@@ -25,7 +25,7 @@ sender.listen(ServerPort, () => {
 
 // //import express 和 ws 套件
 const SocketServer = require('ws').Server
-const PORT = 4000 //指定 port
+const PORT = config.WSPort //指定 port
 
 //創建 express 物件，綁定監聽  port , 設定開啟後在 console 中提示
 const server = express().listen(PORT, () => {
