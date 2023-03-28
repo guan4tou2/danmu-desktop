@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html data-bs-theme="dark">
+
+  <head>
+    <meta charset="UTF-8">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <!-- <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"> -->
+
+    <link rel="stylesheet" href="assets\css\bootstrap.css">
+    <script src="assets\js\jqury-3.6.4.js"></script>
+    <script src="assets\js\bootstrap.js"></script>
+
+    <title>彈幕管理員</title>
+  </head>
+
+  <body style="overflow:hidden">
+    <br>
+    <div class="mb-3 row">
+      <label for="basic-url" class="col-sm-4 col-form-label text-center">請輸入伺服器IP</label>
+      <div class="col-sm-6">
+        <div class="input-group">
+          <span class="input-group-text">http://</span>
+          <input type="text" class="form-control" id="basic-ip" aria-describedby="basic-addon3 basic-addon4">
+        </div>
+      </div>
+    </div>
+    <div class="mb-3 row">
+      <label for="basic-url" class="col-sm-4 col-form-label text-center">請輸入伺服器PORT</label>
+      <div class="col-sm-6">
+        <div class="input-group">
+          <span class="input-group-text">PORT:</span>
+          <input type="text" class="form-control" id="basic-port" aria-describedby="basic-addon3 basic-addon4">
+        </div>
+      </div>
+    </div>
+    <br>
+    <div class="text-center">
+      <button type="button" class="btn btn-secondary btn-lg" id="start">開啟彈幕</button>
+      <button type="button" class="btn btn-secondary btn-lg" id="stop" disabled>結束彈幕</button>
+    </div>
+    <!-- You can also require other files to run in this process -->
+    <script src="./renderer.js"></script>
+<script>
+</script>
+  </body>
+
+</html>

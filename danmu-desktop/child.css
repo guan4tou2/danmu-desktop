@@ -1,0 +1,24 @@
+h1 {
+  position: relative;
+  color: aliceblue;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 10px;
+  margin: 0px;
+}
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+h1::before {
+  content: attr(data-storke);
+}
+h1::before {
+  position: absolute;
+  z-index: -1;
+  -webkit-text-stroke-width: 10px;
+  -webkit-text-stroke-color: var(--webColor, #000000);
+  text-stroke-width: 10px;
+  text-stroke-color: var(--Color, #000000);
+}
