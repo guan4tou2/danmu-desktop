@@ -1,3 +1,3 @@
 {"Port":3000,
-"IP":"localhost",
+"IP":"0.0.0.0",
 "WSPort":4000}
