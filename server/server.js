@@ -42,7 +42,7 @@ wss.on('connection', ws => {
     api.get("/api", function (req, res) {
         console.log(req.query)
         ws.send(JSON.stringify(req.query))
-        res.end("hello")
+        res.end()
     })
     var serverapi = api.listen(5000,ServerIP);
     // 當連線關閉
