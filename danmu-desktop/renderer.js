@@ -35,10 +35,7 @@ function showdanmu(string, range = 75, color = '#000000', speed = 8000, size = 5
     }).onfinish = () => {
         danmu.remove();
     }
-
 }
-
-
 
 const startButton = document.getElementById('start')
 const stopButton = document.getElementById('stop')
@@ -55,30 +52,15 @@ startButton.addEventListener('click', () => {
         api.create(IP, PORT)
         startButton.disabled=true
         stopButton.disabled = false
+        ip.disabled=true
+        port.disabled=true
     }
 });
 stopButton.addEventListener('click', () => {
     startButton.disabled = false
     stopButton.disabled = true
+    ip.disabled=false
+    port.disabled=false
     const api=window.API
     api.delete()
 });
-
-
-// document.addEventListener("DOMContentLoaded", event => {
-//     // 建立 WebSocket (本例 server 端於本地運行)
-//     let url = `ws://${IP}:${PORT}`
-//     var ws = new WebSocket(url)
-//     // 監聽連線狀態
-//     ws.onopen = () => {
-//         console.log('open connection')
-//     }
-//     ws.onclose = () => {
-//         console.log('close connection');
-//     }
-//     //接收 Server 發送的訊息
-//     ws.onmessage = event => {
-//         let txt = event.data
-//         text(txt)
-//     }
-// });
