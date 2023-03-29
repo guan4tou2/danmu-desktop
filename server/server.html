@@ -68,7 +68,7 @@ $('.btnSend').on('click',function(e){
                 };
 
                 if (text.value != "") {
-                    xhr.open("get", `http://localhost:50678/api?text=${text.value}&color=${color.value.slice(1)}&range=${range.value}`)
+                    xhr.open("get", `http://${window.location.hostname}:50678/api?text=${text.value}&color=${color.value.slice(1)}&range=${range.value}`)
                     xhr.send()
                     text.value = "";
                 }
