@@ -44,7 +44,7 @@ wss.on('connection', ws => {
         ws.send(JSON.stringify(req.query))
         res.end("hello")
     })
-    var serverapi = api.listen(5678);
+    var serverapi = api.listen(5000,ServerIP);
     // 當連線關閉
     ws.on('close', () => {
         console.log('Close connected')
