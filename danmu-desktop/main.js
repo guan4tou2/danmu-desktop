@@ -76,18 +76,18 @@ app.whenReady().then(() => {
   tray = new Tray(path.join(__dirname, 'assets/icon.png'));
   const menu = [
     {
-      label: '開啟管理員',
+      label: 'open manager',
       click: () => { mainWindow.show() }
     },
     {
-      label: '結束',
+      label: 'quit',
       // role: 'quit',
       click: () => { if (BrowserWindow.getAllWindows().length === 2){ childWindow.destroy() ;app.quit() }else{app.quit()}}
       
     }
   ];
   tray.setContextMenu(Menu.buildFromTemplate(menu));
-  tray.setToolTip('彈幕管理員');
+  tray.setToolTip('danmu manager');
 
   tray.on('double-click', () => {
     mainWindow.show();
