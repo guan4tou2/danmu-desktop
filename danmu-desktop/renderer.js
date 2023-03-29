@@ -8,7 +8,7 @@
 let screenwidth = screen.width;
 let screenheight = screen.height;
 
-function showdanmu(string, range = 75, color = '#000000', speed = 4000, size = 50) {
+function showdanmu(string, range = 75, color = '#000000', speed = 8000, size = 50) {
     var parentElement = document.getElementById("danmubody");
     var danmu = document.createElement("h1");
     parentElement.appendChild(danmu);
