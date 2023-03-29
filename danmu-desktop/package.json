@@ -1,7 +1,7 @@
 {
-  "name": "electron-quick-start",
+  "name": "danmu-desktop",
   "version": "1.0.0",
-  "description": "A minimal Electron application",
+  "description": "A danmu desktop",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -12,11 +12,9 @@
   "keywords": [
     "Electron",
     "quick",
-    "start",
-    "tutorial",
-    "demo"
+    "start"
   ],
-  "author": "GitHub",
+  "author": "guan4tou2",
   "license": "CC0-1.0",
   "devDependencies": {
     "electron": "^23.2.0",
@@ -28,7 +26,7 @@
   },
   "build": {
     "appId": "com.example.app",
-    "productName": "彈幕管理員",
+    "productName": "danmu manager",
     "directories": {
       "output": "pack"
     },
