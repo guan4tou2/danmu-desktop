@@ -54,8 +54,7 @@ function createWindow() {
         let color = '#' + data.color
         let size=data.size
         let speed=data.speed
-        console.log(text)
-        showdanmu(text, range, color,speed,size)
+        showdanmu(text, range, color,size)
       }
     }
     `
