@@ -40,6 +40,14 @@
                     <input type="range" class="form-range row-sm-1" id="customRange" value="75" min="1" max="75"
                         step="1">
                 </div>
+                <div class="col">
+                    <label for="SizeInput" class="form-label">字體大小</label>
+                    <input type="number" class="form-control row-sm-1" id="SizeInput" style="height:7vh;width:14vh;font-size:x-large" value="50">    
+                </div>
+                <div class="col">
+                    <label for="SpeedInput" class="form-label">速度</label>
+                    <input type="number" class="form-control row-sm-1" id="SpeedInput" style="height:7vh;width:14vh;font-size:x-large" value="7000">    
+                </div>
             </div>
         </div>
         <script>
@@ -55,21 +63,30 @@
             const text = document.getElementById("floatingTextarea")
             const btn = document.getElementById("btnSend")
             const color = document.getElementById('ColorInput');
+            const size = document.getElementById('SizeInput');
+            const speed = document.getElementById('SpeedInput');
 
             btn.onclick = function () {
                 let xhr = new XMLHttpRequest();
                 const data = {
                     "text": text.value,
                     "range": range.value,
-                    "color": color.value.slice(1)
+                    "color": color.value.slice(1),
+                    "size":size.value,
+                    "speed":speed.value
                 };
 
                 if (text.value != "") {
-                    xhr.open("get", `http://${window.location.hostname}:5000/api?text=${text.value}&color=${color.value.slice(1)}&range=${range.value}`)
+                    xhr.open("get", `http://${window.location.hostname}:5000/api?text=${text.value}&color=${color.value.slice(1)}&range=${range.value}&size=${size.value}&speed=${speed.value}`)
                     xhr.send()
                     text.value = "";
                 }
             }
+            text.addEventListener("keyup",function(e){
+                if(e.code==='Enter'){
+                    btn.click()
+                }
+            })
         </script>
     </body>
 
