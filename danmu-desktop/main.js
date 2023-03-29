@@ -27,6 +27,7 @@ function createWindow() {
   })
   ipcMain.on('createChild', (event, ip, port) => {
     createChildWindow()
+    childWindow.setAlwaysOnTop(true,"screen-saver")
     childWindow.webContents.executeJavaScript(
       `
       const IP='${ip}';
@@ -115,12 +116,12 @@ app.on('window-all-closed', function () {
 function createChildWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
   childWindow = new BrowserWindow({
-    alwaysOnTop: true, // 視窗是否總是在頂部
     fullscreen: true, 
     closable:false,
     // width:width,
     // height:height,
     // parent: mainWindow, // 設置父窗口
+    skipTaskbar:true,
     transparent: true,
     frame: false,
     resizable: false,
@@ -135,7 +136,7 @@ function createChildWindow() {
   })
 
   childWindow.on('closed', () => {
-    childWindow = null
+    childWindow.destroy()
   })
 
 }
