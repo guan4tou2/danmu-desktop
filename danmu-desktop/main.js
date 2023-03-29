@@ -82,7 +82,7 @@ app.whenReady().then(() => {
     {
       label: '結束',
       // role: 'quit',
-      click: () => { childWindow.destroy() ;app.quit() }
+      click: () => { if (BrowserWindow.getAllWindows().length === 2){ childWindow.destroy() ;app.quit() }else{app.quit()}}
       
     }
   ];
@@ -98,8 +98,7 @@ app.whenReady().then(() => {
     
   });
   mainWindow.on('close', e => {
-    childWindow.destroy()
-    app.quit()
+    if (BrowserWindow.getAllWindows().length === 2){ childWindow.destroy() ;app.quit() }else{app.quit()}
   });
 })
 
