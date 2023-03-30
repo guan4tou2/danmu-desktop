@@ -8,7 +8,7 @@
 let screenwidth = screen.width;
 let screenheight = screen.height;
 
-function showdanmu(string, range = 75, color = '#000000', size = 50, speed = 8000) {
+function showdanmu(string, range = 75, color = '#000000', size = 50, speed = 10000) {
     var parentElement = document.getElementById("danmubody");
     var danmu = document.createElement("h1");
     parentElement.appendChild(danmu);
@@ -42,9 +42,9 @@ const stopButton = document.getElementById('stop')
 const ip = document.getElementById('basic-ip')
 const port = document.getElementById('basic-port')
 startButton.addEventListener('click', () => {
-    if (ip.value === "" || port.value===""){
-        console.log("stop")
-    }else{
+    var ipre=/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/;
+    var portre=/^\d{1,5}$/;
+    if (ipre.test(ip.value) || ipre.test(port.value)){
         const IP= ip.value
         const PORT=port.value
         console.log(IP,PORT)
