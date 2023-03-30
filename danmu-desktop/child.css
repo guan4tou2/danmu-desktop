@@ -5,6 +5,7 @@ h1 {
   white-space: nowrap;
   padding: 10px;
   margin: 0px;
+  letter-spacing:1px;
 }
 body {
   margin: 0;
@@ -17,8 +18,8 @@ h1::before {
 h1::before {
   position: absolute;
   z-index: -1;
-  -webkit-text-stroke-width: 10px;
+  -webkit-text-stroke-width: 6px;
   -webkit-text-stroke-color: var(--webColor, #000000);
-  text-stroke-width: 10px;
+  text-stroke-width: 6px;
   text-stroke-color: var(--Color, #000000);
 }
