@@ -17,7 +17,7 @@
     <body>
         <div class="container text-center ">
             <div class="form-floating row">
-                <textarea class="form-control" id="floatingTextarea" style="height:20vh"></textarea>
+                <textarea class="form-control" id="floatingTextarea" style="height:20vh" placeholder="輸入彈幕..."></textarea>
                 <label for="floatingTextarea">輸入彈幕...</label>
             </div>
             <br>
@@ -82,8 +82,9 @@
                     text.value = "";
                 }
             }
-            text.addEventListener("keyup",function(e){
-                if(e.code==='Enter'){
+            text.addEventListener("keydown",function(e){
+                if(e.key==='Enter'){
+                    e.preventDefault();
                     btn.click()
                 }
             })
