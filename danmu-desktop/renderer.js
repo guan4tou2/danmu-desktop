@@ -20,7 +20,7 @@ function showdanmu(string, range = 75, color = '#000000', size = 50, speed = 100
 
     const Height = parseFloat(getComputedStyle(danmu).height)
     const Padding = parseFloat(getComputedStyle(danmu).padding)
-    let top = Math.random() * document.documentElement.clientHeight - (Height*2 + Padding * 2);
+    let top = Math.abs(Math.random() * document.documentElement.clientHeight - (Height*2 + Padding * 2));
     console.log(document.documentElement.clientHeight, top)
     danmu.style.top = `${top}px`;
     danmu.style.opacity = range * 0.01
