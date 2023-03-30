@@ -2,7 +2,7 @@
 
 此專案分為兩個部分  
 1. Danmu-Desktop  
-Danmu=Desktop為client端，執行於想要顯示彈幕的電腦上  
+DanmuDesktop為client端，執行於想要顯示彈幕的電腦上  
 
 2. Server  
 Server會建立起網站，提供輸入彈幕的介面，將彈幕傳送給Danmu-Desktop  
