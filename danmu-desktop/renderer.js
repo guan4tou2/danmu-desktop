@@ -44,7 +44,7 @@ const port = document.getElementById('basic-port')
 startButton.addEventListener('click', () => {
     var ipre=/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/;
     var portre=/^\d{1,5}$/;
-    if (ipre.test(ip.value) || ipre.test(port.value)){
+    if (ipre.test(ip.value) && ipre.test(port.value)){
         const IP= ip.value
         const PORT=port.value
         console.log(IP,PORT)
