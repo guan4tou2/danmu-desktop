@@ -3,13 +3,14 @@
 此專案分為兩個部分  
 1. Danmu-Desktop  
 DanmuDesktop為client端，執行於想要顯示彈幕的電腦上  
+目前支援作業系統:Windows,Macos，具有安裝檔與可移植檔  
 
 2. Server  
 Server會建立起網站，提供輸入彈幕的介面，將彈幕傳送給Danmu-Desktop  
 
 ## 使用方式
 ### Danmu-Desktop 
-下載執行檔後，開啟程式後輸入Server的IP以及websocket的port(預設4000)，即可開啟彈幕  
+下載[執行檔](https://github.com/guan4tou2/danmu-desktop/releases/tag/v1.0.0)後，開啟程式後輸入Server的IP以及websocket的port(預設4000)，即可開啟彈幕  
 
 ### Server
 分為兩種執行方式
