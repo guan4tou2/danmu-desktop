@@ -27,6 +27,11 @@ function createWindow() {
   })
   ipcMain.on('createChild', (event, ip, port) => {
     createChildWindow()
+
+    //const {getCursorScreenPoint,getDisPlayNearestPoint}=screen
+    //const currentScreen=getDisPlayNearestPoint(getCursorScreenPoint())
+    //childWindow.setBounds(currentScreen.workAreaSize) //for multiscreen
+
     childWindow.setAlwaysOnTop(true,"screen-saver")
     childWindow.webContents.executeJavaScript(
       `
@@ -115,13 +120,11 @@ app.on('window-all-closed', function () {
 // code. You can also put them in separate files and require them here.
 
 function createChildWindow() {
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize; 
   childWindow = new BrowserWindow({
-    fullscreen: true, 
+    fullscreen: true, //only display on primarydisplay
     closable:false,
-    // width:width,
-    // height:height,
-    // parent: mainWindow, // 設置父窗口
+    // width:width, height:height, //for multiscreen
     skipTaskbar:true,
     transparent: true,
     frame: false,
