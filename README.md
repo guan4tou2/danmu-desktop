@@ -3,7 +3,7 @@
 此專案分為兩個部分  
 1. Danmu-Desktop  
 DanmuDesktop為client端，執行於想要顯示彈幕的電腦上  
-目前支援作業系統:Windows,Macos，具有安裝檔與可移植檔  
+目前支援作業系統:Windows,MacOS，具有安裝檔與可移植檔  
 
 2. Server  
 Server會建立起網站，提供輸入彈幕的介面，將彈幕傳送給Danmu-Desktop  
