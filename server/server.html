@@ -57,9 +57,7 @@
             range.addEventListener('input', () => {
                 value.textContent = range.value + "%";
             });
-        </script>
 
-        <script>
             const text = document.getElementById("floatingTextarea")
             const btn = document.getElementById("btnSend")
             const color = document.getElementById('ColorInput');
@@ -67,6 +65,7 @@
             const speed = document.getElementById('SpeedInput');
 
             btn.onclick = function () {
+                if(speed.value<speed.min)speed.value=speed.min;
                 let xhr = new XMLHttpRequest();
                 const data = {
                     "text": text.value,
@@ -98,5 +97,4 @@
             });
         </script>
     </body>
-
 </html>
