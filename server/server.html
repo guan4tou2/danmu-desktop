@@ -73,11 +73,11 @@
                     "range": range.value,
                     "color": color.value.slice(1),
                     "size":size.value
-               //     "speed":speed.value
+                    "speed":speed.value
                 };
 
                 if (text.value != "") {
-                    xhr.open("get", `http://${window.location.hostname}:5000/api?text=${text.value}&color=${color.value.slice(1)}&range=${range.value}&size=${size.value}`)
+                    xhr.open("get", `http://${window.location.hostname}:5000/api?text=${text.value}&color=${color.value.slice(1)}&range=${range.value}&size=${size.value}&speed=${speed.value}`)
                     xhr.send()
                     text.value = "";
                 }
