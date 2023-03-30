@@ -39,7 +39,7 @@ const stopButton = document.getElementById('stop')
 const ip = document.getElementById('basic-ip')
 const port = document.getElementById('basic-port')
 startButton.addEventListener('click', () => {
-    var ipre=/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/;
+    var ipre=/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
     var portre=/^\d{1,5}$/;
     if (ipre.test(ip.value) && portre.test(port.value)){
         const IP= ip.value
