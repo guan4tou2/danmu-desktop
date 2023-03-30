@@ -5,9 +5,6 @@
  * `contextIsolation` is turned on. Use the contextBridge API in `preload.js`
  * to expose Node.js functionality from the main process.
  */
-let screenwidth = screen.width;
-let screenheight = screen.height;
-
 function showdanmu(string, range = 75, color = '#000000', size = 50, speed = 10000) {
     var parentElement = document.getElementById("danmubody");
     var danmu = document.createElement("h1");
@@ -29,7 +26,7 @@ function showdanmu(string, range = 75, color = '#000000', size = 50, speed = 100
 
     danmu.animate([
         { transform: 'translateX(100%)' },
-        { transform: `translateX(-${screenwidth}px)` }
+        { transform: `translateX(-${document.documentElement.clientWidth}px)` }
     ], {
         duration: speed
     }).onfinish = () => {
