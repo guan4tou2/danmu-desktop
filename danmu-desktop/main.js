@@ -30,7 +30,7 @@ function createWindow() {
 
     //const {getCursorScreenPoint,getDisPlayNearestPoint}=screen
     //const currentScreen=getDisPlayNearestPoint(getCursorScreenPoint())
-    //childWindow.setBounds(currentScreen.workAreaSize) //for multiscreen
+    //childWindow.setBounds(currentScreen.size) //for multiscreen
 
     childWindow.setAlwaysOnTop(true,"screen-saver")
     childWindow.webContents.executeJavaScript(
@@ -120,7 +120,7 @@ app.on('window-all-closed', function () {
 // code. You can also put them in separate files and require them here.
 
 function createChildWindow() {
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize; 
+  const { width, height } = screen.getPrimaryDisplay().size; 
   childWindow = new BrowserWindow({
     fullscreen: true, //only display on primarydisplay
     closable:false,
