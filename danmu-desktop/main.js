@@ -59,7 +59,7 @@ function createWindow() {
         let color = '#' + data.color
         let size=data.size
         let speed=data.speed
-        showdanmu(text, range, color,size)
+        showdanmu(text, range, color,size,speed)
       }
     }
     `
