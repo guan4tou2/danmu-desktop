@@ -28,9 +28,9 @@ function createWindow() {
   ipcMain.on('createChild', (event, ip, port) => {
     createChildWindow()
 
-    //const {getCursorScreenPoint,getDisplayNearestPoint}=screen
-    //const currentScreen=getDisplayNearestPoint(getCursorScreenPoint())
-    //childWindow.setBounds(currentScreen.size) //for multiscreen
+    const {getCursorScreenPoint,getDisplayNearestPoint}=screen
+    const currentScreen=getDisplayNearestPoint(getCursorScreenPoint())
+    childWindow.setBounds(currentScreen.bounds)
 
     childWindow.setAlwaysOnTop(true,"screen-saver")
     childWindow.webContents.executeJavaScript(
@@ -122,9 +122,9 @@ app.on('window-all-closed', function () {
 function createChildWindow() {
   const { width, height } = screen.getPrimaryDisplay().size; 
   childWindow = new BrowserWindow({
-    fullscreen: true, //only display on primarydisplay
+    //fullscreen: true, //only display on primarydisplay
     closable:false,
-    // width:width, height:height, //for multiscreen
+    width:width, height:height, //for multiscreen
     skipTaskbar:true,
     transparent: true,
     frame: false,
