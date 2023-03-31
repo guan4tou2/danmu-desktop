@@ -21,8 +21,9 @@ function showdanmu(string, range = 75, color = '#000000', size = 50, speed = 100
     console.log(document.documentElement.clientHeight, top)
     danmu.style.top = `${top}px`;
     danmu.style.opacity = range * 0.01
-    danmu.style.setProperty('--webColor', color);
-    danmu.style.setProperty('--Color', color);
+    danmu.style.color=color
+    //danmu.style.setProperty('--webColor', color);
+    //danmu.style.setProperty('--Color', color);
 
     danmu.animate([
         { transform: 'translateX(100%)' },
