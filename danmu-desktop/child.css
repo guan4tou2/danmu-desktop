@@ -1,4 +1,8 @@
-@import url(//fonts.googleapis.com/earlyaccess/notosanstc.css);
+@font-face {
+  font-family:NotoSansTC;
+  src: url(assets/NotoSansTC-Regular.otf);
+  font-weight: normal;
+}
 h1 {
   position: relative;
   color: aliceblue;
@@ -7,7 +11,7 @@ h1 {
   padding: 10px;
   margin: 0px;
   letter-spacing:1px;
-  font-family:'Noto Sans TC',sans-serif,monospace,'Microsoft JhengHei';
+  font-family:NotoSansTC,sans-serif,"Microsoft JhengHei";
 }
 body {
   margin: 0;
