@@ -22,4 +22,5 @@ h1::before {
   -webkit-text-stroke-color: var(--webColor, #000000);
   text-stroke-width: 6px;
   text-stroke-color: var(--Color, #000000);
+  text-shadow:0 0 10px #121212;
 }
