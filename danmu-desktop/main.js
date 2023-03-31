@@ -28,8 +28,8 @@ function createWindow() {
   ipcMain.on('createChild', (event, ip, port) => {
     createChildWindow()
 
-    //const {getCursorScreenPoint,getDisPlayNearestPoint}=screen
-    //const currentScreen=getDisPlayNearestPoint(getCursorScreenPoint())
+    //const {getCursorScreenPoint,getDisplayNearestPoint}=screen
+    //const currentScreen=getDisplayNearestPoint(getCursorScreenPoint())
     //childWindow.setBounds(currentScreen.size) //for multiscreen
 
     childWindow.setAlwaysOnTop(true,"screen-saver")
