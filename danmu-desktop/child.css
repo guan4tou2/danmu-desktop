@@ -19,8 +19,8 @@ h1::before {
   position: absolute;
   z-index: -1;
   -webkit-text-stroke-width: 6px;
-  -webkit-text-stroke-color: var(--webColor, #000000);
+  -webkit-text-stroke-color: var(--webColor, #121212);
   text-stroke-width: 6px;
-  text-stroke-color: var(--Color, #000000);
+  text-stroke-color: var(--Color, #121212);
   text-shadow:0 0 10px #121212;
 }
