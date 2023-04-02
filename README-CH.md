@@ -1,4 +1,5 @@
-# danmu-desktop:直接在桌面顯示彈幕 
+# danmu-desktop
+直接在桌面顯示彈幕  
 
 此專案分為兩個部分  
 1. Danmu-Desktop  
@@ -10,7 +11,7 @@ Server會建立起網站，提供輸入彈幕的介面，將彈幕傳送給Danmu
 
 ## 使用方式
 ### Danmu-Desktop 
-下載[執行檔](https://github.com/guan4tou2/danmu-desktop/releases/tag/v1.0.0)後，開啟程式後輸入Server的IP以及websocket的port(預設4000)，即可開啟彈幕  
+下載[執行檔](https://github.com/guan4tou2/danmu-desktop/releases)後，開啟程式後輸入Server的IP以及websocket的port(預設4000)，即可開啟彈幕  
 
 ### Server
 分為兩種執行方式
