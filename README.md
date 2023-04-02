@@ -2,6 +2,8 @@
 直接在桌面顯示彈幕  
 Display bullet screen directly on the desktop  
 
+[中文說明](https://github.com/guan4tou2/danmu-desktop/README-CH.md)
+
 # English document
 This project is divided into two parts:
 
