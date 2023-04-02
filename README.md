@@ -14,7 +14,7 @@ The server creates a website that provides an interface for inputting danmu and 
 
 ## Usage
 ### Danmu-Desktop
-Download the executable file, open the program, and enter the server's IP and websocket port (default is 4000) to start displaying danmu.  
+Download [the executable file](https://github.com/guan4tou2/danmu-desktop/releases), open the program, and enter the server's IP and websocket port (default is 4000) to start displaying danmu.  
 
 ### Server
 There are two ways to run the server:  
