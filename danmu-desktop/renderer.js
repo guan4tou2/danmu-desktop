@@ -7,27 +7,30 @@
  */
 function showdanmu(string, range = 75, color = '#ffffff', size = 50, speed = 10000) {
     var parentElement = document.getElementById("danmubody");
+    //var imgs=/^\d{1,5}$/;
+    //if(imgs.test(string)){
+    //var danmu = document.createElement("img");
+    //danmu.setAttribute("src", string)
+    //danmu.width=size*2;
+    //}else{
     var danmu = document.createElement("h1");
-    parentElement.appendChild(danmu);
-
     danmu.className = "danmu";
     danmu.textContent = string;
     danmu.setAttribute("data-storke", string)
     danmu.style.fontSize = `${size}px`;
-
+    danmu.style.color=color
+    //}
     const Height = parseFloat(getComputedStyle(danmu).height)
+    const Width = parseFloat(getComputedStyle(danmu).width)
     const Padding = parseFloat(getComputedStyle(danmu).padding)
     let top = Math.abs(Math.random() * document.documentElement.clientHeight - (Height + Padding));
-    console.log(document.documentElement.clientHeight, top)
     danmu.style.top = `${top}px`;
     danmu.style.opacity = range * 0.01
-    danmu.style.color=color
-    //danmu.style.setProperty('--webColor', color);
-    //danmu.style.setProperty('--Color', color);
-
+    
+    parentElement.appendChild(danmu);
     danmu.animate([
-        { transform: 'translateX(100%)' },
-        { transform: `translateX(-${document.documentElement.clientWidth}px)` }
+        { transform: 'translateX(100vw)' },
+        { transform: `translateX(-${Width}px)` }
     ], {
         duration: speed
     }).onfinish = () => {
