@@ -30,3 +30,7 @@ h1::before {
   text-stroke-color: var(--Color, #121212);
   text-shadow:0 0 10px #121212;
 }
+img{
+  position: relative;
+  overflow: hidden;
+}
