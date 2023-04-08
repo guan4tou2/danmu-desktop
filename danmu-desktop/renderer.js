@@ -7,19 +7,20 @@
  */
 function showdanmu(string, range = 75, color = '#ffffff', size = 50, speed = 10000) {
     var parentElement = document.getElementById("danmubody");
-    //var imgs=/^\d{1,5}$/;
-    //if(imgs.test(string)){
-    //var danmu = document.createElement("img");
-    //danmu.setAttribute("src", string)
-    //danmu.width=size*2;
-    //}else{
+    var imgs=/^https?:\/\/\S*.(gif|png|jpeg|jpg)$/;
+    if(imgs.test(string)){
+    var danmu = document.createElement("img");
+    danmu.setAttribute("src", string)
+    danmu.width=size*2;
+    }else{
     var danmu = document.createElement("h1");
     danmu.className = "danmu";
     danmu.textContent = string;
     danmu.setAttribute("data-storke", string)
     danmu.style.fontSize = `${size}px`;
     danmu.style.color=color
-    //}
+    }
+    
     const Height = parseFloat(getComputedStyle(danmu).height)
     const Width = parseFloat(getComputedStyle(danmu).width)
     const Padding = parseFloat(getComputedStyle(danmu).padding)
