@@ -20,6 +20,7 @@ function showdanmu(string, range = 75, color = '#ffffff', size = 50, speed = 100
     danmu.style.fontSize = `${size}px`;
     danmu.style.color=color
     }
+    parentElement.appendChild(danmu);
     
     const Height = parseFloat(getComputedStyle(danmu).height)
     const Width = parseFloat(getComputedStyle(danmu).width)
@@ -28,7 +29,6 @@ function showdanmu(string, range = 75, color = '#ffffff', size = 50, speed = 100
     danmu.style.top = `${top}px`;
     danmu.style.opacity = range * 0.01
     
-    parentElement.appendChild(danmu);
     danmu.animate([
         { transform: 'translateX(100vw)' },
         { transform: `translateX(-${Width}px)` }
