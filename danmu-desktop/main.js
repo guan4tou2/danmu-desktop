@@ -31,7 +31,7 @@ function createWindow() {
     const {getCursorScreenPoint,getDisplayNearestPoint}=screen
     const currentScreen=getDisplayNearestPoint(getCursorScreenPoint())
     childWindow.setBounds(currentScreen.bounds)
-
+    childWindow.setVisibleOnAllWorkspaces(true, 'visibleOnFullScreen')
     childWindow.setAlwaysOnTop(true,"screen-saver")
     childWindow.webContents.executeJavaScript(
       `
