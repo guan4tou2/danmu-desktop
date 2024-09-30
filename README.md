@@ -16,20 +16,13 @@ The server creates a website that provides an interface for inputting danmu and 
 
 ## Usage
 ### Danmu-Desktop
-Download [the executable file](https://github.com/guan4tou2/danmu-desktop/releases), open the program, and enter the server's IP and websocket port (default is 4000) to start displaying danmu.  
+Download [the executable file](https://github.com/guan4tou2/danmu-desktop/releases), open the program, and enter the server's IP and port (default is 4000) to start displaying danmu.  
 
 ### Server
-There are two ways to run the server:  
+`pip install -r requestments.txt`
+`python3 app.py`
 
-1. Docker
-Enter the server folder and run start.sh to start the server.  
-
-2. Node.js
-Enter the server folder and run npm i to install the modules and npm start to start the server.  
+https://127.0.0.1:4000
 
 ## Port Description  
-- 3000: Website. 
-- 4000: WebSocket. 
-- 5000: Server API  
-
-Modify the braces in docker run -p {3000}:3000 -p {4000}:4000 -p 5000:5000 --name danmu -d danmu-server to the desired ports.  
+- 3000: Website.
