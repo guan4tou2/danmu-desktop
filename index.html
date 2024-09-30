@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html data-bs-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fire Danmu</title>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+      crossorigin="anonymous"
+    ></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD"
+      crossorigin="anonymous"
+    />
+  </head>
+
+  <body>
+    <div class="container text-center">
+      <div class="form-floating row">
+        <textarea
+          class="form-control"
+          id="floatingTextarea"
+          style="height: 20vh"
+          placeholder="Type danmu..."
+        ></textarea>
+        <label for="floatingTextarea">Type danmu...</label>
+      </div>
+      <br />
+      <div class="d-grid gap-2 row">
+        <button class="btn btn-primary" type="button" id="btnSend">
+          Fire!!
+        </button>
+      </div>
+    </div>
+    <br />
+    <div class="container border border-secondary rounded">
+      <div class="row align-items-start mx-auto">
+        {% if Options['Color'][0] %}
+        <div class="col">
+          <label for="ColorInput" class="form-label row-sm-1">Color</label>
+          <input
+            type="color"
+            class="form-control form-control-color row-sm-1"
+            id="ColorInput"
+            value="{{Options['Color'][3]}}"
+            style="height: 7vh; width: 7vh"
+          />
+        </div>
+        {% endif %} {% if Options['Opacity'][0] %}
+        <div class="col">
+          <label for="customRange" class="form-label row-sm-1">Opacity</label>
+          <label for="customRange" class="form-label row-sm-1" id="rangevalue"
+            >{{Options['Opacity'][3]}}%</label
+          >
+          <input
+            type="range"
+            class="form-range row-sm-1"
+            id="customRange"
+            value="{{Options['Opacity'][3]}}"
+            min="{{Options['Opacity'][1]}}"
+            max="{{Options['Opacity'][2]}}"
+            step="1"
+          />
+        </div>
+        {% endif %} {% if Options['FontSize'][0] %}
+        <div class="col">
+          <label for="SizeInput" class="form-label">Font Size</label>
+          <input
+            type="number"
+            class="form-control row-sm-1"
+            id="SizeInput"
+            style="height: 7vh; width: 14vh; font-size: x-large"
+            value="{{Options['FontSize'][3]}}"
+            min="{{Options['FontSize'][1]}}"
+            max="{{Options['FontSize'][2]}}"
+          />
+        </div>
+        {% endif %} {% if Options['Speed'][0] %}
+        <div class="col">
+          <label for="SpeedInput" class="form-label">Speed</label>
+          <input
+            type="number"
+            class="form-control row-sm-1"
+            id="SpeedInput"
+            style="height: 7vh; width: 14vh; font-size: x-large"
+            value="{{Options['Speed'][3]}}"
+            step="50"
+            min="{{Options['Speed'][1]}}"
+            max="{{Options['Speed'][2]}}"
+          />
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    <script>
+
+        var btn = document.getElementById("btnSend");
+        var text= document.getElementById("floatingTextarea");
+
+
+        btn.addEventListener("click", function () {
+        var bodydata={};
+        bodydata.text= text.value;
+
+        {% if Options['Color'][0] %}
+        bodydata.color= document.getElementById("ColorInput").value.slice(1);
+        {% else %}
+        bodydata.color= {{Options['Color'][3]}};
+        {% endif %}
+        {% if Options['Opacity'][0] %}
+        const range = document.getElementById("customRange");
+        const value = document.getElementById("rangevalue");
+        console.log(range.value);
+        range.addEventListener("input", () => {
+            value.textContent = range.value + "%";
+        });
+        bodydata.range= range.value
+        {% else %}
+        bodydata.range= {{Options['Opacity'][3]}}
+        {% endif %}
+        {% if Options['FontSize'][0] %}
+        bodydata.size= document.getElementById("SizeInput").value
+        {% else %}
+        bodydata.size= {{Options['FontSize'][3]}}
+        {% endif %}
+        {% if Options['Speed'][0] %}
+        bodydata.speed= document.getElementById("SpeedInput").value
+        {% else %}
+        bodydata.speed= {{Options['Speed'][3]}}
+        {% endif %}
+        
+
+        fetch("/fire", {
+          method: "POST",
+          credentials: "same-origin", // 保持與原始請求的身份驗證信息
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bodydata),
+        }).then(function (response) {
+          if (response.redirected) {
+            window.location.href = response.url; // 重定向到登入頁面
+          }
+        });
+        text.value = "";
+      });
+
+      text.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          btn.click();
+        }
+      });
+    </script>
+  </body>
+</html>
