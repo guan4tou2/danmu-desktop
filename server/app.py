@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, redirect, url_for, flash,session,make_response
-from flask_socketio import SocketIO
 from flask_sock import Sock
 from gevent import monkey
 from gevent.pywsgi import WSGIServer
@@ -7,7 +6,6 @@ import json
 
 app = Flask(__name__)
 sock = Sock(app)
-socketio = SocketIO(app)
 
 monkey.patch_all()
 
@@ -89,5 +87,5 @@ if __name__ == '__main__':
     port=4000
 
     # WSGIServer(('127.0.0.1', 4000), app).serve_forever()
-    app.run(port=port,debug=True)
+    app.run(port=port)
     
