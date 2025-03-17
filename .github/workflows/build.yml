@@ -18,6 +18,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        
+      - name: Change to project directory
+        run: cd danmu-desktop && ls -la
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
