@@ -8,7 +8,7 @@ from flask import (
     session,
     make_response,
 )
-from flask_socketio import SocketIO
+
 from flask_sock import Sock
 from gevent import monkey
 from gevent.pywsgi import WSGIServer
@@ -20,7 +20,6 @@ import secrets
 
 app = Flask(__name__)
 sock = Sock(app)
-socketio = SocketIO(app)
 
 monkey.patch_all()
 
@@ -167,7 +166,5 @@ def get_settings():
 
 
 if __name__ == "__main__":
-    port = 4000
-
-    # WSGIServer(('127.0.0.1', 4000), app).serve_forever()
-    app.run(port=port)
+    WSGIServer(('0.0.0.0', 4000), app).serve_forever()
+    #app.run(port=4000)
