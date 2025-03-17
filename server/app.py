@@ -15,7 +15,8 @@ from gevent.pywsgi import WSGIServer
 import json
 import re
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
+import secrets
 
 app = Flask(__name__)
 sock = Sock(app)
@@ -24,7 +25,8 @@ socketio = SocketIO(app)
 monkey.patch_all()
 
 app.config["WS"] = ""
-app.secret_key = os.getenv("SECRET_KEY", "SECRET_KEY")
+load_dotenv(find_dotenv(), override=True)
+app.secret_key = secrets.token_hex(16)
 password = os.getenv("ADMIN_PASSWORD", "ADMIN_PASSWORD")
 
 Options = {
@@ -121,12 +123,12 @@ def update():
     data = request.get_json()
     for key in data:
         if key == "Color":
-            if data[key]:  
+            if data[key]:
                 Options[key][3] = "#" + data[key]
         else:
             # 处理数值型数据
             try:
-                if data[key] == "": 
+                if data[key] == "":
                     continue
                 Options[key][3] = int(data[key])
             except ValueError:
