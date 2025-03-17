@@ -166,6 +166,6 @@ def get_settings():
 
 
 if __name__ == "__main__":
-    port = os.getenv("PORT", 4000)
+    port = int(os.getenv("PORT", 4000))
     WSGIServer(('0.0.0.0', port), app).serve_forever()
     #app.run(port=4000)
