@@ -16,143 +16,587 @@
       integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD"
       crossorigin="anonymous"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css"
+    />
+    <style>
+      body {
+        background-color: #1a1a1a;
+        min-height: 100vh;
+        padding: 2rem;
+      }
+      .main-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: rgba(33, 37, 41, 0.95);
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      }
+      .form-control {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+      }
+      .form-control:focus {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+      }
+      .btn-primary {
+        padding: 0.8rem 2rem;
+        font-size: 1.1rem;
+        /* text-transform: uppercase; */
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
+      }
+      .btn-primary:active {
+        transform: translateY(1px);
+      }
+      .btn-primary .btn-icon {
+        margin-right: 8px;
+      }
+      .controls-container {
+        background: rgba(40, 44, 48, 0.5);
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+      }
+      .control-group {
+        background: rgba(33, 37, 41, 0.5);
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+      }
+      .control-group:hover {
+        background: rgba(33, 37, 41, 0.7);
+        transform: translateY(-2px);
+      }
+      .form-label {
+        color: #adb5bd;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+      }
+      .form-label i {
+        margin-right: 0.5rem;
+      }
+      input[type="color"] {
+        border-radius: 8px;
+        cursor: pointer;
+        height: 40px;
+      }
+      input[type="range"] {
+        height: 6px;
+        cursor: pointer;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        width: 20px;
+        height: 20px;
+        background: #0d6efd;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      input[type="range"]::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+      }
+      input[type="number"] {
+        text-align: center;
+        font-weight: bold;
+        height: 40px;
+      }
+      .title {
+        color: #fff;
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 2.5rem;
+        font-weight: 300;
+        letter-spacing: 2px;
+      }
+      .preview-text {
+        font-size: 1.2rem;
+        color: #adb5bd;
+        text-align: center;
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 8px;
+        background: rgba(33, 37, 41, 0.3);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100px;
+      }
+      .preview-text img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 4px;
+      }
+      .preview-text::before {
+        content: attr(data-storke);
+      }
+      .preview-text::before {
+        position: absolute;
+        z-index: -1;
+        -webkit-text-stroke-width: 6px;
+        -webkit-text-stroke-color: var(--webColor, #121212);
+        text-stroke-width: 6px;
+        text-stroke-color: var(--Color, #121212);
+        text-shadow: 0 0 10px #121212;
+      }
+      .character-count {
+        position: absolute;
+        right: 1rem;
+        bottom: 0.5rem;
+        color: #6c757d;
+        font-size: 0.8rem;
+      }
+      .form-floating {
+        position: relative;
+      }
+      .badge {
+        transition: all 0.3s ease;
+      }
+    </style>
   </head>
 
   <body>
-    <div class="container text-center">
-      <div class="form-floating row">
+    <div class="main-container">
+      <h1 class="title">Danmu Fire</h1>
+      <div class="form-floating">
         <textarea
           class="form-control"
           id="floatingTextarea"
-          style="height: 20vh"
+          style="height: 120px"
           placeholder="Type danmu..."
+          maxlength="100"
         ></textarea>
-        <label for="floatingTextarea">Type danmu...</label>
+        <label for="floatingTextarea">
+          <i class="bi bi-chat-dots"></i> Type Content...
+        </label>
+        <div class="character-count">0/100</div>
       </div>
-      <br />
-      <div class="d-grid gap-2 row">
+
+      <div class="preview-text" id="previewText">Preview</div>
+
+      <div class="d-grid gap-2 mt-3">
         <button class="btn btn-primary" type="button" id="btnSend">
-          Fire!!
+          <i class="bi bi-send-fill btn-icon"></i>Fire!!
         </button>
       </div>
-    </div>
-    <br />
-    <div class="container border border-secondary rounded">
-      <div class="row align-items-start mx-auto">
-        {% if Options['Color'][0] %}
-        <div class="col">
-          <label for="ColorInput" class="form-label row-sm-1">Color</label>
-          <input
-            type="color"
-            class="form-control form-control-color row-sm-1"
-            id="ColorInput"
-            value="{{Options['Color'][3]}}"
-            style="height: 7vh; width: 7vh"
-          />
+
+      <div class="controls-container">
+        <div class="row g-4">
+          {% if Options['Color'][0] %}
+          <div class="col-md-3 col-sm-6">
+            <div class="control-group" data-control="Color">
+              <label for="ColorInput" class="form-label">
+                <i class="bi bi-palette"></i>Color
+              </label>
+              <input
+                type="color"
+                class="form-control form-control-color w-100"
+                id="ColorInput"
+                value="{{Options['Color'][3]}}"
+              />
+            </div>
+          </div>
+          {% endif %} {% if Options['Opacity'][0] %}
+          <div class="col-md-3 col-sm-6">
+            <div class="control-group" data-control="Opacity">
+              <label for="customRange" class="form-label">
+                <i class="bi bi-layers"></i>Opacity
+              </label>
+              <div class="d-flex align-items-center gap-2">
+                <input
+                  type="range"
+                  class="form-range"
+                  id="customRange"
+                  value="{{Options['Opacity'][3]}}"
+                  min="{{Options['Opacity'][1]}}"
+                  max="{{Options['Opacity'][2]}}"
+                  step="1"
+                />
+                <span id="rangevalue" class="badge bg-primary"
+                  >{{Options['Opacity'][3]}}%</span
+                >
+              </div>
+            </div>
+          </div>
+          {% endif %} {% if Options['FontSize'][0] %}
+          <div class="col-md-3 col-sm-6">
+            <div class="control-group" data-control="FontSize">
+              <label for="SizeInput" class="form-label">
+                <i class="bi bi-text-size"></i>Size
+              </label>
+              <input
+                type="number"
+                class="form-control"
+                id="SizeInput"
+                value="{{Options['FontSize'][3]}}"
+                min="{{Options['FontSize'][1]}}"
+                max="{{Options['FontSize'][2]}}"
+              />
+            </div>
+          </div>
+          {% endif %} {% if Options['Speed'][0] %}
+          <div class="col-md-3 col-sm-6">
+            <div class="control-group" data-control="Speed">
+              <label for="SpeedInput" class="form-label">
+                <i class="bi bi-speedometer"></i>Speed
+              </label>
+              <input
+                type="number"
+                class="form-control"
+                id="SpeedInput"
+                value="{{Options['Speed'][3]}}"
+                step="50"
+                min="{{Options['Speed'][1]}}"
+                max="{{Options['Speed'][2]}}"
+              />
+            </div>
+          </div>
+          {% endif %}
         </div>
-        {% endif %} {% if Options['Opacity'][0] %}
-        <div class="col">
-          <label for="customRange" class="form-label row-sm-1">Opacity</label>
-          <label for="customRange" class="form-label row-sm-1" id="rangevalue"
-            >{{Options['Opacity'][3]}}%</label
-          >
-          <input
-            type="range"
-            class="form-range row-sm-1"
-            id="customRange"
-            value="{{Options['Opacity'][3]}}"
-            min="{{Options['Opacity'][1]}}"
-            max="{{Options['Opacity'][2]}}"
-            step="1"
-          />
-        </div>
-        {% endif %} {% if Options['FontSize'][0] %}
-        <div class="col">
-          <label for="SizeInput" class="form-label">Font Size</label>
-          <input
-            type="number"
-            class="form-control row-sm-1"
-            id="SizeInput"
-            style="height: 7vh; width: 14vh; font-size: x-large"
-            value="{{Options['FontSize'][3]}}"
-            min="{{Options['FontSize'][1]}}"
-            max="{{Options['FontSize'][2]}}"
-          />
-        </div>
-        {% endif %} {% if Options['Speed'][0] %}
-        <div class="col">
-          <label for="SpeedInput" class="form-label">Speed</label>
-          <input
-            type="number"
-            class="form-control row-sm-1"
-            id="SpeedInput"
-            style="height: 7vh; width: 14vh; font-size: x-large"
-            value="{{Options['Speed'][3]}}"
-            step="50"
-            min="{{Options['Speed'][1]}}"
-            max="{{Options['Speed'][2]}}"
-          />
-        </div>
-        {% endif %}
       </div>
     </div>
+
     <script>
+      const btn = document.getElementById("btnSend");
+      const text = document.getElementById("floatingTextarea");
+      const preview = document.getElementById("previewText");
+      const charCount = document.querySelector(".character-count");
+      const range = document.getElementById("customRange");
+      const rangeValue = document.getElementById("rangevalue");
 
-        var btn = document.getElementById("btnSend");
-        var text= document.getElementById("floatingTextarea");
+      // WebSocket连接
+      let ws = null;
 
+      // 连接WebSocket
+      function connectWebSocket() {
+        // 创建WebSocket连接
+        ws = new WebSocket(`ws://${window.location.host}/`);
 
-        btn.addEventListener("click", function () {
-        var bodydata={};
-        bodydata.text= text.value;
+        // 连接打开时的处理
+        ws.onopen = function() {
+          console.log('WebSocket Connection Opened');
+        };
 
-        {% if Options['Color'][0] %}
-        bodydata.color= document.getElementById("ColorInput").value.slice(1);
-        {% else %}
-        bodydata.color= {{Options['Color'][3]}};
-        {% endif %}
-        {% if Options['Opacity'][0] %}
-        const range = document.getElementById("customRange");
-        const value = document.getElementById("rangevalue");
-        console.log(range.value);
+        // 接收消息的处理
+        ws.onmessage = function(event) {
+          try {
+            const data = JSON.parse(event.data);
+
+            // 如果是设置更改通知
+            if (data.type === 'settings_changed') {
+              console.log('setted:', data.settings);
+
+              // 更新当前设置
+              currentSettings = {
+                color: data.settings.Color[3],
+                opacity: data.settings.Opacity[3],
+                fontSize: data.settings.FontSize[3],
+                speed: data.settings.Speed[3],
+                randomColor: data.settings.Color[0],
+                randomOpacity: data.settings.Opacity[0],
+                randomFontSize: data.settings.FontSize[0],
+                randomSpeed: data.settings.Speed[0]
+              };
+
+              // 更新UI控件
+              updateUIControls();
+
+              // 更新预览
+              updatePreview();
+
+              // 更新控件的可见性
+              updateControlsVisibility();
+            }
+          } catch (error) {
+            console.error('Process Websocket error:', error);
+          }
+        };
+
+        // 连接关闭时的处理
+        ws.onclose = function() {
+          console.log('WebSocket Connection Closed');
+          // 尝试重新连接
+          setTimeout(connectWebSocket, 3000);
+        };
+
+        // 连接错误时的处理
+        ws.onerror = function(error) {
+          console.error('WebSocket Error:', error);
+        };
+      }
+
+      // 更新控件的可见性
+      function updateControlsVisibility() {
+        // 获取所有控件组
+        const controlGroups = document.querySelectorAll('.control-group');
+        const controlsContainer = document.querySelector('.controls-container');
+
+        // 如果没有可见的控件，隐藏整个控件容器
+        let hasVisibleControls = false;
+
+        // 更新颜色控件的可见性
+        const colorControl = document.querySelector('[data-control="Color"]');
+        if (colorControl) {
+          if (currentSettings.randomColor) {
+            colorControl.style.display = 'block';
+            hasVisibleControls = true;
+          } else {
+            colorControl.style.display = 'none';
+          }
+        }
+
+        // 更新透明度控件的可见性
+        const opacityControl = document.querySelector('[data-control="Opacity"]');
+        if (opacityControl) {
+          if (currentSettings.randomOpacity) {
+            opacityControl.style.display = 'block';
+            hasVisibleControls = true;
+          } else {
+            opacityControl.style.display = 'none';
+          }
+        }
+
+        // 更新字体大小控件的可见性
+        const fontSizeControl = document.querySelector('[data-control="FontSize"]');
+        if (fontSizeControl) {
+          if (currentSettings.randomFontSize) {
+            fontSizeControl.style.display = 'block';
+            hasVisibleControls = true;
+          } else {
+            fontSizeControl.style.display = 'none';
+          }
+        }
+
+        // 更新速度控件的可见性
+        const speedControl = document.querySelector('[data-control="Speed"]');
+        if (speedControl) {
+          if (currentSettings.randomSpeed) {
+            speedControl.style.display = 'block';
+            hasVisibleControls = true;
+          } else {
+            speedControl.style.display = 'none';
+          }
+        }
+
+        // 如果没有可见的控件，隐藏整个控件容器
+        if (controlsContainer) {
+          controlsContainer.style.display = hasVisibleControls ? 'block' : 'none';
+        }
+      }
+
+      // 存储当前设置
+      let currentSettings = {
+        color: "{{Options['Color'][3]}}",
+        opacity: {{Options['Opacity'][3]}},
+        fontSize: {{Options['FontSize'][3]}},
+        speed: {{Options['Speed'][3]}},
+        randomColor: {{Options['Color'][0]|lower}},
+        randomOpacity: {{Options['Opacity'][0]|lower}},
+        randomFontSize: {{Options['FontSize'][0]|lower}},
+        randomSpeed: {{Options['Speed'][0]|lower}}
+      };
+
+      // 定期从服务器获取最新设置
+      function fetchLatestSettings() {
+        fetch('/get_settings', {
+          method: 'GET',
+          credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+          // 更新当前设置
+          currentSettings = {
+            color: data.Color[3],
+            opacity: data.Opacity[3],
+            fontSize: data.FontSize[3],
+            speed: data.Speed[3],
+            randomColor: data.Color[0],
+            randomOpacity: data.Opacity[0],
+            randomFontSize: data.FontSize[0],
+            randomSpeed: data.Speed[0]
+          };
+
+          // 更新UI控件
+          updateUIControls();
+
+          // 更新预览
+          updatePreview();
+
+          // 更新控件的可见性
+          updateControlsVisibility();
+        })
+        .catch(error => console.error('Fetch failed:', error));
+      }
+
+      // 更新UI控件以匹配当前设置
+      function updateUIControls() {
+        // 更新颜色选择器
+        if (document.getElementById("ColorInput")) {
+          document.getElementById("ColorInput").value = currentSettings.color;
+        }
+
+        // 更新透明度滑块
+        if (range) {
+          range.value = currentSettings.opacity;
+          rangeValue.textContent = currentSettings.opacity + "%";
+        }
+
+        // 更新字体大小输入
+        if (document.getElementById("SizeInput")) {
+          document.getElementById("SizeInput").value = currentSettings.fontSize;
+        }
+
+        // 更新速度输入
+        if (document.getElementById("SpeedInput")) {
+          document.getElementById("SpeedInput").value = currentSettings.speed;
+        }
+      }
+
+      // 检查是否是图片URL
+      function isImageUrl(url) {
+        return url && url.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null;
+      }
+
+      // 更新字符计数
+      function updateCharCount() {
+        const count = text.value.length;
+        charCount.textContent = `${count}/100`;
+        if (count >= 90) {
+          charCount.style.color = '#dc3545';
+        } else {
+          charCount.style.color = '#6c757d';
+        }
+      }
+
+      // 更新预览
+      function updatePreview() {
+        const content = text.value.trim();
+
+        if (isImageUrl(content)) {
+          // 如果是图片URL，创建img元素
+          preview.innerHTML = `<img src="${content}" alt="Preview img" style="max-height: ${currentSettings.fontSize}px"/>`;
+        } else {
+          // 如果是普通文本
+          preview.innerHTML = content || "Preview";
+          preview.style.fontSize = `${currentSettings.fontSize}px`;
+        }
+
+        // 设置颜色
+        if (!isImageUrl(content)) {
+          preview.style.color = currentSettings.color;
+        }
+
+        // 设置透明度
+        preview.style.opacity = currentSettings.opacity / 100;
+      }
+
+      // 监听输入事件
+      text.addEventListener("input", () => {
+        updateCharCount();
+        updatePreview();
+      });
+
+      // 监听透明度变化
+      if (range) {
         range.addEventListener("input", () => {
-            value.textContent = range.value + "%";
+          rangeValue.textContent = range.value + "%";
+          currentSettings.opacity = parseInt(range.value);
+          updatePreview();
         });
-        bodydata.range= range.value
-        {% else %}
-        bodydata.range= {{Options['Opacity'][3]}}
-        {% endif %}
-        {% if Options['FontSize'][0] %}
-        bodydata.size= document.getElementById("SizeInput").value
-        {% else %}
-        bodydata.size= {{Options['FontSize'][3]}}
-        {% endif %}
-        {% if Options['Speed'][0] %}
-        bodydata.speed= document.getElementById("SpeedInput").value
-        {% else %}
-        bodydata.speed= {{Options['Speed'][3]}}
-        {% endif %}
-        
+      }
+
+      // 监听颜色变化
+      if (document.getElementById("ColorInput")) {
+        document.getElementById("ColorInput").addEventListener("input", (e) => {
+          currentSettings.color = e.target.value;
+          updatePreview();
+        });
+      }
+
+      // 监听字体大小变化
+      if (document.getElementById("SizeInput")) {
+        document.getElementById("SizeInput").addEventListener("input", (e) => {
+          currentSettings.fontSize = e.target.value;
+          updatePreview();
+        });
+      }
+
+      // 发送按钮点击事件
+      btn.addEventListener("click", function () {
+        const content = text.value.trim();
+        if (!content) {
+          return;
+        }
+
+        var bodydata = {
+          text: content,
+          isImage: isImageUrl(content),
+          color: currentSettings.color.replace('#', ''),
+          range: currentSettings.opacity,
+          size: currentSettings.fontSize,
+          speed: currentSettings.speed
+        };
+
+        // 添加发送动画
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-arrow-right-circle-fill btn-icon"></i>Sending...';
 
         fetch("/fire", {
           method: "POST",
-          credentials: "same-origin", // 保持與原始請求的身份驗證信息
+          credentials: "same-origin",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(bodydata),
         }).then(function (response) {
           if (response.redirected) {
-            window.location.href = response.url; // 重定向到登入頁面
+            window.location.href = response.url;
+          } else {
+            text.value = "";
+            updateCharCount();
+            updatePreview();
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-send-fill btn-icon"></i>Fire!!';
           }
+        }).catch(function(error) {
+          console.error('Error:', error);
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-send-fill btn-icon"></i>Fire!!';
+          alert('Failed to send danmu, please try again later.');
         });
-        text.value = "";
       });
 
+      // 回车发送
       text.addEventListener("keydown", function (e) {
-        if (e.key === "Enter") {
+        if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
           btn.click();
         }
       });
+
+      // 初始化
+      updateCharCount();
+      updatePreview();
+
+      // 建立WebSocket连接
+      connectWebSocket();
+
+      // 每10秒从服务器获取一次最新设置（作为备用机制）
+      setInterval(fetchLatestSettings, 10000);
+
+      // 页面加载时立即获取一次设置
+      fetchLatestSettings();
     </script>
   </body>
 </html>
