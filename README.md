@@ -23,7 +23,7 @@ Using uv is faster, you can also use any management tool you like
 ```bash
 git clone https://github.com/guan4tou2/danmu-desktop
 cd danmu-desktop
-vim .env # 修改你的密碼
+vim .env # remind change your password
 uv venv
 uv pip install -r requirements.txt
 uv run app.py
