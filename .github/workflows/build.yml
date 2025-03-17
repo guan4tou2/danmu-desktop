@@ -13,7 +13,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
       - name: Checkout repository
@@ -40,9 +40,11 @@ jobs:
           name: Electron-App-${{ matrix.os }}
           path: danmu-desktop/pack/**/*
 
-      - name: Create Release
+      - name: Create GitHub Release
         if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           files: danmu-desktop/pack/**
           tag_name: v1.6.${{ github.run_number }}
