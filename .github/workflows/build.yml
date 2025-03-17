@@ -1,6 +1,6 @@
 name: Build Electron App
 
-on:
+on: 
   push:
     branches:
       - main
