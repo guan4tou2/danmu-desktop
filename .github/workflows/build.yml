@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        
+
       - name: Change to project directory
         run: cd danmu-desktop && ls -la
 
@@ -28,25 +28,25 @@ jobs:
           node-version: 18
 
       - name: Install dependencies
-        run: npm install
+        run: cd danmu-desktop && npm install
 
       - name: Build Electron App
-        run: npm run build
+        run: cd danmu-desktop && npm run build
 
       - name: Package Electron App
-        run: npm run dist
+        run: cd danmu-desktop && npm run dist
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Electron-App-${{ matrix.os }}
-          path: dist/**/*
+          path: danmu-desktop/dist/**/*
 
       - name: Create Release
         if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/**/*
+          files: danmu-desktop/dist/**
           tag_name: v1.0.${{ github.run_number }}
           release_name: Release v1.0.${{ github.run_number }}
           draft: false
