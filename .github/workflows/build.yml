@@ -44,7 +44,7 @@ jobs:
         if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           files: danmu-desktop/pack/**
           tag_name: v1.6.${{ github.run_number }}
