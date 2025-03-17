@@ -19,10 +19,20 @@ The server creates a website that provides an interface for inputting danmu and 
 Download [the executable file](https://github.com/guan4tou2/danmu-desktop/releases), open the program, and enter the server's IP and port (default is 4000) to start displaying danmu.  
 
 ### Server
-`pip install -r requestments.txt`
-`python3 app.py`
+Using uv is faster, you can also use any management tool you like
+```bash
+git clone https://github.com/guan4tou2/danmu-desktop
+cd danmu-desktop
+vim .env # 修改你的密碼
+uv venv
+uv pip install -r requirements.txt
+uv run app.py
+```
 
-https://127.0.0.1:4000
+http://ip:4000 can be used
+http://ip:4000/admin to enter the management page
+
+If you want to change the port, you can modify it in .env
 
 ## Port Description  
 - 4000: Website.
