@@ -14,10 +14,20 @@ Server 會建立網站，提供輸入彈幕的介面，將彈幕傳送給 Danmu-
 下載[執行檔](https://github.com/guan4tou2/danmu-desktop/releases)後，開啟程式後輸入 Server 的 IP 以及 port(預設 4000)，即可開啟彈幕  
 
 ### Server
-`pip install -r requestments.txt`
-`python3 app.py`
+使用 uv 會比較快速，也可以使用任何你喜歡的管理工具
+```bash
+git clone https://github.com/guan4tou2/danmu-desktop
+cd danmu-desktop
+vim .env # 修改你的密碼
+uv venv
+uv pip install -r requirements.txt
+uv run app.py
+```
 
-https://127.0.0.1:4000
+http://ip:4000 即可使用
+http://ip:4000/admin 可以進入管理頁面
+
+如果想修改 port，可在 .env 修改
 
 ## port說明  
 - 4000：網頁  
