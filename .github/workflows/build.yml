@@ -50,8 +50,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
-          files: danmu-desktop/pack/**
+          files: |
+            danmu-desktop/pack/**/*.dmg
+            danmu-desktop/pack/**/*.zip
+            danmu-desktop/pack/**/*.exe
           tag_name: v1.6.${{ github.run_number }}
-          release_name: Release v1.6.${{ github.run_number }}
+          name: Release v1.6.${{ github.run_number }}
           draft: false
           prerelease: false
