@@ -9,11 +9,7 @@
     "pack-dist": "electron-builder"
   },
   "repository": "https://github.com/guan4tou2/danmu-desktop",
-  "keywords": [
-    "Electron",
-    "quick",
-    "start"
-  ],
+  "keywords": ["Electron", "quick", "start"],
   "author": "guan4tou2",
   "license": "CC0-1.0",
   "devDependencies": {
@@ -27,6 +23,7 @@
   "build": {
     "appId": "com.example.app",
     "productName": "danmu manager",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "directories": {
       "output": "pack"
     },
@@ -35,16 +32,19 @@
       "!.vscode",
       "!.github"
     ],
-    "asar": false,
+    "asar": true,
+    "asarUnpack": ["node_modules/some-native-module/**"],
     "win": {
-       "target": ["nsis","portable"],
+      "target": ["nsis", "portable"],
       "icon": "assets/icon.png"
     },
     "mac": {
+      "category": "public.app-category.utilities",
       "icon": "assets/icon.png"
     },
     "linux": {
-      "icon": "assets/icon.png"
+      "icon": "assets/icon.png",
+      "target": ["AppImage", "deb"]
     }
   }
 }
