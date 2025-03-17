@@ -25,6 +25,9 @@ jobs:
           node-version: 18
 
       - name: Install dependencies
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           cd danmu-desktop
           npm install
@@ -45,6 +48,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           files: danmu-desktop/pack/**
           tag_name: v1.6.${{ github.run_number }}
