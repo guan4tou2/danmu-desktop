@@ -10,7 +10,7 @@
   },
   "repository": "https://github.com/guan4tou2/danmu-desktop",
   "keywords": ["Electron", "quick", "start"],
-  "author": "guan4tou2",
+  "author": "guan4tou2 mole30608@gmail.com",
   "license": "CC0-1.0",
   "devDependencies": {
     "electron": "^23.2.0",
