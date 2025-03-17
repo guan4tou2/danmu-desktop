@@ -29,7 +29,8 @@
     },
     "publish": [
       {
-        "provider": "github"
+        "provider": "github",
+        "releaseType": "draft"
       }
     ],
     "files": [
