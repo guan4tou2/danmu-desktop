@@ -27,6 +27,11 @@
     "directories": {
       "output": "pack"
     },
+    "publish": [
+      {
+        "provider": "github"
+      }
+    ],
     "files": [
       "**/*",
       "!.vscode",
