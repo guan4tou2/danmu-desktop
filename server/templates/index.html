@@ -20,6 +20,80 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css"
     />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.fog.min.js"></script>
+    <style>
+      /* 玻璃擬態效果 */
+      .glass-effect {
+          background: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(10px);
+          border-radius: 20px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
+      }
+      /* 輸入框聚焦動畫 */
+      .glow-border:focus {
+          box-shadow: 0 0 15px rgba(0, 123, 255, 0.8);
+          transition: box-shadow 0.3s ease-in-out;
+      }
+      /* 發光文字動畫 */
+      .neon-text {
+          text-shadow: 0 0 5px #00bcd4, 0 0 10px #00bcd4, 0 0 15px #00bcd4;
+          animation: flicker 1.5s infinite alternate;
+      }
+      @keyframes flicker {
+          0% { opacity: 1; }
+          100% { opacity: 0.8; }
+      }
+      /* 按鈕點擊波紋效果 */
+      .fire-button {
+          position: relative;
+          overflow: hidden;
+      }
+      .fire-button::after {
+          content: "";
+          position: absolute;
+          width: 300%;
+          height: 300%;
+          top: 50%;
+          left: 50%;
+          background: radial-gradient(circle, rgba(0,123,255,0.4) 10%, transparent 50%);
+          transition: transform 0.5s, opacity 0.6s;
+          transform: translate(-50%, -50%) scale(0);
+          opacity: 0;
+      }
+      .fire-button:active::after {
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 1;
+      }
+      /* 動態懸浮效果 */
+      .floating {
+          transition: transform 0.3s ease-out;
+      }
+      .floating:hover {
+          transform: translateY(-5px);
+      }
+      /* 背景粒子效果 */
+      #particles-js {
+          position: fixed;
+          width: 100%;
+          height: 100%;
+          top: 0;
+          left: 0;
+          z-index: -2;
+      }
+      /* 煙霧效果容器 */
+      #fog-bg {
+          position: fixed;
+          width: 100%;
+          height: 100%;
+          top: 0;
+          left: 0;
+          z-index: -1;
+      }
+    </style>
     <style>
       body {
         background-color: #1a1a1a;
@@ -28,6 +102,7 @@
       }
       .main-container {
         max-width: 800px;
+        width: 100%;
         margin: 0 auto;
         padding: 2rem;
         background: rgba(33, 37, 41, 0.95);
@@ -68,6 +143,15 @@
         border-radius: 10px;
         padding: 1.5rem;
         margin-top: 2rem;
+        transition: all 0.3s ease;
+        overflow: hidden;
+        max-height: 1000px; /* 足够大的高度以容纳所有内容 */
+      }
+      .controls-container.hidden {
+        max-height: 0;
+        padding: 0;
+        margin: 0;
+        opacity: 0;
       }
       .control-group {
         background: rgba(33, 37, 41, 0.5);
@@ -168,8 +252,10 @@
     </style>
   </head>
 
-  <body>
-    <div class="main-container">
+  <body class="bg-gray-900  items-center justify-center h-screen relative">
+    <div id="particles-js"></div>
+    <div id="fog-bg"></div>
+    <div class="main-container glass-effect text-center floating">
       <h1 class="title">Danmu Fire</h1>
       <div class="form-floating">
         <textarea
@@ -188,8 +274,9 @@
       <div class="preview-text" id="previewText">Preview</div>
 
       <div class="d-grid gap-2 mt-3">
-        <button class="btn btn-primary" type="button" id="btnSend">
-          <i class="bi bi-send-fill btn-icon"></i>Fire!!
+        <button class="btn btn-primary fire-button floating transition" type="button" id="btnSend">
+          <!-- <i class="bi bi-send-fill btn-icon"></i> -->
+          🚀 Fire!!
         </button>
       </div>
 
@@ -391,9 +478,13 @@
           }
         }
 
-        // 如果没有可见的控件，隐藏整个控件容器
+        // 使用 CSS 类来控制容器的显示/隐藏
         if (controlsContainer) {
-          controlsContainer.style.display = hasVisibleControls ? 'block' : 'none';
+          if (hasVisibleControls) {
+            controlsContainer.classList.remove('hidden');
+          } else {
+            controlsContainer.classList.add('hidden');
+          }
         }
       }
 
@@ -593,10 +684,32 @@
       connectWebSocket();
 
       // 每10秒从服务器获取一次最新设置（作为备用机制）
-      setInterval(fetchLatestSettings, 10000);
+      // setInterval(fetchLatestSettings, 10000);
 
       // 页面加载时立即获取一次设置
       fetchLatestSettings();
+    </script>
+       <script>
+        /* 初始化粒子背景 */
+        particlesJS("particles-js", {
+            particles: {
+                number: { value: 50 },
+                size: { value: 3 },
+                move: { speed: 1 },
+                color: { value: "#ffffff" },
+                line_linked: { enable: false }
+            }
+        });
+        /* 煙霧背景效果 */
+        VANTA.FOG({
+            el: "#fog-bg",
+            highlightColor: 0xffffff,
+            midtoneColor: 0xaaaaaa,
+            lowlightColor: 0x333333,
+            baseColor: 0x000000,
+            blurFactor: 0.8,
+            speed: 1.5
+        });
     </script>
   </body>
 </html>
