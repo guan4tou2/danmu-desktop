@@ -36,6 +36,7 @@ Options = {
 }
 
 active_ws = None
+active_connections = set()
 
 load_dotenv()
 
@@ -46,22 +47,29 @@ def is_valid_image_url(url):
 
 @sock.route("/")
 def websocket(ws):
-    global active_ws
+    global active_ws, active_connections
     print("websocket connected")
     active_ws = ws
+    active_connections.add(ws)
     while True:
         try:
             ws.receive()
         except Exception as e:
             print(f"WebSocket error: {e}")
-            active_ws = None
+            active_connections.discard(ws)
+            if ws == active_ws:
+                active_ws = None
             break
 
 
 def send_message(message):
     with app.app_context():
-        for client in sock.clients("/"):
-            client.send(message)
+        for client in active_connections:
+            try:
+                client.send(message)
+            except Exception as e:
+                print(f"Error sending message to client: {e}")
+                active_connections.discard(client)
 
 
 @app.route("/")
@@ -95,8 +103,8 @@ def admin():
 @app.route("/fire", methods=["POST"])
 def fire():
     global active_ws
-    if active_ws is None:
-        return make_response("Not Websocket connect", 503)
+    if not active_connections:
+        return make_response("No active WebSocket connections", 503)
 
     try:
         data = request.get_json()
