@@ -1,60 +1,61 @@
-name: Build Electron App
+name: Build
 
-on: 
+on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+        cache: 'npm'
 
-      - name: Install dependencies
-        run: |
-          cd danmu-desktop
-          npm install
+    - name: Install dependencies
+      run: npm ci
 
-      - name: Build Electron App
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: |
-          cd danmu-desktop
-          npm run pack-dist
+    - name: Get version
+      id: get_version
+      run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: Electron-App-${{ matrix.os }}
-          path: danmu-desktop/pack/**/*
+    - name: Build
+      run: npm run pack-dist
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create GitHub Release
-        if: github.event_name == 'push'
-        uses: softprops/action-gh-release@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        with:
-          files: |
-            danmu-desktop/pack/**/*.dmg
-            danmu-desktop/pack/**/*.zip
-            danmu-desktop/pack/**/*.exe
-          tag_name: v1.6.${{ github.run_number }}
-          name: Release v1.6.${{ github.run_number }}
-          draft: false
-          prerelease: false
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.os }}-${{ steps.get_version.outputs.version }}
+        path: pack/
+
+    - name: Create Release
+      if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          pack/*.exe
+          pack/*.AppImage
+          pack/*.deb
+        tag_name: v${{ steps.get_version.outputs.version }}
+        name: Release v${{ steps.get_version.outputs.version }}
+        body: |
+          This is a release of version ${{ steps.get_version.outputs.version }}
+          
+          Changes:
+          - Auto version detection from package.json
+          - Multi-platform support
+        draft: false
+        prerelease: false
