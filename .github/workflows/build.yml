@@ -54,7 +54,6 @@ jobs:
           path: danmu-desktop/pack/**/*
 
       - name: Create GitHub Release
-        id: create_release
         if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         env:
@@ -65,8 +64,8 @@ jobs:
             danmu-desktop/pack/**/*.dmg
             danmu-desktop/pack/**/*.zip
             danmu-desktop/pack/**/*.exe
-          tag_name: ${{ steps.package-version.outputs.current-version}}
-          name: Release ${{ steps.package-version.outputs.current-version}}
+          tag_name: v${{ steps.get_version.outputs.version }}
+          name: Release v${{ steps.get_version.outputs.version }}
           draft: false
           prerelease: false
           generate_release_notes: true
