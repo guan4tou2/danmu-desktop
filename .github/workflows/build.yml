@@ -29,9 +29,15 @@ jobs:
           cd danmu-desktop
           npm install
 
-      - name: get-npm-version
-        id: package-version
-        uses: martinbeentjes/npm-get-version-action@v1.3.1
+      - name: Get version from package.json
+        id: get_version
+        shell: bash
+        run: |
+          set -e
+          VERSION=$(node -p "require('./danmu-desktop/package.json').version")
+          echo "version=$VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
 
       - name: Build Electron App
         env:
