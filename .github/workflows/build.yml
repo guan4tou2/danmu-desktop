@@ -61,9 +61,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           files: |
-            danmu-desktop/pack/**/*.dmg
-            danmu-desktop/pack/**/*.zip
-            danmu-desktop/pack/**/*.exe
+            danmu-desktop/pack/**/danmu.manager-*-*.dmg
+            danmu-desktop/pack/**/danmu.manager-*-*.zip
+            danmu-desktop/pack/**/danmu.manager-*-*.exe
           tag_name: v${{ steps.get_version.outputs.version }}
           name: Release v${{ steps.get_version.outputs.version }}
           draft: false
