@@ -75,6 +75,7 @@ danmu-desktop/danmu-desktop-darwin-x64/
 danmu-desktop/danmu-desktop-linux-x64/
 danmu-desktop/release-builds/
 danmu-desktop/installers/
+danmu-desktop/pack/
 
 # IDE / editors
 .idea/
