@@ -1,6 +1,6 @@
 name: Build Electron App
 
-on: 
+on:
   push:
     branches:
       - main
@@ -38,7 +38,6 @@ jobs:
           echo "version=$VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-
       - name: Build Electron App
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -61,11 +60,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           files: |
-            danmu-desktop/pack/**/danmu.manager-*-*.dmg
-            danmu-desktop/pack/**/danmu.manager-*-*.zip
-            danmu-desktop/pack/**/danmu.manager-*-*.exe
-            danmu-desktop/pack/**/danmu.manager-*-*.AppImage
-            danmu-desktop/pack/**/danmu.manager-*-*.deb
+            danmu-desktop/pack/**/*danmu manager*-*.dmg
+            danmu-desktop/pack/**/*danmu manager*-*.zip
+            danmu-desktop/pack/**/*danmu manager*-*.exe
+            danmu-desktop/pack/**/*danmu manager*-*.AppImage
+            danmu-desktop/pack/**/*danmu manager*-*.deb
           tag_name: v${{ steps.get_version.outputs.version }}
           name: Release v${{ steps.get_version.outputs.version }}
           draft: false
