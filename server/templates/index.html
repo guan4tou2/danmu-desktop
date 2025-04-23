@@ -27,71 +27,79 @@
     <style>
       /* 玻璃擬態效果 */
       .glass-effect {
-          background: rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(10px);
-          border-radius: 20px;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
       }
       /* 輸入框聚焦動畫 */
       .glow-border:focus {
-          box-shadow: 0 0 15px rgba(0, 123, 255, 0.8);
-          transition: box-shadow 0.3s ease-in-out;
+        box-shadow: 0 0 15px rgba(0, 123, 255, 0.8);
+        transition: box-shadow 0.3s ease-in-out;
       }
       /* 發光文字動畫 */
       .neon-text {
-          text-shadow: 0 0 5px #00bcd4, 0 0 10px #00bcd4, 0 0 15px #00bcd4;
-          animation: flicker 1.5s infinite alternate;
+        text-shadow: 0 0 5px #00bcd4, 0 0 10px #00bcd4, 0 0 15px #00bcd4;
+        animation: flicker 1.5s infinite alternate;
       }
       @keyframes flicker {
-          0% { opacity: 1; }
-          100% { opacity: 0.8; }
+        0% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0.8;
+        }
       }
       /* 按鈕點擊波紋效果 */
       .fire-button {
-          position: relative;
-          overflow: hidden;
+        position: relative;
+        overflow: hidden;
       }
       .fire-button::after {
-          content: "";
-          position: absolute;
-          width: 300%;
-          height: 300%;
-          top: 50%;
-          left: 50%;
-          background: radial-gradient(circle, rgba(0,123,255,0.4) 10%, transparent 50%);
-          transition: transform 0.5s, opacity 0.6s;
-          transform: translate(-50%, -50%) scale(0);
-          opacity: 0;
+        content: "";
+        position: absolute;
+        width: 300%;
+        height: 300%;
+        top: 50%;
+        left: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(0, 123, 255, 0.4) 10%,
+          transparent 50%
+        );
+        transition: transform 0.5s, opacity 0.6s;
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
       }
       .fire-button:active::after {
-          transform: translate(-50%, -50%) scale(1);
-          opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
       }
       /* 動態懸浮效果 */
       .floating {
-          transition: transform 0.3s ease-out;
+        transition: transform 0.3s ease-out;
       }
       .floating:hover {
-          transform: translateY(-5px);
+        transform: translateY(-5px);
       }
       /* 背景粒子效果 */
       #particles-js {
-          position: fixed;
-          width: 100%;
-          height: 100%;
-          top: 0;
-          left: 0;
-          z-index: -2;
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        z-index: -2;
       }
       /* 煙霧效果容器 */
       #fog-bg {
-          position: fixed;
-          width: 100%;
-          height: 100%;
-          top: 0;
-          left: 0;
-          z-index: -1;
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        z-index: -1;
       }
     </style>
     <style>
@@ -252,7 +260,7 @@
     </style>
   </head>
 
-  <body class="bg-gray-900  items-center justify-center h-screen relative">
+  <body class="bg-gray-900 items-center justify-center h-screen relative">
     <div id="particles-js"></div>
     <div id="fog-bg"></div>
     <div class="main-container glass-effect text-center floating">
@@ -274,7 +282,11 @@
       <div class="preview-text" id="previewText">Preview</div>
 
       <div class="d-grid gap-2 mt-3">
-        <button class="btn btn-primary fire-button floating transition" type="button" id="btnSend">
+        <button
+          class="btn btn-primary fire-button floating transition"
+          type="button"
+          id="btnSend"
+        >
           <!-- <i class="bi bi-send-fill btn-icon"></i> -->
           🚀 Fire!!
         </button>
@@ -370,7 +382,11 @@
       // 连接WebSocket
       function connectWebSocket() {
         // 创建WebSocket连接
+        {% if ws_url %}
+        ws = new WebSocket("{{ ws_url }}");
+        {% else %}
         ws = new WebSocket(`ws://${window.location.host}/`);
+        {% endif %}
 
         // 连接打开时的处理
         ws.onopen = function() {
@@ -689,27 +705,27 @@
       // 页面加载时立即获取一次设置
       fetchLatestSettings();
     </script>
-       <script>
-        /* 初始化粒子背景 */
-        particlesJS("particles-js", {
-            particles: {
-                number: { value: 50 },
-                size: { value: 3 },
-                move: { speed: 1 },
-                color: { value: "#ffffff" },
-                line_linked: { enable: false }
-            }
-        });
-        /* 煙霧背景效果 */
-        VANTA.FOG({
-            el: "#fog-bg",
-            highlightColor: 0xffffff,
-            midtoneColor: 0xaaaaaa,
-            lowlightColor: 0x333333,
-            baseColor: 0x000000,
-            blurFactor: 0.8,
-            speed: 1.5
-        });
+    <script>
+      /* 初始化粒子背景 */
+      particlesJS("particles-js", {
+        particles: {
+          number: { value: 50 },
+          size: { value: 3 },
+          move: { speed: 1 },
+          color: { value: "#ffffff" },
+          line_linked: { enable: false },
+        },
+      });
+      /* 煙霧背景效果 */
+      VANTA.FOG({
+        el: "#fog-bg",
+        highlightColor: 0xffffff,
+        midtoneColor: 0xaaaaaa,
+        lowlightColor: 0x333333,
+        baseColor: 0x000000,
+        blurFactor: 0.8,
+        speed: 1.5,
+      });
     </script>
   </body>
 </html>

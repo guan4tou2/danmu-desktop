@@ -1,13 +1,24 @@
 // Modules to control application life and create native browser window
-const { app, BrowserWindow, screen, Tray, Menu, ipcMain } = require('electron')
-const path = require('path')
+const { app, BrowserWindow, screen, Tray, Menu, ipcMain } = require("electron");
+const path = require("path");
 
-let mainWindow
-let childWindow
-let konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a']
-let konamiIndex = 0
-let lastKeyTime = Date.now()
-let isKeyDown = false
+let mainWindow;
+let childWindow;
+let konamiCode = [
+  "ArrowUp",
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowLeft",
+  "ArrowRight",
+  "b",
+  "a",
+];
+let konamiIndex = 0;
+let lastKeyTime = Date.now();
+let isKeyDown = false;
 
 function createWindow() {
   // Create the browser window.
@@ -15,29 +26,29 @@ function createWindow() {
     width: 800,
     height: 600,
     resizable: false,
-    autoHideMenuBar: true, 
-    icon: path.join(__dirname, 'assets/icon.png'),
+    autoHideMenuBar: true,
+    icon: path.join(__dirname, "assets/icon.png"),
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      nodeIntegration: true
-    }
-  })
+      preload: path.join(__dirname, "preload.js"),
+      nodeIntegration: true,
+    },
+  });
   // and load the index.html of the app.
-  mainWindow.loadFile('index.html')
+  mainWindow.loadFile("index.html");
 
-  mainWindow.webContents.on('did-finish-load', () => {
+  mainWindow.webContents.on("did-finish-load", () => {
     try {
-      const displays = screen.getAllDisplays()
-      console.log('Detected displays:', displays)
-      
+      const displays = screen.getAllDisplays();
+      console.log("Detected displays:", displays);
+
       const displayOptions = displays.map((display, index) => {
-        const bounds = display.bounds
+        const bounds = display.bounds;
         return {
           value: index,
-          text: `Display ${index + 1} (${bounds.width}x${bounds.height})`
-        }
-      })
-      
+          text: `Display ${index + 1} (${bounds.width}x${bounds.height})`,
+        };
+      });
+
       const script = `
         (function() {
           try {
@@ -60,44 +71,43 @@ function createWindow() {
             console.error('Error updating display options:', error)
           }
         })()
-      `
-      
-      mainWindow.webContents.executeJavaScript(script)
-        .catch(error => {
-          console.error('Error executing display update script:', error)
-        })
+      `;
+
+      mainWindow.webContents.executeJavaScript(script).catch((error) => {
+        console.error("Error executing display update script:", error);
+      });
     } catch (error) {
-      console.error('Error getting display information:', error)
+      console.error("Error getting display information:", error);
     }
-  })
+  });
 
   // Add Konami Code listener
-  mainWindow.webContents.on('before-input-event', (event, input) => {
-    const currentTime = Date.now()
-    
+  mainWindow.webContents.on("before-input-event", (event, input) => {
+    const currentTime = Date.now();
+
     if (currentTime - lastKeyTime > 2000) {
-      konamiIndex = 0
-      isKeyDown = false
+      konamiIndex = 0;
+      isKeyDown = false;
     }
 
-    if (input.type === 'keyUp') {
-      isKeyDown = false
-      return
+    if (input.type === "keyUp") {
+      isKeyDown = false;
+      return;
     }
 
-    if (input.type === 'keyDown' && !isKeyDown) {
-      isKeyDown = true
-      lastKeyTime = currentTime
+    if (input.type === "keyDown" && !isKeyDown) {
+      isKeyDown = true;
+      lastKeyTime = currentTime;
 
-      console.log('Key pressed:', input.key, 'Current index:', konamiIndex)
-      
+      console.log("Key pressed:", input.key, "Current index:", konamiIndex);
+
       if (input.key === konamiCode[konamiIndex]) {
-        konamiIndex++
-        console.log('Match successful, current progress:', konamiIndex)
+        konamiIndex++;
+        console.log("Match successful, current progress:", konamiIndex);
         if (konamiIndex === konamiCode.length) {
-          konamiIndex = 0
-          isKeyDown = false
-          console.log('Konami Code triggered successfully!')
+          konamiIndex = 0;
+          isKeyDown = false;
+          console.log("Konami Code triggered successfully!");
           // Trigger Konami Code function
           mainWindow.webContents.executeJavaScript(`
             (function() {
@@ -126,57 +136,111 @@ function createWindow() {
                 }
               }, 3000);
             })();
-          `)
+          `);
 
           if (childWindow) {
             childWindow.webContents.executeJavaScript(`
               const danmus = document.querySelectorAll('.danmu');
               danmus.forEach(danmu => danmu.remove());
-            `)
+            `);
           }
         }
       } else {
-        console.log('Match failed, resetting index')
-        konamiIndex = 0
-        isKeyDown = false
+        console.log("Match failed, resetting index");
+        konamiIndex = 0;
+        isKeyDown = false;
       }
     }
-  })
-  
+  });
+
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
-  ipcMain.on('deleteChild', (event) => {
-    childWindow.destroy()
-  })
-  ipcMain.on('createChild', (event, ip, port, displayIndex) => {
-    createChildWindow(displayIndex)
+  ipcMain.on("deleteChild", (event) => {
+    childWindow.destroy();
+  });
+  ipcMain.on("createChild", (event, ip, port, displayIndex) => {
+    createChildWindow(displayIndex);
 
-    const displays = screen.getAllDisplays()
-    const selectedDisplay = displays[displayIndex]
-    childWindow.setBounds(selectedDisplay.bounds)
+    const displays = screen.getAllDisplays();
+    const selectedDisplay = displays[displayIndex];
+    childWindow.setBounds(selectedDisplay.bounds);
     //const {getCursorScreenPoint,getDisplayNearestPoint}=screen
     //const currentScreen=getDisplayNearestPoint(getCursorScreenPoint())
     //childWindow.setBounds(currentScreen.bounds)
-    childWindow.setVisibleOnAllWorkspaces(true, 'visibleOnFullScreen')
-    childWindow.setAlwaysOnTop(true,"screen-saver")
+    childWindow.setVisibleOnAllWorkspaces(true, "visibleOnFullScreen");
+    childWindow.setAlwaysOnTop(true, "screen-saver");
     childWindow.webContents.executeJavaScript(
       `
       const IP='${ip}';
       const PORT=${port}
-      console.log(IP,PORT)
-      let url = 'ws://${ip}:${port}'
+      const WS_PORT = ${
+        parseInt(port) + 1
+      } // Default WebSocket port is HTTP port+1
+      console.log(IP, PORT, WS_PORT)
+      let url = 'ws://${ip}:' + WS_PORT
       let ws = null
       let reconnectAttempts = 0
-      const maxReconnectAttempts = 5
+      const maxReconnectAttempts = 10
       const reconnectDelay = 3000
+      let heartbeatInterval = null
+      let lastHeartbeatResponse = Date.now()
+      const heartbeatTimeout = 30000 // 30 seconds without response is considered disconnection
+      let connectionLost = false
+      
+      // Heartbeat detection function
+      function startHeartbeat() {
+        clearInterval(heartbeatInterval)
+        lastHeartbeatResponse = Date.now()
+        
+        heartbeatInterval = setInterval(() => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            // Send heartbeat packet
+            try {
+              ws.send(JSON.stringify({ type: "heartbeat", timestamp: Date.now() }))
+              
+              // Check for timeout
+              const timeSinceLastResponse = Date.now() - lastHeartbeatResponse
+              if (timeSinceLastResponse > heartbeatTimeout) {
+                console.log("Heartbeat timeout, connection may be lost")
+                clearInterval(heartbeatInterval)
+                // If connection is broken but WebSocket state is still OPEN, manually close and reconnect
+                if (ws.readyState === WebSocket.OPEN) {
+                  connectionLost = true
+                  ws.close()
+                }
+              }
+            } catch (error) {
+              console.error("Error sending heartbeat:", error)
+              clearInterval(heartbeatInterval)
+              if (ws.readyState === WebSocket.OPEN) {
+                connectionLost = true
+                ws.close()
+              }
+            }
+          }
+        }, 15000) // Send heartbeat every 15 seconds
+      }
 
       function connect() {
+        // If connection exists, clean up first
+        if (ws) {
+          try {
+            ws.close()
+          } catch (e) {
+            console.error("Error closing old connection:", e)
+          }
+        }
+        
         ws = new WebSocket(url)
         
         ws.onopen = () => {
-          console.log('open connection')
+          console.log('Connection opened')
           reconnectAttempts = 0
-          // showdanmu("Link Start")
+          connectionLost = false
+          lastHeartbeatResponse = Date.now()
+          startHeartbeat()
+          
+          // Link Start animation
           const style = document.createElement('style');
           style.textContent = \`
             .wall{
@@ -366,144 +430,191 @@ function createWindow() {
             linkStart.remove();
           }, 8000);
         }
+        
         ws.onclose = (event) => {
-          console.log('close connection', event.code)
-          if (reconnectAttempts < maxReconnectAttempts) {
-            reconnectAttempts++
-            console.log(\`Attempting to reconnect (\${reconnectAttempts}/\${maxReconnectAttempts})...\`)
-            setTimeout(connect, reconnectDelay)
-          } else {
-            console.log('Max reconnection attempts reached')
-          }
+          console.log('Connection closed', event.code)
+          clearInterval(heartbeatInterval)
+          
+          // Use incremental reconnect delay
+          const currentDelay = connectionLost ? reconnectDelay : reconnectDelay * (reconnectAttempts + 1)
+          
+          // Unlimited reconnect attempts, but with increasing delay
+          console.log(\`Attempting to reconnect in \${currentDelay/1000} seconds...\`)
+          setTimeout(connect, currentDelay)
+          reconnectAttempts++
         }
+        
         ws.onerror = (error) => {
           console.error('WebSocket error:', error)
+          // No special handling on error, let onclose handle reconnection
         }
+        
         ws.onmessage = event => {
+          // Update heartbeat response time for any received message
+          lastHeartbeatResponse = Date.now()
+          
           let txt = event.data
           if (txt === "connection") {
             console.log(txt)
+          } else if (txt === "heartbeat_ack") {
+            // Server heartbeat response
+            console.log("Received heartbeat response")
           } else {
-            let data = JSON.parse(txt)
-            let text = data.text
-            let range = data.range
-            let color = '#' + data.color
-            let size=data.size
-            let speed=parseInt(data.speed)
-            showdanmu(text, range, color,size,speed)
+            try {
+              let data = JSON.parse(txt)
+              
+              // If this is a heartbeat response packet
+              if (data.type === "heartbeat_ack") {
+                console.log("Received heartbeat response")
+                return
+              }
+              
+              // If this is a server ping
+              if (data.type === "ping") {
+                // Reply with pong
+                if (ws.readyState === WebSocket.OPEN) {
+                  ws.send(JSON.stringify({ type: "pong" }))
+                }
+                return
+              }
+              
+              let text = data.text
+              let range = data.range
+              let color = '#' + data.color
+              let size = data.size
+              let speed = parseInt(data.speed)
+              showdanmu(text, range, color, size, speed)
+            } catch (e) {
+              console.error("Error processing message:", e)
+            }
           }
         }
       }
 
+      // Page visibility change listener, check connection when page becomes visible again
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          console.log("Page visible again, checking connection status")
+          if (!ws || ws.readyState !== WebSocket.OPEN) {
+            console.log("Connection lost, attempting to reconnect")
+            connect()
+          }
+        }
+      })
+
+      // Initial connection
       connect()
     `
-    )
-  })
-
+    );
+  });
 }
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  if (BrowserWindow.getAllWindows().length === 0) createWindow();
 
   // createChildWindow()
-  app.on('activate', function () {
+  app.on("activate", function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
-  tray = new Tray(path.join(__dirname, 'assets/icon.png'));
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+  tray = new Tray(path.join(__dirname, "assets/icon.png"));
   const menu = [
     {
-      label: 'open manager',
-      click: () => { mainWindow.show() }
+      label: "open manager",
+      click: () => {
+        mainWindow.show();
+      },
     },
     {
-      label: 'quit',
+      label: "quit",
       // role: 'quit',
-      click: () => { if (BrowserWindow.getAllWindows().length === 2){ childWindow.destroy() ;app.quit() }else{app.quit()}}
-      
-    }
+      click: () => {
+        if (BrowserWindow.getAllWindows().length === 2) {
+          childWindow.destroy();
+          app.quit();
+        } else {
+          app.quit();
+        }
+      },
+    },
   ];
   tray.setContextMenu(Menu.buildFromTemplate(menu));
-  tray.setToolTip('danmu manager');
+  tray.setToolTip("danmu manager");
 
-  tray.on('double-click', () => {
+  tray.on("double-click", () => {
     mainWindow.show();
   });
-  mainWindow.on('minimize', ev => {
+  mainWindow.on("minimize", (ev) => {
     ev.preventDefault();
     mainWindow.hide();
-    
   });
-  mainWindow.on('close', e => {
+  mainWindow.on("close", (e) => {
     if (childWindow) {
-      childWindow.destroy()
+      childWindow.destroy();
     }
-    app.quit()
+    app.quit();
   });
-})
+});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
-app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') app.quit()
-})
+app.on("window-all-closed", function () {
+  if (process.platform !== "darwin") app.quit();
+});
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
 
 function createChildWindow(displayIndex) {
   try {
-    const displays = screen.getAllDisplays()
-    console.log('Available displays:', displays)
-    console.log('Selected display index:', displayIndex)
-    
+    const displays = screen.getAllDisplays();
+    console.log("Available displays:", displays);
+    console.log("Selected display index:", displayIndex);
+
     if (displayIndex < 0 || displayIndex >= displays.length) {
-      console.error('Invalid display index:', displayIndex)
-      return
+      console.error("Invalid display index:", displayIndex);
+      return;
     }
-    
-    const selectedDisplay = displays[displayIndex]
-    console.log('Selected display:', selectedDisplay)
-    
-    const { width, height } = selectedDisplay.bounds
-    console.log('Window dimensions:', { width, height })
-    
+
+    const selectedDisplay = displays[displayIndex];
+    console.log("Selected display:", selectedDisplay);
+
+    const { width, height } = selectedDisplay.bounds;
+    console.log("Window dimensions:", { width, height });
+
     childWindow = new BrowserWindow({
       width: width,
       height: height,
       x: selectedDisplay.bounds.x,
       y: selectedDisplay.bounds.y,
-      closable:false,
-      skipTaskbar:true,
+      closable: false,
+      skipTaskbar: true,
       transparent: true,
       frame: false,
       resizable: false,
-      icon: path.join(__dirname, 'assets/icon.png'),
+      icon: path.join(__dirname, "assets/icon.png"),
       webPreferences: {
-        preload: path.join(__dirname, 'preload.js'),
-        nodeIntegration: true
-      }
-    })
-    childWindow.setIgnoreMouseEvents(true)
+        preload: path.join(__dirname, "preload.js"),
+        nodeIntegration: true,
+      },
+    });
+    childWindow.setIgnoreMouseEvents(true);
     // childWindow.webContents.openDevTools()
-    childWindow.loadFile('child.html')
+    childWindow.loadFile("child.html");
 
-    childWindow.once('ready-to-show', () => {
-      childWindow.show()
-    })
+    childWindow.once("ready-to-show", () => {
+      childWindow.show();
+    });
 
-    childWindow.on('closed', () => {
-      childWindow.destroy()
-    })
+    childWindow.on("closed", () => {
+      childWindow.destroy();
+    });
   } catch (error) {
-    console.error('Error creating child window:', error)
+    console.error("Error creating child window:", error);
   }
 }
-
-
-

@@ -1,0 +1,129 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.venv/
+venv/
+ENV/
+.env
+
+# Project specific paths
+server/__pycache__/
+server/.venv/
+server/venv/
+server/ENV/
+server/.env
+server/dist/
+server/build/
+
+# Node.js / Electron
+node_modules/
+npm-debug.log
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.yarn-integrity
+.npm
+.eslintcache
+.node_repl_history
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Project specific paths
+danmu-desktop/node_modules/
+danmu-desktop/dist/
+danmu-desktop/out/
+danmu-desktop/build/
+
+# Distribution / packaging
+.DS_Store
+out/
+release/
+app/dist
+app/build
+danmu-desktop-win32-x64/
+danmu-desktop-darwin-x64/
+danmu-desktop-linux-x64/
+
+# Project specific packaging
+danmu-desktop/danmu-desktop-win32-x64/
+danmu-desktop/danmu-desktop-darwin-x64/
+danmu-desktop/danmu-desktop-linux-x64/
+danmu-desktop/release-builds/
+danmu-desktop/installers/
+
+# IDE / editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.vs/
+*.sublime-project
+*.sublime-workspace
+
+# Database
+*.db
+*.sqlite3
+*.sqlite
+server/*.db
+server/*.sqlite3
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+server/logs/
+danmu-desktop/logs/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+server/*.pid
+
+# Temporary files
+tmp/
+temp/
+server/tmp/
+danmu-desktop/tmp/
+
+# Cache
+.cache/
+server/.cache/
+danmu-desktop/.cache/
+
+# Static files generated
+server/static/generated/
+server/media/uploads/

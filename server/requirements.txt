@@ -34,6 +34,8 @@ setuptools==76.0.0
     #   zope-interface
 simple-websocket==1.1.0
     # via flask-sock
+websockets==11.0.3
+    # via websockets
 werkzeug==3.1.3
     # via flask
 wsproto==1.2.0
