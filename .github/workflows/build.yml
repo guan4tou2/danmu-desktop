@@ -81,8 +81,39 @@ jobs:
           name: Electron-App-${{ matrix.os }}
           path: danmu-desktop/pack/**/*
 
-      - name: Create GitHub Release
-        if: matrix.os == 'ubuntu-latest'
+      - name: Create GitHub Release for Linux
+        if: matrix.os == 'ubuntu-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          files: |
+            danmu-desktop/pack/**/*danmu manager*-*.AppImage
+            danmu-desktop/pack/**/*danmu manager*-*.deb
+          tag_name: v${{ needs.check_version_change.outputs.version }}
+          name: Release v${{ needs.check_version_change.outputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+
+      - name: Create GitHub Release for Windows
+        if: matrix.os == 'windows-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          files: |
+            danmu-desktop/pack/**/*danmu manager*-*.exe
+          tag_name: v${{ needs.check_version_change.outputs.version }}
+          name: Release v${{ needs.check_version_change.outputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+
+      - name: Create GitHub Release for macOS
+        if: matrix.os == 'macos-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -91,11 +122,8 @@ jobs:
           files: |
             danmu-desktop/pack/**/*danmu manager*-*.dmg
             danmu-desktop/pack/**/*danmu manager*-*.zip
-            danmu-desktop/pack/**/*danmu manager*-*.exe
-            danmu-desktop/pack/**/*danmu manager*-*.AppImage
-            danmu-desktop/pack/**/*danmu manager*-*.deb
           tag_name: v${{ needs.check_version_change.outputs.version }}
           name: Release v${{ needs.check_version_change.outputs.version }}
           draft: false
           prerelease: false
-          generate_release_notes: true
+          generate_release_notes: false
