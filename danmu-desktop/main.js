@@ -172,11 +172,8 @@ function createWindow() {
     childWindow.webContents.executeJavaScript(
       `
       const IP='${ip}';
-      const PORT=${port}
-      const WS_PORT = ${
-        parseInt(port) + 1
-      } // Default WebSocket port is HTTP port+1
-      console.log(IP, PORT, WS_PORT)
+      const WS_PORT=${port}
+      console.log(IP, WS_PORT)
       let url = 'ws://${ip}:' + WS_PORT
       let ws = null
       let reconnectAttempts = 0
@@ -351,7 +348,11 @@ function createWindow() {
                 opacity: 0;
               }
             }
-
+            @font-face {
+              font-family:NotoSansTC;
+              src: url(assets/NotoSansTC-Regular.otf);
+              font-weight: normal;
+            }
             .link-start {
               position: fixed;
               top: 50%;
@@ -363,6 +364,8 @@ function createWindow() {
               z-index: 9999;
               animation: textFade 10s ease-out;
               opacity: 0.7;
+              font-family:NotoSansTC,sans-serif,"Microsoft JhengHei";
+
             }
             .link-start::before {
               content: attr(data-storke);
