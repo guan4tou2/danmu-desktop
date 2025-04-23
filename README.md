@@ -18,6 +18,8 @@ The server creates a website that provides an interface for inputting danmu and 
 ### Danmu-Desktop
 Download [the executable file](https://github.com/guan4tou2/danmu-desktop/releases), open the program, and enter the server's IP and port (default is 4001) to start displaying danmu.  
 
+for mac, type `sudo xattr -r -d com.apple.quarantine 'danmu manager.app'`
+
 ### Server
 Using uv is faster, you can also use any management tool you like
 ```bash
