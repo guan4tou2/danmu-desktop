@@ -4,12 +4,50 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+    paths:
+      - "danmu-desktop/package.json"
+  workflow_dispatch:
 
 jobs:
+  check_version_change:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Get current version
+        id: get_version
+        shell: bash
+        run: |
+          set -e
+          VERSION=$(node -p "require('./danmu-desktop/package.json').version")
+          echo "version=$VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if version changed
+        id: check
+        shell: bash
+        run: |
+          git fetch
+          PREV_VERSION=$(git show HEAD~1:danmu-desktop/package.json | grep '"version"' | head -n 1 | sed -E 's/.*"([^"]+)".*/\1/')
+          CURR_VERSION=$(node -p "require('./danmu-desktop/package.json').version")
+
+          if [ "$PREV_VERSION" != "$CURR_VERSION" ]; then
+            echo "Version changed: $PREV_VERSION -> $CURR_VERSION"
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "Version unchanged: $CURR_VERSION"
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+
   build:
+    needs: check_version_change
+    if: needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -29,22 +67,13 @@ jobs:
           cd danmu-desktop
           npm install
 
-      - name: Get version from package.json
-        id: get_version
-        shell: bash
-        run: |
-          set -e
-          VERSION=$(node -p "require('./danmu-desktop/package.json').version")
-          echo "version=$VERSION"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
       - name: Build Electron App
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           cd danmu-desktop
-          npx electron-builder --config.extraMetadata.version=${{ steps.get_version.outputs.version }}
+          npx electron-builder --config.extraMetadata.version=${{ needs.check_version_change.outputs.version }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -53,7 +82,7 @@ jobs:
           path: danmu-desktop/pack/**/*
 
       - name: Create GitHub Release
-        if: github.event_name == 'push'
+        if: matrix.os == 'ubuntu-latest'
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -65,8 +94,8 @@ jobs:
             danmu-desktop/pack/**/*danmu manager*-*.exe
             danmu-desktop/pack/**/*danmu manager*-*.AppImage
             danmu-desktop/pack/**/*danmu manager*-*.deb
-          tag_name: v${{ steps.get_version.outputs.version }}
-          name: Release v${{ steps.get_version.outputs.version }}
+          tag_name: v${{ needs.check_version_change.outputs.version }}
+          name: Release v${{ needs.check_version_change.outputs.version }}
           draft: false
           prerelease: false
           generate_release_notes: true
