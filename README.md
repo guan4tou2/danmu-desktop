@@ -16,7 +16,7 @@ The server creates a website that provides an interface for inputting danmu and 
 
 ## Usage
 ### Danmu-Desktop
-Download [the executable file](https://github.com/guan4tou2/danmu-desktop/releases), open the program, and enter the server's IP and port (default is 4000) to start displaying danmu.  
+Download [the executable file](https://github.com/guan4tou2/danmu-desktop/releases), open the program, and enter the server's IP and port (default is 4001) to start displaying danmu.  
 
 ### Server
 Using uv is faster, you can also use any management tool you like
@@ -36,3 +36,4 @@ If you want to change the port, you can modify it in .env
 
 ## Port Description  
 - 4000: Website.
+- 4001: Danmu Desktop Client.
