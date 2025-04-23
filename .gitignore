@@ -28,14 +28,12 @@ htmlcov/
 .venv/
 venv/
 ENV/
-.env
 
 # Project specific paths
 server/__pycache__/
 server/.venv/
 server/venv/
 server/ENV/
-server/.env
 server/dist/
 server/build/
 
