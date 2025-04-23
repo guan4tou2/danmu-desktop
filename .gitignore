@@ -27,7 +27,7 @@ htmlcov/
 .hypothesis/
 .venv/
 venv/
-ENV/
+
 
 # Project specific paths
 server/__pycache__/
