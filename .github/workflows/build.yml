@@ -64,6 +64,8 @@ jobs:
             danmu-desktop/pack/**/danmu.manager-*-*.dmg
             danmu-desktop/pack/**/danmu.manager-*-*.zip
             danmu-desktop/pack/**/danmu.manager-*-*.exe
+            danmu-desktop/pack/**/danmu.manager-*-*.AppImage
+            danmu-desktop/pack/**/danmu.manager-*-*.deb
           tag_name: v${{ steps.get_version.outputs.version }}
           name: Release v${{ steps.get_version.outputs.version }}
           draft: false

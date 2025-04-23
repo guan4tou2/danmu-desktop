@@ -1,15 +1,20 @@
 {
   "name": "danmu-desktop",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "A danmu desktop",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "pack": "electron-builder --dir",
-    "pack-dist": "electron-builder"
+    "pack-dist": "electron-builder",
+    "test": "echo \"No tests defined\" && exit 0"
   },
   "repository": "https://github.com/guan4tou2/danmu-desktop",
-  "keywords": ["Electron", "quick", "start"],
+  "keywords": [
+    "Electron",
+    "quick",
+    "start"
+  ],
   "author": "guan4tou2 <mole30608@gmail.com>",
   "license": "CC0-1.0",
   "devDependencies": {
@@ -17,8 +22,8 @@
     "electron-builder": "^26.0.12"
   },
   "dependencies": {
-    "bootstrap": "^5.3.0-alpha2",
-    "jquery": "^3.6.4"
+    "bootstrap": "^5.3.5",
+    "jquery": "^3.7.1"
   },
   "build": {
     "appId": "com.example.app",
@@ -33,9 +38,14 @@
       "!.github"
     ],
     "asar": true,
-    "asarUnpack": ["node_modules/some-native-module/**"],
+    "asarUnpack": [
+      "node_modules/some-native-module/**"
+    ],
     "win": {
-      "target": ["nsis", "portable"],
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "icon": "assets/icon.png"
     },
     "mac": {
@@ -44,7 +54,10 @@
     },
     "linux": {
       "icon": "assets/icon.png",
-      "target": ["AppImage", "deb"]
+      "target": [
+        "AppImage",
+        "deb"
+      ]
     }
   }
 }
