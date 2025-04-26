@@ -641,6 +641,14 @@
         });
       }
 
+      // 监听速度变化
+      if (document.getElementById("SpeedInput")) {
+        document.getElementById("SpeedInput").addEventListener("input", (e) => {
+          currentSettings.speed = parseInt(e.target.value);
+          updatePreview();
+        });
+      }
+
       // 发送按钮点击事件
       btn.addEventListener("click", function () {
         const content = text.value.trim();
