@@ -34,3 +34,6 @@ http://ip:4000/admin 可以進入管理頁面
 ## port說明  
 - 4000：網頁
 - 4001：Danmu Desktop 客戶端
+
+# ref
+SAO UI 參考這篇文章 [SAO-UI-PLAN-LINK-START | Akilarの糖果屋](https://akilar.top/posts/1b4fa1dd/)。
