@@ -108,41 +108,80 @@ function createWindow() {
           konamiIndex = 0;
           isKeyDown = false;
           console.log("Konami Code triggered successfully!");
-          // Trigger Konami Code function
-          mainWindow.webContents.executeJavaScript(`
-            (function() {
-              const existingMessage = document.getElementById('konami-message');
-              if (existingMessage) {
-                existingMessage.remove();
-              }
-              
-              const newMessage = document.createElement('div');
-              newMessage.id = 'konami-message';
-              newMessage.style.position = 'fixed';
-              newMessage.style.top = '50%';
-              newMessage.style.left = '50%';
-              newMessage.style.transform = 'translate(-50%, -50%)';
-              newMessage.style.fontSize = '48px';
-              newMessage.style.color = 'rgb(95, 119, 255)';
-              newMessage.style.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
-              newMessage.style.zIndex = '9999';
-              newMessage.textContent = 'KONAMI CODE ACTIVATED!';
-              document.body.appendChild(newMessage);
-              
-              setTimeout(() => {
-                const messageToRemove = document.getElementById('konami-message');
-                if (messageToRemove) {
-                  messageToRemove.remove();
-                }
-              }, 3000);
-            })();
-          `);
 
-          if (childWindow) {
-            childWindow.webContents.executeJavaScript(`
-              const danmus = document.querySelectorAll('.danmu');
-              danmus.forEach(danmu => danmu.remove());
-            `);
+          // 顯示主窗口的 KONAMI CODE ACTIVATED! 訊息
+          mainWindow.webContents
+            .executeJavaScript(
+              `
+            (function() {
+              try {
+                const existingMessage = document.getElementById('konami-message');
+                if (existingMessage) {
+                  existingMessage.remove();
+                }
+                
+                const newMessage = document.createElement('div');
+                newMessage.id = 'konami-message';
+                newMessage.style.position = 'fixed';
+                newMessage.style.top = '50%';
+                newMessage.style.left = '50%';
+                newMessage.style.transform = 'translate(-50%, -50%)';
+                newMessage.style.fontSize = '48px';
+                newMessage.style.color = 'rgb(95, 119, 255)';
+                newMessage.style.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
+                newMessage.style.zIndex = '9999';
+                newMessage.textContent = 'KONAMI CODE ACTIVATED!';
+                document.body.appendChild(newMessage);
+                
+                setTimeout(() => {
+                  const messageToRemove = document.getElementById('konami-message');
+                  if (messageToRemove) {
+                    messageToRemove.remove();
+                  }
+                }, 3000);
+              } catch (error) {
+                console.error('Error in Konami message:', error);
+              }
+            })();
+          `
+            )
+            .catch((err) => {
+              console.error("Error showing Konami message:", err);
+            });
+
+          // 清除彈幕窗口中的所有彈幕
+          if (childWindow && !childWindow.isDestroyed()) {
+            // 方法1：使用 innerHTML 直接清空 danmubody
+            childWindow.webContents
+              .executeJavaScript(
+                `
+              document.getElementById('danmubody').innerHTML = '<script src="./renderer.js"></script>';
+              console.log('Cleared danmus using innerHTML');
+            `
+              )
+              .catch((err) => {
+                console.error("Failed to clear danmus with method 1:", err);
+
+                // 方法2：如果方法1失敗，嘗試使用選擇器刪除元素
+                childWindow.webContents
+                  .executeJavaScript(
+                    `
+                try {
+                  const elements = document.querySelectorAll('h1.danmu, img');
+                  console.log('Found elements to remove:', elements.length);
+                  elements.forEach(el => el.remove());
+                  console.log('Cleared danmus using element selectors');
+                  return true;
+                } catch (error) {
+                  console.error('Error removing elements:', error);
+                  return false;
+                }
+              `
+                  )
+                  .catch((err) => {
+                    console.error("Failed to clear danmus with method 2:", err);
+                  });
+              });
           }
         }
       } else {

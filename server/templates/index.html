@@ -350,17 +350,19 @@
           <div class="col-md-3 col-sm-6">
             <div class="control-group" data-control="Speed">
               <label for="SpeedInput" class="form-label">
-                <i class="bi bi-speedometer"></i>Speed
+                <i class="bi bi-speedometer"></i>Speed (1-10)
               </label>
               <input
                 type="number"
                 class="form-control"
                 id="SpeedInput"
-                value="{{Options['Speed'][3]}}"
-                step="50"
-                min="{{Options['Speed'][1]}}"
-                max="{{Options['Speed'][2]}}"
+                value="{{ 10 - (Options['Speed'][3] / 1000) }}"
+                step="1"
+                min="1"
+                max="10"
+                title="Higher value = Faster speed"
               />
+              <small class="text-muted">Higher value = Faster speed</small>
             </div>
           </div>
           {% endif %}
@@ -566,9 +568,11 @@
           document.getElementById("SizeInput").value = currentSettings.fontSize;
         }
 
-        // 更新速度输入
+        // 更新速度输入 - 將毫秒转换为1-10的刻度
         if (document.getElementById("SpeedInput")) {
-          document.getElementById("SpeedInput").value = currentSettings.speed;
+          // 將持續時間 (1000ms-9000ms) 映射回 1-10 的值
+          const speedValueReversed = 10 - ((currentSettings.speed - 1000) / 1000);
+          document.getElementById("SpeedInput").value = Math.round(speedValueReversed);
         }
       }
 
@@ -644,7 +648,14 @@
       // 监听速度变化
       if (document.getElementById("SpeedInput")) {
         document.getElementById("SpeedInput").addEventListener("input", (e) => {
-          currentSettings.speed = parseInt(e.target.value);
+          // 將 1-10 的值轉換為毫秒單位的動畫持續時間（反向轉換）
+          // 1 = 最慢 (9000ms), 10 = 最快 (1000ms)
+          const speedValue = parseInt(e.target.value);
+          if (speedValue >= 1 && speedValue <= 10) {
+            // 反向映射：10→1000ms, 1→9000ms
+            currentSettings.speed = 10000 - (speedValue * 1000 - 1000);
+            console.log("Speed value converted:", speedValue, "→", currentSettings.speed);
+          }
           updatePreview();
         });
       }

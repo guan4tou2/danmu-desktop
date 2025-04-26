@@ -222,18 +222,20 @@
             <input class="form-check-input" type="checkbox" id="Speed" {% if
             Options['Speed'][0] %} checked {% endif %} onclick="check('Speed')"
             />
-            <label class="form-check-label" for="Speed">Speed</label>
+            <label class="form-check-label" for="Speed"
+              >Speed (Animation Duration)</label
+            >
           </div>
           {% if Options['Speed'][0] %}
           <div class="input-group input-group-sm">
-            <span class="input-group-text">Min</span>
+            <span class="input-group-text">Slow (High Value)</span>
             <input
               type="text"
               class="form-control"
               id="SpeedMin"
               value="{{Options['Speed'][1]}}"
             />
-            <span class="input-group-text">Max</span>
+            <span class="input-group-text">Fast (Low Value)</span>
             <input
               type="text"
               class="form-control"
@@ -241,9 +243,12 @@
               value="{{Options['Speed'][2]}}"
             />
           </div>
+          <small class="text-muted"
+            >注意：這裡設定的是動畫持續時間（毫秒），數值越小速度越快</small
+          >
           {% else %}
           <div class="input-group input-group-sm">
-            <span class="input-group-text">Sepcify</span>
+            <span class="input-group-text">Animation duration (ms)</span>
             <input
               type="text"
               class="form-control set-value"
@@ -252,6 +257,9 @@
               value="{{Options['Speed'][3]}}"
             />
           </div>
+          <small class="text-muted"
+            >注意：這裡設定的是動畫持續時間（毫秒），數值越小速度越快</small
+          >
           {% endif %}
         </div>
       </div>
