@@ -67,9 +67,16 @@ const port = document.getElementById("basic-port");
 const screenSelect = document.getElementById("screen-select");
 
 startButton.addEventListener("click", () => {
-  var ipre = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+  //var ipre = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+  var ipre =
+    /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+  var domainre =
+    /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
   var portre = /^\d{1,5}$/;
-  if (ipre.test(ip.value) && portre.test(port.value)) {
+  if (
+    ipre.test(ip.value) ||
+    (domainre.test(ip.value) && portre.test(port.value))
+  ) {
     const IP = ip.value;
     const PORT = port.value;
     const displayIndex = parseInt(screenSelect.value);
