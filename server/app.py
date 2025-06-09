@@ -217,26 +217,29 @@ def update():
 
     try:
         data = request.get_json()
-        for key, value in data.items():
-            if key in Options:
-                # 验证范围
-                if key in SETTING_RANGES:
-                    value = int(value)
-                    if (
-                        value < SETTING_RANGES[key]["min"]
-                        or value > SETTING_RANGES[key]["max"]
-                    ):
-                        return make_response(
-                            f"{key} value must be between {SETTING_RANGES[key]['min']} and {SETTING_RANGES[key]['max']}",
-                            400,
-                        )
+        key = data.get("type")
+        value = data.get("value")
+        index = data.get("index")
 
-                # 更新设置
-                Options[key][3] = value
+        if key in Options:
+            # 验证范围
+            if key in SETTING_RANGES:
+                value = int(value)
+                if (
+                    value < SETTING_RANGES[key]["min"]
+                    or value > SETTING_RANGES[key]["max"]
+                ):
+                    return make_response(
+                        f"{key} value must be between {SETTING_RANGES[key]['min']} and {SETTING_RANGES[key]['max']}",
+                        400,
+                    )
 
-                # 通知所有客户端设置已更改
-                notify_data = {"type": "settings_changed", "settings": Options}
-                send_message(json.dumps(notify_data))
+            # 更新设置
+            Options[key][index] = value
+
+            # 通知所有客户端设置已更改
+            notify_data = {"type": "settings_changed", "settings": Options}
+            send_message(json.dumps(notify_data))
 
         return make_response("OK", 200)
     except Exception as e:
@@ -298,6 +301,7 @@ def check_connections():
 # Dedicated WebSocket server running on different port
 def run_ws_server():
     import asyncio
+
     import websockets
 
     clients = set()

@@ -105,7 +105,7 @@
         console.log(session.logged_in);
 
         // Get setting ranges from Flask
-        const settingRanges = JSON.parse('{{ ranges|tojson }}');
+        const settingRanges = JSON.parse(`{{ ranges|tojson }}`);
 
         // Get latest settings from backend
         async function fetchLatestSettings() {
@@ -204,8 +204,12 @@
             }
 
             // Build data object
-            const dataToSend = {};
-            dataToSend[key] = value;
+            const dataToSend = {
+              type: key,
+              value: value,
+              index: index,
+            };
+            console.log(dataToSend);
 
             // 发送到后端
             const response = await fetch("/update", {
@@ -523,7 +527,7 @@
               const key = this.dataset.key;
               const index = parseInt(this.dataset.index);
               let value = this.value;
-
+              console.log(key, index, value);
               if (this.type === "number") {
                 value = parseInt(value);
               }
