@@ -1,59 +1,274 @@
 <!DOCTYPE html>
-<html data-bs-theme="dark">
-
+<html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <!-- <meta http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"> -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Danmu Overlay Control</title>
 
-    <link rel="stylesheet" href="assets\css\bootstrap.css">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha2/dist/css/bootstrap.min.css" rel="stylesheet"
-      integrity="sha384-aFq/bzH65dt+w6FI2ooMVUpc+21e0SRygnTpmBvdBgSdnuTN7QbdgL+OapgHtvPp" crossorigin="anonymous">
-      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha2/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-qKXV1j0HvMUeCBQ+QVp7JcfGl760yU08IQ+GpUo5hlbpg51QRiuqHAJz8+BrxE/N" crossorigin="anonymous"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-    <title>Danmu Manager</title>
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      body {
+        font-family: "Poppins", sans-serif;
+        overflow: hidden;
+      }
+
+      .glass-effect {
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(16px) saturate(180%);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.125);
+      }
+
+      .form-input {
+        background-color: rgba(30, 41, 59, 0.8);
+        border: 1px solid #334155;
+        color: #e2e8f0;
+        transition: all 0.3s ease;
+      }
+      .form-input:focus {
+        background-color: rgba(30, 41, 59, 1);
+        border-color: #38bdf8;
+        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.4);
+        outline: none;
+      }
+
+      .btn-primary {
+        background-image: linear-gradient(to right, #38bdf8, #3b82f6);
+      }
+    </style>
   </head>
+  <body class="text-slate-200">
+    <!-- Dynamic Background -->
+    <div id="vanta-bg" class="fixed top-0 left-0 w-full h-full z-0"></div>
 
-  <body style="overflow:hidden">
-    <br>
-    <div class="mb-3 row">
-      <label for="basic-url" class="col-sm-4 col-form-label text-center">Please input Server IP or Domain</label>
-      <div class="col-sm-6">
-        <div class="input-group">
-          <span class="input-group-text">http://</span>
-          <input type="text" class="form-control" id="basic-ip" aria-describedby="basic-addon3 basic-addon4">
+    <!-- Main Content -->
+    <main
+      class="relative min-h-screen flex items-center justify-center p-4 z-10"
+    >
+      <div
+        class="glass-effect w-full max-w-md p-8 rounded-2xl shadow-2xl space-y-8"
+      >
+        <!-- Header -->
+        <div class="text-center">
+          <h1 class="text-3xl font-bold text-white">Danmu Overlay Setup</h1>
+          <p class="text-slate-400 mt-2">Configure and launch the overlay</p>
+        </div>
+
+        <!-- Form -->
+        <div class="space-y-6">
+          <div>
+            <label for="host-input" class="text-sm font-medium text-slate-300"
+              >Server Address (IP or Domain)</label
+            >
+            <input
+              type="text"
+              id="host-input"
+              class="form-input mt-2 block w-full rounded-lg px-4 py-3"
+              placeholder="e.g., 127.0.0.1 or mydomain.com"
+            />
+          </div>
+
+          <div>
+            <label for="port-input" class="text-sm font-medium text-slate-300"
+              >WebSocket Port</label
+            >
+            <input
+              type="text"
+              id="port-input"
+              class="form-input mt-2 block w-full rounded-lg px-4 py-3"
+              placeholder="e.g., 4001"
+            />
+          </div>
+
+          <div>
+            <label
+              for="screen-select"
+              class="text-sm font-medium text-slate-300"
+              >Target Display</label
+            >
+            <select
+              id="screen-select"
+              class="form-input mt-2 block w-full appearance-none rounded-lg px-4 py-3"
+            >
+              <!-- Options will be populated by script -->
+            </select>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4">
+          <button
+            id="start-button"
+            type="button"
+            class="w-full btn-primary text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-sky-500/50 transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span>Start Overlay</span>
+          </button>
+          <button
+            id="stop-button"
+            disabled
+            class="w-full bg-slate-600 text-slate-300 font-semibold py-3 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            </svg>
+            <span>Stop Overlay</span>
+          </button>
         </div>
       </div>
-    </div>
-    <div class="mb-3 row">
-      <label for="basic-url" class="col-sm-4 col-form-label text-center">Please input WS Port</label>
-      <div class="col-sm-6">
-        <div class="input-group">
-          <span class="input-group-text">Port:</span>
-          <input type="text" class="form-control" id="basic-port" aria-describedby="basic-addon3 basic-addon4">
-        </div>
-      </div>
-    </div>
-    <div class="mb-3 row">
-      <label for="screen-select" class="col-sm-4 col-form-label text-center">Select Display</label>
-      <div class="col-sm-6">
-        <select class="form-select" id="screen-select">
-          <option value="0">Primary Display</option>
-        </select>
-    </div>
-    </div>
-    <br>
-    <div class="text-center">
-      <button type="button" class="btn btn-secondary btn-lg" id="start">Start Danmu</button>
-      <button type="button" class="btn btn-secondary btn-lg" id="stop" disabled>Close Danmu</button>
-    </div>
-    <!-- You can also require other files to run in this process -->
-    <script src="./renderer.js"></script>
-<script>
-</script>
+    </main>
+
+    <!-- Vanta.js and Renderer Logic -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
+    <script>
+      // Vanta.js Background Initialization
+      VANTA.NET({
+        el: "#vanta-bg",
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200.0,
+        minWidth: 200.0,
+        scale: 1.0,
+        scaleMobile: 1.0,
+        color: 0x3b82f6, // sky-500
+        backgroundColor: 0x0f172a, // slate-900
+        points: 12.0,
+        maxDistance: 25.0,
+        spacing: 18.0,
+      });
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const api = window.API;
+
+        // DOM Elements
+        const hostInput = document.getElementById("host-input");
+        const portInput = document.getElementById("port-input");
+        const screenSelect = document.getElementById("screen-select");
+        const startButton = document.getElementById("start-button");
+        const stopButton = document.getElementById("stop-button");
+
+        // Populate screen selector
+        api.getDisplays().then((displays) => {
+          screenSelect.innerHTML = ""; // Clear existing options
+          displays.forEach((display, index) => {
+            const option = document.createElement("option");
+            option.value = index;
+            option.textContent = `Display ${index + 1} (${display.size.width}x${
+              display.size.height
+            }) ${display.primary ? "[Primary]" : ""}`;
+            if (display.primary) {
+              option.selected = true;
+            }
+            screenSelect.appendChild(option);
+          });
+        });
+
+        // Toggle UI state
+        function setUIState(isStarted) {
+          hostInput.disabled = isStarted;
+          portInput.disabled = isStarted;
+          screenSelect.disabled = isStarted;
+          startButton.disabled = isStarted;
+          stopButton.disabled = !isStarted;
+
+          if (isStarted) {
+            startButton.classList.add("opacity-50", "cursor-not-allowed");
+            stopButton.classList.remove("opacity-50", "cursor-not-allowed");
+            stopButton.classList.add("bg-red-600", "hover:bg-red-700");
+            stopButton.classList.remove("bg-slate-600");
+          } else {
+            startButton.classList.remove("opacity-50", "cursor-not-allowed");
+            stopButton.classList.add("opacity-50", "cursor-not-allowed");
+            stopButton.classList.remove("bg-red-600", "hover:bg-red-700");
+            stopButton.classList.add("bg-slate-600");
+          }
+        }
+
+        // Event listener for Start button
+        startButton.addEventListener("click", async () => {
+          const host = hostInput.value.trim();
+          const port = portInput.value.trim();
+
+          // Validation
+          const hostRegex =
+            /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+          const portRegex = /^\d{1,5}$/;
+
+          if (!hostRegex.test(host)) {
+            alert(
+              "Invalid Host: Please enter a valid IP address or domain name."
+            );
+            return;
+          }
+          if (!portRegex.test(port) || parseInt(port) > 65535) {
+            alert("Invalid Port: Please enter a number between 1 and 65535.");
+            return;
+          }
+
+          const displayIndex = parseInt(screenSelect.value);
+
+          try {
+            console.log(
+              `Starting overlay on ${host}:${port} at display ${displayIndex}`
+            );
+            await api.create(host, port, displayIndex);
+            setUIState(true);
+          } catch (error) {
+            console.error("Failed to start overlay:", error);
+            alert("Failed to start overlay. Please try again.");
+          }
+        });
+
+        // Event listener for Stop button
+        stopButton.addEventListener("click", async () => {
+          try {
+            console.log("Stopping overlay...");
+            await api.close();
+            setUIState(false);
+          } catch (error) {
+            console.error("Failed to stop overlay:", error);
+            alert("Failed to stop overlay. Please try again.");
+          }
+        });
+
+        // Initial UI State
+        setUIState(false);
+      });
+    </script>
   </body>
-
 </html>

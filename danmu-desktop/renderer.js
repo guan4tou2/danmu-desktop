@@ -60,10 +60,10 @@ function showdanmu(
   };
 }
 
-const startButton = document.getElementById("start");
-const stopButton = document.getElementById("stop");
-const ip = document.getElementById("basic-ip");
-const port = document.getElementById("basic-port");
+const startButton = document.getElementById("start-button");
+const stopButton = document.getElementById("stop-button");
+const ip = document.getElementById("host-input");
+const port = document.getElementById("port-input");
 const screenSelect = document.getElementById("screen-select");
 
 startButton.addEventListener("click", () => {
