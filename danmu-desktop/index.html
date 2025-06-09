@@ -109,8 +109,7 @@
         <div class="flex flex-col sm:flex-row gap-4">
           <button
             id="start-button"
-            type="button"
-            class="w-full btn-primary text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-sky-500/50 transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+            class="w-full btn-primary text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-sky-500/50 transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -154,6 +153,7 @@
     <!-- Vanta.js and Renderer Logic -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
+    <script src="./renderer.js"></script>
     <script>
       // Vanta.js Background Initialization
       VANTA.NET({
@@ -207,20 +207,32 @@
           stopButton.disabled = !isStarted;
 
           if (isStarted) {
-            startButton.classList.add("opacity-50", "cursor-not-allowed");
-            stopButton.classList.remove("opacity-50", "cursor-not-allowed");
+            startButton.classList.add(
+              "disabled:opacity-50",
+              "disabled:cursor-not-allowed"
+            );
+            stopButton.classList.remove(
+              "disabled:opacity-50",
+              "disabled:cursor-not-allowed"
+            );
             stopButton.classList.add("bg-red-600", "hover:bg-red-700");
             stopButton.classList.remove("bg-slate-600");
           } else {
-            startButton.classList.remove("opacity-50", "cursor-not-allowed");
-            stopButton.classList.add("opacity-50", "cursor-not-allowed");
+            startButton.classList.remove(
+              "disabled:opacity-50",
+              "disabled:cursor-not-allowed"
+            );
+            stopButton.classList.add(
+              "disabled:opacity-50",
+              "disabled:cursor-not-allowed"
+            );
             stopButton.classList.remove("bg-red-600", "hover:bg-red-700");
             stopButton.classList.add("bg-slate-600");
           }
         }
 
         // Event listener for Start button
-        startButton.addEventListener("click", async () => {
+        startButton.addEventListener("click", () => {
           const host = hostInput.value.trim();
           const port = portInput.value.trim();
 
@@ -242,28 +254,18 @@
 
           const displayIndex = parseInt(screenSelect.value);
 
-          try {
-            console.log(
-              `Starting overlay on ${host}:${port} at display ${displayIndex}`
-            );
-            await api.create(host, port, displayIndex);
-            setUIState(true);
-          } catch (error) {
-            console.error("Failed to start overlay:", error);
-            alert("Failed to start overlay. Please try again.");
-          }
+          console.log(
+            `Starting overlay on ${host}:${port} at display ${displayIndex}`
+          );
+          api.create(host, port, displayIndex);
+          setUIState(true);
         });
 
         // Event listener for Stop button
-        stopButton.addEventListener("click", async () => {
-          try {
-            console.log("Stopping overlay...");
-            await api.close();
-            setUIState(false);
-          } catch (error) {
-            console.error("Failed to stop overlay:", error);
-            alert("Failed to stop overlay. Please try again.");
-          }
+        stopButton.addEventListener("click", () => {
+          console.log("Stopping overlay...");
+          api.close();
+          setUIState(false);
         });
 
         // Initial UI State
