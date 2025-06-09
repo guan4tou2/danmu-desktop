@@ -7,10 +7,10 @@
  */
 function showdanmu(
   string,
-  range = 75,
+  opacity = 75,
   color = "#ffffff",
   size = 50,
-  speed = 10000
+  speed = 7
 ) {
   var parentElement = document.getElementById("danmubody");
   var imgs = /^https?:\/\/\S*.(gif|png|jpeg|jpg)$/;
@@ -35,7 +35,16 @@ function showdanmu(
     Math.random() * document.documentElement.clientHeight - (Height + Padding)
   );
   danmu.style.top = `${top}px`;
-  danmu.style.opacity = range * 0.01;
+  danmu.style.opacity = opacity * 0.01;
+
+  // 计算动画持续时间
+  // 基础时间：20000ms (20秒)
+  // 速度范围：1-10，数字越大速度越快
+  // 使用线性计算让速度变化更均匀
+  const maxTime = 15000; // 最慢速度 (20秒)
+  const minTime = 2000; // 最快速度 (2秒)
+  const timeRange = maxTime - minTime;
+  const duration = maxTime - (timeRange / 10) * (speed - 1);
 
   danmu.animate(
     [
@@ -43,7 +52,8 @@ function showdanmu(
       { transform: `translateX(-${Width}px)` },
     ],
     {
-      duration: speed,
+      duration: duration,
+      easing: "linear",
     }
   ).onfinish = () => {
     danmu.remove();

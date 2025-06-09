@@ -521,11 +521,11 @@ function createWindow() {
               }
               
               let text = data.text
-              let range = data.range
+              let opacity = data.opacity
               let color = '#' + data.color
               let size = data.size
               let speed = parseInt(data.speed)
-              showdanmu(text, range, color, size, speed)
+              showdanmu(text, opacity, color, size, speed)
             } catch (e) {
               console.error("Error processing message:", e)
             }

@@ -1,26 +1,25 @@
-from flask import (
-    Flask,
-    render_template,
-    request,
-    redirect,
-    url_for,
-    flash,
-    session,
-    make_response,
-)
-
-from flask_sock import Sock
-from gevent import monkey
-from gevent.pywsgi import WSGIServer
 import json
-import re
 import os
-from dotenv import load_dotenv, find_dotenv
+import queue
+import re
 import secrets
 import threading
 import time
-import queue
-import socket
+
+from dotenv import find_dotenv, load_dotenv
+from flask import (
+    Flask,
+    flash,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
+from flask_sock import Sock
+from gevent import monkey
+from gevent.pywsgi import WSGIServer
 
 # Load environment variables
 load_dotenv(find_dotenv(), override=True)
@@ -44,7 +43,7 @@ Options = {
     "Color": [True, 0, 0, "#FFFFFF"],
     "Opacity": [True, 0, 100, 70],
     "FontSize": [True, 20, 100, 50],
-    "Speed": [True, 1000, 8000, 7000],
+    "Speed": [True, 1, 10, 4],
 }
 
 # Define global variables
@@ -52,6 +51,13 @@ active_ws = None
 active_connections = set()
 # Add client connections for WebSocket server
 ws_clients = set()
+
+# Define setting ranges
+SETTING_RANGES = {
+    "Speed": {"min": 1, "max": 20},
+    "Opacity": {"min": 0, "max": 100},
+    "FontSize": {"min": 12, "max": 100},
+}
 
 
 def is_valid_image_url(url):
@@ -97,7 +103,7 @@ def websocket(ws):
                 elif data.get("type") == "pong":
                     # Record pong response, can add logic here to update connection status
                     continue
-            except Exception as e:
+            except Exception:
                 pass  # Not JSON format or not a heartbeat message, ignore error and continue
         except Exception as e:
             print(f"WebSocket error: {e}")
@@ -146,8 +152,8 @@ def logout():
 @app.route("/admin")
 def admin():
     if not session.get("logged_in"):
-        return render_template("admin.html")
-    return render_template("admin.html", Options=Options)
+        return render_template("admin.html", ranges=SETTING_RANGES)
+    return render_template("admin.html", Options=Options, ranges=SETTING_RANGES)
 
 
 @app.route("/fire", methods=["POST"])
@@ -208,33 +214,34 @@ def update():
     global active_ws
     if not session.get("logged_in"):
         return redirect(url_for("admin"))
-    data = request.get_json()
-    for key in data:
-        if key == "Color":
-            if data[key]:
-                Options[key][3] = "#" + data[key]
-        else:
-            # Process numeric data
-            try:
-                if data[key] == "":
-                    continue
-                Options[key][3] = int(data[key])
-            except ValueError:
-                print(f"Can't convert '{data[key]}' to int, stay original value")
 
     try:
-        # Send settings update to Web clients
-        if active_ws:
-            notification = {"type": "settings_changed", "settings": Options}
-            active_ws.send(json.dumps(notification))
+        data = request.get_json()
+        for key, value in data.items():
+            if key in Options:
+                # 验证范围
+                if key in SETTING_RANGES:
+                    value = int(value)
+                    if (
+                        value < SETTING_RANGES[key]["min"]
+                        or value > SETTING_RANGES[key]["max"]
+                    ):
+                        return make_response(
+                            f"{key} value must be between {SETTING_RANGES[key]['min']} and {SETTING_RANGES[key]['max']}",
+                            400,
+                        )
 
-        # Broadcast settings update to all Danmu Desktop clients
-        notification = {"type": "settings_changed", "settings": Options}
-        forward_to_ws_server(notification)
+                # 更新设置
+                Options[key][3] = value
+
+                # 通知所有客户端设置已更改
+                notify_data = {"type": "settings_changed", "settings": Options}
+                send_message(json.dumps(notify_data))
+
+        return make_response("OK", 200)
     except Exception as e:
-        print(f"Change Error: {e}")
-
-    return make_response()
+        print(f"Error updating settings: {e}")
+        return make_response(str(e), 400)
 
 
 @app.route("/admin/Set", methods=["POST"])
@@ -290,8 +297,8 @@ def check_connections():
 
 # Dedicated WebSocket server running on different port
 def run_ws_server():
-    import websockets
     import asyncio
+    import websockets
 
     clients = set()
 
@@ -370,7 +377,7 @@ def run_ws_server():
                     global ws_clients
                     ws_clients = clients
 
-                await asyncio.sleep(1)  # Check message queue every second
+                await asyncio.sleep(0.5)  # Check message queue every second
             except Exception as e:
                 print(f"Error in message forwarding: {e}")
                 await asyncio.sleep(5)  # Wait longer when an error occurs

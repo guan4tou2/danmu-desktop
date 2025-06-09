@@ -1,749 +1,733 @@
 <!DOCTYPE html>
-
-<html data-bs-theme="dark">
+<html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Fire Danmu</title>
-    <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
-      integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
-      crossorigin="anonymous"
-    ></script>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-      integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD"
-      crossorigin="anonymous"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css"
-    />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Danmu Fire - Pro</title>
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.fog.min.js"></script>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Vanta.js for background effect -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
+
     <style>
-      /* 玻璃擬態效果 */
-      .glass-effect {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
-      }
-      /* 輸入框聚焦動畫 */
-      .glow-border:focus {
-        box-shadow: 0 0 15px rgba(0, 123, 255, 0.8);
-        transition: box-shadow 0.3s ease-in-out;
-      }
-      /* 發光文字動畫 */
-      .neon-text {
-        text-shadow: 0 0 5px #00bcd4, 0 0 10px #00bcd4, 0 0 15px #00bcd4;
-        animation: flicker 1.5s infinite alternate;
-      }
-      @keyframes flicker {
-        0% {
-          opacity: 1;
-        }
-        100% {
-          opacity: 0.8;
-        }
-      }
-      /* 按鈕點擊波紋效果 */
-      .fire-button {
-        position: relative;
-        overflow: hidden;
-      }
-      .fire-button::after {
-        content: "";
-        position: absolute;
-        width: 300%;
-        height: 300%;
-        top: 50%;
-        left: 50%;
-        background: radial-gradient(
-          circle,
-          rgba(0, 123, 255, 0.4) 10%,
-          transparent 50%
-        );
-        transition: transform 0.5s, opacity 0.6s;
-        transform: translate(-50%, -50%) scale(0);
-        opacity: 0;
-      }
-      .fire-button:active::after {
-        transform: translate(-50%, -50%) scale(1);
-        opacity: 1;
-      }
-      /* 動態懸浮效果 */
-      .floating {
-        transition: transform 0.3s ease-out;
-      }
-      .floating:hover {
-        transform: translateY(-5px);
-      }
-      /* 背景粒子效果 */
-      #particles-js {
-        position: fixed;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-        z-index: -2;
-      }
-      /* 煙霧效果容器 */
-      #fog-bg {
-        position: fixed;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-        z-index: -1;
-      }
-    </style>
-    <style>
+      /* Basic styles and fonts */
       body {
-        background-color: #1a1a1a;
-        min-height: 100vh;
-        padding: 2rem;
+        font-family: "Inter", sans-serif;
+        background-color: #000000;
       }
-      .main-container {
-        max-width: 800px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 2rem;
-        background: rgba(33, 37, 41, 0.95);
-        border-radius: 15px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-      }
-      .form-control {
-        background: rgba(255, 255, 255, 0.05) !important;
+
+      /* Glass effect */
+      .glass-effect {
+        background: rgba(15, 23, 42, 0.7);
+        backdrop-filter: blur(16px) saturate(180%);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        transition: all 0.3s ease;
       }
-      .form-control:focus {
-        background: rgba(255, 255, 255, 0.1) !important;
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-      }
-      .btn-primary {
-        padding: 0.8rem 2rem;
-        font-size: 1.1rem;
-        /* text-transform: uppercase; */
-        letter-spacing: 1px;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-      }
-      .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
-      }
-      .btn-primary:active {
-        transform: translateY(1px);
-      }
-      .btn-primary .btn-icon {
-        margin-right: 8px;
-      }
-      .controls-container {
-        background: rgba(40, 44, 48, 0.5);
-        border-radius: 10px;
-        padding: 1.5rem;
-        margin-top: 2rem;
-        transition: all 0.3s ease;
-        overflow: hidden;
-        max-height: 1000px; /* 足够大的高度以容纳所有内容 */
-      }
-      .controls-container.hidden {
-        max-height: 0;
-        padding: 0;
-        margin: 0;
-        opacity: 0;
-      }
-      .control-group {
-        background: rgba(33, 37, 41, 0.5);
-        padding: 1rem;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-        transition: all 0.3s ease;
-      }
-      .control-group:hover {
-        background: rgba(33, 37, 41, 0.7);
-        transform: translateY(-2px);
-      }
-      .form-label {
-        color: #adb5bd;
-        font-size: 0.9rem;
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-      }
-      .form-label i {
-        margin-right: 0.5rem;
-      }
-      input[type="color"] {
-        border-radius: 8px;
-        cursor: pointer;
-        height: 40px;
-      }
+
+      /* Custom range input styles */
       input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
         height: 6px;
-        cursor: pointer;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 999px;
+        outline: none;
+        transition: all 0.2s;
       }
+
       input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
         width: 20px;
         height: 20px;
-        background: #0d6efd;
+        background: #38bdf8;
         cursor: pointer;
-        transition: all 0.2s ease;
+        border-radius: 50%;
+        border: 2px solid #0f172a;
+        transition: all 0.2s;
       }
+
       input[type="range"]::-webkit-slider-thumb:hover {
-        transform: scale(1.2);
+        transform: scale(1.1);
+        box-shadow: 0 0 10px #38bdf8;
       }
-      input[type="number"] {
-        text-align: center;
-        font-weight: bold;
-        height: 40px;
+
+      /* Page load animation */
+      @keyframes fadeInScaleUp {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
       }
-      .title {
-        color: #fff;
-        text-align: center;
-        margin-bottom: 2rem;
-        font-size: 2.5rem;
-        font-weight: 300;
-        letter-spacing: 2px;
-      }
-      .preview-text {
-        font-size: 1.2rem;
-        color: #adb5bd;
-        text-align: center;
-        margin-top: 1rem;
-        padding: 1rem;
-        border-radius: 8px;
-        background: rgba(33, 37, 41, 0.3);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100px;
-      }
-      .preview-text img {
-        max-width: 100%;
-        height: auto;
-        border-radius: 4px;
-      }
-      .preview-text::before {
-        content: attr(data-storke);
-      }
-      .preview-text::before {
-        position: absolute;
-        z-index: -1;
-        -webkit-text-stroke-width: 6px;
-        -webkit-text-stroke-color: var(--webColor, #121212);
-        text-stroke-width: 6px;
-        text-stroke-color: var(--Color, #121212);
-        text-shadow: 0 0 10px #121212;
-      }
-      .character-count {
-        position: absolute;
-        right: 1rem;
-        bottom: 0.5rem;
-        color: #6c757d;
-        font-size: 0.8rem;
-      }
-      .form-floating {
-        position: relative;
-      }
-      .badge {
-        transition: all 0.3s ease;
+      .animate-fade-in-scale-up {
+        animation: fadeInScaleUp 0.5s ease-out forwards;
       }
     </style>
   </head>
+  <body
+    class="text-white relative min-h-screen flex items-center justify-center p-4"
+  >
+    <!-- Dynamic background container -->
+    <div id="vanta-bg" class="fixed top-0 left-0 w-full h-full z-0"></div>
 
-  <body class="bg-gray-900 items-center justify-center h-screen relative">
-    <div id="particles-js"></div>
-    <div id="fog-bg"></div>
-    <div class="main-container glass-effect text-center floating">
-      <h1 class="title">Danmu Fire</h1>
-      <div class="form-floating">
-        <textarea
-          class="form-control"
-          id="floatingTextarea"
-          style="height: 120px"
-          placeholder="Type danmu..."
-          maxlength="100"
-        ></textarea>
-        <label for="floatingTextarea">
-          <i class="bi bi-chat-dots"></i> Type Content...
-        </label>
-        <div class="character-count">0/100</div>
-      </div>
-
-      <div class="preview-text" id="previewText">Preview</div>
-
-      <div class="d-grid gap-2 mt-3">
-        <button
-          class="btn btn-primary fire-button floating transition"
-          type="button"
-          id="btnSend"
+    <!-- Main content container -->
+    <main class="w-full max-w-2xl mx-auto z-10 animate-fade-in-scale-up">
+      <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-6">
+        <!-- Title -->
+        <h1
+          class="text-4xl md:text-5xl font-bold text-center bg-gradient-to-r from-sky-400 to-cyan-300 bg-clip-text text-transparent pb-2"
         >
-          <!-- <i class="bi bi-send-fill btn-icon"></i> -->
-          🚀 Fire!!
-        </button>
-      </div>
+          Danmu Fire
+        </h1>
 
-      <div class="controls-container">
-        <div class="row g-4">
-          {% if Options['Color'][0] %}
-          <div class="col-md-3 col-sm-6">
-            <div class="control-group" data-control="Color">
-              <label for="ColorInput" class="form-label">
-                <i class="bi bi-palette"></i>Color
+        <!-- Input area -->
+        <div class="relative">
+          <textarea
+            id="danmuText"
+            class="w-full h-32 p-4 bg-slate-800/80 border-2 border-slate-700 rounded-xl focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300 resize-none placeholder-slate-500"
+            placeholder="Type danmu here..."
+            maxlength="100"
+          ></textarea>
+          <div
+            id="charCount"
+            class="absolute bottom-3 right-4 text-sm text-slate-500"
+          >
+            0/100
+          </div>
+        </div>
+
+        <!-- Preview area -->
+        <div class="space-y-2">
+          <h2 class="text-sm font-semibold text-slate-400">PREVIEW</h2>
+          <div
+            id="previewText"
+            class="w-full min-h-[100px] flex items-center justify-center bg-slate-900/70 rounded-xl p-4 text-slate-400 transition-all duration-300 text-center break-all"
+          >
+            Preview
+          </div>
+        </div>
+
+        <!-- Send button -->
+        <button
+          id="btnSend"
+          class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-cyan-400 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-cyan-400/50 transform hover:-translate-y-1 active:scale-95 transition-all duration-300"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M5 12h14" />
+            <path d="m12 5 7 7-7 7" />
+          </svg>
+          <span>Fire Danmu</span>
+        </button>
+
+        <!-- Controls -->
+        <details class="group">
+          <summary
+            class="list-none flex items-center justify-center cursor-pointer text-slate-400 hover:text-white transition-colors duration-200"
+          >
+            <span class="text-sm font-medium">Settings</span>
+            <svg
+              class="w-5 h-5 ml-1 transform group-open:rotate-180 transition-transform"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              ></path>
+            </svg>
+          </summary>
+
+          <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            <!-- Color control -->
+            {% if Options['Color'][0] %}
+            <div id="colorControl" class="space-y-2">
+              <label
+                for="ColorInput"
+                class="text-sm font-medium text-slate-300 flex items-center gap-2"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                </svg>
+                Color
               </label>
               <input
                 type="color"
-                class="form-control form-control-color w-100"
                 id="ColorInput"
-                value="{{Options['Color'][3]}}"
+                class="w-full h-10 p-1 bg-slate-800 border-slate-700 rounded-lg cursor-pointer"
               />
             </div>
-          </div>
-          {% endif %} {% if Options['Opacity'][0] %}
-          <div class="col-md-3 col-sm-6">
-            <div class="control-group" data-control="Opacity">
-              <label for="customRange" class="form-label">
-                <i class="bi bi-layers"></i>Opacity
-              </label>
-              <div class="d-flex align-items-center gap-2">
-                <input
-                  type="range"
-                  class="form-range"
-                  id="customRange"
-                  value="{{Options['Opacity'][3]}}"
-                  min="{{Options['Opacity'][1]}}"
-                  max="{{Options['Opacity'][2]}}"
-                  step="1"
-                />
-                <span id="rangevalue" class="badge bg-primary"
-                  >{{Options['Opacity'][3]}}%</span
+            {% endif %} {% if Options['FontSize'][0] %}
+            <!-- Font size control -->
+            <div id="fontSizeControl" class="space-y-2">
+              <label
+                for="SizeInput"
+                class="text-sm font-medium text-slate-300 flex items-center gap-2"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
                 >
-              </div>
-            </div>
-          </div>
-          {% endif %} {% if Options['FontSize'][0] %}
-          <div class="col-md-3 col-sm-6">
-            <div class="control-group" data-control="FontSize">
-              <label for="SizeInput" class="form-label">
-                <i class="bi bi-text-size"></i>Size
+                  <path d="M4 7V4h16v3" />
+                  <path d="M9 20h6" />
+                  <path d="M12 4v16" />
+                </svg>
+                Font Size
               </label>
               <input
                 type="number"
-                class="form-control"
                 id="SizeInput"
-                value="{{Options['FontSize'][3]}}"
                 min="{{Options['FontSize'][1]}}"
                 max="{{Options['FontSize'][2]}}"
+                class="w-full bg-slate-800 border-2 border-slate-700 rounded-lg p-2 text-center focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300"
               />
             </div>
-          </div>
-          {% endif %} {% if Options['Speed'][0] %}
-          <div class="col-md-3 col-sm-6">
-            <div class="control-group" data-control="Speed">
-              <label for="SpeedInput" class="form-label">
-                <i class="bi bi-speedometer"></i>Speed (1-10)
+            {% endif %} {% if Options['Opacity'][0] %}
+            <!-- Opacity control -->
+            <div id="opacityControl" class="space-y-2">
+              <label
+                for="OpacityRange"
+                class="text-sm font-medium text-slate-300 flex items-center justify-between"
+              >
+                <span class="flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  Opacity
+                </span>
+                <span id="opacityValue" class="font-mono text-sky-400"
+                  >100%</span
+                >
               </label>
               <input
-                type="number"
-                class="form-control"
-                id="SpeedInput"
-                value="{{ 10 - (Options['Speed'][3] / 1000) }}"
+                type="range"
+                id="OpacityRange"
+                min="{{Options['Opacity'][1]}}"
+                max="{{Options['Opacity'][2]}}"
                 step="1"
-                min="1"
-                max="10"
-                title="Higher value = Faster speed"
               />
-              <small class="text-muted">Higher value = Faster speed</small>
             </div>
+            {% endif %} {% if Options['Speed'][0] %}
+            <!-- Speed control -->
+            <div id="speedControl" class="space-y-2">
+              <label
+                for="SpeedRange"
+                class="text-sm font-medium text-slate-300 flex items-center justify-between"
+              >
+                <span class="flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="m12 14 4-4" />
+                    <path d="m12 14 4-4" />
+                    <path d="M2 12h3.5" />
+                    <path d="M18.5 12H22" />
+                    <path d="m5 19-2-2" />
+                    <path d="m19 5 2 2" />
+                    <circle cx="12" cy="12" r="10" />
+                  </svg>
+                  Speed
+                </span>
+                <span id="speedValue" class="font-mono text-sky-400">10</span>
+              </label>
+              <input
+                type="range"
+                id="speedRange"
+                min="{{Options['Speed'][1]}}"
+                max="{{Options['Speed'][2]}}"
+                step="1"
+              />
+              <small class="text-slate-500 text-xs"
+                >Higher value = Faster speed</small
+              >
+            </div>
+            {% endif %}
           </div>
-          {% endif %}
-        </div>
+        </details>
       </div>
+    </main>
+
+    <!-- Toast message container -->
+    <div
+      id="toast-container"
+      class="fixed top-5 right-5 z-50 flex flex-col items-end"
+    >
+      <!-- Toasts will be dynamically inserted here -->
     </div>
 
     <script>
-      const btn = document.getElementById("btnSend");
-      const text = document.getElementById("floatingTextarea");
-      const preview = document.getElementById("previewText");
-      const charCount = document.querySelector(".character-count");
-      const range = document.getElementById("customRange");
-      const rangeValue = document.getElementById("rangevalue");
+      document.addEventListener("DOMContentLoaded", () => {
+        // --- VANTA.js background initialization ---
+        VANTA.NET({
+          el: "#vanta-bg",
+          mouseControls: true,
+          touchControls: true,
+          gyroControls: false,
+          minHeight: 200.0,
+          minWidth: 200.0,
+          scale: 1.0,
+          scaleMobile: 1.0,
+          color: 0x3b82f6,
+          backgroundColor: 0x000000,
+          points: 12.0,
+          maxDistance: 25.0,
+          spacing: 18.0,
+        });
 
-      // WebSocket连接
-      let ws = null;
+        // --- Element selectors ---
+        const elements = {
+          danmuText: document.getElementById("danmuText"),
+          charCount: document.getElementById("charCount"),
+          previewText: document.getElementById("previewText"),
+          btnSend: document.getElementById("btnSend"),
 
-      // 连接WebSocket
-      function connectWebSocket() {
-        // 创建WebSocket连接
-        {% if ws_url %}
-        ws = new WebSocket("{{ ws_url }}");
-        {% else %}
-        ws = new WebSocket(`ws://${window.location.host}/`);
-        {% endif %}
+          // Controls
+          colorControl: document.getElementById("colorControl"),
+          colorInput: document.getElementById("ColorInput"),
+          opacityControl: document.getElementById("opacityControl"),
+          opacityRange: document.getElementById("OpacityRange"),
+          opacityValue: document.getElementById("opacityValue"),
+          fontSizeControl: document.getElementById("fontSizeControl"),
+          sizeInput: document.getElementById("SizeInput"),
+          speedControl: document.getElementById("speedControl"),
+          speedRange: document.getElementById("speedRange"),
+          speedValue: document.getElementById("speedValue"),
 
-        // 连接打开时的处理
-        ws.onopen = function() {
-          console.log('WebSocket Connection Opened');
+          // Toast container
+          toastContainer: document.getElementById("toast-container"),
         };
 
-        // 接收消息的处理
-        ws.onmessage = function(event) {
-          try {
-            const data = JSON.parse(event.data);
+        // --- State management ---
+        let currentSettings = {};
+        let ws = null;
 
-            // 如果是设置更改通知
-            if (data.type === 'settings_changed') {
-              console.log('setted:', data.settings);
+        // --- Functions ---
 
-              // 更新当前设置
+        // Show toast message (stackable version)
+        function showToast(message, isSuccess = true) {
+          // 1. Create toast element
+          const toastElement = document.createElement("div");
+          toastElement.className =
+            "flex items-center w-full max-w-xs p-4 mb-4 space-x-4 text-gray-500 bg-white divide-x divide-gray-200 rounded-lg shadow dark:text-gray-400 dark:divide-gray-700 space-x dark:bg-gray-800 transform transition-all duration-300 ease-in-out opacity-0 translate-x-full";
+          toastElement.setAttribute("role", "alert");
+
+          // 2. Create toast content
+          const iconSvg = isSuccess
+            ? `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
+            : `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+          const iconColorClass = isSuccess ? "text-green-500" : "text-red-500";
+
+          toastElement.innerHTML = `
+                <div class="${iconColorClass}">${iconSvg}</div>
+                <div class="pl-4 text-sm font-normal">${message}</div>
+            `;
+
+          // 3. Add to container
+          elements.toastContainer.appendChild(toastElement);
+
+          // 4. Trigger enter animation
+          requestAnimationFrame(() => {
+            toastElement.classList.remove("opacity-0", "translate-x-full");
+          });
+
+          // 5. Set timer to remove toast
+          setTimeout(() => {
+            toastElement.classList.add("opacity-0", "translate-x-full");
+
+            toastElement.addEventListener("transitionend", () => {
+              toastElement.remove();
+            });
+          }, 3000);
+        }
+
+        // Check if URL is an image
+        const isImageUrl = (url) =>
+          url && url.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) != null;
+
+        // Update character count
+        const updateCharCount = () => {
+          const count = elements.danmuText.value.length;
+          elements.charCount.textContent = `${count}/100`;
+          elements.charCount.classList.toggle("text-red-400", count >= 90);
+        };
+
+        // Update preview
+        const updatePreview = () => {
+          const content = elements.danmuText.value.trim();
+          const previewContent = content || "Preview";
+
+          if (isImageUrl(content)) {
+            elements.previewText.innerHTML = `<img src="${content}" alt="Preview Image" class="max-h-24 rounded-lg object-contain">`;
+            elements.previewText.style.color = "";
+          } else {
+            elements.previewText.textContent = previewContent;
+            elements.previewText.style.color = currentSettings.color;
+            elements.previewText.style.fontSize = `${currentSettings.fontSize}px`;
+          }
+          elements.previewText.style.opacity = currentSettings.opacity / 100;
+        };
+
+        // Update UI controls
+        const updateUIControls = () => {
+          {% if Options['Color'][0] %}
+          elements.colorInput.value = currentSettings.color;
+          elements.colorControl.style.display = currentSettings.randomColor
+            ? "block"
+            : "none";
+          {% endif %}
+          {% if Options['Opacity'][0] %}
+          elements.opacityRange.value = currentSettings.opacity;
+          elements.opacityValue.textContent = `${currentSettings.opacity}%`;
+          elements.opacityControl.style.display = currentSettings.randomOpacity
+            ? "block"
+            : "none";
+          {% endif %}
+          {% if Options['FontSize'][0] %}
+          elements.sizeInput.value = currentSettings.fontSize;
+          elements.fontSizeControl.style.display =
+            currentSettings.randomFontSize ? "block" : "none";
+          {% endif %}
+          {% if Options['Speed'][0] %}
+          elements.speedRange.value = currentSettings.speed;
+          elements.speedValue.textContent = `${currentSettings.speed}`;
+          elements.speedControl.style.display = currentSettings.randomSpeed
+            ? "block"
+            : "none";
+          {% endif %}
+        };
+
+        // Fetch latest settings from backend
+        function fetchLatestSettings() {
+          fetch("/get_settings", {
+            method: "GET",
+            credentials: "same-origin",
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              // Update current settings
               currentSettings = {
-                color: data.settings.Color[3],
-                opacity: data.settings.Opacity[3],
-                fontSize: data.settings.FontSize[3],
-                speed: data.settings.Speed[3],
-                randomColor: data.settings.Color[0],
-                randomOpacity: data.settings.Opacity[0],
-                randomFontSize: data.settings.FontSize[0],
-                randomSpeed: data.settings.Speed[0]
+                color: data.Color[3],
+                opacity: data.Opacity[3],
+                fontSize: data.FontSize[3],
+                speed: data.Speed[3],
+                randomColor: data.Color[0],
+                randomOpacity: data.Opacity[0],
+                randomFontSize: data.FontSize[0],
+                randomSpeed: data.Speed[0],
               };
 
-              // 更新UI控件
+              // Update UI controls
               updateUIControls();
 
-              // 更新预览
+              // Update preview
               updatePreview();
 
-              // 更新控件的可见性
+              // Update controls visibility
               updateControlsVisibility();
-            }
-          } catch (error) {
-            console.error('Process Websocket error:', error);
-          }
-        };
-
-        // 连接关闭时的处理
-        ws.onclose = function() {
-          console.log('WebSocket Connection Closed');
-          // 尝试重新连接
-          setTimeout(connectWebSocket, 3000);
-        };
-
-        // 连接错误时的处理
-        ws.onerror = function(error) {
-          console.error('WebSocket Error:', error);
-        };
-      }
-
-      // 更新控件的可见性
-      function updateControlsVisibility() {
-        // 获取所有控件组
-        const controlGroups = document.querySelectorAll('.control-group');
-        const controlsContainer = document.querySelector('.controls-container');
-
-        // 如果没有可见的控件，隐藏整个控件容器
-        let hasVisibleControls = false;
-
-        // 更新颜色控件的可见性
-        const colorControl = document.querySelector('[data-control="Color"]');
-        if (colorControl) {
-          if (currentSettings.randomColor) {
-            colorControl.style.display = 'block';
-            hasVisibleControls = true;
-          } else {
-            colorControl.style.display = 'none';
-          }
+            })
+            .catch((error) => console.error("Fetch failed:", error));
         }
 
-        // 更新透明度控件的可见性
-        const opacityControl = document.querySelector('[data-control="Opacity"]');
-        if (opacityControl) {
-          if (currentSettings.randomOpacity) {
-            opacityControl.style.display = 'block';
-            hasVisibleControls = true;
-          } else {
-            opacityControl.style.display = 'none';
-          }
-        }
+        // --- WebSocket ---
+        function connectWebSocket() {
+          {% if ws_url %}
+          ws = new WebSocket("{{ ws_url }}");
+          {% else %}
+          ws = new WebSocket(`ws://${window.location.host}/`);
+          {% endif %}
+          console.log(`Connecting to WebSocket: {{ws_url}}`);
 
-        // 更新字体大小控件的可见性
-        const fontSizeControl = document.querySelector('[data-control="FontSize"]');
-        if (fontSizeControl) {
-          if (currentSettings.randomFontSize) {
-            fontSizeControl.style.display = 'block';
-            hasVisibleControls = true;
-          } else {
-            fontSizeControl.style.display = 'none';
-          }
-        }
-
-        // 更新速度控件的可见性
-        const speedControl = document.querySelector('[data-control="Speed"]');
-        if (speedControl) {
-          if (currentSettings.randomSpeed) {
-            speedControl.style.display = 'block';
-            hasVisibleControls = true;
-          } else {
-            speedControl.style.display = 'none';
-          }
-        }
-
-        // 使用 CSS 类来控制容器的显示/隐藏
-        if (controlsContainer) {
-          if (hasVisibleControls) {
-            controlsContainer.classList.remove('hidden');
-          } else {
-            controlsContainer.classList.add('hidden');
-          }
-        }
-      }
-
-      // 存储当前设置
-      let currentSettings = {
-        color: "{{Options['Color'][3]}}",
-        opacity: {{Options['Opacity'][3]}},
-        fontSize: {{Options['FontSize'][3]}},
-        speed: {{Options['Speed'][3]}},
-        randomColor: {{Options['Color'][0]|lower}},
-        randomOpacity: {{Options['Opacity'][0]|lower}},
-        randomFontSize: {{Options['FontSize'][0]|lower}},
-        randomSpeed: {{Options['Speed'][0]|lower}}
-      };
-
-      // 定期从服务器获取最新设置
-      function fetchLatestSettings() {
-        fetch('/get_settings', {
-          method: 'GET',
-          credentials: 'same-origin'
-        })
-        .then(response => response.json())
-        .then(data => {
-          // 更新当前设置
-          currentSettings = {
-            color: data.Color[3],
-            opacity: data.Opacity[3],
-            fontSize: data.FontSize[3],
-            speed: data.Speed[3],
-            randomColor: data.Color[0],
-            randomOpacity: data.Opacity[0],
-            randomFontSize: data.FontSize[0],
-            randomSpeed: data.Speed[0]
+          ws.onopen = function () {
+            console.log("WebSocket Connection Opened");
           };
 
-          // 更新UI控件
-          updateUIControls();
+          ws.onmessage = function (event) {
+            try {
+              const data = JSON.parse(event.data);
 
-          // 更新预览
-          updatePreview();
+              // If settings changed notification
+              if (data.type === "settings_changed") {
+                console.log("Settings updated:", data.settings);
 
-          // 更新控件的可见性
-          updateControlsVisibility();
-        })
-        .catch(error => console.error('Fetch failed:', error));
-      }
+                // Update current settings
+                currentSettings = {
+                  color: data.settings.Color[3],
+                  opacity: data.settings.Opacity[3],
+                  fontSize: data.settings.FontSize[3],
+                  speed: data.settings.Speed[3],
+                  randomColor: data.settings.Color[0],
+                  randomOpacity: data.settings.Opacity[0],
+                  randomFontSize: data.settings.FontSize[0],
+                  randomSpeed: data.settings.Speed[0],
+                };
 
-      // 更新UI控件以匹配当前设置
-      function updateUIControls() {
-        // 更新颜色选择器
-        if (document.getElementById("ColorInput")) {
-          document.getElementById("ColorInput").value = currentSettings.color;
+                // Update UI controls
+                updateUIControls();
+
+                // Update preview
+                updatePreview();
+
+                // Update controls visibility
+                updateControlsVisibility();
+              }
+            } catch (error) {
+              console.error("Process WebSocket error:", error);
+            }
+          };
+
+          ws.onclose = function () {
+            console.log("WebSocket Connection Closed");
+            // Try to reconnect
+            setTimeout(connectWebSocket, 3000);
+          };
+
+          ws.onerror = function (error) {
+            console.error("WebSocket Error:", error);
+          };
         }
 
-        // 更新透明度滑块
-        if (range) {
-          range.value = currentSettings.opacity;
-          rangeValue.textContent = currentSettings.opacity + "%";
+        // Update controls visibility
+        function updateControlsVisibility() {
+          // Get all control groups
+          const controlGroups = document.querySelectorAll(".control-group");
+          const controlsContainer = document.querySelector(
+            ".controls-container"
+          );
+
+          // If no visible controls, hide the entire container
+          let hasVisibleControls = false;
+
+          // Update color control visibility
+          const colorControl = document.querySelector('[data-control="Color"]');
+          if (colorControl) {
+            if (currentSettings.randomColor) {
+              colorControl.style.display = "block";
+              hasVisibleControls = true;
+            } else {
+              colorControl.style.display = "none";
+            }
+          }
+
+          // Update opacity control visibility
+          const opacityControl = document.querySelector(
+            '[data-control="Opacity"]'
+          );
+          if (opacityControl) {
+            if (currentSettings.randomOpacity) {
+              opacityControl.style.display = "block";
+              hasVisibleControls = true;
+            } else {
+              opacityControl.style.display = "none";
+            }
+          }
+
+          // Update font size control visibility
+          const fontSizeControl = document.querySelector(
+            '[data-control="FontSize"]'
+          );
+          if (fontSizeControl) {
+            if (currentSettings.randomFontSize) {
+              fontSizeControl.style.display = "block";
+              hasVisibleControls = true;
+            } else {
+              fontSizeControl.style.display = "none";
+            }
+          }
+
+          // Update speed control visibility
+          const speedControl = document.querySelector('[data-control="Speed"]');
+          if (speedControl) {
+            if (currentSettings.randomSpeed) {
+              speedControl.style.display = "block";
+              hasVisibleControls = true;
+            } else {
+              speedControl.style.display = "none";
+            }
+          }
+
+          // Use CSS class to control container visibility
+          if (controlsContainer) {
+            if (hasVisibleControls) {
+              controlsContainer.classList.remove("hidden");
+            } else {
+              controlsContainer.classList.add("hidden");
+            }
+          }
         }
 
-        // 更新字体大小输入
-        if (document.getElementById("SizeInput")) {
-          document.getElementById("SizeInput").value = currentSettings.fontSize;
-        }
-
-        // 更新速度输入 - 將毫秒转换为1-10的刻度
-        if (document.getElementById("SpeedInput")) {
-          // 將持續時間 (1000ms-9000ms) 映射回 1-10 的值
-          const speedValueReversed = 10 - ((currentSettings.speed - 1000) / 1000);
-          document.getElementById("SpeedInput").value = Math.round(speedValueReversed);
-        }
-      }
-
-      // 检查是否是图片URL
-      function isImageUrl(url) {
-        return url && url.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null;
-      }
-
-      // 更新字符计数
-      function updateCharCount() {
-        const count = text.value.length;
-        charCount.textContent = `${count}/100`;
-        if (count >= 90) {
-          charCount.style.color = '#dc3545';
-        } else {
-          charCount.style.color = '#6c757d';
-        }
-      }
-
-      // 更新预览
-      function updatePreview() {
-        const content = text.value.trim();
-
-        if (isImageUrl(content)) {
-          // 如果是图片URL，创建img元素
-          preview.innerHTML = `<img src="${content}" alt="Preview img" style="max-height: ${currentSettings.fontSize}px"/>`;
-        } else {
-          // 如果是普通文本
-          preview.innerHTML = content || "Preview";
-          preview.style.fontSize = `${currentSettings.fontSize}px`;
-        }
-
-        // 设置颜色
-        if (!isImageUrl(content)) {
-          preview.style.color = currentSettings.color;
-        }
-
-        // 设置透明度
-        preview.style.opacity = currentSettings.opacity / 100;
-      }
-
-      // 监听输入事件
-      text.addEventListener("input", () => {
-        updateCharCount();
-        updatePreview();
-      });
-
-      // 监听透明度变化
-      if (range) {
-        range.addEventListener("input", () => {
-          rangeValue.textContent = range.value + "%";
-          currentSettings.opacity = parseInt(range.value);
+        // --- Event listeners ---
+        elements.danmuText.addEventListener("input", () => {
+          updateCharCount();
           updatePreview();
         });
-      }
 
-      // 监听颜色变化
-      if (document.getElementById("ColorInput")) {
-        document.getElementById("ColorInput").addEventListener("input", (e) => {
+        {% if Options['Color'][0] %}
+        elements.colorInput.addEventListener("input", (e) => {
           currentSettings.color = e.target.value;
           updatePreview();
         });
-      }
+        {% endif %}
 
-      // 监听字体大小变化
-      if (document.getElementById("SizeInput")) {
-        document.getElementById("SizeInput").addEventListener("input", (e) => {
+        {% if Options['Opacity'][0] %}
+        elements.opacityRange.addEventListener("input", (e) => {
+          currentSettings.opacity = parseInt(e.target.value);
+          elements.opacityValue.textContent = `${currentSettings.opacity}%`;
+          updatePreview();
+        });
+        {% endif %}
+
+        {% if Options['FontSize'][0] %}
+        elements.sizeInput.addEventListener("input", (e) => {
           currentSettings.fontSize = e.target.value;
           updatePreview();
         });
-      }
+        {% endif %}
 
-      // 监听速度变化
-      if (document.getElementById("SpeedInput")) {
-        document.getElementById("SpeedInput").addEventListener("input", (e) => {
-          // 將 1-10 的值轉換為毫秒單位的動畫持續時間（反向轉換）
-          // 1 = 最慢 (9000ms), 10 = 最快 (1000ms)
-          const speedValue = parseInt(e.target.value);
-          if (speedValue >= 1 && speedValue <= 10) {
-            // 反向映射：10→1000ms, 1→9000ms
-            currentSettings.speed = 10000 - (speedValue * 1000 - 1000);
-            console.log("Speed value converted:", speedValue, "→", currentSettings.speed);
-          }
+        {% if Options['Speed'][0] %}
+        elements.speedRange.addEventListener("input", (e) => {
+          currentSettings.speed = parseInt(e.target.value);
+          elements.speedValue.textContent = `${currentSettings.speed}`;
           updatePreview();
         });
-      }
+        {% endif %}
 
-      // 发送按钮点击事件
-      btn.addEventListener("click", function () {
-        const content = text.value.trim();
-        if (!content) {
-          return;
-        }
-
-        var bodydata = {
-          text: content,
-          isImage: isImageUrl(content),
-          color: currentSettings.color.replace('#', ''),
-          range: currentSettings.opacity,
-          size: currentSettings.fontSize,
-          speed: currentSettings.speed
-        };
-
-        // 添加发送动画
-        btn.disabled = true;
-        btn.innerHTML = '<i class="bi bi-arrow-right-circle-fill btn-icon"></i>Sending...';
-
-        fetch("/fire", {
-          method: "POST",
-          credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(bodydata),
-        }).then(function (response) {
-          if (response.redirected) {
-            window.location.href = response.url;
-          } else {
-            text.value = "";
-            updateCharCount();
-            updatePreview();
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-send-fill btn-icon"></i>Fire!!';
+        elements.danmuText.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            elements.btnSend.click();
           }
-        }).catch(function(error) {
-          console.error('Error:', error);
-          btn.disabled = false;
-          btn.innerHTML = '<i class="bi bi-send-fill btn-icon"></i>Fire!!';
-          alert('Failed to send danmu, please try again later.');
         });
-      });
 
-      // 回车发送
-      text.addEventListener("keydown", function (e) {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          btn.click();
+        elements.btnSend.addEventListener("click", () => {
+          const content = elements.danmuText.value.trim();
+          if (!content) {
+            showToast("Please enter danmu content!", false);
+            return;
+          }
+
+          const payload = {
+            text: content,
+            opacity: currentSettings.opacity,
+            color: currentSettings.color.replace("#", ""),
+            size: currentSettings.fontSize,
+            speed: currentSettings.speed,
+          };
+
+          console.log("Firing danmu:", payload);
+
+          elements.btnSend.disabled = true;
+          elements.btnSend.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Firing...</span>`;
+
+          // --- Fetch request ---
+          fetch("/fire", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          })
+            .then((response) => {
+              if (response.redirected) {
+                window.location.href = response.url;
+              } else {
+                elements.danmuText.value = "";
+                showToast("Fire Danmu Success!");
+                updateCharCount();
+                updatePreview();
+                elements.btnSend.disabled = false;
+                elements.btnSend.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                <span>Fire Danmu</span>`;
+              }
+            })
+            .catch(function (error) {
+              console.error("Error:", error);
+              elements.btnSend.disabled = false;
+              elements.btnSend.innerHTML = `
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              <span>Fire Danmu</span>`;
+              showToast("Send failed, please try again later.", false);
+            });
+        });
+
+        // --- Initialize ---
+        async function init() {
+          updateUIControls();
+          updatePreview();
+          await fetchLatestSettings();
+          connectWebSocket();
         }
-      });
 
-      // 初始化
-      updateCharCount();
-      updatePreview();
-
-      // 建立WebSocket连接
-      connectWebSocket();
-
-      // 每10秒从服务器获取一次最新设置（作为备用机制）
-      // setInterval(fetchLatestSettings, 10000);
-
-      // 页面加载时立即获取一次设置
-      fetchLatestSettings();
-    </script>
-    <script>
-      /* 初始化粒子背景 */
-      particlesJS("particles-js", {
-        particles: {
-          number: { value: 50 },
-          size: { value: 3 },
-          move: { speed: 1 },
-          color: { value: "#ffffff" },
-          line_linked: { enable: false },
-        },
-      });
-      /* 煙霧背景效果 */
-      VANTA.FOG({
-        el: "#fog-bg",
-        highlightColor: 0xffffff,
-        midtoneColor: 0xaaaaaa,
-        lowlightColor: 0x333333,
-        baseColor: 0x000000,
-        blurFactor: 0.8,
-        speed: 1.5,
+        init();
       });
     </script>
   </body>
