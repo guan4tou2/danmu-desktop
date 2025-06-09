@@ -213,7 +213,7 @@ function createWindow() {
       const IP='${ip}';
       const WS_PORT=${port}
       console.log(IP, WS_PORT)
-      let url = 'ws://${ip}:' + WS_PORT
+      let url = \`ws://${ip}:\${WS_PORT}\`
       let ws = null
       let reconnectAttempts = 0
       const maxReconnectAttempts = 10
@@ -279,163 +279,244 @@ function createWindow() {
           // Link Start animation
           const style = document.createElement('style');
           style.textContent = \`
-            .wall{
-              background: url(assets/linkstart.png);
-              background-size: cover;
-            }
+            /* Import Google Font */
+            @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
-            html, body{
+            html, body {
               height: 100%;
               width: 100%;
               overflow: hidden;
+              background-color: transparent; /* Allow desktop to be visible */
             }
 
-            body{
+            body {
               text-align: center;
             }
+            
+            /* Scanline overlay */
+            body::after {
+                content: " ";
+                display: block;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+                background-size: 100% 4px, 6px 100%;
+                z-index: 99999;
+                pointer-events: none;
+                opacity: 0; /* Start invisible */
+                animation: scanlines 1s steps(60) infinite, scene-zoom-in 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+            
+            @keyframes scanlines {
+                from { background-position: 0 0; }
+                to { background-position: 0 100%; }
+            }
 
-            body:before{
+
+            body:before {
               content: '';
               display: inline-block;
               height: 100%;
               vertical-align: middle;
             }
 
-            .scene{
+            .scene {
               display: inline-block;
               vertical-align: middle;
               perspective: 5px;
               perspective-origin: 50% 50%;
               position: relative;
+              opacity: 0;
+              transform: scale(0.2);
+              animation: scene-zoom-in 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             }
 
-            .wrap{
+            .wrap {
               position: absolute;
               width: 1000px;
               height: 1000px;
               left: -500px;
               top: -500px;
               transform-style: preserve-3d;
-              animation: move 20s infinite linear;
+              animation: move 12s infinite linear; /* Faster animation */
               animation-fill-mode: forwards;
             }
 
-            .wrap:nth-child(2){
-              animation: move 20s infinite linear;
-              animation-delay: 10s;
+            .wrap:nth-child(2) {
+              animation: move 12s infinite linear;
+              animation-delay: 6s;
             }
 
             .wall {
               width: 100%;
               height: 100%;
               position: absolute;
+              background: url(assets/linkstart.png); /* Assuming this is a grid/tech texture */
+              background-size: cover;
               opacity: 0;
-              animation: fade 20s infinite linear;
+              animation: fade 12s infinite linear;
               animation-delay: 0;
             }
 
             .wrap:nth-child(2) .wall {
-              animation-delay: 10s;
+              animation-delay: 6s;
             }
 
-            .wall-right {
-              transform: rotateY(90deg) translateZ(500px);
-            }
-
-            .wall-left {
-              transform: rotateY(-90deg) translateZ(500px);
-            }
-
-            .wall-top {
-              transform: rotateX(90deg) translateZ(500px);
-            }
-
-            .wall-bottom {
-              transform: rotateX(-90deg) translateZ(500px);
-            }
-
-            .wall-back {
-              transform: rotateX(180deg) translateZ(500px);
-            }
+            .wall-right { transform: rotateY(90deg) translateZ(500px); }
+            .wall-left { transform: rotateY(-90deg) translateZ(500px); }
+            .wall-top { transform: rotateX(90deg) translateZ(500px); }
+            .wall-bottom { transform: rotateX(-90deg) translateZ(500px); }
+            .wall-back { transform: rotateX(180deg) translateZ(500px); }
 
             @keyframes move {
-              0%{
-                transform: translateZ(-500px) rotate(0deg);
+              0% {
+                transform: translateZ(-500px) rotateY(0deg);
               }
-              100%{
-                transform: translateZ(500px) rotate(0deg);
+              100% {
+                transform: translateZ(500px) rotateY(360deg); /* Added rotation */
               }
             }
 
             @keyframes fade {
-              0%{
-                opacity: 0;
-              }
-              15% {
-                opacity: 0.8;
-              }
-              25% {
-                opacity: 1;
-              }
-              75% {
-                opacity: 1;
-              }
-              85% {
-                opacity: 0.8;
-              }
-              100%{
-                opacity: 0;
-              }
+              0%   { opacity: 0; }
+              20%  { opacity: 0.8; } /* Increased max opacity */
+              80%  { opacity: 0.8; }
+              100% { opacity: 0; }
             }
-            @font-face {
-              font-family:NotoSansTC;
-              src: url(assets/NotoSansTC-Regular.otf);
-              font-weight: normal;
+
+            @keyframes scene-zoom-in {
+                from {
+                    opacity: 0;
+                    transform: scale(0.2);
+                }
+                to {
+                    opacity: 1;
+                    transform: scale(1);
+                }
             }
+            
+            @keyframes scene-fade-out {
+                from { opacity: 1; }
+                to { opacity: 0; }
+            }
+
             .link-start {
               position: fixed;
               top: 50%;
               left: 50%;
               transform: translate(-50%, -50%);
-              font-size: 96px;
-              color: rgb(255, 255, 255);
-              text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+              font-family: 'Orbitron', sans-serif;
+              font-size: 100px;
+              font-weight: 700;
+              color: #00d4ff; /* Bright cyan color */
+              text-shadow: 
+                0 0 5px #00d4ff,
+                0 0 10px #00d4ff,
+                0 0 20px #00d4ff,
+                0 0 40px #00d4ff,
+                0 0 80px #00d4ff;
               z-index: 9999;
-              animation: textFade 10s ease-out;
-              opacity: 0.7;
-              font-family:NotoSansTC,sans-serif,"Microsoft JhengHei";
+              animation: text-flicker 3s linear infinite, text-fade-in-out 8s ease-out forwards;
+              opacity: 0;
+            }
 
-            }
+            /* Glitch effect pseudo-elements */
+            .link-start::after,
             .link-start::before {
-              content: attr(data-storke);
+                content: attr(data-text);
+                position: absolute;
+                top: 0;
+                left: 0;
+                color: #00d4ff;
+                background: transparent; /* Make glitch effect transparent */
+                overflow: hidden;
+                clip: rect(0, 900px, 0, 0);
             }
+            
+            .link-start::after {
+                left: 2px;
+                text-shadow: -1px 0 red;
+                animation: glitch-anim-1 2s infinite linear alternate-reverse;
+            }
+            
             .link-start::before {
-              position: absolute;
-              z-index: -1;
-              -webkit-text-stroke-width: 6px;
-              -webkit-text-stroke-color: var(--webColor, #121212);
-              text-stroke-width: 6px;
-              text-stroke-color: var(--Color, #121212);
-              text-shadow:0 0 10px #121212;
+                left: -2px;
+                text-shadow: 1px 0 blue;
+                animation: glitch-anim-2 3s infinite linear alternate-reverse;
             }
-            @keyframes textFade {
-              0% {
-                opacity: 0;
-                transform: translate(-50%, -50%) scale(0.5);
-              }
-              20% {
-                opacity: 0.7;
-                transform: translate(-50%, -50%) scale(1.2);
-              }
-              40% {
-                transform: translate(-50%, -50%) scale(1);
-              }
-              60% {
-                opacity: 0.7;
-              }
-              100% {
-                opacity: 0;
-              }
+            
+            @keyframes text-fade-in-out {
+              0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+              10%  { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } /* Increased max opacity */
+              20%  { transform: translate(-50%, -50%) scale(1); }
+              80%  { opacity: 1; } /* Hold opacity longer */
+              100% { opacity: 0; transform: translate(-50%, -50%) scale(1.05); } /* Faster fade-out */
+            }
+
+            @keyframes text-flicker {
+              0% { opacity:0.1; }
+              2% { opacity:1; }
+              8% { opacity:0.1; }
+              9% { opacity:1; }
+              12% { opacity:0.1; }
+              20% { opacity:1; }
+              25% { opacity:0.3; }
+              30% { opacity:1; }
+              70% { opacity:0.7; }
+              72% { opacity:0.2; }
+              77% { opacity:1; }
+              100% { opacity:1; }
+            }
+
+            @keyframes glitch-anim-1 {
+              0% { clip: rect(42px, 9999px, 44px, 0); }
+              5% { clip: rect(17px, 9999px, 94px, 0); }
+              10% { clip: rect(83px, 9999px, 86px, 0); }
+              15% { clip: rect(28px, 9999px, 16px, 0); }
+              20% { clip: rect(42px, 9999px, 62px, 0); }
+              25% { clip: rect(34px, 9999px, 14px, 0); }
+              30% { clip: rect(77px, 9999px, 77px, 0); }
+              35% { clip: rect(61px, 9999px, 52px, 0); }
+              40% { clip: rect(40px, 9999px, 50px, 0); }
+              45% { clip: rect(43px, 9999px, 86px, 0); }
+              50% { clip: rect(97px, 9999px, 82px, 0); }
+              55% { clip: rect(26px, 9999px, 47px, 0); }
+              60% { clip: rect(10px, 9999px, 10px, 0); }
+              65% { clip: rect(74px, 9999px, 80px, 0); }
+              70% { clip: rect(10px, 9999px, 15px, 0); }
+              75% { clip: rect(35px, 9999px, 4px, 0); }
+              80% { clip: rect(21px, 9999px, 74px, 0); }
+              85% { clip: rect(2px, 9999px, 79px, 0); }
+              90% { clip: rect(88px, 9999px, 7px, 0); }
+              95% { clip: rect(43px, 9999px, 73px, 0); }
+              100% { clip: rect(50px, 9999px, 95px, 0); }
+            }
+            
+            @keyframes glitch-anim-2 {
+              0% { clip: rect(85px, 9999px, 9px, 0); }
+              5% { clip: rect(8px, 9999px, 3px, 0); }
+              10% { clip: rect(42px, 9999px, 94px, 0); }
+              15% { clip: rect(23px, 9999px, 33px, 0); }
+              20% { clip: rect(38px, 9999px, 49px, 0); }
+              25% { clip: rect(12px, 9999px, 48px, 0); }
+              30% { clip: rect(81px, 9999px, 91px, 0); }
+              35% { clip: rect(30px, 9999px, 75px, 0); }
+              40% { clip: rect(88px, 9999px, 100px, 0); }
+              45% { clip: rect(22px, 9999px, 66px, 0); }
+              50% { clip: rect(1px, 9999px, 52px, 0); }
+              55% { clip: rect(41px, 9999px, 40px, 0); }
+              60% { clip: rect(28px, 9999px, 86px, 0); }
+              65% { clip: rect(59px, 9999px, 55px, 0); }
+              70% { clip: rect(7px, 9999px, 20px, 0); }
+              75% { clip: rect(32px, 9999px, 83px, 0); }
+              80% { clip: rect(54px, 9999px, 26px, 0); }
+              85% { clip: rect(24px, 9999px, 12px, 0); }
+              90% { clip: rect(74px, 9999px, 69px, 0); }
+              95% { clip: rect(10px, 9999px, 7px, 0); }
+              100% { clip: rect(20px, 9999px, 75px, 0); }
             }
           \`;
           document.head.appendChild(style);
@@ -463,14 +544,21 @@ function createWindow() {
           const linkStart = document.createElement('div');
           linkStart.className = 'link-start';
           linkStart.textContent = 'Link Start';
-          linkStart.setAttribute("data-storke", 'Link Start')
+          linkStart.setAttribute("data-text", 'Link Start'); // For glitch effect
           document.body.appendChild(linkStart);
           
+          const totalDuration = 7000; // Trigger fade-out earlier
+          const fadeOutDuration = 2000;
+          
           setTimeout(() => {
-            scene.remove();
-            style.remove();
-            linkStart.remove();
-          }, 8000);
+            scene.style.animation = \`scene-fade-out \${fadeOutDuration / 1000}s ease-out forwards\`;
+            
+            setTimeout(() => {
+              document.body.contains(scene) && scene.remove();
+              document.head.contains(style) && style.remove();
+              document.body.contains(linkStart) && linkStart.remove();
+            }, fadeOutDuration);
+          }, totalDuration);
         }
         
         ws.onclose = (event) => {
