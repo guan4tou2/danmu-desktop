@@ -133,18 +133,36 @@ jobs:
 
       - name: Create GitHub Release for Windows
         if: matrix.os == 'windows-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
+        id: create_release_windows
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
-          files: |
-            danmu-desktop/pack/**/*danmu manager*-*.exe
           tag_name: v${{ needs.check_version_change.outputs.version }}
           name: Release v${{ needs.check_version_change.outputs.version }}
           draft: false
           prerelease: false
           generate_release_notes: false
+
+      - name: Find Windows EXE
+        if: matrix.os == 'windows-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
+        id: find_exe
+        shell: bash
+        run: |
+          EXE_PATH=$(find danmu-desktop/pack -name "danmu manager*-*.exe" -type f)
+          echo "exe_path=$EXE_PATH" >> "$GITHUB_ENV"
+
+      - name: Upload EXE
+        if: matrix.os == 'windows-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release_windows.outputs.upload_url }}
+          asset_path: ${{ env.exe_path }}
+          asset_name: danmu manager-${{ needs.check_version_change.outputs.version }}-win-x64.exe
+          asset_content_type: application/octet-stream
 
       - name: Create Release for macOS
         if: matrix.os == 'macos-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
