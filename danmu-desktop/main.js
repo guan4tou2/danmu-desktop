@@ -109,36 +109,134 @@ function createWindow() {
           isKeyDown = false;
           console.log("Konami Code triggered successfully!");
 
-          // 顯示主窗口的 KONAMI CODE ACTIVATED! 訊息
+          // New Konami Code effect for mainWindow
           mainWindow.webContents
             .executeJavaScript(
               `
             (function() {
               try {
-                const existingMessage = document.getElementById('konami-message');
-                if (existingMessage) {
-                  existingMessage.remove();
-                }
+                // Clean up any previous instances
+                const oldOverlay = document.getElementById('konami-overlay');
+                if (oldOverlay) oldOverlay.remove();
                 
-                const newMessage = document.createElement('div');
-                newMessage.id = 'konami-message';
-                newMessage.style.position = 'fixed';
-                newMessage.style.top = '50%';
-                newMessage.style.left = '50%';
-                newMessage.style.transform = 'translate(-50%, -50%)';
-                newMessage.style.fontSize = '48px';
-                newMessage.style.color = 'rgb(95, 119, 255)';
-                newMessage.style.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
-                newMessage.style.zIndex = '9999';
-                newMessage.textContent = 'KONAMI CODE ACTIVATED!';
-                document.body.appendChild(newMessage);
+                const overlay = document.createElement('div');
+                overlay.id = 'konami-overlay';
+                
+                const style = document.createElement('style');
+                style.textContent = \`
+                  @font-face {
+                    font-family: 'SDGlitch';
+                    src: url('assets/SDGlitch_Demo.ttf') format('truetype');
+                  }
+
+                  #konami-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    background-color: rgba(0,0,0,0);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 10000;
+                    pointer-events: none;
+                    animation: konami-vignette 4s ease-out forwards, konami-screen-shake 0.5s 2;
+                  }
+
+                  @keyframes konami-vignette {
+                    0% { box-shadow: inset 0 0 0 0 rgba(0,0,0,0); }
+                    25% { box-shadow: inset 0 0 200px 100px rgba(0,0,0,0.7); }
+                    75% { box-shadow: inset 0 0 200px 100px rgba(0,0,0,0.7); }
+                    100% { box-shadow: inset 0 0 0 0 rgba(0,0,0,0); }
+                  }
+                  
+                  @keyframes konami-screen-shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-10px); }
+                    75% { transform: translateX(10px); }
+                  }
+
+                  .konami-text {
+                    font-family: 'SDGlitch', 'Courier New', Courier, monospace;
+                    font-size: 12vw; /* Much larger font size for full-screen effect */
+                    color:rgb(222, 187, 32);
+                    text-shadow: 0 0 10px rgb(217, 233, 42), 0 0 20px rgb(217, 233, 42);
+                    position: relative;
+                    animation: konami-text-flicker 3s infinite alternate;
+                    white-space: nowrap; /* Prevent text from wrapping to a new line */
+                    letter-spacing: -0.05em; /* Tighten up letters for glitch effect */
+                  }
+
+                  .konami-text::before, .konami-text::after {
+                    content: 'KONAMI CODE ACTIVATED!';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    background: transparent;
+                    clip: rect(0, 900px, 0, 0);
+                  }
+
+                  .konami-text::before {
+                    left: -2px;
+                    text-shadow: -1px 0 red;
+                    animation: konami-glitch-1 2s infinite linear alternate-reverse;
+                  }
+
+                  .konami-text::after {
+                    left: 2px;
+                    text-shadow: 1px 0 blue;
+                    animation: konami-glitch-2 3s infinite linear alternate-reverse;
+                  }
+                  
+                  @keyframes konami-text-flicker {
+                      0%, 100% { opacity: 1; }
+                      50% { opacity: 0.8; }
+                  }
+
+                  @keyframes konami-glitch-1 {
+                      0% { clip: rect(42px, 9999px, 44px, 0); }
+                      10% { clip: rect(17px, 9999px, 94px, 0); }
+                      20% { clip: rect(83px, 9999px, 86px, 0); }
+                      30% { clip: rect(28px, 9999px, 16px, 0); }
+                      40% { clip: rect(42px, 9999px, 62px, 0); }
+                      50% { clip: rect(34px, 9999px, 14px, 0); }
+                      60% { clip: rect(77px, 9999px, 77px, 0); }
+                      70% { clip: rect(61px, 9999px, 52px, 0); }
+                      80% { clip: rect(40px, 9999px, 50px, 0); }
+                      90% { clip: rect(43px, 9999px, 86px, 0); }
+                      100% { clip: rect(97px, 9999px, 82px, 0); }
+                  }
+
+                  @keyframes konami-glitch-2 {
+                      0% { clip: rect(85px, 9999px, 9px, 0); }
+                      10% { clip: rect(8px, 9999px, 3px, 0); }
+                      20% { clip: rect(42px, 9999px, 94px, 0); }
+                      30% { clip: rect(23px, 9999px, 33px, 0); }
+                      40% { clip: rect(38px, 9999px, 49px, 0); }
+                      50% { clip: rect(12px, 9999px, 48px, 0); }
+                      60% { clip: rect(81px, 9999px, 91px, 0); }
+                      70% { clip: rect(30px, 9999px, 75px, 0); }
+                      80% { clip: rect(88px, 9999px, 100px, 0); }
+                      90% { clip: rect(22px, 9999px, 66px, 0); }
+                      100% { clip: rect(1px, 9999px, 52px, 0); }
+                  }
+                \`;
+                
+                const textElement = document.createElement('div');
+                textElement.className = 'konami-text';
+                textElement.textContent = 'KONAMI CODE ACTIVATED!';
+                
+                overlay.appendChild(style);
+                overlay.appendChild(textElement);
+                document.body.appendChild(overlay);
                 
                 setTimeout(() => {
-                  const messageToRemove = document.getElementById('konami-message');
-                  if (messageToRemove) {
-                    messageToRemove.remove();
+                  const overlayToRemove = document.getElementById('konami-overlay');
+                  if (overlayToRemove) {
+                    overlayToRemove.remove();
                   }
-                }, 3000);
+                }, 4000);
               } catch (error) {
                 console.error('Error in Konami message:', error);
               }
@@ -149,39 +247,67 @@ function createWindow() {
               console.error("Error showing Konami message:", err);
             });
 
-          // 清除彈幕窗口中的所有彈幕
+          // Clear danmus in the child window with an animation
           if (childWindow && !childWindow.isDestroyed()) {
-            // 方法1：使用 innerHTML 直接清空 danmubody
-            childWindow.webContents
-              .executeJavaScript(
-                `
-              document.getElementById('danmubody').innerHTML = '<script src="./renderer.js"></script>';
-              console.log('Cleared danmus using innerHTML');
-            `
-              )
-              .catch((err) => {
-                console.error("Failed to clear danmus with method 1:", err);
-
-                // 方法2：如果方法1失敗，嘗試使用選擇器刪除元素
-                childWindow.webContents
-                  .executeJavaScript(
-                    `
+            const script = `
+              (function() {
                 try {
-                  const elements = document.querySelectorAll('h1.danmu, img');
-                  console.log('Found elements to remove:', elements.length);
-                  elements.forEach(el => el.remove());
-                  console.log('Cleared danmus using element selectors');
-                  return true;
-                } catch (error) {
-                  console.error('Error removing elements:', error);
-                  return false;
-                }
-              `
-                  )
-                  .catch((err) => {
-                    console.error("Failed to clear danmus with method 2:", err);
+                  const danmusToExplode = document.querySelectorAll('h1.danmu, img.danmu');
+                  if (danmusToExplode.length === 0) return;
+
+                  console.log('Initiating explosion for ' + danmusToExplode.length + ' danmus.');
+
+                  // This function creates and animates a single particle
+                  function createExplosionParticle(originalElement) {
+                    const rect = originalElement.getBoundingClientRect();
+                    const particle = originalElement.cloneNode(true); // Create a visual copy
+
+                    // Reset any conflicting inline styles and set up for particle animation
+                    particle.style.transform = '';
+                    particle.style.left = rect.left + 'px';
+                    particle.style.top = rect.top + 'px';
+                    particle.style.margin = '0';
+                    particle.style.position = 'fixed'; // Use fixed to position relative to viewport
+                    
+                    document.body.appendChild(particle);
+
+                    // Animate the particle using the Web Animations API
+                    const duration = 800 + Math.random() * 400;
+                    const targetX = (Math.random() - 0.5) * window.innerWidth;
+                    const targetY = (Math.random() - 0.5) * window.innerHeight;
+                    const targetScale = 1.5 + Math.random() * 2;
+                    const targetRot = (Math.random() - 0.5) * 1080;
+
+                    particle.animate([
+                      { transform: 'translate(0, 0) scale(1) rotate(0)', opacity: particle.style.opacity },
+                      { transform: 'translate(' + targetX + 'px, ' + targetY + 'px) scale(' + targetScale + ') rotate(' + targetRot + 'deg)', opacity: 0 }
+                    ], {
+                      duration: duration,
+                      easing: 'ease-out',
+                      fill: 'forwards' // Keep the final state
+                    });
+
+                    // Remove the particle after the animation
+                    setTimeout(() => {
+                      particle.remove();
+                    }, duration);
+                  }
+
+                  danmusToExplode.forEach(el => {
+                    if (el.dataset.exploding) return; // Skip if already handled
+                    createExplosionParticle(el);
+                    el.dataset.exploding = 'true'; // Mark for removal by the main animation loop
+                    el.style.display = 'none'; // Hide original immediately
                   });
-              });
+
+                } catch (error) {
+                  console.error('Error creating explosion effect:', error);
+                }
+              })();
+            `;
+            childWindow.webContents.executeJavaScript(script).catch((err) => {
+              console.error("Failed to execute danmu clearing script:", err);
+            });
           }
         }
       } else {
@@ -551,7 +677,7 @@ function createWindow() {
           const fadeOutDuration = 2000;
           
           setTimeout(() => {
-            scene.style.animation = \`scene-fade-out \${fadeOutDuration / 1000}s ease-out forwards\`;
+            scene.style.animation = \`scene-fade-out \${fadeOutDuration/1000}s ease-out forwards\`;
             
             setTimeout(() => {
               document.body.contains(scene) && scene.remove();
@@ -747,4 +873,98 @@ function createChildWindow(displayIndex) {
   } catch (error) {
     console.error("Error creating child window:", error);
   }
+}
+
+let animationFrameId = null;
+const danmuElements = new Set();
+const explosionDuration = 800; // ms
+
+function animateDanmus() {
+  const now = performance.now();
+  const danmusToRemove = [];
+
+  danmuElements.forEach((el) => {
+    // Check if the element is still in the DOM or has been marked for explosion
+    if (!el.parentElement || el.dataset.exploding === "true") {
+      danmusToRemove.push(el);
+      return;
+    }
+
+    // Normal movement logic (only runs if not exploding)
+    let distance = parseFloat(el.dataset.distance);
+    let speed = parseFloat(el.dataset.speed);
+    let startTime = parseFloat(el.dataset.startTime);
+
+    let elapsed = now - startTime;
+    let progress = (elapsed * speed) / distance;
+
+    el.style.left =
+      window.innerWidth - progress * (distance + el.offsetWidth) + "px";
+
+    if (progress >= 1) {
+      danmusToRemove.push(el);
+    }
+  });
+
+  danmusToRemove.forEach((el) => {
+    danmuElements.delete(el);
+    el.remove();
+  });
+
+  animationFrameId = requestAnimationFrame(animateDanmus);
+}
+
+function stopAnimation() {
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+}
+
+function showdanmu(text, opacity, color, size, speed) {
+  let danmu = document.createElement("h1");
+  danmu.textContent = text;
+  danmu.style.opacity = opacity;
+  danmu.style.color = color;
+  danmu.style.fontSize = size;
+  danmu.className = "danmu";
+
+  document.body.appendChild(danmu);
+
+  danmu.style.top =
+    Math.random() * (window.innerHeight - danmu.offsetHeight) + "px";
+  danmu.dataset.startTime = performance.now();
+  danmu.dataset.speed = speed;
+  danmu.dataset.distance = window.innerWidth + danmu.offsetWidth;
+
+  danmuElements.add(danmu);
+
+  if (!animationFrameId) {
+    animateDanmus();
+  }
+}
+
+// Add this function for image danmus, modifying it to use the unified animation loop
+function showimagedanmu(src, opacity, size, speed) {
+  let danmu = document.createElement("img");
+  danmu.src = src;
+  danmu.style.opacity = opacity;
+  danmu.style.height = size;
+  danmu.className = "danmu"; // Use the same class
+
+  document.body.appendChild(danmu);
+
+  danmu.onload = () => {
+    danmu.style.top =
+      Math.random() * (window.innerHeight - danmu.offsetHeight) + "px";
+    danmu.dataset.startTime = performance.now();
+    danmu.dataset.speed = speed;
+    danmu.dataset.distance = window.innerWidth + danmu.offsetWidth;
+
+    danmuElements.add(danmu);
+
+    if (!animationFrameId) {
+      animateDanmus();
+    }
+  };
 }
