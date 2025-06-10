@@ -112,16 +112,14 @@ jobs:
           prerelease: false
           generate_release_notes: false
 
-      - name: Create GitHub Release for macOS
+      - name: Create Release for macOS
         if: matrix.os == 'macos-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
+        id: create_release
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
-          files: |
-            danmu-desktop/pack/**/*danmu manager*-*.dmg
-            danmu-desktop/pack/**/*danmu manager*-*.zip
           tag_name: v${{ needs.check_version_change.outputs.version }}
           name: Release v${{ needs.check_version_change.outputs.version }}
           draft: false
@@ -143,3 +141,25 @@ jobs:
             ```bash
             sudo xattr -r -d com.apple.quarantine 'danmu manager.app'
             ```
+
+      - name: Upload DMG
+        if: matrix.os == 'macos-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: danmu-desktop/pack/**/*danmu manager*-*.dmg
+          asset_name: danmu manager-${{ needs.check_version_change.outputs.version }}-mac-arm64.dmg
+          asset_content_type: application/octet-stream
+
+      - name: Upload ZIP
+        if: matrix.os == 'macos-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: danmu-desktop/pack/**/*danmu manager*-*.zip
+          asset_name: danmu manager-${{ needs.check_version_change.outputs.version }}-mac-arm64.zip
+          asset_content_type: application/zip
