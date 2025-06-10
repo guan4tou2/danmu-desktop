@@ -1,39 +1,54 @@
 # danmu-desktop
-直接在桌面顯示彈幕  
+在桌面直接顯示彈幕
 
-此專案分為兩個部分  
+## 概述
+此專案分為兩個部分：
+
 1. Danmu-Desktop  
-DanmuDesktop 為 client 端，執行於想要顯示彈幕的電腦上  
-目前支援作業系統:Windows,MacOS，具有安裝檔與可移植檔  
+   - 客戶端應用程式，在您的電腦上運行以顯示彈幕
+   - 目前支援 Windows 和 MacOS
+   - 提供安裝版和可攜式版本
 
 2. Server  
-Server 會建立網站，提供輸入彈幕的介面，將彈幕傳送給 Danmu-Desktop  
+   - 創建網頁界面用於彈幕輸入
+   - 管理彈幕傳送到已連接的客戶端
+   - 包含管理員配置面板
 
-## 使用方式
-### Danmu-Desktop 
-下載[執行檔](https://github.com/guan4tou2/danmu-desktop/releases)後，開啟程式後輸入 Server 的 IP 以及 port(預設 4001)，即可開啟彈幕  
+## 安裝與使用
 
-mac 需要輸入 `sudo xattr -r -d com.apple.quarantine 'danmu manager.app'`
+### Danmu-Desktop 客戶端
+1. 下載[最新版本](https://github.com/guan4tou2/danmu-desktop/releases)
+2. MacOS 用戶需要執行：
+   ```bash
+   sudo xattr -r -d com.apple.quarantine 'danmu manager.app'
+   ```
+3. 啟動應用程式
+4. 輸入伺服器的 IP 和端口（預設：4001）
 
-### Server
-使用 uv 會比較快速，也可以使用任何你喜歡的管理工具
+### 伺服器設置
 ```bash
+# 克隆專案
 git clone https://github.com/guan4tou2/danmu-desktop
 cd danmu-desktop
-vim .env # 修改你的密碼
+
+# 配置環境
+vim .env  # 設置管理員密碼
+
+# 設置虛擬環境並安裝依賴
 uv venv
 uv pip install -r requirements.txt
+
+# 啟動伺服器
 uv run app.py
 ```
 
-http://ip:4000 即可使用
-http://ip:4000/admin 可以進入管理頁面
+### 訪問伺服器
+- 主界面：`http://ip:4000`
+- 管理面板：`http://ip:4000/admin`
 
-如果想修改 port，可在 .env 修改
+## 端口配置
+- `4000`：網頁界面
+- `4001`：Danmu Desktop 客戶端連接
 
-## port說明  
-- 4000：網頁
-- 4001：Danmu Desktop 客戶端
-
-# ref
-SAO UI 參考這篇文章 [SAO-UI-PLAN-LINK-START | Akilarの糖果屋](https://akilar.top/posts/1b4fa1dd/)。
+## 參考資料
+SAO UI 設計參考自 [SAO-UI-PLAN-LINK-START | Akilarの糖果屋](https://akilar.top/posts/1b4fa1dd/)

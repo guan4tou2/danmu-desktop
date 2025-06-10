@@ -1,44 +1,57 @@
 # danmu-desktop
-直接在桌面顯示彈幕  
 Display bullet screen directly on the desktop  
+在桌面直接顯示彈幕
 
 [中文說明](https://github.com/guan4tou2/danmu-desktop/blob/main/README-CH.md)
 
-# English document
+## Overview
 This project is divided into two parts:
 
 1. Danmu-Desktop  
-DanmuDesktop is the client-side application that runs on the computer where you want to display danmu.   
-Currently supports Windows and MacOS and comes with an installer and portable files.
+   - Client-side application that runs on your computer to display danmu
+   - Currently supports Windows and MacOS
+   - Available as both installer and portable version
 
 2. Server
-The server creates a website that provides an interface for inputting danmu and sends the danmu to Danmu-Desktop.  
+   - Creates a web interface for danmu input
+   - Manages danmu delivery to connected clients
+   - Includes admin panel for configuration
 
-## Usage
-### Danmu-Desktop
-Download [the executable file](https://github.com/guan4tou2/danmu-desktop/releases), open the program, and enter the server's IP and port (default is 4001) to start displaying danmu.  
+## Installation & Usage
 
-for mac, type `sudo xattr -r -d com.apple.quarantine 'danmu manager.app'`
+### Danmu-Desktop Client
+1. Download the [latest release](https://github.com/guan4tou2/danmu-desktop/releases)
+2. For MacOS users, run:
+   ```bash
+   sudo xattr -r -d com.apple.quarantine 'danmu manager.app'
+   ```
+3. Launch the application
+4. Enter the server's IP and port (default: 4001)
 
-### Server
-Using uv is faster, you can also use any management tool you like
+### Server Setup
 ```bash
+# Clone the repository
 git clone https://github.com/guan4tou2/danmu-desktop
 cd danmu-desktop
-vim .env # remind change your password
+
+# Configure environment
+vim .env  # Set your admin password
+
+# Setup virtual environment and install dependencies
 uv venv
 uv pip install -r requirements.txt
+
+# Start the server
 uv run app.py
 ```
 
-http://ip:4000 can be used
-http://ip:4000/admin to enter the management page
+### Accessing the Server
+- Main interface: `http://ip:4000`
+- Admin panel: `http://ip:4000/admin`
 
-If you want to change the port, you can modify it in .env
+## Port Configuration
+- `4000`: Web interface
+- `4001`: Danmu Desktop Client connection
 
-## Port Description  
-- 4000: Website.
-- 4001: Danmu Desktop Client.
-
-# ref
-SAO UI ref this website [SAO-UI-PLAN-LINK-START | Akilarの糖果屋](https://akilar.top/posts/1b4fa1dd/).
+## References
+SAO UI design inspired by [SAO-UI-PLAN-LINK-START | Akilarの糖果屋](https://akilar.top/posts/1b4fa1dd/)
