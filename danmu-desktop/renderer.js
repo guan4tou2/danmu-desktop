@@ -44,7 +44,11 @@ function showdanmu(
   const maxTime = 15000; // 最慢速度 (20秒)
   const minTime = 2000; // 最快速度 (2秒)
   const timeRange = maxTime - minTime;
-  const duration = maxTime - (timeRange / 10) * (speed - 1);
+  let duration = maxTime - (timeRange / 10) * (speed - 1);
+
+  if (duration < minTime) {
+    duration = minTime;
+  }
 
   danmu.animate(
     [
