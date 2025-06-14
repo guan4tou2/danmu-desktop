@@ -29,7 +29,7 @@ function createWindow() {
     autoHideMenuBar: true,
     icon: path.join(__dirname, "assets/icon.png"),
     webPreferences: {
-      preload: path.join(__dirname, "dist/preload.bundle.js"),
+      preload: path.join(__dirname, "preload.bundle.js"),
       nodeIntegration: true,
     },
   });
