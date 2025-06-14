@@ -688,7 +688,7 @@
           if (userBlacklist && userBlacklist.length > 0) {
               for (const keyword of userBlacklist) {
                   if (content.toLowerCase().includes(keyword.toLowerCase())) { // Case-insensitive check
-                      alert("Warning: Your message contains inappropriate content and will not be sent.");
+                      showToast("Warning: Message contains blocked words and was not sent.", false);
                       return; // Stop further processing and do not send
                   }
               }
