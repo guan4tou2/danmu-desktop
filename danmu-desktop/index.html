@@ -103,6 +103,20 @@
               <!-- Options will be populated by script -->
             </select>
           </div>
+
+          <div>
+            <label
+              for="sync-multi-display-checkbox"
+              class="text-sm font-medium text-slate-300 flex items-center mt-2"
+            >
+              <input
+                type="checkbox"
+                id="sync-multi-display-checkbox"
+                class="form-input h-4 w-4 rounded mr-2 text-sky-500 focus:ring-sky-500"
+              />
+              Enable synchronous multi-display
+            </label>
+          </div>
         </div>
 
         <!-- Action Buttons -->
@@ -176,13 +190,14 @@
         const api = window.API;
 
         // DOM Elements
-        const hostInput = document.getElementById("host-input");
-        const portInput = document.getElementById("port-input");
-        const screenSelect = document.getElementById("screen-select");
-        const startButton = document.getElementById("start-button");
-        const stopButton = document.getElementById("stop-button");
+        // const hostInput = document.getElementById("host-input"); // Handled in renderer.js
+        // const portInput = document.getElementById("port-input"); // Handled in renderer.js
+        const screenSelect = document.getElementById("screen-select"); // Still needed for population
+        // const startButton = document.getElementById("start-button"); // Handled in renderer.js
+        // const stopButton = document.getElementById("stop-button"); // Handled in renderer.js
 
         // Populate screen selector
+        console.log('[index.html] window.API before getDisplays:', window.API);
         api.getDisplays().then((displays) => {
           screenSelect.innerHTML = ""; // Clear existing options
           displays.forEach((display, index) => {
@@ -198,78 +213,75 @@
           });
         });
 
-        // Toggle UI state
-        function setUIState(isStarted) {
-          hostInput.disabled = isStarted;
-          portInput.disabled = isStarted;
-          screenSelect.disabled = isStarted;
-          startButton.disabled = isStarted;
-          stopButton.disabled = !isStarted;
+        // Toggle UI state - This logic is now primarily in renderer.js
+        // function setUIState(isStarted) {
+        //   hostInput.disabled = isStarted;
+        //   portInput.disabled = isStarted;
+        //   screenSelect.disabled = isStarted; // screenSelect is handled by renderer.js based on checkbox and start/stop
+        //   startButton.disabled = isStarted;
+        //   stopButton.disabled = !isStarted;
 
-          if (isStarted) {
-            startButton.classList.add(
-              "disabled:opacity-50",
-              "disabled:cursor-not-allowed"
-            );
-            stopButton.classList.remove(
-              "disabled:opacity-50",
-              "disabled:cursor-not-allowed"
-            );
-            stopButton.classList.add("bg-red-600", "hover:bg-red-700");
-            stopButton.classList.remove("bg-slate-600");
-          } else {
-            startButton.classList.remove(
-              "disabled:opacity-50",
-              "disabled:cursor-not-allowed"
-            );
-            stopButton.classList.add(
-              "disabled:opacity-50",
-              "disabled:cursor-not-allowed"
-            );
-            stopButton.classList.remove("bg-red-600", "hover:bg-red-700");
-            stopButton.classList.add("bg-slate-600");
-          }
-        }
+        //   if (isStarted) {
+        //     startButton.classList.add(
+        //       "disabled:opacity-50",
+        //       "disabled:cursor-not-allowed"
+        //     );
+        //     stopButton.classList.remove(
+        //       "disabled:opacity-50",
+        //       "disabled:cursor-not-allowed"
+        //     );
+        //     stopButton.classList.add("bg-red-600", "hover:bg-red-700");
+        //     stopButton.classList.remove("bg-slate-600");
+        //   } else {
+        //     startButton.classList.remove(
+        //       "disabled:opacity-50",
+        //       "disabled:cursor-not-allowed"
+        //     );
+        //     stopButton.classList.add(
+        //       "disabled:opacity-50",
+        //       "disabled:cursor-not-allowed"
+        //     );
+        //     stopButton.classList.remove("bg-red-600", "hover:bg-red-700");
+        //     stopButton.classList.add("bg-slate-600");
+        //   }
+        // }
 
-        // Event listener for Start button
-        startButton.addEventListener("click", () => {
-          const host = hostInput.value.trim();
-          const port = portInput.value.trim();
+        // Event listener for Start button - This is handled by renderer.js
+        // startButton.addEventListener("click", () => {
+        //   const host = hostInput.value.trim();
+        //   const port = portInput.value.trim();
+        //   const hostRegex =
+        //     /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+        //   const portRegex = /^\d{1,5}$/;
+        //   if (!hostRegex.test(host)) {
+        //     alert(
+        //       "Invalid Host: Please enter a valid IP address or domain name."
+        //     );
+        //     return;
+        //   }
+        //   if (!portRegex.test(port) || parseInt(port) > 65535) {
+        //     alert("Invalid Port: Please enter a number between 1 and 65535.");
+        //     return;
+        //   }
+        //   const displayIndex = parseInt(screenSelect.value);
+        //   console.log(
+        //     `Starting overlay on ${host}:${port} at display ${displayIndex}`
+        //   );
+        //   api.create(host, port, displayIndex); // This call is missing the 4th argument
+        //   setUIState(true);
+        // });
 
-          // Validation
-          const hostRegex =
-            /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
-          const portRegex = /^\d{1,5}$/;
+        // Event listener for Stop button - This is handled by renderer.js
+        // stopButton.addEventListener("click", () => {
+        //   console.log("Stopping overlay...");
+        //   api.close();
+        //   setUIState(false);
+        // });
 
-          if (!hostRegex.test(host)) {
-            alert(
-              "Invalid Host: Please enter a valid IP address or domain name."
-            );
-            return;
-          }
-          if (!portRegex.test(port) || parseInt(port) > 65535) {
-            alert("Invalid Port: Please enter a number between 1 and 65535.");
-            return;
-          }
-
-          const displayIndex = parseInt(screenSelect.value);
-
-          console.log(
-            `Starting overlay on ${host}:${port} at display ${displayIndex}`
-          );
-          api.create(host, port, displayIndex);
-          setUIState(true);
-        });
-
-        // Event listener for Stop button
-        stopButton.addEventListener("click", () => {
-          console.log("Stopping overlay...");
-          api.close();
-          setUIState(false);
-        });
-
-        // Initial UI State
-        setUIState(false);
+        // Initial UI State - This is handled by renderer.js and the checkbox listener
+        // setUIState(false);
+        // The initial state of screenSelect based on checkbox is set in renderer.js
+        // The initial disabled state of buttons is set in HTML and managed by renderer.js
       });
     </script>
   </body>

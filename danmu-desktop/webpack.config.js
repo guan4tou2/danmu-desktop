@@ -65,8 +65,9 @@ module.exports = [
     entry: './preload.js',
     target: 'electron-preload',
     output: {
-      path: path.resolve(__dirname, 'dist'),
-      filename: 'preload.bundle.js'
+      path: path.resolve(__dirname, 'dist'), // Reverted path
+      filename: 'preload.bundle.js',
+      libraryTarget: 'commonjs2'
     },
     optimization: {
       minimize: true,
