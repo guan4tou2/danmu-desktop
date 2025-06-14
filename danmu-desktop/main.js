@@ -366,12 +366,9 @@ function createWindow() {
       console.log("[Main] Sync multi-display ENABLED. Creating windows for all displays.");
       displays.forEach((display, index) => {
         console.log(`[MacOS Debug] Multi-display: Using bounds for display ${index} (ID: ${display.id}):`, JSON.stringify(display.bounds, null, 2));
-        console.log(`[Main] Creating child window for display ${index} (ID: ${display.id}) at ${JSON.stringify(display.bounds)}`);
+        console.log(`[Main] Creating child window for display ${index} (ID: ${display.id}). Initial geometry will be default, overridden by setBounds later.`);
         const newChild = new BrowserWindow({
-          x: display.bounds.x,
-          y: display.bounds.y,
-          width: display.bounds.width,
-          height: display.bounds.height,
+          // x, y, width, height removed
           closable: false,
           skipTaskbar: true,
           transparent: true,
@@ -395,12 +392,9 @@ function createWindow() {
       }
       const selectedDisplay = displays[displayIndex];
       console.log(`[MacOS Debug] Single-display: Using bounds for displayIndex ${displayIndex} (ID: ${selectedDisplay.id}):`, JSON.stringify(selectedDisplay.bounds, null, 2));
-      console.log(`[Main] Creating child window for selected display ${displayIndex} (ID: ${selectedDisplay.id}) at ${JSON.stringify(selectedDisplay.bounds)}`);
+      console.log(`[Main] Creating child window for selected display ${displayIndex} (ID: ${selectedDisplay.id}). Initial geometry will be default, overridden by setBounds later.`);
       const newChild = new BrowserWindow({
-        x: selectedDisplay.bounds.x,
-        y: selectedDisplay.bounds.y,
-        width: selectedDisplay.bounds.width,
-        height: selectedDisplay.bounds.height,
+        // x, y, width, height removed
         closable: false,
         skipTaskbar: true,
         transparent: true,
@@ -422,19 +416,22 @@ function createWindow() {
 
 // Renamed and refactored function
 function setupChildWindow(targetWindow, display, ip, port) {
-  console.log(`[Main] Setting up child window for display ID ${display.id} with IP=${ip}, Port=${port}. Initial bounds set at creation: x=${targetWindow.getBounds().x}, y=${targetWindow.getBounds().y}`);
+  console.log(`[Main] Setting up child window for display ID ${display.id}. Initial bounds (before ready-to-show setBounds) might be default: x=${targetWindow.getBounds().x}, y=${targetWindow.getBounds().y}`);
 
-  targetWindow.loadFile("child.html"); // Load content first
+  targetWindow.loadFile("child.html");
 
   targetWindow.once("ready-to-show", () => {
+    console.log(`[Main] In ready-to-show for display ID ${display.id}. Intended bounds:`, JSON.stringify(display.bounds, null, 2));
+    targetWindow.setBounds(display.bounds); // Explicitly set bounds
+    console.log(`[Main] Bounds after setBounds for display ID ${display.id}:`, JSON.stringify(targetWindow.getBounds(), null, 2));
+
     console.log(`[Main] Child window for display ID ${display.id} is ready-to-show. Applying final settings before show.`);
-    // Apply these settings just before showing
     targetWindow.setAlwaysOnTop(true, "screen-saver");
-    targetWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true }); // Corrected syntax
-    targetWindow.setIgnoreMouseEvents(true); // This might also be better here
+    targetWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    targetWindow.setIgnoreMouseEvents(true);
 
     targetWindow.show();
-    console.log(`[Main] Child window for display ID ${display.id} shown.`);
+    console.log(`[Main] Child window for display ID ${display.id} shown. Final bounds:`, JSON.stringify(targetWindow.getBounds(), null, 2));
   });
 
   targetWindow.on("closed", () => {
