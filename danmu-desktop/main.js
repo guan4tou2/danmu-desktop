@@ -29,7 +29,7 @@ function createWindow() {
     autoHideMenuBar: true,
     icon: path.join(__dirname, "assets/icon.png"),
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, "dist/preload.bundle.js"),
       nodeIntegration: true,
     },
   });
@@ -323,6 +323,13 @@ function createWindow() {
   ipcMain.on("deleteChild", (event) => {
     childWindow.destroy();
   });
+
+  ipcMain.on('close-main-window', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.close();
+    }
+  });
+
   ipcMain.on("createChild", (event, ip, port, displayIndex) => {
     createChildWindow(displayIndex);
 
@@ -855,7 +862,7 @@ function createChildWindow(displayIndex) {
       resizable: false,
       icon: path.join(__dirname, "assets/icon.png"),
       webPreferences: {
-        preload: path.join(__dirname, "preload.js"),
+        preload: path.join(__dirname, "dist/preload.bundle.js"),
         nodeIntegration: true,
       },
     });

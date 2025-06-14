@@ -68,12 +68,25 @@ jobs:
           npm install
 
       - name: Build Electron App
+        shell: bash # This line is added
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          APP_VERSION: ${{ needs.check_version_change.outputs.version }}
         run: |
           cd danmu-desktop
-          npx electron-builder --config.extraMetadata.version=${{ needs.check_version_change.outputs.version }}
+          npm run build:webpack
+
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            npx electron-builder --linux --config.extraMetadata.version=$APP_VERSION
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            npx electron-builder --win --config.extraMetadata.version=$APP_VERSION
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            npx electron-builder --mac --arm64 --config.extraMetadata.version=$APP_VERSION
+          fi
+
+          echo "Listing packaged files in danmu-desktop/pack:"
+          ls -R pack
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -197,16 +210,34 @@ jobs:
       - name: Find DMG file
         if: matrix.os == 'macos-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
         id: find_dmg
+        env: # Add APP_VERSION to env
+          APP_VERSION: ${{ needs.check_version_change.outputs.version }}
         run: |
-          DMG_PATH=$(find danmu-desktop/pack -name "danmu manager*-*.dmg" -type f)
-          echo "dmg_path=$DMG_PATH" >> "$GITHUB_ENV"
+          EXPECTED_DMG="danmu-desktop/pack/danmu manager-${APP_VERSION}-mac-arm64.dmg"
+          if [ -f "$EXPECTED_DMG" ]; then
+            echo "Found DMG: $EXPECTED_DMG"
+            echo "dmg_path=$EXPECTED_DMG" >> "$GITHUB_ENV"
+          else
+            echo "Error: Expected DMG file $EXPECTED_DMG not found."
+            ls -R danmu-desktop/pack # List available files for debugging
+            exit 1
+          fi
 
       - name: Find ZIP file
         if: matrix.os == 'macos-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
         id: find_zip
+        env: # Add APP_VERSION to env
+          APP_VERSION: ${{ needs.check_version_change.outputs.version }}
         run: |
-          ZIP_PATH=$(find danmu-desktop/pack -name "danmu manager*-*.zip" -type f)
-          echo "zip_path=$ZIP_PATH" >> "$GITHUB_ENV"
+          EXPECTED_ZIP="danmu-desktop/pack/danmu manager-${APP_VERSION}-mac-arm64.zip"
+          if [ -f "$EXPECTED_ZIP" ]; then
+            echo "Found ZIP: $EXPECTED_ZIP"
+            echo "zip_path=$EXPECTED_ZIP" >> "$GITHUB_ENV"
+          else
+            echo "Error: Expected ZIP file $EXPECTED_ZIP not found."
+            ls -R danmu-desktop/pack # List available files for debugging
+            exit 1
+          fi
 
       - name: Upload DMG
         if: matrix.os == 'macos-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')

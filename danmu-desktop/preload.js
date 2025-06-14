@@ -21,6 +21,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 
 contextBridge.exposeInMainWorld("API", {
-  create: (ip,port,displayIndex) => ipcRenderer.send('createChild',ip,port,displayIndex),
+  create: (ip, port, displayIndex) => ipcRenderer.send('createChild', ip, port, displayIndex),
   delete: () => ipcRenderer.send('deleteChild'),
+  close: () => ipcRenderer.send('close-main-window')
 });
