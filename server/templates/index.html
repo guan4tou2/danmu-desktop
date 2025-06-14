@@ -154,6 +154,21 @@
       #blacklistWarningModal.flashing .modal-content {
           animation: flashWarningBorder 0.7s infinite;
       }
+
+      @keyframes flashIcon {
+          0%, 100% {
+              transform: scale(1);
+              opacity: 1;
+          }
+          50% {
+              transform: scale(1.2);
+              opacity: 0.7;
+          }
+      }
+
+      #blacklistWarningModal.flashing .warning-triangle {
+          animation: flashIcon 0.7s infinite steps(1, end);
+      }
     </style>
   </head>
   <body
@@ -440,13 +455,14 @@
           // Blacklist Warning Modal Elements
           blacklistWarningModal: document.getElementById('blacklistWarningModal'),
           blacklistWarningMessage: document.getElementById('blacklistWarningMessage'),
-          blacklistWarningOkButton: document.getElementById('blacklistWarningOkButton'),
+          // blacklistWarningOkButton: document.getElementById('blacklistWarningOkButton'), // Removed
         };
 
         // --- State management ---
         let currentSettings = {};
         let ws = null;
         let userBlacklist = [];
+        let autoDismissTimer = null;
 
         // --- Functions ---
 
@@ -467,23 +483,32 @@
         function showBlacklistWarningModal(message) {
             if (elements.blacklistWarningModal && elements.blacklistWarningMessage) {
                 elements.blacklistWarningMessage.textContent = message;
-                elements.blacklistWarningModal.style.display = 'flex'; // Make it part of the layout
-                // Timeout to allow display property to apply before transition starts
+                elements.blacklistWarningModal.style.display = 'flex';
+
+                // Clear any existing timer before setting a new one
+                if (autoDismissTimer) {
+                    clearTimeout(autoDismissTimer);
+                }
+                autoDismissTimer = setTimeout(hideBlacklistWarningModal, 5000); // Auto-dismiss after 5 seconds
+
                 setTimeout(() => {
                     elements.blacklistWarningModal.classList.add('visible');
                     elements.blacklistWarningModal.classList.add('flashing');
-                }, 20); // Small delay
+                }, 20);
             }
         }
 
         function hideBlacklistWarningModal() {
+            if (autoDismissTimer) { // Clear the auto-dismiss timer if it's active
+                clearTimeout(autoDismissTimer);
+                autoDismissTimer = null;
+            }
             if (elements.blacklistWarningModal) {
                 elements.blacklistWarningModal.classList.remove('visible');
                 elements.blacklistWarningModal.classList.remove('flashing');
-                // Wait for opacity transition to finish before setting display to none
                 setTimeout(() => {
                     elements.blacklistWarningModal.style.display = 'none';
-                }, 300); // Matches CSS transition duration for opacity
+                }, 300);
             }
         }
 
@@ -862,9 +887,9 @@
         init();
 
         // Event listeners for Blacklist Warning Modal
-        if (elements.blacklistWarningOkButton) {
-            elements.blacklistWarningOkButton.addEventListener('click', hideBlacklistWarningModal);
-        }
+        // if (elements.blacklistWarningOkButton) { // Removed
+        //     elements.blacklistWarningOkButton.addEventListener('click', hideBlacklistWarningModal);
+        // }
         if (elements.blacklistWarningModal) {
             elements.blacklistWarningModal.addEventListener('click', function(event) {
                 if (event.target === elements.blacklistWarningModal) { // Clicked on overlay, not content
@@ -883,7 +908,7 @@
                 <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
             </svg>
             <p id="blacklistWarningMessage" class="warning-message">Warning message here.</p>
-            <button id="blacklistWarningOkButton" class="ok-button">OK</button>
+            <!-- <button id="blacklistWarningOkButton" class="ok-button">OK</button> Removed -->
         </div>
     </div>
   </body>
