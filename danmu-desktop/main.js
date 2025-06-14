@@ -360,10 +360,12 @@ function createWindow() {
 
     const displays = screen.getAllDisplays();
     console.log(`[Main] Detected ${displays.length} displays.`);
+    console.log("[MacOS Debug] All detected displays:", JSON.stringify(displays, null, 2));
 
     if (enableSyncMultiDisplay) {
       console.log("[Main] Sync multi-display ENABLED. Creating windows for all displays.");
       displays.forEach((display, index) => {
+        console.log(`[MacOS Debug] Multi-display: Using bounds for display ${index} (ID: ${display.id}):`, JSON.stringify(display.bounds, null, 2));
         console.log(`[Main] Creating child window for display ${index} (ID: ${display.id}) at ${JSON.stringify(display.bounds)}`);
         const newChild = new BrowserWindow({
           x: display.bounds.x,
@@ -392,6 +394,7 @@ function createWindow() {
         return;
       }
       const selectedDisplay = displays[displayIndex];
+      console.log(`[MacOS Debug] Single-display: Using bounds for displayIndex ${displayIndex} (ID: ${selectedDisplay.id}):`, JSON.stringify(selectedDisplay.bounds, null, 2));
       console.log(`[Main] Creating child window for selected display ${displayIndex} (ID: ${selectedDisplay.id}) at ${JSON.stringify(selectedDisplay.bounds)}`);
       const newChild = new BrowserWindow({
         x: selectedDisplay.bounds.x,
@@ -419,28 +422,30 @@ function createWindow() {
 
 // Renamed and refactored function
 function setupChildWindow(targetWindow, display, ip, port) {
-  console.log(`[Main] Setting up child window for display ID ${display.id} with IP=${ip}, Port=${port}`);
-  // targetWindow.setBounds(display.bounds); // Set by BrowserWindow constructor now
-  targetWindow.setVisibleOnAllWorkspaces(true, "visibleOnFullScreen");
-  targetWindow.setAlwaysOnTop(true, "screen-saver");
-  targetWindow.setIgnoreMouseEvents(true);
-  targetWindow.loadFile("child.html");
+  console.log(`[Main] Setting up child window for display ID ${display.id} with IP=${ip}, Port=${port}. Initial bounds set at creation: x=${targetWindow.getBounds().x}, y=${targetWindow.getBounds().y}`);
+
+  targetWindow.loadFile("child.html"); // Load content first
 
   targetWindow.once("ready-to-show", () => {
+    console.log(`[Main] Child window for display ID ${display.id} is ready-to-show. Applying final settings before show.`);
+    // Apply these settings just before showing
+    targetWindow.setAlwaysOnTop(true, "screen-saver");
+    targetWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true }); // Corrected syntax
+    targetWindow.setIgnoreMouseEvents(true); // This might also be better here
+
     targetWindow.show();
+    console.log(`[Main] Child window for display ID ${display.id} shown.`);
   });
 
   targetWindow.on("closed", () => {
-    // main.js doesn't have a direct reference to destroy,
-    // but good practice to ensure it's cleaned up if closed externally.
-    // However, our windows are not closable by users.
-    // We'll remove it from the array if it gets closed for any reason.
     const index = childWindows.indexOf(targetWindow);
     if (index > -1) {
       childWindows.splice(index, 1);
     }
+    console.log(`[Main] Child window for display ID ${display.id} removed from list upon close.`);
   });
 
+  // WebSocket connection logic (remains the same)
   targetWindow.webContents.executeJavaScript(
       `
       const IP='${ip}';
