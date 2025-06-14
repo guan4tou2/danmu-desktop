@@ -71,10 +71,11 @@ const port = document.getElementById("port-input");
 const screenSelect = document.getElementById("screen-select");
 const syncMultiDisplayCheckbox = document.getElementById("sync-multi-display-checkbox");
 
-startButton.addEventListener("click", () => {
-  //var ipre = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
-  var ipre =
-    /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+if (startButton) {
+  startButton.addEventListener("click", () => {
+    //var ipre = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+    var ipre =
+      /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
   var domainre =
     /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
   var portre = /^\d{1,5}$/;
@@ -84,52 +85,66 @@ startButton.addEventListener("click", () => {
   ) {
     const IP = ip.value;
     const PORT = port.value;
-    const displayIndex = parseInt(screenSelect.value);
-    const enableSyncMultiDisplay = syncMultiDisplayCheckbox.checked;
+    const displayIndex = screenSelect ? parseInt(screenSelect.value) : 0; // Default to 0 if not found
+    const enableSyncMultiDisplay = syncMultiDisplayCheckbox ? syncMultiDisplayCheckbox.checked : false; // Default to false
 
     console.log(`[Renderer] Starting overlay with: IP=${IP}, PORT=${PORT}, DisplayIndex=${displayIndex}, SyncMultiDisplay=${enableSyncMultiDisplay}`);
     console.log('[renderer.js] window.API before create:', window.API);
     const api = window.API;
     api.create(IP, PORT, displayIndex, enableSyncMultiDisplay); // Pass the new argument
 
-    startButton.disabled = true;
-    stopButton.disabled = false;
-    ip.disabled = true;
-    port.disabled = true;
-    screenSelect.disabled = true;
-    syncMultiDisplayCheckbox.disabled = true;
-    console.log(`[Renderer] UI Disabled: screenSelect=${screenSelect.disabled}, syncMultiDisplayCheckbox=${syncMultiDisplayCheckbox.disabled}`);
+    if (startButton) startButton.disabled = true;
+    if (stopButton) stopButton.disabled = false;
+    if (ip) ip.disabled = true;
+    if (port) port.disabled = true;
+    if (screenSelect) screenSelect.disabled = true;
+    if (syncMultiDisplayCheckbox) syncMultiDisplayCheckbox.disabled = true;
+    console.log(`[Renderer] UI Disabled: screenSelect=${screenSelect ? screenSelect.disabled : 'N/A'}, syncMultiDisplayCheckbox=${syncMultiDisplayCheckbox ? syncMultiDisplayCheckbox.disabled : 'N/A'}`);
   }
 });
-
-stopButton.addEventListener("click", () => {
-  startButton.disabled = false;
-  stopButton.disabled = true;
-  ip.disabled = false;
-  port.disabled = false;
-  syncMultiDisplayCheckbox.disabled = false;
-  syncMultiDisplayCheckbox.dispatchEvent(new Event('change')); // This will trigger the change handler below
-  console.log(`[Renderer] Overlay stopped. UI Enabled: syncMultiDisplayCheckbox=${syncMultiDisplayCheckbox.disabled}`);
-  console.log('[renderer.js] window.API before close:', window.API);
-  const api = window.API;
-  api.close(); // Changed from api.delete()
-});
-
-syncMultiDisplayCheckbox.addEventListener('change', () => {
-  if (syncMultiDisplayCheckbox.checked) {
-    screenSelect.disabled = true;
-    console.log(`[Renderer] Sync checkbox CHECKED: screenSelect.disabled=${screenSelect.disabled}`);
-  } else {
-    // Only enable screenSelect if the overlay is not active (i.e., startButton is enabled)
-    if (startButton.disabled === false) {
-      screenSelect.disabled = false;
-    }
-    console.log(`[Renderer] Sync checkbox UNCHECKED: screenSelect.disabled=${screenSelect.disabled} (startButton.disabled=${startButton.disabled})`);
-  }
-});
-
-// Initial state setup
-if (syncMultiDisplayCheckbox.checked) {
-  screenSelect.disabled = true;
 }
-console.log(`[Renderer] Initial UI state: screenSelect.disabled=${screenSelect.disabled}, syncMultiDisplayCheckbox.checked=${syncMultiDisplayCheckbox.checked}`);
+
+if (stopButton) {
+  stopButton.addEventListener("click", () => {
+    if (startButton) startButton.disabled = false;
+    if (stopButton) stopButton.disabled = true;
+    if (ip) ip.disabled = false;
+    if (port) port.disabled = false;
+    if (syncMultiDisplayCheckbox) {
+      syncMultiDisplayCheckbox.disabled = false;
+      // Manually trigger the change handler logic for screenSelect if syncMultiDisplayCheckbox exists
+      if (screenSelect) {
+         screenSelect.disabled = syncMultiDisplayCheckbox.checked;
+      }
+    }
+    console.log(`[Renderer] Overlay stopped. UI Enabled: syncMultiDisplayCheckbox=${syncMultiDisplayCheckbox ? syncMultiDisplayCheckbox.disabled : 'N/A'}`);
+    console.log('[renderer.js] window.API before close:', window.API);
+    const api = window.API;
+    api.close(); // Changed from api.delete()
+  });
+}
+
+if (syncMultiDisplayCheckbox) {
+  syncMultiDisplayCheckbox.addEventListener('change', () => {
+    if (screenSelect) { // Check if screenSelect exists before trying to change its state
+      if (syncMultiDisplayCheckbox.checked) {
+        screenSelect.disabled = true;
+      } else {
+        // Only enable screenSelect if the overlay is not active (i.e., startButton is enabled or doesn't exist)
+        if (!startButton || startButton.disabled === false) {
+          screenSelect.disabled = false;
+        }
+      }
+      console.log(`[Renderer] Sync checkbox changed: screenSelect.disabled=${screenSelect.disabled} (startButton.disabled=${startButton ? startButton.disabled : 'N/A'})`);
+    } else {
+      console.log(`[Renderer] Sync checkbox changed, but screenSelect element not found.`);
+    }
+  });
+
+  // Initial state setup, also guarded
+  if (screenSelect && syncMultiDisplayCheckbox.checked) {
+    screenSelect.disabled = true;
+  }
+}
+
+console.log(`[Renderer] Initial UI state: screenSelect.disabled=${screenSelect ? screenSelect.disabled : 'N/A'}, syncMultiDisplayCheckbox.checked=${syncMultiDisplayCheckbox ? syncMultiDisplayCheckbox.checked : 'N/A'}`);
