@@ -928,24 +928,37 @@ app.whenReady().then(() => {
     mainWindow.hide();
   });
   mainWindow.on("close", (e) => {
-    console.log("!!! mainWindow on.close event FIRED !!!");
-    console.log("[Main] Main window closing. Attempting to destroy all child windows.");
-    console.log('[Main Debug] mainWindow on.close: childWindows before destruction:', childWindows.map(w => w.id));
+    console.log("!!! mainWindow on.close event FIRED V4 !!!"); // V4 to mark this version
 
-    [...childWindows].forEach(win => { // Iterate over a shallow copy
-      if (win && !win.isDestroyed()) {
-        console.log(`[Main Debug] mainWindow on.close: Attempting to destroy child window ID: ${win.id}`);
-        win.destroy();
-      } else if (win) {
-        console.log(`[Main Debug] mainWindow on.close: Child window ID: ${win.id} is already destroyed or invalid.`);
-      } else {
-        console.log('[Main Debug] mainWindow on.close: Encountered a null/undefined entry in childWindows array.');
-      }
-    });
+    // Robustly log current child window IDs
+    if (Array.isArray(childWindows) && childWindows.length > 0) {
+      console.log(
+        "[Main Debug] mainWindow on.close V4: childWindows before destruction:",
+        childWindows.map(w => (w && w.id) ? w.id : 'invalid/destroyed')
+      );
+    } else if (Array.isArray(childWindows)) {
+      console.log("[Main Debug] mainWindow on.close V4: childWindows array is empty.");
+    } else {
+      console.log("[Main Debug] mainWindow on.close V4: childWindows is not an array or is null/undefined.");
+    }
 
-    childWindows = []; // Clear the original array
-    console.log('[Main Debug] mainWindow on.close: childWindows array after being cleared:', childWindows);
-    console.log("[Main] All child windows processing complete on main window close. Quitting app.");
+    // Proceed with destroying windows only if childWindows is an array
+    if (Array.isArray(childWindows)) {
+      [...childWindows].forEach(win => {
+        if (win && !win.isDestroyed()) {
+          console.log(`[Main Debug] mainWindow on.close V4: Attempting to destroy child window ID: ${win.id}`);
+          win.destroy();
+        } else if (win) {
+          console.log(`[Main Debug] mainWindow on.close V4: Child window ID: ${win ? win.id : 'N/A'} is already destroyed or invalid.`);
+        } else {
+          console.log('[Main Debug] mainWindow on.close V4: Encountered a null/undefined entry in childWindows array during iteration.');
+        }
+      });
+      childWindows = []; // Clear the original array
+      console.log('[Main Debug] mainWindow on.close V4: childWindows array after being cleared:', childWindows);
+    }
+
+    console.log("[Main] All child windows processing complete on main window close V4. Quitting app.");
     app.quit();
   });
 });
