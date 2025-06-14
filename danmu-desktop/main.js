@@ -928,19 +928,30 @@ function setupChildWindow(targetWindow, display, ip, port) {
         }
       }
 
-      // Page visibility change listener, check connection when page becomes visible again
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-          console.log("Page visible again, checking connection status")
-          if (!ws || ws.readyState !== WebSocket.OPEN) {
-            console.log("Connection lost, attempting to reconnect")
-            connect()
+      function initializeWebSocketAndListeners() {
+        console.log('[Injected Script] Initializing WebSocket connection and visibility listener.');
+        connect(); // Initial connection call
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            console.log("Page visible again, checking connection status")
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+              console.log("Connection lost, attempting to reconnect")
+              connect()
+            }
           }
-        }
-      })
+        });
+      }
 
-      // Initial connection
-      connect()
+      if (window.isDanmuRendererReady) {
+        console.log('[Injected Script] Renderer was already ready. Initializing WebSocket.');
+        initializeWebSocketAndListeners();
+      } else {
+        console.log('[Injected Script] Renderer not ready yet. Waiting for danmuRendererReady event.');
+        window.addEventListener('danmuRendererReady', function() {
+          console.log('[Injected Script] danmuRendererReady event received. Initializing WebSocket.');
+          initializeWebSocketAndListeners();
+        }, { once: true });
+      }
     `
   );
 }

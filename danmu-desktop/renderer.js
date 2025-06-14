@@ -148,3 +148,8 @@ if (syncMultiDisplayCheckbox) {
 }
 
 console.log(`[Renderer] Initial UI state: screenSelect.disabled=${screenSelect ? screenSelect.disabled : 'N/A'}, syncMultiDisplayCheckbox.checked=${syncMultiDisplayCheckbox ? syncMultiDisplayCheckbox.checked : 'N/A'}`);
+
+// Signal that the danmu renderer is ready
+window.isDanmuRendererReady = true;
+window.dispatchEvent(new CustomEvent('danmuRendererReady'));
+console.log('[Renderer] Danmu renderer is ready and has signaled.');
