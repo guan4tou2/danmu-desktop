@@ -1,6 +1,8 @@
 # danmu-desktop
 在桌面直接顯示彈幕
 
+![img](img/danmu%20display.png)
+
 ## 概述
 此專案分為兩個部分：
 
@@ -9,10 +11,16 @@
    - 目前支援 Windows 和 MacOS
    - 提供安裝版和可攜式版本
 
-2. Server  
+![img](img/client.png)
+![img](img/client%20start%20effect.png)
+
+1. Server  
    - 創建網頁界面用於彈幕輸入
    - 管理彈幕傳送到已連接的客戶端
    - 包含管理員配置面板
+
+![img](img/web%20panel.png)
+![img](img/admin%20panel.png)
 
 ## 安裝與使用
 

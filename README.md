@@ -4,6 +4,8 @@ Display bullet screen directly on the desktop
 
 [中文說明](https://github.com/guan4tou2/danmu-desktop/blob/main/README-CH.md)
 
+![img](img/danmu%20display.png)
+
 ## Overview
 This project is divided into two parts:
 
@@ -12,10 +14,16 @@ This project is divided into two parts:
    - Currently supports Windows and MacOS
    - Available as both installer and portable version
 
+![img](img/client.png)
+![img](img/client%20start%20effect.png)
+
 2. Server
    - Creates a web interface for danmu input
    - Manages danmu delivery to connected clients
    - Includes admin panel for configuration
+
+![img](img/web%20panel.png)
+![img](img/admin%20panel.png)
 
 ## Installation & Usage
 
