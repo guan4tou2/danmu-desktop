@@ -73,6 +73,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           cd danmu-desktop
+          npm run build:webpack
           npx electron-builder --config.extraMetadata.version=${{ needs.check_version_change.outputs.version }}
 
       - name: Upload Artifacts
