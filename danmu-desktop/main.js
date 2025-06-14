@@ -36,6 +36,20 @@ function createWindow() {
   // and load the index.html of the app.
   mainWindow.loadFile("index.html");
 
+  // RELOCATED HANDLERS START
+  mainWindow.on("minimize", (ev) => {
+    ev.preventDefault();
+    mainWindow.hide();
+  });
+
+  mainWindow.on("close", (e) => {
+    if (childWindow && !childWindow.isDestroyed()) {
+      childWindow.destroy();
+    }
+    app.quit();
+  });
+  // RELOCATED HANDLERS END
+
   mainWindow.webContents.on("did-finish-load", () => {
     try {
       const displays = screen.getAllDisplays();
@@ -810,16 +824,6 @@ app.whenReady().then(() => {
 
   tray.on("double-click", () => {
     mainWindow.show();
-  });
-  mainWindow.on("minimize", (ev) => {
-    ev.preventDefault();
-    mainWindow.hide();
-  });
-  mainWindow.on("close", (e) => {
-    if (childWindow) {
-      childWindow.destroy();
-    }
-    app.quit();
   });
 });
 
