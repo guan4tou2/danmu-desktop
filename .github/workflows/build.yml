@@ -68,6 +68,7 @@ jobs:
           npm install
 
       - name: Build Electron App
+        shell: bash # This line is added
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
