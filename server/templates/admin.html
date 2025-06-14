@@ -311,12 +311,7 @@
                         blacklistKeywordsDiv.appendChild(keywordEl);
                     });
                 }
-                // Add event listeners to new remove buttons
-                document.querySelectorAll('.removeKeywordBtn').forEach(button => {
-                    button.addEventListener('click', function() {
-                        removeKeyword(this.dataset.keyword);
-                    });
-                });
+                // Event listeners for remove buttons are now handled by delegation in addEventListeners
             } catch (error) {
                 console.error('Fetch blacklist error:', error);
                 showToast('Failed to fetch blacklist.', false);
@@ -663,6 +658,19 @@
                   if (event.key === 'Enter' || event.keyCode === 13) {
                       event.preventDefault();
                       addKeyword();
+                  }
+              });
+          }
+
+          // Event delegation for remove keyword buttons
+          const blacklistKeywordsDiv = document.getElementById('blacklistKeywords');
+          if (blacklistKeywordsDiv) {
+              blacklistKeywordsDiv.addEventListener('click', function(event) {
+                  if (event.target.classList.contains('removeKeywordBtn')) {
+                      const keyword = event.target.dataset.keyword;
+                      if (keyword) {
+                          removeKeyword(keyword);
+                      }
                   }
               });
           }
