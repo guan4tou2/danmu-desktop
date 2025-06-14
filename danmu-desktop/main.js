@@ -916,7 +916,11 @@ function setupChildWindow(targetWindow, display, ip, port) {
               let color = '#' + data.color
               let size = data.size
               let speed = parseInt(data.speed)
-              window.showdanmu(text, opacity, color, size, speed)
+              if (typeof window.showdanmu === 'function') {
+                window.showdanmu(text, opacity, color, size, speed)
+              } else {
+                console.error('window.showdanmu is not a function. Renderer script might not be loaded yet.');
+              }
             } catch (e) {
               console.error("Error processing message:", e)
             }
@@ -1044,96 +1048,3 @@ function createChildWindow(displayIndex) {
   }
 }
 */
-let animationFrameId = null;
-const danmuElements = new Set();
-const explosionDuration = 800; // ms
-
-function animateDanmus() {
-  const now = performance.now();
-  const danmusToRemove = [];
-
-  danmuElements.forEach((el) => {
-    // Check if the element is still in the DOM or has been marked for explosion
-    if (!el.parentElement || el.dataset.exploding === "true") {
-      danmusToRemove.push(el);
-      return;
-    }
-
-    // Normal movement logic (only runs if not exploding)
-    let distance = parseFloat(el.dataset.distance);
-    let speed = parseFloat(el.dataset.speed);
-    let startTime = parseFloat(el.dataset.startTime);
-
-    let elapsed = now - startTime;
-    let progress = (elapsed * speed) / distance;
-
-    el.style.left =
-      window.innerWidth - progress * (distance + el.offsetWidth) + "px";
-
-    if (progress >= 1) {
-      danmusToRemove.push(el);
-    }
-  });
-
-  danmusToRemove.forEach((el) => {
-    danmuElements.delete(el);
-    el.remove();
-  });
-
-  animationFrameId = requestAnimationFrame(animateDanmus);
-}
-
-function stopAnimation() {
-  if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId);
-    animationFrameId = null;
-  }
-}
-
-function showdanmu(text, opacity, color, size, speed) {
-  let danmu = document.createElement("h1");
-  danmu.textContent = text;
-  danmu.style.opacity = opacity;
-  danmu.style.color = color;
-  danmu.style.fontSize = size;
-  danmu.className = "danmu";
-
-  document.body.appendChild(danmu);
-
-  danmu.style.top =
-    Math.random() * (window.innerHeight - danmu.offsetHeight) + "px";
-  danmu.dataset.startTime = performance.now();
-  danmu.dataset.speed = speed;
-  danmu.dataset.distance = window.innerWidth + danmu.offsetWidth;
-
-  danmuElements.add(danmu);
-
-  if (!animationFrameId) {
-    animateDanmus();
-  }
-}
-
-// Add this function for image danmus, modifying it to use the unified animation loop
-function showimagedanmu(src, opacity, size, speed) {
-  let danmu = document.createElement("img");
-  danmu.src = src;
-  danmu.style.opacity = opacity;
-  danmu.style.height = size;
-  danmu.className = "danmu"; // Use the same class
-
-  document.body.appendChild(danmu);
-
-  danmu.onload = () => {
-    danmu.style.top =
-      Math.random() * (window.innerHeight - danmu.offsetHeight) + "px";
-    danmu.dataset.startTime = performance.now();
-    danmu.dataset.speed = speed;
-    danmu.dataset.distance = window.innerWidth + danmu.offsetWidth;
-
-    danmuElements.add(danmu);
-
-    if (!animationFrameId) {
-      animateDanmus();
-    }
-  };
-}
