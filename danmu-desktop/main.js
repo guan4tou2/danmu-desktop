@@ -36,6 +36,20 @@ function createWindow() {
   // and load the index.html of the app.
   mainWindow.loadFile("index.html");
 
+  // RELOCATED HANDLERS START
+  mainWindow.on("minimize", (ev) => {
+    ev.preventDefault();
+    mainWindow.hide();
+  });
+
+  mainWindow.on("close", (e) => {
+    if (childWindow && !childWindow.isDestroyed()) {
+      childWindow.destroy();
+    }
+    app.quit();
+  });
+  // RELOCATED HANDLERS END
+
   mainWindow.webContents.on("did-finish-load", () => {
     try {
       const displays = screen.getAllDisplays();
@@ -353,17 +367,6 @@ function createWindow() {
     console.log("[Main] getDisplays handled, returning:", displays);
     return displays;
   });
-
-  ipcMain.on("createChild", (event, ip, port, displayIndex, enableSyncMultiDisplay) => { // Added enableSyncMultiDisplay
-    console.log(`[Main] createChild IPC received: IP=${ip}, Port=${port}, DisplayIndex=${displayIndex}, SyncMultiDisplay=${enableSyncMultiDisplay}`);
-    // Clear existing child windows
-    childWindows.forEach(win => {
-      if (win && !win.isDestroyed()) {
-        win.destroy();
-      }
-    });
-    childWindows = [];
-    console.log("[Main] Cleared existing child windows before creating new ones.");
 
     const displays = screen.getAllDisplays();
     console.log(`[Main] Detected ${displays.length} displays.`);
@@ -879,7 +882,6 @@ function setupChildWindow(targetWindow, display, ip, port) {
       connect()
     `
     );
-  });
 }
 
 // This method will be called when Electron has finished
@@ -922,44 +924,6 @@ app.whenReady().then(() => {
 
   tray.on("double-click", () => {
     mainWindow.show();
-  });
-  mainWindow.on("minimize", (ev) => {
-    ev.preventDefault();
-    mainWindow.hide();
-  });
-  mainWindow.on("close", (e) => {
-    console.log("!!! mainWindow on.close event FIRED V4 !!!"); // V4 to mark this version
-
-    // Robustly log current child window IDs
-    if (Array.isArray(childWindows) && childWindows.length > 0) {
-      console.log(
-        "[Main Debug] mainWindow on.close V4: childWindows before destruction:",
-        childWindows.map(w => (w && w.id) ? w.id : 'invalid/destroyed')
-      );
-    } else if (Array.isArray(childWindows)) {
-      console.log("[Main Debug] mainWindow on.close V4: childWindows array is empty.");
-    } else {
-      console.log("[Main Debug] mainWindow on.close V4: childWindows is not an array or is null/undefined.");
-    }
-
-    // Proceed with destroying windows only if childWindows is an array
-    if (Array.isArray(childWindows)) {
-      [...childWindows].forEach(win => {
-        if (win && !win.isDestroyed()) {
-          console.log(`[Main Debug] mainWindow on.close V4: Attempting to destroy child window ID: ${win.id}`);
-          win.destroy();
-        } else if (win) {
-          console.log(`[Main Debug] mainWindow on.close V4: Child window ID: ${win ? win.id : 'N/A'} is already destroyed or invalid.`);
-        } else {
-          console.log('[Main Debug] mainWindow on.close V4: Encountered a null/undefined entry in childWindows array during iteration.');
-        }
-      });
-      childWindows = []; // Clear the original array
-      console.log('[Main Debug] mainWindow on.close V4: childWindows array after being cleared:', childWindows);
-    }
-
-    console.log("[Main] All child windows processing complete on main window close V4. Quitting app.");
-    app.quit();
   });
 });
 
