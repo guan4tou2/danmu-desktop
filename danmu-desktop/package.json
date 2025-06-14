@@ -2,11 +2,12 @@
   "name": "danmu-desktop",
   "version": "2.5.0",
   "description": "A danmu desktop",
-  "main": "main.js",
+  "main": "dist/main.bundle.js",
   "scripts": {
-    "start": "electron .",
-    "pack": "electron-builder --dir",
-    "pack-dist": "electron-builder",
+    "start": "npm run build:webpack && electron .",
+    "pack": "npm run build:webpack && electron-builder --dir",
+    "pack-dist": "npm run build:webpack && electron-builder",
+    "build:webpack": "webpack",
     "test": "echo \"No tests defined\" && exit 0"
   },
   "repository": "https://github.com/guan4tou2/danmu-desktop",
@@ -18,8 +19,14 @@
   "author": "guan4tou2 <mole30608@gmail.com>",
   "license": "CC0-1.0",
   "devDependencies": {
+    "@babel/core": "^7.27.4",
+    "@babel/preset-env": "^7.27.2",
+    "babel-loader": "^10.0.0",
     "electron": "^35.2.0",
-    "electron-builder": "^26.0.12"
+    "electron-builder": "^26.0.12",
+    "terser-webpack-plugin": "^5.3.14",
+    "webpack": "^5.99.9",
+    "webpack-cli": "^6.0.1"
   },
   "dependencies": {
     "bootstrap": "^5.3.5",
@@ -33,20 +40,29 @@
       "output": "pack"
     },
     "files": [
-      "**/*",
+      "dist/**/*",
+      "index.html",
+      "child.html",
+      "child.css",
+      "styles.css",
+      "assets/**/*",
+      "package.json",
+      "!main.js",
+      "!renderer.js",
+      "!preload.js",
+      "!webpack.config.js",
+      "!.babelrc",
       "!.vscode",
       "!.github"
     ],
     "asar": true,
-    "asarUnpack": [
-      "node_modules/some-native-module/**"
-    ],
     "win": {
       "target": [
         "nsis",
         "portable"
       ],
-      "icon": "assets/icon.png"
+      "icon": "assets/icon.png",
+      "compression": "maximum"
     },
     "mac": {
       "category": "public.app-category.utilities",
@@ -57,7 +73,11 @@
       "target": [
         "AppImage",
         "deb"
-      ]
+      ],
+      "compression": "maximum"
+    },
+    "deb": {
+      "compression": "xz"
     }
   }
 }
