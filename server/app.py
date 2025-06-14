@@ -54,7 +54,7 @@ ws_clients = set()
 
 # Define setting ranges
 SETTING_RANGES = {
-    "Speed": {"min": 1, "max": 20},
+    "Speed": {"min": 1, "max": 11},
     "Opacity": {"min": 0, "max": 100},
     "FontSize": {"min": 12, "max": 100},
 }
