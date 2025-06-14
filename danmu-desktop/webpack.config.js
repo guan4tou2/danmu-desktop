@@ -24,10 +24,9 @@ module.exports = [
           test: /\.js$/,
           exclude: /node_modules/,
           use: {
-            loader: 'babel-loader',
-            options: {
-              presets: ['@babel/preset-env']
-            }
+          use: {
+            loader: 'babel-loader'
+            // Babel options will be loaded from .babelrc
           }
         }
       ]
