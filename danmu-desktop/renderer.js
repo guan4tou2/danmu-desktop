@@ -110,7 +110,7 @@ stopButton.addEventListener("click", () => {
   syncMultiDisplayCheckbox.dispatchEvent(new Event('change')); // This will trigger the change handler below
   console.log(`[Renderer] Overlay stopped. UI Enabled: syncMultiDisplayCheckbox=${syncMultiDisplayCheckbox.disabled}`);
   const api = window.API;
-  api.delete();
+  api.close(); // Changed from api.delete()
 });
 
 syncMultiDisplayCheckbox.addEventListener('change', () => {

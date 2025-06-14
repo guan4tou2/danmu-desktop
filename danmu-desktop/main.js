@@ -322,15 +322,31 @@ function createWindow() {
 
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
-  ipcMain.on("deleteChild", (event) => {
+  // ipcMain.on("deleteChild", (event) => { // This is the old handler, remove it
+  //   childWindows.forEach(win => {
+  //     if (win && !win.isDestroyed()) {
+  //       win.destroy();
+  //     }
+  //   });
+  //   childWindows = [];
+  //   console.log("[Main] All child windows destroyed on closeChildWindows event."); // Renamed event
+  // });
+  ipcMain.on("closeChildWindows", (event) => { // This is the correct handler
     childWindows.forEach(win => {
       if (win && !win.isDestroyed()) {
         win.destroy();
       }
     });
     childWindows = [];
-    console.log("[Main] All child windows destroyed on deleteChild event.");
+    console.log("[Main] All child windows destroyed on closeChildWindows event.");
   });
+  // Handler for getDisplays
+  ipcMain.handle('getDisplays', async () => {
+    const displays = screen.getAllDisplays();
+    console.log("[Main] getDisplays handled, returning:", displays);
+    return displays;
+  });
+
   ipcMain.on("createChild", (event, ip, port, displayIndex, enableSyncMultiDisplay) => { // Added enableSyncMultiDisplay
     console.log(`[Main] createChild IPC received: IP=${ip}, Port=${port}, DisplayIndex=${displayIndex}, SyncMultiDisplay=${enableSyncMultiDisplay}`);
     // Clear existing child windows
