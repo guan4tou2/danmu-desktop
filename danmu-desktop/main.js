@@ -3,7 +3,7 @@ const { app, BrowserWindow, screen, Tray, Menu, ipcMain } = require("electron");
 const path = require("path");
 
 let mainWindow;
-let childWindow;
+let childWindows = []; // Changed to an array
 let konamiCode = [
   "ArrowUp",
   "ArrowUp",
@@ -248,8 +248,9 @@ function createWindow() {
             });
 
           // Clear danmus in the child window with an animation
-          if (childWindow && !childWindow.isDestroyed()) {
-            const script = `
+          childWindows.forEach(cw => {
+            if (cw && !cw.isDestroyed()) {
+              const script = `
               (function() {
                 try {
                   const danmusToExplode = document.querySelectorAll('h1.danmu, img.danmu');
@@ -305,10 +306,11 @@ function createWindow() {
                 }
               })();
             `;
-            childWindow.webContents.executeJavaScript(script).catch((err) => {
-              console.error("Failed to execute danmu clearing script:", err);
-            });
-          }
+              cw.webContents.executeJavaScript(script).catch((err) => {
+                console.error("Failed to execute danmu clearing script:", err);
+              });
+            }
+          });
         }
       } else {
         console.log("Match failed, resetting index");
@@ -321,20 +323,109 @@ function createWindow() {
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
   ipcMain.on("deleteChild", (event) => {
-    childWindow.destroy();
+    childWindows.forEach(win => {
+      if (win && !win.isDestroyed()) {
+        win.destroy();
+      }
+    });
+    childWindows = [];
+    console.log("[Main] All child windows destroyed on deleteChild event.");
   });
-  ipcMain.on("createChild", (event, ip, port, displayIndex) => {
-    createChildWindow(displayIndex);
+  ipcMain.on("createChild", (event, ip, port, displayIndex, enableSyncMultiDisplay) => { // Added enableSyncMultiDisplay
+    console.log(`[Main] createChild IPC received: IP=${ip}, Port=${port}, DisplayIndex=${displayIndex}, SyncMultiDisplay=${enableSyncMultiDisplay}`);
+    // Clear existing child windows
+    childWindows.forEach(win => {
+      if (win && !win.isDestroyed()) {
+        win.destroy();
+      }
+    });
+    childWindows = [];
+    console.log("[Main] Cleared existing child windows before creating new ones.");
 
     const displays = screen.getAllDisplays();
-    const selectedDisplay = displays[displayIndex];
-    childWindow.setBounds(selectedDisplay.bounds);
-    //const {getCursorScreenPoint,getDisplayNearestPoint}=screen
-    //const currentScreen=getDisplayNearestPoint(getCursorScreenPoint())
-    //childWindow.setBounds(currentScreen.bounds)
-    childWindow.setVisibleOnAllWorkspaces(true, "visibleOnFullScreen");
-    childWindow.setAlwaysOnTop(true, "screen-saver");
-    childWindow.webContents.executeJavaScript(
+    console.log(`[Main] Detected ${displays.length} displays.`);
+
+    if (enableSyncMultiDisplay) {
+      console.log("[Main] Sync multi-display ENABLED. Creating windows for all displays.");
+      displays.forEach((display, index) => {
+        console.log(`[Main] Creating child window for display ${index} (ID: ${display.id}) at ${JSON.stringify(display.bounds)}`);
+        const newChild = new BrowserWindow({
+          x: display.bounds.x,
+          y: display.bounds.y,
+          width: display.bounds.width,
+          height: display.bounds.height,
+          closable: false,
+          skipTaskbar: true,
+          transparent: true,
+          frame: false,
+          resizable: false,
+          icon: path.join(__dirname, "assets/icon.png"),
+          webPreferences: {
+            preload: path.join(__dirname, "dist/preload.bundle.js"),
+            nodeIntegration: true,
+          },
+        });
+        setupChildWindow(newChild, display, ip, port);
+        childWindows.push(newChild);
+      });
+      console.log(`[Main] Created ${childWindows.length} child windows for sync multi-display.`);
+    } else {
+      console.log("[Main] Sync multi-display DISABLED. Creating window for selected display.");
+      if (displayIndex < 0 || displayIndex >= displays.length) {
+        console.error("[Main] Invalid display index for single display mode:", displayIndex);
+        return;
+      }
+      const selectedDisplay = displays[displayIndex];
+      console.log(`[Main] Creating child window for selected display ${displayIndex} (ID: ${selectedDisplay.id}) at ${JSON.stringify(selectedDisplay.bounds)}`);
+      const newChild = new BrowserWindow({
+        x: selectedDisplay.bounds.x,
+        y: selectedDisplay.bounds.y,
+        width: selectedDisplay.bounds.width,
+        height: selectedDisplay.bounds.height,
+        closable: false,
+        skipTaskbar: true,
+        transparent: true,
+        frame: false,
+        resizable: false,
+        icon: path.join(__dirname, "assets/icon.png"),
+        webPreferences: {
+          preload: path.join(__dirname, "dist/preload.bundle.js"),
+          nodeIntegration: true,
+        },
+      });
+      setupChildWindow(newChild, selectedDisplay, ip, port);
+      childWindows.push(newChild); // This was the correct placement
+      // The }); below was an error from the previous incorrect diff application.
+      console.log(`[Main] Created 1 child window for single display mode.`);
+    }
+  });
+}
+
+// Renamed and refactored function
+function setupChildWindow(targetWindow, display, ip, port) {
+  console.log(`[Main] Setting up child window for display ID ${display.id} with IP=${ip}, Port=${port}`);
+  // targetWindow.setBounds(display.bounds); // Set by BrowserWindow constructor now
+  targetWindow.setVisibleOnAllWorkspaces(true, "visibleOnFullScreen");
+  targetWindow.setAlwaysOnTop(true, "screen-saver");
+  targetWindow.setIgnoreMouseEvents(true);
+  targetWindow.loadFile("child.html");
+
+  targetWindow.once("ready-to-show", () => {
+    targetWindow.show();
+  });
+
+  targetWindow.on("closed", () => {
+    // main.js doesn't have a direct reference to destroy,
+    // but good practice to ensure it's cleaned up if closed externally.
+    // However, our windows are not closable by users.
+    // We'll remove it from the array if it gets closed for any reason.
+    const index = childWindows.indexOf(targetWindow);
+    if (index > -1) {
+      childWindows.splice(index, 1);
+    }
+  });
+
+  targetWindow.webContents.executeJavaScript(
       `
       const IP='${ip}';
       const WS_PORT=${port}
@@ -789,12 +880,14 @@ app.whenReady().then(() => {
       label: "quit",
       // role: 'quit',
       click: () => {
-        if (BrowserWindow.getAllWindows().length === 2) {
-          childWindow.destroy();
-          app.quit();
-        } else {
-          app.quit();
-        }
+        childWindows.forEach(win => {
+          if (win && !win.isDestroyed()) {
+            win.destroy();
+          }
+        });
+        childWindows = [];
+        console.log("[Main] All child windows destroyed on tray quit.");
+        app.quit();
       },
     },
   ];
@@ -809,9 +902,14 @@ app.whenReady().then(() => {
     mainWindow.hide();
   });
   mainWindow.on("close", (e) => {
-    if (childWindow) {
-      childWindow.destroy();
-    }
+    console.log("[Main] Main window closing. Destroying all child windows.");
+    childWindows.forEach(win => {
+      if (win && !win.isDestroyed()) {
+        win.destroy();
+      }
+    });
+    childWindows = [];
+    console.log("[Main] All child windows destroyed on main window close.");
     app.quit();
   });
 });
@@ -826,6 +924,7 @@ app.on("window-all-closed", function () {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
 
+/* // Commenting out the old createChildWindow function
 function createChildWindow(displayIndex) {
   try {
     const displays = screen.getAllDisplays();
@@ -843,7 +942,7 @@ function createChildWindow(displayIndex) {
     const { width, height } = selectedDisplay.bounds;
     console.log("Window dimensions:", { width, height });
 
-    childWindow = new BrowserWindow({
+    childWindow = new BrowserWindow({ // This was the old single childWindow
       width: width,
       height: height,
       x: selectedDisplay.bounds.x,
@@ -868,13 +967,13 @@ function createChildWindow(displayIndex) {
     });
 
     childWindow.on("closed", () => {
-      childWindow.destroy();
+      childWindow.destroy(); // This would refer to the old single childWindow
     });
   } catch (error) {
     console.error("Error creating child window:", error);
   }
 }
-
+*/
 let animationFrameId = null;
 const danmuElements = new Set();
 const explosionDuration = 800; // ms
