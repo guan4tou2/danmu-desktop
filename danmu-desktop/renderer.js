@@ -88,6 +88,7 @@ startButton.addEventListener("click", () => {
     const enableSyncMultiDisplay = syncMultiDisplayCheckbox.checked;
 
     console.log(`[Renderer] Starting overlay with: IP=${IP}, PORT=${PORT}, DisplayIndex=${displayIndex}, SyncMultiDisplay=${enableSyncMultiDisplay}`);
+    console.log('[renderer.js] window.API before create:', window.API);
     const api = window.API;
     api.create(IP, PORT, displayIndex, enableSyncMultiDisplay); // Pass the new argument
 
@@ -109,6 +110,7 @@ stopButton.addEventListener("click", () => {
   syncMultiDisplayCheckbox.disabled = false;
   syncMultiDisplayCheckbox.dispatchEvent(new Event('change')); // This will trigger the change handler below
   console.log(`[Renderer] Overlay stopped. UI Enabled: syncMultiDisplayCheckbox=${syncMultiDisplayCheckbox.disabled}`);
+  console.log('[renderer.js] window.API before close:', window.API);
   const api = window.API;
   api.close(); // Changed from api.delete()
 });

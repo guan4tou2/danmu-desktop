@@ -197,6 +197,7 @@
         // const stopButton = document.getElementById("stop-button"); // Handled in renderer.js
 
         // Populate screen selector
+        console.log('[index.html] window.API before getDisplays:', window.API);
         api.getDisplays().then((displays) => {
           screenSelect.innerHTML = ""; // Clear existing options
           displays.forEach((display, index) => {
