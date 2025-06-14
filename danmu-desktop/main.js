@@ -928,6 +928,7 @@ app.whenReady().then(() => {
     mainWindow.hide();
   });
   mainWindow.on("close", (e) => {
+    console.log("!!! mainWindow on.close event FIRED !!!");
     console.log("[Main] Main window closing. Attempting to destroy all child windows.");
     console.log('[Main Debug] mainWindow on.close: childWindows before destruction:', childWindows.map(w => w.id));
 
@@ -949,11 +950,20 @@ app.whenReady().then(() => {
   });
 });
 
+app.on('before-quit', (e) => {
+  console.log("!!! app event: before-quit FIRED !!!");
+  // In a real app, might have e.preventDefault() here under certain conditions
+});
+
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
-app.on("window-all-closed", function () {
-  if (process.platform !== "darwin") app.quit();
+app.on('window-all-closed', function () {
+  console.log("!!! app event: window-all-closed FIRED !!!");
+  // On macOS it is common for applications and their menu bar
+  // to stay active until the user quits explicitly with Cmd + Q.
+  // Forcing quit for testing purposes for now.
+  app.quit();
 });
 
 // In this file you can include the rest of your app's specific main process
