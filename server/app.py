@@ -51,7 +51,7 @@ active_ws = None
 active_connections = set()
 # Add client connections for WebSocket server
 ws_clients = set()
-blacklist = []
+blacklist = set()
 
 # Define setting ranges
 SETTING_RANGES = {
@@ -290,7 +290,7 @@ def add_to_blacklist():
         data = request.get_json()
         keyword = data.get("keyword")
         if keyword and keyword not in blacklist:
-            blacklist.append(keyword)
+            blacklist.add(keyword)
             return make_response(json.dumps({"message": "Keyword added"}), 200, {"Content-Type": "application/json"})
         elif keyword in blacklist:
             return make_response(json.dumps({"message": "Keyword already exists"}), 200, {"Content-Type": "application/json"})
@@ -309,7 +309,7 @@ def remove_from_blacklist():
         data = request.get_json()
         keyword = data.get("keyword")
         if keyword and keyword in blacklist:
-            blacklist.remove(keyword)
+            blacklist.discard(keyword)
             return make_response(json.dumps({"message": "Keyword removed"}), 200, {"Content-Type": "application/json"})
         else:
             return make_response(json.dumps({"error": "Keyword not found"}), 404, {"Content-Type": "application/json"})
@@ -321,7 +321,7 @@ def remove_from_blacklist():
 def get_blacklist():
     if not session.get("logged_in"):
         return make_response(json.dumps({"error": "Unauthorized"}), 401, {"Content-Type": "application/json"})
-    return make_response(json.dumps(blacklist), 200, {"Content-Type": "application/json"})
+    return make_response(json.dumps(list(blacklist)), 200, {"Content-Type": "application/json"})
 
 
 # Add connection health check thread
