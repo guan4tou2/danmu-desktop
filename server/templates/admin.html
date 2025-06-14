@@ -287,6 +287,91 @@
 
         // --- 函數 ---
 
+        async function fetchBlacklist() {
+            try {
+                const response = await fetch('/admin/blacklist/get', { method: 'GET', credentials: 'same-origin' });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    showToast(`Error fetching blacklist: ${errorData.error || response.statusText}`, false);
+                    return;
+                }
+                const blacklist = await response.json();
+                const blacklistKeywordsDiv = document.getElementById('blacklistKeywords');
+                blacklistKeywordsDiv.innerHTML = ''; // Clear current list
+                if (blacklist.length === 0) {
+                    blacklistKeywordsDiv.innerHTML = '<p class="text-slate-400 text-sm">No keywords blacklisted yet.</p>';
+                } else {
+                    blacklist.forEach(keyword => {
+                        const keywordEl = document.createElement('div');
+                        keywordEl.className = 'flex items-center justify-between bg-slate-700/50 p-2 rounded-lg';
+                        keywordEl.innerHTML = `
+                            <span class="text-slate-200">${keyword}</span>
+                            <button class="removeKeywordBtn text-red-400 hover:text-red-600 font-semibold" data-keyword="${keyword}">Remove</button>
+                        `;
+                        blacklistKeywordsDiv.appendChild(keywordEl);
+                    });
+                }
+                // Add event listeners to new remove buttons
+                document.querySelectorAll('.removeKeywordBtn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        removeKeyword(this.dataset.keyword);
+                    });
+                });
+            } catch (error) {
+                console.error('Fetch blacklist error:', error);
+                showToast('Failed to fetch blacklist.', false);
+            }
+        }
+
+        async function addKeyword() {
+            const keywordInput = document.getElementById('newKeywordInput');
+            const keyword = keywordInput.value.trim();
+            if (!keyword) {
+                showToast('Keyword cannot be empty.', false);
+                return;
+            }
+            try {
+                const response = await fetch('/admin/blacklist/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ keyword: keyword }),
+                    credentials: 'same-origin'
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showToast(data.message || 'Keyword added.', true);
+                    keywordInput.value = ''; // Clear input
+                    fetchBlacklist(); // Refresh list
+                } else {
+                    showToast(data.error || 'Failed to add keyword.', false);
+                }
+            } catch (error) {
+                console.error('Add keyword error:', error);
+                showToast('Error adding keyword.', false);
+            }
+        }
+
+        async function removeKeyword(keyword) {
+            try {
+                const response = await fetch('/admin/blacklist/remove', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ keyword: keyword }),
+                    credentials: 'same-origin'
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showToast(data.message || 'Keyword removed.', true);
+                    fetchBlacklist(); // Refresh list
+                } else {
+                    showToast(data.error || 'Failed to remove keyword.', false);
+                }
+            } catch (error) {
+                console.error('Remove keyword error:', error);
+                showToast('Error removing keyword.', false);
+            }
+        }
+
         // 顯示提示訊息 (可堆疊版本)
         function showToast(message, isSuccess = true) {
           // 1. 創建 toast 元素
@@ -487,6 +572,36 @@
                     `
           );
 
+          // Blacklist Management Card
+          settingsGrid.innerHTML += `
+                    <div class="glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Blacklist Management</h3>
+                                <p class="text-sm text-slate-400">Add or remove keywords from the blacklist.</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-slate-700/50">
+                            <div>
+                                <label for="newKeywordInput" class="text-sm font-medium text-slate-300">New Keyword</label>
+                                <input type="text" id="newKeywordInput" placeholder="Enter keyword" class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all duration-300">
+                                <button id="addKeywordBtn" class="mt-3 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-indigo-500/50 transform hover:-translate-y-1 active:scale-95 transition-all duration-300">Add Keyword</button>
+                            </div>
+                            <div class="mt-6">
+                                <h4 class="text-md font-semibold text-white mb-2">Current Blacklist:</h4>
+                                <div id="blacklistKeywords" class="space-y-2 max-h-48 overflow-y-auto">
+                                    <!-- Keywords will be listed here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+            // Fetch blacklist data after its container is rendered
+            if (document.getElementById('blacklistKeywords')) {
+                 fetchBlacklist();
+            }
+
           addEventListeners();
         }
 
@@ -535,6 +650,22 @@
               await updateSetting(key, value, index);
             });
           });
+
+          // Add Keyword button event listener
+          const addKeywordBtn = document.getElementById('addKeywordBtn');
+          if (addKeywordBtn) {
+              addKeywordBtn.addEventListener('click', addKeyword);
+          }
+
+          const newKeywordInput = document.getElementById('newKeywordInput');
+          if (newKeywordInput) {
+              newKeywordInput.addEventListener('keypress', function(event) {
+                  if (event.key === 'Enter' || event.keyCode === 13) {
+                      event.preventDefault();
+                      addKeyword();
+                  }
+              });
+          }
         }
 
         // 主渲染函數

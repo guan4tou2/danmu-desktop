@@ -77,6 +77,98 @@
       .animate-fade-in-scale-up {
         animation: fadeInScaleUp 0.5s ease-out forwards;
       }
+
+      /* Blacklist Warning Modal Styles */
+      #blacklistWarningModal {
+          /* display: none; /* Already set inline, but good for clarity if inline is removed later */
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent overlay */
+          display: flex; /* Changed from none by JS to flex */
+          align-items: center;
+          justify-content: center;
+          z-index: 1050; /* Higher than toast container (default z-50 for toast) */
+          opacity: 0; /* For fade-in effect */
+          transition: opacity 0.3s ease-in-out;
+          pointer-events: none; /* Initially not interactive */
+      }
+
+      #blacklistWarningModal.visible { /* Class to show modal */
+          opacity: 1;
+          pointer-events: auto; /* Interactive when visible */
+      }
+
+      #blacklistWarningModal .modal-content {
+          background-color: #1e293b; /* Tailwind slate-800 */
+          padding: 2rem;
+          border-radius: 0.75rem; /* Tailwind rounded-xl */
+          text-align: center;
+          border: 2px solid #ef4444; /* Tailwind red-500 */
+          box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+          transform: scale(0.95); /* For scale-up effect */
+          transition: transform 0.3s ease-in-out;
+      }
+
+      #blacklistWarningModal.visible .modal-content {
+          transform: scale(1);
+      }
+
+      #blacklistWarningModal .warning-triangle {
+          fill: #ef4444; /* Tailwind red-500 */
+          margin-bottom: 1rem;
+          width: 48px; /* Explicit size */
+          height: 48px; /* Explicit size */
+          display: inline-block; /* Center SVG */
+      }
+
+      #blacklistWarningModal .warning-message {
+          color: #f1f5f9; /* Tailwind slate-100 */
+          font-size: 1.125rem; /* Tailwind text-lg */
+          margin-bottom: 1.5rem;
+      }
+
+      #blacklistWarningModal .ok-button {
+          background-color: #ef4444; /* Tailwind red-500 */
+          color: white;
+          font-weight: bold;
+          padding: 0.75rem 1.5rem;
+          border: none;
+          border-radius: 0.5rem; /* Tailwind rounded-lg */
+          cursor: pointer;
+          transition: background-color 0.2s;
+      }
+
+      #blacklistWarningModal .ok-button:hover {
+          background-color: #dc2626; /* Tailwind red-600 */
+      }
+
+      /* Flashing Animation for the modal border */
+      @keyframes flashWarningBorder {
+          0%, 100% { border-color: #ef4444; } /* red-500 */
+          50% { border-color: #f87171; } /* red-400, slightly lighter */
+      }
+
+      #blacklistWarningModal.flashing .modal-content {
+          animation: flashWarningBorder 0.7s infinite;
+      }
+
+      @keyframes flashIcon {
+          0%, 100% {
+              transform: scale(1);
+              opacity: 1;
+          }
+          50% {
+              transform: scale(1.2);
+              opacity: 0.7;
+          }
+      }
+
+      #blacklistWarningModal.flashing .warning-triangle {
+          animation: flashIcon 0.7s infinite steps(1, end);
+      }
     </style>
   </head>
   <body
@@ -359,13 +451,66 @@
 
           // Toast container
           toastContainer: document.getElementById("toast-container"),
+
+          // Blacklist Warning Modal Elements
+          blacklistWarningModal: document.getElementById('blacklistWarningModal'),
+          blacklistWarningMessage: document.getElementById('blacklistWarningMessage'),
+          // blacklistWarningOkButton: document.getElementById('blacklistWarningOkButton'), // Removed
         };
 
         // --- State management ---
         let currentSettings = {};
         let ws = null;
+        let userBlacklist = [];
+        let autoDismissTimer = null;
 
         // --- Functions ---
+
+        async function fetchUserBlacklist() {
+            try {
+                const response = await fetch('/admin/blacklist/get', { method: 'GET', credentials: 'same-origin' });
+                if (response.ok) {
+                    userBlacklist = await response.json();
+                    console.log("User blacklist loaded:", userBlacklist);
+                } else {
+                    console.error('Failed to fetch user blacklist:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error fetching user blacklist:', error);
+            }
+        }
+
+        function showBlacklistWarningModal(message) {
+            if (elements.blacklistWarningModal && elements.blacklistWarningMessage) {
+                elements.blacklistWarningMessage.textContent = message;
+                elements.blacklistWarningModal.style.display = 'flex';
+
+                // Clear any existing timer before setting a new one
+                if (autoDismissTimer) {
+                    clearTimeout(autoDismissTimer);
+                }
+                autoDismissTimer = setTimeout(hideBlacklistWarningModal, 5000); // Auto-dismiss after 5 seconds
+
+                setTimeout(() => {
+                    elements.blacklistWarningModal.classList.add('visible');
+                    elements.blacklistWarningModal.classList.add('flashing');
+                }, 20);
+            }
+        }
+
+        function hideBlacklistWarningModal() {
+            if (autoDismissTimer) { // Clear the auto-dismiss timer if it's active
+                clearTimeout(autoDismissTimer);
+                autoDismissTimer = null;
+            }
+            if (elements.blacklistWarningModal) {
+                elements.blacklistWarningModal.classList.remove('visible');
+                elements.blacklistWarningModal.classList.remove('flashing');
+                setTimeout(() => {
+                    elements.blacklistWarningModal.style.display = 'none';
+                }, 300);
+            }
+        }
 
         // Show toast message (stackable version)
         function showToast(message, isSuccess = true) {
@@ -669,6 +814,17 @@
             return;
           }
 
+          // ---- START OF NEW BLACKLIST CHECK ----
+          if (userBlacklist && userBlacklist.length > 0) {
+              for (const keyword of userBlacklist) {
+                  if (content.toLowerCase().includes(keyword.toLowerCase())) { // Case-insensitive check
+                      showBlacklistWarningModal("Warning: Message contains blocked words and was not sent.");
+                      return; // Stop further processing and do not send
+                  }
+              }
+          }
+          // ---- END OF NEW BLACKLIST CHECK ----
+
           const payload = {
             text: content,
             opacity: currentSettings.opacity,
@@ -725,10 +881,35 @@
           updatePreview();
           await fetchLatestSettings();
           connectWebSocket();
+          await fetchUserBlacklist(); // Add this line
         }
 
         init();
+
+        // Event listeners for Blacklist Warning Modal
+        // if (elements.blacklistWarningOkButton) { // Removed
+        //     elements.blacklistWarningOkButton.addEventListener('click', hideBlacklistWarningModal);
+        // }
+        if (elements.blacklistWarningModal) {
+            elements.blacklistWarningModal.addEventListener('click', function(event) {
+                if (event.target === elements.blacklistWarningModal) { // Clicked on overlay, not content
+                    hideBlacklistWarningModal();
+                }
+            });
+        }
+
       });
     </script>
+
+    <!-- Blacklist Warning Modal -->
+    <div id="blacklistWarningModal" style="display: none;"> <!-- Initially hidden -->
+        <div class="modal-content">
+            <svg class="warning-triangle" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="48px" height="48px">
+                <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+            </svg>
+            <p id="blacklistWarningMessage" class="warning-message">Warning message here.</p>
+            <!-- <button id="blacklistWarningOkButton" class="ok-button">OK</button> Removed -->
+        </div>
+    </div>
   </body>
 </html>

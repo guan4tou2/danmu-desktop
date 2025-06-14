@@ -51,6 +51,7 @@ active_ws = None
 active_connections = set()
 # Add client connections for WebSocket server
 ws_clients = set()
+blacklist = []
 
 # Define setting ranges
 SETTING_RANGES = {
@@ -165,6 +166,11 @@ def fire():
     try:
         data = request.get_json()
 
+        text_content = data.get("text", "")
+        for keyword in blacklist:
+            if keyword in text_content:
+                return make_response(json.dumps({"error": "Content contains blocked keywords"}), 400, {"Content-Type": "application/json"})
+
         if not data.get("text"):
             return make_response("Content can't be empty", 400)
 
@@ -273,6 +279,49 @@ def Set():
 @app.route("/get_settings", methods=["GET"])
 def get_settings():
     return make_response(json.dumps(Options), 200, {"Content-Type": "application/json"})
+
+
+@app.route("/admin/blacklist/add", methods=["POST"])
+def add_to_blacklist():
+    global blacklist
+    if not session.get("logged_in"):
+        return make_response(json.dumps({"error": "Unauthorized"}), 401, {"Content-Type": "application/json"})
+    try:
+        data = request.get_json()
+        keyword = data.get("keyword")
+        if keyword and keyword not in blacklist:
+            blacklist.append(keyword)
+            return make_response(json.dumps({"message": "Keyword added"}), 200, {"Content-Type": "application/json"})
+        elif keyword in blacklist:
+            return make_response(json.dumps({"message": "Keyword already exists"}), 200, {"Content-Type": "application/json"})
+        else:
+            return make_response(json.dumps({"error": "Invalid keyword"}), 400, {"Content-Type": "application/json"})
+    except Exception as e:
+        return make_response(json.dumps({"error": str(e)}), 500, {"Content-Type": "application/json"})
+
+
+@app.route("/admin/blacklist/remove", methods=["POST"])
+def remove_from_blacklist():
+    global blacklist
+    if not session.get("logged_in"):
+        return make_response(json.dumps({"error": "Unauthorized"}), 401, {"Content-Type": "application/json"})
+    try:
+        data = request.get_json()
+        keyword = data.get("keyword")
+        if keyword and keyword in blacklist:
+            blacklist.remove(keyword)
+            return make_response(json.dumps({"message": "Keyword removed"}), 200, {"Content-Type": "application/json"})
+        else:
+            return make_response(json.dumps({"error": "Keyword not found"}), 404, {"Content-Type": "application/json"})
+    except Exception as e:
+        return make_response(json.dumps({"error": str(e)}), 500, {"Content-Type": "application/json"})
+
+
+@app.route("/admin/blacklist/get", methods=["GET"])
+def get_blacklist():
+    if not session.get("logged_in"):
+        return make_response(json.dumps({"error": "Unauthorized"}), 401, {"Content-Type": "application/json"})
+    return make_response(json.dumps(blacklist), 200, {"Content-Type": "application/json"})
 
 
 # Add connection health check thread
