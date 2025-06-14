@@ -332,12 +332,19 @@ function createWindow() {
   //   console.log("[Main] All child windows destroyed on closeChildWindows event."); // Renamed event
   // });
   ipcMain.on("closeChildWindows", (event) => { // This is the correct handler
-    childWindows.forEach(win => {
+    console.log('[Main Debug] closeChildWindows called. childWindows before destruction:', childWindows.map(w => w.id));
+    [...childWindows].forEach(win => { // Iterate over a shallow copy for safety
       if (win && !win.isDestroyed()) {
+        console.log(`[Main Debug] Attempting to destroy child window ID: ${win.id}`);
         win.destroy();
+      } else if (win) {
+        console.log(`[Main Debug] Child window ID: ${win.id} is already destroyed or invalid.`);
+      } else {
+        console.log('[Main Debug] Encountered a null/undefined entry in childWindows array.');
       }
     });
     childWindows = [];
+    console.log('[Main Debug] childWindows array after being cleared:', childWindows);
     console.log("[Main] All child windows destroyed on closeChildWindows event.");
   });
   // Handler for getDisplays
@@ -384,6 +391,7 @@ function createWindow() {
         childWindows.push(newChild);
       });
       console.log(`[Main] Created ${childWindows.length} child windows for sync multi-display.`);
+      console.log('[Main Debug] childWindows array after multi-display creation:', childWindows.map(w => w.id));
     } else {
       console.log("[Main] Sync multi-display DISABLED. Creating window for selected display.");
       if (displayIndex < 0 || displayIndex >= displays.length) {
