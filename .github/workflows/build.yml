@@ -191,18 +191,8 @@ jobs:
           prerelease: false
           generate_release_notes: false
           body: |
-            ## macOS Release v${{ needs.check_version_change.outputs.version }}
-
-            ### Changes
-            - 修复了弹幕爆炸效果
-            - 优化了性能
-            - 改进了用户界面
-
-            ### Installation
-            1. 下载 DMG 文件
-            2. 打开 DMG 文件
-            3. 将应用拖到 Applications 文件夹
-            4. 首次运行时，请在终端执行：
+            ## MacOS Installation
+            First execute, run in terminal:
             ```bash
             sudo xattr -r -d com.apple.quarantine 'danmu manager.app'
             ```
