@@ -5,13 +5,14 @@
  * `contextIsolation` is turned on. Use the contextBridge API in `preload.js`
  * to expose Node.js functionality from the main process.
  */
-function showdanmu(
+window.showdanmu = function(
   string,
   opacity = 75,
   color = "#ffffff",
   size = 50,
   speed = 7
 ) {
+  console.log('[showdanmu] Received:', { string, opacity, color, size, speed });
   var parentElement = document.getElementById("danmubody");
   var imgs = /^https?:\/\/\S*.(gif|png|jpeg|jpg)$/;
   if (imgs.test(string)) {
@@ -22,11 +23,12 @@ function showdanmu(
     var danmu = document.createElement("h1");
     danmu.className = "danmu";
     danmu.textContent = string;
-    danmu.setAttribute("data-storke", string);
+    danmu.setAttribute("data-stroke", string);
     danmu.style.fontSize = `${size}px`;
     danmu.style.color = color;
   }
   parentElement.appendChild(danmu);
+  console.log('[showdanmu] Danmu element appended:', danmu);
 
   const Height = parseFloat(getComputedStyle(danmu).height);
   const Width = parseFloat(getComputedStyle(danmu).width);
@@ -37,32 +39,48 @@ function showdanmu(
   danmu.style.top = `${top}px`;
   danmu.style.opacity = opacity * 0.01;
 
-  // 计算动画持续时间
-  // 基础时间：20000ms (20秒)
-  // 速度范围：1-10，数字越大速度越快
-  // 使用线性计算让速度变化更均匀
-  const maxTime = 15000; // 最慢速度 (20秒)
-  const minTime = 2000; // 最快速度 (2秒)
-  const timeRange = maxTime - minTime;
-  let duration = maxTime - (timeRange / 10) * (speed - 1);
-
-  if (duration < minTime) {
-    duration = minTime;
+  // Calculate animation duration
+  // Speed range: 1 (slowest) to 10 (fastest)
+  let currentSpeed = Number(speed);
+  if (isNaN(currentSpeed)) {
+    console.warn('[showdanmu] Invalid speed received, defaulting to 5:', speed);
+    currentSpeed = 5;
   }
 
-  danmu.animate(
-    [
-      { transform: "translateX(100vw)" },
-      { transform: `translateX(-${Width}px)` },
-    ],
-    {
-      duration: duration,
-      easing: "linear",
-    }
-  ).onfinish = () => {
-    danmu.remove();
-  };
-}
+  // Clamp speed to the 1-10 range
+  currentSpeed = Math.max(1, Math.min(10, currentSpeed));
+
+  const maxTime = 20000; // Max duration (slowest) in ms (for speed 1)
+  const minTime = 2000;  // Min duration (fastest) in ms (for speed 10)
+
+  // Linear interpolation: duration = maxTime - (speed - 1) * (maxTime - minTime) / (10 - 1)
+  // (10 - 1) is the range of speed values (9 steps)
+  let duration = maxTime - (currentSpeed - 1) * (maxTime - minTime) / 9;
+
+  // Ensure duration is within minTime and maxTime bounds, even with floating point issues.
+  duration = Math.max(minTime, Math.min(maxTime, duration));
+
+  console.log('[showdanmu] Sanitized speed:', currentSpeed, 'Calculated duration:', duration);
+
+  console.log('[showdanmu] Animation parameters:', { Width, duration, top });
+  try {
+    danmu.animate(
+      [
+        { transform: "translateX(100vw)" },
+        { transform: `translateX(-${Width}px)` },
+      ],
+      {
+        duration: duration,
+        easing: "linear",
+      }
+    ).onfinish = () => {
+      console.log('[showdanmu] Animation finished, danmu removed:', danmu);
+      danmu.remove();
+    };
+  } catch (e) {
+    console.error('[showdanmu] Animation error:', e);
+  }
+};
 
 const startButton = document.getElementById("start-button");
 const stopButton = document.getElementById("stop-button");
