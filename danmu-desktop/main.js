@@ -887,41 +887,53 @@ function setupChildWindow(targetWindow, display, ip, port) {
           lastHeartbeatResponse = Date.now()
           
           let txt = event.data
+          // console.log('[WebSocket] Raw message received:', txt); // Log from previous step
+
           if (txt === "connection") {
-            console.log(txt)
+              console.log(txt);
           } else if (txt === "heartbeat_ack") {
-            // Server heartbeat response
-            console.log("Received heartbeat response")
+              console.log("Received heartbeat response");
           } else {
-            try {
-              let data = JSON.parse(txt)
-              
-              // If this is a heartbeat response packet
-              if (data.type === "heartbeat_ack") {
-                console.log("Received heartbeat response")
-                return
+              try {
+                  console.log('[WebSocket] Raw message received:', txt);
+                  let data = JSON.parse(txt);
+                  console.log('[WebSocket] Parsed data:', data);
+
+                  if (data.type === "heartbeat_ack") {
+                      console.log("Received heartbeat response");
+                      return;
+                  }
+                  if (data.type === "ping") {
+                      if (ws.readyState === WebSocket.OPEN) {
+                          ws.send(JSON.stringify({ type: "pong" }));
+                      }
+                      return;
+                  }
+
+                  // Check if showdanmu is available, if not, wait and retry
+                  function processDanmuWhenReady(dataPayload) {
+                      if (typeof window.showdanmu === 'function') {
+                          console.log('[WebSocket] Calling window.showdanmu with:', dataPayload);
+                          window.showdanmu(dataPayload.text, dataPayload.opacity, '#' + dataPayload.color, dataPayload.size, parseInt(dataPayload.speed));
+                      } else {
+                          console.warn('[WebSocket] window.showdanmu not ready, retrying in 100ms...');
+                          setTimeout(() => processDanmuWhenReady(dataPayload), 100);
+                      }
+                  }
+
+                  processDanmuWhenReady({ // Package the data for the retry mechanism
+                      text: data.text,
+                      opacity: data.opacity,
+                      color: data.color, // color is already a string, hash will be added in processDanmuWhenReady
+                      size: data.size,
+                      speed: data.speed
+                  });
+
+              } catch (e) {
+                  console.error('Error processing message:', e, 'Raw message was:', txt);
               }
-              
-              // If this is a server ping
-              if (data.type === "ping") {
-                // Reply with pong
-                if (ws.readyState === WebSocket.OPEN) {
-                  ws.send(JSON.stringify({ type: "pong" }))
-                }
-                return
-              }
-              
-              let text = data.text
-              let opacity = data.opacity
-              let color = '#' + data.color
-              let size = data.size
-              let speed = parseInt(data.speed)
-              window.showdanmu(text, opacity, color, size, speed)
-            } catch (e) {
-              console.error("Error processing message:", e)
-            }
           }
-        }
+      }
       }
 
       // Page visibility change listener, check connection when page becomes visible again

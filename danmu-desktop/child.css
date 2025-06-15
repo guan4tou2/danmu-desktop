@@ -19,7 +19,7 @@ body {
   overflow: hidden;
 }
 h1::before {
-  content: attr(data-storke);
+  content: attr(data-stroke);
 }
 h1::before {
   position: absolute;
