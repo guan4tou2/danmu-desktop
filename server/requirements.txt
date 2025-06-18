@@ -28,7 +28,7 @@ markupsafe==3.0.2
     #   werkzeug
 python-dotenv==1.0.1
     # via dotenv
-setuptools==76.0.0
+setuptools==78.1.1
     # via
     #   zope-event
     #   zope-interface
