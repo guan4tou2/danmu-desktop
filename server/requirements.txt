@@ -16,7 +16,7 @@ gevent==24.11.1
     # via server (pyproject.toml)
 greenlet==3.1.1
     # via gevent
-h11==0.14.0
+h11==0.16.0
     # via wsproto
 itsdangerous==2.2.0
     # via flask
