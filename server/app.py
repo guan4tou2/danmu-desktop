@@ -377,7 +377,7 @@ def run_ws_server():
         print(f"Client disconnected. Remaining clients: {len(clients)}")
 
     # Handle WebSocket connections from Danmu Desktop
-    async def ws_handler(websocket, path):
+    async def ws_handler(websocket):
         await register(websocket)
         try:
             async for message in websocket:
