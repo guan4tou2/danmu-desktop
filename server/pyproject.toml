@@ -1,0 +1,23 @@
+[project]
+name = "server"
+version = "0.1.0"
+dependencies = [
+    "blinker",
+    "click",
+    "flask",
+    "flask-sock",
+    "gevent",
+    "greenlet",
+    "h11",
+    "itsdangerous",
+    "jinja2",
+    "markupsafe",
+    "python-dotenv",
+    "setuptools",
+    "simple-websocket",
+    "websockets",
+    "werkzeug",
+    "wsproto",
+    "zope-event",
+    "zope-interface"
+]

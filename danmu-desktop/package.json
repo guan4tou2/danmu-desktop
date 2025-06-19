@@ -22,14 +22,14 @@
     "@babel/core": "^7.27.4",
     "@babel/preset-env": "^7.27.2",
     "babel-loader": "^10.0.0",
-    "electron": "^35.2.0",
+    "electron": "^36.5.0",
     "electron-builder": "^26.0.12",
     "terser-webpack-plugin": "^5.3.14",
     "webpack": "^5.99.9",
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
-    "bootstrap": "^5.3.5",
+    "bootstrap": "^5.3.7",
     "jquery": "^3.7.1"
   },
   "build": {
