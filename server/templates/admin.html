@@ -304,10 +304,21 @@
                     blacklist.forEach(keyword => {
                         const keywordEl = document.createElement('div');
                         keywordEl.className = 'flex items-center justify-between bg-slate-700/50 p-2 rounded-lg';
-                        keywordEl.innerHTML = `
-                            <span class="text-slate-200">${keyword}</span>
-                            <button class="removeKeywordBtn text-red-400 hover:text-red-600 font-semibold" data-keyword="${keyword}">Remove</button>
-                        `;
+
+                        // Create a span for the keyword text
+                        const keywordSpan = document.createElement('span');
+                        keywordSpan.className = 'text-slate-200';
+                        keywordSpan.textContent = keyword; // Use textContent to sanitize
+
+                        // Create the remove button
+                        const removeButton = document.createElement('button');
+                        removeButton.className = 'removeKeywordBtn text-red-400 hover:text-red-600 font-semibold';
+                        removeButton.textContent = 'Remove'; // Set button text
+                        // Set data-keyword attribute safely
+                        removeButton.setAttribute('data-keyword', keyword); // Add this line
+
+                        keywordEl.appendChild(keywordSpan);
+                        keywordEl.appendChild(removeButton);
                         blacklistKeywordsDiv.appendChild(keywordEl);
                     });
                 }
