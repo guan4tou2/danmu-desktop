@@ -390,6 +390,10 @@ function createWindow() {
     "createChild",
     (event, ip, port, displayIndex, enableSyncMultiDisplay) => {
       // Added enableSyncMultiDisplay
+      if (typeof ip !== 'string' || !ip) {
+        console.warn(`[Main] createChild: Received invalid IP address. Expected a non-empty string, but got: '${ip}' (type: ${typeof ip})`);
+        return;
+      }
       console.log(
         `[Main] createChild IPC received: IP=${sanitizeLog(ip)}, Port=${sanitizeLog(port)}, DisplayIndex=${sanitizeLog(displayIndex)}, SyncMultiDisplay=${enableSyncMultiDisplay}`
       );
@@ -479,12 +483,15 @@ function createWindow() {
 
 // Renamed and refactored function
 function setupChildWindow(targetWindow, display, ip, port) {
+  const initialBounds = targetWindow.getBounds();
   console.log(
     `[Main] Setting up child window for display ID ${sanitizeLog(
       display.id
     )}. Initial bounds (before ready-to-show setBounds) might be default: x=${
-      targetWindow.getBounds().x
-    }, y=${targetWindow.getBounds().y}`
+      initialBounds.x
+    }, y=${initialBounds.y}, width=${initialBounds.width}, height=${
+      initialBounds.height
+    }`
   );
 
   targetWindow.loadFile(path.join(__dirname, "../child.html"));
@@ -495,9 +502,13 @@ function setupChildWindow(targetWindow, display, ip, port) {
       JSON.stringify(display.bounds, null, 2)
     );
     targetWindow.setBounds(display.bounds); // Explicitly set bounds
+    const boundsAfterSet = targetWindow.getBounds();
     console.log(
-      `[Main] Bounds after setBounds for display ID ${sanitizeLog(display.id)}:`,
-      JSON.stringify(targetWindow.getBounds(), null, 2)
+      `[Main] Bounds after setBounds for display ID ${sanitizeLog(display.id)}: x=${
+        boundsAfterSet.x
+      }, y=${boundsAfterSet.y}, width=${boundsAfterSet.width}, height=${
+        boundsAfterSet.height
+      }`
     );
 
     console.log(
@@ -508,9 +519,13 @@ function setupChildWindow(targetWindow, display, ip, port) {
     targetWindow.setIgnoreMouseEvents(true);
 
     targetWindow.show();
+    const finalBounds = targetWindow.getBounds();
     console.log(
-      `[Main] Child window for display ID ${sanitizeLog(display.id)} shown. Final bounds:`,
-      JSON.stringify(targetWindow.getBounds(), null, 2)
+      `[Main] Child window for display ID ${sanitizeLog(display.id)} shown. Final bounds: x=${
+        finalBounds.x
+      }, y=${finalBounds.y}, width=${finalBounds.width}, height=${
+        finalBounds.height
+      }`
     );
   });
 
@@ -530,7 +545,7 @@ function setupChildWindow(targetWindow, display, ip, port) {
     // We will sanitize ip and port before injecting them into the script.
     `
       const IP='${sanitizeLog(ip)}';
-      const WS_PORT=${sanitizeLog(port)}
+      const WS_PORT=${sanitizeLog(port)};
       console.log(IP, WS_PORT) // These are now sanitized
       let url = \`ws://${IP}:\${WS_PORT}\`
       let ws = null
