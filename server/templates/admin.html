@@ -394,8 +394,10 @@
 
           toastElement.innerHTML = `
                     <div class="${iconColorClass}">${iconSvg}</div>
-                    <div class="pl-4 text-sm font-normal">${message}</div>
+                    <div class="pl-4 text-sm font-normal"></div>
                 `;
+          const messageContainer = toastElement.querySelector(".pl-4.text-sm.font-normal");
+          messageContainer.textContent = message;
 
           // 3. 添加到容器
           toastContainer.appendChild(toastElement);
