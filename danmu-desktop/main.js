@@ -99,9 +99,9 @@ function createWindow() {
               opt.textContent = option.text
               screenSelect.appendChild(opt)
             })
-            console.log('Display options updated:', options.map(o => ({...o, text: sanitizeLog(o.text)})));
+            console.log('Display options updated:', options);
           } catch (error) {
-            console.error('Error updating display options:', sanitizeLog(error.message));
+            console.error('Error updating display options:', error.message);
           }
         })()
       `;
@@ -544,10 +544,10 @@ function setupChildWindow(targetWindow, display, ip, port) {
     // Note: sanitizeLog is a Node.js function, not directly available in browser execution context.
     // We will sanitize ip and port before injecting them into the script.
     `
-      const IP='${sanitizeLog(ip)}';
-      const WS_PORT=${sanitizeLog(port)};
-      console.log(IP, WS_PORT) // These are now sanitized
-      let url = \`ws://${IP}:\${WS_PORT}\`
+      const IP_ADDR='${sanitizeLog(ip)}';
+      const WS_PORT_NUM=${sanitizeLog(port)};
+      console.log(IP_ADDR, WS_PORT_NUM) // These are now sanitized
+      let url = \`ws://\${IP_ADDR}:\${WS_PORT_NUM}\`
       let ws = null
       let reconnectAttempts = 0
       const maxReconnectAttempts = 10
