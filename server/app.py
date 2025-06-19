@@ -219,7 +219,7 @@ def fire():
 
     except Exception as e:
         print(f"Send Error: {sanitize_log_string(str(e))}")
-        return make_response(str(e), 500)
+        return make_response("An internal error has occurred.", 500)
 
 
 @app.route("/update", methods=["POST"])
@@ -257,7 +257,7 @@ def update():
         return make_response("OK", 200)
     except Exception as e:
         print(f"Error updating settings: {sanitize_log_string(str(e))}")
-        return make_response(str(e), 400)
+        return make_response("An error occurred while updating settings.", 400)
 
 
 @app.route("/admin/Set", methods=["POST"])
