@@ -1,7 +1,7 @@
 name: Build Electron App
 
 permissions:
-  contents: read
+  contents: write
   packages: write
   pull-requests: write
 
