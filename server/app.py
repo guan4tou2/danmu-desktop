@@ -61,6 +61,13 @@ SETTING_RANGES = {
 }
 
 
+def sanitize_log_string(input_val):
+    s = str(input_val)
+    s = s.replace("\n", " ").replace("\r", " ")
+    s = s.replace("\t", " ")
+    return s
+
+
 def is_valid_image_url(url):
     return bool(re.match(r"https?://.*\.(jpeg|jpg|gif|png|webp)$", url, re.I))
 
@@ -73,7 +80,7 @@ def forward_to_ws_server(data):
         message_queue.put(data)
         return True
     except Exception as e:
-        print(f"Error forwarding message to WS server: {e}")
+        print(f"Error forwarding message to WS server: {sanitize_log_string(str(e))}")
         return False
 
 
@@ -107,7 +114,7 @@ def websocket(ws):
             except Exception:
                 pass  # Not JSON format or not a heartbeat message, ignore error and continue
         except Exception as e:
-            print(f"WebSocket error: {e}")
+            print(f"WebSocket error: {sanitize_log_string(str(e))}")
             active_connections.discard(ws)
             if ws == active_ws:
                 active_ws = None
@@ -122,7 +129,7 @@ def send_message(message):
             try:
                 client.send(message)
             except Exception as e:
-                print(f"Error sending message to client: {e}")
+                print(f"Error sending message to client: {sanitize_log_string(str(e))}")
                 active_connections.discard(client)
                 if client == active_ws:
                     active_ws = None
@@ -188,7 +195,7 @@ def fire():
                 active_ws.send(json.dumps(data))
                 web_success = True
             except Exception as e:
-                print(f"Failed to send with active_ws: {e}")
+                print(f"Failed to send with active_ws: {sanitize_log_string(str(e))}")
                 active_connections.discard(active_ws)
                 active_ws = None
 
@@ -202,7 +209,7 @@ def fire():
                     web_success = True
                     break
                 except Exception as e:
-                    print(f"Failed to send to connection: {e}")
+                    print(f"Failed to send to connection: {sanitize_log_string(str(e))}")
                     active_connections.discard(ws)
 
         if forward_success or web_success:
@@ -211,7 +218,7 @@ def fire():
             return make_response("Failed to send to any connection", 503)
 
     except Exception as e:
-        print(f"Send Error: {e}")
+        print(f"Send Error: {sanitize_log_string(str(e))}")
         return make_response(str(e), 500)
 
 
@@ -249,7 +256,7 @@ def update():
 
         return make_response("OK", 200)
     except Exception as e:
-        print(f"Error updating settings: {e}")
+        print(f"Error updating settings: {sanitize_log_string(str(e))}")
         return make_response(str(e), 400)
 
 
@@ -271,7 +278,7 @@ def Set():
         notification = {"type": "settings_changed", "settings": Options}
         forward_to_ws_server(notification)
     except Exception as e:
-        print(f"Change Error: {e}")
+        print(f"Change Error: {sanitize_log_string(str(e))}")
 
     return redirect(url_for("admin"))
 
@@ -337,13 +344,13 @@ def check_connections():
                         # Send a ping message to check connection
                         ws.send(json.dumps({"type": "ping"}))
                     except Exception as e:
-                        print(f"Connection dead, removing: {e}")
+                        print(f"Connection dead, removing: {sanitize_log_string(str(e))}")
                         active_connections.discard(ws)
                         if ws == active_ws:
                             active_ws = None
             time.sleep(30)  # Check every 30 seconds
         except Exception as e:
-            print(f"Error in connection check: {e}")
+            print(f"Error in connection check: {sanitize_log_string(str(e))}")
             time.sleep(30)
 
 
@@ -390,7 +397,7 @@ def run_ws_server():
                     # Not JSON or message that doesn't need special handling, ignore
                     pass
         except Exception as e:
-            print(f"WebSocket error in dedicated server: {e}")
+            print(f"WebSocket error in dedicated server: {sanitize_log_string(str(e))}")
         finally:
             await unregister(websocket)
 
@@ -419,7 +426,7 @@ def run_ws_server():
                         try:
                             await client.send(ping_message)
                         except Exception as e:
-                            print(f"Client connection lost: {e}")
+                            print(f"Client connection lost: {sanitize_log_string(str(e))}")
                             dead_clients.add(client)
 
                     # Remove disconnected clients
@@ -432,7 +439,7 @@ def run_ws_server():
 
                 await asyncio.sleep(0.5)  # Check message queue every second
             except Exception as e:
-                print(f"Error in message forwarding: {e}")
+                print(f"Error in message forwarding: {sanitize_log_string(str(e))}")
                 await asyncio.sleep(5)  # Wait longer when an error occurs
 
     # Start WebSocket server

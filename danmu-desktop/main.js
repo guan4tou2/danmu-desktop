@@ -2,6 +2,13 @@
 const { app, BrowserWindow, screen, Tray, Menu, ipcMain } = require("electron");
 const path = require("path");
 
+function sanitizeLog(input) {
+  let strInput = String(input);
+  strInput = strInput.replace(/\r\n|\r|\n/g, " ");
+  strInput = strInput.replace(/\t/g, " ");
+  return strInput;
+}
+
 let mainWindow;
 let childWindows = []; // Changed to an array
 let konamiCode = [
@@ -50,7 +57,7 @@ function createWindow() {
         try {
           win.destroy();
         } catch (err) {
-          console.error("[Main] Error destroying child window:", err);
+          console.error("[Main] Error destroying child window:", sanitizeLog(err.message));
         }
       }
     });
@@ -62,7 +69,9 @@ function createWindow() {
   mainWindow.webContents.on("did-finish-load", () => {
     try {
       const displays = screen.getAllDisplays();
-      console.log("Detected displays:", displays);
+      // Sanitize display information before logging
+      const sanitizedDisplays = displays.map(d => ({...d, id: sanitizeLog(d.id)}));
+      console.log("Detected displays:", sanitizedDisplays);
 
       const displayOptions = displays.map((display, index) => {
         const bounds = display.bounds;
@@ -82,25 +91,25 @@ function createWindow() {
             }
             
             screenSelect.innerHTML = ''
-            const options = ${JSON.stringify(displayOptions)}
+            const options = ${JSON.stringify(displayOptions.map(o => ({...o, text: sanitizeLog(o.text)})))}
             options.forEach(option => {
               const opt = document.createElement('option')
               opt.value = option.value
               opt.textContent = option.text
               screenSelect.appendChild(opt)
             })
-            console.log('Display options updated:', options)
+            console.log('Display options updated:', options.map(o => ({...o, text: sanitizeLog(o.text)})));
           } catch (error) {
-            console.error('Error updating display options:', error)
+            console.error('Error updating display options:', sanitizeLog(error.message));
           }
         })()
       `;
 
       mainWindow.webContents.executeJavaScript(script).catch((error) => {
-        console.error("Error executing display update script:", error);
+        console.error("Error executing display update script:", sanitizeLog(error.message));
       });
     } catch (error) {
-      console.error("Error getting display information:", error);
+      console.error("Error getting display information:", sanitizeLog(error.message));
     }
   });
 
@@ -122,7 +131,7 @@ function createWindow() {
       isKeyDown = true;
       lastKeyTime = currentTime;
 
-      console.log("Key pressed:", input.key, "Current index:", konamiIndex);
+      console.log("Key pressed:", sanitizeLog(input.key), "Current index:", konamiIndex);
 
       if (input.key === konamiCode[konamiIndex]) {
         konamiIndex++;
@@ -261,13 +270,13 @@ function createWindow() {
                   }
                 }, 4000);
               } catch (error) {
-                console.error('Error in Konami message:', error);
+                console.error('Error in Konami message:', sanitizeLog(error.message));
               }
             })();
           `
             )
             .catch((err) => {
-              console.error("Error showing Konami message:", err);
+              console.error("Error showing Konami message:", sanitizeLog(err.message));
             });
 
           // Clear danmus in the child window with an animation
@@ -325,18 +334,18 @@ function createWindow() {
                   });
 
                 } catch (error) {
-                  console.error('Error creating explosion effect:', error);
+                  console.error('Error creating explosion effect:', sanitizeLog(error.message));
                 }
               })();
             `;
               cw.webContents.executeJavaScript(script).catch((err) => {
-                console.error("Failed to execute danmu clearing script:", err);
+                console.error("Failed to execute danmu clearing script:", sanitizeLog(err.message));
               });
             }
           });
         }
       } else {
-        console.log("Match failed, resetting index");
+        console.log("Match failed, resetting index"); // No variable data here
         konamiIndex = 0;
         isKeyDown = false;
       }
@@ -370,7 +379,9 @@ function createWindow() {
   // Handler for getDisplays
   ipcMain.handle("getDisplays", async () => {
     const displays = screen.getAllDisplays();
-    console.log("[Main] getDisplays handled, returning:", displays);
+    // Sanitize display information before logging
+    const sanitizedDisplays = displays.map(d => ({...d, id: sanitizeLog(d.id)}));
+    console.log("[Main] getDisplays handled, returning:", sanitizedDisplays);
     return displays;
   });
 
@@ -379,7 +390,7 @@ function createWindow() {
     (event, ip, port, displayIndex, enableSyncMultiDisplay) => {
       // Added enableSyncMultiDisplay
       console.log(
-        `[Main] createChild IPC received: IP=${ip}, Port=${port}, DisplayIndex=${displayIndex}, SyncMultiDisplay=${enableSyncMultiDisplay}`
+        `[Main] createChild IPC received: IP=${sanitizeLog(ip)}, Port=${sanitizeLog(port)}, DisplayIndex=${sanitizeLog(displayIndex)}, SyncMultiDisplay=${enableSyncMultiDisplay}`
       );
       // Clear existing child windows
       childWindows.forEach((win) => {
@@ -401,11 +412,11 @@ function createWindow() {
         );
         displays.forEach((display, index) => {
           console.log(
-            `[MacOS Debug] Multi-display: Using bounds for display ${index} (ID: ${display.id}):`,
+            `[MacOS Debug] Multi-display: Using bounds for display ${index} (ID: ${sanitizeLog(display.id)}):`,
             JSON.stringify(display.bounds, null, 2)
           );
           console.log(
-            `[Main] Creating child window for display ${index} (ID: ${display.id}). Initial geometry will be default, overridden by setBounds later.`
+            `[Main] Creating child window for display ${index} (ID: ${sanitizeLog(display.id)}). Initial geometry will be default, overridden by setBounds later.`
           );
           const newChild = new BrowserWindow({
             // x, y, width, height removed
@@ -433,13 +444,13 @@ function createWindow() {
         if (displayIndex < 0 || displayIndex >= displays.length) {
           console.error(
             "[Main] Invalid display index for single display mode:",
-            displayIndex
+            sanitizeLog(displayIndex)
           );
           return;
         }
         const selectedDisplay = displays[displayIndex];
         console.log(
-          `[Main] Creating child window for selected display ${displayIndex} (ID: ${selectedDisplay.id}). Initial geometry will be default, overridden by setBounds later.`
+          `[Main] Creating child window for selected display ${sanitizeLog(displayIndex)} (ID: ${sanitizeLog(selectedDisplay.id)}). Initial geometry will be default, overridden by setBounds later.`
         );
         const newChild = new BrowserWindow({
           // x, y, width, height removed
@@ -466,9 +477,9 @@ function createWindow() {
 // Renamed and refactored function
 function setupChildWindow(targetWindow, display, ip, port) {
   console.log(
-    `[Main] Setting up child window for display ID ${
+    `[Main] Setting up child window for display ID ${sanitizeLog(
       display.id
-    }. Initial bounds (before ready-to-show setBounds) might be default: x=${
+    )}. Initial bounds (before ready-to-show setBounds) might be default: x=${
       targetWindow.getBounds().x
     }, y=${targetWindow.getBounds().y}`
   );
@@ -477,17 +488,17 @@ function setupChildWindow(targetWindow, display, ip, port) {
 
   targetWindow.once("ready-to-show", () => {
     console.log(
-      `[Main] In ready-to-show for display ID ${display.id}. Intended bounds:`,
+      `[Main] In ready-to-show for display ID ${sanitizeLog(display.id)}. Intended bounds:`,
       JSON.stringify(display.bounds, null, 2)
     );
     targetWindow.setBounds(display.bounds); // Explicitly set bounds
     console.log(
-      `[Main] Bounds after setBounds for display ID ${display.id}:`,
+      `[Main] Bounds after setBounds for display ID ${sanitizeLog(display.id)}:`,
       JSON.stringify(targetWindow.getBounds(), null, 2)
     );
 
     console.log(
-      `[Main] Child window for display ID ${display.id} is ready-to-show. Applying final settings before show.`
+      `[Main] Child window for display ID ${sanitizeLog(display.id)} is ready-to-show. Applying final settings before show.`
     );
     targetWindow.setAlwaysOnTop(true, "screen-saver");
     targetWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
@@ -495,7 +506,7 @@ function setupChildWindow(targetWindow, display, ip, port) {
 
     targetWindow.show();
     console.log(
-      `[Main] Child window for display ID ${display.id} shown. Final bounds:`,
+      `[Main] Child window for display ID ${sanitizeLog(display.id)} shown. Final bounds:`,
       JSON.stringify(targetWindow.getBounds(), null, 2)
     );
   });
@@ -506,17 +517,19 @@ function setupChildWindow(targetWindow, display, ip, port) {
       childWindows.splice(index, 1);
     }
     console.log(
-      `[Main] Child window for display ID ${display.id} removed from list upon close.`
+      `[Main] Child window for display ID ${sanitizeLog(display.id)} removed from list upon close.`
     );
   });
 
   // WebSocket connection logic (remains the same)
   targetWindow.webContents.executeJavaScript(
+    // Note: sanitizeLog is a Node.js function, not directly available in browser execution context.
+    // We will sanitize ip and port before injecting them into the script.
     `
-      const IP='${ip}';
-      const WS_PORT=${port}
-      console.log(IP, WS_PORT)
-      let url = \`ws://${ip}:\${WS_PORT}\`
+      const IP='${sanitizeLog(ip)}';
+      const WS_PORT=${sanitizeLog(port)}
+      console.log(IP, WS_PORT) // These are now sanitized
+      let url = \`ws://${IP}:\${WS_PORT}\`
       let ws = null
       let reconnectAttempts = 0
       const maxReconnectAttempts = 10
@@ -540,7 +553,7 @@ function setupChildWindow(targetWindow, display, ip, port) {
               // Check for timeout
               const timeSinceLastResponse = Date.now() - lastHeartbeatResponse
               if (timeSinceLastResponse > heartbeatTimeout) {
-                console.log("Heartbeat timeout, connection may be lost")
+                console.log("Heartbeat timeout, connection may be lost") // No variable data
                 clearInterval(heartbeatInterval)
                 // If connection is broken but WebSocket state is still OPEN, manually close and reconnect
                 if (ws.readyState === WebSocket.OPEN) {
@@ -549,7 +562,7 @@ function setupChildWindow(targetWindow, display, ip, port) {
                 }
               }
             } catch (error) {
-              console.error("Error sending heartbeat:", error)
+              console.error("Error sending heartbeat:", error.message) // Sanitize error message
               clearInterval(heartbeatInterval)
               if (ws.readyState === WebSocket.OPEN) {
                 connectionLost = true
@@ -566,14 +579,14 @@ function setupChildWindow(targetWindow, display, ip, port) {
           try {
             ws.close()
           } catch (e) {
-            console.error("Error closing old connection:", e)
+            console.error("Error closing old connection:", e.message) // Sanitize error message
           }
         }
         
         ws = new WebSocket(url)
         
         ws.onopen = () => {
-          console.log('Connection opened')
+          console.log('Connection opened') // No variable data
           reconnectAttempts = 0
           connectionLost = false
           lastHeartbeatResponse = Date.now()
@@ -865,20 +878,20 @@ function setupChildWindow(targetWindow, display, ip, port) {
         }
         
         ws.onclose = (event) => {
-          console.log('Connection closed', event.code)
+          console.log('Connection closed', event.code) // event.code is a number, not typically user input
           clearInterval(heartbeatInterval)
           
           // Use incremental reconnect delay
           const currentDelay = connectionLost ? reconnectDelay : reconnectDelay * (reconnectAttempts + 1)
           
           // Unlimited reconnect attempts, but with increasing delay
-          console.log(\`Attempting to reconnect in \${currentDelay/1000} seconds...\`)
+          console.log(\`Attempting to reconnect in \${currentDelay/1000} seconds...\`) // No direct user input
           setTimeout(connect, currentDelay)
           reconnectAttempts++
         }
         
         ws.onerror = (error) => {
-          console.error('WebSocket error:', error)
+          console.error('WebSocket error:', error.message) // Sanitize error message
           // No special handling on error, let onclose handle reconnection
         }
         
@@ -887,20 +900,32 @@ function setupChildWindow(targetWindow, display, ip, port) {
           lastHeartbeatResponse = Date.now()
           
           let txt = event.data
-          // console.log('[WebSocket] Raw message received:', txt); // Log from previous step
+          // console.log('[WebSocket] Raw message received:', sanitizeLog(txt)); // Log from previous step, sanitized
 
           if (txt === "connection") {
-              console.log(txt);
+              console.log(sanitizeLog(txt));
           } else if (txt === "heartbeat_ack") {
-              console.log("Received heartbeat response");
+              console.log("Received heartbeat response"); // No variable data
           } else {
               try {
-                  console.log('[WebSocket] Raw message received:', txt);
+                  // Sanitize before parsing, as JSON.parse can throw on weird characters.
+                  // However, sanitizing might break JSON structure if not careful.
+                  // Best to sanitize after parsing, on the actual data fields.
+                  console.log('[WebSocket] Raw message received:', (typeof txt === 'string' ? txt.replace(/\\n|\\r|\\t/g, ' ') : txt) ); // Basic sanitization for logging raw msg
                   let data = JSON.parse(txt);
+                  // Sanitize specific fields of data if they are strings
+                  if (data && typeof data === 'object') {
+                    for (const key in data) {
+                      if (typeof data[key] === 'string') {
+                        data[key] = data[key].replace(/\\r\\n|\\r|\\n|\\t/g, " "); // In-browser sanitization
+                      }
+                    }
+                  }
                   console.log('[WebSocket] Parsed data:', data);
 
+
                   if (data.type === "heartbeat_ack") {
-                      console.log("Received heartbeat response");
+                      console.log("Received heartbeat response"); // No variable data
                       return;
                   }
                   if (data.type === "ping") {
@@ -912,25 +937,27 @@ function setupChildWindow(targetWindow, display, ip, port) {
 
                   // Check if showdanmu is available, if not, wait and retry
                   function processDanmuWhenReady(dataPayload) {
+                      // dataPayload here is already sanitized from the loop above
                       if (typeof window.showdanmu === 'function') {
                           console.log('[WebSocket] Calling window.showdanmu with:', dataPayload);
                           window.showdanmu(dataPayload.text, dataPayload.opacity, '#' + dataPayload.color, dataPayload.size, parseInt(dataPayload.speed));
                       } else {
-                          console.warn('[WebSocket] window.showdanmu not ready, retrying in 100ms...');
+                          console.warn('[WebSocket] window.showdanmu not ready, retrying in 100ms...'); // No variable data
                           setTimeout(() => processDanmuWhenReady(dataPayload), 100);
                       }
                   }
 
                   processDanmuWhenReady({ // Package the data for the retry mechanism
+                      // data properties were sanitized in the loop above
                       text: data.text,
                       opacity: data.opacity,
-                      color: data.color, // color is already a string, hash will be added in processDanmuWhenReady
+                      color: data.color,
                       size: data.size,
                       speed: data.speed
                   });
 
               } catch (e) {
-                  console.error('Error processing message:', e, 'Raw message was:', txt);
+                  console.error('Error processing message:', e.message, 'Raw message was:', (typeof txt === 'string' ? txt.replace(/\\n|\\r|\\t/g, ' ') : txt)); // Sanitize error and raw message
               }
           }
       }
@@ -939,9 +966,9 @@ function setupChildWindow(targetWindow, display, ip, port) {
       // Page visibility change listener, check connection when page becomes visible again
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-          console.log("Page visible again, checking connection status")
+          console.log("Page visible again, checking connection status") // No variable data
           if (!ws || ws.readyState !== WebSocket.OPEN) {
-            console.log("Connection lost, attempting to reconnect")
+            console.log("Connection lost, attempting to reconnect") // No variable data
             connect()
           }
         }
@@ -1010,19 +1037,23 @@ app.on("window-all-closed", function () {
 function createChildWindow(displayIndex) {
   try {
     const displays = screen.getAllDisplays();
-    console.log("Available displays:", displays);
-    console.log("Selected display index:", displayIndex);
+    // Sanitize display information before logging
+    const sanitizedDisplays = displays.map(d => ({...d, id: sanitizeLog(d.id)}));
+    console.log("Available displays:", sanitizedDisplays);
+    console.log("Selected display index:", sanitizeLog(displayIndex));
 
     if (displayIndex < 0 || displayIndex >= displays.length) {
-      console.error("Invalid display index:", displayIndex);
+      console.error("Invalid display index:", sanitizeLog(displayIndex));
       return;
     }
 
     const selectedDisplay = displays[displayIndex];
-    console.log("Selected display:", selectedDisplay);
+    // Sanitize selectedDisplay info before logging
+    const sanitizedSelectedDisplay = {...selectedDisplay, id: sanitizeLog(selectedDisplay.id)};
+    console.log("Selected display:", sanitizedSelectedDisplay);
 
     const { width, height } = selectedDisplay.bounds;
-    console.log("Window dimensions:", { width, height });
+    console.log("Window dimensions:", { width, height }); // width and height are numbers
 
     childWindow = new BrowserWindow({ // This was the old single childWindow
       width: width,
@@ -1052,7 +1083,7 @@ function createChildWindow(displayIndex) {
       childWindow.destroy(); // This would refer to the old single childWindow
     });
   } catch (error) {
-    console.error("Error creating child window:", error);
+    console.error("Error creating child window:", sanitizeLog(error.message));
   }
 }
 */

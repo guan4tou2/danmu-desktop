@@ -1,3 +1,10 @@
+function sanitizeLog(input) {
+  let strInput = String(input);
+  strInput = strInput.replace(/\r\n|\r|\n/g, " ");
+  strInput = strInput.replace(/\t/g, " ");
+  return strInput;
+}
+
 /**
  * This file is loaded via the <script> tag in the index.html file and will
  * be executed in the renderer process for that window. No Node.js APIs are
@@ -12,7 +19,7 @@ window.showdanmu = function(
   size = 50,
   speed = 7
 ) {
-  console.log('[showdanmu] Received:', { string, opacity, color, size, speed });
+  console.log('[showdanmu] Received:', { string: sanitizeLog(string), opacity, color: sanitizeLog(color), size, speed });
   var parentElement = document.getElementById("danmubody");
   var imgs = /^https?:\/\/\S*.(gif|png|jpeg|jpg)$/;
   if (imgs.test(string)) {
@@ -43,7 +50,7 @@ window.showdanmu = function(
   // Speed range: 1 (slowest) to 10 (fastest)
   let currentSpeed = Number(speed);
   if (isNaN(currentSpeed)) {
-    console.warn('[showdanmu] Invalid speed received, defaulting to 5:', speed);
+    console.warn('[showdanmu] Invalid speed received, defaulting to 5:', sanitizeLog(speed));
     currentSpeed = 5;
   }
 
@@ -60,9 +67,9 @@ window.showdanmu = function(
   // Ensure duration is within minTime and maxTime bounds, even with floating point issues.
   duration = Math.max(minTime, Math.min(maxTime, duration));
 
-  console.log('[showdanmu] Sanitized speed:', currentSpeed, 'Calculated duration:', duration);
+  console.log('[showdanmu] Sanitized speed:', currentSpeed, 'Calculated duration:', duration); // No sensitive strings
 
-  console.log('[showdanmu] Animation parameters:', { Width, duration, top });
+  console.log('[showdanmu] Animation parameters:', { Width, duration, top }); // These are numbers
   try {
     danmu.animate(
       [
@@ -74,11 +81,12 @@ window.showdanmu = function(
         easing: "linear",
       }
     ).onfinish = () => {
+      // danmu object itself might be complex, but its direct properties logged here are not user strings.
       console.log('[showdanmu] Animation finished, danmu removed:', danmu);
       danmu.remove();
     };
   } catch (e) {
-    console.error('[showdanmu] Animation error:', e);
+    console.error('[showdanmu] Animation error:', sanitizeLog(e.message));
   }
 };
 
@@ -105,8 +113,8 @@ startButton.addEventListener("click", () => {
     const displayIndex = parseInt(screenSelect.value);
     const enableSyncMultiDisplay = syncMultiDisplayCheckbox.checked;
 
-    console.log(`[Renderer] Starting overlay with: IP=${IP}, PORT=${PORT}, DisplayIndex=${displayIndex}, SyncMultiDisplay=${enableSyncMultiDisplay}`);
-    console.log('[renderer.js] window.API before create:', window.API);
+    console.log(`[Renderer] Starting overlay with: IP=${sanitizeLog(IP)}, PORT=${sanitizeLog(PORT)}, DisplayIndex=${displayIndex}, SyncMultiDisplay=${enableSyncMultiDisplay}`);
+    console.log('[renderer.js] window.API before create:', window.API); // window.API is an object, not logging sensitive parts here
     const api = window.API;
     api.create(IP, PORT, displayIndex, enableSyncMultiDisplay); // Pass the new argument
 
@@ -116,6 +124,7 @@ startButton.addEventListener("click", () => {
     port.disabled = true;
     screenSelect.disabled = true;
     syncMultiDisplayCheckbox.disabled = true;
+    // Logging boolean values, no sanitization needed for these.
     console.log(`[Renderer] UI Disabled: screenSelect=${screenSelect.disabled}, syncMultiDisplayCheckbox=${syncMultiDisplayCheckbox.disabled}`);
   }
 });
@@ -127,8 +136,9 @@ stopButton.addEventListener("click", () => {
   port.disabled = false;
   syncMultiDisplayCheckbox.disabled = false;
   syncMultiDisplayCheckbox.dispatchEvent(new Event('change')); // This will trigger the change handler below
+  // Logging boolean value, no sanitization needed.
   console.log(`[Renderer] Overlay stopped. UI Enabled: syncMultiDisplayCheckbox=${syncMultiDisplayCheckbox.disabled}`);
-  console.log('[renderer.js] window.API before close:', window.API);
+  console.log('[renderer.js] window.API before close:', window.API); // window.API is an object
   const api = window.API;
   api.close(); // Changed from api.delete()
 });
@@ -136,12 +146,14 @@ stopButton.addEventListener("click", () => {
 syncMultiDisplayCheckbox.addEventListener('change', () => {
   if (syncMultiDisplayCheckbox.checked) {
     screenSelect.disabled = true;
+    // Logging boolean value, no sanitization needed.
     console.log(`[Renderer] Sync checkbox CHECKED: screenSelect.disabled=${screenSelect.disabled}`);
   } else {
     // Only enable screenSelect if the overlay is not active (i.e., startButton is enabled)
     if (startButton.disabled === false) {
       screenSelect.disabled = false;
     }
+    // Logging boolean values, no sanitization needed.
     console.log(`[Renderer] Sync checkbox UNCHECKED: screenSelect.disabled=${screenSelect.disabled} (startButton.disabled=${startButton.disabled})`);
   }
 });
@@ -150,4 +162,5 @@ syncMultiDisplayCheckbox.addEventListener('change', () => {
 if (syncMultiDisplayCheckbox.checked) {
   screenSelect.disabled = true;
 }
+// Logging boolean values, no sanitization needed.
 console.log(`[Renderer] Initial UI state: screenSelect.disabled=${screenSelect.disabled}, syncMultiDisplayCheckbox.checked=${syncMultiDisplayCheckbox.checked}`);
