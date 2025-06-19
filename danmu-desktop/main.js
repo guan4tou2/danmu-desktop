@@ -37,11 +37,12 @@ function createWindow() {
     icon: path.join(__dirname, "assets/icon.png"),
     webPreferences: {
       preload: path.join(__dirname, "preload.bundle.js"), // Corrected path
-      nodeIntegration: true,
+      nodeIntegration: false,
+      contextIsolation: true,
     },
   });
   // and load the index.html of the app.
-  mainWindow.loadFile("index.html");
+  mainWindow.loadFile(path.join(__dirname, "../index.html"));
 
   // RELOCATED HANDLERS START
   mainWindow.on("minimize", (ev) => {
@@ -428,7 +429,8 @@ function createWindow() {
             icon: path.join(__dirname, "assets/icon.png"),
             webPreferences: {
               preload: path.join(__dirname, "preload.bundle.js"), // Corrected path
-              nodeIntegration: true,
+              nodeIntegration: false,
+              contextIsolation: true,
             },
           });
           setupChildWindow(newChild, display, ip, port);
@@ -462,7 +464,8 @@ function createWindow() {
           icon: path.join(__dirname, "assets/icon.png"),
           webPreferences: {
             preload: path.join(__dirname, "preload.bundle.js"), // Corrected path
-            nodeIntegration: true,
+            nodeIntegration: false,
+            contextIsolation: true,
           },
         });
         setupChildWindow(newChild, selectedDisplay, ip, port);
@@ -484,7 +487,7 @@ function setupChildWindow(targetWindow, display, ip, port) {
     }, y=${targetWindow.getBounds().y}`
   );
 
-  targetWindow.loadFile("child.html");
+  targetWindow.loadFile(path.join(__dirname, "../child.html"));
 
   targetWindow.once("ready-to-show", () => {
     console.log(
