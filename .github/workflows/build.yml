@@ -1,5 +1,10 @@
 name: Build Electron App
 
+permissions:
+  contents: read
+  packages: write
+  pull-requests: write
+
 on:
   push:
     branches:
