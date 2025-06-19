@@ -5,7 +5,7 @@ import re
 import secrets
 import threading
 import time
-
+import html
 from dotenv import find_dotenv, load_dotenv
 from flask import (
     Flask,
@@ -236,7 +236,7 @@ def update():
                     or value > SETTING_RANGES[key]["max"]
                 ):
                     return make_response(
-                        f"{key} value must be between {SETTING_RANGES[key]['min']} and {SETTING_RANGES[key]['max']}",
+                        f"{html.escape(key)} value must be between {SETTING_RANGES[key]['min']} and {SETTING_RANGES[key]['max']}",
                         400,
                     )
 
