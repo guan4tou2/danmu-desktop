@@ -22,10 +22,27 @@ window.showdanmu = function(
   console.log('[showdanmu] Received:', { string: sanitizeLog(string), opacity, color: sanitizeLog(color), size, speed });
   var parentElement = document.getElementById("danmubody");
   var imgs = /^https?:\/\/\S*.(gif|png|jpeg|jpg)$/;
-  if (imgs.test(string)) {
+  // Add a check for http/https protocols
+  var protocolCheck = /^(http:|https:)/i;
+  if (imgs.test(string) && protocolCheck.test(string)) { // Added protocolCheck
     var danmu = document.createElement("img");
     danmu.setAttribute("src", string);
     danmu.width = size * 2;
+  } else if (imgs.test(string) && !protocolCheck.test(string)) {
+    // Handle invalid protocol for an image URL by treating it as text
+    console.warn('[showdanmu] Invalid protocol for image URL:', sanitizeLog(string), 'Displaying as text.');
+    var danmu = document.createElement("h1");
+    danmu.className = "danmu";
+    danmu.textContent = "Invalid image URL: " + string; // Display the problematic string as text
+    danmu.setAttribute("data-stroke", "Invalid image URL: " + string);
+    danmu.style.fontSize = `${size}px`;
+    danmu.style.color = "red"; // Indicate an error
+    // Ensure parentElement is defined before appending
+    if (parentElement) {
+        parentElement.appendChild(danmu);
+    } else {
+        console.error('[showdanmu] parentElement is null, cannot append error message for invalid image URL.');
+    }
   } else {
     var danmu = document.createElement("h1");
     danmu.className = "danmu";
