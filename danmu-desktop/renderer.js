@@ -21,7 +21,7 @@ window.showdanmu = function(
 ) {
   console.log('[showdanmu] Received:', { string: sanitizeLog(string), opacity, color: sanitizeLog(color), size, speed });
   var parentElement = document.getElementById("danmubody");
-  var imgs = /^https?:\/\/\S*.(gif|png|jpeg|jpg)$/;
+  var imgs = /^https?:\/\/([^\s/]+\/)*[^\s/]+\.(gif|png|jpeg|jpg)$/i;
   // Add a check for http/https protocols
   var protocolCheck = /^(http:|https:)/i;
   if (imgs.test(string) && protocolCheck.test(string)) { // Added protocolCheck
@@ -119,7 +119,7 @@ startButton.addEventListener("click", () => {
   var ipre =
     /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
   var domainre =
-    /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+    /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
   var portre = /^\d{1,5}$/;
   if (
     ipre.test(ip.value) ||

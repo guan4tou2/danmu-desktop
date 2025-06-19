@@ -69,7 +69,7 @@ def sanitize_log_string(input_val):
 
 
 def is_valid_image_url(url):
-    return bool(re.match(r"https?://.*\.(jpeg|jpg|gif|png|webp)$", url, re.I))
+    return bool(re.match(r"https?://([^\s/]+/)*[^\s/]+\.(jpeg|jpg|gif|png|webp)$", url, re.I))
 
 
 # Internal communication: Forward messages to WebSocket server
