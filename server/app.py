@@ -321,7 +321,8 @@ def remove_from_blacklist():
         else:
             return make_response(json.dumps({"error": "Keyword not found"}), 404, {"Content-Type": "application/json"})
     except Exception as e:
-        return make_response(json.dumps({"error": str(e)}), 500, {"Content-Type": "application/json"})
+        print(f"Error occurred: {sanitize_log_string(str(e))}")  # Log the sanitized exception details
+        return make_response(json.dumps({"error": "An internal error has occurred"}), 500, {"Content-Type": "application/json"})
 
 
 @app.route("/admin/blacklist/get", methods=["GET"])
@@ -344,13 +345,13 @@ def check_connections():
                         # Send a ping message to check connection
                         ws.send(json.dumps({"type": "ping"}))
                     except Exception as e:
-                        print(f"Connection dead, removing: {sanitize_log_string(str(e))}")
+                        print(f"Connection dead, removing: {sanitize_log_string(str(e))}")  # No changes needed here
                         active_connections.discard(ws)
                         if ws == active_ws:
                             active_ws = None
             time.sleep(30)  # Check every 30 seconds
         except Exception as e:
-            print(f"Error in connection check: {sanitize_log_string(str(e))}")
+            print(f"Error in connection check: {sanitize_log_string(str(e))}")  # No changes needed here
             time.sleep(30)
 
 
