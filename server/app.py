@@ -304,7 +304,8 @@ def add_to_blacklist():
         else:
             return make_response(json.dumps({"error": "Invalid keyword"}), 400, {"Content-Type": "application/json"})
     except Exception as e:
-        return make_response(json.dumps({"error": str(e)}), 500, {"Content-Type": "application/json"})
+        print(f"Error occurred: {sanitize_log_string(str(e))}")  # Log the sanitized exception details
+        return make_response(json.dumps({"error": "An internal error has occurred"}), 500, {"Content-Type": "application/json"})
 
 
 @app.route("/admin/blacklist/remove", methods=["POST"])
