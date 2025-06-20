@@ -1,3 +1,4 @@
+import html
 import json
 import os
 import queue
@@ -5,7 +6,7 @@ import re
 import secrets
 import threading
 import time
-import html
+
 from dotenv import find_dotenv, load_dotenv
 from flask import (
     Flask,
@@ -69,7 +70,9 @@ def sanitize_log_string(input_val):
 
 
 def is_valid_image_url(url):
-    return bool(re.match(r"https?://([^\s/]+/)*[^\s/]+\.(jpeg|jpg|gif|png|webp)$", url, re.I))
+    return bool(
+        re.match(r"https?://([^\s/]+/)*[^\s/]+\.(jpeg|jpg|gif|png|webp)$", url, re.I)
+    )
 
 
 # Internal communication: Forward messages to WebSocket server
@@ -176,7 +179,11 @@ def fire():
         text_content = data.get("text", "")
         for keyword in blacklist:
             if keyword in text_content:
-                return make_response(json.dumps({"error": "Content contains blocked keywords"}), 400, {"Content-Type": "application/json"})
+                return make_response(
+                    json.dumps({"error": "Content contains blocked keywords"}),
+                    400,
+                    {"Content-Type": "application/json"},
+                )
 
         if not data.get("text"):
             return make_response("Content can't be empty", 400)
@@ -209,7 +216,9 @@ def fire():
                     web_success = True
                     break
                 except Exception as e:
-                    print(f"Failed to send to connection: {sanitize_log_string(str(e))}")
+                    print(
+                        f"Failed to send to connection: {sanitize_log_string(str(e))}"
+                    )
                     active_connections.discard(ws)
 
         if forward_success or web_success:
@@ -292,45 +301,126 @@ def get_settings():
 def add_to_blacklist():
     global blacklist
     if not session.get("logged_in"):
-        return make_response(json.dumps({"error": "Unauthorized"}), 401, {"Content-Type": "application/json"})
+        return make_response(
+            json.dumps({"error": "Unauthorized"}),
+            401,
+            {"Content-Type": "application/json"},
+        )
     try:
         data = request.get_json()
         keyword = data.get("keyword")
         if keyword and keyword not in blacklist:
             blacklist.add(keyword)
-            return make_response(json.dumps({"message": "Keyword added"}), 200, {"Content-Type": "application/json"})
+            return make_response(
+                json.dumps({"message": "Keyword added"}),
+                200,
+                {"Content-Type": "application/json"},
+            )
         elif keyword in blacklist:
-            return make_response(json.dumps({"message": "Keyword already exists"}), 200, {"Content-Type": "application/json"})
+            return make_response(
+                json.dumps({"message": "Keyword already exists"}),
+                200,
+                {"Content-Type": "application/json"},
+            )
         else:
-            return make_response(json.dumps({"error": "Invalid keyword"}), 400, {"Content-Type": "application/json"})
+            return make_response(
+                json.dumps({"error": "Invalid keyword"}),
+                400,
+                {"Content-Type": "application/json"},
+            )
     except Exception as e:
-        print(f"Error occurred: {sanitize_log_string(str(e))}")  # Log the sanitized exception details
-        return make_response(json.dumps({"error": "An internal error has occurred"}), 500, {"Content-Type": "application/json"})
+        print(
+            f"Error occurred: {sanitize_log_string(str(e))}"
+        )  # Log the sanitized exception details
+        return make_response(
+            json.dumps({"error": "An internal error has occurred"}),
+            500,
+            {"Content-Type": "application/json"},
+        )
 
 
 @app.route("/admin/blacklist/remove", methods=["POST"])
 def remove_from_blacklist():
     global blacklist
     if not session.get("logged_in"):
-        return make_response(json.dumps({"error": "Unauthorized"}), 401, {"Content-Type": "application/json"})
+        return make_response(
+            json.dumps({"error": "Unauthorized"}),
+            401,
+            {"Content-Type": "application/json"},
+        )
     try:
         data = request.get_json()
         keyword = data.get("keyword")
         if keyword and keyword in blacklist:
             blacklist.discard(keyword)
-            return make_response(json.dumps({"message": "Keyword removed"}), 200, {"Content-Type": "application/json"})
+            return make_response(
+                json.dumps({"message": "Keyword removed"}),
+                200,
+                {"Content-Type": "application/json"},
+            )
         else:
-            return make_response(json.dumps({"error": "Keyword not found"}), 404, {"Content-Type": "application/json"})
+            return make_response(
+                json.dumps({"error": "Keyword not found"}),
+                404,
+                {"Content-Type": "application/json"},
+            )
     except Exception as e:
-        print(f"Error occurred: {sanitize_log_string(str(e))}")  # Log the sanitized exception details
-        return make_response(json.dumps({"error": "An internal error has occurred"}), 500, {"Content-Type": "application/json"})
+        print(
+            f"Error occurred: {sanitize_log_string(str(e))}"
+        )  # Log the sanitized exception details
+        return make_response(
+            json.dumps({"error": "An internal error has occurred"}),
+            500,
+            {"Content-Type": "application/json"},
+        )
 
 
 @app.route("/admin/blacklist/get", methods=["GET"])
 def get_blacklist():
     if not session.get("logged_in"):
-        return make_response(json.dumps({"error": "Unauthorized"}), 401, {"Content-Type": "application/json"})
-    return make_response(json.dumps(list(blacklist)), 200, {"Content-Type": "application/json"})
+        return make_response(
+            json.dumps({"error": "Unauthorized"}),
+            401,
+            {"Content-Type": "application/json"},
+        )
+    return make_response(
+        json.dumps(list(blacklist)), 200, {"Content-Type": "application/json"}
+    )
+
+
+@app.route("/check_blacklist", methods=["POST"])
+def check_blacklist():
+    """检查文本是否包含黑名单关键词，不返回具体的关键词列表"""
+    try:
+        data = request.get_json()
+        text_content = data.get("text", "").lower()
+
+        # 检查是否包含任何黑名单关键词
+        for keyword in blacklist:
+            if keyword.lower() in text_content:
+                return make_response(
+                    json.dumps(
+                        {
+                            "blocked": True,
+                            "message": "Content contains blocked keywords",
+                        }
+                    ),
+                    200,
+                    {"Content-Type": "application/json"},
+                )
+
+        return make_response(
+            json.dumps({"blocked": False, "message": "Content is allowed"}),
+            200,
+            {"Content-Type": "application/json"},
+        )
+    except Exception as e:
+        print(f"Error checking blacklist: {sanitize_log_string(str(e))}")
+        return make_response(
+            json.dumps({"error": "An internal error has occurred"}),
+            500,
+            {"Content-Type": "application/json"},
+        )
 
 
 # Add connection health check thread
@@ -346,13 +436,17 @@ def check_connections():
                         # Send a ping message to check connection
                         ws.send(json.dumps({"type": "ping"}))
                     except Exception as e:
-                        print(f"Connection dead, removing: {sanitize_log_string(str(e))}")  # No changes needed here
+                        print(
+                            f"Connection dead, removing: {sanitize_log_string(str(e))}"
+                        )  # No changes needed here
                         active_connections.discard(ws)
                         if ws == active_ws:
                             active_ws = None
             time.sleep(30)  # Check every 30 seconds
         except Exception as e:
-            print(f"Error in connection check: {sanitize_log_string(str(e))}")  # No changes needed here
+            print(
+                f"Error in connection check: {sanitize_log_string(str(e))}"
+            )  # No changes needed here
             time.sleep(30)
 
 
@@ -428,7 +522,9 @@ def run_ws_server():
                         try:
                             await client.send(ping_message)
                         except Exception as e:
-                            print(f"Client connection lost: {sanitize_log_string(str(e))}")
+                            print(
+                                f"Client connection lost: {sanitize_log_string(str(e))}"
+                            )
                             dead_clients.add(client)
 
                     # Remove disconnected clients
