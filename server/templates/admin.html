@@ -66,7 +66,7 @@
     <div id="vanta-bg" class="fixed top-0 left-0 w-full h-full z-0"></div>
 
     <!-- 主容器 -->
-    <main class="w-full max-w-3xl mx-auto z-10 animate-fade-in-scale-up">
+    <main class="w-full max-w-5xl mx-auto z-10 animate-fade-in-scale-up"> <!-- Changed max-w-3xl to max-w-5xl -->
       <!-- 模擬後端登入狀態 -->
       <div id="app-container">
         <!-- 內容將由 JavaScript 動態插入 -->
@@ -449,11 +449,11 @@
           ) => `
                     <div class="glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent">
                         <div class="flex items-center justify-between">
-                            <div>
+                            <div class="flex-grow pr-4">
                                 <h3 class="text-lg font-bold text-white">${title}</h3>
                                 <p class="text-sm text-slate-400">${description}</p>
                             </div>
-                            <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                            <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in flex-shrink-0">
                                 <input type="checkbox" name="${id}" id="toggle-${id}" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer" ${
             isEnabled ? "checked" : ""
           } />
@@ -553,6 +553,37 @@
                         <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="3" value="${currentSettings.FontSize[3]}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
                     `
           );
+
+          // Font Family Setting
+          const fontFamilyDescription = currentSettings.FontFamily[0]
+            ? "Users can choose their font. Select the default font here if they don't choose, or the font to be used if user choice is disabled."
+            : "Users cannot choose their font. Danmus will use the font selected below.";
+
+          const fontFamilyCardContent = `
+            <div>
+                <label class="text-sm font-medium text-slate-300">Font for Danmus / Default User Choice</label>
+                <select class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg" data-key="FontFamily" data-index="3" id="fontFamilySelect">
+                    <!-- Options will be populated by JS -->
+                </select>
+            </div>
+            <div class="mt-4">
+                <label class="text-sm font-medium text-slate-300">Upload New TTF Font</label>
+                <input type="file" id="fontUploadInput" accept=".ttf" class="mt-1 w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700"/>
+                <button id="uploadFontBtn" class="mt-2 w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg">Upload Font</button>
+            </div>
+            <small class="text-slate-500 text-xs block mt-2">Uploaded fonts become available in the selection above and for users (if enabled).</small>
+            `;
+
+          settingsGrid.innerHTML += settingCard(
+            "FontFamily",
+            "Font Family Configuration",
+            fontFamilyDescription, // Dynamic description
+            currentSettings.FontFamily[0], // isEnabled (this now means "allow user choice")
+            fontFamilyCardContent, // Content is the same regardless of toggle for admin
+            fontFamilyCardContent  // Content is the same
+          );
+          populateFontFamilyDropdowns(); // Call after card is added to DOM
+
 
           // 速度設定
           settingsGrid.innerHTML += settingCard(
@@ -688,6 +719,12 @@
                   }
               });
           }
+
+          // Font upload button event listeners
+            const uploadFontBtn = document.getElementById('uploadFontBtn');
+            if (uploadFontBtn) {
+                uploadFontBtn.addEventListener('click', () => handleFontUpload('fontUploadInput', 'uploadFontBtn'));
+            }
         }
 
         // 主渲染函數
@@ -701,10 +738,102 @@
 
         // --- 初始化 ---
         async function init() {
-          await fetchLatestSettings();
+          await fetchLatestSettings(); // This will call renderControlPanel which now calls populateFontFamilyDropdowns
           render();
         }
 
+        async function populateFontFamilyDropdowns() {
+            try {
+                const response = await fetch('/admin/get_fonts');
+                if (!response.ok) {
+                    showToast('Failed to fetch font list.', false);
+                    return;
+                }
+                const fonts = await response.json();
+                const selectElement = document.getElementById('fontFamilySelect'); // Single select element now
+                const currentFontName = currentSettings.FontFamily[3];
+
+                if (!selectElement) return;
+                selectElement.innerHTML = ''; // Clear existing options
+
+                let foundCurrentFont = false;
+                fonts.forEach(font => {
+                    const option = document.createElement('option');
+                    option.value = font.name;
+                    option.textContent = `${font.name} (${font.type === 'default' ? 'Default' : font.type === 'system' ? 'System' : 'Uploaded'})`;
+                    if (font.name === currentFontName) {
+                        option.selected = true;
+                        foundCurrentFont = true;
+                    }
+                    selectElement.appendChild(option);
+                });
+
+                // If currentFontName from settings wasn't in the fetched list (e.g. deleted externally), try to select NotoSansTC
+                if (!foundCurrentFont) {
+                    const notoOption = Array.from(selectElement.options).find(opt => opt.value === "NotoSansTC");
+                    if (notoOption) {
+                        notoOption.selected = true;
+                        // Optionally update the setting in backend if it was invalid
+                        // await updateSetting("FontFamily", "NotoSansTC", 3);
+                    } else if (selectElement.options.length > 0) {
+                         selectElement.options[0].selected = true; // Fallback to first if Noto also not there
+                         // await updateSetting("FontFamily", selectElement.options[0].value, 3);
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error populating font dropdowns:', error);
+                showToast('Error loading font list.', false);
+            }
+        }
+
+        async function handleFontUpload(inputId, buttonId) {
+            const fileInput = document.getElementById(inputId);
+            const file = fileInput ? fileInput.files[0] : null;
+
+            if (!file) {
+                showToast('Please select a TTF file to upload.', false);
+                return;
+            }
+
+            if (!file.name.toLowerCase().endsWith('.ttf')) {
+                showToast('Invalid file type. Only TTF files are allowed.', false);
+                fileInput.value = ''; // Clear the input
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('fontfile', file);
+
+            try {
+                const response = await fetch('/admin/upload_font', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin' // Important for session auth
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showToast(result.message || 'Font uploaded successfully!', true);
+                    fileInput.value = ''; // Clear the input
+                    await populateFontFamilyDropdowns(); // Refresh font list
+                    // Optionally, select the newly uploaded font
+                    const newFontName = file.name.substring(0, file.name.lastIndexOf('.')); // Get name without .ttf
+                    const selectElement = document.getElementById('fontFamilySelect');
+                    if(selectElement) {
+                         // Check if this font is already an option, if not, populate might add it
+                         // For now, just set value and update setting. populateFontFamilyDropdowns will fix selection if needed.
+                        selectElement.value = newFontName;
+                    }
+                    await updateSetting("FontFamily", newFontName, 3); // Update setting and this will trigger re-render and repopulate
+
+                } else {
+                    showToast(result.error || 'Font upload failed.', false);
+                }
+            } catch (error) {
+                console.error('Font upload error:', error);
+                showToast('An error occurred during font upload.', false);
+            }
+        }
         init();
       });
     </script>

@@ -17,9 +17,10 @@ window.showdanmu = function(
   opacity = 75,
   color = "#ffffff",
   size = 50,
-  speed = 7
+  speed = 7,
+  fontInfo = { name: "NotoSansTC", url: null, type: "default" } // Updated parameter
 ) {
-  console.log('[showdanmu] Received:', { string: sanitizeLog(string), opacity, color: sanitizeLog(color), size, speed });
+  console.log('[showdanmu] Received:', { string: sanitizeLog(string), opacity, color: sanitizeLog(color), size, speed, fontInfo });
   var parentElement = document.getElementById("danmubody");
   var imgs = /^https?:\/\/([^\s/]+\/)*[^\s/]+\.(gif|png|jpeg|jpg)$/i;
   // Add a check for http/https protocols
@@ -36,6 +37,7 @@ window.showdanmu = function(
     danmu.textContent = "Invalid image URL: " + string; // Display the problematic string as text
     danmu.setAttribute("data-stroke", "Invalid image URL: " + string);
     danmu.style.fontSize = `${size}px`;
+    // Font family will be applied after potential dynamic loading
     danmu.style.color = "red"; // Indicate an error
     // Ensure parentElement is defined before appending
     if (parentElement) {
@@ -49,12 +51,40 @@ window.showdanmu = function(
     danmu.textContent = string;
     danmu.setAttribute("data-stroke", string);
     danmu.style.fontSize = `${size}px`;
+    // Font family will be applied after potential dynamic loading
     danmu.style.color = color;
   }
-  parentElement.appendChild(danmu);
-  console.log('[showdanmu] Danmu element appended:', danmu);
 
-  const Height = parseFloat(getComputedStyle(danmu).height);
+  // Function to apply font and then append and animate
+  const applyFontAndAnimate = async () => {
+    let effectiveFontName = fontInfo.name || "NotoSansTC"; // Fallback to default if name is missing
+
+    if (fontInfo.url && fontInfo.type === "uploaded") {
+      const styleId = `font-style-${effectiveFontName.replace(/\s+/g, '-')}`;
+      if (!document.getElementById(styleId)) {
+        try {
+          console.log(`[showdanmu] Loading font: ${effectiveFontName} from ${fontInfo.url}`);
+          const fontFace = `@font-face { font-family: "${effectiveFontName}"; src: url("${fontInfo.url}"); }`;
+          const styleSheet = document.createElement("style");
+          styleSheet.id = styleId;
+          styleSheet.type = "text/css";
+          styleSheet.innerText = fontFace;
+          document.head.appendChild(styleSheet);
+          await document.fonts.load(`1em "${effectiveFontName}"`);
+          console.log(`[showdanmu] Font loaded: ${effectiveFontName}`);
+        } catch (e) {
+          console.error(`[showdanmu] Error loading font ${effectiveFontName}:`, sanitizeLog(e.message));
+          effectiveFontName = "NotoSansTC"; // Fallback to default on error
+        }
+      }
+    }
+    danmu.style.fontFamily = effectiveFontName;
+
+    parentElement.appendChild(danmu);
+    console.log('[showdanmu] Danmu element appended with font:', effectiveFontName, danmu);
+
+    // Animation logic (moved inside this function)
+    const Height = parseFloat(getComputedStyle(danmu).height);
   const Width = parseFloat(getComputedStyle(danmu).width);
   const Padding = parseFloat(getComputedStyle(danmu).padding);
   let top = Math.abs(
@@ -104,7 +134,23 @@ window.showdanmu = function(
     };
   } catch (e) {
     console.error('[showdanmu] Animation error:', sanitizeLog(e.message));
+    // Ensure danmu is removed even if animation fails to start
+    if (danmu.parentElement) {
+      danmu.remove();
+    }
   }
+};
+
+  // Call the function to apply font and start animation
+  applyFontAndAnimate().catch(e => {
+    console.error('[showdanmu] Error in applyFontAndAnimate:', sanitizeLog(e.message));
+    // Fallback: try to append and animate with default font if something went wrong
+    if (danmu && !danmu.parentElement && parentElement) {
+        danmu.style.fontFamily = "NotoSansTC"; // Default font
+        parentElement.appendChild(danmu);
+        // Simplified animation call or let it be handled by the next general error
+    }
+  });
 };
 
 const startButton = document.getElementById("start-button");
