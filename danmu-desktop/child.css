@@ -11,7 +11,10 @@ h1 {
   padding: 5px;
   margin: 0px;
   letter-spacing:1px;
-  font-family:NotoSansTC,sans-serif,"Microsoft JhengHei";
+  /* font-family is now set dynamically via JavaScript in renderer.js,
+     but we can keep a very generic fallback here or remove it if NotoSansTC is always bundled/available.
+     For maximum safety, keep a generic fallback. */
+  font-family: sans-serif, "Microsoft JhengHei";
 }
 body {
   margin: 0;
