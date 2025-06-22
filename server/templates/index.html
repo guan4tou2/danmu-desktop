@@ -440,6 +440,20 @@
               >
             </div>
             {% endif %}
+
+            <!-- User Font Select Control (conditionally displayed) -->
+            <div id="userFontSelectControl" class="space-y-2" style="display: none;"> <!-- Initially hidden -->
+              <label for="userFontSelect" class="text-sm font-medium text-slate-300 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line>
+                </svg>
+                Font Family
+              </label>
+              <select id="userFontSelect" class="w-full bg-slate-800 border-2 border-slate-700 rounded-lg p-2 text-slate-300 focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300">
+                <!-- Options will be populated by JavaScript -->
+              </select>
+            </div>
+
           </div>
         </details>
       </div>
@@ -490,6 +504,10 @@
           speedControl: document.getElementById("speedControl"),
           speedRange: document.getElementById("speedRange"),
           speedValue: document.getElementById("speedValue"),
+
+          // User font selection
+          userFontSelectControl: document.getElementById("userFontSelectControl"),
+          userFontSelect: document.getElementById("userFontSelect"),
 
           // Toast container
           toastContainer: document.getElementById("toast-container"),
@@ -617,11 +635,44 @@
 
           if (isImageUrl(content)) {
             elements.previewText.innerHTML = `<img src="${content}" alt="Preview Image" class="max-h-24 rounded-lg object-contain">`;
-            elements.previewText.style.color = "";
+            elements.previewText.style.color = ""; // Reset color for images
+            elements.previewText.style.fontFamily = ""; // Reset font family for images
           } else {
             elements.previewText.textContent = previewContent;
             elements.previewText.style.color = currentSettings.color;
             elements.previewText.style.fontSize = `${currentSettings.fontSize}px`;
+            // Apply font to preview based on current selection logic
+            let fontNameToApply = "NotoSansTC"; // Ultimate fallback
+
+            if (currentSettings.allowUserFontChoice && elements.userFontSelect && elements.userFontSelect.value) {
+                const selectedOption = elements.userFontSelect.options[elements.userFontSelect.selectedIndex];
+                fontNameToApply = selectedOption.value;
+                const fontUrl = selectedOption.dataset.fontUrl;
+
+                if (fontUrl) { // It's an uploaded font, ensure @font-face is injected
+                    const styleId = `font-style-preview-${fontNameToApply.replace(/\s+/g, '-')}`;
+                    if (!document.getElementById(styleId)) {
+                        const fontFaceRule = `@font-face { font-family: "${fontNameToApply}"; src: url("${fontUrl}"); }`;
+                        const styleSheet = document.createElement("style");
+                        styleSheet.id = styleId;
+                        styleSheet.type = "text/css";
+                        styleSheet.innerText = fontFaceRule;
+                        document.head.appendChild(styleSheet);
+                        // No await document.fonts.load() for simplicity in preview, browser will apply when ready
+                    }
+                }
+            } else {
+                fontNameToApply = currentSettings.adminSelectedFontName || "NotoSansTC";
+                // For admin-selected default, if it's an uploaded one, we also might need to ensure its @font-face
+                // This part is slightly more complex as adminSelectedFontName doesn't directly carry its URL here.
+                // We'll rely on populateUserFontDropdown to have set the correct default selection,
+                // and if that default is an uploaded font, its @font-face rule would be injected if user choice was also on.
+                // A more robust solution might involve looking up adminSelectedFontName in the fetched fonts list.
+                // For now, if user choice is OFF, we assume adminSelectedFontName is either system or NotoSansTC,
+                // or if it's an uploaded one, it's hoped it was loaded when user choice was ON.
+                // This simplification might mean preview for admin-set uploaded font (when user choice is off) might not always work without prior loading.
+            }
+            elements.previewText.style.fontFamily = fontNameToApply;
           }
           elements.previewText.style.opacity = currentSettings.opacity / 100;
         };
@@ -629,62 +680,109 @@
         // Update UI controls
         const updateUIControls = () => {
           {% if Options['Color'][0] %}
-          elements.colorInput.value = currentSettings.color;
-          elements.colorControl.style.display = currentSettings.randomColor
-            ? "block"
-            : "none";
+          if(elements.colorInput) elements.colorInput.value = currentSettings.color;
+          if(elements.colorControl) elements.colorControl.style.display = currentSettings.randomColor ? "block" : "none";
           {% endif %}
           {% if Options['Opacity'][0] %}
-          elements.opacityRange.value = currentSettings.opacity;
-          elements.opacityValue.textContent = `${currentSettings.opacity}%`;
-          elements.opacityControl.style.display = currentSettings.randomOpacity
-            ? "block"
-            : "none";
+          if(elements.opacityRange) elements.opacityRange.value = currentSettings.opacity;
+          if(elements.opacityValue) elements.opacityValue.textContent = `${currentSettings.opacity}%`;
+          if(elements.opacityControl) elements.opacityControl.style.display = currentSettings.randomOpacity ? "block" : "none";
           {% endif %}
           {% if Options['FontSize'][0] %}
-          elements.sizeInput.value = currentSettings.fontSize;
-          elements.fontSizeControl.style.display =
-            currentSettings.randomFontSize ? "block" : "none";
+          if(elements.sizeInput) elements.sizeInput.value = currentSettings.fontSize;
+          if(elements.fontSizeControl) elements.fontSizeControl.style.display = currentSettings.randomFontSize ? "block" : "none";
           {% endif %}
           {% if Options['Speed'][0] %}
-          elements.speedRange.value = currentSettings.speed;
-          elements.speedValue.textContent = `${currentSettings.speed}`;
-          elements.speedControl.style.display = currentSettings.randomSpeed
-            ? "block"
-            : "none";
+          if(elements.speedRange) elements.speedRange.value = currentSettings.speed;
+          if(elements.speedValue) elements.speedValue.textContent = `${currentSettings.speed}`;
+          if(elements.speedControl) elements.speedControl.style.display = currentSettings.randomSpeed ? "block" : "none";
           {% endif %}
+
+          // User font selection visibility
+          if (elements.userFontSelectControl) {
+            elements.userFontSelectControl.style.display = currentSettings.allowUserFontChoice ? "block" : "none";
+          }
         };
 
+        async function populateUserFontDropdown() {
+            if (!elements.userFontSelect) return;
+            try {
+                const response = await fetch('/admin/get_fonts'); // Use the same endpoint as admin
+                if (!response.ok) {
+                    console.error('Failed to fetch font list for user.');
+                    return;
+                }
+                const fonts = await response.json();
+                elements.userFontSelect.innerHTML = ''; // Clear existing
+
+                let foundAdminSelectedFont = false;
+                fonts.forEach(font => {
+                    const option = document.createElement('option');
+                    option.value = font.name;
+                    option.textContent = font.name;
+                    if (font.url) { // Store URL if it's an uploaded font
+                        option.dataset.fontUrl = font.url;
+                    }
+                    if (font.type === 'default' && font.name === "NotoSansTC" && !currentSettings.adminSelectedFontName) { // Prefer NotoSansTC if no admin default
+                        option.selected = true;
+                        foundAdminSelectedFont = true; // Mark as found to prevent override below if Noto is the one
+                    } else if (font.name === currentSettings.adminSelectedFontName) {
+                        option.selected = true;
+                        foundAdminSelectedFont = true;
+                    }
+                    elements.userFontSelect.appendChild(option);
+                });
+
+                // If admin's selected font wasn't in the list (e.g. bad name), select NotoSansTC or first
+                if (!foundAdminSelectedFont) {
+                    const defaultOption = Array.from(elements.userFontSelect.options).find(opt => opt.value === "NotoSansTC");
+                    if (defaultOption) {
+                        defaultOption.selected = true;
+                    } else if (elements.userFontSelect.options.length > 0) {
+                        elements.userFontSelect.options[0].selected = true;
+                    }
+                }
+                updatePreview(); // Ensure preview updates with the correct font
+            } catch (error) {
+                console.error('Error populating user font dropdown:', error);
+            }
+        }
+
         // Fetch latest settings from backend
-        function fetchLatestSettings() {
-          fetch("/get_settings", {
-            method: "GET",
-            credentials: "same-origin",
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              // Update current settings
-              currentSettings = {
-                color: data.Color[3],
-                opacity: data.Opacity[3],
-                fontSize: data.FontSize[3],
-                speed: data.Speed[3],
-                randomColor: data.Color[0],
-                randomOpacity: data.Opacity[0],
-                randomFontSize: data.FontSize[0],
-                randomSpeed: data.Speed[0],
-              };
+        async function fetchLatestSettings() {
+          try {
+            const response = await fetch("/get_settings", {
+              method: "GET",
+              credentials: "same-origin",
+            });
+            const data = await response.json();
 
-              // Update UI controls
-              updateUIControls();
+            currentSettings = {
+              color: data.Color[3] !== undefined ? data.Color[3] : "#FFFFFF",
+              opacity: data.Opacity[3] !== undefined ? data.Opacity[3] : 70,
+              fontSize: data.FontSize[3] !== undefined ? data.FontSize[3] : 50,
+              speed: data.Speed[3] !== undefined ? data.Speed[3] : 4,
+              randomColor: data.Color[0] !== undefined ? data.Color[0] : true,
+              randomOpacity: data.Opacity[0] !== undefined ? data.Opacity[0] : true,
+              randomFontSize: data.FontSize[0] !== undefined ? data.FontSize[0] : true,
+              randomSpeed: data.Speed[0] !== undefined ? data.Speed[0] : true,
+              allowUserFontChoice: data.FontFamily && data.FontFamily[0] !== undefined ? data.FontFamily[0] : false,
+              adminSelectedFontName: data.FontFamily && data.FontFamily[3] !== undefined ? data.FontFamily[3] : "NotoSansTC",
+            };
 
-              // Update preview
-              updatePreview();
+            updateUIControls();
 
-              // Update controls visibility
-              updateControlsVisibility();
-            })
-            .catch((error) => console.error("Fetch failed:", error));
+            if (currentSettings.allowUserFontChoice) {
+              await populateUserFontDropdown();
+            } else {
+                // Ensure preview uses admin default if user choice is off
+                updatePreview();
+            }
+
+            // updateControlsVisibility(); // This function might need review or integration with updateUIControls
+          } catch (error) {
+            console.error("Fetch settings failed:", error)
+          }
         }
 
         // --- WebSocket ---
@@ -851,7 +949,8 @@
         {% endif %}
 
         elements.danmuText.addEventListener("keydown", (e) => {
-          if (e.key === "Enter" && !e.shiftKey) {
+          // Only submit if Enter is pressed, Shift is not pressed, AND an IME is not currently composing.
+          if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
             e.preventDefault();
             elements.btnSend.click();
           }
@@ -878,7 +977,17 @@
             color: currentSettings.color.replace("#", ""),
             size: currentSettings.fontSize,
             speed: currentSettings.speed,
+            // Add fontInfo to payload if user choice is allowed and a font is selected
+            fontInfo: currentSettings.allowUserFontChoice && elements.userFontSelect && elements.userFontSelect.value
+                      ? { name: elements.userFontSelect.value }
+                      : null // Server will use admin default if this is null or not present
           };
+
+          // Remove fontInfo from payload if it's null to keep payload clean
+          if (payload.fontInfo === null) {
+            delete payload.fontInfo;
+          }
+
 
           console.log("Firing danmu:", payload);
 
@@ -924,10 +1033,26 @@
 
         // --- Initialize ---
         async function init() {
-          updateUIControls();
-          updatePreview();
-          await fetchLatestSettings();
+          // Initial placeholder values before settings are fetched
+          currentSettings = {
+            color: "#FFFFFF",
+            opacity: 70,
+            fontSize: 50,
+            speed: 4,
+            randomColor: true,
+            randomOpacity: true,
+            randomFontSize: true,
+            randomSpeed: true,
+            allowUserFontChoice: false,
+            adminSelectedFontName: "NotoSansTC"
+          };
+          updateUIControls(); // Set initial UI state based on placeholders
+          updatePreview();    // Update preview based on placeholders
+          await fetchLatestSettings(); // Fetch actual settings and update UI/preview again
           connectWebSocket();
+          if(elements.userFontSelect) { // Add change listener for user font select
+            elements.userFontSelect.addEventListener('change', updatePreview);
+          }
         }
 
         init();

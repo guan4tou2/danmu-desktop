@@ -958,7 +958,8 @@ function setupChildWindow(targetWindow, display, ip, port) {
                       // dataPayload here is already sanitized from the loop above
                       if (typeof window.showdanmu === 'function') {
                           console.log('[WebSocket] Calling window.showdanmu with:', dataPayload);
-                          window.showdanmu(dataPayload.text, dataPayload.opacity, '#' + dataPayload.color, dataPayload.size, parseInt(dataPayload.speed));
+                          // Pass the fontInfo object to showdanmu
+                          window.showdanmu(dataPayload.text, dataPayload.opacity, '#' + dataPayload.color, dataPayload.size, parseInt(dataPayload.speed), dataPayload.fontInfo);
                       } else {
                           console.warn('[WebSocket] window.showdanmu not ready, retrying in 100ms...'); // No variable data
                           setTimeout(() => processDanmuWhenReady(dataPayload), 100);
@@ -971,7 +972,8 @@ function setupChildWindow(targetWindow, display, ip, port) {
                       opacity: data.opacity,
                       color: data.color,
                       size: data.size,
-                      speed: data.speed
+                      speed: data.speed,
+                      fontInfo: data.fontInfo // Pass the fontInfo object
                   });
 
               } catch (e) {
