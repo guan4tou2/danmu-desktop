@@ -228,8 +228,11 @@ def fire():
         final_font_url = None
         final_font_type = "default" # Assume default initially
 
-        potential_font_filename = f"{chosen_font_name}.ttf"
-        if os.path.exists(os.path.join(USER_FONTS_DIR, potential_font_filename)):
+        potential_font_filename = secure_filename(f"{chosen_font_name}.ttf")
+        normalized_path = os.path.normpath(os.path.join(USER_FONTS_DIR, potential_font_filename))
+        if not normalized_path.startswith(USER_FONTS_DIR):
+            raise Exception("Invalid font filename or path traversal attempt detected.")
+        if os.path.exists(normalized_path):
             final_font_url = url_for("serve_user_font", filename=potential_font_filename, _external=True)
             final_font_type = "uploaded"
         elif chosen_font_name == "NotoSansTC": # Explicit default
@@ -355,6 +358,7 @@ def upload_font():
         # 'font/sfnt' is also a possibility for TTF/OTF.
         allowed_mime_types = ['font/ttf', 'application/font-sfnt', 'application/x-font-ttf', 'font/sfnt']
 
+
         if actual_mime_type not in allowed_mime_types:
             return make_response(json.dumps({"error": f"Invalid file content type. Detected: {actual_mime_type}"}), 400, {"Content-Type": "application/json"})
 
@@ -366,7 +370,11 @@ def upload_font():
 
 @app.route("/admin/get_fonts", methods=["GET"])
 def get_fonts():
-    # Removed admin login check to make this endpoint public
+
+    #if not session.get("logged_in"):
+    #   return make_response(json.dumps({"error": "Unauthorized"}), 401, {"Content-Type": "application/json"})
+
+
     default_fonts = [
         {"name": "NotoSansTC", "url": None, "type": "default"}, # Default bundled font
         {"name": "Arial", "url": None, "type": "system"},

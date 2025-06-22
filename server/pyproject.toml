@@ -13,11 +13,12 @@ dependencies = [
     "jinja2",
     "markupsafe",
     "python-dotenv",
+    "python-magic>=0.4.27",
     "setuptools",
     "simple-websocket",
     "websockets",
     "werkzeug",
     "wsproto",
     "zope-event",
-    "zope-interface"
+    "zope-interface",
 ]
