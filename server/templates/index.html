@@ -705,14 +705,22 @@
                 }
             } else {
                 fontNameToApply = currentSettings.adminSelectedFontName || "NotoSansTC";
-                // For admin-selected default, if it's an uploaded one, we also might need to ensure its @font-face
-                // This part is slightly more complex as adminSelectedFontName doesn't directly carry its URL here.
-                // We'll rely on populateUserFontDropdown to have set the correct default selection,
-                // and if that default is an uploaded font, its @font-face rule would be injected if user choice was also on.
-                // A more robust solution might involve looking up adminSelectedFontName in the fetched fonts list.
-                // For now, if user choice is OFF, we assume adminSelectedFontName is either system or NotoSansTC,
-                // or if it's an uploaded one, it's hoped it was loaded when user choice was ON.
-                // This simplification might mean preview for admin-set uploaded font (when user choice is off) might not always work without prior loading.
+                // For admin-selected default, we need to find the font URL if it's an uploaded font
+                if (elements.userFontSelect) {
+                    const adminFontOption = Array.from(elements.userFontSelect.options).find(opt => opt.value === fontNameToApply);
+                    if (adminFontOption && adminFontOption.dataset.fontUrl) {
+                        const fontUrl = adminFontOption.dataset.fontUrl;
+                        const styleId = `font-style-preview-${fontNameToApply.replace(/\s+/g, '-')}`;
+                        if (!document.getElementById(styleId)) {
+                            const fontFaceRule = `@font-face { font-family: "${fontNameToApply}"; src: url("${fontUrl}"); }`;
+                            const styleSheet = document.createElement("style");
+                            styleSheet.id = styleId;
+                            styleSheet.type = "text/css";
+                            styleSheet.innerText = fontFaceRule;
+                            document.head.appendChild(styleSheet);
+                        }
+                    }
+                }
             }
             elements.previewText.style.fontFamily = fontNameToApply;
           }
@@ -762,7 +770,7 @@
                     const option = document.createElement('option');
                     option.value = font.name;
                     option.textContent = font.name;
-                    if (font.url) { // Store URL if it's an uploaded font
+                    if (font.url) { // Store URL if it's an uploaded font or default font
                         option.dataset.fontUrl = font.url;
                     }
                     if (font.type === 'default' && font.name === "NotoSansTC" && !currentSettings.adminSelectedFontName) { // Prefer NotoSansTC if no admin default
@@ -784,7 +792,10 @@
                         elements.userFontSelect.options[0].selected = true;
                     }
                 }
-                updatePreview(); // Ensure preview updates with the correct font
+                // Ensure preview updates with the correct font after dropdown is populated
+                setTimeout(() => {
+                    updatePreview();
+                }, 100); // Small delay to ensure DOM is ready
             } catch (error) {
                 console.error('Error populating user font dropdown:', error);
             }
