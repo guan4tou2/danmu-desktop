@@ -1,0 +1,135 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background gradient with tech/digital feel -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#334155;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Screen gradient -->
+    <linearGradient id="screenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e40af;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Danmu text glow effect -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Animated danmu gradient -->
+    <linearGradient id="danmuGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00d9ff;stop-opacity:0.9">
+        <animate attributeName="stop-color" values="#00d9ff;#ff6b6b;#4ecdc4;#00d9ff" dur="3s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="50%" style="stop-color:#ff6b6b;stop-opacity:0.9">
+        <animate attributeName="stop-color" values="#ff6b6b;#4ecdc4;#00d9ff;#ff6b6b" dur="3s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" style="stop-color:#4ecdc4;stop-opacity:0.9">
+        <animate attributeName="stop-color" values="#4ecdc4;#00d9ff;#ff6b6b;#4ecdc4" dur="3s" repeatCount="indefinite"/>
+      </stop>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGradient)" stroke="#475569" stroke-width="4"/>
+  
+  <!-- Desktop/Monitor representation -->
+  <g transform="translate(256, 200)">
+    <!-- Monitor screen -->
+    <rect x="-90" y="-60" width="180" height="110" rx="8" fill="url(#screenGradient)" stroke="#64748b" stroke-width="3"/>
+    
+    <!-- Screen bezel -->
+    <rect x="-85" y="-55" width="170" height="100" rx="4" fill="#0f172a" stroke="#374151" stroke-width="1"/>
+    
+    <!-- Monitor stand -->
+    <rect x="-15" y="50" width="30" height="25" rx="3" fill="#64748b"/>
+    <rect x="-35" y="70" width="70" height="8" rx="4" fill="#64748b"/>
+  </g>
+  
+  <!-- Flowing danmu text streams -->
+  <g filter="url(#glow)">
+    <!-- Top danmu stream -->
+    <g transform="translate(0, 150)">
+      <rect x="50" y="0" width="120" height="20" rx="10" fill="url(#danmuGradient)" opacity="0.8">
+        <animateTransform attributeName="transform" type="translate" values="512,0; -200,0" dur="4s" repeatCount="indefinite"/>
+      </rect>
+      <!-- Simulated text -->
+      <rect x="60" y="6" width="8" height="8" rx="1" fill="#ffffff" opacity="0.9">
+        <animateTransform attributeName="transform" type="translate" values="512,0; -200,0" dur="4s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="75" y="6" width="12" height="8" rx="1" fill="#ffffff" opacity="0.9">
+        <animateTransform attributeName="transform" type="translate" values="512,0; -200,0" dur="4s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="95" y="6" width="10" height="8" rx="1" fill="#ffffff" opacity="0.9">
+        <animateTransform attributeName="transform" type="translate" values="512,0; -200,0" dur="4s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+    
+    <!-- Middle danmu stream -->
+    <g transform="translate(0, 190)">
+      <rect x="80" y="0" width="100" height="18" rx="9" fill="#ff6b6b" opacity="0.7">
+        <animateTransform attributeName="transform" type="translate" values="512,0; -200,0" dur="5s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="90" y="5" width="6" height="8" rx="1" fill="#ffffff" opacity="0.9">
+        <animateTransform attributeName="transform" type="translate" values="512,0; -200,0" dur="5s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="102" y="5" width="10" height="8" rx="1" fill="#ffffff" opacity="0.9">
+        <animateTransform attributeName="transform" type="translate" values="512,0; -200,0" dur="5s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="118" y="5" width="8" height="8" rx="1" fill="#ffffff" opacity="0.9">
+        <animateTransform attributeName="transform" type="translate" values="512,0; -200,0" dur="5s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+    
+    <!-- Bottom danmu stream -->
+    <g transform="translate(0, 230)">
+      <rect x="30" y="0" width="140" height="22" rx="11" fill="#4ecdc4" opacity="0.6">
+        <animateTransform attributeName="transform" type="translate" values="512,0; -200,0" dur="6s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="40" y="7" width="12" height="8" rx="1" fill="#ffffff" opacity="0.9">
+        <animateTransform attributeName="transform" type="translate" values="512,0; -200,0" dur="6s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="58" y="7" width="8" height="8" rx="1" fill="#ffffff" opacity="0.9">
+        <animateTransform attributeName="transform" type="translate" values="512,0; -200,0" dur="6s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="72" y="7" width="15" height="8" rx="1" fill="#ffffff" opacity="0.9">
+        <animateTransform attributeName="transform" type="translate" values="512,0; -200,0" dur="6s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+    
+    <!-- Additional floating danmu -->
+    <g transform="translate(0, 320)">
+      <rect x="100" y="0" width="90" height="16" rx="8" fill="#00d9ff" opacity="0.5">
+        <animateTransform attributeName="transform" type="translate" values="512,0; -200,0" dur="7s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="110" y="4" width="10" height="8" rx="1" fill="#ffffff" opacity="0.8">
+        <animateTransform attributeName="transform" type="translate" values="512,0; -200,0" dur="7s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="125" y="4" width="8" height="8" rx="1" fill="#ffffff" opacity="0.8">
+        <animateTransform attributeName="transform" type="translate" values="512,0; -200,0" dur="7s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+  </g>
+  
+  <!-- Tech accent lines (SAO style) -->
+  <g stroke="#00d9ff" stroke-width="2" fill="none" opacity="0.6">
+    <line x1="100" y1="380" x2="180" y2="380">
+      <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite"/>
+    </line>
+    <line x1="330" y1="380" x2="410" y2="380">
+      <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite"/>
+    </line>
+    <circle cx="200" cy="380" r="3" fill="#00d9ff">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="1.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="310" cy="380" r="3" fill="#00d9ff">
+      <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+</svg> 

@@ -222,12 +222,32 @@
     <!-- Main content container -->
     <main class="w-full max-w-2xl mx-auto z-10 animate-fade-in-scale-up">
       <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-6">
-        <!-- Title -->
-        <h1
-          class="text-4xl md:text-5xl font-bold text-center bg-gradient-to-r from-sky-400 to-cyan-300 bg-clip-text text-transparent pb-2"
-        >
-          Danmu Fire
-        </h1>
+        <!-- Title with Dynamic Logo -->
+        <div class="text-center space-y-4">
+          <!-- Dynamic Logo -->
+          <div class="flex justify-center">
+            <object
+              data="/static/icon-dynamic.svg"
+              type="image/svg+xml"
+              width="80"
+              height="80"
+              class="drop-shadow-lg"
+            >
+              <img
+                src="/static/icon.png"
+                alt="Danmu Fire"
+                width="80"
+                height="80"
+                class="drop-shadow-lg"
+              />
+            </object>
+          </div>
+          <h1
+            class="text-4xl md:text-5xl font-bold text-center bg-gradient-to-r from-sky-400 to-cyan-300 bg-clip-text text-transparent pb-2"
+          >
+            Danmu Fire
+          </h1>
+        </div>
 
         <!-- Input area -->
         <div class="relative">
@@ -442,18 +462,40 @@
             {% endif %}
 
             <!-- User Font Select Control (conditionally displayed) -->
-            <div id="userFontSelectControl" class="space-y-2" style="display: none;"> <!-- Initially hidden -->
-              <label for="userFontSelect" class="text-sm font-medium text-slate-300 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line>
+            <div
+              id="userFontSelectControl"
+              class="space-y-2"
+              style="display: none"
+            >
+              <!-- Initially hidden -->
+              <label
+                for="userFontSelect"
+                class="text-sm font-medium text-slate-300 flex items-center gap-2"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                  <line x1="9" y1="20" x2="15" y2="20"></line>
+                  <line x1="12" y1="4" x2="12" y2="20"></line>
                 </svg>
                 Font Family
               </label>
-              <select id="userFontSelect" class="w-full bg-slate-800 border-2 border-slate-700 rounded-lg p-2 text-slate-300 focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300">
+              <select
+                id="userFontSelect"
+                class="w-full bg-slate-800 border-2 border-slate-700 rounded-lg p-2 text-slate-300 focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300"
+              >
                 <!-- Options will be populated by JavaScript -->
               </select>
             </div>
-
           </div>
         </details>
       </div>
