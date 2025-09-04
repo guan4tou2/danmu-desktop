@@ -22,7 +22,7 @@
     "@babel/core": "^7.27.4",
     "@babel/preset-env": "^7.27.2",
     "babel-loader": "^10.0.0",
-    "electron": "^36.5.0",
+    "electron": "^36.8.1",
     "electron-builder": "^26.0.12",
     "terser-webpack-plugin": "^5.3.14",
     "webpack": "^5.99.9",
