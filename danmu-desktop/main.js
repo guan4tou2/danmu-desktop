@@ -58,7 +58,10 @@ function createWindow() {
         try {
           win.destroy();
         } catch (err) {
-          console.error("[Main] Error destroying child window:", sanitizeLog(err.message));
+          console.error(
+            "[Main] Error destroying child window:",
+            sanitizeLog(err.message)
+          );
         }
       }
     });
@@ -71,7 +74,10 @@ function createWindow() {
     try {
       const displays = screen.getAllDisplays();
       // Sanitize display information before logging
-      const sanitizedDisplays = displays.map(d => ({...d, id: sanitizeLog(d.id)}));
+      const sanitizedDisplays = displays.map((d) => ({
+        ...d,
+        id: sanitizeLog(d.id),
+      }));
       console.log("Detected displays:", sanitizedDisplays);
 
       const displayOptions = displays.map((display, index) => {
@@ -92,7 +98,9 @@ function createWindow() {
             }
             
             screenSelect.innerHTML = ''
-            const options = ${JSON.stringify(displayOptions.map(o => ({...o, text: sanitizeLog(o.text)})))}
+            const options = ${JSON.stringify(
+              displayOptions.map((o) => ({ ...o, text: sanitizeLog(o.text) }))
+            )}
             options.forEach(option => {
               const opt = document.createElement('option')
               opt.value = option.value
@@ -107,10 +115,16 @@ function createWindow() {
       `;
 
       mainWindow.webContents.executeJavaScript(script).catch((error) => {
-        console.error("Error executing display update script:", sanitizeLog(error.message));
+        console.error(
+          "Error executing display update script:",
+          sanitizeLog(error.message)
+        );
       });
     } catch (error) {
-      console.error("Error getting display information:", sanitizeLog(error.message));
+      console.error(
+        "Error getting display information:",
+        sanitizeLog(error.message)
+      );
     }
   });
 
@@ -132,7 +146,12 @@ function createWindow() {
       isKeyDown = true;
       lastKeyTime = currentTime;
 
-      console.log("Key pressed:", sanitizeLog(input.key), "Current index:", konamiIndex);
+      console.log(
+        "Key pressed:",
+        sanitizeLog(input.key),
+        "Current index:",
+        konamiIndex
+      );
 
       if (input.key === konamiCode[konamiIndex]) {
         konamiIndex++;
@@ -277,7 +296,10 @@ function createWindow() {
           `
             )
             .catch((err) => {
-              console.error("Error showing Konami message:", sanitizeLog(err.message));
+              console.error(
+                "Error showing Konami message:",
+                sanitizeLog(err.message)
+              );
             });
 
           // Clear danmus in the child window with an animation
@@ -340,7 +362,10 @@ function createWindow() {
               })();
             `;
               cw.webContents.executeJavaScript(script).catch((err) => {
-                console.error("Failed to execute danmu clearing script:", sanitizeLog(err.message));
+                console.error(
+                  "Failed to execute danmu clearing script:",
+                  sanitizeLog(err.message)
+                );
               });
             }
           });
@@ -370,18 +395,35 @@ function createWindow() {
       // Iterate over a shallow copy for safety
       if (win && !win.isDestroyed()) {
         win.destroy();
-      } 
+      }
     });
     childWindows = [];
     console.log(
       "[Main] All child windows destroyed on closeChildWindows event."
     );
+    // Notify renderer that overlay is stopped
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("overlay-connection-status", {
+        status: "stopped",
+      });
+    }
+  });
+
+  // Handle connection status updates from child windows
+  ipcMain.on("overlay-connection-status", (event, data) => {
+    // Forward the status to the main window
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("overlay-connection-status", data);
+    }
   });
   // Handler for getDisplays
   ipcMain.handle("getDisplays", async () => {
     const displays = screen.getAllDisplays();
     // Sanitize display information before logging
-    const sanitizedDisplays = displays.map(d => ({...d, id: sanitizeLog(d.id)}));
+    const sanitizedDisplays = displays.map((d) => ({
+      ...d,
+      id: sanitizeLog(d.id),
+    }));
     console.log("[Main] getDisplays handled, returning:", sanitizedDisplays);
     return displays;
   });
@@ -390,12 +432,18 @@ function createWindow() {
     "createChild",
     (event, ip, port, displayIndex, enableSyncMultiDisplay) => {
       // Added enableSyncMultiDisplay
-      if (typeof ip !== 'string' || !ip) {
-        console.warn(`[Main] createChild: Received invalid IP address. Expected a non-empty string, but got: '${ip}' (type: ${typeof ip})`);
+      if (typeof ip !== "string" || !ip) {
+        console.warn(
+          `[Main] createChild: Received invalid IP address. Expected a non-empty string, but got: '${ip}' (type: ${typeof ip})`
+        );
         return;
       }
       console.log(
-        `[Main] createChild IPC received: IP=${sanitizeLog(ip)}, Port=${sanitizeLog(port)}, DisplayIndex=${sanitizeLog(displayIndex)}, SyncMultiDisplay=${enableSyncMultiDisplay}`
+        `[Main] createChild IPC received: IP=${sanitizeLog(
+          ip
+        )}, Port=${sanitizeLog(port)}, DisplayIndex=${sanitizeLog(
+          displayIndex
+        )}, SyncMultiDisplay=${enableSyncMultiDisplay}`
       );
       // Clear existing child windows
       childWindows.forEach((win) => {
@@ -417,11 +465,15 @@ function createWindow() {
         );
         displays.forEach((display, index) => {
           console.log(
-            `[MacOS Debug] Multi-display: Using bounds for display ${index} (ID: ${sanitizeLog(display.id)}):`,
+            `[MacOS Debug] Multi-display: Using bounds for display ${index} (ID: ${sanitizeLog(
+              display.id
+            )}):`,
             JSON.stringify(display.bounds, null, 2)
           );
           console.log(
-            `[Main] Creating child window for display ${index} (ID: ${sanitizeLog(display.id)}). Initial geometry will be default, overridden by setBounds later.`
+            `[Main] Creating child window for display ${index} (ID: ${sanitizeLog(
+              display.id
+            )}). Initial geometry will be default, overridden by setBounds later.`
           );
           const newChild = new BrowserWindow({
             // x, y, width, height removed
@@ -456,7 +508,11 @@ function createWindow() {
         }
         const selectedDisplay = displays[displayIndex];
         console.log(
-          `[Main] Creating child window for selected display ${sanitizeLog(displayIndex)} (ID: ${sanitizeLog(selectedDisplay.id)}). Initial geometry will be default, overridden by setBounds later.`
+          `[Main] Creating child window for selected display ${sanitizeLog(
+            displayIndex
+          )} (ID: ${sanitizeLog(
+            selectedDisplay.id
+          )}). Initial geometry will be default, overridden by setBounds later.`
         );
         const newChild = new BrowserWindow({
           // x, y, width, height removed
@@ -498,21 +554,25 @@ function setupChildWindow(targetWindow, display, ip, port) {
 
   targetWindow.once("ready-to-show", () => {
     console.log(
-      `[Main] In ready-to-show for display ID ${sanitizeLog(display.id)}. Intended bounds:`,
+      `[Main] In ready-to-show for display ID ${sanitizeLog(
+        display.id
+      )}. Intended bounds:`,
       JSON.stringify(display.bounds, null, 2)
     );
     targetWindow.setBounds(display.bounds); // Explicitly set bounds
     const boundsAfterSet = targetWindow.getBounds();
     console.log(
-      `[Main] Bounds after setBounds for display ID ${sanitizeLog(display.id)}: x=${
-        boundsAfterSet.x
-      }, y=${boundsAfterSet.y}, width=${boundsAfterSet.width}, height=${
-        boundsAfterSet.height
-      }`
+      `[Main] Bounds after setBounds for display ID ${sanitizeLog(
+        display.id
+      )}: x=${boundsAfterSet.x}, y=${boundsAfterSet.y}, width=${
+        boundsAfterSet.width
+      }, height=${boundsAfterSet.height}`
     );
 
     console.log(
-      `[Main] Child window for display ID ${sanitizeLog(display.id)} is ready-to-show. Applying final settings before show.`
+      `[Main] Child window for display ID ${sanitizeLog(
+        display.id
+      )} is ready-to-show. Applying final settings before show.`
     );
     targetWindow.setAlwaysOnTop(true, "screen-saver");
     targetWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
@@ -521,11 +581,11 @@ function setupChildWindow(targetWindow, display, ip, port) {
     targetWindow.show();
     const finalBounds = targetWindow.getBounds();
     console.log(
-      `[Main] Child window for display ID ${sanitizeLog(display.id)} shown. Final bounds: x=${
-        finalBounds.x
-      }, y=${finalBounds.y}, width=${finalBounds.width}, height=${
-        finalBounds.height
-      }`
+      `[Main] Child window for display ID ${sanitizeLog(
+        display.id
+      )} shown. Final bounds: x=${finalBounds.x}, y=${finalBounds.y}, width=${
+        finalBounds.width
+      }, height=${finalBounds.height}`
     );
   });
 
@@ -535,7 +595,9 @@ function setupChildWindow(targetWindow, display, ip, port) {
       childWindows.splice(index, 1);
     }
     console.log(
-      `[Main] Child window for display ID ${sanitizeLog(display.id)} removed from list upon close.`
+      `[Main] Child window for display ID ${sanitizeLog(
+        display.id
+      )} removed from list upon close.`
     );
   });
 
@@ -556,6 +618,20 @@ function setupChildWindow(targetWindow, display, ip, port) {
       let lastHeartbeatResponse = Date.now()
       const heartbeatTimeout = 30000 // 30 seconds without response is considered disconnection
       let connectionLost = false
+      
+      // Helper function to safely send connection status
+      function sendConnectionStatus(status) {
+        if (window.API && typeof window.API.sendConnectionStatus === 'function') {
+          try {
+            window.API.sendConnectionStatus(status)
+          } catch (e) {
+            console.error('Error sending connection status:', e.message)
+          }
+        } else {
+          // Retry after a short delay if API is not ready
+          setTimeout(() => sendConnectionStatus(status), 100)
+        }
+      }
       
       // Heartbeat detection function
       function startHeartbeat() {
@@ -609,6 +685,9 @@ function setupChildWindow(targetWindow, display, ip, port) {
           connectionLost = false
           lastHeartbeatResponse = Date.now()
           startHeartbeat()
+          
+          // Notify main window about successful connection
+          sendConnectionStatus('connected')
           
           // Link Start animation
           const style = document.createElement('style');
@@ -898,6 +977,9 @@ function setupChildWindow(targetWindow, display, ip, port) {
         ws.onclose = (event) => {
           console.log('Connection closed', event.code) // event.code is a number, not typically user input
           clearInterval(heartbeatInterval)
+          
+          // Notify main window about disconnection
+          sendConnectionStatus('disconnected')
           
           // Use incremental reconnect delay
           const currentDelay = connectionLost ? reconnectDelay : reconnectDelay * (reconnectAttempts + 1)
