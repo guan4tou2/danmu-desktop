@@ -45,6 +45,55 @@
       .btn-primary {
         background-image: linear-gradient(to right, #38bdf8, #3b82f6);
       }
+
+      /* Button states */
+      .btn-connecting {
+        background-image: linear-gradient(
+          to right,
+          #06b6d4,
+          #0891b2
+        ) !important;
+        animation: pulse-connecting 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      .btn-connected {
+        background-image: linear-gradient(
+          to right,
+          #14b8a6,
+          #0d9488
+        ) !important;
+        box-shadow: 0 0 20px rgba(20, 184, 166, 0.4);
+      }
+
+      .btn-active {
+        background-image: linear-gradient(
+          to right,
+          #38bdf8,
+          #3b82f6
+        ) !important;
+        box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+      }
+
+      .btn-stopped {
+        background-image: linear-gradient(
+          to right,
+          #475569,
+          #334155
+        ) !important;
+        box-shadow: 0 0 10px rgba(71, 85, 105, 0.2);
+      }
+
+      @keyframes pulse-connecting {
+        0%,
+        100% {
+          opacity: 1;
+          box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.6);
+        }
+        50% {
+          opacity: 0.9;
+          box-shadow: 0 0 0 10px rgba(6, 182, 212, 0);
+        }
+      }
     </style>
   </head>
   <body class="text-slate-200">
@@ -161,7 +210,7 @@
           <button
             id="stop-button"
             disabled
-            class="w-full bg-slate-600 text-slate-300 font-semibold py-3 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            class="w-full btn-stopped text-slate-300 font-semibold py-3 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
