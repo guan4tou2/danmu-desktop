@@ -32,18 +32,38 @@
       .form-input {
         background-color: rgba(30, 41, 59, 0.8);
         border: 1px solid #334155;
-        color: #e2e8f0;
+        color: #f1f5f9;
         transition: all 0.3s ease;
       }
       .form-input:focus {
         background-color: rgba(30, 41, 59, 1);
         border-color: #38bdf8;
-        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.4);
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.5);
         outline: none;
+      }
+      .form-input::placeholder {
+        color: #94a3b8;
+        opacity: 1;
+      }
+      .form-input:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        background-color: rgba(30, 41, 59, 0.5);
       }
 
       .btn-primary {
         background-image: linear-gradient(to right, #38bdf8, #3b82f6);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        box-shadow: 0 6px 12px rgba(56, 189, 248, 0.4);
+        transform: translateY(-1px);
+      }
+
+      .btn-primary:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
       }
 
       /* Button states */
@@ -94,11 +114,122 @@
           box-shadow: 0 0 0 10px rgba(6, 182, 212, 0);
         }
       }
+
+      /* Toast notification styles */
+      #toast-container {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        pointer-events: none;
+      }
+
+      .toast {
+        pointer-events: auto;
+        min-width: 300px;
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+
+      /* Reduced motion support */
+      @media (prefers-reduced-motion: reduce) {
+        .btn-connecting {
+          animation: none !important;
+        }
+        * {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+
+      /* Input validation styles */
+      .input-valid {
+        border-color: #10b981 !important;
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+      }
+
+      .input-invalid {
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+      }
+
+      /* Loading spinner */
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .spinner {
+        animation: spin 1s linear infinite;
+      }
+
+      /* Custom range slider styles */
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #38bdf8, #3b82f6);
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(56, 189, 248, 0.4);
+        transition: all 0.2s ease;
+      }
+
+      input[type="range"]::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+        box-shadow: 0 4px 12px rgba(56, 189, 248, 0.6);
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #38bdf8, #3b82f6);
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 2px 8px rgba(56, 189, 248, 0.4);
+        transition: all 0.2s ease;
+      }
+
+      input[type="range"]::-moz-range-thumb:hover {
+        transform: scale(1.2);
+        box-shadow: 0 4px 12px rgba(56, 189, 248, 0.6);
+      }
+
+      /* Details/Summary styling */
+      details summary {
+        list-style: none;
+      }
+
+      details summary::-webkit-details-marker {
+        display: none;
+      }
+
+      details[open] summary svg {
+        transform: rotate(180deg);
+      }
+
+      details summary svg {
+        transition: transform 0.3s ease;
+      }
     </style>
   </head>
   <body class="text-slate-200">
     <!-- Dynamic Background -->
     <div id="vanta-bg" class="fixed top-0 left-0 w-full h-full z-0"></div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" role="region" aria-live="polite"></div>
 
     <!-- Main Content -->
     <main
@@ -107,6 +238,18 @@
       <div
         class="glass-effect w-full max-w-md p-8 rounded-2xl shadow-2xl space-y-8"
       >
+        <!-- Language Switcher -->
+        <div class="flex justify-end mb-4">
+          <select
+            id="language-select"
+            class="form-input px-3 py-2 rounded-lg text-sm"
+            aria-label="Select language"
+          >
+            <option value="en">English</option>
+            <option value="zh">繁體中文</option>
+          </select>
+        </div>
+
         <!-- Header -->
         <div class="text-center">
           <!-- Dynamic Logo -->
@@ -127,32 +270,44 @@
               />
             </object>
           </div>
-          <h1 class="text-3xl font-bold text-white">Danmu Overlay Setup</h1>
-          <p class="text-slate-400 mt-2">Configure and launch the overlay</p>
+          <h1 class="text-3xl font-bold text-white" data-i18n="title">
+            Danmu Overlay Setup
+          </h1>
+          <p class="text-slate-400 mt-2" data-i18n="subtitle">
+            Configure and launch the overlay
+          </p>
         </div>
 
         <!-- Form -->
         <div class="space-y-6">
           <div>
-            <label for="host-input" class="text-sm font-medium text-slate-300"
+            <label
+              for="host-input"
+              class="text-sm font-medium text-slate-300"
+              data-i18n="hostLabel"
               >Server Address (IP or Domain)</label
             >
             <input
               type="text"
               id="host-input"
               class="form-input mt-2 block w-full rounded-lg px-4 py-3"
+              data-i18n-placeholder="hostPlaceholder"
               placeholder="e.g., 127.0.0.1 or mydomain.com"
             />
           </div>
 
           <div>
-            <label for="port-input" class="text-sm font-medium text-slate-300"
+            <label
+              for="port-input"
+              class="text-sm font-medium text-slate-300"
+              data-i18n="portLabel"
               >WebSocket Port</label
             >
             <input
               type="text"
               id="port-input"
               class="form-input mt-2 block w-full rounded-lg px-4 py-3"
+              data-i18n-placeholder="portPlaceholder"
               placeholder="e.g., 4001"
             />
           </div>
@@ -161,6 +316,7 @@
             <label
               for="screen-select"
               class="text-sm font-medium text-slate-300"
+              data-i18n="displayLabel"
               >Target Display</label
             >
             <select
@@ -181,15 +337,140 @@
                 id="sync-multi-display-checkbox"
                 class="form-input h-4 w-4 rounded mr-2 text-sky-500 focus:ring-sky-500"
               />
-              Enable synchronous multi-display
+              <span data-i18n="syncMultiDisplay"
+                >Enable synchronous multi-display</span
+              >
             </label>
           </div>
         </div>
+
+        <!-- Connection Status -->
+        <div id="connection-status" class="hidden">
+          <div class="flex items-center justify-center gap-2 p-3 rounded-lg glass-effect">
+            <div id="status-indicator" class="w-3 h-3 rounded-full"></div>
+            <span id="status-text" class="text-sm font-medium"></span>
+          </div>
+        </div>
+
+        <!-- Danmu Preview & Settings -->
+        <details class="glass-effect rounded-xl p-4">
+          <summary class="cursor-pointer text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+            </svg>
+            <span data-i18n="previewSettings">Preview & Settings</span>
+          </summary>
+
+          <div class="mt-4 space-y-4">
+            <!-- Preview Controls -->
+            <div class="border-t border-slate-600 pt-4">
+              <label class="text-xs font-medium text-slate-400 uppercase tracking-wide" data-i18n="testDanmu">Test Danmu</label>
+              <div class="mt-2 flex gap-2">
+                <input
+                  type="text"
+                  id="preview-text"
+                  class="form-input flex-1 text-sm px-3 py-2 rounded-lg"
+                  data-i18n-placeholder="previewPlaceholder"
+                  placeholder="Enter test danmu text..."
+                  value="測試彈幕 Test Danmu 🎉"
+                />
+                <button
+                  id="preview-button"
+                  class="btn-primary px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2 hover:shadow-lg transition-all"
+                  data-i18n="sendPreview"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                  </svg>
+                  Send
+                </button>
+              </div>
+            </div>
+
+            <!-- Overlay Settings -->
+            <div class="border-t border-slate-600 pt-4 space-y-3">
+              <label class="text-xs font-medium text-slate-400 uppercase tracking-wide" data-i18n="overlaySettings">Overlay Settings</label>
+
+              <!-- Opacity Control -->
+              <div>
+                <div class="flex justify-between items-center mb-2">
+                  <label for="overlay-opacity" class="text-sm text-slate-300" data-i18n="opacity">Opacity</label>
+                  <span id="opacity-value" class="text-sm font-mono text-sky-400">100%</span>
+                </div>
+                <input
+                  type="range"
+                  id="overlay-opacity"
+                  min="10"
+                  max="100"
+                  value="100"
+                  class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
+                />
+              </div>
+
+              <!-- Danmu Speed Control -->
+              <div>
+                <div class="flex justify-between items-center mb-2">
+                  <label for="danmu-speed" class="text-sm text-slate-300" data-i18n="speed">Speed</label>
+                  <span id="speed-value" class="text-sm font-mono text-sky-400">5</span>
+                </div>
+                <input
+                  type="range"
+                  id="danmu-speed"
+                  min="1"
+                  max="10"
+                  value="5"
+                  class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
+                />
+              </div>
+
+              <!-- Danmu Size Control -->
+              <div>
+                <div class="flex justify-between items-center mb-2">
+                  <label for="danmu-size" class="text-sm text-slate-300" data-i18n="fontSize">Font Size</label>
+                  <span id="size-value" class="text-sm font-mono text-sky-400">50px</span>
+                </div>
+                <input
+                  type="range"
+                  id="danmu-size"
+                  min="20"
+                  max="100"
+                  value="50"
+                  class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
+                />
+              </div>
+
+              <!-- Danmu Color -->
+              <div>
+                <div class="flex justify-between items-center mb-2">
+                  <label for="danmu-color" class="text-sm text-slate-300" data-i18n="color">Color</label>
+                  <input
+                    type="color"
+                    id="danmu-color"
+                    value="#ffffff"
+                    class="w-10 h-8 rounded cursor-pointer bg-transparent border border-slate-600"
+                  />
+                </div>
+              </div>
+
+              <!-- Apply Settings Button -->
+              <button
+                id="apply-settings-button"
+                class="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white font-medium py-2 px-4 rounded-lg hover:shadow-lg transition-all mt-4"
+                data-i18n="applySettings"
+              >
+                Apply Settings to Overlay
+              </button>
+            </div>
+          </div>
+        </details>
 
         <!-- Action Buttons -->
         <div class="flex flex-col sm:flex-row gap-4">
           <button
             id="start-button"
+            aria-label="Start overlay connection"
+            aria-busy="false"
             class="w-full btn-primary text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-sky-500/50 transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2"
           >
             <svg
@@ -205,11 +486,13 @@
             >
               <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>
-            <span>Start Overlay</span>
+            <span data-i18n="startButton">Start Overlay</span>
           </button>
           <button
             id="stop-button"
             disabled
+            aria-label="Stop overlay connection"
+            aria-disabled="true"
             class="w-full btn-stopped text-slate-300 font-semibold py-3 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <svg
@@ -225,7 +508,7 @@
             >
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
             </svg>
-            <span>Stop Overlay</span>
+            <span data-i18n="stopButton">Stop Overlay</span>
           </button>
         </div>
       </div>
@@ -244,6 +527,7 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     ></script>
+    <script src="i18n.js"></script>
     <script src="./dist/renderer.bundle.js"></script>
     <script>
       // Vanta.js Background Initialization
@@ -265,6 +549,21 @@
 
       document.addEventListener("DOMContentLoaded", () => {
         const api = window.API;
+
+        // Initialize i18n
+        if (typeof i18n !== "undefined") {
+          i18n.loadLanguage();
+          i18n.updateUI();
+
+          // Set language selector
+          const languageSelect = document.getElementById("language-select");
+          if (languageSelect) {
+            languageSelect.value = i18n.currentLang;
+            languageSelect.addEventListener("change", (e) => {
+              i18n.setLanguage(e.target.value);
+            });
+          }
+        }
 
         // DOM Elements
         // const hostInput = document.getElementById("host-input"); // Handled in renderer.js

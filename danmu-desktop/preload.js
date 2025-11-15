@@ -80,6 +80,28 @@ try {
         );
       }
     },
+    // Send test danmu to overlay
+    sendTestDanmu: (text, opacity, color, size, speed) => {
+      console.log("[Preload] API.sendTestDanmu called with:", {
+        text,
+        opacity,
+        color,
+        size,
+        speed,
+      });
+      ipcRenderer.send("send-test-danmu", {
+        text,
+        opacity,
+        color,
+        size,
+        speed,
+      });
+    },
+    // Update overlay settings
+    updateOverlaySettings: (settings) => {
+      console.log("[Preload] API.updateOverlaySettings called with:", settings);
+      ipcRenderer.send("update-overlay-settings", settings);
+    },
   });
   // Note: Logging window.API here is from preload's context, not renderer's.
   // The important check is logging window.API in the renderer.

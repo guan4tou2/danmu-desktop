@@ -5,6 +5,127 @@ function sanitizeLog(input) {
   return strInput;
 }
 
+// Toast notification system
+function showToast(message, type = "info") {
+  const container = document.getElementById("toast-container");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+  toast.className =
+    "toast flex items-center gap-3 p-4 rounded-lg shadow-xl transform transition-all duration-300 ease-in-out opacity-0 translate-x-full";
+
+  // Icon and color based on type
+  const icons = {
+    success: `<svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+    </svg>`,
+    error: `<svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+    </svg>`,
+    warning: `<svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+    </svg>`,
+    info: `<svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>`,
+  };
+
+  const bgColors = {
+    success: "rgba(16, 185, 129, 0.15)",
+    error: "rgba(239, 68, 68, 0.15)",
+    warning: "rgba(234, 179, 8, 0.15)",
+    info: "rgba(59, 130, 246, 0.15)",
+  };
+
+  toast.style.backgroundColor = bgColors[type] || bgColors.info;
+  toast.innerHTML = `
+    ${icons[type] || icons.info}
+    <div class="flex-1">
+      <p class="text-sm font-medium text-slate-100">${message}</p>
+    </div>
+    <button class="text-slate-400 hover:text-slate-200 transition-colors" onclick="this.parentElement.remove()">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
+  `;
+
+  container.appendChild(toast);
+
+  // Trigger animation
+  requestAnimationFrame(() => {
+    toast.classList.remove("opacity-0", "translate-x-full");
+  });
+
+  // Auto remove after 4 seconds
+  setTimeout(() => {
+    toast.classList.add("opacity-0", "translate-x-full");
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+
+// Get translation helper
+function t(key) {
+  return typeof i18n !== "undefined" ? i18n.t(key) : key;
+}
+
+// Update connection status display
+function updateConnectionStatus(status, text) {
+  const statusContainer = document.getElementById("connection-status");
+  const statusIndicator = document.getElementById("status-indicator");
+  const statusText = document.getElementById("status-text");
+
+  if (!statusContainer || !statusIndicator || !statusText) return;
+
+  statusContainer.classList.remove("hidden");
+  statusText.textContent = text;
+
+  const statusColors = {
+    idle: { bg: "#475569", shadow: "none" },
+    connecting: { bg: "#06b6d4", shadow: "0 0 10px rgba(6, 182, 212, 0.6)" },
+    connected: { bg: "#10b981", shadow: "0 0 10px rgba(16, 185, 129, 0.6)" },
+    disconnected: { bg: "#ef4444", shadow: "0 0 10px rgba(239, 68, 68, 0.6)" },
+  };
+
+  const color = statusColors[status] || statusColors.idle;
+  statusIndicator.style.backgroundColor = color.bg;
+  statusIndicator.style.boxShadow = color.shadow;
+}
+
+// Input validation
+function validateIP(value) {
+  const ipRegex =
+    /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+  const domainRegex =
+    /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
+  return ipRegex.test(value) || domainRegex.test(value);
+}
+
+function validatePort(value) {
+  const portRegex = /^\d{1,5}$/;
+  if (!portRegex.test(value)) return false;
+  const port = parseInt(value);
+  return port >= 1 && port <= 65535;
+}
+
+// Save and load settings from localStorage
+function saveSettings(host, port, displayIndex, syncMultiDisplay) {
+  localStorage.setItem(
+    "danmu-settings",
+    JSON.stringify({ host, port, displayIndex, syncMultiDisplay })
+  );
+}
+
+function loadSettings() {
+  try {
+    const saved = localStorage.getItem("danmu-settings");
+    return saved ? JSON.parse(saved) : null;
+  } catch (e) {
+    console.error("[loadSettings] Error:", sanitizeLog(e.message));
+    return null;
+  }
+}
+
 /**
  * This file is loaded via the <script> tag in the index.html file and will
  * be executed in the renderer process for that window. No Node.js APIs are
@@ -197,73 +318,116 @@ const syncMultiDisplayCheckbox = document.getElementById(
 );
 
 startButton.addEventListener("click", () => {
-  //var ipre = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
-  var ipre =
-    /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-  var domainre =
-    /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
-  var portre = /^\d{1,5}$/;
-  if (
-    ipre.test(ip.value) ||
-    (domainre.test(ip.value) && portre.test(port.value))
-  ) {
-    const IP = ip.value;
-    const PORT = port.value;
-    const displayIndex = parseInt(screenSelect.value);
-    const enableSyncMultiDisplay = syncMultiDisplayCheckbox.checked;
+  const hostValue = ip.value.trim();
+  const portValue = port.value.trim();
 
-    console.log(
-      `[Renderer] Starting overlay with: IP=${sanitizeLog(
-        IP
-      )}, PORT=${sanitizeLog(
-        PORT
-      )}, DisplayIndex=${displayIndex}, SyncMultiDisplay=${enableSyncMultiDisplay}`
-    );
-    console.log("[renderer.js] window.API before create:", window.API); // window.API is an object, not logging sensitive parts here
-    const api = window.API;
-    api.create(IP, PORT, displayIndex, enableSyncMultiDisplay); // Pass the new argument
-
-    startButton.disabled = true;
-    stopButton.disabled = false;
-    ip.disabled = true;
-    port.disabled = true;
-    screenSelect.disabled = true;
-    syncMultiDisplayCheckbox.disabled = true;
-
-    // Update button styles - waiting for connection
-    startButton.classList.remove("btn-primary", "btn-connected");
-    startButton.classList.add("btn-connecting");
-    stopButton.classList.remove("btn-stopped");
-    stopButton.classList.add("btn-active");
-
-    // Logging boolean values, no sanitization needed for these.
-    console.log(
-      `[Renderer] UI Disabled: screenSelect=${screenSelect.disabled}, syncMultiDisplayCheckbox=${syncMultiDisplayCheckbox.disabled}`
-    );
+  // Validate inputs
+  if (!hostValue) {
+    showToast(t("errorEmptyHost"), "error");
+    ip.classList.add("input-invalid");
+    return;
   }
+
+  if (!validateIP(hostValue)) {
+    showToast(t("errorInvalidHost"), "error");
+    ip.classList.add("input-invalid");
+    return;
+  }
+
+  if (!portValue) {
+    showToast(t("errorEmptyPort"), "error");
+    port.classList.add("input-invalid");
+    return;
+  }
+
+  if (!validatePort(portValue)) {
+    showToast(t("errorInvalidPort"), "error");
+    port.classList.add("input-invalid");
+    return;
+  }
+
+  // All validation passed
+  const IP = hostValue;
+  const PORT = portValue;
+  const displayIndex = parseInt(screenSelect.value);
+  const enableSyncMultiDisplay = syncMultiDisplayCheckbox.checked;
+
+  // Save settings
+  saveSettings(IP, PORT, displayIndex, enableSyncMultiDisplay);
+
+  console.log(
+    `[Renderer] Starting overlay with: IP=${sanitizeLog(
+      IP
+    )}, PORT=${sanitizeLog(
+      PORT
+    )}, DisplayIndex=${displayIndex}, SyncMultiDisplay=${enableSyncMultiDisplay}`
+  );
+
+  const api = window.API;
+  api.create(IP, PORT, displayIndex, enableSyncMultiDisplay);
+
+  // Update UI
+  startButton.disabled = true;
+  startButton.setAttribute("aria-busy", "true");
+  startButton.setAttribute("aria-disabled", "true");
+
+  stopButton.disabled = false;
+  stopButton.setAttribute("aria-disabled", "false");
+
+  ip.disabled = true;
+  port.disabled = true;
+  screenSelect.disabled = true;
+  syncMultiDisplayCheckbox.disabled = true;
+
+  // Update button styles
+  startButton.classList.remove("btn-primary", "btn-connected");
+  startButton.classList.add("btn-connecting");
+  stopButton.classList.remove("btn-stopped");
+  stopButton.classList.add("btn-active");
+
+  // Update connection status
+  updateConnectionStatus("connecting", t("statusConnecting"));
+  showToast(t("toastStarting"), "info");
+
+  console.log(
+    `[Renderer] UI Disabled: screenSelect=${screenSelect.disabled}, syncMultiDisplayCheckbox=${syncMultiDisplayCheckbox.disabled}`
+  );
 });
 
 stopButton.addEventListener("click", () => {
   startButton.disabled = false;
+  startButton.setAttribute("aria-busy", "false");
+  startButton.setAttribute("aria-disabled", "false");
+
   stopButton.disabled = true;
+  stopButton.setAttribute("aria-disabled", "true");
+
   ip.disabled = false;
   port.disabled = false;
   syncMultiDisplayCheckbox.disabled = false;
-  syncMultiDisplayCheckbox.dispatchEvent(new Event("change")); // This will trigger the change handler below
+  syncMultiDisplayCheckbox.dispatchEvent(new Event("change"));
 
-  // Update button styles - reset to default
+  // Update button styles
   startButton.classList.remove("btn-connecting", "btn-connected");
   startButton.classList.add("btn-primary");
   stopButton.classList.remove("btn-active");
   stopButton.classList.add("btn-stopped");
 
-  // Logging boolean value, no sanitization needed.
+  // Update connection status
+  updateConnectionStatus("idle", t("statusIdle"));
+  showToast(t("toastStopped"), "info");
+
+  // Hide status after 2 seconds
+  setTimeout(() => {
+    const statusContainer = document.getElementById("connection-status");
+    if (statusContainer) statusContainer.classList.add("hidden");
+  }, 2000);
+
   console.log(
     `[Renderer] Overlay stopped. UI Enabled: syncMultiDisplayCheckbox=${syncMultiDisplayCheckbox.disabled}`
   );
-  console.log("[renderer.js] window.API before close:", window.API); // window.API is an object
   const api = window.API;
-  api.close(); // Changed from api.delete()
+  api.close();
 });
 
 syncMultiDisplayCheckbox.addEventListener("change", () => {
@@ -285,33 +449,204 @@ syncMultiDisplayCheckbox.addEventListener("change", () => {
   }
 });
 
+// Real-time input validation
+ip.addEventListener("input", () => {
+  ip.classList.remove("input-valid", "input-invalid");
+  if (ip.value.trim() && validateIP(ip.value.trim())) {
+    ip.classList.add("input-valid");
+  } else if (ip.value.trim()) {
+    ip.classList.add("input-invalid");
+  }
+});
+
+port.addEventListener("input", () => {
+  port.classList.remove("input-valid", "input-invalid");
+  if (port.value.trim() && validatePort(port.value.trim())) {
+    port.classList.add("input-valid");
+  } else if (port.value.trim()) {
+    port.classList.add("input-invalid");
+  }
+});
+
+// Load saved settings on startup
+const savedSettings = loadSettings();
+if (savedSettings) {
+  ip.value = savedSettings.host || "";
+  port.value = savedSettings.port || "";
+  if (savedSettings.displayIndex !== undefined) {
+    screenSelect.value = savedSettings.displayIndex;
+  }
+  if (savedSettings.syncMultiDisplay !== undefined) {
+    syncMultiDisplayCheckbox.checked = savedSettings.syncMultiDisplay;
+  }
+  // Trigger validation
+  ip.dispatchEvent(new Event("input"));
+  port.dispatchEvent(new Event("input"));
+  showToast(t("toastSettingsLoaded"), "info");
+}
+
 // Initial state setup
 if (syncMultiDisplayCheckbox.checked) {
   screenSelect.disabled = true;
 }
-// Logging boolean values, no sanitization needed.
 console.log(
   `[Renderer] Initial UI state: screenSelect.disabled=${screenSelect.disabled}, syncMultiDisplayCheckbox.checked=${syncMultiDisplayCheckbox.checked}`
 );
+
+// Danmu Preview & Settings Management
+const previewButton = document.getElementById("preview-button");
+const previewText = document.getElementById("preview-text");
+const overlayOpacity = document.getElementById("overlay-opacity");
+const opacityValue = document.getElementById("opacity-value");
+const danmuSpeed = document.getElementById("danmu-speed");
+const speedValue = document.getElementById("speed-value");
+const danmuSize = document.getElementById("danmu-size");
+const sizeValue = document.getElementById("size-value");
+const danmuColor = document.getElementById("danmu-color");
+const applySettingsButton = document.getElementById("apply-settings-button");
+
+// Default danmu settings
+let danmuSettings = {
+  opacity: 100,
+  speed: 5,
+  size: 50,
+  color: "#ffffff",
+};
+
+// Load saved danmu settings
+function loadDanmuSettings() {
+  try {
+    const saved = localStorage.getItem("danmu-display-settings");
+    if (saved) {
+      danmuSettings = { ...danmuSettings, ...JSON.parse(saved) };
+      // Update UI
+      if (overlayOpacity) overlayOpacity.value = danmuSettings.opacity;
+      if (opacityValue) opacityValue.textContent = `${danmuSettings.opacity}%`;
+      if (danmuSpeed) danmuSpeed.value = danmuSettings.speed;
+      if (speedValue) speedValue.textContent = danmuSettings.speed;
+      if (danmuSize) danmuSize.value = danmuSettings.size;
+      if (sizeValue) sizeValue.textContent = `${danmuSettings.size}px`;
+      if (danmuColor) danmuColor.value = danmuSettings.color;
+    }
+  } catch (e) {
+    console.error("[loadDanmuSettings] Error:", sanitizeLog(e.message));
+  }
+}
+
+// Save danmu settings
+function saveDanmuSettings() {
+  localStorage.setItem("danmu-display-settings", JSON.stringify(danmuSettings));
+}
+
+// Update slider values in real-time
+if (overlayOpacity) {
+  overlayOpacity.addEventListener("input", (e) => {
+    danmuSettings.opacity = parseInt(e.target.value);
+    if (opacityValue) opacityValue.textContent = `${danmuSettings.opacity}%`;
+  });
+}
+
+if (danmuSpeed) {
+  danmuSpeed.addEventListener("input", (e) => {
+    danmuSettings.speed = parseInt(e.target.value);
+    if (speedValue) speedValue.textContent = danmuSettings.speed;
+  });
+}
+
+if (danmuSize) {
+  danmuSize.addEventListener("input", (e) => {
+    danmuSettings.size = parseInt(e.target.value);
+    if (sizeValue) sizeValue.textContent = `${danmuSettings.size}px`;
+  });
+}
+
+if (danmuColor) {
+  danmuColor.addEventListener("input", (e) => {
+    danmuSettings.color = e.target.value;
+  });
+}
+
+// Preview danmu button
+if (previewButton && previewText) {
+  previewButton.addEventListener("click", () => {
+    const text = previewText.value.trim();
+    if (!text) {
+      showToast(t("errorEmptyPreview") || "Please enter preview text", "error");
+      return;
+    }
+
+    // Check if overlay is active
+    const api = window.API;
+    if (!api || !api.sendTestDanmu) {
+      showToast(
+        t("errorOverlayNotActive") || "Please start the overlay first",
+        "warning"
+      );
+      return;
+    }
+
+    // Send test danmu with current settings
+    api.sendTestDanmu(
+      text,
+      danmuSettings.opacity,
+      danmuSettings.color,
+      danmuSettings.size,
+      danmuSettings.speed
+    );
+
+    showToast(t("previewSent") || "Preview danmu sent!", "success");
+  });
+}
+
+// Apply settings to overlay
+if (applySettingsButton) {
+  applySettingsButton.addEventListener("click", () => {
+    const api = window.API;
+    if (!api || !api.updateOverlaySettings) {
+      showToast(
+        t("errorOverlayNotActive") || "Please start the overlay first",
+        "warning"
+      );
+      return;
+    }
+
+    // Save settings
+    saveDanmuSettings();
+
+    // Apply to overlay window
+    api.updateOverlaySettings(danmuSettings);
+
+    showToast(t("settingsApplied") || "Settings applied to overlay", "success");
+  });
+}
+
+// Load settings on startup
+loadDanmuSettings();
 
 // Listen for connection status updates
 if (window.API && typeof window.API.onConnectionStatus === "function") {
   window.API.onConnectionStatus((data) => {
     console.log("[Renderer] Connection status update:", data);
     if (data.status === "connected") {
-      // Connection successful - update start button to connected state
+      // Connection successful
       startButton.classList.remove("btn-connecting");
       startButton.classList.add("btn-connected");
+      startButton.setAttribute("aria-busy", "false");
+      updateConnectionStatus("connected", t("statusConnected"));
+      showToast(t("toastConnected"), "success");
     } else if (data.status === "disconnected") {
-      // Connection lost - update start button to connecting state (waiting for reconnect)
+      // Connection lost
       startButton.classList.remove("btn-connected");
       startButton.classList.add("btn-connecting");
+      updateConnectionStatus("disconnected", t("statusDisconnected"));
+      showToast(t("toastReconnecting"), "warning");
     } else if (data.status === "stopped") {
-      // Overlay stopped - reset buttons to default state
+      // Overlay stopped
       startButton.classList.remove("btn-connecting", "btn-connected");
       startButton.classList.add("btn-primary");
       stopButton.classList.remove("btn-active");
       stopButton.classList.add("btn-stopped");
+      updateConnectionStatus("idle", t("statusStopped"));
     }
   });
 }

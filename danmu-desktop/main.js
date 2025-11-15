@@ -428,6 +428,50 @@ function createWindow() {
     return displays;
   });
 
+  // Handler for sending test danmu
+  ipcMain.on("send-test-danmu", (event, data) => {
+    console.log("[Main] send-test-danmu received:", data);
+    // Send test danmu to all child windows
+    childWindows.forEach((win) => {
+      if (win && !win.isDestroyed()) {
+        win.webContents.executeJavaScript(`
+          if (typeof window.showdanmu === 'function') {
+            window.showdanmu(
+              ${JSON.stringify(data.text)},
+              ${data.opacity},
+              ${JSON.stringify(data.color)},
+              ${data.size},
+              ${data.speed},
+              { name: "NotoSansTC", url: null, type: "default" }
+            );
+          }
+        `).catch(err => {
+          console.error("[Main] Error sending test danmu:", sanitizeLog(err.message));
+        });
+      }
+    });
+  });
+
+  // Handler for updating overlay settings
+  ipcMain.on("update-overlay-settings", (event, settings) => {
+    console.log("[Main] update-overlay-settings received:", settings);
+    // Update opacity of all child windows
+    childWindows.forEach((win) => {
+      if (win && !win.isDestroyed()) {
+        // Update window opacity
+        win.setOpacity(settings.opacity / 100);
+
+        // Store settings in window for future danmu
+        win.webContents.executeJavaScript(`
+          window.defaultDanmuSettings = ${JSON.stringify(settings)};
+          console.log("[Overlay] Default danmu settings updated:", window.defaultDanmuSettings);
+        `).catch(err => {
+          console.error("[Main] Error updating overlay settings:", sanitizeLog(err.message));
+        });
+      }
+    });
+  });
+
   ipcMain.on(
     "createChild",
     (event, ip, port, displayIndex, enableSyncMultiDisplay) => {
