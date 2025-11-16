@@ -66,6 +66,19 @@ const i18n = {
       displayAreaTop: "Top Position",
       displayAreaHeight: "Display Height",
       displayAreaPreview: "Preview",
+
+      // Track management
+      trackManagement: "Track Management",
+      maxTracks: "Maximum Tracks",
+      maxTracksHint: "0 = Unlimited tracks",
+      collisionDetection: "Collision Detection",
+
+      // Batch test
+      batchTest: "Batch Test",
+      startBatchTest: "Start Batch Test",
+      batchTestHint: "Test collision detection and track distribution",
+      batchTestStarted: "Sending test danmu...",
+      batchTestComplete: "Batch test completed!",
     },
 
     zh: {
@@ -131,6 +144,19 @@ const i18n = {
       displayAreaTop: "上方位置",
       displayAreaHeight: "顯示高度",
       displayAreaPreview: "預覽",
+
+      // Track management
+      trackManagement: "軌道管理",
+      maxTracks: "最大軌道數",
+      maxTracksHint: "0 = 無限制軌道",
+      collisionDetection: "碰撞檢測",
+
+      // Batch test
+      batchTest: "批量測試",
+      startBatchTest: "開始批量測試",
+      batchTestHint: "測試碰撞檢測和軌道分配",
+      batchTestStarted: "正在發送測試彈幕...",
+      batchTestComplete: "批量測試完成！",
     },
   },
 

@@ -133,6 +133,104 @@ function loadSettings() {
  * `contextIsolation` is turned on. Use the contextBridge API in `preload.js`
  * to expose Node.js functionality from the main process.
  */
+
+// Track management for collision detection
+window.danmuTracks = [];
+window.danmuTrackSettings = {
+  maxTracks: 10,
+  collisionDetection: true,
+};
+
+// Update track settings
+window.updateDanmuTrackSettings = function(maxTracks, collisionDetection) {
+  window.danmuTrackSettings.maxTracks = maxTracks;
+  window.danmuTrackSettings.collisionDetection = collisionDetection;
+  console.log('[Track Settings] Updated:', window.danmuTrackSettings);
+};
+
+// Find available track with collision detection
+window.findAvailableTrack = function(displayArea, danmuHeight, danmuWidth, speed) {
+  const screenHeight = document.documentElement.clientHeight;
+  const areaTopPixels = (displayArea.top / 100) * screenHeight;
+  const areaHeightPixels = (displayArea.height / 100) * screenHeight;
+
+  const { maxTracks, collisionDetection } = window.danmuTrackSettings;
+
+  // Calculate track height
+  const effectiveMaxTracks = maxTracks > 0 ? maxTracks : Math.floor(areaHeightPixels / danmuHeight);
+  const trackHeight = areaHeightPixels / effectiveMaxTracks;
+
+  if (!collisionDetection) {
+    // Random track selection when collision detection is disabled
+    const randomTrackIndex = Math.floor(Math.random() * effectiveMaxTracks);
+    const top = areaTopPixels + randomTrackIndex * trackHeight + Math.random() * (trackHeight - danmuHeight);
+    return { top, trackIndex: randomTrackIndex };
+  }
+
+  // Collision detection enabled - find available track
+  const now = Date.now();
+  const screenWidth = document.documentElement.clientWidth;
+
+  // Calculate animation duration based on speed
+  const maxTime = 20000;
+  const minTime = 2000;
+  const duration = maxTime - ((speed - 1) * (maxTime - minTime)) / 9;
+
+  // Clean up expired tracks
+  window.danmuTracks = window.danmuTracks.filter(track => track.endTime > now);
+
+  // Try to find an available track
+  for (let i = 0; i < effectiveMaxTracks; i++) {
+    const trackTop = areaTopPixels + i * trackHeight;
+
+    // Check if this track has any active danmu that would collide
+    const hasCollision = window.danmuTracks.some(track => {
+      if (track.trackIndex !== i) return false;
+
+      // Calculate if there's enough space for the new danmu
+      const timeToReachRight = (screenWidth / (screenWidth + track.width)) * track.duration;
+      const remainingTime = track.endTime - now;
+
+      // If the previous danmu hasn't moved far enough, there would be collision
+      return remainingTime > (duration - timeToReachRight);
+    });
+
+    if (!hasCollision) {
+      const top = trackTop + Math.random() * Math.max(0, trackHeight - danmuHeight);
+
+      // Record this track as occupied
+      window.danmuTracks.push({
+        trackIndex: i,
+        startTime: now,
+        endTime: now + duration,
+        duration,
+        width: danmuWidth,
+      });
+
+      return { top, trackIndex: i };
+    }
+  }
+
+  // All tracks are occupied, use the oldest track
+  const oldestTrack = window.danmuTracks.reduce((oldest, track) =>
+    !oldest || track.endTime < oldest.endTime ? track : oldest
+  , null);
+
+  const trackIndex = oldestTrack ? oldestTrack.trackIndex : 0;
+  const trackTop = areaTopPixels + trackIndex * trackHeight;
+  const top = trackTop + Math.random() * Math.max(0, trackHeight - danmuHeight);
+
+  window.danmuTracks.push({
+    trackIndex,
+    startTime: now,
+    endTime: now + duration,
+    duration,
+    width: danmuWidth,
+  });
+
+  return { top, trackIndex };
+};
+
 window.showdanmu = function (
   string,
   opacity = 75,
@@ -258,16 +356,9 @@ window.showdanmu = function (
     const Width = parseFloat(getComputedStyle(danmu).width);
     const Padding = parseFloat(getComputedStyle(danmu).padding);
 
-    // Calculate display area boundaries
-    const screenHeight = document.documentElement.clientHeight;
-    const areaTopPixels = (displayArea.top / 100) * screenHeight;
-    const areaHeightPixels = (displayArea.height / 100) * screenHeight;
-    const areaBottomPixels = areaTopPixels + areaHeightPixels;
-
-    // Calculate random position within the display area
-    let top = areaTopPixels + Math.random() * (areaHeightPixels - (Height + Padding));
-    // Ensure the danmu stays within bounds
-    top = Math.max(areaTopPixels, Math.min(top, areaBottomPixels - (Height + Padding)));
+    // Use track-based positioning with collision detection
+    const trackPosition = window.findAvailableTrack(displayArea, Height + Padding, Width, speed);
+    const top = trackPosition.top;
 
     danmu.style.top = `${top}px`;
     danmu.style.opacity = opacity * 0.01;
@@ -552,6 +643,11 @@ const displayAreaTopValue = document.getElementById("display-area-top-value");
 const displayAreaHeight = document.getElementById("display-area-height");
 const displayAreaHeightValue = document.getElementById("display-area-height-value");
 const displayAreaIndicator = document.getElementById("display-area-indicator");
+const maxTracks = document.getElementById("max-tracks");
+const maxTracksValue = document.getElementById("max-tracks-value");
+const collisionDetectionToggle = document.getElementById("collision-detection-toggle");
+const batchTestButton = document.getElementById("batch-test-button");
+const batchTestCount = document.getElementById("batch-test-count");
 
 // Default danmu settings
 let danmuSettings = {
@@ -566,6 +662,8 @@ let danmuSettings = {
   shadowBlur: 4,
   displayAreaTop: 0, // Top position as percentage (0-80%)
   displayAreaHeight: 100, // Height as percentage (20-100%)
+  maxTracks: 10, // Maximum number of danmu tracks (0 = unlimited)
+  collisionDetection: true, // Enable collision detection
 };
 
 // Load saved danmu settings
@@ -593,6 +691,9 @@ function loadDanmuSettings() {
       if (displayAreaTopValue) displayAreaTopValue.textContent = `${danmuSettings.displayAreaTop}%`;
       if (displayAreaHeight) displayAreaHeight.value = danmuSettings.displayAreaHeight;
       if (displayAreaHeightValue) displayAreaHeightValue.textContent = `${danmuSettings.displayAreaHeight}%`;
+      if (maxTracks) maxTracks.value = danmuSettings.maxTracks;
+      if (maxTracksValue) maxTracksValue.textContent = danmuSettings.maxTracks === 0 ? '無限制' : danmuSettings.maxTracks;
+      if (collisionDetectionToggle) collisionDetectionToggle.checked = danmuSettings.collisionDetection;
 
       // Update visibility of controls
       if (strokeControls) strokeControls.classList.toggle("hidden", !danmuSettings.textStroke);
@@ -600,6 +701,11 @@ function loadDanmuSettings() {
 
       // Update display area indicator
       updateDisplayAreaIndicator();
+
+      // Update track settings in window
+      if (window.updateDanmuTrackSettings) {
+        window.updateDanmuTrackSettings(danmuSettings.maxTracks, danmuSettings.collisionDetection);
+      }
     }
   } catch (e) {
     console.error("[loadDanmuSettings] Error:", sanitizeLog(e.message));
@@ -707,6 +813,31 @@ if (displayAreaHeight) {
   });
 }
 
+// Max tracks control
+if (maxTracks) {
+  maxTracks.addEventListener("input", (e) => {
+    danmuSettings.maxTracks = parseInt(e.target.value);
+    if (maxTracksValue) {
+      maxTracksValue.textContent = danmuSettings.maxTracks === 0 ? (i18n.currentLang === 'zh' ? '無限制' : 'Unlimited') : danmuSettings.maxTracks;
+    }
+    if (window.updateDanmuTrackSettings) {
+      window.updateDanmuTrackSettings(danmuSettings.maxTracks, danmuSettings.collisionDetection);
+    }
+    saveDanmuSettings();
+  });
+}
+
+// Collision detection toggle
+if (collisionDetectionToggle) {
+  collisionDetectionToggle.addEventListener("change", (e) => {
+    danmuSettings.collisionDetection = e.target.checked;
+    if (window.updateDanmuTrackSettings) {
+      window.updateDanmuTrackSettings(danmuSettings.maxTracks, danmuSettings.collisionDetection);
+    }
+    saveDanmuSettings();
+  });
+}
+
 // Update display area visual indicator
 function updateDisplayAreaIndicator() {
   if (displayAreaIndicator) {
@@ -755,6 +886,73 @@ if (previewButton && previewText) {
     );
 
     showToast(t("previewSent") || "Preview danmu sent!", "success");
+  });
+}
+
+// Batch test button
+if (batchTestButton) {
+  batchTestButton.addEventListener("click", () => {
+    const api = window.API;
+    if (!api || !api.sendTestDanmu) {
+      showToast(
+        t("errorOverlayNotActive") || "Please start the overlay first",
+        "warning"
+      );
+      return;
+    }
+
+    const count = batchTestCount ? parseInt(batchTestCount.value) : 5;
+    const testTexts = [
+      "測試彈幕 Test 1",
+      "這是第二條測試 Test 2",
+      "彈幕軌道測試 Track Test 3",
+      "碰撞檢測範例 Collision 4",
+      "批量測試模式 Batch 5",
+      "多軌道顯示測試 Multi-track 6",
+      "彈幕間距測試 Spacing 7",
+      "效能測試彈幕 Performance 8",
+      "自動分配軌道 Auto-assign 9",
+      "最終測試項目 Final Test 10",
+    ];
+
+    let sentCount = 0;
+    const interval = setInterval(() => {
+      if (sentCount >= count) {
+        clearInterval(interval);
+        showToast(
+          t("batchTestComplete") || `Sent ${count} test danmu!`,
+          "success"
+        );
+        return;
+      }
+
+      const text = testTexts[sentCount % testTexts.length];
+      api.sendTestDanmu(
+        text,
+        danmuSettings.opacity,
+        danmuSettings.color,
+        danmuSettings.size,
+        danmuSettings.speed,
+        {
+          textStroke: danmuSettings.textStroke,
+          strokeWidth: danmuSettings.strokeWidth,
+          strokeColor: danmuSettings.strokeColor,
+          textShadow: danmuSettings.textShadow,
+          shadowBlur: danmuSettings.shadowBlur,
+        },
+        {
+          top: danmuSettings.displayAreaTop,
+          height: danmuSettings.displayAreaHeight,
+        }
+      );
+
+      sentCount++;
+    }, 500); // Send one danmu every 500ms
+
+    showToast(
+      t("batchTestStarted") || `Sending ${count} test danmu...`,
+      "info"
+    );
   });
 }
 

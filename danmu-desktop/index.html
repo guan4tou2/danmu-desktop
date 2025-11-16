@@ -565,6 +565,63 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Track Management -->
+              <div class="border-t border-slate-600 pt-3 mt-3">
+                <h3 class="text-sm font-medium text-slate-300 mb-3" data-i18n="trackManagement">Track Management</h3>
+
+                <!-- Max Tracks -->
+                <div class="mb-3">
+                  <div class="flex justify-between items-center mb-2">
+                    <label for="max-tracks" class="text-xs text-slate-400" data-i18n="maxTracks">Maximum Tracks</label>
+                    <span id="max-tracks-value" class="text-xs font-mono text-sky-400">10</span>
+                  </div>
+                  <input
+                    type="range"
+                    id="max-tracks"
+                    min="0"
+                    max="20"
+                    value="10"
+                    step="1"
+                    class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
+                  />
+                  <div class="text-xs text-slate-500 mt-1" data-i18n="maxTracksHint">0 = Unlimited tracks</div>
+                </div>
+
+                <!-- Collision Detection -->
+                <div class="flex items-center justify-between">
+                  <label class="text-xs text-slate-400" data-i18n="collisionDetection">Collision Detection</label>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="collision-detection-toggle" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-sky-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Batch Test -->
+              <div class="border-t border-slate-600 pt-3 mt-3">
+                <h3 class="text-sm font-medium text-slate-300 mb-3" data-i18n="batchTest">Batch Test</h3>
+                <div class="flex gap-2">
+                  <input
+                    type="number"
+                    id="batch-test-count"
+                    min="1"
+                    max="20"
+                    value="5"
+                    class="form-input flex-1 text-sm px-3 py-2 rounded-lg w-20"
+                  />
+                  <button
+                    id="batch-test-button"
+                    class="btn-primary px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2 hover:shadow-lg transition-all"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    <span data-i18n="startBatchTest">Start Batch Test</span>
+                  </button>
+                </div>
+                <div class="text-xs text-slate-500 mt-2" data-i18n="batchTestHint">Test collision detection and track distribution</div>
+              </div>
             </div>
           </div>
         </details>
