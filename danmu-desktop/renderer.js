@@ -139,7 +139,18 @@ window.showdanmu = function (
   color = "#ffffff",
   size = 50,
   speed = 7,
-  fontInfo = { name: "NotoSansTC", url: null, type: "default" } // Updated parameter
+  fontInfo = { name: "NotoSansTC", url: null, type: "default" }, // Updated parameter
+  textStyles = {
+    textStroke: true,
+    strokeWidth: 2,
+    strokeColor: "#000000",
+    textShadow: false,
+    shadowBlur: 4,
+  },
+  displayArea = {
+    top: 0, // Top position as percentage (0-80%)
+    height: 100, // Height as percentage (20-100%)
+  }
 ) {
   console.log("[showdanmu] Received:", {
     string: sanitizeLog(string),
@@ -188,6 +199,21 @@ window.showdanmu = function (
     danmu.style.fontSize = `${size}px`;
     // Font family will be applied after potential dynamic loading
     danmu.style.color = color;
+
+    // Apply text stroke
+    if (textStyles.textStroke) {
+      danmu.style.webkitTextStrokeWidth = `${textStyles.strokeWidth}px`;
+      danmu.style.webkitTextStrokeColor = textStyles.strokeColor;
+      danmu.style.textStrokeWidth = `${textStyles.strokeWidth}px`;
+      danmu.style.textStrokeColor = textStyles.strokeColor;
+      danmu.style.paintOrder = "stroke fill";
+    }
+
+    // Apply text shadow
+    if (textStyles.textShadow) {
+      const blur = textStyles.shadowBlur;
+      danmu.style.textShadow = `0 0 ${blur}px rgba(0, 0, 0, 0.8), 0 0 ${blur * 2}px rgba(0, 0, 0, 0.6)`;
+    }
   }
 
   // Function to apply font and then append and animate
@@ -231,9 +257,18 @@ window.showdanmu = function (
     const Height = parseFloat(getComputedStyle(danmu).height);
     const Width = parseFloat(getComputedStyle(danmu).width);
     const Padding = parseFloat(getComputedStyle(danmu).padding);
-    let top = Math.abs(
-      Math.random() * document.documentElement.clientHeight - (Height + Padding)
-    );
+
+    // Calculate display area boundaries
+    const screenHeight = document.documentElement.clientHeight;
+    const areaTopPixels = (displayArea.top / 100) * screenHeight;
+    const areaHeightPixels = (displayArea.height / 100) * screenHeight;
+    const areaBottomPixels = areaTopPixels + areaHeightPixels;
+
+    // Calculate random position within the display area
+    let top = areaTopPixels + Math.random() * (areaHeightPixels - (Height + Padding));
+    // Ensure the danmu stays within bounds
+    top = Math.max(areaTopPixels, Math.min(top, areaBottomPixels - (Height + Padding)));
+
     danmu.style.top = `${top}px`;
     danmu.style.opacity = opacity * 0.01;
 
@@ -503,7 +538,20 @@ const speedValue = document.getElementById("speed-value");
 const danmuSize = document.getElementById("danmu-size");
 const sizeValue = document.getElementById("size-value");
 const danmuColor = document.getElementById("danmu-color");
-const applySettingsButton = document.getElementById("apply-settings-button");
+const textStrokeToggle = document.getElementById("text-stroke-toggle");
+const strokeControls = document.getElementById("stroke-controls");
+const strokeWidth = document.getElementById("stroke-width");
+const strokeWidthValue = document.getElementById("stroke-width-value");
+const strokeColor = document.getElementById("stroke-color");
+const textShadowToggle = document.getElementById("text-shadow-toggle");
+const shadowControls = document.getElementById("shadow-controls");
+const shadowBlur = document.getElementById("shadow-blur");
+const shadowBlurValue = document.getElementById("shadow-blur-value");
+const displayAreaTop = document.getElementById("display-area-top");
+const displayAreaTopValue = document.getElementById("display-area-top-value");
+const displayAreaHeight = document.getElementById("display-area-height");
+const displayAreaHeightValue = document.getElementById("display-area-height-value");
+const displayAreaIndicator = document.getElementById("display-area-indicator");
 
 // Default danmu settings
 let danmuSettings = {
@@ -511,6 +559,13 @@ let danmuSettings = {
   speed: 5,
   size: 50,
   color: "#ffffff",
+  textStroke: true,
+  strokeWidth: 2,
+  strokeColor: "#000000",
+  textShadow: false,
+  shadowBlur: 4,
+  displayAreaTop: 0, // Top position as percentage (0-80%)
+  displayAreaHeight: 100, // Height as percentage (20-100%)
 };
 
 // Load saved danmu settings
@@ -527,6 +582,24 @@ function loadDanmuSettings() {
       if (danmuSize) danmuSize.value = danmuSettings.size;
       if (sizeValue) sizeValue.textContent = `${danmuSettings.size}px`;
       if (danmuColor) danmuColor.value = danmuSettings.color;
+      if (textStrokeToggle) textStrokeToggle.checked = danmuSettings.textStroke;
+      if (strokeWidth) strokeWidth.value = danmuSettings.strokeWidth;
+      if (strokeWidthValue) strokeWidthValue.textContent = `${danmuSettings.strokeWidth}px`;
+      if (strokeColor) strokeColor.value = danmuSettings.strokeColor;
+      if (textShadowToggle) textShadowToggle.checked = danmuSettings.textShadow;
+      if (shadowBlur) shadowBlur.value = danmuSettings.shadowBlur;
+      if (shadowBlurValue) shadowBlurValue.textContent = `${danmuSettings.shadowBlur}px`;
+      if (displayAreaTop) displayAreaTop.value = danmuSettings.displayAreaTop;
+      if (displayAreaTopValue) displayAreaTopValue.textContent = `${danmuSettings.displayAreaTop}%`;
+      if (displayAreaHeight) displayAreaHeight.value = danmuSettings.displayAreaHeight;
+      if (displayAreaHeightValue) displayAreaHeightValue.textContent = `${danmuSettings.displayAreaHeight}%`;
+
+      // Update visibility of controls
+      if (strokeControls) strokeControls.classList.toggle("hidden", !danmuSettings.textStroke);
+      if (shadowControls) shadowControls.classList.toggle("hidden", !danmuSettings.textShadow);
+
+      // Update display area indicator
+      updateDisplayAreaIndicator();
     }
   } catch (e) {
     console.error("[loadDanmuSettings] Error:", sanitizeLog(e.message));
@@ -543,6 +616,7 @@ if (overlayOpacity) {
   overlayOpacity.addEventListener("input", (e) => {
     danmuSettings.opacity = parseInt(e.target.value);
     if (opacityValue) opacityValue.textContent = `${danmuSettings.opacity}%`;
+    saveDanmuSettings();
   });
 }
 
@@ -550,6 +624,7 @@ if (danmuSpeed) {
   danmuSpeed.addEventListener("input", (e) => {
     danmuSettings.speed = parseInt(e.target.value);
     if (speedValue) speedValue.textContent = danmuSettings.speed;
+    saveDanmuSettings();
   });
 }
 
@@ -557,13 +632,87 @@ if (danmuSize) {
   danmuSize.addEventListener("input", (e) => {
     danmuSettings.size = parseInt(e.target.value);
     if (sizeValue) sizeValue.textContent = `${danmuSettings.size}px`;
+    saveDanmuSettings();
   });
 }
 
 if (danmuColor) {
   danmuColor.addEventListener("input", (e) => {
     danmuSettings.color = e.target.value;
+    saveDanmuSettings();
   });
+}
+
+// Text stroke controls
+if (textStrokeToggle) {
+  textStrokeToggle.addEventListener("change", (e) => {
+    danmuSettings.textStroke = e.target.checked;
+    if (strokeControls) {
+      strokeControls.classList.toggle("hidden", !e.target.checked);
+    }
+    saveDanmuSettings();
+  });
+}
+
+if (strokeWidth) {
+  strokeWidth.addEventListener("input", (e) => {
+    danmuSettings.strokeWidth = parseInt(e.target.value);
+    if (strokeWidthValue) strokeWidthValue.textContent = `${danmuSettings.strokeWidth}px`;
+    saveDanmuSettings();
+  });
+}
+
+if (strokeColor) {
+  strokeColor.addEventListener("input", (e) => {
+    danmuSettings.strokeColor = e.target.value;
+    saveDanmuSettings();
+  });
+}
+
+// Text shadow controls
+if (textShadowToggle) {
+  textShadowToggle.addEventListener("change", (e) => {
+    danmuSettings.textShadow = e.target.checked;
+    if (shadowControls) {
+      shadowControls.classList.toggle("hidden", !e.target.checked);
+    }
+    saveDanmuSettings();
+  });
+}
+
+if (shadowBlur) {
+  shadowBlur.addEventListener("input", (e) => {
+    danmuSettings.shadowBlur = parseInt(e.target.value);
+    if (shadowBlurValue) shadowBlurValue.textContent = `${danmuSettings.shadowBlur}px`;
+    saveDanmuSettings();
+  });
+}
+
+// Display area controls
+if (displayAreaTop) {
+  displayAreaTop.addEventListener("input", (e) => {
+    danmuSettings.displayAreaTop = parseInt(e.target.value);
+    if (displayAreaTopValue) displayAreaTopValue.textContent = `${danmuSettings.displayAreaTop}%`;
+    updateDisplayAreaIndicator();
+    saveDanmuSettings();
+  });
+}
+
+if (displayAreaHeight) {
+  displayAreaHeight.addEventListener("input", (e) => {
+    danmuSettings.displayAreaHeight = parseInt(e.target.value);
+    if (displayAreaHeightValue) displayAreaHeightValue.textContent = `${danmuSettings.displayAreaHeight}%`;
+    updateDisplayAreaIndicator();
+    saveDanmuSettings();
+  });
+}
+
+// Update display area visual indicator
+function updateDisplayAreaIndicator() {
+  if (displayAreaIndicator) {
+    displayAreaIndicator.style.top = `${danmuSettings.displayAreaTop}%`;
+    displayAreaIndicator.style.height = `${danmuSettings.displayAreaHeight}%`;
+  }
 }
 
 // Preview danmu button
@@ -591,32 +740,21 @@ if (previewButton && previewText) {
       danmuSettings.opacity,
       danmuSettings.color,
       danmuSettings.size,
-      danmuSettings.speed
+      danmuSettings.speed,
+      {
+        textStroke: danmuSettings.textStroke,
+        strokeWidth: danmuSettings.strokeWidth,
+        strokeColor: danmuSettings.strokeColor,
+        textShadow: danmuSettings.textShadow,
+        shadowBlur: danmuSettings.shadowBlur,
+      },
+      {
+        top: danmuSettings.displayAreaTop,
+        height: danmuSettings.displayAreaHeight,
+      }
     );
 
     showToast(t("previewSent") || "Preview danmu sent!", "success");
-  });
-}
-
-// Apply settings to overlay
-if (applySettingsButton) {
-  applySettingsButton.addEventListener("click", () => {
-    const api = window.API;
-    if (!api || !api.updateOverlaySettings) {
-      showToast(
-        t("errorOverlayNotActive") || "Please start the overlay first",
-        "warning"
-      );
-      return;
-    }
-
-    // Save settings
-    saveDanmuSettings();
-
-    // Apply to overlay window
-    api.updateOverlaySettings(danmuSettings);
-
-    showToast(t("settingsApplied") || "Settings applied to overlay", "success");
   });
 }
 

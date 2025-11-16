@@ -50,11 +50,22 @@ const i18n = {
       speed: "Speed",
       fontSize: "Font Size",
       color: "Color",
-      applySettings: "Apply Settings to Overlay",
       errorEmptyPreview: "Please enter preview text",
       errorOverlayNotActive: "Please start the overlay first",
       previewSent: "Preview danmu sent!",
-      settingsApplied: "Settings applied to overlay",
+
+      // Text effects
+      textStroke: "Text Stroke",
+      strokeWidth: "Stroke Width",
+      strokeColor: "Stroke Color",
+      textShadow: "Text Shadow",
+      shadowBlur: "Shadow Blur",
+
+      // Display area control
+      displayAreaControl: "Display Area Control",
+      displayAreaTop: "Top Position",
+      displayAreaHeight: "Display Height",
+      displayAreaPreview: "Preview",
     },
 
     zh: {
@@ -104,11 +115,22 @@ const i18n = {
       speed: "速度",
       fontSize: "字體大小",
       color: "顏色",
-      applySettings: "套用設定至覆蓋層",
       errorEmptyPreview: "請輸入預覽文字",
       errorOverlayNotActive: "請先啟動覆蓋層",
       previewSent: "預覽彈幕已發送！",
-      settingsApplied: "設定已套用至覆蓋層",
+
+      // Text effects
+      textStroke: "文字描邊",
+      strokeWidth: "描邊寬度",
+      strokeColor: "描邊顏色",
+      textShadow: "文字陰影",
+      shadowBlur: "陰影模糊",
+
+      // Display area control
+      displayAreaControl: "彈幕顯示區域",
+      displayAreaTop: "上方位置",
+      displayAreaHeight: "顯示高度",
+      displayAreaPreview: "預覽",
     },
   },
 
@@ -127,16 +149,34 @@ const i18n = {
   },
 
   // Load saved language
-  loadLanguage() {
+  async loadLanguage() {
     const saved = localStorage.getItem("danmu-lang");
     if (saved && this.translations[saved]) {
       this.currentLang = saved;
-    } else {
-      // Auto-detect language
-      const browserLang = navigator.language || navigator.userLanguage;
-      if (browserLang.startsWith("zh")) {
-        this.currentLang = "zh";
+      return;
+    }
+
+    // Auto-detect language from system locale (Electron) or browser
+    try {
+      // Try to get system locale from Electron API
+      if (window.API && typeof window.API.getSystemLocale === 'function') {
+        const systemLocale = await window.API.getSystemLocale();
+        console.log('[i18n] System locale detected:', systemLocale);
+
+        if (systemLocale.startsWith("zh")) {
+          this.currentLang = "zh";
+          return;
+        }
       }
+    } catch (error) {
+      console.warn('[i18n] Failed to get system locale, falling back to browser detection:', error);
+    }
+
+    // Fallback to browser language detection
+    const browserLang = navigator.language || navigator.userLanguage;
+    console.log('[i18n] Browser language detected:', browserLang);
+    if (browserLang.startsWith("zh")) {
+      this.currentLang = "zh";
     }
   },
 
