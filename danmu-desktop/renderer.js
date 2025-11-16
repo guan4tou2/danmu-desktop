@@ -126,6 +126,24 @@ function loadSettings() {
   }
 }
 
+// Save and load startup animation settings
+function saveStartupAnimationSettings(enabled, type, customText) {
+  localStorage.setItem(
+    "danmu-startup-animation",
+    JSON.stringify({ enabled, type, customText })
+  );
+}
+
+function loadStartupAnimationSettings() {
+  try {
+    const saved = localStorage.getItem("danmu-startup-animation");
+    return saved ? JSON.parse(saved) : { enabled: true, type: "link-start", customText: "" };
+  } catch (e) {
+    console.error("[loadStartupAnimationSettings] Error:", sanitizeLog(e.message));
+    return { enabled: true, type: "link-start", customText: "" };
+  }
+}
+
 /**
  * This file is loaded via the <script> tag in the index.html file and will
  * be executed in the renderer process for that window. No Node.js APIs are
@@ -478,19 +496,35 @@ startButton.addEventListener("click", () => {
   const displayIndex = parseInt(screenSelect.value);
   const enableSyncMultiDisplay = syncMultiDisplayCheckbox.checked;
 
+  // Get startup animation settings
+  const startupAnimToggle = document.getElementById("startup-animation-toggle");
+  const animTypeSelect = document.getElementById("animation-type-select");
+  const customAnimText = document.getElementById("custom-animation-text");
+
+  const startupAnimationSettings = {
+    enabled: startupAnimToggle ? startupAnimToggle.checked : true,
+    type: animTypeSelect ? animTypeSelect.value : "link-start",
+    customText: customAnimText ? customAnimText.value : ""
+  };
+
   // Save settings
   saveSettings(IP, PORT, displayIndex, enableSyncMultiDisplay);
+  saveStartupAnimationSettings(
+    startupAnimationSettings.enabled,
+    startupAnimationSettings.type,
+    startupAnimationSettings.customText
+  );
 
   console.log(
     `[Renderer] Starting overlay with: IP=${sanitizeLog(
       IP
     )}, PORT=${sanitizeLog(
       PORT
-    )}, DisplayIndex=${displayIndex}, SyncMultiDisplay=${enableSyncMultiDisplay}`
+    )}, DisplayIndex=${displayIndex}, SyncMultiDisplay=${enableSyncMultiDisplay}, StartupAnimation=${JSON.stringify(startupAnimationSettings)}`
   );
 
   const api = window.API;
-  api.create(IP, PORT, displayIndex, enableSyncMultiDisplay);
+  api.create(IP, PORT, displayIndex, enableSyncMultiDisplay, startupAnimationSettings);
 
   // Update UI
   startButton.disabled = true;
@@ -609,6 +643,71 @@ if (savedSettings) {
   ip.dispatchEvent(new Event("input"));
   port.dispatchEvent(new Event("input"));
   showToast(t("toastSettingsLoaded"), "info");
+}
+
+// Load startup animation settings
+const startupAnimToggle = document.getElementById("startup-animation-toggle");
+const animTypeSelect = document.getElementById("animation-type-select");
+const customAnimText = document.getElementById("custom-animation-text");
+const customAnimTextContainer = document.getElementById("custom-animation-text-container");
+const startupAnimControls = document.getElementById("startup-animation-controls");
+
+const savedAnimSettings = loadStartupAnimationSettings();
+if (startupAnimToggle) {
+  startupAnimToggle.checked = savedAnimSettings.enabled;
+  if (startupAnimControls) {
+    startupAnimControls.style.display = savedAnimSettings.enabled ? "block" : "none";
+  }
+}
+if (animTypeSelect) {
+  animTypeSelect.value = savedAnimSettings.type;
+  if (customAnimTextContainer) {
+    customAnimTextContainer.classList.toggle("hidden", savedAnimSettings.type !== "custom");
+  }
+}
+if (customAnimText) {
+  customAnimText.value = savedAnimSettings.customText || "";
+}
+
+// Startup animation toggle handler
+if (startupAnimToggle) {
+  startupAnimToggle.addEventListener("change", () => {
+    const enabled = startupAnimToggle.checked;
+    if (startupAnimControls) {
+      startupAnimControls.style.display = enabled ? "block" : "none";
+    }
+    saveStartupAnimationSettings(
+      enabled,
+      animTypeSelect ? animTypeSelect.value : "link-start",
+      customAnimText ? customAnimText.value : ""
+    );
+  });
+}
+
+// Animation type select handler
+if (animTypeSelect) {
+  animTypeSelect.addEventListener("change", () => {
+    const type = animTypeSelect.value;
+    if (customAnimTextContainer) {
+      customAnimTextContainer.classList.toggle("hidden", type !== "custom");
+    }
+    saveStartupAnimationSettings(
+      startupAnimToggle ? startupAnimToggle.checked : true,
+      type,
+      customAnimText ? customAnimText.value : ""
+    );
+  });
+}
+
+// Custom animation text handler
+if (customAnimText) {
+  customAnimText.addEventListener("input", () => {
+    saveStartupAnimationSettings(
+      startupAnimToggle ? startupAnimToggle.checked : true,
+      animTypeSelect ? animTypeSelect.value : "link-start",
+      customAnimText.value
+    );
+  });
 }
 
 // Initial state setup

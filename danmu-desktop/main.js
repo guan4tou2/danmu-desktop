@@ -27,6 +27,131 @@ let konamiIndex = 0;
 let lastKeyTime = Date.now();
 let isKeyDown = false;
 
+// Function to show startup animation in child window
+function showStartupAnimation(targetWindow, settings) {
+  if (!targetWindow || targetWindow.isDestroyed()) {
+    console.error('[Main] Cannot show startup animation: window is destroyed');
+    return;
+  }
+
+  let animationText = '';
+
+  // Determine animation text based on type
+  if (settings.type === 'link-start') {
+    animationText = 'LINK START';
+  } else if (settings.type === 'domain-expansion') {
+    animationText = '領域展開';
+  } else if (settings.type === 'custom' && settings.customText) {
+    animationText = sanitizeLog(settings.customText);
+  } else {
+    animationText = 'LINK START'; // Default fallback
+  }
+
+  console.log('[Main] Showing startup animation:', animationText);
+
+  const startupAnimationScript = `
+    (function() {
+      try {
+        // Clean up any previous instances
+        const oldOverlay = document.getElementById('startup-overlay');
+        if (oldOverlay) oldOverlay.remove();
+
+        const oldStyle = document.getElementById('startup-overlay-style');
+        if (oldStyle) oldStyle.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'startup-overlay';
+
+        const style = document.createElement('style');
+        style.id = 'startup-overlay-style';
+        style.textContent = \`
+          @font-face {
+            font-family: 'SDGlitch';
+            src: url('assets/SDGlitch_Demo.ttf') format('truetype');
+          }
+
+          #startup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0,0,0,0);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            pointer-events: none;
+            animation: startup-vignette 4s ease-out forwards;
+          }
+
+          @keyframes startup-vignette {
+            0% { box-shadow: inset 0 0 0 0 rgba(0,0,0,0); }
+            25% { box-shadow: inset 0 0 200px 100px rgba(0,0,0,0.7); }
+            75% { box-shadow: inset 0 0 200px 100px rgba(0,0,0,0.7); }
+            100% { box-shadow: inset 0 0 0 0 rgba(0,0,0,0); }
+          }
+
+          .startup-text {
+            font-family: 'SDGlitch', 'Courier New', Courier, monospace;
+            font-size: 12vw;
+            color: rgb(56, 189, 248);
+            text-shadow: 0 0 10px rgb(56, 189, 248), 0 0 20px rgb(56, 189, 248), 0 0 40px rgb(56, 189, 248);
+            animation: startup-text-appear 3s ease-out forwards;
+            opacity: 0;
+          }
+
+          @keyframes startup-text-appear {
+            0% {
+              opacity: 0;
+              transform: scale(0.5);
+              filter: blur(20px);
+            }
+            50% {
+              opacity: 1;
+              transform: scale(1.1);
+              filter: blur(0px);
+            }
+            75% {
+              opacity: 1;
+              transform: scale(1);
+              filter: blur(0px);
+            }
+            100% {
+              opacity: 0;
+              transform: scale(1);
+              filter: blur(10px);
+            }
+          }
+        \`;
+
+        document.head.appendChild(style);
+
+        const textElement = document.createElement('div');
+        textElement.className = 'startup-text';
+        textElement.textContent = ${JSON.stringify(animationText)};
+
+        overlay.appendChild(textElement);
+        document.body.appendChild(overlay);
+
+        // Remove overlay after animation completes
+        setTimeout(() => {
+          overlay.remove();
+          style.remove();
+        }, 4000);
+
+        console.log('[Startup] Animation displayed successfully');
+      } catch (error) {
+        console.error('[Startup] Error in startup animation:', error.message);
+      }
+    })();
+  `;
+
+  targetWindow.webContents.executeJavaScript(startupAnimationScript).catch((err) => {
+    console.error('[Main] Error showing startup animation:', sanitizeLog(err.message));
+  });
+}
+
 function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
@@ -496,8 +621,8 @@ function createWindow() {
 
   ipcMain.on(
     "createChild",
-    (event, ip, port, displayIndex, enableSyncMultiDisplay) => {
-      // Added enableSyncMultiDisplay
+    (event, ip, port, displayIndex, enableSyncMultiDisplay, startupAnimationSettings) => {
+      // Added enableSyncMultiDisplay and startupAnimationSettings
       if (typeof ip !== "string" || !ip) {
         console.warn(
           `[Main] createChild: Received invalid IP address. Expected a non-empty string, but got: '${ip}' (type: ${typeof ip})`
@@ -509,7 +634,7 @@ function createWindow() {
           ip
         )}, Port=${sanitizeLog(port)}, DisplayIndex=${sanitizeLog(
           displayIndex
-        )}, SyncMultiDisplay=${enableSyncMultiDisplay}`
+        )}, SyncMultiDisplay=${enableSyncMultiDisplay}, StartupAnimation=${JSON.stringify(startupAnimationSettings)}`
       );
       // Clear existing child windows
       childWindows.forEach((win) => {
@@ -555,7 +680,9 @@ function createWindow() {
               contextIsolation: true,
             },
           });
-          setupChildWindow(newChild, display, ip, port);
+          // Only show animation on the first display (primary display)
+          const animSettings = index === 0 ? startupAnimationSettings : { enabled: false };
+          setupChildWindow(newChild, display, ip, port, animSettings);
           childWindows.push(newChild);
         });
         console.log(
@@ -594,7 +721,7 @@ function createWindow() {
             contextIsolation: true,
           },
         });
-        setupChildWindow(newChild, selectedDisplay, ip, port);
+        setupChildWindow(newChild, selectedDisplay, ip, port, startupAnimationSettings);
         childWindows.push(newChild); // This was the correct placement
         // The }); below was an error from the previous incorrect diff application.
         console.log(`[Main] Created 1 child window for single display mode.`);
@@ -604,7 +731,7 @@ function createWindow() {
 }
 
 // Renamed and refactored function
-function setupChildWindow(targetWindow, display, ip, port) {
+function setupChildWindow(targetWindow, display, ip, port, startupAnimationSettings) {
   const initialBounds = targetWindow.getBounds();
   console.log(
     `[Main] Setting up child window for display ID ${sanitizeLog(
@@ -645,6 +772,13 @@ function setupChildWindow(targetWindow, display, ip, port) {
     targetWindow.setIgnoreMouseEvents(true);
 
     targetWindow.show();
+
+    // Show startup animation if enabled
+    if (startupAnimationSettings && startupAnimationSettings.enabled) {
+      setTimeout(() => {
+        showStartupAnimation(targetWindow, startupAnimationSettings);
+      }, 100); // Small delay to ensure window is fully rendered
+    }
     const finalBounds = targetWindow.getBounds();
     console.log(
       `[Main] Child window for display ID ${sanitizeLog(

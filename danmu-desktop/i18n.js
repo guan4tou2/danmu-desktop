@@ -5,8 +5,8 @@ const i18n = {
   translations: {
     en: {
       // Header
-      title: "Danmu Overlay Setup",
-      subtitle: "Configure and launch the overlay",
+      title: "Danmu Domain Setup",
+      subtitle: "Configure and launch the danmu domain",
 
       // Form labels
       hostLabel: "Server Address (IP or Domain)",
@@ -17,8 +17,8 @@ const i18n = {
       syncMultiDisplay: "Enable synchronous multi-display",
 
       // Buttons
-      startButton: "Start Overlay",
-      stopButton: "Stop Overlay",
+      startButton: "Start Danmu",
+      stopButton: "Stop Danmu",
 
       // Status
       statusConnecting: "Connecting to server...",
@@ -28,10 +28,10 @@ const i18n = {
       statusStopped: "Stopped",
 
       // Toast messages
-      toastStarting: "Starting overlay connection...",
+      toastStarting: "Starting danmu domain connection...",
       toastConnected: "Successfully connected to server",
       toastReconnecting: "Connection lost, attempting to reconnect...",
-      toastStopped: "Overlay stopped",
+      toastStopped: "Danmu domain stopped",
       toastSettingsLoaded: "Previous settings loaded",
 
       // Validation errors
@@ -45,13 +45,13 @@ const i18n = {
       testDanmu: "Test Danmu",
       previewPlaceholder: "Enter test danmu text...",
       sendPreview: "Send",
-      overlaySettings: "Overlay Settings",
+      overlaySettings: "Domain Settings",
       opacity: "Opacity",
       speed: "Speed",
       fontSize: "Font Size",
       color: "Color",
       errorEmptyPreview: "Please enter preview text",
-      errorOverlayNotActive: "Please start the overlay first",
+      errorOverlayNotActive: "Please start the domain first",
       previewSent: "Preview danmu sent!",
 
       // Text effects
@@ -79,12 +79,22 @@ const i18n = {
       batchTestHint: "Test collision detection and track distribution",
       batchTestStarted: "Sending test danmu...",
       batchTestComplete: "Batch test completed!",
+
+      // Startup animation
+      startupAnimation: "Startup Animation",
+      enableStartupAnimation: "Enable Startup Animation",
+      animationType: "Animation Type",
+      animationLinkStart: "LINK START",
+      animationDomainExpansion: "Domain Expansion",
+      animationCustom: "Custom",
+      customAnimationText: "Custom Animation Text",
+      customAnimationPlaceholder: "Enter custom animation text...",
     },
 
     zh: {
       // Header
-      title: "彈幕覆蓋層設定",
-      subtitle: "配置並啟動覆蓋層",
+      title: "彈幕領域設定",
+      subtitle: "配置並啟動彈幕領域",
 
       // Form labels
       hostLabel: "伺服器位址（IP 或網域）",
@@ -95,8 +105,8 @@ const i18n = {
       syncMultiDisplay: "啟用同步多顯示器",
 
       // Buttons
-      startButton: "啟動覆蓋層",
-      stopButton: "停止覆蓋層",
+      startButton: "啟動彈幕",
+      stopButton: "關閉彈幕",
 
       // Status
       statusConnecting: "正在連線至伺服器...",
@@ -106,10 +116,10 @@ const i18n = {
       statusStopped: "已停止",
 
       // Toast messages
-      toastStarting: "正在啟動覆蓋層連線...",
+      toastStarting: "正在啟動彈幕領域連線...",
       toastConnected: "成功連線至伺服器",
       toastReconnecting: "連線中斷，正在嘗試重新連線...",
-      toastStopped: "覆蓋層已停止",
+      toastStopped: "彈幕領域已停止",
       toastSettingsLoaded: "已載入先前的設定",
 
       // Validation errors
@@ -123,13 +133,13 @@ const i18n = {
       testDanmu: "測試彈幕",
       previewPlaceholder: "輸入測試彈幕文字...",
       sendPreview: "發送",
-      overlaySettings: "覆蓋層設定",
+      overlaySettings: "彈幕領域設定",
       opacity: "不透明度",
       speed: "速度",
       fontSize: "字體大小",
       color: "顏色",
       errorEmptyPreview: "請輸入預覽文字",
-      errorOverlayNotActive: "請先啟動覆蓋層",
+      errorOverlayNotActive: "請先啟動彈幕領域",
       previewSent: "預覽彈幕已發送！",
 
       // Text effects
@@ -157,6 +167,16 @@ const i18n = {
       batchTestHint: "測試碰撞檢測和軌道分配",
       batchTestStarted: "正在發送測試彈幕...",
       batchTestComplete: "批量測試完成！",
+
+      // Startup animation
+      startupAnimation: "啟動動畫",
+      enableStartupAnimation: "啟用啟動動畫",
+      animationType: "動畫類型",
+      animationLinkStart: "LINK START",
+      animationDomainExpansion: "領域展開",
+      animationCustom: "自訂",
+      customAnimationText: "自訂動畫文字",
+      customAnimationPlaceholder: "輸入自訂動畫文字...",
     },
   },
 

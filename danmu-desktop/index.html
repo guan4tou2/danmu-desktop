@@ -622,6 +622,45 @@
                 </div>
                 <div class="text-xs text-slate-500 mt-2" data-i18n="batchTestHint">Test collision detection and track distribution</div>
               </div>
+
+              <!-- Startup Animation -->
+              <div class="border-t border-slate-600 pt-3 mt-3">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="text-sm font-medium text-slate-300" data-i18n="startupAnimation">Startup Animation</h3>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="startup-animation-toggle" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-sky-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
+                  </label>
+                </div>
+
+                <div id="startup-animation-controls" class="space-y-3">
+                  <!-- Animation Type -->
+                  <div>
+                    <label class="text-xs text-slate-400 block mb-2" data-i18n="animationType">Animation Type</label>
+                    <select
+                      id="animation-type-select"
+                      class="form-input w-full text-sm px-3 py-2 rounded-lg"
+                    >
+                      <option value="link-start" data-i18n="animationLinkStart">LINK START</option>
+                      <option value="domain-expansion" data-i18n="animationDomainExpansion">領域展開</option>
+                      <option value="custom" data-i18n="animationCustom">Custom</option>
+                    </select>
+                  </div>
+
+                  <!-- Custom Animation Text -->
+                  <div id="custom-animation-text-container" class="hidden">
+                    <label class="text-xs text-slate-400 block mb-2" data-i18n="customAnimationText">Custom Animation Text</label>
+                    <input
+                      type="text"
+                      id="custom-animation-text"
+                      class="form-input w-full text-sm px-3 py-2 rounded-lg"
+                      data-i18n-placeholder="customAnimationPlaceholder"
+                      placeholder="Enter custom animation text..."
+                      maxlength="50"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </details>
