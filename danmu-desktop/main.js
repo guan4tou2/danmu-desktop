@@ -294,26 +294,10 @@ function createWindow() {
             })();
           `;
 
-          // Check if there are any child windows (overlay windows)
-          const hasChildWindows = childWindows.length > 0 && childWindows.some(cw => cw && !cw.isDestroyed());
+          // Show Konami Code effect only on child windows (overlay windows)
+          // Never show on main window
+          console.log("[Konami] Showing effect on child windows only");
 
-          // If there are child windows, show effect only on child windows
-          // Otherwise, show effect on main window
-          if (hasChildWindows) {
-            console.log("[Konami] Showing effect on child windows only");
-          } else {
-            console.log("[Konami] Showing effect on main window only");
-            mainWindow.webContents
-              .executeJavaScript(konamiEffectScript)
-              .catch((err) => {
-                console.error(
-                  "Error showing Konami message in main window:",
-                  sanitizeLog(err.message)
-                );
-              });
-          }
-
-          // Show Konami Code effect and clear danmus in all child windows
           childWindows.forEach((cw) => {
             if (cw && !cw.isDestroyed()) {
               // Show Konami Code overlay effect in child window
