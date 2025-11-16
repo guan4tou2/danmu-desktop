@@ -81,13 +81,15 @@ try {
       }
     },
     // Send test danmu to overlay
-    sendTestDanmu: (text, opacity, color, size, speed) => {
+    sendTestDanmu: (text, opacity, color, size, speed, textStyles, displayArea) => {
       console.log("[Preload] API.sendTestDanmu called with:", {
         text,
         opacity,
         color,
         size,
         speed,
+        textStyles,
+        displayArea,
       });
       ipcRenderer.send("send-test-danmu", {
         text,
@@ -95,12 +97,19 @@ try {
         color,
         size,
         speed,
+        textStyles,
+        displayArea,
       });
     },
     // Update overlay settings
     updateOverlaySettings: (settings) => {
       console.log("[Preload] API.updateOverlaySettings called with:", settings);
       ipcRenderer.send("update-overlay-settings", settings);
+    },
+    // Get system locale
+    getSystemLocale: () => {
+      console.log("[Preload] API.getSystemLocale called");
+      return ipcRenderer.invoke("getSystemLocale");
     },
   });
   // Note: Logging window.API here is from preload's context, not renderer's.

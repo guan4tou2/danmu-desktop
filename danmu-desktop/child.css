@@ -21,18 +21,7 @@ body {
   padding: 0;
   overflow: hidden;
 }
-h1::before {
-  content: attr(data-stroke);
-}
-h1::before {
-  position: absolute;
-  z-index: -1;
-  -webkit-text-stroke-width: 6px;
-  -webkit-text-stroke-color: var(--webColor, #121212);
-  text-stroke-width: 6px;
-  text-stroke-color: var(--Color, #121212);
-  text-shadow:0 0 10px #121212;
-}
+/* Text stroke and shadow are now controlled dynamically via inline styles */
 img{
   position: absolute;
   overflow: hidden;

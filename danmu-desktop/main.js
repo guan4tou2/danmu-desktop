@@ -31,8 +31,9 @@ function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 800,
-    height: 700,
-    resizable: false,
+    height: 900,
+    minHeight: 700,
+    resizable: true,
     autoHideMenuBar: true,
     icon: path.join(__dirname, "assets/icon.png"),
     webPreferences: {
@@ -302,9 +303,147 @@ function createWindow() {
               );
             });
 
-          // Clear danmus in the child window with an animation
+          // Show Konami Code effect and clear danmus in all child windows
           childWindows.forEach((cw) => {
             if (cw && !cw.isDestroyed()) {
+              // Show Konami Code overlay effect in child window
+              cw.webContents.executeJavaScript(`
+                (function() {
+                  try {
+                    // Clean up any previous instances
+                    const oldOverlay = document.getElementById('konami-overlay');
+                    if (oldOverlay) oldOverlay.remove();
+
+                    const overlay = document.createElement('div');
+                    overlay.id = 'konami-overlay';
+
+                    const style = document.createElement('style');
+                    style.textContent = \`
+                      @font-face {
+                        font-family: 'SDGlitch';
+                        src: url('assets/SDGlitch_Demo.ttf') format('truetype');
+                      }
+
+                      #konami-overlay {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100vw;
+                        height: 100vh;
+                        background-color: rgba(0,0,0,0);
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        z-index: 10000;
+                        pointer-events: none;
+                        animation: konami-vignette 4s ease-out forwards, konami-screen-shake 0.5s 2;
+                      }
+
+                      @keyframes konami-vignette {
+                        0% { box-shadow: inset 0 0 0 0 rgba(0,0,0,0); }
+                        25% { box-shadow: inset 0 0 200px 100px rgba(0,0,0,0.7); }
+                        75% { box-shadow: inset 0 0 200px 100px rgba(0,0,0,0.7); }
+                        100% { box-shadow: inset 0 0 0 0 rgba(0,0,0,0); }
+                      }
+
+                      @keyframes konami-screen-shake {
+                        0%, 100% { transform: translateX(0); }
+                        25% { transform: translateX(-10px); }
+                        75% { transform: translateX(10px); }
+                      }
+
+                      .konami-text {
+                        font-family: 'SDGlitch', 'Courier New', Courier, monospace;
+                        font-size: 12vw;
+                        color:rgb(222, 187, 32);
+                        text-shadow: 0 0 10px rgb(217, 233, 42), 0 0 20px rgb(217, 233, 42);
+                        position: relative;
+                        animation: konami-text-flicker 3s infinite alternate;
+                        white-space: nowrap;
+                        letter-spacing: -0.05em;
+                      }
+
+                      .konami-text::before, .konami-text::after {
+                        content: 'KONAMI CODE ACTIVATED!';
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        background: transparent;
+                        clip: rect(0, 900px, 0, 0);
+                      }
+
+                      .konami-text::before {
+                        left: -2px;
+                        text-shadow: -1px 0 red;
+                        animation: konami-glitch-1 2s infinite linear alternate-reverse;
+                      }
+
+                      .konami-text::after {
+                        left: 2px;
+                        text-shadow: 1px 0 blue;
+                        animation: konami-glitch-2 3s infinite linear alternate-reverse;
+                      }
+
+                      @keyframes konami-text-flicker {
+                          0%, 100% { opacity: 1; }
+                          50% { opacity: 0.8; }
+                      }
+
+                      @keyframes konami-glitch-1 {
+                          0% { clip: rect(42px, 9999px, 44px, 0); }
+                          10% { clip: rect(17px, 9999px, 94px, 0); }
+                          20% { clip: rect(83px, 9999px, 86px, 0); }
+                          30% { clip: rect(28px, 9999px, 16px, 0); }
+                          40% { clip: rect(42px, 9999px, 62px, 0); }
+                          50% { clip: rect(34px, 9999px, 14px, 0); }
+                          60% { clip: rect(77px, 9999px, 77px, 0); }
+                          70% { clip: rect(61px, 9999px, 52px, 0); }
+                          80% { clip: rect(40px, 9999px, 50px, 0); }
+                          90% { clip: rect(43px, 9999px, 86px, 0); }
+                          100% { clip: rect(97px, 9999px, 82px, 0); }
+                      }
+
+                      @keyframes konami-glitch-2 {
+                          0% { clip: rect(85px, 9999px, 9px, 0); }
+                          10% { clip: rect(8px, 9999px, 3px, 0); }
+                          20% { clip: rect(42px, 9999px, 94px, 0); }
+                          30% { clip: rect(23px, 9999px, 33px, 0); }
+                          40% { clip: rect(38px, 9999px, 49px, 0); }
+                          50% { clip: rect(12px, 9999px, 48px, 0); }
+                          60% { clip: rect(81px, 9999px, 91px, 0); }
+                          70% { clip: rect(30px, 9999px, 75px, 0); }
+                          80% { clip: rect(88px, 9999px, 100px, 0); }
+                          90% { clip: rect(22px, 9999px, 66px, 0); }
+                          100% { clip: rect(1px, 9999px, 52px, 0); }
+                      }
+                    \`;
+
+                    const textElement = document.createElement('div');
+                    textElement.className = 'konami-text';
+                    textElement.textContent = 'KONAMI CODE ACTIVATED!';
+
+                    overlay.appendChild(style);
+                    overlay.appendChild(textElement);
+                    document.body.appendChild(overlay);
+
+                    setTimeout(() => {
+                      const overlayToRemove = document.getElementById('konami-overlay');
+                      if (overlayToRemove) {
+                        overlayToRemove.remove();
+                      }
+                    }, 4000);
+                  } catch (error) {
+                    console.error('Error in Konami message:', error.message);
+                  }
+                })();
+              `).catch((err) => {
+                console.error(
+                  "Error showing Konami overlay in child window:",
+                  sanitizeLog(err.message)
+                );
+              });
+
+              // Clear danmus with explosion animation
               const script = `
               (function() {
                 try {
@@ -324,7 +463,7 @@ function createWindow() {
                     particle.style.top = rect.top + 'px';
                     particle.style.margin = '0';
                     particle.style.position = 'fixed'; // Use fixed to position relative to viewport
-                    
+
                     document.body.appendChild(particle);
 
                     // Animate the particle using the Web Animations API
@@ -357,7 +496,7 @@ function createWindow() {
                   });
 
                 } catch (error) {
-                  console.error('Error creating explosion effect:', sanitizeLog(error.message));
+                  console.error('Error creating explosion effect:', error.message);
                 }
               })();
             `;
@@ -428,6 +567,13 @@ function createWindow() {
     return displays;
   });
 
+  // Handler for getting system locale
+  ipcMain.handle("getSystemLocale", async () => {
+    const locale = app.getLocale();
+    console.log("[Main] getSystemLocale handled, returning:", sanitizeLog(locale));
+    return locale;
+  });
+
   // Handler for sending test danmu
   ipcMain.on("send-test-danmu", (event, data) => {
     console.log("[Main] send-test-danmu received:", data);
@@ -442,7 +588,18 @@ function createWindow() {
               ${JSON.stringify(data.color)},
               ${data.size},
               ${data.speed},
-              { name: "NotoSansTC", url: null, type: "default" }
+              { name: "NotoSansTC", url: null, type: "default" },
+              ${JSON.stringify(data.textStyles || {
+                textStroke: true,
+                strokeWidth: 2,
+                strokeColor: "#000000",
+                textShadow: false,
+                shadowBlur: 4
+              })},
+              ${JSON.stringify(data.displayArea || {
+                top: 0,
+                height: 100
+              })}
             );
           }
         `).catch(err => {
@@ -1084,8 +1241,17 @@ function setupChildWindow(targetWindow, display, ip, port) {
                       // dataPayload here is already sanitized from the loop above
                       if (typeof window.showdanmu === 'function') {
                           console.log('[WebSocket] Calling window.showdanmu with:', dataPayload);
-                          // Pass the fontInfo object to showdanmu
-                          window.showdanmu(dataPayload.text, dataPayload.opacity, '#' + dataPayload.color, dataPayload.size, parseInt(dataPayload.speed), dataPayload.fontInfo);
+                          // Pass the fontInfo object, textStyles, and displayArea to showdanmu
+                          window.showdanmu(
+                            dataPayload.text,
+                            dataPayload.opacity,
+                            '#' + dataPayload.color,
+                            dataPayload.size,
+                            parseInt(dataPayload.speed),
+                            dataPayload.fontInfo,
+                            dataPayload.textStyles || { textStroke: true, strokeWidth: 2, strokeColor: "#000000", textShadow: false, shadowBlur: 4 },
+                            dataPayload.displayArea || { top: 0, height: 100 }
+                          );
                       } else {
                           console.warn('[WebSocket] window.showdanmu not ready, retrying in 100ms...'); // No variable data
                           setTimeout(() => processDanmuWhenReady(dataPayload), 100);
@@ -1099,7 +1265,9 @@ function setupChildWindow(targetWindow, display, ip, port) {
                       color: data.color,
                       size: data.size,
                       speed: data.speed,
-                      fontInfo: data.fontInfo // Pass the fontInfo object
+                      fontInfo: data.fontInfo, // Pass the fontInfo object
+                      textStyles: data.textStyles, // Pass text styles if provided
+                      displayArea: data.displayArea // Pass display area if provided
                   });
 
               } catch (e) {
