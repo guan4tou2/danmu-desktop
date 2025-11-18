@@ -1023,29 +1023,6 @@ function setupChildWindow(
               text-align: center;
             }
             
-            /* Scanline overlay */
-            body::after {
-                content: " ";
-                display: block;
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-                background-size: 100% 4px, 6px 100%;
-                z-index: 99999;
-                pointer-events: none;
-                opacity: 0; /* Start invisible */
-                animation: scanlines 1s steps(60) infinite, scene-zoom-in 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            }
-            
-            @keyframes scanlines {
-                from { background-position: 0 0; }
-                to { background-position: 0 100%; }
-            }
-
-
             body:before {
               content: '';
               display: inline-block;
@@ -1143,11 +1120,9 @@ function setupChildWindow(
               font-weight: 700;
               color: #00d4ff; /* Bright cyan color */
               text-shadow: 
-                0 0 5px #00d4ff,
-                0 0 10px #00d4ff,
-                0 0 20px #00d4ff,
-                0 0 40px #00d4ff,
-                0 0 80px #00d4ff;
+                0 0 3px #00d4ff,
+                0 0 6px #00d4ff,
+                0 0 12px #00d4ff;
               z-index: 9999;
               animation: text-flicker 3s linear infinite, text-fade-in-out 8s ease-out forwards;
               opacity: 0;
