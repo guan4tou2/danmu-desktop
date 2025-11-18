@@ -299,10 +299,10 @@ function createWindow() {
                 // Clean up any previous instances
                 const oldOverlay = document.getElementById('konami-overlay');
                 if (oldOverlay) oldOverlay.remove();
-
+                
                 const overlay = document.createElement('div');
                 overlay.id = 'konami-overlay';
-
+                
                 const style = document.createElement('style');
                 style.textContent = \`
                   @font-face {
@@ -331,7 +331,7 @@ function createWindow() {
                     75% { box-shadow: inset 0 0 200px 100px rgba(0,0,0,0.7); }
                     100% { box-shadow: inset 0 0 0 0 rgba(0,0,0,0); }
                   }
-
+                  
                   @keyframes konami-screen-shake {
                     0%, 100% { transform: translateX(0); }
                     25% { transform: translateX(-10px); }
@@ -369,7 +369,7 @@ function createWindow() {
                     text-shadow: 1px 0 blue;
                     animation: konami-glitch-2 3s infinite linear alternate-reverse;
                   }
-
+                  
                   @keyframes konami-text-flicker {
                       0%, 100% { opacity: 1; }
                       50% { opacity: 0.8; }
@@ -403,15 +403,15 @@ function createWindow() {
                       100% { clip: rect(1px, 9999px, 52px, 0); }
                   }
                 \`;
-
+                
                 const textElement = document.createElement('div');
                 textElement.className = 'konami-text';
                 textElement.textContent = 'KONAMI CODE ACTIVATED!';
-
+                
                 overlay.appendChild(style);
                 overlay.appendChild(textElement);
                 document.body.appendChild(overlay);
-
+                
                 setTimeout(() => {
                   const overlayToRemove = document.getElementById('konami-overlay');
                   if (overlayToRemove) {
@@ -460,7 +460,7 @@ function createWindow() {
                     particle.style.top = rect.top + 'px';
                     particle.style.margin = '0';
                     particle.style.position = 'fixed'; // Use fixed to position relative to viewport
-
+                    
                     document.body.appendChild(particle);
 
                     // Animate the particle using the Web Animations API
@@ -531,7 +531,7 @@ function createWindow() {
       // Iterate over a shallow copy for safety
       if (win && !win.isDestroyed()) {
         win.destroy();
-      }
+      } 
     });
     childWindows = [];
     console.log(
@@ -1006,9 +1006,9 @@ function setupChildWindow(
             const oldLinkStart = document.querySelector('.link-start');
             if (oldLinkStart) oldLinkStart.remove();
             
-            const style = document.createElement('style');
+          const style = document.createElement('style');
             style.id = 'link-start-style';
-            style.textContent = \`
+          style.textContent = \`
             /* Import Google Font */
             @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
@@ -1022,7 +1022,7 @@ function setupChildWindow(
             body {
               text-align: center;
             }
-            
+
             body:before {
               content: '';
               display: inline-block;
@@ -1223,47 +1223,47 @@ function setupChildWindow(
               95% { clip: rect(10px, 9999px, 7px, 0); }
               100% { clip: rect(20px, 9999px, 75px, 0); }
             }
-            \`;
-            document.head.appendChild(style);
+          \`;
+          document.head.appendChild(style);
 
-            const scene = document.createElement('div');
-            scene.className = 'scene';
-            scene.innerHTML = \`
-              <div class="wrap">
-                <div class="wall wall-right"></div>
-                <div class="wall wall-left"></div>   
-                <div class="wall wall-top"></div>
-                <div class="wall wall-bottom"></div> 
-                <div class="wall wall-back"></div>    
-              </div>
-              <div class="wrap">
-                <div class="wall wall-right"></div>
-                <div class="wall wall-left"></div>   
-                <div class="wall wall-top"></div>
-                <div class="wall wall-bottom"></div>   
-                <div class="wall wall-back"></div>    
-              </div>
-            \`;
-            document.body.appendChild(scene);
+          const scene = document.createElement('div');
+          scene.className = 'scene';
+          scene.innerHTML = \`
+            <div class="wrap">
+              <div class="wall wall-right"></div>
+              <div class="wall wall-left"></div>   
+              <div class="wall wall-top"></div>
+              <div class="wall wall-bottom"></div> 
+              <div class="wall wall-back"></div>    
+            </div>
+            <div class="wrap">
+              <div class="wall wall-right"></div>
+              <div class="wall wall-left"></div>   
+              <div class="wall wall-top"></div>
+              <div class="wall wall-bottom"></div>   
+              <div class="wall wall-back"></div>    
+            </div>
+          \`;
+          document.body.appendChild(scene);
 
-            const linkStart = document.createElement('div');
-            linkStart.className = 'link-start';
+          const linkStart = document.createElement('div');
+          linkStart.className = 'link-start';
             linkStart.textContent = animationText || 'Link Start';
             linkStart.setAttribute("data-text", animationText || 'Link Start'); // For glitch effect
-            document.body.appendChild(linkStart);
-            
-            const totalDuration = 7000; // Trigger fade-out earlier
-            const fadeOutDuration = 2000;
+          document.body.appendChild(linkStart);
+          
+          const totalDuration = 7000; // Trigger fade-out earlier
+          const fadeOutDuration = 2000;
+          
+          setTimeout(() => {
+            scene.style.animation = \`scene-fade-out \${fadeOutDuration/1000}s ease-out forwards\`;
             
             setTimeout(() => {
-              scene.style.animation = \`scene-fade-out \${fadeOutDuration/1000}s ease-out forwards\`;
-              
-              setTimeout(() => {
-                document.body.contains(scene) && scene.remove();
-                document.head.contains(style) && style.remove();
-                document.body.contains(linkStart) && linkStart.remove();
-              }, fadeOutDuration);
-            }, totalDuration);
+              document.body.contains(scene) && scene.remove();
+              document.head.contains(style) && style.remove();
+              document.body.contains(linkStart) && linkStart.remove();
+            }, fadeOutDuration);
+          }, totalDuration);
           };
           
           let animationText = 'LINK START';
@@ -1311,10 +1311,10 @@ function setupChildWindow(
           
           // Only reconnect if we haven't exceeded max attempts
           if (reconnectAttempts < maxReconnectAttempts) {
-            // Unlimited reconnect attempts, but with increasing delay
-            console.log(\`Attempting to reconnect in \${currentDelay/1000} seconds...\`) // No direct user input
-            setTimeout(connect, currentDelay)
-            reconnectAttempts++
+          // Unlimited reconnect attempts, but with increasing delay
+          console.log(\`Attempting to reconnect in \${currentDelay/1000} seconds...\`) // No direct user input
+          setTimeout(connect, currentDelay)
+          reconnectAttempts++
           } else {
             console.log('Max reconnection attempts reached, stopping reconnection')
             sendConnectionStatus('connection-failed')

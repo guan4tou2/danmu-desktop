@@ -3,10 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ session.get('csrf_token', '') }}" />
     <title>Danmu Fire - Control Panel</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ url_for('static', filename='vendor/tailwindcdn.js') }}"></script>
 
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -17,8 +18,8 @@
     />
 
     <!-- Vanta.js for background effect -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js" integrity="sha512-334uBDwY0iZ2TklV1OtDtBW9vp7jjP7SWRzT7Ehu1fdtPIjTpCwTSFb8HI/YBau9L1/kRBEOALrS229Kry4yFQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanta/0.5.24/vanta.net.min.js" integrity="sha512-lH/5/byfwH0bqySiiSINJJoEoWFEBGKgOwsnAlZZPviNJI1DDBVXjPHgEkM0fowfOp6NMBAN4ROAYjx+uEkEjQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="{{ url_for('static', filename='vendor/three.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/vanta.net.min.js') }}"></script>
 
     <style>
       /* 基本樣式和字體設定 */
@@ -83,6 +84,8 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", () => {
+        const csrfToken =
+          document.querySelector('meta[name="csrf-token"]').content || "";
         // --- VANTA.js 背景初始化 ---
         VANTA.NET({
           el: "#vanta-bg",
@@ -104,8 +107,35 @@
         let session = { logged_in: `{{session['logged_in']}}` };
         console.log(session.logged_in);
 
+        function csrfFetch(url, options = {}) {
+          const opts = { credentials: "same-origin", ...options };
+          const headers = new Headers(options.headers || {});
+          headers.set("X-CSRF-Token", csrfToken);
+          opts.headers = headers;
+          return fetch(url, opts);
+        }
+
         // Get setting ranges from Flask
         const settingRanges = JSON.parse(`{{ ranges|tojson }}`);
+        const FONT_REFRESH_BUFFER_SECONDS = 60;
+        let adminFontRefreshTimer = null;
+        let adminFontCache = [];
+
+        function scheduleAdminFontRefresh(ttlSeconds) {
+          if (adminFontRefreshTimer) {
+            clearTimeout(adminFontRefreshTimer);
+          }
+          if (!ttlSeconds || Number.isNaN(ttlSeconds)) {
+            return;
+          }
+          const delay = Math.max(
+            (ttlSeconds - FONT_REFRESH_BUFFER_SECONDS) * 1000,
+            60 * 1000
+          );
+          adminFontRefreshTimer = setTimeout(() => {
+            populateFontFamilyDropdowns();
+          }, delay);
+        }
 
         // Get latest settings from backend
         async function fetchLatestSettings() {
@@ -212,7 +242,7 @@
             console.log(dataToSend);
 
             // 发送到后端
-            const response = await fetch("/update", {
+            const response = await csrfFetch("/admin/update", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -247,37 +277,36 @@
         // 切换设置的开关状态
         async function toggleSetting(key, isChecked) {
           try {
-            const response = await fetch("/admin/Set", {
+            const response = await csrfFetch("/admin/Set", {
               method: "POST",
-              credentials: "same-origin",
-              body: `${key} ${isChecked ? "True" : "False"}`,
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ key, enabled: isChecked }),
             });
+            const result = await response.json().catch(() => ({}));
 
             if (response.ok) {
-              // 更新本地设置
               if (!Array.isArray(currentSettings[key])) {
                 currentSettings[key] = [false, "", "", ""];
               }
               currentSettings[key][0] = isChecked;
               showToast(`${key} Settings Updated`);
-              // 重新渲染控制面板以更新UI
               renderControlPanel();
             } else {
-              // 如果更新失败，恢复开关状态
               const toggleElement = document.getElementById(`toggle-${key}`);
               if (toggleElement) {
                 toggleElement.checked = !isChecked;
               }
-              showToast(`Update Failed`, false);
+              showToast(result.error || "Update Failed", false);
             }
           } catch (error) {
             console.error("Error:", error);
-            showToast(`Update Error: ${error.message}`, false);
-            // 发生错误时恢复开关状态
             const toggleElement = document.getElementById(`toggle-${key}`);
             if (toggleElement) {
               toggleElement.checked = !isChecked;
             }
+            showToast(`Update Error: ${error.message}`, false);
           }
         }
 
@@ -337,11 +366,12 @@
                 return;
             }
             try {
-                const response = await fetch('/admin/blacklist/add', {
+                const response = await csrfFetch('/admin/blacklist/add', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify({ keyword: keyword }),
-                    credentials: 'same-origin'
                 });
                 const data = await response.json();
                 if (response.ok) {
@@ -359,11 +389,12 @@
 
         async function removeKeyword(keyword) {
             try {
-                const response = await fetch('/admin/blacklist/remove', {
+                const response = await csrfFetch('/admin/blacklist/remove', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify({ keyword: keyword }),
-                    credentials: 'same-origin'
                 });
                 const data = await response.json();
                 if (response.ok) {
@@ -555,7 +586,8 @@
           );
 
           // Font Family Setting
-          const fontFamilyDescription = currentSettings.FontFamily[0]
+          const fontFamilyEnabled = currentSettings.FontFamily && currentSettings.FontFamily[0] === true;
+          const fontFamilyDescription = fontFamilyEnabled
             ? "Users can choose their font. Select the default font here if they don't choose, or the font to be used if user choice is disabled."
             : "Users cannot choose their font. Danmus will use the font selected below.";
 
@@ -578,11 +610,14 @@
             "FontFamily",
             "Font Family Configuration",
             fontFamilyDescription, // Dynamic description
-            currentSettings.FontFamily[0], // isEnabled (this now means "allow user choice")
+            fontFamilyEnabled, // isEnabled (this now means "allow user choice")
             fontFamilyCardContent, // Content is the same regardless of toggle for admin
             fontFamilyCardContent  // Content is the same
           );
-          populateFontFamilyDropdowns(); // Call after card is added to DOM
+          // Use setTimeout to ensure DOM is ready before populating dropdowns
+          setTimeout(() => {
+            populateFontFamilyDropdowns();
+          }, 0);
 
 
           // 速度設定
@@ -651,9 +686,8 @@
             .getElementById("logoutButton")
             .addEventListener("click", async () => {
               try {
-                const response = await fetch("/logout", {
-                  method: "GET",
-                  credentials: "same-origin",
+                const response = await csrfFetch("/logout", {
+                  method: "POST",
                 });
 
                 if (response.redirected) {
@@ -744,23 +778,30 @@
 
         async function populateFontFamilyDropdowns() {
             try {
-                const response = await fetch('/admin/get_fonts');
+                const response = await csrfFetch('/admin/get_fonts');
                 if (!response.ok) {
-                    showToast('Failed to fetch font list.', false);
+                    const err = await response.json().catch(() => ({}));
+                    showToast(err.error || 'Failed to fetch font list.', false);
                     return;
                 }
-                const fonts = await response.json();
-                const selectElement = document.getElementById('fontFamilySelect'); // Single select element now
+                const payload = await response.json();
+                const fonts = payload.fonts || [];
+                adminFontCache = fonts;
+                scheduleAdminFontRefresh(payload.tokenTTL || 0);
+
+                const selectElement = document.getElementById('fontFamilySelect');
                 const currentFontName = currentSettings.FontFamily[3];
 
                 if (!selectElement) return;
-                selectElement.innerHTML = ''; // Clear existing options
+                selectElement.innerHTML = '';
 
                 let foundCurrentFont = false;
                 fonts.forEach(font => {
                     const option = document.createElement('option');
                     option.value = font.name;
                     option.textContent = `${font.name} (${font.type === 'default' ? 'Default' : font.type === 'system' ? 'System' : 'Uploaded'})`;
+                    option.dataset.fontUrl = font.url || '';
+                    option.dataset.expiresAt = font.expiresAt || '';
                     if (font.name === currentFontName) {
                         option.selected = true;
                         foundCurrentFont = true;
@@ -768,16 +809,12 @@
                     selectElement.appendChild(option);
                 });
 
-                // If currentFontName from settings wasn't in the fetched list (e.g. deleted externally), try to select NotoSansTC
                 if (!foundCurrentFont) {
                     const notoOption = Array.from(selectElement.options).find(opt => opt.value === "NotoSansTC");
                     if (notoOption) {
                         notoOption.selected = true;
-                        // Optionally update the setting in backend if it was invalid
-                        // await updateSetting("FontFamily", "NotoSansTC", 3);
                     } else if (selectElement.options.length > 0) {
-                         selectElement.options[0].selected = true; // Fallback to first if Noto also not there
-                         // await updateSetting("FontFamily", selectElement.options[0].value, 3);
+                        selectElement.options[0].selected = true;
                     }
                 }
 
@@ -804,12 +841,12 @@
 
             const formData = new FormData();
             formData.append('fontfile', file);
+            formData.append('csrf_token', csrfToken);
 
             try {
-                const response = await fetch('/admin/upload_font', {
+                const response = await csrfFetch('/admin/upload_font', {
                     method: 'POST',
                     body: formData,
-                    credentials: 'same-origin' // Important for session auth
                 });
                 const result = await response.json();
                 if (response.ok) {

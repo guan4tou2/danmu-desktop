@@ -1,0 +1,62 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "server/**"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "server/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      
+      - name: Install uv
+        run: pip install uv
+      
+      - name: Install dependencies
+        working-directory: server
+        run: uv sync
+      
+      - name: Run tests
+        working-directory: server
+        run: PYTHONPATH=.. uv run python -m pytest -v
+      
+      - name: Check code formatting
+        working-directory: server
+        run: |
+          uv run black --check .
+          uv run isort --check-only .
+      
+      - name: Lint with flake8
+        working-directory: server
+        run: uv run flake8 . --max-line-length=100 --extend-ignore=E203,W503
+
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      
+      - name: Install pre-commit
+        run: pip install pre-commit
+      
+      - name: Run pre-commit
+        run: pre-commit run --all-files
+

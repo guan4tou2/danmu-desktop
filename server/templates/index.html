@@ -11,7 +11,7 @@
     <title>Danmu Fire</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ url_for('static', filename='vendor/tailwindcdn.js') }}"></script>
 
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,17 +22,8 @@
     />
 
     <!-- Vanta.js for background effect -->
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"
-      integrity="sha512-334uBDwY0iZ2TklV1OtDtBW9vp7jjP7SWRzT7Ehu1fdtPIjTpCwTSFb8HI/YBau9L1/kRBEOALrS229Kry4yFQ=="
-      crossorigin="anonymous"
-    ></script>
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/vanta/0.5.24/vanta.net.min.js"
-      integrity="sha512-lH/5/byfwH0bqySiiSINJJoEoWFEBGKgOwsnAlZZPviNJI1DDBVXjPHgEkM0fowfOp6NMBAN4ROAYjx+uEkEjQ=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    ></script>
+    <script src="{{ url_for('static', filename='vendor/three.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/vanta.net.min.js') }}"></script>
 
     <style>
       /* Basic styles and fonts */
@@ -564,8 +555,58 @@
         let currentSettings = {};
         let ws = null;
         let autoDismissTimer = null;
+        let fontRefreshTimer = null;
+        const FONT_REFRESH_BUFFER_SECONDS = 60;
+        let fontsCache = [];
 
         // --- Functions ---
+
+        function scheduleFontRefresh(ttlSeconds) {
+          if (fontRefreshTimer) {
+            clearTimeout(fontRefreshTimer);
+          }
+          if (!ttlSeconds || Number.isNaN(ttlSeconds)) {
+            return;
+          }
+          const delay = Math.max(
+            (ttlSeconds - FONT_REFRESH_BUFFER_SECONDS) * 1000,
+            60 * 1000
+          );
+          fontRefreshTimer = setTimeout(() => {
+            if (currentSettings.allowUserFontChoice) {
+              populateUserFontDropdown();
+            } else {
+              refreshFontCache().then(() => updatePreview()).catch((error) => {
+                console.error("Error refreshing font cache:", error);
+              });
+            }
+          }, delay);
+        }
+
+        async function refreshFontCache() {
+          const response = await fetch("/api/fonts");
+          if (!response.ok) {
+            throw new Error("Failed to fetch font list");
+          }
+          const payload = await response.json();
+          fontsCache = payload.fonts || [];
+          scheduleFontRefresh(payload.tokenTTL || 0);
+          return fontsCache;
+        }
+
+        function ensureFontFaceLoaded(fontName, fontUrl) {
+          if (!fontUrl) return;
+          const safeName = fontName.replace(/\s+/g, "-");
+          const styleId = `font-style-preview-${safeName}`;
+          if (!document.getElementById(styleId)) {
+            const fontFaceRule = `@font-face { font-family: "${fontName}"; src: url("${fontUrl}"); }`;
+            const styleSheet = document.createElement("style");
+            styleSheet.id = styleId;
+            styleSheet.type = "text/css";
+            styleSheet.innerText = fontFaceRule;
+            document.head.appendChild(styleSheet);
+          }
+        }
 
         async function checkTextAgainstBlacklist(text) {
             try {
@@ -689,38 +730,13 @@
             if (currentSettings.allowUserFontChoice && elements.userFontSelect && elements.userFontSelect.value) {
                 const selectedOption = elements.userFontSelect.options[elements.userFontSelect.selectedIndex];
                 fontNameToApply = selectedOption.value;
-                const fontUrl = selectedOption.dataset.fontUrl;
-
-                if (fontUrl) { // It's an uploaded font, ensure @font-face is injected
-                    const styleId = `font-style-preview-${fontNameToApply.replace(/\s+/g, '-')}`;
-                    if (!document.getElementById(styleId)) {
-                        const fontFaceRule = `@font-face { font-family: "${fontNameToApply}"; src: url("${fontUrl}"); }`;
-                        const styleSheet = document.createElement("style");
-                        styleSheet.id = styleId;
-                        styleSheet.type = "text/css";
-                        styleSheet.innerText = fontFaceRule;
-                        document.head.appendChild(styleSheet);
-                        // No await document.fonts.load() for simplicity in preview, browser will apply when ready
-                    }
-                }
+                const optionMeta = fontsCache.find(font => font.name === fontNameToApply);
+                const fontUrl = selectedOption.dataset.fontUrl || optionMeta?.url || "";
+                ensureFontFaceLoaded(fontNameToApply, fontUrl);
             } else {
                 fontNameToApply = currentSettings.adminSelectedFontName || "NotoSansTC";
-                // For admin-selected default, we need to find the font URL if it's an uploaded font
-                if (elements.userFontSelect) {
-                    const adminFontOption = Array.from(elements.userFontSelect.options).find(opt => opt.value === fontNameToApply);
-                    if (adminFontOption && adminFontOption.dataset.fontUrl) {
-                        const fontUrl = adminFontOption.dataset.fontUrl;
-                        const styleId = `font-style-preview-${fontNameToApply.replace(/\s+/g, '-')}`;
-                        if (!document.getElementById(styleId)) {
-                            const fontFaceRule = `@font-face { font-family: "${fontNameToApply}"; src: url("${fontUrl}"); }`;
-                            const styleSheet = document.createElement("style");
-                            styleSheet.id = styleId;
-                            styleSheet.type = "text/css";
-                            styleSheet.innerText = fontFaceRule;
-                            document.head.appendChild(styleSheet);
-                        }
-                    }
-                }
+                const fallbackMeta = fontsCache.find(font => font.name === fontNameToApply);
+                ensureFontFaceLoaded(fontNameToApply, fallbackMeta?.url || "");
             }
             elements.previewText.style.fontFamily = fontNameToApply;
           }
@@ -754,28 +770,24 @@
           }
         };
 
-        async function populateUserFontDropdown() {
+        async function populateUserFontDropdown(skipFetch = false) {
             if (!elements.userFontSelect) return;
             try {
-                const response = await fetch('/admin/get_fonts'); // Use the same endpoint as admin
-                if (!response.ok) {
-                    console.error('Failed to fetch font list for user.');
-                    return;
+                if (!skipFetch) {
+                    await refreshFontCache();
                 }
-                const fonts = await response.json();
-                elements.userFontSelect.innerHTML = ''; // Clear existing
+                elements.userFontSelect.innerHTML = '';
 
                 let foundAdminSelectedFont = false;
-                fonts.forEach(font => {
+                fontsCache.forEach(font => {
                     const option = document.createElement('option');
                     option.value = font.name;
                     option.textContent = font.name;
-                    if (font.url) { // Store URL if it's an uploaded font or default font
-                        option.dataset.fontUrl = font.url;
-                    }
-                    if (font.type === 'default' && font.name === "NotoSansTC" && !currentSettings.adminSelectedFontName) { // Prefer NotoSansTC if no admin default
+                    option.dataset.fontUrl = font.url || '';
+                    option.dataset.expiresAt = font.expiresAt || '';
+                    if (font.type === 'default' && font.name === "NotoSansTC" && !currentSettings.adminSelectedFontName) {
                         option.selected = true;
-                        foundAdminSelectedFont = true; // Mark as found to prevent override below if Noto is the one
+                        foundAdminSelectedFont = true;
                     } else if (font.name === currentSettings.adminSelectedFontName) {
                         option.selected = true;
                         foundAdminSelectedFont = true;
@@ -783,7 +795,6 @@
                     elements.userFontSelect.appendChild(option);
                 });
 
-                // If admin's selected font wasn't in the list (e.g. bad name), select NotoSansTC or first
                 if (!foundAdminSelectedFont) {
                     const defaultOption = Array.from(elements.userFontSelect.options).find(opt => opt.value === "NotoSansTC");
                     if (defaultOption) {
@@ -792,10 +803,8 @@
                         elements.userFontSelect.options[0].selected = true;
                     }
                 }
-                // Ensure preview updates with the correct font after dropdown is populated
-                setTimeout(() => {
-                    updatePreview();
-                }, 100); // Small delay to ensure DOM is ready
+
+                updatePreview();
             } catch (error) {
                 console.error('Error populating user font dropdown:', error);
             }
@@ -825,11 +834,12 @@
 
             updateUIControls();
 
+            await refreshFontCache();
+
             if (currentSettings.allowUserFontChoice) {
-              await populateUserFontDropdown();
+              await populateUserFontDropdown(true);
             } else {
-                // Ensure preview uses admin default if user choice is off
-                updatePreview();
+              updatePreview();
             }
 
             // updateControlsVisibility(); // This function might need review or integration with updateUIControls
@@ -859,25 +869,36 @@
               if (data.type === "settings_changed") {
                 console.log("Settings updated:", data.settings);
 
-                // Update current settings
+                const newSettings = data.settings;
+                const previousAllowUserFontChoice = currentSettings.allowUserFontChoice;
+
                 currentSettings = {
-                  color: data.settings.Color[3],
-                  opacity: data.settings.Opacity[3],
-                  fontSize: data.settings.FontSize[3],
-                  speed: data.settings.Speed[3],
-                  randomColor: data.settings.Color[0],
-                  randomOpacity: data.settings.Opacity[0],
-                  randomFontSize: data.settings.FontSize[0],
-                  randomSpeed: data.settings.Speed[0],
+                  color: newSettings.Color?.[3] ?? currentSettings.color,
+                  opacity: newSettings.Opacity?.[3] ?? currentSettings.opacity,
+                  fontSize: newSettings.FontSize?.[3] ?? currentSettings.fontSize,
+                  speed: newSettings.Speed?.[3] ?? currentSettings.speed,
+                  randomColor: newSettings.Color?.[0] ?? currentSettings.randomColor,
+                  randomOpacity: newSettings.Opacity?.[0] ?? currentSettings.randomOpacity,
+                  randomFontSize: newSettings.FontSize?.[0] ?? currentSettings.randomFontSize,
+                  randomSpeed: newSettings.Speed?.[0] ?? currentSettings.randomSpeed,
+                  allowUserFontChoice:
+                    newSettings.FontFamily?.[0] ?? currentSettings.allowUserFontChoice,
+                  adminSelectedFontName:
+                    newSettings.FontFamily?.[3] ?? currentSettings.adminSelectedFontName,
                 };
 
-                // Update UI controls
                 updateUIControls();
 
-                // Update preview
-                updatePreview();
+                if (currentSettings.allowUserFontChoice) {
+                  populateUserFontDropdown();
+                } else {
+                  refreshFontCache()
+                    .then(() => updatePreview())
+                    .catch((error) =>
+                      console.error("Failed to refresh fonts:", error)
+                    );
+                }
 
-                // Update controls visibility
                 updateControlsVisibility();
               }
             } catch (error) {

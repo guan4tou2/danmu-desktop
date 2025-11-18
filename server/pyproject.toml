@@ -1,6 +1,7 @@
 [project]
 name = "server"
 version = "0.1.0"
+requires-python = ">=3.11"
 dependencies = [
     "blinker",
     "click",
@@ -12,6 +13,7 @@ dependencies = [
     "itsdangerous",
     "jinja2",
     "markupsafe",
+    "pytest>=9.0.1",
     "python-dotenv",
     "python-magic>=0.4.27",
     "setuptools",
@@ -21,4 +23,18 @@ dependencies = [
     "wsproto",
     "zope-event",
     "zope-interface",
+    "redis>=5.0.7",
+    "bcrypt>=4.0.0",
+    "flask-cors>=4.0.0",
+    "marshmallow>=3.20.0",
+    "coverage[toml]>=7.4.0",
 ]
+
+[tool.coverage.run]
+branch = true
+source = ["server"]
+omit = ["server/tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

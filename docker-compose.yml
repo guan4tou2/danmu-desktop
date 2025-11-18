@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: danmu-server
+    ports:
+      - "${PORT:-4000}:4000"
+      - "${WS_PORT:-4001}:4001"
+    environment:
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-ADMIN_PASSWORD}
+      - SECRET_KEY=${SECRET_KEY:-}
+      - PORT=${PORT:-4000}
+      - WS_PORT=${WS_PORT:-4001}
+      - FIRE_RATE_LIMIT=${FIRE_RATE_LIMIT:-20}
+      - FIRE_RATE_WINDOW=${FIRE_RATE_WINDOW:-60}
+      - RATE_LIMIT_BACKEND=${RATE_LIMIT_BACKEND:-memory}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - FONT_TOKEN_EXPIRATION=${FONT_TOKEN_EXPIRATION:-900}
+    volumes:
+      - ./server/user_fonts:/app/user_fonts
+      - ./server/static:/app/static
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    command: >
+      sh -c "
+        python -m server.ws_app &
+        python -m server.app
+      "
+
+  redis:
+    image: redis:7-alpine
+    container_name: danmu-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    profiles:
+      - redis
+
+volumes:
+  redis-data:
+

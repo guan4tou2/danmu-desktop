@@ -37,29 +37,89 @@ This project is divided into two parts:
 4. Enter the server's IP and port (default: 4001)
 
 ### Server Setup
-```bash
-# Clone the repository
-git clone https://github.com/guan4tou2/danmu-desktop
-cd danmu-desktop
 
-# Configure environment
-vim .env  # Set your admin password
+#### Option 1: Docker Compose (Recommended)
 
-# Setup virtual environment and install dependencies
-uv venv
-uv pip install -r requirements.txt
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/guan4tou2/danmu-desktop
+   cd danmu-desktop
+   ```
 
-# Start the server
-uv run app.py
-```
+2. Configure environment variables:
+   ```bash
+   cp env.example .env
+   # Edit .env and set ADMIN_PASSWORD and other settings
+   ```
+
+3. Start services:
+   ```bash
+   docker-compose up -d
+   ```
+
+4. To use Redis for rate limiting (optional):
+   ```bash
+   docker-compose --profile redis up -d
+   ```
+
+#### Option 2: Manual Setup
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/guan4tou2/danmu-desktop
+   cd danmu-desktop
+   ```
+
+2. Configure environment:
+   ```bash
+   cp env.example .env
+   vim .env  # Set your admin password and other settings
+   ```
+
+3. Setup virtual environment and install dependencies:
+   ```bash
+   cd server
+   uv venv
+   uv sync
+   ```
+
+4. Start the server (HTTP + WebSocket):
+   ```bash
+   # Terminal 1: HTTP server
+   PYTHONPATH=.. uv run python -m server.app
+   
+   # Terminal 2: WebSocket server
+   PYTHONPATH=.. uv run python -m server.ws_app
+   ```
 
 ### Accessing the Server
 - Main interface: `http://ip:4000`
 - Admin panel: `http://ip:4000/admin`
 
+### Environment Variables
+
+Key configuration options (set via `.env` file or environment variables):
+
+- `ADMIN_PASSWORD` (required): Password for admin panel access
+- `PORT`: HTTP server port (default: 4000)
+- `WS_PORT`: WebSocket server port (default: 4001)
+- `SECRET_KEY`: Flask secret key (auto-generated if not set)
+- `RATE_LIMIT_BACKEND`: Rate limiter backend - `memory` or `redis` (default: memory)
+- `REDIS_URL`: Redis connection URL (required if using Redis backend)
+- `LOG_LEVEL`: Logging level - `DEBUG`, `INFO`, `WARNING`, `ERROR` (default: INFO)
+
+See `env.example` for all available options.
+
+## Testing & Coverage
+
+- Run tests: `make test` or `make test-verbose`
+- Generate coverage report: `make coverage`
+  - Console summary via `coverage report`
+  - HTML report at `server/htmlcov/index.html`
+
 ## Port Configuration
-- `4000`: Web interface
-- `4001`: Danmu Desktop Client connection
+- `4000`: Web interface (HTTP)
+- `4001`: Danmu Desktop Client connection (WebSocket)
 
 ## References
 SAO UI design inspired by [SAO-UI-PLAN-LINK-START | Akilarの糖果屋](https://akilar.top/posts/1b4fa1dd/)

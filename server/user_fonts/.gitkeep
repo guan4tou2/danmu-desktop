@@ -1,0 +1,3 @@
+# This file ensures the user_fonts directory is tracked by git
+# User-uploaded font files will be stored here but are ignored by .gitignore
+

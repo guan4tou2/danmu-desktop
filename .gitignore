@@ -126,3 +126,15 @@ danmu-desktop/.cache/
 # Static files generated
 server/static/generated/
 server/media/uploads/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Docker
+.docker/
+
+# User uploaded fonts (keep directory structure but ignore contents)
+server/user_fonts/*
+!server/user_fonts/.gitkeep
