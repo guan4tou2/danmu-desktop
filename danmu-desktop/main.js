@@ -30,24 +30,24 @@ let isKeyDown = false;
 // Function to show startup animation in child window
 function showStartupAnimation(targetWindow, settings) {
   if (!targetWindow || targetWindow.isDestroyed()) {
-    console.error('[Main] Cannot show startup animation: window is destroyed');
+    console.error("[Main] Cannot show startup animation: window is destroyed");
     return;
   }
 
-  let animationText = '';
+  let animationText = "";
 
   // Determine animation text based on type
-  if (settings.type === 'link-start') {
-    animationText = 'LINK START';
-  } else if (settings.type === 'domain-expansion') {
-    animationText = '領域展開';
-  } else if (settings.type === 'custom' && settings.customText) {
+  if (settings.type === "link-start") {
+    animationText = "LINK START";
+  } else if (settings.type === "domain-expansion") {
+    animationText = "領域展開";
+  } else if (settings.type === "custom" && settings.customText) {
     animationText = sanitizeLog(settings.customText);
   } else {
-    animationText = 'LINK START'; // Default fallback
+    animationText = "LINK START"; // Default fallback
   }
 
-  console.log('[Main] Showing startup animation:', animationText);
+  console.log("[Main] Showing startup animation:", animationText);
 
   const startupAnimationScript = `
     (function() {
@@ -147,9 +147,14 @@ function showStartupAnimation(targetWindow, settings) {
     })();
   `;
 
-  targetWindow.webContents.executeJavaScript(startupAnimationScript).catch((err) => {
-    console.error('[Main] Error showing startup animation:', sanitizeLog(err.message));
-  });
+  targetWindow.webContents
+    .executeJavaScript(startupAnimationScript)
+    .catch((err) => {
+      console.error(
+        "[Main] Error showing startup animation:",
+        sanitizeLog(err.message)
+      );
+    });
 }
 
 function createWindow() {
@@ -426,12 +431,14 @@ function createWindow() {
           childWindows.forEach((cw) => {
             if (cw && !cw.isDestroyed()) {
               // Show Konami Code overlay effect in child window
-              cw.webContents.executeJavaScript(konamiEffectScript).catch((err) => {
-                console.error(
-                  "Error showing Konami overlay in child window:",
-                  sanitizeLog(err.message)
-                );
-              });
+              cw.webContents
+                .executeJavaScript(konamiEffectScript)
+                .catch((err) => {
+                  console.error(
+                    "Error showing Konami overlay in child window:",
+                    sanitizeLog(err.message)
+                  );
+                });
 
               // Clear danmus with explosion animation
               const script = `
@@ -560,7 +567,10 @@ function createWindow() {
   // Handler for getting system locale
   ipcMain.handle("getSystemLocale", async () => {
     const locale = app.getLocale();
-    console.log("[Main] getSystemLocale handled, returning:", sanitizeLog(locale));
+    console.log(
+      "[Main] getSystemLocale handled, returning:",
+      sanitizeLog(locale)
+    );
     return locale;
   });
 
@@ -570,7 +580,9 @@ function createWindow() {
     // Send test danmu to all child windows
     childWindows.forEach((win) => {
       if (win && !win.isDestroyed()) {
-        win.webContents.executeJavaScript(`
+        win.webContents
+          .executeJavaScript(
+            `
           if (typeof window.showdanmu === 'function') {
             window.showdanmu(
               ${JSON.stringify(data.text)},
@@ -579,22 +591,31 @@ function createWindow() {
               ${data.size},
               ${data.speed},
               { name: "NotoSansTC", url: null, type: "default" },
-              ${JSON.stringify(data.textStyles || {
-                textStroke: true,
-                strokeWidth: 2,
-                strokeColor: "#000000",
-                textShadow: false,
-                shadowBlur: 4
-              })},
-              ${JSON.stringify(data.displayArea || {
-                top: 0,
-                height: 100
-              })}
+              ${JSON.stringify(
+                data.textStyles || {
+                  textStroke: true,
+                  strokeWidth: 2,
+                  strokeColor: "#000000",
+                  textShadow: false,
+                  shadowBlur: 4,
+                }
+              )},
+              ${JSON.stringify(
+                data.displayArea || {
+                  top: 0,
+                  height: 100,
+                }
+              )}
             );
           }
-        `).catch(err => {
-          console.error("[Main] Error sending test danmu:", sanitizeLog(err.message));
-        });
+        `
+          )
+          .catch((err) => {
+            console.error(
+              "[Main] Error sending test danmu:",
+              sanitizeLog(err.message)
+            );
+          });
       }
     });
   });
@@ -609,19 +630,33 @@ function createWindow() {
         win.setOpacity(settings.opacity / 100);
 
         // Store settings in window for future danmu
-        win.webContents.executeJavaScript(`
+        win.webContents
+          .executeJavaScript(
+            `
           window.defaultDanmuSettings = ${JSON.stringify(settings)};
           console.log("[Overlay] Default danmu settings updated:", window.defaultDanmuSettings);
-        `).catch(err => {
-          console.error("[Main] Error updating overlay settings:", sanitizeLog(err.message));
-        });
+        `
+          )
+          .catch((err) => {
+            console.error(
+              "[Main] Error updating overlay settings:",
+              sanitizeLog(err.message)
+            );
+          });
       }
     });
   });
 
   ipcMain.on(
     "createChild",
-    (event, ip, port, displayIndex, enableSyncMultiDisplay, startupAnimationSettings) => {
+    (
+      event,
+      ip,
+      port,
+      displayIndex,
+      enableSyncMultiDisplay,
+      startupAnimationSettings
+    ) => {
       // Added enableSyncMultiDisplay and startupAnimationSettings
       if (typeof ip !== "string" || !ip) {
         console.warn(
@@ -634,7 +669,9 @@ function createWindow() {
           ip
         )}, Port=${sanitizeLog(port)}, DisplayIndex=${sanitizeLog(
           displayIndex
-        )}, SyncMultiDisplay=${enableSyncMultiDisplay}, StartupAnimation=${JSON.stringify(startupAnimationSettings)}`
+        )}, SyncMultiDisplay=${enableSyncMultiDisplay}, StartupAnimation=${JSON.stringify(
+          startupAnimationSettings
+        )}`
       );
       // Clear existing child windows
       childWindows.forEach((win) => {
@@ -680,9 +717,8 @@ function createWindow() {
               contextIsolation: true,
             },
           });
-          // Only show animation on the first display (primary display)
-          const animSettings = index === 0 ? startupAnimationSettings : { enabled: false };
-          setupChildWindow(newChild, display, ip, port, animSettings);
+          // Apply the same startup animation settings to all displays for consistency
+          setupChildWindow(newChild, display, ip, port, startupAnimationSettings);
           childWindows.push(newChild);
         });
         console.log(
@@ -721,7 +757,13 @@ function createWindow() {
             contextIsolation: true,
           },
         });
-        setupChildWindow(newChild, selectedDisplay, ip, port, startupAnimationSettings);
+        setupChildWindow(
+          newChild,
+          selectedDisplay,
+          ip,
+          port,
+          startupAnimationSettings
+        );
         childWindows.push(newChild); // This was the correct placement
         // The }); below was an error from the previous incorrect diff application.
         console.log(`[Main] Created 1 child window for single display mode.`);
@@ -731,7 +773,13 @@ function createWindow() {
 }
 
 // Renamed and refactored function
-function setupChildWindow(targetWindow, display, ip, port, startupAnimationSettings) {
+function setupChildWindow(
+  targetWindow,
+  display,
+  ip,
+  port,
+  startupAnimationSettings
+) {
   const initialBounds = targetWindow.getBounds();
   console.log(
     `[Main] Setting up child window for display ID ${sanitizeLog(
@@ -773,12 +821,10 @@ function setupChildWindow(targetWindow, display, ip, port, startupAnimationSetti
 
     targetWindow.show();
 
-    // Show startup animation if enabled
-    if (startupAnimationSettings && startupAnimationSettings.enabled) {
-      setTimeout(() => {
-        showStartupAnimation(targetWindow, startupAnimationSettings);
-      }, 100); // Small delay to ensure window is fully rendered
-    }
+    // 不在这里显示启动动画，改为在 WebSocket 连接成功时显示
+    // 将启动动画设置存储到窗口对象中，以便在连接成功时使用
+    targetWindow.startupAnimationSettings = startupAnimationSettings;
+    
     const finalBounds = targetWindow.getBounds();
     console.log(
       `[Main] Child window for display ID ${sanitizeLog(
@@ -802,12 +848,15 @@ function setupChildWindow(targetWindow, display, ip, port, startupAnimationSetti
   });
 
   // WebSocket connection logic (remains the same)
+  // Pass startup animation settings to the WebSocket code
+  const startupAnimSettingsJson = JSON.stringify(startupAnimationSettings || { enabled: false });
   targetWindow.webContents.executeJavaScript(
     // Note: sanitizeLog is a Node.js function, not directly available in browser execution context.
     // We will sanitize ip and port before injecting them into the script.
     `
       const IP_ADDR='${sanitizeLog(ip)}';
       const WS_PORT_NUM=${sanitizeLog(port)};
+      const STARTUP_ANIM_SETTINGS = ${startupAnimSettingsJson};
       console.log(IP_ADDR, WS_PORT_NUM) // These are now sanitized
       let url = \`ws://\${IP_ADDR}:\${WS_PORT_NUM}\`
       let ws = null
@@ -818,19 +867,39 @@ function setupChildWindow(targetWindow, display, ip, port, startupAnimationSetti
       let lastHeartbeatResponse = Date.now()
       const heartbeatTimeout = 30000 // 30 seconds without response is considered disconnection
       let connectionLost = false
+      let connectionTimeout = null
+      const connectionTimeoutDuration = 10000 // 10 seconds timeout for initial connection
+      let isFirstConnectionAttempt = true
+      let lastSentStatus = null
+      let statusSendTimeout = null
       
-      // Helper function to safely send connection status
+      // Helper function to safely send connection status with debouncing
       function sendConnectionStatus(status) {
-        if (window.API && typeof window.API.sendConnectionStatus === 'function') {
-          try {
-            window.API.sendConnectionStatus(status)
-          } catch (e) {
-            console.error('Error sending connection status:', e.message)
-          }
-        } else {
-          // Retry after a short delay if API is not ready
-          setTimeout(() => sendConnectionStatus(status), 100)
+        // 如果状态相同，不重复发送
+        if (lastSentStatus === status) {
+          return
         }
+        
+        // 清除之前的发送定时器
+        if (statusSendTimeout) {
+          clearTimeout(statusSendTimeout)
+        }
+        
+        // 防抖：延迟发送状态，避免频繁更新
+        statusSendTimeout = setTimeout(() => {
+          if (window.API && typeof window.API.sendConnectionStatus === 'function') {
+            try {
+              window.API.sendConnectionStatus(status)
+              lastSentStatus = status
+            } catch (e) {
+              console.error('Error sending connection status:', e.message)
+            }
+          } else {
+            // Retry after a short delay if API is not ready
+            setTimeout(() => sendConnectionStatus(status), 100)
+          }
+          statusSendTimeout = null
+        }, 200) // 200ms 防抖延迟
       }
       
       // Heartbeat detection function
@@ -877,10 +946,44 @@ function setupChildWindow(targetWindow, display, ip, port, startupAnimationSetti
           }
         }
         
+        // Clear any existing connection timeout
+        if (connectionTimeout) {
+          clearTimeout(connectionTimeout)
+          connectionTimeout = null
+        }
+        
+        // Set connection timeout for first connection attempt
+        if (isFirstConnectionAttempt) {
+          connectionTimeout = setTimeout(() => {
+            if (ws && ws.readyState !== WebSocket.OPEN) {
+              console.log('Connection timeout - server unreachable')
+              // Close the connection if it's still trying to connect
+              try {
+                ws.close()
+              } catch (e) {
+                // Connection might already be closed
+              }
+              // Notify main window about connection failure
+              sendConnectionStatus('connection-failed')
+              // Stop reconnection attempts for first connection failure
+              reconnectAttempts = maxReconnectAttempts
+            }
+          }, connectionTimeoutDuration)
+        }
+        
         ws = new WebSocket(url)
         
         ws.onopen = () => {
+          // Clear connection timeout
+          if (connectionTimeout) {
+            clearTimeout(connectionTimeout)
+            connectionTimeout = null
+          }
+          isFirstConnectionAttempt = false
+          
           console.log('Connection opened') // No variable data
+          // 在重置之前检查是否为第一次连接
+          const isFirstConnection = reconnectAttempts === 0
           reconnectAttempts = 0
           connectionLost = false
           lastHeartbeatResponse = Date.now()
@@ -889,9 +992,23 @@ function setupChildWindow(targetWindow, display, ip, port, startupAnimationSetti
           // Notify main window about successful connection
           sendConnectionStatus('connected')
           
-          // Link Start animation
-          const style = document.createElement('style');
-          style.textContent = \`
+          // 启动动画和 Link Start 动画 - 只在第一次连接成功时显示
+          if (!isFirstConnection) {
+            return // 重连时不显示动画
+          }
+          
+          const showSceneAnimation = (animationText) => {
+            // 清理可能存在的旧 Link Start 动画元素
+            const oldStyle = document.getElementById('link-start-style');
+            if (oldStyle) oldStyle.remove();
+            const oldScene = document.querySelector('.scene');
+            if (oldScene) oldScene.remove();
+            const oldLinkStart = document.querySelector('.link-start');
+            if (oldLinkStart) oldLinkStart.remove();
+            
+            const style = document.createElement('style');
+            style.id = 'link-start-style';
+            style.textContent = \`
             /* Import Google Font */
             @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
@@ -1131,67 +1248,111 @@ function setupChildWindow(targetWindow, display, ip, port, startupAnimationSetti
               95% { clip: rect(10px, 9999px, 7px, 0); }
               100% { clip: rect(20px, 9999px, 75px, 0); }
             }
-          \`;
-          document.head.appendChild(style);
+            \`;
+            document.head.appendChild(style);
 
-          const scene = document.createElement('div');
-          scene.className = 'scene';
-          scene.innerHTML = \`
-            <div class="wrap">
-              <div class="wall wall-right"></div>
-              <div class="wall wall-left"></div>   
-              <div class="wall wall-top"></div>
-              <div class="wall wall-bottom"></div> 
-              <div class="wall wall-back"></div>    
-            </div>
-            <div class="wrap">
-              <div class="wall wall-right"></div>
-              <div class="wall wall-left"></div>   
-              <div class="wall wall-top"></div>
-              <div class="wall wall-bottom"></div>   
-              <div class="wall wall-back"></div>    
-            </div>
-          \`;
-          document.body.appendChild(scene);
+            const scene = document.createElement('div');
+            scene.className = 'scene';
+            scene.innerHTML = \`
+              <div class="wrap">
+                <div class="wall wall-right"></div>
+                <div class="wall wall-left"></div>   
+                <div class="wall wall-top"></div>
+                <div class="wall wall-bottom"></div> 
+                <div class="wall wall-back"></div>    
+              </div>
+              <div class="wrap">
+                <div class="wall wall-right"></div>
+                <div class="wall wall-left"></div>   
+                <div class="wall wall-top"></div>
+                <div class="wall wall-bottom"></div>   
+                <div class="wall wall-back"></div>    
+              </div>
+            \`;
+            document.body.appendChild(scene);
 
-          const linkStart = document.createElement('div');
-          linkStart.className = 'link-start';
-          linkStart.textContent = 'Link Start';
-          linkStart.setAttribute("data-text", 'Link Start'); // For glitch effect
-          document.body.appendChild(linkStart);
-          
-          const totalDuration = 7000; // Trigger fade-out earlier
-          const fadeOutDuration = 2000;
-          
-          setTimeout(() => {
-            scene.style.animation = \`scene-fade-out \${fadeOutDuration/1000}s ease-out forwards\`;
+            const linkStart = document.createElement('div');
+            linkStart.className = 'link-start';
+            linkStart.textContent = animationText || 'Link Start';
+            linkStart.setAttribute("data-text", animationText || 'Link Start'); // For glitch effect
+            document.body.appendChild(linkStart);
+            
+            const totalDuration = 7000; // Trigger fade-out earlier
+            const fadeOutDuration = 2000;
             
             setTimeout(() => {
-              document.body.contains(scene) && scene.remove();
-              document.head.contains(style) && style.remove();
-              document.body.contains(linkStart) && linkStart.remove();
-            }, fadeOutDuration);
-          }, totalDuration);
+              scene.style.animation = \`scene-fade-out \${fadeOutDuration/1000}s ease-out forwards\`;
+              
+              setTimeout(() => {
+                document.body.contains(scene) && scene.remove();
+                document.head.contains(style) && style.remove();
+                document.body.contains(linkStart) && linkStart.remove();
+              }, fadeOutDuration);
+            }, totalDuration);
+          };
+          
+          let animationText = 'LINK START';
+          if (STARTUP_ANIM_SETTINGS && STARTUP_ANIM_SETTINGS.type === 'domain-expansion') {
+            animationText = '領域展開';
+          } else if (STARTUP_ANIM_SETTINGS && STARTUP_ANIM_SETTINGS.type === 'custom' && STARTUP_ANIM_SETTINGS.customText) {
+            animationText = STARTUP_ANIM_SETTINGS.customText;
+          }
+          
+          // 显示场景动画，仅保留带背景的版本
+          if (STARTUP_ANIM_SETTINGS && STARTUP_ANIM_SETTINGS.enabled) {
+            showSceneAnimation(animationText);
+          } else {
+            // 如果未启用，依然显示场景动画，使用对应的动画文字
+            showSceneAnimation(animationText);
+          }
         }
         
         ws.onclose = (event) => {
           console.log('Connection closed', event.code) // event.code is a number, not typically user input
           clearInterval(heartbeatInterval)
           
-          // Notify main window about disconnection
-          sendConnectionStatus('disconnected')
+          // Clear connection timeout if still active
+          if (connectionTimeout) {
+            clearTimeout(connectionTimeout)
+            connectionTimeout = null
+          }
+          
+          // If this is the first connection attempt and it failed, notify about connection failure
+          if (isFirstConnectionAttempt && reconnectAttempts === 0) {
+            sendConnectionStatus('connection-failed')
+            // Stop reconnection attempts for first connection failure
+            reconnectAttempts = maxReconnectAttempts
+            return
+          }
+          
+          // Notify main window about disconnection (for reconnections)
+          // 只在状态改变时发送，避免频繁更新
+          if (lastSentStatus !== 'disconnected') {
+            sendConnectionStatus('disconnected')
+          }
           
           // Use incremental reconnect delay
           const currentDelay = connectionLost ? reconnectDelay : reconnectDelay * (reconnectAttempts + 1)
           
-          // Unlimited reconnect attempts, but with increasing delay
-          console.log(\`Attempting to reconnect in \${currentDelay/1000} seconds...\`) // No direct user input
-          setTimeout(connect, currentDelay)
-          reconnectAttempts++
+          // Only reconnect if we haven't exceeded max attempts
+          if (reconnectAttempts < maxReconnectAttempts) {
+            // Unlimited reconnect attempts, but with increasing delay
+            console.log(\`Attempting to reconnect in \${currentDelay/1000} seconds...\`) // No direct user input
+            setTimeout(connect, currentDelay)
+            reconnectAttempts++
+          } else {
+            console.log('Max reconnection attempts reached, stopping reconnection')
+            sendConnectionStatus('connection-failed')
+          }
         }
         
         ws.onerror = (error) => {
           console.error('WebSocket error:', error.message) // Sanitize error message
+          // If this is the first connection attempt, clear timeout and let onclose handle
+          if (isFirstConnectionAttempt && connectionTimeout) {
+            clearTimeout(connectionTimeout)
+            connectionTimeout = null
+          }
           // No special handling on error, let onclose handle reconnection
         }
         

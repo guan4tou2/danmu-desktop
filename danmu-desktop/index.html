@@ -239,8 +239,16 @@
       <div
         class="glass-effect w-full max-w-md p-6 md:p-8 rounded-2xl shadow-2xl space-y-6 my-auto"
       >
-        <!-- Language Switcher -->
-        <div class="flex justify-end mb-4">
+        <!-- Language Switcher & Connection Status -->
+        <div class="flex justify-end items-center gap-3 -mt-2 -mb-2">
+          <!-- Connection Status -->
+          <div id="connection-status" class="hidden">
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg glass-effect">
+              <div id="status-indicator" class="w-2.5 h-2.5 rounded-full flex-shrink-0"></div>
+              <span id="status-text" class="text-xs font-medium whitespace-nowrap"></span>
+            </div>
+          </div>
+          <!-- Language Switcher -->
           <select
             id="language-select"
             class="form-input px-3 py-2 rounded-lg text-sm"
@@ -254,120 +262,119 @@
         <!-- Header -->
         <div class="text-center">
           <!-- Dynamic Logo -->
-          <div class="flex justify-center mb-4">
+          <div class="flex justify-center mb-3">
             <object
               data="assets/icon-dynamic.svg"
               type="image/svg+xml"
-              width="64"
-              height="64"
+              width="56"
+              height="56"
               class="drop-shadow-lg"
             >
               <img
                 src="assets/icon.png"
                 alt="Danmu Desktop"
-                width="64"
-                height="64"
+                width="56"
+                height="56"
                 class="drop-shadow-lg"
               />
             </object>
           </div>
-          <h1 class="text-3xl font-bold text-white" data-i18n="title">
+          <h1 class="text-2xl font-bold text-white" data-i18n="title">
             Danmu Overlay Setup
           </h1>
-          <p class="text-slate-400 mt-2" data-i18n="subtitle">
+          <p class="text-slate-400 mt-1 text-sm" data-i18n="subtitle">
             Configure and launch the overlay
           </p>
         </div>
 
-        <!-- Form -->
-        <div class="space-y-6">
-          <div>
-            <label
-              for="host-input"
-              class="text-sm font-medium text-slate-300"
-              data-i18n="hostLabel"
-              >Server Address (IP or Domain)</label
-            >
-            <input
-              type="text"
-              id="host-input"
-              class="form-input mt-2 block w-full rounded-lg px-4 py-3"
-              data-i18n-placeholder="hostPlaceholder"
-              placeholder="e.g., 127.0.0.1 or mydomain.com"
-            />
-          </div>
-
-          <div>
-            <label
-              for="port-input"
-              class="text-sm font-medium text-slate-300"
-              data-i18n="portLabel"
-              >WebSocket Port</label
-            >
-            <input
-              type="text"
-              id="port-input"
-              class="form-input mt-2 block w-full rounded-lg px-4 py-3"
-              data-i18n-placeholder="portPlaceholder"
-              placeholder="e.g., 4001"
-            />
-          </div>
-
-          <div>
-            <label
-              for="screen-select"
-              class="text-sm font-medium text-slate-300"
-              data-i18n="displayLabel"
-              >Target Display</label
-            >
-            <select
-              id="screen-select"
-              class="form-input mt-2 block w-full appearance-none rounded-lg px-4 py-3"
-            >
-              <!-- Options will be populated by script -->
-            </select>
-          </div>
-
-          <div>
-            <label
-              for="sync-multi-display-checkbox"
-              class="text-sm font-medium text-slate-300 flex items-center mt-2"
-            >
-              <input
-                type="checkbox"
-                id="sync-multi-display-checkbox"
-                class="form-input h-4 w-4 rounded mr-2 text-sky-500 focus:ring-sky-500"
-              />
-              <span data-i18n="syncMultiDisplay"
-                >Enable synchronous multi-display</span
+        <!-- Connection Settings Card -->
+        <div class="bg-slate-800/40 backdrop-blur-sm rounded-xl p-5 border border-slate-700/50">
+          <div class="space-y-4">
+            <div>
+              <label
+                for="host-input"
+                class="text-sm font-medium text-slate-300"
+                data-i18n="hostLabel"
+                >Server Address (IP or Domain)</label
               >
-            </label>
+              <input
+                type="text"
+                id="host-input"
+                class="form-input mt-2 block w-full rounded-lg px-4 py-2.5 text-sm"
+                data-i18n-placeholder="hostPlaceholder"
+                placeholder="e.g., 127.0.0.1 or mydomain.com"
+              />
+            </div>
+
+            <div>
+              <label
+                for="port-input"
+                class="text-sm font-medium text-slate-300"
+                data-i18n="portLabel"
+                >WebSocket Port</label
+              >
+              <input
+                type="text"
+                id="port-input"
+                class="form-input mt-2 block w-full rounded-lg px-4 py-2.5 text-sm"
+                data-i18n-placeholder="portPlaceholder"
+                placeholder="e.g., 4001"
+              />
+            </div>
+
+            <div>
+              <label
+                for="screen-select"
+                class="text-sm font-medium text-slate-300"
+                data-i18n="displayLabel"
+                >Target Display</label
+              >
+              <select
+                id="screen-select"
+                class="form-input mt-2 block w-full appearance-none rounded-lg px-4 py-2.5 text-sm"
+              >
+                <!-- Options will be populated by script -->
+              </select>
+            </div>
+
+            <div class="pt-1">
+              <label
+                for="sync-multi-display-checkbox"
+                class="text-sm font-medium text-slate-300 flex items-center cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  id="sync-multi-display-checkbox"
+                  class="form-input h-4 w-4 rounded mr-2 text-sky-500 focus:ring-sky-500 cursor-pointer"
+                />
+                <span data-i18n="syncMultiDisplay"
+                  >Enable synchronous multi-display</span
+                >
+              </label>
+            </div>
           </div>
         </div>
 
-        <!-- Connection Status -->
-        <div id="connection-status" class="hidden">
-          <div class="flex items-center justify-center gap-2 p-3 rounded-lg glass-effect">
-            <div id="status-indicator" class="w-3 h-3 rounded-full"></div>
-            <span id="status-text" class="text-sm font-medium"></span>
-          </div>
-        </div>
-
-        <!-- Danmu Preview & Settings -->
-        <details class="glass-effect rounded-xl p-4">
-          <summary class="cursor-pointer text-sm font-semibold text-slate-200 flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <!-- Advanced Settings -->
+        <details class="bg-slate-800/30 backdrop-blur-sm rounded-xl border border-slate-700/50">
+          <summary class="cursor-pointer p-4 text-sm font-semibold text-slate-200 flex items-center gap-2 hover:bg-slate-700/20 rounded-xl transition-colors">
+            <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
             </svg>
             <span data-i18n="previewSettings">Preview & Settings</span>
           </summary>
 
-          <div class="mt-4 space-y-4">
-            <!-- Preview Controls -->
+          <div class="p-4 pt-0 space-y-5">
+            <!-- Test Danmu Section -->
             <div class="border-t border-slate-600 pt-4">
-              <label class="text-xs font-medium text-slate-400 uppercase tracking-wide" data-i18n="testDanmu">Test Danmu</label>
-              <div class="mt-2 flex gap-2">
+              <div class="flex items-center gap-2 mb-3">
+                <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
+                </svg>
+                <label class="text-sm font-medium text-slate-200" data-i18n="testDanmu">Test Danmu</label>
+              </div>
+              <div class="flex gap-2">
                 <input
                   type="text"
                   id="preview-text"
@@ -378,7 +385,7 @@
                 />
                 <button
                   id="preview-button"
-                  class="btn-primary px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2 hover:shadow-lg transition-all"
+                  class="btn-primary px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2 hover:shadow-lg transition-all flex-shrink-0"
                   data-i18n="sendPreview"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -389,9 +396,14 @@
               </div>
             </div>
 
-            <!-- Overlay Settings -->
+            <!-- Basic Appearance -->
             <div class="border-t border-slate-600 pt-4 space-y-3">
-              <label class="text-xs font-medium text-slate-400 uppercase tracking-wide" data-i18n="overlaySettings">Overlay Settings</label>
+              <div class="flex items-center gap-2 mb-1">
+                <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+                </svg>
+                <label class="text-sm font-medium text-slate-200" data-i18n="overlaySettings">Overlay Settings</label>
+              </div>
 
               <!-- Opacity Control -->
               <div>
@@ -454,18 +466,27 @@
                 </div>
               </div>
 
+            <!-- Text Effects -->
+            <div class="border-t border-slate-600 pt-4 space-y-3">
+              <div class="flex items-center gap-2 mb-1">
+                <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                </svg>
+                <label class="text-sm font-medium text-slate-200" data-i18n="textEffects">Text Effects</label>
+              </div>
+
               <!-- Text Stroke -->
-              <div class="border-t border-slate-600 pt-3 mt-3">
-                <div class="flex items-center justify-between mb-2">
-                  <label class="text-sm text-slate-300" data-i18n="textStroke">Text Stroke</label>
+              <div class="bg-slate-900/30 rounded-lg p-3 space-y-3">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs text-slate-300" data-i18n="textStroke">Text Stroke</label>
                   <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" id="text-stroke-toggle" class="sr-only peer" checked>
                     <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-sky-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
                   </label>
                 </div>
-                <div id="stroke-controls" class="space-y-2 mt-2">
+                <div id="stroke-controls" class="space-y-2">
                   <div>
-                    <div class="flex justify-between items-center mb-2">
+                    <div class="flex justify-between items-center mb-1.5">
                       <label for="stroke-width" class="text-xs text-slate-400" data-i18n="strokeWidth">Stroke Width</label>
                       <span id="stroke-width-value" class="text-xs font-mono text-sky-400">2px</span>
                     </div>
@@ -479,7 +500,7 @@
                     />
                   </div>
                   <div>
-                    <div class="flex justify-between items-center mb-2">
+                    <div class="flex justify-between items-center mb-1.5">
                       <label for="stroke-color" class="text-xs text-slate-400" data-i18n="strokeColor">Stroke Color</label>
                       <input
                         type="color"
@@ -493,17 +514,17 @@
               </div>
 
               <!-- Text Shadow -->
-              <div class="border-t border-slate-600 pt-3 mt-3">
-                <div class="flex items-center justify-between mb-2">
-                  <label class="text-sm text-slate-300" data-i18n="textShadow">Text Shadow</label>
+              <div class="bg-slate-900/30 rounded-lg p-3 space-y-3">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs text-slate-300" data-i18n="textShadow">Text Shadow</label>
                   <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" id="text-shadow-toggle" class="sr-only peer">
                     <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-sky-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
                   </label>
                 </div>
-                <div id="shadow-controls" class="space-y-2 mt-2 hidden">
+                <div id="shadow-controls" class="space-y-2 hidden">
                   <div>
-                    <div class="flex justify-between items-center mb-2">
+                    <div class="flex justify-between items-center mb-1.5">
                       <label for="shadow-blur" class="text-xs text-slate-400" data-i18n="shadowBlur">Shadow Blur</label>
                       <span id="shadow-blur-value" class="text-xs font-mono text-sky-400">4px</span>
                     </div>
@@ -518,15 +539,23 @@
                   </div>
                 </div>
               </div>
+            </div>
 
-              <!-- Display Area Control -->
-              <div class="border-t border-slate-600 pt-3 mt-3">
-                <h3 class="text-sm font-medium text-slate-300 mb-3" data-i18n="displayAreaControl">Display Area Control</h3>
+            <!-- Display & Track Settings -->
+            <div class="border-t border-slate-600 pt-4 space-y-4">
+              <div class="flex items-center gap-2 mb-1">
+                <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path>
+                </svg>
+                <label class="text-sm font-medium text-slate-200" data-i18n="displayAreaControl">Display Area Control</label>
+              </div>
 
+              <!-- Display Area Controls -->
+              <div class="bg-slate-900/30 rounded-lg p-3 space-y-3">
                 <!-- Top Position -->
-                <div class="mb-3">
-                  <div class="flex justify-between items-center mb-2">
-                    <label for="display-area-top" class="text-xs text-slate-400" data-i18n="displayAreaTop">Top Position</label>
+                <div>
+                  <div class="flex justify-between items-center mb-1.5">
+                    <label for="display-area-top" class="text-xs text-slate-300" data-i18n="displayAreaTop">Top Position</label>
                     <span id="display-area-top-value" class="text-xs font-mono text-sky-400">0%</span>
                   </div>
                   <input
@@ -542,8 +571,8 @@
 
                 <!-- Height -->
                 <div>
-                  <div class="flex justify-between items-center mb-2">
-                    <label for="display-area-height" class="text-xs text-slate-400" data-i18n="displayAreaHeight">Display Height</label>
+                  <div class="flex justify-between items-center mb-1.5">
+                    <label for="display-area-height" class="text-xs text-slate-300" data-i18n="displayAreaHeight">Display Height</label>
                     <span id="display-area-height-value" class="text-xs font-mono text-sky-400">100%</span>
                   </div>
                   <input
@@ -558,22 +587,27 @@
                 </div>
 
                 <!-- Visual Indicator -->
-                <div class="mt-3 p-2 bg-slate-800 rounded border border-slate-600">
-                  <div class="text-xs text-slate-400 mb-1" data-i18n="displayAreaPreview">Preview:</div>
-                  <div class="relative h-20 bg-slate-900 rounded overflow-hidden">
+                <div class="p-2 bg-slate-950/50 rounded border border-slate-700">
+                  <div class="text-xs text-slate-400 mb-1.5" data-i18n="displayAreaPreview">Preview:</div>
+                  <div class="relative h-16 bg-slate-900 rounded overflow-hidden">
                     <div id="display-area-indicator" class="absolute left-0 right-0 bg-sky-500 bg-opacity-20 border-t-2 border-b-2 border-sky-500" style="top: 0%; height: 100%;"></div>
                   </div>
                 </div>
               </div>
 
               <!-- Track Management -->
-              <div class="border-t border-slate-600 pt-3 mt-3">
-                <h3 class="text-sm font-medium text-slate-300 mb-3" data-i18n="trackManagement">Track Management</h3>
+              <div class="bg-slate-900/30 rounded-lg p-3 space-y-3">
+                <div class="flex items-center gap-2 mb-1">
+                  <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                  </svg>
+                  <label class="text-xs font-medium text-slate-200" data-i18n="trackManagement">Track Management</label>
+                </div>
 
                 <!-- Max Tracks -->
-                <div class="mb-3">
-                  <div class="flex justify-between items-center mb-2">
-                    <label for="max-tracks" class="text-xs text-slate-400" data-i18n="maxTracks">Maximum Tracks</label>
+                <div>
+                  <div class="flex justify-between items-center mb-1.5">
+                    <label for="max-tracks" class="text-xs text-slate-300" data-i18n="maxTracks">Maximum Tracks</label>
                     <span id="max-tracks-value" class="text-xs font-mono text-sky-400">10</span>
                   </div>
                   <input
@@ -589,54 +623,67 @@
                 </div>
 
                 <!-- Collision Detection -->
-                <div class="flex items-center justify-between">
-                  <label class="text-xs text-slate-400" data-i18n="collisionDetection">Collision Detection</label>
+                <div class="flex items-center justify-between pt-1">
+                  <label class="text-xs text-slate-300" data-i18n="collisionDetection">Collision Detection</label>
                   <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" id="collision-detection-toggle" class="sr-only peer" checked>
                     <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-sky-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
                   </label>
                 </div>
               </div>
+            </div>
 
+            <!-- Testing & Animation -->
+            <div class="border-t border-slate-600 pt-4 space-y-4">
               <!-- Batch Test -->
-              <div class="border-t border-slate-600 pt-3 mt-3">
-                <h3 class="text-sm font-medium text-slate-300 mb-3" data-i18n="batchTest">Batch Test</h3>
-                <div class="flex gap-2">
-                  <input
-                    type="number"
-                    id="batch-test-count"
-                    min="1"
-                    max="20"
-                    value="5"
-                    class="form-input flex-1 text-sm px-3 py-2 rounded-lg w-20"
-                  />
-                  <button
-                    id="batch-test-button"
-                    class="btn-primary px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2 hover:shadow-lg transition-all"
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                    </svg>
-                    <span data-i18n="startBatchTest">Start Batch Test</span>
-                  </button>
+              <div>
+                <div class="flex items-center gap-2 mb-3">
+                  <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                  </svg>
+                  <label class="text-sm font-medium text-slate-200" data-i18n="batchTest">Batch Test</label>
                 </div>
-                <div class="text-xs text-slate-500 mt-2" data-i18n="batchTestHint">Test collision detection and track distribution</div>
+                <div class="bg-slate-900/30 rounded-lg p-3">
+                  <div class="flex gap-2">
+                    <input
+                      type="number"
+                      id="batch-test-count"
+                      min="1"
+                      max="20"
+                      value="5"
+                      class="form-input flex-1 text-sm px-3 py-2 rounded-lg w-20"
+                    />
+                    <button
+                      id="batch-test-button"
+                      class="btn-primary px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2 hover:shadow-lg transition-all flex-shrink-0"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                      </svg>
+                      <span data-i18n="startBatchTest">Start Batch Test</span>
+                    </button>
+                  </div>
+                  <div class="text-xs text-slate-500 mt-2" data-i18n="batchTestHint">Test collision detection and track distribution</div>
+                </div>
               </div>
 
               <!-- Startup Animation -->
-              <div class="border-t border-slate-600 pt-3 mt-3">
-                <div class="flex items-center justify-between mb-3">
-                  <h3 class="text-sm font-medium text-slate-300" data-i18n="startupAnimation">Startup Animation</h3>
-                  <label class="relative inline-flex items-center cursor-pointer">
+              <div>
+                <div class="flex items-center gap-2 mb-3">
+                  <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <label class="text-sm font-medium text-slate-200" data-i18n="startupAnimation">Startup Animation</label>
+                  <label class="relative inline-flex items-center cursor-pointer ml-auto">
                     <input type="checkbox" id="startup-animation-toggle" class="sr-only peer" checked>
                     <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-sky-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
                   </label>
                 </div>
 
-                <div id="startup-animation-controls" class="space-y-3">
+                <div id="startup-animation-controls" class="bg-slate-900/30 rounded-lg p-3 space-y-3">
                   <!-- Animation Type -->
                   <div>
-                    <label class="text-xs text-slate-400 block mb-2" data-i18n="animationType">Animation Type</label>
+                    <label class="text-xs text-slate-300 block mb-2" data-i18n="animationType">Animation Type</label>
                     <select
                       id="animation-type-select"
                       class="form-input w-full text-sm px-3 py-2 rounded-lg"
@@ -649,7 +696,7 @@
 
                   <!-- Custom Animation Text -->
                   <div id="custom-animation-text-container" class="hidden">
-                    <label class="text-xs text-slate-400 block mb-2" data-i18n="customAnimationText">Custom Animation Text</label>
+                    <label class="text-xs text-slate-300 block mb-2" data-i18n="customAnimationText">Custom Animation Text</label>
                     <input
                       type="text"
                       id="custom-animation-text"

@@ -69,27 +69,89 @@ function t(key) {
   return typeof i18n !== "undefined" ? i18n.t(key) : key;
 }
 
-// Update connection status display
-function updateConnectionStatus(status, text) {
-  const statusContainer = document.getElementById("connection-status");
-  const statusIndicator = document.getElementById("status-indicator");
-  const statusText = document.getElementById("status-text");
+// Connection status management
+let currentConnectionStatus = null;
+let statusUpdateTimeout = null;
+let statusHideTimeout = null;
+let overlayActive = false;
+let connectionFailureNotified = false;
+let connectionSuccessNotified = false;
 
-  if (!statusContainer || !statusIndicator || !statusText) return;
+function getLocalizedText(key, fallbackEn = "", fallbackZh = "") {
+  const localized = t(key);
+  if (localized && localized !== key) {
+    return localized;
+  }
+  if (typeof i18n !== "undefined" && i18n.currentLang) {
+    if (i18n.currentLang.startsWith("zh") && fallbackZh) {
+      return fallbackZh;
+    }
+  }
+  return fallbackEn || fallbackZh || key;
+}
 
-  statusContainer.classList.remove("hidden");
-  statusText.textContent = text;
+// Update connection status display with debouncing
+function updateConnectionStatus(status, text, shouldShow = true) {
+  // 如果状态相同，不更新（避免重复更新）
+  if (currentConnectionStatus === status && shouldShow) {
+    return;
+  }
+  
+  // 清除之前的隐藏定时器
+  if (statusHideTimeout) {
+    clearTimeout(statusHideTimeout);
+    statusHideTimeout = null;
+  }
+  
+  // 防抖：延迟更新状态，避免频繁变化
+  if (statusUpdateTimeout) {
+    clearTimeout(statusUpdateTimeout);
+  }
+  
+  statusUpdateTimeout = setTimeout(() => {
+    const statusContainer = document.getElementById("connection-status");
+    const statusIndicator = document.getElementById("status-indicator");
+    const statusText = document.getElementById("status-text");
 
-  const statusColors = {
-    idle: { bg: "#475569", shadow: "none" },
-    connecting: { bg: "#06b6d4", shadow: "0 0 10px rgba(6, 182, 212, 0.6)" },
-    connected: { bg: "#10b981", shadow: "0 0 10px rgba(16, 185, 129, 0.6)" },
-    disconnected: { bg: "#ef4444", shadow: "0 0 10px rgba(239, 68, 68, 0.6)" },
-  };
+    if (!statusContainer || !statusIndicator || !statusText) return;
 
-  const color = statusColors[status] || statusColors.idle;
-  statusIndicator.style.backgroundColor = color.bg;
-  statusIndicator.style.boxShadow = color.shadow;
+    // 更新当前状态
+    currentConnectionStatus = status;
+
+    if (shouldShow) {
+      statusContainer.classList.remove("hidden");
+      statusText.textContent = text;
+
+      const statusColors = {
+        idle: { bg: "#475569", shadow: "none" },
+        connecting: { bg: "#06b6d4", shadow: "0 0 10px rgba(6, 182, 212, 0.6)" },
+        connected: { bg: "#10b981", shadow: "0 0 10px rgba(16, 185, 129, 0.6)" },
+        disconnected: { bg: "#ef4444", shadow: "0 0 10px rgba(239, 68, 68, 0.6)" },
+        "connection-failed": { bg: "#dc2626", shadow: "0 0 12px rgba(220, 38, 38, 0.7)" },
+      };
+
+      const color = statusColors[status] || statusColors.idle;
+      statusIndicator.style.backgroundColor = color.bg;
+      statusIndicator.style.boxShadow = color.shadow;
+    } else {
+      statusContainer.classList.add("hidden");
+      currentConnectionStatus = null;
+    }
+    
+    statusUpdateTimeout = null;
+  }, 100); // 100ms 防抖延迟
+}
+
+// Hide connection status with delay
+function hideConnectionStatus(delay = 2000) {
+  if (statusHideTimeout) {
+    clearTimeout(statusHideTimeout);
+  }
+  
+  statusHideTimeout = setTimeout(() => {
+    updateConnectionStatus(null, "", false);
+    statusHideTimeout = null;
+  }, delay);
 }
 
 // Input validation
@@ -301,7 +363,7 @@ window.showdanmu = function (
     danmu.style.color = "red"; // Indicate an error
     // Ensure parentElement is defined before appending
     if (parentElement) {
-      parentElement.appendChild(danmu);
+        parentElement.appendChild(danmu);
     } else {
       console.error(
         "[showdanmu] parentElement is null, cannot append error message for invalid image URL."
@@ -371,39 +433,39 @@ window.showdanmu = function (
 
     // Animation logic (moved inside this function)
     const Height = parseFloat(getComputedStyle(danmu).height);
-    const Width = parseFloat(getComputedStyle(danmu).width);
-    const Padding = parseFloat(getComputedStyle(danmu).padding);
+  const Width = parseFloat(getComputedStyle(danmu).width);
+  const Padding = parseFloat(getComputedStyle(danmu).padding);
 
     // Use track-based positioning with collision detection
     const trackPosition = window.findAvailableTrack(displayArea, Height + Padding, Width, speed);
     const top = trackPosition.top;
 
-    danmu.style.top = `${top}px`;
-    danmu.style.opacity = opacity * 0.01;
+  danmu.style.top = `${top}px`;
+  danmu.style.opacity = opacity * 0.01;
 
-    // Calculate animation duration
-    // Speed range: 1 (slowest) to 10 (fastest)
-    let currentSpeed = Number(speed);
-    if (isNaN(currentSpeed)) {
+  // Calculate animation duration
+  // Speed range: 1 (slowest) to 10 (fastest)
+  let currentSpeed = Number(speed);
+  if (isNaN(currentSpeed)) {
       console.warn(
         "[showdanmu] Invalid speed received, defaulting to 5:",
         sanitizeLog(speed)
       );
-      currentSpeed = 5;
-    }
+    currentSpeed = 5;
+  }
 
-    // Clamp speed to the 1-10 range
-    currentSpeed = Math.max(1, Math.min(10, currentSpeed));
+  // Clamp speed to the 1-10 range
+  currentSpeed = Math.max(1, Math.min(10, currentSpeed));
 
-    const maxTime = 20000; // Max duration (slowest) in ms (for speed 1)
+  const maxTime = 20000; // Max duration (slowest) in ms (for speed 1)
     const minTime = 2000; // Min duration (fastest) in ms (for speed 10)
 
-    // Linear interpolation: duration = maxTime - (speed - 1) * (maxTime - minTime) / (10 - 1)
-    // (10 - 1) is the range of speed values (9 steps)
+  // Linear interpolation: duration = maxTime - (speed - 1) * (maxTime - minTime) / (10 - 1)
+  // (10 - 1) is the range of speed values (9 steps)
     let duration = maxTime - ((currentSpeed - 1) * (maxTime - minTime)) / 9;
 
-    // Ensure duration is within minTime and maxTime bounds, even with floating point issues.
-    duration = Math.max(minTime, Math.min(maxTime, duration));
+  // Ensure duration is within minTime and maxTime bounds, even with floating point issues.
+  duration = Math.max(minTime, Math.min(maxTime, duration));
 
     console.log(
       "[showdanmu] Sanitized speed:",
@@ -413,29 +475,29 @@ window.showdanmu = function (
     ); // No sensitive strings
 
     console.log("[showdanmu] Animation parameters:", { Width, duration, top }); // These are numbers
-    try {
-      danmu.animate(
-        [
-          { transform: "translateX(100vw)" },
-          { transform: `translateX(-${Width}px)` },
-        ],
-        {
-          duration: duration,
-          easing: "linear",
-        }
-      ).onfinish = () => {
-        // danmu object itself might be complex, but its direct properties logged here are not user strings.
-        console.log("[showdanmu] Animation finished, danmu removed:", danmu);
-        danmu.remove();
-      };
-    } catch (e) {
-      console.error("[showdanmu] Animation error:", sanitizeLog(e.message));
-      // Ensure danmu is removed even if animation fails to start
-      if (danmu.parentElement) {
-        danmu.remove();
+  try {
+    danmu.animate(
+      [
+        { transform: "translateX(100vw)" },
+        { transform: `translateX(-${Width}px)` },
+      ],
+      {
+        duration: duration,
+        easing: "linear",
       }
+    ).onfinish = () => {
+      // danmu object itself might be complex, but its direct properties logged here are not user strings.
+        console.log("[showdanmu] Animation finished, danmu removed:", danmu);
+      danmu.remove();
+    };
+  } catch (e) {
+      console.error("[showdanmu] Animation error:", sanitizeLog(e.message));
+    // Ensure danmu is removed even if animation fails to start
+    if (danmu.parentElement) {
+      danmu.remove();
     }
-  };
+  }
+};
 
   // Call the function to apply font and start animation
   applyFontAndAnimate().catch((e) => {
@@ -445,9 +507,9 @@ window.showdanmu = function (
     );
     // Fallback: try to append and animate with default font if something went wrong
     if (danmu && !danmu.parentElement && parentElement) {
-      danmu.style.fontFamily = "NotoSansTC"; // Default font
-      parentElement.appendChild(danmu);
-      // Simplified animation call or let it be handled by the next general error
+        danmu.style.fontFamily = "NotoSansTC"; // Default font
+        parentElement.appendChild(danmu);
+        // Simplified animation call or let it be handled by the next general error
     }
   });
 };
@@ -493,8 +555,8 @@ startButton.addEventListener("click", () => {
   // All validation passed
   const IP = hostValue;
   const PORT = portValue;
-  const displayIndex = parseInt(screenSelect.value);
-  const enableSyncMultiDisplay = syncMultiDisplayCheckbox.checked;
+    const displayIndex = parseInt(screenSelect.value);
+    const enableSyncMultiDisplay = syncMultiDisplayCheckbox.checked;
 
   // Get startup animation settings
   const startupAnimToggle = document.getElementById("startup-animation-toggle");
@@ -523,21 +585,25 @@ startButton.addEventListener("click", () => {
     )}, DisplayIndex=${displayIndex}, SyncMultiDisplay=${enableSyncMultiDisplay}, StartupAnimation=${JSON.stringify(startupAnimationSettings)}`
   );
 
-  const api = window.API;
+    const api = window.API;
   api.create(IP, PORT, displayIndex, enableSyncMultiDisplay, startupAnimationSettings);
 
+  overlayActive = true;
+  connectionFailureNotified = false;
+  connectionSuccessNotified = false;
+
   // Update UI
-  startButton.disabled = true;
+    startButton.disabled = true;
   startButton.setAttribute("aria-busy", "true");
   startButton.setAttribute("aria-disabled", "true");
 
-  stopButton.disabled = false;
+    stopButton.disabled = false;
   stopButton.setAttribute("aria-disabled", "false");
 
-  ip.disabled = true;
-  port.disabled = true;
-  screenSelect.disabled = true;
-  syncMultiDisplayCheckbox.disabled = true;
+    ip.disabled = true;
+    port.disabled = true;
+    screenSelect.disabled = true;
+    syncMultiDisplayCheckbox.disabled = true;
 
   // Update button styles
   startButton.classList.remove("btn-primary", "btn-connected");
@@ -567,6 +633,10 @@ stopButton.addEventListener("click", () => {
   syncMultiDisplayCheckbox.disabled = false;
   syncMultiDisplayCheckbox.dispatchEvent(new Event("change"));
 
+  overlayActive = false;
+  connectionFailureNotified = false;
+  connectionSuccessNotified = false;
+
   // Update button styles
   startButton.classList.remove("btn-connecting", "btn-connected");
   startButton.classList.add("btn-primary");
@@ -578,10 +648,7 @@ stopButton.addEventListener("click", () => {
   showToast(t("toastStopped"), "info");
 
   // Hide status after 2 seconds
-  setTimeout(() => {
-    const statusContainer = document.getElementById("connection-status");
-    if (statusContainer) statusContainer.classList.add("hidden");
-  }, 2000);
+  hideConnectionStatus(2000);
 
   console.log(
     `[Renderer] Overlay stopped. UI Enabled: syncMultiDisplayCheckbox=${syncMultiDisplayCheckbox.disabled}`
@@ -1064,23 +1131,104 @@ if (window.API && typeof window.API.onConnectionStatus === "function") {
     console.log("[Renderer] Connection status update:", data);
     if (data.status === "connected") {
       // Connection successful
-      startButton.classList.remove("btn-connecting");
-      startButton.classList.add("btn-connected");
-      startButton.setAttribute("aria-busy", "false");
-      updateConnectionStatus("connected", t("statusConnected"));
-      showToast(t("toastConnected"), "success");
+      // 只在状态真正改变时才更新，避免重复更新
+      if (currentConnectionStatus !== "connected") {
+        overlayActive = true;
+        connectionFailureNotified = false;
+        // 确保启动按钮保持禁用状态
+        startButton.disabled = true;
+        startButton.setAttribute("aria-disabled", "true");
+        startButton.setAttribute("aria-busy", "false");
+        startButton.classList.remove("btn-connecting");
+        startButton.classList.add("btn-connected");
+        updateConnectionStatus("connected", t("statusConnected"));
+      }
+      if (!connectionSuccessNotified) {
+        showToast(t("toastConnected"), "success");
+        connectionSuccessNotified = true;
+      }
     } else if (data.status === "disconnected") {
-      // Connection lost
-      startButton.classList.remove("btn-connected");
-      startButton.classList.add("btn-connecting");
-      updateConnectionStatus("disconnected", t("statusDisconnected"));
-      showToast(t("toastReconnecting"), "warning");
-    } else if (data.status === "stopped") {
-      // Overlay stopped
+      // Connection lost (reconnection in progress)
+      // 只在状态真正改变时才更新按钮和状态显示，避免频繁闪烁
+      const wasConnected = currentConnectionStatus === "connected";
+      if (!overlayActive) {
+        return;
+      }
+      if (currentConnectionStatus !== "disconnected") {
+        // 确保启动按钮保持禁用状态（重连中）
+        startButton.disabled = true;
+        startButton.setAttribute("aria-disabled", "true");
+        startButton.classList.remove("btn-connected");
+        startButton.classList.add("btn-connecting");
+        updateConnectionStatus("disconnected", t("statusDisconnected"));
+        // 只在从已连接状态变为断开时显示提示，避免频繁提示
+        if (wasConnected) {
+          showToast(t("toastReconnecting"), "warning");
+        }
+      }
+      connectionSuccessNotified = false;
+    } else if (data.status === "connection-failed") {
+      if (connectionFailureNotified) {
+        return;
+      }
+      connectionFailureNotified = true;
+      overlayActive = false;
+      connectionSuccessNotified = false;
+      // Connection failed - restore button state
+      startButton.disabled = false;
+      startButton.setAttribute("aria-busy", "false");
+      startButton.setAttribute("aria-disabled", "false");
       startButton.classList.remove("btn-connecting", "btn-connected");
       startButton.classList.add("btn-primary");
+      
+      stopButton.disabled = true;
+      stopButton.setAttribute("aria-disabled", "true");
       stopButton.classList.remove("btn-active");
       stopButton.classList.add("btn-stopped");
+      
+      // Re-enable input fields
+      ip.disabled = false;
+      port.disabled = false;
+      screenSelect.disabled = false;
+      syncMultiDisplayCheckbox.disabled = false;
+      
+      // Update connection status
+      const failureStatusText = getLocalizedText(
+        "statusConnectionFailed",
+        "Connection failed",
+        "連線失敗"
+      );
+      const failureToastText = getLocalizedText(
+        "toastConnectionFailed",
+        "Unable to reach the server. Please verify settings.",
+        "無法連線至伺服器，請檢查設定"
+      );
+      updateConnectionStatus("connection-failed", failureStatusText);
+      showToast(failureToastText, "error");
+      
+      // Hide status after 3 seconds
+      hideConnectionStatus(3000);
+    } else if (data.status === "stopped") {
+      // Overlay stopped - re-enable start button
+      overlayActive = false;
+      connectionFailureNotified = false;
+      startButton.disabled = false;
+      startButton.setAttribute("aria-busy", "false");
+      startButton.setAttribute("aria-disabled", "false");
+      startButton.classList.remove("btn-connecting", "btn-connected");
+      startButton.classList.add("btn-primary");
+      
+      stopButton.disabled = true;
+      stopButton.setAttribute("aria-disabled", "true");
+      stopButton.classList.remove("btn-active");
+      stopButton.classList.add("btn-stopped");
+      
+      // Re-enable input fields
+      ip.disabled = false;
+      port.disabled = false;
+      screenSelect.disabled = false;
+      syncMultiDisplayCheckbox.disabled = false;
+      
       updateConnectionStatus("idle", t("statusStopped"));
     }
   });
