@@ -54,6 +54,11 @@ This project is divided into two parts:
      -v danmu_logs:/app/server/logs \
      albetyty/danmu-server:latest
    ```
+   - Multi-arch images published for `linux/amd64` and `linux/arm64/v8`
+   - Available tags:
+     - `latest`: stable build from `main`
+     - `main`: rolling alias of the newest `main` build
+     - `<git-sha>`: immutable build for a specific commit (see workflow logs)
 2. Optional: add `--restart unless-stopped` for long-running deployments.
 3. To update, just pull the latest tag and restart:
    ```bash

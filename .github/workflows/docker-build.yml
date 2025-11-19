@@ -44,25 +44,23 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.DOCKERHUB_USERNAME }}/danmu-server
+          tags: |
+            type=raw,value=latest
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha
+            type=ref,event=tag
 
-      - name: Build and push Docker image
-        id: build-and-push
+      - name: Build test image (linux/amd64)
         uses: docker/build-push-action@v5
         with:
           context: ./server
           file: ./server/Dockerfile
-          push: ${{ github.event_name == 'push' && env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
+          platforms: linux/amd64
+          push: false
           load: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.LOCAL_IMAGE }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Tag image for local tests
-        run: |
-          set -e
-          IMAGE_REF="$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)"
-          docker tag "$IMAGE_REF" "${LOCAL_IMAGE}"
 
       - name: Test Docker image
         run: |
@@ -95,3 +93,16 @@ jobs:
             exit 1
           fi
           docker rm -f test-server
+
+      - name: Build and push multi-arch image
+        if: ${{ github.event_name == 'push' && env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ./server
+          file: ./server/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

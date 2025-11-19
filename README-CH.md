@@ -51,6 +51,11 @@
      -v danmu_logs:/app/server/logs \
      albetyty/danmu-server:latest
    ```
+   - 建置的映像支援 `linux/amd64` 與 `linux/arm64/v8`
+   - 可用標籤：
+     - `latest`：`main` 分支的穩定版本
+     - `main`：永遠指向最新的 `main` commit
+     - `<git-sha>`：對應特定 commit 的不可變版本（可在 CI log 查看）
 2. 建議加入 `--restart unless-stopped` 讓服務自動重啟。
 3. 更新版本只需重新拉取並重建：
    ```bash
