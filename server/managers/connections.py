@@ -44,4 +44,3 @@ class ConnectionManager:
             self._web_connections.clear()
             self._ws_clients.clear()
             self._active_ws = None
-

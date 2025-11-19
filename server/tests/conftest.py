@@ -3,11 +3,11 @@ from pathlib import Path
 
 import pytest
 
+from server import state
 from server.app import create_app
 from server.config import Config
-from server import state
-from server.services.security import rate_limiter
 from server.managers import connection_manager, settings_store
+from server.services.security import rate_limiter
 from server.services.ws_state import update_ws_client_count
 
 
@@ -44,4 +44,3 @@ def app(tmp_path):
 @pytest.fixture()
 def client(app):
     return app.test_client()
-

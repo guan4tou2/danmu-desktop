@@ -120,7 +120,11 @@ def require_csrf(func):
     return wrapper
 
 
-def rate_limit(key_prefix: str, limit_key: str = "FIRE_RATE_LIMIT", window_key: str = "FIRE_RATE_WINDOW"):
+def rate_limit(
+    key_prefix: str,
+    limit_key: str = "FIRE_RATE_LIMIT",
+    window_key: str = "FIRE_RATE_WINDOW",
+):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -159,4 +163,3 @@ def init_security(app):
         configure_rate_limiter(RedisRateLimiter(url))
     else:
         configure_rate_limiter(InMemoryRateLimiter())
-

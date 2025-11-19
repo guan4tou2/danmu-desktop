@@ -1,7 +1,8 @@
-from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
+from flask import (Blueprint, current_app, flash, redirect, render_template,
+                   request, session, url_for)
 
-from ..services.settings import get_options
 from ..services.security import issue_csrf_token, require_csrf, verify_password
+from ..services.settings import get_options
 
 main_bp = Blueprint("main", __name__)
 
@@ -18,7 +19,7 @@ def login():
     password = request.form.get("password", "")
     admin_password = current_app.config["ADMIN_PASSWORD"]
     admin_password_hashed = current_app.config.get("ADMIN_PASSWORD_HASHED", "")
-    
+
     # 支援明文密碼（向後相容）和雜湊密碼
     password_valid = False
     if admin_password_hashed:
@@ -27,7 +28,7 @@ def login():
     else:
         # 向後相容：使用明文比較
         password_valid = password == admin_password
-    
+
     if password_valid:
         session["logged_in"] = True
         session["csrf_token"] = issue_csrf_token()
@@ -42,4 +43,3 @@ def logout():
     session.pop("logged_in", None)
     session.pop("csrf_token", None)
     return redirect(url_for("admin_bp.admin"))
-

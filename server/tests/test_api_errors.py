@@ -71,4 +71,3 @@ def test_health_endpoint_has_request_id(client):
     assert response.is_json
     assert response.get_json()["status"] == "healthy"
     assert "X-Request-ID" in response.headers
-

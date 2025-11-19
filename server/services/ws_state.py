@@ -20,7 +20,11 @@ def _ensure_state_file() -> None:
 def _locked_file(mode: str):
     _ensure_state_file()
     with open(STATE_FILE, mode) as fp:
-        lock_type = fcntl.LOCK_EX if "w" in mode or "a" in mode or "+" in mode else fcntl.LOCK_SH
+        lock_type = (
+            fcntl.LOCK_EX
+            if "w" in mode or "a" in mode or "+" in mode
+            else fcntl.LOCK_SH
+        )
         fcntl.flock(fp.fileno(), lock_type)
         try:
             yield fp
@@ -54,6 +58,3 @@ def update_ws_client_count(count: int) -> None:
 def get_ws_client_count() -> int:
     state = read_state()
     return int(state.get("ws_clients", 0))
-
-
-

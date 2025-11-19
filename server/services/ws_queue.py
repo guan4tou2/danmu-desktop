@@ -43,5 +43,3 @@ def dequeue_all() -> List[Dict[str, Any]]:
         except json.JSONDecodeError:
             continue
     return messages
-
-

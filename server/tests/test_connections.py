@@ -19,4 +19,3 @@ def test_ws_client_registration():
     assert connection_manager.has_ws_clients()
     connection_manager.unregister_ws_client(client)
     assert not connection_manager.has_ws_clients()
-

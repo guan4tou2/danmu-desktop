@@ -27,16 +27,18 @@ class Config:
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
     FONT_TOKEN_EXPIRATION = int(os.getenv("FONT_TOKEN_EXPIRATION", "900"))
-    
+
     # Session configuration
-    SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
+    SESSION_COOKIE_SECURE = (
+        os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
+    )
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
-    
+
     # CORS configuration
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
     CORS_SUPPORTS_CREDENTIALS = True
-    
+
     # Danmu history configuration
     DANMU_HISTORY_MAX_RECORDS = int(os.getenv("DANMU_HISTORY_MAX_RECORDS", "10000"))
     DANMU_HISTORY_CLEANUP_HOURS = int(os.getenv("DANMU_HISTORY_CLEANUP_HOURS", "24"))

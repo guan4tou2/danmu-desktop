@@ -6,9 +6,9 @@ import websockets
 
 from .. import state
 from ..managers import connection_manager
-from ..utils import sanitize_log_string
-from ..services.ws_state import update_ws_client_count
 from ..services import ws_queue
+from ..services.ws_state import update_ws_client_count
+from ..utils import sanitize_log_string
 
 
 def check_connections(logger):
@@ -26,7 +26,9 @@ def check_connections(logger):
                         )
                         connection_manager.unregister_web_connection(ws)
         except Exception as exc:
-            logger.warning("Error in connection checker: %s", sanitize_log_string(str(exc)))
+            logger.warning(
+                "Error in connection checker: %s", sanitize_log_string(str(exc))
+            )
         time.sleep(30)
 
 
@@ -38,10 +40,7 @@ async def _forward_messages(clients, logger):
                 message_tasks = []
                 for data in messages:
                     message_tasks.extend(
-                        [
-                            client.send(json.dumps(data))
-                            for client in clients.copy()
-                        ]
+                        [client.send(json.dumps(data)) for client in clients.copy()]
                     )
                 if message_tasks:
                     await asyncio.gather(*message_tasks, return_exceptions=True)
@@ -63,7 +62,9 @@ async def _forward_messages(clients, logger):
 
             await asyncio.sleep(0.5)
         except Exception as exc:
-            logger.error("Error in message forwarding: %s", sanitize_log_string(str(exc)))
+            logger.error(
+                "Error in message forwarding: %s", sanitize_log_string(str(exc))
+            )
             await asyncio.sleep(5)
 
 
@@ -119,4 +120,3 @@ def run_ws_server(ws_port, logger):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loop.run_until_complete(start_server())
-

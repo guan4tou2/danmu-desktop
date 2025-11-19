@@ -19,7 +19,7 @@
 1. Server
    - 創建網頁界面用於彈幕輸入
    - 管理彈幕傳送到已連接的客戶端
-   - 包含管理員配置面板
+   - 包含管理員配置面板、來源指紋記錄與歷史追蹤
 
 ![img](img/web%20panel.png)
 ![img](img/admin%20panel.png)
@@ -99,7 +99,7 @@
    PYTHONPATH=.. uv run python -m server.ws_app
    ```
 
-詳細部署說明請參考 [DEPLOYMENT.md](DEPLOYMENT.md)
+詳細部署說明請參考 [DEPLOYMENT.md](DEPLOYMENT.md)、`docs/README.md` 以及英文版 README。
 
 ### 訪問伺服器
 
@@ -117,6 +117,12 @@
 
 - `4000`：網頁界面
 - `4001`：Danmu Desktop 客戶端連接
+
+## 文件總覽 / Docs
+- `README.md`：英文版總覽。
+- `docs/README.md`：技術文件索引（English/中文）。
+- `DEPLOYMENT.md`：生產部署細節 / Deployment reference。
+- `docs/archive/`：歷史紀錄與整理檔案。
 
 ## 參考資料
 

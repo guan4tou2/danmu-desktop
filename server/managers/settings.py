@@ -60,4 +60,3 @@ class SettingsStore:
                 "Speed": [True, 1, 10, 4],
                 "FontFamily": [False, "", "", "NotoSansTC"],
             }
-

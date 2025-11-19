@@ -30,6 +30,12 @@ dependencies = [
     "coverage[toml]>=7.4.0",
 ]
 
+[dependency-groups]
+dev = [
+    "black>=24.8.0",
+    "isort>=5.13.2",
+]
+
 [tool.coverage.run]
 branch = true
 source = ["server"]

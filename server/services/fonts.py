@@ -92,4 +92,3 @@ def list_available_fonts():
         )
 
     return {"fonts": default_fonts + uploaded_fonts, "tokenTTL": ttl}
-

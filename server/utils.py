@@ -108,4 +108,3 @@ def register_error_handlers(app):
             error_code="TOO_MANY_REQUESTS",
         )
         return handle_api_error(api_error)
-

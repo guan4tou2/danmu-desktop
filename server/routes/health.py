@@ -20,4 +20,3 @@ def readiness():
 def liveness():
     """存活檢查端點（可用於 Kubernetes liveness probe）"""
     return jsonify({"status": "alive"}), 200
-

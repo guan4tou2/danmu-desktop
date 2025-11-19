@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 
 from server import state
-from server.services.ws_state import update_ws_client_count
 from server.services.security import generate_font_token
+from server.services.ws_state import update_ws_client_count
 
 
 def login(client):
@@ -65,4 +65,3 @@ def test_font_download_requires_token(client, tmp_path):
 
     authorized = client.get(url)
     assert authorized.status_code == 200
-

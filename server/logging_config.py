@@ -23,21 +23,20 @@ class JSONFormatter(logging.Formatter):
 
 def setup_logging(level: str):
     numeric_level = getattr(logging, level.upper(), logging.INFO)
-    
+
     # 檢查是否使用 JSON 格式
     use_json = os.getenv("LOG_FORMAT", "text").lower() == "json"
-    
+
     if use_json:
         formatter = JSONFormatter()
     else:
         formatter = logging.Formatter(
             "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
         )
-    
+
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
-    
+
     root_logger = logging.getLogger()
     root_logger.setLevel(numeric_level)
     root_logger.handlers = [handler]
-

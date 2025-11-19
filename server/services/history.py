@@ -158,14 +158,18 @@ class DanmuHistory:
             return
 
         self.last_cleanup = now
-        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=self.auto_cleanup_hours)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(
+            hours=self.auto_cleanup_hours
+        )
 
         with self._lock:
             # 由於使用 deque，我們需要重建它
             old_count = len(self._records)
             new_records = deque(maxlen=self._records.maxlen)
             for record in self._records:
-                record_time = datetime.fromisoformat(record["timestamp"].replace("Z", "+00:00"))
+                record_time = datetime.fromisoformat(
+                    record["timestamp"].replace("Z", "+00:00")
+                )
                 if record_time >= cutoff_time:
                     new_records.append(record)
             self._records = new_records
@@ -187,4 +191,3 @@ def init_history():
         max_records=Config.DANMU_HISTORY_MAX_RECORDS,
         auto_cleanup_hours=Config.DANMU_HISTORY_CLEANUP_HOURS,
     )
-

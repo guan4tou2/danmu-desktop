@@ -15,10 +15,10 @@ def main():
         print("用法: python hash_password.py <password>")
         print("範例: python hash_password.py my_secure_password")
         sys.exit(1)
-    
+
     password = sys.argv[1]
     hashed = hash_password(password)
-    
+
     print(f"原始密碼: {password}")
     print(f"雜湊值: {hashed}")
     print("\n請將以下內容加入 .env 檔案:")
@@ -28,4 +28,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

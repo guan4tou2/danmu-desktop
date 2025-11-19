@@ -4,7 +4,8 @@ from pathlib import Path
 from werkzeug.datastructures import FileStorage
 
 from server import state
-from server.services.fonts import build_font_payload, save_uploaded_font, list_available_fonts
+from server.services.fonts import (build_font_payload, list_available_fonts,
+                                   save_uploaded_font)
 
 
 def test_build_font_payload_returns_signed_url(client):
@@ -46,4 +47,3 @@ def test_list_available_fonts_includes_defaults(client):
     assert "token=" in uploaded["ListedFont"]["url"]
     if uploaded_file.exists():
         uploaded_file.unlink()
-

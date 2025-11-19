@@ -20,7 +20,7 @@ This project is divided into two parts:
 2. Server
    - Creates a web interface for danmu input
    - Manages danmu delivery to connected clients
-   - Includes admin panel for configuration
+   - Includes admin panel for configuration, source fingerprint logging, and history review
 
 ![img](img/web%20panel.png)
 ![img](img/admin%20panel.png)
@@ -109,6 +109,12 @@ Key configuration options (set via `.env` file or environment variables):
 - `LOG_LEVEL`: Logging level - `DEBUG`, `INFO`, `WARNING`, `ERROR` (default: INFO)
 
 See `env.example` for all available options.
+
+## Project Docs / 文件
+- `docs/README.md` – index of technical notes and archives / 技術文件索引。
+- `DEPLOYMENT.md` – production-grade setup instructions / 部署說明。
+- `README-CH.md` – 中文總覽。
+- `docs/archive/` – historical improvement notes kept for reference / 歷史紀錄。
 
 ## Testing & Coverage
 

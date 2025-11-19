@@ -1,6 +1,6 @@
 """輸入驗證服務"""
 
-from marshmallow import Schema, ValidationError, fields, validate, EXCLUDE
+from marshmallow import EXCLUDE, Schema, ValidationError, fields, validate
 
 
 class FireRequestSchema(Schema):
@@ -43,4 +43,3 @@ def validate_request(schema_class, data):
         return schema.load(data), None
     except ValidationError as err:
         return None, err.messages
-

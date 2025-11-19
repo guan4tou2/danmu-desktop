@@ -25,6 +25,8 @@ def contains_keyword(text: str) -> bool:
         if keyword.lower() in text_lower:
             return True
     return False
+
+
 from .. import state
 
 
@@ -52,4 +54,3 @@ def contains_keyword(text: str) -> bool:
         if keyword.lower() in text_lower:
             return True
     return False
-

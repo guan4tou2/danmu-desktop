@@ -27,4 +27,3 @@ def send_message(message):
                 sanitize_log_string(str(exc)),
             )
             connection_manager.unregister_web_connection(client)
-
