@@ -48,12 +48,13 @@
      -e ADMIN_PASSWORD=your_secure_password \
      -v danmu_fonts:/app/server/user_fonts \
      -v danmu_static:/app/server/static \
-     guan4tou2/danmu-server:latest
+     -v danmu_logs:/app/server/logs \
+     albetyty/danmu-server:latest
    ```
 2. 建議加入 `--restart unless-stopped` 讓服務自動重啟。
 3. 更新版本只需重新拉取並重建：
    ```bash
-   docker pull guan4tou2/danmu-server:latest
+   docker pull albetyty/danmu-server:latest
    docker stop danmu-server && docker rm danmu-server
    # 重新執行上述 docker run 指令
    ```

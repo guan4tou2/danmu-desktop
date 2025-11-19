@@ -1,4 +1,5 @@
 # danmu-desktop
+
 Display bullet screen directly on the desktop  
 在桌面直接顯示彈幕
 
@@ -7,9 +8,10 @@ Display bullet screen directly on the desktop
 ![img](img/danmu%20display.png)
 
 ## Overview
+
 This project is divided into two parts:
 
-1. Danmu-Desktop  
+1. Danmu-Desktop
    - Client-side application that runs on your computer to display danmu
    - Currently supports Windows and MacOS
    - Available as both installer and portable version
@@ -28,6 +30,7 @@ This project is divided into two parts:
 ## Installation & Usage
 
 ### Danmu-Desktop Client
+
 1. Download the [latest release](https://github.com/guan4tou2/danmu-desktop/releases)
 2. For MacOS users, run:
    ```bash
@@ -48,12 +51,13 @@ This project is divided into two parts:
      -e ADMIN_PASSWORD=your_secure_password \
      -v danmu_fonts:/app/server/user_fonts \
      -v danmu_static:/app/server/static \
-     guan4tou2/danmu-server:latest
+     -v danmu_logs:/app/server/logs \
+     albetyty/danmu-server:latest
    ```
 2. Optional: add `--restart unless-stopped` for long-running deployments.
 3. To update, just pull the latest tag and restart:
    ```bash
-   docker pull guan4tou2/danmu-server:latest
+   docker pull albetyty/danmu-server:latest
    docker stop danmu-server && docker rm danmu-server
    # rerun the docker run command above
    ```
@@ -61,18 +65,21 @@ This project is divided into two parts:
 #### Option 2: Docker Compose
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/guan4tou2/danmu-desktop
    cd danmu-desktop
    ```
 
 2. Configure environment variables:
+
    ```bash
    cp env.example .env
    # Edit .env and set ADMIN_PASSWORD and other settings
    ```
 
 3. Start services:
+
    ```bash
    docker-compose up -d
    ```
@@ -85,18 +92,21 @@ This project is divided into two parts:
 #### Option 3: Manual Setup
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/guan4tou2/danmu-desktop
    cd danmu-desktop
    ```
 
 2. Configure environment:
+
    ```bash
    cp env.example .env
    vim .env  # Set your admin password and other settings
    ```
 
 3. Setup virtual environment and install dependencies:
+
    ```bash
    cd server
    uv venv
@@ -104,15 +114,17 @@ This project is divided into two parts:
    ```
 
 4. Start the server (HTTP + WebSocket):
+
    ```bash
    # Terminal 1: HTTP server
    PYTHONPATH=.. uv run python -m server.app
-   
+
    # Terminal 2: WebSocket server
    PYTHONPATH=.. uv run python -m server.ws_app
    ```
 
 ### Accessing the Server
+
 - Main interface: `http://ip:4000`
 - Admin panel: `http://ip:4000/admin`
 
@@ -131,12 +143,14 @@ Key configuration options (set via `.env` file or environment variables):
 See `env.example` for all available options.
 
 ## Project Docs / 文件
+
 - `docs/README.md` – index of technical notes and archives / 技術文件索引。
 - `DEPLOYMENT.md` – production-grade setup instructions / 部署說明。
 - `README-CH.md` – 中文總覽。
 - `docs/archive/` – historical improvement notes kept for reference / 歷史紀錄。
 
 ## CI/CD & Docker Hub
+
 - Workflow `.github/workflows/docker-build.yml` builds and tests the server image on each PR/push.
 - Set GitHub secrets `DOCKERHUB_USERNAME` + `DOCKERHUB_TOKEN` (Docker Hub access token) to auto-publish `DOCKERHUB_USERNAME/danmu-server:latest` and a commit-SHA tag whenever `main` is updated.
 
@@ -148,8 +162,10 @@ See `env.example` for all available options.
   - HTML report at `server/htmlcov/index.html`
 
 ## Port Configuration
+
 - `4000`: Web interface (HTTP)
 - `4001`: Danmu Desktop Client connection (WebSocket)
 
 ## References
-SAO UI design inspired by [SAO-UI-PLAN-LINK-START | Akilarの糖果屋](https://akilar.top/posts/1b4fa1dd/)
+
+SAO UI design inspired by [SAO-UI-PLAN-LINK-START | Akilar の糖果屋](https://akilar.top/posts/1b4fa1dd/)
