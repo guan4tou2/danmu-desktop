@@ -12,6 +12,10 @@ RUN apt-get update && apt-get install -y \
 # Install uv
 RUN pip install --no-cache-dir uv
 
+# Prepare application directory structure
+RUN mkdir -p /app/server
+WORKDIR /app/server
+
 # Copy dependency files
 COPY pyproject.toml uv.lock ./
 
