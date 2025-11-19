@@ -551,6 +551,14 @@
           // blacklistWarningOkButton: document.getElementById('blacklistWarningOkButton'), // Removed
         };
 
+        // --- Helper utilities ---
+        const scheduleIdleTask = (cb, timeout = 500) => {
+          if ("requestIdleCallback" in window) {
+            return window.requestIdleCallback(cb, { timeout });
+          }
+          return setTimeout(cb, timeout);
+        };
+
         // --- State management ---
         let currentSettings = {};
         let ws = null;
@@ -558,6 +566,7 @@
         let fontRefreshTimer = null;
         const FONT_REFRESH_BUFFER_SECONDS = 60;
         let fontsCache = [];
+        const FONT_CACHE_STORAGE_KEY = "danmu-fonts-cache";
         const clientFingerprint = getOrCreateFingerprint();
 
         function getOrCreateFingerprint() {
@@ -589,6 +598,39 @@
           );
         }
 
+        function loadFontsFromCache() {
+          try {
+            if (!window.localStorage) return null;
+            const raw = window.localStorage.getItem(FONT_CACHE_STORAGE_KEY);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed.expiresAt || parsed.expiresAt < Date.now()) {
+              return null;
+            }
+            return parsed;
+          } catch (error) {
+            console.warn("Unable to parse font cache:", error);
+            return null;
+          }
+        }
+
+        function persistFontCache(fonts, tokenTTL) {
+          try {
+            if (!window.localStorage) return;
+            const ttlSeconds = Math.max(tokenTTL || 0, FONT_REFRESH_BUFFER_SECONDS);
+            window.localStorage.setItem(
+              FONT_CACHE_STORAGE_KEY,
+              JSON.stringify({
+                fonts,
+                tokenTTL,
+                expiresAt: Date.now() + ttlSeconds * 1000,
+              })
+            );
+          } catch (error) {
+            console.warn("Unable to persist font cache:", error);
+          }
+        }
+
         // --- Functions ---
 
         function scheduleFontRefresh(ttlSeconds) {
@@ -603,23 +645,38 @@
             60 * 1000
           );
           fontRefreshTimer = setTimeout(() => {
-            if (currentSettings.allowUserFontChoice) {
-              populateUserFontDropdown();
-            } else {
-              refreshFontCache().then(() => updatePreview()).catch((error) => {
-                console.error("Error refreshing font cache:", error);
-              });
-            }
+            scheduleIdleTask(() => {
+              const allowChoice =
+                currentSettings && currentSettings.allowUserFontChoice;
+              if (allowChoice) {
+                populateUserFontDropdown(false, true);
+              } else {
+                refreshFontCache(true)
+                  .then(() => updatePreview())
+                  .catch((error) => {
+                    console.error("Error refreshing font cache:", error);
+                  });
+              }
+            });
           }, delay);
         }
 
-        async function refreshFontCache() {
-          const response = await fetch("/fonts");
+        async function refreshFontCache(forceNetwork = false) {
+          if (!forceNetwork) {
+            const cached = loadFontsFromCache();
+            if (cached) {
+              fontsCache = cached.fonts || [];
+              scheduleFontRefresh(cached.tokenTTL || 0);
+              return fontsCache;
+            }
+          }
+          const response = await fetch("/fonts", { cache: "no-store" });
           if (!response.ok) {
             throw new Error("Failed to fetch font list");
           }
           const payload = await response.json();
           fontsCache = payload.fonts || [];
+          persistFontCache(fontsCache, payload.tokenTTL || 0);
           scheduleFontRefresh(payload.tokenTTL || 0);
           return fontsCache;
         }
@@ -800,11 +857,11 @@
           }
         };
 
-        async function populateUserFontDropdown(skipFetch = false) {
+        async function populateUserFontDropdown(skipFetch = false, forceFetch = false) {
             if (!elements.userFontSelect) return;
             try {
                 if (!skipFetch) {
-                    await refreshFontCache();
+                    await refreshFontCache(forceFetch);
                 }
                 elements.userFontSelect.innerHTML = '';
 
@@ -864,13 +921,14 @@
 
             updateUIControls();
 
-            await refreshFontCache();
+            const fontsPromise = refreshFontCache();
+            await fontsPromise;
 
             if (currentSettings.allowUserFontChoice) {
               await populateUserFontDropdown(true);
-            } else {
-              updatePreview();
             }
+
+            updatePreview();
 
             // updateControlsVisibility(); // This function might need review or integration with updateUIControls
           } catch (error) {
@@ -1137,7 +1195,7 @@
         });
 
         // --- Initialize ---
-        async function init() {
+        function init() {
           // Initial placeholder values before settings are fetched
           currentSettings = {
             color: "#FFFFFF",
@@ -1153,11 +1211,21 @@
           };
           updateUIControls(); // Set initial UI state based on placeholders
           updatePreview();    // Update preview based on placeholders
-          await fetchLatestSettings(); // Fetch actual settings and update UI/preview again
-          connectWebSocket();
-          if(elements.userFontSelect) { // Add change listener for user font select
-            elements.userFontSelect.addEventListener('change', updatePreview);
-          }
+          const bindFontChangeListener = () => {
+            if (elements.userFontSelect && !elements.userFontSelect.dataset.listenerBound) {
+              elements.userFontSelect.addEventListener('change', updatePreview);
+              elements.userFontSelect.dataset.listenerBound = "true";
+            }
+          };
+          bindFontChangeListener();
+          scheduleIdleTask(() => {
+            fetchLatestSettings()
+              .catch((error) => console.error("Fetch settings failed:", error))
+              .finally(() => {
+                bindFontChangeListener();
+                connectWebSocket();
+              });
+          }, 100);
         }
 
         init();

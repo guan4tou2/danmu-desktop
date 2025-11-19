@@ -313,6 +313,12 @@
         // --- 元素選擇器 ---
         const appContainer = document.getElementById("app-container");
         const toastContainer = document.getElementById("toast-container");
+        const scheduleIdleTask = (cb, timeout = 500) => {
+          if ("requestIdleCallback" in window) {
+            return window.requestIdleCallback(cb, { timeout });
+          }
+          return setTimeout(cb, timeout);
+        };
 
         // --- 函數 ---
 
@@ -834,13 +840,13 @@
                     </div>
                 `;
 
-            // Fetch blacklist data after its container is rendered
+            // Fetch blacklist/history after render without blocking first paint
             if (document.getElementById('blacklistKeywords')) {
-                 fetchBlacklist();
+                 scheduleIdleTask(fetchBlacklist);
             }
 
             if (document.getElementById('danmuHistoryList')) {
-                 fetchDanmuHistory();
+                 scheduleIdleTask(fetchDanmuHistory);
             }
 
           addEventListeners();
