@@ -3,1267 +3,322 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="shortcut icon"
-      href="{{ url_for('static', filename='favicon.ico') }}"
-    />
-
     <title>Danmu Fire</title>
-
-    <!-- Tailwind CSS -->
     <script src="{{ url_for('static', filename='vendor/tailwindcdn.js') }}"></script>
-
-    <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-
-    <!-- Vanta.js for background effect -->
-    <script src="{{ url_for('static', filename='vendor/three.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='vendor/vanta.net.min.js') }}"></script>
-
-    <style>
-      /* Basic styles and fonts */
-      body {
-        font-family: "Inter", sans-serif;
-        background-color: #000000;
-      }
-
-      /* Glass effect */
-      .glass-effect {
-        background: rgba(15, 23, 42, 0.7);
-        backdrop-filter: blur(16px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-      }
-
-      /* Custom range input styles */
-      input[type="range"] {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 100%;
-        height: 6px;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 999px;
-        outline: none;
-        transition: all 0.2s;
-      }
-
-      input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 20px;
-        height: 20px;
-        background: #38bdf8;
-        cursor: pointer;
-        border-radius: 50%;
-        border: 2px solid #0f172a;
-        transition: all 0.2s;
-      }
-
-      input[type="range"]::-webkit-slider-thumb:hover {
-        transform: scale(1.1);
-        box-shadow: 0 0 10px #38bdf8;
-      }
-
-      /* Page load animation */
-      @keyframes fadeInScaleUp {
-        from {
-          opacity: 0;
-          transform: scale(0.95);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1);
-        }
-      }
-      .animate-fade-in-scale-up {
-        animation: fadeInScaleUp 0.5s ease-out forwards;
-      }
-
-      /* Blacklist Warning Modal Styles */
-      #blacklistWarningModal {
-        /* display: none; /* Already set inline, but good for clarity if inline is removed later */
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent overlay */
-        display: flex; /* Changed from none by JS to flex */
-        align-items: center;
-        justify-content: center;
-        z-index: 1050; /* Higher than toast container (default z-50 for toast) */
-        opacity: 0; /* For fade-in effect */
-        transition: opacity 0.3s ease-in-out;
-        pointer-events: none; /* Initially not interactive */
-      }
-
-      #blacklistWarningModal.visible {
-        /* Class to show modal */
-        opacity: 1;
-        pointer-events: auto; /* Interactive when visible */
-      }
-
-      #blacklistWarningModal .modal-content {
-        background-color: #1e293b; /* Tailwind slate-800 */
-        padding: 2rem;
-        border-radius: 0.75rem; /* Tailwind rounded-xl */
-        text-align: center;
-        border: 2px solid #ef4444; /* Tailwind red-500 */
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-        transform: scale(0.95); /* For scale-up effect */
-        transition: transform 0.3s ease-in-out;
-      }
-
-      #blacklistWarningModal.visible .modal-content {
-        transform: scale(1);
-      }
-
-      #blacklistWarningModal .warning-triangle {
-        fill: #ef4444; /* Tailwind red-500 */
-        margin-bottom: 1rem;
-        width: 48px; /* Explicit size */
-        height: 48px; /* Explicit size */
-        display: inline-block; /* Center SVG */
-      }
-
-      #blacklistWarningModal .warning-message {
-        color: #f1f5f9; /* Tailwind slate-100 */
-        font-size: 1.125rem; /* Tailwind text-lg */
-        margin-bottom: 1.5rem;
-      }
-
-      #blacklistWarningModal .ok-button {
-        background-color: #ef4444; /* Tailwind red-500 */
-        color: white;
-        font-weight: bold;
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: 0.5rem; /* Tailwind rounded-lg */
-        cursor: pointer;
-        transition: background-color 0.2s;
-      }
-
-      #blacklistWarningModal .ok-button:hover {
-        background-color: #dc2626; /* Tailwind red-600 */
-      }
-
-      /* Flashing Animation for the modal border */
-      @keyframes flashWarningBorder {
-        0%,
-        100% {
-          border-color: #ef4444;
-        } /* red-500 */
-        50% {
-          border-color: #f87171;
-        } /* red-400, slightly lighter */
-      }
-
-      #blacklistWarningModal.flashing .modal-content {
-        animation: flashWarningBorder 0.7s infinite;
-      }
-
-      @keyframes flashIcon {
-        0%,
-        100% {
-          transform: scale(1);
-          opacity: 1;
-        }
-        50% {
-          transform: scale(1.2);
-          opacity: 0.7;
-        }
-      }
-
-      #blacklistWarningModal.flashing .warning-triangle {
-        animation: flashIcon 0.7s infinite steps(1, end);
-      }
-    </style>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
   </head>
-  <body
-    class="text-white relative min-h-screen flex items-center justify-center p-4"
-  >
-    <!-- Dynamic background container -->
-    <div id="vanta-bg" class="fixed top-0 left-0 w-full h-full z-0"></div>
+  <body class="bg-black text-white min-h-screen overflow-x-hidden">
+    <!-- Background Animation Container -->
+    <div id="vanta-bg" class="fixed top-0 left-0 w-full h-full -z-10"></div>
 
-    <!-- GitHub Icon Link -->
-    <a
-      href="https://github.com/guan4tou2/danmu-desktop/releases/latest"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors duration-300 z-20"
-      title="View on GitHub"
-    >
-      <span class="sr-only">View on GitHub</span>
-      <svg
-        class="w-10 h-10"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="currentColor"
+    <div class="container mx-auto px-4 py-8 max-w-2xl relative z-10">
+      <!-- Header -->
+      <header class="text-center mb-10 animate-fade-in-scale-up">
+        <h1
+          class="text-5xl font-bold mb-2 bg-gradient-to-r from-sky-400 to-cyan-300 bg-clip-text text-transparent drop-shadow-lg"
+        >
+          Danmu Fire
+        </h1>
+        <p class="text-slate-300 text-lg font-light tracking-wide">
+          Send your message to the screen!
+        </p>
+      </header>
+
+      <!-- Main Card -->
+      <main
+        class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 mb-8 transform transition-all hover:scale-[1.01] duration-300"
       >
-        <path
-          d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
-        />
-      </svg>
-    </a>
-
-    <!-- Main content container -->
-    <main class="w-full max-w-2xl mx-auto z-10 animate-fade-in-scale-up">
-      <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-6">
-        <!-- Title with Dynamic Logo -->
-        <div class="text-center space-y-4">
-          <!-- Dynamic Logo -->
-          <div class="flex justify-center">
-            <object
-              data="/static/icon-dynamic.svg"
-              type="image/svg+xml"
-              width="80"
-              height="80"
-              class="drop-shadow-lg"
+        <!-- Input Area -->
+        <div class="mb-6 group">
+          <label
+            for="danmuText"
+            class="block text-sm font-medium text-slate-300 mb-2 ml-1 group-focus-within:text-sky-400 transition-colors"
+            >Your Message</label
+          >
+          <div class="relative">
+            <textarea
+              id="danmuText"
+              rows="3"
+              maxlength="100"
+              class="w-full bg-slate-800/50 border-2 border-slate-700 rounded-xl p-4 text-white placeholder-slate-500 focus:ring-4 focus:ring-sky-500/20 focus:border-sky-500 transition-all duration-300 resize-none text-lg"
+              placeholder="Type something awesome..."
+            ></textarea>
+            <div
+              id="charCount"
+              class="absolute bottom-3 right-3 text-xs text-slate-500 font-mono bg-slate-900/80 px-2 py-1 rounded-md"
             >
-              <img
-                src="/static/icon.png"
-                alt="Danmu Fire"
-                width="80"
-                height="80"
-                class="drop-shadow-lg"
-              />
-            </object>
+              0/100
+            </div>
           </div>
-          <h1
-            class="text-4xl md:text-5xl font-bold text-center bg-gradient-to-r from-sky-400 to-cyan-300 bg-clip-text text-transparent pb-2"
-          >
-            Danmu Fire
-          </h1>
         </div>
 
-        <!-- Input area -->
-        <div class="relative">
-          <textarea
-            id="danmuText"
-            class="w-full h-32 p-4 bg-slate-800/80 border-2 border-slate-700 rounded-xl focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300 resize-none placeholder-slate-500"
-            placeholder="Type danmu here..."
-            maxlength="100"
-          ></textarea>
+        <!-- Preview Area -->
+        <div class="mb-8">
+          <label class="block text-sm font-medium text-slate-300 mb-2 ml-1"
+            >Live Preview</label
+          >
           <div
-            id="charCount"
-            class="absolute bottom-3 right-4 text-sm text-slate-500"
+            class="h-24 bg-slate-900/60 rounded-xl flex items-center justify-center overflow-hidden border border-slate-700/50 relative group"
           >
-            0/100
+            <div
+              class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-20"
+            ></div>
+            <div
+              id="previewText"
+              class="text-2xl font-bold transition-all duration-300 px-4 text-center break-all z-10"
+            >
+              Preview
+            </div>
           </div>
         </div>
 
-        <!-- Preview area -->
-        <div class="space-y-2">
-          <h2 class="text-sm font-semibold text-slate-400">PREVIEW</h2>
-          <div
-            id="previewText"
-            class="w-full min-h-[100px] flex items-center justify-center bg-slate-900/70 rounded-xl p-4 text-slate-400 transition-all duration-300 text-center break-all"
-          >
-            Preview
-          </div>
+        <!-- Settings Section -->
+        <div class="mb-8">
+          <details class="group">
+            <summary
+              class="flex items-center justify-between cursor-pointer list-none bg-slate-800/40 p-4 rounded-xl hover:bg-slate-800/60 transition-colors"
+            >
+              <span class="font-medium text-slate-200 flex items-center gap-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5 text-sky-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                  />
+                </svg>
+                Customize Style
+              </span>
+              <span class="transition group-open:rotate-180">
+                <svg
+                  fill="none"
+                  height="24"
+                  shape-rendering="geometricPrecision"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  width="24"
+                >
+                  <path d="M6 9l6 6 6-6"></path>
+                </svg>
+              </span>
+            </summary>
+
+            <div class="mt-4 space-y-6 px-2 animate-fade-in-scale-up">
+              <!-- Color Picker -->
+              {% if options.Color[0] %}
+              <div id="colorControl">
+                <label
+                  class="block text-sm font-medium text-slate-400 mb-2 flex justify-between"
+                >
+                  <span>Color</span>
+                  <span
+                    id="colorValue"
+                    class="text-xs font-mono bg-slate-800 px-2 py-0.5 rounded text-slate-300"
+                    >#FFFFFF</span
+                  >
+                </label>
+                <div class="flex items-center gap-3">
+                  <input
+                    type="color"
+                    id="ColorInput"
+                    value="#ffffff"
+                    class="h-10 w-14 rounded cursor-pointer bg-transparent border-0 p-0"
+                  />
+                  <div id="colorGradientPreview" class="flex-1 h-10 rounded-lg bg-gradient-to-r from-white to-transparent opacity-20"></div>
+                </div>
+              </div>
+              {% endif %}
+
+              <!-- Font Size Slider -->
+              {% if options.FontSize[0] %}
+              <div id="fontSizeControl">
+                <label
+                  class="block text-sm font-medium text-slate-400 mb-2 flex justify-between"
+                >
+                  <span>Size</span>
+                  <span
+                    id="sizeValue"
+                    class="text-xs font-mono bg-slate-800 px-2 py-0.5 rounded text-slate-300"
+                    >{{ (options.FontSize[1] + options.FontSize[2]) // 2 }}px</span
+                  >
+                </label>
+                <input
+                  type="range"
+                  id="SizeInput"
+                  min="{{ options.FontSize[1] }}"
+                  max="{{ options.FontSize[2] }}"
+                  value="{{ (options.FontSize[1] + options.FontSize[2]) // 2 }}"
+                  class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                />
+                <div class="flex justify-between text-xs text-slate-500 mt-1">
+                  <span>{{ options.FontSize[1] }}px</span>
+                  <span>{{ options.FontSize[2] }}px</span>
+                </div>
+              </div>
+              {% endif %}
+
+              <!-- Opacity Slider -->
+              {% if options.Opacity[0] %}
+              <div id="opacityControl">
+                <label
+                  class="block text-sm font-medium text-slate-400 mb-2 flex justify-between"
+                >
+                  <span>Opacity</span>
+                  <span
+                    id="opacityValue"
+                    class="text-xs font-mono bg-slate-800 px-2 py-0.5 rounded text-slate-300"
+                    >100%</span
+                  >
+                </label>
+                <input
+                  type="range"
+                  id="OpacityRange"
+                  min="{{ options.Opacity[1] }}"
+                  max="{{ options.Opacity[2] }}"
+                  value="100"
+                  class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+              {% endif %}
+
+              <!-- Speed Slider -->
+              {% if options.Speed[0] %}
+              <div id="speedControl">
+                <label
+                  class="block text-sm font-medium text-slate-400 mb-2 flex justify-between"
+                >
+                  <span>Speed</span>
+                  <span
+                    id="speedValue"
+                    class="text-xs font-mono bg-slate-800 px-2 py-0.5 rounded text-slate-300"
+                    >{{ (options.Speed[1] + options.Speed[2]) // 2 }}</span
+                  >
+                </label>
+                <input
+                  type="range"
+                  id="speedRange"
+                  min="{{ options.Speed[1] }}"
+                  max="{{ options.Speed[2] }}"
+                  value="{{ (options.Speed[1] + options.Speed[2]) // 2 }}"
+                  class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                />
+                <div class="flex justify-between text-xs text-slate-500 mt-1">
+                  <span>Slow</span>
+                  <span>Fast</span>
+                </div>
+              </div>
+              {% endif %}
+
+              <!-- User Font Selection -->
+              <div id="userFontSelectControl" style="display: none;">
+                <label
+                  class="block text-sm font-medium text-slate-400 mb-2 flex justify-between"
+                >
+                  <span>Font</span>
+                </label>
+                <select
+                  id="userFontSelect"
+                  class="w-full bg-slate-800 border border-slate-700 text-white text-sm rounded-lg focus:ring-sky-500 focus:border-sky-500 block p-2.5"
+                >
+                  <option value="">Default Font</option>
+                  <!-- Options populated by JS -->
+                </select>
+              </div>
+            </div>
+          </details>
         </div>
 
-        <!-- Send button -->
+        <!-- Send Button -->
         <button
           id="btnSend"
-          class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-cyan-400 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-cyan-400/50 transform hover:-translate-y-1 active:scale-95 transition-all duration-300"
+          class="w-full bg-gradient-to-r from-sky-500 to-cyan-400 hover:from-sky-400 hover:to-cyan-300 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-sky-500/30 transform hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 group"
         >
+          <span>Fire Danmu</span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
+            class="h-5 w-5 group-hover:translate-x-1 transition-transform"
             fill="none"
+            viewBox="0 0 24 24"
             stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
           >
-            <path d="M5 12h14" />
-            <path d="m12 5 7 7-7 7" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 10V3L4 14h7v7l9-11h-7z"
+            />
           </svg>
-          <span>Fire Danmu</span>
         </button>
+      </main>
 
-        <!-- Controls -->
-        <details class="group">
-          <summary
-            class="list-none flex items-center justify-center cursor-pointer text-slate-400 hover:text-white transition-colors duration-200"
+      <!-- Footer -->
+      <footer class="text-center text-slate-500 text-sm">
+        <a
+          href="https://github.com/guan4tou2/Danmu-Fire"
+          target="_blank"
+          class="hover:text-sky-400 transition-colors flex items-center justify-center gap-2"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
           >
-            <span class="text-sm font-medium">Settings</span>
-            <svg
-              class="w-5 h-5 ml-1 transform group-open:rotate-180 transition-transform"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              ></path>
-            </svg>
-          </summary>
-
-          <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-            <!-- Color control -->
-            {% if Options['Color'][0] %}
-            <div id="colorControl" class="space-y-2">
-              <label
-                for="ColorInput"
-                class="text-sm font-medium text-slate-300 flex items-center gap-2"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-                </svg>
-                Color
-              </label>
-              <input
-                type="color"
-                id="ColorInput"
-                class="w-full h-10 p-1 bg-slate-800 border-slate-700 rounded-lg cursor-pointer"
-              />
-            </div>
-            {% endif %} {% if Options['FontSize'][0] %}
-            <!-- Font size control -->
-            <div id="fontSizeControl" class="space-y-2">
-              <label
-                for="SizeInput"
-                class="text-sm font-medium text-slate-300 flex items-center gap-2"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M4 7V4h16v3" />
-                  <path d="M9 20h6" />
-                  <path d="M12 4v16" />
-                </svg>
-                Font Size
-              </label>
-              <input
-                type="number"
-                id="SizeInput"
-                min="{{Options['FontSize'][1]}}"
-                max="{{Options['FontSize'][2]}}"
-                class="w-full bg-slate-800 border-2 border-slate-700 rounded-lg p-2 text-center focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300"
-              />
-            </div>
-            {% endif %} {% if Options['Opacity'][0] %}
-            <!-- Opacity control -->
-            <div id="opacityControl" class="space-y-2">
-              <label
-                for="OpacityRange"
-                class="text-sm font-medium text-slate-300 flex items-center justify-between"
-              >
-                <span class="flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                  Opacity
-                </span>
-                <span id="opacityValue" class="font-mono text-sky-400"
-                  >100%</span
-                >
-              </label>
-              <input
-                type="range"
-                id="OpacityRange"
-                min="{{Options['Opacity'][1]}}"
-                max="{{Options['Opacity'][2]}}"
-                step="1"
-              />
-            </div>
-            {% endif %} {% if Options['Speed'][0] %}
-            <!-- Speed control -->
-            <div id="speedControl" class="space-y-2">
-              <label
-                for="SpeedRange"
-                class="text-sm font-medium text-slate-300 flex items-center justify-between"
-              >
-                <span class="flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="m12 14 4-4" />
-                    <path d="m12 14 4-4" />
-                    <path d="M2 12h3.5" />
-                    <path d="M18.5 12H22" />
-                    <path d="m5 19-2-2" />
-                    <path d="m19 5 2 2" />
-                    <circle cx="12" cy="12" r="10" />
-                  </svg>
-                  Speed
-                </span>
-                <span id="speedValue" class="font-mono text-sky-400">10</span>
-              </label>
-              <input
-                type="range"
-                id="speedRange"
-                min="{{Options['Speed'][1]}}"
-                max="{{Options['Speed'][2]}}"
-                step="1"
-              />
-              <small class="text-slate-500 text-xs"
-                >Higher value = Faster speed</small
-              >
-            </div>
-            {% endif %}
-
-            <!-- User Font Select Control (conditionally displayed) -->
-            <div
-              id="userFontSelectControl"
-              class="space-y-2"
-              style="display: none"
-            >
-              <!-- Initially hidden -->
-              <label
-                for="userFontSelect"
-                class="text-sm font-medium text-slate-300 flex items-center gap-2"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <polyline points="4 7 4 4 20 4 20 7"></polyline>
-                  <line x1="9" y1="20" x2="15" y2="20"></line>
-                  <line x1="12" y1="4" x2="12" y2="20"></line>
-                </svg>
-                Font Family
-              </label>
-              <select
-                id="userFontSelect"
-                class="w-full bg-slate-800 border-2 border-slate-700 rounded-lg p-2 text-slate-300 focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300"
-              >
-                <!-- Options will be populated by JavaScript -->
-              </select>
-            </div>
-          </div>
-        </details>
-      </div>
-    </main>
-
-    <!-- Toast message container -->
-    <div
-      id="toast-container"
-      class="fixed top-5 right-5 z-50 flex flex-col items-end"
-    >
-      <!-- Toasts will be dynamically inserted here -->
+            <path
+              fill-rule="evenodd"
+              d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+              clip-rule="evenodd"
+            ></path>
+          </svg>
+          GitHub
+        </a>
+      </footer>
     </div>
 
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        // --- VANTA.js background initialization ---
-        VANTA.NET({
-          el: "#vanta-bg",
-          mouseControls: true,
-          touchControls: true,
-          gyroControls: false,
-          minHeight: 200.0,
-          minWidth: 200.0,
-          scale: 1.0,
-          scaleMobile: 1.0,
-          color: 0x3b82f6,
-          backgroundColor: 0x000000,
-          points: 12.0,
-          maxDistance: 25.0,
-          spacing: 18.0,
-        });
-
-        // --- Element selectors ---
-        const elements = {
-          danmuText: document.getElementById("danmuText"),
-          charCount: document.getElementById("charCount"),
-          previewText: document.getElementById("previewText"),
-          btnSend: document.getElementById("btnSend"),
-
-          // Controls
-          colorControl: document.getElementById("colorControl"),
-          colorInput: document.getElementById("ColorInput"),
-          opacityControl: document.getElementById("opacityControl"),
-          opacityRange: document.getElementById("OpacityRange"),
-          opacityValue: document.getElementById("opacityValue"),
-          fontSizeControl: document.getElementById("fontSizeControl"),
-          sizeInput: document.getElementById("SizeInput"),
-          speedControl: document.getElementById("speedControl"),
-          speedRange: document.getElementById("speedRange"),
-          speedValue: document.getElementById("speedValue"),
-
-          // User font selection
-          userFontSelectControl: document.getElementById("userFontSelectControl"),
-          userFontSelect: document.getElementById("userFontSelect"),
-
-          // Toast container
-          toastContainer: document.getElementById("toast-container"),
-
-          // Blacklist Warning Modal Elements
-          blacklistWarningModal: document.getElementById('blacklistWarningModal'),
-          blacklistWarningMessage: document.getElementById('blacklistWarningMessage'),
-          // blacklistWarningOkButton: document.getElementById('blacklistWarningOkButton'), // Removed
-        };
-
-        // --- Helper utilities ---
-        const scheduleIdleTask = (cb, timeout = 500) => {
-          if ("requestIdleCallback" in window) {
-            return window.requestIdleCallback(cb, { timeout });
-          }
-          return setTimeout(cb, timeout);
-        };
-
-        // --- State management ---
-        let currentSettings = {};
-        let ws = null;
-        let autoDismissTimer = null;
-        let fontRefreshTimer = null;
-        const FONT_REFRESH_BUFFER_SECONDS = 60;
-        let fontsCache = [];
-        const FONT_CACHE_STORAGE_KEY = "danmu-fonts-cache";
-        const clientFingerprint = getOrCreateFingerprint();
-
-        function getOrCreateFingerprint() {
-          try {
-            const storage = window.localStorage;
-            if (!storage) {
-              return generateFallbackFingerprint();
-            }
-            let fp = storage.getItem("danmuFingerprint");
-            if (!fp) {
-              fp = generateFallbackFingerprint();
-              storage.setItem("danmuFingerprint", fp);
-            }
-            return fp;
-          } catch (error) {
-            console.warn("Unable to access localStorage for fingerprint:", error);
-            return generateFallbackFingerprint();
-          }
-        }
-
-        function generateFallbackFingerprint() {
-          if (window.crypto && crypto.randomUUID) {
-            return crypto.randomUUID();
-          }
-          return (
-            "fp-" +
-            Math.random().toString(36).substring(2, 10) +
-            Date.now().toString(36)
-          );
-        }
-
-        function loadFontsFromCache() {
-          try {
-            if (!window.localStorage) return null;
-            const raw = window.localStorage.getItem(FONT_CACHE_STORAGE_KEY);
-            if (!raw) return null;
-            const parsed = JSON.parse(raw);
-            if (!parsed.expiresAt || parsed.expiresAt < Date.now()) {
-              return null;
-            }
-            return parsed;
-          } catch (error) {
-            console.warn("Unable to parse font cache:", error);
-            return null;
-          }
-        }
-
-        function persistFontCache(fonts, tokenTTL) {
-          try {
-            if (!window.localStorage) return;
-            const ttlSeconds = Math.max(tokenTTL || 0, FONT_REFRESH_BUFFER_SECONDS);
-            window.localStorage.setItem(
-              FONT_CACHE_STORAGE_KEY,
-              JSON.stringify({
-                fonts,
-                tokenTTL,
-                expiresAt: Date.now() + ttlSeconds * 1000,
-              })
-            );
-          } catch (error) {
-            console.warn("Unable to persist font cache:", error);
-          }
-        }
-
-        // --- Functions ---
-
-        function scheduleFontRefresh(ttlSeconds) {
-          if (fontRefreshTimer) {
-            clearTimeout(fontRefreshTimer);
-          }
-          if (!ttlSeconds || Number.isNaN(ttlSeconds)) {
-            return;
-          }
-          const delay = Math.max(
-            (ttlSeconds - FONT_REFRESH_BUFFER_SECONDS) * 1000,
-            60 * 1000
-          );
-          fontRefreshTimer = setTimeout(() => {
-            scheduleIdleTask(() => {
-              const allowChoice =
-                currentSettings && currentSettings.allowUserFontChoice;
-              if (allowChoice) {
-                populateUserFontDropdown(false, true);
-              } else {
-                refreshFontCache(true)
-                  .then(() => updatePreview())
-                  .catch((error) => {
-                    console.error("Error refreshing font cache:", error);
-                  });
-              }
-            });
-          }, delay);
-        }
-
-        async function refreshFontCache(forceNetwork = false) {
-          if (!forceNetwork) {
-            const cached = loadFontsFromCache();
-            if (cached) {
-              fontsCache = cached.fonts || [];
-              scheduleFontRefresh(cached.tokenTTL || 0);
-              return fontsCache;
-            }
-          }
-          const response = await fetch("/fonts", { cache: "no-store" });
-          if (!response.ok) {
-            throw new Error("Failed to fetch font list");
-          }
-          const payload = await response.json();
-          fontsCache = payload.fonts || [];
-          persistFontCache(fontsCache, payload.tokenTTL || 0);
-          scheduleFontRefresh(payload.tokenTTL || 0);
-          return fontsCache;
-        }
-
-        function ensureFontFaceLoaded(fontName, fontUrl) {
-          if (!fontUrl) return;
-          const safeName = fontName.replace(/\s+/g, "-");
-          const styleId = `font-style-preview-${safeName}`;
-          if (!document.getElementById(styleId)) {
-            const fontFaceRule = `@font-face { font-family: "${fontName}"; src: url("${fontUrl}"); }`;
-            const styleSheet = document.createElement("style");
-            styleSheet.id = styleId;
-            styleSheet.type = "text/css";
-            styleSheet.innerText = fontFaceRule;
-            document.head.appendChild(styleSheet);
-          }
-        }
-
-        async function checkTextAgainstBlacklist(text) {
-            try {
-                const response = await fetch('/check_blacklist', {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ text: text })
-                });
-                if (response.ok) {
-                    const result = await response.json();
-                    return result.blocked;
-                } else {
-                    console.error('Failed to check blacklist:', response.statusText);
-                    return false; // 如果检查失败，允许发送
-                }
-            } catch (error) {
-                console.error('Error checking blacklist:', error);
-                return false; // 如果检查失败，允许发送
-            }
-        }
-
-        function showBlacklistWarningModal(message) {
-            if (elements.blacklistWarningModal && elements.blacklistWarningMessage) {
-                elements.blacklistWarningMessage.textContent = message;
-                elements.blacklistWarningModal.style.display = 'flex';
-
-                // Clear any existing timer before setting a new one
-                if (autoDismissTimer) {
-                    clearTimeout(autoDismissTimer);
-                }
-                autoDismissTimer = setTimeout(hideBlacklistWarningModal, 5000); // Auto-dismiss after 5 seconds
-
-                setTimeout(() => {
-                    elements.blacklistWarningModal.classList.add('visible');
-                    elements.blacklistWarningModal.classList.add('flashing');
-                }, 20);
-            }
-        }
-
-        function hideBlacklistWarningModal() {
-            if (autoDismissTimer) { // Clear the auto-dismiss timer if it's active
-                clearTimeout(autoDismissTimer);
-                autoDismissTimer = null;
-            }
-            if (elements.blacklistWarningModal) {
-                elements.blacklistWarningModal.classList.remove('visible');
-                elements.blacklistWarningModal.classList.remove('flashing');
-                setTimeout(() => {
-                    elements.blacklistWarningModal.style.display = 'none';
-                }, 300);
-            }
-        }
-
-        // Show toast message (stackable version)
-        function showToast(message, isSuccess = true) {
-          // 1. Create toast element
-          const toastElement = document.createElement("div");
-          toastElement.className =
-            "flex items-center w-full max-w-xs p-4 mb-4 space-x-4 text-gray-500 bg-white divide-x divide-gray-200 rounded-lg shadow dark:text-gray-400 dark:divide-gray-700 space-x dark:bg-gray-800 transform transition-all duration-300 ease-in-out opacity-0 translate-x-full";
-          toastElement.setAttribute("role", "alert");
-
-          // 2. Create toast content
-          const iconSvg = isSuccess
-            ? `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
-            : `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
-          const iconColorClass = isSuccess ? "text-green-500" : "text-red-500";
-
-          toastElement.innerHTML = `
-                <div class="${iconColorClass}">${iconSvg}</div>
-                <div class="pl-4 text-sm font-normal">${message}</div>
-            `;
-
-          // 3. Add to container
-          elements.toastContainer.appendChild(toastElement);
-
-          // 4. Trigger enter animation
-          requestAnimationFrame(() => {
-            toastElement.classList.remove("opacity-0", "translate-x-full");
-          });
-
-          // 5. Set timer to remove toast
-          setTimeout(() => {
-            toastElement.classList.add("opacity-0", "translate-x-full");
-
-            toastElement.addEventListener("transitionend", () => {
-              toastElement.remove();
-            });
-          }, 3000);
-        }
-
-        // Check if URL is an image
-        const isImageUrl = (url) =>
-          url && url.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) != null;
-
-        // Update character count
-        const updateCharCount = () => {
-          const count = elements.danmuText.value.length;
-          elements.charCount.textContent = `${count}/100`;
-          elements.charCount.classList.toggle("text-red-400", count >= 90);
-        };
-
-        // Update preview
-        const updatePreview = () => {
-          const content = elements.danmuText.value.trim();
-          const previewContent = content || "Preview";
-
-          if (isImageUrl(content)) {
-            elements.previewText.innerHTML = `<img src="${content}" alt="Preview Image" class="max-h-24 rounded-lg object-contain">`;
-            elements.previewText.style.color = ""; // Reset color for images
-            elements.previewText.style.fontFamily = ""; // Reset font family for images
-          } else {
-            elements.previewText.textContent = previewContent;
-            elements.previewText.style.color = currentSettings.color;
-            elements.previewText.style.fontSize = `${currentSettings.fontSize}px`;
-            // Apply font to preview based on current selection logic
-            let fontNameToApply = "NotoSansTC"; // Ultimate fallback
-
-            if (currentSettings.allowUserFontChoice && elements.userFontSelect && elements.userFontSelect.value) {
-                const selectedOption = elements.userFontSelect.options[elements.userFontSelect.selectedIndex];
-                fontNameToApply = selectedOption.value;
-                const optionMeta = fontsCache.find(font => font.name === fontNameToApply);
-                const fontUrl = selectedOption.dataset.fontUrl || optionMeta?.url || "";
-                ensureFontFaceLoaded(fontNameToApply, fontUrl);
-            } else {
-                fontNameToApply = currentSettings.adminSelectedFontName || "NotoSansTC";
-                const fallbackMeta = fontsCache.find(font => font.name === fontNameToApply);
-                ensureFontFaceLoaded(fontNameToApply, fallbackMeta?.url || "");
-            }
-            elements.previewText.style.fontFamily = fontNameToApply;
-          }
-          elements.previewText.style.opacity = currentSettings.opacity / 100;
-        };
-
-        // Update UI controls
-        const updateUIControls = () => {
-          {% if Options['Color'][0] %}
-          if(elements.colorInput) elements.colorInput.value = currentSettings.color;
-          if(elements.colorControl) elements.colorControl.style.display = currentSettings.randomColor ? "block" : "none";
-          {% endif %}
-          {% if Options['Opacity'][0] %}
-          if(elements.opacityRange) elements.opacityRange.value = currentSettings.opacity;
-          if(elements.opacityValue) elements.opacityValue.textContent = `${currentSettings.opacity}%`;
-          if(elements.opacityControl) elements.opacityControl.style.display = currentSettings.randomOpacity ? "block" : "none";
-          {% endif %}
-          {% if Options['FontSize'][0] %}
-          if(elements.sizeInput) elements.sizeInput.value = currentSettings.fontSize;
-          if(elements.fontSizeControl) elements.fontSizeControl.style.display = currentSettings.randomFontSize ? "block" : "none";
-          {% endif %}
-          {% if Options['Speed'][0] %}
-          if(elements.speedRange) elements.speedRange.value = currentSettings.speed;
-          if(elements.speedValue) elements.speedValue.textContent = `${currentSettings.speed}`;
-          if(elements.speedControl) elements.speedControl.style.display = currentSettings.randomSpeed ? "block" : "none";
-          {% endif %}
-
-          // User font selection visibility
-          if (elements.userFontSelectControl) {
-            elements.userFontSelectControl.style.display = currentSettings.allowUserFontChoice ? "block" : "none";
-          }
-        };
-
-        async function populateUserFontDropdown(skipFetch = false, forceFetch = false) {
-            if (!elements.userFontSelect) return;
-            try {
-                if (!skipFetch) {
-                    await refreshFontCache(forceFetch);
-                }
-                elements.userFontSelect.innerHTML = '';
-
-                let foundAdminSelectedFont = false;
-                fontsCache.forEach(font => {
-                    const option = document.createElement('option');
-                    option.value = font.name;
-                    option.textContent = font.name;
-                    option.dataset.fontUrl = font.url || '';
-                    option.dataset.expiresAt = font.expiresAt || '';
-                    if (font.type === 'default' && font.name === "NotoSansTC" && !currentSettings.adminSelectedFontName) {
-                        option.selected = true;
-                        foundAdminSelectedFont = true;
-                    } else if (font.name === currentSettings.adminSelectedFontName) {
-                        option.selected = true;
-                        foundAdminSelectedFont = true;
-                    }
-                    elements.userFontSelect.appendChild(option);
-                });
-
-                if (!foundAdminSelectedFont) {
-                    const defaultOption = Array.from(elements.userFontSelect.options).find(opt => opt.value === "NotoSansTC");
-                    if (defaultOption) {
-                        defaultOption.selected = true;
-                    } else if (elements.userFontSelect.options.length > 0) {
-                        elements.userFontSelect.options[0].selected = true;
-                    }
-                }
-
-                updatePreview();
-            } catch (error) {
-                console.error('Error populating user font dropdown:', error);
-            }
-        }
-
-        // Fetch latest settings from backend
-        async function fetchLatestSettings() {
-          try {
-            const response = await fetch("/get_settings", {
-              method: "GET",
-              credentials: "same-origin",
-            });
-            const data = await response.json();
-
-            currentSettings = {
-              color: data.Color[3] !== undefined ? data.Color[3] : "#FFFFFF",
-              opacity: data.Opacity[3] !== undefined ? data.Opacity[3] : 70,
-              fontSize: data.FontSize[3] !== undefined ? data.FontSize[3] : 50,
-              speed: data.Speed[3] !== undefined ? data.Speed[3] : 4,
-              randomColor: data.Color[0] !== undefined ? data.Color[0] : true,
-              randomOpacity: data.Opacity[0] !== undefined ? data.Opacity[0] : true,
-              randomFontSize: data.FontSize[0] !== undefined ? data.FontSize[0] : true,
-              randomSpeed: data.Speed[0] !== undefined ? data.Speed[0] : true,
-              allowUserFontChoice: data.FontFamily && data.FontFamily[0] !== undefined ? data.FontFamily[0] : false,
-              adminSelectedFontName: data.FontFamily && data.FontFamily[3] !== undefined ? data.FontFamily[3] : "NotoSansTC",
-            };
-
-            updateUIControls();
-
-            const fontsPromise = refreshFontCache();
-            await fontsPromise;
-
-            if (currentSettings.allowUserFontChoice) {
-              await populateUserFontDropdown(true);
-            }
-
-            updatePreview();
-
-            // updateControlsVisibility(); // This function might need review or integration with updateUIControls
-          } catch (error) {
-            console.error("Fetch settings failed:", error)
-          }
-        }
-
-        // --- WebSocket ---
-        function connectWebSocket() {
-          {% if ws_url %}
-          ws = new WebSocket("{{ ws_url }}");
-          {% else %}
-          ws = new WebSocket(`ws://${window.location.host}/`);
-          {% endif %}
-          console.log(`Connecting to WebSocket: {{ws_url}}`);
-
-          ws.onopen = function () {
-            console.log("WebSocket Connection Opened");
-          };
-
-          ws.onmessage = function (event) {
-            try {
-              const data = JSON.parse(event.data);
-
-              // If settings changed notification
-              if (data.type === "settings_changed") {
-                console.log("Settings updated:", data.settings);
-
-                const newSettings = data.settings;
-                const previousAllowUserFontChoice = currentSettings.allowUserFontChoice;
-
-                currentSettings = {
-                  color: newSettings.Color?.[3] ?? currentSettings.color,
-                  opacity: newSettings.Opacity?.[3] ?? currentSettings.opacity,
-                  fontSize: newSettings.FontSize?.[3] ?? currentSettings.fontSize,
-                  speed: newSettings.Speed?.[3] ?? currentSettings.speed,
-                  randomColor: newSettings.Color?.[0] ?? currentSettings.randomColor,
-                  randomOpacity: newSettings.Opacity?.[0] ?? currentSettings.randomOpacity,
-                  randomFontSize: newSettings.FontSize?.[0] ?? currentSettings.randomFontSize,
-                  randomSpeed: newSettings.Speed?.[0] ?? currentSettings.randomSpeed,
-                  allowUserFontChoice:
-                    newSettings.FontFamily?.[0] ?? currentSettings.allowUserFontChoice,
-                  adminSelectedFontName:
-                    newSettings.FontFamily?.[3] ?? currentSettings.adminSelectedFontName,
-                };
-
-                updateUIControls();
-
-                if (currentSettings.allowUserFontChoice) {
-                  populateUserFontDropdown();
-                } else {
-                  refreshFontCache()
-                    .then(() => updatePreview())
-                    .catch((error) =>
-                      console.error("Failed to refresh fonts:", error)
-                    );
-                }
-
-                updateControlsVisibility();
-              }
-            } catch (error) {
-              console.error("Process WebSocket error:", error);
-            }
-          };
-
-          ws.onclose = function () {
-            console.log("WebSocket Connection Closed");
-            // Try to reconnect
-            setTimeout(connectWebSocket, 3000);
-          };
-
-          ws.onerror = function (error) {
-            console.error("WebSocket Error:", error);
-          };
-        }
-
-        // Update controls visibility
-        function updateControlsVisibility() {
-          // Get all control groups
-          const controlGroups = document.querySelectorAll(".control-group");
-          const controlsContainer = document.querySelector(
-            ".controls-container"
-          );
-
-          // If no visible controls, hide the entire container
-          let hasVisibleControls = false;
-
-          // Update color control visibility
-          const colorControl = document.querySelector('[data-control="Color"]');
-          if (colorControl) {
-            if (currentSettings.randomColor) {
-              colorControl.style.display = "block";
-              hasVisibleControls = true;
-            } else {
-              colorControl.style.display = "none";
-            }
-          }
-
-          // Update opacity control visibility
-          const opacityControl = document.querySelector(
-            '[data-control="Opacity"]'
-          );
-          if (opacityControl) {
-            if (currentSettings.randomOpacity) {
-              opacityControl.style.display = "block";
-              hasVisibleControls = true;
-            } else {
-              opacityControl.style.display = "none";
-            }
-          }
-
-          // Update font size control visibility
-          const fontSizeControl = document.querySelector(
-            '[data-control="FontSize"]'
-          );
-          if (fontSizeControl) {
-            if (currentSettings.randomFontSize) {
-              fontSizeControl.style.display = "block";
-              hasVisibleControls = true;
-            } else {
-              fontSizeControl.style.display = "none";
-            }
-          }
-
-          // Update speed control visibility
-          const speedControl = document.querySelector('[data-control="Speed"]');
-          if (speedControl) {
-            if (currentSettings.randomSpeed) {
-              speedControl.style.display = "block";
-              hasVisibleControls = true;
-            } else {
-              speedControl.style.display = "none";
-            }
-          }
-
-          // Use CSS class to control container visibility
-          if (controlsContainer) {
-            if (hasVisibleControls) {
-              controlsContainer.classList.remove("hidden");
-            } else {
-              controlsContainer.classList.add("hidden");
-            }
-          }
-        }
-
-        // --- Event listeners ---
-        elements.danmuText.addEventListener("input", () => {
-          updateCharCount();
-          updatePreview();
-        });
-
-        {% if Options['Color'][0] %}
-        elements.colorInput.addEventListener("input", (e) => {
-          currentSettings.color = e.target.value;
-          updatePreview();
-        });
-        {% endif %}
-
-        {% if Options['Opacity'][0] %}
-        elements.opacityRange.addEventListener("input", (e) => {
-          currentSettings.opacity = parseInt(e.target.value);
-          elements.opacityValue.textContent = `${currentSettings.opacity}%`;
-          updatePreview();
-        });
-        {% endif %}
-
-        {% if Options['FontSize'][0] %}
-        elements.sizeInput.addEventListener("input", (e) => {
-          currentSettings.fontSize = e.target.value;
-          updatePreview();
-        });
-        {% endif %}
-
-        {% if Options['Speed'][0] %}
-        elements.speedRange.addEventListener("input", (e) => {
-          currentSettings.speed = parseInt(e.target.value);
-          elements.speedValue.textContent = `${currentSettings.speed}`;
-          updatePreview();
-        });
-        {% endif %}
-
-        elements.danmuText.addEventListener("keydown", (e) => {
-          // Only submit if Enter is pressed, Shift is not pressed, AND an IME is not currently composing.
-          if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
-            e.preventDefault();
-            elements.btnSend.click();
-          }
-        });
-
-        elements.btnSend.addEventListener("click", async () => {
-          const content = elements.danmuText.value.trim();
-          if (!content) {
-            showToast("Please enter danmu content!", false);
-            return;
-          }
-
-          // ---- START OF NEW BLACKLIST CHECK ----
-          const blocked = await checkTextAgainstBlacklist(content);
-          if (blocked) {
-              showBlacklistWarningModal("Warning: Message contains blocked words and was not sent.");
-              return; // Stop further processing and do not send
-          }
-          // ---- END OF NEW BLACKLIST CHECK ----
-
-          const payload = {
-            text: content,
-            opacity: currentSettings.opacity,
-            color: currentSettings.color.replace("#", ""),
-            size: currentSettings.fontSize,
-            speed: currentSettings.speed,
-            fingerprint: clientFingerprint,
-            // Add fontInfo to payload if user choice is allowed and a font is selected
-            fontInfo: currentSettings.allowUserFontChoice && elements.userFontSelect && elements.userFontSelect.value
-                      ? { name: elements.userFontSelect.value }
-                      : null // Server will use admin default if this is null or not present
-          };
-
-          // Remove fontInfo from payload if it's null to keep payload clean
-          if (payload.fontInfo === null) {
-            delete payload.fontInfo;
-          }
-
-
-          console.log("Firing danmu:", payload);
-
-          elements.btnSend.disabled = true;
-          elements.btnSend.innerHTML = `
-                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>Firing...</span>`;
-
-          // --- Fetch request ---
-          fetch("/fire", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          })
-            .then((response) => {
-              if (response.redirected) {
-                window.location.href = response.url;
-              } else {
-                elements.danmuText.value = "";
-                showToast("Fire Danmu Success!");
-                updateCharCount();
-                updatePreview();
-                elements.btnSend.disabled = false;
-                elements.btnSend.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                <span>Fire Danmu</span>`;
-              }
-            })
-            .catch(function (error) {
-              console.error("Error:", error);
-              elements.btnSend.disabled = false;
-              elements.btnSend.innerHTML = `
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-              <span>Fire Danmu</span>`;
-              showToast("Send failed, please try again later.", false);
-            });
-        });
-
-        // --- Initialize ---
-        function init() {
-          // Initial placeholder values before settings are fetched
-          currentSettings = {
-            color: "#FFFFFF",
-            opacity: 70,
-            fontSize: 50,
-            speed: 4,
-            randomColor: true,
-            randomOpacity: true,
-            randomFontSize: true,
-            randomSpeed: true,
-            allowUserFontChoice: false,
-            adminSelectedFontName: "NotoSansTC"
-          };
-          updateUIControls(); // Set initial UI state based on placeholders
-          updatePreview();    // Update preview based on placeholders
-          const bindFontChangeListener = () => {
-            if (elements.userFontSelect && !elements.userFontSelect.dataset.listenerBound) {
-              elements.userFontSelect.addEventListener('change', updatePreview);
-              elements.userFontSelect.dataset.listenerBound = "true";
-            }
-          };
-          bindFontChangeListener();
-          scheduleIdleTask(() => {
-            fetchLatestSettings()
-              .catch((error) => console.error("Fetch settings failed:", error))
-              .finally(() => {
-                bindFontChangeListener();
-                connectWebSocket();
-              });
-          }, 100);
-        }
-
-        init();
-
-        // Event listeners for Blacklist Warning Modal
-        // if (elements.blacklistWarningOkButton) { // Removed
-        //     elements.blacklistWarningOkButton.addEventListener('click', hideBlacklistWarningModal);
-        // }
-        if (elements.blacklistWarningModal) {
-            elements.blacklistWarningModal.addEventListener('click', function(event) {
-                if (event.target === elements.blacklistWarningModal) { // Clicked on overlay, not content
-                    hideBlacklistWarningModal();
-                }
-            });
-        }
-
-      });
-    </script>
+    <!-- Toast Container -->
+    <div
+      id="toast-container"
+      class="fixed top-5 right-5 z-50 flex flex-col gap-2"
+    ></div>
 
     <!-- Blacklist Warning Modal -->
-    <div id="blacklistWarningModal" style="display: none">
-      <!-- Initially hidden -->
+    <div id="blacklistWarningModal" style="display: none;">
       <div class="modal-content">
         <svg
           class="warning-triangle"
-          xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
-          fill="currentColor"
-          width="48px"
-          height="48px"
+          xmlns="http://www.w3.org/2000/svg"
         >
-          <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
+          <path
+            d="M12 2L1 21h22L12 2zm0 3.45l8.27 14.3H3.73L12 5.45zM11 10v6h2v-6h-2zm0 8v2h2v-2h-2z"
+          />
         </svg>
-        <p id="blacklistWarningMessage" class="warning-message">
-          Warning message here.
-        </p>
-        <!-- <button id="blacklistWarningOkButton" class="ok-button">OK</button> Removed -->
+        <div id="blacklistWarningMessage" class="warning-message"></div>
+        <button class="ok-button" onclick="hideBlacklistWarningModal()">
+          OK
+        </button>
       </div>
     </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='vendor/three.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/vanta.net.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   </body>
 </html>
