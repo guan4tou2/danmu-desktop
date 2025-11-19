@@ -67,23 +67,31 @@ jobs:
       - name: Test Docker image
         run: |
           set -e
-          docker run --rm -d --name test-server \
+          docker run -d --name test-server \
             -e ADMIN_PASSWORD=test \
             -p 4000:4000 \
             -p 4001:4001 \
             $LOCAL_IMAGE
+          READY=0
           for i in {1..12}; do
+            if ! docker ps --filter "name=test-server" --filter "status=running" --format '{{.Names}}' | grep -q '^test-server$'; then
+              echo "test-server exited unexpectedly"
+              docker logs test-server || true
+              docker rm -f test-server || true
+              exit 1
+            fi
             if curl -fsS http://localhost:4000/health >/dev/null 2>&1; then
               echo "Server is up"
+              READY=1
               break
             fi
             echo "Waiting for server... ($i/12)"
             sleep 5
-            if [ "$i" -eq 12 ]; then
-              echo "Server did not become ready in time"
-              docker logs test-server
-              docker stop test-server
-              exit 1
-            fi
           done
-          docker stop test-server
+          if [ "$READY" -ne 1 ]; then
+            echo "Server did not become ready in time"
+            docker logs test-server || true
+            docker rm -f test-server || true
+            exit 1
+          fi
+          docker rm -f test-server
