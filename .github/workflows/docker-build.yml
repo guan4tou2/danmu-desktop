@@ -40,7 +40,6 @@ jobs:
 
       - name: Docker meta
         id: meta
-        if: ${{ github.event_name == 'push' && env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.DOCKERHUB_USERNAME }}/danmu-server
@@ -53,8 +52,10 @@ jobs:
           file: ./server/Dockerfile
           push: ${{ github.event_name == 'push' && env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
           load: true
-          tags: ${{ steps.meta.outputs.tags || env.LOCAL_IMAGE }}
-          labels: ${{ steps.meta.outputs.labels || '' }}
+          tags: |
+            ${{ env.LOCAL_IMAGE }}
+            ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -65,16 +66,6 @@ jobs:
             -p 4000:4000 \
             -p 4001:4001 \
             $LOCAL_IMAGE
-
-          echo "Waiting for server to start..."
-          for i in $(seq 1 10); do
-            if curl -f http://localhost:4000/health; then
-              echo "Server is up!"
-              break
-            fi
-            echo "Attempt $i failed, retrying in 2 seconds..."
-            sleep 2
-          done
-
+          sleep 5
           curl -f http://localhost:4000/health || exit 1
           docker stop test-server
