@@ -21,6 +21,10 @@ RUN uv sync --frozen
 # Copy application code
 COPY . .
 
+# Copy entrypoint and set permissions (still running as root)
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod 755 /entrypoint.sh
+
 # Create directories for fonts and static files
 RUN mkdir -p user_fonts static/vendor /tmp
 
@@ -37,10 +41,6 @@ EXPOSE 4000 4001
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:4000/health').read()" || exit 1
-
-# Start both HTTP and WebSocket servers
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
 
