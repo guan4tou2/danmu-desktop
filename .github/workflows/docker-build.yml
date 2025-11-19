@@ -58,6 +58,12 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Tag image for local tests
+        run: |
+          set -e
+          IMAGE_REF="$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)"
+          docker tag "$IMAGE_REF" "${LOCAL_IMAGE}"
+
       - name: Test Docker image
         run: |
           set -e
