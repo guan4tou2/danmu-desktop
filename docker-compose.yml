@@ -21,8 +21,9 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - FONT_TOKEN_EXPIRATION=${FONT_TOKEN_EXPIRATION:-900}
     volumes:
-      - ./server/user_fonts:/app/user_fonts
-      - ./server/static:/app/static
+      - ./server/user_fonts:/app/server/user_fonts
+      - ./server/static:/app/server/static
+      - ./server/logs:/app/server/logs
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health').read()"]
@@ -30,12 +31,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-    command: >
-      sh -c "
-        python -m server.ws_app &
-        python -m server.app
-      "
-
   redis:
     image: redis:7-alpine
     container_name: danmu-redis

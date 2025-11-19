@@ -6,16 +6,12 @@ version: '3.8'
 services:
   server:
     volumes:
-      # 掛載原始碼以便熱重載（需要額外配置）
-      - ./server:/app
-      - ./server/user_fonts:/app/user_fonts
-      - ./server/static:/app/static
+      - ./server:/app/server
+      - ./server/user_fonts:/app/server/user_fonts
+      - ./server/static:/app/server/static
+      - ./server/logs:/app/server/logs
     environment:
       - LOG_LEVEL=DEBUG
       - LOG_FORMAT=text  # 開發環境使用文字格式更易讀
-    command: >
-      sh -c "
-        python -m server.ws_app &
-        python -m server.app
-      "
+    command: []
 

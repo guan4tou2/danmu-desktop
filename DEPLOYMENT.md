@@ -15,6 +15,36 @@ This bilingual guide explains how to deploy the danmu-desktop server. / 本文�
 - Docker Compose 2.0+
 
 ### Quick Start / 快速開始
+
+#### A. Run published Docker Hub image / 直接使用 Docker Hub 映像
+1. Pull & run / 直接執行：
+   ```bash
+   docker run -d --name danmu-server \
+     -p 4000:4000 \
+     -p 4001:4001 \
+     -e ADMIN_PASSWORD=your_secure_password \
+     -v danmu_fonts:/app/server/user_fonts \
+     -v danmu_static:/app/server/static \
+     -v danmu_logs:/app/server/logs \
+     albetyty/danmu-server:latest
+   ```
+2. Optional restart policy / 建議加入：
+   ```bash
+   --restart unless-stopped
+   ```
+3. Tags & platforms / 標籤與架構：
+   - `latest`：穩定版（對應 `main`）
+   - `main`：隨 `main` 更新的滾動版本
+   - `<git-sha>`：特定 commit 的不可變版本
+   - 提供 `linux/amd64` 與 `linux/arm64/v8`
+4. Update / 更新：
+   ```bash
+   docker pull albetyty/danmu-server:latest
+   docker stop danmu-server && docker rm danmu-server
+   # rerun the command above / 重新執行上方指令
+   ```
+
+#### B. Build via Docker Compose / 使用 Docker Compose 建置
 1. **Copy env file / 複製環境檔**
    ```bash
    cp env.example .env
