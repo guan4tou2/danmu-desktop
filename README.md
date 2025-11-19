@@ -38,7 +38,27 @@ This project is divided into two parts:
 
 ### Server Setup
 
-#### Option 1: Docker Compose (Recommended)
+#### Option 1: Docker Hub Image (Recommended)
+
+1. Pull and run the image directly (replace the password):
+   ```bash
+   docker run -d --name danmu-server \
+     -p 4000:4000 \
+     -p 4001:4001 \
+     -e ADMIN_PASSWORD=your_secure_password \
+     -v danmu_fonts:/app/server/user_fonts \
+     -v danmu_static:/app/server/static \
+     guan4tou2/danmu-server:latest
+   ```
+2. Optional: add `--restart unless-stopped` for long-running deployments.
+3. To update, just pull the latest tag and restart:
+   ```bash
+   docker pull guan4tou2/danmu-server:latest
+   docker stop danmu-server && docker rm danmu-server
+   # rerun the docker run command above
+   ```
+
+#### Option 2: Docker Compose
 
 1. Clone the repository:
    ```bash
@@ -62,7 +82,7 @@ This project is divided into two parts:
    docker-compose --profile redis up -d
    ```
 
-#### Option 2: Manual Setup
+#### Option 3: Manual Setup
 
 1. Clone the repository:
    ```bash

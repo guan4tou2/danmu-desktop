@@ -38,7 +38,27 @@
 
 ### 伺服器設置
 
-#### 選項 1：Docker Compose（推薦）
+#### 選項 1：直接使用 Docker Hub 映像（推薦）
+
+1. 直接拉取並啟動映像（請替換密碼）：
+   ```bash
+   docker run -d --name danmu-server \
+     -p 4000:4000 \
+     -p 4001:4001 \
+     -e ADMIN_PASSWORD=your_secure_password \
+     -v danmu_fonts:/app/server/user_fonts \
+     -v danmu_static:/app/server/static \
+     guan4tou2/danmu-server:latest
+   ```
+2. 建議加入 `--restart unless-stopped` 讓服務自動重啟。
+3. 更新版本只需重新拉取並重建：
+   ```bash
+   docker pull guan4tou2/danmu-server:latest
+   docker stop danmu-server && docker rm danmu-server
+   # 重新執行上述 docker run 指令
+   ```
+
+#### 選項 2：Docker Compose
 
 1. 克隆專案：
 
@@ -65,7 +85,7 @@
    docker-compose --profile redis up -d
    ```
 
-#### 選項 2：手動設置
+#### 選項 3：手動設置
 
 1. 克隆專案：
 
