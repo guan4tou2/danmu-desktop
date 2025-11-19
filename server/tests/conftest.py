@@ -8,6 +8,7 @@ from server.config import Config
 from server import state
 from server.services.security import rate_limiter
 from server.managers import connection_manager, settings_store
+from server.services.ws_state import update_ws_client_count
 
 
 class TestConfig(Config):
@@ -37,6 +38,7 @@ def app(tmp_path):
     connection_manager.reset()
     settings_store.reset()
     rate_limiter.reset()
+    update_ws_client_count(0)
 
 
 @pytest.fixture()

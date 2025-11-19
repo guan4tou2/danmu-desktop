@@ -1,6 +1,6 @@
 """輸入驗證服務"""
 
-from marshmallow import Schema, ValidationError, fields, validate
+from marshmallow import Schema, ValidationError, fields, validate, EXCLUDE
 
 
 class FireRequestSchema(Schema):
@@ -9,6 +9,10 @@ class FireRequestSchema(Schema):
     text = fields.Str(required=True, validate=validate.Length(min=1, max=100))
     isImage = fields.Bool(load_default=False)
     fontInfo = fields.Dict(load_default=None)
+    fingerprint = fields.Str(load_default=None, validate=validate.Length(max=128))
+
+    class Meta:
+        unknown = EXCLUDE
 
 
 class BlacklistCheckSchema(Schema):

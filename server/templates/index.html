@@ -558,6 +558,36 @@
         let fontRefreshTimer = null;
         const FONT_REFRESH_BUFFER_SECONDS = 60;
         let fontsCache = [];
+        const clientFingerprint = getOrCreateFingerprint();
+
+        function getOrCreateFingerprint() {
+          try {
+            const storage = window.localStorage;
+            if (!storage) {
+              return generateFallbackFingerprint();
+            }
+            let fp = storage.getItem("danmuFingerprint");
+            if (!fp) {
+              fp = generateFallbackFingerprint();
+              storage.setItem("danmuFingerprint", fp);
+            }
+            return fp;
+          } catch (error) {
+            console.warn("Unable to access localStorage for fingerprint:", error);
+            return generateFallbackFingerprint();
+          }
+        }
+
+        function generateFallbackFingerprint() {
+          if (window.crypto && crypto.randomUUID) {
+            return crypto.randomUUID();
+          }
+          return (
+            "fp-" +
+            Math.random().toString(36).substring(2, 10) +
+            Date.now().toString(36)
+          );
+        }
 
         // --- Functions ---
 
@@ -584,7 +614,7 @@
         }
 
         async function refreshFontCache() {
-          const response = await fetch("/api/fonts");
+          const response = await fetch("/fonts");
           if (!response.ok) {
             throw new Error("Failed to fetch font list");
           }
@@ -1051,6 +1081,7 @@
             color: currentSettings.color.replace("#", ""),
             size: currentSettings.fontSize,
             speed: currentSettings.speed,
+            fingerprint: clientFingerprint,
             // Add fontInfo to payload if user choice is allowed and a font is selected
             fontInfo: currentSettings.allowUserFontChoice && elements.userFontSelect && elements.userFontSelect.value
                       ? { name: elements.userFontSelect.value }

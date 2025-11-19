@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from server import state
-from server.managers import connection_manager
+from server.services.ws_state import update_ws_client_count
 from server.services.security import generate_font_token
 
 
@@ -33,7 +33,7 @@ def test_admin_update_requires_csrf(client):
 
 def test_fire_rate_limit(client):
     # ensure there is mock ws client connected
-    connection_manager.register_ws_client(object())
+    update_ws_client_count(1)
     payload = {
         "text": "hello",
         "fontInfo": {"name": "NotoSansTC"},

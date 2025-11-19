@@ -1,12 +1,12 @@
 import json
 
 from server import state
-from server.managers import connection_manager
+from server.services.ws_state import update_ws_client_count
 
 
 def _register_ws_client():
     """Helper to ensure /fire endpoint can proceed."""
-    connection_manager.register_ws_client(object())
+    update_ws_client_count(1)
 
 
 def test_fire_invalid_json_returns_400(client):

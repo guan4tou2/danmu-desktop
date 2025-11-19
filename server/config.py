@@ -19,7 +19,7 @@ class Config:
     WS = ""
     FIRE_RATE_LIMIT = int(os.getenv("FIRE_RATE_LIMIT", "20"))
     FIRE_RATE_WINDOW = int(os.getenv("FIRE_RATE_WINDOW", "60"))
-    ADMIN_RATE_LIMIT = int(os.getenv("ADMIN_RATE_LIMIT", "10"))
+    ADMIN_RATE_LIMIT = int(os.getenv("ADMIN_RATE_LIMIT", "60"))
     ADMIN_RATE_WINDOW = int(os.getenv("ADMIN_RATE_WINDOW", "60"))
     API_RATE_LIMIT = int(os.getenv("API_RATE_LIMIT", "30"))
     API_RATE_WINDOW = int(os.getenv("API_RATE_WINDOW", "60"))
@@ -36,3 +36,7 @@ class Config:
     # CORS configuration
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
     CORS_SUPPORTS_CREDENTIALS = True
+    
+    # Danmu history configuration
+    DANMU_HISTORY_MAX_RECORDS = int(os.getenv("DANMU_HISTORY_MAX_RECORDS", "10000"))
+    DANMU_HISTORY_CLEANUP_HOURS = int(os.getenv("DANMU_HISTORY_CLEANUP_HOURS", "24"))

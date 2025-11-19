@@ -1,6 +1,5 @@
 import asyncio
 import json
-import queue
 import time
 
 import websockets
@@ -8,6 +7,8 @@ import websockets
 from .. import state
 from ..managers import connection_manager
 from ..utils import sanitize_log_string
+from ..services.ws_state import update_ws_client_count
+from ..services import ws_queue
 
 
 def check_connections(logger):
@@ -32,16 +33,18 @@ def check_connections(logger):
 async def _forward_messages(clients, logger):
     while True:
         try:
-            try:
-                while not state.message_queue.empty():
-                    data = state.message_queue.get_nowait()
-                    if clients:
-                        message = json.dumps(data)
-                        await asyncio.gather(
-                            *[client.send(message) for client in clients.copy()]
-                        )
-            except queue.Empty:
-                pass
+            messages = ws_queue.dequeue_all()
+            if messages and clients:
+                message_tasks = []
+                for data in messages:
+                    message_tasks.extend(
+                        [
+                            client.send(json.dumps(data))
+                            for client in clients.copy()
+                        ]
+                    )
+                if message_tasks:
+                    await asyncio.gather(*message_tasks, return_exceptions=True)
 
             if clients:
                 ping_message = json.dumps({"type": "ping"})
@@ -66,16 +69,19 @@ async def _forward_messages(clients, logger):
 
 def run_ws_server(ws_port, logger):
     clients = set()
+    update_ws_client_count(0)
 
     async def register(websocket):
         clients.add(websocket)
         connection_manager.register_ws_client(websocket)
         logger.info("New client connected. Total clients: %s", len(clients))
+        update_ws_client_count(len(clients))
 
     async def unregister(websocket):
         clients.discard(websocket)
         connection_manager.unregister_ws_client(websocket)
         logger.info("Client disconnected. Remaining clients: %s", len(clients))
+        update_ws_client_count(len(clients))
 
     async def ws_handler(websocket):
         await register(websocket)

@@ -1,13 +1,13 @@
 from flask import current_app
 
 from ..managers import connection_manager
-from ..state import message_queue
 from ..utils import sanitize_log_string
+from . import ws_queue
 
 
 def forward_to_ws_server(data):
     try:
-        message_queue.put(data)
+        ws_queue.enqueue_message(data)
         return True
     except Exception as exc:
         current_app.logger.error(

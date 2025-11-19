@@ -1,10 +1,13 @@
+from gevent import monkey
+
+monkey.patch_all()
+
 import json
 import threading
 import uuid
 
 from flask import Flask, current_app, g, request
 from flask_cors import CORS
-from gevent import monkey
 from gevent.pywsgi import WSGIServer
 
 from .config import Config
@@ -16,10 +19,9 @@ from .routes.health import health_bp
 from .utils import sanitize_log_string, register_error_handlers
 from .managers import connection_manager
 from .services.security import init_security
+from .services.history import init_history
 from .logging_config import setup_logging
 from .ws import check_connections as background_check_connections
-
-monkey.patch_all()
 
 
 def create_app(config_class=Config):
@@ -36,6 +38,7 @@ def create_app(config_class=Config):
     
     sock.init_app(app)
     init_security(app)
+    init_history()
     
     # Request ID tracking
     @app.before_request

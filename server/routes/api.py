@@ -9,7 +9,8 @@ from ..services.fonts import build_font_payload, list_available_fonts
 from ..services.settings import get_options
 from ..services.security import rate_limit, verify_font_token
 from ..services.validation import FireRequestSchema, BlacklistCheckSchema, validate_request
-from ..managers import connection_manager
+from ..services import history as history_service
+from ..services.ws_state import get_ws_client_count
 from ..utils import is_valid_image_url, sanitize_log_string
 
 api_bp = Blueprint("api", __name__)
@@ -19,7 +20,7 @@ api_bp = Blueprint("api", __name__)
 @rate_limit("fire")
 def fire():
     """發送彈幕"""
-    if not connection_manager.has_ws_clients():
+    if get_ws_client_count() <= 0:
         return make_response("No active WebSocket connections", 503)
 
     try:
@@ -37,6 +38,7 @@ def fire():
             )
         
         data = validated_data
+        fingerprint = data.pop("fingerprint", None)
         text_content = data.get("text", "")
 
         if contains_keyword(text_content):
@@ -62,35 +64,17 @@ def fire():
 
         forward_success = messaging.forward_to_ws_server(data)
 
-        web_success = False
-        active_ws = connection_manager.get_active_ws()
-        if active_ws and active_ws in connection_manager.get_web_connections():
-            try:
-                active_ws.send(json.dumps(data))
-                web_success = True
-            except Exception as exc:
-                current_app.logger.warning(
-                    "Failed to send with active_ws: %s", sanitize_log_string(str(exc))
-                )
-                connection_manager.unregister_web_connection(active_ws)
+        client_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
 
-        if not web_success:
-            connections_copy = connection_manager.get_web_connections()
-            for ws in connections_copy:
-                try:
-                    ws.send(json.dumps(data))
-                    connection_manager.register_web_connection(ws)
-                    web_success = True
-                    break
-                except Exception as exc:
-                    current_app.logger.warning(
-                        "Failed to send to connection: %s", sanitize_log_string(str(exc))
-                    )
-                    connection_manager.unregister_web_connection(ws)
-
-        if forward_success or web_success:
+        if forward_success:
+            # 記錄成功發送的彈幕
+            if history_service.danmu_history:
+                history_payload = dict(data)
+                history_payload["clientIp"] = client_ip
+                history_payload["fingerprint"] = fingerprint
+                history_service.danmu_history.add(history_payload)
             return make_response("OK", 200)
-        return make_response("Failed to send to any connection", 503)
+        return make_response("Failed to enqueue message", 503)
     except Exception as exc:
         current_app.logger.error("Send Error: %s", sanitize_log_string(str(exc)))
         return make_response("An internal error has occurred.", 500)
@@ -112,6 +96,12 @@ def get_settings():
 @api_bp.route("/fonts", methods=["GET"])
 def public_fonts():
     return make_response(json.dumps(list_available_fonts()), 200, {"Content-Type": "application/json"})
+
+
+@api_bp.route("/api/fonts", methods=["GET"])
+def public_fonts_alias():
+    """Backward compatibility for older clients requesting /api/fonts"""
+    return public_fonts()
 
 
 @api_bp.route("/check_blacklist", methods=["POST"])

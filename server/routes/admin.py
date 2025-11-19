@@ -16,6 +16,7 @@ from ..state import USER_FONTS_DIR
 from ..utils import allowed_file, sanitize_log_string
 from ..services.security import require_csrf, rate_limit
 from ..services.validation import SettingUpdateSchema, ToggleSettingSchema, validate_request
+from ..services import history as history_service
 
 admin_bp = Blueprint("admin_bp", __name__, url_prefix="/admin")
 
@@ -193,4 +194,61 @@ def get_blacklist():
     if not _ensure_logged_in():
         return make_response(json.dumps({"error": "Unauthorized"}), 401, {"Content-Type": "application/json"})
     return make_response(json.dumps(list_keywords()), 200, {"Content-Type": "application/json"})
+
+
+@admin_bp.route("/history", methods=["GET"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+def get_danmu_history():
+    if not _ensure_logged_in():
+        return make_response(json.dumps({"error": "Unauthorized"}), 401, {"Content-Type": "application/json"})
+
+    try:
+        hours = request.args.get("hours", default=24, type=int)
+        limit = request.args.get("limit", default=1000, type=int)
+
+        hours = max(1, min(hours, 168))  # 1 to 168 hours (7 days)
+        limit = max(1, min(limit, 5000))
+
+        records = history_service.danmu_history.get_recent(hours=hours, limit=limit) if history_service.danmu_history else []
+        stats = history_service.danmu_history.get_stats() if history_service.danmu_history else {}
+
+        return make_response(
+            json.dumps(
+                {
+                    "records": records,
+                    "stats": stats,
+                    "query": {"hours": hours, "limit": limit},
+                }
+            ),
+            200,
+            {"Content-Type": "application/json"},
+        )
+    except Exception as exc:
+        current_app.logger.error(
+            "Error fetching danmu history: %s", sanitize_log_string(str(exc))
+        )
+        return make_response(
+            json.dumps({"error": "An internal error has occurred"}), 500, {"Content-Type": "application/json"}
+        )
+
+
+@admin_bp.route("/history/clear", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+def clear_danmu_history():
+    if not _ensure_logged_in():
+        return make_response(json.dumps({"error": "Unauthorized"}), 401, {"Content-Type": "application/json"})
+
+    try:
+        if history_service.danmu_history:
+            history_service.danmu_history.clear()
+        current_app.logger.info("Danmu history cleared by admin")
+        return make_response(json.dumps({"message": "History cleared"}), 200, {"Content-Type": "application/json"})
+    except Exception as exc:
+        current_app.logger.error(
+            "Error clearing danmu history: %s", sanitize_log_string(str(exc))
+        )
+        return make_response(
+            json.dumps({"error": "An internal error has occurred"}), 500, {"Content-Type": "application/json"}
+        )
 
