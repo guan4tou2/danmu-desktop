@@ -116,6 +116,10 @@ See `env.example` for all available options.
 - `README-CH.md` – 中文總覽。
 - `docs/archive/` – historical improvement notes kept for reference / 歷史紀錄。
 
+## CI/CD & Docker Hub
+- Workflow `.github/workflows/docker-build.yml` builds and tests the server image on each PR/push.
+- Set GitHub secrets `DOCKERHUB_USERNAME` + `DOCKERHUB_TOKEN` (Docker Hub access token) to auto-publish `DOCKERHUB_USERNAME/danmu-server:latest` and a commit-SHA tag whenever `main` is updated.
+
 ## Testing & Coverage
 
 - Run tests: `make test` or `make test-verbose`

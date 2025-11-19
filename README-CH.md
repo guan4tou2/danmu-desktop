@@ -124,6 +124,10 @@
 - `DEPLOYMENT.md`：生產部署細節 / Deployment reference。
 - `docs/archive/`：歷史紀錄與整理檔案。
 
+## CI/CD 與 Docker Hub
+- `.github/workflows/docker-build.yml` 會在每次 PR / push（main）時建置與測試伺服器映像。
+- 於 GitHub Secrets 設定 `DOCKERHUB_USERNAME` 與 `DOCKERHUB_TOKEN`（Docker Hub Access Token），即可在 main 更新時自動推送 `使用者/danmu-server:latest` 與對應 commit SHA 的 Tag。
+
 ## 參考資料
 
 SAO UI 設計參考自 [SAO-UI-PLAN-LINK-START | Akilar の糖果屋](https://akilar.top/posts/1b4fa1dd/)
