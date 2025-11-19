@@ -1,4 +1,6 @@
-FROM python:3.11-slim
+# syntax=docker/dockerfile:1.6
+
+FROM python:3.11-slim AS runtime
 
 WORKDIR /app
 
@@ -37,5 +39,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:4000/health').read()" || exit 1
 
 # Start both HTTP and WebSocket servers
-CMD ["sh", "-c", "python -m server.ws_app & python -m server.app"]
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
 
