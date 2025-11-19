@@ -40,7 +40,6 @@ jobs:
 
       - name: Docker meta
         id: meta
-        if: ${{ github.event_name == 'push' && env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.DOCKERHUB_USERNAME }}/danmu-server
@@ -53,8 +52,10 @@ jobs:
           file: ./server/Dockerfile
           push: ${{ github.event_name == 'push' && env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
           load: true
-          tags: ${{ steps.meta.outputs.tags || env.LOCAL_IMAGE }}
-          labels: ${{ steps.meta.outputs.labels || '' }}
+          tags: |
+            ${{ env.LOCAL_IMAGE }}
+            ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
