@@ -11,7 +11,7 @@ main_bp = Blueprint("main", __name__)
 def index():
     ws_port = current_app.config["WS_PORT"]
     ws_url = f"ws://{request.host.split(':')[0]}:{ws_port}"
-    return render_template("index.html", Options=get_options(), ws_url=ws_url)
+    return render_template("index.html", options=get_options(), ws_url=ws_url)
 
 
 @main_bp.route("/login", methods=["POST"])

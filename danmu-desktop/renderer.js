@@ -1,3 +1,6 @@
+// Utility functions (now using shared/utils if possible, or keeping local for simplicity in bundled file)
+// Note: renderer.js is bundled, so we can't easily use require if we don't have a build step that supports it.
+// Assuming we are updating the bundled file or the source. The source seems to have been shown.
 function sanitizeLog(input) {
   let strInput = String(input);
   strInput = strInput.replace(/\r\n|\r|\n/g, " ");
@@ -96,18 +99,18 @@ function updateConnectionStatus(status, text, shouldShow = true) {
   if (currentConnectionStatus === status && shouldShow) {
     return;
   }
-  
+
   // 清除之前的隐藏定时器
   if (statusHideTimeout) {
     clearTimeout(statusHideTimeout);
     statusHideTimeout = null;
   }
-  
+
   // 防抖：延迟更新状态，避免频繁变化
   if (statusUpdateTimeout) {
     clearTimeout(statusUpdateTimeout);
   }
-  
+
   statusUpdateTimeout = setTimeout(() => {
     const statusContainer = document.getElementById("connection-status");
     const statusIndicator = document.getElementById("status-indicator");
@@ -137,7 +140,7 @@ function updateConnectionStatus(status, text, shouldShow = true) {
       statusContainer.classList.add("hidden");
       currentConnectionStatus = null;
     }
-    
+
     statusUpdateTimeout = null;
   }, 100); // 100ms 防抖延迟
 }
@@ -147,7 +150,7 @@ function hideConnectionStatus(delay = 2000) {
   if (statusHideTimeout) {
     clearTimeout(statusHideTimeout);
   }
-  
+
   statusHideTimeout = setTimeout(() => {
     updateConnectionStatus(null, "", false);
     statusHideTimeout = null;
@@ -222,14 +225,14 @@ window.danmuTrackSettings = {
 };
 
 // Update track settings
-window.updateDanmuTrackSettings = function(maxTracks, collisionDetection) {
+window.updateDanmuTrackSettings = function (maxTracks, collisionDetection) {
   window.danmuTrackSettings.maxTracks = maxTracks;
   window.danmuTrackSettings.collisionDetection = collisionDetection;
   console.log('[Track Settings] Updated:', window.danmuTrackSettings);
 };
 
 // Find available track with collision detection
-window.findAvailableTrack = function(displayArea, danmuHeight, danmuWidth, speed) {
+window.findAvailableTrack = function (displayArea, danmuHeight, danmuWidth, speed) {
   const screenHeight = document.documentElement.clientHeight;
   const areaTopPixels = (displayArea.top / 100) * screenHeight;
   const areaHeightPixels = (displayArea.height / 100) * screenHeight;
@@ -294,7 +297,7 @@ window.findAvailableTrack = function(displayArea, danmuHeight, danmuWidth, speed
   // All tracks are occupied, use the oldest track
   const oldestTrack = window.danmuTracks.reduce((oldest, track) =>
     !oldest || track.endTime < oldest.endTime ? track : oldest
-  , null);
+    , null);
 
   const trackIndex = oldestTrack ? oldestTrack.trackIndex : 0;
   const trackTop = areaTopPixels + trackIndex * trackHeight;
@@ -363,7 +366,7 @@ window.showdanmu = function (
     danmu.style.color = "red"; // Indicate an error
     // Ensure parentElement is defined before appending
     if (parentElement) {
-        parentElement.appendChild(danmu);
+      parentElement.appendChild(danmu);
     } else {
       console.error(
         "[showdanmu] parentElement is null, cannot append error message for invalid image URL."
@@ -433,39 +436,39 @@ window.showdanmu = function (
 
     // Animation logic (moved inside this function)
     const Height = parseFloat(getComputedStyle(danmu).height);
-  const Width = parseFloat(getComputedStyle(danmu).width);
-  const Padding = parseFloat(getComputedStyle(danmu).padding);
+    const Width = parseFloat(getComputedStyle(danmu).width);
+    const Padding = parseFloat(getComputedStyle(danmu).padding);
 
     // Use track-based positioning with collision detection
     const trackPosition = window.findAvailableTrack(displayArea, Height + Padding, Width, speed);
     const top = trackPosition.top;
 
-  danmu.style.top = `${top}px`;
-  danmu.style.opacity = opacity * 0.01;
+    danmu.style.top = `${top}px`;
+    danmu.style.opacity = opacity * 0.01;
 
-  // Calculate animation duration
-  // Speed range: 1 (slowest) to 10 (fastest)
-  let currentSpeed = Number(speed);
-  if (isNaN(currentSpeed)) {
+    // Calculate animation duration
+    // Speed range: 1 (slowest) to 10 (fastest)
+    let currentSpeed = Number(speed);
+    if (isNaN(currentSpeed)) {
       console.warn(
         "[showdanmu] Invalid speed received, defaulting to 5:",
         sanitizeLog(speed)
       );
-    currentSpeed = 5;
-  }
+      currentSpeed = 5;
+    }
 
-  // Clamp speed to the 1-10 range
-  currentSpeed = Math.max(1, Math.min(10, currentSpeed));
+    // Clamp speed to the 1-10 range
+    currentSpeed = Math.max(1, Math.min(10, currentSpeed));
 
-  const maxTime = 20000; // Max duration (slowest) in ms (for speed 1)
+    const maxTime = 20000; // Max duration (slowest) in ms (for speed 1)
     const minTime = 2000; // Min duration (fastest) in ms (for speed 10)
 
-  // Linear interpolation: duration = maxTime - (speed - 1) * (maxTime - minTime) / (10 - 1)
-  // (10 - 1) is the range of speed values (9 steps)
+    // Linear interpolation: duration = maxTime - (speed - 1) * (maxTime - minTime) / (10 - 1)
+    // (10 - 1) is the range of speed values (9 steps)
     let duration = maxTime - ((currentSpeed - 1) * (maxTime - minTime)) / 9;
 
-  // Ensure duration is within minTime and maxTime bounds, even with floating point issues.
-  duration = Math.max(minTime, Math.min(maxTime, duration));
+    // Ensure duration is within minTime and maxTime bounds, even with floating point issues.
+    duration = Math.max(minTime, Math.min(maxTime, duration));
 
     console.log(
       "[showdanmu] Sanitized speed:",
@@ -475,29 +478,29 @@ window.showdanmu = function (
     ); // No sensitive strings
 
     console.log("[showdanmu] Animation parameters:", { Width, duration, top }); // These are numbers
-  try {
-    danmu.animate(
-      [
-        { transform: "translateX(100vw)" },
-        { transform: `translateX(-${Width}px)` },
-      ],
-      {
-        duration: duration,
-        easing: "linear",
-      }
-    ).onfinish = () => {
-      // danmu object itself might be complex, but its direct properties logged here are not user strings.
+    try {
+      danmu.animate(
+        [
+          { transform: "translateX(100vw)" },
+          { transform: `translateX(-${Width}px)` },
+        ],
+        {
+          duration: duration,
+          easing: "linear",
+        }
+      ).onfinish = () => {
+        // danmu object itself might be complex, but its direct properties logged here are not user strings.
         console.log("[showdanmu] Animation finished, danmu removed:", danmu);
-      danmu.remove();
-    };
-  } catch (e) {
+        danmu.remove();
+      };
+    } catch (e) {
       console.error("[showdanmu] Animation error:", sanitizeLog(e.message));
-    // Ensure danmu is removed even if animation fails to start
-    if (danmu.parentElement) {
-      danmu.remove();
+      // Ensure danmu is removed even if animation fails to start
+      if (danmu.parentElement) {
+        danmu.remove();
+      }
     }
-  }
-};
+  };
 
   // Call the function to apply font and start animation
   applyFontAndAnimate().catch((e) => {
@@ -507,9 +510,9 @@ window.showdanmu = function (
     );
     // Fallback: try to append and animate with default font if something went wrong
     if (danmu && !danmu.parentElement && parentElement) {
-        danmu.style.fontFamily = "NotoSansTC"; // Default font
-        parentElement.appendChild(danmu);
-        // Simplified animation call or let it be handled by the next general error
+      danmu.style.fontFamily = "NotoSansTC"; // Default font
+      parentElement.appendChild(danmu);
+      // Simplified animation call or let it be handled by the next general error
     }
   });
 };
@@ -555,8 +558,8 @@ startButton.addEventListener("click", () => {
   // All validation passed
   const IP = hostValue;
   const PORT = portValue;
-    const displayIndex = parseInt(screenSelect.value);
-    const enableSyncMultiDisplay = syncMultiDisplayCheckbox.checked;
+  const displayIndex = parseInt(screenSelect.value);
+  const enableSyncMultiDisplay = syncMultiDisplayCheckbox.checked;
 
   // Get startup animation settings
   const startupAnimToggle = document.getElementById("startup-animation-toggle");
@@ -585,7 +588,7 @@ startButton.addEventListener("click", () => {
     )}, DisplayIndex=${displayIndex}, SyncMultiDisplay=${enableSyncMultiDisplay}, StartupAnimation=${JSON.stringify(startupAnimationSettings)}`
   );
 
-    const api = window.API;
+  const api = window.API;
   api.create(IP, PORT, displayIndex, enableSyncMultiDisplay, startupAnimationSettings);
 
   overlayActive = true;
@@ -593,17 +596,17 @@ startButton.addEventListener("click", () => {
   connectionSuccessNotified = false;
 
   // Update UI
-    startButton.disabled = true;
+  startButton.disabled = true;
   startButton.setAttribute("aria-busy", "true");
   startButton.setAttribute("aria-disabled", "true");
 
-    stopButton.disabled = false;
+  stopButton.disabled = false;
   stopButton.setAttribute("aria-disabled", "false");
 
-    ip.disabled = true;
-    port.disabled = true;
-    screenSelect.disabled = true;
-    syncMultiDisplayCheckbox.disabled = true;
+  ip.disabled = true;
+  port.disabled = true;
+  screenSelect.disabled = true;
+  syncMultiDisplayCheckbox.disabled = true;
 
   // Update button styles
   startButton.classList.remove("btn-primary", "btn-connected");
@@ -1180,18 +1183,18 @@ if (window.API && typeof window.API.onConnectionStatus === "function") {
       startButton.setAttribute("aria-disabled", "false");
       startButton.classList.remove("btn-connecting", "btn-connected");
       startButton.classList.add("btn-primary");
-      
+
       stopButton.disabled = true;
       stopButton.setAttribute("aria-disabled", "true");
       stopButton.classList.remove("btn-active");
       stopButton.classList.add("btn-stopped");
-      
+
       // Re-enable input fields
       ip.disabled = false;
       port.disabled = false;
       screenSelect.disabled = false;
       syncMultiDisplayCheckbox.disabled = false;
-      
+
       // Update connection status
       const failureStatusText = getLocalizedText(
         "statusConnectionFailed",
@@ -1205,7 +1208,7 @@ if (window.API && typeof window.API.onConnectionStatus === "function") {
       );
       updateConnectionStatus("connection-failed", failureStatusText);
       showToast(failureToastText, "error");
-      
+
       // Hide status after 3 seconds
       hideConnectionStatus(3000);
     } else if (data.status === "stopped") {
@@ -1217,19 +1220,278 @@ if (window.API && typeof window.API.onConnectionStatus === "function") {
       startButton.setAttribute("aria-disabled", "false");
       startButton.classList.remove("btn-connecting", "btn-connected");
       startButton.classList.add("btn-primary");
-      
+
       stopButton.disabled = true;
       stopButton.setAttribute("aria-disabled", "true");
       stopButton.classList.remove("btn-active");
       stopButton.classList.add("btn-stopped");
-      
+
       // Re-enable input fields
       ip.disabled = false;
       port.disabled = false;
       screenSelect.disabled = false;
       syncMultiDisplayCheckbox.disabled = false;
-      
+
       updateConnectionStatus("idle", t("statusStopped"));
+    }
+  });
+}
+
+// Global Effect Handlers
+if (window.API) {
+  // Update display options
+  window.API.onUpdateDisplayOptions((options) => {
+    const screenSelect = document.getElementById('screen-select')
+    if (!screenSelect) return;
+
+    screenSelect.innerHTML = ''
+    options.forEach(option => {
+      const opt = document.createElement('option')
+      opt.value = option.value
+      opt.textContent = option.text
+      screenSelect.appendChild(opt)
+    })
+    console.log('[Renderer] Display options updated:', options);
+  });
+
+  // Show startup animation
+  window.API.onShowStartupAnimation((data) => {
+    try {
+      const oldOverlay = document.getElementById('startup-overlay');
+      if (oldOverlay) oldOverlay.remove();
+
+      const oldStyle = document.getElementById('startup-overlay-style');
+      if (oldStyle) oldStyle.remove();
+
+      const overlay = document.createElement('div');
+      overlay.id = 'startup-overlay';
+
+      const style = document.createElement('style');
+      style.id = 'startup-overlay-style';
+      style.textContent = `
+        @font-face {
+          font-family: 'SDGlitch';
+          src: url('assets/SDGlitch_Demo.ttf') format('truetype');
+        }
+
+        #startup-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background-color: rgba(0,0,0,0);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 10000;
+          pointer-events: none;
+          animation: startup-vignette 4s ease-out forwards;
+        }
+
+        @keyframes startup-vignette {
+          0% { box-shadow: inset 0 0 0 0 rgba(0,0,0,0); }
+          25% { box-shadow: inset 0 0 200px 100px rgba(0,0,0,0.7); }
+          75% { box-shadow: inset 0 0 200px 100px rgba(0,0,0,0.7); }
+          100% { box-shadow: inset 0 0 0 0 rgba(0,0,0,0); }
+        }
+
+        .startup-text {
+          font-family: 'SDGlitch', 'Courier New', Courier, monospace;
+          font-size: 12vw;
+          color: rgb(56, 189, 248);
+          text-shadow: 0 0 10px rgb(56, 189, 248), 0 0 20px rgb(56, 189, 248), 0 0 40px rgb(56, 189, 248);
+          animation: startup-text-appear 3s ease-out forwards;
+          opacity: 0;
+        }
+
+        @keyframes startup-text-appear {
+          0% { opacity: 0; transform: scale(0.5); filter: blur(20px); }
+          50% { opacity: 1; transform: scale(1.1); filter: blur(0px); }
+          75% { opacity: 1; transform: scale(1); filter: blur(0px); }
+          100% { opacity: 0; transform: scale(1); filter: blur(10px); }
+        }
+      `;
+
+      document.head.appendChild(style);
+
+      const textElement = document.createElement('div');
+      textElement.className = 'startup-text';
+      textElement.textContent = data.text;
+
+      overlay.appendChild(textElement);
+      document.body.appendChild(overlay);
+
+      setTimeout(() => {
+        overlay.remove();
+        style.remove();
+      }, 4000);
+    } catch (error) {
+      console.error('[Renderer] Error in startup animation:', error.message);
+    }
+  });
+
+  // Konami Effect
+  window.API.onKonamiEffect(() => {
+    try {
+      const oldOverlay = document.getElementById('konami-overlay');
+      if (oldOverlay) oldOverlay.remove();
+
+      const overlay = document.createElement('div');
+      overlay.id = 'konami-overlay';
+
+      const style = document.createElement('style');
+      style.textContent = `
+        @font-face {
+          font-family: 'SDGlitch';
+          src: url('assets/SDGlitch_Demo.ttf') format('truetype');
+        }
+
+        #konami-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background-color: rgba(0,0,0,0);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 10000;
+          pointer-events: none;
+          animation: konami-vignette 4s ease-out forwards, konami-screen-shake 0.5s 2;
+        }
+
+        @keyframes konami-vignette {
+          0% { box-shadow: inset 0 0 0 0 rgba(0,0,0,0); }
+          25% { box-shadow: inset 0 0 200px 100px rgba(0,0,0,0.7); }
+          75% { box-shadow: inset 0 0 200px 100px rgba(0,0,0,0.7); }
+          100% { box-shadow: inset 0 0 0 0 rgba(0,0,0,0); }
+        }
+        
+        @keyframes konami-screen-shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-10px); }
+          75% { transform: translateX(10px); }
+        }
+
+        .konami-text {
+          font-family: 'SDGlitch', 'Courier New', Courier, monospace;
+          font-size: 12vw;
+          color: rgb(222, 187, 32);
+          text-shadow: 0 0 10px rgb(217, 233, 42), 0 0 20px rgb(217, 233, 42);
+          position: relative;
+          animation: konami-text-flicker 3s infinite alternate;
+          white-space: nowrap;
+          letter-spacing: -0.05em;
+        }
+
+        .konami-text::before, .konami-text::after {
+          content: 'KONAMI CODE ACTIVATED!';
+          position: absolute;
+          top: 0;
+          left: 0;
+          background: transparent;
+          clip: rect(0, 900px, 0, 0);
+        }
+
+        .konami-text::before {
+          left: -2px;
+          text-shadow: -1px 0 red;
+          animation: konami-glitch-1 2s infinite linear alternate-reverse;
+        }
+
+        .konami-text::after {
+          left: 2px;
+          text-shadow: 1px 0 blue;
+          animation: konami-glitch-2 3s infinite linear alternate-reverse;
+        }
+        
+        @keyframes konami-text-flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        @keyframes konami-glitch-1 {
+            0% { clip: rect(42px, 9999px, 44px, 0); }
+            10% { clip: rect(17px, 9999px, 94px, 0); }
+            20% { clip: rect(83px, 9999px, 86px, 0); }
+            30% { clip: rect(28px, 9999px, 16px, 0); }
+            40% { clip: rect(42px, 9999px, 62px, 0); }
+            50% { clip: rect(34px, 9999px, 14px, 0); }
+            60% { clip: rect(77px, 9999px, 77px, 0); }
+            70% { clip: rect(61px, 9999px, 52px, 0); }
+            80% { clip: rect(40px, 9999px, 50px, 0); }
+            90% { clip: rect(43px, 9999px, 86px, 0); }
+            100% { clip: rect(97px, 9999px, 82px, 0); }
+        }
+
+        @keyframes konami-glitch-2 {
+            0% { clip: rect(85px, 9999px, 9px, 0); }
+            10% { clip: rect(8px, 9999px, 3px, 0); }
+            20% { clip: rect(42px, 9999px, 94px, 0); }
+            30% { clip: rect(23px, 9999px, 33px, 0); }
+            40% { clip: rect(38px, 9999px, 49px, 0); }
+            50% { clip: rect(12px, 9999px, 48px, 0); }
+            60% { clip: rect(81px, 9999px, 91px, 0); }
+            70% { clip: rect(30px, 9999px, 75px, 0); }
+            80% { clip: rect(88px, 9999px, 100px, 0); }
+            90% { clip: rect(22px, 9999px, 66px, 0); }
+            100% { clip: rect(1px, 9999px, 52px, 0); }
+        }
+      `;
+
+      const textElement = document.createElement('div');
+      textElement.className = 'konami-text';
+      textElement.textContent = 'KONAMI CODE ACTIVATED!';
+
+      overlay.appendChild(style);
+      overlay.appendChild(textElement);
+      document.body.appendChild(overlay);
+
+      setTimeout(() => {
+        const overlayToRemove = document.getElementById('konami-overlay');
+        if (overlayToRemove) {
+          overlayToRemove.remove();
+        }
+      }, 4000);
+
+      // Explosion Effect for current danmus
+      const danmusToExplode = document.querySelectorAll('h1.danmu, img.danmu');
+      danmusToExplode.forEach(el => {
+        if (el.dataset.exploding) return;
+
+        const rect = el.getBoundingClientRect();
+        const particle = el.cloneNode(true);
+        particle.style.transform = '';
+        particle.style.left = rect.left + 'px';
+        particle.style.top = rect.top + 'px';
+        particle.style.margin = '0';
+        particle.style.position = 'fixed';
+        document.body.appendChild(particle);
+
+        const duration = 800 + Math.random() * 400;
+        const targetX = (Math.random() - 0.5) * window.innerWidth;
+        const targetY = (Math.random() - 0.5) * window.innerHeight;
+        const targetScale = 1.5 + Math.random() * 2;
+        const targetRot = (Math.random() - 0.5) * 1080;
+
+        particle.animate([
+          { transform: 'translate(0, 0) scale(1) rotate(0)', opacity: particle.style.opacity },
+          { transform: `translate(${targetX}px, ${targetY}px) scale(${targetScale}) rotate(${targetRot}deg)`, opacity: 0 }
+        ], {
+          duration: duration,
+          easing: 'ease-out',
+          fill: 'forwards'
+        });
+
+        setTimeout(() => particle.remove(), duration);
+        el.dataset.exploding = 'true';
+        el.style.display = 'none';
+      });
+
+    } catch (error) {
+      console.error('[Renderer] Error in Konami message:', error.message);
     }
   });
 }

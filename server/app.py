@@ -29,6 +29,13 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
     setup_logging(app.config.get("LOG_LEVEL", "INFO"))
 
+    # Security check for default password
+    if app.config.get("ADMIN_PASSWORD") == "ADMIN_PASSWORD":
+        app.logger.warning(
+            "CRITICAL SECURITY WARNING: Using default ADMIN_PASSWORD. "
+            "Please change it in your .env file immediately!"
+        )
+
     # CORS configuration
     CORS(
         app,
