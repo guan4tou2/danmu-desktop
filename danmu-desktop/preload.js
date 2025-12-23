@@ -113,6 +113,22 @@ try {
       console.log("[Preload] API.getSystemLocale called");
       return ipcRenderer.invoke("getSystemLocale");
     },
+    // IPC Listeners for main -> renderer events
+    onUpdateDisplayOptions: (callback) => {
+      ipcRenderer.on("update-display-options", (event, options) => {
+        callback(options);
+      });
+    },
+    onShowStartupAnimation: (callback) => {
+      ipcRenderer.on("show-startup-animation", (event, data) => {
+        callback(data);
+      });
+    },
+    onKonamiEffect: (callback) => {
+      ipcRenderer.on("konami-effect", () => {
+        callback();
+      });
+    },
   });
   // Note: Logging window.API here is from preload's context, not renderer's.
   // The important check is logging window.API in the renderer.

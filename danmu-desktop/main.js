@@ -2,12 +2,7 @@
 const { app, BrowserWindow, screen, Tray, Menu, ipcMain } = require("electron");
 const path = require("path");
 
-function sanitizeLog(input) {
-  let strInput = String(input);
-  strInput = strInput.replace(/\r\n|\r|\n/g, " ");
-  strInput = strInput.replace(/\t/g, " ");
-  return strInput;
-}
+const { sanitizeLog } = require("./shared/utils");
 
 let mainWindow;
 let childWindows = []; // Changed to an array
@@ -49,112 +44,10 @@ function showStartupAnimation(targetWindow, settings) {
 
   console.log("[Main] Showing startup animation:", animationText);
 
-  const startupAnimationScript = `
-    (function() {
-      try {
-        // Clean up any previous instances
-        const oldOverlay = document.getElementById('startup-overlay');
-        if (oldOverlay) oldOverlay.remove();
-
-        const oldStyle = document.getElementById('startup-overlay-style');
-        if (oldStyle) oldStyle.remove();
-
-        const overlay = document.createElement('div');
-        overlay.id = 'startup-overlay';
-
-        const style = document.createElement('style');
-        style.id = 'startup-overlay-style';
-        style.textContent = \`
-          @font-face {
-            font-family: 'SDGlitch';
-            src: url('assets/SDGlitch_Demo.ttf') format('truetype');
-          }
-
-          #startup-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-color: rgba(0,0,0,0);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            pointer-events: none;
-            animation: startup-vignette 4s ease-out forwards;
-          }
-
-          @keyframes startup-vignette {
-            0% { box-shadow: inset 0 0 0 0 rgba(0,0,0,0); }
-            25% { box-shadow: inset 0 0 200px 100px rgba(0,0,0,0.7); }
-            75% { box-shadow: inset 0 0 200px 100px rgba(0,0,0,0.7); }
-            100% { box-shadow: inset 0 0 0 0 rgba(0,0,0,0); }
-          }
-
-          .startup-text {
-            font-family: 'SDGlitch', 'Courier New', Courier, monospace;
-            font-size: 12vw;
-            color: rgb(56, 189, 248);
-            text-shadow: 0 0 10px rgb(56, 189, 248), 0 0 20px rgb(56, 189, 248), 0 0 40px rgb(56, 189, 248);
-            animation: startup-text-appear 3s ease-out forwards;
-            opacity: 0;
-          }
-
-          @keyframes startup-text-appear {
-            0% {
-              opacity: 0;
-              transform: scale(0.5);
-              filter: blur(20px);
-            }
-            50% {
-              opacity: 1;
-              transform: scale(1.1);
-              filter: blur(0px);
-            }
-            75% {
-              opacity: 1;
-              transform: scale(1);
-              filter: blur(0px);
-            }
-            100% {
-              opacity: 0;
-              transform: scale(1);
-              filter: blur(10px);
-            }
-          }
-        \`;
-
-        document.head.appendChild(style);
-
-        const textElement = document.createElement('div');
-        textElement.className = 'startup-text';
-        textElement.textContent = ${JSON.stringify(animationText)};
-
-        overlay.appendChild(textElement);
-        document.body.appendChild(overlay);
-
-        // Remove overlay after animation completes
-        setTimeout(() => {
-          overlay.remove();
-          style.remove();
-        }, 4000);
-
-        console.log('[Startup] Animation displayed successfully');
-      } catch (error) {
-        console.error('[Startup] Error in startup animation:', error.message);
-      }
-    })();
-  `;
-
-  targetWindow.webContents
-    .executeJavaScript(startupAnimationScript)
-    .catch((err) => {
-      console.error(
-        "[Main] Error showing startup animation:",
-        sanitizeLog(err.message)
-      );
-    });
+  targetWindow.webContents.send("show-startup-animation", {
+    type: settings.type,
+    text: animationText,
+  });
 }
 
 function createWindow() {
@@ -209,8 +102,6 @@ function createWindow() {
         ...d,
         id: sanitizeLog(d.id),
       }));
-      console.log("Detected displays:", sanitizedDisplays);
-
       const displayOptions = displays.map((display, index) => {
         const bounds = display.bounds;
         return {
@@ -219,38 +110,7 @@ function createWindow() {
         };
       });
 
-      const script = `
-        (function() {
-          try {
-            const screenSelect = document.getElementById('screen-select')
-            if (!screenSelect) {
-              console.error('screen-select element not found')
-              return
-            }
-            
-            screenSelect.innerHTML = ''
-            const options = ${JSON.stringify(
-              displayOptions.map((o) => ({ ...o, text: sanitizeLog(o.text) }))
-            )}
-            options.forEach(option => {
-              const opt = document.createElement('option')
-              opt.value = option.value
-              opt.textContent = option.text
-              screenSelect.appendChild(opt)
-            })
-            console.log('Display options updated:', options);
-          } catch (error) {
-            console.error('Error updating display options:', error.message);
-          }
-        })()
-      `;
-
-      mainWindow.webContents.executeJavaScript(script).catch((error) => {
-        console.error(
-          "Error executing display update script:",
-          sanitizeLog(error.message)
-        );
-      });
+      mainWindow.webContents.send("update-display-options", displayOptions);
     } catch (error) {
       console.error(
         "Error getting display information:",
@@ -292,217 +152,10 @@ function createWindow() {
           isKeyDown = false;
           console.log("Konami Code triggered successfully!");
 
-          // Konami Code effect JavaScript
-          const konamiEffectScript = `
-            (function() {
-              try {
-                // Clean up any previous instances
-                const oldOverlay = document.getElementById('konami-overlay');
-                if (oldOverlay) oldOverlay.remove();
-                
-                const overlay = document.createElement('div');
-                overlay.id = 'konami-overlay';
-                
-                const style = document.createElement('style');
-                style.textContent = \`
-                  @font-face {
-                    font-family: 'SDGlitch';
-                    src: url('assets/SDGlitch_Demo.ttf') format('truetype');
-                  }
-
-                  #konami-overlay {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100vw;
-                    height: 100vh;
-                    background-color: rgba(0,0,0,0);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    z-index: 10000;
-                    pointer-events: none;
-                    animation: konami-vignette 4s ease-out forwards, konami-screen-shake 0.5s 2;
-                  }
-
-                  @keyframes konami-vignette {
-                    0% { box-shadow: inset 0 0 0 0 rgba(0,0,0,0); }
-                    25% { box-shadow: inset 0 0 200px 100px rgba(0,0,0,0.7); }
-                    75% { box-shadow: inset 0 0 200px 100px rgba(0,0,0,0.7); }
-                    100% { box-shadow: inset 0 0 0 0 rgba(0,0,0,0); }
-                  }
-                  
-                  @keyframes konami-screen-shake {
-                    0%, 100% { transform: translateX(0); }
-                    25% { transform: translateX(-10px); }
-                    75% { transform: translateX(10px); }
-                  }
-
-                  .konami-text {
-                    font-family: 'SDGlitch', 'Courier New', Courier, monospace;
-                    font-size: 12vw;
-                    color:rgb(222, 187, 32);
-                    text-shadow: 0 0 10px rgb(217, 233, 42), 0 0 20px rgb(217, 233, 42);
-                    position: relative;
-                    animation: konami-text-flicker 3s infinite alternate;
-                    white-space: nowrap;
-                    letter-spacing: -0.05em;
-                  }
-
-                  .konami-text::before, .konami-text::after {
-                    content: 'KONAMI CODE ACTIVATED!';
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    background: transparent;
-                    clip: rect(0, 900px, 0, 0);
-                  }
-
-                  .konami-text::before {
-                    left: -2px;
-                    text-shadow: -1px 0 red;
-                    animation: konami-glitch-1 2s infinite linear alternate-reverse;
-                  }
-
-                  .konami-text::after {
-                    left: 2px;
-                    text-shadow: 1px 0 blue;
-                    animation: konami-glitch-2 3s infinite linear alternate-reverse;
-                  }
-                  
-                  @keyframes konami-text-flicker {
-                      0%, 100% { opacity: 1; }
-                      50% { opacity: 0.8; }
-                  }
-
-                  @keyframes konami-glitch-1 {
-                      0% { clip: rect(42px, 9999px, 44px, 0); }
-                      10% { clip: rect(17px, 9999px, 94px, 0); }
-                      20% { clip: rect(83px, 9999px, 86px, 0); }
-                      30% { clip: rect(28px, 9999px, 16px, 0); }
-                      40% { clip: rect(42px, 9999px, 62px, 0); }
-                      50% { clip: rect(34px, 9999px, 14px, 0); }
-                      60% { clip: rect(77px, 9999px, 77px, 0); }
-                      70% { clip: rect(61px, 9999px, 52px, 0); }
-                      80% { clip: rect(40px, 9999px, 50px, 0); }
-                      90% { clip: rect(43px, 9999px, 86px, 0); }
-                      100% { clip: rect(97px, 9999px, 82px, 0); }
-                  }
-
-                  @keyframes konami-glitch-2 {
-                      0% { clip: rect(85px, 9999px, 9px, 0); }
-                      10% { clip: rect(8px, 9999px, 3px, 0); }
-                      20% { clip: rect(42px, 9999px, 94px, 0); }
-                      30% { clip: rect(23px, 9999px, 33px, 0); }
-                      40% { clip: rect(38px, 9999px, 49px, 0); }
-                      50% { clip: rect(12px, 9999px, 48px, 0); }
-                      60% { clip: rect(81px, 9999px, 91px, 0); }
-                      70% { clip: rect(30px, 9999px, 75px, 0); }
-                      80% { clip: rect(88px, 9999px, 100px, 0); }
-                      90% { clip: rect(22px, 9999px, 66px, 0); }
-                      100% { clip: rect(1px, 9999px, 52px, 0); }
-                  }
-                \`;
-                
-                const textElement = document.createElement('div');
-                textElement.className = 'konami-text';
-                textElement.textContent = 'KONAMI CODE ACTIVATED!';
-                
-                overlay.appendChild(style);
-                overlay.appendChild(textElement);
-                document.body.appendChild(overlay);
-                
-                setTimeout(() => {
-                  const overlayToRemove = document.getElementById('konami-overlay');
-                  if (overlayToRemove) {
-                    overlayToRemove.remove();
-                  }
-                }, 4000);
-              } catch (error) {
-                console.error('Error in Konami message:', error.message);
-              }
-            })();
-          `;
-
-          // Show Konami Code effect only on child windows (overlay windows)
-          // Never show on main window
-          console.log("[Konami] Showing effect on child windows only");
-
           childWindows.forEach((cw) => {
             if (cw && !cw.isDestroyed()) {
-              // Show Konami Code overlay effect in child window
-              cw.webContents
-                .executeJavaScript(konamiEffectScript)
-                .catch((err) => {
-                  console.error(
-                    "Error showing Konami overlay in child window:",
-                    sanitizeLog(err.message)
-                  );
-                });
-
-              // Clear danmus with explosion animation
-              const script = `
-              (function() {
-                try {
-                  const danmusToExplode = document.querySelectorAll('h1.danmu, img.danmu');
-                  if (danmusToExplode.length === 0) return;
-
-                  console.log('Initiating explosion for ' + danmusToExplode.length + ' danmus.');
-
-                  // This function creates and animates a single particle
-                  function createExplosionParticle(originalElement) {
-                    const rect = originalElement.getBoundingClientRect();
-                    const particle = originalElement.cloneNode(true); // Create a visual copy
-
-                    // Reset any conflicting inline styles and set up for particle animation
-                    particle.style.transform = '';
-                    particle.style.left = rect.left + 'px';
-                    particle.style.top = rect.top + 'px';
-                    particle.style.margin = '0';
-                    particle.style.position = 'fixed'; // Use fixed to position relative to viewport
-                    
-                    document.body.appendChild(particle);
-
-                    // Animate the particle using the Web Animations API
-                    const duration = 800 + Math.random() * 400;
-                    const targetX = (Math.random() - 0.5) * window.innerWidth;
-                    const targetY = (Math.random() - 0.5) * window.innerHeight;
-                    const targetScale = 1.5 + Math.random() * 2;
-                    const targetRot = (Math.random() - 0.5) * 1080;
-
-                    particle.animate([
-                      { transform: 'translate(0, 0) scale(1) rotate(0)', opacity: particle.style.opacity },
-                      { transform: 'translate(' + targetX + 'px, ' + targetY + 'px) scale(' + targetScale + ') rotate(' + targetRot + 'deg)', opacity: 0 }
-                    ], {
-                      duration: duration,
-                      easing: 'ease-out',
-                      fill: 'forwards' // Keep the final state
-                    });
-
-                    // Remove the particle after the animation
-                    setTimeout(() => {
-                      particle.remove();
-                    }, duration);
-                  }
-
-                  danmusToExplode.forEach(el => {
-                    if (el.dataset.exploding) return; // Skip if already handled
-                    createExplosionParticle(el);
-                    el.dataset.exploding = 'true'; // Mark for removal by the main animation loop
-                    el.style.display = 'none'; // Hide original immediately
-                  });
-
-                } catch (error) {
-                  console.error('Error creating explosion effect:', error.message);
-                }
-              })();
-            `;
-              cw.webContents.executeJavaScript(script).catch((err) => {
-                console.error(
-                  "Failed to execute danmu clearing script:",
-                  sanitizeLog(err.message)
-                );
-              });
+              // Send Konami effect message to child window
+              cw.webContents.send("konami-effect");
             }
           });
         }
@@ -531,7 +184,7 @@ function createWindow() {
       // Iterate over a shallow copy for safety
       if (win && !win.isDestroyed()) {
         win.destroy();
-      } 
+      }
     });
     childWindows = [];
     console.log(
@@ -592,20 +245,20 @@ function createWindow() {
               ${data.speed},
               { name: "NotoSansTC", url: null, type: "default" },
               ${JSON.stringify(
-                data.textStyles || {
-                  textStroke: true,
-                  strokeWidth: 2,
-                  strokeColor: "#000000",
-                  textShadow: false,
-                  shadowBlur: 4,
-                }
-              )},
+              data.textStyles || {
+                textStroke: true,
+                strokeWidth: 2,
+                strokeColor: "#000000",
+                textShadow: false,
+                shadowBlur: 4,
+              }
+            )},
               ${JSON.stringify(
-                data.displayArea || {
-                  top: 0,
-                  height: 100,
-                }
-              )}
+              data.displayArea || {
+                top: 0,
+                height: 100,
+              }
+            )}
             );
           }
         `
@@ -784,10 +437,8 @@ function setupChildWindow(
   console.log(
     `[Main] Setting up child window for display ID ${sanitizeLog(
       display.id
-    )}. Initial bounds (before ready-to-show setBounds) might be default: x=${
-      initialBounds.x
-    }, y=${initialBounds.y}, width=${initialBounds.width}, height=${
-      initialBounds.height
+    )}. Initial bounds (before ready-to-show setBounds) might be default: x=${initialBounds.x
+    }, y=${initialBounds.y}, width=${initialBounds.width}, height=${initialBounds.height
     }`
   );
 
@@ -805,8 +456,7 @@ function setupChildWindow(
     console.log(
       `[Main] Bounds after setBounds for display ID ${sanitizeLog(
         display.id
-      )}: x=${boundsAfterSet.x}, y=${boundsAfterSet.y}, width=${
-        boundsAfterSet.width
+      )}: x=${boundsAfterSet.x}, y=${boundsAfterSet.y}, width=${boundsAfterSet.width
       }, height=${boundsAfterSet.height}`
     );
 
@@ -824,13 +474,12 @@ function setupChildWindow(
     // 不在这里显示启动动画，改为在 WebSocket 连接成功时显示
     // 将启动动画设置存储到窗口对象中，以便在连接成功时使用
     targetWindow.startupAnimationSettings = startupAnimationSettings;
-    
+
     const finalBounds = targetWindow.getBounds();
     console.log(
       `[Main] Child window for display ID ${sanitizeLog(
         display.id
-      )} shown. Final bounds: x=${finalBounds.x}, y=${finalBounds.y}, width=${
-        finalBounds.width
+      )} shown. Final bounds: x=${finalBounds.x}, y=${finalBounds.y}, width=${finalBounds.width
       }, height=${finalBounds.height}`
     );
   });
