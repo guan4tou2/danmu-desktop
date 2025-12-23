@@ -314,7 +314,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const isImage = isImageUrl(text);
 
     if (isImage) {
-      elements.previewText.innerHTML = `<img src="${text}" class="max-h-24 rounded-lg shadow-md" alt="Danmu Preview">`;
+      // Safely create an <img> element instead of injecting HTML
+      elements.previewText.textContent = "";
+      const img = document.createElement("img");
+      img.src = text;
+      img.className = "max-h-24 rounded-lg shadow-md";
+      img.alt = "Danmu Preview";
+      elements.previewText.appendChild(img);
     } else {
       elements.previewText.textContent = text || "Preview";
     }
