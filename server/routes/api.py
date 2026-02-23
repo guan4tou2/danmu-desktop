@@ -18,6 +18,64 @@ from ..utils import is_valid_image_url, sanitize_log_string
 api_bp = Blueprint("api", __name__)
 
 
+def _json_response(payload, status=200):
+    return make_response(json.dumps(payload), status, {"Content-Type": "application/json"})
+
+
+def _internal_plain_error_response():
+    return make_response("An internal error has occurred.", 500)
+
+
+def _internal_json_error_response():
+    return _json_response({"error": "An internal error has occurred"}, 500)
+
+
+def _log_and_internal_error(log_prefix, exc, as_json=False):
+    current_app.logger.error("%s: %s", log_prefix, sanitize_log_string(str(exc)))
+    if as_json:
+        return _internal_json_error_response()
+    return _internal_plain_error_response()
+
+
+def _parse_and_validate(schema, invalid_json_as_plain=False):
+    raw_data = request.get_json(silent=True)
+    if raw_data is None:
+        if invalid_json_as_plain:
+            return None, make_response("Invalid JSON", 400)
+        return None, _json_response({"error": "Invalid JSON"}, 400)
+
+    validated_data, errors = validate_request(schema, raw_data)
+    if errors:
+        return None, _json_response(
+            {"error": "Validation failed", "details": errors},
+            400,
+        )
+
+    return validated_data, None
+
+
+def _resolve_font_payload(data):
+    admin_font_setting = get_options().get("FontFamily", [False, "", "", "NotoSansTC"])
+    allow_user_font_choice = admin_font_setting[0]
+    admin_default_font_name = admin_font_setting[3]
+
+    chosen_font_name = admin_default_font_name
+    if allow_user_font_choice and data.get("fontInfo", {}).get("name"):
+        chosen_font_name = data["fontInfo"]["name"]
+
+    return build_font_payload(chosen_font_name)
+
+
+def _record_history_if_enabled(data, fingerprint, client_ip):
+    if not history_service.danmu_history:
+        return
+
+    history_payload = dict(data)
+    history_payload["clientIp"] = client_ip
+    history_payload["fingerprint"] = fingerprint
+    history_service.danmu_history.add(history_payload)
+
+
 @api_bp.route("/fire", methods=["POST"])
 @rate_limit("fire")
 def fire():
@@ -26,66 +84,36 @@ def fire():
         return make_response("No active WebSocket connections", 503)
 
     try:
-        raw_data = request.get_json(silent=True)
-        if raw_data is None:
-            return make_response("Invalid JSON", 400)
+        data, error_response = _parse_and_validate(
+            FireRequestSchema,
+            invalid_json_as_plain=True,
+        )
+        if error_response:
+            return error_response
+        if not isinstance(data, dict):
+            return _internal_plain_error_response()
 
-        # 驗證輸入
-        validated_data, errors = validate_request(FireRequestSchema, raw_data)
-        if errors:
-            return make_response(
-                json.dumps({"error": "Validation failed", "details": errors}),
-                400,
-                {"Content-Type": "application/json"},
-            )
-
-        data = validated_data
         fingerprint = data.pop("fingerprint", None)
         text_content = data.get("text", "")
 
         if contains_keyword(text_content):
-            return make_response(
-                json.dumps({"error": "Content contains blocked keywords"}),
-                400,
-                {"Content-Type": "application/json"},
-            )
+            return _json_response({"error": "Content contains blocked keywords"}, 400)
 
         if data.get("isImage") and not is_valid_image_url(data["text"]):
             return make_response("Invalid image url", 400)
 
-        admin_font_setting = get_options().get(
-            "FontFamily", [False, "", "", "NotoSansTC"]
-        )
-        allow_user_font_choice = admin_font_setting[0]
-        admin_default_font_name = admin_font_setting[3]
-
-        chosen_font_name = admin_default_font_name
-
-        if (
-            allow_user_font_choice
-            and "fontInfo" in data
-            and data["fontInfo"].get("name")
-        ):
-            chosen_font_name = data["fontInfo"]["name"]
-
-        data["fontInfo"] = build_font_payload(chosen_font_name)
+        data["fontInfo"] = _resolve_font_payload(data)
 
         forward_success = messaging.forward_to_ws_server(data)
 
         client_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
 
         if forward_success:
-            # 記錄成功發送的彈幕
-            if history_service.danmu_history:
-                history_payload = dict(data)
-                history_payload["clientIp"] = client_ip
-                history_payload["fingerprint"] = fingerprint
-                history_service.danmu_history.add(history_payload)
+            _record_history_if_enabled(data, fingerprint, client_ip)
             return make_response("OK", 200)
         return make_response("Failed to enqueue message", 503)
     except Exception as exc:
-        current_app.logger.error("Send Error: %s", sanitize_log_string(str(exc)))
-        return make_response("An internal error has occurred.", 500)
+        return _log_and_internal_error("Send Error", exc)
 
 
 @api_bp.route("/user_fonts/<filename>")
@@ -98,16 +126,12 @@ def serve_user_font(filename):
 
 @api_bp.route("/get_settings", methods=["GET"])
 def get_settings():
-    return make_response(
-        json.dumps(get_options()), 200, {"Content-Type": "application/json"}
-    )
+    return _json_response(get_options(), 200)
 
 
 @api_bp.route("/fonts", methods=["GET"])
 def public_fonts():
-    return make_response(
-        json.dumps(list_available_fonts()), 200, {"Content-Type": "application/json"}
-    )
+    return _json_response(list_available_fonts(), 200)
 
 
 @api_bp.route("/api/fonts", methods=["GET"])
@@ -121,46 +145,23 @@ def public_fonts_alias():
 def check_blacklist():
     """檢查內容是否在黑名單中"""
     try:
-        raw_data = request.get_json(silent=True)
-        if raw_data is None:
-            return make_response(
-                json.dumps({"error": "Invalid JSON"}),
-                400,
-                {"Content-Type": "application/json"},
-            )
+        data, error_response = _parse_and_validate(BlacklistCheckSchema)
+        if error_response:
+            return error_response
+        if not isinstance(data, dict):
+            return _internal_json_error_response()
 
-        # 驗證輸入
-        validated_data, errors = validate_request(BlacklistCheckSchema, raw_data)
-        if errors:
-            return make_response(
-                json.dumps({"error": "Validation failed", "details": errors}),
-                400,
-                {"Content-Type": "application/json"},
-            )
-
-        data = validated_data
         text_content = data.get("text", "")
 
         if contains_keyword(text_content):
-            return make_response(
-                json.dumps(
-                    {"blocked": True, "message": "Content contains blocked keywords"}
-                ),
+            return _json_response(
+                {"blocked": True, "message": "Content contains blocked keywords"},
                 200,
-                {"Content-Type": "application/json"},
             )
 
-        return make_response(
-            json.dumps({"blocked": False, "message": "Content is allowed"}),
+        return _json_response(
+            {"blocked": False, "message": "Content is allowed"},
             200,
-            {"Content-Type": "application/json"},
         )
     except Exception as exc:
-        current_app.logger.error(
-            "Error checking blacklist: %s", sanitize_log_string(str(exc))
-        )
-        return make_response(
-            json.dumps({"error": "An internal error has occurred"}),
-            500,
-            {"Content-Type": "application/json"},
-        )
+        return _log_and_internal_error("Error checking blacklist", exc, as_json=True)
