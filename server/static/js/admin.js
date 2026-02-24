@@ -43,6 +43,11 @@ document.addEventListener("DOMContentLoaded", () => {
   let adminFontCache = [];
   let currentSettings = {};
 
+  // Module-level handles for beforeunload cleanup
+  let _autoRefreshTimer = null;
+  let _adminWs = null;
+  let _adminWsReconnectTimer = null;
+
   function scheduleAdminFontRefresh(ttlSeconds) {
     if (adminFontRefreshTimer) {
       clearTimeout(adminFontRefreshTimer);
@@ -371,79 +376,113 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Cache all fetched records for client-side search
+  let _allHistoryRecords = [];
+
+  function renderHistoryRecords(records) {
+    const historyListDiv = document.getElementById("danmuHistoryList");
+    if (!historyListDiv) return;
+
+    historyListDiv.innerHTML = "";
+    if (records.length === 0) {
+      historyListDiv.innerHTML =
+        '<p class="text-slate-400 text-sm text-center py-4">No danmu found.</p>';
+      return;
+    }
+
+    records.forEach((record) => {
+      const recordEl = document.createElement("div");
+      recordEl.className = "bg-slate-700/50 p-3 rounded-lg space-y-1";
+
+      const headerEl = document.createElement("div");
+      headerEl.className = "flex items-start justify-between gap-2";
+
+      const timeEl = document.createElement("div");
+      timeEl.className = "text-xs text-slate-400 shrink-0";
+      timeEl.textContent = formatTimestamp(record.timestamp);
+
+      // "Block" quick-action button (text only, non-image danmu)
+      if (record.text && !record.isImage) {
+        const blockBtn = document.createElement("button");
+        blockBtn.className =
+          "text-xs px-2 py-0.5 rounded bg-red-700/60 hover:bg-red-700 text-slate-200 transition-colors shrink-0";
+        blockBtn.textContent = "+ Block";
+        blockBtn.title = "Add this text to the blacklist";
+        blockBtn.addEventListener("click", async () => {
+          try {
+            await csrfFetch("/admin/blacklist/add", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ keyword: record.text }),
+            });
+            showToast(`"${record.text.slice(0, 30)}" added to blacklist`, true);
+            fetchBlacklist();
+          } catch (e) {
+            showToast("Failed to add to blacklist", false);
+          }
+        });
+        headerEl.appendChild(blockBtn);
+      }
+
+      headerEl.prepend(timeEl);
+
+      const textEl = document.createElement("div");
+      textEl.className = "text-white text-sm break-words";
+      textEl.textContent = record.text || "(empty)";
+
+      const metaEl = document.createElement("div");
+      metaEl.className = "text-xs text-slate-400 flex flex-wrap gap-x-3 gap-y-1";
+      const metaParts = [];
+      if (record.color) metaParts.push(`Color: #${record.color}`);
+      if (record.size) metaParts.push(`Size: ${record.size}`);
+      if (record.speed) metaParts.push(`Speed: ${record.speed}`);
+      if (record.opacity) metaParts.push(`Opacity: ${record.opacity}`);
+      if (record.isImage) metaParts.push("Type: Image");
+      if (record.fontInfo?.name) metaParts.push(`Font: ${record.fontInfo.name}`);
+      if (record.clientIp) metaParts.push(`IP: ${record.clientIp}`);
+      if (record.fingerprint) metaParts.push(`FP: ${record.fingerprint.slice(0, 8)}…`);
+      metaEl.textContent = metaParts.join(" • ") || "No metadata";
+
+      recordEl.appendChild(headerEl);
+      recordEl.appendChild(textEl);
+      recordEl.appendChild(metaEl);
+      historyListDiv.appendChild(recordEl);
+    });
+  }
+
   async function fetchDanmuHistory() {
     try {
-      const hours = parseInt(
-        document.getElementById("historyHours")?.value || "24"
-      );
+      const hours = parseInt(document.getElementById("historyHours")?.value || "24");
       const response = await fetch(`/admin/history?hours=${hours}&limit=1000`, {
         method: "GET",
         credentials: "same-origin",
       });
       if (!response.ok) {
         const errorData = await response.json();
-        showToast(
-          `Error fetching history: ${errorData.error || response.statusText}`,
-          false
-        );
+        showToast(`Error fetching history: ${errorData.error || response.statusText}`, false);
         return;
       }
       const data = await response.json();
       const { records, stats } = data;
+      _allHistoryRecords = records;
 
-      // Update stats
       const statsDiv = document.getElementById("historyStats");
       if (statsDiv) {
         statsDiv.innerHTML = `
-                        <div class="flex gap-4 text-xs">
-                            <span>Total: <span class="text-white font-semibold">${stats.total}</span></span>
-                            <span>Last 24h: <span class="text-white font-semibold">${stats.last_24h}</span></span>
-                            <span>Showing: <span class="text-white font-semibold">${records.length}</span></span>
-                        </div>
-                    `;
+          <div class="flex gap-4 text-xs">
+            <span>Total: <span class="text-white font-semibold">${stats.total}</span></span>
+            <span>Last 24h: <span class="text-white font-semibold">${stats.last_24h}</span></span>
+            <span>Showing: <span class="text-white font-semibold">${records.length}</span></span>
+          </div>`;
       }
 
-      // Update history list
-      const historyListDiv = document.getElementById("danmuHistoryList");
-      if (!historyListDiv) return;
+      // Apply current search filter
+      const searchTerm = document.getElementById("historySearch")?.value?.toLowerCase() || "";
+      const filtered = searchTerm
+        ? records.filter((r) => (r.text || "").toLowerCase().includes(searchTerm))
+        : records;
 
-      historyListDiv.innerHTML = "";
-      if (records.length === 0) {
-        historyListDiv.innerHTML =
-          '<p class="text-slate-400 text-sm text-center py-4">No danmu sent in this time range.</p>';
-      } else {
-        records.forEach((record) => {
-          const recordEl = document.createElement("div");
-          recordEl.className = "bg-slate-700/50 p-3 rounded-lg space-y-1";
-
-          const timeEl = document.createElement("div");
-          timeEl.className = "text-xs text-slate-400";
-          timeEl.textContent = formatTimestamp(record.timestamp);
-
-          const textEl = document.createElement("div");
-          textEl.className = "text-white text-sm break-words";
-          textEl.textContent = record.text || "(empty)";
-
-          const metaEl = document.createElement("div");
-          metaEl.className = "flex gap-2 text-xs text-slate-400";
-          const metaParts = [];
-          if (record.color) metaParts.push(`Color: #${record.color}`);
-          if (record.size) metaParts.push(`Size: ${record.size}`);
-          if (record.speed) metaParts.push(`Speed: ${record.speed}`);
-          if (record.opacity) metaParts.push(`Opacity: ${record.opacity}`);
-          if (record.isImage) metaParts.push("Type: Image");
-          if (record.fontInfo?.name)
-            metaParts.push(`Font: ${record.fontInfo.name}`);
-          if (record.clientIp) metaParts.push(`IP: ${record.clientIp}`);
-          if (record.fingerprint) metaParts.push(`FP: ${record.fingerprint}`);
-          metaEl.textContent = metaParts.join(" • ") || "No metadata";
-
-          recordEl.appendChild(timeEl);
-          recordEl.appendChild(textEl);
-          recordEl.appendChild(metaEl);
-          historyListDiv.appendChild(recordEl);
-        });
-      }
+      renderHistoryRecords(filtered);
     } catch (error) {
       console.error("Fetch danmu history error:", error);
       showToast("Error fetching danmu history.", false);
@@ -749,15 +788,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Danmu History Card
     settingsGrid.innerHTML += `
-                    <div class="glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent">
+                    <div class="glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent lg:col-span-2">
                         <div class="flex items-center justify-between">
                             <div>
                                 <h3 class="text-lg font-bold text-white">Danmu History</h3>
-                                <p class="text-sm text-slate-400">View sent danmu messages.</p>
+                                <p class="text-sm text-slate-400">View and search sent danmu messages.</p>
                             </div>
+                            <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none">
+                                <input type="checkbox" id="historyAutoRefresh" class="accent-purple-500">
+                                Auto-refresh (30s)
+                            </label>
                         </div>
                         <div class="mt-4 pt-4 border-t border-slate-700/50">
-                            <div class="space-y-4">
+                            <div class="space-y-3">
                                 <div class="flex gap-2 items-center flex-wrap">
                                     <label class="text-sm font-medium text-slate-300">Time Range:</label>
                                     <select id="historyHours" class="px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400">
@@ -768,15 +811,39 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <option value="168">Last 7 days</option>
                                     </select>
                                     <button id="refreshHistoryBtn" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm">Refresh</button>
-                                    <button id="clearHistoryBtn" class="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition-colors text-sm">Clear</button>
+                                    <button id="exportHistoryBtn" class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors text-sm">Export CSV</button>
+                                    <button id="clearHistoryBtn" class="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition-colors text-sm">Clear All</button>
                                 </div>
-                                <div id="historyStats" class="text-sm text-slate-400">
-                                    <!-- Stats will be shown here -->
-                                </div>
+                                <input id="historySearch" type="search" placeholder="Search history..."
+                                    class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm
+                                           placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400">
+                                <div id="historyStats" class="text-sm text-slate-400"></div>
                                 <div id="danmuHistoryList" class="space-y-2 max-h-96 overflow-y-auto">
                                     <!-- History will be listed here -->
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                `;
+
+    // Password Change Card
+    settingsGrid.innerHTML += `
+                    <div class="glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent">
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Change Password</h3>
+                            <p class="text-sm text-slate-400">Update the admin login password.</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-3">
+                            <input id="pwCurrent" type="password" placeholder="Current password"
+                                class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400">
+                            <input id="pwNew" type="password" placeholder="New password (min 8 chars)"
+                                class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400">
+                            <input id="pwConfirm" type="password" placeholder="Confirm new password"
+                                class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400">
+                            <button id="changePasswordBtn"
+                                class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm font-semibold">
+                                Change Password
+                            </button>
                         </div>
                     </div>
                 `;
@@ -875,6 +942,48 @@ document.addEventListener("DOMContentLoaded", () => {
       refreshHistoryBtn.addEventListener("click", fetchDanmuHistory);
     }
 
+    const exportHistoryBtn = document.getElementById("exportHistoryBtn");
+    if (exportHistoryBtn) {
+      exportHistoryBtn.addEventListener("click", () => {
+        if (_allHistoryRecords.length === 0) {
+          showToast("No records to export.", false);
+          return;
+        }
+
+        const headers = ["timestamp", "text", "color", "size", "speed", "opacity", "isImage", "fontName", "clientIp", "fingerprint"];
+        const escape = (v) => {
+          const s = v == null ? "" : String(v);
+          return s.includes(",") || s.includes('"') || s.includes("\n")
+            ? `"${s.replace(/"/g, '""')}"`
+            : s;
+        };
+
+        const rows = _allHistoryRecords.map((r) => [
+          escape(r.timestamp || ""),
+          escape(r.text || ""),
+          escape(r.color ? `#${r.color}` : ""),
+          escape(r.size ?? ""),
+          escape(r.speed ?? ""),
+          escape(r.opacity ?? ""),
+          escape(r.isImage ? "true" : "false"),
+          escape(r.fontInfo?.name || ""),
+          escape(r.clientIp || ""),
+          escape(r.fingerprint || ""),
+        ].join(","));
+
+        const csv = [headers.join(","), ...rows].join("\r\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+        a.href = url;
+        a.download = `danmu-history-${ts}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast(`Exported ${_allHistoryRecords.length} records.`, true);
+      });
+    }
+
     const clearHistoryBtn = document.getElementById("clearHistoryBtn");
     if (clearHistoryBtn) {
       clearHistoryBtn.addEventListener("click", clearDanmuHistory);
@@ -883,6 +992,72 @@ document.addEventListener("DOMContentLoaded", () => {
     const historyHoursSelect = document.getElementById("historyHours");
     if (historyHoursSelect) {
       historyHoursSelect.addEventListener("change", fetchDanmuHistory);
+    }
+
+    // Client-side history search
+    const historySearch = document.getElementById("historySearch");
+    if (historySearch) {
+      historySearch.addEventListener("input", () => {
+        const term = historySearch.value.toLowerCase();
+        const filtered = term
+          ? _allHistoryRecords.filter((r) => (r.text || "").toLowerCase().includes(term))
+          : _allHistoryRecords;
+        renderHistoryRecords(filtered);
+      });
+    }
+
+    // Auto-refresh toggle — timer stored at module scope for beforeunload cleanup
+    const autoRefreshCheckbox = document.getElementById("historyAutoRefresh");
+    if (autoRefreshCheckbox) {
+      autoRefreshCheckbox.addEventListener("change", () => {
+        if (_autoRefreshTimer) {
+          clearInterval(_autoRefreshTimer);
+          _autoRefreshTimer = null;
+        }
+        if (autoRefreshCheckbox.checked) {
+          _autoRefreshTimer = setInterval(fetchDanmuHistory, 30000);
+        }
+      });
+    }
+
+    // Password change button
+    const changePasswordBtn = document.getElementById("changePasswordBtn");
+    if (changePasswordBtn) {
+      changePasswordBtn.addEventListener("click", async () => {
+        const current = document.getElementById("pwCurrent")?.value || "";
+        const newPw = document.getElementById("pwNew")?.value || "";
+        const confirm = document.getElementById("pwConfirm")?.value || "";
+
+        if (!current || !newPw || !confirm) {
+          showToast("All password fields are required.", false);
+          return;
+        }
+
+        try {
+          const res = await csrfFetch("/admin/change_password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              current_password: current,
+              new_password: newPw,
+              confirm_password: confirm,
+            }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            showToast(data.message || "Password changed!", true);
+            // Clear the fields
+            ["pwCurrent", "pwNew", "pwConfirm"].forEach((id) => {
+              const el = document.getElementById(id);
+              if (el) el.value = "";
+            });
+          } else {
+            showToast(data.error || "Failed to change password.", false);
+          }
+        } catch (e) {
+          showToast("Error changing password.", false);
+        }
+      });
     }
 
     // Font upload button event listeners
@@ -1010,5 +1185,66 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast("An error occurred during font upload.", false);
     }
   }
+  // --- Real-time WebSocket Listener ---
+  // Receives push notifications from the server (e.g. blacklist_update).
+  function initAdminWebSocket() {
+    const wsUrl = (window.DANMU_CONFIG || {}).wsUrl;
+    if (!wsUrl) return;
+
+    function connect() {
+      try {
+        _adminWs = new WebSocket(wsUrl);
+
+        _adminWs.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === "blacklist_update") {
+              fetchBlacklist();
+            } else if (data.type === "settings_changed") {
+              fetchLatestSettings();
+            }
+          } catch (_) {
+            // ignore non-JSON messages (heartbeat strings)
+          }
+        };
+
+        _adminWs.onclose = () => {
+          if (!_adminWsReconnectTimer) {
+            _adminWsReconnectTimer = setTimeout(() => {
+              _adminWsReconnectTimer = null;
+              connect();
+            }, 5000);
+          }
+        };
+
+        _adminWs.onerror = () => {
+          _adminWs.close();
+        };
+      } catch (e) {
+        console.warn("[AdminWS] Failed to connect:", e);
+      }
+    }
+
+    connect();
+  }
+
+  // Cleanup all background resources on page unload (prevents memory leaks)
+  window.addEventListener("beforeunload", () => {
+    if (_autoRefreshTimer) {
+      clearInterval(_autoRefreshTimer);
+      _autoRefreshTimer = null;
+    }
+    if (_adminWsReconnectTimer) {
+      clearTimeout(_adminWsReconnectTimer);
+      _adminWsReconnectTimer = null;
+    }
+    if (_adminWs) {
+      _adminWs.onclose = null; // prevent reconnect attempt after explicit close
+      _adminWs.close();
+      _adminWs = null;
+    }
+  });
+
+  initAdminWebSocket();
   init();
 });

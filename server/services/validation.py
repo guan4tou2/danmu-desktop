@@ -2,6 +2,9 @@
 
 from marshmallow import EXCLUDE, Schema, ValidationError, fields, validate
 
+# Valid setting type keys (mirrors Config.SETTABLE_OPTION_KEYS)
+_VALID_SETTING_TYPES = {"Color", "Opacity", "FontSize", "Speed", "FontFamily"}
+
 
 class FireRequestSchema(Schema):
     """彈幕發送請求驗證"""
@@ -21,10 +24,31 @@ class BlacklistCheckSchema(Schema):
     text = fields.Str(required=True, validate=validate.Length(min=1, max=1000))
 
 
+class BlacklistKeywordSchema(Schema):
+    """黑名單關鍵字新增/移除請求驗證"""
+
+    keyword = fields.Str(
+        required=True,
+        validate=[
+            validate.Length(min=1, max=200),
+            validate.Regexp(
+                r"^[^\r\n\t\x00-\x08\x0b\x0c\x0e-\x1f]+$",
+                error="Keyword cannot contain control characters.",
+            ),
+        ],
+    )
+
+
 class SettingUpdateSchema(Schema):
     """設定更新請求驗證"""
 
-    type = fields.Str(required=True)
+    type = fields.Str(
+        required=True,
+        validate=validate.OneOf(
+            _VALID_SETTING_TYPES,
+            error="Unknown setting type.",
+        ),
+    )
     value = fields.Raw(required=True)
     index = fields.Int(required=True, validate=validate.Range(min=0, max=3))
 

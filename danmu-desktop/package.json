@@ -8,7 +8,7 @@
     "pack": "npm run build:webpack && electron-builder --dir",
     "pack-dist": "npm run build:webpack && electron-builder",
     "build:webpack": "webpack",
-    "test": "echo \"No tests defined\" && exit 0"
+    "test": "jest --testPathPatterns=tests/"
   },
   "repository": "https://github.com/guan4tou2/danmu-desktop",
   "keywords": [
@@ -21,14 +21,25 @@
   "devDependencies": {
     "@babel/core": "^7.27.4",
     "@babel/preset-env": "^7.27.2",
+    "@jest/globals": "^30.2.0",
     "babel-loader": "^10.0.0",
     "electron": "^36.8.1",
     "electron-builder": "^26.0.12",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
     "terser-webpack-plugin": "^5.3.14",
     "webpack": "^5.99.9",
     "webpack-cli": "^6.0.1"
   },
-  "dependencies": {},
+  "jest": {
+    "testEnvironment": "jsdom",
+    "transform": {
+      "^.+\\.js$": "babel-jest"
+    },
+    "moduleNameMapper": {
+      "^../shared/utils$": "<rootDir>/shared/utils.js"
+    }
+  },
   "build": {
     "appId": "com.example.app",
     "productName": "danmu manager",

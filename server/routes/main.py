@@ -1,8 +1,11 @@
-from flask import (Blueprint, current_app, flash, redirect, render_template,
-                   request, session, url_for)
+from flask import (Blueprint, current_app, flash, make_response, redirect,
+                   render_template, request, session, url_for)
 
-from ..services.security import issue_csrf_token, require_csrf, verify_password
+from ..config import save_runtime_hash
+from ..services.security import (hash_password, issue_csrf_token, rate_limit,
+                                 require_csrf, verify_password)
 from ..services.settings import get_options
+from ..utils import sanitize_log_string
 
 main_bp = Blueprint("main", __name__)
 
@@ -15,6 +18,7 @@ def index():
 
 
 @main_bp.route("/login", methods=["POST"])
+@rate_limit("login", "LOGIN_RATE_LIMIT", "LOGIN_RATE_WINDOW")
 def login():
     password = request.form.get("password", "")
     admin_password = current_app.config["ADMIN_PASSWORD"]
@@ -43,3 +47,52 @@ def logout():
     session.pop("logged_in", None)
     session.pop("csrf_token", None)
     return redirect(url_for("admin_bp.admin"))
+
+
+def _json_response(data, status=200):
+    import json
+    return make_response(json.dumps(data), status, {"Content-Type": "application/json"})
+
+
+def _verify_current_password(candidate: str) -> bool:
+    """Check candidate against whichever password store is active."""
+    hashed = current_app.config.get("ADMIN_PASSWORD_HASHED", "")
+    if hashed:
+        return verify_password(candidate, hashed)
+    return candidate == current_app.config.get("ADMIN_PASSWORD", "")
+
+
+@main_bp.route("/admin/change_password", methods=["POST"])
+@rate_limit("login", "LOGIN_RATE_LIMIT", "LOGIN_RATE_WINDOW")
+@require_csrf
+def change_password():
+    if not session.get("logged_in"):
+        return _json_response({"error": "Unauthorized"}, 401)
+
+    data = request.get_json(silent=True) or {}
+    current = data.get("current_password", "")
+    new_pw = data.get("new_password", "")
+    confirm = data.get("confirm_password", "")
+
+    if not current or not new_pw or not confirm:
+        return _json_response({"error": "All fields are required"}, 400)
+
+    if len(new_pw) < 8:
+        return _json_response({"error": "New password must be at least 8 characters"}, 400)
+
+    if new_pw != confirm:
+        return _json_response({"error": "New passwords do not match"}, 400)
+
+    if not _verify_current_password(current):
+        return _json_response({"error": "Current password is incorrect"}, 403)
+
+    new_hash = hash_password(new_pw)
+    try:
+        save_runtime_hash(new_hash)
+        # Update the live config so subsequent logins use the new hash immediately
+        current_app.config["ADMIN_PASSWORD_HASHED"] = new_hash
+        current_app.logger.info("Admin password changed successfully")
+        return _json_response({"message": "Password changed successfully"})
+    except Exception as exc:
+        current_app.logger.error("Failed to save password hash: %s", sanitize_log_string(str(exc)))
+        return _json_response({"error": "Failed to save new password"}, 500)

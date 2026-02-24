@@ -1,22 +1,26 @@
 import copy
 import threading
 
+_DEFAULT_OPTIONS = {
+    "Color": [True, 0, 0, "#FFFFFF"],
+    "Opacity": [True, 0, 100, 70],
+    "FontSize": [True, 20, 100, 50],
+    "Speed": [True, 1, 10, 4],
+    "FontFamily": [False, "", "", "NotoSansTC"],
+}
+
+_RANGES = {
+    "Speed": {"min": 1, "max": 10},
+    "Opacity": {"min": 0, "max": 100},
+    "FontSize": {"min": 12, "max": 100},
+}
+
 
 class SettingsStore:
     def __init__(self):
         self._lock = threading.Lock()
-        self._options = {
-            "Color": [True, 0, 0, "#FFFFFF"],
-            "Opacity": [True, 0, 100, 70],
-            "FontSize": [True, 20, 100, 50],
-            "Speed": [True, 1, 10, 4],
-            "FontFamily": [False, "", "", "NotoSansTC"],
-        }
-        self._ranges = {
-            "Speed": {"min": 1, "max": 11},
-            "Opacity": {"min": 0, "max": 100},
-            "FontSize": {"min": 12, "max": 100},
-        }
+        self._options = copy.deepcopy(_DEFAULT_OPTIONS)
+        self._ranges = _RANGES
 
     def get_options(self):
         with self._lock:
@@ -53,10 +57,4 @@ class SettingsStore:
 
     def reset(self):
         with self._lock:
-            self._options = {
-                "Color": [True, 0, 0, "#FFFFFF"],
-                "Opacity": [True, 0, 100, 70],
-                "FontSize": [True, 20, 100, 50],
-                "Speed": [True, 1, 10, 4],
-                "FontFamily": [False, "", "", "NotoSansTC"],
-            }
+            self._options = copy.deepcopy(_DEFAULT_OPTIONS)

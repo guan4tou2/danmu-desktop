@@ -4,23 +4,38 @@ import magic
 from flask import (Blueprint, current_app, flash, make_response, redirect,
                    render_template, request, session, url_for)
 
+from ..config import Config
 from ..services import history as history_service
 from ..services import messaging
 from ..services.blacklist import (add_keyword, contains_keyword, list_keywords,
                                   remove_keyword)
+
 from ..services.fonts import (build_font_payload, list_available_fonts,
                               save_uploaded_font)
 from ..services.security import rate_limit, require_csrf
 from ..services.settings import (get_options, get_setting_ranges, set_toggle,
                                  update_setting)
-from ..services.validation import (SettingUpdateSchema, ToggleSettingSchema,
-                                   validate_request)
+from ..services.validation import (BlacklistKeywordSchema, SettingUpdateSchema,
+                                   ToggleSettingSchema, validate_request)
 from ..state import USER_FONTS_DIR
 from ..utils import allowed_file, sanitize_log_string
 
 admin_bp = Blueprint("admin_bp", __name__, url_prefix="/admin")
 
-SETTABLE_OPTION_KEYS = {"Color", "Opacity", "FontSize", "Speed", "FontFamily"}
+
+def _broadcast_blacklist_update():
+    """Push the current blacklist to all connected web clients (admin pages)."""
+    try:
+        notification = json.dumps({"type": "blacklist_update", "keywords": list_keywords()})
+        messaging.send_message(notification)
+    except Exception as exc:
+        current_app.logger.warning(
+            "Failed to broadcast blacklist update: %s", sanitize_log_string(str(exc))
+        )
+
+
+def _json_response(data, status=200):
+    return make_response(json.dumps(data), status, {"Content-Type": "application/json"})
 
 
 def _ensure_logged_in():
@@ -44,26 +59,14 @@ def admin():
 @require_csrf
 def upload_font():
     if not _ensure_logged_in():
-        return make_response(
-            json.dumps({"error": "Unauthorized"}),
-            401,
-            {"Content-Type": "application/json"},
-        )
+        return _json_response({"error": "Unauthorized"}, 401)
 
     file = request.files.get("fontfile")
     if not file or file.filename == "":
-        return make_response(
-            json.dumps({"error": "No selected file"}),
-            400,
-            {"Content-Type": "application/json"},
-        )
+        return _json_response({"error": "No selected file"}, 400)
 
     if not allowed_file(file.filename):
-        return make_response(
-            json.dumps({"error": "File type not allowed"}),
-            400,
-            {"Content-Type": "application/json"},
-        )
+        return _json_response({"error": "File type not allowed"}, 400)
 
     file_head = file.stream.read(2048)
     file.stream.seek(0)
@@ -75,46 +78,25 @@ def upload_font():
         "font/sfnt",
     ]
     if actual_mime_type not in allowed_mime_types:
-        return make_response(
-            json.dumps(
-                {"error": f"Invalid file content type. Detected: {actual_mime_type}"}
-            ),
-            400,
-            {"Content-Type": "application/json"},
+        return _json_response(
+            {"error": f"Invalid file content type. Detected: {actual_mime_type}"}, 400
         )
 
     filename = save_uploaded_font(file)
     if filename:
         current_app.logger.info(f"Font uploaded: {sanitize_log_string(filename)}")
-        return make_response(
-            json.dumps(
-                {
-                    "message": f"Font '{sanitize_log_string(filename)}' uploaded successfully"
-                }
-            ),
-            200,
-            {"Content-Type": "application/json"},
+        return _json_response(
+            {"message": f"Font '{sanitize_log_string(filename)}' uploaded successfully"}
         )
     current_app.logger.warning(f"Failed to upload font: {file.filename}")
-    return make_response(
-        json.dumps({"error": "Failed to upload font"}),
-        400,
-        {"Content-Type": "application/json"},
-    )
+    return _json_response({"error": "Failed to upload font"}, 400)
 
 
 @admin_bp.route("/get_fonts", methods=["GET"])
-@require_csrf
 def get_fonts():
     if not session.get("logged_in"):
-        return make_response(
-            json.dumps({"error": "Unauthorized"}),
-            401,
-            {"Content-Type": "application/json"},
-        )
-    return make_response(
-        json.dumps(list_available_fonts()), 200, {"Content-Type": "application/json"}
-    )
+        return _json_response({"error": "Unauthorized"}, 401)
+    return _json_response(list_available_fonts())
 
 
 @admin_bp.route("/Set", methods=["POST"])
@@ -122,30 +104,17 @@ def get_fonts():
 @require_csrf
 def set_option():
     if not session.get("logged_in"):
-        return make_response(
-            json.dumps({"error": "Unauthorized"}),
-            401,
-            {"Content-Type": "application/json"},
-        )
+        return _json_response({"error": "Unauthorized"}, 401)
 
     payload = request.get_json(silent=True)
-    # 驗證輸入
     validated_data, errors = validate_request(ToggleSettingSchema, payload)
     if errors:
-        return make_response(
-            json.dumps({"error": "Validation failed", "details": errors}),
-            400,
-            {"Content-Type": "application/json"},
-        )
+        return _json_response({"error": "Validation failed", "details": errors}, 400)
 
     key = validated_data["key"]
     value = validated_data["enabled"]
-    if key not in SETTABLE_OPTION_KEYS:
-        return make_response(
-            json.dumps({"error": "Unknown setting key"}),
-            400,
-            {"Content-Type": "application/json"},
-        )
+    if key not in Config.SETTABLE_OPTION_KEYS:
+        return _json_response({"error": "Unknown setting key"}, 400)
     set_toggle(key, value)
     try:
         notification = {"type": "settings_changed", "settings": get_options()}
@@ -155,9 +124,7 @@ def set_option():
     except Exception as exc:
         current_app.logger.error("Change Error: %s", sanitize_log_string(str(exc)))
 
-    return make_response(
-        json.dumps({"message": "OK"}), 200, {"Content-Type": "application/json"}
-    )
+    return _json_response({"message": "OK"})
 
 
 @admin_bp.route("/update", methods=["POST"])
@@ -170,20 +137,11 @@ def update():
     try:
         raw_data = request.get_json()
         if not raw_data:
-            return make_response(
-                json.dumps({"error": "Invalid JSON"}),
-                400,
-                {"Content-Type": "application/json"},
-            )
+            return _json_response({"error": "Invalid JSON"}, 400)
 
-        # 驗證輸入
         validated_data, errors = validate_request(SettingUpdateSchema, raw_data)
         if errors:
-            return make_response(
-                json.dumps({"error": "Validation failed", "details": errors}),
-                400,
-                {"Content-Type": "application/json"},
-            )
+            return _json_response({"error": "Validation failed", "details": errors}, 400)
 
         data = validated_data
         key = data.get("type")
@@ -210,26 +168,18 @@ def update():
 @require_csrf
 def add_to_blacklist_route():
     if not _ensure_logged_in():
-        return make_response(
-            json.dumps({"error": "Unauthorized"}),
-            401,
-            {"Content-Type": "application/json"},
-        )
-    data = request.get_json()
-    keyword = data.get("keyword")
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True)
+    validated_data, errors = validate_request(BlacklistKeywordSchema, data)
+    if errors:
+        return _json_response({"error": "Validation failed", "details": errors}, 400)
+    keyword = validated_data["keyword"]
     if add_keyword(keyword):
-        current_app.logger.info(f"Blacklist keyword added: {keyword}")
-        return make_response(
-            json.dumps({"message": "Keyword added"}),
-            200,
-            {"Content-Type": "application/json"},
-        )
-    current_app.logger.info(f"Blacklist keyword already exists: {keyword}")
-    return make_response(
-        json.dumps({"message": "Keyword already exists"}),
-        200,
-        {"Content-Type": "application/json"},
-    )
+        current_app.logger.info(f"Blacklist keyword added: {sanitize_log_string(keyword)}")
+        _broadcast_blacklist_update()
+        return _json_response({"message": "Keyword added"})
+    current_app.logger.info(f"Blacklist keyword already exists: {sanitize_log_string(keyword)}")
+    return _json_response({"message": "Keyword already exists"})
 
 
 @admin_bp.route("/blacklist/remove", methods=["POST"])
@@ -237,50 +187,34 @@ def add_to_blacklist_route():
 @require_csrf
 def remove_from_blacklist_route():
     if not _ensure_logged_in():
-        return make_response(
-            json.dumps({"error": "Unauthorized"}),
-            401,
-            {"Content-Type": "application/json"},
-        )
-    data = request.get_json()
-    keyword = data.get("keyword")
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True)
+    validated_data, errors = validate_request(BlacklistKeywordSchema, data)
+    if errors:
+        return _json_response({"error": "Validation failed", "details": errors}, 400)
+    keyword = validated_data["keyword"]
     if remove_keyword(keyword):
-        current_app.logger.info(f"Blacklist keyword removed: {keyword}")
-        return make_response(
-            json.dumps({"message": "Keyword removed"}),
-            200,
-            {"Content-Type": "application/json"},
-        )
-    current_app.logger.warning(f"Blacklist keyword not found: {keyword}")
-    return make_response(
-        json.dumps({"error": "Keyword not found"}),
-        404,
-        {"Content-Type": "application/json"},
-    )
+        current_app.logger.info(f"Blacklist keyword removed: {sanitize_log_string(keyword)}")
+        _broadcast_blacklist_update()
+        return _json_response({"message": "Keyword removed"})
+    current_app.logger.warning(f"Blacklist keyword not found: {sanitize_log_string(keyword)}")
+    return _json_response({"error": "Keyword not found"}, 404)
 
 
 @admin_bp.route("/blacklist/get", methods=["GET"])
 def get_blacklist():
     if not _ensure_logged_in():
-        return make_response(
-            json.dumps({"error": "Unauthorized"}),
-            401,
-            {"Content-Type": "application/json"},
-        )
-    return make_response(
-        json.dumps(list_keywords()), 200, {"Content-Type": "application/json"}
-    )
+        return _json_response({"error": "Unauthorized"}, 401)
+    return _json_response(list_keywords())
+
+
 
 
 @admin_bp.route("/history", methods=["GET"])
 @rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 def get_danmu_history():
     if not _ensure_logged_in():
-        return make_response(
-            json.dumps({"error": "Unauthorized"}),
-            401,
-            {"Content-Type": "application/json"},
-        )
+        return _json_response({"error": "Unauthorized"}, 401)
 
     try:
         hours = request.args.get("hours", default=24, type=int)
@@ -300,26 +234,14 @@ def get_danmu_history():
             else {}
         )
 
-        return make_response(
-            json.dumps(
-                {
-                    "records": records,
-                    "stats": stats,
-                    "query": {"hours": hours, "limit": limit},
-                }
-            ),
-            200,
-            {"Content-Type": "application/json"},
+        return _json_response(
+            {"records": records, "stats": stats, "query": {"hours": hours, "limit": limit}}
         )
     except Exception as exc:
         current_app.logger.error(
             "Error fetching danmu history: %s", sanitize_log_string(str(exc))
         )
-        return make_response(
-            json.dumps({"error": "An internal error has occurred"}),
-            500,
-            {"Content-Type": "application/json"},
-        )
+        return _json_response({"error": "An internal error has occurred"}, 500)
 
 
 @admin_bp.route("/history/clear", methods=["POST"])
@@ -327,27 +249,15 @@ def get_danmu_history():
 @require_csrf
 def clear_danmu_history():
     if not _ensure_logged_in():
-        return make_response(
-            json.dumps({"error": "Unauthorized"}),
-            401,
-            {"Content-Type": "application/json"},
-        )
+        return _json_response({"error": "Unauthorized"}, 401)
 
     try:
         if history_service.danmu_history:
             history_service.danmu_history.clear()
         current_app.logger.info("Danmu history cleared by admin")
-        return make_response(
-            json.dumps({"message": "History cleared"}),
-            200,
-            {"Content-Type": "application/json"},
-        )
+        return _json_response({"message": "History cleared"})
     except Exception as exc:
         current_app.logger.error(
             "Error clearing danmu history: %s", sanitize_log_string(str(exc))
         )
-        return make_response(
-            json.dumps({"error": "An internal error has occurred"}),
-            500,
-            {"Content-Type": "application/json"},
-        )
+        return _json_response({"error": "An internal error has occurred"}, 500)

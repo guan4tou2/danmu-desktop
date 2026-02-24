@@ -37,11 +37,17 @@ def create_app(config_class=Config):
         )
 
     # CORS configuration
-    CORS(
-        app,
-        origins=app.config.get("CORS_ORIGINS", ["*"]),
-        supports_credentials=app.config.get("CORS_SUPPORTS_CREDENTIALS", True),
-    )
+    # NOTE: Using wildcard origins with supports_credentials=True is forbidden by the CORS spec.
+    # Default: credentials disabled so public endpoints are accessible from any origin safely.
+    cors_origins = app.config.get("CORS_ORIGINS", ["*"])
+    cors_credentials = app.config.get("CORS_SUPPORTS_CREDENTIALS", False)
+    if cors_credentials and cors_origins == ["*"]:
+        app.logger.warning(
+            "CORS misconfiguration: cannot combine wildcard origins with credentials. "
+            "Set CORS_ORIGINS to specific origins when enabling CORS_SUPPORTS_CREDENTIALS."
+        )
+        cors_credentials = False
+    CORS(app, origins=cors_origins, supports_credentials=cors_credentials)
 
     sock.init_app(app)
     init_security(app)
@@ -65,6 +71,13 @@ def create_app(config_class=Config):
         if request.endpoint == "static":
             response.cache_control.max_age = 3600
             response.cache_control.public = True
+
+        # Security headers
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
 
         return response
 

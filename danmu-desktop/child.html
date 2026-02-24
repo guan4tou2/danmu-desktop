@@ -3,16 +3,25 @@
 
     <head>
         <meta charset="UTF-8">
-        <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-        <!-- <meta http-equiv="Content-Security-Policy"
-            content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"> -->
+        <meta
+          http-equiv="Content-Security-Policy"
+          content="
+            default-src 'self';
+            script-src 'self';
+            style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+            font-src https://fonts.gstatic.com data:;
+            img-src 'self' https: data:;
+            connect-src ws: wss:;
+          "
+        />
         <link href="./child.css" rel="stylesheet">
         <title></title>
     </head>
 
     <body id="danmubody">
+        <!-- Danmu in-flight counter (bottom-right corner) -->
+        <div id="danmu-counter" aria-live="polite" aria-label="Active danmu count"></div>
 
-        <!-- You can also require other files to run in this process -->
         <script src="./dist/renderer.bundle.js"></script>
     </body>
 

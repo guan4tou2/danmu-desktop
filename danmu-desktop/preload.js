@@ -46,41 +46,15 @@ try {
       console.log("[Preload] API.close called");
       ipcRenderer.send("closeChildWindows");
     },
-    sendConnectionStatus: (status) => {
+    sendConnectionStatus: (status, attempt, maxAttempts) => {
       console.log("[Preload] API.sendConnectionStatus called with:", status);
-      ipcRenderer.send("overlay-connection-status", { status });
+      ipcRenderer.send("overlay-connection-status", { status, attempt, maxAttempts });
     },
     onConnectionStatus: (callback) => {
       console.log("[Preload] API.onConnectionStatus listener registered");
       ipcRenderer.on("overlay-connection-status", (event, data) => {
         callback(data);
       });
-    },
-    // Add showDanmu to the API
-    showDanmu: (string, opacity, color, size, speed, fontInfo) => {
-      // Changed fontFamily to fontInfo
-      console.log(
-        "[Preload] API.showDanmu called with:",
-        string,
-        opacity,
-        color,
-        size,
-        speed,
-        fontInfo
-      );
-      // Potentially, you might want to send this to the main process
-      // if the main process is responsible for distributing to child windows.
-      // However, if child windows directly render, this might be called from child's preload.
-      // For now, assuming it's for the child window's renderer to use directly.
-      // If child windows have their own renderer process and preload, this is where it would be.
-      // This example assumes `showdanmu` is a global function in the child window's renderer.
-      if (window.showdanmu) {
-        window.showdanmu(string, opacity, color, size, speed, fontInfo); // Pass fontInfo
-      } else {
-        console.error(
-          "[Preload] window.showdanmu is not defined in this context."
-        );
-      }
     },
     // Send test danmu to overlay
     sendTestDanmu: (text, opacity, color, size, speed, textStyles, displayArea) => {

@@ -4,6 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Danmu Overlay Control</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        script-src 'self' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src https://fonts.gstatic.com;
+        img-src 'self' data: https:;
+        connect-src 'self';
+      "
+    />
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -15,215 +26,7 @@
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
-
-    <style>
-      body {
-        font-family: "Poppins", sans-serif;
-        overflow-y: auto;
-        overflow-x: hidden;
-      }
-
-      .glass-effect {
-        background: rgba(15, 23, 42, 0.75);
-        backdrop-filter: blur(16px) saturate(180%);
-        -webkit-backdrop-filter: blur(16px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.125);
-      }
-
-      .form-input {
-        background-color: rgba(30, 41, 59, 0.8);
-        border: 1px solid #334155;
-        color: #f1f5f9;
-        transition: all 0.3s ease;
-      }
-      .form-input:focus {
-        background-color: rgba(30, 41, 59, 1);
-        border-color: #38bdf8;
-        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.5);
-        outline: none;
-      }
-      .form-input::placeholder {
-        color: #94a3b8;
-        opacity: 1;
-      }
-      .form-input:disabled {
-        opacity: 0.7;
-        cursor: not-allowed;
-        background-color: rgba(30, 41, 59, 0.5);
-      }
-
-      .btn-primary {
-        background-image: linear-gradient(to right, #38bdf8, #3b82f6);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-      }
-
-      .btn-primary:hover:not(:disabled) {
-        box-shadow: 0 6px 12px rgba(56, 189, 248, 0.4);
-        transform: translateY(-1px);
-      }
-
-      .btn-primary:active:not(:disabled) {
-        transform: translateY(0);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-      }
-
-      /* Button states */
-      .btn-connecting {
-        background-image: linear-gradient(
-          to right,
-          #06b6d4,
-          #0891b2
-        ) !important;
-        animation: pulse-connecting 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-      }
-
-      .btn-connected {
-        background-image: linear-gradient(
-          to right,
-          #14b8a6,
-          #0d9488
-        ) !important;
-        box-shadow: 0 0 20px rgba(20, 184, 166, 0.4);
-      }
-
-      .btn-active {
-        background-image: linear-gradient(
-          to right,
-          #38bdf8,
-          #3b82f6
-        ) !important;
-        box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
-      }
-
-      .btn-stopped {
-        background-image: linear-gradient(
-          to right,
-          #475569,
-          #334155
-        ) !important;
-        box-shadow: 0 0 10px rgba(71, 85, 105, 0.2);
-      }
-
-      @keyframes pulse-connecting {
-        0%,
-        100% {
-          opacity: 1;
-          box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.6);
-        }
-        50% {
-          opacity: 0.9;
-          box-shadow: 0 0 0 10px rgba(6, 182, 212, 0);
-        }
-      }
-
-      /* Toast notification styles */
-      #toast-container {
-        position: fixed;
-        top: 1rem;
-        right: 1rem;
-        z-index: 9999;
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        pointer-events: none;
-      }
-
-      .toast {
-        pointer-events: auto;
-        min-width: 300px;
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-      }
-
-      /* Reduced motion support */
-      @media (prefers-reduced-motion: reduce) {
-        .btn-connecting {
-          animation: none !important;
-        }
-        * {
-          animation-duration: 0.01ms !important;
-          transition-duration: 0.01ms !important;
-        }
-      }
-
-      /* Input validation styles */
-      .input-valid {
-        border-color: #10b981 !important;
-        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
-      }
-
-      .input-invalid {
-        border-color: #ef4444 !important;
-        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
-      }
-
-      /* Loading spinner */
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      .spinner {
-        animation: spin 1s linear infinite;
-      }
-
-      /* Custom range slider styles */
-      input[type="range"] {
-        -webkit-appearance: none;
-        appearance: none;
-      }
-
-      input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #38bdf8, #3b82f6);
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(56, 189, 248, 0.4);
-        transition: all 0.2s ease;
-      }
-
-      input[type="range"]::-webkit-slider-thumb:hover {
-        transform: scale(1.2);
-        box-shadow: 0 4px 12px rgba(56, 189, 248, 0.6);
-      }
-
-      input[type="range"]::-moz-range-thumb {
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #38bdf8, #3b82f6);
-        cursor: pointer;
-        border: none;
-        box-shadow: 0 2px 8px rgba(56, 189, 248, 0.4);
-        transition: all 0.2s ease;
-      }
-
-      input[type="range"]::-moz-range-thumb:hover {
-        transform: scale(1.2);
-        box-shadow: 0 4px 12px rgba(56, 189, 248, 0.6);
-      }
-
-      /* Details/Summary styling */
-      details summary {
-        list-style: none;
-      }
-
-      details summary::-webkit-details-marker {
-        display: none;
-      }
-
-      details[open] summary svg {
-        transform: rotate(180deg);
-      }
-
-      details summary svg {
-        transition: transform 0.3s ease;
-      }
-    </style>
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="text-slate-200 overflow-auto">
     <!-- Dynamic Background -->
@@ -758,6 +561,26 @@
             <span data-i18n="stopButton">Stop Overlay</span>
           </button>
         </div>
+
+        <!-- Settings Import / Export -->
+        <div class="flex gap-2 pt-2 border-t border-slate-700/50">
+          <button
+            id="export-settings-btn"
+            title="Export all settings as JSON"
+            class="flex-1 text-xs text-slate-400 hover:text-slate-200 py-1.5 px-3 rounded-lg border border-slate-700 hover:border-slate-500 transition-colors flex items-center justify-center gap-1.5"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span data-i18n="exportSettings">Export Settings</span>
+          </button>
+          <button
+            id="import-settings-btn"
+            title="Import settings from JSON file"
+            class="flex-1 text-xs text-slate-400 hover:text-slate-200 py-1.5 px-3 rounded-lg border border-slate-700 hover:border-slate-500 transition-colors flex items-center justify-center gap-1.5"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span data-i18n="importSettings">Import Settings</span>
+          </button>
+        </div>
       </div>
     </main>
 
@@ -776,136 +599,5 @@
     ></script>
     <script src="i18n.js"></script>
     <script src="./dist/renderer.bundle.js"></script>
-    <script>
-      // Vanta.js Background Initialization
-      VANTA.NET({
-        el: "#vanta-bg",
-        mouseControls: true,
-        touchControls: true,
-        gyroControls: false,
-        minHeight: 200.0,
-        minWidth: 200.0,
-        scale: 1.0,
-        scaleMobile: 1.0,
-        color: 0x3b82f6, // sky-500
-        backgroundColor: 0x0f172a, // slate-900
-        points: 12.0,
-        maxDistance: 25.0,
-        spacing: 18.0,
-      });
-
-      document.addEventListener("DOMContentLoaded", async () => {
-        const api = window.API;
-
-        // Initialize i18n
-        if (typeof i18n !== "undefined") {
-          await i18n.loadLanguage();
-          i18n.updateUI();
-
-          // Set language selector
-          const languageSelect = document.getElementById("language-select");
-          if (languageSelect) {
-            languageSelect.value = i18n.currentLang;
-            languageSelect.addEventListener("change", (e) => {
-              i18n.setLanguage(e.target.value);
-            });
-          }
-        }
-
-        // DOM Elements
-        // const hostInput = document.getElementById("host-input"); // Handled in renderer.js
-        // const portInput = document.getElementById("port-input"); // Handled in renderer.js
-        const screenSelect = document.getElementById("screen-select"); // Still needed for population
-        // const startButton = document.getElementById("start-button"); // Handled in renderer.js
-        // const stopButton = document.getElementById("stop-button"); // Handled in renderer.js
-
-        // Populate screen selector
-        console.log("[index.html] window.API before getDisplays:", window.API);
-        api.getDisplays().then((displays) => {
-          screenSelect.innerHTML = ""; // Clear existing options
-          displays.forEach((display, index) => {
-            const option = document.createElement("option");
-            option.value = index;
-            option.textContent = `Display ${index + 1} (${display.size.width}x${
-              display.size.height
-            }) ${display.primary ? "[Primary]" : ""}`;
-            if (display.primary) {
-              option.selected = true;
-            }
-            screenSelect.appendChild(option);
-          });
-        });
-
-        // Toggle UI state - This logic is now primarily in renderer.js
-        // function setUIState(isStarted) {
-        //   hostInput.disabled = isStarted;
-        //   portInput.disabled = isStarted;
-        //   screenSelect.disabled = isStarted; // screenSelect is handled by renderer.js based on checkbox and start/stop
-        //   startButton.disabled = isStarted;
-        //   stopButton.disabled = !isStarted;
-
-        //   if (isStarted) {
-        //     startButton.classList.add(
-        //       "disabled:opacity-50",
-        //       "disabled:cursor-not-allowed"
-        //     );
-        //     stopButton.classList.remove(
-        //       "disabled:opacity-50",
-        //       "disabled:cursor-not-allowed"
-        //     );
-        //     stopButton.classList.add("bg-red-600", "hover:bg-red-700");
-        //     stopButton.classList.remove("bg-slate-600");
-        //   } else {
-        //     startButton.classList.remove(
-        //       "disabled:opacity-50",
-        //       "disabled:cursor-not-allowed"
-        //     );
-        //     stopButton.classList.add(
-        //       "disabled:opacity-50",
-        //       "disabled:cursor-not-allowed"
-        //     );
-        //     stopButton.classList.remove("bg-red-600", "hover:bg-red-700");
-        //     stopButton.classList.add("bg-slate-600");
-        //   }
-        // }
-
-        // Event listener for Start button - This is handled by renderer.js
-        // startButton.addEventListener("click", () => {
-        //   const host = hostInput.value.trim();
-        //   const port = portInput.value.trim();
-        //   const hostRegex =
-        //     /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
-        //   const portRegex = /^\d{1,5}$/;
-        //   if (!hostRegex.test(host)) {
-        //     alert(
-        //       "Invalid Host: Please enter a valid IP address or domain name."
-        //     );
-        //     return;
-        //   }
-        //   if (!portRegex.test(port) || parseInt(port) > 65535) {
-        //     alert("Invalid Port: Please enter a number between 1 and 65535.");
-        //     return;
-        //   }
-        //   const displayIndex = parseInt(screenSelect.value);
-        //   console.log(
-        //     `Starting overlay on ${host}:${port} at display ${displayIndex}`
-        //   );
-        //   api.create(host, port, displayIndex); // This call is missing the 4th argument
-        //   setUIState(true);
-        // });
-
-        // Event listener for Stop button - This is handled by renderer.js
-        // stopButton.addEventListener("click", () => {
-        //   console.log("Stopping overlay...");
-        //   api.close();
-        //   setUIState(false);
-        // });
-
-        // Initial UI State - This is handled by renderer.js and the checkbox listener
-        // setUIState(false);
-        // The initial state of screenSelect based on checkbox is set in renderer.js
-        // The initial disabled state of buttons is set in HTML and managed by renderer.js
-      });
-    </script>
   </body>
 </html>

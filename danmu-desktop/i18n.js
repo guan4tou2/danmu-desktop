@@ -74,6 +74,7 @@ const i18n = {
       trackManagement: "Track Management",
       maxTracks: "Maximum Tracks",
       maxTracksHint: "0 = Unlimited tracks",
+      maxTracksUnlimited: "Unlimited",
       collisionDetection: "Collision Detection",
 
       // Batch test
@@ -82,6 +83,10 @@ const i18n = {
       batchTestHint: "Test collision detection and track distribution",
       batchTestStarted: "Sending test danmu...",
       batchTestComplete: "Batch test completed!",
+
+      // Settings I/O
+      exportSettings: "Export Settings",
+      importSettings: "Import Settings",
 
       // Startup animation
       startupAnimation: "Startup Animation",
@@ -165,6 +170,7 @@ const i18n = {
       trackManagement: "軌道管理",
       maxTracks: "最大軌道數",
       maxTracksHint: "0 = 無限制軌道",
+      maxTracksUnlimited: "無限制",
       collisionDetection: "碰撞檢測",
 
       // Batch test
@@ -173,6 +179,10 @@ const i18n = {
       batchTestHint: "測試碰撞檢測和軌道分配",
       batchTestStarted: "正在發送測試彈幕...",
       batchTestComplete: "批量測試完成！",
+
+      // Settings I/O
+      exportSettings: "匯出設定",
+      importSettings: "匯入設定",
 
       // Startup animation
       startupAnimation: "啟動動畫",

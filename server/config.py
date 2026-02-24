@@ -1,10 +1,27 @@
 import os
 import secrets
+from pathlib import Path
 
 from dotenv import find_dotenv, load_dotenv
 
 # Load environment variables once for the entire server package
 load_dotenv(find_dotenv(), override=True)
+
+# Runtime-writable password hash file (takes priority over env vars)
+_HASH_FILE = Path(__file__).parent / ".admin_password.hash"
+
+
+def load_runtime_hash() -> str:
+    """Return bcrypt hash from .admin_password.hash, or '' if not present."""
+    try:
+        return _HASH_FILE.read_text().strip()
+    except FileNotFoundError:
+        return ""
+
+
+def save_runtime_hash(hashed: str) -> None:
+    """Persist a new bcrypt hash to .admin_password.hash."""
+    _HASH_FILE.write_text(hashed)
 
 
 class Config:
@@ -12,7 +29,8 @@ class Config:
 
     SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_hex(16))
     ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "ADMIN_PASSWORD")
-    ADMIN_PASSWORD_HASHED = os.getenv("ADMIN_PASSWORD_HASHED", "")  # 預先雜湊的密碼
+    # Priority: runtime hash file > ADMIN_PASSWORD_HASHED env var > plaintext ADMIN_PASSWORD
+    ADMIN_PASSWORD_HASHED = load_runtime_hash() or os.getenv("ADMIN_PASSWORD_HASHED", "")
     PORT = int(os.getenv("PORT", "4000"))
     WS_PORT = int(os.getenv("WS_PORT", "4001"))
     MAX_CONTENT_LENGTH = 15 * 1024 * 1024  # 15 MB uploads
@@ -28,17 +46,29 @@ class Config:
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
     FONT_TOKEN_EXPIRATION = int(os.getenv("FONT_TOKEN_EXPIRATION", "900"))
 
+    # Login rate limiting (5 attempts per 5 minutes per IP)
+    LOGIN_RATE_LIMIT = int(os.getenv("LOGIN_RATE_LIMIT", "5"))
+    LOGIN_RATE_WINDOW = int(os.getenv("LOGIN_RATE_WINDOW", "300"))
+
     # Session configuration
     SESSION_COOKIE_SECURE = (
         os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
     )
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
+    # Strict prevents cookies from being sent on cross-site requests (stronger CSRF protection)
+    SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Strict")
 
     # CORS configuration
+    # Default: wildcard origins, no credentials — allows public API access without CSRF risk.
+    # To allow admin access from a specific remote origin, set CORS_ORIGINS and CORS_SUPPORTS_CREDENTIALS=true.
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
-    CORS_SUPPORTS_CREDENTIALS = True
+    CORS_SUPPORTS_CREDENTIALS = (
+        os.getenv("CORS_SUPPORTS_CREDENTIALS", "false").lower() == "true"
+    )
 
     # Danmu history configuration
     DANMU_HISTORY_MAX_RECORDS = int(os.getenv("DANMU_HISTORY_MAX_RECORDS", "10000"))
     DANMU_HISTORY_CLEANUP_HOURS = int(os.getenv("DANMU_HISTORY_CLEANUP_HOURS", "24"))
+
+    # Admin settable option keys
+    SETTABLE_OPTION_KEYS = {"Color", "Opacity", "FontSize", "Speed", "FontFamily"}
