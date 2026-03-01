@@ -412,6 +412,14 @@ document.addEventListener("DOMContentLoaded", () => {
     updatePreview();
   });
 
+  // Enter 送出，Shift+Enter 換行
+  elements.danmuText.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      elements.btnSend.click();
+    }
+  });
+
   if (elements.colorInput) {
     elements.colorInput.addEventListener("input", (e) => {
       const color = e.target.value;
