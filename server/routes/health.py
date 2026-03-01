@@ -1,6 +1,14 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, send_from_directory
+from pathlib import Path
 
 health_bp = Blueprint("health", __name__)
+
+_STATIC_DIR = Path(__file__).parent.parent / "static"
+
+
+@health_bp.route("/favicon.ico")
+def favicon():
+    return send_from_directory(_STATIC_DIR, "favicon.ico", mimetype="image/x-icon")
 
 
 @health_bp.route("/health")
