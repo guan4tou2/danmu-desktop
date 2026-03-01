@@ -126,7 +126,7 @@ def websocket(ws):
             break
 
 
-if __name__ == "__main__":
+def main():
     http_port = app.config["PORT"]
 
     check_thread = threading.Thread(
@@ -135,3 +135,7 @@ if __name__ == "__main__":
     check_thread.start()
 
     WSGIServer(("0.0.0.0", http_port), app).serve_forever()
+
+
+if __name__ == "__main__":
+    main()
