@@ -8,7 +8,7 @@ services:
       - "${PORT:-4000}:4000"
       - "${WS_PORT:-4001}:4001"
     environment:
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-ADMIN_PASSWORD}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-password}
       - SECRET_KEY=${SECRET_KEY:-}
       - PORT=${PORT:-4000}
       - WS_PORT=${WS_PORT:-4001}
