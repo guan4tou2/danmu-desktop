@@ -88,6 +88,10 @@ def _resolve_danmu_style(data):
     data["size"] = _pick(data.pop("size", None), options.get("FontSize", [True, 20, 100, 50]))
     data["speed"] = _pick(data.pop("speed", None), options.get("Speed", [True, 1, 10, 4]))
 
+    # effect: 直接傳遞，不受管理員設定控制
+    if "effect" not in data:
+        data["effect"] = "none"
+
     return data
 
 

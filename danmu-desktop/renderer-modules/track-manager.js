@@ -1,5 +1,6 @@
 // Track management and collision detection + danmu display (used in child window)
 const { sanitizeLog } = require("../shared/utils");
+const DanmuEffects = require("./danmu-effects");
 
 function initTrackManager() {
   window.danmuTracks = [];
@@ -7,6 +8,9 @@ function initTrackManager() {
     maxTracks: 10,
     collisionDetection: true,
   };
+
+  // 暴露給第三方插件使用
+  window.DanmuEffects = DanmuEffects;
 
   // Cached screen dimensions — updated on resize instead of queried per danmu
   let _cachedScreenWidth = document.documentElement.clientWidth;
@@ -103,6 +107,18 @@ function initTrackManager() {
     return { top, trackIndex };
   };
 
+  /**
+   * 顯示一條彈幕
+   * @param {string} string - 文字或圖片 URL
+   * @param {number} opacity - 透明度 0–100
+   * @param {string} color - CSS 色碼（含 # 前綴）
+   * @param {number} size - 字體大小（px）
+   * @param {number} speed - 速度 1–10
+   * @param {object} fontInfo - 字型資訊
+   * @param {object} textStyles - 描邊 / 陰影設定
+   * @param {object} displayArea - 顯示區域 { top, height }（百分比）
+   * @param {string|object} effect - 特效名稱或 { name, options }
+   */
   window.showdanmu = function (
     string,
     opacity = 75,
@@ -117,7 +133,8 @@ function initTrackManager() {
       textShadow: false,
       shadowBlur: 4,
     },
-    displayArea = { top: 0, height: 100 }
+    displayArea = { top: 0, height: 100 },
+    effect = "none"
   ) {
     console.log("[showdanmu] Received:", {
       string: sanitizeLog(string),
@@ -126,17 +143,28 @@ function initTrackManager() {
       size,
       speed,
       fontInfo,
+      effect,
     });
 
     const parentElement = document.getElementById("danmubody");
     const imgs = /^https?:\/\/([^\s/]+\/)*[^\s/]+\.(gif|png|jpeg|jpg)$/i;
     const protocolCheck = /^(http:|https:)/i;
 
+    // 解析特效參數
+    const effectName = typeof effect === "object" ? effect.name : (effect || "none");
+    const effectOptions = typeof effect === "object" ? (effect.options || {}) : {};
+
+    // ── 建立 wrapper（負責 translateX 動畫，與 inner 特效動畫分離，互不衝突）
+    const wrapper = document.createElement("div");
+    wrapper.style.cssText = "position:absolute;display:inline-block;white-space:nowrap;";
+
     let danmu;
     if (imgs.test(string) && protocolCheck.test(string)) {
       danmu = document.createElement("img");
+      danmu.className = "danmu";
       danmu.setAttribute("src", string);
       danmu.width = size * 2;
+      danmu.style.position = "relative"; // 覆蓋 child.css 的 img { position: absolute }
     } else if (imgs.test(string) && !protocolCheck.test(string)) {
       console.warn(
         "[showdanmu] Invalid protocol for image URL:",
@@ -147,17 +175,18 @@ function initTrackManager() {
       danmu.className = "danmu";
       danmu.textContent = "Invalid image URL: " + string;
       danmu.setAttribute("data-stroke", "Invalid image URL: " + string);
+      danmu.style.position = "relative";
       danmu.style.fontSize = `${size}px`;
       danmu.style.color = "red";
-      if (parentElement) {
-        parentElement.appendChild(danmu);
-      }
+      wrapper.appendChild(danmu);
+      if (parentElement) parentElement.appendChild(wrapper);
       return;
     } else {
       danmu = document.createElement("h1");
       danmu.className = "danmu";
       danmu.textContent = string;
       danmu.setAttribute("data-stroke", string);
+      danmu.style.position = "relative"; // 覆蓋 child.css 的 h1 { position: absolute }
       danmu.style.fontSize = `${size}px`;
       danmu.style.color = color;
 
@@ -176,6 +205,8 @@ function initTrackManager() {
         }px rgba(0, 0, 0, 0.6)`;
       }
     }
+
+    wrapper.appendChild(danmu);
 
     const applyFontAndAnimate = async () => {
       let effectiveFontName = fontInfo.name || "NotoSansTC";
@@ -206,12 +237,8 @@ function initTrackManager() {
       }
       danmu.style.fontFamily = effectiveFontName;
 
-      parentElement.appendChild(danmu);
-      console.log(
-        "[showdanmu] Danmu element appended with font:",
-        effectiveFontName,
-        danmu
-      );
+      // 插入 DOM 才能量測尺寸
+      parentElement.appendChild(wrapper);
 
       const Height = parseFloat(getComputedStyle(danmu).height);
       const Width = parseFloat(getComputedStyle(danmu).width);
@@ -225,8 +252,9 @@ function initTrackManager() {
       );
       const top = trackPosition.top;
 
-      danmu.style.top = `${top}px`;
-      danmu.style.opacity = opacity * 0.01;
+      // 位置 & 透明度套在 wrapper
+      wrapper.style.top = `${top}px`;
+      wrapper.style.opacity = String(opacity * 0.01);
 
       let currentSpeed = Number(speed);
       if (isNaN(currentSpeed)) {
@@ -243,30 +271,25 @@ function initTrackManager() {
       let duration = maxTime - ((currentSpeed - 1) * (maxTime - minTime)) / 9;
       duration = Math.max(minTime, Math.min(maxTime, duration));
 
-      console.log(
-        "[showdanmu] Sanitized speed:",
-        currentSpeed,
-        "Calculated duration:",
-        duration
-      );
-      console.log("[showdanmu] Animation parameters:", { Width, duration, top });
+      console.log("[showdanmu] Animation parameters:", { Width, duration, top, effectName });
 
+      // 套用特效至 inner 元素（不影響 wrapper 的 translateX）
+      DanmuEffects.apply(effectName, danmu, effectOptions);
+
+      // translateX 動畫套在 wrapper
       try {
-        danmu.animate(
+        wrapper.animate(
           [
             { transform: "translateX(100vw)" },
             { transform: `translateX(-${Width}px)` },
           ],
-          { duration: duration, easing: "linear" }
+          { duration, easing: "linear" }
         ).onfinish = () => {
-          console.log("[showdanmu] Animation finished, danmu removed:", danmu);
-          danmu.remove();
+          wrapper.remove();
         };
       } catch (e) {
         console.error("[showdanmu] Animation error:", sanitizeLog(e.message));
-        if (danmu.parentElement) {
-          danmu.remove();
-        }
+        if (wrapper.parentElement) wrapper.remove();
       }
     };
 
@@ -275,9 +298,9 @@ function initTrackManager() {
         "[showdanmu] Error in applyFontAndAnimate:",
         sanitizeLog(e.message)
       );
-      if (danmu && !danmu.parentElement && parentElement) {
+      if (wrapper && !wrapper.parentElement && parentElement) {
         danmu.style.fontFamily = "NotoSansTC";
-        parentElement.appendChild(danmu);
+        parentElement.appendChild(wrapper);
       }
     });
   };

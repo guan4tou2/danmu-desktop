@@ -46,6 +46,9 @@ document.addEventListener("DOMContentLoaded", () => {
     userFontSelectControl: document.getElementById("userFontSelectControl"),
     userFontSelect: document.getElementById("userFontSelect"),
 
+    // Effect buttons
+    effectButtons: document.getElementById("effectButtons"),
+
     // Toast container
     toastContainer: document.getElementById("toast-container"),
 
@@ -65,6 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- State management ---
   let currentSettings = {};
   let ws = null;
+  let selectedEffect = "none";
   let autoDismissTimer = null;
   let fontRefreshTimer = null;
   const FONT_REFRESH_BUFFER_SECONDS = 60;
@@ -461,6 +465,23 @@ document.addEventListener("DOMContentLoaded", () => {
     elements.userFontSelect.addEventListener("change", updatePreview);
   }
 
+  // Effect button toggle
+  if (elements.effectButtons) {
+    elements.effectButtons.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-effect]");
+      if (!btn) return;
+      selectedEffect = btn.dataset.effect;
+      elements.effectButtons.querySelectorAll(".effect-btn").forEach((b) => {
+        const active = b === btn;
+        b.classList.toggle("active", active);
+        b.classList.toggle("bg-slate-700", active);
+        b.classList.toggle("text-white", active);
+        b.classList.toggle("bg-slate-800", !active);
+        b.classList.toggle("text-slate-300", !active);
+      });
+    });
+  }
+
   // Send Danmu
   elements.btnSend.addEventListener("click", async () => {
     const text = elements.danmuText.value.trim();
@@ -488,6 +509,7 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.userFontSelect && elements.userFontSelect.value
           ? elements.userFontSelect.value
           : null,
+      effect: selectedEffect,
       fingerprint: clientFingerprint,
     };
 

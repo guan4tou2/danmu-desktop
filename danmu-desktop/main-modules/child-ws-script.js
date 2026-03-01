@@ -490,7 +490,8 @@ function getChildWsScript(ip, port, startupAnimationSettings) {
                     parseInt(dataPayload.speed),
                     dataPayload.fontInfo,
                     dataPayload.textStyles || { textStroke: true, strokeWidth: 2, strokeColor: "#000000", textShadow: false, shadowBlur: 4 },
-                    dataPayload.displayArea || { top: 0, height: 100 }
+                    dataPayload.displayArea || { top: 0, height: 100 },
+                    dataPayload.effect || 'none'
                   );
                 } else {
                   console.warn('[WebSocket] window.showdanmu not ready, retrying in 100ms...');
@@ -506,7 +507,8 @@ function getChildWsScript(ip, port, startupAnimationSettings) {
                 speed: data.speed,
                 fontInfo: data.fontInfo,
                 textStyles: data.textStyles,
-                displayArea: data.displayArea
+                displayArea: data.displayArea,
+                effect: data.effect,
               });
 
             } catch (e) {
