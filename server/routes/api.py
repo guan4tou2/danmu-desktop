@@ -54,16 +54,41 @@ def _parse_and_validate(schema, invalid_json_as_plain=False):
     return validated_data, None
 
 
-def _resolve_font_payload(data):
-    admin_font_setting = get_options().get("FontFamily", [False, "", "", "NotoSansTC"])
-    allow_user_font_choice = admin_font_setting[0]
-    admin_default_font_name = admin_font_setting[3]
+def _resolve_danmu_style(data):
+    """將使用者傳入的樣式欄位與管理員設定合併，回傳完整樣式的 data dict。
 
-    chosen_font_name = admin_default_font_name
-    if allow_user_font_choice and data.get("fontInfo", {}).get("name"):
+    管理員設定格式：[enabled, min, max, default_value]
+    - enabled=True  → 允許使用者自訂，優先使用使用者傳入值
+    - enabled=False → 強制使用管理員預設值
+    """
+    options = get_options()
+
+    def _pick(user_val, setting):
+        """選出最終值：使用者值（若允許且有提供）或管理員預設。"""
+        allow_custom, default = setting[0], setting[3]
+        return user_val if (user_val is not None and allow_custom) else default
+
+    # font 欄位（web UI 送字串）→ 轉成 fontInfo dict 再走原有解析邏輯
+    if data.get("font"):
+        if not (data.get("fontInfo") and data["fontInfo"].get("name")):
+            data["fontInfo"] = {"name": data["font"]}
+    data.pop("font", None)
+
+    font_setting = options.get("FontFamily", [False, "", "", "NotoSansTC"])
+    chosen_font_name = font_setting[3]
+    if font_setting[0] and data.get("fontInfo", {}).get("name"):
         chosen_font_name = data["fontInfo"]["name"]
+    data["fontInfo"] = build_font_payload(chosen_font_name)
 
-    return build_font_payload(chosen_font_name)
+    # color：管理員設定存 "#FFFFFF"，overlay 期望不含 # 的 hex
+    raw_color = _pick(data.pop("color", None), options.get("Color", [True, 0, 0, "#FFFFFF"]))
+    data["color"] = str(raw_color).lstrip("#")
+
+    data["opacity"] = _pick(data.pop("opacity", None), options.get("Opacity", [True, 0, 100, 70]))
+    data["size"] = _pick(data.pop("size", None), options.get("FontSize", [True, 20, 100, 50]))
+    data["speed"] = _pick(data.pop("speed", None), options.get("Speed", [True, 1, 10, 4]))
+
+    return data
 
 
 def _record_history_if_enabled(data, fingerprint, client_ip):
@@ -102,7 +127,7 @@ def fire():
         if data.get("isImage") and not is_valid_image_url(data["text"]):
             return make_response("Invalid image url", 400)
 
-        data["fontInfo"] = _resolve_font_payload(data)
+        data = _resolve_danmu_style(data)
 
         forward_success = messaging.forward_to_ws_server(data)
 

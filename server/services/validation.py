@@ -12,6 +12,14 @@ class FireRequestSchema(Schema):
     text = fields.Str(required=True, validate=validate.Length(min=1, max=100))
     isImage = fields.Bool(load_default=False)
     fontInfo = fields.Dict(load_default=None)
+    font = fields.Str(load_default=None, validate=validate.Length(max=100))
+    color = fields.Str(
+        load_default=None,
+        validate=validate.Regexp(r"^#?[0-9a-fA-F]{6}$", error="Invalid hex color"),
+    )
+    opacity = fields.Int(load_default=None, validate=validate.Range(min=0, max=100))
+    size = fields.Int(load_default=None, validate=validate.Range(min=1, max=200))
+    speed = fields.Int(load_default=None, validate=validate.Range(min=1, max=10))
     fingerprint = fields.Str(load_default=None, validate=validate.Length(max=128))
 
     class Meta:
