@@ -22,7 +22,7 @@ app.whenReady().then(() => {
   mainWindow = createWindow(childWindows, onKonamiTrigger);
   setupIpcHandlers(mainWindow, childWindows);
 
-  tray = new Tray(path.join(__dirname, "assets/icon.png"));
+  tray = new Tray(path.join(__dirname, "../assets/icon.png"));
   const menu = [
     {
       label: "open manager",
