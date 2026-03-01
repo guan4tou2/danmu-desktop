@@ -1,0 +1,21 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "彈幕桌面伺服器端應用程式。",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build:css": "tailwindcss -i tailwind.input.css -o static/css/tailwind.css --minify",
+    "watch:css": "tailwindcss -i tailwind.input.css -o static/css/tailwind.css --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.2.1",
+    "tailwindcss": "^4.2.1"
+  }
+}
