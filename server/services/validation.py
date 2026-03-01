@@ -56,7 +56,13 @@ class SettingUpdateSchema(Schema):
 class ToggleSettingSchema(Schema):
     """開關設定請求驗證"""
 
-    key = fields.Str(required=True)
+    key = fields.Str(
+        required=True,
+        validate=validate.OneOf(
+            _VALID_SETTING_TYPES,
+            error="Unknown setting key.",
+        ),
+    )
     enabled = fields.Bool(required=True)
 
 

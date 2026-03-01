@@ -27,7 +27,7 @@ function isFromChildWindow(event, childWindows) {
 }
 
 /**
- * Validates numeric IPC parameters to prevent injection through non-string fields.
+ * Validates numeric IPC parameters and color format to prevent injection.
  */
 function validateDanmuParams(data) {
   const opacity = Number(data.opacity);
@@ -42,7 +42,12 @@ function validateDanmuParams(data) {
     return null;
   }
 
-  return { opacity, size, speed };
+  // 驗證顏色格式必須為合法的 CSS 十六進位色碼，防止非預期值注入
+  const colorRegex = /^#[0-9a-fA-F]{6}$/;
+  const color = typeof data.color === "string" ? data.color : "#ffffff";
+  const validatedColor = colorRegex.test(color) ? color : "#ffffff";
+
+  return { opacity, size, speed, color: validatedColor };
 }
 
 /**
@@ -127,7 +132,7 @@ function setupIpcHandlers(mainWindow, childWindows) {
       console.warn("[Main] send-test-danmu: numeric parameter validation failed");
       return;
     }
-    const { opacity, size, speed } = validated;
+    const { opacity, size, speed, color } = validated;
 
     console.log("[Main] send-test-danmu received:", data);
     childWindows.forEach((win) => {
@@ -139,7 +144,7 @@ function setupIpcHandlers(mainWindow, childWindows) {
             window.showdanmu(
               ${JSON.stringify(data.text)},
               ${opacity},
-              ${JSON.stringify(data.color)},
+              ${JSON.stringify(color)},
               ${size},
               ${speed},
               { name: "NotoSansTC", url: null, type: "default" },

@@ -1,3 +1,5 @@
+import json
+
 from flask import (Blueprint, current_app, flash, make_response, redirect,
                    render_template, request, session, url_for)
 
@@ -50,7 +52,6 @@ def logout():
 
 
 def _json_response(data, status=200):
-    import json
     return make_response(json.dumps(data), status, {"Content-Type": "application/json"})
 
 

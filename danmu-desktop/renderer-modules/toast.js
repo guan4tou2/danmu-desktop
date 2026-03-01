@@ -31,17 +31,28 @@ function showToast(message, type = "info") {
   };
 
   toast.style.backgroundColor = bgColors[type] || bgColors.info;
-  toast.innerHTML = `
-    ${icons[type] || icons.info}
-    <div class="flex-1">
-      <p class="text-sm font-medium text-slate-100">${message}</p>
-    </div>
-    <button class="text-slate-400 hover:text-slate-200 transition-colors" onclick="this.parentElement.remove()">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-      </svg>
-    </button>
-  `;
+
+  // 使用 DOM 方法構建結構，避免將 message 插入 innerHTML（防止 XSS）
+  const iconWrapper = document.createElement("div");
+  iconWrapper.innerHTML = icons[type] || icons.info; // 靜態 SVG，安全
+
+  const textWrapper = document.createElement("div");
+  textWrapper.className = "flex-1";
+  const p = document.createElement("p");
+  p.className = "text-sm font-medium text-slate-100";
+  p.textContent = message; // 使用 textContent，確保 message 不被解析為 HTML
+  textWrapper.appendChild(p);
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "text-slate-400 hover:text-slate-200 transition-colors";
+  closeBtn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+    </svg>`;
+  closeBtn.addEventListener("click", () => toast.remove());
+
+  toast.appendChild(iconWrapper);
+  toast.appendChild(textWrapper);
+  toast.appendChild(closeBtn);
 
   container.appendChild(toast);
 

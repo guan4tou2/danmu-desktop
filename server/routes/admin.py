@@ -4,7 +4,6 @@ import magic
 from flask import (Blueprint, current_app, flash, make_response, redirect,
                    render_template, request, session, url_for)
 
-from ..config import Config
 from ..services import history as history_service
 from ..services import messaging
 from ..services.blacklist import (add_keyword, contains_keyword, list_keywords,
@@ -113,8 +112,6 @@ def set_option():
 
     key = validated_data["key"]
     value = validated_data["enabled"]
-    if key not in Config.SETTABLE_OPTION_KEYS:
-        return _json_response({"error": "Unknown setting key"}, 400)
     set_toggle(key, value)
     try:
         notification = {"type": "settings_changed", "settings": get_options()}

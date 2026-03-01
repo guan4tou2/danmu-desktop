@@ -283,9 +283,13 @@ function initTrackManager() {
   };
 
   // Periodically update the in-flight counter element (child window only)
+  // 儲存 interval ID 以便重複初始化時清除舊的 interval，防止累積
   const counterEl = document.getElementById("danmu-counter");
   if (counterEl) {
-    setInterval(() => {
+    if (window._danmuCounterInterval) {
+      clearInterval(window._danmuCounterInterval);
+    }
+    window._danmuCounterInterval = setInterval(() => {
       const count = document.querySelectorAll("h1.danmu, img.danmu").length;
       counterEl.textContent = count > 0 ? String(count) : "";
     }, 500);

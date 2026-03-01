@@ -13,7 +13,8 @@ function loadSettings() {
     const saved = localStorage.getItem("danmu-settings");
     return saved ? JSON.parse(saved) : null;
   } catch (e) {
-    console.error("[loadSettings] Error:", sanitizeLog(e.message));
+    console.error("[loadSettings] Corrupted data, clearing:", sanitizeLog(e.message));
+    try { localStorage.removeItem("danmu-settings"); } catch (_) {}
     return null;
   }
 }
@@ -33,9 +34,10 @@ function loadStartupAnimationSettings() {
       : { enabled: true, type: "link-start", customText: "" };
   } catch (e) {
     console.error(
-      "[loadStartupAnimationSettings] Error:",
+      "[loadStartupAnimationSettings] Corrupted data, clearing:",
       sanitizeLog(e.message)
     );
+    try { localStorage.removeItem("danmu-startup-animation"); } catch (_) {}
     return { enabled: true, type: "link-start", customText: "" };
   }
 }
