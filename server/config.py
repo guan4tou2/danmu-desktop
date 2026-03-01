@@ -27,7 +27,9 @@ def save_runtime_hash(hashed: str) -> None:
 class Config:
     """Central place for server configuration."""
 
-    SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_hex(16))
+    # os.getenv 的 default 只在 key 不存在時生效，不處理空字串
+    # 用 or 確保空字串也會 fallback 到隨機生成的 key
+    SECRET_KEY = os.getenv("SECRET_KEY") or secrets.token_hex(32)
     ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "ADMIN_PASSWORD")
     # Priority: runtime hash file > ADMIN_PASSWORD_HASHED env var > plaintext ADMIN_PASSWORD
     ADMIN_PASSWORD_HASHED = load_runtime_hash() or os.getenv("ADMIN_PASSWORD_HASHED", "")
