@@ -81,9 +81,6 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
-  // macOS 習慣：關閉所有視窗後 app 繼續存活（由 tray 或 Cmd+Q 結束）
-  // Windows/Linux：關閉所有視窗即結束程式
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
+  // 關閉視窗 → 結束程式（minimize 只是 hide，不觸發此事件）
+  app.quit();
 });
