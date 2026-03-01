@@ -21,7 +21,7 @@ from .routes.main import main_bp
 from .services.history import init_history
 from .services.security import init_security
 from .utils import register_error_handlers, sanitize_log_string
-from .ws import check_connections as background_check_connections
+from .ws import check_connections as background_check_connections, run_ws_server
 
 
 def create_app(config_class=Config):
@@ -128,11 +128,21 @@ def websocket(ws):
 
 def main():
     http_port = app.config["PORT"]
+    ws_port = app.config["WS_PORT"]
 
+    # HTTP 連線保活檢查執行緒
     check_thread = threading.Thread(
         target=background_check_connections, args=(app.logger,), daemon=True
     )
     check_thread.start()
+
+    # WS server 與 HTTP server 必須在同一個 process 才能共享 in-memory ws_queue
+    # 使用獨立執行緒跑 asyncio event loop（gevent monkey-patch 相容）
+    ws_thread = threading.Thread(
+        target=run_ws_server, args=(ws_port, app.logger), daemon=True
+    )
+    ws_thread.start()
+    app.logger.info("WebSocket server thread started on port %s", ws_port)
 
     WSGIServer(("0.0.0.0", http_port), app).serve_forever()
 
