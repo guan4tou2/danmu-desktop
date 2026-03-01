@@ -30,9 +30,9 @@ def create_app(config_class=Config):
     setup_logging(app.config.get("LOG_LEVEL", "INFO"))
 
     # Security check for default password
-    if app.config.get("ADMIN_PASSWORD") == "ADMIN_PASSWORD":
+    if app.config.get("ADMIN_PASSWORD") == "password":
         app.logger.warning(
-            "CRITICAL SECURITY WARNING: Using default ADMIN_PASSWORD. "
+            "CRITICAL SECURITY WARNING: Using default password. "
             "Please change it in your .env file immediately!"
         )
 
