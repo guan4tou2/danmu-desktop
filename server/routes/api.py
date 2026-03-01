@@ -81,7 +81,7 @@ def _record_history_if_enabled(data, fingerprint, client_ip):
 def fire():
     """發送彈幕"""
     if get_ws_client_count() <= 0:
-        return make_response("No active WebSocket connections", 503)
+        return _json_response({"error": "No overlay connected. Please start the Electron overlay first."}, 503)
 
     try:
         data, error_response = _parse_and_validate(
@@ -111,7 +111,7 @@ def fire():
         if forward_success:
             _record_history_if_enabled(data, fingerprint, client_ip)
             return make_response("OK", 200)
-        return make_response("Failed to enqueue message", 503)
+        return _json_response({"error": "Failed to enqueue message"}, 503)
     except Exception as exc:
         return _log_and_internal_error("Send Error", exc)
 
