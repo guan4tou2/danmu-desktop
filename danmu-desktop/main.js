@@ -1,5 +1,5 @@
 // Main process entry point
-const { app, Tray, Menu } = require("electron");
+const { app, Tray, Menu, nativeImage } = require("electron");
 const path = require("path");
 const { sanitizeLog } = require("./shared/utils");
 const { createWindow } = require("./main-modules/window-manager");
@@ -22,13 +22,29 @@ app.whenReady().then(() => {
   mainWindow = createWindow(childWindows, onKonamiTrigger);
   setupIpcHandlers(mainWindow, childWindows);
 
-  tray = new Tray(path.join(__dirname, "../assets/icon.png"));
+  // macOS menu bar 需要 16×16 template image（自動適應深淺色模式）
+  // Windows/Linux 使用 32×32 彩色圖示
+  const iconPath = path.join(__dirname, "../assets/icon.png");
+  let trayIcon = nativeImage.createFromPath(iconPath);
+  if (process.platform === "darwin") {
+    trayIcon = trayIcon.resize({ width: 16, height: 16 });
+    trayIcon.setTemplateImage(true);
+  } else {
+    trayIcon = trayIcon.resize({ width: 32, height: 32 });
+  }
+  tray = new Tray(trayIcon);
+
+  const showMainWindow = () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  };
+
   const menu = [
     {
       label: "open manager",
-      click: () => {
-        mainWindow.show();
-      },
+      click: showMainWindow,
     },
     {
       label: "quit",
@@ -47,9 +63,13 @@ app.whenReady().then(() => {
   tray.setContextMenu(Menu.buildFromTemplate(menu));
   tray.setToolTip("danmu manager");
 
-  tray.on("double-click", () => {
-    mainWindow.show();
-  });
+  // macOS 設了 contextMenu 後 double-click 不觸發，改用 click
+  // Windows/Linux 保留 double-click 開啟視窗
+  if (process.platform === "darwin") {
+    tray.on("click", showMainWindow);
+  } else {
+    tray.on("double-click", showMainWindow);
+  }
 
   app.on("activate", () => {
     const { BrowserWindow } = require("electron");
@@ -61,5 +81,9 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
-  app.quit();
+  // macOS 習慣：關閉所有視窗後 app 繼續存活（由 tray 或 Cmd+Q 結束）
+  // Windows/Linux：關閉所有視窗即結束程式
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
 });
