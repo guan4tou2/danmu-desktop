@@ -413,8 +413,9 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Enter 送出，Shift+Enter 換行
+  // e.isComposing: IME 選字過程中為 true，此時不觸發送出（避免中文選字誤送）
   elements.danmuText.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
       e.preventDefault();
       elements.btnSend.click();
     }
