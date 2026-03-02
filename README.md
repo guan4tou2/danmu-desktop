@@ -54,6 +54,10 @@ This project is divided into two parts:
      -v danmu_logs:/app/server/logs \
      albetyty/danmu-server:latest
    ```
+   - You can also use a bcrypt hash instead of plaintext:
+     - Generate hash: `python server/scripts/hash_password.py`
+     - Set `-e ADMIN_PASSWORD_HASHED='<bcrypt-hash>'`
+   - Server startup now requires at least one of `ADMIN_PASSWORD` or `ADMIN_PASSWORD_HASHED`.
    - Multi-arch images published for `linux/amd64` and `linux/arm64/v8`
    - Available tags:
      - `latest`: stable build from `main`
@@ -137,7 +141,7 @@ This project is divided into two parts:
 
 Key configuration options (set via `.env` file or environment variables):
 
-- `ADMIN_PASSWORD` (required): Password for admin panel access
+- `ADMIN_PASSWORD` or `ADMIN_PASSWORD_HASHED` (at least one required): Admin authentication secret
 - `PORT`: HTTP server port (default: 4000)
 - `WS_PORT`: WebSocket server port (default: 4001)
 - `SECRET_KEY`: Flask secret key (auto-generated if not set)
@@ -146,6 +150,12 @@ Key configuration options (set via `.env` file or environment variables):
 - `LOG_LEVEL`: Logging level - `DEBUG`, `INFO`, `WARNING`, `ERROR` (default: INFO)
 
 See `env.example` for all available options.
+
+## Security Notes
+
+- GitHub Advanced Security and Dependabot are enabled for this repository.
+- OSV scanning runs on `push`, `pull_request`, and scheduled jobs via `.github/workflows/osv-scanner.yml`.
+- Frontend lockfile enforces `serialize-javascript@7.0.3` through npm overrides to address advisory `GHSA-5c6j-r48x-rmvq`.
 
 ## Project Docs / 文件
 

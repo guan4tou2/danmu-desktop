@@ -51,6 +51,10 @@
      -v danmu_logs:/app/server/logs \
      albetyty/danmu-server:latest
    ```
+   - 也可改用 bcrypt 雜湊避免明文：
+     - 產生雜湊：`python server/scripts/hash_password.py`
+     - 設定 `-e ADMIN_PASSWORD_HASHED='<bcrypt-hash>'`
+   - 伺服器啟動時至少必須提供 `ADMIN_PASSWORD` 或 `ADMIN_PASSWORD_HASHED` 其中一個。
    - 建置的映像支援 `linux/amd64` 與 `linux/arm64/v8`
    - 可用標籤：
      - `latest`：`main` 分支的穩定版本
@@ -153,6 +157,11 @@
 ## CI/CD 與 Docker Hub
 - `.github/workflows/docker-build.yml` 會在每次 PR / push（main）時建置與測試伺服器映像。
 - 於 GitHub Secrets 設定 `DOCKERHUB_USERNAME` 與 `DOCKERHUB_TOKEN`（Docker Hub Access Token），即可在 main 更新時自動推送 `使用者/danmu-server:latest` 與對應 commit SHA 的 Tag。
+
+## 安全備註
+- 此 repo 已啟用 GitHub Advanced Security 與 Dependabot。
+- OSV 掃描會在 `push`、`pull_request` 與排程任務執行（見 `.github/workflows/osv-scanner.yml`）。
+- 前端 lockfile 透過 npm overrides 強制 `serialize-javascript@7.0.3`，對應 `GHSA-5c6j-r48x-rmvq`。
 
 ## 參考資料
 

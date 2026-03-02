@@ -7,7 +7,7 @@ This report reviews open GitHub code scanning findings for `guan4tou2/danmu-desk
 Priority outcomes:
 - Fixed direct CodeQL issues (sensitive-data logging, stack-trace exposure, DOM XSS sink hardening, workflow permissions).
 - Reduced lockfile security exposure via dependency updates (`npm audit fix`), including `minimatch`, `tar`, `glob`, `ajv`, `lodash`, and `webpack` updates in `danmu-desktop/package-lock.json`.
-- One residual npm advisory remains (`serialize-javascript` via `terser-webpack-plugin`) with no non-breaking upstream fix path indicated by current audit metadata.
+- Resolved residual advisory `GHSA-5c6j-r48x-rmvq` by pinning transitive `serialize-javascript` to `7.0.3` via npm overrides.
 
 ## Critical/High
 
@@ -88,13 +88,7 @@ Priority outcomes:
 
 ## Residual Risk / Open Item
 
-### [R-001] `serialize-javascript` advisory remains
-- Source: `npm audit --json` (post-fix)
-- Current package path: transitive via `terser-webpack-plugin@5.3.16`
-- Status: `fixAvailable: false` for non-breaking path in current tree.
-- Recommended next step:
-  - Re-run GitHub code scanning after push to confirm closed alerts.
-  - If this advisory remains only as tooling-only path (build-time) and no safe upgrade exists, consider documenting and suppressing in `osv-scanner.toml` with explicit risk acceptance reason.
+At report update time (2026-03-02), GitHub Code Scanning open alerts and Dependabot open alerts related to this remediation scope are closed.
 
 ## Verification Performed
 
@@ -102,4 +96,3 @@ Priority outcomes:
 - Frontend tests:
   - `npm test -- tests/ws-reconnect.test.js --runInBand` (pass)
   - Full suite shows one intermittent failure in `tests/ws-reconnect.test.js` backoff-growth assertion (existing flaky behavior; not tied to security patch logic).
-
