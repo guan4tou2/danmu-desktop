@@ -4,7 +4,6 @@ import threading
 
 import websockets
 
-from .. import state
 from ..managers import connection_manager
 from ..services import ws_queue
 from ..services.ws_state import update_ws_client_count
@@ -39,9 +38,7 @@ def check_connections(logger):
                         )
                         connection_manager.unregister_web_connection(ws)
         except Exception as exc:
-            logger.warning(
-                "Error in connection checker: %s", sanitize_log_string(str(exc))
-            )
+            logger.warning("Error in connection checker: %s", sanitize_log_string(str(exc)))
         # Wait up to 30 s, but wake immediately if stop is requested
         _stop_event.wait(timeout=30)
 
@@ -66,9 +63,7 @@ async def _forward_messages(clients, logger):
                     try:
                         await client.send(ping_message)
                     except Exception as exc:
-                        logger.warning(
-                            "Client connection lost: %s", sanitize_log_string(str(exc))
-                        )
+                        logger.warning("Client connection lost: %s", sanitize_log_string(str(exc)))
                         dead_clients.add(client)
 
                 for client in dead_clients:
@@ -76,9 +71,7 @@ async def _forward_messages(clients, logger):
 
             await asyncio.sleep(0.5)
         except Exception as exc:
-            logger.error(
-                "Error in message forwarding: %s", sanitize_log_string(str(exc))
-            )
+            logger.error("Error in message forwarding: %s", sanitize_log_string(str(exc)))
             await asyncio.sleep(5)
 
 
@@ -118,9 +111,7 @@ def run_ws_server(ws_port, logger):
                 except Exception:
                     pass
         except Exception as exc:
-            logger.error(
-                "WebSocket error in dedicated server: %s", sanitize_log_string(str(exc))
-            )
+            logger.error("WebSocket error in dedicated server: %s", sanitize_log_string(str(exc)))
         finally:
             await unregister(websocket)
 

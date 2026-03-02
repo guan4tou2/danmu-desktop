@@ -1,13 +1,13 @@
 """Tests for public API routes: get_settings, fonts, check_blacklist, health."""
+
 import json
 
 from server import state
-from server.services.ws_state import update_ws_client_count
-
 
 # ---------------------------------------------------------------------------
 # /get_settings
 # ---------------------------------------------------------------------------
+
 
 def test_get_settings_returns_options(client):
     res = client.get("/get_settings")
@@ -26,6 +26,7 @@ def test_get_settings_content_type(client):
 # ---------------------------------------------------------------------------
 # /fonts and /api/fonts
 # ---------------------------------------------------------------------------
+
 
 def test_public_fonts_returns_list(client):
     res = client.get("/fonts")
@@ -53,6 +54,7 @@ def test_api_fonts_alias(client):
 # ---------------------------------------------------------------------------
 # /check_blacklist
 # ---------------------------------------------------------------------------
+
 
 def test_check_blacklist_allowed(client):
     res = client.post("/check_blacklist", json={"text": "hello world"})
@@ -90,6 +92,7 @@ def test_check_blacklist_text_too_long(client):
 # Security headers
 # ---------------------------------------------------------------------------
 
+
 def test_security_headers_present(client):
     res = client.get("/get_settings")
     assert res.headers.get("X-Content-Type-Options") == "nosniff"
@@ -100,6 +103,7 @@ def test_security_headers_present(client):
 # ---------------------------------------------------------------------------
 # /health endpoints
 # ---------------------------------------------------------------------------
+
 
 def test_health_liveness(client):
     res = client.get("/health/live")

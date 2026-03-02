@@ -1,5 +1,3 @@
-import json
-
 from server import state
 from server.services.ws_state import update_ws_client_count
 

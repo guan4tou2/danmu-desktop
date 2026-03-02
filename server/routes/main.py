@@ -1,11 +1,25 @@
 import json
 
-from flask import (Blueprint, current_app, flash, make_response, redirect,
-                   render_template, request, session, url_for)
+from flask import (
+    Blueprint,
+    current_app,
+    flash,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 
 from ..config import save_runtime_hash
-from ..services.security import (hash_password, issue_csrf_token, rate_limit,
-                                 require_csrf, verify_password)
+from ..services.security import (
+    hash_password,
+    issue_csrf_token,
+    rate_limit,
+    require_csrf,
+    verify_password,
+)
 from ..services.settings import get_options
 from ..utils import sanitize_log_string
 

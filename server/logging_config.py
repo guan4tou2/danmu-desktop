@@ -30,9 +30,7 @@ def setup_logging(level: str):
     if use_json:
         formatter = JSONFormatter()
     else:
-        formatter = logging.Formatter(
-            "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
-        )
+        formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)

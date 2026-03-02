@@ -1,18 +1,21 @@
 import json
 
-from flask import (Blueprint, current_app, make_response, request,
-                   send_from_directory)
+from flask import Blueprint, current_app, make_response, request, send_from_directory
 
 from .. import state
 from ..services import history as history_service
 from ..services import messaging
 from ..services.blacklist import contains_keyword
+from ..services.effects import load_all as load_all_effects
+from ..services.effects import render_effects
 from ..services.fonts import build_font_payload, list_available_fonts
 from ..services.security import rate_limit, verify_font_token
-from ..services.effects import load_all as load_all_effects, render_effects
 from ..services.settings import get_options
-from ..services.validation import (BlacklistCheckSchema, FireRequestSchema,
-                                   validate_request)
+from ..services.validation import (
+    BlacklistCheckSchema,
+    FireRequestSchema,
+    validate_request,
+)
 from ..services.ws_state import get_ws_client_count
 from ..utils import is_valid_image_url, sanitize_log_string
 
@@ -95,7 +98,9 @@ def _resolve_danmu_style(data):
     effects_input = data.pop("effects", []) or []
     if effects_input and effects_enabled:
         resolved = render_effects(effects_input)
-        data["effectCss"] = resolved  # {keyframes, animation, styleId, animationComposition} 或 None
+        data["effectCss"] = (
+            resolved  # {keyframes, animation, styleId, animationComposition} 或 None
+        )
     else:
         data["effectCss"] = None
 
@@ -117,7 +122,10 @@ def _record_history_if_enabled(data, fingerprint, client_ip):
 def fire():
     """發送彈幕"""
     if get_ws_client_count() <= 0:
-        return _json_response({"error": "No overlay connected. Please start the Electron overlay first."}, 503)
+        return _json_response(
+            {"error": "No overlay connected. Please start the Electron overlay first."},
+            503,
+        )
 
     try:
         data, error_response = _parse_and_validate(

@@ -18,9 +18,7 @@ def sanitize_log_string(input_val) -> str:
 
 
 def is_valid_image_url(url: str) -> bool:
-    return bool(
-        re.match(r"https?://([^\s/]+/)*[^\s/]+\.(jpeg|jpg|gif|png|webp)$", url, re.I)
-    )
+    return bool(re.match(r"https?://([^\s/]+/)*[^\s/]+\.(jpeg|jpg|gif|png|webp)$", url, re.I))
 
 
 # 統一錯誤處理
@@ -73,8 +71,9 @@ def register_error_handlers(app):
     @app.errorhandler(APIError)
     def handle_api_error(error: APIError):
         """處理 APIError"""
+        req_id = getattr(g, "request_id", "N/A")
         current_app.logger.warning(
-            f"API Error [{error.status_code}]: {error.message} (Request ID: {getattr(g, 'request_id', 'N/A')})"
+            f"API Error [{error.status_code}]: {error.message} (Request ID: {req_id})"
         )
         response = jsonify(error.to_dict())
         response.status_code = error.status_code

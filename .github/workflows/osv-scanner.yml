@@ -29,10 +29,10 @@ permissions:
 
 jobs:
   scan-scheduled:
-    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' }}
+    # 只在定期排程時掃描（不在 push 時阻斷 CI），PR 改由 scan-pr job 負責
+    if: ${{ github.event_name == 'schedule' }}
     uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@1f1242919d8a60496dd1874b24b62b2370ed4c78" # v1.7.1
     with:
-      # Example of specifying custom arguments
       scan-args: |-
         -r
         --skip-git
@@ -41,7 +41,6 @@ jobs:
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
     uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@1f1242919d8a60496dd1874b24b62b2370ed4c78" # v1.7.1
     with:
-      # Example of specifying custom arguments
       scan-args: |-
         -r
         --skip-git

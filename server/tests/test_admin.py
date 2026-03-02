@@ -1,12 +1,13 @@
 """Tests for admin routes: blacklist, history, settings toggle, auth."""
+
 import json
 
 from server import state
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def login(client):
     return client.post("/login", data={"password": "test"}, follow_redirects=True)
@@ -27,6 +28,7 @@ def authed_post(client, url, payload):
 # ---------------------------------------------------------------------------
 # Auth: login / logout
 # ---------------------------------------------------------------------------
+
 
 def test_login_correct_password(client):
     res = login(client)
@@ -62,6 +64,7 @@ def test_login_rate_limit(client):
 # ---------------------------------------------------------------------------
 # Blacklist
 # ---------------------------------------------------------------------------
+
 
 def test_blacklist_add_and_list(client):
     res = authed_post(client, "/admin/blacklist/add", {"keyword": "spam"})
@@ -128,6 +131,7 @@ def test_blacklist_requires_auth(client):
 # Settings toggle (/admin/Set)
 # ---------------------------------------------------------------------------
 
+
 def test_set_option_toggle(client):
     token = csrf_token(client)
     res = client.post(
@@ -162,6 +166,7 @@ def test_set_option_requires_auth(client):
 # Admin settings update (/admin/update)
 # ---------------------------------------------------------------------------
 
+
 def test_update_invalid_setting_type(client):
     token = csrf_token(client)
     payload = {"type": "HackerField", "index": 0, "value": 99, "csrf_token": token}
@@ -190,6 +195,7 @@ def test_update_speed_valid(client):
 # ---------------------------------------------------------------------------
 # Danmu history
 # ---------------------------------------------------------------------------
+
 
 def test_history_get_empty(client):
     login(client)
@@ -233,10 +239,10 @@ def test_history_requires_auth(client):
     assert res.status_code == 401
 
 
-
 # ---------------------------------------------------------------------------
 # Effects Management
 # ---------------------------------------------------------------------------
+
 
 def test_effects_list_requires_auth(client):
     res = client.get("/admin/effects")
@@ -255,9 +261,14 @@ def test_effects_list_returns_effects(client):
 def test_effects_list_has_file_info(client):
     """Each effect entry must include filename and label."""
     from server.services import effects as eff_svc
+
     eff_svc._cache["testfx"] = {
-        "name": "testfx", "label": "Test", "description": "", "params": {},
-        "keyframes": "", "animation": "dme-test 1s",
+        "name": "testfx",
+        "label": "Test",
+        "description": "",
+        "params": {},
+        "keyframes": "",
+        "animation": "dme-test 1s",
     }
     eff_svc._path_to_name["/tmp/testfx.dme"] = "testfx"
     login(client)
@@ -302,15 +313,21 @@ def test_effects_delete_invalid_name(client):
 
 
 def test_effects_delete_ok(client, tmp_path):
-    import yaml as _yaml
     from server.services import effects as eff_svc
+
     # Write a real .dme file to tmp dir so delete_by_name can unlink it
     dme_file = tmp_path / "tmpfx.dme"
-    dme_file.write_text("name: tmpfx\nlabel: TmpFx\nanimation: dme-tmp 1s\nkeyframes: '@keyframes dme-tmp {}'\n")
+    dme_file.write_text(
+        "name: tmpfx\nlabel: TmpFx\nanimation: dme-tmp 1s\nkeyframes: '@keyframes dme-tmp {}'\n"
+    )
     # Inject into cache as if it were loaded
     eff_svc._cache["tmpfx"] = {
-        "name": "tmpfx", "label": "TmpFx", "description": "", "params": {},
-        "keyframes": "", "animation": "dme-tmp 1s",
+        "name": "tmpfx",
+        "label": "TmpFx",
+        "description": "",
+        "params": {},
+        "keyframes": "",
+        "animation": "dme-tmp 1s",
     }
     eff_svc._mtime_map[str(dme_file)] = dme_file.stat().st_mtime
     eff_svc._path_to_name[str(dme_file)] = "tmpfx"
@@ -321,6 +338,7 @@ def test_effects_delete_ok(client, tmp_path):
 
 def test_effects_upload_invalid_extension(client):
     from io import BytesIO
+
     token = csrf_token(client)
     data = {"effectfile": (BytesIO(b"content"), "bad.txt")}
     res = client.post(
@@ -334,6 +352,7 @@ def test_effects_upload_invalid_extension(client):
 
 def test_effects_upload_invalid_yaml(client):
     from io import BytesIO
+
     token = csrf_token(client)
     data = {"effectfile": (BytesIO(b": broken: yaml: ["), "bad.dme")}
     res = client.post(
@@ -347,6 +366,7 @@ def test_effects_upload_invalid_yaml(client):
 
 def test_effects_upload_missing_name(client):
     from io import BytesIO
+
     token = csrf_token(client)
     content = b"label: No Name\nanimation: dme-x 1s\n"
     data = {"effectfile": (BytesIO(content), "noname.dme")}
@@ -362,11 +382,16 @@ def test_effects_upload_missing_name(client):
 def test_effects_upload_ok(client, tmp_path, monkeypatch):
     """Uploading a valid .dme file saves it and returns 200."""
     from io import BytesIO
+
     from server.services import effects as eff_svc
+
     # Point _EFFECTS_DIR to a tmp directory for this test
     monkeypatch.setattr(eff_svc, "_EFFECTS_DIR", tmp_path)
     token = csrf_token(client)
-    content = b"name: myfx\nlabel: My Fx\ndescription: Test\nparams: {}\nkeyframes: '@keyframes dme-myfx {}'\nanimation: dme-myfx 1s linear infinite\n"
+    content = (
+        b"name: myfx\nlabel: My Fx\ndescription: Test\nparams: {}\n"
+        b"keyframes: '@keyframes dme-myfx {}'\nanimation: dme-myfx 1s linear infinite\n"
+    )
     data = {"effectfile": (BytesIO(content), "myfx.dme")}
     res = client.post(
         "/admin/effects/upload",
@@ -399,14 +424,17 @@ def test_effects_save_requires_csrf(client):
 
 def test_effects_save_not_found(client, tmp_path, monkeypatch):
     from server.services import effects as eff_svc
+
     monkeypatch.setattr(eff_svc, "_EFFECTS_DIR", tmp_path)
     # Reset cache so the effect is not in the path map
     eff_svc._cache.clear()
     eff_svc._path_to_name.clear()
     eff_svc._mtime_map.clear()
-    res = authed_post(client, "/admin/effects/save", {
-        "name": "notexist", "content": "name: notexist\nanimation: dme-x 1s\n"
-    })
+    res = authed_post(
+        client,
+        "/admin/effects/save",
+        {"name": "notexist", "content": "name: notexist\nanimation: dme-x 1s\n"},
+    )
     assert res.status_code == 400
     data = json.loads(res.data)
     assert "error" in data
@@ -414,19 +442,30 @@ def test_effects_save_not_found(client, tmp_path, monkeypatch):
 
 def test_effects_save_ok(client, tmp_path, monkeypatch):
     from server.services import effects as eff_svc
+
     monkeypatch.setattr(eff_svc, "_EFFECTS_DIR", tmp_path)
     # Create a real .dme file and inject into cache
     dme_file = tmp_path / "editable.dme"
-    original = b"name: editable\nlabel: Editable\nanimation: dme-edit 1s\nkeyframes: '@keyframes dme-edit {}'\n"
+    original = (
+        b"name: editable\nlabel: Editable\nanimation: dme-edit 1s\n"
+        b"keyframes: '@keyframes dme-edit {}'\n"
+    )
     dme_file.write_bytes(original)
     eff_svc._cache["editable"] = {
-        "name": "editable", "label": "Editable", "description": "", "params": {},
-        "keyframes": "", "animation": "dme-edit 1s",
+        "name": "editable",
+        "label": "Editable",
+        "description": "",
+        "params": {},
+        "keyframes": "",
+        "animation": "dme-edit 1s",
     }
     eff_svc._mtime_map[str(dme_file)] = dme_file.stat().st_mtime
     eff_svc._path_to_name[str(dme_file)] = "editable"
 
-    new_content = "name: editable\nlabel: Edited\nanimation: dme-edit 2s\nkeyframes: '@keyframes dme-edit {}'\n"
+    new_content = (
+        "name: editable\nlabel: Edited\nanimation: dme-edit 2s\n"
+        "keyframes: '@keyframes dme-edit {}'\n"
+    )
     res = authed_post(client, "/admin/effects/save", {"name": "editable", "content": new_content})
     assert res.status_code == 200
     data = json.loads(res.data)

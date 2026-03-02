@@ -21,7 +21,8 @@ from .routes.main import main_bp
 from .services.history import init_history
 from .services.security import init_security
 from .utils import register_error_handlers, sanitize_log_string
-from .ws import check_connections as background_check_connections, run_ws_server
+from .ws import check_connections as background_check_connections
+from .ws import run_ws_server
 
 
 def create_app(config_class=Config):
@@ -57,9 +58,7 @@ def create_app(config_class=Config):
     @app.before_request
     def before_request():
         g.request_id = str(uuid.uuid4())
-        current_app.logger.debug(
-            f"Request ID: {g.request_id} - {request.method} {request.path}"
-        )
+        current_app.logger.debug(f"Request ID: {g.request_id} - {request.method} {request.path}")
 
     @app.after_request
     def after_request(response):
@@ -119,9 +118,7 @@ def websocket(ws):
             except Exception:
                 pass
         except Exception as exc:
-            current_app.logger.error(
-                "WebSocket error: %s", sanitize_log_string(str(exc))
-            )
+            current_app.logger.error("WebSocket error: %s", sanitize_log_string(str(exc)))
             connection_manager.unregister_web_connection(ws)
             break
 
@@ -138,9 +135,7 @@ def main():
 
     # WS server 與 HTTP server 必須在同一個 process 才能共享 in-memory ws_queue
     # 使用獨立執行緒跑 asyncio event loop（gevent monkey-patch 相容）
-    ws_thread = threading.Thread(
-        target=run_ws_server, args=(ws_port, app.logger), daemon=True
-    )
+    ws_thread = threading.Thread(target=run_ws_server, args=(ws_port, app.logger), daemon=True)
     ws_thread.start()
     app.logger.info("WebSocket server thread started on port %s", ws_port)
 

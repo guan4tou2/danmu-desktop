@@ -1,6 +1,6 @@
 [project]
 name = "server"
-version = "0.1.0"
+version = "0.2.0"
 requires-python = ">=3.11"
 dependencies = [
     "blinker",
@@ -40,6 +40,15 @@ dev = [
     "black>=24.8.0",
     "isort>=5.13.2",
 ]
+
+[tool.isort]
+profile = "black"
+
+[tool.black]
+line-length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true

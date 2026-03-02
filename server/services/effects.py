@@ -13,7 +13,6 @@ Danmu 特效插件管理服務
 
 import hashlib
 import logging
-import os
 import re
 import threading
 import time
@@ -28,9 +27,9 @@ _EFFECTS_DIR = Path(__file__).parent.parent / "effects"
 _SCAN_INTERVAL = 5.0  # 秒
 
 # 快取
-_cache: Dict[str, Dict[str, Any]] = {}      # name -> parsed effect dict
-_mtime_map: Dict[str, float] = {}            # filepath -> mtime
-_path_to_name: Dict[str, str] = {}           # filepath -> effect name（反查用）
+_cache: Dict[str, Dict[str, Any]] = {}  # name -> parsed effect dict
+_mtime_map: Dict[str, float] = {}  # filepath -> mtime
+_path_to_name: Dict[str, str] = {}  # filepath -> effect name（反查用）
 _last_scan: float = 0.0
 _lock = threading.Lock()
 
@@ -41,6 +40,7 @@ _SAFE_OPTION_RE = re.compile(r"^[a-zA-Z0-9_\-]+$")
 
 
 # ─── 載入器 ──────────────────────────────────────────────────────────────────
+
 
 def _parse_dme(path: Path) -> Optional[Dict[str, Any]]:
     """解析單一 .dme 檔案，回傳 effect dict 或 None（解析失敗時）。"""
@@ -73,7 +73,12 @@ def _parse_dme(path: Path) -> Optional[Dict[str, Any]]:
                 valid_opts = []
                 for opt in opts:
                     if isinstance(opt, dict) and _SAFE_OPTION_RE.match(str(opt.get("value", ""))):
-                        valid_opts.append({"value": str(opt["value"]), "label": str(opt.get("label", opt["value"]))})
+                        valid_opts.append(
+                            {
+                                "value": str(opt["value"]),
+                                "label": str(opt.get("label", opt["value"])),
+                            }
+                        )
                 params[k] = {**v, "type": ptype, "options": valid_opts}
             else:
                 params[k] = {**v, "type": ptype}
@@ -153,13 +158,15 @@ def list_with_file_info() -> List[Dict[str, Any]]:
                 mtime = Path(fpath).stat().st_mtime
             except OSError:
                 mtime = None
-            result.append({
-                "name": eff["name"],
-                "label": eff["label"],
-                "description": eff["description"],
-                "filename": Path(fpath).name,
-                "mtime": mtime,
-            })
+            result.append(
+                {
+                    "name": eff["name"],
+                    "label": eff["label"],
+                    "description": eff["description"],
+                    "filename": Path(fpath).name,
+                    "mtime": mtime,
+                }
+            )
     return sorted(result, key=lambda x: x["name"])
 
 
@@ -271,6 +278,7 @@ def get_effect(name: str) -> Optional[Dict[str, Any]]:
 
 
 # ─── 安全 CSS 渲染器 ──────────────────────────────────────────────────────────
+
 
 def _sanitize_param(key: str, value: Any, param_def: Dict[str, Any]) -> str:
     """

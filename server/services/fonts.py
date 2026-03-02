@@ -11,9 +11,7 @@ from ..utils import sanitize_log_string
 
 def build_font_payload(chosen_font_name: str):
     potential_font_filename = secure_filename(f"{chosen_font_name}.ttf")
-    normalized_path = os.path.normpath(
-        os.path.join(state.USER_FONTS_DIR, potential_font_filename)
-    )
+    normalized_path = os.path.normpath(os.path.join(state.USER_FONTS_DIR, potential_font_filename))
     if not normalized_path.startswith(state.USER_FONTS_DIR):
         raise ValueError("Invalid font filename or path traversal attempt detected.")
 
@@ -45,9 +43,7 @@ def save_uploaded_font(file_storage):
     filename = secure_filename(file_storage.filename)
     destination = os.path.join(state.USER_FONTS_DIR, filename)
     file_storage.save(destination)
-    current_app.logger.info(
-        "Font '%s' uploaded successfully", sanitize_log_string(filename)
-    )
+    current_app.logger.info("Font '%s' uploaded successfully", sanitize_log_string(filename))
     return filename
 
 
@@ -87,8 +83,6 @@ def list_available_fonts():
                     }
                 )
     except Exception as exc:
-        current_app.logger.error(
-            "Error listing uploaded fonts: %s", sanitize_log_string(str(exc))
-        )
+        current_app.logger.error("Error listing uploaded fonts: %s", sanitize_log_string(str(exc)))
 
     return {"fonts": default_fonts + uploaded_fonts, "tokenTTL": ttl}

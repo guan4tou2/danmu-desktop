@@ -3,7 +3,14 @@
 from marshmallow import EXCLUDE, Schema, ValidationError, fields, validate
 
 # Valid setting type keys (mirrors Config.SETTABLE_OPTION_KEYS)
-_VALID_SETTING_TYPES = {"Color", "Opacity", "FontSize", "Speed", "FontFamily", "Effects"}
+_VALID_SETTING_TYPES = {
+    "Color",
+    "Opacity",
+    "FontSize",
+    "Speed",
+    "FontFamily",
+    "Effects",
+}
 
 
 class FireRequestSchema(Schema):
@@ -26,7 +33,6 @@ class FireRequestSchema(Schema):
 
     class Meta:
         unknown = EXCLUDE
-
 
 
 class BlacklistCheckSchema(Schema):

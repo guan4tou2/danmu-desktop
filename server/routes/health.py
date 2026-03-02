@@ -1,5 +1,6 @@
-from flask import Blueprint, jsonify, send_from_directory
 from pathlib import Path
+
+from flask import Blueprint, jsonify, send_from_directory
 
 health_bp = Blueprint("health", __name__)
 

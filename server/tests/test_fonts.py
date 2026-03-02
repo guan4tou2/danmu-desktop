@@ -4,8 +4,11 @@ from pathlib import Path
 from werkzeug.datastructures import FileStorage
 
 from server import state
-from server.services.fonts import (build_font_payload, list_available_fonts,
-                                   save_uploaded_font)
+from server.services.fonts import (
+    build_font_payload,
+    list_available_fonts,
+    save_uploaded_font,
+)
 
 
 def test_build_font_payload_returns_signed_url(client):

@@ -53,24 +53,27 @@ class Config:
     LOGIN_RATE_WINDOW = int(os.getenv("LOGIN_RATE_WINDOW", "300"))
 
     # Session configuration
-    SESSION_COOKIE_SECURE = (
-        os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
-    )
+    SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
     SESSION_COOKIE_HTTPONLY = True
     # Strict prevents cookies from being sent on cross-site requests (stronger CSRF protection)
     SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Strict")
 
     # CORS configuration
     # Default: wildcard origins, no credentials — allows public API access without CSRF risk.
-    # To allow admin access from a specific remote origin, set CORS_ORIGINS and CORS_SUPPORTS_CREDENTIALS=true.
+    # To allow admin from a remote origin: set CORS_ORIGINS and CORS_SUPPORTS_CREDENTIALS=true.
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
-    CORS_SUPPORTS_CREDENTIALS = (
-        os.getenv("CORS_SUPPORTS_CREDENTIALS", "false").lower() == "true"
-    )
+    CORS_SUPPORTS_CREDENTIALS = os.getenv("CORS_SUPPORTS_CREDENTIALS", "false").lower() == "true"
 
     # Danmu history configuration
     DANMU_HISTORY_MAX_RECORDS = int(os.getenv("DANMU_HISTORY_MAX_RECORDS", "10000"))
     DANMU_HISTORY_CLEANUP_HOURS = int(os.getenv("DANMU_HISTORY_CLEANUP_HOURS", "24"))
 
     # Admin settable option keys
-    SETTABLE_OPTION_KEYS = {"Color", "Opacity", "FontSize", "Speed", "FontFamily", "Effects"}
+    SETTABLE_OPTION_KEYS = {
+        "Color",
+        "Opacity",
+        "FontSize",
+        "Speed",
+        "FontFamily",
+        "Effects",
+    }

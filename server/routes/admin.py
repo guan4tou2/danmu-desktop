@@ -1,22 +1,35 @@
 import json
 
 import magic
-from flask import (Blueprint, current_app, flash, make_response, redirect,
-                   render_template, request, session, url_for)
+from flask import (
+    Blueprint,
+    current_app,
+    flash,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 
 from ..services import history as history_service
 from ..services import messaging
-from ..services.blacklist import (add_keyword, contains_keyword, list_keywords,
-                                  remove_keyword)
-
-from ..services.fonts import (build_font_payload, list_available_fonts,
-                              save_uploaded_font)
+from ..services.blacklist import add_keyword, list_keywords, remove_keyword
+from ..services.fonts import list_available_fonts, save_uploaded_font
 from ..services.security import rate_limit, require_csrf
-from ..services.settings import (get_options, get_setting_ranges, set_toggle,
-                                 update_setting)
-from ..services.validation import (BlacklistKeywordSchema, SettingUpdateSchema,
-                                   ToggleSettingSchema, validate_request)
-from ..state import USER_FONTS_DIR
+from ..services.settings import (
+    get_options,
+    get_setting_ranges,
+    set_toggle,
+    update_setting,
+)
+from ..services.validation import (
+    BlacklistKeywordSchema,
+    SettingUpdateSchema,
+    ToggleSettingSchema,
+    validate_request,
+)
 from ..utils import allowed_file, sanitize_log_string
 
 admin_bp = Blueprint("admin_bp", __name__, url_prefix="/admin")
@@ -48,9 +61,7 @@ def _ensure_logged_in():
 def admin():
     if not _ensure_logged_in():
         return render_template("admin.html", ranges=get_setting_ranges())
-    return render_template(
-        "admin.html", Options=get_options(), ranges=get_setting_ranges()
-    )
+    return render_template("admin.html", Options=get_options(), ranges=get_setting_ranges())
 
 
 @admin_bp.route("/upload_font", methods=["POST"])
@@ -154,9 +165,7 @@ def update():
     except ValueError as exc:
         return make_response(str(exc), 400)
     except Exception as exc:
-        current_app.logger.error(
-            "Error updating settings: %s", sanitize_log_string(str(exc))
-        )
+        current_app.logger.error("Error updating settings: %s", sanitize_log_string(str(exc)))
         return make_response("An error occurred while updating settings.", 400)
 
 
@@ -205,8 +214,6 @@ def get_blacklist():
     return _json_response(list_keywords())
 
 
-
-
 @admin_bp.route("/history", methods=["GET"])
 @rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 def get_danmu_history():
@@ -225,21 +232,18 @@ def get_danmu_history():
             if history_service.danmu_history
             else []
         )
-        stats = (
-            history_service.danmu_history.get_stats()
-            if history_service.danmu_history
-            else {}
-        )
+        stats = history_service.danmu_history.get_stats() if history_service.danmu_history else {}
 
         return _json_response(
-            {"records": records, "stats": stats, "query": {"hours": hours, "limit": limit}}
+            {
+                "records": records,
+                "stats": stats,
+                "query": {"hours": hours, "limit": limit},
+            }
         )
     except Exception as exc:
-        current_app.logger.error(
-            "Error fetching danmu history: %s", sanitize_log_string(str(exc))
-        )
+        current_app.logger.error("Error fetching danmu history: %s", sanitize_log_string(str(exc)))
         return _json_response({"error": "An internal error has occurred"}, 500)
-
 
 
 @admin_bp.route("/effects", methods=["GET"])
@@ -248,6 +252,7 @@ def list_effects_admin():
     if not _ensure_logged_in():
         return _json_response({"error": "Unauthorized"}, 401)
     from ..services.effects import list_with_file_info
+
     return _json_response({"effects": list_with_file_info()})
 
 
@@ -271,12 +276,18 @@ def upload_effect():
         return _json_response({"error": "Empty file"}, 400)
 
     from ..services.effects import save_uploaded_effect
+
     filename, error = save_uploaded_effect(content)
     if error:
         return _json_response({"error": error}, 400)
 
     current_app.logger.info("Effect uploaded: %s", sanitize_log_string(filename))
-    return _json_response({"message": f"Effect '{sanitize_log_string(filename)}' uploaded", "filename": sanitize_log_string(filename)})
+    return _json_response(
+        {
+            "message": f"Effect '{sanitize_log_string(filename)}' uploaded",
+            "filename": sanitize_log_string(filename),
+        }
+    )
 
 
 @admin_bp.route("/effects/delete", methods=["POST"])
@@ -292,9 +303,12 @@ def delete_effect():
         return _json_response({"error": "Missing effect name"}, 400)
 
     from ..services.effects import delete_by_name
+
     if delete_by_name(str(data["name"])):
         current_app.logger.info("Effect deleted: %s", sanitize_log_string(str(data["name"])))
-        return _json_response({"message": f"Effect '{sanitize_log_string(str(data['name']))}' deleted"})
+        return _json_response(
+            {"message": f"Effect '{sanitize_log_string(str(data['name']))}' deleted"}
+        )
     return _json_response({"error": "Effect not found"}, 404)
 
 
@@ -304,6 +318,7 @@ def get_effect_content_route(name):
     if not _ensure_logged_in():
         return _json_response({"error": "Unauthorized"}, 401)
     from ..services.effects import get_effect_content
+
     content = get_effect_content(name)
     if content is None:
         return _json_response({"error": "Effect not found"}, 404)
@@ -321,16 +336,17 @@ def save_effect_route():
     if not data or not data.get("name") or not data.get("content"):
         return _json_response({"error": "Missing name or content"}, 400)
     from ..services.effects import save_effect_content
-    filename, error = save_effect_content(
-        str(data["name"]), str(data["content"]).encode("utf-8")
-    )
+
+    filename, error = save_effect_content(str(data["name"]), str(data["content"]).encode("utf-8"))
     if error:
         return _json_response({"error": error}, 400)
     current_app.logger.info("Effect saved: %s", sanitize_log_string(filename))
-    return _json_response({
-        "message": f"Effect '{sanitize_log_string(filename)}' saved",
-        "filename": sanitize_log_string(filename),
-    })
+    return _json_response(
+        {
+            "message": f"Effect '{sanitize_log_string(filename)}' saved",
+            "filename": sanitize_log_string(filename),
+        }
+    )
 
 
 @admin_bp.route("/effects/reload", methods=["POST"])
@@ -342,6 +358,7 @@ def reload_effects_admin():
         return _json_response({"error": "Unauthorized"}, 401)
 
     from ..services.effects import load_all
+
     effects = load_all(force=True)
     return _json_response({"message": "Effects reloaded", "count": len(effects)})
 
@@ -359,7 +376,5 @@ def clear_danmu_history():
         current_app.logger.info("Danmu history cleared by admin")
         return _json_response({"message": "History cleared"})
     except Exception as exc:
-        current_app.logger.error(
-            "Error clearing danmu history: %s", sanitize_log_string(str(exc))
-        )
+        current_app.logger.error("Error clearing danmu history: %s", sanitize_log_string(str(exc)))
         return _json_response({"error": "An internal error has occurred"}, 500)
