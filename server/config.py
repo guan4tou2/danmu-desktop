@@ -73,4 +73,4 @@ class Config:
     DANMU_HISTORY_CLEANUP_HOURS = int(os.getenv("DANMU_HISTORY_CLEANUP_HOURS", "24"))
 
     # Admin settable option keys
-    SETTABLE_OPTION_KEYS = {"Color", "Opacity", "FontSize", "Speed", "FontFamily"}
+    SETTABLE_OPTION_KEYS = {"Color", "Opacity", "FontSize", "Speed", "FontFamily", "Effects"}

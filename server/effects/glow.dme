@@ -1,0 +1,39 @@
+name: glow
+label: 發光
+description: 文字發光脈衝
+
+params:
+  duration:
+    label: 週期 (秒)
+    type: float
+    default: 1.2
+    min: 0.3
+    max: 5.0
+    step: 0.1
+  intensity:
+    label: 強度
+    type: select
+    default: medium
+    options:
+      - value: low
+        label: 微光
+      - value: medium
+        label: 中等
+      - value: high
+        label: 強烈
+
+keyframes: |
+  @keyframes dme-glow-low {
+    0%, 100% { filter: brightness(1) drop-shadow(0 0 2px currentColor); }
+    50%       { filter: brightness(1.1) drop-shadow(0 0 8px currentColor); }
+  }
+  @keyframes dme-glow-medium {
+    0%, 100% { filter: brightness(1) drop-shadow(0 0 4px currentColor); }
+    50%       { filter: brightness(1.2) drop-shadow(0 0 16px currentColor); }
+  }
+  @keyframes dme-glow-high {
+    0%, 100% { filter: brightness(1) drop-shadow(0 0 8px currentColor); }
+    50%       { filter: brightness(1.4) drop-shadow(0 0 30px currentColor); }
+  }
+
+animation: "dme-glow-{intensity} {duration}s ease-in-out infinite"

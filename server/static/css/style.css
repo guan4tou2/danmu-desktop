@@ -153,6 +153,13 @@ input[type="range"]::-webkit-slider-thumb:hover {
   animation: flashIcon 0.7s infinite steps(1, end);
 }
 
+/* Effect button active (selected) state — uses explicit CSS to avoid purged Tailwind classes */
+.effect-btn--active {
+  background-color: #0369a1; /* sky-700 */
+  color: #ffffff;
+  border-color: #0ea5e9; /* sky-500 */
+}
+
 /* Admin Toggle Checkbox */
 .toggle-checkbox:checked {
   right: 0;

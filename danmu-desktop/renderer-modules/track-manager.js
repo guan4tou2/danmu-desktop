@@ -117,7 +117,7 @@ function initTrackManager() {
    * @param {object} fontInfo - 字型資訊
    * @param {object} textStyles - 描邊 / 陰影設定
    * @param {object} displayArea - 顯示區域 { top, height }（百分比）
-   * @param {string|object} effect - 特效名稱或 { name, options }
+   * @param {object|null} effectCss - server 解析的特效 {keyframes,animation,styleId} 或 null
    */
   window.showdanmu = function (
     string,
@@ -134,7 +134,7 @@ function initTrackManager() {
       shadowBlur: 4,
     },
     displayArea = { top: 0, height: 100 },
-    effect = "none"
+    effectCss = null
   ) {
     console.log("[showdanmu] Received:", {
       string: sanitizeLog(string),
@@ -143,16 +143,12 @@ function initTrackManager() {
       size,
       speed,
       fontInfo,
-      effect,
+      effectCss,
     });
 
     const parentElement = document.getElementById("danmubody");
     const imgs = /^https?:\/\/([^\s/]+\/)*[^\s/]+\.(gif|png|jpeg|jpg)$/i;
     const protocolCheck = /^(http:|https:)/i;
-
-    // 解析特效參數
-    const effectName = typeof effect === "object" ? effect.name : (effect || "none");
-    const effectOptions = typeof effect === "object" ? (effect.options || {}) : {};
 
     // ── 建立 wrapper（負責 translateX 動畫，與 inner 特效動畫分離，互不衝突）
     const wrapper = document.createElement("div");
@@ -271,10 +267,18 @@ function initTrackManager() {
       let duration = maxTime - ((currentSpeed - 1) * (maxTime - minTime)) / 9;
       duration = Math.max(minTime, Math.min(maxTime, duration));
 
-      console.log("[showdanmu] Animation parameters:", { Width, duration, top, effectName });
+      console.log("[showdanmu] Animation parameters:", { Width, duration, top, hasEffect: !!(effectCss && effectCss.animation) });
 
       // 套用特效至 inner 元素（不影響 wrapper 的 translateX）
-      DanmuEffects.apply(effectName, danmu, effectOptions);
+      // 優先使用 server 端解析的 .dme CSS；否則 fallback 到 JS plugin
+      if (effectCss && effectCss.animation) {
+        danmu.style.display = "inline-block";
+        danmu.style.animation = effectCss.animation;
+        // animation-composition: add 讓多個 transform 動畫可以疊加（如 spin + bounce）
+        if (effectCss.animationComposition) {
+          danmu.style.animationComposition = effectCss.animationComposition;
+        }
+      }
 
       // translateX 動畫套在 wrapper
       try {

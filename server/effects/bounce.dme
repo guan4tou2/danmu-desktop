@@ -1,0 +1,27 @@
+name: bounce
+label: 彈跳
+description: 文字上下彈跳
+
+params:
+  duration:
+    label: 速度 (秒)
+    type: float
+    default: 0.6
+    min: 0.1
+    max: 3.0
+    step: 0.1
+  height:
+    label: 高度 (px)
+    type: int
+    default: 12
+    min: 2
+    max: 50
+    step: 1
+
+keyframes: |
+  @keyframes dme-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-{height}px); }
+  }
+
+animation: "dme-bounce {duration}s ease-in-out infinite"

@@ -1,0 +1,29 @@
+name: blink
+label: 閃爍
+description: 文字閃爍消失
+
+params:
+  duration:
+    label: 間隔 (秒)
+    type: float
+    default: 0.6
+    min: 0.1
+    max: 3.0
+    step: 0.1
+  style:
+    label: 樣式
+    type: select
+    default: step-start
+    options:
+      - value: step-start
+        label: 逐格
+      - value: ease-in-out
+        label: 漸變
+
+keyframes: |
+  @keyframes dme-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+animation: "dme-blink {duration}s {style} infinite"

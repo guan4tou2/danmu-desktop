@@ -1,0 +1,28 @@
+name: shake
+label: 抖動
+description: 文字左右抖動
+
+params:
+  duration:
+    label: 速度 (秒)
+    type: float
+    default: 0.25
+    min: 0.05
+    max: 2.0
+    step: 0.05
+  amplitude:
+    label: 幅度 (px)
+    type: int
+    default: 5
+    min: 1
+    max: 30
+    step: 1
+
+keyframes: |
+  @keyframes dme-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-{amplitude}px); }
+    75% { transform: translateX({amplitude}px); }
+  }
+
+animation: "dme-shake {duration}s ease-in-out infinite"

@@ -9,6 +9,7 @@ from ..services import messaging
 from ..services.blacklist import contains_keyword
 from ..services.fonts import build_font_payload, list_available_fonts
 from ..services.security import rate_limit, verify_font_token
+from ..services.effects import load_all as load_all_effects, render_effects
 from ..services.settings import get_options
 from ..services.validation import (BlacklistCheckSchema, FireRequestSchema,
                                    validate_request)
@@ -88,9 +89,15 @@ def _resolve_danmu_style(data):
     data["size"] = _pick(data.pop("size", None), options.get("FontSize", [True, 20, 100, 50]))
     data["speed"] = _pick(data.pop("speed", None), options.get("Speed", [True, 1, 10, 4]))
 
-    # effect: 直接傳遞，不受管理員設定控制
-    if "effect" not in data:
-        data["effect"] = "none"
+    # effects：解析 .dme 特效，產生可注入 overlay 的 CSS（若 Effects 設定關閉則略過）
+    effects_setting = options.get("Effects", [True, "", "", ""])
+    effects_enabled = effects_setting[0] is not False
+    effects_input = data.pop("effects", []) or []
+    if effects_input and effects_enabled:
+        resolved = render_effects(effects_input)
+        data["effectCss"] = resolved  # {keyframes, animation, styleId, animationComposition} 或 None
+    else:
+        data["effectCss"] = None
 
     return data
 
@@ -167,6 +174,20 @@ def public_fonts():
 def public_fonts_alias():
     """Backward compatibility for older clients requesting /api/fonts"""
     return public_fonts()
+
+
+@api_bp.route("/effects", methods=["GET"])
+def list_effects():
+    """列出所有可用的 .dme 特效（含參數定義）"""
+    effects = load_all_effects()
+    return _json_response({"effects": effects})
+
+
+@api_bp.route("/effects/reload", methods=["POST"])
+def reload_effects():
+    """強制重新掃描 effects/ 目錄（熱插拔手動觸發）"""
+    effects = load_all_effects(force=True)
+    return _json_response({"message": "Reloaded", "count": len(effects)})
 
 
 @api_bp.route("/check_blacklist", methods=["POST"])

@@ -3,7 +3,7 @@
 from marshmallow import EXCLUDE, Schema, ValidationError, fields, validate
 
 # Valid setting type keys (mirrors Config.SETTABLE_OPTION_KEYS)
-_VALID_SETTING_TYPES = {"Color", "Opacity", "FontSize", "Speed", "FontFamily"}
+_VALID_SETTING_TYPES = {"Color", "Opacity", "FontSize", "Speed", "FontFamily", "Effects"}
 
 
 class FireRequestSchema(Schema):
@@ -13,7 +13,8 @@ class FireRequestSchema(Schema):
     isImage = fields.Bool(load_default=False)
     fontInfo = fields.Dict(load_default=None)
     font = fields.Str(load_default=None, validate=validate.Length(max=100))
-    effect = fields.Str(load_default="none", validate=validate.Length(max=50))
+    # effects：支援多個特效疊加，每個特效可攜帶參數
+    effects = fields.List(fields.Dict(), load_default=[])
     color = fields.Str(
         load_default=None,
         validate=validate.Regexp(r"^#?[0-9a-fA-F]{6}$", error="Invalid hex color"),
@@ -25,6 +26,7 @@ class FireRequestSchema(Schema):
 
     class Meta:
         unknown = EXCLUDE
+
 
 
 class BlacklistCheckSchema(Schema):

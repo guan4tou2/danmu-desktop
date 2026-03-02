@@ -48,6 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let _adminWs = null;
   let _adminWsReconnectTimer = null;
 
+
   function scheduleAdminFontRefresh(ttlSeconds) {
     if (adminFontRefreshTimer) {
       clearTimeout(adminFontRefreshTimer);
@@ -761,6 +762,47 @@ document.addEventListener("DOMContentLoaded", () => {
       populateFontFamilyDropdowns();
     }, 0);
 
+    // Effects Enable/Disable Card
+    const effectsEnabled = currentSettings.Effects ? currentSettings.Effects[0] !== false : true;
+    settingsGrid.innerHTML += settingCard(
+      "Effects",
+      "Effects Setting",
+      "Allow users to apply visual effects (animations) to danmu",
+      effectsEnabled,
+      `<p class="text-sm text-slate-400">Effects are enabled. Users can apply animations to their danmu messages.</p>`,
+      `<p class="text-sm text-slate-400">Effects are disabled. All danmu will display without animations.</p>`
+    );
+
+    // Effects Management Card（全寬）
+    settingsGrid.innerHTML += `
+      <div class="glass-effect rounded-2xl p-6 border border-transparent hover:border-slate-500 transition-all duration-300 lg:col-span-2">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-white">Effects Management</h3>
+            <p class="text-sm text-slate-400">管理 .dme 特效插件（熱插拔，可直接編輯）</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="effectReloadBtn"
+              class="px-3 py-1.5 text-xs font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Reload
+            </button>
+            <label for="effectUploadInput"
+              class="px-3 py-1.5 text-xs font-medium bg-sky-700 hover:bg-sky-600 text-white rounded-lg cursor-pointer transition-colors flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+              Upload .dme
+            </label>
+            <input type="file" id="effectUploadInput" accept=".dme" class="hidden">
+          </div>
+        </div>
+        <div class="border-t border-slate-700/50 pt-4">
+          <div id="effectsList" class="grid grid-cols-1 sm:grid-cols-2 gap-3 min-h-12">
+            <span class="text-xs text-slate-500 col-span-2">Loading effects...</span>
+          </div>
+        </div>
+      </div>
+    `;
+
     // Blacklist Management Card
     settingsGrid.innerHTML += `
                     <div class="glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent">
@@ -858,6 +900,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     addEventListeners();
+    scheduleIdleTask(initEffectsManagement);
   }
 
   // Attach Event Listeners
@@ -1185,6 +1228,276 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast("An error occurred during font upload.", false);
     }
   }
+  // ─── Effects Management ──────────────────────────────────────────────────────
+
+  async function initEffectsManagement() {
+    // ── 注入 Effect Edit Modal（固定覆蓋層）──────────────────────────────
+    if (!document.getElementById("effectEditModal")) {
+      document.body.insertAdjacentHTML("beforeend", `
+        <div id="effectEditModal" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.72);">
+          <div style="background:#0f172a;border:1px solid #1e293b;border-radius:1rem;width:100%;max-width:700px;margin:0 1rem;box-shadow:0 32px 80px rgba(0,0,0,0.8);display:flex;flex-direction:column;max-height:88vh;overflow:hidden;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid #1e293b;flex-shrink:0;">
+              <div>
+                <p id="effectEditModalTitle" style="font-weight:700;color:#f1f5f9;font-size:0.95rem;margin:0;"></p>
+                <p id="effectEditModalFile" style="font-size:0.7rem;color:#64748b;font-family:monospace;margin:0.15rem 0 0;"></p>
+              </div>
+              <button id="effectEditModalClose" title="Close" style="color:#64748b;background:none;border:none;cursor:pointer;padding:0.25rem;border-radius:0.4rem;display:flex;align-items:center;line-height:1;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div style="flex:1;overflow:hidden;padding:1rem 1.25rem;min-height:0;">
+              <textarea id="effectEditModalTextarea"
+                style="width:100%;height:100%;min-height:300px;background:#020617;color:#cbd5e1;font-size:0.75rem;font-family:'Courier New',Courier,monospace;border:1px solid #334155;border-radius:0.5rem;padding:0.75rem;resize:none;outline:none;box-sizing:border-box;display:block;"
+                spellcheck="false"></textarea>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:0.5rem;padding:0.75rem 1.25rem;border-top:1px solid #1e293b;flex-shrink:0;">
+              <button id="effectEditModalCancel" style="padding:0.4rem 1.1rem;font-size:0.8rem;color:#94a3b8;border:1px solid #334155;border-radius:0.5rem;background:none;cursor:pointer;">Cancel</button>
+              <button id="effectEditModalSave" style="padding:0.4rem 1.1rem;font-size:0.8rem;font-weight:600;background:#0369a1;color:#fff;border:none;border-radius:0.5rem;cursor:pointer;">Save Changes</button>
+            </div>
+          </div>
+        </div>
+      `);
+
+      // ── Modal close handlers ───────────────────────────────────────────
+      const hideModal = () => {
+        document.getElementById("effectEditModal").style.display = "none";
+      };
+      document.getElementById("effectEditModalClose").addEventListener("click", hideModal);
+      document.getElementById("effectEditModalCancel").addEventListener("click", hideModal);
+      document.getElementById("effectEditModal").addEventListener("click", (e) => {
+        if (e.target === e.currentTarget) hideModal();
+      });
+
+      // ── Modal save handler ─────────────────────────────────────────────
+      document.getElementById("effectEditModalSave").addEventListener("click", async () => {
+        const modal = document.getElementById("effectEditModal");
+        const textarea = document.getElementById("effectEditModalTextarea");
+        const saveBtn = document.getElementById("effectEditModalSave");
+        const name = modal?.dataset.effectName;
+        if (!name || !textarea) return;
+        saveBtn.disabled = true;
+        try {
+          const res = await csrfFetch("/admin/effects/save", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, content: textarea.value }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            showToast(data.message || "Effect saved", true);
+            modal.style.display = "none";
+            await fetchEffectsAdmin();
+          } else {
+            showToast(data.error || "Save failed", false);
+          }
+        } catch (_) {
+          showToast("Network error", false);
+        } finally {
+          saveBtn.disabled = false;
+        }
+      });
+    }
+
+    await fetchEffectsAdmin();
+
+    document.getElementById("effectReloadBtn")?.addEventListener("click", async () => {
+      const btn = document.getElementById("effectReloadBtn");
+      if (btn) btn.disabled = true;
+      try {
+        const res = await csrfFetch("/admin/effects/reload", { method: "POST" });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          showToast(data.message || "Effects reloaded");
+          await fetchEffectsAdmin();
+        } else {
+          showToast(data.error || "Reload failed", false);
+        }
+      } catch (_) {
+        showToast("Network error", false);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    });
+
+    document.getElementById("effectUploadInput")?.addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append("effectfile", file);
+      try {
+        const res = await csrfFetch("/admin/effects/upload", { method: "POST", body: formData });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          showToast(data.message || "Effect uploaded");
+          await fetchEffectsAdmin();
+        } else {
+          showToast(data.error || "Upload failed", false);
+        }
+      } catch (_) {
+        showToast("Network error", false);
+      } finally {
+        e.target.value = "";
+      }
+    });
+  }
+
+  async function fetchEffectsAdmin() {
+    const container = document.getElementById("effectsList");
+    if (!container) return;
+    try {
+      const res = await csrfFetch("/admin/effects");
+      if (!res.ok) {
+        container.innerHTML = '<span class="text-xs text-red-400">Failed to load effects</span>';
+        return;
+      }
+      const data = await res.json();
+      renderEffectsList(data.effects || []);
+    } catch (_) {
+      container.innerHTML = '<span class="text-xs text-red-400">Network error</span>';
+    }
+  }
+
+  function renderEffectsList(effects) {
+    const container = document.getElementById("effectsList");
+    if (!container) return;
+    if (!effects.length) {
+      container.innerHTML =
+        '<span class="text-xs text-slate-500 col-span-2">No effects loaded. Upload a .dme file to add effects.</span>';
+      return;
+    }
+    container.innerHTML = "";
+    effects.forEach((eff) => {
+      // ── Card ─────────────────────────────────────────────────────────────
+      const card = document.createElement("div");
+      card.style.cssText =
+        "background:rgba(30,41,59,0.6);border:1px solid rgba(71,85,105,0.4);border-radius:0.75rem;padding:0.875rem;display:flex;flex-direction:column;gap:0.5rem;transition:border-color 0.2s;";
+      card.addEventListener("mouseenter", () => {
+        card.style.borderColor = "rgba(100,116,139,0.7)";
+      });
+      card.addEventListener("mouseleave", () => {
+        card.style.borderColor = "rgba(71,85,105,0.4)";
+      });
+
+      // ── Label + name ─────────────────────────────────────────────────────
+      const titleDiv = document.createElement("div");
+      const labelEl = document.createElement("p");
+      labelEl.style.cssText = "font-weight:600;color:#f1f5f9;font-size:0.875rem;margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
+      labelEl.textContent = eff.label || eff.name;
+      const nameEl = document.createElement("p");
+      nameEl.style.cssText = "font-size:0.7rem;color:#64748b;font-family:monospace;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
+      nameEl.textContent = eff.name;
+      titleDiv.appendChild(labelEl);
+      titleDiv.appendChild(nameEl);
+      card.appendChild(titleDiv);
+
+      // ── Description ───────────────────────────────────────────────────────
+      if (eff.description) {
+        const descEl = document.createElement("p");
+        descEl.style.cssText = "font-size:0.75rem;color:#94a3b8;margin:0;flex:1;";
+        descEl.textContent = eff.description;
+        card.appendChild(descEl);
+      } else {
+        const spacer = document.createElement("div");
+        spacer.style.flex = "1";
+        card.appendChild(spacer);
+      }
+
+      // ── Footer: filename + buttons ────────────────────────────────────────
+      const footer = document.createElement("div");
+      footer.style.cssText =
+        "display:flex;align-items:center;justify-content:space-between;gap:0.5rem;padding-top:0.5rem;border-top:1px solid rgba(51,65,85,0.5);margin-top:0.25rem;";
+
+      const filenameEl = document.createElement("span");
+      filenameEl.style.cssText = "font-size:0.65rem;color:#475569;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
+      filenameEl.textContent = eff.filename;
+
+      const btnGroup = document.createElement("div");
+      btnGroup.style.cssText = "display:flex;align-items:center;gap:0.25rem;flex-shrink:0;";
+
+      const editBtn = document.createElement("button");
+      editBtn.style.cssText =
+        "padding:0.25rem 0.625rem;font-size:0.7rem;font-weight:500;color:#cbd5e1;border:1px solid #475569;border-radius:0.4rem;background:none;cursor:pointer;transition:color 0.15s,border-color 0.15s;";
+      editBtn.textContent = "Edit";
+      editBtn.addEventListener("mouseenter", () => {
+        editBtn.style.color = "#7dd3fc";
+        editBtn.style.borderColor = "#38bdf8";
+      });
+      editBtn.addEventListener("mouseleave", () => {
+        editBtn.style.color = "#cbd5e1";
+        editBtn.style.borderColor = "#475569";
+      });
+
+      const delBtn = document.createElement("button");
+      delBtn.style.cssText =
+        "padding:0.25rem;color:#64748b;background:none;border:none;cursor:pointer;border-radius:0.3rem;display:flex;align-items:center;transition:color 0.15s;";
+      delBtn.title = `Delete ${eff.label || eff.name}`;
+      delBtn.innerHTML =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+      delBtn.addEventListener("mouseenter", () => { delBtn.style.color = "#f87171"; });
+      delBtn.addEventListener("mouseleave", () => { delBtn.style.color = "#64748b"; });
+
+      btnGroup.appendChild(editBtn);
+      btnGroup.appendChild(delBtn);
+      footer.appendChild(filenameEl);
+      footer.appendChild(btnGroup);
+      card.appendChild(footer);
+      container.appendChild(card);
+
+      // ── Edit → open modal ─────────────────────────────────────────────────
+      editBtn.addEventListener("click", async () => {
+        const modal = document.getElementById("effectEditModal");
+        const titleEl = document.getElementById("effectEditModalTitle");
+        const fileEl = document.getElementById("effectEditModalFile");
+        const textarea = document.getElementById("effectEditModalTextarea");
+        const saveBtn = document.getElementById("effectEditModalSave");
+        if (!modal) return;
+        titleEl.textContent = eff.label || eff.name;
+        fileEl.textContent = eff.filename;
+        textarea.value = "Loading…";
+        textarea.disabled = true;
+        saveBtn.disabled = true;
+        modal.dataset.effectName = eff.name;
+        modal.style.display = "flex";
+        try {
+          const res = await csrfFetch(`/admin/effects/${encodeURIComponent(eff.name)}/content`);
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            textarea.value = data.content || "";
+            textarea.disabled = false;
+            saveBtn.disabled = false;
+          } else {
+            textarea.value = data.error || "Failed to load";
+            showToast(data.error || "Failed to load content", false);
+          }
+        } catch (_) {
+          textarea.value = "Network error";
+          showToast("Network error", false);
+        }
+      });
+
+      // ── Delete handler ────────────────────────────────────────────────────
+      delBtn.addEventListener("click", async () => {
+        if (!confirm(`Delete effect "${eff.label || eff.name}"?`)) return;
+        try {
+          const res = await csrfFetch("/admin/effects/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: eff.name }),
+          });
+          const d = await res.json().catch(() => ({}));
+          if (res.ok) {
+            showToast(d.message || "Effect deleted", true);
+            await fetchEffectsAdmin();
+          } else {
+            showToast(d.error || "Delete failed", false);
+          }
+        } catch (_) {
+          showToast("Network error", false);
+        }
+      });
+    });
+  }
+
   // --- Real-time WebSocket Listener ---
   // Receives push notifications from the server (e.g. blacklist_update).
   function initAdminWebSocket() {

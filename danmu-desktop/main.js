@@ -22,22 +22,24 @@ app.whenReady().then(() => {
   mainWindow = createWindow(childWindows, onKonamiTrigger);
   setupIpcHandlers(mainWindow, childWindows);
 
-  // macOS menu bar 需要 16×16 template image（自動適應深淺色模式）
-  // Windows/Linux 使用 32×32 彩色圖示
   const iconPath = path.join(__dirname, "../assets/icon.png");
   let trayIcon = nativeImage.createFromPath(iconPath);
-  if (process.platform === "darwin") {
-    trayIcon = trayIcon.resize({ width: 16, height: 16 });
-    trayIcon.setTemplateImage(true);
-  } else {
-    trayIcon = trayIcon.resize({ width: 32, height: 32 });
-  }
+  // macOS：彩色圖示縮至 16×16 即可（不用 setTemplateImage，
+  // template 模式只讀 alpha channel，彩色 PNG 會渲染成空白方塊）
+  trayIcon = trayIcon.resize({ width: process.platform === "darwin" ? 16 : 32, height: process.platform === "darwin" ? 16 : 32 });
   tray = new Tray(trayIcon);
 
   const showMainWindow = () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
+      // setVisibleOnAllWorkspaces(true) 讓視窗強制出現在目前的 macOS Space
+      if (process.platform === "darwin") {
+        mainWindow.setVisibleOnAllWorkspaces(true);
+      }
       mainWindow.show();
       mainWindow.focus();
+      if (process.platform === "darwin") {
+        mainWindow.setVisibleOnAllWorkspaces(false);
+      }
     }
   };
 
@@ -49,7 +51,8 @@ app.whenReady().then(() => {
     {
       label: "quit",
       click: () => {
-        childWindows.forEach((win) => {
+        // spread 複製陣列，避免 destroy 觸發的 "closed" 修改迭代中的陣列
+        [...childWindows].forEach((win) => {
           if (win && !win.isDestroyed()) {
             win.destroy();
           }
@@ -78,6 +81,16 @@ app.whenReady().then(() => {
       setupIpcHandlers(mainWindow, childWindows);
     }
   });
+});
+
+// 安全網：任何退出路徑（Cmd+Q、dock Quit 等）都確保子視窗先被銷毀
+app.on("before-quit", () => {
+  [...childWindows].forEach((win) => {
+    if (win && !win.isDestroyed()) {
+      win.destroy();
+    }
+  });
+  childWindows.length = 0;
 });
 
 app.on("window-all-closed", () => {

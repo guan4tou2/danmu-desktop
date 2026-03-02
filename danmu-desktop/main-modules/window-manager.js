@@ -28,6 +28,7 @@ function createWindow(childWindows, onKonamiTrigger) {
     minHeight: 700,
     resizable: true,
     autoHideMenuBar: true,
+    show: false,
     icon: path.join(__dirname, "../assets/icon.png"),
     webPreferences: {
       preload: path.join(__dirname, "../dist/preload.bundle.js"),
@@ -41,6 +42,18 @@ function createWindow(childWindows, onKonamiTrigger) {
 
   mainWindow.loadFile(path.join(__dirname, "../index.html"));
 
+  // 在目前的 macOS Space 顯示視窗，避免開在別的桌面
+  mainWindow.once("ready-to-show", () => {
+    if (process.platform === "darwin") {
+      mainWindow.setVisibleOnAllWorkspaces(true);
+    }
+    mainWindow.show();
+    mainWindow.focus();
+    if (process.platform === "darwin") {
+      mainWindow.setVisibleOnAllWorkspaces(false);
+    }
+  });
+
   mainWindow.on("minimize", (ev) => {
     ev.preventDefault();
     mainWindow.hide();
@@ -48,7 +61,9 @@ function createWindow(childWindows, onKonamiTrigger) {
 
   mainWindow.on("close", (e) => {
     console.log("[Main] Window close event triggered");
-    childWindows.forEach((win) => {
+    // 使用 spread 複製陣列，避免 destroy() 觸發 "closed" 事件
+    // 導致 splice 修改正在迭代的陣列（index 跑掉，第二個視窗被略過）
+    [...childWindows].forEach((win) => {
       if (win && !win.isDestroyed()) {
         try {
           win.destroy();

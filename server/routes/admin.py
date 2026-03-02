@@ -241,6 +241,111 @@ def get_danmu_history():
         return _json_response({"error": "An internal error has occurred"}, 500)
 
 
+
+@admin_bp.route("/effects", methods=["GET"])
+def list_effects_admin():
+    """列出所有 .dme 特效（含檔案資訊，供 admin 管理）"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    from ..services.effects import list_with_file_info
+    return _json_response({"effects": list_with_file_info()})
+
+
+@admin_bp.route("/effects/upload", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+def upload_effect():
+    """上傳新的 .dme 特效檔案（熱插拔）"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+
+    f = request.files.get("effectfile")
+    if not f or f.filename == "":
+        return _json_response({"error": "No file selected"}, 400)
+
+    if not f.filename.lower().endswith(".dme"):
+        return _json_response({"error": "Only .dme files are allowed"}, 400)
+
+    content = f.stream.read(64 * 1024)  # max 64 KB
+    if not content:
+        return _json_response({"error": "Empty file"}, 400)
+
+    from ..services.effects import save_uploaded_effect
+    filename, error = save_uploaded_effect(content)
+    if error:
+        return _json_response({"error": error}, 400)
+
+    current_app.logger.info("Effect uploaded: %s", sanitize_log_string(filename))
+    return _json_response({"message": f"Effect '{sanitize_log_string(filename)}' uploaded", "filename": sanitize_log_string(filename)})
+
+
+@admin_bp.route("/effects/delete", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+def delete_effect():
+    """刪除指定特效檔案（熱插拔）"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+
+    data = request.get_json(silent=True)
+    if not data or not data.get("name"):
+        return _json_response({"error": "Missing effect name"}, 400)
+
+    from ..services.effects import delete_by_name
+    if delete_by_name(str(data["name"])):
+        current_app.logger.info("Effect deleted: %s", sanitize_log_string(str(data["name"])))
+        return _json_response({"message": f"Effect '{sanitize_log_string(str(data['name']))}' deleted"})
+    return _json_response({"error": "Effect not found"}, 404)
+
+
+@admin_bp.route("/effects/<name>/content", methods=["GET"])
+def get_effect_content_route(name):
+    """取得特效原始 .dme 文字內容（供 admin 編輯用）"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    from ..services.effects import get_effect_content
+    content = get_effect_content(name)
+    if content is None:
+        return _json_response({"error": "Effect not found"}, 404)
+    return _json_response({"content": content})
+
+
+@admin_bp.route("/effects/save", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+def save_effect_route():
+    """儲存已編輯的特效 .dme 內容（覆寫原檔）"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True)
+    if not data or not data.get("name") or not data.get("content"):
+        return _json_response({"error": "Missing name or content"}, 400)
+    from ..services.effects import save_effect_content
+    filename, error = save_effect_content(
+        str(data["name"]), str(data["content"]).encode("utf-8")
+    )
+    if error:
+        return _json_response({"error": error}, 400)
+    current_app.logger.info("Effect saved: %s", sanitize_log_string(filename))
+    return _json_response({
+        "message": f"Effect '{sanitize_log_string(filename)}' saved",
+        "filename": sanitize_log_string(filename),
+    })
+
+
+@admin_bp.route("/effects/reload", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+def reload_effects_admin():
+    """強制重新掃描並載入所有特效（熱插拔手動觸發）"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+
+    from ..services.effects import load_all
+    effects = load_all(force=True)
+    return _json_response({"message": "Effects reloaded", "count": len(effects)})
+
+
 @admin_bp.route("/history/clear", methods=["POST"])
 @rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf

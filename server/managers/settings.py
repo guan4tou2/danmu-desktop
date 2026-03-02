@@ -7,6 +7,7 @@ _DEFAULT_OPTIONS = {
     "FontSize": [True, 20, 100, 50],
     "Speed": [True, 1, 10, 4],
     "FontFamily": [False, "", "", "NotoSansTC"],
+    "Effects": [True, "", "", ""],
 }
 
 _RANGES = {

@@ -2,7 +2,6 @@
 import json
 
 from server import state
-from server.services.ws_state import update_ws_client_count
 
 
 # ---------------------------------------------------------------------------
@@ -232,3 +231,209 @@ def test_history_clear(client):
 def test_history_requires_auth(client):
     res = client.get("/admin/history")
     assert res.status_code == 401
+
+
+
+# ---------------------------------------------------------------------------
+# Effects Management
+# ---------------------------------------------------------------------------
+
+def test_effects_list_requires_auth(client):
+    res = client.get("/admin/effects")
+    assert res.status_code == 401
+
+
+def test_effects_list_returns_effects(client):
+    login(client)
+    res = client.get("/admin/effects")
+    assert res.status_code == 200
+    data = json.loads(res.data)
+    assert "effects" in data
+    assert isinstance(data["effects"], list)
+
+
+def test_effects_list_has_file_info(client):
+    """Each effect entry must include filename and label."""
+    from server.services import effects as eff_svc
+    eff_svc._cache["testfx"] = {
+        "name": "testfx", "label": "Test", "description": "", "params": {},
+        "keyframes": "", "animation": "dme-test 1s",
+    }
+    eff_svc._path_to_name["/tmp/testfx.dme"] = "testfx"
+    login(client)
+    res = client.get("/admin/effects")
+    assert res.status_code == 200
+    data = json.loads(res.data)
+    names = [e["name"] for e in data["effects"]]
+    assert "testfx" in names
+    entry = next(e for e in data["effects"] if e["name"] == "testfx")
+    assert "filename" in entry
+    assert "label" in entry
+    # Cleanup
+    eff_svc._cache.pop("testfx", None)
+    eff_svc._path_to_name.pop("/tmp/testfx.dme", None)
+
+
+def test_effects_reload_requires_auth(client):
+    res = client.post("/admin/effects/reload", json={})
+    assert res.status_code == 403  # CSRF before auth
+
+
+def test_effects_reload_ok(client):
+    token = csrf_token(client)
+    res = client.post(
+        "/admin/effects/reload",
+        json={},
+        headers={"X-CSRF-Token": token},
+    )
+    assert res.status_code == 200
+    data = json.loads(res.data)
+    assert "count" in data
+
+
+def test_effects_delete_not_found(client):
+    res = authed_post(client, "/admin/effects/delete", {"name": "nonexistent_xyz"})
+    assert res.status_code == 404
+
+
+def test_effects_delete_invalid_name(client):
+    res = authed_post(client, "/admin/effects/delete", {"name": "../etc/passwd"})
+    assert res.status_code == 404  # invalid name → delete_by_name returns False → 404
+
+
+def test_effects_delete_ok(client, tmp_path):
+    import yaml as _yaml
+    from server.services import effects as eff_svc
+    # Write a real .dme file to tmp dir so delete_by_name can unlink it
+    dme_file = tmp_path / "tmpfx.dme"
+    dme_file.write_text("name: tmpfx\nlabel: TmpFx\nanimation: dme-tmp 1s\nkeyframes: '@keyframes dme-tmp {}'\n")
+    # Inject into cache as if it were loaded
+    eff_svc._cache["tmpfx"] = {
+        "name": "tmpfx", "label": "TmpFx", "description": "", "params": {},
+        "keyframes": "", "animation": "dme-tmp 1s",
+    }
+    eff_svc._mtime_map[str(dme_file)] = dme_file.stat().st_mtime
+    eff_svc._path_to_name[str(dme_file)] = "tmpfx"
+    res = authed_post(client, "/admin/effects/delete", {"name": "tmpfx"})
+    assert res.status_code == 200
+    assert "tmpfx" not in eff_svc._cache
+
+
+def test_effects_upload_invalid_extension(client):
+    from io import BytesIO
+    token = csrf_token(client)
+    data = {"effectfile": (BytesIO(b"content"), "bad.txt")}
+    res = client.post(
+        "/admin/effects/upload",
+        data=data,
+        content_type="multipart/form-data",
+        headers={"X-CSRF-Token": token},
+    )
+    assert res.status_code == 400
+
+
+def test_effects_upload_invalid_yaml(client):
+    from io import BytesIO
+    token = csrf_token(client)
+    data = {"effectfile": (BytesIO(b": broken: yaml: ["), "bad.dme")}
+    res = client.post(
+        "/admin/effects/upload",
+        data=data,
+        content_type="multipart/form-data",
+        headers={"X-CSRF-Token": token},
+    )
+    assert res.status_code == 400
+
+
+def test_effects_upload_missing_name(client):
+    from io import BytesIO
+    token = csrf_token(client)
+    content = b"label: No Name\nanimation: dme-x 1s\n"
+    data = {"effectfile": (BytesIO(content), "noname.dme")}
+    res = client.post(
+        "/admin/effects/upload",
+        data=data,
+        content_type="multipart/form-data",
+        headers={"X-CSRF-Token": token},
+    )
+    assert res.status_code == 400
+
+
+def test_effects_upload_ok(client, tmp_path, monkeypatch):
+    """Uploading a valid .dme file saves it and returns 200."""
+    from io import BytesIO
+    from server.services import effects as eff_svc
+    # Point _EFFECTS_DIR to a tmp directory for this test
+    monkeypatch.setattr(eff_svc, "_EFFECTS_DIR", tmp_path)
+    token = csrf_token(client)
+    content = b"name: myfx\nlabel: My Fx\ndescription: Test\nparams: {}\nkeyframes: '@keyframes dme-myfx {}'\nanimation: dme-myfx 1s linear infinite\n"
+    data = {"effectfile": (BytesIO(content), "myfx.dme")}
+    res = client.post(
+        "/admin/effects/upload",
+        data=data,
+        content_type="multipart/form-data",
+        headers={"X-CSRF-Token": token},
+    )
+    assert res.status_code == 200
+    result = json.loads(res.data)
+    assert result["filename"] == "myfx.dme"
+    # Cleanup
+    eff_svc._cache.pop("myfx", None)
+
+
+def test_effects_get_content_not_found(client):
+    login(client)
+    res = client.get("/admin/effects/nonexistent_xyz/content")
+    assert res.status_code == 404
+
+
+def test_effects_get_content_requires_auth(client):
+    res = client.get("/admin/effects/rainbow/content")
+    assert res.status_code == 401
+
+
+def test_effects_save_requires_csrf(client):
+    res = client.post("/admin/effects/save", json={"name": "rainbow", "content": "name: rainbow\n"})
+    assert res.status_code == 403
+
+
+def test_effects_save_not_found(client, tmp_path, monkeypatch):
+    from server.services import effects as eff_svc
+    monkeypatch.setattr(eff_svc, "_EFFECTS_DIR", tmp_path)
+    # Reset cache so the effect is not in the path map
+    eff_svc._cache.clear()
+    eff_svc._path_to_name.clear()
+    eff_svc._mtime_map.clear()
+    res = authed_post(client, "/admin/effects/save", {
+        "name": "notexist", "content": "name: notexist\nanimation: dme-x 1s\n"
+    })
+    assert res.status_code == 400
+    data = json.loads(res.data)
+    assert "error" in data
+
+
+def test_effects_save_ok(client, tmp_path, monkeypatch):
+    from server.services import effects as eff_svc
+    monkeypatch.setattr(eff_svc, "_EFFECTS_DIR", tmp_path)
+    # Create a real .dme file and inject into cache
+    dme_file = tmp_path / "editable.dme"
+    original = b"name: editable\nlabel: Editable\nanimation: dme-edit 1s\nkeyframes: '@keyframes dme-edit {}'\n"
+    dme_file.write_bytes(original)
+    eff_svc._cache["editable"] = {
+        "name": "editable", "label": "Editable", "description": "", "params": {},
+        "keyframes": "", "animation": "dme-edit 1s",
+    }
+    eff_svc._mtime_map[str(dme_file)] = dme_file.stat().st_mtime
+    eff_svc._path_to_name[str(dme_file)] = "editable"
+
+    new_content = "name: editable\nlabel: Edited\nanimation: dme-edit 2s\nkeyframes: '@keyframes dme-edit {}'\n"
+    res = authed_post(client, "/admin/effects/save", {"name": "editable", "content": new_content})
+    assert res.status_code == 200
+    data = json.loads(res.data)
+    assert "filename" in data
+    # Verify file was actually written
+    assert dme_file.read_text() == new_content
+    # Cleanup
+    eff_svc._cache.pop("editable", None)
+    eff_svc._path_to_name.pop(str(dme_file), None)
+    eff_svc._mtime_map.pop(str(dme_file), None)

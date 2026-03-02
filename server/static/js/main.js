@@ -46,8 +46,9 @@ document.addEventListener("DOMContentLoaded", () => {
     userFontSelectControl: document.getElementById("userFontSelectControl"),
     userFontSelect: document.getElementById("userFontSelect"),
 
-    // Effect buttons
+    // Effect UI
     effectButtons: document.getElementById("effectButtons"),
+    effectParamsPanel: document.getElementById("effectParamsPanel"),
 
     // Toast container
     toastContainer: document.getElementById("toast-container"),
@@ -68,7 +69,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- State management ---
   let currentSettings = {};
   let ws = null;
-  let selectedEffect = "none";
+  // selectedEffects: { [name]: {params} } — 多選特效狀態
+  let _effectDefs = [];         // 從 /effects API 載入的特效定義
+  const selectedEffects = {};   // name -> {params}
   let autoDismissTimer = null;
   let fontRefreshTimer = null;
   const FONT_REFRESH_BUFFER_SECONDS = 60;
@@ -465,22 +468,132 @@ document.addEventListener("DOMContentLoaded", () => {
     elements.userFontSelect.addEventListener("change", updatePreview);
   }
 
-  // Effect button toggle
-  if (elements.effectButtons) {
-    elements.effectButtons.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-effect]");
-      if (!btn) return;
-      selectedEffect = btn.dataset.effect;
-      elements.effectButtons.querySelectorAll(".effect-btn").forEach((b) => {
-        const active = b === btn;
-        b.classList.toggle("active", active);
-        b.classList.toggle("bg-slate-700", active);
-        b.classList.toggle("text-white", active);
-        b.classList.toggle("bg-slate-800", !active);
-        b.classList.toggle("text-slate-300", !active);
+  // ── 特效系統（.dme 動態載入）──────────────────────────────────────────────
+
+  function _renderParamControl(effectName, paramKey, paramDef, currentVal) {
+    const wrap = document.createElement("div");
+    wrap.className = "flex items-center gap-2 text-xs text-slate-400";
+
+    const lbl = document.createElement("span");
+    lbl.className = "w-20 shrink-0";
+    lbl.textContent = paramDef.label || paramKey;
+    wrap.appendChild(lbl);
+
+    if (paramDef.type === "select") {
+      const sel = document.createElement("select");
+      sel.className = "bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded px-2 py-1";
+      sel.dataset.effectName = effectName;
+      sel.dataset.paramKey = paramKey;
+      (paramDef.options || []).forEach((opt) => {
+        const o = document.createElement("option");
+        o.value = opt.value;
+        o.textContent = opt.label;
+        if (opt.value === (currentVal ?? paramDef.default)) o.selected = true;
+        sel.appendChild(o);
       });
-    });
+      sel.addEventListener("change", () => {
+        if (selectedEffects[effectName]) selectedEffects[effectName][paramKey] = sel.value;
+      });
+      wrap.appendChild(sel);
+    } else {
+      const slider = document.createElement("input");
+      slider.type = "range";
+      slider.className = "flex-1";
+      slider.min = paramDef.min ?? 0;
+      slider.max = paramDef.max ?? 10;
+      slider.step = paramDef.step ?? 0.1;
+      slider.value = currentVal ?? paramDef.default;
+      slider.dataset.effectName = effectName;
+      slider.dataset.paramKey = paramKey;
+
+      const val = document.createElement("span");
+      val.className = "w-10 text-right text-slate-300";
+      val.textContent = slider.value;
+
+      slider.addEventListener("input", () => {
+        val.textContent = slider.value;
+        if (selectedEffects[effectName]) selectedEffects[effectName][paramKey] = Number(slider.value);
+      });
+      wrap.appendChild(slider);
+      wrap.appendChild(val);
+    }
+    return wrap;
   }
+
+  function _refreshParamsPanel() {
+    if (!elements.effectParamsPanel) return;
+    elements.effectParamsPanel.innerHTML = "";
+    for (const [name, params] of Object.entries(selectedEffects)) {
+      const def = _effectDefs.find((e) => e.name === name);
+      if (!def || !def.params || Object.keys(def.params).length === 0) continue;
+
+      const section = document.createElement("div");
+      section.className = "bg-slate-800/60 rounded-lg p-2 space-y-1";
+
+      const title = document.createElement("p");
+      title.className = "text-xs font-medium text-sky-400 mb-1";
+      title.textContent = def.label;
+      section.appendChild(title);
+
+      for (const [pkey, pdef] of Object.entries(def.params)) {
+        section.appendChild(_renderParamControl(name, pkey, pdef, params[pkey]));
+      }
+      elements.effectParamsPanel.appendChild(section);
+    }
+  }
+
+  function _buildEffectButtons(effects) {
+    if (!elements.effectButtons) return;
+    elements.effectButtons.innerHTML = "";
+
+    effects.forEach((eff) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.effectName = eff.name;
+      btn.className = "effect-btn px-3 py-1 rounded-full text-xs font-medium border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors";
+      btn.title = eff.description || "";
+      btn.textContent = eff.label || eff.name;
+      btn.addEventListener("click", () => {
+        if (selectedEffects[eff.name]) {
+          delete selectedEffects[eff.name];
+          btn.style.backgroundColor = "";
+          btn.style.color = "";
+          btn.style.borderColor = "";
+        } else {
+          // 建立預設參數
+          const defaults = {};
+          for (const [k, v] of Object.entries(eff.params || {})) defaults[k] = v.default;
+          selectedEffects[eff.name] = defaults;
+          btn.style.backgroundColor = "#0369a1";
+          btn.style.color = "#ffffff";
+          btn.style.borderColor = "#0ea5e9";
+        }
+        _refreshParamsPanel();
+      });
+      elements.effectButtons.appendChild(btn);
+    });
+
+    if (effects.length === 0) {
+      elements.effectButtons.innerHTML = '<span class="text-xs text-slate-500">無可用特效</span>';
+    }
+  }
+
+  async function loadEffects() {
+    try {
+      const res = await fetch("/effects");
+      if (!res.ok) return;
+      const data = await res.json();
+      _effectDefs = data.effects || [];
+      _buildEffectButtons(_effectDefs);
+    } catch (e) {
+      console.warn("[Effects] Failed to load effects:", e.message);
+      if (elements.effectButtons) {
+        elements.effectButtons.innerHTML = '<span class="text-xs text-slate-500">載入失敗</span>';
+      }
+    }
+  }
+
+  loadEffects();
 
   // Send Danmu
   elements.btnSend.addEventListener("click", async () => {
@@ -509,7 +622,7 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.userFontSelect && elements.userFontSelect.value
           ? elements.userFontSelect.value
           : null,
-      effect: selectedEffect,
+      effects: Object.entries(selectedEffects).map(([name, params]) => ({ name, params })),
       fingerprint: clientFingerprint,
     };
 
@@ -522,17 +635,25 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify(payload),
       });
 
+      elements.danmuText.value = "";
+      updateCharCount();
+      updatePreview();
+
       if (response.ok) {
         showToast("Danmu Fired!", true);
-        elements.danmuText.value = "";
-        updateCharCount();
-        updatePreview();
       } else {
-        const data = await response.json();
-        showToast(data.error || "Failed to send", false);
+        let message = "Failed to send";
+        try {
+          const data = await response.json();
+          message = data.error || message;
+        } catch (_) {}
+        showToast(message, false);
       }
     } catch (error) {
       console.error("Error:", error);
+      elements.danmuText.value = "";
+      updateCharCount();
+      updatePreview();
       showToast("Network error", false);
     }
   });
@@ -567,6 +688,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
           }
 
+          // Update Effects UI visibility
+          applyEffectsVisibility(currentSettings);
+
           // Update other UI elements if needed (e.g., ranges)
           updatePreview();
         }
@@ -583,6 +707,19 @@ document.addEventListener("DOMContentLoaded", () => {
     ws.onerror = (err) => {
       console.error("WebSocket error:", err);
     };
+  }
+
+  // --- Helper: Apply Effects section visibility based on settings ---
+  function applyEffectsVisibility(settings) {
+    const effectsEnabled = settings.Effects ? settings.Effects[0] !== false : true;
+    const effectControl = document.getElementById("effectControl");
+    if (effectControl) {
+      effectControl.style.display = effectsEnabled ? "" : "none";
+    }
+    if (!effectsEnabled) {
+      Object.keys(selectedEffects).forEach((k) => delete selectedEffects[k]);
+      if (elements.effectParamsPanel) elements.effectParamsPanel.innerHTML = "";
+    }
   }
 
   // --- Initialization ---
@@ -605,6 +742,9 @@ document.addEventListener("DOMContentLoaded", () => {
         // Still refresh cache in background for preview purposes if needed, or just to have it
         refreshFontCache(true).catch(() => { });
       }
+
+      // Apply Effects visibility
+      applyEffectsVisibility(settings);
 
       // Initialize WebSocket for real-time updates
       connectWebSocket();

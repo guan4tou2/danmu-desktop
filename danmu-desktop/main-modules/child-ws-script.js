@@ -479,6 +479,14 @@ function getChildWsScript(ip, port, startupAnimationSettings) {
                 return;
               }
 
+              // 管理員 Remote Control：清除所有彈幕
+              if (data.type === "clear") {
+                const danmubody = document.getElementById("danmubody");
+                if (danmubody) danmubody.innerHTML = "";
+                console.log("[WebSocket] Overlay cleared by admin remote control");
+                return;
+              }
+
               function processDanmuWhenReady(dataPayload) {
                 if (typeof window.showdanmu === 'function') {
                   console.log('[WebSocket] Calling window.showdanmu with:', dataPayload);
@@ -491,11 +499,23 @@ function getChildWsScript(ip, port, startupAnimationSettings) {
                     dataPayload.fontInfo,
                     dataPayload.textStyles || { textStroke: true, strokeWidth: 2, strokeColor: "#000000", textShadow: false, shadowBlur: 4 },
                     dataPayload.displayArea || { top: 0, height: 100 },
-                    dataPayload.effect || 'none'
+                    dataPayload.effectCss || null
                   );
                 } else {
                   console.warn('[WebSocket] window.showdanmu not ready, retrying in 100ms...');
                   setTimeout(() => processDanmuWhenReady(dataPayload), 100);
+                }
+              }
+
+              // 注入 .dme 特效的 CSS keyframes（避免重複注入）
+              const effectCss = data.effectCss || null;
+              if (effectCss && effectCss.keyframes && effectCss.styleId) {
+                const styleId = 'dme-' + effectCss.styleId;
+                if (!document.getElementById(styleId)) {
+                  const styleEl = document.createElement('style');
+                  styleEl.id = styleId;
+                  styleEl.textContent = effectCss.keyframes;
+                  document.head.appendChild(styleEl);
                 }
               }
 
@@ -508,7 +528,7 @@ function getChildWsScript(ip, port, startupAnimationSettings) {
                 fontInfo: data.fontInfo,
                 textStyles: data.textStyles,
                 displayArea: data.displayArea,
-                effect: data.effect,
+                effectCss: effectCss,
               });
 
             } catch (e) {

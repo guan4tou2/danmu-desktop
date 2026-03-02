@@ -84,7 +84,7 @@
 
         <!-- Settings Section -->
         <div class="mb-8">
-          <details class="group">
+          <details class="group" open>
             <summary
               class="flex items-center justify-between cursor-pointer list-none bg-slate-800/40 p-4 rounded-xl hover:bg-slate-800/60 transition-colors"
             >
@@ -244,49 +244,18 @@
                 </select>
               </div>
 
-              <!-- Text Effect -->
+              <!-- Text Effect（動態由 JS 從 /effects API 載入） -->
               <div id="effectControl">
-                <label class="block text-sm font-medium text-slate-400 mb-2">
-                  Effect
+                <label class="block text-sm font-medium text-slate-400 mb-2 flex justify-between">
+                  <span>Effects</span>
+                  <span class="text-xs text-slate-500">可多選疊加</span>
                 </label>
+                <!-- 特效按鈕區（JS 動態注入） -->
                 <div class="flex flex-wrap gap-2" id="effectButtons">
-                  <button type="button" data-effect="none"
-                    class="effect-btn active px-3 py-1 rounded-full text-xs font-medium border border-slate-600 bg-slate-700 text-white transition-colors">
-                    None
-                  </button>
-                  <button type="button" data-effect="spin"
-                    class="effect-btn px-3 py-1 rounded-full text-xs font-medium border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors">
-                    旋轉
-                  </button>
-                  <button type="button" data-effect="blink"
-                    class="effect-btn px-3 py-1 rounded-full text-xs font-medium border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors">
-                    閃爍
-                  </button>
-                  <button type="button" data-effect="shake"
-                    class="effect-btn px-3 py-1 rounded-full text-xs font-medium border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors">
-                    抖動
-                  </button>
-                  <button type="button" data-effect="bounce"
-                    class="effect-btn px-3 py-1 rounded-full text-xs font-medium border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors">
-                    彈跳
-                  </button>
-                  <button type="button" data-effect="rainbow"
-                    class="effect-btn px-3 py-1 rounded-full text-xs font-medium border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors">
-                    彩虹
-                  </button>
-                  <button type="button" data-effect="glow"
-                    class="effect-btn px-3 py-1 rounded-full text-xs font-medium border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors">
-                    發光
-                  </button>
-                  <button type="button" data-effect="wave"
-                    class="effect-btn px-3 py-1 rounded-full text-xs font-medium border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors">
-                    波浪
-                  </button>
-                  <button type="button" data-effect="zoom"
-                    class="effect-btn px-3 py-1 rounded-full text-xs font-medium border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors">
-                    縮放
-                  </button>
+                  <span class="text-xs text-slate-500">載入中...</span>
                 </div>
+                <!-- 選中特效的參數調整區（JS 動態注入） -->
+                <div id="effectParamsPanel" class="mt-3 space-y-3"></div>
               </div>
             </div>
           </details>
