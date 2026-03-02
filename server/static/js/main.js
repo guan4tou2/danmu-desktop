@@ -82,6 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const selectedEffects = {};   // name -> {params}
   let autoDismissTimer = null;
   let fontRefreshTimer = null;
+  let blacklistModalRestoreFocusEl = null;
   const FONT_REFRESH_BUFFER_SECONDS = 60;
   let fontsCache = [];
   const FONT_CACHE_STORAGE_KEY = "danmu-fonts-cache";
@@ -240,8 +241,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function showBlacklistWarningModal(message) {
     if (elements.blacklistWarningModal && elements.blacklistWarningMessage) {
+      blacklistModalRestoreFocusEl =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
+
       elements.blacklistWarningMessage.textContent = message;
       elements.blacklistWarningModal.style.display = "flex";
+      elements.blacklistWarningModal.setAttribute("aria-modal", "true");
 
       if (autoDismissTimer) {
         clearTimeout(autoDismissTimer);
@@ -251,7 +258,50 @@ document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => {
         elements.blacklistWarningModal.classList.add("visible");
         elements.blacklistWarningModal.classList.add("flashing");
+        const okBtn = elements.blacklistWarningOkBtn;
+        if (okBtn) okBtn.focus();
       }, 20);
+    }
+  }
+
+  function getBlacklistModalFocusableElements() {
+    if (!elements.blacklistWarningModal) return [];
+    return Array.from(
+      elements.blacklistWarningModal.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter(
+      (el) =>
+        !el.hasAttribute("disabled") &&
+        el.getAttribute("aria-hidden") !== "true"
+    );
+  }
+
+  function handleBlacklistModalKeydown(event) {
+    if (!elements.blacklistWarningModal) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      hideBlacklistWarningModal();
+      return;
+    }
+    if (event.key !== "Tab") return;
+
+    const focusable = getBlacklistModalFocusableElements();
+    if (focusable.length === 0) {
+      event.preventDefault();
+      return;
+    }
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = document.activeElement;
+
+    if (event.shiftKey && active === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
     }
   }
 
@@ -267,11 +317,21 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.blacklistWarningModal.style.display = "none";
       }, 300);
     }
+    if (blacklistModalRestoreFocusEl) {
+      blacklistModalRestoreFocusEl.focus();
+      blacklistModalRestoreFocusEl = null;
+    }
   }
 
   // Bind blacklist modal OK button via addEventListener (no inline onclick)
   if (elements.blacklistWarningOkBtn) {
     elements.blacklistWarningOkBtn.addEventListener("click", hideBlacklistWarningModal);
+  }
+  if (elements.blacklistWarningModal) {
+    elements.blacklistWarningModal.addEventListener(
+      "keydown",
+      handleBlacklistModalKeydown
+    );
   }
 
   // Check if URL is an image
@@ -607,11 +667,10 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify(payload),
       });
 
-      elements.danmuText.value = "";
-      updateCharCount();
-      updatePreview();
-
       if (response.ok) {
+        elements.danmuText.value = "";
+        updateCharCount();
+        updatePreview();
         showToast("Danmu Fired!", true);
       } else {
         let message = "Failed to send";
@@ -623,9 +682,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (error) {
       console.error("Error:", error);
-      elements.danmuText.value = "";
-      updateCharCount();
-      updatePreview();
       showToast("Network error", false);
     } finally {
       setSendLoading(false);

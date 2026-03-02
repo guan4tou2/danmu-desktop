@@ -134,6 +134,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const screenSelect = document.getElementById("screen-select");
   if (!screenSelect) return;
 
+  const selectedBeforePopulate = parseInt(screenSelect.value, 10);
+
   api.getDisplays().then((displays) => {
     screenSelect.innerHTML = "";
     displays.forEach((display, index) => {
@@ -142,10 +144,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       option.textContent = `Display ${index + 1} (${display.size.width}x${
         display.size.height
       }) ${display.primary ? "[Primary]" : ""}`;
-      if (display.primary) {
-        option.selected = true;
-      }
       screenSelect.appendChild(option);
     });
+
+    const hasSavedSelection =
+      Number.isInteger(selectedBeforePopulate) &&
+      selectedBeforePopulate >= 0 &&
+      selectedBeforePopulate < displays.length;
+    const primaryIndex = displays.findIndex((display) => display.primary);
+    const fallbackIndex = primaryIndex >= 0 ? primaryIndex : 0;
+    screenSelect.value = String(hasSavedSelection ? selectedBeforePopulate : fallbackIndex);
   });
 });

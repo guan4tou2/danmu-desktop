@@ -47,6 +47,25 @@ document.addEventListener("DOMContentLoaded", () => {
   let _autoRefreshTimer = null;
   let _adminWs = null;
   let _adminWsReconnectTimer = null;
+  let _effectModalRestoreFocusEl = null;
+  const ADMIN_DETAILS_STATE_KEY = "admin-details-open-state";
+
+  function loadDetailsState() {
+    try {
+      const raw = window.localStorage.getItem(ADMIN_DETAILS_STATE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function saveDetailsState(state) {
+    try {
+      window.localStorage.setItem(ADMIN_DETAILS_STATE_KEY, JSON.stringify(state));
+    } catch (_) {
+      // Ignore localStorage write failures
+    }
+  }
 
 
   function scheduleAdminFontRefresh(ttlSeconds) {
@@ -133,15 +152,25 @@ document.addEventListener("DOMContentLoaded", () => {
     return true;
   }
 
+  function restoreSettingInputValue(key, index, inputEl) {
+    if (!inputEl || !Array.isArray(currentSettings[key])) return;
+    let restoreVal = currentSettings[key][index];
+    if (key === "Color" && typeof restoreVal === "string") {
+      restoreVal = formatColor(`#${restoreVal}`);
+    }
+    if (restoreVal !== undefined && restoreVal !== null) {
+      inputEl.value = String(restoreVal);
+    }
+  }
+
   // Update setting to backend
-  async function updateSetting(key, value, index) {
+  async function updateSetting(key, value, index, sourceEl = null) {
     try {
       // If it's a color value, validate and format
       if (key === "Color") {
         if (!isValidColor(value)) {
           showToast(`Color format error, please use #RRGGBB format`, false);
-          // Re-render to restore correct value
-          renderControlPanel();
+          restoreSettingInputValue(key, index, sourceEl);
           return;
         }
         // Remove # before sending to server
@@ -149,7 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (key === "Speed" || key === "Opacity" || key === "FontSize") {
         // Validate number range
         if (!validateNumberRange(key, value)) {
-          renderControlPanel();
+          restoreSettingInputValue(key, index, sourceEl);
           return;
         }
       }
@@ -180,8 +209,6 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log(`Updated ${key}:`, currentSettings[key]);
 
         showToast(`${key} Settings Updated`, true);
-        // Re-render control panel to update UI
-        renderControlPanel();
       } else {
         showToast(`Update Failed`, false);
         // If update failed, re-fetch settings
@@ -548,6 +575,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Render Control Panel Screen
   function renderControlPanel() {
+    const detailsState = loadDetailsState();
+    const isOpen = (id, defaultOpen = false) =>
+      detailsState[id] !== undefined ? detailsState[id] : defaultOpen;
     const settingCard = (
       id,
       title,
@@ -556,7 +586,7 @@ document.addEventListener("DOMContentLoaded", () => {
       enabledContent,
       disabledContent
     ) => `
-                    <div class="glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent">
+                    <div id="sec-${id.toLowerCase()}" class="glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24">
                         <div class="flex items-center justify-between">
                             <div class="flex-grow pr-4">
                                 <h3 class="text-lg font-bold text-white">${title}</h3>
@@ -585,6 +615,17 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <span>Logout</span>
                             </button>
                         </div>
+
+                        <nav class="sticky top-2 z-10 rounded-xl border border-slate-700/60 bg-slate-900/70 backdrop-blur px-3 py-2">
+                            <div class="flex flex-wrap items-center gap-2 text-xs">
+                                <span class="text-slate-400 mr-1">Quick Navigation</span>
+                                <a href="#sec-color" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Basic</a>
+                                <a href="#sec-effects" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Effects</a>
+                                <a href="#sec-blacklist" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Blacklist</a>
+                                <a href="#sec-history" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">History</a>
+                                <a href="#sec-security" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Security</a>
+                            </div>
+                        </nav>
 
                         <div id="settings-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <!-- Settings cards will be inserted via insertAdjacentHTML -->
@@ -736,7 +777,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Effects Management Card (full width)
     settingsGrid.insertAdjacentHTML("beforeend", `
-      <div class="glass-effect rounded-2xl p-6 border border-transparent hover:border-slate-500 transition-all duration-300 lg:col-span-2">
+      <div id="sec-effects" class="glass-effect rounded-2xl p-6 border border-transparent hover:border-slate-500 transition-all duration-300 lg:col-span-2 scroll-mt-24">
         <div class="flex items-center justify-between mb-4">
           <div>
             <h3 class="text-lg font-bold text-white">Effects Management</h3>
@@ -766,13 +807,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Blacklist Management Card
     settingsGrid.insertAdjacentHTML("beforeend", `
-                    <div class="glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent">
-                        <div class="flex items-center justify-between">
+                    <details id="sec-blacklist" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-blacklist") ? "open" : ""}>
+                        <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
                                 <h3 class="text-lg font-bold text-white">Blacklist Management</h3>
                                 <p class="text-sm text-slate-400">Add or remove keywords from the blacklist.</p>
                             </div>
-                        </div>
+                            <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
+                        </summary>
                         <div class="mt-4 pt-4 border-t border-slate-700/50">
                             <div>
                                 <label for="newKeywordInput" class="text-sm font-medium text-slate-300">New Keyword</label>
@@ -786,22 +828,19 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </details>
                 `);
 
     // Danmu History Card
     settingsGrid.insertAdjacentHTML("beforeend", `
-                    <div class="glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent lg:col-span-2">
-                        <div class="flex items-center justify-between">
+                    <details id="sec-history" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent lg:col-span-2 scroll-mt-24" ${isOpen("sec-history") ? "open" : ""}>
+                        <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
                                 <h3 class="text-lg font-bold text-white">Danmu History</h3>
                                 <p class="text-sm text-slate-400">View and search sent danmu messages.</p>
                             </div>
-                            <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none">
-                                <input type="checkbox" id="historyAutoRefresh" class="accent-purple-500">
-                                Auto-refresh (30s)
-                            </label>
-                        </div>
+                            <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
+                        </summary>
                         <div class="mt-4 pt-4 border-t border-slate-700/50">
                             <div class="space-y-3">
                                 <div class="flex gap-2 items-center flex-wrap">
@@ -816,6 +855,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <button id="refreshHistoryBtn" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm">Refresh</button>
                                     <button id="exportHistoryBtn" class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors text-sm">Export CSV</button>
                                     <button id="clearHistoryBtn" class="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition-colors text-sm">Clear All</button>
+                                    <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none ml-auto">
+                                        <input type="checkbox" id="historyAutoRefresh" class="accent-purple-500">
+                                        Auto-refresh (30s)
+                                    </label>
                                 </div>
                                 <input id="historySearch" type="search" placeholder="Search history..."
                                     class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm
@@ -826,16 +869,19 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </details>
                 `);
 
     // Password Change Card (with show/hide toggles)
     settingsGrid.insertAdjacentHTML("beforeend", `
-                    <div class="glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent">
-                        <div>
-                            <h3 class="text-lg font-bold text-white">Change Password</h3>
-                            <p class="text-sm text-slate-400">Update the admin login password.</p>
-                        </div>
+                    <details id="sec-security" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-security") ? "open" : ""}>
+                        <summary class="flex items-center justify-between cursor-pointer list-none">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Change Password</h3>
+                                <p class="text-sm text-slate-400">Update the admin login password.</p>
+                            </div>
+                            <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
+                        </summary>
                         <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-3">
                             <div class="password-wrapper">
                                 <input id="pwCurrent" type="password" placeholder="Current password"
@@ -863,7 +909,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 Change Password
                             </button>
                         </div>
-                    </div>
+                    </details>
                 `);
 
     // Fetch blacklist/history after render without blocking first paint
@@ -910,6 +956,14 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
+    document.querySelectorAll("details[id^='sec-']").forEach((detailsEl) => {
+      detailsEl.addEventListener("toggle", () => {
+        const current = loadDetailsState();
+        current[detailsEl.id] = detailsEl.open;
+        saveDetailsState(current);
+      });
+    });
+
     // Setting Input Change
     document.querySelectorAll(".setting-input").forEach((input) => {
       input.addEventListener("change", async function () {
@@ -921,7 +975,7 @@ document.addEventListener("DOMContentLoaded", () => {
           value = parseInt(value);
         }
 
-        await updateSetting(key, value, index);
+        await updateSetting(key, value, index, this);
       });
     });
 
@@ -1218,13 +1272,68 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast("An error occurred during font upload.", false);
     }
   }
+
+  function getEffectModalFocusableElements() {
+    const modal = document.getElementById("effectEditModal");
+    if (!modal) return [];
+    return Array.from(
+      modal.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter(
+      (el) =>
+        !el.hasAttribute("disabled") &&
+        el.getAttribute("aria-hidden") !== "true"
+    );
+  }
+
+  function handleEffectModalKeydown(event) {
+    const modal = document.getElementById("effectEditModal");
+    if (!modal || modal.style.display === "none") return;
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      hideEffectModal();
+      return;
+    }
+    if (event.key !== "Tab") return;
+
+    const focusable = getEffectModalFocusableElements();
+    if (focusable.length === 0) {
+      event.preventDefault();
+      return;
+    }
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = document.activeElement;
+
+    if (event.shiftKey && active === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  function hideEffectModal() {
+    const modal = document.getElementById("effectEditModal");
+    if (!modal) return;
+    modal.style.display = "none";
+    modal.removeEventListener("keydown", handleEffectModalKeydown);
+    if (_effectModalRestoreFocusEl) {
+      _effectModalRestoreFocusEl.focus();
+      _effectModalRestoreFocusEl = null;
+    }
+  }
   // ─── Effects Management ──────────────────────────────────────────────────────
 
   async function initEffectsManagement() {
     // ── Inject Effect Edit Modal (fixed overlay) ──────────────────────────────
     if (!document.getElementById("effectEditModal")) {
       document.body.insertAdjacentHTML("beforeend", `
-        <div id="effectEditModal" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.72);">
+        <div id="effectEditModal" role="dialog" aria-modal="true" aria-labelledby="effectEditModalTitle" aria-describedby="effectEditModalFile" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.72);">
           <div style="background:#0f172a;border:1px solid #1e293b;border-radius:1rem;width:100%;max-width:700px;margin:0 1rem;box-shadow:0 32px 80px rgba(0,0,0,0.8);display:flex;flex-direction:column;max-height:88vh;overflow:hidden;">
             <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid #1e293b;flex-shrink:0;">
               <div>
@@ -1249,13 +1358,10 @@ document.addEventListener("DOMContentLoaded", () => {
       `);
 
       // ── Modal close handlers ───────────────────────────────────────────
-      const hideModal = () => {
-        document.getElementById("effectEditModal").style.display = "none";
-      };
-      document.getElementById("effectEditModalClose").addEventListener("click", hideModal);
-      document.getElementById("effectEditModalCancel").addEventListener("click", hideModal);
+      document.getElementById("effectEditModalClose").addEventListener("click", hideEffectModal);
+      document.getElementById("effectEditModalCancel").addEventListener("click", hideEffectModal);
       document.getElementById("effectEditModal").addEventListener("click", (e) => {
-        if (e.target === e.currentTarget) hideModal();
+        if (e.target === e.currentTarget) hideEffectModal();
       });
 
       // ── Modal save handler ─────────────────────────────────────────────
@@ -1275,7 +1381,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const data = await res.json().catch(() => ({}));
           if (res.ok) {
             showToast(data.message || "Effect saved", true);
-            modal.style.display = "none";
+            hideEffectModal();
             await fetchEffectsAdmin();
           } else {
             showToast(data.error || "Save failed", false);
@@ -1411,6 +1517,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const textarea = document.getElementById("effectEditModalTextarea");
         const saveBtn = document.getElementById("effectEditModalSave");
         if (!modal) return;
+        _effectModalRestoreFocusEl =
+          document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : null;
         titleEl.textContent = eff.label || eff.name;
         fileEl.textContent = eff.filename;
         textarea.value = "Loading…";
@@ -1418,6 +1528,8 @@ document.addEventListener("DOMContentLoaded", () => {
         saveBtn.disabled = true;
         modal.dataset.effectName = eff.name;
         modal.style.display = "flex";
+        modal.addEventListener("keydown", handleEffectModalKeydown);
+        textarea.focus();
         try {
           const res = await csrfFetch(`/admin/effects/${encodeURIComponent(eff.name)}/content`);
           const data = await res.json().catch(() => ({}));
@@ -1425,6 +1537,7 @@ document.addEventListener("DOMContentLoaded", () => {
             textarea.value = data.content || "";
             textarea.disabled = false;
             saveBtn.disabled = false;
+            textarea.focus();
           } else {
             textarea.value = data.error || "Failed to load";
             showToast(data.error || "Failed to load content", false);
