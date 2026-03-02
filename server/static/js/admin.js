@@ -796,7 +796,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </div>
         <div class="border-t border-slate-700/50 pt-4">
-          <div id="effectsList" class="grid grid-cols-1 sm:grid-cols-2 gap-3 min-h-12">
+          <div id="effectsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 min-h-12">
             <span class="text-xs text-slate-500 col-span-2">Loading effects...</span>
           </div>
         </div>
@@ -1362,85 +1362,55 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!container) return;
     if (!effects.length) {
       container.innerHTML =
-        '<span class="text-xs text-slate-500 col-span-2">No effects loaded. Upload a .dme file to add effects.</span>';
+        '<span class="text-xs text-slate-500 col-span-3">No effects loaded. Upload a .dme file to add effects.</span>';
       return;
     }
     container.innerHTML = "";
     effects.forEach((eff) => {
-      // ── Card ─────────────────────────────────────────────────────────────
+      // ── Compact horizontal card ───────────────────────────────────────────
       const card = document.createElement("div");
+      const tooltip = [eff.description, `file: ${eff.filename}`].filter(Boolean).join("\n");
+      card.title = tooltip;
       card.style.cssText =
-        "background:rgba(30,41,59,0.6);border:1px solid rgba(71,85,105,0.4);border-radius:0.75rem;padding:0.875rem;display:flex;flex-direction:column;gap:0.5rem;transition:border-color 0.2s;";
-      card.addEventListener("mouseenter", () => {
-        card.style.borderColor = "rgba(100,116,139,0.7)";
-      });
-      card.addEventListener("mouseleave", () => {
-        card.style.borderColor = "rgba(71,85,105,0.4)";
-      });
+        "background:rgba(30,41,59,0.6);border:1px solid rgba(71,85,105,0.4);border-radius:0.5rem;padding:0.35rem 0.5rem;display:flex;align-items:center;gap:0.5rem;transition:border-color 0.15s;min-width:0;";
+      card.addEventListener("mouseenter", () => { card.style.borderColor = "rgba(100,116,139,0.65)"; });
+      card.addEventListener("mouseleave", () => { card.style.borderColor = "rgba(71,85,105,0.4)"; });
 
-      // ── Label + name ─────────────────────────────────────────────────────
-      const titleDiv = document.createElement("div");
-      const labelEl = document.createElement("p");
-      labelEl.style.cssText = "font-weight:600;color:#f1f5f9;font-size:0.875rem;margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
+      // ── Indicator dot ─────────────────────────────────────────────────────
+      const dot = document.createElement("span");
+      dot.style.cssText = "width:6px;height:6px;border-radius:50%;background:#38bdf8;flex-shrink:0;";
+      card.appendChild(dot);
+
+      // ── Text: label + name ────────────────────────────────────────────────
+      const textWrap = document.createElement("div");
+      textWrap.style.cssText = "flex:1;min-width:0;";
+      const labelEl = document.createElement("div");
+      labelEl.style.cssText = "font-weight:600;color:#e2e8f0;font-size:0.775rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;";
       labelEl.textContent = eff.label || eff.name;
-      const nameEl = document.createElement("p");
-      nameEl.style.cssText = "font-size:0.7rem;color:#64748b;font-family:monospace;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
+      const nameEl = document.createElement("div");
+      nameEl.style.cssText = "font-size:0.62rem;color:#64748b;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;";
       nameEl.textContent = eff.name;
-      titleDiv.appendChild(labelEl);
-      titleDiv.appendChild(nameEl);
-      card.appendChild(titleDiv);
+      textWrap.appendChild(labelEl);
+      textWrap.appendChild(nameEl);
+      card.appendChild(textWrap);
 
-      // ── Description ───────────────────────────────────────────────────────
-      if (eff.description) {
-        const descEl = document.createElement("p");
-        descEl.style.cssText = "font-size:0.75rem;color:#94a3b8;margin:0;flex:1;";
-        descEl.textContent = eff.description;
-        card.appendChild(descEl);
-      } else {
-        const spacer = document.createElement("div");
-        spacer.style.flex = "1";
-        card.appendChild(spacer);
-      }
-
-      // ── Footer: filename + buttons ────────────────────────────────────────
-      const footer = document.createElement("div");
-      footer.style.cssText =
-        "display:flex;align-items:center;justify-content:space-between;gap:0.5rem;padding-top:0.5rem;border-top:1px solid rgba(51,65,85,0.5);margin-top:0.25rem;";
-
-      const filenameEl = document.createElement("span");
-      filenameEl.style.cssText = "font-size:0.65rem;color:#475569;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
-      filenameEl.textContent = eff.filename;
-
-      const btnGroup = document.createElement("div");
-      btnGroup.style.cssText = "display:flex;align-items:center;gap:0.25rem;flex-shrink:0;";
-
+      // ── Buttons ───────────────────────────────────────────────────────────
       const editBtn = document.createElement("button");
       editBtn.style.cssText =
-        "padding:0.25rem 0.625rem;font-size:0.7rem;font-weight:500;color:#cbd5e1;border:1px solid #475569;border-radius:0.4rem;background:none;cursor:pointer;transition:color 0.15s,border-color 0.15s;";
+        "padding:0.2rem 0.5rem;font-size:0.65rem;font-weight:500;color:#94a3b8;border:1px solid #334155;border-radius:0.35rem;background:none;cursor:pointer;flex-shrink:0;transition:color 0.15s,border-color 0.15s;";
       editBtn.textContent = "Edit";
-      editBtn.addEventListener("mouseenter", () => {
-        editBtn.style.color = "#7dd3fc";
-        editBtn.style.borderColor = "#38bdf8";
-      });
-      editBtn.addEventListener("mouseleave", () => {
-        editBtn.style.color = "#cbd5e1";
-        editBtn.style.borderColor = "#475569";
-      });
+      editBtn.addEventListener("mouseenter", () => { editBtn.style.color = "#7dd3fc"; editBtn.style.borderColor = "#38bdf8"; });
+      editBtn.addEventListener("mouseleave", () => { editBtn.style.color = "#94a3b8"; editBtn.style.borderColor = "#334155"; });
 
       const delBtn = document.createElement("button");
-      delBtn.style.cssText =
-        "padding:0.25rem;color:#64748b;background:none;border:none;cursor:pointer;border-radius:0.3rem;display:flex;align-items:center;transition:color 0.15s;";
+      delBtn.style.cssText = "padding:0.2rem;color:#475569;background:none;border:none;cursor:pointer;border-radius:0.3rem;display:flex;align-items:center;flex-shrink:0;transition:color 0.15s;";
       delBtn.title = `Delete ${eff.label || eff.name}`;
-      delBtn.innerHTML =
-        '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+      delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
       delBtn.addEventListener("mouseenter", () => { delBtn.style.color = "#f87171"; });
-      delBtn.addEventListener("mouseleave", () => { delBtn.style.color = "#64748b"; });
+      delBtn.addEventListener("mouseleave", () => { delBtn.style.color = "#475569"; });
 
-      btnGroup.appendChild(editBtn);
-      btnGroup.appendChild(delBtn);
-      footer.appendChild(filenameEl);
-      footer.appendChild(btnGroup);
-      card.appendChild(footer);
+      card.appendChild(editBtn);
+      card.appendChild(delBtn);
       container.appendChild(card);
 
       // ── Edit → open modal ─────────────────────────────────────────────────

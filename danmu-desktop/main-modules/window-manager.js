@@ -1,5 +1,5 @@
 // Window creation and lifecycle management
-const { BrowserWindow, screen } = require("electron");
+const { app, BrowserWindow, screen } = require("electron");
 const path = require("path");
 const { sanitizeLog } = require("../shared/utils");
 const { getChildWsScript } = require("./child-ws-script");
@@ -43,14 +43,22 @@ function createWindow(childWindows, onKonamiTrigger) {
   mainWindow.loadFile(path.join(__dirname, "../index.html"));
 
   // 在目前的 macOS Space 顯示視窗，避免開在別的桌面
+  // 需要 setTimeout 延遲呼叫 setVisibleOnAllWorkspaces(false)，
+  // 讓 macOS 有時間完成視窗定位再鎖定 Space，否則仍會開在舊的桌面
   mainWindow.once("ready-to-show", () => {
     if (process.platform === "darwin") {
-      mainWindow.setVisibleOnAllWorkspaces(true);
-    }
-    mainWindow.show();
-    mainWindow.focus();
-    if (process.platform === "darwin") {
-      mainWindow.setVisibleOnAllWorkspaces(false);
+      mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+      mainWindow.show();
+      mainWindow.focus();
+      app.focus({ steal: true });
+      setTimeout(() => {
+        if (!mainWindow.isDestroyed()) {
+          mainWindow.setVisibleOnAllWorkspaces(false);
+        }
+      }, 200);
+    } else {
+      mainWindow.show();
+      mainWindow.focus();
     }
   });
 

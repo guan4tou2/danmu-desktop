@@ -22,23 +22,37 @@ app.whenReady().then(() => {
   mainWindow = createWindow(childWindows, onKonamiTrigger);
   setupIpcHandlers(mainWindow, childWindows);
 
-  const iconPath = path.join(__dirname, "../assets/icon.png");
-  let trayIcon = nativeImage.createFromPath(iconPath);
-  // macOS：彩色圖示縮至 16×16 即可（不用 setTemplateImage，
-  // template 模式只讀 alpha channel，彩色 PNG 會渲染成空白方塊）
-  trayIcon = trayIcon.resize({ width: process.platform === "darwin" ? 16 : 32, height: process.platform === "darwin" ? 16 : 32 });
+  let trayIcon;
+  if (process.platform === "darwin") {
+    // macOS：使用黑色 template image，讓系統依選單列明暗自動反色，
+    // 不會出現白色圓角框（非 template 圖示的 Big Sur 預設行為）
+    const templatePath = path.join(__dirname, "../assets/tray-template.png");
+    trayIcon = nativeImage.createFromPath(templatePath);
+    trayIcon.setTemplateImage(true);
+  } else {
+    const iconPath = path.join(__dirname, "../assets/icon.png");
+    trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 32, height: 32 });
+  }
   tray = new Tray(trayIcon);
 
   const showMainWindow = () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
-      // setVisibleOnAllWorkspaces(true) 讓視窗強制出現在目前的 macOS Space
       if (process.platform === "darwin") {
-        mainWindow.setVisibleOnAllWorkspaces(true);
-      }
-      mainWindow.show();
-      mainWindow.focus();
-      if (process.platform === "darwin") {
-        mainWindow.setVisibleOnAllWorkspaces(false);
+        // setVisibleOnAllWorkspaces(true) → show → setTimeout → false
+        // 需要延遲讓 macOS 有時間把視窗定位到目前的 Space，
+        // 同步呼叫 false 會在視窗定位完成前鎖定，導致仍開在別的桌面
+        mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+        mainWindow.show();
+        mainWindow.focus();
+        app.focus({ steal: true });
+        setTimeout(() => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.setVisibleOnAllWorkspaces(false);
+          }
+        }, 200);
+      } else {
+        mainWindow.show();
+        mainWindow.focus();
       }
     }
   };
