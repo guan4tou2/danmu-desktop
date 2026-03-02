@@ -28,7 +28,7 @@ docker-compose up -d
    ```bash
    # HTTP 伺服器
    PYTHONPATH=.. uv run python -m server.app
-   
+
    # WebSocket 伺服器（另一個終端）
    PYTHONPATH=.. uv run python -m server.ws_app
    ```
@@ -74,4 +74,3 @@ PYTHONPATH=.. uv run python -m pytest
 ### 程式碼風格
 
 專案使用標準 Python 風格，建議使用 `black` 和 `flake8` 進行格式化與檢查。
-

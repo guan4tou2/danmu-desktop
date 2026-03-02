@@ -4,7 +4,7 @@
 
 /**
  * Sanitizes a string for logging by removing newlines and tabs.
- * @param {any} input 
+ * @param {any} input
  * @returns {string}
  */
 function sanitizeLog(input) {
@@ -16,7 +16,7 @@ function sanitizeLog(input) {
 
 /**
  * Validates an IP address or domain name.
- * @param {string} value 
+ * @param {string} value
  * @returns {boolean}
  */
 function validateIP(value) {
@@ -29,7 +29,7 @@ function validateIP(value) {
 
 /**
  * Validates a port number.
- * @param {string} value 
+ * @param {string} value
  * @returns {boolean}
  */
 function validatePort(value) {

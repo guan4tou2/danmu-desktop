@@ -64,4 +64,3 @@ lint: ## 執行程式碼檢查（需要安裝 flake8）
 
 format: ## 格式化程式碼（需要安裝 black）
 	cd server && uv run black . --exclude="/(\.venv|__pycache__)/"
-

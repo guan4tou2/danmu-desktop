@@ -1,6 +1,6 @@
 # danmu-desktop
 
-Display bullet screen directly on the desktop  
+Display bullet screen directly on the desktop
 在桌面直接顯示彈幕
 
 [中文說明](https://github.com/guan4tou2/danmu-desktop/blob/main/README-CH.md)

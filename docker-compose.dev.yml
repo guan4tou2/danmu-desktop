@@ -14,4 +14,3 @@ services:
       - LOG_LEVEL=DEBUG
       - LOG_FORMAT=text  # 開發環境使用文字格式更易讀
     command: []
-

@@ -28,7 +28,7 @@ from ..services.audit import log_admin_action
 
 ### 4. utils 模組衝突
 **問題：** `utils.py` 和 `utils/` 目錄同時存在，造成導入錯誤
-**修復：** 
+**修復：**
 - 將 `utils/errors.py` 的內容合併到 `utils.py`
 - 刪除 `utils/` 目錄
 - 更新所有導入語句
@@ -59,4 +59,3 @@ Python 不允許同時存在 `utils.py` 和 `utils/` 目錄，因為會造成模
 ## ✅ 狀態
 
 所有錯誤已修復，專案現在可以正常運行和測試。
-
