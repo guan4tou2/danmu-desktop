@@ -5,6 +5,32 @@
 格式基於 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，
 版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
+## [3.2.1] - 2026-03-02
+
+### 安全更新 / Security
+
+- 修復 GitHub CodeQL 告警：
+  - `py/clear-text-logging-sensitive-data`（移除密碼明文輸出）
+  - `py/stack-trace-exposure`（避免回傳內部例外細節）
+  - `js/xss-through-dom`（圖片預覽 URL 增加 protocol/path 安全檢查）
+  - `actions/missing-workflow-permissions`（workflow 權限最小化）
+- Hardened admin auth defaults:
+  - 移除 `ADMIN_PASSWORD` 不安全預設值
+  - 啟動時要求至少提供 `ADMIN_PASSWORD` 或 `ADMIN_PASSWORD_HASHED`
+  - runtime 密碼 hash 檔案權限調整為 `0600`
+
+### 依賴與告警收斂 / Dependencies & Alerts
+
+- 更新前端 lockfile，修復多個 transitive 漏洞（`minimatch`、`tar`、`glob`、`ajv`、`lodash`、`webpack`）。
+- 透過 npm `overrides` 強制 `serialize-javascript@7.0.3`，修復 Dependabot alert `GHSA-5c6j-r48x-rmvq`。
+- 移除暫時性忽略設定，改為實際版本修補。
+
+### 文件與流程 / Docs & Process
+
+- 更新 `README.md`、`README-CH.md`、`server/README.md` 的安全設定說明。
+- 補充並更新 `security_best_practices_report.md`。
+- 調整 OSV scanner workflow，支援 push 與手動觸發以保持安全頁面狀態同步。
+
 ## [3.1.0] - 2025-01-XX
 
 ### 新增
