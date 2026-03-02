@@ -144,7 +144,7 @@ def fire():
             return _json_response({"error": "Content contains blocked keywords"}, 400)
 
         if data.get("isImage") and not is_valid_image_url(data["text"]):
-            return make_response("Invalid image url", 400)
+            return _json_response({"error": "Invalid image url"}, 400)
 
         data = _resolve_danmu_style(data)
 
@@ -154,7 +154,7 @@ def fire():
 
         if forward_success:
             _record_history_if_enabled(data, fingerprint, client_ip)
-            return make_response("OK", 200)
+            return _json_response({"status": "OK"}, 200)
         return _json_response({"error": "Failed to enqueue message"}, 503)
     except Exception as exc:
         return _log_and_internal_error("Send Error", exc)
