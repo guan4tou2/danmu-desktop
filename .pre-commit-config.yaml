@@ -30,6 +30,9 @@ repos:
     rev: 7.0.0
     hooks:
       - id: flake8
-        args: ['--max-line-length=100', '--extend-ignore=E203,W503']
+        args:
+          - '--max-line-length=100'
+          - '--extend-ignore=E203,W503'
+          - '--per-file-ignores=server/app.py:E402 server/scripts/hash_password.py:E402'
         files: ^server/
 

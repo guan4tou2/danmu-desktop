@@ -38,6 +38,7 @@ serve-ws = "server.ws_app:main"
 [dependency-groups]
 dev = [
     "black>=24.8.0",
+    "flake8>=7.0.0",
     "isort>=5.13.2",
 ]
 
