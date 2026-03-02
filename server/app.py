@@ -30,7 +30,11 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
     setup_logging(app.config.get("LOG_LEVEL", "INFO"))
 
-    # Security check for default password
+    # Security check for missing/default password
+    if not app.config.get("ADMIN_PASSWORD_HASHED") and not app.config.get("ADMIN_PASSWORD"):
+        raise RuntimeError(
+            "Admin password is not configured. Set ADMIN_PASSWORD or ADMIN_PASSWORD_HASHED."
+        )
     if app.config.get("ADMIN_PASSWORD") == "password":
         app.logger.warning(
             "CRITICAL SECURITY WARNING: Using default password. "

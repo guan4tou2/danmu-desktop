@@ -22,6 +22,7 @@ def load_runtime_hash() -> str:
 def save_runtime_hash(hashed: str) -> None:
     """Persist a new bcrypt hash to .admin_password.hash."""
     _HASH_FILE.write_text(hashed)
+    os.chmod(_HASH_FILE, 0o600)
 
 
 class Config:
@@ -30,7 +31,7 @@ class Config:
     # os.getenv 的 default 只在 key 不存在時生效，不處理空字串
     # 用 or 確保空字串也會 fallback 到隨機生成的 key
     SECRET_KEY = os.getenv("SECRET_KEY") or secrets.token_hex(32)
-    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "password")
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
     # Priority: runtime hash file > ADMIN_PASSWORD_HASHED env var > plaintext ADMIN_PASSWORD
     ADMIN_PASSWORD_HASHED = load_runtime_hash() or os.getenv("ADMIN_PASSWORD_HASHED", "")
     PORT = int(os.getenv("PORT", "4000"))

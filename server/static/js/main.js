@@ -335,8 +335,19 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Check if URL is an image
-  const isImageUrl = (url) =>
-    url && url.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) != null;
+  const parseSafeImageUrl = (url) => {
+    if (!url) return null;
+    try {
+      const parsed = new URL(url, window.location.origin);
+      if (!["http:", "https:"].includes(parsed.protocol)) return null;
+      if (!/\.(jpeg|jpg|gif|png|webp|svg)$/i.test(parsed.pathname)) return null;
+      return parsed.href;
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const isImageUrl = (url) => parseSafeImageUrl(url) != null;
 
   // Update character count
   const updateCharCount = () => {
@@ -348,12 +359,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // Update preview
   const updatePreview = () => {
     const text = elements.danmuText.value;
-    const isImage = isImageUrl(text);
+    const safeImageSrc = parseSafeImageUrl(text);
+    const isImage = safeImageSrc != null;
 
     if (isImage) {
       elements.previewText.textContent = "";
       const img = document.createElement("img");
-      img.src = text;
+      img.src = safeImageSrc;
       img.className = "max-h-24 rounded-lg shadow-md";
       img.alt = "Danmu Preview";
       elements.previewText.appendChild(img);

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """生成管理員密碼雜湊的工具腳本"""
 
+import getpass
 import sys
 from pathlib import Path
 
@@ -11,15 +12,22 @@ from server.services.security import hash_password
 
 
 def main():
-    if len(sys.argv) < 2:
-        print("用法: python hash_password.py <password>")
-        print("範例: python hash_password.py my_secure_password")
+    if len(sys.argv) > 2:
+        print("用法: python hash_password.py [password]")
+        print("不提供參數時，會以安全輸入方式提示輸入密碼")
         sys.exit(1)
 
-    password = sys.argv[1]
+    if len(sys.argv) == 2:
+        password = sys.argv[1]
+    else:
+        password = getpass.getpass("請輸入新管理員密碼: ")
+
+    if not password:
+        print("錯誤: 密碼不可為空")
+        sys.exit(1)
+
     hashed = hash_password(password)
 
-    print(f"原始密碼: {password}")
     print(f"雜湊值: {hashed}")
     print("\n請將以下內容加入 .env 檔案:")
     print(f"ADMIN_PASSWORD_HASHED={hashed}")

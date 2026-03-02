@@ -163,7 +163,8 @@ def update():
         current_app.logger.info(f"Setting updated: {key}[{index}] = {value}")
         return make_response("OK", 200)
     except ValueError as exc:
-        return make_response(str(exc), 400)
+        current_app.logger.warning("Invalid setting update payload: %s", sanitize_log_string(str(exc)))
+        return _json_response({"error": "Invalid settings payload"}, 400)
     except Exception as exc:
         current_app.logger.error("Error updating settings: %s", sanitize_log_string(str(exc)))
         return make_response("An error occurred while updating settings.", 400)
