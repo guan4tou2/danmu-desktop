@@ -49,7 +49,6 @@ jobs:
   scan-push:
     # 在 push / 手動執行時刷新 security tab，避免告警停留在舊 commit
     if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
-    continue-on-error: true
     uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@1f1242919d8a60496dd1874b24b62b2370ed4c78" # v1.7.1
     with:
       scan-args: |-
