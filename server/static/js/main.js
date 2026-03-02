@@ -26,17 +26,20 @@ document.addEventListener("DOMContentLoaded", () => {
     charCount: document.getElementById("charCount"),
     previewText: document.getElementById("previewText"),
     btnSend: document.getElementById("btnSend"),
+    btnSendText: document.getElementById("btnSendText"),
+    btnSendIcon: document.getElementById("btnSendIcon"),
+    btnSendSpinner: document.getElementById("btnSendSpinner"),
 
-    // Controls
+    // Controls (consistent camelCase IDs)
     colorControl: document.getElementById("colorControl"),
-    colorInput: document.getElementById("ColorInput"),
+    colorInput: document.getElementById("colorInput"),
     colorValue: document.getElementById("colorValue"),
     colorGradientPreview: document.getElementById("colorGradientPreview"),
     opacityControl: document.getElementById("opacityControl"),
-    opacityRange: document.getElementById("OpacityRange"),
+    opacityRange: document.getElementById("opacityRange"),
     opacityValue: document.getElementById("opacityValue"),
     fontSizeControl: document.getElementById("fontSizeControl"),
-    sizeInput: document.getElementById("SizeInput"),
+    sizeInput: document.getElementById("sizeInput"),
     sizeValue: document.getElementById("sizeValue"),
     speedControl: document.getElementById("speedControl"),
     speedRange: document.getElementById("speedRange"),
@@ -56,6 +59,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Blacklist Warning Modal Elements
     blacklistWarningModal: document.getElementById("blacklistWarningModal"),
     blacklistWarningMessage: document.getElementById("blacklistWarningMessage"),
+    blacklistWarningOkBtn: document.getElementById("blacklistWarningOkBtn"),
+
+    // Connection status
+    connectionStatus: document.getElementById("connectionStatus"),
+    connectionLabel: document.getElementById("connectionLabel"),
   };
 
   // --- Helper utilities ---
@@ -69,8 +77,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- State management ---
   let currentSettings = {};
   let ws = null;
-  // selectedEffects: { [name]: {params} } — 多選特效狀態
-  let _effectDefs = [];         // 從 /effects API 載入的特效定義
+  // selectedEffects: { [name]: {params} } — multi-select effect state
+  let _effectDefs = [];         // Effect definitions loaded from /effects API
   const selectedEffects = {};   // name -> {params}
   let autoDismissTimer = null;
   let fontRefreshTimer = null;
@@ -222,11 +230,11 @@ document.addEventListener("DOMContentLoaded", () => {
         return result.blocked;
       } else {
         console.error("Failed to check blacklist:", response.statusText);
-        return false; // If check fails, allow sending
+        return false;
       }
     } catch (error) {
       console.error("Error checking blacklist:", error);
-      return false; // If check fails, allow sending
+      return false;
     }
   }
 
@@ -235,11 +243,10 @@ document.addEventListener("DOMContentLoaded", () => {
       elements.blacklistWarningMessage.textContent = message;
       elements.blacklistWarningModal.style.display = "flex";
 
-      // Clear any existing timer before setting a new one
       if (autoDismissTimer) {
         clearTimeout(autoDismissTimer);
       }
-      autoDismissTimer = setTimeout(hideBlacklistWarningModal, 5000); // Auto-dismiss after 5 seconds
+      autoDismissTimer = setTimeout(hideBlacklistWarningModal, 5000);
 
       setTimeout(() => {
         elements.blacklistWarningModal.classList.add("visible");
@@ -250,7 +257,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function hideBlacklistWarningModal() {
     if (autoDismissTimer) {
-      // Clear the auto-dismiss timer if it's active
       clearTimeout(autoDismissTimer);
       autoDismissTimer = null;
     }
@@ -263,45 +269,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Show toast message (stackable version)
-  function showToast(message, isSuccess = true) {
-    // 1. Create toast element
-    const toastElement = document.createElement("div");
-    toastElement.className =
-      "flex items-center w-full max-w-xs p-4 mb-4 space-x-4 text-gray-500 bg-white divide-x divide-gray-200 rounded-lg shadow dark:text-gray-400 dark:divide-gray-700 space-x dark:bg-gray-800 transform transition-all duration-300 ease-in-out opacity-0 translate-x-full";
-    toastElement.setAttribute("role", "alert");
-
-    // 2. Create toast content
-    const iconSvg = isSuccess
-      ? `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
-      : `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
-    const iconColorClass = isSuccess ? "text-green-500" : "text-red-500";
-
-    toastElement.innerHTML = `
-                <div class="${iconColorClass}">${iconSvg}</div>
-                <div class="pl-4 text-sm font-normal"></div>
-            `;
-    const messageContainer = toastElement.querySelector(
-      ".pl-4.text-sm.font-normal"
-    );
-    messageContainer.textContent = message;
-
-    // 3. Add to container
-    elements.toastContainer.appendChild(toastElement);
-
-    // 4. Trigger enter animation
-    requestAnimationFrame(() => {
-      toastElement.classList.remove("opacity-0", "translate-x-full");
-    });
-
-    // 5. Set timer to remove toast
-    setTimeout(() => {
-      toastElement.classList.add("opacity-0", "translate-x-full");
-
-      toastElement.addEventListener("transitionend", () => {
-        toastElement.remove();
-      });
-    }, 3000);
+  // Bind blacklist modal OK button via addEventListener (no inline onclick)
+  if (elements.blacklistWarningOkBtn) {
+    elements.blacklistWarningOkBtn.addEventListener("click", hideBlacklistWarningModal);
   }
 
   // Check if URL is an image
@@ -321,7 +291,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const isImage = isImageUrl(text);
 
     if (isImage) {
-      // Safely create an <img> element instead of injecting HTML
       elements.previewText.textContent = "";
       const img = document.createElement("img");
       img.src = text;
@@ -361,7 +330,6 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.previewText.style.fontFamily = "inherit";
       }
     } else {
-      // Reset to default if no user choice allowed or selected
       elements.previewText.style.fontFamily = "inherit";
     }
   };
@@ -376,16 +344,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const fonts = await refreshFontCache(forceRefresh);
       const currentVal = elements.userFontSelect.value;
 
-      // Clear existing options
       elements.userFontSelect.innerHTML = "";
 
-      // Add default option
       const defaultOption = document.createElement("option");
       defaultOption.value = "";
       defaultOption.textContent = "Default Font";
       elements.userFontSelect.appendChild(defaultOption);
 
-      // Populate fonts
       fonts.forEach((font) => {
         const option = document.createElement("option");
         option.value = font.name;
@@ -393,7 +358,6 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.userFontSelect.appendChild(option);
       });
 
-      // Restore selection if possible
       if (currentVal) {
         const exists = fonts.some((f) => f.name === currentVal);
         if (exists) {
@@ -419,8 +383,8 @@ document.addEventListener("DOMContentLoaded", () => {
     updatePreview();
   });
 
-  // Enter 送出，Shift+Enter 換行
-  // e.isComposing: IME 選字過程中為 true，此時不觸發送出（避免中文選字誤送）
+  // Enter to send, Shift+Enter for newline
+  // e.isComposing: true during IME composition, skip to avoid accidental send
   elements.danmuText.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
       e.preventDefault();
@@ -436,7 +400,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       if (elements.colorGradientPreview) {
         elements.colorGradientPreview.style.backgroundImage = `linear-gradient(to right, ${color}, transparent)`;
-        elements.colorGradientPreview.classList.remove("from-white"); // Remove Tailwind class if it interferes
+        elements.colorGradientPreview.classList.remove("from-white");
       }
       updatePreview();
     });
@@ -468,7 +432,7 @@ document.addEventListener("DOMContentLoaded", () => {
     elements.userFontSelect.addEventListener("change", updatePreview);
   }
 
-  // ── 特效系統（.dme 動態載入）──────────────────────────────────────────────
+  // ── Effects System (dynamically loaded from .dme files) ───────────────────
 
   function _renderParamControl(effectName, paramKey, paramDef, currentVal) {
     const wrap = document.createElement("div");
@@ -556,17 +520,13 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.addEventListener("click", () => {
         if (selectedEffects[eff.name]) {
           delete selectedEffects[eff.name];
-          btn.style.backgroundColor = "";
-          btn.style.color = "";
-          btn.style.borderColor = "";
+          btn.classList.remove("effect-btn--active");
         } else {
-          // 建立預設參數
+          // Build default params
           const defaults = {};
           for (const [k, v] of Object.entries(eff.params || {})) defaults[k] = v.default;
           selectedEffects[eff.name] = defaults;
-          btn.style.backgroundColor = "#0369a1";
-          btn.style.color = "#ffffff";
-          btn.style.borderColor = "#0ea5e9";
+          btn.classList.add("effect-btn--active");
         }
         _refreshParamsPanel();
       });
@@ -574,7 +534,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     if (effects.length === 0) {
-      elements.effectButtons.innerHTML = '<span class="text-xs text-slate-500">無可用特效</span>';
+      elements.effectButtons.innerHTML = '<span class="text-xs text-slate-500">No effects available</span>';
     }
   }
 
@@ -588,12 +548,21 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (e) {
       console.warn("[Effects] Failed to load effects:", e.message);
       if (elements.effectButtons) {
-        elements.effectButtons.innerHTML = '<span class="text-xs text-slate-500">載入失敗</span>';
+        elements.effectButtons.innerHTML = '<span class="text-xs text-slate-500">Failed to load</span>';
       }
     }
   }
 
   loadEffects();
+
+  // --- Send Button Loading State ---
+  function setSendLoading(loading) {
+    if (!elements.btnSend) return;
+    elements.btnSend.disabled = loading;
+    if (elements.btnSendText) elements.btnSendText.textContent = loading ? "Sending..." : "Fire Danmu";
+    if (elements.btnSendIcon) elements.btnSendIcon.classList.toggle("hidden", loading);
+    if (elements.btnSendSpinner) elements.btnSendSpinner.classList.toggle("hidden", !loading);
+  }
 
   // Send Danmu
   elements.btnSend.addEventListener("click", async () => {
@@ -603,30 +572,33 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Check blacklist first
-    const isBlocked = await checkTextAgainstBlacklist(text);
-    if (isBlocked) {
-      showBlacklistWarningModal("This content is blocked by the blacklist.");
-      return;
-    }
-
-    const payload = {
-      text: text,
-      color: elements.colorInput ? elements.colorInput.value : null,
-      size: elements.sizeInput ? parseInt(elements.sizeInput.value) : null,
-      speed: elements.speedRange ? parseInt(elements.speedRange.value) : null,
-      opacity: elements.opacityRange
-        ? parseInt(elements.opacityRange.value)
-        : null,
-      font:
-        elements.userFontSelect && elements.userFontSelect.value
-          ? elements.userFontSelect.value
-          : null,
-      effects: Object.entries(selectedEffects).map(([name, params]) => ({ name, params })),
-      fingerprint: clientFingerprint,
-    };
+    setSendLoading(true);
 
     try {
+      // Check blacklist first
+      const isBlocked = await checkTextAgainstBlacklist(text);
+      if (isBlocked) {
+        showBlacklistWarningModal("This content is blocked by the blacklist.");
+        setSendLoading(false);
+        return;
+      }
+
+      const payload = {
+        text: text,
+        color: elements.colorInput ? elements.colorInput.value : null,
+        size: elements.sizeInput ? parseInt(elements.sizeInput.value) : null,
+        speed: elements.speedRange ? parseInt(elements.speedRange.value) : null,
+        opacity: elements.opacityRange
+          ? parseInt(elements.opacityRange.value)
+          : null,
+        font:
+          elements.userFontSelect && elements.userFontSelect.value
+            ? elements.userFontSelect.value
+            : null,
+        effects: Object.entries(selectedEffects).map(([name, params]) => ({ name, params })),
+        fingerprint: clientFingerprint,
+      };
+
       const response = await fetch("/fire", {
         method: "POST",
         headers: {
@@ -646,7 +618,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
           const data = await response.json();
           message = data.error || message;
-        } catch (_) {}
+        } catch (_) { }
         showToast(message, false);
       }
     } catch (error) {
@@ -655,18 +627,45 @@ document.addEventListener("DOMContentLoaded", () => {
       updateCharCount();
       updatePreview();
       showToast("Network error", false);
+    } finally {
+      setSendLoading(false);
     }
   });
+
+  // --- Connection Status UI ---
+  function updateConnectionUI(state) {
+    if (!elements.connectionStatus) return;
+    const dot = elements.connectionStatus.querySelector(".connection-dot");
+    if (!dot || !elements.connectionLabel) return;
+
+    dot.className = "connection-dot"; // reset
+    switch (state) {
+      case "connected":
+        dot.classList.add("connection-dot--connected");
+        elements.connectionLabel.textContent = "Connected";
+        break;
+      case "connecting":
+        dot.classList.add("connection-dot--connecting");
+        elements.connectionLabel.textContent = "Connecting...";
+        break;
+      case "disconnected":
+        dot.classList.add("connection-dot--disconnected");
+        elements.connectionLabel.textContent = "Disconnected";
+        break;
+    }
+  }
 
   // --- WebSocket ---
   function connectWebSocket() {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/`;
 
+    updateConnectionUI("connecting");
     ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
       console.log("Connected to WebSocket");
+      updateConnectionUI("connected");
     };
 
     ws.onmessage = (event) => {
@@ -691,7 +690,6 @@ document.addEventListener("DOMContentLoaded", () => {
           // Update Effects UI visibility
           applyEffectsVisibility(currentSettings);
 
-          // Update other UI elements if needed (e.g., ranges)
           updatePreview();
         }
       } catch (e) {
@@ -701,11 +699,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ws.onclose = () => {
       console.log("WebSocket disconnected, retrying in 3s...");
+      updateConnectionUI("disconnected");
       setTimeout(connectWebSocket, 3000);
     };
 
     ws.onerror = (err) => {
       console.error("WebSocket error:", err);
+      updateConnectionUI("disconnected");
     };
   }
 
@@ -723,7 +723,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Initialization ---
-  // Fetch initial settings to know if we should show font selector
   fetch("/get_settings")
     .then((res) => res.json())
     .then((settings) => {
@@ -739,7 +738,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (elements.userFontSelectControl) {
           elements.userFontSelectControl.style.display = "none";
         }
-        // Still refresh cache in background for preview purposes if needed, or just to have it
         refreshFontCache(true).catch(() => { });
       }
 

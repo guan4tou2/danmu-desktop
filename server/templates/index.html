@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Danmu Fire</title>
+    <meta name="description" content="Send live danmu messages to the screen in real-time. Customize color, size, speed, and effects." />
+    <meta name="theme-color" content="#000000" />
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}" />
+    <meta property="og:title" content="Danmu Fire" />
+    <meta property="og:description" content="Send live danmu messages to the screen in real-time." />
+    <meta property="og:image" content="{{ url_for('static', filename='icon.png') }}" />
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/tailwind.css') }}"
@@ -32,6 +38,11 @@
         <p class="text-slate-300 text-lg font-light tracking-wide">
           Send your message to the screen!
         </p>
+        <!-- Connection Status -->
+        <div id="connectionStatus" class="inline-flex items-center gap-1.5 mt-2 text-xs" role="status" aria-live="polite">
+          <span class="connection-dot connection-dot--connecting"></span>
+          <span id="connectionLabel" class="text-slate-400">Connecting...</span>
+        </div>
       </header>
 
       <!-- Main Card -->
@@ -50,12 +61,14 @@
               id="danmuText"
               rows="3"
               maxlength="100"
+              aria-describedby="charCount"
               class="w-full bg-slate-800/50 border-2 border-slate-700 rounded-xl p-4 text-white placeholder-slate-500 focus:ring-4 focus:ring-sky-500/20 focus:border-sky-500 transition-all duration-300 resize-none text-lg"
               placeholder="Type something awesome..."
             ></textarea>
             <div
               id="charCount"
               class="absolute bottom-3 right-3 text-xs text-slate-500 font-mono bg-slate-900/80 px-2 py-1 rounded-md"
+              aria-live="polite"
             >
               0/100
             </div>
@@ -68,7 +81,7 @@
             >Live Preview</label
           >
           <div
-            class="h-24 bg-slate-900/60 rounded-xl flex items-center justify-center overflow-hidden border border-slate-700/50 relative group"
+            class="h-32 bg-slate-900/60 rounded-xl flex items-center justify-center overflow-hidden border border-slate-700/50 relative group"
           >
             <div
               class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-20"
@@ -86,7 +99,7 @@
         <div class="mb-8">
           <details class="group" open>
             <summary
-              class="flex items-center justify-between cursor-pointer list-none bg-slate-800/40 p-4 rounded-xl hover:bg-slate-800/60 transition-colors"
+              class="flex items-center justify-between cursor-pointer list-none bg-slate-800/40 p-4 rounded-xl hover:bg-slate-800/60 transition-colors focus-visible:outline-2 focus-visible:outline-sky-400 focus-visible:outline-offset-2"
             >
               <span class="font-medium text-slate-200 flex items-center gap-2">
                 <svg
@@ -95,6 +108,7 @@
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
+                  aria-hidden="true"
                 >
                   <path
                     stroke-linecap="round"
@@ -105,7 +119,7 @@
                 </svg>
                 Customize Style
               </span>
-              <span class="transition group-open:rotate-180">
+              <span class="transition group-open:rotate-180" aria-hidden="true">
                 <svg
                   fill="none"
                   height="24"
@@ -139,9 +153,10 @@
                 <div class="flex items-center gap-3">
                   <input
                     type="color"
-                    id="ColorInput"
+                    id="colorInput"
                     value="#ffffff"
                     class="h-10 w-14 rounded cursor-pointer bg-transparent border-0 p-0"
+                    aria-label="Choose danmu color"
                   />
                   <div id="colorGradientPreview" class="flex-1 h-10 rounded-lg bg-gradient-to-r from-white to-transparent opacity-20"></div>
                 </div>
@@ -163,10 +178,13 @@
                 </label>
                 <input
                   type="range"
-                  id="SizeInput"
+                  id="sizeInput"
                   min="{{ options.FontSize[1] }}"
                   max="{{ options.FontSize[2] }}"
                   value="{{ (options.FontSize[1] + options.FontSize[2]) // 2 }}"
+                  aria-label="Font size"
+                  aria-valuemin="{{ options.FontSize[1] }}"
+                  aria-valuemax="{{ options.FontSize[2] }}"
                   class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
                 />
                 <div class="flex justify-between text-xs text-slate-500 mt-1">
@@ -191,10 +209,13 @@
                 </label>
                 <input
                   type="range"
-                  id="OpacityRange"
+                  id="opacityRange"
                   min="{{ options.Opacity[1] }}"
                   max="{{ options.Opacity[2] }}"
                   value="100"
+                  aria-label="Text opacity"
+                  aria-valuemin="{{ options.Opacity[1] }}"
+                  aria-valuemax="{{ options.Opacity[2] }}"
                   class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
                 />
               </div>
@@ -219,6 +240,9 @@
                   min="{{ options.Speed[1] }}"
                   max="{{ options.Speed[2] }}"
                   value="{{ (options.Speed[1] + options.Speed[2]) // 2 }}"
+                  aria-label="Scroll speed"
+                  aria-valuemin="{{ options.Speed[1] }}"
+                  aria-valuemax="{{ options.Speed[2] }}"
                   class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
                 />
                 <div class="flex justify-between text-xs text-slate-500 mt-1">
@@ -237,6 +261,7 @@
                 </label>
                 <select
                   id="userFontSelect"
+                  aria-label="Choose font"
                   class="w-full bg-slate-800 border border-slate-700 text-white text-sm rounded-lg focus:ring-sky-500 focus:border-sky-500 block p-2.5"
                 >
                   <option value="">Default Font</option>
@@ -244,17 +269,17 @@
                 </select>
               </div>
 
-              <!-- Text Effect（動態由 JS 從 /effects API 載入） -->
+              <!-- Text Effects (dynamically loaded from /effects API) -->
               <div id="effectControl">
                 <label class="block text-sm font-medium text-slate-400 mb-2 flex justify-between">
                   <span>Effects</span>
-                  <span class="text-xs text-slate-500">可多選疊加</span>
+                  <span class="text-xs text-slate-500">Multi-select to stack</span>
                 </label>
-                <!-- 特效按鈕區（JS 動態注入） -->
+                <!-- Effect buttons (injected by JS) -->
                 <div class="flex flex-wrap gap-2" id="effectButtons">
-                  <span class="text-xs text-slate-500">載入中...</span>
+                  <span class="text-xs text-slate-500">Loading...</span>
                 </div>
-                <!-- 選中特效的參數調整區（JS 動態注入） -->
+                <!-- Selected effect parameter controls (injected by JS) -->
                 <div id="effectParamsPanel" class="mt-3 space-y-3"></div>
               </div>
             </div>
@@ -264,15 +289,17 @@
         <!-- Send Button -->
         <button
           id="btnSend"
-          class="w-full bg-gradient-to-r from-sky-500 to-cyan-400 hover:from-sky-400 hover:to-cyan-300 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-sky-500/30 transform hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 group"
+          class="w-full bg-gradient-to-r from-sky-500 to-cyan-400 hover:from-sky-400 hover:to-cyan-300 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-sky-500/30 transform hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
         >
-          <span>Fire Danmu</span>
+          <span id="btnSendText">Fire Danmu</span>
           <svg
+            id="btnSendIcon"
             xmlns="http://www.w3.org/2000/svg"
             class="h-5 w-5 group-hover:translate-x-1 transition-transform"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
+            aria-hidden="true"
           >
             <path
               stroke-linecap="round"
@@ -281,14 +308,18 @@
               d="M13 10V3L4 14h7v7l9-11h-7z"
             />
           </svg>
+          <svg id="btnSendSpinner" class="btn-spinner hidden" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="31.4 31.4" />
+          </svg>
         </button>
       </main>
 
       <!-- Footer -->
-      <footer class="text-center text-slate-500 text-sm">
+      <footer class="text-center text-slate-500 text-sm space-y-1">
         <a
           href="https://github.com/guan4tou2/Danmu-Fire"
           target="_blank"
+          rel="noopener noreferrer"
           class="hover:text-sky-400 transition-colors flex items-center justify-center gap-2"
         >
           <svg
@@ -305,6 +336,7 @@
           </svg>
           GitHub
         </a>
+        <p class="text-slate-600 text-xs">Danmu Fire v0.2.0</p>
       </footer>
     </div>
 
@@ -312,30 +344,34 @@
     <div
       id="toast-container"
       class="fixed top-5 right-5 z-50 flex flex-col gap-2"
+      aria-live="polite"
+      role="status"
     ></div>
 
     <!-- Blacklist Warning Modal -->
-    <div id="blacklistWarningModal" style="display: none;">
+    <div id="blacklistWarningModal" style="display: none;" role="alertdialog" aria-labelledby="blacklistWarningMessage">
       <div class="modal-content">
         <svg
           class="warning-triangle"
           viewBox="0 0 24 24"
           xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
         >
           <path
             d="M12 2L1 21h22L12 2zm0 3.45l8.27 14.3H3.73L12 5.45zM11 10v6h2v-6h-2zm0 8v2h2v-2h-2z"
           />
         </svg>
         <div id="blacklistWarningMessage" class="warning-message"></div>
-        <button class="ok-button" onclick="hideBlacklistWarningModal()">
+        <button class="ok-button" id="blacklistWarningOkBtn">
           OK
         </button>
       </div>
     </div>
 
     <!-- Scripts -->
-    <script src="{{ url_for('static', filename='vendor/three.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='vendor/vanta.net.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='vendor/three.min.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='vendor/vanta.net.min.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/toast.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
   </body>
 </html>

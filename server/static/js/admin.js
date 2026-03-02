@@ -324,6 +324,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function removeKeyword(keyword) {
+    if (!confirm(`Remove "${keyword}" from the blacklist?`)) return;
     try {
       const response = await csrfFetch("/admin/blacklist/remove", {
         method: "POST",
@@ -523,46 +524,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Show toast message (stackable version)
-  function showToast(message, isSuccess = true) {
-    // 1. Create toast element
-    const toastElement = document.createElement("div");
-    toastElement.className =
-      "flex items-center w-full max-w-xs p-4 mb-4 space-x-4 text-gray-500 bg-white divide-x divide-gray-200 rounded-lg shadow dark:text-gray-400 dark:divide-gray-700 space-x dark:bg-gray-800 transform transition-all duration-300 ease-in-out opacity-0 translate-x-full";
-    toastElement.setAttribute("role", "alert");
-
-    // 2. Create toast content
-    const iconSvg = isSuccess
-      ? `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
-      : `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
-    const iconColorClass = isSuccess ? "text-green-500" : "text-red-500";
-
-    toastElement.innerHTML = `
-                    <div class="${iconColorClass}">${iconSvg}</div>
-                    <div class="pl-4 text-sm font-normal"></div>
-                `;
-    const messageContainer = toastElement.querySelector(
-      ".pl-4.text-sm.font-normal"
-    );
-    messageContainer.textContent = message;
-
-    // 3. Add to container
-    toastContainer.appendChild(toastElement);
-
-    // 4. Trigger enter animation
-    requestAnimationFrame(() => {
-      toastElement.classList.remove("opacity-0", "translate-x-full");
-    });
-
-    // 5. Set timer to remove toast
-    setTimeout(() => {
-      toastElement.classList.add("opacity-0", "translate-x-full");
-
-      toastElement.addEventListener("transitionend", () => {
-        toastElement.remove();
-      });
-    }, 3000);
-  }
+  // showToast is provided by the shared toast.js utility (window.showToast)
 
   // Render Login Screen
   function renderLogin() {
@@ -601,9 +563,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <p class="text-sm text-slate-400">${description}</p>
                             </div>
                             <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in flex-shrink-0">
-                                <input type="checkbox" name="${id}" id="toggle-${id}" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer" ${
-      isEnabled ? "checked" : ""
-    } />
+                                <input type="checkbox" name="${id}" id="toggle-${id}" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer" ${isEnabled ? "checked" : ""
+      } />
                                 <label for="toggle-${id}" class="toggle-label block overflow-hidden h-7 rounded-full bg-slate-700 cursor-pointer"></label>
                             </div>
                         </div>
@@ -620,13 +581,13 @@ document.addEventListener("DOMContentLoaded", () => {
                                 Danmu Control Panel
                             </h1>
                             <button id="logoutButton" class="w-full md:w-auto flex items-center justify-center gap-2 bg-red-600/80 hover:bg-red-600 text-white font-bold py-2 px-5 rounded-lg transform active:scale-95 transition-all duration-300">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                                 <span>Logout</span>
                             </button>
                         </div>
 
                         <div id="settings-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <!-- Settings cards will be inserted here -->
+                            <!-- Settings cards will be inserted via insertAdjacentHTML -->
                         </div>
                     </div>
                 `;
@@ -634,7 +595,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const settingsGrid = document.getElementById("settings-grid");
 
     // Color Settings
-    settingsGrid.innerHTML += settingCard(
+    settingsGrid.insertAdjacentHTML("beforeend", settingCard(
       "Color",
       "Color Setting",
       "Allow users to customize colors",
@@ -642,19 +603,19 @@ document.addEventListener("DOMContentLoaded", () => {
       `
                         <label class="text-sm font-medium text-slate-300">Specific Color</label>
                         <input type="color" class="setting-input mt-1 w-full h-10 p-1 bg-slate-800 border-slate-700 rounded-lg cursor-pointer" data-key="Color" data-index="3" value="${formatColor(
-                          "#" + currentSettings.Color[3]
-                        )}" disabled>
+        "#" + currentSettings.Color[3]
+      )}" disabled>
                     `,
       `
                         <label class="text-sm font-medium text-slate-300">Specific Color</label>
                         <input type="color" class="setting-input mt-1 w-full h-10 p-1 bg-slate-800 border-slate-700 rounded-lg cursor-pointer" data-key="Color" data-index="3" value="${formatColor(
-                          "#" + currentSettings.Color[3]
-                        )}">
+        "#" + currentSettings.Color[3]
+      )}">
                     `
-    );
+    ));
 
     // Opacity Settings
-    settingsGrid.innerHTML += settingCard(
+    settingsGrid.insertAdjacentHTML("beforeend", settingCard(
       "Opacity",
       "Opacity Setting",
       "Allow users to customize opacity",
@@ -675,10 +636,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         <label class="text-sm font-medium text-slate-300">Specific Opacity (%)</label>
                         <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="3" value="${currentSettings.Opacity[3]}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
                     `
-    );
+    ));
 
     // Font Size Settings
-    settingsGrid.innerHTML += settingCard(
+    settingsGrid.insertAdjacentHTML("beforeend", settingCard(
       "FontSize",
       "Font Size Setting",
       "Allow users to customize font size",
@@ -699,10 +660,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         <label class="text-sm font-medium text-slate-300">Specific Size (px)</label>
                         <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="3" value="${currentSettings.FontSize[3]}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
                     `
-    );
+    ));
 
     // Speed Settings
-    settingsGrid.innerHTML += settingCard(
+    settingsGrid.insertAdjacentHTML("beforeend", settingCard(
       "Speed",
       "Speed Setting",
       "Allow users to customize speed",
@@ -725,7 +686,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="3" value="${currentSettings.Speed[3]}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
                         <small class="text-slate-500 text-xs block mt-2">Higher value = Faster speed</small>
                     `
-    );
+    ));
 
     // Font Family Setting (moved below speed)
     const fontFamilyEnabled =
@@ -749,14 +710,14 @@ document.addEventListener("DOMContentLoaded", () => {
             <small class="text-slate-500 text-xs block mt-2">Uploaded fonts become available in the selection above and for users (if enabled).</small>
             `;
 
-    settingsGrid.innerHTML += settingCard(
+    settingsGrid.insertAdjacentHTML("beforeend", settingCard(
       "FontFamily",
       "Font Family Configuration",
       fontFamilyDescription, // Dynamic description
       fontFamilyEnabled, // isEnabled (this now means "allow user choice")
       fontFamilyCardContent, // Content is the same regardless of toggle for admin
       fontFamilyCardContent // Content is the same
-    );
+    ));
     // Use setTimeout to ensure DOM is ready before populating dropdowns
     setTimeout(() => {
       populateFontFamilyDropdowns();
@@ -764,22 +725,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Effects Enable/Disable Card
     const effectsEnabled = currentSettings.Effects ? currentSettings.Effects[0] !== false : true;
-    settingsGrid.innerHTML += settingCard(
+    settingsGrid.insertAdjacentHTML("beforeend", settingCard(
       "Effects",
       "Effects Setting",
       "Allow users to apply visual effects (animations) to danmu",
       effectsEnabled,
       `<p class="text-sm text-slate-400">Effects are enabled. Users can apply animations to their danmu messages.</p>`,
       `<p class="text-sm text-slate-400">Effects are disabled. All danmu will display without animations.</p>`
-    );
+    ));
 
-    // Effects Management Card（全寬）
-    settingsGrid.innerHTML += `
+    // Effects Management Card (full width)
+    settingsGrid.insertAdjacentHTML("beforeend", `
       <div class="glass-effect rounded-2xl p-6 border border-transparent hover:border-slate-500 transition-all duration-300 lg:col-span-2">
         <div class="flex items-center justify-between mb-4">
           <div>
             <h3 class="text-lg font-bold text-white">Effects Management</h3>
-            <p class="text-sm text-slate-400">管理 .dme 特效插件（熱插拔，可直接編輯）</p>
+            <p class="text-sm text-slate-400">Manage .dme effect plugins (hot-swap, editable)</p>
           </div>
           <div class="flex items-center gap-2">
             <button id="effectReloadBtn"
@@ -801,10 +762,10 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </div>
       </div>
-    `;
+    `);
 
     // Blacklist Management Card
-    settingsGrid.innerHTML += `
+    settingsGrid.insertAdjacentHTML("beforeend", `
                     <div class="glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent">
                         <div class="flex items-center justify-between">
                             <div>
@@ -826,10 +787,10 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
                         </div>
                     </div>
-                `;
+                `);
 
     // Danmu History Card
-    settingsGrid.innerHTML += `
+    settingsGrid.insertAdjacentHTML("beforeend", `
                     <div class="glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent lg:col-span-2">
                         <div class="flex items-center justify-between">
                             <div>
@@ -866,29 +827,44 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
                         </div>
                     </div>
-                `;
+                `);
 
-    // Password Change Card
-    settingsGrid.innerHTML += `
+    // Password Change Card (with show/hide toggles)
+    settingsGrid.insertAdjacentHTML("beforeend", `
                     <div class="glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent">
                         <div>
                             <h3 class="text-lg font-bold text-white">Change Password</h3>
                             <p class="text-sm text-slate-400">Update the admin login password.</p>
                         </div>
                         <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-3">
-                            <input id="pwCurrent" type="password" placeholder="Current password"
-                                class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400">
-                            <input id="pwNew" type="password" placeholder="New password (min 8 chars)"
-                                class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400">
-                            <input id="pwConfirm" type="password" placeholder="Confirm new password"
-                                class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400">
+                            <div class="password-wrapper">
+                                <input id="pwCurrent" type="password" placeholder="Current password"
+                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400">
+                                <button type="button" class="password-toggle" data-target="pwCurrent" aria-label="Toggle password visibility">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                </button>
+                            </div>
+                            <div class="password-wrapper">
+                                <input id="pwNew" type="password" placeholder="New password (min 8 chars)"
+                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400">
+                                <button type="button" class="password-toggle" data-target="pwNew" aria-label="Toggle password visibility">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                </button>
+                            </div>
+                            <div class="password-wrapper">
+                                <input id="pwConfirm" type="password" placeholder="Confirm new password"
+                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400">
+                                <button type="button" class="password-toggle" data-target="pwConfirm" aria-label="Toggle password visibility">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                </button>
+                            </div>
                             <button id="changePasswordBtn"
                                 class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm font-semibold">
                                 Change Password
                             </button>
                         </div>
                     </div>
-                `;
+                `);
 
     // Fetch blacklist/history after render without blocking first paint
     if (document.getElementById("blacklistKeywords")) {
@@ -1110,6 +1086,21 @@ document.addEventListener("DOMContentLoaded", () => {
         handleFontUpload("fontUploadInput", "uploadFontBtn")
       );
     }
+
+    // Password show/hide toggles
+    document.querySelectorAll(".password-toggle").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.dataset.target;
+        const input = document.getElementById(targetId);
+        if (!input) return;
+        const isPassword = input.type === "password";
+        input.type = isPassword ? "text" : "password";
+        // Swap icon: eye ↔ eye-off
+        btn.innerHTML = isPassword
+          ? '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"/></svg>'
+          : '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>';
+      });
+    });
   }
 
   // Main Render Function
@@ -1150,13 +1141,12 @@ document.addEventListener("DOMContentLoaded", () => {
       fonts.forEach((font) => {
         const option = document.createElement("option");
         option.value = font.name;
-        option.textContent = `${font.name} (${
-          font.type === "default"
-            ? "Default"
-            : font.type === "system"
+        option.textContent = `${font.name} (${font.type === "default"
+          ? "Default"
+          : font.type === "system"
             ? "System"
             : "Uploaded"
-        })`;
+          })`;
         option.dataset.fontUrl = font.url || "";
         option.dataset.expiresAt = font.expiresAt || "";
         if (font.name === currentFontName) {
@@ -1231,7 +1221,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ─── Effects Management ──────────────────────────────────────────────────────
 
   async function initEffectsManagement() {
-    // ── 注入 Effect Edit Modal（固定覆蓋層）──────────────────────────────
+    // ── Inject Effect Edit Modal (fixed overlay) ──────────────────────────────
     if (!document.getElementById("effectEditModal")) {
       document.body.insertAdjacentHTML("beforeend", `
         <div id="effectEditModal" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.72);">

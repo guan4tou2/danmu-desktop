@@ -8,6 +8,9 @@
       content="{{ session.get('csrf_token', '') }}"
     />
     <title>Danmu Admin</title>
+    <meta name="description" content="Danmu Fire administration panel — manage settings, blacklist, effects, and history." />
+    <meta name="theme-color" content="#000000" />
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}" />
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/tailwind.css') }}"
@@ -29,11 +32,14 @@
       id="app-container"
       class="container mx-auto px-4 py-8 max-w-4xl relative z-10 animate-fade-in-scale-up"
     >
-      <!-- Content will be rendered by JS -->
-      <div class="flex justify-center items-center h-64">
-        <div
-          class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"
-        ></div>
+      <!-- Skeleton Loading -->
+      <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 max-w-md mx-auto">
+        <div class="skeleton skeleton-title mx-auto"></div>
+        <div class="space-y-4">
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-input"></div>
+          <div class="skeleton skeleton-btn"></div>
+        </div>
       </div>
     </div>
 
@@ -41,21 +47,24 @@
     <div
       id="toast-container"
       class="fixed top-5 right-5 z-50 flex flex-col gap-2"
+      aria-live="polite"
+      role="status"
     ></div>
 
     <!-- Scripts -->
-    <script src="{{ url_for('static', filename='vendor/three.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='vendor/vanta.net.min.js') }}"></script>
-    
+    <script defer src="{{ url_for('static', filename='vendor/three.min.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='vendor/vanta.net.min.js') }}"></script>
+
     <!-- Inject Configuration -->
     <script>
       window.DANMU_CONFIG = {
         session: { logged_in: {{ session.get('logged_in') | tojson }} },
         settingRanges: {{ ranges | tojson }},
-        wsUrl: "ws://{{ request.host }}/"
+        wsUrl: (window.location.protocol === "https:" ? "wss:" : "ws:") + "//" + window.location.host + "/"
       };
     </script>
-    
-    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+
+    <script defer src="{{ url_for('static', filename='js/toast.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin.js') }}"></script>
   </body>
 </html>
