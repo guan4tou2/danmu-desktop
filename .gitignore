@@ -141,3 +141,6 @@ server/media/uploads/
 # User uploaded fonts (keep directory structure but ignore contents)
 server/user_fonts/*
 !server/user_fonts/.gitkeep
+
+# local TLS certs
+nginx/certs/*.pem
