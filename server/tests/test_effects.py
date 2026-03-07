@@ -9,6 +9,16 @@ from server.services import effects as eff_svc
 # ─── 測試 .dme 解析 ───────────────────────────────────────────────────────────
 
 
+def login(client):
+    return client.post("/login", data={"password": "test"}, follow_redirects=True)
+
+
+def csrf_token(client):
+    login(client)
+    with client.session_transaction() as sess:
+        return sess["csrf_token"]
+
+
 def _make_dme(tmp_path: Path, content: str, filename: str = "test.dme") -> Path:
     p = tmp_path / filename
     p.write_text(textwrap.dedent(content), encoding="utf-8")
@@ -335,6 +345,12 @@ def test_list_effects_endpoint(client):
 
 def test_reload_effects_endpoint(client):
     resp = client.post("/effects/reload")
+    assert resp.status_code == 403
+
+
+def test_reload_effects_endpoint_with_auth_and_csrf(client):
+    token = csrf_token(client)
+    resp = client.post("/effects/reload", headers={"X-CSRF-Token": token})
     assert resp.status_code == 200
     data = json.loads(resp.data)
     assert "count" in data
