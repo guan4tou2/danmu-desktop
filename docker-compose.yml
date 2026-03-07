@@ -4,20 +4,27 @@ services:
       context: ./server
       dockerfile: Dockerfile
     container_name: danmu-server
-    ports:
-      - "${PORT:-4000}:4000"
-      - "${WS_PORT:-4001}:4001"
+    expose:
+      - "4000"
+      - "4001"
     environment:
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-password}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
       - SECRET_KEY=${SECRET_KEY:-}
       - PORT=${PORT:-4000}
       - WS_PORT=${WS_PORT:-4001}
+      - ENV=${ENV:-production}
       - FIRE_RATE_LIMIT=${FIRE_RATE_LIMIT:-20}
       - FIRE_RATE_WINDOW=${FIRE_RATE_WINDOW:-60}
       - RATE_LIMIT_BACKEND=${RATE_LIMIT_BACKEND:-memory}
       - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - FONT_TOKEN_EXPIRATION=${FONT_TOKEN_EXPIRATION:-900}
+      - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-true}
+      - TRUSTED_HOSTS=${TRUSTED_HOSTS:-localhost,127.0.0.1}
+      - WS_REQUIRE_TOKEN=${WS_REQUIRE_TOKEN:-true}
+      - WS_AUTH_TOKEN=${WS_AUTH_TOKEN:-}
+      - WS_ALLOWED_ORIGINS=${WS_ALLOWED_ORIGINS:-}
+      - WEB_WS_ALLOWED_ORIGINS=${WEB_WS_ALLOWED_ORIGINS:-}
     volumes:
       - ./server/user_fonts:/app/server/user_fonts
       - ./server/static:/app/server/static
@@ -29,6 +36,31 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+  reverse-proxy:
+    image: nginx:1.27-alpine
+    container_name: danmu-reverse-proxy
+    depends_on:
+      - server
+    ports:
+      - "${PORT:-4000}:4000"
+      - "${WS_PORT:-4001}:4001"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
+  reverse-proxy-https:
+    image: nginx:1.27-alpine
+    container_name: danmu-reverse-proxy-https
+    depends_on:
+      - server
+    profiles:
+      - https
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx-https.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    restart: unless-stopped
   redis:
     image: redis:7-alpine
     container_name: danmu-redis

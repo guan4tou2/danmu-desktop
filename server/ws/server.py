@@ -1,9 +1,12 @@
 import asyncio
 import json
+import secrets
 import threading
+from urllib.parse import parse_qs, urlparse
 
 import websockets
 
+from ..config import Config
 from ..managers import connection_manager
 from ..services import ws_queue
 from ..services.ws_state import update_ws_client_count
@@ -78,6 +81,58 @@ async def _forward_messages(clients, logger):
 def run_ws_server(ws_port, logger):
     clients = set()
     update_ws_client_count(0)
+    require_token = bool(Config.WS_REQUIRE_TOKEN)
+    configured_token = str(Config.WS_AUTH_TOKEN or "")
+    allowed_origins = set(Config.WS_ALLOWED_ORIGINS or [])
+
+    if require_token and not configured_token:
+        logger.warning("WS_REQUIRE_TOKEN is enabled but WS_AUTH_TOKEN is empty; all WS clients will be rejected.")
+
+    def _request_path(websocket):
+        path = getattr(websocket, "path", None)
+        if path:
+            return path
+        request_obj = getattr(websocket, "request", None)
+        request_path = getattr(request_obj, "path", None)
+        return request_path or ""
+
+    def _request_header(websocket, name: str):
+        # websockets<16
+        headers = getattr(websocket, "request_headers", None)
+        if headers is not None:
+            try:
+                value = headers.get(name)
+                if value is not None:
+                    return value
+            except Exception:
+                pass
+        # websockets>=16
+        request_obj = getattr(websocket, "request", None)
+        headers = getattr(request_obj, "headers", None)
+        if headers is not None:
+            try:
+                return headers.get(name)
+            except Exception:
+                return None
+        return None
+
+    def _extract_token(websocket):
+        path = _request_path(websocket)
+        query = parse_qs(urlparse(path).query)
+        vals = query.get("token", [])
+        return vals[0] if vals else ""
+
+    def _is_authorized(websocket):
+        if allowed_origins:
+            origin = _request_header(websocket, "Origin")
+            if origin not in allowed_origins:
+                logger.warning("Rejecting WS client with disallowed Origin: %s", sanitize_log_string(origin))
+                return False
+        if require_token:
+            token = _extract_token(websocket)
+            if not token or not secrets.compare_digest(token, configured_token):
+                return False
+        return True
 
     async def register(websocket):
         clients.add(websocket)
@@ -92,6 +147,9 @@ def run_ws_server(ws_port, logger):
         update_ws_client_count(len(clients))
 
     async def ws_handler(websocket):
+        if not _is_authorized(websocket):
+            await websocket.close(code=1008, reason="Unauthorized")
+            return
         await register(websocket)
         try:
             async for message in websocket:

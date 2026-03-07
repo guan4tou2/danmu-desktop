@@ -11,6 +11,9 @@
 docker-compose up -d
 ```
 
+> Compose 預設會啟動 Nginx `reverse-proxy`，對外端口為 `4000/4001`，server 容器僅內網可見。
+> 可選 HTTPS：放置 `nginx/certs/fullchain.pem` 與 `nginx/certs/privkey.pem` 後，使用 `docker-compose --profile https up -d` 啟用 `80/443` 反向代理與 HTTP→HTTPS 轉址。
+
 ### 手動安裝
 
 1. 安裝依賴：

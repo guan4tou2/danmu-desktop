@@ -11,6 +11,7 @@ function getOverlayElements() {
     stopButton: document.getElementById("stop-button"),
     ipInput: document.getElementById("host-input"),
     portInput: document.getElementById("port-input"),
+    wsTokenInput: document.getElementById("ws-token-input"),
     screenSelect: document.getElementById("screen-select"),
     syncMultiDisplayCheckbox: document.getElementById("sync-multi-display-checkbox"),
   };
@@ -30,8 +31,15 @@ function initOverlayControls({
   updateConnectionStatus,
   hideConnectionStatus,
 }) {
-  const { startButton, stopButton, ipInput, portInput, screenSelect, syncMultiDisplayCheckbox } =
-    getOverlayElements();
+  const {
+    startButton,
+    stopButton,
+    ipInput,
+    portInput,
+    wsTokenInput,
+    screenSelect,
+    syncMultiDisplayCheckbox,
+  } = getOverlayElements();
 
   if (!startButton || !stopButton || !ipInput || !portInput) return;
 
@@ -66,6 +74,7 @@ function initOverlayControls({
 
     const IP = hostValue;
     const PORT = portValue;
+    const wsToken = wsTokenInput ? wsTokenInput.value.trim() : "";
     const displayIndex = parseInt(screenSelect.value);
     const enableSyncMultiDisplay = syncMultiDisplayCheckbox.checked;
 
@@ -79,7 +88,7 @@ function initOverlayControls({
       customText: customAnimText ? customAnimText.value : "",
     };
 
-    saveSettings(IP, PORT, displayIndex, enableSyncMultiDisplay);
+    saveSettings(IP, PORT, displayIndex, enableSyncMultiDisplay, wsToken);
     saveStartupAnimationSettings(
       startupAnimationSettings.enabled,
       startupAnimationSettings.type,
@@ -93,7 +102,7 @@ function initOverlayControls({
     );
 
     const api = window.API;
-    api.create(IP, PORT, displayIndex, enableSyncMultiDisplay, startupAnimationSettings);
+    api.create(IP, PORT, displayIndex, enableSyncMultiDisplay, startupAnimationSettings, wsToken);
 
     state.overlayActive = true;
     state.connectionFailureNotified = false;
@@ -106,6 +115,7 @@ function initOverlayControls({
     stopButton.setAttribute("aria-disabled", "false");
     ipInput.disabled = true;
     portInput.disabled = true;
+    if (wsTokenInput) wsTokenInput.disabled = true;
     screenSelect.disabled = true;
     syncMultiDisplayCheckbox.disabled = true;
 
@@ -127,6 +137,7 @@ function initOverlayControls({
     stopButton.setAttribute("aria-disabled", "true");
     ipInput.disabled = false;
     portInput.disabled = false;
+    if (wsTokenInput) wsTokenInput.disabled = false;
     syncMultiDisplayCheckbox.disabled = false;
     syncMultiDisplayCheckbox.dispatchEvent(new Event("change"));
 
@@ -184,6 +195,9 @@ function initOverlayControls({
   if (savedSettings) {
     ipInput.value = savedSettings.host || "";
     portInput.value = savedSettings.port || "";
+    if (wsTokenInput && typeof savedSettings.wsToken === "string") {
+      wsTokenInput.value = savedSettings.wsToken;
+    }
     if (savedSettings.displayIndex !== undefined) {
       screenSelect.value = savedSettings.displayIndex;
     }

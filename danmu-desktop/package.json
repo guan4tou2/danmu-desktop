@@ -55,6 +55,7 @@
       "index.html",
       "child.html",
       "child.css",
+      "tailwind.css",
       "styles.css",
       "i18n.js",
       "assets/**/*",

@@ -1,10 +1,10 @@
 // localStorage settings persistence
 const { sanitizeLog } = require("../shared/utils");
 
-function saveSettings(host, port, displayIndex, syncMultiDisplay) {
+function saveSettings(host, port, displayIndex, syncMultiDisplay, wsToken = "") {
   localStorage.setItem(
     "danmu-settings",
-    JSON.stringify({ host, port, displayIndex, syncMultiDisplay })
+    JSON.stringify({ host, port, displayIndex, syncMultiDisplay, wsToken })
   );
 }
 

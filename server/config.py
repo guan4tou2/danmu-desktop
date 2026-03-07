@@ -36,6 +36,7 @@ class Config:
     ADMIN_PASSWORD_HASHED = load_runtime_hash() or os.getenv("ADMIN_PASSWORD_HASHED", "")
     PORT = int(os.getenv("PORT", "4000"))
     WS_PORT = int(os.getenv("WS_PORT", "4001"))
+    ENV = os.getenv("ENV", "development").lower()
     MAX_CONTENT_LENGTH = 15 * 1024 * 1024  # 15 MB uploads
     WS = ""
     FIRE_RATE_LIMIT = int(os.getenv("FIRE_RATE_LIMIT", "20"))
@@ -54,16 +55,34 @@ class Config:
     LOGIN_RATE_WINDOW = int(os.getenv("LOGIN_RATE_WINDOW", "300"))
 
     # Session configuration
-    SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
+    _session_cookie_secure_env = os.getenv("SESSION_COOKIE_SECURE")
+    if _session_cookie_secure_env is None:
+        SESSION_COOKIE_SECURE = ENV in {"production", "prod"}
+    else:
+        SESSION_COOKIE_SECURE = _session_cookie_secure_env.lower() == "true"
     SESSION_COOKIE_HTTPONLY = True
     # Strict prevents cookies from being sent on cross-site requests (stronger CSRF protection)
     SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Strict")
+
+    # Host validation (Flask Trusted Hosts)
+    _trusted_hosts_raw = os.getenv("TRUSTED_HOSTS", "").strip()
+    TRUSTED_HOSTS = [h.strip() for h in _trusted_hosts_raw.split(",") if h.strip()] or None
 
     # CORS configuration
     # Default: wildcard origins, no credentials — allows public API access without CSRF risk.
     # To allow admin from a remote origin: set CORS_ORIGINS and CORS_SUPPORTS_CREDENTIALS=true.
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
     CORS_SUPPORTS_CREDENTIALS = os.getenv("CORS_SUPPORTS_CREDENTIALS", "false").lower() == "true"
+
+    # Dedicated WS server access control
+    WS_REQUIRE_TOKEN = os.getenv("WS_REQUIRE_TOKEN", "true").lower() == "true"
+    WS_AUTH_TOKEN = os.getenv("WS_AUTH_TOKEN", "")
+    _ws_allowed_origins_raw = os.getenv("WS_ALLOWED_ORIGINS", "").strip()
+    WS_ALLOWED_ORIGINS = [o.strip() for o in _ws_allowed_origins_raw.split(",") if o.strip()]
+    _web_ws_allowed_origins_raw = os.getenv("WEB_WS_ALLOWED_ORIGINS", "").strip()
+    WEB_WS_ALLOWED_ORIGINS = [
+        o.strip() for o in _web_ws_allowed_origins_raw.split(",") if o.strip()
+    ]
 
     # Danmu history configuration
     DANMU_HISTORY_MAX_RECORDS = int(os.getenv("DANMU_HISTORY_MAX_RECORDS", "10000"))

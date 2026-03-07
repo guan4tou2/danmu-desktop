@@ -5,19 +5,24 @@ const { sanitizeLog } = require("../shared/utils");
  * Returns the JavaScript string to be injected into the child overlay window.
  * Establishes a WebSocket connection with reconnection and heartbeat logic.
  */
-function getChildWsScript(ip, port, startupAnimationSettings) {
+function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") {
   const safeIp = sanitizeLog(ip);
   const safePort = sanitizeLog(port);
   const startupAnimSettingsJson = JSON.stringify(
     startupAnimationSettings || { enabled: false }
   );
+  const wsAuthTokenJson = JSON.stringify(wsAuthToken || "");
 
   return `
       const IP_ADDR='${safeIp}';
       const WS_PORT_NUM=${safePort};
       const STARTUP_ANIM_SETTINGS = ${startupAnimSettingsJson};
+      const WS_AUTH_TOKEN = ${wsAuthTokenJson};
       console.log(IP_ADDR, WS_PORT_NUM)
       let url = \`ws://\${IP_ADDR}:\${WS_PORT_NUM}\`
+      if (WS_AUTH_TOKEN) {
+        url = \`\${url}/?token=\${encodeURIComponent(WS_AUTH_TOKEN)}\`
+      }
       let ws = null
       let reconnectAttempts = 0
       const maxReconnectAttempts = 10

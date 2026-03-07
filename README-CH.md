@@ -81,7 +81,7 @@
 
    ```bash
    cp env.example .env
-   # 編輯 .env 設定管理員密碼和其他選項
+   # 編輯 .env，至少設定 ADMIN_PASSWORD 或 ADMIN_PASSWORD_HASHED
    ```
 
 3. 啟動服務：
@@ -89,8 +89,20 @@
    ```bash
    docker-compose up -d
    ```
+   - `reverse-proxy` 會對外開放 `4000`（HTTP）與 `4001`（WebSocket）。
+   - Python server 在 Compose 模式下改為僅內網可見，由 Nginx 反向代理。
 
-4. 使用 Redis 進行速率限制（可選）：
+4. 可選 HTTPS 模式（Web 面板）：
+   ```bash
+   # 先放入憑證檔：
+   # nginx/certs/fullchain.pem
+   # nginx/certs/privkey.pem
+   docker-compose --profile https up -d
+   ```
+   - 會啟動 `reverse-proxy-https`，開放 `80/443`，並自動把 HTTP 轉 HTTPS。
+   - Desktop overlay 目前仍使用 `4001`（若要 desktop 也走 WSS 需另外調整 client 連線流程）。
+
+5. 使用 Redis 進行速率限制（可選）：
    ```bash
    docker-compose --profile redis up -d
    ```
@@ -145,8 +157,8 @@
 
 ## 端口配置
 
-- `4000`：網頁界面
-- `4001`：Danmu Desktop 客戶端連接
+- `4000`：網頁界面（經由反向代理）
+- `4001`：Danmu Desktop 客戶端連接（經由反向代理）
 
 ## 文件總覽 / Docs
 - `README.md`：英文版總覽。

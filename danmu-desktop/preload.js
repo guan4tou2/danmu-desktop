@@ -24,14 +24,15 @@ try {
       console.log("[Preload] API.getDisplays called");
       return ipcRenderer.invoke("getDisplays");
     },
-    create: (ip, port, displayIndex, enableSyncMultiDisplay, startupAnimationSettings) => {
+    create: (ip, port, displayIndex, enableSyncMultiDisplay, startupAnimationSettings, wsAuthToken = "") => {
       console.log(
         "[Preload] API.create called with:",
         ip,
         port,
         displayIndex,
         enableSyncMultiDisplay,
-        startupAnimationSettings
+        startupAnimationSettings,
+        wsAuthToken
       );
       ipcRenderer.send(
         "createChild",
@@ -39,7 +40,8 @@ try {
         port,
         displayIndex,
         enableSyncMultiDisplay,
-        startupAnimationSettings
+        startupAnimationSettings,
+        wsAuthToken
       );
     },
     close: () => {

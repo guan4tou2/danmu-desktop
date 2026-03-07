@@ -5,6 +5,7 @@ monkey.patch_all()
 import json
 import threading
 import uuid
+from urllib.parse import urlsplit
 
 from flask import Flask, current_app, g, request
 from flask_cors import CORS
@@ -29,6 +30,7 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     setup_logging(app.config.get("LOG_LEVEL", "INFO"))
+    env = str(app.config.get("ENV", "development")).lower()
 
     # Security check for missing/default password
     if not app.config.get("ADMIN_PASSWORD_HASHED") and not app.config.get("ADMIN_PASSWORD"):
@@ -39,6 +41,25 @@ def create_app(config_class=Config):
         app.logger.warning(
             "CRITICAL SECURITY WARNING: Using default password. "
             "Please change it in your .env file immediately!"
+        )
+    if env in {"production", "prod"} and not app.config.get("SESSION_COOKIE_SECURE", False):
+        app.logger.warning(
+            "SESSION_COOKIE_SECURE is disabled in production. "
+            "Enable HTTPS and set SESSION_COOKIE_SECURE=true."
+        )
+    if env in {"production", "prod"} and not app.config.get("TRUSTED_HOSTS"):
+        app.logger.warning(
+            "TRUSTED_HOSTS is not configured in production. "
+            "Set TRUSTED_HOSTS to allowed hostnames to prevent host header poisoning."
+        )
+    if (
+        env in {"production", "prod"}
+        and app.config.get("WS_REQUIRE_TOKEN", True)
+        and not app.config.get("WS_AUTH_TOKEN")
+    ):
+        app.logger.warning(
+            "WS_REQUIRE_TOKEN is enabled but WS_AUTH_TOKEN is empty. "
+            "Dedicated WS clients will be rejected."
         )
 
     # CORS configuration
@@ -100,6 +121,33 @@ app = create_app()
 
 @sock.route("/")
 def websocket(ws):
+    origin = request.headers.get("Origin", "")
+    allowed = current_app.config.get("WEB_WS_ALLOWED_ORIGINS") or []
+
+    def _origin_matches_host(origin_url: str) -> bool:
+        if not origin_url:
+            return False
+        try:
+            parsed = urlsplit(origin_url)
+        except Exception:
+            return False
+        if parsed.scheme not in {"http", "https"}:
+            return False
+        return parsed.netloc == request.host
+
+    allowed_ok = origin in allowed if allowed else _origin_matches_host(origin)
+    if not allowed_ok:
+        current_app.logger.warning(
+            "Rejecting web WS connection due to Origin policy. origin=%s host=%s",
+            sanitize_log_string(origin),
+            sanitize_log_string(request.host),
+        )
+        try:
+            ws.close()
+        except Exception:
+            pass
+        return
+
     connection_manager.register_web_connection(ws)
     current_app.logger.info("Web server WebSocket connected")
     while True:

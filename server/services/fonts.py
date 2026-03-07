@@ -24,7 +24,6 @@ def build_font_payload(chosen_font_name: str):
             "api.serve_user_font",
             filename=potential_font_filename,
             token=token,
-            _external=True,
         )
         final_font_type = "uploaded"
     elif chosen_font_name in ["Arial", "Verdana", "Times New Roman", "Courier New"]:
@@ -54,7 +53,7 @@ def list_available_fonts():
     default_fonts = [
         {
             "name": "NotoSansTC",
-            "url": url_for("static", filename="NotoSansTC-Regular.otf", _external=True),
+            "url": url_for("static", filename="NotoSansTC-Regular.otf"),
             "type": "default",
             "expiresAt": None,
         },
@@ -76,7 +75,6 @@ def list_available_fonts():
                             "api.serve_user_font",
                             filename=filename,
                             token=token,
-                            _external=True,
                         ),
                         "type": "uploaded",
                         "expiresAt": issued_at + ttl,

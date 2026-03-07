@@ -8,16 +8,13 @@
       http-equiv="Content-Security-Policy"
       content="
         default-src 'self';
-        script-src 'self' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com;
+        script-src 'self';
         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
         font-src https://fonts.gstatic.com;
         img-src 'self' data: https:;
         connect-src 'self';
       "
     />
-
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Google Fonts: Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -26,6 +23,7 @@
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="tailwind.css" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="text-slate-200 overflow-auto">
@@ -123,6 +121,20 @@
                 class="form-input mt-2 block w-full rounded-lg px-4 py-2.5 text-sm"
                 data-i18n-placeholder="portPlaceholder"
               placeholder="e.g., 4001"
+            />
+          </div>
+
+          <div>
+            <label
+              for="ws-token-input"
+              class="text-sm font-medium text-slate-300"
+            >WebSocket Token (optional)</label>
+            <input
+              type="password"
+              id="ws-token-input"
+              class="form-input mt-2 block w-full rounded-lg px-4 py-2.5 text-sm"
+              placeholder="Set if server enables WS_REQUIRE_TOKEN"
+              autocomplete="off"
             />
           </div>
 

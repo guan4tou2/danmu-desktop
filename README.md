@@ -84,7 +84,7 @@ This project is divided into two parts:
 
    ```bash
    cp env.example .env
-   # Edit .env and set ADMIN_PASSWORD and other settings
+   # Edit .env and set ADMIN_PASSWORD / ADMIN_PASSWORD_HASHED and other settings
    ```
 
 3. Start services:
@@ -92,8 +92,20 @@ This project is divided into two parts:
    ```bash
    docker-compose up -d
    ```
+   - `reverse-proxy` is exposed on host ports `4000` (HTTP) and `4001` (WebSocket).
+   - The Python server is now internal-only behind Nginx in Compose mode.
 
-4. To use Redis for rate limiting (optional):
+4. Optional HTTPS mode (web panel):
+   ```bash
+   # Put cert files first:
+   # nginx/certs/fullchain.pem
+   # nginx/certs/privkey.pem
+   docker-compose --profile https up -d
+   ```
+   - This starts `reverse-proxy-https` on `80/443` and redirects HTTP to HTTPS.
+   - Desktop overlay connection remains on `4001` unless you separately implement WSS for the desktop client flow.
+
+5. To use Redis for rate limiting (optional):
    ```bash
    docker-compose --profile redis up -d
    ```
@@ -145,6 +157,10 @@ Key configuration options (set via `.env` file or environment variables):
 - `PORT`: HTTP server port (default: 4000)
 - `WS_PORT`: WebSocket server port (default: 4001)
 - `SECRET_KEY`: Flask secret key (auto-generated if not set)
+- `TRUSTED_HOSTS`: comma-separated allowed hostnames for Host header validation (recommended in production)
+- `WS_REQUIRE_TOKEN`: require `?token=` for dedicated WebSocket clients (default: `true`)
+- `WS_AUTH_TOKEN`: shared secret token for dedicated WebSocket clients
+- `WEB_WS_ALLOWED_ORIGINS`: optional allowlist for browser WebSocket Origin on `/` route
 - `RATE_LIMIT_BACKEND`: Rate limiter backend - `memory` or `redis` (default: memory)
 - `REDIS_URL`: Redis connection URL (required if using Redis backend)
 - `LOG_LEVEL`: Logging level - `DEBUG`, `INFO`, `WARNING`, `ERROR` (default: INFO)
@@ -178,8 +194,8 @@ See `env.example` for all available options.
 
 ## Port Configuration
 
-- `4000`: Web interface (HTTP)
-- `4001`: Danmu Desktop Client connection (WebSocket)
+- `4000`: Web interface (HTTP via reverse proxy)
+- `4001`: Danmu Desktop Client connection (WebSocket via reverse proxy)
 
 ## References
 

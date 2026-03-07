@@ -1,6 +1,6 @@
 import json
 
-from flask import Blueprint, current_app, make_response, request, send_from_directory
+from flask import Blueprint, current_app, make_response, request, send_from_directory, session
 
 from .. import state
 from ..services import history as history_service
@@ -9,7 +9,7 @@ from ..services.blacklist import contains_keyword
 from ..services.effects import load_all as load_all_effects
 from ..services.effects import render_effects
 from ..services.fonts import build_font_payload, list_available_fonts
-from ..services.security import rate_limit, verify_font_token
+from ..services.security import rate_limit, require_csrf, verify_font_token
 from ..services.settings import get_options
 from ..services.validation import (
     BlacklistCheckSchema,
@@ -192,8 +192,12 @@ def list_effects():
 
 
 @api_bp.route("/effects/reload", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
 def reload_effects():
     """強制重新掃描 effects/ 目錄（熱插拔手動觸發）"""
+    if not session.get("logged_in"):
+        return _json_response({"error": "Unauthorized"}, 401)
     effects = load_all_effects(force=True)
     return _json_response({"message": "Reloaded", "count": len(effects)})
 

@@ -158,6 +158,7 @@ function setupChildWindow(
   display,
   ip,
   port,
+  wsAuthToken,
   startupAnimationSettings,
   childWindows
 ) {
@@ -216,7 +217,7 @@ function setupChildWindow(
   });
 
   // Inject WebSocket connection script
-  const script = getChildWsScript(ip, port, startupAnimationSettings);
+  const script = getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken);
   targetWindow.webContents.executeJavaScript(script).catch((err) => {
     console.error(
       "[Main] Error injecting WebSocket script:",

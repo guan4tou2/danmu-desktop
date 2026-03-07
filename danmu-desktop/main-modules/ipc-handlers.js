@@ -218,7 +218,15 @@ function setupIpcHandlers(mainWindow, childWindows) {
   // Create child overlay windows — restricted to main window
   ipcMain.on(
     "createChild",
-    (event, ip, port, displayIndex, enableSyncMultiDisplay, startupAnimationSettings) => {
+    (
+      event,
+      ip,
+      port,
+      displayIndex,
+      enableSyncMultiDisplay,
+      startupAnimationSettings,
+      wsAuthToken
+    ) => {
       if (!isFromMainWindow(event, mainWindow)) {
         console.warn("[Main] createChild: rejected IPC from untrusted sender");
         return;
@@ -234,10 +242,11 @@ function setupIpcHandlers(mainWindow, childWindows) {
         console.warn("[Main] createChild: port out of valid range");
         return;
       }
+      const authToken = typeof wsAuthToken === "string" ? wsAuthToken.trim() : "";
       console.log(
         `[Main] createChild IPC received: IP=${sanitizeLog(ip)}, Port=${sanitizeLog(
           port
-        )}, DisplayIndex=${sanitizeLog(displayIndex)}, SyncMultiDisplay=${enableSyncMultiDisplay}`
+        )}, DisplayIndex=${sanitizeLog(displayIndex)}, SyncMultiDisplay=${enableSyncMultiDisplay}, HasWSToken=${authToken ? "yes" : "no"}`
       );
 
       // Clear existing child windows
@@ -281,6 +290,7 @@ function setupIpcHandlers(mainWindow, childWindows) {
             display,
             ip,
             port,
+            authToken,
             startupAnimationSettings,
             childWindows
           );
@@ -310,6 +320,7 @@ function setupIpcHandlers(mainWindow, childWindows) {
           selectedDisplay,
           ip,
           port,
+          authToken,
           startupAnimationSettings,
           childWindows
         );
