@@ -1,6 +1,7 @@
 // All IPC event handler definitions
 const { ipcMain, screen, app } = require("electron");
 const { BrowserWindow } = require("electron");
+const net = require("net");
 const path = require("path");
 const { sanitizeLog } = require("../shared/utils");
 const { setupChildWindow } = require("./window-manager");
@@ -48,6 +49,17 @@ function validateDanmuParams(data) {
   const validatedColor = colorRegex.test(color) ? color : "#ffffff";
 
   return { opacity, size, speed, color: validatedColor };
+}
+
+function isValidIpAddress(ip) {
+  if (typeof ip !== "string") {
+    return false;
+  }
+  const trimmed = ip.trim();
+  if (!trimmed) {
+    return false;
+  }
+  return trimmed === "localhost" || net.isIP(trimmed) !== 0;
 }
 
 /**
@@ -231,12 +243,13 @@ function setupIpcHandlers(mainWindow, childWindows) {
         console.warn("[Main] createChild: rejected IPC from untrusted sender");
         return;
       }
-      if (typeof ip !== "string" || !ip) {
+      if (!isValidIpAddress(ip)) {
         console.warn(
-          `[Main] createChild: invalid IP address type: ${typeof ip}`
+          `[Main] createChild: invalid IP address: ${sanitizeLog(ip)}`
         );
         return;
       }
+      const normalizedIp = ip.trim();
       const portNum = Number(port);
       if (!Number.isInteger(portNum) || portNum < 1 || portNum > 65535) {
         console.warn("[Main] createChild: port out of valid range");
@@ -288,8 +301,8 @@ function setupIpcHandlers(mainWindow, childWindows) {
           setupChildWindow(
             newChild,
             display,
-            ip,
-            port,
+            normalizedIp,
+            portNum,
             authToken,
             startupAnimationSettings,
             childWindows
@@ -318,8 +331,8 @@ function setupIpcHandlers(mainWindow, childWindows) {
         setupChildWindow(
           newChild,
           selectedDisplay,
-          ip,
-          port,
+          normalizedIp,
+          portNum,
           authToken,
           startupAnimationSettings,
           childWindows

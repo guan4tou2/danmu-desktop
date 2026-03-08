@@ -1,20 +1,19 @@
 // WebSocket script injected into child (overlay) windows via executeJavaScript
-const { sanitizeLog } = require("../shared/utils");
 
 /**
  * Returns the JavaScript string to be injected into the child overlay window.
  * Establishes a WebSocket connection with reconnection and heartbeat logic.
  */
 function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") {
-  const safeIp = sanitizeLog(ip);
-  const safePort = sanitizeLog(port);
+  const ipJson = JSON.stringify(String(ip));
+  const safePort = Number(port);
   const startupAnimSettingsJson = JSON.stringify(
     startupAnimationSettings || { enabled: false }
   );
   const wsAuthTokenJson = JSON.stringify(wsAuthToken || "");
 
   return `
-      const IP_ADDR='${safeIp}';
+      const IP_ADDR=${ipJson};
       const WS_PORT_NUM=${safePort};
       const STARTUP_ANIM_SETTINGS = ${startupAnimSettingsJson};
       const WS_AUTH_TOKEN = ${wsAuthTokenJson};

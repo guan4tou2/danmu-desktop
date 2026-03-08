@@ -35,6 +35,10 @@ class ConnectionManager:
         with self._lock:
             self._ws_clients.discard(client)
 
+    def get_ws_clients(self):
+        with self._lock:
+            return list(self._ws_clients)
+
     def has_ws_clients(self):
         with self._lock:
             return bool(self._ws_clients or self._web_connections)

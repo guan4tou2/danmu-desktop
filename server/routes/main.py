@@ -50,6 +50,7 @@ def login():
         password_valid = password == admin_password
 
     if password_valid:
+        session.clear()
         session["logged_in"] = True
         session["csrf_token"] = issue_csrf_token()
         return redirect(url_for("admin_bp.admin"))

@@ -1,4 +1,5 @@
 import json
+from ipaddress import ip_address
 
 from flask import Blueprint, current_app, make_response, request, send_from_directory, session
 
@@ -117,6 +118,26 @@ def _record_history_if_enabled(data, fingerprint, client_ip):
     history_service.danmu_history.add(history_payload)
 
 
+def _extract_client_ip() -> str:
+    trust_xff = bool(current_app.config.get("TRUST_X_FORWARDED_FOR", False))
+    if trust_xff:
+        xff = request.headers.get("X-Forwarded-For", "")
+        candidate = xff.split(",", 1)[0].strip() if xff else ""
+        if candidate:
+            try:
+                ip_address(candidate)
+                return candidate
+            except ValueError:
+                pass
+
+    remote_addr = request.remote_addr or ""
+    try:
+        ip_address(remote_addr)
+        return remote_addr
+    except ValueError:
+        return "unknown"
+
+
 @api_bp.route("/fire", methods=["POST"])
 @rate_limit("fire")
 def fire():
@@ -150,7 +171,7 @@ def fire():
 
         forward_success = messaging.forward_to_ws_server(data)
 
-        client_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+        client_ip = _extract_client_ip()
 
         if forward_success:
             _record_history_if_enabled(data, fingerprint, client_ip)

@@ -118,6 +118,17 @@ describe("WebSocket reconnection logic", () => {
     delete global.WebSocket;
   });
 
+  test("escapes IP string to prevent script injection", () => {
+    const MockWSLocal = createMockWebSocketClass();
+    global.WebSocket = MockWSLocal;
+
+    const script = getChildWsScript("';window.__pwned=1;//", SCRIPT_PORT, ANIM);
+    // eslint-disable-next-line no-eval
+    eval(script);
+
+    expect(window.__pwned).toBeUndefined();
+  });
+
   // -------------------------------------------------------------------------
   // 1. Initial connection
   // -------------------------------------------------------------------------

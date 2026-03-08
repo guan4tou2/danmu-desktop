@@ -11,6 +11,7 @@ _VALID_SETTING_TYPES = {
     "FontFamily",
     "Effects",
 }
+_NO_CTRL_CHARS_RE = r"^[^\r\n\t\x00-\x08\x0b\x0c\x0e-\x1f]+$"
 
 
 class FireRequestSchema(Schema):
@@ -49,9 +50,35 @@ class BlacklistKeywordSchema(Schema):
         validate=[
             validate.Length(min=1, max=200),
             validate.Regexp(
-                r"^[^\r\n\t\x00-\x08\x0b\x0c\x0e-\x1f]+$",
+                _NO_CTRL_CHARS_RE,
                 error="Keyword cannot contain control characters.",
             ),
+        ],
+    )
+
+
+class EffectDeleteSchema(Schema):
+    name = fields.Str(
+        required=True,
+        validate=[
+            validate.Length(min=1, max=128),
+            validate.Regexp(_NO_CTRL_CHARS_RE, error="Name cannot contain control characters."),
+        ],
+    )
+
+
+class EffectSaveSchema(Schema):
+    name = fields.Str(
+        required=True,
+        validate=[
+            validate.Length(min=1, max=128),
+            validate.Regexp(_NO_CTRL_CHARS_RE, error="Name cannot contain control characters."),
+        ],
+    )
+    content = fields.Str(
+        required=True,
+        validate=[
+            validate.Length(min=1, max=65535),
         ],
     )
 

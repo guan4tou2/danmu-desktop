@@ -1,5 +1,6 @@
 import os
 import secrets
+import tempfile
 from pathlib import Path
 
 from dotenv import find_dotenv, load_dotenv
@@ -67,6 +68,7 @@ class Config:
     # Host validation (Flask Trusted Hosts)
     _trusted_hosts_raw = os.getenv("TRUSTED_HOSTS", "").strip()
     TRUSTED_HOSTS = [h.strip() for h in _trusted_hosts_raw.split(",") if h.strip()] or None
+    TRUST_X_FORWARDED_FOR = os.getenv("TRUST_X_FORWARDED_FOR", "false").lower() == "true"
 
     # CORS configuration
     # Default: wildcard origins, no credentials — allows public API access without CSRF risk.
@@ -87,6 +89,10 @@ class Config:
     # Danmu history configuration
     DANMU_HISTORY_MAX_RECORDS = int(os.getenv("DANMU_HISTORY_MAX_RECORDS", "10000"))
     DANMU_HISTORY_CLEANUP_HOURS = int(os.getenv("DANMU_HISTORY_CLEANUP_HOURS", "24"))
+    SETTINGS_FILE = os.getenv(
+        "SETTINGS_FILE",
+        str(Path(tempfile.gettempdir()) / "danmu_runtime_settings.json"),
+    )
 
     # Admin settable option keys
     SETTABLE_OPTION_KEYS = {

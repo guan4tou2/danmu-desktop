@@ -26,6 +26,8 @@ from ..services.settings import (
 )
 from ..services.validation import (
     BlacklistKeywordSchema,
+    EffectDeleteSchema,
+    EffectSaveSchema,
     SettingUpdateSchema,
     ToggleSettingSchema,
     validate_request,
@@ -300,15 +302,17 @@ def delete_effect():
         return _json_response({"error": "Unauthorized"}, 401)
 
     data = request.get_json(silent=True)
-    if not data or not data.get("name"):
-        return _json_response({"error": "Missing effect name"}, 400)
+    validated_data, errors = validate_request(EffectDeleteSchema, data)
+    if errors:
+        return _json_response({"error": "Validation failed", "details": errors}, 400)
+    effect_name = validated_data["name"]
 
     from ..services.effects import delete_by_name
 
-    if delete_by_name(str(data["name"])):
-        current_app.logger.info("Effect deleted: %s", sanitize_log_string(str(data["name"])))
+    if delete_by_name(effect_name):
+        current_app.logger.info("Effect deleted: %s", sanitize_log_string(effect_name))
         return _json_response(
-            {"message": f"Effect '{sanitize_log_string(str(data['name']))}' deleted"}
+            {"message": f"Effect '{sanitize_log_string(effect_name)}' deleted"}
         )
     return _json_response({"error": "Effect not found"}, 404)
 
@@ -334,11 +338,15 @@ def save_effect_route():
     if not _ensure_logged_in():
         return _json_response({"error": "Unauthorized"}, 401)
     data = request.get_json(silent=True)
-    if not data or not data.get("name") or not data.get("content"):
-        return _json_response({"error": "Missing name or content"}, 400)
+    validated_data, errors = validate_request(EffectSaveSchema, data)
+    if errors:
+        return _json_response({"error": "Validation failed", "details": errors}, 400)
     from ..services.effects import save_effect_content
 
-    filename, error = save_effect_content(str(data["name"]), str(data["content"]).encode("utf-8"))
+    filename, error = save_effect_content(
+        validated_data["name"],
+        validated_data["content"].encode("utf-8"),
+    )
     if error:
         return _json_response({"error": error}, 400)
     current_app.logger.info("Effect saved: %s", sanitize_log_string(filename))
