@@ -220,8 +220,12 @@ def test_ws_server_rejects_oversized_message(ws_server_port):
             ws.send(payload)
         except TimeoutError:
             pass
-        except (ConnectionClosed, OSError):
+        except ConnectionClosed as exc:
+            code = exc.rcvd.code if exc.rcvd else None
+            assert code == 1009
             return
+        except Exception as exc:
+            pytest.fail(f"unexpected send exception: {type(exc).__name__}: {exc}")
 
         deadline = time.monotonic() + 3.0
         while time.monotonic() < deadline:
@@ -236,7 +240,11 @@ def test_ws_server_rejects_oversized_message(ws_server_port):
                     pass
             except TimeoutError:
                 continue
-            except (ConnectionClosed, OSError):
+            except ConnectionClosed as exc:
+                code = exc.rcvd.code if exc.rcvd else None
+                assert code == 1009
                 return
+            except Exception as exc:
+                pytest.fail(f"unexpected recv exception: {type(exc).__name__}: {exc}")
 
         pytest.fail("oversized message did not close the connection")
