@@ -6,10 +6,8 @@ def test_connection_manager_registers_web_connections():
     connection_manager.reset()
     dummy = object()
     connection_manager.register_web_connection(dummy)
-    assert connection_manager.get_active_ws() is dummy
     assert dummy in connection_manager.get_web_connections()
     connection_manager.unregister_web_connection(dummy)
-    assert connection_manager.get_active_ws() is None
     assert dummy not in connection_manager.get_web_connections()
 
 
@@ -59,19 +57,16 @@ def test_multiple_web_connections():
     conns = m.get_web_connections()
     assert w1 in conns
     assert w2 in conns
-    # active_ws 是最後一次 register 的
-    assert m.get_active_ws() is w2
 
 
-def test_unregister_non_active_web_connection():
-    """移除非 active_ws 的連線不應清除 active_ws"""
+def test_unregister_one_web_connection_keeps_others():
     m = ConnectionManager()
     w1, w2 = object(), object()
     m.register_web_connection(w1)
     m.register_web_connection(w2)
-    m.unregister_web_connection(w1)  # w1 不是 active
-    assert m.get_active_ws() is w2
+    m.unregister_web_connection(w1)
     assert w1 not in m.get_web_connections()
+    assert w2 in m.get_web_connections()
 
 
 def test_reset_clears_all_state():
@@ -80,7 +75,6 @@ def test_reset_clears_all_state():
     m.register_ws_client(object())
     m.reset()
     assert not m.has_ws_clients()
-    assert m.get_active_ws() is None
     assert m.get_web_connections() == []
 
 
