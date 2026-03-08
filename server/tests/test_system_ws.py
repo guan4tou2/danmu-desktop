@@ -1,3 +1,5 @@
+# pyright: reportMissingImports=false
+
 """系統測試：真實 asyncio WS 伺服器 + websockets.sync.client 端對端驗證
 
 架構說明：
@@ -14,9 +16,9 @@ import time
 
 import pytest
 
-from server.config import Config
-from server.services import ws_queue
-from server.ws.server import run_ws_server
+from server.config import Config  # ty: ignore[unresolved-import]
+from server.services import ws_queue  # ty: ignore[unresolved-import]
+from server.ws.server import run_ws_server  # ty: ignore[unresolved-import]
 
 logger = logging.getLogger(__name__)
 
@@ -202,3 +204,39 @@ def test_ws_token_auth_rejects_empty_token_when_required():
     candidate = ""
     # 空 token 對空 configured_token 不應視為合法（server 會先檢查 bool(token)）
     assert not bool(candidate)  # '' 為 falsy，伺服器 _is_authorized 中 `not token` 為 True
+
+
+def test_ws_server_rejects_oversized_message(ws_server_port):
+    from websockets.exceptions import ConnectionClosed
+    from websockets.sync.client import connect
+
+    payload = "x" * (int(Config.WS_MAX_SIZE) + 1)
+
+    with connect(f"ws://127.0.0.1:{ws_server_port}") as ws:
+        ws.socket.settimeout(10.0)
+        ws.recv()  # discard initial ping
+
+        try:
+            ws.send(payload)
+        except TimeoutError:
+            pass
+        except (ConnectionClosed, OSError):
+            return
+
+        deadline = time.monotonic() + 3.0
+        while time.monotonic() < deadline:
+            try:
+                ws.socket.settimeout(max(0.1, deadline - time.monotonic()))
+                raw = ws.recv()
+                try:
+                    data = json.loads(raw)
+                    if data.get("type") == "ping":
+                        continue
+                except Exception:
+                    pass
+            except TimeoutError:
+                continue
+            except (ConnectionClosed, OSError):
+                return
+
+        pytest.fail("oversized message did not close the connection")

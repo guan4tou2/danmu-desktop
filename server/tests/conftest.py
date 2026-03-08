@@ -1,21 +1,38 @@
+# pyright: reportMissingImports=false
+
 import logging
+import os
 import socket
 import threading
 import time
+from pathlib import Path
 
 import pytest
 
-from server import state
-from server.app import create_app
-from server.config import Config
-from server.managers import connection_manager, settings_store
-from server.services import effects as eff_svc
-from server.services import ws_queue
-from server.services.security import rate_limiter
-from server.services.ws_state import update_ws_client_count
-from server.ws.server import run_ws_server
+from server import state  # ty: ignore[unresolved-import]
+from server.app import create_app  # ty: ignore[unresolved-import]
+from server.config import Config  # ty: ignore[unresolved-import]
+from server.managers import connection_manager, settings_store  # ty: ignore[unresolved-import]
+from server.services import effects as eff_svc  # ty: ignore[unresolved-import]
+from server.services import ws_queue  # ty: ignore[unresolved-import]
+from server.services.security import rate_limiter  # ty: ignore[unresolved-import]
+from server.services.ws_state import update_ws_client_count  # ty: ignore[unresolved-import]
+from server.ws.server import run_ws_server  # ty: ignore[unresolved-import]
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _isolate_settings_store(tmp_path_factory):
+    settings_file = tmp_path_factory.mktemp("danmu_settings") / "danmu_runtime_settings.json"
+    os.environ["SETTINGS_FILE"] = str(settings_file)
+    settings_store._settings_file = Path(str(settings_file))
+    settings_store.reset()
+    yield
 
 _ws_logger = logging.getLogger("conftest.ws")
+_ws_logger.propagate = False
+if not _ws_logger.handlers:
+    _ws_logger.addHandler(logging.NullHandler())
+_ws_logger.setLevel(logging.INFO)
 
 
 # ─── WS 伺服器輔助函式（供系統測試模組使用）────────────────────────────────
@@ -43,7 +60,7 @@ def wait_for_ws_count(minimum: int = 1, timeout: float = 2.0) -> bool:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if update_ws_client_count.__module__:  # 確保 import 完整
-            from server.services.ws_state import get_ws_client_count
+            from server.services.ws_state import get_ws_client_count  # ty: ignore[unresolved-import]
             if get_ws_client_count() >= minimum:
                 return True
         time.sleep(0.05)
