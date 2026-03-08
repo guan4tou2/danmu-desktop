@@ -55,6 +55,23 @@ def configure_rate_limiter(limiter: BaseRateLimiter):
 
 
 class RedisRateLimiter(BaseRateLimiter):
+    _ALLOW_SCRIPT = """
+local key = KEYS[1]
+local now = tonumber(ARGV[1])
+local limit = tonumber(ARGV[2])
+local window = tonumber(ARGV[3])
+local member = ARGV[4]
+
+redis.call('ZREMRANGEBYSCORE', key, '-inf', now - window)
+local count = redis.call('ZCARD', key)
+if count >= limit then
+    return 0
+end
+redis.call('ZADD', key, now, member)
+redis.call('EXPIRE', key, window)
+return 1
+"""
+
     def __init__(self, redis_url: str):
         if redis is None:  # pragma: no cover
             raise RuntimeError("redis library is not installed")
@@ -63,17 +80,17 @@ class RedisRateLimiter(BaseRateLimiter):
     def allow(self, key: str, limit: int, window: int) -> bool:
         now = time.time()
         redis_key = f"ratelimit:{key}"
-        pipe = self.client.pipeline()
-        pipe.zremrangebyscore(redis_key, "-inf", now - window)
-        pipe.zcard(redis_key)
-        removed, count = pipe.execute()
-        if count >= limit:
-            return False
-        pipe = self.client.pipeline()
-        pipe.zadd(redis_key, {str(now): now})
-        pipe.expire(redis_key, window)
-        pipe.execute()
-        return True
+        member = f"{now}:{secrets.token_hex(8)}"
+        allowed = self.client.eval(
+            self._ALLOW_SCRIPT,
+            1,
+            redis_key,
+            now,
+            limit,
+            window,
+            member,
+        )
+        return bool(allowed)
 
     def reset(self):
         # not implemented for redis backend

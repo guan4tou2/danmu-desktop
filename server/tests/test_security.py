@@ -1,8 +1,10 @@
 from pathlib import Path
+from unittest.mock import MagicMock
 
 from server import state
 from server.services.security import (
     InMemoryRateLimiter,
+    RedisRateLimiter,
     generate_font_token,
     hash_password,
     issue_csrf_token,
@@ -141,3 +143,24 @@ def test_rate_limiter_window_expiry():
     assert not limiter.allow("w", 1, 0.05)  # blocked
     time.sleep(0.1)
     assert limiter.allow("w", 1, 0.05)  # window expired → allowed
+
+
+def test_redis_rate_limiter_allow_uses_atomic_eval():
+    limiter = RedisRateLimiter.__new__(RedisRateLimiter)
+    limiter.client = MagicMock()
+    limiter.client.eval.return_value = 1
+
+    allowed = limiter.allow("ip:127.0.0.1", 10, 60)
+
+    assert allowed is True
+    limiter.client.eval.assert_called_once()
+
+
+def test_redis_rate_limiter_rejects_when_eval_returns_zero():
+    limiter = RedisRateLimiter.__new__(RedisRateLimiter)
+    limiter.client = MagicMock()
+    limiter.client.eval.return_value = 0
+
+    allowed = limiter.allow("ip:127.0.0.1", 1, 60)
+
+    assert allowed is False
