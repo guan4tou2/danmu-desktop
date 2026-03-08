@@ -32,6 +32,7 @@ _mtime_map: Dict[str, float] = {}  # filepath -> mtime
 _path_to_name: Dict[str, str] = {}  # filepath -> effect name（反查用）
 _last_scan: float = 0.0
 _lock = threading.Lock()
+_scan_lock = threading.Lock()
 
 # 合法的參數名稱（白名單）
 _SAFE_KEY_RE = re.compile(r"^[a-zA-Z0-9_]+$")
@@ -96,77 +97,113 @@ def _parse_dme(path: Path) -> Optional[Dict[str, Any]]:
         return None
 
 
-def _scan() -> None:
-    """掃描 effects/ 目錄，熱更新 _cache（僅重新解析有變更的檔案）。"""
-    global _last_scan
+def _build_scan_result(
+    prev_cache: Dict[str, Dict[str, Any]],
+    prev_mtime_map: Dict[str, float],
+    prev_path_to_name: Dict[str, str],
+) -> Tuple[Dict[str, Dict[str, Any]], Dict[str, float], Dict[str, str]]:
     _EFFECTS_DIR.mkdir(exist_ok=True)
-
     current_files = {str(p): p for p in _EFFECTS_DIR.glob("*.dme")}
     updated: Dict[str, Dict[str, Any]] = {}
+    next_mtime_map: Dict[str, float] = {}
+    next_path_to_name: Dict[str, str] = {}
 
     for fpath, p in current_files.items():
         mtime = p.stat().st_mtime
-        if _mtime_map.get(fpath) == mtime:
-            # 未變更，直接沿用快取
-            name = _path_to_name.get(fpath)
-            if name and name in _cache:
-                updated[name] = _cache[name]
-                continue
-        # 新增 / 修改 / 快取失效 → 重新解析
+        prev_name = prev_path_to_name.get(fpath)
+        if prev_mtime_map.get(fpath) == mtime and prev_name and prev_name in prev_cache:
+            updated[prev_name] = prev_cache[prev_name]
+            next_mtime_map[fpath] = mtime
+            next_path_to_name[fpath] = prev_name
+            continue
+
         effect = _parse_dme(p)
         if effect:
             name = effect["name"]
             updated[name] = effect
-            _mtime_map[fpath] = mtime
-            _path_to_name[fpath] = name
+            next_mtime_map[fpath] = mtime
+            next_path_to_name[fpath] = name
             logger.info("[Effects] Loaded: %s from %s", name, p.name)
 
-    # 清除已刪除的檔案
-    removed = set(_mtime_map) - set(current_files)
+    removed = set(prev_mtime_map) - set(current_files)
     for fpath in removed:
-        name = _path_to_name.pop(fpath, None)
-        del _mtime_map[fpath]
-        logger.info("[Effects] Removed effect from: %s (name=%s)", fpath, name)
+        logger.info(
+            "[Effects] Removed effect from: %s (name=%s)",
+            fpath,
+            prev_path_to_name.get(fpath),
+        )
 
-    _cache.clear()
-    _cache.update(updated)
-    _last_scan = time.monotonic()
+    return updated, next_mtime_map, next_path_to_name
+
+
+def _scan() -> None:
+    """掃描 effects/ 目錄，熱更新 _cache（僅重新解析有變更的檔案）。"""
+    global _last_scan
+    with _scan_lock:
+        with _lock:
+            prev_cache = dict(_cache)
+            prev_mtime_map = dict(_mtime_map)
+            prev_path_to_name = dict(_path_to_name)
+
+        updated, next_mtime_map, next_path_to_name = _build_scan_result(
+            prev_cache,
+            prev_mtime_map,
+            prev_path_to_name,
+        )
+
+        with _lock:
+            _cache.clear()
+            _cache.update(updated)
+            _mtime_map.clear()
+            _mtime_map.update(next_mtime_map)
+            _path_to_name.clear()
+            _path_to_name.update(next_path_to_name)
+            _last_scan = time.monotonic()
+
+
+def _maybe_scan(force: bool = False) -> None:
+    with _lock:
+        should_scan = force or time.monotonic() - _last_scan >= _SCAN_INTERVAL
+    if should_scan:
+        _scan()
 
 
 def load_all(force: bool = False) -> List[Dict[str, Any]]:
     """回傳所有已載入的特效（meta 資訊）；必要時觸發熱載入。"""
+    _maybe_scan(force=force)
     with _lock:
-        if force or time.monotonic() - _last_scan >= _SCAN_INTERVAL:
-            _scan()
+        effects = list(_cache.values())
     return [
         {k: v for k, v in eff.items() if k not in ("keyframes", "animation")}
-        for eff in _cache.values()
+        for eff in effects
     ]
 
 
 def list_with_file_info() -> List[Dict[str, Any]]:
     """回傳所有特效詳細資訊，含檔案名稱與修改時間（供 admin 管理使用）。"""
+    _maybe_scan()
     with _lock:
-        if time.monotonic() - _last_scan >= _SCAN_INTERVAL:
-            _scan()
-        result = []
+        items = []
         for fpath, name in _path_to_name.items():
             eff = _cache.get(name)
-            if not eff:
-                continue
-            try:
-                mtime = Path(fpath).stat().st_mtime
-            except OSError:
-                mtime = None
-            result.append(
-                {
-                    "name": eff["name"],
-                    "label": eff["label"],
-                    "description": eff["description"],
-                    "filename": Path(fpath).name,
-                    "mtime": mtime,
-                }
-            )
+            if eff:
+                items.append((fpath, eff["name"], eff["label"], eff["description"]))
+
+    result = []
+    for fpath, name, label, description in items:
+        try:
+            mtime = Path(fpath).stat().st_mtime
+        except OSError:
+            mtime = None
+        result.append(
+            {
+                "name": name,
+                "label": label,
+                "description": description,
+                "filename": Path(fpath).name,
+                "mtime": mtime,
+            }
+        )
     return sorted(result, key=lambda x: x["name"])
 
 
@@ -214,8 +251,7 @@ def save_uploaded_effect(content: bytes) -> Tuple[str, Optional[str]]:
         logger.error("Failed to save effect file %s: %s", filename, e)
         return "", "Failed to save file"
 
-    with _lock:
-        _scan()
+    _scan()
 
     return filename, None
 
@@ -224,9 +260,8 @@ def get_effect_content(name: str) -> Optional[str]:
     """回傳指定特效的原始 .dme 檔案文字內容（供 admin 編輯用）。"""
     if not _SAFE_KEY_RE.match(name):
         return None
+    _maybe_scan()
     with _lock:
-        if time.monotonic() - _last_scan >= _SCAN_INTERVAL:
-            _scan()
         fpath = next((fp for fp, n in _path_to_name.items() if n == name), None)
     if not fpath:
         return None
@@ -263,18 +298,16 @@ def save_effect_content(name: str, content: bytes) -> Tuple[Optional[str], Optio
         logger.error("Failed to save effect file %s: %s", fpath, e)
         return None, "Failed to save file"
 
-    with _lock:
-        _scan()
+    _scan()
 
     return Path(fpath).name, None
 
 
 def get_effect(name: str) -> Optional[Dict[str, Any]]:
     """取得完整的特效定義（含 keyframes/animation）。"""
+    _maybe_scan()
     with _lock:
-        if time.monotonic() - _last_scan >= _SCAN_INTERVAL:
-            _scan()
-    return _cache.get(name)
+        return _cache.get(name)
 
 
 # ─── 安全 CSS 渲染器 ──────────────────────────────────────────────────────────
