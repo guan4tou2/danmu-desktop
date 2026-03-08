@@ -158,12 +158,17 @@ Key configuration options (set via `.env` file or environment variables):
 - `WS_PORT`: WebSocket server port (default: 4001)
 - `SECRET_KEY`: Flask secret key (auto-generated if not set)
 - `TRUSTED_HOSTS`: comma-separated allowed hostnames for Host header validation (recommended in production)
+- `TRUST_X_FORWARDED_FOR`: trust `X-Forwarded-For` for client IP detection (default: `false`; enable only behind a trusted reverse proxy)
 - `WS_REQUIRE_TOKEN`: require `?token=` for dedicated WebSocket clients (default: `true`)
 - `WS_AUTH_TOKEN`: shared secret token for dedicated WebSocket clients
+- `WS_MAX_SIZE`: maximum incoming WebSocket message size in bytes (default: `1048576`)
+- `WS_MAX_QUEUE`: maximum number of incoming WebSocket messages buffered (default: `16`)
+- `WS_WRITE_LIMIT`: write buffer limit in bytes for WebSocket connections (default: `32768`)
 - `WEB_WS_ALLOWED_ORIGINS`: optional allowlist for browser WebSocket Origin on `/` route
 - `RATE_LIMIT_BACKEND`: Rate limiter backend - `memory` or `redis` (default: memory)
 - `REDIS_URL`: Redis connection URL (required if using Redis backend)
 - `LOG_LEVEL`: Logging level - `DEBUG`, `INFO`, `WARNING`, `ERROR` (default: INFO)
+- `SETTINGS_FILE`: path to persisted runtime settings file (optional; defaults to a temp file)
 
 See `env.example` for all available options.
 
