@@ -85,6 +85,9 @@ def run_ws_server(ws_port, logger):
     require_token = bool(Config.WS_REQUIRE_TOKEN)
     configured_token = str(Config.WS_AUTH_TOKEN or "")
     allowed_origins = set(Config.WS_ALLOWED_ORIGINS or [])
+    ws_max_size = int(Config.WS_MAX_SIZE)
+    ws_max_queue = int(Config.WS_MAX_QUEUE)
+    ws_write_limit = int(Config.WS_WRITE_LIMIT)
 
     if require_token and not configured_token:
         logger.warning("WS_REQUIRE_TOKEN is enabled but WS_AUTH_TOKEN is empty; all WS clients will be rejected.")
@@ -175,7 +178,14 @@ def run_ws_server(ws_port, logger):
             await unregister(websocket)
 
     async def start_server():
-        server = await websockets.serve(ws_handler, "0.0.0.0", ws_port)
+        server = await websockets.serve(
+            ws_handler,
+            "0.0.0.0",
+            ws_port,
+            max_size=ws_max_size,
+            max_queue=ws_max_queue,
+            write_limit=ws_write_limit,
+        )
         logger.info("WebSocket server started on port %s", ws_port)
         forwarding_task = asyncio.create_task(_forward_messages(logger))
         await server.wait_closed()
