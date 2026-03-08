@@ -1,11 +1,88 @@
+import logging
+import socket
+import threading
+import time
+
 import pytest
 
 from server import state
 from server.app import create_app
 from server.config import Config
 from server.managers import connection_manager, settings_store
+from server.services import effects as eff_svc
+from server.services import ws_queue
 from server.services.security import rate_limiter
 from server.services.ws_state import update_ws_client_count
+from server.ws.server import run_ws_server
+
+_ws_logger = logging.getLogger("conftest.ws")
+
+
+# ─── WS 伺服器輔助函式（供系統測試模組使用）────────────────────────────────
+
+
+def find_free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def wait_for_port(port: int, timeout: float = 5.0) -> bool:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            with socket.create_connection(("127.0.0.1", port), timeout=0.1):
+                return True
+        except OSError:
+            time.sleep(0.05)
+    return False
+
+
+def wait_for_ws_count(minimum: int = 1, timeout: float = 2.0) -> bool:
+    """等待 ws_client_count 達到 minimum（WS 伺服器非同步更新）"""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if update_ws_client_count.__module__:  # 確保 import 完整
+            from server.services.ws_state import get_ws_client_count
+            if get_ws_client_count() >= minimum:
+                return True
+        time.sleep(0.05)
+    return False
+
+
+# ─── 共用 WS 伺服器 Session Fixture ──────────────────────────────────────────
+
+
+@pytest.fixture(scope="session")
+def ws_server_port():
+    """啟動不需 token 的真實 WS 伺服器（整個 session 共用一個）"""
+    original_require = Config.WS_REQUIRE_TOKEN
+    original_token = Config.WS_AUTH_TOKEN
+    original_origins = Config.WS_ALLOWED_ORIGINS
+
+    Config.WS_REQUIRE_TOKEN = False
+    Config.WS_AUTH_TOKEN = ""
+    Config.WS_ALLOWED_ORIGINS = []
+
+    port = find_free_port()
+    thread = threading.Thread(
+        target=run_ws_server,
+        args=(port, _ws_logger),
+        daemon=True,
+    )
+    thread.start()
+
+    if not wait_for_port(port, timeout=5.0):
+        pytest.skip("WS server did not start in time; skipping system tests")
+
+    yield port
+
+    Config.WS_REQUIRE_TOKEN = original_require
+    Config.WS_AUTH_TOKEN = original_token
+    Config.WS_ALLOWED_ORIGINS = original_origins
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 
 
 class TestConfig(Config):
@@ -36,6 +113,11 @@ def app(tmp_path):
     settings_store.reset()
     rate_limiter.reset()
     update_ws_client_count(0)
+    eff_svc._cache.clear()
+    eff_svc._mtime_map.clear()
+    eff_svc._path_to_name.clear()
+    eff_svc._last_scan = 0.0
+    ws_queue.dequeue_all()
 
 
 @pytest.fixture()

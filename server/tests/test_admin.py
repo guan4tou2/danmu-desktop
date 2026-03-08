@@ -260,6 +260,8 @@ def test_effects_list_returns_effects(client):
 
 def test_effects_list_has_file_info(client):
     """Each effect entry must include filename and label."""
+    import time
+
     from server.services import effects as eff_svc
 
     eff_svc._cache["testfx"] = {
@@ -271,6 +273,7 @@ def test_effects_list_has_file_info(client):
         "animation": "dme-test 1s",
     }
     eff_svc._path_to_name["/tmp/testfx.dme"] = "testfx"
+    eff_svc._last_scan = time.monotonic()  # 防止 list_with_file_info 觸發掃描覆蓋注入資料
     login(client)
     res = client.get("/admin/effects")
     assert res.status_code == 200
@@ -422,6 +425,20 @@ def test_effects_save_requires_csrf(client):
     assert res.status_code == 403
 
 
+def test_effects_save_validation_failure_missing_content(client):
+    res = authed_post(client, "/admin/effects/save", {"name": "rainbow"})
+    assert res.status_code == 400
+    data = json.loads(res.data)
+    assert data["error"] == "Validation failed"
+
+
+def test_effects_delete_validation_failure_missing_name(client):
+    res = authed_post(client, "/admin/effects/delete", {})
+    assert res.status_code == 400
+    data = json.loads(res.data)
+    assert data["error"] == "Validation failed"
+
+
 def test_effects_save_not_found(client, tmp_path, monkeypatch):
     from server.services import effects as eff_svc
 
@@ -476,3 +493,77 @@ def test_effects_save_ok(client, tmp_path, monkeypatch):
     eff_svc._cache.pop("editable", None)
     eff_svc._path_to_name.pop(str(dme_file), None)
     eff_svc._mtime_map.pop(str(dme_file), None)
+
+
+# ---------------------------------------------------------------------------
+# Change password (/admin/change_password)
+# ---------------------------------------------------------------------------
+
+
+def _change_pw(client, token, current, new_pw, confirm):
+    return client.post(
+        "/admin/change_password",
+        json={"current_password": current, "new_password": new_pw, "confirm_password": confirm},
+        headers={"X-CSRF-Token": token},
+    )
+
+
+def test_change_password_requires_login(client):
+    with client.session_transaction() as sess:
+        sess["csrf_token"] = "t"
+    resp = client.post(
+        "/admin/change_password",
+        json={"current_password": "test", "new_password": "newpass1!", "confirm_password": "newpass1!"},
+        headers={"X-CSRF-Token": "t"},
+    )
+    assert resp.status_code == 401
+
+
+def test_change_password_requires_csrf(client):
+    resp = client.post(
+        "/admin/change_password",
+        json={"current_password": "test", "new_password": "newpass1!", "confirm_password": "newpass1!"},
+    )
+    assert resp.status_code == 403
+
+
+def test_change_password_wrong_current(client):
+    token = csrf_token(client)
+    resp = _change_pw(client, token, "wrong", "newpass123", "newpass123")
+    assert resp.status_code == 403
+    assert "incorrect" in json.loads(resp.data)["error"]
+
+
+def test_change_password_mismatch(client):
+    token = csrf_token(client)
+    resp = _change_pw(client, token, "test", "newpass123", "different")
+    assert resp.status_code == 400
+    assert "match" in json.loads(resp.data)["error"]
+
+
+def test_change_password_too_short(client):
+    token = csrf_token(client)
+    resp = _change_pw(client, token, "test", "short", "short")
+    assert resp.status_code == 400
+    assert "8 characters" in json.loads(resp.data)["error"]
+
+
+def test_change_password_missing_fields(client):
+    token = csrf_token(client)
+    resp = client.post(
+        "/admin/change_password",
+        json={"current_password": "test"},
+        headers={"X-CSRF-Token": token},
+    )
+    assert resp.status_code == 400
+    assert "required" in json.loads(resp.data)["error"]
+
+
+def test_change_password_success(client, monkeypatch):
+    import server.routes.main as main_module
+
+    monkeypatch.setattr(main_module, "save_runtime_hash", lambda h: None)
+    token = csrf_token(client)
+    resp = _change_pw(client, token, "test", "newpassword1!", "newpassword1!")
+    assert resp.status_code == 200
+    assert "success" in json.loads(resp.data)["message"].lower()

@@ -9,12 +9,8 @@ from server.services import effects as eff_svc
 # ─── 測試 .dme 解析 ───────────────────────────────────────────────────────────
 
 
-def login(client):
-    return client.post("/login", data={"password": "test"}, follow_redirects=True)
-
-
 def csrf_token(client):
-    login(client)
+    client.post("/login", data={"password": "test"}, follow_redirects=True)
     with client.session_transaction() as sess:
         return sess["csrf_token"]
 
@@ -222,6 +218,8 @@ def test_interpolate_strips_outer_quotes():
 
 def _inject_effect(name, keyframes, animation, params=None):
     """直接插入一個假效果到 _cache 中（不需要 .dme 檔案）。"""
+    import time
+
     eff_svc._cache[name] = {
         "name": name,
         "label": name,
@@ -230,6 +228,8 @@ def _inject_effect(name, keyframes, animation, params=None):
         "keyframes": keyframes,
         "animation": animation,
     }
+    # 防止 get_effect() 的懶載入掃描覆蓋注入的測試資料
+    eff_svc._last_scan = time.monotonic()
 
 
 def test_render_effects_single():
@@ -296,6 +296,7 @@ def test_render_effects_none_effect_ignored():
 
 
 def test_render_effects_empty_returns_none():
+    eff_svc._cache.clear()
     result = eff_svc.render_effects([])
     assert result is None
 
@@ -389,3 +390,260 @@ def test_fire_with_no_effects(client, monkeypatch):
     payload = {"text": "No effects", "effects": []}
     resp = client.post("/fire", json=payload)
     assert resp.status_code == 200
+
+
+# ─── _parse_dme 補充 ──────────────────────────────────────────────────────────
+
+
+def test_parse_dme_invalid_yaml(tmp_path):
+    """YAML 格式錯誤應回傳 None"""
+    dme = _make_dme(tmp_path, ": broken: [yaml not closed")
+    result = eff_svc._parse_dme(dme)
+    assert result is None
+
+
+def test_parse_dme_missing_name_key(tmp_path):
+    """缺少 name 欄位應回傳 None"""
+    dme = _make_dme(tmp_path, "label: 無名\nkeyframes: ''\nanimation: ''\n")
+    result = eff_svc._parse_dme(dme)
+    assert result is None
+
+
+def test_parse_dme_int_param(tmp_path):
+    """int 類型參數應正確解析"""
+    dme = _make_dme(
+        tmp_path,
+        """
+        name: blink
+        label: 閃爍
+        params:
+          count:
+            type: int
+            default: 3
+            min: 1
+            max: 20
+        keyframes: "@keyframes dme-blink { to { opacity: 0; } }"
+        animation: "dme-blink 0.5s step-end {count}"
+    """,
+    )
+    result = eff_svc._parse_dme(dme)
+    assert result is not None
+    assert result["params"]["count"]["type"] == "int"
+    assert result["params"]["count"]["default"] == 3
+
+
+def test_parse_dme_non_dict_param_skipped(tmp_path):
+    """param 值非 dict 應被略過，正常 param 保留"""
+    dme = _make_dme(
+        tmp_path,
+        """
+        name: test
+        label: 測試
+        params:
+          bad_param: "just a string"
+          good_param:
+            type: float
+            default: 1.0
+            min: 0.1
+            max: 5.0
+        keyframes: ""
+        animation: "test 1s"
+    """,
+    )
+    result = eff_svc._parse_dme(dme)
+    assert result is not None
+    assert "bad_param" not in result["params"]
+    assert "good_param" in result["params"]
+
+
+def test_parse_dme_label_defaults_to_name(tmp_path):
+    """未提供 label 時應以 name 作為 label"""
+    dme = _make_dme(tmp_path, "name: myfx\nkeyframes: ''\nanimation: 'dme-myfx 1s'\n")
+    result = eff_svc._parse_dme(dme)
+    assert result is not None
+    assert result["label"] == "myfx"
+
+
+# ─── _sanitize_param 補充 ─────────────────────────────────────────────────────
+
+
+def test_sanitize_unknown_type_returns_empty():
+    """不支援的 param type 應回傳空字串"""
+    pdef = {"type": "color", "default": "#fff"}
+    assert eff_svc._sanitize_param("c", "#ff0000", pdef) == ""
+
+
+def test_sanitize_int_non_numeric_uses_default():
+    """int 類型接到非數字時應 fallback 到 default"""
+    pdef = {"type": "int", "min": 1, "max": 10, "default": 5}
+    assert eff_svc._sanitize_param("n", "abc", pdef) == "5"
+
+
+def test_sanitize_select_empty_options_uses_default():
+    """select 無選項時應回傳 default"""
+    pdef = {"type": "select", "options": [], "default": "normal"}
+    assert eff_svc._sanitize_param("d", "anything", pdef) == "normal"
+
+
+def test_sanitize_none_value_uses_default():
+    """None 值應 fallback 到 default"""
+    pdef = {"type": "float", "min": 0.0, "max": 1.0, "default": 0.5}
+    assert eff_svc._sanitize_param("v", None, pdef) == "0.5"
+
+
+# ─── _interpolate 補充 ────────────────────────────────────────────────────────
+
+
+def test_interpolate_no_placeholders():
+    """無佔位符的模板應原樣返回"""
+    result = eff_svc._interpolate("dme-spin 1s linear infinite", {})
+    assert result == "dme-spin 1s linear infinite"
+
+
+def test_interpolate_strips_single_quotes():
+    """外框單引號應被去除"""
+    result = eff_svc._interpolate("'dme-spin 1s linear'", {})
+    assert result == "dme-spin 1s linear"
+
+
+# ─── render_effects 補充 ──────────────────────────────────────────────────────
+
+
+def test_render_effects_uses_param_defaults():
+    """使用者不提供 params 時應使用 param 的 default 值"""
+    eff_svc._cache.clear()
+    _inject_effect(
+        "blink",
+        "@keyframes dme-blink { to { opacity: 0; } }",
+        "dme-blink {speed}s infinite",
+        {"speed": {"type": "float", "default": 0.5, "min": 0.1, "max": 3.0}},
+    )
+    result = eff_svc.render_effects([{"name": "blink", "params": {}}])
+    assert result is not None
+    assert "0.5s" in result["animation"]
+
+
+def test_render_effects_styleid_is_deterministic():
+    """相同輸入應產生相同 styleId（可作為 CSS cache key）"""
+    eff_svc._cache.clear()
+    _inject_effect(
+        "spin",
+        "@keyframes dme-spin { to { transform: rotate(360deg); } }",
+        "dme-spin 1s linear infinite",
+    )
+    r1 = eff_svc.render_effects([{"name": "spin", "params": {}}])
+    r2 = eff_svc.render_effects([{"name": "spin", "params": {}}])
+    assert r1 is not None and r2 is not None
+    assert r1["styleId"] == r2["styleId"]
+
+
+def test_render_effects_empty_animation_skipped():
+    """animation 為空字串的特效不計入 animation_parts，最終回傳 None"""
+    eff_svc._cache.clear()
+    _inject_effect("noani", "@keyframes dme-noani {}", "")
+    result = eff_svc.render_effects([{"name": "noani", "params": {}}])
+    assert result is None
+
+
+def test_render_effects_select_injection_blocked():
+    """select 型參數：合法值通過，非白名單值 fallback 到 default"""
+    eff_svc._cache.clear()
+    _inject_effect(
+        "spin",
+        "@keyframes dme-spin { to { transform: rotate(360deg); } }",
+        "dme-spin 1s linear infinite {direction}",
+        {
+            "direction": {
+                "type": "select",
+                "default": "normal",
+                "options": [{"value": "normal"}, {"value": "reverse"}],
+            }
+        },
+    )
+    r1 = eff_svc.render_effects([{"name": "spin", "params": {"direction": "reverse"}}])
+    assert r1 is not None
+    assert "reverse" in r1["animation"]
+
+    r2 = eff_svc.render_effects([{"name": "spin", "params": {"direction": "evil;injection"}}])
+    assert r2 is not None
+    assert "evil" not in r2["animation"]
+    assert "normal" in r2["animation"]  # fallback 到 default
+
+
+# ─── load_all / get_effect 測試 ───────────────────────────────────────────────
+
+
+def test_load_all_excludes_keyframes_animation():
+    """load_all 回傳的 meta 不應含 keyframes / animation"""
+    eff_svc._cache.clear()
+    _inject_effect("spin", "@keyframes dme-spin{}", "dme-spin 1s infinite")
+    effects = eff_svc.load_all()
+    spin = next((e for e in effects if e["name"] == "spin"), None)
+    assert spin is not None
+    assert "keyframes" not in spin
+    assert "animation" not in spin
+
+
+def test_get_effect_returns_full_dict():
+    """get_effect 應回傳含 keyframes / animation 的完整定義"""
+    eff_svc._cache.clear()
+    _inject_effect("glow", "@keyframes dme-glow{}", "dme-glow 2s ease infinite")
+    effect = eff_svc.get_effect("glow")
+    assert effect is not None
+    assert effect["keyframes"] == "@keyframes dme-glow{}"
+    assert effect["animation"] == "dme-glow 2s ease infinite"
+
+
+def test_get_effect_unknown_returns_none():
+    """get_effect 查無特效時回傳 None"""
+    eff_svc._cache.clear()
+    assert eff_svc.get_effect("definitely_not_a_real_effect") is None
+
+
+# ─── API 端點補充 ─────────────────────────────────────────────────────────────
+
+
+def test_reload_effects_requires_login(client):
+    """通過 CSRF 但未登入應回傳 401"""
+    with client.session_transaction() as sess:
+        sess["csrf_token"] = "testtoken"
+    resp = client.post("/effects/reload", headers={"X-CSRF-Token": "testtoken"})
+    assert resp.status_code == 401
+
+
+def test_list_effects_endpoint_includes_params(client):
+    """list endpoint 應包含 params 定義，供前端建立參數 UI"""
+    eff_svc._cache.clear()
+    _inject_effect(
+        "zoom",
+        "@keyframes dme-zoom{}",
+        "dme-zoom 1s infinite",
+        {"duration": {"type": "float", "default": 0.8, "min": 0.2, "max": 3.0}},
+    )
+    resp = client.get("/effects")
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    zoom = next((e for e in data["effects"] if e["name"] == "zoom"), None)
+    assert zoom is not None
+    assert "params" in zoom
+    assert "duration" in zoom["params"]
+
+
+def test_fire_effects_disabled_in_settings(client, monkeypatch):
+    """Effects 設定關閉時，fire 不應渲染特效（effectCss 為 None）"""
+    from server.services import messaging as msg
+    from server.services.settings import set_toggle
+    from server.services.ws_state import update_ws_client_count
+
+    forwarded = []
+    monkeypatch.setattr(msg, "forward_to_ws_server", lambda d: forwarded.append(d) or True)
+    update_ws_client_count(1)
+
+    set_toggle("Effects", False)
+    eff_svc._cache.clear()
+    _inject_effect("zoom", "@keyframes dme-zoom{}", "dme-zoom 1s infinite")
+
+    resp = client.post("/fire", json={"text": "Test", "effects": [{"name": "zoom", "params": {}}]})
+    assert resp.status_code == 200
+    assert forwarded
+    assert forwarded[0].get("effectCss") is None

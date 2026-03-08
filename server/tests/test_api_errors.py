@@ -69,3 +69,21 @@ def test_health_endpoint_has_request_id(client):
     assert response.is_json
     assert response.get_json()["status"] == "healthy"
     assert "X-Request-ID" in response.headers
+
+
+def test_fire_no_ws_client_returns_503(client):
+    """無 overlay 連線時 /fire 應回傳 503"""
+    update_ws_client_count(0)
+    resp = client.post("/fire", json={"text": "hello"})
+    assert resp.status_code == 503
+    assert resp.is_json
+    assert "overlay" in resp.get_json()["error"].lower()
+
+
+def test_fire_invalid_image_url_returns_400(client):
+    """isImage=True 但 text 非合法 URL 應回傳 400"""
+    update_ws_client_count(1)
+    resp = client.post("/fire", json={"text": "not-a-url", "isImage": True})
+    assert resp.status_code == 400
+    assert resp.is_json
+    assert "url" in resp.get_json()["error"].lower()
