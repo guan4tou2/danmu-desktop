@@ -102,6 +102,10 @@ function initOverlayControls({
     );
 
     const api = window.API;
+    if (!api) {
+      console.error("[Renderer] window.API not available");
+      return;
+    }
     api.create(IP, PORT, displayIndex, enableSyncMultiDisplay, startupAnimationSettings, wsToken);
 
     state.overlayActive = true;
@@ -155,6 +159,10 @@ function initOverlayControls({
     hideConnectionStatus(2000);
 
     const api = window.API;
+    if (!api) {
+      console.error("[Renderer] window.API not available");
+      return;
+    }
     api.close();
   });
 

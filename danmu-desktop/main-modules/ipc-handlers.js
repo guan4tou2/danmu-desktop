@@ -109,12 +109,11 @@ function setupIpcHandlers(getMainWindow, childWindows) {
       return [];
     }
     const displays = screen.getAllDisplays();
-    const sanitizedDisplays = displays.map((d) => ({
-      ...d,
-      id: sanitizeLog(d.id),
-    }));
-    console.log("[Main] getDisplays handled, returning:", sanitizedDisplays);
-    return sanitizedDisplays;
+    console.log(
+      "[Main] getDisplays handled, returning %d displays",
+      displays.length
+    );
+    return displays;
   });
 
   // Get system locale — restricted to main window
@@ -216,6 +215,32 @@ function setupIpcHandlers(getMainWindow, childWindows) {
     if (!Number.isFinite(opacity) || opacity < 0 || opacity > 100) {
       console.warn("[Main] update-overlay-settings: opacity out of range");
       return;
+    }
+
+    // Validate size if present
+    if (settings.size !== undefined) {
+      const size = Number(settings.size);
+      if (!Number.isFinite(size) || size <= 0 || size > 500) {
+        console.warn("[Main] update-overlay-settings: invalid size");
+        return;
+      }
+    }
+
+    // Validate speed if present
+    if (settings.speed !== undefined) {
+      const speed = Number(settings.speed);
+      if (!Number.isFinite(speed) || speed < 1 || speed > 10) {
+        console.warn("[Main] update-overlay-settings: invalid speed");
+        return;
+      }
+    }
+
+    // Validate color if present
+    if (settings.color !== undefined && typeof settings.color === "string") {
+      if (!/^#[0-9a-fA-F]{6}$/.test(settings.color)) {
+        console.warn("[Main] update-overlay-settings: invalid color format");
+        return;
+      }
     }
 
     console.log("[Main] update-overlay-settings received");
