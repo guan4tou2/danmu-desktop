@@ -25,13 +25,9 @@ from ..services.validation import (
     validate_request,
 )
 from ..services.ws_state import get_ws_client_count
-from ..utils import is_valid_image_url, sanitize_log_string
+from ..utils import is_valid_image_url, json_response as _json_response, sanitize_log_string
 
 api_bp = Blueprint("api", __name__)
-
-
-def _json_response(payload, status=200):
-    return make_response(json.dumps(payload), status, {"Content-Type": "application/json"})
 
 
 def _internal_plain_error_response():

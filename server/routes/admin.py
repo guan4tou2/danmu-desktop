@@ -32,7 +32,7 @@ from ..services.validation import (
     ToggleSettingSchema,
     validate_request,
 )
-from ..utils import allowed_file, sanitize_log_string
+from ..utils import allowed_file, json_response as _json_response, sanitize_log_string
 
 admin_bp = Blueprint("admin_bp", __name__, url_prefix="/admin")
 
@@ -46,10 +46,6 @@ def _broadcast_blacklist_update():
         current_app.logger.warning(
             "Failed to broadcast blacklist update: %s", sanitize_log_string(str(exc))
         )
-
-
-def _json_response(data, status=200):
-    return make_response(json.dumps(data), status, {"Content-Type": "application/json"})
 
 
 def _ensure_logged_in():

@@ -1,9 +1,15 @@
+import json
 import re
 from typing import Any, Dict, Optional
 
-from flask import current_app, g, jsonify
+from flask import current_app, g, jsonify, make_response
 
 from .state import ALLOWED_EXTENSIONS
+
+
+def json_response(data, status=200):
+    """Standard JSON response helper."""
+    return make_response(json.dumps(data), status, {"Content-Type": "application/json"})
 
 
 def allowed_file(filename: str) -> bool:

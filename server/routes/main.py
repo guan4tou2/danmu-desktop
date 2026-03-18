@@ -1,11 +1,9 @@
 import hmac
-import json
 
 from flask import (
     Blueprint,
     current_app,
     flash,
-    make_response,
     redirect,
     render_template,
     request,
@@ -22,7 +20,7 @@ from ..services.security import (
     verify_password,
 )
 from ..services.settings import get_options
-from ..utils import sanitize_log_string
+from ..utils import json_response as _json_response, sanitize_log_string
 
 main_bp = Blueprint("main", __name__)
 
@@ -65,10 +63,6 @@ def logout():
     session.pop("logged_in", None)
     session.pop("csrf_token", None)
     return redirect(url_for("admin_bp.admin"))
-
-
-def _json_response(data, status=200):
-    return make_response(json.dumps(data), status, {"Content-Type": "application/json"})
 
 
 def _verify_current_password(candidate: str) -> bool:
