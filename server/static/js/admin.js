@@ -1283,7 +1283,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function handleEffectModalKeydown(event) {
     const modal = document.getElementById("effectEditModal");
-    if (!modal || modal.style.display === "none") return;
+    if (!modal || modal.classList.contains("hidden")) return;
 
     if (event.key === "Escape") {
       event.preventDefault();
@@ -1314,7 +1314,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function hideEffectModal() {
     const modal = document.getElementById("effectEditModal");
     if (!modal) return;
-    modal.style.display = "none";
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
     modal.removeEventListener("keydown", handleEffectModalKeydown);
     if (_effectModalRestoreFocusEl) {
       _effectModalRestoreFocusEl.focus();
@@ -1327,25 +1328,25 @@ document.addEventListener("DOMContentLoaded", () => {
     // ── Inject Effect Edit Modal (fixed overlay) ──────────────────────────────
     if (!document.getElementById("effectEditModal")) {
       document.body.insertAdjacentHTML("beforeend", `
-        <div id="effectEditModal" role="dialog" aria-modal="true" aria-labelledby="effectEditModalTitle" aria-describedby="effectEditModalFile" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.72);">
-          <div style="background:#0f172a;border:1px solid #1e293b;border-radius:1rem;width:100%;max-width:700px;margin:0 1rem;box-shadow:0 32px 80px rgba(0,0,0,0.8);display:flex;flex-direction:column;max-height:88vh;overflow:hidden;">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid #1e293b;flex-shrink:0;">
+        <div id="effectEditModal" role="dialog" aria-modal="true" aria-labelledby="effectEditModalTitle" aria-describedby="effectEditModalFile" class="hidden fixed inset-0 z-[9999] items-center justify-content-center" style="background:rgba(0,0,0,0.72);">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-[700px] mx-4 shadow-2xl flex flex-col max-h-[88vh] overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800 shrink-0">
               <div>
-                <p id="effectEditModalTitle" style="font-weight:700;color:#f1f5f9;font-size:0.95rem;margin:0;"></p>
-                <p id="effectEditModalFile" style="font-size:0.7rem;color:#64748b;font-family:monospace;margin:0.15rem 0 0;"></p>
+                <p id="effectEditModalTitle" class="font-bold text-slate-100 text-sm m-0"></p>
+                <p id="effectEditModalFile" class="text-[0.7rem] text-slate-500 font-mono mt-0.5 m-0"></p>
               </div>
-              <button id="effectEditModalClose" title="Close" aria-label="Close" style="color:#64748b;background:none;border:none;cursor:pointer;padding:0.25rem;border-radius:0.4rem;display:flex;align-items:center;line-height:1;">
+              <button id="effectEditModalClose" title="Close" aria-label="Close" class="text-slate-500 hover:text-slate-300 bg-transparent border-none cursor-pointer p-1 rounded flex items-center leading-none transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
-            <div style="flex:1;overflow:hidden;padding:1rem 1.25rem;min-height:0;">
+            <div class="flex-1 overflow-hidden px-5 py-4 min-h-0">
               <textarea id="effectEditModalTextarea"
-                style="width:100%;height:100%;min-height:300px;background:#020617;color:#cbd5e1;font-size:0.75rem;font-family:'Courier New',Courier,monospace;border:1px solid #334155;border-radius:0.5rem;padding:0.75rem;resize:none;outline:none;box-sizing:border-box;display:block;"
+                class="w-full h-full min-h-[300px] bg-slate-950 text-slate-300 text-xs font-mono border border-slate-700 rounded-lg p-3 resize-none outline-none block"
                 spellcheck="false"></textarea>
             </div>
-            <div style="display:flex;justify-content:flex-end;gap:0.5rem;padding:0.75rem 1.25rem;border-top:1px solid #1e293b;flex-shrink:0;">
-              <button id="effectEditModalCancel" style="padding:0.4rem 1.1rem;font-size:0.8rem;color:#94a3b8;border:1px solid #334155;border-radius:0.5rem;background:none;cursor:pointer;">Cancel</button>
-              <button id="effectEditModalSave" style="padding:0.4rem 1.1rem;font-size:0.8rem;font-weight:600;background:#0369a1;color:#fff;border:none;border-radius:0.5rem;cursor:pointer;">Save Changes</button>
+            <div class="flex justify-end gap-2 px-5 py-3 border-t border-slate-800 shrink-0">
+              <button id="effectEditModalCancel" class="px-4 py-1.5 text-sm text-slate-400 border border-slate-700 rounded-lg bg-transparent cursor-pointer hover:text-slate-200 hover:border-slate-500 transition-colors">Cancel</button>
+              <button id="effectEditModalSave" class="px-4 py-1.5 text-sm font-semibold bg-sky-700 hover:bg-sky-600 text-white border-none rounded-lg cursor-pointer transition-colors">Save Changes</button>
             </div>
           </div>
         </div>
@@ -1461,24 +1462,21 @@ document.addEventListener("DOMContentLoaded", () => {
       const card = document.createElement("div");
       const tooltip = [eff.description, `file: ${eff.filename}`].filter(Boolean).join("\n");
       card.title = tooltip;
-      card.style.cssText =
-        "background:rgba(30,41,59,0.6);border:1px solid rgba(71,85,105,0.4);border-radius:0.5rem;padding:0.35rem 0.5rem;display:flex;align-items:center;gap:0.5rem;transition:border-color 0.15s;min-width:0;";
-      card.addEventListener("mouseenter", () => { card.style.borderColor = "rgba(100,116,139,0.65)"; });
-      card.addEventListener("mouseleave", () => { card.style.borderColor = "rgba(71,85,105,0.4)"; });
+      card.className = "bg-slate-800/60 border border-slate-600/40 rounded-lg px-2 py-1.5 flex items-center gap-2 transition-colors min-w-0 hover:border-slate-500/65";
 
       // ── Indicator dot ─────────────────────────────────────────────────────
       const dot = document.createElement("span");
-      dot.style.cssText = "width:6px;height:6px;border-radius:50%;background:#38bdf8;flex-shrink:0;";
+      dot.className = "w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0";
       card.appendChild(dot);
 
       // ── Text: label + name ────────────────────────────────────────────────
       const textWrap = document.createElement("div");
-      textWrap.style.cssText = "flex:1;min-width:0;";
+      textWrap.className = "flex-1 min-w-0";
       const labelEl = document.createElement("div");
-      labelEl.style.cssText = "font-weight:600;color:#e2e8f0;font-size:0.775rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;";
+      labelEl.className = "font-semibold text-slate-200 text-xs whitespace-nowrap overflow-hidden text-ellipsis leading-tight";
       labelEl.textContent = eff.label || eff.name;
       const nameEl = document.createElement("div");
-      nameEl.style.cssText = "font-size:0.62rem;color:#64748b;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;";
+      nameEl.className = "text-[0.62rem] text-slate-500 font-mono whitespace-nowrap overflow-hidden text-ellipsis leading-tight";
       nameEl.textContent = eff.name;
       textWrap.appendChild(labelEl);
       textWrap.appendChild(nameEl);
@@ -1486,18 +1484,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // ── Buttons ───────────────────────────────────────────────────────────
       const editBtn = document.createElement("button");
-      editBtn.style.cssText =
-        "padding:0.2rem 0.5rem;font-size:0.65rem;font-weight:500;color:#94a3b8;border:1px solid #334155;border-radius:0.35rem;background:none;cursor:pointer;flex-shrink:0;transition:color 0.15s,border-color 0.15s;";
+      editBtn.className = "px-2 py-0.5 text-[0.65rem] font-medium text-slate-400 border border-slate-700 rounded bg-transparent cursor-pointer shrink-0 transition-colors hover:text-sky-300 hover:border-sky-500";
       editBtn.textContent = "Edit";
-      editBtn.addEventListener("mouseenter", () => { editBtn.style.color = "#7dd3fc"; editBtn.style.borderColor = "#38bdf8"; });
-      editBtn.addEventListener("mouseleave", () => { editBtn.style.color = "#94a3b8"; editBtn.style.borderColor = "#334155"; });
 
       const delBtn = document.createElement("button");
-      delBtn.style.cssText = "padding:0.2rem;color:#475569;background:none;border:none;cursor:pointer;border-radius:0.3rem;display:flex;align-items:center;flex-shrink:0;transition:color 0.15s;";
+      delBtn.className = "p-0.5 text-slate-600 bg-transparent border-none cursor-pointer rounded flex items-center shrink-0 transition-colors hover:text-red-400";
       delBtn.title = `Delete ${eff.label || eff.name}`;
       delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
-      delBtn.addEventListener("mouseenter", () => { delBtn.style.color = "#f87171"; });
-      delBtn.addEventListener("mouseleave", () => { delBtn.style.color = "#475569"; });
 
       card.appendChild(editBtn);
       card.appendChild(delBtn);
@@ -1521,7 +1514,8 @@ document.addEventListener("DOMContentLoaded", () => {
         textarea.disabled = true;
         saveBtn.disabled = true;
         modal.dataset.effectName = eff.name;
-        modal.style.display = "flex";
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
         modal.addEventListener("keydown", handleEffectModalKeydown);
         textarea.focus();
         try {
@@ -1570,6 +1564,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function initAdminWebSocket() {
     const wsUrl = (window.DANMU_CONFIG || {}).wsUrl;
     if (!wsUrl) return;
+    let _wsReconnectAttempts = 0;
+    const _wsMaxReconnectDelay = 60000;
 
     function connect() {
       try {
@@ -1588,12 +1584,18 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         };
 
+        _adminWs.onopen = () => {
+          _wsReconnectAttempts = 0;
+        };
+
         _adminWs.onclose = () => {
           if (!_adminWsReconnectTimer) {
+            const delay = Math.min(5000 * Math.pow(2, _wsReconnectAttempts), _wsMaxReconnectDelay);
+            _wsReconnectAttempts++;
             _adminWsReconnectTimer = setTimeout(() => {
               _adminWsReconnectTimer = null;
               connect();
-            }, 5000);
+            }, delay);
           }
         };
 
