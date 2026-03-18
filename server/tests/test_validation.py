@@ -86,6 +86,37 @@ def test_fire_schema_fingerprint_too_long():
     assert "fingerprint" in errors
 
 
+def test_fire_schema_rejects_oversized_effect_name():
+    """Effect name longer than 128 chars should be rejected."""
+    long_name = "a" * 129
+    _, errors = _load(
+        FireRequestSchema,
+        {"text": "hi", "effects": [{"name": long_name, "params": {}}]},
+    )
+    assert errors is not None
+    assert "effects" in errors
+
+
+def test_fire_schema_accepts_valid_effect_name():
+    """Effect name within 128 chars should be accepted."""
+    result, errors = _load(
+        FireRequestSchema,
+        {"text": "hi", "effects": [{"name": "a" * 128, "params": {}}]},
+    )
+    assert errors is None
+    assert len(result["effects"]) == 1
+
+
+def test_fire_schema_rejects_non_string_effect_name():
+    """Non-string effect name should be rejected."""
+    _, errors = _load(
+        FireRequestSchema,
+        {"text": "hi", "effects": [{"name": 12345, "params": {}}]},
+    )
+    assert errors is not None
+    assert "effects" in errors
+
+
 # ─── BlacklistKeywordSchema ───────────────────────────────────────────────────
 
 

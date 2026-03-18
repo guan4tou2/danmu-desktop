@@ -1,6 +1,6 @@
 """輸入驗證服務"""
 
-from marshmallow import EXCLUDE, Schema, ValidationError, fields, validate
+from marshmallow import EXCLUDE, Schema, ValidationError, fields, validate, validates
 
 # Valid setting type keys (mirrors Config.SETTABLE_OPTION_KEYS)
 _VALID_SETTING_TYPES = {
@@ -31,6 +31,13 @@ class FireRequestSchema(Schema):
     size = fields.Int(load_default=None, validate=validate.Range(min=1, max=200))
     speed = fields.Int(load_default=None, validate=validate.Range(min=1, max=10))
     fingerprint = fields.Str(load_default=None, validate=validate.Length(max=128))
+
+    @validates("effects")
+    def validate_effects(self, value, **kwargs):
+        for item in value:
+            name = item.get("name", "")
+            if not isinstance(name, str) or len(name) > 128:
+                raise ValidationError("Effect name must be a string with max 128 chars")
 
     class Meta:
         unknown = EXCLUDE
