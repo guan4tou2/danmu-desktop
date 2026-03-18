@@ -164,3 +164,76 @@ def test_redis_rate_limiter_rejects_when_eval_returns_zero():
     allowed = limiter.allow("ip:127.0.0.1", 1, 60)
 
     assert allowed is False
+
+
+# ─── timing-safe password comparison ─────────────────────────────────────────
+
+
+def test_login_plaintext_uses_hmac_compare_digest(client, app):
+    """Plaintext password path must use constant-time comparison."""
+    import hmac
+    from unittest.mock import patch
+
+    app.config["ADMIN_PASSWORD"] = "testpass"
+    app.config["ADMIN_PASSWORD_HASHED"] = ""
+
+    with patch("server.routes.main.hmac") as mock_hmac:
+        mock_hmac.compare_digest.return_value = True
+        client.post("/login", data={"password": "testpass"})
+        mock_hmac.compare_digest.assert_called_once()
+
+
+def test_save_and_load_runtime_hash_roundtrip(tmp_path, app, monkeypatch):
+    """save_runtime_hash -> load_runtime_hash should return the same hash."""
+    import os
+    import stat
+
+    import server.config as config_module
+
+    hash_file = tmp_path / "admin_hash"
+    monkeypatch.setattr(config_module, "_HASH_FILE", hash_file)
+
+    test_hash = "$2b$12$somehashedvalue"
+    config_module.save_runtime_hash(test_hash)
+
+    loaded = config_module.load_runtime_hash()
+    assert loaded == test_hash
+
+
+def test_save_runtime_hash_sets_restrictive_permissions(tmp_path, app, monkeypatch):
+    """Hash file should have 0o600 permissions."""
+    import os
+    import stat
+
+    import server.config as config_module
+
+    hash_file = tmp_path / "admin_hash"
+    monkeypatch.setattr(config_module, "_HASH_FILE", hash_file)
+
+    config_module.save_runtime_hash("testhash")
+    mode = stat.S_IMODE(os.stat(str(hash_file)).st_mode)
+    assert mode == 0o600
+
+
+def test_verify_current_password_plaintext_uses_hmac(client, app):
+    """_verify_current_password plaintext path must use constant-time comparison."""
+    from unittest.mock import patch
+
+    app.config["ADMIN_PASSWORD"] = "oldpass"
+    app.config["ADMIN_PASSWORD_HASHED"] = ""
+
+    with patch("server.routes.main.hmac") as mock_hmac:
+        mock_hmac.compare_digest.return_value = True
+        client.post("/login", data={"password": "oldpass"})
+        with client.session_transaction() as sess:
+            sess["logged_in"] = True
+        client.post(
+            "/admin/change_password",
+            json={
+                "current_password": "oldpass",
+                "new_password": "newpass123",
+                "confirm_password": "newpass123",
+            },
+            headers={"X-CSRFToken": "test"},
+        )
+        assert mock_hmac.compare_digest.call_count >= 1

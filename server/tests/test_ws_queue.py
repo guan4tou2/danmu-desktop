@@ -123,3 +123,29 @@ def test_enqueue_preserves_arbitrary_payload():
     ws_queue.enqueue_message(payload)
     result = ws_queue.dequeue_all()
     assert result[0] == payload
+
+
+def test_enqueue_overflow_drops_oldest():
+    """When queue exceeds max size, oldest messages are dropped."""
+    from collections import deque
+
+    ws_queue.dequeue_all()  # drain
+    original_max = ws_queue._MAX_QUEUE_SIZE
+    original_queue = ws_queue._queue
+
+    try:
+        ws_queue._MAX_QUEUE_SIZE = 3
+        ws_queue._queue = deque(maxlen=3)
+
+        ws_queue.enqueue_message({"text": "first"})
+        ws_queue.enqueue_message({"text": "second"})
+        ws_queue.enqueue_message({"text": "third"})
+        ws_queue.enqueue_message({"text": "fourth"})
+
+        messages = ws_queue.dequeue_all()
+        assert len(messages) == 3
+        assert messages[0]["text"] == "second"
+        assert messages[2]["text"] == "fourth"
+    finally:
+        ws_queue._MAX_QUEUE_SIZE = original_max
+        ws_queue._queue = original_queue

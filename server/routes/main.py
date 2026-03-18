@@ -1,3 +1,4 @@
+import hmac
 import json
 
 from flask import (
@@ -46,8 +47,8 @@ def login():
         # 使用雜湊驗證
         password_valid = verify_password(password, admin_password_hashed)
     else:
-        # 向後相容：使用明文比較
-        password_valid = password == admin_password
+        # 向後相容：使用明文比較（常數時間，防止 timing attack）
+        password_valid = hmac.compare_digest(password, admin_password)
 
     if password_valid:
         session.clear()
@@ -75,7 +76,7 @@ def _verify_current_password(candidate: str) -> bool:
     hashed = current_app.config.get("ADMIN_PASSWORD_HASHED", "")
     if hashed:
         return verify_password(candidate, hashed)
-    return candidate == current_app.config.get("ADMIN_PASSWORD", "")
+    return hmac.compare_digest(candidate, current_app.config.get("ADMIN_PASSWORD", ""))
 
 
 @main_bp.route("/admin/change_password", methods=["POST"])

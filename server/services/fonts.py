@@ -1,5 +1,6 @@
 import os
 import time
+from pathlib import Path
 
 from flask import current_app, url_for
 from werkzeug.utils import secure_filename
@@ -11,14 +12,15 @@ from ..utils import sanitize_log_string
 
 def build_font_payload(chosen_font_name: str):
     potential_font_filename = secure_filename(f"{chosen_font_name}.ttf")
-    normalized_path = os.path.normpath(os.path.join(state.USER_FONTS_DIR, potential_font_filename))
-    if not normalized_path.startswith(state.USER_FONTS_DIR):
+    fonts_dir = Path(state.USER_FONTS_DIR).resolve()
+    normalized_path = (fonts_dir / potential_font_filename).resolve()
+    if not normalized_path.is_relative_to(fonts_dir):
         raise ValueError("Invalid font filename or path traversal attempt detected.")
 
     final_font_url = None
     final_font_type = "default"
 
-    if os.path.exists(normalized_path):
+    if normalized_path.exists():
         token = generate_font_token(potential_font_filename)
         final_font_url = url_for(
             "api.serve_user_font",

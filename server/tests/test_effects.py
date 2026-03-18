@@ -647,3 +647,46 @@ def test_fire_effects_disabled_in_settings(client, monkeypatch):
     assert resp.status_code == 200
     assert forwarded
     assert forwarded[0].get("effectCss") is None
+
+
+# ─── save_effect_content name mismatch 測試 ──────────────────────────────────
+
+
+def test_save_effect_content_name_mismatch_rejected(app, tmp_path):
+    """YAML content with name != URL name must be rejected."""
+    from unittest.mock import patch
+    from server.services import effects
+
+    dme = tmp_path / "spin.dme"
+    dme.write_text("name: spin\nanimation: spin 1s linear infinite\nkeyframes:\n  spin:\n    from: { transform: 'rotate(0deg)' }\n    to: { transform: 'rotate(360deg)' }\n")
+
+    with patch.object(effects, "_path_to_name", {str(dme): "spin"}), \
+         patch.object(effects, "_scan"):
+        bad_content = b"name: evil\nanimation: spin 1s linear infinite\nkeyframes:\n  spin:\n    from: { transform: 'rotate(0deg)' }\n    to: { transform: 'rotate(360deg)' }\n"
+        filename, error = effects.save_effect_content("spin", bad_content)
+        assert error is not None
+        assert "name" in error.lower() or "mismatch" in error.lower()
+        assert filename is None
+
+
+def test_effects_content_path_traversal_returns_error(client):
+    """GET /admin/effects with path traversal name must return error."""
+    client.post("/login", data={"password": "test"}, follow_redirects=True)
+    resp = client.get("/admin/effects/..%2F..%2Fetc%2Fpasswd/content")
+    assert resp.status_code in (400, 404)
+
+
+def test_save_effect_content_matching_name_accepted(app, tmp_path):
+    """YAML content with matching name should succeed."""
+    from unittest.mock import patch
+    from server.services import effects
+
+    dme = tmp_path / "spin.dme"
+    dme.write_text("name: spin\nanimation: spin 1s linear infinite\nkeyframes:\n  spin:\n    from: { transform: 'rotate(0deg)' }\n    to: { transform: 'rotate(360deg)' }\n")
+
+    with patch.object(effects, "_path_to_name", {str(dme): "spin"}), \
+         patch.object(effects, "_scan"):
+        good_content = b"name: spin\nanimation: spin 1s linear infinite\nkeyframes:\n  spin:\n    from: { transform: 'rotate(0deg)' }\n    to: { transform: 'rotate(360deg)' }\n"
+        filename, error = effects.save_effect_content("spin", good_content)
+        assert error is None
+        assert filename == "spin.dme"

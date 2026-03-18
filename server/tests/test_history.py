@@ -163,3 +163,51 @@ def test_record_missing_fields_use_defaults():
     assert r["isImage"] is False
     assert r["clientIp"] is None
     assert r["fingerprint"] is None
+
+
+# ─── RLock deadlock regression ────────────────────────────────────────────────
+
+
+import time
+import threading
+
+
+def test_maybe_cleanup_does_not_deadlock(app):
+    """add() calling _maybe_cleanup() must not deadlock on nested lock."""
+    from server.services.history import danmu_history
+
+    danmu_history.clear()
+
+    old_record = {
+        "text": "old",
+        "color": "#fff",
+        "size": "24",
+        "speed": "5",
+        "opacity": "100",
+    }
+
+    danmu_history.add(old_record)
+
+    # Force cleanup to trigger by setting last_cleanup far in the past
+    danmu_history.last_cleanup = time.time() - 7200
+
+    # Make existing record old
+    with danmu_history._lock:
+        for r in danmu_history._records:
+            r["timestamp"] = (
+                datetime.now(timezone.utc) - timedelta(hours=48)
+            ).isoformat()
+
+    # This add() triggers _maybe_cleanup() — with Lock() this deadlocks; with RLock() it works
+    result = [False]
+
+    def add_with_timeout():
+        danmu_history.add({"text": "new", "color": "#000", "size": "20", "speed": "3", "opacity": "80"})
+        result[0] = True
+
+    t = threading.Thread(target=add_with_timeout)
+    t.start()
+    t.join(timeout=5)
+
+    assert result[0] is True, "add() deadlocked in _maybe_cleanup()"
+    assert danmu_history.get_stats()["total"] == 1
