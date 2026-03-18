@@ -20,7 +20,7 @@ function onKonamiTrigger() {
 
 app.whenReady().then(() => {
   mainWindow = createWindow(childWindows, onKonamiTrigger);
-  setupIpcHandlers(mainWindow, childWindows);
+  setupIpcHandlers(() => mainWindow, childWindows);
 
   let trayIcon;
   if (process.platform === "darwin") {
@@ -92,7 +92,8 @@ app.whenReady().then(() => {
     const { BrowserWindow } = require("electron");
     if (BrowserWindow.getAllWindows().length === 0) {
       mainWindow = createWindow(childWindows, onKonamiTrigger);
-      setupIpcHandlers(mainWindow, childWindows);
+      // IPC handlers are already registered globally at app startup;
+      // re-registering would duplicate all listeners. Only recreate the window.
     }
   });
 });

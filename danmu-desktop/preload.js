@@ -54,6 +54,7 @@ try {
     },
     onConnectionStatus: (callback) => {
       console.log("[Preload] API.onConnectionStatus listener registered");
+      ipcRenderer.removeAllListeners("overlay-connection-status");
       ipcRenderer.on("overlay-connection-status", (event, data) => {
         callback(data);
       });
@@ -91,16 +92,19 @@ try {
     },
     // IPC Listeners for main -> renderer events
     onUpdateDisplayOptions: (callback) => {
+      ipcRenderer.removeAllListeners("update-display-options");
       ipcRenderer.on("update-display-options", (event, options) => {
         callback(options);
       });
     },
     onShowStartupAnimation: (callback) => {
+      ipcRenderer.removeAllListeners("show-startup-animation");
       ipcRenderer.on("show-startup-animation", (event, data) => {
         callback(data);
       });
     },
     onKonamiEffect: (callback) => {
+      ipcRenderer.removeAllListeners("konami-effect");
       ipcRenderer.on("konami-effect", () => {
         callback();
       });

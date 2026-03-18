@@ -137,6 +137,16 @@ def require_csrf(func):
     return wrapper
 
 
+def _get_client_ip() -> str:
+    """統一的客戶端 IP 提取（支援 TRUST_X_FORWARDED_FOR 設定）。"""
+    trust_xff = bool(current_app.config.get("TRUST_X_FORWARDED_FOR", False))
+    if trust_xff:
+        xff = request.headers.get("X-Forwarded-For", "")
+        if xff:
+            return xff.split(",")[0].strip()
+    return request.remote_addr or "unknown"
+
+
 def rate_limit(
     key_prefix: str,
     limit_key: str = "FIRE_RATE_LIMIT",
@@ -145,7 +155,7 @@ def rate_limit(
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            client_ip = request.remote_addr or "unknown"
+            client_ip = _get_client_ip()
             limit = current_app.config.get(limit_key, 20)
             window = current_app.config.get(window_key, 60)
             key = f"{key_prefix}:{client_ip}"

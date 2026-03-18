@@ -216,13 +216,15 @@ function setupChildWindow(
     );
   });
 
-  // Inject WebSocket connection script
-  const script = getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken);
-  targetWindow.webContents.executeJavaScript(script).catch((err) => {
-    console.error(
-      "[Main] Error injecting WebSocket script:",
-      sanitizeLog(err.message)
-    );
+  // Inject WebSocket connection script after page (including synchronous scripts) finishes loading
+  targetWindow.webContents.once("did-finish-load", () => {
+    const script = getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken);
+    targetWindow.webContents.executeJavaScript(script).catch((err) => {
+      console.error(
+        "[Main] Error injecting WebSocket script:",
+        sanitizeLog(err.message)
+      );
+    });
   });
 }
 

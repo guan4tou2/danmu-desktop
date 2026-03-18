@@ -47,6 +47,8 @@ def check_connections(logger):
 
 
 async def _forward_messages(logger):
+    _PING_INTERVAL = 5  # 秒（原為每 0.5 秒，改為 5 秒以減少不必要的開銷）
+    last_ping_time = 0.0  # 0 → 第一次迭代即發送 ping
     while True:
         try:
             messages = ws_queue.dequeue_all()
@@ -60,7 +62,10 @@ async def _forward_messages(logger):
                 if message_tasks:
                     await asyncio.gather(*message_tasks, return_exceptions=True)
 
-            if clients:
+            # 定期發送 ping 偵測死連線（首次立即發，之後每 PING_INTERVAL 秒）
+            now = asyncio.get_event_loop().time()
+            if clients and now - last_ping_time >= _PING_INTERVAL:
+                last_ping_time = now
                 ping_message = json.dumps({"type": "ping"})
                 dead_clients = []
                 for client in clients:

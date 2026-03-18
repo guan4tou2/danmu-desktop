@@ -1,14 +1,15 @@
 """彈幕記錄服務"""
 
+import logging
 import threading
 import time
 from collections import deque
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
-from flask import current_app
-
 from ..config import Config
+
+logger = logging.getLogger(__name__)
 
 
 class DanmuHistory:
@@ -50,8 +51,8 @@ class DanmuHistory:
 
         with self._lock:
             self._records.append(record)
-            # 定期清理舊記錄
-            self._maybe_cleanup()
+        # 定期清理舊記錄（在鎖外呼叫，避免 deadlock）
+        self._maybe_cleanup()
 
     def get_records(
         self,
@@ -135,8 +136,18 @@ class DanmuHistory:
             oldest = self._records[0]["timestamp"] if self._records else None
             newest = self._records[-1]["timestamp"] if self._records else None
 
-        # 計算最近 24 小時的記錄數
-        last_24h = len(self.get_recent(hours=24))
+            # 在同一個鎖內計算 24h 記錄數，避免 TOCTOU
+            cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+            last_24h = 0
+            for record in self._records:
+                ts_str = record["timestamp"]
+                if ts_str.endswith("Z"):
+                    ts_str = ts_str.replace("Z", "+00:00")
+                record_time = datetime.fromisoformat(ts_str)
+                if record_time.tzinfo is None:
+                    record_time = record_time.replace(tzinfo=timezone.utc)
+                if record_time >= cutoff:
+                    last_24h += 1
 
         return {
             "total": total,
@@ -171,8 +182,8 @@ class DanmuHistory:
             self._records = new_records
 
             if len(new_records) < old_count:
-                current_app.logger.info(
-                    f"Cleaned up {old_count - len(new_records)} old danmu records"
+                logger.info(
+                    "Cleaned up %d old danmu records", old_count - len(new_records)
                 )
 
 

@@ -33,6 +33,10 @@ jobs:
         working-directory: server
         run: uv sync
 
+      - name: Install Playwright browsers
+        working-directory: server
+        run: uv run playwright install --with-deps chromium
+
       - name: Run tests
         working-directory: server
         run: PYTHONPATH=.. uv run python -m pytest -v

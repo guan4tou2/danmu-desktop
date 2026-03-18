@@ -1,10 +1,11 @@
 import logging
 import threading
+from collections import deque
 from typing import Any, Dict, List
 
-_queue: List[Dict[str, Any]] = []
-_lock = threading.Lock()
 _MAX_QUEUE_SIZE = 500  # 防止高負載下無限增長
+_queue: deque = deque(maxlen=_MAX_QUEUE_SIZE)
+_lock = threading.Lock()
 
 logger = logging.getLogger(__name__)
 
@@ -12,8 +13,6 @@ logger = logging.getLogger(__name__)
 def enqueue_message(data: Dict[str, Any]) -> None:
     with _lock:
         if len(_queue) >= _MAX_QUEUE_SIZE:
-            # 丟棄最舊的訊息，確保新訊息優先處理
-            _queue.pop(0)
             logger.warning("Queue full (%d items); oldest message dropped.", _MAX_QUEUE_SIZE)
         _queue.append(data)
 

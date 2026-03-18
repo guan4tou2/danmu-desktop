@@ -483,15 +483,19 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
                 return;
               }
 
-              // 管理員 Remote Control：清除所有彈幕
+              // 管理員 Remote Control：清除所有彈幕（保留 #danmu-counter 等非彈幕元素）
               if (data.type === "clear") {
-                const danmubody = document.getElementById("danmubody");
-                if (danmubody) danmubody.innerHTML = "";
+                document.querySelectorAll("h1.danmu, img.danmu, div.danmu-wrapper, div[style*='translateX']").forEach(el => el.remove());
                 console.log("[WebSocket] Overlay cleared by admin remote control");
                 return;
               }
 
-              function processDanmuWhenReady(dataPayload) {
+              function processDanmuWhenReady(dataPayload, retries) {
+                retries = retries || 0;
+                if (retries > 30) {
+                  console.error('[WebSocket] window.showdanmu unavailable after 30 retries, dropping danmu');
+                  return;
+                }
                 if (typeof window.showdanmu === 'function') {
                   console.log('[WebSocket] Calling window.showdanmu with:', dataPayload);
                   window.showdanmu(
@@ -506,8 +510,8 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
                     dataPayload.effectCss || null
                   );
                 } else {
-                  console.warn('[WebSocket] window.showdanmu not ready, retrying in 100ms...');
-                  setTimeout(() => processDanmuWhenReady(dataPayload), 100);
+                  console.warn('[WebSocket] window.showdanmu not ready, retrying in 100ms... (attempt ' + (retries + 1) + '/30)');
+                  setTimeout(() => processDanmuWhenReady(dataPayload, retries + 1), 100);
                 }
               }
 
