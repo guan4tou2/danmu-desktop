@@ -394,7 +394,7 @@ def render_effects(effects_input: List[Dict[str, Any]]) -> Optional[Dict[str, An
     animation = ", ".join(animation_parts)
     # animation-composition: add 讓多個 transform 動畫可以疊加而不互相覆蓋
     animation_composition = ", ".join(["add"] * len(animation_parts))
-    style_id = hashlib.md5((keyframes + animation).encode()).hexdigest()[:10]
+    style_id = hashlib.sha256((keyframes + animation).encode()).hexdigest()[:10]
 
     return {
         "keyframes": keyframes,
