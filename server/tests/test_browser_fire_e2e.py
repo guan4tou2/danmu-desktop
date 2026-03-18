@@ -68,7 +68,7 @@ def server_ports():
         [sys.executable, "-c", script],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        cwd="/Users/guantou/Desktop/danmu-desktop",
+        cwd=str(__import__("pathlib").Path(__file__).resolve().parents[2]),
     )
 
     # 等待伺服器印出 READY
