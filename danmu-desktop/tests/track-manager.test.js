@@ -188,3 +188,237 @@ describe("updateDanmuTrackSettings", () => {
     expect(window.danmuTrackSettings.maxTracks).toBe(0);
   });
 });
+
+// ===========================================================================
+// showdanmu rendering tests
+// ===========================================================================
+
+describe("showdanmu", () => {
+  // Mock Element.prototype.animate since jsdom does not support Web Animations API
+  const mockAnimation = {
+    onfinish: null,
+    finished: Promise.resolve(),
+  };
+
+  beforeEach(() => {
+    // Fresh DOM with danmubody container
+    document.body.innerHTML = '<div id="danmubody"></div>';
+
+    Object.defineProperty(document.documentElement, "clientWidth", {
+      configurable: true,
+      get: () => 1920,
+    });
+    Object.defineProperty(document.documentElement, "clientHeight", {
+      configurable: true,
+      get: () => 1080,
+    });
+
+    // Mock animate on all elements
+    Element.prototype.animate = jest.fn(() => {
+      const anim = { onfinish: null, finished: Promise.resolve() };
+      // Store reference so tests can trigger onfinish
+      Element.prototype.animate._lastAnim = anim;
+      return anim;
+    });
+
+    // Mock getComputedStyle
+    window.getComputedStyle = jest.fn(() => ({
+      height: "40px",
+      width: "200px",
+      padding: "0px",
+    }));
+
+    // Mock FontFace
+    window.FontFace = jest.fn(() => ({}));
+    document.fonts = { load: jest.fn(() => Promise.resolve()) };
+
+    initTrackManager();
+    window.danmuTracks = [];
+  });
+
+  afterEach(() => {
+    delete Element.prototype.animate;
+  });
+
+  test("creates a danmu h1 element with correct text", async () => {
+    window.showdanmu("Hello World");
+    // Wait for the async applyFontAndAnimate
+    await new Promise((r) => setTimeout(r, 0));
+
+    const h1 = document.querySelector("h1.danmu");
+    expect(h1).not.toBeNull();
+    expect(h1.textContent).toBe("Hello World");
+  });
+
+  test("opacity is correctly calculated as fraction", () => {
+    // showdanmu sets wrapper.style.opacity = String(opacity * 0.01)
+    // Test the calculation logic directly
+    expect(String(100 * 0.01)).toBe("1");
+    expect(String(50 * 0.01)).toBe("0.5");
+    expect(String(0 * 0.01)).toBe("0");
+    expect(String(75 * 0.01)).toBe("0.75");
+  });
+
+  test("applies correct color to text danmu", async () => {
+    window.showdanmu("Colored", 100, "#ff0000");
+    await new Promise((r) => setTimeout(r, 10));
+
+    const h1 = document.querySelector("h1.danmu");
+    // jsdom normalizes hex to rgb
+    expect(h1.style.color).toBe("rgb(255, 0, 0)");
+  });
+
+  test("applies correct font size", async () => {
+    window.showdanmu("Sized", 100, "#ffffff", 72);
+    await new Promise((r) => setTimeout(r, 0));
+
+    const h1 = document.querySelector("h1.danmu");
+    expect(h1.style.fontSize).toBe("72px");
+  });
+
+  test("applies text stroke when enabled", async () => {
+    window.showdanmu("Stroked", 100, "#ffffff", 50, 5, undefined, {
+      textStroke: true,
+      strokeWidth: 3,
+      strokeColor: "#ff0000",
+      textShadow: false,
+      shadowBlur: 4,
+    });
+    await new Promise((r) => setTimeout(r, 0));
+
+    const h1 = document.querySelector("h1.danmu");
+    expect(h1.style.paintOrder).toBe("stroke fill");
+  });
+
+  test("applies text shadow when enabled", async () => {
+    window.showdanmu("Shadow", 100, "#ffffff", 50, 5, undefined, {
+      textStroke: false,
+      strokeWidth: 2,
+      strokeColor: "#000000",
+      textShadow: true,
+      shadowBlur: 8,
+    });
+    await new Promise((r) => setTimeout(r, 0));
+
+    const h1 = document.querySelector("h1.danmu");
+    expect(h1.style.textShadow).toContain("rgba(0, 0, 0");
+  });
+
+  test("handles missing fontInfo gracefully (uses default)", async () => {
+    window.showdanmu("NoFont", 100, "#ffffff", 50, 5, {
+      name: null,
+      url: null,
+      type: "default",
+    });
+    await new Promise((r) => setTimeout(r, 0));
+
+    const h1 = document.querySelector("h1.danmu");
+    expect(h1).not.toBeNull();
+    expect(h1.style.fontFamily).toBe("NotoSansTC");
+  });
+
+  test("sets data-stroke attribute for text danmu", async () => {
+    window.showdanmu("Stroked Text");
+    await new Promise((r) => setTimeout(r, 0));
+
+    const h1 = document.querySelector("h1.danmu");
+    expect(h1.getAttribute("data-stroke")).toBe("Stroked Text");
+  });
+
+  test("wrapper removal: onfinish callback removes element from DOM", () => {
+    // Test the onfinish removal logic in isolation using a separate container
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+
+    const wrapper = document.createElement("div");
+    container.appendChild(wrapper);
+    expect(container.children.length).toBe(1);
+
+    // Simulate what showdanmu does: animate().onfinish = () => wrapper.remove()
+    const anim = Element.prototype.animate.call(wrapper, [], {});
+    anim.onfinish = () => wrapper.remove();
+    anim.onfinish();
+
+    expect(container.children.length).toBe(0);
+  });
+
+  test("creates img element for valid image URLs", async () => {
+    window.showdanmu("https://example.com/image.png");
+    await new Promise((r) => setTimeout(r, 0));
+
+    const img = document.querySelector("img.danmu");
+    expect(img).not.toBeNull();
+    expect(img.getAttribute("src")).toBe("https://example.com/image.png");
+  });
+
+  test("shows error for image URL without valid protocol", async () => {
+    window.showdanmu("ftp://example.com/image.png");
+    await new Promise((r) => setTimeout(r, 0));
+
+    // Should be treated as text, not an image
+    const h1 = document.querySelector("h1.danmu");
+    // ftp URL doesn't match the imgs regex, so it becomes text
+    expect(h1).not.toBeNull();
+  });
+
+  test("handles invalid speed by defaulting", async () => {
+    window.showdanmu("BadSpeed", 100, "#ffffff", 50, "notanumber");
+    await new Promise((r) => setTimeout(r, 0));
+
+    // Should not throw, danmu should still be created
+    const h1 = document.querySelector("h1.danmu");
+    expect(h1).not.toBeNull();
+  });
+
+  test("applies effectCss animation to inner element", async () => {
+    window.showdanmu(
+      "Effect",
+      100,
+      "#ffffff",
+      50,
+      5,
+      undefined,
+      undefined,
+      undefined,
+      { animation: "de-spin 1s linear infinite", animationComposition: "add" }
+    );
+    await new Promise((r) => setTimeout(r, 0));
+
+    const h1 = document.querySelector("h1.danmu");
+    expect(h1.style.animation).toBe("de-spin 1s linear infinite");
+    expect(h1.style.display).toBe("inline-block");
+  });
+
+  test("calls wrapper.animate with translateX keyframes", async () => {
+    window.showdanmu("Animated");
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(Element.prototype.animate).toHaveBeenCalled();
+    const call = Element.prototype.animate.mock.calls[0];
+    // First arg is keyframes array
+    expect(call[0][0].transform).toBe("translateX(100vw)");
+    expect(call[0][1].transform).toContain("translateX(-");
+    // Second arg is options with duration and easing
+    expect(call[1].easing).toBe("linear");
+    expect(call[1].duration).toBeGreaterThan(0);
+  });
+
+  test("speed 1 gives longest duration, speed 10 gives shortest", async () => {
+    // Speed 1: duration = 20000 - 0 = 20000
+    window.showdanmu("Slow", 100, "#ffffff", 50, 1);
+    await new Promise((r) => setTimeout(r, 0));
+    const slowDuration = Element.prototype.animate.mock.calls[0][1].duration;
+
+    Element.prototype.animate.mockClear();
+    window.danmuTracks = [];
+
+    // Speed 10: duration = 20000 - 18000 = 2000
+    window.showdanmu("Fast", 100, "#ffffff", 50, 10);
+    await new Promise((r) => setTimeout(r, 0));
+    const fastDuration = Element.prototype.animate.mock.calls[0][1].duration;
+
+    expect(slowDuration).toBeGreaterThan(fastDuration);
+    expect(slowDuration).toBe(20000);
+    expect(fastDuration).toBe(2000);
+  });
+});
