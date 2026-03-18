@@ -159,6 +159,24 @@ def run_ws_server(ws_port, logger):
         update_ws_client_count(total_clients)
 
     async def ws_handler(websocket):
+        """Handle a single WebSocket client connection.
+
+        Message flow — two keep-alive mechanisms coexist:
+
+        1. Server-initiated JSON ping/pong (dead-connection detection):
+           - _forward_messages() periodically sends {"type": "ping"} to all
+             WS clients (Electron overlays).
+           - The Electron client (child-ws-script.js) responds with
+             {"type": "pong"}.  We silently consume it here (no further
+             action needed — the send in _forward_messages already detects
+             dead connections via exception).
+
+        2. Client-initiated heartbeat (latency monitoring):
+           - The Electron client (child-ws-script.js) periodically sends
+             {"type": "heartbeat", "timestamp": <epoch_ms>}.
+           - We echo it back as {"type": "heartbeat_ack", "timestamp": ...}
+             so the client can measure round-trip latency.
+        """
         if not _is_authorized(websocket):
             await websocket.close(code=1008, reason="Unauthorized")
             return
@@ -168,6 +186,7 @@ def run_ws_server(ws_port, logger):
                 try:
                     data = json.loads(message)
                     if data.get("type") == "heartbeat":
+                        # Client-initiated heartbeat — echo back for latency measurement
                         await websocket.send(
                             json.dumps(
                                 {
@@ -177,6 +196,9 @@ def run_ws_server(ws_port, logger):
                             )
                         )
                     elif data.get("type") == "pong":
+                        # Response to server-initiated {"type": "ping"} from
+                        # _forward_messages(); silently consumed — the ping sender
+                        # already handles dead-client detection via send exceptions.
                         continue
                 except Exception:
                     pass
