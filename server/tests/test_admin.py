@@ -175,9 +175,7 @@ def test_update_invalid_setting_type(client):
 
 
 def test_update_speed_out_of_range(client):
-    token = csrf_token(client)
-    payload = {"type": "Speed", "index": 3, "value": 99, "csrf_token": token}
-    res = client.post("/admin/update", json=payload)
+    res = authed_post(client, "/admin/update", {"type": "Speed", "index": 3, "value": 99})
     # Should fail validation (Speed max is 10)
     assert res.status_code == 400
 
@@ -513,7 +511,11 @@ def test_change_password_requires_login(client):
         sess["csrf_token"] = "t"
     resp = client.post(
         "/admin/change_password",
-        json={"current_password": "test", "new_password": "newpass1!", "confirm_password": "newpass1!"},
+        json={
+            "current_password": "test",
+            "new_password": "newpass1!",
+            "confirm_password": "newpass1!",
+        },
         headers={"X-CSRF-Token": "t"},
     )
     assert resp.status_code == 401
@@ -522,7 +524,11 @@ def test_change_password_requires_login(client):
 def test_change_password_requires_csrf(client):
     resp = client.post(
         "/admin/change_password",
-        json={"current_password": "test", "new_password": "newpass1!", "confirm_password": "newpass1!"},
+        json={
+            "current_password": "test",
+            "new_password": "newpass1!",
+            "confirm_password": "newpass1!",
+        },
     )
     assert resp.status_code == 403
 

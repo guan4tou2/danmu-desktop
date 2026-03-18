@@ -6,11 +6,13 @@ on:
       - main
     paths:
       - "server/**"
+      - "danmu-desktop/**"
   pull_request:
     branches:
       - main
     paths:
       - "server/**"
+      - "danmu-desktop/**"
 
 permissions:
   contents: read
@@ -29,9 +31,17 @@ jobs:
       - name: Install uv
         run: pip install uv
 
+      - name: Set up environment
+        working-directory: server
+        run: cp .env.example .env
+
       - name: Install dependencies
         working-directory: server
-        run: uv sync
+        run: uv sync --group dev
+
+      - name: Install Playwright browsers
+        working-directory: server
+        run: uv run playwright install --with-deps chromium
 
       - name: Run tests
         working-directory: server
@@ -46,6 +56,22 @@ jobs:
       - name: Lint with flake8
         working-directory: server
         run: uv run flake8 .
+
+  js-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install and test
+        working-directory: danmu-desktop
+        run: |
+          npm install
+          npx jest --testPathPatterns=tests/
 
   pre-commit:
     runs-on: ubuntu-latest

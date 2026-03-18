@@ -944,7 +944,6 @@ dependencies = [
     { name = "bcrypt" },
     { name = "blinker" },
     { name = "click" },
-    { name = "coverage", extra = ["toml"] },
     { name = "flask" },
     { name = "flask-cors" },
     { name = "flask-sock" },
@@ -955,13 +954,9 @@ dependencies = [
     { name = "jinja2" },
     { name = "markupsafe" },
     { name = "marshmallow" },
-    { name = "playwright" },
-    { name = "pytest" },
-    { name = "pytest-playwright" },
     { name = "python-dotenv" },
     { name = "python-magic" },
     { name = "pyyaml" },
-    { name = "redis" },
     { name = "setuptools" },
     { name = "simple-websocket" },
     { name = "websockets" },
@@ -971,11 +966,21 @@ dependencies = [
     { name = "zope-interface" },
 ]
 
+[package.optional-dependencies]
+redis = [
+    { name = "redis" },
+]
+
 [package.dev-dependencies]
 dev = [
     { name = "black" },
+    { name = "coverage", extra = ["toml"] },
     { name = "flake8" },
     { name = "isort" },
+    { name = "playwright" },
+    { name = "pytest" },
+    { name = "pytest-playwright" },
+    { name = "redis" },
 ]
 
 [package.metadata]
@@ -983,7 +988,6 @@ requires-dist = [
     { name = "bcrypt", specifier = ">=4.0.0" },
     { name = "blinker" },
     { name = "click" },
-    { name = "coverage", extras = ["toml"], specifier = ">=7.4.0" },
     { name = "flask" },
     { name = "flask-cors", specifier = ">=4.0.0" },
     { name = "flask-sock" },
@@ -994,13 +998,10 @@ requires-dist = [
     { name = "jinja2" },
     { name = "markupsafe" },
     { name = "marshmallow", specifier = ">=3.20.0" },
-    { name = "playwright", specifier = ">=1.40" },
-    { name = "pytest", specifier = ">=9.0.1" },
-    { name = "pytest-playwright", specifier = ">=0.4" },
     { name = "python-dotenv" },
     { name = "python-magic", specifier = ">=0.4.27" },
     { name = "pyyaml", specifier = ">=6.0.0" },
-    { name = "redis", specifier = ">=5.0.7" },
+    { name = "redis", marker = "extra == 'redis'", specifier = ">=5.0.7" },
     { name = "setuptools" },
     { name = "simple-websocket" },
     { name = "websockets" },
@@ -1009,12 +1010,18 @@ requires-dist = [
     { name = "zope-event" },
     { name = "zope-interface" },
 ]
+provides-extras = ["redis"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "black", specifier = ">=24.8.0" },
+    { name = "coverage", extras = ["toml"], specifier = ">=7.4.0" },
     { name = "flake8", specifier = ">=7.0.0" },
     { name = "isort", specifier = ">=5.13.2" },
+    { name = "playwright", specifier = ">=1.40" },
+    { name = "pytest", specifier = ">=9.0.1" },
+    { name = "pytest-playwright", specifier = ">=0.4" },
+    { name = "redis", specifier = ">=5.0.7" },
 ]
 
 [[package]]

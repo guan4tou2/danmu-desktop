@@ -208,17 +208,23 @@ function initTrackManager() {
       let effectiveFontName = fontInfo.name || "NotoSansTC";
 
       if (fontInfo.url && fontInfo.type === "uploaded") {
-        const styleId = `font-style-${effectiveFontName.replace(/\s+/g, "-")}`;
+        // Sanitize font name: only allow safe characters for CSS font-family
+        const safeFontName = effectiveFontName.replace(/[^a-zA-Z0-9 _-]/g, "");
+        const styleId = `font-style-${safeFontName.replace(/\s+/g, "-")}`;
         if (!document.getElementById(styleId)) {
           try {
+            // Validate font URL scheme
+            if (!/^https?:\/\//.test(fontInfo.url)) {
+              throw new Error("Invalid font URL scheme");
+            }
             console.log(
-              `[showdanmu] Loading font: ${effectiveFontName} from ${fontInfo.url}`
+              `[showdanmu] Loading font: ${safeFontName} from ${fontInfo.url}`
             );
-            const fontFace = `@font-face { font-family: "${effectiveFontName}"; src: url("${fontInfo.url}"); }`;
+            const fontFace = new FontFace(safeFontName, `url(${JSON.stringify(fontInfo.url)})`);
             const styleSheet = document.createElement("style");
             styleSheet.id = styleId;
             styleSheet.type = "text/css";
-            styleSheet.innerText = fontFace;
+            styleSheet.innerText = `@font-face { font-family: "${safeFontName}"; src: url(${JSON.stringify(fontInfo.url)}); }`;
             document.head.appendChild(styleSheet);
             await document.fonts.load(`1em "${effectiveFontName}"`);
             console.log(`[showdanmu] Font loaded: ${effectiveFontName}`);

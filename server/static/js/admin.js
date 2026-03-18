@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
       minWidth: 200.0,
       scale: 1.0,
       scaleMobile: 1.0,
-      color: 0x86198f, // Purple
+      color: 0x7c3aed, // Violet-600 (matches UI accent)
       backgroundColor: 0x000000, // Black background
       points: 12.0,
       maxDistance: 25.0,
@@ -27,8 +27,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const config = window.DANMU_CONFIG || {};
   let session = config.session || { logged_in: false };
   const settingRanges = config.settingRanges || {};
-
-  console.log("Session logged in:", session.logged_in);
 
   function csrfFetch(url, options = {}) {
     const opts = { credentials: "same-origin", ...options };
@@ -94,7 +92,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await response.json();
       // Update current settings
       currentSettings = data;
-      console.log("Settings updated:", currentSettings);
       // Re-render control panel
       renderControlPanel();
     } catch (error) {
@@ -189,7 +186,6 @@ document.addEventListener("DOMContentLoaded", () => {
         value: value,
         index: index,
       };
-      console.log(dataToSend);
 
       // Send to backend
       const response = await csrfFetch("/admin/update", {
@@ -206,7 +202,6 @@ document.addEventListener("DOMContentLoaded", () => {
           currentSettings[key] = [false, "", "", ""];
         }
         currentSettings[key][index] = value;
-        console.log(`Updated ${key}:`, currentSettings[key]);
 
         showToast(`${key} Settings Updated`, true);
       } else {
@@ -557,15 +552,15 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderLogin() {
     appContainer.innerHTML = `
                     <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 max-w-md mx-auto">
-                        <h1 class="text-3xl md:text-4xl font-bold text-center bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent pb-2">
+                        <h1 class="text-3xl md:text-4xl font-bold text-center text-violet-300 pb-2">
                             Admin Login
                         </h1>
                         <form id="loginForm" class="space-y-6" action="/login" method="post">
                             <div>
                                 <label for="password" class="text-sm font-medium text-slate-300">Password</label>
-                                <input type="password" id="password" name="password" class="mt-1 w-full p-3 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all duration-300" required>
+                                <input type="password" id="password" name="password" class="mt-1 w-full p-3 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300" required>
                             </div>
-                            <button type="submit" class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-indigo-500/50 transform hover:-translate-y-1 active:scale-95 transition-all duration-300">
+                            <button type="submit" class="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-bold py-3 px-6 rounded-xl transition-colors">
                                 Login
                             </button>
                         </form>
@@ -590,10 +585,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="flex items-center justify-between">
                             <div class="flex-grow pr-4">
                                 <h3 class="text-lg font-bold text-white">${title}</h3>
-                                <p class="text-sm text-slate-400">${description}</p>
+                                <p class="text-sm text-slate-300">${description}</p>
                             </div>
                             <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in flex-shrink-0">
-                                <input type="checkbox" name="${id}" id="toggle-${id}" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer" ${isEnabled ? "checked" : ""
+                                <input type="checkbox" name="${id}" id="toggle-${id}" role="switch" aria-checked="${isEnabled}" aria-label="Toggle ${title}" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer" ${isEnabled ? "checked" : ""
       } />
                                 <label for="toggle-${id}" class="toggle-label block overflow-hidden h-7 rounded-full bg-slate-700 cursor-pointer"></label>
                             </div>
@@ -607,17 +602,17 @@ document.addEventListener("DOMContentLoaded", () => {
     appContainer.innerHTML = `
                     <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-8">
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                             <h1 class="text-3xl md:text-4xl font-bold text-center bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent pb-2">
+                             <h1 class="text-3xl md:text-4xl font-bold text-center text-violet-300 pb-2">
                                 Danmu Control Panel
                             </h1>
-                            <button id="logoutButton" class="w-full md:w-auto flex items-center justify-center gap-2 bg-red-600/80 hover:bg-red-600 text-white font-bold py-2 px-5 rounded-lg transform active:scale-95 transition-all duration-300">
+                            <button id="logoutButton" class="w-full md:w-auto flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-5 rounded-lg transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                                 <span>Logout</span>
                             </button>
                         </div>
 
-                        <nav class="sticky top-2 z-10 rounded-xl border border-slate-700/60 bg-slate-900/70 backdrop-blur px-3 py-2">
-                            <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <nav class="sticky top-2 z-10 rounded-xl border border-slate-700/60 bg-slate-900/70 backdrop-blur px-3 py-2 overflow-x-auto" aria-label="Quick Navigation">
+                            <div class="flex items-center gap-2 text-xs whitespace-nowrap">
                                 <span class="text-slate-400 mr-1">Quick Navigation</span>
                                 <a href="#sec-color" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Basic</a>
                                 <a href="#sec-effects" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Effects</a>
@@ -642,14 +637,14 @@ document.addEventListener("DOMContentLoaded", () => {
       "Allow users to customize colors",
       currentSettings.Color[0],
       `
-                        <label class="text-sm font-medium text-slate-300">Specific Color</label>
-                        <input type="color" class="setting-input mt-1 w-full h-10 p-1 bg-slate-800 border-slate-700 rounded-lg cursor-pointer" data-key="Color" data-index="3" value="${formatColor(
+                        <label for="setting-color-3" class="text-sm font-medium text-slate-300">Specific Color</label>
+                        <input id="setting-color-3" type="color" class="setting-input mt-1 w-full h-10 p-1 bg-slate-800 border-slate-700 rounded-lg cursor-pointer" data-key="Color" data-index="3" value="${formatColor(
         "#" + currentSettings.Color[3]
       )}" disabled>
                     `,
       `
-                        <label class="text-sm font-medium text-slate-300">Specific Color</label>
-                        <input type="color" class="setting-input mt-1 w-full h-10 p-1 bg-slate-800 border-slate-700 rounded-lg cursor-pointer" data-key="Color" data-index="3" value="${formatColor(
+                        <label for="setting-color-3" class="text-sm font-medium text-slate-300">Specific Color</label>
+                        <input id="setting-color-3" type="color" class="setting-input mt-1 w-full h-10 p-1 bg-slate-800 border-slate-700 rounded-lg cursor-pointer" data-key="Color" data-index="3" value="${formatColor(
         "#" + currentSettings.Color[3]
       )}">
                     `
@@ -664,18 +659,18 @@ document.addEventListener("DOMContentLoaded", () => {
       `
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="text-sm font-medium text-slate-300">Min (%)</label>
-                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="1" value="${currentSettings.Opacity[1]}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
+                                <label for="setting-opacity-1" class="text-sm font-medium text-slate-300">Min (%)</label>
+                                <input id="setting-opacity-1" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="1" value="${escapeHtml(String(currentSettings.Opacity[1]))}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
                             </div>
                             <div>
-                                <label class="text-sm font-medium text-slate-300">Max (%)</label>
-                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="2" value="${currentSettings.Opacity[2]}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
+                                <label for="setting-opacity-2" class="text-sm font-medium text-slate-300">Max (%)</label>
+                                <input id="setting-opacity-2" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="2" value="${escapeHtml(String(currentSettings.Opacity[2]))}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
                             </div>
                         </div>
                     `,
       `
-                        <label class="text-sm font-medium text-slate-300">Specific Opacity (%)</label>
-                        <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="3" value="${currentSettings.Opacity[3]}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
+                        <label for="setting-opacity-3" class="text-sm font-medium text-slate-300">Specific Opacity (%)</label>
+                        <input id="setting-opacity-3" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="3" value="${escapeHtml(String(currentSettings.Opacity[3]))}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
                     `
     ));
 
@@ -688,18 +683,18 @@ document.addEventListener("DOMContentLoaded", () => {
       `
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="text-sm font-medium text-slate-300">Min (px)</label>
-                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="1" value="${currentSettings.FontSize[1]}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
+                                <label for="setting-fontsize-1" class="text-sm font-medium text-slate-300">Min (px)</label>
+                                <input id="setting-fontsize-1" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="1" value="${escapeHtml(String(currentSettings.FontSize[1]))}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
                             </div>
                             <div>
-                                <label class="text-sm font-medium text-slate-300">Max (px)</label>
-                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="2" value="${currentSettings.FontSize[2]}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
+                                <label for="setting-fontsize-2" class="text-sm font-medium text-slate-300">Max (px)</label>
+                                <input id="setting-fontsize-2" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="2" value="${escapeHtml(String(currentSettings.FontSize[2]))}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
                             </div>
                         </div>
                     `,
       `
-                        <label class="text-sm font-medium text-slate-300">Specific Size (px)</label>
-                        <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="3" value="${currentSettings.FontSize[3]}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
+                        <label for="setting-fontsize-3" class="text-sm font-medium text-slate-300">Specific Size (px)</label>
+                        <input id="setting-fontsize-3" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="3" value="${escapeHtml(String(currentSettings.FontSize[3]))}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
                     `
     ));
 
@@ -712,19 +707,19 @@ document.addEventListener("DOMContentLoaded", () => {
       `
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="text-sm font-medium text-slate-300">Slowest</label>
-                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="1" value="${currentSettings.Speed[1]}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
+                                <label for="setting-speed-1" class="text-sm font-medium text-slate-300">Slowest</label>
+                                <input id="setting-speed-1" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="1" value="${escapeHtml(String(currentSettings.Speed[1]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
                             </div>
                             <div>
-                                <label class="text-sm font-medium text-slate-300">Fastest</label>
-                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="2" value="${currentSettings.Speed[2]}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
+                                <label for="setting-speed-2" class="text-sm font-medium text-slate-300">Fastest</label>
+                                <input id="setting-speed-2" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="2" value="${escapeHtml(String(currentSettings.Speed[2]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
                             </div>
                         </div>
                         <small class="text-slate-500 text-xs block mt-2">Higher value = Faster speed</small>
                     `,
       `
-                        <label class="text-sm font-medium text-slate-300">Specific Speed</label>
-                        <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="3" value="${currentSettings.Speed[3]}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
+                        <label for="setting-speed-3" class="text-sm font-medium text-slate-300">Specific Speed</label>
+                        <input id="setting-speed-3" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="3" value="${escapeHtml(String(currentSettings.Speed[3]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
                         <small class="text-slate-500 text-xs block mt-2">Higher value = Faster speed</small>
                     `
     ));
@@ -745,8 +740,8 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <div class="mt-4">
                 <label class="text-sm font-medium text-slate-300">Upload New TTF Font</label>
-                <input type="file" id="fontUploadInput" accept=".ttf" class="mt-1 w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700"/>
-                <button id="uploadFontBtn" class="mt-2 w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg">Upload Font</button>
+                <input type="file" id="fontUploadInput" accept=".ttf" class="mt-1 w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-violet-600 file:text-white hover:file:bg-violet-500"/>
+                <button id="uploadFontBtn" class="mt-2 w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold py-2 px-4 rounded-lg">Upload Font</button>
             </div>
             <small class="text-slate-500 text-xs block mt-2">Uploaded fonts become available in the selection above and for users (if enabled).</small>
             `;
@@ -771,8 +766,8 @@ document.addEventListener("DOMContentLoaded", () => {
       "Effects Setting",
       "Allow users to apply visual effects (animations) to danmu",
       effectsEnabled,
-      `<p class="text-sm text-slate-400">Effects are enabled. Users can apply animations to their danmu messages.</p>`,
-      `<p class="text-sm text-slate-400">Effects are disabled. All danmu will display without animations.</p>`
+      `<p class="text-sm text-slate-300">Effects are enabled. Users can apply animations to their danmu messages.</p>`,
+      `<p class="text-sm text-slate-300">Effects are disabled. All danmu will display without animations.</p>`
     ));
 
     // Effects Management Card (full width)
@@ -781,7 +776,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="flex items-center justify-between mb-4">
           <div>
             <h3 class="text-lg font-bold text-white">Effects Management</h3>
-            <p class="text-sm text-slate-400">Manage .dme effect plugins (hot-swap, editable)</p>
+            <p class="text-sm text-slate-300">Manage .dme effect plugins (hot-swap, editable)</p>
           </div>
           <div class="flex items-center gap-2">
             <button id="effectReloadBtn"
@@ -811,15 +806,15 @@ document.addEventListener("DOMContentLoaded", () => {
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
                                 <h3 class="text-lg font-bold text-white">Blacklist Management</h3>
-                                <p class="text-sm text-slate-400">Add or remove keywords from the blacklist.</p>
+                                <p class="text-sm text-slate-300">Add or remove keywords from the blacklist.</p>
                             </div>
                             <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
                         </summary>
                         <div class="mt-4 pt-4 border-t border-slate-700/50">
                             <div>
                                 <label for="newKeywordInput" class="text-sm font-medium text-slate-300">New Keyword</label>
-                                <input type="text" id="newKeywordInput" placeholder="Enter keyword" class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all duration-300">
-                                <button id="addKeywordBtn" class="mt-3 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-indigo-500/50 transform hover:-translate-y-1 active:scale-95 transition-all duration-300">Add Keyword</button>
+                                <input type="text" id="newKeywordInput" placeholder="Enter keyword" class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300">
+                                <button id="addKeywordBtn" class="mt-3 w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-bold py-3 px-6 rounded-xl transition-colors">Add Keyword</button>
                             </div>
                             <div class="mt-6">
                                 <h4 class="text-md font-semibold text-white mb-2">Current Blacklist:</h4>
@@ -837,7 +832,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
                                 <h3 class="text-lg font-bold text-white">Danmu History</h3>
-                                <p class="text-sm text-slate-400">View and search sent danmu messages.</p>
+                                <p class="text-sm text-slate-300">View and search sent danmu messages.</p>
                             </div>
                             <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
                         </summary>
@@ -845,14 +840,14 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="space-y-3">
                                 <div class="flex gap-2 items-center flex-wrap">
                                     <label class="text-sm font-medium text-slate-300">Time Range:</label>
-                                    <select id="historyHours" class="px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400">
+                                    <select id="historyHours" class="px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400">
                                         <option value="1">Last 1 hour</option>
                                         <option value="6">Last 6 hours</option>
                                         <option value="24" selected>Last 24 hours</option>
                                         <option value="72">Last 3 days</option>
                                         <option value="168">Last 7 days</option>
                                     </select>
-                                    <button id="refreshHistoryBtn" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm">Refresh</button>
+                                    <button id="refreshHistoryBtn" class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors text-sm">Refresh</button>
                                     <button id="exportHistoryBtn" class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors text-sm">Export CSV</button>
                                     <button id="clearHistoryBtn" class="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition-colors text-sm">Clear All</button>
                                     <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none ml-auto">
@@ -862,7 +857,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                                 <input id="historySearch" type="search" placeholder="Search history..."
                                     class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm
-                                           placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400">
+                                           placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400">
                                 <div id="historyStats" class="text-sm text-slate-400"></div>
                                 <div id="danmuHistoryList" class="space-y-2 max-h-96 overflow-y-auto">
                                     <!-- History will be listed here -->
@@ -878,34 +873,34 @@ document.addEventListener("DOMContentLoaded", () => {
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
                                 <h3 class="text-lg font-bold text-white">Change Password</h3>
-                                <p class="text-sm text-slate-400">Update the admin login password.</p>
+                                <p class="text-sm text-slate-300">Update the admin login password.</p>
                             </div>
                             <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
                         </summary>
                         <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-3">
                             <div class="password-wrapper">
                                 <input id="pwCurrent" type="password" placeholder="Current password"
-                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400">
+                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400">
                                 <button type="button" class="password-toggle" data-target="pwCurrent" aria-label="Toggle password visibility">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
                             </div>
                             <div class="password-wrapper">
                                 <input id="pwNew" type="password" placeholder="New password (min 8 chars)"
-                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400">
+                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400">
                                 <button type="button" class="password-toggle" data-target="pwNew" aria-label="Toggle password visibility">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
                             </div>
                             <div class="password-wrapper">
                                 <input id="pwConfirm" type="password" placeholder="Confirm new password"
-                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400">
+                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400">
                                 <button type="button" class="password-toggle" data-target="pwConfirm" aria-label="Toggle password visibility">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
                             </div>
                             <button id="changePasswordBtn"
-                                class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm font-semibold">
+                                class="w-full px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors text-sm font-semibold">
                                 Change Password
                             </button>
                         </div>
@@ -970,7 +965,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const key = this.dataset.key;
         const index = parseInt(this.dataset.index);
         let value = this.value;
-        console.log(key, index, value);
         if (this.type === "number") {
           value = parseInt(value);
         }
@@ -1289,7 +1283,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function handleEffectModalKeydown(event) {
     const modal = document.getElementById("effectEditModal");
-    if (!modal || modal.style.display === "none") return;
+    if (!modal || modal.classList.contains("hidden")) return;
 
     if (event.key === "Escape") {
       event.preventDefault();
@@ -1320,7 +1314,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function hideEffectModal() {
     const modal = document.getElementById("effectEditModal");
     if (!modal) return;
-    modal.style.display = "none";
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
     modal.removeEventListener("keydown", handleEffectModalKeydown);
     if (_effectModalRestoreFocusEl) {
       _effectModalRestoreFocusEl.focus();
@@ -1333,25 +1328,25 @@ document.addEventListener("DOMContentLoaded", () => {
     // ── Inject Effect Edit Modal (fixed overlay) ──────────────────────────────
     if (!document.getElementById("effectEditModal")) {
       document.body.insertAdjacentHTML("beforeend", `
-        <div id="effectEditModal" role="dialog" aria-modal="true" aria-labelledby="effectEditModalTitle" aria-describedby="effectEditModalFile" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.72);">
-          <div style="background:#0f172a;border:1px solid #1e293b;border-radius:1rem;width:100%;max-width:700px;margin:0 1rem;box-shadow:0 32px 80px rgba(0,0,0,0.8);display:flex;flex-direction:column;max-height:88vh;overflow:hidden;">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid #1e293b;flex-shrink:0;">
+        <div id="effectEditModal" role="dialog" aria-modal="true" aria-labelledby="effectEditModalTitle" aria-describedby="effectEditModalFile" class="hidden fixed inset-0 z-[9999] items-center justify-content-center" style="background:rgba(0,0,0,0.72);">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-[700px] mx-4 shadow-2xl flex flex-col max-h-[88vh] overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800 shrink-0">
               <div>
-                <p id="effectEditModalTitle" style="font-weight:700;color:#f1f5f9;font-size:0.95rem;margin:0;"></p>
-                <p id="effectEditModalFile" style="font-size:0.7rem;color:#64748b;font-family:monospace;margin:0.15rem 0 0;"></p>
+                <p id="effectEditModalTitle" class="font-bold text-slate-100 text-sm m-0"></p>
+                <p id="effectEditModalFile" class="text-[0.7rem] text-slate-500 font-mono mt-0.5 m-0"></p>
               </div>
-              <button id="effectEditModalClose" title="Close" style="color:#64748b;background:none;border:none;cursor:pointer;padding:0.25rem;border-radius:0.4rem;display:flex;align-items:center;line-height:1;">
+              <button id="effectEditModalClose" title="Close" aria-label="Close" class="text-slate-500 hover:text-slate-300 bg-transparent border-none cursor-pointer p-1 rounded flex items-center leading-none transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
-            <div style="flex:1;overflow:hidden;padding:1rem 1.25rem;min-height:0;">
+            <div class="flex-1 overflow-hidden px-5 py-4 min-h-0">
               <textarea id="effectEditModalTextarea"
-                style="width:100%;height:100%;min-height:300px;background:#020617;color:#cbd5e1;font-size:0.75rem;font-family:'Courier New',Courier,monospace;border:1px solid #334155;border-radius:0.5rem;padding:0.75rem;resize:none;outline:none;box-sizing:border-box;display:block;"
+                class="w-full h-full min-h-[300px] bg-slate-950 text-slate-300 text-xs font-mono border border-slate-700 rounded-lg p-3 resize-none outline-none block"
                 spellcheck="false"></textarea>
             </div>
-            <div style="display:flex;justify-content:flex-end;gap:0.5rem;padding:0.75rem 1.25rem;border-top:1px solid #1e293b;flex-shrink:0;">
-              <button id="effectEditModalCancel" style="padding:0.4rem 1.1rem;font-size:0.8rem;color:#94a3b8;border:1px solid #334155;border-radius:0.5rem;background:none;cursor:pointer;">Cancel</button>
-              <button id="effectEditModalSave" style="padding:0.4rem 1.1rem;font-size:0.8rem;font-weight:600;background:#0369a1;color:#fff;border:none;border-radius:0.5rem;cursor:pointer;">Save Changes</button>
+            <div class="flex justify-end gap-2 px-5 py-3 border-t border-slate-800 shrink-0">
+              <button id="effectEditModalCancel" class="px-4 py-1.5 text-sm text-slate-400 border border-slate-700 rounded-lg bg-transparent cursor-pointer hover:text-slate-200 hover:border-slate-500 transition-colors">Cancel</button>
+              <button id="effectEditModalSave" class="px-4 py-1.5 text-sm font-semibold bg-sky-700 hover:bg-sky-600 text-white border-none rounded-lg cursor-pointer transition-colors">Save Changes</button>
             </div>
           </div>
         </div>
@@ -1467,24 +1462,21 @@ document.addEventListener("DOMContentLoaded", () => {
       const card = document.createElement("div");
       const tooltip = [eff.description, `file: ${eff.filename}`].filter(Boolean).join("\n");
       card.title = tooltip;
-      card.style.cssText =
-        "background:rgba(30,41,59,0.6);border:1px solid rgba(71,85,105,0.4);border-radius:0.5rem;padding:0.35rem 0.5rem;display:flex;align-items:center;gap:0.5rem;transition:border-color 0.15s;min-width:0;";
-      card.addEventListener("mouseenter", () => { card.style.borderColor = "rgba(100,116,139,0.65)"; });
-      card.addEventListener("mouseleave", () => { card.style.borderColor = "rgba(71,85,105,0.4)"; });
+      card.className = "bg-slate-800/60 border border-slate-600/40 rounded-lg px-2 py-1.5 flex items-center gap-2 transition-colors min-w-0 hover:border-slate-500/65";
 
       // ── Indicator dot ─────────────────────────────────────────────────────
       const dot = document.createElement("span");
-      dot.style.cssText = "width:6px;height:6px;border-radius:50%;background:#38bdf8;flex-shrink:0;";
+      dot.className = "w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0";
       card.appendChild(dot);
 
       // ── Text: label + name ────────────────────────────────────────────────
       const textWrap = document.createElement("div");
-      textWrap.style.cssText = "flex:1;min-width:0;";
+      textWrap.className = "flex-1 min-w-0";
       const labelEl = document.createElement("div");
-      labelEl.style.cssText = "font-weight:600;color:#e2e8f0;font-size:0.775rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;";
+      labelEl.className = "font-semibold text-slate-200 text-xs whitespace-nowrap overflow-hidden text-ellipsis leading-tight";
       labelEl.textContent = eff.label || eff.name;
       const nameEl = document.createElement("div");
-      nameEl.style.cssText = "font-size:0.62rem;color:#64748b;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;";
+      nameEl.className = "text-[0.62rem] text-slate-500 font-mono whitespace-nowrap overflow-hidden text-ellipsis leading-tight";
       nameEl.textContent = eff.name;
       textWrap.appendChild(labelEl);
       textWrap.appendChild(nameEl);
@@ -1492,18 +1484,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // ── Buttons ───────────────────────────────────────────────────────────
       const editBtn = document.createElement("button");
-      editBtn.style.cssText =
-        "padding:0.2rem 0.5rem;font-size:0.65rem;font-weight:500;color:#94a3b8;border:1px solid #334155;border-radius:0.35rem;background:none;cursor:pointer;flex-shrink:0;transition:color 0.15s,border-color 0.15s;";
+      editBtn.className = "px-2 py-0.5 text-[0.65rem] font-medium text-slate-400 border border-slate-700 rounded bg-transparent cursor-pointer shrink-0 transition-colors hover:text-sky-300 hover:border-sky-500";
       editBtn.textContent = "Edit";
-      editBtn.addEventListener("mouseenter", () => { editBtn.style.color = "#7dd3fc"; editBtn.style.borderColor = "#38bdf8"; });
-      editBtn.addEventListener("mouseleave", () => { editBtn.style.color = "#94a3b8"; editBtn.style.borderColor = "#334155"; });
 
       const delBtn = document.createElement("button");
-      delBtn.style.cssText = "padding:0.2rem;color:#475569;background:none;border:none;cursor:pointer;border-radius:0.3rem;display:flex;align-items:center;flex-shrink:0;transition:color 0.15s;";
+      delBtn.className = "p-0.5 text-slate-600 bg-transparent border-none cursor-pointer rounded flex items-center shrink-0 transition-colors hover:text-red-400";
       delBtn.title = `Delete ${eff.label || eff.name}`;
       delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
-      delBtn.addEventListener("mouseenter", () => { delBtn.style.color = "#f87171"; });
-      delBtn.addEventListener("mouseleave", () => { delBtn.style.color = "#475569"; });
 
       card.appendChild(editBtn);
       card.appendChild(delBtn);
@@ -1527,7 +1514,8 @@ document.addEventListener("DOMContentLoaded", () => {
         textarea.disabled = true;
         saveBtn.disabled = true;
         modal.dataset.effectName = eff.name;
-        modal.style.display = "flex";
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
         modal.addEventListener("keydown", handleEffectModalKeydown);
         textarea.focus();
         try {
@@ -1576,6 +1564,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function initAdminWebSocket() {
     const wsUrl = (window.DANMU_CONFIG || {}).wsUrl;
     if (!wsUrl) return;
+    let _wsReconnectAttempts = 0;
+    const _wsMaxReconnectDelay = 60000;
 
     function connect() {
       try {
@@ -1594,12 +1584,18 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         };
 
+        _adminWs.onopen = () => {
+          _wsReconnectAttempts = 0;
+        };
+
         _adminWs.onclose = () => {
           if (!_adminWsReconnectTimer) {
+            const delay = Math.min(5000 * Math.pow(2, _wsReconnectAttempts), _wsMaxReconnectDelay);
+            _wsReconnectAttempts++;
             _adminWsReconnectTimer = setTimeout(() => {
               _adminWsReconnectTimer = null;
               connect();
-            }, 5000);
+            }, delay);
           }
         };
 

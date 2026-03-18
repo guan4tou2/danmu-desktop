@@ -64,12 +64,13 @@ function isValidIpAddress(ip) {
 
 /**
  * Registers all ipcMain handlers for the application.
- * @param {BrowserWindow} mainWindow
+ * @param {Function} getMainWindow - Getter that returns the current main window
  * @param {Object[]} childWindows - Mutable array of child windows
  */
-function setupIpcHandlers(mainWindow, childWindows) {
+function setupIpcHandlers(getMainWindow, childWindows) {
   // Close all child windows — must originate from the main window
   ipcMain.on("closeChildWindows", (event) => {
+    const mainWindow = getMainWindow();
     if (!isFromMainWindow(event, mainWindow)) {
       console.warn("[Main] closeChildWindows: rejected IPC from untrusted sender");
       return;
@@ -94,6 +95,7 @@ function setupIpcHandlers(mainWindow, childWindows) {
       console.warn("[Main] overlay-connection-status: rejected IPC from untrusted sender");
       return;
     }
+    const mainWindow = getMainWindow();
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send("overlay-connection-status", data);
     }
@@ -101,6 +103,7 @@ function setupIpcHandlers(mainWindow, childWindows) {
 
   // Get all displays — restricted to main window
   ipcMain.handle("getDisplays", async (event) => {
+    const mainWindow = getMainWindow();
     if (!isFromMainWindow(event, mainWindow)) {
       console.warn("[Main] getDisplays: rejected IPC from untrusted sender");
       return [];
@@ -111,11 +114,12 @@ function setupIpcHandlers(mainWindow, childWindows) {
       id: sanitizeLog(d.id),
     }));
     console.log("[Main] getDisplays handled, returning:", sanitizedDisplays);
-    return displays;
+    return sanitizedDisplays;
   });
 
   // Get system locale — restricted to main window
   ipcMain.handle("getSystemLocale", async (event) => {
+    const mainWindow = getMainWindow();
     if (!isFromMainWindow(event, mainWindow)) {
       console.warn("[Main] getSystemLocale: rejected IPC from untrusted sender");
       return "";
@@ -130,12 +134,19 @@ function setupIpcHandlers(mainWindow, childWindows) {
 
   // Send test danmu to all child windows — restricted to main window
   ipcMain.on("send-test-danmu", (event, data) => {
+    const mainWindow = getMainWindow();
     if (!isFromMainWindow(event, mainWindow)) {
       console.warn("[Main] send-test-danmu: rejected IPC from untrusted sender");
       return;
     }
     if (!data || typeof data !== "object") {
       console.warn("[Main] send-test-danmu: invalid data payload");
+      return;
+    }
+
+    // Validate text field
+    if (typeof data.text !== "string" || data.text.length > 500) {
+      console.warn("[Main] send-test-danmu: invalid or oversized text");
       return;
     }
 
@@ -191,6 +202,7 @@ function setupIpcHandlers(mainWindow, childWindows) {
 
   // Update overlay settings on all child windows — restricted to main window
   ipcMain.on("update-overlay-settings", (event, settings) => {
+    const mainWindow = getMainWindow();
     if (!isFromMainWindow(event, mainWindow)) {
       console.warn("[Main] update-overlay-settings: rejected IPC from untrusted sender");
       return;
@@ -239,6 +251,7 @@ function setupIpcHandlers(mainWindow, childWindows) {
       startupAnimationSettings,
       wsAuthToken
     ) => {
+      const mainWindow = getMainWindow();
       if (!isFromMainWindow(event, mainWindow)) {
         console.warn("[Main] createChild: rejected IPC from untrusted sender");
         return;

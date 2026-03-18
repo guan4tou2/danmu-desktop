@@ -59,10 +59,10 @@ def test_blacklist_remove_then_fire_passes(client):
 def test_blacklist_add_duplicate_is_idempotent(client):
     """重複新增同一關鍵字不應造成錯誤"""
     token = _login(client)
-    client.post("/admin/blacklist/add",
-                json={"keyword": "dup"}, headers={"X-CSRF-Token": token})
-    resp = client.post("/admin/blacklist/add",
-                       json={"keyword": "dup"}, headers={"X-CSRF-Token": token})
+    client.post("/admin/blacklist/add", json={"keyword": "dup"}, headers={"X-CSRF-Token": token})
+    resp = client.post(
+        "/admin/blacklist/add", json={"keyword": "dup"}, headers={"X-CSRF-Token": token}
+    )
     assert resp.status_code == 200
     assert "already exists" in resp.get_json()["message"]
 
@@ -70,8 +70,9 @@ def test_blacklist_add_duplicate_is_idempotent(client):
 def test_get_blacklist_reflects_add(client):
     """GET /admin/blacklist/get 應回傳新增後的關鍵字"""
     token = _login(client)
-    client.post("/admin/blacklist/add",
-                json={"keyword": "visible"}, headers={"X-CSRF-Token": token})
+    client.post(
+        "/admin/blacklist/add", json={"keyword": "visible"}, headers={"X-CSRF-Token": token}
+    )
     resp = client.get("/admin/blacklist/get")
     assert resp.status_code == 200
     keywords = resp.get_json()
@@ -85,13 +86,15 @@ def test_admin_set_speed_default_then_fire_uses_new_speed(client):
     """Admin 更改 Speed 預設值 + 關閉自訂，fire 應使用新設定"""
     token = _login(client)
     # 更新 Speed 預設值為 7
-    client.post("/admin/update",
-                json={"type": "Speed", "index": 3, "value": 7},
-                headers={"X-CSRF-Token": token})
+    client.post(
+        "/admin/update",
+        json={"type": "Speed", "index": 3, "value": 7},
+        headers={"X-CSRF-Token": token},
+    )
     # 禁止使用者自訂 Speed
-    client.post("/admin/Set",
-                json={"key": "Speed", "enabled": False},
-                headers={"X-CSRF-Token": token})
+    client.post(
+        "/admin/Set", json={"key": "Speed", "enabled": False}, headers={"X-CSRF-Token": token}
+    )
     # 清除 admin 操作產生的 settings_changed 通知
     ws_queue.dequeue_all()
 
@@ -105,14 +108,17 @@ def test_admin_set_speed_default_then_fire_uses_new_speed(client):
 def test_admin_toggle_effects_off_suppresses_effects(client):
     """Admin 關閉 Effects 後，fire 帶入 effects 參數應被忽略"""
     token = _login(client)
-    client.post("/admin/Set",
-                json={"key": "Effects", "enabled": False},
-                headers={"X-CSRF-Token": token})
+    client.post(
+        "/admin/Set", json={"key": "Effects", "enabled": False}, headers={"X-CSRF-Token": token}
+    )
 
-    resp = client.post("/fire", json={
-        "text": "test",
-        "effects": [{"name": "spin", "params": {}}],
-    })
+    resp = client.post(
+        "/fire",
+        json={
+            "text": "test",
+            "effects": [{"name": "spin", "params": {}}],
+        },
+    )
     assert resp.status_code == 200
     msg = ws_queue.dequeue_all()[0]
     assert msg.get("effectCss") is None
@@ -123,17 +129,17 @@ def test_admin_toggle_effects_on_off_on(client):
     token = _login(client)
 
     # 關閉
-    client.post("/admin/Set",
-                json={"key": "Effects", "enabled": False},
-                headers={"X-CSRF-Token": token})
+    client.post(
+        "/admin/Set", json={"key": "Effects", "enabled": False}, headers={"X-CSRF-Token": token}
+    )
     r1 = client.post("/fire", json={"text": "off", "effects": [{"name": "spin", "params": {}}]})
     assert r1.status_code == 200
     assert ws_queue.dequeue_all()[0].get("effectCss") is None
 
     # 開啟
-    client.post("/admin/Set",
-                json={"key": "Effects", "enabled": True},
-                headers={"X-CSRF-Token": token})
+    client.post(
+        "/admin/Set", json={"key": "Effects", "enabled": True}, headers={"X-CSRF-Token": token}
+    )
     r2 = client.post("/fire", json={"text": "on"})
     assert r2.status_code == 200
     ws_queue.dequeue_all()
@@ -145,9 +151,11 @@ def test_admin_toggle_effects_on_off_on(client):
 def test_get_settings_reflects_admin_update(client):
     """/get_settings 應回傳 admin 更新後的設定值"""
     token = _login(client)
-    client.post("/admin/update",
-                json={"type": "Speed", "index": 3, "value": 8},
-                headers={"X-CSRF-Token": token})
+    client.post(
+        "/admin/update",
+        json={"type": "Speed", "index": 3, "value": 8},
+        headers={"X-CSRF-Token": token},
+    )
 
     resp = client.get("/get_settings")
     assert resp.status_code == 200
@@ -157,9 +165,9 @@ def test_get_settings_reflects_admin_update(client):
 def test_get_settings_reflects_admin_toggle(client):
     """/get_settings 應回傳 admin 切換後的開/關狀態"""
     token = _login(client)
-    client.post("/admin/Set",
-                json={"key": "Color", "enabled": False},
-                headers={"X-CSRF-Token": token})
+    client.post(
+        "/admin/Set", json={"key": "Color", "enabled": False}, headers={"X-CSRF-Token": token}
+    )
 
     resp = client.get("/get_settings")
     assert resp.status_code == 200
@@ -178,12 +186,14 @@ def test_sequential_fires_use_updated_settings(client):
 
     # Admin 改 Speed 預設為 9 且強制使用
     token = _login(client)
-    client.post("/admin/update",
-                json={"type": "Speed", "index": 3, "value": 9},
-                headers={"X-CSRF-Token": token})
-    client.post("/admin/Set",
-                json={"key": "Speed", "enabled": False},
-                headers={"X-CSRF-Token": token})
+    client.post(
+        "/admin/update",
+        json={"type": "Speed", "index": 3, "value": 9},
+        headers={"X-CSRF-Token": token},
+    )
+    client.post(
+        "/admin/Set", json={"key": "Speed", "enabled": False}, headers={"X-CSRF-Token": token}
+    )
     # 清除 admin 操作產生的 settings_changed 通知
     ws_queue.dequeue_all()
 
@@ -209,7 +219,7 @@ def test_admin_history_shows_fired_messages(client):
     hist_svc.danmu_history = DanmuHistory(max_records=100)
     try:
         client.post("/fire", json={"text": "history test"})
-        token = _login(client)
+        _login(client)
         resp = client.get("/admin/history")
         assert resp.status_code == 200
         data = resp.get_json()

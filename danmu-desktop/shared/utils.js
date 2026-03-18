@@ -24,7 +24,7 @@ function validateIP(value) {
         /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
     const domainRegex =
         /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
-    return ipRegex.test(value) || domainRegex.test(value);
+    return value === "localhost" || ipRegex.test(value) || domainRegex.test(value);
 }
 
 /**

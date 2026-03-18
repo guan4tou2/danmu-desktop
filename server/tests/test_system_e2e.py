@@ -26,6 +26,8 @@ from server.services.ws_state import get_ws_client_count
 
 def _recv(ws, *, skip_types=("ping",), timeout: float = 2.0):
     """從 WS 接收一則非心跳訊息，回傳 dict 或 None（timeout）"""
+    from websockets.exceptions import ConnectionClosed
+
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         remaining = max(0.05, deadline - time.monotonic())
@@ -35,13 +37,15 @@ def _recv(ws, *, skip_types=("ping",), timeout: float = 2.0):
             if data.get("type") in skip_types:
                 continue
             return data
-        except Exception:
+        except (TimeoutError, ConnectionClosed):
             break
     return None
 
 
 def _recv_type(ws, msg_type: str, timeout: float = 2.0):
     """接收特定 type 的訊息，跳過其他所有訊息"""
+    from websockets.exceptions import ConnectionClosed
+
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         remaining = max(0.05, deadline - time.monotonic())
@@ -50,7 +54,7 @@ def _recv_type(ws, msg_type: str, timeout: float = 2.0):
             data = json.loads(ws.recv())
             if data.get("type") == msg_type:
                 return data
-        except Exception:
+        except (TimeoutError, ConnectionClosed):
             break
     return None
 
@@ -128,10 +132,13 @@ def test_fire_image_flag_preserved(client, ws_server_port):
     with connect(f"ws://127.0.0.1:{ws_server_port}") as ws:
         assert _wait_overlay_registered()
 
-        client.post("/fire", json={
-            "text": "https://example.com/img.jpg",
-            "isImage": True,
-        })
+        client.post(
+            "/fire",
+            json={
+                "text": "https://example.com/img.jpg",
+                "isImage": True,
+            },
+        )
 
         msg = _recv(ws)
         assert msg is not None
@@ -163,8 +170,10 @@ def test_blacklisted_fire_not_delivered_to_overlay(client, ws_server_port):
 
 def test_multiple_overlays_all_receive(client, ws_server_port):
     """兩個 overlay 同時連線，POST /fire 後兩個都應收到訊息"""
-    with connect(f"ws://127.0.0.1:{ws_server_port}") as ws1, \
-         connect(f"ws://127.0.0.1:{ws_server_port}") as ws2:
+    with (
+        connect(f"ws://127.0.0.1:{ws_server_port}") as ws1,
+        connect(f"ws://127.0.0.1:{ws_server_port}") as ws2,
+    ):
         assert _wait_overlay_registered(minimum=2), "expected 2 clients"
 
         client.post("/fire", json={"text": "broadcast"})
@@ -224,7 +233,7 @@ def test_admin_toggle_notifies_overlay(client, ws_server_port):
 def test_fire_returns_503_after_overlay_disconnects(client, ws_server_port):
     """overlay 斷線後 /fire 應回傳 503"""
     # 確保先連再斷
-    with connect(f"ws://127.0.0.1:{ws_server_port}") as ws:
+    with connect(f"ws://127.0.0.1:{ws_server_port}"):
         assert _wait_overlay_registered()
     # ws context 結束，overlay 已斷線；等待 WS 伺服器 unregister
     deadline = time.monotonic() + 2.0

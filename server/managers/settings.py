@@ -82,6 +82,11 @@ class SettingsStore:
                     )
                 self._options[key][index] = value
             else:
+                # index 0 是 toggle，必須為 bool
+                if index == 0:
+                    value = bool(value)
+                elif not isinstance(value, (bool, int, float, str)):
+                    raise ValueError(f"Invalid value type for {key}[{index}]")
                 self._options[key][index] = value
             self._persist()
             return copy.deepcopy(self._options[key])

@@ -174,8 +174,7 @@ def load_all(force: bool = False) -> List[Dict[str, Any]]:
     with _lock:
         effects = list(_cache.values())
     return [
-        {k: v for k, v in eff.items() if k not in ("keyframes", "animation")}
-        for eff in effects
+        {k: v for k, v in eff.items() if k not in ("keyframes", "animation")} for eff in effects
     ]
 
 
@@ -288,6 +287,10 @@ def save_effect_content(name: str, content: bytes) -> Tuple[Optional[str], Optio
 
     if not isinstance(data, dict) or not data.get("name"):
         return None, "Missing 'name' field"
+
+    # 確保 YAML 內的 name 與請求的 name 一致，防止透過編輯偷換名稱
+    if str(data["name"]) != name:
+        return None, f"Name in content '{data['name']}' does not match '{name}'"
 
     if not str(data.get("animation", "")).strip():
         return None, "Missing 'animation' field"

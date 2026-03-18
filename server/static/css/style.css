@@ -7,9 +7,9 @@ body {
 
 /* Glass effect */
 .glass-effect {
-  background: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* Custom range input styles */
@@ -49,6 +49,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 summary:focus-visible {
   border-radius: 0.75rem;
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+  border-radius: 0.25rem;
 }
 
 /* Page load animation */
