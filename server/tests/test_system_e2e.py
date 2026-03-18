@@ -267,3 +267,55 @@ def test_fire_succeeds_after_overlay_reconnects(client, ws_server_port):
         msg = _recv(ws)
         assert msg is not None
         assert msg["text"] == "reconnected"
+
+
+# ─── 並發壓力測試 ─────────────────────────────────────────────────────────────
+
+
+def test_concurrent_fires_all_delivered(ws_server_port):
+    """50 個併發 POST /fire 全部送達 overlay，無遺漏"""
+    import concurrent.futures
+
+    from server.app import create_app
+    from server.config import Config
+    from server.services.security import rate_limiter
+
+    class StressTestConfig(Config):
+        TESTING = True
+        SECRET_KEY = "test-secret"
+        ADMIN_PASSWORD = "test"
+        FIRE_RATE_LIMIT = 200
+        FIRE_RATE_WINDOW = 60
+
+    stress_app = create_app(StressTestConfig)
+    rate_limiter.reset()
+
+    NUM = 50
+    expected_texts = {f"concurrent-{i}" for i in range(NUM)}
+
+    with connect(f"ws://127.0.0.1:{ws_server_port}") as ws:
+        assert _wait_overlay_registered()
+
+        def _fire(i):
+            with stress_app.test_client() as c:
+                return c.post("/fire", json={"text": f"concurrent-{i}"})
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as pool:
+            futures = [pool.submit(_fire, i) for i in range(NUM)]
+            results = [f.result() for f in futures]
+
+        # 所有請求應為 200
+        for i, r in enumerate(results):
+            assert r.status_code == 200, f"fire {i} returned {r.status_code}"
+
+        # 收集 overlay 訊息
+        received_texts: set[str] = set()
+        deadline = time.monotonic() + 10.0
+        while len(received_texts) < NUM and time.monotonic() < deadline:
+            msg = _recv(ws, timeout=max(0.1, deadline - time.monotonic()))
+            if msg and "text" in msg:
+                received_texts.add(msg["text"])
+
+        assert received_texts == expected_texts, (
+            f"missing: {expected_texts - received_texts}, extra: {received_texts - expected_texts}"
+        )
