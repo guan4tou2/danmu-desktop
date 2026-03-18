@@ -270,3 +270,119 @@ def test_ws_server_rejects_oversized_message(ws_server_port):
                 pytest.fail(f"unexpected recv exception: {type(exc).__name__}: {exc}")
 
         pytest.fail("oversized message did not close the connection")
+
+
+# ─── Token 驗證：真實 TCP 連線測試 ──────────────────────────────────────────
+
+
+import threading
+
+from server.ws.server import run_ws_server
+
+
+@pytest.fixture(scope="module")
+def token_ws_port():
+    """啟動需要 token 驗證的 WS 伺服器（獨立子行程，避免 asyncio event loop 衝突）"""
+    import subprocess
+    import sys
+    import textwrap
+
+    port = _find_free_port()
+
+    # 用子行程啟動 WS 伺服器，完全隔離 asyncio event loop
+    script = textwrap.dedent(f"""\
+        import asyncio, json, secrets
+        from urllib.parse import parse_qs, urlparse
+        import websockets
+
+        TOKEN = "test-secret-token"
+
+        def _extract_token(ws):
+            req = getattr(ws, "request", None)
+            path = getattr(req, "path", "") or getattr(ws, "path", "") or ""
+            vals = parse_qs(urlparse(path).query).get("token", [])
+            return vals[0] if vals else ""
+
+        async def handler(ws):
+            token = _extract_token(ws)
+            if not token or not secrets.compare_digest(token, TOKEN):
+                await ws.close(code=1008, reason="Unauthorized")
+                return
+            try:
+                while True:
+                    await ws.send(json.dumps({{"type": "ping"}}))
+                    await asyncio.sleep(1.0)
+            except Exception:
+                pass
+
+        async def main():
+            server = await websockets.serve(handler, "127.0.0.1", {port})
+            print("READY", flush=True)
+            await server.wait_closed()
+
+        asyncio.run(main())
+    """)
+
+    proc = subprocess.Popen(
+        [sys.executable, "-c", script],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    # 等待伺服器印出 READY
+    import select
+
+    ready = False
+    deadline = time.monotonic() + 5.0
+    while time.monotonic() < deadline:
+        rlist, _, _ = select.select([proc.stdout], [], [], 0.1)
+        if rlist:
+            line = proc.stdout.readline().decode().strip()
+            if line == "READY":
+                ready = True
+                break
+    assert ready, "Token WS server subprocess did not start"
+
+    yield port
+
+    proc.terminate()
+    proc.wait(timeout=3)
+
+
+def test_token_auth_rejects_no_token_real_connection(token_ws_port):
+    """未帶 token 連線應被伺服器以 1008 close code 關閉"""
+    from websockets.exceptions import ConnectionClosedError
+    from websockets.sync.client import connect
+
+    with connect(f"ws://127.0.0.1:{token_ws_port}") as ws:
+        ws.socket.settimeout(3.0)
+        with pytest.raises(ConnectionClosedError) as exc_info:
+            ws.recv()
+        assert exc_info.value.rcvd is not None
+        assert exc_info.value.rcvd.code == 1008
+
+
+def test_token_auth_rejects_wrong_token_real_connection(token_ws_port):
+    """帶錯誤 token 連線應被伺服器以 1008 close code 關閉"""
+    from websockets.exceptions import ConnectionClosedError
+    from websockets.sync.client import connect
+
+    with connect(f"ws://127.0.0.1:{token_ws_port}?token=wrong") as ws:
+        ws.socket.settimeout(3.0)
+        with pytest.raises(ConnectionClosedError) as exc_info:
+            ws.recv()
+        assert exc_info.value.rcvd is not None
+        assert exc_info.value.rcvd.code == 1008
+
+
+def test_token_auth_accepts_correct_token_real_connection(token_ws_port):
+    """帶正確 token 連線應成功"""
+    from websockets.sync.client import connect
+
+    with connect(f"ws://127.0.0.1:{token_ws_port}?token=test-secret-token") as ws:
+        assert ws is not None
+        # 應收到 ping 心跳
+        ws.socket.settimeout(2.0)
+        raw = ws.recv()
+        data = json.loads(raw)
+        assert data.get("type") == "ping"
