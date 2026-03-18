@@ -4,7 +4,6 @@ import pytest
 
 from server.utils import APIError, allowed_file, is_valid_image_url, sanitize_log_string
 
-
 # ─── is_valid_image_url ───────────────────────────────────────────────────────
 
 

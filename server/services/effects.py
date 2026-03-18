@@ -174,8 +174,7 @@ def load_all(force: bool = False) -> List[Dict[str, Any]]:
     with _lock:
         effects = list(_cache.values())
     return [
-        {k: v for k, v in eff.items() if k not in ("keyframes", "animation")}
-        for eff in effects
+        {k: v for k, v in eff.items() if k not in ("keyframes", "animation")} for eff in effects
     ]
 
 

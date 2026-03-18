@@ -511,7 +511,11 @@ def test_change_password_requires_login(client):
         sess["csrf_token"] = "t"
     resp = client.post(
         "/admin/change_password",
-        json={"current_password": "test", "new_password": "newpass1!", "confirm_password": "newpass1!"},
+        json={
+            "current_password": "test",
+            "new_password": "newpass1!",
+            "confirm_password": "newpass1!",
+        },
         headers={"X-CSRF-Token": "t"},
     )
     assert resp.status_code == 401
@@ -520,7 +524,11 @@ def test_change_password_requires_login(client):
 def test_change_password_requires_csrf(client):
     resp = client.post(
         "/admin/change_password",
-        json={"current_password": "test", "new_password": "newpass1!", "confirm_password": "newpass1!"},
+        json={
+            "current_password": "test",
+            "new_password": "newpass1!",
+            "confirm_password": "newpass1!",
+        },
     )
     assert resp.status_code == 403
 

@@ -182,9 +182,7 @@ class DanmuHistory:
             self._records = new_records
 
             if len(new_records) < old_count:
-                logger.info(
-                    "Cleaned up %d old danmu records", old_count - len(new_records)
-                )
+                logger.info("Cleaned up %d old danmu records", old_count - len(new_records))
 
 
 # 全局實例（將在應用初始化時配置）

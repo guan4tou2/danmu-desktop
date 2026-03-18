@@ -11,14 +11,12 @@
 import json
 import logging
 import socket
-import threading
 import time
 
 import pytest
 
 from server.config import Config  # ty: ignore[unresolved-import]
 from server.services import ws_queue  # ty: ignore[unresolved-import]
-from server.ws.server import run_ws_server  # ty: ignore[unresolved-import]
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +61,6 @@ def _recv_non_ping(ws, timeout: float = 2.0):
         except (TimeoutError, ConnectionClosed):
             break
     return None
-
 
 
 @pytest.fixture(autouse=True)
@@ -185,7 +182,9 @@ class _MockWebSocket:
         self._path = path
         self._origin = origin
         # websockets>=16 style
-        self.request = type("Request", (), {"path": path, "headers": {"Origin": origin} if origin else {}})()
+        self.request = type(
+            "Request", (), {"path": path, "headers": {"Origin": origin} if origin else {}}
+        )()
 
 
 def test_ws_token_auth_rejects_wrong_token():
@@ -195,6 +194,7 @@ def test_ws_token_auth_rejects_wrong_token():
     configured_token = "real-secret"
     # Simulate what _is_authorized does: extract token from query string, then compare
     from urllib.parse import parse_qs, urlparse
+
     path = "/?token=wrong-token"
     query = parse_qs(urlparse(path).query)
     token = query.get("token", [""])[0]
@@ -209,6 +209,7 @@ def test_ws_token_auth_accepts_correct_token():
 
     configured_token = "real-secret"
     from urllib.parse import parse_qs, urlparse
+
     path = "/?token=real-secret"
     query = parse_qs(urlparse(path).query)
     token = query.get("token", [""])[0]
@@ -219,6 +220,7 @@ def test_ws_token_auth_accepts_correct_token():
 def test_ws_token_auth_rejects_empty_token_when_required():
     """未帶 token 時，require_token=True 應拒絕"""
     from urllib.parse import parse_qs, urlparse
+
     path = "/"
     query = parse_qs(urlparse(path).query)
     token = query.get("token", [""])[0]

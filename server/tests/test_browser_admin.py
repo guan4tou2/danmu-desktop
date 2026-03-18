@@ -20,6 +20,7 @@ from server.tests.conftest import TestConfig, find_free_port
 
 class BrowserTestConfig(TestConfig):
     """瀏覽器測試用設定：提高 rate limit 避免連續登入被封鎖"""
+
     LOGIN_RATE_LIMIT = 1000
     LOGIN_RATE_WINDOW = 1
     ADMIN_RATE_LIMIT = 1000

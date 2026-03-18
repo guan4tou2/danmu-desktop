@@ -56,9 +56,7 @@ async def _forward_messages(logger):
             if messages and clients:
                 message_tasks = []
                 for data in messages:
-                    message_tasks.extend(
-                        [client.send(json.dumps(data)) for client in clients]
-                    )
+                    message_tasks.extend([client.send(json.dumps(data)) for client in clients])
                 if message_tasks:
                     await asyncio.gather(*message_tasks, return_exceptions=True)
 
@@ -95,7 +93,10 @@ def run_ws_server(ws_port, logger):
     ws_write_limit = int(Config.WS_WRITE_LIMIT)
 
     if require_token and not configured_token:
-        logger.warning("WS_REQUIRE_TOKEN is enabled but WS_AUTH_TOKEN is empty; all WS clients will be rejected.")
+        logger.warning(
+            "WS_REQUIRE_TOKEN is enabled but WS_AUTH_TOKEN is empty; "
+            "all WS clients will be rejected."
+        )
 
     def _request_path(websocket):
         path = getattr(websocket, "path", None)
@@ -135,7 +136,9 @@ def run_ws_server(ws_port, logger):
         if allowed_origins:
             origin = _request_header(websocket, "Origin")
             if origin not in allowed_origins:
-                logger.warning("Rejecting WS client with disallowed Origin: %s", sanitize_log_string(origin))
+                logger.warning(
+                    "Rejecting WS client with disallowed Origin: %s", sanitize_log_string(origin)
+                )
                 return False
         if require_token:
             token = _extract_token(websocket)

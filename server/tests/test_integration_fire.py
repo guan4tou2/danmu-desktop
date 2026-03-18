@@ -105,10 +105,13 @@ def test_fire_empty_blacklist_always_passes(client):
 
 
 def test_fire_valid_image_url_enqueued(client):
-    resp = client.post("/fire", json={
-        "text": "https://example.com/photo.jpg",
-        "isImage": True,
-    })
+    resp = client.post(
+        "/fire",
+        json={
+            "text": "https://example.com/photo.jpg",
+            "isImage": True,
+        },
+    )
     assert resp.status_code == 200
     msg = ws_queue.dequeue_all()[0]
     assert msg.get("isImage") is True
@@ -156,8 +159,7 @@ def test_fire_history_records_client_ip(client):
     original = hist_svc.danmu_history
     hist_svc.danmu_history = DanmuHistory(max_records=100)
     try:
-        client.post("/fire", json={"text": "ip test"},
-                    environ_base={"REMOTE_ADDR": "10.0.0.1"})
+        client.post("/fire", json={"text": "ip test"}, environ_base={"REMOTE_ADDR": "10.0.0.1"})
         records = hist_svc.danmu_history.get_records()
         assert records[0]["clientIp"] == "10.0.0.1"
     finally:
@@ -241,10 +243,13 @@ def test_fire_uses_admin_default_speed_when_user_omits(client):
 def test_fire_effects_disabled_sets_null_effect_css(client):
     """Effects 設定關閉時 effectCss 應為 None"""
     settings_store.set_toggle("Effects", False)
-    resp = client.post("/fire", json={
-        "text": "no effects",
-        "effects": [{"name": "spin", "params": {}}],
-    })
+    resp = client.post(
+        "/fire",
+        json={
+            "text": "no effects",
+            "effects": [{"name": "spin", "params": {}}],
+        },
+    )
     assert resp.status_code == 200
     msg = ws_queue.dequeue_all()[0]
     assert msg.get("effectCss") is None

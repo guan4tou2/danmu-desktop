@@ -1,7 +1,14 @@
 import json
 from ipaddress import ip_address
 
-from flask import Blueprint, current_app, make_response, request, send_from_directory, session
+from flask import (
+    Blueprint,
+    current_app,
+    make_response,
+    request,
+    send_from_directory,
+    session,
+)
 
 from .. import state
 from ..services import history as history_service
