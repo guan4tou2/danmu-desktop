@@ -519,6 +519,246 @@ describe("child-ws-script execution", () => {
     expect(script).toContain("Hello World");
   });
 
+  // -----------------------------------------------------------------------
+  // Task 1: settings_changed handling
+  // -----------------------------------------------------------------------
+
+  test("settings_changed message is parsed without error", () => {
+    const script = getChildWsScript("127.0.0.1", 9487);
+    const consoleMock = { log: jest.fn(), warn: jest.fn(), error: jest.fn() };
+
+    evalScript(script, {
+      console: consoleMock,
+      window: {
+        API: { sendConnectionStatus: jest.fn() },
+        showdanmu: jest.fn(),
+      },
+      setTimeout: jest.fn((fn, delay) => {
+        if (delay <= 200) fn();
+        return 1;
+      }),
+    });
+
+    const ws = MockWebSocket.instances[0];
+    ws.readyState = 1;
+    if (ws.onopen) ws.onopen();
+
+    // Send a settings_changed message (as the Python server would)
+    if (ws.onmessage) {
+      ws.onmessage({
+        data: JSON.stringify({
+          type: "settings_changed",
+          settings: { Speed: [true, 1, 10, 5] },
+        }),
+      });
+    }
+
+    // Should not have logged any error
+    const errorCalls = consoleMock.error.mock.calls.filter(
+      (call) => call[0] && call[0].toString().includes("Error processing message")
+    );
+    expect(errorCalls.length).toBe(0);
+  });
+
+  test("settings_changed message with invalid data does not crash", () => {
+    const script = getChildWsScript("127.0.0.1", 9487);
+    const consoleMock = { log: jest.fn(), warn: jest.fn(), error: jest.fn() };
+
+    evalScript(script, {
+      console: consoleMock,
+      window: {
+        API: { sendConnectionStatus: jest.fn() },
+        showdanmu: jest.fn(),
+      },
+      setTimeout: jest.fn((fn, delay) => {
+        if (delay <= 200) fn();
+        return 1;
+      }),
+    });
+
+    const ws = MockWebSocket.instances[0];
+    ws.readyState = 1;
+    if (ws.onopen) ws.onopen();
+
+    // Send malformed settings_changed messages — none should throw
+    expect(() => {
+      ws.onmessage({ data: JSON.stringify({ type: "settings_changed" }) });
+    }).not.toThrow();
+
+    expect(() => {
+      ws.onmessage({ data: JSON.stringify({ type: "settings_changed", settings: null }) });
+    }).not.toThrow();
+
+    expect(() => {
+      ws.onmessage({ data: JSON.stringify({ type: "settings_changed", settings: "invalid" }) });
+    }).not.toThrow();
+  });
+
+  // -----------------------------------------------------------------------
+  // Task 2: startup animation
+  // -----------------------------------------------------------------------
+
+  test("startup animation creates overlay element on open", () => {
+    const script = getChildWsScript("127.0.0.1", 9487, { enabled: true });
+    const createdElements = [];
+    const bodyAppended = [];
+
+    evalScript(script, {
+      window: {
+        API: { sendConnectionStatus: jest.fn() },
+      },
+      document: {
+        addEventListener: jest.fn(),
+        createElement: jest.fn((tag) => {
+          const el = {
+            tagName: tag,
+            id: "",
+            className: "",
+            textContent: "",
+            style: {},
+            setAttribute: jest.fn(),
+            innerHTML: "",
+            remove: jest.fn(),
+            appendChild: jest.fn(),
+          };
+          createdElements.push(el);
+          return el;
+        }),
+        getElementById: jest.fn(() => null),
+        querySelector: jest.fn(() => null),
+        querySelectorAll: jest.fn(() => []),
+        head: { appendChild: jest.fn() },
+        body: {
+          appendChild: jest.fn((el) => bodyAppended.push(el)),
+          contains: jest.fn(() => false),
+        },
+        visibilityState: "visible",
+      },
+      setTimeout: jest.fn((fn, delay) => {
+        if (delay <= 200) fn();
+        return 1;
+      }),
+    });
+
+    const ws = MockWebSocket.instances[0];
+    ws.readyState = 1;
+    if (ws.onopen) ws.onopen();
+
+    // Should have created a scene div and a link-start div
+    const sceneEl = createdElements.find((el) => el.className === "scene");
+    const linkStartEl = createdElements.find((el) => el.className === "link-start");
+    expect(sceneEl).toBeDefined();
+    expect(linkStartEl).toBeDefined();
+    expect(bodyAppended.length).toBeGreaterThanOrEqual(2);
+  });
+
+  test("startup animation with custom text uses provided text", () => {
+    const script = getChildWsScript("127.0.0.1", 9487, {
+      enabled: true,
+      type: "custom",
+      customText: "MyCustomText",
+    });
+    const createdElements = [];
+
+    evalScript(script, {
+      window: {
+        API: { sendConnectionStatus: jest.fn() },
+      },
+      document: {
+        addEventListener: jest.fn(),
+        createElement: jest.fn((tag) => {
+          const el = {
+            tagName: tag,
+            id: "",
+            className: "",
+            textContent: "",
+            style: {},
+            setAttribute: jest.fn(),
+            innerHTML: "",
+            remove: jest.fn(),
+            appendChild: jest.fn(),
+          };
+          createdElements.push(el);
+          return el;
+        }),
+        getElementById: jest.fn(() => null),
+        querySelector: jest.fn(() => null),
+        querySelectorAll: jest.fn(() => []),
+        head: { appendChild: jest.fn() },
+        body: {
+          appendChild: jest.fn(),
+          contains: jest.fn(() => false),
+        },
+        visibilityState: "visible",
+      },
+      setTimeout: jest.fn((fn, delay) => {
+        if (delay <= 200) fn();
+        return 1;
+      }),
+    });
+
+    const ws = MockWebSocket.instances[0];
+    ws.readyState = 1;
+    if (ws.onopen) ws.onopen();
+
+    const linkStartEl = createdElements.find((el) => el.className === "link-start");
+    expect(linkStartEl).toBeDefined();
+    expect(linkStartEl.textContent).toBe("MyCustomText");
+    expect(linkStartEl.setAttribute).toHaveBeenCalledWith("data-text", "MyCustomText");
+  });
+
+  test("startup animation with null settings defaults to LINK START text", () => {
+    const script = getChildWsScript("127.0.0.1", 9487, null);
+    const createdElements = [];
+
+    evalScript(script, {
+      window: {
+        API: { sendConnectionStatus: jest.fn() },
+      },
+      document: {
+        addEventListener: jest.fn(),
+        createElement: jest.fn((tag) => {
+          const el = {
+            tagName: tag,
+            id: "",
+            className: "",
+            textContent: "",
+            style: {},
+            setAttribute: jest.fn(),
+            innerHTML: "",
+            remove: jest.fn(),
+            appendChild: jest.fn(),
+          };
+          createdElements.push(el);
+          return el;
+        }),
+        getElementById: jest.fn(() => null),
+        querySelector: jest.fn(() => null),
+        querySelectorAll: jest.fn(() => []),
+        head: { appendChild: jest.fn() },
+        body: {
+          appendChild: jest.fn(),
+          contains: jest.fn(() => false),
+        },
+        visibilityState: "visible",
+      },
+      setTimeout: jest.fn((fn, delay) => {
+        if (delay <= 200) fn();
+        return 1;
+      }),
+    });
+
+    const ws = MockWebSocket.instances[0];
+    ws.readyState = 1;
+    if (ws.onopen) ws.onopen();
+
+    // Even with null settings (defaults to {enabled:false}), the animation still
+    // plays on first connection with the default "LINK START" text
+    const linkStartEl = createdElements.find((el) => el.className === "link-start");
+    expect(linkStartEl).toBeDefined();
+    expect(linkStartEl.textContent).toBe("LINK START");
+  });
+
   test("clear message removes danmu elements", () => {
     const script = getChildWsScript("127.0.0.1", 9487);
     const removedEls = [];
