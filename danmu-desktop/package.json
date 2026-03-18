@@ -22,6 +22,7 @@
     "@babel/core": "^7.27.4",
     "@babel/preset-env": "^7.27.2",
     "@jest/globals": "^30.2.0",
+    "@playwright/test": "^1.58.2",
     "babel-loader": "^10.0.0",
     "electron": "^36.8.1",
     "electron-builder": "^26.8.1",
