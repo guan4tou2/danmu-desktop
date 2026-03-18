@@ -31,6 +31,10 @@ jobs:
       - name: Install uv
         run: pip install uv
 
+      - name: Set up environment
+        working-directory: server
+        run: cp .env.example .env
+
       - name: Install dependencies
         working-directory: server
         run: uv sync --group dev
