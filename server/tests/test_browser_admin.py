@@ -376,3 +376,36 @@ def test_404_returns_json_error(browser_session, live_url):
     finally:
         page.close()
         context.close()
+
+
+# ─── Effects UI ──────────────────────────────────────────────────────────────
+
+
+def test_effects_section_has_effect_buttons(admin_page):
+    """Effects Management 區塊應至少包含一個效果按鈕"""
+    admin_page.wait_for_selector("#effectsList", state="visible", timeout=5000)
+    # 等待效果列表渲染完成（API 回傳後 JS 動態建立）
+    admin_page.wait_for_selector(
+        "#effectsList > div",
+        state="visible",
+        timeout=5000,
+    )
+    buttons = admin_page.locator("#effectsList > div")
+    assert buttons.count() >= 1, "Effects section should have at least one effect card"
+
+
+def test_effects_toggle_calls_api(admin_page):
+    """切換 Effects 開關應觸發 /admin/Set API"""
+    responses = []
+    admin_page.on(
+        "response",
+        lambda r: responses.append(r) if "/admin/Set" in r.url else None,
+    )
+
+    effects_toggle = admin_page.locator("#toggle-Effects")
+    effects_toggle.click()
+    admin_page.wait_for_timeout(800)
+
+    set_resp = [r for r in responses if "/admin/Set" in r.url]
+    assert len(set_resp) >= 1, "Effects toggle should call /admin/Set"
+    assert set_resp[0].status == 200
