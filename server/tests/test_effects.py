@@ -690,3 +690,118 @@ def test_save_effect_content_matching_name_accepted(app, tmp_path):
         filename, error = effects.save_effect_content("spin", good_content)
         assert error is None
         assert filename == "spin.dme"
+
+
+# ─── OSError branch coverage ────────────────────────────────────────────────
+
+
+def test_list_with_file_info_handles_stat_oserror(app):
+    """list_with_file_info should handle OSError when stat fails."""
+    from unittest.mock import patch
+    from server.services import effects
+
+    # Inject a fake entry that points to a non-existent path
+    fake_path = "/nonexistent/dir/fake.dme"
+    effects._cache["testfx"] = {
+        "name": "testfx",
+        "label": "Test",
+        "description": "desc",
+        "params": {},
+        "keyframes": "",
+        "animation": "testfx 1s",
+    }
+    effects._path_to_name[fake_path] = "testfx"
+    import time
+    effects._last_scan = time.monotonic()
+
+    try:
+        result = effects.list_with_file_info()
+        entry = next((r for r in result if r["name"] == "testfx"), None)
+        assert entry is not None
+        # mtime should be None when stat fails with OSError
+        assert entry["mtime"] is None
+        assert entry["filename"] == "fake.dme"
+    finally:
+        effects._cache.pop("testfx", None)
+        effects._path_to_name.pop(fake_path, None)
+
+
+def test_delete_by_name_handles_unlink_oserror(app):
+    """delete_by_name should return False when unlink fails."""
+    from unittest.mock import patch, MagicMock
+    from server.services import effects
+
+    fake_path = "/nonexistent/dir/spin.dme"
+    effects._cache["spin"] = {
+        "name": "spin",
+        "label": "Spin",
+        "description": "",
+        "params": {},
+        "keyframes": "",
+        "animation": "spin 1s",
+    }
+    effects._path_to_name[fake_path] = "spin"
+    effects._mtime_map[fake_path] = 123.0
+
+    try:
+        with patch("server.services.effects.Path") as MockPath:
+            mock_instance = MagicMock()
+            mock_instance.unlink.side_effect = OSError("Permission denied")
+            MockPath.return_value = mock_instance
+
+            result = effects.delete_by_name("spin")
+            assert result is False
+            # Cache should NOT be cleaned up on failure
+            assert "spin" in effects._cache
+    finally:
+        effects._cache.pop("spin", None)
+        effects._path_to_name.pop(fake_path, None)
+        effects._mtime_map.pop(fake_path, None)
+
+
+def test_save_uploaded_effect_handles_write_oserror(app):
+    """save_uploaded_effect should return error when write_bytes fails."""
+    from unittest.mock import patch
+    from pathlib import Path
+    from server.services import effects
+
+    valid_content = b"name: testwrite\nanimation: testwrite 1s\nkeyframes: ''\n"
+
+    original_write_bytes = Path.write_bytes
+
+    def _failing_write_bytes(self, data):
+        if self.name == "testwrite.dme":
+            raise OSError("Disk full")
+        return original_write_bytes(self, data)
+
+    with patch.object(Path, "write_bytes", _failing_write_bytes):
+        filename, error = effects.save_uploaded_effect(valid_content)
+        assert error == "Failed to save file"
+        assert filename == ""
+
+
+def test_get_effect_content_handles_read_oserror(app):
+    """get_effect_content should return None when file read fails."""
+    from unittest.mock import patch
+    from server.services import effects
+    import time
+
+    fake_path = "/nonexistent/dir/glow.dme"
+    effects._cache["glow"] = {
+        "name": "glow",
+        "label": "Glow",
+        "description": "",
+        "params": {},
+        "keyframes": "",
+        "animation": "glow 1s",
+    }
+    effects._path_to_name[fake_path] = "glow"
+    effects._last_scan = time.monotonic()
+
+    try:
+        # The path doesn't exist, so read_text will raise OSError
+        result = effects.get_effect_content("glow")
+        assert result is None
+    finally:
+        effects._cache.pop("glow", None)
+        effects._path_to_name.pop(fake_path, None)
