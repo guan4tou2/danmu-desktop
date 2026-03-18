@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
       minWidth: 200.0,
       scale: 1.0,
       scaleMobile: 1.0,
-      color: 0x86198f, // Purple
+      color: 0x7c3aed, // Violet-600 (matches UI accent)
       backgroundColor: 0x000000, // Black background
       points: 12.0,
       maxDistance: 25.0,
@@ -552,15 +552,15 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderLogin() {
     appContainer.innerHTML = `
                     <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 max-w-md mx-auto">
-                        <h1 class="text-3xl md:text-4xl font-bold text-center bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent pb-2">
+                        <h1 class="text-3xl md:text-4xl font-bold text-center text-violet-300 pb-2">
                             Admin Login
                         </h1>
                         <form id="loginForm" class="space-y-6" action="/login" method="post">
                             <div>
                                 <label for="password" class="text-sm font-medium text-slate-300">Password</label>
-                                <input type="password" id="password" name="password" class="mt-1 w-full p-3 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all duration-300" required>
+                                <input type="password" id="password" name="password" class="mt-1 w-full p-3 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300" required>
                             </div>
-                            <button type="submit" class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-indigo-500/50 transform hover:-translate-y-1 active:scale-95 transition-all duration-300">
+                            <button type="submit" class="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-bold py-3 px-6 rounded-xl transition-colors">
                                 Login
                             </button>
                         </form>
@@ -585,10 +585,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="flex items-center justify-between">
                             <div class="flex-grow pr-4">
                                 <h3 class="text-lg font-bold text-white">${title}</h3>
-                                <p class="text-sm text-slate-400">${description}</p>
+                                <p class="text-sm text-slate-300">${description}</p>
                             </div>
                             <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in flex-shrink-0">
-                                <input type="checkbox" name="${id}" id="toggle-${id}" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer" ${isEnabled ? "checked" : ""
+                                <input type="checkbox" name="${id}" id="toggle-${id}" role="switch" aria-checked="${isEnabled}" aria-label="Toggle ${title}" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer" ${isEnabled ? "checked" : ""
       } />
                                 <label for="toggle-${id}" class="toggle-label block overflow-hidden h-7 rounded-full bg-slate-700 cursor-pointer"></label>
                             </div>
@@ -602,17 +602,17 @@ document.addEventListener("DOMContentLoaded", () => {
     appContainer.innerHTML = `
                     <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-8">
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                             <h1 class="text-3xl md:text-4xl font-bold text-center bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent pb-2">
+                             <h1 class="text-3xl md:text-4xl font-bold text-center text-violet-300 pb-2">
                                 Danmu Control Panel
                             </h1>
-                            <button id="logoutButton" class="w-full md:w-auto flex items-center justify-center gap-2 bg-red-600/80 hover:bg-red-600 text-white font-bold py-2 px-5 rounded-lg transform active:scale-95 transition-all duration-300">
+                            <button id="logoutButton" class="w-full md:w-auto flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-5 rounded-lg transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                                 <span>Logout</span>
                             </button>
                         </div>
 
-                        <nav class="sticky top-2 z-10 rounded-xl border border-slate-700/60 bg-slate-900/70 backdrop-blur px-3 py-2">
-                            <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <nav class="sticky top-2 z-10 rounded-xl border border-slate-700/60 bg-slate-900/70 backdrop-blur px-3 py-2 overflow-x-auto" aria-label="Quick Navigation">
+                            <div class="flex items-center gap-2 text-xs whitespace-nowrap">
                                 <span class="text-slate-400 mr-1">Quick Navigation</span>
                                 <a href="#sec-color" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Basic</a>
                                 <a href="#sec-effects" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Effects</a>
@@ -637,14 +637,14 @@ document.addEventListener("DOMContentLoaded", () => {
       "Allow users to customize colors",
       currentSettings.Color[0],
       `
-                        <label class="text-sm font-medium text-slate-300">Specific Color</label>
-                        <input type="color" class="setting-input mt-1 w-full h-10 p-1 bg-slate-800 border-slate-700 rounded-lg cursor-pointer" data-key="Color" data-index="3" value="${formatColor(
+                        <label for="setting-color-3" class="text-sm font-medium text-slate-300">Specific Color</label>
+                        <input id="setting-color-3" type="color" class="setting-input mt-1 w-full h-10 p-1 bg-slate-800 border-slate-700 rounded-lg cursor-pointer" data-key="Color" data-index="3" value="${formatColor(
         "#" + currentSettings.Color[3]
       )}" disabled>
                     `,
       `
-                        <label class="text-sm font-medium text-slate-300">Specific Color</label>
-                        <input type="color" class="setting-input mt-1 w-full h-10 p-1 bg-slate-800 border-slate-700 rounded-lg cursor-pointer" data-key="Color" data-index="3" value="${formatColor(
+                        <label for="setting-color-3" class="text-sm font-medium text-slate-300">Specific Color</label>
+                        <input id="setting-color-3" type="color" class="setting-input mt-1 w-full h-10 p-1 bg-slate-800 border-slate-700 rounded-lg cursor-pointer" data-key="Color" data-index="3" value="${formatColor(
         "#" + currentSettings.Color[3]
       )}">
                     `
@@ -659,18 +659,18 @@ document.addEventListener("DOMContentLoaded", () => {
       `
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="text-sm font-medium text-slate-300">Min (%)</label>
-                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="1" value="${escapeHtml(String(currentSettings.Opacity[1]))}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
+                                <label for="setting-opacity-1" class="text-sm font-medium text-slate-300">Min (%)</label>
+                                <input id="setting-opacity-1" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="1" value="${escapeHtml(String(currentSettings.Opacity[1]))}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
                             </div>
                             <div>
-                                <label class="text-sm font-medium text-slate-300">Max (%)</label>
-                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="2" value="${escapeHtml(String(currentSettings.Opacity[2]))}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
+                                <label for="setting-opacity-2" class="text-sm font-medium text-slate-300">Max (%)</label>
+                                <input id="setting-opacity-2" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="2" value="${escapeHtml(String(currentSettings.Opacity[2]))}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
                             </div>
                         </div>
                     `,
       `
-                        <label class="text-sm font-medium text-slate-300">Specific Opacity (%)</label>
-                        <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="3" value="${escapeHtml(String(currentSettings.Opacity[3]))}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
+                        <label for="setting-opacity-3" class="text-sm font-medium text-slate-300">Specific Opacity (%)</label>
+                        <input id="setting-opacity-3" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="3" value="${escapeHtml(String(currentSettings.Opacity[3]))}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
                     `
     ));
 
@@ -683,18 +683,18 @@ document.addEventListener("DOMContentLoaded", () => {
       `
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="text-sm font-medium text-slate-300">Min (px)</label>
-                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="1" value="${escapeHtml(String(currentSettings.FontSize[1]))}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
+                                <label for="setting-fontsize-1" class="text-sm font-medium text-slate-300">Min (px)</label>
+                                <input id="setting-fontsize-1" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="1" value="${escapeHtml(String(currentSettings.FontSize[1]))}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
                             </div>
                             <div>
-                                <label class="text-sm font-medium text-slate-300">Max (px)</label>
-                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="2" value="${escapeHtml(String(currentSettings.FontSize[2]))}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
+                                <label for="setting-fontsize-2" class="text-sm font-medium text-slate-300">Max (px)</label>
+                                <input id="setting-fontsize-2" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="2" value="${escapeHtml(String(currentSettings.FontSize[2]))}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
                             </div>
                         </div>
                     `,
       `
-                        <label class="text-sm font-medium text-slate-300">Specific Size (px)</label>
-                        <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="3" value="${escapeHtml(String(currentSettings.FontSize[3]))}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
+                        <label for="setting-fontsize-3" class="text-sm font-medium text-slate-300">Specific Size (px)</label>
+                        <input id="setting-fontsize-3" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="3" value="${escapeHtml(String(currentSettings.FontSize[3]))}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
                     `
     ));
 
@@ -707,19 +707,19 @@ document.addEventListener("DOMContentLoaded", () => {
       `
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="text-sm font-medium text-slate-300">Slowest</label>
-                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="1" value="${escapeHtml(String(currentSettings.Speed[1]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
+                                <label for="setting-speed-1" class="text-sm font-medium text-slate-300">Slowest</label>
+                                <input id="setting-speed-1" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="1" value="${escapeHtml(String(currentSettings.Speed[1]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
                             </div>
                             <div>
-                                <label class="text-sm font-medium text-slate-300">Fastest</label>
-                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="2" value="${escapeHtml(String(currentSettings.Speed[2]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
+                                <label for="setting-speed-2" class="text-sm font-medium text-slate-300">Fastest</label>
+                                <input id="setting-speed-2" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="2" value="${escapeHtml(String(currentSettings.Speed[2]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
                             </div>
                         </div>
                         <small class="text-slate-500 text-xs block mt-2">Higher value = Faster speed</small>
                     `,
       `
-                        <label class="text-sm font-medium text-slate-300">Specific Speed</label>
-                        <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="3" value="${escapeHtml(String(currentSettings.Speed[3]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
+                        <label for="setting-speed-3" class="text-sm font-medium text-slate-300">Specific Speed</label>
+                        <input id="setting-speed-3" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="3" value="${escapeHtml(String(currentSettings.Speed[3]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
                         <small class="text-slate-500 text-xs block mt-2">Higher value = Faster speed</small>
                     `
     ));
@@ -740,8 +740,8 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <div class="mt-4">
                 <label class="text-sm font-medium text-slate-300">Upload New TTF Font</label>
-                <input type="file" id="fontUploadInput" accept=".ttf" class="mt-1 w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700"/>
-                <button id="uploadFontBtn" class="mt-2 w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg">Upload Font</button>
+                <input type="file" id="fontUploadInput" accept=".ttf" class="mt-1 w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-violet-600 file:text-white hover:file:bg-violet-500"/>
+                <button id="uploadFontBtn" class="mt-2 w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold py-2 px-4 rounded-lg">Upload Font</button>
             </div>
             <small class="text-slate-500 text-xs block mt-2">Uploaded fonts become available in the selection above and for users (if enabled).</small>
             `;
@@ -766,8 +766,8 @@ document.addEventListener("DOMContentLoaded", () => {
       "Effects Setting",
       "Allow users to apply visual effects (animations) to danmu",
       effectsEnabled,
-      `<p class="text-sm text-slate-400">Effects are enabled. Users can apply animations to their danmu messages.</p>`,
-      `<p class="text-sm text-slate-400">Effects are disabled. All danmu will display without animations.</p>`
+      `<p class="text-sm text-slate-300">Effects are enabled. Users can apply animations to their danmu messages.</p>`,
+      `<p class="text-sm text-slate-300">Effects are disabled. All danmu will display without animations.</p>`
     ));
 
     // Effects Management Card (full width)
@@ -776,7 +776,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="flex items-center justify-between mb-4">
           <div>
             <h3 class="text-lg font-bold text-white">Effects Management</h3>
-            <p class="text-sm text-slate-400">Manage .dme effect plugins (hot-swap, editable)</p>
+            <p class="text-sm text-slate-300">Manage .dme effect plugins (hot-swap, editable)</p>
           </div>
           <div class="flex items-center gap-2">
             <button id="effectReloadBtn"
@@ -806,15 +806,15 @@ document.addEventListener("DOMContentLoaded", () => {
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
                                 <h3 class="text-lg font-bold text-white">Blacklist Management</h3>
-                                <p class="text-sm text-slate-400">Add or remove keywords from the blacklist.</p>
+                                <p class="text-sm text-slate-300">Add or remove keywords from the blacklist.</p>
                             </div>
                             <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
                         </summary>
                         <div class="mt-4 pt-4 border-t border-slate-700/50">
                             <div>
                                 <label for="newKeywordInput" class="text-sm font-medium text-slate-300">New Keyword</label>
-                                <input type="text" id="newKeywordInput" placeholder="Enter keyword" class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all duration-300">
-                                <button id="addKeywordBtn" class="mt-3 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-indigo-500/50 transform hover:-translate-y-1 active:scale-95 transition-all duration-300">Add Keyword</button>
+                                <input type="text" id="newKeywordInput" placeholder="Enter keyword" class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300">
+                                <button id="addKeywordBtn" class="mt-3 w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-bold py-3 px-6 rounded-xl transition-colors">Add Keyword</button>
                             </div>
                             <div class="mt-6">
                                 <h4 class="text-md font-semibold text-white mb-2">Current Blacklist:</h4>
@@ -832,7 +832,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
                                 <h3 class="text-lg font-bold text-white">Danmu History</h3>
-                                <p class="text-sm text-slate-400">View and search sent danmu messages.</p>
+                                <p class="text-sm text-slate-300">View and search sent danmu messages.</p>
                             </div>
                             <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
                         </summary>
@@ -840,14 +840,14 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="space-y-3">
                                 <div class="flex gap-2 items-center flex-wrap">
                                     <label class="text-sm font-medium text-slate-300">Time Range:</label>
-                                    <select id="historyHours" class="px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400">
+                                    <select id="historyHours" class="px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400">
                                         <option value="1">Last 1 hour</option>
                                         <option value="6">Last 6 hours</option>
                                         <option value="24" selected>Last 24 hours</option>
                                         <option value="72">Last 3 days</option>
                                         <option value="168">Last 7 days</option>
                                     </select>
-                                    <button id="refreshHistoryBtn" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm">Refresh</button>
+                                    <button id="refreshHistoryBtn" class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors text-sm">Refresh</button>
                                     <button id="exportHistoryBtn" class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors text-sm">Export CSV</button>
                                     <button id="clearHistoryBtn" class="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition-colors text-sm">Clear All</button>
                                     <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none ml-auto">
@@ -857,7 +857,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                                 <input id="historySearch" type="search" placeholder="Search history..."
                                     class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm
-                                           placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400">
+                                           placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400">
                                 <div id="historyStats" class="text-sm text-slate-400"></div>
                                 <div id="danmuHistoryList" class="space-y-2 max-h-96 overflow-y-auto">
                                     <!-- History will be listed here -->
@@ -873,34 +873,34 @@ document.addEventListener("DOMContentLoaded", () => {
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
                                 <h3 class="text-lg font-bold text-white">Change Password</h3>
-                                <p class="text-sm text-slate-400">Update the admin login password.</p>
+                                <p class="text-sm text-slate-300">Update the admin login password.</p>
                             </div>
                             <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
                         </summary>
                         <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-3">
                             <div class="password-wrapper">
                                 <input id="pwCurrent" type="password" placeholder="Current password"
-                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400">
+                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400">
                                 <button type="button" class="password-toggle" data-target="pwCurrent" aria-label="Toggle password visibility">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
                             </div>
                             <div class="password-wrapper">
                                 <input id="pwNew" type="password" placeholder="New password (min 8 chars)"
-                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400">
+                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400">
                                 <button type="button" class="password-toggle" data-target="pwNew" aria-label="Toggle password visibility">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
                             </div>
                             <div class="password-wrapper">
                                 <input id="pwConfirm" type="password" placeholder="Confirm new password"
-                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400">
+                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400">
                                 <button type="button" class="password-toggle" data-target="pwConfirm" aria-label="Toggle password visibility">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
                             </div>
                             <button id="changePasswordBtn"
-                                class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm font-semibold">
+                                class="w-full px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors text-sm font-semibold">
                                 Change Password
                             </button>
                         </div>
@@ -1334,7 +1334,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <p id="effectEditModalTitle" style="font-weight:700;color:#f1f5f9;font-size:0.95rem;margin:0;"></p>
                 <p id="effectEditModalFile" style="font-size:0.7rem;color:#64748b;font-family:monospace;margin:0.15rem 0 0;"></p>
               </div>
-              <button id="effectEditModalClose" title="Close" style="color:#64748b;background:none;border:none;cursor:pointer;padding:0.25rem;border-radius:0.4rem;display:flex;align-items:center;line-height:1;">
+              <button id="effectEditModalClose" title="Close" aria-label="Close" style="color:#64748b;background:none;border:none;cursor:pointer;padding:0.25rem;border-radius:0.4rem;display:flex;align-items:center;line-height:1;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
