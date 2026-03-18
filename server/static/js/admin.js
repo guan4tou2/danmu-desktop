@@ -28,8 +28,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let session = config.session || { logged_in: false };
   const settingRanges = config.settingRanges || {};
 
-  console.log("Session logged in:", session.logged_in);
-
   function csrfFetch(url, options = {}) {
     const opts = { credentials: "same-origin", ...options };
     const headers = new Headers(options.headers || {});
@@ -94,7 +92,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await response.json();
       // Update current settings
       currentSettings = data;
-      console.log("Settings updated:", currentSettings);
       // Re-render control panel
       renderControlPanel();
     } catch (error) {
@@ -189,7 +186,6 @@ document.addEventListener("DOMContentLoaded", () => {
         value: value,
         index: index,
       };
-      console.log(dataToSend);
 
       // Send to backend
       const response = await csrfFetch("/admin/update", {
@@ -206,7 +202,6 @@ document.addEventListener("DOMContentLoaded", () => {
           currentSettings[key] = [false, "", "", ""];
         }
         currentSettings[key][index] = value;
-        console.log(`Updated ${key}:`, currentSettings[key]);
 
         showToast(`${key} Settings Updated`, true);
       } else {
@@ -665,17 +660,17 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="text-sm font-medium text-slate-300">Min (%)</label>
-                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="1" value="${currentSettings.Opacity[1]}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
+                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="1" value="${escapeHtml(String(currentSettings.Opacity[1]))}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
                             </div>
                             <div>
                                 <label class="text-sm font-medium text-slate-300">Max (%)</label>
-                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="2" value="${currentSettings.Opacity[2]}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
+                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="2" value="${escapeHtml(String(currentSettings.Opacity[2]))}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
                             </div>
                         </div>
                     `,
       `
                         <label class="text-sm font-medium text-slate-300">Specific Opacity (%)</label>
-                        <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="3" value="${currentSettings.Opacity[3]}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
+                        <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="3" value="${escapeHtml(String(currentSettings.Opacity[3]))}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
                     `
     ));
 
@@ -689,17 +684,17 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="text-sm font-medium text-slate-300">Min (px)</label>
-                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="1" value="${currentSettings.FontSize[1]}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
+                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="1" value="${escapeHtml(String(currentSettings.FontSize[1]))}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
                             </div>
                             <div>
                                 <label class="text-sm font-medium text-slate-300">Max (px)</label>
-                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="2" value="${currentSettings.FontSize[2]}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
+                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="2" value="${escapeHtml(String(currentSettings.FontSize[2]))}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
                             </div>
                         </div>
                     `,
       `
                         <label class="text-sm font-medium text-slate-300">Specific Size (px)</label>
-                        <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="3" value="${currentSettings.FontSize[3]}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
+                        <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="3" value="${escapeHtml(String(currentSettings.FontSize[3]))}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
                     `
     ));
 
@@ -713,18 +708,18 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="text-sm font-medium text-slate-300">Slowest</label>
-                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="1" value="${currentSettings.Speed[1]}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
+                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="1" value="${escapeHtml(String(currentSettings.Speed[1]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
                             </div>
                             <div>
                                 <label class="text-sm font-medium text-slate-300">Fastest</label>
-                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="2" value="${currentSettings.Speed[2]}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
+                                <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="2" value="${escapeHtml(String(currentSettings.Speed[2]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
                             </div>
                         </div>
                         <small class="text-slate-500 text-xs block mt-2">Higher value = Faster speed</small>
                     `,
       `
                         <label class="text-sm font-medium text-slate-300">Specific Speed</label>
-                        <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="3" value="${currentSettings.Speed[3]}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
+                        <input type="number" class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="3" value="${escapeHtml(String(currentSettings.Speed[3]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
                         <small class="text-slate-500 text-xs block mt-2">Higher value = Faster speed</small>
                     `
     ));
@@ -970,7 +965,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const key = this.dataset.key;
         const index = parseInt(this.dataset.index);
         let value = this.value;
-        console.log(key, index, value);
         if (this.type === "number") {
           value = parseInt(value);
         }

@@ -26,6 +26,8 @@ from server.services.ws_state import get_ws_client_count
 
 def _recv(ws, *, skip_types=("ping",), timeout: float = 2.0):
     """從 WS 接收一則非心跳訊息，回傳 dict 或 None（timeout）"""
+    from websockets.exceptions import ConnectionClosed
+
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         remaining = max(0.05, deadline - time.monotonic())
@@ -35,13 +37,15 @@ def _recv(ws, *, skip_types=("ping",), timeout: float = 2.0):
             if data.get("type") in skip_types:
                 continue
             return data
-        except Exception:
+        except (TimeoutError, ConnectionClosed):
             break
     return None
 
 
 def _recv_type(ws, msg_type: str, timeout: float = 2.0):
     """接收特定 type 的訊息，跳過其他所有訊息"""
+    from websockets.exceptions import ConnectionClosed
+
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         remaining = max(0.05, deadline - time.monotonic())
@@ -50,7 +54,7 @@ def _recv_type(ws, msg_type: str, timeout: float = 2.0):
             data = json.loads(ws.recv())
             if data.get("type") == msg_type:
                 return data
-        except Exception:
+        except (TimeoutError, ConnectionClosed):
             break
     return None
 
