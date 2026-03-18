@@ -162,16 +162,17 @@ class DanmuHistory:
             self._records.clear()
 
     def _maybe_cleanup(self):
-        """定期清理舊記錄"""
+        """定期清理舊記錄（時間檢查在鎖內防止 TOCTOU race）"""
         now = time.time()
-        # 每小時清理一次
-        if now - self.last_cleanup < 3600:
-            return
-
-        self.last_cleanup = now
-        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=self.auto_cleanup_hours)
 
         with self._lock:
+            # 每小時清理一次 — 在鎖內檢查避免多執行緒同時觸發
+            if now - self.last_cleanup < 3600:
+                return
+
+            self.last_cleanup = now
+            cutoff_time = datetime.now(timezone.utc) - timedelta(hours=self.auto_cleanup_hours)
+
             # 由於使用 deque，我們需要重建它
             old_count = len(self._records)
             new_records = deque(maxlen=self._records.maxlen)
