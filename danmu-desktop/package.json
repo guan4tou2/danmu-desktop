@@ -94,5 +94,9 @@
     "deb": {
       "compression": "xz"
     }
+  },
+  "dependencies": {
+    "three": "^0.134.0",
+    "vanta": "^0.5.24"
   }
 }

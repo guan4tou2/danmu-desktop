@@ -37,24 +37,10 @@ app.whenReady().then(() => {
 
   const showMainWindow = () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+      mainWindow.focus();
       if (process.platform === "darwin") {
-        // 把視窗移到游標所在螢幕的中央，讓 macOS 歸屬到目前 Space
-        // （參考 electron/electron#8734）
-        const { screen } = require("electron");
-        const cursorPoint = screen.getCursorScreenPoint();
-        const currentDisplay = screen.getDisplayNearestPoint(cursorPoint);
-        const { x, y, width, height } = currentDisplay.workArea;
-        const bounds = mainWindow.getBounds();
-        mainWindow.setPosition(
-          Math.round(x + (width - bounds.width) / 2),
-          Math.round(y + (height - bounds.height) / 2)
-        );
-        mainWindow.show();
-        mainWindow.focus();
         app.focus({ steal: true });
-      } else {
-        mainWindow.show();
-        mainWindow.focus();
       }
     }
   };

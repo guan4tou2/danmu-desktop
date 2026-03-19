@@ -8,7 +8,7 @@
       http-equiv="Content-Security-Policy"
       content="
         default-src 'self';
-        script-src 'self' https://cdnjs.cloudflare.com;
+        script-src 'self';
         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
         font-src https://fonts.gstatic.com;
         img-src 'self' data: https:;
@@ -600,19 +600,9 @@
       </div>
     </main>
 
-    <!-- Vanta.js and Renderer Logic -->
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"
-      integrity="sha512-334uBDwY0iZ2TklV1OtDtBW9vp7jjP7SWRzT7Ehu1fdtPIjTpCwTSFb8HI/YBau9L1/kRBEOALrS229Kry4yFQ=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    ></script>
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/vanta/0.5.24/vanta.net.min.js"
-      integrity="sha512-lH/5/byfwH0bqySiiSINJJoEoWFEBGKgOwsnAlZZPviNJI1DDBVXjPHgEkM0fowfOp6NMBAN4ROAYjx+uEkEjQ=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    ></script>
+    <!-- Vanta.js and Renderer Logic (bundled locally for instant load) -->
+    <script src="./node_modules/three/build/three.min.js"></script>
+    <script src="./node_modules/vanta/dist/vanta.net.min.js"></script>
     <script src="i18n.js"></script>
     <script src="./dist/renderer.bundle.js"></script>
   </body>

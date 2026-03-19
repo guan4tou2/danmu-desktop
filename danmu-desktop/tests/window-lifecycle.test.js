@@ -54,11 +54,6 @@ jest.mock("electron", () => ({
       { id: 1, bounds: { x: 0, y: 0, width: 1920, height: 1080 } },
     ]),
     getCursorScreenPoint: jest.fn(() => ({ x: 500, y: 400 })),
-    getDisplayNearestPoint: jest.fn(() => ({
-      id: 1,
-      bounds: { x: 0, y: 0, width: 1920, height: 1080 },
-      workArea: { x: 0, y: 25, width: 1920, height: 1055 },
-    })),
   },
 }));
 

@@ -28,7 +28,12 @@ function createWindow(childWindows, onKonamiTrigger) {
     minHeight: 700,
     resizable: true,
     autoHideMenuBar: true,
-    show: false,
+    // macOS Space 修復：不使用 show:false + ready-to-show 模式
+    // macOS 在建立隱藏視窗時會把它分配到任意 Space，
+    // 之後 show() 時視窗就出現在錯誤的桌面。
+    // 改為立即顯示 + 深色背景，避免白閃且確保出現在當前 Space。
+    show: true,
+    backgroundColor: "#0f172a",
     icon: path.join(__dirname, "../assets/icon.png"),
     webPreferences: {
       preload: path.join(__dirname, "../dist/preload.bundle.js"),
@@ -40,31 +45,7 @@ function createWindow(childWindows, onKonamiTrigger) {
     },
   });
 
-  // macOS Space 修復：把視窗定位到游標所在的螢幕
-  // 這會讓 macOS 把視窗歸屬到使用者目前所在的 Space
-  // （參考 electron/electron#8734 最高票解法）
-  if (process.platform === "darwin") {
-    const cursorPoint = screen.getCursorScreenPoint();
-    const currentDisplay = screen.getDisplayNearestPoint(cursorPoint);
-    const { x, y, width, height } = currentDisplay.workArea;
-    mainWindow.setPosition(
-      Math.round(x + (width - 800) / 2),
-      Math.round(y + (height - 900) / 2)
-    );
-  }
-
   mainWindow.loadFile(path.join(__dirname, "../index.html"));
-
-  mainWindow.once("ready-to-show", () => {
-    if (process.platform === "darwin") {
-      mainWindow.show();
-      mainWindow.focus();
-      app.focus({ steal: true });
-    } else {
-      mainWindow.show();
-      mainWindow.focus();
-    }
-  });
 
   mainWindow.on("minimize", (ev) => {
     ev.preventDefault();
