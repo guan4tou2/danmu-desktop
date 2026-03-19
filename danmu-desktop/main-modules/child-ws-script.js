@@ -490,6 +490,46 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
                 return;
               }
 
+              // 投票系統：即時顯示投票面板
+              if (data.type === "poll_update") {
+                let panel = document.getElementById("poll-panel");
+
+                if (data.state === "idle") {
+                  if (panel) panel.remove();
+                  return;
+                }
+
+                if (!panel) {
+                  panel = document.createElement("div");
+                  panel.id = "poll-panel";
+                  panel.style.cssText = "position:fixed; top:20px; right:20px; background:rgba(15,23,42,0.9); color:white; padding:16px 20px; border-radius:12px; font-family:sans-serif; z-index:9999; min-width:280px; backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.1);";
+                  document.body.appendChild(panel);
+                }
+
+                const maxCount = Math.max(1, ...data.options.map(function(o) { return o.count; }));
+
+                panel.innerHTML = '<div style="font-size:14px;font-weight:bold;margin-bottom:12px;color:#22d3ee;">' +
+                  (data.state === "ended" ? "\\u{1F4CA} " : "\\u{1F5F3}\\uFE0F " ) + data.question + '</div>' +
+                  data.options.map(function(o) {
+                    return '<div style="margin-bottom:8px;">' +
+                      '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;">' +
+                        '<span><b>' + o.key + '.</b> ' + o.text + '</span>' +
+                        '<span>' + o.count + ' (' + o.percentage + '%)</span>' +
+                      '</div>' +
+                      '<div style="background:rgba(255,255,255,0.1);border-radius:4px;height:6px;overflow:hidden;">' +
+                        '<div style="background:linear-gradient(90deg,#06b6d4,#22d3ee);height:100%;width:' + (o.count/maxCount*100) + '%;transition:width 0.3s;border-radius:4px;"></div>' +
+                      '</div>' +
+                    '</div>';
+                  }).join('') +
+                  '<div style="font-size:11px;color:#94a3b8;margin-top:8px;">Total: ' + (data.total_votes||0) + ' votes</div>';
+
+                if (data.state === "ended") {
+                  setTimeout(function() { if (panel) { panel.style.opacity = "0"; panel.style.transition = "opacity 2s"; } }, 5000);
+                  setTimeout(function() { if (panel) panel.remove(); }, 7000);
+                }
+                return;
+              }
+
               function processDanmuWhenReady(dataPayload, retries) {
                 retries = retries || 0;
                 if (retries > 30) {

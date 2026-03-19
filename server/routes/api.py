@@ -16,6 +16,7 @@ from ..services.blacklist import contains_keyword
 from ..services.effects import load_all as load_all_effects
 from ..services.effects import render_effects
 from ..services.fonts import build_font_payload, list_available_fonts
+from ..services.poll import poll_service
 from ..services.security import rate_limit, require_csrf, verify_font_token
 from ..services.settings import get_options
 from ..services.validation import (
@@ -170,6 +171,15 @@ def fire():
 
         if data.get("isImage") and not is_valid_image_url(data["text"]):
             return _json_response({"error": "Invalid image url"}, 400)
+
+        # Check if text is a poll vote
+        if poll_service.state == "active":
+            text_upper = text_content.strip().upper()
+            option_keys = poll_service.get_option_keys()
+            if text_upper in option_keys:
+                voter_id = data.get("fingerprint") or request.remote_addr or "unknown"
+                poll_service.vote(text_upper, voter_id)
+                # Vote still passes through as normal danmu
 
         data = _resolve_danmu_style(data)
 

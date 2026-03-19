@@ -737,6 +737,111 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // --- Poll Management ---
+  let _pollStatusTimer = null;
+
+  async function _createPoll() {
+    const question = (document.getElementById("pollQuestion")?.value || "").trim();
+    const optionInputs = document.querySelectorAll(".poll-option-input");
+    const options = Array.from(optionInputs).map((el) => el.value.trim()).filter(Boolean);
+
+    if (!question) { showToast("Please enter a question", false); return; }
+    if (options.length < 2) { showToast("At least 2 options required", false); return; }
+
+    try {
+      const res = await csrfFetch("/admin/poll/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question, options }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || "Failed to create poll", false);
+        return;
+      }
+      showToast("Poll created!", true);
+      _renderPollStatus(data);
+      _pollPollStatus();
+    } catch (e) {
+      showToast("Error creating poll", false);
+    }
+  }
+
+  async function _endPoll() {
+    try {
+      const res = await csrfFetch("/admin/poll/end", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || "Failed to end poll", false); return; }
+      showToast("Poll ended", true);
+      _renderPollStatus(data);
+      if (_pollStatusTimer) { clearInterval(_pollStatusTimer); _pollStatusTimer = null; }
+    } catch (e) {
+      showToast("Error ending poll", false);
+    }
+  }
+
+  async function _resetPoll() {
+    try {
+      const res = await csrfFetch("/admin/poll/reset", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || "Failed to reset poll", false); return; }
+      showToast("Poll reset", true);
+      _renderPollStatus(data);
+      if (_pollStatusTimer) { clearInterval(_pollStatusTimer); _pollStatusTimer = null; }
+    } catch (e) {
+      showToast("Error resetting poll", false);
+    }
+  }
+
+  function _pollPollStatus() {
+    if (_pollStatusTimer) { clearInterval(_pollStatusTimer); _pollStatusTimer = null; }
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch("/admin/poll/status", { credentials: "same-origin" });
+        if (res.ok) {
+          const data = await res.json();
+          _renderPollStatus(data);
+          if (data.state !== "active") {
+            if (_pollStatusTimer) { clearInterval(_pollStatusTimer); _pollStatusTimer = null; }
+          }
+        }
+      } catch (_) { /* ignore */ }
+    };
+    fetchStatus();
+    _pollStatusTimer = setInterval(fetchStatus, 2000);
+  }
+
+  function _renderPollStatus(data) {
+    const display = document.getElementById("pollStatusDisplay");
+    if (!display) return;
+    if (!data || data.state === "idle") {
+      display.innerHTML = '<span class="text-slate-500">No active poll</span>';
+      return;
+    }
+    const total = data.total_votes || 0;
+    const maxCount = Math.max(1, ...data.options.map((o) => o.count));
+    display.innerHTML =
+      '<div class="mt-2 p-3 bg-slate-800/60 rounded-lg border border-slate-700/50">' +
+        '<div class="flex items-center gap-2 mb-2">' +
+          '<span class="inline-block w-2 h-2 rounded-full ' + (data.state === "active" ? "bg-green-400 animate-pulse" : "bg-yellow-400") + '"></span>' +
+          '<span class="text-white font-semibold text-sm">' + (data.question || "") + '</span>' +
+          '<span class="text-xs text-slate-400 ml-auto">' + data.state + '</span>' +
+        '</div>' +
+        data.options.map((o) =>
+          '<div class="mb-1.5">' +
+            '<div class="flex justify-between text-xs text-slate-300 mb-0.5">' +
+              '<span><b>' + o.key + '.</b> ' + o.text + '</span>' +
+              '<span>' + o.count + ' (' + o.percentage + '%)</span>' +
+            '</div>' +
+            '<div class="bg-slate-700/50 rounded h-2 overflow-hidden">' +
+              '<div class="h-full rounded bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-300" style="width:' + (o.count / maxCount * 100) + '%"></div>' +
+            '</div>' +
+          '</div>'
+        ).join("") +
+        '<div class="text-xs text-slate-500 mt-1">Total: ' + total + ' votes</div>' +
+      '</div>';
+  }
+
   // showToast is provided by the shared toast.js utility (window.showToast)
 
   // Render Login Screen
@@ -818,6 +923,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <a href="#sec-effects" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navEffects">${ServerI18n.t("navEffects")}</a>
                                 <a href="#sec-blacklist" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navBlacklist">${ServerI18n.t("navBlacklist")}</a>
                                 <a href="#sec-history" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navHistory">${ServerI18n.t("navHistory")}</a>
+                                <a href="#sec-polls" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Polls</a>
                                 <a href="#sec-security" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navSecurity">${ServerI18n.t("navSecurity")}</a>
                             </div>
                         </nav>
@@ -1089,6 +1195,43 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <!-- History will be listed here -->
                                 </div>
                             </div>
+                        </div>
+                    </details>
+                `);
+
+    // Polls Management Card
+    settingsGrid.insertAdjacentHTML("beforeend", `
+                    <details id="sec-polls" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-polls") ? "open" : ""}>
+                        <summary class="flex items-center justify-between cursor-pointer list-none">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Poll / Vote</h3>
+                                <p class="text-sm text-slate-300">Create interactive polls for viewers to vote via danmu</p>
+                            </div>
+                            <span class="text-slate-400 transition-transform group-open:rotate-180">\u2304</span>
+                        </summary>
+                        <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-4">
+                            <div>
+                                <label for="pollQuestion" class="text-sm font-medium text-slate-300">Question</label>
+                                <input type="text" id="pollQuestion" placeholder="What's your favorite...?" maxlength="200"
+                                    class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300">
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-slate-300">Options (2-6)</label>
+                                <div id="pollOptionsContainer" class="space-y-2 mt-1">
+                                    <input type="text" class="poll-option-input w-full p-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm" placeholder="A. Option 1" maxlength="100">
+                                    <input type="text" class="poll-option-input w-full p-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm" placeholder="B. Option 2" maxlength="100">
+                                </div>
+                                <div class="flex gap-2 mt-2">
+                                    <button id="pollAddOptionBtn" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm">+ Add Option</button>
+                                    <button id="pollRemoveOptionBtn" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm">- Remove</button>
+                                </div>
+                            </div>
+                            <div class="flex gap-2 flex-wrap">
+                                <button id="pollCreateBtn" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors text-sm font-semibold">Create Poll</button>
+                                <button id="pollEndBtn" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors text-sm font-semibold">End Poll</button>
+                                <button id="pollResetBtn" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors text-sm font-semibold">Reset</button>
+                            </div>
+                            <div id="pollStatusDisplay" class="text-sm text-slate-400"></div>
                         </div>
                     </details>
                 `);
@@ -1378,6 +1521,50 @@ document.addEventListener("DOMContentLoaded", () => {
       uploadFontBtn.addEventListener("click", () =>
         handleFontUpload("fontUploadInput", "uploadFontBtn")
       );
+    }
+
+    // Poll management buttons
+    const pollCreateBtn = document.getElementById("pollCreateBtn");
+    if (pollCreateBtn) pollCreateBtn.addEventListener("click", _createPoll);
+    const pollEndBtn = document.getElementById("pollEndBtn");
+    if (pollEndBtn) pollEndBtn.addEventListener("click", _endPoll);
+    const pollResetBtn = document.getElementById("pollResetBtn");
+    if (pollResetBtn) pollResetBtn.addEventListener("click", _resetPoll);
+
+    const pollAddOptionBtn = document.getElementById("pollAddOptionBtn");
+    if (pollAddOptionBtn) {
+      pollAddOptionBtn.addEventListener("click", () => {
+        const container = document.getElementById("pollOptionsContainer");
+        if (!container) return;
+        const count = container.querySelectorAll(".poll-option-input").length;
+        if (count >= 6) { showToast("Maximum 6 options", false); return; }
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "poll-option-input w-full p-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm";
+        input.placeholder = String.fromCharCode(65 + count) + ". Option " + (count + 1);
+        input.maxLength = 100;
+        container.appendChild(input);
+      });
+    }
+
+    const pollRemoveOptionBtn = document.getElementById("pollRemoveOptionBtn");
+    if (pollRemoveOptionBtn) {
+      pollRemoveOptionBtn.addEventListener("click", () => {
+        const container = document.getElementById("pollOptionsContainer");
+        if (!container) return;
+        const inputs = container.querySelectorAll(".poll-option-input");
+        if (inputs.length <= 2) { showToast("Minimum 2 options", false); return; }
+        inputs[inputs.length - 1].remove();
+      });
+    }
+
+    // Start polling for poll status if section is open
+    const pollDetails = document.getElementById("sec-polls");
+    if (pollDetails) {
+      pollDetails.addEventListener("toggle", () => {
+        if (pollDetails.open) _pollPollStatus();
+      });
+      if (pollDetails.open) _pollPollStatus();
     }
 
     // Password show/hide toggles

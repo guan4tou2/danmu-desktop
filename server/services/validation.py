@@ -90,6 +90,17 @@ class EffectSaveSchema(Schema):
     )
 
 
+class PollCreateSchema(Schema):
+    """投票建立請求驗證"""
+
+    question = fields.Str(required=True, validate=validate.Length(min=1, max=200))
+    options = fields.List(
+        fields.Str(validate=validate.Length(min=1, max=100)),
+        required=True,
+        validate=validate.Length(min=2, max=6),
+    )
+
+
 class SettingUpdateSchema(Schema):
     """設定更新請求驗證"""
 

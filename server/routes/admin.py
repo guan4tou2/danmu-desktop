@@ -17,6 +17,7 @@ from ..services import history as history_service
 from ..services import messaging
 from ..services.blacklist import add_keyword, list_keywords, remove_keyword
 from ..services.fonts import list_available_fonts, save_uploaded_font
+from ..services.poll import poll_service
 from ..services.replay import replay_service
 from ..services.security import rate_limit, require_csrf
 from ..services.settings import (
@@ -29,6 +30,7 @@ from ..services.validation import (
     BlacklistKeywordSchema,
     EffectDeleteSchema,
     EffectSaveSchema,
+    PollCreateSchema,
     SettingUpdateSchema,
     ToggleSettingSchema,
     validate_request,
@@ -534,3 +536,52 @@ def get_replay_status():
     if not _ensure_logged_in():
         return _json_response({"error": "Unauthorized"}, 401)
     return _json_response(replay_service.get_status())
+
+
+# ─── 投票 API ─────────────────────────────────────────────────────────────────
+
+
+@admin_bp.route("/poll/create", methods=["POST"])
+@require_csrf
+def create_poll():
+    """建立新投票"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    schema = PollCreateSchema()
+    errors = schema.validate(data)
+    if errors:
+        return _json_response({"error": errors}, 400)
+    try:
+        poll_id = poll_service.create(data["question"], data["options"])
+        return _json_response({"poll_id": poll_id, **poll_service.get_status()})
+    except ValueError as e:
+        return _json_response({"error": str(e)}, 409)
+
+
+@admin_bp.route("/poll/end", methods=["POST"])
+@require_csrf
+def end_poll():
+    """結束投票"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    poll_service.end()
+    return _json_response(poll_service.get_status())
+
+
+@admin_bp.route("/poll/reset", methods=["POST"])
+@require_csrf
+def reset_poll():
+    """重置投票"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    poll_service.reset()
+    return _json_response({"state": "idle"})
+
+
+@admin_bp.route("/poll/status", methods=["GET"])
+def get_poll_status():
+    """取得投票狀態"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    return _json_response(poll_service.get_status())
