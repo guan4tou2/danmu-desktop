@@ -238,6 +238,75 @@ def test_history_requires_auth(client):
 
 
 # ---------------------------------------------------------------------------
+# History Export
+# ---------------------------------------------------------------------------
+
+
+def test_export_history_empty(client):
+    login(client)
+    res = client.get("/admin/history/export?hours=1")
+    assert res.status_code == 200
+    data = json.loads(res.data)
+    assert data["version"] == 1
+    assert data["duration_ms"] == 0
+    assert data["records"] == []
+
+
+def test_export_history_returns_json_timeline(client):
+    login(client)
+    # Add some danmu records via the history service
+    from server.services import history as history_service
+
+    history_service.danmu_history.add(
+        {"text": "hello", "color": "ff0000", "size": "40", "speed": "5", "opacity": "100"}
+    )
+    history_service.danmu_history.add(
+        {"text": "world", "color": "00ff00", "size": "60", "speed": "3", "opacity": "80"}
+    )
+
+    res = client.get("/admin/history/export?hours=24")
+    assert res.status_code == 200
+    assert res.headers["Content-Type"] == "application/json"
+    assert "attachment" in res.headers.get("Content-Disposition", "")
+
+    data = json.loads(res.data)
+    assert data["version"] == 1
+    assert "duration_ms" in data
+    assert "count" in data
+    assert data["count"] == 2
+    assert len(data["records"]) == 2
+
+    # First record should have offset_ms == 0
+    assert data["records"][0]["offset_ms"] == 0
+    assert data["records"][0]["text"] in ("hello", "world")
+
+    # Each record should have required fields
+    for rec in data["records"]:
+        assert "offset_ms" in rec
+        assert "text" in rec
+        assert "color" in rec
+        assert "size" in rec
+        assert "speed" in rec
+        assert "opacity" in rec
+        assert "isImage" in rec
+
+
+def test_export_history_requires_auth(client):
+    res = client.get("/admin/history/export")
+    assert res.status_code == 401
+
+
+def test_export_history_clamps_hours(client):
+    login(client)
+    # hours > 168 should be clamped
+    res = client.get("/admin/history/export?hours=9999")
+    assert res.status_code == 200
+    # Should not error out even with extreme hours value
+    data = json.loads(res.data)
+    assert data["version"] == 1
+
+
+# ---------------------------------------------------------------------------
 # Effects Management
 # ---------------------------------------------------------------------------
 
