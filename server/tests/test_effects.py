@@ -829,3 +829,53 @@ def test_get_effect_content_handles_read_oserror(app):
     finally:
         effects._cache.pop("glow", None)
         effects._path_to_name.pop(fake_path, None)
+
+
+# ─── preview endpoint 測試 ────────────────────────────────────────────────
+
+
+def test_preview_endpoint_returns_css(client):
+    """POST /admin/effects/preview with valid spin content returns keyframes/animation/styleId."""
+    token = csrf_token(client)
+    content = textwrap.dedent(
+        """\
+        name: spin
+        label: 旋轉
+        params:
+          duration:
+            type: float
+            default: 1.0
+            min: 0.2
+            max: 5.0
+        keyframes: |
+          @keyframes dme-spin {
+            to { transform: rotate(360deg); }
+          }
+        animation: "dme-spin {duration}s linear infinite"
+    """
+    )
+    resp = client.post(
+        "/admin/effects/preview",
+        json={"content": content, "params": {"duration": 2.0}},
+        headers={"X-CSRF-Token": token},
+    )
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert "keyframes" in data
+    assert "animation" in data
+    assert "styleId" in data
+    assert "dme-spin" in data["keyframes"]
+    assert "2s" in data["animation"]
+
+
+def test_preview_invalid_yaml_returns_error(client):
+    """POST /admin/effects/preview with invalid YAML returns 400."""
+    token = csrf_token(client)
+    resp = client.post(
+        "/admin/effects/preview",
+        json={"content": ": broken: [yaml not closed"},
+        headers={"X-CSRF-Token": token},
+    )
+    assert resp.status_code == 400
+    data = json.loads(resp.data)
+    assert "error" in data

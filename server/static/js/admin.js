@@ -488,6 +488,49 @@ document.addEventListener("DOMContentLoaded", () => {
     if (selectAllCb) selectAllCb.checked = false;
   }
 
+  async function _loadStats() {
+    const hours = parseInt(document.getElementById("historyHours")?.value || "24");
+    try {
+      const [hourlyRes, topTextRes] = await Promise.all([
+        fetch(`/admin/stats/hourly?hours=${hours}`, { credentials: "same-origin" }),
+        fetch(`/admin/stats/top-text?hours=${hours}&limit=10`, { credentials: "same-origin" }),
+      ]);
+      if (!hourlyRes.ok || !topTextRes.ok) return;
+      const hourlyData = await hourlyRes.json();
+      const topTextData = await topTextRes.json();
+
+      const dashDiv = document.getElementById("statsDashboard");
+      if (!dashDiv) return;
+
+      const dist = hourlyData.distribution || [];
+      const topTexts = topTextData.topTexts || [];
+      const maxCount = Math.max(1, ...dist.map((d) => d.count));
+
+      let chartBars = dist.map((d) => {
+        const pct = Math.round((d.count / maxCount) * 100);
+        return `<div class="chart-bar" style="height: ${pct}%" title="${d.hour}: ${d.count}"><span class="chart-label">${d.hour.slice(-5, -3)}</span></div>`;
+      }).join("");
+
+      let topTextRows = topTexts.map((t, i) =>
+        `<tr class="border-t border-slate-700/50"><td class="py-1 pr-3 text-slate-400">${i + 1}</td><td class="py-1 pr-3 text-white text-sm">${t.text}</td><td class="py-1 text-sky-400 font-mono text-sm">${t.count}</td></tr>`
+      ).join("");
+
+      dashDiv.innerHTML = `
+        <div class="grid gap-4 md:grid-cols-2 mb-4">
+          <div class="bg-slate-800/60 rounded-lg p-3">
+            <h4 class="text-xs font-semibold text-slate-300 mb-2">Hourly Distribution</h4>
+            <div class="stats-chart">${chartBars || '<span class="text-xs text-slate-500">No data</span>'}</div>
+          </div>
+          <div class="bg-slate-800/60 rounded-lg p-3">
+            <h4 class="text-xs font-semibold text-slate-300 mb-2">Top Texts</h4>
+            ${topTexts.length ? `<table class="w-full text-xs"><tbody>${topTextRows}</tbody></table>` : '<span class="text-xs text-slate-500">No data</span>'}
+          </div>
+        </div>`;
+    } catch (err) {
+      console.error("Load stats error:", err);
+    }
+  }
+
   async function fetchDanmuHistory() {
     try {
       const hours = parseInt(document.getElementById("historyHours")?.value || "24");
@@ -521,6 +564,9 @@ document.addEventListener("DOMContentLoaded", () => {
         : records;
 
       renderHistoryRecords(filtered);
+
+      // Also refresh stats dashboard
+      _loadStats();
     } catch (error) {
       console.error("Fetch danmu history error:", error);
       showToast("Error fetching danmu history.", false);
@@ -984,6 +1030,13 @@ document.addEventListener("DOMContentLoaded", () => {
                             <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
                         </summary>
                         <div class="mt-4 pt-4 border-t border-slate-700/50">
+                            <style>
+                                .stats-chart { display: flex; align-items: flex-end; gap: 2px; height: 80px; }
+                                .chart-bar { background: #06b6d4; min-width: 12px; border-radius: 2px 2px 0 0; position: relative; transition: height 0.3s; }
+                                .chart-bar:hover { background: #22d3ee; }
+                                .chart-label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 10px; color: #94a3b8; }
+                            </style>
+                            <div id="statsDashboard"></div>
                             <div class="space-y-3">
                                 <div class="flex gap-2 items-center flex-wrap">
                                     <label class="text-sm font-medium text-slate-300">Time Range:</label>
@@ -1514,7 +1567,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!document.getElementById("effectEditModal")) {
       document.body.insertAdjacentHTML("beforeend", `
         <div id="effectEditModal" role="dialog" aria-modal="true" aria-labelledby="effectEditModalTitle" aria-describedby="effectEditModalFile" class="hidden fixed inset-0 z-[9999] items-center justify-content-center" style="background:rgba(0,0,0,0.72);">
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-[700px] mx-4 shadow-2xl flex flex-col max-h-[88vh] overflow-hidden">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-[1100px] mx-4 shadow-2xl flex flex-col max-h-[88vh] overflow-hidden">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800 shrink-0">
               <div>
                 <p id="effectEditModalTitle" class="font-bold text-slate-100 text-sm m-0"></p>
@@ -1524,10 +1577,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
-            <div class="flex-1 overflow-hidden px-5 py-4 min-h-0">
-              <textarea id="effectEditModalTextarea"
-                class="w-full h-full min-h-[300px] bg-slate-950 text-slate-300 text-xs font-mono border border-slate-700 rounded-lg p-3 resize-none outline-none block"
-                spellcheck="false"></textarea>
+            <div class="flex-1 overflow-hidden flex min-h-0">
+              <div class="flex-1 overflow-hidden px-5 py-4 min-h-0 flex flex-col">
+                <textarea id="effectEditModalTextarea"
+                  class="w-full flex-1 min-h-[300px] bg-slate-950 text-slate-300 text-xs font-mono border border-slate-700 rounded-lg p-3 resize-none outline-none block"
+                  spellcheck="false"></textarea>
+              </div>
+              <div id="effectPreviewPane" class="w-[360px] shrink-0 border-l border-slate-800 px-4 py-4 flex flex-col gap-3 overflow-y-auto">
+                <div class="flex items-center justify-between">
+                  <p class="text-xs font-semibold text-slate-400 m-0">Live Preview</p>
+                  <button id="effectPreviewRefreshBtn" class="px-2 py-0.5 text-[0.65rem] font-medium text-slate-400 border border-slate-700 rounded bg-transparent cursor-pointer transition-colors hover:text-sky-300 hover:border-sky-500">Refresh</button>
+                </div>
+                <div id="effectPreviewBox" style="background:#1e293b;padding:20px;border-radius:8px;display:flex;align-items:center;justify-content:center;min-height:80px;">
+                  <span id="effectPreviewText" style="font-size:32px;color:white;display:inline-block;">Preview</span>
+                </div>
+                <style id="effectPreviewStyle"></style>
+                <div id="effectPreviewParams" class="flex flex-col gap-2"></div>
+                <p id="effectPreviewError" class="text-xs text-red-400 m-0 hidden"></p>
+              </div>
             </div>
             <div class="flex justify-end gap-2 px-5 py-3 border-t border-slate-800 shrink-0">
               <button id="effectEditModalCancel" class="px-4 py-1.5 text-sm text-slate-400 border border-slate-700 rounded-lg bg-transparent cursor-pointer hover:text-slate-200 hover:border-slate-500 transition-colors">Cancel</button>
@@ -1542,6 +1609,238 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("effectEditModalCancel").addEventListener("click", hideEffectModal);
       document.getElementById("effectEditModal").addEventListener("click", (e) => {
         if (e.target === e.currentTarget) hideEffectModal();
+      });
+
+      // ── Preview helpers ────────────────────────────────────────────────
+      let _previewDebounceTimer = null;
+
+      function _buildPreviewParams(yamlContent) {
+        const paramsContainer = document.getElementById("effectPreviewParams");
+        if (!paramsContainer) return {};
+        let parsed;
+        try {
+          // Minimal YAML param extraction — parse key: value lines under params:
+          parsed = null;
+          // Use a simple approach: try to parse with jsyaml if available, else regex
+          const lines = yamlContent.split("\n");
+          let inParams = false;
+          let paramIndent = 0;
+          let currentParam = null;
+          let currentParamIndent = 0;
+          const params = {};
+
+          for (const line of lines) {
+            const trimmed = line.trimStart();
+            const indent = line.length - trimmed.length;
+
+            if (trimmed.startsWith("params:")) {
+              inParams = true;
+              paramIndent = indent;
+              continue;
+            }
+            if (!inParams) continue;
+            if (trimmed === "" || trimmed.startsWith("#")) continue;
+            // Exited params block
+            if (indent <= paramIndent && !trimmed.startsWith("params:")) {
+              inParams = false;
+              continue;
+            }
+
+            // Param key level (indent == paramIndent + 2)
+            const paramKeyMatch = trimmed.match(/^([a-zA-Z0-9_]+):\s*$/);
+            if (paramKeyMatch && indent === paramIndent + 2) {
+              currentParam = paramKeyMatch[1];
+              currentParamIndent = indent;
+              params[currentParam] = {};
+              continue;
+            }
+
+            // Param properties
+            if (currentParam && indent > currentParamIndent) {
+              const propMatch = trimmed.match(/^([a-zA-Z0-9_]+):\s*(.+)$/);
+              if (propMatch) {
+                const key = propMatch[1];
+                let val = propMatch[2].trim();
+                // Remove quotes
+                if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+                  val = val.slice(1, -1);
+                }
+                if (key === "options") {
+                  // options handled below
+                } else {
+                  const num = Number(val);
+                  params[currentParam][key] = isNaN(num) ? val : num;
+                }
+              }
+              // Options list items
+              if (trimmed.startsWith("- value:")) {
+                if (!params[currentParam].options) params[currentParam].options = [];
+                const valMatch = trimmed.match(/^- value:\s*(.+)$/);
+                if (valMatch) {
+                  let v = valMatch[1].trim();
+                  if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+                    v = v.slice(1, -1);
+                  }
+                  params[currentParam].options.push({ value: v, label: v });
+                }
+              }
+              if (trimmed.startsWith("label:") && params[currentParam].options && params[currentParam].options.length > 0) {
+                const lMatch = trimmed.match(/^label:\s*(.+)$/);
+                if (lMatch) {
+                  let lv = lMatch[1].trim();
+                  if ((lv.startsWith('"') && lv.endsWith('"')) || (lv.startsWith("'") && lv.endsWith("'"))) {
+                    lv = lv.slice(1, -1);
+                  }
+                  params[currentParam].options[params[currentParam].options.length - 1].label = lv;
+                }
+              }
+            }
+          }
+
+          parsed = params;
+        } catch (_) {
+          parsed = {};
+        }
+
+        // Build UI controls
+        paramsContainer.innerHTML = "";
+        const values = {};
+
+        for (const [key, def] of Object.entries(parsed || {})) {
+          const type = def.type || "float";
+          const wrapper = document.createElement("div");
+          wrapper.className = "flex flex-col gap-0.5";
+
+          const label = document.createElement("label");
+          label.className = "text-[0.65rem] text-slate-500 font-mono";
+          label.textContent = `${key} (${type})`;
+          wrapper.appendChild(label);
+
+          if (type === "select" && Array.isArray(def.options)) {
+            const sel = document.createElement("select");
+            sel.className = "bg-slate-950 text-slate-300 text-xs border border-slate-700 rounded px-2 py-1 outline-none";
+            sel.dataset.paramKey = key;
+            for (const opt of def.options) {
+              const o = document.createElement("option");
+              o.value = opt.value;
+              o.textContent = opt.label || opt.value;
+              if (opt.value === String(def.default)) o.selected = true;
+              sel.appendChild(o);
+            }
+            values[key] = String(def.default || (def.options[0] && def.options[0].value) || "");
+            sel.addEventListener("change", () => {
+              _triggerPreviewDebounced();
+            });
+            wrapper.appendChild(sel);
+          } else {
+            // float or int — slider
+            const min = def.min != null ? def.min : 0;
+            const max = def.max != null ? def.max : 10;
+            const step = def.step != null ? def.step : (type === "int" ? 1 : 0.1);
+            const defaultVal = def.default != null ? def.default : min;
+
+            const row = document.createElement("div");
+            row.className = "flex items-center gap-2";
+
+            const input = document.createElement("input");
+            input.type = "range";
+            input.min = min;
+            input.max = max;
+            input.step = step;
+            input.value = defaultVal;
+            input.dataset.paramKey = key;
+            input.className = "flex-1 accent-sky-500";
+
+            const valDisplay = document.createElement("span");
+            valDisplay.className = "text-xs text-slate-400 font-mono w-10 text-right";
+            valDisplay.textContent = String(defaultVal);
+
+            input.addEventListener("input", () => {
+              valDisplay.textContent = input.value;
+              _triggerPreviewDebounced();
+            });
+
+            row.appendChild(input);
+            row.appendChild(valDisplay);
+            wrapper.appendChild(row);
+            values[key] = defaultVal;
+          }
+
+          paramsContainer.appendChild(wrapper);
+        }
+
+        return values;
+      }
+
+      function _getPreviewParams() {
+        const paramsContainer = document.getElementById("effectPreviewParams");
+        if (!paramsContainer) return {};
+        const params = {};
+        paramsContainer.querySelectorAll("[data-param-key]").forEach((el) => {
+          params[el.dataset.paramKey] = el.type === "range" ? Number(el.value) : el.value;
+        });
+        return params;
+      }
+
+      async function _previewEffect() {
+        const textarea = document.getElementById("effectEditModalTextarea");
+        const previewText = document.getElementById("effectPreviewText");
+        const previewStyle = document.getElementById("effectPreviewStyle");
+        const previewError = document.getElementById("effectPreviewError");
+        if (!textarea || !previewText || !previewStyle) return;
+
+        const content = textarea.value;
+        if (!content || content === "Loading\u2026" || content === "Network error") return;
+
+        const params = _getPreviewParams();
+        previewError?.classList.add("hidden");
+
+        try {
+          const res = await csrfFetch("/admin/effects/preview", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content, params }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            previewStyle.textContent = data.keyframes || "";
+            previewText.style.animation = data.animation || "none";
+            previewText.style.animationComposition = data.animationComposition || "";
+          } else {
+            previewText.style.animation = "none";
+            previewStyle.textContent = "";
+            if (previewError) {
+              previewError.textContent = data.error || "Preview failed";
+              previewError.classList.remove("hidden");
+            }
+          }
+        } catch (_) {
+          previewText.style.animation = "none";
+          previewStyle.textContent = "";
+          if (previewError) {
+            previewError.textContent = "Network error";
+            previewError.classList.remove("hidden");
+          }
+        }
+      }
+
+      function _triggerPreviewDebounced() {
+        clearTimeout(_previewDebounceTimer);
+        _previewDebounceTimer = setTimeout(() => _previewEffect(), 500);
+      }
+
+      // Textarea input → rebuild params + debounced preview
+      document.getElementById("effectEditModalTextarea").addEventListener("input", () => {
+        const textarea = document.getElementById("effectEditModalTextarea");
+        if (textarea) {
+          _buildPreviewParams(textarea.value);
+          _triggerPreviewDebounced();
+        }
+      });
+
+      // Refresh button
+      document.getElementById("effectPreviewRefreshBtn").addEventListener("click", () => {
+        _previewEffect();
       });
 
       // ── Modal save handler ─────────────────────────────────────────────
@@ -1703,6 +2002,16 @@ document.addEventListener("DOMContentLoaded", () => {
         modal.classList.add("flex");
         modal.addEventListener("keydown", handleEffectModalKeydown);
         textarea.focus();
+        // Reset preview pane
+        const previewText = document.getElementById("effectPreviewText");
+        const previewStyle = document.getElementById("effectPreviewStyle");
+        const previewError = document.getElementById("effectPreviewError");
+        const previewParams = document.getElementById("effectPreviewParams");
+        if (previewText) previewText.style.animation = "none";
+        if (previewStyle) previewStyle.textContent = "";
+        if (previewError) previewError.classList.add("hidden");
+        if (previewParams) previewParams.innerHTML = "";
+
         try {
           const res = await csrfFetch(`/admin/effects/${encodeURIComponent(eff.name)}/content`);
           const data = await res.json().catch(() => ({}));
@@ -1711,6 +2020,9 @@ document.addEventListener("DOMContentLoaded", () => {
             textarea.disabled = false;
             saveBtn.disabled = false;
             textarea.focus();
+            // Build preview params and trigger initial preview
+            _buildPreviewParams(textarea.value);
+            _previewEffect();
           } else {
             textarea.value = data.error || "Failed to load";
             showToast(data.error || "Failed to load content", false);

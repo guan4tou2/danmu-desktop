@@ -215,3 +215,89 @@ def test_maybe_cleanup_does_not_deadlock(app):
 
     assert result[0] is True, "add() deadlocked in _maybe_cleanup()"
     assert danmu_history.get_stats()["total"] == 1
+
+
+# ─── get_hourly_distribution ────────────────────────────────────────────────
+
+
+def test_hourly_distribution_groups_by_hour():
+    """Records with different timestamps are grouped into correct hourly buckets."""
+    h = _h()
+    now = datetime.now(timezone.utc)
+
+    # Inject records with explicit timestamps in different hours
+    with h._lock:
+        for offset_hours in [0, 0, 1, 1, 1, 2]:
+            ts = (now - timedelta(hours=offset_hours)).isoformat()
+            h._records.append({"timestamp": ts, "text": f"msg-{offset_hours}"})
+
+    dist = h.get_hourly_distribution(hours=3)
+
+    # Build a lookup by hour key
+    lookup = {d["hour"]: d["count"] for d in dist}
+
+    current_hour_key = now.replace(minute=0, second=0, microsecond=0).strftime("%Y-%m-%d %H:00")
+    one_hour_ago_key = (
+        (now - timedelta(hours=1))
+        .replace(minute=0, second=0, microsecond=0)
+        .strftime("%Y-%m-%d %H:00")
+    )
+    two_hours_ago_key = (
+        (now - timedelta(hours=2))
+        .replace(minute=0, second=0, microsecond=0)
+        .strftime("%Y-%m-%d %H:00")
+    )
+
+    assert lookup[current_hour_key] == 2
+    assert lookup[one_hour_ago_key] == 3
+    assert lookup[two_hours_ago_key] == 1
+
+
+def test_hourly_distribution_fills_gaps():
+    """Hours with zero records still appear in the result."""
+    h = _h()
+
+    # Only add a record at the current hour
+    h.add({"text": "only-now"})
+
+    dist = h.get_hourly_distribution(hours=3)
+
+    # Should have at least 3 entries (3 hours + possibly 4 due to boundary)
+    assert len(dist) >= 3
+
+    # At least some entries should have count 0
+    zero_entries = [d for d in dist if d["count"] == 0]
+    assert len(zero_entries) >= 2
+
+
+# ─── get_top_texts ───────────────────────────────────────────────────────────
+
+
+def test_top_texts_returns_ranked_list():
+    """Top texts are sorted by count descending."""
+    h = _h()
+    for _ in range(5):
+        h.add({"text": "popular"})
+    for _ in range(3):
+        h.add({"text": "medium"})
+    for _ in range(1):
+        h.add({"text": "rare"})
+
+    top = h.get_top_texts(hours=1)
+    assert len(top) == 3
+    assert top[0]["text"] == "popular"
+    assert top[0]["count"] == 5
+    assert top[1]["text"] == "medium"
+    assert top[1]["count"] == 3
+    assert top[2]["text"] == "rare"
+    assert top[2]["count"] == 1
+
+
+def test_top_texts_respects_limit():
+    """Limit parameter restricts the number of results."""
+    h = _h()
+    for i in range(20):
+        h.add({"text": f"text-{i}"})
+
+    top = h.get_top_texts(hours=1, limit=5)
+    assert len(top) == 5

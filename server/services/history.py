@@ -185,6 +185,55 @@ class DanmuHistory:
             if len(new_records) < old_count:
                 logger.info("Cleaned up %d old danmu records", old_count - len(new_records))
 
+    def get_hourly_distribution(self, hours: int = 24) -> List[Dict]:
+        """按小時分組統計彈幕數量
+        Returns: [{"hour": "2026-03-19 14:00", "count": 5}, ...]
+        """
+        end_time = datetime.now(timezone.utc)
+        start_time = end_time - timedelta(hours=hours)
+        records = self.get_records(start_time=start_time, end_time=end_time, limit=10000)
+
+        # Group by hour
+        hourly = {}
+        for r in records:
+            ts = _parse_iso(r["timestamp"])
+            hour_key = ts.strftime("%Y-%m-%d %H:00")
+            hourly[hour_key] = hourly.get(hour_key, 0) + 1
+
+        # Fill gaps
+        result = []
+        current = start_time.replace(minute=0, second=0, microsecond=0)
+        while current <= end_time:
+            key = current.strftime("%Y-%m-%d %H:00")
+            result.append({"hour": key, "count": hourly.get(key, 0)})
+            current += timedelta(hours=1)
+
+        return result
+
+    def get_top_texts(self, hours: int = 24, limit: int = 10) -> List[Dict]:
+        """統計最常出現的彈幕文字
+        Returns: [{"text": "Hello", "count": 15}, ...]
+        """
+        records = self.get_recent(hours=hours, limit=10000)
+        counter = {}
+        for r in records:
+            text = r.get("text", "")
+            if text:
+                counter[text] = counter.get(text, 0) + 1
+
+        sorted_items = sorted(counter.items(), key=lambda x: x[1], reverse=True)
+        return [{"text": t, "count": c} for t, c in sorted_items[:limit]]
+
+
+def _parse_iso(ts: str) -> datetime:
+    """Parse an ISO 8601 timestamp string into a timezone-aware datetime."""
+    if ts.endswith("Z"):
+        ts = ts.replace("Z", "+00:00")
+    dt = datetime.fromisoformat(ts)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
 
 # 全局實例（將在應用初始化時配置）
 danmu_history = None

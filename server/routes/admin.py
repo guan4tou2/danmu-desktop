@@ -219,6 +219,32 @@ def get_blacklist():
     return _json_response(list_keywords())
 
 
+@admin_bp.route("/stats/hourly", methods=["GET"])
+def get_hourly_stats():
+    """每小時彈幕分布"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    hours = request.args.get("hours", 24, type=int)
+    hours = max(1, min(hours, 168))
+    if not history_service.danmu_history:
+        return _json_response({"distribution": []})
+    dist = history_service.danmu_history.get_hourly_distribution(hours)
+    return _json_response({"distribution": dist})
+
+
+@admin_bp.route("/stats/top-text", methods=["GET"])
+def get_top_text_stats():
+    """熱門彈幕文字排行"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    hours = request.args.get("hours", 24, type=int)
+    limit = request.args.get("limit", 10, type=int)
+    if not history_service.danmu_history:
+        return _json_response({"topTexts": []})
+    texts = history_service.danmu_history.get_top_texts(hours, min(limit, 50))
+    return _json_response({"topTexts": texts})
+
+
 @admin_bp.route("/history", methods=["GET"])
 @rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 def get_danmu_history():
@@ -356,6 +382,56 @@ def save_effect_route():
             "filename": sanitize_log_string(filename),
         }
     )
+
+
+@admin_bp.route("/effects/preview", methods=["POST"])
+@require_csrf
+def preview_effect():
+    """預覽特效 CSS（不存檔）"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+
+    data = request.get_json(silent=True) or {}
+    content = data.get("content", "")
+    params = data.get("params", {})
+
+    if not content:
+        return _json_response({"error": "No content"}, 400)
+
+    import yaml
+
+    try:
+        parsed = yaml.safe_load(content)
+    except Exception:
+        return _json_response({"error": "Invalid YAML"}, 400)
+
+    if not isinstance(parsed, dict) or not parsed.get("name"):
+        return _json_response({"error": "Missing name field"}, 400)
+
+    from ..services import effects as eff_svc
+    from ..services.effects import render_effects
+
+    # Build a temporary effect input using the parsed content
+    name = str(parsed["name"])
+    effect_input = [{"name": name, "params": params}]
+
+    # Temporarily inject parsed effect into cache for rendering
+    original = eff_svc._cache.get(name)
+    eff_svc._cache[name] = parsed
+
+    try:
+        result = render_effects(effect_input)
+    finally:
+        # Restore original cache
+        if original is not None:
+            eff_svc._cache[name] = original
+        else:
+            eff_svc._cache.pop(name, None)
+
+    if result is None:
+        return _json_response({"error": "No animation generated"}, 400)
+
+    return _json_response(result)
 
 
 @admin_bp.route("/effects/reload", methods=["POST"])
