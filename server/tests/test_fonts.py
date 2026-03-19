@@ -80,10 +80,12 @@ def test_path_traversal_rejected(app, monkeypatch):
 
 def test_save_uploaded_font_saves_any_extension(app, tmp_path, monkeypatch):
     """save_uploaded_font at service layer has no MIME guard - caller checks."""
-    from server.services import fonts
-    from server import state
     from io import BytesIO
+
     from werkzeug.datastructures import FileStorage
+
+    from server import state
+    from server.services import fonts
 
     monkeypatch.setattr(state, "USER_FONTS_DIR", str(tmp_path))
 
@@ -97,6 +99,7 @@ def test_save_uploaded_font_saves_any_extension(app, tmp_path, monkeypatch):
 def test_path_is_relative_to_used_not_startswith(app):
     """Verify is_relative_to is used (not startswith) via code inspection."""
     from server.services import fonts
+
     source = inspect.getsource(fonts.build_font_payload)
     assert "is_relative_to" in source, "Must use Path.is_relative_to()"
     assert "startswith" not in source, "startswith is vulnerable to suffix tricks"

@@ -188,6 +188,7 @@ def test_corrupt_settings_file_falls_back_to_defaults(tmp_path, monkeypatch):
 def test_update_value_rejects_dict_for_color(app):
     """Dict values for Color must be rejected."""
     from server.services.settings import settings_store
+
     with pytest.raises((ValueError, TypeError)):
         settings_store.update_value("Color", 1, {"$ne": 1})
 
@@ -195,5 +196,6 @@ def test_update_value_rejects_dict_for_color(app):
 def test_update_value_rejects_list_for_effects(app):
     """List values for Effects must be rejected."""
     from server.services.settings import settings_store
+
     with pytest.raises((ValueError, TypeError)):
         settings_store.update_value("Effects", 1, [1, 2, 3])

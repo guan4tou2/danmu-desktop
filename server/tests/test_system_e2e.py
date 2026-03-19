@@ -316,6 +316,6 @@ def test_concurrent_fires_all_delivered(ws_server_port):
             if msg and "text" in msg:
                 received_texts.add(msg["text"])
 
-        assert received_texts == expected_texts, (
-            f"missing: {expected_texts - received_texts}, extra: {received_texts - expected_texts}"
-        )
+        assert (
+            received_texts == expected_texts
+        ), f"missing: {expected_texts - received_texts}, extra: {received_texts - expected_texts}"

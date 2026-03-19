@@ -20,7 +20,8 @@ from ..services.security import (
     verify_password,
 )
 from ..services.settings import get_options
-from ..utils import json_response as _json_response, sanitize_log_string
+from ..utils import json_response as _json_response
+from ..utils import sanitize_log_string
 
 main_bp = Blueprint("main", __name__)
 

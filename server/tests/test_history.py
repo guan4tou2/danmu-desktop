@@ -1,7 +1,7 @@
 """DanmuHistory 服務直接單元測試"""
 
-import time
 import threading
+import time
 from datetime import datetime, timedelta, timezone
 
 from server.services.history import DanmuHistory
@@ -192,18 +192,21 @@ def test_maybe_cleanup_does_not_deadlock(app):
     # Make existing record old
     with danmu_history._lock:
         for r in danmu_history._records:
-            r["timestamp"] = (
-                datetime.now(timezone.utc) - timedelta(hours=48)
-            ).isoformat()
+            r["timestamp"] = (datetime.now(timezone.utc) - timedelta(hours=48)).isoformat()
 
     # This add() triggers _maybe_cleanup() — with Lock() this deadlocks; with RLock() it works
     result = [False]
 
     def add_with_timeout():
-        danmu_history.add({
-            "text": "new", "color": "#000",
-            "size": "20", "speed": "3", "opacity": "80",
-        })
+        danmu_history.add(
+            {
+                "text": "new",
+                "color": "#000",
+                "size": "20",
+                "speed": "3",
+                "opacity": "80",
+            }
+        )
         result[0] = True
 
     t = threading.Thread(target=add_with_timeout)

@@ -8,7 +8,8 @@ import time
 import pytest
 from websockets.sync.client import connect
 
-from server.services import effects as eff_svc, ws_queue
+from server.services import effects as eff_svc
+from server.services import ws_queue
 from server.services.ws_state import get_ws_client_count
 
 # ─── 輔助函式 ─────────────────────────────────────────────────────────────────

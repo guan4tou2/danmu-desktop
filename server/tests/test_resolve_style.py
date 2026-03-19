@@ -18,10 +18,13 @@ def _resolve(data, options=None, font_payload=None, effects_result=None):
     if font_payload is None:
         font_payload = {"name": "NotoSansTC", "url": None, "type": "default"}
 
-    with patch("server.routes.api.get_options", return_value=options), \
-         patch("server.routes.api.build_font_payload", return_value=font_payload) as mock_font, \
-         patch("server.routes.api.render_effects", return_value=effects_result) as mock_render:
+    with (
+        patch("server.routes.api.get_options", return_value=options),
+        patch("server.routes.api.build_font_payload", return_value=font_payload) as mock_font,
+        patch("server.routes.api.render_effects", return_value=effects_result) as mock_render,
+    ):
         from server.routes.api import _resolve_danmu_style
+
         result = _resolve_danmu_style(data)
     return result, mock_font, mock_render
 
@@ -187,9 +190,7 @@ def test_default_opacity_size_speed_from_settings():
 
 def test_user_opacity_size_speed_override_defaults():
     """User-provided values override admin defaults."""
-    result, _, _ = _resolve(
-        {"text": "hello", "opacity": 90, "size": 80, "speed": 7}
-    )
+    result, _, _ = _resolve({"text": "hello", "opacity": 90, "size": 80, "speed": 7})
     assert result["opacity"] == 90
     assert result["size"] == 80
     assert result["speed"] == 7

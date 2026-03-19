@@ -200,9 +200,9 @@ def test_browser_submit_danmu_appears_in_history(browser_session, server_ports):
 
         # 確認歷史紀錄包含送出的文字
         history_text = page.locator("#sec-history").inner_text()
-        assert "history_e2e_check" in history_text, (
-            f"History should contain 'history_e2e_check', got: {history_text[:300]}"
-        )
+        assert (
+            "history_e2e_check" in history_text
+        ), f"History should contain 'history_e2e_check', got: {history_text[:300]}"
     finally:
         page.close()
         context.close()

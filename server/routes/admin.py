@@ -32,7 +32,9 @@ from ..services.validation import (
     ToggleSettingSchema,
     validate_request,
 )
-from ..utils import allowed_file, json_response as _json_response, sanitize_log_string
+from ..utils import allowed_file
+from ..utils import json_response as _json_response
+from ..utils import sanitize_log_string
 
 admin_bp = Blueprint("admin_bp", __name__, url_prefix="/admin")
 

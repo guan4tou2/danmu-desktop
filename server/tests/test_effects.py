@@ -655,6 +655,7 @@ def test_fire_effects_disabled_in_settings(client, monkeypatch):
 def test_save_effect_content_name_mismatch_rejected(app, tmp_path):
     """YAML content with name != URL name must be rejected."""
     from unittest.mock import patch
+
     from server.services import effects
 
     dme_yaml = (
@@ -666,8 +667,7 @@ def test_save_effect_content_name_mismatch_rejected(app, tmp_path):
     dme = tmp_path / "spin.dme"
     dme.write_text(dme_yaml)
 
-    with patch.object(effects, "_path_to_name", {str(dme): "spin"}), \
-         patch.object(effects, "_scan"):
+    with patch.object(effects, "_path_to_name", {str(dme): "spin"}), patch.object(effects, "_scan"):
         bad_content = (
             b"name: evil\nanimation: spin 1s linear infinite\n"
             b"keyframes:\n  spin:\n"
@@ -690,6 +690,7 @@ def test_effects_content_path_traversal_returns_error(client):
 def test_save_effect_content_matching_name_accepted(app, tmp_path):
     """YAML content with matching name should succeed."""
     from unittest.mock import patch
+
     from server.services import effects
 
     dme_yaml = (
@@ -701,8 +702,7 @@ def test_save_effect_content_matching_name_accepted(app, tmp_path):
     dme = tmp_path / "spin.dme"
     dme.write_text(dme_yaml)
 
-    with patch.object(effects, "_path_to_name", {str(dme): "spin"}), \
-         patch.object(effects, "_scan"):
+    with patch.object(effects, "_path_to_name", {str(dme): "spin"}), patch.object(effects, "_scan"):
         good_content = (
             b"name: spin\nanimation: spin 1s linear infinite\n"
             b"keyframes:\n  spin:\n"
@@ -733,6 +733,7 @@ def test_list_with_file_info_handles_stat_oserror(app):
     }
     effects._path_to_name[fake_path] = "testfx"
     import time
+
     effects._last_scan = time.monotonic()
 
     try:
@@ -749,7 +750,8 @@ def test_list_with_file_info_handles_stat_oserror(app):
 
 def test_delete_by_name_handles_unlink_oserror(app):
     """delete_by_name should return False when unlink fails."""
-    from unittest.mock import patch, MagicMock
+    from unittest.mock import MagicMock, patch
+
     from server.services import effects
 
     fake_path = "/nonexistent/dir/spin.dme"
@@ -782,8 +784,9 @@ def test_delete_by_name_handles_unlink_oserror(app):
 
 def test_save_uploaded_effect_handles_write_oserror(app):
     """save_uploaded_effect should return error when write_bytes fails."""
-    from unittest.mock import patch
     from pathlib import Path
+    from unittest.mock import patch
+
     from server.services import effects
 
     valid_content = b"name: testwrite\nanimation: testwrite 1s\nkeyframes: ''\n"
@@ -803,8 +806,9 @@ def test_save_uploaded_effect_handles_write_oserror(app):
 
 def test_get_effect_content_handles_read_oserror(app):
     """get_effect_content should return None when file read fails."""
-    from server.services import effects
     import time
+
+    from server.services import effects
 
     fake_path = "/nonexistent/dir/glow.dme"
     effects._cache["glow"] = {
