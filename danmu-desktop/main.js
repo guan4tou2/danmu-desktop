@@ -94,6 +94,9 @@ app.whenReady().then(() => {
       mainWindow = createWindow(childWindows, onKonamiTrigger);
       // IPC handlers are already registered globally at app startup;
       // re-registering would duplicate all listeners. Only recreate the window.
+    } else {
+      // 視窗已存在但可能在別的 Space — 用同樣的 workaround 拉到目前桌面
+      showMainWindow();
     }
   });
 });
