@@ -17,6 +17,7 @@ from ..services import history as history_service
 from ..services import messaging
 from ..services.blacklist import add_keyword, list_keywords, remove_keyword
 from ..services.fonts import list_available_fonts, save_uploaded_font
+from ..services.replay import replay_service
 from ..services.security import rate_limit, require_csrf
 from ..services.settings import (
     get_options,
@@ -32,6 +33,7 @@ from ..services.validation import (
     ToggleSettingSchema,
     validate_request,
 )
+from ..services.ws_state import get_ws_client_count
 from ..utils import allowed_file
 from ..utils import json_response as _json_response
 from ..utils import sanitize_log_string
@@ -385,3 +387,74 @@ def clear_danmu_history():
     except Exception as exc:
         current_app.logger.error("Error clearing danmu history: %s", sanitize_log_string(str(exc)))
         return _json_response({"error": "An internal error has occurred"}, 500)
+
+
+# ─── 回放 API ─────────────────────────────────────────────────────────────────
+
+
+@admin_bp.route("/replay", methods=["POST"])
+@require_csrf
+def start_replay():
+    """啟動歷史彈幕回放"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+
+    if get_ws_client_count() <= 0:
+        return _json_response({"error": "No overlay connected"}, 503)
+
+    data = request.get_json(silent=True) or {}
+    records = data.get("records", [])
+    speed = data.get("speedMultiplier", 1.0)
+
+    if not records:
+        return _json_response({"error": "No records provided"}, 400)
+    if len(records) > 500:
+        return _json_response({"error": "Too many records (max 500)"}, 400)
+    if not isinstance(speed, (int, float)) or speed <= 0:
+        return _json_response({"error": "Invalid speed multiplier"}, 400)
+
+    replay_id = replay_service.start(records, speed_multiplier=float(speed))
+    return _json_response(
+        {
+            "replayId": replay_id,
+            "count": len(records),
+        }
+    )
+
+
+@admin_bp.route("/replay/pause", methods=["POST"])
+@require_csrf
+def pause_replay():
+    """暫停回放"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    replay_service.pause()
+    return _json_response(replay_service.get_status())
+
+
+@admin_bp.route("/replay/resume", methods=["POST"])
+@require_csrf
+def resume_replay():
+    """繼續回放"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    replay_service.resume()
+    return _json_response(replay_service.get_status())
+
+
+@admin_bp.route("/replay/stop", methods=["POST"])
+@require_csrf
+def stop_replay():
+    """停止回放"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    replay_service.stop()
+    return _json_response({"status": "stopped"})
+
+
+@admin_bp.route("/replay/status", methods=["GET"])
+def get_replay_status():
+    """取得回放狀態"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    return _json_response(replay_service.get_status())

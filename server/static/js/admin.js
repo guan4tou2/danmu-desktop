@@ -414,9 +414,18 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    records.forEach((record) => {
+    records.forEach((record, idx) => {
       const recordEl = document.createElement("div");
-      recordEl.className = "bg-slate-700/50 p-3 rounded-lg space-y-1";
+      recordEl.className = "bg-slate-700/50 p-3 rounded-lg space-y-1 flex gap-2 items-start";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "accent-purple-500 mt-1 shrink-0 replay-record-cb";
+      checkbox.dataset.recordIndex = idx;
+      recordEl.appendChild(checkbox);
+
+      const contentWrap = document.createElement("div");
+      contentWrap.className = "flex-1 space-y-1";
 
       const headerEl = document.createElement("div");
       headerEl.className = "flex items-start justify-between gap-2";
@@ -467,11 +476,16 @@ document.addEventListener("DOMContentLoaded", () => {
       if (record.fingerprint) metaParts.push(`FP: ${record.fingerprint.slice(0, 8)}…`);
       metaEl.textContent = metaParts.join(" • ") || "No metadata";
 
-      recordEl.appendChild(headerEl);
-      recordEl.appendChild(textEl);
-      recordEl.appendChild(metaEl);
+      contentWrap.appendChild(headerEl);
+      contentWrap.appendChild(textEl);
+      contentWrap.appendChild(metaEl);
+      recordEl.appendChild(contentWrap);
       historyListDiv.appendChild(recordEl);
     });
+
+    // 同步 Select All checkbox 狀態
+    const selectAllCb = document.getElementById("historySelectAll");
+    if (selectAllCb) selectAllCb.checked = false;
   }
 
   async function fetchDanmuHistory() {
@@ -543,6 +557,139 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error("Clear history error:", error);
       showToast("Error clearing history.", false);
+    }
+  }
+
+  // ─── Replay Controls ──────────────────────────────────────────────────────
+
+  let _replayPollTimer = null;
+
+  function _updateReplayUI(state) {
+    const startBtn = document.getElementById("replayStartBtn");
+    const pauseBtn = document.getElementById("replayPauseBtn");
+    const resumeBtn = document.getElementById("replayResumeBtn");
+    const stopBtn = document.getElementById("replayStopBtn");
+    const progressEl = document.getElementById("replayProgress");
+    if (!startBtn) return;
+
+    if (state === "playing") {
+      startBtn.classList.add("hidden");
+      pauseBtn.classList.remove("hidden");
+      resumeBtn.classList.add("hidden");
+      stopBtn.classList.remove("hidden");
+      if (progressEl) progressEl.classList.remove("hidden");
+    } else if (state === "paused") {
+      startBtn.classList.add("hidden");
+      pauseBtn.classList.add("hidden");
+      resumeBtn.classList.remove("hidden");
+      stopBtn.classList.remove("hidden");
+      if (progressEl) progressEl.classList.remove("hidden");
+    } else {
+      // stopped
+      startBtn.classList.remove("hidden");
+      pauseBtn.classList.add("hidden");
+      resumeBtn.classList.add("hidden");
+      stopBtn.classList.add("hidden");
+      if (progressEl) {
+        progressEl.classList.add("hidden");
+        progressEl.textContent = "";
+      }
+    }
+  }
+
+  function _pollReplayStatus() {
+    if (_replayPollTimer) clearInterval(_replayPollTimer);
+    _replayPollTimer = setInterval(async () => {
+      try {
+        const res = await fetch("/admin/replay/status", { credentials: "same-origin" });
+        if (!res.ok) return;
+        const data = await res.json();
+        const progressEl = document.getElementById("replayProgress");
+        if (progressEl) {
+          progressEl.textContent = `Replaying: ${data.sent}/${data.total}`;
+        }
+        _updateReplayUI(data.state);
+        if (data.state === "stopped") {
+          clearInterval(_replayPollTimer);
+          _replayPollTimer = null;
+        }
+      } catch (e) {
+        // ignore polling errors
+      }
+    }, 500);
+  }
+
+  async function _startReplay() {
+    const checkboxes = document.querySelectorAll(".replay-record-cb:checked");
+    if (checkboxes.length === 0) {
+      showToast("No records selected for replay.", false);
+      return;
+    }
+
+    // 取得目前顯示的記錄
+    const searchTerm = document.getElementById("historySearch")?.value?.toLowerCase() || "";
+    const displayedRecords = searchTerm
+      ? _allHistoryRecords.filter((r) => (r.text || "").toLowerCase().includes(searchTerm))
+      : _allHistoryRecords;
+
+    const selectedRecords = [];
+    checkboxes.forEach((cb) => {
+      const idx = parseInt(cb.dataset.recordIndex, 10);
+      if (displayedRecords[idx]) selectedRecords.push(displayedRecords[idx]);
+    });
+
+    if (selectedRecords.length === 0) return;
+
+    const speed = parseFloat(document.getElementById("replaySpeed")?.value || "1");
+
+    try {
+      const res = await csrfFetch("/admin/replay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ records: selectedRecords, speedMultiplier: speed }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        showToast(`Replay started: ${data.count} records at ${speed}x`, true);
+        _updateReplayUI("playing");
+        _pollReplayStatus();
+      } else {
+        const err = await res.json();
+        showToast(`Replay error: ${err.error || res.statusText}`, false);
+      }
+    } catch (e) {
+      showToast("Failed to start replay.", false);
+    }
+  }
+
+  async function _pauseReplay() {
+    try {
+      await csrfFetch("/admin/replay/pause", { method: "POST" });
+      _updateReplayUI("paused");
+    } catch (e) {
+      showToast("Failed to pause replay.", false);
+    }
+  }
+
+  async function _resumeReplay() {
+    try {
+      await csrfFetch("/admin/replay/resume", { method: "POST" });
+      _updateReplayUI("playing");
+    } catch (e) {
+      showToast("Failed to resume replay.", false);
+    }
+  }
+
+  async function _stopReplay() {
+    try {
+      await csrfFetch("/admin/replay/stop", { method: "POST" });
+      _updateReplayUI("stopped");
+      if (_replayPollTimer) {
+        clearInterval(_replayPollTimer);
+        _replayPollTimer = null;
+      }
+    } catch (e) {
+      showToast("Failed to stop replay.", false);
     }
   }
 
@@ -858,7 +1005,26 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <input id="historySearch" type="search" placeholder="Search history..."
                                     class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm
                                            placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400">
+                                <div id="replayToolbar" class="flex gap-2 items-center flex-wrap">
+                                    <button id="replayStartBtn" class="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors text-sm">▶ Replay Selected</button>
+                                    <button id="replayPauseBtn" class="px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors text-sm hidden">⏸ Pause</button>
+                                    <button id="replayResumeBtn" class="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors text-sm hidden">▶ Resume</button>
+                                    <button id="replayStopBtn" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors text-sm hidden">⏹ Stop</button>
+                                    <select id="replaySpeed" class="px-2 py-1.5 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm">
+                                        <option value="1">1x</option>
+                                        <option value="2">2x</option>
+                                        <option value="5">5x</option>
+                                        <option value="10">10x</option>
+                                    </select>
+                                    <span id="replayProgress" class="text-sm text-slate-400 hidden"></span>
+                                </div>
                                 <div id="historyStats" class="text-sm text-slate-400"></div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none">
+                                        <input type="checkbox" id="historySelectAll" class="accent-purple-500">
+                                        Select All
+                                    </label>
+                                </div>
                                 <div id="danmuHistoryList" class="space-y-2 max-h-96 overflow-y-auto">
                                     <!-- History will be listed here -->
                                 </div>
@@ -1084,6 +1250,25 @@ document.addEventListener("DOMContentLoaded", () => {
         if (autoRefreshCheckbox.checked) {
           _autoRefreshTimer = setInterval(fetchDanmuHistory, 30000);
         }
+      });
+    }
+
+    // Replay controls
+    const replayStartBtn = document.getElementById("replayStartBtn");
+    if (replayStartBtn) replayStartBtn.addEventListener("click", _startReplay);
+    const replayPauseBtn = document.getElementById("replayPauseBtn");
+    if (replayPauseBtn) replayPauseBtn.addEventListener("click", _pauseReplay);
+    const replayResumeBtn = document.getElementById("replayResumeBtn");
+    if (replayResumeBtn) replayResumeBtn.addEventListener("click", _resumeReplay);
+    const replayStopBtn = document.getElementById("replayStopBtn");
+    if (replayStopBtn) replayStopBtn.addEventListener("click", _stopReplay);
+
+    const historySelectAll = document.getElementById("historySelectAll");
+    if (historySelectAll) {
+      historySelectAll.addEventListener("change", () => {
+        document.querySelectorAll(".replay-record-cb").forEach((cb) => {
+          cb.checked = historySelectAll.checked;
+        });
       });
     }
 
@@ -1612,6 +1797,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Cleanup all background resources on page unload (prevents memory leaks)
   window.addEventListener("beforeunload", () => {
+    if (_replayPollTimer) {
+      clearInterval(_replayPollTimer);
+      _replayPollTimer = null;
+    }
     if (_autoRefreshTimer) {
       clearInterval(_autoRefreshTimer);
       _autoRefreshTimer = null;
