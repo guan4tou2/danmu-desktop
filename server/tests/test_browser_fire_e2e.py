@@ -172,7 +172,7 @@ def test_browser_submit_danmu_appears_in_history(browser_session, server_ports):
     page = context.new_page()
     try:
         # 需要有 overlay 連線才能 fire 成功（否則 503）
-        with connect(f"ws://127.0.0.1:{ws_port}") as ws:
+        with connect(f"ws://127.0.0.1:{ws_port}"):
             time.sleep(0.5)
 
             # 送出彈幕

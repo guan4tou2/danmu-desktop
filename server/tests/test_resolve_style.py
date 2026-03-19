@@ -1,7 +1,6 @@
 """Unit tests for _resolve_danmu_style in api routes."""
 
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 
 def _resolve(data, options=None, font_payload=None, effects_result=None):
@@ -154,7 +153,12 @@ def test_effects_disabled_in_settings_not_rendered():
 def test_effects_enabled_calls_render_effects():
     """When Effects is enabled and user sends effects, render_effects is called."""
     effects_input = [{"name": "zoom", "params": {"duration": 1.0}}]
-    fake_css = {"keyframes": "@keyframes dme-zoom{}", "animation": "dme-zoom 1s", "styleId": "abc", "animationComposition": "add"}
+    fake_css = {
+        "keyframes": "@keyframes dme-zoom{}",
+        "animation": "dme-zoom 1s",
+        "styleId": "abc",
+        "animationComposition": "add",
+    }
     result, _, mock_render = _resolve(
         {"text": "hello", "effects": effects_input},
         effects_result=fake_css,

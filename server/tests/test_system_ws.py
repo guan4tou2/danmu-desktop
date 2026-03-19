@@ -275,11 +275,6 @@ def test_ws_server_rejects_oversized_message(ws_server_port):
 # ─── Token 驗證：真實 TCP 連線測試 ──────────────────────────────────────────
 
 
-import threading
-
-from server.ws.server import run_ws_server
-
-
 @pytest.fixture(scope="module")
 def token_ws_port():
     """啟動需要 token 驗證的 WS 伺服器（獨立子行程，避免 asyncio event loop 衝突）"""

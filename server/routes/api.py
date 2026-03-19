@@ -1,4 +1,3 @@
-import json
 from ipaddress import ip_address
 
 from flask import (

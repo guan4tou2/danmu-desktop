@@ -171,7 +171,6 @@ def test_redis_rate_limiter_rejects_when_eval_returns_zero():
 
 def test_login_plaintext_uses_hmac_compare_digest(client, app):
     """Plaintext password path must use constant-time comparison."""
-    import hmac
     from unittest.mock import patch
 
     app.config["ADMIN_PASSWORD"] = "testpass"
@@ -185,9 +184,6 @@ def test_login_plaintext_uses_hmac_compare_digest(client, app):
 
 def test_save_and_load_runtime_hash_roundtrip(tmp_path, app, monkeypatch):
     """save_runtime_hash -> load_runtime_hash should return the same hash."""
-    import os
-    import stat
-
     import server.config as config_module
 
     hash_file = tmp_path / "admin_hash"

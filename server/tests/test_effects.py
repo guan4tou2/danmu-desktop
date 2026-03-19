@@ -657,12 +657,23 @@ def test_save_effect_content_name_mismatch_rejected(app, tmp_path):
     from unittest.mock import patch
     from server.services import effects
 
+    dme_yaml = (
+        "name: spin\nanimation: spin 1s linear infinite\n"
+        "keyframes:\n  spin:\n"
+        "    from: { transform: 'rotate(0deg)' }\n"
+        "    to: { transform: 'rotate(360deg)' }\n"
+    )
     dme = tmp_path / "spin.dme"
-    dme.write_text("name: spin\nanimation: spin 1s linear infinite\nkeyframes:\n  spin:\n    from: { transform: 'rotate(0deg)' }\n    to: { transform: 'rotate(360deg)' }\n")
+    dme.write_text(dme_yaml)
 
     with patch.object(effects, "_path_to_name", {str(dme): "spin"}), \
          patch.object(effects, "_scan"):
-        bad_content = b"name: evil\nanimation: spin 1s linear infinite\nkeyframes:\n  spin:\n    from: { transform: 'rotate(0deg)' }\n    to: { transform: 'rotate(360deg)' }\n"
+        bad_content = (
+            b"name: evil\nanimation: spin 1s linear infinite\n"
+            b"keyframes:\n  spin:\n"
+            b"    from: { transform: 'rotate(0deg)' }\n"
+            b"    to: { transform: 'rotate(360deg)' }\n"
+        )
         filename, error = effects.save_effect_content("spin", bad_content)
         assert error is not None
         assert "name" in error.lower() or "mismatch" in error.lower()
@@ -681,12 +692,23 @@ def test_save_effect_content_matching_name_accepted(app, tmp_path):
     from unittest.mock import patch
     from server.services import effects
 
+    dme_yaml = (
+        "name: spin\nanimation: spin 1s linear infinite\n"
+        "keyframes:\n  spin:\n"
+        "    from: { transform: 'rotate(0deg)' }\n"
+        "    to: { transform: 'rotate(360deg)' }\n"
+    )
     dme = tmp_path / "spin.dme"
-    dme.write_text("name: spin\nanimation: spin 1s linear infinite\nkeyframes:\n  spin:\n    from: { transform: 'rotate(0deg)' }\n    to: { transform: 'rotate(360deg)' }\n")
+    dme.write_text(dme_yaml)
 
     with patch.object(effects, "_path_to_name", {str(dme): "spin"}), \
          patch.object(effects, "_scan"):
-        good_content = b"name: spin\nanimation: spin 1s linear infinite\nkeyframes:\n  spin:\n    from: { transform: 'rotate(0deg)' }\n    to: { transform: 'rotate(360deg)' }\n"
+        good_content = (
+            b"name: spin\nanimation: spin 1s linear infinite\n"
+            b"keyframes:\n  spin:\n"
+            b"    from: { transform: 'rotate(0deg)' }\n"
+            b"    to: { transform: 'rotate(360deg)' }\n"
+        )
         filename, error = effects.save_effect_content("spin", good_content)
         assert error is None
         assert filename == "spin.dme"
@@ -697,7 +719,6 @@ def test_save_effect_content_matching_name_accepted(app, tmp_path):
 
 def test_list_with_file_info_handles_stat_oserror(app):
     """list_with_file_info should handle OSError when stat fails."""
-    from unittest.mock import patch
     from server.services import effects
 
     # Inject a fake entry that points to a non-existent path
@@ -782,7 +803,6 @@ def test_save_uploaded_effect_handles_write_oserror(app):
 
 def test_get_effect_content_handles_read_oserror(app):
     """get_effect_content should return None when file read fails."""
-    from unittest.mock import patch
     from server.services import effects
     import time
 

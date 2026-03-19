@@ -1,5 +1,7 @@
 """DanmuHistory 服務直接單元測試"""
 
+import time
+import threading
 from datetime import datetime, timedelta, timezone
 
 from server.services.history import DanmuHistory
@@ -168,10 +170,6 @@ def test_record_missing_fields_use_defaults():
 # ─── RLock deadlock regression ────────────────────────────────────────────────
 
 
-import time
-import threading
-
-
 def test_maybe_cleanup_does_not_deadlock(app):
     """add() calling _maybe_cleanup() must not deadlock on nested lock."""
     from server.services.history import danmu_history
@@ -202,7 +200,10 @@ def test_maybe_cleanup_does_not_deadlock(app):
     result = [False]
 
     def add_with_timeout():
-        danmu_history.add({"text": "new", "color": "#000", "size": "20", "speed": "3", "opacity": "80"})
+        danmu_history.add({
+            "text": "new", "color": "#000",
+            "size": "20", "speed": "3", "opacity": "80",
+        })
         result[0] = True
 
     t = threading.Thread(target=add_with_timeout)

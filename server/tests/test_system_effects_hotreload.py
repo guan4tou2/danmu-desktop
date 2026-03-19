@@ -8,7 +8,6 @@ import time
 import pytest
 from websockets.sync.client import connect
 
-from server import state
 from server.services import effects as eff_svc, ws_queue
 from server.services.ws_state import get_ws_client_count
 
@@ -110,7 +109,10 @@ def test_new_effect_file_picked_up_after_scan(temp_dme):
 
 def test_modified_effect_reloaded_after_scan(temp_dme):
     """修改 .dme 的 animation 欄位後，_scan() 應回傳更新版本"""
-    path = temp_dme("test_hotreload_modify", animation="dme-test_hotreload_modify 1s linear infinite")
+    path = temp_dme(
+        "test_hotreload_modify",
+        animation="dme-test_hotreload_modify 1s linear infinite",
+    )
     eff_svc._scan()
 
     # 確認初始 animation
