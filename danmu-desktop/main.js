@@ -19,12 +19,6 @@ function onKonamiTrigger() {
 }
 
 app.whenReady().then(() => {
-  // macOS: 在建立視窗前先把 app 拉到前景的 Space，
-  // 否則 BrowserWindow 會被建立在 app 上次所在的 Space
-  if (process.platform === "darwin") {
-    app.focus({ steal: true });
-  }
-
   mainWindow = createWindow(childWindows, onKonamiTrigger);
   setupIpcHandlers(() => mainWindow, childWindows);
 
@@ -44,18 +38,20 @@ app.whenReady().then(() => {
   const showMainWindow = () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (process.platform === "darwin") {
-        // 三階段 Space 修復：見 window-manager.js 的詳細說明
-        mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+        // 把視窗移到游標所在螢幕的中央，讓 macOS 歸屬到目前 Space
+        // （參考 electron/electron#8734）
+        const { screen } = require("electron");
+        const cursorPoint = screen.getCursorScreenPoint();
+        const currentDisplay = screen.getDisplayNearestPoint(cursorPoint);
+        const { x, y, width, height } = currentDisplay.workArea;
+        const bounds = mainWindow.getBounds();
+        mainWindow.setPosition(
+          Math.round(x + (width - bounds.width) / 2),
+          Math.round(y + (height - bounds.height) / 2)
+        );
         mainWindow.show();
         mainWindow.focus();
-        app.dock.show();
         app.focus({ steal: true });
-        mainWindow.moveTop();
-        setTimeout(() => {
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.setVisibleOnAllWorkspaces(false);
-          }
-        }, 500);
       } else {
         mainWindow.show();
         mainWindow.focus();

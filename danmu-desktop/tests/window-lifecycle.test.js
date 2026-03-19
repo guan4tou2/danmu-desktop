@@ -14,6 +14,7 @@ const mockFocus = jest.fn();
 const mockHide = jest.fn();
 const mockIsDestroyed = jest.fn(() => false);
 const mockDestroy = jest.fn();
+const mockSetPosition = jest.fn();
 
 // Store BrowserWindow constructor calls for inspection
 let browserWindowOptions = null;
@@ -38,6 +39,7 @@ jest.mock("electron", () => ({
     this.on = mockOn;
     this.isDestroyed = mockIsDestroyed;
     this.destroy = mockDestroy;
+    this.setPosition = mockSetPosition;
     this.webContents = {
       id: 100,
       on: jest.fn(),
@@ -51,6 +53,12 @@ jest.mock("electron", () => ({
     getAllDisplays: jest.fn(() => [
       { id: 1, bounds: { x: 0, y: 0, width: 1920, height: 1080 } },
     ]),
+    getCursorScreenPoint: jest.fn(() => ({ x: 500, y: 400 })),
+    getDisplayNearestPoint: jest.fn(() => ({
+      id: 1,
+      bounds: { x: 0, y: 0, width: 1920, height: 1080 },
+      workArea: { x: 0, y: 25, width: 1920, height: 1055 },
+    })),
   },
 }));
 

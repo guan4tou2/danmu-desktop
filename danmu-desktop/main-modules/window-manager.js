@@ -40,32 +40,26 @@ function createWindow(childWindows, onKonamiTrigger) {
     },
   });
 
+  // macOS Space 修復：把視窗定位到游標所在的螢幕
+  // 這會讓 macOS 把視窗歸屬到使用者目前所在的 Space
+  // （參考 electron/electron#8734 最高票解法）
+  if (process.platform === "darwin") {
+    const cursorPoint = screen.getCursorScreenPoint();
+    const currentDisplay = screen.getDisplayNearestPoint(cursorPoint);
+    const { x, y, width, height } = currentDisplay.workArea;
+    mainWindow.setPosition(
+      Math.round(x + (width - 800) / 2),
+      Math.round(y + (height - 900) / 2)
+    );
+  }
+
   mainWindow.loadFile(path.join(__dirname, "../index.html"));
 
-  // macOS Space 修復：確保視窗出現在使用者目前所在的桌面
-  //
-  // 問題：macOS 在 BrowserWindow 建立時就決定 Space 歸屬，
-  // 如果 app 之前在 Space A 啟動過，新視窗會再次開在 Space A，
-  // 即使使用者已切到 Space B。
-  //
-  // 修復策略（三階段）：
-  // 1. ready-to-show: setVisibleOnAllWorkspaces(true) 讓視窗暫時出現在所有桌面
-  // 2. app.focus({ steal: true }) 強制 macOS 把焦點（和使用者的注意力）帶到 app
-  // 3. 延遲 500ms 後 setVisibleOnAllWorkspaces(false)，鎖定在目前 Space
-  //    （200ms 在某些 Mac 上不夠，macOS 動畫需要更多時間）
   mainWindow.once("ready-to-show", () => {
     if (process.platform === "darwin") {
-      mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
       mainWindow.show();
       mainWindow.focus();
-      app.dock.show();
       app.focus({ steal: true });
-      mainWindow.moveTop();
-      setTimeout(() => {
-        if (!mainWindow.isDestroyed()) {
-          mainWindow.setVisibleOnAllWorkspaces(false);
-        }
-      }, 500);
     } else {
       mainWindow.show();
       mainWindow.focus();
