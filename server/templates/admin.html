@@ -64,6 +64,8 @@
       };
     </script>
 
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    <script>ServerI18n.init();</script>
     <script defer src="{{ url_for('static', filename='js/toast.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin.js') }}"></script>
   </body>

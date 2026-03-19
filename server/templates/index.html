@@ -28,20 +28,32 @@
     <div id="vanta-bg" class="fixed top-0 left-0 w-full h-full -z-10"></div>
 
     <div class="container mx-auto px-4 py-8 max-w-2xl relative z-10">
+      <!-- Language Selector -->
+      <div class="flex justify-end mb-2">
+        <select id="server-lang-select" onchange="ServerI18n.setLanguage(this.value)"
+          class="bg-slate-800/60 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-1 focus:ring-sky-500 focus:border-sky-500">
+          <option value="en">EN</option>
+          <option value="zh">ZH</option>
+          <option value="ja">JA</option>
+          <option value="ko">KO</option>
+        </select>
+      </div>
+
       <!-- Header -->
       <header class="text-center mb-10 animate-fade-in-scale-up">
         <h1
           class="text-5xl font-bold mb-2 bg-gradient-to-r from-sky-400 to-cyan-300 bg-clip-text text-transparent drop-shadow-lg"
+          data-i18n="mainTitle"
         >
           Danmu Fire
         </h1>
-        <p class="text-slate-300 text-lg font-light tracking-wide">
+        <p class="text-slate-300 text-lg font-light tracking-wide" data-i18n="mainSubtitle">
           Send your message to the screen!
         </p>
         <!-- Connection Status -->
         <div id="connectionStatus" class="inline-flex items-center gap-1.5 mt-2 text-xs" role="status" aria-live="polite">
           <span class="connection-dot connection-dot--connecting"></span>
-          <span id="connectionLabel" class="text-slate-400">Connecting...</span>
+          <span id="connectionLabel" class="text-slate-400" data-i18n="connecting">Connecting...</span>
         </div>
       </header>
 
@@ -54,6 +66,7 @@
           <label
             for="danmuText"
             class="block text-sm font-medium text-slate-300 mb-2 ml-1 group-focus-within:text-sky-400 transition-colors"
+            data-i18n="yourMessage"
             >Your Message</label
           >
           <div class="relative">
@@ -64,6 +77,7 @@
               aria-describedby="charCount"
               class="w-full bg-slate-800/50 border-2 border-slate-700 rounded-xl p-4 text-white placeholder-slate-500 focus:ring-4 focus:ring-sky-500/20 focus:border-sky-500 transition-all duration-300 resize-none text-lg"
               placeholder="Type something awesome..."
+              data-i18n-placeholder="placeholder"
             ></textarea>
             <div
               id="charCount"
@@ -77,7 +91,7 @@
 
         <!-- Preview Area -->
         <div class="mb-8">
-          <label class="block text-sm font-medium text-slate-300 mb-2 ml-1"
+          <label class="block text-sm font-medium text-slate-300 mb-2 ml-1" data-i18n="livePreview"
             >Live Preview</label
           >
           <div
@@ -89,6 +103,7 @@
             <div
               id="previewText"
               class="text-2xl font-bold transition-all duration-300 px-4 text-center break-all z-10"
+              data-i18n="preview"
             >
               Preview
             </div>
@@ -117,7 +132,7 @@
                     d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
                   />
                 </svg>
-                Customize Style
+                <span data-i18n="customizeStyle">Customize Style</span>
               </span>
               <span class="transition group-open:rotate-180" aria-hidden="true">
                 <svg
@@ -143,7 +158,7 @@
                 <label
                   class="block text-sm font-medium text-slate-400 mb-2 flex justify-between"
                 >
-                  <span>Color</span>
+                  <span data-i18n="color">Color</span>
                   <span
                     id="colorValue"
                     class="text-xs font-mono bg-slate-800 px-2 py-0.5 rounded text-slate-300"
@@ -169,7 +184,7 @@
                 <label
                   class="block text-sm font-medium text-slate-400 mb-2 flex justify-between"
                 >
-                  <span>Size</span>
+                  <span data-i18n="size">Size</span>
                   <span
                     id="sizeValue"
                     class="text-xs font-mono bg-slate-800 px-2 py-0.5 rounded text-slate-300"
@@ -200,7 +215,7 @@
                 <label
                   class="block text-sm font-medium text-slate-400 mb-2 flex justify-between"
                 >
-                  <span>Opacity</span>
+                  <span data-i18n="opacity">Opacity</span>
                   <span
                     id="opacityValue"
                     class="text-xs font-mono bg-slate-800 px-2 py-0.5 rounded text-slate-300"
@@ -227,7 +242,7 @@
                 <label
                   class="block text-sm font-medium text-slate-400 mb-2 flex justify-between"
                 >
-                  <span>Speed</span>
+                  <span data-i18n="speed">Speed</span>
                   <span
                     id="speedValue"
                     class="text-xs font-mono bg-slate-800 px-2 py-0.5 rounded text-slate-300"
@@ -246,8 +261,8 @@
                   class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
                 />
                 <div class="flex justify-between text-xs text-slate-500 mt-1">
-                  <span>Slow</span>
-                  <span>Fast</span>
+                  <span data-i18n="slow">Slow</span>
+                  <span data-i18n="fast">Fast</span>
                 </div>
               </div>
               {% endif %}
@@ -257,14 +272,14 @@
                 <label
                   class="block text-sm font-medium text-slate-400 mb-2 flex justify-between"
                 >
-                  <span>Font</span>
+                  <span data-i18n="font">Font</span>
                 </label>
                 <select
                   id="userFontSelect"
                   aria-label="Choose font"
                   class="w-full bg-slate-800 border border-slate-700 text-white text-sm rounded-lg focus:ring-sky-500 focus:border-sky-500 block p-2.5"
                 >
-                  <option value="">Default Font</option>
+                  <option value="" data-i18n="defaultFont">Default Font</option>
                   <!-- Options populated by JS -->
                 </select>
               </div>
@@ -272,12 +287,12 @@
               <!-- Text Effects (dynamically loaded from /effects API) -->
               <div id="effectControl">
                 <label class="block text-sm font-medium text-slate-400 mb-2 flex justify-between">
-                  <span>Effects</span>
-                  <span class="text-xs text-slate-500">Multi-select to stack</span>
+                  <span data-i18n="effects">Effects</span>
+                  <span class="text-xs text-slate-500" data-i18n="multiSelectToStack">Multi-select to stack</span>
                 </label>
                 <!-- Effect buttons (injected by JS) -->
                 <div class="flex flex-wrap gap-2" id="effectButtons">
-                  <span class="text-xs text-slate-500">Loading...</span>
+                  <span class="text-xs text-slate-500" data-i18n="loadingEffects">Loading...</span>
                 </div>
                 <!-- Selected effect parameter controls (injected by JS) -->
                 <div id="effectParamsPanel" class="mt-3 space-y-3"></div>
@@ -291,7 +306,7 @@
           id="btnSend"
           class="w-full bg-gradient-to-r from-sky-500 to-cyan-400 hover:from-sky-400 hover:to-cyan-300 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-sky-500/30 transform hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
         >
-          <span id="btnSendText">Fire Danmu</span>
+          <span id="btnSendText" data-i18n="fireDanmu">Fire Danmu</span>
           <svg
             id="btnSendIcon"
             xmlns="http://www.w3.org/2000/svg"
@@ -362,7 +377,7 @@
           />
         </svg>
         <div id="blacklistWarningMessage" class="warning-message"></div>
-        <button class="ok-button" id="blacklistWarningOkBtn">
+        <button class="ok-button" id="blacklistWarningOkBtn" data-i18n="ok">
           OK
         </button>
       </div>
@@ -371,6 +386,8 @@
     <!-- Scripts -->
     <script defer src="{{ url_for('static', filename='vendor/three.min.js') }}"></script>
     <script defer src="{{ url_for('static', filename='vendor/vanta.net.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    <script>ServerI18n.init();</script>
     <script defer src="{{ url_for('static', filename='js/toast.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
   </body>

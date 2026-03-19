@@ -7,6 +7,14 @@ function flush() {
 describe("web client send behavior", () => {
   beforeEach(() => {
     jest.resetModules();
+    // Mock ServerI18n (used by server's main.js)
+    window.ServerI18n = {
+      currentLang: "en",
+      t: (key) => key,
+      init: () => {},
+      setLanguage: () => {},
+      updateUI: () => {},
+    };
     document.body.innerHTML = `
       <div id="vanta-bg"></div>
       <textarea id="danmuText"></textarea>

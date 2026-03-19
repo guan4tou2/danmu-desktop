@@ -370,7 +370,7 @@ document.addEventListener("DOMContentLoaded", () => {
       img.alt = "Danmu Preview";
       elements.previewText.appendChild(img);
     } else {
-      elements.previewText.textContent = text || "Preview";
+      elements.previewText.textContent = text || ServerI18n.t("preview");
     }
 
     // Apply styles
@@ -420,7 +420,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const defaultOption = document.createElement("option");
       defaultOption.value = "";
-      defaultOption.textContent = "Default Font";
+      defaultOption.textContent = ServerI18n.t("defaultFont");
       elements.userFontSelect.appendChild(defaultOption);
 
       fonts.forEach((font) => {
@@ -443,7 +443,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error("Failed to populate user font dropdown:", error);
       if (!background) {
-        showToast("Failed to load fonts", false);
+        showToast(ServerI18n.t("failedToLoadFonts"), false);
       }
     }
   }
@@ -606,7 +606,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     if (effects.length === 0) {
-      elements.effectButtons.innerHTML = '<span class="text-xs text-slate-500">No effects available</span>';
+      elements.effectButtons.innerHTML = `<span class="text-xs text-slate-500">${ServerI18n.t("noEffectsAvailable")}</span>`;
     }
   }
 
@@ -620,7 +620,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (e) {
       console.warn("[Effects] Failed to load effects:", e.message);
       if (elements.effectButtons) {
-        elements.effectButtons.innerHTML = '<span class="text-xs text-slate-500">Failed to load</span>';
+        elements.effectButtons.innerHTML = `<span class="text-xs text-slate-500">${ServerI18n.t("failedToLoad")}</span>`;
       }
     }
   }
@@ -631,7 +631,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function setSendLoading(loading) {
     if (!elements.btnSend) return;
     elements.btnSend.disabled = loading;
-    if (elements.btnSendText) elements.btnSendText.textContent = loading ? "Sending..." : "Fire Danmu";
+    if (elements.btnSendText) elements.btnSendText.textContent = loading ? ServerI18n.t("sending") : ServerI18n.t("fireDanmu");
     if (elements.btnSendIcon) elements.btnSendIcon.classList.toggle("hidden", loading);
     if (elements.btnSendSpinner) elements.btnSendSpinner.classList.toggle("hidden", !loading);
   }
@@ -640,7 +640,7 @@ document.addEventListener("DOMContentLoaded", () => {
   elements.btnSend.addEventListener("click", async () => {
     const text = elements.danmuText.value.trim();
     if (!text) {
-      showToast("Please enter some text", false);
+      showToast(ServerI18n.t("pleaseEnterText"), false);
       return;
     }
 
@@ -650,7 +650,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Check blacklist first
       const isBlocked = await checkTextAgainstBlacklist(text);
       if (isBlocked) {
-        showBlacklistWarningModal("This content is blocked by the blacklist.");
+        showBlacklistWarningModal(ServerI18n.t("blacklistBlocked"));
         setSendLoading(false);
         return;
       }
@@ -683,9 +683,9 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.danmuText.value = "";
         updateCharCount();
         updatePreview();
-        showToast("Danmu Fired!", true);
+        showToast(ServerI18n.t("danmuFired"), true);
       } else {
-        let message = "Failed to send";
+        let message = ServerI18n.t("failedToSend");
         try {
           const data = await response.json();
           message = data.error || message;
@@ -694,7 +694,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (error) {
       console.error("Error:", error);
-      showToast("Network error", false);
+      showToast(ServerI18n.t("networkError"), false);
     } finally {
       setSendLoading(false);
     }
@@ -710,15 +710,15 @@ document.addEventListener("DOMContentLoaded", () => {
     switch (state) {
       case "connected":
         dot.classList.add("connection-dot--connected");
-        elements.connectionLabel.textContent = "Connected";
+        elements.connectionLabel.textContent = ServerI18n.t("connected");
         break;
       case "connecting":
         dot.classList.add("connection-dot--connecting");
-        elements.connectionLabel.textContent = "Connecting...";
+        elements.connectionLabel.textContent = ServerI18n.t("connecting");
         break;
       case "disconnected":
         dot.classList.add("connection-dot--disconnected");
-        elements.connectionLabel.textContent = "Disconnected";
+        elements.connectionLabel.textContent = ServerI18n.t("disconnected");
         break;
     }
   }

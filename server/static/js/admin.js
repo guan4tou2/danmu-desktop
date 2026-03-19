@@ -96,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderControlPanel();
     } catch (error) {
       console.error("Get settings failed:", error);
-      showToast("Get settings failed", false);
+      showToast(ServerI18n.t("getSettingsFailed"), false);
     }
   }
 
@@ -166,7 +166,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // If it's a color value, validate and format
       if (key === "Color") {
         if (!isValidColor(value)) {
-          showToast(`Color format error, please use #RRGGBB format`, false);
+          showToast(ServerI18n.t("colorFormatError"), false);
           restoreSettingInputValue(key, index, sourceEl);
           return;
         }
@@ -203,9 +203,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         currentSettings[key][index] = value;
 
-        showToast(`${key} Settings Updated`, true);
+        showToast(`${key} ${ServerI18n.t("settingsUpdated")}`, true);
       } else {
-        showToast(`Update Failed`, false);
+        showToast(ServerI18n.t("updateFailed"), false);
         // If update failed, re-fetch settings
         await fetchLatestSettings();
       }
@@ -234,7 +234,7 @@ document.addEventListener("DOMContentLoaded", () => {
           currentSettings[key] = [false, "", "", ""];
         }
         currentSettings[key][0] = isChecked;
-        showToast(`${key} Settings Updated`);
+        showToast(`${key} ${ServerI18n.t("settingsUpdated")}`);
         renderControlPanel();
       } else {
         const toggleElement = document.getElementById(`toggle-${key}`);
@@ -284,7 +284,7 @@ document.addEventListener("DOMContentLoaded", () => {
       blacklistKeywordsDiv.innerHTML = ""; // Clear current list
       if (blacklist.length === 0) {
         blacklistKeywordsDiv.innerHTML =
-          '<p class="text-slate-400 text-sm">No keywords blacklisted yet.</p>';
+          `<p class="text-slate-400 text-sm">${ServerI18n.t("noKeywordsYet")}</p>`;
       } else {
         blacklist.forEach((keyword) => {
           const keywordEl = document.createElement("div");
@@ -300,7 +300,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const removeButton = document.createElement("button");
           removeButton.className =
             "removeKeywordBtn text-red-400 hover:text-red-600 font-semibold";
-          removeButton.textContent = "Remove"; // Set button text
+          removeButton.textContent = ServerI18n.t("remove"); // Set button text
           // Set data-keyword attribute safely
           removeButton.setAttribute("data-keyword", keyword); // Add this line
 
@@ -312,7 +312,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Event listeners for remove buttons are now handled by delegation in addEventListeners
     } catch (error) {
       console.error("Fetch blacklist error:", error);
-      showToast("Failed to fetch blacklist.", false);
+      showToast(ServerI18n.t("fetchBlacklistError"), false);
     }
   }
 
@@ -320,7 +320,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const keywordInput = document.getElementById("newKeywordInput");
     const keyword = keywordInput.value.trim();
     if (!keyword) {
-      showToast("Keyword cannot be empty.", false);
+      showToast(ServerI18n.t("keywordEmpty"), false);
       return;
     }
     try {
@@ -341,12 +341,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (error) {
       console.error("Add keyword error:", error);
-      showToast("Error adding keyword.", false);
+      showToast(ServerI18n.t("addKeywordError"), false);
     }
   }
 
   async function removeKeyword(keyword) {
-    if (!confirm(`Remove "${keyword}" from the blacklist?`)) return;
+    if (!confirm(ServerI18n.t("confirmRemoveKeyword").replace("{keyword}", keyword))) return;
     try {
       const response = await csrfFetch("/admin/blacklist/remove", {
         method: "POST",
@@ -364,7 +364,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (error) {
       console.error("Remove keyword error:", error);
-      showToast("Error removing keyword.", false);
+      showToast(ServerI18n.t("removeKeywordError"), false);
     }
   }
 
@@ -383,7 +383,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const diffHours = Math.floor(diffMs / 3600000);
       const diffDays = Math.floor(diffMs / 86400000);
 
-      if (diffMins < 1) return "Just now";
+      if (diffMins < 1) return ServerI18n.t("justNow");
       if (diffMins < 60) return `${diffMins}m ago`;
       if (diffHours < 24) return `${diffHours}h ago`;
       if (diffDays < 7) return `${diffDays}d ago`;
@@ -410,7 +410,7 @@ document.addEventListener("DOMContentLoaded", () => {
     historyListDiv.innerHTML = "";
     if (records.length === 0) {
       historyListDiv.innerHTML =
-        '<p class="text-slate-400 text-sm text-center py-4">No danmu found.</p>';
+        `<p class="text-slate-400 text-sm text-center py-4">${ServerI18n.t("noDanmuFound")}</p>`;
       return;
     }
 
@@ -439,8 +439,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const blockBtn = document.createElement("button");
         blockBtn.className =
           "text-xs px-2 py-0.5 rounded bg-red-700/60 hover:bg-red-700 text-slate-200 transition-colors shrink-0";
-        blockBtn.textContent = "+ Block";
-        blockBtn.title = "Add this text to the blacklist";
+        blockBtn.textContent = ServerI18n.t("block");
+        blockBtn.title = ServerI18n.t("blockTitle");
         blockBtn.addEventListener("click", async () => {
           try {
             await csrfFetch("/admin/blacklist/add", {
@@ -448,10 +448,10 @@ document.addEventListener("DOMContentLoaded", () => {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ keyword: record.text }),
             });
-            showToast(`"${record.text.slice(0, 30)}" added to blacklist`, true);
+            showToast(`"${record.text.slice(0, 30)}" ${ServerI18n.t("addedToBlacklist")}`, true);
             fetchBlacklist();
           } catch (e) {
-            showToast("Failed to add to blacklist", false);
+            showToast(ServerI18n.t("failedToAddBlacklist"), false);
           }
         });
         headerEl.appendChild(blockBtn);
@@ -474,7 +474,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (record.fontInfo?.name) metaParts.push(`Font: ${record.fontInfo.name}`);
       if (record.clientIp) metaParts.push(`IP: ${record.clientIp}`);
       if (record.fingerprint) metaParts.push(`FP: ${record.fingerprint.slice(0, 8)}…`);
-      metaEl.textContent = metaParts.join(" • ") || "No metadata";
+      metaEl.textContent = metaParts.join(" • ") || ServerI18n.t("noMetadata");
 
       contentWrap.appendChild(headerEl);
       contentWrap.appendChild(textEl);
@@ -518,11 +518,11 @@ document.addEventListener("DOMContentLoaded", () => {
       dashDiv.innerHTML = `
         <div class="grid gap-4 md:grid-cols-2 mb-4">
           <div class="bg-slate-800/60 rounded-lg p-3">
-            <h4 class="text-xs font-semibold text-slate-300 mb-2">Hourly Distribution</h4>
+            <h4 class="text-xs font-semibold text-slate-300 mb-2">${ServerI18n.t("hourlyDistribution")}</h4>
             <div class="stats-chart">${chartBars || '<span class="text-xs text-slate-500">No data</span>'}</div>
           </div>
           <div class="bg-slate-800/60 rounded-lg p-3">
-            <h4 class="text-xs font-semibold text-slate-300 mb-2">Top Texts</h4>
+            <h4 class="text-xs font-semibold text-slate-300 mb-2">${ServerI18n.t("topTexts")}</h4>
             ${topTexts.length ? `<table class="w-full text-xs"><tbody>${topTextRows}</tbody></table>` : '<span class="text-xs text-slate-500">No data</span>'}
           </div>
         </div>`;
@@ -551,9 +551,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (statsDiv) {
         statsDiv.innerHTML = `
           <div class="flex gap-4 text-xs">
-            <span>Total: <span class="text-white font-semibold">${stats.total}</span></span>
-            <span>Last 24h: <span class="text-white font-semibold">${stats.last_24h}</span></span>
-            <span>Showing: <span class="text-white font-semibold">${records.length}</span></span>
+            <span>${ServerI18n.t("total")} <span class="text-white font-semibold">${stats.total}</span></span>
+            <span>${ServerI18n.t("last24h")} <span class="text-white font-semibold">${stats.last_24h}</span></span>
+            <span>${ServerI18n.t("showing")} <span class="text-white font-semibold">${records.length}</span></span>
           </div>`;
       }
 
@@ -569,15 +569,13 @@ document.addEventListener("DOMContentLoaded", () => {
       _loadStats();
     } catch (error) {
       console.error("Fetch danmu history error:", error);
-      showToast("Error fetching danmu history.", false);
+      showToast(ServerI18n.t("fetchHistoryError"), false);
     }
   }
 
   async function clearDanmuHistory() {
     if (
-      !confirm(
-        "Are you sure you want to clear all danmu history? This action cannot be undone."
-      )
+      !confirm(ServerI18n.t("confirmClearHistory"))
     ) {
       return;
     }
@@ -591,7 +589,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       if (response.ok) {
-        showToast("History cleared successfully.", true);
+        showToast(ServerI18n.t("historyClearedSuccess"), true);
         fetchDanmuHistory();
       } else {
         const errorData = await response.json();
@@ -668,7 +666,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function _startReplay() {
     const checkboxes = document.querySelectorAll(".replay-record-cb:checked");
     if (checkboxes.length === 0) {
-      showToast("No records selected for replay.", false);
+      showToast(ServerI18n.t("noRecordsSelected"), false);
       return;
     }
 
@@ -696,7 +694,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       if (res.ok) {
         const data = await res.json();
-        showToast(`Replay started: ${data.count} records at ${speed}x`, true);
+        showToast(`${ServerI18n.t("replayStarted")}: ${data.count} records at ${speed}x`, true);
         _updateReplayUI("playing");
         _pollReplayStatus();
       } else {
@@ -704,7 +702,7 @@ document.addEventListener("DOMContentLoaded", () => {
         showToast(`Replay error: ${err.error || res.statusText}`, false);
       }
     } catch (e) {
-      showToast("Failed to start replay.", false);
+      showToast(ServerI18n.t("replayFailed"), false);
     }
   }
 
@@ -713,7 +711,7 @@ document.addEventListener("DOMContentLoaded", () => {
       await csrfFetch("/admin/replay/pause", { method: "POST" });
       _updateReplayUI("paused");
     } catch (e) {
-      showToast("Failed to pause replay.", false);
+      showToast(ServerI18n.t("replayPauseFailed"), false);
     }
   }
 
@@ -722,7 +720,7 @@ document.addEventListener("DOMContentLoaded", () => {
       await csrfFetch("/admin/replay/resume", { method: "POST" });
       _updateReplayUI("playing");
     } catch (e) {
-      showToast("Failed to resume replay.", false);
+      showToast(ServerI18n.t("replayResumeFailed"), false);
     }
   }
 
@@ -735,7 +733,7 @@ document.addEventListener("DOMContentLoaded", () => {
         _replayPollTimer = null;
       }
     } catch (e) {
-      showToast("Failed to stop replay.", false);
+      showToast(ServerI18n.t("replayStopFailed"), false);
     }
   }
 
@@ -745,16 +743,16 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderLogin() {
     appContainer.innerHTML = `
                     <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 max-w-md mx-auto">
-                        <h1 class="text-3xl md:text-4xl font-bold text-center text-violet-300 pb-2">
-                            Admin Login
+                        <h1 class="text-3xl md:text-4xl font-bold text-center text-violet-300 pb-2" data-i18n="adminLoginTitle">
+                            ${ServerI18n.t("adminLoginTitle")}
                         </h1>
                         <form id="loginForm" class="space-y-6" action="/login" method="post">
                             <div>
-                                <label for="password" class="text-sm font-medium text-slate-300">Password</label>
+                                <label for="password" class="text-sm font-medium text-slate-300" data-i18n="password">${ServerI18n.t("password")}</label>
                                 <input type="password" id="password" name="password" class="mt-1 w-full p-3 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300" required>
                             </div>
-                            <button type="submit" class="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-bold py-3 px-6 rounded-xl transition-colors">
-                                Login
+                            <button type="submit" class="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-bold py-3 px-6 rounded-xl transition-colors" data-i18n="login">
+                                ${ServerI18n.t("login")}
                             </button>
                         </form>
                     </div>
@@ -795,23 +793,32 @@ document.addEventListener("DOMContentLoaded", () => {
     appContainer.innerHTML = `
                     <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-8">
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                             <h1 class="text-3xl md:text-4xl font-bold text-center text-violet-300 pb-2">
-                                Danmu Control Panel
+                             <h1 class="text-3xl md:text-4xl font-bold text-center text-violet-300 pb-2" data-i18n="adminTitle">
+                                ${ServerI18n.t("adminTitle")}
                             </h1>
-                            <button id="logoutButton" class="w-full md:w-auto flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-5 rounded-lg transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                                <span>Logout</span>
-                            </button>
+                            <div class="flex items-center gap-2 w-full md:w-auto">
+                                <select id="server-lang-select" onchange="ServerI18n.setLanguage(this.value)"
+                                  class="bg-slate-800/60 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-2 focus:ring-violet-400 focus:border-violet-400">
+                                  <option value="en" ${ServerI18n.currentLang === "en" ? "selected" : ""}>EN</option>
+                                  <option value="zh" ${ServerI18n.currentLang === "zh" ? "selected" : ""}>ZH</option>
+                                  <option value="ja" ${ServerI18n.currentLang === "ja" ? "selected" : ""}>JA</option>
+                                  <option value="ko" ${ServerI18n.currentLang === "ko" ? "selected" : ""}>KO</option>
+                                </select>
+                                <button id="logoutButton" class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-5 rounded-lg transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                    <span data-i18n="logout">${ServerI18n.t("logout")}</span>
+                                </button>
+                            </div>
                         </div>
 
                         <nav class="sticky top-2 z-10 rounded-xl border border-slate-700/60 bg-slate-900/70 backdrop-blur px-3 py-2 overflow-x-auto" aria-label="Quick Navigation">
                             <div class="flex items-center gap-2 text-xs whitespace-nowrap">
-                                <span class="text-slate-400 mr-1">Quick Navigation</span>
-                                <a href="#sec-color" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Basic</a>
-                                <a href="#sec-effects" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Effects</a>
-                                <a href="#sec-blacklist" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Blacklist</a>
-                                <a href="#sec-history" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">History</a>
-                                <a href="#sec-security" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Security</a>
+                                <span class="text-slate-400 mr-1" data-i18n="quickNav">${ServerI18n.t("quickNav")}</span>
+                                <a href="#sec-color" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navBasic">${ServerI18n.t("navBasic")}</a>
+                                <a href="#sec-effects" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navEffects">${ServerI18n.t("navEffects")}</a>
+                                <a href="#sec-blacklist" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navBlacklist">${ServerI18n.t("navBlacklist")}</a>
+                                <a href="#sec-history" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navHistory">${ServerI18n.t("navHistory")}</a>
+                                <a href="#sec-security" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navSecurity">${ServerI18n.t("navSecurity")}</a>
                             </div>
                         </nav>
 
@@ -826,17 +833,17 @@ document.addEventListener("DOMContentLoaded", () => {
     // Color Settings
     settingsGrid.insertAdjacentHTML("beforeend", settingCard(
       "Color",
-      "Color Setting",
-      "Allow users to customize colors",
+      ServerI18n.t("colorSetting"),
+      ServerI18n.t("colorSettingDesc"),
       currentSettings.Color[0],
       `
-                        <label for="setting-color-3" class="text-sm font-medium text-slate-300">Specific Color</label>
+                        <label for="setting-color-3" class="text-sm font-medium text-slate-300">${ServerI18n.t("specificColor")}</label>
                         <input id="setting-color-3" type="color" class="setting-input mt-1 w-full h-10 p-1 bg-slate-800 border-slate-700 rounded-lg cursor-pointer" data-key="Color" data-index="3" value="${formatColor(
         "#" + currentSettings.Color[3]
       )}" disabled>
                     `,
       `
-                        <label for="setting-color-3" class="text-sm font-medium text-slate-300">Specific Color</label>
+                        <label for="setting-color-3" class="text-sm font-medium text-slate-300">${ServerI18n.t("specificColor")}</label>
                         <input id="setting-color-3" type="color" class="setting-input mt-1 w-full h-10 p-1 bg-slate-800 border-slate-700 rounded-lg cursor-pointer" data-key="Color" data-index="3" value="${formatColor(
         "#" + currentSettings.Color[3]
       )}">
@@ -846,23 +853,23 @@ document.addEventListener("DOMContentLoaded", () => {
     // Opacity Settings
     settingsGrid.insertAdjacentHTML("beforeend", settingCard(
       "Opacity",
-      "Opacity Setting",
-      "Allow users to customize opacity",
+      ServerI18n.t("opacitySetting"),
+      ServerI18n.t("opacitySettingDesc"),
       currentSettings.Opacity[0],
       `
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label for="setting-opacity-1" class="text-sm font-medium text-slate-300">Min (%)</label>
+                                <label for="setting-opacity-1" class="text-sm font-medium text-slate-300">${ServerI18n.t("minPercent")}</label>
                                 <input id="setting-opacity-1" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="1" value="${escapeHtml(String(currentSettings.Opacity[1]))}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
                             </div>
                             <div>
-                                <label for="setting-opacity-2" class="text-sm font-medium text-slate-300">Max (%)</label>
+                                <label for="setting-opacity-2" class="text-sm font-medium text-slate-300">${ServerI18n.t("maxPercent")}</label>
                                 <input id="setting-opacity-2" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="2" value="${escapeHtml(String(currentSettings.Opacity[2]))}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
                             </div>
                         </div>
                     `,
       `
-                        <label for="setting-opacity-3" class="text-sm font-medium text-slate-300">Specific Opacity (%)</label>
+                        <label for="setting-opacity-3" class="text-sm font-medium text-slate-300">${ServerI18n.t("specificOpacity")}</label>
                         <input id="setting-opacity-3" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="3" value="${escapeHtml(String(currentSettings.Opacity[3]))}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
                     `
     ));
@@ -870,23 +877,23 @@ document.addEventListener("DOMContentLoaded", () => {
     // Font Size Settings
     settingsGrid.insertAdjacentHTML("beforeend", settingCard(
       "FontSize",
-      "Font Size Setting",
-      "Allow users to customize font size",
+      ServerI18n.t("fontSizeSetting"),
+      ServerI18n.t("fontSizeSettingDesc"),
       currentSettings.FontSize[0],
       `
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label for="setting-fontsize-1" class="text-sm font-medium text-slate-300">Min (px)</label>
+                                <label for="setting-fontsize-1" class="text-sm font-medium text-slate-300">${ServerI18n.t("minPx")}</label>
                                 <input id="setting-fontsize-1" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="1" value="${escapeHtml(String(currentSettings.FontSize[1]))}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
                             </div>
                             <div>
-                                <label for="setting-fontsize-2" class="text-sm font-medium text-slate-300">Max (px)</label>
+                                <label for="setting-fontsize-2" class="text-sm font-medium text-slate-300">${ServerI18n.t("maxPx")}</label>
                                 <input id="setting-fontsize-2" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="2" value="${escapeHtml(String(currentSettings.FontSize[2]))}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
                             </div>
                         </div>
                     `,
       `
-                        <label for="setting-fontsize-3" class="text-sm font-medium text-slate-300">Specific Size (px)</label>
+                        <label for="setting-fontsize-3" class="text-sm font-medium text-slate-300">${ServerI18n.t("specificSizePx")}</label>
                         <input id="setting-fontsize-3" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="3" value="${escapeHtml(String(currentSettings.FontSize[3]))}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
                     `
     ));
@@ -894,26 +901,26 @@ document.addEventListener("DOMContentLoaded", () => {
     // Speed Settings
     settingsGrid.insertAdjacentHTML("beforeend", settingCard(
       "Speed",
-      "Speed Setting",
-      "Allow users to customize speed",
+      ServerI18n.t("speedSetting"),
+      ServerI18n.t("speedSettingDesc"),
       currentSettings.Speed[0],
       `
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label for="setting-speed-1" class="text-sm font-medium text-slate-300">Slowest</label>
+                                <label for="setting-speed-1" class="text-sm font-medium text-slate-300">${ServerI18n.t("slowest")}</label>
                                 <input id="setting-speed-1" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="1" value="${escapeHtml(String(currentSettings.Speed[1]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
                             </div>
                             <div>
-                                <label for="setting-speed-2" class="text-sm font-medium text-slate-300">Fastest</label>
+                                <label for="setting-speed-2" class="text-sm font-medium text-slate-300">${ServerI18n.t("fastest")}</label>
                                 <input id="setting-speed-2" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="2" value="${escapeHtml(String(currentSettings.Speed[2]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
                             </div>
                         </div>
-                        <small class="text-slate-500 text-xs block mt-2">Higher value = Faster speed</small>
+                        <small class="text-slate-500 text-xs block mt-2">${ServerI18n.t("speedHint")}</small>
                     `,
       `
-                        <label for="setting-speed-3" class="text-sm font-medium text-slate-300">Specific Speed</label>
+                        <label for="setting-speed-3" class="text-sm font-medium text-slate-300">${ServerI18n.t("specificSpeed")}</label>
                         <input id="setting-speed-3" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="3" value="${escapeHtml(String(currentSettings.Speed[3]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
-                        <small class="text-slate-500 text-xs block mt-2">Higher value = Faster speed</small>
+                        <small class="text-slate-500 text-xs block mt-2">${ServerI18n.t("speedHint")}</small>
                     `
     ));
 
@@ -921,27 +928,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const fontFamilyEnabled =
       currentSettings.FontFamily && currentSettings.FontFamily[0] === true;
     const fontFamilyDescription = fontFamilyEnabled
-      ? "Users can choose their font. Select the default font here if they don't choose, or the font to be used if user choice is disabled."
-      : "Users cannot choose their font. Danmus will use the font selected below.";
+      ? ServerI18n.t("fontFamilyDescEnabled")
+      : ServerI18n.t("fontFamilyDescDisabled");
 
     const fontFamilyCardContent = `
             <div>
-                <label class="text-sm font-medium text-slate-300">Font for Danmus / Default User Choice</label>
+                <label class="text-sm font-medium text-slate-300">${ServerI18n.t("fontForDanmus")}</label>
                 <select class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg" data-key="FontFamily" data-index="3" id="fontFamilySelect">
                     <!-- Options will be populated by JS -->
                 </select>
             </div>
             <div class="mt-4">
-                <label class="text-sm font-medium text-slate-300">Upload New TTF Font</label>
+                <label class="text-sm font-medium text-slate-300">${ServerI18n.t("uploadNewFont")}</label>
                 <input type="file" id="fontUploadInput" accept=".ttf" class="mt-1 w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-violet-600 file:text-white hover:file:bg-violet-500"/>
-                <button id="uploadFontBtn" class="mt-2 w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold py-2 px-4 rounded-lg">Upload Font</button>
+                <button id="uploadFontBtn" class="mt-2 w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold py-2 px-4 rounded-lg">${ServerI18n.t("uploadFont")}</button>
             </div>
-            <small class="text-slate-500 text-xs block mt-2">Uploaded fonts become available in the selection above and for users (if enabled).</small>
+            <small class="text-slate-500 text-xs block mt-2">${ServerI18n.t("fontUploadHint")}</small>
             `;
 
     settingsGrid.insertAdjacentHTML("beforeend", settingCard(
       "FontFamily",
-      "Font Family Configuration",
+      ServerI18n.t("fontFamilyConfig"),
       fontFamilyDescription, // Dynamic description
       fontFamilyEnabled, // isEnabled (this now means "allow user choice")
       fontFamilyCardContent, // Content is the same regardless of toggle for admin
@@ -956,11 +963,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const effectsEnabled = currentSettings.Effects ? currentSettings.Effects[0] !== false : true;
     settingsGrid.insertAdjacentHTML("beforeend", settingCard(
       "Effects",
-      "Effects Setting",
-      "Allow users to apply visual effects (animations) to danmu",
+      ServerI18n.t("effectsSetting"),
+      ServerI18n.t("effectsSettingDesc"),
       effectsEnabled,
-      `<p class="text-sm text-slate-300">Effects are enabled. Users can apply animations to their danmu messages.</p>`,
-      `<p class="text-sm text-slate-300">Effects are disabled. All danmu will display without animations.</p>`
+      `<p class="text-sm text-slate-300">${ServerI18n.t("effectsEnabledMsg")}</p>`,
+      `<p class="text-sm text-slate-300">${ServerI18n.t("effectsDisabledMsg")}</p>`
     ));
 
     // Effects Management Card (full width)
@@ -968,26 +975,26 @@ document.addEventListener("DOMContentLoaded", () => {
       <div id="sec-effects" class="glass-effect rounded-2xl p-6 border border-transparent hover:border-slate-500 transition-all duration-300 lg:col-span-2 scroll-mt-24">
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h3 class="text-lg font-bold text-white">Effects Management</h3>
-            <p class="text-sm text-slate-300">Manage .dme effect plugins (hot-swap, editable)</p>
+            <h3 class="text-lg font-bold text-white">${ServerI18n.t("effectsManagement")}</h3>
+            <p class="text-sm text-slate-300">${ServerI18n.t("effectsManagementDesc")}</p>
           </div>
           <div class="flex items-center gap-2">
             <button id="effectReloadBtn"
               class="px-3 py-1.5 text-xs font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              Reload
+              ${ServerI18n.t("reload")}
             </button>
             <label for="effectUploadInput"
               class="px-3 py-1.5 text-xs font-medium bg-sky-700 hover:bg-sky-600 text-white rounded-lg cursor-pointer transition-colors flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-              Upload .dme
+              ${ServerI18n.t("uploadDme")}
             </label>
             <input type="file" id="effectUploadInput" accept=".dme" class="hidden">
           </div>
         </div>
         <div class="border-t border-slate-700/50 pt-4">
           <div id="effectsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 min-h-12">
-            <span class="text-xs text-slate-500 col-span-2">Loading effects...</span>
+            <span class="text-xs text-slate-500 col-span-2">${ServerI18n.t("loadingEffectsAdmin")}</span>
           </div>
         </div>
       </div>
@@ -998,19 +1005,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     <details id="sec-blacklist" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-blacklist") ? "open" : ""}>
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
-                                <h3 class="text-lg font-bold text-white">Blacklist Management</h3>
-                                <p class="text-sm text-slate-300">Add or remove keywords from the blacklist.</p>
+                                <h3 class="text-lg font-bold text-white">${ServerI18n.t("blacklistManagement")}</h3>
+                                <p class="text-sm text-slate-300">${ServerI18n.t("blacklistManagementDesc")}</p>
                             </div>
                             <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
                         </summary>
                         <div class="mt-4 pt-4 border-t border-slate-700/50">
                             <div>
-                                <label for="newKeywordInput" class="text-sm font-medium text-slate-300">New Keyword</label>
-                                <input type="text" id="newKeywordInput" placeholder="Enter keyword" class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300">
-                                <button id="addKeywordBtn" class="mt-3 w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-bold py-3 px-6 rounded-xl transition-colors">Add Keyword</button>
+                                <label for="newKeywordInput" class="text-sm font-medium text-slate-300">${ServerI18n.t("newKeyword")}</label>
+                                <input type="text" id="newKeywordInput" placeholder="${ServerI18n.t("enterKeyword")}" class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300">
+                                <button id="addKeywordBtn" class="mt-3 w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-bold py-3 px-6 rounded-xl transition-colors">${ServerI18n.t("addKeyword")}</button>
                             </div>
                             <div class="mt-6">
-                                <h4 class="text-md font-semibold text-white mb-2">Current Blacklist:</h4>
+                                <h4 class="text-md font-semibold text-white mb-2">${ServerI18n.t("currentBlacklist")}</h4>
                                 <div id="blacklistKeywords" class="space-y-2 max-h-48 overflow-y-auto">
                                     <!-- Keywords will be listed here -->
                                 </div>
@@ -1024,8 +1031,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     <details id="sec-history" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent lg:col-span-2 scroll-mt-24" ${isOpen("sec-history") ? "open" : ""}>
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
-                                <h3 class="text-lg font-bold text-white">Danmu History</h3>
-                                <p class="text-sm text-slate-300">View and search sent danmu messages.</p>
+                                <h3 class="text-lg font-bold text-white">${ServerI18n.t("danmuHistory")}</h3>
+                                <p class="text-sm text-slate-300">${ServerI18n.t("danmuHistoryDesc")}</p>
                             </div>
                             <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
                         </summary>
@@ -1039,30 +1046,30 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div id="statsDashboard"></div>
                             <div class="space-y-3">
                                 <div class="flex gap-2 items-center flex-wrap">
-                                    <label class="text-sm font-medium text-slate-300">Time Range:</label>
+                                    <label class="text-sm font-medium text-slate-300">${ServerI18n.t("timeRange")}</label>
                                     <select id="historyHours" class="px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400">
-                                        <option value="1">Last 1 hour</option>
-                                        <option value="6">Last 6 hours</option>
-                                        <option value="24" selected>Last 24 hours</option>
-                                        <option value="72">Last 3 days</option>
-                                        <option value="168">Last 7 days</option>
+                                        <option value="1">${ServerI18n.t("last1Hour")}</option>
+                                        <option value="6">${ServerI18n.t("last6Hours")}</option>
+                                        <option value="24" selected>${ServerI18n.t("last24Hours")}</option>
+                                        <option value="72">${ServerI18n.t("last3Days")}</option>
+                                        <option value="168">${ServerI18n.t("last7Days")}</option>
                                     </select>
-                                    <button id="refreshHistoryBtn" class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors text-sm">Refresh</button>
-                                    <button id="exportHistoryBtn" class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors text-sm">Export CSV</button>
-                                    <button id="clearHistoryBtn" class="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition-colors text-sm">Clear All</button>
+                                    <button id="refreshHistoryBtn" class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("refreshBtn")}</button>
+                                    <button id="exportHistoryBtn" class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("exportCSV")}</button>
+                                    <button id="clearHistoryBtn" class="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("clearAll")}</button>
                                     <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none ml-auto">
                                         <input type="checkbox" id="historyAutoRefresh" class="accent-purple-500">
-                                        Auto-refresh (30s)
+                                        ${ServerI18n.t("autoRefresh")}
                                     </label>
                                 </div>
-                                <input id="historySearch" type="search" placeholder="Search history..."
+                                <input id="historySearch" type="search" placeholder="${ServerI18n.t("searchHistory")}"
                                     class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm
                                            placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400">
                                 <div id="replayToolbar" class="flex gap-2 items-center flex-wrap">
-                                    <button id="replayStartBtn" class="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors text-sm">▶ Replay Selected</button>
-                                    <button id="replayPauseBtn" class="px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors text-sm hidden">⏸ Pause</button>
-                                    <button id="replayResumeBtn" class="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors text-sm hidden">▶ Resume</button>
-                                    <button id="replayStopBtn" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors text-sm hidden">⏹ Stop</button>
+                                    <button id="replayStartBtn" class="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors text-sm">▶ ${ServerI18n.t("replaySelected")}</button>
+                                    <button id="replayPauseBtn" class="px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors text-sm hidden">⏸ ${ServerI18n.t("pause")}</button>
+                                    <button id="replayResumeBtn" class="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors text-sm hidden">▶ ${ServerI18n.t("resume")}</button>
+                                    <button id="replayStopBtn" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors text-sm hidden">⏹ ${ServerI18n.t("stop")}</button>
                                     <select id="replaySpeed" class="px-2 py-1.5 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm">
                                         <option value="1">1x</option>
                                         <option value="2">2x</option>
@@ -1075,7 +1082,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <div class="flex items-center gap-2 mb-1">
                                     <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none">
                                         <input type="checkbox" id="historySelectAll" class="accent-purple-500">
-                                        Select All
+                                        ${ServerI18n.t("selectAll")}
                                     </label>
                                 </div>
                                 <div id="danmuHistoryList" class="space-y-2 max-h-96 overflow-y-auto">
@@ -1091,28 +1098,28 @@ document.addEventListener("DOMContentLoaded", () => {
                     <details id="sec-security" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-security") ? "open" : ""}>
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
-                                <h3 class="text-lg font-bold text-white">Change Password</h3>
-                                <p class="text-sm text-slate-300">Update the admin login password.</p>
+                                <h3 class="text-lg font-bold text-white">${ServerI18n.t("changePassword")}</h3>
+                                <p class="text-sm text-slate-300">${ServerI18n.t("changePasswordDesc")}</p>
                             </div>
                             <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
                         </summary>
                         <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-3">
                             <div class="password-wrapper">
-                                <input id="pwCurrent" type="password" placeholder="Current password"
+                                <input id="pwCurrent" type="password" placeholder="${ServerI18n.t("currentPassword")}"
                                     class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400">
                                 <button type="button" class="password-toggle" data-target="pwCurrent" aria-label="Toggle password visibility">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
                             </div>
                             <div class="password-wrapper">
-                                <input id="pwNew" type="password" placeholder="New password (min 8 chars)"
+                                <input id="pwNew" type="password" placeholder="${ServerI18n.t("newPassword")}"
                                     class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400">
                                 <button type="button" class="password-toggle" data-target="pwNew" aria-label="Toggle password visibility">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
                             </div>
                             <div class="password-wrapper">
-                                <input id="pwConfirm" type="password" placeholder="Confirm new password"
+                                <input id="pwConfirm" type="password" placeholder="${ServerI18n.t("confirmNewPassword")}"
                                     class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400">
                                 <button type="button" class="password-toggle" data-target="pwConfirm" aria-label="Toggle password visibility">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
@@ -1120,7 +1127,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
                             <button id="changePasswordBtn"
                                 class="w-full px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors text-sm font-semibold">
-                                Change Password
+                                ${ServerI18n.t("changePasswordBtn")}
                             </button>
                         </div>
                     </details>
@@ -1153,10 +1160,10 @@ document.addEventListener("DOMContentLoaded", () => {
           if (response.redirected) {
             window.location.href = response.url;
           }
-          showToast("Logout Success");
+          showToast(ServerI18n.t("logoutSuccess"));
         } catch (error) {
           console.error("Logout Failed:", error);
-          showToast("Logout Failed", false);
+          showToast(ServerI18n.t("logoutFailed"), false);
         }
       });
     }
@@ -1232,7 +1239,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (exportHistoryBtn) {
       exportHistoryBtn.addEventListener("click", () => {
         if (_allHistoryRecords.length === 0) {
-          showToast("No records to export.", false);
+          showToast(ServerI18n.t("noRecordsToExport"), false);
           return;
         }
 
@@ -1334,7 +1341,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const confirm = document.getElementById("pwConfirm")?.value || "";
 
         if (!current || !newPw || !confirm) {
-          showToast("All password fields are required.", false);
+          showToast(ServerI18n.t("allFieldsRequired"), false);
           return;
         }
 
@@ -1360,7 +1367,7 @@ document.addEventListener("DOMContentLoaded", () => {
             showToast(data.error || "Failed to change password.", false);
           }
         } catch (e) {
-          showToast("Error changing password.", false);
+          showToast(ServerI18n.t("passwordChangeError"), false);
         }
       });
     }
@@ -1428,10 +1435,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const option = document.createElement("option");
         option.value = font.name;
         option.textContent = `${font.name} (${font.type === "default"
-          ? "Default"
+          ? ServerI18n.t("fontTypeDefault")
           : font.type === "system"
-            ? "System"
-            : "Uploaded"
+            ? ServerI18n.t("fontTypeSystem")
+            : ServerI18n.t("fontTypeUploaded")
           })`;
         option.dataset.fontUrl = font.url || "";
         option.dataset.expiresAt = font.expiresAt || "";
@@ -1454,7 +1461,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (error) {
       console.error("Error populating font dropdowns:", error);
-      showToast("Error loading font list.", false);
+      showToast(ServerI18n.t("errorLoadingFonts"), false);
     }
   }
 
@@ -1463,12 +1470,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const file = fileInput ? fileInput.files[0] : null;
 
     if (!file) {
-      showToast("Please select a TTF file to upload.", false);
+      showToast(ServerI18n.t("selectTTFFile"), false);
       return;
     }
 
     if (!file.name.toLowerCase().endsWith(".ttf")) {
-      showToast("Invalid file type. Only TTF files are allowed.", false);
+      showToast(ServerI18n.t("invalidFileType"), false);
       fileInput.value = ""; // Clear the input
       return;
     }
@@ -1501,7 +1508,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (error) {
       console.error("Font upload error:", error);
-      showToast("An error occurred during font upload.", false);
+      showToast(ServerI18n.t("fontUploadError"), false);
     }
   }
 
@@ -1585,8 +1592,8 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
               <div id="effectPreviewPane" class="w-[360px] shrink-0 border-l border-slate-800 px-4 py-4 flex flex-col gap-3 overflow-y-auto">
                 <div class="flex items-center justify-between">
-                  <p class="text-xs font-semibold text-slate-400 m-0">Live Preview</p>
-                  <button id="effectPreviewRefreshBtn" class="px-2 py-0.5 text-[0.65rem] font-medium text-slate-400 border border-slate-700 rounded bg-transparent cursor-pointer transition-colors hover:text-sky-300 hover:border-sky-500">Refresh</button>
+                  <p class="text-xs font-semibold text-slate-400 m-0">${ServerI18n.t("livePreviewLabel")}</p>
+                  <button id="effectPreviewRefreshBtn" class="px-2 py-0.5 text-[0.65rem] font-medium text-slate-400 border border-slate-700 rounded bg-transparent cursor-pointer transition-colors hover:text-sky-300 hover:border-sky-500">${ServerI18n.t("refresh")}</button>
                 </div>
                 <div id="effectPreviewBox" style="background:#1e293b;padding:20px;border-radius:8px;display:flex;align-items:center;justify-content:center;min-height:80px;">
                   <span id="effectPreviewText" style="font-size:32px;color:white;display:inline-block;">Preview</span>
@@ -1597,8 +1604,8 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
             </div>
             <div class="flex justify-end gap-2 px-5 py-3 border-t border-slate-800 shrink-0">
-              <button id="effectEditModalCancel" class="px-4 py-1.5 text-sm text-slate-400 border border-slate-700 rounded-lg bg-transparent cursor-pointer hover:text-slate-200 hover:border-slate-500 transition-colors">Cancel</button>
-              <button id="effectEditModalSave" class="px-4 py-1.5 text-sm font-semibold bg-sky-700 hover:bg-sky-600 text-white border-none rounded-lg cursor-pointer transition-colors">Save Changes</button>
+              <button id="effectEditModalCancel" class="px-4 py-1.5 text-sm text-slate-400 border border-slate-700 rounded-lg bg-transparent cursor-pointer hover:text-slate-200 hover:border-slate-500 transition-colors">${ServerI18n.t("cancel")}</button>
+              <button id="effectEditModalSave" class="px-4 py-1.5 text-sm font-semibold bg-sky-700 hover:bg-sky-600 text-white border-none rounded-lg cursor-pointer transition-colors">${ServerI18n.t("saveChanges")}</button>
             </div>
           </div>
         </div>
@@ -1969,7 +1976,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // ── Buttons ───────────────────────────────────────────────────────────
       const editBtn = document.createElement("button");
       editBtn.className = "px-2 py-0.5 text-[0.65rem] font-medium text-slate-400 border border-slate-700 rounded bg-transparent cursor-pointer shrink-0 transition-colors hover:text-sky-300 hover:border-sky-500";
-      editBtn.textContent = "Edit";
+      editBtn.textContent = ServerI18n.t("edit");
 
       const delBtn = document.createElement("button");
       delBtn.className = "p-0.5 text-slate-600 bg-transparent border-none cursor-pointer rounded flex items-center shrink-0 transition-colors hover:text-red-400";
