@@ -115,4 +115,56 @@ describe("loadLanguage()", () => {
     await expect(i18n.loadLanguage()).resolves.toBeUndefined();
     delete window.API;
   });
+
+  test("loadLanguage detects ja system locale", async () => {
+    global.window = global.window || {};
+    window.API = { getSystemLocale: jest.fn().mockResolvedValue("ja") };
+    i18n.currentLang = "en";
+    await i18n.loadLanguage();
+    expect(i18n.currentLang).toBe("ja");
+    delete window.API;
+  });
+
+  test("loadLanguage detects ko system locale", async () => {
+    global.window = global.window || {};
+    window.API = { getSystemLocale: jest.fn().mockResolvedValue("ko-KR") };
+    i18n.currentLang = "en";
+    await i18n.loadLanguage();
+    expect(i18n.currentLang).toBe("ko");
+    delete window.API;
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ja & ko translations
+// ---------------------------------------------------------------------------
+
+describe("ja translations", () => {
+  test("ja translations exist for all en keys", () => {
+    const enKeys = Object.keys(i18n.translations.en);
+    const jaKeys = Object.keys(i18n.translations.ja);
+    expect(jaKeys).toEqual(expect.arrayContaining(enKeys));
+    expect(jaKeys.length).toBe(enKeys.length);
+  });
+});
+
+describe("ko translations", () => {
+  test("ko translations exist for all en keys", () => {
+    const enKeys = Object.keys(i18n.translations.en);
+    const koKeys = Object.keys(i18n.translations.ko);
+    expect(koKeys).toEqual(expect.arrayContaining(enKeys));
+    expect(koKeys.length).toBe(enKeys.length);
+  });
+});
+
+describe("setLanguage() for ja and ko", () => {
+  test("setLanguage to ja updates currentLang", () => {
+    i18n.setLanguage("ja");
+    expect(i18n.currentLang).toBe("ja");
+  });
+
+  test("setLanguage to ko updates currentLang", () => {
+    i18n.setLanguage("ko");
+    expect(i18n.currentLang).toBe("ko");
+  });
 });

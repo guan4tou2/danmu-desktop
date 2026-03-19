@@ -194,6 +194,198 @@ const i18n = {
       customAnimationText: "自訂動畫文字",
       customAnimationPlaceholder: "輸入自訂動畫文字...",
     },
+
+    ja: {
+      // Header
+      title: "弾幕オーバーレイ設定",
+      subtitle: "オーバーレイの設定と起動",
+
+      // Form labels
+      hostLabel: "サーバーアドレス（IPまたはドメイン）",
+      hostPlaceholder: "例：127.0.0.1 または mydomain.com",
+      portLabel: "WebSocketポート",
+      portPlaceholder: "例：4001",
+      displayLabel: "対象ディスプレイ",
+      syncMultiDisplay: "同期マルチディスプレイを有効化",
+
+      // Buttons
+      startButton: "オーバーレイ開始",
+      stopButton: "オーバーレイ停止",
+
+      // Status
+      statusConnecting: "サーバーに接続中...",
+      statusConnected: "サーバーに接続しました",
+      statusDisconnected: "接続が切断されました。再接続中...",
+      statusIdle: "切断済み",
+      statusStopped: "停止済み",
+      statusConnectionFailed: "接続に失敗しました",
+
+      // Toast messages
+      toastStarting: "弾幕オーバーレイ接続を開始しています...",
+      toastConnected: "サーバーに接続しました",
+      toastReconnecting: "接続が切断されました。再接続を試みています...",
+      toastStopped: "弾幕オーバーレイを停止しました",
+      toastSettingsLoaded: "以前の設定を読み込みました",
+      toastConnectionFailed: "サーバーに接続できません。設定を確認してください。",
+
+      // Validation errors
+      errorEmptyHost: "サーバーアドレスを入力してください",
+      errorInvalidHost: "無効なサーバーアドレスです。有効なIPまたはドメインを入力してください",
+      errorEmptyPort: "ポート番号を入力してください",
+      errorInvalidPort: "無効なポートです。1から65535の数字を入力してください",
+
+      // Preview & Settings
+      previewSettings: "プレビューと設定",
+      testDanmu: "弾幕テスト",
+      previewPlaceholder: "テスト弾幕テキストを入力...",
+      sendPreview: "送信",
+      overlaySettings: "オーバーレイ設定",
+      opacity: "不透明度",
+      speed: "速度",
+      fontSize: "フォントサイズ",
+      color: "色",
+      errorEmptyPreview: "プレビューテキストを入力してください",
+      errorOverlayNotActive: "先にオーバーレイを起動してください",
+      previewSent: "プレビュー弾幕を送信しました！",
+
+      // Text effects
+      textEffects: "テキストエフェクト",
+      textStroke: "テキスト縁取り",
+      strokeWidth: "縁取り幅",
+      strokeColor: "縁取り色",
+      textShadow: "テキストシャドウ",
+      shadowBlur: "シャドウぼかし",
+
+      // Display area control
+      displayAreaControl: "表示エリア設定",
+      displayAreaTop: "上部位置",
+      displayAreaHeight: "表示高さ",
+      displayAreaPreview: "プレビュー",
+
+      // Track management
+      trackManagement: "トラック管理",
+      maxTracks: "最大トラック数",
+      maxTracksHint: "0 = 無制限",
+      maxTracksUnlimited: "無制限",
+      collisionDetection: "衝突検出",
+
+      // Batch test
+      batchTest: "一括テスト",
+      startBatchTest: "一括テスト開始",
+      batchTestHint: "衝突検出とトラック配分のテスト",
+      batchTestStarted: "テスト弾幕を送信中...",
+      batchTestComplete: "一括テスト完了！",
+
+      // Settings I/O
+      exportSettings: "設定をエクスポート",
+      importSettings: "設定をインポート",
+
+      // Startup animation
+      startupAnimation: "起動アニメーション",
+      enableStartupAnimation: "起動アニメーションを有効化",
+      animationType: "アニメーションタイプ",
+      animationLinkStart: "LINK START",
+      animationDomainExpansion: "領域展開",
+      animationCustom: "カスタム",
+      customAnimationText: "カスタムアニメーションテキスト",
+      customAnimationPlaceholder: "カスタムアニメーションテキストを入力...",
+    },
+
+    ko: {
+      // Header
+      title: "탄막 오버레이 설정",
+      subtitle: "오버레이 구성 및 실행",
+
+      // Form labels
+      hostLabel: "서버 주소 (IP 또는 도메인)",
+      hostPlaceholder: "예: 127.0.0.1 또는 mydomain.com",
+      portLabel: "WebSocket 포트",
+      portPlaceholder: "예: 4001",
+      displayLabel: "대상 디스플레이",
+      syncMultiDisplay: "동기 멀티 디스플레이 활성화",
+
+      // Buttons
+      startButton: "오버레이 시작",
+      stopButton: "오버레이 중지",
+
+      // Status
+      statusConnecting: "서버에 연결 중...",
+      statusConnected: "서버에 연결됨",
+      statusDisconnected: "연결이 끊어졌습니다. 재연결 중...",
+      statusIdle: "연결 해제됨",
+      statusStopped: "중지됨",
+      statusConnectionFailed: "연결 실패",
+
+      // Toast messages
+      toastStarting: "탄막 오버레이 연결을 시작하는 중...",
+      toastConnected: "서버에 성공적으로 연결되었습니다",
+      toastReconnecting: "연결이 끊어졌습니다. 재연결을 시도하는 중...",
+      toastStopped: "탄막 오버레이가 중지되었습니다",
+      toastSettingsLoaded: "이전 설정을 불러왔습니다",
+      toastConnectionFailed: "서버에 연결할 수 없습니다. 설정을 확인해 주세요.",
+
+      // Validation errors
+      errorEmptyHost: "서버 주소를 입력해 주세요",
+      errorInvalidHost: "잘못된 서버 주소입니다. 유효한 IP 또는 도메인을 입력해 주세요",
+      errorEmptyPort: "포트 번호를 입력해 주세요",
+      errorInvalidPort: "잘못된 포트입니다. 1에서 65535 사이의 숫자를 입력해 주세요",
+
+      // Preview & Settings
+      previewSettings: "미리보기 및 설정",
+      testDanmu: "탄막 테스트",
+      previewPlaceholder: "테스트 탄막 텍스트 입력...",
+      sendPreview: "전송",
+      overlaySettings: "오버레이 설정",
+      opacity: "불투명도",
+      speed: "속도",
+      fontSize: "글꼴 크기",
+      color: "색상",
+      errorEmptyPreview: "미리보기 텍스트를 입력해 주세요",
+      errorOverlayNotActive: "먼저 오버레이를 시작해 주세요",
+      previewSent: "미리보기 탄막을 전송했습니다!",
+
+      // Text effects
+      textEffects: "텍스트 효과",
+      textStroke: "텍스트 윤곽선",
+      strokeWidth: "윤곽선 두께",
+      strokeColor: "윤곽선 색상",
+      textShadow: "텍스트 그림자",
+      shadowBlur: "그림자 블러",
+
+      // Display area control
+      displayAreaControl: "표시 영역 설정",
+      displayAreaTop: "상단 위치",
+      displayAreaHeight: "표시 높이",
+      displayAreaPreview: "미리보기",
+
+      // Track management
+      trackManagement: "트랙 관리",
+      maxTracks: "최대 트랙 수",
+      maxTracksHint: "0 = 무제한",
+      maxTracksUnlimited: "무제한",
+      collisionDetection: "충돌 감지",
+
+      // Batch test
+      batchTest: "일괄 테스트",
+      startBatchTest: "일괄 테스트 시작",
+      batchTestHint: "충돌 감지 및 트랙 배분 테스트",
+      batchTestStarted: "테스트 탄막 전송 중...",
+      batchTestComplete: "일괄 테스트 완료!",
+
+      // Settings I/O
+      exportSettings: "설정 내보내기",
+      importSettings: "설정 가져오기",
+
+      // Startup animation
+      startupAnimation: "시작 애니메이션",
+      enableStartupAnimation: "시작 애니메이션 활성화",
+      animationType: "애니메이션 유형",
+      animationLinkStart: "LINK START",
+      animationDomainExpansion: "영역 전개",
+      animationCustom: "사용자 지정",
+      customAnimationText: "사용자 지정 애니메이션 텍스트",
+      customAnimationPlaceholder: "사용자 지정 애니메이션 텍스트 입력...",
+    },
   },
 
   // Get translation for a key
@@ -225,8 +417,9 @@ const i18n = {
         const systemLocale = await window.API.getSystemLocale();
         console.log('[i18n] System locale detected:', systemLocale);
 
-        if (systemLocale.startsWith("zh")) {
-          this.currentLang = "zh";
+        const detectedLang = this._detectLangFromLocale(systemLocale);
+        if (detectedLang) {
+          this.currentLang = detectedLang;
           return;
         }
       }
@@ -237,9 +430,19 @@ const i18n = {
     // Fallback to browser language detection
     const browserLang = navigator.language || navigator.userLanguage;
     console.log('[i18n] Browser language detected:', browserLang);
-    if (browserLang.startsWith("zh")) {
-      this.currentLang = "zh";
+    const detectedLang = this._detectLangFromLocale(browserLang);
+    if (detectedLang) {
+      this.currentLang = detectedLang;
     }
+  },
+
+  // Detect language from a locale string (e.g. "ja", "ja-JP", "zh-TW", "ko-KR")
+  _detectLangFromLocale(locale) {
+    if (!locale) return null;
+    if (locale.startsWith("zh")) return "zh";
+    if (locale.startsWith("ja")) return "ja";
+    if (locale.startsWith("ko")) return "ko";
+    return null;
   },
 
   // Update UI with current language
