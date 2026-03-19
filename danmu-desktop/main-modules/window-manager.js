@@ -42,20 +42,30 @@ function createWindow(childWindows, onKonamiTrigger) {
 
   mainWindow.loadFile(path.join(__dirname, "../index.html"));
 
-  // 在目前的 macOS Space 顯示視窗，避免開在別的桌面
-  // 需要 setTimeout 延遲呼叫 setVisibleOnAllWorkspaces(false)，
-  // 讓 macOS 有時間完成視窗定位再鎖定 Space，否則仍會開在舊的桌面
+  // macOS Space 修復：確保視窗出現在使用者目前所在的桌面
+  //
+  // 問題：macOS 在 BrowserWindow 建立時就決定 Space 歸屬，
+  // 如果 app 之前在 Space A 啟動過，新視窗會再次開在 Space A，
+  // 即使使用者已切到 Space B。
+  //
+  // 修復策略（三階段）：
+  // 1. ready-to-show: setVisibleOnAllWorkspaces(true) 讓視窗暫時出現在所有桌面
+  // 2. app.focus({ steal: true }) 強制 macOS 把焦點（和使用者的注意力）帶到 app
+  // 3. 延遲 500ms 後 setVisibleOnAllWorkspaces(false)，鎖定在目前 Space
+  //    （200ms 在某些 Mac 上不夠，macOS 動畫需要更多時間）
   mainWindow.once("ready-to-show", () => {
     if (process.platform === "darwin") {
       mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
       mainWindow.show();
       mainWindow.focus();
+      app.dock.show();
       app.focus({ steal: true });
+      mainWindow.moveTop();
       setTimeout(() => {
         if (!mainWindow.isDestroyed()) {
           mainWindow.setVisibleOnAllWorkspaces(false);
         }
-      }, 200);
+      }, 500);
     } else {
       mainWindow.show();
       mainWindow.focus();

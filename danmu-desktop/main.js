@@ -19,6 +19,12 @@ function onKonamiTrigger() {
 }
 
 app.whenReady().then(() => {
+  // macOS: 在建立視窗前先把 app 拉到前景的 Space，
+  // 否則 BrowserWindow 會被建立在 app 上次所在的 Space
+  if (process.platform === "darwin") {
+    app.focus({ steal: true });
+  }
+
   mainWindow = createWindow(childWindows, onKonamiTrigger);
   setupIpcHandlers(() => mainWindow, childWindows);
 
@@ -38,18 +44,18 @@ app.whenReady().then(() => {
   const showMainWindow = () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (process.platform === "darwin") {
-        // setVisibleOnAllWorkspaces(true) → show → setTimeout → false
-        // 需要延遲讓 macOS 有時間把視窗定位到目前的 Space，
-        // 同步呼叫 false 會在視窗定位完成前鎖定，導致仍開在別的桌面
+        // 三階段 Space 修復：見 window-manager.js 的詳細說明
         mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
         mainWindow.show();
         mainWindow.focus();
+        app.dock.show();
         app.focus({ steal: true });
+        mainWindow.moveTop();
         setTimeout(() => {
           if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.setVisibleOnAllWorkspaces(false);
           }
-        }, 200);
+        }, 500);
       } else {
         mainWindow.show();
         mainWindow.focus();
