@@ -627,6 +627,67 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadEffects();
 
+  // ── Theme Selector ────────────────────────────────────────────────────────
+
+  let _activeThemeName = "default";
+
+  async function loadThemes() {
+    try {
+      const res = await fetch("/themes");
+      if (!res.ok) return;
+      const data = await res.json();
+      const themes = data.themes || [];
+      _activeThemeName = data.active || "default";
+      _buildThemeSelector(themes, _activeThemeName);
+    } catch (e) {
+      console.warn("[Themes] Failed to load themes:", e.message);
+    }
+  }
+
+  function _buildThemeSelector(themes, activeName) {
+    const effectControl = document.getElementById("effectControl");
+    if (!effectControl) return;
+
+    // Remove existing theme selector if any
+    const existing = document.getElementById("themeSelector");
+    if (existing) existing.remove();
+
+    if (themes.length === 0) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.id = "themeSelector";
+    wrapper.className = "flex items-center gap-2 mb-2";
+
+    const label = document.createElement("span");
+    label.className = "text-xs text-slate-400 shrink-0";
+    label.textContent = "Theme";
+    wrapper.appendChild(label);
+
+    const select = document.createElement("select");
+    select.id = "themeSelect";
+    select.className =
+      "bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded px-2 py-1 flex-1";
+
+    themes.forEach((t) => {
+      const opt = document.createElement("option");
+      opt.value = t.name;
+      opt.textContent = `${t.label} - ${t.description}`;
+      if (t.name === activeName) opt.selected = true;
+      select.appendChild(opt);
+    });
+
+    select.addEventListener("change", () => {
+      _activeThemeName = select.value;
+    });
+
+    wrapper.appendChild(select);
+
+    // Insert before effectControl
+    effectControl.parentNode.insertBefore(wrapper, effectControl);
+  }
+
+  loadThemes();
+
   // --- Send Button Loading State ---
   function setSendLoading(loading) {
     if (!elements.btnSend) return;

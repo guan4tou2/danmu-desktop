@@ -1,0 +1,14 @@
+name: cinema
+label: 電影
+description: 電影字幕風格，優雅金色
+styles:
+  color: "#F5DEB3"
+  textStroke: true
+  strokeWidth: 1
+  strokeColor: "#333333"
+  textShadow: true
+  shadowBlur: 8
+effects_preset:
+  - name: wave
+    params:
+      angle: 3

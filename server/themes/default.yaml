@@ -1,0 +1,11 @@
+name: default
+label: 預設
+description: 標準白色彈幕
+styles:
+  color: "#FFFFFF"
+  textStroke: true
+  strokeWidth: 2
+  strokeColor: "#000000"
+  textShadow: false
+  shadowBlur: 4
+effects_preset: []

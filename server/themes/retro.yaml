@@ -1,0 +1,14 @@
+name: retro
+label: 復古
+description: 復古像素風格，帶閃爍效果
+styles:
+  color: "#FFD700"
+  textStroke: true
+  strokeWidth: 3
+  strokeColor: "#8B4513"
+  textShadow: false
+  shadowBlur: 0
+effects_preset:
+  - name: blink
+    params:
+      style: step-start

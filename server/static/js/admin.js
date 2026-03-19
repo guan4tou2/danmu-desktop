@@ -737,6 +737,170 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // ─── Record Replay ────────────────────────────────────────────────────────
+
+  let _replayRecorder = null;
+  let _recordingTimerInterval = null;
+  let _recordingStartTime = 0;
+  let _recordingReplayPollTimer = null;
+
+  function _updateRecordingTimer() {
+    const timerEl = document.getElementById("replayRecordingTimer");
+    if (!timerEl) return;
+    const elapsed = Math.floor((Date.now() - _recordingStartTime) / 1000);
+    const min = String(Math.floor(elapsed / 60)).padStart(2, "0");
+    const sec = String(elapsed % 60).padStart(2, "0");
+    timerEl.textContent = `${min}:${sec}`;
+  }
+
+  function _showRecordingIndicator(show) {
+    const indicator = document.getElementById("replayRecordingIndicator");
+    const recordBtn = document.getElementById("replayRecordBtn");
+    if (indicator) indicator.classList.toggle("hidden", !show);
+    if (recordBtn) recordBtn.classList.toggle("hidden", show);
+  }
+
+  async function _startRecordReplay() {
+    const checkboxes = document.querySelectorAll(".replay-record-cb:checked");
+    if (checkboxes.length === 0) {
+      showToast(ServerI18n.t("noRecordsSelected"), false);
+      return;
+    }
+
+    const searchTerm = document.getElementById("historySearch")?.value?.toLowerCase() || "";
+    const displayedRecords = searchTerm
+      ? _allHistoryRecords.filter((r) => (r.text || "").toLowerCase().includes(searchTerm))
+      : _allHistoryRecords;
+
+    const selectedRecords = [];
+    checkboxes.forEach((cb) => {
+      const idx = parseInt(cb.dataset.recordIndex, 10);
+      if (displayedRecords[idx]) selectedRecords.push(displayedRecords[idx]);
+    });
+
+    if (selectedRecords.length === 0) return;
+
+    // Initialize recorder
+    if (typeof ReplayRecorder === "undefined") {
+      showToast("ReplayRecorder not loaded", false);
+      return;
+    }
+
+    _replayRecorder = new ReplayRecorder();
+    _replayRecorder.init(1280, 720);
+    _replayRecorder.startRecording();
+
+    _recordingStartTime = Date.now();
+    _recordingTimerInterval = setInterval(_updateRecordingTimer, 1000);
+    _showRecordingIndicator(true);
+
+    // Start the actual replay
+    const speed = parseFloat(document.getElementById("replaySpeed")?.value || "1");
+
+    try {
+      const res = await csrfFetch("/admin/replay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ records: selectedRecords, speedMultiplier: speed }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        showToast(`Recording replay: ${data.count} records at ${speed}x`, true);
+        _updateReplayUI("playing");
+
+        // Poll replay status and feed danmu to recorder
+        _pollReplayStatusForRecording();
+      } else {
+        const err = await res.json();
+        showToast(`Replay error: ${err.error || res.statusText}`, false);
+        _stopRecordReplay();
+      }
+    } catch (e) {
+      showToast(ServerI18n.t("replayFailed"), false);
+      _stopRecordReplay();
+    }
+  }
+
+  function _pollReplayStatusForRecording() {
+    if (_recordingReplayPollTimer) clearInterval(_recordingReplayPollTimer);
+    let _lastSentCount = 0;
+
+    _recordingReplayPollTimer = setInterval(async () => {
+      try {
+        const res = await fetch("/admin/replay/status", { credentials: "same-origin" });
+        if (!res.ok) return;
+        const data = await res.json();
+        const progressEl = document.getElementById("replayProgress");
+        if (progressEl) {
+          progressEl.textContent = `Recording: ${data.sent}/${data.total}`;
+          progressEl.classList.remove("hidden");
+        }
+        _updateReplayUI(data.state);
+
+        // Feed new danmu to recorder from the sent records
+        if (data.sent > _lastSentCount && data.sentRecords) {
+          const newRecords = data.sentRecords.slice(_lastSentCount);
+          for (const r of newRecords) {
+            if (_replayRecorder) _replayRecorder.addDanmu(r);
+          }
+        }
+        _lastSentCount = data.sent || 0;
+
+        if (data.state === "stopped") {
+          clearInterval(_recordingReplayPollTimer);
+          _recordingReplayPollTimer = null;
+          // Wait a bit for last danmu to animate, then stop recording
+          setTimeout(() => _stopRecordReplay(), 3000);
+        }
+      } catch (e) {
+        // ignore polling errors
+      }
+    }, 500);
+  }
+
+  async function _stopRecordReplay() {
+    if (_recordingTimerInterval) {
+      clearInterval(_recordingTimerInterval);
+      _recordingTimerInterval = null;
+    }
+    if (_recordingReplayPollTimer) {
+      clearInterval(_recordingReplayPollTimer);
+      _recordingReplayPollTimer = null;
+    }
+    _showRecordingIndicator(false);
+    _updateReplayUI("stopped");
+
+    if (_replayRecorder) {
+      await _replayRecorder.downloadRecording();
+      _replayRecorder = null;
+      showToast("Recording saved!", true);
+    }
+  }
+
+  async function _exportJsonTimeline() {
+    const hours = document.getElementById("historyHours")?.value || "24";
+    try {
+      const res = await fetch(`/admin/history/export?hours=${hours}`, { credentials: "same-origin" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showToast(`Export error: ${err.error || res.statusText}`, false);
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `danmu-timeline-${hours}h.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("JSON timeline exported!", true);
+    } catch (e) {
+      showToast("Export failed", false);
+    }
+  }
+
   // --- Poll Management ---
   let _pollStatusTimer = null;
 
@@ -1106,6 +1270,32 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `);
 
+    // Theme Management Card
+    settingsGrid.insertAdjacentHTML("beforeend", `
+      <details id="sec-themes" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-themes") ? "open" : ""}>
+        <summary class="flex items-center justify-between cursor-pointer list-none">
+          <div>
+            <h3 class="text-lg font-bold text-white">Style Theme Packs</h3>
+            <p class="text-sm text-slate-300">Predefined visual themes for danmu styles and effects</p>
+          </div>
+          <span class="text-slate-400 transition-transform group-open:rotate-180">\u2304</span>
+        </summary>
+        <div class="mt-4 pt-4 border-t border-slate-700/50">
+          <div class="flex items-center gap-2 mb-4">
+            <button id="themeReloadBtn"
+              class="px-3 py-1.5 text-xs font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Reload
+            </button>
+          </div>
+          <div id="themesList" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <span class="text-xs text-slate-500">Loading themes...</span>
+          </div>
+        </div>
+      </details>
+    `);
+    scheduleIdleTask(initThemesManagement);
+
     // Blacklist Management Card
     settingsGrid.insertAdjacentHTML("beforeend", `
                     <details id="sec-blacklist" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-blacklist") ? "open" : ""}>
@@ -1182,6 +1372,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <option value="5">5x</option>
                                         <option value="10">10x</option>
                                     </select>
+                                    <button id="replayRecordBtn" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg transition-colors text-sm">⏺ ${ServerI18n.t("recordReplay") || "Record Replay"}</button>
+                                    <span id="replayRecordingIndicator" class="text-sm text-red-400 hidden">⏺ <span id="replayRecordingTimer">00:00</span></span>
+                                    <button id="exportJsonBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("exportJSON") || "Export JSON"}</button>
                                     <span id="replayProgress" class="text-sm text-slate-400 hidden"></span>
                                 </div>
                                 <div id="historyStats" class="text-sm text-slate-400"></div>
@@ -1465,6 +1658,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (replayResumeBtn) replayResumeBtn.addEventListener("click", _resumeReplay);
     const replayStopBtn = document.getElementById("replayStopBtn");
     if (replayStopBtn) replayStopBtn.addEventListener("click", _stopReplay);
+
+    const replayRecordBtn = document.getElementById("replayRecordBtn");
+    if (replayRecordBtn) replayRecordBtn.addEventListener("click", _startRecordReplay);
+
+    const exportJsonBtn = document.getElementById("exportJsonBtn");
+    if (exportJsonBtn) exportJsonBtn.addEventListener("click", _exportJsonTimeline);
 
     const historySelectAll = document.getElementById("historySelectAll");
     if (historySelectAll) {
@@ -1754,6 +1953,109 @@ document.addEventListener("DOMContentLoaded", () => {
       _effectModalRestoreFocusEl = null;
     }
   }
+  // ─── Themes Management ──────────────────────────────────────────────────────
+
+  let _adminActiveTheme = "default";
+
+  async function fetchThemes() {
+    try {
+      const res = await csrfFetch("/admin/themes");
+      if (!res.ok) return;
+      const data = await res.json();
+      _adminActiveTheme = data.active || "default";
+      renderThemesList(data.themes || [], _adminActiveTheme);
+    } catch (e) {
+      console.warn("[Themes] Failed to fetch themes:", e);
+    }
+  }
+
+  function renderThemesList(themes, activeName) {
+    const container = document.getElementById("themesList");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (themes.length === 0) {
+      container.innerHTML = '<span class="text-xs text-slate-500">No themes found</span>';
+      return;
+    }
+
+    themes.forEach((theme) => {
+      const isActive = theme.name === activeName;
+      const card = document.createElement("div");
+      card.className = `flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 ${
+        isActive
+          ? "border-violet-500 bg-violet-500/10"
+          : "border-slate-700 bg-slate-800/60 hover:border-slate-500"
+      }`;
+
+      card.innerHTML = `
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-semibold text-white">${escapeHtml(theme.label)}</span>
+            <span class="text-xs text-slate-500">${escapeHtml(theme.name)}</span>
+            ${isActive ? '<span class="text-[10px] px-1.5 py-0.5 bg-violet-600 text-white rounded-full font-medium">Active</span>' : ""}
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5 truncate">${escapeHtml(theme.description)}</p>
+        </div>
+        ${
+          isActive
+            ? ""
+            : '<button class="theme-activate-btn px-3 py-1.5 text-xs font-medium bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors shrink-0" data-theme="' + escapeHtml(theme.name) + '">Set Active</button>'
+        }
+      `;
+
+      container.appendChild(card);
+    });
+
+    // Bind activate buttons
+    container.querySelectorAll(".theme-activate-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const themeName = btn.dataset.theme;
+        try {
+          const res = await csrfFetch("/admin/themes/active", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: themeName }),
+          });
+          if (res.ok) {
+            showToast(`Theme "${themeName}" activated`);
+            _adminActiveTheme = themeName;
+            renderThemesList(themes, themeName);
+          } else {
+            const err = await res.json().catch(() => ({}));
+            showToast(err.error || "Failed to set theme", false);
+          }
+        } catch (e) {
+          showToast("Failed to set theme", false);
+        }
+      });
+    });
+  }
+
+  function initThemesManagement() {
+    fetchThemes();
+
+    const reloadBtn = document.getElementById("themeReloadBtn");
+    if (reloadBtn) {
+      reloadBtn.addEventListener("click", async () => {
+        try {
+          const res = await csrfFetch("/admin/themes/reload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
+          if (res.ok) {
+            showToast("Themes reloaded");
+            fetchThemes();
+          } else {
+            showToast("Failed to reload themes", false);
+          }
+        } catch (e) {
+          showToast("Failed to reload themes", false);
+        }
+      });
+    }
+  }
+
   // ─── Effects Management ──────────────────────────────────────────────────────
 
   async function initEffectsManagement() {

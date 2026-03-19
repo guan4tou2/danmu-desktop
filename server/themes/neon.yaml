@@ -1,0 +1,14 @@
+name: neon
+label: 霓虹
+description: 霓虹燈效果，帶發光特效
+styles:
+  color: "#00FF88"
+  textStroke: true
+  strokeWidth: 1
+  strokeColor: "#001122"
+  textShadow: true
+  shadowBlur: 15
+effects_preset:
+  - name: glow
+    params:
+      intensity: high

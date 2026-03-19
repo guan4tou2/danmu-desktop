@@ -98,10 +98,41 @@ def _resolve_danmu_style(data):
     data["size"] = _pick(data.pop("size", None), options.get("FontSize", [True, 20, 100, 50]))
     data["speed"] = _pick(data.pop("speed", None), options.get("Speed", [True, 1, 10, 4]))
 
+    # Apply active theme defaults for textStyles
+    from ..services import themes as theme_svc
+
+    active_theme = theme_svc.get_active()
+    theme_styles = active_theme.get("styles", {})
+
+    # If user/admin didn't set color explicitly, use theme color
+    if not data.get("color") and theme_styles.get("color"):
+        data["color"] = str(theme_styles["color"]).lstrip("#")
+
+    # Apply theme textStyles as defaults
+    text_styles = data.get("textStyles") or {}
+    if theme_styles.get("textStroke") is not None:
+        text_styles.setdefault("textStroke", theme_styles["textStroke"])
+    if theme_styles.get("strokeWidth") is not None:
+        text_styles.setdefault("strokeWidth", theme_styles["strokeWidth"])
+    if theme_styles.get("strokeColor"):
+        text_styles.setdefault("strokeColor", theme_styles["strokeColor"])
+    if theme_styles.get("textShadow") is not None:
+        text_styles.setdefault("textShadow", theme_styles["textShadow"])
+    if theme_styles.get("shadowBlur") is not None:
+        text_styles.setdefault("shadowBlur", theme_styles["shadowBlur"])
+    if text_styles:
+        data["textStyles"] = text_styles
+
     # effects：解析 .dme 特效，產生可注入 overlay 的 CSS（若 Effects 設定關閉則略過）
     effects_setting = options.get("Effects", [True, "", "", ""])
     effects_enabled = effects_setting[0] is not False
     effects_input = data.pop("effects", []) or []
+
+    # Apply theme effects preset if user didn't select any effects
+    theme_effects = active_theme.get("effects_preset", [])
+    if theme_effects and not effects_input:
+        effects_input = theme_effects
+
     if effects_input and effects_enabled:
         resolved = render_effects(effects_input)
         data["effectCss"] = (
@@ -217,6 +248,16 @@ def public_fonts():
 def public_fonts_alias():
     """Backward compatibility for older clients requesting /api/fonts"""
     return public_fonts()
+
+
+@api_bp.route("/themes", methods=["GET"])
+def list_themes():
+    """列出所有可用的主題"""
+    from ..services import themes as theme_svc
+
+    themes_list = theme_svc.load_all()
+    active = theme_svc.get_active_name()
+    return _json_response({"themes": themes_list, "active": active})
 
 
 @api_bp.route("/effects", methods=["GET"])

@@ -17,6 +17,7 @@ from server.managers import (  # ty: ignore[unresolved-import]
     settings_store,
 )
 from server.services import effects as eff_svc  # ty: ignore[unresolved-import]
+from server.services import themes as theme_svc  # ty: ignore[unresolved-import]
 from server.services import ws_queue  # ty: ignore[unresolved-import]
 from server.services.security import rate_limiter  # ty: ignore[unresolved-import]
 from server.services.ws_state import (
@@ -143,6 +144,10 @@ def app(tmp_path):
     eff_svc._mtime_map.clear()
     eff_svc._path_to_name.clear()
     eff_svc._last_scan = 0.0
+    theme_svc._cache.clear()
+    theme_svc._mtime_map.clear()
+    theme_svc._path_to_name.clear()
+    theme_svc._active_theme = "default"
     ws_queue.dequeue_all()
 
 

@@ -450,6 +450,109 @@ def reload_effects_admin():
     return _json_response({"message": "Effects reloaded", "count": len(effects)})
 
 
+# ─── Theme Management ─────────────────────────────────────────────────────
+
+
+@admin_bp.route("/themes", methods=["GET"])
+def get_themes():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    from ..services import themes as theme_svc
+
+    themes_list = theme_svc.load_all()
+    active = theme_svc.get_active_name()
+    return _json_response({"themes": themes_list, "active": active})
+
+
+@admin_bp.route("/themes/active", methods=["POST"])
+@require_csrf
+def set_active_theme():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    name = data.get("name", "")
+    if not name:
+        return _json_response({"error": "Missing theme name"}, 400)
+    from ..services import themes as theme_svc
+
+    if theme_svc.set_active(name):
+        return _json_response({"active": name})
+    return _json_response({"error": "Theme not found"}, 404)
+
+
+@admin_bp.route("/themes/reload", methods=["POST"])
+@require_csrf
+def reload_themes():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    from ..services import themes as theme_svc
+
+    themes_list = theme_svc.load_all(force=True)
+    return _json_response({"themes": themes_list})
+
+
+@admin_bp.route("/history/export", methods=["GET"])
+def export_history():
+    """Export danmu history as JSON timeline."""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+
+    hours = request.args.get("hours", 24, type=int)
+    hours = max(1, min(hours, 168))
+
+    if not history_service.danmu_history:
+        return _json_response({"version": 1, "duration_ms": 0, "records": []})
+
+    records = history_service.danmu_history.get_recent(hours=hours, limit=10000)
+
+    if not records:
+        return _json_response({"version": 1, "duration_ms": 0, "records": []})
+
+    # Calculate relative offsets from first record
+    from datetime import datetime
+
+    def parse_ts(ts_str):
+        if ts_str.endswith("Z"):
+            ts_str = ts_str.replace("Z", "+00:00")
+        return datetime.fromisoformat(ts_str)
+
+    # Records are sorted newest-first by get_records, reverse for timeline
+    sorted_records = list(reversed(records))
+    first_ts = parse_ts(sorted_records[0]["timestamp"])
+    last_ts = parse_ts(sorted_records[-1]["timestamp"])
+
+    timeline = []
+    for r in sorted_records:
+        ts = parse_ts(r["timestamp"])
+        offset_ms = int((ts - first_ts).total_seconds() * 1000)
+        timeline.append(
+            {
+                "offset_ms": offset_ms,
+                "text": r.get("text", ""),
+                "color": r.get("color", "#FFFFFF"),
+                "size": r.get("size", "50"),
+                "speed": r.get("speed", "5"),
+                "opacity": r.get("opacity", "100"),
+                "isImage": r.get("isImage", False),
+            }
+        )
+
+    duration_ms = int((last_ts - first_ts).total_seconds() * 1000)
+
+    response_data = {
+        "version": 1,
+        "duration_ms": duration_ms,
+        "count": len(timeline),
+        "records": timeline,
+    }
+
+    # Return as downloadable JSON file
+    response = make_response(json.dumps(response_data, ensure_ascii=False, indent=2))
+    response.headers["Content-Type"] = "application/json"
+    response.headers["Content-Disposition"] = f"attachment; filename=danmu-timeline-{hours}h.json"
+    return response
+
+
 @admin_bp.route("/history/clear", methods=["POST"])
 @rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
