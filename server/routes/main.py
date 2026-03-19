@@ -33,6 +33,16 @@ def index():
     return render_template("index.html", options=get_options(), ws_url=ws_url)
 
 
+@main_bp.route("/overlay")
+def overlay():
+    """OBS Browser Source overlay page."""
+    return render_template(
+        "overlay.html",
+        ws_port=current_app.config["WS_PORT"],
+        ws_token=current_app.config.get("WS_AUTH_TOKEN") or "",
+    )
+
+
 @main_bp.route("/login", methods=["POST"])
 @rate_limit("login", "LOGIN_RATE_LIMIT", "LOGIN_RATE_WINDOW")
 def login():
