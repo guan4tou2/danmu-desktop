@@ -34,8 +34,8 @@ COPY . .
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod 755 /entrypoint.sh
 
-# Create directories for fonts and static files
-RUN mkdir -p user_fonts static/vendor /tmp
+# Create directories for fonts, static files, plugins, and runtime data
+RUN mkdir -p user_fonts static/vendor static/sounds static/emojis plugins /tmp
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser && \
