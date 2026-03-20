@@ -10,6 +10,8 @@ _VALID_SETTING_TYPES = {
     "Speed",
     "FontFamily",
     "Effects",
+    "Layout",
+    "Nickname",
 }
 _NO_CTRL_CHARS_RE = r"^[^\r\n\t\x00-\x08\x0b\x0c\x0e-\x1f]+$"
 
@@ -31,6 +33,14 @@ class FireRequestSchema(Schema):
     size = fields.Int(load_default=None, validate=validate.Range(min=1, max=200))
     speed = fields.Int(load_default=None, validate=validate.Range(min=1, max=10))
     fingerprint = fields.Str(load_default=None, validate=validate.Length(max=128))
+    nickname = fields.Str(load_default=None, validate=validate.Length(max=20))
+    layout = fields.Str(
+        load_default=None,
+        validate=validate.OneOf(
+            ["scroll", "top_fixed", "bottom_fixed", "float", "rise"],
+            error="Invalid layout mode.",
+        ),
+    )
 
     @validates("effects")
     def validate_effects(self, value, **kwargs):
@@ -126,6 +136,77 @@ class ToggleSettingSchema(Schema):
         ),
     )
     enabled = fields.Bool(required=True)
+
+
+class SchedulerCreateSchema(Schema):
+    """排程建立請求驗證"""
+
+    messages = fields.List(
+        fields.Dict(),
+        required=True,
+        validate=validate.Length(min=1, max=50),
+    )
+    interval_sec = fields.Float(
+        required=True,
+        validate=validate.Range(min=1, max=3600),
+    )
+    repeat_count = fields.Int(load_default=-1, validate=validate.Range(min=-1, max=10000))
+    start_delay = fields.Float(load_default=0, validate=validate.Range(min=0, max=3600))
+
+
+class FilterRuleSchema(Schema):
+    """過濾規則請求驗證"""
+
+    type = fields.Str(
+        required=True,
+        validate=validate.OneOf(
+            ["keyword", "regex", "replace", "rate_limit"],
+            error="Unknown filter type.",
+        ),
+    )
+    pattern = fields.Str(required=True, validate=validate.Length(min=1, max=500))
+    replacement = fields.Str(load_default="***", validate=validate.Length(max=200))
+    action = fields.Str(
+        load_default="block",
+        validate=validate.OneOf(["block", "replace", "allow"]),
+    )
+    priority = fields.Int(load_default=100, validate=validate.Range(min=0, max=9999))
+    enabled = fields.Bool(load_default=True)
+    # rate_limit specific
+    max_count = fields.Int(load_default=5, validate=validate.Range(min=1, max=100))
+    window_sec = fields.Float(load_default=60, validate=validate.Range(min=1, max=3600))
+
+
+class WebhookSchema(Schema):
+    """Webhook 註冊請求驗證"""
+
+    url = fields.Url(required=True)
+    events = fields.List(
+        fields.Str(validate=validate.OneOf(
+            ["on_danmu", "on_poll_create", "on_poll_end", "on_connect", "on_disconnect"],
+        )),
+        required=True,
+        validate=validate.Length(min=1, max=5),
+    )
+    format = fields.Str(
+        load_default="json",
+        validate=validate.OneOf(["json", "discord", "slack"]),
+    )
+    secret = fields.Str(load_default="", validate=validate.Length(max=256))
+    enabled = fields.Bool(load_default=True)
+
+
+class SoundRuleSchema(Schema):
+    """音效規則請求驗證"""
+
+    trigger_type = fields.Str(
+        required=True,
+        validate=validate.OneOf(["keyword", "effect", "all"]),
+    )
+    trigger_value = fields.Str(load_default="", validate=validate.Length(max=200))
+    sound_name = fields.Str(required=True, validate=validate.Length(min=1, max=100))
+    volume = fields.Float(load_default=1.0, validate=validate.Range(min=0, max=1))
+    cooldown_ms = fields.Int(load_default=1000, validate=validate.Range(min=0, max=60000))
 
 
 def validate_request(schema_class, data):

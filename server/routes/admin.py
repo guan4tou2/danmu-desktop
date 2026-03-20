@@ -30,9 +30,13 @@ from ..services.validation import (
     BlacklistKeywordSchema,
     EffectDeleteSchema,
     EffectSaveSchema,
+    FilterRuleSchema,
     PollCreateSchema,
+    SchedulerCreateSchema,
     SettingUpdateSchema,
+    SoundRuleSchema,
     ToggleSettingSchema,
+    WebhookSchema,
     validate_request,
 )
 from ..services.ws_state import get_ws_client_count
@@ -688,3 +692,478 @@ def get_poll_status():
     if not _ensure_logged_in():
         return _json_response({"error": "Unauthorized"}, 401)
     return _json_response(poll_service.get_status())
+
+
+# ─── Scheduler API ────────────────────────────────────────────────────────────
+
+
+@admin_bp.route("/scheduler/create", methods=["POST"])
+@require_csrf
+def create_scheduled_job():
+    """建立排程任務"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    validated, errors = validate_request(SchedulerCreateSchema, data)
+    if errors:
+        return _json_response({"error": "Validation failed", "details": errors}, 400)
+    from ..services.scheduler import scheduler_service
+
+    try:
+        job_id = scheduler_service.create(
+            messages=validated["messages"],
+            interval_sec=validated["interval_sec"],
+            repeat_count=validated.get("repeat_count", -1),
+            start_delay=validated.get("start_delay", 0),
+        )
+        return _json_response({"job_id": job_id})
+    except ValueError as e:
+        return _json_response({"error": str(e)}, 400)
+
+
+@admin_bp.route("/scheduler/cancel", methods=["POST"])
+@require_csrf
+def cancel_scheduled_job():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    job_id = data.get("job_id", "")
+    from ..services.scheduler import scheduler_service
+
+    if scheduler_service.cancel(job_id):
+        return _json_response({"message": "Job cancelled"})
+    return _json_response({"error": "Job not found"}, 404)
+
+
+@admin_bp.route("/scheduler/pause", methods=["POST"])
+@require_csrf
+def pause_scheduled_job():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    job_id = data.get("job_id", "")
+    from ..services.scheduler import scheduler_service
+
+    if scheduler_service.pause(job_id):
+        return _json_response({"message": "Job paused"})
+    return _json_response({"error": "Job not found or not active"}, 400)
+
+
+@admin_bp.route("/scheduler/resume", methods=["POST"])
+@require_csrf
+def resume_scheduled_job():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    job_id = data.get("job_id", "")
+    from ..services.scheduler import scheduler_service
+
+    if scheduler_service.resume(job_id):
+        return _json_response({"message": "Job resumed"})
+    return _json_response({"error": "Job not found or not paused"}, 400)
+
+
+@admin_bp.route("/scheduler/list", methods=["GET"])
+def list_scheduled_jobs():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    from ..services.scheduler import scheduler_service
+
+    return _json_response({"jobs": scheduler_service.list_jobs()})
+
+
+# ─── Filter Engine API ────────────────────────────────────────────────────────
+
+
+@admin_bp.route("/filters/add", methods=["POST"])
+@require_csrf
+def add_filter_rule():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    validated, errors = validate_request(FilterRuleSchema, data)
+    if errors:
+        return _json_response({"error": "Validation failed", "details": errors}, 400)
+    from ..services.filter_engine import filter_engine
+
+    try:
+        rule_id = filter_engine.add_rule(validated)
+        return _json_response({"rule_id": rule_id})
+    except ValueError as e:
+        return _json_response({"error": str(e)}, 400)
+
+
+@admin_bp.route("/filters/remove", methods=["POST"])
+@require_csrf
+def remove_filter_rule():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    rule_id = data.get("rule_id", "")
+    from ..services.filter_engine import filter_engine
+
+    if filter_engine.remove_rule(rule_id):
+        return _json_response({"message": "Rule removed"})
+    return _json_response({"error": "Rule not found"}, 404)
+
+
+@admin_bp.route("/filters/update", methods=["POST"])
+@require_csrf
+def update_filter_rule():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    rule_id = data.get("rule_id", "")
+    updates = data.get("updates", {})
+    if not rule_id or not isinstance(updates, dict):
+        return _json_response({"error": "Missing rule_id or updates"}, 400)
+    from ..services.filter_engine import filter_engine
+
+    try:
+        if filter_engine.update_rule(rule_id, updates):
+            return _json_response({"message": "Rule updated"})
+        return _json_response({"error": "Rule not found"}, 404)
+    except ValueError as e:
+        return _json_response({"error": str(e)}, 400)
+
+
+@admin_bp.route("/filters/list", methods=["GET"])
+def list_filter_rules():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    from ..services.filter_engine import filter_engine
+
+    return _json_response({"rules": filter_engine.list_rules()})
+
+
+@admin_bp.route("/filters/test", methods=["POST"])
+@require_csrf
+def test_filter_rule():
+    """測試過濾規則是否匹配"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    rule_data = data.get("rule", {})
+    sample_text = data.get("text", "")
+    from ..services.filter_engine import filter_engine
+
+    try:
+        result = filter_engine.test_rule(rule_data, sample_text)
+        return _json_response({
+            "action": result.action,
+            "text": result.text,
+            "reason": result.reason,
+        })
+    except ValueError as e:
+        return _json_response({"error": str(e)}, 400)
+
+
+# ─── Webhook API ──────────────────────────────────────────────────────────────
+
+
+@admin_bp.route("/webhooks/register", methods=["POST"])
+@require_csrf
+def register_webhook():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    validated, errors = validate_request(WebhookSchema, data)
+    if errors:
+        return _json_response({"error": "Validation failed", "details": errors}, 400)
+    from ..services.webhook import webhook_service
+
+    try:
+        hook_id = webhook_service.register(validated)
+        return _json_response({"hook_id": hook_id})
+    except ValueError as e:
+        return _json_response({"error": str(e)}, 400)
+
+
+@admin_bp.route("/webhooks/unregister", methods=["POST"])
+@require_csrf
+def unregister_webhook():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    hook_id = data.get("hook_id", "")
+    from ..services.webhook import webhook_service
+
+    if webhook_service.unregister(hook_id):
+        return _json_response({"message": "Webhook removed"})
+    return _json_response({"error": "Webhook not found"}, 404)
+
+
+@admin_bp.route("/webhooks/list", methods=["GET"])
+def list_webhooks():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    from ..services.webhook import webhook_service
+
+    return _json_response({"webhooks": webhook_service.list_hooks()})
+
+
+@admin_bp.route("/webhooks/test", methods=["POST"])
+@require_csrf
+def test_webhook():
+    """測試 webhook（發送測試 payload）"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    hook_id = data.get("hook_id", "")
+    from ..services.webhook import webhook_service
+
+    webhook_service.emit("test", {"text": "Test from danmu admin", "hook_id": hook_id})
+    return _json_response({"message": "Test webhook sent"})
+
+
+@admin_bp.route("/webhook/incoming/<hook_id>", methods=["POST"])
+def incoming_webhook(hook_id):
+    """接收外部 webhook 轉為彈幕"""
+    from ..services.webhook import webhook_service
+
+    payload = request.get_data()
+    signature = request.headers.get("X-Webhook-Signature", "")
+
+    hooks = webhook_service.list_hooks()
+    hook = next((h for h in hooks if h.get("id") == hook_id), None)
+    if not hook:
+        return _json_response({"error": "Unknown webhook"}, 404)
+
+    if hook.get("secret"):
+        if not webhook_service.verify_incoming(payload, signature, hook["secret"]):
+            return _json_response({"error": "Invalid signature"}, 403)
+
+    try:
+        body = json.loads(payload)
+    except Exception:
+        return _json_response({"error": "Invalid JSON"}, 400)
+
+    text = body.get("text", "")
+    if not text:
+        return _json_response({"error": "Missing text"}, 400)
+
+    msg = {
+        "text": text[:100],
+        "color": body.get("color", "FFFFFF"),
+        "size": body.get("size", 50),
+        "speed": body.get("speed", 4),
+        "opacity": body.get("opacity", 100),
+    }
+    messaging.forward_to_ws_server(msg)
+    return _json_response({"status": "OK"})
+
+
+# ─── Sound API ────────────────────────────────────────────────────────────────
+
+
+@admin_bp.route("/sounds/list", methods=["GET"])
+def list_sounds():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    from ..services.sound import sound_service
+
+    return _json_response({
+        "sounds": sound_service.list_sounds(),
+        "rules": sound_service.list_rules(),
+    })
+
+
+@admin_bp.route("/sounds/upload", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+def upload_sound():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    f = request.files.get("soundfile")
+    if not f or f.filename == "":
+        return _json_response({"error": "No file selected"}, 400)
+
+    name = request.form.get("name", "").strip()
+    if not name:
+        name = f.filename.rsplit(".", 1)[0] if "." in f.filename else f.filename
+
+    ext = f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else ""
+    file_bytes = f.stream.read(2 * 1024 * 1024)  # 2MB max read
+
+    from ..services.sound import sound_service
+
+    if sound_service.upload_sound(name, file_bytes, ext):
+        return _json_response({"message": f"Sound '{name}' uploaded"})
+    return _json_response({"error": "Upload failed (check format/size)"}, 400)
+
+
+@admin_bp.route("/sounds/delete", methods=["POST"])
+@require_csrf
+def delete_sound():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    name = data.get("name", "")
+    from ..services.sound import sound_service
+
+    if sound_service.delete_sound(name):
+        return _json_response({"message": "Sound deleted"})
+    return _json_response({"error": "Sound not found"}, 404)
+
+
+@admin_bp.route("/sounds/rules/add", methods=["POST"])
+@require_csrf
+def add_sound_rule():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    validated, errors = validate_request(SoundRuleSchema, data)
+    if errors:
+        return _json_response({"error": "Validation failed", "details": errors}, 400)
+    from ..services.sound import sound_service
+
+    rule_id = sound_service.add_rule(validated)
+    return _json_response({"rule_id": rule_id})
+
+
+@admin_bp.route("/sounds/rules/remove", methods=["POST"])
+@require_csrf
+def remove_sound_rule():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    rule_id = data.get("rule_id", "")
+    from ..services.sound import sound_service
+
+    if sound_service.remove_rule(rule_id):
+        return _json_response({"message": "Rule removed"})
+    return _json_response({"error": "Rule not found"}, 404)
+
+
+# ─── Emoji API ────────────────────────────────────────────────────────────────
+
+
+@admin_bp.route("/emojis/list", methods=["GET"])
+def list_emojis_admin():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    from ..services.emoji import emoji_service
+
+    return _json_response({"emojis": emoji_service.list_emojis()})
+
+
+@admin_bp.route("/emojis/upload", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+def upload_emoji():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    f = request.files.get("emojifile")
+    if not f or f.filename == "":
+        return _json_response({"error": "No file selected"}, 400)
+
+    name = request.form.get("name", "").strip()
+    if not name:
+        return _json_response({"error": "Name required"}, 400)
+
+    ext = f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else ""
+    file_bytes = f.stream.read(1024 * 1024)  # 1MB max read
+
+    from ..services.emoji import emoji_service
+
+    if emoji_service.upload(name, file_bytes, ext):
+        return _json_response({"message": f"Emoji ':{name}:' uploaded"})
+    return _json_response({"error": "Upload failed (check format/size/name)"}, 400)
+
+
+@admin_bp.route("/emojis/delete", methods=["POST"])
+@require_csrf
+def delete_emoji():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    name = data.get("name", "")
+    from ..services.emoji import emoji_service
+
+    if emoji_service.delete(name):
+        return _json_response({"message": "Emoji deleted"})
+    return _json_response({"error": "Emoji not found"}, 404)
+
+
+# ─── Plugin API ───────────────────────────────────────────────────────────────
+
+
+@admin_bp.route("/plugins/list", methods=["GET"])
+def list_plugins():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    from ..services.plugin_manager import plugin_manager
+
+    return _json_response({"plugins": plugin_manager.list_plugins()})
+
+
+@admin_bp.route("/plugins/enable", methods=["POST"])
+@require_csrf
+def enable_plugin():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    name = data.get("name", "")
+    from ..services.plugin_manager import plugin_manager
+
+    if plugin_manager.enable(name):
+        return _json_response({"message": f"Plugin '{name}' enabled"})
+    return _json_response({"error": "Plugin not found"}, 404)
+
+
+@admin_bp.route("/plugins/disable", methods=["POST"])
+@require_csrf
+def disable_plugin():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    name = data.get("name", "")
+    from ..services.plugin_manager import plugin_manager
+
+    if plugin_manager.disable(name):
+        return _json_response({"message": f"Plugin '{name}' disabled"})
+    return _json_response({"error": "Plugin not found"}, 404)
+
+
+@admin_bp.route("/plugins/reload", methods=["POST"])
+@require_csrf
+def reload_plugins():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    from ..services.plugin_manager import plugin_manager
+
+    plugin_manager.reload()
+    return _json_response({"plugins": plugin_manager.list_plugins()})
+
+
+# ─── Live Feed API ────────────────────────────────────────────────────────────
+
+
+@admin_bp.route("/live/block", methods=["POST"])
+@require_csrf
+def live_block():
+    """即時封鎖 — 加入黑名單或過濾規則"""
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+    data = request.get_json(silent=True) or {}
+    block_type = data.get("type", "keyword")  # "keyword" or "fingerprint"
+    value = data.get("value", "").strip()
+    if not value:
+        return _json_response({"error": "Value required"}, 400)
+
+    if block_type == "keyword":
+        add_keyword(value)
+        _broadcast_blacklist_update()
+        return _json_response({"message": f"Keyword '{value}' blocked"})
+    elif block_type == "fingerprint":
+        from ..services.filter_engine import filter_engine
+
+        filter_engine.add_rule({
+            "type": "keyword",
+            "pattern": value,
+            "action": "block",
+            "priority": 0,
+            "enabled": True,
+        })
+        return _json_response({"message": "Fingerprint rule added"})
+    return _json_response({"error": "Unknown block type"}, 400)

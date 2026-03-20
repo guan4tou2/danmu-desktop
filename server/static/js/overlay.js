@@ -135,6 +135,26 @@
           }
         }
 
+        // Inject layout CSS keyframes
+        if (data.layoutCss) {
+          var layoutStyleId = "layout-css-" + (data.layout || "scroll");
+          if (!document.getElementById(layoutStyleId)) {
+            var layoutStyle = document.createElement("style");
+            layoutStyle.id = layoutStyleId;
+            layoutStyle.textContent = data.layoutCss;
+            document.head.appendChild(layoutStyle);
+          }
+        }
+
+        // Play sound if present
+        if (data.sound && data.sound.url) {
+          try {
+            var audio = new Audio(data.sound.url);
+            audio.volume = data.sound.volume || 1.0;
+            audio.play().catch(function () {});
+          } catch (e) { /* ignore sound errors */ }
+        }
+
         showdanmu(
           data.text,
           data.opacity,
@@ -144,7 +164,11 @@
           data.fontInfo,
           data.textStyles || { textStroke: true, strokeWidth: 2, strokeColor: "#000000", textShadow: false, shadowBlur: 4 },
           data.displayArea || { top: 0, height: 100 },
-          effectCss
+          effectCss,
+          data.layout || "scroll",
+          data.layoutConfig || null,
+          data.nickname || null,
+          data.emojis || null
         );
       } catch (e) {
         console.error("[overlay] Error processing message:", e.message);
@@ -221,7 +245,9 @@
   }
 
   // ── showdanmu ──────────────────────────────────────────────────────────────
-  function showdanmu(text, opacity, color, size, speed, fontInfo, textStyles, displayArea, effectCss) {
+  function showdanmu(text, opacity, color, size, speed, fontInfo, textStyles, displayArea, effectCss, layout, layoutConfig, nickname, emojis) {
+    layout = layout || "scroll";
+    layoutConfig = layoutConfig || null;
     if (defaultOpacity) opacity = defaultOpacity;
     if (defaultFontSize) size = defaultFontSize;
 
@@ -274,6 +300,44 @@
       }
     }
 
+    // Nickname label
+    if (nickname) {
+      var nickEl = document.createElement("span");
+      nickEl.textContent = nickname;
+      nickEl.style.cssText = "font-size:" + Math.max(12, size * 0.35) + "px;color:" + color + ";opacity:0.7;margin-right:6px;vertical-align:middle;";
+      wrapper.insertBefore(nickEl, danmu);
+    }
+
+    // Inline emoji images
+    if (emojis && emojis.length > 0 && danmu.tagName === "H1") {
+      var parts = text;
+      emojis.forEach(function (em) {
+        var pattern = ":" + em.name + ":";
+        if (parts.indexOf(pattern) !== -1) {
+          var img = document.createElement("img");
+          img.src = em.url;
+          img.style.cssText = "display:inline;vertical-align:middle;width:" + Math.round(size * 0.8) + "px;height:" + Math.round(size * 0.8) + "px;margin:0 2px;";
+          img.alt = em.name;
+          // Replace text node containing the pattern
+          var walker = document.createTreeWalker(danmu, NodeFilter.SHOW_TEXT, null, false);
+          while (walker.nextNode()) {
+            var node = walker.currentNode;
+            var idx = node.textContent.indexOf(pattern);
+            if (idx !== -1) {
+              var before = document.createTextNode(node.textContent.substring(0, idx));
+              var after = document.createTextNode(node.textContent.substring(idx + pattern.length));
+              var parent = node.parentNode;
+              parent.insertBefore(before, node);
+              parent.insertBefore(img, node);
+              parent.insertBefore(after, node);
+              parent.removeChild(node);
+              break;
+            }
+          }
+        }
+      });
+    }
+
     wrapper.appendChild(danmu);
 
     // Font loading + animation
@@ -308,17 +372,59 @@
           }
         }
 
-        // translateX animation on wrapper
+        // Layout-dependent animation
         try {
-          wrapper.animate(
-            [
-              { transform: "translateX(100vw)" },
-              { transform: "translateX(-" + Width + "px)" }
-            ],
-            { duration: duration, easing: "linear" }
-          ).onfinish = function () {
-            wrapper.remove();
-          };
+          if (layout === "top_fixed" || layout === "bottom_fixed") {
+            // Fixed position danmu
+            wrapper.style.left = "50%";
+            wrapper.style.transform = "translateX(-50%)";
+            if (layout === "bottom_fixed") {
+              wrapper.style.top = "";
+              wrapper.style.bottom = trackPos.top + "px";
+            }
+            var fixedDuration = (layoutConfig && layoutConfig.duration) || 3000;
+            wrapper.animate(
+              [
+                { opacity: 1 },
+                { opacity: 1, offset: 0.8 },
+                { opacity: 0 }
+              ],
+              { duration: fixedDuration, easing: "ease-out" }
+            ).onfinish = function () { wrapper.remove(); };
+          } else if (layout === "float") {
+            // Random position float
+            wrapper.style.left = (Math.random() * 60 + 20) + "%";
+            wrapper.style.top = (Math.random() * 60 + 20) + "%";
+            var floatDuration = (layoutConfig && layoutConfig.duration) || 4000;
+            wrapper.animate(
+              [
+                { opacity: 0, transform: "scale(0.8)" },
+                { opacity: 1, transform: "scale(1)", offset: 0.1 },
+                { opacity: 1, transform: "scale(1)", offset: 0.9 },
+                { opacity: 0, transform: "scale(0.8)" }
+              ],
+              { duration: floatDuration, easing: "ease-in-out" }
+            ).onfinish = function () { wrapper.remove(); };
+          } else if (layout === "rise") {
+            // Bottom to top
+            wrapper.style.left = (Math.random() * 60 + 20) + "%";
+            wrapper.animate(
+              [
+                { transform: "translateY(100vh)" },
+                { transform: "translateY(-100%)" }
+              ],
+              { duration: duration, easing: "linear" }
+            ).onfinish = function () { wrapper.remove(); };
+          } else {
+            // Default scroll (right to left)
+            wrapper.animate(
+              [
+                { transform: "translateX(100vw)" },
+                { transform: "translateX(-" + Width + "px)" }
+              ],
+              { duration: duration, easing: "linear" }
+            ).onfinish = function () { wrapper.remove(); };
+          }
         } catch (e) {
           console.error("[overlay] Animation error:", e.message);
           if (wrapper.parentElement) wrapper.remove();

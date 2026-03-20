@@ -198,6 +198,20 @@ window.ServerI18n = {
       updateFailed: "Update Failed",
       colorFormatError: "Color format error, please use #RRGGBB format",
       getSettingsFailed: "Get settings failed",
+
+      // ── New Features ──────────────────────────────────────────────────
+      nickname: "Nickname",
+      anonymousPlaceholder: "Anonymous",
+      layoutMode: "Layout",
+      emojis: "Emojis",
+      emojiHint: "Click to insert :name:",
+      schedulerTitle: "Scheduled Broadcasts",
+      filterRulesTitle: "Filter Rules",
+      liveFeedTitle: "Live Feed",
+      webhooksTitle: "Webhooks",
+      soundsTitle: "Sound Effects",
+      pluginsTitle: "Plugins",
+      emojisTitle: "Emoji & Stickers",
     },
 
     zh: {
@@ -386,6 +400,19 @@ window.ServerI18n = {
       updateFailed: "Update Failed",
       colorFormatError: "Color format error, please use #RRGGBB format",
       getSettingsFailed: "Get settings failed",
+
+      nickname: "暱稱",
+      anonymousPlaceholder: "匿名",
+      layoutMode: "佈局模式",
+      emojis: "表情包",
+      emojiHint: "點擊插入 :name:",
+      schedulerTitle: "定時發送",
+      filterRulesTitle: "過濾規則",
+      liveFeedTitle: "即時監控",
+      webhooksTitle: "Webhook 整合",
+      soundsTitle: "音效系統",
+      pluginsTitle: "插件管理",
+      emojisTitle: "表情包管理",
     },
 
     ja: {
@@ -575,6 +602,19 @@ window.ServerI18n = {
       updateFailed: "更新失敗",
       colorFormatError: "色の形式エラー。#RRGGBB形式を使用してください",
       getSettingsFailed: "設定の取得に失敗しました",
+
+      nickname: "ニックネーム",
+      anonymousPlaceholder: "匿名",
+      layoutMode: "レイアウト",
+      emojis: "絵文字",
+      emojiHint: "クリックして :name: を挿入",
+      schedulerTitle: "スケジュール配信",
+      filterRulesTitle: "フィルタールール",
+      liveFeedTitle: "ライブフィード",
+      webhooksTitle: "Webhook連携",
+      soundsTitle: "効果音",
+      pluginsTitle: "プラグイン",
+      emojisTitle: "絵文字管理",
     },
 
     ko: {
@@ -763,6 +803,19 @@ window.ServerI18n = {
       updateFailed: "업데이트 실패",
       colorFormatError: "색상 형식 오류. #RRGGBB 형식을 사용하세요",
       getSettingsFailed: "설정 가져오기 실패",
+
+      nickname: "닉네임",
+      anonymousPlaceholder: "익명",
+      layoutMode: "레이아웃",
+      emojis: "이모지",
+      emojiHint: "클릭하여 :name: 삽입",
+      schedulerTitle: "예약 발송",
+      filterRulesTitle: "필터 규칙",
+      liveFeedTitle: "실시간 피드",
+      webhooksTitle: "Webhook 연동",
+      soundsTitle: "효과음",
+      pluginsTitle: "플러그인",
+      emojisTitle: "이모지 관리",
     },
   },
 

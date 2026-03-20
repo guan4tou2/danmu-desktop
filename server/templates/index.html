@@ -284,6 +284,49 @@
                 </select>
               </div>
 
+              <!-- Nickname -->
+              {% if options.get('Nickname', [True])[0] %}
+              <div id="nicknameControl">
+                <label class="block text-sm font-medium text-slate-400 mb-2">
+                  <span data-i18n="nickname">Nickname</span>
+                </label>
+                <input
+                  type="text"
+                  id="nicknameInput"
+                  maxlength="20"
+                  placeholder="Anonymous"
+                  data-i18n-placeholder="anonymousPlaceholder"
+                  class="w-full bg-slate-800/50 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:ring-sky-500 focus:border-sky-500"
+                />
+              </div>
+              {% endif %}
+
+              <!-- Layout Mode -->
+              {% if options.get('Layout', [True])[0] %}
+              <div id="layoutControl">
+                <label class="block text-sm font-medium text-slate-400 mb-2">
+                  <span data-i18n="layoutMode">Layout</span>
+                </label>
+                <div class="flex flex-wrap gap-2" id="layoutButtons">
+                  <button type="button" data-layout="scroll" class="layout-btn active px-3 py-1.5 text-xs rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/30">→ Scroll</button>
+                  <button type="button" data-layout="top_fixed" class="layout-btn px-3 py-1.5 text-xs rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600/30">↑ Top</button>
+                  <button type="button" data-layout="bottom_fixed" class="layout-btn px-3 py-1.5 text-xs rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600/30">↓ Bottom</button>
+                  <button type="button" data-layout="float" class="layout-btn px-3 py-1.5 text-xs rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600/30">✦ Float</button>
+                  <button type="button" data-layout="rise" class="layout-btn px-3 py-1.5 text-xs rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600/30">↑ Rise</button>
+                </div>
+                <input type="hidden" id="layoutSelect" value="scroll" />
+              </div>
+              {% endif %}
+
+              <!-- Emoji Picker -->
+              <div id="emojiControl">
+                <label class="block text-sm font-medium text-slate-400 mb-2">
+                  <span data-i18n="emojis">Emojis</span>
+                  <span class="text-xs text-slate-500 ml-2" data-i18n="emojiHint">Click to insert :name:</span>
+                </label>
+                <div id="emojiPicker" class="flex flex-wrap gap-2"></div>
+              </div>
+
               <!-- Text Effects (dynamically loaded from /effects API) -->
               <div id="effectControl">
                 <label class="block text-sm font-medium text-slate-400 mb-2 flex justify-between">

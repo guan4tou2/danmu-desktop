@@ -716,6 +716,17 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      // Nickname from localStorage
+      const nicknameInput = document.getElementById("nicknameInput");
+      const nickname = nicknameInput ? nicknameInput.value.trim() : null;
+      if (nicknameInput && nickname) {
+        try { localStorage.setItem("danmu_nickname", nickname); } catch (_) {}
+      }
+
+      // Layout mode
+      const layoutSelect = document.getElementById("layoutSelect");
+      const layout = layoutSelect ? layoutSelect.value : null;
+
       const payload = {
         text: text,
         color: elements.colorInput ? elements.colorInput.value : null,
@@ -730,6 +741,8 @@ document.addEventListener("DOMContentLoaded", () => {
             : null,
         effects: Object.entries(selectedEffects).map(([name, params]) => ({ name, params })),
         fingerprint: clientFingerprint,
+        nickname: nickname || undefined,
+        layout: layout || undefined,
       };
 
       const response = await fetch("/fire", {
@@ -878,6 +891,71 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Sync preview with initial input values
       updatePreview();
+
+      // Restore nickname from localStorage
+      const nicknameInput = document.getElementById("nicknameInput");
+      if (nicknameInput) {
+        try {
+          const saved = localStorage.getItem("danmu_nickname");
+          if (saved) nicknameInput.value = saved;
+        } catch (_) {}
+      }
+
+      // Layout mode buttons
+      const layoutBtns = document.querySelectorAll(".layout-btn");
+      const layoutSelect = document.getElementById("layoutSelect");
+      if (layoutBtns.length > 0 && layoutSelect) {
+        layoutBtns.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            layoutBtns.forEach((b) => {
+              b.classList.remove("active", "bg-sky-500/20", "text-sky-300", "border-sky-500/30");
+              b.classList.add("bg-slate-700/50", "text-slate-300", "border-slate-600/30");
+            });
+            btn.classList.remove("bg-slate-700/50", "text-slate-300", "border-slate-600/30");
+            btn.classList.add("active", "bg-sky-500/20", "text-sky-300", "border-sky-500/30");
+            layoutSelect.value = btn.dataset.layout;
+          });
+        });
+      }
+
+      // Load emoji picker
+      const emojiPicker = document.getElementById("emojiPicker");
+      if (emojiPicker) {
+        fetch("/emojis")
+          .then((r) => r.json())
+          .then((data) => {
+            const emojis = data.emojis || [];
+            if (emojis.length === 0) {
+              emojiPicker.innerHTML = '<span class="text-xs text-slate-500">No emojis available</span>';
+              return;
+            }
+            emojiPicker.innerHTML = "";
+            emojis.forEach((em) => {
+              const btn = document.createElement("button");
+              btn.type = "button";
+              btn.className = "emoji-picker-btn p-1 rounded hover:bg-slate-700/50 transition-colors";
+              btn.title = ":" + em.name + ":";
+              const img = document.createElement("img");
+              img.src = em.url;
+              img.alt = em.name;
+              img.style.cssText = "width:32px;height:32px;";
+              btn.appendChild(img);
+              btn.addEventListener("click", () => {
+                const textarea = elements.danmuText;
+                const insertText = ":" + em.name + ":";
+                const start = textarea.selectionStart || textarea.value.length;
+                textarea.value = textarea.value.substring(0, start) + insertText + textarea.value.substring(textarea.selectionEnd || start);
+                textarea.focus();
+                updateCharCount();
+                updatePreview();
+              });
+              emojiPicker.appendChild(btn);
+            });
+          })
+          .catch(() => {
+            emojiPicker.innerHTML = '<span class="text-xs text-slate-500">Failed to load emojis</span>';
+          });
+      }
     })
     .catch((err) => console.error("Failed to load settings:", err));
 });

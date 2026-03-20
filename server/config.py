@@ -97,6 +97,40 @@ class Config:
         str(Path(tempfile.gettempdir()) / "danmu_runtime_settings.json"),
     )
 
+    # Scheduler configuration
+    SCHEDULER_MAX_JOBS = int(os.getenv("SCHEDULER_MAX_JOBS", "20"))
+
+    # Filter engine configuration
+    FILTER_RULES_PATH = os.getenv(
+        "FILTER_RULES_PATH",
+        str(Path(__file__).parent / "filter_rules.json"),
+    )
+
+    # Webhook configuration
+    WEBHOOKS_PATH = os.getenv(
+        "WEBHOOKS_PATH",
+        str(Path(__file__).parent / "webhooks.json"),
+    )
+    WEBHOOK_TIMEOUT = int(os.getenv("WEBHOOK_TIMEOUT", "10"))
+
+    # Sounds configuration
+    SOUNDS_DIR = os.getenv(
+        "SOUNDS_DIR",
+        str(Path(__file__).parent / "static" / "sounds"),
+    )
+
+    # Plugins configuration
+    PLUGINS_DIR = os.getenv(
+        "PLUGINS_DIR",
+        str(Path(__file__).parent / "plugins"),
+    )
+
+    # Emoji configuration
+    EMOJI_DIR = os.getenv(
+        "EMOJI_DIR",
+        str(Path(__file__).parent / "static" / "emojis"),
+    )
+
     # Admin settable option keys
     SETTABLE_OPTION_KEYS = {
         "Color",
@@ -105,4 +139,6 @@ class Config:
         "Speed",
         "FontFamily",
         "Effects",
+        "Layout",
+        "Nickname",
     }

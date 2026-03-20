@@ -134,7 +134,11 @@ function initTrackManager() {
       shadowBlur: 4,
     },
     displayArea = { top: 0, height: 100 },
-    effectCss = null
+    effectCss = null,
+    layout = "scroll",
+    layoutConfig = null,
+    nickname = null,
+    emojis = null
   ) {
     console.log("[showdanmu] Received:", {
       string: sanitizeLog(string),
@@ -200,6 +204,40 @@ function initTrackManager() {
           blur * 2
         }px rgba(0, 0, 0, 0.6)`;
       }
+    }
+
+    // Nickname label
+    if (nickname) {
+      const nickEl = document.createElement("span");
+      nickEl.textContent = nickname;
+      nickEl.style.cssText = `font-size:${Math.max(12, size * 0.35)}px;color:${color};opacity:0.7;margin-right:6px;vertical-align:middle;`;
+      wrapper.appendChild(nickEl);
+    }
+
+    // Inline emoji images
+    if (emojis && emojis.length > 0 && danmu.tagName === "H1") {
+      emojis.forEach((em) => {
+        const pattern = ":" + em.name + ":";
+        const walker = document.createTreeWalker(danmu, NodeFilter.SHOW_TEXT, null, false);
+        while (walker.nextNode()) {
+          const node = walker.currentNode;
+          const idx = node.textContent.indexOf(pattern);
+          if (idx !== -1) {
+            const before = document.createTextNode(node.textContent.substring(0, idx));
+            const img = document.createElement("img");
+            img.src = em.url;
+            img.style.cssText = `display:inline;vertical-align:middle;width:${Math.round(size * 0.8)}px;height:${Math.round(size * 0.8)}px;margin:0 2px;`;
+            img.alt = em.name;
+            const after = document.createTextNode(node.textContent.substring(idx + pattern.length));
+            const parent = node.parentNode;
+            parent.insertBefore(before, node);
+            parent.insertBefore(img, node);
+            parent.insertBefore(after, node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      });
     }
 
     wrapper.appendChild(danmu);
@@ -286,17 +324,56 @@ function initTrackManager() {
         }
       }
 
-      // translateX 動畫套在 wrapper
+      // Layout-dependent animation on wrapper
       try {
-        wrapper.animate(
-          [
-            { transform: "translateX(100vw)" },
-            { transform: `translateX(-${Width}px)` },
-          ],
-          { duration, easing: "linear" }
-        ).onfinish = () => {
-          wrapper.remove();
-        };
+        if (layout === "top_fixed" || layout === "bottom_fixed") {
+          wrapper.style.left = "50%";
+          wrapper.style.transform = "translateX(-50%)";
+          if (layout === "bottom_fixed") {
+            wrapper.style.top = "";
+            wrapper.style.bottom = `${top}px`;
+          }
+          const fixedDuration = (layoutConfig && layoutConfig.duration) || 3000;
+          wrapper.animate(
+            [
+              { opacity: 1 },
+              { opacity: 1, offset: 0.8 },
+              { opacity: 0 },
+            ],
+            { duration: fixedDuration, easing: "ease-out" }
+          ).onfinish = () => { wrapper.remove(); };
+        } else if (layout === "float") {
+          wrapper.style.left = `${Math.random() * 60 + 20}%`;
+          wrapper.style.top = `${Math.random() * 60 + 20}%`;
+          const floatDuration = (layoutConfig && layoutConfig.duration) || 4000;
+          wrapper.animate(
+            [
+              { opacity: 0, transform: "scale(0.8)" },
+              { opacity: 1, transform: "scale(1)", offset: 0.1 },
+              { opacity: 1, transform: "scale(1)", offset: 0.9 },
+              { opacity: 0, transform: "scale(0.8)" },
+            ],
+            { duration: floatDuration, easing: "ease-in-out" }
+          ).onfinish = () => { wrapper.remove(); };
+        } else if (layout === "rise") {
+          wrapper.style.left = `${Math.random() * 60 + 20}%`;
+          wrapper.animate(
+            [
+              { transform: "translateY(100vh)" },
+              { transform: "translateY(-100%)" },
+            ],
+            { duration, easing: "linear" }
+          ).onfinish = () => { wrapper.remove(); };
+        } else {
+          // Default scroll (right to left)
+          wrapper.animate(
+            [
+              { transform: "translateX(100vw)" },
+              { transform: `translateX(-${Width}px)` },
+            ],
+            { duration, easing: "linear" }
+          ).onfinish = () => { wrapper.remove(); };
+        }
       } catch (e) {
         console.error("[showdanmu] Animation error:", sanitizeLog(e.message));
         if (wrapper.parentElement) wrapper.remove();

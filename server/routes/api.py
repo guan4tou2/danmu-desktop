@@ -13,6 +13,10 @@ from .. import state
 from ..services import history as history_service
 from ..services import messaging
 from ..services.blacklist import contains_keyword
+from ..services.emoji import emoji_service
+from ..services.filter_engine import filter_engine
+from ..services.layout import get_layout_config, get_layout_css
+from ..services.sound import sound_service
 from ..services.effects import load_all as load_all_effects
 from ..services.effects import render_effects
 from ..services.fonts import build_font_payload, list_available_fonts
@@ -123,6 +127,26 @@ def _resolve_danmu_style(data):
     if text_styles:
         data["textStyles"] = text_styles
 
+    # Layout mode
+    layout_setting = options.get("Layout", [True, "", "", "scroll"])
+    layout_input = data.pop("layout", None)
+    layout_mode = layout_input if (layout_input and layout_setting[0]) else (layout_setting[3] or "scroll")
+    data["layout"] = layout_mode
+    layout_config = get_layout_config(layout_mode)
+    data["layoutConfig"] = layout_config
+    layout_css = get_layout_css(layout_mode)
+    if layout_css:
+        data["layoutCss"] = layout_css
+
+    # Nickname
+    nickname_setting = options.get("Nickname", [True, "", "", ""])
+    nickname_enabled = nickname_setting[0] is not False
+    nickname = data.pop("nickname", None)
+    if nickname and nickname_enabled:
+        data["nickname"] = nickname
+    else:
+        data.pop("nickname", None)
+
     # effects：解析 .dme 特效，產生可注入 overlay 的 CSS（若 Effects 設定關閉則略過）
     effects_setting = options.get("Effects", [True, "", "", ""])
     effects_enabled = effects_setting[0] is not False
@@ -140,6 +164,18 @@ def _resolve_danmu_style(data):
         )
     else:
         data["effectCss"] = None
+
+    # Emoji parsing
+    text = data.get("text", "")
+    if not data.get("isImage") and ":" in text:
+        emoji_result = emoji_service.parse(text)
+        if emoji_result.get("emojis"):
+            data["emojis"] = emoji_result["emojis"]
+
+    # Sound matching
+    sound_match = sound_service.match(text, effects_input if effects_input else None)
+    if sound_match:
+        data["sound"] = sound_match
 
     return data
 
@@ -197,18 +233,45 @@ def fire():
         fingerprint = data.pop("fingerprint", None)
         text_content = data.get("text", "")
 
+        # Filter engine check (replaces simple blacklist check)
+        filter_result = filter_engine.check(text_content, fingerprint)
+        if filter_result.action == "block":
+            return _json_response(
+                {"error": filter_result.reason or "Content blocked by filter rule"},
+                400,
+            )
+        if filter_result.action == "replace":
+            data["text"] = filter_result.text
+            text_content = filter_result.text
+
+        # Fallback: also check legacy blacklist
         if contains_keyword(text_content):
             return _json_response({"error": "Content contains blocked keywords"}, 400)
 
         if data.get("isImage") and not is_valid_image_url(data["text"]):
             return _json_response({"error": "Invalid image url"}, 400)
 
+        # Plugin system: on_fire hook
+        from ..services.plugin_manager import plugin_manager
+
+        plugin_ctx = dict(data)
+        plugin_ctx["fingerprint"] = fingerprint
+        plugin_result = plugin_manager.emit("on_fire", plugin_ctx)
+        if plugin_result is None:
+            # Plugin blocked the message (StopPropagation)
+            return _json_response({"status": "OK", "blocked_by_plugin": True}, 200)
+        # Merge plugin modifications back
+        if isinstance(plugin_result, dict):
+            fingerprint = plugin_result.pop("fingerprint", fingerprint)
+            data.update(plugin_result)
+            text_content = data.get("text", text_content)
+
         # Check if text is a poll vote
         if poll_service.state == "active":
             text_upper = text_content.strip().upper()
             option_keys = poll_service.get_option_keys()
             if text_upper in option_keys:
-                voter_id = data.get("fingerprint") or request.remote_addr or "unknown"
+                voter_id = fingerprint or request.remote_addr or "unknown"
                 poll_service.vote(text_upper, voter_id)
                 # Vote still passes through as normal danmu
 
@@ -220,6 +283,20 @@ def fire():
 
         if forward_success:
             _record_history_if_enabled(data, fingerprint, client_ip)
+
+            # Webhook: emit on_danmu event (fire-and-forget)
+            try:
+                from ..services.webhook import webhook_service
+
+                webhook_service.emit("on_danmu", {
+                    "text": text_content,
+                    "color": data.get("color", ""),
+                    "nickname": data.get("nickname", ""),
+                    "ip": client_ip,
+                })
+            except Exception:
+                pass  # webhook failure should never block danmu
+
             return _json_response({"status": "OK"}, 200)
         return _json_response({"error": "Failed to enqueue message"}, 503)
     except Exception as exc:
@@ -276,6 +353,38 @@ def reload_effects():
         return _json_response({"error": "Unauthorized"}, 401)
     effects = load_all_effects(force=True)
     return _json_response({"message": "Reloaded", "count": len(effects)})
+
+
+@api_bp.route("/layouts", methods=["GET"])
+def list_layouts():
+    """列出所有可用的佈局模式"""
+    from ..services.layout import get_all_modes
+
+    return _json_response({"layouts": get_all_modes()})
+
+
+@api_bp.route("/emojis", methods=["GET"])
+def list_emojis():
+    """列出所有可用的表情包"""
+    return _json_response({"emojis": emoji_service.list_emojis()})
+
+
+@api_bp.route("/avatar/<letter>/<color>")
+def generate_avatar(letter, color):
+    """Generate a simple SVG avatar with a letter and background color."""
+    letter = letter[:1].upper() if letter else "?"
+    color = color[:6] if color else "7c3aed"
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48">'
+        f'<rect width="48" height="48" rx="24" fill="#{color}"/>'
+        f'<text x="24" y="32" text-anchor="middle" fill="white" '
+        f'font-family="sans-serif" font-size="24" font-weight="bold">{letter}</text>'
+        f'</svg>'
+    )
+    resp = make_response(svg)
+    resp.headers["Content-Type"] = "image/svg+xml"
+    resp.headers["Cache-Control"] = "public, max-age=86400"
+    return resp
 
 
 @api_bp.route("/check_blacklist", methods=["POST"])

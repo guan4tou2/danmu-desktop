@@ -547,7 +547,11 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
                     dataPayload.fontInfo,
                     dataPayload.textStyles || { textStroke: true, strokeWidth: 2, strokeColor: "#000000", textShadow: false, shadowBlur: 4 },
                     dataPayload.displayArea || { top: 0, height: 100 },
-                    dataPayload.effectCss || null
+                    dataPayload.effectCss || null,
+                    dataPayload.layout || 'scroll',
+                    dataPayload.layoutConfig || null,
+                    dataPayload.nickname || null,
+                    dataPayload.emojis || null
                   );
                 } else {
                   console.warn('[WebSocket] window.showdanmu not ready, retrying in 100ms... (attempt ' + (retries + 1) + '/30)');
@@ -567,6 +571,26 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
                 }
               }
 
+              // 注入佈局 CSS keyframes
+              if (data.layoutCss) {
+                const layoutStyleId = 'layout-css-' + (data.layout || 'scroll');
+                if (!document.getElementById(layoutStyleId)) {
+                  const layoutStyle = document.createElement('style');
+                  layoutStyle.id = layoutStyleId;
+                  layoutStyle.textContent = data.layoutCss;
+                  document.head.appendChild(layoutStyle);
+                }
+              }
+
+              // 播放音效
+              if (data.sound && data.sound.url) {
+                try {
+                  const audio = new Audio(data.sound.url);
+                  audio.volume = data.sound.volume || 1.0;
+                  audio.play().catch(() => {});
+                } catch (e) { /* ignore sound errors */ }
+              }
+
               processDanmuWhenReady({
                 text: data.text,
                 opacity: data.opacity,
@@ -577,6 +601,10 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
                 textStyles: data.textStyles,
                 displayArea: data.displayArea,
                 effectCss: effectCss,
+                layout: data.layout || 'scroll',
+                layoutConfig: data.layoutConfig || null,
+                nickname: data.nickname || null,
+                emojis: data.emojis || null,
               });
 
             } catch (e) {

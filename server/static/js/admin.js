@@ -35,6 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
     opts.headers = headers;
     return fetch(url, opts);
   }
+  window.csrfFetch = csrfFetch;
 
   const FONT_REFRESH_BUFFER_SECONDS = 60;
   let adminFontRefreshTimer = null;
@@ -1006,6 +1007,9 @@ document.addEventListener("DOMContentLoaded", () => {
       '</div>';
   }
 
+  // Expose csrfFetch globally for external admin modules (e.g. admin-scheduler.js)
+  window.csrfFetch = csrfFetch;
+
   // showToast is provided by the shared toast.js utility (window.showToast)
 
   // Render Login Screen
@@ -1089,6 +1093,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <a href="#sec-history" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navHistory">${ServerI18n.t("navHistory")}</a>
                                 <a href="#sec-polls" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Polls</a>
                                 <a href="#sec-security" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navSecurity">${ServerI18n.t("navSecurity")}</a>
+                                <a href="#sec-live-feed" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Live Feed</a>
                             </div>
                         </nav>
 
@@ -2572,6 +2577,8 @@ document.addEventListener("DOMContentLoaded", () => {
             } else if (data.type === "settings_changed") {
               fetchLatestSettings();
             }
+            // Dispatch to external scripts (e.g. live feed)
+            document.dispatchEvent(new CustomEvent("admin-ws-message", { detail: data }));
           } catch (_) {
             // ignore non-JSON messages (heartbeat strings)
           }
