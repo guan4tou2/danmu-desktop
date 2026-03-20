@@ -13,16 +13,16 @@ from .. import state
 from ..services import history as history_service
 from ..services import messaging
 from ..services.blacklist import contains_keyword
-from ..services.emoji import emoji_service
-from ..services.filter_engine import filter_engine
-from ..services.layout import get_layout_config, get_layout_css
-from ..services.sound import sound_service
 from ..services.effects import load_all as load_all_effects
 from ..services.effects import render_effects
+from ..services.emoji import emoji_service
+from ..services.filter_engine import filter_engine
 from ..services.fonts import build_font_payload, list_available_fonts
+from ..services.layout import get_layout_config, get_layout_css
 from ..services.poll import poll_service
 from ..services.security import rate_limit, require_csrf, verify_font_token
 from ..services.settings import get_options
+from ..services.sound import sound_service
 from ..services.validation import (
     BlacklistCheckSchema,
     FireRequestSchema,
@@ -130,7 +130,9 @@ def _resolve_danmu_style(data):
     # Layout mode
     layout_setting = options.get("Layout", [True, "", "", "scroll"])
     layout_input = data.pop("layout", None)
-    layout_mode = layout_input if (layout_input and layout_setting[0]) else (layout_setting[3] or "scroll")
+    layout_mode = (
+        layout_input if (layout_input and layout_setting[0]) else (layout_setting[3] or "scroll")
+    )
     data["layout"] = layout_mode
     layout_config = get_layout_config(layout_mode)
     data["layoutConfig"] = layout_config
@@ -288,12 +290,15 @@ def fire():
             try:
                 from ..services.webhook import webhook_service
 
-                webhook_service.emit("on_danmu", {
-                    "text": text_content,
-                    "color": data.get("color", ""),
-                    "nickname": data.get("nickname", ""),
-                    "ip": client_ip,
-                })
+                webhook_service.emit(
+                    "on_danmu",
+                    {
+                        "text": text_content,
+                        "color": data.get("color", ""),
+                        "nickname": data.get("nickname", ""),
+                        "ip": client_ip,
+                    },
+                )
             except Exception:
                 pass  # webhook failure should never block danmu
 
@@ -379,7 +384,7 @@ def generate_avatar(letter, color):
         f'<rect width="48" height="48" rx="24" fill="#{color}"/>'
         f'<text x="24" y="32" text-anchor="middle" fill="white" '
         f'font-family="sans-serif" font-size="24" font-weight="bold">{letter}</text>'
-        f'</svg>'
+        f"</svg>"
     )
     resp = make_response(svg)
     resp.headers["Content-Type"] = "image/svg+xml"

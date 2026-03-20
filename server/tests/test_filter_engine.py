@@ -1,7 +1,5 @@
 """Comprehensive tests for the FilterEngine."""
 
-import time
-
 import pytest
 
 from server.services.filter_engine import FilterEngine, FilterResult
@@ -70,12 +68,14 @@ def test_regex_rule_passes_non_matching_text(reset_engine):
 
 def test_replace_rule_modifies_text(reset_engine):
     engine = reset_engine
-    engine.add_rule({
-        "type": "replace",
-        "pattern": r"bad\w*",
-        "action": "replace",
-        "replacement": "***",
-    })
+    engine.add_rule(
+        {
+            "type": "replace",
+            "pattern": r"bad\w*",
+            "action": "replace",
+            "replacement": "***",
+        }
+    )
 
     result = engine.check("you are badword and baddest")
     assert result.action == "replace"
@@ -89,13 +89,15 @@ def test_replace_rule_modifies_text(reset_engine):
 
 def test_rate_limit_blocks_after_limit(reset_engine):
     engine = reset_engine
-    engine.add_rule({
-        "type": "rate_limit",
-        "pattern": "",
-        "action": "block",
-        "max_count": 3,
-        "window_sec": 60.0,
-    })
+    engine.add_rule(
+        {
+            "type": "rate_limit",
+            "pattern": "",
+            "action": "block",
+            "max_count": 3,
+            "window_sec": 60.0,
+        }
+    )
 
     fp = "user-abc"
     for _ in range(3):
@@ -110,13 +112,15 @@ def test_rate_limit_blocks_after_limit(reset_engine):
 def test_rate_limit_ignores_without_fingerprint(reset_engine):
     """Rate limit rules should be skipped when no fingerprint is provided."""
     engine = reset_engine
-    engine.add_rule({
-        "type": "rate_limit",
-        "pattern": "",
-        "action": "block",
-        "max_count": 1,
-        "window_sec": 60.0,
-    })
+    engine.add_rule(
+        {
+            "type": "rate_limit",
+            "pattern": "",
+            "action": "block",
+            "max_count": 1,
+            "window_sec": 60.0,
+        }
+    )
 
     # Without fingerprint, rate_limit rule is skipped entirely
     for _ in range(5):
@@ -130,13 +134,23 @@ def test_rate_limit_ignores_without_fingerprint(reset_engine):
 def test_priority_ordering_lower_number_first(reset_engine):
     engine = reset_engine
     # Higher priority number = evaluated later
-    engine.add_rule({
-        "type": "keyword", "pattern": "hello", "action": "block", "priority": 10,
-    })
+    engine.add_rule(
+        {
+            "type": "keyword",
+            "pattern": "hello",
+            "action": "block",
+            "priority": 10,
+        }
+    )
     # Lower priority number = evaluated first → this allow rule should win
-    engine.add_rule({
-        "type": "keyword", "pattern": "hello", "action": "allow", "priority": 1,
-    })
+    engine.add_rule(
+        {
+            "type": "keyword",
+            "pattern": "hello",
+            "action": "allow",
+            "priority": 1,
+        }
+    )
 
     result = engine.check("hello world")
     assert result.action == "allow"
@@ -144,12 +158,22 @@ def test_priority_ordering_lower_number_first(reset_engine):
 
 def test_priority_ordering_block_wins_when_lower(reset_engine):
     engine = reset_engine
-    engine.add_rule({
-        "type": "keyword", "pattern": "hello", "action": "allow", "priority": 10,
-    })
-    engine.add_rule({
-        "type": "keyword", "pattern": "hello", "action": "block", "priority": 1,
-    })
+    engine.add_rule(
+        {
+            "type": "keyword",
+            "pattern": "hello",
+            "action": "allow",
+            "priority": 10,
+        }
+    )
+    engine.add_rule(
+        {
+            "type": "keyword",
+            "pattern": "hello",
+            "action": "block",
+            "priority": 1,
+        }
+    )
 
     result = engine.check("hello world")
     assert result.action == "block"
@@ -193,9 +217,14 @@ def test_update_rule_disable(reset_engine):
 
 def test_update_rule_enable(reset_engine):
     engine = reset_engine
-    rule_id = engine.add_rule({
-        "type": "keyword", "pattern": "spam", "action": "block", "enabled": False,
-    })
+    rule_id = engine.add_rule(
+        {
+            "type": "keyword",
+            "pattern": "spam",
+            "action": "block",
+            "enabled": False,
+        }
+    )
 
     result = engine.check("spam")
     assert result.action == "pass"
@@ -233,10 +262,14 @@ def test_invalid_regex_raises_value_error(reset_engine):
 
 def test_invalid_regex_in_replace_raises_value_error(reset_engine):
     with pytest.raises(ValueError, match="Invalid regex"):
-        reset_engine.add_rule({
-            "type": "replace", "pattern": "(unclosed", "action": "replace",
-            "replacement": "x",
-        })
+        reset_engine.add_rule(
+            {
+                "type": "replace",
+                "pattern": "(unclosed",
+                "action": "replace",
+                "replacement": "x",
+            }
+        )
 
 
 # ── 10. test_rule does not persist ───────────────────────────
@@ -328,13 +361,23 @@ def test_regex_case_insensitive(reset_engine):
 def test_multiple_rules_first_match_wins(reset_engine):
     engine = reset_engine
     # Both match "hello", same priority → insertion order decides (both priority 0)
-    id_replace = engine.add_rule({
-        "type": "replace", "pattern": "hello", "action": "replace",
-        "replacement": "hi", "priority": 0,
-    })
-    engine.add_rule({
-        "type": "keyword", "pattern": "hello", "action": "block", "priority": 0,
-    })
+    id_replace = engine.add_rule(
+        {
+            "type": "replace",
+            "pattern": "hello",
+            "action": "replace",
+            "replacement": "hi",
+            "priority": 0,
+        }
+    )
+    engine.add_rule(
+        {
+            "type": "keyword",
+            "pattern": "hello",
+            "action": "block",
+            "priority": 0,
+        }
+    )
 
     result = engine.check("hello world")
     # The replace rule was added first, same priority, so it matches first
@@ -368,9 +411,14 @@ def test_unknown_action_raises(reset_engine):
 
 def test_disabled_rule_does_not_match(reset_engine):
     engine = reset_engine
-    engine.add_rule({
-        "type": "keyword", "pattern": "spam", "action": "block", "enabled": False,
-    })
+    engine.add_rule(
+        {
+            "type": "keyword",
+            "pattern": "spam",
+            "action": "block",
+            "enabled": False,
+        }
+    )
 
     assert engine.check("spam").action == "pass"
 
@@ -385,10 +433,15 @@ def test_filter_result_fields():
 
 def test_cleanup_rate_tracker(reset_engine):
     engine = reset_engine
-    engine.add_rule({
-        "type": "rate_limit", "pattern": "", "action": "block",
-        "max_count": 100, "window_sec": 60.0,
-    })
+    engine.add_rule(
+        {
+            "type": "rate_limit",
+            "pattern": "",
+            "action": "block",
+            "max_count": 100,
+            "window_sec": 60.0,
+        }
+    )
     # Add a fingerprint entry
     engine.check("hi", fingerprint="fp1")
     assert len(engine._rate_tracker) == 1

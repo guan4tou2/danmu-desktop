@@ -4,15 +4,14 @@
 
 import hashlib
 import hmac
-import json
 import threading
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from server.services.webhook import (  # ty: ignore[unresolved-import]
-    WebhookService,
     _MAX_HOOKS,
+    WebhookService,
 )
 
 
@@ -146,8 +145,10 @@ def test_emit_spawns_threads(monkeypatch):
         original_thread_init(self, *args, **kwargs)
         started_threads.append(self)
 
-    with patch("urllib.request.urlopen", return_value=mock_urlopen), \
-         patch.object(threading.Thread, "__init__", tracking_init):
+    with (
+        patch("urllib.request.urlopen", return_value=mock_urlopen),
+        patch.object(threading.Thread, "__init__", tracking_init),
+    ):
         svc.emit("on_danmu", {"text": "hello"})
 
     assert len(started_threads) == 2
@@ -170,6 +171,7 @@ def test_emit_filters_by_event():
         svc.emit("on_danmu", {"text": "hi"})
         # Wait briefly for daemon threads
         import time
+
         time.sleep(0.2)
 
     assert len(calls) == 1
@@ -183,10 +185,13 @@ def test_update_hook():
     svc = _make_service()
     hook_id = svc.register(_sample_config(url="https://old.com", events=["on_danmu"]))
 
-    result = svc.update_hook(hook_id, {
-        "url": "https://new.com",
-        "events": ["on_poll_create", "on_poll_end"],
-    })
+    result = svc.update_hook(
+        hook_id,
+        {
+            "url": "https://new.com",
+            "events": ["on_poll_create", "on_poll_end"],
+        },
+    )
     assert result is True
 
     hooks = svc.list_hooks()

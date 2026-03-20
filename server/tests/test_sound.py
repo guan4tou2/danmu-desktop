@@ -1,6 +1,5 @@
 """Tests for the sound service."""
 
-import time
 from unittest.mock import patch
 
 import pytest
@@ -30,14 +29,17 @@ def svc(tmp_path):
 
 # ── 1. add_rule and list_rules ─────────────────────────────────────────────
 
+
 def test_add_rule_and_list_rules(svc):
-    rule_id = svc.add_rule({
-        "trigger_type": "keyword",
-        "trigger_value": "hello",
-        "sound_name": "alert.mp3",
-        "volume": 0.8,
-        "cooldown_ms": 1000,
-    })
+    rule_id = svc.add_rule(
+        {
+            "trigger_type": "keyword",
+            "trigger_value": "hello",
+            "sound_name": "alert.mp3",
+            "volume": 0.8,
+            "cooldown_ms": 1000,
+        }
+    )
     assert rule_id is not None
 
     rules = svc.list_rules()
@@ -52,12 +54,15 @@ def test_add_rule_and_list_rules(svc):
 
 # ── 2. remove_rule ────────────────────────────────────────────────────────
 
+
 def test_remove_rule(svc):
-    rule_id = svc.add_rule({
-        "trigger_type": "keyword",
-        "trigger_value": "bye",
-        "sound_name": "beep.mp3",
-    })
+    rule_id = svc.add_rule(
+        {
+            "trigger_type": "keyword",
+            "trigger_value": "bye",
+            "sound_name": "beep.mp3",
+        }
+    )
     assert svc.remove_rule(rule_id) is True
     assert svc.list_rules() == []
 
@@ -68,17 +73,20 @@ def test_remove_rule_nonexistent(svc):
 
 # ── 3. match with keyword trigger ─────────────────────────────────────────
 
+
 def test_match_keyword_trigger(svc, tmp_path):
     # Create the sound file so match() can verify it exists
     sound_file = tmp_path / "sounds" / "ding.mp3"
     sound_file.write_bytes(b"\x00" * 10)
 
-    svc.add_rule({
-        "trigger_type": "keyword",
-        "trigger_value": "wow",
-        "sound_name": "ding.mp3",
-        "volume": 0.5,
-    })
+    svc.add_rule(
+        {
+            "trigger_type": "keyword",
+            "trigger_value": "wow",
+            "sound_name": "ding.mp3",
+            "volume": 0.5,
+        }
+    )
 
     result = svc.match("wow that's cool")
     assert result is not None
@@ -88,15 +96,18 @@ def test_match_keyword_trigger(svc, tmp_path):
 
 # ── 4. match with no matching trigger ─────────────────────────────────────
 
+
 def test_match_no_trigger(svc, tmp_path):
     sound_file = tmp_path / "sounds" / "ding.mp3"
     sound_file.write_bytes(b"\x00" * 10)
 
-    svc.add_rule({
-        "trigger_type": "keyword",
-        "trigger_value": "wow",
-        "sound_name": "ding.mp3",
-    })
+    svc.add_rule(
+        {
+            "trigger_type": "keyword",
+            "trigger_value": "wow",
+            "sound_name": "ding.mp3",
+        }
+    )
 
     result = svc.match("nothing special here")
     assert result is None
@@ -104,16 +115,19 @@ def test_match_no_trigger(svc, tmp_path):
 
 # ── 5. match respects cooldown ─────────────────────────────────────────────
 
+
 def test_match_respects_cooldown(svc, tmp_path):
     sound_file = tmp_path / "sounds" / "boom.mp3"
     sound_file.write_bytes(b"\x00" * 10)
 
-    svc.add_rule({
-        "trigger_type": "keyword",
-        "trigger_value": "boom",
-        "sound_name": "boom.mp3",
-        "cooldown_ms": 60000,  # 60 seconds — won't expire during the test
-    })
+    svc.add_rule(
+        {
+            "trigger_type": "keyword",
+            "trigger_value": "boom",
+            "sound_name": "boom.mp3",
+            "cooldown_ms": 60000,  # 60 seconds — won't expire during the test
+        }
+    )
 
     # First match should succeed
     result1 = svc.match("boom")
@@ -126,6 +140,7 @@ def test_match_respects_cooldown(svc, tmp_path):
 
 # ── 6. upload_sound with valid extension ──────────────────────────────────
 
+
 def test_upload_sound_valid(svc, tmp_path):
     data = b"\xff\xfb\x90\x00" * 10  # fake mp3 bytes
     assert svc.upload_sound("alert", data, "mp3") is True
@@ -134,11 +149,13 @@ def test_upload_sound_valid(svc, tmp_path):
 
 # ── 7. upload_sound with invalid extension ────────────────────────────────
 
+
 def test_upload_sound_invalid_extension(svc):
     assert svc.upload_sound("evil", b"data", "exe") is False
 
 
 # ── 8. upload_sound with file too large ───────────────────────────────────
+
 
 def test_upload_sound_too_large(svc):
     big = b"\x00" * (1 * 1024 * 1024 + 1)  # 1 MB + 1 byte
@@ -146,6 +163,7 @@ def test_upload_sound_too_large(svc):
 
 
 # ── 9. delete_sound ───────────────────────────────────────────────────────
+
 
 def test_delete_sound(svc, tmp_path):
     sound_file = tmp_path / "sounds" / "remove-me.wav"
@@ -160,6 +178,7 @@ def test_delete_sound_nonexistent(svc):
 
 
 # ── 10. list_sounds ───────────────────────────────────────────────────────
+
 
 def test_list_sounds(svc, tmp_path):
     sounds_dir = tmp_path / "sounds"

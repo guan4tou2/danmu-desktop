@@ -398,9 +398,7 @@ class PluginManager:
         self._maybe_scan()
 
         with self._lock:
-            entries = [
-                e for e in self._plugins.values() if e.enabled
-            ]
+            entries = [e for e in self._plugins.values() if e.enabled]
         entries.sort(key=lambda e: (e.instance.priority, e.instance.name))
 
         for entry in entries:

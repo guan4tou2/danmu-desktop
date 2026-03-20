@@ -4,7 +4,7 @@ import textwrap
 
 import pytest
 
-from server.services.plugin_manager import PluginManager, StopPropagation
+from server.services.plugin_manager import PluginManager
 
 
 @pytest.fixture()

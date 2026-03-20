@@ -8,7 +8,7 @@ import logging
 import threading
 import time
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -49,9 +49,7 @@ class SchedulerService:
             raise ValueError("start_delay must be non-negative")
 
         with self._lock:
-            active_count = sum(
-                1 for j in self._jobs.values() if j["state"] != "cancelled"
-            )
+            active_count = sum(1 for j in self._jobs.values() if j["state"] != "cancelled")
             if active_count >= self._max_jobs:
                 raise ValueError(
                     f"Job limit reached ({self._max_jobs}). "
@@ -113,9 +111,7 @@ class SchedulerService:
             if not job or job["state"] != "paused":
                 return False
             job["state"] = "active"
-            timer = threading.Timer(
-                job["interval_sec"], self._run_job, args=(job_id,)
-            )
+            timer = threading.Timer(job["interval_sec"], self._run_job, args=(job_id,))
             timer.daemon = True
             self._timers[job_id] = timer
             timer.start()

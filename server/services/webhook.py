@@ -224,11 +224,7 @@ class WebhookService:
     def emit(self, event: str, data: Any) -> None:
         """Fire-and-forget: spawn a thread for each matching enabled hook."""
         with self._lock:
-            targets = [
-                h
-                for h in self._hooks.values()
-                if h.enabled and event in h.events
-            ]
+            targets = [h for h in self._hooks.values() if h.enabled and event in h.events]
 
         for hook in targets:
             t = threading.Thread(
@@ -277,7 +273,10 @@ class WebhookService:
                     self._update_status(hook.id, status, None)
                     logger.debug(
                         "Webhook %s -> %s [%d] (attempt %d)",
-                        hook.id, event, status, attempt + 1,
+                        hook.id,
+                        event,
+                        status,
+                        attempt + 1,
                     )
                     return  # success
 
@@ -285,7 +284,10 @@ class WebhookService:
                 last_exc = exc
                 logger.warning(
                     "Webhook %s attempt %d/%d failed: %s",
-                    hook.id, attempt + 1, attempts, exc,
+                    hook.id,
+                    attempt + 1,
+                    attempts,
+                    exc,
                 )
 
         # all retries exhausted
@@ -293,9 +295,7 @@ class WebhookService:
         self._update_status(hook.id, None, error_msg)
         logger.error("Webhook %s failed after %d attempts: %s", hook.id, attempts, error_msg)
 
-    def _update_status(
-        self, hook_id: str, status: Optional[int], error: Optional[str]
-    ) -> None:
+    def _update_status(self, hook_id: str, status: Optional[int], error: Optional[str]) -> None:
         """Persist last_status / last_error for a hook."""
         with self._lock:
             hook = self._hooks.get(hook_id)
@@ -347,7 +347,11 @@ class WebhookService:
             # default: json
             payload = {
                 "event": event,
-                "data": data if isinstance(data, (dict, list, str, int, float, bool, type(None))) else str(data),
+                "data": (
+                    data
+                    if isinstance(data, (dict, list, str, int, float, bool, type(None)))
+                    else str(data)
+                ),
                 "timestamp": timestamp,
             }
 

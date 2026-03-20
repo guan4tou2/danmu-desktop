@@ -1,7 +1,5 @@
 """Tests for server.services.layout module."""
 
-import pytest
-
 from server.services.layout import (
     LayoutMode,
     get_all_modes,

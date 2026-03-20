@@ -83,18 +83,10 @@ _MODE_METADATA = [
 
 _CSS_KEYFRAMES = {
     LayoutMode.TOP_FIXED: (
-        "@keyframes danmu-fixed {"
-        " 0%{opacity:1}"
-        " 80%{opacity:1}"
-        " 100%{opacity:0}"
-        " }"
+        "@keyframes danmu-fixed {" " 0%{opacity:1}" " 80%{opacity:1}" " 100%{opacity:0}" " }"
     ),
     LayoutMode.BOTTOM_FIXED: (
-        "@keyframes danmu-fixed {"
-        " 0%{opacity:1}"
-        " 80%{opacity:1}"
-        " 100%{opacity:0}"
-        " }"
+        "@keyframes danmu-fixed {" " 0%{opacity:1}" " 80%{opacity:1}" " 100%{opacity:0}" " }"
     ),
     LayoutMode.FLOAT: (
         "@keyframes danmu-float {"

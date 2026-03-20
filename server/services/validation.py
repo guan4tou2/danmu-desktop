@@ -182,9 +182,11 @@ class WebhookSchema(Schema):
 
     url = fields.Url(required=True)
     events = fields.List(
-        fields.Str(validate=validate.OneOf(
-            ["on_danmu", "on_poll_create", "on_poll_end", "on_connect", "on_disconnect"],
-        )),
+        fields.Str(
+            validate=validate.OneOf(
+                ["on_danmu", "on_poll_create", "on_poll_end", "on_connect", "on_disconnect"],
+            )
+        ),
         required=True,
         validate=validate.Length(min=1, max=5),
     )

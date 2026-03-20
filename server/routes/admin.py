@@ -849,11 +849,13 @@ def test_filter_rule():
 
     try:
         result = filter_engine.test_rule(rule_data, sample_text)
-        return _json_response({
-            "action": result.action,
-            "text": result.text,
-            "reason": result.reason,
-        })
+        return _json_response(
+            {
+                "action": result.action,
+                "text": result.text,
+                "reason": result.reason,
+            }
+        )
     except ValueError as e:
         return _json_response({"error": str(e)}, 400)
 
@@ -962,10 +964,12 @@ def list_sounds():
         return _json_response({"error": "Unauthorized"}, 401)
     from ..services.sound import sound_service
 
-    return _json_response({
-        "sounds": sound_service.list_sounds(),
-        "rules": sound_service.list_rules(),
-    })
+    return _json_response(
+        {
+            "sounds": sound_service.list_sounds(),
+            "rules": sound_service.list_rules(),
+        }
+    )
 
 
 @admin_bp.route("/sounds/upload", methods=["POST"])
@@ -1158,12 +1162,14 @@ def live_block():
     elif block_type == "fingerprint":
         from ..services.filter_engine import filter_engine
 
-        filter_engine.add_rule({
-            "type": "keyword",
-            "pattern": value,
-            "action": "block",
-            "priority": 0,
-            "enabled": True,
-        })
+        filter_engine.add_rule(
+            {
+                "type": "keyword",
+                "pattern": value,
+                "action": "block",
+                "priority": 0,
+                "enabled": True,
+            }
+        )
         return _json_response({"message": "Fingerprint rule added"})
     return _json_response({"error": "Unknown block type"}, 400)
