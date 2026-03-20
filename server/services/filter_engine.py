@@ -1,14 +1,12 @@
 """Advanced content filtering engine with keyword, regex, replace, and rate-limit rules."""
 
-from __future__ import annotations
-
 import json
 import os
 import re
 import threading
 import time
 import uuid
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from typing import Any, Optional
 
 
@@ -47,10 +45,10 @@ class FilterResult:
 class FilterEngine:
     """Singleton content filtering engine with thread-safe rule management."""
 
-    _instance: Optional[FilterEngine] = None
+    _instance: Optional["FilterEngine"] = None
     _init_lock = threading.Lock()
 
-    def __new__(cls, path: Optional[str] = None) -> FilterEngine:
+    def __new__(cls, path: Optional[str] = None) -> "FilterEngine":
         if cls._instance is None:
             with cls._init_lock:
                 if cls._instance is None:
