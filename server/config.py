@@ -100,6 +100,9 @@ class Config:
     # Scheduler configuration
     SCHEDULER_MAX_JOBS = int(os.getenv("SCHEDULER_MAX_JOBS", "20"))
 
+    # Sticker configuration
+    STICKER_MAX_COUNT = int(os.getenv("STICKER_MAX_COUNT", "50"))
+
     # Filter engine configuration
     FILTER_RULES_PATH = os.getenv(
         "FILTER_RULES_PATH",

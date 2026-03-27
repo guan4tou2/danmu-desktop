@@ -17,6 +17,7 @@ from server.managers import (  # ty: ignore[unresolved-import]
     settings_store,
 )
 from server.services import effects as eff_svc  # ty: ignore[unresolved-import]
+from server.services import stickers as sticker_svc  # ty: ignore[unresolved-import]
 from server.services import themes as theme_svc  # ty: ignore[unresolved-import]
 from server.services import ws_queue  # ty: ignore[unresolved-import]
 from server.services.security import rate_limiter  # ty: ignore[unresolved-import]
@@ -149,6 +150,7 @@ def app(tmp_path):
     theme_svc._path_to_name.clear()
     theme_svc._active_theme = "default"
     ws_queue.dequeue_all()
+    sticker_svc.sticker_service._cache.clear()
 
 
 @pytest.fixture()
