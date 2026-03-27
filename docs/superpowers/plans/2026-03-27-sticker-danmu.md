@@ -476,7 +476,8 @@
           data={"file": (BytesIO(b"GIF89a"), "fire.gif")},
           content_type="multipart/form-data",
       )
-      assert res.status_code == 401
+      # @require_csrf fires before _ensure_logged_in() → 403; both are rejection
+      assert res.status_code in {401, 403}
 
 
   def test_upload_sticker_success(client, tmp_path, monkeypatch):
@@ -674,7 +675,8 @@
 
   def test_delete_sticker_unauthenticated(client):
       res = client.delete("/admin/stickers/wave")
-      assert res.status_code == 401
+      # @require_csrf fires before _ensure_logged_in() → 403; both are rejection
+      assert res.status_code in {401, 403}
 
 
   def test_delete_sticker_invalid_name(client):
