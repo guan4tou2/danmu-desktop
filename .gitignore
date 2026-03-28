@@ -144,3 +144,11 @@ server/user_fonts/*
 
 # local TLS certs
 nginx/certs/*.pem
+
+# Playwright MCP / test artifacts
+.playwright-mcp/
+danmu-desktop/test-results/
+
+# Runtime data files (generated at runtime, not source-controlled)
+server/filter_rules.json
+server/plugins/plugins_state.json
