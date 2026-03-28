@@ -28,8 +28,7 @@ def server_ports():
     http_port = find_free_port()
     ws_port = find_free_port()
 
-    script = textwrap.dedent(
-        f"""\
+    script = textwrap.dedent(f"""\
         import sys, os, threading, logging
         sys.path.insert(0, ".")
         os.environ.setdefault("SETTINGS_FILE", "/tmp/_test_fire_e2e_settings.json")
@@ -63,8 +62,7 @@ def server_ports():
         app = create_app(Config)
         print("READY", flush=True)
         app.run(host="127.0.0.1", port={http_port}, use_reloader=False)
-    """
-    )
+    """)
 
     proc = subprocess.Popen(
         [sys.executable, "-c", script],

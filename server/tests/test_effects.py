@@ -837,8 +837,7 @@ def test_get_effect_content_handles_read_oserror(app):
 def test_preview_endpoint_returns_css(client):
     """POST /admin/effects/preview with valid spin content returns keyframes/animation/styleId."""
     token = csrf_token(client)
-    content = textwrap.dedent(
-        """\
+    content = textwrap.dedent("""\
         name: spin
         label: 旋轉
         params:
@@ -852,8 +851,7 @@ def test_preview_endpoint_returns_css(client):
             to { transform: rotate(360deg); }
           }
         animation: "dme-spin {duration}s linear infinite"
-    """
-    )
+    """)
     resp = client.post(
         "/admin/effects/preview",
         json={"content": content, "params": {"duration": 2.0}},

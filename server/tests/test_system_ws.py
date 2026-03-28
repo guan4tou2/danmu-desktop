@@ -285,8 +285,7 @@ def token_ws_port():
     port = _find_free_port()
 
     # 用子行程啟動 WS 伺服器，完全隔離 asyncio event loop
-    script = textwrap.dedent(
-        f"""\
+    script = textwrap.dedent(f"""\
         import asyncio, json, secrets
         from urllib.parse import parse_qs, urlparse
         import websockets
@@ -317,8 +316,7 @@ def token_ws_port():
             await server.wait_closed()
 
         asyncio.run(main())
-    """
-    )
+    """)
 
     proc = subprocess.Popen(
         [sys.executable, "-c", script],
