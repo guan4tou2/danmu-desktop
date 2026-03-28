@@ -62,12 +62,19 @@ function isValidIpAddress(ip) {
   return trimmed === "localhost" || net.isIP(trimmed) !== 0;
 }
 
+let _ipcRegistered = false;
+
 /**
  * Registers all ipcMain handlers for the application.
+ * Guarded against duplicate registration (e.g. on macOS activate event).
  * @param {Function} getMainWindow - Getter that returns the current main window
  * @param {Object[]} childWindows - Mutable array of child windows
  */
 function setupIpcHandlers(getMainWindow, childWindows) {
+  if (_ipcRegistered) {
+    return;
+  }
+  _ipcRegistered = true;
   // Close all child windows — must originate from the main window
   ipcMain.on("closeChildWindows", (event) => {
     const mainWindow = getMainWindow();
