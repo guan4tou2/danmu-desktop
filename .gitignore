@@ -145,6 +145,9 @@ server/user_fonts/*
 # local TLS certs
 nginx/certs/*.pem
 
+# Traefik Let's Encrypt storage (含私鑰，不可 commit)
+traefik/acme.json
+
 # Playwright MCP / test artifacts
 .playwright-mcp/
 danmu-desktop/test-results/

@@ -20,6 +20,7 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   build:
@@ -34,19 +35,38 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Log in to Docker Hub
-        # Only push to Docker Hub when credentials are available
         if: ${{ github.event_name == 'push' && env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
         uses: docker/login-action@v3
         with:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
 
+      - name: Build image list
+        id: images
+        run: |
+          IMAGES="ghcr.io/${{ github.repository_owner }}/danmu-server"
+          if [ -n "${{ env.DOCKERHUB_USERNAME }}" ]; then
+            IMAGES="$IMAGES
+          ${{ env.DOCKERHUB_USERNAME }}/danmu-server"
+          fi
+          echo "list<<EOF" >> $GITHUB_OUTPUT
+          echo "$IMAGES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.DOCKERHUB_USERNAME }}/danmu-server
+          images: ${{ steps.images.outputs.list }}
           tags: |
             type=raw,value=latest
             type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
@@ -98,7 +118,7 @@ jobs:
           docker rm -f test-server
 
       - name: Build and push multi-arch image
-        if: ${{ github.event_name == 'push' && env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
+        if: github.event_name == 'push'
         uses: docker/build-push-action@v5
         with:
           context: ./server

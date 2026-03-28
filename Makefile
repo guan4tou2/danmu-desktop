@@ -1,8 +1,11 @@
-.PHONY: help install test run docker-build docker-up docker-down docker-logs clean
+.PHONY: help install test test-verbose coverage run \
+        docker-build docker-up docker-up-prebuilt docker-up-https docker-up-traefik \
+        docker-down docker-logs docker-restart docker-clean docker-pull \
+        gen-certs setup-env clean lint format
 
 help: ## 顯示此幫助訊息
 	@echo "可用指令："
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
 
 install: ## 安裝依賴
 	cd server && uv sync
@@ -25,26 +28,43 @@ run: ## 啟動伺服器（開發模式）
 	@echo "啟動 WebSocket 伺服器..."
 	@cd server && PYTHONPATH=.. uv run python -m server.ws_app
 
-docker-build: ## 構建 Docker 映像
-	docker-compose build
+docker-build: ## 建置 Docker image（從 source）
+	docker compose build
 
-docker-up: ## 啟動 Docker 容器
-	docker-compose up -d
+docker-up: ## 啟動容器（HTTP only，從 source build）
+	docker compose up -d --build
 
-docker-down: ## 停止 Docker 容器
-	docker-compose down
+docker-up-prebuilt: ## 啟動容器（HTTP only，使用預建 image，需設定 DANMU_IMAGE）
+	docker compose up -d --no-build
+
+docker-up-https: ## 啟動容器（HTTPS + WSS，自動產生自簽憑證）
+	docker compose --profile https up -d
+
+docker-up-traefik: ## 啟動容器（Traefik + Let's Encrypt，需在 .env 設定 DOMAIN 和 ACME_EMAIL）
+	@mkdir -p traefik
+	@touch traefik/acme.json && chmod 600 traefik/acme.json
+	docker compose --profile traefik up -d
+
+docker-pull: ## 拉取預建 image（需先在 .env 設定 DANMU_IMAGE）
+	docker compose pull server
+
+docker-down: ## 停止容器
+	docker compose down
 
 docker-logs: ## 查看 Docker 日誌
-	docker-compose logs -f
+	docker compose logs -f
 
-docker-restart: ## 重啟 Docker 容器
-	docker-compose restart
+docker-restart: ## 重啟容器
+	docker compose restart
 
-docker-clean: ## 清理 Docker 資源
-	docker-compose down -v
+docker-clean: ## 清理 Docker 資源（含 volumes）
+	docker compose down -v
 	docker system prune -f
 
-setup-env: ## 設定環境變數檔案
+gen-certs: ## 手動產生自簽 SSL 憑證（docker-up-https 會自動產生，通常不需要）
+	@bash scripts/gen-self-signed-cert.sh $(if $(DOMAIN),$(DOMAIN),localhost)
+
+setup-env: ## 建立 .env 檔案
 	@if [ ! -f .env ]; then \
 		cp env.example .env; \
 		echo "已建立 .env 檔案，請編輯並設定 ADMIN_PASSWORD"; \
@@ -59,8 +79,8 @@ clean: ## 清理暫存檔案
 	find . -type d -name "*.egg-info" -exec rm -r {} + 2>/dev/null || true
 	find . -type d -name ".pytest_cache" -exec rm -r {} + 2>/dev/null || true
 
-lint: ## 執行程式碼檢查（需要安裝 flake8）
+lint: ## 執行程式碼檢查
 	cd server && uv run flake8 . --exclude=.venv,__pycache__,*.pyc
 
-format: ## 格式化程式碼（需要安裝 black）
+format: ## 格式化程式碼
 	cd server && uv run black . --exclude="/(\.venv|__pycache__)/"
