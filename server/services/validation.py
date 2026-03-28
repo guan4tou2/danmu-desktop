@@ -1,9 +1,16 @@
 """輸入驗證服務"""
 
 import re as _re
-import signal as _signal
 
-from marshmallow import EXCLUDE, Schema, ValidationError, fields, validate, validates, validates_schema
+from marshmallow import (
+    EXCLUDE,
+    Schema,
+    ValidationError,
+    fields,
+    validate,
+    validates,
+    validates_schema,
+)
 
 # Valid setting type keys (mirrors Config.SETTABLE_OPTION_KEYS)
 _VALID_SETTING_TYPES = {
@@ -222,6 +229,32 @@ class FilterRuleSchema(Schema):
     # rate_limit specific
     max_count = fields.Int(load_default=5, validate=validate.Range(min=1, max=100))
     window_sec = fields.Float(load_default=60, validate=validate.Range(min=1, max=3600))
+
+    @validates_schema
+    def validate_pattern_safe(self, data, **kwargs):
+        if data.get("type") in ("regex", "replace") and data.get("pattern"):
+            _safe_compile_regex(data["pattern"])
+
+
+class FilterRuleUpdateSchema(Schema):
+    """過濾規則更新驗證（所有欄位為可選）"""
+
+    class Meta:
+        unknown = EXCLUDE
+
+    type = fields.Str(
+        validate=validate.OneOf(
+            ["keyword", "regex", "replace", "rate_limit"],
+            error="Unknown filter type.",
+        ),
+    )
+    pattern = fields.Str(validate=validate.Length(min=1, max=500))
+    replacement = fields.Str(validate=validate.Length(max=200))
+    action = fields.Str(validate=validate.OneOf(["block", "replace", "allow"]))
+    priority = fields.Int(validate=validate.Range(min=0, max=9999))
+    enabled = fields.Bool()
+    max_count = fields.Int(validate=validate.Range(min=1, max=100))
+    window_sec = fields.Float(validate=validate.Range(min=1, max=3600))
 
     @validates_schema
     def validate_pattern_safe(self, data, **kwargs):

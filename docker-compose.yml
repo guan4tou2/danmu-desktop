@@ -17,7 +17,7 @@ services:
       - FIRE_RATE_LIMIT=${FIRE_RATE_LIMIT:-20}
       - FIRE_RATE_WINDOW=${FIRE_RATE_WINDOW:-60}
       - RATE_LIMIT_BACKEND=${RATE_LIMIT_BACKEND:-memory}  # 改為 redis 可跨實例共享限流
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - REDIS_URL=${REDIS_URL:-redis://:${REDIS_PASSWORD:-changeme}@redis:6379/0}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - FONT_TOKEN_EXPIRATION=${FONT_TOKEN_EXPIRATION:-900}
       - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-true}
@@ -143,12 +143,12 @@ services:
   redis:
     image: redis:7-alpine
     container_name: danmu-redis
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
+    expose:
+      - "6379"
     volumes:
       - redis-data:/data
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme}
     profiles:
       - redis
 

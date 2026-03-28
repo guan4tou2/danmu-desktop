@@ -582,12 +582,19 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
                 }
               }
 
-              // 播放音效
+              // 播放音效（僅允許本機來源）
               if (data.sound && data.sound.url) {
                 try {
-                  const audio = new Audio(data.sound.url);
-                  audio.volume = data.sound.volume || 1.0;
-                  audio.play().catch(() => {});
+                  const soundUrl = String(data.sound.url);
+                  if (/^https?:\\/\\/(127\\.0\\.0\\.1|localhost)(:\\d+)?\\//.test(soundUrl)
+                      || /^blob:/.test(soundUrl)
+                      || /^data:audio\\//.test(soundUrl)) {
+                    const audio = new Audio(soundUrl);
+                    audio.volume = Math.min(1.0, Math.max(0, Number(data.sound.volume) || 1.0));
+                    audio.play().catch(() => {});
+                  } else {
+                    console.warn('[WebSocket] Blocked non-local sound URL:', soundUrl.substring(0, 50));
+                  }
                 } catch (e) { /* ignore sound errors */ }
               }
 

@@ -180,6 +180,12 @@ class WebhookService:
             logger.info("Unregistered webhook %s", hook_id)
             return True
 
+    def get_hook(self, hook_id: str) -> Optional[Dict[str, Any]]:
+        """Return a single hook by id (unredacted, for internal verification)."""
+        with self._lock:
+            hook = self._hooks.get(hook_id)
+            return hook.to_dict() if hook else None
+
     def list_hooks(self) -> List[Dict[str, Any]]:
         """Return all hooks as dicts (secrets redacted)."""
         with self._lock:

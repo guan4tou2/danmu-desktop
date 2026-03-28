@@ -926,10 +926,16 @@ def update_filter_rule():
     updates = data.get("updates", {})
     if not rule_id or not isinstance(updates, dict):
         return _json_response({"error": "Missing rule_id or updates"}, 400)
+
     from ..services.filter_engine import filter_engine
+    from ..services.validation import FilterRuleUpdateSchema, validate_request
+
+    validated_updates, errors = validate_request(FilterRuleUpdateSchema, updates)
+    if errors:
+        return _json_response({"error": errors}, 400)
 
     try:
-        if filter_engine.update_rule(rule_id, updates):
+        if filter_engine.update_rule(rule_id, validated_updates):
             return _json_response({"message": "Rule updated"})
         return _json_response({"error": "Rule not found"}, 404)
     except ValueError as e:
@@ -1040,14 +1046,16 @@ def incoming_webhook(hook_id):
     payload = request.get_data()
     signature = request.headers.get("X-Webhook-Signature", "")
 
-    hooks = webhook_service.list_hooks()
-    hook = next((h for h in hooks if h.get("id") == hook_id), None)
+    hook = webhook_service.get_hook(hook_id)
     if not hook:
         return _json_response({"error": "Unknown webhook"}, 404)
 
-    if hook.get("secret"):
-        if not webhook_service.verify_incoming(payload, signature, hook["secret"]):
-            return _json_response({"error": "Invalid signature"}, 403)
+    # Require secret on all webhooks — reject unsigned requests
+    if not hook.get("secret"):
+        return _json_response({"error": "Webhook has no secret configured"}, 403)
+
+    if not webhook_service.verify_incoming(payload, signature, hook["secret"]):
+        return _json_response({"error": "Invalid signature"}, 403)
 
     try:
         body = json.loads(payload)
@@ -1071,8 +1079,23 @@ def incoming_webhook(hook_id):
     if not isinstance(opacity, int) or not (0 <= opacity <= 100):
         opacity = 100
 
+    text = text[:100]
+
+    # Apply content filtering (blacklist + filter engine)
+    from ..services.blacklist import contains_keyword
+    from ..services.filter_engine import filter_engine
+
+    if contains_keyword(text):
+        return _json_response({"error": "Blocked by blacklist"}, 403)
+
+    result = filter_engine.check(text)
+    if result.action == "block":
+        return _json_response({"error": "Blocked by filter rule"}, 403)
+    if result.action == "replace" and result.replacement is not None:
+        text = result.replacement
+
     msg = {
-        "text": text[:100],
+        "text": text,
         "color": color,
         "size": size,
         "speed": speed,

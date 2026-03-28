@@ -1,3 +1,4 @@
+import hmac
 import logging
 import secrets
 import threading
@@ -130,7 +131,7 @@ def require_csrf(func):
             or request.form.get("csrf_token")
             or (request.get_json(silent=True) or {}).get("csrf_token")
         )
-        if not token or not candidate or token != candidate:
+        if not token or not candidate or not hmac.compare_digest(token, candidate):
             abort(403, description="Invalid CSRF token")
         return func(*args, **kwargs)
 

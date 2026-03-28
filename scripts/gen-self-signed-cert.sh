@@ -19,15 +19,18 @@ echo "  網域：$DOMAIN"
 echo "  有效期：${DAYS} 天"
 echo "  輸出：$CERTS_DIR"
 
+SAN_CNF=$(mktemp /tmp/san.XXXXXX.cnf)
+trap 'rm -f "$SAN_CNF"' EXIT
+
 printf '[req]\ndistinguished_name=req\n[SAN]\nsubjectAltName=DNS:%s,DNS:localhost,IP:127.0.0.1\n' \
-  "${DOMAIN}" > /tmp/san.cnf
+  "${DOMAIN}" > "$SAN_CNF"
 openssl req -x509 -nodes -newkey rsa:2048 \
   -keyout "$CERTS_DIR/privkey.pem" \
   -out "$CERTS_DIR/fullchain.pem" \
   -days "$DAYS" \
   -subj "/CN=${DOMAIN}" \
   -extensions SAN \
-  -config /tmp/san.cnf
+  -config "$SAN_CNF"
 
 echo ""
 echo "完成！憑證已產生："

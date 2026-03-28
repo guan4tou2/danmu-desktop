@@ -216,21 +216,23 @@ function setupIpcHandlers(getMainWindow, childWindows) {
               ${size},
               ${speed},
               { name: "NotoSansTC", url: null, type: "default" },
-              ${JSON.stringify(
-                data.textStyles || {
-                  textStroke: true,
-                  strokeWidth: 2,
-                  strokeColor: "#000000",
-                  textShadow: false,
-                  shadowBlur: 4,
-                }
-              )},
-              ${JSON.stringify(
-                data.displayArea || {
-                  top: 0,
-                  height: 100,
-                }
-              )}
+              ${JSON.stringify((() => {
+                const ts = data.textStyles || {};
+                return {
+                  textStroke: !!ts.textStroke,
+                  strokeWidth: typeof ts.strokeWidth === "number" ? ts.strokeWidth : 2,
+                  strokeColor: typeof ts.strokeColor === "string" ? ts.strokeColor : "#000000",
+                  textShadow: !!ts.textShadow,
+                  shadowBlur: typeof ts.shadowBlur === "number" ? ts.shadowBlur : 4,
+                };
+              })())},
+              ${JSON.stringify((() => {
+                const da = data.displayArea || {};
+                return {
+                  top: typeof da.top === "number" ? da.top : 0,
+                  height: typeof da.height === "number" ? da.height : 100,
+                };
+              })())}
             );
           }
         `
@@ -296,7 +298,12 @@ function setupIpcHandlers(getMainWindow, childWindows) {
         win.webContents
           .executeJavaScript(
             `
-          window.defaultDanmuSettings = ${JSON.stringify(settings)};
+          window.defaultDanmuSettings = ${JSON.stringify({
+              opacity: Number(settings.opacity),
+              ...(settings.size !== undefined && { size: Number(settings.size) }),
+              ...(settings.speed !== undefined && { speed: Number(settings.speed) }),
+              ...(settings.color !== undefined && { color: settings.color }),
+            })};
           console.log("[Overlay] Default danmu settings updated");
         `
           )
