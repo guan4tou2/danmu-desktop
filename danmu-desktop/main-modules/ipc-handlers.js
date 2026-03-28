@@ -122,11 +122,20 @@ function setupIpcHandlers(getMainWindow, childWindows) {
       return [];
     }
     const displays = screen.getAllDisplays();
+    // Return only the fields the renderer needs — prevents leaking internal
+    // Electron display properties and avoids IPC serialization of unexpected data.
+    const sanitizedDisplays = displays.map((d) => ({
+      id: d.id,
+      label: d.label || "",
+      bounds: d.bounds,
+      workArea: d.workArea,
+      scaleFactor: d.scaleFactor,
+    }));
     console.log(
       "[Main] getDisplays handled, returning %d displays",
-      displays.length
+      sanitizedDisplays.length
     );
-    return displays;
+    return sanitizedDisplays;
   });
 
   // Get system locale — restricted to main window
