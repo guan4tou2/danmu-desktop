@@ -50,7 +50,7 @@
 1. 下載[最新版本](https://github.com/guan4tou2/danmu-desktop/releases)
 2. MacOS 用戶需要執行：
    ```bash
-   sudo xattr -r -d com.apple.quarantine 'danmu manager.app'
+   sudo xattr -r -d com.apple.quarantine 'Danmu Desktop.app'
    ```
 3. 啟動應用程式
 4. 輸入伺服器的 IP 和端口（預設：4001）

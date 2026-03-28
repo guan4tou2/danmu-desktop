@@ -46,8 +46,8 @@
     }
   },
   "build": {
-    "appId": "com.example.app",
-    "productName": "danmu manager",
+    "appId": "com.danmufire.desktop",
+    "productName": "Danmu Desktop",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "directories": {
       "output": "pack"

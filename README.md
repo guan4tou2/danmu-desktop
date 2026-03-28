@@ -53,7 +53,7 @@ Drop `.dme` files (YAML format) into `server/effects/` to add custom effects —
 1. Download the [latest release](https://github.com/guan4tou2/danmu-desktop/releases)
 2. For MacOS users, run:
    ```bash
-   sudo xattr -r -d com.apple.quarantine 'danmu manager.app'
+   sudo xattr -r -d com.apple.quarantine 'Danmu Desktop.app'
    ```
 3. Launch the application
 4. Enter the server's IP and port (default: 4001)
