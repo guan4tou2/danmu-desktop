@@ -77,7 +77,7 @@ class Config:
     CORS_SUPPORTS_CREDENTIALS = os.getenv("CORS_SUPPORTS_CREDENTIALS", "false").lower() == "true"
 
     # Dedicated WS server access control
-    WS_REQUIRE_TOKEN = os.getenv("WS_REQUIRE_TOKEN", "true").lower() == "true"
+    WS_REQUIRE_TOKEN = os.getenv("WS_REQUIRE_TOKEN", "false").lower() == "true"
     WS_AUTH_TOKEN = os.getenv("WS_AUTH_TOKEN", "")
     WS_MAX_SIZE = int(os.getenv("WS_MAX_SIZE", str(1024 * 1024)))
     WS_MAX_QUEUE = int(os.getenv("WS_MAX_QUEUE", "16"))
