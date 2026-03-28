@@ -125,3 +125,28 @@ def test_max_count_raises_when_exceeded(svc, tmp_path):
     svc._scan()
     with pytest.raises(ValueError, match="sticker limit"):
         svc.check_count_limit()
+
+
+# ── GET /stickers route ──────────────────────────────────────────────────
+
+
+def test_get_stickers_returns_empty_list(client):
+    res = client.get("/stickers")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data == {"stickers": []}
+
+
+def test_get_stickers_lists_uploaded_sticker(client, tmp_path, monkeypatch):
+    import server.services.stickers as sticker_mod
+    monkeypatch.setattr(sticker_mod, "_STICKERS_DIR", tmp_path)
+    sticker_mod.sticker_service._cache.clear()
+    (tmp_path / "wave.gif").write_bytes(b"GIF89a")
+    sticker_mod.sticker_service._scan()
+
+    res = client.get("/stickers")
+    assert res.status_code == 200
+    stickers = res.get_json()["stickers"]
+    assert len(stickers) == 1
+    assert stickers[0]["name"] == "wave"
+    assert stickers[0]["url"] == "/static/stickers/wave.gif"

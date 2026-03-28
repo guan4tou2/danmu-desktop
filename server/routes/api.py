@@ -16,6 +16,7 @@ from ..services.blacklist import contains_keyword
 from ..services.effects import load_all as load_all_effects
 from ..services.effects import render_effects
 from ..services.emoji import emoji_service
+from ..services.stickers import sticker_service
 from ..services.filter_engine import filter_engine
 from ..services.fonts import build_font_payload, list_available_fonts
 from ..services.layout import get_layout_config, get_layout_css
@@ -372,6 +373,13 @@ def list_layouts():
 def list_emojis():
     """列出所有可用的表情包"""
     return _json_response({"emojis": emoji_service.list_emojis()})
+
+
+@api_bp.route("/stickers", methods=["GET"])
+@rate_limit("api", "API_RATE_LIMIT", "API_RATE_WINDOW")
+def list_stickers():
+    """列出所有可用的貼圖"""
+    return _json_response({"stickers": sticker_service.list_stickers()})
 
 
 @api_bp.route("/avatar/<letter>/<color>")
