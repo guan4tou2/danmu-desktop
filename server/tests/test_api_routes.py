@@ -118,3 +118,99 @@ def test_health_readiness(client):
 def test_health_has_request_id(client):
     res = client.get("/health/live")
     assert "X-Request-ID" in res.headers
+
+
+# ── Avatar generation ─────────────────────────────────────────────────────
+
+
+def test_avatar_returns_svg(client):
+    """GET /avatar/<letter>/<color> returns SVG content."""
+    resp = client.get("/avatar/A/7c3aed")
+    assert resp.status_code == 200
+    assert resp.content_type == "image/svg+xml"
+    data = resp.data.decode()
+    assert "<svg" in data
+    assert "A" in data
+
+
+def test_avatar_uses_first_letter_only(client):
+    """Only the first character of the letter param is used."""
+    resp = client.get("/avatar/Hello/ff0000")
+    assert resp.status_code == 200
+    data = resp.data.decode()
+    assert "H" in data
+    assert "ello" not in data
+
+
+def test_avatar_uppercases_letter(client):
+    """Letter is uppercased in output."""
+    resp = client.get("/avatar/a/7c3aed")
+    assert resp.status_code == 200
+    data = resp.data.decode()
+    assert "A" in data
+
+
+def test_avatar_truncates_color(client):
+    """Color is limited to 6 hex chars."""
+    resp = client.get("/avatar/Z/aabbccddeeff")
+    assert resp.status_code == 200
+    data = resp.data.decode()
+    assert "aabbcc" in data
+    assert "ddeeff" not in data
+
+
+def test_avatar_has_cache_header(client):
+    """Avatar response has a cache-control header."""
+    resp = client.get("/avatar/B/123456")
+    assert "Cache-Control" in resp.headers
+    assert "max-age" in resp.headers["Cache-Control"]
+
+
+# ── Nickname validation ───────────────────────────────────────────────────
+
+
+def test_fire_with_nickname_passes_validation(client):
+    """Valid nickname is accepted in /fire."""
+    from server.services.ws_state import update_ws_client_count
+
+    update_ws_client_count(1)
+    resp = client.post("/fire", json={
+        "text": "hello",
+        "nickname": "Alice",
+        "color": "#ffffff",
+        "size": 24,
+        "speed": 5,
+        "opacity": 100,
+    })
+    assert resp.status_code == 200
+
+
+def test_fire_nickname_too_long_rejected(client):
+    """Nickname exceeding 20 chars is rejected."""
+    from server.services.ws_state import update_ws_client_count
+
+    update_ws_client_count(1)
+    resp = client.post("/fire", json={
+        "text": "hello",
+        "nickname": "A" * 21,
+        "color": "#ffffff",
+        "size": 24,
+        "speed": 5,
+        "opacity": 100,
+    })
+    assert resp.status_code in {400, 422}
+
+
+def test_fire_without_nickname_succeeds(client):
+    """Fire without nickname field still works."""
+    from server.services.ws_state import update_ws_client_count
+
+    update_ws_client_count(1)
+    resp = client.post("/fire", json={
+        "text": "hello",
+        "color": "#ffffff",
+        "size": 24,
+        "speed": 5,
+        "opacity": 100,
+    })
+    assert resp.status_code == 200

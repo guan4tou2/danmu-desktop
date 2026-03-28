@@ -642,3 +642,44 @@ def test_change_password_success(client, monkeypatch):
     resp = _change_pw(client, token, "test", "newpassword1!", "newpassword1!")
     assert resp.status_code == 200
     assert "success" in json.loads(resp.data)["message"].lower()
+
+
+# ── Live Feed (/admin/live/block) ─────────────────────────────────────────
+
+
+def test_live_block_keyword_unauthenticated(client):
+    """Unauthenticated request is rejected."""
+    with client.session_transaction() as sess:
+        sess["csrf_token"] = "fake-token"
+    resp = client.post(
+        "/admin/live/block",
+        json={"type": "keyword", "value": "spam"},
+        headers={"X-CSRF-Token": "fake-token"},
+    )
+    assert resp.status_code in {401, 403}
+
+
+def test_live_block_keyword_success(client):
+    """Blocking a keyword adds it to the blacklist and returns 200."""
+    resp = authed_post(client, "/admin/live/block", {"type": "keyword", "value": "badword_live_test"})
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert "blocked" in data.get("message", "").lower() or "badword_live_test" in data.get("message", "")
+
+
+def test_live_block_empty_value_rejected(client):
+    """Empty value returns 400."""
+    resp = authed_post(client, "/admin/live/block", {"type": "keyword", "value": ""})
+    assert resp.status_code == 400
+
+
+def test_live_block_unknown_type_rejected(client):
+    """Unknown block type returns 400."""
+    resp = authed_post(client, "/admin/live/block", {"type": "unknown", "value": "foo"})
+    assert resp.status_code == 400
+
+
+def test_live_block_fingerprint_success(client):
+    """Blocking a fingerprint returns 200."""
+    resp = authed_post(client, "/admin/live/block", {"type": "fingerprint", "value": "fp_abc123"})
+    assert resp.status_code == 200
