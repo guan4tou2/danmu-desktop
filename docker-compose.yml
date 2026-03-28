@@ -16,7 +16,7 @@ services:
       - ENV=${ENV:-production}
       - FIRE_RATE_LIMIT=${FIRE_RATE_LIMIT:-20}
       - FIRE_RATE_WINDOW=${FIRE_RATE_WINDOW:-60}
-      - RATE_LIMIT_BACKEND=${RATE_LIMIT_BACKEND:-memory}
+      - RATE_LIMIT_BACKEND=${RATE_LIMIT_BACKEND:-memory}  # 改為 redis 可跨實例共享限流
       - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - FONT_TOKEN_EXPIRATION=${FONT_TOKEN_EXPIRATION:-900}
