@@ -1,32 +1,33 @@
+@import "../shared/tokens.css";
 /* styles.css */
 
 body {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-family);
   overflow-y: auto;
   overflow-x: hidden;
 }
 
 .glass-effect {
-  background: rgba(15, 23, 42, 0.75);
+  background: var(--color-bg-card);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.125);
+  border: 1px solid var(--color-border);
 }
 
 .form-input {
-  background-color: rgba(30, 41, 59, 0.8);
+  background-color: var(--color-bg-input);
   border: 1px solid #334155;
-  color: #f1f5f9;
+  color: var(--color-text-primary);
   transition: all 0.3s ease;
 }
 .form-input:focus {
   background-color: rgba(30, 41, 59, 1);
-  border-color: #38bdf8;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.5);
   outline: none;
 }
 .form-input::placeholder {
-  color: #94a3b8;
+  color: var(--color-text-secondary);
   opacity: 1;
 }
 .form-input:disabled {
@@ -36,7 +37,7 @@ body {
 }
 
 .btn-primary {
-  background-image: linear-gradient(to right, #38bdf8, #3b82f6);
+  background-image: linear-gradient(to right, var(--color-primary), var(--color-secondary));
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
@@ -52,7 +53,7 @@ body {
 
 /* Button states */
 .btn-connecting {
-  background-image: linear-gradient(to right, #06b6d4, #0891b2) !important;
+  background-image: linear-gradient(to right, var(--color-accent), #0891b2) !important;
   animation: pulse-connecting 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
@@ -62,7 +63,7 @@ body {
 }
 
 .btn-active {
-  background-image: linear-gradient(to right, #38bdf8, #3b82f6) !important;
+  background-image: linear-gradient(to right, var(--color-primary), var(--color-secondary)) !important;
   box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
 }
 
@@ -115,12 +116,12 @@ body {
 
 /* Input validation styles */
 .input-valid {
-  border-color: #10b981 !important;
+  border-color: var(--color-success) !important;
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
 }
 
 .input-invalid {
-  border-color: #ef4444 !important;
+  border-color: var(--color-error) !important;
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
 }
 
@@ -147,7 +148,7 @@ input[type="range"]::-webkit-slider-thumb {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #38bdf8, #3b82f6);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(56, 189, 248, 0.4);
   transition: all 0.2s ease;
@@ -162,7 +163,7 @@ input[type="range"]::-moz-range-thumb {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #38bdf8, #3b82f6);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   cursor: pointer;
   border: none;
   box-shadow: 0 2px 8px rgba(56, 189, 248, 0.4);
@@ -204,6 +205,6 @@ details summary svg {
 
   .settings-scroll::-webkit-scrollbar-thumb {
     background: rgba(71, 85, 105, 0.7);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
   }
 }
