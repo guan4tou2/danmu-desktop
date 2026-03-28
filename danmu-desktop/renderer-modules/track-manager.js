@@ -248,16 +248,25 @@ function initTrackManager() {
     const applyFontAndAnimate = async () => {
       let effectiveFontName = fontInfo.name || "NotoSansTC";
 
-      if (fontInfo.url && fontInfo.type === "uploaded") {
-        // Sanitize font name: only allow safe characters for CSS font-family
-        const safeFontName = effectiveFontName.replace(/[^a-zA-Z0-9 _-]/g, "");
+      function isSafeFontUrl(url) {
+      if (typeof url !== "string") return false;
+      if (url.startsWith("blob:")) return true;
+      if (url.startsWith("/") && !url.includes("..")) return true;
+      if (url.startsWith("https://fonts.gstatic.com/")) return true;
+      if (/^https?:\/\//.test(url)) return true;
+      return false;
+    }
+
+    function sanitizeFontName(name) {
+      if (typeof name !== "string") return "unknown";
+      return name.replace(/["\\]/g, "");
+    }
+
+    if (fontInfo && fontInfo.url && fontInfo.name && isSafeFontUrl(fontInfo.url) && fontInfo.type === "uploaded") {
+        const safeFontName = sanitizeFontName(effectiveFontName).replace(/[^a-zA-Z0-9 _-]/g, "");
         const styleId = `font-style-${safeFontName.replace(/\s+/g, "-")}`;
         if (!document.getElementById(styleId)) {
           try {
-            // Validate font URL scheme
-            if (!/^https?:\/\//.test(fontInfo.url)) {
-              throw new Error("Invalid font URL scheme");
-            }
             console.log(
               `[showdanmu] Loading font: ${safeFontName} from ${fontInfo.url}`
             );
