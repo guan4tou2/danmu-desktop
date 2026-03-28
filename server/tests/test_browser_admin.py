@@ -142,7 +142,9 @@ def test_login_correct_password_shows_admin_panel(fresh_page, live_url):
     fresh_page.wait_for_selector("#loginForm", timeout=8000)
     fresh_page.fill("#password", "test")
     fresh_page.locator("#loginForm button[type=submit]").click()
-    fresh_page.wait_for_selector("#logoutButton", timeout=8000)
+    # 登入後 admin JS 同時發出多個 API calls（settings、fonts、effects 等），
+    # gevent 單線程處理完後 logoutButton 才渲染，給予較寬鬆的 timeout
+    fresh_page.wait_for_selector("#logoutButton", timeout=15000)
     assert fresh_page.is_visible("#logoutButton")
 
 
@@ -153,7 +155,7 @@ def test_logout_returns_to_login_form(fresh_page, live_url):
     fresh_page.wait_for_selector("#loginForm", timeout=8000)
     fresh_page.fill("#password", "test")
     fresh_page.locator("#loginForm button[type=submit]").click()
-    fresh_page.wait_for_selector("#logoutButton", timeout=8000)
+    fresh_page.wait_for_selector("#logoutButton", timeout=15000)
     # 再登出
     fresh_page.locator("#logoutButton").click()
     fresh_page.wait_for_selector("#loginForm", timeout=5000)
