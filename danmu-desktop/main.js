@@ -22,16 +22,26 @@ app.whenReady().then(() => {
   mainWindow = createWindow(childWindows, onKonamiTrigger);
   setupIpcHandlers(() => mainWindow, childWindows);
 
+  // macOS Dock icon（開發模式下 Electron 預設顯示通用圖示，需手動設定）
+  if (process.platform === "darwin" && app.dock) {
+    const dockIcon = nativeImage.createFromPath(
+      path.join(__dirname, "../assets/icon.png")
+    );
+    app.dock.setIcon(dockIcon);
+  }
+
   let trayIcon;
   if (process.platform === "darwin") {
     // macOS：使用黑色 template image，讓系統依選單列明暗自動反色，
     // 不會出現白色圓角框（非 template 圖示的 Big Sur 預設行為）
+    // Electron 會自動偵測 @2x 後綴並在 Retina 螢幕使用高解析度版本
     const templatePath = path.join(__dirname, "../assets/tray-template.png");
     trayIcon = nativeImage.createFromPath(templatePath);
     trayIcon.setTemplateImage(true);
   } else {
-    const iconPath = path.join(__dirname, "../assets/icon.png");
-    trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 32, height: 32 });
+    // Windows/Linux：使用彩色 tray icon，設計語言與 app icon 一致
+    const iconPath = path.join(__dirname, "../assets/tray-icon.png");
+    trayIcon = nativeImage.createFromPath(iconPath);
   }
   tray = new Tray(trayIcon);
 
@@ -47,11 +57,11 @@ app.whenReady().then(() => {
 
   const menu = [
     {
-      label: "open manager",
+      label: "Open Danmu Manager",
       click: showMainWindow,
     },
     {
-      label: "quit",
+      label: "Quit",
       click: () => {
         // spread 複製陣列，避免 destroy 觸發的 "closed" 修改迭代中的陣列
         [...childWindows].forEach((win) => {
@@ -66,7 +76,7 @@ app.whenReady().then(() => {
     },
   ];
   tray.setContextMenu(Menu.buildFromTemplate(menu));
-  tray.setToolTip("danmu manager");
+  tray.setToolTip("Danmu Desktop");
 
   // macOS 設了 contextMenu 後 double-click 不觸發，改用 click
   // Windows/Linux 保留 double-click 開啟視窗
