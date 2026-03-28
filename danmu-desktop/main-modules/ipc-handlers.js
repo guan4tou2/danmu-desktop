@@ -28,9 +28,15 @@ function isFromChildWindow(event, childWindows) {
 }
 
 /**
- * Validates numeric IPC parameters and color format to prevent injection.
+ * Validates numeric IPC parameters, text, and color format to prevent injection.
  */
 function validateDanmuParams(data) {
+  // Validate text: must be string, max 500 chars
+  if (typeof data.text !== "string" || data.text.length > 500) {
+    console.log("[Main] Invalid danmu text: must be string <= 500 chars");
+    return null;
+  }
+
   const opacity = Number(data.opacity);
   const size = Number(data.size);
   const speed = Number(data.speed);
@@ -48,7 +54,7 @@ function validateDanmuParams(data) {
   const color = typeof data.color === "string" ? data.color : "#ffffff";
   const validatedColor = colorRegex.test(color) ? color : "#ffffff";
 
-  return { opacity, size, speed, color: validatedColor };
+  return { opacity, size, speed, color: validatedColor, text: data.text };
 }
 
 function isValidIpAddress(ip) {
@@ -150,18 +156,42 @@ function setupIpcHandlers(getMainWindow, childWindows) {
       return;
     }
 
-    // Validate text field
-    if (typeof data.text !== "string" || data.text.length > 500) {
-      console.warn("[Main] send-test-danmu: invalid or oversized text");
-      return;
-    }
-
     const validated = validateDanmuParams(data);
     if (!validated) {
       console.warn("[Main] send-test-danmu: numeric parameter validation failed");
       return;
     }
-    const { opacity, size, speed, color } = validated;
+    const { opacity, size, speed, color, text } = validated;
+
+    // Validate textStyles if provided
+    if (data.textStyles && typeof data.textStyles === "object") {
+      const ts = data.textStyles;
+      if (ts.strokeColor !== undefined && (typeof ts.strokeColor !== "string" || !/^#[0-9a-fA-F]{6}$/.test(ts.strokeColor))) {
+        console.log("[Main] Invalid strokeColor");
+        return;
+      }
+      if (ts.strokeWidth !== undefined && (typeof ts.strokeWidth !== "number" || ts.strokeWidth < 0 || ts.strokeWidth > 10)) {
+        console.log("[Main] Invalid strokeWidth");
+        return;
+      }
+      if (ts.shadowBlur !== undefined && (typeof ts.shadowBlur !== "number" || ts.shadowBlur < 0 || ts.shadowBlur > 50)) {
+        console.log("[Main] Invalid shadowBlur");
+        return;
+      }
+    }
+
+    // Validate displayArea if provided
+    if (data.displayArea && typeof data.displayArea === "object") {
+      const da = data.displayArea;
+      if (da.top !== undefined && (typeof da.top !== "number" || da.top < 0 || da.top > 100)) {
+        console.log("[Main] Invalid displayArea.top");
+        return;
+      }
+      if (da.height !== undefined && (typeof da.height !== "number" || da.height < 0 || da.height > 100)) {
+        console.log("[Main] Invalid displayArea.height");
+        return;
+      }
+    }
 
     console.log("[Main] send-test-danmu received:", data);
     childWindows.forEach((win) => {
@@ -171,7 +201,7 @@ function setupIpcHandlers(getMainWindow, childWindows) {
             `
           if (typeof window.showdanmu === 'function') {
             window.showdanmu(
-              ${JSON.stringify(data.text)},
+              ${JSON.stringify(text)},
               ${opacity},
               ${JSON.stringify(color)},
               ${size},
@@ -389,4 +419,4 @@ function setupIpcHandlers(getMainWindow, childWindows) {
   );
 }
 
-module.exports = { setupIpcHandlers };
+module.exports = { setupIpcHandlers, validateDanmuParams };

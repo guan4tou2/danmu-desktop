@@ -31,7 +31,7 @@ jest.mock("../main-modules/window-manager", () => ({
   setupChildWindow: jest.fn(),
 }));
 
-const { setupIpcHandlers } = require("../main-modules/ipc-handlers");
+let setupIpcHandlers;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -68,6 +68,9 @@ describe("ipc-handlers integration", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset module registry so _ipcRegistered guard starts fresh for each test
+    jest.resetModules();
+    ({ setupIpcHandlers } = require("../main-modules/ipc-handlers"));
 
     mainWindow = {
       webContents: { id: 1, send: jest.fn() },
