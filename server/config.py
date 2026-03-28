@@ -82,6 +82,8 @@ class Config:
     WS_MAX_SIZE = int(os.getenv("WS_MAX_SIZE", str(1024 * 1024)))
     WS_MAX_QUEUE = int(os.getenv("WS_MAX_QUEUE", "16"))
     WS_WRITE_LIMIT = int(os.getenv("WS_WRITE_LIMIT", "32768"))
+    WS_MAX_CONNECTIONS = int(os.getenv("WS_MAX_CONNECTIONS", "200"))
+    WS_MAX_CONNECTIONS_PER_IP = int(os.getenv("WS_MAX_CONNECTIONS_PER_IP", "10"))
     _ws_allowed_origins_raw = os.getenv("WS_ALLOWED_ORIGINS", "").strip()
     WS_ALLOWED_ORIGINS = [o.strip() for o in _ws_allowed_origins_raw.split(",") if o.strip()]
     _web_ws_allowed_origins_raw = os.getenv("WEB_WS_ALLOWED_ORIGINS", "").strip()

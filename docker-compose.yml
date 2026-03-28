@@ -51,6 +51,11 @@ services:
       - traefik.http.routers.danmu-ws.middlewares=danmu-ws-strip
       - traefik.http.services.danmu-ws.loadbalancer.server.port=4001
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${SERVER_MEMORY_LIMIT:-512m}
+          cpus: "${SERVER_CPU_LIMIT:-1.0}"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health').read()"]
       interval: 30s
@@ -68,6 +73,11 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.5"
   reverse-proxy-https:
     image: nginx:1.27-alpine
     container_name: danmu-reverse-proxy-https
@@ -101,6 +111,11 @@ services:
         fi
         exec nginx -g "daemon off;"
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.5"
   traefik:
     image: traefik:v3.3
     container_name: danmu-traefik

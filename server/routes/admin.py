@@ -1008,6 +1008,7 @@ def test_webhook():
 
 
 @admin_bp.route("/webhook/incoming/<hook_id>", methods=["POST"])
+@rate_limit("fire", "FIRE_RATE_LIMIT", "FIRE_RATE_WINDOW")
 def incoming_webhook(hook_id):
     """接收外部 webhook 轉為彈幕"""
     from ..services.webhook import webhook_service

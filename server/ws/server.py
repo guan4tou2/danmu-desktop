@@ -91,6 +91,11 @@ def run_ws_server(ws_port, logger):
     ws_max_size = int(Config.WS_MAX_SIZE)
     ws_max_queue = int(Config.WS_MAX_QUEUE)
     ws_write_limit = int(Config.WS_WRITE_LIMIT)
+    ws_max_connections = int(Config.WS_MAX_CONNECTIONS)
+    ws_max_connections_per_ip = int(Config.WS_MAX_CONNECTIONS_PER_IP)
+
+    # Per-IP connection tracking (IP -> set of websocket objects)
+    _connections_by_ip: dict = {}
 
     if require_token and not configured_token:
         logger.warning(
@@ -146,16 +151,48 @@ def run_ws_server(ws_port, logger):
                 return False
         return True
 
-    async def register(websocket):
+    def _get_client_ip(websocket) -> str:
+        addr = getattr(websocket, "remote_address", None)
+        if addr and isinstance(addr, (tuple, list)):
+            return str(addr[0])
+        return "unknown"
+
+    async def register(websocket) -> bool:
+        """Register connection. Returns False if limits exceeded (caller should close)."""
+        client_ip = _get_client_ip(websocket)
+        total_clients = len(connection_manager.get_ws_clients())
+
+        if total_clients >= ws_max_connections:
+            logger.warning("WS global connection limit reached (%s)", ws_max_connections)
+            await websocket.close(code=1008, reason="Too many connections")
+            return False
+
+        ip_conns = _connections_by_ip.get(client_ip, set())
+        if len(ip_conns) >= ws_max_connections_per_ip:
+            logger.warning(
+                "WS per-IP connection limit reached for %s (%s)",
+                client_ip,
+                ws_max_connections_per_ip,
+            )
+            await websocket.close(code=1008, reason="Too many connections from your IP")
+            return False
+
+        _connections_by_ip.setdefault(client_ip, set()).add(websocket)
         connection_manager.register_ws_client(websocket)
         total_clients = len(connection_manager.get_ws_clients())
-        logger.info("New client connected. Total clients: %s", total_clients)
+        logger.info("New client connected from %s. Total: %s", client_ip, total_clients)
         update_ws_client_count(total_clients)
+        return True
 
     async def unregister(websocket):
+        client_ip = _get_client_ip(websocket)
+        if client_ip in _connections_by_ip:
+            _connections_by_ip[client_ip].discard(websocket)
+            if not _connections_by_ip[client_ip]:
+                del _connections_by_ip[client_ip]
         connection_manager.unregister_ws_client(websocket)
         total_clients = len(connection_manager.get_ws_clients())
-        logger.info("Client disconnected. Remaining clients: %s", total_clients)
+        logger.info("Client disconnected. Remaining: %s", total_clients)
         update_ws_client_count(total_clients)
 
     async def ws_handler(websocket):
@@ -180,7 +217,8 @@ def run_ws_server(ws_port, logger):
         if not _is_authorized(websocket):
             await websocket.close(code=1008, reason="Unauthorized")
             return
-        await register(websocket)
+        if not await register(websocket):
+            return
         try:
             async for message in websocket:
                 try:
