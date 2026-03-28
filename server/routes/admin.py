@@ -178,6 +178,25 @@ def upload_sticker():
     return _json_response({"name": name, "url": f"/static/stickers/{name}.{ext}"})
 
 
+@admin_bp.route("/stickers/<name>", methods=["DELETE"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+def delete_sticker(name):
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+
+    if not _STICKER_NAME_RE.match(name):
+        return _json_response({"error": "Invalid sticker name"}, 400)
+
+    from ..services.stickers import sticker_service  # local import, matching admin.py style
+    deleted = sticker_service.delete(name)
+    if not deleted:
+        return _json_response({"error": "Sticker not found"}, 404)
+
+    current_app.logger.info("Sticker deleted: %s", sanitize_log_string(name))
+    return _json_response({"status": "OK"})
+
+
 @admin_bp.route("/get_fonts", methods=["GET"])
 def get_fonts():
     if not session.get("logged_in"):

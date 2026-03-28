@@ -230,3 +230,47 @@ def test_upload_sticker_name_collision_with_existing_sticker(client, tmp_path, m
     )
     res = _upload(client, "fire.gif", gif_bytes)
     assert res.status_code == 409
+
+
+# ── DELETE /admin/stickers/<name> ────────────────────────────────────────
+
+
+def _delete_sticker(client, name):
+    token = csrf_token(client)
+    return client.delete(
+        f"/admin/stickers/{name}",
+        headers={"X-CSRF-Token": token},
+    )
+
+
+def test_delete_sticker_success(client, tmp_path, monkeypatch):
+    import server.services.stickers as sticker_mod
+    monkeypatch.setattr(sticker_mod, "_STICKERS_DIR", tmp_path)
+    sticker_mod.sticker_service._cache.clear()
+    f = tmp_path / "wave.gif"
+    f.write_bytes(b"GIF89a")
+    sticker_mod.sticker_service._scan()
+
+    res = _delete_sticker(client, "wave")
+    assert res.status_code == 200
+    assert res.get_json() == {"status": "OK"}
+    assert not f.exists()
+
+
+def test_delete_sticker_not_found(client):
+    res = _delete_sticker(client, "ghost")
+    assert res.status_code == 404
+
+
+def test_delete_sticker_unauthenticated(client):
+    res = client.delete("/admin/stickers/wave")
+    # @require_csrf fires before _ensure_logged_in() → 403; both are rejection
+    assert res.status_code in {401, 403}
+
+
+def test_delete_sticker_invalid_name(client):
+    # Flask normalizes /admin/stickers/../etc/passwd → /admin/etc/passwd (404)
+    # before our handler runs; our _STICKER_NAME_RE would also catch it (400).
+    # Both are rejections — path traversal is blocked either way.
+    res = _delete_sticker(client, "../etc/passwd")
+    assert res.status_code in {400, 404}
