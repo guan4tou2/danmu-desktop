@@ -151,7 +151,7 @@ function initTrackManager() {
     });
 
     const parentElement = document.getElementById("danmubody");
-    const imgs = /^https?:\/\/([^\s/]+\/)*[^\s/]+\.(gif|png|jpeg|jpg)$/i;
+    const imgs = /^https?:\/\/([^\s/]+\/)*[^\s/]+\.(gif|png|jpeg|jpg|webp)$/i;
     const protocolCheck = /^(http:|https:)/i;
 
     // ── 建立 wrapper（負責 translateX 動畫，與 inner 特效動畫分離，互不衝突）
@@ -165,6 +165,9 @@ function initTrackManager() {
       danmu.setAttribute("src", string);
       danmu.width = size * 2;
       danmu.style.position = "relative"; // 覆蓋 child.css 的 img { position: absolute }
+      danmu.style.maxWidth = "200px";
+      danmu.style.maxHeight = "120px";
+      danmu.style.objectFit = "contain";
     } else if (imgs.test(string) && !protocolCheck.test(string)) {
       console.warn(
         "[showdanmu] Invalid protocol for image URL:",
