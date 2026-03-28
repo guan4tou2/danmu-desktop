@@ -76,6 +76,16 @@ def _resolve_danmu_style(data):
     - enabled=True  → 允許使用者自訂，優先使用使用者傳入值
     - enabled=False → 強制使用管理員預設值
     """
+    # --- Sticker resolution (runs first, before all other processing) ---
+    is_sticker = False
+    if not data.get("isImage"):
+        sticker_filename = sticker_service.resolve(data.get("text", ""))
+        if sticker_filename:
+            base = request.host_url.rstrip("/")
+            data["text"] = f"{base}/static/stickers/{sticker_filename}"
+            data["isImage"] = True
+            is_sticker = True
+
     options = get_options()
 
     def _pick(user_val, setting):
@@ -175,10 +185,11 @@ def _resolve_danmu_style(data):
         if emoji_result.get("emojis"):
             data["emojis"] = emoji_result["emojis"]
 
-    # Sound matching
-    sound_match = sound_service.match(text, effects_input if effects_input else None)
-    if sound_match:
-        data["sound"] = sound_match
+    # Sound matching (skipped for sticker danmu — text is now a URL)
+    if not is_sticker:
+        sound_match = sound_service.match(text, effects_input if effects_input else None)
+        if sound_match:
+            data["sound"] = sound_match
 
     return data
 

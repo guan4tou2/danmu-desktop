@@ -213,3 +213,73 @@ def test_opacity_size_speed_forced_when_disabled():
     assert result["opacity"] == 50
     assert result["size"] == 30
     assert result["speed"] == 5
+
+
+# ── Sticker resolution ───────────────────────────────────────────────────
+
+
+def _resolve_with_sticker(data, sticker_filename=None):
+    """Call _resolve_danmu_style with sticker service and request mocked.
+
+    Uses patch("server.routes.api.request") to avoid creating an app context,
+    matching the existing _resolve() helper pattern in this file.
+    """
+    from unittest.mock import patch, MagicMock
+
+    mock_request = MagicMock()
+    mock_request.host_url = "http://127.0.0.1:5000/"
+
+    mock_resolve = MagicMock(return_value=sticker_filename)
+
+    with (
+        patch("server.routes.api.request", mock_request),
+        patch("server.routes.api.get_options", return_value={
+            "Color": [True, 0, 0, "#FFFFFF"],
+            "Opacity": [True, 0, 100, 70],
+            "FontSize": [True, 20, 100, 50],
+            "Speed": [True, 1, 10, 4],
+            "FontFamily": [False, "", "", "NotoSansTC"],
+            "Effects": [True, "", "", ""],
+        }),
+        patch("server.routes.api.build_font_payload",
+              return_value={"name": "NotoSansTC", "url": None, "type": "default"}),
+        patch("server.routes.api.sticker_service") as mock_sticker_svc,
+        patch("server.routes.api.sound_service.match", return_value=None),
+        patch("server.routes.api.render_effects", return_value=None),
+    ):
+        mock_sticker_svc.resolve = mock_resolve
+        from server.routes.api import _resolve_danmu_style
+        result = _resolve_danmu_style(data)
+    return result, mock_resolve
+
+
+def test_sticker_converts_to_image_danmu():
+    result, _ = _resolve_with_sticker({"text": ":fire:"}, sticker_filename="fire.gif")
+    assert result["isImage"] is True
+    assert result["text"] == "http://127.0.0.1:5000/static/stickers/fire.gif"
+
+
+def test_sticker_no_sound_key_in_result():
+    result, _ = _resolve_with_sticker({"text": ":fire:"}, sticker_filename="fire.gif")
+    assert "sound" not in result
+
+
+def test_sticker_no_skip_sound_key_leaks():
+    result, _ = _resolve_with_sticker({"text": ":fire:"}, sticker_filename="fire.gif")
+    assert "_skip_sound" not in result
+
+
+def test_no_sticker_match_leaves_text_unchanged():
+    result, _ = _resolve_with_sticker({"text": "hello"}, sticker_filename=None)
+    assert result.get("isImage") is not True
+    assert result["text"] == "hello"
+
+
+def test_already_image_danmu_skips_sticker_resolution():
+    """isImage=True messages must not call sticker_service.resolve at all."""
+    result, mock_resolve = _resolve_with_sticker(
+        {"text": "http://example.com/img.png", "isImage": True},
+        sticker_filename="fire.gif",
+    )
+    mock_resolve.assert_not_called()
+    assert result["text"] == "http://example.com/img.png"
