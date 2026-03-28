@@ -1,5 +1,6 @@
 services:
   server:
+    image: ${DANMU_IMAGE:-danmu-server:local}
     build:
       context: ./server
       dockerfile: Dockerfile
@@ -29,6 +30,26 @@ services:
       - ./server/user_fonts:/app/server/user_fonts
       - ./server/static:/app/server/static
       - ./server/logs:/app/server/logs
+    labels:
+      - traefik.enable=true
+      # HTTP → HTTPS redirect
+      - traefik.http.middlewares.danmu-https-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.danmu-https-redirect.redirectscheme.permanent=true
+      - traefik.http.routers.danmu-http.rule=Host(`${DOMAIN:-localhost}`)
+      - traefik.http.routers.danmu-http.entrypoints=web
+      - traefik.http.routers.danmu-http.middlewares=danmu-https-redirect
+      # HTTPS - HTTP (port 4000)
+      - traefik.http.routers.danmu.rule=Host(`${DOMAIN:-localhost}`) && !PathPrefix(`/ws`)
+      - traefik.http.routers.danmu.entrypoints=websecure
+      - traefik.http.routers.danmu.tls.certresolver=le
+      - traefik.http.services.danmu.loadbalancer.server.port=4000
+      # WSS (port 4001，路徑 /ws，自動去除前綴)
+      - traefik.http.middlewares.danmu-ws-strip.stripprefix.prefixes=/ws
+      - traefik.http.routers.danmu-ws.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/ws`)
+      - traefik.http.routers.danmu-ws.entrypoints=websecure
+      - traefik.http.routers.danmu-ws.tls.certresolver=le
+      - traefik.http.routers.danmu-ws.middlewares=danmu-ws-strip
+      - traefik.http.services.danmu-ws.loadbalancer.server.port=4001
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health').read()"]
@@ -59,7 +80,46 @@ services:
       - "${HTTPS_PORT:-443}:443"
     volumes:
       - ./nginx/nginx-https.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/certs:/etc/nginx/certs:ro
+      - ./nginx/certs:/etc/nginx/certs
+    entrypoint:
+      - sh
+      - -c
+      - |
+        if [ ! -f /etc/nginx/certs/fullchain.pem ] || [ ! -f /etc/nginx/certs/privkey.pem ]; then
+          echo "[danmu] 自動產生自簽憑證..."
+          printf '[req]\ndistinguished_name=req\n[SAN]\nsubjectAltName=DNS:localhost,IP:127.0.0.1\n' \
+            > /tmp/san.cnf
+          openssl req -x509 -nodes -newkey rsa:2048 \
+            -keyout /etc/nginx/certs/privkey.pem \
+            -out /etc/nginx/certs/fullchain.pem \
+            -days 365 \
+            -subj "/CN=localhost" \
+            -extensions SAN \
+            -config /tmp/san.cnf 2>/dev/null
+          echo "[danmu] 憑證已產生，有效 365 天。"
+          echo "[danmu] 如需使用正式憑證，請將 fullchain.pem / privkey.pem 放入 nginx/certs/ 後重啟。"
+        fi
+        exec nginx -g "daemon off;"
+    restart: unless-stopped
+  traefik:
+    image: traefik:v3.3
+    container_name: danmu-traefik
+    profiles:
+      - traefik
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/acme.json:/acme.json
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.le.acme.email=${ACME_EMAIL:-admin@example.com}
+      - --certificatesresolvers.le.acme.storage=/acme.json
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
     restart: unless-stopped
   redis:
     image: redis:7-alpine
