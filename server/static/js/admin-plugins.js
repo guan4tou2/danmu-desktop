@@ -25,19 +25,17 @@
       }
     }
 
-    // Wait for admin.js to render the settings grid before injecting
+    // Wait for admin.js to render the settings grid before injecting.
+    // admin.js rebuilds the entire DOM via innerHTML on every renderControlPanel()
+    // call, so we keep observing and re-inject when our section is wiped out.
+    let pluginsInjecting = false;
     const observer = new MutationObserver(() => {
-      const settingsGrid = document.querySelector("#app-container .grid");
+      const settingsGrid = document.getElementById("settings-grid");
       if (!settingsGrid) return;
+      if (document.getElementById("sec-plugins") || pluginsInjecting) return;
 
-      // Avoid double-injection
-      if (document.getElementById("sec-plugins")) {
-        observer.disconnect();
-        return;
-      }
-
-      observer.disconnect();
-      injectPluginsSection(settingsGrid);
+      pluginsInjecting = true;
+      try { injectPluginsSection(settingsGrid); } finally { pluginsInjecting = false; }
     });
     observer.observe(document.getElementById("app-container"), {
       childList: true,

@@ -369,29 +369,27 @@
     });
   }
 
-  // Wait for admin.js to finish rendering (it also runs on DOMContentLoaded).
-  // Use a MutationObserver to detect when #settings-grid appears.
+  // Wait for admin.js to finish rendering. admin.js rebuilds the entire DOM
+  // via innerHTML on every renderControlPanel() call, so we keep observing
+  // and re-inject when our section is wiped out.
   function waitForGridAndInit() {
-    const grid = document.getElementById("settings-grid");
-    if (grid) {
-      init();
-      return;
-    }
+    let initializing = false;
 
-    const observer = new MutationObserver(function (_mutations, obs) {
+    const observer = new MutationObserver(function () {
       const g = document.getElementById("settings-grid");
-      if (g) {
-        obs.disconnect();
-        init();
+      if (g && !document.getElementById("sec-scheduler") && !initializing) {
+        initializing = true;
+        try { init(); } finally { initializing = false; }
       }
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
 
-    // Safety timeout: stop observing after 30s
-    setTimeout(function () {
-      observer.disconnect();
-    }, 30000);
+    // Also check immediately
+    const grid = document.getElementById("settings-grid");
+    if (grid && !document.getElementById("sec-scheduler")) {
+      init();
+    }
   }
 
   if (document.readyState === "loading") {

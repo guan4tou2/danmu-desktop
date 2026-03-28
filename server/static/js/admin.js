@@ -1485,6 +1485,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     addEventListeners();
     scheduleIdleTask(initEffectsManagement);
+
+    // Notify add-on scripts (admin-sounds.js, admin-webhooks.js, etc.)
+    // that the control panel has been (re)built, so they can re-inject.
+    document.dispatchEvent(new CustomEvent("admin-panel-rendered"));
   }
 
   // Attach Event Listeners

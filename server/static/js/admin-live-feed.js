@@ -337,22 +337,23 @@
 
   // ── Init ─────────────────────────────────────────────────
 
+  let wsListenerBound = false;
+
   function init() {
-    if (!injectSection()) {
-      // Panel not yet rendered (not logged in); retry once after admin.js renders
-      const observer = new MutationObserver(() => {
-        if (document.getElementById("settings-grid")) {
-          observer.disconnect();
-          if (injectSection()) bindAndListen();
-        }
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-      return;
-    }
-    bindAndListen();
+    // admin.js rebuilds the entire DOM via innerHTML on every renderControlPanel()
+    // call, so we keep observing and re-inject when our section is wiped out.
+    const observer = new MutationObserver(() => {
+      if (document.getElementById("settings-grid") && !document.getElementById("sec-live-feed")) {
+        if (injectSection()) bindUI();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Also check immediately
+    if (injectSection()) bindUI();
   }
 
-  function bindAndListen() {
+  function bindUI() {
     listEl = document.getElementById("liveFeedList");
     pauseBtn = document.getElementById("liveFeedPauseBtn");
     searchInput = document.getElementById("liveFeedSearch");
@@ -383,7 +384,7 @@
       });
     }
 
-    // Persist details open/close state (same mechanism as admin.js)
+    // Persist details open/close state
     const detailsEl = document.getElementById("sec-live-feed");
     if (detailsEl) {
       detailsEl.addEventListener("toggle", () => {
@@ -401,13 +402,21 @@
       });
     }
 
-    // Listen for WS messages dispatched by admin.js
-    document.addEventListener("admin-ws-message", (e) => {
-      const msg = e.detail;
-      if (msg && msg.type === "danmu_live" && msg.data) {
-        addEntry(msg.data);
-      }
-    });
+    // Listen for WS messages (bind once on document, survives DOM rebuilds)
+    if (!wsListenerBound) {
+      wsListenerBound = true;
+      document.addEventListener("admin-ws-message", (e) => {
+        const msg = e.detail;
+        if (msg && msg.type === "danmu_live" && msg.data) {
+          addEntry(msg.data);
+        }
+      });
+    }
+
+    // Re-render existing entries if we have data from before the DOM rebuild
+    if (entries.length > 0) {
+      renderList();
+    }
   }
 
   // ── Bootstrap ────────────────────────────────────────────
@@ -415,7 +424,6 @@
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {
-    // DOMContentLoaded already fired (unlikely with defer, but safe)
     init();
   }
 })();

@@ -263,25 +263,22 @@
     fetchAndRenderStickers();
   }
 
-  function tryInit() {
-    if (document.getElementById("settings-grid")) {
-      init();
-      return true;
-    }
-    return false;
-  }
-
+  // admin.js rebuilds the entire DOM via innerHTML on every renderControlPanel()
+  // call, so we keep observing and re-inject when our section is wiped out.
   document.addEventListener("DOMContentLoaded", function () {
-    if (tryInit()) return;
-
     var observer = new MutationObserver(function () {
-      if (tryInit()) {
-        observer.disconnect();
+      if (document.getElementById("settings-grid") && !document.getElementById("sec-stickers")) {
+        init();
       }
     });
     observer.observe(document.getElementById("app-container") || document.body, {
       childList: true,
       subtree: true,
     });
+
+    // Also check immediately
+    if (document.getElementById("settings-grid") && !document.getElementById("sec-stickers")) {
+      init();
+    }
   });
 })();

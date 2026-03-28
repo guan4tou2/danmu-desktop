@@ -315,31 +315,24 @@
     fetchAndRenderEmojis();
   }
 
-  // Wait for admin.js to render the control panel first.
-  // Since both scripts use DOMContentLoaded + defer, admin.js fires first
-  // (it appears earlier in the HTML). Use a MutationObserver as a robust fallback.
-
-  function tryInit() {
-    if (document.getElementById("settings-grid")) {
-      init();
-      return true;
-    }
-    return false;
-  }
+  // Wait for admin.js to render the control panel. admin.js rebuilds the
+  // entire DOM via innerHTML on every renderControlPanel() call, so we keep
+  // observing and re-inject when our section is wiped out.
 
   document.addEventListener("DOMContentLoaded", function () {
-    if (tryInit()) return;
-
-    // settings-grid is rendered asynchronously by admin.js after login;
-    // observe for its appearance.
     var observer = new MutationObserver(function () {
-      if (tryInit()) {
-        observer.disconnect();
+      if (document.getElementById("settings-grid") && !document.getElementById("sec-emojis")) {
+        init();
       }
     });
     observer.observe(document.getElementById("app-container") || document.body, {
       childList: true,
       subtree: true,
     });
+
+    // Also check immediately
+    if (document.getElementById("settings-grid") && !document.getElementById("sec-emojis")) {
+      init();
+    }
   });
 })();

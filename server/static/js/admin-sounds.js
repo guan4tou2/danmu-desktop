@@ -32,26 +32,23 @@
 
   async function fetchSounds() {
     try {
-      const res = await window.csrfFetch("/admin/sounds", { method: "GET" });
+      const res = await window.csrfFetch("/admin/sounds/list", { method: "GET" });
       if (!res.ok) throw new Error(await res.text());
-      availableSounds = await res.json();
+      const data = await res.json();
+      availableSounds = data.sounds || [];
+      soundRules = data.rules || [];
     } catch (err) {
       console.error("Failed to fetch sounds:", err);
       window.showToast("Failed to load sounds", false);
       availableSounds = [];
+      soundRules = [];
     }
   }
 
   async function fetchRules() {
-    try {
-      const res = await window.csrfFetch("/admin/sounds/rules", { method: "GET" });
-      if (!res.ok) throw new Error(await res.text());
-      soundRules = await res.json();
-    } catch (err) {
-      console.error("Failed to fetch sound rules:", err);
-      window.showToast("Failed to load sound rules", false);
-      soundRules = [];
-    }
+    // Rules are fetched together with sounds in fetchSounds()
+    // This function kept for compatibility with code that calls it separately
+    return fetchSounds();
   }
 
   async function uploadSound(file, name) {
@@ -91,7 +88,7 @@
   }
 
   async function deleteRule(ruleId) {
-    const res = await window.csrfFetch("/admin/sounds/rules/delete", {
+    const res = await window.csrfFetch("/admin/sounds/rules/remove", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: ruleId }),
@@ -530,26 +527,31 @@
     bindVolumeLabel();
   }
 
-  // Wait for DOM + admin.js to render the control panel before injecting
+  // Wait for DOM + admin.js to render the control panel before injecting.
+  // admin.js rebuilds the entire DOM via innerHTML on every renderControlPanel()
+  // call, so we must keep observing and re-inject when our section is wiped out.
   document.addEventListener("DOMContentLoaded", () => {
-    // The admin panel renders asynchronously after login.
-    // Use a MutationObserver to detect when the settings grid appears.
-    const observer = new MutationObserver((_mutations, obs) => {
-      const grid = document.querySelector(".grid.grid-cols-1");
-      // Ensure grid exists and the sounds section hasn't been added yet
-      if (grid && !document.getElementById("sec-sounds")) {
-        obs.disconnect();
-        initSoundsSection();
+    let injecting = false;
+
+    const observer = new MutationObserver(() => {
+      const grid = document.getElementById("settings-grid");
+      if (grid && !document.getElementById("sec-sounds") && !injecting) {
+        injecting = true;
+        initSoundsSection().finally(() => {
+          injecting = false;
+        });
       }
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
 
     // Also check immediately in case grid is already rendered
-    const grid = document.querySelector(".grid.grid-cols-1");
+    const grid = document.getElementById("settings-grid");
     if (grid && !document.getElementById("sec-sounds")) {
-      observer.disconnect();
-      initSoundsSection();
+      injecting = true;
+      initSoundsSection().finally(() => {
+        injecting = false;
+      });
     }
   });
 })();

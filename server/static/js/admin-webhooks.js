@@ -7,54 +7,53 @@
 (function () {
   "use strict";
 
-  document.addEventListener("DOMContentLoaded", () => {
-    const DETAILS_STATE_KEY = "admin-details-open-state";
+  const DETAILS_STATE_KEY = "admin-details-open-state";
+  const SECTION_ID = "sec-webhooks";
 
-    // ---- helpers ----
+  // ---- helpers ----
 
-    function _detailsOpen(id) {
-      try {
-        const raw = window.localStorage.getItem(DETAILS_STATE_KEY);
-        const state = raw ? JSON.parse(raw) : {};
-        return !!state[id];
-      } catch (_) {
-        return false;
-      }
+  function _detailsOpen(id) {
+    try {
+      const raw = window.localStorage.getItem(DETAILS_STATE_KEY);
+      const state = raw ? JSON.parse(raw) : {};
+      return !!state[id];
+    } catch (_) {
+      return false;
     }
+  }
 
-    function _saveDetailsOpen(id, open) {
-      try {
-        const raw = window.localStorage.getItem(DETAILS_STATE_KEY);
-        const state = raw ? JSON.parse(raw) : {};
-        state[id] = open;
-        window.localStorage.setItem(DETAILS_STATE_KEY, JSON.stringify(state));
-      } catch (_) {
-        /* ignore */
-      }
+  function _saveDetailsOpen(id, open) {
+    try {
+      const raw = window.localStorage.getItem(DETAILS_STATE_KEY);
+      const state = raw ? JSON.parse(raw) : {};
+      state[id] = open;
+      window.localStorage.setItem(DETAILS_STATE_KEY, JSON.stringify(state));
+    } catch (_) {
+      /* ignore */
     }
+  }
 
-    function _truncate(str, max) {
-      if (!str) return "";
-      return str.length > max ? str.slice(0, max) + "\u2026" : str;
-    }
+  function _truncate(str, max) {
+    if (!str) return "";
+    return str.length > max ? str.slice(0, max) + "\u2026" : str;
+  }
 
-    function _escHtml(str) {
-      const el = document.createElement("span");
-      el.textContent = str;
-      return el.innerHTML;
-    }
+  function _escHtml(str) {
+    const el = document.createElement("span");
+    el.textContent = str;
+    return el.innerHTML;
+  }
 
-    // ---- inject section ----
+  // ---- inject section ----
 
+  function injectSection() {
     const grid = document.getElementById("settings-grid");
-    if (!grid) return; // not logged in or grid not rendered yet
-
-    const sectionId = "sec-webhooks";
+    if (!grid || document.getElementById(SECTION_ID)) return;
 
     grid.insertAdjacentHTML(
       "beforeend",
       `
-      <details id="${sectionId}" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent lg:col-span-2 scroll-mt-24" ${_detailsOpen(sectionId) ? "open" : ""}>
+      <details id="${SECTION_ID}" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent lg:col-span-2 scroll-mt-24" ${_detailsOpen(SECTION_ID) ? "open" : ""}>
         <summary class="flex items-center justify-between cursor-pointer list-none">
           <div>
             <h3 class="text-lg font-bold text-white">Webhooks</h3>
@@ -116,136 +115,144 @@
           <!-- Webhook list -->
           <div>
             <h4 class="text-sm font-semibold text-slate-300 mb-2">Registered Webhooks</h4>
-            <div id="wh-list" class="space-y-2 text-sm text-slate-400">Loading…</div>
+            <div id="wh-list" class="space-y-2 text-sm text-slate-400">Loading\u2026</div>
           </div>
         </div>
       </details>
     `
     );
 
-    // ---- details toggle persistence ----
+    bindSection();
+  }
 
-    const detailsEl = document.getElementById(sectionId);
+  // ---- bind events after injection ----
+
+  function bindSection() {
+    const detailsEl = document.getElementById(SECTION_ID);
     if (detailsEl) {
       detailsEl.addEventListener("toggle", () => {
-        _saveDetailsOpen(sectionId, detailsEl.open);
+        _saveDetailsOpen(SECTION_ID, detailsEl.open);
         if (detailsEl.open) loadWebhooks();
       });
     }
 
-    // ---- register form ----
-
     const form = document.getElementById("wh-register-form");
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+    if (form) {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-      const url = document.getElementById("wh-url").value.trim();
-      if (!url) return;
+        const url = document.getElementById("wh-url").value.trim();
+        if (!url) return;
 
-      const events = Array.from(
-        form.querySelectorAll('input[name="wh-event"]:checked')
-      ).map((cb) => cb.value);
+        const events = Array.from(
+          form.querySelectorAll('input[name="wh-event"]:checked')
+        ).map((cb) => cb.value);
 
-      if (events.length === 0) {
-        showToast("Select at least one event", false);
+        if (events.length === 0) {
+          showToast("Select at least one event", false);
+          return;
+        }
+
+        const format = document.getElementById("wh-format").value;
+        const secret = document.getElementById("wh-secret").value.trim();
+
+        const payload = { url, events, format };
+        if (secret) payload.secret = secret;
+
+        try {
+          const res = await csrfFetch("/admin/webhooks/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (res.ok && data.status === "ok") {
+            showToast("Webhook registered");
+            form.reset();
+            const defaultCb = form.querySelector(
+              'input[name="wh-event"][value="on_danmu"]'
+            );
+            if (defaultCb) defaultCb.checked = true;
+            loadWebhooks();
+          } else {
+            showToast(data.error || "Registration failed", false);
+          }
+        } catch (err) {
+          console.error("Webhook register error:", err);
+          showToast("Registration failed", false);
+        }
+      });
+    }
+
+    if (detailsEl && detailsEl.open) {
+      loadWebhooks();
+    }
+  }
+
+  // ---- load webhook list ----
+
+  async function loadWebhooks() {
+    const listEl = document.getElementById("wh-list");
+    if (!listEl) return;
+
+    try {
+      const res = await csrfFetch("/admin/webhooks/list");
+      const data = await res.json();
+
+      if (!res.ok || !Array.isArray(data.webhooks)) {
+        listEl.textContent = data.error || "Failed to load webhooks";
         return;
       }
 
-      const format = document.getElementById("wh-format").value;
-      const secret = document.getElementById("wh-secret").value.trim();
-
-      const payload = { url, events, format };
-      if (secret) payload.secret = secret;
-
-      try {
-        const res = await csrfFetch("/admin/webhooks/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const data = await res.json();
-        if (res.ok && data.status === "ok") {
-          showToast("Webhook registered");
-          form.reset();
-          // Re-check on_danmu by default after reset
-          const defaultCb = form.querySelector(
-            'input[name="wh-event"][value="on_danmu"]'
-          );
-          if (defaultCb) defaultCb.checked = true;
-          loadWebhooks();
-        } else {
-          showToast(data.error || "Registration failed", false);
-        }
-      } catch (err) {
-        console.error("Webhook register error:", err);
-        showToast("Registration failed", false);
+      const hooks = data.webhooks;
+      if (hooks.length === 0) {
+        listEl.innerHTML =
+          '<p class="text-slate-500 italic">No webhooks registered.</p>';
+        return;
       }
-    });
 
-    // ---- load webhook list ----
-
-    async function loadWebhooks() {
-      const listEl = document.getElementById("wh-list");
-      if (!listEl) return;
-
-      try {
-        const res = await csrfFetch("/admin/webhooks/list");
-        const data = await res.json();
-
-        if (!res.ok || !Array.isArray(data.webhooks)) {
-          listEl.textContent = data.error || "Failed to load webhooks";
-          return;
-        }
-
-        const hooks = data.webhooks;
-        if (hooks.length === 0) {
-          listEl.innerHTML =
-            '<p class="text-slate-500 italic">No webhooks registered.</p>';
-          return;
-        }
-
-        listEl.innerHTML = hooks.map(renderHook).join("");
-        _bindHookActions();
-      } catch (err) {
-        console.error("Webhook list error:", err);
-        listEl.textContent = "Failed to load webhooks";
-      }
+      listEl.innerHTML = hooks.map(renderHook).join("");
+      _bindHookActions();
+    } catch (err) {
+      console.error("Webhook list error:", err);
+      listEl.textContent = "Failed to load webhooks";
     }
+  }
 
-    // ---- render single hook ----
+  // ---- render single hook ----
 
-    const FORMAT_COLORS = {
-      json: "bg-blue-600/20 text-blue-300",
-      discord: "bg-indigo-600/20 text-indigo-300",
-      slack: "bg-green-600/20 text-green-300",
-    };
+  const FORMAT_COLORS = {
+    json: "bg-blue-600/20 text-blue-300",
+    discord: "bg-indigo-600/20 text-indigo-300",
+    slack: "bg-green-600/20 text-green-300",
+  };
 
-    const STATUS_DOT = {
-      active: "bg-green-400",
-      error: "bg-red-400",
-      disabled: "bg-slate-500",
-    };
+  const STATUS_DOT = {
+    active: "bg-green-400",
+    error: "bg-red-400",
+    disabled: "bg-slate-500",
+  };
 
-    function renderHook(hook) {
-      const hookId = _escHtml(hook.id || hook.hook_id || "");
-      const urlDisplay = _escHtml(_truncate(hook.url, 50));
-      const format = (hook.format || "json").toLowerCase();
-      const status = (hook.status || "active").toLowerCase();
-      const events = Array.isArray(hook.events) ? hook.events : [];
+  function renderHook(hook) {
+    const hookId = _escHtml(hook.id || hook.hook_id || "");
+    const urlDisplay = _escHtml(_truncate(hook.url, 50));
+    const format = (hook.format || "json").toLowerCase();
+    const status = (hook.status || "active").toLowerCase();
+    const events = Array.isArray(hook.events) ? hook.events : [];
 
-      const eventBadges = events
-        .map(
-          (ev) =>
-            `<span class="px-1.5 py-0.5 rounded bg-violet-600/20 text-violet-300 text-xs">${_escHtml(ev)}</span>`
-        )
-        .join("");
+    const eventBadges = events
+      .map(
+        (ev) =>
+          `<span class="px-1.5 py-0.5 rounded bg-violet-600/20 text-violet-300 text-xs">${_escHtml(ev)}</span>`
+      )
+      .join("");
 
-      const formatBadge = `<span class="px-1.5 py-0.5 rounded text-xs ${FORMAT_COLORS[format] || FORMAT_COLORS.json}">${_escHtml(format)}</span>`;
+    const formatBadge = `<span class="px-1.5 py-0.5 rounded text-xs ${FORMAT_COLORS[format] || FORMAT_COLORS.json}">${_escHtml(format)}</span>`;
 
-      const dotClass = STATUS_DOT[status] || STATUS_DOT.active;
-      const statusIndicator = `<span class="inline-block w-2 h-2 rounded-full ${dotClass}" title="${_escHtml(status)}"></span>`;
+    const dotClass = STATUS_DOT[status] || STATUS_DOT.active;
+    const statusIndicator = `<span class="inline-block w-2 h-2 rounded-full ${dotClass}" title="${_escHtml(status)}"></span>`;
 
-      return `
+    return `
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-slate-800/60 rounded-lg border border-slate-700/50" data-hook-id="${hookId}">
           <div class="flex flex-col gap-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
@@ -264,80 +271,90 @@
             </button>
           </div>
         </div>`;
+  }
+
+  // ---- actions ----
+
+  function _bindHookActions() {
+    document.querySelectorAll(".wh-test-btn").forEach((btn) => {
+      btn.addEventListener("click", () => testWebhook(btn.dataset.hookId));
+    });
+    document.querySelectorAll(".wh-delete-btn").forEach((btn) => {
+      btn.addEventListener("click", () => deleteWebhook(btn.dataset.hookId));
+    });
+  }
+
+  async function testWebhook(hookId) {
+    if (!hookId) return;
+
+    const btn = document.querySelector(
+      `.wh-test-btn[data-hook-id="${CSS.escape(hookId)}"]`
+    );
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Sending\u2026";
     }
 
-    // ---- actions ----
-
-    function _bindHookActions() {
-      document.querySelectorAll(".wh-test-btn").forEach((btn) => {
-        btn.addEventListener("click", () => testWebhook(btn.dataset.hookId));
+    try {
+      const res = await csrfFetch("/admin/webhooks/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hook_id: hookId }),
       });
-      document.querySelectorAll(".wh-delete-btn").forEach((btn) => {
-        btn.addEventListener("click", () => deleteWebhook(btn.dataset.hookId));
-      });
-    }
-
-    async function testWebhook(hookId) {
-      if (!hookId) return;
-
-      const btn = document.querySelector(
-        `.wh-test-btn[data-hook-id="${CSS.escape(hookId)}"]`
-      );
+      const data = await res.json();
+      if (res.ok && data.status === "ok") {
+        showToast("Test payload sent");
+      } else {
+        showToast(data.error || "Test failed", false);
+      }
+    } catch (err) {
+      console.error("Webhook test error:", err);
+      showToast("Test failed", false);
+    } finally {
       if (btn) {
-        btn.disabled = true;
-        btn.textContent = "Sending\u2026";
-      }
-
-      try {
-        const res = await csrfFetch("/admin/webhooks/test", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ hook_id: hookId }),
-        });
-        const data = await res.json();
-        if (res.ok && data.status === "ok") {
-          showToast("Test payload sent");
-        } else {
-          showToast(data.error || "Test failed", false);
-        }
-      } catch (err) {
-        console.error("Webhook test error:", err);
-        showToast("Test failed", false);
-      } finally {
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = "Test";
-        }
+        btn.disabled = false;
+        btn.textContent = "Test";
       }
     }
+  }
 
-    async function deleteWebhook(hookId) {
-      if (!hookId) return;
-      if (!confirm("Delete this webhook?")) return;
+  async function deleteWebhook(hookId) {
+    if (!hookId) return;
+    if (!confirm("Delete this webhook?")) return;
 
-      try {
-        const res = await csrfFetch("/admin/webhooks/unregister", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ hook_id: hookId }),
-        });
-        const data = await res.json();
-        if (res.ok && data.status === "ok") {
-          showToast("Webhook deleted");
-          loadWebhooks();
-        } else {
-          showToast(data.error || "Delete failed", false);
-        }
-      } catch (err) {
-        console.error("Webhook delete error:", err);
-        showToast("Delete failed", false);
+    try {
+      const res = await csrfFetch("/admin/webhooks/unregister", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hook_id: hookId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.status === "ok") {
+        showToast("Webhook deleted");
+        loadWebhooks();
+      } else {
+        showToast(data.error || "Delete failed", false);
       }
+    } catch (err) {
+      console.error("Webhook delete error:", err);
+      showToast("Delete failed", false);
     }
+  }
 
-    // ---- initial load ----
+  // ---- bootstrap: re-inject on every admin panel rebuild ----
 
-    if (detailsEl && detailsEl.open) {
-      loadWebhooks();
-    }
+  document.addEventListener("DOMContentLoaded", () => {
+    const observer = new MutationObserver(() => {
+      if (document.getElementById("settings-grid") && !document.getElementById(SECTION_ID)) {
+        injectSection();
+      }
+    });
+    observer.observe(document.getElementById("app-container") || document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    // Also check immediately
+    injectSection();
   });
 })();

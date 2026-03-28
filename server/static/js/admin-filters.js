@@ -511,14 +511,28 @@
     refreshRulesList();
   }
 
-  // Wait for admin.js to finish rendering (it also uses DOMContentLoaded)
-  // Use a small delay to ensure the settings-grid element exists
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      // Defer to let admin.js render first
-      requestAnimationFrame(init);
+  // admin.js rebuilds the entire DOM via innerHTML on every renderControlPanel()
+  // call, so we keep observing and re-inject when our section is wiped out.
+  function bootstrap() {
+    const observer = new MutationObserver(() => {
+      if (document.getElementById("settings-grid") && !document.getElementById("sec-filters")) {
+        init();
+      }
     });
+    observer.observe(document.getElementById("app-container") || document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    // Also check immediately
+    if (document.getElementById("settings-grid") && !document.getElementById("sec-filters")) {
+      init();
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootstrap);
   } else {
-    requestAnimationFrame(init);
+    bootstrap();
   }
 })();
