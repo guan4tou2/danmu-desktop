@@ -44,6 +44,12 @@ from ..utils import allowed_file
 from ..utils import json_response as _json_response
 from ..utils import sanitize_log_string
 
+import re as _re
+
+_STICKER_ALLOWED_MIME = {"image/gif", "image/png", "image/webp"}
+_STICKER_MAX_SIZE = 2 * 1024 * 1024  # 2 MB
+_STICKER_NAME_RE = _re.compile(r"^[a-zA-Z0-9_]{1,32}$")
+
 admin_bp = Blueprint("admin_bp", __name__, url_prefix="/admin")
 
 
@@ -108,6 +114,68 @@ def upload_font():
         )
     current_app.logger.warning(f"Failed to upload font: {file.filename}")
     return _json_response({"error": "Failed to upload font"}, 400)
+
+
+@admin_bp.route("/upload_sticker", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+def upload_sticker():
+    if not _ensure_logged_in():
+        return _json_response({"error": "Unauthorized"}, 401)
+
+    file = request.files.get("file")
+    if not file or file.filename == "":
+        return _json_response({"error": "No file provided"}, 400)
+
+    name = file.filename.rsplit(".", 1)[0] if "." in file.filename else ""
+    ext = file.filename.rsplit(".", 1)[1].lower() if "." in file.filename else ""
+
+    if not _STICKER_NAME_RE.match(name):
+        return _json_response({"error": "Invalid sticker name (alphanumeric + underscore, max 32)"}, 400)
+
+    if ext not in {"gif", "png", "webp"}:
+        return _json_response({"error": "File type not allowed (gif, png, webp only)"}, 400)
+
+    file_bytes = file.read()
+    if len(file_bytes) > _STICKER_MAX_SIZE:
+        return _json_response({"error": "File too large (max 2MB)"}, 413)
+    if not file_bytes:
+        return _json_response({"error": "Empty file"}, 400)
+
+    actual_mime = magic.from_buffer(file_bytes[:2048], mime=True)
+    if actual_mime not in _STICKER_ALLOWED_MIME:
+        return _json_response(
+            {"error": f"Invalid file content type: {actual_mime}"}, 400
+        )
+
+    # Local imports — matching the existing admin.py pattern for emoji_service
+    from ..services import stickers as sticker_mod
+    from ..services.stickers import sticker_service
+    from ..services.emoji import emoji_service
+
+    # Name collision checks
+    if sticker_service.resolve(f":{name}:") is not None:
+        return _json_response({"error": f"Sticker '{name}' already exists"}, 409)
+    if emoji_service.get_url(name) is not None:
+        return _json_response({"error": f"Name '{name}' already used by an emoji"}, 409)
+
+    # Count limit
+    try:
+        sticker_service.check_count_limit()
+    except ValueError as e:
+        return _json_response({"error": str(e)}, 400)
+
+    dest = sticker_mod._STICKERS_DIR / f"{name}.{ext}"
+    sticker_mod._STICKERS_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        dest.write_bytes(file_bytes)
+    except OSError as e:
+        current_app.logger.error("Failed to save sticker: %s", sanitize_log_string(str(e)))
+        return _json_response({"error": "Failed to save sticker"}, 500)
+
+    sticker_service._scan()
+    current_app.logger.info("Sticker uploaded: %s", sanitize_log_string(f"{name}.{ext}"))
+    return _json_response({"name": name, "url": f"/static/stickers/{name}.{ext}"})
 
 
 @admin_bp.route("/get_fonts", methods=["GET"])

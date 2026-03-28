@@ -150,3 +150,83 @@ def test_get_stickers_lists_uploaded_sticker(client, tmp_path, monkeypatch):
     assert len(stickers) == 1
     assert stickers[0]["name"] == "wave"
     assert stickers[0]["url"] == "/static/stickers/wave.gif"
+
+
+# ── POST /admin/upload_sticker ───────────────────────────────────────────
+
+
+def _upload(client, filename, data, content_type="image/gif"):
+    """Helper: upload a sticker as admin."""
+    from io import BytesIO
+    login(client)
+    token = csrf_token(client)
+    return client.post(
+        "/admin/upload_sticker",
+        data={"file": (BytesIO(data), filename)},
+        content_type="multipart/form-data",
+        headers={"X-CSRF-Token": token},
+    )
+
+
+def login(client):
+    client.post("/login", data={"password": "test"}, follow_redirects=True)
+
+
+def csrf_token(client):
+    login(client)
+    with client.session_transaction() as sess:
+        return sess["csrf_token"]
+
+
+def test_upload_sticker_unauthenticated(client):
+    from io import BytesIO
+    res = client.post(
+        "/admin/upload_sticker",
+        data={"file": (BytesIO(b"GIF89a"), "fire.gif")},
+        content_type="multipart/form-data",
+    )
+    # @require_csrf fires before _ensure_logged_in() → 403; both are rejection
+    assert res.status_code in {401, 403}
+
+
+def test_upload_sticker_success(client, tmp_path, monkeypatch):
+    import server.services.stickers as sticker_mod
+    monkeypatch.setattr(sticker_mod, "_STICKERS_DIR", tmp_path)
+    sticker_mod.sticker_service._cache.clear()
+
+    # Use a real GIF header so magic recognizes it
+    gif_bytes = (
+        b"GIF89a\x01\x00\x01\x00\x00\xff\x00,"
+        b"\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x00;"
+    )
+    res = _upload(client, "fire.gif", gif_bytes)
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["name"] == "fire"
+    assert data["url"] == "/static/stickers/fire.gif"
+
+
+def test_upload_sticker_invalid_extension(client):
+    res = _upload(client, "fire.bmp", b"\x00" * 10)
+    assert res.status_code == 400
+
+
+def test_upload_sticker_too_large(client):
+    big = b"GIF89a" + b"\x00" * (2 * 1024 * 1024 + 1)
+    res = _upload(client, "big.gif", big)
+    assert res.status_code == 400 or res.status_code == 413
+
+
+def test_upload_sticker_name_collision_with_existing_sticker(client, tmp_path, monkeypatch):
+    import server.services.stickers as sticker_mod
+    monkeypatch.setattr(sticker_mod, "_STICKERS_DIR", tmp_path)
+    sticker_mod.sticker_service._cache.clear()
+    (tmp_path / "fire.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+    sticker_mod.sticker_service._scan()
+
+    gif_bytes = (
+        b"GIF89a\x01\x00\x01\x00\x00\xff\x00,"
+        b"\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x00;"
+    )
+    res = _upload(client, "fire.gif", gif_bytes)
+    assert res.status_code == 409
