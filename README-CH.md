@@ -50,7 +50,7 @@
 1. 下載[最新版本](https://github.com/guan4tou2/danmu-desktop/releases)
 2. MacOS 用戶需要執行：
    ```bash
-   sudo xattr -r -d com.apple.quarantine 'danmu manager.app'
+   sudo xattr -r -d com.apple.quarantine 'Danmu Desktop.app'
    ```
 3. 啟動應用程式
 4. 輸入伺服器的 IP 和端口（預設：4001）
@@ -103,27 +103,25 @@
    # 編輯 .env，至少設定 ADMIN_PASSWORD 或 ADMIN_PASSWORD_HASHED
    ```
 
-3. 啟動服務：
+3. 啟動服務（HTTP）：
 
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
-   - `reverse-proxy` 會對外開放 `4000`（HTTP）與 `4001`（WebSocket）。
-   - Python server 在 Compose 模式下改為僅內網可見，由 Nginx 反向代理。
+   - Nginx 反向代理對外開放 `4000`（HTTP）與 `4001`（WebSocket）。
+   - Python server 在 Compose 模式下僅內網可見，由 Nginx 反向代理。
 
-4. 可選 HTTPS 模式（Web 面板）：
-   ```bash
-   # 先放入憑證檔：
-   # nginx/certs/fullchain.pem
-   # nginx/certs/privkey.pem
-   docker-compose --profile https up -d
-   ```
-   - 會啟動 `reverse-proxy-https`，開放 `80/443`，並自動把 HTTP 轉 HTTPS。
-   - Desktop overlay 目前仍使用 `4001`（若要 desktop 也走 WSS 需另外調整 client 連線流程）。
+4. 可選覆蓋設定（透過 `-f` 組合）：
 
-5. 使用 Redis 進行速率限制（可選）：
+   | 覆蓋設定 | 指令 |
+   |----------|------|
+   | HTTPS（自簽憑證） | `docker compose -f docker-compose.yml -f docker-compose.https.yml up -d` |
+   | Traefik + Let's Encrypt | `docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d` |
+   | Redis 速率限制 | `docker compose -f docker-compose.yml -f docker-compose.redis.yml up -d` |
+
+   覆蓋設定可組合使用，例如 HTTPS + Redis：
    ```bash
-   docker-compose --profile redis up -d
+   docker compose -f docker-compose.yml -f docker-compose.https.yml -f docker-compose.redis.yml up -d
    ```
 
 #### 選項 3：手動設置

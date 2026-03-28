@@ -75,7 +75,7 @@ test.describe("Preview & Batch Test", () => {
 
     // App should still be running (no crash)
     const title = await page.title();
-    expect(title).toBe("Danmu Overlay Control");
+    expect(title).toBe("Danmu Desktop");
   });
 
   // ─── Batch Test ────────────────────────────────────────────────────────
@@ -107,7 +107,7 @@ test.describe("Preview & Batch Test", () => {
 
     // App still running
     const title = await page.title();
-    expect(title).toBe("Danmu Overlay Control");
+    expect(title).toBe("Danmu Desktop");
   });
 
   // ─── Settings Persistence ──────────────────────────────────────────────

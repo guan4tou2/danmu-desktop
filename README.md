@@ -53,7 +53,7 @@ Drop `.dme` files (YAML format) into `server/effects/` to add custom effects —
 1. Download the [latest release](https://github.com/guan4tou2/danmu-desktop/releases)
 2. For MacOS users, run:
    ```bash
-   sudo xattr -r -d com.apple.quarantine 'danmu manager.app'
+   sudo xattr -r -d com.apple.quarantine 'Danmu Desktop.app'
    ```
 3. Launch the application
 4. Enter the server's IP and port (default: 4001)
@@ -106,27 +106,25 @@ Drop `.dme` files (YAML format) into `server/effects/` to add custom effects —
    # Edit .env and set ADMIN_PASSWORD / ADMIN_PASSWORD_HASHED and other settings
    ```
 
-3. Start services:
+3. Start services (HTTP):
 
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
-   - `reverse-proxy` is exposed on host ports `4000` (HTTP) and `4001` (WebSocket).
-   - The Python server is now internal-only behind Nginx in Compose mode.
+   - Nginx reverse proxy exposes ports `4000` (HTTP) and `4001` (WebSocket).
+   - The Python server runs internal-only behind Nginx.
 
-4. Optional HTTPS mode (web panel):
-   ```bash
-   # Put cert files first:
-   # nginx/certs/fullchain.pem
-   # nginx/certs/privkey.pem
-   docker-compose --profile https up -d
-   ```
-   - This starts `reverse-proxy-https` on `80/443` and redirects HTTP to HTTPS.
-   - Desktop overlay connection remains on `4001` unless you separately implement WSS for the desktop client flow.
+4. Optional overrides (composable via `-f` flags):
 
-5. To use Redis for rate limiting (optional):
+   | Override | Command |
+   |----------|---------|
+   | HTTPS (self-signed) | `docker compose -f docker-compose.yml -f docker-compose.https.yml up -d` |
+   | Traefik + Let's Encrypt | `docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d` |
+   | Redis rate limiting | `docker compose -f docker-compose.yml -f docker-compose.redis.yml up -d` |
+
+   Overrides can be combined, e.g. HTTPS + Redis:
    ```bash
-   docker-compose --profile redis up -d
+   docker compose -f docker-compose.yml -f docker-compose.https.yml -f docker-compose.redis.yml up -d
    ```
 
 #### Option 3: Manual Setup

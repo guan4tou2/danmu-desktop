@@ -1,0 +1,44 @@
+# HTTPS override — self-signed certificate (auto-generated if missing)
+# Usage: docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
+services:
+  reverse-proxy:
+    # Disable the HTTP-only proxy defined in the base file
+    profiles:
+      - disabled
+
+  reverse-proxy-https:
+    image: nginx:1.27-alpine
+    container_name: danmu-reverse-proxy-https
+    depends_on:
+      - server
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx-https.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs
+    entrypoint:
+      - sh
+      - -c
+      - |
+        if [ ! -f /etc/nginx/certs/fullchain.pem ] || [ ! -f /etc/nginx/certs/privkey.pem ]; then
+          echo "[danmu] Auto-generating self-signed certificate..."
+          printf '[req]\ndistinguished_name=req\n[SAN]\nsubjectAltName=DNS:localhost,IP:127.0.0.1\n' \
+            > /tmp/san.cnf
+          openssl req -x509 -nodes -newkey rsa:2048 \
+            -keyout /etc/nginx/certs/privkey.pem \
+            -out /etc/nginx/certs/fullchain.pem \
+            -days 365 \
+            -subj "/CN=localhost" \
+            -extensions SAN \
+            -config /tmp/san.cnf 2>/dev/null
+          echo "[danmu] Certificate generated (valid 365 days)."
+          echo "[danmu] To use a real certificate, place fullchain.pem / privkey.pem in nginx/certs/ and restart."
+        fi
+        exec nginx -g "daemon off;"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.5"

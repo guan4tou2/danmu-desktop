@@ -57,7 +57,7 @@ app.whenReady().then(() => {
 
   const menu = [
     {
-      label: "Open Danmu Manager",
+      label: "Open Danmu Desktop",
       click: showMainWindow,
     },
     {
