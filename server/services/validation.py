@@ -1,6 +1,9 @@
 """輸入驗證服務"""
 
-from marshmallow import EXCLUDE, Schema, ValidationError, fields, validate, validates
+import re as _re
+import signal as _signal
+
+from marshmallow import EXCLUDE, Schema, ValidationError, fields, validate, validates, validates_schema
 
 # Valid setting type keys (mirrors Config.SETTABLE_OPTION_KEYS)
 _VALID_SETTING_TYPES = {
@@ -121,8 +124,19 @@ class SettingUpdateSchema(Schema):
             error="Unknown setting type.",
         ),
     )
-    value = fields.Raw(required=True)
+    value = fields.Raw(required=True, metadata={"max_bytes": 4096})
     index = fields.Int(required=True, validate=validate.Range(min=0, max=3))
+
+    @validates("value")
+    def validate_value_size(self, value, **kwargs):
+        import json as _json
+
+        try:
+            serialized = _json.dumps(value)
+        except Exception:
+            raise ValidationError("Value must be JSON-serializable.")
+        if len(serialized) > 4096:
+            raise ValidationError("Value exceeds maximum allowed size.")
 
 
 class ToggleSettingSchema(Schema):
@@ -138,11 +152,27 @@ class ToggleSettingSchema(Schema):
     enabled = fields.Bool(required=True)
 
 
+class SchedulerMessageSchema(Schema):
+    """排程訊息驗證"""
+
+    text = fields.Str(required=True, validate=validate.Length(min=1, max=100))
+    color = fields.Str(
+        load_default=None,
+        validate=validate.Regexp(r"^#?[0-9a-fA-F]{6}$", error="Invalid hex color"),
+    )
+    size = fields.Int(load_default=None, validate=validate.Range(min=1, max=200))
+    speed = fields.Int(load_default=None, validate=validate.Range(min=1, max=10))
+    opacity = fields.Int(load_default=None, validate=validate.Range(min=0, max=100))
+
+    class Meta:
+        unknown = EXCLUDE
+
+
 class SchedulerCreateSchema(Schema):
     """排程建立請求驗證"""
 
     messages = fields.List(
-        fields.Dict(),
+        fields.Nested(SchedulerMessageSchema),
         required=True,
         validate=validate.Length(min=1, max=50),
     )
@@ -152,6 +182,23 @@ class SchedulerCreateSchema(Schema):
     )
     repeat_count = fields.Int(load_default=-1, validate=validate.Range(min=-1, max=10000))
     start_delay = fields.Float(load_default=0, validate=validate.Range(min=0, max=3600))
+
+
+def _safe_compile_regex(pattern: str) -> None:
+    """Attempt to compile a regex; raise ValidationError if it's invalid or dangerous."""
+    try:
+        compiled = _re.compile(pattern, _re.IGNORECASE)
+    except _re.error as exc:
+        raise ValidationError(f"Invalid regex: {exc}")
+    # Heuristic ReDoS guard: reject patterns with nested quantifiers on groups/chars
+    dangerous = _re.search(r"(\([^)]*\)[+*?{].*[+*?{]|\[[^\]]*\][+*?{].*[+*?{])", pattern)
+    if dangerous:
+        raise ValidationError("Regex pattern may cause catastrophic backtracking.")
+    # Test against a short safe input to catch simple ReDoS patterns
+    try:
+        compiled.match("a" * 50)
+    except Exception:
+        raise ValidationError("Regex pattern failed safety check.")
 
 
 class FilterRuleSchema(Schema):
@@ -175,6 +222,11 @@ class FilterRuleSchema(Schema):
     # rate_limit specific
     max_count = fields.Int(load_default=5, validate=validate.Range(min=1, max=100))
     window_sec = fields.Float(load_default=60, validate=validate.Range(min=1, max=3600))
+
+    @validates_schema
+    def validate_pattern_safe(self, data, **kwargs):
+        if data.get("type") in ("regex", "replace") and data.get("pattern"):
+            _safe_compile_regex(data["pattern"])
 
 
 class WebhookSchema(Schema):

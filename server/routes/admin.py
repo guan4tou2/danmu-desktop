@@ -480,6 +480,7 @@ def save_effect_route():
 
 
 @admin_bp.route("/effects/preview", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def preview_effect():
     """預覽特效 CSS（不存檔）"""
@@ -510,18 +511,20 @@ def preview_effect():
     name = str(parsed["name"])
     effect_input = [{"name": name, "params": params}]
 
-    # Temporarily inject parsed effect into cache for rendering
-    original = eff_svc._cache.get(name)
-    eff_svc._cache[name] = parsed
-
+    # Temporarily inject parsed effect into cache for rendering.
+    # Lock during both the initial mutation and the restore to prevent races,
+    # but release before calling render_effects (which re-acquires _lock via get_effect).
+    with eff_svc._lock:
+        original = eff_svc._cache.get(name)
+        eff_svc._cache[name] = parsed
     try:
         result = render_effects(effect_input)
     finally:
-        # Restore original cache
-        if original is not None:
-            eff_svc._cache[name] = original
-        else:
-            eff_svc._cache.pop(name, None)
+        with eff_svc._lock:
+            if original is not None:
+                eff_svc._cache[name] = original
+            else:
+                eff_svc._cache.pop(name, None)
 
     if result is None:
         return _json_response({"error": "No animation generated"}, 400)
@@ -558,6 +561,7 @@ def get_themes():
 
 
 @admin_bp.route("/themes/active", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def set_active_theme():
     if not _ensure_logged_in():
@@ -574,6 +578,7 @@ def set_active_theme():
 
 
 @admin_bp.route("/themes/reload", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def reload_themes():
     if not _ensure_logged_in():
@@ -585,6 +590,7 @@ def reload_themes():
 
 
 @admin_bp.route("/history/export", methods=["GET"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 def export_history():
     """Export danmu history as JSON timeline."""
     if not _ensure_logged_in():
@@ -667,6 +673,7 @@ def clear_danmu_history():
 
 
 @admin_bp.route("/replay", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def start_replay():
     """啟動歷史彈幕回放"""
@@ -697,6 +704,7 @@ def start_replay():
 
 
 @admin_bp.route("/replay/pause", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def pause_replay():
     """暫停回放"""
@@ -707,6 +715,7 @@ def pause_replay():
 
 
 @admin_bp.route("/replay/resume", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def resume_replay():
     """繼續回放"""
@@ -717,6 +726,7 @@ def resume_replay():
 
 
 @admin_bp.route("/replay/stop", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def stop_replay():
     """停止回放"""
@@ -738,6 +748,7 @@ def get_replay_status():
 
 
 @admin_bp.route("/poll/create", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def create_poll():
     """建立新投票"""
@@ -756,6 +767,7 @@ def create_poll():
 
 
 @admin_bp.route("/poll/end", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def end_poll():
     """結束投票"""
@@ -766,6 +778,7 @@ def end_poll():
 
 
 @admin_bp.route("/poll/reset", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def reset_poll():
     """重置投票"""
@@ -787,6 +800,7 @@ def get_poll_status():
 
 
 @admin_bp.route("/scheduler/create", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def create_scheduled_job():
     """建立排程任務"""
@@ -811,6 +825,7 @@ def create_scheduled_job():
 
 
 @admin_bp.route("/scheduler/cancel", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def cancel_scheduled_job():
     if not _ensure_logged_in():
@@ -825,6 +840,7 @@ def cancel_scheduled_job():
 
 
 @admin_bp.route("/scheduler/pause", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def pause_scheduled_job():
     if not _ensure_logged_in():
@@ -839,6 +855,7 @@ def pause_scheduled_job():
 
 
 @admin_bp.route("/scheduler/resume", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def resume_scheduled_job():
     if not _ensure_logged_in():
@@ -865,6 +882,7 @@ def list_scheduled_jobs():
 
 
 @admin_bp.route("/filters/add", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def add_filter_rule():
     if not _ensure_logged_in():
@@ -883,6 +901,7 @@ def add_filter_rule():
 
 
 @admin_bp.route("/filters/remove", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def remove_filter_rule():
     if not _ensure_logged_in():
@@ -897,6 +916,7 @@ def remove_filter_rule():
 
 
 @admin_bp.route("/filters/update", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def update_filter_rule():
     if not _ensure_logged_in():
@@ -926,6 +946,7 @@ def list_filter_rules():
 
 
 @admin_bp.route("/filters/test", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def test_filter_rule():
     """測試過濾規則是否匹配"""
@@ -953,6 +974,7 @@ def test_filter_rule():
 
 
 @admin_bp.route("/webhooks/register", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def register_webhook():
     if not _ensure_logged_in():
@@ -971,6 +993,7 @@ def register_webhook():
 
 
 @admin_bp.route("/webhooks/unregister", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def unregister_webhook():
     if not _ensure_logged_in():
@@ -994,6 +1017,7 @@ def list_webhooks():
 
 
 @admin_bp.route("/webhooks/test", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def test_webhook():
     """測試 webhook（發送測試 payload）"""
@@ -1034,12 +1058,25 @@ def incoming_webhook(hook_id):
     if not text:
         return _json_response({"error": "Missing text"}, 400)
 
+    color = body.get("color", "FFFFFF")
+    if not isinstance(color, str) or not _re.match(r"^#?[0-9a-fA-F]{6}$", color):
+        color = "FFFFFF"
+    size = body.get("size", 50)
+    if not isinstance(size, int) or not (1 <= size <= 200):
+        size = 50
+    speed = body.get("speed", 4)
+    if not isinstance(speed, int) or not (1 <= speed <= 10):
+        speed = 4
+    opacity = body.get("opacity", 100)
+    if not isinstance(opacity, int) or not (0 <= opacity <= 100):
+        opacity = 100
+
     msg = {
         "text": text[:100],
-        "color": body.get("color", "FFFFFF"),
-        "size": body.get("size", 50),
-        "speed": body.get("speed", 4),
-        "opacity": body.get("opacity", 100),
+        "color": color,
+        "size": size,
+        "speed": speed,
+        "opacity": opacity,
     }
     messaging.forward_to_ws_server(msg)
     return _json_response({"status": "OK"})
@@ -1087,6 +1124,7 @@ def upload_sound():
 
 
 @admin_bp.route("/sounds/delete", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def delete_sound():
     if not _ensure_logged_in():
@@ -1101,6 +1139,7 @@ def delete_sound():
 
 
 @admin_bp.route("/sounds/rules/add", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def add_sound_rule():
     if not _ensure_logged_in():
@@ -1116,6 +1155,7 @@ def add_sound_rule():
 
 
 @admin_bp.route("/sounds/rules/remove", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def remove_sound_rule():
     if not _ensure_logged_in():
@@ -1166,6 +1206,7 @@ def upload_emoji():
 
 
 @admin_bp.route("/emojis/delete", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def delete_emoji():
     if not _ensure_logged_in():
@@ -1192,6 +1233,7 @@ def list_plugins():
 
 
 @admin_bp.route("/plugins/enable", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def enable_plugin():
     if not _ensure_logged_in():
@@ -1206,6 +1248,7 @@ def enable_plugin():
 
 
 @admin_bp.route("/plugins/disable", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def disable_plugin():
     if not _ensure_logged_in():
@@ -1220,6 +1263,7 @@ def disable_plugin():
 
 
 @admin_bp.route("/plugins/reload", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def reload_plugins():
     if not _ensure_logged_in():
@@ -1234,6 +1278,7 @@ def reload_plugins():
 
 
 @admin_bp.route("/live/block", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 def live_block():
     """即時封鎖 — 加入黑名單或過濾規則"""
@@ -1241,9 +1286,10 @@ def live_block():
         return _json_response({"error": "Unauthorized"}, 401)
     data = request.get_json(silent=True) or {}
     block_type = data.get("type", "keyword")  # "keyword" or "fingerprint"
-    value = data.get("value", "").strip()
-    if not value:
-        return _json_response({"error": "Value required"}, 400)
+    validated, errors = validate_request(BlacklistKeywordSchema, {"keyword": data.get("value", "")})
+    if errors:
+        return _json_response({"error": "Validation failed", "details": errors}, 400)
+    value = validated["keyword"]
 
     if block_type == "keyword":
         add_keyword(value)

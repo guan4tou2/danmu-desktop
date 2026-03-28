@@ -71,8 +71,7 @@ def login():
 @main_bp.route("/logout", methods=["POST"])
 @require_csrf
 def logout():
-    session.pop("logged_in", None)
-    session.pop("csrf_token", None)
+    session.clear()
     return redirect(url_for("admin_bp.admin"))
 
 

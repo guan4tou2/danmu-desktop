@@ -2,6 +2,7 @@ import asyncio
 import json
 import secrets
 import threading
+import time
 from urllib.parse import parse_qs, urlparse
 
 import websockets
@@ -195,6 +196,23 @@ def run_ws_server(ws_port, logger):
         logger.info("Client disconnected. Remaining: %s", total_clients)
         update_ws_client_count(total_clients)
 
+    # Per-connection message rate limiter: max 30 messages per 10 seconds
+    _WS_MSG_RATE = 30
+    _WS_MSG_WINDOW = 10.0
+    _msg_counts: dict = {}  # websocket -> [count, window_start]
+
+    def _check_msg_rate(websocket) -> bool:
+        """Return True if message is allowed; False if rate limit exceeded."""
+        now = time.monotonic()
+        entry = _msg_counts.get(websocket)
+        if entry is None or now - entry[1] >= _WS_MSG_WINDOW:
+            _msg_counts[websocket] = [1, now]
+            return True
+        if entry[0] >= _WS_MSG_RATE:
+            return False
+        entry[0] += 1
+        return True
+
     async def ws_handler(websocket):
         """Handle a single WebSocket client connection.
 
@@ -221,6 +239,12 @@ def run_ws_server(ws_port, logger):
             return
         try:
             async for message in websocket:
+                if not _check_msg_rate(websocket):
+                    logger.warning(
+                        "WS per-connection message rate limit exceeded for %s",
+                        _get_client_ip(websocket),
+                    )
+                    continue
                 try:
                     data = json.loads(message)
                     if data.get("type") == "heartbeat":
@@ -243,6 +267,7 @@ def run_ws_server(ws_port, logger):
         except Exception as exc:
             logger.error("WebSocket error in dedicated server: %s", sanitize_log_string(str(exc)))
         finally:
+            _msg_counts.pop(websocket, None)
             await unregister(websocket)
 
     async def start_server():
