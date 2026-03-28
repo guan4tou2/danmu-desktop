@@ -31,22 +31,22 @@ run: ## 啟動伺服器（開發模式）
 docker-build: ## 建置 Docker image（從 source）
 	docker compose build
 
-docker-up: ## 啟動容器（HTTP only，從 source build）
-	docker compose --profile http up -d --build
+docker-up: ## 啟動容器（從 source build）
+	docker compose up -d --build
 
-docker-up-prebuilt: ## 啟動容器（HTTP only，使用預建 image，需設定 DANMU_IMAGE）
-	docker compose --profile http up -d --no-build
+docker-up-prebuilt: ## 啟動容器（使用預建 image，需設定 DANMU_IMAGE）
+	docker compose up -d --no-build
 
 docker-up-https: ## 啟動容器（HTTPS + WSS，自動產生自簽憑證）
-	docker compose --profile https up -d
+	docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
 
 docker-up-traefik: ## 啟動容器（Traefik + Let's Encrypt，需在 .env 設定 DOMAIN 和 ACME_EMAIL）
 	@mkdir -p traefik
 	@touch traefik/acme.json && chmod 600 traefik/acme.json
-	docker compose --profile traefik up -d
+	docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d
 
 docker-up-redis: ## 啟動容器（HTTP + Redis rate limiter，跨實例共享限流）
-	RATE_LIMIT_BACKEND=redis docker compose --profile redis up -d
+	docker compose -f docker-compose.yml -f docker-compose.redis.yml up -d
 
 docker-pull: ## 拉取預建 image（需先在 .env 設定 DANMU_IMAGE）
 	docker compose pull server

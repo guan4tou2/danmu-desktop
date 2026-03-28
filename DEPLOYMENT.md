@@ -57,20 +57,20 @@ This bilingual guide explains how to deploy the danmu-desktop server. / 本文�
    ```
 3. **Start services / 啟動服務**
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 4. **View logs / 查看日誌**
    ```bash
-   docker-compose logs -f
+   docker compose logs -f
    ```
 5. **Stop / 停止**
    ```bash
-   docker-compose down
+   docker compose down
    ```
 
 ### Redis Rate Limiting / Redis 速率限制
 ```bash
-docker-compose --profile redis up -d
+docker compose -f docker-compose.yml -f docker-compose.redis.yml up -d
 ```
 `.env` 設定 / set:
 ```bash
@@ -86,7 +86,7 @@ REDIS_URL=redis://redis:6379/0
 ### Update Services / 更新服務
 ```bash
 git pull
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 ## Manual Deployment / 手動部署 {#manual-deployment--手動部署}
