@@ -1,7 +1,7 @@
 .PHONY: help install test test-verbose coverage run \
         docker-build docker-up docker-up-prebuilt docker-up-https docker-up-traefik \
         docker-up-redis docker-down docker-logs docker-restart docker-clean docker-pull \
-        gen-certs setup-env clean lint format
+        gen-certs setup-env clean lint format copy-tokens
 
 help: ## 顯示此幫助訊息
 	@echo "可用指令："
@@ -87,3 +87,6 @@ lint: ## 執行程式碼檢查
 
 format: ## 格式化程式碼
 	cd server && uv run black . --exclude="/(\.venv|__pycache__)/"
+
+copy-tokens: ## 將共用 design tokens 複製到 server static 目錄
+	cp shared/tokens.css server/static/css/tokens.css
