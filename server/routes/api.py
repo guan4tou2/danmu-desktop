@@ -101,7 +101,7 @@ def _resolve_danmu_style(data):
 
     font_setting = options.get("FontFamily", [False, "", "", "NotoSansTC"])
     chosen_font_name = font_setting[3]
-    if font_setting[0] and data.get("fontInfo", {}).get("name"):
+    if font_setting[0] and (data.get("fontInfo") or {}).get("name"):
         chosen_font_name = data["fontInfo"]["name"]
     data["fontInfo"] = build_font_payload(chosen_font_name)
 
