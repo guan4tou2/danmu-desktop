@@ -32,10 +32,10 @@ docker-build: ## 建置 Docker image（從 source）
 	docker compose build
 
 docker-up: ## 啟動容器（HTTP only，從 source build）
-	docker compose up -d --build
+	docker compose --profile http up -d --build
 
 docker-up-prebuilt: ## 啟動容器（HTTP only，使用預建 image，需設定 DANMU_IMAGE）
-	docker compose up -d --no-build
+	docker compose --profile http up -d --no-build
 
 docker-up-https: ## 啟動容器（HTTPS + WSS，自動產生自簽憑證）
 	docker compose --profile https up -d

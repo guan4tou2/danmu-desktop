@@ -26,6 +26,8 @@ services:
       - WS_AUTH_TOKEN=${WS_AUTH_TOKEN:-}
       - WS_ALLOWED_ORIGINS=${WS_ALLOWED_ORIGINS:-}
       - WEB_WS_ALLOWED_ORIGINS=${WEB_WS_ALLOWED_ORIGINS:-}
+      - WS_MAX_CONNECTIONS=${WS_MAX_CONNECTIONS:-200}
+      - WS_MAX_CONNECTIONS_PER_IP=${WS_MAX_CONNECTIONS_PER_IP:-10}
     volumes:
       - ./server/user_fonts:/app/server/user_fonts
       - ./server/static:/app/server/static
@@ -65,6 +67,8 @@ services:
   reverse-proxy:
     image: nginx:1.27-alpine
     container_name: danmu-reverse-proxy
+    profiles:
+      - http
     depends_on:
       - server
     ports:

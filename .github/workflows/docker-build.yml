@@ -54,7 +54,7 @@ jobs:
         id: images
         run: |
           IMAGES="ghcr.io/${{ github.repository_owner }}/danmu-server"
-          if [ -n "${{ env.DOCKERHUB_USERNAME }}" ]; then
+          if [ -n "${{ env.DOCKERHUB_USERNAME }}" ] && [ -n "${{ env.DOCKERHUB_TOKEN }}" ]; then
             IMAGES="$IMAGES
           ${{ env.DOCKERHUB_USERNAME }}/danmu-server"
           fi
