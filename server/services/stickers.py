@@ -9,7 +9,6 @@ change infrequently compared to emojis/effects).
 """
 
 import logging
-import os
 import re
 import threading
 from pathlib import Path

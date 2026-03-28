@@ -1,4 +1,5 @@
 import json
+import re as _re
 
 import magic
 from flask import (
@@ -43,8 +44,6 @@ from ..services.ws_state import get_ws_client_count
 from ..utils import allowed_file
 from ..utils import json_response as _json_response
 from ..utils import sanitize_log_string
-
-import re as _re
 
 _STICKER_ALLOWED_MIME = {"image/gif", "image/png", "image/webp"}
 _STICKER_MAX_SIZE = 2 * 1024 * 1024  # 2 MB
@@ -131,7 +130,9 @@ def upload_sticker():
     ext = file.filename.rsplit(".", 1)[1].lower() if "." in file.filename else ""
 
     if not _STICKER_NAME_RE.match(name):
-        return _json_response({"error": "Invalid sticker name (alphanumeric + underscore, max 32)"}, 400)
+        return _json_response(
+            {"error": "Invalid sticker name (alphanumeric + underscore, max 32)"}, 400
+        )
 
     if ext not in {"gif", "png", "webp"}:
         return _json_response({"error": "File type not allowed (gif, png, webp only)"}, 400)
@@ -144,14 +145,12 @@ def upload_sticker():
 
     actual_mime = magic.from_buffer(file_bytes[:2048], mime=True)
     if actual_mime not in _STICKER_ALLOWED_MIME:
-        return _json_response(
-            {"error": f"Invalid file content type: {actual_mime}"}, 400
-        )
+        return _json_response({"error": f"Invalid file content type: {actual_mime}"}, 400)
 
     # Local imports — matching the existing admin.py pattern for emoji_service
     from ..services import stickers as sticker_mod
-    from ..services.stickers import sticker_service
     from ..services.emoji import emoji_service
+    from ..services.stickers import sticker_service
 
     # Name collision checks
     if sticker_service.resolve(f":{name}:") is not None:
@@ -188,7 +187,10 @@ def delete_sticker(name):
     if not _STICKER_NAME_RE.match(name):
         return _json_response({"error": "Invalid sticker name"}, 400)
 
-    from ..services.stickers import sticker_service  # local import, matching admin.py style
+    from ..services.stickers import (
+        sticker_service,  # local import, matching admin.py style
+    )
+
     deleted = sticker_service.delete(name)
     if not deleted:
         return _json_response({"error": "Sticker not found"}, 404)

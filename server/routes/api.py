@@ -16,7 +16,6 @@ from ..services.blacklist import contains_keyword
 from ..services.effects import load_all as load_all_effects
 from ..services.effects import render_effects
 from ..services.emoji import emoji_service
-from ..services.stickers import sticker_service
 from ..services.filter_engine import filter_engine
 from ..services.fonts import build_font_payload, list_available_fonts
 from ..services.layout import get_layout_config, get_layout_css
@@ -24,6 +23,7 @@ from ..services.poll import poll_service
 from ..services.security import rate_limit, require_csrf, verify_font_token
 from ..services.settings import get_options
 from ..services.sound import sound_service
+from ..services.stickers import sticker_service
 from ..services.validation import (
     BlacklistCheckSchema,
     FireRequestSchema,

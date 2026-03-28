@@ -661,10 +661,14 @@ def test_live_block_keyword_unauthenticated(client):
 
 def test_live_block_keyword_success(client):
     """Blocking a keyword adds it to the blacklist and returns 200."""
-    resp = authed_post(client, "/admin/live/block", {"type": "keyword", "value": "badword_live_test"})
+    resp = authed_post(
+        client, "/admin/live/block", {"type": "keyword", "value": "badword_live_test"}
+    )
     assert resp.status_code == 200
     data = json.loads(resp.data)
-    assert "blocked" in data.get("message", "").lower() or "badword_live_test" in data.get("message", "")
+    assert "blocked" in data.get("message", "").lower() or "badword_live_test" in data.get(
+        "message", ""
+    )
 
 
 def test_live_block_empty_value_rejected(client):

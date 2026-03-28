@@ -1,5 +1,7 @@
 """Tests for server.services.stickers — StickerService."""
+
 import pytest
+
 from server.services import stickers as sticker_mod
 from server.services.stickers import StickerService
 
@@ -139,6 +141,7 @@ def test_get_stickers_returns_empty_list(client):
 
 def test_get_stickers_lists_uploaded_sticker(client, tmp_path, monkeypatch):
     import server.services.stickers as sticker_mod
+
     monkeypatch.setattr(sticker_mod, "_STICKERS_DIR", tmp_path)
     sticker_mod.sticker_service._cache.clear()
     (tmp_path / "wave.gif").write_bytes(b"GIF89a")
@@ -158,6 +161,7 @@ def test_get_stickers_lists_uploaded_sticker(client, tmp_path, monkeypatch):
 def _upload(client, filename, data, content_type="image/gif"):
     """Helper: upload a sticker as admin."""
     from io import BytesIO
+
     login(client)
     token = csrf_token(client)
     return client.post(
@@ -180,6 +184,7 @@ def csrf_token(client):
 
 def test_upload_sticker_unauthenticated(client):
     from io import BytesIO
+
     res = client.post(
         "/admin/upload_sticker",
         data={"file": (BytesIO(b"GIF89a"), "fire.gif")},
@@ -191,13 +196,13 @@ def test_upload_sticker_unauthenticated(client):
 
 def test_upload_sticker_success(client, tmp_path, monkeypatch):
     import server.services.stickers as sticker_mod
+
     monkeypatch.setattr(sticker_mod, "_STICKERS_DIR", tmp_path)
     sticker_mod.sticker_service._cache.clear()
 
     # Use a real GIF header so magic recognizes it
     gif_bytes = (
-        b"GIF89a\x01\x00\x01\x00\x00\xff\x00,"
-        b"\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x00;"
+        b"GIF89a\x01\x00\x01\x00\x00\xff\x00," b"\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x00;"
     )
     res = _upload(client, "fire.gif", gif_bytes)
     assert res.status_code == 200
@@ -219,14 +224,14 @@ def test_upload_sticker_too_large(client):
 
 def test_upload_sticker_name_collision_with_existing_sticker(client, tmp_path, monkeypatch):
     import server.services.stickers as sticker_mod
+
     monkeypatch.setattr(sticker_mod, "_STICKERS_DIR", tmp_path)
     sticker_mod.sticker_service._cache.clear()
     (tmp_path / "fire.png").write_bytes(b"\x89PNG\r\n\x1a\n")
     sticker_mod.sticker_service._scan()
 
     gif_bytes = (
-        b"GIF89a\x01\x00\x01\x00\x00\xff\x00,"
-        b"\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x00;"
+        b"GIF89a\x01\x00\x01\x00\x00\xff\x00," b"\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x00;"
     )
     res = _upload(client, "fire.gif", gif_bytes)
     assert res.status_code == 409
@@ -245,6 +250,7 @@ def _delete_sticker(client, name):
 
 def test_delete_sticker_success(client, tmp_path, monkeypatch):
     import server.services.stickers as sticker_mod
+
     monkeypatch.setattr(sticker_mod, "_STICKERS_DIR", tmp_path)
     sticker_mod.sticker_service._cache.clear()
     f = tmp_path / "wave.gif"

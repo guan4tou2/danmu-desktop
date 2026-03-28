@@ -224,7 +224,7 @@ def _resolve_with_sticker(data, sticker_filename=None):
     Uses patch("server.routes.api.request") to avoid creating an app context,
     matching the existing _resolve() helper pattern in this file.
     """
-    from unittest.mock import patch, MagicMock
+    from unittest.mock import MagicMock, patch
 
     mock_request = MagicMock()
     mock_request.host_url = "http://127.0.0.1:5000/"
@@ -233,22 +233,28 @@ def _resolve_with_sticker(data, sticker_filename=None):
 
     with (
         patch("server.routes.api.request", mock_request),
-        patch("server.routes.api.get_options", return_value={
-            "Color": [True, 0, 0, "#FFFFFF"],
-            "Opacity": [True, 0, 100, 70],
-            "FontSize": [True, 20, 100, 50],
-            "Speed": [True, 1, 10, 4],
-            "FontFamily": [False, "", "", "NotoSansTC"],
-            "Effects": [True, "", "", ""],
-        }),
-        patch("server.routes.api.build_font_payload",
-              return_value={"name": "NotoSansTC", "url": None, "type": "default"}),
+        patch(
+            "server.routes.api.get_options",
+            return_value={
+                "Color": [True, 0, 0, "#FFFFFF"],
+                "Opacity": [True, 0, 100, 70],
+                "FontSize": [True, 20, 100, 50],
+                "Speed": [True, 1, 10, 4],
+                "FontFamily": [False, "", "", "NotoSansTC"],
+                "Effects": [True, "", "", ""],
+            },
+        ),
+        patch(
+            "server.routes.api.build_font_payload",
+            return_value={"name": "NotoSansTC", "url": None, "type": "default"},
+        ),
         patch("server.routes.api.sticker_service") as mock_sticker_svc,
         patch("server.routes.api.sound_service.match", return_value=None),
         patch("server.routes.api.render_effects", return_value=None),
     ):
         mock_sticker_svc.resolve = mock_resolve
         from server.routes.api import _resolve_danmu_style
+
         result = _resolve_danmu_style(data)
     return result, mock_resolve
 

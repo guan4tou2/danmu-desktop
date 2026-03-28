@@ -125,22 +125,25 @@ def test_forward_broadcasts_danmu_live_to_web_connections(app):
     """forward_to_ws_server broadcasts a danmu_live message to web connections."""
     import json
     from unittest.mock import MagicMock, patch
+
     from server.services.messaging import forward_to_ws_server
 
     mock_client = MagicMock()
     with patch("server.services.messaging.connection_manager") as mock_cm:
         mock_cm.get_web_connections.return_value = [mock_client]
-        forward_to_ws_server({
-            "text": "hello",
-            "color": "#ffffff",
-            "size": "24",
-            "speed": "5",
-            "opacity": "100",
-            "nickname": "Alice",
-            "layout": "scroll",
-            "isImage": False,
-            "fingerprint": "abc123",
-        })
+        forward_to_ws_server(
+            {
+                "text": "hello",
+                "color": "#ffffff",
+                "size": "24",
+                "speed": "5",
+                "opacity": "100",
+                "nickname": "Alice",
+                "layout": "scroll",
+                "isImage": False,
+                "fingerprint": "abc123",
+            }
+        )
 
     assert mock_client.send.called
     sent = json.loads(mock_client.send.call_args[0][0])
@@ -153,6 +156,7 @@ def test_forward_broadcasts_danmu_live_to_web_connections(app):
 def test_forward_live_broadcast_does_not_block_on_exception(app):
     """Even if broadcast fails, forward_to_ws_server returns True."""
     from unittest.mock import patch
+
     from server.services.messaging import forward_to_ws_server
 
     with patch("server.services.messaging.connection_manager") as mock_cm:
@@ -165,6 +169,7 @@ def test_forward_live_broadcast_does_not_block_on_exception(app):
 def test_forward_skips_live_broadcast_for_empty_text(app):
     """Messages without text field should not trigger live broadcast."""
     from unittest.mock import MagicMock, patch
+
     from server.services.messaging import forward_to_ws_server
 
     mock_client = MagicMock()

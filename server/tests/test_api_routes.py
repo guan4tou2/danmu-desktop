@@ -174,14 +174,17 @@ def test_fire_with_nickname_passes_validation(client):
     from server.services.ws_state import update_ws_client_count
 
     update_ws_client_count(1)
-    resp = client.post("/fire", json={
-        "text": "hello",
-        "nickname": "Alice",
-        "color": "#ffffff",
-        "size": 24,
-        "speed": 5,
-        "opacity": 100,
-    })
+    resp = client.post(
+        "/fire",
+        json={
+            "text": "hello",
+            "nickname": "Alice",
+            "color": "#ffffff",
+            "size": 24,
+            "speed": 5,
+            "opacity": 100,
+        },
+    )
     assert resp.status_code == 200
 
 
@@ -190,14 +193,17 @@ def test_fire_nickname_too_long_rejected(client):
     from server.services.ws_state import update_ws_client_count
 
     update_ws_client_count(1)
-    resp = client.post("/fire", json={
-        "text": "hello",
-        "nickname": "A" * 21,
-        "color": "#ffffff",
-        "size": 24,
-        "speed": 5,
-        "opacity": 100,
-    })
+    resp = client.post(
+        "/fire",
+        json={
+            "text": "hello",
+            "nickname": "A" * 21,
+            "color": "#ffffff",
+            "size": 24,
+            "speed": 5,
+            "opacity": 100,
+        },
+    )
     assert resp.status_code in {400, 422}
 
 
@@ -206,11 +212,14 @@ def test_fire_without_nickname_succeeds(client):
     from server.services.ws_state import update_ws_client_count
 
     update_ws_client_count(1)
-    resp = client.post("/fire", json={
-        "text": "hello",
-        "color": "#ffffff",
-        "size": 24,
-        "speed": 5,
-        "opacity": 100,
-    })
+    resp = client.post(
+        "/fire",
+        json={
+            "text": "hello",
+            "color": "#ffffff",
+            "size": 24,
+            "speed": 5,
+            "opacity": 100,
+        },
+    )
     assert resp.status_code == 200
