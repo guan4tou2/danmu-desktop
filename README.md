@@ -27,6 +27,25 @@ This project is divided into two parts:
 ![img](img/web%20panel.png)
 ![img](img/admin%20panel.png)
 
+## Features
+
+### Layout Modes
+
+Five danmu display layouts: scroll (right-to-left), top fixed, bottom fixed, float (random position), and rise (bottom-to-top).
+
+![Layout modes](img/danmu-layouts.png)
+
+### Effects & Styling
+
+Built-in animation effects (spin, bounce, rainbow, glow, shake, wave, blink, zoom) with per-effect parameters. Supports nicknames, custom colors, text stroke/shadow, and multiple effects stacking.
+
+![Effects demo](img/danmu-effects-demo.gif)
+![Effects showcase](img/danmu-effects-showcase.png)
+
+### Hot-pluggable Effects (.dme)
+
+Drop `.dme` files (YAML format) into `server/effects/` to add custom effects — auto-detected within 5 seconds. Edit and manage effects from the admin panel.
+
 ## Installation & Usage
 
 ### Danmu-Desktop Client

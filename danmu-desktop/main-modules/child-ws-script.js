@@ -197,13 +197,13 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
                 left: -500px;
                 top: -500px;
                 transform-style: preserve-3d;
-                animation: move 12s infinite linear;
+                animation: move 6s infinite linear;
                 animation-fill-mode: forwards;
               }
 
               .wrap:nth-child(2) {
-                animation: move 12s infinite linear;
-                animation-delay: 6s;
+                animation: move 6s infinite linear;
+                animation-delay: 3s;
               }
 
               .wall {
@@ -213,12 +213,12 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
                 background: url(assets/linkstart.png);
                 background-size: cover;
                 opacity: 0;
-                animation: fade 12s infinite linear;
+                animation: fade 6s infinite linear;
                 animation-delay: 0;
               }
 
               .wrap:nth-child(2) .wall {
-                animation-delay: 6s;
+                animation-delay: 3s;
               }
 
               .wall-right { transform: rotateY(90deg) translateZ(500px); }
@@ -263,7 +263,7 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
                   0 0 6px #00d4ff,
                   0 0 12px #00d4ff;
                 z-index: 9999;
-                animation: text-flicker 3s linear infinite, text-fade-in-out 8s ease-out forwards;
+                animation: text-flicker 2s linear infinite, text-fade-in-out 4s ease-out forwards;
                 opacity: 0;
               }
 
@@ -390,8 +390,8 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
             linkStart.setAttribute("data-text", animationText || 'Link Start');
             document.body.appendChild(linkStart);
 
-            const totalDuration = 7000;
-            const fadeOutDuration = 2000;
+            const totalDuration = 3000;
+            const fadeOutDuration = 1500;
 
             setTimeout(() => {
               scene.style.animation = \`scene-fade-out \${fadeOutDuration/1000}s ease-out forwards\`;

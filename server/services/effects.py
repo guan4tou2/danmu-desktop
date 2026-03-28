@@ -84,6 +84,10 @@ def _parse_dme(path: Path) -> Optional[Dict[str, Any]]:
             else:
                 params[k] = {**v, "type": ptype}
 
+        composition = str(data.get("composition", "add"))
+        if composition not in ("add", "replace", "accumulate"):
+            composition = "add"
+
         return {
             "name": name,
             "label": str(data.get("label", name)),
@@ -91,6 +95,7 @@ def _parse_dme(path: Path) -> Optional[Dict[str, Any]]:
             "params": params,
             "keyframes": str(data.get("keyframes", "")),
             "animation": str(data.get("animation", "")),
+            "composition": composition,
         }
     except Exception as e:
         logger.error("Error parsing .dme file %s: %s", path, e)
@@ -363,6 +368,7 @@ def render_effects(effects_input: List[Dict[str, Any]]) -> Optional[Dict[str, An
     """
     keyframes_parts = []
     animation_parts = []
+    composition_parts = []
 
     for item in effects_input:
         name = str(item.get("name", "")).strip()
@@ -386,14 +392,14 @@ def render_effects(effects_input: List[Dict[str, Any]]) -> Optional[Dict[str, An
             keyframes_parts.append(kf)
         if anim:
             animation_parts.append(anim)
+            composition_parts.append(effect.get("composition", "add"))
 
     if not animation_parts:
         return None
 
     keyframes = "\n".join(keyframes_parts)
     animation = ", ".join(animation_parts)
-    # animation-composition: add 讓多個 transform 動畫可以疊加而不互相覆蓋
-    animation_composition = ", ".join(["add"] * len(animation_parts))
+    animation_composition = ", ".join(composition_parts)
     style_id = hashlib.sha256((keyframes + animation).encode()).hexdigest()[:10]
 
     return {

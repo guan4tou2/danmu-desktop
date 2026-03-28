@@ -24,6 +24,25 @@
 ![img](img/web%20panel.png)
 ![img](img/admin%20panel.png)
 
+## 功能特色
+
+### 佈局模式
+
+支援五種彈幕顯示佈局：捲動（右至左）、頂部固定、底部固定、浮動（隨機位置）、上升（由下至上）。
+
+![佈局模式](img/danmu-layouts.png)
+
+### 特效與樣式
+
+內建動畫特效（旋轉、彈跳、彩虹、發光、抖動、波浪、閃爍、縮放），每個特效可調參數。支援暱稱、自訂顏色、文字描邊/陰影，以及多特效疊加。
+
+![特效動態展示](img/danmu-effects-demo.gif)
+![特效展示](img/danmu-effects-showcase.png)
+
+### 熱插拔特效 (.dme)
+
+將 `.dme` 檔案（YAML 格式）放入 `server/effects/` 目錄即可新增自訂特效，5 秒內自動偵測載入。可在管理面板中編輯和管理特效。
+
 ## 安裝與使用
 
 ### Danmu-Desktop 客戶端

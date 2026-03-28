@@ -295,18 +295,7 @@ function initTrackManager() {
       const Height = parseFloat(getComputedStyle(danmu).height);
       const Width = parseFloat(getComputedStyle(danmu).width);
       const Padding = parseFloat(getComputedStyle(danmu).padding);
-
-      const trackPosition = window.findAvailableTrack(
-        displayArea,
-        Height + Padding,
-        Width,
-        speed
-      );
-      const top = trackPosition.top;
-
-      // 位置 & 透明度套在 wrapper
-      wrapper.style.top = `${top}px`;
-      wrapper.style.opacity = String(opacity * 0.01);
+      const danmuTotalHeight = Height + Padding;
 
       let currentSpeed = Number(speed);
       if (isNaN(currentSpeed)) {
@@ -323,61 +312,119 @@ function initTrackManager() {
       let duration = maxTime - ((currentSpeed - 1) * (maxTime - minTime)) / 9;
       duration = Math.max(minTime, Math.min(maxTime, duration));
 
-      console.log("[showdanmu] Animation parameters:", { Width, duration, top, hasEffect: !!(effectCss && effectCss.animation) });
+      const userOpacity = opacity * 0.01;
+      wrapper.style.opacity = String(userOpacity);
 
-      // 套用特效至 inner 元素（不影響 wrapper 的 translateX）
-      // 優先使用 server 端解析的 .dme CSS；否則 fallback 到 JS plugin
+      console.log("[showdanmu] Animation parameters:", { Width, duration, layout, hasEffect: !!(effectCss && effectCss.animation) });
+
+      // ���用特效至 inner 元素（不影響 wrapper 的移動動畫）
       if (effectCss && effectCss.animation) {
         danmu.style.display = "inline-block";
         danmu.style.animation = effectCss.animation;
-        // animation-composition: add 讓多個 transform 動畫可以疊加（如 spin + bounce）
         if (effectCss.animationComposition) {
           danmu.style.animationComposition = effectCss.animationComposition;
         }
       }
 
-      // Layout-dependent animation on wrapper
+      // ── 各佈局獨立處理定位與動畫 ──
       try {
         if (layout === "top_fixed" || layout === "bottom_fixed") {
+          // 固定彈幕：置中，從上/下堆疊，獨立碰撞檢測（基於實際顯示時間）
+          const fixedDuration = (layoutConfig && layoutConfig.duration) || 3000;
+          const screenHeight = _cachedScreenHeight;
+          const areaTopPx = (displayArea.top / 100) * screenHeight;
+          const areaHeightPx = (displayArea.height / 100) * screenHeight;
+          const { maxTracks } = window.danmuTrackSettings;
+          const effectiveMaxTracks = maxTracks > 0
+            ? maxTracks
+            : Math.max(1, Math.floor(areaHeightPx / danmuTotalHeight));
+          const trackHeight = areaHeightPx / effectiveMaxTracks;
+
+          // 獨立的固定彈幕軌道陣列（top_fixed 和 bottom_fixed 各自獨立）
+          if (!window._fixedTracks) window._fixedTracks = [];
+          const now = Date.now();
+          window._fixedTracks = window._fixedTracks.filter(t => t.endTime > now);
+
+          // 找第一個未佔用的軌道
+          let trackIdx = 0;
+          let found = false;
+          for (let i = 0; i < effectiveMaxTracks; i++) {
+            const occupied = window._fixedTracks.some(
+              t => t.trackIndex === i && t.layout === layout
+            );
+            if (!occupied) {
+              trackIdx = i;
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            // 全部佔用 → 選最快到期的軌道
+            const candidates = window._fixedTracks.filter(t => t.layout === layout);
+            if (candidates.length > 0) {
+              trackIdx = candidates.reduce((a, b) => a.endTime < b.endTime ? a : b).trackIndex;
+            }
+          }
+          window._fixedTracks.push({ trackIndex: trackIdx, endTime: now + fixedDuration, layout });
+
+          const offsetInTrack = Math.random() * Math.max(0, trackHeight - danmuTotalHeight);
           wrapper.style.left = "50%";
           wrapper.style.transform = "translateX(-50%)";
-          if (layout === "bottom_fixed") {
-            wrapper.style.top = "";
-            wrapper.style.bottom = `${top}px`;
+
+          if (layout === "top_fixed") {
+            // 從顯示區域頂部向下堆疊
+            wrapper.style.top = `${areaTopPx + trackIdx * trackHeight + offsetInTrack}px`;
+          } else {
+            // 從顯示區域底部向上���疊
+            const distFromAreaBottom = trackIdx * trackHeight + offsetInTrack;
+            const distFromViewportBottom = (screenHeight - areaTopPx - areaHeightPx) + distFromAreaBottom;
+            wrapper.style.bottom = `${distFromViewportBottom}px`;
           }
-          const fixedDuration = (layoutConfig && layoutConfig.duration) || 3000;
+
           wrapper.animate(
             [
-              { opacity: 1 },
-              { opacity: 1, offset: 0.8 },
-              { opacity: 0 },
+              { opacity: String(userOpacity) },
+              { opacity: String(userOpacity), offset: 0.8 },
+              { opacity: "0" },
             ],
             { duration: fixedDuration, easing: "ease-out" }
           ).onfinish = () => { wrapper.remove(); };
+
         } else if (layout === "float") {
+          // 浮動彈幕：隨機位置（顯示區域內），漸入漸出 + 縮放
+          const areaTopPx = (displayArea.top / 100) * _cachedScreenHeight;
+          const areaHeightPx = (displayArea.height / 100) * _cachedScreenHeight;
           wrapper.style.left = `${Math.random() * 60 + 20}%`;
-          wrapper.style.top = `${Math.random() * 60 + 20}%`;
+          wrapper.style.top = `${areaTopPx + Math.random() * Math.max(0, areaHeightPx - danmuTotalHeight)}px`;
           const floatDuration = (layoutConfig && layoutConfig.duration) || 4000;
           wrapper.animate(
             [
-              { opacity: 0, transform: "scale(0.8)" },
-              { opacity: 1, transform: "scale(1)", offset: 0.1 },
-              { opacity: 1, transform: "scale(1)", offset: 0.9 },
-              { opacity: 0, transform: "scale(0.8)" },
+              { opacity: "0", transform: "scale(0.8)" },
+              { opacity: String(userOpacity), transform: "scale(1)", offset: 0.15 },
+              { opacity: String(userOpacity), transform: "scale(1)", offset: 0.85 },
+              { opacity: "0", transform: "scale(0.8)" },
             ],
             { duration: floatDuration, easing: "ease-in-out" }
           ).onfinish = () => { wrapper.remove(); };
+
         } else if (layout === "rise") {
+          // 上升彈幕：隨機水平位置，從底部升到頂部
           wrapper.style.left = `${Math.random() * 60 + 20}%`;
+          wrapper.style.top = "0px";
           wrapper.animate(
             [
-              { transform: "translateY(100vh)" },
-              { transform: "translateY(-100%)" },
+              { transform: "translateY(100vh)", opacity: String(userOpacity) },
+              { transform: "translateY(-100%)", opacity: String(userOpacity) },
             ],
             { duration, easing: "linear" }
           ).onfinish = () => { wrapper.remove(); };
+
         } else {
-          // Default scroll (right to left)
+          // 預設 scroll（右至左滾動）
+          const trackPosition = window.findAvailableTrack(
+            displayArea, danmuTotalHeight, Width, speed
+          );
+          wrapper.style.top = `${trackPosition.top}px`;
           wrapper.animate(
             [
               { transform: "translateX(100vw)" },

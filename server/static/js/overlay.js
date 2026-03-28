@@ -352,10 +352,10 @@
         var Height = parseFloat(compStyle.height);
         var Width = parseFloat(compStyle.width);
         var Padding = parseFloat(compStyle.padding) || 0;
+        var danmuTotalHeight = Height + Padding;
 
-        var trackPos = findAvailableTrack(displayArea, Height + Padding, Width, speed);
-        wrapper.style.top = trackPos.top + "px";
-        wrapper.style.opacity = String((opacity || 75) * 0.01);
+        var userOpacity = (opacity || 75) * 0.01;
+        wrapper.style.opacity = String(userOpacity);
 
         var currentSpeed = Math.max(1, Math.min(10, isNaN(speed) ? 5 : speed));
         var maxTime = 20000;
@@ -375,48 +375,83 @@
         // Layout-dependent animation
         try {
           if (layout === "top_fixed" || layout === "bottom_fixed") {
-            // Fixed position danmu
+            var fixedDuration = (layoutConfig && layoutConfig.duration) || 3000;
+            var screenHeight = cachedHeight;
+            var areaTopPx = (displayArea.top / 100) * screenHeight;
+            var areaHeightPx = (displayArea.height / 100) * screenHeight;
+            var effectiveMax = maxTracks > 0 ? maxTracks : Math.max(1, Math.floor(areaHeightPx / danmuTotalHeight));
+            var trkHeight = areaHeightPx / effectiveMax;
+
+            // Independent fixed-track collision detection
+            if (!window._overlayFixedTracks) window._overlayFixedTracks = [];
+            var now = Date.now();
+            window._overlayFixedTracks = window._overlayFixedTracks.filter(function (t) { return t.endTime > now; });
+
+            var trackIdx = 0;
+            var found = false;
+            for (var fi = 0; fi < effectiveMax; fi++) {
+              var occupied = window._overlayFixedTracks.some(function (t) { return t.trackIndex === fi && t.layout === layout; });
+              if (!occupied) { trackIdx = fi; found = true; break; }
+            }
+            if (!found) {
+              var candidates = window._overlayFixedTracks.filter(function (t) { return t.layout === layout; });
+              if (candidates.length > 0) {
+                trackIdx = candidates.reduce(function (a, b) { return a.endTime < b.endTime ? a : b; }).trackIndex;
+              }
+            }
+            window._overlayFixedTracks.push({ trackIndex: trackIdx, endTime: now + fixedDuration, layout: layout });
+
+            var offsetInTrack = Math.random() * Math.max(0, trkHeight - danmuTotalHeight);
             wrapper.style.left = "50%";
             wrapper.style.transform = "translateX(-50%)";
-            if (layout === "bottom_fixed") {
-              wrapper.style.top = "";
-              wrapper.style.bottom = trackPos.top + "px";
+
+            if (layout === "top_fixed") {
+              wrapper.style.top = (areaTopPx + trackIdx * trkHeight + offsetInTrack) + "px";
+            } else {
+              var distFromBottom = (screenHeight - areaTopPx - areaHeightPx) + trackIdx * trkHeight + offsetInTrack;
+              wrapper.style.bottom = distFromBottom + "px";
             }
-            var fixedDuration = (layoutConfig && layoutConfig.duration) || 3000;
+
             wrapper.animate(
               [
-                { opacity: 1 },
-                { opacity: 1, offset: 0.8 },
-                { opacity: 0 }
+                { opacity: String(userOpacity) },
+                { opacity: String(userOpacity), offset: 0.8 },
+                { opacity: "0" }
               ],
               { duration: fixedDuration, easing: "ease-out" }
             ).onfinish = function () { wrapper.remove(); };
+
           } else if (layout === "float") {
-            // Random position float
+            var fAreaTopPx = (displayArea.top / 100) * cachedHeight;
+            var fAreaHeightPx = (displayArea.height / 100) * cachedHeight;
             wrapper.style.left = (Math.random() * 60 + 20) + "%";
-            wrapper.style.top = (Math.random() * 60 + 20) + "%";
+            wrapper.style.top = (fAreaTopPx + Math.random() * Math.max(0, fAreaHeightPx - danmuTotalHeight)) + "px";
             var floatDuration = (layoutConfig && layoutConfig.duration) || 4000;
             wrapper.animate(
               [
-                { opacity: 0, transform: "scale(0.8)" },
-                { opacity: 1, transform: "scale(1)", offset: 0.1 },
-                { opacity: 1, transform: "scale(1)", offset: 0.9 },
-                { opacity: 0, transform: "scale(0.8)" }
+                { opacity: "0", transform: "scale(0.8)" },
+                { opacity: String(userOpacity), transform: "scale(1)", offset: 0.15 },
+                { opacity: String(userOpacity), transform: "scale(1)", offset: 0.85 },
+                { opacity: "0", transform: "scale(0.8)" }
               ],
               { duration: floatDuration, easing: "ease-in-out" }
             ).onfinish = function () { wrapper.remove(); };
+
           } else if (layout === "rise") {
-            // Bottom to top
             wrapper.style.left = (Math.random() * 60 + 20) + "%";
+            wrapper.style.top = "0px";
             wrapper.animate(
               [
-                { transform: "translateY(100vh)" },
-                { transform: "translateY(-100%)" }
+                { transform: "translateY(100vh)", opacity: String(userOpacity) },
+                { transform: "translateY(-100%)", opacity: String(userOpacity) }
               ],
               { duration: duration, easing: "linear" }
             ).onfinish = function () { wrapper.remove(); };
+
           } else {
             // Default scroll (right to left)
+            var trackPos = findAvailableTrack(displayArea, danmuTotalHeight, Width, speed);
+            wrapper.style.top = trackPos.top + "px";
             wrapper.animate(
               [
                 { transform: "translateX(100vw)" },

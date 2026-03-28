@@ -23,3 +23,4 @@ keyframes: |
   }
 
 animation: dme-rainbow {duration}s linear infinite
+composition: replace

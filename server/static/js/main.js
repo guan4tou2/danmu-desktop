@@ -762,7 +762,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let message = ServerI18n.t("failedToSend");
         try {
           const data = await response.json();
-          message = data.error || message;
+          message = (typeof data.error === "string" ? data.error : data.error?.message) || message;
         } catch (_) { }
         showToast(message, false);
       }
