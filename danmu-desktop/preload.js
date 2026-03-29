@@ -35,7 +35,7 @@ try {
         displayIndex,
         enableSyncMultiDisplay,
         startupAnimationSettings,
-        wsAuthToken
+        wsAuthToken ? "(token set)" : "(no token)"
       );
       ipcRenderer.send(
         "createChild",

@@ -359,8 +359,8 @@ function setupIpcHandlers(getMainWindow, childWindows) {
         )}, DisplayIndex=${sanitizeLog(displayIndex)}, SyncMultiDisplay=${enableSyncMultiDisplay}, HasWSToken=${authToken ? "yes" : "no"}`
       );
 
-      // Clear existing child windows
-      childWindows.forEach((win) => {
+      // Clear existing child windows (copy array to avoid splice-during-iteration)
+      [...childWindows].forEach((win) => {
         if (win && !win.isDestroyed()) {
           win.destroy();
         }
