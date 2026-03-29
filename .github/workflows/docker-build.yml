@@ -115,6 +115,57 @@ jobs:
             docker rm -f test-server || true
             exit 1
           fi
+
+          echo "=== Smoke test: verify core routes ==="
+          curl -fsS http://localhost:4000/ > /dev/null
+          echo "[PASS] GET / (main page)"
+          curl -fsS http://localhost:4000/overlay > /dev/null
+          echo "[PASS] GET /overlay (OBS page)"
+
+          echo "=== Smoke test: /fire + WS delivery ==="
+          # Use Python inside the container (always available) to:
+          # 1. Connect a WS client to port 4001
+          # 2. POST /fire with a test danmu
+          # 3. Verify the WS client receives the message
+          docker exec test-server python3 -c "
+          import json, threading, time
+          from websockets.sync.client import connect
+
+          received = []
+          def ws_listener():
+              with connect('ws://127.0.0.1:4001') as ws:
+                  while True:
+                      msg = ws.recv(timeout=10)
+                      if msg == 'connection':
+                          continue
+                      data = json.loads(msg) if isinstance(msg, str) else msg
+                      if isinstance(data, dict) and data.get('type') in ('ping', 'heartbeat_ack'):
+                          if data.get('type') == 'ping':
+                              ws.send(json.dumps({'type': 'pong'}))
+                          continue
+                      received.append(data)
+                      break
+
+          t = threading.Thread(target=ws_listener, daemon=True)
+          t.start()
+          time.sleep(1)  # Wait for WS registration
+
+          import urllib.request
+          req = urllib.request.Request(
+              'http://127.0.0.1:4000/fire',
+              data=json.dumps({'text': 'docker_smoke_test'}).encode(),
+              headers={'Content-Type': 'application/json'},
+          )
+          resp = urllib.request.urlopen(req)
+          assert resp.status == 200, f'/fire returned {resp.status}'
+
+          t.join(timeout=5)
+          assert len(received) == 1, f'Expected 1 message, got {len(received)}'
+          assert received[0]['text'] == 'docker_smoke_test', f'Wrong text: {received[0].get(\"text\")}'
+          print('[PASS] POST /fire -> WS client received danmu')
+          "
+
+          echo "=== All Docker smoke tests passed ==="
           docker rm -f test-server
 
       - name: Build and push multi-arch image

@@ -374,14 +374,6 @@
       }
     }
 
-    // Nickname label
-    if (nickname) {
-      var nickEl = document.createElement("span");
-      nickEl.textContent = nickname;
-      nickEl.style.cssText = "font-size:" + Math.max(12, size * 0.35) + "px;color:" + color + ";opacity:0.7;margin-right:6px;vertical-align:middle;";
-      wrapper.insertBefore(nickEl, danmu);
-    }
-
     // Inline emoji images
     if (emojis && emojis.length > 0 && danmu.tagName === "H1") {
       var parts = text;
@@ -410,6 +402,14 @@
           }
         }
       });
+    }
+
+    // Nickname label (must be before danmu in wrapper)
+    if (nickname) {
+      var nickEl = document.createElement("span");
+      nickEl.textContent = nickname;
+      nickEl.style.cssText = "font-size:" + Math.max(12, size * 0.35) + "px;color:" + color + ";opacity:0.7;margin-right:6px;vertical-align:middle;";
+      wrapper.appendChild(nickEl);
     }
 
     wrapper.appendChild(danmu);
