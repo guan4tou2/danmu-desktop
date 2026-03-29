@@ -9,26 +9,18 @@
 (function () {
   "use strict";
 
-  const DETAILS_STATE_KEY = "admin-details-open-state";
+  var loadDetailsState = window.AdminUtils.loadDetailsState;
+  var saveDetailsState = window.AdminUtils.saveDetailsState;
+  var escapeHtml = window.AdminUtils.escapeHtml;
+
   const RULE_TYPES = ["keyword", "regex", "replace", "rate_limit"];
   const ACTIONS = ["block", "replace", "allow"];
 
   // ── Helpers ──────────────────────────────────────────────────
 
-  function escapeHtml(str) {
-    const div = document.createElement("div");
-    div.appendChild(document.createTextNode(str));
-    return div.innerHTML;
-  }
-
   function isDetailsOpen(id) {
-    try {
-      const raw = window.localStorage.getItem(DETAILS_STATE_KEY);
-      const state = raw ? JSON.parse(raw) : {};
-      return state[id] !== undefined ? state[id] : false;
-    } catch (_) {
-      return false;
-    }
+    var state = loadDetailsState();
+    return state[id] !== undefined ? state[id] : false;
   }
 
   function t(key, fallback) {
@@ -438,14 +430,9 @@
     const detailsEl = document.getElementById("sec-filters");
     if (detailsEl) {
       detailsEl.addEventListener("toggle", () => {
-        try {
-          const raw = window.localStorage.getItem(DETAILS_STATE_KEY);
-          const state = raw ? JSON.parse(raw) : {};
-          state["sec-filters"] = detailsEl.open;
-          window.localStorage.setItem(DETAILS_STATE_KEY, JSON.stringify(state));
-        } catch (_) {
-          // Ignore localStorage failures
-        }
+        var state = loadDetailsState();
+        state["sec-filters"] = detailsEl.open;
+        saveDetailsState(state);
       });
     }
 

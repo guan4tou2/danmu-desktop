@@ -9,10 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from server.services.webhook import (  # ty: ignore[unresolved-import]
-    _MAX_HOOKS,
-    WebhookService,
-)
+from server.services.webhook import _MAX_HOOKS, WebhookService  # ty: ignore[unresolved-import]
 
 
 @pytest.fixture(autouse=True)

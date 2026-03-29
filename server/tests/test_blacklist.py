@@ -3,12 +3,7 @@
 import pytest
 
 from server import state
-from server.services.blacklist import (
-    add_keyword,
-    contains_keyword,
-    list_keywords,
-    remove_keyword,
-)
+from server.services.blacklist import add_keyword, contains_keyword, list_keywords, remove_keyword
 
 
 @pytest.fixture(autouse=True)

@@ -21,7 +21,7 @@ from .routes.health import health_bp
 from .routes.main import main_bp
 from .services.history import init_history
 from .services.security import init_security
-from .utils import register_error_handlers, sanitize_log_string
+from .utils import json_response, sanitize_log_string
 from .ws import check_connections as background_check_connections
 from .ws import run_ws_server
 
@@ -110,8 +110,23 @@ def create_app(config_class=Config):
     app.register_blueprint(api_bp)
     app.register_blueprint(health_bp)
 
-    # Register error handlers
-    register_error_handlers(app)
+    # Error handlers (simple JSON responses, no unused APIError abstraction)
+    @app.errorhandler(404)
+    def handle_not_found(error):
+        return json_response({"error": "Resource not found"}, 404)
+
+    @app.errorhandler(500)
+    def handle_internal_error(error):
+        current_app.logger.error(
+            "Internal Server Error: %s (Request ID: %s)",
+            str(error),
+            getattr(g, "request_id", "N/A"),
+        )
+        return json_response({"error": "An internal error has occurred"}, 500)
+
+    @app.errorhandler(429)
+    def handle_rate_limit(error):
+        return json_response({"error": "Too many requests. Please try again later."}, 429)
 
     return app
 

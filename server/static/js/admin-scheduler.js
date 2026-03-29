@@ -1,29 +1,15 @@
 (function () {
   "use strict";
 
-  const DETAILS_KEY = "admin-details-open-state";
+  var loadDetailsState = window.AdminUtils.loadDetailsState;
+  var saveDetailsState = window.AdminUtils.saveDetailsState;
+  var escapeHTML = window.AdminUtils.escapeHtml;
+
   const REFRESH_INTERVAL = 5000;
   let refreshTimer = null;
 
-  function loadDetailsState() {
-    try {
-      const raw = window.localStorage.getItem(DETAILS_KEY);
-      return raw ? JSON.parse(raw) : {};
-    } catch (_) {
-      return {};
-    }
-  }
-
-  function saveDetailsState(state) {
-    try {
-      window.localStorage.setItem(DETAILS_KEY, JSON.stringify(state));
-    } catch (_) {
-      /* ignore */
-    }
-  }
-
   function isOpen(id) {
-    const s = loadDetailsState();
+    var s = loadDetailsState();
     return s[id] !== undefined ? s[id] : false;
   }
 
@@ -87,12 +73,6 @@
   }
 
   // --- Utility ---
-
-  function escapeHTML(str) {
-    const el = document.createElement("span");
-    el.textContent = String(str);
-    return el.innerHTML;
-  }
 
   function escapeAttr(str) {
     return String(str)

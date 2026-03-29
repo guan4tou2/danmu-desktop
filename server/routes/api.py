@@ -1,34 +1,25 @@
-from ipaddress import ip_address
-
-from flask import (
-    Blueprint,
-    current_app,
-    make_response,
-    request,
-    send_from_directory,
-    session,
-)
+from flask import Blueprint, current_app, make_response, request, send_from_directory, session
 
 from .. import state
 from ..services import history as history_service
 from ..services import messaging
+from ..services import themes as theme_svc
 from ..services.blacklist import contains_keyword
 from ..services.effects import load_all as load_all_effects
 from ..services.effects import render_effects
 from ..services.emoji import emoji_service
 from ..services.filter_engine import filter_engine
 from ..services.fonts import build_font_payload, list_available_fonts
-from ..services.layout import get_layout_config, get_layout_css
+from ..services.ip import get_client_ip as _extract_client_ip
+from ..services.layout import get_all_modes, get_layout_config, get_layout_css
+from ..services.plugin_manager import plugin_manager
 from ..services.poll import poll_service
 from ..services.security import rate_limit, require_csrf, verify_font_token
 from ..services.settings import get_options
 from ..services.sound import sound_service
 from ..services.stickers import sticker_service
-from ..services.validation import (
-    BlacklistCheckSchema,
-    FireRequestSchema,
-    validate_request,
-)
+from ..services.validation import BlacklistCheckSchema, FireRequestSchema, validate_request
+from ..services.webhook import webhook_service
 from ..services.ws_state import get_ws_client_count
 from ..utils import is_valid_image_url
 from ..utils import json_response as _json_response
@@ -114,8 +105,6 @@ def _resolve_danmu_style(data):
     data["speed"] = _pick(data.pop("speed", None), options.get("Speed", [True, 1, 10, 4]))
 
     # Apply active theme defaults for textStyles
-    from ..services import themes as theme_svc
-
     active_theme = theme_svc.get_active()
     theme_styles = active_theme.get("styles", {})
 
@@ -204,26 +193,6 @@ def _record_history_if_enabled(data, fingerprint, client_ip):
     history_service.danmu_history.add(history_payload)
 
 
-def _extract_client_ip() -> str:
-    trust_xff = bool(current_app.config.get("TRUST_X_FORWARDED_FOR", False))
-    if trust_xff:
-        xff = request.headers.get("X-Forwarded-For", "")
-        candidate = xff.split(",", 1)[0].strip() if xff else ""
-        if candidate:
-            try:
-                ip_address(candidate)
-                return candidate
-            except ValueError:
-                pass
-
-    remote_addr = request.remote_addr or ""
-    try:
-        ip_address(remote_addr)
-        return remote_addr
-    except ValueError:
-        return "unknown"
-
-
 # NOTE: /fire is a public endpoint (no auth required) — CSRF protection is
 # intentionally omitted. Rate limiting + fingerprint tracking provide abuse
 # protection. Do NOT add @require_csrf here.
@@ -269,8 +238,6 @@ def fire():
             return _json_response({"error": "Invalid image url"}, 400)
 
         # Plugin system: on_fire hook
-        from ..services.plugin_manager import plugin_manager
-
         plugin_ctx = dict(data)
         plugin_ctx["fingerprint"] = fingerprint
         plugin_result = plugin_manager.emit("on_fire", plugin_ctx)
@@ -303,8 +270,6 @@ def fire():
 
             # Webhook: emit on_danmu event (fire-and-forget)
             try:
-                from ..services.webhook import webhook_service
-
                 webhook_service.emit(
                     "on_danmu",
                     {
@@ -350,8 +315,6 @@ def public_fonts_alias():
 @api_bp.route("/themes", methods=["GET"])
 def list_themes():
     """列出所有可用的主題"""
-    from ..services import themes as theme_svc
-
     themes_list = theme_svc.load_all()
     active = theme_svc.get_active_name()
     return _json_response({"themes": themes_list, "active": active})
@@ -378,8 +341,6 @@ def reload_effects():
 @api_bp.route("/layouts", methods=["GET"])
 def list_layouts():
     """列出所有可用的佈局模式"""
-    from ..services.layout import get_all_modes
-
     return _json_response({"layouts": get_all_modes()})
 
 

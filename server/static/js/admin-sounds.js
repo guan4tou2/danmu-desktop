@@ -2,24 +2,8 @@
 (function () {
   "use strict";
 
-  const DETAILS_STATE_KEY = "admin-details-open-state";
-
-  function loadDetailsState() {
-    try {
-      const raw = window.localStorage.getItem(DETAILS_STATE_KEY);
-      return raw ? JSON.parse(raw) : {};
-    } catch (_) {
-      return {};
-    }
-  }
-
-  function saveDetailsState(state) {
-    try {
-      window.localStorage.setItem(DETAILS_STATE_KEY, JSON.stringify(state));
-    } catch (_) {
-      // Ignore localStorage write failures
-    }
-  }
+  var loadDetailsState = window.AdminUtils.loadDetailsState;
+  var saveDetailsState = window.AdminUtils.saveDetailsState;
 
   // Currently previewing audio instance (so we can stop it)
   let previewAudio = null;

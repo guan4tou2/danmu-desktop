@@ -2,7 +2,7 @@
 
 import pytest
 
-from server.utils import APIError, allowed_file, is_valid_image_url, sanitize_log_string
+from server.utils import allowed_file, is_valid_image_url, sanitize_log_string
 
 # ─── is_valid_image_url ───────────────────────────────────────────────────────
 
@@ -91,55 +91,3 @@ def test_sanitize_non_string_input():
 def test_sanitize_clean_string_unchanged():
     result = sanitize_log_string("normal log message")
     assert result == "normal log message"
-
-
-# ─── APIError ─────────────────────────────────────────────────────────────────
-
-
-def test_api_error_default_codes():
-    cases = {
-        400: "BAD_REQUEST",
-        401: "UNAUTHORIZED",
-        403: "FORBIDDEN",
-        404: "NOT_FOUND",
-        429: "TOO_MANY_REQUESTS",
-        500: "INTERNAL_SERVER_ERROR",
-        503: "SERVICE_UNAVAILABLE",
-    }
-    for status, expected_code in cases.items():
-        err = APIError("msg", status)
-        assert err.error_code == expected_code
-
-
-def test_api_error_unknown_status_code():
-    err = APIError("msg", 418)
-    assert err.error_code == "UNKNOWN_ERROR"
-
-
-def test_api_error_custom_error_code():
-    err = APIError("msg", 400, error_code="CUSTOM_CODE")
-    assert err.error_code == "CUSTOM_CODE"
-
-
-def test_api_error_to_dict_structure(client):
-    """to_dict 需要 Flask app context（因為用到 g）"""
-    with client.application.app_context():
-        err = APIError("something went wrong", 400)
-        d = err.to_dict()
-    assert "error" in d
-    assert d["error"]["code"] == "BAD_REQUEST"
-    assert d["error"]["message"] == "something went wrong"
-
-
-def test_api_error_to_dict_with_payload(client):
-    with client.application.app_context():
-        err = APIError("bad input", 400, payload={"field": "text"})
-        d = err.to_dict()
-    assert d["error"]["details"] == {"field": "text"}
-
-
-def test_api_error_to_dict_no_payload_no_details(client):
-    with client.application.app_context():
-        err = APIError("simple error", 404)
-        d = err.to_dict()
-    assert "details" not in d["error"]

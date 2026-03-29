@@ -47,24 +47,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let _adminWs = null;
   let _adminWsReconnectTimer = null;
   let _effectModalRestoreFocusEl = null;
-  const ADMIN_DETAILS_STATE_KEY = "admin-details-open-state";
-
-  function loadDetailsState() {
-    try {
-      const raw = window.localStorage.getItem(ADMIN_DETAILS_STATE_KEY);
-      return raw ? JSON.parse(raw) : {};
-    } catch (_) {
-      return {};
-    }
-  }
-
-  function saveDetailsState(state) {
-    try {
-      window.localStorage.setItem(ADMIN_DETAILS_STATE_KEY, JSON.stringify(state));
-    } catch (_) {
-      // Ignore localStorage write failures
-    }
-  }
+  var loadDetailsState = window.AdminUtils.loadDetailsState;
+  var saveDetailsState = window.AdminUtils.saveDetailsState;
+  var escapeHtml = window.AdminUtils.escapeHtml;
 
 
   function scheduleAdminFontRefresh(ttlSeconds) {
@@ -367,12 +352,6 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Remove keyword error:", error);
       showToast(ServerI18n.t("removeKeywordError"), false);
     }
-  }
-
-  function escapeHtml(text) {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
   }
 
   function formatTimestamp(timestamp) {

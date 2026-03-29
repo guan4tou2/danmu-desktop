@@ -7,41 +7,28 @@
 (function () {
   "use strict";
 
-  const DETAILS_STATE_KEY = "admin-details-open-state";
+  var _loadDetailsState = window.AdminUtils.loadDetailsState;
+  var _saveDetailsState = window.AdminUtils.saveDetailsState;
+  var _escHtml = window.AdminUtils.escapeHtml;
+
   const SECTION_ID = "sec-webhooks";
 
   // ---- helpers ----
 
   function _detailsOpen(id) {
-    try {
-      const raw = window.localStorage.getItem(DETAILS_STATE_KEY);
-      const state = raw ? JSON.parse(raw) : {};
-      return !!state[id];
-    } catch (_) {
-      return false;
-    }
+    var state = _loadDetailsState();
+    return !!state[id];
   }
 
   function _saveDetailsOpen(id, open) {
-    try {
-      const raw = window.localStorage.getItem(DETAILS_STATE_KEY);
-      const state = raw ? JSON.parse(raw) : {};
-      state[id] = open;
-      window.localStorage.setItem(DETAILS_STATE_KEY, JSON.stringify(state));
-    } catch (_) {
-      /* ignore */
-    }
+    var state = _loadDetailsState();
+    state[id] = open;
+    _saveDetailsState(state);
   }
 
   function _truncate(str, max) {
     if (!str) return "";
     return str.length > max ? str.slice(0, max) + "\u2026" : str;
-  }
-
-  function _escHtml(str) {
-    const el = document.createElement("span");
-    el.textContent = str;
-    return el.innerHTML;
   }
 
   // ---- inject section ----

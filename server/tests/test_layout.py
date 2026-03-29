@@ -1,11 +1,6 @@
 """Tests for server.services.layout module."""
 
-from server.services.layout import (
-    LayoutMode,
-    get_all_modes,
-    get_layout_config,
-    get_layout_css,
-)
+from server.services.layout import LayoutMode, get_all_modes, get_layout_config, get_layout_css
 
 
 class TestLayoutModeEnum:
