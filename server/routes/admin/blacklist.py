@@ -2,6 +2,9 @@
 
 from flask import current_app, request
 
+from ...services.blacklist import add_keyword, list_keywords, remove_keyword
+from ...services.security import rate_limit
+from ...services.validation import BlacklistKeywordSchema, validate_request
 from . import (
     _broadcast_blacklist_update,
     _json_response,
@@ -10,9 +13,6 @@ from . import (
     require_login,
     sanitize_log_string,
 )
-from ...services.blacklist import add_keyword, list_keywords, remove_keyword
-from ...services.security import rate_limit
-from ...services.validation import BlacklistKeywordSchema, validate_request
 
 
 @admin_bp.route("/blacklist/add", methods=["POST"])

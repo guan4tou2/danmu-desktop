@@ -2,9 +2,9 @@
 
 from flask import render_template, session
 
-from . import _ensure_logged_in, _json_response, admin_bp
 from ...services.fonts import list_available_fonts
 from ...services.settings import get_options, get_setting_ranges
+from . import _ensure_logged_in, _json_response, admin_bp
 
 
 @admin_bp.route("/")

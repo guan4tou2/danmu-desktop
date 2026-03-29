@@ -2,8 +2,8 @@
 
 from flask import request
 
-from . import _json_response, admin_bp, require_csrf, require_login
 from ...services.security import rate_limit
+from . import _json_response, admin_bp, require_csrf, require_login
 
 
 @admin_bp.route("/plugins/list", methods=["GET"])

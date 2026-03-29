@@ -2,16 +2,10 @@
 
 from flask import request
 
-from . import (
-    _broadcast_blacklist_update,
-    _json_response,
-    admin_bp,
-    require_csrf,
-    require_login,
-)
 from ...services.blacklist import add_keyword
 from ...services.security import rate_limit
 from ...services.validation import BlacklistKeywordSchema, validate_request
+from . import _broadcast_blacklist_update, _json_response, admin_bp, require_csrf, require_login
 
 
 @admin_bp.route("/live/block", methods=["POST"])

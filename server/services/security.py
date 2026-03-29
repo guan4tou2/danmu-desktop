@@ -148,6 +148,7 @@ def require_login(func):
     unauthenticated users differently (renders with limited data),
     so it does NOT use this decorator.
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         if not session.get("logged_in"):
@@ -157,6 +158,7 @@ def require_login(func):
                 {"Content-Type": "application/json"},
             )
         return func(*args, **kwargs)
+
     return wrapper
 
 

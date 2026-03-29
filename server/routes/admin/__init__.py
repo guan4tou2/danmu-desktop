@@ -7,14 +7,7 @@ Each sub-module registers its routes on the shared ``admin_bp`` Blueprint.
 import json
 import re as _re
 
-from flask import (  # noqa: F401
-    Blueprint,
-    current_app,
-    flash,
-    render_template,
-    request,
-    session,
-)
+from flask import Blueprint, current_app, flash, render_template, request, session  # noqa: F401
 
 from ...services import messaging
 from ...services.blacklist import add_keyword, list_keywords  # noqa: F401

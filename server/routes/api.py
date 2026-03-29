@@ -1,22 +1,16 @@
-from flask import (
-    Blueprint,
-    current_app,
-    make_response,
-    request,
-    send_from_directory,
-    session,
-)
+from flask import Blueprint, current_app, make_response, request, send_from_directory, session
 
 from .. import state
 from ..services import history as history_service
 from ..services import messaging
+from ..services import themes as theme_svc
 from ..services.blacklist import contains_keyword
-from ..services.ip import get_client_ip as _extract_client_ip
 from ..services.effects import load_all as load_all_effects
 from ..services.effects import render_effects
 from ..services.emoji import emoji_service
 from ..services.filter_engine import filter_engine
 from ..services.fonts import build_font_payload, list_available_fonts
+from ..services.ip import get_client_ip as _extract_client_ip
 from ..services.layout import get_all_modes, get_layout_config, get_layout_css
 from ..services.plugin_manager import plugin_manager
 from ..services.poll import poll_service
@@ -24,13 +18,8 @@ from ..services.security import rate_limit, require_csrf, verify_font_token
 from ..services.settings import get_options
 from ..services.sound import sound_service
 from ..services.stickers import sticker_service
-from ..services import themes as theme_svc
+from ..services.validation import BlacklistCheckSchema, FireRequestSchema, validate_request
 from ..services.webhook import webhook_service
-from ..services.validation import (
-    BlacklistCheckSchema,
-    FireRequestSchema,
-    validate_request,
-)
 from ..services.ws_state import get_ws_client_count
 from ..utils import is_valid_image_url
 from ..utils import json_response as _json_response
@@ -202,7 +191,6 @@ def _record_history_if_enabled(data, fingerprint, client_ip):
     history_payload["clientIp"] = client_ip
     history_payload["fingerprint"] = fingerprint
     history_service.danmu_history.add(history_payload)
-
 
 
 # NOTE: /fire is a public endpoint (no auth required) — CSRF protection is

@@ -2,9 +2,9 @@
 
 from flask import request
 
-from . import _json_response, admin_bp, require_csrf, require_login
 from ...services.security import rate_limit
 from ...services.validation import FilterRuleSchema, validate_request
+from . import _json_response, admin_bp, require_csrf, require_login
 
 
 @admin_bp.route("/filters/add", methods=["POST"])

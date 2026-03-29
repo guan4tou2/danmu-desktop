@@ -3,6 +3,8 @@
 import magic
 from flask import current_app, request
 
+from ...services.fonts import save_uploaded_font
+from ...services.security import rate_limit
 from . import (
     _STICKER_ALLOWED_MIME,
     _STICKER_MAX_SIZE,
@@ -14,8 +16,6 @@ from . import (
     require_login,
     sanitize_log_string,
 )
-from ...services.fonts import save_uploaded_font
-from ...services.security import rate_limit
 
 
 @admin_bp.route("/upload_font", methods=["POST"])

@@ -5,9 +5,9 @@ from datetime import datetime
 
 from flask import current_app, make_response, request
 
-from . import _json_response, admin_bp, require_csrf, require_login, sanitize_log_string
 from ...services import history as history_service
 from ...services.security import rate_limit
+from . import _json_response, admin_bp, require_csrf, require_login, sanitize_log_string
 
 
 def _clamp_hours(hours):
