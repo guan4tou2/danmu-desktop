@@ -889,8 +889,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const optionInputs = document.querySelectorAll(".poll-option-input");
     const options = Array.from(optionInputs).map((el) => el.value.trim()).filter(Boolean);
 
-    if (!question) { showToast("Please enter a question", false); return; }
-    if (options.length < 2) { showToast("At least 2 options required", false); return; }
+    if (!question) { showToast(ServerI18n.t("pollEnterQuestion"), false); return; }
+    if (options.length < 2) { showToast(ServerI18n.t("pollMinOptions"), false); return; }
 
     try {
       const res = await csrfFetch("/admin/poll/create", {
@@ -900,14 +900,14 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       const data = await res.json();
       if (!res.ok) {
-        showToast(data.error || "Failed to create poll", false);
+        showToast(data.error || ServerI18n.t("pollCreateFailed"), false);
         return;
       }
-      showToast("Poll created!", true);
+      showToast(ServerI18n.t("pollCreated"), true);
       _renderPollStatus(data);
       _pollPollStatus();
     } catch (e) {
-      showToast("Error creating poll", false);
+      showToast(ServerI18n.t("pollCreateFailed"), false);
     }
   }
 
@@ -915,12 +915,12 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await csrfFetch("/admin/poll/end", { method: "POST" });
       const data = await res.json();
-      if (!res.ok) { showToast(data.error || "Failed to end poll", false); return; }
-      showToast("Poll ended", true);
+      if (!res.ok) { showToast(data.error || ServerI18n.t("pollEndFailed"), false); return; }
+      showToast(ServerI18n.t("pollEnded"), true);
       _renderPollStatus(data);
       if (_pollStatusTimer) { clearInterval(_pollStatusTimer); _pollStatusTimer = null; }
     } catch (e) {
-      showToast("Error ending poll", false);
+      showToast(ServerI18n.t("pollEndFailed"), false);
     }
   }
 
@@ -928,12 +928,12 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await csrfFetch("/admin/poll/reset", { method: "POST" });
       const data = await res.json();
-      if (!res.ok) { showToast(data.error || "Failed to reset poll", false); return; }
-      showToast("Poll reset", true);
+      if (!res.ok) { showToast(data.error || ServerI18n.t("pollResetFailed"), false); return; }
+      showToast(ServerI18n.t("pollResetDone"), true);
       _renderPollStatus(data);
       if (_pollStatusTimer) { clearInterval(_pollStatusTimer); _pollStatusTimer = null; }
     } catch (e) {
-      showToast("Error resetting poll", false);
+      showToast(ServerI18n.t("pollResetFailed"), false);
     }
   }
 
@@ -958,32 +958,81 @@ document.addEventListener("DOMContentLoaded", () => {
   function _renderPollStatus(data) {
     const display = document.getElementById("pollStatusDisplay");
     if (!display) return;
+    display.textContent = "";
+
     if (!data || data.state === "idle") {
-      display.innerHTML = '<span class="text-slate-500">No active poll</span>';
+      const noActive = document.createElement("span");
+      noActive.className = "text-slate-500";
+      noActive.textContent = ServerI18n.t("pollNoActive");
+      display.appendChild(noActive);
       return;
     }
     const total = data.total_votes || 0;
     const maxCount = Math.max(1, ...data.options.map((o) => o.count));
-    display.innerHTML =
-      '<div class="mt-2 p-3 bg-slate-800/60 rounded-lg border border-slate-700/50">' +
-        '<div class="flex items-center gap-2 mb-2">' +
-          '<span class="inline-block w-2 h-2 rounded-full ' + (data.state === "active" ? "bg-green-400 animate-pulse" : "bg-yellow-400") + '"></span>' +
-          '<span class="text-white font-semibold text-sm">' + (data.question || "") + '</span>' +
-          '<span class="text-xs text-slate-400 ml-auto">' + data.state + '</span>' +
-        '</div>' +
-        data.options.map((o) =>
-          '<div class="mb-1.5">' +
-            '<div class="flex justify-between text-xs text-slate-300 mb-0.5">' +
-              '<span><b>' + o.key + '.</b> ' + o.text + '</span>' +
-              '<span>' + o.count + ' (' + o.percentage + '%)</span>' +
-            '</div>' +
-            '<div class="bg-slate-700/50 rounded h-2 overflow-hidden">' +
-              '<div class="h-full rounded bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-300" style="width:' + (o.count / maxCount * 100) + '%"></div>' +
-            '</div>' +
-          '</div>'
-        ).join("") +
-        '<div class="text-xs text-slate-500 mt-1">Total: ' + total + ' votes</div>' +
-      '</div>';
+
+    const card = document.createElement("div");
+    card.className = "mt-2 p-3 bg-slate-800/60 rounded-lg border border-slate-700/50";
+
+    // Header row
+    const headerRow = document.createElement("div");
+    headerRow.className = "flex items-center gap-2 mb-2";
+
+    const dot = document.createElement("span");
+    dot.className = "inline-block w-2 h-2 rounded-full " + (data.state === "active" ? "bg-green-400 animate-pulse" : "bg-yellow-400");
+    headerRow.appendChild(dot);
+
+    const questionEl = document.createElement("span");
+    questionEl.className = "text-white font-semibold text-sm";
+    questionEl.textContent = data.question || "";
+    headerRow.appendChild(questionEl);
+
+    const stateEl = document.createElement("span");
+    stateEl.className = "text-xs text-slate-400 ml-auto";
+    stateEl.textContent = data.state;
+    headerRow.appendChild(stateEl);
+
+    card.appendChild(headerRow);
+
+    // Option rows
+    data.options.forEach((o) => {
+      const row = document.createElement("div");
+      row.className = "mb-1.5";
+
+      const labelRow = document.createElement("div");
+      labelRow.className = "flex justify-between text-xs text-slate-300 mb-0.5";
+
+      const labelLeft = document.createElement("span");
+      const keyBold = document.createElement("b");
+      keyBold.textContent = o.key + ".";
+      labelLeft.appendChild(keyBold);
+      labelLeft.appendChild(document.createTextNode(" " + o.text));
+
+      const labelRight = document.createElement("span");
+      labelRight.textContent = o.count + " (" + o.percentage + "%)";
+
+      labelRow.appendChild(labelLeft);
+      labelRow.appendChild(labelRight);
+
+      const barBg = document.createElement("div");
+      barBg.className = "bg-slate-700/50 rounded h-2 overflow-hidden";
+
+      const barFill = document.createElement("div");
+      barFill.className = "h-full rounded bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-300";
+      barFill.style.width = (o.count / maxCount * 100) + "%";
+
+      barBg.appendChild(barFill);
+      row.appendChild(labelRow);
+      row.appendChild(barBg);
+      card.appendChild(row);
+    });
+
+    // Footer
+    const footer = document.createElement("div");
+    footer.className = "text-xs text-slate-500 mt-1";
+    footer.textContent = ServerI18n.t("pollTotalVotes").replace("{0}", total);
+    card.appendChild(footer);
+
+    display.appendChild(card);
   }
 
   // Expose csrfFetch globally for external admin modules (e.g. admin-scheduler.js)

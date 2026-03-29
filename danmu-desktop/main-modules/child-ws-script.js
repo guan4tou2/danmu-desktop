@@ -508,20 +508,51 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
 
                 const maxCount = Math.max(1, ...data.options.map(function(o) { return o.count; }));
 
-                panel.innerHTML = '<div style="font-size:14px;font-weight:bold;margin-bottom:12px;color:#22d3ee;">' +
-                  (data.state === "ended" ? "\\u{1F4CA} " : "\\u{1F5F3}\\uFE0F " ) + data.question + '</div>' +
-                  data.options.map(function(o) {
-                    return '<div style="margin-bottom:8px;">' +
-                      '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;">' +
-                        '<span><b>' + o.key + '.</b> ' + o.text + '</span>' +
-                        '<span>' + o.count + ' (' + o.percentage + '%)</span>' +
-                      '</div>' +
-                      '<div style="background:rgba(255,255,255,0.1);border-radius:4px;height:6px;overflow:hidden;">' +
-                        '<div style="background:linear-gradient(90deg,#06b6d4,#22d3ee);height:100%;width:' + (o.count/maxCount*100) + '%;transition:width 0.3s;border-radius:4px;"></div>' +
-                      '</div>' +
-                    '</div>';
-                  }).join('') +
-                  '<div style="font-size:11px;color:#94a3b8;margin-top:8px;">Total: ' + (data.total_votes||0) + ' votes</div>';
+                // DOM-based rendering to prevent XSS
+                while (panel.firstChild) panel.removeChild(panel.firstChild);
+
+                const icon = data.state === "ended" ? "\\u{1F4CA} " : "\\u{1F5F3}\\uFE0F ";
+                const header = document.createElement("div");
+                header.style.cssText = "font-size:14px;font-weight:bold;margin-bottom:12px;color:#22d3ee;";
+                header.textContent = icon + (data.question || "");
+                panel.appendChild(header);
+
+                (data.options || []).forEach(function(o) {
+                  const row = document.createElement("div");
+                  row.style.marginBottom = "8px";
+
+                  const labelRow = document.createElement("div");
+                  labelRow.style.cssText = "display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;";
+
+                  const labelLeft = document.createElement("span");
+                  const keyBold = document.createElement("b");
+                  keyBold.textContent = o.key + ".";
+                  labelLeft.appendChild(keyBold);
+                  labelLeft.appendChild(document.createTextNode(" " + o.text));
+
+                  const labelRight = document.createElement("span");
+                  labelRight.textContent = o.count + " (" + o.percentage + "%)";
+
+                  labelRow.appendChild(labelLeft);
+                  labelRow.appendChild(labelRight);
+
+                  const barBg = document.createElement("div");
+                  barBg.style.cssText = "background:rgba(255,255,255,0.1);border-radius:4px;height:6px;overflow:hidden;";
+
+                  const barFill = document.createElement("div");
+                  barFill.style.cssText = "background:linear-gradient(90deg,#06b6d4,#22d3ee);height:100%;border-radius:4px;transition:width 0.3s;";
+                  barFill.style.width = (o.count / maxCount * 100) + "%";
+
+                  barBg.appendChild(barFill);
+                  row.appendChild(labelRow);
+                  row.appendChild(barBg);
+                  panel.appendChild(row);
+                });
+
+                const footer = document.createElement("div");
+                footer.style.cssText = "font-size:11px;color:#94a3b8;margin-top:8px;";
+                footer.textContent = "Total: " + (data.total_votes || 0) + " votes";
+                panel.appendChild(footer);
 
                 if (data.state === "ended") {
                   setTimeout(function() { if (panel) { panel.style.opacity = "0"; panel.style.transition = "opacity 2s"; } }, 5000);
