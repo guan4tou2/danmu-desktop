@@ -19,6 +19,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
 try {
   console.log("[Preload] Attempting to expose API via contextBridge V2...");
+  // Store per-channel handler references so we remove only our own listener,
+  // not any other listeners that may be registered on the same channel.
+  const _handlers = {};
   contextBridge.exposeInMainWorld("API", {
     getDisplays: () => {
       console.log("[Preload] API.getDisplays called");
@@ -54,10 +57,11 @@ try {
     },
     onConnectionStatus: (callback) => {
       console.log("[Preload] API.onConnectionStatus listener registered");
-      ipcRenderer.removeAllListeners("overlay-connection-status");
-      ipcRenderer.on("overlay-connection-status", (event, data) => {
-        callback(data);
-      });
+      if (_handlers.connectionStatus) {
+        ipcRenderer.removeListener("overlay-connection-status", _handlers.connectionStatus);
+      }
+      _handlers.connectionStatus = (event, data) => callback(data);
+      ipcRenderer.on("overlay-connection-status", _handlers.connectionStatus);
     },
     // Send test danmu to overlay
     sendTestDanmu: (text, opacity, color, size, speed, textStyles, displayArea) => {
@@ -92,22 +96,25 @@ try {
     },
     // IPC Listeners for main -> renderer events
     onUpdateDisplayOptions: (callback) => {
-      ipcRenderer.removeAllListeners("update-display-options");
-      ipcRenderer.on("update-display-options", (event, options) => {
-        callback(options);
-      });
+      if (_handlers.updateDisplayOptions) {
+        ipcRenderer.removeListener("update-display-options", _handlers.updateDisplayOptions);
+      }
+      _handlers.updateDisplayOptions = (event, options) => callback(options);
+      ipcRenderer.on("update-display-options", _handlers.updateDisplayOptions);
     },
     onShowStartupAnimation: (callback) => {
-      ipcRenderer.removeAllListeners("show-startup-animation");
-      ipcRenderer.on("show-startup-animation", (event, data) => {
-        callback(data);
-      });
+      if (_handlers.showStartupAnimation) {
+        ipcRenderer.removeListener("show-startup-animation", _handlers.showStartupAnimation);
+      }
+      _handlers.showStartupAnimation = (event, data) => callback(data);
+      ipcRenderer.on("show-startup-animation", _handlers.showStartupAnimation);
     },
     onKonamiEffect: (callback) => {
-      ipcRenderer.removeAllListeners("konami-effect");
-      ipcRenderer.on("konami-effect", () => {
-        callback();
-      });
+      if (_handlers.konamiEffect) {
+        ipcRenderer.removeListener("konami-effect", _handlers.konamiEffect);
+      }
+      _handlers.konamiEffect = () => callback();
+      ipcRenderer.on("konami-effect", _handlers.konamiEffect);
     },
   });
   // Note: Logging window.API here is from preload's context, not renderer's.

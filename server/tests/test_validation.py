@@ -169,8 +169,10 @@ def test_setting_update_valid():
 
 
 def test_setting_update_all_valid_types():
-    for t in ("Color", "Opacity", "FontSize", "Speed", "FontFamily", "Effects"):
-        result, errors = _load(SettingUpdateSchema, {"type": t, "value": 1, "index": 0})
+    from server.config import Config
+
+    for t in Config.SETTABLE_OPTION_KEYS:
+        result, errors = _load(SettingUpdateSchema, {"type": t, "value": "test", "index": 0})
         assert errors is None, f"type={t} should be valid"
 
 

@@ -224,6 +224,9 @@ def _extract_client_ip() -> str:
         return "unknown"
 
 
+# NOTE: /fire is a public endpoint (no auth required) — CSRF protection is
+# intentionally omitted. Rate limiting + fingerprint tracking provide abuse
+# protection. Do NOT add @require_csrf here.
 @api_bp.route("/fire", methods=["POST"])
 @rate_limit("fire")
 def fire():

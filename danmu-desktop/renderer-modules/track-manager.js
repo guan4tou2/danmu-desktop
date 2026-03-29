@@ -2,6 +2,8 @@
 const { sanitizeLog } = require("../shared/utils");
 const DanmuEffects = require("./danmu-effects");
 
+let _resizeHandler = null;
+
 function initTrackManager() {
   window.danmuTracks = [];
   window.danmuTrackSettings = {
@@ -16,11 +18,15 @@ function initTrackManager() {
   let _cachedScreenWidth = document.documentElement.clientWidth;
   let _cachedScreenHeight = document.documentElement.clientHeight;
 
-  window.addEventListener("resize", () => {
+  if (_resizeHandler) {
+    window.removeEventListener("resize", _resizeHandler);
+  }
+  _resizeHandler = () => {
     _cachedScreenWidth = document.documentElement.clientWidth;
     _cachedScreenHeight = document.documentElement.clientHeight;
     console.log("[Track] Screen resized:", _cachedScreenWidth, "x", _cachedScreenHeight);
-  });
+  };
+  window.addEventListener("resize", _resizeHandler);
 
   window.updateDanmuTrackSettings = function (maxTracks, collisionDetection) {
     window.danmuTrackSettings.maxTracks = maxTracks;

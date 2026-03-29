@@ -504,11 +504,16 @@ def preview_effect():
     if not isinstance(parsed, dict) or not parsed.get("name"):
         return _json_response({"error": "Missing name field"}, 400)
 
+    import re as _re
+
     from ..services import effects as eff_svc
     from ..services.effects import render_effects
 
     # Build a temporary effect input using the parsed content
     name = str(parsed["name"])
+    _SAFE_EFFECT_NAME = _re.compile(r"^[a-zA-Z0-9_-]{1,128}$")
+    if not _SAFE_EFFECT_NAME.match(name):
+        return _json_response({"error": "Invalid effect name format"}, 400)
     effect_input = [{"name": name, "params": params}]
 
     # Temporarily inject parsed effect into cache for rendering.
