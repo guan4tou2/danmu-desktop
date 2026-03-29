@@ -45,14 +45,18 @@ class TestGetClientIp:
         """Invalid XFF IP falls through to remote_addr."""
         app.config["TRUST_X_FORWARDED_FOR"] = True
         headers = {"X-Forwarded-For": "not-an-ip, 172.16.0.1"}
-        with app.test_request_context(headers=headers, environ_base={"REMOTE_ADDR": "192.168.1.20"}):
+        with app.test_request_context(
+            headers=headers, environ_base={"REMOTE_ADDR": "192.168.1.20"}
+        ):
             assert get_client_ip() == "192.168.1.20"
 
     def test_empty_xff_falls_through(self, app):
         """Empty XFF header falls through to remote_addr."""
         app.config["TRUST_X_FORWARDED_FOR"] = True
         headers = {"X-Forwarded-For": ""}
-        with app.test_request_context(headers=headers, environ_base={"REMOTE_ADDR": "192.168.1.30"}):
+        with app.test_request_context(
+            headers=headers, environ_base={"REMOTE_ADDR": "192.168.1.30"}
+        ):
             assert get_client_ip() == "192.168.1.30"
 
     def test_no_remote_addr_returns_unknown(self, app):
@@ -63,11 +67,8 @@ class TestGetClientIp:
 
     def test_invalid_remote_addr_returns_unknown(self, app):
         """When remote_addr is not a valid IP, returns 'unknown'."""
-        with app.test_request_context():
-            # Override remote_addr with an invalid value
-            from flask import request
-            with app.test_request_context(environ_base={"REMOTE_ADDR": "garbage"}):
-                assert get_client_ip() == "unknown"
+        with app.test_request_context(environ_base={"REMOTE_ADDR": "garbage"}):
+            assert get_client_ip() == "unknown"
 
     def test_xff_with_ipv6(self, app):
         """XFF with IPv6 address is accepted."""

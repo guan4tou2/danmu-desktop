@@ -2,13 +2,17 @@
 
 import json
 
-from flask import current_app, make_response, redirect, request, url_for
+from flask import current_app, make_response, request
 
-from . import _json_response, admin_bp, require_csrf, require_login, sanitize_log_string
 from ...services import messaging
 from ...services.security import rate_limit
 from ...services.settings import get_options, set_toggle, update_setting
-from ...services.validation import SettingUpdateSchema, ToggleSettingSchema, validate_request
+from ...services.validation import (
+    SettingUpdateSchema,
+    ToggleSettingSchema,
+    validate_request,
+)
+from . import _json_response, admin_bp, require_csrf, require_login, sanitize_log_string
 
 
 @admin_bp.route("/Set", methods=["POST"])
