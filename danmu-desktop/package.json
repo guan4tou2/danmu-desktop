@@ -8,7 +8,8 @@
     "pack": "npm run build:webpack && electron-builder --dir",
     "pack-dist": "npm run build:webpack && electron-builder",
     "build:webpack": "webpack",
-    "test": "jest --testPathPatterns=tests/"
+    "test": "jest --testPathPatterns=tests/",
+    "test:e2e": "npx playwright test"
   },
   "repository": "https://github.com/guan4tou2/danmu-desktop",
   "keywords": [
@@ -38,6 +39,7 @@
   },
   "jest": {
     "testEnvironment": "jsdom",
+    "testPathIgnorePatterns": ["/node_modules/", "/e2e/"],
     "transform": {
       "^.+\\.js$": "babel-jest"
     },

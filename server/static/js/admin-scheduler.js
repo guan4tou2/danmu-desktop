@@ -227,7 +227,7 @@
   // --- Init ---
 
   function init() {
-    const settingsGrid = document.getElementById("settings-grid");
+    const settingsGrid = document.getElementById("advanced-grid") || document.getElementById("settings-grid");
     if (!settingsGrid) return; // not logged in or grid not rendered yet
 
     const openAttr = isOpen("sec-scheduler") ? "open" : "";
@@ -356,7 +356,7 @@
     let initializing = false;
 
     const observer = new MutationObserver(function () {
-      const g = document.getElementById("settings-grid");
+      const g = document.getElementById("advanced-grid") || document.getElementById("settings-grid");
       if (g && !document.getElementById("sec-scheduler") && !initializing) {
         initializing = true;
         try { init(); } finally { initializing = false; }
@@ -366,7 +366,7 @@
     observer.observe(document.body, { childList: true, subtree: true });
 
     // Also check immediately
-    const grid = document.getElementById("settings-grid");
+    const grid = document.getElementById("advanced-grid") || document.getElementById("settings-grid");
     if (grid && !document.getElementById("sec-scheduler")) {
       init();
     }

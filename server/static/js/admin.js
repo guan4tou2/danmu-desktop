@@ -1073,12 +1073,26 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <a href="#sec-polls" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Polls</a>
                                 <a href="#sec-security" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navSecurity">${ServerI18n.t("navSecurity")}</a>
                                 <a href="#sec-live-feed" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Live Feed</a>
+                                <a href="#sec-advanced" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Advanced</a>
                             </div>
                         </nav>
 
                         <div id="settings-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <!-- Settings cards will be inserted via insertAdjacentHTML -->
                         </div>
+
+                        <details id="sec-advanced" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent mt-6 scroll-mt-24" ${isOpen("sec-advanced") ? "open" : ""}
+                            <summary class="flex items-center justify-between cursor-pointer list-none">
+                                <div>
+                                    <h3 class="text-lg font-bold text-white">Advanced</h3>
+                                    <p class="text-sm text-slate-300">Webhooks, scheduled broadcasts, and other advanced features</p>
+                                </div>
+                                <span class="text-slate-400 transition-transform group-open:rotate-180">&#8964;</span>
+                            </summary>
+                            <div id="advanced-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+                                <!-- Webhooks & Scheduler sections injected here -->
+                            </div>
+                        </details>
                     </div>
                 `;
 
