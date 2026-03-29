@@ -6,10 +6,12 @@
 // ---------------------------------------------------------------------------
 const mockIpcMainOn = jest.fn();
 const mockIpcMainHandle = jest.fn();
-const mockScreenGetAllDisplays = jest.fn(() => [
-  { id: 1, bounds: { x: 0, y: 0, width: 1920, height: 1080 } },
-  { id: 2, bounds: { x: 1920, y: 0, width: 2560, height: 1440 } },
-]);
+const mockDisplays = [
+  { id: 1, bounds: { x: 0, y: 0, width: 1920, height: 1080 }, size: { width: 1920, height: 1080 } },
+  { id: 2, bounds: { x: 1920, y: 0, width: 2560, height: 1440 }, size: { width: 2560, height: 1440 } },
+];
+const mockScreenGetAllDisplays = jest.fn(() => mockDisplays);
+const mockScreenGetPrimaryDisplay = jest.fn(() => mockDisplays[0]);
 const mockAppGetLocale = jest.fn(() => "en-US");
 
 jest.mock("electron", () => ({
@@ -19,6 +21,7 @@ jest.mock("electron", () => ({
   },
   screen: {
     getAllDisplays: mockScreenGetAllDisplays,
+    getPrimaryDisplay: mockScreenGetPrimaryDisplay,
   },
   app: {
     getLocale: mockAppGetLocale,

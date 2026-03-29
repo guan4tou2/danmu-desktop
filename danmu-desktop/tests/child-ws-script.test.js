@@ -707,7 +707,7 @@ describe("child-ws-script execution", () => {
     expect(linkStartEl.setAttribute).toHaveBeenCalledWith("data-text", "MyCustomText");
   });
 
-  test("startup animation with null settings defaults to LINK START text", () => {
+  test("startup animation with null settings (enabled:false) does not play", () => {
     const script = getChildWsScript("127.0.0.1", 9487, null);
     const createdElements = [];
 
@@ -752,11 +752,9 @@ describe("child-ws-script execution", () => {
     ws.readyState = 1;
     if (ws.onopen) ws.onopen();
 
-    // Even with null settings (defaults to {enabled:false}), the animation still
-    // plays on first connection with the default "LINK START" text
+    // With null settings (defaults to {enabled:false}), the animation should NOT play
     const linkStartEl = createdElements.find((el) => el.className === "link-start");
-    expect(linkStartEl).toBeDefined();
-    expect(linkStartEl.textContent).toBe("LINK START");
+    expect(linkStartEl).toBeUndefined();
   });
 
   test("clear message removes danmu elements", () => {
