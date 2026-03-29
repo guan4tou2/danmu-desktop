@@ -54,10 +54,13 @@ class FireRequestSchema(Schema):
 
     @validates("effects")
     def validate_effects(self, value, **kwargs):
+        _SAFE_NAME = _re.compile(r"^[a-zA-Z0-9_-]{1,128}$")
         for item in value:
             name = item.get("name", "")
-            if not isinstance(name, str) or len(name) > 128:
-                raise ValidationError("Effect name must be a string with max 128 chars")
+            if not isinstance(name, str) or not _SAFE_NAME.match(name):
+                raise ValidationError(
+                    "Effect name must be 1-128 alphanumeric/hyphen/underscore chars"
+                )
 
     class Meta:
         unknown = EXCLUDE

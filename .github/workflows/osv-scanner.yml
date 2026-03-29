@@ -32,7 +32,7 @@ jobs:
   scan-scheduled:
     # 只在定期排程時掃描（不在 push 時阻斷 CI），PR 改由 scan-pr job 負責
     if: ${{ github.event_name == 'schedule' }}
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@1f1242919d8a60496dd1874b24b62b2370ed4c78" # v1.7.1
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@c51854704019a247608d928f370c98740469d4b5" # v2.3.5
     with:
       scan-args: |-
         -r
@@ -40,7 +40,7 @@ jobs:
         ./
   scan-pr:
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@1f1242919d8a60496dd1874b24b62b2370ed4c78" # v1.7.1
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@c51854704019a247608d928f370c98740469d4b5" # v2.3.5
     with:
       scan-args: |-
         -r
@@ -49,7 +49,7 @@ jobs:
   scan-push:
     # 在 push / 手動執行時刷新 security tab，避免告警停留在舊 commit
     if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@1f1242919d8a60496dd1874b24b62b2370ed4c78" # v1.7.1
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@c51854704019a247608d928f370c98740469d4b5" # v2.3.5
     with:
       scan-args: |-
         -r

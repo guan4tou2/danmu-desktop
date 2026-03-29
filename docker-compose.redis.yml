@@ -6,6 +6,9 @@ services:
     environment:
       - RATE_LIMIT_BACKEND=redis
       - REDIS_URL=redis://:${REDIS_PASSWORD:-changeme}@redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
 
   redis:
     image: redis:7-alpine
@@ -16,6 +19,12 @@ services:
       - redis-data:/data
     restart: unless-stopped
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
 
 volumes:
   redis-data:

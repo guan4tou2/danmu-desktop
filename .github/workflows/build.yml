@@ -112,42 +112,9 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: true
-
-      - name: Find Linux AppImage
-        if: matrix.os == 'ubuntu-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
-        id: find_appimage
-        run: |
-          APPIMAGE_PATH=$(find danmu-desktop/pack -name "danmu manager*-*.AppImage" -type f)
-          echo "appimage_path=$APPIMAGE_PATH" >> "$GITHUB_ENV"
-
-      - name: Find Linux DEB
-        if: matrix.os == 'ubuntu-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
-        id: find_deb
-        run: |
-          DEB_PATH=$(find danmu-desktop/pack -name "danmu manager*-*.deb" -type f)
-          echo "deb_path=$DEB_PATH" >> "$GITHUB_ENV"
-
-      - name: Upload AppImage
-        if: matrix.os == 'ubuntu-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release_linux.outputs.upload_url }}
-          asset_path: ${{ env.appimage_path }}
-          asset_name: danmu manager-${{ needs.check_version_change.outputs.version }}-linux-x86_64.AppImage
-          asset_content_type: application/octet-stream
-
-      - name: Upload DEB
-        if: matrix.os == 'ubuntu-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release_linux.outputs.upload_url }}
-          asset_path: ${{ env.deb_path }}
-          asset_name: danmu manager-${{ needs.check_version_change.outputs.version }}-linux-amd64.deb
-          asset_content_type: application/vnd.debian.binary-package
+          files: |
+            danmu-desktop/pack/danmu manager*-*.AppImage
+            danmu-desktop/pack/danmu manager*-*.deb
 
       - name: Create GitHub Release for Windows
         if: matrix.os == 'windows-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
@@ -162,25 +129,8 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: false
-
-      - name: Find Windows EXE
-        if: matrix.os == 'windows-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
-        id: find_exe
-        shell: bash
-        run: |
-          EXE_PATH=$(find danmu-desktop/pack -name "danmu manager*-*.exe" -type f)
-          echo "exe_path=$EXE_PATH" >> "$GITHUB_ENV"
-
-      - name: Upload EXE
-        if: matrix.os == 'windows-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release_windows.outputs.upload_url }}
-          asset_path: ${{ env.exe_path }}
-          asset_name: danmu manager-${{ needs.check_version_change.outputs.version }}-win-x64.exe
-          asset_content_type: application/octet-stream
+          files: |
+            danmu-desktop/pack/danmu manager*-*.exe
 
       - name: Create Release for macOS
         if: matrix.os == 'macos-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
@@ -189,6 +139,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          APP_VERSION: ${{ needs.check_version_change.outputs.version }}
         with:
           tag_name: v${{ needs.check_version_change.outputs.version }}
           name: Release v${{ needs.check_version_change.outputs.version }}
@@ -201,57 +152,6 @@ jobs:
             ```bash
             sudo xattr -r -d com.apple.quarantine 'danmu manager.app'
             ```
-
-      - name: Find DMG file
-        if: matrix.os == 'macos-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
-        id: find_dmg
-        env: # Add APP_VERSION to env
-          APP_VERSION: ${{ needs.check_version_change.outputs.version }}
-        run: |
-          EXPECTED_DMG="danmu-desktop/pack/danmu manager-${APP_VERSION}-mac-arm64.dmg"
-          if [ -f "$EXPECTED_DMG" ]; then
-            echo "Found DMG: $EXPECTED_DMG"
-            echo "dmg_path=$EXPECTED_DMG" >> "$GITHUB_ENV"
-          else
-            echo "Error: Expected DMG file $EXPECTED_DMG not found."
-            ls -R danmu-desktop/pack # List available files for debugging
-            exit 1
-          fi
-
-      - name: Find ZIP file
-        if: matrix.os == 'macos-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
-        id: find_zip
-        env: # Add APP_VERSION to env
-          APP_VERSION: ${{ needs.check_version_change.outputs.version }}
-        run: |
-          EXPECTED_ZIP="danmu-desktop/pack/danmu manager-${APP_VERSION}-mac-arm64.zip"
-          if [ -f "$EXPECTED_ZIP" ]; then
-            echo "Found ZIP: $EXPECTED_ZIP"
-            echo "zip_path=$EXPECTED_ZIP" >> "$GITHUB_ENV"
-          else
-            echo "Error: Expected ZIP file $EXPECTED_ZIP not found."
-            ls -R danmu-desktop/pack # List available files for debugging
-            exit 1
-          fi
-
-      - name: Upload DMG
-        if: matrix.os == 'macos-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.dmg_path }}
-          asset_name: danmu manager-${{ needs.check_version_change.outputs.version }}-mac-arm64.dmg
-          asset_content_type: application/octet-stream
-
-      - name: Upload ZIP
-        if: matrix.os == 'macos-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.zip_path }}
-          asset_name: danmu manager-${{ needs.check_version_change.outputs.version }}-mac-arm64.zip
-          asset_content_type: application/zip
+          files: |
+            danmu-desktop/pack/danmu manager-*-mac-arm64.dmg
+            danmu-desktop/pack/danmu manager-*-mac-arm64.zip

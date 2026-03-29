@@ -43,16 +43,17 @@ function validateDanmuParams(data) {
 
   if (
     !Number.isFinite(opacity) || opacity < 0 || opacity > 100 ||
-    !Number.isFinite(size) || size <= 0 || size > 500 ||
+    !Number.isFinite(size) || size <= 0 || size > 200 ||
     !Number.isFinite(speed) || speed < 1 || speed > 10
   ) {
     return null;
   }
 
-  // 驗證顏色格式必須為合法的 CSS 十六進位色碼，防止非預期值注入
-  const colorRegex = /^#[0-9a-fA-F]{6}$/;
-  const color = typeof data.color === "string" ? data.color : "#ffffff";
-  const validatedColor = colorRegex.test(color) ? color : "#ffffff";
+  // 驗證顏色格式：接受含或不含 # 前綴的十六進位色碼（server 端 strip #，IPC 端需相容兩種格式）
+  const rawColor = typeof data.color === "string" ? data.color : "";
+  const normalizedColor = rawColor.startsWith("#") ? rawColor : `#${rawColor}`;
+  const colorRegex = /^#[0-9a-fA-F]{3,8}$/;
+  const validatedColor = colorRegex.test(normalizedColor) ? normalizedColor : "#ffffff";
 
   return { opacity, size, speed, color: validatedColor, text: data.text };
 }
@@ -175,7 +176,7 @@ function setupIpcHandlers(getMainWindow, childWindows) {
     // Validate textStyles if provided
     if (data.textStyles && typeof data.textStyles === "object") {
       const ts = data.textStyles;
-      if (ts.strokeColor !== undefined && (typeof ts.strokeColor !== "string" || !/^#[0-9a-fA-F]{6}$/.test(ts.strokeColor))) {
+      if (ts.strokeColor !== undefined && (typeof ts.strokeColor !== "string" || !/^#[0-9a-fA-F]{3,8}$/.test(ts.strokeColor.startsWith("#") ? ts.strokeColor : `#${ts.strokeColor}`))) {
         console.log("[Main] Invalid strokeColor");
         return;
       }
@@ -268,7 +269,7 @@ function setupIpcHandlers(getMainWindow, childWindows) {
     // Validate size if present
     if (settings.size !== undefined) {
       const size = Number(settings.size);
-      if (!Number.isFinite(size) || size <= 0 || size > 500) {
+      if (!Number.isFinite(size) || size <= 0 || size > 200) {
         console.warn("[Main] update-overlay-settings: invalid size");
         return;
       }
@@ -285,10 +286,15 @@ function setupIpcHandlers(getMainWindow, childWindows) {
 
     // Validate color if present
     if (settings.color !== undefined && typeof settings.color === "string") {
-      if (!/^#[0-9a-fA-F]{6}$/.test(settings.color)) {
+      const rawSettingsColor = settings.color;
+      const normalizedSettingsColor = rawSettingsColor.startsWith("#")
+        ? rawSettingsColor
+        : `#${rawSettingsColor}`;
+      if (!/^#[0-9a-fA-F]{3,8}$/.test(normalizedSettingsColor)) {
         console.warn("[Main] update-overlay-settings: invalid color format");
         return;
       }
+      settings = { ...settings, color: normalizedSettingsColor };
     }
 
     console.log("[Main] update-overlay-settings received");

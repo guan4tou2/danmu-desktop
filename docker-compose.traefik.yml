@@ -2,6 +2,8 @@
 # Usage: docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d
 # Requires: public domain, port 80 accessible from internet
 # Set DOMAIN and ACME_EMAIL in .env
+# Before first run: mkdir -p traefik && touch traefik/acme.json && chmod 600 traefik/acme.json
+# Or use: make docker-up-traefik (handles acme.json setup automatically)
 services:
   reverse-proxy:
     # Disable the HTTP-only proxy defined in the base file

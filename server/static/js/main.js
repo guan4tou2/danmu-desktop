@@ -202,12 +202,18 @@ document.addEventListener("DOMContentLoaded", () => {
     return fontsCache;
   }
 
+  function escapeCSSString(str) {
+    return str.replace(/[\\"'();\n\r]/g, "\\$&");
+  }
+
   function ensureFontFaceLoaded(fontName, fontUrl) {
     if (!fontUrl) return;
     const safeName = fontName.replace(/\s+/g, "-");
     const styleId = `font-style-preview-${safeName}`;
     if (!document.getElementById(styleId)) {
-      const fontFaceRule = `@font-face { font-family: "${fontName}"; src: url("${fontUrl}"); }`;
+      const escapedFontName = escapeCSSString(fontName);
+      const escapedFontUrl = escapeCSSString(fontUrl);
+      const fontFaceRule = `@font-face { font-family: "${escapedFontName}"; src: url("${escapedFontUrl}"); }`;
       const styleSheet = document.createElement("style");
       styleSheet.id = styleId;
       styleSheet.type = "text/css";
@@ -798,6 +804,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- WebSocket ---
+  let _wsReconnectAttempt = 0;
+  const WS_BASE_DELAY = 3000;
+  const WS_MAX_RECONNECT_DELAY = 30000;
+
   function connectWebSocket() {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/`;
@@ -807,6 +817,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ws.onopen = () => {
       console.log("Connected to WebSocket");
+      _wsReconnectAttempt = 0;
       updateConnectionUI("connected");
     };
 
@@ -840,9 +851,16 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     ws.onclose = () => {
-      console.log("WebSocket disconnected, retrying in 3s...");
+      _wsReconnectAttempt++;
+      const delay = Math.min(
+        WS_BASE_DELAY * Math.pow(2, _wsReconnectAttempt - 1),
+        WS_MAX_RECONNECT_DELAY
+      );
+      const jitter = delay * 0.2 * Math.random();
+      const totalDelay = Math.round(delay + jitter);
+      console.log(`WebSocket disconnected, retrying in ${totalDelay}ms (attempt ${_wsReconnectAttempt})...`);
       updateConnectionUI("disconnected");
-      setTimeout(connectWebSocket, 3000);
+      setTimeout(connectWebSocket, totalDelay);
     };
 
     ws.onerror = (err) => {

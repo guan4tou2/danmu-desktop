@@ -29,6 +29,7 @@ services:
       - WEB_WS_ALLOWED_ORIGINS=${WEB_WS_ALLOWED_ORIGINS:-}
       - WS_MAX_CONNECTIONS=${WS_MAX_CONNECTIONS:-200}
       - WS_MAX_CONNECTIONS_PER_IP=${WS_MAX_CONNECTIONS_PER_IP:-10}
+      - TRUST_X_FORWARDED_FOR=true
     volumes:
       - ./server/user_fonts:/app/server/user_fonts
       - ./server/static:/app/server/static

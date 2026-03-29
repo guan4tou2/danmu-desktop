@@ -7,6 +7,7 @@ services:
   server:
     volumes:
       - ./server:/app/server
+      - /app/server/.venv  # Preserve container's venv from being overwritten by mount
       - ./server/user_fonts:/app/server/user_fonts
       - ./server/static:/app/server/static
       - ./server/logs:/app/server/logs
