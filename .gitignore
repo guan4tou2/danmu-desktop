@@ -149,6 +149,9 @@ nginx/certs/*.pem
 # Traefik Let's Encrypt storage (含私鑰，不可 commit)
 traefik/acme.json
 
+# Claude Code
+.claude/
+
 # Playwright MCP / test artifacts
 .playwright-mcp/
 danmu-desktop/test-results/
