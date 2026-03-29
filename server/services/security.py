@@ -1,4 +1,5 @@
 import hmac
+import json
 import logging
 import secrets
 import threading
@@ -7,7 +8,7 @@ from collections import defaultdict, deque
 from functools import wraps
 
 import bcrypt
-from flask import abort, current_app, request, session
+from flask import abort, current_app, make_response, request, session
 from itsdangerous import BadSignature, BadTimeSignature, URLSafeTimedSerializer
 
 from .ip import get_client_ip as _get_client_ip
@@ -139,6 +140,24 @@ def require_csrf(func):
 
     return wrapper
 
+
+def require_login(func):
+    """Decorator that returns 401 JSON if user is not logged in.
+
+    Use on API routes. The admin page view (GET /admin/) handles
+    unauthenticated users differently (renders with limited data),
+    so it does NOT use this decorator.
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not session.get("logged_in"):
+            return make_response(
+                json.dumps({"error": "Unauthorized"}),
+                401,
+                {"Content-Type": "application/json"},
+            )
+        return func(*args, **kwargs)
+    return wrapper
 
 
 def rate_limit(
