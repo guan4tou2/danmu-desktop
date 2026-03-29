@@ -36,10 +36,13 @@ def index():
 @main_bp.route("/overlay")
 def overlay():
     """OBS Browser Source overlay page."""
+    ws_token = current_app.config.get("WS_AUTH_TOKEN") or ""
+    if ws_token and not session.get("logged_in"):
+        return redirect(url_for("admin_bp.admin"))
     return render_template(
         "overlay.html",
         ws_port=current_app.config["WS_PORT"],
-        ws_token=current_app.config.get("WS_AUTH_TOKEN") or "",
+        ws_token=ws_token,
     )
 
 

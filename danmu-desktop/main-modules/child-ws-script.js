@@ -403,14 +403,16 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
             }, totalDuration);
           };
 
-          let animationText = 'LINK START';
-          if (STARTUP_ANIM_SETTINGS && STARTUP_ANIM_SETTINGS.type === 'domain-expansion') {
-            animationText = '領域展開';
-          } else if (STARTUP_ANIM_SETTINGS && STARTUP_ANIM_SETTINGS.type === 'custom' && STARTUP_ANIM_SETTINGS.customText) {
-            animationText = STARTUP_ANIM_SETTINGS.customText;
-          }
+          if (STARTUP_ANIM_SETTINGS && STARTUP_ANIM_SETTINGS.enabled !== false) {
+            let animationText = 'LINK START';
+            if (STARTUP_ANIM_SETTINGS.type === 'domain-expansion') {
+              animationText = '領域展開';
+            } else if (STARTUP_ANIM_SETTINGS.type === 'custom' && STARTUP_ANIM_SETTINGS.customText) {
+              animationText = STARTUP_ANIM_SETTINGS.customText;
+            }
 
-          showSceneAnimation(animationText);
+            showSceneAnimation(animationText);
+          }
         }
 
         ws.onclose = (event) => {

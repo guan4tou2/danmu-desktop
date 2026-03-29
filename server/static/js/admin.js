@@ -488,11 +488,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       let chartBars = dist.map((d) => {
         const pct = Math.round((d.count / maxCount) * 100);
-        return `<div class="chart-bar" style="height: ${pct}%" title="${d.hour}: ${d.count}"><span class="chart-label">${d.hour.slice(-5, -3)}</span></div>`;
+        return `<div class="chart-bar" style="height: ${pct}%" title="${escapeHtml(d.hour)}: ${d.count}"><span class="chart-label">${escapeHtml(d.hour.slice(-5, -3))}</span></div>`;
       }).join("");
 
       let topTextRows = topTexts.map((t, i) =>
-        `<tr class="border-t border-slate-700/50"><td class="py-1 pr-3 text-slate-400">${i + 1}</td><td class="py-1 pr-3 text-white text-sm">${t.text}</td><td class="py-1 text-sky-400 font-mono text-sm">${t.count}</td></tr>`
+        `<tr class="border-t border-slate-700/50"><td class="py-1 pr-3 text-slate-400">${i + 1}</td><td class="py-1 pr-3 text-white text-sm">${escapeHtml(t.text)}</td><td class="py-1 text-sky-400 font-mono text-sm">${t.count}</td></tr>`
       ).join("");
 
       dashDiv.innerHTML = `

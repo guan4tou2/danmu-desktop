@@ -114,6 +114,7 @@ class TestConfig(Config):
     ADMIN_PASSWORD = "test"
     FIRE_RATE_LIMIT = 2
     FIRE_RATE_WINDOW = 60
+    WS_AUTH_TOKEN = ""
 
 
 @pytest.fixture()

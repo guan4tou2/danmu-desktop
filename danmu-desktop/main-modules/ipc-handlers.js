@@ -125,12 +125,15 @@ function setupIpcHandlers(getMainWindow, childWindows) {
     const displays = screen.getAllDisplays();
     // Return only the fields the renderer needs — prevents leaking internal
     // Electron display properties and avoids IPC serialization of unexpected data.
+    const primaryDisplay = screen.getPrimaryDisplay();
     const sanitizedDisplays = displays.map((d) => ({
       id: d.id,
       label: d.label || "",
       bounds: d.bounds,
       workArea: d.workArea,
+      size: d.size,
       scaleFactor: d.scaleFactor,
+      primary: d.id === primaryDisplay.id,
     }));
     console.log(
       "[Main] getDisplays handled, returning %d displays",
