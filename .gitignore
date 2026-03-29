@@ -134,6 +134,7 @@ server/media/uploads/
 .env
 .env.local
 .env.*.local
+server/.env
 
 # Docker
 .docker/
@@ -155,3 +156,4 @@ danmu-desktop/test-results/
 # Runtime data files (generated at runtime, not source-controlled)
 server/filter_rules.json
 server/plugins/plugins_state.json
+server/webhooks.json

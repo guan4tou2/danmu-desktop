@@ -23,7 +23,7 @@ docker-compose up -d
 
 2. 設定環境變數：
    ```bash
-   cp ../env.example ../.env
+   cp ../.env.example ../.env
    # 編輯 ../.env，至少設定 ADMIN_PASSWORD 或 ADMIN_PASSWORD_HASHED 其中一個
    ```
    可用 `python scripts/hash_password.py` 產生 bcrypt 雜湊並填入 `ADMIN_PASSWORD_HASHED`。
@@ -65,7 +65,7 @@ server/
 
 ## 環境變數
 
-詳見專案根目錄的 `env.example` 檔案。
+詳見專案根目錄的 `.env.example` 檔案。
 
 ## 開發
 

@@ -102,7 +102,7 @@ Drop `.dme` files (YAML format) into `server/effects/` to add custom effects —
 2. Configure environment variables:
 
    ```bash
-   cp env.example .env
+   cp .env.example .env
    # Edit .env and set ADMIN_PASSWORD / ADMIN_PASSWORD_HASHED and other settings
    ```
 
@@ -139,7 +139,7 @@ Drop `.dme` files (YAML format) into `server/effects/` to add custom effects —
 2. Configure environment:
 
    ```bash
-   cp env.example .env
+   cp .env.example .env
    vim .env  # Set your admin password and other settings
    ```
 
@@ -187,7 +187,7 @@ Key configuration options (set via `.env` file or environment variables):
 - `LOG_LEVEL`: Logging level - `DEBUG`, `INFO`, `WARNING`, `ERROR` (default: INFO)
 - `SETTINGS_FILE`: path to persisted runtime settings file (optional; defaults to a temp file)
 
-See `env.example` for all available options.
+See `.env.example` for all available options.
 
 ## Security Notes
 

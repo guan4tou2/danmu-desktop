@@ -99,7 +99,7 @@
 2. 配置環境變數：
 
    ```bash
-   cp env.example .env
+   cp .env.example .env
    # 編輯 .env，至少設定 ADMIN_PASSWORD 或 ADMIN_PASSWORD_HASHED
    ```
 
@@ -136,7 +136,7 @@
 2. 配置環境：
 
    ```bash
-   cp env.example .env
+   cp .env.example .env
    vim .env  # 設定管理員密碼和其他選項
    ```
 

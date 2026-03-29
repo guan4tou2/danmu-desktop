@@ -18,7 +18,7 @@
    ```
 2. **環境變數 / Env config**
    ```bash
-   cp env.example .env
+   cp .env.example .env
    # Edit .env for passwords / 設定管理員密碼
    ```
 3. **伺服器依賴 / Server deps**
