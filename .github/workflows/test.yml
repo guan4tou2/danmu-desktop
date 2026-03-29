@@ -31,8 +31,15 @@ jobs:
       - name: Install uv
         run: pip install uv
 
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: server/.venv
+          key: uv-${{ runner.os }}-py3.11-${{ hashFiles('server/uv.lock') }}
+          restore-keys: uv-${{ runner.os }}-py3.11-
+
       - name: Set up environment
-        run: cp env.example .env
+        run: cp .env.example .env
 
       - name: Install dependencies
         working-directory: server
@@ -65,6 +72,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
+          cache-dependency-path: danmu-desktop/package-lock.json
 
       - name: Install and test
         working-directory: danmu-desktop
@@ -81,6 +90,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
+          cache-dependency-path: danmu-desktop/package-lock.json
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -90,8 +101,15 @@ jobs:
       - name: Install uv
         run: pip install uv
 
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: server/.venv
+          key: uv-${{ runner.os }}-py3.11-${{ hashFiles('server/uv.lock') }}
+          restore-keys: uv-${{ runner.os }}-py3.11-
+
       - name: Set up environment
-        run: cp env.example .env
+        run: cp .env.example .env
 
       - name: Install Python dependencies
         working-directory: server

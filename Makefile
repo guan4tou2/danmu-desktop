@@ -69,7 +69,7 @@ gen-certs: ## 手動產生自簽 SSL 憑證（docker-up-https 會自動產生，
 
 setup-env: ## 建立 .env 檔案
 	@if [ ! -f .env ]; then \
-		cp env.example .env; \
+		cp .env.example .env; \
 		echo "已建立 .env 檔案，請編輯並設定 ADMIN_PASSWORD"; \
 	else \
 		echo ".env 檔案已存在"; \
