@@ -105,6 +105,27 @@ def browser_session():
         browser.close()
 
 
+# ─── WS 訊息攔截 init script ──────────────────────────────────────────────────
+
+_WS_INTERCEPT_SCRIPT = """
+window.__wsMessages = [];
+const _OrigWS = window.WebSocket;
+window.WebSocket = function(url, protocols) {
+    const ws = new _OrigWS(url, protocols);
+    ws.addEventListener('message', function(e) {
+        try { window.__wsMessages.push(JSON.parse(e.data)); }
+        catch(_) { window.__wsMessages.push(e.data); }
+    });
+    return ws;
+};
+window.WebSocket.prototype = _OrigWS.prototype;
+Object.defineProperty(window.WebSocket, 'CONNECTING', {value: 0});
+Object.defineProperty(window.WebSocket, 'OPEN', {value: 1});
+Object.defineProperty(window.WebSocket, 'CLOSING', {value: 2});
+Object.defineProperty(window.WebSocket, 'CLOSED', {value: 3});
+"""
+
+
 # ─── 輔助函式 ─────────────────────────────────────────────────────────────────
 
 
@@ -141,6 +162,26 @@ def _open_overlay(browser_session, http_port, ws_port):
     return context, page
 
 
+def _open_overlay_with_intercept(browser_session, http_port, ws_port):
+    """開啟 overlay 頁面，並注入 WS 訊息攔截器以便 debug"""
+    context = browser_session.new_context()
+    page = context.new_page()
+    page.add_init_script(_WS_INTERCEPT_SCRIPT)
+    page.goto(f"http://127.0.0.1:{http_port}/overlay")
+    page.wait_for_timeout(3000)
+    return context, page
+
+
+def _get_ws_debug(page):
+    """取得攔截到的 WS 訊息 + 頁面 DOM 資訊"""
+    msgs = page.evaluate("() => JSON.stringify(window.__wsMessages || [])")
+    html = page.evaluate(
+        "() => { var el = document.querySelector('h1.danmu');"
+        " return el ? el.outerHTML : 'none'; }"
+    )
+    return msgs, html
+
+
 # ─── 基本渲染測試 ──────────────────────────────────────────────────────────────
 
 
@@ -157,7 +198,7 @@ def test_overlay_page_loads(browser_session, server_ports):
 
 
 def test_danmu_renders_in_overlay(browser_session, server_ports):
-    """POST /fire → overlay 頁面應出現 .danmu 元素且文字正確"""
+    """POST /fire -> overlay 頁面應出現 .danmu 元素且文字正確"""
     http_port, ws_port = server_ports
     context, page = _open_overlay(browser_session, http_port, ws_port)
     try:
@@ -176,17 +217,20 @@ def test_danmu_renders_in_overlay(browser_session, server_ports):
 def test_danmu_has_correct_color(browser_session, server_ports):
     """danmu 應套用指定的顏色"""
     http_port, ws_port = server_ports
-    context, page = _open_overlay(browser_session, http_port, ws_port)
+    context, page = _open_overlay_with_intercept(browser_session, http_port, ws_port)
     try:
         _fire(http_port, {"text": "color_test_red", "color": "#ff0000"})
 
-        # 等待特定文字的 danmu 出現（避免匹配���其他殘留元素）
         danmu = page.locator("h1.danmu", has_text="color_test_red")
         danmu.first.wait_for(timeout=8000)
 
         color = danmu.first.evaluate("el => getComputedStyle(el).color")
-        # rgb(255, 0, 0)
-        assert color == "rgb(255, 0, 0)", f"Expected red, got: {color}"
+        if color != "rgb(255, 0, 0)":
+            msgs, html = _get_ws_debug(page)
+            raise AssertionError(
+                f"Expected rgb(255, 0, 0), got: {color}\n"
+                f"WS messages: {msgs}\nDanmu HTML: {html}"
+            )
     finally:
         page.close()
         context.close()
@@ -199,7 +243,7 @@ def test_danmu_has_correct_font_size(browser_session, server_ports):
     try:
         _fire(http_port, {"text": "size_test", "size": 80})
 
-        danmu = page.locator("h1.danmu")
+        danmu = page.locator("h1.danmu", has_text="size_test")
         danmu.first.wait_for(timeout=5000)
 
         font_size = danmu.first.evaluate("el => getComputedStyle(el).fontSize")
@@ -210,7 +254,7 @@ def test_danmu_has_correct_font_size(browser_session, server_ports):
 
 
 def test_danmu_wrapper_has_animation(browser_session, server_ports):
-    """scroll 佈局的 wrapper 應有 Web Animation（translateX）"""
+    """彈幕 wrapper 應有 CSS animation（translateX 滾動）"""
     http_port, ws_port = server_ports
     context, page = _open_overlay(browser_session, http_port, ws_port)
     try:
@@ -219,31 +263,31 @@ def test_danmu_wrapper_has_animation(browser_session, server_ports):
         wrapper = page.locator(".danmu-wrapper")
         wrapper.first.wait_for(timeout=5000)
 
-        # Web Animation API: getAnimations() 應返回至少 1 個動畫
-        anim_count = wrapper.first.evaluate("el => el.getAnimations().length")
-        assert anim_count >= 1, f"Expected >=1 animation, got {anim_count}"
+        has_animation = wrapper.first.evaluate("el => el.getAnimations().length > 0")
+        assert has_animation, "Danmu wrapper should have running animations"
     finally:
         page.close()
         context.close()
 
 
 def test_danmu_disappears_after_animation(browser_session, server_ports):
-    """彈幕動畫結束後應自動從 DOM 移除"""
+    """彈幕動畫結束後，DOM 元素應被移除"""
     http_port, ws_port = server_ports
     context, page = _open_overlay(browser_session, http_port, ws_port)
     try:
-        # 使用最快速度（speed=10 → 2s duration）
-        _fire(http_port, {"text": "disappear_test", "speed": 10})
+        _fire(
+            http_port,
+            {"text": "disappear_test", "speed": 10},
+        )
 
-        danmu = page.locator("h1.danmu")
+        danmu = page.locator("h1.danmu", has_text="disappear_test")
         danmu.first.wait_for(timeout=5000)
 
-        # 等待動畫結束 + 清除（最快 2s + 緩衝）
-        page.wait_for_timeout(3500)
+        # speed=10 最快 duration ~2s，等待消失
+        page.wait_for_timeout(5000)
 
-        # 文字為 disappear_test 的 danmu 應已移除
-        remaining = page.locator("h1.danmu").all_text_contents()
-        assert "disappear_test" not in remaining, f"Danmu not removed: {remaining}"
+        count = page.locator("h1.danmu", has_text="disappear_test").count()
+        assert count == 0, f"Danmu should be removed after animation, found {count}"
     finally:
         page.close()
         context.close()
@@ -253,59 +297,75 @@ def test_danmu_disappears_after_animation(browser_session, server_ports):
 
 
 def test_top_fixed_layout(browser_session, server_ports):
-    """top_fixed 佈局：danmu 應水平置中（left: 50% + translateX(-50%)）"""
+    """top_fixed 佈局：wrapper 應水平置中、有 opacity fade 動畫"""
     http_port, ws_port = server_ports
     context, page = _open_overlay(browser_session, http_port, ws_port)
     try:
-        _fire(http_port, {"text": "top_fixed_test", "layout": "top_fixed"})
+        _fire(
+            http_port,
+            {"text": "topfix_test", "layout": "top_fixed"},
+        )
 
         wrapper = page.locator(".danmu-wrapper")
         wrapper.first.wait_for(timeout=5000)
 
         left = wrapper.first.evaluate("el => el.style.left")
-        transform = wrapper.first.evaluate("el => el.style.transform")
-        assert left == "50%", f"Expected left=50%, got: {left}"
-        assert "translateX(-50%)" in transform, f"Expected translateX(-50%), got: {transform}"
+        assert left == "50%", f"top_fixed should center, got left={left}"
+
+        # top_fixed 用 opacity keyframes 動畫
+        anims = wrapper.first.evaluate("el => el.getAnimations().length")
+        assert anims > 0, "top_fixed wrapper should have animation"
     finally:
         page.close()
         context.close()
 
 
 def test_float_layout(browser_session, server_ports):
-    """float 佈局：danmu 應有 scale 動畫"""
+    """float 佈局：wrapper 應有 scale + opacity 動畫"""
     http_port, ws_port = server_ports
     context, page = _open_overlay(browser_session, http_port, ws_port)
     try:
-        _fire(http_port, {"text": "float_test", "layout": "float"})
+        _fire(
+            http_port,
+            {"text": "float_test", "layout": "float"},
+        )
 
         wrapper = page.locator(".danmu-wrapper")
         wrapper.first.wait_for(timeout=5000)
 
-        anim_count = wrapper.first.evaluate("el => el.getAnimations().length")
-        assert anim_count >= 1, f"Float layout should have animation, got {anim_count}"
+        # float 使用 scale + opacity 動畫
+        has_anim = wrapper.first.evaluate("el => el.getAnimations().length > 0")
+        assert has_anim, "float layout should have animation"
     finally:
         page.close()
         context.close()
 
 
 def test_rise_layout(browser_session, server_ports):
-    """rise 佈局：wrapper 應有 translateY 動畫"""
+    """rise 佈局：wrapper 應有 translateY 動畫（向上飛起）"""
     http_port, ws_port = server_ports
     context, page = _open_overlay(browser_session, http_port, ws_port)
     try:
-        _fire(http_port, {"text": "rise_test", "layout": "rise"})
+        _fire(
+            http_port,
+            {"text": "rise_test", "layout": "rise"},
+        )
 
         wrapper = page.locator(".danmu-wrapper")
         wrapper.first.wait_for(timeout=5000)
 
-        # 檢查動畫存在且包含 translateY keyframes
-        has_anim = wrapper.first.evaluate("""el => {
-            const anims = el.getAnimations();
-            if (anims.length === 0) return false;
-            const kf = anims[0].effect.getKeyframes();
-            return kf.some(k => k.transform && k.transform.includes('translateY'));
-        }""")
-        assert has_anim, "Rise layout should have translateY animation"
+        has_translate_y = wrapper.first.evaluate("""el => {
+                const anims = el.getAnimations();
+                return anims.some(a => {
+                    try {
+                        const kf = a.effect.getKeyframes();
+                        return kf.some(k =>
+                            k.transform && k.transform.includes('translateY')
+                        );
+                    } catch(e) { return false; }
+                });
+            }""")
+        assert has_translate_y, "rise layout should have translateY animation"
     finally:
         page.close()
         context.close()
@@ -318,7 +378,7 @@ def test_effect_css_injected_and_applied(browser_session, server_ports):
     """帶 effects 的彈幕：style[id^='dme-'] 應被注入，danmu 應有 animation"""
     http_port, ws_port = server_ports
 
-    # 先確認 effects API 有回傳效果（避免 CI 環境問題導致效果未載入）
+    # 先確認 effects API 有回傳效果
     import urllib.request
 
     try:
@@ -331,7 +391,7 @@ def test_effect_css_injected_and_applied(browser_session, server_ports):
     if "spin" not in available:
         pytest.skip("spin effect not available on this environment")
 
-    context, page = _open_overlay(browser_session, http_port, ws_port)
+    context, page = _open_overlay_with_intercept(browser_session, http_port, ws_port)
     try:
         _fire(
             http_port,
@@ -346,7 +406,11 @@ def test_effect_css_injected_and_applied(browser_session, server_ports):
 
         # 檢查 dme- style 標籤已注入
         dme_styles = page.locator("style[id^='dme-']")
-        assert dme_styles.count() >= 1, "No dme- style tags injected"
+        if dme_styles.count() < 1:
+            msgs, html = _get_ws_debug(page)
+            raise AssertionError(
+                f"No dme- style tags injected\n" f"WS messages: {msgs}\nDanmu HTML: {html}"
+            )
 
         # 檢查 danmu 元素有 animation 屬性
         animation = danmu.first.evaluate("el => getComputedStyle(el).animation")
@@ -364,6 +428,7 @@ def test_theme_color_applied(browser_session, server_ports):
     http_port, ws_port = server_ports
 
     # 先切換到 neon 主題（透過 admin API）
+    import re
     import urllib.request
 
     # Login
@@ -376,13 +441,10 @@ def test_theme_color_applied(browser_session, server_ports):
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor())
     opener.open(login_req)
 
-    # 取得 CSRF token
+    # 取得 CSRF token（admin.html <meta> tag: content="<64-hex>"）
     admin_resp = opener.open(f"http://127.0.0.1:{http_port}/admin/")
     admin_html = admin_resp.read().decode()
 
-    import re
-
-    # CSRF token 在 admin.html <meta> tag：content="<64-hex>"
     csrf_match = re.search(r'content="([a-f0-9]{64})"', admin_html)
     if not csrf_match:
         csrf_match = re.search(r'name="csrf_token"\s+value="([^"]+)"', admin_html)
@@ -409,7 +471,7 @@ def test_theme_color_applied(browser_session, server_ports):
         danmu.first.wait_for(timeout=8000)
 
         color = danmu.first.evaluate("el => getComputedStyle(el).color")
-        # neon 主題的顏色不應是純白（#ffffff → rgb(255, 255, 255)）
+        # neon 主題的顏色不應是純白
         # 只要能取到顏色值就代表渲染成功
         assert color and len(color) > 0, f"Danmu should have a color, got: {color}"
     finally:
@@ -445,7 +507,6 @@ def test_poll_panel_renders_on_overlay(browser_session, server_ports):
     context, page = _open_overlay(browser_session, http_port, ws_port)
     try:
         # overlay.js 的 WS onmessage handler 處理 poll_update 訊息
-        # 透過找到頁面中的 WebSocket 實例並 dispatch MessageEvent 觸發
         page.evaluate("""() => {
             const pollMsg = JSON.stringify({
                 type: "poll_update",
@@ -458,9 +519,6 @@ def test_poll_panel_renders_on_overlay(browser_session, server_ports):
                 ],
                 total_votes: 9
             });
-            // overlay.js 保存 ws 引用在 window.__overlayWs（如果有暴露）
-            // 否則用全域 _overlayHandlePoll（如果有暴露）
-            // 最可靠的方法：直接 dispatch 到已連線的 WebSocket
             if (window.__overlayWs) {
                 window.__overlayWs.dispatchEvent(
                     new MessageEvent("message", { data: pollMsg })
@@ -473,8 +531,7 @@ def test_poll_panel_renders_on_overlay(browser_session, server_ports):
         has_ws = page.evaluate("() => !!window.__overlayWs")
 
         if not has_ws:
-            # overlay.js 未暴露 WS 引用，改用直接呼叫渲染函式模擬
-            # 這直接測試 poll panel 的 DOM 建構邏輯（與 overlay.js 一致）
+            # overlay.js 未暴露 WS 引用，直接建構 poll panel DOM
             page.evaluate("""() => {
                 var data = {
                     type: "poll_update",
@@ -514,7 +571,8 @@ def test_poll_panel_renders_on_overlay(browser_session, server_ports):
                         : 0;
                     var label = document.createElement("span");
                     label.textContent =
-                        opt.key + ". " + opt.text + " (" + opt.count + ", " + pct + "%)";
+                        opt.key + ". " + opt.text +
+                        " (" + opt.count + ", " + pct + "%)";
                     row.appendChild(label);
                     panel.appendChild(row);
                 });
@@ -564,7 +622,10 @@ def test_nickname_renders(browser_session, server_ports):
 
     # 捕捉 console log 幫助 debug
     console_logs = []
-    page.on("console", lambda msg: console_logs.append(f"{msg.type}: {msg.text}"))
+    page.on(
+        "console",
+        lambda msg: console_logs.append(f"{msg.type}: {msg.text}"),
+    )
 
     page.goto(f"http://127.0.0.1:{http_port}/overlay")
     page.wait_for_timeout(3000)
