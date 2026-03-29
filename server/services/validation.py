@@ -12,17 +12,9 @@ from marshmallow import (
     validates_schema,
 )
 
-# Valid setting type keys (mirrors Config.SETTABLE_OPTION_KEYS)
-_VALID_SETTING_TYPES = {
-    "Color",
-    "Opacity",
-    "FontSize",
-    "Speed",
-    "FontFamily",
-    "Effects",
-    "Layout",
-    "Nickname",
-}
+from ..config import Config
+
+_VALID_SETTING_TYPES = Config.SETTABLE_OPTION_KEYS
 _NO_CTRL_CHARS_RE = r"^[^\r\n\t\x00-\x08\x0b\x0c\x0e-\x1f]+$"
 
 
@@ -239,12 +231,13 @@ class FilterRuleSchema(Schema):
             _safe_compile_regex(data["pattern"])
 
 
-class FilterRuleUpdateSchema(Schema):
-    """過濾規則更新驗證（所有欄位為可選）"""
+class FilterRuleUpdateSchema(FilterRuleSchema):
+    """過濾規則更新驗證（所有欄位為可選，繼承自 FilterRuleSchema）"""
 
     class Meta:
         unknown = EXCLUDE
 
+    # Override all fields to be optional (remove required=True and load_default)
     type = fields.Str(
         validate=validate.OneOf(
             ["keyword", "regex", "replace", "rate_limit"],
@@ -258,11 +251,6 @@ class FilterRuleUpdateSchema(Schema):
     enabled = fields.Bool()
     max_count = fields.Int(validate=validate.Range(min=1, max=100))
     window_sec = fields.Float(validate=validate.Range(min=1, max=3600))
-
-    @validates_schema
-    def validate_pattern_safe(self, data, **kwargs):
-        if data.get("type") in ("regex", "replace") and data.get("pattern"):
-            _safe_compile_regex(data["pattern"])
 
 
 class WebhookSchema(Schema):

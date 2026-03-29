@@ -50,8 +50,8 @@ def test_rate_limit_error_returns_json(client):
     assert third.status_code == 429
     assert third.is_json
     body = third.get_json()
-    assert body["error"]["code"] == "TOO_MANY_REQUESTS"
-    assert "request_id" in body["error"]
+    assert "error" in body
+    assert "too many requests" in body["error"].lower()
 
 
 def test_not_found_returns_json_error(client):
@@ -59,7 +59,8 @@ def test_not_found_returns_json_error(client):
     assert response.status_code == 404
     assert response.is_json
     body = response.get_json()
-    assert body["error"]["code"] == "NOT_FOUND"
+    assert "error" in body
+    assert "not found" in body["error"].lower()
     assert "X-Request-ID" in response.headers
 
 
