@@ -64,6 +64,7 @@ class FilterEngine:
         self._rules: list[FilterRule] = []
         self._regex_cache: dict[str, re.Pattern] = {}
         self._rate_tracker: dict[str, list[float]] = {}
+        self._check_count = 0
         if path is None:
             server_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             path = os.path.join(server_dir, "filter_rules.json")
@@ -80,6 +81,12 @@ class FilterEngine:
         FilterResult with action="pass" and the original text.
         """
         with self._lock:
+            # Periodic cleanup: prune stale rate_tracker entries every 500 checks
+            self._check_count += 1
+            if self._check_count >= 500:
+                self._check_count = 0
+                self.cleanup_rate_tracker()
+
             for rule in self._sorted_rules():
                 if not rule.enabled:
                     continue

@@ -19,7 +19,7 @@
   <script>
     window.OVERLAY_CONFIG = {
       wsPort: {{ ws_port }},
-      wsToken: "{{ ws_token or '' }}"
+      wsToken: {{ (ws_token or '')|tojson }}
     };
   </script>
   <script src="{{ url_for('static', filename='js/overlay.js') }}"></script>

@@ -43,6 +43,11 @@ class InMemoryRateLimiter(BaseRateLimiter):
             if len(dq) >= limit:
                 return False
             dq.append(now)
+            # Periodic cleanup: prune empty entries to prevent unbounded growth
+            if len(self.history) > 1000:
+                empty_keys = [k for k, v in self.history.items() if not v]
+                for k in empty_keys:
+                    del self.history[k]
         return True
 
     def reset(self):

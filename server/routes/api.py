@@ -1,3 +1,6 @@
+import html
+import re
+
 from flask import Blueprint, current_app, make_response, request, send_from_directory, session
 
 from .. import state
@@ -362,11 +365,17 @@ def generate_avatar(letter, color):
     """Generate a simple SVG avatar with a letter and background color."""
     letter = letter[:1].upper() if letter else "?"
     color = color[:6] if color else "7c3aed"
+    # Validate inputs to prevent SVG injection
+    if not re.match(r"^[A-Za-z0-9?]$", letter):
+        letter = "?"
+    if not re.match(r"^[0-9a-fA-F]{1,6}$", color):
+        color = "7c3aed"
+    safe_letter = html.escape(letter)
     svg = (
         f'<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48">'
         f'<rect width="48" height="48" rx="24" fill="#{color}"/>'
         f'<text x="24" y="32" text-anchor="middle" fill="white" '
-        f'font-family="sans-serif" font-size="24" font-weight="bold">{letter}</text>'
+        f'font-family="sans-serif" font-size="24" font-weight="bold">{safe_letter}</text>'
         f"</svg>"
     )
     resp = make_response(svg)
