@@ -10,6 +10,8 @@ import bcrypt
 from flask import abort, current_app, request, session
 from itsdangerous import BadSignature, BadTimeSignature, URLSafeTimedSerializer
 
+from .ip import get_client_ip as _get_client_ip
+
 try:
     import redis  # type: ignore
 except Exception:  # pragma: no cover
@@ -137,15 +139,6 @@ def require_csrf(func):
 
     return wrapper
 
-
-def _get_client_ip() -> str:
-    """統一的客戶端 IP 提取（支援 TRUST_X_FORWARDED_FOR 設定）。"""
-    trust_xff = bool(current_app.config.get("TRUST_X_FORWARDED_FOR", False))
-    if trust_xff:
-        xff = request.headers.get("X-Forwarded-For", "")
-        if xff:
-            return xff.split(",")[0].strip()
-    return request.remote_addr or "unknown"
 
 
 def rate_limit(

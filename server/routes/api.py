@@ -1,5 +1,3 @@
-from ipaddress import ip_address
-
 from flask import (
     Blueprint,
     current_app,
@@ -13,6 +11,7 @@ from .. import state
 from ..services import history as history_service
 from ..services import messaging
 from ..services.blacklist import contains_keyword
+from ..services.ip import get_client_ip as _extract_client_ip
 from ..services.effects import load_all as load_all_effects
 from ..services.effects import render_effects
 from ..services.emoji import emoji_service
@@ -203,25 +202,6 @@ def _record_history_if_enabled(data, fingerprint, client_ip):
     history_payload["fingerprint"] = fingerprint
     history_service.danmu_history.add(history_payload)
 
-
-def _extract_client_ip() -> str:
-    trust_xff = bool(current_app.config.get("TRUST_X_FORWARDED_FOR", False))
-    if trust_xff:
-        xff = request.headers.get("X-Forwarded-For", "")
-        candidate = xff.split(",", 1)[0].strip() if xff else ""
-        if candidate:
-            try:
-                ip_address(candidate)
-                return candidate
-            except ValueError:
-                pass
-
-    remote_addr = request.remote_addr or ""
-    try:
-        ip_address(remote_addr)
-        return remote_addr
-    except ValueError:
-        return "unknown"
 
 
 # NOTE: /fire is a public endpoint (no auth required) — CSRF protection is
