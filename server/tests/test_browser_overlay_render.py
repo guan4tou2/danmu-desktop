@@ -30,10 +30,17 @@ def server_ports():
     http_port = find_free_port()
     ws_port = find_free_port()
 
+    # 確保隔離的 settings file（避免繼承 conftest 或殘留檔案）
+    import pathlib
+
+    settings_path = pathlib.Path("/tmp/_test_overlay_render_settings.json")
+    if settings_path.exists():
+        settings_path.unlink()
+
     script = textwrap.dedent(f"""\
         import sys, os, threading, logging
         sys.path.insert(0, ".")
-        os.environ.setdefault("SETTINGS_FILE", "/tmp/_test_overlay_render_settings.json")
+        os.environ["SETTINGS_FILE"] = "/tmp/_test_overlay_render_settings.json"
 
         from server.config import Config
         Config.WS_REQUIRE_TOKEN = False
