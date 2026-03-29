@@ -2,27 +2,19 @@
   "use strict";
 
   document.addEventListener("DOMContentLoaded", () => {
-    const DETAILS_STATE_KEY = "admin-details-open-state";
+    var loadDetailsState = window.AdminUtils.loadDetailsState;
+    var saveDetailsState = window.AdminUtils.saveDetailsState;
+    var escapeHtml = window.AdminUtils.escapeHtml;
 
     function isOpen(id, defaultOpen = false) {
-      try {
-        const raw = window.localStorage.getItem(DETAILS_STATE_KEY);
-        const state = raw ? JSON.parse(raw) : {};
-        return state[id] !== undefined ? state[id] : defaultOpen;
-      } catch (_) {
-        return defaultOpen;
-      }
+      var state = loadDetailsState();
+      return state[id] !== undefined ? state[id] : defaultOpen;
     }
 
     function saveDetailsToggle(detailsEl) {
-      try {
-        const raw = window.localStorage.getItem(DETAILS_STATE_KEY);
-        const state = raw ? JSON.parse(raw) : {};
-        state[detailsEl.id] = detailsEl.open;
-        window.localStorage.setItem(DETAILS_STATE_KEY, JSON.stringify(state));
-      } catch (_) {
-        // Ignore localStorage write failures
-      }
+      var state = loadDetailsState();
+      state[detailsEl.id] = detailsEl.open;
+      saveDetailsState(state);
     }
 
     // Wait for admin.js to render the settings grid before injecting.
@@ -211,11 +203,5 @@
       return "bg-slate-700 text-slate-300";
     }
 
-    function escapeHtml(str) {
-      if (!str) return "";
-      const div = document.createElement("div");
-      div.appendChild(document.createTextNode(String(str)));
-      return div.innerHTML;
-    }
   });
 })();

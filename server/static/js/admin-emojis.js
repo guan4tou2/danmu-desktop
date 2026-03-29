@@ -7,26 +7,12 @@
 (function () {
   "use strict";
 
-  const DETAILS_STATE_KEY = "admin-details-open-state";
+  var loadDetailsState = window.AdminUtils.loadDetailsState;
+  var saveDetailsState = window.AdminUtils.saveDetailsState;
+  var escapeHtml = window.AdminUtils.escapeHtml;
+
   const NAME_RE = /^[a-zA-Z0-9_]{1,32}$/;
   const ACCEPTED_TYPES = ".png,.gif,.webp";
-
-  function loadDetailsState() {
-    try {
-      const raw = window.localStorage.getItem(DETAILS_STATE_KEY);
-      return raw ? JSON.parse(raw) : {};
-    } catch (_) {
-      return {};
-    }
-  }
-
-  function saveDetailsState(state) {
-    try {
-      window.localStorage.setItem(DETAILS_STATE_KEY, JSON.stringify(state));
-    } catch (_) {
-      /* ignore */
-    }
-  }
 
   function isOpen(id) {
     const s = loadDetailsState();
@@ -108,14 +94,6 @@
         "</div>" +
       "</div>"
     );
-  }
-
-  function escapeHtml(s) {
-    return s
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
   }
 
   function escapeAttr(s) {
