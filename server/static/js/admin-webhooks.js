@@ -34,7 +34,7 @@
   // ---- inject section ----
 
   function injectSection() {
-    const grid = document.getElementById("settings-grid");
+    const grid = document.getElementById("advanced-grid") || document.getElementById("settings-grid");
     if (!grid || document.getElementById(SECTION_ID)) return;
 
     grid.insertAdjacentHTML(
@@ -332,7 +332,7 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     const observer = new MutationObserver(() => {
-      if (document.getElementById("settings-grid") && !document.getElementById(SECTION_ID)) {
+      if ((document.getElementById("advanced-grid") || document.getElementById("settings-grid")) && !document.getElementById(SECTION_ID)) {
         injectSection();
       }
     });

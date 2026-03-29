@@ -72,6 +72,43 @@ jobs:
           npm install
           npx jest --testPathPatterns=tests/
 
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Set up environment
+        run: cp env.example .env
+
+      - name: Install Python dependencies
+        working-directory: server
+        run: uv sync
+
+      - name: Install Node dependencies and build
+        working-directory: danmu-desktop
+        run: |
+          npm install
+          npm run build:webpack
+
+      - name: Run Playwright e2e tests
+        working-directory: danmu-desktop
+        env:
+          ELECTRON_DISABLE_SANDBOX: 1
+        run: xvfb-run --auto-servernum npx playwright test
+
   pre-commit:
     runs-on: ubuntu-latest
     steps:
