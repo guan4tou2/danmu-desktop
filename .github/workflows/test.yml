@@ -105,6 +105,8 @@ jobs:
 
       - name: Run Playwright e2e tests
         working-directory: danmu-desktop
+        env:
+          ELECTRON_DISABLE_SANDBOX: 1
         run: xvfb-run --auto-servernum npx playwright test
 
   pre-commit:
