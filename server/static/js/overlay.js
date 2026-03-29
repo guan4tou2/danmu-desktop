@@ -123,6 +123,47 @@
           return;
         }
 
+        // Poll update — show live voting panel on overlay
+        if (data.type === "poll_update") {
+          var panel = document.getElementById("poll-panel");
+
+          if (data.state === "idle") {
+            if (panel) panel.remove();
+            return;
+          }
+
+          if (!panel) {
+            panel = document.createElement("div");
+            panel.id = "poll-panel";
+            panel.style.cssText = "position:fixed;top:20px;right:20px;background:rgba(15,23,42,0.9);color:white;padding:16px 20px;border-radius:12px;font-family:sans-serif;z-index:9999;min-width:280px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.1);";
+            document.body.appendChild(panel);
+          }
+
+          var maxCount = Math.max(1, Math.max.apply(null, data.options.map(function (o) { return o.count; })));
+          var icon = data.state === "ended" ? "\uD83D\uDCCA " : "\uD83D\uDDF3\uFE0F ";
+
+          panel.innerHTML = '<div style="font-size:14px;font-weight:bold;margin-bottom:12px;color:#22d3ee;">' +
+            icon + (data.question || "") + '</div>' +
+            (data.options || []).map(function (o) {
+              return '<div style="margin-bottom:8px;">' +
+                '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;">' +
+                  '<span><b>' + o.key + '.</b> ' + o.text + '</span>' +
+                  '<span>' + o.count + ' (' + o.percentage + '%)</span>' +
+                '</div>' +
+                '<div style="background:rgba(255,255,255,0.1);border-radius:4px;height:6px;overflow:hidden;">' +
+                  '<div style="background:linear-gradient(90deg,#06b6d4,#22d3ee);height:100%;width:' + (o.count / maxCount * 100) + '%;transition:width 0.3s;border-radius:4px;"></div>' +
+                '</div>' +
+              '</div>';
+            }).join('') +
+            '<div style="font-size:11px;color:#94a3b8;margin-top:8px;">Total: ' + (data.total_votes || 0) + ' votes</div>';
+
+          if (data.state === "ended") {
+            setTimeout(function () { if (panel) { panel.style.opacity = "0"; panel.style.transition = "opacity 2s"; } }, 5000);
+            setTimeout(function () { if (panel) panel.remove(); }, 7000);
+          }
+          return;
+        }
+
         // Inject .dme effect CSS keyframes (avoid duplicates)
         var effectCss = data.effectCss || null;
         if (effectCss && effectCss.keyframes && effectCss.styleId) {
