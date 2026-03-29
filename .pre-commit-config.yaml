@@ -17,6 +17,7 @@ repos:
     hooks:
       - id: black
         language_version: python3.11
+        args: ['--target-version', 'py311']
         files: ^server/
 
   - repo: https://github.com/pycqa/isort
