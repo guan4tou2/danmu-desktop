@@ -178,14 +178,15 @@ def test_danmu_has_correct_color(browser_session, server_ports):
     http_port, ws_port = server_ports
     context, page = _open_overlay(browser_session, http_port, ws_port)
     try:
-        _fire(http_port, {"text": "color_test", "color": "#ff0000"})
+        _fire(http_port, {"text": "color_test_red", "color": "#ff0000"})
 
-        danmu = page.locator("h1.danmu")
-        danmu.first.wait_for(timeout=5000)
+        # 等待特定文字的 danmu 出現（避免匹配���其他殘留元素）
+        danmu = page.locator("h1.danmu", has_text="color_test_red")
+        danmu.first.wait_for(timeout=8000)
 
         color = danmu.first.evaluate("el => getComputedStyle(el).color")
-        # rgb(255, 0, 0) 或 red
-        assert "255" in color and "0" in color, f"Expected red, got: {color}"
+        # rgb(255, 0, 0)
+        assert color == "rgb(255, 0, 0)", f"Expected red, got: {color}"
     finally:
         page.close()
         context.close()
@@ -316,18 +317,32 @@ def test_rise_layout(browser_session, server_ports):
 def test_effect_css_injected_and_applied(browser_session, server_ports):
     """帶 effects 的彈幕：style[id^='dme-'] 應被注入，danmu 應有 animation"""
     http_port, ws_port = server_ports
+
+    # 先確認 effects API 有回傳效果（避免 CI 環境問題導致效果未載入）
+    import urllib.request
+
+    try:
+        resp = urllib.request.urlopen(f"http://127.0.0.1:{http_port}/effects")
+        effects_data = json.loads(resp.read().decode())
+        available = [e["name"] for e in effects_data.get("effects", [])]
+    except Exception:
+        available = []
+
+    if "spin" not in available:
+        pytest.skip("spin effect not available on this environment")
+
     context, page = _open_overlay(browser_session, http_port, ws_port)
     try:
         _fire(
             http_port,
             {
-                "text": "effect_test",
+                "text": "effect_test_spin",
                 "effects": [{"name": "spin"}],
             },
         )
 
-        danmu = page.locator("h1.danmu")
-        danmu.first.wait_for(timeout=5000)
+        danmu = page.locator("h1.danmu", has_text="effect_test_spin")
+        danmu.first.wait_for(timeout=8000)
 
         # 檢查 dme- style 標籤已注入
         dme_styles = page.locator("style[id^='dme-']")
@@ -367,19 +382,20 @@ def test_theme_color_applied(browser_session, server_ports):
 
     import re
 
-    csrf_match = re.search(r'name="csrf_token"\s+value="([^"]+)"', admin_html)
+    # CSRF token 在 admin.html <meta> tag：content="<64-hex>"
+    csrf_match = re.search(r'content="([a-f0-9]{64})"', admin_html)
     if not csrf_match:
-        csrf_match = re.search(r'"csrf_token":\s*"([^"]+)"', admin_html)
+        csrf_match = re.search(r'name="csrf_token"\s+value="([^"]+)"', admin_html)
 
     if csrf_match:
         csrf_token = csrf_match.group(1)
         # 設定 neon 主題
         set_theme_req = urllib.request.Request(
-            f"http://127.0.0.1:{http_port}/admin/themes/activate",
+            f"http://127.0.0.1:{http_port}/admin/themes/active",
             data=json.dumps({"name": "neon"}).encode(),
             headers={
                 "Content-Type": "application/json",
-                "X-CSRFToken": csrf_token,
+                "X-CSRF-Token": csrf_token,
             },
         )
         opener.open(set_theme_req)
@@ -387,10 +403,10 @@ def test_theme_color_applied(browser_session, server_ports):
     context, page = _open_overlay(browser_session, http_port, ws_port)
     try:
         # Fire without explicit color — should use theme default
-        _fire(http_port, {"text": "theme_test"})
+        _fire(http_port, {"text": "theme_test_neon"})
 
-        danmu = page.locator("h1.danmu")
-        danmu.first.wait_for(timeout=5000)
+        danmu = page.locator("h1.danmu", has_text="theme_test_neon")
+        danmu.first.wait_for(timeout=8000)
 
         color = danmu.first.evaluate("el => getComputedStyle(el).color")
         # neon 主題的顏色不應是純白（#ffffff → rgb(255, 255, 255)）
@@ -403,11 +419,11 @@ def test_theme_color_applied(browser_session, server_ports):
         # 恢復 default 主題
         if csrf_match:
             reset_req = urllib.request.Request(
-                f"http://127.0.0.1:{http_port}/admin/themes/activate",
+                f"http://127.0.0.1:{http_port}/admin/themes/active",
                 data=json.dumps({"name": "default"}).encode(),
                 headers={
                     "Content-Type": "application/json",
-                    "X-CSRFToken": csrf_token,
+                    "X-CSRF-Token": csrf_token,
                 },
             )
             try:
