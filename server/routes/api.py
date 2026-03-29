@@ -17,12 +17,15 @@ from ..services.effects import render_effects
 from ..services.emoji import emoji_service
 from ..services.filter_engine import filter_engine
 from ..services.fonts import build_font_payload, list_available_fonts
-from ..services.layout import get_layout_config, get_layout_css
+from ..services.layout import get_all_modes, get_layout_config, get_layout_css
+from ..services.plugin_manager import plugin_manager
 from ..services.poll import poll_service
 from ..services.security import rate_limit, require_csrf, verify_font_token
 from ..services.settings import get_options
 from ..services.sound import sound_service
 from ..services.stickers import sticker_service
+from ..services import themes as theme_svc
+from ..services.webhook import webhook_service
 from ..services.validation import (
     BlacklistCheckSchema,
     FireRequestSchema,
@@ -113,8 +116,6 @@ def _resolve_danmu_style(data):
     data["speed"] = _pick(data.pop("speed", None), options.get("Speed", [True, 1, 10, 4]))
 
     # Apply active theme defaults for textStyles
-    from ..services import themes as theme_svc
-
     active_theme = theme_svc.get_active()
     theme_styles = active_theme.get("styles", {})
 
@@ -249,8 +250,6 @@ def fire():
             return _json_response({"error": "Invalid image url"}, 400)
 
         # Plugin system: on_fire hook
-        from ..services.plugin_manager import plugin_manager
-
         plugin_ctx = dict(data)
         plugin_ctx["fingerprint"] = fingerprint
         plugin_result = plugin_manager.emit("on_fire", plugin_ctx)
@@ -283,8 +282,6 @@ def fire():
 
             # Webhook: emit on_danmu event (fire-and-forget)
             try:
-                from ..services.webhook import webhook_service
-
                 webhook_service.emit(
                     "on_danmu",
                     {
@@ -330,8 +327,6 @@ def public_fonts_alias():
 @api_bp.route("/themes", methods=["GET"])
 def list_themes():
     """列出所有可用的主題"""
-    from ..services import themes as theme_svc
-
     themes_list = theme_svc.load_all()
     active = theme_svc.get_active_name()
     return _json_response({"themes": themes_list, "active": active})
@@ -358,8 +353,6 @@ def reload_effects():
 @api_bp.route("/layouts", methods=["GET"])
 def list_layouts():
     """列出所有可用的佈局模式"""
-    from ..services.layout import get_all_modes
-
     return _json_response({"layouts": get_all_modes()})
 
 

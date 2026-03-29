@@ -2,7 +2,7 @@
 
 from flask import request
 
-from . import _json_response, admin_bp, require_csrf, require_login
+from . import _json_response, admin_bp, require_csrf, require_login, validate_request
 from ...services.poll import poll_service
 from ...services.security import rate_limit
 from ...services.validation import PollCreateSchema
@@ -15,12 +15,11 @@ from ...services.validation import PollCreateSchema
 def create_poll():
     """Create a new poll."""
     data = request.get_json(silent=True) or {}
-    schema = PollCreateSchema()
-    errors = schema.validate(data)
+    validated, errors = validate_request(PollCreateSchema, data)
     if errors:
-        return _json_response({"error": errors}, 400)
+        return _json_response({"error": "Validation failed", "details": errors}, 400)
     try:
-        poll_id = poll_service.create(data["question"], data["options"])
+        poll_id = poll_service.create(validated["question"], validated["options"])
         return _json_response({"poll_id": poll_id, **poll_service.get_status()})
     except ValueError as e:
         return _json_response({"error": str(e)}, 409)
