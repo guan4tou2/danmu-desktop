@@ -5,6 +5,30 @@
 格式基於 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，
 版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
+## [4.1.3] - 2026-03-30
+
+### 安全修正 / Security
+
+- SVG 頭像注入防護：`api.py` 的 `generate_avatar()` 加入 regex 驗證 + `html.escape()`
+- Rate limiter / Filter engine 記憶體洩漏修復：定期清理過期條目防止無限增長
+- Overlay 登入閘門：設定 WS token 時未登入者自動跳轉 admin
+- Jinja2 模板 XSS 修復：`overlay.html` 的 `wsToken` 改用 `|tojson` 過濾器
+- Admin 儀表板 `escapeHtml()`：圖表與熱門文字的 `innerHTML` 加入跳脫
+- Nginx IP 偽造防護：`X-Forwarded-For` 改用 `$remote_addr`
+- Electron child CSP 放寬 `connect-src` 為 `ws: wss:`（支援非 localhost 連線）
+
+### 修正 / Fixed
+
+- Overlay nickname `insertBefore` 錯誤修復（節點未附加到父元素前呼叫）
+- 啟動動畫遵守 `enabled` 旗標（`null` 設定不再強制播放）
+- `getDisplays` IPC 回傳新增 `size` 與 `primary` 欄位
+- OSV-Scanner CI 修復：補上 `actions: read` 權限
+
+### 測試 / Testing
+
+- 新增 15 個 Playwright overlay 渲染整合測試（`test_browser_overlay_render.py`）
+- `TestConfig` 明確設定 `WS_AUTH_TOKEN=""`，防止測試間污染
+
 ## [4.1.2] - 2026-03-29
 
 ### 安全修正 / Security
