@@ -14,6 +14,7 @@ services:
       - SECRET_KEY=${SECRET_KEY:-}
       - PORT=${PORT:-4000}
       - WS_PORT=${WS_PORT:-4001}
+      - WS_HOST=0.0.0.0
       - ENV=${ENV:-production}
       - FIRE_RATE_LIMIT=${FIRE_RATE_LIMIT:-20}
       - FIRE_RATE_WINDOW=${FIRE_RATE_WINDOW:-60}

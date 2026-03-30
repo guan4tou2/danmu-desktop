@@ -30,7 +30,7 @@ def live_block():
 
         filter_engine.add_rule(
             {
-                "type": "keyword",
+                "type": "fingerprint",
                 "pattern": value,
                 "action": "block",
                 "priority": 0,

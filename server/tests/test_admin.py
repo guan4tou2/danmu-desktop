@@ -684,6 +684,17 @@ def test_live_block_unknown_type_rejected(client):
 
 
 def test_live_block_fingerprint_success(client):
-    """Blocking a fingerprint returns 200."""
+    """Blocking a fingerprint returns 200 and actually blocks that fingerprint."""
     resp = authed_post(client, "/admin/live/block", {"type": "fingerprint", "value": "fp_abc123"})
     assert resp.status_code == 200
+
+    # Verify the fingerprint is actually blocked in the filter engine
+    from server.services.filter_engine import filter_engine
+
+    result = filter_engine.check("any text", fingerprint="fp_abc123")
+    assert result.action == "block"
+    assert "Fingerprint blocked" in result.reason
+
+    # Different fingerprint should pass
+    result = filter_engine.check("any text", fingerprint="fp_other")
+    assert result.action == "pass"

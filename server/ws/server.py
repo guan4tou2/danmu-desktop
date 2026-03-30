@@ -86,6 +86,7 @@ async def _forward_messages(logger):
 
 def run_ws_server(ws_port, logger):
     update_ws_client_count(0)
+    ws_host = str(Config.WS_HOST or "127.0.0.1")
     require_token = bool(Config.WS_REQUIRE_TOKEN)
     configured_token = str(Config.WS_AUTH_TOKEN or "")
     allowed_origins = set(Config.WS_ALLOWED_ORIGINS or [])
@@ -273,7 +274,7 @@ def run_ws_server(ws_port, logger):
     async def start_server():
         server = await websockets.serve(
             ws_handler,
-            "0.0.0.0",
+            ws_host,
             ws_port,
             max_size=ws_max_size,
             max_queue=ws_max_queue,

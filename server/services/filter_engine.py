@@ -13,7 +13,7 @@ from typing import Any, Optional
 @dataclass
 class FilterRule:
     id: str
-    type: str  # "keyword", "regex", "replace", "rate_limit"
+    type: str  # "keyword", "regex", "replace", "rate_limit", "fingerprint"
     pattern: str
     action: str  # "block", "replace", "allow"
     priority: int = 0
@@ -167,7 +167,7 @@ class FilterEngine:
 
     def _build_rule(self, data: dict[str, Any]) -> FilterRule:
         rule_type = data.get("type", "keyword")
-        if rule_type not in ("keyword", "regex", "replace", "rate_limit"):
+        if rule_type not in ("keyword", "regex", "replace", "rate_limit", "fingerprint"):
             raise ValueError(f"Unknown rule type: {rule_type}")
 
         action = data.get("action", "block")
@@ -214,6 +214,18 @@ class FilterEngine:
         self, rule: FilterRule, text: str, fingerprint: Optional[str]
     ) -> Optional[FilterResult]:
         """Evaluate a single rule against text. Returns FilterResult on match, None otherwise."""
+
+        if rule.type == "fingerprint":
+            if fingerprint is None:
+                return None
+            if fingerprint == rule.pattern:
+                return FilterResult(
+                    action="block",
+                    text=text,
+                    reason=f"Fingerprint blocked: '{rule.pattern}'",
+                    rule_id=rule.id,
+                )
+            return None
 
         if rule.type == "keyword":
             if rule.pattern.lower() in text.lower():

@@ -84,6 +84,37 @@ def test_replace_rule_modifies_text(reset_engine):
     assert result.rule_id
 
 
+# ── 4b. Fingerprint blocking ────────────────────────────────
+
+
+def test_fingerprint_block_exact_match(reset_engine):
+    """Fingerprint rule blocks matching fingerprint."""
+    engine = reset_engine
+    engine.add_rule({"type": "fingerprint", "pattern": "bad-fp-123", "action": "block"})
+
+    result = engine.check("any text", fingerprint="bad-fp-123")
+    assert result.action == "block"
+    assert "Fingerprint blocked" in result.reason
+
+
+def test_fingerprint_block_no_match(reset_engine):
+    """Fingerprint rule does not block different fingerprint."""
+    engine = reset_engine
+    engine.add_rule({"type": "fingerprint", "pattern": "bad-fp-123", "action": "block"})
+
+    result = engine.check("any text", fingerprint="good-fp-456")
+    assert result.action == "pass"
+
+
+def test_fingerprint_block_skipped_without_fingerprint(reset_engine):
+    """Fingerprint rule is skipped when no fingerprint is provided."""
+    engine = reset_engine
+    engine.add_rule({"type": "fingerprint", "pattern": "bad-fp-123", "action": "block"})
+
+    result = engine.check("any text")
+    assert result.action == "pass"
+
+
 # ── 5. Rate limit blocks after exceeding max_count ──────────
 
 

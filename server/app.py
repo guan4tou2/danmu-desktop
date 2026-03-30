@@ -37,10 +37,17 @@ def create_app(config_class=Config):
         raise RuntimeError(
             "Admin password is not configured. Set ADMIN_PASSWORD or ADMIN_PASSWORD_HASHED."
         )
-    if app.config.get("ADMIN_PASSWORD") == "password":
+    _weak_passwords = {"password", "changeme", "admin", "123456"}
+    if app.config.get("ADMIN_PASSWORD") in _weak_passwords:
+        if not app.config.get("TESTING") and env in {"production", "prod"}:
+            raise RuntimeError(
+                "Refusing to start in production with a weak default admin password. "
+                "Set a strong ADMIN_PASSWORD or ADMIN_PASSWORD_HASHED in your .env file."
+            )
         app.logger.warning(
-            "CRITICAL SECURITY WARNING: Using default password. "
-            "Please change it in your .env file immediately!"
+            "SECURITY WARNING: Using a weak default password '%s'. "
+            "Change it in your .env file before exposing this instance!",
+            app.config.get("ADMIN_PASSWORD"),
         )
     if env in {"production", "prod"} and not app.config.get("SESSION_COOKIE_SECURE", False):
         app.logger.warning(

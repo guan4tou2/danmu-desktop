@@ -90,6 +90,7 @@ jobs:
           set -e
           docker run -d --name test-server \
             -e ADMIN_PASSWORD=test \
+            -e WS_HOST=0.0.0.0 \
             -p 4000:4000 \
             -p 4001:4001 \
             $LOCAL_IMAGE
