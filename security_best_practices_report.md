@@ -1,98 +1,80 @@
-# Security Best Practices Report
+# Security Fix Verification Report
 
 ## Executive Summary
 
-This report reviews open GitHub code scanning findings for `guan4tou2/danmu-desktop` and documents fixes applied locally in this branch.
+I re-verified the three previously discussed issues against the current workspace.
 
-Priority outcomes:
-- Fixed direct CodeQL issues (sensitive-data logging, stack-trace exposure, DOM XSS sink hardening, workflow permissions).
-- Reduced lockfile security exposure via dependency updates (`npm audit fix`), including `minimatch`, `tar`, `glob`, `ajv`, `lodash`, and `webpack` updates in `danmu-desktop/package-lock.json`.
-- Resolved residual advisory `GHSA-5c6j-r48x-rmvq` by pinning transitive `serialize-javascript` to `7.0.3` via npm overrides.
+Current status:
 
-## Critical/High
+1. `SEC-001` Weak default admin password handling: fixed for production startup. The app now rejects weak passwords such as `password` and `changeme` in production, while only warning in development. The local [`server/.env`](/Users/guantou/Desktop/danmu-desktop/server/.env#L1) still uses `changeme`, so this remains a local-development hygiene concern, not the earlier high-severity production bypass.
+2. `SEC-002` Fingerprint blocking: fixed. The admin `Block FP` flow now creates a real `fingerprint` rule, and regression tests pass.
+3. `SEC-003` Dedicated WebSocket exposure: partially fixed. The code now defaults to binding the WS server to loopback via `WS_HOST=127.0.0.1`, but the default Docker deployment still sets `WS_HOST=0.0.0.0` and leaves `WS_REQUIRE_TOKEN=false`, so container deployments remain unauthenticated unless the operator overrides the defaults.
 
-### [F-001] Clear-text sensitive data exposure in password hash script
-- Rule ID: `py/clear-text-logging-sensitive-data` (CodeQL alert #23)
-- Severity: High
-- Location: `server/scripts/hash_password.py:20-34`
-- Evidence: Script previously printed raw plaintext password to stdout.
-- Impact: Plaintext credential exposure in terminal history/CI logs/shell capture.
-- Fix Applied:
-  - Removed plaintext password output.
-  - Added secure prompt flow (`getpass`) when password argument is omitted.
-  - Added empty-password guard.
-- Mitigation: Prefer running without CLI args to avoid shell history leaks.
+Validation performed:
 
-### [F-002] DOM XSS risk via untrusted URL assignment in preview image
-- Rule ID: `js/xss-through-dom` (CodeQL alert #31)
-- Severity: High
-- Location: `server/static/js/main.js:338-369`
-- Evidence: User-controlled text was previously assigned into `img.src` after extension regex only.
-- Impact: Scriptable URL/protocol abuse risk in preview rendering path.
-- Fix Applied:
-  - Added `parseSafeImageUrl()` to enforce protocol allowlist (`http/https`) and extension checks on parsed pathname.
-  - Preview now uses normalized safe URL only.
-- Mitigation: Keep server-side URL validation (`/fire`) as second layer.
+1. Targeted `pytest` for fingerprint blocking:
+   - [`test_live_block_fingerprint_success`](/Users/guantou/Desktop/danmu-desktop/server/tests/test_admin.py#L686): passed
+   - fingerprint-specific rules in [`test_filter_engine.py`](/Users/guantou/Desktop/danmu-desktop/server/tests/test_filter_engine.py#L90): `4` tests passed
+2. Direct runtime probe for password handling:
+   - `ENV=production` + `ADMIN_PASSWORD=changeme` raised the expected `RuntimeError`
+   - `ENV=development` + `ADMIN_PASSWORD=changeme` started and logged a warning
 
-## Medium
+## Verification Results
 
-### [F-003] Stack-trace / internal exception detail exposure
-- Rule ID: `py/stack-trace-exposure` (CodeQL alert #58)
-- Severity: Medium
-- Location: `server/routes/admin.py:165-167`
-- Evidence: Route returned `str(exc)` to client on `ValueError`.
-- Impact: Internal validation details leak to untrusted clients.
-- Fix Applied:
-  - Return generic JSON error message.
-  - Preserve sanitized server log for diagnostics.
+### SEC-001: Weak default password
 
-### [F-004] Missing workflow token least-privilege permissions
-- Rule ID: `actions/missing-workflow-permissions` (CodeQL alerts #21, #22, #26)
-- Severity: Medium
-- Location:
-  - `.github/workflows/test.yml:15-16`
-  - `.github/workflows/docker-build.yml:21-22`
-- Evidence: No explicit `permissions` block defined.
-- Impact: Broader default `GITHUB_TOKEN` scope than needed.
-- Fix Applied:
-  - Added explicit `permissions: contents: read`.
+Status: Fixed for production, with residual local-development risk.
 
-### [F-005] Insecure admin password defaults / credential hardening gap
-- Rule ID: Best-practice hardening (config review)
-- Severity: Medium
-- Location:
-  - `server/config.py:22-25,34`
-  - `server/app.py:33-37`
-- Evidence: Previously used fallback plaintext default password.
-- Impact: Weak default credential risk and misconfigured deployments.
-- Fix Applied:
-  - Removed fallback default admin password.
-  - Added startup guard: require `ADMIN_PASSWORD` or `ADMIN_PASSWORD_HASHED`.
-  - Set runtime password hash file mode to `0600` after write.
+- Evidence:
+  - [`app.py`](/Users/guantou/Desktop/danmu-desktop/server/app.py#L40) defines `_weak_passwords = {"password", "changeme", "admin", "123456"}`.
+  - [`app.py`](/Users/guantou/Desktop/danmu-desktop/server/app.py#L43) raises on weak passwords when `ENV` is `production` or `prod`.
+  - [`app.py`](/Users/guantou/Desktop/danmu-desktop/server/app.py#L47) only logs a warning outside production.
+  - [`server/.env`](/Users/guantou/Desktop/danmu-desktop/server/.env#L1) now sets `ADMIN_PASSWORD=changeme`.
+- Dynamic verification:
+  - Production config with `changeme` failed closed with:
+    - `Refusing to start in production with a weak default admin password.`
+  - Development config with `changeme` did not fail startup and emitted a warning instead.
+- Assessment:
+  - This closes the earlier trivial-production-takeover issue.
+  - If someone exposes a development-mode instance as-is, the credential is still weak; that is now an operational misuse case rather than a production-default vulnerability.
 
-## Dependency/Lockfile Findings
+### SEC-002: Fingerprint blocking
 
-### [F-006] Multiple transitive vulnerabilities in JS lockfile
-- Rule IDs: multiple OSV alerts (`CVE-2026-27903`, `CVE-2026-27904`, `CVE-2026-26996`, `CVE-2026-26960`, `CVE-2025-69873`, `CVE-2025-68458`, `CVE-2026-25547`, etc.)
-- Severity: Warning/High mix (from code scanning)
-- Location: `danmu-desktop/package-lock.json`
-- Fix Applied:
-  - Ran `npm audit fix` in `danmu-desktop/`.
-  - Updated dependency graph now includes patched baselines such as:
-    - `webpack@5.105.3`
-    - `minimatch@3.1.5/9.0.9/10.2.4`
-    - `tar@7.5.9`
-    - `glob@10.5.0`
-    - `ajv@6.14.0/8.18.0`
-    - `lodash@4.17.23`
+Status: Fixed.
 
-## Residual Risk / Open Item
+- Evidence:
+  - [`live.py`](/Users/guantou/Desktop/danmu-desktop/server/routes/admin/live.py#L31) now adds a rule with `"type": "fingerprint"`.
+  - [`filter_engine.py`](/Users/guantou/Desktop/danmu-desktop/server/services/filter_engine.py#L170) now accepts `fingerprint` in `_build_rule`.
+  - [`filter_engine.py`](/Users/guantou/Desktop/danmu-desktop/server/services/filter_engine.py#L218) performs exact-match fingerprint blocking.
+  - [`test_admin.py`](/Users/guantou/Desktop/danmu-desktop/server/tests/test_admin.py#L686) verifies the UI route both returns `200` and actually blocks the targeted fingerprint.
+  - [`test_filter_engine.py`](/Users/guantou/Desktop/danmu-desktop/server/tests/test_filter_engine.py#L90) adds exact-match and non-match regression coverage.
+- Dynamic verification:
+  - `pytest tests/test_admin.py -q -k live_block_fingerprint_success`: passed
+  - `pytest tests/test_filter_engine.py -q -k fingerprint`: `4` tests passed
 
-At report update time (2026-03-02), GitHub Code Scanning open alerts and Dependabot open alerts related to this remediation scope are closed.
+### SEC-003: Dedicated WebSocket exposure
 
-## Verification Performed
+Status: Partially fixed.
 
-- Backend tests: `PYTHONPATH=.. uv run --group dev pytest` (89 passed)
-- Frontend tests:
-  - `npm test -- tests/ws-reconnect.test.js --runInBand` (pass)
-  - Full suite shows one intermittent failure in `tests/ws-reconnect.test.js` backoff-growth assertion (existing flaky behavior; not tied to security patch logic).
+- Evidence for the fix:
+  - [`config.py`](/Users/guantou/Desktop/danmu-desktop/server/config.py#L80) now sets `WS_HOST` default to `127.0.0.1`.
+  - [`server.py`](/Users/guantou/Desktop/danmu-desktop/server/ws/server.py#L275) now binds `websockets.serve(...)` to `ws_host` instead of hardcoded `0.0.0.0`.
+- Residual exposure:
+  - [`docker-compose.yml`](/Users/guantou/Desktop/danmu-desktop/docker-compose.yml#L15) explicitly sets `WS_HOST=0.0.0.0`.
+  - [`docker-compose.yml`](/Users/guantou/Desktop/danmu-desktop/docker-compose.yml#L25) still defaults `WS_REQUIRE_TOKEN` to `false`.
+  - [`README.md`](/Users/guantou/Desktop/danmu-desktop/README.md#L179) says the default is `true`, but runtime config and container defaults still indicate otherwise.
+- Assessment:
+  - Native/local runs are now safer by default because the WS listener stays on loopback.
+  - Default container deployment still exposes an unauthenticated WS service unless the operator sets `WS_REQUIRE_TOKEN=true` and provides `WS_AUTH_TOKEN`, or otherwise restricts network access.
+
+## Conclusion
+
+Two of the three fixes are confirmed in the current workspace:
+
+1. Weak password handling is materially improved and now fails closed in production.
+2. Fingerprint blocking is working again and covered by regression tests.
+
+The WebSocket issue is only partially resolved:
+
+1. Local default binding is fixed.
+2. Docker default exposure/auth still needs tightening before I would call the issue fully closed.
