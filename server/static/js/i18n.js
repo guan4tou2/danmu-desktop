@@ -477,6 +477,24 @@ window.ServerI18n = {
       pauseJobBtn: "Pause",
       cancelJobBtn: "Cancel",
 
+      // ── Theme/Effect labels ─────────────────────────────────────────
+      theme_default: "Default",
+      theme_default_desc: "Standard white danmu",
+      theme_neon: "Neon",
+      theme_neon_desc: "Neon glow effect with cyberpunk style",
+      theme_retro: "Retro",
+      theme_retro_desc: "Retro pixel style with blink effect",
+      theme_cinema: "Cinema",
+      theme_cinema_desc: "Cinema subtitle style, elegant gold",
+      effect_spin: "Spin",
+      effect_bounce: "Bounce",
+      effect_rainbow: "Rainbow",
+      effect_glow: "Glow",
+      effect_shake: "Shake",
+      effect_wave: "Wave",
+      effect_blink: "Blink",
+      effect_zoom: "Zoom",
+
       // ── Themes ──────────────────────────────────────────────────────
       themesTitle: "Themes",
       themesDesc: "Manage overlay themes",
@@ -977,6 +995,24 @@ window.ServerI18n = {
       resumeJobBtn: "繼續",
       pauseJobBtn: "暫停",
       cancelJobBtn: "取消",
+
+      // ── Theme/Effect labels ─────────────────────────────────────────
+      theme_default: "預設",
+      theme_default_desc: "標準白色彈幕",
+      theme_neon: "霓虹",
+      theme_neon_desc: "霓虹燈效果，帶發光特效",
+      theme_retro: "復古",
+      theme_retro_desc: "復古像素風格，帶閃爍效果",
+      theme_cinema: "電影",
+      theme_cinema_desc: "電影字幕風格，優雅金色",
+      effect_spin: "旋轉",
+      effect_bounce: "彈跳",
+      effect_rainbow: "彩虹",
+      effect_glow: "發光",
+      effect_shake: "抖動",
+      effect_wave: "波浪",
+      effect_blink: "閃爍",
+      effect_zoom: "縮放",
 
       // ── Themes ──────────────────────────────────────────────────────
       themesTitle: "主題",
@@ -1480,6 +1516,24 @@ window.ServerI18n = {
       pauseJobBtn: "一時停止",
       cancelJobBtn: "キャンセル",
 
+      // ── Theme/Effect labels ─────────────────────────────────────────
+      theme_default: "デフォルト",
+      theme_default_desc: "標準の白い弾幕",
+      theme_neon: "ネオン",
+      theme_neon_desc: "ネオングロー効果、サイバーパンク風",
+      theme_retro: "レトロ",
+      theme_retro_desc: "レトロピクセルスタイル、点滅効果付き",
+      theme_cinema: "シネマ",
+      theme_cinema_desc: "映画字幕スタイル、エレガントなゴールド",
+      effect_spin: "回転",
+      effect_bounce: "バウンス",
+      effect_rainbow: "レインボー",
+      effect_glow: "グロー",
+      effect_shake: "シェイク",
+      effect_wave: "ウェーブ",
+      effect_blink: "ブリンク",
+      effect_zoom: "ズーム",
+
       // ── Themes ──────────────────────────────────────────────────────
       themesTitle: "テーマ",
       themesDesc: "オーバーレイテーマを管理",
@@ -1980,6 +2034,24 @@ window.ServerI18n = {
       resumeJobBtn: "재개",
       pauseJobBtn: "일시정지",
       cancelJobBtn: "취소",
+
+      // ── Theme/Effect labels ─────────────────────────────────────────
+      theme_default: "기본",
+      theme_default_desc: "표준 흰색 탄막",
+      theme_neon: "네온",
+      theme_neon_desc: "네온 글로우 효과, 사이버펑크 스타일",
+      theme_retro: "레트로",
+      theme_retro_desc: "레트로 픽셀 스타일, 깜빡임 효과",
+      theme_cinema: "시네마",
+      theme_cinema_desc: "영화 자막 스타일, 우아한 골드",
+      effect_spin: "회전",
+      effect_bounce: "바운스",
+      effect_rainbow: "레인보우",
+      effect_glow: "글로우",
+      effect_shake: "흔들기",
+      effect_wave: "웨이브",
+      effect_blink: "깜빡임",
+      effect_zoom: "줌",
 
       // ── Themes ──────────────────────────────────────────────────────
       themesTitle: "테마",

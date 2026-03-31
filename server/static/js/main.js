@@ -594,17 +594,21 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.dataset.effectName = eff.name;
       btn.className = "effect-btn px-3 py-1 rounded-full text-xs font-medium border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors";
       btn.title = eff.description || "";
-      btn.textContent = eff.label || eff.name;
+      var effI18nKey = "effect_" + eff.name;
+      btn.textContent = ServerI18n.t(effI18nKey) !== effI18nKey ? ServerI18n.t(effI18nKey) : (eff.label || eff.name);
+      btn.setAttribute("aria-pressed", "false");
       btn.addEventListener("click", () => {
         if (selectedEffects[eff.name]) {
           delete selectedEffects[eff.name];
           btn.classList.remove("effect-btn--active");
+          btn.setAttribute("aria-pressed", "false");
         } else {
           // Build default params
           const defaults = {};
           for (const [k, v] of Object.entries(eff.params || {})) defaults[k] = v.default;
           selectedEffects[eff.name] = defaults;
           btn.classList.add("effect-btn--active");
+          btn.setAttribute("aria-pressed", "true");
         }
         _refreshParamsPanel();
       });
@@ -677,7 +681,11 @@ document.addEventListener("DOMContentLoaded", () => {
     themes.forEach((t) => {
       const opt = document.createElement("option");
       opt.value = t.name;
-      opt.textContent = `${t.label} - ${t.description}`;
+      var tLabelKey = "theme_" + t.name;
+      var tDescKey = tLabelKey + "_desc";
+      var tLabel = ServerI18n.t(tLabelKey) !== tLabelKey ? ServerI18n.t(tLabelKey) : t.label;
+      var tDesc = ServerI18n.t(tDescKey) !== tDescKey ? ServerI18n.t(tDescKey) : t.description;
+      opt.textContent = tLabel + " - " + tDesc;
       if (t.name === activeName) opt.selected = true;
       select.appendChild(opt);
     });
@@ -928,9 +936,11 @@ document.addEventListener("DOMContentLoaded", () => {
             layoutBtns.forEach((b) => {
               b.classList.remove("active", "bg-sky-500/20", "text-sky-300", "border-sky-500/30");
               b.classList.add("bg-slate-700/50", "text-slate-300", "border-slate-600/30");
+              b.setAttribute("aria-pressed", "false");
             });
             btn.classList.remove("bg-slate-700/50", "text-slate-300", "border-slate-600/30");
             btn.classList.add("active", "bg-sky-500/20", "text-sky-300", "border-sky-500/30");
+            btn.setAttribute("aria-pressed", "true");
             layoutSelect.value = btn.dataset.layout;
           });
         });

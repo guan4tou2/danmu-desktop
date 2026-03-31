@@ -10,16 +10,20 @@
 
 1. Danmu-Desktop
    - 客戶端應用程式，在您的電腦上運行以顯示彈幕
-   - 目前支援 Windows 和 MacOS
+   - 支援 Windows、MacOS 和 Linux
    - 提供安裝版和可攜式版本
+   - 從 GitHub Releases 自動更新
 
 ![img](img/client.png)
 ![img](img/client%20start%20effect.png)
 
-1. Server
+2. Server
    - 創建網頁界面用於彈幕輸入
    - 管理彈幕傳送到已連接的客戶端
    - 包含管理員配置面板、來源指紋記錄與歷史追蹤
+   - OBS Browser Source 覆蓋層（`/overlay` 路由）
+   - 插件 SDK 支援伺服器端擴展
+   - 四語介面（EN、ZH、JA、KO）
 
 ![img](img/web%20panel.png)
 ![img](img/admin%20panel.png)
@@ -42,6 +46,30 @@
 ### 熱插拔特效 (.dme)
 
 將 `.dme` 檔案（YAML 格式）放入 `server/effects/` 目錄即可新增自訂特效，5 秒內自動偵測載入。可在管理面板中編輯和管理特效。
+
+### 樣式主題
+
+預定義視覺主題（預設、霓虹、復古、電影），一鍵切換顏色、描邊、陰影和特效組合。可在管理面板或使用者頁面切換主題。
+
+### 互動投票
+
+管理員建立 2-6 個選項的投票。觀眾透過發送選項代號（A/B/C）作為彈幕來投票。即時結果顯示在覆蓋層上，包含即時票數統計。
+
+### 覆蓋層小工具
+
+在 OBS 覆蓋層上新增持久的計分板、跑馬燈和標籤。從管理面板管理位置、樣式和內容。小工具透過 WebSocket 廣播至所有已連接的覆蓋層客戶端。
+
+### OBS Browser Source
+
+使用 `http://your-server:4000/overlay` 作為 OBS Browser Source，無需 Electron 即可顯示彈幕。透明背景，透過 WebSocket 自動連接。
+
+### 插件 SDK
+
+建立伺服器端插件，可對彈幕事件做出反應、修改訊息、過濾內容和自動回覆。每 5 秒熱載入。詳見[插件開發指南](server/PLUGIN_GUIDE.md)。
+
+### 時間軸匯出
+
+將即時彈幕場次錄製為 JSON 時間軸，供離線回放或分析使用。可從管理面板操作。
 
 ## 安裝與使用
 
@@ -164,6 +192,7 @@
 
 - 主界面：`http://ip:4000`
 - 管理面板：`http://ip:4000/admin`
+- OBS 覆蓋層：`http://ip:4000/overlay`
 
 ## 測試與覆蓋率
 
@@ -181,10 +210,14 @@
 - `README.md`：英文版總覽。
 - `docs/README.md`：技術文件索引（English/中文）。
 - `DEPLOYMENT.md`：生產部署細節 / Deployment reference。
+- `server/PLUGIN_GUIDE.md`：插件 SDK 開發文件。
+- `README-CH.md`：中文總覽（本文件）。
 - `docs/archive/`：歷史紀錄與整理檔案。
 
 ## CI/CD 與 Docker Hub
 - `.github/workflows/docker-build.yml` 會在每次 PR / push（main）時建置與測試伺服器映像。
+- `.github/workflows/test.yml` 執行 Python 測試（含覆蓋率報告與 `pip-audit` CVE 掃描）。
+- `.github/workflows/build.yml` 在版本更新時為 Windows、macOS、Linux 建置 Electron 應用程式，並建立含自動更新中繼資料的 GitHub Releases。
 - 於 GitHub Secrets 設定 `DOCKERHUB_USERNAME` 與 `DOCKERHUB_TOKEN`（Docker Hub Access Token），即可在 main 更新時自動推送 `使用者/danmu-server:latest` 與對應 commit SHA 的 Tag。
 
 ## 安全備註

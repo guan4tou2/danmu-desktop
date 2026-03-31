@@ -48,11 +48,11 @@
       card.innerHTML = `
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2">
-            <span class="text-sm font-semibold text-white">${escapeHtml(theme.label)}</span>
+            <span class="text-sm font-semibold text-white">${escapeHtml(ServerI18n.t("theme_" + theme.name) !== "theme_" + theme.name ? ServerI18n.t("theme_" + theme.name) : theme.label)}</span>
             <span class="text-xs text-slate-500">${escapeHtml(theme.name)}</span>
             ${isActive ? '<span class="text-[10px] px-1.5 py-0.5 bg-violet-600 text-white rounded-full font-medium">' + ServerI18n.t("themeActiveBadge") + '</span>' : ""}
           </div>
-          <p class="text-xs text-slate-400 mt-0.5 truncate">${escapeHtml(theme.description)}</p>
+          <p class="text-xs text-slate-400 mt-0.5 truncate">${escapeHtml(ServerI18n.t("theme_" + theme.name + "_desc") !== "theme_" + theme.name + "_desc" ? ServerI18n.t("theme_" + theme.name + "_desc") : theme.description)}</p>
         </div>
         ${
           isActive

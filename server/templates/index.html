@@ -24,8 +24,11 @@
     />
   </head>
   <body class="bg-black text-white min-h-screen overflow-x-hidden">
+    <!-- Skip to main content -->
+    <a href="#danmuText" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-sky-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg">Skip to main content</a>
+
     <!-- Background Animation Container -->
-    <div id="vanta-bg" class="fixed top-0 left-0 w-full h-full -z-10"></div>
+    <div id="vanta-bg" class="fixed top-0 left-0 w-full h-full -z-10" aria-hidden="true"></div>
 
     <div class="container mx-auto px-4 py-8 max-w-2xl relative z-10">
       <!-- Language Selector -->
@@ -307,12 +310,12 @@
                 <label class="block text-sm font-medium text-slate-400 mb-2">
                   <span data-i18n="layoutMode">Layout</span>
                 </label>
-                <div class="flex flex-wrap gap-2" id="layoutButtons">
-                  <button type="button" data-layout="scroll" class="layout-btn active px-3 py-1.5 text-xs rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/30">→ Scroll</button>
-                  <button type="button" data-layout="top_fixed" class="layout-btn px-3 py-1.5 text-xs rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600/30">↑ Top</button>
-                  <button type="button" data-layout="bottom_fixed" class="layout-btn px-3 py-1.5 text-xs rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600/30">↓ Bottom</button>
-                  <button type="button" data-layout="float" class="layout-btn px-3 py-1.5 text-xs rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600/30">✦ Float</button>
-                  <button type="button" data-layout="rise" class="layout-btn px-3 py-1.5 text-xs rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600/30">↑ Rise</button>
+                <div class="flex flex-wrap gap-2" id="layoutButtons" role="group" aria-label="Layout mode selection">
+                  <button type="button" data-layout="scroll" aria-label="Scroll layout (right to left)" aria-pressed="true" class="layout-btn active px-3 py-1.5 text-xs rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/30">→ Scroll</button>
+                  <button type="button" data-layout="top_fixed" aria-label="Top fixed layout" aria-pressed="false" class="layout-btn px-3 py-1.5 text-xs rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600/30">↑ Top</button>
+                  <button type="button" data-layout="bottom_fixed" aria-label="Bottom fixed layout" aria-pressed="false" class="layout-btn px-3 py-1.5 text-xs rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600/30">↓ Bottom</button>
+                  <button type="button" data-layout="float" aria-label="Float layout (random position)" aria-pressed="false" class="layout-btn px-3 py-1.5 text-xs rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600/30">✦ Float</button>
+                  <button type="button" data-layout="rise" aria-label="Rise layout (bottom to top)" aria-pressed="false" class="layout-btn px-3 py-1.5 text-xs rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600/30">↑ Rise</button>
                 </div>
                 <input type="hidden" id="layoutSelect" value="scroll" />
               </div>
@@ -334,7 +337,7 @@
                   <span class="text-xs text-slate-500" data-i18n="multiSelectToStack">Multi-select to stack</span>
                 </label>
                 <!-- Effect buttons (injected by JS) -->
-                <div class="flex flex-wrap gap-2" id="effectButtons">
+                <div class="flex flex-wrap gap-2" id="effectButtons" role="group" aria-label="Effect selection">
                   <span class="text-xs text-slate-500" data-i18n="loadingEffects">Loading...</span>
                 </div>
                 <!-- Selected effect parameter controls (injected by JS) -->

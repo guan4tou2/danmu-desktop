@@ -185,6 +185,69 @@ class TestValidation:
         w2 = widgets.create_widget("label", {"text": "X", "fontSize": 1})
         assert w2["config"]["fontSize"] == 10
 
+    def test_color_injection_rejected(self):
+        """CSS injection via bgColor/textColor should be rejected"""
+        w = widgets.create_widget(
+            "label",
+            {
+                "text": "X",
+                "bgColor": "red; position:fixed; z-index:9999",
+                "textColor": "expression(alert(1))",
+            },
+        )
+        # Should fall back to defaults
+        assert w["config"]["bgColor"] == "rgba(15,23,42,0.85)"
+        assert w["config"]["textColor"] == "#ffffff"
+
+    def test_valid_colors_accepted(self):
+        """Valid CSS colors should be accepted"""
+        w = widgets.create_widget(
+            "label",
+            {
+                "text": "X",
+                "bgColor": "rgba(255,0,0,0.5)",
+                "textColor": "#ff0000",
+            },
+        )
+        assert w["config"]["bgColor"] == "rgba(255,0,0,0.5)"
+        assert w["config"]["textColor"] == "#ff0000"
+
+    def test_padding_injection_rejected(self):
+        """CSS injection via padding should be rejected"""
+        w = widgets.create_widget(
+            "label",
+            {"text": "X", "padding": "8px; background: red"},
+        )
+        assert w["config"]["padding"] == "8px 16px"  # default
+
+    def test_valid_padding_accepted(self):
+        """Valid CSS padding values should be accepted"""
+        w = widgets.create_widget(
+            "label",
+            {"text": "X", "padding": "10px 20px"},
+        )
+        assert w["config"]["padding"] == "10px 20px"
+
+    def test_scoreboard_team_color_injection(self):
+        """CSS injection via team color should be rejected"""
+        w = widgets.create_widget(
+            "scoreboard",
+            {
+                "teams": [
+                    {"name": "Team1", "score": 0, "color": "url(evil)"},
+                ]
+            },
+        )
+        assert w["config"]["teams"][0]["color"] == "#06b6d4"  # default
+
+    def test_transparent_color_accepted(self):
+        """transparent keyword should be accepted"""
+        w = widgets.create_widget(
+            "label",
+            {"text": "X", "bgColor": "transparent"},
+        )
+        assert w["config"]["bgColor"] == "transparent"
+
 
 # ---------------------------------------------------------------------------
 # Route integration tests (require Flask test client)

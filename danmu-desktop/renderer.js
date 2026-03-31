@@ -77,23 +77,10 @@ initConnectionStatusHandler({
 initDanmuSettings(danmuSettings, showToast, t);
 loadDanmuSettings(danmuSettings);
 
-// Vanta.js background initialization (main window only)
-if (typeof VANTA !== "undefined") {
-  VANTA.NET({
-    el: "#vanta-bg",
-    mouseControls: true,
-    touchControls: true,
-    gyroControls: false,
-    minHeight: 200.0,
-    minWidth: 200.0,
-    scale: 1.0,
-    scaleMobile: 1.0,
-    color: 0x3b82f6,
-    backgroundColor: 0x0f172a,
-    points: 12.0,
-    maxDistance: 25.0,
-    spacing: 18.0,
-  });
+// Canvas 2D particle network background (main window only)
+const { initParticleBg } = require("./renderer-modules/particle-bg");
+if (document.getElementById("vanta-bg")) {
+  initParticleBg("#vanta-bg");
 }
 
 // Settings export / import buttons (main window only)

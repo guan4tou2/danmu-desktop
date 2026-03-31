@@ -452,7 +452,8 @@
       textWrap.className = "flex-1 min-w-0";
       const labelEl = document.createElement("div");
       labelEl.className = "font-semibold text-slate-200 text-xs whitespace-nowrap overflow-hidden text-ellipsis leading-tight";
-      labelEl.textContent = eff.label || eff.name;
+      var _ek = "effect_" + eff.name;
+      labelEl.textContent = ServerI18n.t(_ek) !== _ek ? ServerI18n.t(_ek) : (eff.label || eff.name);
       const nameEl = document.createElement("div");
       nameEl.className = "text-[0.62rem] text-slate-500 font-mono whitespace-nowrap overflow-hidden text-ellipsis leading-tight";
       nameEl.textContent = eff.name;

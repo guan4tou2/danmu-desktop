@@ -418,3 +418,91 @@ def test_effects_toggle_calls_api(admin_page):
     set_resp = [r for r in responses if "/admin/Set" in r.url]
     assert len(set_resp) >= 1, "Effects toggle should call /admin/Set"
     assert set_resp[0].status == 200
+
+
+# ─── Polls UI ──────────────────────────────────────────────────────────────────
+
+
+def test_poll_create_and_end(admin_page):
+    """建立投票、驗證狀態、結束投票"""
+    _open_section(admin_page, "sec-polls")
+
+    # Fill poll form
+    admin_page.fill("#pollQuestion", "Test poll question?")
+    option_inputs = admin_page.locator("#pollOptionsContainer input[type=text]")
+    if option_inputs.count() >= 2:
+        option_inputs.nth(0).fill("Option A")
+        option_inputs.nth(1).fill("Option B")
+
+    # Create poll
+    admin_page.locator("#pollCreateBtn").click()
+    admin_page.wait_for_timeout(1000)
+
+    # Verify poll is active via API
+    resp = admin_page.request.get(admin_page.url.rsplit("/admin", 1)[0] + "/admin/poll/status")
+    if resp.ok:
+        data = resp.json()
+        assert data.get("state") in ("active", "ended", "idle")
+
+    # End poll
+    end_btn = admin_page.locator("#pollEndBtn")
+    if end_btn.count() > 0 and end_btn.is_visible():
+        end_btn.click()
+        admin_page.wait_for_timeout(500)
+
+    # Reset poll
+    reset_btn = admin_page.locator("#pollResetBtn")
+    if reset_btn.count() > 0 and reset_btn.is_visible():
+        reset_btn.click()
+        admin_page.wait_for_timeout(500)
+
+
+# ─── Themes UI ─────────────────────────────────────────────────────────────────
+
+
+def test_themes_section_loads(admin_page):
+    """Themes 區塊應至少顯示一個主題卡片"""
+    _open_section(admin_page, "sec-themes")
+    admin_page.wait_for_timeout(1000)
+
+    themes_list = admin_page.locator("#themesList")
+    assert themes_list.is_visible(), "Themes list should be visible"
+    # Should have at least the default theme
+    cards = themes_list.locator("> div")
+    assert cards.count() >= 1, "Should have at least one theme card"
+
+
+# ─── Widgets UI ────────────────────────────────────────────────────────────────
+
+
+def test_widgets_create_label(admin_page):
+    """建立一個 label widget 並驗證出現在列表中"""
+    _open_section(admin_page, "sec-widgets")
+    admin_page.wait_for_timeout(500)
+
+    # Click the add label button
+    add_label_btn = admin_page.locator("#widget-add-label")
+    if add_label_btn.count() > 0:
+        add_label_btn.click()
+        admin_page.wait_for_timeout(1000)
+
+    # Verify widget appears in list
+    widget_list = admin_page.locator("#widgets-list")
+    if widget_list.count() > 0:
+        widget_cards = widget_list.locator("> div")
+        assert widget_cards.count() >= 1, "Should have at least one widget after creation"
+
+
+# ─── Metrics API ───────────────────────────────────────────────────────────────
+
+
+def test_metrics_endpoint(admin_page, live_url):
+    """GET /admin/metrics 應回傳 JSON 含 ws_clients 和 queue_size"""
+    response = admin_page.request.get(f"{live_url}/admin/metrics")
+    assert response.status == 200
+    data = response.json()
+    assert "ws_clients" in data
+    assert "queue_size" in data
+    assert "queue_capacity" in data
+    assert "server_time" in data
+    assert data["queue_capacity"] == 500

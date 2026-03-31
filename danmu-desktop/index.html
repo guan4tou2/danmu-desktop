@@ -602,18 +602,7 @@
       </div>
     </main>
 
-    <!-- Vanta.js and Renderer Logic (bundled locally for instant load) -->
-    <script src="./node_modules/three/build/three.min.js"></script>
-    <script>
-      // Shims for vanta.js 0.5.24 (unmaintained) — needs legacy THREE APIs removed in r136+
-      if (typeof THREE !== 'undefined') {
-        if (THREE.VertexColors === undefined) THREE.VertexColors = true;
-        if (!THREE.Color.prototype.sub) {
-          THREE.Color.prototype.sub = function(c) { this.r -= c.r; this.g -= c.g; this.b -= c.b; return this; };
-        }
-      }
-    </script>
-    <script src="./node_modules/vanta/dist/vanta.net.min.js"></script>
+    <!-- Renderer Logic (bundled locally for instant load) -->
     <script src="i18n.js"></script>
     <script src="./dist/renderer.bundle.js"></script>
   </body>

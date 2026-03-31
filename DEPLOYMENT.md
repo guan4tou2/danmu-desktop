@@ -158,6 +158,27 @@ sudo systemctl start danmu-server danmu-ws-server
 
 Refer to `.env.example` for the complete list / 更多設定請見 `.env.example`。
 
+### dotenv Precedence / dotenv 優先順序
+
+This project uses `python-dotenv` which loads `.env` values **as overrides** of existing environment variables by default. This means `.env` file values take precedence over runtime environment variables set via `docker run -e` or shell exports.
+
+本專案使用 `python-dotenv`，`.env` 檔案中的值會**覆蓋**已存在的環境變數。也就是說，`.env` 檔案的優先順序高於透過 `docker run -e` 或 shell `export` 設定的值。
+
+**Example / 範例：**
+```bash
+# This will NOT work as expected if .env contains ADMIN_PASSWORD=changeme
+# 如果 .env 中有 ADMIN_PASSWORD=changeme，以下不會生效：
+ADMIN_PASSWORD=mysecret python -m server.app
+# server will use "changeme" from .env, not "mysecret"
+
+# Solution: edit .env directly, or remove the variable from .env
+# 解法：直接編輯 .env，或從 .env 中移除該變數
+```
+
+For Docker deployments, the `docker-compose.yml` passes env vars from `.env` to the container. If running `docker run -e`, ensure no conflicting `.env` is mounted into the container.
+
+Docker 部署時，`docker-compose.yml` 會從 `.env` 傳遞環境變數。若使用 `docker run -e`，請確保容器內無衝突的 `.env` 檔案。
+
 ## Production Tips / 生產環境建議 {#production-tips--生產環境建議}
 1. **Use hashed password / 使用雜湊密碼**：`server/scripts/hash_password.py`。
 2. **Enable HTTPS** (Nginx/Caddy) / 透過 Nginx 或 Caddy 啟用 HTTPS。
@@ -227,19 +248,6 @@ Install the Redis extra:
 ```bash
 uv sync --extra redis
 ```
-
-## Vanta.js Migration Plan / Vanta 遷移規劃
-
-The Electron desktop app uses [vanta.js](https://www.vantajs.com/) (v0.5.24, last updated Sept 2022) for the animated background. Vanta is unmaintained, which locks three.js at v0.160.1 (the last version with a UMD global build + the APIs vanta needs).
-
-Current mitigation: compatibility shims in `index.html` polyfill `THREE.VertexColors` and `THREE.Color.prototype.sub`.
-
-Long-term options (ranked by effort):
-1. **Keep current setup** — shims work, no action needed unless three.js 0.160.x gets a CVE
-2. **Fork vanta** — patch `vanta.net.js` to use modern THREE APIs, publish as `@danmufire/vanta`
-3. **Replace with CSS/Canvas** — implement a lightweight particle network in pure Canvas 2D, dropping both three.js and vanta dependencies entirely
-
-Recommended: option 1 for now, option 3 when a redesign happens.
 
 ## Auto-Update / 自動更新
 

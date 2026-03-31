@@ -55,6 +55,7 @@ from . import (  # noqa: E402, F401
     filters,
     history,
     live,
+    metrics,
     plugins,
     poll,
     replay,

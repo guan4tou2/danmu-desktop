@@ -6,6 +6,7 @@ alongside danmu. Widgets are broadcast to overlay clients via the WS queue.
 """
 
 import logging
+import re
 import threading
 import uuid
 from typing import Any, Dict, List, Optional
@@ -135,6 +136,36 @@ def update_scoreboard_score(widget_id: str, team_index: int, delta: int = 1) -> 
     return widget
 
 
+# ── Sanitization helpers ─────────────────────────────────────────────────────
+
+_COLOR_RE = re.compile(
+    r"^("
+    r"#[0-9a-fA-F]{3,8}"  # hex: #fff, #ffffff, #ffffffaa
+    r"|rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(,\s*[\d.]+\s*)?\)"  # rgb/rgba
+    r"|hsla?\(\s*\d{1,3}\s*,\s*\d{1,3}%?\s*,\s*\d{1,3}%?\s*(,\s*[\d.]+\s*)?\)"  # hsl/hsla
+    r"|transparent"
+    r")$"
+)
+
+_PADDING_RE = re.compile(r"^[\d]+px(\s+[\d]+px){0,3}$")
+
+
+def _safe_color(value: str, default: str) -> str:
+    """Validate a CSS color value. Returns default if invalid."""
+    value = str(value).strip()[:50]
+    if _COLOR_RE.match(value):
+        return value
+    return default
+
+
+def _safe_padding(value: str, default: str) -> str:
+    """Validate a CSS padding value. Returns default if invalid."""
+    value = str(value).strip()[:30]
+    if _PADDING_RE.match(value):
+        return value
+    return default
+
+
 # ── Validation helpers ────────────────────────────────────────────────────────
 
 
@@ -162,9 +193,9 @@ def _validate_scoreboard(new: dict, base: dict) -> dict:
     if "fontSize" in new:
         base["fontSize"] = max(10, min(72, int(new["fontSize"])))
     if "bgColor" in new:
-        base["bgColor"] = str(new["bgColor"])[:50]
+        base["bgColor"] = _safe_color(new["bgColor"], base["bgColor"])
     if "textColor" in new:
-        base["textColor"] = str(new["textColor"])[:20]
+        base["textColor"] = _safe_color(new["textColor"], base["textColor"])
     if "teams" in new and isinstance(new["teams"], list):
         teams = []
         for t in new["teams"][:10]:
@@ -172,7 +203,7 @@ def _validate_scoreboard(new: dict, base: dict) -> dict:
                 {
                     "name": str(t.get("name", "Team"))[:30],
                     "score": max(0, int(t.get("score", 0))),
-                    "color": str(t.get("color", "#06b6d4"))[:20],
+                    "color": _safe_color(t.get("color", "#06b6d4"), "#06b6d4"),
                 }
             )
         base["teams"] = teams
@@ -197,9 +228,9 @@ def _validate_ticker(new: dict, base: dict) -> dict:
     if "fontSize" in new:
         base["fontSize"] = max(10, min(48, int(new["fontSize"])))
     if "bgColor" in new:
-        base["bgColor"] = str(new["bgColor"])[:50]
+        base["bgColor"] = _safe_color(new["bgColor"], base["bgColor"])
     if "textColor" in new:
-        base["textColor"] = str(new["textColor"])[:20]
+        base["textColor"] = _safe_color(new["textColor"], base["textColor"])
 
     return base
 
@@ -216,10 +247,10 @@ def _validate_label(new: dict, base: dict) -> dict:
     if "fontSize" in new:
         base["fontSize"] = max(10, min(96, int(new["fontSize"])))
     if "bgColor" in new:
-        base["bgColor"] = str(new["bgColor"])[:50]
+        base["bgColor"] = _safe_color(new["bgColor"], base["bgColor"])
     if "textColor" in new:
-        base["textColor"] = str(new["textColor"])[:20]
+        base["textColor"] = _safe_color(new["textColor"], base["textColor"])
     if "padding" in new:
-        base["padding"] = str(new["padding"])[:30]
+        base["padding"] = _safe_padding(new["padding"], base["padding"])
 
     return base
