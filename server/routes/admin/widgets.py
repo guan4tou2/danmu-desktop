@@ -77,8 +77,11 @@ def delete_widget():
 def update_score():
     data = request.get_json(silent=True) or {}
     widget_id = data.get("id", "")
-    team_index = int(data.get("team_index", 0))
-    delta = int(data.get("delta", 1))
+    try:
+        team_index = int(data.get("team_index", 0))
+        delta = int(data.get("delta", 1))
+    except (TypeError, ValueError):
+        return _json_response({"error": "team_index and delta must be integers"}, 400)
 
     from ...services.widgets import update_scoreboard_score
 

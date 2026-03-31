@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class PollService:
     def __init__(self):
-        self._lock = threading.RLock()
+        self._lock = threading.Lock()
         self._poll = None  # Current poll dict or None
 
     @property
@@ -68,24 +68,7 @@ class PollService:
 
     def get_status(self) -> Dict[str, Any]:
         with self._lock:
-            if not self._poll:
-                return {"state": "idle"}
-            total = sum(o["count"] for o in self._poll["options"])
-            return {
-                "poll_id": self._poll["poll_id"],
-                "question": self._poll["question"],
-                "options": [
-                    {
-                        "key": o["key"],
-                        "text": o["text"],
-                        "count": o["count"],
-                        "percentage": round(o["count"] / total * 100, 1) if total > 0 else 0,
-                    }
-                    for o in self._poll["options"]
-                ],
-                "state": self._poll["state"],
-                "total_votes": total,
-            }
+            return self._get_status_locked()
 
     def end(self):
         with self._lock:
@@ -99,8 +82,30 @@ class PollService:
             self._broadcast_clear()
 
     def _broadcast(self):
-        status = self.get_status()
+        """Broadcast poll status. Must be called while self._lock is held."""
+        status = self._get_status_locked()
         ws_queue.enqueue_message({"type": "poll_update", **status})
+
+    def _get_status_locked(self) -> Dict[str, Any]:
+        """Get poll status without acquiring the lock (caller holds it)."""
+        if not self._poll:
+            return {"state": "idle"}
+        total = sum(o["count"] for o in self._poll["options"])
+        return {
+            "poll_id": self._poll["poll_id"],
+            "question": self._poll["question"],
+            "options": [
+                {
+                    "key": o["key"],
+                    "text": o["text"],
+                    "count": o["count"],
+                    "percentage": round(o["count"] / total * 100, 1) if total > 0 else 0,
+                }
+                for o in self._poll["options"]
+            ],
+            "state": self._poll["state"],
+            "total_votes": total,
+        }
 
     def _broadcast_clear(self):
         ws_queue.enqueue_message({"type": "poll_update", "state": "idle"})

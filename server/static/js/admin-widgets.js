@@ -71,7 +71,7 @@
       };
       if (body) {
         const csrf = document.querySelector('meta[name="csrf-token"]');
-        if (csrf) opts.headers["X-CSRFToken"] = csrf.content;
+        if (csrf) opts.headers["X-CSRF-Token"] = csrf.content;
         opts.body = JSON.stringify(body);
       }
       const resp = await fetch("/admin/widgets/" + endpoint, opts);

@@ -13,8 +13,9 @@ This project is divided into two parts:
 
 1. Danmu-Desktop
    - Client-side application that runs on your computer to display danmu
-   - Currently supports Windows and MacOS
+   - Supports Windows, MacOS, and Linux
    - Available as both installer and portable version
+   - Auto-update from GitHub Releases
 
 ![img](img/client.png)
 ![img](img/client%20start%20effect.png)
@@ -23,6 +24,9 @@ This project is divided into two parts:
    - Creates a web interface for danmu input
    - Manages danmu delivery to connected clients
    - Includes admin panel for configuration, source fingerprint logging, and history review
+   - OBS Browser Source overlay (`/overlay` route)
+   - Plugin SDK for server-side extensions
+   - 4-language UI (EN, ZH, JA, KO)
 
 ![img](img/web%20panel.png)
 ![img](img/admin%20panel.png)
@@ -45,6 +49,30 @@ Built-in animation effects (spin, bounce, rainbow, glow, shake, wave, blink, zoo
 ### Hot-pluggable Effects (.dme)
 
 Drop `.dme` files (YAML format) into `server/effects/` to add custom effects — auto-detected within 5 seconds. Edit and manage effects from the admin panel.
+
+### Style Themes
+
+Predefined visual themes (default, neon, retro, cinema) that set color, stroke, shadow, and effects in one click. Switch themes from the admin panel or the user-facing page.
+
+### Interactive Polls
+
+Admin creates polls with 2-6 options. Viewers vote by sending option keys (A/B/C) as danmu. Live results display on the overlay with real-time vote counts.
+
+### Overlay Widgets
+
+Add persistent scoreboards, tickers, and labels to the OBS overlay. Manage position, style, and content from the admin panel. Widgets broadcast to all connected overlay clients via WebSocket.
+
+### OBS Browser Source
+
+Use `http://your-server:4000/overlay` as an OBS Browser Source to display danmu without the Electron app. Transparent background, auto-connects via WebSocket.
+
+### Plugin SDK
+
+Build server-side plugins that react to danmu events, modify messages, filter content, and auto-reply. Hot-reloaded every 5 seconds. See [Plugin Guide](server/PLUGIN_GUIDE.md) for details.
+
+### Timeline Export
+
+Record live danmu sessions as JSON timelines for offline replay or analysis. Available from the admin panel.
 
 ## Installation & Usage
 
@@ -165,6 +193,7 @@ Drop `.dme` files (YAML format) into `server/effects/` to add custom effects —
 
 - Main interface: `http://ip:4000`
 - Admin panel: `http://ip:4000/admin`
+- OBS overlay: `http://ip:4000/overlay`
 
 ### Environment Variables
 
@@ -202,12 +231,15 @@ See `.env.example` for all available options.
 
 - `docs/README.md` – index of technical notes and archives / 技術文件索引。
 - `DEPLOYMENT.md` – production-grade setup instructions / 部署說明。
+- `server/PLUGIN_GUIDE.md` – Plugin SDK documentation / 插件開發文件。
 - `README-CH.md` – 中文總覽。
 - `docs/archive/` – historical improvement notes kept for reference / 歷史紀錄。
 
 ## CI/CD & Docker Hub
 
 - Workflow `.github/workflows/docker-build.yml` builds and tests the server image on each PR/push.
+- Workflow `.github/workflows/test.yml` runs Python tests with coverage reporting and `pip-audit` for CVE scanning.
+- Workflow `.github/workflows/build.yml` builds Electron app for Windows, macOS, and Linux on version bump, creating GitHub Releases with auto-update metadata.
 - Set GitHub secrets `DOCKERHUB_USERNAME` + `DOCKERHUB_TOKEN` (Docker Hub access token) to auto-publish `DOCKERHUB_USERNAME/danmu-server:latest` and a commit-SHA tag whenever `main` is updated.
 
 ## Testing & Coverage

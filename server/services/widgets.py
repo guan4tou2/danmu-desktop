@@ -6,12 +6,15 @@ alongside danmu. Widgets are broadcast to overlay clients via the WS queue.
 """
 
 import logging
+import threading
 import uuid
 from typing import Any, Dict, List, Optional
 
 from server.services import ws_queue
 
 logger = logging.getLogger(__name__)
+
+_lock = threading.Lock()
 
 # Valid widget types
 WIDGET_TYPES = {"scoreboard", "ticker", "label"}
@@ -46,15 +49,6 @@ def _broadcast():
 
 
 def create_widget(widget_type: str, config: dict) -> dict:
-    """Create a new overlay widget.
-
-    Args:
-        widget_type: One of 'scoreboard', 'ticker', 'label'
-        config: Widget-specific configuration
-
-    Returns:
-        The created widget dict
-    """
     if widget_type not in WIDGET_TYPES:
         raise ValueError(f"Unknown widget type: {widget_type}")
 
@@ -71,82 +65,80 @@ def create_widget(widget_type: str, config: dict) -> dict:
         "config": _validate_config(widget_type, config),
     }
 
-    _widgets[widget_id] = widget
+    with _lock:
+        _widgets[widget_id] = widget
     _broadcast()
     logger.info("Widget created: %s (%s)", widget_id, widget_type)
     return widget
 
 
 def update_widget(widget_id: str, config: dict) -> Optional[dict]:
-    """Update an existing widget's configuration."""
-    if widget_id not in _widgets:
-        return None
+    with _lock:
+        if widget_id not in _widgets:
+            return None
 
-    widget = _widgets[widget_id]
-    widget_type = widget["type"]
+        widget = _widgets[widget_id]
+        widget_type = widget["type"]
 
-    if "position" in config:
-        pos = config["position"]
-        if pos in POSITIONS:
-            widget["position"] = pos
+        if "position" in config:
+            pos = config["position"]
+            if pos in POSITIONS:
+                widget["position"] = pos
 
-    if "visible" in config:
-        widget["visible"] = bool(config["visible"])
+        if "visible" in config:
+            widget["visible"] = bool(config["visible"])
 
-    widget["config"] = _validate_config(widget_type, config, widget["config"])
+        widget["config"] = _validate_config(widget_type, config, widget["config"])
+
     _broadcast()
     return widget
 
 
 def delete_widget(widget_id: str) -> bool:
-    """Delete a widget by ID."""
-    if widget_id not in _widgets:
-        return False
+    with _lock:
+        if widget_id not in _widgets:
+            return False
+        del _widgets[widget_id]
 
-    del _widgets[widget_id]
     _broadcast()
     logger.info("Widget deleted: %s", widget_id)
     return True
 
 
 def list_widgets() -> List[dict]:
-    """Return all widgets."""
-    return list(_widgets.values())
+    with _lock:
+        return list(_widgets.values())
 
 
 def get_widget(widget_id: str) -> Optional[dict]:
-    """Get a single widget by ID."""
-    return _widgets.get(widget_id)
+    with _lock:
+        return _widgets.get(widget_id)
 
 
 def clear_all() -> None:
-    """Remove all widgets."""
-    _widgets.clear()
+    with _lock:
+        _widgets.clear()
     _broadcast()
 
 
-def update_scoreboard_score(
-    widget_id: str, team_index: int, delta: int = 1
-) -> Optional[dict]:
-    """Increment/decrement a scoreboard team's score."""
-    widget = _widgets.get(widget_id)
-    if not widget or widget["type"] != "scoreboard":
-        return None
+def update_scoreboard_score(widget_id: str, team_index: int, delta: int = 1) -> Optional[dict]:
+    with _lock:
+        widget = _widgets.get(widget_id)
+        if not widget or widget["type"] != "scoreboard":
+            return None
 
-    teams = widget["config"].get("teams", [])
-    if 0 <= team_index < len(teams):
-        teams[team_index]["score"] = max(0, teams[team_index]["score"] + delta)
-        _broadcast()
+        teams = widget["config"].get("teams", [])
+        if 0 <= team_index < len(teams):
+            teams[team_index]["score"] = max(0, teams[team_index]["score"] + delta)
+
+    _broadcast()
     return widget
 
 
 # ── Validation helpers ────────────────────────────────────────────────────────
 
 
-def _validate_config(
-    widget_type: str, new: dict, existing: Optional[dict] = None
-) -> dict:
-    """Validate and merge widget config based on type."""
+def _validate_config(widget_type: str, new: dict, existing: Optional[dict] = None) -> dict:
     base = dict(existing) if existing else {}
 
     if widget_type == "scoreboard":
@@ -159,7 +151,6 @@ def _validate_config(
 
 
 def _validate_scoreboard(new: dict, base: dict) -> dict:
-    """Scoreboard config: title, teams [{name, score, color}]."""
     base.setdefault("title", "")
     base.setdefault("teams", [])
     base.setdefault("fontSize", 18)
@@ -176,7 +167,7 @@ def _validate_scoreboard(new: dict, base: dict) -> dict:
         base["textColor"] = str(new["textColor"])[:20]
     if "teams" in new and isinstance(new["teams"], list):
         teams = []
-        for t in new["teams"][:10]:  # max 10 teams
+        for t in new["teams"][:10]:
             teams.append(
                 {
                     "name": str(t.get("name", "Team"))[:30],
@@ -190,9 +181,8 @@ def _validate_scoreboard(new: dict, base: dict) -> dict:
 
 
 def _validate_ticker(new: dict, base: dict) -> dict:
-    """Ticker config: messages [str], speed, bgColor."""
     base.setdefault("messages", [])
-    base.setdefault("speed", 60)  # px/s
+    base.setdefault("speed", 60)
     base.setdefault("separator", " \u2022 ")
     base.setdefault("fontSize", 16)
     base.setdefault("bgColor", "rgba(15,23,42,0.85)")
@@ -215,7 +205,6 @@ def _validate_ticker(new: dict, base: dict) -> dict:
 
 
 def _validate_label(new: dict, base: dict) -> dict:
-    """Label config: text, fontSize, bgColor."""
     base.setdefault("text", "")
     base.setdefault("fontSize", 24)
     base.setdefault("bgColor", "rgba(15,23,42,0.85)")

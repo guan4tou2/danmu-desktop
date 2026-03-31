@@ -124,8 +124,8 @@ def set_active(name: str) -> bool:
     with _lock:
         if name not in _cache:
             return False
-    with _active_lock:
-        _active_theme = name
+        with _active_lock:
+            _active_theme = name
     logger.info("[Themes] Active theme set to: %s", name)
     return True
 

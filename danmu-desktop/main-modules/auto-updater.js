@@ -17,7 +17,7 @@ function setupAutoUpdater(mainWindowGetter) {
 
   // Don't auto-download — let the user decide
   autoUpdater.autoDownload = false;
-  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.autoInstallOnAppQuit = false;
 
   autoUpdater.on("update-available", (info) => {
     if (updateNotified) return;
@@ -42,6 +42,7 @@ function setupAutoUpdater(mainWindowGetter) {
   });
 
   autoUpdater.on("update-downloaded", () => {
+    autoUpdater.autoInstallOnAppQuit = true;
     const win = typeof mainWindowGetter === "function" ? mainWindowGetter() : null;
     dialog
       .showMessageBox(win, {
