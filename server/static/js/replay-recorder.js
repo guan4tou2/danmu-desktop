@@ -172,5 +172,65 @@
     }
   }
 
+  /**
+   * TimelineExporter — records danmu as a JSON timeline for offline replay.
+   * Lighter alternative to video recording; can be re-imported.
+   */
+  class TimelineExporter {
+    constructor() {
+      this.events = [];
+      this.startTime = 0;
+      this.isRecording = false;
+    }
+
+    start() {
+      this.events = [];
+      this.startTime = Date.now();
+      this.isRecording = true;
+    }
+
+    addDanmu(data) {
+      if (!this.isRecording) return;
+      this.events.push({
+        t: Date.now() - this.startTime,
+        text: data.text || "",
+        color: data.color || "FFFFFF",
+        size: parseInt(data.size) || 50,
+        speed: parseInt(data.speed) || 5,
+        opacity: parseInt(data.opacity) || 100,
+        layout: data.layout || "scroll",
+        nickname: data.nickname || "",
+        effects: data.effects || [],
+      });
+    }
+
+    stop() {
+      this.isRecording = false;
+      return {
+        version: 1,
+        duration: Date.now() - this.startTime,
+        count: this.events.length,
+        events: this.events,
+      };
+    }
+
+    downloadJSON(filename) {
+      const timeline = this.stop();
+      const blob = new Blob([JSON.stringify(timeline, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename || `danmu-timeline-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      return timeline;
+    }
+  }
+
   window.ReplayRecorder = ReplayRecorder;
+  window.TimelineExporter = TimelineExporter;
 })();

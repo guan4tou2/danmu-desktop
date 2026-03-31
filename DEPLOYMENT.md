@@ -166,3 +166,86 @@ Refer to `.env.example` for the complete list / 更多設定請見 `.env.example
 5. **Dedicated WS exposure** – default `WS_REQUIRE_TOKEN=false` means reachable clients can connect without token. If you expose port `4001` outside localhost or a trusted LAN, enable `WS_REQUIRE_TOKEN=true` and set `WS_AUTH_TOKEN`, or restrict access at the proxy/firewall layer.
 6. **Logging** – consider `LOG_FORMAT=json` for centralized log ingestion / 建議使用 JSON 日誌。
 7. **Backup** – `.env`, `server/user_fonts`, custom static files / 定期備份關鍵檔案。
+
+## WebSocket over TLS (wss://) / WebSocket 加密連線
+
+The overlay page connects via plain `ws://` by default, which is fine for local OBS Browser Source usage. For remote or public deployments, use a reverse proxy to terminate TLS:
+
+以下範例是 Nginx 的 wss:// 設定：
+
+```nginx
+# /etc/nginx/sites-available/danmu
+server {
+    listen 443 ssl;
+    server_name danmu.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/danmu.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/danmu.example.com/privkey.pem;
+
+    # HTTP API
+    location / {
+        proxy_pass http://127.0.0.1:4000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # WebSocket (wss:// -> ws://)
+    location /ws/ {
+        proxy_pass http://127.0.0.1:4001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 3600s;
+    }
+}
+```
+
+For Caddy (auto-HTTPS):
+
+```
+danmu.example.com {
+    reverse_proxy /ws/* 127.0.0.1:4001
+    reverse_proxy * 127.0.0.1:4000
+}
+```
+
+## Rate Limiting with Redis / 使用 Redis 做速率限制
+
+By default, rate limiting uses in-memory counters that reset on server restart. For high-traffic or multi-worker deployments, switch to Redis:
+
+預設使用記憶體計數器，重啟歸零。多 worker 或高流量場景建議改用 Redis：
+
+```bash
+# .env
+RATE_LIMIT_BACKEND=redis
+REDIS_URL=redis://localhost:6379/0
+```
+
+Install the Redis extra:
+```bash
+uv sync --extra redis
+```
+
+## Vanta.js Migration Plan / Vanta 遷移規劃
+
+The Electron desktop app uses [vanta.js](https://www.vantajs.com/) (v0.5.24, last updated Sept 2022) for the animated background. Vanta is unmaintained, which locks three.js at v0.160.1 (the last version with a UMD global build + the APIs vanta needs).
+
+Current mitigation: compatibility shims in `index.html` polyfill `THREE.VertexColors` and `THREE.Color.prototype.sub`.
+
+Long-term options (ranked by effort):
+1. **Keep current setup** — shims work, no action needed unless three.js 0.160.x gets a CVE
+2. **Fork vanta** — patch `vanta.net.js` to use modern THREE APIs, publish as `@danmufire/vanta`
+3. **Replace with CSS/Canvas** — implement a lightweight particle network in pure Canvas 2D, dropping both three.js and vanta dependencies entirely
+
+Recommended: option 1 for now, option 3 when a redesign happens.
+
+## Auto-Update / 自動更新
+
+The Electron app includes `electron-updater` which checks GitHub Releases for new versions:
+- First check: 10 seconds after startup
+- Periodic checks: every 4 hours
+- User is prompted before download and before restart
+
+For this to work, the CI build must upload `latest.yml` / `latest-mac.yml` / `latest-linux.yml` alongside the app binaries in each GitHub Release. This is already configured in `.github/workflows/build.yml`.

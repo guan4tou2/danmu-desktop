@@ -4,6 +4,7 @@ const path = require("path");
 const { sanitizeLog } = require("./shared/utils");
 const { createWindow } = require("./main-modules/window-manager");
 const { setupIpcHandlers } = require("./main-modules/ipc-handlers");
+const { setupAutoUpdater } = require("./main-modules/auto-updater");
 
 let mainWindow;
 const childWindows = [];
@@ -21,6 +22,7 @@ function onKonamiTrigger() {
 app.whenReady().then(() => {
   mainWindow = createWindow(childWindows, onKonamiTrigger);
   setupIpcHandlers(() => mainWindow, childWindows);
+  setupAutoUpdater(() => mainWindow);
 
   // macOS Dock icon（開發模式下 Electron 預設顯示通用圖示，需手動設定）
   if (process.platform === "darwin" && app.dock) {

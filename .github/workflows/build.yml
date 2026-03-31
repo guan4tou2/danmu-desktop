@@ -115,6 +115,7 @@ jobs:
           files: |
             danmu-desktop/pack/Danmu Desktop*-*.AppImage
             danmu-desktop/pack/Danmu Desktop*-*.deb
+            danmu-desktop/pack/latest-linux.yml
 
       - name: Create GitHub Release for Windows
         if: matrix.os == 'windows-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
@@ -131,6 +132,7 @@ jobs:
           generate_release_notes: false
           files: |
             danmu-desktop/pack/Danmu Desktop*-*.exe
+            danmu-desktop/pack/latest.yml
 
       - name: Create Release for macOS
         if: matrix.os == 'macos-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
@@ -155,3 +157,4 @@ jobs:
           files: |
             danmu-desktop/pack/danmu manager-*-mac-arm64.dmg
             danmu-desktop/pack/danmu manager-*-mac-arm64.zip
+            danmu-desktop/pack/latest-mac.yml

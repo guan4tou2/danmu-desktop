@@ -49,9 +49,12 @@ jobs:
         working-directory: server
         run: uv run playwright install --with-deps chromium
 
-      - name: Run tests
+      - name: Run tests with coverage
         working-directory: server
-        run: PYTHONPATH=.. uv run python -m pytest -v
+        run: |
+          PYTHONPATH=.. uv run python -m pytest -v --cov=. --cov-report=term-missing --cov-report=xml:coverage.xml
+          echo "### Test Coverage" >> $GITHUB_STEP_SUMMARY
+          uv run coverage report --format=markdown >> $GITHUB_STEP_SUMMARY || true
 
       - name: Check code formatting
         working-directory: server

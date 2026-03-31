@@ -51,6 +51,11 @@
     "appId": "com.danmufire.desktop",
     "productName": "Danmu Desktop",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "publish": {
+      "provider": "github",
+      "owner": "guan4tou2",
+      "repo": "danmu-desktop"
+    },
     "directories": {
       "output": "pack"
     },
@@ -98,6 +103,7 @@
     }
   },
   "dependencies": {
+    "electron-updater": "^6.8.3",
     "three": "^0.160.1",
     "vanta": "^0.5.24"
   }
