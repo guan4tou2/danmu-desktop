@@ -160,3 +160,6 @@ danmu-desktop/test-results/
 server/filter_rules.json
 server/plugins/plugins_state.json
 server/webhooks.json
+
+# gstack security reports
+.gstack/

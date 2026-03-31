@@ -173,10 +173,11 @@ Key configuration options (set via `.env` file or environment variables):
 - `ADMIN_PASSWORD` or `ADMIN_PASSWORD_HASHED` (at least one required): Admin authentication secret
 - `PORT`: HTTP server port (default: 4000)
 - `WS_PORT`: WebSocket server port (default: 4001)
-- `SECRET_KEY`: Flask secret key (auto-generated if not set)
-- `TRUSTED_HOSTS`: comma-separated allowed hostnames for Host header validation (recommended in production)
+- `WS_HOST`: dedicated WebSocket bind host (default: `127.0.0.1`; Docker may override to `0.0.0.0`)
+- `SECRET_KEY`: Flask secret key (required in production; dev may auto-generate one)
+- `TRUSTED_HOSTS`: comma-separated allowed hostnames for Host header validation (required in production)
 - `TRUST_X_FORWARDED_FOR`: trust `X-Forwarded-For` for client IP detection (default: `false`; enable only behind a trusted reverse proxy)
-- `WS_REQUIRE_TOKEN`: require `?token=` for dedicated WebSocket clients (default: `true`)
+- `WS_REQUIRE_TOKEN`: require `?token=` for dedicated WebSocket clients (default: `false`)
 - `WS_AUTH_TOKEN`: shared secret token for dedicated WebSocket clients
 - `WS_MAX_SIZE`: maximum incoming WebSocket message size in bytes (default: `1048576`)
 - `WS_MAX_QUEUE`: maximum number of incoming WebSocket messages buffered (default: `16`)
@@ -194,6 +195,8 @@ See `.env.example` for all available options.
 - GitHub Advanced Security and Dependabot are enabled for this repository.
 - OSV scanning runs on `push`, `pull_request`, and scheduled jobs via `.github/workflows/osv-scanner.yml`.
 - Frontend lockfile enforces `serialize-javascript@7.0.3` through npm overrides to address advisory `GHSA-5c6j-r48x-rmvq`.
+- Dedicated WS auth is disabled by default (`WS_REQUIRE_TOKEN=false`). If port `4001` is reachable beyond localhost or a trusted LAN, any reachable client can connect unless you enable token auth or restrict the network path.
+- Production startup now refuses an ephemeral `SECRET_KEY`, `SESSION_COOKIE_SECURE=false`, or missing `TRUSTED_HOSTS`. Set those explicitly before deploying.
 
 ## Project Docs / 文件
 

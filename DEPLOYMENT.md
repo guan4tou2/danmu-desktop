@@ -139,13 +139,17 @@ sudo systemctl start danmu-server danmu-ws-server
 | `ADMIN_PASSWORD_HASHED` | ⚠️ | - | Bcrypt hash (recommended)。
 | `PORT` | ❌ | `4000` | HTTP port / HTTP 端口。
 | `WS_PORT` | ❌ | `4001` | WebSocket port / WebSocket 端口。
-| `SECRET_KEY` | ❌ | random | Flask secret key / Session 密鑰。
+| `WS_HOST` | ❌ | `127.0.0.1` | Dedicated WS bind host / 專用 WS 綁定位址。Docker compose may override to `0.0.0.0`。 |
+| `WS_REQUIRE_TOKEN` | ❌ | `false` | Dedicated WS token auth / 專用 WS token 驗證。When `false`, reachable clients can connect without token. |
+| `WS_AUTH_TOKEN` | ❌ | empty | Shared token for dedicated WS clients / 專用 WS 共用 token。 |
+| `SECRET_KEY` | ✅ (production) | random in dev | Flask secret key / Session 密鑰。Production startup refuses an auto-generated key. |
+| `TRUSTED_HOSTS` | ✅ (production) | empty | Allowed hostnames for Host header validation / Host header 驗證白名單。Production startup refuses an empty value. |
 | `RATE_LIMIT_BACKEND` | ❌ | `memory` | `memory` 或 `redis`。
 | `REDIS_URL` | ❌ | `redis://localhost:6379/0` | Redis 連線字串。
 | `LOG_LEVEL` | ❌ | `INFO` | Logging level / 日誌等級。
 | `LOG_FORMAT` | ❌ | `text` | `text` or `json`。
-| `SESSION_COOKIE_SECURE` | ❌ | `false` | HTTPS-only cookie。
-| `SESSION_COOKIE_SAMESITE` | ❌ | `Lax` | Cookie SameSite (Strict/Lax/None)。
+| `SESSION_COOKIE_SECURE` | ✅ (production) | auto-`true` in production | HTTPS-only cookie。Production startup refuses `false`. |
+| `SESSION_COOKIE_SAMESITE` | ❌ | `Strict` | Cookie SameSite (Strict/Lax/None)。
 | `FONT_TOKEN_EXPIRATION` | ❌ | `900` | Font token TTL (seconds)。
 | `ADMIN_RATE_LIMIT` | ❌ | `60` | Admin requests per window / 管理端速率。
 | `ADMIN_RATE_WINDOW` | ❌ | `60` | Time window seconds。
@@ -157,6 +161,8 @@ Refer to `.env.example` for the complete list / 更多設定請見 `.env.example
 ## Production Tips / 生產環境建議 {#production-tips--生產環境建議}
 1. **Use hashed password / 使用雜湊密碼**：`server/scripts/hash_password.py`。
 2. **Enable HTTPS** (Nginx/Caddy) / 透過 Nginx 或 Caddy 啟用 HTTPS。
-3. **Reverse proxy** – forward `/`→4000, `/ws/`→4001，確保 `Upgrade` header。
-4. **Logging** – consider `LOG_FORMAT=json` for centralized log ingestion / 建議使用 JSON 日誌。
-5. **Backup** – `.env`, `server/user_fonts`, custom static files / 定期備份關鍵檔案。
+3. **Set production security baseline** – provide a persistent `SECRET_KEY`, keep `SESSION_COOKIE_SECURE=true`, and set real `TRUSTED_HOSTS`; the app now refuses startup if those are unsafe.
+4. **Reverse proxy** – forward `/`→4000, `/ws/`→4001，確保 `Upgrade` header。
+5. **Dedicated WS exposure** – default `WS_REQUIRE_TOKEN=false` means reachable clients can connect without token. If you expose port `4001` outside localhost or a trusted LAN, enable `WS_REQUIRE_TOKEN=true` and set `WS_AUTH_TOKEN`, or restrict access at the proxy/firewall layer.
+6. **Logging** – consider `LOG_FORMAT=json` for centralized log ingestion / 建議使用 JSON 日誌。
+7. **Backup** – `.env`, `server/user_fonts`, custom static files / 定期備份關鍵檔案。

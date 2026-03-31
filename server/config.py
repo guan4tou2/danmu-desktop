@@ -10,6 +10,7 @@ load_dotenv(find_dotenv(), override=True)
 
 # Runtime-writable password hash file (takes priority over env vars)
 _HASH_FILE = Path(__file__).parent / ".admin_password.hash"
+_SECRET_KEY_ENV = (os.getenv("SECRET_KEY") or "").strip()
 
 
 def load_runtime_hash() -> str:
@@ -31,7 +32,8 @@ class Config:
 
     # os.getenv 的 default 只在 key 不存在時生效，不處理空字串
     # 用 or 確保空字串也會 fallback 到隨機生成的 key
-    SECRET_KEY = os.getenv("SECRET_KEY") or secrets.token_hex(32)
+    SECRET_KEY = _SECRET_KEY_ENV or secrets.token_hex(32)
+    SECRET_KEY_FROM_ENV = bool(_SECRET_KEY_ENV)
     ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
     # Priority: runtime hash file > ADMIN_PASSWORD_HASHED env var > plaintext ADMIN_PASSWORD
     ADMIN_PASSWORD_HASHED = load_runtime_hash() or os.getenv("ADMIN_PASSWORD_HASHED", "")

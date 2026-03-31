@@ -381,6 +381,14 @@ class WebhookService:
         return hmac.compare_digest(expected, signature)
 
 
-# ── Module-level singleton ────────────────────────────────────────────────
+# ── Module-level lazy proxy ───────────────────────────────────────────────
 
-webhook_service = WebhookService()
+
+class _WebhookServiceProxy:
+    """Resolve the singleton lazily so tests can reset/patch it reliably."""
+
+    def __getattr__(self, name: str):
+        return getattr(WebhookService(), name)
+
+
+webhook_service = _WebhookServiceProxy()

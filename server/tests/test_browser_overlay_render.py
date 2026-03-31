@@ -10,37 +10,47 @@
 """
 
 import json
+import os
 import select
 import subprocess
 import sys
+import tempfile
 import textwrap
 import time
 
 import pytest
 from playwright.sync_api import sync_playwright
 
+from server.tests._browser_isolation import should_run_browser_module
 from server.tests.conftest import find_free_port
+
+if not should_run_browser_module(__file__):
+    pytest.skip(
+        "Browser modules run in isolated child pytest processes during the full suite.",
+        allow_module_level=True,
+    )
 
 # ─── Fixtures ────────────────────────────────────────────────────────────────
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def server_ports():
-    """啟動 Flask HTTP + WS 伺服器（子行程，避免 asyncio/gevent 衝突）"""
+    """啟動 Flask HTTP + WS 伺服器（每個測試一個子行程，避免跨測試狀態汙染）"""
     http_port = find_free_port()
     ws_port = find_free_port()
 
-    # 確保隔離的 settings file（避免繼承 conftest 或殘留檔案）
-    import pathlib
-
-    settings_path = pathlib.Path("/tmp/_test_overlay_render_settings.json")
-    if settings_path.exists():
-        settings_path.unlink()
+    fd, settings_path_str = tempfile.mkstemp(
+        prefix="_test_overlay_render_settings_",
+        suffix=".json",
+    )
+    os.close(fd)
+    settings_path = __import__("pathlib").Path(settings_path_str)
+    settings_path.unlink(missing_ok=True)
 
     script = textwrap.dedent(f"""\
         import sys, os, threading, logging
         sys.path.insert(0, ".")
-        os.environ["SETTINGS_FILE"] = "/tmp/_test_overlay_render_settings.json"
+        os.environ["SETTINGS_FILE"] = "{settings_path}"
 
         from server.config import Config
         Config.WS_REQUIRE_TOKEN = False
@@ -102,6 +112,7 @@ def server_ports():
 
     proc.terminate()
     proc.wait(timeout=5)
+    settings_path.unlink(missing_ok=True)
 
 
 @pytest.fixture(scope="module")

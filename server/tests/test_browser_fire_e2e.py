@@ -17,7 +17,14 @@ import time
 import pytest
 from playwright.sync_api import sync_playwright
 
+from server.tests._browser_isolation import should_run_browser_module
 from server.tests.conftest import find_free_port
+
+if not should_run_browser_module(__file__):
+    pytest.skip(
+        "Browser modules run in isolated child pytest processes during the full suite.",
+        allow_module_level=True,
+    )
 
 # ─── Fixtures ────────────────────────────────────────────────────────────────
 

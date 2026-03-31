@@ -191,6 +191,8 @@
 - 此 repo 已啟用 GitHub Advanced Security 與 Dependabot。
 - OSV 掃描會在 `push`、`pull_request` 與排程任務執行（見 `.github/workflows/osv-scanner.yml`）。
 - 前端 lockfile 透過 npm overrides 強制 `serialize-javascript@7.0.3`，對應 `GHSA-5c6j-r48x-rmvq`。
+- 專用 WebSocket 預設為 `WS_REQUIRE_TOKEN=false`。若 `4001` 對 localhost 或受信任 LAN 以外的網路可達，任何可到達該埠的客戶端都能連線；請改為啟用 token 驗證，或用反向代理 / 防火牆限制路徑。
+- production 啟動現在會拒絕以下不安全設定：未明確設定 `SECRET_KEY`、`SESSION_COOKIE_SECURE=false`、或未設定 `TRUSTED_HOSTS`。部署前請先補齊。
 
 ## 參考資料
 

@@ -21,6 +21,7 @@ from .routes.health import health_bp
 from .routes.main import main_bp
 from .services.history import init_history
 from .services.security import init_security
+from .startup_warnings import log_ws_auth_warnings
 from .utils import json_response, sanitize_log_string
 from .ws import check_connections as background_check_connections
 from .ws import run_ws_server
@@ -49,14 +50,19 @@ def create_app(config_class=Config):
             "Change it in your .env file before exposing this instance!",
             app.config.get("ADMIN_PASSWORD"),
         )
+    if env in {"production", "prod"} and not app.config.get("SECRET_KEY_FROM_ENV", False):
+        raise RuntimeError(
+            "SECRET_KEY must be explicitly set in production. "
+            "Refusing to start with an ephemeral auto-generated secret key."
+        )
     if env in {"production", "prod"} and not app.config.get("SESSION_COOKIE_SECURE", False):
-        app.logger.warning(
-            "SESSION_COOKIE_SECURE is disabled in production. "
+        raise RuntimeError(
+            "SESSION_COOKIE_SECURE must remain enabled in production. "
             "Enable HTTPS and set SESSION_COOKIE_SECURE=true."
         )
     if env in {"production", "prod"} and not app.config.get("TRUSTED_HOSTS"):
-        app.logger.warning(
-            "TRUSTED_HOSTS is not configured in production. "
+        raise RuntimeError(
+            "TRUSTED_HOSTS must be configured in production. "
             "Set TRUSTED_HOSTS to allowed hostnames to prevent host header poisoning."
         )
     if (
@@ -68,6 +74,7 @@ def create_app(config_class=Config):
             "WS_REQUIRE_TOKEN is enabled but WS_AUTH_TOKEN is empty. "
             "Dedicated WS clients will be rejected."
         )
+    log_ws_auth_warnings(app.logger, app.config, env=env)
 
     # CORS configuration
     # NOTE: Using wildcard origins with supports_credentials=True is forbidden by the CORS spec.

@@ -1,7 +1,12 @@
+import logging
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import pytest
+
 from server import state
+from server.app import create_app
+from server.startup_warnings import log_ws_auth_warnings
 from server.services.security import (
     InMemoryRateLimiter,
     RedisRateLimiter,
@@ -93,6 +98,131 @@ def test_hash_produces_different_salts():
 
 def test_verify_password_invalid_hash():
     assert not verify_password("any", "not-a-valid-bcrypt-hash")
+
+
+def test_ws_require_token_disabled_emits_startup_warning(caplog):
+    logger = logging.getLogger("test.ws-warning")
+
+    with caplog.at_level(logging.WARNING):
+        log_ws_auth_warnings(
+            logger,
+            {
+                "WS_REQUIRE_TOKEN": False,
+                "WS_HOST": "127.0.0.1",
+                "WS_PORT": 4001,
+                "ENV": "development",
+            },
+        )
+
+    assert "WS_REQUIRE_TOKEN is disabled" in caplog.text
+    assert "reachable without token auth" not in caplog.text
+
+
+def test_ws_require_token_disabled_on_public_host_emits_stronger_warning(caplog):
+    logger = logging.getLogger("test.ws-warning-public")
+
+    with caplog.at_level(logging.WARNING):
+        log_ws_auth_warnings(
+            logger,
+            {
+                "WS_REQUIRE_TOKEN": False,
+                "WS_HOST": "0.0.0.0",
+                "WS_PORT": 4001,
+                "ENV": "production",
+            },
+        )
+
+    assert "WS_REQUIRE_TOKEN is disabled" in caplog.text
+    assert "reachable without token auth" in caplog.text
+
+
+def test_production_requires_explicit_secret_key():
+    class ProdConfig:
+        ENV = "production"
+        TESTING = True
+        SECRET_KEY = "generated-for-test"
+        SECRET_KEY_FROM_ENV = False
+        ADMIN_PASSWORD = "correct horse battery staple"
+        ADMIN_PASSWORD_HASHED = ""
+        SESSION_COOKIE_SECURE = True
+        TRUSTED_HOSTS = ["example.com"]
+        WS_REQUIRE_TOKEN = False
+        WS_AUTH_TOKEN = ""
+        WS_HOST = "127.0.0.1"
+        WS_PORT = 4001
+        LOG_LEVEL = "INFO"
+        RATE_LIMIT_BACKEND = "memory"
+        SETTINGS_FILE = "/tmp/test-danmu-settings.json"
+
+    with pytest.raises(RuntimeError, match="SECRET_KEY"):
+        create_app(ProdConfig)
+
+
+def test_production_requires_secure_session_cookie():
+    class ProdConfig:
+        ENV = "production"
+        TESTING = True
+        SECRET_KEY = "provided-secret"
+        SECRET_KEY_FROM_ENV = True
+        ADMIN_PASSWORD = "correct horse battery staple"
+        ADMIN_PASSWORD_HASHED = ""
+        SESSION_COOKIE_SECURE = False
+        TRUSTED_HOSTS = ["example.com"]
+        WS_REQUIRE_TOKEN = False
+        WS_AUTH_TOKEN = ""
+        WS_HOST = "127.0.0.1"
+        WS_PORT = 4001
+        LOG_LEVEL = "INFO"
+        RATE_LIMIT_BACKEND = "memory"
+        SETTINGS_FILE = "/tmp/test-danmu-settings.json"
+
+    with pytest.raises(RuntimeError, match="SESSION_COOKIE_SECURE"):
+        create_app(ProdConfig)
+
+
+def test_production_requires_trusted_hosts():
+    class ProdConfig:
+        ENV = "production"
+        TESTING = True
+        SECRET_KEY = "provided-secret"
+        SECRET_KEY_FROM_ENV = True
+        ADMIN_PASSWORD = "correct horse battery staple"
+        ADMIN_PASSWORD_HASHED = ""
+        SESSION_COOKIE_SECURE = True
+        TRUSTED_HOSTS = None
+        WS_REQUIRE_TOKEN = False
+        WS_AUTH_TOKEN = ""
+        WS_HOST = "127.0.0.1"
+        WS_PORT = 4001
+        LOG_LEVEL = "INFO"
+        RATE_LIMIT_BACKEND = "memory"
+        SETTINGS_FILE = "/tmp/test-danmu-settings.json"
+
+    with pytest.raises(RuntimeError, match="TRUSTED_HOSTS"):
+        create_app(ProdConfig)
+
+
+def test_production_allows_safe_security_baseline():
+    class ProdConfig:
+        ENV = "production"
+        TESTING = True
+        SECRET_KEY = "provided-secret"
+        SECRET_KEY_FROM_ENV = True
+        ADMIN_PASSWORD = "correct horse battery staple"
+        ADMIN_PASSWORD_HASHED = ""
+        SESSION_COOKIE_SECURE = True
+        TRUSTED_HOSTS = ["example.com"]
+        WS_REQUIRE_TOKEN = False
+        WS_AUTH_TOKEN = ""
+        WS_HOST = "127.0.0.1"
+        WS_PORT = 4001
+        LOG_LEVEL = "INFO"
+        RATE_LIMIT_BACKEND = "memory"
+        SETTINGS_FILE = "/tmp/test-danmu-settings.json"
+
+    app = create_app(ProdConfig)
+
+    assert app.config["ENV"] == "production"
 
 
 # ─── issue_csrf_token ────────────────────────────────────────────────────────
