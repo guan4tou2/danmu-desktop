@@ -39,22 +39,22 @@
         <details id="sec-plugins" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-plugins") ? "open" : ""}>
           <summary class="flex items-center justify-between cursor-pointer list-none">
             <div>
-              <h3 class="text-lg font-bold text-white">Plugins</h3>
-              <p class="text-sm text-slate-300">Manage server-side plugin extensions</p>
+              <h3 class="text-lg font-bold text-white">${ServerI18n.t("pluginsTitle")}</h3>
+              <p class="text-sm text-slate-300">${ServerI18n.t("pluginsDesc")}</p>
             </div>
             <span class="text-slate-400 transition-transform group-open:rotate-180">\u2304</span>
           </summary>
           <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-3">
             <div class="flex justify-between items-center">
-              <p class="text-xs text-slate-400">Place .py plugin files in server/plugins/ directory</p>
+              <p class="text-xs text-slate-400">${ServerI18n.t("pluginsHint")}</p>
               <button id="pluginsReloadBtn"
                 class="px-3 py-1.5 text-xs font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors flex items-center gap-1">
                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                Reload
+                ${ServerI18n.t("reloadBtn")}
               </button>
             </div>
             <div id="pluginsList" class="space-y-2">
-              <span class="text-xs text-slate-500">Loading plugins...</span>
+              <span class="text-xs text-slate-500">${ServerI18n.t("loadingPlugins")}</span>
             </div>
           </div>
         </details>
@@ -89,7 +89,7 @@
 
         if (plugins.length === 0) {
           listEl.innerHTML =
-            '<p class="text-xs text-slate-500 text-center py-4">No plugins found</p>';
+            '<p class="text-xs text-slate-500 text-center py-4">' + ServerI18n.t("noPluginsFound") + '</p>';
           return;
         }
 
@@ -98,7 +98,7 @@
       } catch (err) {
         console.error("Failed to load plugins:", err);
         listEl.innerHTML =
-          '<p class="text-xs text-red-400">Failed to load plugins</p>';
+          '<p class="text-xs text-red-400">' + ServerI18n.t("loadPluginsFailed") + '</p>';
       }
     }
 
@@ -159,12 +159,12 @@
         }
 
         showToast(
-          `Plugin "${name}" ${enable ? "enabled" : "disabled"}`,
+          enable ? ServerI18n.t("pluginEnabled").replace("{name}", name) : ServerI18n.t("pluginDisabled").replace("{name}", name),
           true
         );
       } catch (err) {
         console.error(`Failed to ${enable ? "enable" : "disable"} plugin:`, err);
-        showToast(err.message || "Operation failed", false);
+        showToast(err.message || ServerI18n.t("operationFailed"), false);
         // Revert toggle state
         if (toggleEl) toggleEl.checked = !enable;
       }
@@ -184,11 +184,11 @@
           throw new Error(data.error || `HTTP ${res.status}`);
         }
 
-        showToast("Plugins reloaded", true);
+        showToast(ServerI18n.t("pluginsReloaded"), true);
         await fetchPlugins();
       } catch (err) {
         console.error("Failed to reload plugins:", err);
-        showToast(err.message || "Reload failed", false);
+        showToast(err.message || ServerI18n.t("reloadFailed"), false);
       } finally {
         if (btn) btn.disabled = false;
       }

@@ -18,7 +18,7 @@
   function msgRowHTML(index, text, color, size) {
     return `
       <div class="flex items-center gap-2" data-msg-index="${index}">
-        <input type="text" placeholder="Message text"
+        <input type="text" placeholder="${ServerI18n.t("messageTextPlaceholder")}"
           class="scheduler-msg-text flex-1 bg-slate-800/60 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 focus:ring-violet-400 focus:border-violet-400 placeholder-slate-500"
           value="${escapeAttr(text)}" />
         <input type="color"
@@ -35,10 +35,10 @@
 
   function stateBadge(state) {
     if (state === "active") {
-      return '<span class="inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-green-600/30 text-green-300 border border-green-500/40">Active</span>';
+      return '<span class="inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-green-600/30 text-green-300 border border-green-500/40">' + ServerI18n.t("stateActive") + '</span>';
     }
     if (state === "paused") {
-      return '<span class="inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-600/30 text-yellow-300 border border-yellow-500/40">Paused</span>';
+      return '<span class="inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-600/30 text-yellow-300 border border-yellow-500/40">' + ServerI18n.t("statePaused") + '</span>';
     }
     return '<span class="inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-600/30 text-slate-400 border border-slate-500/40">' + escapeHTML(state) + '</span>';
   }
@@ -55,19 +55,19 @@
           <div class="flex items-center gap-1">
             <button type="button" class="scheduler-job-toggle px-3 py-1 text-xs font-semibold rounded-lg transition-colors ${isPaused ? "bg-green-600/80 hover:bg-green-500 text-white" : "bg-yellow-600/80 hover:bg-yellow-500 text-white"}"
               data-job-id="${escapeAttr(job.id)}" data-action="${isPaused ? "resume" : "pause"}">
-              ${isPaused ? "Resume" : "Pause"}
+              ${isPaused ? ServerI18n.t("resumeJobBtn") : ServerI18n.t("pauseJobBtn")}
             </button>
             <button type="button" class="scheduler-job-cancel px-3 py-1 text-xs font-semibold rounded-lg bg-red-600/80 hover:bg-red-500 text-white transition-colors"
               data-job-id="${escapeAttr(job.id)}">
-              Cancel
+              ${ServerI18n.t("cancelJobBtn")}
             </button>
           </div>
         </div>
         <div class="text-xs text-slate-400 flex flex-wrap gap-x-4 gap-y-1">
-          <span>Messages: <strong class="text-slate-200">${job.message_count ?? "?"}</strong></span>
-          <span>Interval: <strong class="text-slate-200">${job.interval ?? "?"}s</strong></span>
-          <span>Sent: <strong class="text-slate-200">${job.sent_count ?? 0}</strong></span>
-          ${job.repeat !== undefined ? '<span>Repeat: <strong class="text-slate-200">' + (job.repeat === -1 ? "infinite" : job.repeat) + "</strong></span>" : ""}
+          <span>${ServerI18n.t("schedulerMessages")} <strong class="text-slate-200">${job.message_count ?? "?"}</strong></span>
+          <span>${ServerI18n.t("schedulerInterval")} <strong class="text-slate-200">${job.interval ?? "?"}s</strong></span>
+          <span>${ServerI18n.t("schedulerSent")} <strong class="text-slate-200">${job.sent_count ?? 0}</strong></span>
+          ${job.repeat !== undefined ? '<span>' + ServerI18n.t("schedulerRepeat") + ' <strong class="text-slate-200">' + (job.repeat === -1 ? ServerI18n.t("repeatInfinite") : job.repeat) + "</strong></span>" : ""}
         </div>
       </div>`;
   }
@@ -150,7 +150,7 @@
         showToast(ServerI18n.t("schedulerCreated") || "Job created");
         await fetchJobs();
       } else {
-        showToast(data.error || "Failed to create job", false);
+        showToast(data.error || ServerI18n.t("schedulerCreateFailed"), false);
       }
     } catch (err) {
       console.error("Scheduler create error:", err);
@@ -168,19 +168,19 @@
       const resp = await csrfFetch("/admin/scheduler/list", { method: "GET" });
       const data = await resp.json();
       if (!resp.ok || !Array.isArray(data.jobs)) {
-        list.innerHTML = '<p class="text-sm text-slate-500">Failed to load jobs</p>';
+        list.innerHTML = '<p class="text-sm text-slate-500">' + ServerI18n.t("loadJobsFailed") + '</p>';
         return;
       }
 
       if (data.jobs.length === 0) {
-        list.innerHTML = '<p class="text-sm text-slate-500">No active scheduled jobs</p>';
+        list.innerHTML = '<p class="text-sm text-slate-500">' + ServerI18n.t("noActiveJobs") + '</p>';
         return;
       }
 
       list.innerHTML = data.jobs.map(jobCardHTML).join("");
     } catch (err) {
       console.error("Scheduler fetch error:", err);
-      list.innerHTML = '<p class="text-sm text-red-400">Error loading jobs</p>';
+      list.innerHTML = '<p class="text-sm text-red-400">' + ServerI18n.t("loadJobsError") + '</p>';
     }
   }
 
@@ -193,14 +193,14 @@
       });
       const data = await resp.json();
       if (resp.ok && data.ok) {
-        showToast(action === "pause" ? "Job paused" : "Job resumed");
+        showToast(action === "pause" ? ServerI18n.t("jobPaused") : ServerI18n.t("jobResumed"));
         await fetchJobs();
       } else {
-        showToast(data.error || "Action failed", false);
+        showToast(data.error || ServerI18n.t("actionFailed"), false);
       }
     } catch (err) {
       console.error("Scheduler toggle error:", err);
-      showToast("Action failed", false);
+      showToast(ServerI18n.t("actionFailed"), false);
     }
   }
 
@@ -216,11 +216,11 @@
         showToast(ServerI18n.t("schedulerCancelled") || "Job cancelled");
         await fetchJobs();
       } else {
-        showToast(data.error || "Cancel failed", false);
+        showToast(data.error || ServerI18n.t("cancelFailed"), false);
       }
     } catch (err) {
       console.error("Scheduler cancel error:", err);
-      showToast("Cancel failed", false);
+      showToast(ServerI18n.t("cancelFailed"), false);
     }
   }
 
@@ -245,37 +245,37 @@
         <div class="space-y-4 mt-4">
           <!-- Message editor -->
           <div>
-            <label class="block text-sm font-medium text-slate-300 mb-2">Messages</label>
+            <label class="block text-sm font-medium text-slate-300 mb-2">${ServerI18n.t("messagesLabel")}</label>
             <div id="schedulerMessages" class="space-y-2"></div>
             <button type="button" id="schedulerAddMsg"
               class="mt-2 px-3 py-1.5 text-sm font-semibold rounded-lg bg-slate-700/80 hover:bg-slate-600 text-slate-200 transition-colors">
-              + Add Message
+              ${ServerI18n.t("addMessageBtn")}
             </button>
           </div>
 
           <!-- Config row -->
           <div class="flex flex-wrap items-end gap-3">
             <div>
-              <label for="schedulerInterval" class="block text-xs text-slate-400 mb-1">Interval (sec)</label>
+              <label for="schedulerInterval" class="block text-xs text-slate-400 mb-1">${ServerI18n.t("intervalLabel")}</label>
               <input id="schedulerInterval" type="number" value="10" min="1" max="3600"
                 class="w-28 bg-slate-800/60 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 focus:ring-violet-400 focus:border-violet-400" />
             </div>
             <div>
-              <label for="schedulerRepeat" class="block text-xs text-slate-400 mb-1">Repeat (-1 = infinite)</label>
+              <label for="schedulerRepeat" class="block text-xs text-slate-400 mb-1">${ServerI18n.t("repeatLabel")}</label>
               <input id="schedulerRepeat" type="number" value="-1" min="-1" max="10000"
                 class="w-28 bg-slate-800/60 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 focus:ring-violet-400 focus:border-violet-400" />
             </div>
             <button type="button" id="schedulerCreateBtn"
               class="px-5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-              Create
+              ${ServerI18n.t("createBtn")}
             </button>
           </div>
 
           <!-- Active jobs -->
           <div>
-            <h4 class="text-sm font-medium text-slate-300 mb-2">Active Jobs</h4>
+            <h4 class="text-sm font-medium text-slate-300 mb-2">${ServerI18n.t("activeJobsTitle")}</h4>
             <div id="schedulerJobsList" class="space-y-2">
-              <p class="text-sm text-slate-500">Loading...</p>
+              <p class="text-sm text-slate-500">${ServerI18n.t("loadingJobs")}</p>
             </div>
           </div>
         </div>

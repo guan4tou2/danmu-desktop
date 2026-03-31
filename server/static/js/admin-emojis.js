@@ -26,8 +26,8 @@
       <details id="sec-emojis" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent lg:col-span-2 scroll-mt-24" ${isOpen("sec-emojis") ? "open" : ""}>
         <summary class="flex items-center justify-between cursor-pointer list-none">
           <div>
-            <h3 class="text-lg font-bold text-white">Emoji &amp; Stickers</h3>
-            <p class="text-sm text-slate-300">Upload and manage custom emojis for danmu</p>
+            <h3 class="text-lg font-bold text-white">${ServerI18n.t("emojiStickersTitle")}</h3>
+            <p class="text-sm text-slate-300">${ServerI18n.t("emojiStickersDesc")}</p>
           </div>
           <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
         </summary>
@@ -35,7 +35,7 @@
           <!-- Upload Form -->
           <div class="flex flex-col sm:flex-row gap-3 items-end">
             <div class="flex-1 min-w-0">
-              <label for="emojiNameInput" class="text-sm font-medium text-slate-300">Name</label>
+              <label for="emojiNameInput" class="text-sm font-medium text-slate-300">${ServerI18n.t("emojiNameLabel")}</label>
               <input
                 type="text"
                 id="emojiNameInput"
@@ -47,7 +47,7 @@
               />
             </div>
             <div class="flex-1 min-w-0">
-              <label for="emojiFileInput" class="text-sm font-medium text-slate-300">Image</label>
+              <label for="emojiFileInput" class="text-sm font-medium text-slate-300">${ServerI18n.t("emojiImageLabel")}</label>
               <input
                 type="file"
                 id="emojiFileInput"
@@ -60,18 +60,18 @@
               class="flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm whitespace-nowrap"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              Upload
+              ${ServerI18n.t("uploadBtn")}
             </button>
           </div>
 
           <!-- Usage hint -->
           <p class="text-xs text-slate-500 select-all">
-            Type <code class="bg-slate-800 px-1.5 py-0.5 rounded text-violet-300">:emoji_name:</code> in your danmu to use emojis
+            ${ServerI18n.t("emojiUsageHint")}
           </p>
 
           <!-- Emoji Grid -->
           <div id="emojiGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-            <span class="text-xs text-slate-500 col-span-full">Loading emojis...</span>
+            <span class="text-xs text-slate-500 col-span-full">${ServerI18n.t("loadingEmojis")}</span>
           </div>
         </div>
       </details>
@@ -89,8 +89,8 @@
           'width="48" height="48" loading="lazy" class="w-12 h-12 object-contain rounded" />' +
         '<span class="text-[10px] text-slate-400 truncate max-w-full" title="' + escapeAttr(label) + '">' + escapeHtml(label) + "</span>" +
         '<div class="flex gap-1">' +
-          '<button class="emoji-copy-btn px-1.5 py-0.5 text-[10px] rounded bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors" data-label="' + escapeAttr(label) + '" title="Copy to clipboard">Copy</button>' +
-          '<button class="emoji-delete-btn px-1.5 py-0.5 text-[10px] rounded bg-red-900/60 hover:bg-red-700 text-red-300 transition-colors" data-name="' + escapeAttr(emoji.name) + '" title="Delete emoji">Delete</button>' +
+          '<button class="emoji-copy-btn px-1.5 py-0.5 text-[10px] rounded bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors" data-label="' + escapeAttr(label) + '" title="' + escapeAttr(ServerI18n.t("copyToClipboard")) + '">' + escapeHtml(ServerI18n.t("copyBtn")) + '</button>' +
+          '<button class="emoji-delete-btn px-1.5 py-0.5 text-[10px] rounded bg-red-900/60 hover:bg-red-700 text-red-300 transition-colors" data-name="' + escapeAttr(emoji.name) + '" title="' + escapeAttr(ServerI18n.t("deleteEmoji")) + '">' + escapeHtml(ServerI18n.t("deleteBtn")) + '</button>' +
         "</div>" +
       "</div>"
     );
@@ -117,7 +117,7 @@
 
       if (emojis.length === 0) {
         grid.innerHTML =
-          '<span class="text-xs text-slate-500 col-span-full">No emojis uploaded yet</span>';
+          '<span class="text-xs text-slate-500 col-span-full">' + ServerI18n.t("noEmojisUploaded") + '</span>';
         return;
       }
 
@@ -125,7 +125,7 @@
     } catch (err) {
       console.error("[admin-emojis] fetch failed:", err);
       grid.innerHTML =
-        '<span class="text-xs text-red-400 col-span-full">Failed to load emojis</span>';
+        '<span class="text-xs text-red-400 col-span-full">' + ServerI18n.t("loadEmojiFailed") + '</span>';
     }
   }
 
@@ -141,28 +141,28 @@
     var file = fileInput.files && fileInput.files[0];
 
     if (!name) {
-      showToast("Please enter an emoji name", false);
+      showToast(ServerI18n.t("emojiNameRequired"), false);
       nameInput.focus();
       return;
     }
     if (!NAME_RE.test(name)) {
-      showToast("Name must be alphanumeric/underscore, max 32 chars", false);
+      showToast(ServerI18n.t("emojiNameInvalid"), false);
       nameInput.focus();
       return;
     }
     if (!file) {
-      showToast("Please select an image file", false);
+      showToast(ServerI18n.t("emojiFileRequired"), false);
       return;
     }
 
     var ext = file.name.split(".").pop().toLowerCase();
     if (!["png", "gif", "webp"].includes(ext)) {
-      showToast("Only PNG, GIF, and WebP files are allowed", false);
+      showToast(ServerI18n.t("emojiInvalidFileType"), false);
       return;
     }
 
     uploadBtn.disabled = true;
-    uploadBtn.textContent = "Uploading...";
+    uploadBtn.textContent = ServerI18n.t("uploadingStatus");
 
     try {
       var fd = new FormData();
@@ -176,26 +176,26 @@
       var data = await resp.json();
 
       if (resp.ok) {
-        showToast(data.message || "Emoji uploaded");
+        showToast(data.message || ServerI18n.t("emojiUploadFallback"));
         nameInput.value = "";
         fileInput.value = "";
         await fetchAndRenderEmojis();
       } else {
-        showToast(data.error || "Upload failed", false);
+        showToast(data.error || ServerI18n.t("uploadFailed"), false);
       }
     } catch (err) {
       console.error("[admin-emojis] upload error:", err);
-      showToast("Upload failed: network error", false);
+      showToast(ServerI18n.t("uploadNetworkError"), false);
     } finally {
       uploadBtn.disabled = false;
-      uploadBtn.textContent = "Upload";
+      uploadBtn.textContent = ServerI18n.t("uploadBtn");
     }
   }
 
   // ─── Delete ────────────────────────────────────────────────────────
 
   async function handleDelete(name) {
-    if (!confirm("Delete emoji :" + name + ":?")) return;
+    if (!confirm(ServerI18n.t("deleteEmojiConfirm").replace("{name}", name))) return;
 
     try {
       var resp = await csrfFetch("/admin/emojis/delete", {
@@ -206,14 +206,14 @@
       var data = await resp.json();
 
       if (resp.ok) {
-        showToast(data.message || "Emoji deleted");
+        showToast(data.message || ServerI18n.t("emojiDeleteFallback"));
         await fetchAndRenderEmojis();
       } else {
-        showToast(data.error || "Delete failed", false);
+        showToast(data.error || ServerI18n.t("deleteFailed"), false);
       }
     } catch (err) {
       console.error("[admin-emojis] delete error:", err);
-      showToast("Delete failed: network error", false);
+      showToast(ServerI18n.t("deleteNetworkError"), false);
     }
   }
 
@@ -222,7 +222,7 @@
   async function handleCopy(label) {
     try {
       await navigator.clipboard.writeText(label);
-      showToast("Copied " + label);
+      showToast(ServerI18n.t("copiedLabel").replace("{label}", label));
     } catch (_) {
       // Fallback for insecure contexts
       var ta = document.createElement("textarea");
@@ -233,7 +233,7 @@
       ta.select();
       document.execCommand("copy");
       document.body.removeChild(ta);
-      showToast("Copied " + label);
+      showToast(ServerI18n.t("copiedLabel").replace("{label}", label));
     }
   }
 

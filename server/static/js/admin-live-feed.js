@@ -135,8 +135,8 @@
     blockKwBtn.type = "button";
     blockKwBtn.className =
       "px-1.5 py-0.5 text-[10px] rounded bg-red-700/70 hover:bg-red-600 text-red-100 transition-colors";
-    blockKwBtn.textContent = "Block Keyword";
-    blockKwBtn.title = "Add text to blacklist";
+    blockKwBtn.textContent = ServerI18n.t("blockKeywordBtn");
+    blockKwBtn.title = ServerI18n.t("blockKeywordTitle");
     blockKwBtn.addEventListener("click", () => blockAction("keyword", d.text));
     actions.appendChild(blockKwBtn);
 
@@ -145,8 +145,8 @@
       blockFpBtn.type = "button";
       blockFpBtn.className =
         "px-1.5 py-0.5 text-[10px] rounded bg-orange-700/70 hover:bg-orange-600 text-orange-100 transition-colors";
-      blockFpBtn.textContent = "Block FP";
-      blockFpBtn.title = "Block fingerprint: " + d.fingerprint;
+      blockFpBtn.textContent = ServerI18n.t("blockFpBtn");
+      blockFpBtn.title = ServerI18n.t("blockFpTitle").replace("{fp}", d.fingerprint);
       blockFpBtn.addEventListener("click", () =>
         blockAction("fingerprint", d.fingerprint)
       );
@@ -161,11 +161,11 @@
 
   async function blockAction(type, value) {
     if (!value) return;
-    const label = type === "keyword" ? "keyword" : "fingerprint";
+    const label = type === "keyword" ? ServerI18n.t("blockLabelKeyword") : ServerI18n.t("blockLabelFingerprint");
     const display =
       type === "keyword" ? truncate(value, 30) : value.slice(0, FP_DISPLAY_LEN);
 
-    if (!confirm(`Block ${label}: "${display}"?`)) return;
+    if (!confirm(ServerI18n.t("blockConfirm").replace("{label}", label).replace("{display}", display))) return;
 
     try {
       const resp = await window.csrfFetch("/admin/live/block", {
@@ -175,13 +175,13 @@
       });
       const result = await resp.json();
       if (resp.ok) {
-        showToast(result.message || `${label} blocked`);
+        showToast(result.message || ServerI18n.t("blockFallback").replace("{label}", label));
       } else {
-        showToast(result.error || "Block failed", false);
+        showToast(result.error || ServerI18n.t("blockFailed"), false);
       }
     } catch (err) {
       console.error("[LiveFeed] Block failed:", err);
-      showToast("Block request failed", false);
+      showToast(ServerI18n.t("blockRequestFailed"), false);
     }
   }
 
@@ -201,10 +201,10 @@
       const empty = document.createElement("p");
       empty.className = "text-slate-500 text-sm text-center py-4";
       empty.textContent = paused
-        ? "Paused — messages buffered"
+        ? ServerI18n.t("liveFeedPaused")
         : entries.length === 0
-          ? "Waiting for danmu\u2026"
-          : "No matches";
+          ? ServerI18n.t("liveFeedWaiting")
+          : ServerI18n.t("liveFeedNoMatches");
       listEl.appendChild(empty);
     } else {
       listEl.appendChild(frag);
@@ -262,7 +262,7 @@
   function togglePause() {
     paused = !paused;
     if (pauseBtn) {
-      pauseBtn.textContent = paused ? "Resume" : "Pause";
+      pauseBtn.textContent = paused ? ServerI18n.t("resumeBtn") : ServerI18n.t("pauseBtn");
       pauseBtn.classList.toggle("bg-green-600", paused);
       pauseBtn.classList.toggle("hover:bg-green-500", paused);
       pauseBtn.classList.toggle("bg-slate-600", !paused);
@@ -307,8 +307,8 @@
       <details id="sec-live-feed" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent lg:col-span-2 scroll-mt-24" ${isOpen ? "open" : ""}>
         <summary class="flex items-center justify-between cursor-pointer list-none">
           <div>
-            <h3 class="text-lg font-bold text-white">Live Feed</h3>
-            <p class="text-sm text-slate-300">Real-time danmu stream monitor</p>
+            <h3 class="text-lg font-bold text-white">${ServerI18n.t("liveFeedTitle")}</h3>
+            <p class="text-sm text-slate-300">${ServerI18n.t("liveFeedDesc")}</p>
           </div>
           <span class="flex items-center gap-2">
             <span id="liveFeedCount" class="text-xs text-slate-500 font-mono">0</span>
@@ -317,16 +317,16 @@
         </summary>
         <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-3">
           <div class="flex gap-2 items-center flex-wrap">
-            <input id="liveFeedSearch" type="search" placeholder="Search text, nickname, fingerprint\u2026"
+            <input id="liveFeedSearch" type="search" placeholder="${ServerI18n.t("liveFeedSearchPlaceholder")}"
               class="flex-1 min-w-[180px] px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm
                      placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400" />
             <button id="liveFeedPauseBtn" type="button"
-              class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors text-sm font-medium">Pause</button>
+              class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors text-sm font-medium">${ServerI18n.t("pauseBtn")}</button>
             <button id="liveFeedClearBtn" type="button"
-              class="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition-colors text-sm">Clear</button>
+              class="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("clearBtn")}</button>
           </div>
           <div id="liveFeedList" class="space-y-1 max-h-96 overflow-y-auto">
-            <p class="text-slate-500 text-sm text-center py-4">Waiting for danmu\u2026</p>
+            <p class="text-slate-500 text-sm text-center py-4">${ServerI18n.t("liveFeedWaiting")}</p>
           </div>
         </div>
       </details>`;

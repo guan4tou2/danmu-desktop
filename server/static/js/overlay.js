@@ -123,6 +123,12 @@
           return;
         }
 
+        // Widget sync — render persistent overlay widgets
+        if (data.type === "widget_sync") {
+          renderWidgets(data.widgets || []);
+          return;
+        }
+
         // Poll update — show live voting panel on overlay (DOM-based, no innerHTML)
         if (data.type === "poll_update") {
           var panel = document.getElementById("poll-panel");
@@ -567,6 +573,179 @@
         afterFont();
       }
     })();
+  }
+
+  // ── Widget Rendering ──────────────────────────────────────────────────────
+
+  var WIDGET_POSITIONS = {
+    "top-left": "top:20px;left:20px;",
+    "top-center": "top:20px;left:50%;transform:translateX(-50%);",
+    "top-right": "top:20px;right:20px;",
+    "bottom-left": "bottom:20px;left:20px;",
+    "bottom-center": "bottom:20px;left:50%;transform:translateX(-50%);",
+    "bottom-right": "bottom:20px;right:20px;",
+    "center": "top:50%;left:50%;transform:translate(-50%,-50%);"
+  };
+
+  function renderWidgets(widgets) {
+    // Remove stale widget elements
+    document.querySelectorAll("[data-widget-id]").forEach(function (el) {
+      var keep = widgets.some(function (w) { return w.id === el.getAttribute("data-widget-id") && w.visible; });
+      if (!keep) el.remove();
+    });
+
+    widgets.forEach(function (w) {
+      if (!w.visible) return;
+      var existing = document.querySelector('[data-widget-id="' + w.id + '"]');
+
+      if (w.type === "scoreboard") renderScoreboard(w, existing);
+      else if (w.type === "ticker") renderTicker(w, existing);
+      else if (w.type === "label") renderLabel(w, existing);
+    });
+  }
+
+  function _widgetBase(w, existing) {
+    var el = existing || document.createElement("div");
+    el.setAttribute("data-widget-id", w.id);
+    var posStyle = WIDGET_POSITIONS[w.position] || WIDGET_POSITIONS["top-left"];
+    el.style.cssText = "position:fixed;" + posStyle + "z-index:9998;font-family:sans-serif;pointer-events:none;transition:opacity 0.3s;";
+    if (!existing) document.body.appendChild(el);
+    return el;
+  }
+
+  function renderScoreboard(w, existing) {
+    var cfg = w.config || {};
+    var el = _widgetBase(w, existing);
+    while (el.firstChild) el.removeChild(el.firstChild);
+
+    el.style.background = cfg.bgColor || "rgba(15,23,42,0.85)";
+    el.style.color = cfg.textColor || "#fff";
+    el.style.padding = "12px 20px";
+    el.style.borderRadius = "10px";
+    el.style.backdropFilter = "blur(8px)";
+    el.style.border = "1px solid rgba(255,255,255,0.1)";
+    el.style.minWidth = "200px";
+
+    if (cfg.title) {
+      var title = document.createElement("div");
+      title.style.cssText = "font-size:" + Math.max(10, (cfg.fontSize || 18) * 0.8) + "px;font-weight:bold;margin-bottom:8px;text-align:center;opacity:0.8;text-transform:uppercase;letter-spacing:1px;";
+      title.textContent = cfg.title;
+      el.appendChild(title);
+    }
+
+    var teams = cfg.teams || [];
+    if (teams.length >= 2) {
+      // Side-by-side layout for 2 teams
+      var row = document.createElement("div");
+      row.style.cssText = "display:flex;align-items:center;justify-content:center;gap:16px;";
+
+      teams.forEach(function (team, i) {
+        var cell = document.createElement("div");
+        cell.style.cssText = "text-align:center;min-width:60px;";
+
+        var score = document.createElement("div");
+        score.style.cssText = "font-size:" + (cfg.fontSize || 18) * 2 + "px;font-weight:bold;color:" + (team.color || "#06b6d4") + ";line-height:1;";
+        score.textContent = team.score;
+        cell.appendChild(score);
+
+        var name = document.createElement("div");
+        name.style.cssText = "font-size:" + (cfg.fontSize || 18) * 0.7 + "px;margin-top:4px;opacity:0.8;";
+        name.textContent = team.name;
+        cell.appendChild(name);
+
+        row.appendChild(cell);
+
+        // Add separator between teams (not after last)
+        if (i < teams.length - 1) {
+          var sep = document.createElement("div");
+          sep.style.cssText = "font-size:" + (cfg.fontSize || 18) + "px;opacity:0.4;";
+          sep.textContent = ":";
+          row.appendChild(sep);
+        }
+      });
+      el.appendChild(row);
+    }
+  }
+
+  function renderTicker(w, existing) {
+    var cfg = w.config || {};
+    var el = _widgetBase(w, existing);
+
+    // Only rebuild if content changed
+    var contentKey = JSON.stringify(cfg.messages || []);
+    if (el.getAttribute("data-ticker-key") === contentKey) return;
+    el.setAttribute("data-ticker-key", contentKey);
+
+    while (el.firstChild) el.removeChild(el.firstChild);
+
+    el.style.background = cfg.bgColor || "rgba(15,23,42,0.85)";
+    el.style.color = cfg.textColor || "#fff";
+    el.style.padding = "6px 0";
+    el.style.borderRadius = "0";
+    el.style.overflow = "hidden";
+    el.style.width = "100vw";
+    el.style.left = "0";
+    el.style.transform = "none";
+    // Override position for ticker — always full width at its vertical position
+    if (w.position.indexOf("bottom") === 0) {
+      el.style.top = "auto";
+      el.style.bottom = "0";
+    } else {
+      el.style.top = "0";
+      el.style.bottom = "auto";
+    }
+
+    var messages = cfg.messages || [];
+    if (messages.length === 0) return;
+
+    var sep = cfg.separator || " \u2022 ";
+    var fullText = messages.join(sep) + sep;
+
+    var track = document.createElement("div");
+    track.style.cssText = "display:flex;white-space:nowrap;font-size:" + (cfg.fontSize || 16) + "px;padding:0 8px;";
+
+    // Duplicate text for seamless loop
+    for (var i = 0; i < 2; i++) {
+      var span = document.createElement("span");
+      span.textContent = fullText;
+      span.style.paddingRight = "40px";
+      track.appendChild(span);
+    }
+    el.appendChild(track);
+
+    // Calculate animation duration based on text length and speed
+    var speed = cfg.speed || 60;
+    var textWidth = fullText.length * (cfg.fontSize || 16) * 0.6; // approximate
+    var duration = textWidth / speed;
+
+    // Inject ticker animation
+    var tickerStyleId = "ticker-anim-" + w.id;
+    var existingStyle = document.getElementById(tickerStyleId);
+    if (existingStyle) existingStyle.remove();
+    var style = document.createElement("style");
+    style.id = tickerStyleId;
+    style.textContent = "@keyframes ticker-" + w.id + " { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }";
+    document.head.appendChild(style);
+
+    track.style.animation = "ticker-" + w.id + " " + duration + "s linear infinite";
+  }
+
+  function renderLabel(w, existing) {
+    var cfg = w.config || {};
+    var el = _widgetBase(w, existing);
+    while (el.firstChild) el.removeChild(el.firstChild);
+
+    el.style.background = cfg.bgColor || "rgba(15,23,42,0.85)";
+    el.style.color = cfg.textColor || "#fff";
+    el.style.padding = cfg.padding || "8px 16px";
+    el.style.borderRadius = "8px";
+    el.style.backdropFilter = "blur(8px)";
+    el.style.border = "1px solid rgba(255,255,255,0.1)";
+    el.style.fontSize = (cfg.fontSize || 24) + "px";
+    el.style.fontWeight = "bold";
+
+    var textNode = document.createTextNode(cfg.text || "");
+    el.appendChild(textNode);
   }
 
   // ── Start ──────────────────────────────────────────────────────────────────

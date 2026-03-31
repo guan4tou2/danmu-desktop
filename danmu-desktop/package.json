@@ -36,7 +36,10 @@
   },
   "jest": {
     "testEnvironment": "jsdom",
-    "testPathIgnorePatterns": ["/node_modules/", "/e2e/"],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/e2e/"
+    ],
     "transform": {
       "^.+\\.js$": "babel-jest"
     },
@@ -95,7 +98,7 @@
     }
   },
   "dependencies": {
-    "three": "^0.134.0",
+    "three": "^0.160.1",
     "vanta": "^0.5.24"
   }
 }

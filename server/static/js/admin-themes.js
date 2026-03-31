@@ -32,7 +32,7 @@
     container.innerHTML = "";
 
     if (themes.length === 0) {
-      container.innerHTML = '<span class="text-xs text-slate-500">No themes found</span>';
+      container.innerHTML = '<span class="text-xs text-slate-500">' + ServerI18n.t("noThemesFound") + '</span>';
       return;
     }
 
@@ -50,14 +50,14 @@
           <div class="flex items-center gap-2">
             <span class="text-sm font-semibold text-white">${escapeHtml(theme.label)}</span>
             <span class="text-xs text-slate-500">${escapeHtml(theme.name)}</span>
-            ${isActive ? '<span class="text-[10px] px-1.5 py-0.5 bg-violet-600 text-white rounded-full font-medium">Active</span>' : ""}
+            ${isActive ? '<span class="text-[10px] px-1.5 py-0.5 bg-violet-600 text-white rounded-full font-medium">' + ServerI18n.t("themeActiveBadge") + '</span>' : ""}
           </div>
           <p class="text-xs text-slate-400 mt-0.5 truncate">${escapeHtml(theme.description)}</p>
         </div>
         ${
           isActive
             ? ""
-            : '<button class="theme-activate-btn px-3 py-1.5 text-xs font-medium bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors shrink-0" data-theme="' + escapeHtml(theme.name) + '">Set Active</button>'
+            : '<button class="theme-activate-btn px-3 py-1.5 text-xs font-medium bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors shrink-0" data-theme="' + escapeHtml(theme.name) + '">' + ServerI18n.t("setActiveBtn") + '</button>'
         }
       `;
 
@@ -75,15 +75,15 @@
             body: JSON.stringify({ name: themeName }),
           });
           if (res.ok) {
-            showToast(`Theme "${themeName}" activated`);
+            showToast(ServerI18n.t("themeActivated").replace("{name}", themeName));
             _adminActiveTheme = themeName;
             renderThemesList(themes, themeName);
           } else {
             const err = await res.json().catch(() => ({}));
-            showToast(err.error || "Failed to set theme", false);
+            showToast(err.error || ServerI18n.t("setThemeFailed"), false);
           }
         } catch (e) {
-          showToast("Failed to set theme", false);
+          showToast(ServerI18n.t("setThemeFailed"), false);
         }
       });
     });
@@ -101,13 +101,13 @@
             headers: { "Content-Type": "application/json" },
           });
           if (res.ok) {
-            showToast("Themes reloaded");
+            showToast(ServerI18n.t("themesReloaded"));
             fetchThemes();
           } else {
-            showToast("Failed to reload themes", false);
+            showToast(ServerI18n.t("themesReloadFailed"), false);
           }
         } catch (e) {
-          showToast("Failed to reload themes", false);
+          showToast(ServerI18n.t("themesReloadFailed"), false);
         }
       });
     }

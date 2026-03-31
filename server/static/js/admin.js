@@ -227,7 +227,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (toggleElement) {
           toggleElement.checked = !isChecked;
         }
-        showToast(result.error || "Update Failed", false);
+        showToast(result.error || ServerI18n.t("updateFailed"), false);
       }
     } catch (error) {
       console.error("Error:", error);
@@ -260,7 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!response.ok) {
         const errorData = await response.json();
         showToast(
-          `Error fetching blacklist: ${errorData.error || response.statusText}`,
+          ServerI18n.t("errorFetchingBlacklist").replace("{error}", errorData.error || response.statusText),
           false
         );
         return;
@@ -520,7 +520,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       if (!response.ok) {
         const errorData = await response.json();
-        showToast(`Error fetching history: ${errorData.error || response.statusText}`, false);
+        showToast(ServerI18n.t("errorFetchingHistory").replace("{error}", errorData.error || response.statusText), false);
         return;
       }
       const data = await response.json();
@@ -574,13 +574,13 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         const errorData = await response.json();
         showToast(
-          `Error clearing history: ${errorData.error || response.statusText}`,
+          ServerI18n.t("errorClearingHistory").replace("{error}", errorData.error || response.statusText),
           false
         );
       }
     } catch (error) {
       console.error("Clear history error:", error);
-      showToast("Error clearing history.", false);
+      showToast(ServerI18n.t("clearHistoryError"), false);
     }
   }
 
@@ -630,7 +630,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await res.json();
         const progressEl = document.getElementById("replayProgress");
         if (progressEl) {
-          progressEl.textContent = `Replaying: ${data.sent}/${data.total}`;
+          progressEl.textContent = ServerI18n.t("replayingProgress").replace("{sent}", data.sent).replace("{total}", data.total);
         }
         _updateReplayUI(data.state);
         if (data.state === "stopped") {
@@ -674,12 +674,12 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       if (res.ok) {
         const data = await res.json();
-        showToast(`${ServerI18n.t("replayStarted")}: ${data.count} records at ${speed}x`, true);
+        showToast(ServerI18n.t("replayStarted"), true);
         _updateReplayUI("playing");
         _pollReplayStatus();
       } else {
         const err = await res.json();
-        showToast(`Replay error: ${err.error || res.statusText}`, false);
+        showToast(ServerI18n.t("replayError").replace("{error}", err.error || res.statusText), false);
       }
     } catch (e) {
       showToast(ServerI18n.t("replayFailed"), false);
@@ -762,7 +762,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Initialize recorder
     if (typeof ReplayRecorder === "undefined") {
-      showToast("ReplayRecorder not loaded", false);
+      showToast(ServerI18n.t("replayRecorderNotLoaded"), false);
       return;
     }
 
@@ -785,14 +785,14 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       if (res.ok) {
         const data = await res.json();
-        showToast(`Recording replay: ${data.count} records at ${speed}x`, true);
+        showToast(ServerI18n.t("recordingReplay").replace("{count}", data.count).replace("{speed}", speed), true);
         _updateReplayUI("playing");
 
         // Poll replay status and feed danmu to recorder
         _pollReplayStatusForRecording();
       } else {
         const err = await res.json();
-        showToast(`Replay error: ${err.error || res.statusText}`, false);
+        showToast(ServerI18n.t("replayError").replace("{error}", err.error || res.statusText), false);
         _stopRecordReplay();
       }
     } catch (e) {
@@ -812,7 +812,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await res.json();
         const progressEl = document.getElementById("replayProgress");
         if (progressEl) {
-          progressEl.textContent = `Recording: ${data.sent}/${data.total}`;
+          progressEl.textContent = ServerI18n.t("recordingProgress").replace("{sent}", data.sent).replace("{total}", data.total);
           progressEl.classList.remove("hidden");
         }
         _updateReplayUI(data.state);
@@ -853,7 +853,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (_replayRecorder) {
       await _replayRecorder.downloadRecording();
       _replayRecorder = null;
-      showToast("Recording saved!", true);
+      showToast(ServerI18n.t("recordingSaved"), true);
     }
   }
 
@@ -863,7 +863,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch(`/admin/history/export?hours=${hours}`, { credentials: "same-origin" });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        showToast(`Export error: ${err.error || res.statusText}`, false);
+        showToast(ServerI18n.t("exportFailed"), false);
         return;
       }
       const blob = await res.blob();
@@ -875,9 +875,9 @@ document.addEventListener("DOMContentLoaded", () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showToast("JSON timeline exported!", true);
+      showToast(ServerI18n.t("jsonTimelineExported"), true);
     } catch (e) {
-      showToast("Export failed", false);
+      showToast(ServerI18n.t("exportFailed"), false);
     }
   }
 
@@ -1787,7 +1787,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const container = document.getElementById("pollOptionsContainer");
         if (!container) return;
         const count = container.querySelectorAll(".poll-option-input").length;
-        if (count >= 6) { showToast("Maximum 6 options", false); return; }
+        if (count >= 6) { showToast(ServerI18n.t("maxPollOptions"), false); return; }
         const input = document.createElement("input");
         input.type = "text";
         input.className = "poll-option-input w-full p-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm";
@@ -1803,7 +1803,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const container = document.getElementById("pollOptionsContainer");
         if (!container) return;
         const inputs = container.querySelectorAll(".poll-option-input");
-        if (inputs.length <= 2) { showToast("Minimum 2 options", false); return; }
+        if (inputs.length <= 2) { showToast(ServerI18n.t("minPollOptions"), false); return; }
         inputs[inputs.length - 1].remove();
       });
     }

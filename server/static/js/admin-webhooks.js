@@ -43,8 +43,8 @@
       <details id="${SECTION_ID}" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent lg:col-span-2 scroll-mt-24" ${_detailsOpen(SECTION_ID) ? "open" : ""}>
         <summary class="flex items-center justify-between cursor-pointer list-none">
           <div>
-            <h3 class="text-lg font-bold text-white">Webhooks</h3>
-            <p class="text-sm text-slate-300">Send event notifications to external services</p>
+            <h3 class="text-lg font-bold text-white">${ServerI18n.t("webhooksTitle")}</h3>
+            <p class="text-sm text-slate-300">${ServerI18n.t("webhooksDesc")}</p>
           </div>
           <span class="text-slate-400 transition-transform group-open:rotate-180">\u2304</span>
         </summary>
@@ -53,13 +53,13 @@
           <!-- Register form -->
           <form id="wh-register-form" autocomplete="off" class="space-y-3">
             <div>
-              <label for="wh-url" class="text-sm font-medium text-slate-300">Payload URL</label>
-              <input id="wh-url" type="url" required placeholder="https://example.com/webhook"
+              <label for="wh-url" class="text-sm font-medium text-slate-300">${ServerI18n.t("payloadUrlLabel")}</label>
+              <input id="wh-url" type="url" required placeholder="${ServerI18n.t("payloadUrlPlaceholder")}"
                 class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300" />
             </div>
 
             <fieldset>
-              <legend class="text-sm font-medium text-slate-300 mb-1">Events</legend>
+              <legend class="text-sm font-medium text-slate-300 mb-1">${ServerI18n.t("eventsLegend")}</legend>
               <div class="flex flex-wrap gap-3">
                 <label class="inline-flex items-center gap-1.5 text-sm text-slate-200 cursor-pointer">
                   <input type="checkbox" name="wh-event" value="on_danmu" class="accent-violet-500 rounded" checked />
@@ -78,7 +78,7 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label for="wh-format" class="text-sm font-medium text-slate-300">Format</label>
+                <label for="wh-format" class="text-sm font-medium text-slate-300">${ServerI18n.t("formatLabel")}</label>
                 <select id="wh-format"
                   class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300">
                   <option value="json">JSON</option>
@@ -87,22 +87,22 @@
                 </select>
               </div>
               <div>
-                <label for="wh-secret" class="text-sm font-medium text-slate-300">Secret <span class="text-slate-500">(optional)</span></label>
-                <input id="wh-secret" type="text" placeholder="HMAC secret"
+                <label for="wh-secret" class="text-sm font-medium text-slate-300">${ServerI18n.t("secretLabel")} <span class="text-slate-500">${ServerI18n.t("secretOptional")}</span></label>
+                <input id="wh-secret" type="text" placeholder="${ServerI18n.t("hmacSecretPlaceholder")}"
                   class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300" />
               </div>
             </div>
 
             <button type="submit"
               class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors text-sm font-semibold">
-              Register Webhook
+              ${ServerI18n.t("registerWebhookBtn")}
             </button>
           </form>
 
           <!-- Webhook list -->
           <div>
-            <h4 class="text-sm font-semibold text-slate-300 mb-2">Registered Webhooks</h4>
-            <div id="wh-list" class="space-y-2 text-sm text-slate-400">Loading\u2026</div>
+            <h4 class="text-sm font-semibold text-slate-300 mb-2">${ServerI18n.t("registeredWebhooksTitle")}</h4>
+            <div id="wh-list" class="space-y-2 text-sm text-slate-400">${ServerI18n.t("loadingWebhooks")}</div>
           </div>
         </div>
       </details>
@@ -136,7 +136,7 @@
         ).map((cb) => cb.value);
 
         if (events.length === 0) {
-          showToast("Select at least one event", false);
+          showToast(ServerI18n.t("selectAtLeastOneEvent"), false);
           return;
         }
 
@@ -154,7 +154,7 @@
           });
           const data = await res.json();
           if (res.ok && data.status === "ok") {
-            showToast("Webhook registered");
+            showToast(ServerI18n.t("webhookRegistered"));
             form.reset();
             const defaultCb = form.querySelector(
               'input[name="wh-event"][value="on_danmu"]'
@@ -162,11 +162,11 @@
             if (defaultCb) defaultCb.checked = true;
             loadWebhooks();
           } else {
-            showToast(data.error || "Registration failed", false);
+            showToast(data.error || ServerI18n.t("registrationFailed"), false);
           }
         } catch (err) {
           console.error("Webhook register error:", err);
-          showToast("Registration failed", false);
+          showToast(ServerI18n.t("registrationFailed"), false);
         }
       });
     }
@@ -187,14 +187,14 @@
       const data = await res.json();
 
       if (!res.ok || !Array.isArray(data.webhooks)) {
-        listEl.textContent = data.error || "Failed to load webhooks";
+        listEl.textContent = data.error || ServerI18n.t("loadWebhooksFailed");
         return;
       }
 
       const hooks = data.webhooks;
       if (hooks.length === 0) {
         listEl.innerHTML =
-          '<p class="text-slate-500 italic">No webhooks registered.</p>';
+          '<p class="text-slate-500 italic">' + ServerI18n.t("noWebhooksRegistered") + '</p>';
         return;
       }
 
@@ -202,7 +202,7 @@
       _bindHookActions();
     } catch (err) {
       console.error("Webhook list error:", err);
-      listEl.textContent = "Failed to load webhooks";
+      listEl.textContent = ServerI18n.t("loadWebhooksFailed");
     }
   }
 
@@ -251,10 +251,10 @@
           </div>
           <div class="flex gap-2 shrink-0">
             <button type="button" class="wh-test-btn px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-xs font-medium" data-hook-id="${hookId}">
-              Test
+              ${ServerI18n.t("testBtn")}
             </button>
             <button type="button" class="wh-delete-btn px-3 py-1.5 bg-red-600/80 hover:bg-red-500 text-white rounded-lg transition-colors text-xs font-medium" data-hook-id="${hookId}">
-              Delete
+              ${ServerI18n.t("deleteBtn")}
             </button>
           </div>
         </div>`;
@@ -279,7 +279,7 @@
     );
     if (btn) {
       btn.disabled = true;
-      btn.textContent = "Sending\u2026";
+      btn.textContent = ServerI18n.t("testSending");
     }
 
     try {
@@ -290,24 +290,24 @@
       });
       const data = await res.json();
       if (res.ok && data.status === "ok") {
-        showToast("Test payload sent");
+        showToast(ServerI18n.t("testPayloadSent"));
       } else {
-        showToast(data.error || "Test failed", false);
+        showToast(data.error || ServerI18n.t("testFailed"), false);
       }
     } catch (err) {
       console.error("Webhook test error:", err);
-      showToast("Test failed", false);
+      showToast(ServerI18n.t("testFailed"), false);
     } finally {
       if (btn) {
         btn.disabled = false;
-        btn.textContent = "Test";
+        btn.textContent = ServerI18n.t("testBtn");
       }
     }
   }
 
   async function deleteWebhook(hookId) {
     if (!hookId) return;
-    if (!confirm("Delete this webhook?")) return;
+    if (!confirm(ServerI18n.t("deleteWebhookConfirm"))) return;
 
     try {
       const res = await csrfFetch("/admin/webhooks/unregister", {
@@ -317,14 +317,14 @@
       });
       const data = await res.json();
       if (res.ok && data.status === "ok") {
-        showToast("Webhook deleted");
+        showToast(ServerI18n.t("webhookDeleted"));
         loadWebhooks();
       } else {
-        showToast(data.error || "Delete failed", false);
+        showToast(data.error || ServerI18n.t("deleteFailed"), false);
       }
     } catch (err) {
       console.error("Webhook delete error:", err);
-      showToast("Delete failed", false);
+      showToast(ServerI18n.t("deleteFailed"), false);
     }
   }
 

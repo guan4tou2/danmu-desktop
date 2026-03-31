@@ -127,6 +127,27 @@ jobs:
           ELECTRON_DISABLE_SANDBOX: 1
         run: xvfb-run --auto-servernum npx playwright test
 
+  pip-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv and pip-audit
+        run: pip install uv pip-audit
+
+      - name: Install dependencies
+        working-directory: server
+        run: uv sync
+
+      - name: Run pip-audit
+        working-directory: server
+        run: uv run pip-audit
+
   pre-commit:
     runs-on: ubuntu-latest
     steps:

@@ -98,7 +98,7 @@
                   <button id="effectPreviewRefreshBtn" class="px-2 py-0.5 text-[0.65rem] font-medium text-slate-400 border border-slate-700 rounded bg-transparent cursor-pointer transition-colors hover:text-sky-300 hover:border-sky-500">${ServerI18n.t("refresh")}</button>
                 </div>
                 <div id="effectPreviewBox" style="background:#1e293b;padding:20px;border-radius:8px;display:flex;align-items:center;justify-content:center;min-height:80px;">
-                  <span id="effectPreviewText" style="font-size:32px;color:white;display:inline-block;">Preview</span>
+                  <span id="effectPreviewText" style="font-size:32px;color:white;display:inline-block;">${ServerI18n.t("previewText")}</span>
                 </div>
                 <style id="effectPreviewStyle"></style>
                 <div id="effectPreviewParams" class="flex flex-col gap-2"></div>
@@ -287,7 +287,7 @@
         if (!textarea || !previewText || !previewStyle) return;
 
         const content = textarea.value;
-        if (!content || content === "Loading\u2026" || content === "Network error") return;
+        if (!content || content === ServerI18n.t("effectLoadContent") || content === ServerI18n.t("effectsNetworkError")) return;
 
         const params = _getPreviewParams();
         previewError?.classList.add("hidden");
@@ -307,7 +307,7 @@
             previewText.style.animation = "none";
             previewStyle.textContent = "";
             if (previewError) {
-              previewError.textContent = data.error || "Preview failed";
+              previewError.textContent = data.error || ServerI18n.t("previewFailed");
               previewError.classList.remove("hidden");
             }
           }
@@ -315,7 +315,7 @@
           previewText.style.animation = "none";
           previewStyle.textContent = "";
           if (previewError) {
-            previewError.textContent = "Network error";
+            previewError.textContent = ServerI18n.t("effectsNetworkError");
             previewError.classList.remove("hidden");
           }
         }
@@ -356,14 +356,14 @@
           });
           const data = await res.json().catch(() => ({}));
           if (res.ok) {
-            showToast(data.message || "Effect saved", true);
+            showToast(data.message || ServerI18n.t("effectSaveFallback"), true);
             hideEffectModal();
             await fetchEffectsAdmin();
           } else {
-            showToast(data.error || "Save failed", false);
+            showToast(data.error || ServerI18n.t("saveFailed"), false);
           }
         } catch (_) {
-          showToast("Network error", false);
+          showToast(ServerI18n.t("effectsNetworkError"), false);
         } finally {
           saveBtn.disabled = false;
         }
@@ -379,13 +379,13 @@
         const res = await csrfFetch("/admin/effects/reload", { method: "POST" });
         const data = await res.json().catch(() => ({}));
         if (res.ok) {
-          showToast(data.message || "Effects reloaded");
+          showToast(data.message || ServerI18n.t("effectsReloadFallback"));
           await fetchEffectsAdmin();
         } else {
-          showToast(data.error || "Reload failed", false);
+          showToast(data.error || ServerI18n.t("reloadFailed"), false);
         }
       } catch (_) {
-        showToast("Network error", false);
+        showToast(ServerI18n.t("effectsNetworkError"), false);
       } finally {
         if (btn) btn.disabled = false;
       }
@@ -400,13 +400,13 @@
         const res = await csrfFetch("/admin/effects/upload", { method: "POST", body: formData });
         const data = await res.json().catch(() => ({}));
         if (res.ok) {
-          showToast(data.message || "Effect uploaded");
+          showToast(data.message || ServerI18n.t("effectUploadFallback"));
           await fetchEffectsAdmin();
         } else {
-          showToast(data.error || "Upload failed", false);
+          showToast(data.error || ServerI18n.t("uploadFailed"), false);
         }
       } catch (_) {
-        showToast("Network error", false);
+        showToast(ServerI18n.t("effectsNetworkError"), false);
       } finally {
         e.target.value = "";
       }
@@ -419,13 +419,13 @@
     try {
       const res = await csrfFetch("/admin/effects");
       if (!res.ok) {
-        container.innerHTML = '<span class="text-xs text-red-400">Failed to load effects</span>';
+        container.innerHTML = '<span class="text-xs text-red-400">' + ServerI18n.t("effectsLoadFailed") + '</span>';
         return;
       }
       const data = await res.json();
       renderEffectsList(data.effects || []);
     } catch (_) {
-      container.innerHTML = '<span class="text-xs text-red-400">Network error</span>';
+      container.innerHTML = '<span class="text-xs text-red-400">' + ServerI18n.t("effectsNetworkError") + '</span>';
     }
   }
 
@@ -434,7 +434,7 @@
     if (!container) return;
     if (!effects.length) {
       container.innerHTML =
-        '<span class="text-xs text-slate-500 col-span-3">No effects loaded. Upload a .dme file to add effects.</span>';
+        '<span class="text-xs text-slate-500 col-span-3">' + ServerI18n.t("noEffectsLoaded") + '</span>';
       return;
     }
     container.innerHTML = "";
@@ -466,7 +466,7 @@
 
       const delBtn = document.createElement("button");
       delBtn.className = "p-0.5 text-slate-600 bg-transparent border-none cursor-pointer rounded flex items-center shrink-0 transition-colors hover:text-red-400";
-      delBtn.title = `Delete ${eff.label || eff.name}`;
+      delBtn.title = ServerI18n.t("deleteEffectTitle").replace("{name}", eff.label || eff.name);
       delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
 
       card.appendChild(editBtn);
@@ -487,7 +487,7 @@
             : null;
         titleEl.textContent = eff.label || eff.name;
         fileEl.textContent = eff.filename;
-        textarea.value = "Loading\u2026";
+        textarea.value = ServerI18n.t("effectLoadContent");
         textarea.disabled = true;
         saveBtn.disabled = true;
         modal.dataset.effectName = eff.name;
@@ -516,18 +516,18 @@
             _buildPreviewParams(textarea.value);
             _previewEffect();
           } else {
-            textarea.value = data.error || "Failed to load";
-            showToast(data.error || "Failed to load content", false);
+            textarea.value = data.error || ServerI18n.t("effectLoadContentFailed");
+            showToast(data.error || ServerI18n.t("effectLoadContentFailed"), false);
           }
         } catch (_) {
-          textarea.value = "Network error";
-          showToast("Network error", false);
+          textarea.value = ServerI18n.t("effectsNetworkError");
+          showToast(ServerI18n.t("effectsNetworkError"), false);
         }
       });
 
       // ── Delete handler
       delBtn.addEventListener("click", async () => {
-        if (!confirm(`Delete effect "${eff.label || eff.name}"?`)) return;
+        if (!confirm(ServerI18n.t("deleteEffectConfirm").replace("{name}", eff.label || eff.name))) return;
         try {
           const res = await csrfFetch("/admin/effects/delete", {
             method: "POST",
@@ -536,13 +536,13 @@
           });
           const d = await res.json().catch(() => ({}));
           if (res.ok) {
-            showToast(d.message || "Effect deleted", true);
+            showToast(d.message || ServerI18n.t("effectDeleteFallback"), true);
             await fetchEffectsAdmin();
           } else {
-            showToast(d.error || "Delete failed", false);
+            showToast(d.error || ServerI18n.t("deleteFailed"), false);
           }
         } catch (_) {
-          showToast("Network error", false);
+          showToast(ServerI18n.t("effectsNetworkError"), false);
         }
       });
     });
