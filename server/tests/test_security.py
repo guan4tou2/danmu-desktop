@@ -6,7 +6,6 @@ import pytest
 
 from server import state
 from server.app import create_app
-from server.startup_warnings import log_ws_auth_warnings
 from server.services.security import (
     InMemoryRateLimiter,
     RedisRateLimiter,
@@ -16,6 +15,7 @@ from server.services.security import (
     verify_password,
 )
 from server.services.ws_state import update_ws_client_count
+from server.startup_warnings import log_ws_auth_warnings
 
 
 def login(client):

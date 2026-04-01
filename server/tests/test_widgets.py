@@ -277,10 +277,14 @@ class TestWidgetRoutes:
         assert res.get_json()["widgets"] == []
 
     def test_create_and_list(self, client):
-        res = _post(client, "/admin/widgets/create", {
-            "type": "label",
-            "config": {"text": "Hello"},
-        })
+        res = _post(
+            client,
+            "/admin/widgets/create",
+            {
+                "type": "label",
+                "config": {"text": "Hello"},
+            },
+        )
         assert res.status_code == 200
         data = res.get_json()
         assert data["widget"]["type"] == "label"
@@ -290,53 +294,77 @@ class TestWidgetRoutes:
         assert len(res2.get_json()["widgets"]) == 1
 
     def test_create_invalid_type(self, client):
-        res = _post(client, "/admin/widgets/create", {
-            "type": "invalid",
-            "config": {},
-        })
+        res = _post(
+            client,
+            "/admin/widgets/create",
+            {
+                "type": "invalid",
+                "config": {},
+            },
+        )
         assert res.status_code == 400
 
     def test_update_widget(self, client):
-        res = _post(client, "/admin/widgets/create", {
-            "type": "label",
-            "config": {"text": "Old"},
-        })
+        res = _post(
+            client,
+            "/admin/widgets/create",
+            {
+                "type": "label",
+                "config": {"text": "Old"},
+            },
+        )
         wid = res.get_json()["widget"]["id"]
 
-        res2 = _post(client, "/admin/widgets/update", {
-            "id": wid,
-            "config": {"text": "New"},
-        })
+        res2 = _post(
+            client,
+            "/admin/widgets/update",
+            {
+                "id": wid,
+                "config": {"text": "New"},
+            },
+        )
         assert res2.status_code == 200
         assert res2.get_json()["widget"]["config"]["text"] == "New"
 
     def test_delete_widget(self, client):
-        res = _post(client, "/admin/widgets/create", {
-            "type": "label",
-            "config": {"text": "X"},
-        })
+        res = _post(
+            client,
+            "/admin/widgets/create",
+            {
+                "type": "label",
+                "config": {"text": "X"},
+            },
+        )
         wid = res.get_json()["widget"]["id"]
 
         res2 = _post(client, "/admin/widgets/delete", {"id": wid})
         assert res2.status_code == 200
 
     def test_scoreboard_score(self, client):
-        res = _post(client, "/admin/widgets/create", {
-            "type": "scoreboard",
-            "config": {
-                "teams": [
-                    {"name": "A", "score": 0},
-                    {"name": "B", "score": 0},
-                ],
+        res = _post(
+            client,
+            "/admin/widgets/create",
+            {
+                "type": "scoreboard",
+                "config": {
+                    "teams": [
+                        {"name": "A", "score": 0},
+                        {"name": "B", "score": 0},
+                    ],
+                },
             },
-        })
+        )
         wid = res.get_json()["widget"]["id"]
 
-        res2 = _post(client, "/admin/widgets/score", {
-            "id": wid,
-            "team_index": 0,
-            "delta": 3,
-        })
+        res2 = _post(
+            client,
+            "/admin/widgets/score",
+            {
+                "id": wid,
+                "team_index": 0,
+                "delta": 3,
+            },
+        )
         assert res2.status_code == 200
         assert res2.get_json()["widget"]["config"]["teams"][0]["score"] == 3
 

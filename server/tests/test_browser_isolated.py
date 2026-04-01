@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 
-
 _BROWSER_MODULES = [
     "tests/test_browser_admin.py",
     "tests/test_browser_fire_e2e.py",

@@ -11,7 +11,9 @@ _EXCITED = {"!!!", "omg", "lol", "lmao", "haha", "xd", "poggers", "pog"}
 class ColorByMoodPlugin(DanmuPlugin):
     name = "example_color_by_mood"
     version = "1.0.0"
-    description = "Auto-colors danmu based on text mood (green=positive, red=negative, yellow=excited)"
+    description = (
+        "Auto-colors danmu based on text mood (green=positive, red=negative, yellow=excited)"
+    )
     priority = 80  # runs before loggers but after filters
 
     def on_fire(self, context):

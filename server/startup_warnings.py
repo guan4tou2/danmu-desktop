@@ -23,7 +23,9 @@ def log_ws_auth_warnings(logger: logging.Logger, config: Any, env: str | None = 
 
     ws_host = str(_get_config_value(config, "WS_HOST", "127.0.0.1") or "127.0.0.1")
     ws_port = int(_get_config_value(config, "WS_PORT", 4001))
-    runtime_env = str(env or _get_config_value(config, "ENV", "development") or "development").lower()
+    runtime_env = str(
+        env or _get_config_value(config, "ENV", "development") or "development"
+    ).lower()
 
     logger.warning(
         "WS_REQUIRE_TOKEN is disabled. Dedicated WebSocket clients on %s:%s do not "
