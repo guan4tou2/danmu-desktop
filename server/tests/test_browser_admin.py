@@ -498,9 +498,14 @@ def test_widgets_create_label(admin_page):
 
 def test_metrics_endpoint(admin_page, live_url):
     """GET /admin/metrics 應回傳 JSON 含 ws_clients 和 queue_size"""
-    response = admin_page.request.get(f"{live_url}/admin/metrics")
-    assert response.status == 200
-    data = response.json()
+    data = admin_page.evaluate(
+        """async (url) => {
+            const resp = await fetch(url + '/admin/metrics', { credentials: 'include' });
+            if (!resp.ok) throw new Error('status ' + resp.status);
+            return resp.json();
+        }""",
+        live_url,
+    )
     assert "ws_clients" in data
     assert "queue_size" in data
     assert "queue_capacity" in data
