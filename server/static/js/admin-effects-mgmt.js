@@ -71,6 +71,212 @@
     }
   }
 
+  // ── Preview helpers (IIFE scope so renderEffectsList can call them) ──────────
+  let _previewDebounceTimer = null;
+
+  function _buildPreviewParams(yamlContent) {
+    const paramsContainer = document.getElementById("effectPreviewParams");
+    if (!paramsContainer) return {};
+    let parsed;
+    try {
+      const lines = yamlContent.split("\n");
+      let inParams = false;
+      let paramIndent = 0;
+      let currentParam = null;
+      let currentParamIndent = 0;
+      const params = {};
+
+      for (const line of lines) {
+        const trimmed = line.trimStart();
+        const indent = line.length - trimmed.length;
+
+        if (trimmed.startsWith("params:")) {
+          inParams = true;
+          paramIndent = indent;
+          continue;
+        }
+        if (!inParams) continue;
+        if (trimmed === "" || trimmed.startsWith("#")) continue;
+        if (indent <= paramIndent && !trimmed.startsWith("params:")) {
+          inParams = false;
+          continue;
+        }
+
+        const paramKeyMatch = trimmed.match(/^([a-zA-Z0-9_]+):\s*$/);
+        if (paramKeyMatch && indent === paramIndent + 2) {
+          currentParam = paramKeyMatch[1];
+          currentParamIndent = indent;
+          params[currentParam] = {};
+          continue;
+        }
+
+        if (currentParam && indent > currentParamIndent) {
+          const propMatch = trimmed.match(/^([a-zA-Z0-9_]+):\s*(.+)$/);
+          if (propMatch) {
+            const key = propMatch[1];
+            let val = propMatch[2].trim();
+            if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+              val = val.slice(1, -1);
+            }
+            if (key !== "options") {
+              const num = Number(val);
+              params[currentParam][key] = isNaN(num) ? val : num;
+            }
+          }
+          if (trimmed.startsWith("- value:")) {
+            if (!params[currentParam].options) params[currentParam].options = [];
+            const valMatch = trimmed.match(/^- value:\s*(.+)$/);
+            if (valMatch) {
+              let v = valMatch[1].trim();
+              if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+                v = v.slice(1, -1);
+              }
+              params[currentParam].options.push({ value: v, label: v });
+            }
+          }
+          if (trimmed.startsWith("label:") && params[currentParam].options && params[currentParam].options.length > 0) {
+            const lMatch = trimmed.match(/^label:\s*(.+)$/);
+            if (lMatch) {
+              let lv = lMatch[1].trim();
+              if ((lv.startsWith('"') && lv.endsWith('"')) || (lv.startsWith("'") && lv.endsWith("'"))) {
+                lv = lv.slice(1, -1);
+              }
+              params[currentParam].options[params[currentParam].options.length - 1].label = lv;
+            }
+          }
+        }
+      }
+
+      parsed = params;
+    } catch (_) {
+      parsed = {};
+    }
+
+    paramsContainer.innerHTML = "";
+    const values = {};
+
+    for (const [key, def] of Object.entries(parsed || {})) {
+      const type = def.type || "float";
+      const wrapper = document.createElement("div");
+      wrapper.className = "flex flex-col gap-0.5";
+
+      const label = document.createElement("label");
+      label.className = "text-[0.65rem] text-slate-500 font-mono";
+      label.textContent = `${key} (${type})`;
+      wrapper.appendChild(label);
+
+      if (type === "select" && Array.isArray(def.options)) {
+        const sel = document.createElement("select");
+        sel.className = "bg-slate-950 text-slate-300 text-xs border border-slate-700 rounded px-2 py-1 outline-none";
+        sel.dataset.paramKey = key;
+        for (const opt of def.options) {
+          const o = document.createElement("option");
+          o.value = opt.value;
+          o.textContent = opt.label || opt.value;
+          if (opt.value === String(def.default)) o.selected = true;
+          sel.appendChild(o);
+        }
+        values[key] = String(def.default || (def.options[0] && def.options[0].value) || "");
+        sel.addEventListener("change", () => {
+          _triggerPreviewDebounced();
+        });
+        wrapper.appendChild(sel);
+      } else {
+        const min = def.min != null ? def.min : 0;
+        const max = def.max != null ? def.max : 10;
+        const step = def.step != null ? def.step : (type === "int" ? 1 : 0.1);
+        const defaultVal = def.default != null ? def.default : min;
+
+        const row = document.createElement("div");
+        row.className = "flex items-center gap-2";
+
+        const input = document.createElement("input");
+        input.type = "range";
+        input.min = min;
+        input.max = max;
+        input.step = step;
+        input.value = defaultVal;
+        input.dataset.paramKey = key;
+        input.className = "flex-1 accent-sky-500";
+
+        const valDisplay = document.createElement("span");
+        valDisplay.className = "text-xs text-slate-400 font-mono w-10 text-right";
+        valDisplay.textContent = String(defaultVal);
+
+        input.addEventListener("input", () => {
+          valDisplay.textContent = input.value;
+          _triggerPreviewDebounced();
+        });
+
+        row.appendChild(input);
+        row.appendChild(valDisplay);
+        wrapper.appendChild(row);
+        values[key] = defaultVal;
+      }
+
+      paramsContainer.appendChild(wrapper);
+    }
+
+    return values;
+  }
+
+  function _getPreviewParams() {
+    const paramsContainer = document.getElementById("effectPreviewParams");
+    if (!paramsContainer) return {};
+    const params = {};
+    paramsContainer.querySelectorAll("[data-param-key]").forEach((el) => {
+      params[el.dataset.paramKey] = el.type === "range" ? Number(el.value) : el.value;
+    });
+    return params;
+  }
+
+  async function _previewEffect() {
+    const textarea = document.getElementById("effectEditModalTextarea");
+    const previewText = document.getElementById("effectPreviewText");
+    const previewStyle = document.getElementById("effectPreviewStyle");
+    const previewError = document.getElementById("effectPreviewError");
+    if (!textarea || !previewText || !previewStyle) return;
+
+    const content = textarea.value;
+    if (!content || content === ServerI18n.t("effectLoadContent") || content === ServerI18n.t("effectsNetworkError")) return;
+
+    const params = _getPreviewParams();
+    previewError?.classList.add("hidden");
+
+    try {
+      const res = await csrfFetch("/admin/effects/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, params }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        previewStyle.textContent = data.keyframes || "";
+        previewText.style.animation = data.animation || "none";
+        previewText.style.animationComposition = data.animationComposition || "";
+      } else {
+        previewText.style.animation = "none";
+        previewStyle.textContent = "";
+        if (previewError) {
+          previewError.textContent = data.error || ServerI18n.t("previewFailed");
+          previewError.classList.remove("hidden");
+        }
+      }
+    } catch (_) {
+      previewText.style.animation = "none";
+      previewStyle.textContent = "";
+      if (previewError) {
+        previewError.textContent = ServerI18n.t("effectsNetworkError");
+        previewError.classList.remove("hidden");
+      }
+    }
+  }
+
+  function _triggerPreviewDebounced() {
+    clearTimeout(_previewDebounceTimer);
+    _previewDebounceTimer = setTimeout(() => _previewEffect(), 500);
+  }
+
   async function initEffectsManagement() {
     // ── Inject Effect Edit Modal (fixed overlay) ──────────────────────────────
     if (!document.getElementById("effectEditModal")) {
@@ -119,212 +325,6 @@
       document.getElementById("effectEditModal").addEventListener("click", (e) => {
         if (e.target === e.currentTarget) hideEffectModal();
       });
-
-      // ── Preview helpers ────────────────────────────────────────────────
-      let _previewDebounceTimer = null;
-
-      function _buildPreviewParams(yamlContent) {
-        const paramsContainer = document.getElementById("effectPreviewParams");
-        if (!paramsContainer) return {};
-        let parsed;
-        try {
-          const lines = yamlContent.split("\n");
-          let inParams = false;
-          let paramIndent = 0;
-          let currentParam = null;
-          let currentParamIndent = 0;
-          const params = {};
-
-          for (const line of lines) {
-            const trimmed = line.trimStart();
-            const indent = line.length - trimmed.length;
-
-            if (trimmed.startsWith("params:")) {
-              inParams = true;
-              paramIndent = indent;
-              continue;
-            }
-            if (!inParams) continue;
-            if (trimmed === "" || trimmed.startsWith("#")) continue;
-            if (indent <= paramIndent && !trimmed.startsWith("params:")) {
-              inParams = false;
-              continue;
-            }
-
-            const paramKeyMatch = trimmed.match(/^([a-zA-Z0-9_]+):\s*$/);
-            if (paramKeyMatch && indent === paramIndent + 2) {
-              currentParam = paramKeyMatch[1];
-              currentParamIndent = indent;
-              params[currentParam] = {};
-              continue;
-            }
-
-            if (currentParam && indent > currentParamIndent) {
-              const propMatch = trimmed.match(/^([a-zA-Z0-9_]+):\s*(.+)$/);
-              if (propMatch) {
-                const key = propMatch[1];
-                let val = propMatch[2].trim();
-                if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-                  val = val.slice(1, -1);
-                }
-                if (key !== "options") {
-                  const num = Number(val);
-                  params[currentParam][key] = isNaN(num) ? val : num;
-                }
-              }
-              if (trimmed.startsWith("- value:")) {
-                if (!params[currentParam].options) params[currentParam].options = [];
-                const valMatch = trimmed.match(/^- value:\s*(.+)$/);
-                if (valMatch) {
-                  let v = valMatch[1].trim();
-                  if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
-                    v = v.slice(1, -1);
-                  }
-                  params[currentParam].options.push({ value: v, label: v });
-                }
-              }
-              if (trimmed.startsWith("label:") && params[currentParam].options && params[currentParam].options.length > 0) {
-                const lMatch = trimmed.match(/^label:\s*(.+)$/);
-                if (lMatch) {
-                  let lv = lMatch[1].trim();
-                  if ((lv.startsWith('"') && lv.endsWith('"')) || (lv.startsWith("'") && lv.endsWith("'"))) {
-                    lv = lv.slice(1, -1);
-                  }
-                  params[currentParam].options[params[currentParam].options.length - 1].label = lv;
-                }
-              }
-            }
-          }
-
-          parsed = params;
-        } catch (_) {
-          parsed = {};
-        }
-
-        paramsContainer.innerHTML = "";
-        const values = {};
-
-        for (const [key, def] of Object.entries(parsed || {})) {
-          const type = def.type || "float";
-          const wrapper = document.createElement("div");
-          wrapper.className = "flex flex-col gap-0.5";
-
-          const label = document.createElement("label");
-          label.className = "text-[0.65rem] text-slate-500 font-mono";
-          label.textContent = `${key} (${type})`;
-          wrapper.appendChild(label);
-
-          if (type === "select" && Array.isArray(def.options)) {
-            const sel = document.createElement("select");
-            sel.className = "bg-slate-950 text-slate-300 text-xs border border-slate-700 rounded px-2 py-1 outline-none";
-            sel.dataset.paramKey = key;
-            for (const opt of def.options) {
-              const o = document.createElement("option");
-              o.value = opt.value;
-              o.textContent = opt.label || opt.value;
-              if (opt.value === String(def.default)) o.selected = true;
-              sel.appendChild(o);
-            }
-            values[key] = String(def.default || (def.options[0] && def.options[0].value) || "");
-            sel.addEventListener("change", () => {
-              _triggerPreviewDebounced();
-            });
-            wrapper.appendChild(sel);
-          } else {
-            const min = def.min != null ? def.min : 0;
-            const max = def.max != null ? def.max : 10;
-            const step = def.step != null ? def.step : (type === "int" ? 1 : 0.1);
-            const defaultVal = def.default != null ? def.default : min;
-
-            const row = document.createElement("div");
-            row.className = "flex items-center gap-2";
-
-            const input = document.createElement("input");
-            input.type = "range";
-            input.min = min;
-            input.max = max;
-            input.step = step;
-            input.value = defaultVal;
-            input.dataset.paramKey = key;
-            input.className = "flex-1 accent-sky-500";
-
-            const valDisplay = document.createElement("span");
-            valDisplay.className = "text-xs text-slate-400 font-mono w-10 text-right";
-            valDisplay.textContent = String(defaultVal);
-
-            input.addEventListener("input", () => {
-              valDisplay.textContent = input.value;
-              _triggerPreviewDebounced();
-            });
-
-            row.appendChild(input);
-            row.appendChild(valDisplay);
-            wrapper.appendChild(row);
-            values[key] = defaultVal;
-          }
-
-          paramsContainer.appendChild(wrapper);
-        }
-
-        return values;
-      }
-
-      function _getPreviewParams() {
-        const paramsContainer = document.getElementById("effectPreviewParams");
-        if (!paramsContainer) return {};
-        const params = {};
-        paramsContainer.querySelectorAll("[data-param-key]").forEach((el) => {
-          params[el.dataset.paramKey] = el.type === "range" ? Number(el.value) : el.value;
-        });
-        return params;
-      }
-
-      async function _previewEffect() {
-        const textarea = document.getElementById("effectEditModalTextarea");
-        const previewText = document.getElementById("effectPreviewText");
-        const previewStyle = document.getElementById("effectPreviewStyle");
-        const previewError = document.getElementById("effectPreviewError");
-        if (!textarea || !previewText || !previewStyle) return;
-
-        const content = textarea.value;
-        if (!content || content === ServerI18n.t("effectLoadContent") || content === ServerI18n.t("effectsNetworkError")) return;
-
-        const params = _getPreviewParams();
-        previewError?.classList.add("hidden");
-
-        try {
-          const res = await csrfFetch("/admin/effects/preview", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content, params }),
-          });
-          const data = await res.json().catch(() => ({}));
-          if (res.ok) {
-            previewStyle.textContent = data.keyframes || "";
-            previewText.style.animation = data.animation || "none";
-            previewText.style.animationComposition = data.animationComposition || "";
-          } else {
-            previewText.style.animation = "none";
-            previewStyle.textContent = "";
-            if (previewError) {
-              previewError.textContent = data.error || ServerI18n.t("previewFailed");
-              previewError.classList.remove("hidden");
-            }
-          }
-        } catch (_) {
-          previewText.style.animation = "none";
-          previewStyle.textContent = "";
-          if (previewError) {
-            previewError.textContent = ServerI18n.t("effectsNetworkError");
-            previewError.classList.remove("hidden");
-          }
-        }
-      }
-
-      function _triggerPreviewDebounced() {
-        clearTimeout(_previewDebounceTimer);
-        _previewDebounceTimer = setTimeout(() => _previewEffect(), 500);
-      }
 
       // Textarea input -> rebuild params + debounced preview
       document.getElementById("effectEditModalTextarea").addEventListener("input", () => {
