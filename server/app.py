@@ -71,9 +71,8 @@ def create_app(config_class=Config):
                 "Set a strong ADMIN_PASSWORD or ADMIN_PASSWORD_HASHED in your .env file."
             )
         app.logger.warning(
-            "SECURITY WARNING: Using a weak default password '%s'. "
-            "Change it in your .env file before exposing this instance!",
-            app.config.get("ADMIN_PASSWORD"),
+            "SECURITY WARNING: Using a weak default password. "
+            "Change it in your .env file before exposing this instance!"
         )
     if env in {"production", "prod"} and not app.config.get("SECRET_KEY_FROM_ENV", False):
         raise RuntimeError(

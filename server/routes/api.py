@@ -381,6 +381,8 @@ def generate_avatar(letter, color):
     resp = make_response(svg)
     resp.headers["Content-Type"] = "image/svg+xml"
     resp.headers["Cache-Control"] = "public, max-age=86400"
+    resp.headers["Content-Security-Policy"] = "default-src 'none'"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
     return resp
 
 

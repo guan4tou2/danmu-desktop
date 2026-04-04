@@ -353,7 +353,12 @@
     if (imgs.test(text)) {
       danmu = document.createElement("img");
       danmu.className = "danmu";
-      danmu.setAttribute("src", text);
+      try {
+        var parsed = new URL(text);
+        if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+          danmu.setAttribute("src", parsed.href);
+        }
+      } catch (e) { /* invalid URL, src intentionally left unset */ }
       danmu.width = size * 2;
       danmu.style.position = "relative";
     } else {
@@ -387,7 +392,12 @@
         var pattern = ":" + em.name + ":";
         if (parts.indexOf(pattern) !== -1) {
           var img = document.createElement("img");
-          img.src = em.url;
+          try {
+            var emojiUrl = new URL(em.url);
+            if (emojiUrl.protocol === "https:" || emojiUrl.protocol === "http:") {
+              img.src = emojiUrl.href;
+            }
+          } catch (e) { /* invalid URL, src intentionally left unset */ }
           img.style.cssText = "display:inline;vertical-align:middle;width:" + Math.round(size * 0.8) + "px;height:" + Math.round(size * 0.8) + "px;margin:0 2px;";
           img.alt = em.name;
           // Replace text node containing the pattern
