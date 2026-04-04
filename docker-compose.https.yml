@@ -23,6 +23,7 @@ services:
       - |
         if [ ! -f /etc/nginx/certs/fullchain.pem ] || [ ! -f /etc/nginx/certs/privkey.pem ]; then
           echo "[danmu] Auto-generating self-signed certificate..."
+          apk add --no-cache openssl >/dev/null 2>&1
           SAN="DNS:localhost,IP:127.0.0.1"
           CN="localhost"
           if [ -n "${SERVER_IP:-}" ]; then
@@ -42,7 +43,11 @@ services:
             -days 365 \
             -subj "/CN=${CN}" \
             -extensions SAN \
-            -config /tmp/san.cnf 2>/dev/null
+            -config /tmp/san.cnf
+          if [ $? -ne 0 ]; then
+            echo "[danmu] ERROR: Failed to generate certificate. Check openssl output above."
+            exit 1
+          fi
           echo "[danmu] Certificate generated (valid 365 days)."
           echo "[danmu] To use a real certificate, place fullchain.pem / privkey.pem in nginx/certs/ and restart."
         fi
