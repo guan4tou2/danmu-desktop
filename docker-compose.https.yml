@@ -23,13 +23,24 @@ services:
       - |
         if [ ! -f /etc/nginx/certs/fullchain.pem ] || [ ! -f /etc/nginx/certs/privkey.pem ]; then
           echo "[danmu] Auto-generating self-signed certificate..."
-          printf '[req]\ndistinguished_name=req\n[SAN]\nsubjectAltName=DNS:localhost,IP:127.0.0.1\n' \
-            > /tmp/san.cnf
+          SAN="DNS:localhost,IP:127.0.0.1"
+          CN="localhost"
+          if [ -n "${SERVER_IP:-}" ]; then
+            SAN="$SAN,IP:${SERVER_IP}"
+            CN="${SERVER_IP}"
+            echo "[danmu] Including public IP in SAN: ${SERVER_IP}"
+          fi
+          if [ -n "${SERVER_DOMAIN:-}" ]; then
+            SAN="$SAN,DNS:${SERVER_DOMAIN}"
+            CN="${SERVER_DOMAIN}"
+            echo "[danmu] Including domain in SAN: ${SERVER_DOMAIN}"
+          fi
+          printf '[req]\ndistinguished_name=req\n[SAN]\nsubjectAltName=%s\n' "$SAN" > /tmp/san.cnf
           openssl req -x509 -nodes -newkey rsa:2048 \
             -keyout /etc/nginx/certs/privkey.pem \
             -out /etc/nginx/certs/fullchain.pem \
             -days 365 \
-            -subj "/CN=localhost" \
+            -subj "/CN=${CN}" \
             -extensions SAN \
             -config /tmp/san.cnf 2>/dev/null
           echo "[danmu] Certificate generated (valid 365 days)."

@@ -144,9 +144,10 @@
    **要用哪種模式？**
    | 情境 | 建議 |
    |------|------|
-   | 區域網路 / 內網（IP，例如 `192.168.x.x`） | HTTPS 自簽憑證 — 瀏覽器會警告，但連線加密 |
-   | 有公開 domain 的伺服器（例如 `danmu.example.com`） | Traefik + Let's Encrypt — 受信任憑證，無瀏覽器警告 |
    | 本機開發 / 同台電腦 | 純 HTTP 即可 |
+   | 區域網路 / 內網（`192.168.x.x`） | HTTPS 自簽憑證，不需額外設定 |
+   | 公網 IP，無 domain（例如 VPS `1.2.3.4`） | HTTPS 自簽憑證，`.env` 加 `SERVER_IP=1.2.3.4` |
+   | 有公開 domain（例如 `danmu.example.com`） | Traefik + Let's Encrypt — 受信任憑證，無瀏覽器警告 |
 
    **HTTPS — 自簽憑證**（IP 或任意 host，不需 domain）：
    ```bash

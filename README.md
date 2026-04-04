@@ -147,9 +147,10 @@ Record live danmu sessions as JSON timelines for offline replay or analysis. Ava
    **Which mode should I use?**
    | Scenario | Recommendation |
    |----------|---------------|
-   | Local network / LAN (IP only, e.g. `192.168.x.x`) | HTTPS (self-signed) — browser will warn, but connection is encrypted |
-   | Public server with a domain (e.g. `danmu.example.com`) | Traefik + Let's Encrypt — trusted cert, no browser warning |
    | Local dev / same machine only | Plain HTTP is fine |
+   | Local network / LAN (`192.168.x.x`) | HTTPS self-signed — set nothing extra |
+   | Public IP, no domain (e.g. VPS `1.2.3.4`) | HTTPS self-signed — set `SERVER_IP=1.2.3.4` in `.env` |
+   | Public server with a domain (`danmu.example.com`) | Traefik + Let's Encrypt — trusted cert, no browser warning |
 
    **HTTPS — Self-Signed Certificate** (IP or any host, no domain required):
    ```bash
