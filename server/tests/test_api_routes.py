@@ -1,8 +1,11 @@
 """Tests for public API routes: get_settings, fonts, check_blacklist, health."""
 
 import json
+import re
 
 from server import state
+from server.app import create_app
+from server.config import Config
 
 # ---------------------------------------------------------------------------
 # /get_settings
@@ -98,6 +101,67 @@ def test_security_headers_present(client):
     assert res.headers.get("X-Content-Type-Options") == "nosniff"
     assert res.headers.get("X-Frame-Options") == "DENY"
     assert "X-XSS-Protection" in res.headers
+    csp = res.headers.get("Content-Security-Policy")
+    assert csp is not None
+    assert "default-src 'self'" in csp
+    assert "object-src 'none'" in csp
+    assert "script-src 'self' 'nonce-" in csp
+    assert res.headers.get("Strict-Transport-Security") is None
+
+
+def test_index_uses_csp_nonce_and_no_inline_event_handlers(client):
+    res = client.get("/")
+    csp = res.headers["Content-Security-Policy"]
+    nonce_match = re.search(r"script-src 'self' 'nonce-([^']+)'", csp)
+    assert nonce_match is not None
+    nonce = nonce_match.group(1)
+    body = res.data.decode()
+    assert f'nonce="{nonce}"' in body
+    assert "onchange=" not in body
+
+
+def test_admin_and_overlay_use_response_csp_nonce(client):
+    admin_res = client.get("/admin/")
+    admin_csp = admin_res.headers["Content-Security-Policy"]
+    admin_nonce_match = re.search(r"script-src 'self' 'nonce-([^']+)'", admin_csp)
+    assert admin_nonce_match is not None
+    admin_nonce = admin_nonce_match.group(1)
+    admin_body = admin_res.data.decode()
+    assert admin_body.count(f'nonce="{admin_nonce}"') >= 2
+
+    overlay_res = client.get("/overlay")
+    overlay_csp = overlay_res.headers["Content-Security-Policy"]
+    overlay_nonce_match = re.search(r"script-src 'self' 'nonce-([^']+)'", overlay_csp)
+    assert overlay_nonce_match is not None
+    overlay_nonce = overlay_nonce_match.group(1)
+    overlay_body = overlay_res.data.decode()
+    assert f'nonce="{overlay_nonce}"' in overlay_body
+    assert "http-equiv=\"Content-Security-Policy\"" not in overlay_body
+
+
+def test_hsts_header_requires_secure_request_and_opt_in(tmp_path):
+    class HstsConfig(Config):
+        TESTING = True
+        ENV = "production"
+        SECRET_KEY = "test-secret"
+        SECRET_KEY_FROM_ENV = True
+        ADMIN_PASSWORD = "test"
+        ADMIN_PASSWORD_HASHED = ""
+        SESSION_COOKIE_SECURE = True
+        TRUSTED_HOSTS = ["example.com"]
+        HSTS_ENABLED = True
+        HSTS_INCLUDE_SUBDOMAINS = True
+        SETTINGS_FILE = str(tmp_path / "settings.json")
+
+    app = create_app(HstsConfig)
+    app.testing = True
+    secure_client = app.test_client()
+
+    https_res = secure_client.get("/health/live", base_url="https://example.com")
+    assert https_res.headers.get("Strict-Transport-Security") == "max-age=31536000; includeSubDomains"
+
+    http_res = secure_client.get("/health/live", base_url="http://example.com")
+    assert http_res.headers.get("Strict-Transport-Security") is None
 
 
 # ---------------------------------------------------------------------------

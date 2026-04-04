@@ -3,6 +3,7 @@ from gevent import monkey
 monkey.patch_all()
 
 import json
+import secrets
 import threading
 import uuid
 from urllib.parse import urlsplit
@@ -25,6 +26,30 @@ from .startup_warnings import log_ws_auth_warnings
 from .utils import json_response, sanitize_log_string
 from .ws import check_connections as background_check_connections
 from .ws import run_ws_server
+
+
+def _build_content_security_policy(nonce: str) -> str:
+    directives = [
+        "default-src 'self'",
+        "base-uri 'self'",
+        "frame-ancestors 'none'",
+        "object-src 'none'",
+        "form-action 'self'",
+        "img-src 'self' https: data:",
+        "font-src 'self' https://fonts.gstatic.com data:",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "connect-src 'self' ws: wss:",
+        f"script-src 'self' 'nonce-{nonce}'",
+        "script-src-attr 'none'",
+    ]
+    return "; ".join(directives)
+
+
+def _build_hsts_header(config) -> str:
+    parts = [f"max-age={config.get('HSTS_MAX_AGE', 31536000)}"]
+    if config.get("HSTS_INCLUDE_SUBDOMAINS", False):
+        parts.append("includeSubDomains")
+    return "; ".join(parts)
 
 
 def create_app(config_class=Config):
@@ -97,7 +122,12 @@ def create_app(config_class=Config):
     @app.before_request
     def before_request():
         g.request_id = str(uuid.uuid4())
+        g.csp_nonce = secrets.token_urlsafe(24)
         current_app.logger.debug(f"Request ID: {g.request_id} - {request.method} {request.path}")
+
+    @app.context_processor
+    def inject_security_template_state():
+        return {"csp_nonce": getattr(g, "csp_nonce", ""), "app_version": Config.APP_VERSION}
 
     @app.after_request
     def after_request(response):
@@ -116,6 +146,11 @@ def create_app(config_class=Config):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        response.headers["Content-Security-Policy"] = _build_content_security_policy(
+            getattr(g, "csp_nonce", "")
+        )
+        if app.config.get("HSTS_ENABLED", False) and request.is_secure:
+            response.headers["Strict-Transport-Security"] = _build_hsts_header(app.config)
 
         return response
 

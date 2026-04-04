@@ -16,6 +16,7 @@ from server.managers import connection_manager, settings_store  # ty: ignore[unr
 from server.services import effects as eff_svc  # ty: ignore[unresolved-import]
 from server.services import stickers as sticker_svc  # ty: ignore[unresolved-import]
 from server.services import themes as theme_svc  # ty: ignore[unresolved-import]
+from server.services import webhook as webhook_mod  # ty: ignore[unresolved-import]
 from server.services import ws_queue  # ty: ignore[unresolved-import]
 from server.services.security import rate_limiter  # ty: ignore[unresolved-import]
 from server.services.ws_state import update_ws_client_count  # ty: ignore[unresolved-import]
@@ -29,6 +30,18 @@ def _isolate_settings_store(tmp_path_factory):
     settings_store._settings_file = Path(str(settings_file))
     settings_store.reset()
     yield
+
+
+@pytest.fixture(autouse=True)
+def _isolate_webhook_store(tmp_path):
+    webhook_mod.WebhookService._instance = None
+    original_file = webhook_mod._WEBHOOKS_FILE
+    webhook_mod._WEBHOOKS_FILE = tmp_path / "webhooks.json"
+    try:
+        yield
+    finally:
+        webhook_mod.WebhookService._instance = None
+        webhook_mod._WEBHOOKS_FILE = original_file
 
 
 _ws_logger = logging.getLogger("conftest.ws")

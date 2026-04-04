@@ -1098,7 +1098,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 ${ServerI18n.t("adminTitle")}
                             </h1>
                             <div class="flex items-center gap-2 w-full md:w-auto">
-                                <select id="server-lang-select" onchange="ServerI18n.setLanguage(this.value)"
+                                <select id="server-lang-select"
                                   class="bg-slate-800/60 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-2 focus:ring-violet-400 focus:border-violet-400">
                                   <option value="en" ${ServerI18n.currentLang === "en" ? "selected" : ""}>EN</option>
                                   <option value="zh" ${ServerI18n.currentLang === "zh" ? "selected" : ""}>ZH</option>
@@ -1535,6 +1535,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Attach Event Listeners
   function addEventListeners() {
+    if (window.ServerI18n && typeof window.ServerI18n.bindLanguageSelector === "function") {
+      window.ServerI18n.bindLanguageSelector();
+    }
+
     // Logout Button
     const logoutBtn = document.getElementById("logoutButton");
     if (logoutBtn) {

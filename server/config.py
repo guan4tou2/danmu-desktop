@@ -37,6 +37,7 @@ class Config:
     ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
     # Priority: runtime hash file > ADMIN_PASSWORD_HASHED env var > plaintext ADMIN_PASSWORD
     ADMIN_PASSWORD_HASHED = load_runtime_hash() or os.getenv("ADMIN_PASSWORD_HASHED", "")
+    APP_VERSION = "4.3.0"
     PORT = int(os.getenv("PORT", "4000"))
     WS_PORT = int(os.getenv("WS_PORT", "4001"))
     ENV = os.getenv("ENV", "development").lower()
@@ -52,6 +53,9 @@ class Config:
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
     FONT_TOKEN_EXPIRATION = int(os.getenv("FONT_TOKEN_EXPIRATION", "900"))
+    HSTS_ENABLED = os.getenv("HSTS_ENABLED", "false").lower() == "true"
+    HSTS_MAX_AGE = int(os.getenv("HSTS_MAX_AGE", "31536000"))
+    HSTS_INCLUDE_SUBDOMAINS = os.getenv("HSTS_INCLUDE_SUBDOMAINS", "false").lower() == "true"
 
     # Login rate limiting (5 attempts per 5 minutes per IP)
     LOGIN_RATE_LIMIT = int(os.getenv("LOGIN_RATE_LIMIT", "5"))

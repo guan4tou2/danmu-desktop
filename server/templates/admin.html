@@ -56,7 +56,7 @@
     <script defer src="{{ url_for('static', filename='vendor/vanta.net.min.js') }}"></script>
 
     <!-- Inject Configuration -->
-    <script>
+    <script nonce="{{ csp_nonce }}">
       window.DANMU_CONFIG = {
         session: { logged_in: {{ session.get('logged_in') | tojson }} },
         settingRanges: {{ ranges | tojson }},
@@ -65,7 +65,7 @@
     </script>
 
     <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
-    <script>ServerI18n.init();</script>
+    <script nonce="{{ csp_nonce }}">ServerI18n.init();</script>
     <script defer src="{{ url_for('static', filename='js/toast.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/replay-recorder.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-utils.js') }}"></script>

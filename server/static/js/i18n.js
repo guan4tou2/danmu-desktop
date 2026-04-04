@@ -2115,6 +2115,17 @@ window.ServerI18n = {
     this.updateUI();
   },
 
+  bindLanguageSelector() {
+    const sel = document.getElementById("server-lang-select");
+    if (!sel) return;
+    sel.value = this.currentLang;
+    if (sel.dataset.i18nBound === "true") return;
+    sel.addEventListener("change", (event) => {
+      this.setLanguage(event.target.value);
+    });
+    sel.dataset.i18nBound = "true";
+  },
+
   setLanguage(lang) {
     if (this.translations[lang]) {
       this.currentLang = lang;
@@ -2139,8 +2150,6 @@ window.ServerI18n = {
       const text = this.t(key);
       if (text !== key) el.title = text;
     });
-    // Update language selector if exists
-    const sel = document.getElementById("server-lang-select");
-    if (sel) sel.value = this.currentLang;
+    this.bindLanguageSelector();
   },
 };

@@ -3,20 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self';
-    script-src 'self' 'unsafe-inline';
-    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-    font-src https://fonts.gstatic.com data:;
-    img-src 'self' https: data:;
-    connect-src ws: wss:;
-  ">
   <title>Danmu Fire Overlay</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/overlay.css') }}">
 </head>
 <body>
   <div id="danmubody"></div>
-  <script>
+  <script nonce="{{ csp_nonce }}">
     window.OVERLAY_CONFIG = {
       wsPort: {{ ws_port }},
       wsToken: {{ (ws_token or '')|tojson }}

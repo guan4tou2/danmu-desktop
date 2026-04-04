@@ -14,6 +14,7 @@ from server.services.security import (
     issue_csrf_token,
     verify_password,
 )
+from server.services.webhook import WebhookService
 from server.services.ws_state import update_ws_client_count
 from server.startup_warnings import log_ws_auth_warnings
 
@@ -223,6 +224,11 @@ def test_production_allows_safe_security_baseline():
     app = create_app(ProdConfig)
 
     assert app.config["ENV"] == "production"
+
+
+def test_default_test_app_uses_isolated_webhook_store(client):
+    WebhookService._instance = None
+    assert WebhookService().list_hooks() == []
 
 
 # ─── issue_csrf_token ────────────────────────────────────────────────────────

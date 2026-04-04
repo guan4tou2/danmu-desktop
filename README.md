@@ -206,6 +206,7 @@ Key configuration options (set via `.env` file or environment variables):
 - `SECRET_KEY`: Flask secret key (required in production; dev may auto-generate one)
 - `TRUSTED_HOSTS`: comma-separated allowed hostnames for Host header validation (required in production)
 - `TRUST_X_FORWARDED_FOR`: trust `X-Forwarded-For` for client IP detection (default: `false`; enable only behind a trusted reverse proxy)
+- `HSTS_ENABLED`: opt-in `Strict-Transport-Security` response header for HTTPS requests (default: `false`)
 - `WS_REQUIRE_TOKEN`: require `?token=` for dedicated WebSocket clients (default: `false`)
 - `WS_AUTH_TOKEN`: shared secret token for dedicated WebSocket clients
 - `WS_MAX_SIZE`: maximum incoming WebSocket message size in bytes (default: `1048576`)
@@ -226,6 +227,8 @@ See `.env.example` for all available options.
 - Frontend lockfile enforces `serialize-javascript@7.0.3` through npm overrides to address advisory `GHSA-5c6j-r48x-rmvq`.
 - Dedicated WS auth is disabled by default (`WS_REQUIRE_TOKEN=false`). If port `4001` is reachable beyond localhost or a trusted LAN, any reachable client can connect unless you enable token auth or restrict the network path.
 - Production startup now refuses an ephemeral `SECRET_KEY`, `SESSION_COOKIE_SECURE=false`, or missing `TRUSTED_HOSTS`. Set those explicitly before deploying.
+- The app now emits a nonce-based `Content-Security-Policy` header. If you add new inline scripts, use the template nonce instead of falling back to `unsafe-inline`.
+- `Strict-Transport-Security` stays opt-in via `HSTS_ENABLED=true` and is only sent on HTTPS responses.
 
 ## Project Docs / 文件
 

@@ -33,7 +33,7 @@
     <div class="container mx-auto px-4 py-8 max-w-2xl relative z-10">
       <!-- Language Selector -->
       <div class="flex justify-end mb-2">
-        <select id="server-lang-select" onchange="ServerI18n.setLanguage(this.value)"
+        <select id="server-lang-select"
           class="bg-slate-800/60 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-1 focus:ring-sky-500 focus:border-sky-500">
           <option value="en">EN</option>
           <option value="zh">ZH</option>
@@ -397,7 +397,7 @@
           </svg>
           GitHub
         </a>
-        <p class="text-slate-600 text-xs">Danmu Fire v1.0.0</p>
+        <p class="text-slate-600 text-xs">Danmu Fire v{{ app_version }}</p>
       </footer>
     </div>
 
@@ -433,7 +433,7 @@
     <script defer src="{{ url_for('static', filename='vendor/three.min.js') }}"></script>
     <script defer src="{{ url_for('static', filename='vendor/vanta.net.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
-    <script>ServerI18n.init();</script>
+    <script nonce="{{ csp_nonce }}">ServerI18n.init();</script>
     <script defer src="{{ url_for('static', filename='js/toast.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
   </body>
