@@ -157,8 +157,15 @@ Record live danmu sessions as JSON timelines for offline replay or analysis. Ava
 
 #### Option 3: Manual Setup
 
-1. Clone the repository:
+1. Clone the repository (server-only, skips Electron client):
 
+   ```bash
+   git clone --filter=blob:none --sparse https://github.com/guan4tou2/danmu-desktop
+   cd danmu-desktop
+   git sparse-checkout set server .env.example
+   ```
+
+   Or full clone:
    ```bash
    git clone https://github.com/guan4tou2/danmu-desktop
    cd danmu-desktop

@@ -154,8 +154,15 @@
 
 #### 選項 3：手動設置
 
-1. 克隆專案：
+1. 克隆專案（僅 server，跳過 Electron client）：
 
+   ```bash
+   git clone --filter=blob:none --sparse https://github.com/guan4tou2/danmu-desktop
+   cd danmu-desktop
+   git sparse-checkout set server .env.example
+   ```
+
+   或完整克隆：
    ```bash
    git clone https://github.com/guan4tou2/danmu-desktop
    cd danmu-desktop

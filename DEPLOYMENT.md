@@ -97,9 +97,18 @@ docker compose up -d --build
 
 ### Steps / 安裝步驟
 1. **Clone repo / 複製專案**
+
+   Full clone:
    ```bash
    git clone https://github.com/guan4tou2/danmu-desktop
    cd danmu-desktop
+   ```
+
+   Server-only (skips Electron client, ~70% less data / 僅下載 server，跳過 Electron client):
+   ```bash
+   git clone --filter=blob:none --sparse https://github.com/guan4tou2/danmu-desktop
+   cd danmu-desktop
+   git sparse-checkout set server .env.example
    ```
 2. **Configure env / 設定環境**
    ```bash
