@@ -117,11 +117,11 @@
 
 #### 選項 2：Docker Compose
 
-1. 克隆專案：
+1. 下載設定檔（不需 clone 整個 repo）：
 
    ```bash
-   git clone https://github.com/guan4tou2/danmu-desktop
-   cd danmu-desktop
+   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.yml
+   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/.env.example
    ```
 
 2. 配置環境變數：

@@ -120,11 +120,11 @@ Record live danmu sessions as JSON timelines for offline replay or analysis. Ava
 
 #### Option 2: Docker Compose
 
-1. Clone the repository:
+1. Download the config files (no full clone needed):
 
    ```bash
-   git clone https://github.com/guan4tou2/danmu-desktop
-   cd danmu-desktop
+   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.yml
+   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/.env.example
    ```
 
 2. Configure environment variables:
