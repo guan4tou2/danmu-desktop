@@ -25,7 +25,7 @@
     "@jest/globals": "^30.3.0",
     "@playwright/test": "^1.59.0",
     "babel-loader": "^10.1.1",
-    "electron": "^36.8.1",
+    "electron": "^41.1.1",
     "electron-builder": "^26.8.1",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",
@@ -104,5 +104,9 @@
   },
   "dependencies": {
     "electron-updater": "^6.8.3"
+  },
+  "overrides": {
+    "lodash": "^4.18.1",
+    "@xmldom/xmldom": "^0.8.12"
   }
 }
