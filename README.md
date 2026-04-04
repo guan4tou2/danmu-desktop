@@ -88,7 +88,7 @@ Record live danmu sessions as JSON timelines for offline replay or analysis. Ava
 
 ### Server Setup
 
-#### Option 1: Docker Hub Image (Recommended)
+#### Option 1: GitHub Container Registry Image (Recommended)
 
 1. Pull and run the image directly (replace the password):
    ```bash
@@ -99,7 +99,7 @@ Record live danmu sessions as JSON timelines for offline replay or analysis. Ava
      -v danmu_fonts:/app/server/user_fonts \
      -v danmu_static:/app/server/static \
      -v danmu_logs:/app/server/logs \
-     albetyty/danmu-server:latest
+     ghcr.io/guan4tou2/danmu-server:latest
    ```
    - You can also use a bcrypt hash instead of plaintext:
      - Generate hash: `python server/scripts/hash_password.py`
@@ -113,7 +113,7 @@ Record live danmu sessions as JSON timelines for offline replay or analysis. Ava
 2. Optional: add `--restart unless-stopped` for long-running deployments.
 3. To update, just pull the latest tag and restart:
    ```bash
-   docker pull albetyty/danmu-server:latest
+   docker pull ghcr.io/guan4tou2/danmu-server:latest
    docker stop danmu-server && docker rm danmu-server
    # rerun the docker run command above
    ```
@@ -202,7 +202,7 @@ Key configuration options (set via `.env` file or environment variables):
 - `ADMIN_PASSWORD` or `ADMIN_PASSWORD_HASHED` (at least one required): Admin authentication secret
 - `PORT`: HTTP server port (default: 4000)
 - `WS_PORT`: WebSocket server port (default: 4001)
-- `WS_HOST`: dedicated WebSocket bind host (default: `127.0.0.1`; Docker may override to `0.0.0.0`)
+- `WS_HOST`: dedicated WebSocket bind host (default: `0.0.0.0`)
 - `SECRET_KEY`: Flask secret key (required in production; dev may auto-generate one)
 - `TRUSTED_HOSTS`: comma-separated allowed hostnames for Host header validation (required in production)
 - `TRUST_X_FORWARDED_FOR`: trust `X-Forwarded-For` for client IP detection (default: `false`; enable only behind a trusted reverse proxy)

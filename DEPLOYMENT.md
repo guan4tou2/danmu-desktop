@@ -26,7 +26,7 @@ This bilingual guide explains how to deploy the danmu-desktop server. / 本文�
      -v danmu_fonts:/app/server/user_fonts \
      -v danmu_static:/app/server/static \
      -v danmu_logs:/app/server/logs \
-     albetyty/danmu-server:latest
+     ghcr.io/guan4tou2/danmu-server:latest
    ```
 2. Optional restart policy / 建議加入：
    ```bash
@@ -39,7 +39,7 @@ This bilingual guide explains how to deploy the danmu-desktop server. / 本文�
    - 提供 `linux/amd64` 與 `linux/arm64/v8`
 4. Update / 更新：
    ```bash
-   docker pull albetyty/danmu-server:latest
+   docker pull ghcr.io/guan4tou2/danmu-server:latest
    docker stop danmu-server && docker rm danmu-server
    # rerun the command above / 重新執行上方指令
    ```
@@ -139,7 +139,7 @@ sudo systemctl start danmu-server danmu-ws-server
 | `ADMIN_PASSWORD_HASHED` | ⚠️ | - | Bcrypt hash (recommended)。
 | `PORT` | ❌ | `4000` | HTTP port / HTTP 端口。
 | `WS_PORT` | ❌ | `4001` | WebSocket port / WebSocket 端口。
-| `WS_HOST` | ❌ | `127.0.0.1` | Dedicated WS bind host / 專用 WS 綁定位址。Docker compose may override to `0.0.0.0`。 |
+| `WS_HOST` | ❌ | `0.0.0.0` | Dedicated WS bind host / 專用 WS 綁定位址。 |
 | `WS_REQUIRE_TOKEN` | ❌ | `false` | Dedicated WS token auth / 專用 WS token 驗證。When `false`, reachable clients can connect without token. |
 | `WS_AUTH_TOKEN` | ❌ | empty | Shared token for dedicated WS clients / 專用 WS 共用 token。 |
 | `SECRET_KEY` | ✅ (production) | random in dev | Flask secret key / Session 密鑰。Production startup refuses an auto-generated key. |

@@ -85,7 +85,7 @@
 
 ### 伺服器設置
 
-#### 選項 1：直接使用 Docker Hub 映像（推薦）
+#### 選項 1：使用 GitHub Container Registry 映像（推薦）
 
 1. 直接拉取並啟動映像（請替換密碼）：
    ```bash
@@ -96,7 +96,7 @@
      -v danmu_fonts:/app/server/user_fonts \
      -v danmu_static:/app/server/static \
      -v danmu_logs:/app/server/logs \
-     albetyty/danmu-server:latest
+     ghcr.io/guan4tou2/danmu-server:latest
    ```
    - 也可改用 bcrypt 雜湊避免明文：
      - 產生雜湊：`python server/scripts/hash_password.py`
@@ -110,7 +110,7 @@
 2. 建議加入 `--restart unless-stopped` 讓服務自動重啟。
 3. 更新版本只需重新拉取並重建：
    ```bash
-   docker pull albetyty/danmu-server:latest
+   docker pull ghcr.io/guan4tou2/danmu-server:latest
    docker stop danmu-server && docker rm danmu-server
    # 重新執行上述 docker run 指令
    ```

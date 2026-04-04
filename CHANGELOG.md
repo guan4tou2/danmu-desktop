@@ -5,6 +5,37 @@
 格式基於 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，
 版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
+## [4.4.0] - 2026-04-05
+
+### 安全修正 / Security
+
+- CodeQL 告警全數修復：移除 startup log 中的明文密碼（`py/clear-text-logging-sensitive-data`）；`overlay.js` 的 img src 與 emoji URL 加入 `new URL()` 協議驗證（`js/xss`、`js/client-side-unvalidated-url-redirection`）；SVG 頭像回應加入 `Content-Security-Policy: default-src 'none'`（`py/reflective-xss`）
+- Dependabot 漏洞全清：Electron `^36` → `^41.1.1`（修所有 HIGH use-after-free CVE）；npm overrides 強制 `lodash@^4.18.1`（修 code injection + prototype pollution）與 `@xmldom/xmldom@^0.8.12`（修 XML injection）
+- `WS_HOST` 預設值從 `127.0.0.1` 改為 `0.0.0.0`，與 HTTP server 行為一致，Docker 部署不再需要手動指定
+
+### 改善 / Improved
+
+- Docker image 從單階段改為 multi-stage build：779 MB → 222 MB（縮小 72%）。Runtime image 不含 pip、uv、pytest、black 等 dev 工具與測試檔案
+- CI：所有 GitHub Actions workflow 加入 `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`，提前遷移至 Node.js 24（deadline 2026-06-02）
+- macOS Release artifact glob 修正（`danmu manager` → `Danmu Desktop`），`.dmg` 與 `.zip` 現在正確上傳至 GitHub Releases
+
+### 修正 / Fixed
+
+- Effects editor（admin 面板）開啟時永遠顯示「Network error」：根因為 JS strict mode 下 `if` 區塊內的 `function` 宣告是 block-scoped，對 IIFE 外層不可見。將 `_buildPreviewParams`、`_getPreviewParams`、`_previewEffect`、`_triggerPreviewDebounced` 移至 IIFE scope
+- Footer 版本號從硬碼 `v1.0.0` 改為 `{{ app_version }}`，由 `Config.APP_VERSION` 透過 context_processor 注入
+
+### 新增 / Added
+
+- `Config.APP_VERSION`（`server/config.py`）透過 Flask context_processor 注入所有模板，所有頁面的版本號自動同步
+- CSP nonce per-request（`g.csp_nonce`）、HSTS opt-in（`HSTS_ENABLED`）、`app_version` 模板注入
+- `server/tests/conftest.py` 新增 `_isolate_webhook_store` autouse fixture
+
+### 測試 / Testing
+
+- 測試總數：692（原 347）
+- 新增 `test_api_routes.py` CSP/HSTS/security headers 整合測試
+- 新增 `test_security.py` webhook store isolation 測試
+
 ## [4.1.3] - 2026-03-30
 
 ### 安全修正 / Security
