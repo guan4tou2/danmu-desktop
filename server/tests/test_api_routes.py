@@ -136,7 +136,7 @@ def test_admin_and_overlay_use_response_csp_nonce(client):
     overlay_nonce = overlay_nonce_match.group(1)
     overlay_body = overlay_res.data.decode()
     assert f'nonce="{overlay_nonce}"' in overlay_body
-    assert "http-equiv=\"Content-Security-Policy\"" not in overlay_body
+    assert 'http-equiv="Content-Security-Policy"' not in overlay_body
 
 
 def test_hsts_header_requires_secure_request_and_opt_in(tmp_path):
@@ -158,7 +158,9 @@ def test_hsts_header_requires_secure_request_and_opt_in(tmp_path):
     secure_client = app.test_client()
 
     https_res = secure_client.get("/health/live", base_url="https://example.com")
-    assert https_res.headers.get("Strict-Transport-Security") == "max-age=31536000; includeSubDomains"
+    assert (
+        https_res.headers.get("Strict-Transport-Security") == "max-age=31536000; includeSubDomains"
+    )
 
     http_res = secure_client.get("/health/live", base_url="http://example.com")
     assert http_res.headers.get("Strict-Transport-Security") is None
