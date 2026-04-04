@@ -1,6 +1,10 @@
 # HTTPS override — self-signed certificate (auto-generated if missing)
 # Usage: docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
 services:
+  server:
+    ports:
+      - "${WS_PORT:-4001}:4001"
+
   reverse-proxy:
     # Disable the HTTP-only proxy defined in the base file
     profiles:
