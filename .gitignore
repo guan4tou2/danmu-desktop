@@ -163,3 +163,6 @@ server/webhooks.json
 
 # gstack security reports
 .gstack/
+
+# local MCP server config
+.mcp.json
