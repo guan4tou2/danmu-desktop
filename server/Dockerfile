@@ -1,58 +1,64 @@
 # syntax=docker/dockerfile:1.6
 
+# ── Stage 1: dependency builder ──────────────────────────────────────────────
+FROM python:3.11-slim AS builder
+
+WORKDIR /app/server
+
+# Copy uv from official image (no pip overhead)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Install only production dependencies into an isolated venv
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+
+# ── Stage 2: runtime ──────────────────────────────────────────────────────────
 FROM python:3.11-slim AS runtime
 
 LABEL maintainer="guan4tou2 <mole30608@gmail.com>"
 LABEL org.opencontainers.image.source="https://github.com/guan4tou2/danmu-desktop"
 LABEL org.opencontainers.image.description="Danmu Desktop Server"
 
-WORKDIR /app
+WORKDIR /app/server
 
-# Install system dependencies
+# Runtime system dependency only
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libmagic1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv
-RUN pip install --no-cache-dir uv
+# Copy venv from builder (no uv, no pip, no dev packages)
+COPY --from=builder /app/server/.venv /app/server/.venv
 
-# Prepare application directory structure
-RUN mkdir -p /app/server
-WORKDIR /app/server
-
-# Copy dependency files
-COPY pyproject.toml uv.lock ./
-
-# Install Python dependencies
-RUN uv sync --frozen
-
-# Use the virtual environment created by uv
 ENV VIRTUAL_ENV=/app/server/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 ENV PYTHONPATH=/app
 
-# Copy application code
-COPY . .
+# Copy application code — exclude tests, dev configs, and build artifacts
+COPY app.py config.py extensions.py logging_config.py \
+     startup_warnings.py state.py utils.py ws_app.py ./
+COPY effects/ effects/
+COPY managers/ managers/
+COPY routes/ routes/
+COPY services/ services/
+COPY static/ static/
+COPY templates/ templates/
+COPY themes/ themes/
+COPY ws/ ws/
 
-# Copy entrypoint and set permissions (still running as root)
+# Copy entrypoint
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod 755 /entrypoint.sh
 
-# Create directories for fonts, static files, plugins, and runtime data
-RUN mkdir -p user_fonts static/vendor static/sounds static/emojis plugins /tmp
+# Create runtime directories and non-root user
+RUN mkdir -p user_fonts static/vendor static/sounds static/emojis plugins \
+    && useradd -m -u 1000 appuser \
+    && chown -R appuser:appuser /app /entrypoint.sh
 
-# Create non-root user
-RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app /tmp
-
-# Switch to non-root user
 USER appuser
 
-# Expose ports
 EXPOSE 4000 4001
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:4000/health').read()" || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
