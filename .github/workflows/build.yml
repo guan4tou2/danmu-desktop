@@ -158,6 +158,6 @@ jobs:
             sudo xattr -r -d com.apple.quarantine 'Danmu Desktop.app'
             ```
           files: |
-            danmu-desktop/pack/danmu manager-*-mac-arm64.dmg
-            danmu-desktop/pack/danmu manager-*-mac-arm64.zip
+            danmu-desktop/pack/Danmu Desktop*-mac-arm64.dmg
+            danmu-desktop/pack/Danmu Desktop*-mac-arm64.zip
             danmu-desktop/pack/latest-mac.yml
