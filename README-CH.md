@@ -139,17 +139,43 @@
    - Nginx 反向代理對外開放 `4000`（HTTP）與 `4001`（WebSocket）。
    - Python server 在 Compose 模式下僅內網可見，由 Nginx 反向代理。
 
-4. 可選覆蓋設定（透過 `-f` 組合）：
+4. 可選 HTTPS / SSL 設定：
 
-   | 覆蓋設定 | 指令 |
-   |----------|------|
-   | HTTPS（自簽憑證） | `docker compose -f docker-compose.yml -f docker-compose.https.yml up -d` |
-   | Traefik + Let's Encrypt | `docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d` |
-   | Redis 速率限制 | `docker compose -f docker-compose.yml -f docker-compose.redis.yml up -d` |
+   **要用哪種模式？**
+   | 情境 | 建議 |
+   |------|------|
+   | 區域網路 / 內網（IP，例如 `192.168.x.x`） | HTTPS 自簽憑證 — 瀏覽器會警告，但連線加密 |
+   | 有公開 domain 的伺服器（例如 `danmu.example.com`） | Traefik + Let's Encrypt — 受信任憑證，無瀏覽器警告 |
+   | 本機開發 / 同台電腦 | 純 HTTP 即可 |
 
-   覆蓋設定可組合使用，例如 HTTPS + Redis：
+   **HTTPS — 自簽憑證**（IP 或任意 host，不需 domain）：
    ```bash
-   docker compose -f docker-compose.yml -f docker-compose.https.yml -f docker-compose.redis.yml up -d
+   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.https.yml
+   mkdir -p nginx/certs
+   curl -o nginx/nginx-https.conf https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/nginx/nginx-https.conf
+   docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
+   ```
+   首次啟動自動產生憑證。若要換成真實憑證，將 `fullchain.pem` / `privkey.pem` 放入 `nginx/certs/` 再重啟。
+
+   **Traefik + Let's Encrypt**（需要公開 domain，且 80 port 可從網際網路連線）：
+   ```bash
+   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.traefik.yml
+   mkdir -p traefik && touch traefik/acme.json && chmod 600 traefik/acme.json
+   # 在 .env 設定 DOMAIN=yourdomain.com 與 ACME_EMAIL=you@example.com
+   docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d
+   ```
+   Traefik 自動申請並續約憑證。
+
+   **Redis 速率限制**（多實例或高流量）：
+   ```bash
+   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.redis.yml
+   # 在 .env 設定 RATE_LIMIT_BACKEND=redis 與 REDIS_URL=redis://redis:6379/0
+   docker compose -f docker-compose.yml -f docker-compose.redis.yml up -d
+   ```
+
+   覆蓋設定可組合使用，例如 Let's Encrypt + Redis：
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.traefik.yml -f docker-compose.redis.yml up -d
    ```
 
 #### 選項 3：手動設置

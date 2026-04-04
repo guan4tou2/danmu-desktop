@@ -142,17 +142,43 @@ Record live danmu sessions as JSON timelines for offline replay or analysis. Ava
    - Nginx reverse proxy exposes ports `4000` (HTTP) and `4001` (WebSocket).
    - The Python server runs internal-only behind Nginx.
 
-4. Optional overrides (composable via `-f` flags):
+4. Optional HTTPS / SSL setup:
 
-   | Override | Command |
-   |----------|---------|
-   | HTTPS (self-signed) | `docker compose -f docker-compose.yml -f docker-compose.https.yml up -d` |
-   | Traefik + Let's Encrypt | `docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d` |
-   | Redis rate limiting | `docker compose -f docker-compose.yml -f docker-compose.redis.yml up -d` |
+   **Which mode should I use?**
+   | Scenario | Recommendation |
+   |----------|---------------|
+   | Local network / LAN (IP only, e.g. `192.168.x.x`) | HTTPS (self-signed) — browser will warn, but connection is encrypted |
+   | Public server with a domain (e.g. `danmu.example.com`) | Traefik + Let's Encrypt — trusted cert, no browser warning |
+   | Local dev / same machine only | Plain HTTP is fine |
 
-   Overrides can be combined, e.g. HTTPS + Redis:
+   **HTTPS — Self-Signed Certificate** (IP or any host, no domain required):
    ```bash
-   docker compose -f docker-compose.yml -f docker-compose.https.yml -f docker-compose.redis.yml up -d
+   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.https.yml
+   mkdir -p nginx/certs
+   curl -o nginx/nginx-https.conf https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/nginx/nginx-https.conf
+   docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
+   ```
+   Certificate is auto-generated on first start. To use a real cert, place `fullchain.pem` / `privkey.pem` in `nginx/certs/` and restart.
+
+   **Traefik + Let's Encrypt** (public domain required, port 80 must be internet-accessible):
+   ```bash
+   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.traefik.yml
+   mkdir -p traefik && touch traefik/acme.json && chmod 600 traefik/acme.json
+   # Set DOMAIN=yourdomain.com and ACME_EMAIL=you@example.com in .env
+   docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d
+   ```
+   Traefik automatically obtains and renews the certificate.
+
+   **Redis rate limiting** (multi-instance or high-traffic):
+   ```bash
+   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.redis.yml
+   # Set RATE_LIMIT_BACKEND=redis and REDIS_URL=redis://redis:6379/0 in .env
+   docker compose -f docker-compose.yml -f docker-compose.redis.yml up -d
+   ```
+
+   Overrides can be combined, e.g. Let's Encrypt + Redis:
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.traefik.yml -f docker-compose.redis.yml up -d
    ```
 
 #### Option 3: Manual Setup
