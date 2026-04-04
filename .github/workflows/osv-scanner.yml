@@ -30,6 +30,9 @@ permissions:
   # Required by the reusable workflow
   actions: read
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   scan-scheduled:
     # 只在定期排程時掃描（不在 push 時阻斷 CI），PR 改由 scan-pr job 負責
