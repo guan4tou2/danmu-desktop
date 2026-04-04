@@ -154,18 +154,35 @@
    curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.https.yml
    mkdir -p nginx/certs
    curl -o nginx/nginx-https.conf https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/nginx/nginx-https.conf
+   ```
+   在 `.env` 加入：
+   ```bash
+   SESSION_COOKIE_SECURE=true
+   TRUSTED_HOSTS=你的IP,localhost,127.0.0.1
+   # SERVER_IP=1.2.3.4        # 公網 IP 加入憑證 SAN
+   # HTTPS_PORT=4000           # 預設 443；port 被佔用時可改
+   ```
+   ```bash
    docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
    ```
-   首次啟動自動產生憑證。若要換成真實憑證，將 `fullchain.pem` / `privkey.pem` 放入 `nginx/certs/` 再重啟。
+   首次啟動自動產生憑證。Electron client 連線至 `你的IP:4001`。
 
    **Traefik + Let's Encrypt**（需要公開 domain，且 80 port 可從網際網路連線）：
    ```bash
    curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.traefik.yml
    mkdir -p traefik && touch traefik/acme.json && chmod 600 traefik/acme.json
-   # 在 .env 設定 DOMAIN=yourdomain.com 與 ACME_EMAIL=you@example.com
+   ```
+   在 `.env` 加入：
+   ```bash
+   SESSION_COOKIE_SECURE=true
+   TRUSTED_HOSTS=yourdomain.com,localhost,127.0.0.1
+   DOMAIN=yourdomain.com
+   ACME_EMAIL=you@example.com
+   ```
+   ```bash
    docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d
    ```
-   Traefik 自動申請並續約憑證。
+   Traefik 自動申請並續約憑證。Electron client 連線至 `yourdomain.com:4001`。
 
    **Redis 速率限制**（多實例或高流量）：
    ```bash

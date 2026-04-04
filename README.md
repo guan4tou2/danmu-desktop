@@ -157,18 +157,35 @@ Record live danmu sessions as JSON timelines for offline replay or analysis. Ava
    curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.https.yml
    mkdir -p nginx/certs
    curl -o nginx/nginx-https.conf https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/nginx/nginx-https.conf
+   ```
+   Add to `.env`:
+   ```bash
+   SESSION_COOKIE_SECURE=true
+   TRUSTED_HOSTS=your-ip,localhost,127.0.0.1
+   # SERVER_IP=1.2.3.4        # include public IP in cert SAN
+   # HTTPS_PORT=4000           # default 443; change if port 443 is taken
+   ```
+   ```bash
    docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
    ```
-   Certificate is auto-generated on first start. To use a real cert, place `fullchain.pem` / `privkey.pem` in `nginx/certs/` and restart.
+   Certificate is auto-generated on first start. Electron client connects to `your-ip:4001`.
 
    **Traefik + Let's Encrypt** (public domain required, port 80 must be internet-accessible):
    ```bash
    curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.traefik.yml
    mkdir -p traefik && touch traefik/acme.json && chmod 600 traefik/acme.json
-   # Set DOMAIN=yourdomain.com and ACME_EMAIL=you@example.com in .env
+   ```
+   Add to `.env`:
+   ```bash
+   SESSION_COOKIE_SECURE=true
+   TRUSTED_HOSTS=yourdomain.com,localhost,127.0.0.1
+   DOMAIN=yourdomain.com
+   ACME_EMAIL=you@example.com
+   ```
+   ```bash
    docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d
    ```
-   Traefik automatically obtains and renews the certificate.
+   Traefik automatically obtains and renews the certificate. Electron client connects to `yourdomain.com:4001`.
 
    **Redis rate limiting** (multi-instance or high-traffic):
    ```bash

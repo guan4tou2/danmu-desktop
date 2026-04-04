@@ -87,10 +87,28 @@ curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/.env.exam
 mkdir -p nginx/certs
 curl -o nginx/nginx-https.conf https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/nginx/nginx-https.conf
 cp .env.example .env
-# Edit .env — set ADMIN_PASSWORD and SERVER_IP or SERVER_DOMAIN if needed
+```
+
+Required `.env` settings for HTTPS / HTTPS 必填設定：
+```bash
+ADMIN_PASSWORD=your_secure_password
+SESSION_COOKIE_SECURE=true
+TRUSTED_HOSTS=your-ip-or-domain,localhost,127.0.0.1  # e.g. 1.2.3.4,localhost,127.0.0.1
+# Optional: customize ports (default HTTPS=443, HTTP redirect=80)
+# HTTPS_PORT=4000
+# HTTP_PORT=4080
+# Optional: include IP/domain in self-signed cert SAN
+# SERVER_IP=1.2.3.4
+# SERVER_DOMAIN=danmu.example.com
+```
+
+```bash
 docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```
+
 To replace with a real cert, drop `fullchain.pem` / `privkey.pem` into `nginx/certs/` and restart.
+
+> **Electron client / 桌面客戶端**：connect to `your-ip:4001` (WebSocket port, independent of HTTPS port).
 
 ### HTTPS — Traefik + Let's Encrypt / 真實憑證（自動申請與續約）
 Requires a public domain with port 80 accessible from the internet. / 需要公開 domain，且 80 port 可從網際網路連線。
@@ -100,10 +118,24 @@ curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-co
 curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/.env.example
 mkdir -p traefik && touch traefik/acme.json && chmod 600 traefik/acme.json
 cp .env.example .env
-# Edit .env — set ADMIN_PASSWORD, DOMAIN=yourdomain.com, ACME_EMAIL=you@example.com
+```
+
+Required `.env` settings / 必填設定：
+```bash
+ADMIN_PASSWORD=your_secure_password
+SESSION_COOKIE_SECURE=true
+TRUSTED_HOSTS=yourdomain.com,localhost,127.0.0.1
+DOMAIN=yourdomain.com
+ACME_EMAIL=you@example.com
+```
+
+```bash
 docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d
 ```
+
 Traefik automatically obtains and renews the certificate via Let's Encrypt HTTP challenge.
+
+> **Electron client / 桌面客戶端**：connect to `yourdomain.com:4001` (WebSocket port, direct connection).
 
 ### Redis Rate Limiting / Redis 速率限制
 ```bash
