@@ -5,6 +5,27 @@
 格式基於 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，
 版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
+## [4.5.0] - 2026-04-07
+
+### 新增 / Added
+
+- Admin 面板新增「佈局模式」設定卡：可設定預設模式（scroll / top_fixed / bottom_fixed / float / rise）及是否允許使用者自選
+- 主頁面連線狀態拆分為「伺服器」與「Overlay」兩個指示燈，清楚區分 WebSocket server 連線狀態與 Electron overlay 連線數
+- 新增 `GET /overlay_status` API，回傳目前 Electron overlay 連線數量
+
+### 改善 / Improved
+
+- **i18n 系統全面遷移至 i18next**（server 與 Electron client 統一）
+  - 翻譯檔獨立為 JSON source-of-truth：`server/static/locales/{lang}/translation.json`、`danmu-desktop/locales/{lang}/translation.json`
+  - 新增 `scripts/build-i18n.js`（兩端皆有），從 JSON 自動生成 `i18n.js`
+  - 新增 `npm run build:i18n` 指令（`server/` 與 `danmu-desktop/`）
+  - 插值保持 `{var}` 格式，現有呼叫端 `.replace("{n}", val)` 完全相容，同時支援新 API `t("key", {n: val})`
+- zh locale 大量補齊翻譯：主頁面、管理員頁面、設定卡標籤、黑名單、歷史記錄、密碼變更等約 80 個 key 從英文改為正確中文
+
+### CI/CD
+
+- `test.yml` `js-test` job 新增 i18n 一致性檢查：驗證 `i18n.js` 與 JSON 檔案同步，若過時則 CI 失敗並提示執行 `npm run build:i18n`
+
 ## [4.4.0] - 2026-04-05
 
 ### 安全修正 / Security

@@ -81,11 +81,25 @@ jobs:
           cache: "npm"
           cache-dependency-path: danmu-desktop/package-lock.json
 
-      - name: Install and test
+      - name: Install dependencies
+        working-directory: danmu-desktop
+        run: npm install
+
+      - name: Verify client i18n.js is up-to-date
         working-directory: danmu-desktop
         run: |
-          npm install
-          npx jest --testPathPatterns=tests/
+          node scripts/build-i18n.js
+          git diff --exit-code i18n.js || { echo "❌ i18n.js is stale — run 'npm run build:i18n' in danmu-desktop/ and commit"; exit 1; }
+
+      - name: Verify server i18n.js is up-to-date
+        working-directory: server
+        run: |
+          node scripts/build-i18n.js
+          git diff --exit-code static/js/i18n.js || { echo "❌ server i18n.js is stale — run 'npm run build:i18n' in server/ and commit"; exit 1; }
+
+      - name: Run Jest tests
+        working-directory: danmu-desktop
+        run: npx jest --testPathPatterns=tests/
 
   e2e:
     runs-on: ubuntu-latest

@@ -70,6 +70,33 @@ PYTHONPATH=.. uv run python -m pytest --cov=server --cov-report=html
 ```
 Place tests in `server/tests/` (use pytest fixtures)。
 
+## i18n 翻譯 / Translations
+
+翻譯檔案為 JSON，是唯一的修改來源。修改後必須重新生成 `i18n.js`。
+
+| 目錄 | 用途 |
+|---|---|
+| `server/static/locales/{lang}/translation.json` | 伺服器 Web UI（474 keys） |
+| `danmu-desktop/locales/{lang}/translation.json` | Electron client UI（68 keys） |
+
+支援語言：`en`、`zh`、`ja`、`ko`
+
+**修改翻譯的流程 / Workflow:**
+```bash
+# 1. 編輯 JSON 檔
+vim server/static/locales/zh/translation.json
+
+# 2. 重新生成 i18n.js（兩端各自執行）
+cd server && npm run build:i18n
+cd ../danmu-desktop && npm run build:i18n
+
+# 3. Commit JSON 與生成的 i18n.js
+git add server/static/locales/ server/static/js/i18n.js
+git add danmu-desktop/locales/ danmu-desktop/i18n.js
+```
+
+> CI 會自動驗證 `i18n.js` 與 JSON 是否同步。若忘記執行 `build:i18n`，CI 會失敗並提示。
+
 ## 提交規範 / Commit & PR
 - 使用 [Conventional Commits](https://www.conventionalcommits.org/)。
   - `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`。
