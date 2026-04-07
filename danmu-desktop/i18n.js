@@ -3,7 +3,6 @@
 //   npm run build:i18n   (from danmu-desktop/)
 
 /* eslint-disable */
-const i18next = require("i18next");
 
 const SUPPORTED = ["en", "zh", "ja", "ko"];
 
@@ -290,56 +289,47 @@ const _resources = {
     }
   };
 
-// Build i18next resource map
-const _i18nextResources = {};
-SUPPORTED.forEach(function (lng) {
-  _i18nextResources[lng] = { translation: _resources[lng] };
-});
-
-// Initialize synchronously (inline resources, no async plugins)
-i18next.init({
-  lng: "en",
-  fallbackLng: false,   // No cross-locale fallback — preserve original behaviour
-  resources: _i18nextResources,
-  interpolation: {
-    escapeValue: false,
-    // Preserve {var} placeholders when vars are not passed (legacy .replace() compat)
-    missingInterpolationHandler: function (_text, match) {
-      return "{" + match[1] + "}";
-    },
-  },
-});
-
 const i18n = {
   currentLang: "en",
 
   // Exposed for backward-compatibility with tests that inspect translations directly
   translations: _resources,
 
-  /** Translate a key.
+  /** Translate a key with optional {var} interpolation.
    *  Respects this.currentLang so tests can do: i18n.currentLang = "zh"
    *  without needing to call setLanguage().
    *
    *  Returns the key itself when:
    *  - currentLang is not a supported locale
-   *  - the key does not exist in any locale
+   *  - the key does not exist in the locale
    */
   t(key, vars) {
     if (!SUPPORTED.includes(this.currentLang)) return key;
-    return i18next.t(key, { ...vars, lng: this.currentLang });
+    const dict = _resources[this.currentLang];
+    if (!dict) return key;
+    let text = dict[key];
+    if (text === undefined) return key;
+    if (vars) {
+      Object.keys(vars).forEach((k) => {
+        text = text.replace(new RegExp("\\{" + k + "\\}", "g"), vars[k]);
+      });
+    }
+    return text;
   },
 
   setLanguage(lang) {
     if (!SUPPORTED.includes(lang)) return;
     this.currentLang = lang;
-    i18next.changeLanguage(lang);
-    localStorage.setItem("danmu-lang", lang);
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem("danmu-lang", lang);
+    }
     this.updateUI();
   },
 
   /** Detect and apply the correct language (async — uses Electron IPC if available). */
   async loadLanguage() {
-    const saved = localStorage.getItem("danmu-lang");
+    const saved =
+      typeof localStorage !== "undefined" && localStorage.getItem("danmu-lang");
     if (saved && SUPPORTED.includes(saved)) {
       this.currentLang = saved;
       return;
@@ -347,7 +337,11 @@ const i18n = {
 
     // Try Electron system locale first
     try {
-      if (window.API && typeof window.API.getSystemLocale === "function") {
+      if (
+        typeof window !== "undefined" &&
+        window.API &&
+        typeof window.API.getSystemLocale === "function"
+      ) {
         const systemLocale = await window.API.getSystemLocale();
         console.log("[i18n] System locale:", systemLocale);
         const detected = this._detectLangFromLocale(systemLocale);
@@ -361,7 +355,10 @@ const i18n = {
     }
 
     // Browser fallback
-    const browserLang = navigator.language || navigator.userLanguage;
+    const browserLang =
+      typeof navigator !== "undefined"
+        ? navigator.language || navigator.userLanguage
+        : "";
     console.log("[i18n] Browser language:", browserLang);
     const detected = this._detectLangFromLocale(browserLang);
     if (detected) this.currentLang = detected;
@@ -376,6 +373,7 @@ const i18n = {
   },
 
   updateUI() {
+    if (typeof document === "undefined") return;
     document.querySelectorAll("[data-i18n]").forEach((el) => {
       const key = el.getAttribute("data-i18n");
       const text = this.t(key);
