@@ -8,6 +8,8 @@
     "pack": "npm run build:webpack && electron-builder --dir",
     "pack-dist": "npm run build:webpack && electron-builder",
     "build:webpack": "webpack",
+    "build:i18n": "node scripts/build-i18n.js",
+    "build": "npm run build:i18n && npm run build:webpack",
     "test": "jest --testPathPatterns=tests/",
     "test:e2e": "npx playwright test"
   },
@@ -103,7 +105,8 @@
     }
   },
   "dependencies": {
-    "electron-updater": "^6.8.3"
+    "electron-updater": "^6.8.3",
+    "i18next": "^26.0.3"
   },
   "overrides": {
     "lodash": "^4.18.1",
