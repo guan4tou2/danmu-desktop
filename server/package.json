@@ -8,7 +8,9 @@
   },
   "scripts": {
     "build:css": "tailwindcss -i tailwind.input.css -o static/css/tailwind.css --minify",
-    "watch:css": "tailwindcss -i tailwind.input.css -o static/css/tailwind.css --watch"
+    "watch:css": "tailwindcss -i tailwind.input.css -o static/css/tailwind.css --watch",
+    "build:i18n": "node scripts/build-i18n.js",
+    "build": "npm run build:i18n && npm run build:css"
   },
   "keywords": [],
   "author": "",
