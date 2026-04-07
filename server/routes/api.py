@@ -353,6 +353,12 @@ def list_emojis():
     return _json_response({"emojis": emoji_service.list_emojis()})
 
 
+@api_bp.route("/overlay_status", methods=["GET"])
+def overlay_status():
+    """Return current Electron overlay connection count."""
+    return _json_response({"overlay_count": get_ws_client_count()})
+
+
 @api_bp.route("/stickers", methods=["GET"])
 @rate_limit("api", "API_RATE_LIMIT", "API_RATE_WINDOW")
 def list_stickers():

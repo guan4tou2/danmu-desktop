@@ -64,6 +64,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Connection status
     connectionStatus: document.getElementById("connectionStatus"),
     connectionLabel: document.getElementById("connectionLabel"),
+    overlayStatus: document.getElementById("overlayStatus"),
+    overlayLabel: document.getElementById("overlayLabel"),
   };
 
   // --- Helper utilities ---
@@ -810,6 +812,31 @@ document.addEventListener("DOMContentLoaded", () => {
         break;
     }
   }
+
+  // --- Overlay Status Polling ---
+  function updateOverlayUI(count) {
+    if (!elements.overlayStatus || !elements.overlayLabel) return;
+    const dot = elements.overlayStatus.querySelector(".connection-dot");
+    if (!dot) return;
+    dot.className = "connection-dot";
+    if (count > 0) {
+      dot.classList.add("connection-dot--connected");
+      elements.overlayLabel.textContent = ServerI18n.t("overlayConnected").replace("{n}", count);
+    } else {
+      dot.classList.add("connection-dot--disconnected");
+      elements.overlayLabel.textContent = ServerI18n.t("overlayNone");
+    }
+  }
+
+  function pollOverlayStatus() {
+    fetch("/overlay_status")
+      .then((r) => r.json())
+      .then((data) => updateOverlayUI(data.overlay_count || 0))
+      .catch(() => updateOverlayUI(0));
+  }
+
+  pollOverlayStatus();
+  setInterval(pollOverlayStatus, 5000);
 
   // --- WebSocket ---
   let _wsReconnectAttempt = 0;

@@ -54,9 +54,15 @@
           Send your message to the screen!
         </p>
         <!-- Connection Status -->
-        <div id="connectionStatus" class="inline-flex items-center gap-1.5 mt-2 text-xs" role="status" aria-live="polite">
-          <span class="connection-dot connection-dot--connecting"></span>
-          <span id="connectionLabel" class="text-slate-400" data-i18n="connecting">Connecting...</span>
+        <div class="inline-flex items-center gap-3 mt-2 text-xs flex-wrap" role="status" aria-live="polite">
+          <div id="connectionStatus" class="inline-flex items-center gap-1.5">
+            <span class="connection-dot connection-dot--connecting"></span>
+            <span id="connectionLabel" class="text-slate-400" data-i18n="connecting">Connecting...</span>
+          </div>
+          <div id="overlayStatus" class="inline-flex items-center gap-1.5">
+            <span class="connection-dot connection-dot--disconnected"></span>
+            <span id="overlayLabel" class="text-slate-400" data-i18n="overlayNone">Overlay: –</span>
+          </div>
         </div>
       </header>
 
