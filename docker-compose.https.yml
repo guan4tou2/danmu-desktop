@@ -22,6 +22,9 @@ services:
     volumes:
       - ./nginx/nginx-https.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/certs:/etc/nginx/certs
+    environment:
+      - SERVER_IP=${SERVER_IP:-}
+      - SERVER_DOMAIN=${SERVER_DOMAIN:-}
     entrypoint:
       - sh
       - -c
@@ -29,27 +32,27 @@ services:
         if [ ! -f /etc/nginx/certs/fullchain.pem ] || [ ! -f /etc/nginx/certs/privkey.pem ]; then
           echo "[danmu] Auto-generating self-signed certificate..."
           apk add --no-cache openssl >/dev/null 2>&1
-          SAN="DNS:localhost,IP:127.0.0.1"
-          CN="localhost"
-          if [ -n "${SERVER_IP:-}" ]; then
-            SAN="$SAN,IP:${SERVER_IP}"
-            CN="${SERVER_IP}"
-            echo "[danmu] Including public IP in SAN: ${SERVER_IP}"
+          _SAN="DNS:localhost,IP:127.0.0.1"
+          _CN="localhost"
+          if [ -n "$$SERVER_IP" ]; then
+            _SAN="$$_SAN,IP:$$SERVER_IP"
+            _CN="$$SERVER_IP"
+            echo "[danmu] Including public IP in SAN: $$SERVER_IP"
           fi
-          if [ -n "${SERVER_DOMAIN:-}" ]; then
-            SAN="$SAN,DNS:${SERVER_DOMAIN}"
-            CN="${SERVER_DOMAIN}"
-            echo "[danmu] Including domain in SAN: ${SERVER_DOMAIN}"
+          if [ -n "$$SERVER_DOMAIN" ]; then
+            _SAN="$$_SAN,DNS:$$SERVER_DOMAIN"
+            _CN="$$SERVER_DOMAIN"
+            echo "[danmu] Including domain in SAN: $$SERVER_DOMAIN"
           fi
-          printf '[req]\ndistinguished_name=req\n[SAN]\nsubjectAltName=%s\n' "$SAN" > /tmp/san.cnf
+          printf '[req]\ndistinguished_name=req\n[SAN]\nsubjectAltName=%s\n' "$$_SAN" > /tmp/san.cnf
           openssl req -x509 -nodes -newkey rsa:2048 \
             -keyout /etc/nginx/certs/privkey.pem \
             -out /etc/nginx/certs/fullchain.pem \
             -days 365 \
-            -subj "/CN=${CN}" \
+            -subj "/CN=$$_CN" \
             -extensions SAN \
             -config /tmp/san.cnf
-          if [ $? -ne 0 ]; then
+          if [ $$? -ne 0 ]; then
             echo "[danmu] ERROR: Failed to generate certificate. Check openssl output above."
             exit 1
           fi
