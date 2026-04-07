@@ -1276,6 +1276,53 @@ document.addEventListener("DOMContentLoaded", () => {
       populateFontFamilyDropdowns();
     }, 0);
 
+    // Layout Setting Card
+    const layoutEnabled = currentSettings.Layout ? currentSettings.Layout[0] !== false : true;
+    const currentLayout = currentSettings.Layout ? currentSettings.Layout[3] : "scroll";
+    const layoutOptions = ["scroll", "top_fixed", "bottom_fixed", "float", "rise"];
+    const layoutLabels = {
+      scroll: ServerI18n.t("layoutScroll"),
+      top_fixed: ServerI18n.t("layoutTopFixed"),
+      bottom_fixed: ServerI18n.t("layoutBottomFixed"),
+      float: ServerI18n.t("layoutFloat"),
+      rise: ServerI18n.t("layoutRise"),
+    };
+    const layoutCardContent = `
+      <div>
+        <label class="text-sm font-medium text-slate-300">${ServerI18n.t("defaultLayout")}</label>
+        <div class="flex flex-wrap gap-2 mt-2">
+          ${layoutOptions.map(mode => `
+            <button type="button"
+              class="layout-btn px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${mode === currentLayout ? "bg-sky-600 border-sky-500 text-white" : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"}"
+              data-mode="${mode}">${layoutLabels[mode] || mode}</button>
+          `).join("")}
+        </div>
+        <input type="hidden" class="setting-input" data-key="Layout" data-index="3" id="layoutSelect" value="${escapeHtml(currentLayout)}">
+      </div>`;
+    settingsGrid.insertAdjacentHTML("beforeend", settingCard(
+      "Layout",
+      ServerI18n.t("layoutSetting"),
+      layoutEnabled ? ServerI18n.t("layoutDescEnabled") : ServerI18n.t("layoutDescDisabled"),
+      layoutEnabled,
+      layoutCardContent,
+      layoutCardContent
+    ));
+    // Layout button click handler
+    setTimeout(() => {
+      const layoutBtns = document.querySelectorAll(".layout-btn");
+      layoutBtns.forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const mode = btn.dataset.mode;
+          document.getElementById("layoutSelect").value = mode;
+          layoutBtns.forEach(b => {
+            b.className = b.className.replace(/bg-sky-600 border-sky-500 text-white/, "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700");
+          });
+          btn.className = btn.className.replace(/bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700/, "bg-sky-600 border-sky-500 text-white");
+          await updateSetting("Layout", mode, 3);
+        });
+      });
+    }, 0);
+
     // Effects Enable/Disable Card
     const effectsEnabled = currentSettings.Effects ? currentSettings.Effects[0] !== false : true;
     settingsGrid.insertAdjacentHTML("beforeend", settingCard(
