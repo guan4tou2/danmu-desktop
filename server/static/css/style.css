@@ -34,7 +34,7 @@ input[type="range"]::-webkit-slider-thumb {
   background: var(--color-primary);
   cursor: pointer;
   border-radius: 50%;
-  border: 2px solid #0f172a;
+  border: 2px solid var(--color-bg-base);
   transition: all 0.2s;
 }
 
@@ -81,7 +81,7 @@ summary:focus-visible {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: var(--color-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -97,12 +97,12 @@ summary:focus-visible {
 }
 
 #blacklistWarningModal .modal-content {
-  background-color: #1e293b;
+  background-color: var(--color-bg-elevated);
   padding: 2rem;
   border-radius: var(--radius-lg);
   text-align: center;
   border: 2px solid var(--color-error);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 25px var(--shadow-base);
   transform: scale(0.95);
   transition: transform 0.3s ease-in-out;
 }
@@ -147,7 +147,7 @@ summary:focus-visible {
     border-color: var(--color-error);
   }
   50% {
-    border-color: #f87171;
+    border-color: var(--color-error-light);
   }
 }
 
@@ -173,9 +173,9 @@ summary:focus-visible {
 
 /* Effect button active (selected) state */
 .effect-btn--active {
-  background-color: #0369a1 !important; /* sky-700 */
+  background-color: var(--color-active-btn) !important;
   color: #ffffff !important;
-  border-color: var(--color-primary-hover) !important; /* sky-500 */
+  border-color: var(--color-primary-hover) !important;
 }
 
 /* Admin Toggle Checkbox */
@@ -198,7 +198,7 @@ summary:focus-visible {
 
 .connection-dot--connected {
   background-color: var(--color-success);
-  box-shadow: 0 0 6px rgba(34, 197, 94, 0.6);
+  box-shadow: 0 0 6px var(--glow-success);
 }
 
 .connection-dot--connecting {
@@ -282,7 +282,7 @@ summary:focus-visible {
 }
 
 .password-toggle:hover {
-  color: #e2e8f0;
+  color: var(--color-text-bright);
 }
 
 .password-toggle svg {
