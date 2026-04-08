@@ -12,6 +12,7 @@ import pytest
 from server import state  # ty: ignore[unresolved-import]
 from server.app import create_app  # ty: ignore[unresolved-import]
 from server.config import Config  # ty: ignore[unresolved-import]
+from server.services.filter_engine import FilterEngine, filter_engine  # ty: ignore[unresolved-import]
 from server.managers import connection_manager, settings_store  # ty: ignore[unresolved-import]
 from server.services import effects as eff_svc  # ty: ignore[unresolved-import]
 from server.services import stickers as sticker_svc  # ty: ignore[unresolved-import]
@@ -138,6 +139,10 @@ def app(tmp_path):
     original_dir = state.USER_FONTS_DIR
     state.USER_FONTS_DIR = str(fonts_dir)
 
+    # Clear production filter rules before each test so they don't interfere
+    filter_engine._rules = []
+    FilterEngine._instance = None
+
     app = create_app(TestConfig)
 
     with app.app_context():
@@ -146,6 +151,8 @@ def app(tmp_path):
     # reset globals
     state.USER_FONTS_DIR = original_dir
     state.blacklist.clear()
+    FilterEngine._instance = None  # reset filter engine singleton between tests
+    filter_engine._rules = []  # clear loaded production rules so tests start clean
     connection_manager.reset()
     settings_store.reset()
     rate_limiter.reset()
