@@ -1,5 +1,5 @@
 // All IPC event handler definitions
-const { ipcMain, screen, app } = require("electron");
+const { ipcMain, screen, app, shell } = require("electron");
 const { BrowserWindow } = require("electron");
 const net = require("net");
 const path = require("path");
@@ -155,6 +155,15 @@ function setupIpcHandlers(getMainWindow, childWindows) {
       sanitizeLog(locale)
     );
     return locale;
+  });
+
+  ipcMain.handle("get-app-version", () => app.getVersion());
+
+  ipcMain.handle("open-external", (_, url) => {
+    // Only allow https:// URLs to prevent protocol-handler abuse
+    if (typeof url === "string" && url.startsWith("https://")) {
+      shell.openExternal(url);
+    }
   });
 
   // Send test danmu to all child windows — restricted to main window

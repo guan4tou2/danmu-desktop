@@ -94,6 +94,8 @@ try {
       console.log("[Preload] API.getSystemLocale called");
       return ipcRenderer.invoke("getSystemLocale");
     },
+    getAppVersion: () => ipcRenderer.invoke("get-app-version"),
+    openExternal: (url) => ipcRenderer.invoke("open-external", url),
     // IPC Listeners for main -> renderer events
     onUpdateDisplayOptions: (callback) => {
       if (_handlers.updateDisplayOptions) {

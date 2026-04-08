@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About Danmu Desktop</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self';"
+    />
+    <link rel="stylesheet" href="about.css" />
+  </head>
+  <body>
+    <div class="about-container">
+      <img src="assets/icon.png" width="80" height="80" alt="Danmu Desktop" class="app-icon" />
+      <h1 class="app-name">Danmu Desktop</h1>
+      <p class="app-version" id="app-version">Loading…</p>
+      <p class="app-desc">Danmu overlay controller for live streaming</p>
+      <p class="app-link">
+        <a href="#" id="github-link">github.com/guan4tou2/danmu-desktop</a>
+      </p>
+      <button class="close-btn" id="close-btn">Close</button>
+    </div>
+    <script src="about-renderer.js"></script>
+  </body>
+</html>

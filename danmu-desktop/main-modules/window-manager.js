@@ -213,4 +213,28 @@ function setupChildWindow(
   });
 }
 
-module.exports = { createWindow, setupChildWindow };
+/**
+ * Creates the About window.
+ * @param {BrowserWindow} mainWindow - The parent window (for modal behaviour)
+ */
+function createAboutWindow(mainWindow) {
+  const aboutWindow = new BrowserWindow({
+    width: 420,
+    height: 320,
+    resizable: false,
+    autoHideMenuBar: true,
+    title: "About Danmu Desktop",
+    parent: mainWindow && !mainWindow.isDestroyed() ? mainWindow : null,
+    modal: true,
+    webPreferences: {
+      preload: path.join(__dirname, "../dist/preload.bundle.js"),
+      nodeIntegration: false,
+      contextIsolation: true,
+      webSecurity: true,
+    },
+  });
+  aboutWindow.loadFile(path.join(__dirname, "../about.html"));
+  return aboutWindow;
+}
+
+module.exports = { createWindow, setupChildWindow, createAboutWindow };
