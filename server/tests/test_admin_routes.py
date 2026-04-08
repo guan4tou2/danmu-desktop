@@ -6,8 +6,6 @@ Covers: /admin/filters/*, /admin/poll/*, /admin/metrics
 import pytest
 
 from server.services.filter_engine import FilterEngine
-from server.services.poll import PollService
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -50,6 +48,7 @@ def reset_filter_engine(tmp_path):
 @pytest.fixture(autouse=True)
 def reset_poll():
     from server.services.poll import poll_service
+
     poll_service.reset()
     yield
     poll_service.reset()
@@ -61,9 +60,9 @@ def reset_poll():
 
 
 def test_filter_add_keyword_rule(client):
-    resp = authed_post(client, "/admin/filters/add", {
-        "type": "keyword", "pattern": "spam", "action": "block"
-    })
+    resp = authed_post(
+        client, "/admin/filters/add", {"type": "keyword", "pattern": "spam", "action": "block"}
+    )
     assert resp.status_code == 200
     data = resp.get_json()
     assert "rule_id" in data
@@ -77,7 +76,9 @@ def test_filter_add_validation_error(client):
 
 
 def test_filter_add_requires_login(client):
-    resp = client.post("/admin/filters/add", json={"type": "keyword", "pattern": "x", "action": "block"})
+    resp = client.post(
+        "/admin/filters/add", json={"type": "keyword", "pattern": "x", "action": "block"}
+    )
     assert resp.status_code in (302, 401, 403)
 
 
@@ -88,9 +89,9 @@ def test_filter_add_requires_login(client):
 
 def test_filter_remove_existing_rule(client):
     # Add a rule first
-    add_resp = authed_post(client, "/admin/filters/add", {
-        "type": "keyword", "pattern": "test", "action": "block"
-    })
+    add_resp = authed_post(
+        client, "/admin/filters/add", {"type": "keyword", "pattern": "test", "action": "block"}
+    )
     rule_id = add_resp.get_json()["rule_id"]
 
     resp = authed_post(client, "/admin/filters/remove", {"rule_id": rule_id})
@@ -110,15 +111,14 @@ def test_filter_remove_nonexistent_rule(client):
 
 
 def test_filter_update_existing_rule(client):
-    add_resp = authed_post(client, "/admin/filters/add", {
-        "type": "keyword", "pattern": "hello", "action": "block"
-    })
+    add_resp = authed_post(
+        client, "/admin/filters/add", {"type": "keyword", "pattern": "hello", "action": "block"}
+    )
     rule_id = add_resp.get_json()["rule_id"]
 
-    resp = authed_post(client, "/admin/filters/update", {
-        "rule_id": rule_id,
-        "updates": {"pattern": "world"}
-    })
+    resp = authed_post(
+        client, "/admin/filters/update", {"rule_id": rule_id, "updates": {"pattern": "world"}}
+    )
     assert resp.status_code == 200
     assert resp.get_json()["message"] == "Rule updated"
 
@@ -129,10 +129,9 @@ def test_filter_update_missing_fields(client):
 
 
 def test_filter_update_nonexistent_rule(client):
-    resp = authed_post(client, "/admin/filters/update", {
-        "rule_id": "ghost",
-        "updates": {"pattern": "x"}
-    })
+    resp = authed_post(
+        client, "/admin/filters/update", {"rule_id": "ghost", "updates": {"pattern": "x"}}
+    )
     assert resp.status_code == 404
 
 
@@ -142,9 +141,9 @@ def test_filter_update_nonexistent_rule(client):
 
 
 def test_filter_list_returns_rules(client):
-    authed_post(client, "/admin/filters/add", {
-        "type": "keyword", "pattern": "a", "action": "block"
-    })
+    authed_post(
+        client, "/admin/filters/add", {"type": "keyword", "pattern": "a", "action": "block"}
+    )
     resp = authed_get(client, "/admin/filters/list")
     assert resp.status_code == 200
     data = resp.get_json()
@@ -164,10 +163,11 @@ def test_filter_list_returns_list_type(client):
 
 
 def test_filter_test_matching_rule(client):
-    resp = authed_post(client, "/admin/filters/test", {
-        "rule": {"type": "keyword", "pattern": "spam", "action": "block"},
-        "text": "this is spam"
-    })
+    resp = authed_post(
+        client,
+        "/admin/filters/test",
+        {"rule": {"type": "keyword", "pattern": "spam", "action": "block"}, "text": "this is spam"},
+    )
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["action"] == "block"
@@ -175,19 +175,21 @@ def test_filter_test_matching_rule(client):
 
 
 def test_filter_test_non_matching_rule(client):
-    resp = authed_post(client, "/admin/filters/test", {
-        "rule": {"type": "keyword", "pattern": "spam", "action": "block"},
-        "text": "clean text"
-    })
+    resp = authed_post(
+        client,
+        "/admin/filters/test",
+        {"rule": {"type": "keyword", "pattern": "spam", "action": "block"}, "text": "clean text"},
+    )
     assert resp.status_code == 200
     assert resp.get_json()["action"] == "pass"
 
 
 def test_filter_test_invalid_rule(client):
-    resp = authed_post(client, "/admin/filters/test", {
-        "rule": {"type": "invalid_type", "pattern": "x", "action": "block"},
-        "text": "text"
-    })
+    resp = authed_post(
+        client,
+        "/admin/filters/test",
+        {"rule": {"type": "invalid_type", "pattern": "x", "action": "block"}, "text": "text"},
+    )
     assert resp.status_code == 400
 
 
@@ -197,10 +199,11 @@ def test_filter_test_invalid_rule(client):
 
 
 def test_poll_create_via_http(client):
-    resp = authed_post(client, "/admin/poll/create", {
-        "question": "Best fruit?",
-        "options": ["Apple", "Banana", "Cherry"]
-    })
+    resp = authed_post(
+        client,
+        "/admin/poll/create",
+        {"question": "Best fruit?", "options": ["Apple", "Banana", "Cherry"]},
+    )
     assert resp.status_code == 200
     data = resp.get_json()
     assert "poll_id" in data
@@ -213,28 +216,20 @@ def test_poll_create_validation_error(client):
 
 
 def test_poll_create_while_active_returns_409(client):
-    authed_post(client, "/admin/poll/create", {
-        "question": "First?", "options": ["A", "B"]
-    })
-    resp = authed_post(client, "/admin/poll/create", {
-        "question": "Second?", "options": ["X", "Y"]
-    })
+    authed_post(client, "/admin/poll/create", {"question": "First?", "options": ["A", "B"]})
+    resp = authed_post(client, "/admin/poll/create", {"question": "Second?", "options": ["X", "Y"]})
     assert resp.status_code == 409
 
 
 def test_poll_end_via_http(client):
-    authed_post(client, "/admin/poll/create", {
-        "question": "Q?", "options": ["A", "B"]
-    })
+    authed_post(client, "/admin/poll/create", {"question": "Q?", "options": ["A", "B"]})
     resp = authed_post(client, "/admin/poll/end", {})
     assert resp.status_code == 200
     assert resp.get_json()["state"] == "ended"
 
 
 def test_poll_reset_via_http(client):
-    authed_post(client, "/admin/poll/create", {
-        "question": "Q?", "options": ["A", "B"]
-    })
+    authed_post(client, "/admin/poll/create", {"question": "Q?", "options": ["A", "B"]})
     resp = authed_post(client, "/admin/poll/reset", {})
     assert resp.status_code == 200
     assert resp.get_json()["state"] == "idle"
