@@ -7,12 +7,14 @@ on:
     paths:
       - "server/**"
       - "danmu-desktop/**"
+      - "shared/**"
   pull_request:
     branches:
       - main
     paths:
       - "server/**"
       - "danmu-desktop/**"
+      - "shared/**"
 
 permissions:
   contents: read
@@ -96,6 +98,11 @@ jobs:
         run: |
           node scripts/build-i18n.js
           git diff --exit-code static/js/i18n.js || { echo "❌ server i18n.js is stale — run 'npm run build:i18n' in server/ and commit"; exit 1; }
+
+      - name: Verify tokens.css is in sync
+        run: |
+          diff shared/tokens.css server/static/css/tokens.css \
+            || { echo "❌ tokens out of sync — run 'make copy-tokens' and commit"; exit 1; }
 
       - name: Run Jest tests
         working-directory: danmu-desktop

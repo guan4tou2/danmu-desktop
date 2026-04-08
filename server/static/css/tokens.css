@@ -10,18 +10,50 @@
   --color-warning: #eab308;
   --color-error: #ef4444;
   --color-error-hover: #dc2626;
+  --color-error-light: #f87171;
 
-  /* Surface */
+  /* Surface / Background */
   --color-bg-deep: #000000;
+  --color-bg-base: #0f172a;
+  --color-bg-elevated: #1e293b;
   --color-bg-card: rgba(15, 23, 42, 0.75);
   --color-bg-input: rgba(30, 41, 59, 0.8);
+  --color-bg-input-solid: rgba(30, 41, 59, 1);
+  --color-bg-input-disabled: rgba(30, 41, 59, 0.5);
+  --color-overlay: rgba(0, 0, 0, 0.6);
+
+  /* Border */
   --color-border: rgba(255, 255, 255, 0.1);
   --color-border-focus: #38bdf8;
+  --color-border-strong: #334155;
 
   /* Text */
   --color-text-primary: #f1f5f9;
   --color-text-secondary: #94a3b8;
   --color-text-muted: #475569;
+  --color-text-bright: #e2e8f0;
+
+  /* State colours */
+  --color-connected: #14b8a6;
+  --color-connected-dark: #0d9488;
+  --color-surface-muted: #475569;
+  --color-active-btn: #0369a1;
+
+  /* Scrollbar */
+  --color-scrollbar: rgba(71, 85, 105, 0.7);
+
+  /* Shadow */
+  --shadow-base: rgba(0, 0, 0, 0.3);
+
+  /* Glow / Focus ring */
+  --glow-primary: rgba(56, 189, 248, 0.4);
+  --glow-primary-ring: rgba(56, 189, 248, 0.5);
+  --glow-primary-lg: rgba(56, 189, 248, 0.6);
+  --glow-accent: rgba(6, 182, 212, 0.6);
+  --glow-connected: rgba(20, 184, 166, 0.4);
+  --glow-success: rgba(34, 197, 94, 0.6);
+  --ring-success: rgba(16, 185, 129, 0.2);
+  --ring-error: rgba(239, 68, 68, 0.2);
 
   /* Typography */
   --font-family: "Poppins", sans-serif;
