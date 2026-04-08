@@ -166,3 +166,4 @@ server/webhooks.json
 
 # local MCP server config
 .mcp.json
+.worktrees/
