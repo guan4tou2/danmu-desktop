@@ -5,6 +5,23 @@
 格式基於 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，
 版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
+## [Unreleased]
+
+### 新增 / Added
+
+- **品牌統一**：Server 端命名為「Danmu Fire」，Electron client 命名為「Danmu Desktop」；`Config.APP_NAME = "Danmu Fire"` 透過 context_processor 注入模板
+- **Danmu Fire 圖示**：新增 `danmu-desktop/assets/icon-fire.svg`（暖色火焰調色盤），複製至 `server/static/`；`scripts/build-icons.sh` 一鍵從 SVG 重新生成所有 PNG / ICO / ICNS
+- **About 視窗**：Electron 新增 About 視窗（`about.html`），顯示版本號（IPC `get-app-version`）、描述、GitHub 連結
+- **Tray 選單升級**：新增動態連線狀態列（`⊘ Disconnected` / `◐ Connecting…` / `● Connected`）與 About 選項；連線狀態變更時透過 IPC 即時更新
+- **主視窗 Fade-in**：新增 `.main-content` CSS fade-in，防止 i18n 初始化前的文字閃爍
+
+### 改善 / Improved
+
+- **設計 Token 集中化**：`shared/tokens.css` 擴充至 43 個 token，作為唯一設計系統來源；`server/static/css/tokens.css` 同步自 shared；CI 新增 token 同步檢查
+- `.env.example` 補齊 `LOGIN_RATE_LIMIT`、`LOGIN_RATE_WINDOW`、`WEBHOOK_TIMEOUT`、`STICKER_MAX_COUNT` 文件
+
+---
+
 ## [4.5.0] - 2026-04-07
 
 ### 新增 / Added
