@@ -115,6 +115,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  // Reveal main content after i18n is ready (prevents flash of un-translated text)
+  const mainContent = document.querySelector(".main-content");
+  if (mainContent) mainContent.classList.add("loaded");
+
   const api = window.API;
   if (!api) return;
 

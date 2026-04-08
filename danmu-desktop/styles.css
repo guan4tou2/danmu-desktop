@@ -192,6 +192,16 @@ details summary svg {
   transition: transform 0.3s ease;
 }
 
+/* Main content fade-in on load */
+.main-content {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.main-content.loaded {
+  opacity: 1;
+}
+
 @media (min-width: 1280px) {
   .settings-scroll {
     max-height: 62vh;
