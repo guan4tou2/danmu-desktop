@@ -40,6 +40,20 @@ function updateConnectionStatus(status, text, shouldShow = true) {
 
     currentConnectionStatus = status;
 
+    // Update tray status label
+    if (typeof window !== "undefined" && window.API && window.API.updateTrayStatus) {
+      const trayLabels = {
+        idle: "⊘ Disconnected",
+        connecting: "◐ Connecting\u2026",
+        connected: "● Connected",
+        disconnected: "⊘ Disconnected",
+        "connection-failed": "⊘ Connection Failed",
+      };
+      window.API.updateTrayStatus(
+        shouldShow ? (trayLabels[status] || "⊘ Disconnected") : "⊘ Disconnected"
+      );
+    }
+
     if (shouldShow) {
       statusContainer.classList.remove("hidden");
       statusText.textContent = text;

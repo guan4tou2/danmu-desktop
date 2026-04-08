@@ -96,6 +96,7 @@ try {
     },
     getAppVersion: () => ipcRenderer.invoke("get-app-version"),
     openExternal: (url) => ipcRenderer.invoke("open-external", url),
+    updateTrayStatus: (text) => ipcRenderer.send("update-tray-status", text),
     // IPC Listeners for main -> renderer events
     onUpdateDisplayOptions: (callback) => {
       if (_handlers.updateDisplayOptions) {

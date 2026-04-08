@@ -1,8 +1,8 @@
 // Main process entry point
-const { app, Tray, Menu, nativeImage } = require("electron");
+const { app, Tray, Menu, nativeImage, ipcMain } = require("electron");
 const path = require("path");
 const { sanitizeLog } = require("./shared/utils");
-const { createWindow } = require("./main-modules/window-manager");
+const { createWindow, createAboutWindow } = require("./main-modules/window-manager");
 const { setupIpcHandlers } = require("./main-modules/ipc-handlers");
 const { setupAutoUpdater } = require("./main-modules/auto-updater");
 
@@ -57,28 +57,41 @@ app.whenReady().then(() => {
     }
   };
 
-  const menu = [
-    {
-      label: "Open Danmu Desktop",
-      click: showMainWindow,
-    },
-    {
-      label: "Quit",
-      click: () => {
-        // spread 複製陣列，避免 destroy 觸發的 "closed" 修改迭代中的陣列
-        [...childWindows].forEach((win) => {
-          if (win && !win.isDestroyed()) {
-            win.destroy();
-          }
-        });
-        childWindows.length = 0;
-        console.log("[Main] All child windows destroyed on tray quit.");
-        app.quit();
+  let trayStatusText = "⊘ Disconnected";
+
+  function rebuildTrayMenu() {
+    const trayMenu = Menu.buildFromTemplate([
+      { label: trayStatusText, enabled: false },
+      { type: "separator" },
+      { label: "Open Danmu Desktop", click: showMainWindow },
+      { label: "About Danmu Desktop", click: () => createAboutWindow(mainWindow) },
+      { type: "separator" },
+      {
+        label: "Quit",
+        click: () => {
+          // spread 複製陣列，避免 destroy 觸發的 "closed" 修改迭代中的陣列
+          [...childWindows].forEach((win) => {
+            if (win && !win.isDestroyed()) {
+              win.destroy();
+            }
+          });
+          childWindows.length = 0;
+          console.log("[Main] All child windows destroyed on tray quit.");
+          app.quit();
+        },
       },
-    },
-  ];
-  tray.setContextMenu(Menu.buildFromTemplate(menu));
+    ]);
+    tray.setContextMenu(trayMenu);
+  }
+
+  rebuildTrayMenu();
   tray.setToolTip("Danmu Desktop");
+
+  // Update tray status label from renderer
+  ipcMain.on("update-tray-status", (_, text) => {
+    trayStatusText = String(text).slice(0, 50); // cap length for safety
+    rebuildTrayMenu();
+  });
 
   // macOS 設了 contextMenu 後 double-click 不觸發，改用 click
   // Windows/Linux 保留 double-click 開啟視窗
