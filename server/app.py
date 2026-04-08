@@ -126,7 +126,7 @@ def create_app(config_class=Config):
 
     @app.context_processor
     def inject_security_template_state():
-        return {"csp_nonce": getattr(g, "csp_nonce", ""), "app_version": Config.APP_VERSION}
+        return {"csp_nonce": getattr(g, "csp_nonce", ""), "app_version": Config.APP_VERSION, "app_name": Config.APP_NAME}
 
     @app.after_request
     def after_request(response):
