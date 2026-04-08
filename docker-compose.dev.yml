@@ -1,17 +1,15 @@
-version: '3.8'
-
-# 開發環境配置
-# 使用方式: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+# docker-compose.dev.yml
+# Development override — hot-reload source mount
+# Usage: docker compose --profile http -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 services:
   server:
     volumes:
       - ./server:/app/server
-      - /app/server/.venv  # Preserve container's venv from being overwritten by mount
+      - /app/server/.venv
       - ./server/user_fonts:/app/server/user_fonts
       - ./server/static:/app/server/static
       - ./server/logs:/app/server/logs
     environment:
       - LOG_LEVEL=DEBUG
-      - LOG_FORMAT=text  # 開發環境使用文字格式更易讀
-    command: []
+      - LOG_FORMAT=text
