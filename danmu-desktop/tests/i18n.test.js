@@ -12,7 +12,7 @@ beforeEach(() => {
 
 describe("t()", () => {
   test("returns translation for a known English key", () => {
-    expect(i18n.t("title")).toBe("Danmu Overlay Setup");
+    expect(i18n.t("title")).toBe("Danmu Desktop");
   });
 
   test("returns translation for a known Chinese key when lang is zh", () => {

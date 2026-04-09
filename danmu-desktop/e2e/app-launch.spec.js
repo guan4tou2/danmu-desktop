@@ -75,9 +75,11 @@ test.describe("App Launch", () => {
     // Wait for i18n to update
     await mainWindow.waitForTimeout(500);
 
-    const title = mainWindow.locator("h1[data-i18n='title']");
-    const titleText = await title.textContent();
-    expect(titleText).toContain("彈幕");
+    // title is now "Danmu Desktop" in all languages (brand name, not translated)
+    // verify a translated element instead — the start button label switches to Chinese
+    const startBtn = mainWindow.locator("#start-button");
+    const btnText = await startBtn.textContent();
+    expect(btnText).toContain("啟動");
 
     // Switch back to English
     await langSelect.selectOption("en");
