@@ -424,7 +424,10 @@
     });
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
+  // admin.js renders the control panel HTML asynchronously (after an HTTP fetch),
+  // so DOMContentLoaded fires before #addKeywordBtn and friends exist.
+  // admin.js dispatches "admin-panel-rendered" once the DOM is ready.
+  document.addEventListener("admin-panel-rendered", function () {
     fetchBlacklist();
     fetchDanmuHistory();
     _initHistoryEventListeners();
