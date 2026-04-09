@@ -1,4 +1,6 @@
 // Renderer entry point - orchestrates all renderer modules
+require("./renderer-modules/store");
+require("./renderer-modules/events");
 const { showToast } = require("./renderer-modules/toast");
 const { exportSettings, importSettings } = require("./renderer-modules/settings-io");
 const {

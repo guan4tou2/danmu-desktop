@@ -43,7 +43,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentSettings = {};
 
   // Module-level handles for beforeunload cleanup
-  let _autoRefreshTimer = null;
   let _adminWs = null;
   let _adminWsReconnectTimer = null;
   // _effectModalRestoreFocusEl moved to admin-effects-mgmt.js
@@ -251,223 +250,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Functions ---
 
-  async function fetchBlacklist() {
-    try {
-      const response = await fetch("/admin/blacklist/get", {
-        method: "GET",
-        credentials: "same-origin",
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        showToast(
-          ServerI18n.t("errorFetchingBlacklist").replace("{error}", errorData.error || response.statusText),
-          false
-        );
-        return;
-      }
-      const blacklist = await response.json();
-      const blacklistKeywordsDiv = document.getElementById("blacklistKeywords");
-      blacklistKeywordsDiv.innerHTML = ""; // Clear current list
-      if (blacklist.length === 0) {
-        blacklistKeywordsDiv.innerHTML =
-          `<p class="text-slate-400 text-sm">${ServerI18n.t("noKeywordsYet")}</p>`;
-      } else {
-        blacklist.forEach((keyword) => {
-          const keywordEl = document.createElement("div");
-          keywordEl.className =
-            "flex items-center justify-between bg-slate-700/50 p-2 rounded-lg";
-
-          // Create a span for the keyword text
-          const keywordSpan = document.createElement("span");
-          keywordSpan.className = "text-slate-200";
-          keywordSpan.textContent = keyword; // Use textContent to sanitize
-
-          // Create the remove button
-          const removeButton = document.createElement("button");
-          removeButton.className =
-            "removeKeywordBtn text-red-400 hover:text-red-600 font-semibold";
-          removeButton.textContent = ServerI18n.t("remove"); // Set button text
-          // Set data-keyword attribute safely
-          removeButton.setAttribute("data-keyword", keyword); // Add this line
-
-          keywordEl.appendChild(keywordSpan);
-          keywordEl.appendChild(removeButton);
-          blacklistKeywordsDiv.appendChild(keywordEl);
-        });
-      }
-      // Event listeners for remove buttons are now handled by delegation in addEventListeners
-    } catch (error) {
-      console.error("Fetch blacklist error:", error);
-      showToast(ServerI18n.t("fetchBlacklistError"), false);
-    }
-  }
-
-  async function addKeyword() {
-    const keywordInput = document.getElementById("newKeywordInput");
-    const keyword = keywordInput.value.trim();
-    if (!keyword) {
-      showToast(ServerI18n.t("keywordEmpty"), false);
-      return;
-    }
-    try {
-      const response = await csrfFetch("/admin/blacklist/add", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ keyword: keyword }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        showToast(data.message || "Keyword added.", true);
-        keywordInput.value = ""; // Clear input
-        fetchBlacklist(); // Refresh list
-      } else {
-        showToast(data.error || "Failed to add keyword.", false);
-      }
-    } catch (error) {
-      console.error("Add keyword error:", error);
-      showToast(ServerI18n.t("addKeywordError"), false);
-    }
-  }
-
-  async function removeKeyword(keyword) {
-    if (!confirm(ServerI18n.t("confirmRemoveKeyword").replace("{keyword}", keyword))) return;
-    try {
-      const response = await csrfFetch("/admin/blacklist/remove", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ keyword: keyword }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        showToast(data.message || "Keyword removed.", true);
-        fetchBlacklist(); // Refresh list
-      } else {
-        showToast(data.error || "Failed to remove keyword.", false);
-      }
-    } catch (error) {
-      console.error("Remove keyword error:", error);
-      showToast(ServerI18n.t("removeKeywordError"), false);
-    }
-  }
-
-  function formatTimestamp(timestamp) {
-    try {
-      const date = new Date(timestamp);
-      const now = new Date();
-      const diffMs = now - date;
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMs / 3600000);
-      const diffDays = Math.floor(diffMs / 86400000);
-
-      if (diffMins < 1) return ServerI18n.t("justNow");
-      if (diffMins < 60) return `${diffMins}m ago`;
-      if (diffHours < 24) return `${diffHours}h ago`;
-      if (diffDays < 7) return `${diffDays}d ago`;
-
-      return date.toLocaleString("zh-TW", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch (e) {
-      return timestamp;
-    }
-  }
-
-  // Cache all fetched records for client-side search
-  let _allHistoryRecords = [];
-
-  function renderHistoryRecords(records) {
-    const historyListDiv = document.getElementById("danmuHistoryList");
-    if (!historyListDiv) return;
-
-    historyListDiv.innerHTML = "";
-    if (records.length === 0) {
-      historyListDiv.innerHTML =
-        `<p class="text-slate-400 text-sm text-center py-4">${ServerI18n.t("noDanmuFound")}</p>`;
-      return;
-    }
-
-    records.forEach((record, idx) => {
-      const recordEl = document.createElement("div");
-      recordEl.className = "bg-slate-700/50 p-3 rounded-lg space-y-1 flex gap-2 items-start";
-
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.className = "accent-purple-500 mt-1 shrink-0 replay-record-cb";
-      checkbox.dataset.recordIndex = idx;
-      recordEl.appendChild(checkbox);
-
-      const contentWrap = document.createElement("div");
-      contentWrap.className = "flex-1 space-y-1";
-
-      const headerEl = document.createElement("div");
-      headerEl.className = "flex items-start justify-between gap-2";
-
-      const timeEl = document.createElement("div");
-      timeEl.className = "text-xs text-slate-400 shrink-0";
-      timeEl.textContent = formatTimestamp(record.timestamp);
-
-      // "Block" quick-action button (text only, non-image danmu)
-      if (record.text && !record.isImage) {
-        const blockBtn = document.createElement("button");
-        blockBtn.className =
-          "text-xs px-2 py-0.5 rounded bg-red-700/60 hover:bg-red-700 text-slate-200 transition-colors shrink-0";
-        blockBtn.textContent = ServerI18n.t("block");
-        blockBtn.title = ServerI18n.t("blockTitle");
-        blockBtn.addEventListener("click", async () => {
-          try {
-            await csrfFetch("/admin/blacklist/add", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ keyword: record.text }),
-            });
-            showToast(`"${record.text.slice(0, 30)}" ${ServerI18n.t("addedToBlacklist")}`, true);
-            fetchBlacklist();
-          } catch (e) {
-            showToast(ServerI18n.t("failedToAddBlacklist"), false);
-          }
-        });
-        headerEl.appendChild(blockBtn);
-      }
-
-      headerEl.prepend(timeEl);
-
-      const textEl = document.createElement("div");
-      textEl.className = "text-white text-sm break-words";
-      textEl.textContent = record.text || "(empty)";
-
-      const metaEl = document.createElement("div");
-      metaEl.className = "text-xs text-slate-400 flex flex-wrap gap-x-3 gap-y-1";
-      const metaParts = [];
-      if (record.color) metaParts.push(`Color: #${record.color}`);
-      if (record.size) metaParts.push(`Size: ${record.size}`);
-      if (record.speed) metaParts.push(`Speed: ${record.speed}`);
-      if (record.opacity) metaParts.push(`Opacity: ${record.opacity}`);
-      if (record.isImage) metaParts.push("Type: Image");
-      if (record.fontInfo?.name) metaParts.push(`Font: ${record.fontInfo.name}`);
-      if (record.clientIp) metaParts.push(`IP: ${record.clientIp}`);
-      if (record.fingerprint) metaParts.push(`FP: ${record.fingerprint.slice(0, 8)}…`);
-      metaEl.textContent = metaParts.join(" • ") || ServerI18n.t("noMetadata");
-
-      contentWrap.appendChild(headerEl);
-      contentWrap.appendChild(textEl);
-      contentWrap.appendChild(metaEl);
-      recordEl.appendChild(contentWrap);
-      historyListDiv.appendChild(recordEl);
-    });
-
-    // 同步 Select All checkbox 狀態
-    const selectAllCb = document.getElementById("historySelectAll");
-    if (selectAllCb) selectAllCb.checked = false;
-  }
-
   async function _loadStats() {
     const hours = parseInt(document.getElementById("historyHours")?.value || "24");
     try {
@@ -510,79 +292,8 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Load stats error:", err);
     }
   }
-
-  async function fetchDanmuHistory() {
-    try {
-      const hours = parseInt(document.getElementById("historyHours")?.value || "24");
-      const response = await fetch(`/admin/history?hours=${hours}&limit=1000`, {
-        method: "GET",
-        credentials: "same-origin",
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        showToast(ServerI18n.t("errorFetchingHistory").replace("{error}", errorData.error || response.statusText), false);
-        return;
-      }
-      const data = await response.json();
-      const { records, stats } = data;
-      _allHistoryRecords = records;
-
-      const statsDiv = document.getElementById("historyStats");
-      if (statsDiv) {
-        statsDiv.innerHTML = `
-          <div class="flex gap-4 text-xs">
-            <span>${ServerI18n.t("total")} <span class="text-white font-semibold">${stats.total}</span></span>
-            <span>${ServerI18n.t("last24h")} <span class="text-white font-semibold">${stats.last_24h}</span></span>
-            <span>${ServerI18n.t("showing")} <span class="text-white font-semibold">${records.length}</span></span>
-          </div>`;
-      }
-
-      // Apply current search filter
-      const searchTerm = document.getElementById("historySearch")?.value?.toLowerCase() || "";
-      const filtered = searchTerm
-        ? records.filter((r) => (r.text || "").toLowerCase().includes(searchTerm))
-        : records;
-
-      renderHistoryRecords(filtered);
-
-      // Also refresh stats dashboard
-      _loadStats();
-    } catch (error) {
-      console.error("Fetch danmu history error:", error);
-      showToast(ServerI18n.t("fetchHistoryError"), false);
-    }
-  }
-
-  async function clearDanmuHistory() {
-    if (
-      !confirm(ServerI18n.t("confirmClearHistory"))
-    ) {
-      return;
-    }
-
-    try {
-      const response = await csrfFetch("/admin/history/clear", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        showToast(ServerI18n.t("historyClearedSuccess"), true);
-        fetchDanmuHistory();
-      } else {
-        const errorData = await response.json();
-        showToast(
-          ServerI18n.t("errorClearingHistory").replace("{error}", errorData.error || response.statusText),
-          false
-        );
-      }
-    } catch (error) {
-      console.error("Clear history error:", error);
-      showToast(ServerI18n.t("clearHistoryError"), false);
-    }
-  }
+  // Expose for admin-history.js
+  window._loadStats = _loadStats;
 
   // ─── Replay Controls ──────────────────────────────────────────────────────
 
@@ -652,9 +363,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 取得目前顯示的記錄
     const searchTerm = document.getElementById("historySearch")?.value?.toLowerCase() || "";
+    const allRecords = (window.AdminHistory && window.AdminHistory.allHistoryRecords) || [];
     const displayedRecords = searchTerm
-      ? _allHistoryRecords.filter((r) => (r.text || "").toLowerCase().includes(searchTerm))
-      : _allHistoryRecords;
+      ? allRecords.filter((r) => (r.text || "").toLowerCase().includes(searchTerm))
+      : allRecords;
 
     const selectedRecords = [];
     checkboxes.forEach((cb) => {
@@ -748,9 +460,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const searchTerm = document.getElementById("historySearch")?.value?.toLowerCase() || "";
+    const allRecords = (window.AdminHistory && window.AdminHistory.allHistoryRecords) || [];
     const displayedRecords = searchTerm
-      ? _allHistoryRecords.filter((r) => (r.text || "").toLowerCase().includes(searchTerm))
-      : _allHistoryRecords;
+      ? allRecords.filter((r) => (r.text || "").toLowerCase().includes(searchTerm))
+      : allRecords;
 
     const selectedRecords = [];
     checkboxes.forEach((cb) => {
@@ -879,160 +592,6 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (e) {
       showToast(ServerI18n.t("exportFailed"), false);
     }
-  }
-
-  // --- Poll Management ---
-  let _pollStatusTimer = null;
-
-  async function _createPoll() {
-    const question = (document.getElementById("pollQuestion")?.value || "").trim();
-    const optionInputs = document.querySelectorAll(".poll-option-input");
-    const options = Array.from(optionInputs).map((el) => el.value.trim()).filter(Boolean);
-
-    if (!question) { showToast(ServerI18n.t("pollEnterQuestion"), false); return; }
-    if (options.length < 2) { showToast(ServerI18n.t("pollMinOptions"), false); return; }
-
-    try {
-      const res = await csrfFetch("/admin/poll/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, options }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        showToast(data.error || ServerI18n.t("pollCreateFailed"), false);
-        return;
-      }
-      showToast(ServerI18n.t("pollCreated"), true);
-      _renderPollStatus(data);
-      _pollPollStatus();
-    } catch (e) {
-      showToast(ServerI18n.t("pollCreateFailed"), false);
-    }
-  }
-
-  async function _endPoll() {
-    try {
-      const res = await csrfFetch("/admin/poll/end", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) { showToast(data.error || ServerI18n.t("pollEndFailed"), false); return; }
-      showToast(ServerI18n.t("pollEnded"), true);
-      _renderPollStatus(data);
-      if (_pollStatusTimer) { clearInterval(_pollStatusTimer); _pollStatusTimer = null; }
-    } catch (e) {
-      showToast(ServerI18n.t("pollEndFailed"), false);
-    }
-  }
-
-  async function _resetPoll() {
-    try {
-      const res = await csrfFetch("/admin/poll/reset", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) { showToast(data.error || ServerI18n.t("pollResetFailed"), false); return; }
-      showToast(ServerI18n.t("pollResetDone"), true);
-      _renderPollStatus(data);
-      if (_pollStatusTimer) { clearInterval(_pollStatusTimer); _pollStatusTimer = null; }
-    } catch (e) {
-      showToast(ServerI18n.t("pollResetFailed"), false);
-    }
-  }
-
-  function _pollPollStatus() {
-    if (_pollStatusTimer) { clearInterval(_pollStatusTimer); _pollStatusTimer = null; }
-    const fetchStatus = async () => {
-      try {
-        const res = await fetch("/admin/poll/status", { credentials: "same-origin" });
-        if (res.ok) {
-          const data = await res.json();
-          _renderPollStatus(data);
-          if (data.state !== "active") {
-            if (_pollStatusTimer) { clearInterval(_pollStatusTimer); _pollStatusTimer = null; }
-          }
-        }
-      } catch (_) { /* ignore */ }
-    };
-    fetchStatus();
-    _pollStatusTimer = setInterval(fetchStatus, 2000);
-  }
-
-  function _renderPollStatus(data) {
-    const display = document.getElementById("pollStatusDisplay");
-    if (!display) return;
-    display.textContent = "";
-
-    if (!data || data.state === "idle") {
-      const noActive = document.createElement("span");
-      noActive.className = "text-slate-500";
-      noActive.textContent = ServerI18n.t("pollNoActive");
-      display.appendChild(noActive);
-      return;
-    }
-    const total = data.total_votes || 0;
-    const maxCount = Math.max(1, ...data.options.map((o) => o.count));
-
-    const card = document.createElement("div");
-    card.className = "mt-2 p-3 bg-slate-800/60 rounded-lg border border-slate-700/50";
-
-    // Header row
-    const headerRow = document.createElement("div");
-    headerRow.className = "flex items-center gap-2 mb-2";
-
-    const dot = document.createElement("span");
-    dot.className = "inline-block w-2 h-2 rounded-full " + (data.state === "active" ? "bg-green-400 animate-pulse" : "bg-yellow-400");
-    headerRow.appendChild(dot);
-
-    const questionEl = document.createElement("span");
-    questionEl.className = "text-white font-semibold text-sm";
-    questionEl.textContent = data.question || "";
-    headerRow.appendChild(questionEl);
-
-    const stateEl = document.createElement("span");
-    stateEl.className = "text-xs text-slate-400 ml-auto";
-    stateEl.textContent = data.state;
-    headerRow.appendChild(stateEl);
-
-    card.appendChild(headerRow);
-
-    // Option rows
-    data.options.forEach((o) => {
-      const row = document.createElement("div");
-      row.className = "mb-1.5";
-
-      const labelRow = document.createElement("div");
-      labelRow.className = "flex justify-between text-xs text-slate-300 mb-0.5";
-
-      const labelLeft = document.createElement("span");
-      const keyBold = document.createElement("b");
-      keyBold.textContent = o.key + ".";
-      labelLeft.appendChild(keyBold);
-      labelLeft.appendChild(document.createTextNode(" " + o.text));
-
-      const labelRight = document.createElement("span");
-      labelRight.textContent = o.count + " (" + o.percentage + "%)";
-
-      labelRow.appendChild(labelLeft);
-      labelRow.appendChild(labelRight);
-
-      const barBg = document.createElement("div");
-      barBg.className = "bg-slate-700/50 rounded h-2 overflow-hidden";
-
-      const barFill = document.createElement("div");
-      barFill.className = "h-full rounded bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-300";
-      barFill.style.width = (o.count / maxCount * 100) + "%";
-
-      barBg.appendChild(barFill);
-      row.appendChild(labelRow);
-      row.appendChild(barBg);
-      card.appendChild(row);
-    });
-
-    // Footer
-    const footer = document.createElement("div");
-    footer.className = "text-xs text-slate-500 mt-1";
-    footer.textContent = ServerI18n.t("pollTotalVotes").replace("{0}", total);
-    card.appendChild(footer);
-
-    display.appendChild(card);
   }
 
   // Expose csrfFetch globally for external admin modules (e.g. admin-scheduler.js)
@@ -1563,15 +1122,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     </details>
                 `);
 
-    // Fetch blacklist/history after render without blocking first paint
-    if (document.getElementById("blacklistKeywords")) {
-      scheduleIdleTask(fetchBlacklist);
-    }
-
-    if (document.getElementById("danmuHistoryList")) {
-      scheduleIdleTask(fetchDanmuHistory);
-    }
-
     addEventListeners();
     scheduleIdleTask(initEffectsManagement);
 
@@ -1637,119 +1187,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // Add Keyword button event listener
-    const addKeywordBtn = document.getElementById("addKeywordBtn");
-    if (addKeywordBtn) {
-      addKeywordBtn.addEventListener("click", addKeyword);
-    }
-
-    const newKeywordInput = document.getElementById("newKeywordInput");
-    if (newKeywordInput) {
-      newKeywordInput.addEventListener("keypress", function (event) {
-        if (event.key === "Enter" || event.keyCode === 13) {
-          event.preventDefault();
-          addKeyword();
-        }
-      });
-    }
-
-    // Event delegation for remove keyword buttons
-    const blacklistKeywordsDiv = document.getElementById("blacklistKeywords");
-    if (blacklistKeywordsDiv) {
-      blacklistKeywordsDiv.addEventListener("click", function (event) {
-        const removeButton = event.target.closest(".removeKeywordBtn");
-        if (removeButton) {
-          const keyword = removeButton.dataset.keyword;
-          if (keyword) {
-            removeKeyword(keyword);
-          }
-        }
-      });
-    }
-
-    // Danmu history event listeners
-    const refreshHistoryBtn = document.getElementById("refreshHistoryBtn");
-    if (refreshHistoryBtn) {
-      refreshHistoryBtn.addEventListener("click", fetchDanmuHistory);
-    }
-
-    const exportHistoryBtn = document.getElementById("exportHistoryBtn");
-    if (exportHistoryBtn) {
-      exportHistoryBtn.addEventListener("click", () => {
-        if (_allHistoryRecords.length === 0) {
-          showToast(ServerI18n.t("noRecordsToExport"), false);
-          return;
-        }
-
-        const headers = ["timestamp", "text", "color", "size", "speed", "opacity", "isImage", "fontName", "clientIp", "fingerprint"];
-        const escape = (v) => {
-          const s = v == null ? "" : String(v);
-          return s.includes(",") || s.includes('"') || s.includes("\n")
-            ? `"${s.replace(/"/g, '""')}"`
-            : s;
-        };
-
-        const rows = _allHistoryRecords.map((r) => [
-          escape(r.timestamp || ""),
-          escape(r.text || ""),
-          escape(r.color ? `#${r.color}` : ""),
-          escape(r.size ?? ""),
-          escape(r.speed ?? ""),
-          escape(r.opacity ?? ""),
-          escape(r.isImage ? "true" : "false"),
-          escape(r.fontInfo?.name || ""),
-          escape(r.clientIp || ""),
-          escape(r.fingerprint || ""),
-        ].join(","));
-
-        const csv = [headers.join(","), ...rows].join("\r\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-        a.href = url;
-        a.download = `danmu-history-${ts}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-        showToast(`Exported ${_allHistoryRecords.length} records.`, true);
-      });
-    }
-
-    const clearHistoryBtn = document.getElementById("clearHistoryBtn");
-    if (clearHistoryBtn) {
-      clearHistoryBtn.addEventListener("click", clearDanmuHistory);
-    }
-
-    const historyHoursSelect = document.getElementById("historyHours");
-    if (historyHoursSelect) {
-      historyHoursSelect.addEventListener("change", fetchDanmuHistory);
-    }
-
-    // Client-side history search
-    const historySearch = document.getElementById("historySearch");
-    if (historySearch) {
-      historySearch.addEventListener("input", () => {
-        const term = historySearch.value.toLowerCase();
-        const filtered = term
-          ? _allHistoryRecords.filter((r) => (r.text || "").toLowerCase().includes(term))
-          : _allHistoryRecords;
-        renderHistoryRecords(filtered);
-      });
-    }
-
-    // Auto-refresh toggle — timer stored at module scope for beforeunload cleanup
-    const autoRefreshCheckbox = document.getElementById("historyAutoRefresh");
-    if (autoRefreshCheckbox) {
-      autoRefreshCheckbox.addEventListener("change", () => {
-        if (_autoRefreshTimer) {
-          clearInterval(_autoRefreshTimer);
-          _autoRefreshTimer = null;
-        }
-        if (autoRefreshCheckbox.checked) {
-          _autoRefreshTimer = setInterval(fetchDanmuHistory, 30000);
-        }
-      });
-    }
+    // History/blacklist event listeners moved to admin-history.js
 
     // Replay controls
     const replayStartBtn = document.getElementById("replayStartBtn");
@@ -1766,15 +1204,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const exportJsonBtn = document.getElementById("exportJsonBtn");
     if (exportJsonBtn) exportJsonBtn.addEventListener("click", _exportJsonTimeline);
-
-    const historySelectAll = document.getElementById("historySelectAll");
-    if (historySelectAll) {
-      historySelectAll.addEventListener("change", () => {
-        document.querySelectorAll(".replay-record-cb").forEach((cb) => {
-          cb.checked = historySelectAll.checked;
-        });
-      });
-    }
 
     // Password change button
     const changePasswordBtn = document.getElementById("changePasswordBtn");
@@ -1822,50 +1251,6 @@ document.addEventListener("DOMContentLoaded", () => {
       uploadFontBtn.addEventListener("click", () =>
         handleFontUpload("fontUploadInput", "uploadFontBtn")
       );
-    }
-
-    // Poll management buttons
-    const pollCreateBtn = document.getElementById("pollCreateBtn");
-    if (pollCreateBtn) pollCreateBtn.addEventListener("click", _createPoll);
-    const pollEndBtn = document.getElementById("pollEndBtn");
-    if (pollEndBtn) pollEndBtn.addEventListener("click", _endPoll);
-    const pollResetBtn = document.getElementById("pollResetBtn");
-    if (pollResetBtn) pollResetBtn.addEventListener("click", _resetPoll);
-
-    const pollAddOptionBtn = document.getElementById("pollAddOptionBtn");
-    if (pollAddOptionBtn) {
-      pollAddOptionBtn.addEventListener("click", () => {
-        const container = document.getElementById("pollOptionsContainer");
-        if (!container) return;
-        const count = container.querySelectorAll(".poll-option-input").length;
-        if (count >= 6) { showToast(ServerI18n.t("maxPollOptions"), false); return; }
-        const input = document.createElement("input");
-        input.type = "text";
-        input.className = "poll-option-input w-full p-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm";
-        input.placeholder = String.fromCharCode(65 + count) + ". Option " + (count + 1);
-        input.maxLength = 100;
-        container.appendChild(input);
-      });
-    }
-
-    const pollRemoveOptionBtn = document.getElementById("pollRemoveOptionBtn");
-    if (pollRemoveOptionBtn) {
-      pollRemoveOptionBtn.addEventListener("click", () => {
-        const container = document.getElementById("pollOptionsContainer");
-        if (!container) return;
-        const inputs = container.querySelectorAll(".poll-option-input");
-        if (inputs.length <= 2) { showToast(ServerI18n.t("minPollOptions"), false); return; }
-        inputs[inputs.length - 1].remove();
-      });
-    }
-
-    // Start polling for poll status if section is open
-    const pollDetails = document.getElementById("sec-polls");
-    if (pollDetails) {
-      pollDetails.addEventListener("toggle", () => {
-        if (pollDetails.open) _pollPollStatus();
-      });
-      if (pollDetails.open) _pollPollStatus();
     }
 
     // Password show/hide toggles
@@ -2026,7 +1411,7 @@ document.addEventListener("DOMContentLoaded", () => {
           try {
             const data = JSON.parse(event.data);
             if (data.type === "blacklist_update") {
-              fetchBlacklist();
+              window.AdminHistory && window.AdminHistory.fetchBlacklist();
             } else if (data.type === "settings_changed") {
               fetchLatestSettings();
             }
@@ -2068,10 +1453,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (_replayPollTimer) {
       clearInterval(_replayPollTimer);
       _replayPollTimer = null;
-    }
-    if (_autoRefreshTimer) {
-      clearInterval(_autoRefreshTimer);
-      _autoRefreshTimer = null;
     }
     if (_adminWsReconnectTimer) {
       clearTimeout(_adminWsReconnectTimer);
