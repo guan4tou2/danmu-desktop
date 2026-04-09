@@ -24,17 +24,21 @@ server/static/css/tokens.css -> ../../shared/tokens.css
 
 Git tracks symlinks natively. Flask's static file server follows symlinks. No build step required. One file to edit.
 
+The existing CI `diff` check in `test.yml` continues to work unchanged — `diff` compares file contents and returns 0 when both paths resolve to the same content. The only change needed beyond the symlink itself is the Makefile `copy-tokens` target, which currently uses `cp` (would overwrite the symlink with a regular file); it must be updated to `ln -sf` so that running `make copy-tokens` recreates the symlink rather than destroying it.
+
 ### Files Changed
 
 | Action | Path |
 |--------|------|
 | Delete + replace with symlink | `server/static/css/tokens.css` |
+| Modify | `Makefile` — update `copy-tokens` target to use `ln -sf` |
 
 ### Verification
 
 ```bash
 python3 -c "import os; print(os.path.realpath('server/static/css/tokens.css'))"
 # Expected: .../shared/tokens.css
+diff shared/tokens.css server/static/css/tokens.css  # must exit 0
 ```
 
 Visually confirm admin page loads correctly after change.
