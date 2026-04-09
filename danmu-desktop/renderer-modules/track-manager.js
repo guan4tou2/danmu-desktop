@@ -1,15 +1,14 @@
 // Track management and collision detection + danmu display (used in child window)
 const { sanitizeLog } = require("../shared/utils");
 const DanmuEffects = require("./danmu-effects");
+const store = require("./store");
 
 let _resizeHandler = null;
 
 function initTrackManager() {
-  window.danmuTracks = [];
-  window.danmuTrackSettings = {
-    maxTracks: 10,
-    collisionDetection: true,
-  };
+  store.set("tracks", []);
+  store.set("trackSettings", { maxTracks: 10, collisionDetection: true });
+  store.set("fixedTracks", []);
 
   // 暴露給第三方插件使用
   window.DanmuEffects = DanmuEffects;
@@ -29,9 +28,8 @@ function initTrackManager() {
   window.addEventListener("resize", _resizeHandler);
 
   window.updateDanmuTrackSettings = function (maxTracks, collisionDetection) {
-    window.danmuTrackSettings.maxTracks = maxTracks;
-    window.danmuTrackSettings.collisionDetection = collisionDetection;
-    console.log("[Track Settings] Updated:", window.danmuTrackSettings);
+    store.set("trackSettings", { maxTracks, collisionDetection });
+    console.log("[Track Settings] Updated:", store.get("trackSettings"));
   };
 
   window.findAvailableTrack = function (displayArea, danmuHeight, danmuWidth, speed) {
@@ -39,7 +37,7 @@ function initTrackManager() {
     const areaTopPixels = (displayArea.top / 100) * screenHeight;
     const areaHeightPixels = (displayArea.height / 100) * screenHeight;
 
-    const { maxTracks, collisionDetection } = window.danmuTrackSettings;
+    const { maxTracks, collisionDetection } = store.get("trackSettings");
 
     const effectiveMaxTracks =
       maxTracks > 0 ? maxTracks : Math.floor(areaHeightPixels / danmuHeight);
@@ -61,17 +59,14 @@ function initTrackManager() {
     const minTime = 2000;
     const duration = maxTime - ((speed - 1) * (maxTime - minTime)) / 9;
 
-    // In-place removal avoids allocating a new array on every danmu arrival
-    for (let i = window.danmuTracks.length - 1; i >= 0; i--) {
-      if (window.danmuTracks[i].endTime <= now) {
-        window.danmuTracks.splice(i, 1);
-      }
-    }
+    // Filter out expired tracks and write back
+    const tracks = store.get("tracks").filter((t) => t.endTime > now);
+    store.set("tracks", tracks);
 
     for (let i = 0; i < effectiveMaxTracks; i++) {
       const trackTop = areaTopPixels + i * trackHeight;
 
-      const hasCollision = window.danmuTracks.some((track) => {
+      const hasCollision = tracks.some((track) => {
         if (track.trackIndex !== i) return false;
         const timeToReachRight =
           (screenWidth / (screenWidth + track.width)) * track.duration;
@@ -81,18 +76,19 @@ function initTrackManager() {
 
       if (!hasCollision) {
         const top = trackTop + Math.random() * Math.max(0, trackHeight - danmuHeight);
-        window.danmuTracks.push({
+        tracks.push({
           trackIndex: i,
           startTime: now,
           endTime: now + duration,
           duration,
           width: danmuWidth,
         });
+        store.set("tracks", tracks);
         return { top, trackIndex: i };
       }
     }
 
-    const oldestTrack = window.danmuTracks.reduce(
+    const oldestTrack = tracks.reduce(
       (oldest, track) =>
         !oldest || track.endTime < oldest.endTime ? track : oldest,
       null
@@ -102,13 +98,14 @@ function initTrackManager() {
     const trackTop = areaTopPixels + trackIndex * trackHeight;
     const top = trackTop + Math.random() * Math.max(0, trackHeight - danmuHeight);
 
-    window.danmuTracks.push({
+    tracks.push({
       trackIndex,
       startTime: now,
       endTime: now + duration,
       duration,
       width: danmuWidth,
     });
+    store.set("tracks", tracks);
 
     return { top, trackIndex };
   };
@@ -340,22 +337,22 @@ function initTrackManager() {
           const screenHeight = _cachedScreenHeight;
           const areaTopPx = (displayArea.top / 100) * screenHeight;
           const areaHeightPx = (displayArea.height / 100) * screenHeight;
-          const { maxTracks } = window.danmuTrackSettings;
+          const { maxTracks } = store.get("trackSettings");
           const effectiveMaxTracks = maxTracks > 0
             ? maxTracks
             : Math.max(1, Math.floor(areaHeightPx / danmuTotalHeight));
           const trackHeight = areaHeightPx / effectiveMaxTracks;
 
           // 獨立的固定彈幕軌道陣列（top_fixed 和 bottom_fixed 各自獨立）
-          if (!window._fixedTracks) window._fixedTracks = [];
           const now = Date.now();
-          window._fixedTracks = window._fixedTracks.filter(t => t.endTime > now);
+          const fixedTracks = store.get("fixedTracks").filter(t => t.endTime > now);
+          store.set("fixedTracks", fixedTracks);
 
           // 找第一個未佔用的軌道
           let trackIdx = 0;
           let found = false;
           for (let i = 0; i < effectiveMaxTracks; i++) {
-            const occupied = window._fixedTracks.some(
+            const occupied = fixedTracks.some(
               t => t.trackIndex === i && t.layout === layout
             );
             if (!occupied) {
@@ -366,12 +363,13 @@ function initTrackManager() {
           }
           if (!found) {
             // 全部佔用 → 選最快到期的軌道
-            const candidates = window._fixedTracks.filter(t => t.layout === layout);
+            const candidates = fixedTracks.filter(t => t.layout === layout);
             if (candidates.length > 0) {
               trackIdx = candidates.reduce((a, b) => a.endTime < b.endTime ? a : b).trackIndex;
             }
           }
-          window._fixedTracks.push({ trackIndex: trackIdx, endTime: now + fixedDuration, layout });
+          fixedTracks.push({ trackIndex: trackIdx, endTime: now + fixedDuration, layout });
+          store.set("fixedTracks", fixedTracks);
 
           const offsetInTrack = Math.random() * Math.max(0, trackHeight - danmuTotalHeight);
           wrapper.style.left = "50%";
