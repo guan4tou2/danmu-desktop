@@ -118,86 +118,16 @@ Record live danmu sessions as JSON timelines for offline replay or analysis. Ava
    # rerun the docker run command above
    ```
 
-#### Option 2: Docker Compose
+#### Option 2: Docker Compose — Quick Start
 
-1. Download the config files (no full clone needed):
+```bash
+cp .env.example .env     # set ADMIN_PASSWORD
+docker compose --profile http up -d
+```
 
-   ```bash
-   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.yml
-   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/.env.example
-   ```
+Open http://localhost:4000
 
-2. Configure environment variables:
-
-   ```bash
-   cp .env.example .env
-   # Edit .env and set ADMIN_PASSWORD / ADMIN_PASSWORD_HASHED and other settings
-   ```
-
-3. Start services (HTTP):
-
-   ```bash
-   docker compose up -d
-   ```
-   - Nginx reverse proxy exposes ports `4000` (HTTP) and `4001` (WebSocket).
-   - The Python server runs internal-only behind Nginx.
-
-4. Optional HTTPS / SSL setup:
-
-   **Which mode should I use?**
-   | Scenario | Recommendation |
-   |----------|---------------|
-   | Local dev / same machine only | Plain HTTP is fine |
-   | Local network / LAN (`192.168.x.x`) | HTTPS self-signed — set nothing extra |
-   | Public IP, no domain (e.g. VPS `1.2.3.4`) | HTTPS self-signed — set `SERVER_IP=1.2.3.4` in `.env` |
-   | Public server with a domain (`danmu.example.com`) | Traefik + Let's Encrypt — trusted cert, no browser warning |
-
-   **HTTPS — Self-Signed Certificate** (IP or any host, no domain required):
-   ```bash
-   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.https.yml
-   mkdir -p nginx/certs
-   curl -o nginx/nginx-https.conf https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/nginx/nginx-https.conf
-   ```
-   Add to `.env`:
-   ```bash
-   SESSION_COOKIE_SECURE=true
-   TRUSTED_HOSTS=your-ip,localhost,127.0.0.1
-   # SERVER_IP=1.2.3.4        # include public IP in cert SAN
-   # HTTPS_PORT=4000           # default 443; change if port 443 is taken
-   ```
-   ```bash
-   docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
-   ```
-   Certificate is auto-generated on first start. Electron client connects to `your-ip:4001`.
-
-   **Traefik + Let's Encrypt** (public domain required, port 80 must be internet-accessible):
-   ```bash
-   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.traefik.yml
-   mkdir -p traefik && touch traefik/acme.json && chmod 600 traefik/acme.json
-   ```
-   Add to `.env`:
-   ```bash
-   SESSION_COOKIE_SECURE=true
-   TRUSTED_HOSTS=yourdomain.com,localhost,127.0.0.1
-   DOMAIN=yourdomain.com
-   ACME_EMAIL=you@example.com
-   ```
-   ```bash
-   docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d
-   ```
-   Traefik automatically obtains and renews the certificate. Electron client connects to `yourdomain.com:4001`.
-
-   **Redis rate limiting** (multi-instance or high-traffic):
-   ```bash
-   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.redis.yml
-   # Set RATE_LIMIT_BACKEND=redis and REDIS_URL=redis://redis:6379/0 in .env
-   docker compose -f docker-compose.yml -f docker-compose.redis.yml up -d
-   ```
-
-   Overrides can be combined, e.g. Let's Encrypt + Redis:
-   ```bash
-   docker compose -f docker-compose.yml -f docker-compose.traefik.yml -f docker-compose.redis.yml up -d
-   ```
+For HTTPS, Traefik, Redis, and production hardening, see **[DEPLOYMENT.md](DEPLOYMENT.md)**.
 
 #### Option 3: Manual Setup
 

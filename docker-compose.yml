@@ -14,11 +14,11 @@ services:
       - SECRET_KEY=${SECRET_KEY:-}
       - PORT=${PORT:-4000}
       - WS_PORT=${WS_PORT:-4001}
-      # Expose the dedicated WS server from the container; keep this intentional.
       - WS_HOST=0.0.0.0
       - ENV=${ENV:-production}
       - FIRE_RATE_LIMIT=${FIRE_RATE_LIMIT:-20}
       - FIRE_RATE_WINDOW=${FIRE_RATE_WINDOW:-60}
+      # Set RATE_LIMIT_BACKEND=redis and REDIS_URL in .env when using --profile redis
       - RATE_LIMIT_BACKEND=${RATE_LIMIT_BACKEND:-memory}
       - REDIS_URL=${REDIS_URL:-}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
@@ -50,12 +50,36 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    labels:
+      - traefik.enable=true
+      - traefik.http.middlewares.danmu-https-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.danmu-https-redirect.redirectscheme.permanent=true
+      - traefik.http.routers.danmu-http.rule=Host(`${DOMAIN:-localhost}`)
+      - traefik.http.routers.danmu-http.entrypoints=web
+      - traefik.http.routers.danmu-http.middlewares=danmu-https-redirect
+      - traefik.http.routers.danmu.rule=Host(`${DOMAIN:-localhost}`) && !PathPrefix(`/ws`)
+      - traefik.http.routers.danmu.entrypoints=websecure
+      - traefik.http.routers.danmu.tls.certresolver=le
+      - traefik.http.services.danmu.loadbalancer.server.port=4000
+      - traefik.http.middlewares.danmu-ws-strip.stripprefix.prefixes=/ws
+      - traefik.http.routers.danmu-ws.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/ws`)
+      - traefik.http.routers.danmu-ws.entrypoints=websecure
+      - traefik.http.routers.danmu-ws.tls.certresolver=le
+      - traefik.http.routers.danmu-ws.middlewares=danmu-ws-strip
+      - traefik.http.services.danmu-ws.loadbalancer.server.port=4001
+    depends_on:
+      redis:
+        condition: service_healthy
+        required: false
 
+  # ── HTTP mode (--profile http) ────────────────────────────────────────────
   reverse-proxy:
+    profiles: [http]
     image: nginx:1.27-alpine
     container_name: danmu-reverse-proxy
     depends_on:
-      - server
+      server:
+        condition: service_healthy
     ports:
       - "${PORT:-4000}:4000"
       - "${WS_PORT:-4001}:4001"
@@ -67,3 +91,105 @@ services:
         limits:
           memory: 128m
           cpus: "0.5"
+
+  # ── HTTPS self-signed mode (--profile https) ─────────────────────────────
+  reverse-proxy-https:
+    profiles: [https]
+    image: nginx:1.27-alpine
+    container_name: danmu-reverse-proxy-https
+    depends_on:
+      server:
+        condition: service_healthy
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx-https.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs
+    environment:
+      - SERVER_IP=${SERVER_IP:-}
+      - SERVER_DOMAIN=${SERVER_DOMAIN:-}
+    entrypoint:
+      - sh
+      - -c
+      - |
+        if [ ! -f /etc/nginx/certs/fullchain.pem ] || [ ! -f /etc/nginx/certs/privkey.pem ]; then
+          echo "[danmu] Auto-generating self-signed certificate..."
+          apk add --no-cache openssl >/dev/null 2>&1
+          _SAN="DNS:localhost,IP:127.0.0.1"
+          _CN="localhost"
+          if [ -n "$$SERVER_IP" ]; then
+            _SAN="$$_SAN,IP:$$SERVER_IP"
+            _CN="$$SERVER_IP"
+            echo "[danmu] Including public IP in SAN: $$SERVER_IP"
+          fi
+          if [ -n "$$SERVER_DOMAIN" ]; then
+            _SAN="$$_SAN,DNS:$$SERVER_DOMAIN"
+            _CN="$$SERVER_DOMAIN"
+            echo "[danmu] Including domain in SAN: $$SERVER_DOMAIN"
+          fi
+          printf '[req]\ndistinguished_name=req\n[SAN]\nsubjectAltName=%s\n' "$$_SAN" > /tmp/san.cnf
+          openssl req -x509 -nodes -newkey rsa:2048 \
+            -keyout /etc/nginx/certs/privkey.pem \
+            -out /etc/nginx/certs/fullchain.pem \
+            -days 365 \
+            -subj "/CN=$$_CN" \
+            -extensions SAN \
+            -config /tmp/san.cnf || { echo "[danmu] ERROR: Failed to generate certificate. Exiting."; exit 1; }
+          echo "[danmu] Certificate generated (valid 365 days)."
+        fi
+        exec nginx -g "daemon off;"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.5"
+
+  # ── Traefik + Let's Encrypt mode (--profile traefik) ─────────────────────
+  traefik:
+    profiles: [traefik]
+    image: traefik:v3.3
+    container_name: danmu-traefik
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Create before first run: touch traefik/acme.json && chmod 600 traefik/acme.json
+      - ./traefik/acme.json:/acme.json
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.le.acme.email=${ACME_EMAIL:-admin@example.com}
+      - --certificatesresolvers.le.acme.storage=/acme.json
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.5"
+
+  # ── Redis rate limiting add-on (--profile redis) ─────────────────────────
+  redis:
+    profiles: [redis]
+    image: redis:7-alpine
+    container_name: danmu-redis
+    expose:
+      - "6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  redis-data:

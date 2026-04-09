@@ -115,86 +115,16 @@
    # 重新執行上述 docker run 指令
    ```
 
-#### 選項 2：Docker Compose
+#### 選項 2：Docker Compose — 快速啟動
 
-1. 下載設定檔（不需 clone 整個 repo）：
+```bash
+cp .env.example .env     # 設定 ADMIN_PASSWORD
+docker compose --profile http up -d
+```
 
-   ```bash
-   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.yml
-   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/.env.example
-   ```
+開啟 http://localhost:4000
 
-2. 配置環境變數：
-
-   ```bash
-   cp .env.example .env
-   # 編輯 .env，至少設定 ADMIN_PASSWORD 或 ADMIN_PASSWORD_HASHED
-   ```
-
-3. 啟動服務（HTTP）：
-
-   ```bash
-   docker compose up -d
-   ```
-   - Nginx 反向代理對外開放 `4000`（HTTP）與 `4001`（WebSocket）。
-   - Python server 在 Compose 模式下僅內網可見，由 Nginx 反向代理。
-
-4. 可選 HTTPS / SSL 設定：
-
-   **要用哪種模式？**
-   | 情境 | 建議 |
-   |------|------|
-   | 本機開發 / 同台電腦 | 純 HTTP 即可 |
-   | 區域網路 / 內網（`192.168.x.x`） | HTTPS 自簽憑證，不需額外設定 |
-   | 公網 IP，無 domain（例如 VPS `1.2.3.4`） | HTTPS 自簽憑證，`.env` 加 `SERVER_IP=1.2.3.4` |
-   | 有公開 domain（例如 `danmu.example.com`） | Traefik + Let's Encrypt — 受信任憑證，無瀏覽器警告 |
-
-   **HTTPS — 自簽憑證**（IP 或任意 host，不需 domain）：
-   ```bash
-   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.https.yml
-   mkdir -p nginx/certs
-   curl -o nginx/nginx-https.conf https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/nginx/nginx-https.conf
-   ```
-   在 `.env` 加入：
-   ```bash
-   SESSION_COOKIE_SECURE=true
-   TRUSTED_HOSTS=你的IP,localhost,127.0.0.1
-   # SERVER_IP=1.2.3.4        # 公網 IP 加入憑證 SAN
-   # HTTPS_PORT=4000           # 預設 443；port 被佔用時可改
-   ```
-   ```bash
-   docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
-   ```
-   首次啟動自動產生憑證。Electron client 連線至 `你的IP:4001`。
-
-   **Traefik + Let's Encrypt**（需要公開 domain，且 80 port 可從網際網路連線）：
-   ```bash
-   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.traefik.yml
-   mkdir -p traefik && touch traefik/acme.json && chmod 600 traefik/acme.json
-   ```
-   在 `.env` 加入：
-   ```bash
-   SESSION_COOKIE_SECURE=true
-   TRUSTED_HOSTS=yourdomain.com,localhost,127.0.0.1
-   DOMAIN=yourdomain.com
-   ACME_EMAIL=you@example.com
-   ```
-   ```bash
-   docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d
-   ```
-   Traefik 自動申請並續約憑證。Electron client 連線至 `yourdomain.com:4001`。
-
-   **Redis 速率限制**（多實例或高流量）：
-   ```bash
-   curl -O https://raw.githubusercontent.com/guan4tou2/danmu-desktop/main/docker-compose.redis.yml
-   # 在 .env 設定 RATE_LIMIT_BACKEND=redis 與 REDIS_URL=redis://redis:6379/0
-   docker compose -f docker-compose.yml -f docker-compose.redis.yml up -d
-   ```
-
-   覆蓋設定可組合使用，例如 Let's Encrypt + Redis：
-   ```bash
-   docker compose -f docker-compose.yml -f docker-compose.traefik.yml -f docker-compose.redis.yml up -d
-   ```
+HTTPS、Traefik、Redis 及正式環境部署說明，請參閱 **[DEPLOYMENT.md](DEPLOYMENT.md)**。
 
 #### 選項 3：手動設置
 
