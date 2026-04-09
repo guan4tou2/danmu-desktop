@@ -88,5 +88,5 @@ lint: ## 執行程式碼檢查
 format: ## 格式化程式碼
 	cd server && uv run black . --exclude="/(\.venv|__pycache__)/"
 
-copy-tokens: ## 將共用 design tokens 複製到 server static 目錄
-	cp shared/tokens.css server/static/css/tokens.css
+copy-tokens: ## 重建 server static tokens.css symlink 指向 shared/tokens.css
+	ln -sf ../../../shared/tokens.css server/static/css/tokens.css
