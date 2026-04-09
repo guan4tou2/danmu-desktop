@@ -165,7 +165,7 @@ SESSION_COOKIE_SAMESITE=Strict
 TRUSTED_HOSTS=localhost,127.0.0.1${domain:+,$domain}
 WS_REQUIRE_TOKEN=false
 WS_AUTH_TOKEN=
-RATE_LIMIT_BACKEND=${_REDIS:+redis}${_REDIS:-memory}
+RATE_LIMIT_BACKEND=$( [ "${_REDIS:-}" = "true" ] && echo "redis" || echo "memory" )
 REDIS_PASSWORD=changeme
 EOF
 
