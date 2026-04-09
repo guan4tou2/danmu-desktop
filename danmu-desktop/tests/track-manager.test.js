@@ -4,6 +4,7 @@
  */
 
 const { initTrackManager } = require("../renderer-modules/track-manager");
+const store = require("../renderer-modules/store");
 
 // Helper: reset track state before each test
 function setup(screenW = 1920, screenH = 1080) {
@@ -21,7 +22,7 @@ function setup(screenW = 1920, screenH = 1080) {
   document.body.id = "danmubody";
 
   initTrackManager();
-  window.danmuTracks = []; // always start clean
+  store.set("tracks", []); // always start clean
 }
 
 describe("findAvailableTrack", () => {
@@ -52,7 +53,7 @@ describe("findAvailableTrack", () => {
   test("trackIndex is within [0, maxTracks)", () => {
     const { trackIndex } = window.findAvailableTrack(displayArea, DANMU_H, DANMU_W, SPEED);
     expect(trackIndex).toBeGreaterThanOrEqual(0);
-    expect(trackIndex).toBeLessThan(window.danmuTrackSettings.maxTracks);
+    expect(trackIndex).toBeLessThan(store.get("trackSettings").maxTracks);
   });
 
   // -----------------------------------------------------------------------
@@ -60,13 +61,15 @@ describe("findAvailableTrack", () => {
   // -----------------------------------------------------------------------
   test("selects a different track when track 0 is occupied", () => {
     // Occupy track 0 with a very long-lasting danmu
-    window.danmuTracks.push({
+    const tracks = store.get("tracks");
+    tracks.push({
       trackIndex: 0,
       startTime: Date.now(),
       endTime: Date.now() + 20000,
       duration: 20000,
       width: DANMU_W,
     });
+    store.set("tracks", tracks);
 
     // With 10 tracks available, should pick track >= 1
     const results = new Set();
@@ -79,9 +82,9 @@ describe("findAvailableTrack", () => {
   });
 
   test("adds an entry to danmuTracks after each call", () => {
-    const beforeCount = window.danmuTracks.length;
+    const beforeCount = store.get("tracks").length;
     window.findAvailableTrack(displayArea, DANMU_H, DANMU_W, SPEED);
-    expect(window.danmuTracks.length).toBe(beforeCount + 1);
+    expect(store.get("tracks").length).toBe(beforeCount + 1);
   });
 
   // -----------------------------------------------------------------------
@@ -89,18 +92,20 @@ describe("findAvailableTrack", () => {
   // -----------------------------------------------------------------------
   test("removes expired tracks before evaluating", () => {
     // Push an already-expired track
-    window.danmuTracks.push({
+    const tracks = store.get("tracks");
+    tracks.push({
       trackIndex: 0,
       startTime: Date.now() - 5000,
       endTime: Date.now() - 1,   // already expired
       duration: 4000,
       width: DANMU_W,
     });
+    store.set("tracks", tracks);
 
     window.findAvailableTrack(displayArea, DANMU_H, DANMU_W, SPEED);
 
     // The expired track should have been removed; only the new one remains
-    const expired = window.danmuTracks.filter((t) => t.endTime < Date.now());
+    const expired = store.get("tracks").filter((t) => t.endTime < Date.now());
     expect(expired).toHaveLength(0);
   });
 
@@ -108,12 +113,13 @@ describe("findAvailableTrack", () => {
   // 4. All tracks occupied → falls back to oldest track
   // -----------------------------------------------------------------------
   test("falls back to oldest track when all tracks are occupied", () => {
-    const maxTracks = window.danmuTrackSettings.maxTracks; // 10
+    const maxTracks = store.get("trackSettings").maxTracks; // 10
     const now = Date.now();
 
     // Fill every track with an active entry
+    const tracks = store.get("tracks");
     for (let i = 0; i < maxTracks; i++) {
-      window.danmuTracks.push({
+      tracks.push({
         trackIndex: i,
         startTime: now,
         endTime: now + 15000 + i * 100, // staggered end times
@@ -121,6 +127,7 @@ describe("findAvailableTrack", () => {
         width: DANMU_W,
       });
     }
+    store.set("tracks", tracks);
 
     const result = window.findAvailableTrack(displayArea, DANMU_H, DANMU_W, SPEED);
     // Should still return a valid position
@@ -144,8 +151,8 @@ describe("findAvailableTrack", () => {
     // With random selection and 50 attempts across 10 tracks, expect variety
     expect(selected.size).toBeGreaterThan(3);
 
-    // danmuTracks should NOT grow (random mode skips recording)
-    expect(window.danmuTracks.length).toBe(0);
+    // tracks should NOT grow (random mode skips recording)
+    expect(store.get("tracks").length).toBe(0);
   });
 
   // -----------------------------------------------------------------------
@@ -179,13 +186,13 @@ describe("updateDanmuTrackSettings", () => {
 
   test("updates maxTracks and collisionDetection", () => {
     window.updateDanmuTrackSettings(5, false);
-    expect(window.danmuTrackSettings.maxTracks).toBe(5);
-    expect(window.danmuTrackSettings.collisionDetection).toBe(false);
+    expect(store.get("trackSettings").maxTracks).toBe(5);
+    expect(store.get("trackSettings").collisionDetection).toBe(false);
   });
 
   test("maxTracks = 0 means unlimited", () => {
     window.updateDanmuTrackSettings(0, true);
-    expect(window.danmuTrackSettings.maxTracks).toBe(0);
+    expect(store.get("trackSettings").maxTracks).toBe(0);
   });
 });
 
@@ -233,7 +240,7 @@ describe("showdanmu", () => {
     document.fonts = { load: jest.fn(() => Promise.resolve()) };
 
     initTrackManager();
-    window.danmuTracks = [];
+    store.set("tracks", []);
   });
 
   afterEach(() => {
@@ -410,7 +417,7 @@ describe("showdanmu", () => {
     const slowDuration = Element.prototype.animate.mock.calls[0][1].duration;
 
     Element.prototype.animate.mockClear();
-    window.danmuTracks = [];
+    store.set("tracks", []);
 
     // Speed 10: duration = 20000 - 18000 = 2000
     window.showdanmu("Fast", 100, "#ffffff", 50, 10);
