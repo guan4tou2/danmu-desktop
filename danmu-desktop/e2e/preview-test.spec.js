@@ -17,6 +17,7 @@ test.describe("Preview & Batch Test", () => {
     });
     page = await electronApp.firstWindow();
     await page.waitForLoadState("domcontentloaded");
+    await page.waitForSelector(".main-content.loaded", { timeout: 15000 });
   });
 
   test.afterAll(async () => {
@@ -115,8 +116,10 @@ test.describe("Preview & Batch Test", () => {
   test("slider changes persist in localStorage", async () => {
     // Change opacity
     const slider = page.locator("#overlay-opacity");
-    await slider.fill("42");
-    await slider.dispatchEvent("input");
+    await slider.evaluate((el, v) => {
+      el.value = v;
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }, "42");
 
     // Read from localStorage
     const stored = await page.evaluate(() => {

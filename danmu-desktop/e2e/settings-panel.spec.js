@@ -17,6 +17,7 @@ test.describe("Settings Panel", () => {
     });
     page = await electronApp.firstWindow();
     await page.waitForLoadState("domcontentloaded");
+    await page.waitForSelector(".main-content.loaded", { timeout: 15000 });
   });
 
   test.afterAll(async () => {
@@ -29,8 +30,10 @@ test.describe("Settings Panel", () => {
     const slider = page.locator("#overlay-opacity");
     const display = page.locator("#opacity-value");
 
-    await slider.fill("75");
-    await slider.dispatchEvent("input");
+    await slider.evaluate((el, v) => {
+      el.value = v;
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }, "75");
     await expect(display).toHaveText("75%");
   });
 
@@ -38,8 +41,10 @@ test.describe("Settings Panel", () => {
     const slider = page.locator("#danmu-speed");
     const display = page.locator("#speed-value");
 
-    await slider.fill("3");
-    await slider.dispatchEvent("input");
+    await slider.evaluate((el, v) => {
+      el.value = v;
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }, "3");
     await expect(display).toHaveText("3");
   });
 
@@ -47,8 +52,10 @@ test.describe("Settings Panel", () => {
     const slider = page.locator("#danmu-size");
     const display = page.locator("#size-value");
 
-    await slider.fill("80");
-    await slider.dispatchEvent("input");
+    await slider.evaluate((el, v) => {
+      el.value = v;
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }, "80");
     await expect(display).toHaveText("80px");
   });
 
@@ -138,8 +145,10 @@ test.describe("Settings Panel", () => {
     const slider = page.locator("#stroke-width");
     const display = page.locator("#stroke-width-value");
 
-    await slider.fill("4");
-    await slider.dispatchEvent("input");
+    await slider.evaluate((el, v) => {
+      el.value = v;
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }, "4");
     await expect(display).toHaveText("4px");
   });
 
@@ -149,8 +158,10 @@ test.describe("Settings Panel", () => {
     const slider = page.locator("#display-area-top");
     const display = page.locator("#display-area-top-value");
 
-    await slider.fill("20");
-    await slider.dispatchEvent("input");
+    await slider.evaluate((el, v) => {
+      el.value = v;
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }, "20");
     await expect(display).toHaveText("20%");
   });
 
@@ -158,8 +169,10 @@ test.describe("Settings Panel", () => {
     const slider = page.locator("#display-area-height");
     const display = page.locator("#display-area-height-value");
 
-    await slider.fill("60");
-    await slider.dispatchEvent("input");
+    await slider.evaluate((el, v) => {
+      el.value = v;
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }, "60");
     await expect(display).toHaveText("60%");
   });
 
@@ -170,10 +183,14 @@ test.describe("Settings Panel", () => {
     const topSlider = page.locator("#display-area-top");
     const heightSlider = page.locator("#display-area-height");
 
-    await topSlider.fill("10");
-    await topSlider.dispatchEvent("input");
-    await heightSlider.fill("50");
-    await heightSlider.dispatchEvent("input");
+    await topSlider.evaluate((el, v) => {
+      el.value = v;
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }, "10");
+    await heightSlider.evaluate((el, v) => {
+      el.value = v;
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }, "50");
 
     // Indicator should have updated style
     const style = await indicator.getAttribute("style");
@@ -187,8 +204,10 @@ test.describe("Settings Panel", () => {
     const slider = page.locator("#max-tracks");
     const display = page.locator("#max-tracks-value");
 
-    await slider.fill("15");
-    await slider.dispatchEvent("input");
+    await slider.evaluate((el, v) => {
+      el.value = v;
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }, "15");
     await expect(display).toHaveText("15");
   });
 

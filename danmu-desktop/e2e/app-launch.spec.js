@@ -21,8 +21,9 @@ test.describe("App Launch", () => {
   test.beforeAll(async () => {
     electronApp = await launchApp();
     mainWindow = await electronApp.firstWindow();
-    // Wait for renderer to finish loading
+    // Wait for renderer to finish loading (including i18n which reveals .main-content)
     await mainWindow.waitForLoadState("domcontentloaded");
+    await mainWindow.waitForSelector(".main-content.loaded", { timeout: 15000 });
   });
 
   test.afterAll(async () => {
