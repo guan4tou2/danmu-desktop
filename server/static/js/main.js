@@ -995,12 +995,29 @@ document.addEventListener("DOMContentLoaded", () => {
               img.alt = em.name;
               img.style.cssText = "width:32px;height:32px;";
               btn.appendChild(img);
-              btn.addEventListener("click", () => {
+              btn.addEventListener("click", (ev) => {
+                // Prevent the implicit submit + scroll-to-top behaviour: focusing
+                // a far-away textarea would yank the page back to the input, so
+                // we capture and restore both window and emoji-picker scroll.
+                ev.preventDefault();
                 const textarea = elements.danmuText;
                 const insertText = ":" + em.name + ":";
-                const start = textarea.selectionStart || textarea.value.length;
-                textarea.value = textarea.value.substring(0, start) + insertText + textarea.value.substring(textarea.selectionEnd || start);
-                textarea.focus();
+                const start = textarea.selectionStart ?? textarea.value.length;
+                const end = textarea.selectionEnd ?? start;
+                textarea.value =
+                  textarea.value.substring(0, start) + insertText + textarea.value.substring(end);
+                const newCursor = start + insertText.length;
+                const winY = window.scrollY;
+                const winX = window.scrollX;
+                const pickerScroll = emojiPicker.scrollTop;
+                try {
+                  textarea.focus({ preventScroll: true });
+                } catch (_) {
+                  textarea.focus();
+                }
+                textarea.setSelectionRange(newCursor, newCursor);
+                window.scrollTo(winX, winY);
+                emojiPicker.scrollTop = pickerScroll;
                 updateCharCount();
                 updatePreview();
               });

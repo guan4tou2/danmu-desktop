@@ -6,8 +6,13 @@ Emoji / sticker 服務
 
 熱插拔：每 SCAN_INTERVAL 秒最多掃描一次 static/emojis/ 目錄；
         mtime 變更時自動重新載入。
+
+每個快取項目同時保留 HTTP URL（給 Web 端用）和 data URL（base64，給
+Desktop overlay 用 — Electron child window 跑在 file:// 下，無法解析
+相對的 /static/... URL，所以必須直接內嵌位元組）。
 """
 
+import base64
 import logging
 import os
 import re
@@ -25,6 +30,7 @@ _ALLOWED_EXTENSIONS = {"png", "gif", "webp"}
 _NAME_RE = re.compile(r"^[a-zA-Z0-9_]{1,32}$")
 _EMOJI_SYNTAX_RE = re.compile(r":([a-zA-Z0-9_]{1,32}):")
 _URL_PREFIX = "/static/emojis"
+_MIME_BY_EXT = {"png": "image/png", "gif": "image/gif", "webp": "image/webp"}
 
 
 class EmojiService:
@@ -74,9 +80,19 @@ class EmojiService:
                     continue
 
                 url = f"{_URL_PREFIX}/{p.name}"
+                data_url: Optional[str] = None
+                try:
+                    raw = p.read_bytes()
+                    if len(raw) <= _MAX_FILE_SIZE:
+                        mime = _MIME_BY_EXT.get(ext, "application/octet-stream")
+                        data_url = f"data:{mime};base64,{base64.b64encode(raw).decode('ascii')}"
+                except OSError as e:
+                    logger.warning("[Emoji] Failed to read %s for data URL: %s", p, e)
+
                 new_cache[name] = {
                     "path": fpath,
                     "url": url,
+                    "data_url": data_url,
                     "ext": ext,
                     "filename": p.name,
                 }
@@ -119,13 +135,15 @@ class EmojiService:
         for m in _EMOJI_SYNTAX_RE.finditer(text):
             name = m.group(1)
             if name in cache:
-                emojis.append(
-                    {
-                        "name": name,
-                        "url": cache[name]["url"],
-                        "position": m.start(),
-                    }
-                )
+                entry = cache[name]
+                payload: Dict[str, Any] = {
+                    "name": name,
+                    "url": entry["url"],
+                    "position": m.start(),
+                }
+                if entry.get("data_url"):
+                    payload["dataUrl"] = entry["data_url"]
+                emojis.append(payload)
 
         return {"text": text, "emojis": emojis}
 

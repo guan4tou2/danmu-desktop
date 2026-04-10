@@ -220,7 +220,11 @@ function initTrackManager() {
       wrapper.appendChild(nickEl);
     }
 
-    // Inline emoji images
+    // Inline emoji images.
+    // Prefer the inlined data URL — the overlay runs in an Electron window
+    // loaded from file://, so a relative /static/emojis/... URL would be
+    // resolved against file:// and 404. The server now ships dataUrl alongside
+    // url, but we keep the URL fallback for backwards compatibility.
     if (emojis && emojis.length > 0 && danmu.tagName === "H1") {
       emojis.forEach((em) => {
         const pattern = ":" + em.name + ":";
@@ -231,7 +235,7 @@ function initTrackManager() {
           if (idx !== -1) {
             const before = document.createTextNode(node.textContent.substring(0, idx));
             const img = document.createElement("img");
-            img.src = em.url;
+            img.src = em.dataUrl || em.url;
             img.style.cssText = `display:inline;vertical-align:middle;width:${Math.round(size * 0.8)}px;height:${Math.round(size * 0.8)}px;margin:0 2px;`;
             img.alt = em.name;
             const after = document.createTextNode(node.textContent.substring(idx + pattern.length));
