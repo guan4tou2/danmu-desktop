@@ -90,8 +90,16 @@ _validate_env() {
 # ── Interactive init ──────────────────────────────────────────────────────────
 
 _init() {
+  local advanced=false
+  if [ "${1:-}" = "--advanced" ]; then
+    advanced=true
+  fi
+
   echo ""
   echo -e "${CYAN}=== Danmu Fire Setup ===${NC}"
+  if [ "$advanced" = "true" ]; then
+    _info "Advanced mode: will also prompt for rate limits, logging and resource caps."
+  fi
   echo ""
 
   # Mode selection
@@ -116,12 +124,19 @@ _init() {
     _REDIS=true
   fi
 
-  # Desktop client (exposes WS port 4001 with token auth)
-  local _desktop=false ws_token=""
+  # Desktop client (exposes WS port 4001; token auth is optional)
+  local _desktop=false _ws_token_required=false ws_token=""
   read -rp "Expose WebSocket port 4001 for Danmu Desktop client? [y/N]: " use_desktop
   if [ "${use_desktop,,}" = "y" ]; then
     _desktop=true
-    ws_token=$(python3 -c 'import secrets; print(secrets.token_hex(32))' 2>/dev/null || openssl rand -hex 32)
+    echo ""
+    _info "Token auth protects port 4001 from anyone who can reach it on the network."
+    _info "Skip it only if the port is on a trusted LAN or behind a firewall."
+    read -rp "Require a shared token for the WS port? [Y/n]: " use_token
+    if [ "${use_token,,}" != "n" ]; then
+      _ws_token_required=true
+      ws_token=$(python3 -c 'import secrets; print(secrets.token_hex(32))' 2>/dev/null || openssl rand -hex 32)
+    fi
   fi
 
   # Admin password
@@ -170,6 +185,56 @@ _init() {
       [ -n "${_hp:-}" ] && http_port="$_hp"
       read -rp "HTTPS port [${https_port}]: " _sp
       [ -n "${_sp:-}" ] && https_port="$_sp"
+    fi
+  fi
+
+  # ── Advanced prompts (only with --advanced) ────────────────────────────────
+  # Empty answer = leave .env.example default untouched.
+  local adv_fire_limit="" adv_fire_window=""
+  local adv_admin_limit="" adv_admin_window=""
+  local adv_api_limit=""   adv_api_window=""
+  local adv_login_limit="" adv_login_window=""
+  local adv_log_level=""   adv_log_format=""
+  local adv_mem_limit=""   adv_cpu_limit=""
+  local adv_ws_max_conn="" adv_ws_max_per_ip=""
+  local adv_redis_password=""
+  if [ "$advanced" = "true" ]; then
+    echo ""
+    echo -e "${CYAN}── Advanced settings (press Enter to keep .env.example default) ──${NC}"
+
+    echo ""
+    _info "Rate limits"
+    read -rp "  FIRE_RATE_LIMIT [20]: "  adv_fire_limit
+    read -rp "  FIRE_RATE_WINDOW seconds [60]: " adv_fire_window
+    read -rp "  ADMIN_RATE_LIMIT [60]: " adv_admin_limit
+    read -rp "  ADMIN_RATE_WINDOW seconds [60]: " adv_admin_window
+    read -rp "  API_RATE_LIMIT [30]: "   adv_api_limit
+    read -rp "  API_RATE_WINDOW seconds [60]: "  adv_api_window
+    read -rp "  LOGIN_RATE_LIMIT (failed attempts) [5]: " adv_login_limit
+    read -rp "  LOGIN_RATE_WINDOW seconds [300]: "        adv_login_window
+
+    echo ""
+    _info "WebSocket connection caps"
+    read -rp "  WS_MAX_CONNECTIONS [200]: "         adv_ws_max_conn
+    read -rp "  WS_MAX_CONNECTIONS_PER_IP [10]: "   adv_ws_max_per_ip
+
+    echo ""
+    _info "Logging"
+    read -rp "  LOG_LEVEL (DEBUG/INFO/WARNING/ERROR) [INFO]: " adv_log_level
+    read -rp "  LOG_FORMAT (text/json) [text]: "                adv_log_format
+
+    echo ""
+    _info "Container resource limits"
+    read -rp "  SERVER_MEMORY_LIMIT (e.g. 512m, 1g) [512m]: " adv_mem_limit
+    read -rp "  SERVER_CPU_LIMIT (e.g. 0.5, 1.0, 2) [1.0]: "  adv_cpu_limit
+
+    if [ "${_REDIS:-}" = "true" ]; then
+      echo ""
+      _info "Redis"
+      read -rp "  REDIS_PASSWORD [auto-generate]: " adv_redis_password
+      if [ -z "$adv_redis_password" ]; then
+        adv_redis_password=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))' 2>/dev/null || openssl rand -base64 24 | tr -d "=+/")
+      fi
     fi
   fi
 
@@ -237,17 +302,35 @@ _init() {
 
   # Rate limiting backend
   if [ "${_REDIS:-}" = "true" ]; then
+    local _redis_pw="${adv_redis_password:-changeme}"
     _set_env RATE_LIMIT_BACKEND "redis"
-    _set_env REDIS_URL          "redis://:changeme@redis:6379/0"
+    _set_env REDIS_PASSWORD     "$_redis_pw"
+    _set_env REDIS_URL          "redis://:${_redis_pw}@redis:6379/0"
   else
     _set_env RATE_LIMIT_BACKEND "memory"
   fi
 
-  # Desktop client: enable WS token auth
-  if [ "$_desktop" = "true" ]; then
+  # Desktop client: optionally enable WS token auth
+  if [ "$_desktop" = "true" ] && [ "$_ws_token_required" = "true" ]; then
     _set_env WS_REQUIRE_TOKEN "true"
     _set_env WS_AUTH_TOKEN    "$ws_token"
   fi
+
+  # Advanced overrides — only written if non-empty
+  [ -n "$adv_fire_limit"     ] && _set_env FIRE_RATE_LIMIT          "$adv_fire_limit"
+  [ -n "$adv_fire_window"    ] && _set_env FIRE_RATE_WINDOW         "$adv_fire_window"
+  [ -n "$adv_admin_limit"    ] && _set_env ADMIN_RATE_LIMIT         "$adv_admin_limit"
+  [ -n "$adv_admin_window"   ] && _set_env ADMIN_RATE_WINDOW        "$adv_admin_window"
+  [ -n "$adv_api_limit"      ] && _set_env API_RATE_LIMIT           "$adv_api_limit"
+  [ -n "$adv_api_window"     ] && _set_env API_RATE_WINDOW          "$adv_api_window"
+  [ -n "$adv_login_limit"    ] && _set_env LOGIN_RATE_LIMIT         "$adv_login_limit"
+  [ -n "$adv_login_window"   ] && _set_env LOGIN_RATE_WINDOW        "$adv_login_window"
+  [ -n "$adv_ws_max_conn"    ] && _set_env WS_MAX_CONNECTIONS       "$adv_ws_max_conn"
+  [ -n "$adv_ws_max_per_ip"  ] && _set_env WS_MAX_CONNECTIONS_PER_IP "$adv_ws_max_per_ip"
+  [ -n "$adv_log_level"      ] && _set_env LOG_LEVEL                "$adv_log_level"
+  [ -n "$adv_log_format"     ] && _set_env LOG_FORMAT               "$adv_log_format"
+  [ -n "$adv_mem_limit"      ] && _set_env SERVER_MEMORY_LIMIT      "$adv_mem_limit"
+  [ -n "$adv_cpu_limit"      ] && _set_env SERVER_CPU_LIMIT         "$adv_cpu_limit"
 
   echo ""
   _ok ".env written."
@@ -291,9 +374,13 @@ _init() {
   if [ "$_desktop" = "true" ]; then
     echo ""
     _info "Desktop client (ws + https dual transport):"
-    echo "    Host:     ${_url_host}"
-    echo "    Port:     4001"
-    echo "    WS Token: ${ws_token}"
+    echo "    Host:  ${_url_host}"
+    echo "    Port:  4001"
+    if [ "$_ws_token_required" = "true" ]; then
+      echo "    Token: ${ws_token}"
+    else
+      _warn "Token auth disabled — anyone who can reach port 4001 can connect."
+    fi
     echo ""
     _info "Open firewall for the WS port:  sudo ufw allow 4001/tcp"
   fi
@@ -305,11 +392,12 @@ _init() {
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 case "${1:-}" in
-  init)  _init ;;
+  init)  _init "${2:-}" ;;
   check) _PROFILE="${2:-}" _validate_env "${3:-.env}" ;;
   *)
     echo "Usage:"
     echo "  ./setup.sh init              Interactive wizard → writes .env"
+    echo "  ./setup.sh init --advanced   Wizard + rate limit / log / resource prompts"
     echo "  ./setup.sh check [profile]   Validate existing .env"
     exit 1
     ;;

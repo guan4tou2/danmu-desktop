@@ -13,7 +13,8 @@ Open http://localhost:4000
 Or use the setup wizard for a guided setup:
 
 ```bash
-./setup.sh init
+./setup.sh init              # essentials only (mode, password, ports, desktop)
+./setup.sh init --advanced   # essentials + rate limits, logging, resource caps
 ```
 
 ---
