@@ -87,6 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let blacklistModalRestoreFocusEl = null;
   const FONT_REFRESH_BUFFER_SECONDS = 60;
   let fontsCache = [];
+  let emojiCache = []; // [{name, url, filename}] — populated by /emojis fetch
   const FONT_CACHE_STORAGE_KEY = "danmu-fonts-cache";
   const clientFingerprint = getOrCreateFingerprint();
 
@@ -377,6 +378,36 @@ document.addEventListener("DOMContentLoaded", () => {
       img.className = "max-h-24 rounded-lg shadow-md";
       img.alt = "Danmu Preview";
       elements.previewText.appendChild(img);
+    } else if (text && emojiCache.length > 0 && /:[a-zA-Z0-9_]{1,32}:/.test(text)) {
+      // Render :emoji_name: tokens as inline <img> using the cached emoji list.
+      // textContent is unsafe for HTML, so we build DOM nodes manually.
+      elements.previewText.textContent = "";
+      const emojiMap = Object.create(null);
+      emojiCache.forEach((e) => { emojiMap[e.name] = e; });
+      const re = /:([a-zA-Z0-9_]{1,32}):/g;
+      let lastIndex = 0;
+      let m;
+      while ((m = re.exec(text)) !== null) {
+        if (m.index > lastIndex) {
+          elements.previewText.appendChild(
+            document.createTextNode(text.slice(lastIndex, m.index))
+          );
+        }
+        const entry = emojiMap[m[1]];
+        if (entry) {
+          const img = document.createElement("img");
+          img.src = entry.url;
+          img.alt = m[1];
+          img.style.cssText = "display:inline-block;height:1em;vertical-align:middle;margin:0 2px;";
+          elements.previewText.appendChild(img);
+        } else {
+          elements.previewText.appendChild(document.createTextNode(m[0]));
+        }
+        lastIndex = m.index + m[0].length;
+      }
+      if (lastIndex < text.length) {
+        elements.previewText.appendChild(document.createTextNode(text.slice(lastIndex)));
+      }
     } else {
       elements.previewText.textContent = text || ServerI18n.t("preview");
     }
@@ -980,6 +1011,8 @@ document.addEventListener("DOMContentLoaded", () => {
           .then((r) => r.json())
           .then((data) => {
             const emojis = data.emojis || [];
+            emojiCache = emojis;
+            updatePreview();
             if (emojis.length === 0) {
               emojiPicker.innerHTML = '<span class="text-xs text-slate-500">No emojis available</span>';
               return;

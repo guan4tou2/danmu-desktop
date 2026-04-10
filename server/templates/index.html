@@ -70,57 +70,8 @@
       <main
         class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 mb-8 transform transition-all hover:scale-[1.01] duration-300"
       >
-        <!-- Input Area -->
-        <div class="mb-6 group">
-          <label
-            for="danmuText"
-            class="block text-sm font-medium text-slate-300 mb-2 ml-1 group-focus-within:text-sky-400 transition-colors"
-            data-i18n="yourMessage"
-            >Your Message</label
-          >
-          <div class="relative">
-            <textarea
-              id="danmuText"
-              rows="3"
-              maxlength="100"
-              aria-describedby="charCount"
-              class="w-full bg-slate-800/50 border-2 border-slate-700 rounded-xl p-4 text-white placeholder-slate-500 focus:ring-4 focus:ring-sky-500/20 focus:border-sky-500 transition-all duration-300 resize-none text-lg"
-              placeholder="Type something awesome..."
-              data-i18n-placeholder="placeholder"
-            ></textarea>
-            <div
-              id="charCount"
-              class="absolute bottom-3 right-3 text-xs text-slate-500 font-mono bg-slate-900/80 px-2 py-1 rounded-md"
-              aria-live="polite"
-            >
-              0/100
-            </div>
-          </div>
-        </div>
-
-        <!-- Preview Area -->
-        <div class="mb-8">
-          <label class="block text-sm font-medium text-slate-300 mb-2 ml-1" data-i18n="livePreview"
-            >Live Preview</label
-          >
-          <div
-            class="h-32 bg-slate-900/60 rounded-xl flex items-center justify-center overflow-hidden border border-slate-700/50 relative group"
-          >
-            <div
-              class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-20"
-            ></div>
-            <div
-              id="previewText"
-              class="text-2xl font-bold transition-all duration-300 px-4 text-center break-all z-10"
-              data-i18n="preview"
-            >
-              Preview
-            </div>
-          </div>
-        </div>
-
         <!-- Settings Section -->
-        <div class="mb-8">
+        <div class="mb-6">
           <details class="group" open>
             <summary
               class="flex items-center justify-between cursor-pointer list-none bg-slate-800/40 p-4 rounded-xl hover:bg-slate-800/60 transition-colors focus-visible:outline-2 focus-visible:outline-sky-400 focus-visible:outline-offset-2"
@@ -353,32 +304,76 @@
           </details>
         </div>
 
-        <!-- Send Button -->
-        <button
-          id="btnSend"
-          class="w-full bg-gradient-to-r from-sky-500 to-cyan-400 hover:from-sky-400 hover:to-cyan-300 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-sky-500/30 transform hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
-        >
-          <span id="btnSendText" data-i18n="fireDanmu">Fire Danmu</span>
-          <svg
-            id="btnSendIcon"
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5 group-hover:translate-x-1 transition-transform"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
+        <!-- Floating Composer (sticky: input + preview + send) -->
+        <div id="composerBar" class="sticky bottom-4 z-30 -mx-6 md:-mx-8 px-6 md:px-8 py-4 mt-4 bg-slate-950/85 backdrop-blur-md border-t border-slate-700/40 rounded-b-3xl">
+          <!-- Preview Area (compact) -->
+          <div class="mb-3">
+            <div
+              class="h-16 bg-slate-900/60 rounded-lg flex items-center justify-center overflow-hidden border border-slate-700/50 relative"
+            >
+              <div
+                class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-20"
+              ></div>
+              <div
+                id="previewText"
+                class="text-xl font-bold transition-all duration-300 px-3 text-center break-all z-10"
+                data-i18n="preview"
+              >
+                Preview
+              </div>
+            </div>
+          </div>
+
+          <!-- Input Area -->
+          <div class="mb-3 group">
+            <div class="relative">
+              <textarea
+                id="danmuText"
+                rows="2"
+                maxlength="100"
+                aria-describedby="charCount"
+                aria-label="Your Message"
+                class="w-full bg-slate-800/60 border-2 border-slate-700 rounded-xl p-3 pr-16 text-white placeholder-slate-500 focus:ring-4 focus:ring-sky-500/20 focus:border-sky-500 transition-all duration-300 resize-none text-base"
+                placeholder="Type something awesome..."
+                data-i18n-placeholder="placeholder"
+              ></textarea>
+              <div
+                id="charCount"
+                class="absolute bottom-2 right-3 text-xs text-slate-500 font-mono bg-slate-900/80 px-2 py-0.5 rounded-md"
+                aria-live="polite"
+              >
+                0/100
+              </div>
+            </div>
+          </div>
+
+          <!-- Send Button -->
+          <button
+            id="btnSend"
+            class="w-full bg-gradient-to-r from-sky-500 to-cyan-400 hover:from-sky-400 hover:to-cyan-300 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-sky-500/30 transform hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 10V3L4 14h7v7l9-11h-7z"
-            />
-          </svg>
-          <svg id="btnSendSpinner" class="btn-spinner hidden" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="31.4 31.4" />
-          </svg>
-        </button>
+            <span id="btnSendText" data-i18n="fireDanmu">Fire Danmu</span>
+            <svg
+              id="btnSendIcon"
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 group-hover:translate-x-1 transition-transform"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
+            </svg>
+            <svg id="btnSendSpinner" class="btn-spinner hidden" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="31.4 31.4" />
+            </svg>
+          </button>
+        </div>
       </main>
 
       <!-- Footer -->
