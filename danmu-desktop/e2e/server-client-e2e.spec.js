@@ -145,7 +145,8 @@ test.describe("Server + Client E2E", () => {
     });
     const mainWindow = await electronApp.firstWindow();
     await mainWindow.waitForLoadState("domcontentloaded");
-    await mainWindow.waitForTimeout(1000);
+    // Wait for renderer to finish initializing (i18n + all event handlers)
+    await mainWindow.waitForSelector(".main-content.loaded", { timeout: 15000 });
 
     // 3. Configure connection settings
     await mainWindow.locator("#host-input").fill("127.0.0.1");
