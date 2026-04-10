@@ -200,15 +200,17 @@ def test_upload_sticker_success(client, tmp_path, monkeypatch):
     monkeypatch.setattr(sticker_mod, "_STICKERS_DIR", tmp_path)
     sticker_mod.sticker_service._cache.clear()
 
+    # Use a name that doesn't clash with any seeded emoji (fire/cry/smile/...)
+    # Upload route rejects sticker names that collide with existing emojis.
     # Use a real GIF header so magic recognizes it
     gif_bytes = (
         b"GIF89a\x01\x00\x01\x00\x00\xff\x00," b"\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x00;"
     )
-    res = _upload(client, "fire.gif", gif_bytes)
+    res = _upload(client, "party.gif", gif_bytes)
     assert res.status_code == 200
     data = res.get_json()
-    assert data["name"] == "fire"
-    assert data["url"] == "/static/stickers/fire.gif"
+    assert data["name"] == "party"
+    assert data["url"] == "/static/stickers/party.gif"
 
 
 def test_upload_sticker_invalid_extension(client):
