@@ -27,6 +27,7 @@ const {
   initConnectionStatusHandler,
 } = require("./renderer-modules/ws-manager");
 const { initGlobalEffects } = require("./renderer-modules/konami");
+const { initParticleBg } = require("./renderer-modules/particle-bg");
 
 // Translation helper
 function t(key) {
@@ -43,69 +44,67 @@ const state = {
 // Danmu display settings (shared between danmu-settings and ws-manager)
 const danmuSettings = { ...DEFAULT_DANMU_SETTINGS };
 
-// Initialize track manager and showdanmu (used in both main and child windows)
-initTrackManager();
-
-// Initialize global effect handlers (konami, startup animation, display options)
-initGlobalEffects();
-
-// Initialize overlay controls (start/stop buttons, connection status)
-initOverlayControls({
-  state,
-  showToast,
-  t,
-  validateIP,
-  validatePort,
-  saveSettings,
-  saveStartupAnimationSettings,
-  loadSettings,
-  loadStartupAnimationSettings,
-  updateConnectionStatus,
-  hideConnectionStatus,
-});
-
-// Initialize connection status handler (IPC events from main process)
-initConnectionStatusHandler({
-  state,
-  showToast,
-  t,
-  getLocalizedText,
-  updateConnectionStatus,
-  hideConnectionStatus,
-  getCurrentStatus,
-});
-
-// Initialize danmu settings UI (sliders, preview, batch test)
-initDanmuSettings(danmuSettings, showToast, t);
-loadDanmuSettings(danmuSettings);
-
-// Canvas 2D particle network background (main window only)
-const { initParticleBg } = require("./renderer-modules/particle-bg");
-if (document.getElementById("vanta-bg")) {
-  initParticleBg("#vanta-bg");
-}
-
-// Settings export / import buttons (main window only)
-const _exportBtn = document.getElementById("export-settings-btn");
-if (_exportBtn) {
-  _exportBtn.addEventListener("click", () => {
-    exportSettings();
-    showToast(t("exportSettings") + " OK", "success");
-  });
-}
-
-const _importBtn = document.getElementById("import-settings-btn");
-if (_importBtn) {
-  _importBtn.addEventListener("click", async () => {
-    const result = await importSettings();
-    showToast(result.message, result.ok ? "success" : "error");
-  });
-}
-
-// i18n and display population (main window only)
+// All initialization runs inside DOMContentLoaded to guarantee DOM is ready
 document.addEventListener("DOMContentLoaded", async () => {
+  // ── Synchronous module initialization (all sync, before any awaits) ──────
+  initTrackManager();
+  initGlobalEffects();
+
+  initOverlayControls({
+    state,
+    showToast,
+    t,
+    validateIP,
+    validatePort,
+    saveSettings,
+    saveStartupAnimationSettings,
+    loadSettings,
+    loadStartupAnimationSettings,
+    updateConnectionStatus,
+    hideConnectionStatus,
+  });
+
+  initConnectionStatusHandler({
+    state,
+    showToast,
+    t,
+    getLocalizedText,
+    updateConnectionStatus,
+    hideConnectionStatus,
+    getCurrentStatus,
+  });
+
+  initDanmuSettings(danmuSettings, showToast, t);
+  loadDanmuSettings(danmuSettings);
+
+  // Canvas 2D particle network background (main window only)
+  if (document.getElementById("vanta-bg")) {
+    initParticleBg("#vanta-bg");
+  }
+
+  // Settings export / import buttons (main window only)
+  const exportBtn = document.getElementById("export-settings-btn");
+  if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+      exportSettings();
+      showToast(t("exportSettings") + " OK", "success");
+    });
+  }
+
+  const importBtn = document.getElementById("import-settings-btn");
+  if (importBtn) {
+    importBtn.addEventListener("click", async () => {
+      const result = await importSettings();
+      showToast(result.message, result.ok ? "success" : "error");
+    });
+  }
+
+  // ── i18n (async, with timeout guard to prevent hang in CI) ──────────────
   if (typeof i18n !== "undefined") {
-    await i18n.loadLanguage();
+    await Promise.race([
+      i18n.loadLanguage(),
+      new Promise((resolve) => setTimeout(resolve, 2000)),
+    ]);
     i18n.updateUI();
 
     const languageSelect = document.getElementById("language-select");
@@ -117,10 +116,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // Reveal main content after i18n is ready (prevents flash of un-translated text)
+  // ── Signal that renderer is fully initialized ────────────────────────────
   const mainContent = document.querySelector(".main-content");
   if (mainContent) mainContent.classList.add("loaded");
 
+  // ── Screen select population ─────────────────────────────────────────────
   const api = window.API;
   if (!api) return;
 

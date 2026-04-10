@@ -21,8 +21,9 @@ test.describe("App Launch", () => {
   test.beforeAll(async () => {
     electronApp = await launchApp();
     mainWindow = await electronApp.firstWindow();
-    // Wait for renderer to finish loading
     await mainWindow.waitForLoadState("domcontentloaded");
+    // Wait for renderer to finish initializing (i18n + all event handlers)
+    await mainWindow.waitForSelector(".main-content.loaded", { timeout: 15000 });
   });
 
   test.afterAll(async () => {
@@ -71,18 +72,11 @@ test.describe("App Launch", () => {
   test("language switch to Chinese updates UI text", async () => {
     const langSelect = mainWindow.locator("#language-select");
     await langSelect.selectOption("zh");
-    // Wait for i18n to update
-    await mainWindow.waitForTimeout(500);
-
-    // title is "Danmu Desktop" in all languages (brand name, not translated)
-    // verify a translated element instead — subtitle switches to Chinese
-    const subtitle = mainWindow.locator("[data-i18n='subtitle']");
-    const subtitleText = await subtitle.textContent();
-    expect(subtitleText).toContain("彈幕");
-
+    // Wait for i18n to update — use assertion retry instead of fixed timeout
+    await expect(mainWindow.locator("[data-i18n='subtitle']")).toContainText("彈幕", { timeout: 5000 });
     // Switch back to English
     await langSelect.selectOption("en");
-    await mainWindow.waitForTimeout(500);
+    await mainWindow.waitForTimeout(300);
   });
 
   test("settings details panel is open by default", async () => {
