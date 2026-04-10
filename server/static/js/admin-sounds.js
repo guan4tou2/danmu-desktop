@@ -480,7 +480,7 @@
 
   async function initSoundsSection() {
     // Find the settings grid to append to
-    const settingsGrid = document.querySelector(".grid.grid-cols-1");
+    const settingsGrid = document.getElementById("settings-grid");
     if (!settingsGrid) return;
 
     // Insert section HTML

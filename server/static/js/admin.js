@@ -45,6 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Module-level handles for beforeunload cleanup
   let _adminWs = null;
   let _adminWsReconnectTimer = null;
+  let _adminSectionObserver = null;
   // _effectModalRestoreFocusEl moved to admin-effects-mgmt.js
   var loadDetailsState = window.AdminUtils.loadDetailsState;
   var saveDetailsState = window.AdminUtils.saveDetailsState;
@@ -143,6 +144,61 @@ document.addEventListener("DOMContentLoaded", () => {
     if (restoreVal !== undefined && restoreVal !== null) {
       inputEl.value = String(restoreVal);
     }
+  }
+
+  const ADMIN_SECTION_GROUPS = {
+    moderation: {
+      containerId: "moderation-grid",
+      orderedIds: [
+        "sec-live-feed",
+        "sec-blacklist",
+        "sec-history",
+        "sec-filters",
+        "sec-polls",
+        "sec-security",
+      ],
+    },
+    assets: {
+      containerId: "assets-grid",
+      orderedIds: [
+        "sec-emojis",
+        "sec-stickers",
+        "sec-sounds",
+        "sec-themes",
+        "sec-plugins",
+        "sec-widgets",
+      ],
+    },
+  };
+
+  function syncAdminSectionLayout() {
+    Object.values(ADMIN_SECTION_GROUPS).forEach((group) => {
+      const target = document.getElementById(group.containerId);
+      if (!target) return;
+      group.orderedIds.forEach((sectionId) => {
+        const section = document.getElementById(sectionId);
+        if (section && section.parentElement !== target) {
+          target.appendChild(section);
+        }
+      });
+    });
+  }
+
+  function initAdminSectionLayout() {
+    if (_adminSectionObserver) {
+      _adminSectionObserver.disconnect();
+      _adminSectionObserver = null;
+    }
+
+    syncAdminSectionLayout();
+
+    _adminSectionObserver = new MutationObserver(() => {
+      syncAdminSectionLayout();
+    });
+    _adminSectionObserver.observe(appContainer, {
+      childList: true,
+      subtree: true,
+    });
   }
 
   // Update setting to backend
@@ -624,6 +680,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const detailsState = loadDetailsState();
     const isOpen = (id, defaultOpen = false) =>
       detailsState[id] !== undefined ? detailsState[id] : defaultOpen;
+    const enabledSettingCount = ["Color", "Opacity", "FontSize", "Speed", "FontFamily", "Layout", "Effects"]
+      .filter((key) => Array.isArray(currentSettings[key]) && currentSettings[key][0] === true)
+      .length;
+    const overlayMode = currentSettings.Layout && currentSettings.Layout[3]
+      ? escapeHtml(String(currentSettings.Layout[3]).replace(/_/g, " "))
+      : "scroll";
+    const fontLabel = currentSettings.FontFamily && currentSettings.FontFamily[3]
+      ? escapeHtml(String(currentSettings.FontFamily[3]))
+      : "NotoSansTC";
     const settingCard = (
       id,
       title,
@@ -651,56 +716,170 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
 
     appContainer.innerHTML = `
-                    <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-8">
-                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                             <h1 class="text-3xl md:text-4xl font-bold text-center text-violet-300 pb-2" data-i18n="adminTitle">
-                                ${ServerI18n.t("adminTitle")}
-                            </h1>
-                            <div class="flex items-center gap-2 w-full md:w-auto">
-                                <select id="server-lang-select"
-                                  class="bg-slate-800/60 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-2 focus:ring-violet-400 focus:border-violet-400">
-                                  <option value="en" ${ServerI18n.currentLang === "en" ? "selected" : ""}>EN</option>
-                                  <option value="zh" ${ServerI18n.currentLang === "zh" ? "selected" : ""}>ZH</option>
-                                  <option value="ja" ${ServerI18n.currentLang === "ja" ? "selected" : ""}>JA</option>
-                                  <option value="ko" ${ServerI18n.currentLang === "ko" ? "selected" : ""}>KO</option>
-                                </select>
-                                <button id="logoutButton" class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-5 rounded-lg transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                                    <span data-i18n="logout">${ServerI18n.t("logout")}</span>
-                                </button>
+                    <div class="glass-effect admin-shell rounded-3xl shadow-2xl p-6 md:p-8 space-y-6">
+                        <section class="admin-hero rounded-3xl p-5 md:p-6">
+                            <div class="flex flex-col gap-5">
+                                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                                    <div class="min-w-0">
+                                        <span class="admin-kicker">Danmu Fire Control Center</span>
+                                        <h1 class="text-3xl md:text-4xl font-bold text-sky-300 mt-3" data-i18n="adminTitle">
+                                            ${ServerI18n.t("adminTitle")}
+                                        </h1>
+                                        <p class="text-sm md:text-base text-slate-300 mt-2 max-w-2xl">
+                                            Tune the live experience, moderate incoming messages, and manage assets without hunting through one long page.
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-2 w-full lg:w-auto">
+                                        <select id="server-lang-select"
+                                          class="bg-slate-800/60 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-2 focus:ring-sky-400 focus:border-sky-400">
+                                          <option value="en" ${ServerI18n.currentLang === "en" ? "selected" : ""}>EN</option>
+                                          <option value="zh" ${ServerI18n.currentLang === "zh" ? "selected" : ""}>ZH</option>
+                                          <option value="ja" ${ServerI18n.currentLang === "ja" ? "selected" : ""}>JA</option>
+                                          <option value="ko" ${ServerI18n.currentLang === "ko" ? "selected" : ""}>KO</option>
+                                        </select>
+                                        <button id="logoutButton" class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-5 rounded-lg transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                            <span data-i18n="logout">${ServerI18n.t("logout")}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="admin-summary-grid">
+                                    <div class="admin-summary-card">
+                                        <span class="admin-summary-label">Workspace</span>
+                                        <span class="admin-summary-value">${enabledSettingCount} live controls enabled</span>
+                                    </div>
+                                    <div class="admin-summary-card">
+                                        <span class="admin-summary-label">Default Layout</span>
+                                        <span class="admin-summary-value">${overlayMode}</span>
+                                    </div>
+                                    <div class="admin-summary-card">
+                                        <span class="admin-summary-label">Active Font</span>
+                                        <span class="admin-summary-value">${fontLabel}</span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        </section>
 
-                        <nav class="sticky top-2 z-10 rounded-xl border border-slate-700/60 bg-slate-900/70 backdrop-blur px-3 py-2 overflow-x-auto" aria-label="Quick Navigation">
-                            <div class="flex items-center gap-2 text-xs whitespace-nowrap">
-                                <span class="text-slate-400 mr-1" data-i18n="quickNav">${ServerI18n.t("quickNav")}</span>
-                                <a href="#sec-color" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navBasic">${ServerI18n.t("navBasic")}</a>
-                                <a href="#sec-effects" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navEffects">${ServerI18n.t("navEffects")}</a>
-                                <a href="#sec-blacklist" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navBlacklist">${ServerI18n.t("navBlacklist")}</a>
-                                <a href="#sec-history" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navHistory">${ServerI18n.t("navHistory")}</a>
-                                <a href="#sec-polls" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Polls</a>
-                                <a href="#sec-security" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navSecurity">${ServerI18n.t("navSecurity")}</a>
-                                <a href="#sec-live-feed" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Live Feed</a>
-                                <a href="#sec-advanced" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Advanced</a>
+                        <nav class="admin-section rounded-2xl p-4 md:p-5" aria-label="Quick Navigation">
+                            <div class="admin-section-heading">
+                                <div>
+                                    <span class="admin-section-kicker" data-i18n="quickNav">${ServerI18n.t("quickNav")}</span>
+                                    <h2 class="text-lg font-bold text-white">Jump to a task</h2>
+                                    <p class="text-sm text-slate-300">Shortcuts are grouped by what you are trying to do right now.</p>
+                                </div>
+                            </div>
+                            <div class="space-y-3">
+                                <div>
+                                    <div class="text-xs text-slate-500 uppercase tracking-wide mb-2">Control</div>
+                                    <div class="admin-chip-nav">
+                                        <a href="#sec-color" class="admin-chip" data-i18n="navBasic">${ServerI18n.t("navBasic")}</a>
+                                        <a href="#sec-effects" class="admin-chip" data-i18n="navEffects">${ServerI18n.t("navEffects")}</a>
+                                        <a href="#sec-themes" class="admin-chip">Themes</a>
+                                        <a href="#sec-live-feed" class="admin-chip">Live Feed</a>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500 uppercase tracking-wide mb-2">Moderation</div>
+                                    <div class="admin-chip-nav">
+                                        <a href="#sec-blacklist" class="admin-chip" data-i18n="navBlacklist">${ServerI18n.t("navBlacklist")}</a>
+                                        <a href="#sec-history" class="admin-chip" data-i18n="navHistory">${ServerI18n.t("navHistory")}</a>
+                                        <a href="#sec-filters" class="admin-chip">Filters</a>
+                                        <a href="#sec-security" class="admin-chip" data-i18n="navSecurity">${ServerI18n.t("navSecurity")}</a>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500 uppercase tracking-wide mb-2">Assets & Automation</div>
+                                    <div class="admin-chip-nav">
+                                        <a href="#sec-emojis" class="admin-chip">Emojis</a>
+                                        <a href="#sec-stickers" class="admin-chip">Stickers</a>
+                                        <a href="#sec-sounds" class="admin-chip">Sounds</a>
+                                        <a href="#sec-polls" class="admin-chip">Polls</a>
+                                        <a href="#sec-advanced" class="admin-chip">Advanced</a>
+                                    </div>
+                                </div>
                             </div>
                         </nav>
 
-                        <div id="settings-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <!-- Settings cards will be inserted via insertAdjacentHTML -->
-                        </div>
+                        <div class="admin-content-grid">
+                            <div class="admin-primary-stack space-y-6">
+                                <section class="admin-section rounded-2xl p-5 md:p-6">
+                                    <div class="admin-section-heading">
+                                        <div>
+                                            <span class="admin-section-kicker">Live control</span>
+                                            <h2 class="text-xl font-bold text-white">Core danmu behavior</h2>
+                                            <p class="text-sm text-slate-300">These controls define how messages look, move, and feel during the stream.</p>
+                                        </div>
+                                    </div>
+                                    <div id="settings-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <!-- Settings cards will be inserted via insertAdjacentHTML -->
+                                    </div>
+                                </section>
 
-                        <details id="sec-advanced" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent mt-6 scroll-mt-24" ${isOpen("sec-advanced") ? "open" : ""}
-                            <summary class="flex items-center justify-between cursor-pointer list-none">
-                                <div>
-                                    <h3 class="text-lg font-bold text-white">Advanced</h3>
-                                    <p class="text-sm text-slate-300">Webhooks, scheduled broadcasts, and other advanced features</p>
-                                </div>
-                                <span class="text-slate-400 transition-transform group-open:rotate-180">&#8964;</span>
-                            </summary>
-                            <div id="advanced-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
-                                <!-- Webhooks & Scheduler sections injected here -->
+                                <section class="admin-section rounded-2xl p-5 md:p-6">
+                                    <div class="admin-section-heading">
+                                        <div>
+                                            <span class="admin-section-kicker">Moderation</span>
+                                            <h2 class="text-xl font-bold text-white">Review, guardrails, and incident response</h2>
+                                            <p class="text-sm text-slate-300">Keep the live stream healthy with history, filtering, blacklists, and quick reaction tools.</p>
+                                        </div>
+                                    </div>
+                                    <div id="moderation-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <!-- Moderation sections are re-homed here -->
+                                    </div>
+                                </section>
+
+                                <section class="admin-section rounded-2xl p-5 md:p-6">
+                                    <div class="admin-section-heading">
+                                        <div>
+                                            <span class="admin-section-kicker">Assets</span>
+                                            <h2 class="text-xl font-bold text-white">Reusable media and extensions</h2>
+                                            <p class="text-sm text-slate-300">Manage themes, sounds, stickers, emojis, widgets, and other reusable building blocks.</p>
+                                        </div>
+                                    </div>
+                                    <div id="assets-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <!-- Asset and extension sections are re-homed here -->
+                                    </div>
+                                </section>
+
+                                <section class="admin-section rounded-2xl p-5 md:p-6">
+                                    <details id="sec-advanced" class="group scroll-mt-24" ${isOpen("sec-advanced") ? "open" : ""}>
+                                        <summary class="flex items-center justify-between cursor-pointer list-none">
+                                            <div>
+                                                <span class="admin-section-kicker">Automation</span>
+                                                <h3 class="text-lg font-bold text-white">Advanced operations</h3>
+                                                <p class="text-sm text-slate-300">Webhooks, scheduled broadcasts, and other higher-leverage workflows.</p>
+                                            </div>
+                                            <span class="text-slate-400 transition-transform group-open:rotate-180">&#8964;</span>
+                                        </summary>
+                                        <div id="advanced-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+                                            <!-- Webhooks & Scheduler sections injected here -->
+                                        </div>
+                                    </details>
+                                </section>
                             </div>
-                        </details>
+
+                            <aside class="admin-sidebar">
+                                <div class="admin-sidebar-card">
+                                    <div class="admin-sidebar-title">Workflow</div>
+                                    <p class="admin-sidebar-copy">Treat this page as a control tower: tune the stream on the left, then jump directly to moderation or asset sections from here.</p>
+                                    <div class="admin-link-list">
+                                        <a href="#sec-history"><span>Review recent danmu</span><span class="text-slate-500">→</span></a>
+                                        <a href="#sec-blacklist"><span>Block problem keywords</span><span class="text-slate-500">→</span></a>
+                                        <a href="#sec-effects"><span>Refresh effects and visuals</span><span class="text-slate-500">→</span></a>
+                                    </div>
+                                </div>
+
+                                <div class="admin-sidebar-card">
+                                    <div class="admin-sidebar-title">Recommended order</div>
+                                    <p class="admin-sidebar-copy">For live tuning, adjust style, verify output in live feed, then move to history and filters only if moderation is needed.</p>
+                                    <div class="admin-link-list">
+                                        <a href="#sec-color"><span>1. Style controls</span><span class="text-slate-500">Color / size / speed</span></a>
+                                        <a href="#sec-live-feed"><span>2. Live validation</span><span class="text-slate-500">Incoming traffic</span></a>
+                                        <a href="#sec-filters"><span>3. Guardrails</span><span class="text-slate-500">Rate limit / rules</span></a>
+                                    </div>
+                                </div>
+                            </aside>
+                        </div>
                     </div>
                 `;
 
@@ -1123,6 +1302,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 `);
 
     addEventListeners();
+    initAdminSectionLayout();
     scheduleIdleTask(initEffectsManagement);
 
     // Notify add-on scripts (admin-sounds.js, admin-webhooks.js, etc.)
@@ -1450,6 +1630,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Cleanup all background resources on page unload (prevents memory leaks)
   window.addEventListener("beforeunload", () => {
+    if (_adminSectionObserver) {
+      _adminSectionObserver.disconnect();
+      _adminSectionObserver = null;
+    }
     if (_replayPollTimer) {
       clearInterval(_replayPollTimer);
       _replayPollTimer = null;
