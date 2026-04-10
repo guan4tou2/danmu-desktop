@@ -411,17 +411,35 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
               animationText = STARTUP_ANIM_SETTINGS.customText;
             }
 
-            showSceneAnimation(animationText);
+            // The Python websockets server accepts the handshake first then
+            // closes with 1008 if WS_REQUIRE_TOKEN is enabled and the token is
+            // missing/invalid. ws.onopen still fires in that case, so we wait
+            // briefly and only play the intro if the socket is still alive.
+            setTimeout(() => {
+              if (ws && ws.readyState === WebSocket.OPEN) {
+                showSceneAnimation(animationText)
+              }
+            }, 800)
           }
         }
 
         ws.onclose = (event) => {
-          console.log('Connection closed', event.code)
+          console.log('Connection closed', event.code, event.reason)
           clearInterval(heartbeatInterval)
 
           if (connectionTimeout) {
             clearTimeout(connectionTimeout)
             connectionTimeout = null
+          }
+
+          // 1008 = Policy Violation. The server uses this for token auth failure
+          // and connection-limit rejection. Reconnecting won't help — stop and
+          // surface the failure to the user.
+          if (event.code === 1008) {
+            console.error('WebSocket rejected by server (1008):', event.reason)
+            sendConnectionStatus('connection-failed')
+            reconnectAttempts = maxReconnectAttempts
+            return
           }
 
           if (isFirstConnectionAttempt && reconnectAttempts === 0) {

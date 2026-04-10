@@ -152,7 +152,7 @@ describe("child-ws-script execution", () => {
     evalScript(script, {
       setTimeout: jest.fn((fn, delay) => {
         timeouts.push({ fn, delay });
-        if (delay === undefined || delay <= 200) fn();
+        if (delay === undefined || delay <= 800) fn();
         return timeouts.length;
       }),
     });
@@ -165,7 +165,7 @@ describe("child-ws-script execution", () => {
     const script = getChildWsScript("10.0.0.1", 8080, null, "abc123");
     evalScript(script, {
       setTimeout: jest.fn((fn, delay) => {
-        if (delay === undefined || delay <= 200) fn();
+        if (delay === undefined || delay <= 800) fn();
         return 1;
       }),
     });
@@ -178,7 +178,7 @@ describe("child-ws-script execution", () => {
     const script = getChildWsScript("10.0.0.1", 8080, null, "");
     evalScript(script, {
       setTimeout: jest.fn((fn, delay) => {
-        if (delay === undefined || delay <= 200) fn();
+        if (delay === undefined || delay <= 800) fn();
         return 1;
       }),
     });
@@ -199,7 +199,7 @@ describe("child-ws-script execution", () => {
       setTimeout: jest.fn((fn, delay) => {
         scheduledTimeouts.push({ fn, delay });
         // Execute 200ms debounce timeouts immediately
-        if (delay <= 200) fn();
+        if (delay <= 800) fn();
         return scheduledTimeouts.length;
       }),
     });
@@ -221,7 +221,7 @@ describe("child-ws-script execution", () => {
     const globals = evalScript(script, {
       window: { API: { sendConnectionStatus: jest.fn() } },
       setTimeout: jest.fn((fn, delay) => {
-        if (delay <= 200) fn();
+        if (delay <= 800) fn();
         return 1;
       }),
       setInterval: jest.fn((fn) => {
@@ -289,7 +289,7 @@ describe("child-ws-script execution", () => {
         visibilityState: "visible",
       },
       setTimeout: jest.fn((fn, delay) => {
-        if (delay <= 200) fn();
+        if (delay <= 800) fn();
         return 1;
       }),
     });
@@ -352,7 +352,7 @@ describe("child-ws-script execution", () => {
         showdanmu: jest.fn(),
       },
       setTimeout: jest.fn((fn, delay) => {
-        if (delay <= 200) fn();
+        if (delay <= 800) fn();
         return 1;
       }),
     });
@@ -385,7 +385,7 @@ describe("child-ws-script execution", () => {
       console: consoleMock,
       window: { API: { sendConnectionStatus: jest.fn() } },
       setTimeout: jest.fn((fn, delay) => {
-        if (delay <= 200) fn();
+        if (delay <= 800) fn();
         return 1;
       }),
     });
@@ -409,7 +409,7 @@ describe("child-ws-script execution", () => {
       console: consoleMock,
       window: { API: { sendConnectionStatus: jest.fn() } },
       setTimeout: jest.fn((fn, delay) => {
-        if (delay <= 200) fn();
+        if (delay <= 800) fn();
         return 1;
       }),
     });
@@ -462,7 +462,7 @@ describe("child-ws-script execution", () => {
         visibilityState: "visible",
       },
       setTimeout: jest.fn((fn, delay) => {
-        if (delay <= 200) fn();
+        if (delay <= 800) fn();
         return 1;
       }),
     });
@@ -534,7 +534,7 @@ describe("child-ws-script execution", () => {
         showdanmu: jest.fn(),
       },
       setTimeout: jest.fn((fn, delay) => {
-        if (delay <= 200) fn();
+        if (delay <= 800) fn();
         return 1;
       }),
     });
@@ -571,7 +571,7 @@ describe("child-ws-script execution", () => {
         showdanmu: jest.fn(),
       },
       setTimeout: jest.fn((fn, delay) => {
-        if (delay <= 200) fn();
+        if (delay <= 800) fn();
         return 1;
       }),
     });
@@ -635,7 +635,7 @@ describe("child-ws-script execution", () => {
         visibilityState: "visible",
       },
       setTimeout: jest.fn((fn, delay) => {
-        if (delay <= 200) fn();
+        if (delay <= 800) fn();
         return 1;
       }),
     });
@@ -692,7 +692,7 @@ describe("child-ws-script execution", () => {
         visibilityState: "visible",
       },
       setTimeout: jest.fn((fn, delay) => {
-        if (delay <= 200) fn();
+        if (delay <= 800) fn();
         return 1;
       }),
     });
@@ -743,7 +743,7 @@ describe("child-ws-script execution", () => {
         visibilityState: "visible",
       },
       setTimeout: jest.fn((fn, delay) => {
-        if (delay <= 200) fn();
+        if (delay <= 800) fn();
         return 1;
       }),
     });
@@ -792,7 +792,7 @@ describe("child-ws-script execution", () => {
         visibilityState: "visible",
       },
       setTimeout: jest.fn((fn, delay) => {
-        if (delay <= 200) fn();
+        if (delay <= 800) fn();
         return 1;
       }),
     });

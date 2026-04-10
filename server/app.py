@@ -200,7 +200,12 @@ def websocket(ws):
             return False
         if parsed.scheme not in {"http", "https"}:
             return False
-        return parsed.netloc == request.host
+        # Compare hostname only — reverse proxies (e.g. nginx with `Host $host`)
+        # strip the port from request.host while the browser keeps it in Origin,
+        # so a literal netloc comparison would reject legitimate connections.
+        origin_host = parsed.hostname or ""
+        request_host = request.host.partition(":")[0]
+        return bool(origin_host) and origin_host == request_host
 
     allowed_ok = origin in allowed if allowed else _origin_matches_host(origin)
     if not allowed_ok:
