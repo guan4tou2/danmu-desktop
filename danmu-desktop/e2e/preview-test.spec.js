@@ -115,10 +115,8 @@ test.describe("Preview & Batch Test", () => {
   test("slider changes persist in localStorage", async () => {
     // Change opacity
     const slider = page.locator("#overlay-opacity");
-    await slider.evaluate((el, v) => {
-      el.value = v;
-      el.dispatchEvent(new Event("input", { bubbles: true }));
-    }, "42");
+    await slider.fill("42");
+    await slider.dispatchEvent("input");
 
     // Read from localStorage
     const stored = await page.evaluate(() => {
