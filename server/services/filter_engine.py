@@ -66,8 +66,10 @@ class FilterEngine:
         self._rate_tracker: dict[str, list[float]] = {}
         self._check_count = 0
         if path is None:
-            server_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            path = os.path.join(server_dir, "filter_rules.json")
+            path = os.environ.get("FILTER_RULES_FILE") or os.path.join(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                "filter_rules.json",
+            )
         self._path = path
         self._load()
         self._initialized = True

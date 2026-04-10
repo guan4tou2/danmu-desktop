@@ -47,10 +47,19 @@ def server_ports():
     settings_path = __import__("pathlib").Path(settings_path_str)
     settings_path.unlink(missing_ok=True)
 
+    fd2, filter_rules_path_str = tempfile.mkstemp(
+        prefix="_test_overlay_render_filter_",
+        suffix=".json",
+    )
+    os.write(fd2, b"[]")
+    os.close(fd2)
+    filter_rules_path = __import__("pathlib").Path(filter_rules_path_str)
+
     script = textwrap.dedent(f"""\
         import sys, os, threading, logging
         sys.path.insert(0, ".")
         os.environ["SETTINGS_FILE"] = "{settings_path}"
+        os.environ["FILTER_RULES_FILE"] = "{filter_rules_path}"
 
         from server.config import Config
         Config.WS_REQUIRE_TOKEN = False
@@ -113,6 +122,7 @@ def server_ports():
     proc.terminate()
     proc.wait(timeout=5)
     settings_path.unlink(missing_ok=True)
+    filter_rules_path.unlink(missing_ok=True)
 
 
 @pytest.fixture(scope="module")
