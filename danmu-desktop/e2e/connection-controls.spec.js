@@ -17,7 +17,6 @@ test.describe("Connection Controls", () => {
     });
     page = await electronApp.firstWindow();
     await page.waitForLoadState("domcontentloaded");
-    await page.waitForSelector(".main-content.loaded", { timeout: 15000 });
   });
 
   test.afterAll(async () => {

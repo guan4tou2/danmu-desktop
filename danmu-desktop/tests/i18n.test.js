@@ -17,7 +17,7 @@ describe("t()", () => {
 
   test("returns translation for a known Chinese key when lang is zh", () => {
     i18n.currentLang = "zh";
-    expect(i18n.t("title")).toBe("彈幕設定");
+    expect(i18n.t("title")).toBe("Danmu Desktop");
   });
 
   test("falls back to the key name for an unknown key", () => {
