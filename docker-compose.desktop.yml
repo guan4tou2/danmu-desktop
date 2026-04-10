@@ -1,0 +1,22 @@
+# Exposes the dedicated WebSocket server (port 4001) to the host network
+# so the Danmu Desktop (Electron) client can connect directly.
+#
+# This supports the dual-transport mode: HTTPS admin panel on 443/HTTPS_PORT
+# plus plain ws:// for desktop overlays on 4001. The desktop client connects
+# with ws://IP:PORT (see danmu-desktop/main-modules/child-ws-script.js); it
+# does not require wss://.
+#
+# Access control is provided by a shared token rather than TLS on this port:
+#
+#   WS_REQUIRE_TOKEN=true
+#   WS_AUTH_TOKEN=<long random string>   # openssl rand -hex 32
+#
+# Usage (layer on top of the https or traefik profile):
+#
+#   docker compose -f docker-compose.yml -f docker-compose.desktop.yml \
+#     --profile https up -d
+
+services:
+  server:
+    ports:
+      - "${WS_PORT:-4001}:4001"

@@ -116,6 +116,14 @@ _init() {
     _REDIS=true
   fi
 
+  # Desktop client (exposes WS port 4001 with token auth)
+  local _desktop=false ws_token=""
+  read -rp "Expose WebSocket port 4001 for Danmu Desktop client? [y/N]: " use_desktop
+  if [ "${use_desktop,,}" = "y" ]; then
+    _desktop=true
+    ws_token=$(python3 -c 'import secrets; print(secrets.token_hex(32))' 2>/dev/null || openssl rand -hex 32)
+  fi
+
   # Admin password
   echo ""
   while true; do
@@ -235,6 +243,12 @@ _init() {
     _set_env RATE_LIMIT_BACKEND "memory"
   fi
 
+  # Desktop client: enable WS token auth
+  if [ "$_desktop" = "true" ]; then
+    _set_env WS_REQUIRE_TOKEN "true"
+    _set_env WS_AUTH_TOKEN    "$ws_token"
+  fi
+
   echo ""
   _ok ".env written."
 
@@ -248,7 +262,11 @@ _init() {
   echo ""
   _info "To start Danmu Fire, run:"
   echo ""
-  echo "    docker compose --profile ${_PROFILE}${redis_profile} up -d"
+  local _compose_files=""
+  if [ "$_desktop" = "true" ]; then
+    _compose_files=" -f docker-compose.yml -f docker-compose.desktop.yml"
+  fi
+  echo "    docker compose${_compose_files} --profile ${_PROFILE}${redis_profile} up -d"
   echo ""
 
   # Access URL hint
@@ -269,6 +287,16 @@ _init() {
       _info "Then open: https://${domain}"
       ;;
   esac
+
+  if [ "$_desktop" = "true" ]; then
+    echo ""
+    _info "Desktop client (ws + https dual transport):"
+    echo "    Host:     ${_url_host}"
+    echo "    Port:     4001"
+    echo "    WS Token: ${ws_token}"
+    echo ""
+    _info "Open firewall for the WS port:  sudo ufw allow 4001/tcp"
+  fi
 
   echo ""
   _warn "Change REDIS_PASSWORD in .env before production use."

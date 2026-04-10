@@ -125,6 +125,41 @@ docker compose --profile http -f docker-compose.yml -f docker-compose.dev.yml up
 
 Or: `make docker-up-dev`
 
+### Desktop Client (ws + https dual transport)
+
+The Danmu Desktop (Electron) client connects with plain `ws://IP:PORT`. This
+is a supported deployment mode: run the HTTPS admin panel on `HTTPS_PORT`
+alongside a plain WebSocket endpoint on port `4001` for desktop overlays.
+Access control on the WS port is provided by a shared token instead of TLS.
+
+For the `https` and `traefik` profiles the dedicated WS server is
+internal-only by default. To expose it, layer the `desktop` override file on
+top of the main compose file:
+
+1. In `.env`:
+
+   ```
+   WS_REQUIRE_TOKEN=true
+   WS_AUTH_TOKEN=<generate: openssl rand -hex 32>
+   ```
+
+2. Start with the override:
+
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.desktop.yml \
+     --profile https up -d
+   ```
+
+3. Open the firewall:
+
+   ```bash
+   sudo ufw allow 4001/tcp
+   ```
+
+4. In the desktop app, enter the server IP, port `4001`, and paste the token
+   into the **WS Token** field. The admin panel is reached separately at
+   `https://<host>:<HTTPS_PORT>`.
+
 ---
 
 ## Security Checklist
