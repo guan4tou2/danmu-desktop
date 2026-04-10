@@ -44,108 +44,126 @@ const state = {
 // Danmu display settings (shared between danmu-settings and ws-manager)
 const danmuSettings = { ...DEFAULT_DANMU_SETTINGS };
 
-// All initialization runs inside DOMContentLoaded to guarantee DOM is ready
-document.addEventListener("DOMContentLoaded", async () => {
-  // ── Synchronous module initialization (all sync, before any awaits) ──────
-  initTrackManager();
-  initGlobalEffects();
+// Main initialization — runs after DOM is ready.
+// Uses try/finally so .main-content.loaded is always added even if init throws.
+const initRenderer = async () => {
+  try {
+    // ── Synchronous module initialization (before any awaits) ────────────
+    initTrackManager();
+    initGlobalEffects();
 
-  initOverlayControls({
-    state,
-    showToast,
-    t,
-    validateIP,
-    validatePort,
-    saveSettings,
-    saveStartupAnimationSettings,
-    loadSettings,
-    loadStartupAnimationSettings,
-    updateConnectionStatus,
-    hideConnectionStatus,
-  });
-
-  initConnectionStatusHandler({
-    state,
-    showToast,
-    t,
-    getLocalizedText,
-    updateConnectionStatus,
-    hideConnectionStatus,
-    getCurrentStatus,
-  });
-
-  initDanmuSettings(danmuSettings, showToast, t);
-  loadDanmuSettings(danmuSettings);
-
-  // Canvas 2D particle network background (main window only)
-  if (document.getElementById("vanta-bg")) {
-    initParticleBg("#vanta-bg");
-  }
-
-  // Settings export / import buttons (main window only)
-  const exportBtn = document.getElementById("export-settings-btn");
-  if (exportBtn) {
-    exportBtn.addEventListener("click", () => {
-      exportSettings();
-      showToast(t("exportSettings") + " OK", "success");
+    initOverlayControls({
+      state,
+      showToast,
+      t,
+      validateIP,
+      validatePort,
+      saveSettings,
+      saveStartupAnimationSettings,
+      loadSettings,
+      loadStartupAnimationSettings,
+      updateConnectionStatus,
+      hideConnectionStatus,
     });
-  }
 
-  const importBtn = document.getElementById("import-settings-btn");
-  if (importBtn) {
-    importBtn.addEventListener("click", async () => {
-      const result = await importSettings();
-      showToast(result.message, result.ok ? "success" : "error");
+    initConnectionStatusHandler({
+      state,
+      showToast,
+      t,
+      getLocalizedText,
+      updateConnectionStatus,
+      hideConnectionStatus,
+      getCurrentStatus,
     });
-  }
 
-  // ── i18n (async, with timeout guard to prevent hang in CI) ──────────────
-  if (typeof i18n !== "undefined") {
-    await Promise.race([
-      i18n.loadLanguage(),
-      new Promise((resolve) => setTimeout(resolve, 2000)),
-    ]);
-    i18n.updateUI();
+    initDanmuSettings(danmuSettings, showToast, t);
+    loadDanmuSettings(danmuSettings);
 
-    const languageSelect = document.getElementById("language-select");
-    if (languageSelect) {
-      languageSelect.value = i18n.currentLang;
-      languageSelect.addEventListener("change", (e) => {
-        i18n.setLanguage(e.target.value);
+    // Canvas 2D particle network background (main window only)
+    if (document.getElementById("vanta-bg")) {
+      initParticleBg("#vanta-bg");
+    }
+
+    // Settings export / import buttons (main window only)
+    const exportBtn = document.getElementById("export-settings-btn");
+    if (exportBtn) {
+      exportBtn.addEventListener("click", () => {
+        exportSettings();
+        showToast(t("exportSettings") + " OK", "success");
       });
     }
+
+    const importBtn = document.getElementById("import-settings-btn");
+    if (importBtn) {
+      importBtn.addEventListener("click", async () => {
+        const result = await importSettings();
+        showToast(result.message, result.ok ? "success" : "error");
+      });
+    }
+
+    // ── i18n (async, with timeout guard to prevent hang in CI) ──────────
+    if (typeof i18n !== "undefined") {
+      try {
+        await Promise.race([
+          i18n.loadLanguage(),
+          new Promise((resolve) => setTimeout(resolve, 2000)),
+        ]);
+        i18n.updateUI();
+
+        const languageSelect = document.getElementById("language-select");
+        if (languageSelect) {
+          languageSelect.value = i18n.currentLang;
+          languageSelect.addEventListener("change", (e) => {
+            i18n.setLanguage(e.target.value);
+          });
+        }
+      } catch (_) {
+        // i18n failure — continue with HTML defaults
+      }
+    }
+
+    // ── Screen select population ─────────────────────────────────────────
+    const api = window.API;
+    if (api) {
+      const screenSelect = document.getElementById("screen-select");
+      if (screenSelect) {
+        const selectedBeforePopulate = parseInt(screenSelect.value, 10);
+
+        api.getDisplays().then((displays) => {
+          screenSelect.innerHTML = "";
+          displays.forEach((display, index) => {
+            const option = document.createElement("option");
+            option.value = index;
+            option.textContent = `Display ${index + 1} (${display.size.width}x${
+              display.size.height
+            }) ${display.primary ? "[Primary]" : ""}`;
+            screenSelect.appendChild(option);
+          });
+
+          const hasSavedSelection =
+            Number.isInteger(selectedBeforePopulate) &&
+            selectedBeforePopulate >= 0 &&
+            selectedBeforePopulate < displays.length;
+          const primaryIndex = displays.findIndex((display) => display.primary);
+          const fallbackIndex = primaryIndex >= 0 ? primaryIndex : 0;
+          screenSelect.value = String(
+            hasSavedSelection ? selectedBeforePopulate : fallbackIndex
+          );
+        });
+      }
+    }
+  } finally {
+    // Always signal that the renderer has finished initializing.
+    // E2e tests wait for this class before interacting with the page.
+    const mainContent = document.querySelector(".main-content");
+    if (mainContent) mainContent.classList.add("loaded");
   }
+};
 
-  // ── Signal that renderer is fully initialized ────────────────────────────
-  const mainContent = document.querySelector(".main-content");
-  if (mainContent) mainContent.classList.add("loaded");
-
-  // ── Screen select population ─────────────────────────────────────────────
-  const api = window.API;
-  if (!api) return;
-
-  const screenSelect = document.getElementById("screen-select");
-  if (!screenSelect) return;
-
-  const selectedBeforePopulate = parseInt(screenSelect.value, 10);
-
-  api.getDisplays().then((displays) => {
-    screenSelect.innerHTML = "";
-    displays.forEach((display, index) => {
-      const option = document.createElement("option");
-      option.value = index;
-      option.textContent = `Display ${index + 1} (${display.size.width}x${
-        display.size.height
-      }) ${display.primary ? "[Primary]" : ""}`;
-      screenSelect.appendChild(option);
-    });
-
-    const hasSavedSelection =
-      Number.isInteger(selectedBeforePopulate) &&
-      selectedBeforePopulate >= 0 &&
-      selectedBeforePopulate < displays.length;
-    const primaryIndex = displays.findIndex((display) => display.primary);
-    const fallbackIndex = primaryIndex >= 0 ? primaryIndex : 0;
-    screenSelect.value = String(hasSavedSelection ? selectedBeforePopulate : fallbackIndex);
-  });
-});
+// Run after DOM is ready — handles the case where DOMContentLoaded has already
+// fired (e.g. readyState is "interactive" or "complete").
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => initRenderer());
+} else {
+  initRenderer();
+}
