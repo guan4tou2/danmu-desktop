@@ -236,7 +236,10 @@ function initTrackManager() {
             const before = document.createTextNode(node.textContent.substring(0, idx));
             const img = document.createElement("img");
             img.src = em.dataUrl || em.url;
-            img.style.cssText = `display:inline;vertical-align:middle;width:${Math.round(size * 0.8)}px;height:${Math.round(size * 0.8)}px;margin:0 2px;`;
+            // child.css has `img { position: absolute }` which would yank the
+            // emoji out of the text flow and clip it. Force static positioning
+            // and inline-block so it sits on the baseline next to the chars.
+            img.style.cssText = `position:static;display:inline-block;vertical-align:middle;width:${Math.round(size * 0.9)}px;height:${Math.round(size * 0.9)}px;margin:0 2px;overflow:visible;`;
             img.alt = em.name;
             const after = document.createTextNode(node.textContent.substring(idx + pattern.length));
             const parent = node.parentNode;
