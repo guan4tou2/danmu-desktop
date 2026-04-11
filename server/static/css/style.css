@@ -119,11 +119,13 @@ summary:focus-visible {
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
   }
 }
+
 .animate-fade-in-scale-up {
   animation: fadeInScaleUp 0.5s ease-out forwards;
 }
@@ -265,7 +267,7 @@ summary:focus-visible {
   padding: 1rem;
 }
 
-.admin-sidebar-card + .admin-sidebar-card {
+.admin-sidebar-card+.admin-sidebar-card {
   margin-top: 1rem;
 }
 
@@ -306,8 +308,8 @@ summary:focus-visible {
   transform: translateY(-1px);
 }
 
-#moderation-grid > *,
-#assets-grid > * {
+#moderation-grid>*,
+#assets-grid>* {
   width: 100%;
 }
 
@@ -399,10 +401,12 @@ summary:focus-visible {
 
 /* Flashing Animation for the modal border */
 @keyframes flashWarningBorder {
+
   0%,
   100% {
     border-color: var(--color-error);
   }
+
   50% {
     border-color: var(--color-error-light);
   }
@@ -413,11 +417,13 @@ summary:focus-visible {
 }
 
 @keyframes flashIcon {
+
   0%,
   100% {
     transform: scale(1);
     opacity: 1;
   }
+
   50% {
     transform: scale(1.2);
     opacity: 0.7;
@@ -440,7 +446,8 @@ summary:focus-visible {
   right: 0;
   border-color: var(--color-primary);
 }
-.toggle-checkbox:checked + .toggle-label {
+
+.toggle-checkbox:checked+.toggle-label {
   background-color: var(--color-primary);
 }
 
@@ -468,8 +475,15 @@ summary:focus-visible {
 }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
 }
 
 /* --- Button Loading Spinner --- */
@@ -480,13 +494,18 @@ summary:focus-visible {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* --- Skeleton Loading --- */
 .skeleton {
-  background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.06) 75%);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.06) 25%, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.06) 75%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
   border-radius: var(--radius-md);
@@ -515,8 +534,13 @@ summary:focus-visible {
 }
 
 @keyframes skeleton-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* --- Password Show/Hide Toggle --- */
@@ -545,4 +569,280 @@ summary:focus-visible {
 .password-toggle svg {
   width: 18px;
   height: 18px;
+}
+
+/* --- Home composer shell --- */
+.server-home-shell {
+  max-width: 980px;
+}
+
+.server-main-shell {
+  position: relative;
+  overflow: clip;
+  background:
+    linear-gradient(180deg, rgba(2, 6, 23, 0.78), rgba(2, 6, 23, 0.58)),
+    radial-gradient(circle at top, rgba(56, 189, 248, 0.12), transparent 42%);
+}
+
+.server-main-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 200px;
+  background:
+    radial-gradient(circle at top left, rgba(34, 211, 238, 0.14), transparent 42%),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 36%);
+  pointer-events: none;
+}
+
+/* --- Floating Composer (input + preview) --- */
+.composer-bar {
+  position: relative;
+  padding: 1rem;
+  transition:
+    padding 0.25s ease,
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.composer-card {
+  overflow: hidden;
+  background:
+    linear-gradient(145deg, rgba(2, 6, 23, 0.94), rgba(15, 23, 42, 0.88)),
+    radial-gradient(circle at top left, rgba(34, 211, 238, 0.09), transparent 42%);
+}
+
+.composer-card::before {
+  content: "";
+  position: absolute;
+  inset: auto -8% -45% auto;
+  width: 240px;
+  height: 240px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.16), transparent 68%);
+  pointer-events: none;
+}
+
+.composer-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 640px) {
+  .composer-grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
+    align-items: stretch;
+  }
+}
+
+.composer-input,
+.composer-preview {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.composer-label {
+  transition: opacity 0.2s ease, height 0.2s ease, margin 0.2s ease;
+}
+
+.composer-textarea {
+  min-height: 132px;
+  line-height: 1.45;
+  position: relative;
+  z-index: 1;
+}
+
+.composer-preview-box {
+  flex: 1 1 auto;
+  min-height: 132px;
+  transition: min-height 0.25s ease;
+}
+
+.composer-preview-text {
+  transition: font-size 0.2s ease;
+  text-shadow: 0 0 20px rgba(34, 211, 238, 0.18);
+}
+
+.composer-send {
+  position: relative;
+  z-index: 1;
+  transition:
+    padding 0.2s ease,
+    font-size 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.asset-dashboard-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 1.1rem;
+}
+
+.asset-dashboard-card {
+  border: 1px solid rgba(51, 65, 85, 0.72);
+  border-radius: 1rem;
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.72), rgba(2, 6, 23, 0.62));
+  padding: 0.9rem 1rem;
+}
+
+.asset-dashboard-label {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--color-sky-400);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.asset-dashboard-card strong {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--color-slate-100);
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.asset-dashboard-card p {
+  margin: 0;
+  color: var(--color-slate-400);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.history-section-body {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.history-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 0.9rem;
+}
+
+.history-dashboard-card {
+  border: 1px solid rgba(51, 65, 85, 0.68);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.62));
+  padding: 0.9rem 1rem;
+}
+
+.history-dashboard-card--chart,
+.history-dashboard-card--table {
+  min-width: 0;
+}
+
+.history-dashboard-meta + .history-dashboard-meta {
+  margin-top: 0.85rem;
+}
+
+.history-dashboard-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--color-slate-400);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.history-dashboard-value {
+  color: var(--color-slate-100);
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.history-dashboard-title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  align-items: baseline;
+}
+
+.history-dashboard-title {
+  color: var(--color-slate-200);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.history-dashboard-caption {
+  color: var(--color-slate-500);
+  font-size: 0.72rem;
+}
+
+.stats-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 80px;
+}
+
+.chart-bar {
+  background: #06b6d4;
+  min-width: 12px;
+  border-radius: 2px 2px 0 0;
+  position: relative;
+  transition: height 0.3s;
+}
+
+.chart-bar:hover {
+  background: #22d3ee;
+}
+
+.chart-label {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.history-command-bar,
+.history-replay-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.history-stats-strip {
+  border: 1px solid rgba(51, 65, 85, 0.66);
+  border-radius: 0.9rem;
+  background: rgba(15, 23, 42, 0.5);
+  padding: 0.7rem 0.9rem;
+}
+
+.history-list-shell {
+  border: 1px solid rgba(51, 65, 85, 0.66);
+  border-radius: 1rem;
+  background: rgba(2, 6, 23, 0.42);
+  padding: 0.85rem 0.9rem;
+}
+
+@media (max-width: 1023px) {
+  .asset-dashboard-strip,
+  .history-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 639px) {
+  .composer-bar {
+    padding: 0.9rem;
+  }
+
+  .composer-textarea,
+  .composer-preview-box {
+    min-height: 108px;
+  }
 }

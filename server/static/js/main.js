@@ -767,7 +767,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const nicknameInput = document.getElementById("nicknameInput");
       const nickname = nicknameInput ? nicknameInput.value.trim() : null;
       if (nicknameInput && nickname) {
-        try { localStorage.setItem("danmu_nickname", nickname); } catch (_) {}
+        try { localStorage.setItem("danmu_nickname", nickname); } catch (_) { }
       }
 
       // Layout mode
@@ -982,7 +982,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
           const saved = localStorage.getItem("danmu_nickname");
           if (saved) nicknameInput.value = saved;
-        } catch (_) {}
+        } catch (_) { }
       }
 
       // Layout mode buttons
