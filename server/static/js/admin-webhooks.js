@@ -331,6 +331,7 @@
   // ---- bootstrap: re-inject on every admin panel rebuild ----
 
   document.addEventListener("DOMContentLoaded", () => {
+    if (!window.DANMU_CONFIG?.session?.logged_in) return;
     const observer = new MutationObserver(() => {
       if ((document.getElementById("advanced-grid") || document.getElementById("settings-grid")) && !document.getElementById(SECTION_ID)) {
         injectSection();

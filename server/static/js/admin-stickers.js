@@ -243,6 +243,7 @@
   // admin.js rebuilds the entire DOM via innerHTML on every renderControlPanel()
   // call, so we keep observing and re-inject when our section is wiped out.
   document.addEventListener("DOMContentLoaded", function () {
+    if (!window.DANMU_CONFIG || !window.DANMU_CONFIG.session || !window.DANMU_CONFIG.session.logged_in) return;
     var observer = new MutationObserver(function () {
       if (document.getElementById("settings-grid") && !document.getElementById("sec-stickers")) {
         init();

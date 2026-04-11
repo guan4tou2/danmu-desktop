@@ -353,6 +353,7 @@
   // via innerHTML on every renderControlPanel() call, so we keep observing
   // and re-inject when our section is wiped out.
   function waitForGridAndInit() {
+    if (!window.DANMU_CONFIG?.session?.logged_in) return;
     let initializing = false;
 
     const observer = new MutationObserver(function () {

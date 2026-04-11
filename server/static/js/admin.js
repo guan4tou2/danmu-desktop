@@ -78,8 +78,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await response.json();
       // Update current settings
       currentSettings = data;
-      // Re-render control panel
-      renderControlPanel();
+      // Only re-render the control panel when authenticated, otherwise
+      // we dispatch "admin-panel-rendered" on the login screen and trigger
+      // a wave of 401 fetches from admin-history.js etc.
+      if (session.logged_in) {
+        renderControlPanel();
+      }
     } catch (error) {
       console.error("Get settings failed:", error);
       showToast(ServerI18n.t("getSettingsFailed"), false);
@@ -323,6 +327,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const dist = hourlyData.distribution || [];
       const topTexts = topTextData.topTexts || [];
       const maxCount = Math.max(1, ...dist.map((d) => d.count));
+      const totalMessages = dist.reduce((sum, d) => sum + (d.count || 0), 0);
+      const activeSlots = dist.filter((d) => d.count > 0).length;
 
       let chartBars = dist.map((d) => {
         const pct = Math.round((d.count / maxCount) * 100);
@@ -334,13 +340,29 @@ document.addEventListener("DOMContentLoaded", () => {
       ).join("");
 
       dashDiv.innerHTML = `
-        <div class="grid gap-4 md:grid-cols-2 mb-4">
-          <div class="bg-slate-800/60 rounded-lg p-3">
-            <h4 class="text-xs font-semibold text-slate-300 mb-2">${ServerI18n.t("hourlyDistribution")}</h4>
+        <div class="history-dashboard-grid">
+          <div class="history-dashboard-card">
+            <div class="history-dashboard-meta">
+              <span class="history-dashboard-label">${ServerI18n.t("total")}</span>
+              <strong class="history-dashboard-value">${totalMessages}</strong>
+            </div>
+            <div class="history-dashboard-meta">
+              <span class="history-dashboard-label">Active slots</span>
+              <strong class="history-dashboard-value">${activeSlots}</strong>
+            </div>
+          </div>
+          <div class="history-dashboard-card history-dashboard-card--chart">
+            <div class="history-dashboard-title-row">
+              <h4 class="history-dashboard-title">${ServerI18n.t("hourlyDistribution")}</h4>
+              <span class="history-dashboard-caption">${hours}h window</span>
+            </div>
             <div class="stats-chart">${chartBars || '<span class="text-xs text-slate-500">No data</span>'}</div>
           </div>
-          <div class="bg-slate-800/60 rounded-lg p-3">
-            <h4 class="text-xs font-semibold text-slate-300 mb-2">${ServerI18n.t("topTexts")}</h4>
+          <div class="history-dashboard-card history-dashboard-card--table">
+            <div class="history-dashboard-title-row">
+              <h4 class="history-dashboard-title">${ServerI18n.t("topTexts")}</h4>
+              <span class="history-dashboard-caption">Top 10</span>
+            </div>
             ${topTexts.length ? `<table class="w-full text-xs"><tbody>${topTextRows}</tbody></table>` : '<span class="text-xs text-slate-500">No data</span>'}
           </div>
         </div>`;
@@ -836,6 +858,23 @@ document.addEventListener("DOMContentLoaded", () => {
                                             <p class="text-sm text-slate-300">Manage themes, sounds, stickers, emojis, widgets, and other reusable building blocks.</p>
                                         </div>
                                     </div>
+                                    <div class="asset-dashboard-strip">
+                                        <div class="asset-dashboard-card">
+                                            <span class="asset-dashboard-label">Media library</span>
+                                            <strong>Emojis, stickers, sounds</strong>
+                                            <p>Keep the frequently reused pieces close instead of burying them in a long maintenance list.</p>
+                                        </div>
+                                        <div class="asset-dashboard-card">
+                                            <span class="asset-dashboard-label">Visual system</span>
+                                            <strong>Themes and display polish</strong>
+                                            <p>Tune the overall atmosphere here before going deeper into lower-level sections.</p>
+                                        </div>
+                                        <div class="asset-dashboard-card">
+                                            <span class="asset-dashboard-label">Extensions</span>
+                                            <strong>Widgets and plugins</strong>
+                                            <p>Treat integrations as a separate lane so the dashboard reads like operations, not a toolbox dump.</p>
+                                        </div>
+                                    </div>
                                     <div id="assets-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                         <!-- Asset and extension sections are re-homed here -->
                                     </div>
@@ -1164,16 +1203,10 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
                             <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
                         </summary>
-                        <div class="mt-4 pt-4 border-t border-slate-700/50">
-                            <style>
-                                .stats-chart { display: flex; align-items: flex-end; gap: 2px; height: 80px; }
-                                .chart-bar { background: #06b6d4; min-width: 12px; border-radius: 2px 2px 0 0; position: relative; transition: height 0.3s; }
-                                .chart-bar:hover { background: #22d3ee; }
-                                .chart-label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 10px; color: #94a3b8; }
-                            </style>
+                        <div class="mt-4 pt-4 border-t border-slate-700/50 history-section-body">
                             <div id="statsDashboard"></div>
                             <div class="space-y-3">
-                                <div class="flex gap-2 items-center flex-wrap">
+                                <div class="history-command-bar">
                                     <label class="text-sm font-medium text-slate-300">${ServerI18n.t("timeRange")}</label>
                                     <select id="historyHours" class="px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400">
                                         <option value="1">${ServerI18n.t("last1Hour")}</option>
@@ -1193,7 +1226,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <input id="historySearch" type="search" placeholder="${ServerI18n.t("searchHistory")}"
                                     class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm
                                            placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400">
-                                <div id="replayToolbar" class="flex gap-2 items-center flex-wrap">
+                                <div id="replayToolbar" class="history-replay-toolbar">
                                     <button id="replayStartBtn" class="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors text-sm">▶ ${ServerI18n.t("replaySelected")}</button>
                                     <button id="replayPauseBtn" class="px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors text-sm hidden">⏸ ${ServerI18n.t("pause")}</button>
                                     <button id="replayResumeBtn" class="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors text-sm hidden">▶ ${ServerI18n.t("resume")}</button>
@@ -1209,7 +1242,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <button id="exportJsonBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("exportJSON") || "Export JSON"}</button>
                                     <span id="replayProgress" class="text-sm text-slate-400 hidden"></span>
                                 </div>
-                                <div id="historyStats" class="text-sm text-slate-400"></div>
+                                <div id="historyStats" class="history-stats-strip text-sm text-slate-400"></div>
+                                <div class="history-list-shell">
                                 <div class="flex items-center gap-2 mb-1">
                                     <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none">
                                         <input type="checkbox" id="historySelectAll" class="accent-purple-500">
@@ -1218,6 +1252,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                                 <div id="danmuHistoryList" class="space-y-2 max-h-96 overflow-y-auto">
                                     <!-- History will be listed here -->
+                                </div>
                                 </div>
                             </div>
                         </div>

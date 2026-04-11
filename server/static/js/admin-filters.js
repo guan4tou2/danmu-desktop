@@ -501,6 +501,7 @@
   // admin.js rebuilds the entire DOM via innerHTML on every renderControlPanel()
   // call, so we keep observing and re-inject when our section is wiped out.
   function bootstrap() {
+    if (!window.DANMU_CONFIG?.session?.logged_in) return;
     const observer = new MutationObserver(() => {
       if (document.getElementById("settings-grid") && !document.getElementById("sec-filters")) {
         init();

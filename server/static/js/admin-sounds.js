@@ -515,6 +515,7 @@
   // admin.js rebuilds the entire DOM via innerHTML on every renderControlPanel()
   // call, so we must keep observing and re-inject when our section is wiped out.
   document.addEventListener("DOMContentLoaded", () => {
+    if (!window.DANMU_CONFIG?.session?.logged_in) return;
     let injecting = false;
 
     const observer = new MutationObserver(() => {

@@ -340,6 +340,7 @@
   let wsListenerBound = false;
 
   function init() {
+    if (!window.DANMU_CONFIG?.session?.logged_in) return;
     // admin.js rebuilds the entire DOM via innerHTML on every renderControlPanel()
     // call, so we keep observing and re-inject when our section is wiped out.
     const observer = new MutationObserver(() => {
