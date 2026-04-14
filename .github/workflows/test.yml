@@ -8,6 +8,7 @@ on:
       - "server/**"
       - "danmu-desktop/**"
       - "shared/**"
+      - ".github/workflows/**"
   pull_request:
     branches:
       - main
@@ -15,6 +16,7 @@ on:
       - "server/**"
       - "danmu-desktop/**"
       - "shared/**"
+      - ".github/workflows/**"
 
 permissions:
   contents: read
