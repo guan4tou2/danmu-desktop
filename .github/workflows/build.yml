@@ -76,7 +76,7 @@ jobs:
           npm install
 
       - name: Build Electron App
-        shell: bash # This line is added
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -102,55 +102,26 @@ jobs:
           name: Electron-App-${{ matrix.os }}
           path: danmu-desktop/pack/**/*
 
-      - name: Create GitHub Release for Linux
-        if: matrix.os == 'ubuntu-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
-        id: create_release_linux
+  release:
+    needs: [check_version_change, build]
+    if: needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           tag_name: v${{ needs.check_version_change.outputs.version }}
           name: Release v${{ needs.check_version_change.outputs.version }}
           draft: false
           prerelease: false
           generate_release_notes: true
-          files: |
-            danmu-desktop/pack/Danmu Desktop*-*.AppImage
-            danmu-desktop/pack/Danmu Desktop*-*.deb
-            danmu-desktop/pack/latest-linux.yml
-
-      - name: Create GitHub Release for Windows
-        if: matrix.os == 'windows-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
-        id: create_release_windows
-        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        with:
-          tag_name: v${{ needs.check_version_change.outputs.version }}
-          name: Release v${{ needs.check_version_change.outputs.version }}
-          draft: false
-          prerelease: false
-          generate_release_notes: false
-          files: |
-            danmu-desktop/pack/Danmu Desktop*-*.exe
-            danmu-desktop/pack/latest.yml
-
-      - name: Create Release for macOS
-        if: matrix.os == 'macos-latest' && (needs.check_version_change.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
-        id: create_release
-        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          APP_VERSION: ${{ needs.check_version_change.outputs.version }}
-        with:
-          tag_name: v${{ needs.check_version_change.outputs.version }}
-          name: Release v${{ needs.check_version_change.outputs.version }}
-          draft: false
-          prerelease: false
-          generate_release_notes: false
           body: |
             ## MacOS Installation
             First execute, run in terminal:
@@ -158,6 +129,11 @@ jobs:
             sudo xattr -r -d com.apple.quarantine 'Danmu Desktop.app'
             ```
           files: |
-            danmu-desktop/pack/Danmu Desktop*-mac-arm64.dmg
-            danmu-desktop/pack/Danmu Desktop*-mac-arm64.zip
-            danmu-desktop/pack/latest-mac.yml
+            artifacts/Electron-App-ubuntu-latest/Danmu Desktop*-*.AppImage
+            artifacts/Electron-App-ubuntu-latest/Danmu Desktop*-*.deb
+            artifacts/Electron-App-ubuntu-latest/latest-linux.yml
+            artifacts/Electron-App-windows-latest/Danmu Desktop*-*.exe
+            artifacts/Electron-App-windows-latest/latest.yml
+            artifacts/Electron-App-macos-latest/Danmu Desktop*-mac-arm64.dmg
+            artifacts/Electron-App-macos-latest/Danmu Desktop*-mac-arm64.zip
+            artifacts/Electron-App-macos-latest/latest-mac.yml
