@@ -41,7 +41,7 @@ dev = [
     "black==26.3.1",
     "flake8>=7.0.0",
     "isort>=5.13.2",
-    "pytest>=9.0.1",
+    "pytest>=9.0.3",
     "coverage[toml]>=7.4.0",
     "pytest-cov>=6.0.0",
     "playwright>=1.40",
