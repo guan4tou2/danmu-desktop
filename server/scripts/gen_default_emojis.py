@@ -7,6 +7,7 @@ adding or refreshing the bundled set; the resulting PNGs are committed to git.
 
     python server/scripts/gen_default_emojis.py
 """
+
 from pathlib import Path
 
 from PIL import Image, ImageDraw
