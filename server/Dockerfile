@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.6
 
 # ── Stage 1: dependency builder ──────────────────────────────────────────────
-FROM python:3.11-slim AS builder
+FROM python:3.14-slim AS builder
 
 WORKDIR /app/server
 
@@ -13,7 +13,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
-FROM python:3.11-slim AS runtime
+FROM python:3.14-slim AS runtime
 
 LABEL maintainer="guan4tou2 <mole30608@gmail.com>"
 LABEL org.opencontainers.image.source="https://github.com/guan4tou2/danmu-desktop"
