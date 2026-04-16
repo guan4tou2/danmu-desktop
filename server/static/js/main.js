@@ -510,8 +510,8 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.colorValue.textContent = color.toUpperCase();
       }
       if (elements.colorGradientPreview) {
-        elements.colorGradientPreview.style.backgroundImage = `linear-gradient(to right, ${color}, transparent)`;
-        elements.colorGradientPreview.classList.remove("from-white");
+        elements.colorGradientPreview.style.backgroundImage = "none";
+        elements.colorGradientPreview.style.backgroundColor = color;
       }
       updatePreview();
     });
