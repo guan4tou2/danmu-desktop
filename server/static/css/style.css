@@ -12,6 +12,20 @@ body {
   color: white;
 }
 
+/* Every interactive element shows a pointer — no more default arrow on buttons */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+summary,
+label[for],
+select:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 .admin-app-shell {
   max-width: 1280px;
 }
