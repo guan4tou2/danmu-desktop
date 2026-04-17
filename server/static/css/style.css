@@ -176,7 +176,7 @@ summary:focus-visible {
   border-radius: 999px;
   background: rgba(8, 47, 73, 0.35);
   color: var(--color-sky-300);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -198,7 +198,7 @@ summary:focus-visible {
   display: block;
   margin-bottom: 0.35rem;
   color: var(--color-slate-400);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -255,7 +255,7 @@ summary:focus-visible {
   display: block;
   margin-bottom: 0.35rem;
   color: var(--color-sky-400);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -275,7 +275,7 @@ summary:focus-visible {
   border: 1px solid rgba(51, 65, 85, 0.72);
   background: rgba(15, 23, 42, 0.78);
   color: var(--color-slate-200);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   transition: background-color 0.2s, border-color 0.2s, color 0.2s;
 }
 
@@ -298,13 +298,13 @@ summary:focus-visible {
 
 .admin-sidebar-title {
   color: var(--color-slate-100);
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 600;
 }
 
 .admin-sidebar-copy {
   color: var(--color-slate-400);
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   line-height: 1.5;
 }
 
@@ -634,7 +634,7 @@ summary:focus-visible {
 
 .server-hero-kicker {
   color: var(--color-sky-400);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -681,7 +681,7 @@ summary:focus-visible {
 .server-hero-note {
   margin: 0;
   color: var(--color-slate-400);
-  font-size: 0.86rem;
+  font-size: 0.875rem;
   line-height: 1.5;
 }
 
@@ -862,7 +862,7 @@ summary:focus-visible {
 
 .settings-summary-subtitle {
   color: var(--color-slate-400);
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   line-height: 1.4;
 }
 
@@ -878,7 +878,7 @@ summary:focus-visible {
 
 .settings-block-kicker {
   color: var(--color-sky-400);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -886,7 +886,7 @@ summary:focus-visible {
 
 .settings-block-title {
   color: var(--color-slate-300);
-  font-size: 0.92rem;
+  font-size: 0.875rem;
   line-height: 1.35;
 }
 
@@ -938,7 +938,7 @@ summary:focus-visible {
 .settings-more-kicker {
   display: block;
   color: var(--color-sky-400);
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -947,7 +947,7 @@ summary:focus-visible {
   display: block;
   margin-top: 0.18rem;
   color: var(--color-slate-200);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 600;
 }
 
@@ -964,7 +964,7 @@ summary:focus-visible {
   gap: 0.55rem;
   margin-top: 1.25rem;
   color: var(--color-slate-600);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
 }
 
 .site-footer-link {
@@ -985,7 +985,7 @@ summary:focus-visible {
 
 .site-footer-version {
   color: var(--color-slate-600);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
 }
 
 .asset-dashboard-strip {
@@ -1006,7 +1006,7 @@ summary:focus-visible {
   display: block;
   margin-bottom: 0.45rem;
   color: var(--color-sky-400);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -1015,14 +1015,14 @@ summary:focus-visible {
   display: block;
   margin-bottom: 0.45rem;
   color: var(--color-slate-100);
-  font-size: 0.98rem;
+  font-size: 1rem;
   font-weight: 600;
 }
 
 .asset-dashboard-card p {
   margin: 0;
   color: var(--color-slate-400);
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   line-height: 1.45;
 }
 
@@ -1057,14 +1057,14 @@ summary:focus-visible {
   display: block;
   margin-bottom: 0.35rem;
   color: var(--color-slate-400);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .history-dashboard-value {
   color: var(--color-slate-100);
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 700;
 }
 
@@ -1078,7 +1078,7 @@ summary:focus-visible {
 
 .history-dashboard-title {
   color: var(--color-slate-200);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1086,7 +1086,7 @@ summary:focus-visible {
 
 .history-dashboard-caption {
   color: var(--color-slate-500);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
 }
 
 .stats-chart {
@@ -1195,6 +1195,6 @@ summary:focus-visible {
   .site-footer {
     flex-wrap: wrap;
     gap: 0.3rem 0.45rem;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
   }
 }
