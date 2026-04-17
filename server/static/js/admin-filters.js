@@ -35,7 +35,7 @@
 
   const TYPE_COLORS = {
     keyword: "bg-blue-600/80 text-blue-100",
-    regex: "bg-purple-600/80 text-purple-100",
+    regex: "bg-sky-600/80 text-sky-100",
     replace: "bg-amber-600/80 text-amber-100",
     rate_limit: "bg-rose-600/80 text-rose-100",
   };
@@ -75,7 +75,7 @@
               <div>
                 <label for="filterType" class="text-xs text-slate-400">${t("filterType", "Type")}</label>
                 <select id="filterType"
-                  class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400">
+                  class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400">
                   <option value="keyword">keyword</option>
                   <option value="regex">regex</option>
                   <option value="replace">replace</option>
@@ -87,7 +87,7 @@
               <div>
                 <label for="filterAction" class="text-xs text-slate-400">${t("filterAction", "Action")}</label>
                 <select id="filterAction"
-                  class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400">
+                  class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400">
                   <option value="block">block</option>
                   <option value="replace">replace</option>
                   <option value="allow">allow</option>
@@ -99,14 +99,14 @@
             <div>
               <label for="filterPattern" class="text-xs text-slate-400">${t("filterPattern", "Pattern")}</label>
               <input type="text" id="filterPattern" placeholder="${t("filterPatternPlaceholder", "Enter pattern...")}"
-                class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:ring-2 focus:ring-violet-400 focus:border-violet-400" />
+                class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:ring-2 focus:ring-sky-400 focus:border-sky-400" />
             </div>
 
             <!-- Replacement (visible only for replace type) -->
             <div id="filterReplacementRow" class="hidden">
               <label for="filterReplacement" class="text-xs text-slate-400">${t("filterReplacement", "Replacement")}</label>
               <input type="text" id="filterReplacement" placeholder="${t("filterReplacementPlaceholder", "Replacement text...")}"
-                class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:ring-2 focus:ring-violet-400 focus:border-violet-400" />
+                class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:ring-2 focus:ring-sky-400 focus:border-sky-400" />
             </div>
 
             <!-- Rate limit fields (visible only for rate_limit type) -->
@@ -114,12 +114,12 @@
               <div>
                 <label for="filterMaxCount" class="text-xs text-slate-400">${t("filterMaxCount", "Max Count")}</label>
                 <input type="number" id="filterMaxCount" value="5" min="1" max="1000"
-                  class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400" />
+                  class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400" />
               </div>
               <div>
                 <label for="filterWindowSec" class="text-xs text-slate-400">${t("filterWindowSec", "Window (sec)")}</label>
                 <input type="number" id="filterWindowSec" value="60" min="1" max="86400"
-                  class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400" />
+                  class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400" />
               </div>
             </div>
 
@@ -127,11 +127,11 @@
             <div>
               <label for="filterPriority" class="text-xs text-slate-400">${t("filterPriority", "Priority")} <span class="text-slate-500">(${t("lowerFirst", "lower = first")})</span></label>
               <input type="number" id="filterPriority" value="0" min="-9999" max="9999"
-                class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400" />
+                class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400" />
             </div>
 
             <button id="filterAddBtn"
-              class="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-bold py-2.5 px-6 rounded-xl transition-colors text-sm">
+              class="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2.5 px-6 rounded-xl transition-colors text-sm">
               ${t("addRule", "Add Rule")}
             </button>
           </div>
@@ -140,7 +140,7 @@
           <div class="bg-slate-800/60 p-3 rounded-lg space-y-2">
             <h4 class="text-sm font-semibold text-slate-200">${t("testRule", "Test Rule")}</h4>
             <input id="filterTestText" type="text" placeholder="${t("sampleText", "Sample text...")}"
-              class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:ring-2 focus:ring-violet-400 focus:border-violet-400" />
+              class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:ring-2 focus:ring-sky-400 focus:border-sky-400" />
             <button id="filterTestBtn"
               class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition-colors text-sm font-semibold">
               ${t("testBtn", "Test")}
@@ -192,7 +192,7 @@
         <div class="flex items-center gap-2 flex-shrink-0">
           <label class="relative inline-flex items-center cursor-pointer" title="${escapeHtml(toggleLabel)}">
             <input type="checkbox" class="sr-only peer filter-toggle-cb" data-rule-id="${escapeHtml(rule.id)}" ${rule.enabled ? "checked" : ""} />
-            <div class="w-9 h-5 bg-slate-600 peer-focus:ring-2 peer-focus:ring-violet-400 rounded-full peer peer-checked:bg-violet-600 transition-colors
+            <div class="w-9 h-5 bg-slate-600 peer-focus:ring-2 peer-focus:ring-sky-400 rounded-full peer peer-checked:bg-sky-600 transition-colors
                         after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full">
             </div>
           </label>

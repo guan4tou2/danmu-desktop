@@ -66,52 +66,13 @@ button:disabled,
 .admin-app-shell input:focus,
 .admin-app-shell select:focus,
 .admin-app-shell textarea:focus {
-  border-color: var(--color-sky-500) !important;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.22);
   outline: none;
 }
 
-.admin-app-shell .text-violet-300 {
-  color: var(--color-sky-300) !important;
-}
-
-.admin-app-shell .border-violet-500 {
-  border-color: var(--color-sky-500) !important;
-}
-
-.admin-app-shell .bg-violet-500\/10,
-.admin-app-shell .bg-violet-600\/20,
-.admin-app-shell .bg-purple-600\/80 {
-  background-color: rgba(2, 132, 199, 0.18) !important;
-}
-
-.admin-app-shell .text-violet-300,
-.admin-app-shell .text-purple-100 {
-  color: var(--color-cyan-100) !important;
-}
-
-.admin-app-shell .bg-violet-600,
-.admin-app-shell .peer-checked\:bg-violet-600 {
-  background-color: var(--color-sky-600) !important;
-}
-
-.admin-app-shell .hover\:bg-violet-500:hover,
-.admin-app-shell .hover\:bg-violet-600:hover {
-  background-color: var(--color-cyan-600) !important;
-}
-
-.admin-app-shell .file\:bg-violet-600::file-selector-button {
-  background-color: var(--color-sky-600) !important;
-}
-
-.admin-app-shell .hover\:file\:bg-violet-500:hover::file-selector-button {
-  background-color: var(--color-cyan-600) !important;
-}
-
-.admin-app-shell .accent-violet-500,
-.admin-app-shell .accent-purple-500 {
-  accent-color: var(--color-sky-500) !important;
-}
+/* Sky/cyan accent classes now emitted directly from admin.js + submodules.
+   The former !important violet→sky override block is gone. */
 
 /* Glass effect */
 .glass-effect {
