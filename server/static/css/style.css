@@ -1,5 +1,10 @@
 @import url("tokens.css");
 
+/* Native form controls (scrollbar, date picker, etc.) render in dark mode */
+html {
+  color-scheme: dark;
+}
+
 /* Basic styles and fonts */
 body {
   font-family: var(--font-family);
