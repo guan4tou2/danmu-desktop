@@ -257,6 +257,18 @@ summary:focus-visible {
   margin-bottom: 1.25rem;
 }
 
+/* Enforce heading hierarchy: section H2 must outrank card H3 */
+.admin-section-heading h2 {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.admin-primary-stack > .admin-section > * h3,
+.admin-section > .admin-section-heading ~ * h3 {
+  font-size: 1rem;
+}
+
 .admin-section-kicker {
   display: block;
   margin-bottom: 0.35rem;
