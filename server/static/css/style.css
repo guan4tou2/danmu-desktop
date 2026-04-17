@@ -1,10 +1,62 @@
 @import url("tokens.css");
 
+/* Native form controls (scrollbar, date picker, etc.) render in dark mode */
+html {
+  color-scheme: dark;
+}
+
+/* Respect user's motion preference — disable animation for vestibular safety */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Basic styles and fonts */
 body {
   font-family: var(--font-family);
   background-color: var(--color-bg-deep);
   color: white;
+}
+
+/* Every interactive element shows a pointer — no more default arrow on buttons */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+summary,
+label[for],
+select:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* Skip link — visible only when focused via keyboard */
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100;
+  padding: 0.65rem 1rem;
+  background: var(--color-primary);
+  color: var(--color-bg-deep);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  transform: translateY(-200%);
+  transition: transform 0.2s ease;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
 }
 
 .admin-app-shell {
@@ -77,7 +129,7 @@ input[type="range"] {
   background: rgba(255, 255, 255, 0.2);
   border-radius: var(--radius-pill);
   outline: none;
-  transition: all 0.2s;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 input[type="range"]::-webkit-slider-thumb {
@@ -89,7 +141,7 @@ input[type="range"]::-webkit-slider-thumb {
   cursor: pointer;
   border-radius: 50%;
   border: 2px solid var(--color-bg-base);
-  transition: all 0.2s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
@@ -224,6 +276,18 @@ summary:focus-visible {
   gap: 1rem;
   align-items: start;
   margin-bottom: 1.25rem;
+}
+
+/* Enforce heading hierarchy: section H2 must outrank card H3 */
+.admin-section-heading h2 {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.admin-primary-stack > .admin-section > * h3,
+.admin-section > .admin-section-heading ~ * h3 {
+  font-size: 1rem;
 }
 
 .admin-section-kicker {
@@ -432,6 +496,18 @@ summary:focus-visible {
 
 #blacklistWarningModal.flashing .warning-triangle {
   animation: flashIcon 0.7s infinite ease-in-out;
+}
+
+/* Effect button — ensure WCAG 2.5.5 minimum 44px touch target */
+.effect-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 44px;
+  min-width: 44px;
+  padding-inline: 0.9rem;
+  padding-block: 0.65rem;
 }
 
 /* Effect button active (selected) state */
