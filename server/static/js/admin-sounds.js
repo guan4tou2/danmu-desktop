@@ -382,18 +382,18 @@
                 <label for="soundFileInput" class="text-sm font-medium text-slate-300">${ServerI18n.t("audioFileLabel")}</label>
                 <input type="file" id="soundFileInput" accept=".mp3,.ogg,.wav,audio/mpeg,audio/ogg,audio/wav"
                   class="mt-1 w-full text-sm text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
-                         file:text-sm file:font-medium file:bg-violet-600 file:text-white file:cursor-pointer
-                         hover:file:bg-violet-500 file:transition-colors" />
+                         file:text-sm file:font-medium file:bg-sky-600 file:text-white file:cursor-pointer
+                         hover:file:bg-sky-500 file:transition-colors" />
               </div>
               <div>
                 <label for="soundNameInput" class="text-sm font-medium text-slate-300">${ServerI18n.t("soundNameLabel")}</label>
                 <input type="text" id="soundNameInput" placeholder="${ServerI18n.t("soundNamePlaceholder")}" maxlength="100"
                   class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg
-                         focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300
+                         focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300
                          text-white placeholder-slate-500" />
               </div>
               <button id="soundUploadBtn"
-                class="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500
+                class="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500
                        text-white font-bold py-3 px-6 rounded-xl transition-colors">
                 ${ServerI18n.t("uploadBtn")}
               </button>
@@ -417,7 +417,7 @@
                   <label for="ruleTriggerType" class="text-sm font-medium text-slate-300">${ServerI18n.t("triggerTypeLabel")}</label>
                   <select id="ruleTriggerType"
                     class="mt-1 w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg
-                           text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400">
+                           text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400">
                     <option value="keyword">${ServerI18n.t("triggerTypeKeyword")}</option>
                     <option value="effect">${ServerI18n.t("triggerTypeEffect")}</option>
                     <option value="all">${ServerI18n.t("triggerTypeAll")}</option>
@@ -427,7 +427,7 @@
                   <label for="ruleTriggerValue" class="text-sm font-medium text-slate-300">${ServerI18n.t("triggerValueLabel")}</label>
                   <input type="text" id="ruleTriggerValue" placeholder="${ServerI18n.t("triggerValueKeywordPlaceholder")}"
                     class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg
-                           focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300
+                           focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300
                            text-white placeholder-slate-500 text-sm" />
                 </div>
               </div>
@@ -435,28 +435,28 @@
                 <label for="ruleSoundName" class="text-sm font-medium text-slate-300">${ServerI18n.t("soundLabel")}</label>
                 <select id="ruleSoundName"
                   class="mt-1 w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg
-                         text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400">
+                         text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400">
                   <option value="" disabled>${ServerI18n.t("soundLoading")}</option>
                 </select>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <label for="ruleVolume" class="text-sm font-medium text-slate-300">
-                    ${ServerI18n.t("volumeLabel")} <span id="ruleVolumeLabel" class="text-violet-300">80%</span>
+                    ${ServerI18n.t("volumeLabel")} <span id="ruleVolumeLabel" class="text-sky-300">80%</span>
                   </label>
                   <input type="range" id="ruleVolume" min="0" max="100" value="80"
-                    class="mt-1 w-full accent-violet-500" />
+                    class="mt-1 w-full accent-sky-500" />
                 </div>
                 <div>
                   <label for="ruleCooldown" class="text-sm font-medium text-slate-300">${ServerI18n.t("cooldownLabel")}</label>
                   <input type="number" id="ruleCooldown" min="0" step="100" value="1000" placeholder="1000"
                     class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg
-                           focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300
+                           focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300
                            text-white placeholder-slate-500 text-sm" />
                 </div>
               </div>
               <button id="addRuleBtn"
-                class="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500
+                class="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500
                        text-white font-bold py-3 px-6 rounded-xl transition-colors">
                 ${ServerI18n.t("addRuleBtn")}
               </button>

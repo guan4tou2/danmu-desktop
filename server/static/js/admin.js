@@ -114,7 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // If length incorrect, return default color
     if (!isValidColor(color)) {
-      return "#8b5cf6"; // Default purple
+      return "#38bdf8"; // Default sky (matches --color-primary)
     }
 
     return color;
@@ -681,15 +681,15 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderLogin() {
     appContainer.innerHTML = `
                     <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 max-w-md mx-auto">
-                        <h1 class="text-3xl md:text-4xl font-bold text-center text-violet-300 pb-2" data-i18n="adminLoginTitle">
+                        <h1 class="text-3xl md:text-4xl font-bold text-center text-sky-300 pb-2" data-i18n="adminLoginTitle">
                             ${ServerI18n.t("adminLoginTitle")}
                         </h1>
                         <form id="loginForm" class="space-y-6" action="/login" method="post">
                             <div>
                                 <label for="password" class="text-sm font-medium text-slate-300" data-i18n="password">${ServerI18n.t("password")}</label>
-                                <input type="password" id="password" name="password" class="mt-1 w-full p-3 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300" required>
+                                <input type="password" id="password" name="password" class="mt-1 w-full p-3 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300" required>
                             </div>
-                            <button type="submit" class="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-bold py-3 px-6 rounded-xl transition-colors" data-i18n="login">
+                            <button type="submit" class="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-6 rounded-xl transition-colors" data-i18n="login">
                                 ${ServerI18n.t("login")}
                             </button>
                         </form>
@@ -1034,8 +1034,8 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <div class="mt-4">
                 <label class="text-sm font-medium text-slate-300">${ServerI18n.t("uploadNewFont")}</label>
-                <input type="file" id="fontUploadInput" accept=".ttf" class="mt-1 w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-violet-600 file:text-white hover:file:bg-violet-500"/>
-                <button id="uploadFontBtn" class="mt-2 w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold py-2 px-4 rounded-lg">${ServerI18n.t("uploadFont")}</button>
+                <input type="file" id="fontUploadInput" accept=".ttf" class="mt-1 w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500"/>
+                <button id="uploadFontBtn" class="mt-2 w-full bg-sky-600 hover:bg-sky-500 text-white font-semibold py-2 px-4 rounded-lg">${ServerI18n.t("uploadFont")}</button>
             </div>
             <small class="text-slate-500 text-xs block mt-2">${ServerI18n.t("fontUploadHint")}</small>
             `;
@@ -1180,8 +1180,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="mt-4 pt-4 border-t border-slate-700/50">
                             <div>
                                 <label for="newKeywordInput" class="text-sm font-medium text-slate-300">${ServerI18n.t("newKeyword")}</label>
-                                <input type="text" id="newKeywordInput" placeholder="${ServerI18n.t("enterKeyword")}" class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300">
-                                <button id="addKeywordBtn" class="mt-3 w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-bold py-3 px-6 rounded-xl transition-colors">${ServerI18n.t("addKeyword")}</button>
+                                <input type="text" id="newKeywordInput" placeholder="${ServerI18n.t("enterKeyword")}" class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300">
+                                <button id="addKeywordBtn" class="mt-3 w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-6 rounded-xl transition-colors">${ServerI18n.t("addKeyword")}</button>
                             </div>
                             <div class="mt-6">
                                 <h4 class="text-md font-semibold text-white mb-2">${ServerI18n.t("currentBlacklist")}</h4>
@@ -1208,24 +1208,24 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="space-y-3">
                                 <div class="history-command-bar">
                                     <label class="text-sm font-medium text-slate-300">${ServerI18n.t("timeRange")}</label>
-                                    <select id="historyHours" class="px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400">
+                                    <select id="historyHours" class="px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400">
                                         <option value="1">${ServerI18n.t("last1Hour")}</option>
                                         <option value="6">${ServerI18n.t("last6Hours")}</option>
                                         <option value="24" selected>${ServerI18n.t("last24Hours")}</option>
                                         <option value="72">${ServerI18n.t("last3Days")}</option>
                                         <option value="168">${ServerI18n.t("last7Days")}</option>
                                     </select>
-                                    <button id="refreshHistoryBtn" class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("refreshBtn")}</button>
+                                    <button id="refreshHistoryBtn" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("refreshBtn")}</button>
                                     <button id="exportHistoryBtn" class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("exportCSV")}</button>
                                     <button id="clearHistoryBtn" class="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("clearAll")}</button>
                                     <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none ml-auto">
-                                        <input type="checkbox" id="historyAutoRefresh" class="accent-purple-500">
+                                        <input type="checkbox" id="historyAutoRefresh" class="accent-sky-500">
                                         ${ServerI18n.t("autoRefresh")}
                                     </label>
                                 </div>
                                 <input id="historySearch" type="search" placeholder="${ServerI18n.t("searchHistory")}"
                                     class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm
-                                           placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400">
+                                           placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400">
                                 <div id="replayToolbar" class="history-replay-toolbar">
                                     <button id="replayStartBtn" class="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors text-sm">▶ ${ServerI18n.t("replaySelected")}</button>
                                     <button id="replayPauseBtn" class="px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors text-sm hidden">⏸ ${ServerI18n.t("pause")}</button>
@@ -1246,7 +1246,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <div class="history-list-shell">
                                 <div class="flex items-center gap-2 mb-1">
                                     <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none">
-                                        <input type="checkbox" id="historySelectAll" class="accent-purple-500">
+                                        <input type="checkbox" id="historySelectAll" class="accent-sky-500">
                                         ${ServerI18n.t("selectAll")}
                                     </label>
                                 </div>
@@ -1273,7 +1273,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div>
                                 <label for="pollQuestion" class="text-sm font-medium text-slate-300">Question</label>
                                 <input type="text" id="pollQuestion" placeholder="What's your favorite...?" maxlength="200"
-                                    class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300">
+                                    class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300">
                             </div>
                             <div>
                                 <label class="text-sm font-medium text-slate-300">Options (2-6)</label>
@@ -1309,27 +1309,27 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-3">
                             <div class="password-wrapper">
                                 <input id="pwCurrent" type="password" placeholder="${ServerI18n.t("currentPassword")}"
-                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400">
+                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400">
                                 <button type="button" class="password-toggle" data-target="pwCurrent" aria-label="Toggle password visibility">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
                             </div>
                             <div class="password-wrapper">
                                 <input id="pwNew" type="password" placeholder="${ServerI18n.t("newPassword")}"
-                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400">
+                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400">
                                 <button type="button" class="password-toggle" data-target="pwNew" aria-label="Toggle password visibility">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
                             </div>
                             <div class="password-wrapper">
                                 <input id="pwConfirm" type="password" placeholder="${ServerI18n.t("confirmNewPassword")}"
-                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400">
+                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400">
                                 <button type="button" class="password-toggle" data-target="pwConfirm" aria-label="Toggle password visibility">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
                             </div>
                             <button id="changePasswordBtn"
-                                class="w-full px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors text-sm font-semibold">
+                                class="w-full px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-colors text-sm font-semibold">
                                 ${ServerI18n.t("changePasswordBtn")}
                             </button>
                         </div>
