@@ -108,7 +108,7 @@ input[type="range"] {
   background: rgba(255, 255, 255, 0.2);
   border-radius: var(--radius-pill);
   outline: none;
-  transition: all 0.2s;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 input[type="range"]::-webkit-slider-thumb {
@@ -120,7 +120,7 @@ input[type="range"]::-webkit-slider-thumb {
   cursor: pointer;
   border-radius: 50%;
   border: 2px solid var(--color-bg-base);
-  transition: all 0.2s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
