@@ -477,6 +477,18 @@ summary:focus-visible {
   animation: flashIcon 0.7s infinite ease-in-out;
 }
 
+/* Effect button — ensure WCAG 2.5.5 minimum 44px touch target */
+.effect-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 44px;
+  min-width: 44px;
+  padding-inline: 0.9rem;
+  padding-block: 0.65rem;
+}
+
 /* Effect button active (selected) state */
 .effect-btn--active {
   background-color: var(--color-active-btn) !important;
