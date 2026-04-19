@@ -9,6 +9,26 @@
 
 ---
 
+## [4.6.2] - 2026-04-20
+
+### 修復 / Fixed
+
+- **無障礙對比不足 / A11y contrast**：61 處使用 `text-slate-500`（對比 3.75:1，僅符合 AA large 非 AA body）與 1 處 `text-slate-600`（對比 2.36:1，全數失敗）全面改為 `text-slate-400`（對比 6.96:1，通過 AA body）。影響：loading / empty-state 訊息、時間戳、metadata 標籤、篩選規則優先級顯示等皆可讀。
+- **i18n 漏譯補齊**：`exportJSON`、`recordReplay` 補上 4 語系；韓文 `overlayNone`、`overlayConnected` 從英文改為 "연결 안 됨" / "Overlay: {n}개"。
+- **`.env.example` 行內註解 bug**：`WS_ALLOWED_ORIGINS=  # comment` 在 python-dotenv 下會被解析成字串 literal，導致所有 WebSocket overlay 連線被 Origin 檢查擋掉。改成註解獨立一行。
+
+### 新增 / Added
+
+- `docs/perf/baseline-v4.6.1.md` — HTTP payload / latency / font loading strategy 的效能基線
+- `CONTRIBUTING.md` 新增「設計系統」章節，連結 `DESIGN.md` + tokens 使用規範
+- `README.md` 文件索引新增 DESIGN.md / docs/perf / docs/designs / docs/audits 入口
+
+### 改善 / Improved
+
+- `shared/tokens.css` 的 `--color-text-*` tokens 加註 WCAG 對比率值，`--color-text-muted` 明確標註「僅用於 disabled/decorative」
+
+---
+
 ## [4.6.1] - 2026-04-20
 
 ### 新增 / Added
