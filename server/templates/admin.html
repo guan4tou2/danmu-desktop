@@ -25,12 +25,15 @@
     />
   </head>
   <body class="bg-black text-white min-h-screen overflow-x-hidden">
+    <a href="#app-container" class="skip-link">Skip to main content</a>
+
     <!-- Background Animation Container -->
     <div id="vanta-bg" class="fixed top-0 left-0 w-full h-full -z-10"></div>
 
     <div
       id="app-container"
-      class="container mx-auto px-4 py-8 max-w-4xl relative z-10 animate-fade-in-scale-up"
+      class="container admin-app-shell mx-auto px-4 py-8 relative z-10 animate-fade-in-scale-up"
+      tabindex="-1"
     >
       <!-- Skeleton Loading -->
       <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 max-w-md mx-auto">

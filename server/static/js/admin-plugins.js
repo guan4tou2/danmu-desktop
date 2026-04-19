@@ -2,6 +2,7 @@
   "use strict";
 
   document.addEventListener("DOMContentLoaded", () => {
+    if (!window.DANMU_CONFIG?.session?.logged_in) return;
     var loadDetailsState = window.AdminUtils.loadDetailsState;
     var saveDetailsState = window.AdminUtils.saveDetailsState;
     var escapeHtml = window.AdminUtils.escapeHtml;

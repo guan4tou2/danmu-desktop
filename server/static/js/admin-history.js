@@ -152,7 +152,7 @@
 
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
-      checkbox.className = "accent-purple-500 mt-1 shrink-0 replay-record-cb";
+      checkbox.className = "accent-sky-500 mt-1 shrink-0 replay-record-cb";
       checkbox.dataset.recordIndex = idx;
       recordEl.appendChild(checkbox);
 

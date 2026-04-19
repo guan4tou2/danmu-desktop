@@ -19,13 +19,13 @@
     return `
       <div class="flex items-center gap-2" data-msg-index="${index}">
         <input type="text" placeholder="${ServerI18n.t("messageTextPlaceholder")}"
-          class="scheduler-msg-text flex-1 bg-slate-800/60 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 focus:ring-violet-400 focus:border-violet-400 placeholder-slate-500"
+          class="scheduler-msg-text flex-1 bg-slate-800/60 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 focus:ring-sky-400 focus:border-sky-400 placeholder-slate-500"
           value="${escapeAttr(text)}" />
         <input type="color"
           class="scheduler-msg-color w-10 h-10 rounded-lg border border-slate-700 bg-slate-800/60 cursor-pointer p-1"
           value="${escapeAttr(color || "#ffffff")}" title="Color" />
         <input type="number" min="12" max="200" placeholder="Size"
-          class="scheduler-msg-size w-20 bg-slate-800/60 border border-slate-700 text-slate-200 text-sm rounded-lg px-2 py-2 focus:ring-violet-400 focus:border-violet-400"
+          class="scheduler-msg-size w-20 bg-slate-800/60 border border-slate-700 text-slate-200 text-sm rounded-lg px-2 py-2 focus:ring-sky-400 focus:border-sky-400"
           value="${size || 48}" />
         <button type="button" class="scheduler-remove-msg text-red-400 hover:text-red-300 transition-colors p-1" title="Remove" aria-label="Remove message">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -258,15 +258,15 @@
             <div>
               <label for="schedulerInterval" class="block text-xs text-slate-400 mb-1">${ServerI18n.t("intervalLabel")}</label>
               <input id="schedulerInterval" type="number" value="10" min="1" max="3600"
-                class="w-28 bg-slate-800/60 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 focus:ring-violet-400 focus:border-violet-400" />
+                class="w-28 bg-slate-800/60 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 focus:ring-sky-400 focus:border-sky-400" />
             </div>
             <div>
               <label for="schedulerRepeat" class="block text-xs text-slate-400 mb-1">${ServerI18n.t("repeatLabel")}</label>
               <input id="schedulerRepeat" type="number" value="-1" min="-1" max="10000"
-                class="w-28 bg-slate-800/60 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 focus:ring-violet-400 focus:border-violet-400" />
+                class="w-28 bg-slate-800/60 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 focus:ring-sky-400 focus:border-sky-400" />
             </div>
             <button type="button" id="schedulerCreateBtn"
-              class="px-5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              class="px-5 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               ${ServerI18n.t("createBtn")}
             </button>
           </div>
@@ -353,6 +353,7 @@
   // via innerHTML on every renderControlPanel() call, so we keep observing
   // and re-inject when our section is wiped out.
   function waitForGridAndInit() {
+    if (!window.DANMU_CONFIG?.session?.logged_in) return;
     let initializing = false;
 
     const observer = new MutationObserver(function () {

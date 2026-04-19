@@ -55,22 +55,22 @@
             <div>
               <label for="wh-url" class="text-sm font-medium text-slate-300">${ServerI18n.t("payloadUrlLabel")}</label>
               <input id="wh-url" type="url" required placeholder="${ServerI18n.t("payloadUrlPlaceholder")}"
-                class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300" />
+                class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300" />
             </div>
 
             <fieldset>
               <legend class="text-sm font-medium text-slate-300 mb-1">${ServerI18n.t("eventsLegend")}</legend>
               <div class="flex flex-wrap gap-3">
                 <label class="inline-flex items-center gap-1.5 text-sm text-slate-200 cursor-pointer">
-                  <input type="checkbox" name="wh-event" value="on_danmu" class="accent-violet-500 rounded" checked />
+                  <input type="checkbox" name="wh-event" value="on_danmu" class="accent-sky-500 rounded" checked />
                   on_danmu
                 </label>
                 <label class="inline-flex items-center gap-1.5 text-sm text-slate-200 cursor-pointer">
-                  <input type="checkbox" name="wh-event" value="on_poll_create" class="accent-violet-500 rounded" />
+                  <input type="checkbox" name="wh-event" value="on_poll_create" class="accent-sky-500 rounded" />
                   on_poll_create
                 </label>
                 <label class="inline-flex items-center gap-1.5 text-sm text-slate-200 cursor-pointer">
-                  <input type="checkbox" name="wh-event" value="on_poll_end" class="accent-violet-500 rounded" />
+                  <input type="checkbox" name="wh-event" value="on_poll_end" class="accent-sky-500 rounded" />
                   on_poll_end
                 </label>
               </div>
@@ -80,7 +80,7 @@
               <div>
                 <label for="wh-format" class="text-sm font-medium text-slate-300">${ServerI18n.t("formatLabel")}</label>
                 <select id="wh-format"
-                  class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300">
+                  class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300">
                   <option value="json">JSON</option>
                   <option value="discord">Discord</option>
                   <option value="slack">Slack</option>
@@ -89,12 +89,12 @@
               <div>
                 <label for="wh-secret" class="text-sm font-medium text-slate-300">${ServerI18n.t("secretLabel")} <span class="text-slate-500">${ServerI18n.t("secretOptional")}</span></label>
                 <input id="wh-secret" type="text" placeholder="${ServerI18n.t("hmacSecretPlaceholder")}"
-                  class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300" />
+                  class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300" />
               </div>
             </div>
 
             <button type="submit"
-              class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors text-sm font-semibold">
+              class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-colors text-sm font-semibold">
               ${ServerI18n.t("registerWebhookBtn")}
             </button>
           </form>
@@ -230,7 +230,7 @@
     const eventBadges = events
       .map(
         (ev) =>
-          `<span class="px-1.5 py-0.5 rounded bg-violet-600/20 text-violet-300 text-xs">${_escHtml(ev)}</span>`
+          `<span class="px-1.5 py-0.5 rounded bg-sky-600/20 text-sky-300 text-xs">${_escHtml(ev)}</span>`
       )
       .join("");
 
@@ -331,6 +331,7 @@
   // ---- bootstrap: re-inject on every admin panel rebuild ----
 
   document.addEventListener("DOMContentLoaded", () => {
+    if (!window.DANMU_CONFIG?.session?.logged_in) return;
     const observer = new MutationObserver(() => {
       if ((document.getElementById("advanced-grid") || document.getElementById("settings-grid")) && !document.getElementById(SECTION_ID)) {
         injectSection();

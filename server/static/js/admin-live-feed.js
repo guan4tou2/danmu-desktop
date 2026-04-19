@@ -104,7 +104,7 @@
     // Nickname (if present)
     if (d.nickname) {
       const nick = document.createElement("span");
-      nick.className = "text-violet-300 text-xs truncate max-w-[80px] shrink-0";
+      nick.className = "text-sky-300 text-xs truncate max-w-[80px] shrink-0";
       nick.textContent = d.nickname;
       nick.title = d.nickname;
       row.appendChild(nick);
@@ -319,7 +319,7 @@
           <div class="flex gap-2 items-center flex-wrap">
             <input id="liveFeedSearch" type="search" placeholder="${ServerI18n.t("liveFeedSearchPlaceholder")}"
               class="flex-1 min-w-[180px] px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm
-                     placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400" />
+                     placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400" />
             <button id="liveFeedPauseBtn" type="button"
               class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors text-sm font-medium">${ServerI18n.t("pauseBtn")}</button>
             <button id="liveFeedClearBtn" type="button"
@@ -340,6 +340,7 @@
   let wsListenerBound = false;
 
   function init() {
+    if (!window.DANMU_CONFIG?.session?.logged_in) return;
     // admin.js rebuilds the entire DOM via innerHTML on every renderControlPanel()
     // call, so we keep observing and re-inject when our section is wiped out.
     const observer = new MutationObserver(() => {

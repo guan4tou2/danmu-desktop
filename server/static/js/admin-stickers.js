@@ -29,12 +29,12 @@
               type="file"
               id="stickerFileInput"
               accept=".gif,.png,.webp"
-              class="mt-1 w-full text-sm text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-violet-600 file:text-white hover:file:bg-violet-500 file:cursor-pointer file:transition-colors bg-slate-800/80 border-2 border-slate-700 rounded-lg"
+              class="mt-1 w-full text-sm text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500 file:cursor-pointer file:transition-colors bg-slate-800/80 border-2 border-slate-700 rounded-lg"
             />
           </div>
           <button
             id="stickerUploadBtn"
-            class="flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm whitespace-nowrap"
+            class="flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm whitespace-nowrap"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             ${ServerI18n.t("uploadStickerBtn")}
@@ -69,7 +69,7 @@
   function stickerCard(sticker) {
     const label = ":" + sticker.name + ":";
     return (
-      '<div class="group/card flex flex-col items-center gap-1.5 p-2 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-violet-500/50 transition-all duration-200">' +
+      '<div class="group/card flex flex-col items-center gap-1.5 p-2 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-sky-500/50 transition-all duration-200">' +
         '<img src="' + escapeHtml(sticker.url) + '" alt="' + escapeHtml(label) + '" ' +
           'width="48" height="48" loading="lazy" class="w-12 h-12 object-contain rounded" />' +
         '<span class="text-[10px] text-slate-400 truncate max-w-full" title="' + escapeHtml(label) + '">' + escapeHtml(label) + "</span>" +
@@ -243,6 +243,7 @@
   // admin.js rebuilds the entire DOM via innerHTML on every renderControlPanel()
   // call, so we keep observing and re-inject when our section is wiped out.
   document.addEventListener("DOMContentLoaded", function () {
+    if (!window.DANMU_CONFIG || !window.DANMU_CONFIG.session || !window.DANMU_CONFIG.session.logged_in) return;
     var observer = new MutationObserver(function () {
       if (document.getElementById("settings-grid") && !document.getElementById("sec-stickers")) {
         init();

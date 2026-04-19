@@ -5,8 +5,10 @@ from pathlib import Path
 
 from dotenv import find_dotenv, load_dotenv
 
-# Load environment variables once for the entire server package
-load_dotenv(find_dotenv(), override=True)
+# Load .env defaults once for the entire server package.
+# Keep explicit shell env vars higher priority so local overrides like
+# `ADMIN_PASSWORD=test uv run ...` behave as expected.
+load_dotenv(find_dotenv(), override=False)
 
 # Runtime-writable password hash file (takes priority over env vars)
 _HASH_FILE = Path(__file__).parent / ".admin_password.hash"

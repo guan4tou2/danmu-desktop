@@ -45,6 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Module-level handles for beforeunload cleanup
   let _adminWs = null;
   let _adminWsReconnectTimer = null;
+  let _adminSectionObserver = null;
   // _effectModalRestoreFocusEl moved to admin-effects-mgmt.js
   var loadDetailsState = window.AdminUtils.loadDetailsState;
   var saveDetailsState = window.AdminUtils.saveDetailsState;
@@ -77,8 +78,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await response.json();
       // Update current settings
       currentSettings = data;
-      // Re-render control panel
-      renderControlPanel();
+      // Only re-render the control panel when authenticated, otherwise
+      // we dispatch "admin-panel-rendered" on the login screen and trigger
+      // a wave of 401 fetches from admin-history.js etc.
+      if (session.logged_in) {
+        renderControlPanel();
+      }
     } catch (error) {
       console.error("Get settings failed:", error);
       showToast(ServerI18n.t("getSettingsFailed"), false);
@@ -109,7 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // If length incorrect, return default color
     if (!isValidColor(color)) {
-      return "#8b5cf6"; // Default purple
+      return "#38bdf8"; // Default sky (matches --color-primary)
     }
 
     return color;
@@ -143,6 +148,61 @@ document.addEventListener("DOMContentLoaded", () => {
     if (restoreVal !== undefined && restoreVal !== null) {
       inputEl.value = String(restoreVal);
     }
+  }
+
+  const ADMIN_SECTION_GROUPS = {
+    moderation: {
+      containerId: "moderation-grid",
+      orderedIds: [
+        "sec-live-feed",
+        "sec-blacklist",
+        "sec-history",
+        "sec-filters",
+        "sec-polls",
+        "sec-security",
+      ],
+    },
+    assets: {
+      containerId: "assets-grid",
+      orderedIds: [
+        "sec-emojis",
+        "sec-stickers",
+        "sec-sounds",
+        "sec-themes",
+        "sec-plugins",
+        "sec-widgets",
+      ],
+    },
+  };
+
+  function syncAdminSectionLayout() {
+    Object.values(ADMIN_SECTION_GROUPS).forEach((group) => {
+      const target = document.getElementById(group.containerId);
+      if (!target) return;
+      group.orderedIds.forEach((sectionId) => {
+        const section = document.getElementById(sectionId);
+        if (section && section.parentElement !== target) {
+          target.appendChild(section);
+        }
+      });
+    });
+  }
+
+  function initAdminSectionLayout() {
+    if (_adminSectionObserver) {
+      _adminSectionObserver.disconnect();
+      _adminSectionObserver = null;
+    }
+
+    syncAdminSectionLayout();
+
+    _adminSectionObserver = new MutationObserver(() => {
+      syncAdminSectionLayout();
+    });
+    _adminSectionObserver.observe(appContainer, {
+      childList: true,
+      subtree: true,
+    });
   }
 
   // Update setting to backend
@@ -267,6 +327,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const dist = hourlyData.distribution || [];
       const topTexts = topTextData.topTexts || [];
       const maxCount = Math.max(1, ...dist.map((d) => d.count));
+      const totalMessages = dist.reduce((sum, d) => sum + (d.count || 0), 0);
+      const activeSlots = dist.filter((d) => d.count > 0).length;
 
       let chartBars = dist.map((d) => {
         const pct = Math.round((d.count / maxCount) * 100);
@@ -278,13 +340,29 @@ document.addEventListener("DOMContentLoaded", () => {
       ).join("");
 
       dashDiv.innerHTML = `
-        <div class="grid gap-4 md:grid-cols-2 mb-4">
-          <div class="bg-slate-800/60 rounded-lg p-3">
-            <h4 class="text-xs font-semibold text-slate-300 mb-2">${ServerI18n.t("hourlyDistribution")}</h4>
+        <div class="history-dashboard-grid">
+          <div class="history-dashboard-card">
+            <div class="history-dashboard-meta">
+              <span class="history-dashboard-label">${ServerI18n.t("total")}</span>
+              <strong class="history-dashboard-value">${totalMessages}</strong>
+            </div>
+            <div class="history-dashboard-meta">
+              <span class="history-dashboard-label">Active slots</span>
+              <strong class="history-dashboard-value">${activeSlots}</strong>
+            </div>
+          </div>
+          <div class="history-dashboard-card history-dashboard-card--chart">
+            <div class="history-dashboard-title-row">
+              <h4 class="history-dashboard-title">${ServerI18n.t("hourlyDistribution")}</h4>
+              <span class="history-dashboard-caption">${hours}h window</span>
+            </div>
             <div class="stats-chart">${chartBars || '<span class="text-xs text-slate-500">No data</span>'}</div>
           </div>
-          <div class="bg-slate-800/60 rounded-lg p-3">
-            <h4 class="text-xs font-semibold text-slate-300 mb-2">${ServerI18n.t("topTexts")}</h4>
+          <div class="history-dashboard-card history-dashboard-card--table">
+            <div class="history-dashboard-title-row">
+              <h4 class="history-dashboard-title">${ServerI18n.t("topTexts")}</h4>
+              <span class="history-dashboard-caption">Top 10</span>
+            </div>
             ${topTexts.length ? `<table class="w-full text-xs"><tbody>${topTextRows}</tbody></table>` : '<span class="text-xs text-slate-500">No data</span>'}
           </div>
         </div>`;
@@ -603,15 +681,15 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderLogin() {
     appContainer.innerHTML = `
                     <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 max-w-md mx-auto">
-                        <h1 class="text-3xl md:text-4xl font-bold text-center text-violet-300 pb-2" data-i18n="adminLoginTitle">
+                        <h1 class="text-3xl md:text-4xl font-bold text-center text-sky-300 pb-2" data-i18n="adminLoginTitle">
                             ${ServerI18n.t("adminLoginTitle")}
                         </h1>
                         <form id="loginForm" class="space-y-6" action="/login" method="post">
                             <div>
                                 <label for="password" class="text-sm font-medium text-slate-300" data-i18n="password">${ServerI18n.t("password")}</label>
-                                <input type="password" id="password" name="password" class="mt-1 w-full p-3 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300" required>
+                                <input type="password" id="password" name="password" class="mt-1 w-full p-3 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300" required>
                             </div>
-                            <button type="submit" class="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-bold py-3 px-6 rounded-xl transition-colors" data-i18n="login">
+                            <button type="submit" class="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-6 rounded-xl transition-colors" data-i18n="login">
                                 ${ServerI18n.t("login")}
                             </button>
                         </form>
@@ -624,6 +702,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const detailsState = loadDetailsState();
     const isOpen = (id, defaultOpen = false) =>
       detailsState[id] !== undefined ? detailsState[id] : defaultOpen;
+    const enabledSettingCount = ["Color", "Opacity", "FontSize", "Speed", "FontFamily", "Layout", "Effects"]
+      .filter((key) => Array.isArray(currentSettings[key]) && currentSettings[key][0] === true)
+      .length;
+    const overlayMode = currentSettings.Layout && currentSettings.Layout[3]
+      ? escapeHtml(String(currentSettings.Layout[3]).replace(/_/g, " "))
+      : "scroll";
+    const fontLabel = currentSettings.FontFamily && currentSettings.FontFamily[3]
+      ? escapeHtml(String(currentSettings.FontFamily[3]))
+      : "NotoSansTC";
     const settingCard = (
       id,
       title,
@@ -651,56 +738,187 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
 
     appContainer.innerHTML = `
-                    <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-8">
-                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                             <h1 class="text-3xl md:text-4xl font-bold text-center text-violet-300 pb-2" data-i18n="adminTitle">
-                                ${ServerI18n.t("adminTitle")}
-                            </h1>
-                            <div class="flex items-center gap-2 w-full md:w-auto">
-                                <select id="server-lang-select"
-                                  class="bg-slate-800/60 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-2 focus:ring-violet-400 focus:border-violet-400">
-                                  <option value="en" ${ServerI18n.currentLang === "en" ? "selected" : ""}>EN</option>
-                                  <option value="zh" ${ServerI18n.currentLang === "zh" ? "selected" : ""}>ZH</option>
-                                  <option value="ja" ${ServerI18n.currentLang === "ja" ? "selected" : ""}>JA</option>
-                                  <option value="ko" ${ServerI18n.currentLang === "ko" ? "selected" : ""}>KO</option>
-                                </select>
-                                <button id="logoutButton" class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-5 rounded-lg transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                                    <span data-i18n="logout">${ServerI18n.t("logout")}</span>
-                                </button>
+                    <div class="glass-effect admin-shell rounded-3xl shadow-2xl p-6 md:p-8 space-y-6">
+                        <section class="admin-hero rounded-3xl p-5 md:p-6">
+                            <div class="flex flex-col gap-5">
+                                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                                    <div class="min-w-0">
+                                        <span class="admin-kicker">Danmu Fire Control Center</span>
+                                        <h1 class="text-3xl md:text-4xl font-bold text-sky-300 mt-3" data-i18n="adminTitle">
+                                            ${ServerI18n.t("adminTitle")}
+                                        </h1>
+                                        <p class="text-sm md:text-base text-slate-300 mt-2 max-w-2xl">
+                                            Tune the live experience, moderate incoming messages, and manage assets without hunting through one long page.
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-2 w-full lg:w-auto">
+                                        <select id="server-lang-select"
+                                          class="bg-slate-800/60 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-2 focus:ring-sky-400 focus:border-sky-400">
+                                          <option value="en" ${ServerI18n.currentLang === "en" ? "selected" : ""}>EN</option>
+                                          <option value="zh" ${ServerI18n.currentLang === "zh" ? "selected" : ""}>ZH</option>
+                                          <option value="ja" ${ServerI18n.currentLang === "ja" ? "selected" : ""}>JA</option>
+                                          <option value="ko" ${ServerI18n.currentLang === "ko" ? "selected" : ""}>KO</option>
+                                        </select>
+                                        <button id="logoutButton" class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-5 rounded-lg transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                            <span data-i18n="logout">${ServerI18n.t("logout")}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="admin-summary-grid">
+                                    <div class="admin-summary-card">
+                                        <span class="admin-summary-label">Workspace</span>
+                                        <span class="admin-summary-value">${enabledSettingCount} live controls enabled</span>
+                                    </div>
+                                    <div class="admin-summary-card">
+                                        <span class="admin-summary-label">Default Layout</span>
+                                        <span class="admin-summary-value">${overlayMode}</span>
+                                    </div>
+                                    <div class="admin-summary-card">
+                                        <span class="admin-summary-label">Active Font</span>
+                                        <span class="admin-summary-value">${fontLabel}</span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        </section>
 
-                        <nav class="sticky top-2 z-10 rounded-xl border border-slate-700/60 bg-slate-900/70 backdrop-blur px-3 py-2 overflow-x-auto" aria-label="Quick Navigation">
-                            <div class="flex items-center gap-2 text-xs whitespace-nowrap">
-                                <span class="text-slate-400 mr-1" data-i18n="quickNav">${ServerI18n.t("quickNav")}</span>
-                                <a href="#sec-color" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navBasic">${ServerI18n.t("navBasic")}</a>
-                                <a href="#sec-effects" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navEffects">${ServerI18n.t("navEffects")}</a>
-                                <a href="#sec-blacklist" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navBlacklist">${ServerI18n.t("navBlacklist")}</a>
-                                <a href="#sec-history" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navHistory">${ServerI18n.t("navHistory")}</a>
-                                <a href="#sec-polls" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Polls</a>
-                                <a href="#sec-security" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors" data-i18n="navSecurity">${ServerI18n.t("navSecurity")}</a>
-                                <a href="#sec-live-feed" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Live Feed</a>
-                                <a href="#sec-advanced" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">Advanced</a>
+                        <nav class="admin-section rounded-2xl p-4 md:p-5" aria-label="Quick Navigation">
+                            <div class="admin-section-heading">
+                                <div>
+                                    <span class="admin-section-kicker" data-i18n="quickNav">${ServerI18n.t("quickNav")}</span>
+                                    <h2 class="text-lg font-bold text-white">Jump to a task</h2>
+                                    <p class="text-sm text-slate-300">Shortcuts are grouped by what you are trying to do right now.</p>
+                                </div>
+                            </div>
+                            <div class="space-y-3">
+                                <div>
+                                    <div class="text-xs text-slate-500 uppercase tracking-wide mb-2">Control</div>
+                                    <div class="admin-chip-nav">
+                                        <a href="#sec-color" class="admin-chip" data-i18n="navBasic">${ServerI18n.t("navBasic")}</a>
+                                        <a href="#sec-effects" class="admin-chip" data-i18n="navEffects">${ServerI18n.t("navEffects")}</a>
+                                        <a href="#sec-themes" class="admin-chip">Themes</a>
+                                        <a href="#sec-live-feed" class="admin-chip">Live Feed</a>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500 uppercase tracking-wide mb-2">Moderation</div>
+                                    <div class="admin-chip-nav">
+                                        <a href="#sec-blacklist" class="admin-chip" data-i18n="navBlacklist">${ServerI18n.t("navBlacklist")}</a>
+                                        <a href="#sec-history" class="admin-chip" data-i18n="navHistory">${ServerI18n.t("navHistory")}</a>
+                                        <a href="#sec-filters" class="admin-chip">Filters</a>
+                                        <a href="#sec-security" class="admin-chip" data-i18n="navSecurity">${ServerI18n.t("navSecurity")}</a>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500 uppercase tracking-wide mb-2">Assets & Automation</div>
+                                    <div class="admin-chip-nav">
+                                        <a href="#sec-emojis" class="admin-chip">Emojis</a>
+                                        <a href="#sec-stickers" class="admin-chip">Stickers</a>
+                                        <a href="#sec-sounds" class="admin-chip">Sounds</a>
+                                        <a href="#sec-polls" class="admin-chip">Polls</a>
+                                        <a href="#sec-advanced" class="admin-chip">Advanced</a>
+                                    </div>
+                                </div>
                             </div>
                         </nav>
 
-                        <div id="settings-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <!-- Settings cards will be inserted via insertAdjacentHTML -->
-                        </div>
+                        <div class="admin-content-grid">
+                            <div class="admin-primary-stack space-y-6">
+                                <section class="admin-section rounded-2xl p-5 md:p-6">
+                                    <div class="admin-section-heading">
+                                        <div>
+                                            <span class="admin-section-kicker">Live control</span>
+                                            <h2 class="text-xl font-bold text-white">Core danmu behavior</h2>
+                                            <p class="text-sm text-slate-300">These controls define how messages look, move, and feel during the stream.</p>
+                                        </div>
+                                    </div>
+                                    <div id="settings-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <!-- Settings cards will be inserted via insertAdjacentHTML -->
+                                    </div>
+                                </section>
 
-                        <details id="sec-advanced" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent mt-6 scroll-mt-24" ${isOpen("sec-advanced") ? "open" : ""}
-                            <summary class="flex items-center justify-between cursor-pointer list-none">
-                                <div>
-                                    <h3 class="text-lg font-bold text-white">Advanced</h3>
-                                    <p class="text-sm text-slate-300">Webhooks, scheduled broadcasts, and other advanced features</p>
-                                </div>
-                                <span class="text-slate-400 transition-transform group-open:rotate-180">&#8964;</span>
-                            </summary>
-                            <div id="advanced-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
-                                <!-- Webhooks & Scheduler sections injected here -->
+                                <section class="admin-section rounded-2xl p-5 md:p-6">
+                                    <div class="admin-section-heading">
+                                        <div>
+                                            <span class="admin-section-kicker">Moderation</span>
+                                            <h2 class="text-xl font-bold text-white">Review, guardrails, and incident response</h2>
+                                            <p class="text-sm text-slate-300">Keep the live stream healthy with history, filtering, blacklists, and quick reaction tools.</p>
+                                        </div>
+                                    </div>
+                                    <div id="moderation-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <!-- Moderation sections are re-homed here -->
+                                    </div>
+                                </section>
+
+                                <section class="admin-section rounded-2xl p-5 md:p-6">
+                                    <div class="admin-section-heading">
+                                        <div>
+                                            <span class="admin-section-kicker">Assets</span>
+                                            <h2 class="text-xl font-bold text-white">Reusable media and extensions</h2>
+                                            <p class="text-sm text-slate-300">Manage themes, sounds, stickers, emojis, widgets, and other reusable building blocks.</p>
+                                        </div>
+                                    </div>
+                                    <div class="asset-dashboard-strip">
+                                        <div class="asset-dashboard-card">
+                                            <span class="asset-dashboard-label">Media library</span>
+                                            <strong>Emojis, stickers, sounds</strong>
+                                            <p>Keep the frequently reused pieces close instead of burying them in a long maintenance list.</p>
+                                        </div>
+                                        <div class="asset-dashboard-card">
+                                            <span class="asset-dashboard-label">Visual system</span>
+                                            <strong>Themes and display polish</strong>
+                                            <p>Tune the overall atmosphere here before going deeper into lower-level sections.</p>
+                                        </div>
+                                        <div class="asset-dashboard-card">
+                                            <span class="asset-dashboard-label">Extensions</span>
+                                            <strong>Widgets and plugins</strong>
+                                            <p>Treat integrations as a separate lane so the dashboard reads like operations, not a toolbox dump.</p>
+                                        </div>
+                                    </div>
+                                    <div id="assets-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <!-- Asset and extension sections are re-homed here -->
+                                    </div>
+                                </section>
+
+                                <section class="admin-section rounded-2xl p-5 md:p-6">
+                                    <details id="sec-advanced" class="group scroll-mt-24" ${isOpen("sec-advanced") ? "open" : ""}>
+                                        <summary class="flex items-center justify-between cursor-pointer list-none">
+                                            <div>
+                                                <span class="admin-section-kicker">Automation</span>
+                                                <h3 class="text-lg font-bold text-white">Advanced operations</h3>
+                                                <p class="text-sm text-slate-300">Webhooks, scheduled broadcasts, and other higher-leverage workflows.</p>
+                                            </div>
+                                            <span class="text-slate-400 transition-transform group-open:rotate-180">&#8964;</span>
+                                        </summary>
+                                        <div id="advanced-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+                                            <!-- Webhooks & Scheduler sections injected here -->
+                                        </div>
+                                    </details>
+                                </section>
                             </div>
-                        </details>
+
+                            <aside class="admin-sidebar">
+                                <div class="admin-sidebar-card">
+                                    <div class="admin-sidebar-title">Workflow</div>
+                                    <p class="admin-sidebar-copy">Treat this page as a control tower: tune the stream on the left, then jump directly to moderation or asset sections from here.</p>
+                                    <div class="admin-link-list">
+                                        <a href="#sec-history"><span>Review recent danmu</span><span class="text-slate-500">→</span></a>
+                                        <a href="#sec-blacklist"><span>Block problem keywords</span><span class="text-slate-500">→</span></a>
+                                        <a href="#sec-effects"><span>Refresh effects and visuals</span><span class="text-slate-500">→</span></a>
+                                    </div>
+                                </div>
+
+                                <div class="admin-sidebar-card">
+                                    <div class="admin-sidebar-title">Recommended order</div>
+                                    <p class="admin-sidebar-copy">For live tuning, adjust style, verify output in live feed, then move to history and filters only if moderation is needed.</p>
+                                    <div class="admin-link-list">
+                                        <a href="#sec-color"><span>1. Style controls</span><span class="text-slate-500">Color / size / speed</span></a>
+                                        <a href="#sec-live-feed"><span>2. Live validation</span><span class="text-slate-500">Incoming traffic</span></a>
+                                        <a href="#sec-filters"><span>3. Guardrails</span><span class="text-slate-500">Rate limit / rules</span></a>
+                                    </div>
+                                </div>
+                            </aside>
+                        </div>
                     </div>
                 `;
 
@@ -816,8 +1034,8 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <div class="mt-4">
                 <label class="text-sm font-medium text-slate-300">${ServerI18n.t("uploadNewFont")}</label>
-                <input type="file" id="fontUploadInput" accept=".ttf" class="mt-1 w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-violet-600 file:text-white hover:file:bg-violet-500"/>
-                <button id="uploadFontBtn" class="mt-2 w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold py-2 px-4 rounded-lg">${ServerI18n.t("uploadFont")}</button>
+                <input type="file" id="fontUploadInput" accept=".ttf" class="mt-1 w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500"/>
+                <button id="uploadFontBtn" class="mt-2 w-full bg-sky-600 hover:bg-sky-500 text-white font-semibold py-2 px-4 rounded-lg">${ServerI18n.t("uploadFont")}</button>
             </div>
             <small class="text-slate-500 text-xs block mt-2">${ServerI18n.t("fontUploadHint")}</small>
             `;
@@ -962,8 +1180,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="mt-4 pt-4 border-t border-slate-700/50">
                             <div>
                                 <label for="newKeywordInput" class="text-sm font-medium text-slate-300">${ServerI18n.t("newKeyword")}</label>
-                                <input type="text" id="newKeywordInput" placeholder="${ServerI18n.t("enterKeyword")}" class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300">
-                                <button id="addKeywordBtn" class="mt-3 w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-bold py-3 px-6 rounded-xl transition-colors">${ServerI18n.t("addKeyword")}</button>
+                                <input type="text" id="newKeywordInput" placeholder="${ServerI18n.t("enterKeyword")}" class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300">
+                                <button id="addKeywordBtn" class="mt-3 w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-6 rounded-xl transition-colors">${ServerI18n.t("addKeyword")}</button>
                             </div>
                             <div class="mt-6">
                                 <h4 class="text-md font-semibold text-white mb-2">${ServerI18n.t("currentBlacklist")}</h4>
@@ -985,36 +1203,30 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
                             <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
                         </summary>
-                        <div class="mt-4 pt-4 border-t border-slate-700/50">
-                            <style>
-                                .stats-chart { display: flex; align-items: flex-end; gap: 2px; height: 80px; }
-                                .chart-bar { background: #06b6d4; min-width: 12px; border-radius: 2px 2px 0 0; position: relative; transition: height 0.3s; }
-                                .chart-bar:hover { background: #22d3ee; }
-                                .chart-label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 10px; color: #94a3b8; }
-                            </style>
+                        <div class="mt-4 pt-4 border-t border-slate-700/50 history-section-body">
                             <div id="statsDashboard"></div>
                             <div class="space-y-3">
-                                <div class="flex gap-2 items-center flex-wrap">
+                                <div class="history-command-bar">
                                     <label class="text-sm font-medium text-slate-300">${ServerI18n.t("timeRange")}</label>
-                                    <select id="historyHours" class="px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400">
+                                    <select id="historyHours" class="px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400">
                                         <option value="1">${ServerI18n.t("last1Hour")}</option>
                                         <option value="6">${ServerI18n.t("last6Hours")}</option>
                                         <option value="24" selected>${ServerI18n.t("last24Hours")}</option>
                                         <option value="72">${ServerI18n.t("last3Days")}</option>
                                         <option value="168">${ServerI18n.t("last7Days")}</option>
                                     </select>
-                                    <button id="refreshHistoryBtn" class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("refreshBtn")}</button>
+                                    <button id="refreshHistoryBtn" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("refreshBtn")}</button>
                                     <button id="exportHistoryBtn" class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("exportCSV")}</button>
                                     <button id="clearHistoryBtn" class="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("clearAll")}</button>
                                     <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none ml-auto">
-                                        <input type="checkbox" id="historyAutoRefresh" class="accent-purple-500">
+                                        <input type="checkbox" id="historyAutoRefresh" class="accent-sky-500">
                                         ${ServerI18n.t("autoRefresh")}
                                     </label>
                                 </div>
                                 <input id="historySearch" type="search" placeholder="${ServerI18n.t("searchHistory")}"
                                     class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm
-                                           placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400">
-                                <div id="replayToolbar" class="flex gap-2 items-center flex-wrap">
+                                           placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400">
+                                <div id="replayToolbar" class="history-replay-toolbar">
                                     <button id="replayStartBtn" class="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors text-sm">▶ ${ServerI18n.t("replaySelected")}</button>
                                     <button id="replayPauseBtn" class="px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors text-sm hidden">⏸ ${ServerI18n.t("pause")}</button>
                                     <button id="replayResumeBtn" class="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors text-sm hidden">▶ ${ServerI18n.t("resume")}</button>
@@ -1030,15 +1242,17 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <button id="exportJsonBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("exportJSON") || "Export JSON"}</button>
                                     <span id="replayProgress" class="text-sm text-slate-400 hidden"></span>
                                 </div>
-                                <div id="historyStats" class="text-sm text-slate-400"></div>
+                                <div id="historyStats" class="history-stats-strip text-sm text-slate-400"></div>
+                                <div class="history-list-shell">
                                 <div class="flex items-center gap-2 mb-1">
                                     <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none">
-                                        <input type="checkbox" id="historySelectAll" class="accent-purple-500">
+                                        <input type="checkbox" id="historySelectAll" class="accent-sky-500">
                                         ${ServerI18n.t("selectAll")}
                                     </label>
                                 </div>
                                 <div id="danmuHistoryList" class="space-y-2 max-h-96 overflow-y-auto">
                                     <!-- History will be listed here -->
+                                </div>
                                 </div>
                             </div>
                         </div>
@@ -1059,7 +1273,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div>
                                 <label for="pollQuestion" class="text-sm font-medium text-slate-300">Question</label>
                                 <input type="text" id="pollQuestion" placeholder="What's your favorite...?" maxlength="200"
-                                    class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-all duration-300">
+                                    class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300">
                             </div>
                             <div>
                                 <label class="text-sm font-medium text-slate-300">Options (2-6)</label>
@@ -1095,27 +1309,27 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-3">
                             <div class="password-wrapper">
                                 <input id="pwCurrent" type="password" placeholder="${ServerI18n.t("currentPassword")}"
-                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400">
+                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400">
                                 <button type="button" class="password-toggle" data-target="pwCurrent" aria-label="Toggle password visibility">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
                             </div>
                             <div class="password-wrapper">
                                 <input id="pwNew" type="password" placeholder="${ServerI18n.t("newPassword")}"
-                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400">
+                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400">
                                 <button type="button" class="password-toggle" data-target="pwNew" aria-label="Toggle password visibility">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
                             </div>
                             <div class="password-wrapper">
                                 <input id="pwConfirm" type="password" placeholder="${ServerI18n.t("confirmNewPassword")}"
-                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-400">
+                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400">
                                 <button type="button" class="password-toggle" data-target="pwConfirm" aria-label="Toggle password visibility">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
                             </div>
                             <button id="changePasswordBtn"
-                                class="w-full px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors text-sm font-semibold">
+                                class="w-full px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-colors text-sm font-semibold">
                                 ${ServerI18n.t("changePasswordBtn")}
                             </button>
                         </div>
@@ -1123,6 +1337,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 `);
 
     addEventListeners();
+    initAdminSectionLayout();
     scheduleIdleTask(initEffectsManagement);
 
     // Notify add-on scripts (admin-sounds.js, admin-webhooks.js, etc.)
@@ -1450,6 +1665,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Cleanup all background resources on page unload (prevents memory leaks)
   window.addEventListener("beforeunload", () => {
+    if (_adminSectionObserver) {
+      _adminSectionObserver.disconnect();
+      _adminSectionObserver = null;
+    }
     if (_replayPollTimer) {
       clearInterval(_replayPollTimer);
       _replayPollTimer = null;
