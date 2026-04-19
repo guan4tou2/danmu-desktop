@@ -44,11 +44,12 @@ services:
       - ./server/static:/app/server/static
       - ./server/logs:/app/server/logs
       # Persisted runtime state — survives container recreate (upgrade-safe).
-      # Stored: filter_rules.json, settings.json, webhooks.json (paths set via env above).
-      # NOTE: plugin state + user plugins NOT yet mounted — mounting the whole
-      # server/plugins dir would shadow bundled example plugins from the image.
-      # Tracked for v4.7 refactor (split bundled vs user plugin paths).
+      # Contains filter_rules.json, settings.json, webhooks.json (via env vars
+      # above) and plugins_state.json (via PluginManager's _STATE_FILE).
       - ./server/runtime:/app/server/runtime
+      # Custom user plugins. Bundled example plugins stay inside the image at
+      # /app/server/plugins (not mounted) so upstream fixes arrive on upgrade.
+      - ./server/user_plugins:/app/server/user_plugins
     restart: unless-stopped
     deploy:
       resources:

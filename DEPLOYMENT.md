@@ -173,15 +173,19 @@ to the host by the default `docker-compose.yml`:
 | `./server/runtime/filter_rules.json` | `/app/server/runtime/filter_rules.json` | Blacklist + filter rules |
 | `./server/runtime/settings.json` | `/app/server/runtime/settings.json` | Admin UI setting state (color / speed / etc.) |
 | `./server/runtime/webhooks.json` | `/app/server/runtime/webhooks.json` | Registered webhooks |
+| `./server/runtime/plugins_state.json` | `/app/server/runtime/plugins_state.json` | Enabled/disabled plugins |
+| `./server/user_plugins/` | `/app/server/user_plugins/` | Custom user plugins (drop `.py` files here) |
 | `./server/user_fonts/` | `/app/server/user_fonts/` | Uploaded user fonts |
 | `./server/static/` | `/app/server/static/` | Uploaded stickers / emojis (plus bundled assets) |
 | `./server/logs/` | `/app/server/logs/` | Server logs (optional for backup) |
 
-**Not yet persisted:** Plugin enabled/disabled state (`server/plugins/plugins_state.json`)
-and any custom user plugins still reset on container recreate. Mounting the whole
-`server/plugins/` directory would shadow bundled example plugins, which would then
-miss upstream fixes. Fix requires splitting bundled vs user plugin paths in the
-plugin manager — tracked for v4.7.
+**Bundled example plugins** (`server/plugins/example_*.py`) are NOT mounted —
+they live inside the image so upstream fixes arrive with each image upgrade.
+Put custom plugins in `server/user_plugins/` instead.
+
+**Legacy migration:** Upgrading from v4.6.2 or earlier? On first run, the plugin
+manager detects `server/plugins/plugins_state.json` and copies it to the new
+`server/runtime/plugins_state.json` automatically — no manual action needed.
 
 The paths for filter / settings / webhooks are redirected into `./server/runtime/`
 via `FILTER_RULES_FILE`, `SETTINGS_FILE`, `WEBHOOKS_PATH` env vars in compose.
@@ -193,19 +197,17 @@ The user-generated bind-mounted paths in the table above are the source of
 truth. `server/logs/` is bind-mounted for operational access but can be
 omitted from backups unless you need audit / debug history.
 
-### Manual backup (tar)
+### Backup (scripts/backup.sh)
 
 ```bash
-tar -czf danmu-backup-$(date +%F).tar.gz \
-  server/runtime/ \
-  server/user_fonts/ \
-  server/static/ \
-  .env
+./scripts/backup.sh                        # writes danmu-backup-YYYY-MM-DD.tar.gz
+./scripts/backup.sh /path/to/output.tgz    # custom filename
+BACKUP_SKIP_STATIC=1 ./scripts/backup.sh   # skip bundled static assets
 ```
 
-> **Plugin state / custom plugins** — see the note in the persistence table.
-> Plugin state loss during container rebuild is a known limitation tracked
-> for v4.7 refactor.
+Snapshots: `server/runtime/`, `server/user_plugins/`, `server/user_fonts/`,
+`server/static/`, and `.env`.
+
 
 ### Restore
 
