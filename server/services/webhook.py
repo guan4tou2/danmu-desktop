@@ -22,7 +22,12 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-_WEBHOOKS_FILE = Path(__file__).parent.parent / "webhooks.json"
+import os
+
+_WEBHOOKS_FILE = Path(
+    os.environ.get("WEBHOOKS_PATH")
+    or str(Path(__file__).parent.parent / "webhooks.json")
+)
 _MAX_HOOKS = 20
 _REQUEST_TIMEOUT = 10  # seconds
 _VALID_FORMATS = {"json", "discord", "slack"}

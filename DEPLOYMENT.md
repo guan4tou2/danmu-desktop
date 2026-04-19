@@ -163,6 +163,68 @@ top of the main compose file:
 
 ---
 
+## Data persistence
+
+Runtime state files that MUST survive container recreate. All are bind-mounted
+to the host by the default `docker-compose.yml`:
+
+| Host path | In-container path | Content |
+|---|---|---|
+| `./server/runtime/filter_rules.json` | `/app/server/runtime/filter_rules.json` | Blacklist + filter rules |
+| `./server/runtime/settings.json` | `/app/server/runtime/settings.json` | Admin UI setting state (color / speed / etc.) |
+| `./server/runtime/webhooks.json` | `/app/server/runtime/webhooks.json` | Registered webhooks |
+| `./server/plugins/plugins_state.json` | `/app/server/plugins/plugins_state.json` | Enabled/disabled plugins |
+| `./server/plugins/*` | `/app/server/plugins/*` | Custom user plugins |
+| `./server/user_fonts/` | `/app/server/user_fonts/` | Uploaded user fonts |
+| `./server/static/` | `/app/server/static/` | Uploaded stickers / emojis |
+| `./server/logs/` | `/app/server/logs/` | Server logs |
+
+The paths for filter / settings / webhooks are redirected into `./server/runtime/`
+via `FILTER_RULES_FILE`, `SETTINGS_FILE`, `WEBHOOKS_PATH` env vars in compose.
+This keeps all new state in one dir for easy backup.
+
+## Backup & restore
+
+Everything under the bind-mounted host paths above is a source of truth.
+
+### Manual backup (tar)
+
+```bash
+tar -czf danmu-backup-$(date +%F).tar.gz \
+  server/runtime/ \
+  server/plugins/ \
+  server/user_fonts/ \
+  server/static/stickers/ \
+  server/static/emojis/ \
+  .env
+```
+
+### Restore
+
+```bash
+docker compose down
+tar -xzf danmu-backup-2026-04-20.tar.gz
+docker compose up -d
+```
+
+### Upgrade (pull new image, keep data)
+
+```bash
+docker compose pull              # fetch new image
+docker compose down
+docker compose up -d             # recreate containers, runtime data survives
+```
+
+Because runtime state is bind-mounted on the host, `docker compose up --force-recreate`
+will NOT delete your filter rules / webhooks / plugins.
+
+### Moving between machines
+
+Copy `.env` + the bind-mounted directories listed above to the new host,
+then `docker compose up -d`. No database migration needed.
+
+---
+
 ## Security Checklist
 
 Before exposing to the internet:

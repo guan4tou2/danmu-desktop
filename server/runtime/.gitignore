@@ -1,0 +1,4 @@
+# Runtime state — generated at runtime, not tracked.
+# Keep this .gitignore so docker bind-mount works on fresh clones.
+*.json
+!.gitignore
