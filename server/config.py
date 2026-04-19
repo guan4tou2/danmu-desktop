@@ -1,6 +1,5 @@
 import os
 import secrets
-import tempfile
 from pathlib import Path
 
 from dotenv import find_dotenv, load_dotenv
@@ -104,9 +103,12 @@ class Config:
     # Danmu history configuration
     DANMU_HISTORY_MAX_RECORDS = int(os.getenv("DANMU_HISTORY_MAX_RECORDS", "10000"))
     DANMU_HISTORY_CLEANUP_HOURS = int(os.getenv("DANMU_HISTORY_CLEANUP_HOURS", "24"))
+    # Default settings file lives alongside other runtime state under
+    # server/runtime/. Previously used /tmp which is wiped on reboot on
+    # many systems (macOS default, some Linux), silently losing user settings.
     SETTINGS_FILE = os.getenv(
         "SETTINGS_FILE",
-        str(Path(tempfile.gettempdir()) / "danmu_runtime_settings.json"),
+        str(Path(__file__).parent / "runtime" / "settings.json"),
     )
 
     # Scheduler configuration

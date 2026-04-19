@@ -1,9 +1,10 @@
 import copy
 import json
 import os
-import tempfile
 import threading
 from pathlib import Path
+
+from server.config import Config
 
 _DEFAULT_OPTIONS = {
     "Color": [True, 0, 0, "#FFFFFF"],
@@ -26,8 +27,10 @@ class SettingsStore:
         self._lock = threading.Lock()
         self._options = copy.deepcopy(_DEFAULT_OPTIONS)
         self._ranges = _RANGES
-        default_path = Path(tempfile.gettempdir()) / "danmu_runtime_settings.json"
-        self._settings_file = Path(os.getenv("SETTINGS_FILE", str(default_path)))
+        # Read env at runtime so tests can monkeypatch after import; fall
+        # back to Config.SETTINGS_FILE (which has the sane server/runtime/
+        # default baked in).
+        self._settings_file = Path(os.environ.get("SETTINGS_FILE") or Config.SETTINGS_FILE)
         self._load_from_disk()
 
     def _load_from_disk(self):
