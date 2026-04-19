@@ -481,5 +481,7 @@
   "widgetScoreboardTitle": "標題",
   "widgetTickerMessages": "訊息（每行一則）",
   "widgetTickerPlaceholder": "輸入訊息，每行一則...",
-  "widgetLabelText": "文字"
+  "widgetLabelText": "文字",
+  "exportJSON": "匯出 JSON",
+  "recordReplay": "錄製回放"
 }

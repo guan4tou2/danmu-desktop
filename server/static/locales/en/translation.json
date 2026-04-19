@@ -481,5 +481,7 @@
   "widgetScoreboardTitle": "Title",
   "widgetTickerMessages": "Messages (one per line)",
   "widgetTickerPlaceholder": "Enter messages, one per line...",
-  "widgetLabelText": "Text"
+  "widgetLabelText": "Text",
+  "exportJSON": "Export JSON",
+  "recordReplay": "Record Replay"
 }

@@ -481,5 +481,7 @@
   "widgetScoreboardTitle": "タイトル",
   "widgetTickerMessages": "メッセージ（1行に1つ）",
   "widgetTickerPlaceholder": "メッセージを入力、1行に1つ...",
-  "widgetLabelText": "テキスト"
+  "widgetLabelText": "テキスト",
+  "exportJSON": "JSONエクスポート",
+  "recordReplay": "リプレイ録画"
 }
