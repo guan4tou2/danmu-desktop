@@ -244,6 +244,14 @@ summary:focus-visible {
   font-size: 1.5rem;
   line-height: 1.2;
   letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+/* Long English section titles shrink slightly on narrow mobile to avoid 3-line wrap */
+@media (max-width: 480px) {
+  .admin-section-heading h2 {
+    font-size: 1.25rem;
+  }
 }
 
 .admin-primary-stack > .admin-section > * h3,
@@ -1094,14 +1102,17 @@ summary:focus-visible {
   align-items: flex-end;
   gap: 2px;
   height: 80px;
+  /* Viewport-fit: 24 bars never overflow parent card — bars flex down when cramped */
+  overflow-x: hidden;
 }
 
 .chart-bar {
-  background: #06b6d4;
-  min-width: 12px;
+  background: var(--color-accent);
+  flex: 1 1 0;
+  min-width: 4px;
   border-radius: 2px 2px 0 0;
   position: relative;
-  transition: height 0.3s;
+  transition: height 0.3s ease, background-color 0.2s ease;
 }
 
 .chart-bar:hover {
