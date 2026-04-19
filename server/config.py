@@ -116,8 +116,9 @@ class Config:
     STICKER_MAX_COUNT = int(os.getenv("STICKER_MAX_COUNT", "50"))
 
     # Filter engine configuration
-    FILTER_RULES_PATH = os.getenv(
-        "FILTER_RULES_PATH",
+    # Reads FILTER_RULES_FILE to match what services/filter_engine.py actually uses.
+    FILTER_RULES_FILE = os.getenv(
+        "FILTER_RULES_FILE",
         str(Path(__file__).parent / "filter_rules.json"),
     )
 

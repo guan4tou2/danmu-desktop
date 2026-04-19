@@ -1,4 +1,5 @@
 # Runtime state — generated at runtime, not tracked.
-# Keep this .gitignore so docker bind-mount works on fresh clones.
-*.json
+# Ignore EVERYTHING (incl. .tmp files from atomic-save writers that would
+# otherwise leak webhook secrets or filter rules).
+*
 !.gitignore

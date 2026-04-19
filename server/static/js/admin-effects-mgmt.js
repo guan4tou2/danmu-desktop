@@ -466,7 +466,7 @@
       editBtn.textContent = ServerI18n.t("edit");
 
       const delBtn = document.createElement("button");
-      delBtn.className = "p-0.5 text-slate-500 bg-transparent border-none cursor-pointer rounded flex items-center shrink-0 transition-colors hover:text-red-400";
+      delBtn.className = "p-0.5 text-slate-400 bg-transparent border-none cursor-pointer rounded flex items-center shrink-0 transition-colors hover:text-red-400";
       delBtn.title = ServerI18n.t("deleteEffectTitle").replace("{name}", eff.label || eff.name);
       delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
 

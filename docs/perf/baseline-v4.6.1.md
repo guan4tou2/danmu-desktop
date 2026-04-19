@@ -1,6 +1,6 @@
 # Performance Baseline — v4.6.1
 
-Captured 2026-04-20 on localhost via curl timing (dev laptop, no network latency).
+Captured 2026-04-20 UTC+08:00 on localhost via curl timing (dev laptop, no network latency).
 
 ## HTTP payloads
 
@@ -24,7 +24,7 @@ Captured 2026-04-20 on localhost via curl timing (dev laptop, no network latency
 
 ## Font loading strategy
 
-```
+```text
 family=Bebas+Neue          (1 weight)
 &family=Noto+Sans          (5 weights)  — Latin
 &family=Noto+Sans+TC       (5 weights)  — Traditional Chinese
