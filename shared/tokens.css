@@ -55,10 +55,14 @@
   --ring-success: rgba(16, 185, 129, 0.2);
   --ring-error: rgba(239, 68, 68, 0.2);
 
-  /* Typography (see DESIGN.md § Typography) */
-  --font-display: "Bebas Neue", "Noto Sans TC", "Noto Sans", system-ui, sans-serif;
-  --font-brand: "Noto Sans TC", "Noto Sans", system-ui, sans-serif;
-  --font-ui: "Noto Sans TC", "Noto Sans", system-ui, sans-serif;
+  /* Typography (see DESIGN.md § Typography)
+   * Default stack: Latin → TC (primary market) → JP → KR → system fallback.
+   * Per-language <html lang=""> triggers :lang() overrides in style.css that
+   * promote the matching Noto to the front so Han characters render with
+   * the correct regional glyph style (e.g. 直 differs between zh-TW and ja). */
+  --font-display: "Bebas Neue", "Noto Sans", "Noto Sans TC", "Noto Sans JP", "Noto Sans KR", system-ui, sans-serif;
+  --font-brand: "Noto Sans", "Noto Sans TC", "Noto Sans JP", "Noto Sans KR", system-ui, sans-serif;
+  --font-ui: "Noto Sans", "Noto Sans TC", "Noto Sans JP", "Noto Sans KR", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
   /* Backwards compat: consumers that still read --font-family */

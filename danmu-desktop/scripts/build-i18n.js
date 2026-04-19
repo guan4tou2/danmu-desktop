@@ -79,6 +79,10 @@ const i18n = {
     if (typeof localStorage !== "undefined") {
       localStorage.setItem("danmu-lang", lang);
     }
+    // Update <html lang=""> so CSS :lang() picks the right CJK font
+    if (typeof document !== "undefined" && document.documentElement) {
+      document.documentElement.lang = lang;
+    }
     this.updateUI();
   },
 
@@ -130,6 +134,10 @@ const i18n = {
 
   updateUI() {
     if (typeof document === "undefined") return;
+    // Keep <html lang=""> in sync so CSS :lang() picks the right CJK font
+    if (document.documentElement) {
+      document.documentElement.lang = this.currentLang;
+    }
     document.querySelectorAll("[data-i18n]").forEach((el) => {
       const key = el.getAttribute("data-i18n");
       const text = this.t(key);

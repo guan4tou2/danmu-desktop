@@ -1989,6 +1989,11 @@
         },
       });
 
+      // Set <html lang=""> so CSS :lang() can apply the right CJK font
+      if (document.documentElement) {
+        document.documentElement.lang = this.currentLang;
+      }
+
       this.updateUI();
     },
 
@@ -2007,6 +2012,10 @@
       localStorage.setItem("danmu-server-lang", lang);
       // changeLanguage is async but resources are already loaded — resolves instantly
       i18next.changeLanguage(lang);
+      // Update <html lang=""> so CSS :lang() picks the right CJK font
+      if (document.documentElement) {
+        document.documentElement.lang = lang;
+      }
       this.updateUI();
     },
 

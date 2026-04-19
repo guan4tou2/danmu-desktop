@@ -24,6 +24,27 @@ body {
   color: white;
 }
 
+/* Per-language font priority. i18n.js updates <html lang=""> so these apply.
+ * Each override promotes the matching Noto to the front so Han characters
+ * render with the correct regional glyph style. */
+:lang(zh) {
+  --font-display: "Bebas Neue", "Noto Sans", "Noto Sans TC", system-ui, sans-serif;
+  --font-brand: "Noto Sans", "Noto Sans TC", system-ui, sans-serif;
+  --font-ui: "Noto Sans", "Noto Sans TC", system-ui, sans-serif;
+}
+
+:lang(ja) {
+  --font-display: "Bebas Neue", "Noto Sans", "Noto Sans JP", system-ui, sans-serif;
+  --font-brand: "Noto Sans", "Noto Sans JP", system-ui, sans-serif;
+  --font-ui: "Noto Sans", "Noto Sans JP", system-ui, sans-serif;
+}
+
+:lang(ko) {
+  --font-display: "Bebas Neue", "Noto Sans", "Noto Sans KR", system-ui, sans-serif;
+  --font-brand: "Noto Sans", "Noto Sans KR", system-ui, sans-serif;
+  --font-ui: "Noto Sans", "Noto Sans KR", system-ui, sans-serif;
+}
+
 /* Tabular figures — numbers align column-to-column in data displays */
 [data-tabular],
 .composer-counter,
