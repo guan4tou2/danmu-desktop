@@ -63,8 +63,19 @@ echo "Writing $OUT"
 tar -czf "$OUT" "${EXIST_PATHS[@]}"
 
 SIZE=$(du -h "$OUT" | cut -f1)
-echo "Done. $OUT ($SIZE)"
-echo "Contents:"
-tar -tzf "$OUT" | head -20
 TOTAL=$(tar -tzf "$OUT" | wc -l | tr -d ' ')
-echo "... ($TOTAL entries total)"
+echo "Done. $OUT ($SIZE, $TOTAL entries)"
+echo "Preview (first 20):"
+# Read tar output into an array instead of `tar | head` — the latter breaks
+# under `set -o pipefail` because head closes the pipe early, sending SIGPIPE
+# to tar, which returns 141 and trips `set -e`.
+CONTENTS=()
+while IFS= read -r line; do
+  CONTENTS+=("$line")
+done < <(tar -tzf "$OUT")
+for entry in "${CONTENTS[@]:0:20}"; do
+  echo "  $entry"
+done
+if (( TOTAL > 20 )); then
+  echo "  ... ($((TOTAL - 20)) more)"
+fi

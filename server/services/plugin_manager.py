@@ -306,6 +306,8 @@ class PluginManager:
 
     def _hot_scan(self) -> None:
         """Re-scan bundled + user plugin dirs, reload changed, remove deleted."""
+        # Walk bundled first, user second — later entries override earlier
+        # ones when building the shadow map (user > bundled for same name).
         current_files: Dict[str, Path] = {}
         for scan_dir in (_BUNDLED_PLUGINS_DIR, _USER_PLUGINS_DIR):
             if not scan_dir.is_dir():
@@ -317,7 +319,6 @@ class PluginManager:
 
         with self._lock:
             prev_mtime_map = dict(self._mtime_map)
-            prev_path_to_name = dict(self._path_to_name)  # noqa: F841
 
         changed = False
 
@@ -337,8 +338,26 @@ class PluginManager:
                 continue
 
             name = instance.name
+            is_from_user_dir = str(p).startswith(str(_USER_PLUGINS_DIR))
             with self._lock:
                 old_entry = self._plugins.get(name)
+                # Shadow priority: a reloaded bundled file must NOT overwrite
+                # the active registry entry if that entry is backed by the
+                # user version. We still record new mtime so we don't re-import
+                # every scan.
+                if (
+                    old_entry is not None
+                    and not is_from_user_dir
+                    and str(Path(old_entry.filepath)).startswith(str(_USER_PLUGINS_DIR))
+                ):
+                    self._mtime_map[fpath] = mtime
+                    self._path_to_name[fpath] = name
+                    logger.info(
+                        "[PluginManager] Re-scanned bundled %s but user override is "
+                        "active — keeping user version",
+                        p.name,
+                    )
+                    continue
                 enabled = old_entry.enabled if old_entry else self._state.get(name, True)
                 entry = _PluginEntry(instance, fpath, mtime, enabled)
                 self._plugins[name] = entry
@@ -352,10 +371,55 @@ class PluginManager:
             with self._lock:
                 old_name = self._path_to_name.pop(fpath, None)
                 self._mtime_map.pop(fpath, None)
-                if old_name:
-                    self._plugins.pop(old_name, None)
-                    changed = True
-                    logger.info("[PluginManager] Removed plugin: %s", old_name)
+                if not old_name:
+                    continue
+                current_entry = self._plugins.get(old_name)
+                # Only drop from registry if the deleted file was THE active
+                # source for this plugin name. A deleted bundled file when the
+                # user version is active should be a silent delete.
+                if current_entry is None or current_entry.filepath != fpath:
+                    logger.info(
+                        "[PluginManager] Removed shadowed file %s (plugin %s still "
+                        "served by %s)",
+                        Path(fpath).name,
+                        old_name,
+                        current_entry.filepath if current_entry else "<none>",
+                    )
+                    continue
+
+                self._plugins.pop(old_name, None)
+                changed = True
+                logger.info("[PluginManager] Removed plugin: %s", old_name)
+
+                # Fall back to the bundled version if a user plugin was removed
+                # and a same-named bundled file exists (or vice versa — rare).
+                fallback_path = None
+                for alt_dir in (_USER_PLUGINS_DIR, _BUNDLED_PLUGINS_DIR):
+                    candidate = alt_dir / Path(fpath).name
+                    if str(candidate) != fpath and candidate.is_file():
+                        fallback_path = candidate
+                        break
+                if fallback_path is None:
+                    continue
+            # Load fallback OUTSIDE the lock (_load_plugin_from_file does I/O).
+            fallback_instance = self._load_plugin_from_file(fallback_path)
+            if fallback_instance is None:
+                continue
+            with self._lock:
+                try:
+                    fb_mtime = fallback_path.stat().st_mtime
+                except OSError:
+                    continue
+                enabled = self._state.get(fallback_instance.name, True)
+                fb_entry = _PluginEntry(fallback_instance, str(fallback_path), fb_mtime, enabled)
+                self._plugins[fallback_instance.name] = fb_entry
+                self._mtime_map[str(fallback_path)] = fb_mtime
+                self._path_to_name[str(fallback_path)] = fallback_instance.name
+                logger.info(
+                    "[PluginManager] Fell back to %s for plugin %s",
+                    fallback_path,
+                    fallback_instance.name,
+                )
 
         with self._lock:
             self._last_scan = time.monotonic()
