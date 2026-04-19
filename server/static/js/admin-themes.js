@@ -32,7 +32,7 @@
     container.innerHTML = "";
 
     if (themes.length === 0) {
-      container.innerHTML = '<span class="text-xs text-slate-500">' + ServerI18n.t("noThemesFound") + '</span>';
+      container.innerHTML = '<span class="text-xs text-slate-400">' + ServerI18n.t("noThemesFound") + '</span>';
       return;
     }
 
@@ -49,7 +49,7 @@
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2">
             <span class="text-sm font-semibold text-white">${escapeHtml(ServerI18n.t("theme_" + theme.name) !== "theme_" + theme.name ? ServerI18n.t("theme_" + theme.name) : theme.label)}</span>
-            <span class="text-xs text-slate-500">${escapeHtml(theme.name)}</span>
+            <span class="text-xs text-slate-400">${escapeHtml(theme.name)}</span>
             ${isActive ? '<span class="text-[10px] px-1.5 py-0.5 bg-sky-600 text-white rounded-full font-medium">' + ServerI18n.t("themeActiveBadge") + '</span>' : ""}
           </div>
           <p class="text-xs text-slate-400 mt-0.5 truncate">${escapeHtml(ServerI18n.t("theme_" + theme.name + "_desc") !== "theme_" + theme.name + "_desc" ? ServerI18n.t("theme_" + theme.name + "_desc") : theme.description)}</p>

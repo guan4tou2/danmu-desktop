@@ -53,11 +53,11 @@
         </summary>
         <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-5">
           ${uploadRow}
-          <p class="text-xs text-slate-500">
+          <p class="text-xs text-slate-400">
             ${ServerI18n.t("stickerUsageHint")}
           </p>
           <div id="stickerGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-            <span class="text-xs text-slate-500 col-span-full">${ServerI18n.t("loadingStickers")}</span>
+            <span class="text-xs text-slate-400 col-span-full">${ServerI18n.t("loadingStickers")}</span>
           </div>
         </div>
       </details>
@@ -98,7 +98,7 @@
 
       if (stickers.length === 0) {
         grid.innerHTML =
-          '<span class="text-xs text-slate-500 col-span-full">' + ServerI18n.t("noStickersUploaded") + '</span>';
+          '<span class="text-xs text-slate-400 col-span-full">' + ServerI18n.t("noStickersUploaded") + '</span>';
         return;
       }
 

@@ -649,7 +649,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     if (effects.length === 0) {
-      elements.effectButtons.innerHTML = `<span class="text-xs text-slate-500">${ServerI18n.t("noEffectsAvailable")}</span>`;
+      elements.effectButtons.innerHTML = `<span class="text-xs text-slate-400">${ServerI18n.t("noEffectsAvailable")}</span>`;
     }
   }
 
@@ -663,7 +663,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (e) {
       console.warn("[Effects] Failed to load effects:", e.message);
       if (elements.effectButtons) {
-        elements.effectButtons.innerHTML = `<span class="text-xs text-slate-500">${ServerI18n.t("failedToLoad")}</span>`;
+        elements.effectButtons.innerHTML = `<span class="text-xs text-slate-400">${ServerI18n.t("failedToLoad")}</span>`;
       }
     }
   }
@@ -1014,7 +1014,7 @@ document.addEventListener("DOMContentLoaded", () => {
             emojiCache = emojis;
             updatePreview();
             if (emojis.length === 0) {
-              emojiPicker.innerHTML = '<span class="text-xs text-slate-500">No emojis available</span>';
+              emojiPicker.innerHTML = '<span class="text-xs text-slate-400">No emojis available</span>';
               return;
             }
             emojiPicker.innerHTML = "";
@@ -1058,7 +1058,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
           })
           .catch(() => {
-            emojiPicker.innerHTML = '<span class="text-xs text-slate-500">Failed to load emojis</span>';
+            emojiPicker.innerHTML = '<span class="text-xs text-slate-400">Failed to load emojis</span>';
           });
       }
     })
