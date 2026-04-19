@@ -7,6 +7,10 @@
 
 ## [Unreleased]
 
+---
+
+## [4.6.0] - 2026-04-19
+
 ### 新增 / Added
 
 - **品牌統一**：Server 端命名為「Danmu Fire」，Electron client 命名為「Danmu Desktop」；`Config.APP_NAME = "Danmu Fire"` 透過 context_processor 注入模板
@@ -14,11 +18,27 @@
 - **About 視窗**：Electron 新增 About 視窗（`about.html`），顯示版本號（IPC `get-app-version`）、描述、GitHub 連結
 - **Tray 選單升級**：新增動態連線狀態列（`⊘ Disconnected` / `◐ Connecting…` / `● Connected`）與 About 選項；連線狀態變更時透過 IPC 即時更新
 - **主視窗 Fade-in**：新增 `.main-content` CSS fade-in，防止 i18n 初始化前的文字閃爍
+- **Admin 儀表板資訊架構重整**：管理頁面重新分組為 Live Control / Moderation / Assets 三大區，新增 hero 區段、chip 快速導覽、sticky 工作流側欄
+- **主頁 Composer 重設計**：輸入框與即時預覽改為兩欄 sticky 佈局；滾動時自動收合為更精簡的 pinned 狀態
+- **跳轉連結 / Skip-link**：Admin 頁加入鍵盤導覽用的 Skip to main content 連結
+- **設計 Token 型別尺度**：新增 `--text-2xs` 至 `--text-3xl`、`--space-1` 至 `--space-8`，4px 網格模組化字級
+- **3 份設計稽核報告**：`docs/audits/admin-design-audit-2026-04-11.md`、`design-review-round2-2026-04-17.md`、`design-review-final-2026-04-19.md`
 
 ### 改善 / Improved
 
 - **設計 Token 集中化**：`shared/tokens.css` 擴充至 43 個 token，作為唯一設計系統來源；`server/static/css/tokens.css` 同步自 shared；CI 新增 token 同步檢查
 - `.env.example` 補齊 `LOGIN_RATE_LIMIT`、`LOGIN_RATE_WINDOW`、`WEBHOOK_TIMEOUT`、`STICKER_MAX_COUNT` 文件
+- **顏色系統統一**：清除 11 個 admin JS 模組與 4 個語系 JSON 中的 78 個 violet/purple Tailwind class；移除 45 行 `!important` cascade 覆寫；`tokens.css` 的 sky 為唯一來源
+- **標題層級修復**：Admin 區段 H2 從 18px 放大到 24px，卡片 H3 固定 16px，長英文標題在 mobile 自動縮到 20px 避免 3 行折行
+- **觸控目標 WCAG 2.5.5**：Effect buttons 由 26-30px 提升至 44×44px；新增全域 `cursor: pointer` 涵蓋 button / summary / label / select
+- **深色模式原生控件**：新增 `color-scheme: dark` 讓 scrollbar、date picker、select dropdown 等原生控件符合深色主題
+- **Motion 無障礙**：`prefers-reduced-motion: reduce` 支援；移除 range slider 的 `transition: all` 避免 layout 屬性重排
+- **圖表 viewport 自適應**：歷史區 stats-chart 24 個 bar 改為 flex 均分，mobile 375px 以下不再溢出
+
+### 修復 / Fixed
+
+- **未登入 /admin/ 錯誤 toast 牆**：`fetchLatestSettings()` 在未認證狀態下不再觸發 `renderControlPanel()`，避免 6 個 401 toast 湧出（FINDING-001）
+- **Admin i18n locale 引用過期**：4 個語系檔 (en/zh/ja/ko) 的 emoji/sticker 使用提示不再引用已清除的 violet-300 class
 
 ---
 
