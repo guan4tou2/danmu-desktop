@@ -80,7 +80,7 @@
 
     if (!data || data.state === "idle") {
       var noActive = document.createElement("span");
-      noActive.className = "text-slate-500";
+      noActive.className = "text-slate-400";
       noActive.textContent = ServerI18n.t("pollNoActive");
       display.appendChild(noActive);
       return;
@@ -132,7 +132,7 @@
     });
 
     var footer = document.createElement("div");
-    footer.className = "text-xs text-slate-500 mt-1";
+    footer.className = "text-xs text-slate-400 mt-1";
     footer.textContent = ServerI18n.t("pollTotalVotes").replace("{0}", total);
     card.appendChild(footer);
     display.appendChild(card);

@@ -55,7 +55,7 @@
               </button>
             </div>
             <div id="pluginsList" class="space-y-2">
-              <span class="text-xs text-slate-500">${ServerI18n.t("loadingPlugins")}</span>
+              <span class="text-xs text-slate-400">${ServerI18n.t("loadingPlugins")}</span>
             </div>
           </div>
         </details>
@@ -90,7 +90,7 @@
 
         if (plugins.length === 0) {
           listEl.innerHTML =
-            '<p class="text-xs text-slate-500 text-center py-4">' + ServerI18n.t("noPluginsFound") + '</p>';
+            '<p class="text-xs text-slate-400 text-center py-4">' + ServerI18n.t("noPluginsFound") + '</p>';
           return;
         }
 

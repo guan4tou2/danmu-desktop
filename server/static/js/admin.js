@@ -356,14 +356,14 @@ document.addEventListener("DOMContentLoaded", () => {
               <h4 class="history-dashboard-title">${ServerI18n.t("hourlyDistribution")}</h4>
               <span class="history-dashboard-caption">${hours}h window</span>
             </div>
-            <div class="stats-chart">${chartBars || '<span class="text-xs text-slate-500">No data</span>'}</div>
+            <div class="stats-chart">${chartBars || '<span class="text-xs text-slate-400">No data</span>'}</div>
           </div>
           <div class="history-dashboard-card history-dashboard-card--table">
             <div class="history-dashboard-title-row">
               <h4 class="history-dashboard-title">${ServerI18n.t("topTexts")}</h4>
               <span class="history-dashboard-caption">Top 10</span>
             </div>
-            ${topTexts.length ? `<table class="w-full text-xs"><tbody>${topTextRows}</tbody></table>` : '<span class="text-xs text-slate-500">No data</span>'}
+            ${topTexts.length ? `<table class="w-full text-xs"><tbody>${topTextRows}</tbody></table>` : '<span class="text-xs text-slate-400">No data</span>'}
           </div>
         </div>`;
     } catch (err) {
@@ -792,7 +792,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
                             <div class="space-y-3">
                                 <div>
-                                    <div class="text-xs text-slate-500 uppercase tracking-wide mb-2">Control</div>
+                                    <div class="text-xs text-slate-400 uppercase tracking-wide mb-2">Control</div>
                                     <div class="admin-chip-nav">
                                         <a href="#sec-color" class="admin-chip" data-i18n="navBasic">${ServerI18n.t("navBasic")}</a>
                                         <a href="#sec-effects" class="admin-chip" data-i18n="navEffects">${ServerI18n.t("navEffects")}</a>
@@ -801,7 +801,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     </div>
                                 </div>
                                 <div>
-                                    <div class="text-xs text-slate-500 uppercase tracking-wide mb-2">Moderation</div>
+                                    <div class="text-xs text-slate-400 uppercase tracking-wide mb-2">Moderation</div>
                                     <div class="admin-chip-nav">
                                         <a href="#sec-blacklist" class="admin-chip" data-i18n="navBlacklist">${ServerI18n.t("navBlacklist")}</a>
                                         <a href="#sec-history" class="admin-chip" data-i18n="navHistory">${ServerI18n.t("navHistory")}</a>
@@ -810,7 +810,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     </div>
                                 </div>
                                 <div>
-                                    <div class="text-xs text-slate-500 uppercase tracking-wide mb-2">Assets & Automation</div>
+                                    <div class="text-xs text-slate-400 uppercase tracking-wide mb-2">Assets & Automation</div>
                                     <div class="admin-chip-nav">
                                         <a href="#sec-emojis" class="admin-chip">Emojis</a>
                                         <a href="#sec-stickers" class="admin-chip">Stickers</a>
@@ -902,9 +902,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <div class="admin-sidebar-title">Workflow</div>
                                     <p class="admin-sidebar-copy">Treat this page as a control tower: tune the stream on the left, then jump directly to moderation or asset sections from here.</p>
                                     <div class="admin-link-list">
-                                        <a href="#sec-history"><span>Review recent danmu</span><span class="text-slate-500">→</span></a>
-                                        <a href="#sec-blacklist"><span>Block problem keywords</span><span class="text-slate-500">→</span></a>
-                                        <a href="#sec-effects"><span>Refresh effects and visuals</span><span class="text-slate-500">→</span></a>
+                                        <a href="#sec-history"><span>Review recent danmu</span><span class="text-slate-400">→</span></a>
+                                        <a href="#sec-blacklist"><span>Block problem keywords</span><span class="text-slate-400">→</span></a>
+                                        <a href="#sec-effects"><span>Refresh effects and visuals</span><span class="text-slate-400">→</span></a>
                                     </div>
                                 </div>
 
@@ -912,9 +912,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <div class="admin-sidebar-title">Recommended order</div>
                                     <p class="admin-sidebar-copy">For live tuning, adjust style, verify output in live feed, then move to history and filters only if moderation is needed.</p>
                                     <div class="admin-link-list">
-                                        <a href="#sec-color"><span>1. Style controls</span><span class="text-slate-500">Color / size / speed</span></a>
-                                        <a href="#sec-live-feed"><span>2. Live validation</span><span class="text-slate-500">Incoming traffic</span></a>
-                                        <a href="#sec-filters"><span>3. Guardrails</span><span class="text-slate-500">Rate limit / rules</span></a>
+                                        <a href="#sec-color"><span>1. Style controls</span><span class="text-slate-400">Color / size / speed</span></a>
+                                        <a href="#sec-live-feed"><span>2. Live validation</span><span class="text-slate-400">Incoming traffic</span></a>
+                                        <a href="#sec-filters"><span>3. Guardrails</span><span class="text-slate-400">Rate limit / rules</span></a>
                                     </div>
                                 </div>
                             </aside>
@@ -1009,12 +1009,12 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <input id="setting-speed-2" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="2" value="${escapeHtml(String(currentSettings.Speed[2]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
                             </div>
                         </div>
-                        <small class="text-slate-500 text-xs block mt-2">${ServerI18n.t("speedHint")}</small>
+                        <small class="text-slate-400 text-xs block mt-2">${ServerI18n.t("speedHint")}</small>
                     `,
       `
                         <label for="setting-speed-3" class="text-sm font-medium text-slate-300">${ServerI18n.t("specificSpeed")}</label>
                         <input id="setting-speed-3" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="3" value="${escapeHtml(String(currentSettings.Speed[3]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="1">
-                        <small class="text-slate-500 text-xs block mt-2">${ServerI18n.t("speedHint")}</small>
+                        <small class="text-slate-400 text-xs block mt-2">${ServerI18n.t("speedHint")}</small>
                     `
     ));
 
@@ -1037,7 +1037,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <input type="file" id="fontUploadInput" accept=".ttf" class="mt-1 w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500"/>
                 <button id="uploadFontBtn" class="mt-2 w-full bg-sky-600 hover:bg-sky-500 text-white font-semibold py-2 px-4 rounded-lg">${ServerI18n.t("uploadFont")}</button>
             </div>
-            <small class="text-slate-500 text-xs block mt-2">${ServerI18n.t("fontUploadHint")}</small>
+            <small class="text-slate-400 text-xs block mt-2">${ServerI18n.t("fontUploadHint")}</small>
             `;
 
     settingsGrid.insertAdjacentHTML("beforeend", settingCard(
@@ -1135,7 +1135,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="border-t border-slate-700/50 pt-4">
           <div id="effectsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 min-h-12">
-            <span class="text-xs text-slate-500 col-span-2">${ServerI18n.t("loadingEffectsAdmin")}</span>
+            <span class="text-xs text-slate-400 col-span-2">${ServerI18n.t("loadingEffectsAdmin")}</span>
           </div>
         </div>
       </div>
@@ -1160,7 +1160,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </button>
           </div>
           <div id="themesList" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <span class="text-xs text-slate-500">Loading themes...</span>
+            <span class="text-xs text-slate-400">Loading themes...</span>
           </div>
         </div>
       </details>

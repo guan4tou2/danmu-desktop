@@ -65,13 +65,13 @@
           </div>
 
           <!-- Usage hint -->
-          <p class="text-xs text-slate-500 select-all">
+          <p class="text-xs text-slate-400 select-all">
             ${ServerI18n.t("emojiUsageHint")}
           </p>
 
           <!-- Emoji Grid -->
           <div id="emojiGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-            <span class="text-xs text-slate-500 col-span-full">${ServerI18n.t("loadingEmojis")}</span>
+            <span class="text-xs text-slate-400 col-span-full">${ServerI18n.t("loadingEmojis")}</span>
           </div>
         </div>
       </details>
@@ -117,7 +117,7 @@
 
       if (emojis.length === 0) {
         grid.innerHTML =
-          '<span class="text-xs text-slate-500 col-span-full">' + ServerI18n.t("noEmojisUploaded") + '</span>';
+          '<span class="text-xs text-slate-400 col-span-full">' + ServerI18n.t("noEmojisUploaded") + '</span>';
         return;
       }
 

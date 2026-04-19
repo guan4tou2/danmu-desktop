@@ -213,6 +213,10 @@ See `.env.example` for all available options.
 
 ## Project Docs / 文件
 
+- [`DESIGN.md`](./DESIGN.md) – 設計系統（brand, color, typography, motion, a11y, voice）. Single source of truth for all visual decisions.
+- `docs/perf/baseline-v4.6.1.md` – performance baseline（HTTP payload, latency, font loading strategy）。
+- `docs/designs/` – design exploration artifacts（typography comparison pages etc）.
+- `docs/audits/` – design-review audit reports by round.
 - `docs/README.md` – index of technical notes and archives / 技術文件索引。
 - `DEPLOYMENT.md` – production-grade setup instructions / 部署說明。
 - `server/PLUGIN_GUIDE.md` – Plugin SDK documentation / 插件開發文件。

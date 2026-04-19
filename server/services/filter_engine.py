@@ -66,10 +66,10 @@ class FilterEngine:
         self._rate_tracker: dict[str, list[float]] = {}
         self._check_count = 0
         if path is None:
-            path = os.environ.get("FILTER_RULES_FILE") or os.path.join(
-                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                "filter_rules.json",
-            )
+            # Defer the Config import to runtime so tests can monkey-patch env
+            from server.config import Config
+
+            path = Config.FILTER_RULES_FILE
         self._path = path
         self._load()
         self._initialized = True

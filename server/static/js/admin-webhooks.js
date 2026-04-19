@@ -87,7 +87,7 @@
                 </select>
               </div>
               <div>
-                <label for="wh-secret" class="text-sm font-medium text-slate-300">${ServerI18n.t("secretLabel")} <span class="text-slate-500">${ServerI18n.t("secretOptional")}</span></label>
+                <label for="wh-secret" class="text-sm font-medium text-slate-300">${ServerI18n.t("secretLabel")} <span class="text-slate-400">${ServerI18n.t("secretOptional")}</span></label>
                 <input id="wh-secret" type="text" placeholder="${ServerI18n.t("hmacSecretPlaceholder")}"
                   class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300" />
               </div>
@@ -194,7 +194,7 @@
       const hooks = data.webhooks;
       if (hooks.length === 0) {
         listEl.innerHTML =
-          '<p class="text-slate-500 italic">' + ServerI18n.t("noWebhooksRegistered") + '</p>';
+          '<p class="text-slate-400 italic">' + ServerI18n.t("noWebhooksRegistered") + '</p>';
         return;
       }
 

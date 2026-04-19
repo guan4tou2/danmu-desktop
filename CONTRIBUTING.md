@@ -40,6 +40,14 @@
 - Python: Black, isort, flake8 (PEP 8)。
 - JavaScript: ESLint / Airbnb style (if configured)。
 
+## 設計系統 / Design System
+- 單一來源：[`DESIGN.md`](./DESIGN.md) 涵蓋品牌定位、色彩、字型、間距、動效、無障礙、語氣
+- 設計 tokens 於 `shared/tokens.css`（server 與 Electron 兩邊共用，build 時自動同步）
+- 字型：Bebas Neue（hero display only）+ Noto Sans 家族（Latin/TC/JP/KR）+ JetBrains Mono
+- 新色、新間距、新字級 **先加 token**，不要硬寫 hex / rem
+- 對比率：所有 user-facing 文字需達 WCAG AA (body 4.5:1, large 3:1)
+- 參考效能 baseline: [`docs/perf/baseline-v4.6.1.md`](./docs/perf/baseline-v4.6.1.md)
+
 Format / 格式化:
 ```bash
 cd server

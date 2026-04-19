@@ -161,7 +161,7 @@
       wrapper.className = "flex flex-col gap-0.5";
 
       const label = document.createElement("label");
-      label.className = "text-[0.65rem] text-slate-500 font-mono";
+      label.className = "text-[0.65rem] text-slate-400 font-mono";
       label.textContent = `${key} (${type})`;
       wrapper.appendChild(label);
 
@@ -286,9 +286,9 @@
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800 shrink-0">
               <div>
                 <p id="effectEditModalTitle" class="font-bold text-slate-100 text-sm m-0"></p>
-                <p id="effectEditModalFile" class="text-[0.7rem] text-slate-500 font-mono mt-0.5 m-0"></p>
+                <p id="effectEditModalFile" class="text-[0.7rem] text-slate-400 font-mono mt-0.5 m-0"></p>
               </div>
-              <button id="effectEditModalClose" title="Close" aria-label="Close" class="text-slate-500 hover:text-slate-300 bg-transparent border-none cursor-pointer p-1 rounded flex items-center leading-none transition-colors">
+              <button id="effectEditModalClose" title="Close" aria-label="Close" class="text-slate-400 hover:text-slate-300 bg-transparent border-none cursor-pointer p-1 rounded flex items-center leading-none transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
@@ -434,7 +434,7 @@
     if (!container) return;
     if (!effects.length) {
       container.innerHTML =
-        '<span class="text-xs text-slate-500 col-span-3">' + ServerI18n.t("noEffectsLoaded") + '</span>';
+        '<span class="text-xs text-slate-400 col-span-3">' + ServerI18n.t("noEffectsLoaded") + '</span>';
       return;
     }
     container.innerHTML = "";
@@ -455,7 +455,7 @@
       var _ek = "effect_" + eff.name;
       labelEl.textContent = ServerI18n.t(_ek) !== _ek ? ServerI18n.t(_ek) : (eff.label || eff.name);
       const nameEl = document.createElement("div");
-      nameEl.className = "text-[0.62rem] text-slate-500 font-mono whitespace-nowrap overflow-hidden text-ellipsis leading-tight";
+      nameEl.className = "text-[0.62rem] text-slate-400 font-mono whitespace-nowrap overflow-hidden text-ellipsis leading-tight";
       nameEl.textContent = eff.name;
       textWrap.appendChild(labelEl);
       textWrap.appendChild(nameEl);
@@ -466,7 +466,7 @@
       editBtn.textContent = ServerI18n.t("edit");
 
       const delBtn = document.createElement("button");
-      delBtn.className = "p-0.5 text-slate-600 bg-transparent border-none cursor-pointer rounded flex items-center shrink-0 transition-colors hover:text-red-400";
+      delBtn.className = "p-0.5 text-slate-400 bg-transparent border-none cursor-pointer rounded flex items-center shrink-0 transition-colors hover:text-red-400";
       delBtn.title = ServerI18n.t("deleteEffectTitle").replace("{name}", eff.label || eff.name);
       delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
 

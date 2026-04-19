@@ -88,7 +88,7 @@
                     class="composer-textarea w-full bg-transparent border-0 rounded-[0.95rem] py-0 px-0 pr-12 text-white placeholder-slate-500 focus:ring-0 transition-all duration-200 resize-none text-base"
                     placeholder="Type something awesome..." data-i18n-placeholder="placeholder"></textarea>
                   <div id="charCount"
-                    class="composer-counter absolute bottom-0 right-0 text-[10px] text-slate-500 font-mono bg-slate-950/95 px-1.5 py-0.5 rounded"
+                    class="composer-counter absolute bottom-0 right-0 text-[10px] text-slate-400 font-mono bg-slate-950/95 px-1.5 py-0.5 rounded"
                     aria-live="polite">
                     0/100
                   </div>
@@ -191,7 +191,7 @@
                 value="{{ (options.FontSize[1] + options.FontSize[2]) // 2 }}" aria-label="Font size"
                 aria-valuemin="{{ options.FontSize[1] }}" aria-valuemax="{{ options.FontSize[2] }}"
                 class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
-              <div class="flex justify-between text-xs text-slate-500 mt-1">
+              <div class="flex justify-between text-xs text-slate-400 mt-1">
                 <span>{{ options.FontSize[1] }}px</span>
                 <span>{{ options.FontSize[2] }}px</span>
               </div>
@@ -225,7 +225,7 @@
                 value="{{ (options.Speed[1] + options.Speed[2]) // 2 }}" aria-label="Scroll speed"
                 aria-valuemin="{{ options.Speed[1] }}" aria-valuemax="{{ options.Speed[2] }}"
                 class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
-              <div class="flex justify-between text-xs text-slate-500 mt-1">
+              <div class="flex justify-between text-xs text-slate-400 mt-1">
                 <span data-i18n="slow">Slow</span>
                 <span data-i18n="fast">Fast</span>
               </div>
@@ -311,7 +311,7 @@
                   <div id="emojiControl" class="settings-card settings-card--wide">
                     <label class="block text-sm font-medium text-slate-400 mb-2">
                       <span data-i18n="emojis">Emojis</span>
-                      <span class="text-xs text-slate-500 ml-2" data-i18n="emojiHint">Click to insert :name:</span>
+                      <span class="text-xs text-slate-400 ml-2" data-i18n="emojiHint">Click to insert :name:</span>
                     </label>
                     <div id="emojiPicker" class="flex flex-wrap gap-2"></div>
                   </div>
@@ -320,10 +320,10 @@
                   <div id="effectControl" class="settings-card settings-card--wide">
                     <label class="block text-sm font-medium text-slate-400 mb-2 flex justify-between">
                       <span data-i18n="effects">Effects</span>
-                      <span class="text-xs text-slate-500" data-i18n="multiSelectToStack">Multi-select to stack</span>
+                      <span class="text-xs text-slate-400" data-i18n="multiSelectToStack">Multi-select to stack</span>
                     </label>
                     <div class="flex flex-wrap gap-2" id="effectButtons" role="group" aria-label="Effect selection">
-                      <span class="text-xs text-slate-500" data-i18n="loadingEffects">Loading...</span>
+                      <span class="text-xs text-slate-400" data-i18n="loadingEffects">Loading...</span>
                     </div>
                     <div id="effectParamsPanel" class="mt-3 space-y-3"></div>
                   </div>

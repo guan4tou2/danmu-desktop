@@ -82,7 +82,7 @@
 
     // Timestamp
     const timeSpan = document.createElement("span");
-    timeSpan.className = "text-slate-500 text-xs font-mono shrink-0";
+    timeSpan.className = "text-slate-400 text-xs font-mono shrink-0";
     timeSpan.textContent = fmtTime(entry.ts);
     row.appendChild(timeSpan);
 
@@ -120,7 +120,7 @@
     // Fingerprint
     if (d.fingerprint) {
       const fp = document.createElement("span");
-      fp.className = "text-slate-500 text-xs font-mono shrink-0";
+      fp.className = "text-slate-400 text-xs font-mono shrink-0";
       fp.textContent = d.fingerprint.slice(0, FP_DISPLAY_LEN);
       fp.title = d.fingerprint;
       row.appendChild(fp);
@@ -199,7 +199,7 @@
     listEl.textContent = ""; // clear
     if (frag.childNodes.length === 0) {
       const empty = document.createElement("p");
-      empty.className = "text-slate-500 text-sm text-center py-4";
+      empty.className = "text-slate-400 text-sm text-center py-4";
       empty.textContent = paused
         ? ServerI18n.t("liveFeedPaused")
         : entries.length === 0
@@ -243,7 +243,7 @@
     if (!matchesSearch(entry)) return;
 
     // Remove empty placeholder if present
-    const placeholder = listEl.querySelector("p.text-slate-500");
+    const placeholder = listEl.querySelector("p.text-slate-400");
     if (placeholder) placeholder.remove();
 
     const el = createEntryEl(entry);
@@ -311,7 +311,7 @@
             <p class="text-sm text-slate-300">${ServerI18n.t("liveFeedDesc")}</p>
           </div>
           <span class="flex items-center gap-2">
-            <span id="liveFeedCount" class="text-xs text-slate-500 font-mono">0</span>
+            <span id="liveFeedCount" class="text-xs text-slate-400 font-mono">0</span>
             <span class="text-slate-400 transition-transform group-open:rotate-180">\u2304</span>
           </span>
         </summary>
@@ -326,7 +326,7 @@
               class="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("clearBtn")}</button>
           </div>
           <div id="liveFeedList" class="space-y-1 max-h-96 overflow-y-auto">
-            <p class="text-slate-500 text-sm text-center py-4">${ServerI18n.t("liveFeedWaiting")}</p>
+            <p class="text-slate-400 text-sm text-center py-4">${ServerI18n.t("liveFeedWaiting")}</p>
           </div>
         </div>
       </details>`;

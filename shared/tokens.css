@@ -27,7 +27,11 @@
   --color-border-focus: #38bdf8;
   --color-border-strong: #334155;
 
-  /* Text */
+  /* Text (all meet WCAG AA on --color-bg-base #0f172a unless marked)
+   * primary   16.30:1 ✓ AAA
+   * secondary  6.96:1 ✓ AA body, AAA large
+   * bright    14.48:1 ✓ AAA
+   * muted      2.36:1 ✗ — for disabled/decorative ONLY, not user-facing copy */
   --color-text-primary: #f1f5f9;
   --color-text-secondary: #94a3b8;
   --color-text-muted: #475569;

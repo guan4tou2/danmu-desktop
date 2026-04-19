@@ -1,0 +1,5 @@
+# Runtime state — generated at runtime, not tracked.
+# Ignore EVERYTHING (incl. .tmp files from atomic-save writers that would
+# otherwise leak webhook secrets or filter rules).
+*
+!.gitignore

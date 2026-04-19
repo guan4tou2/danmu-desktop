@@ -168,12 +168,12 @@
       const resp = await csrfFetch("/admin/scheduler/list", { method: "GET" });
       const data = await resp.json();
       if (!resp.ok || !Array.isArray(data.jobs)) {
-        list.innerHTML = '<p class="text-sm text-slate-500">' + ServerI18n.t("loadJobsFailed") + '</p>';
+        list.innerHTML = '<p class="text-sm text-slate-400">' + ServerI18n.t("loadJobsFailed") + '</p>';
         return;
       }
 
       if (data.jobs.length === 0) {
-        list.innerHTML = '<p class="text-sm text-slate-500">' + ServerI18n.t("noActiveJobs") + '</p>';
+        list.innerHTML = '<p class="text-sm text-slate-400">' + ServerI18n.t("noActiveJobs") + '</p>';
         return;
       }
 
@@ -275,7 +275,7 @@
           <div>
             <h4 class="text-sm font-medium text-slate-300 mb-2">${ServerI18n.t("activeJobsTitle")}</h4>
             <div id="schedulerJobsList" class="space-y-2">
-              <p class="text-sm text-slate-500">${ServerI18n.t("loadingJobs")}</p>
+              <p class="text-sm text-slate-400">${ServerI18n.t("loadingJobs")}</p>
             </div>
           </div>
         </div>

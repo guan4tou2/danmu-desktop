@@ -125,7 +125,7 @@
 
             <!-- Priority -->
             <div>
-              <label for="filterPriority" class="text-xs text-slate-400">${t("filterPriority", "Priority")} <span class="text-slate-500">(${t("lowerFirst", "lower = first")})</span></label>
+              <label for="filterPriority" class="text-xs text-slate-400">${t("filterPriority", "Priority")} <span class="text-slate-400">(${t("lowerFirst", "lower = first")})</span></label>
               <input type="number" id="filterPriority" value="0" min="-9999" max="9999"
                 class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400" />
             </div>
@@ -184,7 +184,7 @@
           <div class="flex flex-wrap items-center gap-1.5 mb-1">
             ${badge(rule.type, typeColor)}
             ${badge(rule.action, actionColor)}
-            <span class="text-xs text-slate-500">P${escapeHtml(String(rule.priority))}</span>
+            <span class="text-xs text-slate-400">P${escapeHtml(String(rule.priority))}</span>
           </div>
           <p class="text-sm text-white font-mono break-all">${escapeHtml(rule.pattern)}</p>
           ${extra}
@@ -221,10 +221,10 @@
   async function refreshRulesList() {
     const list = document.getElementById("filterRulesList");
     if (!list) return;
-    list.innerHTML = `<span class="text-xs text-slate-500">${t("loading", "Loading...")}</span>`;
+    list.innerHTML = `<span class="text-xs text-slate-400">${t("loading", "Loading...")}</span>`;
     const rules = await fetchRules();
     if (rules.length === 0) {
-      list.innerHTML = `<p class="text-xs text-slate-500">${t("noFilterRules", "No filter rules configured.")}</p>`;
+      list.innerHTML = `<p class="text-xs text-slate-400">${t("noFilterRules", "No filter rules configured.")}</p>`;
       return;
     }
     list.innerHTML = rules.map(renderRuleCard).join("");
@@ -390,7 +390,7 @@
       }
 
       if (data.reason) {
-        resultHtml += `<br/><span class="text-xs text-slate-500">${escapeHtml(data.reason)}</span>`;
+        resultHtml += `<br/><span class="text-xs text-slate-400">${escapeHtml(data.reason)}</span>`;
       }
 
       resultEl.innerHTML = resultHtml;

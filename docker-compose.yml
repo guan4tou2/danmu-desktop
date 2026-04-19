@@ -34,10 +34,21 @@ services:
       - WS_MAX_CONNECTIONS=${WS_MAX_CONNECTIONS:-200}
       - WS_MAX_CONNECTIONS_PER_IP=${WS_MAX_CONNECTIONS_PER_IP:-10}
       - TRUST_X_FORWARDED_FOR=true
+      # Redirect filter rules + settings + webhooks into the persisted runtime
+      # volume. Overridable via .env. See DEPLOYMENT.md § Data persistence.
+      - FILTER_RULES_FILE=${FILTER_RULES_FILE:-/app/server/runtime/filter_rules.json}
+      - SETTINGS_FILE=${SETTINGS_FILE:-/app/server/runtime/settings.json}
+      - WEBHOOKS_PATH=${WEBHOOKS_PATH:-/app/server/runtime/webhooks.json}
     volumes:
       - ./server/user_fonts:/app/server/user_fonts
       - ./server/static:/app/server/static
       - ./server/logs:/app/server/logs
+      # Persisted runtime state — survives container recreate (upgrade-safe).
+      # Stored: filter_rules.json, settings.json, webhooks.json (paths set via env above).
+      # NOTE: plugin state + user plugins NOT yet mounted — mounting the whole
+      # server/plugins dir would shadow bundled example plugins from the image.
+      # Tracked for v4.7 refactor (split bundled vs user plugin paths).
+      - ./server/runtime:/app/server/runtime
     restart: unless-stopped
     deploy:
       resources:

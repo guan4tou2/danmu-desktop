@@ -9,6 +9,31 @@
 
 ---
 
+## [4.6.2] - 2026-04-20
+
+### 修復 / Fixed
+
+- **部署資料遺失 (CRITICAL)**：Docker 容器重建時會遺失使用者的 filter 規則、webhooks、設定、plugins 狀態。修法：加入 `./server/runtime/` 與 `./server/plugins/` bind mounts，透過 `FILTER_RULES_FILE` / `SETTINGS_FILE` / `WEBHOOKS_PATH` env vars 將 runtime 檔案導向持久化目錄。影響：先前的升級流程會 silently reset 全部使用者配置。
+- **`webhook.py` 忽略 env var**：`config.py` 宣告 `WEBHOOKS_PATH` 但 `services/webhook.py` 硬寫檔名，env 永遠無效。現改為直接讀 `Config.WEBHOOKS_PATH`（單一設定來源，未設環境變數時回退到 `server/webhooks.json` 預設）。
+- **`FILTER_RULES_PATH` → `FILTER_RULES_FILE` 名稱統一**：`config.py` 宣告 `FILTER_RULES_PATH` 但實際使用的 `services/filter_engine.py` 讀 `FILTER_RULES_FILE` env var，兩者名字不一致 config 欄位等於死碼。統一為 `Config.FILTER_RULES_FILE`。
+- **無障礙對比不足 / A11y contrast**：61 處使用 `text-slate-500`（對比 3.75:1，僅符合 AA large 非 AA body）與 1 處 `text-slate-600`（對比 2.36:1，全數失敗）全面改為 `text-slate-400`（對比 6.96:1，通過 AA body）。影響：loading / empty-state 訊息、時間戳、metadata 標籤、篩選規則優先級顯示等皆可讀。
+- **i18n 漏譯補齊**：`exportJSON`、`recordReplay` 補上 4 語系；韓文 `overlayNone`、`overlayConnected` 從英文改為 "연결 안 됨" / "Overlay: {n}개"。
+- **`.env.example` 行內註解 bug**：`WS_ALLOWED_ORIGINS=  # comment` 在 python-dotenv 下會被解析成字串 literal，導致所有 WebSocket overlay 連線被 Origin 檢查擋掉。改成註解獨立一行。
+- **`.env.example` 死變數清理**：移除 `EMOJI_DIR` / `PLUGINS_DIR` / `SOUNDS_DIR` / `WS_PUBLIC_PORT`（4 個完全沒程式讀取的假文件）；修正 `FILTER_RULES_PATH` → `FILTER_RULES_FILE` 對齊程式實際使用的名字。
+
+### 新增 / Added
+
+- `docs/perf/baseline-v4.6.1.md` — HTTP payload / latency / font loading strategy 的效能基線
+- `DEPLOYMENT.md` 新增「Data persistence」與「Backup & restore」章節（完整 runtime state 檔案對照表、tar 備份指令、升級 / 搬機流程）
+- `CONTRIBUTING.md` 新增「設計系統」章節，連結 `DESIGN.md` + tokens 使用規範
+- `README.md` 文件索引新增 DESIGN.md / docs/perf / docs/designs / docs/audits 入口
+
+### 改善 / Improved
+
+- `shared/tokens.css` 的 `--color-text-*` tokens 加註 WCAG 對比率值，`--color-text-muted` 明確標註「僅用於 disabled/decorative」
+
+---
+
 ## [4.6.1] - 2026-04-20
 
 ### 新增 / Added

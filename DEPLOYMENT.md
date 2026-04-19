@@ -163,6 +163,85 @@ top of the main compose file:
 
 ---
 
+## Data persistence
+
+Runtime state files that MUST survive container recreate. All are bind-mounted
+to the host by the default `docker-compose.yml`:
+
+| Host path | In-container path | Content |
+|---|---|---|
+| `./server/runtime/filter_rules.json` | `/app/server/runtime/filter_rules.json` | Blacklist + filter rules |
+| `./server/runtime/settings.json` | `/app/server/runtime/settings.json` | Admin UI setting state (color / speed / etc.) |
+| `./server/runtime/webhooks.json` | `/app/server/runtime/webhooks.json` | Registered webhooks |
+| `./server/user_fonts/` | `/app/server/user_fonts/` | Uploaded user fonts |
+| `./server/static/` | `/app/server/static/` | Uploaded stickers / emojis (plus bundled assets) |
+| `./server/logs/` | `/app/server/logs/` | Server logs (optional for backup) |
+
+**Not yet persisted:** Plugin enabled/disabled state (`server/plugins/plugins_state.json`)
+and any custom user plugins still reset on container recreate. Mounting the whole
+`server/plugins/` directory would shadow bundled example plugins, which would then
+miss upstream fixes. Fix requires splitting bundled vs user plugin paths in the
+plugin manager — tracked for v4.7.
+
+The paths for filter / settings / webhooks are redirected into `./server/runtime/`
+via `FILTER_RULES_FILE`, `SETTINGS_FILE`, `WEBHOOKS_PATH` env vars in compose.
+This keeps all new state in one dir for easy backup.
+
+## Backup & restore
+
+The user-generated bind-mounted paths in the table above are the source of
+truth. `server/logs/` is bind-mounted for operational access but can be
+omitted from backups unless you need audit / debug history.
+
+### Manual backup (tar)
+
+```bash
+tar -czf danmu-backup-$(date +%F).tar.gz \
+  server/runtime/ \
+  server/user_fonts/ \
+  server/static/ \
+  .env
+```
+
+> **Plugin state / custom plugins** — see the note in the persistence table.
+> Plugin state loss during container rebuild is a known limitation tracked
+> for v4.7 refactor.
+
+### Restore
+
+Reuse the same `--profile` (and any `-f` override files) you used to start
+this deployment, or the restore will bring up the wrong stack:
+
+```bash
+# Match the profile used at deploy time (http/https/traefik, optionally redis).
+COMPOSE_ARGS="--profile https"
+
+docker compose $COMPOSE_ARGS down
+tar -xzf danmu-backup-2026-04-20.tar.gz
+docker compose $COMPOSE_ARGS up -d
+```
+
+### Upgrade (pull new image, keep data)
+
+```bash
+COMPOSE_ARGS="--profile https"   # same as deploy time
+
+docker compose $COMPOSE_ARGS pull             # fetch new image
+docker compose $COMPOSE_ARGS down
+docker compose $COMPOSE_ARGS up -d            # recreate, runtime data survives
+```
+
+Because runtime state is bind-mounted on the host, `docker compose up --force-recreate`
+will NOT delete your filter rules / webhooks / settings.
+
+### Moving between machines
+
+Copy `.env` + the bind-mounted directories listed above to the new host,
+then `docker compose $COMPOSE_ARGS up -d` with the same profile + override
+files used by that deployment. No database migration needed.
+
+---
+
 ## Security Checklist
 
 Before exposing to the internet:
