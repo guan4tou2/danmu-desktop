@@ -8,6 +8,7 @@ const SUPPORTED = ["en", "zh", "ja", "ko"];
 
 const _resources = {
     "en": {
+      "skipToMainContent": "Skip to main content",
       "title": "Danmu Desktop",
       "subtitle": "Configure and launch the danmu overlay",
       "hostLabel": "Server Address (IP or Domain)",
@@ -78,6 +79,7 @@ const _resources = {
       "customAnimationPlaceholder": "Enter custom animation text..."
     },
     "zh": {
+      "skipToMainContent": "跳至主要內容",
       "title": "Danmu Desktop",
       "subtitle": "配置並啟動彈幕",
       "hostLabel": "伺服器位址（IP 或網域）",
@@ -148,6 +150,7 @@ const _resources = {
       "customAnimationPlaceholder": "輸入自訂動畫文字..."
     },
     "ja": {
+      "skipToMainContent": "メインコンテンツへスキップ",
       "title": "Danmu Desktop",
       "subtitle": "オーバーレイの設定と起動",
       "hostLabel": "サーバーアドレス（IPまたはドメイン）",
@@ -218,6 +221,7 @@ const _resources = {
       "customAnimationPlaceholder": "カスタムアニメーションテキストを入力..."
     },
     "ko": {
+      "skipToMainContent": "본문으로 건너뛰기",
       "title": "Danmu Desktop",
       "subtitle": "오버레이 구성 및 실행",
       "hostLabel": "서버 주소 (IP 또는 도메인)",
