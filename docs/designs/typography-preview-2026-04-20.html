@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Danmu Fire — Type Exploration</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+<!-- All candidate fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans+TC:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;700&family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=Archivo+Black&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #000;
+    --bg-card: rgba(15, 23, 42, 0.85);
+    --border: rgba(71, 85, 105, 0.42);
+    --accent: #38bdf8;
+    --accent-cyan: #06b6d4;
+    --text: #f1f5f9;
+    --text-muted: #94a3b8;
+    --text-kicker: #7dd3fc;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    padding: 3rem 1.5rem;
+    min-height: 100vh;
+  }
+  .page {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .intro {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+  .intro h1 {
+    font-family: "Noto Sans TC", sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .intro p {
+    font-family: "Noto Sans TC", sans-serif;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 1.5rem;
+  }
+
+  /* Each candidate card */
+  .card {
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--bg-card);
+    padding: 1.75rem;
+    backdrop-filter: blur(20px);
+  }
+  .card-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-kicker);
+    margin-bottom: 0.4rem;
+  }
+  .card-name {
+    font-family: "Noto Sans TC", sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+  }
+  .card-stack {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+    line-height: 1.6;
+  }
+
+  /* Sample content styling */
+  .hero-sample {
+    font-size: 4rem;
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+    margin-bottom: 0.3rem;
+  }
+  .hero-cjk {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.75rem;
+  }
+  .hero-tagline {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+  }
+  .ui-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+  }
+  .ui-kicker {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-kicker);
+  }
+  .ui-data {
+    font-family: "JetBrains Mono", monospace;
+    color: var(--accent);
+    font-size: 0.875rem;
+  }
+  .ui-value {
+    font-weight: 600;
+    color: var(--text);
+  }
+  .btn-sample {
+    display: inline-block;
+    padding: 0.65rem 1.2rem;
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border-radius: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  /* =============================================================
+     CANDIDATE A: Noto Sans TC + JetBrains Mono
+     ============================================================= */
+  .card-a .hero-sample,
+  .card-a .hero-cjk,
+  .card-a .hero-tagline,
+  .card-a .ui-kicker,
+  .card-a .ui-value,
+  .card-a .btn-sample {
+    font-family: "Noto Sans TC", sans-serif;
+  }
+  .card-a .ui-data {
+    font-family: "JetBrains Mono", monospace;
+  }
+
+  /* =============================================================
+     CANDIDATE B: IBM Plex Sans TC + IBM Plex Mono
+     ============================================================= */
+  .card-b .hero-sample,
+  .card-b .hero-cjk,
+  .card-b .hero-tagline,
+  .card-b .ui-kicker,
+  .card-b .ui-value,
+  .card-b .btn-sample {
+    font-family: "IBM Plex Sans TC", "IBM Plex Sans", sans-serif;
+  }
+  .card-b .ui-data {
+    font-family: "IBM Plex Mono", monospace;
+  }
+
+  /* =============================================================
+     CANDIDATE C: Geist + Noto Sans TC + Geist Mono
+     ============================================================= */
+  .card-c .hero-sample,
+  .card-c .hero-cjk,
+  .card-c .hero-tagline,
+  .card-c .ui-kicker,
+  .card-c .ui-value,
+  .card-c .btn-sample {
+    font-family: "Geist", "Noto Sans TC", sans-serif;
+  }
+  .card-c .ui-data {
+    font-family: "Geist Mono", monospace;
+  }
+
+  /* =============================================================
+     CANDIDATE D: Bebas Neue display + Noto Sans TC body
+     ============================================================= */
+  .card-d .hero-sample {
+    font-family: "Bebas Neue", "Noto Sans TC", sans-serif;
+    font-size: 5.5rem;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+  }
+  .card-d .hero-cjk,
+  .card-d .hero-tagline,
+  .card-d .ui-kicker,
+  .card-d .ui-value,
+  .card-d .btn-sample {
+    font-family: "Noto Sans TC", sans-serif;
+  }
+  .card-d .ui-data {
+    font-family: "JetBrains Mono", monospace;
+  }
+
+  /* =============================================================
+     CURRENT (for comparison): Poppins + system zh fallback
+     ============================================================= */
+  .card-current .hero-sample,
+  .card-current .hero-cjk,
+  .card-current .hero-tagline,
+  .card-current .ui-kicker,
+  .card-current .ui-value,
+  .card-current .btn-sample {
+    font-family: Poppins, sans-serif;
+  }
+  .card-current .ui-data {
+    font-family: ui-monospace, monospace;
+  }
+  .card-current {
+    border-color: rgba(239, 68, 68, 0.4);
+    background: rgba(69, 10, 10, 0.35);
+  }
+  .card-current .card-label {
+    color: #fca5a5;
+  }
+
+  footer {
+    margin-top: 3rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.75rem;
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <section class="intro">
+    <h1>Danmu Fire — 字型方向探索</h1>
+    <p>同一組 hero + UI 樣本，換 4 套字型系統看效果。全部在黑底 + sky 主色下呈現。</p>
+  </section>
+
+  <section class="grid">
+
+    <!-- CURRENT STATE -->
+    <article class="card card-current">
+      <div class="card-label">CURRENT · v4.6.0</div>
+      <div class="card-name">Poppins + system CJK fallback（現況）</div>
+      <div class="hero-sample">Danmu Fire</div>
+      <div class="hero-cjk">彈幕控制台</div>
+      <div class="hero-tagline">把你的訊息送上螢幕，即時控制樣式與效果。</div>
+      <div class="ui-row"><span class="ui-kicker">CONTROL</span></div>
+      <div class="ui-row"><span class="ui-value">Core danmu behavior</span> <span class="ui-data">#38bdf8</span></div>
+      <div class="ui-row"><span class="ui-value">歷史記錄</span> <span class="ui-data">24h</span></div>
+      <a class="btn-sample">發射彈幕</a>
+      <div class="card-stack">
+        Latin → Poppins (loaded)
+        CJK   → ui-sans-serif (OS 隨便)
+        Mono  → ui-monospace
+      </div>
+    </article>
+
+    <!-- CANDIDATE A -->
+    <article class="card card-a">
+      <div class="card-label">A · 責任派</div>
+      <div class="card-name">Noto Sans TC + JetBrains Mono</div>
+      <div class="hero-sample">Danmu Fire</div>
+      <div class="hero-cjk">彈幕控制台</div>
+      <div class="hero-tagline">把你的訊息送上螢幕，即時控制樣式與效果。</div>
+      <div class="ui-row"><span class="ui-kicker">CONTROL</span></div>
+      <div class="ui-row"><span class="ui-value">Core danmu behavior</span> <span class="ui-data">#38bdf8</span></div>
+      <div class="ui-row"><span class="ui-value">歷史記錄</span> <span class="ui-data">24h</span></div>
+      <a class="btn-sample">發射彈幕</a>
+      <div class="card-stack">
+        Latin + CJK → Noto Sans TC
+        Mono        → JetBrains Mono
+      </div>
+    </article>
+
+    <!-- CANDIDATE B -->
+    <article class="card card-b">
+      <div class="card-label">B · 科技派</div>
+      <div class="card-name">IBM Plex Sans TC + IBM Plex Mono</div>
+      <div class="hero-sample">Danmu Fire</div>
+      <div class="hero-cjk">彈幕控制台</div>
+      <div class="hero-tagline">把你的訊息送上螢幕，即時控制樣式與效果。</div>
+      <div class="ui-row"><span class="ui-kicker">CONTROL</span></div>
+      <div class="ui-row"><span class="ui-value">Core danmu behavior</span> <span class="ui-data">#38bdf8</span></div>
+      <div class="ui-row"><span class="ui-value">歷史記錄</span> <span class="ui-data">24h</span></div>
+      <a class="btn-sample">發射彈幕</a>
+      <div class="card-stack">
+        Latin + CJK → IBM Plex Sans TC
+        Mono        → IBM Plex Mono
+      </div>
+    </article>
+
+    <!-- CANDIDATE C -->
+    <article class="card card-c">
+      <div class="card-label">C · 雙主角派</div>
+      <div class="card-name">Geist (拉丁) + Noto Sans TC (中文) + Geist Mono</div>
+      <div class="hero-sample">Danmu Fire</div>
+      <div class="hero-cjk">彈幕控制台</div>
+      <div class="hero-tagline">把你的訊息送上螢幕，即時控制樣式與效果。</div>
+      <div class="ui-row"><span class="ui-kicker">CONTROL</span></div>
+      <div class="ui-row"><span class="ui-value">Core danmu behavior</span> <span class="ui-data">#38bdf8</span></div>
+      <div class="ui-row"><span class="ui-value">歷史記錄</span> <span class="ui-data">24h</span></div>
+      <a class="btn-sample">發射彈幕</a>
+      <div class="card-stack">
+        Latin → Geist
+        CJK   → Noto Sans TC (fallback)
+        Mono  → Geist Mono
+      </div>
+    </article>
+
+    <!-- CANDIDATE D (recommended) -->
+    <article class="card card-d">
+      <div class="card-label">D · 表演派 ★ 推薦</div>
+      <div class="card-name">Bebas Neue (display) + Noto Sans TC (body)</div>
+      <div class="hero-sample">Danmu Fire</div>
+      <div class="hero-cjk">彈幕控制台</div>
+      <div class="hero-tagline">把你的訊息送上螢幕，即時控制樣式與效果。</div>
+      <div class="ui-row"><span class="ui-kicker">CONTROL</span></div>
+      <div class="ui-row"><span class="ui-value">Core danmu behavior</span> <span class="ui-data">#38bdf8</span></div>
+      <div class="ui-row"><span class="ui-value">歷史記錄</span> <span class="ui-data">24h</span></div>
+      <a class="btn-sample">發射彈幕</a>
+      <div class="card-stack">
+        Display (Hero 專用) → Bebas Neue
+        Body + CJK         → Noto Sans TC
+        Mono               → JetBrains Mono
+      </div>
+    </article>
+
+  </section>
+
+  <footer>
+    <p>評估：注意 Hero 力道、中英混排 x-height、UI 小字可讀性、數字表現</p>
+    <p>F-010 · design review rounds 1-4 · 2026-04-20</p>
+  </footer>
+
+</main>
+</body>
+</html>

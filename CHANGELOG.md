@@ -9,6 +9,25 @@
 
 ---
 
+## [4.6.1] - 2026-04-20
+
+### 新增 / Added
+
+- **DESIGN.md**：專案設計系統文件，涵蓋品牌定位、色彩、字型、間距、動效、無障礙、語氣 (F-010)
+- **`docs/designs/typography-preview-2026-04-20.html`**：字型方向比較頁（4 候選 vs 現況）
+
+### 改善 / Improved
+
+- **雙語字型系統建立 (F-010)**：
+  - Hero wordmark "Danmu Fire" 改用 **Bebas Neue**（街機跑馬燈感的 display face）
+  - UI / body / 中文全面改用 **Noto Sans TC**，解決過去中文 fallback 到 OS 預設（PingFang / 微軟雅黑 / Noto Sans CJK）造成品牌零控制的問題
+  - 數字 / 程式碼改用 **JetBrains Mono**
+  - 新增 tokens：`--font-display` / `--font-brand` / `--font-ui` / `--font-mono`；`--font-family` 改為 `--font-ui` 的別名以保持回溯相容
+- **字體載入優化**：新增 `preconnect` 提示與 `display=swap`，減少 FOIT 並加速首次繪製
+- **數字對齊**：`.composer-counter` / `.history-dashboard-value` / `.chart-label` 套用 `font-variant-numeric: tabular-nums`
+
+---
+
 ## [4.6.0] - 2026-04-19
 
 ### 新增 / Added

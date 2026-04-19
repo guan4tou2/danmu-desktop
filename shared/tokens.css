@@ -55,8 +55,14 @@
   --ring-success: rgba(16, 185, 129, 0.2);
   --ring-error: rgba(239, 68, 68, 0.2);
 
-  /* Typography */
-  --font-family: "Poppins", sans-serif;
+  /* Typography (see DESIGN.md § Typography) */
+  --font-display: "Bebas Neue", "Noto Sans TC", "Noto Sans", system-ui, sans-serif;
+  --font-brand: "Noto Sans TC", "Noto Sans", system-ui, sans-serif;
+  --font-ui: "Noto Sans TC", "Noto Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Backwards compat: consumers that still read --font-family */
+  --font-family: var(--font-ui);
 
   /* Type scale — 4px-rounded modular scale (base 16px) */
   --text-2xs: 0.75rem;   /* 12px — kicker / caption */

@@ -19,9 +19,17 @@ html {
 
 /* Basic styles and fonts */
 body {
-  font-family: var(--font-family);
+  font-family: var(--font-ui);
   background-color: var(--color-bg-deep);
   color: white;
+}
+
+/* Tabular figures — numbers align column-to-column in data displays */
+[data-tabular],
+.composer-counter,
+.history-dashboard-value,
+.chart-label {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Every interactive element shows a pointer — no more default arrow on buttons */
@@ -650,9 +658,11 @@ summary:focus-visible {
 
 .server-hero-title {
   margin: 0;
-  font-size: clamp(2.8rem, 7vw, 5.2rem);
-  line-height: 0.92;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: clamp(3.2rem, 8vw, 6rem);
+  line-height: 0.95;
+  font-weight: 400; /* Bebas Neue only ships one weight */
+  letter-spacing: 0.02em;
 }
 
 .server-hero-subtitle {
