@@ -9,6 +9,27 @@
 
 ---
 
+## [4.6.1] - 2026-04-20
+
+### 新增 / Added
+
+- **DESIGN.md**：專案設計系統文件，涵蓋品牌定位、色彩、字型、間距、動效、無障礙、語氣 (F-010)
+- **`docs/designs/typography-preview-2026-04-20.html`**：字型方向比較頁（4 候選 vs 現況）
+
+### 改善 / Improved
+
+- **四語雙語字型系統建立 (F-010)**：
+  - Hero wordmark "Danmu Fire" 改用 **Bebas Neue**（街機跑馬燈感的 display face）
+  - 依語系切換 CJK 字型：**Noto Sans TC**（繁中）/ **Noto Sans JP**（日文假名 + 日漢字）/ **Noto Sans KR**（韓文 Hangul）/ **Noto Sans**（Latin）
+  - 數字 / 程式碼改用 **JetBrains Mono**
+  - 新增 tokens：`--font-display` / `--font-brand` / `--font-ui` / `--font-mono`；`--font-family` 改為 `--font-ui` 的別名以保持回溯相容
+  - `i18n.js` 在初始化與切換語系時同步設定 `<html lang="">`，讓 CSS `:lang()` 能自動挑選對應 CJK 字型，避免日文字用繁中 glyph、或 Hangul 完全 fallback 的問題
+- **字體載入優化**：新增 `preconnect` 提示與 `display=swap`，減少 FOIT 並加速首次繪製
+- **數字對齊**：`.composer-counter` / `.history-dashboard-value` / `.chart-label` 套用 `font-variant-numeric: tabular-nums`
+- **Electron client 字型同步**：`danmu-desktop/about.css` 硬寫的 Poppins 改為 Noto Sans TC；`tokens.css` 自 shared 重新同步
+
+---
+
 ## [4.6.0] - 2026-04-19
 
 ### 新增 / Added

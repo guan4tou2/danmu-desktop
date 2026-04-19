@@ -19,9 +19,38 @@ html {
 
 /* Basic styles and fonts */
 body {
-  font-family: var(--font-family);
+  font-family: var(--font-ui);
   background-color: var(--color-bg-deep);
   color: white;
+}
+
+/* Per-language font priority. i18n.js updates <html lang=""> so these apply.
+ * Each override promotes the matching Noto to the front so Han characters
+ * render with the correct regional glyph style. */
+:lang(zh) {
+  --font-display: "Bebas Neue", "Noto Sans", "Noto Sans TC", system-ui, sans-serif;
+  --font-brand: "Noto Sans", "Noto Sans TC", system-ui, sans-serif;
+  --font-ui: "Noto Sans", "Noto Sans TC", system-ui, sans-serif;
+}
+
+:lang(ja) {
+  --font-display: "Bebas Neue", "Noto Sans", "Noto Sans JP", system-ui, sans-serif;
+  --font-brand: "Noto Sans", "Noto Sans JP", system-ui, sans-serif;
+  --font-ui: "Noto Sans", "Noto Sans JP", system-ui, sans-serif;
+}
+
+:lang(ko) {
+  --font-display: "Bebas Neue", "Noto Sans", "Noto Sans KR", system-ui, sans-serif;
+  --font-brand: "Noto Sans", "Noto Sans KR", system-ui, sans-serif;
+  --font-ui: "Noto Sans", "Noto Sans KR", system-ui, sans-serif;
+}
+
+/* Tabular figures — numbers align column-to-column in data displays */
+[data-tabular],
+.composer-counter,
+.history-dashboard-value,
+.chart-label {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Every interactive element shows a pointer — no more default arrow on buttons */
@@ -650,9 +679,11 @@ summary:focus-visible {
 
 .server-hero-title {
   margin: 0;
-  font-size: clamp(2.8rem, 7vw, 5.2rem);
-  line-height: 0.92;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: clamp(3.2rem, 8vw, 6rem);
+  line-height: 0.95;
+  font-weight: 400; /* Bebas Neue only ships one weight */
+  letter-spacing: 0.02em;
 }
 
 .server-hero-subtitle {

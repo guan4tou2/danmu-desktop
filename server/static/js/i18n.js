@@ -492,7 +492,9 @@
       "widgetScoreboardTitle": "Title",
       "widgetTickerMessages": "Messages (one per line)",
       "widgetTickerPlaceholder": "Enter messages, one per line...",
-      "widgetLabelText": "Text"
+      "widgetLabelText": "Text",
+      "exportJSON": "Export JSON",
+      "recordReplay": "Record Replay"
     },
     "zh": {
       "mainTitle": "Danmu Fire",
@@ -977,7 +979,9 @@
       "widgetScoreboardTitle": "標題",
       "widgetTickerMessages": "訊息（每行一則）",
       "widgetTickerPlaceholder": "輸入訊息，每行一則...",
-      "widgetLabelText": "文字"
+      "widgetLabelText": "文字",
+      "exportJSON": "匯出 JSON",
+      "recordReplay": "錄製回放"
     },
     "ja": {
       "mainTitle": "Danmu Fire",
@@ -1462,7 +1466,9 @@
       "widgetScoreboardTitle": "タイトル",
       "widgetTickerMessages": "メッセージ（1行に1つ）",
       "widgetTickerPlaceholder": "メッセージを入力、1行に1つ...",
-      "widgetLabelText": "テキスト"
+      "widgetLabelText": "テキスト",
+      "exportJSON": "JSONエクスポート",
+      "recordReplay": "リプレイ録画"
     },
     "ko": {
       "mainTitle": "Danmu Fire",
@@ -1472,8 +1478,8 @@
       "connecting": "서버: 연결 중...",
       "connected": "서버: 연결됨",
       "disconnected": "서버: 연결 끊김",
-      "overlayNone": "Overlay: –",
-      "overlayConnected": "Overlay: {n}",
+      "overlayNone": "Overlay: 연결 안 됨",
+      "overlayConnected": "Overlay: {n}개",
       "yourMessage": "메시지",
       "placeholder": "멋진 메시지를 입력하세요...",
       "livePreview": "실시간 미리보기",
@@ -1947,7 +1953,9 @@
       "widgetScoreboardTitle": "제목",
       "widgetTickerMessages": "메시지 (줄당 하나)",
       "widgetTickerPlaceholder": "메시지 입력, 줄당 하나...",
-      "widgetLabelText": "텍스트"
+      "widgetLabelText": "텍스트",
+      "exportJSON": "JSON 내보내기",
+      "recordReplay": "리플레이 녹화"
     }
   };
 
@@ -1989,6 +1997,11 @@
         },
       });
 
+      // Set <html lang=""> so CSS :lang() can apply the right CJK font
+      if (document.documentElement) {
+        document.documentElement.lang = this.currentLang;
+      }
+
       this.updateUI();
     },
 
@@ -2007,6 +2020,10 @@
       localStorage.setItem("danmu-server-lang", lang);
       // changeLanguage is async but resources are already loaded — resolves instantly
       i18next.changeLanguage(lang);
+      // Update <html lang=""> so CSS :lang() picks the right CJK font
+      if (document.documentElement) {
+        document.documentElement.lang = lang;
+      }
       this.updateUI();
     },
 

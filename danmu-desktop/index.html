@@ -16,17 +16,19 @@
       "
     />
 
-    <!-- Google Fonts: Poppins -->
+    <!-- Google Fonts: Bebas Neue (display) + Noto Sans family (pan-CJK + Latin) + JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="tailwind.css" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="text-slate-200 overflow-auto">
+    <a href="#main-content" class="skip-link" data-i18n="skipToMainContent">Skip to main content</a>
+
     <!-- Dynamic Background -->
     <div id="vanta-bg" class="fixed top-0 left-0 w-full h-full z-0"></div>
 
@@ -35,6 +37,8 @@
 
     <!-- Main Content -->
     <main
+      id="main-content"
+      tabindex="-1"
       class="relative min-h-screen flex items-start justify-center p-4 py-6 z-10"
     >
       <div

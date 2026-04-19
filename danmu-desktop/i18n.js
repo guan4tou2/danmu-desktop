@@ -8,6 +8,7 @@ const SUPPORTED = ["en", "zh", "ja", "ko"];
 
 const _resources = {
     "en": {
+      "skipToMainContent": "Skip to main content",
       "title": "Danmu Desktop",
       "subtitle": "Configure and launch the danmu overlay",
       "hostLabel": "Server Address (IP or Domain)",
@@ -78,6 +79,7 @@ const _resources = {
       "customAnimationPlaceholder": "Enter custom animation text..."
     },
     "zh": {
+      "skipToMainContent": "跳至主要內容",
       "title": "Danmu Desktop",
       "subtitle": "配置並啟動彈幕",
       "hostLabel": "伺服器位址（IP 或網域）",
@@ -148,6 +150,7 @@ const _resources = {
       "customAnimationPlaceholder": "輸入自訂動畫文字..."
     },
     "ja": {
+      "skipToMainContent": "メインコンテンツへスキップ",
       "title": "Danmu Desktop",
       "subtitle": "オーバーレイの設定と起動",
       "hostLabel": "サーバーアドレス（IPまたはドメイン）",
@@ -218,6 +221,7 @@ const _resources = {
       "customAnimationPlaceholder": "カスタムアニメーションテキストを入力..."
     },
     "ko": {
+      "skipToMainContent": "본문으로 건너뛰기",
       "title": "Danmu Desktop",
       "subtitle": "오버레이 구성 및 실행",
       "hostLabel": "서버 주소 (IP 또는 도메인)",
@@ -323,6 +327,10 @@ const i18n = {
     if (typeof localStorage !== "undefined") {
       localStorage.setItem("danmu-lang", lang);
     }
+    // Update <html lang=""> so CSS :lang() picks the right CJK font
+    if (typeof document !== "undefined" && document.documentElement) {
+      document.documentElement.lang = lang;
+    }
     this.updateUI();
   },
 
@@ -374,6 +382,10 @@ const i18n = {
 
   updateUI() {
     if (typeof document === "undefined") return;
+    // Keep <html lang=""> in sync so CSS :lang() picks the right CJK font
+    if (document.documentElement) {
+      document.documentElement.lang = this.currentLang;
+    }
     document.querySelectorAll("[data-i18n]").forEach((el) => {
       const key = el.getAttribute("data-i18n");
       const text = this.t(key);

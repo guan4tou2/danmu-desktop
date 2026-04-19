@@ -1,10 +1,81 @@
 @import "./tokens.css";
 /* styles.css */
 
+/* Native form controls (scrollbar, date picker, select) render in dark mode */
+html {
+  color-scheme: dark;
+}
+
+/* Respect user's motion preference — disable animation for vestibular safety */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 body {
   font-family: var(--font-family);
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+/* Every interactive element shows a pointer — no more default arrow */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+summary,
+label[for],
+select:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* Skip link — visible only when focused via keyboard */
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100;
+  padding: 0.65rem 1rem;
+  background: var(--color-primary);
+  color: var(--color-bg-deep);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  transform: translateY(-200%);
+  transition: transform 0.2s ease;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}
+
+/* Per-language font priority — :lang() overrides from server style.css */
+:lang(zh) {
+  --font-display: "Bebas Neue", "Noto Sans", "Noto Sans TC", system-ui, sans-serif;
+  --font-brand: "Noto Sans", "Noto Sans TC", system-ui, sans-serif;
+  --font-ui: "Noto Sans", "Noto Sans TC", system-ui, sans-serif;
+}
+
+:lang(ja) {
+  --font-display: "Bebas Neue", "Noto Sans", "Noto Sans JP", system-ui, sans-serif;
+  --font-brand: "Noto Sans", "Noto Sans JP", system-ui, sans-serif;
+  --font-ui: "Noto Sans", "Noto Sans JP", system-ui, sans-serif;
+}
+
+:lang(ko) {
+  --font-display: "Bebas Neue", "Noto Sans", "Noto Sans KR", system-ui, sans-serif;
+  --font-brand: "Noto Sans", "Noto Sans KR", system-ui, sans-serif;
+  --font-ui: "Noto Sans", "Noto Sans KR", system-ui, sans-serif;
 }
 
 .glass-effect {
@@ -101,17 +172,6 @@ body {
   min-width: 300px;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  .btn-connecting {
-    animation: none !important;
-  }
-  * {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
 }
 
 /* Input validation styles */

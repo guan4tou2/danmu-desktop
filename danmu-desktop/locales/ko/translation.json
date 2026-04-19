@@ -1,4 +1,5 @@
 {
+  "skipToMainContent": "본문으로 건너뛰기",
   "title": "Danmu Desktop",
   "subtitle": "오버레이 구성 및 실행",
   "hostLabel": "서버 주소 (IP 또는 도메인)",
