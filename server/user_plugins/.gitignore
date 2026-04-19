@@ -1,0 +1,5 @@
+# User-added plugins are per-install, not shipped. The directory itself is
+# tracked (via this .gitignore) so Docker bind-mounts + first-run scans work.
+*.py
+!.gitignore
+!README.md

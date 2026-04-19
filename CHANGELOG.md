@@ -9,6 +9,25 @@
 
 ---
 
+## [4.6.3] - 2026-04-20
+
+### 修復 / Fixed
+
+- **SETTINGS_FILE 預設路徑 `/tmp`**：之前預設是 `tempfile.gettempdir()` 解析為 `/tmp`，macOS 重開機會清空（部分 Linux 發行版亦同），非 Docker 直跑的使用者每次開機都會 silently 丟失設定（顏色 / 透明度 / 速度 / 字型）。改為 `server/runtime/settings.json`，與其他 runtime state 同 dir。
+- **插件狀態與使用者插件可持久化**：重構 `PluginManager`，拆開**內建 example 插件**（`server/plugins/`，跟 image 一起升級）與**使用者自訂插件**（`server/user_plugins/`，獨立 mount）。`plugins_state.json` 移到 `server/runtime/`。一次性自動 migration：升級時若偵測到舊位置檔案則複製至新位置。
+
+### 新增 / Added
+
+- **`scripts/backup.sh`**：一鍵備份 runtime / user_plugins / user_fonts / static / .env 成 dated tarball。支援 `BACKUP_SKIP_STATIC=1` 環境變數跳過 bundled static 資源。
+- **`server/user_plugins/`**：使用者自訂插件放這裡；gitignored，可獨立 bind-mount。含 `README.md` 說明 SDK 路徑。
+
+### 改善 / Improved
+
+- `docker-compose.yml` 新增 `./server/user_plugins:/app/server/user_plugins` mount；不再 mount `./server/plugins`（避免 shadow bundled example plugins）。
+- `DEPLOYMENT.md` persistence table 更新為新的雙 plugin dir 架構 + legacy migration 說明。
+
+---
+
 ## [4.6.2] - 2026-04-20
 
 ### 修復 / Fixed

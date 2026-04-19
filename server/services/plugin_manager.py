@@ -22,8 +22,18 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-_PLUGINS_DIR = Path(__file__).parent.parent / "plugins"
-_STATE_FILE = _PLUGINS_DIR / "plugins_state.json"
+_SERVER_DIR = Path(__file__).parent.parent
+# Bundled example plugins shipped with the server image. Read-only intent —
+# upgrades should surface new example plugins without user action.
+_BUNDLED_PLUGINS_DIR = _SERVER_DIR / "plugins"
+# User-added plugins. Gitignored on the host, bind-mountable in Docker so
+# custom plugins survive image upgrades.
+_USER_PLUGINS_DIR = _SERVER_DIR / "user_plugins"
+# Enabled/disabled state lives in the persisted runtime/ dir so it survives
+# container recreate. Legacy path (plugins/plugins_state.json) is migrated
+# on first load — see _load_state().
+_STATE_FILE = _SERVER_DIR / "runtime" / "plugins_state.json"
+_LEGACY_STATE_FILE = _BUNDLED_PLUGINS_DIR / "plugins_state.json"
 _SCAN_INTERVAL = 5.0
 _HOOK_TIMEOUT = 3.0
 
@@ -120,8 +130,25 @@ class PluginManager:
     # ---- persistence -------------------------------------------------------
 
     def _load_state(self) -> Dict[str, bool]:
-        """Load enabled/disabled state from disk."""
+        """Load enabled/disabled state from disk.
+
+        One-time migration: if the legacy state file (next to bundled plugins)
+        exists and the new runtime location does not, copy the legacy content
+        so users upgrading from v4.6.2 or earlier don't lose toggles.
+        """
         try:
+            if not _STATE_FILE.exists() and _LEGACY_STATE_FILE.exists():
+                try:
+                    _STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+                    _STATE_FILE.write_bytes(_LEGACY_STATE_FILE.read_bytes())
+                    logger.info(
+                        "[PluginManager] Migrated legacy state %s -> %s",
+                        _LEGACY_STATE_FILE,
+                        _STATE_FILE,
+                    )
+                except Exception as exc:
+                    logger.warning("[PluginManager] Legacy state migration failed: %s", exc)
+
             if _STATE_FILE.exists():
                 with open(_STATE_FILE, encoding="utf-8") as f:
                     data = json.load(f)
@@ -135,7 +162,7 @@ class PluginManager:
         """Persist enabled/disabled state to disk. Caller must hold _lock."""
         state = {name: entry.enabled for name, entry in self._plugins.items()}
         try:
-            _PLUGINS_DIR.mkdir(exist_ok=True)
+            _STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
             tmp = _STATE_FILE.with_suffix(".tmp")
             with open(tmp, "w", encoding="utf-8") as f:
                 json.dump(state, f, indent=2)
@@ -180,10 +207,22 @@ class PluginManager:
                     return None
         return None
 
+    def _scan_dirs(self, explicit_dir: Optional[str] = None) -> List[Path]:
+        """Return the list of directories to scan for plugin .py files.
+
+        If *explicit_dir* is passed (tests), only that directory is scanned.
+        Otherwise scan bundled + user dirs in that order; a plugin name
+        appearing in both prefers the user version (loaded later overwrites).
+        """
+        if explicit_dir:
+            return [Path(explicit_dir)]
+        return [_BUNDLED_PLUGINS_DIR, _USER_PLUGINS_DIR]
+
     def load_all(self, plugins_dir: Optional[str] = None) -> None:
-        """Scan *plugins_dir* for .py plugin files and load them."""
-        scan_dir = Path(plugins_dir) if plugins_dir else _PLUGINS_DIR
-        scan_dir.mkdir(exist_ok=True)
+        """Scan bundled + user plugin dirs for .py files and load them."""
+        scan_dirs = self._scan_dirs(plugins_dir)
+        for d in scan_dirs:
+            d.mkdir(parents=True, exist_ok=True)
         self._state = self._load_state()
 
         with self._lock:
@@ -191,26 +230,28 @@ class PluginManager:
             self._mtime_map.clear()
             self._path_to_name.clear()
 
-        for py_file in sorted(scan_dir.glob("*.py")):
-            if py_file.name.startswith("_"):
-                continue
-            instance = self._load_plugin_from_file(py_file)
-            if instance is None:
-                continue
-            name = instance.name
-            mtime = py_file.stat().st_mtime
-            enabled = self._state.get(name, True)
-            entry = _PluginEntry(instance, str(py_file), mtime, enabled)
-            with self._lock:
-                self._plugins[name] = entry
-                self._mtime_map[str(py_file)] = mtime
-                self._path_to_name[str(py_file)] = name
-            logger.info(
-                "[PluginManager] Loaded plugin: %s v%s (%s)",
-                name,
-                instance.version,
-                "enabled" if enabled else "disabled",
-            )
+        for scan_dir in scan_dirs:
+            for py_file in sorted(scan_dir.glob("*.py")):
+                if py_file.name.startswith("_"):
+                    continue
+                instance = self._load_plugin_from_file(py_file)
+                if instance is None:
+                    continue
+                name = instance.name
+                mtime = py_file.stat().st_mtime
+                enabled = self._state.get(name, True)
+                entry = _PluginEntry(instance, str(py_file), mtime, enabled)
+                with self._lock:
+                    self._plugins[name] = entry
+                    self._mtime_map[str(py_file)] = mtime
+                    self._path_to_name[str(py_file)] = name
+                logger.info(
+                    "[PluginManager] Loaded plugin: %s v%s (%s) from %s",
+                    name,
+                    instance.version,
+                    "enabled" if enabled else "disabled",
+                    scan_dir.name,
+                )
 
         with self._lock:
             self._last_scan = time.monotonic()
@@ -264,18 +305,20 @@ class PluginManager:
             self._scan_lock.release()
 
     def _hot_scan(self) -> None:
-        """Re-scan plugins directory, reload changed files, remove deleted ones."""
-        scan_dir = _PLUGINS_DIR
-        if not scan_dir.is_dir():
-            return
-
-        current_files = {
-            str(p): p for p in sorted(scan_dir.glob("*.py")) if not p.name.startswith("_")
-        }
+        """Re-scan bundled + user plugin dirs, reload changed, remove deleted."""
+        # Walk bundled first, user second — later entries override earlier
+        # ones when building the shadow map (user > bundled for same name).
+        current_files: Dict[str, Path] = {}
+        for scan_dir in (_BUNDLED_PLUGINS_DIR, _USER_PLUGINS_DIR):
+            if not scan_dir.is_dir():
+                continue
+            for p in sorted(scan_dir.glob("*.py")):
+                if p.name.startswith("_"):
+                    continue
+                current_files[str(p)] = p
 
         with self._lock:
             prev_mtime_map = dict(self._mtime_map)
-            prev_path_to_name = dict(self._path_to_name)  # noqa: F841
 
         changed = False
 
@@ -295,8 +338,26 @@ class PluginManager:
                 continue
 
             name = instance.name
+            is_from_user_dir = str(p).startswith(str(_USER_PLUGINS_DIR))
             with self._lock:
                 old_entry = self._plugins.get(name)
+                # Shadow priority: a reloaded bundled file must NOT overwrite
+                # the active registry entry if that entry is backed by the
+                # user version. We still record new mtime so we don't re-import
+                # every scan.
+                if (
+                    old_entry is not None
+                    and not is_from_user_dir
+                    and str(Path(old_entry.filepath)).startswith(str(_USER_PLUGINS_DIR))
+                ):
+                    self._mtime_map[fpath] = mtime
+                    self._path_to_name[fpath] = name
+                    logger.info(
+                        "[PluginManager] Re-scanned bundled %s but user override is "
+                        "active — keeping user version",
+                        p.name,
+                    )
+                    continue
                 enabled = old_entry.enabled if old_entry else self._state.get(name, True)
                 entry = _PluginEntry(instance, fpath, mtime, enabled)
                 self._plugins[name] = entry
@@ -310,10 +371,55 @@ class PluginManager:
             with self._lock:
                 old_name = self._path_to_name.pop(fpath, None)
                 self._mtime_map.pop(fpath, None)
-                if old_name:
-                    self._plugins.pop(old_name, None)
-                    changed = True
-                    logger.info("[PluginManager] Removed plugin: %s", old_name)
+                if not old_name:
+                    continue
+                current_entry = self._plugins.get(old_name)
+                # Only drop from registry if the deleted file was THE active
+                # source for this plugin name. A deleted bundled file when the
+                # user version is active should be a silent delete.
+                if current_entry is None or current_entry.filepath != fpath:
+                    logger.info(
+                        "[PluginManager] Removed shadowed file %s (plugin %s still "
+                        "served by %s)",
+                        Path(fpath).name,
+                        old_name,
+                        current_entry.filepath if current_entry else "<none>",
+                    )
+                    continue
+
+                self._plugins.pop(old_name, None)
+                changed = True
+                logger.info("[PluginManager] Removed plugin: %s", old_name)
+
+                # Fall back to the bundled version if a user plugin was removed
+                # and a same-named bundled file exists (or vice versa — rare).
+                fallback_path = None
+                for alt_dir in (_USER_PLUGINS_DIR, _BUNDLED_PLUGINS_DIR):
+                    candidate = alt_dir / Path(fpath).name
+                    if str(candidate) != fpath and candidate.is_file():
+                        fallback_path = candidate
+                        break
+                if fallback_path is None:
+                    continue
+            # Load fallback OUTSIDE the lock (_load_plugin_from_file does I/O).
+            fallback_instance = self._load_plugin_from_file(fallback_path)
+            if fallback_instance is None:
+                continue
+            with self._lock:
+                try:
+                    fb_mtime = fallback_path.stat().st_mtime
+                except OSError:
+                    continue
+                enabled = self._state.get(fallback_instance.name, True)
+                fb_entry = _PluginEntry(fallback_instance, str(fallback_path), fb_mtime, enabled)
+                self._plugins[fallback_instance.name] = fb_entry
+                self._mtime_map[str(fallback_path)] = fb_mtime
+                self._path_to_name[str(fallback_path)] = fallback_instance.name
+                logger.info(
+                    "[PluginManager] Fell back to %s for plugin %s",
+                    fallback_path,
+                    fallback_instance.name,
+                )
 
         with self._lock:
             self._last_scan = time.monotonic()

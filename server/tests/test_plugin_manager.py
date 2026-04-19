@@ -242,11 +242,12 @@ class TestReload:
         mgr.load_all(str(plugins_dir))
         assert len(mgr.list_plugins()) == 1
 
-        # Add a second plugin and reload. reload() calls load_all() which
-        # uses the default _PLUGINS_DIR, so monkeypatch it.
+        # Add a second plugin and reload. reload()/scan() iterate bundled +
+        # user dirs; redirect both to the tmp dir and move the state file.
         import server.services.plugin_manager as pm_mod
 
-        monkeypatch.setattr(pm_mod, "_PLUGINS_DIR", plugins_dir)
+        monkeypatch.setattr(pm_mod, "_BUNDLED_PLUGINS_DIR", plugins_dir)
+        monkeypatch.setattr(pm_mod, "_USER_PLUGINS_DIR", plugins_dir)
         monkeypatch.setattr(pm_mod, "_STATE_FILE", plugins_dir / "plugins_state.json")
 
         _write_plugin(plugins_dir, "first.py", _HIGH_PRIORITY_PLUGIN)
@@ -264,7 +265,8 @@ class TestReload:
 
         import server.services.plugin_manager as pm_mod
 
-        monkeypatch.setattr(pm_mod, "_PLUGINS_DIR", plugins_dir)
+        monkeypatch.setattr(pm_mod, "_BUNDLED_PLUGINS_DIR", plugins_dir)
+        monkeypatch.setattr(pm_mod, "_USER_PLUGINS_DIR", plugins_dir)
         monkeypatch.setattr(pm_mod, "_STATE_FILE", plugins_dir / "plugins_state.json")
 
         (plugins_dir / "hello.py").unlink()
