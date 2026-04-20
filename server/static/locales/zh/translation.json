@@ -1,8 +1,6 @@
 {
   "mainTitle": "Danmu Fire",
   "mainSubtitle": "把你的訊息送上螢幕！",
-  "heroKicker": "即時彈幕面板",
-  "heroNote": "調整樣式時可以保持這個面板開著，直接看右側預覽變化。",
   "connecting": "伺服器：連線中...",
   "connected": "伺服器：已連線",
   "disconnected": "伺服器：已斷線",
@@ -13,7 +11,6 @@
   "livePreview": "即時預覽",
   "preview": "預覽",
   "customizeStyle": "自訂樣式",
-  "customizeStyleSubtitle": "不用離開輸入區，就能直接調整即時顯示效果。",
   "coreControlsKicker": "核心控制",
   "coreControlsTitle": "顏色、大小、透明度與速度",
   "secondaryControlsKicker": "識別與佈局",

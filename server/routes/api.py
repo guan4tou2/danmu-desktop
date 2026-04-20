@@ -93,10 +93,14 @@ def _resolve_danmu_style(data):
             data["fontInfo"] = {"name": data["font"]}
     data.pop("font", None)
 
-    font_setting = options.get("FontFamily", [False, "", "", "NotoSansTC"])
+    font_setting = options.get("FontFamily", [True, "", "", "NotoSansTC"])
     chosen_font_name = font_setting[3]
-    if font_setting[0] and data.get("fontInfo", {}).get("name"):
-        chosen_font_name = data["fontInfo"]["name"]
+    # `FireRequestSchema.fontInfo` has `load_default=None`, so the key can be
+    # present-but-None (dict.get's fallback doesn't fire for present keys).
+    # Coalesce None → {} before `.get("name")` to avoid AttributeError.
+    font_info = data.get("fontInfo") or {}
+    if font_setting[0] and font_info.get("name"):
+        chosen_font_name = font_info["name"]
     data["fontInfo"] = build_font_payload(chosen_font_name)
 
     # color：管理員設定存 "#FFFFFF"，overlay 期望不含 # 的 hex

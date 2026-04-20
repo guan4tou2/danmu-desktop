@@ -1,8 +1,6 @@
 {
   "mainTitle": "Danmu Fire",
   "mainSubtitle": "Send your message to the screen!",
-  "heroKicker": "Live danmu composer",
-  "heroNote": "Keep this open while adjusting style and checking the preview.",
   "connecting": "Server: Connecting...",
   "connected": "Server: Connected",
   "disconnected": "Server: Disconnected",
@@ -13,7 +11,6 @@
   "livePreview": "Live Preview",
   "preview": "Preview",
   "customizeStyle": "Customize Style",
-  "customizeStyleSubtitle": "Tune the live message system without leaving the composer.",
   "coreControlsKicker": "Core controls",
   "coreControlsTitle": "Color, size, opacity, and speed",
   "secondaryControlsKicker": "Identity",
