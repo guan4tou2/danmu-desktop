@@ -95,6 +95,28 @@ def create_app(config_class=Config):
     # first-boot seed (see services/ws_auth.py::_seed_from_env).
     log_ws_auth_warnings(app.logger, app.config, env=env)
 
+    # Reverse-proxy awareness: when running behind nginx/Traefik, Flask
+    # must honor X-Forwarded-Proto / X-Forwarded-Host / X-Forwarded-For
+    # so redirects (e.g. GET /admin → /admin/), SESSION_COOKIE_SECURE
+    # gating, and rate-limit IPs reflect the real client instead of the
+    # proxy. Without this, a user hitting `https://example.com/admin`
+    # gets redirected to `http://127.0.0.1/admin/` and lands on whatever
+    # else is listening on port 80 of the host (netbird-caddy, etc.).
+    # Enable only when the operator has opted in via TRUST_X_FORWARDED_FOR
+    # so naive deploys aren't vulnerable to header spoofing from untrusted
+    # clients. setup.sh auto-sets this to true for https / traefik modes.
+    if app.config.get("TRUST_X_FORWARDED_FOR", False):
+        from werkzeug.middleware.proxy_fix import ProxyFix
+
+        app.wsgi_app = ProxyFix(
+            app.wsgi_app,
+            x_for=1,  # trust single hop of X-Forwarded-For
+            x_proto=1,  # trust X-Forwarded-Proto
+            x_host=1,  # trust X-Forwarded-Host
+            x_prefix=0,
+            x_port=0,
+        )
+
     # CORS configuration
     # NOTE: Using wildcard origins with supports_credentials=True is forbidden by the CORS spec.
     # Default: credentials disabled so public endpoints are accessible from any origin safely.

@@ -1,0 +1,54 @@
+# Build context is the repo root (so shared/tokens.css is accessible
+# as the symlink target of server/static/css/tokens.css). This file
+# keeps the context slim — docker daemon gets the bytes it actually
+# needs, not the whole Electron source tree.
+
+# Git + CI
+.git
+.github
+.gitignore
+.pre-commit-config.yaml
+.gitguardian.yaml
+.gstack
+
+# Electron client (only the server image cares about repo root)
+danmu-desktop/
+
+# Docs, audit artifacts — not needed in server image
+docs/
+wiki/
+*.md
+# (server/PLUGIN_GUIDE.md lives under server/ and plugin_manager serves it
+# as a static resource; the COPY server/... in Dockerfile still pulls it.)
+
+# Local-only state + IDE
+.env
+.env.*
+!.env.example
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python artifacts that shouldn't cross the build boundary
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+**/*.so
+**/.Python
+**/*.egg-info/
+**/dist/
+**/build/
+**/.pytest_cache/
+**/.coverage
+**/htmlcov/
+**/.venv/
+**/venv/
+**/ENV/
+**/*.log
+
+# Frontend build tooling caches (the runtime image only needs the
+# pre-built tailwind.css + i18n.js artifacts inside server/static/)
+**/node_modules/

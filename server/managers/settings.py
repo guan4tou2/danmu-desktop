@@ -11,7 +11,10 @@ _DEFAULT_OPTIONS = {
     "Opacity": [True, 0, 100, 70],
     "FontSize": [True, 20, 100, 50],
     "Speed": [True, 1, 10, 4],
-    "FontFamily": [False, "", "", "NotoSansTC"],
+    # User-override on by default, consistent with Nickname / Layout in the
+    # same Identity & Layout grid. The section copy promises font control;
+    # admins who want to lock it can flip this off in the admin panel.
+    "FontFamily": [True, "", "", "NotoSansTC"],
     "Effects": [True, "", "", ""],
 }
 

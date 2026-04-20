@@ -7,6 +7,46 @@
 
 ## [Unreleased]
 
+## [4.8.3] - 2026-04-20
+
+### 修復 / Fixed
+
+- **Docker image 缺 `shared/tokens.css` → 所有 CSS 變數失效 (CRITICAL)**：
+  `server/static/css/tokens.css` 是 symlink 指向 `../../../shared/tokens.css`。
+  `docker-compose.yml` + `docker-build.yml` build context 是 `./server`，
+  symlink 的 target 在 context 外，docker COPY 把 symlink 帶進 image 但
+  target 檔案不存在。結果：`@import url("tokens.css")` 載入 404、
+  `var(--radius-pill)` / `var(--color-success)` / 全部 tokens 變 `initial`。
+  使用者可見症狀：hero status pill 不圓（看起來方角）、status dot 綠/紅消失、
+  其他依賴 CSS 變數的元件 silently broken。
+
+  修法：build context 改 repo root，Dockerfile COPY paths 加 `server/` prefix，
+  明確 `COPY shared/ /app/shared/` 讓 symlink target 進 image。新增 root
+  `.dockerignore` 排除 `danmu-desktop/` / docs / node_modules / pycache
+  等，避免 context 變大影響 build 速度。
+
+### 技術細節 / Technical
+
+- **`docker-compose.yml`** `build.context` `./server` → `.`，dockerfile path
+  改 `server/Dockerfile`。同樣改動套用到 `.github/workflows/docker-build.yml`
+  的兩個 build step（PR + push to main）。
+- **`server/Dockerfile`** 所有 `COPY <relpath>` 前綴 `server/`；新增
+  `COPY shared/ /app/shared/` 在 server code 之前，確保 symlink 解析時
+  target 已存在。
+- **新增 root `.dockerignore`**：排除 `.git` / `.github` / `danmu-desktop/`
+  / `docs/` / `*.md` / node_modules / python cache 等。
+- **為何不用其他修法？**
+  - Option A（把 tokens.css 變成真實檔案、刪 symlink）：破壞 MEMORY.md 記的
+    "single source of truth" 架構，未來 Electron / 其他 consumer 不好共享。
+  - Option B（Dockerfile 內 inline content）：不可維護，每次 tokens.css 改
+    都要改 Dockerfile。
+  - Option C（build step resolve symlink）：引入 build 時副作用，污染 local
+    repo 狀態。
+  選擇 context 改 root 的代價僅是 docker-compose / CI 各一行改動，換來乾淨的
+  monorepo-style build。
+
+---
+
 ## [4.8.2] - 2026-04-20
 
 Deployment-papercut release — all four fixes were triggered by an actual
