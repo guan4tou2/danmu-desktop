@@ -178,17 +178,21 @@ _init() {
   local http_port="80" https_port="443"
 
   # Validate a single port value: numeric, 1-65535, and optionally ensure
-  # it's not already in use. Returns 0 if OK, 1 otherwise (prints the reason).
+  # it's not already in use. Returns 0 if OK, 1 otherwise (prints reason).
+  # Forces decimal interpretation via $((10#$p)) so inputs like "080" are
+  # 80, not an octal-parse crash under `set -e`.
   _valid_port() {
     local p="$1" label="$2" check_in_use="${3:-true}"
     case "$p" in
       ''|*[!0-9]*) _error "$label is not a number: '$p'"; return 1 ;;
     esac
-    if [ "$p" -lt 1 ] || [ "$p" -gt 65535 ]; then
+    local n
+    n=$((10#$p))
+    if [ "$n" -lt 1 ] || [ "$n" -gt 65535 ]; then
       _error "$label out of range 1-65535: '$p'"; return 1
     fi
-    if [ "$check_in_use" = "true" ] && ss -ltn 2>/dev/null | awk '{print $4}' | grep -Eq ":$p$"; then
-      _warn "$label $p is already in use on this host."
+    if [ "$check_in_use" = "true" ] && ss -ltn 2>/dev/null | awk '{print $4}' | grep -Eq ":$n$"; then
+      _error "$label $n is already in use on this host."
       return 1
     fi
     return 0
@@ -204,20 +208,26 @@ _init() {
       https_port="4000"
     fi
     if [ "$_PROFILE" = "https" ]; then
-      # Loop until user gives valid, non-colliding ports.
+      # Loop until user gives valid, non-colliding ports. Important: keep the
+      # last-known-good defaults intact on retry, and validate into temp vars
+      # so a bad typo doesn't poison the "press Enter to accept" default next
+      # round. Also: if HTTPS fails validation, don't force re-typing HTTP.
       while true; do
-        read -rp "HTTP port [${http_port}]: " _hp
-        [ -n "${_hp:-}" ] && http_port="$_hp"
-        _valid_port "$http_port" "HTTP port" true || continue
+        local _hp_in _sp_in _hp_val _sp_val
+        read -rp "HTTP port [${http_port}]: " _hp_in
+        _hp_val="${_hp_in:-$http_port}"
+        _valid_port "$_hp_val" "HTTP port" true || continue
 
-        read -rp "HTTPS port [${https_port}]: " _sp
-        [ -n "${_sp:-}" ] && https_port="$_sp"
-        _valid_port "$https_port" "HTTPS port" true || continue
+        read -rp "HTTPS port [${https_port}]: " _sp_in
+        _sp_val="${_sp_in:-$https_port}"
+        _valid_port "$_sp_val" "HTTPS port" true || continue
 
-        if [ "$http_port" = "$https_port" ]; then
-          _error "HTTP and HTTPS ports cannot be the same ($http_port). Pick different ports."
+        if [ "$_hp_val" = "$_sp_val" ]; then
+          _error "HTTP and HTTPS ports cannot be the same ($_hp_val). Pick different ports."
           continue
         fi
+        http_port="$_hp_val"
+        https_port="$_sp_val"
         break
       done
     fi
