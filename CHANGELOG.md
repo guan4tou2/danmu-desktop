@@ -9,6 +9,19 @@
 
 ---
 
+## [4.6.4] - 2026-04-20
+
+### 新增 / Added
+
+- **`scripts/bump-version.sh`**：一鍵同步更新 `danmu-desktop/package.json`、`server/config.py`、`CHANGELOG.md` 三處版本號。支援 `DRY_RUN=1` 預覽、版本格式驗證、自動 section 插入。
+- **`setup.sh gen-secret`**：新指令，在 `.env` 遺失 `SECRET_KEY` 時一鍵產生 256-bit hex key 並寫入。原本 `setup.sh check` 只會回報錯誤沒指示如何修，現在錯誤訊息直接提示修復指令。
+
+### 改善 / Improved
+
+- `setup.sh check` 偵測 production 無 `SECRET_KEY` 時，錯誤後附上 `./setup.sh gen-secret` 與 `./setup.sh init` 兩種修復路徑。
+
+---
+
 ## [4.6.3] - 2026-04-20
 
 ### 修復 / Fixed

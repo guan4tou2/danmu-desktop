@@ -167,3 +167,6 @@ server/webhooks.json
 # local MCP server config
 .mcp.json
 .worktrees/
+
+# Retro snapshots (local history, not shipped)
+.context/
