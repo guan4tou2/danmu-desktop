@@ -16,7 +16,7 @@
   / `#ffffff`（toggle handle + effect-btn active text）。新增兩個 token：
   - `--color-accent-light: #22d3ee`（cyan-400，比 `--color-accent` #06b6d4 亮）
   - `--color-white: #ffffff`（rare-use 絕對白 — checkbox handle 之類）
-  
+
   現在 `style.css` **零 hardcoded hex**，所有顏色走 token，方便未來 theme
   重構或 dark/light 模式切換。Preview 確認 tokens 正確 resolve。
 
