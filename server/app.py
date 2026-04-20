@@ -110,9 +110,9 @@ def create_app(config_class=Config):
 
         app.wsgi_app = ProxyFix(
             app.wsgi_app,
-            x_for=1,      # trust single hop of X-Forwarded-For
-            x_proto=1,    # trust X-Forwarded-Proto
-            x_host=1,     # trust X-Forwarded-Host
+            x_for=1,  # trust single hop of X-Forwarded-For
+            x_proto=1,  # trust X-Forwarded-Proto
+            x_host=1,  # trust X-Forwarded-Host
             x_prefix=0,
             x_port=0,
         )
