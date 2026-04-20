@@ -146,9 +146,7 @@ def ws_server_port(tmp_path_factory):
     # primes the cache. Per-test `_isolate_ws_auth` will redirect again to
     # a per-test tmp and re-seed as disabled, which is fine — the cache is
     # reset with `_reset_for_tests()` before each test.
-    ws_auth_mod._STATE_FILE = (
-        tmp_path_factory.mktemp("ws_auth_session") / "ws_auth.json"
-    )
+    ws_auth_mod._STATE_FILE = tmp_path_factory.mktemp("ws_auth_session") / "ws_auth.json"
     ws_auth_mod._reset_for_tests()
     ws_auth_mod.set_state(require_token=False, token="")
 
