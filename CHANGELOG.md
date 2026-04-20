@@ -7,6 +7,23 @@
 
 ## [Unreleased]
 
+## [4.8.5] - 2026-04-20
+
+### 修復 / Fixed
+
+- **Admin dashboard i18n 漏譯 (~35 條)**：v4.6.0 的 dashboard IA 重整把整個
+  hero/nav/section 骨架換成英文寫死的字串，從沒 i18n 化過。切到中文 / 日文 /
+  韓文時，admin 頁面 hero kicker、summary labels、nav chip 群組標題、section
+  kickers、asset dashboard 卡片、sidebar workflow 連結等等都還是英文。新增
+  35 個 translation key，4 語系齊備（en/zh/ja/ko），wrap 所有 hardcoded 字串
+  為 `data-i18n` + `ServerI18n.t()` template 對應。
+
+  影響：使用者切 ZH/JA/KO 時 admin 頁面現在全中/日/韓文，不再中英混雜。
+  737 tests pass；Phase 1 完成 admin 頁面 visible i18n，剩一些低頻 sidebar
+  描述段落以 TODO 保留（v4.9.0 一併處理）。
+
+---
+
 ## [4.8.4] - 2026-04-20
 
 ### 修復 / Fixed
