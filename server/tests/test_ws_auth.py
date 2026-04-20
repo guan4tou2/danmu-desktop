@@ -23,7 +23,9 @@ from server.services import ws_auth  # ty: ignore[unresolved-import]
 
 @pytest.mark.ws_auth_raw_seed
 def test_get_state_seeds_secure_by_default_when_env_empty(monkeypatch):
-    """Fresh install with no env vars → secure-on with generated token."""
+    """Fresh install — no env vars set at all → secure-on with generated token."""
+    monkeypatch.delenv("WS_REQUIRE_TOKEN", raising=False)
+    monkeypatch.delenv("WS_AUTH_TOKEN", raising=False)
     monkeypatch.setattr(Config, "WS_REQUIRE_TOKEN", False)
     monkeypatch.setattr(Config, "WS_AUTH_TOKEN", "")
     state = ws_auth.get_state()
@@ -32,18 +34,31 @@ def test_get_state_seeds_secure_by_default_when_env_empty(monkeypatch):
 
 
 @pytest.mark.ws_auth_raw_seed
-def test_get_state_preserves_env_opt_out(monkeypatch):
-    """User explicitly set WS_REQUIRE_TOKEN=false AND token → honour it.
+def test_get_state_respects_explicit_env_disable(monkeypatch):
+    """User explicitly set WS_REQUIRE_TOKEN=false in env → honour it.
 
-    This path is the v4.7 upgrade case: an existing deploy that
-    intentionally ran without token auth shouldn't silently flip closed.
+    v4.7 upgrade case + CI smoke test case: an existing deploy that
+    intentionally ran with token auth disabled shouldn't silently flip
+    closed, and CI pipelines passing `-e WS_REQUIRE_TOKEN=false` need the
+    smoke test to connect without a token.
     """
+    monkeypatch.setenv("WS_REQUIRE_TOKEN", "false")
+    monkeypatch.delenv("WS_AUTH_TOKEN", raising=False)
+    monkeypatch.setattr(Config, "WS_REQUIRE_TOKEN", False)
+    monkeypatch.setattr(Config, "WS_AUTH_TOKEN", "")
+    state = ws_auth.get_state()
+    assert state["require_token"] is False
+    assert state["token"] == ""
+
+
+@pytest.mark.ws_auth_raw_seed
+def test_get_state_preserves_env_opt_out_with_token(monkeypatch):
+    """Explicit false + token value set → honour the disabled posture."""
+    monkeypatch.setenv("WS_REQUIRE_TOKEN", "false")
+    monkeypatch.setenv("WS_AUTH_TOKEN", "legacy-token-user-had-set")
     monkeypatch.setattr(Config, "WS_REQUIRE_TOKEN", False)
     monkeypatch.setattr(Config, "WS_AUTH_TOKEN", "legacy-token-user-had-set")
     state = ws_auth.get_state()
-    # WS_REQUIRE_TOKEN=false means auth not required — we should respect
-    # that even if the user populated WS_AUTH_TOKEN (a common config
-    # pattern for "enable via admin later").
     assert state["require_token"] is False
     assert state["token"] == "legacy-token-user-had-set"
 
@@ -51,6 +66,8 @@ def test_get_state_preserves_env_opt_out(monkeypatch):
 @pytest.mark.ws_auth_raw_seed
 def test_get_state_generates_token_when_require_but_no_token(monkeypatch, caplog):
     """WS_REQUIRE_TOKEN=true but WS_AUTH_TOKEN empty → generate + warn."""
+    monkeypatch.setenv("WS_REQUIRE_TOKEN", "true")
+    monkeypatch.delenv("WS_AUTH_TOKEN", raising=False)
     monkeypatch.setattr(Config, "WS_REQUIRE_TOKEN", True)
     monkeypatch.setattr(Config, "WS_AUTH_TOKEN", "")
     import logging
@@ -68,6 +85,8 @@ def test_get_state_generates_token_when_require_but_no_token(monkeypatch, caplog
 @pytest.mark.ws_auth_raw_seed
 def test_get_state_caches_after_first_load(monkeypatch):
     """Calling get_state twice doesn't re-read the file (in-memory cache)."""
+    monkeypatch.setenv("WS_REQUIRE_TOKEN", "true")
+    monkeypatch.setenv("WS_AUTH_TOKEN", "first-call-token")
     monkeypatch.setattr(Config, "WS_REQUIRE_TOKEN", True)
     monkeypatch.setattr(Config, "WS_AUTH_TOKEN", "first-call-token")
 
@@ -131,6 +150,8 @@ def test_rotate_token_even_when_disabled():
 @pytest.mark.ws_auth_raw_seed
 def test_malformed_json_recovers_by_reseeding(monkeypatch):
     """A corrupt runtime file should not crash boot — re-seed instead."""
+    monkeypatch.delenv("WS_REQUIRE_TOKEN", raising=False)
+    monkeypatch.delenv("WS_AUTH_TOKEN", raising=False)
     monkeypatch.setattr(Config, "WS_REQUIRE_TOKEN", False)
     monkeypatch.setattr(Config, "WS_AUTH_TOKEN", "")
     ws_auth._STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -144,6 +165,8 @@ def test_malformed_json_recovers_by_reseeding(monkeypatch):
 
 @pytest.mark.ws_auth_raw_seed
 def test_missing_keys_recovers_by_reseeding(monkeypatch):
+    monkeypatch.delenv("WS_REQUIRE_TOKEN", raising=False)
+    monkeypatch.delenv("WS_AUTH_TOKEN", raising=False)
     monkeypatch.setattr(Config, "WS_REQUIRE_TOKEN", False)
     monkeypatch.setattr(Config, "WS_AUTH_TOKEN", "")
     ws_auth._STATE_FILE.parent.mkdir(parents=True, exist_ok=True)

@@ -29,6 +29,7 @@ load). Call `set_state()` from the admin route after validating input.
 
 import json
 import logging
+import os
 import secrets
 import threading
 from pathlib import Path
@@ -57,18 +58,23 @@ def _write_state(state: Dict) -> None:
 def _seed_from_env() -> Dict:
     """Initial state when runtime file doesn't exist yet.
 
-    v4.8 policy: default require_token=True so new deploys are secure by
-    default (matches user's original ask "預設開啟"). We respect an explicit
-    WS_REQUIRE_TOKEN=false in env for backward compat with existing
-    v4.7 deployments — those users opted in to open 4001 and we shouldn't
-    silently flip them closed on upgrade.
+    v4.8 policy: for truly fresh installs (no WS_REQUIRE_TOKEN env var set
+    at all AND no WS_AUTH_TOKEN set), default to require_token=True with a
+    generated token — matches the user's original ask "預設開啟".
+
+    When the env var is **explicitly** set (even to "false"), respect it.
+    That's the v4.7 upgrade case: an existing deploy that intentionally
+    ran with WS_REQUIRE_TOKEN=false shouldn't silently flip closed on
+    upgrade, and CI smoke tests that need passwordless WS should work.
     """
+    raw_require = os.environ.get("WS_REQUIRE_TOKEN")
+    raw_token = os.environ.get("WS_AUTH_TOKEN")
+
     require = bool(Config.WS_REQUIRE_TOKEN)
     token = str(Config.WS_AUTH_TOKEN or "")
-    # Treat env as "unset" when WS_REQUIRE_TOKEN is literally the default
-    # "false" AND no WS_AUTH_TOKEN was provided — that's a fresh install,
-    # so default to secure-on.
-    if not require and not token:
+
+    # Fresh install: no env vars set at all → secure-by-default.
+    if raw_require is None and not raw_token:
         require = True
         token = secrets.token_urlsafe(24)
     elif require and not token:
