@@ -7,6 +7,21 @@
 
 ## [Unreleased]
 
+## [4.8.7] - 2026-04-20
+
+### 改善 / Improved
+
+- **補齊 `style.css` 剩餘 3 處 hardcoded hex**：v4.6/v4.8.0 的 design-token
+  retrofit 留了 3 處沒進 token — `#22d3ee`（stats-chart hover）、兩處 `#fff`
+  / `#ffffff`（toggle handle + effect-btn active text）。新增兩個 token：
+  - `--color-accent-light: #22d3ee`（cyan-400，比 `--color-accent` #06b6d4 亮）
+  - `--color-white: #ffffff`（rare-use 絕對白 — checkbox handle 之類）
+
+  現在 `style.css` **零 hardcoded hex**（RGBA 半透明值保留，仍搭配相同色系），
+  為未來 theme 重構 / dark-light 模式打底。Preview 確認 tokens 正確 resolve。
+
+---
+
 ## [4.8.6] - 2026-04-20
 
 ### 修復 / Fixed
