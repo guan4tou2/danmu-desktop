@@ -123,15 +123,34 @@ def wait_for_ws_count(minimum: int = 1, timeout: float = 2.0) -> bool:
 
 
 @pytest.fixture(scope="session")
-def ws_server_port():
-    """啟動不需 token 的真實 WS 伺服器（整個 session 共用一個）"""
+def ws_server_port(tmp_path_factory):
+    """啟動不需 token 的真實 WS 伺服器（整個 session 共用一個）.
+
+    v4.8+: `run_ws_server()` primes `ws_auth.get_state()` at startup. This
+    fixture runs before any per-test `_isolate_ws_auth`, so we need to
+    redirect `_STATE_FILE` to a session-scoped tmp path here too — else the
+    first call to `ws_auth.get_state()` (at WS server start) would seed/
+    touch the real `server/runtime/ws_auth.json`.
+    """
+    from server.services import ws_auth as ws_auth_mod
+
     original_require = Config.WS_REQUIRE_TOKEN
     original_token = Config.WS_AUTH_TOKEN
     original_origins = Config.WS_ALLOWED_ORIGINS
+    original_ws_auth_file = ws_auth_mod._STATE_FILE
 
     Config.WS_REQUIRE_TOKEN = False
     Config.WS_AUTH_TOKEN = ""
     Config.WS_ALLOWED_ORIGINS = []
+    # Point to a session-tmp path + seed as disabled before run_ws_server()
+    # primes the cache. Per-test `_isolate_ws_auth` will redirect again to
+    # a per-test tmp and re-seed as disabled, which is fine — the cache is
+    # reset with `_reset_for_tests()` before each test.
+    ws_auth_mod._STATE_FILE = (
+        tmp_path_factory.mktemp("ws_auth_session") / "ws_auth.json"
+    )
+    ws_auth_mod._reset_for_tests()
+    ws_auth_mod.set_state(require_token=False, token="")
 
     port = find_free_port()
     thread = threading.Thread(
@@ -149,6 +168,8 @@ def ws_server_port():
     Config.WS_REQUIRE_TOKEN = original_require
     Config.WS_AUTH_TOKEN = original_token
     Config.WS_ALLOWED_ORIGINS = original_origins
+    ws_auth_mod._STATE_FILE = original_ws_auth_file
+    ws_auth_mod._reset_for_tests()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
