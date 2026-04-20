@@ -7,6 +7,28 @@
 
 ## [Unreleased]
 
+## [4.8.4] - 2026-04-20
+
+### 修復 / Fixed
+
+- **nginx `Host: $host` 丟 port → Flask redirect 走到錯 port (CRITICAL)**：
+  v4.8.3 的 ProxyFix 讓 `/admin → /admin/` redirect 走 HTTPS 了，但 nginx
+  用 `proxy_set_header Host $host;` 把 port **剝掉**（`$host` 只有 hostname，
+  不含 port）。Flask 看到 `Host: 138.2.59.206`，redirect 預設 HTTPS →
+  `https://138.2.59.206/admin/` → 443 → 在 shared-host 環境（例如 Oracle
+  Cloud 同 VM 跑 netbird-caddy 或其他 web service 在 443）會被別的服務接走。
+
+  修法：兩個 nginx config（`nginx-https.conf` + `nginx.conf`）把
+  `proxy_set_header Host $host;` 改成 `proxy_set_header Host $http_host;`，
+  `$http_host` 包含 client 實際連的 port。額外 `X-Forwarded-Host $http_host`
+  讓 ProxyFix 有精確 fallback。
+
+  使用者症狀：v4.8.3 部署後 `https://<ip>:4000/admin` 在 port-only
+  deployment（沒 domain，走非標準 port）會被同機 443 服務攔截。改完
+  `curl -L https://<ip>:4000/admin` 會正確落在 `https://<ip>:4000/admin/`。
+
+---
+
 ## [4.8.3] - 2026-04-20
 
 ### 修復 / Fixed
