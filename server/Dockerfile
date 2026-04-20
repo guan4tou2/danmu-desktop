@@ -1,4 +1,11 @@
 # syntax=docker/dockerfile:1.6
+#
+# Build context: repository root (NOT server/).
+# We need access to ../shared/ because server/static/css/tokens.css is a
+# symlink to shared/tokens.css — a `./server` context drops the symlink
+# target and style.css fails to resolve `var(--radius-pill)` etc, causing
+# silent UI regressions (pill chips render as rectangles, status dots
+# disappear because --color-success is undefined).
 
 # ── Stage 1: dependency builder ──────────────────────────────────────────────
 FROM python:3.11-slim AS builder
@@ -9,7 +16,7 @@ WORKDIR /app/server
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Install only production dependencies into an isolated venv
-COPY pyproject.toml uv.lock ./
+COPY server/pyproject.toml server/uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
@@ -33,20 +40,25 @@ ENV VIRTUAL_ENV=/app/server/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 ENV PYTHONPATH=/app
 
+# Shared resources consumed by both server and (eventually) other
+# packages. server/static/css/tokens.css is a symlink pointing here —
+# copy shared/ BEFORE the server code so the symlink resolves.
+COPY shared/ /app/shared/
+
 # Copy application code — exclude tests, dev configs, and build artifacts
-COPY app.py config.py extensions.py logging_config.py \
-     startup_warnings.py state.py utils.py ws_app.py ./
-COPY effects/ effects/
-COPY managers/ managers/
-COPY routes/ routes/
-COPY services/ services/
-COPY static/ static/
-COPY templates/ templates/
-COPY themes/ themes/
-COPY ws/ ws/
+COPY server/app.py server/config.py server/extensions.py server/logging_config.py \
+     server/startup_warnings.py server/state.py server/utils.py server/ws_app.py ./
+COPY server/effects/ effects/
+COPY server/managers/ managers/
+COPY server/routes/ routes/
+COPY server/services/ services/
+COPY server/static/ static/
+COPY server/templates/ templates/
+COPY server/themes/ themes/
+COPY server/ws/ ws/
 
 # Copy entrypoint
-COPY entrypoint.sh /entrypoint.sh
+COPY server/entrypoint.sh /entrypoint.sh
 RUN chmod 755 /entrypoint.sh
 
 # Create runtime directories and non-root user

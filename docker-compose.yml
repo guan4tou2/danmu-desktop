@@ -2,8 +2,12 @@ services:
   server:
     image: ${DANMU_IMAGE:-danmu-server:local}
     build:
-      context: ./server
-      dockerfile: Dockerfile
+      # Context is the repo root so the `shared/` directory (target of the
+      # server/static/css/tokens.css symlink) is inside the build context.
+      # A `./server` context silently drops the symlink target, breaking
+      # all CSS custom properties at runtime.
+      context: .
+      dockerfile: server/Dockerfile
     container_name: danmu-fire
     expose:
       - "4000"
