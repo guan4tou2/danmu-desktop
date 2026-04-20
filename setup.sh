@@ -126,16 +126,19 @@ _init() {
     _REDIS=true
   fi
 
-  # Desktop client (exposes WS port 4001; token auth is optional)
+  # Desktop client (exposes WS port 4001; token auth is optional).
+  # Default Y because running this server without the overlay WS port is
+  # rare — almost everyone wants the Electron overlay to connect.
   local _desktop=false _ws_token_required=false ws_token=""
-  read -rp "Expose WebSocket port 4001 for Danmu Desktop client? [y/N]: " use_desktop
-  if [ "${use_desktop,,}" = "y" ]; then
+  read -rp "Expose WebSocket port 4001 for Danmu Desktop client? [Y/n]: " use_desktop
+  if [ "${use_desktop,,}" != "n" ]; then
     _desktop=true
     echo ""
-    _info "Token auth protects port 4001 from anyone who can reach it on the network."
-    _info "Skip it only if the port is on a trusted LAN or behind a firewall."
-    read -rp "Require a shared token for the WS port? [Y/n]: " use_token
-    if [ "${use_token,,}" != "n" ]; then
+    _info "Token auth protects port 4001 from anyone on the network connecting."
+    _info "Default N assumes LAN-only / firewall-protected. Enable if the VPS"
+    _info "exposes 4001 to the public internet without a firewall rule."
+    read -rp "Require a shared token for the WS port? [y/N]: " use_token
+    if [ "${use_token,,}" = "y" ]; then
       _ws_token_required=true
       ws_token=$(python3 -c 'import secrets; print(secrets.token_hex(32))' 2>/dev/null || openssl rand -hex 32)
     fi
@@ -173,6 +176,24 @@ _init() {
 
   # Port selection for https/traefik (auto-detect conflicts on 80/443)
   local http_port="80" https_port="443"
+
+  # Validate a single port value: numeric, 1-65535, and optionally ensure
+  # it's not already in use. Returns 0 if OK, 1 otherwise (prints the reason).
+  _valid_port() {
+    local p="$1" label="$2" check_in_use="${3:-true}"
+    case "$p" in
+      ''|*[!0-9]*) _error "$label is not a number: '$p'"; return 1 ;;
+    esac
+    if [ "$p" -lt 1 ] || [ "$p" -gt 65535 ]; then
+      _error "$label out of range 1-65535: '$p'"; return 1
+    fi
+    if [ "$check_in_use" = "true" ] && ss -ltn 2>/dev/null | awk '{print $4}' | grep -Eq ":$p$"; then
+      _warn "$label $p is already in use on this host."
+      return 1
+    fi
+    return 0
+  }
+
   if [ "$_PROFILE" = "https" ] || [ "$_PROFILE" = "traefik" ]; then
     local conflict=""
     if ss -ltn 2>/dev/null | awk '{print $4}' | grep -Eq ':80$';  then conflict="${conflict}80 "; fi
@@ -183,10 +204,22 @@ _init() {
       https_port="4000"
     fi
     if [ "$_PROFILE" = "https" ]; then
-      read -rp "HTTP port [${http_port}]: " _hp
-      [ -n "${_hp:-}" ] && http_port="$_hp"
-      read -rp "HTTPS port [${https_port}]: " _sp
-      [ -n "${_sp:-}" ] && https_port="$_sp"
+      # Loop until user gives valid, non-colliding ports.
+      while true; do
+        read -rp "HTTP port [${http_port}]: " _hp
+        [ -n "${_hp:-}" ] && http_port="$_hp"
+        _valid_port "$http_port" "HTTP port" true || continue
+
+        read -rp "HTTPS port [${https_port}]: " _sp
+        [ -n "${_sp:-}" ] && https_port="$_sp"
+        _valid_port "$https_port" "HTTPS port" true || continue
+
+        if [ "$http_port" = "$https_port" ]; then
+          _error "HTTP and HTTPS ports cannot be the same ($http_port). Pick different ports."
+          continue
+        fi
+        break
+      done
     fi
   fi
 

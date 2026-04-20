@@ -7,6 +7,21 @@
 
 ## [Unreleased]
 
+## [4.7.1] - 2026-04-20
+
+### 修復 / Fixed
+
+- **`setup.sh init` port 防呆**：HTTPS mode 分開輸入 HTTP_PORT 與 HTTPS_PORT 時，之前沒檢查兩者是否相同，也沒驗證是否為有效 port 或是否已被佔用。新增 `_valid_port` 驗證迴圈：非數字、超出 1-65535、已被佔用、兩 port 相同都會提示並重問。
+
+### 改善 / Improved
+
+- **`setup.sh init` WS 預設調整**：
+  - `Expose WebSocket port 4001 for Danmu Desktop client?` 預設從 N 改為 **Y**（安裝 server 的主要原因就是要跑 overlay，不開等於沒用）
+  - `Require a shared token for the WS port?` 預設保持 N（LAN / firewall 保護環境不需要；公網 VPS 可手動啟用）
+- **統一安裝文件**：`README.md` 與 `DEPLOYMENT.md` 都把 `./setup.sh init` 列為 canonical 安裝路徑，不再並列多條 manual 流程。降低新用戶決策負擔。
+
+---
+
 ## [4.7.0] - 2026-04-20
 
 ### 新增 / Added
