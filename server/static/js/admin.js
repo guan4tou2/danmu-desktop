@@ -367,14 +367,14 @@ document.addEventListener("DOMContentLoaded", () => {
               <h4 class="history-dashboard-title">${ServerI18n.t("hourlyDistribution")}</h4>
               <span class="history-dashboard-caption">${hours}h window</span>
             </div>
-            <div class="stats-chart">${chartBars || '<span class="text-xs text-slate-400">${ServerI18n.t("noData")}</span>'}</div>
+            <div class="stats-chart">${chartBars || `<span class="text-xs text-slate-400">${ServerI18n.t("noData")}</span>`}</div>
           </div>
           <div class="history-dashboard-card history-dashboard-card--table">
             <div class="history-dashboard-title-row">
               <h4 class="history-dashboard-title">${ServerI18n.t("topTexts")}</h4>
               <span class="history-dashboard-caption">Top 10</span>
             </div>
-            ${topTexts.length ? `<table class="w-full text-xs"><tbody>${topTextRows}</tbody></table>` : '<span class="text-xs text-slate-400">${ServerI18n.t("noData")}</span>'}
+            ${topTexts.length ? `<table class="w-full text-xs"><tbody>${topTextRows}</tbody></table>` : `<span class="text-xs text-slate-400">${ServerI18n.t("noData")}</span>`}
           </div>
         </div>`;
     } catch (err) {
