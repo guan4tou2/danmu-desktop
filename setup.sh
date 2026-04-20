@@ -48,6 +48,8 @@ _validate_env() {
   local env_val="${ENV:-production}"
   if [ "$env_val" = "production" ] && [ -z "${SECRET_KEY:-}" ]; then
     _error "SECRET_KEY must be set when ENV=production"
+    _info "  fix: ./setup.sh gen-secret  (generates and writes SECRET_KEY into .env)"
+    _info "  or:  ./setup.sh init        (full interactive wizard)"
     errors=$((errors+1))
   fi
 
@@ -391,14 +393,42 @@ _init() {
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 
+_gen_secret() {
+  local env_file="${1:-.env}"
+  if [ ! -f "$env_file" ]; then
+    _error "$env_file not found. Run './setup.sh init' first or 'cp .env.example $env_file'."
+    exit 1
+  fi
+
+  local key
+  key=$(python3 -c 'import secrets; print(secrets.token_hex(32))' 2>/dev/null || openssl rand -hex 32)
+  if [ -z "$key" ]; then
+    _error "Neither python3 nor openssl available — cannot generate SECRET_KEY."
+    exit 1
+  fi
+
+  if grep -Eq "^[[:space:]]*#?[[:space:]]*SECRET_KEY=" "$env_file"; then
+    local esc
+    esc=$(printf '%s' "$key" | sed -e 's/[\/&|]/\\&/g')
+    sed -i.bak -E "s|^[[:space:]]*#?[[:space:]]*SECRET_KEY=.*|SECRET_KEY=${esc}|" "$env_file" && rm -f "${env_file}.bak"
+  else
+    printf 'SECRET_KEY=%s\n' "$key" >> "$env_file"
+  fi
+
+  _ok "Wrote SECRET_KEY into $env_file (${#key}-char hex, $((${#key} * 4)) bits)."
+  _info "Sessions and signed tokens now have a stable key across restarts."
+}
+
 case "${1:-}" in
-  init)  _init "${2:-}" ;;
-  check) _PROFILE="${2:-}" _validate_env "${3:-.env}" ;;
+  init)       _init "${2:-}" ;;
+  check)      _PROFILE="${2:-}" _validate_env "${3:-.env}" ;;
+  gen-secret) _gen_secret "${2:-.env}" ;;
   *)
     echo "Usage:"
     echo "  ./setup.sh init              Interactive wizard → writes .env"
     echo "  ./setup.sh init --advanced   Wizard + rate limit / log / resource prompts"
     echo "  ./setup.sh check [profile]   Validate existing .env"
+    echo "  ./setup.sh gen-secret [file] Generate & write SECRET_KEY into .env"
     exit 1
     ;;
 esac
