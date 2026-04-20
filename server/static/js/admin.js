@@ -1446,8 +1446,11 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // Toggle Checkbox
+    // Toggle Checkbox (generic settings toggles — skip elements without a
+    // `name` attribute so bespoke .toggle-checkbox widgets like wsAuthRequireToggle
+    // don't accidentally POST to /admin/Set with an empty key).
     document.querySelectorAll(".toggle-checkbox").forEach((toggle) => {
+      if (!toggle.name) return;
       toggle.addEventListener("change", async function () {
         const key = this.name;
         const isChecked = this.checked;
@@ -1544,12 +1547,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const copyBtn = document.getElementById("wsAuthCopyBtn");
       if (!toggle || !tokenInput || !saveBtn || !rotateBtn || !copyBtn) return;
 
-      // The toggle lives inside the security details panel, but we don't
-      // want the generic `.toggle-checkbox` auto-handler (which POSTs to
-      // /admin/Set) to fire for this. Remove the class so addEventListeners's
-      // global querySelectorAll(".toggle-checkbox") skips it, since we
-      // already flip classList on `toggle` above.
-      toggle.classList.remove("toggle-checkbox");
+      // The generic `.toggle-checkbox` handler (in addEventListeners above)
+      // skips elements without a `name` attribute, so this widget is not
+      // bound to the /admin/Set auto-POST path. Our Save button is the only
+      // thing that writes to the server.
 
       function applyState(state) {
         toggle.checked = !!state.require_token;

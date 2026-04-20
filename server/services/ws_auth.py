@@ -27,6 +27,7 @@ Call `get_state()` from hot paths — it's cheap (dict lookup after first
 load). Call `set_state()` from the admin route after validating input.
 """
 
+import errno
 import json
 import logging
 import os
@@ -47,12 +48,43 @@ _state: Optional[Dict] = None  # cached in-memory snapshot; load on first read
 
 
 def _write_state(state: Dict) -> None:
-    """Atomic write via tmp + replace. Caller must hold _lock."""
+    """Atomic write via tmp + replace. Caller must hold _lock.
+
+    Hardening:
+      * 0o600 chmod on the tmp before rename — the file contains a token
+        that is effectively a bearer credential for 4001, so it should
+        never be world-readable.
+      * pid / tid suffix on the tmp name so multi-worker deploys (gunicorn
+        with N workers) don't race on `_STATE_FILE.tmp` when two admins
+        save simultaneously. `_lock` only covers threads within a single
+        process.
+    """
     _STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    tmp = _STATE_FILE.with_suffix(".tmp")
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(state, f, indent=2)
-    tmp.replace(_STATE_FILE)
+    tmp = _STATE_FILE.with_suffix(f".tmp.{os.getpid()}.{threading.get_ident()}")
+    # Open with restricted mode directly so no window exists where the file
+    # is readable by others between creation and chmod.
+    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+    fd = os.open(tmp, flags, 0o600)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2)
+        # On systems where umask masked the open mode, fix it explicitly.
+        try:
+            os.chmod(tmp, 0o600)
+        except OSError as exc:
+            # Windows / unusual filesystems — best-effort, don't fail the
+            # write. Log once; the data landed on disk correctly.
+            if exc.errno not in (errno.ENOSYS, errno.EPERM):
+                raise
+            logger.warning("chmod 0o600 not supported on %s: %s", tmp, exc)
+        tmp.replace(_STATE_FILE)
+    except Exception:
+        # Best-effort cleanup on partial write failure.
+        try:
+            tmp.unlink()
+        except OSError:
+            pass
+        raise
 
 
 def _seed_from_env() -> Dict:

@@ -301,11 +301,17 @@ class WsAuthSchema(Schema):
         unknown = EXCLUDE
 
     require_token = fields.Bool(required=True)
+    # Token rules:
+    #   * 0 chars OR 12-128 chars (0 only when require_token=False)
+    #   * URL-safe characters only — NO '+' because URL-encoded query strings
+    #     decode '+' to a literal space, which then fails the server-side
+    #     secrets.compare_digest() when the admin pastes it into Electron.
+    #     (Keep '-' and '_' which secrets.token_urlsafe() actually produces.)
     token = fields.Str(
         load_default="",
         validate=validate.Regexp(
-            r"^[A-Za-z0-9._~+/=\-]{0,128}$",
-            error="token must be 0-128 chars of URL-safe base64 / url-param characters",
+            r"^(|[A-Za-z0-9._~/=\-]{12,128})$",
+            error="token must be empty or 12-128 chars of URL-safe characters",
         ),
     )
 

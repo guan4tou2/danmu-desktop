@@ -158,7 +158,8 @@ def test_malformed_json_recovers_by_reseeding(monkeypatch):
     ws_auth._STATE_FILE.write_text("{not valid json")
 
     state = ws_auth.get_state()
-    assert state["require_token"] in (True, False)  # secure-default either way
+    # Re-seeded secure-by-default because env vars are absent.
+    assert state["require_token"] is True
     # File should be rewritten with valid JSON
     assert json.loads(ws_auth._STATE_FILE.read_text())["require_token"] is True
 
@@ -277,12 +278,12 @@ def test_route_post_requires_csrf(logged_client):
 # ── 5. WS handler integration — per-connection read ──────────────────────
 
 
-def test_ws_handler_reads_live_state(monkeypatch):
-    """_is_authorized() should see admin flips without server restart.
-
-    We verify the contract by checking that get_state() returns a fresh
-    copy after set_state mutations — the ws_handler internals call
-    get_state() per connection, so this contract is sufficient.
+def test_get_state_reflects_admin_mutations_without_restart():
+    """Contract: ws/server.py::_is_authorized() reads ws_auth.get_state()
+    per connection, so admin-driven set_state mutations take effect on
+    the NEXT connection with no server restart. We verify the contract
+    by asserting that successive get_state() reads see fresh values after
+    set_state calls, which is all the WS handler relies on.
     """
     ws_auth.set_state(require_token=True, token="phase-one-token")
     assert ws_auth.get_state()["token"] == "phase-one-token"
@@ -295,3 +296,16 @@ def test_ws_handler_reads_live_state(monkeypatch):
     # Admin disables entirely
     ws_auth.set_state(require_token=False, token="")
     assert ws_auth.get_state()["require_token"] is False
+
+
+def test_write_state_chmod_600(tmp_path):
+    """Token file must be chmod 0o600 — it's a bearer credential."""
+    import stat
+    import sys
+
+    if sys.platform == "win32":
+        pytest.skip("POSIX-only chmod test")
+
+    ws_auth.set_state(require_token=True, token="sensitive-token-here")
+    mode = stat.S_IMODE(ws_auth._STATE_FILE.stat().st_mode)
+    assert mode == 0o600, f"Expected 0o600, got 0o{mode:o}"
