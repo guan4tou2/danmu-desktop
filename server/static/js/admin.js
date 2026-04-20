@@ -358,7 +358,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <strong class="history-dashboard-value">${totalMessages}</strong>
             </div>
             <div class="history-dashboard-meta">
-              <span class="history-dashboard-label">Active slots</span>
+              <span class="history-dashboard-label" data-i18n="historyActiveSlots">${ServerI18n.t("historyActiveSlots")}</span>
               <strong class="history-dashboard-value">${activeSlots}</strong>
             </div>
           </div>
@@ -367,14 +367,14 @@ document.addEventListener("DOMContentLoaded", () => {
               <h4 class="history-dashboard-title">${ServerI18n.t("hourlyDistribution")}</h4>
               <span class="history-dashboard-caption">${hours}h window</span>
             </div>
-            <div class="stats-chart">${chartBars || '<span class="text-xs text-slate-400">No data</span>'}</div>
+            <div class="stats-chart">${chartBars || '<span class="text-xs text-slate-400">${ServerI18n.t("noData")}</span>'}</div>
           </div>
           <div class="history-dashboard-card history-dashboard-card--table">
             <div class="history-dashboard-title-row">
               <h4 class="history-dashboard-title">${ServerI18n.t("topTexts")}</h4>
               <span class="history-dashboard-caption">Top 10</span>
             </div>
-            ${topTexts.length ? `<table class="w-full text-xs"><tbody>${topTextRows}</tbody></table>` : '<span class="text-xs text-slate-400">No data</span>'}
+            ${topTexts.length ? `<table class="w-full text-xs"><tbody>${topTextRows}</tbody></table>` : '<span class="text-xs text-slate-400">${ServerI18n.t("noData")}</span>'}
           </div>
         </div>`;
     } catch (err) {
@@ -754,12 +754,12 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="flex flex-col gap-5">
                                 <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                                     <div class="min-w-0">
-                                        <span class="admin-kicker">Danmu Fire Control Center</span>
+                                        <span class="admin-kicker" data-i18n="adminKicker">${ServerI18n.t("adminKicker")}</span>
                                         <h1 class="text-3xl md:text-4xl font-bold text-sky-300 mt-3" data-i18n="adminTitle">
                                             ${ServerI18n.t("adminTitle")}
                                         </h1>
-                                        <p class="text-sm md:text-base text-slate-300 mt-2 max-w-2xl">
-                                            Tune the live experience, moderate incoming messages, and manage assets without hunting through one long page.
+                                        <p class="text-sm md:text-base text-slate-300 mt-2 max-w-2xl" data-i18n="adminSubtitle">
+                                            ${ServerI18n.t("adminSubtitle")}
                                         </p>
                                     </div>
                                     <div class="flex items-center gap-2 w-full lg:w-auto">
@@ -783,15 +783,15 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                                 <div class="admin-summary-grid">
                                     <div class="admin-summary-card">
-                                        <span class="admin-summary-label">Workspace</span>
+                                        <span class="admin-summary-label" data-i18n="adminSummaryWorkspace">${ServerI18n.t("adminSummaryWorkspace")}</span>
                                         <span class="admin-summary-value">${enabledSettingCount} live controls enabled</span>
                                     </div>
                                     <div class="admin-summary-card">
-                                        <span class="admin-summary-label">Default Layout</span>
+                                        <span class="admin-summary-label" data-i18n="adminSummaryDefaultLayout">${ServerI18n.t("adminSummaryDefaultLayout")}</span>
                                         <span class="admin-summary-value">${overlayMode}</span>
                                     </div>
                                     <div class="admin-summary-card">
-                                        <span class="admin-summary-label">Active Font</span>
+                                        <span class="admin-summary-label" data-i18n="adminSummaryActiveFont">${ServerI18n.t("adminSummaryActiveFont")}</span>
                                         <span class="admin-summary-value">${fontLabel}</span>
                                     </div>
                                 </div>
@@ -802,37 +802,37 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="admin-section-heading">
                                 <div>
                                     <span class="admin-section-kicker" data-i18n="quickNav">${ServerI18n.t("quickNav")}</span>
-                                    <h2 class="text-lg font-bold text-white">Jump to a task</h2>
-                                    <p class="text-sm text-slate-300">Shortcuts are grouped by what you are trying to do right now.</p>
+                                    <h2 class="text-lg font-bold text-white" data-i18n="navJumpTitle">${ServerI18n.t("navJumpTitle")}</h2>
+                                    <p class="text-sm text-slate-300" data-i18n="navShortcutsHint">${ServerI18n.t("navShortcutsHint")}</p>
                                 </div>
                             </div>
                             <div class="space-y-3">
                                 <div>
-                                    <div class="text-xs text-slate-400 uppercase tracking-wide mb-2">Control</div>
+                                    <div class="text-xs text-slate-400 uppercase tracking-wide mb-2" data-i18n="navGroupControl">${ServerI18n.t("navGroupControl")}</div>
                                     <div class="admin-chip-nav">
                                         <a href="#sec-color" class="admin-chip" data-i18n="navBasic">${ServerI18n.t("navBasic")}</a>
                                         <a href="#sec-effects" class="admin-chip" data-i18n="navEffects">${ServerI18n.t("navEffects")}</a>
-                                        <a href="#sec-themes" class="admin-chip">Themes</a>
-                                        <a href="#sec-live-feed" class="admin-chip">Live Feed</a>
+                                        <a href="#sec-themes" class="admin-chip" data-i18n="navThemes">${ServerI18n.t("navThemes")}</a>
+                                        <a href="#sec-live-feed" class="admin-chip" data-i18n="navLiveFeed">${ServerI18n.t("navLiveFeed")}</a>
                                     </div>
                                 </div>
                                 <div>
-                                    <div class="text-xs text-slate-400 uppercase tracking-wide mb-2">Moderation</div>
+                                    <div class="text-xs text-slate-400 uppercase tracking-wide mb-2" data-i18n="navGroupModeration">${ServerI18n.t("navGroupModeration")}</div>
                                     <div class="admin-chip-nav">
                                         <a href="#sec-blacklist" class="admin-chip" data-i18n="navBlacklist">${ServerI18n.t("navBlacklist")}</a>
                                         <a href="#sec-history" class="admin-chip" data-i18n="navHistory">${ServerI18n.t("navHistory")}</a>
-                                        <a href="#sec-filters" class="admin-chip">Filters</a>
+                                        <a href="#sec-filters" class="admin-chip" data-i18n="navFilters">${ServerI18n.t("navFilters")}</a>
                                         <a href="#sec-security" class="admin-chip" data-i18n="navSecurity">${ServerI18n.t("navSecurity")}</a>
                                     </div>
                                 </div>
                                 <div>
-                                    <div class="text-xs text-slate-400 uppercase tracking-wide mb-2">Assets & Automation</div>
+                                    <div class="text-xs text-slate-400 uppercase tracking-wide mb-2" data-i18n="navGroupAssets">${ServerI18n.t("navGroupAssets")}</div>
                                     <div class="admin-chip-nav">
-                                        <a href="#sec-emojis" class="admin-chip">Emojis</a>
-                                        <a href="#sec-stickers" class="admin-chip">Stickers</a>
-                                        <a href="#sec-sounds" class="admin-chip">Sounds</a>
-                                        <a href="#sec-polls" class="admin-chip">Polls</a>
-                                        <a href="#sec-advanced" class="admin-chip">Advanced</a>
+                                        <a href="#sec-emojis" class="admin-chip" data-i18n="navEmojis">${ServerI18n.t("navEmojis")}</a>
+                                        <a href="#sec-stickers" class="admin-chip" data-i18n="navStickers">${ServerI18n.t("navStickers")}</a>
+                                        <a href="#sec-sounds" class="admin-chip" data-i18n="navSounds">${ServerI18n.t("navSounds")}</a>
+                                        <a href="#sec-polls" class="admin-chip" data-i18n="navPolls">${ServerI18n.t("navPolls")}</a>
+                                        <a href="#sec-advanced" class="admin-chip" data-i18n="navAdvanced">${ServerI18n.t("navAdvanced")}</a>
                                     </div>
                                 </div>
                             </div>
@@ -843,9 +843,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <section class="admin-section rounded-2xl p-5 md:p-6">
                                     <div class="admin-section-heading">
                                         <div>
-                                            <span class="admin-section-kicker">Live control</span>
-                                            <h2 class="text-xl font-bold text-white">Core danmu behavior</h2>
-                                            <p class="text-sm text-slate-300">These controls define how messages look, move, and feel during the stream.</p>
+                                            <span class="admin-section-kicker" data-i18n="sectionLiveControl">${ServerI18n.t("sectionLiveControl")}</span>
+                                            <h2 class="text-xl font-bold text-white" data-i18n="sectionLiveControlTitle">${ServerI18n.t("sectionLiveControlTitle")}</h2>
+                                            <p class="text-sm text-slate-300" data-i18n="sectionLiveControlDesc">${ServerI18n.t("sectionLiveControlDesc")}</p>
                                         </div>
                                     </div>
                                     <div id="settings-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -856,9 +856,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <section class="admin-section rounded-2xl p-5 md:p-6">
                                     <div class="admin-section-heading">
                                         <div>
-                                            <span class="admin-section-kicker">Moderation</span>
-                                            <h2 class="text-xl font-bold text-white">Review, guardrails, and incident response</h2>
-                                            <p class="text-sm text-slate-300">Keep the live stream healthy with history, filtering, blacklists, and quick reaction tools.</p>
+                                            <span class="admin-section-kicker" data-i18n="sectionModeration">${ServerI18n.t("sectionModeration")}</span>
+                                            <h2 class="text-xl font-bold text-white" data-i18n="sectionModerationTitle">${ServerI18n.t("sectionModerationTitle")}</h2>
+                                            <p class="text-sm text-slate-300" data-i18n="sectionModerationDesc">${ServerI18n.t("sectionModerationDesc")}</p>
                                         </div>
                                     </div>
                                     <div id="moderation-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -869,26 +869,26 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <section class="admin-section rounded-2xl p-5 md:p-6">
                                     <div class="admin-section-heading">
                                         <div>
-                                            <span class="admin-section-kicker">Assets</span>
-                                            <h2 class="text-xl font-bold text-white">Reusable media and extensions</h2>
-                                            <p class="text-sm text-slate-300">Manage themes, sounds, stickers, emojis, widgets, and other reusable building blocks.</p>
+                                            <span class="admin-section-kicker" data-i18n="sectionAssets">${ServerI18n.t("sectionAssets")}</span>
+                                            <h2 class="text-xl font-bold text-white" data-i18n="sectionAssetsTitle">${ServerI18n.t("sectionAssetsTitle")}</h2>
+                                            <p class="text-sm text-slate-300" data-i18n="sectionAssetsDesc">${ServerI18n.t("sectionAssetsDesc")}</p>
                                         </div>
                                     </div>
                                     <div class="asset-dashboard-strip">
                                         <div class="asset-dashboard-card">
-                                            <span class="asset-dashboard-label">Media library</span>
-                                            <strong>Emojis, stickers, sounds</strong>
-                                            <p>Keep the frequently reused pieces close instead of burying them in a long maintenance list.</p>
+                                            <span class="asset-dashboard-label" data-i18n="assetMediaLibrary">${ServerI18n.t("assetMediaLibrary")}</span>
+                                            <strong data-i18n="assetMediaLibraryTitle">${ServerI18n.t("assetMediaLibraryTitle")}</strong>
+                                            <p data-i18n="assetMediaLibraryDesc">${ServerI18n.t("assetMediaLibraryDesc")}</p>
                                         </div>
                                         <div class="asset-dashboard-card">
-                                            <span class="asset-dashboard-label">Visual system</span>
-                                            <strong>Themes and display polish</strong>
-                                            <p>Tune the overall atmosphere here before going deeper into lower-level sections.</p>
+                                            <span class="asset-dashboard-label" data-i18n="assetVisualSystem">${ServerI18n.t("assetVisualSystem")}</span>
+                                            <strong data-i18n="assetVisualSystemTitle">${ServerI18n.t("assetVisualSystemTitle")}</strong>
+                                            <p data-i18n="assetVisualSystemDesc">${ServerI18n.t("assetVisualSystemDesc")}</p>
                                         </div>
                                         <div class="asset-dashboard-card">
-                                            <span class="asset-dashboard-label">Extensions</span>
-                                            <strong>Widgets and plugins</strong>
-                                            <p>Treat integrations as a separate lane so the dashboard reads like operations, not a toolbox dump.</p>
+                                            <span class="asset-dashboard-label" data-i18n="assetExtensions">${ServerI18n.t("assetExtensions")}</span>
+                                            <strong data-i18n="assetExtensionsTitle">${ServerI18n.t("assetExtensionsTitle")}</strong>
+                                            <p data-i18n="assetExtensionsDesc">${ServerI18n.t("assetExtensionsDesc")}</p>
                                         </div>
                                     </div>
                                     <div id="assets-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -900,9 +900,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <details id="sec-advanced" class="group scroll-mt-24" ${isOpen("sec-advanced") ? "open" : ""}>
                                         <summary class="flex items-center justify-between cursor-pointer list-none">
                                             <div>
-                                                <span class="admin-section-kicker">Automation</span>
-                                                <h3 class="text-lg font-bold text-white">Advanced operations</h3>
-                                                <p class="text-sm text-slate-300">Webhooks, scheduled broadcasts, and other higher-leverage workflows.</p>
+                                                <span class="admin-section-kicker" data-i18n="sectionAutomation">${ServerI18n.t("sectionAutomation")}</span>
+                                                <h3 class="text-lg font-bold text-white" data-i18n="sectionAutomationTitle">${ServerI18n.t("sectionAutomationTitle")}</h3>
+                                                <p class="text-sm text-slate-300" data-i18n="sectionAutomationDesc">${ServerI18n.t("sectionAutomationDesc")}</p>
                                             </div>
                                             <span class="text-slate-400 transition-transform group-open:rotate-180">&#8964;</span>
                                         </summary>
@@ -915,22 +915,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             <aside class="admin-sidebar">
                                 <div class="admin-sidebar-card">
-                                    <div class="admin-sidebar-title">Workflow</div>
+                                    <div class="admin-sidebar-title" data-i18n="sidebarWorkflow">${ServerI18n.t("sidebarWorkflow")}</div>
                                     <p class="admin-sidebar-copy">Treat this page as a control tower: tune the stream on the left, then jump directly to moderation or asset sections from here.</p>
                                     <div class="admin-link-list">
-                                        <a href="#sec-history"><span>Review recent danmu</span><span class="text-slate-400">→</span></a>
-                                        <a href="#sec-blacklist"><span>Block problem keywords</span><span class="text-slate-400">→</span></a>
-                                        <a href="#sec-effects"><span>Refresh effects and visuals</span><span class="text-slate-400">→</span></a>
+                                        <a href="#sec-history"><span data-i18n="sidebarLinkReviewRecent">${ServerI18n.t("sidebarLinkReviewRecent")}</span><span class="text-slate-400">→</span></a>
+                                        <a href="#sec-blacklist"><span data-i18n="sidebarLinkBlockKeywords">${ServerI18n.t("sidebarLinkBlockKeywords")}</span><span class="text-slate-400">→</span></a>
+                                        <a href="#sec-effects"><span data-i18n="sidebarLinkRefreshEffects">${ServerI18n.t("sidebarLinkRefreshEffects")}</span><span class="text-slate-400">→</span></a>
                                     </div>
                                 </div>
 
                                 <div class="admin-sidebar-card">
-                                    <div class="admin-sidebar-title">Recommended order</div>
+                                    <div class="admin-sidebar-title" data-i18n="sidebarRecommendedOrder">${ServerI18n.t("sidebarRecommendedOrder")}</div>
                                     <p class="admin-sidebar-copy">For live tuning, adjust style, verify output in live feed, then move to history and filters only if moderation is needed.</p>
                                     <div class="admin-link-list">
-                                        <a href="#sec-color"><span>1. Style controls</span><span class="text-slate-400">Color / size / speed</span></a>
-                                        <a href="#sec-live-feed"><span>2. Live validation</span><span class="text-slate-400">Incoming traffic</span></a>
-                                        <a href="#sec-filters"><span>3. Guardrails</span><span class="text-slate-400">Rate limit / rules</span></a>
+                                        <a href="#sec-color"><span data-i18n="sidebarStep1">${ServerI18n.t("sidebarStep1")}</span><span class="text-slate-400" data-i18n="sidebarStep1Hint">${ServerI18n.t("sidebarStep1Hint")}</span></a>
+                                        <a href="#sec-live-feed"><span data-i18n="sidebarStep2">${ServerI18n.t("sidebarStep2")}</span><span class="text-slate-400" data-i18n="sidebarStep2Hint">${ServerI18n.t("sidebarStep2Hint")}</span></a>
+                                        <a href="#sec-filters"><span data-i18n="sidebarStep3">${ServerI18n.t("sidebarStep3")}</span><span class="text-slate-400" data-i18n="sidebarStep3Hint">${ServerI18n.t("sidebarStep3Hint")}</span></a>
                                     </div>
                                 </div>
                             </aside>
@@ -1162,8 +1162,8 @@ document.addEventListener("DOMContentLoaded", () => {
       <details id="sec-themes" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-themes") ? "open" : ""}>
         <summary class="flex items-center justify-between cursor-pointer list-none">
           <div>
-            <h3 class="text-lg font-bold text-white">Style Theme Packs</h3>
-            <p class="text-sm text-slate-300">Predefined visual themes for danmu styles and effects</p>
+            <h3 class="text-lg font-bold text-white" data-i18n="styleThemePacks">${ServerI18n.t("styleThemePacks")}</h3>
+            <p class="text-sm text-slate-300" data-i18n="themesSectionDesc">${ServerI18n.t("themesSectionDesc")}</p>
           </div>
           <span class="text-slate-400 transition-transform group-open:rotate-180">\u2304</span>
         </summary>
@@ -1281,13 +1281,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
                                 <h3 class="text-lg font-bold text-white">Poll / Vote</h3>
-                                <p class="text-sm text-slate-300">Create interactive polls for viewers to vote via danmu</p>
+                                <p class="text-sm text-slate-300" data-i18n="pollSectionDesc">${ServerI18n.t("pollSectionDesc")}</p>
                             </div>
                             <span class="text-slate-400 transition-transform group-open:rotate-180">\u2304</span>
                         </summary>
                         <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-4">
                             <div>
-                                <label for="pollQuestion" class="text-sm font-medium text-slate-300">Question</label>
+                                <label for="pollQuestion" class="text-sm font-medium text-slate-300" data-i18n="pollQuestion">${ServerI18n.t("pollQuestion")}</label>
                                 <input type="text" id="pollQuestion" placeholder="What's your favorite...?" maxlength="200"
                                     class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300">
                             </div>
@@ -1303,9 +1303,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                             </div>
                             <div class="flex gap-2 flex-wrap">
-                                <button id="pollCreateBtn" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors text-sm font-semibold">Create Poll</button>
-                                <button id="pollEndBtn" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors text-sm font-semibold">End Poll</button>
-                                <button id="pollResetBtn" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors text-sm font-semibold">Reset</button>
+                                <button id="pollCreateBtn" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors text-sm font-semibold" data-i18n="pollCreate">${ServerI18n.t("pollCreate")}</button>
+                                <button id="pollEndBtn" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors text-sm font-semibold" data-i18n="pollEnd">${ServerI18n.t("pollEnd")}</button>
+                                <button id="pollResetBtn" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors text-sm font-semibold" data-i18n="pollReset">${ServerI18n.t("pollReset")}</button>
                             </div>
                             <div id="pollStatusDisplay" class="text-sm text-slate-400"></div>
                         </div>
