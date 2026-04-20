@@ -8,6 +8,7 @@ clean and nothing leaks to the real runtime/ws_auth.json.
 """
 
 import json
+import os
 
 import pytest
 
@@ -309,3 +310,95 @@ def test_write_state_chmod_600(tmp_path):
     ws_auth.set_state(require_token=True, token="sensitive-token-here")
     mode = stat.S_IMODE(ws_auth._STATE_FILE.stat().st_mode)
     assert mode == 0o600, f"Expected 0o600, got 0o{mode:o}"
+
+
+# ── 6. Graceful degradation when the runtime dir is unwritable ──────────
+# Simulates the Oracle Cloud UID-mismatch case: host bind-mount owner is
+# a different UID than the container's appuser. Before v4.8.2, every
+# get_state / set_state raised or logged ERROR; admin UI silently lost
+# changes. After: in-memory state is authoritative, one-shot warning.
+
+
+def _force_permission_error(monkeypatch):
+    """Patch os.open to always raise PermissionError for the ws_auth tmp file."""
+    real_open = os.open
+    tmp_prefix = str(ws_auth._STATE_FILE.with_suffix("")) + ".tmp."
+
+    def guarded(path, *args, **kwargs):
+        if str(path).startswith(tmp_prefix):
+            raise PermissionError(13, "Permission denied", str(path))
+        return real_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(os, "open", guarded)
+
+
+@pytest.mark.ws_auth_raw_seed
+def test_seed_survives_unwritable_runtime(monkeypatch, caplog):
+    """Boot-seed write fails → in-memory state is still usable."""
+    import logging
+
+    _force_permission_error(monkeypatch)
+    ws_auth._reset_for_tests()
+    with caplog.at_level(logging.WARNING, logger="server.services.ws_auth"):
+        state = ws_auth.get_state()
+    # Service still returns a valid state
+    assert "require_token" in state and "token" in state
+    # File was NOT written
+    assert not ws_auth._STATE_FILE.exists()
+    # One-shot warning logged with actionable guidance
+    warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+    assert any("in memory" in r.getMessage() for r in warnings)
+    assert any("chown" in r.getMessage() for r in warnings)
+
+
+@pytest.mark.ws_auth_raw_seed
+def test_set_state_memory_only_mode(monkeypatch, caplog):
+    """Admin save with unwritable disk → change still takes effect in memory."""
+    import logging
+
+    _force_permission_error(monkeypatch)
+    ws_auth._reset_for_tests()
+    with caplog.at_level(logging.WARNING, logger="server.services.ws_auth"):
+        result = ws_auth.set_state(require_token=True, token="admin-set-tokenXYZ")
+    # Admin's change visible in the return value
+    assert result["require_token"] is True
+    assert result["token"] == "admin-set-tokenXYZ"
+    # And in subsequent get_state calls (cached in memory)
+    assert ws_auth.get_state()["token"] == "admin-set-tokenXYZ"
+    # File does not exist on disk
+    assert not ws_auth._STATE_FILE.exists()
+
+
+@pytest.mark.ws_auth_raw_seed
+def test_write_failure_logged_once(monkeypatch, caplog):
+    """Five failing writes produce a single WARNING, not five ERRORs."""
+    import logging
+
+    _force_permission_error(monkeypatch)
+    ws_auth._reset_for_tests()
+    with caplog.at_level(logging.DEBUG, logger="server.services.ws_auth"):
+        ws_auth.get_state()
+        for _ in range(4):
+            ws_auth.set_state(require_token=False, token="")
+
+    warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+    # Exactly one persistence-failure warning (first occurrence)
+    persist_warnings = [r for r in warnings if "in memory" in r.getMessage()]
+    assert len(persist_warnings) == 1, f"Expected 1, got {len(persist_warnings)}"
+    # Subsequent failures downgrade to DEBUG (so don't spam production logs)
+    debug_repeats = [
+        r for r in caplog.records if r.levelname == "DEBUG" and "still failing" in r.getMessage()
+    ]
+    assert len(debug_repeats) >= 1  # at least one repeat logged at DEBUG
+
+
+@pytest.mark.ws_auth_raw_seed
+def test_rotate_token_survives_unwritable_dir(monkeypatch):
+    """Admin clicks regenerate with unwritable disk → new token lives in memory."""
+    _force_permission_error(monkeypatch)
+    ws_auth._reset_for_tests()
+    ws_auth.set_state(require_token=True, token="original-token-abc")
+    rotated = ws_auth.rotate_token()
+    assert rotated["require_token"] is True
+    assert rotated["token"] != "original-token-abc"
+    assert len(rotated["token"]) >= 16
