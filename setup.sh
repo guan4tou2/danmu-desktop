@@ -225,8 +225,14 @@ _init() {
     fi
     if [ "$check_in_use" = "true" ]; then
       _warn_if_no_probe
-      _port_in_use "$n"
-      case $? in
+      # `_port_in_use` returns 1 for a FREE port. Under `set -e` that would
+      # kill the script before the `case $?` below could run, even though
+      # free-is-good is the happy path. Capture via `|| rc=$?` so the call
+      # never trips set -e — that's the idiom for getting a return code
+      # from a failing command without aborting.
+      local _piu=0
+      _port_in_use "$n" || _piu=$?
+      case "$_piu" in
         0) _warn "$label $n is already in use on this host."; return 2 ;;
         1|2) : ;;  # free or unknown — accept
       esac
@@ -258,11 +264,15 @@ _init() {
         [ "${ans,,}" = "y" ]
       }
       while true; do
-        local _hp_in _sp_in _hp_val _sp_val
+        local _hp_in _sp_in _hp_val _sp_val _rc
         read -rp "HTTP port [${http_port}]: " _hp_in
         _hp_val="${_hp_in:-$http_port}"
-        _valid_port "$_hp_val" "HTTP port" true
-        case $? in
+        # `set -e` fires on any non-zero return from a plain call, so capture
+        # the return code via `|| _rc=$?` — that idiom is one of the few ways
+        # to get rc from a failing command without tripping set -e.
+        _rc=0
+        _valid_port "$_hp_val" "HTTP port" true || _rc=$?
+        case $_rc in
           0) : ;;                                          # free — good
           1) continue ;;                                   # format/range bad
           2) _accept_occupied_port "HTTP port" "$_hp_val" || continue ;;
@@ -270,8 +280,9 @@ _init() {
 
         read -rp "HTTPS port [${https_port}]: " _sp_in
         _sp_val="${_sp_in:-$https_port}"
-        _valid_port "$_sp_val" "HTTPS port" true
-        case $? in
+        _rc=0
+        _valid_port "$_sp_val" "HTTPS port" true || _rc=$?
+        case $_rc in
           0) : ;;
           1) continue ;;
           2) _accept_occupied_port "HTTPS port" "$_sp_val" || continue ;;
