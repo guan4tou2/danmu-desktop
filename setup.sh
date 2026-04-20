@@ -272,7 +272,7 @@ _init() {
         # to get rc from a failing command without tripping set -e.
         _rc=0
         _valid_port "$_hp_val" "HTTP port" true || _rc=$?
-        case $_rc in
+        case "$_rc" in
           0) : ;;                                          # free — good
           1) continue ;;                                   # format/range bad
           2) _accept_occupied_port "HTTP port" "$_hp_val" || continue ;;
@@ -282,7 +282,7 @@ _init() {
         _sp_val="${_sp_in:-$https_port}"
         _rc=0
         _valid_port "$_sp_val" "HTTPS port" true || _rc=$?
-        case $_rc in
+        case "$_rc" in
           0) : ;;
           1) continue ;;
           2) _accept_occupied_port "HTTPS port" "$_sp_val" || continue ;;
