@@ -36,7 +36,12 @@ def index():
 @main_bp.route("/overlay")
 def overlay():
     """OBS Browser Source overlay page."""
-    ws_token = current_app.config.get("WS_AUTH_TOKEN") or ""
+    # Read live auth state (admin UI can flip it without restart) instead of
+    # the Config snapshot captured at app boot.
+    from ..services import ws_auth
+
+    auth = ws_auth.get_state()
+    ws_token = auth["token"] if auth["require_token"] else ""
     if ws_token and not session.get("logged_in"):
         return redirect(url_for("admin_bp.admin"))
     return render_template(

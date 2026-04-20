@@ -287,6 +287,34 @@ class SoundRuleSchema(Schema):
     cooldown_ms = fields.Int(load_default=1000, validate=validate.Range(min=0, max=60000))
 
 
+class WsAuthSchema(Schema):
+    """Admin WebSocket auth toggle request.
+
+    Token validation: we constrain to printable ASCII and length 12-128 so
+    admins can't accidentally persist whitespace-only or overly long
+    strings that some WS URL parsers choke on. `require_token=True` with an
+    empty token is caught at the service boundary (set_state raises), but
+    we reject it earlier here so the admin gets a clean validation error.
+    """
+
+    class Meta:
+        unknown = EXCLUDE
+
+    require_token = fields.Bool(required=True)
+    token = fields.Str(
+        load_default="",
+        validate=validate.Regexp(
+            r"^[A-Za-z0-9._~+/=\-]{0,128}$",
+            error="token must be 0-128 chars of URL-safe base64 / url-param characters",
+        ),
+    )
+
+    @validates_schema
+    def _require_token_when_enabled(self, data, **kwargs):
+        if data.get("require_token") and not (data.get("token") or "").strip():
+            raise ValidationError({"token": "token is required when require_token=True"})
+
+
 def validate_request(schema_class, data):
     """驗證請求資料"""
     try:

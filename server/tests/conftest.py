@@ -48,6 +48,35 @@ def _isolate_webhook_store(tmp_path):
         webhook_mod._WEBHOOKS_FILE = original_file
 
 
+@pytest.fixture(autouse=True)
+def _isolate_ws_auth(tmp_path, request):
+    """Isolate ws_auth runtime file per test to avoid cross-test pollution.
+
+    Default posture: auth DISABLED (require_token=False, empty token), so
+    the legacy system/browser tests that pre-date v4.8 don't all need to
+    be touched. Tests that want to exercise the seeding-from-env or the
+    secure-by-default behaviour can opt-out via the `ws_auth_raw_seed`
+    marker, which leaves _state=None and the file untouched (letting the
+    service seed normally on first get_state()).
+    """
+    from server.services import ws_auth as ws_auth_mod
+
+    original_file = ws_auth_mod._STATE_FILE
+    ws_auth_mod._STATE_FILE = tmp_path / "ws_auth.json"
+    ws_auth_mod._reset_for_tests()
+
+    if "ws_auth_raw_seed" not in request.keywords:
+        # Pre-populate as disabled so the next get_state() returns that
+        # (skipping the secure-by-default seeding path).
+        ws_auth_mod.set_state(require_token=False, token="")
+
+    try:
+        yield
+    finally:
+        ws_auth_mod._STATE_FILE = original_file
+        ws_auth_mod._reset_for_tests()
+
+
 _ws_logger = logging.getLogger("conftest.ws")
 _ws_logger.propagate = False
 if not _ws_logger.handlers:

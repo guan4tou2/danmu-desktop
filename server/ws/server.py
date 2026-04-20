@@ -9,7 +9,7 @@ import websockets
 
 from ..config import Config
 from ..managers import connection_manager
-from ..services import ws_queue
+from ..services import ws_auth, ws_queue
 from ..services.ws_state import update_ws_client_count
 from ..utils import sanitize_log_string
 
@@ -87,8 +87,6 @@ async def _forward_messages(logger):
 def run_ws_server(ws_port, logger):
     update_ws_client_count(0)
     ws_host = str(Config.WS_HOST or "127.0.0.1")
-    require_token = bool(Config.WS_REQUIRE_TOKEN)
-    configured_token = str(Config.WS_AUTH_TOKEN or "")
     allowed_origins = set(Config.WS_ALLOWED_ORIGINS or [])
     ws_max_size = int(Config.WS_MAX_SIZE)
     ws_max_queue = int(Config.WS_MAX_QUEUE)
@@ -99,10 +97,13 @@ def run_ws_server(ws_port, logger):
     # Per-IP connection tracking (IP -> set of websocket objects)
     _connections_by_ip: dict = {}
 
-    if require_token and not configured_token:
+    # Prime the ws_auth cache so the warning (if any) fires at startup rather
+    # than on first connection attempt.
+    initial_auth = ws_auth.get_state()
+    if initial_auth["require_token"] and not initial_auth["token"]:
         logger.warning(
-            "WS_REQUIRE_TOKEN is enabled but WS_AUTH_TOKEN is empty; "
-            "all WS clients will be rejected."
+            "WS auth enabled but token is empty; all WS clients will be "
+            "rejected. Flip the admin UI toggle or set WS_AUTH_TOKEN."
         )
 
     def _request_path(websocket):
@@ -147,9 +148,14 @@ def run_ws_server(ws_port, logger):
                     "Rejecting WS client with disallowed Origin: %s", sanitize_log_string(origin)
                 )
                 return False
-        if require_token:
+        # Read per-connection so admin UI flips take effect without restart.
+        auth = ws_auth.get_state()
+        if auth["require_token"]:
+            configured_token = auth["token"]
             token = _extract_token(websocket)
-            if not token or not secrets.compare_digest(token, configured_token):
+            if not token or not configured_token:
+                return False
+            if not secrets.compare_digest(token, configured_token):
                 return False
         return True
 

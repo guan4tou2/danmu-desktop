@@ -170,6 +170,7 @@ document.addEventListener("DOMContentLoaded", () => {
         "sec-filters",
         "sec-polls",
         "sec-security",
+        "sec-ws-auth",
       ],
     },
     assets: {
@@ -1349,6 +1350,49 @@ document.addEventListener("DOMContentLoaded", () => {
                             </button>
                         </div>
                     </details>
+
+                    <details id="sec-ws-auth" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-ws-auth") ? "open" : ""}>
+                        <summary class="flex items-center justify-between cursor-pointer list-none">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">${ServerI18n.t("wsAuthTitle")}</h3>
+                                <p class="text-sm text-slate-300">${ServerI18n.t("wsAuthDesc")}</p>
+                            </div>
+                            <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
+                        </summary>
+                        <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-4">
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input id="wsAuthRequireToggle" type="checkbox" class="toggle-checkbox w-4 h-4 accent-sky-500" />
+                                <span class="text-sm text-white">${ServerI18n.t("wsAuthRequireLabel")}</span>
+                            </label>
+                            <p class="text-xs text-slate-400">${ServerI18n.t("wsAuthRequireHint")}</p>
+                            <div class="space-y-2">
+                                <label for="wsAuthTokenInput" class="block text-sm text-slate-200">${ServerI18n.t("wsAuthTokenLabel")}</label>
+                                <div class="password-wrapper">
+                                    <input id="wsAuthTokenInput" type="password"
+                                        class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm font-mono placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                                        placeholder="${ServerI18n.t("wsAuthTokenPlaceholder")}" autocomplete="off" spellcheck="false">
+                                    <button type="button" class="password-toggle" data-target="wsAuthTokenInput" aria-label="Toggle token visibility">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    </button>
+                                </div>
+                                <p class="text-xs text-slate-400">${ServerI18n.t("wsAuthTokenHint")}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button id="wsAuthSaveBtn"
+                                    class="flex-1 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-colors text-sm font-semibold">
+                                    ${ServerI18n.t("wsAuthSaveBtn")}
+                                </button>
+                                <button id="wsAuthRotateBtn"
+                                    class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm font-semibold">
+                                    ${ServerI18n.t("wsAuthRotateBtn")}
+                                </button>
+                                <button id="wsAuthCopyBtn"
+                                    class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm font-semibold">
+                                    ${ServerI18n.t("wsAuthCopyBtn")}
+                                </button>
+                            </div>
+                        </div>
+                    </details>
                 `);
 
     addEventListeners();
@@ -1490,6 +1534,101 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
+
+    // WS auth toggle/token — hydrate current state then wire save/rotate/copy
+    (function initWsAuthPanel() {
+      const toggle = document.getElementById("wsAuthRequireToggle");
+      const tokenInput = document.getElementById("wsAuthTokenInput");
+      const saveBtn = document.getElementById("wsAuthSaveBtn");
+      const rotateBtn = document.getElementById("wsAuthRotateBtn");
+      const copyBtn = document.getElementById("wsAuthCopyBtn");
+      if (!toggle || !tokenInput || !saveBtn || !rotateBtn || !copyBtn) return;
+
+      // The toggle lives inside the security details panel, but we don't
+      // want the generic `.toggle-checkbox` auto-handler (which POSTs to
+      // /admin/Set) to fire for this. Remove the class so addEventListeners's
+      // global querySelectorAll(".toggle-checkbox") skips it, since we
+      // already flip classList on `toggle` above.
+      toggle.classList.remove("toggle-checkbox");
+
+      function applyState(state) {
+        toggle.checked = !!state.require_token;
+        tokenInput.value = state.token || "";
+      }
+
+      fetch("/admin/ws-auth", { credentials: "same-origin" })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+        .then(applyState)
+        .catch(() => {
+          /* silent — admin can still fill in fields manually */
+        });
+
+      saveBtn.addEventListener("click", async () => {
+        const body = {
+          require_token: toggle.checked,
+          token: tokenInput.value.trim(),
+        };
+        if (body.require_token && !body.token) {
+          showToast(ServerI18n.t("wsAuthTokenRequired"), false);
+          return;
+        }
+        try {
+          const res = await csrfFetch("/admin/ws-auth", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            applyState(data);
+            showToast(ServerI18n.t("wsAuthSaved"), true);
+          } else {
+            showToast(data.error || ServerI18n.t("wsAuthSaveFailed"), false);
+          }
+        } catch (e) {
+          showToast(ServerI18n.t("wsAuthSaveFailed"), false);
+        }
+      });
+
+      rotateBtn.addEventListener("click", async () => {
+        try {
+          const res = await csrfFetch("/admin/ws-auth/rotate", { method: "POST" });
+          const data = await res.json();
+          if (res.ok) {
+            applyState(data);
+            showToast(ServerI18n.t("wsAuthRotated"), true);
+          } else {
+            showToast(data.error || ServerI18n.t("wsAuthSaveFailed"), false);
+          }
+        } catch (e) {
+          showToast(ServerI18n.t("wsAuthSaveFailed"), false);
+        }
+      });
+
+      copyBtn.addEventListener("click", async () => {
+        const value = tokenInput.value;
+        if (!value) {
+          showToast(ServerI18n.t("wsAuthTokenEmpty"), false);
+          return;
+        }
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(value);
+          } else {
+            // Fallback for non-HTTPS dev — select + execCommand still ships
+            // in Firefox/Safari.
+            const originalType = tokenInput.type;
+            tokenInput.type = "text";
+            tokenInput.select();
+            document.execCommand("copy");
+            tokenInput.type = originalType;
+          }
+          showToast(ServerI18n.t("wsAuthCopied"), true);
+        } catch (e) {
+          showToast(ServerI18n.t("wsAuthCopyFailed"), false);
+        }
+      });
+    })();
 
     // Font upload button event listeners
     const uploadFontBtn = document.getElementById("uploadFontBtn");

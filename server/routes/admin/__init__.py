@@ -66,4 +66,5 @@ from . import (  # noqa: E402, F401
     uploads,
     webhooks,
     widgets,
+    ws_auth,
 )

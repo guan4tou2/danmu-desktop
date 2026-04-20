@@ -102,38 +102,47 @@ def test_verify_password_invalid_hash():
 
 
 def test_ws_require_token_disabled_emits_startup_warning(caplog):
+    from server.services import ws_auth
+
+    # v4.8+: startup_warnings reads live state from ws_auth service, not
+    # from the passed Config dict. Explicitly put the service in the
+    # "disabled" state that the test is documenting.
+    ws_auth.set_state(require_token=False, token="")
+
     logger = logging.getLogger("test.ws-warning")
 
     with caplog.at_level(logging.WARNING):
         log_ws_auth_warnings(
             logger,
             {
-                "WS_REQUIRE_TOKEN": False,
                 "WS_HOST": "127.0.0.1",
                 "WS_PORT": 4001,
                 "ENV": "development",
             },
         )
 
-    assert "WS_REQUIRE_TOKEN is disabled" in caplog.text
+    assert "WS token auth is disabled" in caplog.text
     assert "reachable without token auth" not in caplog.text
 
 
 def test_ws_require_token_disabled_on_public_host_emits_stronger_warning(caplog):
+    from server.services import ws_auth
+
+    ws_auth.set_state(require_token=False, token="")
+
     logger = logging.getLogger("test.ws-warning-public")
 
     with caplog.at_level(logging.WARNING):
         log_ws_auth_warnings(
             logger,
             {
-                "WS_REQUIRE_TOKEN": False,
                 "WS_HOST": "0.0.0.0",
                 "WS_PORT": 4001,
                 "ENV": "production",
             },
         )
 
-    assert "WS_REQUIRE_TOKEN is disabled" in caplog.text
+    assert "WS token auth is disabled" in caplog.text
     assert "reachable without token auth" in caplog.text
 
 
