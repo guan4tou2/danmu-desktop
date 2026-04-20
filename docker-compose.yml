@@ -222,6 +222,13 @@ services:
     profiles: [redis]
     image: redis:7-alpine
     container_name: danmu-redis
+    # Run directly as the redis user (UID 999 in the upstream image). The
+    # redis:7-alpine entrypoint normally starts as root and uses `gosu` to
+    # drop privileges via `setresuid` — but that setuid syscall is blocked
+    # by `no-new-privileges:true` + `cap_drop: ALL` (CAP_SETUID missing),
+    # making the container fail to boot. Starting as non-root from the
+    # outset skips the gosu path entirely and keeps our security posture.
+    user: "999:999"
     expose:
       - "6379"
     volumes:
