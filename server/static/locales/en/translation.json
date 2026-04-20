@@ -107,6 +107,8 @@
   "themesSectionDesc": "Predefined visual themes for danmu styles and effects",
   "pollSectionDesc": "Create interactive polls for viewers to vote via danmu",
   "noData": "No data",
+  "sidebarWorkflowCopy": "Treat this page as a control tower: tune the stream on the left, then jump directly to moderation or asset sections from here.",
+  "sidebarRecommendedCopy": "For live tuning, adjust style, verify output in live feed, then move to history and filters only if moderation is needed.",
   "colorSetting": "Color Setting",
   "colorSettingDesc": "Allow users to customize colors",
   "specificColor": "Specific Color",

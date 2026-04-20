@@ -39,6 +39,11 @@ COPY --from=builder /app/server/.venv /app/server/.venv
 ENV VIRTUAL_ENV=/app/server/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 ENV PYTHONPATH=/app
+# Hardening: don't write .pyc cache files at runtime (smaller writable-dir
+# footprint + marginally less disk I/O) and flush stdout/stderr without
+# buffering so docker logs show errors immediately instead of at shutdown.
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # Shared resources consumed by both server and (eventually) other
 # packages. server/static/css/tokens.css is a symlink pointing here —

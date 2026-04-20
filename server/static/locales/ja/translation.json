@@ -107,6 +107,8 @@
   "themesSectionDesc": "弾幕スタイルとエフェクトの定義済みビジュアルテーマ",
   "pollSectionDesc": "視聴者が弾幕で投票できるインタラクティブな投票を作成",
   "noData": "データなし",
+  "sidebarWorkflowCopy": "このページを管制塔として扱います：左で配信を調整し、ここから直接モデレーションや素材セクションにジャンプします。",
+  "sidebarRecommendedCopy": "ライブ調整時：まずスタイルを変更し、ライブフィードで確認、必要な場合のみ履歴とフィルターへ進みます。",
   "colorSetting": "色設定",
   "colorSettingDesc": "ユーザーが色をカスタマイズできるようにする",
   "specificColor": "指定色",

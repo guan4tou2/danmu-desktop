@@ -916,7 +916,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <aside class="admin-sidebar">
                                 <div class="admin-sidebar-card">
                                     <div class="admin-sidebar-title" data-i18n="sidebarWorkflow">${ServerI18n.t("sidebarWorkflow")}</div>
-                                    <p class="admin-sidebar-copy">Treat this page as a control tower: tune the stream on the left, then jump directly to moderation or asset sections from here.</p>
+                                    <p class="admin-sidebar-copy" data-i18n="sidebarWorkflowCopy">${ServerI18n.t("sidebarWorkflowCopy")}</p>
                                     <div class="admin-link-list">
                                         <a href="#sec-history"><span data-i18n="sidebarLinkReviewRecent">${ServerI18n.t("sidebarLinkReviewRecent")}</span><span class="text-slate-400">→</span></a>
                                         <a href="#sec-blacklist"><span data-i18n="sidebarLinkBlockKeywords">${ServerI18n.t("sidebarLinkBlockKeywords")}</span><span class="text-slate-400">→</span></a>
@@ -926,7 +926,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                                 <div class="admin-sidebar-card">
                                     <div class="admin-sidebar-title" data-i18n="sidebarRecommendedOrder">${ServerI18n.t("sidebarRecommendedOrder")}</div>
-                                    <p class="admin-sidebar-copy">For live tuning, adjust style, verify output in live feed, then move to history and filters only if moderation is needed.</p>
+                                    <p class="admin-sidebar-copy" data-i18n="sidebarRecommendedCopy">${ServerI18n.t("sidebarRecommendedCopy")}</p>
                                     <div class="admin-link-list">
                                         <a href="#sec-color"><span data-i18n="sidebarStep1">${ServerI18n.t("sidebarStep1")}</span><span class="text-slate-400" data-i18n="sidebarStep1Hint">${ServerI18n.t("sidebarStep1Hint")}</span></a>
                                         <a href="#sec-live-feed"><span data-i18n="sidebarStep2">${ServerI18n.t("sidebarStep2")}</span><span class="text-slate-400" data-i18n="sidebarStep2Hint">${ServerI18n.t("sidebarStep2Hint")}</span></a>

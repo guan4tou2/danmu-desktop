@@ -55,11 +55,26 @@ services:
       # /app/server/plugins (not mounted) so upstream fixes arrive on upgrade.
       - ./server/user_plugins:/app/server/user_plugins
     restart: unless-stopped
+    # Security hardening (v4.8.6+):
+    # - `no-new-privileges` blocks setuid/setgid escalation inside the
+    #   container (defence-in-depth: the image already runs as UID 1000
+    #   non-root, this seals the escape hatch).
+    # - Drop ALL capabilities: Python Flask + websockets on high ports
+    #   (4000/4001) needs zero Linux caps. `NET_BIND_SERVICE` only required
+    #   for <1024 binds; nginx sidecar handles 80/443, server itself never
+    #   touches privileged ports.
+    # - `pids_limit` caps fork/thread explosion (a Python runaway or
+    #   plugin bug can't fork-bomb the host).
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
           memory: ${SERVER_MEMORY_LIMIT:-512m}
           cpus: "${SERVER_CPU_LIMIT:-1.0}"
+          pids: 200
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health').read()"]
       interval: 30s
@@ -102,11 +117,15 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    # Keep default caps so nginx can bind to <1024 ports when PORT is overridden.
     deploy:
       resources:
         limits:
           memory: 128m
           cpus: "0.5"
+          pids: 100
 
   # ── HTTPS self-signed mode (--profile https) ─────────────────────────────
   reverse-proxy-https:
@@ -156,11 +175,17 @@ services:
         fi
         exec nginx -g "daemon off;"
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    # Default caps retained: nginx binds 80/443 + entrypoint runs
+    # `apk add openssl` to generate the self-signed cert; dropping caps
+    # would break both.
     deploy:
       resources:
         limits:
           memory: 128m
           cpus: "0.5"
+          pids: 100
 
   # ── Traefik + Let's Encrypt mode (--profile traefik) ─────────────────────
   traefik:
@@ -183,11 +208,14 @@ services:
       - --certificatesresolvers.le.acme.storage=/acme.json
       - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     deploy:
       resources:
         limits:
           memory: 256m
           cpus: "0.5"
+          pids: 100
 
   # ── Redis rate limiting add-on (--profile redis) ─────────────────────────
   redis:
@@ -199,6 +227,11 @@ services:
     volumes:
       - redis-data:/data
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 100
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme}
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]

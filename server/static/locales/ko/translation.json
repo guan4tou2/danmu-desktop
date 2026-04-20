@@ -107,6 +107,8 @@
   "themesSectionDesc": "탄막 스타일과 효과를 위한 사전 정의된 비주얼 테마",
   "pollSectionDesc": "시청자가 탄막으로 투표할 수 있는 대화형 투표 생성",
   "noData": "데이터 없음",
+  "sidebarWorkflowCopy": "이 페이지를 관제탑으로 활용하세요: 왼쪽에서 방송을 조정하고, 여기서 모더레이션이나 에셋 섹션으로 바로 이동합니다.",
+  "sidebarRecommendedCopy": "라이브 조정 시: 먼저 스타일을 조정하고, 라이브 피드에서 검증한 뒤 필요할 때만 기록과 필터로 이동하세요.",
   "colorSetting": "색상 설정",
   "colorSettingDesc": "사용자가 색상을 커스터마이즈할 수 있도록 허용",
   "specificColor": "지정 색상",
