@@ -7,6 +7,20 @@
 
 ## [Unreleased]
 
+## [4.8.1] - 2026-04-20
+
+### 修復 / Fixed
+
+- **`setup.sh init` 在 HTTPS mode 的 HTTP port 提示後靜默退出 (CRITICAL)**：v4.7.1 加入的 port 驗證邏輯有兩個 `set -e` 陷阱：
+  1. `_port_in_use` 對**空閒 port** 回傳 1，直接觸發 `set -euo pipefail` 把 script 殺掉（`case $?` 根本沒機會跑）。使用者在 VPS 上看到的 symptom 就是輸入 HTTP port（比方 4080）後 prompt 消失、shell 回傳 exit code 1、沒有錯誤訊息。
+  2. `_valid_port` 回傳 2（port 被佔用）也會被 `set -e` 吃掉，使得 occupied-port 的 override 路徑從來都不會被觸發。
+
+  修法：在 `_valid_port` 裡用 `_port_in_use "$n" || _piu=$?` 捕 rc；在呼叫端用 `_valid_port … || _rc=$?` 同樣 idiom。兩個 `set -e` 豁免點都加了註解說明為什麼不能改回 `; case $?`。用 bash 5 + Docker 跑了三種 scenario（free port / in-use port / 非數字）確認修好。
+
+  回報：使用者 VPS（ubuntu、ss 可用）實際重現 — 80/443 被佔用而被 fallback 到 4080，再輸入 4080 時 `_port_in_use 4080` 回 1（free），script 死。
+
+---
+
 ## [4.8.0] - 2026-04-20
 
 ### 新增 / Added
