@@ -446,6 +446,24 @@ _init() {
   echo ""
   _ok ".env written."
 
+  # Bind-mount prep: ensure runtime/ and user_plugins/ exist on the host
+  # with ownership that matches the container's non-root user (uid 1000,
+  # `appuser`). If host `$(id -u)` is different (common on Oracle Cloud
+  # images where the default user is UID 1001), docker will mount dirs
+  # owned by the host user and the container can't write — ws_auth.json
+  # seeding fails silently until admin notices the error log.
+  mkdir -p server/runtime server/user_plugins
+  local _APP_UID=1000 _host_uid
+  _host_uid=$(id -u)
+  if [ "$_host_uid" -ne "$_APP_UID" ]; then
+    _warn "Host uid ($_host_uid) differs from container appuser uid ($_APP_UID)."
+    _warn "Container will fail to write runtime/ws_auth.json, runtime/settings.json,"
+    _warn "runtime/webhooks.json, etc. unless the host dirs match uid $_APP_UID."
+    _warn "Fix before 'docker compose up -d':"
+    echo "    sudo chown -R ${_APP_UID}:${_APP_UID} server/runtime server/user_plugins"
+    echo ""
+  fi
+
   # Traefik acme.json
   if [ "$_PROFILE" = "traefik" ]; then
     mkdir -p traefik

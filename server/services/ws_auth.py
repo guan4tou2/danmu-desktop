@@ -45,6 +45,12 @@ logger = logging.getLogger(__name__)
 _STATE_FILE = Path(__file__).parent.parent / "runtime" / "ws_auth.json"
 _lock = threading.RLock()
 _state: Optional[Dict] = None  # cached in-memory snapshot; load on first read
+# When the bind-mounted runtime/ dir is owned by the wrong UID (e.g. Oracle
+# Cloud images where `ubuntu` is UID 1001 but the container's `appuser` is
+# 1000), every write fails. Log the actionable remediation ONCE so we don't
+# spam ERROR on every connection — the service continues with in-memory
+# state, admin UI still works, changes just don't survive restart.
+_write_failure_logged: bool = False
 
 
 def _write_state(state: Dict) -> None:
@@ -120,6 +126,30 @@ def _seed_from_env() -> Dict:
     return {"require_token": require, "token": token}
 
 
+def _log_write_failure_once(exc: Exception) -> None:
+    """Emit a single actionable warning when the runtime file is unwritable.
+
+    Repeat failures go to DEBUG to avoid log spam — the service is
+    explicitly degrading to in-memory-only mode, not crashing.
+    """
+    global _write_failure_logged
+    if _write_failure_logged:
+        logger.debug("ws_auth persist still failing: %s", exc)
+        return
+    _write_failure_logged = True
+    logger.warning(
+        "Cannot persist %s (%s: %s). State will live in memory for this "
+        "process only — admin changes won't survive a container restart. "
+        "Common cause: host bind-mount owned by a different UID than the "
+        "container's `appuser` (1000). Fix: `sudo chown -R 1000:1000 "
+        "server/runtime server/user_plugins` on the host, then recreate "
+        "the container.",
+        _STATE_FILE,
+        type(exc).__name__,
+        exc,
+    )
+
+
 def _load() -> Dict:
     """Read runtime file, or seed + write if missing. Caller must hold _lock."""
     if _STATE_FILE.exists():
@@ -136,11 +166,15 @@ def _load() -> Dict:
             logger.warning("Failed to read %s: %s; re-seeding from env", _STATE_FILE, exc)
 
     seeded = _seed_from_env()
+    # Seeding write is "nice to have" — if the host bind mount is unwritable,
+    # we log once and keep going with in-memory state.
     try:
         _write_state(seeded)
         logger.info("Seeded ws_auth.json (require_token=%s)", seeded["require_token"])
-    except Exception as exc:
-        logger.error("Failed to write %s: %s", _STATE_FILE, exc)
+    except PermissionError as exc:
+        _log_write_failure_once(exc)
+    except OSError as exc:
+        _log_write_failure_once(exc)
     return seeded
 
 
@@ -164,6 +198,12 @@ def set_state(*, require_token: bool, token: str) -> Dict:
     Raises ValueError if require_token=True but token is empty — the admin
     schema should catch this, but we double-check at the persistence
     boundary so no bad state ever lands on disk.
+
+    Disk write failures (PermissionError / OSError on a misconfigured host
+    bind mount) are logged once and swallowed — the in-memory cache is
+    always updated so admin UI changes take effect immediately for this
+    process lifetime. They just won't survive a restart until the host dir
+    ownership is fixed.
     """
     require_token = bool(require_token)
     token = str(token or "")
@@ -172,8 +212,14 @@ def set_state(*, require_token: bool, token: str) -> Dict:
     global _state
     with _lock:
         new_state = {"require_token": require_token, "token": token}
-        _write_state(new_state)
+        # Update memory first so the change takes effect even if disk fails.
         _state = dict(new_state)
+        try:
+            _write_state(new_state)
+        except PermissionError as exc:
+            _log_write_failure_once(exc)
+        except OSError as exc:
+            _log_write_failure_once(exc)
         return dict(_state)
 
 
@@ -196,6 +242,7 @@ def _reset_for_tests() -> None:
     """Drop the in-memory cache. Tests should monkeypatch _STATE_FILE before
     calling get_state() so they don't pollute the real runtime file.
     """
-    global _state
+    global _state, _write_failure_logged
     with _lock:
         _state = None
+        _write_failure_logged = False

@@ -7,6 +7,56 @@
 
 ## [Unreleased]
 
+## [4.8.2] - 2026-04-20
+
+Deployment-papercut release — all four fixes were triggered by an actual
+live deploy to Oracle Cloud where UID mismatch + .env inline-comment +
+cloud firewall combined to hide the problem behind cryptic log lines.
+
+### 修復 / Fixed
+
+- **`.env.example` inline-comment 被 python-dotenv 吞成值 (CRITICAL)**：
+  `SECRET_KEY=` 和 `WS_AUTH_TOKEN=` 兩行後面接了 `# comment`。dotenv 對
+  **空值 + inline `#` comment** 的處理是把整個 comment 當成值，所以
+  `WS_AUTH_TOKEN=              # Shared secret; ...` 會被 load 成
+  `"# Shared secret; ..."`，接著 admin UI 也會顯示這串 garbage 當 token。
+  修法：把說明註解移到變數的**上一行**，變數行保持 `KEY=`（值為空）。
+  同個 bug 之前在 `WS_ALLOWED_ORIGINS` 被修過，這次補齊剩下兩個受害者。
+- **`setup.sh` UID mismatch 無感知 (Oracle Cloud 常見)**：host 使用者 UID
+  ≠ 1000（Oracle / 某些 minimal image 的 `ubuntu` 是 1001）時，docker
+  bind-mount `server/runtime/` 會讓 container 的 `appuser`(uid 1000) 無法
+  寫入，ws_auth.json / settings.json / webhooks.json 等全部寫失敗但無
+  明顯錯誤訊息。`setup.sh init` 現在會：
+  - `mkdir -p server/runtime server/user_plugins`（避免 docker 用 root 預設建）
+  - 偵測 `$(id -u)` ≠ 1000 時 warn 並印出修復指令
+    `sudo chown -R 1000:1000 server/runtime server/user_plugins`
+- **`ws_auth.py` 寫入失敗時 log spam → 優雅降級**：先前每次 `set_state`
+  / 每次 boot 都會 `ERROR ... Permission denied`。現改為：
+  - 第一次失敗記一條 `WARNING` 附可行修復指令
+  - 後續失敗降到 `DEBUG`
+  - **in-memory cache 照更新** — admin UI 的變動在 container lifetime 內
+    仍生效（只是無法跨 restart），比先前「靜默丟失」好
+
+### 新增 / Added
+
+- **`DEPLOYMENT.md` 疑難排解新段**：
+  - `Permission denied writing runtime/ws_auth.json` — 完整診斷 + chown 修復
+  - `Cloud firewall blocking 4000 / 4001` — host iptables + cloud ingress 雙層
+    說明（Oracle Cloud / AWS / GCP 通則）
+
+### 技術細節 / Technical
+
+- **Tests**：`tests/test_ws_auth.py` 新增 4 個 graceful-degradation 測試
+  （seed 失敗 / set_state 失敗 / 一次性 log / rotate 失敗時 in-memory 可用）。
+  使用 `monkeypatch` 把 `os.open` 對 `ws_auth.tmp.*` 強制丟 `PermissionError`，
+  模擬 UID mismatch 情境不需真的改 host 權限。全部標 `@ws_auth_raw_seed`
+  opt out 預設的 disabled-state fixture。737 tests pass（v4.8.1: 733 + 4 new）。
+- **Build tooling**：`server/package.json` `build:css` script 在 tailwindcss
+  output 後追加 `\n`，避免 pre-commit `end-of-file-fixer` 每次重 build 都
+  strip 掉尾行 newline（v4.8.0、v4.8.1 都撞過這個 DX papercut）。
+
+---
+
 ## [4.8.1] - 2026-04-20
 
 ### 修復 / Fixed

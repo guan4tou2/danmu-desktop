@@ -339,3 +339,50 @@ Add `nginx/certs/fullchain.pem` to your browser or OS trust store.
 ```bash
 docker compose logs server
 ```
+
+**`Permission denied` writing `runtime/ws_auth.json` (or other runtime files)**
+
+The container runs as UID `1000` (`appuser`). If the host's `server/runtime/`
+or `server/user_plugins/` is owned by a different UID, the bind-mounted dir
+overrides the image ownership and the container can't write. Common on
+Oracle Cloud images where the default human user is UID `1001`, not `1000`.
+
+Symptom: log lines like
+```
+ERROR | ... | Failed to write /app/server/runtime/ws_auth.json: [Errno 13] Permission denied
+```
+or (v4.8.2+)
+```
+WARNING | ... | Cannot persist ... State will live in memory for this process only
+```
+
+Fix (run on host, from the repo root):
+```bash
+sudo chown -R 1000:1000 server/runtime server/user_plugins
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml \
+  --profile https up -d --force-recreate server
+```
+
+v4.8.2+ `setup.sh init` detects this at install time and prints the chown
+command when `id -u` ≠ 1000.
+
+**Cloud firewall blocking 4000 / 4001 (Oracle Cloud / AWS / GCP)**
+
+Host-level `iptables` usually allows only 22/80/443 by default on cloud
+images; docker publishing a port opens the host socket but NOT the cloud
+ingress. Both must allow inbound.
+
+- **Host iptables** (Ubuntu/Oracle images):
+  ```bash
+  sudo iptables -I INPUT 10 -p tcp --dport 4000 -j ACCEPT
+  sudo iptables -I INPUT 10 -p tcp --dport 4001 -j ACCEPT
+  sudo netfilter-persistent save
+  ```
+- **Cloud security list / NSG**: add TCP ingress 4000 + 4001 from `0.0.0.0/0`
+  via your cloud provider's console, CLI, or terraform.
+  - OCI example (one-shot, run in Cloud Shell):
+    see wiki → Installation → "Oracle Cloud: open ports via CLI"
+
+Symptom: external `curl https://YOUR_IP:4000/health` times out (not refused).
+If iptables is the cause, `curl` from the same host via `127.0.0.1:4000`
+works. If cloud ingress is the cause, even a `dev laptop → VPS` test fails.
