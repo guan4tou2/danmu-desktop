@@ -8,13 +8,11 @@ clean and nothing leaks to the real runtime/ws_auth.json.
 """
 
 import json
-from unittest.mock import patch
 
 import pytest
 
 from server.config import Config  # ty: ignore[unresolved-import]
 from server.services import ws_auth  # ty: ignore[unresolved-import]
-
 
 # ── 1. Service: seed from env on first load ──────────────────────────────
 #
