@@ -7,6 +7,14 @@
 
 ## [Unreleased]
 
+## [4.6.5] - 2026-04-20
+
+### 修復 / Fixed
+
+- **`scripts/bump-version.sh` drift self-heal**：腳本先前用 `$CURRENT` 當 sed 匹配模式，若 `package.json` 與 `config.py` 版本已 drift（如 `config.py` 被手動改成別的版本），sed 會 silent no-op 只更新 `package.json`，留下不一致。改為匹配任意 `[0-9]+\.[0-9]+\.[0-9]+` semver pattern，並加上 post-write verification 逐檔確認新版本已寫入。
+- **`scripts/bump-version.sh` portability**：`grep -E '^\s*...'` 在 BSD grep（macOS 預設）下不認 `\s`，改為 `[[:space:]]` 與腳本其他地方一致，避免某些環境抓不到當前版本。
+- **`scripts/bump-version.sh` awk double separator**：bump 後 CHANGELOG 會產生兩條 `---`，原因是 awk 不消化 `[Unreleased]` 後既存的 separator。現在會吞掉後續空白行與 `---` 再插入新 section，不再疊。
+
 ---
 
 ## [4.6.4] - 2026-04-20
