@@ -2,6 +2,8 @@
 
 在桌面直接顯示彈幕
 
+[English README](https://github.com/guan4tou2/danmu-desktop/blob/main/README.md)
+
 ![img](img/danmu%20display.png)
 
 ## 概述
@@ -18,7 +20,7 @@
 ![img](img/client%20start%20effect.png)
 
 2. Server
-   - 創建網頁界面用於彈幕輸入
+   - 提供網頁介面用於彈幕輸入
    - 管理彈幕傳送到已連接的客戶端
    - 包含管理員配置面板、來源指紋記錄與歷史追蹤
    - OBS Browser Source 覆蓋層（`/overlay` 路由）
@@ -76,104 +78,128 @@
 ### Danmu-Desktop 客戶端
 
 1. 下載[最新版本](https://github.com/guan4tou2/danmu-desktop/releases)
-2. MacOS 用戶需要執行：
+2. macOS 使用者解除隔離：
    ```bash
    sudo xattr -r -d com.apple.quarantine 'Danmu Desktop.app'
    ```
 3. 啟動應用程式
-4. 輸入伺服器的 IP 和端口（預設：4001）
+4. 輸入伺服器的 IP 與 WebSocket port（預設：`4001`）
 
 ### 伺服器設置
 
-#### 選項 1：使用 GitHub Container Registry 映像（推薦）
-
-1. 直接拉取並啟動映像（請替換密碼）：
-   ```bash
-   docker run -d --name danmu-server \
-     -p 4000:4000 \
-     -p 4001:4001 \
-     -e ADMIN_PASSWORD=your_secure_password \
-     -v danmu_fonts:/app/server/user_fonts \
-     -v danmu_static:/app/server/static \
-     -v danmu_logs:/app/server/logs \
-     ghcr.io/guan4tou2/danmu-server:latest
-   ```
-   - 也可改用 bcrypt 雜湊避免明文：
-     - 產生雜湊：`python server/scripts/hash_password.py`
-     - 設定 `-e ADMIN_PASSWORD_HASHED='<bcrypt-hash>'`
-   - 伺服器啟動時至少必須提供 `ADMIN_PASSWORD` 或 `ADMIN_PASSWORD_HASHED` 其中一個。
-   - 建置的映像支援 `linux/amd64` 與 `linux/arm64/v8`
-   - 可用標籤：
-     - `latest`：`main` 分支的穩定版本
-     - `main`：永遠指向最新的 `main` commit
-     - `<git-sha>`：對應特定 commit 的不可變版本（可在 CI log 查看）
-2. 建議加入 `--restart unless-stopped` 讓服務自動重啟。
-3. 更新版本只需重新拉取並重建：
-   ```bash
-   docker pull ghcr.io/guan4tou2/danmu-server:latest
-   docker stop danmu-server && docker rm danmu-server
-   # 重新執行上述 docker run 指令
-   ```
-
-#### 選項 2：Docker Compose — 快速啟動
+正規安裝路徑是 `./setup.sh init` — 一個互動式精靈，會根據你的
+環境挑合理預設、自動產生 secret、寫好 `.env`。這一套流程涵蓋
+HTTP 開發、HTTPS 自簽（LAN / VPS）、以及 Traefik + Let's Encrypt
+（公網 domain）三種部署模式。
 
 ```bash
-cp .env.example .env     # 設定 ADMIN_PASSWORD
-docker compose --profile http up -d
+git clone https://github.com/guan4tou2/danmu-desktop.git
+cd danmu-desktop
+./setup.sh init                      # 互動式：模式、密碼、ports、desktop client
+./setup.sh init --advanced           # + 速率限制、log、資源上限
+./setup.sh check                     # 啟動前驗證現有 .env
+./setup.sh gen-secret                # 只產生並寫入 SECRET_KEY
+
+# 再啟動 stack。精靈會印出確切指令，常見路徑：
+docker compose --profile http up -d          # 本機 HTTP
+docker compose --profile https up -d         # HTTPS 自簽（LAN / VPS）
+docker compose --profile traefik up -d       # HTTPS + Let's Encrypt（公網 domain）
 ```
 
-開啟 http://localhost:4000
+完整部署文件（HTTPS 模式、桌面客戶端 WS port、Redis、備份/還原、升級）：
+**[DEPLOYMENT.md](DEPLOYMENT.md)**。
 
-HTTPS、Traefik、Redis 及正式環境部署說明，請參閱 **[DEPLOYMENT.md](DEPLOYMENT.md)**。
+#### 捷徑：預編譯映像，無需 clone
 
-#### 選項 3：手動設置
+若你只要跑 server，不需要原始碼：
 
-1. 克隆專案（僅 server，跳過 Electron client）：
+```bash
+docker run -d --name danmu-server \
+  -p 4000:4000 -p 4001:4001 \
+  -e ADMIN_PASSWORD=your_secure_password \
+  -e SECRET_KEY=$(openssl rand -hex 32) \
+  -e ENV=production \
+  -v "$(pwd)/danmu-runtime:/app/server/runtime" \
+  -v "$(pwd)/danmu-user-plugins:/app/server/user_plugins" \
+  -v "$(pwd)/danmu-user-fonts:/app/server/user_fonts" \
+  --restart unless-stopped \
+  ghcr.io/guan4tou2/danmu-server:latest
+```
 
-   ```bash
-   git clone --filter=blob:none --sparse https://github.com/guan4tou2/danmu-desktop
-   cd danmu-desktop
-   git sparse-checkout set server .env.example
-   ```
+`SECRET_KEY` 在 production 為必填 — 啟動時會拒絕 ephemeral key。
+`openssl rand -hex 32` 會即時產一把；記下來才能在 container 重建後保有
+相同的 session。
 
-   或完整克隆：
-   ```bash
-   git clone https://github.com/guan4tou2/danmu-desktop
-   cd danmu-desktop
-   ```
+多架構（`linux/amd64` + `linux/arm64/v8`）。Tags：`latest`、`main`、
+`<git-sha>`。此路徑要用 HTTPS 需自行在前面架反向代理。
 
-2. 配置環境：
+#### 手動（不使用 Docker）
 
-   ```bash
-   cp .env.example .env
-   vim .env  # 設定管理員密碼和其他選項
-   ```
+```bash
+cp .env.example .env
+./setup.sh gen-secret                # 寫入 SECRET_KEY
+# 編輯 .env：設定 ADMIN_PASSWORD
 
-3. 設置虛擬環境並安裝依賴：
+cd server && uv venv && uv sync
+PYTHONPATH=.. uv run python -m server.app    # HTTP + WS 都從這邊起
+```
 
-   ```bash
-   cd server
-   uv venv
-   uv sync
-   ```
+### 存取伺服器
 
-4. 啟動伺服器（HTTP + WebSocket）：
+啟動後開啟：
 
-   ```bash
-   # 終端 1：HTTP 伺服器
-   PYTHONPATH=.. uv run python -m server.app
+- 主介面：`http://<host>:<port>`
+- 管理面板：`http://<host>:<port>/admin`
+- OBS overlay：`http://<host>:<port>/overlay`
 
-   # 終端 2：WebSocket 伺服器
-   PYTHONPATH=.. uv run python -m server.ws_app
-   ```
+（`<host>` 與 `<port>` 請替換成精靈印出的值。）
 
-詳細部署說明請參考 [DEPLOYMENT.md](DEPLOYMENT.md)、`docs/README.md` 以及英文版 README。
+### 環境變數
 
-### 訪問伺服器
+`.env.example` 有完整註解。精靈會幫你處理的關鍵變數：
 
-- 主界面：`http://ip:4000`
-- 管理面板：`http://ip:4000/admin`
-- OBS 覆蓋層：`http://ip:4000/overlay`
+| 變數 | 用途 |
+|---|---|
+| `ADMIN_PASSWORD` / `ADMIN_PASSWORD_HASHED` | 管理員登入（至少設一個） |
+| `SECRET_KEY` | Flask session 密鑰（精靈 / `gen-secret` 產生） |
+| `ENV` | `production` 啟用嚴格 session / HSTS 預設值 |
+| `PORT` / `WS_PORT` | HTTP 與 WebSocket port（預設 4000 / 4001） |
+| `HTTPS_PORT` | `--profile https` / `traefik` 對外的 HTTPS port |
+| `TRUSTED_HOSTS` | Host header 白名單（逗號分隔） |
+| `SESSION_COOKIE_SECURE` | production 走 HTTPS 時設 `true` |
+| `WS_REQUIRE_TOKEN` / `WS_AUTH_TOKEN` | 選配：port 4001 的共用 token 驗證 |
+| `RATE_LIMIT_BACKEND` | `memory` 或 `redis`（透過 `--profile redis` 啟） |
+
+其他設定都有安全預設；`.env.example` 列齊了所有項目。
+
+## 安全備註
+
+- 此 repo 已啟用 GitHub Advanced Security 與 Dependabot。
+- OSV 掃描會在 `push`、`pull_request` 與排程任務執行（見 `.github/workflows/osv-scanner.yml`）。
+- 前端 lockfile 透過 npm overrides 強制 `serialize-javascript@7.0.3`，對應 `GHSA-5c6j-r48x-rmvq`。
+- 專用 WebSocket 預設為 `WS_REQUIRE_TOKEN=false`。若 `4001` 對 localhost 或受信任 LAN 以外的網路可達，任何可到達該埠的客戶端都能連線；請改為啟用 token 驗證，或用反向代理 / 防火牆限制路徑。
+- production 啟動現在會拒絕以下不安全設定：未明確設定 `SECRET_KEY`、`SESSION_COOKIE_SECURE=false`、或未設定 `TRUSTED_HOSTS`。部署前請先補齊。
+- 目前 app 會送出 nonce-based `Content-Security-Policy` header。之後若新增 inline script，請使用模板提供的 nonce，不要退回 `unsafe-inline`。
+- `Strict-Transport-Security` 目前是 opt-in，需明確設定 `HSTS_ENABLED=true`，且只會在 HTTPS 回應上送出。
+
+## 專案文件
+
+- [`DESIGN.md`](./DESIGN.md) – 設計系統（brand、color、typography、motion、a11y、voice）。所有視覺決策的單一真相來源。
+- `docs/perf/baseline-v4.6.1.md` – performance baseline（HTTP payload、latency、font loading）。
+- `docs/designs/` – 設計探索產出（排版比較頁等）。
+- `docs/audits/` – 設計審查 audit 報告（依 round 編列）。
+- `docs/README.md` – 技術文件與 archive 的索引。
+- `DEPLOYMENT.md` – production 部署指南。
+- `server/PLUGIN_GUIDE.md` – Plugin SDK 開發文件。
+- `README.md` – 英文總覽。
+- `docs/archive/` – 歷史紀錄與整理檔案。
+
+## CI/CD 與 Docker Hub
+
+- `.github/workflows/docker-build.yml` 會在每次 PR / push 時建置與測試伺服器映像。
+- `.github/workflows/test.yml` 執行 Python 測試（含覆蓋率報告與 `pip-audit` CVE 掃描）。
+- `.github/workflows/build.yml` 在版本更新時為 Windows、macOS、Linux 建置 Electron 應用程式，並建立含自動更新中繼資料的 GitHub Releases。
+- 於 GitHub Secrets 設定 `DOCKERHUB_USERNAME` 與 `DOCKERHUB_TOKEN`（Docker Hub Access Token），即可在 main 更新時自動推送 `DOCKERHUB_USERNAME/danmu-server:latest` 與對應 commit SHA tag。
 
 ## 測試與覆蓋率
 
@@ -184,31 +210,8 @@ HTTPS、Traefik、Redis 及正式環境部署說明，請參閱 **[DEPLOYMENT.md
 
 ## 端口配置
 
-- `4000`：網頁界面（經由反向代理）
-- `4001`：Danmu Desktop 客戶端連接（經由反向代理）
-
-## 文件總覽 / Docs
-- `README.md`：英文版總覽。
-- `docs/README.md`：技術文件索引（English/中文）。
-- `DEPLOYMENT.md`：生產部署細節 / Deployment reference。
-- `server/PLUGIN_GUIDE.md`：插件 SDK 開發文件。
-- `README-CH.md`：中文總覽（本文件）。
-- `docs/archive/`：歷史紀錄與整理檔案。
-
-## CI/CD 與 Docker Hub
-- `.github/workflows/docker-build.yml` 會在每次 PR / push（main）時建置與測試伺服器映像。
-- `.github/workflows/test.yml` 執行 Python 測試（含覆蓋率報告與 `pip-audit` CVE 掃描）。
-- `.github/workflows/build.yml` 在版本更新時為 Windows、macOS、Linux 建置 Electron 應用程式，並建立含自動更新中繼資料的 GitHub Releases。
-- 於 GitHub Secrets 設定 `DOCKERHUB_USERNAME` 與 `DOCKERHUB_TOKEN`（Docker Hub Access Token），即可在 main 更新時自動推送 `使用者/danmu-server:latest` 與對應 commit SHA 的 Tag。
-
-## 安全備註
-- 此 repo 已啟用 GitHub Advanced Security 與 Dependabot。
-- OSV 掃描會在 `push`、`pull_request` 與排程任務執行（見 `.github/workflows/osv-scanner.yml`）。
-- 前端 lockfile 透過 npm overrides 強制 `serialize-javascript@7.0.3`，對應 `GHSA-5c6j-r48x-rmvq`。
-- 專用 WebSocket 預設為 `WS_REQUIRE_TOKEN=false`。若 `4001` 對 localhost 或受信任 LAN 以外的網路可達，任何可到達該埠的客戶端都能連線；請改為啟用 token 驗證，或用反向代理 / 防火牆限制路徑。
-- production 啟動現在會拒絕以下不安全設定：未明確設定 `SECRET_KEY`、`SESSION_COOKIE_SECURE=false`、或未設定 `TRUSTED_HOSTS`。部署前請先補齊。
-- 目前 app 會送出 nonce-based `Content-Security-Policy` header。之後若新增 inline script，請使用模板提供的 nonce，不要退回 `unsafe-inline`。
-- `Strict-Transport-Security` 目前是 opt-in，需明確設定 `HSTS_ENABLED=true`，且只會在 HTTPS 回應上送出。
+- `4000`：網頁介面（HTTP，可經反向代理）
+- `4001`：Danmu Desktop 客戶端連接（WebSocket，可經反向代理）
 
 ## 參考資料
 
