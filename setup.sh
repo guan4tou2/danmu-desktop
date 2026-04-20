@@ -177,8 +177,40 @@ _init() {
   # Port selection for https/traefik (auto-detect conflicts on 80/443)
   local http_port="80" https_port="443"
 
+  # Probe whether a port is already listening. Tries `ss` (Linux) then
+  # `lsof` (macOS default) then `netstat`. Returns 0 if in use, 1 if free,
+  # 2 if no probe tool is available (caller should treat as "unknown").
+  _port_in_use() {
+    local n="$1"
+    if command -v ss >/dev/null 2>&1; then
+      ss -ltn 2>/dev/null | awk '{print $4}' | grep -Eq ":$n$" && return 0 || return 1
+    fi
+    if command -v lsof >/dev/null 2>&1; then
+      lsof -iTCP:"$n" -sTCP:LISTEN -P -n 2>/dev/null | grep -q LISTEN && return 0 || return 1
+    fi
+    if command -v netstat >/dev/null 2>&1; then
+      netstat -an 2>/dev/null | grep -Eq "[.:]$n[[:space:]]+.*LISTEN" && return 0 || return 1
+    fi
+    return 2
+  }
+
+  # One-time warning when no port probe tool is available. Caller loops
+  # multiple times; we only want to warn once.
+  local _probe_warned=""
+  _warn_if_no_probe() {
+    if [ -n "$_probe_warned" ]; then return 0; fi
+    if ! command -v ss >/dev/null 2>&1 && \
+       ! command -v lsof >/dev/null 2>&1 && \
+       ! command -v netstat >/dev/null 2>&1; then
+      _warn "No ss/lsof/netstat found — port-in-use detection disabled."
+      _warn "Ports will only be checked for format/range; conflicts at docker compose up may still occur."
+      _probe_warned=1
+    fi
+  }
+
   # Validate a single port value: numeric, 1-65535, and optionally ensure
-  # it's not already in use. Returns 0 if OK, 1 otherwise (prints reason).
+  # it's not already in use. Returns 0 if OK, 1 if format/range invalid,
+  # 2 if the port is occupied (caller can decide whether to override).
   # Forces decimal interpretation via $((10#$p)) so inputs like "080" are
   # 80, not an octal-parse crash under `set -e`.
   _valid_port() {
@@ -191,9 +223,13 @@ _init() {
     if [ "$n" -lt 1 ] || [ "$n" -gt 65535 ]; then
       _error "$label out of range 1-65535: '$p'"; return 1
     fi
-    if [ "$check_in_use" = "true" ] && ss -ltn 2>/dev/null | awk '{print $4}' | grep -Eq ":$n$"; then
-      _error "$label $n is already in use on this host."
-      return 1
+    if [ "$check_in_use" = "true" ]; then
+      _warn_if_no_probe
+      _port_in_use "$n"
+      case $? in
+        0) _warn "$label $n is already in use on this host."; return 2 ;;
+        1|2) : ;;  # free or unknown — accept
+      esac
     fi
     return 0
   }
@@ -208,19 +244,38 @@ _init() {
       https_port="4000"
     fi
     if [ "$_PROFILE" = "https" ]; then
-      # Loop until user gives valid, non-colliding ports. Important: keep the
-      # last-known-good defaults intact on retry, and validate into temp vars
-      # so a bad typo doesn't poison the "press Enter to accept" default next
-      # round. Also: if HTTPS fails validation, don't force re-typing HTTP.
+      # Loop until user gives valid, non-colliding ports. Keeps last-known-
+      # good defaults intact on retry; validates into temp vars so a bad typo
+      # doesn't poison the "press Enter to accept" default next round. If
+      # HTTPS fails, HTTP isn't re-asked.
+      #
+      # Port-in-use is a SOFT failure: offer an override for cases where the
+      # operator knows they're replacing an existing listener (e.g. old
+      # danmu container still running on that port).
+      _accept_occupied_port() {
+        local label="$1" n="$2" ans
+        read -rp "  Use $label $n anyway (you'll replace whatever's listening)? [y/N]: " ans
+        [ "${ans,,}" = "y" ]
+      }
       while true; do
         local _hp_in _sp_in _hp_val _sp_val
         read -rp "HTTP port [${http_port}]: " _hp_in
         _hp_val="${_hp_in:-$http_port}"
-        _valid_port "$_hp_val" "HTTP port" true || continue
+        _valid_port "$_hp_val" "HTTP port" true
+        case $? in
+          0) : ;;                                          # free — good
+          1) continue ;;                                   # format/range bad
+          2) _accept_occupied_port "HTTP port" "$_hp_val" || continue ;;
+        esac
 
         read -rp "HTTPS port [${https_port}]: " _sp_in
         _sp_val="${_sp_in:-$https_port}"
-        _valid_port "$_sp_val" "HTTPS port" true || continue
+        _valid_port "$_sp_val" "HTTPS port" true
+        case $? in
+          0) : ;;
+          1) continue ;;
+          2) _accept_occupied_port "HTTPS port" "$_sp_val" || continue ;;
+        esac
 
         if [ "$_hp_val" = "$_sp_val" ]; then
           _error "HTTP and HTTPS ports cannot be the same ($_hp_val). Pick different ports."

@@ -118,12 +118,18 @@ If you only want the server binary and don't need source access:
 docker run -d --name danmu-server \
   -p 4000:4000 -p 4001:4001 \
   -e ADMIN_PASSWORD=your_secure_password \
-  -v $(pwd)/danmu-runtime:/app/server/runtime \
-  -v $(pwd)/danmu-user-plugins:/app/server/user_plugins \
-  -v $(pwd)/danmu-user-fonts:/app/server/user_fonts \
+  -e SECRET_KEY=$(openssl rand -hex 32) \
+  -e ENV=production \
+  -v "$(pwd)/danmu-runtime:/app/server/runtime" \
+  -v "$(pwd)/danmu-user-plugins:/app/server/user_plugins" \
+  -v "$(pwd)/danmu-user-fonts:/app/server/user_fonts" \
   --restart unless-stopped \
   ghcr.io/guan4tou2/danmu-server:latest
 ```
+
+`SECRET_KEY` is required in production — production startup refuses to
+boot with an ephemeral key. `openssl rand -hex 32` inlines a fresh one;
+save it if you want consistent sessions across container recreates.
 
 Multi-arch (`linux/amd64` + `linux/arm64/v8`). Tags: `latest`, `main`,
 `<git-sha>`. For HTTPS on this path you need to front the container with
