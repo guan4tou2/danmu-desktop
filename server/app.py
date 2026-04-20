@@ -89,15 +89,10 @@ def create_app(config_class=Config):
             "TRUSTED_HOSTS must be configured in production. "
             "Set TRUSTED_HOSTS to allowed hostnames to prevent host header poisoning."
         )
-    if (
-        env in {"production", "prod"}
-        and app.config.get("WS_REQUIRE_TOKEN", True)
-        and not app.config.get("WS_AUTH_TOKEN")
-    ):
-        app.logger.warning(
-            "WS_REQUIRE_TOKEN is enabled but WS_AUTH_TOKEN is empty. "
-            "Dedicated WS clients will be rejected."
-        )
+    # v4.8+: auth state now lives in runtime/ws_auth.json and is mutable at
+    # runtime via the admin UI. startup_warnings.log_ws_auth_warnings() reads
+    # the service-backed state; the Config.WS_* env vars are only used as a
+    # first-boot seed (see services/ws_auth.py::_seed_from_env).
     log_ws_auth_warnings(app.logger, app.config, env=env)
 
     # CORS configuration

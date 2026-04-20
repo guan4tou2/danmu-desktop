@@ -7,6 +7,33 @@
 
 ## [Unreleased]
 
+## [4.8.0] - 2026-04-20
+
+### 新增 / Added
+
+- **Admin UI WS token toggle**（moderation 區新增 `sec-ws-auth` 區段）：過去要啟用/停用 `4001` 的 shared token 驗證必須改 `.env` 並重啟 container，現在在 admin 頁一鍵切換。開/關、手動填 token、重新產生 token、複製到剪貼簿都直接可用，設定瞬間套用 — existing connections 會被保留（grandfathered），新連線立即依新設定。支援 4 語系（中/英/日/韓）。直播中切換不用踢人，不用重開 server。
+- **`runtime/ws_auth.json`**：新的 runtime state 檔，同 `settings.json` / `webhooks.json` / `filter_rules.json` 一樣放在 `server/runtime/`，被 Docker bind-mount、被 `scripts/backup.sh` 備份、被 v4.6.2+ 的 upgrade-safe 機制保護。
+- **Secure-by-default 初始化**：首次啟動（runtime 檔不存在）如果環境變數 `WS_REQUIRE_TOKEN` / `WS_AUTH_TOKEN` 都沒設，會自動產生 24-byte urlsafe token 並啟用 token 驗證；管理員之後可在 UI 關閉。這是「fresh install 安全」與「已部署用戶 upgrade 不被靜默改設定」的折衷 — 若 env 明確 set `WS_REQUIRE_TOKEN=false`，就尊重這個決定。
+- **Admin routes**：`GET /admin/ws-auth`（讀當前狀態）、`POST /admin/ws-auth`（更新）、`POST /admin/ws-auth/rotate`（重新產生 token）。全部 CSRF 保護、`require_login`、過 `admin` rate limit。
+
+### 改善 / Improved
+
+- **Per-connection auth lookup**：`server/ws/server.py` 的 `_is_authorized()` 不再從啟動時 capture 的 closure 常數讀，而是每次連線呼叫 `ws_auth.get_state()`。admin 改 token 或切換 require_token 不用重啟 server，下一個 WS 連線就吃到新設定。
+- **啟動 warning 文字更新**：`startup_warnings.py` 原本提 `WS_REQUIRE_TOKEN is disabled`；現在改為 `WS token auth is disabled`，並提示「flip the admin UI toggle to enable token auth」作為可行的修復路徑。
+- **`/overlay` 路由讀 live state**：`routes/main.py` 的 overlay handler 以前讀 `current_app.config["WS_AUTH_TOKEN"]`（啟動時固定），現在讀 `ws_auth.get_state()`，admin 改 token 後新開的 OBS browser source 就拿得到最新值。
+
+### 修復 / Fixed
+
+- **Admin UI auto-handler 衝突**：`wsAuthRequireToggle` 原本會被 `.toggle-checkbox` 全域監聽抓到並誤打到 `/admin/Set` endpoint。初始化時移掉該 class，改由本區段專用 save button 處理。
+
+### 技術細節 / Technical
+
+- **Tests**：`tests/test_ws_auth.py` 新增 21 個測試（seeding 行為、cache 語意、檔案毀損復原、route validation、CSRF、rotate 保持 require_token flag、管理員改完 state 新連線立即吃到）。`conftest.py` 新增 `_isolate_ws_auth` autouse fixture，每測試重置 runtime 檔 + in-memory cache；預設把 state 預先設為 disabled，和 v4.7 系統測試相容，需要觸發 seeding 邏輯的 test 用 `@pytest.mark.ws_auth_raw_seed` opt-out。
+- **Validation schema**：`WsAuthSchema` 在 `validation.py` 新增，token 允許 `[A-Za-z0-9._~+/=-]{0,128}`（URL-safe base64 + 常見的 URL-safe 字元），同時用 `@validates_schema` 強制「require_token=True 時 token 必填」。服務層 `set_state()` 也會再 double-check。
+- **文件層**：Wiki Admin-Guide / Configuration 下次更新會收錄。DEPLOYMENT.md 的「WS token auth」段也會指向 admin UI 而非 env var。
+
+---
+
 ## [4.7.1] - 2026-04-20
 
 ### 修復 / Fixed

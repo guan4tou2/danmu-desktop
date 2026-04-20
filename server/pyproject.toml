@@ -59,6 +59,9 @@ target-version = ["py311"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "ws_auth_raw_seed: opt out of ws_auth autouse preset so the seeding-from-env path can be exercised",
+]
 
 [tool.coverage.run]
 branch = true

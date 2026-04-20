@@ -94,9 +94,14 @@ jobs:
           docker run -d --name test-server \
             -e ADMIN_PASSWORD=test \
             -e WS_HOST=0.0.0.0 \
+            -e WS_REQUIRE_TOKEN=false \
             -p 4000:4000 \
             -p 4001:4001 \
             $LOCAL_IMAGE
+          # WS_REQUIRE_TOKEN=false opts out of v4.8's secure-by-default
+          # seeding so the smoke test can connect without obtaining a token
+          # via the admin UI first. Real deploys leave this unset and the
+          # runtime state file is seeded with a generated token + auth on.
           READY=0
           for i in {1..12}; do
             if ! docker ps --filter "name=test-server" --filter "status=running" --format '{{.Names}}' | grep -q '^test-server$'; then

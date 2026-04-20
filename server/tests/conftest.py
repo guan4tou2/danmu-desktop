@@ -48,6 +48,35 @@ def _isolate_webhook_store(tmp_path):
         webhook_mod._WEBHOOKS_FILE = original_file
 
 
+@pytest.fixture(autouse=True)
+def _isolate_ws_auth(tmp_path, request):
+    """Isolate ws_auth runtime file per test to avoid cross-test pollution.
+
+    Default posture: auth DISABLED (require_token=False, empty token), so
+    the legacy system/browser tests that pre-date v4.8 don't all need to
+    be touched. Tests that want to exercise the seeding-from-env or the
+    secure-by-default behaviour can opt-out via the `ws_auth_raw_seed`
+    marker, which leaves _state=None and the file untouched (letting the
+    service seed normally on first get_state()).
+    """
+    from server.services import ws_auth as ws_auth_mod
+
+    original_file = ws_auth_mod._STATE_FILE
+    ws_auth_mod._STATE_FILE = tmp_path / "ws_auth.json"
+    ws_auth_mod._reset_for_tests()
+
+    if "ws_auth_raw_seed" not in request.keywords:
+        # Pre-populate as disabled so the next get_state() returns that
+        # (skipping the secure-by-default seeding path).
+        ws_auth_mod.set_state(require_token=False, token="")
+
+    try:
+        yield
+    finally:
+        ws_auth_mod._STATE_FILE = original_file
+        ws_auth_mod._reset_for_tests()
+
+
 _ws_logger = logging.getLogger("conftest.ws")
 _ws_logger.propagate = False
 if not _ws_logger.handlers:
@@ -94,15 +123,32 @@ def wait_for_ws_count(minimum: int = 1, timeout: float = 2.0) -> bool:
 
 
 @pytest.fixture(scope="session")
-def ws_server_port():
-    """啟動不需 token 的真實 WS 伺服器（整個 session 共用一個）"""
+def ws_server_port(tmp_path_factory):
+    """啟動不需 token 的真實 WS 伺服器（整個 session 共用一個）.
+
+    v4.8+: `run_ws_server()` primes `ws_auth.get_state()` at startup. This
+    fixture runs before any per-test `_isolate_ws_auth`, so we need to
+    redirect `_STATE_FILE` to a session-scoped tmp path here too — else the
+    first call to `ws_auth.get_state()` (at WS server start) would seed/
+    touch the real `server/runtime/ws_auth.json`.
+    """
+    from server.services import ws_auth as ws_auth_mod
+
     original_require = Config.WS_REQUIRE_TOKEN
     original_token = Config.WS_AUTH_TOKEN
     original_origins = Config.WS_ALLOWED_ORIGINS
+    original_ws_auth_file = ws_auth_mod._STATE_FILE
 
     Config.WS_REQUIRE_TOKEN = False
     Config.WS_AUTH_TOKEN = ""
     Config.WS_ALLOWED_ORIGINS = []
+    # Point to a session-tmp path + seed as disabled before run_ws_server()
+    # primes the cache. Per-test `_isolate_ws_auth` will redirect again to
+    # a per-test tmp and re-seed as disabled, which is fine — the cache is
+    # reset with `_reset_for_tests()` before each test.
+    ws_auth_mod._STATE_FILE = tmp_path_factory.mktemp("ws_auth_session") / "ws_auth.json"
+    ws_auth_mod._reset_for_tests()
+    ws_auth_mod.set_state(require_token=False, token="")
 
     port = find_free_port()
     thread = threading.Thread(
@@ -120,6 +166,8 @@ def ws_server_port():
     Config.WS_REQUIRE_TOKEN = original_require
     Config.WS_AUTH_TOKEN = original_token
     Config.WS_ALLOWED_ORIGINS = original_origins
+    ws_auth_mod._STATE_FILE = original_ws_auth_file
+    ws_auth_mod._reset_for_tests()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
