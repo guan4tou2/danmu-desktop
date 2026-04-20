@@ -138,8 +138,14 @@ class WebhookService:
                 and legacy.resolve() != _WEBHOOKS_FILE.resolve()
             ):
                 try:
+                    # shutil.copy2 preserves mtime + permissions. Matters here
+                    # because webhooks.json can contain secrets — we want to
+                    # carry over any restrictive chmod (e.g. 600) the operator
+                    # set, not fall back to umask defaults.
+                    import shutil
+
                     _WEBHOOKS_FILE.parent.mkdir(parents=True, exist_ok=True)
-                    _WEBHOOKS_FILE.write_bytes(legacy.read_bytes())
+                    shutil.copy2(legacy, _WEBHOOKS_FILE)
                     logger.info("Migrated legacy webhooks %s -> %s", legacy, _WEBHOOKS_FILE)
                 except Exception:
                     logger.exception("Failed to migrate legacy webhooks")

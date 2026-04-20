@@ -763,7 +763,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     </div>
                                     <div class="flex items-center gap-2 w-full lg:w-auto">
                                         <label class="stream-mode-toggle" title="${ServerI18n.t("streamModeHelp")}">
-                                          <input type="checkbox" id="streamModeToggle" ${localStorage.getItem("danmu-stream-mode") === "1" ? "checked" : ""} />
+                                          <input type="checkbox" id="streamModeToggle" ${document.body.classList.contains("stream-mode") ? "checked" : ""} />
                                           <span class="stream-mode-track" aria-hidden="true"></span>
                                           <span class="stream-mode-label" data-i18n="streamMode">${ServerI18n.t("streamMode")}</span>
                                         </label>
