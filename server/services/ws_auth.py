@@ -167,12 +167,11 @@ def _load() -> Dict:
 
     seeded = _seed_from_env()
     # Seeding write is "nice to have" — if the host bind mount is unwritable,
-    # we log once and keep going with in-memory state.
+    # we log once and keep going with in-memory state. `PermissionError` is
+    # a subclass of `OSError`, so one handler covers both.
     try:
         _write_state(seeded)
         logger.info("Seeded ws_auth.json (require_token=%s)", seeded["require_token"])
-    except PermissionError as exc:
-        _log_write_failure_once(exc)
     except OSError as exc:
         _log_write_failure_once(exc)
     return seeded
@@ -216,9 +215,8 @@ def set_state(*, require_token: bool, token: str) -> Dict:
         _state = dict(new_state)
         try:
             _write_state(new_state)
-        except PermissionError as exc:
-            _log_write_failure_once(exc)
         except OSError as exc:
+            # PermissionError subclasses OSError — one handler covers both.
             _log_write_failure_once(exc)
         return dict(_state)
 

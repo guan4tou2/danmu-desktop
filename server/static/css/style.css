@@ -952,7 +952,11 @@ body.stream-mode .admin-hero .admin-summary-grid {
   z-index: 1;
   width: min(100%, 22rem);
   background: rgb(14 165 233);
-  box-shadow: 0 16px 32px rgba(14, 165, 233, 0.24);
+  /* Shadow sized to fit within .composer-bar's `overflow: hidden` clip +
+   * 16px padding — prior `0 16px 32px` extended ~48px below the button
+   * and got chopped at the parent edge, looking like the bottom-right
+   * corner was visually "covered" by the card frame. */
+  box-shadow: 0 3px 10px rgba(14, 165, 233, 0.34);
   transition:
     padding 0.2s ease,
     font-size 0.2s ease,
@@ -963,7 +967,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
 
 .composer-send:hover {
   background: rgb(56 189 248);
-  box-shadow: 0 20px 38px rgba(56, 189, 248, 0.28);
+  box-shadow: 0 5px 12px rgba(56, 189, 248, 0.4);
 }
 
 .server-settings-panel {
