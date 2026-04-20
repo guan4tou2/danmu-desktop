@@ -156,29 +156,37 @@ For the `https` and `traefik` profiles the dedicated WS server is
 internal-only by default. To expose it, layer the `desktop` override file on
 top of the main compose file:
 
-1. In `.env`:
-
-   ```
-   WS_REQUIRE_TOKEN=true
-   WS_AUTH_TOKEN=<generate: openssl rand -hex 32>
-   ```
-
-2. Start with the override:
+1. Start with the override:
 
    ```bash
    docker compose -f docker-compose.yml -f docker-compose.desktop.yml \
      --profile https up -d
    ```
 
-3. Open the firewall:
+2. Open the firewall:
 
    ```bash
    sudo ufw allow 4001/tcp
    ```
 
-4. In the desktop app, enter the server IP, port `4001`, and paste the token
-   into the **WS Token** field. The admin panel is reached separately at
-   `https://<host>:<HTTPS_PORT>`.
+3. Configure WS token auth (v4.8.0+):
+
+   - **Preferred: Admin UI.** Log in at `https://<host>:<HTTPS_PORT>/admin`
+     → **WebSocket token auth** section → flip the toggle on, click
+     **Regenerate**, click **Copy**. State persists to
+     `server/runtime/ws_auth.json` (bind-mounted, survives image upgrade).
+     Changes apply to the next WS connection — no container restart, and
+     existing overlay connections stay up.
+   - **Fresh installs** boot with `require_token=true` + a random token
+     already generated, so port 4001 is not publicly open-access by
+     default. Go to the admin UI to copy it into the Electron client.
+   - **Opting out** (token required only via env): set `WS_REQUIRE_TOKEN=false`
+     in `.env` before first boot. Explicit env values are respected and
+     never silently flipped on by the secure-by-default seeding.
+
+4. In the Danmu Desktop app, enter the server IP, port `4001`, and paste
+   the admin-issued token into the **WS Token** field. The admin panel is
+   reached separately at `https://<host>:<HTTPS_PORT>`.
 
 ---
 
@@ -193,6 +201,7 @@ to the host by the default `docker-compose.yml`:
 | `./server/runtime/settings.json` | `/app/server/runtime/settings.json` | Admin UI setting state (color / speed / etc.) |
 | `./server/runtime/webhooks.json` | `/app/server/runtime/webhooks.json` | Registered webhooks |
 | `./server/runtime/plugins_state.json` | `/app/server/runtime/plugins_state.json` | Enabled/disabled plugins |
+| `./server/runtime/ws_auth.json` | `/app/server/runtime/ws_auth.json` | WS token auth state (chmod 0o600, v4.8.0+) |
 | `./server/user_plugins/` | `/app/server/user_plugins/` | Custom user plugins (drop `.py` files here) |
 | `./server/user_fonts/` | `/app/server/user_fonts/` | Uploaded user fonts |
 | `./server/static/` | `/app/server/static/` | Uploaded stickers / emojis (plus bundled assets) |
@@ -273,7 +282,10 @@ Before exposing to the internet:
 - [ ] `SESSION_COOKIE_SECURE=true` — required when serving over HTTPS
 - [ ] `TRUSTED_HOSTS` — set to your domain/IP, not just `localhost`
 - [ ] `REDIS_PASSWORD` — change from default if using Redis
-- [ ] `WS_REQUIRE_TOKEN=true` + `WS_AUTH_TOKEN=...` — if WS port is publicly exposed
+- [ ] **WS token auth on port 4001** — admin UI → **WebSocket token auth**
+  → toggle on + copy the generated token into the Electron client.
+  Fresh installs are secure-by-default since v4.8.0; only worry about this
+  if you're upgrading from ≤v4.7 with `WS_REQUIRE_TOKEN=false`.
 
 Run `./setup.sh check` to validate your `.env` against these rules.
 
@@ -298,8 +310,8 @@ Key variables:
 | `SERVER_IP` | — | VPS public IP for self-signed cert SAN |
 | `SERVER_DOMAIN` | — | Hostname for self-signed cert SAN |
 | `REDIS_PASSWORD` | `changeme` | Redis auth password |
-| `WS_REQUIRE_TOKEN` | `false` | Require token for WS connections |
-| `WS_AUTH_TOKEN` | — | Token value when `WS_REQUIRE_TOKEN=true` |
+| `WS_REQUIRE_TOKEN` | see note | **First-boot seed only since v4.8.0.** After first boot, authoritative state lives in `server/runtime/ws_auth.json` and is controlled from the admin UI. If this env var is unset on a fresh install, the server seeds secure-on with a generated token. Explicit `false` is respected and never flipped back on. |
+| `WS_AUTH_TOKEN` | — | Same as above — first-boot seed only. The admin UI is authoritative after the runtime file exists. |
 
 ---
 
