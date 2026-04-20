@@ -79,127 +79,101 @@ Record live danmu sessions as JSON timelines for offline replay or analysis. Ava
 ### Danmu-Desktop Client
 
 1. Download the [latest release](https://github.com/guan4tou2/danmu-desktop/releases)
-2. For MacOS users, run:
+2. For macOS users, lift the quarantine:
    ```bash
    sudo xattr -r -d com.apple.quarantine 'Danmu Desktop.app'
    ```
-3. Launch the application
-4. Enter the server's IP and port (default: 4001)
+3. Launch the app
+4. Enter the server's IP + WebSocket port (default: `4001`)
 
 ### Server Setup
 
-#### Option 1: GitHub Container Registry Image (Recommended)
-
-1. Pull and run the image directly (replace the password):
-   ```bash
-   docker run -d --name danmu-server \
-     -p 4000:4000 \
-     -p 4001:4001 \
-     -e ADMIN_PASSWORD=your_secure_password \
-     -v danmu_fonts:/app/server/user_fonts \
-     -v danmu_static:/app/server/static \
-     -v danmu_logs:/app/server/logs \
-     ghcr.io/guan4tou2/danmu-server:latest
-   ```
-   - You can also use a bcrypt hash instead of plaintext:
-     - Generate hash: `python server/scripts/hash_password.py`
-     - Set `-e ADMIN_PASSWORD_HASHED='<bcrypt-hash>'`
-   - Server startup now requires at least one of `ADMIN_PASSWORD` or `ADMIN_PASSWORD_HASHED`.
-   - Multi-arch images published for `linux/amd64` and `linux/arm64/v8`
-   - Available tags:
-     - `latest`: stable build from `main`
-     - `main`: rolling alias of the newest `main` build
-     - `<git-sha>`: immutable build for a specific commit (see workflow logs)
-2. Optional: add `--restart unless-stopped` for long-running deployments.
-3. To update, just pull the latest tag and restart:
-   ```bash
-   docker pull ghcr.io/guan4tou2/danmu-server:latest
-   docker stop danmu-server && docker rm danmu-server
-   # rerun the docker run command above
-   ```
-
-#### Option 2: Docker Compose — Quick Start
+The canonical path is `./setup.sh init` — an interactive wizard that
+picks sensible defaults for your environment, generates secrets, and
+writes `.env` for you. This covers HTTP dev, HTTPS self-signed (LAN /
+VPS), and Traefik + Let's Encrypt (public domain) in one flow.
 
 ```bash
-cp .env.example .env     # set ADMIN_PASSWORD
-docker compose --profile http up -d
+git clone https://github.com/guan4tou2/danmu-desktop.git
+cd danmu-desktop
+./setup.sh init                      # interactive: mode, password, ports, desktop client
+./setup.sh init --advanced           # + rate limits, logging, resource caps
+./setup.sh check                     # validate an existing .env before startup
+./setup.sh gen-secret                # generate + inject SECRET_KEY only
+
+# Then start the stack. The wizard prints the exact command; common paths:
+docker compose --profile http up -d          # local HTTP
+docker compose --profile https up -d         # HTTPS self-signed (LAN / VPS)
+docker compose --profile traefik up -d       # HTTPS + Let's Encrypt (public domain)
 ```
 
-Open http://localhost:4000
+Full deploy guide (HTTPS modes, desktop-client WS port, Redis, backup/
+restore, upgrades): **[DEPLOYMENT.md](DEPLOYMENT.md)**.
 
-For HTTPS, Traefik, Redis, and production hardening, see **[DEPLOYMENT.md](DEPLOYMENT.md)**.
+#### Shortcut: prebuilt image, no clone
 
-#### Option 3: Manual Setup
+If you only want the server binary and don't need source access:
 
-1. Clone the repository (server-only, skips Electron client):
+```bash
+docker run -d --name danmu-server \
+  -p 4000:4000 -p 4001:4001 \
+  -e ADMIN_PASSWORD=your_secure_password \
+  -e SECRET_KEY=$(openssl rand -hex 32) \
+  -e ENV=production \
+  -v "$(pwd)/danmu-runtime:/app/server/runtime" \
+  -v "$(pwd)/danmu-user-plugins:/app/server/user_plugins" \
+  -v "$(pwd)/danmu-user-fonts:/app/server/user_fonts" \
+  --restart unless-stopped \
+  ghcr.io/guan4tou2/danmu-server:latest
+```
 
-   ```bash
-   git clone --filter=blob:none --sparse https://github.com/guan4tou2/danmu-desktop
-   cd danmu-desktop
-   git sparse-checkout set server .env.example
-   ```
+`SECRET_KEY` is required in production — production startup refuses to
+boot with an ephemeral key. `openssl rand -hex 32` inlines a fresh one;
+save it if you want consistent sessions across container recreates.
 
-   Or full clone:
-   ```bash
-   git clone https://github.com/guan4tou2/danmu-desktop
-   cd danmu-desktop
-   ```
+Multi-arch (`linux/amd64` + `linux/arm64/v8`). Tags: `latest`, `main`,
+`<git-sha>`. For HTTPS on this path you need to front the container with
+your own reverse proxy.
 
-2. Configure environment:
+#### Manual (no Docker)
 
-   ```bash
-   cp .env.example .env
-   vim .env  # Set your admin password and other settings
-   ```
+```bash
+cp .env.example .env
+./setup.sh gen-secret                # writes SECRET_KEY
+# Edit .env: set ADMIN_PASSWORD
 
-3. Setup virtual environment and install dependencies:
+cd server && uv venv && uv sync
+PYTHONPATH=.. uv run python -m server.app    # HTTP + WS both run from here
+```
 
-   ```bash
-   cd server
-   uv venv
-   uv sync
-   ```
+### Accessing the server
 
-4. Start the server (HTTP + WebSocket):
+After start-up, open:
 
-   ```bash
-   # Terminal 1: HTTP server
-   PYTHONPATH=.. uv run python -m server.app
+- Main interface: `http://<host>:<port>`
+- Admin panel: `http://<host>:<port>/admin`
+- OBS overlay: `http://<host>:<port>/overlay`
 
-   # Terminal 2: WebSocket server
-   PYTHONPATH=.. uv run python -m server.ws_app
-   ```
+(Replace `<host>` and `<port>` with whatever the wizard printed.)
 
-### Accessing the Server
+### Environment variables
 
-- Main interface: `http://ip:4000`
-- Admin panel: `http://ip:4000/admin`
-- OBS overlay: `http://ip:4000/overlay`
+`.env.example` has the full annotated list. Key ones the wizard sets
+for you:
 
-### Environment Variables
+| Variable | Purpose |
+|---|---|
+| `ADMIN_PASSWORD` / `ADMIN_PASSWORD_HASHED` | Admin login (at least one required) |
+| `SECRET_KEY` | Flask session key (wizard / `gen-secret` generates this) |
+| `ENV` | `production` enables strict session/HSTS defaults |
+| `PORT` / `WS_PORT` | HTTP and WebSocket ports (defaults 4000 / 4001) |
+| `HTTPS_PORT` | External HTTPS port for `--profile https` / `traefik` |
+| `TRUSTED_HOSTS` | Comma-separated allowlist for Host header |
+| `SESSION_COOKIE_SECURE` | `true` in production over HTTPS |
+| `WS_REQUIRE_TOKEN` / `WS_AUTH_TOKEN` | Optional shared-token auth for port 4001 |
+| `RATE_LIMIT_BACKEND` | `memory` or `redis` (set up via `--profile redis`) |
 
-Key configuration options (set via `.env` file or environment variables):
-
-- `ADMIN_PASSWORD` or `ADMIN_PASSWORD_HASHED` (at least one required): Admin authentication secret
-- `PORT`: HTTP server port (default: 4000)
-- `WS_PORT`: WebSocket server port (default: 4001)
-- `WS_HOST`: dedicated WebSocket bind host (default: `0.0.0.0`)
-- `SECRET_KEY`: Flask secret key (required in production; dev may auto-generate one)
-- `TRUSTED_HOSTS`: comma-separated allowed hostnames for Host header validation (required in production)
-- `TRUST_X_FORWARDED_FOR`: trust `X-Forwarded-For` for client IP detection (default: `false`; enable only behind a trusted reverse proxy)
-- `HSTS_ENABLED`: opt-in `Strict-Transport-Security` response header for HTTPS requests (default: `false`)
-- `WS_REQUIRE_TOKEN`: require `?token=` for dedicated WebSocket clients (default: `false`)
-- `WS_AUTH_TOKEN`: shared secret token for dedicated WebSocket clients
-- `WS_MAX_SIZE`: maximum incoming WebSocket message size in bytes (default: `1048576`)
-- `WS_MAX_QUEUE`: maximum number of incoming WebSocket messages buffered (default: `16`)
-- `WS_WRITE_LIMIT`: write buffer limit in bytes for WebSocket connections (default: `32768`)
-- `WEB_WS_ALLOWED_ORIGINS`: optional allowlist for browser WebSocket Origin on `/` route
-- `RATE_LIMIT_BACKEND`: Rate limiter backend - `memory` or `redis` (default: memory)
-- `REDIS_URL`: Redis connection URL (required if using Redis backend)
-- `LOG_LEVEL`: Logging level - `DEBUG`, `INFO`, `WARNING`, `ERROR` (default: INFO)
-- `SETTINGS_FILE`: path to persisted runtime settings file (optional; defaults to a temp file)
-
-See `.env.example` for all available options.
+Every other setting ships a safe default; `.env.example` shows them all.
 
 ## Security Notes
 

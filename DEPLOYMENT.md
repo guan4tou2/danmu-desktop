@@ -1,21 +1,40 @@
 # Deployment Guide
 
-## Quick Start (Local HTTP)
+## Quick Start
+
+The fastest and safest path is the interactive wizard. It picks defaults
+that match your environment, generates a SECRET_KEY, and writes `.env`:
 
 ```bash
-cp .env.example .env          # create config
-# Edit .env: set ADMIN_PASSWORD (required)
-docker compose --profile http up -d
+git clone https://github.com/guan4tou2/danmu-desktop.git
+cd danmu-desktop
+./setup.sh init               # wizard: mode, password, ports, desktop client
+./setup.sh init --advanced    # + rate limits, logging, resource caps
+
+# Wizard prints the exact start command. Typically:
+docker compose --profile https up -d        # HTTPS self-signed (LAN / VPS)
+docker compose --profile http up -d         # local HTTP (dev only)
+docker compose --profile traefik up -d      # HTTPS + Let's Encrypt
 ```
 
-Open http://localhost:4000
+Additional wizard commands:
 
-Or use the setup wizard for a guided setup:
+- `./setup.sh check` — validate an existing `.env` (flags missing
+  `SECRET_KEY`, weak passwords, CORS + credentials conflicts, etc.)
+- `./setup.sh gen-secret` — generate a SECRET_KEY and inject it into `.env`
+
+### Skip the wizard (not recommended)
 
 ```bash
-./setup.sh init              # essentials only (mode, password, ports, desktop)
-./setup.sh init --advanced   # essentials + rate limits, logging, resource caps
+cp .env.example .env
+./setup.sh gen-secret         # at minimum, generate SECRET_KEY
+# Manually edit: ADMIN_PASSWORD, and any mode-specific vars below
+docker compose --profile <http|https|traefik> up -d
 ```
+
+The rest of this doc covers mode-specific details, data persistence,
+backup/restore, and troubleshooting. For most deployments the wizard
+output + `./setup.sh check` is enough.
 
 ---
 
