@@ -430,7 +430,7 @@ summary:focus-visible {
   left: 2px;
   width: 14px;
   height: 14px;
-  background: #fff;
+  background: var(--color-white);
   border-radius: 50%;
   transition: transform 0.2s;
 }
@@ -596,7 +596,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
 /* Effect button active (selected) state */
 .effect-btn--active {
   background-color: var(--color-active-btn) !important;
-  color: #ffffff !important;
+  color: var(--color-white) !important;
   border-color: var(--color-primary-hover) !important;
 }
 
@@ -1236,7 +1236,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
 }
 
 .chart-bar:hover {
-  background: #22d3ee;
+  background: var(--color-accent-light);
 }
 
 .chart-label {
