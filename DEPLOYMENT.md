@@ -348,11 +348,11 @@ overrides the image ownership and the container can't write. Common on
 Oracle Cloud images where the default human user is UID `1001`, not `1000`.
 
 Symptom: log lines like
-```
+```text
 ERROR | ... | Failed to write /app/server/runtime/ws_auth.json: [Errno 13] Permission denied
 ```
 or (v4.8.2+)
-```
+```text
 WARNING | ... | Cannot persist ... State will live in memory for this process only
 ```
 
