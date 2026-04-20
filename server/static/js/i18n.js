@@ -494,7 +494,9 @@
       "widgetTickerPlaceholder": "Enter messages, one per line...",
       "widgetLabelText": "Text",
       "exportJSON": "Export JSON",
-      "recordReplay": "Record Replay"
+      "recordReplay": "Record Replay",
+      "streamMode": "Stream mode",
+      "streamModeHelp": "Hide low-frequency sections while live (themes, sounds, plugins, etc.) Preference saved locally."
     },
     "zh": {
       "mainTitle": "Danmu Fire",
@@ -981,7 +983,9 @@
       "widgetTickerPlaceholder": "輸入訊息，每行一則...",
       "widgetLabelText": "文字",
       "exportJSON": "匯出 JSON",
-      "recordReplay": "錄製回放"
+      "recordReplay": "錄製回放",
+      "streamMode": "直播模式",
+      "streamModeHelp": "直播中隱藏低頻率區段（佈景、音效、插件等）。偏好會記在本機。"
     },
     "ja": {
       "mainTitle": "Danmu Fire",
@@ -1468,7 +1472,9 @@
       "widgetTickerPlaceholder": "メッセージを入力、1行に1つ...",
       "widgetLabelText": "テキスト",
       "exportJSON": "JSONエクスポート",
-      "recordReplay": "リプレイ録画"
+      "recordReplay": "リプレイ録画",
+      "streamMode": "配信モード",
+      "streamModeHelp": "配信中は低頻度のセクション（テーマ、サウンド、プラグインなど）を隠します。設定はローカルに保存されます。"
     },
     "ko": {
       "mainTitle": "Danmu Fire",
@@ -1955,7 +1961,9 @@
       "widgetTickerPlaceholder": "메시지 입력, 줄당 하나...",
       "widgetLabelText": "텍스트",
       "exportJSON": "JSON 내보내기",
-      "recordReplay": "리플레이 녹화"
+      "recordReplay": "리플레이 녹화",
+      "streamMode": "방송 모드",
+      "streamModeHelp": "방송 중에는 사용 빈도가 낮은 섹션(테마, 사운드, 플러그인 등)을 숨깁니다. 설정은 로컬에 저장됩니다."
     }
   };
 

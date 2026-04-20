@@ -7,6 +7,20 @@
 
 ## [Unreleased]
 
+## [4.7.0] - 2026-04-20
+
+### 新增 / Added
+
+- **直播模式 / Stream mode toggle**：Admin 頁 hero 右上新增 toggle 開關，開啟後自動折疊 11 個低頻率區段（Themes / Emojis / Stickers / Sounds / Polls / Plugins / Webhooks / Scheduler / Change password / Filters / Advanced），只保留直播中真的會用到的：Live Feed、黑名單、Effects、歷史、Core controls。Hero summary cards 同步縮小。偏好存 `localStorage['danmu-stream-mode']`，reload 後 before-paint 套用不閃爍。i18n 4 語系齊備（中：直播模式、日：配信モード、韓：방송 모드、英：Stream mode）。
+- **Legacy runtime-state migration**：`filter_engine.py` 與 `webhook.py` 新增 one-shot 自動搬家邏輯，從舊 default（`server/filter_rules.json`、`server/webhooks.json`）搬到新的 `server/runtime/` 位置。只在使用 default path 時觸發，不影響測試 monkeypatch。
+
+### 改善 / Improved
+
+- **`filter_rules.json` + `webhooks.json` 預設路徑對齊**：跟 v4.6.3 的 `SETTINGS_FILE` / `plugins_state.json` 一致，預設全部改到 `server/runtime/`，backup.sh 一個指令即可涵蓋整組 user state。
+- Docker 使用者無感（已經 bind-mount `./server/runtime/`）。非 Docker 直跑的使用者升級後會看到一次性 migration log，原檔保留不刪。
+
+---
+
 ## [4.6.5] - 2026-04-20
 
 ### 修復 / Fixed
