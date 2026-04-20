@@ -7,6 +7,41 @@
 
 ## [Unreleased]
 
+## [4.8.6] - 2026-04-20
+
+### 修復 / Fixed
+
+- **Admin sidebar 兩段長描述仍是英文**：v4.8.5 Phase 1 打掃 admin 頁面 i18n
+  時，為控制 scope 暫留了兩個 `admin-sidebar-copy` 段落（workflow 控制塔說明
+  / 即時調整建議順序）沒譯。本版補齊，新增 `sidebarWorkflowCopy` +
+  `sidebarRecommendedCopy` 兩個 key，共 8 條翻譯（en/zh/ja/ko）。
+
+### 改善 / Improved
+
+- **Docker 容器 hardening**：
+  - `server/Dockerfile` 加 `ENV PYTHONDONTWRITEBYTECODE=1` + `PYTHONUNBUFFERED=1`
+    — 不再寫 `.pyc` cache（小幅減少可寫空間使用），stdout/stderr 立即 flush
+    讓 `docker logs` 即時看到錯誤而不是等 shutdown。
+  - `docker-compose.yml` 4 個 service 加 `security_opt: no-new-privileges:true`
+    — 阻止 setuid/setgid 升權，container 已經跑 UID 1000 非 root，這是 defence
+    in depth 把逃生通道封死。
+  - `server` + `redis` service 加 `cap_drop: ALL` — Python Flask + Redis 都不需
+    要任何 Linux capability。nginx services 因為要 bind 80/443 + apk add openssl
+    保留 default caps（cap_add `NET_BIND_SERVICE` 的話會複雜化 ports 自訂場景，
+    直接留 default 更穩）。
+  - 所有 service 加 `pids_limit` / `deploy.resources.limits.pids`（server: 200,
+    其他: 100）— Python / nginx runaway 或惡意 plugin 無法 fork-bomb host。
+    注意：`server` 用 `deploy.resources.limits.pids`（跟現有 memory/cpus 同樹），
+    redis 用 top-level `pids_limit` — docker compose 不允許 service 同時兩種寫法。
+
+### 驗證 / Verification
+
+- `docker compose config` 通過（所有 4 services）
+- 737 tests pass (server/)
+- i18n 生成檔（`static/js/i18n.js`）確認 4 個語系都有新 2 個 key
+
+---
+
 ## [4.8.5] - 2026-04-20
 
 ### 修復 / Fixed

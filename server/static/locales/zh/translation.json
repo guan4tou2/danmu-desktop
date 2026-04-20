@@ -107,6 +107,8 @@
   "themesSectionDesc": "彈幕樣式與特效的預設視覺主題",
   "pollSectionDesc": "建立互動投票，觀眾可以用彈幕投票",
   "noData": "暫無資料",
+  "sidebarWorkflowCopy": "把這個頁面當作指揮塔：左側調整直播，從這裡直接跳到審核或素材區。",
+  "sidebarRecommendedCopy": "直播調整時：先改樣式、在即時彈幕中驗證，必要時再進歷史與篩選規則。",
   "colorSetting": "顏色設定",
   "colorSettingDesc": "允許使用者自訂顏色",
   "specificColor": "指定顏色",
