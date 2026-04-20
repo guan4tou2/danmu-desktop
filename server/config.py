@@ -39,7 +39,7 @@ class Config:
     # Priority: runtime hash file > ADMIN_PASSWORD_HASHED env var > plaintext ADMIN_PASSWORD
     ADMIN_PASSWORD_HASHED = load_runtime_hash() or os.getenv("ADMIN_PASSWORD_HASHED", "")
     APP_NAME = "Danmu Fire"
-    APP_VERSION = "4.6.5"
+    APP_VERSION = "4.7.0"
     PORT = int(os.getenv("PORT", "4000"))
     WS_PORT = int(os.getenv("WS_PORT", "4001"))
     ENV = os.getenv("ENV", "development").lower()
@@ -117,17 +117,20 @@ class Config:
     # Sticker configuration
     STICKER_MAX_COUNT = int(os.getenv("STICKER_MAX_COUNT", "50"))
 
-    # Filter engine configuration
-    # Reads FILTER_RULES_FILE to match what services/filter_engine.py actually uses.
+    # Filter engine configuration. Same runtime/ pattern as SETTINGS_FILE and
+    # WEBHOOKS_PATH — all user state consolidated in one backup-friendly dir.
+    # Migration: services/filter_engine.py checks the legacy location
+    # (server/filter_rules.json) and moves the file on first load.
     FILTER_RULES_FILE = os.getenv(
         "FILTER_RULES_FILE",
-        str(Path(__file__).parent / "filter_rules.json"),
+        str(Path(__file__).parent / "runtime" / "filter_rules.json"),
     )
 
-    # Webhook configuration
+    # Webhook configuration. Default is runtime/webhooks.json (consolidated
+    # state); webhook.py migrates legacy server/webhooks.json on first load.
     WEBHOOKS_PATH = os.getenv(
         "WEBHOOKS_PATH",
-        str(Path(__file__).parent / "webhooks.json"),
+        str(Path(__file__).parent / "runtime" / "webhooks.json"),
     )
     WEBHOOK_TIMEOUT = int(os.getenv("WEBHOOK_TIMEOUT", "10"))
 

@@ -122,9 +122,36 @@ class WebhookService:
     # ── Persistence ──────────────────────────────────────────────────────
 
     def _load(self) -> None:
-        """Load webhooks from JSON file (called once at init, under no lock)."""
+        """Load webhooks from JSON file (called once at init, under no lock).
+
+        Legacy migration: v4.7.0 moved default to server/runtime/webhooks.json.
+        Migration only runs when _WEBHOOKS_FILE is the current default
+        (Config.WEBHOOKS_PATH) — tests that monkeypatch _WEBHOOKS_FILE to a
+        tmp path stay isolated.
+        """
         if not _WEBHOOKS_FILE.exists():
-            return
+            default_is_current = str(_WEBHOOKS_FILE) == str(Config.WEBHOOKS_PATH)
+            legacy = Path(__file__).parent.parent / "webhooks.json"
+            if (
+                default_is_current
+                and legacy.is_file()
+                and legacy.resolve() != _WEBHOOKS_FILE.resolve()
+            ):
+                try:
+                    # shutil.copy2 preserves mtime + permissions. Matters here
+                    # because webhooks.json can contain secrets — we want to
+                    # carry over any restrictive chmod (e.g. 600) the operator
+                    # set, not fall back to umask defaults.
+                    import shutil
+
+                    _WEBHOOKS_FILE.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(legacy, _WEBHOOKS_FILE)
+                    logger.info("Migrated legacy webhooks %s -> %s", legacy, _WEBHOOKS_FILE)
+                except Exception:
+                    logger.exception("Failed to migrate legacy webhooks")
+                    return
+            else:
+                return
         try:
             raw = json.loads(_WEBHOOKS_FILE.read_text(encoding="utf-8"))
             for entry in raw:

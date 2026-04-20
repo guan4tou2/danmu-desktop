@@ -483,5 +483,7 @@
   "widgetTickerPlaceholder": "메시지 입력, 줄당 하나...",
   "widgetLabelText": "텍스트",
   "exportJSON": "JSON 내보내기",
-  "recordReplay": "리플레이 녹화"
+  "recordReplay": "리플레이 녹화",
+  "streamMode": "방송 모드",
+  "streamModeHelp": "방송 중에는 사용 빈도가 낮은 섹션(테마, 사운드, 플러그인 등)을 숨깁니다. 설정은 로컬에 저장됩니다."
 }

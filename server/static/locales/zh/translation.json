@@ -483,5 +483,7 @@
   "widgetTickerPlaceholder": "輸入訊息，每行一則...",
   "widgetLabelText": "文字",
   "exportJSON": "匯出 JSON",
-  "recordReplay": "錄製回放"
+  "recordReplay": "錄製回放",
+  "streamMode": "直播模式",
+  "streamModeHelp": "直播中隱藏低頻率區段（佈景、音效、插件等）。偏好會記在本機。"
 }

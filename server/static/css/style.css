@@ -385,6 +385,91 @@ summary:focus-visible {
   }
 }
 
+/* ─── Stream mode toggle + hiding ──────────────────────────────────────────
+ * When body.stream-mode is set, low-frequency sections collapse so the
+ * streamer only sees the controls they touch mid-broadcast (live feed,
+ * blacklist, core controls, effects, history). Toggle persists to
+ * localStorage "danmu-stream-mode". Selector list intentionally narrow
+ * — new sections default to visible unless added here. */
+.stream-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  padding: 0.25rem 0.65rem 0.25rem 0.25rem;
+  border: 1px solid rgba(51, 65, 85, 0.72);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.62);
+  transition: border-color 0.2s, background-color 0.2s, color 0.2s;
+}
+.stream-mode-toggle:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  color: var(--color-text-primary);
+}
+.stream-mode-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.stream-mode-track {
+  position: relative;
+  display: inline-block;
+  width: 32px;
+  height: 18px;
+  background: rgba(71, 85, 105, 0.8);
+  border-radius: 999px;
+  transition: background-color 0.2s;
+}
+.stream-mode-track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.stream-mode-toggle input:checked + .stream-mode-track {
+  background: var(--color-primary);
+}
+.stream-mode-toggle input:checked + .stream-mode-track::after {
+  transform: translateX(14px);
+}
+.stream-mode-toggle input:focus-visible + .stream-mode-track {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Hide low-frequency sections when stream mode is on.
+ * Keep high-freq visible: live-feed, blacklist, effects, history,
+ * moderation core controls (sec-moderation), and the chip quick-nav. */
+body.stream-mode #sec-themes,
+body.stream-mode #sec-emojis,
+body.stream-mode #sec-stickers,
+body.stream-mode #sec-sounds,
+body.stream-mode #sec-polls,
+body.stream-mode #sec-plugins,
+body.stream-mode #sec-webhooks,
+body.stream-mode #sec-scheduler,
+body.stream-mode #sec-security,
+body.stream-mode #sec-filters,
+body.stream-mode #sec-advanced {
+  display: none;
+}
+
+/* Slim the hero while streaming — less ornament, more signal */
+body.stream-mode .admin-hero {
+  padding: 1rem 1.25rem;
+}
+body.stream-mode .admin-hero .admin-summary-grid {
+  display: none;
+}
+
 @media (max-width: 640px) {
   .admin-summary-grid {
     grid-template-columns: 1fr;

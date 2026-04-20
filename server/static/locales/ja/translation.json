@@ -483,5 +483,7 @@
   "widgetTickerPlaceholder": "メッセージを入力、1行に1つ...",
   "widgetLabelText": "テキスト",
   "exportJSON": "JSONエクスポート",
-  "recordReplay": "リプレイ録画"
+  "recordReplay": "リプレイ録画",
+  "streamMode": "配信モード",
+  "streamModeHelp": "配信中は低頻度のセクション（テーマ、サウンド、プラグインなど）を隠します。設定はローカルに保存されます。"
 }

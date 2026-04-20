@@ -306,10 +306,41 @@ class FilterEngine:
     # ── Persistence ─────────────────────────────────────────────
 
     def _load(self) -> None:
-        """Load rules from the JSON file. Silently starts empty if file is missing or corrupt."""
+        """Load rules from the JSON file. Silently starts empty if file is missing or corrupt.
+
+        One-time migration: v4.7.0 moved the default to server/runtime/filter_rules.json.
+        Only migrates when self._path is the default (not a custom test path), so
+        test isolation isn't broken by leaking the legacy host file.
+        """
         if not os.path.isfile(self._path):
-            self._rules = []
-            return
+            try:
+                from server.config import Config as _Cfg
+
+                default_path = _Cfg.FILTER_RULES_FILE
+            except Exception:
+                default_path = None
+            if default_path and os.path.abspath(self._path) == os.path.abspath(default_path):
+                legacy = os.path.join(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                    "filter_rules.json",
+                )
+                if os.path.isfile(legacy) and os.path.abspath(legacy) != os.path.abspath(
+                    self._path
+                ):
+                    try:
+                        os.makedirs(os.path.dirname(self._path), exist_ok=True)
+                        import shutil
+
+                        shutil.copy2(legacy, self._path)
+                    except Exception:
+                        self._rules = []
+                        return
+                else:
+                    self._rules = []
+                    return
+            else:
+                self._rules = []
+                return
         try:
             with open(self._path, "r", encoding="utf-8") as f:
                 raw = json.load(f)

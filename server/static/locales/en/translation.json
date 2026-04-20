@@ -483,5 +483,7 @@
   "widgetTickerPlaceholder": "Enter messages, one per line...",
   "widgetLabelText": "Text",
   "exportJSON": "Export JSON",
-  "recordReplay": "Record Replay"
+  "recordReplay": "Record Replay",
+  "streamMode": "Stream mode",
+  "streamModeHelp": "Hide low-frequency sections while live (themes, sounds, plugins, etc.) Preference saved locally."
 }
