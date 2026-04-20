@@ -674,7 +674,7 @@
       "sidebarStep3Hint": "速率限制 / 規則",
       "themesSectionDesc": "彈幕樣式與特效的預設視覺主題",
       "pollSectionDesc": "建立互動投票，觀眾可以用彈幕投票",
-      "noData": "無資料",
+      "noData": "暫無資料",
       "colorSetting": "顏色設定",
       "colorSettingDesc": "允許使用者自訂顏色",
       "specificColor": "指定顏色",
