@@ -37,7 +37,8 @@ if ! [[ "$NEW" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 fi
 
 # Read current version from the canonical source (package.json).
-CURRENT=$(grep -E '^\s*"version"' danmu-desktop/package.json | head -1 | sed -E 's/.*"([0-9]+\.[0-9]+\.[0-9]+)".*/\1/')
+# Note: BSD grep (macOS) doesn't support \s in -E mode; use [[:space:]] instead.
+CURRENT=$(grep -E '^[[:space:]]*"version"' danmu-desktop/package.json | head -1 | sed -E 's/.*"([0-9]+\.[0-9]+\.[0-9]+)".*/\1/')
 if [ -z "$CURRENT" ]; then
   echo "ERROR: could not parse current version from danmu-desktop/package.json" >&2
   exit 1
@@ -46,27 +47,39 @@ fi
 echo "Bumping: $CURRENT → $NEW (date: $DATE)"
 
 # Check all three files are in sync before touching anything.
-CFG_VER=$(grep -E '^\s*APP_VERSION' server/config.py | head -1 | sed -E 's/.*"([0-9]+\.[0-9]+\.[0-9]+)".*/\1/')
+CFG_VER=$(grep -E '^[[:space:]]*APP_VERSION' server/config.py | head -1 | sed -E 's/.*"([0-9]+\.[0-9]+\.[0-9]+)".*/\1/')
 if [ "$CFG_VER" != "$CURRENT" ]; then
   echo "WARN: server/config.py APP_VERSION ($CFG_VER) doesn't match package.json ($CURRENT)." >&2
-  echo "      Continuing — bump will force both to $NEW." >&2
+  echo "      Continuing — bump matches any semver so both will be set to $NEW." >&2
 fi
 
 if [ "$DRY_RUN" = "1" ]; then
   echo "DRY RUN — would update:"
-  echo "  danmu-desktop/package.json: \"version\": \"$CURRENT\" → \"$NEW\""
-  echo "  server/config.py:           APP_VERSION = \"$CURRENT\" → \"$NEW\""
-  echo "  CHANGELOG.md:               add [### $NEW] - $DATE after [Unreleased]"
+  echo "  danmu-desktop/package.json: \"version\" → \"$NEW\""
+  echo "  server/config.py:           APP_VERSION → \"$NEW\""
+  echo "  CHANGELOG.md:               add [$NEW] - $DATE after [Unreleased]"
   exit 0
 fi
 
-# 1. package.json
-sed -i.bak -E "s/\"version\": \"$CURRENT\"/\"version\": \"$NEW\"/" danmu-desktop/package.json
+# 1. package.json — match any semver value so pre-existing drift self-heals.
+sed -i.bak -E 's/"version": "[0-9]+\.[0-9]+\.[0-9]+"/"version": "'"$NEW"'"/' danmu-desktop/package.json
 rm -f danmu-desktop/package.json.bak
 
-# 2. server/config.py
-sed -i.bak -E "s/APP_VERSION = \"$CURRENT\"/APP_VERSION = \"$NEW\"/" server/config.py
+# 2. server/config.py — same self-healing pattern.
+sed -i.bak -E 's/APP_VERSION = "[0-9]+\.[0-9]+\.[0-9]+"/APP_VERSION = "'"$NEW"'"/' server/config.py
 rm -f server/config.py.bak
+
+# Post-write verification: on macOS + BSD sed the regex escaping gets weird
+# (esp. with quotes) and silently no-ops. Confirm both files now report $NEW.
+for pair in "danmu-desktop/package.json:\"version\": \"$NEW\"" \
+            "server/config.py:APP_VERSION = \"$NEW\""; do
+  file="${pair%%:*}"
+  needle="${pair#*:}"
+  if ! grep -qF "$needle" "$file"; then
+    echo "ERROR: $file was not updated to $NEW (sed no-op)" >&2
+    exit 1
+  fi
+done
 
 # 3. CHANGELOG.md — insert new section after [Unreleased] if not already there.
 if grep -qE "^## \[$NEW\]" CHANGELOG.md; then
