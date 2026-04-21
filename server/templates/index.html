@@ -20,6 +20,7 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/hud.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/viewer-v2.css') }}" />
 </head>
 
 <body class="bg-black text-white min-h-screen overflow-x-hidden">
@@ -32,307 +33,326 @@
   <div id="vanta-bg" class="fixed top-0 left-0 w-full h-full -z-10" aria-hidden="true"></div>
 
   <div class="container server-home-shell mx-auto px-4 py-8 relative z-10">
-    <!-- Language Selector -->
-    <div class="flex justify-end mb-2">
-      <select id="server-lang-select"
-        class="bg-slate-800/60 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-1 focus:ring-sky-500 focus:border-sky-500">
-        <option value="en">EN</option>
-        <option value="zh">ZH</option>
-        <option value="ja">JA</option>
-        <option value="ko">KO</option>
-      </select>
-    </div>
 
-    <!-- Main Card -->
-    <main class="glass-effect hud-corners-auto server-main-shell rounded-3xl shadow-2xl px-5 pb-5 pt-5 md:px-8 md:pb-8 md:pt-7 mb-8 transition-all duration-300">
-      <section class="server-hero-band animate-fade-in-scale-up">
-        <div class="server-hero-copy">
-          <span class="hud-label is-accent" aria-hidden="true">DANMU · FIRE</span>
-          <h1
-            class="server-hero-title text-sky-300 drop-shadow-lg"
-            data-i18n="mainTitle">
-            Danmu Fire
-          </h1>
-          <p class="server-hero-subtitle text-slate-300" data-i18n="mainSubtitle">
+    <!-- Main Card — design-v2 Viewer port (see docs/designs/design-v2/components/viewer.jsx) -->
+    <main
+      class="glass-effect hud-corners-auto server-main-shell rounded-3xl shadow-2xl mb-8 overflow-hidden transition-all duration-300"
+    >
+      <div class="viewer-shell">
+
+        <!-- Top strip — status chips + language picker above hero -->
+        <div class="viewer-topstrip" role="status" aria-live="polite">
+          <div>
+            <span id="connectionStatus" class="viewer-topstrip-status">
+              <span class="connection-dot connection-dot--connecting"></span>
+              <span id="connectionLabel" data-i18n="connecting">Connecting...</span>
+            </span>
+            <span id="overlayStatus" class="viewer-topstrip-status">
+              <span class="connection-dot connection-dot--disconnected"></span>
+              <span id="overlayLabel" data-i18n="overlayNone">Overlay: –</span>
+            </span>
+          </div>
+          <select id="server-lang-select" class="viewer-topstrip-select" aria-label="Language">
+            <option value="en">EN</option>
+            <option value="zh">ZH</option>
+            <option value="ja">JA</option>
+            <option value="ko">KO</option>
+          </select>
+        </div>
+
+        <!-- Hero lockup — DanmuHero size="hero" -->
+        <section class="viewer-hero animate-fade-in-scale-up">
+          <h1 class="viewer-hero-title" data-i18n="mainTitle">Danmu Fire</h1>
+          <p class="viewer-hero-subtitle" data-i18n="mainSubtitle">
             Send your message to the screen!
           </p>
-        </div>
-
-        <div class="server-hero-side">
-          <div class="server-status-stack" role="status" aria-live="polite">
-            <div id="connectionStatus" class="server-status-chip">
-              <span class="connection-dot connection-dot--connecting"></span>
-              <span id="connectionLabel" class="hud-label" data-i18n="connecting">Connecting...</span>
-            </div>
-            <div id="overlayStatus" class="server-status-chip">
-              <span class="connection-dot connection-dot--disconnected"></span>
-              <span id="overlayLabel" class="hud-label" data-i18n="overlayNone">Overlay: –</span>
-            </div>
+          <div class="viewer-hero-chip-row">
+            <span class="viewer-hero-chip" aria-hidden="true">
+              <span class="hud-dot"></span>
+              <span data-i18n="heroConnected">CONNECTED · LIVE</span>
+            </span>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Hero Composer -->
-      <div id="composerBar" class="composer-dock mb-8">
-        <div
-          class="composer-bar composer-card rounded-[1.75rem] border border-slate-800/70 shadow-lg shadow-black/20">
-          <div class="composer-grid">
-            <!-- Input Area -->
-            <div class="composer-panel composer-input group">
-              <label for="danmuText"
-                class="composer-label block text-xs font-semibold uppercase tracking-wider text-slate-400 group-focus-within:text-sky-400 transition-colors"
-                data-i18n="yourMessage">Your Message</label>
-              <div class="composer-panel-body">
-                <div class="relative composer-input-body">
-                  <textarea id="danmuText" rows="4" maxlength="100" aria-describedby="charCount"
-                    class="composer-textarea w-full bg-transparent border-0 rounded-[0.95rem] py-0 px-0 pr-12 text-white placeholder-slate-500 focus:ring-0 transition-all duration-200 resize-none text-base"
-                    placeholder="Type something awesome..." data-i18n-placeholder="placeholder"></textarea>
-                  <div id="charCount"
-                    class="composer-counter absolute bottom-0 right-0 text-[10px] text-slate-400 font-mono bg-slate-950/95 px-1.5 py-0.5 rounded"
-                    aria-live="polite">
-                    0/100
-                  </div>
-                </div>
-              </div>
-            </div>
+        <!-- Scrollable body — preview + fields -->
+        <div class="viewer-body">
 
-            <!-- Preview Area -->
-            <div class="composer-panel composer-preview">
-              <label class="composer-label block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                data-i18n="livePreview">Live Preview</label>
-              <div class="composer-panel-body composer-preview-box flex items-center justify-center overflow-hidden relative">
-                <div
-                  class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-20">
-                </div>
-                <div id="previewText"
-                  class="composer-preview-text text-2xl font-bold transition-all duration-300 px-3 text-center break-all z-10"
-                  data-i18n="preview">
-                  Preview
-                </div>
-              </div>
+          <!-- Live preview strip -->
+          <div class="viewer-preview">
+            <div class="viewer-preview-kicker" data-i18n="previewKicker">PREVIEW · 你送出的樣子</div>
+            <div class="viewer-preview-row" aria-live="polite">
+              <span id="previewNick" class="viewer-preview-nick">@guest</span>
+              <span
+                id="previewText"
+                class="viewer-preview-text"
+                data-i18n="preview"
+                style="font-size: 32px;"
+              >示例彈幕文字</span>
             </div>
           </div>
 
-          <div class="composer-footer">
-            <button id="btnSend"
-              class="composer-send text-white font-bold py-3 px-6 rounded-xl transform hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none">
-              <span id="btnSendText" data-i18n="fireDanmu">Fire Danmu</span>
-              <svg id="btnSendIcon" xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor" aria-hidden="true">
+          <!-- Nickname -->
+          {% if options.get('Nickname', [True])[0] %}
+          <div id="nicknameControl" class="viewer-field">
+            <label class="viewer-field-label" for="nicknameInput">
+              <span data-i18n="nicknameField">暱稱 · NICKNAME</span>
+            </label>
+            <input
+              type="text"
+              id="nicknameInput"
+              class="viewer-input"
+              maxlength="20"
+              placeholder="Anonymous"
+              data-i18n-placeholder="anonymousPlaceholder"
+            />
+          </div>
+          {% endif %}
+
+          <!-- Color + hex readout -->
+          {% if options.Color[0] %}
+          <div id="colorControl" class="viewer-field">
+            <label class="viewer-field-label">
+              <span data-i18n="colorField">顏色 · COLOR</span>
+            </label>
+            <div class="viewer-color-row">
+              <div
+                id="colorGradientPreview"
+                class="viewer-swatch is-active"
+                style="background:#ffffff;"
+                aria-hidden="true"
+              ></div>
+              <label class="viewer-swatch viewer-swatch--custom" aria-label="Choose custom color">
+                +<input type="color" id="colorInput" value="#ffffff" aria-label="Choose danmu color" />
+              </label>
+              <span id="colorValue" class="viewer-color-hex">#FFFFFF</span>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Font family -->
+          <div id="userFontSelectControl" class="viewer-field" style="display: none;">
+            <label class="viewer-field-label" for="userFontSelect">
+              <span data-i18n="fontField">字型 · FONT FAMILY</span>
+            </label>
+            <div class="viewer-select-wrap">
+              <select id="userFontSelect" class="viewer-select" aria-label="Choose font">
+                <option value="" data-i18n="defaultFont">Default Font</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Font size + Opacity 2-col -->
+          <div class="viewer-grid-2">
+            {% if options.FontSize[0] %}
+            <div id="fontSizeControl" class="viewer-field is-nomb">
+              <label class="viewer-field-label" for="sizeInput">
+                <span data-i18n="sizeField">字級</span>
+                <span class="viewer-field-label__value"> · <span id="sizeValue">{{
+                  (options.FontSize[1] + options.FontSize[2]) // 2 }}</span>px</span>
+              </label>
+              <input
+                type="range"
+                id="sizeInput"
+                class="viewer-range"
+                min="{{ options.FontSize[1] }}"
+                max="{{ options.FontSize[2] }}"
+                value="{{ (options.FontSize[1] + options.FontSize[2]) // 2 }}"
+                aria-label="Font size"
+                aria-valuemin="{{ options.FontSize[1] }}"
+                aria-valuemax="{{ options.FontSize[2] }}"
+              />
+            </div>
+            {% endif %}
+
+            {% if options.Opacity[0] %}
+            <div id="opacityControl" class="viewer-field is-nomb">
+              <label class="viewer-field-label" for="opacityRange">
+                <span data-i18n="opacityField">透明度</span>
+                <span class="viewer-field-label__value"> · <span id="opacityValue">100</span>%</span>
+              </label>
+              <input
+                type="range"
+                id="opacityRange"
+                class="viewer-range"
+                min="{{ options.Opacity[1] }}"
+                max="{{ options.Opacity[2] }}"
+                value="100"
+                aria-label="Text opacity"
+                aria-valuemin="{{ options.Opacity[1] }}"
+                aria-valuemax="{{ options.Opacity[2] }}"
+              />
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Speed -->
+          {% if options.Speed[0] %}
+          <div id="speedControl" class="viewer-field">
+            <label class="viewer-field-label" for="speedRange">
+              <span data-i18n="speedField">速度 · SPEED</span>
+              <span class="viewer-field-label__value"> · <span id="speedValue">{{
+                (options.Speed[1] + options.Speed[2]) // 2 }}</span>x</span>
+            </label>
+            <input
+              type="range"
+              id="speedRange"
+              class="viewer-range"
+              min="{{ options.Speed[1] }}"
+              max="{{ options.Speed[2] }}"
+              value="{{ (options.Speed[1] + options.Speed[2]) // 2 }}"
+              aria-label="Scroll speed"
+              aria-valuemin="{{ options.Speed[1] }}"
+              aria-valuemax="{{ options.Speed[2] }}"
+            />
+          </div>
+          {% endif %}
+
+          <!-- Effects (dynamically loaded from /effects API by main.js) -->
+          <div id="effectControl" class="viewer-field">
+            <label class="viewer-field-label">
+              <span data-i18n="effectsField">效果 · EFFECTS</span>
+              <span class="viewer-field-label__value" data-i18n="multiSelectToStack"> · 可疊加</span>
+            </label>
+            <div
+              id="effectButtons"
+              class="viewer-chip-row"
+              role="group"
+              aria-label="Effect selection"
+            >
+              <span class="viewer-field-label" data-i18n="loadingEffects">Loading...</span>
+            </div>
+            <div id="effectParamsPanel" class="mt-3 space-y-3"></div>
+          </div>
+
+          <!-- Layout 5-grid -->
+          {% if options.get('Layout', [True])[0] %}
+          <div id="layoutControl" class="viewer-field is-nomb">
+            <label class="viewer-field-label">
+              <span data-i18n="layoutField">排版 · LAYOUT</span>
+            </label>
+            <div
+              class="viewer-layout-grid"
+              id="layoutButtons"
+              role="group"
+              aria-label="Layout mode selection"
+            >
+              <button
+                type="button"
+                data-layout="scroll"
+                aria-label="Scroll layout (right to left)"
+                aria-pressed="true"
+                class="layout-btn viewer-layout-btn active is-active"
+              >
+                <span class="viewer-layout-btn__zh" data-i18n="layoutScroll">滾動</span>
+                <span class="viewer-layout-btn__sub">R→L</span>
+              </button>
+              <button
+                type="button"
+                data-layout="top_fixed"
+                aria-label="Top fixed layout"
+                aria-pressed="false"
+                class="layout-btn viewer-layout-btn"
+              >
+                <span class="viewer-layout-btn__zh" data-i18n="layoutTop">頂固定</span>
+                <span class="viewer-layout-btn__sub">TOP</span>
+              </button>
+              <button
+                type="button"
+                data-layout="bottom_fixed"
+                aria-label="Bottom fixed layout"
+                aria-pressed="false"
+                class="layout-btn viewer-layout-btn"
+              >
+                <span class="viewer-layout-btn__zh" data-i18n="layoutBottom">底固定</span>
+                <span class="viewer-layout-btn__sub">BOT</span>
+              </button>
+              <button
+                type="button"
+                data-layout="float"
+                aria-label="Float layout (random position)"
+                aria-pressed="false"
+                class="layout-btn viewer-layout-btn"
+              >
+                <span class="viewer-layout-btn__zh" data-i18n="layoutFloat">浮動</span>
+                <span class="viewer-layout-btn__sub">RND</span>
+              </button>
+              <button
+                type="button"
+                data-layout="rise"
+                aria-label="Rise layout (bottom to top)"
+                aria-pressed="false"
+                class="layout-btn viewer-layout-btn"
+              >
+                <span class="viewer-layout-btn__zh" data-i18n="layoutRise">上升</span>
+                <span class="viewer-layout-btn__sub">B→T</span>
+              </button>
+            </div>
+            <input type="hidden" id="layoutSelect" value="scroll" />
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Send bar — pill input + emoji button + FIRE. Emoji popover holds
+             the legacy #emojiPicker grid so main.js can populate it without
+             needing new IDs. -->
+        <div class="viewer-sendbar">
+          <div id="emojiPopover" class="viewer-emoji-popover" aria-hidden="true">
+            <div id="emojiPicker" class="viewer-emoji-popover-grid"></div>
+          </div>
+          <div id="sendbarPill" class="viewer-sendbar-pill">
+            <button
+              type="button"
+              id="emojiToggle"
+              class="viewer-emoji-btn"
+              aria-label="Toggle emoji picker"
+              aria-expanded="false"
+            >☺</button>
+            <input
+              type="text"
+              id="danmuText"
+              class="viewer-sendbar-input"
+              maxlength="100"
+              aria-describedby="charCount"
+              placeholder="想對現場說點什麼?"
+              data-i18n-placeholder="placeholder"
+              autocomplete="off"
+            />
+            <button
+              type="button"
+              id="btnSend"
+              class="viewer-fire-btn"
+              disabled
+            >
+              <span id="btnSendText" data-i18n="fireDanmu">FIRE</span>
+              <svg
+                id="btnSendIcon"
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              <svg id="btnSendSpinner" class="btn-spinner hidden" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-linecap="round"
-                  stroke-dasharray="31.4 31.4" />
+              <svg
+                id="btnSendSpinner"
+                class="btn-spinner hidden"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="31.4 31.4" />
               </svg>
             </button>
           </div>
-        </div>
-      </div>
-
-      <!-- Settings Section -->
-      <div class="server-settings-panel mb-6">
-        <details class="group" open>
-          <summary
-            class="settings-summary-header flex items-center justify-between cursor-pointer list-none bg-slate-800/40 p-4 rounded-xl hover:bg-slate-800/60 transition-colors focus-visible:outline-2 focus-visible:outline-sky-400 focus-visible:outline-offset-2">
-              <span class="settings-summary-copy">
-                <span class="font-medium text-slate-200 flex items-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-sky-400" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                </svg>
-                <span data-i18n="customizeStyle">Customize Style</span>
-              </span>
-            </span>
-            <span class="transition group-open:rotate-180" aria-hidden="true">
-              <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor"
-                stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24">
-                <path d="M6 9l6 6 6-6"></path>
-              </svg>
-            </span>
-          </summary>
-
-          <div class="settings-dashboard mt-4 px-2 animate-fade-in-scale-up">
-            <div class="settings-block-heading">
-              <span class="settings-block-kicker" data-i18n="coreControlsKicker">Core controls</span>
-              <span class="settings-block-title" data-i18n="coreControlsTitle">Color, size, opacity, and speed</span>
-            </div>
-            <div class="settings-primary-grid">
-            <!-- Color Picker -->
-            {% if options.Color[0] %}
-            <div id="colorControl" class="settings-card settings-card--accent">
-              <label class="block text-sm font-medium text-slate-400 mb-2 flex justify-between">
-                <span data-i18n="color">Color</span>
-                <span id="colorValue"
-                  class="text-xs font-mono bg-slate-800 px-2 py-0.5 rounded text-slate-300">#FFFFFF</span>
-              </label>
-              <div class="flex items-center gap-3">
-                <input type="color" id="colorInput" value="#ffffff"
-                  class="h-10 w-14 rounded cursor-pointer bg-transparent border-0 p-0"
-                  aria-label="Choose danmu color" />
-                <div id="colorGradientPreview"
-                  class="h-10 w-14 shrink-0 rounded-lg border border-slate-700/70 bg-white/90"></div>
-              </div>
-            </div>
-            {% endif %}
-
-            <!-- Font Size Slider -->
-            {% if options.FontSize[0] %}
-            <div id="fontSizeControl" class="settings-card">
-              <label class="block text-sm font-medium text-slate-400 mb-2 flex justify-between">
-                <span data-i18n="size">Size</span>
-                <span id="sizeValue" class="text-xs font-mono bg-slate-800 px-2 py-0.5 rounded text-slate-300">{{
-                  (options.FontSize[1] + options.FontSize[2]) // 2 }}px</span>
-              </label>
-              <input type="range" id="sizeInput" min="{{ options.FontSize[1] }}" max="{{ options.FontSize[2] }}"
-                value="{{ (options.FontSize[1] + options.FontSize[2]) // 2 }}" aria-label="Font size"
-                aria-valuemin="{{ options.FontSize[1] }}" aria-valuemax="{{ options.FontSize[2] }}"
-                class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
-              <div class="flex justify-between text-xs text-slate-400 mt-1">
-                <span>{{ options.FontSize[1] }}px</span>
-                <span>{{ options.FontSize[2] }}px</span>
-              </div>
-            </div>
-            {% endif %}
-
-            <!-- Opacity Slider -->
-            {% if options.Opacity[0] %}
-            <div id="opacityControl" class="settings-card">
-              <label class="block text-sm font-medium text-slate-400 mb-2 flex justify-between">
-                <span data-i18n="opacity">Opacity</span>
-                <span id="opacityValue"
-                  class="text-xs font-mono bg-slate-800 px-2 py-0.5 rounded text-slate-300">100%</span>
-              </label>
-              <input type="range" id="opacityRange" min="{{ options.Opacity[1] }}" max="{{ options.Opacity[2] }}"
-                value="100" aria-label="Text opacity" aria-valuemin="{{ options.Opacity[1] }}"
-                aria-valuemax="{{ options.Opacity[2] }}"
-                class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            {% endif %}
-
-            <!-- Speed Slider -->
-            {% if options.Speed[0] %}
-            <div id="speedControl" class="settings-card">
-              <label class="block text-sm font-medium text-slate-400 mb-2 flex justify-between">
-                <span data-i18n="speed">Speed</span>
-                <span id="speedValue" class="text-xs font-mono bg-slate-800 px-2 py-0.5 rounded text-slate-300">{{
-                  (options.Speed[1] + options.Speed[2]) // 2 }}</span>
-              </label>
-              <input type="range" id="speedRange" min="{{ options.Speed[1] }}" max="{{ options.Speed[2] }}"
-                value="{{ (options.Speed[1] + options.Speed[2]) // 2 }}" aria-label="Scroll speed"
-                aria-valuemin="{{ options.Speed[1] }}" aria-valuemax="{{ options.Speed[2] }}"
-                class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
-              <div class="flex justify-between text-xs text-slate-400 mt-1">
-                <span data-i18n="slow">Slow</span>
-                <span data-i18n="fast">Fast</span>
-              </div>
-            </div>
-            {% endif %}
-            </div>
-
-            <div class="settings-block-heading">
-              <span class="settings-block-kicker" data-i18n="secondaryControlsKicker">Identity</span>
-              <span class="settings-block-title" data-i18n="secondaryControlsTitle">Font, nickname, and layout defaults</span>
-            </div>
-            <div class="settings-secondary-grid">
-
-            <!-- User Font Selection -->
-            <div id="userFontSelectControl" class="settings-card" style="display: none;">
-              <label class="block text-sm font-medium text-slate-400 mb-2 flex justify-between">
-                <span data-i18n="font">Font</span>
-              </label>
-              <select id="userFontSelect" aria-label="Choose font"
-                class="w-full bg-slate-800 border border-slate-700 text-white text-sm rounded-lg focus:ring-sky-500 focus:border-sky-500 block p-2.5">
-                <option value="" data-i18n="defaultFont">Default Font</option>
-                <!-- Options populated by JS -->
-              </select>
-            </div>
-
-            <!-- Nickname -->
-            {% if options.get('Nickname', [True])[0] %}
-            <div id="nicknameControl" class="settings-card">
-              <label class="block text-sm font-medium text-slate-400 mb-2">
-                <span data-i18n="nickname">Nickname</span>
-              </label>
-              <input type="text" id="nicknameInput" maxlength="20" placeholder="Anonymous"
-                data-i18n-placeholder="anonymousPlaceholder"
-                class="w-full bg-slate-800/50 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:ring-sky-500 focus:border-sky-500" />
-            </div>
-            {% endif %}
-
-            <!-- Layout Mode -->
-            {% if options.get('Layout', [True])[0] %}
-            <div id="layoutControl" class="settings-card settings-card--wide">
-              <label class="block text-sm font-medium text-slate-400 mb-2">
-                <span data-i18n="layoutMode">Layout</span>
-              </label>
-              <div class="flex flex-wrap gap-2" id="layoutButtons" role="group" aria-label="Layout mode selection">
-                <button type="button" data-layout="scroll" aria-label="Scroll layout (right to left)"
-                  aria-pressed="true"
-                  class="layout-btn active px-3 py-1.5 text-xs rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/30">→
-                  Scroll</button>
-                <button type="button" data-layout="top_fixed" aria-label="Top fixed layout" aria-pressed="false"
-                  class="layout-btn px-3 py-1.5 text-xs rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600/30">↑
-                  Top</button>
-                <button type="button" data-layout="bottom_fixed" aria-label="Bottom fixed layout" aria-pressed="false"
-                  class="layout-btn px-3 py-1.5 text-xs rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600/30">↓
-                  Bottom</button>
-                <button type="button" data-layout="float" aria-label="Float layout (random position)"
-                  aria-pressed="false"
-                  class="layout-btn px-3 py-1.5 text-xs rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600/30">✦
-                  Float</button>
-                <button type="button" data-layout="rise" aria-label="Rise layout (bottom to top)" aria-pressed="false"
-                  class="layout-btn px-3 py-1.5 text-xs rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600/30">↑
-                  Rise</button>
-              </div>
-              <input type="hidden" id="layoutSelect" value="scroll" />
-            </div>
-            {% endif %}
-            </div>
-
-            <details class="settings-more-controls group">
-              <summary class="settings-more-summary">
-                <span>
-                  <span class="settings-more-kicker" data-i18n="moreToolsKicker">More tools</span>
-                  <span class="settings-more-title" data-i18n="moreToolsTitle">Emojis and effects</span>
-                </span>
-                <span class="transition group-open:rotate-180" aria-hidden="true">
-                  <svg fill="none" height="20" viewBox="0 0 24 24" width="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
-                    <path d="M6 9l6 6 6-6"></path>
-                  </svg>
-                </span>
-              </summary>
-              <div class="settings-more-body">
-                <div class="settings-utility-stack">
-                  <!-- Emoji Picker -->
-                  <div id="emojiControl" class="settings-card settings-card--wide">
-                    <label class="block text-sm font-medium text-slate-400 mb-2">
-                      <span data-i18n="emojis">Emojis</span>
-                      <span class="text-xs text-slate-400 ml-2" data-i18n="emojiHint">Click to insert :name:</span>
-                    </label>
-                    <div id="emojiPicker" class="flex flex-wrap gap-2"></div>
-                  </div>
-
-                  <!-- Text Effects (dynamically loaded from /effects API) -->
-                  <div id="effectControl" class="settings-card settings-card--wide">
-                    <label class="block text-sm font-medium text-slate-400 mb-2 flex justify-between">
-                      <span data-i18n="effects">Effects</span>
-                      <span class="text-xs text-slate-400" data-i18n="multiSelectToStack">Multi-select to stack</span>
-                    </label>
-                    <div class="flex flex-wrap gap-2" id="effectButtons" role="group" aria-label="Effect selection">
-                      <span class="text-xs text-slate-400" data-i18n="loadingEffects">Loading...</span>
-                    </div>
-                    <div id="effectParamsPanel" class="mt-3 space-y-3"></div>
-                  </div>
-                </div>
-              </div>
-            </details>
+          <div class="viewer-sendbar-meta">
+            <span data-i18n="sendbarHint">Enter 送出 · emoji 可用 :name:</span>
+            <span id="charCount" class="viewer-sendbar-meta__count" aria-live="polite">0/100</span>
           </div>
-        </details>
-      </div>
+        </div>
 
+      </div>
     </main>
 
     <!-- Footer -->

@@ -159,7 +159,7 @@ function initTrackManager() {
 
     // ── 建立 wrapper（負責 translateX 動畫，與 inner 特效動畫分離，互不衝突）
     const wrapper = document.createElement("div");
-    wrapper.style.cssText = "position:absolute;display:inline-block;white-space:nowrap;";
+    wrapper.style.cssText = "position:absolute;display:inline-flex;flex-direction:column;align-items:flex-start;white-space:nowrap;line-height:1;";
 
     let danmu;
     if (imgs.test(string) && protocolCheck.test(string)) {
@@ -212,11 +212,12 @@ function initTrackManager() {
       }
     }
 
-    // Nickname label
+    // Nickname label — pinned top-left of the bullet block, above the text.
+    // Per design v2 spec: @nickname as small mono prefix at top-left corner.
     if (nickname) {
       const nickEl = document.createElement("span");
       nickEl.textContent = nickname;
-      nickEl.style.cssText = `font-size:${Math.max(12, size * 0.35)}px;color:${color};opacity:0.7;margin-right:6px;vertical-align:middle;`;
+      nickEl.style.cssText = `font-size:${Math.max(11, size * 0.3)}px;font-family:'JetBrains Mono',ui-monospace,monospace;color:${color};opacity:0.75;letter-spacing:0.05em;margin-bottom:${Math.round(size * 0.08)}px;line-height:1;align-self:flex-start;`;
       wrapper.appendChild(nickEl);
     }
 

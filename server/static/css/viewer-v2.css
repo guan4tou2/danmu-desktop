@@ -1,0 +1,589 @@
+/* viewer-v2.css — design-v2 Viewer port (public /fire page).
+ *
+ * Mirrors docs/designs/design-v2/components/viewer.jsx: DanmuHero lockup on
+ * top, scrollable body with the seven fields (nickname, color, font, size +
+ * opacity 2-col, speed, effects, layout), pill send bar at the bottom with
+ * an emoji popover. Uses shared tokens + hud.css atoms — no hardcoded hex.
+ *
+ * Layout contract: .viewer-shell is a flex column (header / body / send-bar)
+ * that pins to the bounding card. The host <main> already carries glass +
+ * hud-corners-auto chrome from index.html.
+ */
+
+.viewer-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: clamp(540px, 72vh, 820px);
+  gap: 0;
+}
+
+/* Hero lockup — DanmuHero `size="hero"` (clamp 3.2rem → 6rem, Bebas Neue,
+ * sky-300, drop-shadow, uppercase, 0.02em track). Subtitle in slate-300
+ * capped at 40rem. Chip pill below. */
+.viewer-hero {
+  padding: clamp(1.4rem, 3vw, 1.75rem) clamp(1rem, 3vw, 1.5rem) clamp(1.2rem, 2.6vw, 1.5rem);
+  border-bottom: 1px solid var(--hud-line);
+  text-align: center;
+  background: linear-gradient(
+    180deg,
+    rgba(125, 211, 252, 0.04) 0%,
+    transparent 100%
+  );
+}
+
+.viewer-hero-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(3.2rem, 8vw, 6rem);
+  font-weight: 400;
+  color: #7dd3fc;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  filter:
+    drop-shadow(0 10px 15px rgba(0, 0, 0, 0.45))
+    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+}
+
+.viewer-hero-subtitle {
+  margin: 0.875rem auto 0;
+  max-width: 40rem;
+  color: var(--color-text-bright);
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.viewer-hero-chip-row {
+  margin-top: 1.125rem;
+  display: flex;
+  justify-content: center;
+}
+
+.viewer-hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-pill);
+  background: var(--hud-cyan-soft);
+  border: 1px solid var(--hud-cyan-line);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  color: var(--color-primary);
+  text-transform: uppercase;
+}
+
+/* Scrollable body — holds preview + all field rows. */
+.viewer-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 1.5rem 1.5rem 1.75rem;
+  overflow: auto;
+}
+
+@media (max-width: 520px) {
+  .viewer-body {
+    padding: 1rem 1rem 1.25rem;
+  }
+}
+
+/* Live preview strip — dark inset panel with PREVIEW kicker. */
+.viewer-preview {
+  position: relative;
+  overflow: hidden;
+  min-height: 72px;
+  padding: 18px 14px;
+  margin-bottom: 1rem;
+  background: #000814;
+  border: 1px solid var(--hud-line);
+  border-radius: 8px;
+}
+
+.viewer-preview-kicker {
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: rgba(148, 163, 184, 0.7);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.viewer-preview-row {
+  margin-top: 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.viewer-preview-nick {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  opacity: 0.75;
+  letter-spacing: 0.03em;
+}
+
+.viewer-preview-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all 0.3s;
+}
+
+/* Field — 9px mono tracked uppercase label above control. */
+.viewer-field {
+  margin-bottom: 0.875rem;
+}
+
+.viewer-field.is-nomb {
+  margin-bottom: 0;
+}
+
+.viewer-field-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.375rem;
+  text-transform: uppercase;
+}
+
+.viewer-field-label__value {
+  color: var(--color-text-bright);
+}
+
+/* Text input — raised background + hairline border. */
+.viewer-input {
+  width: 100%;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--hud-line);
+  color: var(--color-text-primary);
+  padding: 0.625rem 0.75rem;
+  border-radius: 6px;
+  outline: none;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.viewer-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--glow-primary-ring);
+}
+
+/* Color swatches — 6 preset + 1 custom with dashed ring. */
+.viewer-color-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.viewer-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  border: 1px solid var(--hud-line);
+  background-clip: padding-box;
+}
+
+.viewer-swatch.is-active {
+  border: 2px solid var(--color-primary);
+  outline: 1px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.viewer-swatch--custom {
+  position: relative;
+  border-style: dashed;
+  color: var(--color-text-secondary);
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+
+.viewer-swatch--custom input[type="color"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.viewer-color-hex {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}
+
+/* Select — chevron rendered via ::after absolute overlay. */
+.viewer-select-wrap {
+  position: relative;
+}
+
+.viewer-select {
+  width: 100%;
+  padding: 9px 34px 9px 12px;
+  border-radius: 6px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--hud-line);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.viewer-select-wrap::after {
+  content: "▾";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+/* Range slider — thin 4px track, accentColor driven. */
+.viewer-range {
+  width: 100%;
+  accent-color: var(--color-primary);
+  height: 4px;
+}
+
+/* 2-column grid for fontSize + opacity. */
+.viewer-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.875rem;
+}
+
+/* Effects/Layout chip grid. */
+.viewer-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.viewer-chip {
+  min-width: 64px;
+  min-height: 44px;            /* WCAG 44×44 touch target */
+  padding: 0.375rem 0.875rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--hud-line);
+  background: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 400;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+}
+
+.viewer-chip:hover {
+  border-color: var(--hud-line-strong);
+}
+
+.viewer-chip.is-active,
+.viewer-chip[aria-pressed="true"] {
+  border-color: var(--color-primary);
+  background: var(--hud-cyan-soft);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Layout 5-column grid (title + monospace sub-label). */
+.viewer-layout-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.375rem;
+}
+
+.viewer-layout-btn {
+  min-height: 56px;
+  padding: 0.5rem 0.25rem;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--hud-line);
+  background: transparent;
+  color: var(--color-text-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1875rem;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.viewer-layout-btn:hover {
+  border-color: var(--hud-line-strong);
+}
+
+.viewer-layout-btn.is-active,
+.viewer-layout-btn[aria-pressed="true"] {
+  border-color: var(--color-primary);
+  background: var(--hud-cyan-soft);
+  color: var(--color-primary);
+}
+
+.viewer-layout-btn__zh {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.viewer-layout-btn__sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.03em;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}
+
+.viewer-layout-btn.is-active .viewer-layout-btn__sub {
+  color: var(--color-primary);
+  opacity: 0.8;
+}
+
+/* Send bar — pill container with emoji ☺ button + input + FIRE. */
+.viewer-sendbar {
+  position: relative;
+  padding: 0.625rem 1.25rem 0.75rem;
+  border-top: 1px solid var(--hud-line);
+  background: var(--color-bg-base);
+}
+
+.viewer-sendbar-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 4px 4px 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--hud-line);
+  background: var(--color-bg-deep);
+  transition: border-color 0.15s;
+}
+
+.viewer-sendbar-pill.is-active {
+  border-color: var(--color-primary);
+}
+
+.viewer-emoji-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.viewer-emoji-btn.is-active {
+  background: var(--hud-cyan-soft);
+  color: var(--color-primary);
+}
+
+.viewer-sendbar-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  padding: 10px 0;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  min-width: 0;
+}
+
+.viewer-sendbar-input::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.viewer-fire-btn {
+  padding: 0.5625rem 1rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-elevated);
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: default;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  letter-spacing: 0.15em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+  flex-shrink: 0;
+}
+
+.viewer-fire-btn:not([disabled]) {
+  background: var(--color-primary);
+  color: #000;
+  cursor: pointer;
+}
+
+.viewer-fire-btn:not([disabled]):hover {
+  transform: translateY(-1px);
+}
+
+.viewer-fire-btn:not([disabled]):active {
+  transform: translateY(0);
+}
+
+.viewer-fire-btn .btn-spinner {
+  width: 14px;
+  height: 14px;
+}
+
+.viewer-sendbar-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.375rem;
+  padding: 0 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.viewer-sendbar-meta__count.is-near {
+  color: var(--color-warning);
+}
+
+/* Emoji popover — absolute above the send bar pill. */
+.viewer-emoji-popover {
+  position: absolute;
+  left: 1.25rem;
+  right: 1.25rem;
+  bottom: 100%;
+  margin-bottom: 0.375rem;
+  background: var(--color-bg-base);
+  border: 1px solid var(--hud-line);
+  border-radius: 8px;
+  padding: 0.5rem;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+  display: none;
+  z-index: 30;
+}
+
+.viewer-emoji-popover.is-open {
+  display: block;
+}
+
+.viewer-emoji-popover-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 0.25rem;
+}
+
+@media (max-width: 520px) {
+  .viewer-emoji-popover-grid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+}
+
+/* Image-emoji tiles inside the popover + the legacy #emojiPicker grid. */
+.viewer-emoji-tile {
+  padding: 0.375rem 0;
+  min-height: 36px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid var(--hud-line);
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.viewer-emoji-tile:hover {
+  background: var(--hud-cyan-soft);
+  border-color: var(--color-primary);
+}
+
+.viewer-emoji-tile img {
+  width: 22px;
+  height: 22px;
+}
+
+/* Header bar — status + language picker (stays above hero on small). */
+.viewer-topstrip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 1.25rem 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}
+
+.viewer-topstrip-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.viewer-topstrip-status + .viewer-topstrip-status {
+  margin-left: 0.75rem;
+}
+
+.viewer-topstrip-select {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--hud-line);
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.viewer-topstrip-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+/* Reduced motion — kill hover transforms. */
+@media (prefers-reduced-motion: reduce) {
+  .viewer-chip,
+  .viewer-layout-btn,
+  .viewer-fire-btn,
+  .viewer-preview-text,
+  .viewer-emoji-btn {
+    transition: none;
+  }
+  .viewer-fire-btn:not([disabled]):hover {
+    transform: none;
+  }
+}
