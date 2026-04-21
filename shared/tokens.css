@@ -102,4 +102,14 @@
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
   --radius-pill: 999px;
+
+  /* HUD atoms (design-v2) — angular-cut panels, L-bracket corners,
+   * monospace labels. Kept as tokens so Electron + server share values. */
+  --hud-cut: 14px;                                /* diagonal notch size on .hud-panel */
+  --hud-corner-size: 10px;                        /* L-bracket arm length */
+  --hud-corner-thickness: 1px;                    /* L-bracket stroke */
+  --hud-line: rgba(71, 85, 105, 0.55);            /* slate-600 @ 0.55 — panel edges */
+  --hud-line-strong: rgba(100, 116, 139, 0.85);   /* slate-500 @ 0.85 — emphasized edges */
+  --hud-cyan-line: rgba(56, 189, 248, 0.45);      /* sky-400 @ 0.45 — accent edges */
+  --hud-cyan-soft: rgba(56, 189, 248, 0.14);      /* sky-400 @ 0.14 — active fill */
 }

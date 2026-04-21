@@ -19,6 +19,7 @@
     href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/hud.css') }}" />
 </head>
 
 <body class="bg-black text-white min-h-screen overflow-x-hidden">
@@ -43,9 +44,10 @@
     </div>
 
     <!-- Main Card -->
-    <main class="glass-effect server-main-shell rounded-3xl shadow-2xl px-5 pb-5 pt-5 md:px-8 md:pb-8 md:pt-7 mb-8 transition-all duration-300">
+    <main class="glass-effect hud-corners-auto server-main-shell rounded-3xl shadow-2xl px-5 pb-5 pt-5 md:px-8 md:pb-8 md:pt-7 mb-8 transition-all duration-300">
       <section class="server-hero-band animate-fade-in-scale-up">
         <div class="server-hero-copy">
+          <span class="hud-label is-accent" aria-hidden="true">DANMU · FIRE</span>
           <h1
             class="server-hero-title text-sky-300 drop-shadow-lg"
             data-i18n="mainTitle">
@@ -60,11 +62,11 @@
           <div class="server-status-stack" role="status" aria-live="polite">
             <div id="connectionStatus" class="server-status-chip">
               <span class="connection-dot connection-dot--connecting"></span>
-              <span id="connectionLabel" class="text-slate-300" data-i18n="connecting">Connecting...</span>
+              <span id="connectionLabel" class="hud-label" data-i18n="connecting">Connecting...</span>
             </div>
             <div id="overlayStatus" class="server-status-chip">
               <span class="connection-dot connection-dot--disconnected"></span>
-              <span id="overlayLabel" class="text-slate-300" data-i18n="overlayNone">Overlay: –</span>
+              <span id="overlayLabel" class="hud-label" data-i18n="overlayNone">Overlay: –</span>
             </div>
           </div>
         </div>
