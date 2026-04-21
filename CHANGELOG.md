@@ -7,6 +7,48 @@
 
 ## [Unreleased]
 
+## [4.9.0] - 2026-04-21
+
+Admin observability bundle — 五支面向維運者的工具一次打包，server-only release
+（不觸發 Electron 二進位構建，因為 `danmu-desktop/package.json` 未 bump）。
+
+### 新增 / Added
+
+- **T1 · Metrics sparklines**：Admin dashboard 新增即時 CPU / MEM / WS 客戶端數折線圖。
+  psutil-based 取樣 `services/metrics.py`，routes `GET /admin/metrics` 回傳最近
+  N 筆 ring-buffer 資料，前端 `admin-metrics.js` 10 秒自動刷新繪製 sparkline。
+- **T2 · Admin fonts management**：`routes/admin/fonts.py` 提供 list/upload/delete
+  字型檔 API，`secure_filename()` + `Path.is_relative_to()` 雙重 path-traversal 防護。
+  Admin UI 新增 `<details id="sec-fonts">` 區塊管理自訂字型。
+- **T3 · Fingerprint observatory**：`services/fingerprint_tracker.py` in-memory
+  ring-buffer（MAX_RECORDS=1000，LRU eviction）追蹤每個 fingerprint 的 msgs /
+  rate_per_min / blocked count。sha256[:12] 雜湊不外洩原始 fingerprint，60 秒
+  rolling window 計算速率，>60/min 標記 `flagged`。routes `GET /admin/fingerprints`
+  + `POST /admin/fingerprints/reset`（require CSRF）。Admin UI 新增狀態徽章表格，
+  10 秒自動刷新。21 tests covering record / state / list / LRU / routes。
+- **T4 · Theme bundle schema extension**：Theme `.dmt` YAML 新增 `tokens` /
+  `overrides` 區塊，支援 override `shared/tokens.css` 變數 + 注入自訂 CSS。
+  hot-reload with mtime tracking。
+- **T5 · Desktop design v2 reference docs**：`docs/designs/design-feedback-desktop-v2.md`
+  + 相關 design explorations 存檔，供後續 `claude/design-v2-retrofit` 分支參考。
+
+### 改善 / Changed
+
+- **Admin i18n**：4 個語系（en/zh/ja/ko）各新增 21 個 fingerprint 相關 key +
+  fonts / metrics 區塊標題翻譯，admin 頁面 100% 已翻譯維持。
+- **`routes/admin/__init__.py`**：註冊 `fingerprints` / `fonts` submodules 到
+  admin blueprint package import 列表（alphabetical order）。
+
+### 驗證 / Verification
+
+- 791 tests pass（`cd server && PYTHONPATH=.. uv run python -m pytest`）
+- i18n 生成檔確認 4 個語系都有新 key
+- Preview 確認 fingerprint 表格、sparklines、fonts 區塊正常渲染
+- Server-only change — `danmu-desktop/package.json` 保持 4.8.7，不觸發 build.yml
+  binary release pipeline
+
+---
+
 ## [4.8.7] - 2026-04-20
 
 ### 改善 / Improved

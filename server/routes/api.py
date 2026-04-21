@@ -4,6 +4,7 @@ import re
 from flask import Blueprint, current_app, make_response, request, send_from_directory, session
 
 from .. import state
+from ..services import fingerprint_tracker
 from ..services import history as history_service
 from ..services import messaging
 from ..services import themes as theme_svc
@@ -225,10 +226,13 @@ def fire():
 
         fingerprint = data.pop("fingerprint", None)
         text_content = data.get("text", "")
+        client_ip = _extract_client_ip()
+        user_agent = request.headers.get("User-Agent", "")
 
         # Filter engine check (replaces simple blacklist check)
         filter_result = filter_engine.check(text_content, fingerprint)
         if filter_result.action == "block":
+            fingerprint_tracker.record(fingerprint, client_ip, user_agent, blocked=True)
             return _json_response(
                 {"error": filter_result.reason or "Content blocked by filter rule"},
                 400,
@@ -270,9 +274,8 @@ def fire():
 
         forward_success = messaging.forward_to_ws_server(data)
 
-        client_ip = _extract_client_ip()
-
         if forward_success:
+            fingerprint_tracker.record(fingerprint, client_ip, user_agent)
             _record_history_if_enabled(data, fingerprint, client_ip)
 
             # Webhook: emit on_danmu event (fire-and-forget)

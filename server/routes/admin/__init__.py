@@ -53,6 +53,7 @@ from . import (  # noqa: E402, F401
     effects,
     emojis,
     filters,
+    fingerprints,
     history,
     live,
     metrics,

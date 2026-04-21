@@ -2,7 +2,7 @@
 
 import time
 
-from ...services import ws_queue, ws_state
+from ...services import telemetry, ws_queue, ws_state
 from ...services.poll import poll_service
 from ...services.widgets import list_widgets
 from . import _json_response, admin_bp, rate_limit, require_login
@@ -14,6 +14,7 @@ from . import _json_response, admin_bp, rate_limit, require_login
 def get_metrics():
     state = ws_state.read_state()
     queue_len = len(ws_queue._queue)
+    series = telemetry.get_series()
 
     return _json_response(
         {
@@ -24,5 +25,6 @@ def get_metrics():
             "active_widgets": len(list_widgets()),
             "poll_state": poll_service.state,
             "server_time": time.time(),
+            **series,
         }
     )

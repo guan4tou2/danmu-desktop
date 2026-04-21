@@ -4,12 +4,13 @@ from flask import current_app
 
 from ..managers import connection_manager
 from ..utils import sanitize_log_string
-from . import ws_queue
+from . import telemetry, ws_queue
 
 
 def forward_to_ws_server(data):
     try:
         ws_queue.enqueue_message(data)
+        telemetry.record_message()
 
         # Broadcast live feed to admin WS connections (fire-and-forget)
         if isinstance(data, dict) and data.get("text"):

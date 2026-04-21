@@ -268,6 +268,11 @@ def main():
     http_port = app.config["PORT"]
     ws_port = app.config["WS_PORT"]
 
+    # Start telemetry sampler for admin dashboard sparklines
+    from .services import telemetry
+
+    telemetry.start_sampler()
+
     # HTTP 連線保活檢查執行緒
     check_thread = threading.Thread(
         target=background_check_connections, args=(app.logger,), daemon=True

@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <title>Danmu Desktop · UI/UX 重設計</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Chakra+Petch:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+      font-family: 'Zen Kaku Gothic New', 'Noto Sans TC', -apple-system, system-ui, sans-serif;
+      background: oklch(0.12 0.02 250);
+      color: oklch(0.96 0.01 240);
+      -webkit-font-smoothing: antialiased;
+    }
+    @keyframes hud-pulse { 0%,100% { opacity:1; transform:scale(1);} 50% { opacity:.6; transform:scale(.9);} }
+    @keyframes dm-scroll { from { transform: translateX(0);} to { transform: translateX(2400px);} }
+    .tweaks-panel {
+      position: fixed; right: 16px; bottom: 16px;
+      background: oklch(0.16 0.022 250);
+      border: 1px solid oklch(0.82 0.14 195 / 0.45);
+      padding: 14px 16px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px; color: oklch(0.96 0.01 240);
+      letter-spacing: 1px; z-index: 1000; min-width: 220px; display: none;
+      clip-path: polygon(0 10px, 10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+    }
+    .tweaks-panel.open { display: block; }
+    .tweaks-panel h4 { margin: 0 0 10px; font-size: 10px; letter-spacing: 2px; color: oklch(0.82 0.14 195); font-weight: 600; }
+    .tweaks-panel .row { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+    .tweaks-panel button {
+      background: transparent; border: 1px solid oklch(0.32 0.03 220 / 0.55);
+      color: oklch(0.72 0.015 240); padding: 4px 8px;
+      font-family: inherit; font-size: 10px; letter-spacing: 1px; cursor: pointer;
+    }
+    .tweaks-panel button.on { background: oklch(0.82 0.14 195 / 0.14); border-color: oklch(0.82 0.14 195); color: oklch(0.82 0.14 195); }
+    .tweaks-panel .label { font-size: 9px; letter-spacing: 2px; color: oklch(0.55 0.015 240); margin-bottom: 4px; text-transform: uppercase; }
+  </style>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<div class="tweaks-panel" id="tweaks">
+  <h4>◆ TWEAKS</h4>
+  <div class="label">THEME</div>
+  <div class="row" data-group="theme">
+    <button data-val="dark" class="on">DARK</button>
+    <button data-val="light">LIGHT</button>
+  </div>
+  <div class="label">POLL · 後台開啟</div>
+  <div class="row" data-group="pollEnabled">
+    <button data-val="true" class="on">ON</button>
+    <button data-val="false">OFF</button>
+  </div>
+  <div class="label">QUICK · 後台開啟</div>
+  <div class="row" data-group="quickEnabled">
+    <button data-val="true" class="on">ON</button>
+    <button data-val="false">OFF</button>
+  </div>
+</div>
+
+<script type="text/babel" src="components/tokens.jsx"></script>
+<script type="text/babel" src="components/danmu-preview.jsx"></script>
+<script type="text/babel" src="components/admin-v3.jsx"></script>
+<script type="text/babel" src="components/admin-pages.jsx"></script>
+<script type="text/babel" src="components/admin-theme-packs.jsx"></script>
+<script type="text/babel" src="components/browser-window.jsx"></script>
+<script type="text/babel" src="components/mobile-safari.jsx"></script>
+<script type="text/babel" src="components/viewer.jsx"></script>
+<script type="text/babel" src="components/desktop.jsx"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "light",
+  "pollEnabled": "false",
+  "quickEnabled": "false"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
+
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      if (e.data?.type === '__activate_edit_mode') document.getElementById('tweaks').classList.add('open');
+      else if (e.data?.type === '__deactivate_edit_mode') document.getElementById('tweaks').classList.remove('open');
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    const panel = document.getElementById('tweaks');
+    panel.querySelectorAll('.row').forEach(row => {
+      const group = row.dataset.group;
+      row.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          row.querySelectorAll('button').forEach(b => b.classList.remove('on'));
+          btn.classList.add('on');
+          const val = btn.dataset.val;
+          setTweaks(t => ({ ...t, [group]: val }));
+          window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [group]: val } }, '*');
+        });
+        if (btn.dataset.val === TWEAK_DEFAULTS[group]) btn.classList.add('on');
+      });
+    });
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const pollOn = tweaks.pollEnabled === 'true' || tweaks.pollEnabled === true;
+  const quickOn = tweaks.quickEnabled === 'true' || tweaks.quickEnabled === true;
+
+  const Intro = () => (
+    <div data-screen-label="00 README" style={{
+      width: 900, padding: '40px 44px',
+      background: 'oklch(0.14 0.02 250)',
+      border: '1px solid oklch(0.82 0.14 195 / 0.45)',
+      color: 'oklch(0.96 0.01 240)',
+      fontFamily: hudTokens.fontSans, position: 'relative',
+      clipPath: 'polygon(0 18px, 18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%)',
+    }}>
+      <HudLabel color={hudTokens.cyan}>DANMU-DESKTOP · UI/UX REDESIGN · v3</HudLabel>
+      <div style={{ fontFamily: hudTokens.fontDisplay, fontSize: 42, fontWeight: 700, letterSpacing: -1, marginTop: 10, lineHeight: 1.1 }}>
+        全景重新設計 <span style={{ color: hudTokens.cyan }}>/</span> 對齊原版功能
+      </div>
+      <div style={{ color: hudTokens.textDim, fontSize: 13, marginTop: 14, lineHeight: 1.7 }}>
+        依原 README 特性逐項對齊：<b style={{ color: hudTokens.text }}>5 種 layout · 8 效果 + .dme · 暱稱 / 顏色 / 描邊 / 陰影 · 效果可疊加 · 4 主題 · 2–6 選項投票（A/B/C/D 輸入） · OBS 小工具 · Plugin SDK</b>。
+        此版額外：字型選擇、透明度、字級 — 為觀眾端的合理延伸。
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18, marginTop: 28, paddingTop: 22, borderTop: `1px solid ${hudTokens.line}` }}>
+        {[
+          { t: 'Danmu Fire · 觀眾端', d: '暱稱 / 文字 / 顏色 / 字型 / 字級 / 透明度 / 描邊 / 陰影 / 效果疊加 / Layout / 主題。只送不收。Poll & Quick 條件顯示；投票無 %。' },
+          { t: 'Admin · 控制台', d: '移除 DISPLAY 設定卡（那在 /effects、/fonts 頁面）。主畫面聚焦：KPI / 投票建立 & 進行中 / 訊息審核 / Widgets & Plugins。Sidebar：session + telemetry。' },
+          { t: 'Desktop Client · Electron', d: '4 個關鍵畫面：首次連線 dialog / 透明 overlay 實景 / 控制視窗 / macOS tray menu。包含快捷鍵、透明度、layout、自動更新。' },
+        ].map(x => (
+          <div key={x.t}>
+            <HudLabel color={hudTokens.cyan}>◉ {x.t}</HudLabel>
+            <div style={{ fontSize: 12, color: hudTokens.textDim, marginTop: 6, lineHeight: 1.6 }}>{x.d}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 18, padding: 12, background: hudTokens.cyanSoft, border: `1px solid ${hudTokens.cyanLine}`, fontSize: 12, color: hudTokens.text, lineHeight: 1.6 }}>
+        <HudLabel color={hudTokens.cyan}>TRY</HudLabel>
+        <div style={{ marginTop: 4 }}>右下 Tweaks 切換 Poll / Quick — 觀眾端 Fire/Poll tab 會即時出現或隱藏。</div>
+      </div>
+    </div>
+  );
+
+  return (
+    <DesignCanvas minScale={0.05} maxScale={3}>
+      <div style={{ padding: '0 60px' }}><Intro /></div>
+      <div style={{ height: 60 }} />
+
+      <DCSection title="Danmu Fire · 觀眾端" subtitle="完整欄位對齊原版 user-facing 頁面，統一以「網站」呈現 — 手機 Safari / 桌面 Chrome，不是 App">
+        <DCArtboard width={375} height={812} label="Mobile · Safari · danmu.im/42" style={{ background: '#000', borderRadius: 36, overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
+          <div data-screen-label="Viewer Mobile Web" style={{ width: 375, height: 812 }}>
+            <MobileSafariChrome url="danmu.im/42" dark={tweaks.theme === 'dark'}>
+              <ViewerMobile theme={tweaks.theme} pollEnabled={pollOn} quickEnabled={quickOn} inBrowser />
+            </MobileSafariChrome>
+          </div>
+        </DCArtboard>
+        <DCArtboard width={900} height={760} label="Desktop · Chrome · danmu.im/42" style={{ background: 'transparent' }}>
+          <div data-screen-label="Viewer Desktop Web" style={{ width: 900, height: 760 }}>
+            <ChromeWindow
+              width={900} height={760}
+              tabs={[{ title: 'Danmu · #MTG-042' }, { title: 'Keynote' }, { title: '筆記' }]}
+              activeIndex={0}
+              url="https://danmu.roy.im/live/mtg-042"
+            >
+              <div style={{ width: '100%', height: '100%' }}>
+                <ViewerDesktop theme={tweaks.theme} pollEnabled={pollOn} quickEnabled={quickOn} />
+              </div>
+            </ChromeWindow>
+          </div>
+        </DCArtboard>
+        <DCPostIt top={-30} left={1320} rotate={2} width={240}>
+          試試右下 Tweaks 切換 POLL / QUICK — Fire tab 下方的快速回應與 Poll tab 會出現或隱藏
+        </DCPostIt>
+      </DCSection>
+
+      <DCSection title="Admin · 管理後台" subtitle="Dashboard + 子頁面：風格主題包 / 效果庫 / 插件 / 字型 / 系統">
+        <DCArtboard width={1440} height={920} label="① Dashboard · 控制台" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Dashboard" style={{ width: 1440, height: 920 }}><AdminV3SoftHolo theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="② 風格主題包 · Theme Packs" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Theme Packs" style={{ width: 1440, height: 920 }}><AdminThemePacksPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="③ 效果庫 .dme · Effects" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Effects" style={{ width: 1440, height: 920 }}><AdminEffectsPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="④ 伺服器插件 · Plugins" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Plugins" style={{ width: 1440, height: 920 }}><AdminPluginsPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="⑤ 字型管理 · Fonts" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Fonts" style={{ width: 1440, height: 920 }}><AdminFontsPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="⑥ 系統 & 指紋 · System" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · System" style={{ width: 1440, height: 920 }}><AdminSystemPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="⑦ 敏感字 & 黑名單 · Moderation" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Moderation" style={{ width: 1440, height: 920 }}><AdminModerationPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="Desktop Client · Electron App" subtitle="透明 overlay + Tray + 控制視窗 + 首次啟動連線精靈">
+        <DCArtboard width={1200} height={760} label="① 桌面實景 · 透明 overlay 疊在 Keynote 上" style={{ background: 'transparent' }}>
+          <div data-screen-label="Desktop · Overlay on screen" style={{ width: 1200, height: 760 }}><DesktopClient theme={tweaks.theme} scenario="overlay" /></div>
+        </DCArtboard>
+        <DCArtboard width={680} height={520} label="② 控制視窗 · 連線 / overlay / 快捷鍵 / 自動更新" style={{ background: 'transparent' }}>
+          <div data-screen-label="Desktop · Control" style={{ width: 680, height: 520 }}><DesktopClient theme={tweaks.theme} scenario="control" /></div>
+        </DCArtboard>
+        <DCArtboard width={520} height={600} label="③ 首次啟動 · 連線精靈" style={{ background: 'transparent' }}>
+          <div data-screen-label="Desktop · Connect" style={{ width: 520, height: 600 }}><DesktopClient theme={tweaks.theme} scenario="connect" /></div>
+        </DCArtboard>
+        <DCArtboard width={520} height={460} label="④ macOS Tray Menu · 隨時快速操作" style={{ background: 'transparent' }}>
+          <div data-screen-label="Desktop · Tray" style={{ width: 520, height: 460 }}><DesktopClient theme={tweaks.theme} scenario="tray" /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <div style={{ padding: '20px 60px 60px' }}>
+        <div style={{ padding: 20, background: 'oklch(0.16 0.022 250)', border: `1px solid ${hudTokens.line}`, color: hudTokens.textDim, fontSize: 13, lineHeight: 1.7, maxWidth: 900 }}>
+          <HudLabel color={hudTokens.cyan}>原版功能對齊檢查</HudLabel>
+          <ul style={{ margin: '10px 0 0', paddingLeft: 20 }}>
+            <li>✓ 5 種 layout（scroll / top / bottom / float / rise）— Viewer + Desktop Client 皆可切</li>
+            <li>✓ 8 種效果（glow/shake/wave/rainbow/spin/bounce/blink/zoom）可疊加 — Viewer Fire tab</li>
+            <li>✓ .dme YAML 熱載入 — Admin sidebar 「效果庫 .dme」</li>
+            <li>✓ 4 主題（default / neon / retro / cinema）— Viewer Fire tab</li>
+            <li>✓ 暱稱 / 顏色 / 描邊 / 陰影 — Viewer Fire tab 完整</li>
+            <li>✓ Polls 2–6 選項 · A/B/C/D 輸入投票 — Admin Poll Builder + Viewer Poll tab</li>
+            <li>✓ Overlay widgets（分數板 / 跑馬燈）— Admin Widgets & Plugins 卡</li>
+            <li>✓ Plugin SDK · 熱重載 — 同上</li>
+            <li>✓ Electron 桌面端 · 自動更新 — Desktop Client 控制視窗</li>
+          </ul>
+        </div>
+      </div>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

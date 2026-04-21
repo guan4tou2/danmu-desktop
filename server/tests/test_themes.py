@@ -69,6 +69,94 @@ class TestThemesParsing:
         assert result["effects_preset"][0]["name"] == "glow"
 
 
+class TestThemesBundleSchema:
+    def test_parse_palette_filters_invalid_and_caps_length(self, tmp_path):
+        f = tmp_path / "bundle.yaml"
+        colors = ["'#FF0000'"] * 15 + ["'not-a-color'", "'#00FF00'"]
+        palette_yaml = "\n".join([f"  - {c}" for c in colors])
+        f.write_text(f"name: bundle\npalette:\n{palette_yaml}\n")
+        result = _parse_theme(str(f))
+        assert result is not None
+        assert len(result["palette"]) == theme_svc.PALETTE_MAX
+        assert all(c.startswith("#") for c in result["palette"])
+
+    def test_parse_font_validates_family_and_weight(self, tmp_path):
+        f = tmp_path / "bundle.yaml"
+        f.write_text("name: bundle\nfont:\n  family: NotoSansTC\n  weight: 700\n")
+        result = _parse_theme(str(f))
+        assert result is not None
+        assert result["font"] == {"family": "NotoSansTC", "weight": 700}
+
+    def test_parse_font_rejects_out_of_range_weight(self, tmp_path):
+        f = tmp_path / "bundle.yaml"
+        f.write_text("name: bundle\nfont:\n  family: X\n  weight: 1234\n")
+        result = _parse_theme(str(f))
+        assert result is not None
+        # Weight dropped, family kept
+        assert result["font"] == {"family": "X"}
+
+    def test_parse_layout_accepts_valid_value(self, tmp_path):
+        f = tmp_path / "bundle.yaml"
+        f.write_text("name: bundle\nlayout: rise\n")
+        result = _parse_theme(str(f))
+        assert result is not None
+        assert result["layout"] == "rise"
+
+    def test_parse_layout_drops_invalid_value(self, tmp_path):
+        f = tmp_path / "bundle.yaml"
+        f.write_text("name: bundle\nlayout: diagonal\n")
+        result = _parse_theme(str(f))
+        assert result is not None
+        assert "layout" not in result
+
+    def test_parse_bg_accepts_gradient_and_opacity(self, tmp_path):
+        f = tmp_path / "bundle.yaml"
+        f.write_text(
+            "name: bundle\nbg:\n  gradient: 'linear-gradient(90deg, #000, #fff)'\n  opacity: 0.5\n"
+        )
+        result = _parse_theme(str(f))
+        assert result is not None
+        assert result["bg"]["gradient"].startswith("linear-gradient")
+        assert result["bg"]["opacity"] == 0.5
+
+    def test_parse_bg_rejects_out_of_range_opacity(self, tmp_path):
+        f = tmp_path / "bundle.yaml"
+        f.write_text("name: bundle\nbg:\n  opacity: 5\n")
+        result = _parse_theme(str(f))
+        assert result is not None
+        assert result["bg"] == {}
+
+    def test_parse_defaults_empty_bundle_sections(self, tmp_path):
+        f = tmp_path / "minimal.yaml"
+        f.write_text("name: minimal\n")
+        result = _parse_theme(str(f))
+        assert result is not None
+        assert result["palette"] == []
+        assert result["font"] == {}
+        assert result["bg"] == {}
+        assert "layout" not in result
+
+    def test_load_all_includes_bundle_flags(self):
+        themes = load_all(force=True)
+        for t in themes:
+            assert "bundle" in t
+            assert set(t["bundle"].keys()) == {"palette", "font", "layout", "bg", "effects"}
+        neon = next(t for t in themes if t["name"] == "neon")
+        assert neon["bundle"]["palette"] is True
+        assert neon["bundle"]["font"] is True
+        assert neon["bundle"]["layout"] is True
+        assert neon["bundle"]["bg"] is True
+
+    def test_get_theme_exposes_new_sections(self):
+        load_all(force=True)
+        neon = get_theme("neon")
+        assert neon is not None
+        assert neon["palette"] == ["#00FF88", "#38BDF8", "#F472B6", "#FBBF24"]
+        assert neon["font"]["family"] == "NotoSansTC"
+        assert neon["layout"] == "scroll"
+        assert neon["bg"]["opacity"] == 0.35
+
+
 class TestThemesService:
     def test_load_all_returns_list(self):
         themes = load_all(force=True)
