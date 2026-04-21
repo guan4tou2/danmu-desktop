@@ -258,3 +258,13 @@ def test_metrics_returns_data_when_logged_in(client):
     data = resp.get_json()
     # Metrics endpoint returns ws connection count and queue state
     assert isinstance(data, dict)
+
+
+def test_metrics_includes_telemetry_series(client):
+    resp = authed_get(client, "/admin/metrics")
+    data = resp.get_json()
+    for key in ("cpu_series", "mem_series", "ws_series", "rate_series"):
+        assert key in data
+        assert isinstance(data[key], list)
+    assert data["series_len"] == 60
+    assert data["sample_interval_sec"] == 1.0
