@@ -691,10 +691,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // Render Login Screen
   function renderLogin() {
     appContainer.innerHTML = `
-                    <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 max-w-md mx-auto">
-                        <h1 class="text-3xl md:text-4xl font-bold text-center text-sky-300 pb-2" data-i18n="adminLoginTitle">
-                            ${ServerI18n.t("adminLoginTitle")}
-                        </h1>
+                    <div class="glass-effect hud-corners-auto rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 max-w-md mx-auto">
+                        <div class="flex flex-col items-center gap-3 pb-2">
+                            <span class="hud-label is-accent">ADMIN · 控制台登入</span>
+                            <h1 class="hud-hero-title is-large text-center" data-i18n="adminLoginTitle">
+                                ${ServerI18n.t("adminLoginTitle")}
+                            </h1>
+                        </div>
                         <form id="loginForm" class="space-y-6" action="/login" method="post">
                             <div>
                                 <label for="password" class="text-sm font-medium text-slate-300" data-i18n="password">${ServerI18n.t("password")}</label>
@@ -755,7 +758,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                                     <div class="min-w-0">
                                         <span class="admin-kicker" data-i18n="adminKicker">${ServerI18n.t("adminKicker")}</span>
-                                        <h1 class="text-3xl md:text-4xl font-bold text-sky-300 mt-3" data-i18n="adminTitle">
+                                        <h1 class="hud-hero-title is-medium mt-3" data-i18n="adminTitle">
                                             ${ServerI18n.t("adminTitle")}
                                         </h1>
                                         <p class="text-sm md:text-base text-slate-300 mt-2 max-w-2xl" data-i18n="adminSubtitle">

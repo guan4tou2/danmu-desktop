@@ -258,6 +258,57 @@
   );
 }
 
+/* DanmuHero brand lockup — Bebas Neue sky-300 display title.
+ * Three sizes via modifiers. Used on viewer, admin login, Electron control.
+ * Matches design-v2 tokens.jsx DanmuHero component. */
+.hud-hero-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  color: #7dd3fc;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  filter:
+    drop-shadow(0 10px 15px rgba(0, 0, 0, 0.45))
+    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+}
+
+.hud-hero-title.is-hero {
+  font-size: clamp(3.2rem, 8vw, 6rem);
+}
+
+.hud-hero-title.is-large {
+  font-size: clamp(2.4rem, 6vw, 3.6rem);
+}
+
+.hud-hero-title.is-medium {
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+}
+
+/* HeroInline — compact sidebar / header variant. Bebas Neue at 1.5rem. */
+.hud-hero-inline {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.625rem;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: #7dd3fc;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.hud-hero-inline-suffix {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
 /* Reduced-motion: kill pulse + keep the static dot visible. */
 @media (prefers-reduced-motion: reduce) {
   .hud-dot {
