@@ -4,6 +4,7 @@ import re
 from flask import Blueprint, current_app, make_response, request, send_from_directory, session
 
 from .. import state
+from ..services import fingerprint_tracker
 from ..services import history as history_service
 from ..services import messaging
 from ..services import themes as theme_svc
@@ -11,7 +12,6 @@ from ..services.blacklist import contains_keyword
 from ..services.effects import load_all as load_all_effects
 from ..services.effects import render_effects
 from ..services.emoji import emoji_service
-from ..services import fingerprint_tracker
 from ..services.filter_engine import filter_engine
 from ..services.fonts import build_font_payload, list_available_fonts
 from ..services.ip import get_client_ip as _extract_client_ip
