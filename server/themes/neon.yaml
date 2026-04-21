@@ -8,6 +8,18 @@ styles:
   strokeColor: "#001122"
   textShadow: true
   shadowBlur: 15
+palette:
+  - "#00FF88"
+  - "#38BDF8"
+  - "#F472B6"
+  - "#FBBF24"
+font:
+  family: NotoSansTC
+  weight: 700
+layout: scroll
+bg:
+  gradient: "linear-gradient(135deg, #020617 0%, #0f172a 100%)"
+  opacity: 0.35
 effects_preset:
   - name: glow
     params:
