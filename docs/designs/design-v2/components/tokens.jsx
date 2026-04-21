@@ -1,43 +1,51 @@
 // Shared design tokens + utility atoms for the SAO-HUD refined system.
 // All admin variations share these tokens so the language stays consistent.
+//
+// Values mirror shared/tokens.css (the real production token source). Migrated
+// oklch → hex in design-v2 round 2 so the prototype stops parallel-tracking
+// a separate color system. No-magenta rule from design-feedback-desktop-v2.md:
+// `magenta` + `crimson` are retained as keys but now resolve to amber / red
+// respectively — usages should be renamed in a follow-up pass.
 
 const hudTokens = {
-  // Deep-ink base, neutral-cool
-  bg0: 'oklch(0.12 0.02 250)',          // viewport
-  bg1: 'oklch(0.16 0.022 250)',         // panels
-  bg2: 'oklch(0.20 0.025 250)',         // raised
-  bg3: 'oklch(0.24 0.028 250)',         // row hover
-  line: 'oklch(0.32 0.03 220 / 0.55)',  // hairlines
-  lineStrong: 'oklch(0.45 0.05 220 / 0.85)',
+  // Deep-ink base — matches --color-bg-base family
+  bg0: '#020617',         // slate-950 — viewport
+  bg1: '#0f172a',         // slate-900 — panels
+  bg2: '#1e293b',         // slate-800 — raised
+  bg3: '#334155',         // slate-700 — row hover
+  line: 'rgba(71, 85, 105, 0.55)',   // slate-600 @ 0.55
+  lineStrong: 'rgba(100, 116, 139, 0.85)',  // slate-500 @ 0.85
 
-  // Text
-  text: 'oklch(0.96 0.01 240)',
-  textDim: 'oklch(0.72 0.015 240)',
-  textMute: 'oklch(0.55 0.015 240)',
+  // Text — matches --color-text-*
+  text: '#f1f5f9',        // slate-100
+  textDim: '#94a3b8',     // slate-400
+  textMute: '#64748b',    // slate-500
 
-  // HUD signature — cyan primary, same chroma family
-  cyan: 'oklch(0.82 0.14 195)',
-  cyanSoft: 'oklch(0.82 0.14 195 / 0.14)',
-  cyanLine: 'oklch(0.82 0.14 195 / 0.45)',
+  // HUD signature — sky-400 primary, matches --color-primary
+  cyan: '#38bdf8',
+  cyanSoft: 'rgba(56, 189, 248, 0.14)',
+  cyanLine: 'rgba(56, 189, 248, 0.45)',
 
-  // Accents (same chroma, different hue)
-  magenta: 'oklch(0.75 0.16 330)',
-  amber:   'oklch(0.82 0.14 80)',
-  lime:    'oklch(0.85 0.14 140)',
-  crimson: 'oklch(0.68 0.20 25)',
+  // Accents — no-magenta rule: alerts/warnings use amber, errors use red.
+  // `magenta` + `crimson` keys kept as aliases so downstream usages don't
+  // break; rename to `amber` / `red` in a follow-up sweep.
+  magenta: '#f59e0b',     // was oklch magenta → now amber-500 (warning/live)
+  amber:   '#f59e0b',     // amber-500 — matches --color-warning-ish
+  lime:    '#22c55e',     // green-500 — matches --color-success
+  crimson: '#ef4444',     // was oklch crimson → now red-500 (--color-error)
 
-  // Type
-  fontSans: '"Zen Kaku Gothic New", "Noto Sans TC", -apple-system, system-ui, sans-serif',
-  fontMono: '"IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace',
-  fontDisplay: '"Chakra Petch", "Zen Kaku Gothic New", sans-serif',
+  // Type — matches --font-display / --font-mono / --font-ui from shared tokens
+  fontSans: '"Noto Sans", "Noto Sans TC", "Zen Kaku Gothic New", -apple-system, system-ui, sans-serif',
+  fontMono: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace',
+  fontDisplay: '"Bebas Neue", "Noto Sans", "Noto Sans TC", system-ui, sans-serif',
 
-  // Light mode mirror
-  lightBg0: 'oklch(0.98 0.005 240)',
-  lightBg1: 'oklch(0.99 0.003 240)',
-  lightBg2: 'oklch(0.96 0.005 240)',
-  lightLine: 'oklch(0.82 0.015 240 / 0.8)',
-  lightText: 'oklch(0.22 0.015 240)',
-  lightTextDim: 'oklch(0.45 0.015 240)',
+  // Light mode mirror — slate-50 family
+  lightBg0: '#f8fafc',    // slate-50
+  lightBg1: '#ffffff',
+  lightBg2: '#f1f5f9',    // slate-100
+  lightLine: 'rgba(203, 213, 225, 0.8)',   // slate-300 @ 0.8
+  lightText: '#1e293b',   // slate-800
+  lightTextDim: '#64748b', // slate-500
 };
 
 // Corner bracket decoration — wraps any child with HUD brackets

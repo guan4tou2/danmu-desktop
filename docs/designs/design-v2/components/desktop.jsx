@@ -80,7 +80,6 @@ function OverlayOnDesktop({ theme }) {
         </div>
         <div style={{ padding: 12, fontSize: 11, fontFamily: hudTokens.fontMono, letterSpacing: 0.5, color: hudTokens.textDim, lineHeight: 1.6 }}>
           <div>SERVER · ws://danmu.local:4001</div>
-          <div>SESSION · #MTG-042 · 247 viewers</div>
         </div>
         <div style={{ padding: '0 12px 12px' }}>
           <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
@@ -88,22 +87,11 @@ function OverlayOnDesktop({ theme }) {
             <MiniBtn>⏸ 暫停</MiniBtn>
             <MiniBtn>⌫ 清空</MiniBtn>
           </div>
-          <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: hudTokens.textDim, letterSpacing: 1, marginBottom: 4 }}>OPACITY · 85%</div>
-          <div style={{ height: 4, background: hudTokens.line, borderRadius: 2, position: 'relative', marginBottom: 10 }}>
-            <div style={{ width: '85%', height: '100%', background: accent, borderRadius: 2 }} />
-          </div>
-          <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: hudTokens.textDim, letterSpacing: 1, marginBottom: 4 }}>LAYOUT</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4 }}>
-            {['滾', '頂', '底', '浮', '升'].map((l, i) => (
-              <span key={l} style={{
-                padding: '5px 0', textAlign: 'center',
-                border: `1px solid ${i === 0 ? accent : hudTokens.line}`,
-                color: i === 0 ? accent : hudTokens.text,
-                background: i === 0 ? hudTokens.cyanSoft : 'transparent',
-                fontSize: 11, borderRadius: 3, cursor: 'pointer',
-              }}>{l}</span>
-            ))}
-          </div>
+          <div style={{
+            marginTop: 2, padding: '6px 8px', textAlign: 'right',
+            fontFamily: hudTokens.fontMono, fontSize: 10, color: accent,
+            letterSpacing: 0.5, cursor: 'pointer',
+          }}>→ 開 Admin</div>
         </div>
       </div>
 
@@ -333,7 +321,7 @@ function ConnectDialog({ theme }) {
           <div>
             <div style={{
               width: 36, height: 36, borderRadius: 8,
-              background: `linear-gradient(135deg, ${accent}, ${hudTokens.magenta})`,
+              background: 'linear-gradient(135deg, #38bdf8, #0ea5e9)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: '#000', fontFamily: hudTokens.fontDisplay, fontWeight: 700, fontSize: 18,
             }}>弾</div>
@@ -376,7 +364,6 @@ function ConnectDialog({ theme }) {
             </div>
             <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 11, color: textDim }}>
               <Check label="開機啟動 & 自動連線" on accent={accent} line={line} />
-              <Check label="登入時以 Viewer 模式開啟 overlay" on accent={accent} line={line} />
             </div>
           </div>
 
