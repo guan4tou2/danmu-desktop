@@ -751,192 +751,227 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 `;
 
+    const kpiBars = (seed, len = 12) => {
+      const out = [];
+      for (let i = 0; i < len; i++) {
+        const v = 3 + ((seed * 7 + i * 13) % 8) + Math.floor(i / 3);
+        out.push(`<span style="height:${Math.min(16, v * 1.1)}px;opacity:${0.3 + (v / 11) * 0.6}"></span>`);
+      }
+      return out.join("");
+    };
+    const telemBars = (pattern) =>
+      pattern.map((b) => `<span style="height:${b * 10}%;opacity:${0.3 + b * 0.08}"></span>`).join("");
+    const broadcasting = overlayMode && overlayMode !== "off";
+    const httpPort = window.location.port || (window.location.protocol === "https:" ? "443" : "80");
+
     appContainer.innerHTML = `
-                    <div class="glass-effect admin-shell rounded-3xl shadow-2xl p-6 md:p-8 space-y-6">
-                        <section class="admin-hero rounded-3xl p-5 md:p-6">
-                            <div class="flex flex-col gap-5">
-                                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                                    <div class="min-w-0">
-                                        <span class="admin-kicker" data-i18n="adminKicker">${ServerI18n.t("adminKicker")}</span>
-                                        <h1 class="hud-hero-title is-medium mt-3" data-i18n="adminTitle">
-                                            ${ServerI18n.t("adminTitle")}
-                                        </h1>
-                                        <p class="text-sm md:text-base text-slate-300 mt-2 max-w-2xl" data-i18n="adminSubtitle">
-                                            ${ServerI18n.t("adminSubtitle")}
-                                        </p>
-                                    </div>
-                                    <div class="flex items-center gap-2 w-full lg:w-auto">
-                                        <label class="stream-mode-toggle" title="${ServerI18n.t("streamModeHelp")}">
-                                          <input type="checkbox" id="streamModeToggle" ${document.body.classList.contains("stream-mode") ? "checked" : ""} />
-                                          <span class="stream-mode-track" aria-hidden="true"></span>
-                                          <span class="stream-mode-label" data-i18n="streamMode">${ServerI18n.t("streamMode")}</span>
-                                        </label>
-                                        <select id="server-lang-select"
-                                          class="bg-slate-800/60 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-2 focus:ring-sky-400 focus:border-sky-400">
-                                          <option value="en" ${ServerI18n.currentLang === "en" ? "selected" : ""}>EN</option>
-                                          <option value="zh" ${ServerI18n.currentLang === "zh" ? "selected" : ""}>ZH</option>
-                                          <option value="ja" ${ServerI18n.currentLang === "ja" ? "selected" : ""}>JA</option>
-                                          <option value="ko" ${ServerI18n.currentLang === "ko" ? "selected" : ""}>KO</option>
-                                        </select>
-                                        <button id="logoutButton" class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-5 rounded-lg transition-colors">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                                            <span data-i18n="logout">${ServerI18n.t("logout")}</span>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="admin-summary-grid">
-                                    <div class="admin-summary-card">
-                                        <span class="admin-summary-label" data-i18n="adminSummaryWorkspace">${ServerI18n.t("adminSummaryWorkspace")}</span>
-                                        <span class="admin-summary-value">${enabledSettingCount} live controls enabled</span>
-                                    </div>
-                                    <div class="admin-summary-card">
-                                        <span class="admin-summary-label" data-i18n="adminSummaryDefaultLayout">${ServerI18n.t("adminSummaryDefaultLayout")}</span>
-                                        <span class="admin-summary-value">${overlayMode}</span>
-                                    </div>
-                                    <div class="admin-summary-card">
-                                        <span class="admin-summary-label" data-i18n="adminSummaryActiveFont">${ServerI18n.t("adminSummaryActiveFont")}</span>
-                                        <span class="admin-summary-value">${fontLabel}</span>
-                                    </div>
-                                </div>
+                    <div class="admin-dash-grid">
+                        <aside class="admin-dash-sidebar" aria-label="Admin navigation">
+                            <div class="admin-dash-brand">
+                                <span class="admin-dash-brand-hero">Danmu Fire</span>
+                                <span class="admin-dash-brand-suffix">ADMIN · v${window.APP_VERSION || "4.8.7"}</span>
                             </div>
-                        </section>
+                            <nav class="admin-dash-nav">
+                                <div class="admin-dash-nav-label" data-i18n="navGroupControl">${ServerI18n.t("navGroupControl")}</div>
+                                <a class="admin-dash-nav-row is-active" href="#sec-live-control">
+                                    <span class="admin-dash-nav-icon">◉</span>
+                                    <span data-i18n="sectionLiveControlTitle">${ServerI18n.t("sectionLiveControlTitle")}</span>
+                                    <span class="admin-dash-nav-badge">${enabledSettingCount}</span>
+                                </a>
+                                <a class="admin-dash-nav-row" href="#sec-effects">
+                                    <span class="admin-dash-nav-icon">✦</span>
+                                    <span data-i18n="navEffects">${ServerI18n.t("navEffects")}</span>
+                                </a>
+                                <a class="admin-dash-nav-row" href="#sec-themes">
+                                    <span class="admin-dash-nav-icon">◈</span>
+                                    <span data-i18n="navThemes">${ServerI18n.t("navThemes")}</span>
+                                </a>
+                                <a class="admin-dash-nav-row" href="#sec-live-feed">
+                                    <span class="admin-dash-nav-icon">≡</span>
+                                    <span data-i18n="navLiveFeed">${ServerI18n.t("navLiveFeed")}</span>
+                                    <span class="admin-dash-nav-live"></span>
+                                </a>
 
-                        <nav class="admin-section rounded-2xl p-4 md:p-5" aria-label="Quick Navigation">
-                            <div class="admin-section-heading">
-                                <div>
-                                    <span class="admin-section-kicker" data-i18n="quickNav">${ServerI18n.t("quickNav")}</span>
-                                    <h2 class="text-lg font-bold text-white" data-i18n="navJumpTitle">${ServerI18n.t("navJumpTitle")}</h2>
-                                    <p class="text-sm text-slate-300" data-i18n="navShortcutsHint">${ServerI18n.t("navShortcutsHint")}</p>
-                                </div>
-                            </div>
-                            <div class="space-y-3">
-                                <div>
-                                    <div class="text-xs text-slate-400 uppercase tracking-wide mb-2" data-i18n="navGroupControl">${ServerI18n.t("navGroupControl")}</div>
-                                    <div class="admin-chip-nav">
-                                        <a href="#sec-color" class="admin-chip" data-i18n="navBasic">${ServerI18n.t("navBasic")}</a>
-                                        <a href="#sec-effects" class="admin-chip" data-i18n="navEffects">${ServerI18n.t("navEffects")}</a>
-                                        <a href="#sec-themes" class="admin-chip" data-i18n="navThemes">${ServerI18n.t("navThemes")}</a>
-                                        <a href="#sec-live-feed" class="admin-chip" data-i18n="navLiveFeed">${ServerI18n.t("navLiveFeed")}</a>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="text-xs text-slate-400 uppercase tracking-wide mb-2" data-i18n="navGroupModeration">${ServerI18n.t("navGroupModeration")}</div>
-                                    <div class="admin-chip-nav">
-                                        <a href="#sec-blacklist" class="admin-chip" data-i18n="navBlacklist">${ServerI18n.t("navBlacklist")}</a>
-                                        <a href="#sec-history" class="admin-chip" data-i18n="navHistory">${ServerI18n.t("navHistory")}</a>
-                                        <a href="#sec-filters" class="admin-chip" data-i18n="navFilters">${ServerI18n.t("navFilters")}</a>
-                                        <a href="#sec-security" class="admin-chip" data-i18n="navSecurity">${ServerI18n.t("navSecurity")}</a>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="text-xs text-slate-400 uppercase tracking-wide mb-2" data-i18n="navGroupAssets">${ServerI18n.t("navGroupAssets")}</div>
-                                    <div class="admin-chip-nav">
-                                        <a href="#sec-emojis" class="admin-chip" data-i18n="navEmojis">${ServerI18n.t("navEmojis")}</a>
-                                        <a href="#sec-stickers" class="admin-chip" data-i18n="navStickers">${ServerI18n.t("navStickers")}</a>
-                                        <a href="#sec-sounds" class="admin-chip" data-i18n="navSounds">${ServerI18n.t("navSounds")}</a>
-                                        <a href="#sec-polls" class="admin-chip" data-i18n="navPolls">${ServerI18n.t("navPolls")}</a>
-                                        <a href="#sec-advanced" class="admin-chip" data-i18n="navAdvanced">${ServerI18n.t("navAdvanced")}</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </nav>
+                                <div class="admin-dash-nav-label" data-i18n="navGroupModeration">${ServerI18n.t("navGroupModeration")}</div>
+                                <a class="admin-dash-nav-row" href="#sec-blacklist">
+                                    <span class="admin-dash-nav-icon">⬚</span>
+                                    <span data-i18n="navBlacklist">${ServerI18n.t("navBlacklist")}</span>
+                                </a>
+                                <a class="admin-dash-nav-row" href="#sec-history">
+                                    <span class="admin-dash-nav-icon">↳</span>
+                                    <span data-i18n="navHistory">${ServerI18n.t("navHistory")}</span>
+                                </a>
+                                <a class="admin-dash-nav-row" href="#sec-filters">
+                                    <span class="admin-dash-nav-icon">⌕</span>
+                                    <span data-i18n="navFilters">${ServerI18n.t("navFilters")}</span>
+                                </a>
+                                <a class="admin-dash-nav-row" href="#sec-polls">
+                                    <span class="admin-dash-nav-icon">◈</span>
+                                    <span data-i18n="navPolls">${ServerI18n.t("navPolls")}</span>
+                                </a>
 
-                        <div class="admin-content-grid">
-                            <div class="admin-primary-stack space-y-6">
-                                <section class="admin-section rounded-2xl p-5 md:p-6">
-                                    <div class="admin-section-heading">
+                                <div class="admin-dash-nav-label" data-i18n="navGroupAssets">${ServerI18n.t("navGroupAssets")}</div>
+                                <a class="admin-dash-nav-row" href="#sec-emojis">
+                                    <span class="admin-dash-nav-icon">☺</span>
+                                    <span data-i18n="navEmojis">${ServerI18n.t("navEmojis")}</span>
+                                </a>
+                                <a class="admin-dash-nav-row" href="#sec-stickers">
+                                    <span class="admin-dash-nav-icon">◆</span>
+                                    <span data-i18n="navStickers">${ServerI18n.t("navStickers")}</span>
+                                </a>
+                                <a class="admin-dash-nav-row" href="#sec-sounds">
+                                    <span class="admin-dash-nav-icon">♪</span>
+                                    <span data-i18n="navSounds">${ServerI18n.t("navSounds")}</span>
+                                </a>
+                                <a class="admin-dash-nav-row" href="#sec-fonts">
+                                    <span class="admin-dash-nav-icon">⌂</span>
+                                    <span data-i18n="sidebarLinkFonts">${ServerI18n.t("sidebarLinkFonts") || "Fonts"}</span>
+                                </a>
+                                <a class="admin-dash-nav-row" href="#sec-advanced">
+                                    <span class="admin-dash-nav-icon">⚙</span>
+                                    <span data-i18n="navAdvanced">${ServerI18n.t("navAdvanced")}</span>
+                                </a>
+                            </nav>
+                            <div class="admin-dash-telem">
+                                <div class="admin-dash-telem-head">
+                                    <span class="hud-label">TELEMETRY</span>
+                                    <span class="status">● HEALTHY</span>
+                                </div>
+                                <div class="admin-dash-telem-row">
+                                    <span class="label">CPU</span>
+                                    <div class="admin-dash-telem-bars">${telemBars([3, 4, 2, 5, 4, 6, 3, 4])}</div>
+                                    <span class="value">12%</span>
+                                </div>
+                                <div class="admin-dash-telem-row">
+                                    <span class="label">MEM</span>
+                                    <div class="admin-dash-telem-bars">${telemBars([5, 5, 6, 6, 7, 7, 7, 8])}</div>
+                                    <span class="value">218MB</span>
+                                </div>
+                                <div class="admin-dash-telem-row">
+                                    <span class="label">WS</span>
+                                    <div class="admin-dash-telem-bars">${telemBars([2, 4, 3, 6, 8, 7, 9, 8])}</div>
+                                    <span class="value">${enabledSettingCount}</span>
+                                </div>
+                                <div class="admin-dash-telem-foot">
+                                    <div>HTTP <span>:${httpPort}</span></div>
+                                    <div>OVERLAY <span>${overlayMode}</span></div>
+                                </div>
+                            </div>
+                        </aside>
+
+                        <div class="admin-dash-main">
+                            <header class="admin-dash-topbar">
+                                <div class="admin-dash-topbar-title">
+                                    <span class="hud-label is-accent" data-i18n="adminKicker">${ServerI18n.t("adminKicker")}</span>
+                                    <h1>
+                                        <span data-i18n="adminGreetingPre">${ServerI18n.t("adminGreetingPre") || "哈囉"}</span>
+                                        <span class="accent">admin</span><span>,</span>
+                                        <span data-i18n="adminGreetingPost">${ServerI18n.t("adminGreetingPost") || "活動進行中"}</span>
+                                    </h1>
+                                </div>
+                                <div class="admin-dash-topbar-actions">
+                                    <div class="admin-dash-search" aria-hidden="true">
+                                        ⌕ <span data-i18n="adminSearchHint">${ServerI18n.t("adminSearchHint") || "搜尋訊息 / 用戶"}</span>
+                                        <span class="sep">|</span><span>⌘K</span>
+                                    </div>
+                                    <label class="stream-mode-toggle" title="${ServerI18n.t("streamModeHelp")}">
+                                      <input type="checkbox" id="streamModeToggle" ${document.body.classList.contains("stream-mode") ? "checked" : ""} />
+                                      <span class="stream-mode-track" aria-hidden="true"></span>
+                                      <span class="stream-mode-label" data-i18n="streamMode">${ServerI18n.t("streamMode")}</span>
+                                    </label>
+                                    <select id="server-lang-select" aria-label="Language"
+                                      class="bg-slate-800/60 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-2 focus:ring-sky-400 focus:border-sky-400">
+                                      <option value="en" ${ServerI18n.currentLang === "en" ? "selected" : ""}>EN</option>
+                                      <option value="zh" ${ServerI18n.currentLang === "zh" ? "selected" : ""}>ZH</option>
+                                      <option value="ja" ${ServerI18n.currentLang === "ja" ? "selected" : ""}>JA</option>
+                                      <option value="ko" ${ServerI18n.currentLang === "ko" ? "selected" : ""}>KO</option>
+                                    </select>
+                                    <button class="admin-dash-broadcast" type="button" aria-live="polite">
+                                        <span class="dot"></span>
+                                        ${broadcasting ? "BROADCASTING" : "STANDBY"}
+                                    </button>
+                                    <button id="logoutButton" class="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                        <span data-i18n="logout">${ServerI18n.t("logout")}</span>
+                                    </button>
+                                </div>
+                            </header>
+
+                            <section class="admin-kpi-strip">
+                                <div class="admin-kpi-tile">
+                                    <div class="admin-kpi-tile-head">
+                                        <span class="label" data-i18n="adminSummaryWorkspace">${ServerI18n.t("adminSummaryWorkspace")}</span>
+                                        <span class="en">LIVE CONTROLS</span>
+                                    </div>
+                                    <div class="admin-kpi-tile-value">${enabledSettingCount}</div>
+                                    <div class="admin-kpi-tile-bars">${kpiBars(enabledSettingCount + 3)}</div>
+                                    <div class="admin-kpi-tile-delta is-success">+${enabledSettingCount} / 7 enabled</div>
+                                </div>
+                                <div class="admin-kpi-tile">
+                                    <div class="admin-kpi-tile-head">
+                                        <span class="label" data-i18n="adminSummaryDefaultLayout">${ServerI18n.t("adminSummaryDefaultLayout")}</span>
+                                        <span class="en">OVERLAY MODE</span>
+                                    </div>
+                                    <div class="admin-kpi-tile-value">${overlayMode}</div>
+                                    <div class="admin-kpi-tile-bars">${kpiBars((overlayMode || "x").length + 5)}</div>
+                                    <div class="admin-kpi-tile-delta is-muted">FONT · ${fontLabel}</div>
+                                </div>
+                            </section>
+
+                            <section id="sec-live-control" class="admin-section rounded-2xl p-5 md:p-6">
+                                <div class="admin-section-heading">
+                                    <div>
+                                        <span class="admin-section-kicker" data-i18n="sectionLiveControl">${ServerI18n.t("sectionLiveControl")}</span>
+                                        <h2 class="text-xl font-bold text-white" data-i18n="sectionLiveControlTitle">${ServerI18n.t("sectionLiveControlTitle")}</h2>
+                                        <p class="text-sm text-slate-300" data-i18n="sectionLiveControlDesc">${ServerI18n.t("sectionLiveControlDesc")}</p>
+                                    </div>
+                                </div>
+                                <div id="settings-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <!-- Settings cards will be inserted via insertAdjacentHTML -->
+                                </div>
+                            </section>
+
+                            <section class="admin-section rounded-2xl p-5 md:p-6">
+                                <div class="admin-section-heading">
+                                    <div>
+                                        <span class="admin-section-kicker" data-i18n="sectionModeration">${ServerI18n.t("sectionModeration")}</span>
+                                        <h2 class="text-xl font-bold text-white" data-i18n="sectionModerationTitle">${ServerI18n.t("sectionModerationTitle")}</h2>
+                                        <p class="text-sm text-slate-300" data-i18n="sectionModerationDesc">${ServerI18n.t("sectionModerationDesc")}</p>
+                                    </div>
+                                </div>
+                                <div id="moderation-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <!-- Moderation sections are re-homed here -->
+                                </div>
+                            </section>
+
+                            <section class="admin-section rounded-2xl p-5 md:p-6">
+                                <div class="admin-section-heading">
+                                    <div>
+                                        <span class="admin-section-kicker" data-i18n="sectionAssets">${ServerI18n.t("sectionAssets")}</span>
+                                        <h2 class="text-xl font-bold text-white" data-i18n="sectionAssetsTitle">${ServerI18n.t("sectionAssetsTitle")}</h2>
+                                        <p class="text-sm text-slate-300" data-i18n="sectionAssetsDesc">${ServerI18n.t("sectionAssetsDesc")}</p>
+                                    </div>
+                                </div>
+                                <div id="assets-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <!-- Asset and extension sections are re-homed here -->
+                                </div>
+                            </section>
+
+                            <section class="admin-section rounded-2xl p-5 md:p-6">
+                                <details id="sec-advanced" class="group scroll-mt-24" ${isOpen("sec-advanced") ? "open" : ""}>
+                                    <summary class="flex items-center justify-between cursor-pointer list-none">
                                         <div>
-                                            <span class="admin-section-kicker" data-i18n="sectionLiveControl">${ServerI18n.t("sectionLiveControl")}</span>
-                                            <h2 class="text-xl font-bold text-white" data-i18n="sectionLiveControlTitle">${ServerI18n.t("sectionLiveControlTitle")}</h2>
-                                            <p class="text-sm text-slate-300" data-i18n="sectionLiveControlDesc">${ServerI18n.t("sectionLiveControlDesc")}</p>
+                                            <span class="admin-section-kicker" data-i18n="sectionAutomation">${ServerI18n.t("sectionAutomation")}</span>
+                                            <h3 class="text-lg font-bold text-white" data-i18n="sectionAutomationTitle">${ServerI18n.t("sectionAutomationTitle")}</h3>
+                                            <p class="text-sm text-slate-300" data-i18n="sectionAutomationDesc">${ServerI18n.t("sectionAutomationDesc")}</p>
                                         </div>
+                                        <span class="text-slate-400 transition-transform group-open:rotate-180">&#8964;</span>
+                                    </summary>
+                                    <div id="advanced-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+                                        <!-- Webhooks & Scheduler sections injected here -->
                                     </div>
-                                    <div id="settings-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                        <!-- Settings cards will be inserted via insertAdjacentHTML -->
-                                    </div>
-                                </section>
-
-                                <section class="admin-section rounded-2xl p-5 md:p-6">
-                                    <div class="admin-section-heading">
-                                        <div>
-                                            <span class="admin-section-kicker" data-i18n="sectionModeration">${ServerI18n.t("sectionModeration")}</span>
-                                            <h2 class="text-xl font-bold text-white" data-i18n="sectionModerationTitle">${ServerI18n.t("sectionModerationTitle")}</h2>
-                                            <p class="text-sm text-slate-300" data-i18n="sectionModerationDesc">${ServerI18n.t("sectionModerationDesc")}</p>
-                                        </div>
-                                    </div>
-                                    <div id="moderation-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                        <!-- Moderation sections are re-homed here -->
-                                    </div>
-                                </section>
-
-                                <section class="admin-section rounded-2xl p-5 md:p-6">
-                                    <div class="admin-section-heading">
-                                        <div>
-                                            <span class="admin-section-kicker" data-i18n="sectionAssets">${ServerI18n.t("sectionAssets")}</span>
-                                            <h2 class="text-xl font-bold text-white" data-i18n="sectionAssetsTitle">${ServerI18n.t("sectionAssetsTitle")}</h2>
-                                            <p class="text-sm text-slate-300" data-i18n="sectionAssetsDesc">${ServerI18n.t("sectionAssetsDesc")}</p>
-                                        </div>
-                                    </div>
-                                    <div class="asset-dashboard-strip">
-                                        <div class="asset-dashboard-card">
-                                            <span class="asset-dashboard-label" data-i18n="assetMediaLibrary">${ServerI18n.t("assetMediaLibrary")}</span>
-                                            <strong data-i18n="assetMediaLibraryTitle">${ServerI18n.t("assetMediaLibraryTitle")}</strong>
-                                            <p data-i18n="assetMediaLibraryDesc">${ServerI18n.t("assetMediaLibraryDesc")}</p>
-                                        </div>
-                                        <div class="asset-dashboard-card">
-                                            <span class="asset-dashboard-label" data-i18n="assetVisualSystem">${ServerI18n.t("assetVisualSystem")}</span>
-                                            <strong data-i18n="assetVisualSystemTitle">${ServerI18n.t("assetVisualSystemTitle")}</strong>
-                                            <p data-i18n="assetVisualSystemDesc">${ServerI18n.t("assetVisualSystemDesc")}</p>
-                                        </div>
-                                        <div class="asset-dashboard-card">
-                                            <span class="asset-dashboard-label" data-i18n="assetExtensions">${ServerI18n.t("assetExtensions")}</span>
-                                            <strong data-i18n="assetExtensionsTitle">${ServerI18n.t("assetExtensionsTitle")}</strong>
-                                            <p data-i18n="assetExtensionsDesc">${ServerI18n.t("assetExtensionsDesc")}</p>
-                                        </div>
-                                    </div>
-                                    <div id="assets-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                        <!-- Asset and extension sections are re-homed here -->
-                                    </div>
-                                </section>
-
-                                <section class="admin-section rounded-2xl p-5 md:p-6">
-                                    <details id="sec-advanced" class="group scroll-mt-24" ${isOpen("sec-advanced") ? "open" : ""}>
-                                        <summary class="flex items-center justify-between cursor-pointer list-none">
-                                            <div>
-                                                <span class="admin-section-kicker" data-i18n="sectionAutomation">${ServerI18n.t("sectionAutomation")}</span>
-                                                <h3 class="text-lg font-bold text-white" data-i18n="sectionAutomationTitle">${ServerI18n.t("sectionAutomationTitle")}</h3>
-                                                <p class="text-sm text-slate-300" data-i18n="sectionAutomationDesc">${ServerI18n.t("sectionAutomationDesc")}</p>
-                                            </div>
-                                            <span class="text-slate-400 transition-transform group-open:rotate-180">&#8964;</span>
-                                        </summary>
-                                        <div id="advanced-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
-                                            <!-- Webhooks & Scheduler sections injected here -->
-                                        </div>
-                                    </details>
-                                </section>
-                            </div>
-
-                            <aside class="admin-sidebar">
-                                <div class="admin-sidebar-card">
-                                    <div class="admin-sidebar-title" data-i18n="sidebarWorkflow">${ServerI18n.t("sidebarWorkflow")}</div>
-                                    <p class="admin-sidebar-copy" data-i18n="sidebarWorkflowCopy">${ServerI18n.t("sidebarWorkflowCopy")}</p>
-                                    <div class="admin-link-list">
-                                        <a href="#sec-history"><span data-i18n="sidebarLinkReviewRecent">${ServerI18n.t("sidebarLinkReviewRecent")}</span><span class="text-slate-400">→</span></a>
-                                        <a href="#sec-blacklist"><span data-i18n="sidebarLinkBlockKeywords">${ServerI18n.t("sidebarLinkBlockKeywords")}</span><span class="text-slate-400">→</span></a>
-                                        <a href="#sec-effects"><span data-i18n="sidebarLinkRefreshEffects">${ServerI18n.t("sidebarLinkRefreshEffects")}</span><span class="text-slate-400">→</span></a>
-                                    </div>
-                                </div>
-
-                                <div class="admin-sidebar-card">
-                                    <div class="admin-sidebar-title" data-i18n="sidebarRecommendedOrder">${ServerI18n.t("sidebarRecommendedOrder")}</div>
-                                    <p class="admin-sidebar-copy" data-i18n="sidebarRecommendedCopy">${ServerI18n.t("sidebarRecommendedCopy")}</p>
-                                    <div class="admin-link-list">
-                                        <a href="#sec-color"><span data-i18n="sidebarStep1">${ServerI18n.t("sidebarStep1")}</span><span class="text-slate-400" data-i18n="sidebarStep1Hint">${ServerI18n.t("sidebarStep1Hint")}</span></a>
-                                        <a href="#sec-live-feed"><span data-i18n="sidebarStep2">${ServerI18n.t("sidebarStep2")}</span><span class="text-slate-400" data-i18n="sidebarStep2Hint">${ServerI18n.t("sidebarStep2Hint")}</span></a>
-                                        <a href="#sec-filters"><span data-i18n="sidebarStep3">${ServerI18n.t("sidebarStep3")}</span><span class="text-slate-400" data-i18n="sidebarStep3Hint">${ServerI18n.t("sidebarStep3Hint")}</span></a>
-                                    </div>
-                                </div>
-                            </aside>
+                                </details>
+                            </section>
                         </div>
                     </div>
                 `;
