@@ -6,7 +6,13 @@ import pytest
 from werkzeug.datastructures import FileStorage
 
 from server import state
-from server.services.fonts import build_font_payload, list_available_fonts, save_uploaded_font
+from server.services.fonts import (
+    build_font_payload,
+    delete_uploaded_font,
+    list_available_fonts,
+    list_uploaded_fonts,
+    save_uploaded_font,
+)
 
 
 def test_build_font_payload_returns_signed_url(client):
@@ -48,6 +54,50 @@ def test_list_available_fonts_includes_defaults(client):
     assert "token=" in uploaded["ListedFont"]["url"]
     if uploaded_file.exists():
         uploaded_file.unlink()
+
+
+def test_delete_uploaded_font_removes_file(client):
+    target = Path(state.USER_FONTS_DIR) / "Removable.ttf"
+    target.write_text("data")
+
+    with client.application.test_request_context("/"):
+        removed = delete_uploaded_font("Removable")
+
+    assert removed is True
+    assert not target.exists()
+
+
+def test_delete_uploaded_font_returns_false_when_missing(client):
+    with client.application.test_request_context("/"):
+        assert delete_uploaded_font("Ghost") is False
+
+
+def test_delete_uploaded_font_rejects_traversal(client, monkeypatch):
+    monkeypatch.setattr(
+        "server.services.fonts.secure_filename",
+        lambda _name: "../outside/evil",
+    )
+    with client.application.test_request_context("/"):
+        with pytest.raises(ValueError):
+            delete_uploaded_font("whatever")
+
+
+def test_delete_uploaded_font_rejects_empty_name(client):
+    with client.application.test_request_context("/"):
+        with pytest.raises(ValueError):
+            delete_uploaded_font("")
+
+
+def test_list_uploaded_fonts_excludes_defaults(client):
+    (Path(state.USER_FONTS_DIR) / "OnlyMine.ttf").write_text("data")
+
+    with client.application.test_request_context("/"):
+        uploaded = list_uploaded_fonts()
+
+    names = [f["name"] for f in uploaded]
+    assert "OnlyMine" in names
+    assert "NotoSansTC" not in names
+    assert all(f["type"] == "uploaded" for f in uploaded)
 
 
 def test_path_traversal_rejected(app, monkeypatch):

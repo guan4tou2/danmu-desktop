@@ -260,6 +260,55 @@ def test_metrics_returns_data_when_logged_in(client):
     assert isinstance(data, dict)
 
 
+# ---------------------------------------------------------------------------
+# /admin/fonts (list + delete)
+# ---------------------------------------------------------------------------
+
+
+def test_list_fonts_requires_login(client):
+    resp = client.get("/admin/fonts")
+    assert resp.status_code in (302, 401, 403)
+
+
+def test_list_fonts_returns_uploaded_only(client):
+    from pathlib import Path
+
+    from server import state
+
+    (Path(state.USER_FONTS_DIR) / "Mine.ttf").write_text("data")
+    resp = authed_get(client, "/admin/fonts")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert "fonts" in data
+    names = [f["name"] for f in data["fonts"]]
+    assert "Mine" in names
+    assert "NotoSansTC" not in names
+
+
+def test_delete_font_removes_existing(client):
+    from pathlib import Path
+
+    from server import state
+
+    target = Path(state.USER_FONTS_DIR) / "Gone.ttf"
+    target.write_text("data")
+    token = csrf_token(client)
+    resp = client.delete("/admin/fonts/Gone", headers={"X-CSRF-Token": token})
+    assert resp.status_code == 200
+    assert not target.exists()
+
+
+def test_delete_font_404_when_missing(client):
+    token = csrf_token(client)
+    resp = client.delete("/admin/fonts/Nope", headers={"X-CSRF-Token": token})
+    assert resp.status_code == 404
+
+
+def test_delete_font_requires_login(client):
+    resp = client.delete("/admin/fonts/AnyName")
+    assert resp.status_code in (302, 401, 403)
+
+
 def test_metrics_includes_telemetry_series(client):
     resp = authed_get(client, "/admin/metrics")
     data = resp.get_json()

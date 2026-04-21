@@ -3,7 +3,7 @@
 import magic
 from flask import current_app, request
 
-from ...services.fonts import save_uploaded_font
+from ...services.fonts import delete_uploaded_font, list_uploaded_fonts, save_uploaded_font
 from ...services.security import rate_limit
 from . import (
     _STICKER_ALLOWED_MIME,
@@ -52,6 +52,27 @@ def upload_font():
         )
     current_app.logger.warning(f"Failed to upload font: {file.filename}")
     return _json_response({"error": "Failed to upload font"}, 400)
+
+
+@admin_bp.route("/fonts", methods=["GET"])
+@require_login
+def list_fonts():
+    return _json_response({"fonts": list_uploaded_fonts()})
+
+
+@admin_bp.route("/fonts/<name>", methods=["DELETE"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+@require_login
+def delete_font(name):
+    try:
+        removed = delete_uploaded_font(name)
+    except ValueError as exc:
+        return _json_response({"error": str(exc)}, 400)
+    if not removed:
+        return _json_response({"error": "Font not found"}, 404)
+    current_app.logger.info("Font deleted: %s", sanitize_log_string(name))
+    return _json_response({"status": "OK"})
 
 
 @admin_bp.route("/upload_sticker", methods=["POST"])
