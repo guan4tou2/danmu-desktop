@@ -14,6 +14,10 @@ from server.app import create_app  # ty: ignore[unresolved-import]
 from server.config import Config  # ty: ignore[unresolved-import]
 from server.managers import connection_manager, settings_store  # ty: ignore[unresolved-import]
 from server.services import effects as eff_svc  # ty: ignore[unresolved-import]
+from server.services import (  # ty: ignore[unresolved-import]
+    onscreen_config,
+    onscreen_limiter,
+)
 from server.services import stickers as sticker_svc  # ty: ignore[unresolved-import]
 from server.services import themes as theme_svc  # ty: ignore[unresolved-import]
 from server.services import webhook as webhook_mod  # ty: ignore[unresolved-import]
@@ -46,6 +50,35 @@ def _isolate_webhook_store(tmp_path):
     finally:
         webhook_mod.WebhookService._instance = None
         webhook_mod._WEBHOOKS_FILE = original_file
+
+
+@pytest.fixture(autouse=True)
+def _isolate_onscreen_limits(tmp_path):
+    """Isolate onscreen-limiter state per test.
+
+    Default posture: cap=0 (unlimited), drop mode. Pre-v4.9 tests that blast
+    many /fire calls (e.g. 50-way concurrent) rely on no traffic shaping.
+    Tests that exercise the limiter directly (test_onscreen_limiter.py,
+    test_messaging.py) override _STATE_FILE themselves and call set_state()
+    for the scenario.
+    """
+    original_file = onscreen_config._STATE_FILE
+    cfg_dir = tmp_path / "_conftest_onscreen"
+    cfg_dir.mkdir(exist_ok=True)
+    onscreen_config._STATE_FILE = cfg_dir / "onscreen_limits.json"
+    onscreen_config._reset_for_tests()
+    onscreen_config.set_state(max_onscreen_danmu=0, overflow_mode="drop")
+    onscreen_limiter.reset()
+    # Let any in-flight timer callback from a prior test drain and settle,
+    # then flush ws_queue so cross-test pollution can't bleed into this test.
+    time.sleep(0.02)
+    ws_queue.dequeue_all()
+    try:
+        yield
+    finally:
+        onscreen_limiter.reset()
+        onscreen_config._STATE_FILE = original_file
+        onscreen_config._reset_for_tests()
 
 
 @pytest.fixture(autouse=True)
