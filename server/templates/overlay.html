@@ -4,14 +4,32 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Danmu Fire Overlay</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/hud.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/overlay.css') }}">
 </head>
 <body>
   <div id="danmubody"></div>
+  <div id="overlay-idle" class="overlay-idle" role="status" aria-live="polite">
+    <div class="overlay-idle__grid" aria-hidden="true"></div>
+    <div class="overlay-idle__stack">
+      <h1 class="hud-hero-title is-hero">Danmu Fire</h1>
+      <p class="overlay-idle__subtitle">掃描 QR code 或打開 {{ join_label }} — 開始送彈幕</p>
+      <div class="overlay-idle__chip">
+        <span class="hud-dot"></span>
+        <span class="overlay-idle__chip-label">OVERLAY READY</span>
+        <span class="overlay-idle__chip-sub">· 等待中</span>
+      </div>
+      <div class="overlay-idle__qr">{{ qr_svg|safe }}</div>
+      <div class="overlay-idle__url">{{ join_label }}</div>
+    </div>
+  </div>
   <script nonce="{{ csp_nonce }}">
     window.OVERLAY_CONFIG = {
       wsPort: {{ ws_port }},
-      wsToken: {{ (ws_token or '')|tojson }}
+      wsToken: {{ (ws_token or '')|tojson }},
+      joinUrl: {{ join_url|tojson }},
+      idleAfterMs: 30000
     };
   </script>
   <script src="{{ url_for('static', filename='js/overlay.js') }}"></script>

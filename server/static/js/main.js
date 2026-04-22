@@ -489,10 +489,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Event Listeners ---
 
+  const updateSendEnabled = () => {
+    if (!elements.btnSend) return;
+    const hasText = elements.danmuText.value.trim().length > 0;
+    elements.btnSend.disabled = !hasText;
+  };
   elements.danmuText.addEventListener("input", () => {
     updateCharCount();
     updatePreview();
+    updateSendEnabled();
   });
+  updateSendEnabled();
 
   // Enter to send, Shift+Enter for newline
   // e.isComposing: true during IME composition, skip to avoid accidental send

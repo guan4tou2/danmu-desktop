@@ -233,7 +233,7 @@
     const openAttr = isOpen("sec-scheduler") ? "open" : "";
 
     settingsGrid.insertAdjacentHTML("beforeend", `
-      <details id="sec-scheduler" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent lg:col-span-2 scroll-mt-24" ${openAttr}>
+      <details id="sec-scheduler" class="group admin-v3-card lg:col-span-2" ${openAttr}>
         <summary class="flex items-center justify-between cursor-pointer list-none">
           <div>
             <h3 class="text-lg font-bold text-white" data-i18n="schedulerTitle">${ServerI18n.t("schedulerTitle") || "Scheduled Broadcasts"}</h3>

@@ -25,20 +25,26 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
     />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/hud.css') }}"
+    />
   </head>
-  <body class="bg-black text-white min-h-screen overflow-x-hidden">
+  <body class="admin-body min-h-screen overflow-x-hidden">
     <a href="#app-container" class="skip-link">Skip to main content</a>
-
-    <!-- Background Animation Container -->
-    <div id="vanta-bg" class="fixed top-0 left-0 w-full h-full -z-10"></div>
 
     <div
       id="app-container"
-      class="container admin-app-shell mx-auto px-4 py-8 relative z-10 animate-fade-in-scale-up"
+      class="admin-app-shell animate-fade-in-scale-up"
       tabindex="-1"
     >
-      <!-- Skeleton Loading -->
-      <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 max-w-md mx-auto">
+      <!-- Skeleton Loading — HUD chrome overlays until admin.js replaces
+           innerHTML with the real dashboard. -->
+      <div class="glass-effect hud-corners-auto rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 max-w-md mx-auto">
+        <div class="flex items-center justify-center gap-2 pb-1">
+          <span class="hud-dot"></span>
+          <span class="hud-label is-accent">DANMU · ADMIN · BOOT</span>
+        </div>
         <div class="skeleton skeleton-title mx-auto"></div>
         <div class="space-y-4">
           <div class="skeleton skeleton-text"></div>
@@ -57,15 +63,14 @@
     ></div>
 
     <!-- Scripts -->
-    <script defer src="{{ url_for('static', filename='vendor/three.min.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='vendor/vanta.net.min.js') }}"></script>
 
     <!-- Inject Configuration -->
     <script nonce="{{ csp_nonce }}">
       window.DANMU_CONFIG = {
         session: { logged_in: {{ session.get('logged_in') | tojson }} },
         settingRanges: {{ ranges | tojson }},
-        wsUrl: (window.location.protocol === "https:" ? "wss:" : "ws:") + "//" + window.location.host + "/"
+        appVersion: {{ app_version | tojson }},
+        wsUrl: (window.location.protocol === "https:" ? "wss:" : "ws:") + "//" + window.location.host + "/",
       };
     </script>
 

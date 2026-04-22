@@ -12,27 +12,6 @@ document.addEventListener("DOMContentLoaded", () => {
     /* localStorage blocked — that is ok, session only */
   }
 
-  // --- VANTA.js Background Initialization ---
-  try {
-    VANTA.NET({
-      el: "#vanta-bg",
-      mouseControls: true,
-      touchControls: true,
-      gyroControls: false,
-      minHeight: 200.0,
-      minWidth: 200.0,
-      scale: 1.0,
-      scaleMobile: 1.0,
-      color: 0x7c3aed, // Violet-600 (matches UI accent)
-      backgroundColor: 0x000000, // Black background
-      points: 12.0,
-      maxDistance: 25.0,
-      spacing: 18.0,
-    });
-  } catch (e) {
-    console.warn("Vanta.js failed to initialize", e);
-  }
-
   // Access configuration injected from HTML
   const config = window.DANMU_CONFIG || {};
   let session = config.session || { logged_in: false };
@@ -691,10 +670,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // Render Login Screen
   function renderLogin() {
     appContainer.innerHTML = `
-                    <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 max-w-md mx-auto">
-                        <h1 class="text-3xl md:text-4xl font-bold text-center text-sky-300 pb-2" data-i18n="adminLoginTitle">
-                            ${ServerI18n.t("adminLoginTitle")}
-                        </h1>
+                    <div class="glass-effect hud-corners-auto rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 max-w-md mx-auto">
+                        <div class="flex flex-col items-center gap-3 pb-2">
+                            <span class="hud-label is-accent">ADMIN · 控制台登入</span>
+                            <h1 class="hud-hero-title is-large text-center" data-i18n="adminLoginTitle">
+                                ${ServerI18n.t("adminLoginTitle")}
+                            </h1>
+                        </div>
                         <form id="loginForm" class="space-y-6" action="/login" method="post">
                             <div>
                                 <label for="password" class="text-sm font-medium text-slate-300" data-i18n="password">${ServerI18n.t("password")}</label>
@@ -730,7 +712,7 @@ document.addEventListener("DOMContentLoaded", () => {
       enabledContent,
       disabledContent
     ) => `
-                    <div id="sec-${id.toLowerCase()}" class="glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24">
+                    <div id="sec-${id.toLowerCase()}" class="admin-v3-card">
                         <div class="flex items-center justify-between">
                             <div class="flex-grow pr-4">
                                 <h3 class="text-lg font-bold text-white">${title}</h3>
@@ -748,192 +730,176 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 `;
 
+    const kpiBars = (seed, len = 12) => {
+      const out = [];
+      for (let i = 0; i < len; i++) {
+        const v = 3 + ((seed * 7 + i * 13) % 8) + Math.floor(i / 3);
+        out.push(`<span style="height:${Math.min(16, v * 1.1)}px;opacity:${0.3 + (v / 11) * 0.6}"></span>`);
+      }
+      return out.join("");
+    };
+    const telemBars = (pattern) =>
+      pattern.map((b) => `<span style="height:${b * 10}%;opacity:${0.3 + b * 0.08}"></span>`).join("");
+    const broadcasting = overlayMode && overlayMode !== "off";
+    const httpPort = window.location.port || (window.location.protocol === "https:" ? "443" : "80");
+
     appContainer.innerHTML = `
-                    <div class="glass-effect admin-shell rounded-3xl shadow-2xl p-6 md:p-8 space-y-6">
-                        <section class="admin-hero rounded-3xl p-5 md:p-6">
-                            <div class="flex flex-col gap-5">
-                                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                                    <div class="min-w-0">
-                                        <span class="admin-kicker" data-i18n="adminKicker">${ServerI18n.t("adminKicker")}</span>
-                                        <h1 class="text-3xl md:text-4xl font-bold text-sky-300 mt-3" data-i18n="adminTitle">
-                                            ${ServerI18n.t("adminTitle")}
-                                        </h1>
-                                        <p class="text-sm md:text-base text-slate-300 mt-2 max-w-2xl" data-i18n="adminSubtitle">
-                                            ${ServerI18n.t("adminSubtitle")}
-                                        </p>
-                                    </div>
-                                    <div class="flex items-center gap-2 w-full lg:w-auto">
-                                        <label class="stream-mode-toggle" title="${ServerI18n.t("streamModeHelp")}">
-                                          <input type="checkbox" id="streamModeToggle" ${document.body.classList.contains("stream-mode") ? "checked" : ""} />
-                                          <span class="stream-mode-track" aria-hidden="true"></span>
-                                          <span class="stream-mode-label" data-i18n="streamMode">${ServerI18n.t("streamMode")}</span>
-                                        </label>
-                                        <select id="server-lang-select"
-                                          class="bg-slate-800/60 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-2 focus:ring-sky-400 focus:border-sky-400">
-                                          <option value="en" ${ServerI18n.currentLang === "en" ? "selected" : ""}>EN</option>
-                                          <option value="zh" ${ServerI18n.currentLang === "zh" ? "selected" : ""}>ZH</option>
-                                          <option value="ja" ${ServerI18n.currentLang === "ja" ? "selected" : ""}>JA</option>
-                                          <option value="ko" ${ServerI18n.currentLang === "ko" ? "selected" : ""}>KO</option>
-                                        </select>
-                                        <button id="logoutButton" class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-5 rounded-lg transition-colors">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                                            <span data-i18n="logout">${ServerI18n.t("logout")}</span>
-                                        </button>
-                                    </div>
+                    <div class="admin-dash-grid" data-active-route="dashboard">
+                        <aside class="admin-dash-sidebar" aria-label="Admin navigation">
+                            <div class="admin-dash-brand">
+                                <span class="admin-dash-brand-hero">Danmu Fire</span>
+                                <span class="admin-dash-brand-suffix">ADMIN · v${window.APP_VERSION || "4.8.7"}</span>
+                            </div>
+                            <nav class="admin-dash-nav" role="tablist" aria-label="Admin pages">
+                                <div class="admin-dash-nav-label">總覽</div>
+                                <button type="button" class="admin-dash-nav-row is-active" data-route="dashboard" role="tab" aria-selected="true">
+                                    <span class="admin-dash-nav-icon">◉</span>
+                                    <span>控制台</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="messages" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">≡</span>
+                                    <span>訊息紀錄</span>
+                                    <span class="admin-dash-nav-live"></span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="history" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">↳</span>
+                                    <span>時間軸匯出</span>
+                                </button>
+
+                                <div class="admin-dash-nav-label" style="margin-top:16px">互動</div>
+                                <button type="button" class="admin-dash-nav-row" data-route="polls" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◈</span>
+                                    <span>投票</span>
+                                    <span class="admin-dash-nav-live"></span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="widgets" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⬚</span>
+                                    <span>Overlay Widgets</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="themes" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">❖</span>
+                                    <span>風格主題包</span>
+                                    <span class="admin-dash-nav-badge" data-count-themes>—</span>
+                                </button>
+
+                                <div class="admin-dash-nav-label" style="margin-top:16px">審核</div>
+                                <button type="button" class="admin-dash-nav-row" data-route="moderation" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⊘</span>
+                                    <span>敏感字 & 黑名單</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="ratelimit" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◑</span>
+                                    <span>速率限制</span>
+                                </button>
+
+                                <div class="admin-dash-nav-label" style="margin-top:16px">設定</div>
+                                <button type="button" class="admin-dash-nav-row" data-route="effects" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">✦</span>
+                                    <span>效果庫 .dme</span>
+                                    <span class="admin-dash-nav-badge" data-count-effects>—</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="plugins" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⬢</span>
+                                    <span>伺服器插件</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="fonts" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⌂</span>
+                                    <span>字型管理</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="system" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⚙</span>
+                                    <span>系統 & 指紋</span>
+                                </button>
+                            </nav>
+                            <div class="admin-dash-telem">
+                                <div class="admin-dash-telem-head">
+                                    <span>TELEMETRY</span>
+                                    <span class="status">● HEALTHY</span>
                                 </div>
-                                <div class="admin-summary-grid">
-                                    <div class="admin-summary-card">
-                                        <span class="admin-summary-label" data-i18n="adminSummaryWorkspace">${ServerI18n.t("adminSummaryWorkspace")}</span>
-                                        <span class="admin-summary-value">${enabledSettingCount} live controls enabled</span>
-                                    </div>
-                                    <div class="admin-summary-card">
-                                        <span class="admin-summary-label" data-i18n="adminSummaryDefaultLayout">${ServerI18n.t("adminSummaryDefaultLayout")}</span>
-                                        <span class="admin-summary-value">${overlayMode}</span>
-                                    </div>
-                                    <div class="admin-summary-card">
-                                        <span class="admin-summary-label" data-i18n="adminSummaryActiveFont">${ServerI18n.t("adminSummaryActiveFont")}</span>
-                                        <span class="admin-summary-value">${fontLabel}</span>
-                                    </div>
+                                <div class="admin-dash-telem-grid">
+                                    <div>CPU <span>12%</span></div>
+                                    <div>WS <span>${enabledSettingCount}</span></div>
+                                    <div>MEM <span>218 MB</span></div>
+                                    <div>RATE <span>4.2/s</span></div>
                                 </div>
                             </div>
-                        </section>
+                        </aside>
 
-                        <nav class="admin-section rounded-2xl p-4 md:p-5" aria-label="Quick Navigation">
-                            <div class="admin-section-heading">
-                                <div>
-                                    <span class="admin-section-kicker" data-i18n="quickNav">${ServerI18n.t("quickNav")}</span>
-                                    <h2 class="text-lg font-bold text-white" data-i18n="navJumpTitle">${ServerI18n.t("navJumpTitle")}</h2>
-                                    <p class="text-sm text-slate-300" data-i18n="navShortcutsHint">${ServerI18n.t("navShortcutsHint")}</p>
+                        <div class="admin-dash-main">
+                            <header class="admin-dash-topbar">
+                                <div class="admin-dash-topbar-title">
+                                    <span class="hud-label is-accent" data-route-kicker>DASHBOARD · 控制台</span>
+                                    <h1 data-route-title>
+                                        <span>哈囉</span>
+                                        <span class="accent">admin</span><span>,</span>
+                                        <span>活動進行中</span>
+                                    </h1>
                                 </div>
+                                <div class="admin-dash-topbar-actions">
+                                    <div class="admin-dash-search" aria-hidden="true">
+                                        <span>⌕</span>
+                                        <span data-i18n="adminSearchHint">${ServerI18n.t("adminSearchHint") || "搜尋"}</span>
+                                        <span class="sep">⌘K</span>
+                                    </div>
+                                    <label class="stream-mode-toggle" title="${ServerI18n.t("streamModeHelp")}">
+                                      <input type="checkbox" id="streamModeToggle" ${document.body.classList.contains("stream-mode") ? "checked" : ""} />
+                                      <span class="stream-mode-track" aria-hidden="true"></span>
+                                      <span class="stream-mode-label" data-i18n="streamMode">${ServerI18n.t("streamMode")}</span>
+                                    </label>
+                                    <select id="server-lang-select" aria-label="Language"
+                                      class="bg-slate-800/60 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-2 focus:ring-sky-400 focus:border-sky-400">
+                                      <option value="en" ${ServerI18n.currentLang === "en" ? "selected" : ""}>EN</option>
+                                      <option value="zh" ${ServerI18n.currentLang === "zh" ? "selected" : ""}>ZH</option>
+                                      <option value="ja" ${ServerI18n.currentLang === "ja" ? "selected" : ""}>JA</option>
+                                      <option value="ko" ${ServerI18n.currentLang === "ko" ? "selected" : ""}>KO</option>
+                                    </select>
+                                    <button class="admin-dash-broadcast" type="button" aria-live="polite">
+                                        <span class="dot"></span>
+                                        ${broadcasting ? "BROADCASTING" : "STANDBY"}
+                                    </button>
+                                    <button id="logoutButton" class="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                        <span data-i18n="logout">${ServerI18n.t("logout")}</span>
+                                    </button>
+                                </div>
+                            </header>
+
+                            <section class="admin-kpi-strip" data-route-view="dashboard">
+                                <div class="admin-kpi-tile">
+                                    <div class="admin-kpi-tile-head">
+                                        <span class="label">即時控制</span>
+                                        <span class="en">LIVE CONTROLS</span>
+                                    </div>
+                                    <div class="admin-kpi-tile-value">${enabledSettingCount}</div>
+                                    <div class="admin-kpi-tile-bars">${kpiBars(enabledSettingCount + 3)}</div>
+                                    <div class="admin-kpi-tile-delta is-success">+${enabledSettingCount} / 7 enabled</div>
+                                </div>
+                                <div class="admin-kpi-tile">
+                                    <div class="admin-kpi-tile-head">
+                                        <span class="label">預設模式</span>
+                                        <span class="en">OVERLAY MODE</span>
+                                    </div>
+                                    <div class="admin-kpi-tile-value">${overlayMode}</div>
+                                    <div class="admin-kpi-tile-bars">${kpiBars((overlayMode || "x").length + 5)}</div>
+                                    <div class="admin-kpi-tile-delta is-muted">FONT · ${fontLabel}</div>
+                                </div>
+                            </section>
+
+                            <div id="settings-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 admin-route-sections">
+                                <!-- display setting cards -->
                             </div>
-                            <div class="space-y-3">
-                                <div>
-                                    <div class="text-xs text-slate-400 uppercase tracking-wide mb-2" data-i18n="navGroupControl">${ServerI18n.t("navGroupControl")}</div>
-                                    <div class="admin-chip-nav">
-                                        <a href="#sec-color" class="admin-chip" data-i18n="navBasic">${ServerI18n.t("navBasic")}</a>
-                                        <a href="#sec-effects" class="admin-chip" data-i18n="navEffects">${ServerI18n.t("navEffects")}</a>
-                                        <a href="#sec-themes" class="admin-chip" data-i18n="navThemes">${ServerI18n.t("navThemes")}</a>
-                                        <a href="#sec-live-feed" class="admin-chip" data-i18n="navLiveFeed">${ServerI18n.t("navLiveFeed")}</a>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="text-xs text-slate-400 uppercase tracking-wide mb-2" data-i18n="navGroupModeration">${ServerI18n.t("navGroupModeration")}</div>
-                                    <div class="admin-chip-nav">
-                                        <a href="#sec-blacklist" class="admin-chip" data-i18n="navBlacklist">${ServerI18n.t("navBlacklist")}</a>
-                                        <a href="#sec-history" class="admin-chip" data-i18n="navHistory">${ServerI18n.t("navHistory")}</a>
-                                        <a href="#sec-filters" class="admin-chip" data-i18n="navFilters">${ServerI18n.t("navFilters")}</a>
-                                        <a href="#sec-security" class="admin-chip" data-i18n="navSecurity">${ServerI18n.t("navSecurity")}</a>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="text-xs text-slate-400 uppercase tracking-wide mb-2" data-i18n="navGroupAssets">${ServerI18n.t("navGroupAssets")}</div>
-                                    <div class="admin-chip-nav">
-                                        <a href="#sec-emojis" class="admin-chip" data-i18n="navEmojis">${ServerI18n.t("navEmojis")}</a>
-                                        <a href="#sec-stickers" class="admin-chip" data-i18n="navStickers">${ServerI18n.t("navStickers")}</a>
-                                        <a href="#sec-sounds" class="admin-chip" data-i18n="navSounds">${ServerI18n.t("navSounds")}</a>
-                                        <a href="#sec-polls" class="admin-chip" data-i18n="navPolls">${ServerI18n.t("navPolls")}</a>
-                                        <a href="#sec-advanced" class="admin-chip" data-i18n="navAdvanced">${ServerI18n.t("navAdvanced")}</a>
-                                    </div>
-                                </div>
+                            <div id="moderation-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 admin-route-sections">
+                                <!-- moderation sections -->
                             </div>
-                        </nav>
-
-                        <div class="admin-content-grid">
-                            <div class="admin-primary-stack space-y-6">
-                                <section class="admin-section rounded-2xl p-5 md:p-6">
-                                    <div class="admin-section-heading">
-                                        <div>
-                                            <span class="admin-section-kicker" data-i18n="sectionLiveControl">${ServerI18n.t("sectionLiveControl")}</span>
-                                            <h2 class="text-xl font-bold text-white" data-i18n="sectionLiveControlTitle">${ServerI18n.t("sectionLiveControlTitle")}</h2>
-                                            <p class="text-sm text-slate-300" data-i18n="sectionLiveControlDesc">${ServerI18n.t("sectionLiveControlDesc")}</p>
-                                        </div>
-                                    </div>
-                                    <div id="settings-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                        <!-- Settings cards will be inserted via insertAdjacentHTML -->
-                                    </div>
-                                </section>
-
-                                <section class="admin-section rounded-2xl p-5 md:p-6">
-                                    <div class="admin-section-heading">
-                                        <div>
-                                            <span class="admin-section-kicker" data-i18n="sectionModeration">${ServerI18n.t("sectionModeration")}</span>
-                                            <h2 class="text-xl font-bold text-white" data-i18n="sectionModerationTitle">${ServerI18n.t("sectionModerationTitle")}</h2>
-                                            <p class="text-sm text-slate-300" data-i18n="sectionModerationDesc">${ServerI18n.t("sectionModerationDesc")}</p>
-                                        </div>
-                                    </div>
-                                    <div id="moderation-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                        <!-- Moderation sections are re-homed here -->
-                                    </div>
-                                </section>
-
-                                <section class="admin-section rounded-2xl p-5 md:p-6">
-                                    <div class="admin-section-heading">
-                                        <div>
-                                            <span class="admin-section-kicker" data-i18n="sectionAssets">${ServerI18n.t("sectionAssets")}</span>
-                                            <h2 class="text-xl font-bold text-white" data-i18n="sectionAssetsTitle">${ServerI18n.t("sectionAssetsTitle")}</h2>
-                                            <p class="text-sm text-slate-300" data-i18n="sectionAssetsDesc">${ServerI18n.t("sectionAssetsDesc")}</p>
-                                        </div>
-                                    </div>
-                                    <div class="asset-dashboard-strip">
-                                        <div class="asset-dashboard-card">
-                                            <span class="asset-dashboard-label" data-i18n="assetMediaLibrary">${ServerI18n.t("assetMediaLibrary")}</span>
-                                            <strong data-i18n="assetMediaLibraryTitle">${ServerI18n.t("assetMediaLibraryTitle")}</strong>
-                                            <p data-i18n="assetMediaLibraryDesc">${ServerI18n.t("assetMediaLibraryDesc")}</p>
-                                        </div>
-                                        <div class="asset-dashboard-card">
-                                            <span class="asset-dashboard-label" data-i18n="assetVisualSystem">${ServerI18n.t("assetVisualSystem")}</span>
-                                            <strong data-i18n="assetVisualSystemTitle">${ServerI18n.t("assetVisualSystemTitle")}</strong>
-                                            <p data-i18n="assetVisualSystemDesc">${ServerI18n.t("assetVisualSystemDesc")}</p>
-                                        </div>
-                                        <div class="asset-dashboard-card">
-                                            <span class="asset-dashboard-label" data-i18n="assetExtensions">${ServerI18n.t("assetExtensions")}</span>
-                                            <strong data-i18n="assetExtensionsTitle">${ServerI18n.t("assetExtensionsTitle")}</strong>
-                                            <p data-i18n="assetExtensionsDesc">${ServerI18n.t("assetExtensionsDesc")}</p>
-                                        </div>
-                                    </div>
-                                    <div id="assets-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                        <!-- Asset and extension sections are re-homed here -->
-                                    </div>
-                                </section>
-
-                                <section class="admin-section rounded-2xl p-5 md:p-6">
-                                    <details id="sec-advanced" class="group scroll-mt-24" ${isOpen("sec-advanced") ? "open" : ""}>
-                                        <summary class="flex items-center justify-between cursor-pointer list-none">
-                                            <div>
-                                                <span class="admin-section-kicker" data-i18n="sectionAutomation">${ServerI18n.t("sectionAutomation")}</span>
-                                                <h3 class="text-lg font-bold text-white" data-i18n="sectionAutomationTitle">${ServerI18n.t("sectionAutomationTitle")}</h3>
-                                                <p class="text-sm text-slate-300" data-i18n="sectionAutomationDesc">${ServerI18n.t("sectionAutomationDesc")}</p>
-                                            </div>
-                                            <span class="text-slate-400 transition-transform group-open:rotate-180">&#8964;</span>
-                                        </summary>
-                                        <div id="advanced-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
-                                            <!-- Webhooks & Scheduler sections injected here -->
-                                        </div>
-                                    </details>
-                                </section>
+                            <div id="assets-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 admin-route-sections">
+                                <!-- assets sections -->
                             </div>
-
-                            <aside class="admin-sidebar">
-                                <div class="admin-sidebar-card">
-                                    <div class="admin-sidebar-title" data-i18n="sidebarWorkflow">${ServerI18n.t("sidebarWorkflow")}</div>
-                                    <p class="admin-sidebar-copy" data-i18n="sidebarWorkflowCopy">${ServerI18n.t("sidebarWorkflowCopy")}</p>
-                                    <div class="admin-link-list">
-                                        <a href="#sec-history"><span data-i18n="sidebarLinkReviewRecent">${ServerI18n.t("sidebarLinkReviewRecent")}</span><span class="text-slate-400">→</span></a>
-                                        <a href="#sec-blacklist"><span data-i18n="sidebarLinkBlockKeywords">${ServerI18n.t("sidebarLinkBlockKeywords")}</span><span class="text-slate-400">→</span></a>
-                                        <a href="#sec-effects"><span data-i18n="sidebarLinkRefreshEffects">${ServerI18n.t("sidebarLinkRefreshEffects")}</span><span class="text-slate-400">→</span></a>
-                                    </div>
+                            <details id="sec-advanced" class="admin-route-sections" open>
+                                <summary class="sr-only">${ServerI18n.t("sectionAutomationTitle") || "Advanced"}</summary>
+                                <div id="advanced-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <!-- webhooks & scheduler -->
                                 </div>
-
-                                <div class="admin-sidebar-card">
-                                    <div class="admin-sidebar-title" data-i18n="sidebarRecommendedOrder">${ServerI18n.t("sidebarRecommendedOrder")}</div>
-                                    <p class="admin-sidebar-copy" data-i18n="sidebarRecommendedCopy">${ServerI18n.t("sidebarRecommendedCopy")}</p>
-                                    <div class="admin-link-list">
-                                        <a href="#sec-color"><span data-i18n="sidebarStep1">${ServerI18n.t("sidebarStep1")}</span><span class="text-slate-400" data-i18n="sidebarStep1Hint">${ServerI18n.t("sidebarStep1Hint")}</span></a>
-                                        <a href="#sec-live-feed"><span data-i18n="sidebarStep2">${ServerI18n.t("sidebarStep2")}</span><span class="text-slate-400" data-i18n="sidebarStep2Hint">${ServerI18n.t("sidebarStep2Hint")}</span></a>
-                                        <a href="#sec-filters"><span data-i18n="sidebarStep3">${ServerI18n.t("sidebarStep3")}</span><span class="text-slate-400" data-i18n="sidebarStep3Hint">${ServerI18n.t("sidebarStep3Hint")}</span></a>
-                                    </div>
-                                </div>
-                            </aside>
+                            </details>
                         </div>
                     </div>
                 `;
@@ -1127,39 +1093,50 @@ document.addEventListener("DOMContentLoaded", () => {
       `<p class="text-sm text-slate-300">${ServerI18n.t("effectsDisabledMsg")}</p>`
     ));
 
-    // Effects Management Card (full width)
+    // Effects Management — AdminEffectsPage layout (1fr + 340px YAML inspector)
     settingsGrid.insertAdjacentHTML("beforeend", `
-      <div id="sec-effects" class="glass-effect rounded-2xl p-6 border border-transparent hover:border-slate-500 transition-all duration-300 lg:col-span-2 scroll-mt-24">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h3 class="text-lg font-bold text-white">${ServerI18n.t("effectsManagement")}</h3>
-            <p class="text-sm text-slate-300">${ServerI18n.t("effectsManagementDesc")}</p>
+      <div id="sec-effects-mgmt" class="hud-page-stack lg:col-span-2">
+        <div class="hud-page-grid-2">
+          <div class="hud-page-stack" style="gap:16px">
+            <div class="hud-filter-row" id="effectsFilterRow">
+              <span class="hud-filter-chip is-active" data-effect-filter="ALL">\u5168\u90e8 \u2014</span>
+            </div>
+            <div class="flex items-center justify-between" style="gap:8px">
+              <p class="text-xs text-slate-400 m-0">${ServerI18n.t("effectsManagementDesc")}</p>
+              <div class="flex items-center" style="gap:6px">
+                <button id="effectReloadBtn" class="hud-toolbar-action" type="button">
+                  \u21bb ${ServerI18n.t("reload")}
+                </button>
+                <label for="effectUploadInput" class="hud-toolbar-action" style="cursor:pointer">
+                  + ${ServerI18n.t("uploadDme")}
+                </label>
+                <input type="file" id="effectUploadInput" accept=".dme" class="hidden">
+              </div>
+            </div>
+            <div id="effectsList" class="hud-effects-grid">
+              <span class="text-xs text-slate-400" style="grid-column:1 / -1">${ServerI18n.t("loadingEffectsAdmin")}</span>
+            </div>
           </div>
-          <div class="flex items-center gap-2">
-            <button id="effectReloadBtn"
-              class="px-3 py-1.5 text-xs font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors flex items-center gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              ${ServerI18n.t("reload")}
-            </button>
-            <label for="effectUploadInput"
-              class="px-3 py-1.5 text-xs font-medium bg-sky-700 hover:bg-sky-600 text-white rounded-lg cursor-pointer transition-colors flex items-center gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-              ${ServerI18n.t("uploadDme")}
-            </label>
-            <input type="file" id="effectUploadInput" accept=".dme" class="hidden">
-          </div>
-        </div>
-        <div class="border-t border-slate-700/50 pt-4">
-          <div id="effectsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 min-h-12">
-            <span class="text-xs text-slate-400 col-span-2">${ServerI18n.t("loadingEffectsAdmin")}</span>
-          </div>
+
+          <aside class="hud-inspector" id="effectsInspector">
+            <div class="hud-inspector-head">
+              <span class="hud-status-dot is-paused" id="effectsInspectorDot"></span>
+              <span id="effectsInspectorTitle" style="font-size:13px;font-weight:600;color:var(--color-text-strong)">\u2014</span>
+              <span class="admin-v3-card-kicker" id="effectsInspectorKicker" style="margin:0">IDLE</span>
+            </div>
+            <pre class="hud-inspector-body" id="effectsInspectorBody"># \u9ede\u9078\u4e00\u500b\u6548\u679c\u4ee5\u986f\u793a YAML \u5167\u5bb9</pre>
+            <div class="hud-inspector-foot">
+              <button type="button" class="hud-toolbar-action" id="effectsInspectorReload" style="flex:1">\u21bb RELOAD</button>
+              <button type="button" class="hud-toolbar-action is-primary" id="effectsInspectorEdit" style="flex:1">EDIT</button>
+            </div>
+          </aside>
         </div>
       </div>
     `);
 
     // Theme Management Card
     settingsGrid.insertAdjacentHTML("beforeend", `
-      <details id="sec-themes" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-themes") ? "open" : ""}>
+      <details id="sec-themes" class="group admin-v3-card" ${isOpen("sec-themes") ? "open" : ""}>
         <summary class="flex items-center justify-between cursor-pointer list-none">
           <div>
             <h3 class="text-lg font-bold text-white" data-i18n="styleThemePacks">${ServerI18n.t("styleThemePacks")}</h3>
@@ -1183,35 +1160,59 @@ document.addEventListener("DOMContentLoaded", () => {
     `);
     scheduleIdleTask(initThemesManagement);
 
-    // Blacklist Management Card
+    // Moderation Overview (AdminModerationPage layout): stats strip + banned/blacklist panel
     settingsGrid.insertAdjacentHTML("beforeend", `
-                    <details id="sec-blacklist" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-blacklist") ? "open" : ""}>
-                        <summary class="flex items-center justify-between cursor-pointer list-none">
-                            <div>
-                                <h3 class="text-lg font-bold text-white">${ServerI18n.t("blacklistManagement")}</h3>
-                                <p class="text-sm text-slate-300">${ServerI18n.t("blacklistManagementDesc")}</p>
-                            </div>
-                            <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
-                        </summary>
-                        <div class="mt-4 pt-4 border-t border-slate-700/50">
-                            <div>
-                                <label for="newKeywordInput" class="text-sm font-medium text-slate-300">${ServerI18n.t("newKeyword")}</label>
-                                <input type="text" id="newKeywordInput" placeholder="${ServerI18n.t("enterKeyword")}" class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300">
-                                <button id="addKeywordBtn" class="mt-3 w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-6 rounded-xl transition-colors">${ServerI18n.t("addKeyword")}</button>
-                            </div>
-                            <div class="mt-6">
-                                <h4 class="text-md font-semibold text-white mb-2">${ServerI18n.t("currentBlacklist")}</h4>
-                                <div id="blacklistKeywords" class="space-y-2 max-h-48 overflow-y-auto">
-                                    <!-- Keywords will be listed here -->
-                                </div>
-                            </div>
-                        </div>
-                    </details>
-                `);
+      <div id="sec-blacklist" class="hud-page-stack lg:col-span-2">
+        <div class="hud-stats-strip" id="modStatsStrip" style="grid-template-columns:repeat(5, minmax(0, 1fr))">
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">RULES</span>
+            <span class="hud-stat-tile-value" data-mod-stat="rules">\u2014</span>
+            <span class="hud-stat-tile-label">\u898f\u5247\u6578</span>
+          </div>
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">BANNED</span>
+            <span class="hud-stat-tile-value is-danger" data-mod-stat="banned">\u2014</span>
+            <span class="hud-stat-tile-label">\u9ed1\u540d\u55ae</span>
+          </div>
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">MASKED \u00b7 24H</span>
+            <span class="hud-stat-tile-value is-amber" data-mod-stat="masked">\u2014</span>
+            <span class="hud-stat-tile-label">\u4eca\u65e5\u906e\u7f69</span>
+          </div>
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">BLOCKED \u00b7 24H</span>
+            <span class="hud-stat-tile-value is-danger" data-mod-stat="blocked">\u2014</span>
+            <span class="hud-stat-tile-label">\u4eca\u65e5\u5c01\u9396</span>
+          </div>
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">REVIEW QUEUE</span>
+            <span class="hud-stat-tile-value is-cyan" data-mod-stat="review">\u2014</span>
+            <span class="hud-stat-tile-label">\u5f85\u5be9\u6838</span>
+          </div>
+        </div>
+
+        <div class="hud-inspector hud-blacklist-panel" style="min-height:auto">
+          <div class="hud-inspector-head">
+            <span class="hud-status-dot is-danger"></span>
+            <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${ServerI18n.t("blacklistManagement")}</span>
+            <span class="admin-v3-card-kicker" style="margin:0">KEYWORD \u00b7 BANNED</span>
+            <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.1em" id="modBlacklistCount">\u2014 words</span>
+          </div>
+          <div style="padding:14px;display:grid;grid-template-columns:1fr auto;gap:8px;border-bottom:1px solid var(--hud-line-strong)">
+            <input type="text" id="newKeywordInput" placeholder="${ServerI18n.t("enterKeyword")}"
+              class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:ring-2 focus:ring-sky-400 focus:border-sky-400">
+            <button id="addKeywordBtn" type="button" class="hud-toolbar-action is-primary">+ ${ServerI18n.t("addKeyword")}</button>
+          </div>
+          <div id="blacklistKeywords" class="max-h-72 overflow-y-auto" style="padding:8px 14px">
+            <!-- Keywords will be listed here -->
+          </div>
+        </div>
+      </div>
+    `);
 
     // Danmu History Card
     settingsGrid.insertAdjacentHTML("beforeend", `
-                    <details id="sec-history" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent lg:col-span-2 scroll-mt-24" ${isOpen("sec-history") ? "open" : ""}>
+                    <details id="sec-history" class="group admin-v3-card lg:col-span-2" ${isOpen("sec-history") ? "open" : ""}>
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
                                 <h3 class="text-lg font-bold text-white">${ServerI18n.t("danmuHistory")}</h3>
@@ -1277,7 +1278,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Polls Management Card
     settingsGrid.insertAdjacentHTML("beforeend", `
-                    <details id="sec-polls" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-polls") ? "open" : ""}>
+                    <details id="sec-polls" class="group admin-v3-card" ${isOpen("sec-polls") ? "open" : ""}>
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
                                 <h3 class="text-lg font-bold text-white">Poll / Vote</h3>
@@ -1312,9 +1313,181 @@ document.addEventListener("DOMContentLoaded", () => {
                     </details>
                 `);
 
+    // System Overview (AdminSystemPage layout): Server block + Rate Limits + Backup/Danger
+    settingsGrid.insertAdjacentHTML("beforeend", `
+      <div id="sec-system-overview" class="hud-page-stack lg:col-span-2">
+        <div class="hud-system-grid">
+          <div class="hud-inspector hud-system-server" style="min-height:auto">
+            <div class="hud-inspector-head">
+              <span class="hud-status-dot is-live"></span>
+              <span style="font-size:14px;font-weight:600;color:var(--color-text-strong)">Danmu Server</span>
+              <span class="admin-v3-card-kicker" id="sysoVersion" style="margin:0">v\u2014</span>
+              <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:#86efac;letter-spacing:0.12em" id="sysoUptime">UPTIME \u2014</span>
+            </div>
+            <div style="padding:16px;display:grid;grid-template-columns:repeat(3, 1fr);gap:12px">
+              <div class="hud-kv"><span class="hud-kv-k">HTTP</span><span class="hud-kv-v" id="sysoHttpPort">:\u2014</span></div>
+              <div class="hud-kv"><span class="hud-kv-k">WS</span><span class="hud-kv-v" id="sysoWsPort">:\u2014</span></div>
+              <div class="hud-kv"><span class="hud-kv-k">BIND</span><span class="hud-kv-v" id="sysoBind">\u2014</span></div>
+              <div class="hud-kv"><span class="hud-kv-k">WS CLIENTS</span><span class="hud-kv-v" id="sysoWsClients">\u2014</span></div>
+              <div class="hud-kv"><span class="hud-kv-k">QUEUE</span><span class="hud-kv-v" id="sysoQueue">\u2014</span></div>
+              <div class="hud-kv"><span class="hud-kv-k">WIDGETS</span><span class="hud-kv-v" id="sysoWidgets">\u2014</span></div>
+            </div>
+            <div style="padding:0 16px 16px 16px">
+              <div style="padding:12px;background:color-mix(in srgb, var(--color-bg-deep) 65%, transparent);border-radius:4px;font-family:var(--font-mono);font-size:11px">
+                <div class="admin-v3-card-kicker" style="margin:0 0 6px 0">PUBLIC URL</div>
+                <div id="sysoPublicUrl" style="color:var(--color-primary);word-break:break-all">${location.origin}</div>
+                <div style="margin-top:4px;color:var(--color-text-muted);font-size:10px">\u89c0\u773e\u6383\u78bc\u5373\u53ef\u52a0\u5165</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hud-inspector hud-system-rates" style="min-height:auto">
+            <div class="hud-inspector-head">
+              <span class="admin-v3-card-kicker" style="margin:0">RATE LIMITS \u00b7 \u53cd\u5237\u5c4f</span>
+            </div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:14px" id="sysoRatesBody">
+              <div class="hud-rate-item" data-rate="fire">
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                  <span style="color:var(--color-text-strong)">\u6bcf\u7528\u6236 \u00b7 FIRE</span>
+                  <span style="margin-left:auto;font-family:var(--font-mono);color:var(--color-primary);font-weight:600" data-rate-val>\u2014</span>
+                </div>
+                <div style="margin-top:6px;height:4px;border-radius:2px;background:color-mix(in srgb, var(--color-bg-deep) 60%, transparent);overflow:hidden">
+                  <div style="width:40%;height:100%;background:var(--color-primary);opacity:0.7" data-rate-bar></div>
+                </div>
+                <div style="margin-top:2px;font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.1em" data-rate-cap>\u2014</div>
+              </div>
+              <div class="hud-rate-item" data-rate="api">
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                  <span style="color:var(--color-text-strong)">\u6bcf\u7528\u6236 \u00b7 API</span>
+                  <span style="margin-left:auto;font-family:var(--font-mono);color:var(--color-primary);font-weight:600" data-rate-val>\u2014</span>
+                </div>
+                <div style="margin-top:6px;height:4px;border-radius:2px;background:color-mix(in srgb, var(--color-bg-deep) 60%, transparent);overflow:hidden">
+                  <div style="width:40%;height:100%;background:var(--color-primary);opacity:0.7" data-rate-bar></div>
+                </div>
+                <div style="margin-top:2px;font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.1em" data-rate-cap>\u2014</div>
+              </div>
+              <div class="hud-rate-item" data-rate="admin">
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                  <span style="color:var(--color-text-strong)">ADMIN \u00b7 \u4fdd\u8b77</span>
+                  <span style="margin-left:auto;font-family:var(--font-mono);color:var(--color-primary);font-weight:600" data-rate-val>\u2014</span>
+                </div>
+                <div style="margin-top:6px;height:4px;border-radius:2px;background:color-mix(in srgb, var(--color-bg-deep) 60%, transparent);overflow:hidden">
+                  <div style="width:40%;height:100%;background:var(--color-primary);opacity:0.7" data-rate-bar></div>
+                </div>
+                <div style="margin-top:2px;font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.1em" data-rate-cap>\u2014</div>
+              </div>
+              <div class="hud-rate-item" data-rate="login">
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                  <span style="color:var(--color-text-strong)">LOGIN \u00b7 \u767b\u5165</span>
+                  <span style="margin-left:auto;font-family:var(--font-mono);color:var(--color-primary);font-weight:600" data-rate-val>\u2014</span>
+                </div>
+                <div style="margin-top:6px;height:4px;border-radius:2px;background:color-mix(in srgb, var(--color-bg-deep) 60%, transparent);overflow:hidden">
+                  <div style="width:20%;height:100%;background:var(--color-primary);opacity:0.7" data-rate-bar></div>
+                </div>
+                <div style="margin-top:2px;font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.1em" data-rate-cap>\u2014</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hud-inspector hud-system-backup" style="min-height:auto">
+            <div class="hud-inspector-head">
+              <span class="admin-v3-card-kicker" style="margin:0">BACKUP \u00b7 EXPORT</span>
+            </div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+              <div style="padding:12px;background:color-mix(in srgb, var(--color-bg-deep) 65%, transparent);border-radius:4px">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span class="hud-status-dot is-live"></span>
+                  <span style="font-size:12px;font-weight:600;color:var(--color-text-strong)">\u81ea\u52d5\u8a0a\u606f\u65e5\u8a8c</span>
+                  <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.12em" id="sysoBackupStatus">SQLite \u00b7 active</span>
+                </div>
+                <div style="margin-top:8px;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.05em">
+                  \u5132\u5b58\u65bc <code style="color:var(--color-primary)">server/runtime/</code>
+                </div>
+              </div>
+              <div>
+                <div class="admin-v3-card-kicker" style="margin:0">\u532f\u51fa\u683c\u5f0f</div>
+                <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                  <a href="/admin/history/export?format=json" class="hud-toolbar-action is-primary" style="text-align:center;text-decoration:none">JSON \u00b7 \u5b8c\u6574</a>
+                  <a href="/admin/history/export?format=csv" class="hud-toolbar-action" style="text-align:center;text-decoration:none">CSV \u00b7 \u8a0a\u606f</a>
+                </div>
+              </div>
+              <div style="margin-top:auto;padding:12px;border:1px dashed #f87171;border-radius:4px">
+                <div class="admin-v3-card-kicker" style="margin:0;color:#f87171">DANGER ZONE</div>
+                <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px">\u6e05\u9664\u6b77\u53f2\u8a0a\u606f\uff0c\u65e5\u8a8c\u4fdd\u7559</div>
+                <button id="sysoEndSessionBtn" type="button" style="margin-top:10px;width:100%;padding:8px;border-radius:4px;border:1px solid #f87171;background:transparent;color:#f87171;font-family:var(--font-mono);font-size:11px;letter-spacing:0.15em;font-weight:700;cursor:pointer">END SESSION</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `);
+
+    // Wire system overview live data
+    (function wireSystemOverview() {
+      const verEl = document.getElementById("sysoVersion");
+      if (verEl && window.DANMU_CONFIG?.appVersion) verEl.textContent = "v" + window.DANMU_CONFIG.appVersion;
+      const portEl = document.getElementById("sysoHttpPort");
+      if (portEl) portEl.textContent = ":" + (location.port || "80");
+      const wsPortEl = document.getElementById("sysoWsPort");
+      if (wsPortEl) wsPortEl.textContent = ":" + (location.port || "80") + "/ws";
+      const bindEl = document.getElementById("sysoBind");
+      if (bindEl) bindEl.textContent = location.hostname;
+
+      // Rate limit caps: hardcoded defaults per config.py (not exposed via API yet)
+      const rateCaps = {
+        fire: { max: 60, label: "FIRE_RATE_LIMIT" },
+        api: { max: 60, label: "API_RATE_LIMIT" },
+        admin: { max: 120, label: "ADMIN_RATE_LIMIT" },
+        login: { max: 30, label: "LOGIN_RATE_LIMIT" },
+      };
+      const rateDefaults = { fire: 20, api: 30, admin: 60, login: 5 };
+      const rateWindows = { fire: 60, api: 60, admin: 60, login: 300 };
+      Object.keys(rateDefaults).forEach((k) => {
+        const row = document.querySelector(`.hud-rate-item[data-rate="${k}"]`);
+        if (!row) return;
+        const val = rateDefaults[k];
+        const win = rateWindows[k];
+        const max = rateCaps[k].max;
+        row.querySelector("[data-rate-val]").textContent = `${val} \u5247 / ${win}s`;
+        row.querySelector("[data-rate-cap]").textContent = `UP TO ${max} \u00b7 ${rateCaps[k].label}`;
+        const bar = row.querySelector("[data-rate-bar]");
+        if (bar) bar.style.width = Math.min(100, (val / max) * 100) + "%";
+      });
+
+      // Fetch metrics to fill live fields
+      (async () => {
+        try {
+          const res = await window.csrfFetch("/admin/metrics");
+          if (!res.ok) return;
+          const data = await res.json();
+          const clientsEl = document.getElementById("sysoWsClients");
+          if (clientsEl) clientsEl.textContent = String(data.ws_clients ?? 0);
+          const qEl = document.getElementById("sysoQueue");
+          if (qEl) qEl.textContent = `${data.queue_size ?? 0} / ${data.queue_capacity ?? "\u2014"}`;
+          const widgEl = document.getElementById("sysoWidgets");
+          if (widgEl) widgEl.textContent = String(data.active_widgets ?? 0);
+        } catch (_) { /* ignore */ }
+      })();
+
+      const endBtn = document.getElementById("sysoEndSessionBtn");
+      if (endBtn) {
+        endBtn.addEventListener("click", () => {
+          if (!confirm("\u78ba\u5b9a\u8981\u6e05\u9664\u6b77\u53f2\u8a0a\u606f\u55ce\uff1f\u6b64\u52d5\u4f5c\u7121\u6cd5\u5fa9\u539f\u3002")) return;
+          window.csrfFetch("/admin/history/clear", { method: "POST" })
+            .then((r) => r.ok ? r.json() : Promise.reject(r))
+            .then(() => {
+              if (typeof showToast === "function") showToast("\u6b77\u53f2\u5df2\u6e05\u9664", true);
+            })
+            .catch(() => {
+              if (typeof showToast === "function") showToast("\u6e05\u9664\u5931\u6557\uff08\u7aef\u9ede\u53ef\u80fd\u5c1a\u672a\u5be6\u4f5c\uff09", false);
+            });
+        });
+      }
+    })();
+
     // Password Change Card (with show/hide toggles)
     settingsGrid.insertAdjacentHTML("beforeend", `
-                    <details id="sec-security" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-security") ? "open" : ""}>
+                    <details id="sec-security" class="group admin-v3-card" ${isOpen("sec-security") ? "open" : ""}>
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
                                 <h3 class="text-lg font-bold text-white">${ServerI18n.t("changePassword")}</h3>
@@ -1351,7 +1524,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                     </details>
 
-                    <details id="sec-ws-auth" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-ws-auth") ? "open" : ""}>
+                    <details id="sec-ws-auth" class="group admin-v3-card" ${isOpen("sec-ws-auth") ? "open" : ""}>
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
                                 <h3 class="text-lg font-bold text-white">${ServerI18n.t("wsAuthTitle")}</h3>
@@ -1402,6 +1575,105 @@ document.addEventListener("DOMContentLoaded", () => {
     // Notify add-on scripts (admin-sounds.js, admin-webhooks.js, etc.)
     // that the control panel has been (re)built, so they can re-inject.
     document.dispatchEvent(new CustomEvent("admin-panel-rendered"));
+
+    // AdminV3 multi-page router: each sidebar tab maps to a set of inner
+    // sections. Sections not matching the active route are hidden via
+    // [data-active-route] CSS on the shell.
+    initAdminRouter();
+  }
+
+  const ADMIN_ROUTES = {
+    dashboard: { title: "哈囉 <span class=\"accent\">admin</span>, 活動進行中", kicker: "DASHBOARD · 控制台", sections: [], showKpi: true },
+    messages:  { title: "訊息紀錄",         kicker: "MESSAGES · 即時訊息串",    sections: ["sec-live-feed"] },
+    history:   { title: "時間軸匯出",       kicker: "HISTORY · 時間軸 / 匯出",   sections: ["sec-history"] },
+    polls:     { title: "投票",             kicker: "POLLS · 2–6 選項",         sections: ["sec-polls"] },
+    widgets:   { title: "Overlay Widgets",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
+    themes:    { title: "風格主題包",       kicker: "THEME PACKS · 顏色 / 字體 / 速度 / 版面", sections: ["sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout", "sec-themes", "sec-emojis", "sec-stickers", "sec-sounds"] },
+    moderation:{ title: "敏感字 & 黑名單",  kicker: "MODERATION · 內建功能 · 非插件", sections: ["sec-blacklist", "sec-filters"] },
+    ratelimit: { title: "速率限制",         kicker: "RATE LIMITS · 反刷屏",          sections: ["sec-filters"] },
+    effects:   { title: "效果庫 .dme",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },
+    plugins:   { title: "伺服器插件",       kicker: "PLUGIN SDK · 熱重載 · SANDBOX", sections: ["sec-plugins"] },
+    fonts:     { title: "字型管理",         kicker: "FONT LIBRARY · 觀眾可選",   sections: ["sec-fonts"] },
+    system:    { title: "系統 & 指紋",      kicker: "SYSTEM · FINGERPRINT · RATE LIMITS", sections: ["sec-system-overview", "sec-security", "sec-ws-auth", "sec-scheduler", "sec-webhooks", "sec-fingerprints"] },
+  };
+
+  function initAdminRouter() {
+    const shell = document.querySelector(".admin-dash-grid");
+    if (!shell) return;
+
+    let currentRoute = "dashboard";
+
+    const applySectionVisibility = () => {
+      const cfg = ADMIN_ROUTES[currentRoute];
+      const wanted = new Set(cfg.sections);
+      shell.querySelectorAll("[id^=\"sec-\"]").forEach((el) => {
+        if (!el.id) return;
+        if (el.id === "sec-advanced") {
+          // Advanced wrapper: visible only if it contains any wanted section
+          const hasAny = Array.from(el.querySelectorAll("[id^=\"sec-\"]")).some((c) => wanted.has(c.id));
+          el.style.display = hasAny ? "" : "none";
+          return;
+        }
+        el.style.display = wanted.has(el.id) ? "" : "none";
+      });
+    };
+
+    const applyRoute = (name) => {
+      currentRoute = ADMIN_ROUTES[name] ? name : "dashboard";
+      shell.dataset.activeRoute = currentRoute;
+      const cfg = ADMIN_ROUTES[currentRoute];
+
+      shell.querySelectorAll("[data-route]").forEach((btn) => {
+        const on = btn.dataset.route === currentRoute;
+        btn.classList.toggle("is-active", on);
+        btn.setAttribute("aria-selected", on ? "true" : "false");
+      });
+
+      const kicker = shell.querySelector("[data-route-kicker]");
+      const title = shell.querySelector("[data-route-title]");
+      if (kicker) kicker.textContent = cfg.kicker;
+      if (title) title.innerHTML = cfg.title;
+
+      shell.querySelectorAll("[data-route-view=\"dashboard\"]").forEach((el) => {
+        el.style.display = currentRoute === "dashboard" ? "" : "none";
+      });
+
+      applySectionVisibility();
+
+      try { history.replaceState(null, "", "#/" + currentRoute); } catch (e) { /* ignore */ }
+    };
+
+    shell.querySelectorAll("[data-route]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        applyRoute(btn.dataset.route);
+      });
+    });
+
+    const fromHash = (window.location.hash.match(/^#\/(\w+)/) || [])[1];
+    applyRoute(fromHash || "dashboard");
+
+    window.addEventListener("hashchange", () => {
+      const h = (window.location.hash.match(/^#\/(\w+)/) || [])[1];
+      if (h) applyRoute(h);
+    });
+
+    // Late-injected sections (admin-sounds.js, admin-emojis.js, etc. inject
+    // after scheduleIdleTask). Watch the main area for new [id^="sec-"]
+    // elements and re-apply visibility when they arrive.
+    const main = shell.querySelector(".admin-dash-main");
+    if (main && typeof MutationObserver === "function") {
+      let scheduled = false;
+      const mo = new MutationObserver(() => {
+        if (scheduled) return;
+        scheduled = true;
+        requestAnimationFrame(() => {
+          scheduled = false;
+          applySectionVisibility();
+        });
+      });
+      mo.observe(main, { childList: true, subtree: true });
+    }
   }
 
   // Attach Event Listeners

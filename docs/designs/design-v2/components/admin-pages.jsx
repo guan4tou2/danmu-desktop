@@ -22,19 +22,15 @@ function AdminPageShell({ route, title, en, children, theme = 'dark' }) {
         width: 240, background: panel, borderRight: `1px solid ${line}`,
         display: 'flex', flexDirection: 'column',
       }}>
-        <div style={{ padding: '20px 22px', borderBottom: `1px solid ${line}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{
-              width: 34, height: 34, borderRadius: radius,
-              background: `linear-gradient(135deg, ${accent}, ${hudTokens.magenta})`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#000', fontFamily: hudTokens.fontDisplay, fontWeight: 700, fontSize: 16,
-            }}>弾</div>
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 14, letterSpacing: 0.3 }}>Danmu Admin</div>
-              <div style={{ fontSize: 10, letterSpacing: 1.5, color: textDim, fontFamily: hudTokens.fontMono, marginTop: 2 }}>v4.8.7 · ZH</div>
-            </div>
-          </div>
+        <div style={{ padding: '18px 22px 16px', borderBottom: `1px solid ${line}` }}>
+          <HeroInline
+            title="Danmu Fire"
+            suffix={
+              <span style={{ fontSize: 10, letterSpacing: 1.5, color: textDim, fontFamily: hudTokens.fontMono }}>
+                ADMIN · v4.8.7
+              </span>
+            }
+          />
         </div>
 
         <div style={{ flex: 1, padding: '14px 10px', overflow: 'auto' }}>
@@ -271,6 +267,7 @@ function AdminPluginsPage({ theme = 'dark' }) {
   // Plugins = OPTIONAL third-party extensions only.
   // Blacklist / rate-limit / fingerprint are first-class features (see 系統 & 指紋 頁).
   const plugins = [
+    { name: 'autoreply.py',      desc: 'AI 自動回覆常見問題 · 用 Haiku',       running: false, uptime: '—',          mem: '0 MB',  calls: 0,    lang: 'py' },
     { name: 'scoreboard.js',     desc: 'Overlay 分數板 · OBS browser source',  running: true,  uptime: '02:41:08', mem: '8 MB',  calls: 412,  lang: 'js' },
     { name: 'ticker.js',         desc: 'Overlay 跑馬燈 · 推播訊息',            running: true,  uptime: '02:41:08', mem: '6 MB',  calls: 89,   lang: 'js' },
     { name: 'whisper-stt.py',    desc: '語音轉字幕 · 送到彈幕 stream',         running: false, uptime: '—',          mem: '0 MB',  calls: 0,    lang: 'py' },

@@ -148,6 +148,26 @@ function AdminThemePacksPage({ theme = 'dark' }) {
               </div>
             </div>
 
+            <div style={{ background: panel, border: `1px solid ${line}`, borderRadius: radius, padding: 14 }}>
+              <HudLabel color={textDim}>排程切換 · SCHEDULE</HudLabel>
+              <div style={{ fontSize: 12, color: text, marginTop: 8 }}>根據時段自動切換主題包</div>
+              <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {[
+                  { t: '19:00 · 暖場', p: 'RETRO' },
+                  { t: '19:30 · 主題演講', p: 'DEFAULT' },
+                  { t: '21:00 · 問答', p: 'NEON' },
+                ].map(s => (
+                  <div key={s.t} style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '6px 10px', background: raised, borderRadius: 4,
+                    fontFamily: hudTokens.fontMono, fontSize: 11,
+                  }}>
+                    <span style={{ color: textDim }}>{s.t}</span>
+                    <span style={{ marginLeft: 'auto', color: accent, letterSpacing: 1 }}>→ {s.p}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}

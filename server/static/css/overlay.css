@@ -1,3 +1,118 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: transparent; overflow: hidden; width: 100vw; height: 100vh; }
 #danmubody { position: relative; width: 100%; height: 100%; }
+
+/* ── Idle scene ─────────────────────────────────────────────────────────────
+ * Fullscreen brand lockup + QR that shows while the overlay is connected but
+ * no danmu has been rendered. Hidden as soon as the first frame arrives and
+ * re-shown after OVERLAY_CONFIG.idleAfterMs of inactivity.
+ */
+.overlay-idle {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: radial-gradient(ellipse at 50% 40%, #0b1220 0%, #000 80%);
+  color: #fff;
+  font-family: var(--font-ui);
+  z-index: 1;
+  overflow: hidden;
+}
+
+.overlay-idle.is-hidden {
+  display: none;
+}
+
+.overlay-idle__grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.2;
+  background-image:
+    linear-gradient(var(--hud-cyan-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hud-cyan-line) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, transparent 70%);
+}
+
+.overlay-idle__stack {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.overlay-idle__subtitle {
+  margin: 14px 0 0;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  color: #cbd5e1;
+}
+
+.overlay-idle__chip {
+  margin-top: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--hud-cyan-line);
+  background: var(--hud-cyan-soft);
+}
+
+.overlay-idle__chip-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  color: var(--color-primary);
+}
+
+.overlay-idle__chip-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: #cbd5e1;
+}
+
+.overlay-idle__qr {
+  margin: 34px auto 0;
+  width: 140px;
+  height: 140px;
+  background: var(--color-white);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  padding: 10px;
+}
+
+.overlay-idle__qr svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.overlay-idle__qr svg path {
+  fill: #000;
+}
+
+.overlay-idle__url {
+  margin-top: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: #cbd5e1;
+  text-transform: lowercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay-idle .hud-dot {
+    animation: none;
+  }
+}

@@ -23,19 +23,15 @@ function AdminV3SoftHolo({ density = 'comfy', theme = 'dark' }) {
         width: 240, background: panel, borderRight: `1px solid ${line}`,
         display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1,
       }}>
-        <div style={{ padding: '20px 22px', borderBottom: `1px solid ${line}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{
-              width: 34, height: 34, borderRadius: radius,
-              background: `linear-gradient(135deg, ${accent}, ${hudTokens.magenta})`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#000', fontFamily: hudTokens.fontDisplay, fontWeight: 700, fontSize: 16,
-            }}>弾</div>
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 14, letterSpacing: 0.3 }}>Danmu Admin</div>
-              <div style={{ fontSize: 10, letterSpacing: 1.5, color: textDim, fontFamily: hudTokens.fontMono, marginTop: 2 }}>v4.8.7 · ZH</div>
-            </div>
-          </div>
+        <div style={{ padding: '18px 22px 16px', borderBottom: `1px solid ${line}` }}>
+          <HeroInline
+            title="Danmu Fire"
+            suffix={
+              <span style={{ fontSize: 10, letterSpacing: 1.5, color: textDim, fontFamily: hudTokens.fontMono }}>
+                ADMIN · v4.8.7
+              </span>
+            }
+          />
         </div>
 
         <div style={{ flex: 1, padding: '14px 10px', overflow: 'auto' }}>
@@ -81,7 +77,7 @@ function AdminV3SoftHolo({ density = 'comfy', theme = 'dark' }) {
           <div>
             <HudLabel color={textDim}>DASHBOARD · 控制台</HudLabel>
             <div style={{ fontSize: 22, fontWeight: 600, marginTop: 2, letterSpacing: -0.3 }}>
-              即時狀態
+              哈囉 <span style={{ color: accent }}>admin</span>，活動進行中
             </div>
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -243,8 +239,8 @@ function AdminV3SoftHolo({ density = 'comfy', theme = 'dark' }) {
               {[
                 { title: '分數板', kind: 'WIDGET', running: true, uptime: '02:41', cat: 'OBS' },
                 { title: '跑馬燈', kind: 'WIDGET', running: true, uptime: '02:41', cat: 'OBS' },
-                { title: '敏感字過濾', kind: 'FILTERS', running: true, uptime: '2d 14h', cat: 'Server' },
-                { title: 'Webhook 轉發', kind: 'WEBHOOK', running: true, uptime: '01:12', cat: 'Server' },
+                { title: '敏感字過濾', kind: 'PLUGIN.py', running: true, uptime: '2d 14h', cat: 'Server' },
+                { title: 'AI 自動回覆', kind: 'PLUGIN.py', paused: true, uptime: '—', cat: 'Server' },
               ].map(w => {
                 const statusColor = w.running ? hudTokens.lime : w.paused ? hudTokens.amber : textDim;
                 return (

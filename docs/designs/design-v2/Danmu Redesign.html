@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Chakra+Petch:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Chakra+Petch:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; height: 100%; }
@@ -53,12 +53,12 @@
     <button data-val="dark" class="on">DARK</button>
     <button data-val="light">LIGHT</button>
   </div>
-  <div class="label">POLL · 後台開啟</div>
+  <div class="label">POLL · 主持人開啟</div>
   <div class="row" data-group="pollEnabled">
     <button data-val="true" class="on">ON</button>
     <button data-val="false">OFF</button>
   </div>
-  <div class="label">QUICK · 後台開啟</div>
+  <div class="label">QUICK · 主持人開啟</div>
   <div class="row" data-group="quickEnabled">
     <button data-val="true" class="on">ON</button>
     <button data-val="false">OFF</button>
@@ -70,6 +70,7 @@
 <script type="text/babel" src="components/admin-v3.jsx"></script>
 <script type="text/babel" src="components/admin-pages.jsx"></script>
 <script type="text/babel" src="components/admin-theme-packs.jsx"></script>
+<script type="text/babel" src="components/hero-scenes.jsx"></script>
 <script type="text/babel" src="components/browser-window.jsx"></script>
 <script type="text/babel" src="components/mobile-safari.jsx"></script>
 <script type="text/babel" src="components/viewer.jsx"></script>
@@ -182,6 +183,9 @@ function App() {
       </DCSection>
 
       <DCSection title="Admin · 管理後台" subtitle="Dashboard + 子頁面：風格主題包 / 效果庫 / 插件 / 字型 / 系統">
+        <DCArtboard width={1100} height={760} label="⓪ 登入 · Admin Login" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Login" style={{ width: 1100, height: 760 }}><AdminLogin theme={tweaks.theme} /></div>
+        </DCArtboard>
         <DCArtboard width={1440} height={920} label="① Dashboard · 控制台" style={{ background: 'transparent' }}>
           <div data-screen-label="Admin · Dashboard" style={{ width: 1440, height: 920 }}><AdminV3SoftHolo theme={tweaks.theme} /></div>
         </DCArtboard>
@@ -208,6 +212,9 @@ function App() {
       <DCSection title="Desktop Client · Electron App" subtitle="透明 overlay + Tray + 控制視窗 + 首次啟動連線精靈">
         <DCArtboard width={1200} height={760} label="① 桌面實景 · 透明 overlay 疊在 Keynote 上" style={{ background: 'transparent' }}>
           <div data-screen-label="Desktop · Overlay on screen" style={{ width: 1200, height: 760 }}><DesktopClient theme={tweaks.theme} scenario="overlay" /></div>
+        </DCArtboard>
+        <DCArtboard width={1200} height={680} label="② Overlay 空連線 · Idle state · Hero lockup" style={{ background: '#000' }}>
+          <div data-screen-label="Desktop · Overlay Idle" style={{ width: 1200, height: 680 }}><OverlayIdle theme={tweaks.theme} /></div>
         </DCArtboard>
         <DCArtboard width={680} height={520} label="② 控制視窗 · 連線 / overlay / 快捷鍵 / 自動更新" style={{ background: 'transparent' }}>
           <div data-screen-label="Desktop · Control" style={{ width: 680, height: 520 }}><DesktopClient theme={tweaks.theme} scenario="control" /></div>

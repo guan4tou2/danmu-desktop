@@ -25,6 +25,7 @@
     />
     <link rel="stylesheet" href="tailwind.css" />
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="hud.css" />
   </head>
   <body class="text-slate-200 overflow-auto">
     <a href="#main-content" class="skip-link" data-i18n="skipToMainContent">Skip to main content</a>
@@ -42,7 +43,7 @@
       class="relative min-h-screen flex items-start justify-center p-4 py-6 z-10"
     >
       <div
-        class="glass-effect w-full max-w-6xl p-5 md:p-7 rounded-2xl shadow-2xl space-y-5 my-auto main-content"
+        class="glass-effect hud-corners-auto w-full max-w-6xl p-5 md:p-7 rounded-2xl shadow-2xl space-y-5 my-auto main-content"
       >
         <!-- Language Switcher & Connection Status -->
         <div class="flex justify-end items-center gap-3 -mt-2 -mb-2">
@@ -86,10 +87,10 @@
               />
             </object>
           </div>
-          <h1 class="text-2xl font-bold text-white" data-i18n="title">
+          <h1 class="hud-hero-title is-medium mt-2" data-i18n="title">
             Danmu Desktop
           </h1>
-          <p class="text-slate-400 mt-1 text-sm" data-i18n="subtitle">
+          <p class="text-slate-400 mt-2 text-sm" data-i18n="subtitle">
             Configure and launch the overlay
           </p>
         </div>

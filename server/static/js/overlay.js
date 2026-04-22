@@ -16,6 +16,31 @@
   var maxTracks = parseInt(params.get("maxTracks"), 10) || 10;
   var defaultFontSize = parseInt(params.get("fontSize"), 10) || 0; // 0 = use server value
   var defaultOpacity = parseInt(params.get("opacity"), 10) || 0;  // 0 = use server value
+  var idleAfterMs = parseInt(params.get("idleAfter"), 10) || cfg.idleAfterMs || 30000;
+  var hideIdle = params.get("idle") === "0";
+
+  // ── Idle scene ─────────────────────────────────────────────────────────────
+  var idleEl = document.getElementById("overlay-idle");
+  var idleTimer = null;
+
+  function showIdle() {
+    if (!idleEl || hideIdle) return;
+    idleEl.classList.remove("is-hidden");
+  }
+
+  function hideIdleScene() {
+    if (!idleEl) return;
+    idleEl.classList.add("is-hidden");
+  }
+
+  function markActivity() {
+    hideIdleScene();
+    if (idleTimer) clearTimeout(idleTimer);
+    if (hideIdle || idleAfterMs <= 0) return;
+    idleTimer = setTimeout(showIdle, idleAfterMs);
+  }
+
+  if (hideIdle) hideIdleScene();
 
   // ── WebSocket state ────────────────────────────────────────────────────────
   var ws = null;
@@ -119,6 +144,8 @@
           document.querySelectorAll("h1.danmu, img.danmu, div.danmu-wrapper, div[style*='translateX']").forEach(function (el) {
             el.remove();
           });
+          if (idleTimer) clearTimeout(idleTimer);
+          showIdle();
           console.log("[overlay] Cleared by admin remote control");
           return;
         }
@@ -341,6 +368,8 @@
 
     var parentElement = document.getElementById("danmubody");
     if (!parentElement) return;
+
+    markActivity();
 
     var imgs = /^https?:\/\/([^\s/]+\/)*[^\s/]+\.(gif|png|jpeg|jpg)$/i;
 

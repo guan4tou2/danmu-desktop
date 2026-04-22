@@ -37,34 +37,75 @@
 
     function injectPluginsSection(settingsGrid) {
       const html = `
-        <details id="sec-plugins" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-plugins") ? "open" : ""}>
-          <summary class="flex items-center justify-between cursor-pointer list-none">
+        <div id="sec-plugins" class="hud-page-stack lg:col-span-2">
+          <div class="flex items-center justify-between">
             <div>
               <h3 class="text-lg font-bold text-white">${ServerI18n.t("pluginsTitle")}</h3>
               <p class="text-sm text-slate-300">${ServerI18n.t("pluginsDesc")}</p>
             </div>
-            <span class="text-slate-400 transition-transform group-open:rotate-180">\u2304</span>
-          </summary>
-          <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-3">
-            <div class="flex justify-between items-center">
-              <p class="text-xs text-slate-400">${ServerI18n.t("pluginsHint")}</p>
-              <button id="pluginsReloadBtn"
-                class="px-3 py-1.5 text-xs font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                ${ServerI18n.t("reloadBtn")}
-              </button>
+            <button id="pluginsReloadBtn" class="hud-toolbar-action" type="button">
+              + \u4e0a\u50b3 .py/.js \u00b7 \u21bb ${ServerI18n.t("reloadBtn")}
+            </button>
+          </div>
+
+          <div class="hud-stats-strip" id="pluginsStatsStrip">
+            <div class="hud-stat-tile">
+              <span class="hud-stat-tile-en">LOADED</span>
+              <span class="hud-stat-tile-value" data-plugins-stat="loaded">\u2014</span>
+              <span class="hud-stat-tile-label">\u5df2\u8f09\u5165</span>
             </div>
-            <div id="pluginsList" class="space-y-2">
-              <span class="text-xs text-slate-400">${ServerI18n.t("loadingPlugins")}</span>
+            <div class="hud-stat-tile">
+              <span class="hud-stat-tile-en">RUNNING</span>
+              <span class="hud-stat-tile-value is-lime" data-plugins-stat="running">\u2014</span>
+              <span class="hud-stat-tile-label">\u904b\u884c\u4e2d</span>
+            </div>
+            <div class="hud-stat-tile">
+              <span class="hud-stat-tile-en">PAUSED</span>
+              <span class="hud-stat-tile-value is-amber" data-plugins-stat="paused">\u2014</span>
+              <span class="hud-stat-tile-label">\u5df2\u66ab\u505c</span>
+            </div>
+            <div class="hud-stat-tile">
+              <span class="hud-stat-tile-en">PRIORITY \u00b7 AVG</span>
+              <span class="hud-stat-tile-value is-cyan" data-plugins-stat="priority">\u2014</span>
+              <span class="hud-stat-tile-label">\u5e73\u5747\u512a\u5148\u5ea6</span>
             </div>
           </div>
-        </details>
+
+          <div class="hud-table" id="pluginsTable">
+            <div class="hud-table-head" style="grid-template-columns: 24px 1fr 120px 100px 80px 100px;">
+              <span>\u25cf</span>
+              <span>PLUGIN \u00b7 \u63cf\u8ff0</span>
+              <span>VERSION</span>
+              <span>PRIORITY</span>
+              <span>LANG</span>
+              <span style="text-align:right">STATUS</span>
+            </div>
+            <div id="pluginsList">
+              <div class="hud-table-row" style="grid-template-columns: 1fr;">
+                <span class="text-xs text-slate-400">${ServerI18n.t("loadingPlugins")}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hud-console">
+            <div class="hud-console-head">
+              <span class="hud-status-dot is-live"></span>
+              <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">LIVE CONSOLE</span>
+              <span class="admin-v3-card-kicker" style="margin:0">stdout + stderr \u00b7 filter by plugin</span>
+              <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.1em">TAIL \u00b7 LIVE</span>
+            </div>
+            <div class="hud-console-body" id="pluginsConsoleBody">
+              <div class="hud-console-line">
+                <span style="color:var(--color-text-muted)">\u2014</span>
+                <span class="hud-console-lv-debug">INFO</span>
+                <span style="color:var(--color-primary)">plugin-manager</span>
+                <span style="color:var(--color-text-strong)">Console stream becomes live when plugins emit stdout/stderr.</span>
+              </div>
+            </div>
+          </div>
+        </div>
       `;
       settingsGrid.insertAdjacentHTML("beforeend", html);
-
-      // Persist details open/close state
-      const detailsEl = document.getElementById("sec-plugins");
-      detailsEl.addEventListener("toggle", () => saveDetailsToggle(detailsEl));
 
       // Wire up reload button
       document
@@ -90,46 +131,96 @@
 
         if (plugins.length === 0) {
           listEl.innerHTML =
-            '<p class="text-xs text-slate-400 text-center py-4">' + ServerI18n.t("noPluginsFound") + '</p>';
+            '<div class="hud-table-row" style="grid-template-columns: 1fr;"><span class="text-xs text-slate-400">' +
+            ServerI18n.t("noPluginsFound") +
+            "</span></div>";
+          renderPluginsStats([]);
           return;
         }
 
         listEl.innerHTML = plugins.map(renderPlugin).join("");
         bindToggleListeners(listEl);
+        renderPluginsStats(plugins);
       } catch (err) {
         console.error("Failed to load plugins:", err);
         listEl.innerHTML =
-          '<p class="text-xs text-red-400">' + ServerI18n.t("loadPluginsFailed") + '</p>';
+          '<div class="hud-table-row" style="grid-template-columns: 1fr;"><span class="text-xs text-red-400">' +
+          ServerI18n.t("loadPluginsFailed") +
+          "</span></div>";
       }
+    }
+
+    function renderPluginsStats(plugins) {
+      const loaded = plugins.length;
+      const running = plugins.filter((p) => p.enabled).length;
+      const paused = loaded - running;
+      const priorityList = plugins
+        .map((p) => p.priority)
+        .filter((p) => typeof p === "number");
+      const avgPriority = priorityList.length
+        ? Math.round(
+            priorityList.reduce((sum, v) => sum + v, 0) / priorityList.length,
+          )
+        : null;
+
+      const set = (key, value) => {
+        document
+          .querySelectorAll(`[data-plugins-stat="${key}"]`)
+          .forEach((el) => {
+            el.textContent = value;
+          });
+      };
+      set("loaded", loaded);
+      set("running", running);
+      set("paused", paused);
+      set("priority", avgPriority != null ? avgPriority : "—");
     }
 
     function renderPlugin(plugin) {
       const { name, version, description, priority, enabled } = plugin;
       const toggleId = `plugin-toggle-${name}`;
-      const priorityColor = priorityBadgeColor(priority);
+      const dotClass = enabled ? "is-live" : "is-paused";
+      const priorityPill = priorityPillClass(priority);
+      const lang = detectLang(plugin);
 
       return `
-        <div class="flex items-center justify-between bg-slate-800/60 rounded-xl px-4 py-3 gap-3" data-plugin="${escapeHtml(name)}">
-          <div class="flex-grow min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-sm font-semibold text-white truncate">${escapeHtml(name)}</span>
-              ${version ? `<span class="text-[10px] text-slate-400 font-mono">v${escapeHtml(version)}</span>` : ""}
-              <span class="text-[10px] px-1.5 py-0.5 rounded-full font-medium ${priorityColor}">
-                ${priority != null ? priority : "—"}
-              </span>
-            </div>
-            ${description ? `<p class="text-xs text-slate-400 mt-0.5 truncate">${escapeHtml(description)}</p>` : ""}
+        <div class="hud-table-row" style="grid-template-columns: 24px 1fr 120px 100px 80px 100px;" data-plugin="${escapeHtml(name)}">
+          <span class="hud-status-dot ${dotClass}" aria-hidden="true"></span>
+          <div class="min-w-0">
+            <div style="font-size:13px;font-weight:600;color:var(--color-text-strong)" class="truncate">${escapeHtml(name)}</div>
+            ${description ? `<div style="font-size:11px;color:var(--color-text-muted);margin-top:2px" class="truncate">${escapeHtml(description)}</div>` : ""}
           </div>
-          <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in flex-shrink-0">
-            <input type="checkbox" id="${toggleId}" role="switch"
-              aria-checked="${!!enabled}" aria-label="Toggle plugin ${escapeHtml(name)}"
-              class="plugin-toggle toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer"
-              data-plugin-name="${escapeHtml(name)}"
-              ${enabled ? "checked" : ""} />
-            <label for="${toggleId}" class="toggle-label block overflow-hidden h-7 rounded-full bg-slate-700 cursor-pointer"></label>
+          <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">${version ? "v" + escapeHtml(version) : "—"}</span>
+          <span class="hud-pill ${priorityPill}">${priority != null ? priority : "—"}</span>
+          <span class="hud-pill" style="text-transform:uppercase">${lang}</span>
+          <div style="display:flex;justify-content:flex-end;align-items:center">
+            <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
+              <input type="checkbox" id="${toggleId}" role="switch"
+                aria-checked="${!!enabled}" aria-label="Toggle plugin ${escapeHtml(name)}"
+                class="plugin-toggle toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer"
+                data-plugin-name="${escapeHtml(name)}"
+                ${enabled ? "checked" : ""} />
+              <label for="${toggleId}" class="toggle-label block overflow-hidden h-7 rounded-full bg-slate-700 cursor-pointer"></label>
+            </div>
           </div>
         </div>
       `;
+    }
+
+    function detectLang(plugin) {
+      const file = plugin.file || plugin.path || plugin.source || "";
+      if (typeof file === "string") {
+        if (file.endsWith(".py")) return "PY";
+        if (file.endsWith(".js")) return "JS";
+      }
+      return plugin.language || "PY";
+    }
+
+    function priorityPillClass(priority) {
+      if (priority == null) return "is-default";
+      if (priority <= 10) return "is-danger";
+      if (priority <= 50) return "is-amber";
+      return "is-cyan";
     }
 
     function bindToggleListeners(container) {

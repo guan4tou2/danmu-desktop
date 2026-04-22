@@ -28,6 +28,7 @@ dependencies = [
     "pyyaml>=6.0.3",
     "requests>=2.33.1",
     "psutil>=5.9.0",
+    "qrcode>=8.0",
 ]
 
 [project.optional-dependencies]

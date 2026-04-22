@@ -2,14 +2,15 @@ const { test, expect } = require("@jest/globals");
 const fs = require("fs");
 const path = require("path");
 
-test("admin panel includes quick navigation and collapsible secondary sections", () => {
+test("admin panel includes sidebar navigation and collapsible sections", () => {
   const filePath = path.join(__dirname, "..", "..", "server", "static", "js", "admin.js");
   const src = fs.readFileSync(filePath, "utf8");
 
-  expect(src).toContain("Quick Navigation");
-  expect(src).toContain("href=\"#sec-history\"");
+  // AdminV3 Soft Holo shell uses a sidebar instead of top-of-page Quick Navigation
+  expect(src).toContain("admin-dash-sidebar");
+  expect(src).toContain("aria-label=\"Admin navigation\"");
   expect(src).toContain("id=\"sec-blacklist\"");
   expect(src).toContain("id=\"sec-history\"");
   expect(src).toContain("id=\"sec-security\"");
-  expect(src).toContain("class=\"group glass-effect");
+  expect(src).toContain("class=\"group admin-v3-card");
 });

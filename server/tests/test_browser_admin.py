@@ -99,14 +99,65 @@ def admin_page(logged_context, live_url):
 # ─── 輔助函式 ─────────────────────────────────────────────────────────────────
 
 
-def _open_section(page, section_id: str):
-    """確保 <details> section 處於展開狀態
+# 路由地圖：將 section_id 映射到對應的 admin route（對應 admin.js ADMIN_ROUTES）。
+# Post-retrofit（2026-04-22）admin 面板改為 hash-based 路由，sections 依 route
+# 切換 display:none/""；不再是 <details> 展開/摺疊。
+SECTION_TO_ROUTE = {
+    "sec-live-feed": "messages",
+    "sec-history": "history",
+    "sec-polls": "polls",
+    "sec-widgets": "widgets",
+    "sec-color": "themes",
+    "sec-opacity": "themes",
+    "sec-fontsize": "themes",
+    "sec-speed": "themes",
+    "sec-fontfamily": "themes",
+    "sec-layout": "themes",
+    "sec-themes": "themes",
+    "sec-emojis": "themes",
+    "sec-stickers": "themes",
+    "sec-sounds": "themes",
+    "sec-blacklist": "moderation",
+    "sec-filters": "moderation",
+    "sec-effects": "effects",
+    "sec-effects-mgmt": "effects",
+    "sec-plugins": "plugins",
+    "sec-fonts": "fonts",
+    "sec-system-overview": "system",
+    "sec-security": "system",
+    "sec-ws-auth": "system",
+    "sec-scheduler": "system",
+    "sec-webhooks": "system",
+    "sec-fingerprints": "system",
+}
 
-    注意：<details open> 的 get_attribute("open") 回傳 ""（空字串）；
-    未展開時回傳 None。Python 中 not "" 為 True，因此必須明確判斷 is None。
+
+def _open_section(page, section_id: str):
+    """切換 hash 路由到 section_id 所屬 route，等待該 section 可見。
+
+    retrofit 後（2026-04-22）admin 面板為 hybrid：
+      • Route layer：hash-based 切換 display:none / ""（適用所有 sec-*）
+      • Inner expand：部分 section 本身仍是 <details>（sec-themes / sec-polls /
+        sec-security / sec-widgets ...），需額外點 summary 展開內容。
+    本 helper 兩者都處理。
     """
-    details = page.locator(f"#{section_id}")
-    if details.get_attribute("open") is None:
+    route = SECTION_TO_ROUTE.get(section_id)
+    if route:
+        page.evaluate(
+            """(target) => {
+                if (window.location.hash === target) {
+                    window.location.hash = '';
+                }
+                window.location.hash = target;
+            }""",
+            f"#/{route}",
+        )
+        page.wait_for_timeout(250)
+    page.wait_for_selector(f"#{section_id}", state="visible", timeout=5000)
+
+    # 若 section 是 <details>，確保它展開（內部元素才會 visible）。
+    details = page.locator(f"details#{section_id}")
+    if details.count() > 0 and details.get_attribute("open") is None:
         details.locator("summary").click()
         page.wait_for_timeout(400)
 
@@ -173,21 +224,25 @@ def test_logout_returns_to_login_form(fresh_page, live_url):
 
 
 def test_admin_panel_has_settings_section(admin_page):
-    assert admin_page.is_visible("#settings-grid")
+    # settings-grid 為 route sections 容器；retrofit 後仍存在於 DOM 中。
+    assert admin_page.locator("#settings-grid").count() == 1
 
 
 def test_admin_panel_has_effects_section(admin_page):
+    _open_section(admin_page, "sec-effects")
     assert admin_page.is_visible("#sec-effects")
 
 
 def test_admin_panel_has_speed_input(admin_page):
     # Speed 預設為啟用（Speed[0]=True），顯示 index=1（最慢）與 index=2（最快）
+    _open_section(admin_page, "sec-speed")
     speed = admin_page.locator('[data-key="Speed"][data-index="1"]')
     assert speed.is_visible()
 
 
 def test_admin_panel_speed_initial_value(admin_page):
     """Speed 啟用時，最慢值預設為 1（系統預設 Speed[1]=1）"""
+    _open_section(admin_page, "sec-speed")
     speed = admin_page.locator('[data-key="Speed"][data-index="1"]')
     assert speed.input_value() == "1"
 
@@ -197,6 +252,7 @@ def test_admin_panel_speed_initial_value(admin_page):
 
 def test_settings_speed_change_calls_api(admin_page):
     """修改 Speed 最慢值後，應觸發 /admin/update API（回 200）"""
+    _open_section(admin_page, "sec-speed")
     responses = []
     admin_page.on("response", lambda r: responses.append(r) if "/admin/update" in r.url else None)
 
@@ -212,6 +268,7 @@ def test_settings_speed_change_calls_api(admin_page):
 
 def test_settings_speed_reflects_new_value(admin_page):
     """修改 Speed 最慢值後，input 的值應即時反映"""
+    _open_section(admin_page, "sec-speed")
     speed = admin_page.locator('[data-key="Speed"][data-index="1"]')
     speed.fill("3")
     speed.dispatch_event("change")
@@ -221,6 +278,7 @@ def test_settings_speed_reflects_new_value(admin_page):
 
 def test_settings_color_toggle_calls_api(admin_page):
     """切換 Color 的 toggle checkbox 應發送 /admin/Set 請求（回 200）"""
+    _open_section(admin_page, "sec-color")
     responses = []
     admin_page.on("response", lambda r: responses.append(r) if "/admin/Set" in r.url else None)
 
@@ -392,6 +450,7 @@ def test_404_returns_json_error(browser_session, live_url):
 
 def test_effects_section_has_effect_buttons(admin_page):
     """Effects Management 區塊應至少包含一個效果按鈕"""
+    _open_section(admin_page, "sec-effects")
     admin_page.wait_for_selector("#effectsList", state="visible", timeout=5000)
     # 等待效果列表渲染完成（API 回傳後 JS 動態建立）
     admin_page.wait_for_selector(
@@ -405,6 +464,7 @@ def test_effects_section_has_effect_buttons(admin_page):
 
 def test_effects_toggle_calls_api(admin_page):
     """切換 Effects 開關應觸發 /admin/Set API"""
+    _open_section(admin_page, "sec-effects")
     responses = []
     admin_page.on(
         "response",
