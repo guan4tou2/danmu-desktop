@@ -13,7 +13,6 @@ import re
 import qrcode
 import qrcode.image.svg
 
-
 _WIDTH_HEIGHT_RE = re.compile(r'\s(width|height)="[^"]*"')
 
 
