@@ -667,27 +667,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // showToast is provided by the shared toast.js utility (window.showToast)
 
-  // Render Login Screen
+  // Render Login Screen — mirrors prototype AdminLogin (hero-scenes.jsx):
+  // brand lockup, mono labels, cyan sign-in, status chip row.
   function renderLogin() {
+    const version = (window.DANMU_CONFIG && window.DANMU_CONFIG.appVersion) || "";
     appContainer.innerHTML = `
-                    <div class="glass-effect hud-corners-auto rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 max-w-md mx-auto">
-                        <div class="flex flex-col items-center gap-3 pb-2">
-                            <span class="hud-label is-accent">ADMIN · 控制台登入</span>
-                            <h1 class="hud-hero-title is-large text-center" data-i18n="adminLoginTitle">
-                                ${ServerI18n.t("adminLoginTitle")}
-                            </h1>
-                        </div>
-                        <form id="loginForm" class="space-y-6" action="/login" method="post">
-                            <div>
-                                <label for="password" class="text-sm font-medium text-slate-300" data-i18n="password">${ServerI18n.t("password")}</label>
-                                <input type="password" id="password" name="password" class="mt-1 w-full p-3 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300" required>
-                            </div>
-                            <button type="submit" class="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-6 rounded-xl transition-colors" data-i18n="login">
-                                ${ServerI18n.t("login")}
-                            </button>
-                        </form>
-                    </div>
-                `;
+      <div class="admin-login-shell">
+        <div class="admin-login-card">
+          <div class="admin-login-hero">
+            <h1 class="hud-hero-title is-large">Danmu Fire</h1>
+            <p class="admin-login-subtitle" data-i18n="adminLoginSubtitle">${ServerI18n.t("adminLoginSubtitle")}</p>
+          </div>
+          <form id="loginForm" class="admin-login-form" action="/login" method="post" autocomplete="off">
+            <div class="admin-login-field">
+              <label class="admin-login-label" for="username" data-i18n="adminLoginUsernameLabel">${ServerI18n.t("adminLoginUsernameLabel")}</label>
+              <input class="admin-login-input" type="text" id="username" name="username" value="admin" autocomplete="username" />
+            </div>
+            <div class="admin-login-field">
+              <label class="admin-login-label" for="password" data-i18n="adminLoginPasswordLabel">${ServerI18n.t("adminLoginPasswordLabel")}</label>
+              <input class="admin-login-input" type="password" id="password" name="password" autocomplete="current-password" required />
+            </div>
+            <button class="admin-login-submit" type="submit" data-i18n="adminLoginSignIn">${ServerI18n.t("adminLoginSignIn")}</button>
+          </form>
+          <div class="admin-login-chiprow">
+            <span class="admin-login-chip is-accent">
+              <span class="hud-dot is-success" aria-hidden="true"></span>
+              <span data-i18n="adminLoginServerOnline">${ServerI18n.t("adminLoginServerOnline")}</span>
+            </span>
+            ${version ? `<span class="admin-login-chip">v${version}</span>` : ""}
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   // Render Control Panel Screen
