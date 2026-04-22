@@ -38,16 +38,22 @@ def overlay():
     """OBS Browser Source overlay page."""
     # Read live auth state (admin UI can flip it without restart) instead of
     # the Config snapshot captured at app boot.
-    from ..services import ws_auth
+    from ..services import qr, ws_auth
 
     auth = ws_auth.get_state()
     ws_token = auth["token"] if auth["require_token"] else ""
     if ws_token and not session.get("logged_in"):
         return redirect(url_for("admin_bp.admin"))
+
+    join_url = request.host_url.rstrip("/")
+    join_label = join_url.split("://", 1)[-1]
     return render_template(
         "overlay.html",
         ws_port=current_app.config["WS_PORT"],
         ws_token=ws_token,
+        join_url=join_url,
+        join_label=join_label,
+        qr_svg=qr.render_svg(join_url),
     )
 
 
