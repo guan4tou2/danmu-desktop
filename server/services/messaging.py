@@ -61,11 +61,7 @@ def forward_to_ws_server(data):
     # they must reach the overlay regardless of load.
     if isinstance(data, dict) and data.get("type") == "settings_changed":
         ok = _raw_forward(data)
-        return (
-            {"status": "sent"}
-            if ok
-            else {"status": "dropped", "reason": "forward_failed"}
-        )
+        return {"status": "sent"} if ok else {"status": "dropped", "reason": "forward_failed"}
     return onscreen_limiter.try_send(data, _raw_forward)
 
 

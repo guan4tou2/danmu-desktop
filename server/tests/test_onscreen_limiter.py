@@ -1,4 +1,5 @@
 """onscreen_limiter.py — traffic shaper for danmu flow."""
+
 import threading
 import time
 from unittest.mock import MagicMock

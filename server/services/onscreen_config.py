@@ -12,6 +12,7 @@ When disk writes fail (host bind-mount owned by wrong UID, read-only FS),
 we log once and continue with in-memory state. Admin UI still works, the
 change just won't survive a container restart until the host is fixed.
 """
+
 import errno
 import json
 import logging
@@ -71,8 +72,7 @@ def _log_write_failure_once(exc: Exception) -> None:
         return
     _write_failure_logged = True
     logger.warning(
-        "Cannot persist %s (%s: %s). State will live in memory for this "
-        "process only.",
+        "Cannot persist %s (%s: %s). State will live in memory for this " "process only.",
         _STATE_FILE,
         type(exc).__name__,
         exc,

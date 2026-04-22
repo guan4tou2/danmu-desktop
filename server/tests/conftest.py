@@ -14,14 +14,11 @@ from server.app import create_app  # ty: ignore[unresolved-import]
 from server.config import Config  # ty: ignore[unresolved-import]
 from server.managers import connection_manager, settings_store  # ty: ignore[unresolved-import]
 from server.services import effects as eff_svc  # ty: ignore[unresolved-import]
-from server.services import (  # ty: ignore[unresolved-import]
-    onscreen_config,
-    onscreen_limiter,
-)
+from server.services import ws_queue  # ty: ignore[unresolved-import]
+from server.services import onscreen_config, onscreen_limiter  # ty: ignore[unresolved-import]
 from server.services import stickers as sticker_svc  # ty: ignore[unresolved-import]
 from server.services import themes as theme_svc  # ty: ignore[unresolved-import]
 from server.services import webhook as webhook_mod  # ty: ignore[unresolved-import]
-from server.services import ws_queue  # ty: ignore[unresolved-import]
 from server.services.filter_engine import (  # ty: ignore[unresolved-import]
     FilterEngine,
     filter_engine,

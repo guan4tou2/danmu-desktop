@@ -1,4 +1,5 @@
 """Admin HTTP routes for onscreen-limiter settings (v4.9.0+)."""
+
 import json
 
 import pytest

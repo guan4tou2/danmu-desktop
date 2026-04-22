@@ -1,4 +1,5 @@
 """onscreen_config.py — persistent settings for onscreen limiter."""
+
 import json
 import threading
 
@@ -61,6 +62,7 @@ def test_reload_from_disk_after_cache_reset():
 def test_write_failure_is_swallowed(monkeypatch):
     def boom(*a, **kw):
         raise PermissionError("read-only fs")
+
     monkeypatch.setattr(onscreen_config, "_write_state", boom)
     s = onscreen_config.set_state(max_onscreen_danmu=5, overflow_mode="drop")
     assert s == {"max_onscreen_danmu": 5, "overflow_mode": "drop"}

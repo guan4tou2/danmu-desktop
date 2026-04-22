@@ -9,6 +9,7 @@ Timers are scheduled per in-flight danmu based on the overlay's animation
 duration formula; when they fire, a slot opens and the next queue entry (if
 any) is released.
 """
+
 import atexit
 import logging
 import threading
@@ -117,9 +118,7 @@ def _ensure_sweep_running() -> None:
     global _sweep_thread
     if _sweep_thread is None or not _sweep_thread.is_alive():
         _sweep_stop.clear()
-        _sweep_thread = threading.Thread(
-            target=_sweep_loop, daemon=True, name="onscreen-sweep"
-        )
+        _sweep_thread = threading.Thread(target=_sweep_loop, daemon=True, name="onscreen-sweep")
         _sweep_thread.start()
 
 
