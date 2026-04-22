@@ -16,7 +16,6 @@ from server.managers import connection_manager, settings_store  # ty: ignore[unr
 from server.services import effects as eff_svc  # ty: ignore[unresolved-import]
 from server.services import ws_queue  # ty: ignore[unresolved-import]
 from server.services import onscreen_config, onscreen_limiter  # ty: ignore[unresolved-import]
-from server.services.scheduler import scheduler_service  # ty: ignore[unresolved-import]
 from server.services import stickers as sticker_svc  # ty: ignore[unresolved-import]
 from server.services import themes as theme_svc  # ty: ignore[unresolved-import]
 from server.services import webhook as webhook_mod  # ty: ignore[unresolved-import]
@@ -24,6 +23,7 @@ from server.services.filter_engine import (  # ty: ignore[unresolved-import]
     FilterEngine,
     filter_engine,
 )
+from server.services.scheduler import scheduler_service  # ty: ignore[unresolved-import]
 from server.services.security import rate_limiter  # ty: ignore[unresolved-import]
 from server.services.ws_state import update_ws_client_count  # ty: ignore[unresolved-import]
 from server.ws.server import run_ws_server  # ty: ignore[unresolved-import]
