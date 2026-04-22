@@ -36,7 +36,7 @@ def test_fire_enqueues_message(client):
 def test_fire_response_is_ok(client):
     resp = client.post("/fire", json={"text": "test"})
     assert resp.is_json
-    assert resp.get_json()["status"] == "OK"
+    assert resp.get_json()["status"] == "sent"
 
 
 def test_fire_payload_contains_resolved_style_fields(client):

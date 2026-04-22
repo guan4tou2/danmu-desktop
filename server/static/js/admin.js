@@ -150,6 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
         "sec-polls",
         "sec-security",
         "sec-ws-auth",
+        "sec-onscreen-limits",
       ],
     },
     assets: {
@@ -1566,6 +1567,43 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
                         </div>
                     </details>
+
+                    <details id="sec-onscreen-limits" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-onscreen-limits") ? "open" : ""}>
+                        <summary class="flex items-center justify-between cursor-pointer list-none">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">${ServerI18n.t("onscreenLimitsTitle")}</h3>
+                                <p class="text-sm text-slate-300">${ServerI18n.t("onscreenLimitsDesc")}</p>
+                            </div>
+                            <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
+                        </summary>
+                        <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-4">
+                            <div class="space-y-2">
+                                <label for="onscreenMaxInput" class="block text-sm text-slate-200">${ServerI18n.t("onscreenMaxLabel")}</label>
+                                <input id="onscreenMaxInput" type="number" min="0" max="200" step="1"
+                                    class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                                    placeholder="20">
+                                <p class="text-xs text-slate-400">${ServerI18n.t("onscreenMaxHint")}</p>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm text-slate-200">${ServerI18n.t("onscreenModeLabel")}</label>
+                                <div class="flex gap-4">
+                                    <label class="flex items-center gap-2 cursor-pointer text-sm text-white">
+                                        <input type="radio" name="onscreenMode" value="drop" class="accent-sky-500"> ${ServerI18n.t("onscreenModeDrop")}
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer text-sm text-white">
+                                        <input type="radio" name="onscreenMode" value="queue" class="accent-sky-500"> ${ServerI18n.t("onscreenModeQueue")}
+                                    </label>
+                                </div>
+                                <p class="text-xs text-slate-400">${ServerI18n.t("onscreenModeHint")}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button id="onscreenSaveBtn"
+                                    class="flex-1 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-colors text-sm font-semibold">
+                                    ${ServerI18n.t("onscreenSaveBtn")}
+                                </button>
+                            </div>
+                        </div>
+                    </details>
                 `);
 
     addEventListeners();
@@ -1899,6 +1937,64 @@ document.addEventListener("DOMContentLoaded", () => {
           showToast(ServerI18n.t("wsAuthCopied"), true);
         } catch (e) {
           showToast(ServerI18n.t("wsAuthCopyFailed"), false);
+        }
+      });
+    })();
+
+    // Onscreen limiter settings — hydrate + wire save button
+    (function initOnscreenLimitsPanel() {
+      const maxInput = document.getElementById("onscreenMaxInput");
+      const saveBtn = document.getElementById("onscreenSaveBtn");
+      if (!maxInput || !saveBtn) return;
+
+      function setMode(value) {
+        document.querySelectorAll("input[name='onscreenMode']").forEach((r) => {
+          r.checked = r.value === value;
+        });
+      }
+      function getMode() {
+        const checked = document.querySelector("input[name='onscreenMode']:checked");
+        return checked ? checked.value : "drop";
+      }
+
+      function applyState(state) {
+        const cap = Number.isFinite(state.max_onscreen_danmu) ? state.max_onscreen_danmu : 20;
+        maxInput.value = String(cap);
+        setMode(state.overflow_mode || "drop");
+      }
+
+      fetch("/admin/api/onscreen-limits", { credentials: "same-origin" })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+        .then(applyState)
+        .catch(() => {
+          applyState({ max_onscreen_danmu: 20, overflow_mode: "drop" });
+        });
+
+      saveBtn.addEventListener("click", async () => {
+        const raw = parseInt(maxInput.value, 10);
+        if (!Number.isFinite(raw) || raw < 0 || raw > 200) {
+          showToast(ServerI18n.t("onscreenInvalidRange"), false);
+          return;
+        }
+        const body = {
+          max_onscreen_danmu: raw,
+          overflow_mode: getMode(),
+        };
+        try {
+          const res = await csrfFetch("/admin/api/onscreen-limits", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            applyState(data);
+            showToast(ServerI18n.t("onscreenSaved"), true);
+          } else {
+            showToast(data.error || ServerI18n.t("onscreenSaveFailed"), false);
+          }
+        } catch (e) {
+          showToast(ServerI18n.t("onscreenSaveFailed"), false);
         }
       });
     })();

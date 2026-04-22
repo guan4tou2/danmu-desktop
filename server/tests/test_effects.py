@@ -361,7 +361,7 @@ def test_fire_with_effects(client, monkeypatch):
     from server.services import messaging as msg
     from server.services.ws_state import update_ws_client_count
 
-    monkeypatch.setattr(msg, "forward_to_ws_server", lambda d: True)
+    monkeypatch.setattr(msg, "forward_to_ws_server", lambda d: {"status": "sent"})
     update_ws_client_count(1)
 
     eff_svc._cache.clear()
@@ -384,7 +384,7 @@ def test_fire_with_no_effects(client, monkeypatch):
     from server.services import messaging as msg
     from server.services.ws_state import update_ws_client_count
 
-    monkeypatch.setattr(msg, "forward_to_ws_server", lambda d: True)
+    monkeypatch.setattr(msg, "forward_to_ws_server", lambda d: {"status": "sent"})
     update_ws_client_count(1)
 
     payload = {"text": "No effects", "effects": []}
@@ -636,7 +636,9 @@ def test_fire_effects_disabled_in_settings(client, monkeypatch):
     from server.services.ws_state import update_ws_client_count
 
     forwarded = []
-    monkeypatch.setattr(msg, "forward_to_ws_server", lambda d: forwarded.append(d) or True)
+    monkeypatch.setattr(
+        msg, "forward_to_ws_server", lambda d: forwarded.append(d) or {"status": "sent"}
+    )
     update_ws_client_count(1)
 
     set_toggle("Effects", False)

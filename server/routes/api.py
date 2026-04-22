@@ -272,9 +272,11 @@ def fire():
 
         data = _resolve_danmu_style(data)
 
-        forward_success = messaging.forward_to_ws_server(data)
+        forward_result = messaging.forward_to_ws_server(data)
+        status = forward_result.get("status")
+        accepted = status in ("sent", "queued")
 
-        if forward_success:
+        if accepted:
             fingerprint_tracker.record(fingerprint, client_ip, user_agent)
             _record_history_if_enabled(data, fingerprint, client_ip)
 
@@ -292,8 +294,12 @@ def fire():
             except Exception:
                 pass  # webhook failure should never block danmu
 
-            return _json_response({"status": "OK"}, 200)
-        return _json_response({"error": "Failed to enqueue message"}, 503)
+            return _json_response(forward_result, 200)
+        if status == "rejected":
+            return _json_response(forward_result, 429)
+        if status == "dropped" and forward_result.get("reason") == "full":
+            return _json_response(forward_result, 429)
+        return _json_response(forward_result, 503)
     except Exception as exc:
         return _log_and_internal_error("Send Error", exc)
 
