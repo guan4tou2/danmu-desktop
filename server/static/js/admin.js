@@ -733,7 +733,7 @@ document.addEventListener("DOMContentLoaded", () => {
       enabledContent,
       disabledContent
     ) => `
-                    <div id="sec-${id.toLowerCase()}" class="glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24">
+                    <div id="sec-${id.toLowerCase()}" class="admin-v3-card">
                         <div class="flex items-center justify-between">
                             <div class="flex-grow pr-4">
                                 <h3 class="text-lg font-bold text-white">${title}</h3>
@@ -765,72 +765,68 @@ document.addEventListener("DOMContentLoaded", () => {
     const httpPort = window.location.port || (window.location.protocol === "https:" ? "443" : "80");
 
     appContainer.innerHTML = `
-                    <div class="admin-dash-grid">
+                    <div class="admin-dash-grid" data-active-route="dashboard">
                         <aside class="admin-dash-sidebar" aria-label="Admin navigation">
                             <div class="admin-dash-brand">
                                 <span class="admin-dash-brand-hero">Danmu Fire</span>
                                 <span class="admin-dash-brand-suffix">ADMIN · v${window.APP_VERSION || "4.8.7"}</span>
                             </div>
-                            <nav class="admin-dash-nav">
-                                <div class="admin-dash-nav-label" data-i18n="navGroupControl">${ServerI18n.t("navGroupControl")}</div>
-                                <a class="admin-dash-nav-row is-active" href="#sec-live-control">
+                            <nav class="admin-dash-nav" role="tablist" aria-label="Admin pages">
+                                <div class="admin-dash-nav-label">總覽</div>
+                                <button type="button" class="admin-dash-nav-row is-active" data-route="dashboard" role="tab" aria-selected="true">
                                     <span class="admin-dash-nav-icon">◉</span>
-                                    <span data-i18n="sectionLiveControlTitle">${ServerI18n.t("sectionLiveControlTitle")}</span>
-                                    <span class="admin-dash-nav-badge">${enabledSettingCount}</span>
-                                </a>
-                                <a class="admin-dash-nav-row" href="#sec-effects">
-                                    <span class="admin-dash-nav-icon">✦</span>
-                                    <span data-i18n="navEffects">${ServerI18n.t("navEffects")}</span>
-                                </a>
-                                <a class="admin-dash-nav-row" href="#sec-themes">
-                                    <span class="admin-dash-nav-icon">◈</span>
-                                    <span data-i18n="navThemes">${ServerI18n.t("navThemes")}</span>
-                                </a>
-                                <a class="admin-dash-nav-row" href="#sec-live-feed">
+                                    <span>控制台</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="messages" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">≡</span>
-                                    <span data-i18n="navLiveFeed">${ServerI18n.t("navLiveFeed")}</span>
+                                    <span>訊息紀錄</span>
                                     <span class="admin-dash-nav-live"></span>
-                                </a>
-
-                                <div class="admin-dash-nav-label" data-i18n="navGroupModeration">${ServerI18n.t("navGroupModeration")}</div>
-                                <a class="admin-dash-nav-row" href="#sec-blacklist">
-                                    <span class="admin-dash-nav-icon">⬚</span>
-                                    <span data-i18n="navBlacklist">${ServerI18n.t("navBlacklist")}</span>
-                                </a>
-                                <a class="admin-dash-nav-row" href="#sec-history">
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="history" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">↳</span>
-                                    <span data-i18n="navHistory">${ServerI18n.t("navHistory")}</span>
-                                </a>
-                                <a class="admin-dash-nav-row" href="#sec-filters">
-                                    <span class="admin-dash-nav-icon">⌕</span>
-                                    <span data-i18n="navFilters">${ServerI18n.t("navFilters")}</span>
-                                </a>
-                                <a class="admin-dash-nav-row" href="#sec-polls">
-                                    <span class="admin-dash-nav-icon">◈</span>
-                                    <span data-i18n="navPolls">${ServerI18n.t("navPolls")}</span>
-                                </a>
+                                    <span>時間軸匯出</span>
+                                </button>
 
-                                <div class="admin-dash-nav-label" data-i18n="navGroupAssets">${ServerI18n.t("navGroupAssets")}</div>
-                                <a class="admin-dash-nav-row" href="#sec-emojis">
-                                    <span class="admin-dash-nav-icon">☺</span>
-                                    <span data-i18n="navEmojis">${ServerI18n.t("navEmojis")}</span>
-                                </a>
-                                <a class="admin-dash-nav-row" href="#sec-stickers">
-                                    <span class="admin-dash-nav-icon">◆</span>
-                                    <span data-i18n="navStickers">${ServerI18n.t("navStickers")}</span>
-                                </a>
-                                <a class="admin-dash-nav-row" href="#sec-sounds">
-                                    <span class="admin-dash-nav-icon">♪</span>
-                                    <span data-i18n="navSounds">${ServerI18n.t("navSounds")}</span>
-                                </a>
-                                <a class="admin-dash-nav-row" href="#sec-fonts">
+                                <div class="admin-dash-nav-label" style="margin-top:16px">互動</div>
+                                <button type="button" class="admin-dash-nav-row" data-route="polls" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◈</span>
+                                    <span>投票</span>
+                                    <span class="admin-dash-nav-live"></span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="widgets" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⬚</span>
+                                    <span>Overlay Widgets</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="themes" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">❖</span>
+                                    <span>風格主題包</span>
+                                    <span class="admin-dash-nav-badge" data-count-themes>—</span>
+                                </button>
+
+                                <div class="admin-dash-nav-label" style="margin-top:16px">審核</div>
+                                <button type="button" class="admin-dash-nav-row" data-route="moderation" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⊘</span>
+                                    <span>敏感字 & 黑名單</span>
+                                </button>
+
+                                <div class="admin-dash-nav-label" style="margin-top:16px">設定</div>
+                                <button type="button" class="admin-dash-nav-row" data-route="effects" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">✦</span>
+                                    <span>效果庫 .dme</span>
+                                    <span class="admin-dash-nav-badge" data-count-effects>—</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="plugins" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⬢</span>
+                                    <span>伺服器插件</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="fonts" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⌂</span>
-                                    <span data-i18n="sidebarLinkFonts">${ServerI18n.t("sidebarLinkFonts") || "Fonts"}</span>
-                                </a>
-                                <a class="admin-dash-nav-row" href="#sec-advanced">
+                                    <span>字型管理</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="system" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⚙</span>
-                                    <span data-i18n="navAdvanced">${ServerI18n.t("navAdvanced")}</span>
-                                </a>
+                                    <span>系統 & 指紋</span>
+                                </button>
                             </nav>
                             <div class="admin-dash-telem">
                                 <div class="admin-dash-telem-head">
@@ -862,11 +858,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="admin-dash-main">
                             <header class="admin-dash-topbar">
                                 <div class="admin-dash-topbar-title">
-                                    <span class="hud-label is-accent" data-i18n="adminKicker">${ServerI18n.t("adminKicker")}</span>
-                                    <h1>
-                                        <span data-i18n="adminGreetingPre">${ServerI18n.t("adminGreetingPre") || "哈囉"}</span>
+                                    <span class="hud-label is-accent" data-route-kicker>DASHBOARD · 控制台</span>
+                                    <h1 data-route-title>
+                                        <span>哈囉</span>
                                         <span class="accent">admin</span><span>,</span>
-                                        <span data-i18n="adminGreetingPost">${ServerI18n.t("adminGreetingPost") || "活動進行中"}</span>
+                                        <span>活動進行中</span>
                                     </h1>
                                 </div>
                                 <div class="admin-dash-topbar-actions">
@@ -897,10 +893,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                             </header>
 
-                            <section class="admin-kpi-strip">
+                            <section class="admin-kpi-strip" data-route-view="dashboard">
                                 <div class="admin-kpi-tile">
                                     <div class="admin-kpi-tile-head">
-                                        <span class="label" data-i18n="adminSummaryWorkspace">${ServerI18n.t("adminSummaryWorkspace")}</span>
+                                        <span class="label">即時控制</span>
                                         <span class="en">LIVE CONTROLS</span>
                                     </div>
                                     <div class="admin-kpi-tile-value">${enabledSettingCount}</div>
@@ -909,7 +905,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                                 <div class="admin-kpi-tile">
                                     <div class="admin-kpi-tile-head">
-                                        <span class="label" data-i18n="adminSummaryDefaultLayout">${ServerI18n.t("adminSummaryDefaultLayout")}</span>
+                                        <span class="label">預設模式</span>
                                         <span class="en">OVERLAY MODE</span>
                                     </div>
                                     <div class="admin-kpi-tile-value">${overlayMode}</div>
@@ -918,60 +914,21 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                             </section>
 
-                            <section id="sec-live-control" class="admin-section rounded-2xl p-5 md:p-6">
-                                <div class="admin-section-heading">
-                                    <div>
-                                        <span class="admin-section-kicker" data-i18n="sectionLiveControl">${ServerI18n.t("sectionLiveControl")}</span>
-                                        <h2 class="text-xl font-bold text-white" data-i18n="sectionLiveControlTitle">${ServerI18n.t("sectionLiveControlTitle")}</h2>
-                                        <p class="text-sm text-slate-300" data-i18n="sectionLiveControlDesc">${ServerI18n.t("sectionLiveControlDesc")}</p>
-                                    </div>
+                            <div id="settings-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 admin-route-sections">
+                                <!-- display setting cards -->
+                            </div>
+                            <div id="moderation-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 admin-route-sections">
+                                <!-- moderation sections -->
+                            </div>
+                            <div id="assets-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 admin-route-sections">
+                                <!-- assets sections -->
+                            </div>
+                            <details id="sec-advanced" class="admin-route-sections" open>
+                                <summary class="sr-only">${ServerI18n.t("sectionAutomationTitle") || "Advanced"}</summary>
+                                <div id="advanced-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <!-- webhooks & scheduler -->
                                 </div>
-                                <div id="settings-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <!-- Settings cards will be inserted via insertAdjacentHTML -->
-                                </div>
-                            </section>
-
-                            <section class="admin-section rounded-2xl p-5 md:p-6">
-                                <div class="admin-section-heading">
-                                    <div>
-                                        <span class="admin-section-kicker" data-i18n="sectionModeration">${ServerI18n.t("sectionModeration")}</span>
-                                        <h2 class="text-xl font-bold text-white" data-i18n="sectionModerationTitle">${ServerI18n.t("sectionModerationTitle")}</h2>
-                                        <p class="text-sm text-slate-300" data-i18n="sectionModerationDesc">${ServerI18n.t("sectionModerationDesc")}</p>
-                                    </div>
-                                </div>
-                                <div id="moderation-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <!-- Moderation sections are re-homed here -->
-                                </div>
-                            </section>
-
-                            <section class="admin-section rounded-2xl p-5 md:p-6">
-                                <div class="admin-section-heading">
-                                    <div>
-                                        <span class="admin-section-kicker" data-i18n="sectionAssets">${ServerI18n.t("sectionAssets")}</span>
-                                        <h2 class="text-xl font-bold text-white" data-i18n="sectionAssetsTitle">${ServerI18n.t("sectionAssetsTitle")}</h2>
-                                        <p class="text-sm text-slate-300" data-i18n="sectionAssetsDesc">${ServerI18n.t("sectionAssetsDesc")}</p>
-                                    </div>
-                                </div>
-                                <div id="assets-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <!-- Asset and extension sections are re-homed here -->
-                                </div>
-                            </section>
-
-                            <section class="admin-section rounded-2xl p-5 md:p-6">
-                                <details id="sec-advanced" class="group scroll-mt-24" ${isOpen("sec-advanced") ? "open" : ""}>
-                                    <summary class="flex items-center justify-between cursor-pointer list-none">
-                                        <div>
-                                            <span class="admin-section-kicker" data-i18n="sectionAutomation">${ServerI18n.t("sectionAutomation")}</span>
-                                            <h3 class="text-lg font-bold text-white" data-i18n="sectionAutomationTitle">${ServerI18n.t("sectionAutomationTitle")}</h3>
-                                            <p class="text-sm text-slate-300" data-i18n="sectionAutomationDesc">${ServerI18n.t("sectionAutomationDesc")}</p>
-                                        </div>
-                                        <span class="text-slate-400 transition-transform group-open:rotate-180">&#8964;</span>
-                                    </summary>
-                                    <div id="advanced-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
-                                        <!-- Webhooks & Scheduler sections injected here -->
-                                    </div>
-                                </details>
-                            </section>
+                            </details>
                         </div>
                     </div>
                 `;
@@ -1167,7 +1124,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Effects Management Card (full width)
     settingsGrid.insertAdjacentHTML("beforeend", `
-      <div id="sec-effects" class="glass-effect rounded-2xl p-6 border border-transparent hover:border-slate-500 transition-all duration-300 lg:col-span-2 scroll-mt-24">
+      <div id="sec-effects-mgmt" class="admin-v3-card lg:col-span-2">
         <div class="flex items-center justify-between mb-4">
           <div>
             <h3 class="text-lg font-bold text-white">${ServerI18n.t("effectsManagement")}</h3>
@@ -1197,7 +1154,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Theme Management Card
     settingsGrid.insertAdjacentHTML("beforeend", `
-      <details id="sec-themes" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-themes") ? "open" : ""}>
+      <details id="sec-themes" class="group admin-v3-card" ${isOpen("sec-themes") ? "open" : ""}>
         <summary class="flex items-center justify-between cursor-pointer list-none">
           <div>
             <h3 class="text-lg font-bold text-white" data-i18n="styleThemePacks">${ServerI18n.t("styleThemePacks")}</h3>
@@ -1223,7 +1180,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Blacklist Management Card
     settingsGrid.insertAdjacentHTML("beforeend", `
-                    <details id="sec-blacklist" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-blacklist") ? "open" : ""}>
+                    <details id="sec-blacklist" class="group admin-v3-card" ${isOpen("sec-blacklist") ? "open" : ""}>
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
                                 <h3 class="text-lg font-bold text-white">${ServerI18n.t("blacklistManagement")}</h3>
@@ -1249,7 +1206,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Danmu History Card
     settingsGrid.insertAdjacentHTML("beforeend", `
-                    <details id="sec-history" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent lg:col-span-2 scroll-mt-24" ${isOpen("sec-history") ? "open" : ""}>
+                    <details id="sec-history" class="group admin-v3-card lg:col-span-2" ${isOpen("sec-history") ? "open" : ""}>
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
                                 <h3 class="text-lg font-bold text-white">${ServerI18n.t("danmuHistory")}</h3>
@@ -1315,7 +1272,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Polls Management Card
     settingsGrid.insertAdjacentHTML("beforeend", `
-                    <details id="sec-polls" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-polls") ? "open" : ""}>
+                    <details id="sec-polls" class="group admin-v3-card" ${isOpen("sec-polls") ? "open" : ""}>
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
                                 <h3 class="text-lg font-bold text-white">Poll / Vote</h3>
@@ -1352,7 +1309,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Password Change Card (with show/hide toggles)
     settingsGrid.insertAdjacentHTML("beforeend", `
-                    <details id="sec-security" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-security") ? "open" : ""}>
+                    <details id="sec-security" class="group admin-v3-card" ${isOpen("sec-security") ? "open" : ""}>
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
                                 <h3 class="text-lg font-bold text-white">${ServerI18n.t("changePassword")}</h3>
@@ -1389,7 +1346,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                     </details>
 
-                    <details id="sec-ws-auth" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen("sec-ws-auth") ? "open" : ""}>
+                    <details id="sec-ws-auth" class="group admin-v3-card" ${isOpen("sec-ws-auth") ? "open" : ""}>
                         <summary class="flex items-center justify-between cursor-pointer list-none">
                             <div>
                                 <h3 class="text-lg font-bold text-white">${ServerI18n.t("wsAuthTitle")}</h3>
@@ -1440,6 +1397,104 @@ document.addEventListener("DOMContentLoaded", () => {
     // Notify add-on scripts (admin-sounds.js, admin-webhooks.js, etc.)
     // that the control panel has been (re)built, so they can re-inject.
     document.dispatchEvent(new CustomEvent("admin-panel-rendered"));
+
+    // AdminV3 multi-page router: each sidebar tab maps to a set of inner
+    // sections. Sections not matching the active route are hidden via
+    // [data-active-route] CSS on the shell.
+    initAdminRouter();
+  }
+
+  const ADMIN_ROUTES = {
+    dashboard: { title: "哈囉 <span class=\"accent\">admin</span>, 活動進行中", kicker: "DASHBOARD · 控制台", sections: [], showKpi: true },
+    messages:  { title: "訊息紀錄",         kicker: "MESSAGES · 即時訊息串",    sections: ["sec-live-feed"] },
+    history:   { title: "時間軸匯出",       kicker: "HISTORY · 時間軸 / 匯出",   sections: ["sec-history"] },
+    polls:     { title: "投票",             kicker: "POLLS · 2–6 選項",         sections: ["sec-polls"] },
+    widgets:   { title: "Overlay Widgets",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
+    themes:    { title: "風格主題包",       kicker: "THEME PACKS · 顏色 / 字體 / 速度 / 版面", sections: ["sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout", "sec-themes", "sec-emojis", "sec-stickers", "sec-sounds"] },
+    moderation:{ title: "敏感字 & 黑名單",  kicker: "MODERATION · 內建功能 · 非插件", sections: ["sec-blacklist", "sec-filters"] },
+    effects:   { title: "效果庫 .dme",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },
+    plugins:   { title: "伺服器插件",       kicker: "PLUGIN SDK · 熱重載 · SANDBOX", sections: ["sec-plugins"] },
+    fonts:     { title: "字型管理",         kicker: "FONT LIBRARY · 觀眾可選",   sections: ["sec-fonts"] },
+    system:    { title: "系統 & 指紋",      kicker: "SYSTEM · FINGERPRINT · RATE LIMITS", sections: ["sec-security", "sec-ws-auth", "sec-scheduler", "sec-webhooks", "sec-fingerprints"] },
+  };
+
+  function initAdminRouter() {
+    const shell = document.querySelector(".admin-dash-grid");
+    if (!shell) return;
+
+    let currentRoute = "dashboard";
+
+    const applySectionVisibility = () => {
+      const cfg = ADMIN_ROUTES[currentRoute];
+      const wanted = new Set(cfg.sections);
+      shell.querySelectorAll("[id^=\"sec-\"]").forEach((el) => {
+        if (!el.id) return;
+        if (el.id === "sec-advanced") {
+          // Advanced wrapper: visible only if it contains any wanted section
+          const hasAny = Array.from(el.querySelectorAll("[id^=\"sec-\"]")).some((c) => wanted.has(c.id));
+          el.style.display = hasAny ? "" : "none";
+          return;
+        }
+        el.style.display = wanted.has(el.id) ? "" : "none";
+      });
+    };
+
+    const applyRoute = (name) => {
+      currentRoute = ADMIN_ROUTES[name] ? name : "dashboard";
+      shell.dataset.activeRoute = currentRoute;
+      const cfg = ADMIN_ROUTES[currentRoute];
+
+      shell.querySelectorAll("[data-route]").forEach((btn) => {
+        const on = btn.dataset.route === currentRoute;
+        btn.classList.toggle("is-active", on);
+        btn.setAttribute("aria-selected", on ? "true" : "false");
+      });
+
+      const kicker = shell.querySelector("[data-route-kicker]");
+      const title = shell.querySelector("[data-route-title]");
+      if (kicker) kicker.textContent = cfg.kicker;
+      if (title) title.innerHTML = cfg.title;
+
+      shell.querySelectorAll("[data-route-view=\"dashboard\"]").forEach((el) => {
+        el.style.display = currentRoute === "dashboard" ? "" : "none";
+      });
+
+      applySectionVisibility();
+
+      try { history.replaceState(null, "", "#/" + currentRoute); } catch (e) { /* ignore */ }
+    };
+
+    shell.querySelectorAll("[data-route]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        applyRoute(btn.dataset.route);
+      });
+    });
+
+    const fromHash = (window.location.hash.match(/^#\/(\w+)/) || [])[1];
+    applyRoute(fromHash || "dashboard");
+
+    window.addEventListener("hashchange", () => {
+      const h = (window.location.hash.match(/^#\/(\w+)/) || [])[1];
+      if (h) applyRoute(h);
+    });
+
+    // Late-injected sections (admin-sounds.js, admin-emojis.js, etc. inject
+    // after scheduleIdleTask). Watch the main area for new [id^="sec-"]
+    // elements and re-apply visibility when they arrive.
+    const main = shell.querySelector(".admin-dash-main");
+    if (main && typeof MutationObserver === "function") {
+      let scheduled = false;
+      const mo = new MutationObserver(() => {
+        if (scheduled) return;
+        scheduled = true;
+        requestAnimationFrame(() => {
+          scheduled = false;
+          applySectionVisibility();
+        });
+      });
+      mo.observe(main, { childList: true, subtree: true });
+    }
   }
 
   // Attach Event Listeners

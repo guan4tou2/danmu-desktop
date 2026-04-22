@@ -364,7 +364,7 @@
     const isOpen = detailsState["sec-sounds"] || false;
 
     return `
-      <details id="sec-sounds" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24" ${isOpen ? "open" : ""}>
+      <details id="sec-sounds" class="group admin-v3-card" ${isOpen ? "open" : ""}>
         <summary class="flex items-center justify-between cursor-pointer list-none">
           <div>
             <h3 class="text-lg font-bold text-white">${ServerI18n.t("soundEffectsTitle")}</h3>

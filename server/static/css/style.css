@@ -172,6 +172,13 @@ button:disabled,
   text-decoration: none;
   font-size: 13px;
   transition: background 120ms ease;
+  /* Reset for <button> elements used as nav rows */
+  width: 100%;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
 }
 
 .admin-dash-nav-row:hover {
@@ -441,6 +448,46 @@ button:disabled,
 
 .admin-kpi-tile-delta.is-muted {
   color: var(--color-text-muted);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * AdminV3 inner card — flat HUD panel replacing .glass-effect rounded-2xl.
+ * Used across every admin section (settings, moderation, assets, advanced).
+ * ────────────────────────────────────────────────────────────────────────── */
+.admin-v3-card {
+  background: color-mix(in srgb, var(--color-bg-elevated) 88%, transparent);
+  border: 1px solid var(--hud-line-strong);
+  border-radius: 6px;
+  padding: var(--space-5);
+  transition: border-color 180ms ease, background 180ms ease;
+  scroll-margin-top: var(--space-6);
+}
+
+.admin-v3-card:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 40%, var(--hud-line-strong));
+}
+
+.admin-v3-card > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.admin-v3-card > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-v3-card-kicker {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.admin-v3-card-kicker.is-accent {
+  color: var(--color-primary);
 }
 
 @media (max-width: 1023px) {

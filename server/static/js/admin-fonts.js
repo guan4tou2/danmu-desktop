@@ -41,7 +41,7 @@
       : "";
 
     return `
-      <details id="sec-fonts" class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent lg:col-span-2 scroll-mt-24" ${isOpen("sec-fonts") ? "open" : ""}>
+      <details id="sec-fonts" class="group admin-v3-card lg:col-span-2" ${isOpen("sec-fonts") ? "open" : ""}>
         <summary class="flex items-center justify-between cursor-pointer list-none">
           <div>
             <h3 class="text-lg font-bold text-white">${ServerI18n.t("fontsTitle")}</h3>

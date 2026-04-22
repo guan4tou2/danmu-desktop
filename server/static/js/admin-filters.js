@@ -55,7 +55,7 @@
   function buildSectionHtml() {
     return `
       <details id="sec-filters"
-        class="group glass-effect rounded-2xl p-6 transition-all duration-300 hover:border-slate-500 border border-transparent scroll-mt-24"
+        class="group admin-v3-card"
         ${isDetailsOpen("sec-filters") ? "open" : ""}>
         <summary class="flex items-center justify-between cursor-pointer list-none">
           <div>
