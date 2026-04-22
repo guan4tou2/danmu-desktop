@@ -119,4 +119,13 @@
   --hud-amber: #fbbf24;              /* amber-400 — live/recording/warn */
   --hud-lime: #86efac;               /* green-300 — healthy/ok */
   --hud-crimson: #f87171;            /* red-400 — danger/drop */
+
+  /* AdminPageShell (admin-pages.jsx) exact dark-mode surface colors —
+   * blue-cast slate via oklch. NOT the same as bg-deep/bg-base, which
+   * are pure slate. Admin chrome uses these; the rest of the app keeps
+   * the slate tokens above. */
+  --admin-bg: oklch(0.16 0.022 250);       /* viewport */
+  --admin-panel: oklch(0.20 0.025 250);    /* sidebar / topbar / cards */
+  --admin-raised: oklch(0.24 0.028 250);   /* nested surfaces */
+  --admin-line: oklch(0.32 0.03 220 / 0.35);
 }

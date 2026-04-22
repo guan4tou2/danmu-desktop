@@ -89,7 +89,7 @@ button:disabled,
 }
 
 .admin-body {
-  background: var(--color-bg-deep);
+  background: var(--admin-bg);
   min-height: 100vh;
   color: var(--color-text-primary);
   font-family: var(--font-ui);
@@ -117,8 +117,8 @@ button:disabled,
   position: sticky;
   top: var(--space-4);
   align-self: start;
-  background: var(--color-bg-base);
-  border: 1px solid var(--hud-line);
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
   border-radius: 6px;
   overflow: hidden;
   display: flex;
@@ -128,7 +128,7 @@ button:disabled,
 
 .admin-dash-brand {
   padding: 18px 22px 16px;
-  border-bottom: 1px solid var(--hud-line);
+  border-bottom: 1px solid var(--admin-line);
 }
 
 .admin-dash-brand-hero {
@@ -214,7 +214,7 @@ button:disabled,
 .admin-dash-nav-badge {
   margin-left: auto;
   padding: 1px 6px;
-  border: 1px solid var(--hud-line);
+  border: 1px solid var(--admin-line);
   border-radius: 4px;
   font-family: var(--font-mono);
   font-size: 9px;
@@ -234,7 +234,7 @@ button:disabled,
 
 .admin-dash-telem {
   padding: 12px 16px;
-  border-top: 1px solid var(--hud-line);
+  border-top: 1px solid var(--admin-line);
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.05em;
@@ -260,6 +260,7 @@ button:disabled,
   margin-top: 6px;
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
 }
 
 .admin-dash-telem-grid > div span {
@@ -279,8 +280,8 @@ button:disabled,
   align-items: center;
   gap: 18px;
   padding: 18px 24px;
-  background: var(--color-bg-base);
-  border: 1px solid var(--hud-line);
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
   border-radius: 6px;
   flex-wrap: wrap;
 }
@@ -315,7 +316,7 @@ button:disabled,
 .admin-dash-search {
   padding: 7px 14px;
   border-radius: 6px;
-  border: 1px solid var(--hud-line);
+  border: 1px solid var(--admin-line);
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.08em;
@@ -327,7 +328,7 @@ button:disabled,
 }
 
 .admin-dash-search .sep {
-  color: var(--hud-line-strong);
+  color: var(--admin-line);
   margin: 0 2px;
 }
 
@@ -355,8 +356,8 @@ button:disabled,
 }
 
 .admin-kpi-strip {
-  background: var(--color-bg-base);
-  border: 1px solid var(--hud-line);
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
   border-radius: 6px;
   padding: var(--space-5);
   display: grid;
@@ -434,8 +435,8 @@ button:disabled,
  * Used across every admin section (settings, moderation, assets, advanced).
  * ────────────────────────────────────────────────────────────────────────── */
 .admin-v3-card {
-  background: color-mix(in srgb, var(--color-bg-elevated) 88%, transparent);
-  border: 1px solid var(--hud-line-strong);
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
   border-radius: 6px;
   padding: var(--space-5);
   transition: border-color 180ms ease, background 180ms ease;
@@ -443,7 +444,7 @@ button:disabled,
 }
 
 .admin-v3-card:hover {
-  border-color: color-mix(in srgb, var(--color-primary) 40%, var(--hud-line-strong));
+  border-color: color-mix(in srgb, var(--color-primary) 40%, var(--admin-line));
 }
 
 .admin-v3-card > summary {
@@ -478,8 +479,8 @@ button:disabled,
   grid-template-columns: repeat(4, 1fr);
   gap: var(--space-5);
   padding: var(--space-5);
-  background: color-mix(in srgb, var(--color-bg-elevated) 88%, transparent);
-  border: 1px solid var(--hud-line-strong);
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
   border-radius: 6px;
 }
 
@@ -518,8 +519,8 @@ button:disabled,
 }
 
 .hud-table {
-  background: color-mix(in srgb, var(--color-bg-elevated) 88%, transparent);
-  border: 1px solid var(--hud-line-strong);
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -537,12 +538,12 @@ button:disabled,
   font-size: 10px;
   letter-spacing: 0.1em;
   color: var(--color-text-muted);
-  border-bottom: 1px solid var(--hud-line-strong);
+  border-bottom: 1px solid var(--admin-line);
 }
 
 .hud-table-row {
   padding: 12px 14px;
-  border-bottom: 1px solid var(--hud-line-strong);
+  border-bottom: 1px solid var(--admin-line);
 }
 .hud-table-row:last-child { border-bottom: 0; }
 
@@ -573,7 +574,7 @@ button:disabled,
   letter-spacing: 0.1em;
   padding: 2px 8px;
   border-radius: 3px;
-  border: 1px solid var(--hud-line-strong);
+  border: 1px solid var(--admin-line);
   color: var(--color-text-muted);
   width: fit-content;
 }
@@ -601,7 +602,7 @@ button:disabled,
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.1em;
-  border: 1px solid var(--hud-line-strong);
+  border: 1px solid var(--admin-line);
   color: var(--color-text-muted);
   background: transparent;
   cursor: pointer;
@@ -625,7 +626,7 @@ button:disabled,
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .hud-toolbar-action:hover {
-  border-color: var(--hud-line-strong);
+  border-color: var(--admin-line);
   background: color-mix(in srgb, var(--color-bg-elevated) 60%, transparent);
 }
 .hud-toolbar-action.is-primary {
@@ -645,8 +646,8 @@ button:disabled,
   gap: 10px;
 }
 .hud-effect-card {
-  background: color-mix(in srgb, var(--color-bg-elevated) 88%, transparent);
-  border: 1px solid var(--hud-line-strong);
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
   border-radius: 6px;
   padding: 12px;
   display: flex;
@@ -671,7 +672,7 @@ button:disabled,
   height: 44px;
   border-radius: 4px;
   background: color-mix(in srgb, var(--color-bg-deep) 70%, transparent);
-  border: 1px solid var(--hud-line-strong);
+  border: 1px solid var(--admin-line);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -707,7 +708,7 @@ button:disabled,
   letter-spacing: 0.12em;
   padding: 2px 8px;
   border-radius: 3px;
-  border: 1px solid var(--hud-line-strong);
+  border: 1px solid var(--admin-line);
   color: var(--color-text-muted);
   cursor: pointer;
   background: transparent;
@@ -718,8 +719,8 @@ button:disabled,
 }
 
 .hud-inspector {
-  background: color-mix(in srgb, var(--color-bg-elevated) 88%, transparent);
-  border: 1px solid var(--hud-line-strong);
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -728,7 +729,7 @@ button:disabled,
 }
 .hud-inspector-head {
   padding: 12px 14px;
-  border-bottom: 1px solid var(--hud-line-strong);
+  border-bottom: 1px solid var(--admin-line);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -747,7 +748,7 @@ button:disabled,
 }
 .hud-inspector-foot {
   padding: 12px;
-  border-top: 1px solid var(--hud-line-strong);
+  border-top: 1px solid var(--admin-line);
   display: flex;
   gap: 6px;
 }
@@ -757,7 +758,7 @@ button:disabled,
   align-items: center;
   gap: 10px;
   padding: 8px 4px;
-  border-bottom: 1px solid color-mix(in srgb, var(--hud-line-strong) 55%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--admin-line) 55%, transparent);
 }
 .hud-banned-row:last-child {
   border-bottom: none;
@@ -769,7 +770,7 @@ button:disabled,
 }
 .hud-rule-row {
   padding: 8px 14px;
-  border-bottom: 1px solid color-mix(in srgb, var(--hud-line-strong) 55%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--admin-line) 55%, transparent);
   gap: 10px;
   align-items: center;
 }
@@ -804,8 +805,8 @@ button:disabled,
 }
 
 .hud-console {
-  background: color-mix(in srgb, var(--color-bg-elevated) 88%, transparent);
-  border: 1px solid var(--hud-line-strong);
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -814,7 +815,7 @@ button:disabled,
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  border-bottom: 1px solid var(--hud-line-strong);
+  border-bottom: 1px solid var(--admin-line);
 }
 .hud-console-body {
   padding: 12px 14px;
@@ -839,7 +840,7 @@ button:disabled,
   height: 44px;
   border-radius: 4px;
   background: color-mix(in srgb, var(--color-bg-deep) 70%, transparent);
-  border: 1px solid var(--hud-line-strong);
+  border: 1px solid var(--admin-line);
   display: flex;
   align-items: center;
   justify-content: center;
