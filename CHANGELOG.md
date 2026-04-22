@@ -398,6 +398,62 @@ Server-side 包含 Rate Limit telemetry、admin 啟動單一 endpoint、Effects
 - VPS 尚未部署 — branch `claude/design-v2-retrofit` 有 12 個 unpushed
   commits
 
+## [4.9.1] - 2026-04-22
+
+`/fire` anti-abuse hardening — 在 v4.9.0 admin observability 之後，補齊公開
+`/fire` endpoint 面對 WAN 部署 / 瀏覽器 extension 量產時需要的濫用防線。
+Server-only release（`danmu-desktop/package.json` 未 bump → 不觸發 Electron
+binary build）。
+
+### 新增 / Added
+
+- **Per-fingerprint rate limit**：在既有 per-IP ceiling 之上新增
+  `FIRE_FINGERPRINT_RATE_LIMIT` / `FIRE_FINGERPRINT_RATE_WINDOW`（預設 30/60s）
+  捕捉 IP 輪替的單一攻擊者（mobile hotspot、residential proxy pool）。0 = 關閉。
+- **Global rate limit ceiling**：`GLOBAL_FIRE_RATE_LIMIT` / `GLOBAL_FIRE_RATE_WINDOW`
+  （預設 0/關閉）跨所有 public 客戶端的全域上限，針對分散式 flood 用。
+- **Admin fast-lane (`X-Fire-Token`)**：`FIRE_ADMIN_TOKEN` 環境變數啟用後，帶
+  對應 header 的請求繞過 public per-IP / per-fingerprint / global 限制 + captcha，
+  但有自己的 ceiling（`FIRE_ADMIN_RATE_LIMIT`，預設 200/60s）防止 buggy extension
+  runaway loop。用 `secrets.compare_digest` 做 timing-safe 比對。
+- **Captcha gate**：`CAPTCHA_PROVIDER` 支援 `none` / `turnstile` / `hcaptcha`。啟用後
+  public 端必須在 `/fire` body 夾帶 `captcha_token`，server 用 `urllib.request` 呼叫
+  `siteverify` 驗證。Admin lane 跳過。secret 缺失時 fail-open（logged warning）
+  避免 typo 直接把 server 打掛。
+- **Slido extension v0.2.0**：popup 新增 **Fire Token** 欄位，填了後 extension
+  打 `/fire` 會帶 `X-Fire-Token` header 走 admin 通道。README 更新說明用法。
+
+### 改善 / Changed
+
+- **`routes/api.py::fire`**：移除 `@rate_limit("fire")` decorator，改為 inline
+  呼叫 `enforce_fire_rate_limits(fingerprint, is_admin)` 統一處理四層防線。
+  在 `try/except` 前面新增 `except HTTPException: raise`，避免 `abort(429)` 被
+  外層 `except Exception` 吞成 500。
+- **`services/validation.py::FireRequestSchema`**：新增 `captcha_token` 欄位
+  （optional，max 8192 chars）。
+- **`.env.example`**：記錄 7 個新環境變數 + captcha provider 區塊。
+- **`app.py`**：`inject_security_template_state` context_processor 暴露
+  `captcha_provider` / `captcha_site_key` 給模板（後續讓 overlay/admin 能自動
+  render widget）。
+
+### 驗證 / Verification
+
+- 803 tests pass（新增 12 個 `test_fire_abuse_protection.py` 覆蓋 admin-bypass、
+  token-mismatch-fallback、admin-ceiling、no-token-configured、fingerprint-catches-
+  IP-rotation、fingerprint-0-disables、global-trips-across-IPs、global-admin-bypasses、
+  captcha-rejects、captcha-approves、captcha-admin-skips、captcha-disabled-default）
+- `APP_VERSION` bumped to 4.9.1（server-only — `package.json` 維持 4.9.0，
+  不觸發 `build.yml` 的 Electron binary release pipeline）
+
+### 為什麼 / Why
+
+主要用途是會開放到 WAN 給大家使用 — 單一 per-IP limit 擋不住 IP 輪替攻擊，
+也擋不住分散式 flood。Admin fast-lane 讓主持人/extension 操作者不會被同一套
+public 防線擋住。四層（admin bypass → per-IP → per-fingerprint → global → captcha）
+組合起來才能覆蓋實際部署場景。
+
+---
+
 ## [4.9.0] - 2026-04-21
 
 Admin observability bundle — 五支面向維運者的工具一次打包，server-only release

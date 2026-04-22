@@ -5,6 +5,7 @@ const DEFAULTS = {
   includeAuthor: true,
   minIntervalMs: 800,
   maxTextLen: 100,
+  fireToken: "",
 };
 
 const $ = (id) => document.getElementById(id);
@@ -20,6 +21,7 @@ async function load() {
   const s = { ...DEFAULTS, ...(stored.settings || {}) };
   $("enabled").checked = !!s.enabled;
   $("serverUrl").value = s.serverUrl;
+  $("fireToken").value = s.fireToken || "";
   $("mode").value = s.mode;
   $("includeAuthor").checked = !!s.includeAuthor;
   $("minIntervalMs").value = s.minIntervalMs;
@@ -43,6 +45,7 @@ async function save() {
   const settings = {
     enabled: $("enabled").checked,
     serverUrl: $("serverUrl").value.trim() || DEFAULTS.serverUrl,
+    fireToken: $("fireToken").value.trim(),
     mode: $("mode").value,
     includeAuthor: $("includeAuthor").checked,
     minIntervalMs: Math.max(0, parseInt($("minIntervalMs").value, 10) || 0),

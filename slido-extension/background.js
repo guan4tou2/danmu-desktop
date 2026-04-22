@@ -13,6 +13,7 @@ const DEFAULTS = {
   opacity: null,
   size: null,
   speed: null,
+  fireToken: "",         // X-Fire-Token — bypasses public rate limits + captcha
 };
 
 const seen = new Map();        // key -> timestamp
@@ -65,11 +66,13 @@ function buildPayload(text, settings) {
   return payload;
 }
 
-async function postFire(serverUrl, payload) {
+async function postFire(serverUrl, payload, fireToken) {
   const url = serverUrl.replace(/\/+$/, "") + "/fire";
+  const headers = { "Content-Type": "application/json" };
+  if (fireToken) headers["X-Fire-Token"] = fireToken;
   const resp = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(payload),
     // credentials intentionally omitted: /fire is public, no cookies needed.
   });
@@ -119,7 +122,7 @@ async function handleCandidates(candidates) {
     }
 
     try {
-      await postFire(settings.serverUrl, payload);
+      await postFire(settings.serverUrl, payload, settings.fireToken);
       recentStats.forwarded++;
     } catch (err) {
       recentStats.errors++;
@@ -144,10 +147,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg && msg.type === "test_connection") {
     getSettings().then(async (settings) => {
       try {
-        await postFire(settings.serverUrl, {
-          text: "Slido → Danmu connected ✓",
-          fingerprint: "slido-extension",
-        });
+        await postFire(
+          settings.serverUrl,
+          { text: "Slido → Danmu connected ✓", fingerprint: "slido-extension" },
+          settings.fireToken,
+        );
         sendResponse({ ok: true });
       } catch (err) {
         sendResponse({ ok: false, error: String(err.message || err) });

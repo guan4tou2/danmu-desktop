@@ -147,6 +147,8 @@ def create_app(config_class=Config):
             "csp_nonce": getattr(g, "csp_nonce", ""),
             "app_version": Config.APP_VERSION,
             "app_name": Config.APP_NAME,
+            "captcha_provider": Config.CAPTCHA_PROVIDER,
+            "captcha_site_key": Config.CAPTCHA_SITE_KEY,
         }
 
     @app.after_request

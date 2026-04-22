@@ -28,6 +28,10 @@ main world，hook 三個 transport 並從 JSON response 中遞迴找出
 1. 啟動 danmu-desktop server（預設 `http://localhost:4000`）與 Electron overlay
 2. 點 extension icon 打開 popup：
    - **Server URL**：如果不是本機，改成你的 server 位址
+   - **Fire Token** (選填)：對應 server 的 `FIRE_ADMIN_TOKEN`，填了之後
+     extension 打 `/fire` 會帶 `X-Fire-Token` header，走 admin 快速通道，
+     不受 public per-IP / per-fingerprint / 全域速率限制和 captcha 阻擋。
+     只在你是 server 管理者、extension 跑在公開場合時才需要。
    - **Mode**：先用 `Dry run` 驗證能抓到訊息再切 `Live`
    - **Test /fire**：手動發一則測試彈幕
 3. 打開 Slido 活動頁（`https://app.sli.do/event/...`），開 DevTools console
