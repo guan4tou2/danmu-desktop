@@ -97,3 +97,86 @@ def test_live_config_change_takes_effect():
     onscreen_config.set_state(max_onscreen_danmu=1, overflow_mode="drop")
     status = onscreen_limiter.try_send({"text": "b", "speed": 1}, send)
     assert status["status"] == "dropped"
+
+
+# ── queue mode ──
+
+
+def test_queue_mode_fifo_release():
+    onscreen_config.set_state(max_onscreen_danmu=1, overflow_mode="queue")
+    sent = []
+
+    def send(d):
+        sent.append(d["text"])
+        return True
+
+    for i in range(3):
+        onscreen_limiter.try_send({"text": str(i), "speed": 10}, send)
+    assert sent == ["0"]
+    assert onscreen_limiter.get_state()["queue_len"] == 2
+    time.sleep(2.3)
+    assert sent[:2] == ["0", "1"]
+    time.sleep(2.3)
+    assert sent == ["0", "1", "2"]
+    assert onscreen_limiter.get_state()["queue_len"] == 0
+
+
+def test_queue_returns_queued_status():
+    onscreen_config.set_state(max_onscreen_danmu=1, overflow_mode="queue")
+    send = MagicMock(return_value=True)
+    onscreen_limiter.try_send({"text": "a", "speed": 1}, send)
+    status = onscreen_limiter.try_send({"text": "b", "speed": 1}, send)
+    assert status == {"status": "queued"}
+
+
+def test_queue_cap_rejects_51st():
+    onscreen_config.set_state(max_onscreen_danmu=1, overflow_mode="queue")
+    send = MagicMock(return_value=True)
+    onscreen_limiter.try_send({"text": "fill", "speed": 1}, send)
+    for i in range(50):
+        status = onscreen_limiter.try_send({"text": f"q{i}", "speed": 1}, send)
+        assert status["status"] == "queued"
+    status = onscreen_limiter.try_send({"text": "overflow", "speed": 1}, send)
+    assert status == {"status": "rejected", "reason": "queue_full"}
+
+
+def test_queue_ttl_expires_after_60s(monkeypatch):
+    onscreen_config.set_state(max_onscreen_danmu=1, overflow_mode="queue")
+    send = MagicMock(return_value=True)
+    onscreen_limiter.try_send({"text": "a", "speed": 1}, send)
+    onscreen_limiter.try_send({"text": "b", "speed": 1}, send)
+    future = onscreen_limiter._now() + 120
+    monkeypatch.setattr(onscreen_limiter, "_now", lambda: future)
+    onscreen_limiter._sweep_expired()
+    assert onscreen_limiter.get_state()["queue_len"] == 0
+
+
+def test_drop_mode_does_not_queue():
+    onscreen_config.set_state(max_onscreen_danmu=1, overflow_mode="drop")
+    send = MagicMock(return_value=True)
+    onscreen_limiter.try_send({"text": "a", "speed": 1}, send)
+    onscreen_limiter.try_send({"text": "b", "speed": 1}, send)
+    assert onscreen_limiter.get_state()["queue_len"] == 0
+
+
+def test_queue_preserves_order_under_concurrency():
+    onscreen_config.set_state(max_onscreen_danmu=1, overflow_mode="queue")
+    sent = []
+    lock = threading.Lock()
+
+    def send(d):
+        with lock:
+            sent.append(d["text"])
+        return True
+
+    onscreen_limiter.try_send({"text": "fill", "speed": 1}, send)
+
+    def enqueue(i):
+        onscreen_limiter.try_send({"text": f"q{i:03d}", "speed": 10}, send)
+
+    threads = [threading.Thread(target=enqueue, args=(i,)) for i in range(20)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert onscreen_limiter.get_state()["queue_len"] == 20
