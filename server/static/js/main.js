@@ -808,16 +808,35 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       if (response.ok) {
-        elements.danmuText.value = "";
-        updateCharCount();
-        updatePreview();
-        showToast(ServerI18n.t("danmuFired"), true);
+        let body = {};
+        try { body = await response.json(); } catch (_) { }
+        const status = body.status || "sent";
+        const accepted = status === "sent" || status === "queued";
+
+        if (accepted) {
+          elements.danmuText.value = "";
+          updateCharCount();
+          updatePreview();
+        }
+
+        if (status === "sent") {
+          showToast(ServerI18n.t("danmuFired"), true);
+        } else if (status === "queued") {
+          showToast(ServerI18n.t("onscreenFullQueued"), true);
+        } else {
+          showToast(ServerI18n.t("danmuFired"), true);
+        }
       } else {
         let message = ServerI18n.t("failedToSend");
-        try {
-          const data = await response.json();
+        let data = null;
+        try { data = await response.json(); } catch (_) { }
+        if (data && data.status === "dropped" && data.reason === "full") {
+          message = ServerI18n.t("onscreenFullDropped");
+        } else if (data && data.status === "rejected" && data.reason === "queue_full") {
+          message = ServerI18n.t("queueFullTryLater");
+        } else if (data) {
           message = (typeof data.error === "string" ? data.error : data.error?.message) || message;
-        } catch (_) { }
+        }
         showToast(message, false);
       }
     } catch (error) {
