@@ -23,28 +23,36 @@
       const blacklist = await response.json();
       const blacklistKeywordsDiv = document.getElementById("blacklistKeywords");
       blacklistKeywordsDiv.innerHTML = ""; // Clear current list
+
+      const countEl = document.getElementById("modBlacklistCount");
+      if (countEl) countEl.textContent = `${blacklist.length} words`;
+      const bannedStatEl = document.querySelector('[data-mod-stat="banned"]');
+      if (bannedStatEl) bannedStatEl.textContent = blacklist.length;
+
       if (blacklist.length === 0) {
         blacklistKeywordsDiv.innerHTML =
-          `<p class="text-slate-400 text-sm">${ServerI18n.t("noKeywordsYet")}</p>`;
+          `<div style="padding:12px 0;text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.05em">${ServerI18n.t("noKeywordsYet")}</div>`;
       } else {
         blacklist.forEach((keyword) => {
           const keywordEl = document.createElement("div");
-          keywordEl.className =
-            "flex items-center justify-between bg-slate-700/50 p-2 rounded-lg";
+          keywordEl.className = "hud-banned-row";
 
-          // Create a span for the keyword text
+          const iconSpan = document.createElement("span");
+          iconSpan.style.cssText = "color:#f87171;font-family:var(--font-mono);font-size:13px";
+          iconSpan.textContent = "\u2298";
+
           const keywordSpan = document.createElement("span");
-          keywordSpan.className = "text-slate-200";
-          keywordSpan.textContent = keyword; // Use textContent to sanitize
+          keywordSpan.style.cssText = "flex:1;min-width:0;font-family:var(--font-mono);font-size:12px;color:var(--color-text-strong);word-break:break-all";
+          keywordSpan.textContent = keyword;
 
-          // Create the remove button
           const removeButton = document.createElement("button");
-          removeButton.className =
-            "removeKeywordBtn text-red-400 hover:text-red-600 font-semibold";
-          removeButton.textContent = ServerI18n.t("remove"); // Set button text
-          // Set data-keyword attribute safely
-          removeButton.setAttribute("data-keyword", keyword); // Add this line
+          removeButton.className = "removeKeywordBtn";
+          removeButton.type = "button";
+          removeButton.style.cssText = "background:transparent;border:none;color:var(--color-primary);font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;cursor:pointer;padding:2px 4px";
+          removeButton.textContent = "UNBAN";
+          removeButton.setAttribute("data-keyword", keyword);
 
+          keywordEl.appendChild(iconSpan);
           keywordEl.appendChild(keywordSpan);
           keywordEl.appendChild(removeButton);
           blacklistKeywordsDiv.appendChild(keywordEl);

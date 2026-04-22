@@ -413,66 +413,118 @@
     });
   }
 
+  // ── Category detection + filter state ───────────────────────────────────────
+  function detectCategory(name) {
+    const n = (name || "").toLowerCase();
+    if (n.startsWith("glow") || n.includes("neon")) return "GLOW";
+    if (n.startsWith("shake")) return "SHAKE";
+    if (n.startsWith("wave") || n.startsWith("spin") || n.startsWith("bounce") || n.startsWith("zoom") || n.startsWith("fire") || n.includes("motion")) return "MOTION";
+    if (n.startsWith("rainbow") || n.startsWith("blink") || n.includes("color")) return "COLOR";
+    if (n.startsWith("type") || n.includes("text")) return "TEXT";
+    return "MISC";
+  }
+
+  const _effectsState = {
+    all: [],
+    filter: "ALL",
+    selected: null,
+  };
+
   async function fetchEffectsAdmin() {
     const container = document.getElementById("effectsList");
     if (!container) return;
     try {
       const res = await csrfFetch("/admin/effects");
       if (!res.ok) {
-        container.innerHTML = '<span class="text-xs text-red-400">' + ServerI18n.t("effectsLoadFailed") + '</span>';
+        container.innerHTML = '<span class="text-xs text-red-400" style="grid-column:1 / -1">' + ServerI18n.t("effectsLoadFailed") + '</span>';
         return;
       }
       const data = await res.json();
-      renderEffectsList(data.effects || []);
+      _effectsState.all = data.effects || [];
+      renderFilterRow();
+      renderEffectsList();
     } catch (_) {
-      container.innerHTML = '<span class="text-xs text-red-400">' + ServerI18n.t("effectsNetworkError") + '</span>';
+      container.innerHTML = '<span class="text-xs text-red-400" style="grid-column:1 / -1">' + ServerI18n.t("effectsNetworkError") + '</span>';
     }
   }
 
-  function renderEffectsList(effects) {
+  function renderFilterRow() {
+    const row = document.getElementById("effectsFilterRow");
+    if (!row) return;
+    const counts = { GLOW: 0, MOTION: 0, COLOR: 0, SHAKE: 0, TEXT: 0, MISC: 0 };
+    _effectsState.all.forEach((e) => { counts[detectCategory(e.name)] += 1; });
+    const total = _effectsState.all.length;
+    const chips = [["ALL", "\u5168\u90e8", total], ["GLOW", "GLOW", counts.GLOW], ["MOTION", "MOTION", counts.MOTION], ["COLOR", "COLOR", counts.COLOR], ["SHAKE", "SHAKE", counts.SHAKE], ["TEXT", "TEXT", counts.TEXT]];
+    if (counts.MISC > 0) chips.push(["MISC", "MISC", counts.MISC]);
+    row.innerHTML = chips.map(([key, label, n]) => {
+      const active = _effectsState.filter === key ? "is-active" : "";
+      return `<span class="hud-filter-chip ${active}" data-effect-filter="${key}">${label} ${n}</span>`;
+    }).join("");
+    row.querySelectorAll("[data-effect-filter]").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        _effectsState.filter = chip.dataset.effectFilter;
+        renderFilterRow();
+        renderEffectsList();
+      });
+    });
+  }
+
+  function renderEffectsList() {
     const container = document.getElementById("effectsList");
     if (!container) return;
-    if (!effects.length) {
+    const all = _effectsState.all;
+    const filtered = _effectsState.filter === "ALL"
+      ? all
+      : all.filter((e) => detectCategory(e.name) === _effectsState.filter);
+
+    if (!filtered.length) {
       container.innerHTML =
-        '<span class="text-xs text-slate-400 col-span-3">' + ServerI18n.t("noEffectsLoaded") + '</span>';
+        '<span class="text-xs text-slate-400" style="grid-column:1 / -1">' +
+        (all.length ? "\u6c92\u6709\u7b26\u5408\u904e\u6ffe\u7684\u6548\u679c" : ServerI18n.t("noEffectsLoaded")) +
+        '</span>';
       return;
     }
     container.innerHTML = "";
-    effects.forEach((eff) => {
+    filtered.forEach((eff) => {
+      const cat = detectCategory(eff.name);
+      const previewTxt = cat === "SHAKE" ? "\u2248 ABC \u2248" : cat === "MOTION" ? "\u2192 ABC \u2192" : "ABC";
+      const previewClass = cat === "GLOW" ? "is-glow" : cat === "COLOR" ? "is-color" : cat === "TEXT" ? "is-text" : "";
+
       const card = document.createElement("div");
-      const tooltip = [eff.description, `file: ${eff.filename}`].filter(Boolean).join("\n");
-      card.title = tooltip;
-      card.className = "bg-slate-800/60 border border-slate-600/40 rounded-lg px-2 py-1.5 flex items-center gap-2 transition-colors min-w-0 hover:border-slate-500/65";
+      card.className = "hud-effect-card" + (_effectsState.selected === eff.name ? " is-selected" : "");
+      card.dataset.effectName = eff.name;
+      card.title = [eff.description, `file: ${eff.filename}`].filter(Boolean).join("\n");
 
-      const dot = document.createElement("span");
-      dot.className = "w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0";
-      card.appendChild(dot);
-
-      const textWrap = document.createElement("div");
-      textWrap.className = "flex-1 min-w-0";
-      const labelEl = document.createElement("div");
-      labelEl.className = "font-semibold text-slate-200 text-xs whitespace-nowrap overflow-hidden text-ellipsis leading-tight";
       var _ek = "effect_" + eff.name;
-      labelEl.textContent = ServerI18n.t(_ek) !== _ek ? ServerI18n.t(_ek) : (eff.label || eff.name);
-      const nameEl = document.createElement("div");
-      nameEl.className = "text-[0.62rem] text-slate-400 font-mono whitespace-nowrap overflow-hidden text-ellipsis leading-tight";
-      nameEl.textContent = eff.name;
-      textWrap.appendChild(labelEl);
-      textWrap.appendChild(nameEl);
-      card.appendChild(textWrap);
+      const label = ServerI18n.t(_ek) !== _ek ? ServerI18n.t(_ek) : (eff.label || eff.name);
+      const author = "built-in";
 
-      const editBtn = document.createElement("button");
-      editBtn.className = "px-2 py-0.5 text-[0.65rem] font-medium text-slate-400 border border-slate-700 rounded bg-transparent cursor-pointer shrink-0 transition-colors hover:text-sky-300 hover:border-sky-500";
-      editBtn.textContent = ServerI18n.t("edit");
-
-      const delBtn = document.createElement("button");
-      delBtn.className = "p-0.5 text-slate-400 bg-transparent border-none cursor-pointer rounded flex items-center shrink-0 transition-colors hover:text-red-400";
-      delBtn.title = ServerI18n.t("deleteEffectTitle").replace("{name}", eff.label || eff.name);
-      delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
-
-      card.appendChild(editBtn);
-      card.appendChild(delBtn);
+      card.innerHTML = `
+        <div class="hud-effect-card-head">
+          <span class="hud-status-dot is-live"></span>
+          <span class="admin-v3-card-kicker" style="margin:0;color:var(--color-text-muted)">${escapeHtml(cat)}</span>
+          <span style="margin-left:auto;font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted)">${escapeHtml(eff.filename || "")}</span>
+        </div>
+        <div class="hud-effect-card-preview ${previewClass}">${previewTxt}</div>
+        <div>
+          <div class="hud-effect-card-name">${escapeHtml(label)}</div>
+          <div class="hud-effect-card-meta">${escapeHtml(author)} \u00b7 ${escapeHtml(eff.name)}</div>
+        </div>
+        <div class="hud-effect-card-actions">
+          <span class="hud-effect-chip is-on" data-role="on">ON</span>
+          <button type="button" class="hud-effect-chip" data-role="edit">EDIT</button>
+          <button type="button" class="hud-effect-chip" data-role="delete" style="margin-left:auto">DEL</button>
+        </div>
+      `;
       container.appendChild(card);
+
+      // Card click: select + load inspector
+      card.addEventListener("click", (e) => {
+        if (e.target.closest("[data-role]")) return;
+        selectEffect(eff);
+      });
+      const editBtn = card.querySelector('[data-role="edit"]');
+      const delBtn = card.querySelector('[data-role="delete"]');
 
       // ── Edit -> open modal
       editBtn.addEventListener("click", async () => {
@@ -548,6 +600,79 @@
       });
     });
   }
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  async function selectEffect(eff) {
+    _effectsState.selected = eff.name;
+    const inspector = document.getElementById("effectsInspector");
+    const dot = document.getElementById("effectsInspectorDot");
+    const titleEl = document.getElementById("effectsInspectorTitle");
+    const kicker = document.getElementById("effectsInspectorKicker");
+    const body = document.getElementById("effectsInspectorBody");
+    if (!inspector) return;
+    if (dot) dot.className = "hud-status-dot is-live";
+    if (titleEl) titleEl.textContent = eff.filename || eff.name;
+    if (kicker) kicker.textContent = "LOADING";
+    if (body) body.textContent = "# \u8f09\u5165\u4e2d\u2026";
+
+    // mark selected card
+    document.querySelectorAll(".hud-effect-card").forEach((c) => {
+      c.classList.toggle("is-selected", c.dataset.effectName === eff.name);
+    });
+
+    try {
+      const res = await csrfFetch(`/admin/effects/${encodeURIComponent(eff.name)}/content`);
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        if (body) body.textContent = data.content || "";
+        if (kicker) kicker.textContent = "HOT-RELOADED";
+      } else {
+        if (body) body.textContent = "# " + (data.error || ServerI18n.t("effectLoadContentFailed"));
+        if (kicker) kicker.textContent = "ERROR";
+      }
+    } catch (_) {
+      if (body) body.textContent = "# " + ServerI18n.t("effectsNetworkError");
+      if (kicker) kicker.textContent = "NETWORK";
+    }
+  }
+
+  function wireInspectorButtons() {
+    const reloadBtn = document.getElementById("effectsInspectorReload");
+    const editBtn = document.getElementById("effectsInspectorEdit");
+    reloadBtn?.addEventListener("click", async () => {
+      if (!_effectsState.selected) {
+        showToast("\u8acb\u5148\u9078\u64c7\u4e00\u500b\u6548\u679c", false);
+        return;
+      }
+      const eff = _effectsState.all.find((e) => e.name === _effectsState.selected);
+      if (eff) await selectEffect(eff);
+    });
+    editBtn?.addEventListener("click", () => {
+      if (!_effectsState.selected) {
+        showToast("\u8acb\u5148\u9078\u64c7\u4e00\u500b\u6548\u679c", false);
+        return;
+      }
+      const card = document.querySelector(`.hud-effect-card[data-effect-name="${CSS.escape(_effectsState.selected)}"]`);
+      card?.querySelector('[data-role="edit"]')?.click();
+    });
+  }
+
+  // Wire inspector once after initial DOM injection
+  const _inspectorObserver = new MutationObserver(() => {
+    if (document.getElementById("effectsInspector") && !document.getElementById("effectsInspector").dataset.wired) {
+      document.getElementById("effectsInspector").dataset.wired = "1";
+      wireInspectorButtons();
+    }
+  });
+  _inspectorObserver.observe(document.body, { childList: true, subtree: true });
 
   window.AdminEffects = { init: initEffectsManagement };
 })();

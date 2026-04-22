@@ -1122,32 +1122,43 @@ document.addEventListener("DOMContentLoaded", () => {
       `<p class="text-sm text-slate-300">${ServerI18n.t("effectsDisabledMsg")}</p>`
     ));
 
-    // Effects Management Card (full width)
+    // Effects Management — AdminEffectsPage layout (1fr + 340px YAML inspector)
     settingsGrid.insertAdjacentHTML("beforeend", `
-      <div id="sec-effects-mgmt" class="admin-v3-card lg:col-span-2">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h3 class="text-lg font-bold text-white">${ServerI18n.t("effectsManagement")}</h3>
-            <p class="text-sm text-slate-300">${ServerI18n.t("effectsManagementDesc")}</p>
+      <div id="sec-effects-mgmt" class="hud-page-stack lg:col-span-2">
+        <div class="hud-page-grid-2">
+          <div class="hud-page-stack" style="gap:16px">
+            <div class="hud-filter-row" id="effectsFilterRow">
+              <span class="hud-filter-chip is-active" data-effect-filter="ALL">\u5168\u90e8 \u2014</span>
+            </div>
+            <div class="flex items-center justify-between" style="gap:8px">
+              <p class="text-xs text-slate-400 m-0">${ServerI18n.t("effectsManagementDesc")}</p>
+              <div class="flex items-center" style="gap:6px">
+                <button id="effectReloadBtn" class="hud-toolbar-action" type="button">
+                  \u21bb ${ServerI18n.t("reload")}
+                </button>
+                <label for="effectUploadInput" class="hud-toolbar-action" style="cursor:pointer">
+                  + ${ServerI18n.t("uploadDme")}
+                </label>
+                <input type="file" id="effectUploadInput" accept=".dme" class="hidden">
+              </div>
+            </div>
+            <div id="effectsList" class="hud-effects-grid">
+              <span class="text-xs text-slate-400" style="grid-column:1 / -1">${ServerI18n.t("loadingEffectsAdmin")}</span>
+            </div>
           </div>
-          <div class="flex items-center gap-2">
-            <button id="effectReloadBtn"
-              class="px-3 py-1.5 text-xs font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors flex items-center gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              ${ServerI18n.t("reload")}
-            </button>
-            <label for="effectUploadInput"
-              class="px-3 py-1.5 text-xs font-medium bg-sky-700 hover:bg-sky-600 text-white rounded-lg cursor-pointer transition-colors flex items-center gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-              ${ServerI18n.t("uploadDme")}
-            </label>
-            <input type="file" id="effectUploadInput" accept=".dme" class="hidden">
-          </div>
-        </div>
-        <div class="border-t border-slate-700/50 pt-4">
-          <div id="effectsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 min-h-12">
-            <span class="text-xs text-slate-400 col-span-2">${ServerI18n.t("loadingEffectsAdmin")}</span>
-          </div>
+
+          <aside class="hud-inspector" id="effectsInspector">
+            <div class="hud-inspector-head">
+              <span class="hud-status-dot is-paused" id="effectsInspectorDot"></span>
+              <span id="effectsInspectorTitle" style="font-size:13px;font-weight:600;color:var(--color-text-strong)">\u2014</span>
+              <span class="admin-v3-card-kicker" id="effectsInspectorKicker" style="margin:0">IDLE</span>
+            </div>
+            <pre class="hud-inspector-body" id="effectsInspectorBody"># \u9ede\u9078\u4e00\u500b\u6548\u679c\u4ee5\u986f\u793a YAML \u5167\u5bb9</pre>
+            <div class="hud-inspector-foot">
+              <button type="button" class="hud-toolbar-action" id="effectsInspectorReload" style="flex:1">\u21bb RELOAD</button>
+              <button type="button" class="hud-toolbar-action is-primary" id="effectsInspectorEdit" style="flex:1">EDIT</button>
+            </div>
+          </aside>
         </div>
       </div>
     `);
@@ -1178,31 +1189,55 @@ document.addEventListener("DOMContentLoaded", () => {
     `);
     scheduleIdleTask(initThemesManagement);
 
-    // Blacklist Management Card
+    // Moderation Overview (AdminModerationPage layout): stats strip + banned/blacklist panel
     settingsGrid.insertAdjacentHTML("beforeend", `
-                    <details id="sec-blacklist" class="group admin-v3-card" ${isOpen("sec-blacklist") ? "open" : ""}>
-                        <summary class="flex items-center justify-between cursor-pointer list-none">
-                            <div>
-                                <h3 class="text-lg font-bold text-white">${ServerI18n.t("blacklistManagement")}</h3>
-                                <p class="text-sm text-slate-300">${ServerI18n.t("blacklistManagementDesc")}</p>
-                            </div>
-                            <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
-                        </summary>
-                        <div class="mt-4 pt-4 border-t border-slate-700/50">
-                            <div>
-                                <label for="newKeywordInput" class="text-sm font-medium text-slate-300">${ServerI18n.t("newKeyword")}</label>
-                                <input type="text" id="newKeywordInput" placeholder="${ServerI18n.t("enterKeyword")}" class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300">
-                                <button id="addKeywordBtn" class="mt-3 w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-6 rounded-xl transition-colors">${ServerI18n.t("addKeyword")}</button>
-                            </div>
-                            <div class="mt-6">
-                                <h4 class="text-md font-semibold text-white mb-2">${ServerI18n.t("currentBlacklist")}</h4>
-                                <div id="blacklistKeywords" class="space-y-2 max-h-48 overflow-y-auto">
-                                    <!-- Keywords will be listed here -->
-                                </div>
-                            </div>
-                        </div>
-                    </details>
-                `);
+      <div id="sec-blacklist" class="hud-page-stack lg:col-span-2">
+        <div class="hud-stats-strip" id="modStatsStrip" style="grid-template-columns:repeat(5, minmax(0, 1fr))">
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">RULES</span>
+            <span class="hud-stat-tile-value" data-mod-stat="rules">\u2014</span>
+            <span class="hud-stat-tile-label">\u898f\u5247\u6578</span>
+          </div>
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">BANNED</span>
+            <span class="hud-stat-tile-value is-danger" data-mod-stat="banned">\u2014</span>
+            <span class="hud-stat-tile-label">\u9ed1\u540d\u55ae</span>
+          </div>
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">MASKED \u00b7 24H</span>
+            <span class="hud-stat-tile-value is-amber" data-mod-stat="masked">\u2014</span>
+            <span class="hud-stat-tile-label">\u4eca\u65e5\u906e\u7f69</span>
+          </div>
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">BLOCKED \u00b7 24H</span>
+            <span class="hud-stat-tile-value is-danger" data-mod-stat="blocked">\u2014</span>
+            <span class="hud-stat-tile-label">\u4eca\u65e5\u5c01\u9396</span>
+          </div>
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">REVIEW QUEUE</span>
+            <span class="hud-stat-tile-value is-cyan" data-mod-stat="review">\u2014</span>
+            <span class="hud-stat-tile-label">\u5f85\u5be9\u6838</span>
+          </div>
+        </div>
+
+        <div class="hud-inspector hud-blacklist-panel" style="min-height:auto">
+          <div class="hud-inspector-head">
+            <span class="hud-status-dot is-danger"></span>
+            <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${ServerI18n.t("blacklistManagement")}</span>
+            <span class="admin-v3-card-kicker" style="margin:0">KEYWORD \u00b7 BANNED</span>
+            <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.1em" id="modBlacklistCount">\u2014 words</span>
+          </div>
+          <div style="padding:14px;display:grid;grid-template-columns:1fr auto;gap:8px;border-bottom:1px solid var(--hud-line-strong)">
+            <input type="text" id="newKeywordInput" placeholder="${ServerI18n.t("enterKeyword")}"
+              class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:ring-2 focus:ring-sky-400 focus:border-sky-400">
+            <button id="addKeywordBtn" type="button" class="hud-toolbar-action is-primary">+ ${ServerI18n.t("addKeyword")}</button>
+          </div>
+          <div id="blacklistKeywords" class="max-h-72 overflow-y-auto" style="padding:8px 14px">
+            <!-- Keywords will be listed here -->
+          </div>
+        </div>
+      </div>
+    `);
 
     // Danmu History Card
     settingsGrid.insertAdjacentHTML("beforeend", `
@@ -1306,6 +1341,178 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                     </details>
                 `);
+
+    // System Overview (AdminSystemPage layout): Server block + Rate Limits + Backup/Danger
+    settingsGrid.insertAdjacentHTML("beforeend", `
+      <div id="sec-system-overview" class="hud-page-stack lg:col-span-2">
+        <div class="hud-system-grid">
+          <div class="hud-inspector hud-system-server" style="min-height:auto">
+            <div class="hud-inspector-head">
+              <span class="hud-status-dot is-live"></span>
+              <span style="font-size:14px;font-weight:600;color:var(--color-text-strong)">Danmu Server</span>
+              <span class="admin-v3-card-kicker" id="sysoVersion" style="margin:0">v\u2014</span>
+              <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:#86efac;letter-spacing:0.12em" id="sysoUptime">UPTIME \u2014</span>
+            </div>
+            <div style="padding:16px;display:grid;grid-template-columns:repeat(3, 1fr);gap:12px">
+              <div class="hud-kv"><span class="hud-kv-k">HTTP</span><span class="hud-kv-v" id="sysoHttpPort">:\u2014</span></div>
+              <div class="hud-kv"><span class="hud-kv-k">WS</span><span class="hud-kv-v" id="sysoWsPort">:\u2014</span></div>
+              <div class="hud-kv"><span class="hud-kv-k">BIND</span><span class="hud-kv-v" id="sysoBind">\u2014</span></div>
+              <div class="hud-kv"><span class="hud-kv-k">WS CLIENTS</span><span class="hud-kv-v" id="sysoWsClients">\u2014</span></div>
+              <div class="hud-kv"><span class="hud-kv-k">QUEUE</span><span class="hud-kv-v" id="sysoQueue">\u2014</span></div>
+              <div class="hud-kv"><span class="hud-kv-k">WIDGETS</span><span class="hud-kv-v" id="sysoWidgets">\u2014</span></div>
+            </div>
+            <div style="padding:0 16px 16px 16px">
+              <div style="padding:12px;background:color-mix(in srgb, var(--color-bg-deep) 65%, transparent);border-radius:4px;font-family:var(--font-mono);font-size:11px">
+                <div class="admin-v3-card-kicker" style="margin:0 0 6px 0">PUBLIC URL</div>
+                <div id="sysoPublicUrl" style="color:var(--color-primary);word-break:break-all">${location.origin}</div>
+                <div style="margin-top:4px;color:var(--color-text-muted);font-size:10px">\u89c0\u773e\u6383\u78bc\u5373\u53ef\u52a0\u5165</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hud-inspector hud-system-rates" style="min-height:auto">
+            <div class="hud-inspector-head">
+              <span class="admin-v3-card-kicker" style="margin:0">RATE LIMITS \u00b7 \u53cd\u5237\u5c4f</span>
+            </div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:14px" id="sysoRatesBody">
+              <div class="hud-rate-item" data-rate="fire">
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                  <span style="color:var(--color-text-strong)">\u6bcf\u7528\u6236 \u00b7 FIRE</span>
+                  <span style="margin-left:auto;font-family:var(--font-mono);color:var(--color-primary);font-weight:600" data-rate-val>\u2014</span>
+                </div>
+                <div style="margin-top:6px;height:4px;border-radius:2px;background:color-mix(in srgb, var(--color-bg-deep) 60%, transparent);overflow:hidden">
+                  <div style="width:40%;height:100%;background:var(--color-primary);opacity:0.7" data-rate-bar></div>
+                </div>
+                <div style="margin-top:2px;font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.1em" data-rate-cap>\u2014</div>
+              </div>
+              <div class="hud-rate-item" data-rate="api">
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                  <span style="color:var(--color-text-strong)">\u6bcf\u7528\u6236 \u00b7 API</span>
+                  <span style="margin-left:auto;font-family:var(--font-mono);color:var(--color-primary);font-weight:600" data-rate-val>\u2014</span>
+                </div>
+                <div style="margin-top:6px;height:4px;border-radius:2px;background:color-mix(in srgb, var(--color-bg-deep) 60%, transparent);overflow:hidden">
+                  <div style="width:40%;height:100%;background:var(--color-primary);opacity:0.7" data-rate-bar></div>
+                </div>
+                <div style="margin-top:2px;font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.1em" data-rate-cap>\u2014</div>
+              </div>
+              <div class="hud-rate-item" data-rate="admin">
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                  <span style="color:var(--color-text-strong)">ADMIN \u00b7 \u4fdd\u8b77</span>
+                  <span style="margin-left:auto;font-family:var(--font-mono);color:var(--color-primary);font-weight:600" data-rate-val>\u2014</span>
+                </div>
+                <div style="margin-top:6px;height:4px;border-radius:2px;background:color-mix(in srgb, var(--color-bg-deep) 60%, transparent);overflow:hidden">
+                  <div style="width:40%;height:100%;background:var(--color-primary);opacity:0.7" data-rate-bar></div>
+                </div>
+                <div style="margin-top:2px;font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.1em" data-rate-cap>\u2014</div>
+              </div>
+              <div class="hud-rate-item" data-rate="login">
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                  <span style="color:var(--color-text-strong)">LOGIN \u00b7 \u767b\u5165</span>
+                  <span style="margin-left:auto;font-family:var(--font-mono);color:var(--color-primary);font-weight:600" data-rate-val>\u2014</span>
+                </div>
+                <div style="margin-top:6px;height:4px;border-radius:2px;background:color-mix(in srgb, var(--color-bg-deep) 60%, transparent);overflow:hidden">
+                  <div style="width:20%;height:100%;background:var(--color-primary);opacity:0.7" data-rate-bar></div>
+                </div>
+                <div style="margin-top:2px;font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.1em" data-rate-cap>\u2014</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hud-inspector hud-system-backup" style="min-height:auto">
+            <div class="hud-inspector-head">
+              <span class="admin-v3-card-kicker" style="margin:0">BACKUP \u00b7 EXPORT</span>
+            </div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+              <div style="padding:12px;background:color-mix(in srgb, var(--color-bg-deep) 65%, transparent);border-radius:4px">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span class="hud-status-dot is-live"></span>
+                  <span style="font-size:12px;font-weight:600;color:var(--color-text-strong)">\u81ea\u52d5\u8a0a\u606f\u65e5\u8a8c</span>
+                  <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.12em" id="sysoBackupStatus">SQLite \u00b7 active</span>
+                </div>
+                <div style="margin-top:8px;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.05em">
+                  \u5132\u5b58\u65bc <code style="color:var(--color-primary)">server/runtime/</code>
+                </div>
+              </div>
+              <div>
+                <div class="admin-v3-card-kicker" style="margin:0">\u532f\u51fa\u683c\u5f0f</div>
+                <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                  <a href="/admin/history/export?format=json" class="hud-toolbar-action is-primary" style="text-align:center;text-decoration:none">JSON \u00b7 \u5b8c\u6574</a>
+                  <a href="/admin/history/export?format=csv" class="hud-toolbar-action" style="text-align:center;text-decoration:none">CSV \u00b7 \u8a0a\u606f</a>
+                </div>
+              </div>
+              <div style="margin-top:auto;padding:12px;border:1px dashed #f87171;border-radius:4px">
+                <div class="admin-v3-card-kicker" style="margin:0;color:#f87171">DANGER ZONE</div>
+                <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px">\u6e05\u9664\u6b77\u53f2\u8a0a\u606f\uff0c\u65e5\u8a8c\u4fdd\u7559</div>
+                <button id="sysoEndSessionBtn" type="button" style="margin-top:10px;width:100%;padding:8px;border-radius:4px;border:1px solid #f87171;background:transparent;color:#f87171;font-family:var(--font-mono);font-size:11px;letter-spacing:0.15em;font-weight:700;cursor:pointer">END SESSION</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `);
+
+    // Wire system overview live data
+    (function wireSystemOverview() {
+      const verEl = document.getElementById("sysoVersion");
+      if (verEl && window.DANMU_CONFIG?.appVersion) verEl.textContent = "v" + window.DANMU_CONFIG.appVersion;
+      const portEl = document.getElementById("sysoHttpPort");
+      if (portEl) portEl.textContent = ":" + (location.port || "80");
+      const wsPortEl = document.getElementById("sysoWsPort");
+      if (wsPortEl) wsPortEl.textContent = ":" + (location.port || "80") + "/ws";
+      const bindEl = document.getElementById("sysoBind");
+      if (bindEl) bindEl.textContent = location.hostname;
+
+      // Rate limit caps: hardcoded defaults per config.py (not exposed via API yet)
+      const rateCaps = {
+        fire: { max: 60, label: "FIRE_RATE_LIMIT" },
+        api: { max: 60, label: "API_RATE_LIMIT" },
+        admin: { max: 120, label: "ADMIN_RATE_LIMIT" },
+        login: { max: 30, label: "LOGIN_RATE_LIMIT" },
+      };
+      const rateDefaults = { fire: 20, api: 30, admin: 60, login: 5 };
+      const rateWindows = { fire: 60, api: 60, admin: 60, login: 300 };
+      Object.keys(rateDefaults).forEach((k) => {
+        const row = document.querySelector(`.hud-rate-item[data-rate="${k}"]`);
+        if (!row) return;
+        const val = rateDefaults[k];
+        const win = rateWindows[k];
+        const max = rateCaps[k].max;
+        row.querySelector("[data-rate-val]").textContent = `${val} \u5247 / ${win}s`;
+        row.querySelector("[data-rate-cap]").textContent = `UP TO ${max} \u00b7 ${rateCaps[k].label}`;
+        const bar = row.querySelector("[data-rate-bar]");
+        if (bar) bar.style.width = Math.min(100, (val / max) * 100) + "%";
+      });
+
+      // Fetch metrics to fill live fields
+      (async () => {
+        try {
+          const res = await window.csrfFetch("/admin/metrics");
+          if (!res.ok) return;
+          const data = await res.json();
+          const clientsEl = document.getElementById("sysoWsClients");
+          if (clientsEl) clientsEl.textContent = String(data.ws_clients ?? 0);
+          const qEl = document.getElementById("sysoQueue");
+          if (qEl) qEl.textContent = `${data.queue_size ?? 0} / ${data.queue_capacity ?? "\u2014"}`;
+          const widgEl = document.getElementById("sysoWidgets");
+          if (widgEl) widgEl.textContent = String(data.active_widgets ?? 0);
+        } catch (_) { /* ignore */ }
+      })();
+
+      const endBtn = document.getElementById("sysoEndSessionBtn");
+      if (endBtn) {
+        endBtn.addEventListener("click", () => {
+          if (!confirm("\u78ba\u5b9a\u8981\u6e05\u9664\u6b77\u53f2\u8a0a\u606f\u55ce\uff1f\u6b64\u52d5\u4f5c\u7121\u6cd5\u5fa9\u539f\u3002")) return;
+          window.csrfFetch("/admin/history/clear", { method: "POST" })
+            .then((r) => r.ok ? r.json() : Promise.reject(r))
+            .then(() => {
+              if (typeof showToast === "function") showToast("\u6b77\u53f2\u5df2\u6e05\u9664", true);
+            })
+            .catch(() => {
+              if (typeof showToast === "function") showToast("\u6e05\u9664\u5931\u6557\uff08\u7aef\u9ede\u53ef\u80fd\u5c1a\u672a\u5be6\u4f5c\uff09", false);
+            });
+        });
+      }
+    })();
 
     // Password Change Card (with show/hide toggles)
     settingsGrid.insertAdjacentHTML("beforeend", `
@@ -1415,7 +1622,7 @@ document.addEventListener("DOMContentLoaded", () => {
     effects:   { title: "效果庫 .dme",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },
     plugins:   { title: "伺服器插件",       kicker: "PLUGIN SDK · 熱重載 · SANDBOX", sections: ["sec-plugins"] },
     fonts:     { title: "字型管理",         kicker: "FONT LIBRARY · 觀眾可選",   sections: ["sec-fonts"] },
-    system:    { title: "系統 & 指紋",      kicker: "SYSTEM · FINGERPRINT · RATE LIMITS", sections: ["sec-security", "sec-ws-auth", "sec-scheduler", "sec-webhooks", "sec-fingerprints"] },
+    system:    { title: "系統 & 指紋",      kicker: "SYSTEM · FINGERPRINT · RATE LIMITS", sections: ["sec-system-overview", "sec-security", "sec-ws-auth", "sec-scheduler", "sec-webhooks", "sec-fingerprints"] },
   };
 
   function initAdminRouter() {

@@ -33,174 +33,184 @@
 
   // ── Type / Action badge rendering ────────────────────────────
 
-  const TYPE_COLORS = {
-    keyword: "bg-blue-600/80 text-blue-100",
-    regex: "bg-sky-600/80 text-sky-100",
-    replace: "bg-amber-600/80 text-amber-100",
-    rate_limit: "bg-rose-600/80 text-rose-100",
+  const TYPE_PILL = {
+    keyword: "is-cyan",
+    regex: "is-cyan",
+    replace: "is-amber",
+    rate_limit: "is-danger",
   };
 
-  const ACTION_COLORS = {
-    block: "bg-red-600/80 text-red-100",
-    replace: "bg-amber-600/80 text-amber-100",
-    allow: "bg-green-600/80 text-green-100",
+  const ACTION_COLOR = {
+    block: "#f87171",
+    replace: "#fbbf24",
+    allow: "#a3e635",
   };
-
-  function badge(text, colorClass) {
-    return `<span class="inline-block px-2 py-0.5 text-xs font-semibold rounded ${colorClass}">${escapeHtml(text)}</span>`;
-  }
 
   // ── Section HTML ─────────────────────────────────────────────
 
   function buildSectionHtml() {
     return `
-      <details id="sec-filters"
-        class="group admin-v3-card"
-        ${isDetailsOpen("sec-filters") ? "open" : ""}>
-        <summary class="flex items-center justify-between cursor-pointer list-none">
-          <div>
-            <h3 class="text-lg font-bold text-white" data-i18n="filterRulesTitle">${t("filterRulesTitle", "Filter Rules")}</h3>
-            <p class="text-sm text-slate-300">${t("filterRulesDesc", "Content filtering rules for danmu messages")}</p>
-          </div>
-          <span class="text-slate-400 transition-transform group-open:rotate-180">\u2304</span>
-        </summary>
-        <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-4">
+      <div id="sec-filters" class="hud-page-stack lg:col-span-2">
+        <div class="hud-page-grid-2" style="grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr)">
+          <!-- LEFT: Rules library -->
+          <div class="hud-inspector" style="min-height:auto">
+            <div class="hud-inspector-head">
+              <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">\u898f\u5247\u5eab</span>
+              <span class="admin-v3-card-kicker" style="margin:0">RULESET \u00b7 ORDER MATTERS</span>
+              <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-primary);letter-spacing:0.1em">+ \u65b0\u589e \u00b7 \u23d3 \u532f\u5165 \u00b7 \u23d2 \u532f\u51fa</span>
+            </div>
+            <div class="hud-filter-row" id="filterTypeChips" style="padding:10px 14px;border-bottom:1px solid var(--hud-line-strong)">
+              <span class="hud-filter-chip is-active" data-filter-scope="all">\u5168\u90e8 <span data-filter-count="all">0</span></span>
+              <span class="hud-filter-chip" data-filter-scope="keyword">WORD <span data-filter-count="keyword">0</span></span>
+              <span class="hud-filter-chip" data-filter-scope="regex">REGEX <span data-filter-count="regex">0</span></span>
+              <span class="hud-filter-chip" data-filter-scope="replace">REPLACE <span data-filter-count="replace">0</span></span>
+              <span class="hud-filter-chip" data-filter-scope="rate_limit">RATE <span data-filter-count="rate_limit">0</span></span>
+            </div>
+            <div class="hud-table-head" style="grid-template-columns: 1.6fr 80px 80px 60px 60px 40px;border-bottom:1px solid var(--hud-line-strong);padding:8px 14px">
+              <span>PATTERN</span>
+              <span>TYPE</span>
+              <span>ACTION</span>
+              <span>P</span>
+              <span>STATUS</span>
+              <span style="text-align:right"></span>
+            </div>
+            <div id="filterRulesList" class="hud-rules-body"></div>
 
-          <!-- Add Rule Form -->
-          <div id="filterRuleForm" class="space-y-2 bg-slate-800/60 p-3 rounded-lg">
-            <h4 class="text-sm font-semibold text-slate-200 mb-1">${t("addFilterRule", "Add Rule")}</h4>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <!-- Type -->
-              <div>
-                <label for="filterType" class="text-xs text-slate-400">${t("filterType", "Type")}</label>
-                <select id="filterType"
-                  class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400">
-                  <option value="keyword">keyword</option>
-                  <option value="regex">regex</option>
-                  <option value="replace">replace</option>
-                  <option value="rate_limit">rate_limit</option>
-                </select>
+            <!-- Live moderation log -->
+            <div style="border-top:1px solid var(--hud-line-strong)">
+              <div class="hud-inspector-head" style="border-bottom:1px solid var(--hud-line-strong)">
+                <span class="hud-status-dot is-live"></span>
+                <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">\u5373\u6642\u5be9\u6838\u65e5\u8a8c</span>
+                <span class="admin-v3-card-kicker" style="margin:0">LAST 6 EVENTS</span>
+                <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.1em">AUTO-SCROLL \u25b6</span>
               </div>
-
-              <!-- Action -->
-              <div>
-                <label for="filterAction" class="text-xs text-slate-400">${t("filterAction", "Action")}</label>
-                <select id="filterAction"
-                  class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400">
-                  <option value="block">block</option>
-                  <option value="replace">replace</option>
-                  <option value="allow">allow</option>
-                </select>
+              <div class="hud-console-body" id="filterLiveLog" style="max-height:200px;padding:10px 14px;font-family:var(--font-mono);font-size:11px;line-height:1.7">
+                <div style="color:var(--color-text-muted);text-align:center;padding:10px">\u5c1a\u7121\u4e8b\u4ef6 \u00b7 \u7b49\u5f85\u898f\u5247\u547d\u4e2d...</div>
               </div>
             </div>
+          </div>
 
-            <!-- Pattern -->
-            <div>
-              <label for="filterPattern" class="text-xs text-slate-400">${t("filterPattern", "Pattern")}</label>
-              <input type="text" id="filterPattern" placeholder="${t("filterPatternPlaceholder", "Enter pattern...")}"
-                class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:ring-2 focus:ring-sky-400 focus:border-sky-400" />
-            </div>
-
-            <!-- Replacement (visible only for replace type) -->
-            <div id="filterReplacementRow" class="hidden">
-              <label for="filterReplacement" class="text-xs text-slate-400">${t("filterReplacement", "Replacement")}</label>
-              <input type="text" id="filterReplacement" placeholder="${t("filterReplacementPlaceholder", "Replacement text...")}"
-                class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:ring-2 focus:ring-sky-400 focus:border-sky-400" />
-            </div>
-
-            <!-- Rate limit fields (visible only for rate_limit type) -->
-            <div id="filterRateLimitRow" class="hidden grid grid-cols-2 gap-2">
-              <div>
-                <label for="filterMaxCount" class="text-xs text-slate-400">${t("filterMaxCount", "Max Count")}</label>
-                <input type="number" id="filterMaxCount" value="5" min="1" max="1000"
-                  class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400" />
+          <!-- RIGHT: Add + Test -->
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="hud-inspector" style="min-height:auto">
+              <div class="hud-inspector-head">
+                <span class="hud-status-dot is-live"></span>
+                <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${t("addFilterRule", "Add Rule")}</span>
+                <span class="admin-v3-card-kicker" style="margin:0">NEW \u00b7 PATTERN</span>
               </div>
-              <div>
-                <label for="filterWindowSec" class="text-xs text-slate-400">${t("filterWindowSec", "Window (sec)")}</label>
-                <input type="number" id="filterWindowSec" value="60" min="1" max="86400"
-                  class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400" />
+              <div id="filterRuleForm" style="padding:14px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                  <div>
+                    <label for="filterType" class="admin-v3-card-kicker" style="margin:0">TYPE</label>
+                    <select id="filterType" class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400">
+                      <option value="keyword">keyword</option>
+                      <option value="regex">regex</option>
+                      <option value="replace">replace</option>
+                      <option value="rate_limit">rate_limit</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="filterAction" class="admin-v3-card-kicker" style="margin:0">ACTION</label>
+                    <select id="filterAction" class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400">
+                      <option value="block">block</option>
+                      <option value="replace">replace</option>
+                      <option value="allow">allow</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label for="filterPattern" class="admin-v3-card-kicker" style="margin:0">PATTERN</label>
+                  <input type="text" id="filterPattern" placeholder="${t("filterPatternPlaceholder", "Enter pattern...")}"
+                    class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:ring-2 focus:ring-sky-400" />
+                </div>
+                <div id="filterReplacementRow" class="hidden">
+                  <label for="filterReplacement" class="admin-v3-card-kicker" style="margin:0">REPLACEMENT</label>
+                  <input type="text" id="filterReplacement" placeholder="${t("filterReplacementPlaceholder", "Replacement text...")}"
+                    class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:ring-2 focus:ring-sky-400" />
+                </div>
+                <div id="filterRateLimitRow" class="hidden" style="display:none;grid-template-columns:1fr 1fr;gap:8px">
+                  <div>
+                    <label for="filterMaxCount" class="admin-v3-card-kicker" style="margin:0">MAX COUNT</label>
+                    <input type="number" id="filterMaxCount" value="5" min="1" max="1000"
+                      class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400" />
+                  </div>
+                  <div>
+                    <label for="filterWindowSec" class="admin-v3-card-kicker" style="margin:0">WINDOW (SEC)</label>
+                    <input type="number" id="filterWindowSec" value="60" min="1" max="86400"
+                      class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400" />
+                  </div>
+                </div>
+                <div>
+                  <label for="filterPriority" class="admin-v3-card-kicker" style="margin:0">PRIORITY \u00b7 \u5c0f\u7684\u5148\u884c</label>
+                  <input type="number" id="filterPriority" value="0" min="-9999" max="9999"
+                    class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400" />
+                </div>
+                <button id="filterAddBtn" type="button" class="hud-toolbar-action is-primary" style="margin-top:4px">
+                  + ${t("addRule", "Add Rule")}
+                </button>
               </div>
             </div>
 
-            <!-- Priority -->
-            <div>
-              <label for="filterPriority" class="text-xs text-slate-400">${t("filterPriority", "Priority")} <span class="text-slate-400">(${t("lowerFirst", "lower = first")})</span></label>
-              <input type="number" id="filterPriority" value="0" min="-9999" max="9999"
-                class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400" />
+            <div class="hud-inspector" style="min-height:auto">
+              <div class="hud-inspector-head">
+                <span class="admin-v3-card-kicker" style="margin:0">${t("testRule", "Test Rule")} \u00b7 SANDBOX</span>
+              </div>
+              <div style="padding:14px;display:flex;flex-direction:column;gap:8px">
+                <input id="filterTestText" type="text" placeholder="${t("sampleText", "Sample text...")}"
+                  class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:ring-2 focus:ring-sky-400" />
+                <button id="filterTestBtn" type="button" class="hud-toolbar-action" style="align-self:flex-start">${t("testBtn", "Test")}</button>
+                <div id="filterTestResult" style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-strong);letter-spacing:0.02em"></div>
+              </div>
             </div>
-
-            <button id="filterAddBtn"
-              class="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2.5 px-6 rounded-xl transition-colors text-sm">
-              ${t("addRule", "Add Rule")}
-            </button>
           </div>
-
-          <!-- Test Rule -->
-          <div class="bg-slate-800/60 p-3 rounded-lg space-y-2">
-            <h4 class="text-sm font-semibold text-slate-200">${t("testRule", "Test Rule")}</h4>
-            <input id="filterTestText" type="text" placeholder="${t("sampleText", "Sample text...")}"
-              class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:ring-2 focus:ring-sky-400 focus:border-sky-400" />
-            <button id="filterTestBtn"
-              class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition-colors text-sm font-semibold">
-              ${t("testBtn", "Test")}
-            </button>
-            <div id="filterTestResult" class="text-sm"></div>
-          </div>
-
-          <!-- Active Rules List -->
-          <div>
-            <h4 class="text-sm font-semibold text-slate-200 mb-2">${t("activeRules", "Active Rules")}</h4>
-            <div id="filterRulesList" class="space-y-2"></div>
-          </div>
-
         </div>
-      </details>`;
+      </div>`;
   }
 
-  // ── Render a single rule card ────────────────────────────────
+  // ── Render a single rule row ─────────────────────────────────
 
-  function renderRuleCard(rule) {
-    const typeColor = TYPE_COLORS[rule.type] || "bg-slate-600 text-slate-200";
-    const actionColor = ACTION_COLORS[rule.action] || "bg-slate-600 text-slate-200";
-    const enabledClass = rule.enabled ? "" : "opacity-50";
-    const toggleLabel = rule.enabled
-      ? t("enabled", "Enabled")
-      : t("disabled", "Disabled");
+  let _currentFilter = "all";
 
-    let extra = "";
+  function renderRuleRow(rule) {
+    const typePill = TYPE_PILL[rule.type] || "is-default";
+    const actionCol = ACTION_COLOR[rule.action] || "#94a3b8";
+    const typeLabel = rule.type === "keyword" ? "WORD" : rule.type.toUpperCase();
+
+    let patternText = rule.pattern;
     if (rule.type === "replace" && rule.replacement !== undefined) {
-      extra += `<span class="text-xs text-slate-400 block mt-1">\u2192 ${escapeHtml(rule.replacement)}</span>`;
+      patternText = `${rule.pattern}  \u2192  ${rule.replacement}`;
     }
     if (rule.type === "rate_limit") {
       const mc = rule.max_count || 5;
       const ws = rule.window_sec || 60;
-      extra += `<span class="text-xs text-slate-400 block mt-1">${escapeHtml(String(mc))} / ${escapeHtml(String(ws))}s</span>`;
+      patternText = `${rule.pattern}  \u00b7  ${mc}/${ws}s`;
     }
 
+    const dim = rule.enabled ? "" : "opacity:0.45;";
+
     return `
-      <div class="flex items-start gap-3 bg-slate-800/40 rounded-lg p-3 ${enabledClass}" data-rule-id="${escapeHtml(rule.id)}">
-        <div class="flex-1 min-w-0">
-          <div class="flex flex-wrap items-center gap-1.5 mb-1">
-            ${badge(rule.type, typeColor)}
-            ${badge(rule.action, actionColor)}
-            <span class="text-xs text-slate-400">P${escapeHtml(String(rule.priority))}</span>
-          </div>
-          <p class="text-sm text-white font-mono break-all">${escapeHtml(rule.pattern)}</p>
-          ${extra}
-        </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
-          <label class="relative inline-flex items-center cursor-pointer" title="${escapeHtml(toggleLabel)}">
-            <input type="checkbox" class="sr-only peer filter-toggle-cb" data-rule-id="${escapeHtml(rule.id)}" ${rule.enabled ? "checked" : ""} />
-            <div class="w-9 h-5 bg-slate-600 peer-focus:ring-2 peer-focus:ring-sky-400 rounded-full peer peer-checked:bg-sky-600 transition-colors
-                        after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full">
-            </div>
-          </label>
-          <button class="filter-delete-btn text-red-400 hover:text-red-300 transition-colors p-1" data-rule-id="${escapeHtml(rule.id)}" title="${t("deleteRule", "Delete")}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-          </button>
-        </div>
+      <div class="hud-table-row hud-rule-row" style="grid-template-columns: 1.6fr 80px 80px 60px 60px 40px;${dim}" data-rule-id="${escapeHtml(rule.id)}" data-rule-type="${escapeHtml(rule.type)}">
+        <span style="font-family:var(--font-mono);font-size:12px;color:var(--color-text-strong);word-break:break-all">${escapeHtml(patternText)}</span>
+        <span class="hud-pill ${typePill}">${typeLabel}</span>
+        <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;padding:2px 6px;border-radius:3px;background:${actionCol};color:#000;font-weight:700;width:fit-content;text-transform:uppercase">${escapeHtml(rule.action)}</span>
+        <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">P${escapeHtml(String(rule.priority))}</span>
+        <label class="relative inline-block" style="width:32px;align-self:center" title="${escapeHtml(rule.enabled ? t("enabled", "Enabled") : t("disabled", "Disabled"))}">
+          <input type="checkbox" class="sr-only filter-toggle-cb" data-rule-id="${escapeHtml(rule.id)}" ${rule.enabled ? "checked" : ""} />
+          <span class="hud-status-dot ${rule.enabled ? "is-live" : "is-paused"}" style="display:inline-block;cursor:pointer"></span>
+        </label>
+        <button class="filter-delete-btn" type="button" data-rule-id="${escapeHtml(rule.id)}" title="${t("deleteRule", "Delete")}" style="background:transparent;border:none;color:var(--color-text-muted);cursor:pointer;font-size:16px;text-align:right;padding:0">\u22ef</button>
       </div>`;
+  }
+
+  function applyFilterChips(rules) {
+    const counts = { all: rules.length, keyword: 0, regex: 0, replace: 0, rate_limit: 0 };
+    rules.forEach((r) => { if (counts[r.type] != null) counts[r.type]++; });
+    Object.keys(counts).forEach((k) => {
+      const el = document.querySelector(`[data-filter-count="${k}"]`);
+      if (el) el.textContent = counts[k];
+    });
+    const rulesStatEl = document.querySelector('[data-mod-stat="rules"]');
+    if (rulesStatEl) rulesStatEl.textContent = counts.all;
   }
 
   // ── API interactions ─────────────────────────────────────────
@@ -221,13 +231,15 @@
   async function refreshRulesList() {
     const list = document.getElementById("filterRulesList");
     if (!list) return;
-    list.innerHTML = `<span class="text-xs text-slate-400">${t("loading", "Loading...")}</span>`;
+    list.innerHTML = `<div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">${t("loading", "Loading...")}</div>`;
     const rules = await fetchRules();
+    applyFilterChips(rules);
     if (rules.length === 0) {
-      list.innerHTML = `<p class="text-xs text-slate-400">${t("noFilterRules", "No filter rules configured.")}</p>`;
+      list.innerHTML = `<div style="padding:18px 14px;text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.05em">${t("noFilterRules", "No filter rules configured.")}</div>`;
       return;
     }
-    list.innerHTML = rules.map(renderRuleCard).join("");
+    const visible = _currentFilter === "all" ? rules : rules.filter((r) => r.type === _currentFilter);
+    list.innerHTML = visible.map(renderRuleRow).join("");
   }
 
   async function addRule() {
@@ -410,11 +422,25 @@
 
     const ruleType = typeEl.value;
     if (replacementRow) {
-      replacementRow.classList.toggle("hidden", ruleType !== "replace");
+      replacementRow.style.display = ruleType === "replace" ? "" : "none";
     }
     if (rateLimitRow) {
-      rateLimitRow.classList.toggle("hidden", ruleType !== "rate_limit");
+      rateLimitRow.style.display = ruleType === "rate_limit" ? "grid" : "none";
     }
+  }
+
+  function wireFilterChips() {
+    const chipRow = document.getElementById("filterTypeChips");
+    if (!chipRow) return;
+    chipRow.addEventListener("click", (e) => {
+      const chip = e.target.closest(".hud-filter-chip");
+      if (!chip) return;
+      _currentFilter = chip.dataset.filterScope || "all";
+      chipRow.querySelectorAll(".hud-filter-chip").forEach((c) => {
+        c.classList.toggle("is-active", c.dataset.filterScope === _currentFilter);
+      });
+      refreshRulesList();
+    });
   }
 
   // ── Initialization ───────────────────────────────────────────
@@ -426,15 +452,7 @@
 
     settingsGrid.insertAdjacentHTML("beforeend", buildSectionHtml());
 
-    // Wire up details toggle persistence
-    const detailsEl = document.getElementById("sec-filters");
-    if (detailsEl) {
-      detailsEl.addEventListener("toggle", () => {
-        var state = loadDetailsState();
-        state["sec-filters"] = detailsEl.open;
-        saveDetailsState(state);
-      });
-    }
+    wireFilterChips();
 
     // Type selector changes form visibility
     const typeEl = document.getElementById("filterType");
@@ -490,6 +508,19 @@
         const btn = e.target.closest(".filter-delete-btn");
         if (btn) {
           deleteRule(btn.dataset.ruleId);
+          return;
+        }
+        const dot = e.target.closest(".hud-status-dot");
+        if (dot) {
+          const row = dot.closest(".hud-rule-row");
+          const cb = row?.querySelector(".filter-toggle-cb");
+          if (cb) {
+            cb.checked = !cb.checked;
+            toggleRule(cb.dataset.ruleId, cb.checked);
+            dot.classList.toggle("is-live", cb.checked);
+            dot.classList.toggle("is-paused", !cb.checked);
+            row.style.opacity = cb.checked ? "" : "0.45";
+          }
         }
       });
     }

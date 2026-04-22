@@ -74,7 +74,8 @@
       window.DANMU_CONFIG = {
         session: { logged_in: {{ session.get('logged_in') | tojson }} },
         settingRanges: {{ ranges | tojson }},
-        wsUrl: (window.location.protocol === "https:" ? "wss:" : "ws:") + "//" + window.location.host + "/"
+        appVersion: {{ app_version | tojson }},
+        wsUrl: (window.location.protocol === "https:" ? "wss:" : "ws:") + "//" + window.location.host + "/",
       };
     </script>
 

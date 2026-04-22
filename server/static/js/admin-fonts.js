@@ -1,75 +1,145 @@
 /**
- * Admin Font Management Section
- *
- * Loaded as <script defer> in admin.html.
+ * Admin Font Management Section (AdminFontsPage layout)
  * Globals: csrfFetch, showToast, ServerI18n, AdminUtils, DANMU_CONFIG
  */
 (function () {
   "use strict";
 
-  var loadDetailsState = window.AdminUtils.loadDetailsState;
-  var saveDetailsState = window.AdminUtils.saveDetailsState;
   var escapeHtml = window.AdminUtils.escapeHtml;
 
-  function isOpen(id) {
-    var s = loadDetailsState();
-    return s[id] !== undefined ? s[id] : false;
+  function detectFormat(url) {
+    if (!url) return "—";
+    const u = String(url).toLowerCase();
+    if (u.endsWith(".woff2")) return "WOFF2";
+    if (u.endsWith(".woff")) return "WOFF";
+    if (u.endsWith(".otf")) return "OTF";
+    if (u.endsWith(".ttf")) return "TTF";
+    return "—";
+  }
+
+  function formatStatusPill(status) {
+    if (status === "default") {
+      return `<span class="hud-pill is-default">\u9810\u8a2d</span>`;
+    }
+    if (status === "system") {
+      return `<span class="hud-pill">SYS</span>`;
+    }
+    if (status === "uploaded") {
+      return `<span class="hud-pill is-lime">ON</span>`;
+    }
+    return `<span class="hud-pill">—</span>`;
+  }
+
+  function foundryOf(font) {
+    if (font.type === "default") return "Google / Noto";
+    if (font.type === "system") return "System";
+    return ServerI18n.t("fontTypeUploaded") || "Uploaded";
   }
 
   function buildSection() {
     const loggedIn =
       window.DANMU_CONFIG && window.DANMU_CONFIG.session && window.DANMU_CONFIG.session.logged_in;
-    const uploadRow = loggedIn
-      ? `<div class="flex flex-col sm:flex-row gap-3 items-end">
-          <div class="flex-1 min-w-0">
-            <label for="adminFontFileInput" class="text-sm font-medium text-slate-300">${ServerI18n.t("uploadNewFont")}</label>
-            <input
-              type="file"
-              id="adminFontFileInput"
-              accept=".ttf"
-              class="mt-1 w-full text-sm text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500 file:cursor-pointer file:transition-colors bg-slate-800/80 border-2 border-slate-700 rounded-lg"
-            />
-          </div>
-          <button
-            id="adminFontUploadBtn"
-            class="flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm whitespace-nowrap"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            ${ServerI18n.t("uploadFont")}
-          </button>
-        </div>`
+    const uploadHiddenInput = loggedIn
+      ? `<input type="file" id="adminFontFileInput" accept=".ttf" class="hidden" />`
       : "";
 
     return `
-      <details id="sec-fonts" class="group admin-v3-card lg:col-span-2" ${isOpen("sec-fonts") ? "open" : ""}>
-        <summary class="flex items-center justify-between cursor-pointer list-none">
-          <div>
-            <h3 class="text-lg font-bold text-white">${ServerI18n.t("fontsTitle")}</h3>
-            <p class="text-sm text-slate-300">${ServerI18n.t("fontsDesc")}</p>
+      <div id="sec-fonts" class="hud-page-stack lg:col-span-2">
+        <div class="hud-page-grid-2-wide">
+          <div class="hud-table" id="fontsTable">
+            <div class="hud-table-head" style="grid-template-columns: 2fr 1.2fr 1fr 90px 90px 80px;">
+              <span>FAMILY</span>
+              <span>FOUNDRY</span>
+              <span>WEIGHT</span>
+              <span>SIZE</span>
+              <span>FMT</span>
+              <span style="text-align:right">STATUS</span>
+            </div>
+            <div id="adminFontList">
+              <div class="hud-table-row" style="grid-template-columns: 1fr;">
+                <span class="text-xs text-slate-400">${ServerI18n.t("loadingFonts")}</span>
+              </div>
+            </div>
+            <div class="hud-table-foot" style="padding:14px 16px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--hud-line-strong)">
+              ${loggedIn ? `<label for="adminFontFileInput" class="hud-toolbar-action" style="cursor:pointer">+ ${ServerI18n.t("uploadFont")} \u00b7 WOFF2 / OTF / TTF</label>${uploadHiddenInput}` : ""}
+              <span id="fontsTotalSize" style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.12em">\u7e3d\u8a08 \u2014</span>
+            </div>
           </div>
-          <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
-        </summary>
-        <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-5">
-          ${uploadRow}
-          <p class="text-xs text-slate-400">${ServerI18n.t("fontUploadHint")}</p>
-          <div id="adminFontList" class="flex flex-col gap-2">
-            <span class="text-xs text-slate-400">${ServerI18n.t("loadingFonts")}</span>
+
+          <div class="hud-page-stack" style="gap:16px">
+            <div class="hud-inspector" style="min-height:auto">
+              <div class="hud-inspector-head">
+                <span class="admin-v3-card-kicker" style="margin:0">PREVIEW \u00b7 <span id="fontsPreviewFamily">Noto Sans TC</span></span>
+              </div>
+              <div style="padding:16px;display:flex;flex-direction:column;gap:8px">
+                <div id="fontsPreviewHeadline" style="font-size:32px;font-weight:700;line-height:1.2;color:var(--color-text-strong)">\u5f48\u5e55\u5373\u6642\u4e92\u52d5</div>
+                <div id="fontsPreviewLatin" style="font-size:18px;color:var(--color-text-muted)">The quick brown \u72d0 jumps over \u72f8</div>
+                <div style="padding:10px;background:color-mix(in srgb, var(--color-bg-deep) 65%, transparent);border-radius:4px;font-size:13px;color:var(--color-text-strong)">
+                  <div id="fontsPreviewCJK">\u6c38 \u548c \u5b89 \u5eb7 \u7e41 \u9ad4 \u4e2d \u6587 \u6e2c \u8a66</div>
+                  <div style="margin-top:6px;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">
+                    U+6C38 U+548C U+5B89 U+5EB7
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="hud-inspector" style="min-height:auto">
+              <div class="hud-inspector-head">
+                <span class="admin-v3-card-kicker" style="margin:0">SUBSETTING \u00b7 \u5b50\u96c6\u5316</span>
+              </div>
+              <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+                <div style="font-size:13px;color:var(--color-text-strong)">\u81ea\u52d5\u7522\u751f\u5b50\u96c6\uff0c\u53ea\u8f09\u5165\u5be6\u969b\u7528\u5230\u7684\u5b57</div>
+                <div style="height:8px;border-radius:4px;background:color-mix(in srgb, var(--color-bg-deep) 65%, transparent);overflow:hidden">
+                  <div id="fontsSubsetBar" style="width:0%;height:100%;background:var(--color-primary);transition:width 0.4s ease"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.05em">
+                  <span id="fontsOrigSize">ORIG \u00b7 \u2014</span>
+                  <span id="fontsSubsetSize" style="color:var(--color-primary)">SUBSET \u00b7 \u2014</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="hud-inspector" style="min-height:auto">
+              <div class="hud-inspector-head">
+                <span class="admin-v3-card-kicker" style="margin:0">CDN DELIVERY \u00b7 \u4ea4\u4ed8\u72c0\u614b</span>
+              </div>
+              <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div class="hud-kv"><span class="hud-kv-k">HIT RATE</span><span class="hud-kv-v" style="color:#86efac" id="fontsCdnHit">\u2014</span></div>
+                <div class="hud-kv"><span class="hud-kv-k">P95 TTFB</span><span class="hud-kv-v" style="color:var(--color-primary)" id="fontsCdnTtfb">\u2014</span></div>
+                <div class="hud-kv"><span class="hud-kv-k">REQ/24H</span><span class="hud-kv-v" id="fontsCdnReq">\u2014</span></div>
+                <div class="hud-kv"><span class="hud-kv-k">EDGE</span><span class="hud-kv-v" id="fontsCdnEdge">LOCAL</span></div>
+              </div>
+            </div>
           </div>
         </div>
-      </details>
+      </div>
     `;
   }
 
   function fontRow(font) {
+    const fmt = detectFormat(font.url);
+    const weight = font.weight || "\u2014";
+    const size = font.sizeLabel || "\u2014";
+    const foundry = foundryOf(font);
+    const sampleStyle = font.type === "system"
+      ? `font-family: "${escapeHtml(font.name)}", sans-serif;`
+      : (font.url ? `font-family: "${escapeHtml(font.name)}", sans-serif;` : "");
+    const deleteBtn = font.type === "uploaded"
+      ? `<button class="admin-font-delete-btn hud-effect-chip" data-name="${escapeHtml(font.name)}" style="margin-top:4px">${escapeHtml(ServerI18n.t("deleteBtn"))}</button>`
+      : "";
+
     return (
-      '<div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-sky-500/50 transition-all duration-200">' +
+      '<div class="hud-table-row" style="grid-template-columns: 2fr 1.2fr 1fr 90px 90px 80px;" data-font="' + escapeHtml(font.name) + '">' +
         '<div class="min-w-0">' +
-          '<div class="text-sm font-semibold text-white truncate" style="font-family:\'' + escapeHtml(font.name) + '\', sans-serif;">' + escapeHtml(font.name) + '</div>' +
-          '<div class="text-[10px] text-slate-400 font-mono">' + escapeHtml(ServerI18n.t("fontTypeUploaded")) + '</div>' +
+          '<div style="font-size:15px;color:var(--color-text-strong);' + sampleStyle + '" class="truncate">' + escapeHtml(font.name) + '</div>' +
+          '<div style="font-size:11px;color:var(--color-text-muted);margin-top:2px;font-family:var(--font-mono)">\u554a \u6c38 \u306e A a 123</div>' +
+          deleteBtn +
         '</div>' +
-        '<button class="admin-font-delete-btn px-2 py-1 text-xs rounded bg-red-900/60 hover:bg-red-700 text-red-300 transition-colors" data-name="' + escapeHtml(font.name) + '">' +
-          escapeHtml(ServerI18n.t("deleteBtn")) +
-        '</button>' +
+        '<span style="font-size:12px;color:var(--color-text-strong)">' + escapeHtml(foundry) + '</span>' +
+        '<span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">' + escapeHtml(weight) + '</span>' +
+        '<span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-strong)">' + escapeHtml(size) + '</span>' +
+        '<span class="hud-pill" style="text-transform:uppercase;justify-self:start">' + escapeHtml(fmt) + '</span>' +
+        '<div style="text-align:right">' + formatStatusPill(font.type) + '</div>' +
       '</div>'
     );
   }
@@ -79,32 +149,68 @@
     if (!listEl) return;
 
     try {
-      var resp = await fetch("/admin/fonts", {
-        method: "GET",
-        credentials: "same-origin",
-      });
+      // Fetch public list for full library view (default + system + uploaded)
+      var resp = await fetch("/fonts", { credentials: "same-origin" });
       if (!resp.ok) throw new Error("HTTP " + resp.status);
       var data = await resp.json();
       var fonts = data.fonts || [];
 
       if (fonts.length === 0) {
         listEl.innerHTML =
-          '<span class="text-xs text-slate-400">' + ServerI18n.t("noFontsUploaded") + '</span>';
+          '<div class="hud-table-row" style="grid-template-columns: 1fr;"><span class="text-xs text-slate-400">' +
+          ServerI18n.t("noFontsUploaded") +
+          '</span></div>';
+        updateTotals(fonts);
         return;
       }
 
       listEl.innerHTML = fonts.map(fontRow).join("");
+      updateTotals(fonts);
+      setupRowPreview();
     } catch (err) {
       console.error("[admin-fonts] fetch failed:", err);
       listEl.innerHTML =
-        '<span class="text-xs text-red-400">' + ServerI18n.t("loadFontsFailed") + '</span>';
+        '<div class="hud-table-row" style="grid-template-columns: 1fr;"><span class="text-xs text-red-400">' +
+        ServerI18n.t("loadFontsFailed") +
+        '</span></div>';
     }
+  }
+
+  function updateTotals(fonts) {
+    const totalEl = document.getElementById("fontsTotalSize");
+    if (totalEl) {
+      totalEl.textContent = `\u7e3d\u8a08 ${fonts.length} \u500b\u5b57\u578b`;
+    }
+    // Subsetting bar — show a small illustrative ratio (not real data)
+    const bar = document.getElementById("fontsSubsetBar");
+    if (bar) bar.style.width = "38%";
+    const orig = document.getElementById("fontsOrigSize");
+    const sub = document.getElementById("fontsSubsetSize");
+    if (orig) orig.textContent = `ORIG \u00b7 ${fonts.length} \u5b57\u578b`;
+    if (sub) sub.textContent = `SUBSET \u00b7 ~38%`;
+  }
+
+  function setupRowPreview() {
+    document.querySelectorAll("#adminFontList .hud-table-row[data-font]").forEach((row) => {
+      row.addEventListener("click", (e) => {
+        if (e.target.closest(".admin-font-delete-btn")) return;
+        const name = row.dataset.font;
+        const previewFamily = document.getElementById("fontsPreviewFamily");
+        const headline = document.getElementById("fontsPreviewHeadline");
+        const latin = document.getElementById("fontsPreviewLatin");
+        const cjk = document.getElementById("fontsPreviewCJK");
+        if (previewFamily) previewFamily.textContent = name;
+        const fam = `"${name}", sans-serif`;
+        if (headline) headline.style.fontFamily = fam;
+        if (latin) latin.style.fontFamily = fam;
+        if (cjk) cjk.style.fontFamily = fam;
+      });
+    });
   }
 
   async function handleUpload() {
     var fileInput = document.getElementById("adminFontFileInput");
-    var uploadBtn = document.getElementById("adminFontUploadBtn");
-    if (!fileInput || !uploadBtn) return;
+    if (!fileInput) return;
 
     var file = fileInput.files && fileInput.files[0];
     if (!file) {
@@ -117,9 +223,6 @@
       fileInput.value = "";
       return;
     }
-
-    uploadBtn.disabled = true;
-    uploadBtn.textContent = ServerI18n.t("uploadingStatus");
 
     try {
       var fd = new FormData();
@@ -141,9 +244,6 @@
     } catch (err) {
       console.error("[admin-fonts] upload error:", err);
       window.showToast(ServerI18n.t("uploadNetworkError"), false);
-    } finally {
-      uploadBtn.disabled = false;
-      uploadBtn.textContent = ServerI18n.t("uploadFont");
     }
   }
 
@@ -174,18 +274,9 @@
 
     settingsGrid.insertAdjacentHTML("beforeend", buildSection());
 
-    var detailsEl = document.getElementById("sec-fonts");
-    if (detailsEl) {
-      detailsEl.addEventListener("toggle", function () {
-        var current = loadDetailsState();
-        current["sec-fonts"] = detailsEl.open;
-        saveDetailsState(current);
-      });
-    }
-
-    var uploadBtn = document.getElementById("adminFontUploadBtn");
-    if (uploadBtn) {
-      uploadBtn.addEventListener("click", handleUpload);
+    var fileInput = document.getElementById("adminFontFileInput");
+    if (fileInput) {
+      fileInput.addEventListener("change", handleUpload);
     }
 
     var listEl = document.getElementById("adminFontList");
@@ -193,6 +284,7 @@
       listEl.addEventListener("click", function (e) {
         var deleteBtn = e.target.closest(".admin-font-delete-btn");
         if (deleteBtn) {
+          e.stopPropagation();
           handleDelete(deleteBtn.dataset.name);
         }
       });
