@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Slido → Danmu Bridge",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Forward Slido questions/polls/messages to a local danmu-desktop server as danmu.",
   "permissions": ["storage", "scripting"],
   "host_permissions": [

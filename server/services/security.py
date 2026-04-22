@@ -4,6 +4,8 @@ import logging
 import secrets
 import threading
 import time
+import urllib.parse
+import urllib.request
 from collections import defaultdict, deque
 from functools import wraps
 
@@ -186,6 +188,119 @@ def rate_limit(
         return wrapper
 
     return decorator
+
+
+def is_fire_admin() -> bool:
+    """Return True when the request carries a matching X-Fire-Token header.
+
+    Admin requests bypass public /fire rate limits and captcha. Returns
+    False (public client) when no admin token is configured or the header
+    is missing/mismatched. Uses secrets.compare_digest to resist timing
+    attacks.
+    """
+    expected = (current_app.config.get("FIRE_ADMIN_TOKEN") or "").strip()
+    if not expected:
+        return False
+    provided = (request.headers.get("X-Fire-Token") or "").strip()
+    if not provided:
+        return False
+    try:
+        return secrets.compare_digest(expected, provided)
+    except Exception:
+        return False
+
+
+def enforce_fire_rate_limits(fingerprint: str | None, is_admin: bool) -> None:
+    """Apply the full /fire rate-limit chain. Aborts 429 if any is exceeded.
+
+    - Admin lane: one generous per-IP ceiling, no captcha, no per-fingerprint,
+      no global cap. Stops buggy extensions from runaway-looping without
+      blocking organizers behind a public surge.
+    - Public lane: per-IP (existing), per-fingerprint (new), global (new).
+      Any of the three tripping is enough to reject.
+    """
+    cfg = current_app.config
+    client_ip = _get_client_ip()
+
+    if is_admin:
+        limit = int(cfg.get("FIRE_ADMIN_RATE_LIMIT", 200))
+        window = int(cfg.get("FIRE_ADMIN_RATE_WINDOW", 60))
+        if limit > 0 and not rate_limiter.allow(
+            f"fire_admin:{client_ip}", limit, window
+        ):
+            abort(429, description="Too Many Requests")
+        return
+
+    # Per-IP ceiling (mirrors the pre-v4.9.1 decorator behaviour).
+    ip_limit = int(cfg.get("FIRE_RATE_LIMIT", 20))
+    ip_window = int(cfg.get("FIRE_RATE_WINDOW", 60))
+    if ip_limit > 0 and not rate_limiter.allow(
+        f"fire:{client_ip}", ip_limit, ip_window
+    ):
+        abort(429, description="Too Many Requests")
+
+    fp_limit = int(cfg.get("FIRE_FINGERPRINT_RATE_LIMIT", 0))
+    fp_window = int(cfg.get("FIRE_FINGERPRINT_RATE_WINDOW", 60))
+    if fp_limit > 0 and fingerprint:
+        if not rate_limiter.allow(f"fire_fp:{fingerprint}", fp_limit, fp_window):
+            abort(429, description="Too Many Requests")
+
+    global_limit = int(cfg.get("GLOBAL_FIRE_RATE_LIMIT", 0))
+    global_window = int(cfg.get("GLOBAL_FIRE_RATE_WINDOW", 60))
+    if global_limit > 0:
+        if not rate_limiter.allow("fire_global:all", global_limit, global_window):
+            abort(429, description="Too Many Requests")
+
+
+def verify_captcha(token: str | None) -> bool:
+    """Verify a Turnstile / hCaptcha token.
+
+    Returns True when:
+      - no provider is configured (feature disabled)
+      - provider is configured but secret is missing (misconfig -> fail open
+        so server doesn't become unusable on typo; logged at WARNING)
+      - provider verifies the token successfully
+
+    Returns False only when the provider actively rejects the token or
+    the HTTP call errors. Caller translates False → 400.
+    """
+    cfg = current_app.config
+    provider = (cfg.get("CAPTCHA_PROVIDER") or "none").lower()
+    if provider == "none":
+        return True
+    secret = (cfg.get("CAPTCHA_SECRET") or "").strip()
+    if not secret:
+        logger.warning(
+            "CAPTCHA_PROVIDER=%s set but CAPTCHA_SECRET empty — skipping verification",
+            provider,
+        )
+        return True
+    if not token:
+        return False
+
+    if provider == "turnstile":
+        url = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+    elif provider == "hcaptcha":
+        url = "https://hcaptcha.com/siteverify"
+    else:
+        logger.warning("Unknown CAPTCHA_PROVIDER=%s — skipping verification", provider)
+        return True
+
+    try:
+        data = urllib.parse.urlencode(
+            {
+                "secret": secret,
+                "response": token,
+                "remoteip": _get_client_ip() or "",
+            }
+        ).encode()
+        req = urllib.request.Request(url, data=data, method="POST")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            payload = json.loads(resp.read().decode("utf-8") or "{}")
+        return bool(payload.get("success"))
+    except Exception as exc:
+        logger.warning("captcha verify error (%s): %s", provider, exc)
+        return False
 
 
 def hash_password(password: str) -> str:

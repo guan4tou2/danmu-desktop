@@ -2,6 +2,7 @@ import html
 import re
 
 from flask import Blueprint, current_app, make_response, request, send_from_directory, session
+from werkzeug.exceptions import HTTPException
 
 from .. import state
 from ..services import fingerprint_tracker
@@ -18,7 +19,14 @@ from ..services.ip import get_client_ip as _extract_client_ip
 from ..services.layout import get_all_modes, get_layout_config, get_layout_css
 from ..services.plugin_manager import plugin_manager
 from ..services.poll import poll_service
-from ..services.security import rate_limit, require_csrf, verify_font_token
+from ..services.security import (
+    enforce_fire_rate_limits,
+    is_fire_admin,
+    rate_limit,
+    require_csrf,
+    verify_captcha,
+    verify_font_token,
+)
 from ..services.settings import get_options
 from ..services.sound import sound_service
 from ..services.stickers import sticker_service
@@ -201,11 +209,14 @@ def _record_history_if_enabled(data, fingerprint, client_ip):
     history_service.danmu_history.add(history_payload)
 
 
-# NOTE: /fire is a public endpoint (no auth required) — CSRF protection is
-# intentionally omitted. Rate limiting + fingerprint tracking provide abuse
-# protection. Do NOT add @require_csrf here.
+# NOTE: /fire is a public endpoint (no session auth required) — CSRF protection
+# is intentionally omitted. Abuse protection instead layered as: per-IP rate
+# limit, per-fingerprint rate limit, global rate limit, and optional captcha.
+# Clients with a valid `X-Fire-Token` header bypass the public ceiling and use
+# the admin lane (also rate-limited, but more generously). Do NOT add
+# @require_csrf or @rate_limit decorators — all checks run inline so the admin
+# token can bypass them before limits are charged.
 @api_bp.route("/fire", methods=["POST"])
-@rate_limit("fire")
 def fire():
     """發送彈幕"""
     if get_ws_client_count() <= 0:
@@ -225,9 +236,21 @@ def fire():
             return _internal_plain_error_response()
 
         fingerprint = data.pop("fingerprint", None)
+        captcha_token = data.pop("captcha_token", None)
         text_content = data.get("text", "")
         client_ip = _extract_client_ip()
         user_agent = request.headers.get("User-Agent", "")
+
+        admin_client = is_fire_admin()
+
+        # Captcha gate (public only; admin lane skips).
+        if not admin_client:
+            header_captcha = request.headers.get("X-Captcha-Token")
+            if not verify_captcha(captcha_token or header_captcha):
+                return _json_response({"error": "Captcha verification failed"}, 400)
+
+        # Rate-limit chain. Aborts 429 internally; flask converts to response.
+        enforce_fire_rate_limits(fingerprint, admin_client)
 
         # Filter engine check (replaces simple blacklist check)
         filter_result = filter_engine.check(text_content, fingerprint)
@@ -294,6 +317,9 @@ def fire():
 
             return _json_response({"status": "OK"}, 200)
         return _json_response({"error": "Failed to enqueue message"}, 503)
+    except HTTPException:
+        # Rate-limit aborts (429) and similar must propagate verbatim.
+        raise
     except Exception as exc:
         return _log_and_internal_error("Send Error", exc)
 

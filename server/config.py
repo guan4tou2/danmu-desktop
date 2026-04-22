@@ -39,7 +39,7 @@ class Config:
     # Priority: runtime hash file > ADMIN_PASSWORD_HASHED env var > plaintext ADMIN_PASSWORD
     ADMIN_PASSWORD_HASHED = load_runtime_hash() or os.getenv("ADMIN_PASSWORD_HASHED", "")
     APP_NAME = "Danmu Fire"
-    APP_VERSION = "4.9.0"
+    APP_VERSION = "4.9.1"
     PORT = int(os.getenv("PORT", "4000"))
     WS_PORT = int(os.getenv("WS_PORT", "4001"))
     ENV = os.getenv("ENV", "development").lower()
@@ -47,6 +47,26 @@ class Config:
     WS = ""
     FIRE_RATE_LIMIT = int(os.getenv("FIRE_RATE_LIMIT", "20"))
     FIRE_RATE_WINDOW = int(os.getenv("FIRE_RATE_WINDOW", "60"))
+    # Per-fingerprint ceiling (0 disables). Stops users who rotate IPs
+    # (VPN / mobile) from bypassing per-IP limits via /fire.
+    FIRE_FINGERPRINT_RATE_LIMIT = int(os.getenv("FIRE_FINGERPRINT_RATE_LIMIT", "30"))
+    FIRE_FINGERPRINT_RATE_WINDOW = int(os.getenv("FIRE_FINGERPRINT_RATE_WINDOW", "60"))
+    # Global ceiling across all clients (0 disables). Protects the overlay
+    # from distributed-IP floods that individually stay under per-IP caps.
+    GLOBAL_FIRE_RATE_LIMIT = int(os.getenv("GLOBAL_FIRE_RATE_LIMIT", "0"))
+    GLOBAL_FIRE_RATE_WINDOW = int(os.getenv("GLOBAL_FIRE_RATE_WINDOW", "60"))
+    # Shared secret for privileged /fire clients (e.g. Slido extension).
+    # If set, requests with a matching `X-Fire-Token` header skip the
+    # public rate limits and captcha, using the higher admin ceiling below.
+    # Empty string disables the admin lane entirely.
+    FIRE_ADMIN_TOKEN = os.getenv("FIRE_ADMIN_TOKEN", "")
+    FIRE_ADMIN_RATE_LIMIT = int(os.getenv("FIRE_ADMIN_RATE_LIMIT", "200"))
+    FIRE_ADMIN_RATE_WINDOW = int(os.getenv("FIRE_ADMIN_RATE_WINDOW", "60"))
+    # Captcha verification for public /fire (extension admin lane bypasses).
+    # Provider: "none" (default, disabled), "turnstile", "hcaptcha".
+    CAPTCHA_PROVIDER = os.getenv("CAPTCHA_PROVIDER", "none").lower()
+    CAPTCHA_SITE_KEY = os.getenv("CAPTCHA_SITE_KEY", "")
+    CAPTCHA_SECRET = os.getenv("CAPTCHA_SECRET", "")
     ADMIN_RATE_LIMIT = int(os.getenv("ADMIN_RATE_LIMIT", "60"))
     ADMIN_RATE_WINDOW = int(os.getenv("ADMIN_RATE_WINDOW", "60"))
     API_RATE_LIMIT = int(os.getenv("API_RATE_LIMIT", "30"))

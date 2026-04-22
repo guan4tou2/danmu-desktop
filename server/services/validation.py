@@ -35,6 +35,9 @@ class FireRequestSchema(Schema):
     size = fields.Int(load_default=None, validate=validate.Range(min=1, max=200))
     speed = fields.Int(load_default=None, validate=validate.Range(min=1, max=10))
     fingerprint = fields.Str(load_default=None, validate=validate.Length(max=128))
+    # Captcha providers (Turnstile / hCaptcha) issue tokens well under 4k chars.
+    # Accept anything up to 8k to be safe; verification itself is the real gate.
+    captcha_token = fields.Str(load_default=None, validate=validate.Length(max=8192))
     nickname = fields.Str(load_default=None, validate=validate.Length(max=20))
     layout = fields.Str(
         load_default=None,
