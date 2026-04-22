@@ -17,10 +17,11 @@
   --color-error-hover: #dc2626;
   --color-error-light: #f87171;
 
-  /* Surface / Background */
-  --color-bg-deep: #000000;
-  --color-bg-base: #0f172a;
-  --color-bg-elevated: #1e293b;
+  /* Surface / Background — aligned to HUD prototype (tokens.jsx) */
+  --color-bg-deep: #020617;          /* slate-950 — viewport */
+  --color-bg-base: #0f172a;          /* slate-900 — panels */
+  --color-bg-elevated: #1e293b;      /* slate-800 — raised */
+  --color-bg-row-hover: #334155;     /* slate-700 — list row hover */
   --color-bg-card: rgba(15, 23, 42, 0.75);
   --color-bg-input: rgba(30, 41, 59, 0.8);
   --color-bg-input-solid: rgba(30, 41, 59, 1);
@@ -37,9 +38,9 @@
    * secondary  6.96:1 ✓ AA body, AAA large
    * bright    14.48:1 ✓ AAA
    * muted      2.36:1 ✗ — for disabled/decorative ONLY, not user-facing copy */
-  --color-text-primary: #f1f5f9;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted: #475569;
+  --color-text-primary: #f1f5f9;     /* slate-100 */
+  --color-text-secondary: #94a3b8;   /* slate-400 */
+  --color-text-muted: #64748b;       /* slate-500 — HUD textMute */
   --color-text-bright: #e2e8f0;
 
   /* State colours */
@@ -108,8 +109,14 @@
   --hud-cut: 14px;                                /* diagonal notch size on .hud-panel */
   --hud-corner-size: 10px;                        /* L-bracket arm length */
   --hud-corner-thickness: 1px;                    /* L-bracket stroke */
-  --hud-line: rgba(71, 85, 105, 0.55);            /* slate-600 @ 0.55 — panel edges */
-  --hud-line-strong: rgba(100, 116, 139, 0.85);   /* slate-500 @ 0.85 — emphasized edges */
+  --hud-line: rgba(148, 163, 184, 0.18);          /* slate-400 @ 0.18 — hairlines */
+  --hud-line-strong: rgba(148, 163, 184, 0.35);   /* slate-400 @ 0.35 — emphasized */
   --hud-cyan-line: rgba(56, 189, 248, 0.45);      /* sky-400 @ 0.45 — accent edges */
-  --hud-cyan-soft: rgba(56, 189, 248, 0.14);      /* sky-400 @ 0.14 — active fill */
+  --hud-cyan-soft: rgba(56, 189, 248, 0.12);      /* sky-400 @ 0.12 — active fill */
+
+  /* HUD accent palette — amber/lime/crimson replace magenta. */
+  --hud-cyan: #38bdf8;               /* sky-400 — primary signal */
+  --hud-amber: #fbbf24;              /* amber-400 — live/recording/warn */
+  --hud-lime: #86efac;               /* green-300 — healthy/ok */
+  --hud-crimson: #f87171;            /* red-400 — danger/drop */
 }

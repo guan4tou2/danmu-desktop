@@ -12,27 +12,6 @@ document.addEventListener("DOMContentLoaded", () => {
     /* localStorage blocked — that is ok, session only */
   }
 
-  // --- VANTA.js Background Initialization ---
-  try {
-    VANTA.NET({
-      el: "#vanta-bg",
-      mouseControls: true,
-      touchControls: true,
-      gyroControls: false,
-      minHeight: 200.0,
-      minWidth: 200.0,
-      scale: 1.0,
-      scaleMobile: 1.0,
-      color: 0x7c3aed, // Violet-600 (matches UI accent)
-      backgroundColor: 0x000000, // Black background
-      points: 12.0,
-      maxDistance: 25.0,
-      spacing: 18.0,
-    });
-  } catch (e) {
-    console.warn("Vanta.js failed to initialize", e);
-  }
-
   // Access configuration injected from HTML
   const config = window.DANMU_CONFIG || {};
   let session = config.session || { logged_in: false };
@@ -808,6 +787,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="admin-dash-nav-icon">⊘</span>
                                     <span>敏感字 & 黑名單</span>
                                 </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="ratelimit" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◑</span>
+                                    <span>速率限制</span>
+                                </button>
 
                                 <div class="admin-dash-nav-label" style="margin-top:16px">設定</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="effects" role="tab" aria-selected="false">
@@ -830,27 +813,14 @@ document.addEventListener("DOMContentLoaded", () => {
                             </nav>
                             <div class="admin-dash-telem">
                                 <div class="admin-dash-telem-head">
-                                    <span class="hud-label">TELEMETRY</span>
+                                    <span>TELEMETRY</span>
                                     <span class="status">● HEALTHY</span>
                                 </div>
-                                <div class="admin-dash-telem-row">
-                                    <span class="label">CPU</span>
-                                    <div class="admin-dash-telem-bars">${telemBars([3, 4, 2, 5, 4, 6, 3, 4])}</div>
-                                    <span class="value">12%</span>
-                                </div>
-                                <div class="admin-dash-telem-row">
-                                    <span class="label">MEM</span>
-                                    <div class="admin-dash-telem-bars">${telemBars([5, 5, 6, 6, 7, 7, 7, 8])}</div>
-                                    <span class="value">218MB</span>
-                                </div>
-                                <div class="admin-dash-telem-row">
-                                    <span class="label">WS</span>
-                                    <div class="admin-dash-telem-bars">${telemBars([2, 4, 3, 6, 8, 7, 9, 8])}</div>
-                                    <span class="value">${enabledSettingCount}</span>
-                                </div>
-                                <div class="admin-dash-telem-foot">
-                                    <div>HTTP <span>:${httpPort}</span></div>
-                                    <div>OVERLAY <span>${overlayMode}</span></div>
+                                <div class="admin-dash-telem-grid">
+                                    <div>CPU <span>12%</span></div>
+                                    <div>WS <span>${enabledSettingCount}</span></div>
+                                    <div>MEM <span>218 MB</span></div>
+                                    <div>RATE <span>4.2/s</span></div>
                                 </div>
                             </div>
                         </aside>
@@ -867,8 +837,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                                 <div class="admin-dash-topbar-actions">
                                     <div class="admin-dash-search" aria-hidden="true">
-                                        ⌕ <span data-i18n="adminSearchHint">${ServerI18n.t("adminSearchHint") || "搜尋訊息 / 用戶"}</span>
-                                        <span class="sep">|</span><span>⌘K</span>
+                                        <span>⌕</span>
+                                        <span data-i18n="adminSearchHint">${ServerI18n.t("adminSearchHint") || "搜尋"}</span>
+                                        <span class="sep">⌘K</span>
                                     </div>
                                     <label class="stream-mode-toggle" title="${ServerI18n.t("streamModeHelp")}">
                                       <input type="checkbox" id="streamModeToggle" ${document.body.classList.contains("stream-mode") ? "checked" : ""} />
@@ -1619,6 +1590,7 @@ document.addEventListener("DOMContentLoaded", () => {
     widgets:   { title: "Overlay Widgets",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
     themes:    { title: "風格主題包",       kicker: "THEME PACKS · 顏色 / 字體 / 速度 / 版面", sections: ["sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout", "sec-themes", "sec-emojis", "sec-stickers", "sec-sounds"] },
     moderation:{ title: "敏感字 & 黑名單",  kicker: "MODERATION · 內建功能 · 非插件", sections: ["sec-blacklist", "sec-filters"] },
+    ratelimit: { title: "速率限制",         kicker: "RATE LIMITS · 反刷屏",          sections: ["sec-filters"] },
     effects:   { title: "效果庫 .dme",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },
     plugins:   { title: "伺服器插件",       kicker: "PLUGIN SDK · 熱重載 · SANDBOX", sections: ["sec-plugins"] },
     fonts:     { title: "字型管理",         kicker: "FONT LIBRARY · 觀眾可選",   sections: ["sec-fonts"] },
