@@ -16,6 +16,7 @@ from server.managers import connection_manager, settings_store  # ty: ignore[unr
 from server.services import effects as eff_svc  # ty: ignore[unresolved-import]
 from server.services import ws_queue  # ty: ignore[unresolved-import]
 from server.services import onscreen_config, onscreen_limiter  # ty: ignore[unresolved-import]
+from server.services.scheduler import scheduler_service  # ty: ignore[unresolved-import]
 from server.services import stickers as sticker_svc  # ty: ignore[unresolved-import]
 from server.services import themes as theme_svc  # ty: ignore[unresolved-import]
 from server.services import webhook as webhook_mod  # ty: ignore[unresolved-import]
@@ -70,12 +71,17 @@ def _isolate_onscreen_limits(tmp_path):
     # then flush ws_queue so cross-test pollution can't bleed into this test.
     time.sleep(0.02)
     ws_queue.dequeue_all()
+    # Cancel any scheduler timers from prior tests — test_integration_scheduler
+    # creates jobs with 30s intervals that leak messages into ws_queue during
+    # later tests. Shutdown before yield flushes them before the test body runs.
+    scheduler_service.shutdown()
     try:
         yield
     finally:
         onscreen_limiter.reset()
         onscreen_config._STATE_FILE = original_file
         onscreen_config._reset_for_tests()
+        scheduler_service.shutdown()
 
 
 @pytest.fixture(autouse=True)
