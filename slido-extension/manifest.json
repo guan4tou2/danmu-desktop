@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Slido → Danmu Bridge",
+  "version": "0.1.0",
+  "description": "Forward Slido questions/polls/messages to a local danmu-desktop server as danmu.",
+  "permissions": ["storage", "scripting"],
+  "host_permissions": [
+    "https://app.sli.do/*",
+    "https://*.sli.do/*",
+    "https://*.slido.com/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://app.sli.do/*",
+        "https://*.sli.do/*",
+        "https://*.slido.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["inject.js"],
+      "matches": [
+        "https://app.sli.do/*",
+        "https://*.sli.do/*",
+        "https://*.slido.com/*"
+      ]
+    }
+  ],
+  "action": {
+    "default_title": "Slido → Danmu",
+    "default_popup": "popup.html"
+  }
+}

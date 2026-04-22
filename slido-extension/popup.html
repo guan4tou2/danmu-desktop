@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; style-src 'self' 'unsafe-inline';" />
+    <title>Slido → Danmu</title>
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #0f1117;
+        color: #e8e8ef;
+        margin: 0;
+        padding: 12px 14px;
+        width: 320px;
+      }
+      h1 { font-size: 14px; margin: 0 0 10px; letter-spacing: .3px; }
+      label { display: block; font-size: 12px; margin: 10px 0 4px; color: #a6a6b8; }
+      input[type="text"], input[type="number"], select {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 6px 8px;
+        background: #1a1d27;
+        border: 1px solid #2a2e3c;
+        border-radius: 4px;
+        color: #e8e8ef;
+        font-size: 12px;
+      }
+      .row { display: flex; gap: 8px; align-items: center; }
+      .row > * { flex: 1; }
+      .toggle { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+      button {
+        padding: 6px 10px;
+        background: #38bdf8;
+        border: 0;
+        border-radius: 4px;
+        color: #0b1020;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 12px;
+      }
+      button.secondary { background: #2a2e3c; color: #e8e8ef; }
+      button:disabled { opacity: .5; cursor: not-allowed; }
+      .actions { display: flex; gap: 8px; margin-top: 12px; }
+      .status {
+        font-size: 11px;
+        color: #a6a6b8;
+        margin-top: 10px;
+        padding: 6px 8px;
+        border: 1px dashed #2a2e3c;
+        border-radius: 4px;
+        min-height: 14px;
+      }
+      .status.ok { color: #5fe3a1; border-color: #1e3a2b; }
+      .status.err { color: #ff8585; border-color: #3a1e1e; }
+      small { color: #6d6d7d; }
+    </style>
+  </head>
+  <body>
+    <h1>Slido → Danmu</h1>
+
+    <div class="toggle">
+      <input type="checkbox" id="enabled" />
+      <label for="enabled" style="margin:0;">Enabled</label>
+    </div>
+
+    <label for="serverUrl">Server URL</label>
+    <input type="text" id="serverUrl" placeholder="http://localhost:4000" />
+
+    <label for="mode">Mode</label>
+    <select id="mode">
+      <option value="live">Live (POST /fire)</option>
+      <option value="dry-run">Dry run (console only)</option>
+    </select>
+
+    <div class="row">
+      <div>
+        <label for="minIntervalMs">Min interval (ms)</label>
+        <input type="number" id="minIntervalMs" min="0" max="10000" step="100" />
+      </div>
+      <div>
+        <label for="maxTextLen">Max text len</label>
+        <input type="number" id="maxTextLen" min="10" max="100" step="1" />
+      </div>
+    </div>
+
+    <div class="toggle" style="margin-top:8px;">
+      <input type="checkbox" id="includeAuthor" />
+      <label for="includeAuthor" style="margin:0;">Prefix author name</label>
+    </div>
+
+    <div class="actions">
+      <button id="save">Save</button>
+      <button id="test" class="secondary">Test /fire</button>
+    </div>
+
+    <div id="status" class="status">—</div>
+
+    <p><small>Open a Slido event page, then check DevTools console
+      (on that tab) for <code>[slido-danmu]</code> hook logs.</small></p>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
