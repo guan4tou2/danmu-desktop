@@ -89,9 +89,25 @@ button:disabled,
 }
 
 .admin-body {
+  /* Scoped light-theme overrides — the rest of the app (viewer, overlay,
+   * Electron window) keeps the dark slate tokens; admin alone flips to
+   * the prototype's light palette (hudTokens.light*). */
+  --color-text-primary: var(--admin-text);
+  --color-text-secondary: var(--admin-text-dim);
+  --color-text-muted: var(--admin-text-dim);
+  --color-text-bright: var(--admin-text);
+  --color-text-strong: var(--admin-text);
+  --color-bg-deep: var(--admin-raised);
+  --color-bg-elevated: var(--admin-raised);
+  --color-bg-base: var(--admin-panel);
+  --hud-line: var(--admin-line);
+  --hud-line-strong: rgba(15, 23, 42, 0.18);
+  --hud-cyan-soft: rgba(56, 189, 248, 0.12);
+  color-scheme: light;
+
   background: var(--admin-bg);
   min-height: 100vh;
-  color: var(--color-text-primary);
+  color: var(--admin-text);
   font-family: var(--font-ui);
 }
 
@@ -196,7 +212,6 @@ button:disabled,
 
 .admin-dash-nav-row.is-active {
   background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
-  color: var(--color-primary);
   font-weight: 500;
 }
 

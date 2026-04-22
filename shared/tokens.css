@@ -120,12 +120,14 @@
   --hud-lime: #86efac;               /* green-300 — healthy/ok */
   --hud-crimson: #f87171;            /* red-400 — danger/drop */
 
-  /* AdminPageShell (admin-pages.jsx) exact dark-mode surface colors —
-   * blue-cast slate via oklch. NOT the same as bg-deep/bg-base, which
-   * are pure slate. Admin chrome uses these; the rest of the app keeps
-   * the slate tokens above. */
-  --admin-bg: oklch(0.16 0.022 250);       /* viewport */
-  --admin-panel: oklch(0.20 0.025 250);    /* sidebar / topbar / cards */
-  --admin-raised: oklch(0.24 0.028 250);   /* nested surfaces */
-  --admin-line: oklch(0.32 0.03 220 / 0.35);
+  /* AdminPageShell (admin-pages.jsx) — LIGHT theme.
+   * The prototype canvas mounts admin with theme='light' (TWEAK_DEFAULTS).
+   * These are the hudTokens.light* values exactly. Admin chrome uses
+   * these; the rest of the app keeps the dark slate tokens above. */
+  --admin-bg: #f8fafc;                       /* lightBg0 — viewport */
+  --admin-panel: #ffffff;                    /* sidebar / topbar / cards */
+  --admin-raised: #f1f5f9;                   /* lightBg2 — nested surfaces */
+  --admin-line: rgba(15, 23, 42, 0.12);      /* lightLine */
+  --admin-text: #0f172a;                     /* lightText — slate-900 */
+  --admin-text-dim: #475569;                 /* lightTextDim — slate-600 */
 }
