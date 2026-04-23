@@ -846,6 +846,311 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   padding-top: 4px;
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+ * Multi-question Poll Builder (v4 prototype admin-poll-spec)
+ * Question queue with drag handle + per-question image upload + run bar.
+ * ────────────────────────────────────────────────────────────────────────── */
+.admin-poll-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.admin-poll-head {
+  padding: 16px 18px;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+}
+
+.admin-poll-kicker {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--admin-text-dim);
+  text-transform: uppercase;
+}
+
+.admin-poll-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--admin-text);
+  margin-top: 4px;
+}
+
+.admin-poll-subnote {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--admin-text-dim);
+  line-height: 1.6;
+}
+
+.admin-poll-queue {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-poll-q {
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-poll-q.is-running {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.25);
+}
+
+.admin-poll-q-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--admin-line);
+  background: var(--admin-raised);
+}
+
+.admin-poll-q-handle {
+  cursor: grab;
+  color: var(--admin-text-dim);
+  font-size: 14px;
+  user-select: none;
+}
+
+.admin-poll-q-index {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: var(--color-primary);
+  color: #000;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-poll-q.is-running .admin-poll-q-index {
+  background: var(--color-primary);
+  box-shadow: 0 0 6px var(--color-primary);
+}
+
+.admin-poll-q-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--admin-text-dim);
+  text-transform: uppercase;
+}
+
+.admin-poll-q.is-running .admin-poll-q-label {
+  color: var(--color-primary);
+}
+
+.admin-poll-q-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+
+.admin-poll-q-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid var(--admin-line);
+  background: transparent;
+  color: var(--admin-text-dim);
+  cursor: pointer;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.admin-poll-q-btn:hover {
+  color: var(--admin-text);
+  border-color: var(--admin-text-dim);
+}
+
+.admin-poll-q-btn.is-danger:hover {
+  color: #f87171;
+  border-color: #f87171;
+}
+
+.admin-poll-q-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-poll-q-text {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--admin-line);
+  background: var(--admin-raised);
+  color: var(--admin-text);
+  font-size: 14px;
+  outline: none;
+}
+
+.admin-poll-q-text:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
+}
+
+.admin-poll-q-image-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.admin-poll-q-image-drop {
+  flex: 1;
+  min-height: 70px;
+  border: 1px dashed var(--admin-line);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 10px;
+  cursor: pointer;
+  color: var(--admin-text-dim);
+  font-size: 12px;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+
+.admin-poll-q-image-drop:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.admin-poll-q-image-drop small {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.admin-poll-q-image-drop img {
+  max-height: 100px;
+  max-width: 100%;
+  border-radius: 4px;
+  object-fit: contain;
+}
+
+.admin-poll-q-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-poll-q-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-poll-q-opt-tag {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  background: var(--admin-raised);
+  color: var(--admin-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.admin-poll-q-opt input {
+  flex: 1;
+  padding: 7px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--admin-line);
+  background: transparent;
+  color: var(--admin-text);
+  font-size: 12px;
+  outline: none;
+}
+
+.admin-poll-q-opt input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
+}
+
+.admin-poll-queue-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-poll-queue-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--admin-text-dim);
+  text-transform: uppercase;
+  margin-left: auto;
+}
+
+.admin-poll-runbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+}
+
+.admin-poll-runbar-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.admin-poll-runbar-field > span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--admin-text-dim);
+  text-transform: uppercase;
+}
+
+.admin-poll-runbar-field select {
+  padding: 7px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--admin-line);
+  background: var(--admin-raised);
+  color: var(--admin-text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  outline: none;
+}
+
+.admin-poll-runbar-spacer { flex: 1; }
+
+.admin-poll-status {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--admin-text-dim);
+  letter-spacing: 0.5px;
+}
+
+.admin-poll-legacy { display: none; }
+
 .admin-ratelimit-export {
   margin: 0;
   padding: 12px 14px;

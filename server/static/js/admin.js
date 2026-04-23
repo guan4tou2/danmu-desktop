@@ -1337,42 +1337,278 @@ document.addEventListener("DOMContentLoaded", () => {
                     </details>
                 `);
 
-    // Polls Management Card
+    // Polls Management — multi-question queue (v4 prototype admin-poll-spec).
+    // Client-side queue fires questions through the existing single-active
+    // backend (`/admin/poll/create`) in sequence. Image field is visual-only
+    // for now (stored in-memory + localStorage; not posted to server yet).
     settingsGrid.insertAdjacentHTML("beforeend", `
-                    <details id="sec-polls" class="group admin-v3-card" ${isOpen("sec-polls") ? "open" : ""}>
-                        <summary class="flex items-center justify-between cursor-pointer list-none">
-                            <div>
-                                <h3 class="text-lg font-bold text-white">Poll / Vote</h3>
-                                <p class="text-sm text-slate-300" data-i18n="pollSectionDesc">${ServerI18n.t("pollSectionDesc")}</p>
-                            </div>
-                            <span class="text-slate-400 transition-transform group-open:rotate-180">\u2304</span>
-                        </summary>
-                        <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-4">
-                            <div>
-                                <label for="pollQuestion" class="text-sm font-medium text-slate-300" data-i18n="pollQuestion">${ServerI18n.t("pollQuestion")}</label>
-                                <input type="text" id="pollQuestion" placeholder="What's your favorite...?" maxlength="200"
-                                    class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300">
-                            </div>
-                            <div>
-                                <label class="text-sm font-medium text-slate-300">Options (2-6)</label>
-                                <div id="pollOptionsContainer" class="space-y-2 mt-1">
-                                    <input type="text" class="poll-option-input w-full p-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm" placeholder="A. Option 1" maxlength="100">
-                                    <input type="text" class="poll-option-input w-full p-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm" placeholder="B. Option 2" maxlength="100">
-                                </div>
-                                <div class="admin-poll-options-actions">
-                                    <button id="pollAddOptionBtn" class="admin-poll-link">+ 新增選項</button>
-                                    <button id="pollRemoveOptionBtn" class="admin-poll-link is-muted">- 移除選項</button>
-                                </div>
-                            </div>
-                            <div class="admin-poll-actions">
-                                <button id="pollCreateBtn" class="admin-poll-btn is-primary" data-i18n="pollCreate">${ServerI18n.t("pollCreate")}</button>
-                                <button id="pollEndBtn" class="admin-poll-btn is-ghost" data-i18n="pollEnd">${ServerI18n.t("pollEnd")}</button>
-                                <button id="pollResetBtn" class="admin-poll-btn is-ghost" data-i18n="pollReset">${ServerI18n.t("pollReset")}</button>
-                            </div>
-                            <div id="pollStatusDisplay" class="text-sm text-slate-400"></div>
-                        </div>
-                    </details>
-                `);
+      <div id="sec-polls" class="admin-poll-page hud-page-stack lg:col-span-2">
+        <div class="admin-poll-head">
+          <div class="admin-poll-kicker">POLL BUILDER · 2–6 選項 · 可排序 / 多題目</div>
+          <div class="admin-poll-title">投票題組</div>
+          <p class="admin-poll-subnote">
+            觀眾以彈幕輸入 A / B / C / D 即可投票。一次只跑一題,上一題結束後自動播下一題。
+          </p>
+        </div>
+
+        <div class="admin-poll-queue" id="pollQuestionList"></div>
+
+        <div class="admin-poll-queue-actions">
+          <button type="button" class="admin-poll-btn is-ghost" data-poll-action="add">+ 新增題目</button>
+          <span class="admin-poll-queue-count" data-poll-count>—</span>
+        </div>
+
+        <div class="admin-poll-runbar">
+          <label class="admin-poll-runbar-field">
+            <span>每題時限</span>
+            <select id="pollGlobalTimer">
+              <option value="0" selected>無時限</option>
+              <option value="30">30 秒</option>
+              <option value="60">60 秒</option>
+              <option value="180">3 分鐘</option>
+            </select>
+          </label>
+          <div class="admin-poll-runbar-spacer"></div>
+          <button type="button" class="admin-poll-btn is-ghost" data-poll-action="reset">重設</button>
+          <button type="button" class="admin-poll-btn is-primary" data-poll-action="start">開始第一題 ▶</button>
+        </div>
+
+        <!-- Legacy single-question inputs retained for admin-poll.js compatibility.
+             Hidden visually but still wired; the multi-question queue JS copies
+             active question into these before submitting. -->
+        <div class="admin-poll-legacy" hidden>
+          <input type="text" id="pollQuestion" />
+          <div id="pollOptionsContainer">
+            <input type="text" class="poll-option-input" />
+            <input type="text" class="poll-option-input" />
+          </div>
+          <button id="pollAddOptionBtn"></button>
+          <button id="pollRemoveOptionBtn"></button>
+          <button id="pollCreateBtn"></button>
+          <button id="pollEndBtn"></button>
+          <button id="pollResetBtn"></button>
+        </div>
+
+        <div id="pollStatusDisplay" class="admin-poll-status"></div>
+      </div>
+    `);
+
+    // Multi-question poll builder controller
+    (function initMultiPoll() {
+      const list = document.getElementById("pollQuestionList");
+      const countEl = document.querySelector("[data-poll-count]");
+      if (!list) return;
+
+      const STORAGE_KEY = "danmu.adminPollQueue.v1";
+      let queue = [];
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) queue = JSON.parse(raw);
+      } catch (_) {}
+      if (!Array.isArray(queue) || queue.length === 0) {
+        queue = [{ id: qid(), text: "", options: ["", ""], image: "" }];
+      }
+      let activeIdx = -1; // index of currently-running question, -1 if none
+
+      function qid() { return "q_" + Math.random().toString(36).slice(2, 8); }
+      function persist() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(queue)); } catch (_) {} }
+
+      function render() {
+        list.innerHTML = "";
+        queue.forEach((q, i) => {
+          const card = document.createElement("div");
+          card.className = "admin-poll-q";
+          if (i === activeIdx) card.classList.add("is-running");
+          card.dataset.qid = q.id;
+          card.innerHTML = `
+            <div class="admin-poll-q-head">
+              <span class="admin-poll-q-handle" draggable="true" title="拖曳排序">⋮⋮</span>
+              <span class="admin-poll-q-index">${i + 1}</span>
+              <span class="admin-poll-q-label">${i === activeIdx ? "● 進行中" : "題目"}</span>
+              <div class="admin-poll-q-actions">
+                <button type="button" class="admin-poll-q-btn" data-q-move="up" aria-label="上移">↑</button>
+                <button type="button" class="admin-poll-q-btn" data-q-move="down" aria-label="下移">↓</button>
+                <button type="button" class="admin-poll-q-btn is-danger" data-q-remove aria-label="刪除">×</button>
+              </div>
+            </div>
+            <div class="admin-poll-q-body">
+              <input class="admin-poll-q-text" data-q-text placeholder="輸入題目文字…" maxlength="200" value="${escapeHtml(q.text || "")}" />
+              <div class="admin-poll-q-image-row">
+                <label class="admin-poll-q-image-drop">
+                  ${q.image ? `<img src="${q.image}" alt="題目圖片" />` : `<span>+ 上傳圖片</span><small>PNG / JPG · ≤ 2 MB</small>`}
+                  <input type="file" accept="image/png,image/jpeg" data-q-image hidden />
+                </label>
+                ${q.image ? `<button type="button" class="admin-poll-q-btn is-danger" data-q-image-remove>移除圖片</button>` : ""}
+              </div>
+              <div class="admin-poll-q-opts" data-q-opts>
+                ${q.options.map((opt, oi) => `
+                  <div class="admin-poll-q-opt">
+                    <span class="admin-poll-q-opt-tag">${String.fromCharCode(65 + oi)}</span>
+                    <input data-q-opt="${oi}" placeholder="選項 ${String.fromCharCode(65 + oi)}" maxlength="100" value="${escapeHtml(opt || "")}" />
+                    ${q.options.length > 2 ? `<button type="button" class="admin-poll-q-btn" data-q-opt-remove="${oi}">×</button>` : ""}
+                  </div>
+                `).join("")}
+                ${q.options.length < 6 ? `<button type="button" class="admin-poll-link" data-q-opt-add>+ 新增選項</button>` : ""}
+              </div>
+            </div>
+          `;
+          list.appendChild(card);
+        });
+        if (countEl) countEl.textContent = queue.length + " 題";
+      }
+
+      function findQ(id) { return queue.find(q => q.id === id); }
+
+      list.addEventListener("input", (e) => {
+        const card = e.target.closest(".admin-poll-q");
+        if (!card) return;
+        const q = findQ(card.dataset.qid);
+        if (!q) return;
+        if (e.target.dataset.qText !== undefined) {
+          q.text = e.target.value;
+          persist();
+        } else if (e.target.dataset.qOpt !== undefined) {
+          q.options[+e.target.dataset.qOpt] = e.target.value;
+          persist();
+        }
+      });
+
+      list.addEventListener("click", (e) => {
+        const card = e.target.closest(".admin-poll-q");
+        if (!card) return;
+        const q = findQ(card.dataset.qid);
+        const idx = queue.indexOf(q);
+        const btn = e.target.closest("button, [data-q-opt-add]");
+        if (!btn) return;
+        if (btn.dataset.qMove === "up" && idx > 0) {
+          [queue[idx - 1], queue[idx]] = [queue[idx], queue[idx - 1]];
+          persist(); render();
+        } else if (btn.dataset.qMove === "down" && idx < queue.length - 1) {
+          [queue[idx + 1], queue[idx]] = [queue[idx], queue[idx + 1]];
+          persist(); render();
+        } else if (btn.hasAttribute("data-q-remove")) {
+          if (queue.length > 1) {
+            queue.splice(idx, 1);
+            persist(); render();
+          }
+        } else if (btn.dataset.qOptRemove !== undefined) {
+          const oi = +btn.dataset.qOptRemove;
+          if (q.options.length > 2) {
+            q.options.splice(oi, 1);
+            persist(); render();
+          }
+        } else if (btn.hasAttribute("data-q-opt-add")) {
+          if (q.options.length < 6) {
+            q.options.push("");
+            persist(); render();
+          }
+        } else if (btn.hasAttribute("data-q-image-remove")) {
+          q.image = "";
+          persist(); render();
+        }
+      });
+
+      list.addEventListener("change", (e) => {
+        if (e.target.dataset.qImage === undefined) return;
+        const card = e.target.closest(".admin-poll-q");
+        const q = findQ(card.dataset.qid);
+        const file = e.target.files && e.target.files[0];
+        if (!file || !q) return;
+        if (file.size > 2 * 1024 * 1024) {
+          if (typeof showToast === "function") showToast("圖片需小於 2 MB", false);
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          q.image = String(reader.result || "");
+          persist(); render();
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Queue-level actions (add / reset / start)
+      document.querySelector("#sec-polls").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-poll-action]");
+        if (!btn) return;
+        const a = btn.dataset.pollAction;
+        if (a === "add") {
+          queue.push({ id: qid(), text: "", options: ["", ""], image: "" });
+          persist(); render();
+        } else if (a === "reset") {
+          if (!confirm("清空所有題目?")) return;
+          queue = [{ id: qid(), text: "", options: ["", ""], image: "" }];
+          activeIdx = -1;
+          persist(); render();
+        } else if (a === "start") {
+          startNext(0);
+        }
+      });
+
+      async function startNext(idx) {
+        if (idx >= queue.length) {
+          activeIdx = -1;
+          render();
+          if (typeof showToast === "function") showToast("全部題目已結束", true);
+          return;
+        }
+        const q = queue[idx];
+        const cleanOpts = (q.options || []).map(o => (o || "").trim()).filter(Boolean);
+        if (!(q.text || "").trim()) {
+          if (typeof showToast === "function") showToast(`第 ${idx + 1} 題缺少題目文字`, false);
+          return;
+        }
+        if (cleanOpts.length < 2) {
+          if (typeof showToast === "function") showToast(`第 ${idx + 1} 題選項不足 2 個`, false);
+          return;
+        }
+        activeIdx = idx;
+        render();
+        // Submit through existing backend
+        try {
+          const res = await csrfFetch("/admin/poll/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question: q.text, options: cleanOpts }),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || "poll create failed");
+          }
+          if (typeof showToast === "function") showToast(`第 ${idx + 1} 題已開始`, true);
+          // Watch for end, then advance
+          watchAndAdvance(idx);
+        } catch (err) {
+          activeIdx = -1;
+          render();
+          if (typeof showToast === "function") showToast(String(err.message || err), false);
+        }
+      }
+
+      async function watchAndAdvance(idx) {
+        // Poll status until state !== "active" or the admin manually ends.
+        const check = async () => {
+          try {
+            const res = await fetch("/admin/poll/status", { credentials: "same-origin" });
+            if (!res.ok) return "retry";
+            const data = await res.json();
+            if (data.state === "active") return "retry";
+            // advance
+            if (activeIdx === idx) {
+              setTimeout(() => startNext(idx + 1), 800);
+            }
+            return "done";
+          } catch (_) { return "retry"; }
+        };
+        const loop = async () => {
+          if (activeIdx !== idx) return;
+          const r = await check();
+          if (r === "retry") setTimeout(loop, 2000);
+        };
+        setTimeout(loop, 2000);
+      }
+
+      render();
+    })();
 
     // System Overview (AdminSystemPage layout): Server block + Rate Limits + Backup/Danger
     settingsGrid.insertAdjacentHTML("beforeend", `
