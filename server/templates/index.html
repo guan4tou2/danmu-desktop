@@ -23,21 +23,16 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/viewer-v2.css') }}" />
 </head>
 
-<body class="bg-black text-white min-h-screen overflow-x-hidden">
+<body class="viewer-body-v2 min-h-screen overflow-x-hidden">
   <!-- Skip to main content -->
   <a href="#danmuText"
     class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-sky-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg">Skip
     to main content</a>
 
-  <!-- Background Animation Container -->
-  <div id="vanta-bg" class="fixed top-0 left-0 w-full h-full -z-10" aria-hidden="true"></div>
-
-  <div class="container server-home-shell mx-auto px-4 py-8 relative z-10">
+  <div class="viewer-page-shell">
 
     <!-- Main Card — design-v2 Viewer port (see docs/designs/design-v2/components/viewer.jsx) -->
-    <main
-      class="glass-effect hud-corners-auto server-main-shell rounded-3xl shadow-2xl mb-8 overflow-hidden transition-all duration-300"
-    >
+    <main class="viewer-main-card">
       <div class="viewer-shell">
 
         <!-- Top strip — status chips + language picker above hero -->
@@ -69,7 +64,7 @@
           <div class="viewer-hero-chip-row">
             <span class="viewer-hero-chip" aria-hidden="true">
               <span class="hud-dot"></span>
-              <span data-i18n="heroConnected">CONNECTED · LIVE</span>
+              <span data-i18n="heroConnected">CONNECTED · #MTG-042</span>
             </span>
           </div>
         </section>
@@ -108,22 +103,23 @@
           </div>
           {% endif %}
 
-          <!-- Color + hex readout -->
+          <!-- Color + hex readout · 6 preset swatches + custom picker -->
           {% if options.Color[0] %}
           <div id="colorControl" class="viewer-field">
             <label class="viewer-field-label">
               <span data-i18n="colorField">顏色 · COLOR</span>
             </label>
             <div class="viewer-color-row">
-              <div
-                id="colorGradientPreview"
-                class="viewer-swatch is-active"
-                style="background:#ffffff;"
-                aria-hidden="true"
-              ></div>
+              <button type="button" class="viewer-swatch-preset is-active" data-color="#ffffff" aria-label="White" style="background:#ffffff"></button>
+              <button type="button" class="viewer-swatch-preset" data-color="#38bdf8" aria-label="Cyan" style="background:#38bdf8"></button>
+              <button type="button" class="viewer-swatch-preset" data-color="#fbbf24" aria-label="Amber" style="background:#fbbf24"></button>
+              <button type="button" class="viewer-swatch-preset" data-color="#86efac" aria-label="Lime" style="background:#86efac"></button>
+              <button type="button" class="viewer-swatch-preset" data-color="#f87171" aria-label="Crimson" style="background:#f87171"></button>
+              <button type="button" class="viewer-swatch-preset" data-color="#ffd166" aria-label="Gold" style="background:#ffd166"></button>
               <label class="viewer-swatch viewer-swatch--custom" aria-label="Choose custom color">
                 +<input type="color" id="colorInput" value="#ffffff" aria-label="Choose danmu color" />
               </label>
+              <div id="colorGradientPreview" hidden aria-hidden="true"></div>
               <span id="colorValue" class="viewer-color-hex">#FFFFFF</span>
             </div>
           </div>
@@ -274,7 +270,7 @@
                 class="layout-btn viewer-layout-btn"
               >
                 <span class="viewer-layout-btn__zh" data-i18n="layoutFloat">浮動</span>
-                <span class="viewer-layout-btn__sub">RND</span>
+                <span class="viewer-layout-btn__sub">RANDOM</span>
               </button>
               <button
                 type="button"
@@ -284,7 +280,7 @@
                 class="layout-btn viewer-layout-btn"
               >
                 <span class="viewer-layout-btn__zh" data-i18n="layoutRise">上升</span>
-                <span class="viewer-layout-btn__sub">B→T</span>
+                <span class="viewer-layout-btn__sub">底→頂</span>
               </button>
             </div>
             <input type="hidden" id="layoutSelect" value="scroll" />
@@ -324,17 +320,7 @@
               disabled
             >
               <span id="btnSendText" data-i18n="fireDanmu">FIRE</span>
-              <svg
-                id="btnSendIcon"
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+              <span id="btnSendIcon" class="viewer-fire-arrow" aria-hidden="true">▶</span>
               <svg
                 id="btnSendSpinner"
                 class="btn-spinner hidden"

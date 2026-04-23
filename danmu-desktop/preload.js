@@ -119,6 +119,18 @@ try {
       _handlers.konamiEffect = () => callback();
       ipcRenderer.on("konami-effect", _handlers.konamiEffect);
     },
+    // Overlay Idle · Hero Lockup toggle (tray menu → main → child)
+    onToggleIdle: (callback) => {
+      if (_handlers.toggleIdle) {
+        ipcRenderer.removeListener("overlay-idle-toggle", _handlers.toggleIdle);
+      }
+      _handlers.toggleIdle = (event, data) => callback(data || {});
+      ipcRenderer.on("overlay-idle-toggle", _handlers.toggleIdle);
+    },
+    toggleOverlayIdle: (mode) => {
+      // mode: 'show' | 'hide' | 'toggle'
+      ipcRenderer.send("overlay-idle-request", { mode: mode || "toggle" });
+    },
   });
   // Note: Logging window.API here is from preload's context, not renderer's.
   // The important check is logging window.API in the renderer.

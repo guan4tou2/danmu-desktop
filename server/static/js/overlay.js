@@ -17,6 +17,44 @@
   var defaultFontSize = parseInt(params.get("fontSize"), 10) || 0; // 0 = use server value
   var defaultOpacity = parseInt(params.get("opacity"), 10) || 0;  // 0 = use server value
 
+  // ── Overlay Idle (Hero Lockup) ─────────────────────────────────────────────
+  // Manual-only control. Hidden by default. Exposed as window.OverlayIdle
+  // so the desktop client / tray menu (or the admin remote) can invoke it.
+  var idleEl = null;
+
+  function showIdle() {
+    if (!idleEl) idleEl = document.getElementById("overlay-idle");
+    if (!idleEl) return;
+    idleEl.classList.remove("is-fading");
+    idleEl.classList.add("is-visible");
+  }
+
+  function hideIdle() {
+    if (!idleEl) idleEl = document.getElementById("overlay-idle");
+    if (!idleEl) return;
+    idleEl.classList.add("is-fading");
+    setTimeout(function () {
+      if (idleEl) {
+        idleEl.classList.remove("is-visible");
+        idleEl.classList.remove("is-fading");
+      }
+    }, 550);
+  }
+
+  window.OverlayIdle = {
+    show: showIdle,
+    hide: hideIdle,
+    toggle: function () {
+      if (!idleEl) idleEl = document.getElementById("overlay-idle");
+      if (idleEl && idleEl.classList.contains("is-visible")) hideIdle();
+      else showIdle();
+    }
+  };
+
+  document.addEventListener("DOMContentLoaded", function () {
+    idleEl = document.getElementById("overlay-idle");
+  });
+
   // ── WebSocket state ────────────────────────────────────────────────────────
   var ws = null;
   var reconnectAttempts = 0;
@@ -171,8 +209,10 @@
             labelLeft.appendChild(keyBold);
             labelLeft.appendChild(document.createTextNode(" " + o.text));
 
+            // Viewer-facing poll: show vote count only. Per design brief the
+            // viewer never sees percentages (admin-only metric).
             var labelRight = document.createElement("span");
-            labelRight.textContent = o.count + " (" + o.percentage + "%)";
+            labelRight.textContent = String(o.count);
 
             labelRow.appendChild(labelLeft);
             labelRow.appendChild(labelRight);

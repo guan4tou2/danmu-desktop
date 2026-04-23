@@ -1,3 +1,149 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: transparent; overflow: hidden; width: 100vw; height: 100vh; }
+body {
+  background: transparent;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  font-family: "Zen Kaku Gothic New", "Noto Sans TC", -apple-system, system-ui, sans-serif;
+}
 #danmubody { position: relative; width: 100%; height: 100%; }
+
+/* ─────────── Overlay Idle (Hero Lockup) ───────────
+ * Prototype hero-scenes.jsx:86 OverlayIdle (dark theme).
+ * Full-viewport radial bg, grid backdrop, centered hero + chip + QR.
+ * Hidden by default; invoke via window.OverlayIdle.{show,hide,toggle}. */
+#overlay-idle {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 40px;
+  color: #fff;
+  background: radial-gradient(ellipse at 50% 40%, #0b1220 0%, #000 80%);
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 500ms ease;
+}
+
+#overlay-idle.is-visible { display: flex; opacity: 1; }
+#overlay-idle.is-fading  { opacity: 0; }
+
+/* HudBackdrop — cyan grid masked by radial. opacity=0.2 in prototype. */
+.overlay-idle-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.2;
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.45) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.45) 1px, transparent 1px);
+  background-size: 40px 40px;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, transparent 70%);
+          mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, transparent 70%);
+}
+
+.overlay-idle-inner {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+/* DanmuHero title (size="hero") */
+.overlay-idle-hero {
+  margin: 0;
+  font-family: "Bebas Neue", "Noto Sans TC", "Noto Sans CJK TC", sans-serif;
+  font-size: clamp(3.2rem, 8vw, 6rem);
+  font-weight: 400;
+  color: #7dd3fc;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  filter:
+    drop-shadow(0 10px 15px rgba(0, 0, 0, 0.45))
+    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+}
+
+.overlay-idle-subtitle {
+  margin: 14px auto 0;
+  max-width: 40rem;
+  color: #cbd5e1; /* HERO_SLATE_300 */
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  line-height: 1.6;
+  font-weight: 400;
+  font-family: "Zen Kaku Gothic New", "Noto Sans TC", -apple-system, system-ui, sans-serif;
+}
+
+/* OVERLAY READY chip */
+.overlay-idle-chip {
+  margin-top: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.overlay-idle-chip-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8, 0 0 16px rgba(56, 189, 248, 0.33);
+  animation: overlay-idle-pulse 2s ease-in-out infinite;
+}
+
+.overlay-idle-chip-label {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: #38bdf8;
+  text-transform: uppercase;
+}
+
+.overlay-idle-chip-suffix {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #cbd5e1;
+}
+
+/* QR placeholder — 140x140 white card, 108x108 SVG centered */
+.overlay-idle-qr {
+  margin: 34px auto 0;
+  width: 140px;
+  height: 140px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay-idle-qr svg {
+  display: block;
+  width: 108px;
+  height: 108px;
+}
+
+.overlay-idle-url {
+  margin-top: 12px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #cbd5e1;
+  text-transform: uppercase;
+}
+
+/* prototype tokens.jsx:19 — hud-pulse */
+@keyframes overlay-idle-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.6; transform: scale(0.9); }
+}

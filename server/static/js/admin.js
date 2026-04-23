@@ -876,24 +876,70 @@ document.addEventListener("DOMContentLoaded", () => {
                             </header>
 
                             <section class="admin-kpi-strip" data-route-view="dashboard">
-                                <div class="admin-kpi-tile">
+                                <div class="admin-kpi-tile" data-kpi="messages">
                                     <div class="admin-kpi-tile-head">
-                                        <span class="label">即時控制</span>
-                                        <span class="en">LIVE CONTROLS</span>
+                                        <span class="label">訊息總數</span>
+                                        <span class="en">MESSAGES</span>
                                     </div>
-                                    <div class="admin-kpi-tile-value">${enabledSettingCount}</div>
-                                    <div class="admin-kpi-tile-bars">${kpiBars(enabledSettingCount + 3)}</div>
-                                    <div class="admin-kpi-tile-delta is-success">+${enabledSettingCount} / 7 enabled</div>
+                                    <div class="admin-kpi-tile-value" data-kpi-value>—</div>
+                                    <div class="admin-kpi-tile-bars" data-kpi-bars>${kpiBars(6)}</div>
+                                    <div class="admin-kpi-tile-delta is-success" data-kpi-delta>載入中…</div>
                                 </div>
-                                <div class="admin-kpi-tile">
+                                <div class="admin-kpi-tile" data-kpi="peak">
                                     <div class="admin-kpi-tile-head">
-                                        <span class="label">預設模式</span>
-                                        <span class="en">OVERLAY MODE</span>
+                                        <span class="label">高峰/分鐘</span>
+                                        <span class="en">PEAK</span>
                                     </div>
-                                    <div class="admin-kpi-tile-value">${overlayMode}</div>
-                                    <div class="admin-kpi-tile-bars">${kpiBars((overlayMode || "x").length + 5)}</div>
-                                    <div class="admin-kpi-tile-delta is-muted">FONT · ${fontLabel}</div>
+                                    <div class="admin-kpi-tile-value" data-kpi-value>—</div>
+                                    <div class="admin-kpi-tile-bars" data-kpi-bars>${kpiBars(6)}</div>
+                                    <div class="admin-kpi-tile-delta is-muted" data-kpi-delta>計算中…</div>
                                 </div>
+                            </section>
+
+                            <!-- Dashboard summary grid — prototype admin-v3.jsx:100+
+                                 12-col grid: active poll (7) + poll builder (5),
+                                 messages stream (7) + widgets & plugins (5). -->
+                            <section class="admin-dash-summary" data-route-view="dashboard">
+                              <div class="admin-dash-summary-grid">
+                                <div class="admin-dash-card is-span-7" data-dash-card="active-poll">
+                                  <div class="admin-dash-card-head">
+                                    <span class="title">進行中投票</span>
+                                    <span class="kicker">POLL · 觀眾已同步</span>
+                                    <span class="timer" data-dash-poll-timer></span>
+                                  </div>
+                                  <div class="admin-dash-card-body" data-dash-poll-body>
+                                    <div class="admin-dash-empty">尚無進行中投票 · 切換至「投票」頁建立</div>
+                                  </div>
+                                </div>
+                                <div class="admin-dash-card is-span-5" data-dash-card="poll-builder">
+                                  <div class="admin-dash-card-head">
+                                    <span class="title">新增投票</span>
+                                    <span class="kicker">POLL BUILDER · 2–6 選項</span>
+                                  </div>
+                                  <div class="admin-dash-card-body">
+                                    <a class="admin-dash-cta" href="#" data-route-link="polls">+ 前往投票頁建立 ▶</a>
+                                  </div>
+                                </div>
+                                <div class="admin-dash-card is-span-7" data-dash-card="messages">
+                                  <div class="admin-dash-card-head">
+                                    <span class="title">即時訊息</span>
+                                    <span class="kicker">STREAM · 可封鎖 / 標記</span>
+                                    <span class="auto">▶ AUTO</span>
+                                  </div>
+                                  <div class="admin-dash-card-body admin-dash-messages" data-dash-messages>
+                                    <div class="admin-dash-empty">等待訊息…</div>
+                                  </div>
+                                </div>
+                                <div class="admin-dash-card is-span-5" data-dash-card="widgets">
+                                  <div class="admin-dash-card-head">
+                                    <span class="title">Widgets &amp; Plugins</span>
+                                    <span class="kicker">OBS · 熱重載</span>
+                                  </div>
+                                  <div class="admin-dash-card-body" data-dash-widgets>
+                                    <div class="admin-dash-empty">載入中…</div>
+                                  </div>
+                                </div>
+                              </div>
                             </section>
 
                             <div id="settings-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 admin-route-sections">
@@ -1163,8 +1209,12 @@ document.addEventListener("DOMContentLoaded", () => {
               Reload
             </button>
           </div>
-          <div id="themesList" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <span class="text-xs text-slate-400">Loading themes...</span>
+          <div class="theme-pack-toolbar">
+            <span class="theme-pack-count" data-theme-pack-count>—</span>
+            <span class="theme-pack-actions-head">+ 新增主題包 · ⤓ 匯入 .dmtheme · ⤒ 匯出</span>
+          </div>
+          <div id="themesList">
+            <span class="theme-pack-muted" style="padding:14px">載入主題包…</span>
           </div>
         </div>
       </details>
@@ -1309,15 +1359,15 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <input type="text" class="poll-option-input w-full p-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm" placeholder="A. Option 1" maxlength="100">
                                     <input type="text" class="poll-option-input w-full p-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm" placeholder="B. Option 2" maxlength="100">
                                 </div>
-                                <div class="flex gap-2 mt-2">
-                                    <button id="pollAddOptionBtn" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm">+ Add Option</button>
-                                    <button id="pollRemoveOptionBtn" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm">- Remove</button>
+                                <div class="admin-poll-options-actions">
+                                    <button id="pollAddOptionBtn" class="admin-poll-link">+ 新增選項</button>
+                                    <button id="pollRemoveOptionBtn" class="admin-poll-link is-muted">- 移除選項</button>
                                 </div>
                             </div>
-                            <div class="flex gap-2 flex-wrap">
-                                <button id="pollCreateBtn" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors text-sm font-semibold" data-i18n="pollCreate">${ServerI18n.t("pollCreate")}</button>
-                                <button id="pollEndBtn" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors text-sm font-semibold" data-i18n="pollEnd">${ServerI18n.t("pollEnd")}</button>
-                                <button id="pollResetBtn" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors text-sm font-semibold" data-i18n="pollReset">${ServerI18n.t("pollReset")}</button>
+                            <div class="admin-poll-actions">
+                                <button id="pollCreateBtn" class="admin-poll-btn is-primary" data-i18n="pollCreate">${ServerI18n.t("pollCreate")}</button>
+                                <button id="pollEndBtn" class="admin-poll-btn is-ghost" data-i18n="pollEnd">${ServerI18n.t("pollEnd")}</button>
+                                <button id="pollResetBtn" class="admin-poll-btn is-ghost" data-i18n="pollReset">${ServerI18n.t("pollReset")}</button>
                             </div>
                             <div id="pollStatusDisplay" class="text-sm text-slate-400"></div>
                         </div>
@@ -1591,6 +1641,168 @@ document.addEventListener("DOMContentLoaded", () => {
     // sections. Sections not matching the active route are hidden via
     // [data-active-route] CSS on the shell.
     initAdminRouter();
+
+    // Dashboard KPI — mirrors prototype admin-v3.jsx:107 KpiTile with real data.
+    refreshDashboardKpi();
+    refreshDashboardSummary();
+  }
+
+  async function refreshDashboardKpi() {
+    try {
+      const [historyRes, hourlyRes] = await Promise.all([
+        fetch("/admin/history?hours=24&limit=1", { credentials: "same-origin" }),
+        fetch("/admin/stats/hourly?hours=24",   { credentials: "same-origin" }),
+      ]);
+      if (!historyRes.ok || !hourlyRes.ok) return;
+      const hist = await historyRes.json();
+      const dist = (await hourlyRes.json()).distribution || [];
+      const total = (hist.stats && hist.stats.total) || 0;
+      const last24h = (hist.stats && hist.stats.last_24h) || 0;
+      const peakEntry = dist.reduce((m, e) => (e.count > (m?.count || -1) ? e : m), null);
+      const peakVal = peakEntry ? peakEntry.count : 0;
+      const peakHour = peakEntry ? (peakEntry.hour || "").slice(-5) : "—";
+
+      const tileMsg = document.querySelector('[data-kpi="messages"]');
+      if (tileMsg) {
+        tileMsg.querySelector("[data-kpi-value]").textContent = total.toLocaleString();
+        tileMsg.querySelector("[data-kpi-delta]").textContent = `+${last24h.toLocaleString()} / 24h`;
+      }
+      const tilePeak = document.querySelector('[data-kpi="peak"]');
+      if (tilePeak) {
+        tilePeak.querySelector("[data-kpi-value]").textContent = peakVal.toLocaleString();
+        tilePeak.querySelector("[data-kpi-delta]").textContent = peakEntry ? `於 ${peakHour}` : "無資料";
+        if (dist.length) {
+          const bars = dist.slice(-12).map(e => Math.max(2, Math.round((e.count / Math.max(1, peakVal)) * 12)));
+          tilePeak.querySelector("[data-kpi-bars]").innerHTML = bars.map(h =>
+            `<span style="height:${h}px;opacity:${0.3 + h/20}"></span>`
+          ).join("");
+        }
+      }
+    } catch (e) {
+      // Silent — dashboard falls back to placeholders.
+    }
+  }
+
+  // Dashboard summary cards — prototype admin-v3.jsx active-poll + messages + widgets.
+  async function refreshDashboardSummary() {
+    populateDashboardPoll();
+    populateDashboardMessages();
+    populateDashboardWidgets();
+  }
+
+  async function populateDashboardPoll() {
+    const body = document.querySelector("[data-dash-poll-body]");
+    const timer = document.querySelector("[data-dash-poll-timer]");
+    if (!body) return;
+    try {
+      const r = await fetch("/admin/metrics", { credentials: "same-origin" });
+      if (!r.ok) return;
+      const m = await r.json();
+      const ps = m.poll_state;
+      if (!ps || !ps.active || !Array.isArray(ps.options) || ps.options.length === 0) {
+        body.innerHTML = `<div class="admin-dash-empty">尚無進行中投票 · 切換至「投票」頁建立</div>`;
+        if (timer) timer.textContent = "";
+        return;
+      }
+      const totalVotes = ps.options.reduce((s, o) => s + (o.votes || 0), 0);
+      const keys = ["A", "B", "C", "D", "E", "F"];
+      let winnerIdx = 0;
+      ps.options.forEach((o, i) => { if ((o.votes || 0) > (ps.options[winnerIdx].votes || 0)) winnerIdx = i; });
+      body.innerHTML =
+        `<div class="admin-dash-poll-question" style="font-size:13px;margin-bottom:8px">${escapeHtml(ps.question || "投票進行中")}</div>` +
+        ps.options.map((o, i) => {
+          const pct = totalVotes ? Math.round((o.votes / totalVotes) * 100) : 0;
+          const win = i === winnerIdx && totalVotes > 0;
+          return `
+            <div class="admin-dash-poll-opt ${win ? "is-winner" : ""}">
+              <div class="row">
+                <span class="tag">${keys[i] || String(i + 1)}</span>
+                <span class="label">${escapeHtml(o.label || "")}</span>
+                <span class="pct">${pct}%</span>
+                <span class="votes">${(o.votes || 0)} 票</span>
+              </div>
+              <div class="bar"><span style="width:${pct}%"></span></div>
+            </div>`;
+        }).join("") +
+        `<div class="admin-dash-empty" style="padding:6px 4px;margin-top:4px;font-size:10px">TOTAL · ${totalVotes} 票 · 觀眾輸入 A B C D 即可投票</div>`;
+      if (timer) {
+        const remain = ps.remaining_seconds;
+        timer.textContent = typeof remain === "number" && remain > 0
+          ? `● ${Math.floor(remain / 60)}:${String(remain % 60).padStart(2, "0")} 剩餘`
+          : "● LIVE";
+      }
+    } catch (e) {
+      // Silent.
+    }
+  }
+
+  async function populateDashboardMessages() {
+    const body = document.querySelector("[data-dash-messages]");
+    if (!body) return;
+    try {
+      const r = await fetch("/admin/history?hours=24&limit=7", { credentials: "same-origin" });
+      if (!r.ok) return;
+      const data = await r.json();
+      const records = (data.records || []).slice(0, 7);
+      if (records.length === 0) {
+        body.innerHTML = `<div class="admin-dash-empty">等待訊息…</div>`;
+        return;
+      }
+      body.innerHTML = records.map(rec => {
+        const ts = (rec.timestamp || "").slice(11, 19);
+        const txt = escapeHtml(rec.text || rec.message || "");
+        const user = escapeHtml(rec.nickname || rec.user || "guest");
+        const tag = "MSG";
+        const tagStyle = `color:var(--admin-text-dim)`;
+        return `
+          <div class="admin-dash-msg-row">
+            <span class="time">${ts}</span>
+            <span class="tag" style="${tagStyle}">${tag}</span>
+            <div>
+              <div class="text">${txt}</div>
+              <div class="meta">@${user}</div>
+            </div>
+            <span class="more">⋯</span>
+          </div>`;
+      }).join("");
+    } catch (e) {
+      // Silent.
+    }
+  }
+
+  async function populateDashboardWidgets() {
+    const body = document.querySelector("[data-dash-widgets]");
+    if (!body) return;
+    try {
+      const r = await fetch("/admin/widgets", { credentials: "same-origin" });
+      if (!r.ok) {
+        body.innerHTML = `<div class="admin-dash-empty">無可用 widgets</div>`;
+        return;
+      }
+      const data = await r.json();
+      const widgets = (data.widgets || data.items || []).slice(0, 4);
+      if (widgets.length === 0) {
+        body.innerHTML = `<div class="admin-dash-empty">尚未啟用任何 widget</div>`;
+        return;
+      }
+      body.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">` +
+        widgets.map(w => {
+          const running = w.enabled || w.running;
+          const dotColor = running ? "var(--color-success, #22c55e)" : "var(--admin-text-dim)";
+          return `
+            <div class="admin-dash-widget-tile">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="width:6px;height:6px;border-radius:50%;background:${dotColor}"></span>
+                <span class="kind">${escapeHtml(w.kind || "WIDGET")}</span>
+              </div>
+              <div class="title">${escapeHtml(w.name || w.title || w.id || "widget")}</div>
+              <div class="uptime">${running ? "● RUNNING" : "○ PAUSED"}</div>
+            </div>`;
+        }).join("") +
+        `</div>`;
+    } catch (e) {
+      body.innerHTML = `<div class="admin-dash-empty">無可用 widgets</div>`;
+    }
   }
 
   const ADMIN_ROUTES = {

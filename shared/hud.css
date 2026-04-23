@@ -279,11 +279,11 @@
 }
 
 .hud-hero-title.is-large {
-  font-size: clamp(2.4rem, 6vw, 3.6rem);
+  font-size: clamp(2rem, 5vw, 3.5rem);
 }
 
 .hud-hero-title.is-medium {
-  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  font-size: 2rem;
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
 }
 

@@ -278,3 +278,80 @@ details summary svg {
     border-radius: var(--radius-pill);
   }
 }
+
+/* ───────────── Title bar (prototype desktop.jsx ControlWindow:152) ─────────────
+ * Sticky macOS-style bar at the top: traffic lights + label + CONNECTED dot.
+ * Uses position: sticky so it stays visible while content scrolls. */
+.client-titlebar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 36px;
+  background: rgba(15, 23, 42, 0.92);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.client-titlebar-light {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.client-titlebar-light--red    { background: #ff5f57; }
+.client-titlebar-light--amber  { background: #febc2e; }
+.client-titlebar-light--green  { background: #28c840; }
+
+.client-titlebar-label {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.client-titlebar-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: rgba(148, 163, 184, 0.9);
+  text-transform: uppercase;
+}
+
+.client-titlebar-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #94a3b8;
+  box-shadow: 0 0 6px rgba(148, 163, 184, 0.4);
+}
+
+.client-titlebar-status-dot[data-client-status="connected"] {
+  background: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8, 0 0 12px rgba(56, 189, 248, 0.4);
+  animation: client-titlebar-pulse 2s ease-in-out infinite;
+}
+
+.client-titlebar-status-dot[data-client-status="connecting"] {
+  background: #fbbf24;
+  box-shadow: 0 0 6px #fbbf24;
+}
+
+.client-titlebar-status[data-client-status="connected"] .client-titlebar-status-text,
+.client-titlebar-status-dot[data-client-status="connected"] + .client-titlebar-status-text {
+  color: #38bdf8;
+}
+
+@keyframes client-titlebar-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.6; transform: scale(0.85); }
+}

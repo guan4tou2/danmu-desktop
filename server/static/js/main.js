@@ -1,24 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // --- VANTA.js background initialization ---
-  try {
-    VANTA.NET({
-      el: "#vanta-bg",
-      mouseControls: true,
-      touchControls: true,
-      gyroControls: false,
-      minHeight: 200.0,
-      minWidth: 200.0,
-      scale: 1.0,
-      scaleMobile: 1.0,
-      color: 0x3b82f6,
-      backgroundColor: 0x000000,
-      points: 12.0,
-      maxDistance: 25.0,
-      spacing: 18.0,
-    });
-  } catch (e) {
-    console.warn("Vanta.js failed to initialize", e);
-  }
+  // Viewer v2 background is a static dark navy gradient (see viewer-v2.css).
+  // VANTA.NET animation was removed to match the handoff design — the viewer
+  // page is a calm launcher, not a screensaver.
 
   // --- Element selectors ---
   const elements = {
@@ -520,9 +503,32 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.colorGradientPreview.style.backgroundImage = "none";
         elements.colorGradientPreview.style.backgroundColor = color;
       }
+      const swatches = document.querySelectorAll(".viewer-swatch-preset");
+      let matched = false;
+      swatches.forEach((sw) => {
+        const c = (sw.getAttribute("data-color") || "").toLowerCase();
+        if (c === color.toLowerCase()) {
+          sw.classList.add("is-active");
+          matched = true;
+        } else {
+          sw.classList.remove("is-active");
+        }
+      });
+      if (elements.danmuText) {
+        elements.danmuText.style.color = color;
+      }
       updatePreview();
     });
   }
+
+  document.querySelectorAll(".viewer-swatch-preset").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const color = btn.getAttribute("data-color");
+      if (!color || !elements.colorInput) return;
+      elements.colorInput.value = color;
+      elements.colorInput.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  });
 
   if (elements.sizeInput) {
     elements.sizeInput.addEventListener("input", (e) => {
@@ -632,23 +638,29 @@ document.addEventListener("DOMContentLoaded", () => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.dataset.effectName = eff.name;
-      btn.className = "effect-btn px-3 py-1 rounded-full text-xs font-medium border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors";
+      btn.className = "effect-btn viewer-chip";
       btn.title = eff.description || "";
       var effI18nKey = "effect_" + eff.name;
-      btn.textContent = ServerI18n.t(effI18nKey) !== effI18nKey ? ServerI18n.t(effI18nKey) : (eff.label || eff.name);
+      var label = ServerI18n.t(effI18nKey) !== effI18nKey ? ServerI18n.t(effI18nKey) : (eff.label || eff.name);
+      var bullet = document.createElement("span");
+      bullet.className = "viewer-chip-bullet";
+      bullet.textContent = "\u25CB"; // ○ off
+      btn.appendChild(bullet);
+      btn.appendChild(document.createTextNode(" " + label));
       btn.setAttribute("aria-pressed", "false");
       btn.addEventListener("click", () => {
         if (selectedEffects[eff.name]) {
           delete selectedEffects[eff.name];
-          btn.classList.remove("effect-btn--active");
+          btn.classList.remove("effect-btn--active", "is-active");
           btn.setAttribute("aria-pressed", "false");
+          bullet.textContent = "\u25CB";
         } else {
-          // Build default params
           const defaults = {};
           for (const [k, v] of Object.entries(eff.params || {})) defaults[k] = v.default;
           selectedEffects[eff.name] = defaults;
-          btn.classList.add("effect-btn--active");
+          btn.classList.add("effect-btn--active", "is-active");
           btn.setAttribute("aria-pressed", "true");
+          bullet.textContent = "\u25CF"; // ● on
         }
         _refreshParamsPanel();
       });
@@ -656,7 +668,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     if (effects.length === 0) {
-      elements.effectButtons.innerHTML = `<span class="text-xs text-slate-400">${ServerI18n.t("noEffectsAvailable")}</span>`;
+      elements.effectButtons.innerHTML = `<span class="viewer-field-label">${ServerI18n.t("noEffectsAvailable")}</span>`;
     }
   }
 
@@ -677,70 +689,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadEffects();
 
-  // ── Theme Selector ────────────────────────────────────────────────────────
-
-  let _activeThemeName = "default";
-
-  async function loadThemes() {
-    try {
-      const res = await fetch("/themes");
-      if (!res.ok) return;
-      const data = await res.json();
-      const themes = data.themes || [];
-      _activeThemeName = data.active || "default";
-      _buildThemeSelector(themes, _activeThemeName);
-    } catch (e) {
-      console.warn("[Themes] Failed to load themes:", e.message);
-    }
-  }
-
-  function _buildThemeSelector(themes, activeName) {
-    const effectControl = document.getElementById("effectControl");
-    if (!effectControl) return;
-
-    // Remove existing theme selector if any
-    const existing = document.getElementById("themeSelector");
-    if (existing) existing.remove();
-
-    if (themes.length === 0) return;
-
-    const wrapper = document.createElement("div");
-    wrapper.id = "themeSelector";
-    wrapper.className = "flex items-center gap-2 mb-2";
-
-    const label = document.createElement("span");
-    label.className = "text-xs text-slate-400 shrink-0";
-    label.textContent = "Theme";
-    wrapper.appendChild(label);
-
-    const select = document.createElement("select");
-    select.id = "themeSelect";
-    select.className =
-      "bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded px-2 py-1 flex-1";
-
-    themes.forEach((t) => {
-      const opt = document.createElement("option");
-      opt.value = t.name;
-      var tLabelKey = "theme_" + t.name;
-      var tDescKey = tLabelKey + "_desc";
-      var tLabel = ServerI18n.t(tLabelKey) !== tLabelKey ? ServerI18n.t(tLabelKey) : t.label;
-      var tDesc = ServerI18n.t(tDescKey) !== tDescKey ? ServerI18n.t(tDescKey) : t.description;
-      opt.textContent = tLabel + " - " + tDesc;
-      if (t.name === activeName) opt.selected = true;
-      select.appendChild(opt);
-    });
-
-    select.addEventListener("change", () => {
-      _activeThemeName = select.value;
-    });
-
-    wrapper.appendChild(select);
-
-    // Insert before effectControl
-    effectControl.parentNode.insertBefore(wrapper, effectControl);
-  }
-
-  loadThemes();
+  // Theme selector removed from viewer — per design brief, theme packs are
+  // admin-only. Active theme is applied server-side; viewer just fires text.
 
   // --- Send Button Loading State ---
   function setSendLoading(loading) {

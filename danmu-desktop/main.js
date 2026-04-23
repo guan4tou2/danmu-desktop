@@ -59,11 +59,32 @@ app.whenReady().then(() => {
 
   let trayStatusText = "⊘ Disconnected";
 
+  // Broadcast an overlay-idle-toggle message to every live child window.
+  // mode: 'show' | 'hide' | 'toggle'
+  function broadcastIdleToggle(mode) {
+    const payload = { mode: mode || "toggle" };
+    let delivered = 0;
+    childWindows.forEach((cw) => {
+      if (cw && !cw.isDestroyed()) {
+        cw.webContents.send("overlay-idle-toggle", payload);
+        delivered++;
+      }
+    });
+    console.log(`[Main] overlay-idle-toggle → ${delivered} child window(s) · mode=${payload.mode}`);
+    return delivered;
+  }
+
   function rebuildTrayMenu() {
+    const hasOverlay = childWindows.some((cw) => cw && !cw.isDestroyed());
     const trayMenu = Menu.buildFromTemplate([
       { label: trayStatusText, enabled: false },
       { type: "separator" },
       { label: "Open Danmu Desktop", click: showMainWindow },
+      {
+        label: "Toggle Overlay Idle · Hero",
+        enabled: hasOverlay,
+        click: () => broadcastIdleToggle("toggle"),
+      },
       { label: "About Danmu Desktop", click: () => createAboutWindow(mainWindow) },
       { type: "separator" },
       {
@@ -91,6 +112,13 @@ app.whenReady().then(() => {
   ipcMain.on("update-tray-status", (_, text) => {
     trayStatusText = String(text).slice(0, 50); // cap length for safety
     rebuildTrayMenu();
+  });
+
+  // Main window requests an overlay-idle toggle (button / shortcut)
+  ipcMain.on("overlay-idle-request", (_, data) => {
+    const mode = (data && data.mode) || "toggle";
+    if (!["show", "hide", "toggle"].includes(mode)) return;
+    broadcastIdleToggle(mode);
   });
 
   // macOS 設了 contextMenu 後 double-click 不觸發，改用 click
