@@ -49,25 +49,61 @@
     <!-- Toast Container -->
     <div id="toast-container" role="region" aria-live="polite"></div>
 
-    <!-- Main Content -->
-    <main
-      id="main-content"
-      tabindex="-1"
-      class="relative min-h-screen flex items-start justify-center p-4 py-6 z-10"
-    >
-      <div
-        class="glass-effect hud-corners-auto w-full max-w-6xl p-5 md:p-7 rounded-2xl shadow-2xl space-y-5 my-auto main-content"
+    <!-- Client shell — prototype desktop.jsx ControlWindow:164
+         Sidebar (168px) + Main (flex 1, padding 22). Section switching via
+         data-active-section on body; each <section data-section="..."> only
+         shows when its key matches body[data-active-section]. -->
+    <div class="client-shell" data-client-shell>
+      <aside class="client-sidebar" role="navigation" aria-label="Client sections">
+        <nav class="client-nav">
+          <button type="button" class="client-nav-btn is-active" data-nav="overlay">
+            <span class="client-nav-icon">▢</span>
+            <span class="client-nav-label">
+              <span class="zh">Overlay</span>
+              <span class="en">DISPLAY</span>
+            </span>
+          </button>
+          <button type="button" class="client-nav-btn" data-nav="conn">
+            <span class="client-nav-icon">⇌</span>
+            <span class="client-nav-label">
+              <span class="zh">連線</span>
+              <span class="en">CONNECTION</span>
+            </span>
+          </button>
+          <button type="button" class="client-nav-btn" data-nav="keys">
+            <span class="client-nav-icon">⌘</span>
+            <span class="client-nav-label">
+              <span class="zh">快捷鍵</span>
+              <span class="en">SHORTCUTS</span>
+            </span>
+          </button>
+          <button type="button" class="client-nav-btn" data-nav="about">
+            <span class="client-nav-icon">○</span>
+            <span class="client-nav-label">
+              <span class="zh">關於</span>
+              <span class="en">ABOUT</span>
+            </span>
+          </button>
+        </nav>
+        <div class="client-sidebar-foot">
+          <div class="ver" data-client-version>v5.0.0 · <span data-client-platform>macOS</span></div>
+          <div class="status"><span class="dot"></span> UP TO DATE</div>
+        </div>
+      </aside>
+
+      <main
+        id="main-content"
+        tabindex="-1"
+        class="client-main"
       >
-        <!-- Language Switcher & Connection Status -->
-        <div class="flex justify-end items-center gap-3 -mt-2 -mb-2">
-          <!-- Connection Status -->
+        <!-- Top utility row — language + legacy connection chip -->
+        <div class="client-toprow">
           <div id="connection-status" class="hidden">
             <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg glass-effect">
               <div id="status-indicator" class="w-2.5 h-2.5 rounded-full flex-shrink-0"></div>
               <span id="status-text" class="text-xs font-medium whitespace-nowrap"></span>
             </div>
           </div>
-          <!-- Language Switcher -->
           <select
             id="language-select"
             class="form-input px-3 py-2 rounded-lg text-sm"
@@ -80,36 +116,14 @@
           </select>
         </div>
 
-        <!-- Header -->
-        <div class="text-center">
-          <!-- Dynamic Logo -->
-          <div class="flex justify-center mb-3">
-            <object
-              data="assets/icon-dynamic.svg"
-              type="image/svg+xml"
-              width="56"
-              height="56"
-              class="drop-shadow-lg"
-            >
-              <img
-                src="assets/icon.png"
-                alt="Danmu Desktop"
-                width="56"
-                height="56"
-                class="drop-shadow-lg"
-              />
-            </object>
+        <!-- Section: Connection (prototype ConnSection:250) -->
+        <section class="client-section" data-section="conn" hidden>
+          <div class="client-section-head">
+            <div class="client-section-title" data-i18n="sectionConnTitle">連線狀態</div>
+            <div class="client-section-kicker" data-i18n="sectionConnKicker">CONNECTION · SERVER · TOKEN</div>
           </div>
-          <h1 class="hud-hero-title is-medium mt-2" data-i18n="title">
-            Danmu Desktop
-          </h1>
-          <p class="text-slate-400 mt-2 text-sm" data-i18n="subtitle">
-            Configure and launch the overlay
-          </p>
-        </div>
-
-        <div class="grid gap-4 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] items-start">
-        <!-- Connection Settings Card -->
+          <div class="grid gap-4 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] items-start">
+          <!-- Connection Settings Card -->
         <div class="bg-slate-800/40 backdrop-blur-sm rounded-xl p-5 border border-slate-700/50 xl:sticky xl:top-5">
           <div class="space-y-4">
           <div>
@@ -190,6 +204,15 @@
             </div>
           </div>
         </div>
+          </div>
+        </section>
+
+        <!-- Section: Overlay display & controls (prototype OverlaySection:203) -->
+        <section class="client-section" data-section="overlay">
+          <div class="client-section-head">
+            <div class="client-section-title" data-i18n="sectionOverlayTitle">Overlay 控制</div>
+            <div class="client-section-kicker" data-i18n="sectionOverlayKicker">DISPLAY · 透明層 · 點擊穿透</div>
+          </div>
 
         <!-- Advanced Settings -->
         <details class="bg-slate-800/30 backdrop-blur-sm rounded-xl border border-slate-700/50 h-fit" open>
@@ -546,8 +569,8 @@
               </div>
             </div>
           </div>
+          </div>
         </details>
-        </div>
 
         <!-- Action Buttons -->
         <div class="sticky bottom-2 z-20 bg-slate-900/80 backdrop-blur-md border border-slate-700/60 rounded-xl p-3 space-y-3">
@@ -617,11 +640,71 @@
             </button>
           </div>
         </div>
-      </div>
-    </main>
+        </section>
+
+        <!-- Section: Shortcuts (prototype KeysSection:286) -->
+        <section class="client-section" data-section="keys" hidden>
+          <div class="client-section-head">
+            <div class="client-section-title" data-i18n="sectionKeysTitle">快捷鍵</div>
+            <div class="client-section-kicker" data-i18n="sectionKeysKicker">SHORTCUTS · 點擊自訂</div>
+          </div>
+          <div class="client-keys-card">
+            <div class="client-keys-row">
+              <span class="act" data-i18n="keyToggleOverlay">顯示 / 隱藏 overlay</span>
+              <kbd class="kbd">⌘⇧D</kbd>
+            </div>
+            <div class="client-keys-row">
+              <span class="act" data-i18n="keyPauseReceive">暫停接收</span>
+              <kbd class="kbd">⌘⇧P</kbd>
+            </div>
+            <div class="client-keys-row">
+              <span class="act" data-i18n="keyClearScreen">清空畫面</span>
+              <kbd class="kbd">⌘⇧K</kbd>
+            </div>
+            <div class="client-keys-row">
+              <span class="act" data-i18n="keyOpenControl">開啟控制視窗</span>
+              <kbd class="kbd">⌘⇧C</kbd>
+            </div>
+            <div class="client-keys-row">
+              <span class="act" data-i18n="keySwitchDisplay">切換主螢幕 / 副螢幕</span>
+              <kbd class="kbd">⌘⇧M</kbd>
+            </div>
+          </div>
+          <div class="client-keys-hint" data-i18n="keysHint">點擊任一快捷鍵可自訂 · 偏好會立即生效</div>
+        </section>
+
+        <!-- Section: About (prototype AboutSection:318) -->
+        <section class="client-section" data-section="about" hidden>
+          <div class="client-section-head">
+            <div class="client-section-title" data-i18n="sectionAboutTitle">關於</div>
+            <div class="client-section-kicker" data-i18n="sectionAboutKicker">ABOUT · 版本 · 更新</div>
+          </div>
+          <div class="client-about-card">
+            <div class="client-about-logo">
+              <object data="assets/icon-dynamic.svg" type="image/svg+xml" width="56" height="56">
+                <img src="assets/icon.png" alt="Danmu Client" width="56" height="56" />
+              </object>
+            </div>
+            <div class="client-about-body">
+              <div class="title">Danmu Client</div>
+              <div class="meta"><span data-client-about-version>v5.0.0</span> · Electron · <span data-client-about-platform>macOS</span></div>
+              <div class="status"><span class="dot"></span> UP TO DATE</div>
+            </div>
+            <div class="client-about-actions">
+              <button type="button" class="client-action-btn" data-i18n="checkForUpdates">檢查更新</button>
+            </div>
+          </div>
+          <div class="client-about-desc" data-i18n="aboutDesc">
+            Danmu Fire 是即時彈幕送字系統。觀眾用手機或桌機網頁輸入文字,送到主場大螢幕的 overlay。
+          </div>
+          <div class="client-about-footer">© 2025 · github.com/guan4tou2/danmu-desktop</div>
+        </section>
+      </main>
+    </div>
 
     <!-- Renderer Logic (bundled locally for instant load) -->
     <script src="i18n.js"></script>
     <script src="./dist/renderer.bundle.js"></script>
+    <script src="./client-nav.js"></script>
   </body>
 </html>

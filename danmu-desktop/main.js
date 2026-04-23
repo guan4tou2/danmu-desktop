@@ -58,6 +58,7 @@ app.whenReady().then(() => {
   };
 
   let trayStatusText = "⊘ Disconnected";
+  let trayServerUrl = "";
 
   // Broadcast an overlay-idle-toggle message to every live child window.
   // mode: 'show' | 'hide' | 'toggle'
@@ -74,35 +75,91 @@ app.whenReady().then(() => {
     return delivered;
   }
 
+  // Send a generic command to the main renderer (pause receive / clear screen).
+  function dispatchToRenderer(command) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("client-command", { command });
+    }
+  }
+
+  // Rebuild tray menu — mirrors prototype desktop.jsx TrayMenu:550 structure:
+  // header (● Danmu Client + version + server status)
+  // → 顯示 overlay (✓ toggle · ⌘⇧D)
+  // → 暫停接收 (⌘⇧P)
+  // → 清空畫面 (⌘⇧K)
+  // ─────────────
+  // → 顯示於 ▸ submenu
+  // → 伺服器 ▸ submenu
+  // ─────────────
+  // → 開啟控制視窗…
+  // → 偏好設定…
+  // → 結束 Danmu
   function rebuildTrayMenu() {
     const hasOverlay = childWindows.some((cw) => cw && !cw.isDestroyed());
-    const trayMenu = Menu.buildFromTemplate([
-      { label: trayStatusText, enabled: false },
+    const version = app.getVersion();
+    const pkgName = "Danmu Client";
+    const template = [
+      { label: `● ${pkgName}    v${version}`, enabled: false },
+      { label: trayServerUrl ? `${trayStatusText} · ${trayServerUrl}` : trayStatusText, enabled: false },
       { type: "separator" },
-      { label: "Open Danmu Desktop", click: showMainWindow },
       {
-        label: "Toggle Overlay Idle · Hero",
-        enabled: hasOverlay,
+        label: "顯示 overlay",
+        type: "checkbox",
+        checked: hasOverlay,
+        accelerator: "CommandOrControl+Shift+D",
         click: () => broadcastIdleToggle("toggle"),
       },
-      { label: "About Danmu Desktop", click: () => createAboutWindow(mainWindow) },
+      {
+        label: "暫停接收",
+        accelerator: "CommandOrControl+Shift+P",
+        enabled: hasOverlay,
+        click: () => dispatchToRenderer("pause"),
+      },
+      {
+        label: "清空畫面",
+        accelerator: "CommandOrControl+Shift+K",
+        enabled: hasOverlay,
+        click: () => dispatchToRenderer("clear"),
+      },
       { type: "separator" },
       {
-        label: "Quit",
+        label: "顯示於",
+        submenu: [
+          { label: "主螢幕", type: "radio", checked: true, click: () => dispatchToRenderer("display:primary") },
+          { label: "副螢幕", type: "radio", click: () => dispatchToRenderer("display:secondary") },
+        ],
+      },
+      {
+        label: "伺服器",
+        submenu: [
+          { label: trayStatusText, enabled: false },
+          { type: "separator" },
+          { label: "重新連線", click: () => dispatchToRenderer("reconnect") },
+          { label: "更改連線…", click: showMainWindow },
+        ],
+      },
+      { type: "separator" },
+      {
+        label: "開啟控制視窗…",
+        accelerator: "CommandOrControl+Shift+C",
+        click: showMainWindow,
+      },
+      { label: "偏好設定…", click: showMainWindow },
+      { label: "關於 Danmu Fire", click: () => createAboutWindow(mainWindow) },
+      { type: "separator" },
+      {
+        label: "結束 Danmu",
         click: () => {
-          // spread 複製陣列，避免 destroy 觸發的 "closed" 修改迭代中的陣列
           [...childWindows].forEach((win) => {
-            if (win && !win.isDestroyed()) {
-              win.destroy();
-            }
+            if (win && !win.isDestroyed()) win.destroy();
           });
           childWindows.length = 0;
           console.log("[Main] All child windows destroyed on tray quit.");
           app.quit();
         },
       },
-    ]);
-    tray.setContextMenu(trayMenu);
+    ];
+    tray.setContextMenu(Menu.buildFromTemplate(template));
   }
 
   rebuildTrayMenu();
