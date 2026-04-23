@@ -693,6 +693,172 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   cursor: default;
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+ * Rate Limits editable page (prototype admin-rate-limits.jsx)
+ * 4 rows · each has limit count + window dropdown + current usage bar
+ * ────────────────────────────────────────────────────────────────────────── */
+.admin-ratelimit-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-ratelimit-head {
+  padding: 16px 18px;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+}
+
+.admin-ratelimit-kicker {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--admin-text-dim);
+  text-transform: uppercase;
+}
+
+.admin-ratelimit-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--admin-text);
+  margin-top: 4px;
+}
+
+.admin-ratelimit-note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--admin-text-dim);
+}
+
+.admin-ratelimit-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-ratelimit-row {
+  padding: 14px 16px;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+}
+
+.admin-ratelimit-row-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.admin-ratelimit-row-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--admin-text);
+}
+
+.admin-ratelimit-row-env {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--admin-text-dim);
+}
+
+.admin-ratelimit-row-body {
+  display: grid;
+  grid-template-columns: 140px 140px 1fr;
+  gap: 14px;
+  align-items: end;
+}
+
+@media (max-width: 760px) {
+  .admin-ratelimit-row-body { grid-template-columns: 1fr 1fr; }
+  .admin-ratelimit-bar-field { grid-column: span 2; }
+}
+
+.admin-ratelimit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.admin-ratelimit-field > span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--admin-text-dim);
+  text-transform: uppercase;
+}
+
+.admin-ratelimit-field input,
+.admin-ratelimit-field select {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--admin-line);
+  background: var(--admin-raised);
+  color: var(--admin-text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  outline: none;
+}
+
+.admin-ratelimit-field input:focus,
+.admin-ratelimit-field select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
+}
+
+.admin-ratelimit-bar-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-ratelimit-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--admin-raised);
+  overflow: hidden;
+}
+
+.admin-ratelimit-bar-fill {
+  height: 100%;
+  background: var(--color-primary);
+  opacity: 0.6;
+  transition: width 0.3s ease;
+}
+
+.admin-ratelimit-bar-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--admin-text-dim);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.admin-ratelimit-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+.admin-ratelimit-export {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 6px;
+  border: 1px dashed var(--color-primary);
+  background: var(--admin-raised);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--admin-text);
+  white-space: pre-wrap;
+  user-select: all;
+}
+
 .theme-pack-toolbar {
   display: flex;
   align-items: center;

@@ -779,12 +779,27 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --- Connection Status UI ---
+  // Dot lives inside a viewer-conn-chip; target it by the state-bearing class,
+  // not by `.connection-dot` (the base class was dropped in the 2-col hero).
+  function _resetDotState(dot) {
+    if (!dot) return;
+    dot.classList.remove(
+      "connection-dot--connected",
+      "connection-dot--connecting",
+      "connection-dot--disconnected",
+      "connection-dot--failed",
+      "connection-dot--live",
+    );
+  }
+
   function updateConnectionUI(state) {
     if (!elements.connectionStatus) return;
-    const dot = elements.connectionStatus.querySelector(".connection-dot");
+    const dot = elements.connectionStatus.querySelector("[class*='connection-dot--']") ||
+                elements.connectionStatus.querySelector(".viewer-conn-chip-dot") ||
+                elements.connectionStatus.querySelector(".connection-dot");
     if (!dot || !elements.connectionLabel) return;
 
-    dot.className = "connection-dot"; // reset
+    _resetDotState(dot);
     switch (state) {
       case "connected":
         dot.classList.add("connection-dot--connected");
@@ -804,9 +819,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Overlay Status Polling ---
   function updateOverlayUI(count) {
     if (!elements.overlayStatus || !elements.overlayLabel) return;
-    const dot = elements.overlayStatus.querySelector(".connection-dot");
+    const dot = elements.overlayStatus.querySelector("[class*='connection-dot--']") ||
+                elements.overlayStatus.querySelector(".viewer-conn-chip-dot") ||
+                elements.overlayStatus.querySelector(".connection-dot");
     if (!dot) return;
-    dot.className = "connection-dot";
+    _resetDotState(dot);
     if (count > 0) {
       dot.classList.add("connection-dot--connected");
       elements.overlayLabel.textContent = ServerI18n.t("overlayConnected").replace("{n}", count);

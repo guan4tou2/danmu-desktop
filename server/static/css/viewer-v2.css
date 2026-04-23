@@ -114,26 +114,52 @@ body.viewer-body-v2 {
   gap: 0;
 }
 
-/* Hero lockup — DanmuHero `size="hero"` (clamp 3.2rem → 6rem, Bebas Neue,
- * sky-300, drop-shadow, uppercase, 0.02em track). Subtitle in slate-300
- * capped at 40rem. Chip pill below. */
+/* Hero · 2-col layout (v4 handoff chat decision):
+ * left = DANMU FIRE lockup + subtitle, right = 伺服器/Overlay ConnChip + lang.
+ * Single-col on narrow viewports (< 640px) — lockup centered, chips below. */
 .viewer-hero {
-  padding: 30px 24px 24px; /* prototype viewer.jsx:88 desktop */
+  padding: 30px 24px 24px;
   border-bottom: 1px solid var(--hud-line);
-  text-align: center;
-  background: transparent; /* light theme — prototype viewer.jsx:91 */
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 24px;
 }
 
-@media (max-width: 520px) {
+.viewer-hero-lockup {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: left;
+}
+
+.viewer-hero-utility {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
   .viewer-hero {
-    padding: 22px 20px 20px; /* prototype mobile */
+    flex-direction: column;
+    padding: 22px 20px 20px;
+    gap: 14px;
+  }
+  .viewer-hero-lockup { text-align: center; }
+  .viewer-hero-utility {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
   }
 }
 
 .viewer-hero-title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(3.2rem, 8vw, 6rem);
+  font-size: clamp(3rem, 7vw, 5rem);
   font-weight: 400;
   color: #7dd3fc;
   text-transform: uppercase;
@@ -145,33 +171,100 @@ body.viewer-body-v2 {
 }
 
 .viewer-hero-subtitle {
-  margin: 0.875rem auto 0;
-  max-width: 40rem;
+  margin: 0.75rem 0 0;
+  max-width: 32rem;
   color: var(--color-text-secondary);
-  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-size: clamp(0.9rem, 1.6vw, 1.05rem);
   line-height: 1.6;
   font-weight: 400;
 }
 
-.viewer-hero-chip-row {
-  margin-top: 1.125rem;
-  display: flex;
-  justify-content: center;
+@media (max-width: 640px) {
+  .viewer-hero-subtitle { margin-left: auto; margin-right: auto; }
 }
 
-.viewer-hero-chip {
+/* ConnChip — 伺服器 / Overlay status pill.
+ * Two states via `.connection-dot--*` on the dot:
+ * connected → cyan pulse, connecting → amber, disconnected → crimson. */
+.viewer-conn-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 8px;
+  padding: 6px 12px;
   border-radius: var(--radius-pill);
-  background: var(--hud-cyan-soft);
-  border: 1px solid var(--hud-cyan-line);
+  border: 1px solid var(--hud-line);
+  background: var(--color-bg-base);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.viewer-conn-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #94a3b8;
+  flex-shrink: 0;
+}
+
+.viewer-conn-chip-dot.connection-dot--connected,
+.viewer-conn-chip-dot.connection-dot--live {
+  background: var(--color-primary);
+  box-shadow: 0 0 6px var(--color-primary);
+  animation: viewer-conn-pulse 2s ease-in-out infinite;
+}
+
+.viewer-conn-chip-dot.connection-dot--connecting {
+  background: var(--color-warning, #fbbf24);
+  box-shadow: 0 0 4px var(--color-warning, #fbbf24);
+}
+
+.viewer-conn-chip-dot.connection-dot--disconnected,
+.viewer-conn-chip-dot.connection-dot--failed {
+  background: #f87171;
+}
+
+.viewer-conn-chip-label {
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.viewer-conn-chip-value {
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .viewer-conn-chip {
+    font-size: 10px;
+    padding: 4px 10px;
+    gap: 6px;
+  }
+  .viewer-conn-chip-label { display: none; }
+}
+
+@keyframes viewer-conn-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.65; transform: scale(0.88); }
+}
+
+.viewer-hero-lang {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--hud-line);
+  color: var(--color-text-secondary);
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 1.5px;
-  color: var(--color-primary);
-  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.viewer-hero-lang:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }
 
 /* Scrollable body — holds preview + all field rows. */

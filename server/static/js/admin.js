@@ -788,6 +788,14 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span>風格主題包</span>
                                     <span class="admin-dash-nav-badge" data-count-themes>—</span>
                                 </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="display" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◐</span>
+                                    <span>顯示設定</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="assets" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◰</span>
+                                    <span>素材庫</span>
+                                </button>
 
                                 <div class="admin-dash-nav-label" style="margin-top:16px">審核</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="moderation" role="tab" aria-selected="false">
@@ -835,12 +843,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="admin-dash-main">
                             <header class="admin-dash-topbar">
                                 <div class="admin-dash-topbar-title">
-                                    <span class="hud-label is-accent" data-route-kicker>DASHBOARD · 控制台</span>
-                                    <h1 data-route-title>
-                                        <span>哈囉</span>
-                                        <span class="accent">admin</span><span>,</span>
-                                        <span>活動進行中</span>
-                                    </h1>
+                                    <span class="hud-label is-accent" data-route-kicker>DASHBOARD · 活動進行中</span>
+                                    <h1 data-route-title>控制台</h1>
                                 </div>
                                 <div class="admin-dash-topbar-actions">
                                     <div class="admin-dash-search" aria-hidden="true">
@@ -1542,6 +1546,107 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     })();
 
+    // Rate Limits editable card — /admin ratelimit nav points here.
+    // Values come from env vars (FIRE_RATE_LIMIT / _WINDOW etc.) read at
+    // startup. Editing here lets the admin prepare a .env patch; applying
+    // takes effect on next server restart (no live rewrite yet — tracked
+    // in design-v2-backlog #8).
+    settingsGrid.insertAdjacentHTML("beforeend", `
+      <div id="sec-ratelimit" class="admin-ratelimit-page hud-page-stack lg:col-span-2">
+        <div class="admin-ratelimit-head">
+          <div class="admin-ratelimit-kicker">RATE LIMITS · 反刷屏 / 反暴力登入</div>
+          <div class="admin-ratelimit-title">請求速率上限</div>
+          <p class="admin-ratelimit-note">
+            每個來源 IP(或 fingerprint)在時間窗內可發送的請求數上限。
+            變更後請 export .env 並 restart server 生效。
+          </p>
+        </div>
+        <div class="admin-ratelimit-rows">
+          ${[
+            { key: "fire",  label: "FIRE · 觀眾彈幕",   envLimit: "FIRE_RATE_LIMIT",  envWindow: "FIRE_RATE_WINDOW",  defLimit: 20, defWindow: 60 },
+            { key: "api",   label: "API · 一般請求",    envLimit: "API_RATE_LIMIT",   envWindow: "API_RATE_WINDOW",   defLimit: 30, defWindow: 60 },
+            { key: "admin", label: "ADMIN · 後台動作",  envLimit: "ADMIN_RATE_LIMIT", envWindow: "ADMIN_RATE_WINDOW", defLimit: 60, defWindow: 60 },
+            { key: "login", label: "LOGIN · 登入嘗試",  envLimit: "LOGIN_RATE_LIMIT", envWindow: "LOGIN_RATE_WINDOW", defLimit: 5,  defWindow: 300 },
+          ].map((r) => `
+            <div class="admin-ratelimit-row" data-rl-key="${r.key}">
+              <div class="admin-ratelimit-row-head">
+                <span class="admin-ratelimit-row-label">${escapeHtml(r.label)}</span>
+                <span class="admin-ratelimit-row-env">${r.envLimit}</span>
+              </div>
+              <div class="admin-ratelimit-row-body">
+                <label class="admin-ratelimit-field">
+                  <span>限制 · count</span>
+                  <input type="number" min="1" max="1000" value="${r.defLimit}" data-rl-limit="${r.key}" />
+                </label>
+                <label class="admin-ratelimit-field">
+                  <span>窗口 · window</span>
+                  <select data-rl-window="${r.key}">
+                    <option value="10"${r.defWindow === 10 ? " selected" : ""}>10s</option>
+                    <option value="30"${r.defWindow === 30 ? " selected" : ""}>30s</option>
+                    <option value="60"${r.defWindow === 60 ? " selected" : ""}>60s</option>
+                    <option value="300"${r.defWindow === 300 ? " selected" : ""}>5 min</option>
+                    <option value="3600"${r.defWindow === 3600 ? " selected" : ""}>1 hr</option>
+                  </select>
+                </label>
+                <div class="admin-ratelimit-field admin-ratelimit-bar-field">
+                  <span>目前使用</span>
+                  <div class="admin-ratelimit-bar">
+                    <div class="admin-ratelimit-bar-fill" data-rl-bar="${r.key}" style="width:18%"></div>
+                  </div>
+                  <span class="admin-ratelimit-bar-text" data-rl-current="${r.key}">—</span>
+                </div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+
+        <div class="admin-ratelimit-footer">
+          <button type="button" class="admin-poll-btn is-ghost" data-rl-action="reset">重設預設</button>
+          <button type="button" class="admin-poll-btn is-primary" data-rl-action="export">匯出 .env 片段</button>
+        </div>
+
+        <pre id="rlEnvExport" class="admin-ratelimit-export" hidden></pre>
+      </div>
+    `);
+
+    // Wire up export button to generate .env-compatible text for copying.
+    (function () {
+      const section = document.getElementById("sec-ratelimit");
+      if (!section) return;
+      const exportPre = section.querySelector("#rlEnvExport");
+      section.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-rl-action]");
+        if (!btn) return;
+        const action = btn.dataset.rlAction;
+        if (action === "export") {
+          const lines = [];
+          section.querySelectorAll("[data-rl-limit]").forEach((el) => {
+            const k = el.dataset.rlLimit.toUpperCase();
+            lines.push(`${k}_RATE_LIMIT=${el.value}`);
+          });
+          section.querySelectorAll("[data-rl-window]").forEach((el) => {
+            const k = el.dataset.rlWindow.toUpperCase();
+            lines.push(`${k}_RATE_WINDOW=${el.value}`);
+          });
+          exportPre.textContent = lines.join("\n");
+          exportPre.hidden = false;
+          try {
+            navigator.clipboard?.writeText(lines.join("\n"));
+            if (typeof showToast === "function") showToast("已複製 .env 片段到剪貼簿", true);
+          } catch (_) {}
+        } else if (action === "reset") {
+          const defs = { fire: [20, 60], api: [30, 60], admin: [60, 60], login: [5, 300] };
+          Object.entries(defs).forEach(([k, [lim, win]]) => {
+            const l = section.querySelector(`[data-rl-limit="${k}"]`);
+            const w = section.querySelector(`[data-rl-window="${k}"]`);
+            if (l) l.value = lim;
+            if (w) w.value = win;
+          });
+          exportPre.hidden = true;
+        }
+      });
+    })();
+
     // Password Change Card (with show/hide toggles)
     settingsGrid.insertAdjacentHTML("beforeend", `
                     <details id="sec-security" class="group admin-v3-card" ${isOpen("sec-security") ? "open" : ""}>
@@ -1807,9 +1912,11 @@ document.addEventListener("DOMContentLoaded", () => {
     history:   { title: "時間軸匯出",       kicker: "HISTORY · 時間軸 / 匯出",   sections: ["sec-history"] },
     polls:     { title: "投票",             kicker: "POLLS · 2–6 選項",         sections: ["sec-polls"] },
     widgets:   { title: "Overlay Widgets",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
-    themes:    { title: "風格主題包",       kicker: "THEME PACKS · 顏色 / 字體 / 速度 / 版面", sections: ["sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout", "sec-themes", "sec-emojis", "sec-stickers", "sec-sounds"] },
+    themes:    { title: "風格主題包",       kicker: "THEME PACKS · 彈幕樣式預設",       sections: ["sec-themes"] },
+    display:   { title: "顯示設定",         kicker: "DISPLAY · 觀眾可自訂欄位",        sections: ["sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout"] },
+    assets:    { title: "素材庫",           kicker: "ASSETS · EMOJI / STICKERS / SOUNDS", sections: ["sec-emojis", "sec-stickers", "sec-sounds"] },
     moderation:{ title: "敏感字 & 黑名單",  kicker: "MODERATION · 內建功能 · 非插件", sections: ["sec-blacklist", "sec-filters"] },
-    ratelimit: { title: "速率限制",         kicker: "RATE LIMITS · 反刷屏",          sections: ["sec-filters"] },
+    ratelimit: { title: "速率限制",         kicker: "RATE LIMITS · 反刷屏",          sections: ["sec-ratelimit"] },
     effects:   { title: "效果庫 .dme",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },
     plugins:   { title: "伺服器插件",       kicker: "PLUGIN SDK · 熱重載 · SANDBOX", sections: ["sec-plugins"] },
     fonts:     { title: "字型管理",         kicker: "FONT LIBRARY · 觀眾可選",   sections: ["sec-fonts"] },

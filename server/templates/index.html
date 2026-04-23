@@ -35,37 +35,33 @@
     <main class="viewer-main-card">
       <div class="viewer-shell">
 
-        <!-- Top strip — status chips + language picker above hero -->
-        <div class="viewer-topstrip" role="status" aria-live="polite">
-          <div>
-            <span id="connectionStatus" class="viewer-topstrip-status">
-              <span class="connection-dot connection-dot--connecting"></span>
-              <span id="connectionLabel" data-i18n="connecting">Connecting...</span>
-            </span>
-            <span id="overlayStatus" class="viewer-topstrip-status">
-              <span class="connection-dot connection-dot--disconnected"></span>
-              <span id="overlayLabel" data-i18n="overlayNone">Overlay: –</span>
-            </span>
-          </div>
-          <select id="server-lang-select" class="viewer-topstrip-select" aria-label="Language">
-            <option value="en">EN</option>
-            <option value="zh">ZH</option>
-            <option value="ja">JA</option>
-            <option value="ko">KO</option>
-          </select>
-        </div>
-
-        <!-- Hero lockup — DanmuHero size="hero" -->
+        <!-- Hero · 2-col layout (v4 handoff chat decision):
+             left column = DANMU FIRE + subtitle (centered block)
+             right column = 伺服器 / Overlay ConnChip stack + language picker
+             Mobile uses `is-mini` chip variant. -->
         <section class="viewer-hero animate-fade-in-scale-up">
-          <h1 class="viewer-hero-title" data-i18n="mainTitle">Danmu Fire</h1>
-          <p class="viewer-hero-subtitle" data-i18n="mainSubtitle">
-            Send your message to the screen!
-          </p>
-          <div class="viewer-hero-chip-row">
-            <span class="viewer-hero-chip" aria-hidden="true">
-              <span class="hud-dot"></span>
-              <span data-i18n="heroConnected">CONNECTED · LIVE</span>
+          <div class="viewer-hero-lockup">
+            <h1 class="viewer-hero-title" data-i18n="mainTitle">Danmu Fire</h1>
+            <p class="viewer-hero-subtitle" data-i18n="mainSubtitle">
+              Send your message to the screen!
+            </p>
+          </div>
+
+          <div class="viewer-hero-utility" role="status" aria-live="polite">
+            <span id="connectionStatus" class="viewer-conn-chip">
+              <span class="viewer-conn-chip-dot connection-dot--connecting"></span>
+              <span class="viewer-conn-chip-value" id="connectionLabel" data-i18n="connecting">Connecting…</span>
             </span>
+            <span id="overlayStatus" class="viewer-conn-chip">
+              <span class="viewer-conn-chip-dot connection-dot--disconnected"></span>
+              <span class="viewer-conn-chip-value" id="overlayLabel" data-i18n="overlayNone">–</span>
+            </span>
+            <select id="server-lang-select" class="viewer-hero-lang" aria-label="Language">
+              <option value="en">EN</option>
+              <option value="zh">ZH</option>
+              <option value="ja">JA</option>
+              <option value="ko">KO</option>
+            </select>
           </div>
         </section>
 
