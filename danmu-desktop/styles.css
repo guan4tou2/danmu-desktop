@@ -650,3 +650,475 @@ details summary svg {
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.7);
 }
+
+/* ───────────── Connection section (prototype ConnSection:250) ─────────────
+ * 2-col grid: SERVER card + CERTIFICATE card; below: MESSAGE FLOW sparkline.
+ * Legacy host/port/token inputs hidden behind the ⚙ 更改 action. */
+.client-conn-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 780px) {
+  .client-conn-grid { grid-template-columns: 1fr; }
+}
+
+.client-conn-card {
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(8px);
+}
+
+.client-conn-kicker {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(148, 163, 184, 0.8);
+  text-transform: uppercase;
+}
+
+.client-conn-url {
+  margin-top: 6px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(241, 245, 249, 0.95);
+  word-break: break-all;
+}
+
+.client-conn-meta {
+  margin-top: 4px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: rgba(148, 163, 184, 0.8);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.client-conn-meta .sep { color: rgba(148, 163, 184, 0.5); }
+.client-conn-meta b { font-weight: 500; color: rgba(241, 245, 249, 0.95); }
+
+.client-conn-note {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.client-conn-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 6px;
+}
+
+.client-mini-btn {
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.35);
+  color: rgba(241, 245, 249, 0.9);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.client-mini-btn:hover {
+  border-color: #38bdf8;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+}
+
+/* Message flow sparkline card */
+.client-conn-flow .client-conn-sparkline {
+  display: block;
+  width: 100%;
+  height: 56px;
+  margin-top: 10px;
+}
+
+.client-conn-sparkline .fill { fill: #38bdf8; opacity: 0.12; }
+.client-conn-sparkline .stroke {
+  fill: none;
+  stroke: #38bdf8;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.client-conn-flow-stats {
+  margin-top: 8px;
+  display: flex;
+  gap: 20px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.client-conn-flow-stats b { font-weight: 500; color: rgba(241, 245, 249, 0.95); }
+.client-conn-flow-stats b.is-accent { color: #38bdf8; }
+
+/* Connection edit form — expanded via ⚙ 更改 */
+.client-conn-edit {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(8px);
+}
+
+.client-conn-edit[hidden] { display: none; }
+
+.client-conn-edit-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.client-conn-edit-head .client-mini-btn { margin-left: auto; }
+
+.client-conn-edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .client-conn-edit-grid { grid-template-columns: 1fr; }
+}
+
+.client-conn-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(241, 245, 249, 0.9);
+}
+
+.client-conn-edit-field > span {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: rgba(148, 163, 184, 0.8);
+  text-transform: uppercase;
+}
+
+.client-conn-edit-field input,
+.client-conn-edit-field select {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.6);
+  color: rgba(241, 245, 249, 0.95);
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.client-conn-edit-field input:focus,
+.client-conn-edit-field select:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
+}
+
+.client-conn-edit-check {
+  grid-column: span 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(241, 245, 249, 0.9);
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .client-conn-edit-check { grid-column: span 1; }
+}
+
+.client-conn-edit-check input[type="checkbox"] {
+  accent-color: #38bdf8;
+}
+
+/* ───────────── Overlay section (prototype OverlaySection:203) ─────────────
+ * Show/hide toggle card + display picker + action buttons + NOTE.
+ * Legacy Preview & Settings accordion is tucked away in client-overlay-advanced. */
+.client-overlay-card {
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.client-overlay-card .client-overlay-card-body { flex: 1; }
+
+.client-overlay-card .title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(241, 245, 249, 0.95);
+}
+
+.client-overlay-card .dim {
+  margin-top: 2px;
+  font-size: 11px;
+  color: rgba(148, 163, 184, 0.85);
+}
+
+/* Prototype Toggle (40×22 pill) */
+.client-toggle {
+  display: inline-block;
+  position: relative;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.client-toggle input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.client-toggle .track {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.25);
+  transition: background 0.15s ease;
+  position: relative;
+}
+
+.client-toggle .track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: left 0.15s ease;
+}
+
+.client-toggle input:checked + .track { background: #38bdf8; }
+.client-toggle input:checked + .track::after { left: 20px; }
+
+/* Display picker (prototype ScreenChip row) */
+.client-overlay-screens {
+  display: block;
+}
+
+.client-overlay-screens .head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.client-overlay-screens .head .label {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(241, 245, 249, 0.9);
+}
+
+.client-overlay-screens .head .kicker {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(148, 163, 184, 0.8);
+  text-transform: uppercase;
+}
+
+.client-screen-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.client-screen-chip {
+  flex: 1 1 200px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+  text-align: left;
+  color: rgba(241, 245, 249, 0.9);
+  font: inherit;
+}
+
+.client-screen-chip .head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.client-screen-chip .box {
+  width: 26px;
+  height: 18px;
+  border-radius: 2px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.client-screen-chip .name {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(241, 245, 249, 0.9);
+}
+
+.client-screen-chip .check {
+  margin-left: auto;
+  color: #38bdf8;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  opacity: 0;
+}
+
+.client-screen-chip .meta {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.client-screen-chip.is-active {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.client-screen-chip.is-active .box {
+  background: #38bdf8;
+  border-color: #38bdf8;
+}
+
+.client-screen-chip.is-active .name { color: #38bdf8; font-weight: 600; }
+.client-screen-chip.is-active .check { opacity: 1; }
+
+/* Overlay action buttons (▶ 開始接收 / ⏸ 暫停 / ⌫ 清空畫面) */
+.client-overlay-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.client-overlay-actions .client-action-btn {
+  padding: 9px 16px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: transparent;
+  color: rgba(241, 245, 249, 0.9);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.client-overlay-actions .client-action-btn:hover {
+  border-color: #38bdf8;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.06);
+}
+
+.client-overlay-actions .client-action-btn.is-primary {
+  border-color: #38bdf8;
+  background: #38bdf8;
+  color: #000;
+  font-weight: 600;
+}
+
+.client-overlay-actions .client-action-btn.is-primary:hover {
+  background: #7dd3fc;
+  border-color: #7dd3fc;
+  color: #000;
+}
+
+/* NOTE panel (prototype OverlaySection:239) */
+.client-overlay-note {
+  padding: 12px;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: rgba(148, 163, 184, 0.85);
+  margin-bottom: 14px;
+}
+
+.client-overlay-note .kicker {
+  display: inline-block;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #38bdf8;
+  text-transform: uppercase;
+}
+
+.client-overlay-note p {
+  margin: 4px 0 0;
+}
+
+.client-overlay-note b { color: rgba(241, 245, 249, 0.95); font-weight: 600; }
+
+/* Legacy advanced controls wrapper — tucked below the prototype-aligned cards */
+.client-overlay-advanced {
+  margin-top: 8px;
+  border-radius: 8px;
+  border: 1px dashed rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.client-overlay-advanced > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 10px 14px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: rgba(148, 163, 184, 0.75);
+  text-transform: uppercase;
+  display: block;
+  /* Visually replace the legacy summary (SVG + "Preview & Settings") with
+   * our own label via ::before and hide the original children. */
+  font-size: 0; /* collapse legacy inline content */
+}
+
+.client-overlay-advanced > summary > * { display: none; }
+
+.client-overlay-advanced > summary::-webkit-details-marker { display: none; }
+
+.client-overlay-advanced > summary::before {
+  content: "▸ 進階 · 舊版設定";
+  display: inline-block;
+  font-size: 10px;
+}
+
+.client-overlay-advanced[open] > summary::before {
+  content: "▾ 進階 · 舊版設定";
+}
