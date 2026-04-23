@@ -186,7 +186,96 @@ table + router into `admin-router.js`, and move `renderLogin` /
 
 ---
 
-## Changelog of decisions so far
+## Round 2 feedback (after Claude Design v3 handoff, 2026-04-24)
+
+User reviewed the v3 bundle
+(`https://api.anthropic.com/v1/design/h/pE9NkgtUeFsUp0lfp0I-pA`) and
+gave 14 specific modification asks. Applied directly: #A1, #A3, #A11
+(see Priority A below). Remaining items sent back to Claude Design.
+
+### Priority A · applied in this branch
+
+| # | Change | Where |
+|---|---|---|
+| A1 | Admin Login drops username field (single password input) | `server/static/js/admin.js:renderLogin` |
+| A3 | Viewer subtitle reverts to short `把你的訊息送上螢幕！` | `locales/zh/translation.json` + `i18n.js` |
+| A11 | Remove `哈囉 admin, 活動進行中` + revert hero chip `#MTG-042` → `LIVE` | `admin.js` ADMIN_ROUTES, `templates/index.html` |
+
+### Priority B · sent back to Claude Design
+
+| # | Topic | Notes |
+|---|---|---|
+| B2  | Mobile Safari viewer should match Desktop Chrome viewer; hero stays centered, no mobile-specific IA divergence | `viewer.jsx` mobile variant |
+| B4  | Drop dual-lang labels like `暱稱 · NICKNAME` · `顏色 · COLOR`; rely on i18n to pick single label | whole viewer + admin forms |
+| B5  | Dashboard topbar "bar" not aligned with other admin pages — needs concrete screenshot or location to resolve | admin topbar |
+| B7  | Display Settings needs **per-setting enable toggle** UX: each of Color / Opacity / FontSize / Speed / FontFamily / Layout has (✓ allow audience to set · min/max range) compound control. Backend `options.Color[0]` is already this boolean but UI doesn't expose it cleanly | new Display Settings page |
+| B8  | RATE LIMITS currently read-only on System page; needs editable form for FIRE / API / ADMIN / LOGIN (each: limit + window) | new or updated System section |
+| B9  | `⌘K` command palette scope lock — admin-only. Electron client displays no controls or palette — Electron is "display-only" | remove from Electron scope |
+| B10 | Polls: **multi-question + ordering + per-question image upload**. Requires schema rework: `poll.questions[{text, options[], image_url, order}]`. Frontend: reorderable list + image picker per question | major feature, design from scratch |
+| B13 | Viewer Theme — separate concept from Theme Packs. Controls page chrome only (bg / primary / dark-light / logo) | already item #19 elsewhere |
+| B14 | Delete `Overlay 配對 · Pairing States` from v3 bundle — doesn't match original functionality | strike from spec |
+
+### v3 delta to codebase
+
+v3 prototype already contains things our codebase lacks; these are
+design-complete but not yet implemented:
+
+- `admin-display-settings.jsx` — new component file separating Display
+  Settings from Theme Packs (aligns with backlog #3)
+- `priority-2-pieces.jsx` — unclear contents (gzip bundle was truncated
+  during fetch); likely contains messages filter tabs + sidebar
+  telemetry mini-charts (#7, #8)
+- Expanded Admin to **17 pages** — current codebase has Dashboard /
+  Messages (collapsed) / History / Polls / Widgets / Themes / Moderation
+  / RateLimit / Effects / Plugins / Fonts / System = 12 pages. Missing
+  as dedicated pages: **Emojis / Stickers / Sounds / Scheduler /
+  Webhooks / Live Feed** (exist as server modules but as admin-v3-card
+  under Assets group, not own pages)
+
+---
+
+## Original codebase features not visible in v3 prototype
+
+Checked the v3 `Danmu Redesign.html` + chat transcript against `server/routes/`
+and `danmu-desktop/`. These features ship but have **no prototype screen**:
+
+| Feature | Lives at | Status in v3 |
+|---|---|---|
+| Webhooks management | `routes/admin/webhooks.py` + `admin-webhooks.js` | Not designed |
+| Sounds library + trigger rules | `routes/admin/sounds.py` + `admin-sounds.js` | Not designed |
+| Emojis CRUD | `routes/admin/emojis.py` + `admin-emojis.js` | Not designed |
+| Stickers CRUD | `routes/admin/stickers.py` + `admin-stickers.js` | Not designed |
+| Scheduled broadcasts | `routes/admin/scheduler.py` + `admin-scheduler.js` | Not designed |
+| Live feed (streaming messages stream) | `admin-live-feed.js` | Mentioned in admin-v3 STREAM card, no dedicated page |
+| Replay recorder + timeline export | `replay-recorder.js` + `history.py:/history/export` | Not designed |
+| Fingerprint observatory | `admin-fingerprints.js` + `services/fingerprints.py` | Mentioned in System page, no dedicated page |
+| Fonts upload (TTF) + subsetting | `admin-fonts.js` | Partial: Fonts page shows read-only list, no upload UX |
+| Password change | `main.py:_verify_current_password` + routes | Not designed |
+| WS token auth enable/rotate | `services/ws_auth.py` | Mentioned in System page as collapsed row |
+| CSV / JSON history export | `routes/admin/history.py` | Mentioned in System BACKUP, no dedicated UX |
+
+## Pages/artboards missing from v3 that the app needs
+
+| Page | Why it's needed | Design status |
+|---|---|---|
+| **Admin · Emojis** | CRUD image emojis with filename + hotkey; existing model is rich | Missing |
+| **Admin · Stickers** | CRUD sticker packs (category + bulk upload) | Missing |
+| **Admin · Sounds** | Assign sound effects to keywords / poll transitions | Missing |
+| **Admin · Webhooks** | Register outgoing webhooks for danmu events (filter + URL + signature) | Missing |
+| **Admin · Scheduler** | Scheduled broadcasts (one-off / recurring / conditional) | Missing |
+| **Admin · Live Feed (dedicated)** | Full-screen message stream with moderation controls | Missing (only as dashboard card) |
+| **Admin · Replay** | Timeline scrub + per-event replay + batch replay | Missing |
+| **Admin · Fonts Upload** | TTF upload form + subset preview + delete | Missing (page shows list only) |
+| **Admin · Security (password + tokens)** | Change admin password, rotate WS token, view active sessions | Missing |
+| **Admin · Backup / Export** | Export history JSON/CSV, backup settings, danger zone (end session) | Mentioned on System, needs own page |
+| **Viewer · Offline state** | What audience sees when server is down | Missing |
+| **Overlay · Connecting state** | Before first danmu arrives (between page load and WS open) | Missing (only Idle state exists) |
+| **Electron · Update available** | Auto-updater UX (download / ready to restart) | Missing |
+| **Admin · Login failed / locked out** | Rate-limit hit, wrong password attempts, lockout screen | Missing |
+
+---
+
+## Changelog of decisions
 
 | Date       | Decision                                                    | Source       |
 |------------|-------------------------------------------------------------|--------------|
@@ -195,8 +284,15 @@ table + router into `admin-router.js`, and move `renderLogin` /
 | 2026-04-23 | Split `風格主題包` into Theme Packs + Display Settings     | User         |
 | 2026-04-23 | Restore v4-style 2-col viewer layout                       | User         |
 | 2026-04-23 | Scope locked — prototype-only, no features prototype lacks | User         |
+| 2026-04-24 | Pairing States removed from v3 design                      | User         |
+| 2026-04-24 | Admin Login drops username (password-only)                 | User + applied |
+| 2026-04-24 | Viewer subtitle short: 把你的訊息送上螢幕！                | User + applied |
+| 2026-04-24 | Remove 哈囉 admin greeting + #MTG-042 session id           | v3 chat + applied |
+| 2026-04-24 | Admin Viewer Theme separate from Theme Packs (#19)         | User         |
+| 2026-04-24 | Polls expand to multi-question + image upload              | User         |
+| 2026-04-24 | Electron is display-only; ⌘K + all settings are server-side | User         |
 
 ---
 
-*Last updated: 2026-04-23*
+*Last updated: 2026-04-24*
 *Handoff target: Claude Design + product owner*

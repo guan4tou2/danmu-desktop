@@ -680,10 +680,6 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <form id="loginForm" class="admin-login-form" action="/login" method="post" autocomplete="off">
             <div class="admin-login-field">
-              <label class="admin-login-label" for="username" data-i18n="adminLoginUsernameLabel">${ServerI18n.t("adminLoginUsernameLabel")}</label>
-              <input class="admin-login-input" type="text" id="username" name="username" value="admin" autocomplete="username" />
-            </div>
-            <div class="admin-login-field">
               <label class="admin-login-label" for="password" data-i18n="adminLoginPasswordLabel">${ServerI18n.t("adminLoginPasswordLabel")}</label>
               <input class="admin-login-input" type="password" id="password" name="password" autocomplete="current-password" required />
             </div>
@@ -1806,7 +1802,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const ADMIN_ROUTES = {
-    dashboard: { title: "哈囉 <span class=\"accent\">admin</span>, 活動進行中", kicker: "DASHBOARD · 控制台", sections: [], showKpi: true },
+    dashboard: { title: "控制台", kicker: "DASHBOARD · 活動進行中", sections: [], showKpi: true },
     messages:  { title: "訊息紀錄",         kicker: "MESSAGES · 即時訊息串",    sections: ["sec-live-feed"] },
     history:   { title: "時間軸匯出",       kicker: "HISTORY · 時間軸 / 匯出",   sections: ["sec-history"] },
     polls:     { title: "投票",             kicker: "POLLS · 2–6 選項",         sections: ["sec-polls"] },
