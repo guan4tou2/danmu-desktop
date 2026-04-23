@@ -708,6 +708,75 @@ counterparts. Single source via `shared/`.
 1900+ lines. Extract `ADMIN_ROUTES` + `renderLogin` / `renderControlPanel`
 / `refreshDashboardKpi` into separate modules.
 
+### P6-3 · Plugin-first architecture for Poll / Widgets / Scheduler / Webhooks
+
+**Question raised 2026-04-24.** Should Poll (and similar vertical features:
+Widgets, Scheduler, Webhooks, Sounds, Emojis, Stickers) live as plugins
+instead of first-class core modules?
+
+**Current state.**
+- Core owns Poll entirely (`services/poll.py` + `routes/admin/poll.py`
+  + admin UI + viewer A/B/C/D intercept + overlay render)
+- Plugin SDK exists but is "event-listener" scale only:
+  `on_danmu` / `on_connect` / `modify` / `filter` / `auto-reply`
+- Plugins cannot register admin pages, WS message types, HTTP routes,
+  scoped storage, or overlay render components
+
+**Verdict: don't migrate now.** Making Poll a plugin today requires expanding
+the SDK by five extension points (admin-page / ws-channel / http-route /
+storage / overlay-render) — 2–4 weeks of infra before touching Poll,
+zero user-visible benefit.
+
+**Roadmap (when we revisit):**
+
+- **Stage 1 · File-only reorg** (low-risk, recommended next sprint). Move
+  vertical features into `server/plugins/builtin/<name>/` folders with a
+  plugin-shaped manifest, even though they still load in-process:
+  ```
+  server/plugins/builtin/
+  ├── poll/
+  │   ├── manifest.yaml     # name/version/hooks/admin-page-spec
+  │   ├── server.py         # would become plugin entry
+  │   ├── storage.py        # poll state
+  │   ├── admin.js          # UI injection
+  │   └── overlay.js        # overlay render
+  ├── widgets/
+  ├── scheduler/
+  ├── webhooks/
+  ├── sounds/
+  ├── emojis/
+  └── stickers/
+  ```
+  Makes the codebase *look* plugin-first without a real plugin loader.
+  Easier to lift out later.
+
+- **Stage 2 · SDK 2.0 expansion** (major infra). Add extension points:
+  1. `plugin.register_admin_page({ nav, kicker, render })`
+  2. `plugin.register_ws_channel({ type, schema })`
+  3. `plugin.register_http_route({ path, method, handler })`
+  4. `plugin.register_storage({ namespace })`
+  5. `plugin.register_overlay_render({ component })`
+
+  Validate with two toy plugins that don't overlap with core:
+  - `plugin-raffle` — single-answer lottery
+  - `plugin-reaction` — emoji rating aggregator
+
+- **Stage 3 · Optional core-to-plugin migration.** Once SDK 2.0 is proven
+  by at least one external plugin, decide per-feature whether to lift
+  Poll / Widgets out of core. May decide to keep them in-core anyway —
+  by then it's pure refactor, not architectural experiment.
+
+**Why not migrate directly to Stage 3?**
+- Poll is the marquee interaction feature; making it optional/disable-able
+  feels like a default install missing teeth
+- Migrating a working feature into unproven plugin system = high risk, no
+  user-visible benefit
+- Poll is about to grow (multi-question + image + ordering per design v2) —
+  stabilize expanded version in core first
+
+**Decision log.** Deferred at user's request 2026-04-24. When plugin SDK
+work restarts, start with Stage 1 (file reorg), not Stage 2.
+
 ---
 
 ## Applied already (no design needed)
@@ -737,6 +806,7 @@ counterparts. Single source via `shared/`.
 | 2026-04-24 | Electron display-only; ⌘K + settings all server-side | User |
 | 2026-04-24 | Fingerprint primary ID, nickname display-only, global format | User |
 | 2026-04-24 | Effects live inline preview, all-on (<1% CPU) | User |
+| 2026-04-24 | Poll-as-plugin deferred; revisit via Stage 1 file reorg first | User |
 
 ---
 
