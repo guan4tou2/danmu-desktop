@@ -1341,45 +1341,48 @@ document.addEventListener("DOMContentLoaded", () => {
                     </details>
                 `);
 
-    // Polls Management — multi-question queue (v4 prototype admin-poll-spec).
-    // Client-side queue fires questions through the existing single-active
-    // backend (`/admin/poll/create`) in sequence. Image field is visual-only
-    // for now (stored in-memory + localStorage; not posted to server yet).
+    // Polls Builder — master-detail v5 layout (admin-polls.jsx)
+    // Left 380px queue with HTML5 drag-reorder + play mode · right active
+    // question editor with crop ratio picker + per-question timer/multi +
+    // option rows with drag handle + image toggle. Client-side queue, fires
+    // each question through `/admin/poll/create` in sequence.
     settingsGrid.insertAdjacentHTML("beforeend", `
-      <div id="sec-polls" class="admin-poll-page hud-page-stack lg:col-span-2">
+      <div id="sec-polls" class="admin-poll-page-v5 hud-page-stack lg:col-span-2">
         <div class="admin-poll-head">
-          <div class="admin-poll-kicker">POLL BUILDER · 2–6 選項 · 可排序 / 多題目</div>
-          <div class="admin-poll-title">投票題組</div>
-          <p class="admin-poll-subnote">
-            觀眾以彈幕輸入 A / B / C / D 即可投票。一次只跑一題,上一題結束後自動播下一題。
-          </p>
+          <div class="admin-poll-kicker">POLL · 多題目 · 拖曳排序 · 每題可上傳圖片</div>
+          <div class="admin-poll-title">投票</div>
         </div>
 
-        <div class="admin-poll-queue" id="pollQuestionList"></div>
+        <div class="admin-poll-master-detail">
+          <!-- LEFT · queue with real DnD -->
+          <aside class="admin-poll-queue-panel">
+            <div class="admin-poll-card-head">
+              <span class="title">題目佇列</span>
+              <span class="kicker">QUEUE · 按住 ⋮⋮ 拖曳排序</span>
+            </div>
+            <div class="admin-poll-queue" data-poll-queue></div>
+            <button type="button" class="admin-poll-add-btn" data-poll-action="add">＋ 新增題目</button>
 
-        <div class="admin-poll-queue-actions">
-          <button type="button" class="admin-poll-btn is-ghost" data-poll-action="add">+ 新增題目</button>
-          <span class="admin-poll-queue-count" data-poll-count>—</span>
+            <div class="admin-poll-mode">
+              <div class="mode-label">播放模式</div>
+              <div class="mode-row">
+                <button type="button" class="is-active" data-poll-mode="manual">
+                  <span class="lbl">手動</span>
+                  <span class="sub">每題按 Next</span>
+                </button>
+                <button type="button" data-poll-mode="auto">
+                  <span class="lbl">自動</span>
+                  <span class="sub">時限到自動下一題</span>
+                </button>
+              </div>
+            </div>
+          </aside>
+
+          <!-- RIGHT · active question editor -->
+          <main class="admin-poll-editor" data-poll-editor></main>
         </div>
 
-        <div class="admin-poll-runbar">
-          <label class="admin-poll-runbar-field">
-            <span>每題時限</span>
-            <select id="pollGlobalTimer">
-              <option value="0" selected>無時限</option>
-              <option value="30">30 秒</option>
-              <option value="60">60 秒</option>
-              <option value="180">3 分鐘</option>
-            </select>
-          </label>
-          <div class="admin-poll-runbar-spacer"></div>
-          <button type="button" class="admin-poll-btn is-ghost" data-poll-action="reset">重設</button>
-          <button type="button" class="admin-poll-btn is-primary" data-poll-action="start">開始第一題 ▶</button>
-        </div>
-
-        <!-- Legacy single-question inputs retained for admin-poll.js compatibility.
-             Hidden visually but still wired; the multi-question queue JS copies
-             active question into these before submitting. -->
+        <!-- Legacy single-question inputs retained for admin-poll.js compatibility -->
         <div class="admin-poll-legacy" hidden>
           <input type="text" id="pollQuestion" />
           <div id="pollOptionsContainer">
@@ -1397,216 +1400,303 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `);
 
-    // Multi-question poll builder controller
+    // Multi-question poll builder controller — v5 master-detail
     (function initMultiPoll() {
-      const list = document.getElementById("pollQuestionList");
-      const countEl = document.querySelector("[data-poll-count]");
-      if (!list) return;
+      const sec = document.getElementById("sec-polls");
+      if (!sec) return;
+      const queueEl = sec.querySelector("[data-poll-queue]");
+      const editorEl = sec.querySelector("[data-poll-editor]");
 
-      const STORAGE_KEY = "danmu.adminPollQueue.v1";
+      const STORAGE_KEY = "danmu.adminPollQueue.v2";
+      function qid() { return "q_" + Math.random().toString(36).slice(2, 8); }
+      function oid() { return "o_" + Math.random().toString(36).slice(2, 6); }
+      function newOpt(letter) {
+        return { id: oid(), label: "", img: "" };
+      }
+      function newQuestion() {
+        return {
+          id: qid(), text: "", timer: 90, multi: false, crop: "16:9",
+          options: [newOpt("A"), newOpt("B")],
+        };
+      }
+
       let queue = [];
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) queue = JSON.parse(raw);
       } catch (_) {}
-      if (!Array.isArray(queue) || queue.length === 0) {
-        queue = [{ id: qid(), text: "", options: ["", ""], image: "" }];
-      }
-      let activeIdx = -1; // index of currently-running question, -1 if none
-
-      function qid() { return "q_" + Math.random().toString(36).slice(2, 8); }
-      function persist() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(queue)); } catch (_) {} }
-
-      function render() {
-        list.innerHTML = "";
-        queue.forEach((q, i) => {
-          const card = document.createElement("div");
-          card.className = "admin-poll-q";
-          if (i === activeIdx) card.classList.add("is-running");
-          card.dataset.qid = q.id;
-          card.innerHTML = `
-            <div class="admin-poll-q-head">
-              <span class="admin-poll-q-handle" draggable="true" title="拖曳排序">⋮⋮</span>
-              <span class="admin-poll-q-index">${i + 1}</span>
-              <span class="admin-poll-q-label">${i === activeIdx ? "● 進行中" : "題目"}</span>
-              <div class="admin-poll-q-actions">
-                <button type="button" class="admin-poll-q-btn" data-q-move="up" aria-label="上移">↑</button>
-                <button type="button" class="admin-poll-q-btn" data-q-move="down" aria-label="下移">↓</button>
-                <button type="button" class="admin-poll-q-btn is-danger" data-q-remove aria-label="刪除">×</button>
-              </div>
-            </div>
-            <div class="admin-poll-q-body">
-              <input class="admin-poll-q-text" data-q-text placeholder="輸入題目文字…" maxlength="200" value="${escapeHtml(q.text || "")}" />
-              <div class="admin-poll-q-image-row">
-                <label class="admin-poll-q-image-drop">
-                  ${q.image ? `<img src="${q.image}" alt="題目圖片" />` : `<span>+ 上傳圖片</span><small>PNG / JPG · ≤ 2 MB</small>`}
-                  <input type="file" accept="image/png,image/jpeg" data-q-image hidden />
-                </label>
-                ${q.image ? `<button type="button" class="admin-poll-q-btn is-danger" data-q-image-remove>移除圖片</button>` : ""}
-              </div>
-              <div class="admin-poll-q-opts" data-q-opts>
-                ${q.options.map((opt, oi) => `
-                  <div class="admin-poll-q-opt">
-                    <span class="admin-poll-q-opt-tag">${String.fromCharCode(65 + oi)}</span>
-                    <input data-q-opt="${oi}" placeholder="選項 ${String.fromCharCode(65 + oi)}" maxlength="100" value="${escapeHtml(opt || "")}" />
-                    ${q.options.length > 2 ? `<button type="button" class="admin-poll-q-btn" data-q-opt-remove="${oi}">×</button>` : ""}
-                  </div>
-                `).join("")}
-                ${q.options.length < 6 ? `<button type="button" class="admin-poll-link" data-q-opt-add>+ 新增選項</button>` : ""}
-              </div>
-            </div>
-          `;
-          list.appendChild(card);
-        });
-        if (countEl) countEl.textContent = queue.length + " 題";
-      }
-
+      if (!Array.isArray(queue) || queue.length === 0) queue = [newQuestion()];
+      let activeId = queue[0].id;
+      let mode = "manual";
+      let runningIdx = -1;
+      let dragQId = null;
+      let dragOptId = null;
+      function persist() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ queue, activeId, mode })); } catch (_) {} }
       function findQ(id) { return queue.find(q => q.id === id); }
+      function patchQ(id, v) { const q = findQ(id); if (q) Object.assign(q, v); }
+      function reorder(arr, from, to) { const next = arr.slice(); const [m] = next.splice(from, 1); next.splice(to, 0, m); return next; }
 
-      list.addEventListener("input", (e) => {
-        const card = e.target.closest(".admin-poll-q");
-        if (!card) return;
-        const q = findQ(card.dataset.qid);
-        if (!q) return;
-        if (e.target.dataset.qText !== undefined) {
-          q.text = e.target.value;
-          persist();
-        } else if (e.target.dataset.qOpt !== undefined) {
-          q.options[+e.target.dataset.qOpt] = e.target.value;
-          persist();
-        }
-      });
+      function renderQueue() {
+        queueEl.innerHTML = "";
+        queue.forEach((q, i) => {
+          const row = document.createElement("div");
+          row.className = "admin-poll-qrow";
+          if (q.id === activeId) row.classList.add("is-active");
+          if (i === runningIdx) row.classList.add("is-running");
+          row.dataset.qid = q.id;
+          row.draggable = true;
+          const hasImg = q.options.some(o => o.img);
+          row.innerHTML = `
+            <span class="drag-handle" title="拖曳排序">⋮⋮</span>
+            <span class="idx">${i + 1}</span>
+            <div class="info">
+              <div class="text">${escapeHtml(q.text || "(空題目)")}</div>
+              <div class="meta">${q.options.length} 選項 · ${q.timer === 0 ? "無時限" : q.timer + "s"} · ${hasImg ? "含圖 " + q.crop : "純文字"}</div>
+            </div>
+            ${q.id === activeId ? '<span class="editing-chip">● 編輯中</span>' : ""}
+          `;
+          queueEl.appendChild(row);
+        });
+      }
 
-      list.addEventListener("click", (e) => {
-        const card = e.target.closest(".admin-poll-q");
-        if (!card) return;
-        const q = findQ(card.dataset.qid);
+      function renderEditor() {
+        const q = findQ(activeId) || queue[0];
+        if (!q) { editorEl.innerHTML = ""; return; }
         const idx = queue.indexOf(q);
-        const btn = e.target.closest("button, [data-q-opt-add]");
-        if (!btn) return;
-        if (btn.dataset.qMove === "up" && idx > 0) {
-          [queue[idx - 1], queue[idx]] = [queue[idx], queue[idx - 1]];
-          persist(); render();
-        } else if (btn.dataset.qMove === "down" && idx < queue.length - 1) {
-          [queue[idx + 1], queue[idx]] = [queue[idx], queue[idx + 1]];
-          persist(); render();
-        } else if (btn.hasAttribute("data-q-remove")) {
-          if (queue.length > 1) {
-            queue.splice(idx, 1);
-            persist(); render();
-          }
-        } else if (btn.dataset.qOptRemove !== undefined) {
-          const oi = +btn.dataset.qOptRemove;
-          if (q.options.length > 2) {
-            q.options.splice(oi, 1);
-            persist(); render();
-          }
-        } else if (btn.hasAttribute("data-q-opt-add")) {
-          if (q.options.length < 6) {
-            q.options.push("");
-            persist(); render();
-          }
-        } else if (btn.hasAttribute("data-q-image-remove")) {
-          q.image = "";
-          persist(); render();
-        }
+        editorEl.innerHTML = `
+          <div class="admin-poll-edit-head">
+            <span class="idx">${idx + 1}</span>
+            <div class="head-info">
+              <span class="title">編輯題目 ${idx + 1}</span>
+              <span class="kicker">EDITING · 變更即時同步</span>
+            </div>
+            <span class="progress">Q${idx + 1} / ${queue.length}</span>
+          </div>
+
+          <div class="admin-poll-field-label">問題</div>
+          <input type="text" class="admin-poll-q-text" data-ed-text value="${escapeHtml(q.text || "")}" placeholder="輸入題目文字…" maxlength="200" />
+
+          <div class="admin-poll-crop" data-ed-crop-row>
+            <span class="crop-label">圖片裁切比例 · CROP</span>
+            ${["16:9", "1:1", "4:3"].map(r => `
+              <button type="button" data-ed-crop="${r}" class="${q.crop === r ? "is-active" : ""}">${r}</button>
+            `).join("")}
+            <span class="crop-note">套用到此題所有選項圖片</span>
+          </div>
+
+          <div class="admin-poll-field-label">選項 · 2–6 · 拖曳 ⋮⋮ 排序 · 可切換顯示圖片</div>
+          <div class="admin-poll-opts" data-ed-opts>
+            ${q.options.map((opt, oi) => `
+              <div class="admin-poll-opt" data-oid="${opt.id}" draggable="true">
+                <span class="drag-handle">⋮⋮</span>
+                <span class="opt-tag">${String.fromCharCode(65 + oi)}</span>
+                <button type="button" class="opt-img-toggle ${opt.img ? "is-on" : ""}" data-ed-opt-img="${opt.id}" title="切換圖片">
+                  ${opt.img ? '<span class="img-on">🖼</span>' : '<span class="img-off">+ 圖</span>'}
+                </button>
+                <input type="text" data-ed-opt-text="${opt.id}" value="${escapeHtml(opt.label || "")}" placeholder="選項 ${String.fromCharCode(65 + oi)}" maxlength="100" />
+                ${q.options.length > 2 ? `<button type="button" class="opt-remove" data-ed-opt-remove="${opt.id}" title="刪除">×</button>` : ""}
+              </div>
+            `).join("")}
+            ${q.options.length < 6 ? `<button type="button" class="admin-poll-opt-add" data-ed-opt-add>＋ 新增選項 (${q.options.length}/6)</button>` : ""}
+          </div>
+
+          <div class="admin-poll-edit-foot">
+            <label class="foot-field">
+              <span>時限</span>
+              <select data-ed-timer>
+                <option value="30"${q.timer === 30 ? " selected" : ""}>30s</option>
+                <option value="90"${q.timer === 90 ? " selected" : ""}>90s</option>
+                <option value="180"${q.timer === 180 ? " selected" : ""}>3 分</option>
+                <option value="300"${q.timer === 300 ? " selected" : ""}>5 分</option>
+                <option value="0"${q.timer === 0 ? " selected" : ""}>無時限</option>
+              </select>
+            </label>
+            <label class="foot-field foot-check">
+              <input type="checkbox" data-ed-multi ${q.multi ? "checked" : ""} />
+              <span>允許複選</span>
+            </label>
+            <div class="foot-spacer"></div>
+            <button type="button" class="admin-poll-btn is-ghost" data-ed-action="remove-q">刪除此題</button>
+            <button type="button" class="admin-poll-btn is-primary" data-ed-action="start-this">START Q${idx + 1} ▶</button>
+          </div>
+        `;
+      }
+
+      function render() { renderQueue(); renderEditor(); }
+
+      // Queue drag-reorder
+      queueEl.addEventListener("dragstart", (e) => {
+        const row = e.target.closest(".admin-poll-qrow");
+        if (!row) return;
+        dragQId = row.dataset.qid;
+        row.classList.add("is-dragging");
+      });
+      queueEl.addEventListener("dragend", (e) => {
+        const row = e.target.closest(".admin-poll-qrow");
+        if (row) row.classList.remove("is-dragging");
+        dragQId = null;
+        queueEl.querySelectorAll(".is-drag-over").forEach(r => r.classList.remove("is-drag-over"));
+      });
+      queueEl.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        const row = e.target.closest(".admin-poll-qrow");
+        if (!row || !dragQId || row.dataset.qid === dragQId) return;
+        queueEl.querySelectorAll(".is-drag-over").forEach(r => r.classList.remove("is-drag-over"));
+        row.classList.add("is-drag-over");
+      });
+      queueEl.addEventListener("drop", (e) => {
+        e.preventDefault();
+        const row = e.target.closest(".admin-poll-qrow");
+        if (!row || !dragQId) return;
+        const from = queue.findIndex(q => q.id === dragQId);
+        const to = queue.findIndex(q => q.id === row.dataset.qid);
+        if (from < 0 || to < 0 || from === to) return;
+        queue = reorder(queue, from, to);
+        persist(); render();
+      });
+      queueEl.addEventListener("click", (e) => {
+        const row = e.target.closest(".admin-poll-qrow");
+        if (!row) return;
+        activeId = row.dataset.qid;
+        persist(); render();
       });
 
-      list.addEventListener("change", (e) => {
-        if (e.target.dataset.qImage === undefined) return;
-        const card = e.target.closest(".admin-poll-q");
-        const q = findQ(card.dataset.qid);
-        const file = e.target.files && e.target.files[0];
-        if (!file || !q) return;
-        if (file.size > 2 * 1024 * 1024) {
-          if (typeof showToast === "function") showToast("圖片需小於 2 MB", false);
+      // Editor inputs
+      editorEl.addEventListener("input", (e) => {
+        const q = findQ(activeId);
+        if (!q) return;
+        if (e.target.matches("[data-ed-text]")) {
+          q.text = e.target.value;
+          persist(); renderQueue();
           return;
         }
-        const reader = new FileReader();
-        reader.onload = () => {
-          q.image = String(reader.result || "");
-          persist(); render();
-        };
-        reader.readAsDataURL(file);
-      });
-
-      // Queue-level actions (add / reset / start)
-      document.querySelector("#sec-polls").addEventListener("click", (e) => {
-        const btn = e.target.closest("[data-poll-action]");
-        if (!btn) return;
-        const a = btn.dataset.pollAction;
-        if (a === "add") {
-          queue.push({ id: qid(), text: "", options: ["", ""], image: "" });
-          persist(); render();
-        } else if (a === "reset") {
-          if (!confirm("清空所有題目?")) return;
-          queue = [{ id: qid(), text: "", options: ["", ""], image: "" }];
-          activeIdx = -1;
-          persist(); render();
-        } else if (a === "start") {
-          startNext(0);
+        if (e.target.matches("[data-ed-opt-text]")) {
+          const oid = e.target.dataset.edOptText;
+          const opt = q.options.find(o => o.id === oid);
+          if (opt) { opt.label = e.target.value; persist(); renderQueue(); }
         }
       });
-
-      async function startNext(idx) {
-        if (idx >= queue.length) {
-          activeIdx = -1;
-          render();
-          if (typeof showToast === "function") showToast("全部題目已結束", true);
+      editorEl.addEventListener("change", (e) => {
+        const q = findQ(activeId);
+        if (!q) return;
+        if (e.target.matches("[data-ed-timer]")) { q.timer = +e.target.value; persist(); renderQueue(); }
+        else if (e.target.matches("[data-ed-multi]")) { q.multi = e.target.checked; persist(); }
+      });
+      editorEl.addEventListener("click", (e) => {
+        const q = findQ(activeId);
+        if (!q) return;
+        const cropBtn = e.target.closest("[data-ed-crop]");
+        if (cropBtn) { q.crop = cropBtn.dataset.edCrop; persist(); renderEditor(); return; }
+        const imgToggle = e.target.closest("[data-ed-opt-img]");
+        if (imgToggle) {
+          const opt = q.options.find(o => o.id === imgToggle.dataset.edOptImg);
+          if (opt) { opt.img = opt.img ? "" : "placeholder"; persist(); renderEditor(); }
           return;
         }
+        const rem = e.target.closest("[data-ed-opt-remove]");
+        if (rem) {
+          const oid = rem.dataset.edOptRemove;
+          if (q.options.length > 2) { q.options = q.options.filter(o => o.id !== oid); persist(); renderEditor(); renderQueue(); }
+          return;
+        }
+        if (e.target.closest("[data-ed-opt-add]")) {
+          if (q.options.length < 6) { q.options.push(newOpt()); persist(); renderEditor(); renderQueue(); }
+          return;
+        }
+        const act = e.target.closest("[data-ed-action]");
+        if (act) {
+          if (act.dataset.edAction === "remove-q") {
+            if (queue.length > 1 && confirm("刪除此題目?")) {
+              const idx = queue.findIndex(q2 => q2.id === activeId);
+              queue = queue.filter(q2 => q2.id !== activeId);
+              activeId = queue[Math.min(idx, queue.length - 1)].id;
+              persist(); render();
+            }
+          } else if (act.dataset.edAction === "start-this") {
+            startAt(queue.findIndex(q2 => q2.id === activeId));
+          }
+        }
+      });
+
+      // Options drag-reorder (within active question)
+      editorEl.addEventListener("dragstart", (e) => {
+        const row = e.target.closest(".admin-poll-opt");
+        if (!row) return;
+        dragOptId = row.dataset.oid;
+        row.classList.add("is-dragging");
+      });
+      editorEl.addEventListener("dragend", (e) => {
+        editorEl.querySelectorAll(".is-dragging, .is-drag-over").forEach(r => r.classList.remove("is-dragging", "is-drag-over"));
+        dragOptId = null;
+      });
+      editorEl.addEventListener("dragover", (e) => {
+        const row = e.target.closest(".admin-poll-opt");
+        if (!row || !dragOptId || row.dataset.oid === dragOptId) return;
+        e.preventDefault();
+        editorEl.querySelectorAll(".is-drag-over").forEach(r => r.classList.remove("is-drag-over"));
+        row.classList.add("is-drag-over");
+      });
+      editorEl.addEventListener("drop", (e) => {
+        e.preventDefault();
+        const row = e.target.closest(".admin-poll-opt");
+        const q = findQ(activeId);
+        if (!row || !dragOptId || !q) return;
+        const from = q.options.findIndex(o => o.id === dragOptId);
+        const to = q.options.findIndex(o => o.id === row.dataset.oid);
+        if (from < 0 || to < 0 || from === to) return;
+        q.options = reorder(q.options, from, to);
+        persist(); renderEditor();
+      });
+
+      // Sidebar actions
+      sec.addEventListener("click", (e) => {
+        const add = e.target.closest("[data-poll-action='add']");
+        if (add) { const q = newQuestion(); queue.push(q); activeId = q.id; persist(); render(); return; }
+        const mb = e.target.closest("[data-poll-mode]");
+        if (mb) {
+          mode = mb.dataset.pollMode;
+          sec.querySelectorAll("[data-poll-mode]").forEach(b => b.classList.toggle("is-active", b === mb));
+          persist();
+        }
+      });
+
+      // Start engine
+      async function startAt(idx) {
+        if (idx < 0 || idx >= queue.length) return;
         const q = queue[idx];
-        const cleanOpts = (q.options || []).map(o => (o || "").trim()).filter(Boolean);
-        if (!(q.text || "").trim()) {
-          if (typeof showToast === "function") showToast(`第 ${idx + 1} 題缺少題目文字`, false);
-          return;
-        }
-        if (cleanOpts.length < 2) {
-          if (typeof showToast === "function") showToast(`第 ${idx + 1} 題選項不足 2 個`, false);
-          return;
-        }
-        activeIdx = idx;
-        render();
-        // Submit through existing backend
+        const cleanOpts = q.options.map(o => (o.label || "").trim()).filter(Boolean);
+        if (!(q.text || "").trim()) { showToast && showToast(`第 ${idx + 1} 題缺少題目文字`, false); return; }
+        if (cleanOpts.length < 2) { showToast && showToast(`第 ${idx + 1} 題選項不足 2 個`, false); return; }
+        runningIdx = idx;
+        renderQueue();
         try {
           const res = await csrfFetch("/admin/poll/create", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ question: q.text, options: cleanOpts }),
           });
-          if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.error || "poll create failed");
-          }
-          if (typeof showToast === "function") showToast(`第 ${idx + 1} 題已開始`, true);
-          // Watch for end, then advance
-          watchAndAdvance(idx);
+          if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || "poll create failed"); }
+          showToast && showToast(`第 ${idx + 1} 題已開始`, true);
+          if (mode === "auto") watchAndAdvance(idx);
         } catch (err) {
-          activeIdx = -1;
-          render();
-          if (typeof showToast === "function") showToast(String(err.message || err), false);
+          runningIdx = -1; renderQueue();
+          showToast && showToast(String(err.message || err), false);
         }
       }
-
       async function watchAndAdvance(idx) {
-        // Poll status until state !== "active" or the admin manually ends.
-        const check = async () => {
+        const loop = async () => {
+          if (runningIdx !== idx) return;
           try {
             const res = await fetch("/admin/poll/status", { credentials: "same-origin" });
-            if (!res.ok) return "retry";
-            const data = await res.json();
-            if (data.state === "active") return "retry";
-            // advance
-            if (activeIdx === idx) {
-              setTimeout(() => startNext(idx + 1), 800);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.state !== "active") {
+                setTimeout(() => { if (idx + 1 < queue.length) startAt(idx + 1); else { runningIdx = -1; renderQueue(); showToast && showToast("全部題目已結束", true); } }, 800);
+                return;
+              }
             }
-            return "done";
-          } catch (_) { return "retry"; }
-        };
-        const loop = async () => {
-          if (activeIdx !== idx) return;
-          const r = await check();
-          if (r === "retry") setTimeout(loop, 2000);
+          } catch (_) {}
+          setTimeout(loop, 2000);
         };
         setTimeout(loop, 2000);
       }
