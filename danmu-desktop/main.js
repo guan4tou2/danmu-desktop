@@ -87,8 +87,16 @@ app.whenReady().then(() => {
   rebuildTrayMenu();
   tray.setToolTip("Danmu Desktop");
 
-  // Update tray status label from renderer
-  ipcMain.on("update-tray-status", (_, text) => {
+  // Update tray status label from renderer — restricted to main window
+  ipcMain.on("update-tray-status", (event, text) => {
+    if (
+      !mainWindow ||
+      mainWindow.isDestroyed() ||
+      event.sender !== mainWindow.webContents
+    ) {
+      console.warn("[Main] update-tray-status: rejected IPC from untrusted sender");
+      return;
+    }
     trayStatusText = String(text).slice(0, 50); // cap length for safety
     rebuildTrayMenu();
   });

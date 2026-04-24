@@ -29,6 +29,12 @@ from .ws import run_ws_server
 
 
 def _build_content_security_policy(nonce: str) -> str:
+    # `style-src-elem` forbids `'unsafe-inline'` so a successful HTML injection
+    # cannot smuggle in an attacker-controlled `<style>` block (the main
+    # CSS-exfiltration vector via `@import` or attribute selectors).
+    # `style-src-attr` stays permissive so template `style=""` attributes and
+    # JS-driven `.style.foo = …` assignments continue to work. `style-src`
+    # is kept as a fallback for user agents that don't support the split.
     directives = [
         "default-src 'self'",
         "base-uri 'self'",
@@ -38,6 +44,8 @@ def _build_content_security_policy(nonce: str) -> str:
         "img-src 'self' https: data:",
         "font-src 'self' https://fonts.gstatic.com data:",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "style-src-elem 'self' https://fonts.googleapis.com",
+        "style-src-attr 'unsafe-inline'",
         "connect-src 'self' ws: wss:",
         f"script-src 'self' 'nonce-{nonce}'",
         "script-src-attr 'none'",
