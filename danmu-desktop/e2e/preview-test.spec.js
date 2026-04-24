@@ -19,6 +19,11 @@ test.describe("Preview & Batch Test", () => {
     await page.waitForLoadState("domcontentloaded");
     // Wait for renderer to finish initializing (i18n + all event handlers)
     await page.waitForSelector("#main-content.loaded", { timeout: 15000 });
+    // Post design-v2: preview-text / batch-test / sliders live inside the
+    // Overlay tab's collapsed `.client-overlay-advanced` <details>.
+    await page.locator('[data-nav="overlay"]').click();
+    const advSummary = page.locator(".client-overlay-advanced > summary");
+    if (await advSummary.count()) await advSummary.click();
   });
 
   test.afterAll(async () => {

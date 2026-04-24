@@ -147,13 +147,19 @@ test.describe("Server + Client E2E", () => {
     await mainWindow.waitForLoadState("domcontentloaded");
     // Wait for renderer to finish initializing (i18n + all event handlers)
     await mainWindow.waitForSelector("#main-content.loaded", { timeout: 15000 });
+    // Post design-v2: host / port inputs live inside Conn tab behind ⚙ 更改.
+    await mainWindow.locator('[data-nav="conn"]').click();
+    await mainWindow.locator('[data-client-action="edit-conn"]').click();
+    await mainWindow.waitForSelector("#host-input", { state: "visible", timeout: 5000 });
 
     // 3. Configure connection settings
     await mainWindow.locator("#host-input").fill("127.0.0.1");
     await mainWindow.locator("#port-input").fill(String(WS_PORT));
 
     // 4. Click Start to create overlay and connect WS
-    await mainWindow.locator("#start-button").click();
+    // v2: start-button is in the Overlay tab; click via JS to bypass
+    // visibility check (we stayed on Conn tab after filling host/port).
+    await mainWindow.evaluate(() => document.getElementById("start-button").click());
 
     // 5. Wait for overlay child window to appear
     await mainWindow.waitForTimeout(3000);

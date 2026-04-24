@@ -19,6 +19,12 @@ test.describe("Connection Controls", () => {
     await page.waitForLoadState("domcontentloaded");
     // Wait for renderer to finish initializing (i18n + all event handlers)
     await page.waitForSelector("#main-content.loaded", { timeout: 15000 });
+    // Post design-v2: host / port / token / screen-select / sync-multi live
+    // inside the Conn section (sidebar tab `連線`) behind the ⚙ 更改 panel.
+    // Open both once so per-test fills can target the inputs directly.
+    await page.locator('[data-nav="conn"]').click();
+    await page.locator('[data-client-action="edit-conn"]').click();
+    await page.waitForSelector("#host-input", { state: "visible", timeout: 5000 });
   });
 
   test.afterAll(async () => {
@@ -32,7 +38,7 @@ test.describe("Connection Controls", () => {
     await page.locator("#host-input").fill("");
     await page.locator("#port-input").fill("4001");
 
-    await page.locator("#start-button").click();
+    await page.evaluate(() => document.getElementById("start-button").click());
     await page.waitForTimeout(500);
 
     // Toast should appear with error
@@ -52,7 +58,7 @@ test.describe("Connection Controls", () => {
       document.getElementById("toast-container").innerHTML = "";
     });
 
-    await page.locator("#start-button").click();
+    await page.evaluate(() => document.getElementById("start-button").click());
     await page.waitForTimeout(500);
 
     const toastContainer = page.locator("#toast-container");
@@ -68,7 +74,7 @@ test.describe("Connection Controls", () => {
       document.getElementById("toast-container").innerHTML = "";
     });
 
-    await page.locator("#start-button").click();
+    await page.evaluate(() => document.getElementById("start-button").click());
     await page.waitForTimeout(500);
 
     const toastContainer = page.locator("#toast-container");
@@ -84,7 +90,7 @@ test.describe("Connection Controls", () => {
       document.getElementById("toast-container").innerHTML = "";
     });
 
-    await page.locator("#start-button").click();
+    await page.evaluate(() => document.getElementById("start-button").click());
     await page.waitForTimeout(500);
 
     const toastContainer = page.locator("#toast-container");
