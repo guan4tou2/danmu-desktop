@@ -71,6 +71,43 @@
     }
   }
 
+  // ── Built-in effect animations (live card preview fallback) ─────────────────
+  // These mirror the 8 bundled .dme files in server/effects/ with their default
+  // params resolved. Used to render live animations on effect cards without an
+  // HTTP round-trip per card. User .dme uploads fall back to static text until
+  // they can be loaded via POST /admin/effects/preview (v2).
+  const _BUILTIN_EFFECT_ANIMATIONS = {
+    blink: "dme-blink 0.6s step-start infinite",
+    bounce: "dme-bounce 0.6s ease-in-out infinite",
+    glow: "dme-glow-medium 1.2s ease-in-out infinite",
+    rainbow: "dme-rainbow 2s linear infinite",
+    shake: "dme-shake 0.25s ease-in-out infinite",
+    spin: "dme-spin 1.5s linear infinite normal",
+    wave: "dme-wave 0.5s ease-in-out infinite",
+    zoom: "dme-zoom 0.8s ease-in-out infinite",
+  };
+
+  // IntersectionObserver for pausing off-screen card animations.
+  // Lazy-init so headless tests that never scroll still work.
+  let _cardVisibilityObserver = null;
+  function _getCardVisibilityObserver() {
+    if (_cardVisibilityObserver) return _cardVisibilityObserver;
+    if (typeof IntersectionObserver === "undefined") return null;
+    _cardVisibilityObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const el = entry.target.querySelector(".effect-demo-text");
+          if (!el) return;
+          // >=50% visible → running, else paused (backlog engineering note).
+          el.style.animationPlayState =
+            entry.intersectionRatio >= 0.5 ? "running" : "paused";
+        });
+      },
+      { threshold: [0, 0.5, 1] }
+    );
+    return _cardVisibilityObserver;
+  }
+
   // ── Preview helpers (IIFE scope so renderEffectsList can call them) ──────────
   let _previewDebounceTimer = null;
 
@@ -484,11 +521,16 @@
         '</span>';
       return;
     }
+    // Disconnect previous observer before re-rendering — cards get rebuilt.
+    if (_cardVisibilityObserver) {
+      _cardVisibilityObserver.disconnect();
+    }
+
     container.innerHTML = "";
     filtered.forEach((eff) => {
       const cat = detectCategory(eff.name);
-      const previewTxt = cat === "SHAKE" ? "\u2248 ABC \u2248" : cat === "MOTION" ? "\u2192 ABC \u2192" : "ABC";
       const previewClass = cat === "GLOW" ? "is-glow" : cat === "COLOR" ? "is-color" : cat === "TEXT" ? "is-text" : "";
+      const animShorthand = _BUILTIN_EFFECT_ANIMATIONS[eff.name] || "";
 
       const card = document.createElement("div");
       card.className = "hud-effect-card" + (_effectsState.selected === eff.name ? " is-selected" : "");
@@ -499,13 +541,20 @@
       const label = ServerI18n.t(_ek) !== _ek ? ServerI18n.t(_ek) : (eff.label || eff.name);
       const author = "built-in";
 
+      // Live-animated demo text. Paused by default; IntersectionObserver flips
+      // to running when card is ≥50% visible. Inline styles so they override
+      // the static .hud-effect-card-preview rules in style.css without edits.
+      const demoStyle = animShorthand
+        ? `animation:${animShorthand};animation-play-state:paused;`
+        : "";
+
       card.innerHTML = `
         <div class="hud-effect-card-head">
           <span class="hud-status-dot is-live"></span>
           <span class="admin-v3-card-kicker" style="margin:0;color:var(--color-text-muted)">${escapeHtml(cat)}</span>
           <span style="margin-left:auto;font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted)">${escapeHtml(eff.filename || "")}</span>
         </div>
-        <div class="hud-effect-card-preview ${previewClass}">${previewTxt}</div>
+        <div class="hud-effect-card-preview effect-card-preview ${previewClass}"><span class="effect-demo-text" style="${demoStyle}">ABC</span></div>
         <div>
           <div class="hud-effect-card-name">${escapeHtml(label)}</div>
           <div class="hud-effect-card-meta">${escapeHtml(author)} \u00b7 ${escapeHtml(eff.name)}</div>
@@ -517,6 +566,12 @@
         </div>
       `;
       container.appendChild(card);
+
+      // Observe visibility for animation pause/resume (built-ins only).
+      if (animShorthand) {
+        const observer = _getCardVisibilityObserver();
+        if (observer) observer.observe(card);
+      }
 
       // Card click: select + load inspector
       card.addEventListener("click", (e) => {
