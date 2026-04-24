@@ -15,6 +15,7 @@
  * Viewport-filling flex column: body scrolls inside, sendbar pins bottom. */
 html:has(body.viewer-body-v2) {
   height: 100%;
+  color-scheme: light;
 }
 
 body.viewer-body-v2 {

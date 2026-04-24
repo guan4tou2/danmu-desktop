@@ -1,8 +1,16 @@
 @import url("tokens.css");
 
-/* Native form controls (scrollbar, date picker, etc.) render in dark mode */
+/* Native form controls (scrollbar, date picker, etc.) render in dark mode
+ * by default — overlay (child.html) and Electron renderer keep this.
+ * Viewer and admin pages flip html's scheme to `light` via :has() selectors
+ * scoped to their body class so Chrome's scrollbar + form controls match
+ * the light palette the page actually paints. */
 html {
   color-scheme: dark;
+}
+
+html:has(body.admin-body) {
+  color-scheme: light;
 }
 
 /* Respect user's motion preference — disable animation for vestibular safety */
