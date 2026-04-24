@@ -2303,14 +2303,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Fetch summary tiles — reuses existing endpoints:
       // /admin/history for 24h count · /admin/blacklist/get for blacklist size.
-      // Violations + locked IPs need a new backend counter (tracked in backlog).
+      // /admin/metrics for rate_limits counters (hits/violations/locked).
       // Deferred 4.5s to stay clear of nginx's rate=10r/s burst=30 window
       // that admin's init wave already saturates.
       setTimeout(async () => {
         try {
-          const [histR, blR] = await Promise.all([
+          const [histR, blR, metR] = await Promise.all([
             fetch("/admin/history?hours=24&limit=1", { credentials: "same-origin" }),
             fetch("/admin/blacklist/get",            { credentials: "same-origin" }),
+            fetch("/admin/metrics",                  { credentials: "same-origin" }),
           ]);
           if (histR.ok) {
             const h = await histR.json();
@@ -2327,13 +2328,46 @@ document.addEventListener("DOMContentLoaded", () => {
             const bl = section.querySelector("[data-rl-sum-black]");
             if (bl) bl.textContent = arr.length ? arr.length + " 項" : "0";
           }
-          // Violations + locked IPs: no backend yet — leave "—"
+          // Rate-limit counters from /admin/metrics. If the server is older
+          // and `rate_limits` is missing, fall through and leave "—".
           const viol = section.querySelector("[data-rl-sum-viol]");
           const violRate = section.querySelector("[data-rl-sum-viol-rate]");
           const locked = section.querySelector("[data-rl-sum-locked]");
-          if (viol) viol.textContent = "—";
-          if (violRate) violRate.textContent = "計數待 backend";
-          if (locked) locked.textContent = "—";
+          if (metR.ok) {
+            const m = await metR.json();
+            const rl = m && m.rate_limits;
+            if (rl && rl.totals) {
+              const tHits = rl.totals.hits || 0;
+              const tViol = rl.totals.violations || 0;
+              const tLock = rl.totals.locked_sources || 0;
+              if (viol) viol.textContent = tViol.toLocaleString();
+              if (violRate) {
+                const denom = tHits + tViol;
+                violRate.textContent = denom > 0
+                  ? `阻擋率 ${((tViol / denom) * 100).toFixed(1)}%`
+                  : "—";
+              }
+              if (locked) locked.textContent = `${tLock.toLocaleString()} 來源`;
+              // Per-row "H 次 · V 違規" text under each limit bar.
+              ["fire", "api", "admin", "login"].forEach((k) => {
+                const row = rl[k];
+                const el = section.querySelector(`[data-rl-current="${k}"]`);
+                if (el && row) {
+                  const rh = (row.hits || 0).toLocaleString();
+                  const rv = (row.violations || 0).toLocaleString();
+                  el.textContent = `${rh} 次 · ${rv} 違規`;
+                }
+              });
+            } else {
+              if (viol) viol.textContent = "—";
+              if (violRate) violRate.textContent = "計數待 backend";
+              if (locked) locked.textContent = "—";
+            }
+          } else {
+            if (viol) viol.textContent = "—";
+            if (violRate) violRate.textContent = "計數待 backend";
+            if (locked) locked.textContent = "—";
+          }
         } catch (_) {}
       }, 4500);
 

@@ -290,6 +290,47 @@ def test_rate_limiter_window_expiry():
     assert limiter.allow("w", 1, 0.05)  # window expired → allowed
 
 
+def test_rate_limit_records_hits_and_violations(client, app):
+    """The rate_limit decorator must feed the module-level counters so
+    /admin/metrics can surface hits/violations to the v2 summary strip."""
+    from server.services.security import (
+        get_rate_limit_stats,
+        rate_limit,
+        reset_rate_limit_counters,
+    )
+
+    reset_rate_limit_counters()
+
+    # Register a tiny test endpoint that uses the real decorator.
+    app.config["DUMMY_RATE_LIMIT"] = 2
+    app.config["DUMMY_RATE_WINDOW"] = 60
+
+    @rate_limit("fire", "DUMMY_RATE_LIMIT", "DUMMY_RATE_WINDOW")
+    def _dummy():
+        return "ok"
+
+    # Drive it through a request context so current_app + get_client_ip work.
+    with app.test_request_context("/"):
+        assert _dummy() == "ok"
+    with app.test_request_context("/"):
+        assert _dummy() == "ok"
+
+    # Third call should 429 (werkzeug raises HTTPException via abort()).
+    from werkzeug.exceptions import HTTPException
+
+    with app.test_request_context("/"):
+        with pytest.raises(HTTPException) as exc_info:
+            _dummy()
+        assert exc_info.value.code == 429
+
+    stats = get_rate_limit_stats()
+    assert stats["fire"]["hits"] == 2
+    assert stats["fire"]["violations"] == 1
+    assert stats["fire"]["locked_sources"] >= 1
+    assert stats["totals"]["hits"] == 2
+    assert stats["totals"]["violations"] == 1
+
+
 def test_redis_rate_limiter_allow_uses_atomic_eval():
     limiter = RedisRateLimiter.__new__(RedisRateLimiter)
     limiter.client = MagicMock()

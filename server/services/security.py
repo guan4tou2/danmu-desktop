@@ -63,6 +63,111 @@ def configure_rate_limiter(limiter: BaseRateLimiter):
     rate_limiter = limiter
 
 
+# ─── Rate-limit counters (cumulative hits/violations + recent violator IPs) ──
+#
+# Counters are process-local and reset on restart (no disk persistence). The
+# /admin/metrics endpoint reads them through get_rate_limit_stats() on every
+# poll, so the implementation is designed to be cheap (<1ms).
+
+_RATE_STATS_VIOLATOR_WINDOW = 300  # seconds — "recent" violator IP window
+
+_rate_stats_lock = threading.Lock()
+_rate_stats_hits: "defaultdict[str, int]" = defaultdict(int)
+_rate_stats_violations: "defaultdict[str, int]" = defaultdict(int)
+# Each entry is a deque of (timestamp, client_ip) pairs for that prefix.
+_rate_stats_violators: "defaultdict[str, deque]" = defaultdict(deque)
+
+
+def _record_rate_event(key_prefix: str, client_ip: str, allowed: bool) -> None:
+    """Record a rate-limit check outcome for later aggregation.
+
+    Called once per `rate_limiter.allow()` invocation inside the `rate_limit`
+    decorator. Cheap (O(1) amortised); holds a single module-level lock so it
+    is safe to call from any request thread.
+    """
+    now = time.time()
+    with _rate_stats_lock:
+        if allowed:
+            _rate_stats_hits[key_prefix] += 1
+        else:
+            _rate_stats_violations[key_prefix] += 1
+            dq = _rate_stats_violators[key_prefix]
+            dq.append((now, client_ip))
+            # Opportunistic prune: drop events older than the window so the
+            # deque stays bounded in size even under sustained pressure.
+            cutoff = now - _RATE_STATS_VIOLATOR_WINDOW
+            while dq and dq[0][0] < cutoff:
+                dq.popleft()
+
+
+def _locked_sources_for(prefix: str, now: float) -> int:
+    dq = _rate_stats_violators.get(prefix)
+    if not dq:
+        return 0
+    cutoff = now - _RATE_STATS_VIOLATOR_WINDOW
+    # Prune expired entries in-place while we're holding the lock.
+    while dq and dq[0][0] < cutoff:
+        dq.popleft()
+    return len({ip for _, ip in dq})
+
+
+def get_rate_limit_stats() -> dict:
+    """Return a snapshot of rate-limit counters for /admin/metrics.
+
+    Shape:
+        {
+          "fire":  {"hits": int, "violations": int, "locked_sources": int},
+          "api":   {...},
+          "admin": {...},
+          "login": {...},
+          "totals": {"hits": int, "violations": int, "locked_sources": int},
+        }
+
+    `locked_sources` is the number of distinct client IPs that violated the
+    limit in the last 300 seconds. Thread-safe, cheap (<1ms).
+    """
+    prefixes = ("fire", "api", "admin", "login")
+    now = time.time()
+    out: dict = {}
+    total_hits = 0
+    total_violations = 0
+    all_ips: set = set()
+    with _rate_stats_lock:
+        for p in prefixes:
+            hits = _rate_stats_hits.get(p, 0)
+            violations = _rate_stats_violations.get(p, 0)
+            dq = _rate_stats_violators.get(p)
+            if dq:
+                cutoff = now - _RATE_STATS_VIOLATOR_WINDOW
+                while dq and dq[0][0] < cutoff:
+                    dq.popleft()
+                ips = {ip for _, ip in dq}
+            else:
+                ips = set()
+            out[p] = {
+                "hits": hits,
+                "violations": violations,
+                "locked_sources": len(ips),
+            }
+            total_hits += hits
+            total_violations += violations
+            all_ips |= ips
+        out["totals"] = {
+            "hits": total_hits,
+            "violations": total_violations,
+            "locked_sources": len(all_ips),
+        }
+    return out
+
+
+def reset_rate_limit_counters() -> None:
+    """Clear all counter state. Intended for tests."""
+    with _rate_stats_lock:
+        _rate_stats_hits.clear()
+        _rate_stats_violations.clear()
+        _rate_stats_violators.clear()
+
+
 class RedisRateLimiter(BaseRateLimiter):
     _ALLOW_SCRIPT = """
 local key = KEYS[1]
@@ -179,7 +284,9 @@ def rate_limit(
             limit = current_app.config.get(limit_key, 20)
             window = current_app.config.get(window_key, 60)
             key = f"{key_prefix}:{client_ip}"
-            if not rate_limiter.allow(key, limit, window):
+            allowed = rate_limiter.allow(key, limit, window)
+            _record_rate_event(key_prefix, client_ip, allowed)
+            if not allowed:
                 abort(429, description="Too Many Requests")
             return func(*args, **kwargs)
 

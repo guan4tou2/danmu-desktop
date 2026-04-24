@@ -260,6 +260,32 @@ def test_metrics_returns_data_when_logged_in(client):
     assert isinstance(data, dict)
 
 
+def test_metrics_includes_rate_limits(client):
+    resp = authed_get(client, "/admin/metrics")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert "rate_limits" in data
+    rl = data["rate_limits"]
+    for key in ("fire", "api", "admin", "login", "totals"):
+        assert key in rl, f"missing rate_limits[{key!r}]"
+        assert isinstance(rl[key]["hits"], int)
+        assert isinstance(rl[key]["violations"], int)
+
+
+def test_rate_limit_counters_increment_on_request(client):
+    # Hit an admin-rate-limited endpoint a few times while logged in.
+    for _ in range(3):
+        resp = authed_get(client, "/admin/metrics")
+        assert resp.status_code == 200
+
+    resp = authed_get(client, "/admin/metrics")
+    data = resp.get_json()
+    rl = data["rate_limits"]
+    # At least the requests we just made should be counted under "admin".
+    assert rl["admin"]["hits"] >= 3
+    assert rl["totals"]["hits"] >= 3
+
+
 # ---------------------------------------------------------------------------
 # /admin/fonts (list + delete)
 # ---------------------------------------------------------------------------

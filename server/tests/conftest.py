@@ -22,7 +22,10 @@ from server.services.filter_engine import (  # ty: ignore[unresolved-import]
     FilterEngine,
     filter_engine,
 )
-from server.services.security import rate_limiter  # ty: ignore[unresolved-import]
+from server.services.security import (  # ty: ignore[unresolved-import]
+    rate_limiter,
+    reset_rate_limit_counters,
+)
 from server.services.ws_state import update_ws_client_count  # ty: ignore[unresolved-import]
 from server.ws.server import run_ws_server  # ty: ignore[unresolved-import]
 
@@ -207,6 +210,7 @@ def app(tmp_path):
     connection_manager.reset()
     settings_store.reset()
     rate_limiter.reset()
+    reset_rate_limit_counters()
     update_ws_client_count(0)
     eff_svc._cache.clear()
     eff_svc._mtime_map.clear()

@@ -4,6 +4,7 @@ import time
 
 from ...services import telemetry, ws_queue, ws_state
 from ...services.poll import poll_service
+from ...services.security import get_rate_limit_stats
 from ...services.widgets import list_widgets
 from . import _json_response, admin_bp, rate_limit, require_login
 
@@ -25,6 +26,7 @@ def get_metrics():
             "active_widgets": len(list_widgets()),
             "poll_state": poll_service.state,
             "server_time": time.time(),
+            "rate_limits": get_rate_limit_stats(),
             **series,
         }
     )
