@@ -343,3 +343,37 @@ def test_metrics_includes_telemetry_series(client):
         assert isinstance(data[key], list)
     assert data["series_len"] == 60
     assert data["sample_interval_sec"] == 1.0
+
+
+# ---------------------------------------------------------------------------
+# /admin/bootstrap — bulk first-paint snapshot
+# ---------------------------------------------------------------------------
+
+_BOOTSTRAP_KEYS = (
+    "blacklist", "widgets", "polls", "settings", "filters", "history_stats",
+    "ws_auth", "effects", "themes", "webhooks", "sounds", "emojis",
+    "stickers", "scheduler", "fingerprints", "metrics",
+)
+
+
+def test_bootstrap_requires_login(client):
+    resp = client.get("/admin/bootstrap")
+    assert resp.status_code in (302, 401, 403)
+
+
+def test_bootstrap_returns_all_sections(client):
+    resp = authed_get(client, "/admin/bootstrap")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    for key in _BOOTSTRAP_KEYS:
+        assert key in data, f"missing bootstrap[{key!r}]"
+
+
+def test_bootstrap_continues_on_section_error(client, monkeypatch):
+    from server.routes.admin import bootstrap as bs
+    monkeypatch.setattr(bs, "_widgets", lambda: (_ for _ in ()).throw(RuntimeError("boom")))
+    resp = authed_get(client, "/admin/bootstrap")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["widgets"] == {"_error": "boom"}
+    assert "polls" in data and "metrics" in data

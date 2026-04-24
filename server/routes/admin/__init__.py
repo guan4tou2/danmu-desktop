@@ -49,6 +49,7 @@ def _ensure_logged_in():
 # Import sub-modules to register their routes on admin_bp
 from . import (  # noqa: E402, F401
     blacklist,
+    bootstrap,
     dashboard,
     effects,
     emojis,

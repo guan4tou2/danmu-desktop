@@ -26,6 +26,44 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   window.csrfFetch = csrfFetch;
 
+  // ── Bulk bootstrap cache ──────────────────────────────────────────────
+  // Single GET /admin/bootstrap feeds first-paint data for ~16 sections so
+  // the admin page does not fan-out 16 concurrent requests on load (which
+  // previously tripped nginx's public `limit_req` burst window — now mitigated
+  // with a per-path bypass in commit b65abc5, but this endpoint is the real
+  // fix). Cache is considered fresh for 5 s; after that sections refetch.
+  // Mutations (POSTs) bypass the cache, as do explicit refresh buttons.
+  const BOOTSTRAP_TTL_MS = 5000;
+  const _bootstrapCache = { at: 0, data: null, promise: null };
+  function _bootstrapIsFresh() {
+    return _bootstrapCache.data && (Date.now() - _bootstrapCache.at) < BOOTSTRAP_TTL_MS;
+  }
+  function primeBootstrap() {
+    if (_bootstrapIsFresh()) return Promise.resolve(_bootstrapCache.data);
+    if (_bootstrapCache.promise) return _bootstrapCache.promise;
+    _bootstrapCache.promise = fetch("/admin/bootstrap", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) { _bootstrapCache.data = data; _bootstrapCache.at = Date.now(); }
+        _bootstrapCache.promise = null;
+        return data;
+      })
+      .catch(() => { _bootstrapCache.promise = null; return null; });
+    return _bootstrapCache.promise;
+  }
+  // Read a section. Returns the cached value if fresh, else null. Sync.
+  function bootstrapSection(name) {
+    if (!_bootstrapIsFresh()) return null;
+    const v = _bootstrapCache.data[name];
+    // Sections that errored on the server come back as {_error: "..."} —
+    // treat those as cache-miss so we still hit the real endpoint.
+    if (v && typeof v === "object" && "_error" in v) return null;
+    return v;
+  }
+  window.__danmuAdminBootstrap = { prime: primeBootstrap, get: bootstrapSection };
+  // Kick off as early as possible — parallel with HTML parse.
+  primeBootstrap();
+
   const FONT_REFRESH_BUFFER_SECONDS = 60;
   let adminFontRefreshTimer = null;
   let adminFontCache = [];
@@ -2301,20 +2339,27 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!section) return;
       const exportPre = section.querySelector("#rlEnvExport");
 
-      // Fetch summary tiles — reuses existing endpoints:
-      // /admin/history for 24h count · /admin/blacklist/get for blacklist size.
-      // /admin/metrics for rate_limits counters (hits/violations/locked).
+      // Fetch summary tiles — prefers bulk /admin/bootstrap cache primed
+      // on page load (avoids the 3-way fan-out for history/blacklist/metrics).
+      // Falls back to per-endpoint fetches if cache is stale/absent.
       // Deferred 4.5s to stay clear of nginx's rate=10r/s burst=30 window
       // that admin's init wave already saturates.
       setTimeout(async () => {
         try {
-          const [histR, blR, metR] = await Promise.all([
-            fetch("/admin/history?hours=24&limit=1", { credentials: "same-origin" }),
-            fetch("/admin/blacklist/get",            { credentials: "same-origin" }),
-            fetch("/admin/metrics",                  { credentials: "same-origin" }),
-          ]);
-          if (histR.ok) {
-            const h = await histR.json();
+          await primeBootstrap();
+          const cachedHist = bootstrapSection("history_stats");
+          const cachedBl   = bootstrapSection("blacklist");
+          const cachedMet  = bootstrapSection("metrics");
+          const need = [];
+          if (!cachedHist) need.push(fetch("/admin/history?hours=24&limit=1", { credentials: "same-origin" }));
+          else need.push(null);
+          if (!cachedBl) need.push(fetch("/admin/blacklist/get", { credentials: "same-origin" }));
+          else need.push(null);
+          if (!cachedMet) need.push(fetch("/admin/metrics", { credentials: "same-origin" }));
+          else need.push(null);
+          const [histR, blR, metR] = await Promise.all(need);
+          const h = cachedHist || (histR && histR.ok ? await histR.json() : null);
+          if (h) {
             const n24 = (h.stats && h.stats.last_24h) || 0;
             const tot = (h.stats && h.stats.total) || 0;
             const hits = section.querySelector("[data-rl-sum-hits]");
@@ -2322,8 +2367,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (hits) hits.textContent = n24.toLocaleString();
             if (delta) delta.textContent = `總計 ${tot.toLocaleString()}`;
           }
-          if (blR.ok) {
-            const b = await blR.json();
+          const b = cachedBl || (blR && blR.ok ? await blR.json() : null);
+          if (b) {
             const arr = Array.isArray(b) ? b : (b.entries || b.keywords || []);
             const bl = section.querySelector("[data-rl-sum-black]");
             if (bl) bl.textContent = arr.length ? arr.length + " 項" : "0";
@@ -2333,8 +2378,8 @@ document.addEventListener("DOMContentLoaded", () => {
           const viol = section.querySelector("[data-rl-sum-viol]");
           const violRate = section.querySelector("[data-rl-sum-viol-rate]");
           const locked = section.querySelector("[data-rl-sum-locked]");
-          if (metR.ok) {
-            const m = await metR.json();
+          const m = cachedMet || (metR && metR.ok ? await metR.json() : null);
+          if (m) {
             const rl = m && m.rate_limits;
             if (rl && rl.totals) {
               const tHits = rl.totals.hits || 0;
@@ -2510,12 +2555,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function refreshDashboardKpi() {
     try {
-      const [historyRes, hourlyRes] = await Promise.all([
-        fetch("/admin/history?hours=24&limit=1", { credentials: "same-origin" }),
-        fetch("/admin/stats/hourly?hours=24",   { credentials: "same-origin" }),
+      await primeBootstrap();
+      const cachedHist = bootstrapSection("history_stats");
+      // /admin/stats/hourly is not bundled — always fetch. /admin/history IS
+      // bundled as history_stats (same shape), so consult cache first.
+      const [histRes, hourlyRes] = await Promise.all([
+        cachedHist ? null : fetch("/admin/history?hours=24&limit=1", { credentials: "same-origin" }),
+        fetch("/admin/stats/hourly?hours=24", { credentials: "same-origin" }),
       ]);
-      if (!historyRes.ok || !hourlyRes.ok) return;
-      const hist = await historyRes.json();
+      if (!hourlyRes.ok) return;
+      const hist = cachedHist || (histRes && histRes.ok ? await histRes.json() : null);
+      if (!hist) return;
       const dist = (await hourlyRes.json()).distribution || [];
       const total = (hist.stats && hist.stats.total) || 0;
       const last24h = (hist.stats && hist.stats.last_24h) || 0;
@@ -2556,9 +2606,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const timer = document.querySelector("[data-dash-poll-timer]");
     if (!body) return;
     try {
-      const r = await fetch("/admin/metrics", { credentials: "same-origin" });
-      if (!r.ok) return;
-      const m = await r.json();
+      await primeBootstrap();
+      const cachedMet = bootstrapSection("metrics");
+      let m = cachedMet;
+      if (!m) {
+        const r = await fetch("/admin/metrics", { credentials: "same-origin" });
+        if (!r.ok) return;
+        m = await r.json();
+      }
       const ps = m.poll_state;
       if (!ps || !ps.active || !Array.isArray(ps.options) || ps.options.length === 0) {
         body.innerHTML = `<div class="admin-dash-empty">尚無進行中投票 · 切換至「投票」頁建立</div>`;
@@ -2635,12 +2690,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const body = document.querySelector("[data-dash-widgets]");
     if (!body) return;
     try {
-      const r = await fetch("/admin/widgets/list", { credentials: "same-origin" });
-      if (!r.ok) {
-        body.innerHTML = `<div class="admin-dash-empty">無可用 widgets</div>`;
-        return;
+      await primeBootstrap();
+      let data = bootstrapSection("widgets");
+      if (!data) {
+        const r = await fetch("/admin/widgets/list", { credentials: "same-origin" });
+        if (!r.ok) {
+          body.innerHTML = `<div class="admin-dash-empty">無可用 widgets</div>`;
+          return;
+        }
+        data = await r.json();
       }
-      const data = await r.json();
       const widgets = (data.widgets || data.items || []).slice(0, 4);
       if (widgets.length === 0) {
         body.innerHTML = `<div class="admin-dash-empty">尚未啟用任何 widget</div>`;
