@@ -2302,13 +2302,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const exportPre = section.querySelector("#rlEnvExport");
 
       // Fetch summary tiles — reuses existing endpoints:
-      // /admin/history for 24h count · /admin/blacklist for blacklist size.
+      // /admin/history for 24h count · /admin/blacklist/get for blacklist size.
       // Violations + locked IPs need a new backend counter (tracked in backlog).
-      (async () => {
+      // Deferred 4.5s to stay clear of nginx's rate=10r/s burst=30 window
+      // that admin's init wave already saturates.
+      setTimeout(async () => {
         try {
           const [histR, blR] = await Promise.all([
             fetch("/admin/history?hours=24&limit=1", { credentials: "same-origin" }),
-            fetch("/admin/blacklist",                { credentials: "same-origin" }),
+            fetch("/admin/blacklist/get",            { credentials: "same-origin" }),
           ]);
           if (histR.ok) {
             const h = await histR.json();
@@ -2333,7 +2335,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (violRate) violRate.textContent = "計數待 backend";
           if (locked) locked.textContent = "—";
         } catch (_) {}
-      })();
+      }, 4500);
 
       section.addEventListener("click", (e) => {
         const btn = e.target.closest("[data-rl-action]");
@@ -2464,9 +2466,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // [data-active-route] CSS on the shell.
     initAdminRouter();
 
-    // Dashboard KPI — mirrors prototype admin-v3.jsx:107 KpiTile with real data.
-    refreshDashboardKpi();
-    refreshDashboardSummary();
+    // Dashboard KPI + summary fetches — defer so they don't join the
+    // init burst that already hits nginx `rate=10r/s burst=30`. We've
+    // seen 429 cascade across admin-history / admin-effects / etc when
+    // these fire concurrently. Stagger 1.5s + 3s after init.
+    setTimeout(() => { refreshDashboardKpi(); }, 1500);
+    setTimeout(() => { refreshDashboardSummary(); }, 3000);
   }
 
   async function refreshDashboardKpi() {
@@ -2596,7 +2601,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const body = document.querySelector("[data-dash-widgets]");
     if (!body) return;
     try {
-      const r = await fetch("/admin/widgets", { credentials: "same-origin" });
+      const r = await fetch("/admin/widgets/list", { credentials: "same-origin" });
       if (!r.ok) {
         body.innerHTML = `<div class="admin-dash-empty">無可用 widgets</div>`;
         return;
