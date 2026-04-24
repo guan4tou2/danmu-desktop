@@ -46,6 +46,7 @@ jest.mock("electron", () => ({
       once: jest.fn(),
       send: jest.fn(),
       executeJavaScript: mockExecuteJavaScript,
+      setWindowOpenHandler: jest.fn(),
     };
     return this;
   }),
@@ -86,8 +87,10 @@ describe("window-lifecycle: setupChildWindow", () => {
       startupAnimationSettings: null,
       webContents: {
         id: 100,
+        on: jest.fn(),
         once: jest.fn(),
         executeJavaScript: mockExecuteJavaScript,
+        setWindowOpenHandler: jest.fn(),
       },
     };
 
