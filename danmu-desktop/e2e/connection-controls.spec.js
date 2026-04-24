@@ -18,7 +18,7 @@ test.describe("Connection Controls", () => {
     page = await electronApp.firstWindow();
     await page.waitForLoadState("domcontentloaded");
     // Wait for renderer to finish initializing (i18n + all event handlers)
-    await page.waitForSelector(".main-content.loaded", { timeout: 15000 });
+    await page.waitForSelector("#main-content.loaded", { timeout: 15000 });
   });
 
   test.afterAll(async () => {

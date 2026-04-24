@@ -1242,6 +1242,54 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   gap: 16px;
 }
 
+.admin-ratelimit-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 760px) {
+  .admin-ratelimit-summary { grid-template-columns: repeat(2, 1fr); }
+}
+
+.admin-ratelimit-summary .tile {
+  padding: 14px 16px;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-ratelimit-summary .lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--admin-text-dim);
+  text-transform: uppercase;
+}
+
+.admin-ratelimit-summary .val {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--admin-text);
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+.admin-ratelimit-summary .delta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.admin-ratelimit-summary .delta.is-good   { color: #86efac; }
+.admin-ratelimit-summary .delta.is-warn   { color: #fbbf24; }
+.admin-ratelimit-summary .delta.is-danger { color: #f87171; }
+.admin-ratelimit-summary .delta.is-muted  { color: var(--admin-text-dim); }
+
 .admin-ratelimit-head {
   padding: 16px 18px;
   background: var(--admin-panel);

@@ -2216,12 +2216,36 @@ document.addEventListener("DOMContentLoaded", () => {
     settingsGrid.insertAdjacentHTML("beforeend", `
       <div id="sec-ratelimit" class="admin-ratelimit-page hud-page-stack lg:col-span-2">
         <div class="admin-ratelimit-head">
-          <div class="admin-ratelimit-kicker">RATE LIMITS · 反刷屏 / 反暴力登入</div>
+          <div class="admin-ratelimit-kicker">RATE LIMITS · 4 SCOPES · .env</div>
           <div class="admin-ratelimit-title">請求速率上限</div>
           <p class="admin-ratelimit-note">
             每個來源 IP(或 fingerprint)在時間窗內可發送的請求數上限。
             變更後請 export .env 並 restart server 生效。
           </p>
+        </div>
+
+        <!-- Summary strip — 24h telemetry (data wiring TODO in backend audit) -->
+        <div class="admin-ratelimit-summary">
+          <div class="tile">
+            <span class="lbl">24h 請求</span>
+            <span class="val" data-rl-sum-hits>—</span>
+            <span class="delta is-muted" data-rl-sum-hits-delta>計算中…</span>
+          </div>
+          <div class="tile">
+            <span class="lbl">24h 違規</span>
+            <span class="val" data-rl-sum-viol>—</span>
+            <span class="delta is-good" data-rl-sum-viol-rate>命中率 —</span>
+          </div>
+          <div class="tile">
+            <span class="lbl">現正鎖定</span>
+            <span class="val" data-rl-sum-locked>—</span>
+            <span class="delta is-warn">LOGIN · 滑動視窗自動解除</span>
+          </div>
+          <div class="tile">
+            <span class="lbl">黑名單</span>
+            <span class="val" data-rl-sum-black>—</span>
+            <span class="delta is-danger">手動加入 · 永久</span>
+          </div>
         </div>
         <div class="admin-ratelimit-rows">
           ${[
@@ -2271,11 +2295,46 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `);
 
-    // Wire up export button to generate .env-compatible text for copying.
+    // Wire up export button + fetch summary tiles.
     (function () {
       const section = document.getElementById("sec-ratelimit");
       if (!section) return;
       const exportPre = section.querySelector("#rlEnvExport");
+
+      // Fetch summary tiles — reuses existing endpoints:
+      // /admin/history for 24h count · /admin/blacklist for blacklist size.
+      // Violations + locked IPs need a new backend counter (tracked in backlog).
+      (async () => {
+        try {
+          const [histR, blR] = await Promise.all([
+            fetch("/admin/history?hours=24&limit=1", { credentials: "same-origin" }),
+            fetch("/admin/blacklist",                { credentials: "same-origin" }),
+          ]);
+          if (histR.ok) {
+            const h = await histR.json();
+            const n24 = (h.stats && h.stats.last_24h) || 0;
+            const tot = (h.stats && h.stats.total) || 0;
+            const hits = section.querySelector("[data-rl-sum-hits]");
+            const delta = section.querySelector("[data-rl-sum-hits-delta]");
+            if (hits) hits.textContent = n24.toLocaleString();
+            if (delta) delta.textContent = `總計 ${tot.toLocaleString()}`;
+          }
+          if (blR.ok) {
+            const b = await blR.json();
+            const arr = Array.isArray(b) ? b : (b.entries || b.keywords || []);
+            const bl = section.querySelector("[data-rl-sum-black]");
+            if (bl) bl.textContent = arr.length ? arr.length + " 項" : "0";
+          }
+          // Violations + locked IPs: no backend yet — leave "—"
+          const viol = section.querySelector("[data-rl-sum-viol]");
+          const violRate = section.querySelector("[data-rl-sum-viol-rate]");
+          const locked = section.querySelector("[data-rl-sum-locked]");
+          if (viol) viol.textContent = "—";
+          if (violRate) violRate.textContent = "計數待 backend";
+          if (locked) locked.textContent = "—";
+        } catch (_) {}
+      })();
+
       section.addEventListener("click", (e) => {
         const btn = e.target.closest("[data-rl-action]");
         if (!btn) return;

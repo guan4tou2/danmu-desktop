@@ -155,7 +155,12 @@ const initRenderer = async () => {
   } finally {
     // Always signal that the renderer has finished initializing.
     // E2e tests wait for this class before interacting with the page.
-    const mainContent = document.querySelector(".main-content");
+    // Post design-v2 retrofit the wrapper class is `client-main`; target by
+    // the stable `#main-content` id which exists in both shells.
+    const mainContent =
+      document.querySelector("#main-content") ||
+      document.querySelector(".main-content") ||
+      document.querySelector(".client-main");
     if (mainContent) mainContent.classList.add("loaded");
   }
 };
