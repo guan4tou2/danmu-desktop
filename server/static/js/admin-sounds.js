@@ -1,14 +1,15 @@
-// Admin Sound Effects Management
+// Admin Sound Effects Management — v2 retrofit.
+// Tile grid for uploaded sounds + rules list + inline create form.
 (function () {
   "use strict";
 
-  var loadDetailsState = window.AdminUtils.loadDetailsState;
-  var saveDetailsState = window.AdminUtils.saveDetailsState;
+  var escapeHtml = window.AdminUtils.escapeHtml;
+  const SECTION_ID = "sec-sounds";
 
-  // Currently previewing audio instance (so we can stop it)
+  // Currently previewing audio instance (so we can stop it).
   let previewAudio = null;
 
-  // Cached lists
+  // Cached lists.
   let availableSounds = [];
   let soundRules = [];
 
@@ -30,8 +31,6 @@
   }
 
   async function fetchRules() {
-    // Rules are fetched together with sounds in fetchSounds()
-    // This function kept for compatibility with code that calls it separately
     return fetchSounds();
   }
 
@@ -90,48 +89,49 @@
 
     if (availableSounds.length === 0) {
       container.innerHTML =
-        '<p class="text-slate-400 text-sm">' + ServerI18n.t("noSoundsUploaded") + '</p>';
+        '<div class="admin-emojis-empty" style="grid-column:1/-1">' +
+        escapeHtml(ServerI18n.t("noSoundsUploaded")) +
+        "</div>";
       return;
     }
 
-    container.innerHTML = "";
-    availableSounds.forEach((sound) => {
-      const row = document.createElement("div");
-      row.className =
-        "flex items-center justify-between bg-slate-700/50 p-2 rounded-lg";
+    container.innerHTML = availableSounds
+      .map(function (sound) {
+        var safeName = escapeHtml(sound.name);
+        return (
+          '<div class="admin-sounds-tile" data-sound-name="' + escapeHtml(sound.name) + '">' +
+          '<div class="name" title="' + safeName + '">' + safeName + "</div>" +
+          '<div class="actions">' +
+          '<button type="button" class="sound-play-btn admin-v2-chip is-on" data-name="' + escapeHtml(sound.name) + '">▶ ' + escapeHtml(ServerI18n.t("previewBtn")) + "</button>" +
+          '<button type="button" class="sound-delete-btn admin-v2-chip is-bad" data-name="' + escapeHtml(sound.name) + '">×</button>' +
+          "</div>" +
+          "</div>"
+        );
+      })
+      .join("");
 
-      const nameSpan = document.createElement("span");
-      nameSpan.className = "text-slate-200 truncate mr-2";
-      nameSpan.textContent = sound.name;
-
-      const btnGroup = document.createElement("div");
-      btnGroup.className = "flex items-center gap-2 shrink-0";
-
-      const playBtn = document.createElement("button");
-      playBtn.className =
-        "px-2 py-1 text-xs bg-cyan-600 hover:bg-cyan-500 text-white rounded transition-colors";
-      playBtn.textContent = ServerI18n.t("previewBtn");
-      playBtn.addEventListener("click", () => {
+    // Wire preview/delete.
+    container.querySelectorAll(".sound-play-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var name = btn.dataset.name;
+        var entry = availableSounds.find(function (s) { return s.name === name; });
+        if (!entry) return;
         if (previewAudio) {
           previewAudio.pause();
           previewAudio = null;
         }
-        previewAudio = new Audio(sound.url);
+        previewAudio = new Audio(entry.url);
         previewAudio.volume = 0.5;
-        previewAudio.play().catch((e) =>
-          console.warn("Audio preview failed:", e)
-        );
+        previewAudio.play().catch(function (e) { console.warn("Audio preview failed:", e); });
       });
-
-      const delBtn = document.createElement("button");
-      delBtn.className =
-        "px-2 py-1 text-xs bg-red-600/80 hover:bg-red-600 text-white rounded transition-colors";
-      delBtn.textContent = ServerI18n.t("deleteBtn");
-      delBtn.addEventListener("click", async () => {
-        if (!confirm(ServerI18n.t("deleteSoundConfirm").replace("{name}", sound.name))) return;
+    });
+    container.querySelectorAll(".sound-delete-btn").forEach(function (btn) {
+      btn.addEventListener("click", async function () {
+        var name = btn.dataset.name;
+        if (!confirm(ServerI18n.t("deleteSoundConfirm").replace("{name}", name))) return;
         try {
-          await deleteSound(sound.name);
-          window.showToast(ServerI18n.t("soundDeleted").replace("{name}", sound.name), true);
+          await deleteSound(name);
+          window.showToast(ServerI18n.t("soundDeleted").replace("{name}", name), true);
           await fetchSounds();
           renderSoundsList();
           renderSoundNameOptions();
@@ -139,12 +139,6 @@
           window.showToast(err.message, false);
         }
       });
-
-      btnGroup.appendChild(playBtn);
-      btnGroup.appendChild(delBtn);
-      row.appendChild(nameSpan);
-      row.appendChild(btnGroup);
-      container.appendChild(row);
     });
   }
 
@@ -152,7 +146,6 @@
     const select = document.getElementById("ruleSoundName");
     if (!select) return;
 
-    // Preserve current selection if possible
     const prev = select.value;
     select.innerHTML = "";
 
@@ -172,7 +165,6 @@
       select.appendChild(opt);
     });
 
-    // Restore previous selection
     if (prev && [...select.options].some((o) => o.value === prev)) {
       select.value = prev;
     }
@@ -184,45 +176,41 @@
 
     if (soundRules.length === 0) {
       container.innerHTML =
-        '<p class="text-slate-400 text-sm">' + ServerI18n.t("noSoundRules") + '</p>';
+        '<div class="admin-emojis-empty">' +
+        escapeHtml(ServerI18n.t("noSoundRules")) +
+        "</div>";
       return;
     }
 
-    container.innerHTML = "";
-    soundRules.forEach((rule) => {
-      const row = document.createElement("div");
-      row.className =
-        "flex items-center justify-between bg-slate-700/50 p-2 rounded-lg gap-2";
+    container.innerHTML = soundRules
+      .map(function (rule) {
+        var triggerLabel =
+          rule.trigger_type === "all"
+            ? ServerI18n.t("triggerAllMessages")
+            : rule.trigger_type === "keyword"
+              ? ServerI18n.t("triggerKeywordPrefix").replace("{value}", rule.trigger_value)
+              : ServerI18n.t("triggerEffectPrefix").replace("{value}", rule.trigger_value);
+        var volPercent = Math.round((rule.volume != null ? rule.volume : 1) * 100);
+        var detail = ServerI18n.t("soundDetailLine")
+          .replace("{sound}", rule.sound_name)
+          .replace("{vol}", volPercent)
+          .replace("{cd}", rule.cooldown != null ? rule.cooldown : 0);
+        return (
+          '<div class="admin-sounds-rule" data-rule-id="' + escapeHtml(String(rule.id)) + '">' +
+          '<div class="admin-sounds-rule-body">' +
+          '<div class="admin-sounds-rule-trigger">' + escapeHtml(triggerLabel) + "</div>" +
+          '<div class="admin-sounds-rule-detail">' + escapeHtml(detail) + "</div>" +
+          "</div>" +
+          '<button type="button" class="sound-rule-del-btn admin-v2-chip is-bad" data-rule-id="' + escapeHtml(String(rule.id)) + '">×</button>' +
+          "</div>"
+        );
+      })
+      .join("");
 
-      const info = document.createElement("div");
-      info.className = "flex flex-col text-sm min-w-0";
-
-      const triggerLine = document.createElement("span");
-      triggerLine.className = "text-slate-200 truncate";
-      const triggerLabel =
-        rule.trigger_type === "all"
-          ? ServerI18n.t("triggerAllMessages")
-          : rule.trigger_type === "keyword"
-            ? ServerI18n.t("triggerKeywordPrefix").replace("{value}", rule.trigger_value)
-            : ServerI18n.t("triggerEffectPrefix").replace("{value}", rule.trigger_value);
-      triggerLine.textContent = triggerLabel;
-
-      const detailLine = document.createElement("span");
-      detailLine.className = "text-slate-400 text-xs truncate";
-      const volPercent = Math.round((rule.volume ?? 1) * 100);
-      detailLine.textContent =
-        ServerI18n.t("soundDetailLine").replace("{sound}", rule.sound_name).replace("{vol}", volPercent).replace("{cd}", rule.cooldown ?? 0);
-
-      info.appendChild(triggerLine);
-      info.appendChild(detailLine);
-
-      const delBtn = document.createElement("button");
-      delBtn.className =
-        "px-2 py-1 text-xs bg-red-600/80 hover:bg-red-600 text-white rounded transition-colors shrink-0";
-      delBtn.textContent = ServerI18n.t("deleteBtn");
-      delBtn.addEventListener("click", async () => {
+    container.querySelectorAll(".sound-rule-del-btn").forEach(function (btn) {
+      btn.addEventListener("click", async function () {
         try {
-          await deleteRule(rule.id);
+          await deleteRule(btn.dataset.ruleId);
           window.showToast(ServerI18n.t("soundRuleDeleted"), true);
           await fetchRules();
           renderRulesList();
@@ -230,10 +218,6 @@
           window.showToast(err.message, false);
         }
       });
-
-      row.appendChild(info);
-      row.appendChild(delBtn);
-      container.appendChild(row);
     });
   }
 
@@ -273,7 +257,7 @@
         window.showToast(err.message, false);
       } finally {
         uploadBtn.disabled = false;
-        uploadBtn.textContent = ServerI18n.t("uploadBtn");
+        uploadBtn.textContent = "上傳";
       }
     });
   }
@@ -289,7 +273,6 @@
       const volumeSlider = document.getElementById("ruleVolume");
       const cooldownInput = document.getElementById("ruleCooldown");
 
-      // Validate
       if (triggerType !== "all" && !triggerValue) {
         window.showToast(ServerI18n.t("enterTriggerValue"), false);
         return;
@@ -360,167 +343,116 @@
   // ---- Section HTML ----
 
   function buildSectionHTML() {
-    const detailsState = loadDetailsState();
-    const isOpen = detailsState["sec-sounds"] || false;
-
     return `
-      <details id="sec-sounds" class="group admin-v3-card" ${isOpen ? "open" : ""}>
-        <summary class="flex items-center justify-between cursor-pointer list-none">
-          <div>
-            <h3 class="text-lg font-bold text-white">${ServerI18n.t("soundEffectsTitle")}</h3>
-            <p class="text-sm text-slate-300">${ServerI18n.t("soundEffectsDesc")}</p>
-          </div>
-          <span class="text-slate-400 transition-transform group-open:rotate-180">\u2304</span>
-        </summary>
-        <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-6">
-
-          <!-- Upload Sound -->
-          <div>
-            <h4 class="text-md font-semibold text-white mb-3">${ServerI18n.t("uploadSoundTitle")}</h4>
-            <div class="space-y-2">
-              <div>
-                <label for="soundFileInput" class="text-sm font-medium text-slate-300">${ServerI18n.t("audioFileLabel")}</label>
-                <input type="file" id="soundFileInput" accept=".mp3,.ogg,.wav,audio/mpeg,audio/ogg,audio/wav"
-                  class="mt-1 w-full text-sm text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
-                         file:text-sm file:font-medium file:bg-sky-600 file:text-white file:cursor-pointer
-                         hover:file:bg-sky-500 file:transition-colors" />
-              </div>
-              <div>
-                <label for="soundNameInput" class="text-sm font-medium text-slate-300">${ServerI18n.t("soundNameLabel")}</label>
-                <input type="text" id="soundNameInput" placeholder="${ServerI18n.t("soundNamePlaceholder")}" maxlength="100"
-                  class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg
-                         focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300
-                         text-white placeholder-slate-500" />
-              </div>
-              <button id="soundUploadBtn"
-                class="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500
-                       text-white font-bold py-3 px-6 rounded-xl transition-colors">
-                ${ServerI18n.t("uploadBtn")}
-              </button>
-            </div>
-          </div>
-
-          <!-- Available Sounds -->
-          <div>
-            <h4 class="text-md font-semibold text-white mb-2">${ServerI18n.t("availableSoundsTitle")}</h4>
-            <div id="soundsList" class="space-y-2 max-h-48 overflow-y-auto">
-              <p class="text-slate-400 text-sm">${ServerI18n.t("loadingSounds")}</p>
-            </div>
-          </div>
-
-          <!-- Sound Rules -->
-          <div>
-            <h4 class="text-md font-semibold text-white mb-3">${ServerI18n.t("soundTriggerRulesTitle")}</h4>
-            <div class="space-y-2">
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div>
-                  <label for="ruleTriggerType" class="text-sm font-medium text-slate-300">${ServerI18n.t("triggerTypeLabel")}</label>
-                  <select id="ruleTriggerType"
-                    class="mt-1 w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg
-                           text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400">
-                    <option value="keyword">${ServerI18n.t("triggerTypeKeyword")}</option>
-                    <option value="effect">${ServerI18n.t("triggerTypeEffect")}</option>
-                    <option value="all">${ServerI18n.t("triggerTypeAll")}</option>
-                  </select>
-                </div>
-                <div>
-                  <label for="ruleTriggerValue" class="text-sm font-medium text-slate-300">${ServerI18n.t("triggerValueLabel")}</label>
-                  <input type="text" id="ruleTriggerValue" placeholder="${ServerI18n.t("triggerValueKeywordPlaceholder")}"
-                    class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg
-                           focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300
-                           text-white placeholder-slate-500 text-sm" />
-                </div>
-              </div>
-              <div>
-                <label for="ruleSoundName" class="text-sm font-medium text-slate-300">${ServerI18n.t("soundLabel")}</label>
-                <select id="ruleSoundName"
-                  class="mt-1 w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg
-                         text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400">
-                  <option value="" disabled>${ServerI18n.t("soundLoading")}</option>
-                </select>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div>
-                  <label for="ruleVolume" class="text-sm font-medium text-slate-300">
-                    ${ServerI18n.t("volumeLabel")} <span id="ruleVolumeLabel" class="text-sky-300">80%</span>
-                  </label>
-                  <input type="range" id="ruleVolume" min="0" max="100" value="80"
-                    class="mt-1 w-full accent-sky-500" />
-                </div>
-                <div>
-                  <label for="ruleCooldown" class="text-sm font-medium text-slate-300">${ServerI18n.t("cooldownLabel")}</label>
-                  <input type="number" id="ruleCooldown" min="0" step="100" value="1000" placeholder="1000"
-                    class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg
-                           focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300
-                           text-white placeholder-slate-500 text-sm" />
-                </div>
-              </div>
-              <button id="addRuleBtn"
-                class="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500
-                       text-white font-bold py-3 px-6 rounded-xl transition-colors">
-                ${ServerI18n.t("addRuleBtn")}
-              </button>
-            </div>
-          </div>
-
-          <!-- Active Rules -->
-          <div>
-            <h4 class="text-md font-semibold text-white mb-2">${ServerI18n.t("activeRulesTitle")}</h4>
-            <div id="rulesList" class="space-y-2 max-h-64 overflow-y-auto">
-              <p class="text-slate-400 text-sm">${ServerI18n.t("loadingSounds")}</p>
-            </div>
-          </div>
-
+      <div id="${SECTION_ID}" class="admin-sounds-page hud-page-stack lg:col-span-2">
+        <div class="admin-v2-head">
+          <div class="admin-v2-kicker">SOUNDS · 觸發音效 · .MP3/.WAV</div>
+          <div class="admin-v2-title">音效庫</div>
+          <p class="admin-v2-note">
+            關鍵字命中或事件觸發時在 overlay 播放 — 最長 10 秒,最大 500KB。
+          </p>
         </div>
-      </details>
+
+        <!-- Upload Sound -->
+        <div class="admin-v2-card">
+          <div class="admin-v2-monolabel" style="margin-bottom:10px">+ 上傳音效</div>
+          <div class="admin-sounds-form">
+            <label class="admin-webhooks-field">
+              <span class="admin-v2-monolabel">FILE · MP3/OGG/WAV</span>
+              <input type="file" id="soundFileInput" accept=".mp3,.ogg,.wav,audio/mpeg,audio/ogg,audio/wav" class="admin-v2-input" />
+            </label>
+            <label class="admin-webhooks-field">
+              <span class="admin-v2-monolabel">NAME</span>
+              <input type="text" id="soundNameInput" placeholder="${escapeHtml(ServerI18n.t("soundNamePlaceholder"))}" maxlength="100" class="admin-v2-input" />
+            </label>
+            <div class="admin-sounds-form-full" style="display:flex;justify-content:flex-end">
+              <button id="soundUploadBtn" type="button" class="admin-poll-btn is-primary">上傳</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Available Sounds -->
+        <div class="admin-v2-card">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span class="admin-v2-monolabel">SOUNDS · 庫存</span>
+          </div>
+          <div id="soundsList" class="admin-sounds-grid"></div>
+        </div>
+
+        <!-- Sound Rules -->
+        <div class="admin-v2-card">
+          <div class="admin-v2-monolabel" style="margin-bottom:10px">+ 新增觸發規則</div>
+          <div class="admin-sounds-form">
+            <label class="admin-webhooks-field">
+              <span class="admin-v2-monolabel">TRIGGER TYPE</span>
+              <select id="ruleTriggerType" class="admin-v2-select">
+                <option value="keyword">${escapeHtml(ServerI18n.t("triggerTypeKeyword"))}</option>
+                <option value="effect">${escapeHtml(ServerI18n.t("triggerTypeEffect"))}</option>
+                <option value="all">${escapeHtml(ServerI18n.t("triggerTypeAll"))}</option>
+              </select>
+            </label>
+            <label class="admin-webhooks-field">
+              <span class="admin-v2-monolabel">TRIGGER VALUE</span>
+              <input type="text" id="ruleTriggerValue" placeholder="${escapeHtml(ServerI18n.t("triggerValueKeywordPlaceholder"))}" class="admin-v2-input" />
+            </label>
+            <label class="admin-webhooks-field admin-sounds-form-full">
+              <span class="admin-v2-monolabel">SOUND</span>
+              <select id="ruleSoundName" class="admin-v2-select">
+                <option value="" disabled>${escapeHtml(ServerI18n.t("soundLoading"))}</option>
+              </select>
+            </label>
+            <label class="admin-webhooks-field">
+              <span class="admin-v2-monolabel">VOLUME · <span id="ruleVolumeLabel">80%</span></span>
+              <input type="range" id="ruleVolume" min="0" max="100" value="80" class="admin-v2-input" />
+            </label>
+            <label class="admin-webhooks-field">
+              <span class="admin-v2-monolabel">COOLDOWN · MS</span>
+              <input type="number" id="ruleCooldown" min="0" step="100" value="1000" class="admin-v2-input" />
+            </label>
+            <div class="admin-sounds-form-full" style="display:flex;justify-content:flex-end">
+              <button id="addRuleBtn" type="button" class="admin-poll-btn is-primary">新增規則</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Rules -->
+        <div class="admin-v2-card">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span class="admin-v2-monolabel">RULES · 已啟用</span>
+          </div>
+          <div id="rulesList" class="admin-sounds-rules"></div>
+        </div>
+      </div>
     `;
   }
 
   // ---- Initialization ----
 
   async function initSoundsSection() {
-    // Find the settings grid to append to
     const settingsGrid = document.getElementById("settings-grid");
     if (!settingsGrid) return;
 
-    // Insert section HTML
     settingsGrid.insertAdjacentHTML("beforeend", buildSectionHTML());
 
-    // Persist details open/close state
-    const detailsEl = document.getElementById("sec-sounds");
-    if (detailsEl) {
-      detailsEl.addEventListener("toggle", () => {
-        const current = loadDetailsState();
-        current["sec-sounds"] = detailsEl.open;
-        saveDetailsState(current);
-      });
-    }
-
-    // Load data
     await Promise.all([fetchSounds(), fetchRules()]);
 
-    // Render lists
     renderSoundsList();
     renderSoundNameOptions();
     renderRulesList();
 
-    // Bind events
     bindUploadForm();
     bindAddRuleForm();
     bindTriggerTypeChange();
     bindVolumeLabel();
   }
 
-  // Wait for DOM + admin.js to render the control panel before injecting.
-  // admin.js rebuilds the entire DOM via innerHTML on every renderControlPanel()
-  // call, so we must keep observing and re-inject when our section is wiped out.
   document.addEventListener("DOMContentLoaded", () => {
     if (!window.DANMU_CONFIG?.session?.logged_in) return;
     let injecting = false;
 
     const observer = new MutationObserver(() => {
       const grid = document.getElementById("settings-grid");
-      if (grid && !document.getElementById("sec-sounds") && !injecting) {
+      if (grid && !document.getElementById(SECTION_ID) && !injecting) {
         injecting = true;
         initSoundsSection().finally(() => {
           injecting = false;
@@ -530,9 +462,8 @@
 
     observer.observe(document.body, { childList: true, subtree: true });
 
-    // Also check immediately in case grid is already rendered
     const grid = document.getElementById("settings-grid");
-    if (grid && !document.getElementById("sec-sounds")) {
+    if (grid && !document.getElementById(SECTION_ID)) {
       injecting = true;
       initSoundsSection().finally(() => {
         injecting = false;

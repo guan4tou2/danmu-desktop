@@ -3,28 +3,16 @@
  *
  * Loaded as <script defer> in admin.html after admin.js.
  * Globals: csrfFetch (window.csrfFetch), showToast (window.showToast), ServerI18n (window.ServerI18n)
+ *
+ * v2 retrofit: page-level v2 shell (kicker + title + note + card list) replaces
+ * legacy <details> accordion — matches Rate Limits / Polls pattern.
  */
 (function () {
   "use strict";
 
-  var _loadDetailsState = window.AdminUtils.loadDetailsState;
-  var _saveDetailsState = window.AdminUtils.saveDetailsState;
   var _escHtml = window.AdminUtils.escapeHtml;
 
   const SECTION_ID = "sec-webhooks";
-
-  // ---- helpers ----
-
-  function _detailsOpen(id) {
-    var state = _loadDetailsState();
-    return !!state[id];
-  }
-
-  function _saveDetailsOpen(id, open) {
-    var state = _loadDetailsState();
-    state[id] = open;
-    _saveDetailsState(state);
-  }
 
   function _truncate(str, max) {
     if (!str) return "";
@@ -34,78 +22,66 @@
   // ---- inject section ----
 
   function injectSection() {
-    const grid = document.getElementById("advanced-grid") || document.getElementById("settings-grid");
+    const grid =
+      document.getElementById("advanced-grid") ||
+      document.getElementById("settings-grid");
     if (!grid || document.getElementById(SECTION_ID)) return;
 
     grid.insertAdjacentHTML(
       "beforeend",
       `
-      <details id="${SECTION_ID}" class="group admin-v3-card lg:col-span-2" ${_detailsOpen(SECTION_ID) ? "open" : ""}>
-        <summary class="flex items-center justify-between cursor-pointer list-none">
-          <div>
-            <h3 class="text-lg font-bold text-white">${ServerI18n.t("webhooksTitle")}</h3>
-            <p class="text-sm text-slate-300">${ServerI18n.t("webhooksDesc")}</p>
+      <div id="${SECTION_ID}" class="admin-webhooks-page hud-page-stack lg:col-span-2">
+        <div class="admin-v2-head">
+          <div class="admin-v2-kicker">WEBHOOKS · 外部通知 · HMAC</div>
+          <div class="admin-v2-title">Webhooks</div>
+          <p class="admin-v2-note">
+            當彈幕/投票/Overlay 事件發生時,POST 到外部 URL。簽名使用 HMAC-SHA256。
+          </p>
+        </div>
+
+        <!-- Register form (inline "+ 新增" pattern) -->
+        <form id="wh-register-form" class="admin-v2-card" autocomplete="off">
+          <div class="admin-v2-monolabel" style="margin-bottom:10px">+ 新增 Webhook</div>
+          <div class="admin-webhooks-form">
+            <div class="admin-webhooks-field">
+              <span class="admin-v2-monolabel">URL</span>
+              <input id="wh-url" type="url" required placeholder="https://example.com/hook" class="admin-v2-input" />
+            </div>
+            <div class="admin-webhooks-field">
+              <span class="admin-v2-monolabel">FORMAT</span>
+              <select id="wh-format" class="admin-v2-select">
+                <option value="json">JSON</option>
+                <option value="discord">Discord</option>
+                <option value="slack">Slack</option>
+              </select>
+            </div>
+            <div class="admin-webhooks-field">
+              <span class="admin-v2-monolabel">SECRET · HMAC</span>
+              <input id="wh-secret" type="text" placeholder="optional" class="admin-v2-input" />
+            </div>
+            <button type="submit" class="admin-poll-btn is-primary">註冊</button>
           </div>
-          <span class="text-slate-400 transition-transform group-open:rotate-180">\u2304</span>
-        </summary>
-
-        <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-5">
-          <!-- Register form -->
-          <form id="wh-register-form" autocomplete="off" class="space-y-3">
-            <div>
-              <label for="wh-url" class="text-sm font-medium text-slate-300">${ServerI18n.t("payloadUrlLabel")}</label>
-              <input id="wh-url" type="url" required placeholder="${ServerI18n.t("payloadUrlPlaceholder")}"
-                class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300" />
+          <fieldset style="margin-top:12px;border:0;padding:0">
+            <legend class="admin-v2-monolabel">EVENTS</legend>
+            <div class="admin-webhooks-events">
+              <label><input type="checkbox" name="wh-event" value="on_danmu" checked /> on_danmu</label>
+              <label><input type="checkbox" name="wh-event" value="on_poll_create" /> on_poll_create</label>
+              <label><input type="checkbox" name="wh-event" value="on_poll_end" /> on_poll_end</label>
             </div>
+          </fieldset>
+        </form>
 
-            <fieldset>
-              <legend class="text-sm font-medium text-slate-300 mb-1">${ServerI18n.t("eventsLegend")}</legend>
-              <div class="flex flex-wrap gap-3">
-                <label class="inline-flex items-center gap-1.5 text-sm text-slate-200 cursor-pointer">
-                  <input type="checkbox" name="wh-event" value="on_danmu" class="accent-sky-500 rounded" checked />
-                  on_danmu
-                </label>
-                <label class="inline-flex items-center gap-1.5 text-sm text-slate-200 cursor-pointer">
-                  <input type="checkbox" name="wh-event" value="on_poll_create" class="accent-sky-500 rounded" />
-                  on_poll_create
-                </label>
-                <label class="inline-flex items-center gap-1.5 text-sm text-slate-200 cursor-pointer">
-                  <input type="checkbox" name="wh-event" value="on_poll_end" class="accent-sky-500 rounded" />
-                  on_poll_end
-                </label>
-              </div>
-            </fieldset>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label for="wh-format" class="text-sm font-medium text-slate-300">${ServerI18n.t("formatLabel")}</label>
-                <select id="wh-format"
-                  class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300">
-                  <option value="json">JSON</option>
-                  <option value="discord">Discord</option>
-                  <option value="slack">Slack</option>
-                </select>
-              </div>
-              <div>
-                <label for="wh-secret" class="text-sm font-medium text-slate-300">${ServerI18n.t("secretLabel")} <span class="text-slate-400">${ServerI18n.t("secretOptional")}</span></label>
-                <input id="wh-secret" type="text" placeholder="${ServerI18n.t("hmacSecretPlaceholder")}"
-                  class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300" />
-              </div>
-            </div>
-
-            <button type="submit"
-              class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-colors text-sm font-semibold">
-              ${ServerI18n.t("registerWebhookBtn")}
-            </button>
-          </form>
-
-          <!-- Webhook list -->
-          <div>
-            <h4 class="text-sm font-semibold text-slate-300 mb-2">${ServerI18n.t("registeredWebhooksTitle")}</h4>
-            <div id="wh-list" class="space-y-2 text-sm text-slate-400">${ServerI18n.t("loadingWebhooks")}</div>
+        <!-- Webhook list -->
+        <div class="admin-v2-card" style="padding:14px 14px 10px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span class="admin-v2-monolabel">REGISTERED</span>
+            <span class="admin-v2-monolabel" style="margin-left:auto" id="wh-count">—</span>
+          </div>
+          <div id="wh-list" class="admin-webhooks-list">
+            <div class="admin-webhooks-empty">載入中…</div>
           </div>
         </div>
-      </details>
+      </div>
     `
     );
 
@@ -115,14 +91,6 @@
   // ---- bind events after injection ----
 
   function bindSection() {
-    const detailsEl = document.getElementById(SECTION_ID);
-    if (detailsEl) {
-      detailsEl.addEventListener("toggle", () => {
-        _saveDetailsOpen(SECTION_ID, detailsEl.open);
-        if (detailsEl.open) loadWebhooks();
-      });
-    }
-
     const form = document.getElementById("wh-register-form");
     if (form) {
       form.addEventListener("submit", async (e) => {
@@ -171,15 +139,14 @@
       });
     }
 
-    if (detailsEl && detailsEl.open) {
-      loadWebhooks();
-    }
+    loadWebhooks();
   }
 
   // ---- load webhook list ----
 
   async function loadWebhooks() {
     const listEl = document.getElementById("wh-list");
+    const countEl = document.getElementById("wh-count");
     if (!listEl) return;
 
     try {
@@ -187,14 +154,16 @@
       const data = await res.json();
 
       if (!res.ok || !Array.isArray(data.webhooks)) {
-        listEl.textContent = data.error || ServerI18n.t("loadWebhooksFailed");
+        listEl.innerHTML = `<div class="admin-webhooks-empty">${_escHtml(data.error || ServerI18n.t("loadWebhooksFailed"))}</div>`;
+        if (countEl) countEl.textContent = "—";
         return;
       }
 
       const hooks = data.webhooks;
+      if (countEl) countEl.textContent = hooks.length + " 項";
+
       if (hooks.length === 0) {
-        listEl.innerHTML =
-          '<p class="text-slate-400 italic">' + ServerI18n.t("noWebhooksRegistered") + '</p>';
+        listEl.innerHTML = `<div class="admin-webhooks-empty">${_escHtml(ServerI18n.t("noWebhooksRegistered"))}</div>`;
         return;
       }
 
@@ -202,59 +171,47 @@
       _bindHookActions();
     } catch (err) {
       console.error("Webhook list error:", err);
-      listEl.textContent = ServerI18n.t("loadWebhooksFailed");
+      listEl.innerHTML = `<div class="admin-webhooks-empty">${_escHtml(ServerI18n.t("loadWebhooksFailed"))}</div>`;
     }
   }
 
   // ---- render single hook ----
 
-  const FORMAT_COLORS = {
-    json: "bg-blue-600/20 text-blue-300",
-    discord: "bg-indigo-600/20 text-indigo-300",
-    slack: "bg-green-600/20 text-green-300",
-  };
-
-  const STATUS_DOT = {
-    active: "bg-green-400",
-    error: "bg-red-400",
-    disabled: "bg-slate-500",
+  const STATUS_CLASS = {
+    active: "is-good",
+    error: "is-bad",
+    disabled: "",
   };
 
   function renderHook(hook) {
     const hookId = _escHtml(hook.id || hook.hook_id || "");
-    const urlDisplay = _escHtml(_truncate(hook.url, 50));
+    const urlDisplay = _escHtml(_truncate(hook.url, 64));
     const format = (hook.format || "json").toLowerCase();
     const status = (hook.status || "active").toLowerCase();
     const events = Array.isArray(hook.events) ? hook.events : [];
 
-    const eventBadges = events
+    const dotClass = STATUS_CLASS[status] || "";
+    const eventChips = events
       .map(
         (ev) =>
-          `<span class="px-1.5 py-0.5 rounded bg-sky-600/20 text-sky-300 text-xs">${_escHtml(ev)}</span>`
+          `<span class="admin-v2-chip is-on">${_escHtml(ev)}</span>`
       )
       .join("");
-
-    const formatBadge = `<span class="px-1.5 py-0.5 rounded text-xs ${FORMAT_COLORS[format] || FORMAT_COLORS.json}">${_escHtml(format)}</span>`;
-
-    const dotClass = STATUS_DOT[status] || STATUS_DOT.active;
-    const statusIndicator = `<span class="inline-block w-2 h-2 rounded-full ${dotClass}" title="${_escHtml(status)}"></span>`;
+    const formatChip = `<span class="admin-v2-chip">${_escHtml(format)}</span>`;
 
     return `
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-slate-800/60 rounded-lg border border-slate-700/50" data-hook-id="${hookId}">
-          <div class="flex flex-col gap-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
-              ${statusIndicator}
-              <span class="text-slate-200 font-mono text-xs truncate" title="${_escHtml(hook.url)}">${urlDisplay}</span>
-              ${formatBadge}
-            </div>
-            <div class="flex gap-1 flex-wrap">${eventBadges}</div>
+        <div class="admin-webhooks-row" data-hook-id="${hookId}">
+          <span class="admin-v2-dot ${dotClass}" title="${_escHtml(status)}"></span>
+          <div class="admin-webhooks-row-body">
+            <div class="admin-webhooks-url" title="${_escHtml(hook.url)}">${urlDisplay}</div>
+            <div class="admin-webhooks-meta">${formatChip}${eventChips}</div>
           </div>
-          <div class="flex gap-2 shrink-0">
-            <button type="button" class="wh-test-btn px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-xs font-medium" data-hook-id="${hookId}">
-              ${ServerI18n.t("testBtn")}
+          <div class="admin-webhooks-actions">
+            <button type="button" class="wh-test-btn admin-poll-btn is-ghost" data-hook-id="${hookId}">
+              ${_escHtml(ServerI18n.t("testBtn"))}
             </button>
-            <button type="button" class="wh-delete-btn px-3 py-1.5 bg-red-600/80 hover:bg-red-500 text-white rounded-lg transition-colors text-xs font-medium" data-hook-id="${hookId}">
-              ${ServerI18n.t("deleteBtn")}
+            <button type="button" class="wh-delete-btn admin-poll-btn is-ghost" data-hook-id="${hookId}" style="color:#f87171;border-color:#f87171">
+              ${_escHtml(ServerI18n.t("deleteBtn"))}
             </button>
           </div>
         </div>`;
@@ -333,7 +290,11 @@
   document.addEventListener("DOMContentLoaded", () => {
     if (!window.DANMU_CONFIG?.session?.logged_in) return;
     const observer = new MutationObserver(() => {
-      if ((document.getElementById("advanced-grid") || document.getElementById("settings-grid")) && !document.getElementById(SECTION_ID)) {
+      if (
+        (document.getElementById("advanced-grid") ||
+          document.getElementById("settings-grid")) &&
+        !document.getElementById(SECTION_ID)
+      ) {
         injectSection();
       }
     });

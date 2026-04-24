@@ -1,73 +1,64 @@
+// Admin Scheduler — v2 retrofit.
+// List view: sortable rows (state · messages · interval · sent · repeat · actions) +
+// inline create form. Replaces legacy <details> accordion.
 (function () {
   "use strict";
 
-  var loadDetailsState = window.AdminUtils.loadDetailsState;
-  var saveDetailsState = window.AdminUtils.saveDetailsState;
   var escapeHTML = window.AdminUtils.escapeHtml;
+  const SECTION_ID = "sec-scheduler";
 
   const REFRESH_INTERVAL = 5000;
   let refreshTimer = null;
-
-  function isOpen(id) {
-    var s = loadDetailsState();
-    return s[id] !== undefined ? s[id] : false;
-  }
 
   // --- HTML helpers ---
 
   function msgRowHTML(index, text, color, size) {
     return `
-      <div class="flex items-center gap-2" data-msg-index="${index}">
-        <input type="text" placeholder="${ServerI18n.t("messageTextPlaceholder")}"
-          class="scheduler-msg-text flex-1 bg-slate-800/60 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 focus:ring-sky-400 focus:border-sky-400 placeholder-slate-500"
+      <div class="admin-scheduler-msg-row" data-msg-index="${index}">
+        <input type="text" placeholder="${escapeAttr(ServerI18n.t("messageTextPlaceholder"))}"
+          class="scheduler-msg-text admin-v2-input"
           value="${escapeAttr(text)}" />
         <input type="color"
-          class="scheduler-msg-color w-10 h-10 rounded-lg border border-slate-700 bg-slate-800/60 cursor-pointer p-1"
+          class="scheduler-msg-color admin-v2-input"
+          style="padding:2px;height:36px;cursor:pointer"
           value="${escapeAttr(color || "#ffffff")}" title="Color" />
         <input type="number" min="12" max="200" placeholder="Size"
-          class="scheduler-msg-size w-20 bg-slate-800/60 border border-slate-700 text-slate-200 text-sm rounded-lg px-2 py-2 focus:ring-sky-400 focus:border-sky-400"
+          class="scheduler-msg-size admin-v2-input"
           value="${size || 48}" />
-        <button type="button" class="scheduler-remove-msg text-red-400 hover:text-red-300 transition-colors p-1" title="Remove" aria-label="Remove message">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        <button type="button" class="scheduler-remove-msg admin-v2-chip is-bad" title="Remove" aria-label="Remove message">×</button>
       </div>`;
   }
 
-  function stateBadge(state) {
-    if (state === "active") {
-      return '<span class="inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-green-600/30 text-green-300 border border-green-500/40">' + ServerI18n.t("stateActive") + '</span>';
-    }
-    if (state === "paused") {
-      return '<span class="inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-600/30 text-yellow-300 border border-yellow-500/40">' + ServerI18n.t("statePaused") + '</span>';
-    }
-    return '<span class="inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-600/30 text-slate-400 border border-slate-500/40">' + escapeHTML(state) + '</span>';
+  function stateDot(state) {
+    var cls = state === "active" ? "is-good" : state === "paused" ? "is-warn" : "";
+    return '<span class="admin-v2-dot ' + cls + '" title="' + escapeAttr(state) + '"></span>';
   }
 
-  function jobCardHTML(job) {
+  function jobRowHTML(job) {
     const isPaused = job.state === "paused";
+    const repeat =
+      job.repeat === undefined
+        ? "—"
+        : job.repeat === -1
+          ? "∞"
+          : String(job.repeat);
     return `
-      <div class="bg-slate-800/40 border border-slate-700/60 rounded-xl p-4 space-y-2" data-job-id="${escapeAttr(job.id)}">
-        <div class="flex items-center justify-between gap-2 flex-wrap">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-mono text-slate-400">#${escapeHTML(job.id)}</span>
-            ${stateBadge(job.state)}
-          </div>
-          <div class="flex items-center gap-1">
-            <button type="button" class="scheduler-job-toggle px-3 py-1 text-xs font-semibold rounded-lg transition-colors ${isPaused ? "bg-green-600/80 hover:bg-green-500 text-white" : "bg-yellow-600/80 hover:bg-yellow-500 text-white"}"
-              data-job-id="${escapeAttr(job.id)}" data-action="${isPaused ? "resume" : "pause"}">
-              ${isPaused ? ServerI18n.t("resumeJobBtn") : ServerI18n.t("pauseJobBtn")}
-            </button>
-            <button type="button" class="scheduler-job-cancel px-3 py-1 text-xs font-semibold rounded-lg bg-red-600/80 hover:bg-red-500 text-white transition-colors"
-              data-job-id="${escapeAttr(job.id)}">
-              ${ServerI18n.t("cancelJobBtn")}
-            </button>
-          </div>
+      <div class="admin-scheduler-job" data-job-id="${escapeAttr(job.id)}">
+        ${stateDot(job.state)}
+        <div>
+          <div class="admin-scheduler-job-title">#${escapeHTML(job.id)}</div>
+          <div class="admin-scheduler-job-meta">${escapeHTML(ServerI18n.t("schedulerMessages"))} ${job.message_count ?? "?"}</div>
         </div>
-        <div class="text-xs text-slate-400 flex flex-wrap gap-x-4 gap-y-1">
-          <span>${ServerI18n.t("schedulerMessages")} <strong class="text-slate-200">${job.message_count ?? "?"}</strong></span>
-          <span>${ServerI18n.t("schedulerInterval")} <strong class="text-slate-200">${job.interval ?? "?"}s</strong></span>
-          <span>${ServerI18n.t("schedulerSent")} <strong class="text-slate-200">${job.sent_count ?? 0}</strong></span>
-          ${job.repeat !== undefined ? '<span>' + ServerI18n.t("schedulerRepeat") + ' <strong class="text-slate-200">' + (job.repeat === -1 ? ServerI18n.t("repeatInfinite") : job.repeat) + "</strong></span>" : ""}
+        <span class="admin-scheduler-job-val">${job.interval ?? "?"}s</span>
+        <span class="admin-scheduler-job-val">${job.sent_count ?? 0}</span>
+        <span class="admin-scheduler-job-val">${escapeHTML(repeat)}</span>
+        <div class="admin-scheduler-job-actions">
+          <button type="button" class="scheduler-job-toggle admin-v2-chip ${isPaused ? "is-good" : "is-warn"}"
+            data-job-id="${escapeAttr(job.id)}" data-action="${isPaused ? "resume" : "pause"}">
+            ${isPaused ? "▶" : "⏸"}
+          </button>
+          <button type="button" class="scheduler-job-cancel admin-v2-chip is-bad"
+            data-job-id="${escapeAttr(job.id)}">×</button>
         </div>
       </div>`;
   }
@@ -102,13 +93,15 @@
     const container = document.getElementById("schedulerMessages");
     if (!container) return;
     const index = container.children.length;
-    container.insertAdjacentHTML("beforeend", msgRowHTML(index, text || "", color || "#ffffff", size || 48));
+    container.insertAdjacentHTML(
+      "beforeend",
+      msgRowHTML(index, text || "", color || "#ffffff", size || 48)
+    );
   }
 
   function removeMessageRow(btn) {
     const row = btn.closest("[data-msg-index]");
     if (row) row.remove();
-    // Re-index remaining rows
     const container = document.getElementById("schedulerMessages");
     if (container) {
       container.querySelectorAll("[data-msg-index]").forEach(function (el, i) {
@@ -162,25 +155,35 @@
 
   async function fetchJobs() {
     const list = document.getElementById("schedulerJobsList");
+    const count = document.getElementById("schedulerJobsCount");
     if (!list) return;
 
     try {
       const resp = await csrfFetch("/admin/scheduler/list", { method: "GET" });
       const data = await resp.json();
       if (!resp.ok || !Array.isArray(data.jobs)) {
-        list.innerHTML = '<p class="text-sm text-slate-400">' + ServerI18n.t("loadJobsFailed") + '</p>';
+        list.innerHTML =
+          '<div class="admin-emojis-empty">' + escapeHTML(ServerI18n.t("loadJobsFailed")) + "</div>";
+        if (count) count.textContent = "—";
         return;
       }
+      if (count) count.textContent = data.jobs.length + " 項";
 
       if (data.jobs.length === 0) {
-        list.innerHTML = '<p class="text-sm text-slate-400">' + ServerI18n.t("noActiveJobs") + '</p>';
+        list.innerHTML =
+          '<div class="admin-emojis-empty">' + escapeHTML(ServerI18n.t("noActiveJobs")) + "</div>";
         return;
       }
 
-      list.innerHTML = data.jobs.map(jobCardHTML).join("");
+      list.innerHTML =
+        '<div class="admin-scheduler-jobs-head"><span></span><span>JOB · 訊息</span><span>INTERVAL</span><span>SENT</span><span>REPEAT</span><span style="text-align:right">ACTIONS</span></div>' +
+        data.jobs.map(jobRowHTML).join("");
     } catch (err) {
       console.error("Scheduler fetch error:", err);
-      list.innerHTML = '<p class="text-sm text-red-400">' + ServerI18n.t("loadJobsError") + '</p>';
+      list.innerHTML =
+        '<div class="admin-emojis-empty" style="color:#f87171">' +
+        escapeHTML(ServerI18n.t("loadJobsError")) +
+        "</div>";
     }
   }
 
@@ -227,70 +230,61 @@
   // --- Init ---
 
   function init() {
-    const settingsGrid = document.getElementById("advanced-grid") || document.getElementById("settings-grid");
-    if (!settingsGrid) return; // not logged in or grid not rendered yet
+    const settingsGrid =
+      document.getElementById("advanced-grid") ||
+      document.getElementById("settings-grid");
+    if (!settingsGrid) return;
 
-    const openAttr = isOpen("sec-scheduler") ? "open" : "";
+    settingsGrid.insertAdjacentHTML(
+      "beforeend",
+      `
+      <div id="${SECTION_ID}" class="admin-scheduler-page hud-page-stack lg:col-span-2">
+        <div class="admin-v2-head">
+          <div class="admin-v2-kicker">SCHEDULER · CRON + ONE-SHOT</div>
+          <div class="admin-v2-title">排程播出</div>
+          <p class="admin-v2-note">
+            按時間/週期自動送出彈幕 — 使用 apscheduler,時區以伺服器為準。
+          </p>
+        </div>
 
-    settingsGrid.insertAdjacentHTML("beforeend", `
-      <details id="sec-scheduler" class="group admin-v3-card lg:col-span-2" ${openAttr}>
-        <summary class="flex items-center justify-between cursor-pointer list-none">
-          <div>
-            <h3 class="text-lg font-bold text-white" data-i18n="schedulerTitle">${ServerI18n.t("schedulerTitle") || "Scheduled Broadcasts"}</h3>
-            <p class="text-sm text-slate-400 mt-1" data-i18n="schedulerDesc">${ServerI18n.t("schedulerDesc") || "Automatically send messages on a timer"}</p>
-          </div>
-          <svg class="w-5 h-5 text-slate-400 transition-transform group-open:rotate-90" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-        </summary>
-
-        <div class="space-y-4 mt-4">
-          <!-- Message editor -->
-          <div>
-            <label class="block text-sm font-medium text-slate-300 mb-2">${ServerI18n.t("messagesLabel")}</label>
-            <div id="schedulerMessages" class="space-y-2"></div>
-            <button type="button" id="schedulerAddMsg"
-              class="mt-2 px-3 py-1.5 text-sm font-semibold rounded-lg bg-slate-700/80 hover:bg-slate-600 text-slate-200 transition-colors">
-              ${ServerI18n.t("addMessageBtn")}
-            </button>
-          </div>
-
-          <!-- Config row -->
-          <div class="flex flex-wrap items-end gap-3">
+        <!-- Create job form -->
+        <div class="admin-v2-card">
+          <div class="admin-v2-monolabel" style="margin-bottom:10px">+ 新增排程</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
             <div>
-              <label for="schedulerInterval" class="block text-xs text-slate-400 mb-1">${ServerI18n.t("intervalLabel")}</label>
-              <input id="schedulerInterval" type="number" value="10" min="1" max="3600"
-                class="w-28 bg-slate-800/60 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 focus:ring-sky-400 focus:border-sky-400" />
+              <div class="admin-v2-monolabel" style="margin-bottom:6px">MESSAGES</div>
+              <div id="schedulerMessages" style="display:flex;flex-direction:column;gap:6px"></div>
+              <button type="button" id="schedulerAddMsg" class="admin-v2-chip" style="margin-top:8px;cursor:pointer">+ ${escapeHTML(ServerI18n.t("addMessageBtn"))}</button>
             </div>
-            <div>
-              <label for="schedulerRepeat" class="block text-xs text-slate-400 mb-1">${ServerI18n.t("repeatLabel")}</label>
-              <input id="schedulerRepeat" type="number" value="-1" min="-1" max="10000"
-                class="w-28 bg-slate-800/60 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 focus:ring-sky-400 focus:border-sky-400" />
-            </div>
-            <button type="button" id="schedulerCreateBtn"
-              class="px-5 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-              ${ServerI18n.t("createBtn")}
-            </button>
-          </div>
-
-          <!-- Active jobs -->
-          <div>
-            <h4 class="text-sm font-medium text-slate-300 mb-2">${ServerI18n.t("activeJobsTitle")}</h4>
-            <div id="schedulerJobsList" class="space-y-2">
-              <p class="text-sm text-slate-400">${ServerI18n.t("loadingJobs")}</p>
+            <div class="admin-scheduler-config">
+              <label>
+                <span class="admin-v2-monolabel">INTERVAL · 秒</span>
+                <input id="schedulerInterval" type="number" value="10" min="1" max="3600" class="admin-v2-input" />
+              </label>
+              <label>
+                <span class="admin-v2-monolabel">REPEAT · -1=∞</span>
+                <input id="schedulerRepeat" type="number" value="-1" min="-1" max="10000" class="admin-v2-input" />
+              </label>
+              <div style="margin-left:auto;align-self:end">
+                <button type="button" id="schedulerCreateBtn" class="admin-poll-btn is-primary">${escapeHTML(ServerI18n.t("createBtn"))}</button>
+              </div>
             </div>
           </div>
         </div>
-      </details>
-    `);
 
-    // Persist open/close state
-    const detailsEl = document.getElementById("sec-scheduler");
-    if (detailsEl) {
-      detailsEl.addEventListener("toggle", function () {
-        const current = loadDetailsState();
-        current["sec-scheduler"] = detailsEl.open;
-        saveDetailsState(current);
-      });
-    }
+        <!-- Active jobs list -->
+        <div class="admin-v2-card">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span class="admin-v2-monolabel">JOBS · 進行中</span>
+            <span class="admin-v2-monolabel" style="margin-left:auto" id="schedulerJobsCount">—</span>
+          </div>
+          <div id="schedulerJobsList" class="admin-scheduler-jobs">
+            <div class="admin-emojis-empty">${escapeHTML(ServerI18n.t("loadingJobs"))}</div>
+          </div>
+        </div>
+      </div>
+    `
+    );
 
     // Add initial empty message row
     addMessageRow("", "#ffffff", 48);
@@ -338,6 +332,7 @@
 
     // Initial fetch + auto-refresh
     fetchJobs();
+    if (refreshTimer) clearInterval(refreshTimer);
     refreshTimer = setInterval(fetchJobs, REFRESH_INTERVAL);
 
     // Cleanup on page unload
@@ -349,26 +344,31 @@
     });
   }
 
-  // Wait for admin.js to finish rendering. admin.js rebuilds the entire DOM
-  // via innerHTML on every renderControlPanel() call, so we keep observing
-  // and re-inject when our section is wiped out.
+  // Wait for admin.js to finish rendering.
   function waitForGridAndInit() {
     if (!window.DANMU_CONFIG?.session?.logged_in) return;
     let initializing = false;
 
     const observer = new MutationObserver(function () {
-      const g = document.getElementById("advanced-grid") || document.getElementById("settings-grid");
-      if (g && !document.getElementById("sec-scheduler") && !initializing) {
+      const g =
+        document.getElementById("advanced-grid") ||
+        document.getElementById("settings-grid");
+      if (g && !document.getElementById(SECTION_ID) && !initializing) {
         initializing = true;
-        try { init(); } finally { initializing = false; }
+        try {
+          init();
+        } finally {
+          initializing = false;
+        }
       }
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
 
-    // Also check immediately
-    const grid = document.getElementById("advanced-grid") || document.getElementById("settings-grid");
-    if (grid && !document.getElementById("sec-scheduler")) {
+    const grid =
+      document.getElementById("advanced-grid") ||
+      document.getElementById("settings-grid");
+    if (grid && !document.getElementById(SECTION_ID)) {
       init();
     }
   }

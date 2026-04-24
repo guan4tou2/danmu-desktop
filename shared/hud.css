@@ -315,3 +315,487 @@
     animation: none;
   }
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * v2 page shell — shared head chrome (kicker + title + note).
+ * Used by Webhooks · Emojis · Sounds · Scheduler after retrofit from
+ * collapsed <details> accordions. Mirrors admin-ratelimit-head/kicker/title/
+ * note but generic so new pages can drop in without per-page CSS.
+ * ────────────────────────────────────────────────────────────────────────── */
+.admin-v2-head {
+  padding: 16px 18px;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+}
+
+.admin-v2-kicker {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--admin-text-dim);
+  text-transform: uppercase;
+}
+
+.admin-v2-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--admin-text);
+  margin-top: 4px;
+}
+
+.admin-v2-note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--admin-text-dim);
+}
+
+.admin-v2-card {
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+  padding: 14px 16px;
+}
+
+.admin-v2-monolabel {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--admin-text-dim);
+  text-transform: uppercase;
+}
+
+.admin-v2-input,
+.admin-v2-select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--admin-line);
+  background: var(--admin-raised);
+  color: var(--admin-text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.admin-v2-input:focus,
+.admin-v2-select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
+}
+
+.admin-v2-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-v2-chip {
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: 1px solid var(--admin-line);
+  color: var(--admin-text-dim);
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: default;
+}
+
+.admin-v2-chip.is-on {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.admin-v2-chip.is-good { border-color: #86efac; color: #86efac; }
+.admin-v2-chip.is-warn { border-color: #fbbf24; color: #fbbf24; }
+.admin-v2-chip.is-bad  { border-color: #f87171; color: #f87171; }
+
+/* Status dot — reused via .admin-v2-dot, uses --color-success / warning / error tokens. */
+.admin-v2-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--admin-text-dim);
+  flex-shrink: 0;
+}
+
+.admin-v2-dot.is-good { background: #86efac; box-shadow: 0 0 6px rgba(134, 239, 172, 0.5); }
+.admin-v2-dot.is-warn { background: #fbbf24; box-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+.admin-v2-dot.is-bad  { background: #f87171; box-shadow: 0 0 6px rgba(248, 113, 113, 0.5); }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Webhooks page (P1-1) — list with status dot, events badges, inline controls.
+ * ────────────────────────────────────────────────────────────────────────── */
+.admin-webhooks-form {
+  display: grid;
+  grid-template-columns: 1fr 200px 160px auto;
+  gap: 10px;
+  align-items: end;
+}
+
+@media (max-width: 900px) {
+  .admin-webhooks-form { grid-template-columns: 1fr 1fr; }
+}
+
+.admin-webhooks-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-webhooks-events {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.admin-webhooks-events label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--admin-text);
+  cursor: pointer;
+}
+
+.admin-webhooks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-webhooks-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+}
+
+.admin-webhooks-row-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-webhooks-url {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--admin-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-webhooks-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.admin-webhooks-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.admin-webhooks-empty {
+  padding: 18px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--admin-text-dim);
+  letter-spacing: 0.5px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Emojis page (P1-3) — search + grid of emoji tiles.
+ * ────────────────────────────────────────────────────────────────────────── */
+.admin-emojis-toolbar {
+  display: grid;
+  grid-template-columns: 1fr 180px auto;
+  gap: 10px;
+  align-items: end;
+}
+
+@media (max-width: 720px) {
+  .admin-emojis-toolbar { grid-template-columns: 1fr; }
+}
+
+.admin-emojis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.admin-emojis-tile {
+  position: relative;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+  padding: 12px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: border-color 0.15s ease;
+}
+
+.admin-emojis-tile:hover {
+  border-color: var(--color-primary);
+}
+
+.admin-emojis-tile img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.admin-emojis-tile .label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: var(--admin-text);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-emojis-tile .actions {
+  display: flex;
+  gap: 4px;
+}
+
+.admin-emojis-empty {
+  grid-column: 1 / -1;
+  padding: 24px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--admin-text-dim);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Sounds page (P1-2) — upload form + sound tile grid + rules list.
+ * ────────────────────────────────────────────────────────────────────────── */
+.admin-sounds-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.admin-sounds-tile {
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-sounds-tile .name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--admin-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-sounds-tile .actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.admin-sounds-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-sounds-rule {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+}
+
+.admin-sounds-rule-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-sounds-rule-trigger {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--admin-text);
+}
+
+.admin-sounds-rule-detail {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: var(--admin-text-dim);
+}
+
+.admin-sounds-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 720px) {
+  .admin-sounds-form { grid-template-columns: 1fr; }
+}
+
+.admin-sounds-form-full {
+  grid-column: 1 / -1;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Scheduler page (P1-5) — list view with sortable rows + create form.
+ * ────────────────────────────────────────────────────────────────────────── */
+.admin-scheduler-jobs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-scheduler-jobs-head {
+  display: grid;
+  grid-template-columns: 8px 1fr 80px 80px 80px auto;
+  gap: 10px;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--admin-text-dim);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--admin-line);
+}
+
+.admin-scheduler-job {
+  display: grid;
+  grid-template-columns: 8px 1fr 80px 80px 80px auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+}
+
+.admin-scheduler-job-title {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--admin-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-scheduler-job-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--admin-text-dim);
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+.admin-scheduler-job-val {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--admin-text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-scheduler-job-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 720px) {
+  .admin-scheduler-jobs-head,
+  .admin-scheduler-job {
+    grid-template-columns: 8px 1fr auto;
+  }
+  .admin-scheduler-jobs-head > :nth-child(3),
+  .admin-scheduler-jobs-head > :nth-child(4),
+  .admin-scheduler-jobs-head > :nth-child(5),
+  .admin-scheduler-job > :nth-child(3),
+  .admin-scheduler-job > :nth-child(4),
+  .admin-scheduler-job > :nth-child(5) {
+    display: none;
+  }
+}
+
+.admin-scheduler-msg-row {
+  display: grid;
+  grid-template-columns: 1fr 44px 80px auto;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (max-width: 600px) {
+  .admin-scheduler-msg-row {
+    grid-template-columns: 1fr auto;
+  }
+  .admin-scheduler-msg-row > :nth-child(2),
+  .admin-scheduler-msg-row > :nth-child(3) {
+    grid-column: span 2;
+  }
+}
+
+.admin-scheduler-config {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+
+.admin-scheduler-config > label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-width: 120px;
+}
+
+/* ─── Admin Effects: live inline card preview (P3-2) ────────────────────────
+ * Each effect card in the admin Effects page renders an actual animation on
+ * the demo text instead of a static "ABC". Keyframes below mirror the 8
+ * bundled .dme files so no HTTP round-trip is needed for built-ins.
+ * Animations are paused by default and flipped to running by an
+ * IntersectionObserver in admin-effects-mgmt.js (>=50% visible -> running).
+ * prefers-reduced-motion forces all previews to paused regardless.
+ * ──────────────────────────────────────────────────────────────────────── */
+
