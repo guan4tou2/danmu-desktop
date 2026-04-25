@@ -114,19 +114,25 @@
     text.title = d.text || "";
     row.appendChild(text);
 
-    // Nickname (if present)
-    const nick = document.createElement("span");
-    nick.className = "admin-live-feed-nick";
-    nick.textContent = d.nickname ? "@" + d.nickname : "";
-    nick.title = d.nickname || "";
-    row.appendChild(nick);
-
-    // Fingerprint short
-    const fp = document.createElement("span");
-    fp.className = "admin-live-feed-fp";
-    fp.textContent = d.fingerprint ? "fp:" + d.fingerprint.slice(0, FP_DISPLAY_LEN) : "";
-    fp.title = d.fingerprint || "";
-    row.appendChild(fp);
+    // Identity stack (@nick / fp:xxx) via shared AdminIdentity.
+    // Live-feed payload has no IP; we get the @nick + fp lines.
+    const identity = document.createElement("span");
+    identity.className = "admin-live-feed-identity";
+    if (window.AdminIdentity) {
+      identity.appendChild(
+        AdminIdentity.render({
+          nickname: d.nickname || "",
+          fp: d.fingerprint || "",
+          onNicknameClick: function (nick) {
+            if (!nick || !searchInput) return;
+            searchInput.value = nick;
+            searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+            searchInput.focus();
+          },
+        })
+      );
+    }
+    row.appendChild(identity);
 
     // Action buttons
     const actions = document.createElement("span");

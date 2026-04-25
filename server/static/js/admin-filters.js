@@ -443,6 +443,87 @@
     });
   }
 
+  // ── Live moderation log ──────────────────────────────────────
+  // Server has no dedicated filter-match WS event today, so we surface
+  // the last 6 danmu_live entries with the shared AdminIdentity stack so
+  // operators can spot/block in context. (P3-1 audience-identity adoption.)
+
+  const LIVE_LOG_MAX = 6;
+  /** @type {{ts:number, text:string, nickname:string, fp:string}[]} */
+  const _liveLogBuffer = [];
+  let _liveLogBound = false;
+
+  function fmtLogTime(ts) {
+    const d = new Date(ts);
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+
+  function renderLiveLog() {
+    const log = document.getElementById("filterLiveLog");
+    if (!log) return;
+    if (_liveLogBuffer.length === 0) {
+      log.innerHTML = `<div style="color:var(--color-text-muted);text-align:center;padding:10px">\u5c1a\u7121\u4e8b\u4ef6 \u00b7 \u7b49\u5f85\u898f\u5247\u547d\u4e2d...</div>`;
+      return;
+    }
+    log.innerHTML = "";
+    // newest first
+    for (let i = _liveLogBuffer.length - 1; i >= 0; i--) {
+      const e = _liveLogBuffer[i];
+      const row = document.createElement("div");
+      row.className = "admin-filter-log-row";
+      row.style.cssText = "display:grid;grid-template-columns:60px 1fr 160px;gap:10px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--hud-line)";
+
+      const ts = document.createElement("span");
+      ts.style.cssText = "font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)";
+      ts.textContent = fmtLogTime(e.ts);
+      row.appendChild(ts);
+
+      const txt = document.createElement("span");
+      txt.style.cssText = "font-family:var(--font-mono);font-size:11px;color:var(--color-text-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
+      txt.textContent = e.text || "(empty)";
+      txt.title = e.text || "";
+      row.appendChild(txt);
+
+      const id = document.createElement("span");
+      if (window.AdminIdentity) {
+        id.appendChild(
+          AdminIdentity.render({
+            nickname: e.nickname || "",
+            fp: e.fp || "",
+            onNicknameClick: function (nick) {
+              const testEl = document.getElementById("filterTestText");
+              if (testEl && nick) {
+                testEl.value = nick;
+                testEl.focus();
+              }
+            },
+          })
+        );
+      }
+      row.appendChild(id);
+      log.appendChild(row);
+    }
+  }
+
+  function wireLiveLog() {
+    if (_liveLogBound) return;
+    _liveLogBound = true;
+    document.addEventListener("admin-ws-message", (e) => {
+      const msg = e && e.detail;
+      if (!msg || msg.type !== "danmu_live" || !msg.data) return;
+      _liveLogBuffer.push({
+        ts: Date.now(),
+        text: String(msg.data.text || ""),
+        nickname: String(msg.data.nickname || ""),
+        fp: String(msg.data.fingerprint || ""),
+      });
+      while (_liveLogBuffer.length > LIVE_LOG_MAX) _liveLogBuffer.shift();
+      // Only re-render if our section is currently in the DOM.
+      if (document.getElementById("filterLiveLog")) renderLiveLog();
+    });
+  }
+
   // ── Initialization ───────────────────────────────────────────
 
   function init() {
@@ -527,6 +608,8 @@
 
     // Initial load
     refreshRulesList();
+    wireLiveLog();
+    renderLiveLog();
   }
 
   // admin.js rebuilds the entire DOM via innerHTML on every renderControlPanel()

@@ -96,10 +96,15 @@
       .map(function (r) {
         var blockedVal = r.blocked | 0;
         var blockedColor = blockedVal > 0 ? "#f87171" : "var(--color-text-muted)";
+        var hash = r.hash || "";
+        // P3-1: AdminIdentity.focusFingerprint() locates rows by data-fp-hash.
+        // Server sends the 12-char SHA-256 prefix in `hash`; first 8 are shown
+        // as `fp:xxxxxxxx` to match the AdminIdentity short-form (FP_DISPLAY_LEN=8).
+        var fpShort = hash.slice(0, 8);
         return (
-          '<div class="hud-table-row" style="grid-template-columns:' + cols + '">' +
-            '<span style="font-family:var(--font-mono);font-size:12px;color:var(--color-text-strong);overflow:hidden;text-overflow:ellipsis">' + escapeHtml(r.hash || "") + "</span>" +
-            '<span style="font-family:var(--font-mono);font-size:12px;color:var(--color-text-strong)">' + escapeHtml(r.ip || "—") + "</span>" +
+          '<div class="hud-table-row admin-fp-row" data-fp-hash="' + escapeHtml(hash) + '" style="grid-template-columns:' + cols + '">' +
+            '<span class="admin-identity-fp" style="font-family:var(--font-mono);font-size:12px;color:var(--color-text-strong);overflow:hidden;text-overflow:ellipsis" title="' + escapeHtml(hash) + '">fp:' + escapeHtml(fpShort) + "</span>" +
+            '<span class="admin-identity-ip" style="font-size:12px;color:var(--color-text-muted)">' + escapeHtml(r.ip || "—") + "</span>" +
             '<span style="font-size:12px;color:var(--color-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escapeHtml(r.ua || "") + '">' + escapeHtml(r.ua || "—") + "</span>" +
             '<span style="text-align:right;font-family:var(--font-mono);font-size:13px;color:var(--color-text-strong)">' + (r.msgs | 0) + "</span>" +
             '<span style="text-align:right;font-family:var(--font-mono);font-size:13px;color:var(--color-text-strong)">' + (r.rate_per_min | 0) + "</span>" +

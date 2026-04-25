@@ -1384,7 +1384,7 @@
 
 .admin-live-feed-row {
   display: grid;
-  grid-template-columns: 20px 64px 72px 1fr 120px 96px auto;
+  grid-template-columns: 20px 64px 72px 1fr 160px auto;
   gap: 10px;
   align-items: center;
   padding: 8px 10px;
@@ -1393,6 +1393,10 @@
   border-radius: 4px;
   font-family: var(--font-mono);
   font-size: 12px;
+}
+
+.admin-live-feed-identity {
+  min-width: 0;
 }
 
 .admin-live-feed-row.is-muted {
@@ -1464,7 +1468,7 @@
 @media (max-width: 900px) {
   .admin-live-feed-row {
     grid-template-columns: 20px 1fr auto;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto;
     row-gap: 6px;
   }
   .admin-live-feed-row > :nth-child(2),
@@ -1475,9 +1479,134 @@
     grid-column: 1 / -1;
     grid-row: 2;
   }
-  .admin-live-feed-row > :nth-child(5),
-  .admin-live-feed-row > :nth-child(6) {
-    display: none;
+  .admin-live-feed-row > :nth-child(5) {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * AdminIdentity (P3-1) — shared @nick / fp:xxx / ip stack used across
+ * Live Feed, History, Fingerprints, and any other admin page that lists
+ * audience-attributed events. Tokens-only; no hardcoded colors.
+ * ────────────────────────────────────────────────────────────────────────── */
+.admin-identity-row {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+  max-width: 100%;
+  line-height: 1.25;
+}
+
+.admin-identity-nick {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 400;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-identity-nick.is-clickable {
+  cursor: pointer;
+}
+
+.admin-identity-nick.is-clickable:hover,
+.admin-identity-nick.is-clickable:focus-visible {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  outline: none;
+}
+
+.admin-identity-nick.is-guest {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.admin-identity-fp {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--admin-text-dim);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-identity-fp.is-clickable {
+  cursor: pointer;
+}
+
+.admin-identity-fp.is-clickable:hover,
+.admin-identity-fp.is-clickable:focus-visible {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  outline: none;
+}
+
+.admin-identity-ip {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+  cursor: default;
+  user-select: text;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-identity-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hud-lime);
+  box-shadow: 0 0 4px var(--hud-lime);
+  flex-shrink: 0;
+}
+
+/* Highlight ring used by AdminIdentity.focusFingerprint() to flag the
+ * matched observatory row after navigation. */
+.admin-identity-flash {
+  animation: admin-identity-flash 2s ease-out;
+}
+
+@keyframes admin-identity-flash {
+  0% {
+    background-color: var(--hud-cyan-soft);
+    box-shadow: inset 0 0 0 1px var(--color-primary);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 1px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-identity-flash {
+    animation: none;
+    background-color: var(--hud-cyan-soft);
   }
 }
 

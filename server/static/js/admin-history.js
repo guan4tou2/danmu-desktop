@@ -212,12 +212,35 @@
       if (record.opacity) metaParts.push(`Opacity: ${record.opacity}`);
       if (record.isImage) metaParts.push("Type: Image");
       if (record.fontInfo?.name) metaParts.push(`Font: ${record.fontInfo.name}`);
-      if (record.clientIp) metaParts.push(`IP: ${record.clientIp}`);
-      if (record.fingerprint) metaParts.push(`FP: ${record.fingerprint.slice(0, 8)}…`);
-      metaEl.textContent = metaParts.join(" • ") || ServerI18n.t("noMetadata");
+      if (metaParts.length > 0) {
+        metaEl.textContent = metaParts.join(" • ");
+      } else {
+        metaEl.textContent = ServerI18n.t("noMetadata");
+      }
+
+      // Identity stack (@nick / fp:xxx / ip) via shared AdminIdentity.
+      const identityEl = document.createElement("div");
+      identityEl.className = "admin-history-identity";
+      if (window.AdminIdentity) {
+        identityEl.appendChild(
+          AdminIdentity.render({
+            nickname: record.nickname || "",
+            fp: record.fingerprint || "",
+            ip: record.clientIp || "",
+            onNicknameClick: function (nick) {
+              const searchInputEl = document.getElementById("historySearch");
+              if (!searchInputEl || !nick) return;
+              searchInputEl.value = nick;
+              searchInputEl.dispatchEvent(new Event("input", { bubbles: true }));
+              searchInputEl.focus();
+            },
+          })
+        );
+      }
 
       contentWrap.appendChild(headerEl);
       contentWrap.appendChild(textEl);
+      contentWrap.appendChild(identityEl);
       contentWrap.appendChild(metaEl);
       recordEl.appendChild(contentWrap);
       historyListDiv.appendChild(recordEl);
@@ -257,7 +280,11 @@
       // Apply current search filter
       const searchTerm = document.getElementById("historySearch")?.value?.toLowerCase() || "";
       const filtered = searchTerm
-        ? records.filter((r) => (r.text || "").toLowerCase().includes(searchTerm))
+        ? records.filter((r) =>
+            (r.text || "").toLowerCase().includes(searchTerm) ||
+            (r.nickname || "").toLowerCase().includes(searchTerm) ||
+            (r.fingerprint || "").toLowerCase().includes(searchTerm)
+          )
         : records;
 
       renderHistoryRecords(filtered);
@@ -398,7 +425,11 @@
       historySearch.addEventListener("input", () => {
         const term = historySearch.value.toLowerCase();
         const filtered = term
-          ? _allHistoryRecords.filter((r) => (r.text || "").toLowerCase().includes(term))
+          ? _allHistoryRecords.filter((r) =>
+              (r.text || "").toLowerCase().includes(term) ||
+              (r.nickname || "").toLowerCase().includes(term) ||
+              (r.fingerprint || "").toLowerCase().includes(term)
+            )
           : _allHistoryRecords;
         renderHistoryRecords(filtered);
       });
