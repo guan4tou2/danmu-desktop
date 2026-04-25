@@ -37,6 +37,17 @@
       <span class="client-titlebar-light client-titlebar-light--amber" aria-hidden="true"></span>
       <span class="client-titlebar-light client-titlebar-light--green" aria-hidden="true"></span>
       <span class="client-titlebar-label">Danmu Fire</span>
+      <!-- Update badge (P2-3) — hidden until autoUpdater fires update-available -->
+      <button
+        type="button"
+        id="titlebar-update-badge"
+        class="client-titlebar-update"
+        hidden
+        aria-label="Update available"
+      >
+        <span class="dot" aria-hidden="true"></span>
+        <span class="label" data-i18n="updateAvailableShort">UPDATE</span>
+      </button>
       <span class="client-titlebar-status" role="status" aria-live="polite">
         <span class="client-titlebar-status-dot" data-client-status="disconnected"></span>
         <span class="client-titlebar-status-text" data-i18n="disconnected">DISCONNECTED</span>
@@ -259,366 +270,6 @@
             <p>彈幕的字體、顏色、大小、透明度、速度、排版與效果為<b>觀眾每次發送時帶上的參數</b>,不在此視窗控制。此視窗僅決定 overlay 是否顯示、顯示於哪個螢幕,以及與 server 的連線。</p>
           </div>
 
-          <!-- Legacy advanced controls — kept in DOM so renderer-modules
-               (danmu-settings.js, track-manager.js, etc.) still bind to the
-               existing input IDs. Not in prototype; collapsed by default. -->
-          <details class="client-overlay-advanced" data-client-overlay-advanced>
-          <summary class="cursor-pointer p-4 text-sm font-semibold text-slate-200 flex items-center gap-2 hover:bg-slate-700/20 rounded-xl transition-colors">
-            <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-            </svg>
-            <span data-i18n="previewSettings">Preview & Settings</span>
-          </summary>
-
-          <div class="p-4 pt-0 grid gap-4 xl:grid-cols-2 settings-scroll">
-            <!-- Test Danmu Section -->
-            <div class="border-t border-slate-600 pt-4 xl:col-span-2">
-              <div class="flex items-center gap-2 mb-3">
-                <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
-                </svg>
-                <label class="text-sm font-medium text-slate-200" data-i18n="testDanmu">Test Danmu</label>
-              </div>
-              <div class="flex gap-2">
-                <input
-                  type="text"
-                  id="preview-text"
-                  class="form-input flex-1 text-sm px-3 py-2 rounded-lg"
-                  data-i18n-placeholder="previewPlaceholder"
-                  placeholder="Enter test danmu text..."
-                  value="測試彈幕 Test Danmu 🎉"
-                />
-                <button
-                  id="preview-button"
-                  class="btn-primary px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2 hover:shadow-lg transition-all flex-shrink-0"
-                  data-i18n="sendPreview"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                  </svg>
-                  Send
-                </button>
-              </div>
-            </div>
-
-            <!-- Basic Appearance -->
-            <div class="border-t border-slate-600 pt-4 space-y-3">
-              <div class="flex items-center gap-2 mb-1">
-                <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
-                </svg>
-                <label class="text-sm font-medium text-slate-200" data-i18n="overlaySettings">Overlay Settings</label>
-              </div>
-
-              <!-- Opacity Control -->
-              <div>
-                <div class="flex justify-between items-center mb-2">
-                  <label for="overlay-opacity" class="text-sm text-slate-300" data-i18n="opacity">Opacity</label>
-                  <span id="opacity-value" class="text-sm font-mono text-sky-400">100%</span>
-                </div>
-                <input
-                  type="range"
-                  id="overlay-opacity"
-                  min="10"
-                  max="100"
-                  value="100"
-                  class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
-                />
-              </div>
-
-              <!-- Danmu Speed Control -->
-              <div>
-                <div class="flex justify-between items-center mb-2">
-                  <label for="danmu-speed" class="text-sm text-slate-300" data-i18n="speed">Speed</label>
-                  <span id="speed-value" class="text-sm font-mono text-sky-400">5</span>
-                </div>
-                <input
-                  type="range"
-                  id="danmu-speed"
-                  min="1"
-                  max="10"
-                  value="5"
-                  class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
-                />
-              </div>
-
-              <!-- Danmu Size Control -->
-              <div>
-                <div class="flex justify-between items-center mb-2">
-                  <label for="danmu-size" class="text-sm text-slate-300" data-i18n="fontSize">Font Size</label>
-                  <span id="size-value" class="text-sm font-mono text-sky-400">50px</span>
-                </div>
-                <input
-                  type="range"
-                  id="danmu-size"
-                  min="20"
-                  max="100"
-                  value="50"
-                  class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
-                />
-              </div>
-
-              <!-- Danmu Color -->
-              <div>
-                <div class="flex justify-between items-center mb-2">
-                  <label for="danmu-color" class="text-sm text-slate-300" data-i18n="color">Color</label>
-                  <input
-                    type="color"
-                    id="danmu-color"
-                    value="#ffffff"
-                    class="w-10 h-8 rounded cursor-pointer bg-transparent border border-slate-600"
-                  />
-                </div>
-              </div>
-
-            <!-- Text Effects -->
-            <div class="border-t border-slate-600 pt-4 space-y-3">
-              <div class="flex items-center gap-2 mb-1">
-                <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                </svg>
-                <label class="text-sm font-medium text-slate-200" data-i18n="textEffects">Text Effects</label>
-              </div>
-
-              <!-- Text Stroke -->
-              <div class="bg-slate-900/30 rounded-lg p-3 space-y-3">
-                <div class="flex items-center justify-between">
-                  <label class="text-xs text-slate-300" data-i18n="textStroke">Text Stroke</label>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="text-stroke-toggle" class="sr-only peer" checked>
-                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-sky-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
-                  </label>
-                </div>
-                <div id="stroke-controls" class="space-y-2">
-                  <div>
-                    <div class="flex justify-between items-center mb-1.5">
-                      <label for="stroke-width" class="text-xs text-slate-400" data-i18n="strokeWidth">Stroke Width</label>
-                      <span id="stroke-width-value" class="text-xs font-mono text-sky-400">2px</span>
-                    </div>
-                    <input
-                      type="range"
-                      id="stroke-width"
-                      min="1"
-                      max="5"
-                      value="2"
-                      class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
-                    />
-                  </div>
-                  <div>
-                    <div class="flex justify-between items-center mb-1.5">
-                      <label for="stroke-color" class="text-xs text-slate-400" data-i18n="strokeColor">Stroke Color</label>
-                      <input
-                        type="color"
-                        id="stroke-color"
-                        value="#000000"
-                        class="w-8 h-6 rounded cursor-pointer bg-transparent border border-slate-600"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Text Shadow -->
-              <div class="bg-slate-900/30 rounded-lg p-3 space-y-3">
-                <div class="flex items-center justify-between">
-                  <label class="text-xs text-slate-300" data-i18n="textShadow">Text Shadow</label>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="text-shadow-toggle" class="sr-only peer">
-                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-sky-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
-                  </label>
-                </div>
-                <div id="shadow-controls" class="space-y-2 hidden">
-                  <div>
-                    <div class="flex justify-between items-center mb-1.5">
-                      <label for="shadow-blur" class="text-xs text-slate-400" data-i18n="shadowBlur">Shadow Blur</label>
-                      <span id="shadow-blur-value" class="text-xs font-mono text-sky-400">4px</span>
-                    </div>
-                    <input
-                      type="range"
-                      id="shadow-blur"
-                      min="1"
-                      max="10"
-                      value="4"
-                      class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Display & Track Settings -->
-            <div class="border-t border-slate-600 pt-4 space-y-4">
-              <div class="flex items-center gap-2 mb-1">
-                <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path>
-                </svg>
-                <label class="text-sm font-medium text-slate-200" data-i18n="displayAreaControl">Display Area Control</label>
-              </div>
-
-              <!-- Display Area Controls -->
-              <div class="bg-slate-900/30 rounded-lg p-3 space-y-3">
-                <!-- Top Position -->
-                <div>
-                  <div class="flex justify-between items-center mb-1.5">
-                    <label for="display-area-top" class="text-xs text-slate-300" data-i18n="displayAreaTop">Top Position</label>
-                    <span id="display-area-top-value" class="text-xs font-mono text-sky-400">0%</span>
-                  </div>
-                  <input
-                    type="range"
-                    id="display-area-top"
-                    min="0"
-                    max="80"
-                    value="0"
-                    step="5"
-                    class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
-                  />
-                </div>
-
-                <!-- Height -->
-                <div>
-                  <div class="flex justify-between items-center mb-1.5">
-                    <label for="display-area-height" class="text-xs text-slate-300" data-i18n="displayAreaHeight">Display Height</label>
-                    <span id="display-area-height-value" class="text-xs font-mono text-sky-400">100%</span>
-                  </div>
-                  <input
-                    type="range"
-                    id="display-area-height"
-                    min="20"
-                    max="100"
-                    value="100"
-                    step="5"
-                    class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
-                  />
-                </div>
-
-                <!-- Visual Indicator -->
-                <div class="p-2 bg-slate-950/50 rounded border border-slate-700">
-                  <div class="text-xs text-slate-400 mb-1.5" data-i18n="displayAreaPreview">Preview:</div>
-                  <div class="relative h-16 bg-slate-900 rounded overflow-hidden">
-                    <div id="display-area-indicator" class="absolute left-0 right-0 bg-sky-500/20 border-t-2 border-b-2 border-sky-500" style="top: 0%; height: 100%;"></div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Track Management -->
-              <div class="bg-slate-900/30 rounded-lg p-3 space-y-3">
-                <div class="flex items-center gap-2 mb-1">
-                  <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                  </svg>
-                  <label class="text-xs font-medium text-slate-200" data-i18n="trackManagement">Track Management</label>
-                </div>
-
-                <!-- Max Tracks -->
-                <div>
-                  <div class="flex justify-between items-center mb-1.5">
-                    <label for="max-tracks" class="text-xs text-slate-300" data-i18n="maxTracks">Maximum Tracks</label>
-                    <span id="max-tracks-value" class="text-xs font-mono text-sky-400">10</span>
-                  </div>
-                  <input
-                    type="range"
-                    id="max-tracks"
-                    min="0"
-                    max="20"
-                    value="10"
-                    step="1"
-                    class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
-                  />
-                  <div class="text-xs text-slate-400 mt-1" data-i18n="maxTracksHint">0 = Unlimited tracks</div>
-                </div>
-
-                <!-- Collision Detection -->
-                <div class="flex items-center justify-between pt-1">
-                  <label class="text-xs text-slate-300" data-i18n="collisionDetection">Collision Detection</label>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="collision-detection-toggle" class="sr-only peer" checked>
-                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-sky-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <!-- Testing & Animation -->
-            <div class="border-t border-slate-600 pt-4 space-y-4 xl:col-span-2">
-              <!-- Batch Test -->
-              <div>
-                <div class="flex items-center gap-2 mb-3">
-                  <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                  </svg>
-                  <label class="text-sm font-medium text-slate-200" data-i18n="batchTest">Batch Test</label>
-                </div>
-                <div class="bg-slate-900/30 rounded-lg p-3">
-                  <div class="flex gap-2">
-                    <input
-                      type="number"
-                      id="batch-test-count"
-                      min="1"
-                      max="20"
-                      value="5"
-                      class="form-input flex-1 text-sm px-3 py-2 rounded-lg w-20"
-                    />
-                    <button
-                      id="batch-test-button"
-                      class="btn-primary px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2 hover:shadow-lg transition-all flex-shrink-0"
-                    >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                      </svg>
-                      <span data-i18n="startBatchTest">Start Batch Test</span>
-                    </button>
-                  </div>
-                  <div class="text-xs text-slate-400 mt-2" data-i18n="batchTestHint">Test collision detection and track distribution</div>
-                </div>
-              </div>
-
-              <!-- Startup Animation -->
-              <div>
-                <div class="flex items-center gap-2 mb-3">
-                  <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                  <label class="text-sm font-medium text-slate-200" data-i18n="startupAnimation">Startup Animation</label>
-                  <label class="relative inline-flex items-center cursor-pointer ml-auto">
-                    <input type="checkbox" id="startup-animation-toggle" class="sr-only peer" checked>
-                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-sky-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
-                  </label>
-                </div>
-
-                <div id="startup-animation-controls" class="bg-slate-900/30 rounded-lg p-3 space-y-3">
-                  <!-- Animation Type -->
-                  <div>
-                    <label class="text-xs text-slate-300 block mb-2" data-i18n="animationType">Animation Type</label>
-                    <select
-                      id="animation-type-select"
-                      class="form-input w-full text-sm px-3 py-2 rounded-lg"
-                    >
-                      <option value="link-start" data-i18n="animationLinkStart">LINK START</option>
-                      <option value="domain-expansion" data-i18n="animationDomainExpansion">領域展開</option>
-                      <option value="custom" data-i18n="animationCustom">Custom</option>
-                    </select>
-                  </div>
-
-                  <!-- Custom Animation Text -->
-                  <div id="custom-animation-text-container" class="hidden">
-                    <label class="text-xs text-slate-300 block mb-2" data-i18n="customAnimationText">Custom Animation Text</label>
-                    <input
-                      type="text"
-                      id="custom-animation-text"
-                      class="form-input w-full text-sm px-3 py-2 rounded-lg"
-                      data-i18n-placeholder="customAnimationPlaceholder"
-                      placeholder="Enter custom animation text..."
-                      maxlength="50"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          </div>
-        </details>
-
         <!-- Action Buttons -->
         <div class="sticky bottom-2 z-20 bg-slate-900/80 backdrop-blur-md border border-slate-700/60 rounded-xl p-3 space-y-3">
           <div class="flex flex-col sm:flex-row gap-3">
@@ -738,9 +389,61 @@
               <div class="status"><span class="dot"></span> UP TO DATE</div>
             </div>
             <div class="client-about-actions">
-              <button type="button" class="client-action-btn" data-i18n="checkForUpdates">檢查更新</button>
+              <button
+                type="button"
+                id="update-card-check"
+                class="client-action-btn"
+                data-i18n="checkForUpdates"
+              >檢查更新</button>
             </div>
           </div>
+
+          <!-- Update card (P2-3) — auto-updater UX. Hidden until lifecycle event. -->
+          <section
+            class="client-update-card"
+            id="update-card"
+            hidden
+            aria-live="polite"
+          >
+            <div class="head">
+              <div class="title-row">
+                <span class="kicker" data-i18n="updateKicker">UPDATE</span>
+                <span class="title" id="update-card-title" data-i18n="updateUpToDate">You're up to date</span>
+                <span class="version" id="update-card-version"></span>
+              </div>
+            </div>
+            <p class="notes" id="update-card-notes" hidden></p>
+            <div class="progress" id="update-card-progress" hidden>
+              <div class="progress-track">
+                <div class="progress-fill" id="update-card-progress-bar" style="width: 0%"></div>
+              </div>
+              <span class="progress-label" id="update-card-progress-label">0%</span>
+            </div>
+            <p class="error" id="update-card-error" hidden></p>
+            <div class="actions">
+              <button
+                type="button"
+                class="client-action-btn is-primary"
+                id="update-card-install"
+                hidden
+                data-i18n="updateInstallNow"
+              >Restart to install</button>
+              <button
+                type="button"
+                class="client-action-btn"
+                id="update-card-later"
+                hidden
+                data-i18n="updateRemindLater"
+              >Remind me later</button>
+              <button
+                type="button"
+                class="client-action-btn"
+                id="update-card-skip"
+                hidden
+                data-i18n="updateSkipVersion"
+              >Skip this version</button>
+            </div>
+          </section>
           <div class="client-about-desc" data-i18n="aboutDesc">
             Danmu Fire 是即時彈幕送字系統。觀眾用手機或桌機網頁輸入文字,送到主場大螢幕的 overlay。
           </div>

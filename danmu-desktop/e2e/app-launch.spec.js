@@ -89,13 +89,11 @@ test.describe("App Launch", () => {
     await mainWindow.waitForTimeout(300);
   });
 
-  test("legacy advanced settings panel is collapsed by default (v2)", async () => {
-    // Post design-v2: Preview & Settings lives inside `.client-overlay-advanced`
-    // which is collapsed by default — users configure via admin, not Electron.
+  test("legacy advanced settings panel is removed (P5-2)", async () => {
+    // P5-2: 進階 · 舊版設定 panel deleted — Electron is display-only,
+    // danmu appearance is configured by viewers, not the desktop client.
     const advanced = mainWindow.locator(".client-overlay-advanced");
-    await expect(advanced).toBeAttached();
-    const isOpen = await advanced.getAttribute("open");
-    expect(isOpen).toBeNull();
+    expect(await advanced.count()).toBe(0);
   });
 
   test("Conn section screen selector reachable", async () => {

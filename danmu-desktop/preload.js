@@ -131,6 +131,28 @@ try {
       // mode: 'show' | 'hide' | 'toggle'
       ipcRenderer.send("overlay-idle-request", { mode: mode || "toggle" });
     },
+    // ── Auto-updater UX (P2-3) ────────────────────────────────────────────
+    // Subscribe to update lifecycle events from main process.
+    onUpdateStatus: (callback) => {
+      if (_handlers.updateStatus) {
+        ipcRenderer.removeListener("update:status", _handlers.updateStatus);
+      }
+      _handlers.updateStatus = (event, data) => callback(data || {});
+      ipcRenderer.on("update:status", _handlers.updateStatus);
+    },
+    // Send a user action to the updater. action ∈
+    //   "install" | "later" | "skip" | "check-now" | "request-state"
+    sendUpdateAction: (action, version) => {
+      const allowed = ["install", "later", "skip", "check-now", "request-state"];
+      if (!allowed.includes(action)) {
+        console.warn("[Preload] sendUpdateAction: invalid action", action);
+        return;
+      }
+      ipcRenderer.send("update:action", {
+        action,
+        version: typeof version === "string" ? version : undefined,
+      });
+    },
   });
   // Note: Logging window.API here is from preload's context, not renderer's.
   // The important check is logging window.API in the renderer.

@@ -13,14 +13,8 @@ const { validateIP, validatePort } = require("./renderer-modules/validation");
 const {
   saveSettings,
   loadSettings,
-  saveStartupAnimationSettings,
   loadStartupAnimationSettings,
 } = require("./renderer-modules/settings");
-const {
-  DEFAULT_DANMU_SETTINGS,
-  initDanmuSettings,
-  loadDanmuSettings,
-} = require("./renderer-modules/danmu-settings");
 const { initTrackManager } = require("./renderer-modules/track-manager");
 const {
   initOverlayControls,
@@ -28,6 +22,7 @@ const {
 } = require("./renderer-modules/ws-manager");
 const { initGlobalEffects } = require("./renderer-modules/konami");
 const { initParticleBg } = require("./renderer-modules/particle-bg");
+const { initUpdateStatus } = require("./renderer-modules/update-status");
 
 // Translation helper
 function t(key) {
@@ -40,9 +35,6 @@ const state = {
   connectionFailureNotified: false,
   connectionSuccessNotified: false,
 };
-
-// Danmu display settings (shared between danmu-settings and ws-manager)
-const danmuSettings = { ...DEFAULT_DANMU_SETTINGS };
 
 // Main initialization — runs after DOM is ready.
 // Uses try/finally so .main-content.loaded is always added even if init throws.
@@ -59,7 +51,6 @@ const initRenderer = async () => {
       validateIP,
       validatePort,
       saveSettings,
-      saveStartupAnimationSettings,
       loadSettings,
       loadStartupAnimationSettings,
       updateConnectionStatus,
@@ -76,8 +67,9 @@ const initRenderer = async () => {
       getCurrentStatus,
     });
 
-    initDanmuSettings(danmuSettings, showToast, t);
-    loadDanmuSettings(danmuSettings);
+    // Auto-updater UX (P2-3) — title bar badge + About card + toast.
+    // Safe no-op if API.onUpdateStatus is missing (e.g. older preload).
+    initUpdateStatus({ t, showToast });
 
     // Canvas 2D particle network background (main window only)
     if (document.getElementById("vanta-bg")) {

@@ -10,6 +10,9 @@ let mainWindow;
 const childWindows = [];
 let tray;
 
+// Updater state shared with the tray menu (rebuilt on every update event)
+const updateInfo = { phase: "idle", version: null };
+
 // Trigger Konami effect on all child windows
 function onKonamiTrigger() {
   childWindows.forEach((cw) => {
@@ -22,7 +25,19 @@ function onKonamiTrigger() {
 app.whenReady().then(() => {
   mainWindow = createWindow(childWindows, onKonamiTrigger);
   setupIpcHandlers(() => mainWindow, childWindows);
-  setupAutoUpdater(() => mainWindow);
+  setupAutoUpdater(
+    () => mainWindow,
+    (state) => {
+      // Mirror updater phase into tray menu
+      updateInfo.phase = state.phase || "idle";
+      updateInfo.version = state.version || null;
+      try {
+        if (tray) rebuildTrayMenu();
+      } catch (_) {
+        // tray may not yet be created (very early checks) — ignore
+      }
+    }
+  );
 
   // macOS Dock icon（開發模式下 Electron 預設顯示通用圖示，需手動設定）
   if (process.platform === "darwin" && app.dock) {
@@ -98,10 +113,40 @@ app.whenReady().then(() => {
     const hasOverlay = childWindows.some((cw) => cw && !cw.isDestroyed());
     const version = app.getVersion();
     const pkgName = "Danmu Fire";
+
+    // Update entry — shown only when an update is available/downloading/ready.
+    const updateEntries = [];
+    if (updateInfo.phase === "downloaded" && updateInfo.version) {
+      updateEntries.push({
+        label: `↻ Restart to install v${updateInfo.version}`,
+        click: () => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send("update:status", {
+              phase: "downloaded",
+              version: updateInfo.version,
+              percent: 100,
+            });
+          }
+          showMainWindow();
+        },
+      });
+      updateEntries.push({ type: "separator" });
+    } else if (
+      (updateInfo.phase === "available" || updateInfo.phase === "downloading") &&
+      updateInfo.version
+    ) {
+      updateEntries.push({
+        label: `↓ New version v${updateInfo.version} available`,
+        click: showMainWindow,
+      });
+      updateEntries.push({ type: "separator" });
+    }
+
     const template = [
       { label: `● ${pkgName}    v${version}`, enabled: false },
       { label: trayServerUrl ? `${trayStatusText} · ${trayServerUrl}` : trayStatusText, enabled: false },
       { type: "separator" },
+      ...updateEntries,
       {
         label: "顯示 overlay",
         type: "checkbox",
