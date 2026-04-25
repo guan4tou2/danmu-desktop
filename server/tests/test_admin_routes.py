@@ -338,9 +338,14 @@ def test_delete_font_requires_login(client):
 def test_metrics_includes_telemetry_series(client):
     resp = authed_get(client, "/admin/metrics")
     data = resp.get_json()
-    for key in ("cpu_series", "mem_series", "ws_series", "rate_series"):
+    for key in ("cpu_series", "mem_series", "mem_mb_series", "ws_series", "rate_series"):
         assert key in data
         assert isinstance(data[key], list)
+        assert len(data[key]) <= data["series_len"]
+    # mem_mb_series entries (when populated) must be numeric — sidebar renders
+    # `${Math.round(value)} MB` so non-numbers would surface as `NaN MB`.
+    for v in data["mem_mb_series"]:
+        assert isinstance(v, (int, float))
     assert data["series_len"] == 60
     assert data["sample_interval_sec"] == 1.0
 

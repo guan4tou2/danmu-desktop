@@ -212,6 +212,41 @@ def get_rate_limit_suggestion(
     }
 
 
+def get_rate_limit_bucket_history(
+    key_prefix: str, granularity_minutes: int = 60
+) -> List[int]:
+    """Return a 24-element list of allowed-request counts per granularity bucket.
+
+    Aggregates the 5-min bucket history (288 buckets × 5min = 24h) up to the
+    requested ``granularity_minutes`` resolution. The returned list is always
+    24 elements long, oldest first; missing slots are zero-padded so the admin
+    sparkline always renders 24 columns regardless of uptime.
+
+    Default granularity is 60 minutes (hourly), which sums 12 of the 5-min
+    buckets together → 24h × 1h-per-bar. Pass ``granularity_minutes=10`` for
+    a 4h × 10min view, etc. Granularity must be a multiple of 5.
+    """
+    if granularity_minutes < 5 or granularity_minutes % 5 != 0:
+        granularity_minutes = 60
+
+    granularity_seconds = granularity_minutes * 60
+    now = time.time()
+    # Align "now" to the granularity boundary so we get full buckets.
+    end_bucket = math.floor(now / granularity_seconds) * granularity_seconds
+    start_bucket = end_bucket - 24 * granularity_seconds
+
+    out = [0] * 24
+    with _rate_stats_lock:
+        buckets = list(_rate_buckets.get(key_prefix, []))
+    for ts, count in buckets:
+        if ts < start_bucket or ts >= end_bucket:
+            continue
+        idx = int((ts - start_bucket) // granularity_seconds)
+        if 0 <= idx < 24:
+            out[idx] += int(count)
+    return out
+
+
 def _locked_sources_for(prefix: str, now: float) -> int:
     dq = _rate_stats_violators.get(prefix)
     if not dq:

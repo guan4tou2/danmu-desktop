@@ -487,6 +487,49 @@ def test_rate_limit_suggestion_in_metrics_response(client, app):
     assert payload["rate_limits"]["api"]["suggestion"] is None
 
 
+def test_bucket_history_returns_24_elements():
+    """``get_rate_limit_bucket_history`` must always return 24 ints regardless
+    of how many real buckets exist, and aggregate the 5-min source buckets up
+    to the requested granularity (default 60 min = sum of 12 source buckets).
+    """
+    from server.services.security import (
+        _rate_buckets,
+        _rate_stats_lock,
+        get_rate_limit_bucket_history,
+        reset_rate_limit_counters,
+    )
+
+    reset_rate_limit_counters()
+
+    # Empty state → 24 zeros (zero-padded).
+    history = get_rate_limit_bucket_history("fire", 60)
+    assert len(history) == 24
+    assert all(v == 0 for v in history)
+    assert all(isinstance(v, int) for v in history)
+
+    # Seed last 24h × 12 5-min buckets (288 total) each with 5 hits → every
+    # hourly aggregate should sum to 60 (12 × 5).
+    now = time.time()
+    granularity_seconds = 60 * 60
+    end_bucket = (int(now) // granularity_seconds) * granularity_seconds
+    start_bucket = end_bucket - 24 * granularity_seconds
+    with _rate_stats_lock:
+        for i in range(288):
+            ts = start_bucket + i * 300
+            _rate_buckets["fire"].append([float(ts), 5])
+
+    history = get_rate_limit_bucket_history("fire", 60)
+    assert len(history) == 24
+    assert all(v == 60 for v in history), history
+    # Total across the window should match the seed (288 × 5 = 1440).
+    assert sum(history) == 1440
+
+    # Granularity guardrail: invalid values fall back to 60-min default.
+    history_bad = get_rate_limit_bucket_history("fire", 7)
+    assert len(history_bad) == 24
+    assert sum(history_bad) == 1440
+
+
 def test_redis_rate_limiter_allow_uses_atomic_eval():
     limiter = RedisRateLimiter.__new__(RedisRateLimiter)
     limiter.client = MagicMock()

@@ -6,7 +6,11 @@ from flask import current_app
 
 from ...services import telemetry, ws_queue, ws_state
 from ...services.poll import poll_service
-from ...services.security import get_rate_limit_stats, get_rate_limit_suggestion
+from ...services.security import (
+    get_rate_limit_bucket_history,
+    get_rate_limit_stats,
+    get_rate_limit_suggestion,
+)
 from ...services.widgets import list_widgets
 from . import _json_response, admin_bp, rate_limit, require_login
 
@@ -39,6 +43,10 @@ def _attach_suggestions(rate_stats: dict) -> dict:
         entry["limit"] = cur_limit
         entry["window"] = cur_window
         entry["suggestion"] = get_rate_limit_suggestion(scope, cur_limit, cur_window)
+        # 24-element hourly history of allowed-request counts for the
+        # admin Rate Limits sparkline. Always 24 entries (zero-padded if
+        # the server hasn't been up 24h yet).
+        entry["bucket_history"] = get_rate_limit_bucket_history(scope, 60)
     return rate_stats
 
 

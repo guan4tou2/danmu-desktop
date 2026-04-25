@@ -4,9 +4,11 @@
 // UX:
 //   - ⌘K (mac) / Ctrl+K (win/linux) toggles open
 //   - Esc closes
-//   - Scope chips: 所有 / 訊息 / 用戶 / 設定 / 跳轉
+//   - Scope chips: 所有 / 訊息 / 用戶 / 設定 / 跳轉 / 主題包 / 快速動作
 //   - Tab cycles scope, ↑↓ navigates results, Enter selects
-//   - Results: routes (jump), settings (jump + scroll), messages (history), users (fingerprints)
+//   - Results: routes (jump), settings (jump + scroll), messages (history),
+//     users (fingerprints), themes (POST /admin/themes/active),
+//     actions (predefined client-side mutations e.g. /effects/reload)
 //
 // Mounts independently — talks to admin.js only via location.hash for routes.
 (function () {
@@ -68,6 +70,84 @@
     { id: "users",    label: "用戶" },
     { id: "settings", label: "設定" },
     { id: "routes",   label: "跳轉" },
+    { id: "themes",   label: "主題包" },
+    { id: "actions",  label: "快速動作" },
+  ];
+
+  // Predefined quick-action corpus — no fetch needed. Each entry's `action`
+  // is invoked on Enter; the palette closes immediately after dispatch.
+  function _csrf() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return (meta && meta.content) || "";
+  }
+  function _csrfFetch(url, opts) {
+    if (typeof window.csrfFetch === "function") return window.csrfFetch(url, opts);
+    const o = Object.assign({ credentials: "same-origin" }, opts || {});
+    const headers = new Headers((opts && opts.headers) || {});
+    headers.set("X-CSRF-Token", _csrf());
+    o.headers = headers;
+    return fetch(url, o);
+  }
+  function _toast(msg, ok) {
+    if (typeof window.showToast === "function") {
+      window.showToast(msg, ok !== false);
+    } else {
+      console.log("[cmdk]", msg);
+    }
+  }
+  const ACTIONS = [
+    {
+      id: "restart-effects",
+      label: "重新載入特效",
+      sub: "POST /effects/reload",
+      action: () => _csrfFetch("/effects/reload", { method: "POST" })
+        .then((r) => _toast(r.ok ? "特效已重新載入" : "重載失敗", r.ok))
+        .catch(() => _toast("重載失敗", false)),
+    },
+    {
+      id: "end-broadcast",
+      label: "結束廣播",
+      sub: "切到 STANDBY 模式",
+      action: () => _csrfFetch("/admin/broadcast/toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "standby" }),
+      })
+        .then((r) => _toast(r.ok ? "已切換為 STANDBY" : "切換失敗", r.ok))
+        .catch(() => _toast("切換失敗", false)),
+    },
+    {
+      id: "reset-poll",
+      label: "重置投票",
+      sub: "POST /admin/poll/reset",
+      action: () => _csrfFetch("/admin/poll/reset", { method: "POST" })
+        .then((r) => _toast(r.ok ? "投票已重置" : "重置失敗", r.ok))
+        .catch(() => _toast("重置失敗", false)),
+    },
+    {
+      id: "clear-history",
+      label: "清空訊息歷史",
+      sub: "POST /admin/history/clear · 危險",
+      action: () => {
+        if (!confirm("確定清空所有訊息歷史？此操作無法復原。")) return;
+        return _csrfFetch("/admin/history/clear", { method: "POST" })
+          .then((r) => _toast(r.ok ? "訊息歷史已清空" : "清空失敗", r.ok))
+          .catch(() => _toast("清空失敗", false));
+      },
+    },
+    {
+      id: "logout",
+      label: "登出",
+      sub: "POST /logout",
+      action: () => fetch("/logout", { method: "POST", credentials: "same-origin" })
+        .finally(() => location.reload()),
+    },
+    {
+      id: "reload-page",
+      label: "重新整理頁面",
+      sub: "Cmd+R",
+      action: () => location.reload(),
+    },
   ];
 
   let _root = null;
@@ -78,10 +158,11 @@
   let _query = "";
   let _items = [];
   let _activeIdx = 0;
-  // Caches for messages (history) and users (fingerprints) so search is
-  // client-side fuzzy filtering — endpoints don't accept `q`.
+  // Caches for messages (history), users (fingerprints) and themes so search
+  // is client-side fuzzy filtering — endpoints don't accept `q`.
   let _msgCache = null;     // { at, records }
   let _userCache = null;    // { at, records }
+  let _themeCache = null;   // { at, records, active }
   const CACHE_TTL_MS = 15000;
 
   function _esc(s) {
@@ -117,7 +198,7 @@
       <div class="admin-cmdk-panel" role="dialog" aria-modal="true" aria-label="Command palette">
         <div class="admin-cmdk-search">
           <span class="admin-cmdk-search-icon" aria-hidden="true">⌕</span>
-          <input type="text" class="admin-cmdk-input" placeholder="搜尋訊息 · 用戶 · 設定 · 跳轉..." autocomplete="off" spellcheck="false" />
+          <input type="text" class="admin-cmdk-input" placeholder="搜尋訊息 · 用戶 · 設定 · 跳轉 · 主題 · 動作..." autocomplete="off" spellcheck="false" />
           <span class="admin-cmdk-prompt">⌘K</span>
         </div>
         <div class="admin-cmdk-scope" role="tablist">
@@ -227,6 +308,30 @@
         if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 80);
       close();
+    } else if (item.type === "theme") {
+      // Activate the theme via existing /admin/themes/active endpoint.
+      _csrfFetch("/admin/themes/active", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: item.id }),
+      })
+        .then((r) => {
+          if (r.ok) {
+            _toast(`主題「${item.label}」已套用`, true);
+            // Invalidate cache so the active flag refreshes next open.
+            _themeCache = null;
+          } else {
+            _toast("套用主題失敗", false);
+          }
+        })
+        .catch(() => _toast("套用主題失敗", false));
+      close();
+    } else if (item.type === "action") {
+      try {
+        const ret = item.action && item.action();
+        if (ret && typeof ret.then === "function") ret.catch(() => {});
+      } catch (_) { /* keep palette resilient */ }
+      close();
     }
   }
 
@@ -274,6 +379,37 @@
     }).filter((x) => x.score >= 0);
   }
 
+  function _scoreThemes(q) {
+    if (!_themeCache) return [];
+    const records = _themeCache.records || [];
+    const active = _themeCache.active || "";
+    return records.map((t) => {
+      const label = t.label || t.display_name || t.name || "";
+      const desc = t.description || "套用此主題";
+      const isActive = t.name === active;
+      return {
+        type: "theme",
+        id: t.name,
+        label: isActive ? `${label}  ✓ 使用中` : label,
+        sub: desc,
+        icon: "🎨",
+        score: Math.max(_fuzzyScore(label, q), _fuzzyScore(t.name || "", q), _fuzzyScore(desc, q)),
+      };
+    }).filter((x) => x.score >= 0);
+  }
+
+  function _scoreActions(q) {
+    return ACTIONS.map((a) => ({
+      type: "action",
+      id: a.id,
+      label: a.label,
+      sub: a.sub,
+      icon: "⚡",
+      action: a.action,
+      score: Math.max(_fuzzyScore(a.label, q), _fuzzyScore(a.id, q), _fuzzyScore(a.sub, q)),
+    })).filter((x) => x.score >= 0);
+  }
+
   function _scoreUsers(q) {
     if (!_userCache) return [];
     const records = _userCache.records || [];
@@ -310,6 +446,20 @@
           .catch(() => { _userCache = { at: now, records: [] }; }));
       }
     }
+    if (_scope === "themes" || _scope === "all") {
+      if (!_themeCache || now - _themeCache.at > CACHE_TTL_MS) {
+        tasks.push(fetch("/admin/themes", { credentials: "same-origin" })
+          .then((r) => r.ok ? r.json() : null)
+          .then((d) => {
+            _themeCache = {
+              at: now,
+              records: (d && d.themes) || [],
+              active: (d && d.active) || "",
+            };
+          })
+          .catch(() => { _themeCache = { at: now, records: [], active: "" }; }));
+      }
+    }
     if (tasks.length) await Promise.all(tasks);
   }
 
@@ -323,8 +473,17 @@
       settings: _scoreSettings(q),
       messages: _scoreMessages(q),
       users:    _scoreUsers(q),
+      themes:   _scoreThemes(q),
+      actions:  _scoreActions(q),
     };
-    const all = [].concat(byScope.routes, byScope.settings, byScope.messages, byScope.users);
+    const all = [].concat(
+      byScope.routes,
+      byScope.settings,
+      byScope.messages,
+      byScope.users,
+      byScope.themes,
+      byScope.actions,
+    );
     let pool;
     if (_scope === "all") pool = all;
     else if (byScope[_scope]) pool = byScope[_scope];
@@ -340,6 +499,8 @@
       settings: byScope.settings.length,
       messages: byScope.messages.length,
       users: byScope.users.length,
+      themes: byScope.themes.length,
+      actions: byScope.actions.length,
     });
   }
 
@@ -354,7 +515,14 @@
   // Per-result icon chip glyph by item type. Falls back to the row's own
   // ``item.icon`` when present (settings/messages/users set their own).
   function _iconFor(item) {
-    return item.icon || ({ route: "◇", setting: "⚙", message: "💬", user: "👤" }[item.type] || "·");
+    return item.icon || ({
+      route: "◇",
+      setting: "⚙",
+      message: "💬",
+      user: "👤",
+      theme: "🎨",
+      action: "⚡",
+    }[item.type] || "·");
   }
 
   function _renderList() {

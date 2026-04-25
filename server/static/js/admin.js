@@ -3439,33 +3439,25 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       renderEffectiveRates();
 
-      // Sparkline · prefer real /admin/metrics.rate_limits.<k>.history; fall
-      // back to a deterministic synthetic series so the curve is stable per k.
-      function synthSeries(k, n) {
-        // simple PRNG seeded by k for reproducibility
-        let h = 0; for (let i = 0; i < k.length; i++) h = (h * 31 + k.charCodeAt(i)) | 0;
-        const out = [];
-        for (let i = 0; i < n; i++) {
-          h = (h * 1103515245 + 12345) | 0;
-          const x = ((h >>> 0) % 1000) / 1000;
-          out.push(8 + Math.sin(i / 2 + h % 7) * 6 + x * 14);
-        }
-        return out;
-      }
+      // Sparkline · pulls the real 24h hourly bucket history from
+      // /admin/metrics.rate_limits.<k>.bucket_history (24 ints, zero-padded).
+      // Falls back to a flat zero series until the first metrics fetch lands
+      // so we never render synthetic noise that would mislead operators.
       function renderSparkline(svgEl, series) {
-        if (!svgEl || !Array.isArray(series) || series.length === 0) return;
+        if (!svgEl || !Array.isArray(series)) return;
         const W = 96, H = 24;
-        const max = Math.max(1, ...series);
-        const step = W / Math.max(1, series.length - 1);
-        const pts = series.map((v, i) => `${(i * step).toFixed(1)},${(H - 2 - (v / max) * (H - 4)).toFixed(1)}`).join(" ");
+        const arr = series.length ? series : new Array(24).fill(0);
+        const max = Math.max(1, ...arr);
+        const step = W / Math.max(1, arr.length - 1);
+        const pts = arr.map((v, i) => `${(i * step).toFixed(1)},${(H - 2 - (v / max) * (H - 4)).toFixed(1)}`).join(" ");
         const line = svgEl.querySelector("polyline");
         if (line) line.setAttribute("points", pts);
       }
+      // Initial render: flat baseline. Upgraded by the metrics fetch below.
       ["fire", "api", "admin", "login"].forEach((k) => {
         const svg = section.querySelector(`[data-rl-spark="${k}"]`);
-        if (svg) renderSparkline(svg, synthSeries(k, 24));
+        if (svg) renderSparkline(svg, new Array(24).fill(0));
       });
-      // Try to upgrade to real metrics history if backend exposes it.
       setTimeout(async () => {
         try {
           const r = await fetch("/admin/metrics", { credentials: "same-origin" });
@@ -3474,7 +3466,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const rl = m && m.rate_limits;
           if (!rl) return;
           ["fire", "api", "admin", "login"].forEach((k) => {
-            const hist = rl[k] && (rl[k].history || rl[k].hits_24h);
+            const hist = rl[k] && (rl[k].bucket_history || rl[k].history);
             if (Array.isArray(hist) && hist.length) {
               const svg = section.querySelector(`[data-rl-spark="${k}"]`);
               if (svg) renderSparkline(svg, hist.slice(-24));
@@ -3657,7 +3649,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const el = document.querySelector("[data-telem-bars]");
       if (!el) return;
       const status = document.querySelector("[data-telem-status]");
-      const THRESHOLDS = { cpu: 100, mem: 100, ws: 100, rate: 50 };
+      // MEM threshold is in MB (sidebar shows e.g. "MEM 218 MB"); 1 GB used
+      // marks the warn line. CPU is percent, WS is connections, RATE is req/s.
+      const THRESHOLDS = { cpu: 100, mem: 1024, ws: 100, rate: 50 };
 
       function _set(metric, pct, valueText, healthy) {
         const fill = el.querySelector(`[data-telem-fill="${metric}"]`);
@@ -3674,23 +3668,24 @@ document.addEventListener("DOMContentLoaded", () => {
           const r = await fetch("/admin/metrics", { credentials: "same-origin" });
           if (!r.ok) return;
           const m = await r.json();
-          const cpuArr  = m.cpu_series  || [];
-          const memArr  = m.mem_series  || [];
-          const wsArr   = m.ws_series   || [];
-          const rateArr = m.rate_series || [];
+          const cpuArr   = m.cpu_series    || [];
+          const memArr   = m.mem_series    || [];
+          const memMbArr = m.mem_mb_series || [];
+          const wsArr    = m.ws_series     || [];
+          const rateArr  = m.rate_series   || [];
           const last = (a) => a.length ? a[a.length - 1] : 0;
-          // psutil reports MEM as percent — convert to MB display via /proc-style
-          // approximation when possible. Telemetry only stores the percentage,
-          // so render percent for MEM too. (Avoids needing a new endpoint.)
           const cpuPct  = Number(last(cpuArr) || 0);
+          // Sidebar MEM shows used MB (matches admin-pages.jsx prototype "MEM 218 MB").
+          // Fall back to 0 when telemetry hasn't sampled yet; warn at >=1 GB used.
+          const memMb   = Number(last(memMbArr) || 0);
           const memPct  = Number(last(memArr) || 0);
           const wsCount = Number(last(wsArr)  || (m.ws_clients || 0));
           // rate_series accumulates per-minute; convert to per-second for the
           // sidebar so the threshold bar matches the user mental model.
           const ratePerSec = Number(last(rateArr) || 0) / 60;
 
-          _set("cpu",  (cpuPct  / THRESHOLDS.cpu)  * 100, `${cpuPct.toFixed(0)}%`,    cpuPct  < 90);
-          _set("mem",  (memPct  / THRESHOLDS.mem)  * 100, `${memPct.toFixed(0)}%`,    memPct  < 90);
+          _set("cpu",  (cpuPct / THRESHOLDS.cpu) * 100, `${cpuPct.toFixed(0)}%`,    cpuPct  < 90);
+          _set("mem",  (memMb  / THRESHOLDS.mem) * 100, `${Math.round(memMb)} MB`,  memMb < THRESHOLDS.mem);
           _set("ws",   (wsCount / THRESHOLDS.ws)   * 100, String(wsCount),            wsCount < 100);
           _set("rate", (ratePerSec / THRESHOLDS.rate) * 100, `${ratePerSec.toFixed(1)}/s`, ratePerSec < 40);
 
