@@ -8,17 +8,11 @@
  *   2) END BROADCAST (right): confirmation-code input + crimson primary button
  *      (disabled until code matches), then a 2-column LIVE vs STANDBY legend.
  *
- * No backend `/admin/broadcast/toggle` exists, so v1 ships client-side only:
- *   - Toggle flips a localStorage flag (`danmu.broadcast.v1`) and dispatches a
- *     `danmu-broadcast-changed` window event so the topbar chip can listen.
- *   - Uptime is counted from a `started_at` ms timestamp persisted on first
- *     LIVE entry; reset to now when transitioning STANDBY → LIVE.
- *   - Connection count comes from /admin/metrics.ws_clients (poll every 10s).
- *   - Message count comes from /admin/history?hours=24&limit=1 stats.total
- *     (poll every 30s).
- *   - Confirmation code is a random 4-digit token regenerated each time the
- *     END BROADCAST card is shown; user must type it exactly to enable the
- *     END button. Action just flips localStorage + reloads (no backend).
+ * v5.0.0+: backend is now source of truth (server/services/broadcast.py +
+ * server/routes/admin/broadcast.py). Toggle posts to /admin/broadcast/toggle;
+ * UI polls /admin/broadcast/status every 2s and reflects the server state.
+ * "ENDED" is still a UI-only mode (we just shove it into local state and tell
+ * the user to refresh) — the server only knows live/standby right now.
  *
  * Section id is intentionally NOT prefixed `sec-` so admin.js router's
  * [id^="sec-"] visibility sweep leaves it alone — this module manages its
@@ -28,26 +22,67 @@
   "use strict";
 
   const PAGE_ID = "admin-broadcast-v2-page";
-  const STATE_KEY = "danmu.broadcast.v1";
+  const STATUS_URL = "/admin/broadcast/status";
+  const TOGGLE_URL = "/admin/broadcast/toggle";
 
-  function readState() {
-    try {
-      const raw = localStorage.getItem(STATE_KEY);
-      if (!raw) return { mode: "live", started_at: Date.now() };
-      const parsed = JSON.parse(raw);
-      if (parsed && (parsed.mode === "live" || parsed.mode === "standby" || parsed.mode === "ended")) {
-        if (typeof parsed.started_at !== "number") parsed.started_at = Date.now();
-        return parsed;
-      }
-    } catch (_) {}
-    return { mode: "live", started_at: Date.now() };
-  }
+  // Local cache of last server state — updated via poll.
+  let _serverState = { mode: "live", started_at: null, total_messages: 0, queue_size: 0 };
+  // UI-only "ended" overlay. Cleared on next status fetch that returns live/standby.
+  let _endedLocally = false;
 
-  function writeState(s) {
-    try { localStorage.setItem(STATE_KEY, JSON.stringify(s)); } catch (_) {}
+  function dispatchBroadcastChanged(s) {
     try {
       window.dispatchEvent(new CustomEvent("danmu-broadcast-changed", { detail: s }));
     } catch (_) {}
+  }
+
+  function readState() {
+    if (_endedLocally) {
+      return { mode: "ended", started_at: _serverState.started_at };
+    }
+    return {
+      mode: _serverState.mode,
+      // Server ships unix-seconds; convert to ms for fmtDuration math.
+      started_at: typeof _serverState.started_at === "number"
+        ? _serverState.started_at * 1000
+        : null,
+    };
+  }
+
+  async function fetchStatus() {
+    try {
+      const r = await fetch(STATUS_URL, { credentials: "same-origin" });
+      if (!r.ok) return;
+      const data = await r.json();
+      if (data && (data.mode === "live" || data.mode === "standby")) {
+        _serverState = data;
+        // If server said live/standby, any client-only "ended" overlay is stale.
+        if (_endedLocally && data.mode !== "ended") _endedLocally = false;
+        dispatchBroadcastChanged(readState());
+      }
+    } catch (_) {}
+  }
+
+  async function postToggle(nextMode) {
+    try {
+      const r = await window.csrfFetch(TOGGLE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: nextMode }),
+      });
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        throw new Error(body && body.error ? body.error : `HTTP ${r.status}`);
+      }
+      const data = await r.json();
+      _serverState = data;
+      dispatchBroadcastChanged(readState());
+      return true;
+    } catch (e) {
+      console.warn("[admin-broadcast] toggle failed:", e);
+      window.showToast && window.showToast("切換失敗 · " + (e && e.message || ""), false);
+      return false;
+    }
   }
 
   function fmtDuration(ms) {
@@ -158,9 +193,8 @@
   // ---- live numbers (ws_clients + total messages) -----------------------
 
   let _wsClients = 0;
-  let _totalMessages = 0;
   let _metricsTimer = 0;
-  let _historyTimer = 0;
+  let _statusTimer = 0;
   let _tickTimer = 0;
 
   async function refreshMetrics() {
@@ -169,15 +203,6 @@
       if (!r.ok) return;
       const m = await r.json();
       _wsClients = m.ws_clients || 0;
-    } catch (_) {}
-  }
-
-  async function refreshHistory() {
-    try {
-      const r = await fetch("/admin/history?hours=24&limit=1", { credentials: "same-origin" });
-      if (!r.ok) return;
-      const h = await r.json();
-      _totalMessages = (h && h.stats && (h.stats.total || h.stats.last_24h)) || 0;
     } catch (_) {}
   }
 
@@ -193,29 +218,32 @@
     if (!meta || !title || !strip || !dot || !toggle) return;
 
     const isLive = state.mode === "live";
-    const elapsed = isLive ? Date.now() - (state.started_at || Date.now()) : 0;
+    const elapsed = isLive && state.started_at ? Date.now() - state.started_at : 0;
     title.textContent = isLive ? "LIVE · 廣播中" : (state.mode === "standby" ? "STANDBY · 已暫停" : "ENDED · 已結束");
-    meta.textContent = `${fmtDuration(elapsed)} ${isLive ? "進行中" : (state.mode === "standby" ? "暫停中" : "已結束")} · ${_wsClients.toLocaleString()} 連線 · ${_totalMessages.toLocaleString()} 則訊息`;
+    const totalMsgs = (_serverState && _serverState.total_messages) || 0;
+    const queued = (_serverState && _serverState.queue_size) || 0;
+    const tail = state.mode === "standby" && queued > 0
+      ? ` · queue ${queued.toLocaleString()}`
+      : "";
+    meta.textContent = `${fmtDuration(elapsed)} ${isLive ? "進行中" : (state.mode === "standby" ? "暫停中" : "已結束")} · ${_wsClients.toLocaleString()} 連線 · ${totalMsgs.toLocaleString()} 則訊息${tail}`;
     strip.dataset.mode = state.mode;
     dot.dataset.mode = state.mode;
     toggle.textContent = isLive ? "⏸ 切到 STANDBY" : "▶ 切回 LIVE";
     toggle.dataset.bcMode = state.mode;
   }
 
-  function onToggleClick() {
+  async function onToggleClick() {
     const state = readState();
     if (state.mode === "ended") {
       window.showToast && showToast("廣播已結束 · 請重新整理頁面", false);
       return;
     }
     const next = state.mode === "live" ? "standby" : "live";
-    const newState = {
-      mode: next,
-      started_at: next === "live" ? Date.now() : state.started_at,
-    };
-    writeState(newState);
-    window.showToast && showToast(next === "live" ? "已切回 LIVE" : "已切到 STANDBY", true);
-    renderTick();
+    const ok = await postToggle(next);
+    if (ok) {
+      window.showToast && showToast(next === "live" ? "已切回 LIVE · queue 將排空" : "已切到 STANDBY", true);
+      renderTick();
+    }
   }
 
   function onConfirmInput(e) {

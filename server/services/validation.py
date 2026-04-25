@@ -153,8 +153,17 @@ class PollSessionCreateSchema(Schema):
         unknown = EXCLUDE
 
 
+_ALLOWLIST_KEYS = {"Color", "FontFamily", "Layout"}
+
+
 class SettingUpdateSchema(Schema):
-    """設定更新請求驗證"""
+    """設定更新請求驗證
+
+    v5.0.0+: when ``index == 1`` and ``type`` is a pick-set key
+    (Color / FontFamily / Layout), ``value`` may be a list of preset string
+    values (the allowlist). Numeric scalars are still accepted everywhere
+    else for back-compat with the v4 viewer/admin shape.
+    """
 
     type = fields.Str(
         required=True,
@@ -176,6 +185,39 @@ class SettingUpdateSchema(Schema):
             raise ValidationError("Value must be JSON-serializable.")
         if len(serialized) > 4096:
             raise ValidationError("Value exceeds maximum allowed size.")
+
+    @validates_schema
+    def _validate_allowlist_shape(self, data, **kwargs):
+        """If value is a list, the only legal slot is allowlist for pick-set keys."""
+        value = data.get("value")
+        if not isinstance(value, list):
+            return
+        key = data.get("type")
+        index = data.get("index")
+        if index != 1 or key not in _ALLOWLIST_KEYS:
+            raise ValidationError(
+                {"value": "List value only allowed at index=1 for pick-set keys"}
+            )
+        if len(value) > 64:
+            raise ValidationError({"value": "Allowlist entries exceed maximum count (64)"})
+        for item in value:
+            if not isinstance(item, (str, int, float)):
+                raise ValidationError({"value": "Allowlist entries must be strings"})
+            if isinstance(item, str) and len(item) > 100:
+                raise ValidationError({"value": "Allowlist entry too long (>100 chars)"})
+
+
+class AllowlistUpdateSchema(Schema):
+    """Dedicated allowlist endpoint payload — POST /admin/options/<key>/allowlist."""
+
+    class Meta:
+        unknown = EXCLUDE
+
+    allowlist = fields.List(
+        fields.Str(validate=validate.Length(min=1, max=100)),
+        required=True,
+        validate=validate.Length(max=64),
+    )
 
 
 class ToggleSettingSchema(Schema):

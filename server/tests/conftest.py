@@ -52,6 +52,32 @@ def _isolate_webhook_store(tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def _isolate_broadcast(tmp_path):
+    """Per-test broadcast state file isolation; default LIVE.
+
+    v5.0.0+: ``messaging.forward_to_ws_server`` consults
+    ``broadcast.is_live()`` and parks danmu in standby. Tests that don't
+    care about broadcast state need a clean LIVE seed each time so /fire
+    behaves as v4.x did.
+    """
+    from server.services import broadcast as broadcast_mod
+
+    original_state = broadcast_mod._STATE_FILE
+    original_queue = broadcast_mod._QUEUE_FILE
+    broadcast_mod._STATE_FILE = tmp_path / "broadcast.json"
+    broadcast_mod._QUEUE_FILE = tmp_path / "broadcast_queue.json"
+    broadcast_mod.reset_for_tests()
+    # Force seed as LIVE so /fire isn't gated by default.
+    broadcast_mod.set_mode("live")
+    try:
+        yield
+    finally:
+        broadcast_mod._STATE_FILE = original_state
+        broadcast_mod._QUEUE_FILE = original_queue
+        broadcast_mod.reset_for_tests()
+
+
+@pytest.fixture(autouse=True)
 def _isolate_ws_auth(tmp_path, request):
     """Isolate ws_auth runtime file per test to avoid cross-test pollution.
 

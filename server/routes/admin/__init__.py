@@ -50,6 +50,7 @@ def _ensure_logged_in():
 from . import (  # noqa: E402, F401
     blacklist,
     bootstrap,
+    broadcast,
     dashboard,
     effects,
     emojis,

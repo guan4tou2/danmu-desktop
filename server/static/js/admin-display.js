@@ -80,7 +80,35 @@
     fonts: [],
     metricsTimer: null,
     viewerCount: 0,
+    // key → Set<string> of admin-toggled allowlist entries (mirrors options[key][1]).
+    // null = not in edit mode for this row.
+    allowlistEdit: {},
   };
+
+  const PICK_SET_KEYS = ["Color", "FontFamily", "Layout"];
+
+  function isAllowlistKey(key) { return PICK_SET_KEYS.indexOf(key) !== -1; }
+
+  function readAllowlist(key) {
+    const opt = _state.options && _state.options[key];
+    const slot1 = opt && opt[1];
+    return Array.isArray(slot1) ? slot1.slice() : [];
+  }
+
+  function presetValuesFor(key) {
+    if (key === "Color") return COLOR_PRESETS.map((c) => c.replace(/^#/, "").toUpperCase());
+    if (key === "Layout") return LAYOUT_PRESETS.map((l) => l.value);
+    if (key === "FontFamily") {
+      const fonts = _state.fonts && _state.fonts.length ? _state.fonts : ["NotoSansTC", "Inter"];
+      return fonts.map((f) => (typeof f === "string" ? f : (f.name || f.family || ""))).filter(Boolean);
+    }
+    return [];
+  }
+
+  function normalizeAllowValue(key, value) {
+    if (key === "Color") return String(value || "").replace(/^#/, "").toUpperCase();
+    return String(value || "");
+  }
 
   // ─── HTML shell ─────────────────────────────────────────────────────
 
@@ -219,19 +247,38 @@
 
     if (row.key === "Color") {
       const cur = "#" + String(def || "FFFFFF").replace(/^#/, "").toUpperCase();
+      const editing = !!_state.allowlistEdit.Color;
+      const allowSet = editing
+        ? _state.allowlistEdit.Color
+        : new Set(readAllowlist("Color").map((v) => normalizeAllowValue("Color", v)));
+      const allowAll = !editing && allowSet.size === 0;
       return `
         <div class="admin-dsp2-swatches">
           ${COLOR_PRESETS.map((c) => {
+            const code = c.replace(/^#/, "").toUpperCase();
             const on = c.toUpperCase() === cur;
-            return `<button type="button" class="admin-dsp2-swatch ${on ? "is-active" : ""}"
-              data-chip-key="Color" data-chip-value="${c.replace(/^#/, "").toUpperCase()}"
-              style="background:${c}" aria-label="${c}"></button>`;
+            const inAllow = editing ? allowSet.has(code) : (allowAll || allowSet.has(code));
+            const cls = [
+              "admin-dsp2-swatch",
+              on ? "is-active" : "",
+              editing ? "is-editing" : "",
+              !inAllow ? "is-blocked" : "",
+            ].filter(Boolean).join(" ");
+            const dataAttrs = editing
+              ? `data-allow-key="Color" data-allow-value="${code}"`
+              : `data-chip-key="Color" data-chip-value="${code}"`;
+            return `<button type="button" class="${cls}" ${dataAttrs}
+              style="background:${c}" aria-label="${c}" aria-pressed="${inAllow ? "true" : "false"}">
+              ${editing ? `<span class="admin-dsp2-allow-mark">${inAllow ? "✓" : ""}</span>` : ""}
+            </button>`;
           }).join("")}
           <label class="admin-dsp2-swatch-custom" title="${escapeHtml(t("specificColor", "自訂顏色"))}">
             <input type="color" data-num-key="Color" data-num-index="3"
               value="${escapeHtml(cur)}" />
           </label>
-        </div>`;
+        </div>
+        ${allowlistControlsHtml(row)}
+      `;
     }
 
     if (row.key === "FontFamily") {
@@ -241,31 +288,96 @@
         return { value: v, label: l };
       }).filter((c) => c.value);
       const cur = String(def || "");
+      const editing = !!_state.allowlistEdit.FontFamily;
+      const allowSet = editing
+        ? _state.allowlistEdit.FontFamily
+        : new Set(readAllowlist("FontFamily").map((v) => normalizeAllowValue("FontFamily", v)));
+      const allowAll = !editing && allowSet.size === 0;
       return `
         <div class="admin-dsp2-chiprow admin-dsp2-chiprow-wrap">
           ${fonts.map((f) => {
             const on = f.value === cur;
-            return `<button type="button" class="admin-dsp2-tchip ${on ? "is-active" : ""}"
-              data-chip-key="FontFamily" data-chip-value="${escapeHtml(f.value)}">${escapeHtml(f.label)}</button>`;
+            const inAllow = editing ? allowSet.has(f.value) : (allowAll || allowSet.has(f.value));
+            const cls = [
+              "admin-dsp2-tchip",
+              on ? "is-active" : "",
+              editing ? "is-editing" : "",
+              !inAllow ? "is-blocked" : "",
+            ].filter(Boolean).join(" ");
+            const dataAttrs = editing
+              ? `data-allow-key="FontFamily" data-allow-value="${escapeHtml(f.value)}"`
+              : `data-chip-key="FontFamily" data-chip-value="${escapeHtml(f.value)}"`;
+            return `<button type="button" class="${cls}" ${dataAttrs}
+              aria-pressed="${inAllow ? "true" : "false"}">
+              ${editing ? `<span class="admin-dsp2-allow-mark">${inAllow ? "✓ " : ""}</span>` : ""}${escapeHtml(f.label)}
+            </button>`;
           }).join("")}
-        </div>`;
+        </div>
+        ${allowlistControlsHtml(row)}
+      `;
     }
 
     if (row.key === "Layout") {
       const cur = String(def || "scroll");
+      const editing = !!_state.allowlistEdit.Layout;
+      const allowSet = editing
+        ? _state.allowlistEdit.Layout
+        : new Set(readAllowlist("Layout").map((v) => normalizeAllowValue("Layout", v)));
+      const allowAll = !editing && allowSet.size === 0;
       return `
         <div class="admin-dsp2-tiles">
           ${LAYOUT_PRESETS.map((l) => {
             const on = l.value === cur;
-            return `<button type="button" class="admin-dsp2-tile ${on ? "is-active" : ""}"
-              data-chip-key="Layout" data-chip-value="${l.value}">
+            const inAllow = editing ? allowSet.has(l.value) : (allowAll || allowSet.has(l.value));
+            const cls = [
+              "admin-dsp2-tile",
+              on ? "is-active" : "",
+              editing ? "is-editing" : "",
+              !inAllow ? "is-blocked" : "",
+            ].filter(Boolean).join(" ");
+            const dataAttrs = editing
+              ? `data-allow-key="Layout" data-allow-value="${l.value}"`
+              : `data-chip-key="Layout" data-chip-value="${l.value}"`;
+            return `<button type="button" class="${cls}" ${dataAttrs}
+              aria-pressed="${inAllow ? "true" : "false"}">
               <span class="admin-dsp2-tile-icon">${l.icon}</span>
               <span class="admin-dsp2-tile-label">${l.label}</span>
+              ${editing ? `<span class="admin-dsp2-allow-mark">${inAllow ? "✓" : ""}</span>` : ""}
             </button>`;
           }).join("")}
-        </div>`;
+        </div>
+        ${allowlistControlsHtml(row)}
+      `;
     }
     return "";
+  }
+
+  function allowlistControlsHtml(row) {
+    if (!isAllowlistKey(row.key)) return "";
+    const editing = !!_state.allowlistEdit[row.key];
+    const list = readAllowlist(row.key);
+    const total = presetValuesFor(row.key).length || 0;
+    const summary = list.length > 0
+      ? `允許 ${list.length} / ${total} ${labelForKey(row.key)}`
+      : `允許全部 (${total})`;
+    return `
+      <div class="admin-dsp2-allow-controls" data-allow-controls="${row.key}">
+        <span class="admin-dsp2-allow-summary" data-allow-summary="${row.key}">${escapeHtml(summary)}</span>
+        ${editing ? `
+          <button type="button" class="admin-dsp2-allow-btn is-apply" data-allow-action="apply" data-allow-key="${row.key}">套用</button>
+          <button type="button" class="admin-dsp2-allow-btn is-cancel" data-allow-action="cancel" data-allow-key="${row.key}">取消</button>
+          <button type="button" class="admin-dsp2-allow-btn is-clear" data-allow-action="clear" data-allow-key="${row.key}">允許全部</button>
+        ` : `
+          <button type="button" class="admin-dsp2-allow-btn" data-allow-action="edit" data-allow-key="${row.key}" title="編輯允許清單">[編輯允許清單]</button>
+        `}
+      </div>`;
+  }
+
+  function labelForKey(key) {
+    if (key === "Color") return "顏色";
+    if (key === "FontFamily") return "字型";
+    if (key === "Layout") return "排版";
+    return "選項";
   }
 
   function rangeBandHtml(row, opt) {
@@ -476,6 +588,34 @@
     }
   }
 
+  async function postAllowlist(key, list) {
+    try {
+      const res = await window.csrfFetch(`/admin/options/${encodeURIComponent(key)}/allowlist`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ allowlist: list }),
+      });
+      if (!res.ok) throw new Error("allowlist " + res.status);
+      const body = await res.json().catch(() => ({}));
+      if (body && Array.isArray(body.option)) {
+        _state.options[key] = body.option;
+      } else if (Array.isArray(_state.options[key])) {
+        _state.options[key][1] = list.slice();
+      }
+      refreshRow(key);
+      renderPreview();
+      renderSummary();
+      const total = presetValuesFor(key).length || 0;
+      const msg = list.length > 0
+        ? `${key} 允許 ${list.length} / ${total}`
+        : `${key} 允許全部`;
+      window.showToast && window.showToast(msg, true);
+    } catch (e) {
+      console.warn("[admin-display] allowlist failed:", e);
+      window.showToast && window.showToast(t("updateFailed", "更新失敗"), false);
+    }
+  }
+
   // Re-render only the value-badge / picker chip-active state for one row.
   function refreshRow(key) {
     const row = document.querySelector(`[data-row-key="${key}"]`);
@@ -486,6 +626,16 @@
     const def = opt[3];
     const badge = row.querySelector("[data-value-badge]");
     if (badge) badge.textContent = meta.fmt ? meta.fmt(def) : (def != null ? String(def) : "—");
+
+    // For pick-set keys, re-render the picker entirely so the allowlist
+    // edit-mode chips / [編輯] / [套用] controls stay in sync. The slider
+    // path below skips this branch (uses class toggles to avoid stealing
+    // focus from <input type="number">).
+    if (isAllowlistKey(key)) {
+      const pickerHost = row.querySelector("[data-picker-host]");
+      if (pickerHost) pickerHost.innerHTML = pickerHtml(meta, opt);
+      return;
+    }
 
     // Sync chip active states (FontSize / Color / FontFamily / Layout)
     if (key === "FontSize" || key === "Color" || key === "FontFamily" || key === "Layout") {
@@ -641,6 +791,65 @@
         postToggle(key, !cur);
         return;
       }
+
+      // Allowlist edit-mode action buttons (edit / apply / cancel / clear).
+      const allowBtn = e.target.closest("[data-allow-action]");
+      if (allowBtn) {
+        const action = allowBtn.getAttribute("data-allow-action");
+        const key = allowBtn.getAttribute("data-allow-key");
+        if (!key) return;
+        if (action === "edit") {
+          // Seed edit set from current persisted allowlist (or all-on if empty).
+          const cur = readAllowlist(key).map((v) => normalizeAllowValue(key, v));
+          if (cur.length) {
+            _state.allowlistEdit[key] = new Set(cur);
+          } else {
+            _state.allowlistEdit[key] = new Set(presetValuesFor(key));
+          }
+          refreshRow(key);
+          return;
+        }
+        if (action === "cancel") {
+          delete _state.allowlistEdit[key];
+          refreshRow(key);
+          return;
+        }
+        if (action === "clear") {
+          _state.allowlistEdit[key] = new Set();
+          // "Clear" semantically means "allow all" → POST empty list.
+          postAllowlist(key, []);
+          delete _state.allowlistEdit[key];
+          return;
+        }
+        if (action === "apply") {
+          const set = _state.allowlistEdit[key] || new Set();
+          // If admin checked everything, send empty list (= allow all) to keep
+          // the persisted form minimal and forward-compatible.
+          const presets = presetValuesFor(key);
+          const list = Array.from(set);
+          const allChecked = presets.length > 0 && list.length === presets.length
+            && presets.every((v) => set.has(v));
+          postAllowlist(key, allChecked ? [] : list);
+          delete _state.allowlistEdit[key];
+          return;
+        }
+      }
+
+      // Per-chip allowlist toggle (only in edit mode).
+      const allowChip = e.target.closest("[data-allow-key][data-allow-value]");
+      if (allowChip) {
+        const key = allowChip.getAttribute("data-allow-key");
+        const val = allowChip.getAttribute("data-allow-value");
+        const set = _state.allowlistEdit[key];
+        if (set) {
+          const norm = normalizeAllowValue(key, val);
+          if (set.has(norm)) set.delete(norm);
+          else set.add(norm);
+          refreshRow(key);
+        }
+        return;
+      }
+
       const chip = e.target.closest("[data-chip-key]");
       if (chip) {
         const key = chip.getAttribute("data-chip-key");
