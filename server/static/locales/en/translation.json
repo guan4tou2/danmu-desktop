@@ -588,5 +588,17 @@
   "fingerprintCol_lastSeen": "Last Seen",
   "fingerprintState_active": "active",
   "fingerprintState_flagged": "flagged",
-  "fingerprintState_blocked": "blocked"
+  "fingerprintState_blocked": "blocked",
+  "offlineStatus": "DISCONNECTED",
+  "offlineMessage": "Event has not started, or the host is offline.",
+  "offlineHint": "Please wait and try again shortly.",
+  "offlineRetryUnit": "seconds",
+  "offlineReload": "Reload",
+  "offlineContactOps": "Contact organizer",
+  "loginAttemptsRemaining": "{n} attempts remaining",
+  "loginFailedGeneric": "Login failed. Please try again.",
+  "lockoutTitle": "LOCKED 5 MIN",
+  "lockoutRemaining": "time remaining",
+  "lockoutReason": "Too many failed sign-in attempts.",
+  "lockoutContactAdmin": "Contact administrator"
 }

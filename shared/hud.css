@@ -869,3 +869,286 @@
     animation-play-state: paused !important;
   }
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Edge-state screens — P2-1 Viewer Offline, P2-2 Overlay Connecting,
+ * P2-4 Admin Login Lockout. See docs/design-v2-backlog.md.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+/* P2-1 · Viewer Offline — card replaces .viewer-body content when WS fails.
+ * Dark card on a light (viewer-v2) theme; re-declare text tokens in-scope
+ * so the card stays legible regardless of the host page's theme. */
+.viewer-offline-card {
+  /* Re-assert dark-scope text tokens (tokens.css :root values) because
+   * body.viewer-body-v2 remaps these to light. */
+  --color-text-primary: #f1f5f9;
+  --color-text-bright: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  padding: 32px 24px;
+  background: #0f172a;
+  border: 1px solid var(--hud-line);
+  border-radius: 12px;
+  color: var(--color-text-primary);
+}
+
+.viewer-offline-lockup {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  color: var(--color-primary);
+  letter-spacing: 0.02em;
+  line-height: 1;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.viewer-offline-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(248, 113, 113, 0.08);
+  color: var(--color-error-light);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.viewer-offline-chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-error-light);
+  box-shadow: 0 0 8px var(--color-error-light);
+  animation: hud-pulse 2s ease-in-out infinite;
+}
+
+.viewer-offline-message {
+  margin: 0;
+  max-width: 32rem;
+  color: var(--color-text-bright);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.viewer-offline-message small {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+}
+
+.viewer-offline-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--hud-cyan-soft);
+  border: 1px solid var(--hud-cyan-line);
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.viewer-offline-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.viewer-offline-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: var(--color-primary);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+.viewer-offline-btn:hover { background: var(--color-primary-hover); }
+.viewer-offline-btn:active { transform: translateY(1px); }
+
+.viewer-offline-btn.is-secondary {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--hud-line-strong);
+}
+.viewer-offline-btn.is-secondary:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-primary);
+}
+
+/* P2-2 · Overlay Connecting — dim grid + CONNECTING label before first WS open */
+.overlay-connecting {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 18px;
+  background: radial-gradient(ellipse at 50% 40%, #0b1220 0%, #000 85%);
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  pointer-events: none;
+  transition: opacity 350ms ease;
+  opacity: 0;
+}
+.overlay-connecting.is-visible { display: flex; opacity: 1; }
+.overlay-connecting.is-fading { opacity: 0; }
+
+.overlay-connecting::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.2;
+  background-image:
+    linear-gradient(var(--hud-cyan-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hud-cyan-line) 1px, transparent 1px);
+  background-size: 40px 40px;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 40%, #000 0%, transparent 70%);
+          mask-image: radial-gradient(ellipse at 50% 40%, #000 0%, transparent 70%);
+}
+
+.overlay-connecting-label {
+  position: relative;
+  z-index: 1;
+  font-size: 20px;
+  letter-spacing: 4px;
+  color: var(--color-primary);
+  text-transform: uppercase;
+}
+
+.overlay-connecting-pulse {
+  position: relative;
+  z-index: 1;
+  font-size: 22px;
+  color: var(--color-primary);
+  animation: overlay-connecting-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes overlay-connecting-pulse {
+  0%, 100% { opacity: 0.25; transform: scale(0.92); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay-connecting-pulse { animation: none; opacity: 0.8; }
+}
+
+/* P2-4 · Admin Login Lockout — swapped card + countdown on 429 */
+.admin-lockout-card {
+  text-align: center;
+}
+
+.admin-lockout-card .admin-login-hero {
+  border-bottom: none;
+  padding-bottom: 8px;
+}
+
+.admin-lockout-title {
+  margin: 8px 0 0;
+  font-family: var(--font-mono);
+  font-size: 22px;
+  letter-spacing: 3px;
+  color: var(--color-error);
+  text-transform: uppercase;
+}
+
+.admin-lockout-body {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-lockout-countdown {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: var(--color-error);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-lockout-countdown-value {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.admin-lockout-countdown-unit {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--admin-text-dim);
+  text-transform: uppercase;
+}
+
+.admin-lockout-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--admin-text-dim);
+  text-transform: uppercase;
+}
+
+.admin-lockout-meta code {
+  color: var(--admin-text);
+  font-family: var(--font-mono);
+}
+
+.admin-lockout-contact {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.admin-lockout-contact:hover { color: var(--color-primary-hover); text-decoration: underline; }
+
+.admin-login-attempts {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--color-error);
+  text-align: center;
+  text-transform: uppercase;
+}
+.admin-login-attempts.is-warn {
+  color: var(--color-warning);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Stickers page (P1-4) — left pack sidebar + right upload/search/grid.
+ * Backend has no multi-pack concept yet so sidebar shows a single "ALL" pack.
+ * ────────────────────────────────────────────────────────────────────────── */

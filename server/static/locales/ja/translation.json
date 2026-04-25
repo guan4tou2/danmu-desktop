@@ -588,5 +588,17 @@
   "fingerprintCol_lastSeen": "最終観測",
   "fingerprintState_active": "アクティブ",
   "fingerprintState_flagged": "警告",
-  "fingerprintState_blocked": "ブロック"
+  "fingerprintState_blocked": "ブロック",
+  "offlineStatus": "切断されました",
+  "offlineMessage": "イベント未開始、または主催者がオフラインです。",
+  "offlineHint": "しばらくしてから再試行してください。",
+  "offlineRetryUnit": "秒後に再試行",
+  "offlineReload": "再読み込み",
+  "offlineContactOps": "主催者に連絡",
+  "loginAttemptsRemaining": "残り {n} 回",
+  "loginFailedGeneric": "ログイン失敗。もう一度お試しください。",
+  "lockoutTitle": "5 分ロック",
+  "lockoutRemaining": "残り時間",
+  "lockoutReason": "ログイン失敗が多すぎます。",
+  "lockoutContactAdmin": "管理者に連絡"
 }

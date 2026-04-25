@@ -7,10 +7,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/hud.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/overlay.css') }}">
 </head>
 <body>
   <div id="danmubody"></div>
+
+  <!-- Overlay Connecting · P2-2 — shown from page-load until first WS open.
+       Hidden automatically once WS connects (or after first message arrives). -->
+  <div id="overlay-connecting" class="overlay-connecting is-visible" aria-hidden="true">
+    <div class="overlay-connecting-pulse" aria-hidden="true">&#9670;</div>
+    <div class="overlay-connecting-label">CONNECTING&hellip;</div>
+  </div>
 
   <!-- Overlay Idle · Hero Lockup — prototype hero-scenes.jsx:86 OverlayIdle.
        Hidden by default. Invoke via window.OverlayIdle.{show,hide,toggle}. -->

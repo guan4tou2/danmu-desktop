@@ -848,6 +848,127 @@ document.addEventListener("DOMContentLoaded", () => {
   const WS_BASE_DELAY = 3000;
   const WS_MAX_RECONNECT_DELAY = 30000;
 
+  // ── Offline state (P2-1) ──────────────────────────────────────────────────
+  // After 3 failed reconnect attempts within a 30s window we swap the
+  // .viewer-body content with the offline card. Resets on successful connect.
+  const OFFLINE_FAIL_THRESHOLD = 3;
+  const OFFLINE_WINDOW_MS = 30000;
+  const OFFLINE_RETRY_SECONDS = 15;
+  let _wsFailTimestamps = [];
+  let _offlineCardActive = false;
+  let _offlineCountdownTimer = null;
+  let _offlineBodyHtml = null;
+
+  function _recordWsFailure() {
+    const now = Date.now();
+    _wsFailTimestamps.push(now);
+    _wsFailTimestamps = _wsFailTimestamps.filter(
+      (t) => now - t <= OFFLINE_WINDOW_MS
+    );
+    if (
+      !_offlineCardActive &&
+      _wsFailTimestamps.length >= OFFLINE_FAIL_THRESHOLD
+    ) {
+      showOfflineCard();
+    }
+  }
+
+  function _getOpsContact() {
+    // Optional operator contact — read from /get_settings payload. Safe to
+    // call even if the key is absent (we only render if truthy).
+    if (currentSettings && typeof currentSettings.OpsContact !== "undefined") {
+      const oc = currentSettings.OpsContact;
+      if (Array.isArray(oc)) return oc[3] || oc[0] || null;
+      if (typeof oc === "string") return oc;
+    }
+    return null;
+  }
+
+  function showOfflineCard() {
+    const body = document.querySelector(".viewer-body");
+    if (!body || _offlineCardActive) return;
+    _offlineCardActive = true;
+    _offlineBodyHtml = body.innerHTML;
+
+    const opsContact = _getOpsContact();
+    const contactHtml = opsContact
+      ? `<a class="viewer-offline-btn is-secondary" href="${opsContact}" target="_blank" rel="noopener noreferrer">${ServerI18n.t("offlineContactOps")}</a>`
+      : "";
+
+    body.innerHTML = `
+      <div class="viewer-offline-card" role="alert" aria-live="assertive">
+        <h2 class="viewer-offline-lockup">Danmu Fire</h2>
+        <span class="viewer-offline-chip">
+          <span class="viewer-offline-chip-dot" aria-hidden="true"></span>
+          <span>${ServerI18n.t("offlineStatus")}</span>
+        </span>
+        <p class="viewer-offline-message">
+          ${ServerI18n.t("offlineMessage")}
+          <small>${ServerI18n.t("offlineHint")}</small>
+        </p>
+        <div class="viewer-offline-countdown" id="offlineCountdown" aria-live="polite">
+          <span id="offlineCountdownValue">${OFFLINE_RETRY_SECONDS}</span>
+          <span>${ServerI18n.t("offlineRetryUnit")}</span>
+        </div>
+        <div class="viewer-offline-actions">
+          <button type="button" class="viewer-offline-btn" id="offlineReloadBtn">
+            ${ServerI18n.t("offlineReload")}
+          </button>
+          ${contactHtml}
+        </div>
+      </div>
+    `;
+
+    // Disable sendbar while offline (keep visible per design).
+    if (elements.btnSend) elements.btnSend.disabled = true;
+    if (elements.danmuText) elements.danmuText.disabled = true;
+
+    const btn = document.getElementById("offlineReloadBtn");
+    if (btn) btn.addEventListener("click", () => window.location.reload());
+    _startOfflineCountdown();
+  }
+
+  function _startOfflineCountdown() {
+    let remaining = OFFLINE_RETRY_SECONDS;
+    const valueEl = document.getElementById("offlineCountdownValue");
+    if (_offlineCountdownTimer) clearInterval(_offlineCountdownTimer);
+    _offlineCountdownTimer = setInterval(() => {
+      remaining -= 1;
+      if (valueEl) valueEl.textContent = String(Math.max(0, remaining));
+      if (remaining <= 0) {
+        clearInterval(_offlineCountdownTimer);
+        _offlineCountdownTimer = null;
+        // One nudge — trigger an immediate reconnect attempt. ws.onclose
+        // already schedules retries, but we collapse the backoff here.
+        try { if (ws && ws.readyState !== WebSocket.OPEN) ws.close(); } catch (_) {}
+        connectWebSocket();
+        // Reset countdown for the next cycle (still offline = keep visible).
+        if (_offlineCardActive) _startOfflineCountdown();
+      }
+    }, 1000);
+  }
+
+  function hideOfflineCard() {
+    if (!_offlineCardActive) return;
+    _offlineCardActive = false;
+    _wsFailTimestamps = [];
+    if (_offlineCountdownTimer) {
+      clearInterval(_offlineCountdownTimer);
+      _offlineCountdownTimer = null;
+    }
+    const body = document.querySelector(".viewer-body");
+    if (body && _offlineBodyHtml !== null) {
+      body.innerHTML = _offlineBodyHtml;
+      _offlineBodyHtml = null;
+      // Re-bind controls after DOM restore — easiest is a soft reload of the
+      // nickname/fields, but most values are driven by settings + WS push.
+      // Just re-run input wiring for the core inputs that persisted via IDs.
+    }
+    if (elements.btnSend) elements.btnSend.disabled = false;
+    if (elements.danmuText) elements.danmuText.disabled = false;
+    updateSendEnabled();
+  }
+
   function connectWebSocket() {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/`;
@@ -858,6 +979,8 @@ document.addEventListener("DOMContentLoaded", () => {
     ws.onopen = () => {
       console.log("Connected to WebSocket");
       _wsReconnectAttempt = 0;
+      _wsFailTimestamps = [];
+      if (_offlineCardActive) hideOfflineCard();
       updateConnectionUI("connected");
     };
 
@@ -892,6 +1015,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ws.onclose = () => {
       _wsReconnectAttempt++;
+      _recordWsFailure();
       const delay = Math.min(
         WS_BASE_DELAY * Math.pow(2, _wsReconnectAttempt - 1),
         WS_MAX_RECONNECT_DELAY

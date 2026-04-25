@@ -86,7 +86,7 @@
           {% if options.get('Nickname', [True])[0] %}
           <div id="nicknameControl" class="viewer-field">
             <label class="viewer-field-label" for="nicknameInput">
-              <span data-i18n="nicknameField">暱稱 · NICKNAME</span>
+              <span data-i18n="nickname">暱稱</span>
             </label>
             <input
               type="text"
@@ -103,7 +103,7 @@
           {% if options.Color[0] %}
           <div id="colorControl" class="viewer-field">
             <label class="viewer-field-label">
-              <span data-i18n="colorField">顏色 · COLOR</span>
+              <span data-i18n="color">顏色</span>
             </label>
             <div class="viewer-color-row">
               <button type="button" class="viewer-swatch-preset is-active" data-color="#ffffff" aria-label="White" style="background:#ffffff"></button>
@@ -124,7 +124,7 @@
           <!-- Font family -->
           <div id="userFontSelectControl" class="viewer-field" style="display: none;">
             <label class="viewer-field-label" for="userFontSelect">
-              <span data-i18n="fontField">字型 · FONT FAMILY</span>
+              <span data-i18n="font">字型</span>
             </label>
             <div class="viewer-select-wrap">
               <select id="userFontSelect" class="viewer-select" aria-label="Choose font">
@@ -138,7 +138,7 @@
             {% if options.FontSize[0] %}
             <div id="fontSizeControl" class="viewer-field is-nomb">
               <label class="viewer-field-label" for="sizeInput">
-                <span data-i18n="sizeField">字級</span>
+                <span data-i18n="size">字級</span>
                 <span class="viewer-field-label__value"> · <span id="sizeValue">{{
                   (options.FontSize[1] + options.FontSize[2]) // 2 }}</span>px</span>
               </label>
@@ -159,7 +159,7 @@
             {% if options.Opacity[0] %}
             <div id="opacityControl" class="viewer-field is-nomb">
               <label class="viewer-field-label" for="opacityRange">
-                <span data-i18n="opacityField">透明度</span>
+                <span data-i18n="opacity">透明度</span>
                 <span class="viewer-field-label__value"> · <span id="opacityValue">100</span>%</span>
               </label>
               <input
@@ -181,7 +181,7 @@
           {% if options.Speed[0] %}
           <div id="speedControl" class="viewer-field">
             <label class="viewer-field-label" for="speedRange">
-              <span data-i18n="speedField">速度 · SPEED</span>
+              <span data-i18n="speed">速度</span>
               <span class="viewer-field-label__value"> · <span id="speedValue">{{
                 (options.Speed[1] + options.Speed[2]) // 2 }}</span>x</span>
             </label>
@@ -202,8 +202,8 @@
           <!-- Effects (dynamically loaded from /effects API by main.js) -->
           <div id="effectControl" class="viewer-field">
             <label class="viewer-field-label">
-              <span data-i18n="effectsField">效果 · EFFECTS</span>
-              <span class="viewer-field-label__value" data-i18n="multiSelectToStack"> · 可疊加</span>
+              <span data-i18n="effects">效果</span>
+              <span class="viewer-field-label__value"> · <span data-i18n="multiSelectToStack">可疊加</span></span>
             </label>
             <div
               id="effectButtons"
@@ -220,7 +220,7 @@
           {% if options.get('Layout', [True])[0] %}
           <div id="layoutControl" class="viewer-field is-nomb">
             <label class="viewer-field-label">
-              <span data-i18n="layoutField">排版 · LAYOUT</span>
+              <span data-i18n="layoutMode">排版</span>
             </label>
             <div
               class="viewer-layout-grid"

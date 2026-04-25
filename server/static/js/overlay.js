@@ -55,6 +55,34 @@
     idleEl = document.getElementById("overlay-idle");
   });
 
+  // ── Overlay Connecting (P2-2) ──────────────────────────────────────────────
+  // Shown from page-load until the first WS message arrives (or 500ms after
+  // WS open, whichever is sooner). Transparent-safe — sits above the black
+  // chromakey but below danmu elements; hidden via class + display:none.
+  var connectingEl = null;
+  var connectingHideTimer = null;
+  var connectingDidHide = false;
+
+  function hideConnecting() {
+    if (connectingDidHide) return;
+    connectingDidHide = true;
+    if (connectingHideTimer) {
+      clearTimeout(connectingHideTimer);
+      connectingHideTimer = null;
+    }
+    if (!connectingEl) connectingEl = document.getElementById("overlay-connecting");
+    if (!connectingEl) return;
+    connectingEl.classList.remove("is-visible");
+    connectingEl.classList.add("is-fading");
+    setTimeout(function () {
+      if (connectingEl) connectingEl.style.display = "none";
+    }, 360);
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    connectingEl = document.getElementById("overlay-connecting");
+  });
+
   // ── WebSocket state ────────────────────────────────────────────────────────
   var ws = null;
   var reconnectAttempts = 0;
@@ -108,6 +136,11 @@
       reconnectAttempts = 0;
       lastHeartbeatResponse = Date.now();
       startHeartbeat();
+      // Hide CONNECTING state 500ms after WS open (or when first message lands,
+      // whichever fires sooner — see ws.onmessage).
+      if (!connectingDidHide && !connectingHideTimer) {
+        connectingHideTimer = setTimeout(hideConnecting, 500);
+      }
     };
 
     ws.onclose = function (event) {
@@ -126,6 +159,8 @@
 
     ws.onmessage = function (event) {
       lastHeartbeatResponse = Date.now();
+      // Hide CONNECTING state on the first real message (beats the 500ms timer).
+      if (!connectingDidHide) hideConnecting();
       var txt = event.data;
 
       if (txt === "connection" || txt === "heartbeat_ack") {

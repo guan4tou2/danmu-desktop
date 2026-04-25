@@ -266,7 +266,7 @@
   "getSettingsFailed": "取得設定失敗",
   "nickname": "暱稱",
   "anonymousPlaceholder": "匿名",
-  "layoutMode": "佈局模式",
+  "layoutMode": "排版",
   "emojis": "表情包",
   "emojiHint": "點擊插入 :name:",
   "schedulerTitle": "定時發送",
@@ -588,5 +588,17 @@
   "fingerprintCol_lastSeen": "最近一次",
   "fingerprintState_active": "活躍",
   "fingerprintState_flagged": "異常",
-  "fingerprintState_blocked": "封鎖"
+  "fingerprintState_blocked": "封鎖",
+  "offlineStatus": "已離線",
+  "offlineMessage": "活動尚未開始 / 主辦方失聯",
+  "offlineHint": "請稍候重試。",
+  "offlineRetryUnit": "秒後重試",
+  "offlineReload": "重新整理",
+  "offlineContactOps": "聯繫主辦方",
+  "loginAttemptsRemaining": "還剩 {n} 次嘗試",
+  "loginFailedGeneric": "登入失敗，請重試。",
+  "lockoutTitle": "鎖定 5 分鐘",
+  "lockoutRemaining": "剩餘時間",
+  "lockoutReason": "登入失敗次數過多。",
+  "lockoutContactAdmin": "聯繫管理員"
 }
