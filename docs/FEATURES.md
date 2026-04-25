@@ -1,15 +1,16 @@
 # Danmu Fire — Feature Specification
 
-**Status:** Canonical feature inventory (2026-04-25, v5.0.0)
+**Status:** Canonical feature inventory (2026-04-25 PM, v5.0.0 + 2nd-wave retrofit)
 **Audience:** designers, PMs, Claude Design agents
 **Pairs with:** [DESIGN.md](../DESIGN.md) (design tokens), [CLAUDE.md](../CLAUDE.md) (project rules)
 
 ---
 
-## What's new in 5.0.0
+## What's new in 5.0.0 + 2nd-wave (2026-04-25 PM)
 
-Quick reference for what shipped in this release. Full notes live in [CHANGELOG.md](../CHANGELOG.md).
+Quick reference. Full notes in [CHANGELOG.md](../CHANGELOG.md).
 
+### First wave (commit `acca401` and earlier)
 - **Soft Holo HUD design retrofit** across viewer / admin / overlay (10 admin pages: Webhooks, Emojis, Sounds, Scheduler, Stickers, Live Feed, Fonts, Replay, Security, Backup).
 - **Admin bootstrap endpoint** — `GET /admin/bootstrap` replaces the 25-fetch boot wave with a single payload.
 - **Per-rate-limit telemetry** — `/admin/metrics` now reports hits / violations per limiter.
@@ -19,6 +20,22 @@ Quick reference for what shipped in this release. Full notes live in [CHANGELOG.
 - **Edge-state pages** — viewer offline, overlay connecting, admin lockout (4 P2 states retrofitted).
 - **Three new admin routes** — dedicated nav slugs for Replay, Security, Backup.
 - **`admin.js` modularised** — split into login + dashboard modules.
+
+### Second wave (2026-04-25 PM, post-`acca401`)
+
+Triggered by Claude Design fetching a refreshed handoff bundle (5 new admin components: `admin-display-settings`, `admin-polls`, `admin-ratelimits`, `admin-viewer-theme`, `priority-2-pieces`).
+
+- **Polls multi-question session + per-question image upload (P0-1)** — schema bumped to `poll.questions[]`; `POST /admin/poll/<id>/upload-image/<qid>` (≤2 MB, JPG/PNG/WebP, magic-byte check, path-traversal guarded). Public `GET /polls/media/<path>`. Backward-compat preserved for legacy single-question callers.
+- **Polls Live HUD + Results page** — active-state replaces Builder with CountdownRing + leader-gradient bars + queue mini + auto-advance toggle; ended-state shows winner callout + ranked bars + Participation/Timeline tiles + CSV/JSON/copy export rail (per-question Tab pagination).
+- **Display Settings v2 redesign (P0-3)** — full rewrite from `<details>` accordion to `1fr / 340px` two-column grid: 6 flat table-rows (`OPACITY · FONT SIZE · SPEED · COLOR · FONT FAMILY · LAYOUT`) + right-rail PreviewCard (live 2-pill stage) / DeployCard / SummaryCard. FontSize uses 5 monospaced chips, Layout uses 5-tile glyph grid, Color uses prototype 8-color palette.
+- **Stickers multi-pack model (P1-4 backend)** — `StickerPack {id, name, enabled, weight, order}` + `Sticker.pack_id` FK persisted to `runtime/stickers/{packs,stickers}.json`. Idempotent migration assigns existing stickers to a synthetic `default` pack. New endpoints `POST /admin/stickers/packs/{create,<id>/toggle,<id>/rename,<id>/reorder,<id>}` + `POST /admin/stickers/<name>/assign`.
+- **Sounds per-tile inline volume (P1-2)** — per-sound volume 0..1 persisted to `runtime/sounds/sound_volumes.json`; trigger-rule volume cascades over per-sound default. Inline 100-px slider per Sound tile.
+- **Effects user `.dme` live preview (P3-2 follow-up)** — user-uploaded `.dme` cards now animate too (was: builtin-8-only). Lazy-fetches `/admin/effects/<name>/content` + `/admin/effects/preview`, injects keyframes, observes IntersectionObserver for off-screen pause.
+- **Broadcast dedicated admin page (`/admin/#/broadcast`)** — state strip with circular cyan dot + `LIVE · 廣播中` + uptime/connections/messages meta + `⏸ 切到 STANDBY` magenta button; END BROADCAST card with `STANDBY` confirmation-code input + crimson `■ 結束廣播` (disabled until match) + LIVE-vs-STANDBY 5-bullet comparison.
+- **Rate Limits enhancements** — LOGIN scope adds LOCKOUT seconds knob; per-scope 24-bar sparkline; `effective_rate = N/W · burst = round(N×1.5)` mono footer; bottom row gains ViolationsFeed (TIME / SCOPE / KEY / UA / HITS / [BLOCK]) + IpPolicyCard (DENY/ALLOW list).
+- **Viewer Theme out-of-scope legend** — card under preview frame links to the right route per scope (彈幕色 → Theme Packs / 字級 → Display Settings / 效果 → Effects / 速率限制 → Moderation).
+- **Viewer prototype parity sweep** — hero 2-col restored (left lockup + right ConnChip stack); single-language form labels; preview gradient + scanline; ConnChip `·` interpunct + `cyanSoft` online state; full-width `？` placeholder; Layout sub `右→左`; Hero font-size `clamp(3.2rem, 8vw, 6rem)` matching `HERO_SIZE.hero`.
+- **Admin Login i18n alignment** — strings now match prototype literally (`管理後台登入` / `管理密碼` / `伺服器上線`); previous placeholder copy invented in commit `249d4bc` was replaced.
 
 ---
 
@@ -131,7 +148,7 @@ Theme bundle flags (`palette / font / layout / bg / effects`) drive the admin ba
 | Capability | Routes | Scenario |
 |---|---|---|
 | Scheduler | `/admin/scheduler/{list,create,pause,resume,cancel}` | Timed repeating danmu (e.g. "訂閱頻道!" every 5 min); max 20 jobs |
-| Polls | `/admin/poll/{create,status,end,reset}` | 2–6 options (A/B/C/D…) question, live vote counts broadcast to overlays. **Viewer sees no percentages — admin-only metric.** |
+| Polls | `/admin/poll/{create,start,advance,status,end,reset}` + `POST /admin/poll/<id>/upload-image/<qid>` + public `GET /polls/media/<path>` | Multi-question session: each question has 2–6 options (A/B/C/D…) + optional image (≤2MB, JPG/PNG/WebP). Live vote counts broadcast to overlays. **Viewer sees no percentages — admin-only metric.** Legacy single-question shape still supported. |
 | Widgets | `/admin/widgets/{list,create,update,delete,score,clear}` | Overlay widgets: scoreboard / ticker / label with position presets |
 
 ### 6. Extensions
@@ -191,6 +208,7 @@ The v2 (design-v2-retrofit) admin is split into these routes. The left sidebar l
 | `#/system` | 系統 & 指紋 | System overview + scheduler + webhooks + fingerprints |
 | `#/security` | 安全 | Password change + WS auth token + audit |
 | `#/backup` | 備份 & 匯出 | Settings export / import + danger zone |
+| `#/broadcast` | 廣播 | LIVE / STANDBY mode + uptime / message count + END confirmation |
 
 Section IDs (`sec-…`) are stable identifiers. See `ADMIN_ROUTES` in [admin.js](../server/static/js/admin.js).
 
@@ -356,4 +374,4 @@ If a designer wants one of these, it is a **new product scope** and needs explic
 4. **When showing flows**: use the 7 scenarios above as the storyboard backbone.
 5. **When in doubt about what persists**: check the persistence map. Volatile state should not have a "Reset" button unless the data visibly accumulates (fingerprints, history, widgets).
 
-Last sync: 2026-04-25 against branch `claude/design-v2-retrofit`, server `APP_VERSION = 5.0.0`.
+Last sync: 2026-04-25 PM against branch `claude/design-v2-retrofit` HEAD `609108d`, server `APP_VERSION = 5.0.0`.

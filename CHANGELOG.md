@@ -7,6 +7,126 @@
 
 ## [Unreleased]
 
+**Design v2 second wave · 2026-04-25 PM** — alignment with the
+refreshed Claude Design handoff bundle (新 `admin-display-settings.jsx`
+/ `admin-polls.jsx` / `admin-ratelimits.jsx` / `admin-viewer-theme.jsx`
+/ `priority-2-pieces.jsx` 五個新元件 + viewer / tokens / hero refresh).
+Production deployed at `609108d` after the original `[5.0.0]` cut.
+
+### 新增 / Added
+
+- **Stickers 多 pack 模型 (P1-4 後端)**：`services/stickers.py` +
+  `StickerPack {id, name, enabled, weight, order}` + `Sticker.pack_id`
+  FK；持久化到 `runtime/stickers/{packs,stickers}.json`；首次載入時
+  migrate 既有 stickers 到 `default` pack（idempotent）。新 endpoint
+  集合：`/admin/stickers/packs/{create,<id>/toggle,<id>/rename,
+  <id>/reorder,<id>}` + `POST /admin/stickers/<name>/assign`。
+  Admin UI sidebar 顯示真 pack 列表 + 增改刪。([12f0e22](#))
+- **Sounds per-tile inline volume (P1-2 後續)**：`services/sound.py`
+  per-sound volume 0..1 持久化到 `runtime/sounds/sound_volumes.json`；
+  rule volume 仍會覆蓋。`POST /admin/sounds/<name>/volume`。每張
+  Sound tile 加 100px 滑桿。([12f0e22](#))
+- **Effects user .dme live preview (P3-2 後續)**：用戶上傳的 .dme 卡
+  片現在也會即時動畫(原本只有 8 個 builtin)。透過 lazy-fetch
+  `/admin/effects/<name>/content` + `/admin/effects/preview` 取得
+  rendered keyframes，注入 `<style>` 並套用到 demo 文字。Cache 與
+  IntersectionObserver 復用。([12f0e22](#))
+- **Polls 多題 session + 圖片上傳 (P0-1)**：`PollService` 改寫成
+  question-session state machine，仍 backward-compat 提供 legacy
+  `state.question` / `options` 派生欄位。新 endpoint `/admin/poll/
+  {create,start,advance}`、`POST /admin/poll/<id>/upload-image/<qid>`
+  (多 part / ≤2 MB / JPG·PNG·WebP / magic-byte / path-traversal)。
+  公開 `/polls/media/<path>` 提供圖片讀取。Admin UI 多題 Builder +
+  per-question image upload + START SESSION / 下一題 / 結束 控制器。
+  17 新測試。([61a5dbc](#))
+- **Polls Live HUD + Results 頁**：active 狀態替換 Builder 為 Live
+  HUD（CountdownRing 1Hz / leader 漸層 / queue mini / 自動下一題 +
+  overlay 顯示 toggle）；ended 狀態替換為 Results（per-question Tab
+  + winner callout + ranked bars + Participation/Timeline + Export
+  rail CSV/JSON/copy）。([609108d](#))
+- **Broadcast 獨立後台頁 (`/admin/#/broadcast`)**：state strip + LIVE
+  · 廣播中 + uptime/connections/messages 計時 + `⏸ 切到 STANDBY`，
+  END BROADCAST 卡需輸入 `STANDBY` 確認碼 + `■ 結束廣播` crimson 按
+  鈕；附 LIVE vs STANDBY 5-bullet 對比。([609108d](#))
+- **Rate Limits 加強**：LOGIN scope 加入 LOCKOUT 秒數欄、每 scope
+  24-bar sparkline、effective_rate / burst mono footer、底部
+  ViolationsFeed (TIME / SCOPE / KEY / UA / HITS / [BLOCK]) 與
+  IpPolicyCard (DENY/ALLOW)。([609108d](#))
+- **Viewer Theme legend 卡**：preview frame 下方加跳轉導引 — 彈幕色/
+  描邊/陰影 → Theme Packs；字級/速度/透明度 → Display Settings；
+  效果 → Effects；速率限制 → Moderation。([609108d](#))
+- **Display Settings v2 重做 (P0-3 完整版)**：整頁從 `<details>`
+  accordion 改成 `1fr / 340px` 二欄，左 6 列扁平表格 (OPACITY ·
+  FONT SIZE · SPEED · COLOR · FONT FAMILY · LAYOUT)，每列
+  `[150px label \| 1fr pickers \| 160px audience-pill]`；FontSize
+  改 5 chip `[14][20][32][44][64]`，Layout 改 5-tile glyph grid
+  `→ ▀ ▄ ■ ▌`，Color 換成 prototype 真實 8 色 palette；ON 狀態多
+  `[Min · Max · Step]` dashed-accent 三 input；右 rail 三張卡：
+  PreviewCard (180px stage + 2 sample danmu) / DeployCard
+  (▶ 即時套用 + 還原預設) / SummaryCard (`AUDIENCE · N/6 OPEN`)。
+  ([1e57d33](#))
+
+### 改善 / Changed
+
+- **Viewer prototype parity**（對齊新 bundle 的 `viewer.jsx`）：
+  - Hero 從中央單欄改回 2-col（左 lockup + 右 chips）— 還原 v4
+    決策同時反映新 prototype；padding `28px 32px 22px` desktop /
+    `18px 16px 16px` mobile。
+  - Form labels 從雙語 `暱稱 · NICKNAME` 改回單語 `暱稱` — 撤銷
+    P3-6 cleanup（兩次 prototype iterate 來回後新 prototype 終於
+    定下來單語）。
+  - Speed label 從 `· SPEED · 5.0X` 改成 `5.0X`；Effects 從
+    `· EFFECTS · 已選 N / 8 · 可疊加` 改成 `已選 N / 8 · 可疊加`。
+  - Preview kicker 從 `PREVIEW · 你送出的樣子` 改成 Chinese
+    `預覽 · 你送出的樣子`。
+  - Preview 背景升級為 `linear-gradient(135deg, #0f172a, #1e293b)`
+    + cyan-tint 邊框 + soft inset shadow + `repeating-linear-gradient`
+    掃描線紋理。
+  - Hero font-size 從 `clamp(3rem, 7vw, 5rem)` 提升為
+    `clamp(3.2rem, 8vw, 6rem)` (HERO_SIZE.hero)，mobile drop 到
+    `2rem` (HERO_SIZE.medium)。
+  - Subtitle margin 從 `14px auto 0` 改成 `10px 0 0` desktop /
+    `6px 0 0` mobile，max-width 取消強制。
+  - ConnChip 內部分隔符從全形冒號 `：` (zh/ja/ko) 與 ASCII `:` (en)
+    全部改成 `·` interpunct；online 狀態加 `cyanSoft` 底色 +
+    cyan-line 邊框；font-size 11→10、padding 6×12→4×10、letter-
+    spacing 0.5→1.0。
+  - Placeholder `想對現場說點什麼?` 改為全形 `？`。
+- **Admin Login i18n 字串對齊 prototype**：
+  - subtitle 從亂編的 `後台管理 — 主辦方專用` 改成 prototype 真正
+    的 `管理後台登入`
+  - password label `密碼` → `管理密碼`
+  - server-online chip `伺服器在線` → `伺服器上線`
+- **zh.json 字串對齊 prototype**：`size: 大小→字級`、`effects: 特效→
+  效果`、`multiSelectToStack: 多選疊加→可疊加`。
+- **Viewer 桌面 layout 全部展開平鋪**（per user 2026-04-25：
+  「desktop 上瀏覽應該是全部展開平鋪 不要陰影」）：移除
+  `box-shadow: 0 10px 40px rgba(0,0,0,0.35)`，把 `overflow: hidden /
+  flex column / 100dvh` 限制到 `@media (max-width: 599px)`，桌面
+  整頁自然流動視窗 scrollbar。
+- **Layout 副標 `R→L` → `右→左`**（match prototype Chinese）。
+- **Preview `@nick` 字級** 動態 `max(11, fontSize × 0.42)` 反映
+  prototype `viewer.jsx:130` 公式。
+
+### 修復 / Fixed
+
+- 透明度 / 字級 重複單位 bug：main.js 同時寫 `${value}%` / `${value}px`
+  到 span 而 HTML 又有字面 `%` / `px` → 顯示 `100%%` / `60pxpx`。
+  改成只寫數值，由 HTML 補上單位。
+- Speed 顯示從整數 `5X` 改成 `5.0X`（toFixed(1)，符合
+  `${speed.toFixed(1)}x` prototype 規格）。
+
+### 文件 / Docs
+
+- `docs/designs/design-v2/` 整批同步 2026-04-25 handoff bundle，
+  含 5 個新元件 + tokens/hero/admin-pages/admin-v3 refresh。
+
+### 驗證 / Verification
+
+- Pytest（含新測試）836 pass / 1 pre-existing flaky browser-admin
+- VPS production deployed at `609108d`：viewer / admin /
+  admin-broadcast.js / admin-display.js / admin-display 顯示新樣式
+
 ## [5.0.0] - 2026-04-25
 
 **Design v2 Retrofit · breaking** — admin / viewer / overlay 全面切換到
