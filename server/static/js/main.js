@@ -548,12 +548,25 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Update --progress CSS var so the cyan track fill in viewer-v2.css matches
+  // the slider's value (Safari ignores accent-color on the track).
+  const _syncRangeProgress = (el) => {
+    if (!el) return;
+    const min = parseFloat(el.min) || 0;
+    const max = parseFloat(el.max) || 100;
+    const val = parseFloat(el.value);
+    const pct = max > min ? ((val - min) / (max - min)) * 100 : 50;
+    el.style.setProperty("--progress", `${pct}%`);
+  };
+
   if (elements.sizeInput) {
+    _syncRangeProgress(elements.sizeInput);
     elements.sizeInput.addEventListener("input", (e) => {
       if (elements.sizeValue) {
         // HTML wraps with literal `px` after </span> — write number only.
         elements.sizeValue.textContent = e.target.value;
       }
+      _syncRangeProgress(e.target);
       updatePreview();
     });
   }
@@ -565,21 +578,69 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (elements.opacityRange) {
+    _syncRangeProgress(elements.opacityRange);
     elements.opacityRange.addEventListener("input", (e) => {
       // HTML wraps with literal `%` after </span> — write number only.
       elements.opacityValue.textContent = e.target.value;
+      _syncRangeProgress(e.target);
       updatePreview();
     });
   }
 
   if (elements.speedRange) {
+    _syncRangeProgress(elements.speedRange);
     elements.speedRange.addEventListener("input", (e) => {
       // Match prototype `${speed.toFixed(1)}x` — always show one decimal
       // (e.g. 1.0x not 1x) so the column doesn't shrink when speed lands
       // on an integer.
       const v = parseFloat(e.target.value);
       elements.speedValue.textContent = Number.isFinite(v) ? v.toFixed(1) : e.target.value;
+      _syncRangeProgress(e.target);
     });
+  }
+
+  // ── Theme toggle (◐ dark / ◑ light) — prototype viewer.jsx:120 ────────────
+  // Persist choice to localStorage; default = light (matches prototype default).
+  const themeBtns = document.querySelectorAll(".viewer-seg-btn[data-theme]");
+  if (themeBtns.length) {
+    const applyTheme = (mode) => {
+      document.body.classList.toggle("is-dark", mode === "dark");
+      themeBtns.forEach((b) => {
+        const on = b.dataset.theme === mode;
+        b.classList.toggle("is-active", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      try { localStorage.setItem("viewer-theme", mode); } catch (_) {}
+    };
+    let initial = "light";
+    try { initial = localStorage.getItem("viewer-theme") || "light"; } catch (_) {}
+    applyTheme(initial);
+    themeBtns.forEach((b) => b.addEventListener("click", () => applyTheme(b.dataset.theme)));
+  }
+
+  // ── Language Seg (中 / EN) — mirrors the hidden #server-lang-select ────────
+  // The legacy <select> stays in the DOM so existing i18n.js wiring keeps
+  // working; clicks on the visible Seg buttons just dispatch a change event.
+  const langBtns = document.querySelectorAll(".viewer-seg-btn[data-lang]");
+  const langSelect = document.getElementById("server-lang-select");
+  if (langBtns.length && langSelect) {
+    const syncLangSeg = () => {
+      const cur = (langSelect.value || "zh").toLowerCase().startsWith("zh") ? "zh" : "en";
+      langBtns.forEach((b) => {
+        const on = b.dataset.lang === cur;
+        b.classList.toggle("is-active", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+    };
+    syncLangSeg();
+    langBtns.forEach((b) =>
+      b.addEventListener("click", () => {
+        langSelect.value = b.dataset.lang;
+        langSelect.dispatchEvent(new Event("change", { bubbles: true }));
+        syncLangSeg();
+      })
+    );
+    langSelect.addEventListener("change", syncLangSeg);
   }
 
   if (elements.userFontSelect) {
