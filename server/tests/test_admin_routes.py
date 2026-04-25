@@ -377,3 +377,83 @@ def test_bootstrap_continues_on_section_error(client, monkeypatch):
     data = resp.get_json()
     assert data["widgets"] == {"_error": "boom"}
     assert "polls" in data and "metrics" in data
+
+
+# ---------------------------------------------------------------------------
+# /admin/ratelimit/apply — live-apply rate-limit overrides (P3-3, v5.0.0)
+# ---------------------------------------------------------------------------
+
+
+def test_ratelimit_apply_requires_login(client):
+    resp = client.post(
+        "/admin/ratelimit/apply",
+        json={"scope": "fire", "limit": 25, "window": 60},
+    )
+    assert resp.status_code in (302, 401, 403)
+
+
+def test_ratelimit_apply_updates_config(client, app):
+    resp = authed_post(
+        client,
+        "/admin/ratelimit/apply",
+        {"scope": "fire", "limit": 42, "window": 30},
+    )
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body == {"scope": "fire", "limit": 42, "window": 30}
+    assert app.config["FIRE_RATE_LIMIT"] == 42
+    assert app.config["FIRE_RATE_WINDOW"] == 30
+
+    # Second scope writes to its own keys without touching others.
+    resp2 = authed_post(
+        client,
+        "/admin/ratelimit/apply",
+        {"scope": "login", "limit": 7, "window": 300},
+    )
+    assert resp2.status_code == 200
+    assert app.config["LOGIN_RATE_LIMIT"] == 7
+    assert app.config["LOGIN_RATE_WINDOW"] == 300
+    # First scope's writes survive the second update.
+    assert app.config["FIRE_RATE_LIMIT"] == 42
+
+
+def test_ratelimit_apply_validates_scope_and_window(client):
+    # bad scope
+    resp = authed_post(
+        client,
+        "/admin/ratelimit/apply",
+        {"scope": "nope", "limit": 20, "window": 60},
+    )
+    assert resp.status_code == 400
+    assert "error" in resp.get_json()
+
+    # bad window (not in allow-list)
+    resp = authed_post(
+        client,
+        "/admin/ratelimit/apply",
+        {"scope": "fire", "limit": 20, "window": 45},
+    )
+    assert resp.status_code == 400
+
+    # bad limit (out of range)
+    resp = authed_post(
+        client,
+        "/admin/ratelimit/apply",
+        {"scope": "fire", "limit": 0, "window": 60},
+    )
+    assert resp.status_code == 400
+
+    resp = authed_post(
+        client,
+        "/admin/ratelimit/apply",
+        {"scope": "fire", "limit": 1001, "window": 60},
+    )
+    assert resp.status_code == 400
+
+    # non-int limit
+    resp = authed_post(
+        client,
+        "/admin/ratelimit/apply",
+        {"scope": "fire", "limit": "20", "window": 60},
+    )
+    assert resp.status_code == 400

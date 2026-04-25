@@ -60,6 +60,7 @@ from . import (  # noqa: E402, F401
     metrics,
     plugins,
     poll,
+    ratelimit,
     replay,
     scheduler,
     settings,

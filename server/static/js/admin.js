@@ -705,166 +705,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // showToast is provided by the shared toast.js utility (window.showToast)
 
-  // Render Login Screen — mirrors prototype AdminLogin (hero-scenes.jsx):
-  // brand lockup, mono labels, cyan sign-in, status chip row.
-  //
-  // v5 retrofit: intercepts the submit via fetch so we can surface
-  //   - 401 → remaining-attempt hint (5-attempt window, LOGIN_RATE_LIMIT)
-  //   - 429 → full lockout screen with countdown (Retry-After if present,
-  //           else hardcoded 300s matching LOGIN_RATE_WINDOW default)
-  // See docs/design-v2-backlog.md P2-4.
-  const LOGIN_MAX_ATTEMPTS = 5;           // matches LOGIN_RATE_LIMIT default
-  const LOGIN_LOCKOUT_DEFAULT = 300;       // matches LOGIN_RATE_WINDOW default
-  let _loginAttemptsUsed = 0;
+  // Render Login Screen — extracted to admin-login.js (P6-2).
+  // Shared closures (appContainer, currentSettings) bridged via window.__adminCtx.
+  // Keeps a tiny in-file fallback so the admin page still loads if the
+  // admin-login.js module fails to fetch.
+  window.__adminCtx = window.__adminCtx || {};
+  window.__adminCtx.appContainer = appContainer;
+  window.__adminCtx.getSettings = () => currentSettings;
 
-  function _getLoginOpsContact() {
-    // Optional admin contact surfaced on the lockout screen. Reads from
-    // currentSettings.OpsContact (populated by fetchLatestSettings() before
-    // renderLogin runs).
-    if (currentSettings && typeof currentSettings.OpsContact !== "undefined") {
-      const oc = currentSettings.OpsContact;
-      if (Array.isArray(oc)) return oc[3] || oc[0] || null;
-      if (typeof oc === "string") return oc;
-    }
-    return null;
+  function _legacyRenderLogin() {
+    // Minimal fallback if admin-login.js is missing — login still works.
+    if (!appContainer) return;
+    appContainer.innerHTML = `
+      <div class="admin-login-shell"><div class="admin-login-card">
+        <h1 class="hud-hero-title is-large">Danmu Fire</h1>
+        <form action="/login" method="post" class="admin-login-form">
+          <input type="password" name="password" class="admin-login-input" required />
+          <button type="submit" class="admin-login-submit">Sign in</button>
+        </form>
+      </div></div>`;
   }
 
   function renderLogin() {
-    const version = (window.DANMU_CONFIG && window.DANMU_CONFIG.appVersion) || "";
-    appContainer.innerHTML = `
-      <div class="admin-login-shell">
-        <div class="admin-login-card" id="adminLoginCard">
-          <div class="admin-login-hero">
-            <h1 class="hud-hero-title is-large">Danmu Fire</h1>
-            <p class="admin-login-subtitle" data-i18n="adminLoginSubtitle">${ServerI18n.t("adminLoginSubtitle")}</p>
-          </div>
-          <form id="loginForm" class="admin-login-form" action="/login" method="post" autocomplete="off">
-            <div class="admin-login-field">
-              <label class="admin-login-label" for="password" data-i18n="adminLoginPasswordLabel">${ServerI18n.t("adminLoginPasswordLabel")}</label>
-              <input class="admin-login-input" type="password" id="password" name="password" autocomplete="current-password" required />
-            </div>
-            <button class="admin-login-submit" type="submit" data-i18n="adminLoginSignIn">${ServerI18n.t("adminLoginSignIn")}</button>
-            <div class="admin-login-attempts" id="loginAttemptsHint" hidden></div>
-          </form>
-          <div class="admin-login-chiprow">
-            <span class="admin-login-chip is-accent">
-              <span class="hud-dot is-success" aria-hidden="true"></span>
-              <span data-i18n="adminLoginServerOnline">${ServerI18n.t("adminLoginServerOnline")}</span>
-            </span>
-            ${version ? `<span class="admin-login-chip">v${version}</span>` : ""}
-          </div>
-        </div>
-      </div>
-    `;
-
-    const form = document.getElementById("loginForm");
-    const pwInput = document.getElementById("password");
-    const hint = document.getElementById("loginAttemptsHint");
-    if (!form) return;
-
-    // Load previously-used attempts from session storage so a full reload
-    // between failed attempts (server flashes + 302) keeps the counter.
-    try {
-      const stored = parseInt(sessionStorage.getItem("admin_login_attempts") || "0", 10);
-      if (Number.isFinite(stored) && stored > 0) {
-        _loginAttemptsUsed = stored;
-        const remaining = Math.max(0, LOGIN_MAX_ATTEMPTS - _loginAttemptsUsed);
-        if (hint && _loginAttemptsUsed > 0 && remaining > 0) {
-          hint.hidden = false;
-          hint.classList.toggle("is-warn", remaining > 1);
-          hint.textContent = ServerI18n.t("loginAttemptsRemaining", { n: remaining });
-        }
-      }
-    } catch (_) {}
-
-    form.addEventListener("submit", async (ev) => {
-      ev.preventDefault();
-      if (!pwInput) return;
-      const body = new URLSearchParams();
-      body.set("password", pwInput.value);
-      try {
-        // Probe /login first so we can trap 429 before the browser navigates.
-        // On success/failure the server 302s — fetch with redirect:"manual"
-        // returns an opaqueredirect (status 0) which we treat as "completed,
-        // let the native form follow through".
-        const res = await fetch("/login", {
-          method: "POST",
-          credentials: "same-origin",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: body.toString(),
-          redirect: "manual",
-        });
-
-        if (res.status === 429) {
-          const retryAfterRaw = res.headers.get("Retry-After");
-          const retryAfter = parseInt(retryAfterRaw, 10);
-          const seconds = Number.isFinite(retryAfter) && retryAfter > 0
-            ? retryAfter
-            : LOGIN_LOCKOUT_DEFAULT;
-          renderLockout(seconds);
-          return;
-        }
-
-        // Redirect response — attempt succeeded OR credentials were wrong
-        // (server flashes "wrong password!" and 302s back here). We can't
-        // distinguish without checking session state, so bump the local
-        // attempts counter and reload to let render() route.
-        _loginAttemptsUsed += 1;
-        try { sessionStorage.setItem("admin_login_attempts", String(_loginAttemptsUsed)); } catch (_) {}
-        window.location.reload();
-      } catch (err) {
-        console.error("Login submit failed:", err);
-        if (hint) {
-          hint.hidden = false;
-          hint.textContent = ServerI18n.t("networkError");
-        }
-      }
-    });
-  }
-
-  function renderLockout(seconds) {
-    const card = document.getElementById("adminLoginCard");
-    if (!card) return;
-    const opsContact = _getLoginOpsContact();
-    const contactHtml = opsContact
-      ? `<a class="admin-lockout-contact" href="${opsContact}" target="_blank" rel="noopener noreferrer">${ServerI18n.t("lockoutContactAdmin")}</a>`
-      : "";
-
-    card.classList.add("admin-lockout-card");
-    card.innerHTML = `
-      <div class="admin-login-hero">
-        <h1 class="hud-hero-title is-large">Danmu Fire</h1>
-        <p class="admin-lockout-title">${ServerI18n.t("lockoutTitle")}</p>
-      </div>
-      <div class="admin-lockout-body" role="alert" aria-live="assertive">
-        <div class="admin-lockout-countdown" aria-live="polite">
-          <span class="admin-lockout-countdown-value" id="lockoutCountdown">--:--</span>
-          <span class="admin-lockout-countdown-unit">${ServerI18n.t("lockoutRemaining")}</span>
-        </div>
-        <div class="admin-lockout-meta">${ServerI18n.t("lockoutReason")}</div>
-        ${contactHtml}
-      </div>
-    `;
-
-    const valueEl = document.getElementById("lockoutCountdown");
-    let remaining = seconds;
-    const fmt = (s) => {
-      const m = Math.floor(s / 60);
-      const r = s % 60;
-      return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
-    };
-    if (valueEl) valueEl.textContent = fmt(remaining);
-    const timer = setInterval(() => {
-      remaining -= 1;
-      if (valueEl) valueEl.textContent = fmt(Math.max(0, remaining));
-      if (remaining <= 0) {
-        clearInterval(timer);
-        // Reset attempt counter and re-render the login form.
-        _loginAttemptsUsed = 0;
-        renderLogin();
-        ServerI18n.updateUI();
-      }
-    }, 1000);
+    if (window.AdminLogin && typeof window.AdminLogin.render === "function") {
+      window.AdminLogin.render();
+    } else {
+      _legacyRenderLogin();
+    }
   }
 
   // Render Control Panel Screen
@@ -2392,9 +2259,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Rate Limits editable card — /admin ratelimit nav points here.
     // Values come from env vars (FIRE_RATE_LIMIT / _WINDOW etc.) read at
-    // startup. Editing here lets the admin prepare a .env patch; applying
-    // takes effect on next server restart (no live rewrite yet — tracked
-    // in design-v2-backlog #8).
+    // startup. The per-row Save button POSTs to /admin/ratelimit/apply
+    // which mutates `current_app.config` in-memory — change is live for the
+    // very next request, but reverts on server restart. The export button
+    // remains for moving a config across environments / making it durable.
     settingsGrid.insertAdjacentHTML("beforeend", `
       <div id="sec-ratelimit" class="admin-ratelimit-page hud-page-stack lg:col-span-2">
         <div class="admin-ratelimit-head">
@@ -2462,6 +2330,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="admin-ratelimit-bar-fill" data-rl-bar="${r.key}" style="width:18%"></div>
                   </div>
                   <span class="admin-ratelimit-bar-text" data-rl-current="${r.key}">—</span>
+                </div>
+                <div class="admin-ratelimit-field admin-ratelimit-save-field">
+                  <button type="button" class="admin-poll-btn is-primary" data-rl-action="save" data-rl-save="${r.key}" title="即時套用至執行中的伺服器(重啟後恢復 env 預設)">即時套用</button>
                 </div>
               </div>
             </div>
@@ -2560,10 +2431,70 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (_) {}
       }, 4500);
 
-      section.addEventListener("click", (e) => {
+      // Refresh per-row hits/violations text + summary tiles after a live-apply
+      // succeeds. Mirrors the bulk fetch in the deferred init block above but
+      // bypasses the bootstrap cache (which is stale right after a mutation).
+      async function refreshRateLimitMetrics() {
+        try {
+          const r = await fetch("/admin/metrics", { credentials: "same-origin" });
+          if (!r.ok) return;
+          const m = await r.json();
+          const rl = m && m.rate_limits;
+          if (!rl) return;
+          ["fire", "api", "admin", "login"].forEach((k) => {
+            const row = rl[k];
+            const el = section.querySelector(`[data-rl-current="${k}"]`);
+            if (el && row) {
+              const rh = (row.hits || 0).toLocaleString();
+              const rv = (row.violations || 0).toLocaleString();
+              el.textContent = `${rh} 次 · ${rv} 違規`;
+            }
+          });
+        } catch (_) {}
+      }
+
+      section.addEventListener("click", async (e) => {
         const btn = e.target.closest("[data-rl-action]");
         if (!btn) return;
         const action = btn.dataset.rlAction;
+        if (action === "save") {
+          const scope = btn.dataset.rlSave;
+          const limitEl = section.querySelector(`[data-rl-limit="${scope}"]`);
+          const winEl = section.querySelector(`[data-rl-window="${scope}"]`);
+          if (!limitEl || !winEl) return;
+          const limit = parseInt(limitEl.value, 10);
+          const window_ = parseInt(winEl.value, 10);
+          if (!Number.isFinite(limit) || !Number.isFinite(window_)) {
+            if (typeof showToast === "function") showToast("輸入值無效", false);
+            return;
+          }
+          const orig = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = "套用中…";
+          try {
+            const resp = await csrfFetch("/admin/ratelimit/apply", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ scope, limit, window: window_ }),
+            });
+            if (resp.ok) {
+              if (typeof showToast === "function") {
+                showToast(`已即時套用 ${scope.toUpperCase()} = ${limit} / ${window_}s`, true);
+              }
+              refreshRateLimitMetrics();
+            } else {
+              const body = await resp.json().catch(() => ({}));
+              const msg = (body && body.error) || `HTTP ${resp.status}`;
+              if (typeof showToast === "function") showToast(`套用失敗:${msg}`, false);
+            }
+          } catch (err) {
+            if (typeof showToast === "function") showToast("套用失敗:網路錯誤", false);
+          } finally {
+            btn.disabled = false;
+            btn.textContent = orig;
+          }
+          return;
+        }
         if (action === "export") {
           const lines = [];
           section.querySelectorAll("[data-rl-limit]").forEach((el) => {
@@ -2693,181 +2624,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // init burst that already hits nginx `rate=10r/s burst=30`. We've
     // seen 429 cascade across admin-history / admin-effects / etc when
     // these fire concurrently. Stagger 1.5s + 3s after init.
-    setTimeout(() => { refreshDashboardKpi(); }, 1500);
-    setTimeout(() => { refreshDashboardSummary(); }, 3000);
+    setTimeout(() => { window.AdminDashboard?.refreshKpi?.(); }, 1500);
+    setTimeout(() => { window.AdminDashboard?.refreshSummary?.(); }, 3000);
   }
-
-  async function refreshDashboardKpi() {
-    try {
-      await primeBootstrap();
-      const cachedHist = bootstrapSection("history_stats");
-      // /admin/stats/hourly is not bundled — always fetch. /admin/history IS
-      // bundled as history_stats (same shape), so consult cache first.
-      const [histRes, hourlyRes] = await Promise.all([
-        cachedHist ? null : fetch("/admin/history?hours=24&limit=1", { credentials: "same-origin" }),
-        fetch("/admin/stats/hourly?hours=24", { credentials: "same-origin" }),
-      ]);
-      if (!hourlyRes.ok) return;
-      const hist = cachedHist || (histRes && histRes.ok ? await histRes.json() : null);
-      if (!hist) return;
-      const dist = (await hourlyRes.json()).distribution || [];
-      const total = (hist.stats && hist.stats.total) || 0;
-      const last24h = (hist.stats && hist.stats.last_24h) || 0;
-      const peakEntry = dist.reduce((m, e) => (e.count > (m?.count || -1) ? e : m), null);
-      const peakVal = peakEntry ? peakEntry.count : 0;
-      const peakHour = peakEntry ? (peakEntry.hour || "").slice(-5) : "—";
-
-      const tileMsg = document.querySelector('[data-kpi="messages"]');
-      if (tileMsg) {
-        tileMsg.querySelector("[data-kpi-value]").textContent = total.toLocaleString();
-        tileMsg.querySelector("[data-kpi-delta]").textContent = `+${last24h.toLocaleString()} / 24h`;
-      }
-      const tilePeak = document.querySelector('[data-kpi="peak"]');
-      if (tilePeak) {
-        tilePeak.querySelector("[data-kpi-value]").textContent = peakVal.toLocaleString();
-        tilePeak.querySelector("[data-kpi-delta]").textContent = peakEntry ? `於 ${peakHour}` : "無資料";
-        if (dist.length) {
-          const bars = dist.slice(-12).map(e => Math.max(2, Math.round((e.count / Math.max(1, peakVal)) * 12)));
-          tilePeak.querySelector("[data-kpi-bars]").innerHTML = bars.map(h =>
-            `<span style="height:${h}px;opacity:${0.3 + h/20}"></span>`
-          ).join("");
-        }
-      }
-    } catch (e) {
-      // Silent — dashboard falls back to placeholders.
-    }
-  }
-
-  // Dashboard summary cards — prototype admin-v3.jsx active-poll + messages + widgets.
-  async function refreshDashboardSummary() {
-    populateDashboardPoll();
-    populateDashboardMessages();
-    populateDashboardWidgets();
-  }
-
-  async function populateDashboardPoll() {
-    const body = document.querySelector("[data-dash-poll-body]");
-    const timer = document.querySelector("[data-dash-poll-timer]");
-    if (!body) return;
-    try {
-      await primeBootstrap();
-      const cachedMet = bootstrapSection("metrics");
-      let m = cachedMet;
-      if (!m) {
-        const r = await fetch("/admin/metrics", { credentials: "same-origin" });
-        if (!r.ok) return;
-        m = await r.json();
-      }
-      const ps = m.poll_state;
-      if (!ps || !ps.active || !Array.isArray(ps.options) || ps.options.length === 0) {
-        body.innerHTML = `<div class="admin-dash-empty">尚無進行中投票 · 切換至「投票」頁建立</div>`;
-        if (timer) timer.textContent = "";
-        return;
-      }
-      const totalVotes = ps.options.reduce((s, o) => s + (o.votes || 0), 0);
-      const keys = ["A", "B", "C", "D", "E", "F"];
-      let winnerIdx = 0;
-      ps.options.forEach((o, i) => { if ((o.votes || 0) > (ps.options[winnerIdx].votes || 0)) winnerIdx = i; });
-      body.innerHTML =
-        `<div class="admin-dash-poll-question" style="font-size:13px;margin-bottom:8px">${escapeHtml(ps.question || "投票進行中")}</div>` +
-        ps.options.map((o, i) => {
-          const pct = totalVotes ? Math.round((o.votes / totalVotes) * 100) : 0;
-          const win = i === winnerIdx && totalVotes > 0;
-          return `
-            <div class="admin-dash-poll-opt ${win ? "is-winner" : ""}">
-              <div class="row">
-                <span class="tag">${keys[i] || String(i + 1)}</span>
-                <span class="label">${escapeHtml(o.label || "")}</span>
-                <span class="pct">${pct}%</span>
-                <span class="votes">${(o.votes || 0)} 票</span>
-              </div>
-              <div class="bar"><span style="width:${pct}%"></span></div>
-            </div>`;
-        }).join("") +
-        `<div class="admin-dash-empty" style="padding:6px 4px;margin-top:4px;font-size:10px">TOTAL · ${totalVotes} 票 · 觀眾輸入 A B C D 即可投票</div>`;
-      if (timer) {
-        const remain = ps.remaining_seconds;
-        timer.textContent = typeof remain === "number" && remain > 0
-          ? `● ${Math.floor(remain / 60)}:${String(remain % 60).padStart(2, "0")} 剩餘`
-          : "● LIVE";
-      }
-    } catch (e) {
-      // Silent.
-    }
-  }
-
-  async function populateDashboardMessages() {
-    const body = document.querySelector("[data-dash-messages]");
-    if (!body) return;
-    try {
-      const r = await fetch("/admin/history?hours=24&limit=7", { credentials: "same-origin" });
-      if (!r.ok) return;
-      const data = await r.json();
-      const records = (data.records || []).slice(0, 7);
-      if (records.length === 0) {
-        body.innerHTML = `<div class="admin-dash-empty">等待訊息…</div>`;
-        return;
-      }
-      body.innerHTML = records.map(rec => {
-        const ts = (rec.timestamp || "").slice(11, 19);
-        const txt = escapeHtml(rec.text || rec.message || "");
-        const user = escapeHtml(rec.nickname || rec.user || "guest");
-        const tag = "MSG";
-        const tagStyle = `color:var(--admin-text-dim)`;
-        return `
-          <div class="admin-dash-msg-row">
-            <span class="time">${ts}</span>
-            <span class="tag" style="${tagStyle}">${tag}</span>
-            <div>
-              <div class="text">${txt}</div>
-              <div class="meta">@${user}</div>
-            </div>
-            <span class="more">⋯</span>
-          </div>`;
-      }).join("");
-    } catch (e) {
-      // Silent.
-    }
-  }
-
-  async function populateDashboardWidgets() {
-    const body = document.querySelector("[data-dash-widgets]");
-    if (!body) return;
-    try {
-      await primeBootstrap();
-      let data = bootstrapSection("widgets");
-      if (!data) {
-        const r = await fetch("/admin/widgets/list", { credentials: "same-origin" });
-        if (!r.ok) {
-          body.innerHTML = `<div class="admin-dash-empty">無可用 widgets</div>`;
-          return;
-        }
-        data = await r.json();
-      }
-      const widgets = (data.widgets || data.items || []).slice(0, 4);
-      if (widgets.length === 0) {
-        body.innerHTML = `<div class="admin-dash-empty">尚未啟用任何 widget</div>`;
-        return;
-      }
-      body.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">` +
-        widgets.map(w => {
-          const running = w.enabled || w.running;
-          const dotColor = running ? "var(--color-success, #22c55e)" : "var(--admin-text-dim)";
-          return `
-            <div class="admin-dash-widget-tile">
-              <div style="display:flex;align-items:center;gap:6px">
-                <span style="width:6px;height:6px;border-radius:50%;background:${dotColor}"></span>
-                <span class="kind">${escapeHtml(w.kind || "WIDGET")}</span>
-              </div>
-              <div class="title">${escapeHtml(w.name || w.title || w.id || "widget")}</div>
-              <div class="uptime">${running ? "● RUNNING" : "○ PAUSED"}</div>
-            </div>`;
-        }).join("") +
-        `</div>`;
-    } catch (e) {
-      body.innerHTML = `<div class="admin-dash-empty">無可用 widgets</div>`;
-    }
-  }
+  // Dashboard KPI + summary helpers extracted to admin-dashboard.js (P6-2).
+  // Reachable via window.AdminDashboard.{refreshKpi, refreshSummary, ...}.
 
   const ADMIN_ROUTES = {
     dashboard: { title: "控制台", kicker: "DASHBOARD · 活動進行中", sections: [], showKpi: true },
