@@ -1,35 +1,29 @@
 /**
- * Admin Display Settings (P0-3) — dedicated Soft Holo HUD page.
+ * Admin Display Settings — 2026-04-25 prototype rewrite.
  *
  * Replaces the legacy 6 setting cards (sec-color · sec-opacity · sec-fontsize
- * · sec-speed · sec-fontfamily · sec-layout) with a single v2-styled page
- * where each row exposes:
- *   - A 允許觀眾自訂 toggle that flips options.<Key>[0]
- *   - When ON: compound min/max controls (Opacity/FontSize/Speed) or a
- *     value picker (Color/FontFamily/Layout) for the "default" everyone
- *     starts with — viewers may then override within the allowed band
- *   - When OFF: a single-value picker that becomes the unified locked default
- *   - Live preview rendering the danmu pill at the current settings
- *   - Collapsed summary like "✓ 允許 · 20–64 px" / "✕ 鎖定 · 50 px"
+ * · sec-speed · sec-fontfamily · sec-layout) with a single Soft Holo HUD page
+ * matching docs/designs/design-v2/components/admin-display-settings.jsx:
  *
- * Endpoints used (existing, no backend changes):
- *   GET  /get_settings        → options snapshot (public, no CSRF)
- *   GET  /fonts               → available font families
- *   POST /admin/Set           → toggle index 0 (broadcasts to viewers)
- *   POST /admin/update        → update value at index (broadcasts to viewers)
- *   GET  /admin/metrics       → live ws_clients count for connected-viewer chip
+ *   ┌─ 1fr ──────────────────────────────────┐  ┌─ 340px ────────┐
+ *   │ TABLE HEAD (param · default · audience) │  │ PreviewCard    │
+ *   │ ROW · OPACITY                           │  │ (180px stage)  │
+ *   │ ROW · FONT SIZE                         │  ├────────────────┤
+ *   │ ROW · SPEED                             │  │ DeployCard     │
+ *   │ ROW · COLOR                             │  ├────────────────┤
+ *   │ ROW · FONT FAMILY                       │  │ SummaryCard    │
+ *   │ ROW · LAYOUT                            │  │ (6 rows)       │
+ *   └─────────────────────────────────────────┘  └────────────────┘
  *
- * "套用至所有觀眾" button does NOT introduce a new endpoint — every control
- * auto-saves via /admin/Set or /admin/update, and the existing `set_option`
- * / `update` handlers already call `messaging.send_message(settings_changed)`
- * to push the snapshot to /ws/settings subscribers. The button explicitly
- * re-broadcasts the current toggles to confirm and surface a viewer-count
- * toast.
+ * Each row is one tabular line: [label + value-badge | default-picker
+ * (+ dashed range band when audience ON) | audience pill toggle].
  *
- * Section id is intentionally NOT prefixed `sec-` so admin.js router's
- * [id^="sec-"] visibility sweep leaves it alone. This module owns its own
- * show/hide via the shell's `data-active-route` attr, mirroring
- * admin-security.js / admin-backup.js.
+ * Endpoints used (existing — no backend changes):
+ *   GET  /get_settings   → options snapshot, shape options[Key] = [bool, min, max, default]
+ *   GET  /fonts          → font catalog
+ *   POST /admin/Set      → toggle index 0
+ *   POST /admin/update   → update value at index { type, value, index }
+ *   GET  /admin/metrics  → ws_clients gauge for SummaryCard / DeployCard banner
  */
 (function () {
   "use strict";
@@ -37,23 +31,30 @@
   const PAGE_ID = "admin-display-v2-page";
   const LEGACY_IDS = ["sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout"];
   const METRICS_INTERVAL_MS = 5000;
-  const PREVIEW_DEBOUNCE_MS = 120;
 
-  var escapeHtml = (window.AdminUtils && window.AdminUtils.escapeHtml) || function (s) {
+  const escapeHtml = (window.AdminUtils && window.AdminUtils.escapeHtml) || function (s) {
     return String(s).replace(/[&<>"']/g, function (c) {
-      return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c];
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[c];
     });
   };
 
-  // Defaults if /get_settings hasn't returned yet.
+  // Server stores [bool, min, max, default]. Prototype's `step` is a UI hint
+  // only — kept in client-side state, not persisted.
   const DEFAULT_RANGES = {
-    Opacity:  { min: 0,  max: 100 },
-    FontSize: { min: 12, max: 100 },
-    Speed:    { min: 1,  max: 10 },
+    Opacity:  { min: 0,  max: 100, step: 1, unit: "%" },
+    FontSize: { min: 12, max: 100, step: 2, unit: "px" },
+    Speed:    { min: 1,  max: 10,  step: 1, unit: "" },
   };
 
-  const COLOR_PRESETS = ["FFFFFF", "38BDF8", "F472B6", "F59E0B", "10B981", "A855F7", "EF4444", "1E293B"];
-  const LAYOUT_OPTIONS = ["scroll", "top_fixed", "bottom_fixed", "float", "rise"];
+  const FONT_SIZE_PRESETS = [14, 20, 32, 44, 64];
+  const COLOR_PRESETS = ["#F8FAFC", "#7DD3FC", "#FCD34D", "#F472B6", "#86EFAC", "#C084FC", "#FB923C", "#FCA5A5"];
+  const LAYOUT_PRESETS = [
+    { value: "scroll",       label: "SCROLL", icon: "→" },
+    { value: "top_fixed",    label: "TOP",    icon: "▀" },
+    { value: "bottom_fixed", label: "BOTTOM", icon: "▄" },
+    { value: "float",        label: "CENTER", icon: "■" },
+    { value: "rise",         label: "SIDE",   icon: "▌" },
+  ];
 
   function t(key, fallback) {
     if (window.ServerI18n && typeof window.ServerI18n.t === "function") {
@@ -63,283 +64,357 @@
     return fallback != null ? fallback : key;
   }
 
+  // Client-only step storage. Server doesn't persist step, so stash it locally.
+  const _stepCache = {};
+  function getStep(key) {
+    if (_stepCache[key] != null) return _stepCache[key];
+    const r = DEFAULT_RANGES[key];
+    return r ? r.step : 1;
+  }
+  function setStep(key, v) { _stepCache[key] = Number(v) || getStep(key); }
+
   // ─── State ──────────────────────────────────────────────────────────
 
-  let _state = {
+  const _state = {
     options: null,
-    ranges: (window.DANMU_CONFIG && window.DANMU_CONFIG.settingRanges) || DEFAULT_RANGES,
     fonts: [],
     metricsTimer: null,
-    previewTimer: null,
+    viewerCount: 0,
   };
 
-  // ─── HTML ───────────────────────────────────────────────────────────
+  // ─── HTML shell ─────────────────────────────────────────────────────
 
   function pageTemplate() {
     return `
-      <div id="${PAGE_ID}" class="admin-display-page hud-page-stack lg:col-span-2">
+      <div id="${PAGE_ID}" class="admin-dsp2-page hud-page-stack lg:col-span-2">
         <div class="admin-v2-head">
-          <div class="admin-v2-kicker">DISPLAY · 觀眾可自訂欄位</div>
+          <div class="admin-v2-kicker">DISPLAY SETTINGS · 每列決定該參數的預設值 + 是否讓觀眾自訂 + 自訂範圍</div>
           <div class="admin-v2-title">${escapeHtml(t("displaySettingsTitle", "顯示設定"))}</div>
-          <p class="admin-v2-note">
-            ${escapeHtml(t("displaySettingsNote", "設定哪些彈幕參數允許觀眾自訂 — OFF 時所有觀眾使用統一預設值"))}
-          </p>
-          <div class="admin-display-meta">
-            <span class="admin-v2-chip" id="dsp2-viewers" title="目前 /ws/settings 連線數">
-              VIEWERS · <span data-viewer-count>—</span>
-            </span>
-            <button type="button" id="dsp2-broadcast" class="admin-poll-btn is-primary">
-              ${escapeHtml(t("displaySettingsApply", "套用至所有觀眾"))}
-            </button>
+        </div>
+
+        <div class="admin-dsp2-grid">
+          <!-- Left · row list -->
+          <div class="admin-dsp2-list" id="dsp2-list">
+            <div class="admin-dsp2-list-head">
+              <span>參數 · PARAM</span>
+              <span>預設值 · DEFAULT</span>
+              <span class="admin-dsp2-list-head-right">觀眾自訂 · AUDIENCE</span>
+            </div>
+            <div id="dsp2-rows">
+              <div class="admin-dsp2-empty">${escapeHtml(t("loading", "載入中…"))}</div>
+            </div>
           </div>
-        </div>
 
-        <div id="dsp2-rows" class="admin-display-rows">
-          <div class="admin-display-empty">${escapeHtml(t("loading", "載入中…"))}</div>
-        </div>
-      </div>`;
-  }
+          <!-- Right rail -->
+          <div class="admin-dsp2-rail">
+            <div class="admin-dsp2-card admin-dsp2-preview" id="dsp2-preview">
+              <div class="admin-dsp2-preview-head">
+                <span class="admin-v2-monolabel">LIVE PREVIEW</span>
+                <span class="admin-dsp2-preview-sync">
+                  <span class="admin-dsp2-dot"></span>
+                  ${escapeHtml(t("displayPreviewSync", "同步 Overlay"))}
+                </span>
+              </div>
+              <div class="admin-dsp2-preview-stage" data-preview-stage>
+                <div class="admin-dsp2-preview-pill admin-dsp2-preview-pill-1" data-preview-pill="1">
+                  <span class="admin-dsp2-preview-tag">@guest#1284</span>
+                  <span data-preview-text>這個想法真的很棒 ✨</span>
+                </div>
+                <div class="admin-dsp2-preview-pill admin-dsp2-preview-pill-2" data-preview-pill="2">
+                  <span class="admin-dsp2-preview-tag">@annie</span>
+                  <span>先舉手發問 🙋</span>
+                </div>
+              </div>
+              <div class="admin-dsp2-preview-foot">
+                <span data-preview-foot-l>—</span>
+                <span data-preview-foot-r>—</span>
+              </div>
+            </div>
 
-  // ─── Row builders ───────────────────────────────────────────────────
+            <div class="admin-dsp2-card admin-dsp2-deploy">
+              <div class="admin-v2-monolabel admin-dsp2-card-head">
+                <span>${escapeHtml(t("displayDeployTitle", "推送動作"))}</span>
+                <span class="admin-dsp2-card-head-en">DEPLOY</span>
+              </div>
+              <div class="admin-dsp2-deploy-row">
+                <button type="button" class="admin-dsp2-btn admin-dsp2-btn-primary" id="dsp2-deploy">
+                  ${escapeHtml(t("displayDeployApply", "▶ 即時套用"))}
+                </button>
+                <button type="button" class="admin-dsp2-btn admin-dsp2-btn-ghost" id="dsp2-revert">
+                  ${escapeHtml(t("displayDeployRevert", "還原預設"))}
+                </button>
+              </div>
+              <div class="admin-dsp2-deploy-note">
+                ${escapeHtml(t("displayDeployNote", "即時同步到 overlay · 觀眾端下次刷新 viewer 生效"))}
+              </div>
+            </div>
 
-  function summaryFor(key, opt) {
-    if (!Array.isArray(opt)) return "";
-    const enabled = opt[0] !== false;
-    const allow = enabled ? "✓ 允許" : "✕ 鎖定";
-    if (key === "Opacity")  return `${allow} · ${enabled ? `${opt[1]}–${opt[2]}%` : `${opt[3]}%`}`;
-    if (key === "FontSize") return `${allow} · ${enabled ? `${opt[1]}–${opt[2]} px` : `${opt[3]} px`}`;
-    if (key === "Speed")    return `${allow} · ${enabled ? `${opt[1]}–${opt[2]}` : opt[3]}`;
-    if (key === "Color")    return `${allow} · #${String(opt[3] || "FFFFFF").replace(/^#/, "").toUpperCase()}`;
-    if (key === "FontFamily") return `${allow} · ${opt[3] || "—"}`;
-    if (key === "Layout")     return `${allow} · ${opt[3] || "scroll"}`;
-    return allow;
-  }
-
-  function rowHead(key, label, kicker, opt) {
-    const enabled = Array.isArray(opt) && opt[0] !== false;
-    return `
-      <summary class="admin-display-row-head">
-        <div class="admin-display-row-titleblock">
-          <div class="admin-v2-monolabel">${escapeHtml(kicker)}</div>
-          <div class="admin-display-row-title">${escapeHtml(label)}</div>
-        </div>
-        <div class="admin-display-row-summary" data-row-summary>${escapeHtml(summaryFor(key, opt))}</div>
-        <label class="admin-display-toggle ${enabled ? "is-on" : ""}" data-toggle-host>
-          <input type="checkbox" data-toggle-key="${escapeHtml(key)}" ${enabled ? "checked" : ""} />
-          <span class="admin-display-toggle-track"><span class="admin-display-toggle-thumb"></span></span>
-          <span class="admin-display-toggle-label">${enabled ? "ON" : "OFF"}</span>
-        </label>
-      </summary>`;
-  }
-
-  function rangeBand(key, opt, range) {
-    const min = range.min;
-    const max = range.max;
-    const lo = Math.max(min, Number(opt[1]) || min);
-    const hi = Math.min(max, Number(opt[2]) || max);
-    const span = Math.max(1, max - min);
-    const left  = ((lo - min) / span) * 100;
-    const right = 100 - ((hi - min) / span) * 100;
-    return `
-      <div class="admin-display-band" aria-hidden="true">
-        <div class="admin-display-band-fill" style="left:${left}%;right:${right}%"></div>
-        <div class="admin-display-band-axis"><span>${min}</span><span>${max}</span></div>
-      </div>`;
-  }
-
-  function compoundBody(key, opt, label, suffix) {
-    const range = _state.ranges[key] || DEFAULT_RANGES[key] || { min: 0, max: 100 };
-    const enabled = opt[0] !== false;
-    return `
-      <div class="admin-display-row-body" data-body-key="${escapeHtml(key)}">
-        <div class="admin-display-fields ${enabled ? "" : "is-locked"}">
-          <label class="admin-display-field" ${enabled ? "" : "hidden"}>
-            <span class="admin-v2-monolabel">${escapeHtml(t("minPercent", "最小"))}${suffix ? " · " + suffix : ""}</span>
-            <input type="number" class="admin-v2-input" data-key="${escapeHtml(key)}" data-index="1"
-              value="${escapeHtml(String(opt[1] != null ? opt[1] : range.min))}"
-              min="${range.min}" max="${range.max}" step="1" ${enabled ? "" : "disabled"} />
-          </label>
-          <label class="admin-display-field" ${enabled ? "" : "hidden"}>
-            <span class="admin-v2-monolabel">${escapeHtml(t("maxPercent", "最大"))}${suffix ? " · " + suffix : ""}</span>
-            <input type="number" class="admin-v2-input" data-key="${escapeHtml(key)}" data-index="2"
-              value="${escapeHtml(String(opt[2] != null ? opt[2] : range.max))}"
-              min="${range.min}" max="${range.max}" step="1" ${enabled ? "" : "disabled"} />
-          </label>
-          <label class="admin-display-field" ${enabled ? "hidden" : ""}>
-            <span class="admin-v2-monolabel">${escapeHtml(t("specificValue", "預設值"))}${suffix ? " · " + suffix : ""}</span>
-            <input type="number" class="admin-v2-input" data-key="${escapeHtml(key)}" data-index="3"
-              value="${escapeHtml(String(opt[3] != null ? opt[3] : range.min))}"
-              min="${range.min}" max="${range.max}" step="1" />
-          </label>
-        </div>
-        ${enabled ? rangeBand(key, opt, range) : ""}
-        <div class="admin-display-preview" data-preview-key="${escapeHtml(key)}">
-          <div class="admin-v2-monolabel">PREVIEW · 觀眾頁渲染</div>
-          <div class="admin-display-preview-stage" data-preview-stage>
-            <span class="admin-display-preview-pill" data-preview-pill>觀眾彈幕示意</span>
+            <div class="admin-dsp2-card admin-dsp2-summary" id="dsp2-summary">
+              <div class="admin-v2-monolabel admin-dsp2-card-head">
+                <span>${escapeHtml(t("displaySummaryTitle", "觀眾端摘要"))}</span>
+                <span class="admin-dsp2-card-head-en" data-summary-count>AUDIENCE · 0/6 OPEN</span>
+              </div>
+              <div class="admin-dsp2-summary-list" data-summary-list></div>
+            </div>
           </div>
         </div>
       </div>`;
   }
 
-  function chipsBody(key, opt, choices, options) {
-    options = options || {};
+  // ─── Row rendering ──────────────────────────────────────────────────
+
+  const ROWS = [
+    { key: "Opacity",    label: "透明度",   en: "OPACITY",     fmt: (v) => `${Math.round(v)}%` },
+    { key: "FontSize",   label: "字級",     en: "FONT SIZE",   fmt: (v) => `${v}px` },
+    { key: "Speed",      label: "滾動速度", en: "SPEED",       fmt: (v) => `${(+v).toFixed(1)}×` },
+    { key: "Color",      label: "顏色",     en: "COLOR",       fmt: (v) => `#${String(v || "").replace(/^#/, "").toUpperCase() || "—"}`, noRange: true },
+    { key: "FontFamily", label: "字型",     en: "FONT FAMILY", fmt: (v) => v || "—",                       noRange: true },
+    { key: "Layout",     label: "排版",     en: "LAYOUT",      fmt: (v) => layoutLabel(v),                  noRange: true },
+  ];
+
+  function layoutLabel(v) {
+    const m = LAYOUT_PRESETS.find((l) => l.value === v);
+    return m ? m.label : (v || "—");
+  }
+
+  function pickerHtml(row, opt) {
     const enabled = opt[0] !== false;
-    const current = opt[3] != null ? String(opt[3]) : "";
-    const chips = choices.map((c) => {
-      const val = typeof c === "object" ? c.value : c;
-      const label = typeof c === "object" ? c.label : c;
-      const swatch = typeof c === "object" ? c.swatch : null;
-      const isCurrent = String(val) === String(current);
+    const def = opt[3];
+    const range = DEFAULT_RANGES[row.key];
+
+    if (row.key === "Opacity" || row.key === "Speed") {
+      const r = range;
+      const cur = def != null ? Number(def) : r.min;
+      const safeCur = isFinite(cur) ? cur : r.min;
+      const pct = ((safeCur - r.min) / Math.max(1e-6, r.max - r.min)) * 100;
       return `
-        <button type="button" class="admin-display-chip ${isCurrent ? "is-active" : ""}"
-          data-chip-key="${escapeHtml(key)}" data-chip-value="${escapeHtml(val)}">
-          ${swatch ? `<span class="admin-display-chip-swatch" style="background:${escapeHtml(swatch)}"></span>` : ""}
-          <span>${escapeHtml(label)}</span>
-        </button>`;
-    }).join("");
-
-    const customSlot = options.customSlot || "";
-    return `
-      <div class="admin-display-row-body" data-body-key="${escapeHtml(key)}">
-        <div class="admin-display-pickset">
-          <div class="admin-v2-monolabel" style="margin-bottom:6px">
-            ${escapeHtml(enabled ? t("displayDefaultLabel", "預設值（觀眾起始）") : t("displayLockedLabel", "鎖定值（所有觀眾）"))}
+        <div class="admin-dsp2-track" data-track="${row.key}">
+          <input type="number" class="admin-dsp2-num" data-num-key="${row.key}" data-num-index="3"
+            min="${r.min}" max="${r.max}" step="${getStep(row.key)}" value="${escapeHtml(String(safeCur))}" />
+          <div class="admin-dsp2-slider">
+            <div class="admin-dsp2-slider-track">
+              <div class="admin-dsp2-slider-fill" style="width:${pct.toFixed(2)}%"></div>
+              <div class="admin-dsp2-slider-thumb" style="left:calc(${pct.toFixed(2)}% - 8px)"></div>
+            </div>
+            <input type="range" class="admin-dsp2-range" data-range-key="${row.key}"
+              min="${r.min}" max="${r.max}" step="${getStep(row.key)}" value="${escapeHtml(String(safeCur))}" />
+            <div class="admin-dsp2-slider-axis">
+              <span>${r.min}${r.unit}</span><span>${r.max}${r.unit}</span>
+            </div>
           </div>
-          <div class="admin-display-chips">${chips}</div>
-          ${customSlot}
-        </div>
-        <div class="admin-display-preview" data-preview-key="${escapeHtml(key)}">
-          <div class="admin-v2-monolabel">PREVIEW · 觀眾頁渲染</div>
-          <div class="admin-display-preview-stage" data-preview-stage>
-            <span class="admin-display-preview-pill" data-preview-pill>觀眾彈幕示意</span>
-          </div>
-        </div>
-      </div>`;
-  }
-
-  function buildRow(key, label, kicker, opt) {
-    let body;
-    if (key === "Opacity")  body = compoundBody(key, opt, label, "%");
-    else if (key === "FontSize") body = compoundBody(key, opt, label, "px");
-    else if (key === "Speed")    body = compoundBody(key, opt, label, "");
-    else if (key === "Color") {
-      const choices = COLOR_PRESETS.map((hex) => ({ value: hex, label: "#" + hex, swatch: "#" + hex }));
-      const customColor = "#" + String(opt[3] || "FFFFFF").toUpperCase().replace(/^#/, "");
-      const customSlot = `
-        <label class="admin-display-field" style="margin-top:10px;max-width:220px">
-          <span class="admin-v2-monolabel">${escapeHtml(t("specificColor", "自訂顏色"))}</span>
-          <input type="color" class="admin-v2-input" data-key="Color" data-index="3"
-            value="${escapeHtml(customColor)}" />
-        </label>`;
-      body = chipsBody(key, opt, choices, { customSlot });
-    } else if (key === "FontFamily") {
-      const choices = (_state.fonts.length ? _state.fonts : ["NotoSansTC", "Inter"]).map((f) => ({
-        value: typeof f === "string" ? f : (f.name || f.family || ""),
-        label: typeof f === "string" ? f : (f.label || f.name || f.family || ""),
-      })).filter((c) => c.value);
-      body = chipsBody(key, opt, choices);
-    } else if (key === "Layout") {
-      const choices = LAYOUT_OPTIONS.map((m) => ({
-        value: m,
-        label: t("layout_" + m, m === "scroll" ? "滾動" : m === "top_fixed" ? "頂部固定" :
-                m === "bottom_fixed" ? "底部固定" : m === "float" ? "浮動" : "上升"),
-      }));
-      body = chipsBody(key, opt, choices);
-    } else {
-      body = "";
+        </div>`;
     }
 
+    if (row.key === "FontSize") {
+      const cur = Number(def);
+      return `
+        <div class="admin-dsp2-chiprow">
+          ${FONT_SIZE_PRESETS.map((s) => {
+            const on = cur === s;
+            return `<button type="button" class="admin-dsp2-fchip ${on ? "is-active" : ""}"
+              data-chip-key="FontSize" data-chip-value="${s}">${s}</button>`;
+          }).join("")}
+        </div>`;
+    }
+
+    if (row.key === "Color") {
+      const cur = "#" + String(def || "FFFFFF").replace(/^#/, "").toUpperCase();
+      return `
+        <div class="admin-dsp2-swatches">
+          ${COLOR_PRESETS.map((c) => {
+            const on = c.toUpperCase() === cur;
+            return `<button type="button" class="admin-dsp2-swatch ${on ? "is-active" : ""}"
+              data-chip-key="Color" data-chip-value="${c.replace(/^#/, "").toUpperCase()}"
+              style="background:${c}" aria-label="${c}"></button>`;
+          }).join("")}
+          <label class="admin-dsp2-swatch-custom" title="${escapeHtml(t("specificColor", "自訂顏色"))}">
+            <input type="color" data-num-key="Color" data-num-index="3"
+              value="${escapeHtml(cur)}" />
+          </label>
+        </div>`;
+    }
+
+    if (row.key === "FontFamily") {
+      const fonts = (_state.fonts && _state.fonts.length ? _state.fonts : ["NotoSansTC", "Inter"]).map((f) => {
+        const v = typeof f === "string" ? f : (f.name || f.family || "");
+        const l = typeof f === "string" ? f : (f.label || f.name || f.family || "");
+        return { value: v, label: l };
+      }).filter((c) => c.value);
+      const cur = String(def || "");
+      return `
+        <div class="admin-dsp2-chiprow admin-dsp2-chiprow-wrap">
+          ${fonts.map((f) => {
+            const on = f.value === cur;
+            return `<button type="button" class="admin-dsp2-tchip ${on ? "is-active" : ""}"
+              data-chip-key="FontFamily" data-chip-value="${escapeHtml(f.value)}">${escapeHtml(f.label)}</button>`;
+          }).join("")}
+        </div>`;
+    }
+
+    if (row.key === "Layout") {
+      const cur = String(def || "scroll");
+      return `
+        <div class="admin-dsp2-tiles">
+          ${LAYOUT_PRESETS.map((l) => {
+            const on = l.value === cur;
+            return `<button type="button" class="admin-dsp2-tile ${on ? "is-active" : ""}"
+              data-chip-key="Layout" data-chip-value="${l.value}">
+              <span class="admin-dsp2-tile-icon">${l.icon}</span>
+              <span class="admin-dsp2-tile-label">${l.label}</span>
+            </button>`;
+          }).join("")}
+        </div>`;
+    }
+    return "";
+  }
+
+  function rangeBandHtml(row, opt) {
+    if (row.noRange) return "";
+    const enabled = opt[0] !== false;
+    if (!enabled) return "";
+    const r = DEFAULT_RANGES[row.key];
+    const lo = opt[1] != null ? opt[1] : r.min;
+    const hi = opt[2] != null ? opt[2] : r.max;
+    const step = getStep(row.key);
     return `
-      <details class="admin-display-row" data-row-key="${escapeHtml(key)}" open>
-        ${rowHead(key, label, kicker, opt)}
-        ${body}
-      </details>`;
+      <div class="admin-dsp2-band">
+        <div class="admin-dsp2-band-cell">
+          <span class="admin-v2-monolabel">${escapeHtml(t("displayMinAudience", "觀眾 MIN"))}</span>
+          <div class="admin-dsp2-band-input">
+            <input type="number" data-num-key="${row.key}" data-num-index="1"
+              min="${r.min}" max="${r.max}" step="${step}" value="${escapeHtml(String(lo))}" />
+            ${r.unit ? `<span>${r.unit}</span>` : ""}
+          </div>
+        </div>
+        <div class="admin-dsp2-band-cell">
+          <span class="admin-v2-monolabel">${escapeHtml(t("displayMaxAudience", "觀眾 MAX"))}</span>
+          <div class="admin-dsp2-band-input">
+            <input type="number" data-num-key="${row.key}" data-num-index="2"
+              min="${r.min}" max="${r.max}" step="${step}" value="${escapeHtml(String(hi))}" />
+            ${r.unit ? `<span>${r.unit}</span>` : ""}
+          </div>
+        </div>
+        <div class="admin-dsp2-band-cell">
+          <span class="admin-v2-monolabel">STEP</span>
+          <div class="admin-dsp2-band-input">
+            <input type="number" data-num-key="${row.key}" data-num-index="step"
+              min="0.1" step="0.1" value="${escapeHtml(String(step))}" />
+            ${r.unit ? `<span>${r.unit}</span>` : ""}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function rowHtml(row, opt) {
+    const enabled = opt[0] !== false;
+    const def = opt[3];
+    const valStr = row.fmt ? row.fmt(def) : (def != null ? String(def) : "—");
+    const isLast = row.key === "Layout";
+    return `
+      <div class="admin-dsp2-row ${enabled ? "is-on" : "is-off"} ${isLast ? "is-last" : ""}" data-row-key="${row.key}">
+        <div class="admin-dsp2-cell-label">
+          <div class="admin-dsp2-cell-label-name">${escapeHtml(row.label)}</div>
+          <div class="admin-dsp2-cell-label-en">${row.en}</div>
+          <div class="admin-dsp2-value-badge ${enabled ? "is-on" : ""}" data-value-badge>${escapeHtml(valStr)}</div>
+        </div>
+        <div class="admin-dsp2-cell-center">
+          <div class="admin-dsp2-cell-hint">
+            <span class="admin-dsp2-cell-hint-arrow">▸</span>
+            ${escapeHtml(enabled
+              ? t("displayHintAudienceOn", "觀眾拖動滑桿時的起始值")
+              : t("displayHintAudienceOff", "所有觀眾看到的固定值"))}
+          </div>
+          <div class="admin-dsp2-picker" data-picker-host>${pickerHtml(row, opt)}</div>
+          <div class="admin-dsp2-band-host" data-band-host>${rangeBandHtml(row, opt)}</div>
+        </div>
+        <div class="admin-dsp2-cell-toggle">
+          <button type="button" class="admin-dsp2-pill ${enabled ? "is-on" : ""}"
+            data-toggle-key="${row.key}" aria-pressed="${enabled ? "true" : "false"}">
+            <span class="admin-dsp2-pill-track"><span class="admin-dsp2-pill-thumb"></span></span>
+            <span class="admin-dsp2-pill-label">${enabled ? "可自訂" : "鎖定"}</span>
+          </button>
+          <div class="admin-dsp2-toggle-hint">
+            ${escapeHtml(enabled
+              ? t("displayToggleHintOn", "觀眾端顯示此欄位")
+              : (row.noRange
+                  ? t("displayToggleHintOffPick", "觀眾看不到選項")
+                  : t("displayToggleHintOffSlider", "觀眾看不到 slider")))}
+          </div>
+        </div>
+      </div>`;
   }
 
   function renderRows() {
     const host = document.getElementById("dsp2-rows");
     if (!host) return;
     if (!_state.options) {
-      host.innerHTML = `<div class="admin-display-empty">${escapeHtml(t("loading", "載入中…"))}</div>`;
+      host.innerHTML = `<div class="admin-dsp2-empty">${escapeHtml(t("loading", "載入中…"))}</div>`;
       return;
     }
-    const rows = [
-      { key: "Color",      kicker: "COLOR · 文字顏色",         label: t("colorSetting", "顏色設定") },
-      { key: "Opacity",    kicker: "OPACITY · 透明度 %",       label: t("opacitySetting", "透明度設定") },
-      { key: "FontSize",   kicker: "FONT-SIZE · 字級 px",      label: t("fontSizeSetting", "字型大小設定") },
-      { key: "Speed",      kicker: "SPEED · 滾動速度",         label: t("speedSetting", "速度設定") },
-      { key: "FontFamily", kicker: "FONT-FAMILY · 字型家族",   label: t("fontFamilyConfig", "字型設定") },
-      { key: "Layout",     kicker: "LAYOUT · 排版模式",        label: t("layoutSetting", "佈局模式") },
-    ];
-    host.innerHTML = rows.map((r) => buildRow(r.key, r.label, r.kicker, _state.options[r.key] || [false, "", "", ""])).join("");
-    rows.forEach((r) => updatePreview(r.key));
+    host.innerHTML = ROWS
+      .map((row) => rowHtml(row, _state.options[row.key] || [false, "", "", ""]))
+      .join("");
+    renderPreview();
+    renderSummary();
   }
 
-  // ─── Live preview ───────────────────────────────────────────────────
+  // ─── Preview / Summary ──────────────────────────────────────────────
 
-  function updatePreview(key) {
-    const stage = document.querySelector(`[data-preview-key="${key}"] [data-preview-stage]`);
-    const pill  = document.querySelector(`[data-preview-key="${key}"] [data-preview-pill]`);
-    if (!stage || !pill || !_state.options) return;
-
-    const opt = _state.options[key] || [];
-    const enabled = opt[0] !== false;
-    // When enabled, show midpoint of band; when locked, show the default.
-    let pillStyle = {};
-
-    // Always pull current settings of OTHER fields from _state to make the
-    // preview holistic (e.g. preview Opacity row using current FontSize).
-    const color   = "#" + String((_state.options.Color || [])[3] || "FFFFFF").replace(/^#/, "");
-    const fontSize = Number((_state.options.FontSize || [])[3] || 36);
-    const opacity  = Number((_state.options.Opacity || [])[3] || 70);
-    const family   = String((_state.options.FontFamily || [])[3] || "NotoSansTC");
-    const layout   = String((_state.options.Layout || [])[3] || "scroll");
-
-    pillStyle.color = color;
-    pillStyle.fontSize = fontSize + "px";
-    pillStyle.opacity = (opacity / 100).toFixed(2);
-    pillStyle.fontFamily = family + ", system-ui, sans-serif";
-
-    // Per-row override — let the row preview show the *current row* mid value.
-    if (key === "Opacity") {
-      const lo = Number(opt[1] || 0), hi = Number(opt[2] || 100);
-      const v  = enabled ? Math.round((lo + hi) / 2) : Number(opt[3] || 70);
-      pillStyle.opacity = (v / 100).toFixed(2);
-    }
-    if (key === "FontSize") {
-      const lo = Number(opt[1] || 12), hi = Number(opt[2] || 100);
-      const v  = enabled ? Math.round((lo + hi) / 2) : Number(opt[3] || 36);
-      pillStyle.fontSize = v + "px";
-    }
-    if (key === "Speed") {
-      const v = enabled ? Math.round((Number(opt[1] || 1) + Number(opt[2] || 10)) / 2) : Number(opt[3] || 4);
-      // Speed visualised by translating the pill across the stage.
-      pill.dataset.speedV = String(v);
-      pill.classList.add("admin-display-preview-anim");
-      pill.style.animationDuration = (12 - Math.min(10, Math.max(1, v))) + "s";
-    } else {
-      pill.classList.remove("admin-display-preview-anim");
-      pill.style.animationDuration = "";
-      delete pill.dataset.speedV;
-    }
-    if (key === "Color") {
-      pillStyle.color = "#" + String(opt[3] || "FFFFFF").replace(/^#/, "");
-    }
-    if (key === "FontFamily") {
-      pillStyle.fontFamily = (opt[3] || "NotoSansTC") + ", system-ui, sans-serif";
-    }
-
-    Object.assign(pill.style, pillStyle);
-
-    // Layout — adjust stage layout class
-    stage.dataset.layout = key === "Layout" ? (opt[3] || "scroll") : (_state.options.Layout?.[3] || "scroll");
-    stage.dataset.locked = enabled ? "0" : "1";
+  function previewVal(key, fallback) {
+    const opt = _state.options && _state.options[key];
+    if (!opt) return fallback;
+    return opt[3] != null ? opt[3] : fallback;
   }
 
-  function debouncedPreview(key) {
-    if (_state.previewTimer) clearTimeout(_state.previewTimer);
-    _state.previewTimer = setTimeout(() => updatePreview(key), PREVIEW_DEBOUNCE_MS);
+  function renderPreview() {
+    const stage = document.querySelector("[data-preview-stage]");
+    const pill1 = document.querySelector("[data-preview-pill='1']");
+    const pill2 = document.querySelector("[data-preview-pill='2']");
+    const footL = document.querySelector("[data-preview-foot-l]");
+    const footR = document.querySelector("[data-preview-foot-r]");
+    if (!stage || !pill1 || !pill2 || !_state.options) return;
+
+    const fontSize = Number(previewVal("FontSize", 32));
+    const opacity  = Number(previewVal("Opacity", 92));
+    const speed    = Number(previewVal("Speed", 1));
+    const color    = "#" + String(previewVal("Color", "7DD3FC")).replace(/^#/, "");
+    const family   = String(previewVal("FontFamily", "NotoSansTC"));
+    const layout   = String(previewVal("Layout", "scroll"));
+
+    // Cap visual font-size so the stage doesn't blow up.
+    const capped = Math.min(fontSize, 36);
+    const op = Math.max(0, Math.min(100, opacity)) / 100;
+
+    pill1.style.fontSize = capped + "px";
+    pill1.style.color = color;
+    pill1.style.opacity = op.toFixed(2);
+    pill1.style.fontFamily = family + ", system-ui, sans-serif";
+    pill1.style.textShadow = `0 0 14px ${color}66`;
+
+    pill2.style.fontSize = (capped * 0.78).toFixed(0) + "px";
+    pill2.style.opacity = (op * 0.9).toFixed(2);
+    pill2.style.fontFamily = family + ", system-ui, sans-serif";
+
+    stage.dataset.layout = layout;
+
+    if (footL) footL.textContent = `${layoutLabel(layout)} · ${fontSize}px · ${(+speed).toFixed(1)}×`;
+    if (footR) footR.textContent = `${Math.round(opacity)}% OPACITY`;
+  }
+
+  function renderSummary() {
+    const list = document.querySelector("[data-summary-list]");
+    const headEn = document.querySelector("[data-summary-count]");
+    if (!list || !_state.options) return;
+    const opens = ROWS.filter((r) => (_state.options[r.key] || [])[0]).length;
+    if (headEn) headEn.textContent = `AUDIENCE · ${opens}/6 OPEN`;
+    list.innerHTML = ROWS.map((r) => {
+      const open = !!(_state.options[r.key] || [])[0];
+      return `<div class="admin-dsp2-srow ${open ? "is-on" : ""}">
+        <span class="admin-dsp2-srow-dot"></span>
+        <span class="admin-dsp2-srow-label">${escapeHtml(r.label)}</span>
+        <span class="admin-dsp2-srow-tag">${open ? "觀眾可改" : "鎖定"}</span>
+      </div>`;
+    }).join("");
   }
 
   // ─── Backend calls ──────────────────────────────────────────────────
@@ -349,10 +424,9 @@
       const res = await window.csrfFetch("/admin/Set", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: key, enabled: !!enabled }),
+        body: JSON.stringify({ key, enabled: !!enabled }),
       });
       if (!res.ok) throw new Error("toggle " + res.status);
-      // Update local state and re-render that row.
       if (!Array.isArray(_state.options[key])) _state.options[key] = [false, "", "", ""];
       _state.options[key][0] = !!enabled;
       renderRows();
@@ -377,7 +451,7 @@
         v = hex.toUpperCase();
       } else if (key === "Opacity" || key === "FontSize" || key === "Speed") {
         v = parseInt(v, 10);
-        const r = _state.ranges[key] || DEFAULT_RANGES[key];
+        const r = DEFAULT_RANGES[key];
         if (Number.isNaN(v) || (r && (v < r.min || v > r.max))) {
           window.showToast && window.showToast(`${key} ${r.min}–${r.max}`, false);
           return;
@@ -386,19 +460,56 @@
       const res = await window.csrfFetch("/admin/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: key, value: v, index: index }),
+        body: JSON.stringify({ type: key, value: v, index }),
       });
       if (!res.ok) throw new Error("update " + res.status);
       if (!Array.isArray(_state.options[key])) _state.options[key] = [false, "", "", ""];
       _state.options[key][index] = v;
-      // Update summary + preview without full re-render to keep focus.
-      const summaryEl = document.querySelector(`[data-row-key="${key}"] [data-row-summary]`);
-      if (summaryEl) summaryEl.textContent = summaryFor(key, _state.options[key]);
-      updatePreview(key);
-      window.showToast && window.showToast(`${key} ${t("settingsUpdated", "已更新")}`, true);
+      // Light update: refresh the row + preview/summary without full re-render
+      // so the open <input> doesn't lose focus.
+      refreshRow(key);
+      renderPreview();
+      renderSummary();
     } catch (e) {
       console.warn("[admin-display] update failed:", e);
       window.showToast && window.showToast(t("updateFailed", "更新失敗"), false);
+    }
+  }
+
+  // Re-render only the value-badge / picker chip-active state for one row.
+  function refreshRow(key) {
+    const row = document.querySelector(`[data-row-key="${key}"]`);
+    if (!row || !_state.options) return;
+    const meta = ROWS.find((r) => r.key === key);
+    if (!meta) return;
+    const opt = _state.options[key] || [false, "", "", ""];
+    const def = opt[3];
+    const badge = row.querySelector("[data-value-badge]");
+    if (badge) badge.textContent = meta.fmt ? meta.fmt(def) : (def != null ? String(def) : "—");
+
+    // Sync chip active states (FontSize / Color / FontFamily / Layout)
+    if (key === "FontSize" || key === "Color" || key === "FontFamily" || key === "Layout") {
+      row.querySelectorAll(`[data-chip-key="${key}"]`).forEach((el) => {
+        const v = el.getAttribute("data-chip-value");
+        const cur = key === "Color"
+          ? String(def || "").replace(/^#/, "").toUpperCase()
+          : String(def != null ? def : "");
+        el.classList.toggle("is-active", String(v) === cur);
+      });
+    }
+    // Sync slider visual fill for Opacity / Speed
+    if (key === "Opacity" || key === "Speed") {
+      const r = DEFAULT_RANGES[key];
+      const cur = Number(def != null ? def : r.min);
+      const pct = ((cur - r.min) / Math.max(1e-6, r.max - r.min)) * 100;
+      const fill = row.querySelector(".admin-dsp2-slider-fill");
+      const thumb = row.querySelector(".admin-dsp2-slider-thumb");
+      if (fill) fill.style.width = pct.toFixed(2) + "%";
+      if (thumb) thumb.style.left = `calc(${pct.toFixed(2)}% - 8px)`;
+      const range = row.querySelector(".admin-dsp2-range");
+      if (range && document.activeElement !== range) range.value = String(cur);
+      const num = row.querySelector(".admin-dsp2-num");
+      if (num && document.activeElement !== num) num.value = String(cur);
     }
   }
 
@@ -429,8 +540,7 @@
       const res = await fetch("/admin/metrics", { credentials: "same-origin" });
       if (!res.ok) return;
       const data = await res.json();
-      const el = document.querySelector("[data-viewer-count]");
-      if (el) el.textContent = String(data.ws_clients ?? 0);
+      _state.viewerCount = data.ws_clients ?? 0;
     } catch (e) { /* silent */ }
   }
 
@@ -439,7 +549,6 @@
     fetchMetrics();
     _state.metricsTimer = setInterval(fetchMetrics, METRICS_INTERVAL_MS);
   }
-
   function stopMetricsPoll() {
     if (_state.metricsTimer) {
       clearInterval(_state.metricsTimer);
@@ -447,35 +556,73 @@
     }
   }
 
-  // ─── Apply-to-all broadcast ─────────────────────────────────────────
+  // ─── Apply-to-all / revert ──────────────────────────────────────────
 
-  async function broadcastAll() {
+  async function deployAll() {
     if (!_state.options) return;
-    const btn = document.getElementById("dsp2-broadcast");
+    const btn = document.getElementById("dsp2-deploy");
     if (btn) { btn.disabled = true; btn.classList.add("is-pending"); }
     try {
       // Re-post each toggle to force a fresh `settings_changed` push to all
-      // connected /ws/settings clients. The endpoint already broadcasts on
-      // every set_toggle call, so this acts as the explicit "apply now".
-      const keys = ["Color", "Opacity", "FontSize", "Speed", "FontFamily", "Layout"];
-      for (const k of keys) {
-        const opt = _state.options[k];
+      // /ws/settings clients. The endpoint already broadcasts on every
+      // set_toggle call, so this acts as the explicit "apply now".
+      for (const r of ROWS) {
+        const opt = _state.options[r.key];
         if (!Array.isArray(opt)) continue;
         await window.csrfFetch("/admin/Set", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key: k, enabled: !!opt[0] }),
+          body: JSON.stringify({ key: r.key, enabled: !!opt[0] }),
         });
       }
       await fetchMetrics();
-      const el = document.querySelector("[data-viewer-count]");
-      const n = el ? el.textContent : "?";
-      window.showToast && window.showToast(t("displayBroadcastDone", "已套用，") + ` ${n} 位觀眾收到更新`, true);
+      window.showToast && window.showToast(
+        t("displayBroadcastDone", "已套用，") + ` ${_state.viewerCount} ${t("viewersReceivedSuffix", "位觀眾收到更新")}`,
+        true,
+      );
     } catch (e) {
-      console.warn("[admin-display] broadcast failed:", e);
+      console.warn("[admin-display] deploy failed:", e);
       window.showToast && window.showToast(t("updateFailed", "更新失敗"), false);
     } finally {
       if (btn) { btn.disabled = false; btn.classList.remove("is-pending"); }
+    }
+  }
+
+  async function revertDefaults() {
+    const presets = {
+      Opacity:    [true, 0,  100, 70],
+      FontSize:   [true, 20, 100, 50],
+      Speed:      [true, 1,  10,  8],
+      Color:      [true, 0,  0,   "FFFFFF"],
+      FontFamily: [false, "", "", "NotoSansTC"],
+      Layout:     [true, "", "", "scroll"],
+    };
+    const ok = window.confirm(t("displayRevertConfirm", "還原預設將覆寫目前設定，確定？"));
+    if (!ok) return;
+    try {
+      for (const [k, target] of Object.entries(presets)) {
+        await window.csrfFetch("/admin/Set", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key: k, enabled: !!target[0] }),
+        });
+        for (let i = 1; i <= 3; i++) {
+          // Skip min/max for non-numeric rows
+          if (i < 3 && (k === "Color" || k === "FontFamily" || k === "Layout")) continue;
+          if (target[i] === "" || target[i] == null) continue;
+          await window.csrfFetch("/admin/update", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: k, value: target[i], index: i }),
+          });
+        }
+      }
+      await fetchSettings();
+      renderRows();
+      window.showToast && window.showToast(t("displayRevertDone", "已還原預設"), true);
+    } catch (e) {
+      console.warn("[admin-display] revert failed:", e);
+      window.showToast && window.showToast(t("updateFailed", "更新失敗"), false);
     }
   }
 
@@ -485,53 +632,91 @@
     const page = document.getElementById(PAGE_ID);
     if (!page) return;
 
-    // Toggle (allow audience customisation)
-    page.addEventListener("change", (e) => {
-      const target = e.target;
-      if (target && target.matches("input[data-toggle-key]")) {
-        const key = target.getAttribute("data-toggle-key");
-        postToggle(key, target.checked);
-        return;
-      }
-      // number / color inputs auto-save on change
-      if (target && target.matches(".admin-v2-input[data-key]")) {
-        const key = target.getAttribute("data-key");
-        const idx = parseInt(target.getAttribute("data-index"), 10);
-        postUpdate(key, idx, target.value);
-        return;
-      }
-    });
-
-    // Range inputs — live preview while typing (debounced)
-    page.addEventListener("input", (e) => {
-      const target = e.target;
-      if (target && target.matches(".admin-v2-input[data-key]")) {
-        const key = target.getAttribute("data-key");
-        const idx = parseInt(target.getAttribute("data-index"), 10);
-        if (!Array.isArray(_state.options[key])) return;
-        // Mirror to local state (without POST) so preview reacts immediately
-        let v = target.value;
-        if (target.type === "number") v = Number(v);
-        _state.options[key][idx] = v;
-        debouncedPreview(key);
-      }
-    });
-
-    // Pick-set chips (Color/FontFamily/Layout) — POST + active state swap
+    // Pill toggle (audience on/off)
     page.addEventListener("click", (e) => {
+      const pill = e.target.closest("[data-toggle-key]");
+      if (pill) {
+        const key = pill.getAttribute("data-toggle-key");
+        const cur = !!(_state.options[key] || [])[0];
+        postToggle(key, !cur);
+        return;
+      }
       const chip = e.target.closest("[data-chip-key]");
       if (chip) {
         const key = chip.getAttribute("data-chip-key");
         const val = chip.getAttribute("data-chip-value");
-        // Visual swap
         document.querySelectorAll(`[data-chip-key="${key}"]`).forEach((c) => c.classList.remove("is-active"));
         chip.classList.add("is-active");
         postUpdate(key, 3, val);
         return;
       }
-      if (e.target && e.target.id === "dsp2-broadcast") {
-        broadcastAll();
+      if (e.target && e.target.id === "dsp2-deploy") { deployAll(); return; }
+      if (e.target && e.target.id === "dsp2-revert") { revertDefaults(); return; }
+    });
+
+    // Number / range / color inputs
+    page.addEventListener("change", (e) => {
+      const t1 = e.target;
+      if (!t1) return;
+      const key = t1.getAttribute("data-num-key");
+      if (!key) return;
+      const idxAttr = t1.getAttribute("data-num-index");
+      if (idxAttr === "step") {
+        setStep(key, t1.value);
+        // Step is client-only — re-render the band so step propagates to siblings.
+        refreshRow(key);
         return;
+      }
+      const idx = parseInt(idxAttr, 10);
+      if (Number.isNaN(idx)) return;
+      let v = t1.value;
+      if (key === "Color") v = String(v).replace(/^#/, "").toUpperCase();
+      postUpdate(key, idx, v);
+    });
+
+    // Live slider — keep number + fill in sync while dragging, post on change
+    page.addEventListener("input", (e) => {
+      const t1 = e.target;
+      if (!t1) return;
+      // Slider drag
+      if (t1.classList && t1.classList.contains("admin-dsp2-range")) {
+        const key = t1.getAttribute("data-range-key");
+        const r = DEFAULT_RANGES[key];
+        const cur = Number(t1.value);
+        const pct = ((cur - r.min) / Math.max(1e-6, r.max - r.min)) * 100;
+        const row = t1.closest("[data-row-key]");
+        if (row) {
+          const fill = row.querySelector(".admin-dsp2-slider-fill");
+          const thumb = row.querySelector(".admin-dsp2-slider-thumb");
+          if (fill) fill.style.width = pct.toFixed(2) + "%";
+          if (thumb) thumb.style.left = `calc(${pct.toFixed(2)}% - 8px)`;
+          const num = row.querySelector(".admin-dsp2-num");
+          if (num) num.value = String(cur);
+        }
+        // Mirror to local state for live preview but DON'T post on every input
+        if (Array.isArray(_state.options[key])) _state.options[key][3] = cur;
+        renderPreview();
+        return;
+      }
+      // Number text input — live mirror to preview without POST
+      if (t1.classList && t1.classList.contains("admin-dsp2-num")) {
+        const key = t1.getAttribute("data-num-key");
+        const idx = parseInt(t1.getAttribute("data-num-index"), 10);
+        if (Number.isNaN(idx) || !Array.isArray(_state.options[key])) return;
+        let v = t1.value;
+        if (t1.type === "number") v = Number(v);
+        _state.options[key][idx] = v;
+        renderPreview();
+      }
+    });
+
+    // Slider commit — POST on `change`
+    page.addEventListener("change", (e) => {
+      const t1 = e.target;
+      if (!t1) return;
+      if (t1.classList && t1.classList.contains("admin-dsp2-range")) {
+        const key = t1.getAttribute("data-range-key");
+        postUpdate(key, 3, t1.value);
       }
     });
   }
@@ -555,8 +740,6 @@
     page.style.display = onPage ? "" : "none";
     if (onPage) {
       startMetricsPoll();
-      // Refresh on route entry so admin sees up-to-date settings (e.g. after
-      // changes from another tab or after a stale render).
       if (_lastVisibleRoute !== "display") {
         fetchSettings().then(renderRows).catch(() => {});
       }
