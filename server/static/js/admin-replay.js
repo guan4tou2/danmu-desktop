@@ -295,12 +295,13 @@
   }
 
   // Visibility: mirror the shell's route awareness without touching it.
-  // Show section on #/history and #/replay. Hide elsewhere.
+  // Show section ONLY on #/replay (dedicated nav slug landed via admin.js
+  // ADMIN_ROUTES). Hide elsewhere.
   function _applyHashVisibility() {
     var el = document.getElementById(SECTION_ID);
     if (!el) return;
     var hash = (window.location.hash.match(/^#\/(\w[\w-]*)/) || [])[1] || "dashboard";
-    el.style.display = (hash === "history" || hash === "replay") ? "" : "none";
+    el.style.display = hash === "replay" ? "" : "none";
   }
 
   window.addEventListener("hashchange", _applyHashVisibility);

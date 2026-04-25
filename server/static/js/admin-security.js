@@ -312,7 +312,7 @@
     const page = document.getElementById(PAGE_ID);
     if (!shell || !page) return;
     const route = shell.dataset.activeRoute || "dashboard";
-    page.style.display = route === "system" ? "" : "none";
+    page.style.display = route === "security" ? "" : "none";
   }
 
   function inject() {

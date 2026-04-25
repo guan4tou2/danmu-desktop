@@ -942,6 +942,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="admin-dash-nav-icon">↳</span>
                                     <span>時間軸匯出</span>
                                 </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="replay" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">▶</span>
+                                    <span>歷史重播</span>
+                                </button>
 
                                 <div class="admin-dash-nav-label" style="margin-top:16px">互動</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="polls" role="tab" aria-selected="false">
@@ -998,6 +1002,14 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <button type="button" class="admin-dash-nav-row" data-route="system" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⚙</span>
                                     <span>系統 & 指紋</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="security" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⛨</span>
+                                    <span>安全</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="backup" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⤓</span>
+                                    <span>備份 & 匯出</span>
                                 </button>
                             </nav>
                             <div class="admin-dash-telem">
@@ -2861,6 +2873,7 @@ document.addEventListener("DOMContentLoaded", () => {
     dashboard: { title: "控制台", kicker: "DASHBOARD · 活動進行中", sections: [], showKpi: true },
     messages:  { title: "訊息紀錄",         kicker: "MESSAGES · 即時訊息串",    sections: ["sec-live-feed"] },
     history:   { title: "時間軸匯出",       kicker: "HISTORY · 時間軸 / 匯出",   sections: ["sec-history"] },
+    replay:    { title: "歷史重播",         kicker: "REPLAY · 重送歷史訊息",     sections: [] },
     polls:     { title: "投票",             kicker: "POLLS · 2–6 選項",         sections: ["sec-polls"] },
     widgets:   { title: "Overlay Widgets",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
     themes:    { title: "風格主題包",       kicker: "THEME PACKS · 彈幕樣式預設",       sections: ["sec-themes"] },
@@ -2872,7 +2885,9 @@ document.addEventListener("DOMContentLoaded", () => {
     effects:   { title: "效果庫 .dme",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },
     plugins:   { title: "伺服器插件",       kicker: "PLUGIN SDK · 熱重載 · SANDBOX", sections: ["sec-plugins"] },
     fonts:     { title: "字型管理",         kicker: "FONT LIBRARY · 觀眾可選",   sections: ["sec-fonts"] },
-    system:    { title: "系統 & 指紋",      kicker: "SYSTEM · FINGERPRINT · RATE LIMITS", sections: ["sec-system-overview", "sec-security", "sec-ws-auth", "sec-scheduler", "sec-webhooks", "sec-fingerprints"] },
+    system:    { title: "系統 & 指紋",      kicker: "SYSTEM · FINGERPRINT · RATE LIMITS", sections: ["sec-system-overview", "sec-scheduler", "sec-webhooks", "sec-fingerprints"] },
+    security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: [] },
+    backup:    { title: "備份 & 匯出",       kicker: "BACKUP · EXPORT · DANGER",          sections: [] },
   };
 
   function initAdminRouter() {
@@ -2899,6 +2914,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const applyRoute = (name) => {
       currentRoute = ADMIN_ROUTES[name] ? name : "dashboard";
       shell.dataset.activeRoute = currentRoute;
+      // Sync URL hash so external pages (admin-replay/security/backup) that
+      // listen for `hashchange` re-evaluate their visibility. No-op if hash
+      // already matches (prevents the click → setHash → hashchange → applyRoute
+      // recursion from looping). Replace, not push, to keep history clean.
+      const wantedHash = "#/" + currentRoute;
+      if (window.location.hash !== wantedHash) {
+        try { history.replaceState(null, "", wantedHash); } catch (_) {}
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+      }
       const cfg = ADMIN_ROUTES[currentRoute];
 
       shell.querySelectorAll("[data-route]").forEach((btn) => {
