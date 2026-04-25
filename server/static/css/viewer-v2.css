@@ -33,11 +33,13 @@ body.viewer-body-v2 {
   color-scheme: light;
   font-family: var(--font-ui);
   margin: 0;
-  /* Natural flow — no viewport-locked column. Page scrolls as a whole on
-   * desktop (per user 2026-04-25: 平鋪、不要陰影、整頁展開). On narrow
-   * mobile viewports we re-impose a viewport-bound flex column so the
-   * sendbar stays pinned, but desktop and tablet are flat. */
-  min-height: 100dvh;
+  /* Viewport-bound flex column — prototype viewer.jsx:73–78 unifies desktop
+   * + mobile: `overflow:hidden, display:flex, flexDirection:column` with the
+   * scrollable body in the middle and the sendbar pinned to the bottom. */
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Dark theme — prototype viewer.jsx:32–37 (isDark branch).
@@ -54,45 +56,29 @@ body.viewer-body-v2.is-dark {
   color-scheme: dark;
 }
 
-/* Full-width on desktop per prototype viewer.jsx — `width: inBrowser ? '100%' : ...`.
+/* Full-width per prototype viewer.jsx — `width: inBrowser ? '100%' : ...`.
  * No card, no max-width, no side padding — content's own hero/body padding
- * provides the 28–32px breathing room. */
+ * provides the 28–32px breathing room. Viewport-bound flex column so the
+ * sendbar pins to the bottom on every viewport (desktop + mobile unified). */
 .viewer-page-shell {
   width: 100%;
+  flex: 1 1 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 0;
 }
 
 .viewer-main-card {
+  flex: 1 1 0;
+  min-height: 0;
   background: var(--color-bg-base);
   border: none;
   border-radius: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   box-shadow: none;
-}
-
-/* Mobile-only viewport lock so the sendbar pins to the bottom of the
- * screen and the body scrolls inside. On desktop, layout is flat and
- * the whole page scrolls naturally. */
-@media (max-width: 599px) {
-  body.viewer-body-v2 {
-    height: 100dvh;
-    min-height: 100dvh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-  .viewer-page-shell {
-    flex: 1 1 0;
-    min-height: 0;
-  }
-  .viewer-main-card {
-    flex: 1 1 0;
-    min-height: 0;
-    overflow: hidden;
-  }
 }
 
 /* Preset color swatch buttons — 6 circles + 1 custom (matches viewer.jsx:146) */
@@ -127,17 +113,11 @@ body.viewer-body-v2.is-dark {
 }
 
 .viewer-shell {
+  flex: 1 1 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 0;
-}
-
-/* Mobile re-imposes flex:1 so the shell fills the viewport-bound card. */
-@media (max-width: 599px) {
-  .viewer-shell {
-    flex: 1 1 0;
-    min-height: 0;
-  }
 }
 
 /* Hero · 2-col layout matching the 2026-04-25 prototype
@@ -357,19 +337,18 @@ body.viewer-body-v2.is-dark {
   color: var(--color-primary);
 }
 
-/* Body — holds preview + all field rows.
- * Desktop (≥600px): natural flow, no inner scroll, page scrolls as a whole.
- * Mobile (<600px): inner scroll so the sendbar pins to viewport bottom. */
+/* Body — prototype viewer.jsx:129 — `flex:1, overflow:auto, padding: pad`.
+ * Inner scroll on every viewport so the sendbar pins to the bottom. */
 .viewer-body {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
   padding: 24px 24px 30px; /* prototype viewer.jsx:111 desktop */
 }
 
 @media (max-width: 599px) {
   .viewer-body {
-    flex: 1 1 0;
-    min-height: 0;
-    overflow: auto;
-    overscroll-behavior: contain;
     padding: 16px 16px 22px; /* prototype mobile: pad=16, pad+6=22 */
   }
 }
