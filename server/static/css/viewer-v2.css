@@ -219,22 +219,39 @@ body.viewer-body-v2 {
   }
 }
 
-/* ConnChip — 伺服器 / Overlay status pill.
- * Two states via `.connection-dot--*` on the dot:
- * connected → cyan pulse, connecting → amber, disconnected → crimson. */
+/* ConnChip — 伺服器 / Overlay status pill matching the 2026-04-25
+ * prototype viewer.jsx ConnChip (lines 376–399 of new bundle):
+ *   padding: '4px 10px' / mini '2px 7px'
+ *   borderRadius: 999
+ *   background: online ? cyanSoft : transparent
+ *   border: 1px online cyanLine / offline line
+ *   font-mono 10px / mini 9px, letter-spacing 1px / mini 0.5px
+ *   gap: 6 / mini 4
+ *
+ * Online state is signalled by `.connection-dot--connected` /
+ * `.connection-dot--live` on the dot child; the parent gets is-online
+ * via JS (or fall back to scoped child selector). */
 .viewer-conn-chip {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
+  gap: 6px;
+  padding: 4px 10px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--hud-line);
-  background: var(--color-bg-base);
+  background: transparent;
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.5px;
+  font-size: 10px;
+  letter-spacing: 1px;
   color: var(--color-text-primary);
   white-space: nowrap;
+}
+
+/* When the chip wraps a connected/live dot, treat the whole chip as
+ * online (cyan-soft fill + cyan-tint border). */
+.viewer-conn-chip:has(.connection-dot--connected),
+.viewer-conn-chip:has(.connection-dot--live) {
+  background: var(--hud-cyan-soft);
+  border-color: var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
 }
 
 .viewer-conn-chip-dot {
@@ -274,9 +291,11 @@ body.viewer-body-v2 {
 
 @media (max-width: 599px) {
   .viewer-conn-chip {
-    font-size: 10px;
-    padding: 4px 10px;
-    gap: 6px;
+    /* prototype mini variant: 2px 7px / 9px / 0.5px / gap 4 */
+    font-size: 9px;
+    padding: 2px 7px;
+    letter-spacing: 0.5px;
+    gap: 4px;
   }
   .viewer-conn-chip-label { display: none; }
 }
