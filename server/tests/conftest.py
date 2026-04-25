@@ -221,7 +221,7 @@ def app(tmp_path):
     theme_svc._path_to_name.clear()
     theme_svc._active_theme = "default"
     ws_queue.dequeue_all()
-    sticker_svc.sticker_service._cache.clear()
+    sticker_svc.sticker_service._reset_for_tests()
 
 
 @pytest.fixture()

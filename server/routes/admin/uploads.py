@@ -130,8 +130,26 @@ def upload_sticker():
         return _json_response({"error": "Failed to save sticker"}, 500)
 
     sticker_service._scan()
+
+    # Assign to a pack if requested (defaults to "default" pack via _scan migration).
+    pack_id = (request.form.get("pack_id") or "").strip()
+    if pack_id:
+        if not sticker_service.assign_sticker(name, pack_id):
+            current_app.logger.warning(
+                "Sticker uploaded but pack assignment failed: %s -> %s",
+                sanitize_log_string(name),
+                sanitize_log_string(pack_id),
+            )
+
     current_app.logger.info("Sticker uploaded: %s", sanitize_log_string(f"{name}.{ext}"))
-    return _json_response({"name": name, "url": f"/static/stickers/{name}.{ext}"})
+    meta = sticker_service._sticker_meta.get(name, {})
+    return _json_response(
+        {
+            "name": name,
+            "url": f"/static/stickers/{name}.{ext}",
+            "pack_id": meta.get("pack_id", "default"),
+        }
+    )
 
 
 @admin_bp.route("/stickers/<name>", methods=["DELETE"])

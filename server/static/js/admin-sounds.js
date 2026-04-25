@@ -98,10 +98,18 @@
     container.innerHTML = availableSounds
       .map(function (sound) {
         var safeName = escapeHtml(sound.name);
+        var volPct = Math.round((sound.volume != null ? sound.volume : 1) * 100);
         return (
           '<div class="admin-sounds-tile" data-sound-name="' + escapeHtml(sound.name) + '">' +
           '<div class="name" title="' + safeName + '">' + safeName + "</div>" +
-          '<div class="actions">' +
+          '<div class="admin-sounds-tile-volume" style="display:flex;align-items:center;gap:6px;margin-top:6px">' +
+            '<span class="admin-v2-monolabel" style="font-size:9px">VOL</span>' +
+            '<input type="range" class="sound-volume-slider" data-name="' + escapeHtml(sound.name) + '" ' +
+              'min="0" max="100" step="1" value="' + volPct + '" ' +
+              'style="flex:1;min-width:80px;max-width:120px;accent-color:#38bdf8" />' +
+            '<span class="admin-v2-monolabel sound-volume-label" data-name="' + escapeHtml(sound.name) + '" style="min-width:32px;text-align:right">' + volPct + "%</span>" +
+          "</div>" +
+          '<div class="actions" style="margin-top:6px">' +
           '<button type="button" class="sound-play-btn admin-v2-chip is-on" data-name="' + escapeHtml(sound.name) + '">▶ ' + escapeHtml(ServerI18n.t("previewBtn")) + "</button>" +
           '<button type="button" class="sound-delete-btn admin-v2-chip is-bad" data-name="' + escapeHtml(sound.name) + '">×</button>' +
           "</div>" +
@@ -140,6 +148,49 @@
         }
       });
     });
+
+    // ── Per-tile volume slider (P1-2) ─────────────────────────────────
+    // input → live label update; change/debounced → POST + toast.
+    var _volumeDebounceTimers = {};
+    container.querySelectorAll(".sound-volume-slider").forEach(function (slider) {
+      var name = slider.dataset.name;
+      var label = container.querySelector('.sound-volume-label[data-name="' + CSS.escape(name) + '"]');
+      slider.addEventListener("input", function () {
+        if (label) label.textContent = slider.value + "%";
+        clearTimeout(_volumeDebounceTimers[name]);
+        _volumeDebounceTimers[name] = setTimeout(function () {
+          saveSoundVolume(name, Number(slider.value) / 100);
+        }, 300);
+      });
+      slider.addEventListener("change", function () {
+        clearTimeout(_volumeDebounceTimers[name]);
+        saveSoundVolume(name, Number(slider.value) / 100);
+      });
+    });
+  }
+
+  async function saveSoundVolume(name, volume) {
+    try {
+      var res = await window.csrfFetch(
+        "/admin/sounds/" + encodeURIComponent(name) + "/volume",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ volume: volume }),
+        }
+      );
+      var data = await res.json();
+      if (!res.ok) {
+        window.showToast(data.error || "Volume update failed", false);
+        return;
+      }
+      var entry = availableSounds.find(function (s) { return s.name === name; });
+      if (entry) entry.volume = volume;
+      window.showToast("音量已儲存 · " + Math.round(volume * 100) + "%", true);
+    } catch (err) {
+      console.warn("[admin-sounds] volume save failed:", err);
+      window.showToast("Network error", false);
+    }
   }
 
   function renderSoundNameOptions() {

@@ -4,11 +4,10 @@
  * Loaded as <script defer> in admin.html.
  * Globals: csrfFetch, showToast, ServerI18n, AdminUtils
  *
- * v2 retrofit: page-level v2 shell (kicker + title + note) + left pack sidebar
- * + main grid (upload + search + tiles). Replaces legacy <details> accordion.
- * Backend has no multi-pack concept so the sidebar renders a single "ALL" pack
- * representing the whole library (P1-4 per-sticker weight / reorder deferred
- * until a pack model ships).
+ * v2 retrofit (2026-04-25): full multi-pack support — create / rename /
+ * toggle / reorder / delete packs from the sidebar; sticker grid filters
+ * by selected pack; upload form auto-tags new stickers with the active
+ * pack id. Backend pack model lives in server/services/stickers.py.
  */
 (function () {
   "use strict";
@@ -17,9 +16,12 @@
   var SECTION_ID = "sec-stickers";
   var ACCEPTED_EXT = ["png", "gif", "webp"];
   var ACCEPTED_TYPES = ".gif,.png,.webp";
+  var ALL_PACK_KEY = "__all__";
 
-  // Hold last-fetched list so search can filter client-side.
-  var _cache = [];
+  // Hold last-fetched lists so search can filter client-side.
+  var _stickers = [];
+  var _packs = [];
+  var _activePackId = ALL_PACK_KEY;
 
   function escapeAttr(s) {
     return escapeHtml(s);
@@ -60,17 +62,17 @@
         <div class="admin-stickers-layout">
           <!-- Left sidebar: pack list -->
           <aside class="admin-v2-card admin-stickers-sidebar">
-            <div class="admin-v2-monolabel" style="margin-bottom:10px">PACKS</div>
-            <div class="admin-stickers-pack-list">
-              <button type="button" class="admin-stickers-pack is-active" data-pack="all">
-                <span class="admin-v2-dot is-good"></span>
-                <span class="admin-stickers-pack-name">全部貼圖</span>
-                <span class="admin-stickers-pack-count" id="stickerPackCount">—</span>
-              </button>
-              <div class="admin-stickers-pack-hint">
-                多貼圖包支援待後端擴充
-              </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+              <span class="admin-v2-monolabel">PACKS</span>
+              <button
+                id="stickerPackAddBtn"
+                type="button"
+                class="admin-v2-chip is-on"
+                style="margin-left:auto"
+                title="新增貼圖包"
+              >+ 新增</button>
             </div>
+            <div id="stickerPackList" class="admin-stickers-pack-list"></div>
           </aside>
 
           <!-- Main: upload + grid -->
@@ -102,6 +104,49 @@
     `;
   }
 
+  // ─── Render Pack Sidebar ───────────────────────────────────────────
+
+  function _packCount(packId) {
+    if (packId === ALL_PACK_KEY) return _stickers.length;
+    return _stickers.filter(function (s) { return s.pack_id === packId; }).length;
+  }
+
+  function renderPackList() {
+    var container = document.getElementById("stickerPackList");
+    if (!container) return;
+    var html = '<button type="button" class="admin-stickers-pack' +
+      (_activePackId === ALL_PACK_KEY ? " is-active" : "") + '" data-pack="' + ALL_PACK_KEY + '">' +
+      '<span class="admin-v2-dot is-good"></span>' +
+      '<span class="admin-stickers-pack-name">全部貼圖</span>' +
+      '<span class="admin-stickers-pack-count">' + _packCount(ALL_PACK_KEY) + '</span>' +
+      '</button>';
+
+    _packs.forEach(function (pack) {
+      var dotCls = pack.enabled ? "is-good" : "is-mute";
+      var rowCls = "admin-stickers-pack" + (pack.id === _activePackId ? " is-active" : "");
+      var isDefault = pack.id === "default";
+      var actions = isDefault
+        ? ""
+        : '<div class="admin-stickers-pack-actions" style="display:flex;gap:4px;flex-wrap:wrap;padding-left:14px">' +
+            '<button type="button" class="admin-v2-chip" data-pack-action="rename" data-pack-id="' + escapeAttr(pack.id) + '" title="重新命名">✎</button>' +
+            '<button type="button" class="admin-v2-chip" data-pack-action="up" data-pack-id="' + escapeAttr(pack.id) + '" title="上移">↑</button>' +
+            '<button type="button" class="admin-v2-chip" data-pack-action="down" data-pack-id="' + escapeAttr(pack.id) + '" title="下移">↓</button>' +
+            '<button type="button" class="admin-v2-chip" data-pack-action="toggle" data-pack-id="' + escapeAttr(pack.id) + '" title="' + (pack.enabled ? "停用" : "啟用") + '">' + (pack.enabled ? "ON" : "OFF") + '</button>' +
+            '<button type="button" class="admin-v2-chip is-bad" data-pack-action="delete" data-pack-id="' + escapeAttr(pack.id) + '" title="刪除貼圖包">×</button>' +
+          '</div>';
+      html +=
+        '<div class="' + rowCls + '" data-pack="' + escapeAttr(pack.id) + '" style="display:flex;flex-direction:column;gap:4px">' +
+          '<button type="button" class="admin-stickers-pack-row" data-pack-action="select" data-pack-id="' + escapeAttr(pack.id) + '" style="display:flex;align-items:center;gap:8px;background:transparent;border:none;color:inherit;text-align:left;padding:0;cursor:pointer;width:100%">' +
+            '<span class="admin-v2-dot ' + dotCls + '"></span>' +
+            '<span class="admin-stickers-pack-name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(pack.name) + '</span>' +
+            '<span class="admin-stickers-pack-count">' + _packCount(pack.id) + '</span>' +
+          '</button>' +
+          actions +
+        '</div>';
+    });
+    container.innerHTML = html;
+  }
+
   // ─── Render Sticker Card ───────────────────────────────────────────
 
   function stickerCard(sticker) {
@@ -122,57 +167,164 @@
     );
   }
 
-  function renderGrid(stickers) {
+  function renderGrid() {
     var grid = document.getElementById("stickerGrid");
     var count = document.getElementById("stickerCount");
-    var packCount = document.getElementById("stickerPackCount");
     if (!grid) return;
 
-    if (!stickers || stickers.length === 0) {
+    var search = document.getElementById("stickerSearchInput");
+    var q = (search && search.value || "").trim().toLowerCase();
+    var filtered = _stickers.filter(function (s) {
+      if (_activePackId !== ALL_PACK_KEY && s.pack_id !== _activePackId) return false;
+      if (q && !(s.name || "").toLowerCase().includes(q)) return false;
+      return true;
+    });
+
+    if (filtered.length === 0) {
       grid.innerHTML =
         '<div class="admin-stickers-empty">' +
         escapeHtml(ServerI18n.t("noStickersUploaded")) +
         "</div>";
       if (count) count.textContent = "0 項";
-      if (packCount) packCount.textContent = String(_cache.length);
       return;
     }
-    grid.innerHTML = stickers.map(stickerCard).join("");
-    if (count) count.textContent = stickers.length + " 項";
-    if (packCount) packCount.textContent = String(_cache.length);
-  }
-
-  function applySearchFilter() {
-    var search = document.getElementById("stickerSearchInput");
-    var q = (search && search.value || "").trim().toLowerCase();
-    var filtered = q
-      ? _cache.filter(function (s) {
-          return (s.name || "").toLowerCase().includes(q);
-        })
-      : _cache;
-    renderGrid(filtered);
+    grid.innerHTML = filtered.map(stickerCard).join("");
+    if (count) count.textContent = filtered.length + " 項";
   }
 
   // ─── Fetch ──────────────────────────────────────────────────────────
 
-  async function fetchAndRenderStickers() {
+  async function fetchAndRender() {
     var grid = document.getElementById("stickerGrid");
     if (!grid) return;
     try {
-      var resp = await fetch("/stickers", {
-        method: "GET",
-        credentials: "same-origin",
-      });
-      if (!resp.ok) throw new Error("HTTP " + resp.status);
-      var data = await resp.json();
-      _cache = data.stickers || [];
-      applySearchFilter();
+      var [stickerResp, packResp] = await Promise.all([
+        fetch("/stickers", { method: "GET", credentials: "same-origin" }),
+        window.csrfFetch("/admin/stickers/packs", { method: "GET" }),
+      ]);
+      if (!stickerResp.ok) throw new Error("HTTP " + stickerResp.status);
+      _stickers = (await stickerResp.json()).stickers || [];
+      _packs = packResp.ok ? ((await packResp.json()).packs || []) : [];
+      // If active pack disappeared, fall back to ALL.
+      if (_activePackId !== ALL_PACK_KEY && !_packs.some(function (p) { return p.id === _activePackId; })) {
+        _activePackId = ALL_PACK_KEY;
+      }
+      renderPackList();
+      renderGrid();
     } catch (err) {
       console.error("[admin-stickers] fetch failed:", err);
       grid.innerHTML =
         '<div class="admin-stickers-empty" style="color:#f87171">' +
         escapeHtml(ServerI18n.t("loadStickersFailed")) +
         "</div>";
+    }
+  }
+
+  // ─── Pack Actions ──────────────────────────────────────────────────
+
+  async function handlePackAction(action, packId) {
+    if (action === "select") {
+      _activePackId = packId;
+      renderPackList();
+      renderGrid();
+      return;
+    }
+    if (action === "rename") {
+      var current = _packs.find(function (p) { return p.id === packId; });
+      var name = prompt("貼圖包名稱", current ? current.name : "");
+      if (!name) return;
+      try {
+        var resp = await window.csrfFetch("/admin/stickers/packs/" + encodeURIComponent(packId) + "/rename", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name }),
+        });
+        var data = await resp.json();
+        if (resp.ok) {
+          window.showToast("已重新命名");
+          await fetchAndRender();
+        } else {
+          window.showToast(data.error || "重新命名失敗", false);
+        }
+      } catch (_) {
+        window.showToast("Network error", false);
+      }
+      return;
+    }
+    if (action === "toggle") {
+      try {
+        var r = await window.csrfFetch("/admin/stickers/packs/" + encodeURIComponent(packId) + "/toggle", {
+          method: "POST",
+        });
+        if (r.ok) await fetchAndRender();
+      } catch (_) { /* noop */ }
+      return;
+    }
+    if (action === "delete") {
+      if (!confirm("確定刪除此貼圖包?所有貼圖都會一起刪除。")) return;
+      try {
+        var dr = await window.csrfFetch("/admin/stickers/packs/" + encodeURIComponent(packId), {
+          method: "DELETE",
+        });
+        var dd = await dr.json();
+        if (dr.ok) {
+          window.showToast("貼圖包已刪除");
+          if (_activePackId === packId) _activePackId = ALL_PACK_KEY;
+          await fetchAndRender();
+        } else {
+          window.showToast(dd.error || "刪除失敗", false);
+        }
+      } catch (_) {
+        window.showToast("Network error", false);
+      }
+      return;
+    }
+    if (action === "up" || action === "down") {
+      // Reorder relative to current position via swap.
+      var ordered = _packs.slice().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+      var idx = ordered.findIndex(function (p) { return p.id === packId; });
+      if (idx < 0) return;
+      var swap = action === "up" ? idx - 1 : idx + 1;
+      if (swap < 0 || swap >= ordered.length) return;
+      var a = ordered[idx];
+      var b = ordered[swap];
+      try {
+        await Promise.all([
+          window.csrfFetch("/admin/stickers/packs/" + encodeURIComponent(a.id) + "/reorder", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order: b.order || 0 }),
+          }),
+          window.csrfFetch("/admin/stickers/packs/" + encodeURIComponent(b.id) + "/reorder", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order: a.order || 0 }),
+          }),
+        ]);
+        await fetchAndRender();
+      } catch (_) { /* noop */ }
+    }
+  }
+
+  async function handleAddPack() {
+    var name = prompt("新貼圖包名稱");
+    if (!name) return;
+    try {
+      var r = await window.csrfFetch("/admin/stickers/packs/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name }),
+      });
+      var d = await r.json();
+      if (r.ok) {
+        window.showToast("貼圖包已建立");
+        _activePackId = d.pack && d.pack.id ? d.pack.id : _activePackId;
+        await fetchAndRender();
+      } else {
+        window.showToast(d.error || "建立失敗", false);
+      }
+    } catch (_) {
+      window.showToast("Network error", false);
     }
   }
 
@@ -202,6 +354,10 @@
     try {
       var fd = new FormData();
       fd.append("file", file);
+      // Tag with active pack (skip when "all" is selected — backend defaults to default).
+      if (_activePackId && _activePackId !== ALL_PACK_KEY) {
+        fd.append("pack_id", _activePackId);
+      }
 
       var resp = await window.csrfFetch("/admin/upload_sticker", {
         method: "POST",
@@ -212,7 +368,7 @@
       if (resp.ok) {
         window.showToast(data.message || ServerI18n.t("stickerUploadFallback"));
         fileInput.value = "";
-        await fetchAndRenderStickers();
+        await fetchAndRender();
       } else {
         window.showToast(data.error || ServerI18n.t("uploadFailed"), false);
       }
@@ -236,7 +392,7 @@
       var data = await resp.json();
       if (resp.ok) {
         window.showToast(data.message || ServerI18n.t("stickerDeleteFallback"));
-        await fetchAndRenderStickers();
+        await fetchAndRender();
       } else {
         window.showToast(data.error || ServerI18n.t("deleteFailed"), false);
       }
@@ -276,8 +432,31 @@
     var uploadBtn = document.getElementById("stickerUploadBtn");
     if (uploadBtn) uploadBtn.addEventListener("click", handleUpload);
 
+    var addBtn = document.getElementById("stickerPackAddBtn");
+    if (addBtn) addBtn.addEventListener("click", handleAddPack);
+
     var search = document.getElementById("stickerSearchInput");
-    if (search) search.addEventListener("input", applySearchFilter);
+    if (search) search.addEventListener("input", renderGrid);
+
+    var packList = document.getElementById("stickerPackList");
+    if (packList) {
+      packList.addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-pack-action]");
+        if (!btn) {
+          var row = e.target.closest("[data-pack]");
+          if (row) {
+            handlePackAction("select", row.dataset.pack);
+          }
+          return;
+        }
+        var action = btn.dataset.packAction;
+        var packId = btn.dataset.packId;
+        if (action === "select" && !packId) {
+          packId = btn.closest("[data-pack]") && btn.closest("[data-pack]").dataset.pack;
+        }
+        handlePackAction(action, packId);
+      });
+    }
 
     var grid = document.getElementById("stickerGrid");
     if (grid) {
@@ -294,7 +473,7 @@
       });
     }
 
-    fetchAndRenderStickers();
+    fetchAndRender();
   }
 
   // admin.js rebuilds the entire DOM via innerHTML on every renderControlPanel()

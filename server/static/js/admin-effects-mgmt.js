@@ -74,8 +74,8 @@
   // ── Built-in effect animations (live card preview fallback) ─────────────────
   // These mirror the 8 bundled .dme files in server/effects/ with their default
   // params resolved. Used to render live animations on effect cards without an
-  // HTTP round-trip per card. User .dme uploads fall back to static text until
-  // they can be loaded via POST /admin/effects/preview (v2).
+  // HTTP round-trip per card. User .dme uploads use the lazy-fetch path below
+  // to render via POST /admin/effects/preview, with results memoized.
   const _BUILTIN_EFFECT_ANIMATIONS = {
     blink: "dme-blink 0.6s step-start infinite",
     bounce: "dme-bounce 0.6s ease-in-out infinite",
@@ -86,6 +86,70 @@
     wave: "dme-wave 0.5s ease-in-out infinite",
     zoom: "dme-zoom 0.8s ease-in-out infinite",
   };
+
+  // ── User .dme card preview cache (P3-2 follow-up) ───────────────────────────
+  // name -> { keyframes, animation, animationComposition, styleId } | "failed".
+  const _userEffectCache = new Map();
+  // Map of effect name -> Promise to dedupe in-flight fetches.
+  const _userEffectFetches = new Map();
+
+  function _injectUserEffectStyle(rendered) {
+    if (!rendered || !rendered.styleId || !rendered.keyframes) return;
+    const id = "dme-user-" + rendered.styleId;
+    if (document.getElementById(id)) return;
+    const styleEl = document.createElement("style");
+    styleEl.id = id;
+    styleEl.textContent = rendered.keyframes;
+    document.head.appendChild(styleEl);
+  }
+
+  async function _loadUserEffectAnimation(name) {
+    if (_userEffectCache.has(name)) return _userEffectCache.get(name);
+    if (_userEffectFetches.has(name)) return _userEffectFetches.get(name);
+
+    const promise = (async () => {
+      try {
+        const contentRes = await csrfFetch(`/admin/effects/${encodeURIComponent(name)}/content`);
+        if (!contentRes.ok) throw new Error("content fetch failed");
+        const contentData = await contentRes.json();
+        const content = (contentData && contentData.content) || "";
+        if (!content) throw new Error("empty content");
+
+        const previewRes = await csrfFetch("/admin/effects/preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content, params: {} }),
+        });
+        if (!previewRes.ok) throw new Error("preview failed");
+        const rendered = await previewRes.json();
+        if (!rendered || !rendered.animation) throw new Error("no animation");
+
+        _injectUserEffectStyle(rendered);
+        _userEffectCache.set(name, rendered);
+        return rendered;
+      } catch (_err) {
+        _userEffectCache.set(name, "failed");
+        return null;
+      } finally {
+        _userEffectFetches.delete(name);
+      }
+    })();
+
+    _userEffectFetches.set(name, promise);
+    return promise;
+  }
+
+  function _applyUserEffectToCard(card, rendered) {
+    const demo = card.querySelector(".effect-demo-text");
+    if (!demo) return;
+    demo.style.animation = rendered.animation || "";
+    if (rendered.animationComposition) {
+      demo.style.animationComposition = rendered.animationComposition;
+    }
+    demo.style.animationPlayState = "paused";
+    const observer = _getCardVisibilityObserver();
+    if (observer) observer.observe(card);
+  }
 
   // IntersectionObserver for pausing off-screen card animations.
   // Lazy-init so headless tests that never scroll still work.
@@ -530,7 +594,8 @@
     filtered.forEach((eff) => {
       const cat = detectCategory(eff.name);
       const previewClass = cat === "GLOW" ? "is-glow" : cat === "COLOR" ? "is-color" : cat === "TEXT" ? "is-text" : "";
-      const animShorthand = _BUILTIN_EFFECT_ANIMATIONS[eff.name] || "";
+      const builtinAnim = _BUILTIN_EFFECT_ANIMATIONS[eff.name] || "";
+      const isBuiltin = !!builtinAnim;
 
       const card = document.createElement("div");
       card.className = "hud-effect-card" + (_effectsState.selected === eff.name ? " is-selected" : "");
@@ -539,13 +604,14 @@
 
       var _ek = "effect_" + eff.name;
       const label = ServerI18n.t(_ek) !== _ek ? ServerI18n.t(_ek) : (eff.label || eff.name);
-      const author = "built-in";
+      const author = isBuiltin ? "built-in" : "user";
 
       // Live-animated demo text. Paused by default; IntersectionObserver flips
-      // to running when card is ≥50% visible. Inline styles so they override
-      // the static .hud-effect-card-preview rules in style.css without edits.
-      const demoStyle = animShorthand
-        ? `animation:${animShorthand};animation-play-state:paused;`
+      // to running when card is ≥50% visible. Built-ins use the precomputed
+      // shorthand; user .dme effects start static and have their animation
+      // injected after the preview API responds.
+      const demoStyle = builtinAnim
+        ? `animation:${builtinAnim};animation-play-state:paused;`
         : "";
 
       card.innerHTML = `
@@ -567,10 +633,25 @@
       `;
       container.appendChild(card);
 
-      // Observe visibility for animation pause/resume (built-ins only).
-      if (animShorthand) {
+      if (builtinAnim) {
+        // Built-in effects: observe visibility immediately.
         const observer = _getCardVisibilityObserver();
         if (observer) observer.observe(card);
+      } else {
+        // User .dme: lazy-fetch keyframes + animation, then apply + observe.
+        const cached = _userEffectCache.get(eff.name);
+        if (cached && cached !== "failed") {
+          _injectUserEffectStyle(cached);
+          _applyUserEffectToCard(card, cached);
+        } else if (cached !== "failed") {
+          _loadUserEffectAnimation(eff.name).then((rendered) => {
+            if (!rendered) return;
+            const fresh = container.querySelector(
+              `.hud-effect-card[data-effect-name="${CSS.escape(eff.name)}"]`
+            );
+            if (fresh) _applyUserEffectToCard(fresh, rendered);
+          });
+        }
       }
 
       // Card click: select + load inspector
