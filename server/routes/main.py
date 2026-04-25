@@ -26,6 +26,19 @@ from ..utils import sanitize_log_string
 main_bp = Blueprint("main", __name__)
 
 
+@main_bp.route("/polls/media/<path:rel_path>")
+def poll_media(rel_path: str):
+    """Serve uploaded poll question images.
+
+    Path-traversal-guarded; the writer/validator lives in
+    :mod:`server.routes.admin.poll` so all bytes-on-disk concerns share one
+    code path.
+    """
+    from .admin.poll import _safe_send_poll_media
+
+    return _safe_send_poll_media(rel_path)
+
+
 @main_bp.route("/")
 def index():
     ws_port = current_app.config["WS_PORT"]

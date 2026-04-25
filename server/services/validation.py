@@ -106,7 +106,11 @@ class EffectSaveSchema(Schema):
 
 
 class PollCreateSchema(Schema):
-    """投票建立請求驗證"""
+    """投票建立請求驗證 (legacy single-question shape).
+
+    Kept for backward compat with the v4 admin UI / external callers. Maps
+    to ``PollService.create()`` which builds a 1-question session.
+    """
 
     question = fields.Str(required=True, validate=validate.Length(min=1, max=200))
     options = fields.List(
@@ -114,6 +118,39 @@ class PollCreateSchema(Schema):
         required=True,
         validate=validate.Length(min=2, max=6),
     )
+
+
+class PollQuestionSchema(Schema):
+    """單一題目（用於 multi-question session）"""
+
+    text = fields.Str(required=True, validate=validate.Length(min=1, max=200))
+    options = fields.List(
+        fields.Str(validate=validate.Length(min=1, max=100)),
+        required=True,
+        validate=validate.Length(min=2, max=6),
+    )
+    image_url = fields.Str(load_default=None, validate=validate.Length(max=512))
+    time_limit_seconds = fields.Int(
+        load_default=None,
+        validate=validate.Range(min=0, max=86400),
+        allow_none=True,
+    )
+
+    class Meta:
+        unknown = EXCLUDE
+
+
+class PollSessionCreateSchema(Schema):
+    """Multi-question poll session creation."""
+
+    questions = fields.List(
+        fields.Nested(PollQuestionSchema),
+        required=True,
+        validate=validate.Length(min=1, max=20),
+    )
+
+    class Meta:
+        unknown = EXCLUDE
 
 
 class SettingUpdateSchema(Schema):

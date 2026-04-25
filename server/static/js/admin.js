@@ -1425,6 +1425,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 </button>
               </div>
             </div>
+
+            <!-- Multi-question session controls (P0-1) -->
+            <div class="admin-poll-session" data-poll-session>
+              <div class="session-status" data-poll-session-status>
+                <span class="kicker">SESSION · 尚未開始</span>
+              </div>
+              <div class="session-actions">
+                <button type="button" class="admin-poll-btn is-primary" data-poll-session-action="start">START SESSION ▶</button>
+                <button type="button" class="admin-poll-btn" data-poll-session-action="advance" hidden>下一題 ▶</button>
+                <button type="button" class="admin-poll-btn is-ghost" data-poll-session-action="end" hidden>結束 ✕</button>
+              </div>
+            </div>
           </aside>
 
           <!-- RIGHT · active question editor -->
@@ -1465,6 +1477,7 @@ document.addEventListener("DOMContentLoaded", () => {
       function newQuestion() {
         return {
           id: qid(), text: "", timer: 90, multi: false, crop: "16:9",
+          image_url: "", server_q_id: "",
           options: [newOpt("A"), newOpt("B")],
         };
       }
@@ -1472,14 +1485,26 @@ document.addEventListener("DOMContentLoaded", () => {
       let queue = [];
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) queue = JSON.parse(raw);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          // localStorage may contain either raw array (old) or {queue, ...} (new).
+          if (Array.isArray(parsed)) queue = parsed;
+          else if (parsed && Array.isArray(parsed.queue)) queue = parsed.queue;
+        }
       } catch (_) {}
       if (!Array.isArray(queue) || queue.length === 0) queue = [newQuestion()];
+      // Backfill new fields on questions saved by older clients.
+      queue.forEach(q => {
+        if (typeof q.image_url !== "string") q.image_url = "";
+        if (typeof q.server_q_id !== "string") q.server_q_id = "";
+      });
       let activeId = queue[0].id;
       let mode = "manual";
       let runningIdx = -1;
       let dragQId = null;
       let dragOptId = null;
+      // Multi-question session state (P0-1)
+      let session = { pollId: "", active: false, currentIndex: -1, statusTimer: null };
       function persist() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ queue, activeId, mode })); } catch (_) {} }
       function findQ(id) { return queue.find(q => q.id === id); }
       function patchQ(id, v) { const q = findQ(id); if (q) Object.assign(q, v); }
@@ -1491,10 +1516,11 @@ document.addEventListener("DOMContentLoaded", () => {
           const row = document.createElement("div");
           row.className = "admin-poll-qrow";
           if (q.id === activeId) row.classList.add("is-active");
-          if (i === runningIdx) row.classList.add("is-running");
+          const sessionRunning = session.active && session.currentIndex === i;
+          if (i === runningIdx || sessionRunning) row.classList.add("is-running");
           row.dataset.qid = q.id;
           row.draggable = true;
-          const hasImg = q.options.some(o => o.img);
+          const hasImg = !!q.image_url || q.options.some(o => o.img);
           row.innerHTML = `
             <span class="drag-handle" title="拖曳排序">⋮⋮</span>
             <span class="idx">${i + 1}</span>
@@ -1502,7 +1528,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="text">${escapeHtml(q.text || "(空題目)")}</div>
               <div class="meta">${q.options.length} 選項 · ${q.timer === 0 ? "無時限" : q.timer + "s"} · ${hasImg ? "含圖 " + q.crop : "純文字"}</div>
             </div>
-            ${q.id === activeId ? '<span class="editing-chip">● 編輯中</span>' : ""}
+            ${sessionRunning ? '<span class="editing-chip" style="background:#86efac20;color:#86efac">● LIVE</span>' : (q.id === activeId ? '<span class="editing-chip">● 編輯中</span>' : "")}
           `;
           queueEl.appendChild(row);
         });
@@ -1524,6 +1550,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
           <div class="admin-poll-field-label">問題</div>
           <input type="text" class="admin-poll-q-text" data-ed-text value="${escapeHtml(q.text || "")}" placeholder="輸入題目文字…" maxlength="200" />
+
+          <div class="admin-poll-field-label">題目圖片 · 可選</div>
+          <div class="admin-poll-q-image">
+            ${q.image_url ? `
+              <img class="admin-poll-q-image-thumb" src="${escapeHtml(q.image_url)}" alt="" />
+              <button type="button" class="admin-poll-btn is-ghost" data-ed-action="remove-q-image">移除圖片</button>
+            ` : `
+              <button type="button" class="admin-poll-btn" data-ed-action="upload-q-image">＋ 上傳圖片 (JPG/PNG/WebP, ≤2 MB)</button>
+              <input type="file" data-ed-q-image-input accept="image/jpeg,image/png,image/webp" hidden />
+            `}
+          </div>
 
           <div class="admin-poll-crop" data-ed-crop-row>
             <span class="crop-label">圖片裁切比例 · CROP</span>
@@ -1571,7 +1608,7 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
       }
 
-      function render() { renderQueue(); renderEditor(); }
+      function render() { renderQueue(); renderEditor(); renderSessionStatus(); }
 
       // Queue drag-reorder
       queueEl.addEventListener("dragstart", (e) => {
@@ -1663,7 +1700,53 @@ document.addEventListener("DOMContentLoaded", () => {
             }
           } else if (act.dataset.edAction === "start-this") {
             startAt(queue.findIndex(q2 => q2.id === activeId));
+          } else if (act.dataset.edAction === "upload-q-image") {
+            const input = editorEl.querySelector("[data-ed-q-image-input]");
+            if (input) input.click();
+          } else if (act.dataset.edAction === "remove-q-image") {
+            q.image_url = "";
+            persist(); renderEditor(); renderQueue();
           }
+        }
+      });
+      // File-input change → upload to server (requires active session)
+      editorEl.addEventListener("change", async (e) => {
+        if (!e.target.matches("[data-ed-q-image-input]")) return;
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const q = findQ(activeId);
+        if (!q) return;
+        if (!session.pollId) {
+          showToast && showToast("請先按 START SESSION 建立投票後再上傳圖片", false);
+          e.target.value = "";
+          return;
+        }
+        if (!q.server_q_id) {
+          showToast && showToast("此題目尚未同步到伺服器", false);
+          e.target.value = "";
+          return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+          showToast && showToast("圖片過大 (最多 2 MB)", false);
+          e.target.value = "";
+          return;
+        }
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+          const res = await csrfFetch(
+            `/admin/poll/${encodeURIComponent(session.pollId)}/upload-image/${encodeURIComponent(q.server_q_id)}`,
+            { method: "POST", body: formData }
+          );
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || "upload failed");
+          q.image_url = data.image_url;
+          persist(); renderEditor(); renderQueue();
+          showToast && showToast("圖片已上傳", true);
+        } catch (err) {
+          showToast && showToast(String(err.message || err), false);
+        } finally {
+          e.target.value = "";
         }
       });
 
@@ -1707,6 +1790,138 @@ document.addEventListener("DOMContentLoaded", () => {
           sec.querySelectorAll("[data-poll-mode]").forEach(b => b.classList.toggle("is-active", b === mb));
           persist();
         }
+        const sa = e.target.closest("[data-poll-session-action]");
+        if (sa) {
+          const action = sa.dataset.pollSessionAction;
+          if (action === "start") sessionStart();
+          else if (action === "advance") sessionAdvance();
+          else if (action === "end") sessionEnd();
+        }
+      });
+
+      // ─── Multi-question session controls (P0-1) ─────────────────────────
+      function renderSessionStatus() {
+        const wrap = sec.querySelector("[data-poll-session]");
+        if (!wrap) return;
+        const statusEl = wrap.querySelector("[data-poll-session-status]");
+        const startBtn = wrap.querySelector("[data-poll-session-action='start']");
+        const advBtn = wrap.querySelector("[data-poll-session-action='advance']");
+        const endBtn = wrap.querySelector("[data-poll-session-action='end']");
+        if (!session.pollId || !session.active) {
+          statusEl.innerHTML = '<span class="kicker">SESSION · 尚未開始</span>';
+          startBtn.hidden = false;
+          advBtn.hidden = true;
+          endBtn.hidden = true;
+          return;
+        }
+        const total = queue.length;
+        const pos = session.currentIndex + 1;
+        const onLast = session.currentIndex >= total - 1;
+        statusEl.innerHTML = `<span class="kicker">SESSION · ACTIVE</span><span class="progress">Q ${pos} / ${total}</span>`;
+        startBtn.hidden = true;
+        advBtn.hidden = onLast;
+        endBtn.hidden = false;
+      }
+
+      async function sessionStart() {
+        // Validate every question first
+        const payload = queue.map((q, idx) => {
+          const text = (q.text || "").trim();
+          const options = q.options.map(o => (o.label || "").trim()).filter(Boolean);
+          if (!text) throw new Error(`第 ${idx + 1} 題缺少題目文字`);
+          if (options.length < 2) throw new Error(`第 ${idx + 1} 題選項不足 2 個`);
+          return {
+            text,
+            options,
+            time_limit_seconds: q.timer && q.timer > 0 ? q.timer : null,
+          };
+        });
+        try {
+          const createRes = await csrfFetch("/admin/poll/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ questions: payload }),
+          });
+          const createData = await createRes.json().catch(() => ({}));
+          if (!createRes.ok) throw new Error(createData.error || "建立失敗");
+          // Map server question ids back onto local state so image upload works.
+          session.pollId = createData.poll_id;
+          (createData.questions || []).forEach((sq, i) => {
+            if (queue[i]) queue[i].server_q_id = sq.id;
+          });
+          persist();
+
+          const startRes = await csrfFetch("/admin/poll/start", { method: "POST" });
+          const startData = await startRes.json().catch(() => ({}));
+          if (!startRes.ok) throw new Error(startData.error || "開始失敗");
+          session.active = true;
+          session.currentIndex = startData.current_index ?? 0;
+          renderSessionStatus();
+          renderQueue();
+          showToast && showToast("Session 已開始", true);
+          beginSessionPolling();
+        } catch (err) {
+          showToast && showToast(String(err.message || err), false);
+        }
+      }
+
+      async function sessionAdvance() {
+        try {
+          const res = await csrfFetch("/admin/poll/advance", { method: "POST" });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || "推進失敗");
+          session.currentIndex = data.current_index;
+          session.active = !!data.active;
+          renderSessionStatus();
+          renderQueue();
+          showToast && showToast(`已推進至 Q${session.currentIndex + 1}`, true);
+        } catch (err) {
+          showToast && showToast(String(err.message || err), false);
+        }
+      }
+
+      async function sessionEnd() {
+        try {
+          const res = await csrfFetch("/admin/poll/end", { method: "POST" });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || "結束失敗");
+          }
+          session.active = false;
+          session.pollId = "";
+          session.currentIndex = -1;
+          if (session.statusTimer) { clearInterval(session.statusTimer); session.statusTimer = null; }
+          renderSessionStatus();
+          renderQueue();
+          showToast && showToast("Session 已結束", true);
+        } catch (err) {
+          showToast && showToast(String(err.message || err), false);
+        }
+      }
+
+      function beginSessionPolling() {
+        if (session.statusTimer) clearInterval(session.statusTimer);
+        session.statusTimer = setInterval(async () => {
+          if (!session.pollId) return;
+          try {
+            const res = await fetch("/admin/poll/status", { credentials: "same-origin" });
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.poll_id !== session.pollId) return;
+            session.active = !!data.active;
+            session.currentIndex = data.current_index ?? -1;
+            renderSessionStatus();
+            renderQueue();
+            if (!data.active) {
+              clearInterval(session.statusTimer);
+              session.statusTimer = null;
+            }
+          } catch (_) { /* ignore */ }
+        }, 2000);
+      }
+
+      window.addEventListener("beforeunload", () => {
+        if (session.statusTimer) { clearInterval(session.statusTimer); session.statusTimer = null; }
       });
 
       // Start engine
