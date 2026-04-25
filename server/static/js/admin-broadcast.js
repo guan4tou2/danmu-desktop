@@ -195,6 +195,7 @@
   let _wsClients = 0;
   let _metricsTimer = 0;
   let _statusTimer = 0;
+  let _historyTimer = 0;
   let _tickTimer = 0;
 
   async function refreshMetrics() {
