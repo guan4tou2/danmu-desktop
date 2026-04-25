@@ -1884,3 +1884,182 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Command palette ⌘K (P3-4) — admin-only overlay. Slides from top, scope
+ * chips, fuzzy result list with mono prefix per row. Reuses .admin-v2-chip
+ * idiom on the scope row but with cmdk-specific tokens for spacing.
+ * ────────────────────────────────────────────────────────────────────────── */
+.admin-cmdk[hidden] { display: none; }
+.admin-cmdk {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 8vh 16px 16px;
+  pointer-events: auto;
+}
+.admin-cmdk-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.62);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.admin-cmdk-panel {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  background: var(--admin-panel, #0b1220);
+  border: 1px solid var(--admin-line, #1e293b);
+  border-radius: 10px;
+  box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.6),
+              0 0 0 1px rgba(56, 189, 248, 0.18);
+  overflow: hidden;
+  animation: admin-cmdk-slide 160ms ease-out;
+}
+@keyframes admin-cmdk-slide {
+  from { transform: translateY(-12px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+.admin-cmdk-scope {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--admin-line, #1e293b);
+  flex-wrap: wrap;
+}
+.admin-cmdk-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  border: 1px solid var(--admin-line, #1e293b);
+  background: transparent;
+  color: var(--admin-text-dim, #94a3b8);
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+.admin-cmdk-chip:hover { color: var(--admin-text, #e2e8f0); }
+.admin-cmdk-chip.is-on {
+  border-color: var(--color-primary, #38bdf8);
+  color: var(--color-primary, #38bdf8);
+  background: rgba(56, 189, 248, 0.1);
+}
+.admin-cmdk-hint {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--admin-text-dim, #94a3b8);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.admin-cmdk-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--admin-line, #1e293b);
+}
+.admin-cmdk-prompt {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-primary, #38bdf8);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 4px;
+  padding: 2px 8px;
+  letter-spacing: 1px;
+}
+.admin-cmdk-input {
+  flex: 1 1 auto;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: var(--admin-text, #e2e8f0);
+  font-size: 15px;
+  font-family: inherit;
+  padding: 4px 0;
+}
+.admin-cmdk-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.admin-cmdk-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--admin-text, #e2e8f0);
+  border-left: 2px solid transparent;
+}
+.admin-cmdk-row:hover { background: rgba(56, 189, 248, 0.06); }
+.admin-cmdk-row.is-active {
+  background: rgba(56, 189, 248, 0.12);
+  border-left-color: var(--color-primary, #38bdf8);
+}
+.admin-cmdk-prefix {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--color-primary, #38bdf8);
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+.admin-cmdk-label {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-cmdk-empty,
+.admin-cmdk-more {
+  list-style: none;
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--admin-text-dim, #94a3b8);
+  text-align: center;
+  font-family: var(--font-mono);
+}
+.admin-cmdk-foot {
+  display: flex;
+  gap: 14px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--admin-line, #1e293b);
+  font-size: 10px;
+  color: var(--admin-text-dim, #94a3b8);
+  font-family: var(--font-mono);
+  letter-spacing: 0.5px;
+  flex-wrap: wrap;
+}
+.admin-cmdk-foot kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  border: 1px solid var(--admin-line, #1e293b);
+  border-radius: 3px;
+  background: rgba(56, 189, 248, 0.04);
+  color: var(--admin-text, #e2e8f0);
+  font-family: inherit;
+  font-size: 10px;
+  margin-right: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-cmdk-panel { animation: none; }
+}
+@media (max-width: 480px) {
+  .admin-cmdk { padding: 4vh 8px 8px; }
+  .admin-cmdk-foot { gap: 8px; font-size: 9px; }
+}
