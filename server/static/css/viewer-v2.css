@@ -33,16 +33,14 @@ body.viewer-body-v2 {
   color-scheme: light;
   font-family: var(--font-ui);
   margin: 0;
-  height: 100dvh;
+  /* Natural flow — no viewport-locked column. Page scrolls as a whole on
+   * desktop (per user 2026-04-25: 平鋪、不要陰影、整頁展開). On narrow
+   * mobile viewports we re-impose a viewport-bound flex column so the
+   * sendbar stays pinned, but desktop and tablet are flat. */
   min-height: 100dvh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
 }
 
 .viewer-page-shell {
-  flex: 1 1 0;
-  min-height: 0;
   width: 100%;
   max-width: 960px;
   margin: 0 auto;
@@ -52,14 +50,11 @@ body.viewer-body-v2 {
 }
 
 .viewer-main-card {
-  flex: 1 1 0;
-  min-height: 0;
-  background: var(--color-bg-base); /* #0f172a slate-900 = bg1 */
+  background: var(--color-bg-base);
   border: 1px solid var(--hud-line);
   border-top: none;
   border-bottom: none;
   border-radius: 0;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   box-shadow: none;
@@ -72,7 +67,30 @@ body.viewer-body-v2 {
   .viewer-main-card {
     border: 1px solid var(--hud-line);
     border-radius: 12px 12px 0 0;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+    /* No drop shadow per user 2026-04-25 — flat desktop look. */
+    box-shadow: none;
+  }
+}
+
+/* Mobile-only viewport lock so the sendbar pins to the bottom of the
+ * screen and the body scrolls inside. On desktop, layout is flat and
+ * the whole page scrolls naturally. */
+@media (max-width: 599px) {
+  body.viewer-body-v2 {
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .viewer-page-shell {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+  .viewer-main-card {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
   }
 }
 
@@ -108,11 +126,17 @@ body.viewer-body-v2 {
 }
 
 .viewer-shell {
-  flex: 1 1 0;
-  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 0;
+}
+
+/* Mobile re-imposes flex:1 so the shell fills the viewport-bound card. */
+@media (max-width: 599px) {
+  .viewer-shell {
+    flex: 1 1 0;
+    min-height: 0;
+  }
 }
 
 /* Hero · 2-col layout (v4 handoff chat decision):
@@ -272,17 +296,19 @@ body.viewer-body-v2 {
   border-color: var(--color-primary);
 }
 
-/* Scrollable body — holds preview + all field rows. */
+/* Body — holds preview + all field rows.
+ * Desktop (≥600px): natural flow, no inner scroll, page scrolls as a whole.
+ * Mobile (<600px): inner scroll so the sendbar pins to viewport bottom. */
 .viewer-body {
-  flex: 1 1 0;
-  min-height: 0;
   padding: 24px 24px 30px; /* prototype viewer.jsx:111 desktop */
-  overflow: auto;
-  overscroll-behavior: contain;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 599px) {
   .viewer-body {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
     padding: 16px 16px 22px; /* prototype mobile: pad=16, pad+6=22 */
   }
 }

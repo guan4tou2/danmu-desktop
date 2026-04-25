@@ -533,22 +533,34 @@ document.addEventListener("DOMContentLoaded", () => {
   if (elements.sizeInput) {
     elements.sizeInput.addEventListener("input", (e) => {
       if (elements.sizeValue) {
-        elements.sizeValue.textContent = `${e.target.value}px`;
+        // HTML wraps with literal `px` after </span> — write number only.
+        elements.sizeValue.textContent = e.target.value;
       }
       updatePreview();
     });
   }
 
+  // Init speed display with one decimal to match prototype `1.0x` shape.
+  if (elements.speedRange && elements.speedValue) {
+    const sv = parseFloat(elements.speedRange.value);
+    if (Number.isFinite(sv)) elements.speedValue.textContent = sv.toFixed(1);
+  }
+
   if (elements.opacityRange) {
     elements.opacityRange.addEventListener("input", (e) => {
-      elements.opacityValue.textContent = `${e.target.value}%`;
+      // HTML wraps with literal `%` after </span> — write number only.
+      elements.opacityValue.textContent = e.target.value;
       updatePreview();
     });
   }
 
   if (elements.speedRange) {
     elements.speedRange.addEventListener("input", (e) => {
-      elements.speedValue.textContent = e.target.value;
+      // Match prototype `${speed.toFixed(1)}x` — always show one decimal
+      // (e.g. 1.0x not 1x) so the column doesn't shrink when speed lands
+      // on an integer.
+      const v = parseFloat(e.target.value);
+      elements.speedValue.textContent = Number.isFinite(v) ? v.toFixed(1) : e.target.value;
     });
   }
 
