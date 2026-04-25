@@ -51,6 +51,9 @@ document.addEventListener("DOMContentLoaded", () => {
     connectionLabel: document.getElementById("connectionLabel"),
     overlayStatus: document.getElementById("overlayStatus"),
     overlayLabel: document.getElementById("overlayLabel"),
+
+    // Send bar pill — border turns cyan when text is present
+    sendbarPill: document.getElementById("sendbarPill"),
   };
 
   // --- Helper utilities ---
@@ -347,7 +350,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const updateCharCount = () => {
     const count = elements.danmuText.value.length;
     elements.charCount.textContent = `${count}/100`;
-    elements.charCount.classList.toggle("text-red-400", count >= 90);
+    elements.charCount.classList.toggle("is-near", count >= 90);
   };
 
   // Update preview
@@ -399,7 +402,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Apply styles
     if (elements.colorInput) {
-      elements.previewText.style.color = elements.colorInput.value;
+      const color = elements.colorInput.value;
+      elements.previewText.style.color = color;
+      // Glow effect: viewer.jsx — `0 0 12px ${color}, 0 2px 4px rgba(0,0,0,0.6)`
+      elements.previewText.style.textShadow = selectedEffects["glow"]
+        ? `0 0 12px ${color}, 0 2px 4px rgba(0,0,0,0.6)`
+        : "";
     }
     if (elements.sizeInput) {
       const fontSize = parseFloat(elements.sizeInput.value) || 32;
@@ -485,6 +493,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!elements.btnSend) return;
     const hasText = elements.danmuText.value.trim().length > 0;
     elements.btnSend.disabled = !hasText;
+    elements.sendbarPill?.classList.toggle("is-active", hasText);
   };
   elements.danmuText.addEventListener("input", () => {
     updateCharCount();
@@ -695,6 +704,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         _updateEffectsCount();
         _refreshParamsPanel();
+        updatePreview();
       });
       elements.effectButtons.appendChild(btn);
     });
