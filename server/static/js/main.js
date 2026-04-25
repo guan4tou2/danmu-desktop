@@ -35,6 +35,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Effect UI
     effectButtons: document.getElementById("effectButtons"),
     effectParamsPanel: document.getElementById("effectParamsPanel"),
+    effectsCount: document.getElementById("effectsCount"),
+    effectsTotal: document.getElementById("effectsTotal"),
 
     // Toast container
     toastContainer: document.getElementById("toast-container"),
@@ -649,9 +651,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function _updateEffectsCount() {
+    if (elements.effectsCount) {
+      elements.effectsCount.textContent = String(Object.keys(selectedEffects).length);
+    }
+  }
+
   function _buildEffectButtons(effects) {
     if (!elements.effectButtons) return;
     elements.effectButtons.innerHTML = "";
+    if (elements.effectsTotal) {
+      elements.effectsTotal.textContent = String(effects.length);
+    }
+    _updateEffectsCount();
 
     effects.forEach((eff) => {
       const btn = document.createElement("button");
@@ -681,6 +693,7 @@ document.addEventListener("DOMContentLoaded", () => {
           btn.setAttribute("aria-pressed", "true");
           bullet.textContent = "\u25CF"; // ● on
         }
+        _updateEffectsCount();
         _refreshParamsPanel();
       });
       elements.effectButtons.appendChild(btn);
