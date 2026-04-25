@@ -539,9 +539,11 @@ body.viewer-body-v2 {
   font-size: 10px;
 }
 
-/* Range slider — thin 4px track, accentColor driven. */
+/* Range slider — native track restored so accent-color applies. */
 .viewer-range {
   width: 100%;
+  -webkit-appearance: auto;
+  appearance: auto;
   accent-color: var(--color-primary);
   height: 4px;
 }

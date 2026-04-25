@@ -241,10 +241,10 @@ def test_admin_panel_has_speed_input(admin_page):
 
 
 def test_admin_panel_speed_initial_value(admin_page):
-    """Speed 啟用時，最慢值預設為 1（系統預設 Speed[1]=1）"""
+    """Speed 啟用時，最慢值預設為 0.5（系統預設 Speed[1]=0.5）"""
     _open_section(admin_page, "sec-speed")
     speed = admin_page.locator('[data-key="Speed"][data-index="1"]')
-    assert speed.input_value() == "1"
+    assert speed.input_value() == "0.5"
 
 
 # ─── 設定修改 ─────────────────────────────────────────────────────────────────

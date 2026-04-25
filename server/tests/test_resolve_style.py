@@ -8,9 +8,9 @@ def _resolve(data, options=None, font_payload=None, effects_result=None):
     if options is None:
         options = {
             "Color": [True, 0, 0, "#FFFFFF"],
-            "Opacity": [True, 0, 100, 70],
-            "FontSize": [True, 20, 100, 50],
-            "Speed": [True, 1, 10, 4],
+            "Opacity": [True, 20, 100, 100],
+            "FontSize": [True, 16, 64, 32],
+            "Speed": [True, 0.5, 3.0, 1.0],
             "FontFamily": [False, "", "", "NotoSansTC"],
             "Effects": [True, "", "", ""],
         }
@@ -183,36 +183,36 @@ def test_effects_empty_list_not_rendered():
 def test_default_opacity_size_speed_from_settings():
     """When user doesn't provide opacity/size/speed, admin defaults are used."""
     result, _, _ = _resolve({"text": "hello"})
-    assert result["opacity"] == 70
-    assert result["size"] == 50
-    assert result["speed"] == 4
+    assert result["opacity"] == 100
+    assert result["size"] == 32
+    assert result["speed"] == 1.0
 
 
 def test_user_opacity_size_speed_override_defaults():
     """User-provided values override admin defaults."""
-    result, _, _ = _resolve({"text": "hello", "opacity": 90, "size": 80, "speed": 7})
+    result, _, _ = _resolve({"text": "hello", "opacity": 90, "size": 50, "speed": 2.0})
     assert result["opacity"] == 90
-    assert result["size"] == 80
-    assert result["speed"] == 7
+    assert result["size"] == 50
+    assert result["speed"] == 2.0
 
 
 def test_opacity_size_speed_forced_when_disabled():
     """When settings are disabled, admin defaults override user values."""
     options = {
         "Color": [True, 0, 0, "#FFFFFF"],
-        "Opacity": [False, 0, 100, 50],
-        "FontSize": [False, 20, 100, 30],
-        "Speed": [False, 1, 10, 5],
+        "Opacity": [False, 20, 100, 50],
+        "FontSize": [False, 16, 64, 30],
+        "Speed": [False, 0.5, 3.0, 1.5],
         "FontFamily": [False, "", "", "NotoSansTC"],
         "Effects": [True, "", "", ""],
     }
     result, _, _ = _resolve(
-        {"text": "hello", "opacity": 90, "size": 80, "speed": 7},
+        {"text": "hello", "opacity": 90, "size": 50, "speed": 2.0},
         options=options,
     )
     assert result["opacity"] == 50
     assert result["size"] == 30
-    assert result["speed"] == 5
+    assert result["speed"] == 1.5
 
 
 # ── Sticker resolution ───────────────────────────────────────────────────

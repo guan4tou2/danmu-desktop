@@ -33,7 +33,7 @@ def test_admin_update_requires_csrf(client):
     with client.session_transaction() as sess:
         token = sess["csrf_token"]
 
-    payload = {"type": "Speed", "index": 3, "value": 5}
+    payload = {"type": "Speed", "index": 3, "value": 1.5}
     res = client.post("/admin/update", json=payload)
     assert res.status_code == 403
 

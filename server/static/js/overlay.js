@@ -315,7 +315,7 @@
           data.opacity,
           "#" + data.color,
           data.size,
-          parseInt(data.speed, 10),
+          parseFloat(data.speed) || 1.0,
           data.fontInfo,
           data.textStyles || { textStroke: true, strokeWidth: 2, strokeColor: "#000000", textShadow: false, shadowBlur: 4 },
           data.displayArea || { top: 0, height: 100 },
@@ -361,7 +361,7 @@
     var now = Date.now();
     var maxTime = 20000;
     var minTime = 2000;
-    var duration = maxTime - ((speed - 1) * (maxTime - minTime)) / 9;
+    var duration = maxTime - ((speed - 0.5) * (maxTime - minTime)) / 2.5;
 
     // Purge expired entries
     for (var i = danmuTracks.length - 1; i >= 0; i--) {
@@ -409,7 +409,7 @@
     opacity = opacity || 75;
     color = color || "#ffffff";
     size = size || 50;
-    speed = speed || 7;
+    speed = speed || 1.0;
     fontInfo = fontInfo || { name: "NotoSansTC", url: null, type: "default" };
     textStyles = textStyles || { textStroke: true, strokeWidth: 2, strokeColor: "#000000", textShadow: false, shadowBlur: 4 };
     displayArea = displayArea || { top: 0, height: 100 };
@@ -522,10 +522,10 @@
         var userOpacity = (opacity || 75) * 0.01;
         wrapper.style.opacity = String(userOpacity);
 
-        var currentSpeed = Math.max(1, Math.min(10, isNaN(speed) ? 5 : speed));
+        var currentSpeed = Math.max(0.5, Math.min(3.0, isNaN(speed) ? 1.0 : speed));
         var maxTime = 20000;
         var minTime = 2000;
-        var duration = maxTime - ((currentSpeed - 1) * (maxTime - minTime)) / 9;
+        var duration = maxTime - ((currentSpeed - 0.5) * (maxTime - minTime)) / 2.5;
         duration = Math.max(minTime, Math.min(maxTime, duration));
 
         // Apply .dme effect to inner element

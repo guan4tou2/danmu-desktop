@@ -767,7 +767,7 @@ document.addEventListener("DOMContentLoaded", () => {
         text: text,
         color: elements.colorInput ? elements.colorInput.value : null,
         size: elements.sizeInput ? parseInt(elements.sizeInput.value) : null,
-        speed: elements.speedRange ? parseInt(elements.speedRange.value) : null,
+        speed: elements.speedRange ? parseFloat(elements.speedRange.value) : null,
         opacity: elements.opacityRange
           ? parseInt(elements.opacityRange.value)
           : null,

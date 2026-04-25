@@ -247,7 +247,7 @@ def test_fire_with_nickname_passes_validation(client):
             "nickname": "Alice",
             "color": "#ffffff",
             "size": 24,
-            "speed": 5,
+            "speed": 1.5,
             "opacity": 100,
         },
     )
@@ -266,7 +266,7 @@ def test_fire_nickname_too_long_rejected(client):
             "nickname": "A" * 21,
             "color": "#ffffff",
             "size": 24,
-            "speed": 5,
+            "speed": 1.5,
             "opacity": 100,
         },
     )
@@ -284,7 +284,7 @@ def test_fire_without_nickname_succeeds(client):
             "text": "hello",
             "color": "#ffffff",
             "size": 24,
-            "speed": 5,
+            "speed": 1.5,
             "opacity": 100,
         },
     )

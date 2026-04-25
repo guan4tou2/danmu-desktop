@@ -31,9 +31,9 @@ class FireRequestSchema(Schema):
         load_default=None,
         validate=validate.Regexp(r"^#?[0-9a-fA-F]{6}$", error="Invalid hex color"),
     )
-    opacity = fields.Int(load_default=None, validate=validate.Range(min=0, max=100))
+    opacity = fields.Int(load_default=None, validate=validate.Range(min=20, max=100))
     size = fields.Int(load_default=None, validate=validate.Range(min=1, max=200))
-    speed = fields.Int(load_default=None, validate=validate.Range(min=1, max=10))
+    speed = fields.Float(load_default=None, validate=validate.Range(min=0.5, max=3.0))
     fingerprint = fields.Str(load_default=None, validate=validate.Length(max=128))
     nickname = fields.Str(load_default=None, validate=validate.Length(max=20))
     layout = fields.Str(
@@ -242,8 +242,8 @@ class SchedulerMessageSchema(Schema):
         validate=validate.Regexp(r"^#?[0-9a-fA-F]{6}$", error="Invalid hex color"),
     )
     size = fields.Int(load_default=None, validate=validate.Range(min=1, max=200))
-    speed = fields.Int(load_default=None, validate=validate.Range(min=1, max=10))
-    opacity = fields.Int(load_default=None, validate=validate.Range(min=0, max=100))
+    speed = fields.Float(load_default=None, validate=validate.Range(min=0.5, max=3.0))
+    opacity = fields.Int(load_default=None, validate=validate.Range(min=20, max=100))
 
     class Meta:
         unknown = EXCLUDE

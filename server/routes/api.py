@@ -108,9 +108,9 @@ def _resolve_danmu_style(data):
     raw_color = _pick(data.pop("color", None), options.get("Color", [True, 0, 0, "#FFFFFF"]))
     data["color"] = str(raw_color).lstrip("#")
 
-    data["opacity"] = _pick(data.pop("opacity", None), options.get("Opacity", [True, 0, 100, 70]))
-    data["size"] = _pick(data.pop("size", None), options.get("FontSize", [True, 20, 100, 50]))
-    data["speed"] = _pick(data.pop("speed", None), options.get("Speed", [True, 1, 10, 4]))
+    data["opacity"] = _pick(data.pop("opacity", None), options.get("Opacity", [True, 20, 100, 100]))
+    data["size"] = _pick(data.pop("size", None), options.get("FontSize", [True, 16, 64, 32]))
+    data["speed"] = _pick(data.pop("speed", None), options.get("Speed", [True, 0.5, 3.0, 1.0]))
 
     # Apply active theme defaults for textStyles
     active_theme = theme_svc.get_active()

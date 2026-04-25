@@ -15,9 +15,9 @@ _PICK_SET_KEYS = ("Color", "FontFamily", "Layout")
 _DEFAULT_OPTIONS = {
     # slot 1 is now an allowlist (List[str]); empty means "all presets allowed".
     "Color": [True, [], 0, "#FFFFFF"],
-    "Opacity": [True, 0, 100, 70],
-    "FontSize": [True, 20, 100, 50],
-    "Speed": [True, 1, 10, 4],
+    "Opacity": [True, 20, 100, 100],
+    "FontSize": [True, 16, 64, 32],
+    "Speed": [True, 0.5, 3.0, 1.0],
     # User-override on by default, consistent with Nickname / Layout in the
     # same Identity & Layout grid. The section copy promises font control;
     # admins who want to lock it can flip this off in the admin panel.
@@ -28,9 +28,9 @@ _DEFAULT_OPTIONS = {
 }
 
 _RANGES = {
-    "Speed": {"min": 1, "max": 10},
-    "Opacity": {"min": 0, "max": 100},
-    "FontSize": {"min": 12, "max": 100},
+    "Speed": {"min": 0.5, "max": 3.0},
+    "Opacity": {"min": 20, "max": 100},
+    "FontSize": {"min": 16, "max": 64},
 }
 
 
@@ -132,7 +132,7 @@ class SettingsStore:
                 return copy.deepcopy(self._options[key])
 
             if key in self._ranges:
-                value = int(value)
+                value = round(float(value), 1) if key == "Speed" else int(value)
                 limits = self._ranges[key]
                 if not (limits["min"] <= value <= limits["max"]):
                     raise ValueError(
