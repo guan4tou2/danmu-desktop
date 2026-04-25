@@ -700,9 +700,15 @@ overrides scoped to `.admin-body`.
 
 ## P6 · Tech debt (code-only, no design)
 
-### P6-1 · Dedupe viewer logic Electron ↔ server
-`renderer-modules/particle-bg.js` + `danmu-effects.js` have server-side
-counterparts. Single source via `shared/`.
+### P6-1 · Dedupe viewer logic Electron ↔ server — DONE 2026-04-25
+`renderer-modules/particle-bg.js` + `danmu-effects.js` extracted into
+`shared/particle-bg.js` + `shared/danmu-effects.js` (UMD-style: CommonJS for
+webpack, `window.*` for plain `<script>`). Both consumer paths are now
+symlinks pointing at `shared/` — same pattern as `shared/tokens.css` and
+`shared/hud.css`. Server template doesn't include them yet (viewer v2 dropped
+particle bg, server uses `.dme` engine for effects), but the single source
+exists for future server-side use. Electron renderer continues to bundle
+them via webpack; all 268 Jest tests still pass.
 
 ### P6-2 · Split admin.js router
 1900+ lines. Extract `ADMIN_ROUTES` + `renderLogin` / `renderControlPanel`
