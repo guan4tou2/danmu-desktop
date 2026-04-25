@@ -83,42 +83,71 @@ function ViewerCore({ theme, form, inBrowser }) {
         </div>
       )}
 
-      {/* Hero lockup — product identity */}
+      {/* Hero lockup — 左右兩欄 (mobile + desktop 統一):
+          左 · Danmu Fire logo + 副標題
+          右 · 伺服器 / Overlay 連線 chip + (desktop) 語言 & 主題切換 */}
       <div style={{
-        padding: isMobile ? '22px 20px 20px' : '30px 24px 24px',
+        padding: isMobile ? '18px 16px 16px' : '28px 32px 22px',
         borderBottom: `1px solid ${line}`,
-        textAlign: 'center',
         background: isDark ? 'linear-gradient(180deg, rgba(125,211,252,0.04) 0%, transparent 100%)' : 'transparent',
+        display: 'flex',
+        alignItems: 'center',
+        gap: isMobile ? 10 : 24,
+        position: 'relative',
       }}>
-        <DanmuHero
-          title="Danmu Fire"
-          size={isMobile ? 'large' : 'hero'}
-          subtitle={isMobile ? undefined : '即時彈幕送字 — 寫下想說的,按 FIRE 送到大螢幕'}
-          chip={
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '4px 10px', borderRadius: 999,
-              background: hudTokens.cyanSoft, border: `1px solid ${hudTokens.cyanLine}`,
-              fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 1.5, color: accent,
-            }}>
-              <StatusDot color={accent} size={6} />
-              CONNECTED · #MTG-042
-            </span>
-          }
-        />
+        <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+          <DanmuHero
+            title="Danmu Fire"
+            theme={theme}
+            size={isMobile ? 'medium' : 'hero'}
+            align="left"
+            subtitle="把你的訊息送上螢幕!"
+            subStyle={{ margin: isMobile ? '6px 0 0' : '10px 0 0', fontSize: isMobile ? 12 : undefined }}
+          />
+        </div>
+        <div style={{
+          flexShrink: 0, display: 'flex', flexDirection: 'column',
+          gap: 4, alignItems: 'flex-end',
+        }}>
+          <ConnChip label="伺服器" state="online" accent={accent} textDim={textDim} mini={isMobile} />
+          <ConnChip label="Overlay" state="offline" textDim={textDim} line={line} mini={isMobile} />
+          {!isMobile && (
+            <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+              <Seg>
+                <SegBtn on>中</SegBtn>
+                <SegBtn>EN</SegBtn>
+              </Seg>
+              <Seg>
+                <SegBtn on={isDark}>◐</SegBtn>
+                <SegBtn on={!isDark}>◑</SegBtn>
+              </Seg>
+            </div>
+          )}
+        </div>
       </div>
 
       <div style={{ flex: 1, overflow: 'auto', padding: `${pad}px ${pad}px ${pad + 6}px`, minHeight: 0 }}>
-        {/* Live preview */}
+        {/* Live preview — 模擬「投到螢幕上」;dark/light 各自的深色舞台背景 */}
         <div style={{
-          background: isDark ? '#000814' : '#0f172a',
+          background: isDark
+            ? 'linear-gradient(135deg, #000814 0%, #001428 100%)'
+            : 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
           borderRadius: 8, padding: '18px 14px', marginBottom: 16,
-          border: `1px solid ${line}`, position: 'relative', overflow: 'hidden', minHeight: 72,
+          border: `1px solid ${isDark ? 'rgba(125,211,252,0.18)' : 'rgba(125,211,252,0.25)'}`,
+          position: 'relative', overflow: 'hidden', minHeight: 72,
+          boxShadow: isDark
+            ? 'inset 0 0 40px rgba(125,211,252,0.06)'
+            : '0 4px 14px rgba(15,23,42,0.18), inset 0 0 40px rgba(125,211,252,0.08)',
         }}>
+          {/* scanline texture to sell "screen" feel */}
+          <div style={{
+            position: 'absolute', inset: 0, pointerEvents: 'none',
+            background: 'repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(255,255,255,0.015) 3px, rgba(255,255,255,0.015) 4px)',
+          }} />
           <div style={{
             position: 'absolute', top: 6, left: 10, fontFamily: hudTokens.fontMono, fontSize: 9,
-            color: 'rgba(148,163,184,0.7)', letterSpacing: 1.5,
-          }}>PREVIEW · 你送出的樣子</div>
+            color: 'rgba(148,163,184,0.7)', letterSpacing: 1.5, zIndex: 1,
+          }}>預覽 · 你送出的樣子</div>
           <div style={{
             marginTop: 10, fontSize, fontFamily, fontWeight: 600, color,
             opacity: opacity / 100,
@@ -136,12 +165,12 @@ function ViewerCore({ theme, form, inBrowser }) {
           </div>
         </div>
 
-        <Field label="暱稱 · NICKNAME" textDim={textDim}>
+        <Field label="暱稱" textDim={textDim}>
           <input value={nick} onChange={e => setNick(e.target.value.slice(0, 20))} maxLength={20}
             style={inputStyle({ line, text, raised })} />
         </Field>
 
-        <Field label="顏色 · COLOR" textDim={textDim}>
+        <Field label="顏色" textDim={textDim}>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {['#ffffff', accent, hudTokens.amber, hudTokens.lime, hudTokens.crimson, '#ffd166'].map(c => (
               <button key={c} onClick={() => setColor(c)} style={{
@@ -161,7 +190,7 @@ function ViewerCore({ theme, form, inBrowser }) {
           </div>
         </Field>
 
-        <Field label="字型 · FONT FAMILY" textDim={textDim}>
+        <Field label="字型" textDim={textDim}>
           <div style={{ position: 'relative' }}>
             <select value={fontFamily} onChange={e => setFontFamily(e.target.value)} style={{
               width: '100%', padding: '9px 34px 9px 12px', borderRadius: 6,
@@ -187,11 +216,11 @@ function ViewerCore({ theme, form, inBrowser }) {
           </Field>
         </div>
 
-        <Field label={`速度 · SPEED · ${speed.toFixed(1)}x`} textDim={textDim}>
+        <Field label={`速度 ${speed.toFixed(1)}x`} textDim={textDim}>
           <input type="range" min="0.5" max="3" step="0.1" value={speed} onChange={e => setSpeed(+e.target.value)} style={rangeStyle(accent)} />
         </Field>
 
-        <Field label={`效果 · EFFECTS · 已選 ${effects.length} / 8 · 可疊加`} textDim={textDim}>
+        <Field label={`效果 已選 ${effects.length} / 8 · 可疊加`} textDim={textDim}>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {[
               { e: 'blink',   zh: '閃爍' }, { e: 'bounce',  zh: '彈跳' },
@@ -214,7 +243,7 @@ function ViewerCore({ theme, form, inBrowser }) {
           </div>
         </Field>
 
-        <Field label="排版 · LAYOUT" textDim={textDim} nomb>
+        <Field label="排版" textDim={textDim} nomb>
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(5, 1fr)`, gap: 6 }}>
             {[
               { k: 'scroll',       zh: '滾動',     sub: '右→左' },
@@ -321,6 +350,45 @@ function inputStyle({ line, text, raised }) {
 }
 function rangeStyle(accent) {
   return { width: '100%', accentColor: accent, height: 4 };
+}
+
+function Seg({ children }) {
+  return (
+    <div style={{
+      display: 'inline-flex', padding: 2, borderRadius: 6,
+      background: hudTokens.raised, border: `1px solid ${hudTokens.line}`,
+    }}>{children}</div>
+  );
+}
+function SegBtn({ on, children }) {
+  return (
+    <button style={{
+      padding: '4px 10px', borderRadius: 4, border: 'none', cursor: 'pointer',
+      background: on ? hudTokens.cyanSoft : 'transparent',
+      color: on ? hudTokens.cyan : hudTokens.textDim,
+      fontFamily: hudTokens.fontMono, fontSize: 11, letterSpacing: 1,
+    }}>{children}</button>
+  );
+}
+
+// Connection chip — 伺服器 / Overlay 單行小膠囊
+function ConnChip({ label, state, accent, textDim, line, mini }) {
+  const online = state === 'online';
+  const color = online ? (accent || hudTokens.cyan) : (textDim || hudTokens.textDim);
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: mini ? 4 : 6,
+      padding: mini ? '2px 7px' : '4px 10px', borderRadius: 999,
+      background: online ? hudTokens.cyanSoft : 'transparent',
+      border: `1px solid ${online ? hudTokens.cyanLine : (line || 'rgba(148,163,184,0.25)')}`,
+      fontFamily: hudTokens.fontMono, fontSize: mini ? 9 : 10, letterSpacing: mini ? 0.5 : 1, color,
+      whiteSpace: 'nowrap',
+    }}>
+      <StatusDot color={color} size={mini ? 5 : 6} />
+      <span style={{ opacity: 0.85 }}>{label}</span>
+      <span style={{ color, opacity: online ? 1 : 0.7 }}>· {online ? '已連線' : '未連線'}</span>
+    </span>
+  );
 }
 
 Object.assign(window, { ViewerMobile, ViewerDesktop });

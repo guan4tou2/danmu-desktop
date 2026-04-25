@@ -43,6 +43,7 @@ function AdminPageShell({ route, title, en, children, theme = 'dark' }) {
           <AdminNavItem icon="◈" label="投票" live active={route === 'polls'} text={text} textDim={textDim} accent={accent} line={line} />
           <AdminNavItem icon="⬚" label="Overlay Widgets" badge="2" active={route === 'widgets'} text={text} textDim={textDim} accent={accent} line={line} />
           <AdminNavItem icon="❖" label="風格主題包" badge="6" active={route === 'themes'} text={text} textDim={textDim} accent={accent} line={line} />
+          <AdminNavItem icon="◐" label="顯示設定" active={route === 'display'} text={text} textDim={textDim} accent={accent} line={line} />
 
           <AdminNavSection label="審核" textDim={textDim} top />
           <AdminNavItem icon="⊘" label="敏感字 & 黑名單" badge="847" active={route === 'moderation'} text={text} textDim={textDim} accent={accent} line={line} />
@@ -56,16 +57,14 @@ function AdminPageShell({ route, title, en, children, theme = 'dark' }) {
         </div>
 
         <div style={{ padding: '12px 16px', borderTop: `1px solid ${line}`, fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 0.5, color: textDim }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
             <span>TELEMETRY</span>
             <span style={{ color: hudTokens.lime }}>● HEALTHY</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 }}>
-            <div>CPU <span style={{ color: text }}>12%</span></div>
-            <div>WS <span style={{ color: text }}>247</span></div>
-            <div>MEM <span style={{ color: text }}>218 MB</span></div>
-            <div>RATE <span style={{ color: text }}>4.2/s</span></div>
-          </div>
+          <TelemBar label="CPU"  value="12%"     bars={[2, 3, 2, 4, 3, 2, 3, 2]} text={text} textDim={textDim} accent={accent} />
+          <TelemBar label="WS"   value="247"     bars={[5, 6, 7, 6, 8, 7, 9, 8]} text={text} textDim={textDim} accent={accent} />
+          <TelemBar label="MEM"  value="218 MB"  bars={[4, 4, 5, 4, 5, 5, 6, 5]} text={text} textDim={textDim} accent={accent} />
+          <TelemBar label="RATE" value="4.2/s"   bars={[3, 5, 4, 6, 4, 5, 7, 6]} text={text} textDim={textDim} accent={accent} />
         </div>
       </div>
 
@@ -774,6 +773,24 @@ function KV({ k, v, text, textDim }) {
     <div>
       <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, letterSpacing: 1, color: textDim }}>{k}</div>
       <div style={{ fontFamily: hudTokens.fontMono, fontSize: 13, color: text, marginTop: 2 }}>{v}</div>
+    </div>
+  );
+}
+
+function TelemBar({ label, value, bars, text, textDim, accent }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+      <span style={{ width: 30, color: textDim, fontSize: 9, letterSpacing: 1 }}>{label}</span>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: 2, height: 14 }}>
+        {bars.map((b, i) => (
+          <div key={i} style={{
+            flex: 1, height: `${(b / 10) * 100}%`,
+            background: i === bars.length - 1 ? accent : (i >= bars.length - 2 ? `${accent}aa` : `${accent}44`),
+            borderRadius: 1, minHeight: 2,
+          }} />
+        ))}
+      </div>
+      <span style={{ color: text, fontSize: 10, width: 50, textAlign: 'right' }}>{value}</span>
     </div>
   );
 }

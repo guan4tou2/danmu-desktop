@@ -70,6 +70,11 @@
 <script type="text/babel" src="components/admin-v3.jsx"></script>
 <script type="text/babel" src="components/admin-pages.jsx"></script>
 <script type="text/babel" src="components/admin-theme-packs.jsx"></script>
+<script type="text/babel" src="components/admin-display-settings.jsx"></script>
+<script type="text/babel" src="components/admin-ratelimits.jsx"></script>
+<script type="text/babel" src="components/admin-polls.jsx"></script>
+<script type="text/babel" src="components/admin-viewer-theme.jsx"></script>
+<script type="text/babel" src="components/priority-2-pieces.jsx"></script>
 <script type="text/babel" src="components/hero-scenes.jsx"></script>
 <script type="text/babel" src="components/browser-window.jsx"></script>
 <script type="text/babel" src="components/mobile-safari.jsx"></script>
@@ -80,8 +85,8 @@
 <script type="text/babel">
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "theme": "light",
-  "pollEnabled": "false",
-  "quickEnabled": "false"
+  "pollEnabled": "true",
+  "quickEnabled": "true"
 }/*EDITMODE-END*/;
 
 function App() {
@@ -192,20 +197,47 @@ function App() {
         <DCArtboard width={1440} height={920} label="② 風格主題包 · Theme Packs" style={{ background: 'transparent' }}>
           <div data-screen-label="Admin · Theme Packs" style={{ width: 1440, height: 920 }}><AdminThemePacksPage theme={tweaks.theme} /></div>
         </DCArtboard>
-        <DCArtboard width={1440} height={920} label="③ 效果庫 .dme · Effects" style={{ background: 'transparent' }}>
+        <DCArtboard width={1440} height={920} label="③ 顯示設定 · Display Settings" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Display Settings" style={{ width: 1440, height: 920 }}><AdminDisplaySettingsPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={1100} label="③-B 觀眾頁主題 · Viewer Theme" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Viewer Theme" style={{ width: 1440, height: 1100 }}><AdminViewerThemePage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="④ 效果庫 .dme · Effects" style={{ background: 'transparent' }}>
           <div data-screen-label="Admin · Effects" style={{ width: 1440, height: 920 }}><AdminEffectsPage theme={tweaks.theme} /></div>
         </DCArtboard>
-        <DCArtboard width={1440} height={920} label="④ 伺服器插件 · Plugins" style={{ background: 'transparent' }}>
+        <DCArtboard width={1440} height={920} label="⑤ 伺服器插件 · Plugins" style={{ background: 'transparent' }}>
           <div data-screen-label="Admin · Plugins" style={{ width: 1440, height: 920 }}><AdminPluginsPage theme={tweaks.theme} /></div>
         </DCArtboard>
-        <DCArtboard width={1440} height={920} label="⑤ 字型管理 · Fonts" style={{ background: 'transparent' }}>
+        <DCArtboard width={1440} height={920} label="⑥ 字型管理 · Fonts" style={{ background: 'transparent' }}>
           <div data-screen-label="Admin · Fonts" style={{ width: 1440, height: 920 }}><AdminFontsPage theme={tweaks.theme} /></div>
         </DCArtboard>
-        <DCArtboard width={1440} height={920} label="⑥ 系統 & 指紋 · System" style={{ background: 'transparent' }}>
+        <DCArtboard width={1440} height={920} label="⑦ 系統 & 指紋 · System" style={{ background: 'transparent' }}>
           <div data-screen-label="Admin · System" style={{ width: 1440, height: 920 }}><AdminSystemPage theme={tweaks.theme} /></div>
         </DCArtboard>
-        <DCArtboard width={1440} height={920} label="⑦ 敏感字 & 黑名單 · Moderation" style={{ background: 'transparent' }}>
+        <DCArtboard width={1440} height={920} label="⑧ 敏感字 & 黑名單 · Moderation" style={{ background: 'transparent' }}>
           <div data-screen-label="Admin · Moderation" style={{ width: 1440, height: 920 }}><AdminModerationPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={1160} label="⑨ 速率限制 · Rate Limits" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Rate Limits" style={{ width: 1440, height: 1160 }}><AdminRateLimitsPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="投票 · Polls · 三態" subtitle="Builder (拖曳排序 · 圖片上傳 + 裁切比例) → 進行中 HUD → 結果視覺">
+        <DCArtboard width={1440} height={960} label="A · Poll Builder · 拖曳排序 · 圖片上傳 · 裁切比例" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Polls Builder" style={{ width: 1440, height: 960 }}><AdminPollsPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={840} label="B · Poll Live HUD · 第 1/3 題 · 剩餘 01:24" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Polls Live" style={{ width: 1440, height: 840 }}><AdminPollsLive theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={1000} label="C · Poll Results · 結束後視覺 + 匯出" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Polls Results" style={{ width: 1440, height: 1000 }}><AdminPollsResults theme={tweaks.theme} /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="互動狀態 · 進階操作" subtitle="⌘K 命令面板">
+        <DCArtboard width={920} height={720} label="⌘K · 命令面板 · 全域搜尋 & 快速動作" style={{ background: '#0A0E1A', borderRadius: 10, overflow: 'hidden' }}>
+          <div data-screen-label="Command Palette" style={{ width: 920, height: 720 }}><CommandPalette theme={tweaks.theme} /></div>
         </DCArtboard>
       </DCSection>
 

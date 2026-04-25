@@ -70,7 +70,7 @@
 
           <!-- Live preview strip -->
           <div class="viewer-preview">
-            <div class="viewer-preview-kicker" data-i18n="previewKicker">PREVIEW · 你送出的樣子</div>
+            <div class="viewer-preview-kicker" data-i18n="previewKicker">預覽 · 你送出的樣子</div>
             <div class="viewer-preview-row" aria-live="polite">
               <span id="previewNick" class="viewer-preview-nick">@guest</span>
               <span
@@ -86,7 +86,7 @@
           {% if options.get('Nickname', [True])[0] %}
           <div id="nicknameControl" class="viewer-field">
             <label class="viewer-field-label" for="nicknameInput">
-              <span data-i18n="nickname">暱稱</span> · NICKNAME
+              <span data-i18n="nickname">暱稱</span>
             </label>
             <input
               type="text"
@@ -103,7 +103,7 @@
           {% if options.Color[0] %}
           <div id="colorControl" class="viewer-field">
             <label class="viewer-field-label">
-              <span data-i18n="color">顏色</span> · COLOR
+              <span data-i18n="color">顏色</span>
             </label>
             <div class="viewer-color-row">
               <button type="button" class="viewer-swatch-preset is-active" data-color="#ffffff" aria-label="White" style="background:#ffffff"></button>
@@ -124,7 +124,7 @@
           <!-- Font family -->
           <div id="userFontSelectControl" class="viewer-field" style="display: none;">
             <label class="viewer-field-label" for="userFontSelect">
-              <span data-i18n="font">字型</span> · FONT FAMILY
+              <span data-i18n="font">字型</span>
             </label>
             <div class="viewer-select-wrap">
               <select id="userFontSelect" class="viewer-select" aria-label="Choose font">
@@ -181,8 +181,8 @@
           {% if options.Speed[0] %}
           <div id="speedControl" class="viewer-field">
             <label class="viewer-field-label" for="speedRange">
-              <span data-i18n="speed">速度</span> · SPEED
-              <span class="viewer-field-label__value"> · <span id="speedValue">{{
+              <span data-i18n="speed">速度</span>
+              <span class="viewer-field-label__value"> <span id="speedValue">{{
                 (options.Speed[1] + options.Speed[2]) // 2 }}</span>x</span>
             </label>
             <input
@@ -202,8 +202,8 @@
           <!-- Effects (dynamically loaded from /effects API by main.js) -->
           <div id="effectControl" class="viewer-field">
             <label class="viewer-field-label">
-              <span data-i18n="effects">效果</span> · EFFECTS
-              <span class="viewer-field-label__value"> · 已選 <span id="effectsCount">0</span> / <span id="effectsTotal">8</span> · <span data-i18n="multiSelectToStack">可疊加</span></span>
+              <span data-i18n="effects">效果</span>
+              <span class="viewer-field-label__value"> 已選 <span id="effectsCount">0</span> / <span id="effectsTotal">8</span> · <span data-i18n="multiSelectToStack">可疊加</span></span>
             </label>
             <div
               id="effectButtons"
@@ -220,7 +220,7 @@
           {% if options.get('Layout', [True])[0] %}
           <div id="layoutControl" class="viewer-field is-nomb">
             <label class="viewer-field-label">
-              <span data-i18n="layoutMode">排版</span> · LAYOUT
+              <span data-i18n="layoutMode">排版</span>
             </label>
             <div
               class="viewer-layout-grid"

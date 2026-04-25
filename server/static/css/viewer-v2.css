@@ -139,49 +139,48 @@ body.viewer-body-v2 {
   }
 }
 
-/* Hero · single centered column matching prototype DanmuHero
- * (tokens.jsx:165–206 + viewer.jsx:87–109). Vertical stack:
- *   1. <h1> Title  — Bebas Neue cyan, drop-shadow, uppercase
- *   2. <p>  Subtitle — slate-400, margin '14px auto 0', max-width 40rem
- *   3. utility chip row — margin-top: 18px, flex justify-center
+/* Hero · 2-col layout matching the 2026-04-25 prototype
+ * (docs/designs/design-v2/components/viewer.jsx:88–113):
+ *   left  — DanmuHero (lockup left-aligned, theme-aware drop-shadow)
+ *   right — ConnChip stack (伺服器 / Overlay) + (desktop) Lang Seg + Theme Seg
  *
- * Utility row holds 伺服器 / Overlay status chips + language picker. The
- * prototype's single decorative `CONNECTED · #MTG-042` chip is replaced
- * by the live connection state we need to surface (#MTG-042 was dropped
- * per P4 — no meeting concept). Subtitle stays visible on mobile (P3-5
- * deviation from prototype which hides it on mobile). */
+ * padding: '28px 32px 22px' desktop / '18px 16px 16px' mobile
+ * gap: 24 desktop / 10 mobile
+ * Mobile keeps both columns side-by-side (NOT stacked) — chip stack uses
+ * mini variant. */
 .viewer-hero {
-  padding: 30px 24px 24px;
+  padding: 28px 32px 22px;
   border-bottom: 1px solid var(--hud-line);
   background: transparent;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 24px;
 }
 
 .viewer-hero-lockup {
-  text-align: center;
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: left;
 }
 
 .viewer-hero-utility {
-  margin-top: 18px;
+  flex: 0 0 auto;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
 }
 
 @media (max-width: 599px) {
   .viewer-hero {
-    padding: 22px 20px 20px;
-  }
-  .viewer-hero-utility {
-    margin-top: 14px;
-    gap: 6px;
+    padding: 18px 16px 16px;
+    gap: 10px;
   }
 }
 
-/* Prototype HERO_SIZE.hero = clamp(3.2rem, 8vw, 6rem) (tokens.jsx:159).
- * Mobile shrinks to HERO_SIZE.large = clamp(2rem, 5vw, 3.5rem). */
+/* Prototype tokens.jsx HERO_SIZE.hero = clamp(3.2rem, 8vw, 6rem).
+ * Mobile in new prototype uses 'medium' = '2rem' (smaller than the prior
+ * 'large' clamp). Light-theme drop-shadow (matches DanmuHero light branch). */
 .viewer-hero-title {
   margin: 0;
   font-family: var(--font-display);
@@ -198,20 +197,26 @@ body.viewer-body-v2 {
 
 @media (max-width: 599px) {
   .viewer-hero-title {
-    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-size: 2rem;
   }
 }
 
-/* Prototype DanmuHero subtitle (tokens.jsx:188–197):
- *   margin: '14px auto 0', maxWidth: '40rem',
- *   fontSize: 'clamp(1rem, 2vw, 1.25rem)', color: HERO_SLATE_300. */
+/* Prototype subtitle override (viewer.jsx:101 subStyle):
+ * desktop: margin '10px 0 0' / inherits HERO_SLATE_300 / no maxWidth lock
+ * mobile: margin '6px 0 0' / fontSize 12 */
 .viewer-hero-subtitle {
-  margin: 14px auto 0;
-  max-width: 40rem;
+  margin: 10px 0 0;
   color: var(--color-text-secondary);
   font-size: clamp(1rem, 2vw, 1.25rem);
   line-height: 1.6;
   font-weight: 400;
+}
+
+@media (max-width: 599px) {
+  .viewer-hero-subtitle {
+    margin: 6px 0 0;
+    font-size: 12px;
+  }
 }
 
 /* ConnChip — 伺服器 / Overlay status pill.
@@ -315,31 +320,50 @@ body.viewer-body-v2 {
   }
 }
 
-/* Live preview strip — dark inset panel with PREVIEW kicker.
- * Stays dark even in light theme so danmu colors (white/cyan/amber/etc.)
- * remain legible. Prototype viewer.jsx:114 — `isDark ? '#000814' : '#0f172a'`.
- * Light theme → slate-900. Default text inside is light. */
+/* Live preview strip — 模擬「投到螢幕上」.
+ * Per 2026-04-25 prototype viewer.jsx:118–143 (light branch):
+ * gradient 135deg #0f172a → #1e293b, cyan glow border, soft inset shadow
+ * with scanline texture pseudo-element. Stays dark even in light theme so
+ * danmu colors (white/cyan/amber/etc.) remain legible. */
 .viewer-preview {
   position: relative;
   overflow: hidden;
   min-height: 72px;
   padding: 18px 14px;
   margin-bottom: 1rem;
-  background: #0f172a;
-  border: 1px solid var(--hud-line);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border: 1px solid rgba(125, 211, 252, 0.25);
   border-radius: 8px;
   color: #f1f5f9;
+  box-shadow:
+    0 4px 14px rgba(15, 23, 42, 0.18),
+    inset 0 0 40px rgba(125, 211, 252, 0.08);
+}
+
+/* Subtle scanline texture overlay — sells the "screen" feel. */
+.viewer-preview::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0,
+    transparent 3px,
+    rgba(255, 255, 255, 0.015) 3px,
+    rgba(255, 255, 255, 0.015) 4px
+  );
 }
 
 .viewer-preview-kicker {
   position: absolute;
   top: 6px;
   left: 10px;
+  z-index: 1;
   font-family: var(--font-mono);
   font-size: 9px;
   color: rgba(148, 163, 184, 0.7);
   letter-spacing: 1.5px;
-  text-transform: uppercase;
 }
 
 .viewer-preview-row {

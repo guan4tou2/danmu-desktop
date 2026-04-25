@@ -447,6 +447,7 @@ function ConnectDialog({ theme }) {
           }}>
             <DanmuHero
               title="Danmu Fire"
+              theme={theme}
               size="large"
               align="left"
               subtitle="歡迎 — 來連線到你的 server,接收觀眾送來的彈幕"
