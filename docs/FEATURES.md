@@ -1,8 +1,24 @@
 # Danmu Fire — Feature Specification
 
-**Status:** Canonical feature inventory (2026-04-23)
+**Status:** Canonical feature inventory (2026-04-25, v5.0.0)
 **Audience:** designers, PMs, Claude Design agents
 **Pairs with:** [DESIGN.md](../DESIGN.md) (design tokens), [CLAUDE.md](../CLAUDE.md) (project rules)
+
+---
+
+## What's new in 5.0.0
+
+Quick reference for what shipped in this release. Full notes live in [CHANGELOG.md](../CHANGELOG.md).
+
+- **Soft Holo HUD design retrofit** across viewer / admin / overlay (10 admin pages: Webhooks, Emojis, Sounds, Scheduler, Stickers, Live Feed, Fonts, Replay, Security, Backup).
+- **Admin bootstrap endpoint** — `GET /admin/bootstrap` replaces the 25-fetch boot wave with a single payload.
+- **Per-rate-limit telemetry** — `/admin/metrics` now reports hits / violations per limiter.
+- **Effects live preview** — inline preview on Effects cards for all 8 built-in `.dme` animations.
+- **Rate Limits live-apply** — `POST /admin/ratelimit/apply` applies new caps without restart.
+- **⌘K command palette** — keyboard navigation between admin routes.
+- **Edge-state pages** — viewer offline, overlay connecting, admin lockout (4 P2 states retrofitted).
+- **Three new admin routes** — dedicated nav slugs for Replay, Security, Backup.
+- **`admin.js` modularised** — split into login + dashboard modules.
 
 ---
 
@@ -135,7 +151,7 @@ Designers should show these controls on the admin UI but **never invent new ones
 | Login | `POST /login`, rate-limited 5/5min | `ADMIN_PASSWORD` or `ADMIN_PASSWORD_HASHED` or `.admin_password.hash` |
 | Change password | `POST /admin/change_password` | Writes bcrypt to `.admin_password.hash` |
 | CSRF | Token in session, `<meta name="csrf-token">`, `X-CSRF-Token` header | `SESSION_COOKIE_SAMESITE=Strict` |
-| Rate-limit toggles (UI) | `/admin/system` route | Three tiers: fire / admin / api; in-memory or Redis |
+| Rate-limit toggles (UI) | `#/ratelimit` route, `POST /admin/ratelimit/apply` | Three tiers: fire / admin / api; in-memory or Redis; live-apply without restart |
 | WebSocket auth | `/admin/ws-auth[/rotate]` | Bearer token stored in `runtime/ws_auth.json` |
 | Trusted Hosts + ProxyFix | `TRUSTED_HOSTS`, `TRUST_X_FORWARDED_FOR` | Server-level config, not admin UI |
 | CSP + HSTS | `app.py` | Nonce per request; HSTS opt-in for prod |
@@ -145,7 +161,8 @@ Designers should show these controls on the admin UI but **never invent new ones
 | Capability | Route |
 |---|---|
 | Health probes | `GET /health`, `/health/ready`, `/health/live` (Kubernetes-style) |
-| Metrics | `GET /admin/metrics` (uptime, msg count, client count) |
+| Metrics | `GET /admin/metrics` (uptime, msg count, client count, per-limiter hits / violations) |
+| Admin bootstrap | `GET /admin/bootstrap` (single-payload boot data — replaces 25-fetch fan-out) |
 | Live feed (see §3) | WS push + admin UI |
 
 ---
@@ -156,20 +173,26 @@ The v2 (design-v2-retrofit) admin is split into these routes. The left sidebar l
 
 | Route hash | Title (ZH) | Owns sections |
 |---|---|---|
-| `#/dashboard` | 控制台 | Core settings: Color, Opacity, FontSize, Speed, FontFamily, Layout, Nickname, active Theme |
+| `#/dashboard` | 控制台 | KPI tiles, route launcher, Nickname / active Theme summary |
 | `#/messages` | 訊息紀錄 | Live feed, search |
-| `#/history` | 時間軸記錄 | History table, hourly chart, top-text chart, export, clear |
+| `#/history` | 時間軸匯出 | History table, hourly chart, top-text chart, export, clear |
+| `#/replay` | 歷史重播 | Replay start / pause / resume / stop with speed multiplier |
 | `#/polls` | 投票 | Poll create / status / end |
 | `#/widgets` | Overlay Widgets | Widget CRUD + scoreboard updates |
 | `#/themes` | 風格主題包 | Theme selector + bundle flags + reload |
+| `#/display` | 顯示設定 | Viewer-facing defaults: Color, Opacity, FontSize, Speed, FontFamily, Layout |
+| `#/viewer-theme` | 觀眾頁主題 | `/fire` viewer page appearance |
+| `#/assets` | 素材庫 | Emojis, stickers, sounds upload + rules |
 | `#/moderation` | 敏感字 & 黑名單 | Legacy blacklist + filter engine rules + test |
-| `#/ratelimit` | 速率限制 | Fire / admin / api rate caps + backend toggle |
-| `#/effects` | 效果庫 .dme | Effect grid + YAML editor + upload + preview |
-| `#/plugins` | 伺服器擴充 | Plugin list + enable/disable/reload |
-| `#/fonts` | 字型庫 | Upload + list + delete + live preview |
-| `#/system` | 系統 & 指紋 | System overview + security + ws-auth + scheduler + webhooks + fingerprints |
+| `#/ratelimit` | 速率限制 | Fire / admin / api rate caps + backend toggle + live-apply |
+| `#/effects` | 效果庫 .dme | Effect grid + YAML editor + upload + live preview |
+| `#/plugins` | 伺服器插件 | Plugin list + enable/disable/reload |
+| `#/fonts` | 字型管理 | Upload + list + delete + live preview |
+| `#/system` | 系統 & 指紋 | System overview + scheduler + webhooks + fingerprints |
+| `#/security` | 安全 | Password change + WS auth token + audit |
+| `#/backup` | 備份 & 匯出 | Settings export / import + danger zone |
 
-Section IDs (`sec-…`) are stable identifiers. See `ROUTE_SECTIONS` in [admin.js:1608](../server/static/js/admin.js).
+Section IDs (`sec-…`) are stable identifiers. See `ADMIN_ROUTES` in [admin.js](../server/static/js/admin.js).
 
 ---
 
@@ -329,8 +352,8 @@ If a designer wants one of these, it is a **new product scope** and needs explic
 
 1. **Before designing a new screen**: find the matching capability above. If not found, stop and discuss scope.
 2. **When proposing a rename**: use the canonical term in the left column of the tables. Do not rename `Effects` to "Animations" etc.
-3. **When adding a section to a mockup**: it must map to one of the 12 admin routes. Do not invent route 13.
+3. **When adding a section to a mockup**: it must map to one of the 18 admin routes listed above. Do not invent a new one.
 4. **When showing flows**: use the 7 scenarios above as the storyboard backbone.
 5. **When in doubt about what persists**: check the persistence map. Volatile state should not have a "Reset" button unless the data visibly accumulates (fingerprints, history, widgets).
 
-Last sync: 2026-04-23 against branch `claude/design-v2-retrofit`, server `APP_VERSION = 5.0.0`.
+Last sync: 2026-04-25 against branch `claude/design-v2-retrofit`, server `APP_VERSION = 5.0.0`.

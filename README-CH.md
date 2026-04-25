@@ -4,6 +4,8 @@
 
 [English README](https://github.com/guan4tou2/danmu-desktop/blob/main/README.md)
 
+完整功能清單（伺服器路由、管理頁面、持久化對照、範圍規範）詳見 [docs/FEATURES.md](docs/FEATURES.md)。
+
 ![img](img/danmu%20display.png)
 
 ## 概述
