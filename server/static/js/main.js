@@ -400,7 +400,14 @@ document.addEventListener("DOMContentLoaded", () => {
       elements.previewText.style.color = elements.colorInput.value;
     }
     if (elements.sizeInput) {
-      elements.previewText.style.fontSize = `${elements.sizeInput.value}px`;
+      const fontSize = parseFloat(elements.sizeInput.value) || 32;
+      elements.previewText.style.fontSize = `${fontSize}px`;
+      // Prototype viewer.jsx:130 — @nick scales with main fontSize:
+      //   fontSize: max(11, fontSize * 0.42)
+      const previewNick = document.getElementById("previewNick");
+      if (previewNick) {
+        previewNick.style.fontSize = `${Math.max(11, fontSize * 0.42)}px`;
+      }
     }
     if (elements.opacityRange) {
       elements.previewText.style.opacity = elements.opacityRange.value / 100;

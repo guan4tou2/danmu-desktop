@@ -360,11 +360,15 @@ body.viewer-body-v2 {
   letter-spacing: 0.5px;
 }
 
+/* Default preview shadow — prototype viewer.jsx:125 fallback when glow off:
+ *   '0 2px 4px rgba(0,0,0,0.55)'. Glow-effect handler in main.js may add
+ *   a coloured halo on top via inline style. */
 .viewer-preview-text {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.55);
   transition: font-size 0.2s, opacity 0.2s;
 }
 
