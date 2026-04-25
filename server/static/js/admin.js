@@ -2,16 +2,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const csrfToken =
     document.querySelector('meta[name="csrf-token"]').content || "";
 
-  // Apply persisted stream-mode class immediately (before render) to avoid
-  // flash of low-freq sections on reload.
-  try {
-    if (localStorage.getItem("danmu-stream-mode") === "1") {
-      document.body.classList.add("stream-mode");
-    }
-  } catch (e) {
-    /* localStorage blocked — that is ok, session only */
-  }
-
   // Access configuration injected from HTML
   const config = window.DANMU_CONFIG || {};
   let session = config.session || { logged_in: false };
@@ -925,11 +915,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <span data-i18n="adminSearchHint">${ServerI18n.t("adminSearchHint") || "搜尋"}</span>
                                         <span class="sep">⌘K</span>
                                     </div>
-                                    <label class="stream-mode-toggle" title="${ServerI18n.t("streamModeHelp")}">
-                                      <input type="checkbox" id="streamModeToggle" ${document.body.classList.contains("stream-mode") ? "checked" : ""} />
-                                      <span class="stream-mode-track" aria-hidden="true"></span>
-                                      <span class="stream-mode-label" data-i18n="streamMode">${ServerI18n.t("streamMode")}</span>
-                                    </label>
                                     <select id="server-lang-select" aria-label="Language"
                                       class="bg-slate-800/60 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-2 focus:ring-sky-400 focus:border-sky-400">
                                       <option value="en" ${ServerI18n.currentLang === "en" ? "selected" : ""}>EN</option>
@@ -3820,22 +3805,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function addEventListeners() {
     if (window.ServerI18n && typeof window.ServerI18n.bindLanguageSelector === "function") {
       window.ServerI18n.bindLanguageSelector();
-    }
-
-    // Stream mode toggle — hide low-frequency sections during live streaming.
-    // Preference persisted in localStorage so it survives reloads.
-    const streamToggle = document.getElementById("streamModeToggle");
-    if (streamToggle) {
-      // Apply initial state (set by DOMContentLoaded handler too, but safe to re-apply)
-      document.body.classList.toggle("stream-mode", streamToggle.checked);
-      streamToggle.addEventListener("change", function () {
-        document.body.classList.toggle("stream-mode", this.checked);
-        try {
-          localStorage.setItem("danmu-stream-mode", this.checked ? "1" : "0");
-        } catch (e) {
-          /* localStorage can fail in private mode — toggle still works session-local */
-        }
-      });
     }
 
     // Logout Button
