@@ -40,10 +40,11 @@ body.viewer-body-v2 {
   min-height: 100dvh;
 }
 
+/* Full-width on desktop per prototype viewer.jsx — `width: inBrowser ? '100%' : ...`.
+ * No card, no max-width, no side padding — content's own hero/body padding
+ * provides the 28–32px breathing room. */
 .viewer-page-shell {
   width: 100%;
-  max-width: 960px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -51,25 +52,11 @@ body.viewer-body-v2 {
 
 .viewer-main-card {
   background: var(--color-bg-base);
-  border: 1px solid var(--hud-line);
-  border-top: none;
-  border-bottom: none;
+  border: none;
   border-radius: 0;
   display: flex;
   flex-direction: column;
   box-shadow: none;
-}
-
-@media (min-width: 600px) {
-  .viewer-page-shell {
-    padding: 16px 16px 0;
-  }
-  .viewer-main-card {
-    border: 1px solid var(--hud-line);
-    border-radius: 12px 12px 0 0;
-    /* No drop shadow per user 2026-04-25 — flat desktop look. */
-    box-shadow: none;
-  }
 }
 
 /* Mobile-only viewport lock so the sendbar pins to the bottom of the
