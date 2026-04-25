@@ -1152,3 +1152,408 @@
  * Stickers page (P1-4) — left pack sidebar + right upload/search/grid.
  * Backend has no multi-pack concept yet so sidebar shows a single "ALL" pack.
  * ────────────────────────────────────────────────────────────────────────── */
+.admin-stickers-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .admin-stickers-layout { grid-template-columns: 1fr; }
+}
+
+.admin-stickers-sidebar {
+  position: sticky;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-stickers-pack-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-stickers-pack {
+  display: grid;
+  grid-template-columns: 8px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  background: var(--admin-raised);
+  border: 1px solid var(--admin-line);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--admin-text);
+  text-align: left;
+  transition: border-color 0.15s ease;
+}
+
+.admin-stickers-pack:hover {
+  border-color: var(--color-primary);
+}
+
+.admin-stickers-pack.is-active {
+  border-color: var(--color-primary);
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.admin-stickers-pack-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-stickers-pack-count {
+  font-size: 10px;
+  color: var(--admin-text-dim);
+  letter-spacing: 0.5px;
+}
+
+.admin-stickers-pack-hint {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: var(--admin-text-dim);
+  line-height: 1.5;
+}
+
+.admin-stickers-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.admin-stickers-upload {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.admin-stickers-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-stickers-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-stickers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.admin-stickers-tile {
+  position: relative;
+  background: var(--admin-raised);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+  padding: 12px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: border-color 0.15s ease;
+}
+
+.admin-stickers-tile:hover {
+  border-color: var(--color-primary);
+}
+
+.admin-stickers-tile img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.admin-stickers-tile .label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: var(--admin-text);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-stickers-tile .actions {
+  display: flex;
+  gap: 4px;
+}
+
+.admin-stickers-empty {
+  grid-column: 1 / -1;
+  padding: 24px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--admin-text-dim);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Live Feed page (P1-6) — filter tabs + full-width stream + moderation.
+ * Q&A / Poll tabs deferred — `message.type` field not present server-side.
+ * ────────────────────────────────────────────────────────────────────────── */
+.admin-live-feed-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-live-feed-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 2px;
+  background: var(--admin-raised);
+  border: 1px solid var(--admin-line);
+  border-radius: 4px;
+}
+
+.admin-live-feed-tab {
+  padding: 4px 12px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background: transparent;
+  border: none;
+  color: var(--admin-text-dim);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.admin-live-feed-tab:hover {
+  color: var(--admin-text);
+}
+
+.admin-live-feed-tab.is-active {
+  background: var(--color-primary);
+  color: #000;
+}
+
+.admin-live-feed-search {
+  flex: 1;
+  min-width: 180px;
+  max-width: 320px;
+}
+
+.admin-live-feed-count {
+  margin-left: auto;
+}
+
+.admin-live-feed-bulk {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-live-feed-bulk.is-active {
+  border-color: var(--color-primary);
+}
+
+.admin-live-feed-stream-wrap {
+  padding: 0;
+}
+
+.admin-live-feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  max-height: 640px;
+  overflow-y: auto;
+}
+
+.admin-live-feed-row {
+  display: grid;
+  grid-template-columns: 20px 64px 72px 1fr 120px 96px auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  background: var(--admin-raised);
+  border: 1px solid var(--admin-line);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.admin-live-feed-row.is-muted {
+  opacity: 0.55;
+  border-color: #f87171;
+}
+
+.admin-live-feed-row:hover {
+  border-color: var(--color-primary);
+}
+
+.admin-live-feed-check {
+  margin: 0;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.admin-live-feed-time {
+  font-size: 10px;
+  color: var(--admin-text-dim);
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-live-feed-tag {
+  justify-self: start;
+}
+
+.admin-live-feed-text {
+  color: var(--admin-text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-live-feed-nick {
+  color: var(--color-primary);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-live-feed-fp {
+  font-size: 10px;
+  color: var(--admin-text-dim);
+  letter-spacing: 0.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-live-feed-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.admin-live-feed-empty {
+  padding: 32px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--admin-text-dim);
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 900px) {
+  .admin-live-feed-row {
+    grid-template-columns: 20px 1fr auto;
+    grid-template-rows: auto auto;
+    row-gap: 6px;
+  }
+  .admin-live-feed-row > :nth-child(2),
+  .admin-live-feed-row > :nth-child(3) {
+    grid-row: 1;
+  }
+  .admin-live-feed-row > :nth-child(4) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .admin-live-feed-row > :nth-child(5),
+  .admin-live-feed-row > :nth-child(6) {
+    display: none;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Fonts upload section (P1-8) — drag/drop card appended above existing table.
+ * ────────────────────────────────────────────────────────────────────────── */
+.admin-fonts-upload-card {
+  padding: 14px 16px;
+}
+
+.admin-fonts-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 22px 16px;
+  border: 1px dashed var(--admin-line);
+  border-radius: 6px;
+  background: var(--admin-raised);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  outline: none;
+  position: relative;
+}
+
+.admin-fonts-drop:hover,
+.admin-fonts-drop:focus-visible {
+  border-color: var(--color-primary);
+}
+
+.admin-fonts-drop.is-drag {
+  border-color: var(--color-primary);
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.admin-fonts-drop-icon {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.admin-fonts-drop-title {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--admin-text);
+  letter-spacing: 1px;
+}
+
+.admin-fonts-drop-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--admin-text-dim);
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.admin-fonts-drop-status {
+  margin-top: 6px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  border: 1px solid var(--admin-line);
+  color: var(--admin-text-dim);
+  background: transparent;
+}
+
+.admin-fonts-drop-status.is-good {
+  border-color: #86efac;
+  color: #86efac;
+}
+
+.admin-fonts-drop-status.is-bad {
+  border-color: #f87171;
+  color: #f87171;
+}

@@ -40,11 +40,41 @@
     const loggedIn =
       window.DANMU_CONFIG && window.DANMU_CONFIG.session && window.DANMU_CONFIG.session.logged_in;
     const uploadHiddenInput = loggedIn
-      ? `<input type="file" id="adminFontFileInput" accept=".ttf" class="hidden" />`
+      ? `<input type="file" id="adminFontFileInput" accept=".ttf,.otf,.woff2" class="hidden" />`
+      : "";
+
+    const uploadSection = loggedIn
+      ? `
+        <div class="admin-v2-head">
+          <div class="admin-v2-kicker">FONTS · UPLOAD · 自動 CDN</div>
+          <div class="admin-v2-title">字型庫</div>
+          <p class="admin-v2-note">
+            自訂字型讓彈幕更有風格 — .TTF/.OTF/.WOFF2,最大 5 MB。
+          </p>
+        </div>
+        <div class="admin-v2-card admin-fonts-upload-card">
+          <div class="admin-v2-monolabel" style="margin-bottom:10px">+ 上傳字型</div>
+          <div
+            id="adminFontDrop"
+            class="admin-fonts-drop"
+            role="button"
+            tabindex="0"
+            aria-label="${escapeHtml(ServerI18n.t("uploadFont"))}"
+          >
+            <div class="admin-fonts-drop-icon">⬆</div>
+            <div class="admin-fonts-drop-title">拖曳或點選檔案</div>
+            <div class="admin-fonts-drop-hint">
+              .TTF / .OTF / .WOFF2 · 最大 5 MB · 前端會驗證 magic bytes
+            </div>
+            <div id="adminFontDropStatus" class="admin-fonts-drop-status" hidden></div>
+            ${uploadHiddenInput}
+          </div>
+        </div>`
       : "";
 
     return `
       <div id="sec-fonts" class="hud-page-stack lg:col-span-2">
+        ${uploadSection}
         <div class="hud-page-grid-2-wide">
           <div class="hud-table" id="fontsTable">
             <div class="hud-table-head" style="grid-template-columns: 2fr 1.2fr 1fr 90px 90px 80px;">
@@ -61,7 +91,7 @@
               </div>
             </div>
             <div class="hud-table-foot" style="padding:14px 16px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--hud-line-strong)">
-              ${loggedIn ? `<label for="adminFontFileInput" class="hud-toolbar-action" style="cursor:pointer">+ ${ServerI18n.t("uploadFont")} \u00b7 WOFF2 / OTF / TTF</label>${uploadHiddenInput}` : ""}
+              ${loggedIn ? `<label for="adminFontFileInput" class="hud-toolbar-action" style="cursor:pointer">+ ${ServerI18n.t("uploadFont")} \u00b7 WOFF2 / OTF / TTF</label>` : ""}
               <span id="fontsTotalSize" style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.12em">\u7e3d\u8a08 \u2014</span>
             </div>
           </div>
@@ -208,21 +238,64 @@
     });
   }
 
-  async function handleUpload() {
-    var fileInput = document.getElementById("adminFontFileInput");
-    if (!fileInput) return;
+  // Magic-byte check for .ttf / .otf / .woff2 (first 4 bytes).
+  async function detectFontMagic(file) {
+    try {
+      const buf = await file.slice(0, 4).arrayBuffer();
+      const b = new Uint8Array(buf);
+      // TTF: 00 01 00 00  |  OTF: "OTTO" (4F 54 54 4F)  |  WOFF2: "wOF2" (77 4F 46 32)
+      // Some macOS TTFs use "true" (0x74 0x72 0x75 0x65); Windows TTCs use "ttcf".
+      if (b[0] === 0x00 && b[1] === 0x01 && b[2] === 0x00 && b[3] === 0x00) return "TTF";
+      if (b[0] === 0x4f && b[1] === 0x54 && b[2] === 0x54 && b[3] === 0x4f) return "OTF";
+      if (b[0] === 0x77 && b[1] === 0x4f && b[2] === 0x46 && b[3] === 0x32) return "WOFF2";
+      if (b[0] === 0x74 && b[1] === 0x72 && b[2] === 0x75 && b[3] === 0x65) return "TTF";
+      if (b[0] === 0x74 && b[1] === 0x74 && b[2] === 0x63 && b[3] === 0x66) return "TTC";
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
 
-    var file = fileInput.files && fileInput.files[0];
-    if (!file) {
-      window.showToast(ServerI18n.t("selectTTFFile"), false);
+  function setDropStatus(msg, kind) {
+    const el = document.getElementById("adminFontDropStatus");
+    if (!el) return;
+    if (!msg) {
+      el.textContent = "";
+      el.hidden = true;
+      el.classList.remove("is-good", "is-bad");
       return;
     }
+    el.hidden = false;
+    el.textContent = msg;
+    el.classList.toggle("is-good", kind === "good");
+    el.classList.toggle("is-bad", kind === "bad");
+  }
 
-    if (!file.name.toLowerCase().endsWith(".ttf")) {
+  async function uploadFile(file) {
+    if (!file) return;
+
+    const name = file.name.toLowerCase();
+    const extOk = /\.(ttf|otf|woff2)$/.test(name);
+    if (!extOk) {
       window.showToast(ServerI18n.t("invalidFileType"), false);
-      fileInput.value = "";
+      setDropStatus("副檔名不支援 — 僅限 .TTF / .OTF / .WOFF2", "bad");
       return;
     }
+
+    if (file.size > 5 * 1024 * 1024) {
+      window.showToast("檔案超過 5 MB", false);
+      setDropStatus("檔案超過 5 MB", "bad");
+      return;
+    }
+
+    const magic = await detectFontMagic(file);
+    if (!magic) {
+      window.showToast("檔案不是合法字型", false);
+      setDropStatus("magic bytes 無效 — 檔案不是合法字型", "bad");
+      return;
+    }
+
+    setDropStatus(`驗證通過 · ${magic} · ${(file.size / 1024).toFixed(1)} KB · 上傳中…`, "good");
 
     try {
       var fd = new FormData();
@@ -236,15 +309,65 @@
 
       if (resp.ok) {
         window.showToast(data.message || ServerI18n.t("fontUploadFallback"));
-        fileInput.value = "";
+        setDropStatus(`已上傳 · ${file.name}`, "good");
         await fetchAndRenderFonts();
       } else {
         window.showToast(data.error || ServerI18n.t("uploadFailed"), false);
+        setDropStatus(data.error || "上傳失敗", "bad");
       }
     } catch (err) {
       console.error("[admin-fonts] upload error:", err);
       window.showToast(ServerI18n.t("uploadNetworkError"), false);
+      setDropStatus("網路錯誤", "bad");
     }
+  }
+
+  async function handleUpload() {
+    var fileInput = document.getElementById("adminFontFileInput");
+    if (!fileInput) return;
+    var file = fileInput.files && fileInput.files[0];
+    if (!file) {
+      window.showToast(ServerI18n.t("selectTTFFile"), false);
+      return;
+    }
+    await uploadFile(file);
+    fileInput.value = "";
+  }
+
+  function bindDropZone() {
+    const drop = document.getElementById("adminFontDrop");
+    const fileInput = document.getElementById("adminFontFileInput");
+    if (!drop || !fileInput) return;
+
+    drop.addEventListener("click", (e) => {
+      if (e.target !== fileInput) fileInput.click();
+    });
+    drop.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        fileInput.click();
+      }
+    });
+    ["dragenter", "dragover"].forEach((ev) => {
+      drop.addEventListener(ev, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        drop.classList.add("is-drag");
+      });
+    });
+    ["dragleave", "drop"].forEach((ev) => {
+      drop.addEventListener(ev, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        drop.classList.remove("is-drag");
+      });
+    });
+    drop.addEventListener("drop", async (e) => {
+      const files = e.dataTransfer && e.dataTransfer.files;
+      if (files && files[0]) {
+        await uploadFile(files[0]);
+      }
+    });
   }
 
   async function handleDelete(name) {
@@ -278,6 +401,8 @@
     if (fileInput) {
       fileInput.addEventListener("change", handleUpload);
     }
+
+    bindDropZone();
 
     var listEl = document.getElementById("adminFontList");
     if (listEl) {
