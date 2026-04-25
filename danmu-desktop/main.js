@@ -83,7 +83,7 @@ app.whenReady().then(() => {
   }
 
   // Rebuild tray menu — mirrors prototype desktop.jsx TrayMenu:550 structure:
-  // header (● Danmu Client + version + server status)
+  // header (● Danmu Fire + version + server status)
   // → 顯示 overlay (✓ toggle · ⌘⇧D)
   // → 暫停接收 (⌘⇧P)
   // → 清空畫面 (⌘⇧K)
@@ -97,7 +97,7 @@ app.whenReady().then(() => {
   function rebuildTrayMenu() {
     const hasOverlay = childWindows.some((cw) => cw && !cw.isDestroyed());
     const version = app.getVersion();
-    const pkgName = "Danmu Client";
+    const pkgName = "Danmu Fire";
     const template = [
       { label: `● ${pkgName}    v${version}`, enabled: false },
       { label: trayServerUrl ? `${trayStatusText} · ${trayServerUrl}` : trayStatusText, enabled: false },
@@ -163,7 +163,7 @@ app.whenReady().then(() => {
   }
 
   rebuildTrayMenu();
-  tray.setToolTip("Danmu Desktop");
+  tray.setToolTip("Danmu Fire");
 
   // Update tray status label from renderer
   ipcMain.on("update-tray-status", (_, text) => {

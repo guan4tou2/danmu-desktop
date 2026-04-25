@@ -24,7 +24,7 @@ FROM python:3.11-slim AS runtime
 
 LABEL maintainer="guan4tou2 <mole30608@gmail.com>"
 LABEL org.opencontainers.image.source="https://github.com/guan4tou2/danmu-desktop"
-LABEL org.opencontainers.image.description="Danmu Desktop Server"
+LABEL org.opencontainers.image.description="Danmu Fire Server"
 
 WORKDIR /app/server
 

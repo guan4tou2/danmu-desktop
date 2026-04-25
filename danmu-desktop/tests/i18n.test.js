@@ -12,12 +12,12 @@ beforeEach(() => {
 
 describe("t()", () => {
   test("returns translation for a known English key", () => {
-    expect(i18n.t("title")).toBe("Danmu Desktop");
+    expect(i18n.t("title")).toBe("Danmu Fire");
   });
 
   test("returns translation for a known Chinese key when lang is zh", () => {
     i18n.currentLang = "zh";
-    expect(i18n.t("title")).toBe("Danmu Desktop");
+    expect(i18n.t("title")).toBe("Danmu Fire");
   });
 
   test("falls back to the key name for an unknown key", () => {

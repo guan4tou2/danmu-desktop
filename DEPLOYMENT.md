@@ -147,7 +147,7 @@ Or: `make docker-up-dev`
 
 ### Desktop Client (ws + https dual transport)
 
-The Danmu Desktop (Electron) client connects with plain `ws://IP:PORT`. This
+The Danmu Fire (Electron) client connects with plain `ws://IP:PORT`. This
 is a supported deployment mode: run the HTTPS admin panel on `HTTPS_PORT`
 alongside a plain WebSocket endpoint on port `4001` for desktop overlays.
 Access control on the WS port is provided by a shared token instead of TLS.
@@ -184,7 +184,7 @@ top of the main compose file:
      in `.env` before first boot. Explicit env values are respected and
      never silently flipped on by the secure-by-default seeding.
 
-4. In the Danmu Desktop app, enter the server IP, port `4001`, and paste
+4. In the Danmu Fire app, enter the server IP, port `4001`, and paste
    the admin-issued token into the **WS Token** field. The admin panel is
    reached separately at `https://<host>:<HTTPS_PORT>`.
 

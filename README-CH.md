@@ -211,7 +211,7 @@ PYTHONPATH=.. uv run python -m server.app    # HTTP + WS 都從這邊起
 ## 端口配置
 
 - `4000`：網頁介面（HTTP，可經反向代理）
-- `4001`：Danmu Desktop 客戶端連接（WebSocket，可經反向代理）
+- `4001`：Danmu Fire 客戶端連接（WebSocket，可經反向代理）
 
 ## 參考資料
 

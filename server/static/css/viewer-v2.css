@@ -65,7 +65,7 @@ body.viewer-body-v2 {
   box-shadow: none;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 600px) {
   .viewer-page-shell {
     padding: 16px 16px 0;
   }
@@ -117,7 +117,11 @@ body.viewer-body-v2 {
 
 /* Hero · 2-col layout (v4 handoff chat decision):
  * left = DANMU FIRE lockup + subtitle, right = 伺服器/Overlay ConnChip + lang.
- * Single-col on narrow viewports (< 640px) — lockup centered, chips below. */
+ * Single-col on narrow viewports (< 600px, P3-5 Mobile Safari parity) —
+ * lockup centered, utility strip (chips + lang) wraps below. Subtitle is
+ * ALWAYS visible (mobile included) per P3-5 rules, unlike the prototype
+ * viewer.jsx which hides it on mobile. Sendbar stays flex:0 0 auto so the
+ * shell keeps it pinned at the viewport bottom at every breakpoint. */
 .viewer-hero {
   padding: 30px 24px 24px;
   border-bottom: 1px solid var(--hud-line);
@@ -141,7 +145,7 @@ body.viewer-body-v2 {
   gap: 8px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 599px) {
   .viewer-hero {
     flex-direction: column;
     padding: 22px 20px 20px;
@@ -180,7 +184,7 @@ body.viewer-body-v2 {
   font-weight: 400;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 599px) {
   .viewer-hero-subtitle { margin-left: auto; margin-right: auto; }
 }
 
@@ -237,7 +241,7 @@ body.viewer-body-v2 {
   font-weight: 500;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 599px) {
   .viewer-conn-chip {
     font-size: 10px;
     padding: 4px 10px;

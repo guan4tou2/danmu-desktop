@@ -38,7 +38,7 @@ test.describe("App Launch", () => {
 
   test("main window has correct title", async () => {
     const title = await mainWindow.title();
-    expect(title).toBe("Danmu Desktop");
+    expect(title).toBe("Danmu Fire");
   });
 
   test("main window contains start button", async () => {

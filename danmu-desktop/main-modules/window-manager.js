@@ -223,7 +223,7 @@ function createAboutWindow(mainWindow) {
     height: 320,
     resizable: false,
     autoHideMenuBar: true,
-    title: "About Danmu Desktop",
+    title: "About Danmu Fire",
     parent: mainWindow && !mainWindow.isDestroyed() ? mainWindow : null,
     modal: true,
     webPreferences: {

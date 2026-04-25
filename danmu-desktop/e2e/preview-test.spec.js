@@ -82,7 +82,7 @@ test.describe("Preview & Batch Test", () => {
 
     // App should still be running (no crash)
     const title = await page.title();
-    expect(title).toBe("Danmu Desktop");
+    expect(title).toBe("Danmu Fire");
   });
 
   // ─── Batch Test ────────────────────────────────────────────────────────
@@ -114,7 +114,7 @@ test.describe("Preview & Batch Test", () => {
 
     // App still running
     const title = await page.title();
-    expect(title).toBe("Danmu Desktop");
+    expect(title).toBe("Danmu Fire");
   });
 
   // ─── Settings Persistence ──────────────────────────────────────────────

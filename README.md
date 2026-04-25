@@ -214,7 +214,7 @@ Every other setting ships a safe default; `.env.example` shows them all.
 ## Port Configuration
 
 - `4000`: Web interface (HTTP via reverse proxy)
-- `4001`: Danmu Desktop Client connection (WebSocket via reverse proxy)
+- `4001`: Danmu Fire client connection (WebSocket via reverse proxy)
 
 ## References
 
