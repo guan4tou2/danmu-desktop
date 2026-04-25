@@ -146,6 +146,9 @@
     `;
   }
 
+  // Currently-active default font name (read from /get_settings on load)
+  var currentDefaultFont = null;
+
   function fontRow(font) {
     const fmt = detectFormat(font.url);
     const weight = font.weight || "\u2014";
@@ -154,24 +157,64 @@
     const sampleStyle = font.type === "system"
       ? `font-family: "${escapeHtml(font.name)}", sans-serif;`
       : (font.url ? `font-family: "${escapeHtml(font.name)}", sans-serif;` : "");
-    const deleteBtn = font.type === "uploaded"
-      ? `<button class="admin-font-delete-btn hud-effect-chip" data-name="${escapeHtml(font.name)}" style="margin-top:4px">${escapeHtml(ServerI18n.t("deleteBtn"))}</button>`
-      : "";
+    const isDefault = currentDefaultFont && font.name === currentDefaultFont;
+    const actionBtns = [];
+    if (!isDefault) {
+      actionBtns.push(
+        '<button class="admin-font-default-btn hud-effect-chip" data-name="' + escapeHtml(font.name) + '" style="margin-top:4px">' +
+        (ServerI18n.t("setAsDefault") !== "setAsDefault" ? escapeHtml(ServerI18n.t("setAsDefault")) : "\u8a2d\u70ba\u9810\u8a2d") +
+        '</button>'
+      );
+    }
+    if (font.type === "uploaded") {
+      actionBtns.push(
+        '<button class="admin-font-delete-btn hud-effect-chip" data-name="' + escapeHtml(font.name) + '" style="margin-top:4px">' +
+        escapeHtml(ServerI18n.t("deleteBtn")) +
+        '</button>'
+      );
+    }
+    // Override the type-derived pill with a real-time "\u9810\u8a2d" badge for the
+    // currently active default font.
+    const statusPill = isDefault
+      ? `<span class="hud-pill is-default">\u9810\u8a2d</span>`
+      : formatStatusPill(font.type);
 
     return (
       '<div class="hud-table-row" style="grid-template-columns: 2fr 1.2fr 1fr 90px 90px 80px;" data-font="' + escapeHtml(font.name) + '">' +
         '<div class="min-w-0">' +
           '<div style="font-size:15px;color:var(--color-text-strong);' + sampleStyle + '" class="truncate">' + escapeHtml(font.name) + '</div>' +
           '<div style="font-size:11px;color:var(--color-text-muted);margin-top:2px;font-family:var(--font-mono)">\u554a \u6c38 \u306e A a 123</div>' +
-          deleteBtn +
+          (actionBtns.length ? '<div style="display:flex;gap:6px;flex-wrap:wrap">' + actionBtns.join("") + '</div>' : "") +
         '</div>' +
         '<span style="font-size:12px;color:var(--color-text-strong)">' + escapeHtml(foundry) + '</span>' +
         '<span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">' + escapeHtml(weight) + '</span>' +
         '<span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-strong)">' + escapeHtml(size) + '</span>' +
         '<span class="hud-pill" style="text-transform:uppercase;justify-self:start">' + escapeHtml(fmt) + '</span>' +
-        '<div style="text-align:right">' + formatStatusPill(font.type) + '</div>' +
+        '<div style="text-align:right">' + statusPill + '</div>' +
       '</div>'
     );
+  }
+
+  async function setAsDefault(name) {
+    try {
+      const resp = await window.csrfFetch("/admin/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "FontFamily", index: 3, value: name }),
+      });
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+      currentDefaultFont = name;
+      window.showToast(
+        (ServerI18n.t("setAsDefaultOk") !== "setAsDefaultOk"
+          ? ServerI18n.t("setAsDefaultOk")
+          : "\u5df2\u8a2d\u70ba\u9810\u8a2d\u5b57\u578b") + " \u00b7 " + name,
+        true
+      );
+      fetchAndRenderFonts();
+    } catch (err) {
+      console.error("[admin-fonts] set default failed:", err);
+      window.showToast("\u8a2d\u5b9a\u9810\u8a2d\u5931\u6557", false);
+    }
   }
 
   async function fetchAndRenderFonts() {
@@ -224,6 +267,7 @@
     document.querySelectorAll("#adminFontList .hud-table-row[data-font]").forEach((row) => {
       row.addEventListener("click", (e) => {
         if (e.target.closest(".admin-font-delete-btn")) return;
+        if (e.target.closest(".admin-font-default-btn")) return;
         const name = row.dataset.font;
         const previewFamily = document.getElementById("fontsPreviewFamily");
         const headline = document.getElementById("fontsPreviewHeadline");
@@ -411,11 +455,25 @@
         if (deleteBtn) {
           e.stopPropagation();
           handleDelete(deleteBtn.dataset.name);
+          return;
+        }
+        var defaultBtn = e.target.closest(".admin-font-default-btn");
+        if (defaultBtn) {
+          e.stopPropagation();
+          setAsDefault(defaultBtn.dataset.name);
         }
       });
     }
 
-    fetchAndRenderFonts();
+    // Read current default from /get_settings then render so the "預設" badge
+    // and the per-row "設為預設" button reflect live state.
+    fetch("/get_settings", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s) => {
+        if (s && Array.isArray(s.FontFamily)) currentDefaultFont = s.FontFamily[3] || null;
+      })
+      .catch(() => {})
+      .finally(fetchAndRenderFonts);
   }
 
   document.addEventListener("DOMContentLoaded", function () {
