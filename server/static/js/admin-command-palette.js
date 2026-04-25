@@ -115,16 +115,20 @@
     root.innerHTML = `
       <div class="admin-cmdk-backdrop" data-cmdk-close></div>
       <div class="admin-cmdk-panel" role="dialog" aria-modal="true" aria-label="Command palette">
+        <div class="admin-cmdk-search">
+          <span class="admin-cmdk-search-icon" aria-hidden="true">⌕</span>
+          <input type="text" class="admin-cmdk-input" placeholder="搜尋訊息 · 用戶 · 設定 · 跳轉..." autocomplete="off" spellcheck="false" />
+          <span class="admin-cmdk-prompt">⌘K</span>
+        </div>
         <div class="admin-cmdk-scope" role="tablist">
           ${SCOPES.map(s => `
             <button type="button" class="admin-cmdk-chip ${s.id === "all" ? "is-on" : ""}"
-                    data-scope="${s.id}" role="tab" aria-selected="${s.id === "all"}">${_esc(s.label)}</button>
+                    data-scope="${s.id}" role="tab" aria-selected="${s.id === "all"}">
+              <span class="lbl">${_esc(s.label)}</span>
+              <span class="num" data-scope-count="${s.id}">·</span>
+            </button>
           `).join("")}
           <span class="admin-cmdk-hint">Tab · Esc</span>
-        </div>
-        <div class="admin-cmdk-search">
-          <span class="admin-cmdk-prompt">⌘K</span>
-          <input type="text" class="admin-cmdk-input" placeholder="搜尋訊息 · 用戶 · 設定 · 跳轉..." autocomplete="off" spellcheck="false" />
         </div>
         <ul class="admin-cmdk-list" role="listbox"></ul>
         <div class="admin-cmdk-foot">
@@ -133,6 +137,7 @@
           <span><kbd>Tab</kbd> 切換範圍</span>
           <span><kbd>Esc</kbd> 關閉</span>
         </div>
+        <div class="admin-cmdk-note">所有動作在 Server 執行 · Desktop Client 只負責顯示彈幕</div>
       </div>
     `;
     document.body.appendChild(root);
@@ -228,7 +233,14 @@
   function _scoreRoutes(q) {
     return Object.entries(ROUTES).map(([id, r]) => {
       const score = Math.max(_fuzzyScore(r.title, q), _fuzzyScore(id, q), _fuzzyScore(r.kicker, q));
-      return { type: "route", route: id, label: r.title, prefix: `[${r.kicker}]`, score };
+      return {
+        type: "route",
+        route: id,
+        label: r.title,
+        sub: `route → ${r.kicker}`,
+        icon: "◇",
+        score,
+      };
     }).filter((x) => x.score >= 0);
   }
 
@@ -238,7 +250,8 @@
       route: s.route,
       section: s.section,
       label: s.label,
-      prefix: `[SET·${s.section.replace("sec-", "").toUpperCase()}]`,
+      sub: `setting · ${s.section.replace("sec-", "")} · ${s.route}`,
+      icon: "⚙",
       score: _fuzzyScore(s.label, q),
     })).filter((x) => x.score >= 0);
   }
@@ -249,10 +262,13 @@
     return records.map((rec) => {
       const text = rec.text || rec.message || "";
       const user = rec.nickname || rec.user || "guest";
+      const ts = (rec.timestamp || "").slice(11, 19) || "—";
+      const fp = (rec.fingerprint || rec.fp || "").slice(0, 8);
       return {
         type: "message",
         label: `${text}  ·  @${user}`,
-        prefix: `[MSG ${(rec.timestamp || "").slice(11, 19)}]`,
+        sub: fp ? `${ts} · fp:${fp}` : ts,
+        icon: "💬",
         score: Math.max(_fuzzyScore(text, q), _fuzzyScore(user, q)),
       };
     }).filter((x) => x.score >= 0);
@@ -264,12 +280,13 @@
     return records.map((rec) => {
       const fp = rec.fingerprint || rec.fp || rec.id || "";
       const ip = rec.ip || rec.last_ip || "";
-      const label = `${fp.slice(0, 12)}…  ·  ${ip}`;
+      const nick = rec.nickname || "";
       return {
         type: "user",
-        label,
-        prefix: `[USER]`,
-        score: Math.max(_fuzzyScore(fp, q), _fuzzyScore(ip, q), _fuzzyScore(rec.nickname || "", q)),
+        label: nick ? `@${nick}  ·  ${fp.slice(0, 12)}…` : `${fp.slice(0, 12)}…`,
+        sub: `user · ${ip || "ip 未知"}`,
+        icon: "👤",
+        score: Math.max(_fuzzyScore(fp, q), _fuzzyScore(ip, q), _fuzzyScore(nick, q)),
       };
     }).filter((x) => x.score >= 0);
   }
@@ -298,23 +315,46 @@
 
   async function _refresh() {
     await _ensureCaches();
-    let pool = [];
     const q = _query.trim();
-    if (_scope === "all") {
-      pool = [].concat(_scoreRoutes(q), _scoreSettings(q), _scoreMessages(q), _scoreUsers(q));
-    } else if (_scope === "routes") {
-      pool = _scoreRoutes(q);
-    } else if (_scope === "settings") {
-      pool = _scoreSettings(q);
-    } else if (_scope === "messages") {
-      pool = _scoreMessages(q);
-    } else if (_scope === "users") {
-      pool = _scoreUsers(q);
-    }
+    // Always compute per-scope candidate counts so chip badges stay live, even
+    // when the active scope filter restricts the visible result set.
+    const byScope = {
+      routes:   _scoreRoutes(q),
+      settings: _scoreSettings(q),
+      messages: _scoreMessages(q),
+      users:    _scoreUsers(q),
+    };
+    const all = [].concat(byScope.routes, byScope.settings, byScope.messages, byScope.users);
+    let pool;
+    if (_scope === "all") pool = all;
+    else if (byScope[_scope]) pool = byScope[_scope];
+    else pool = [];
+
     pool.sort((a, b) => b.score - a.score);
     _items = pool.slice(0, 50);
     _activeIdx = 0;
     _renderList();
+    _updateScopeCounts({
+      all: all.length,
+      routes: byScope.routes.length,
+      settings: byScope.settings.length,
+      messages: byScope.messages.length,
+      users: byScope.users.length,
+    });
+  }
+
+  function _updateScopeCounts(counts) {
+    if (!_scopeRow) return;
+    Object.entries(counts).forEach(([id, n]) => {
+      const el = _scopeRow.querySelector(`[data-scope-count="${id}"]`);
+      if (el) el.textContent = `· ${n}`;
+    });
+  }
+
+  // Per-result icon chip glyph by item type. Falls back to the row's own
+  // ``item.icon`` when present (settings/messages/users set their own).
+  function _iconFor(item) {
+    return item.icon || ({ route: "◇", setting: "⚙", message: "💬", user: "👤" }[item.type] || "·");
   }
 
   function _renderList() {
@@ -322,13 +362,21 @@
       _list.innerHTML = `<li class="admin-cmdk-empty">無結果 · 試試切換範圍 (Tab)</li>`;
       return;
     }
-    _list.innerHTML = _items.slice(0, 10).map((item, i) => `
-      <li class="admin-cmdk-row ${i === _activeIdx ? "is-active" : ""}"
-          data-cmdk-idx="${i}" role="option" aria-selected="${i === _activeIdx}">
-        <span class="admin-cmdk-prefix">${_esc(item.prefix)}</span>
-        <span class="admin-cmdk-label">${_esc(item.label)}</span>
-      </li>
-    `).join("");
+    _list.innerHTML = _items.slice(0, 10).map((item, i) => {
+      const isActive = i === _activeIdx;
+      const shortcut = isActive ? "ENTER" : "";
+      return `
+        <li class="admin-cmdk-row ${isActive ? "is-active" : ""}"
+            data-cmdk-idx="${i}" role="option" aria-selected="${isActive}">
+          <span class="admin-cmdk-icon" aria-hidden="true">${_esc(_iconFor(item))}</span>
+          <span class="admin-cmdk-body">
+            <span class="admin-cmdk-label">${_esc(item.label)}</span>
+            <span class="admin-cmdk-sub">${_esc(item.sub || "")}</span>
+          </span>
+          <span class="admin-cmdk-shortcut">${_esc(shortcut)}</span>
+        </li>
+      `;
+    }).join("");
     if (_items.length > 10) {
       _list.insertAdjacentHTML("beforeend", `<li class="admin-cmdk-more">+${_items.length - 10} 個更多 · 縮小搜尋範圍</li>`);
     }

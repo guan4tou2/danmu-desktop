@@ -886,13 +886,29 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="admin-dash-telem">
                                 <div class="admin-dash-telem-head">
                                     <span>TELEMETRY</span>
-                                    <span class="status">● HEALTHY</span>
+                                    <span class="status" data-telem-status>● HEALTHY</span>
                                 </div>
-                                <div class="admin-dash-telem-grid">
-                                    <div>CPU <span>12%</span></div>
-                                    <div>WS <span>${enabledSettingCount}</span></div>
-                                    <div>MEM <span>218 MB</span></div>
-                                    <div>RATE <span>4.2/s</span></div>
+                                <div class="admin-dash-telem-bars" data-telem-bars>
+                                    <div class="admin-dash-telem-bar-row" data-telem-row="cpu">
+                                        <span class="admin-dash-telem-bar-label">CPU</span>
+                                        <span class="admin-dash-telem-bar-track"><span class="admin-dash-telem-bar-fill" data-telem-fill="cpu" style="width:0%"></span></span>
+                                        <span class="admin-dash-telem-bar-value" data-telem-value="cpu">—</span>
+                                    </div>
+                                    <div class="admin-dash-telem-bar-row" data-telem-row="mem">
+                                        <span class="admin-dash-telem-bar-label">MEM</span>
+                                        <span class="admin-dash-telem-bar-track"><span class="admin-dash-telem-bar-fill" data-telem-fill="mem" style="width:0%"></span></span>
+                                        <span class="admin-dash-telem-bar-value" data-telem-value="mem">—</span>
+                                    </div>
+                                    <div class="admin-dash-telem-bar-row" data-telem-row="ws">
+                                        <span class="admin-dash-telem-bar-label">WS</span>
+                                        <span class="admin-dash-telem-bar-track"><span class="admin-dash-telem-bar-fill" data-telem-fill="ws" style="width:0%"></span></span>
+                                        <span class="admin-dash-telem-bar-value" data-telem-value="ws">—</span>
+                                    </div>
+                                    <div class="admin-dash-telem-bar-row" data-telem-row="rate">
+                                        <span class="admin-dash-telem-bar-label">RATE</span>
+                                        <span class="admin-dash-telem-bar-track"><span class="admin-dash-telem-bar-fill" data-telem-fill="rate" style="width:0%"></span></span>
+                                        <span class="admin-dash-telem-bar-value" data-telem-value="rate">—</span>
+                                    </div>
                                 </div>
                             </div>
                         </aside>
@@ -3084,6 +3100,14 @@ document.addEventListener("DOMContentLoaded", () => {
                   effective_rate = ${r.defLimit} / ${r.defWindow}s = ${(r.defLimit / r.defWindow).toFixed(2)} req/s · burst = ${Math.round(r.defLimit * 1.5)}${r.key === "login" ? " · lock = " + r.defLockout + "s" : ""}
                 </span>
               </div>
+              <div class="admin-ratelimit-suggest" data-rl-suggest="${r.key}" hidden>
+                <span class="admin-ratelimit-suggest-icon" aria-hidden="true">▲</span>
+                <span class="admin-ratelimit-suggest-body">
+                  <span class="admin-ratelimit-suggest-title">建議調整</span>
+                  <span class="admin-ratelimit-suggest-detail" data-rl-suggest-detail>—</span>
+                </span>
+                <button type="button" class="admin-poll-btn is-primary" data-rl-action="apply-suggest" data-rl-apply="${r.key}">套用建議</button>
+              </div>
             </div>
           `).join("")}
         </div>
@@ -3203,6 +3227,7 @@ document.addEventListener("DOMContentLoaded", () => {
                   el.textContent = `${rh} 次 · ${rv} 違規`;
                 }
               });
+              _renderSuggestBanners(rl);
             } else {
               if (viol) viol.textContent = "—";
               if (violRate) violRate.textContent = "計數待 backend";
@@ -3215,6 +3240,38 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         } catch (_) {}
       }, 4500);
+
+      // Render the per-row suggest banner from a /admin/metrics response. The
+      // backend (services/security.get_rate_limit_suggestion) returns null when
+      // the current limit is sized appropriately — in that case we just hide
+      // the banner. Otherwise we surface "P95 X.X req/s · 建議 N / Ws" plus an
+      // 套用建議 button that POSTs to /admin/ratelimit/apply.
+      function _renderSuggestBanners(rl) {
+        if (!rl) return;
+        ["fire", "api", "admin", "login"].forEach((k) => {
+          const row = rl[k];
+          const banner = section.querySelector(`[data-rl-suggest="${k}"]`);
+          if (!banner) return;
+          const sug = row && row.suggestion;
+          if (!sug) {
+            banner.hidden = true;
+            return;
+          }
+          const detail = banner.querySelector("[data-rl-suggest-detail]");
+          if (detail) {
+            detail.textContent =
+              `P95 ${Number(sug.p95_per_second || 0).toFixed(2)} req/s · ` +
+              `目前 ${row.limit || "—"} / ${row.window || "—"}s → ` +
+              `建議 ${sug.suggested_limit} / ${sug.suggested_window}s`;
+          }
+          const btn = banner.querySelector("[data-rl-apply]");
+          if (btn) {
+            btn.dataset.rlSuggestLimit = String(sug.suggested_limit);
+            btn.dataset.rlSuggestWindow = String(sug.suggested_window);
+          }
+          banner.hidden = false;
+        });
+      }
 
       // Refresh per-row hits/violations text + summary tiles after a live-apply
       // succeeds. Mirrors the bulk fetch in the deferred init block above but
@@ -3235,6 +3292,7 @@ document.addEventListener("DOMContentLoaded", () => {
               el.textContent = `${rh} 次 · ${rv} 違規`;
             }
           });
+          _renderSuggestBanners(rl);
         } catch (_) {}
       }
 
@@ -3267,6 +3325,46 @@ document.addEventListener("DOMContentLoaded", () => {
                 showToast(`已即時套用 ${scope.toUpperCase()} = ${limit} / ${window_}s`, true);
               }
               refreshRateLimitMetrics();
+            } else {
+              const body = await resp.json().catch(() => ({}));
+              const msg = (body && body.error) || `HTTP ${resp.status}`;
+              if (typeof showToast === "function") showToast(`套用失敗:${msg}`, false);
+            }
+          } catch (err) {
+            if (typeof showToast === "function") showToast("套用失敗:網路錯誤", false);
+          } finally {
+            btn.disabled = false;
+            btn.textContent = orig;
+          }
+          return;
+        }
+        if (action === "apply-suggest") {
+          // Apply backend's sizing suggestion in one click. Mirrors the "save"
+          // path but uses the precomputed suggested_limit / suggested_window
+          // stashed onto the button by _renderSuggestBanners().
+          const scope = btn.dataset.rlApply;
+          const limit = parseInt(btn.dataset.rlSuggestLimit, 10);
+          const window_ = parseInt(btn.dataset.rlSuggestWindow, 10);
+          if (!scope || !Number.isFinite(limit) || !Number.isFinite(window_)) return;
+          const orig = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = "套用中…";
+          try {
+            const resp = await csrfFetch("/admin/ratelimit/apply", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ scope, limit, window: window_ }),
+            });
+            if (resp.ok) {
+              const limEl = section.querySelector(`[data-rl-limit="${scope}"]`);
+              const winEl = section.querySelector(`[data-rl-window="${scope}"]`);
+              if (limEl) limEl.value = limit;
+              if (winEl) winEl.value = window_;
+              if (typeof showToast === "function") {
+                showToast(`已套用建議:${scope.toUpperCase()} = ${limit} / ${window_}s`, true);
+              }
+              refreshRateLimitMetrics();
+              if (typeof renderEffectiveRates === "function") renderEffectiveRates();
             } else {
               const body = await resp.json().catch(() => ({}));
               const msg = (body && body.error) || `HTTP ${resp.status}`;
@@ -3550,6 +3648,65 @@ document.addEventListener("DOMContentLoaded", () => {
     // these fire concurrently. Stagger 1.5s + 3s after init.
     setTimeout(() => { window.AdminDashboard?.refreshKpi?.(); }, 1500);
     setTimeout(() => { window.AdminDashboard?.refreshSummary?.(); }, 3000);
+
+    // Sidebar TELEMETRY · 4-bar refresh — proto admin-pages.jsx 4 TelemBar rows.
+    // Pulls latest CPU% / MEM% / WS clients / msg-rate from /admin/metrics
+    // every 5 s. Bar fill is metric_value / threshold (CPU 100%, MEM 100%,
+    // WS 100 conns, RATE 50 req/s) clamped to [0, 100].
+    (function setupTelemetryBars() {
+      const el = document.querySelector("[data-telem-bars]");
+      if (!el) return;
+      const status = document.querySelector("[data-telem-status]");
+      const THRESHOLDS = { cpu: 100, mem: 100, ws: 100, rate: 50 };
+
+      function _set(metric, pct, valueText, healthy) {
+        const fill = el.querySelector(`[data-telem-fill="${metric}"]`);
+        const value = el.querySelector(`[data-telem-value="${metric}"]`);
+        if (fill) {
+          fill.style.width = Math.max(0, Math.min(100, pct)) + "%";
+          fill.classList.toggle("is-warn", !healthy);
+        }
+        if (value) value.textContent = valueText;
+      }
+
+      async function tick() {
+        try {
+          const r = await fetch("/admin/metrics", { credentials: "same-origin" });
+          if (!r.ok) return;
+          const m = await r.json();
+          const cpuArr  = m.cpu_series  || [];
+          const memArr  = m.mem_series  || [];
+          const wsArr   = m.ws_series   || [];
+          const rateArr = m.rate_series || [];
+          const last = (a) => a.length ? a[a.length - 1] : 0;
+          // psutil reports MEM as percent — convert to MB display via /proc-style
+          // approximation when possible. Telemetry only stores the percentage,
+          // so render percent for MEM too. (Avoids needing a new endpoint.)
+          const cpuPct  = Number(last(cpuArr) || 0);
+          const memPct  = Number(last(memArr) || 0);
+          const wsCount = Number(last(wsArr)  || (m.ws_clients || 0));
+          // rate_series accumulates per-minute; convert to per-second for the
+          // sidebar so the threshold bar matches the user mental model.
+          const ratePerSec = Number(last(rateArr) || 0) / 60;
+
+          _set("cpu",  (cpuPct  / THRESHOLDS.cpu)  * 100, `${cpuPct.toFixed(0)}%`,    cpuPct  < 90);
+          _set("mem",  (memPct  / THRESHOLDS.mem)  * 100, `${memPct.toFixed(0)}%`,    memPct  < 90);
+          _set("ws",   (wsCount / THRESHOLDS.ws)   * 100, String(wsCount),            wsCount < 100);
+          _set("rate", (ratePerSec / THRESHOLDS.rate) * 100, `${ratePerSec.toFixed(1)}/s`, ratePerSec < 40);
+
+          if (status) {
+            const anyWarn = cpuPct >= 90 || memPct >= 90 || ratePerSec >= 40;
+            status.textContent = anyWarn ? "● BUSY" : "● HEALTHY";
+            status.classList.toggle("is-warn", anyWarn);
+          }
+        } catch (_) { /* silent — keep last values */ }
+      }
+
+      // First fetch deferred to avoid joining init burst (matches KPI/summary
+      // polling cadence at +4s, then 5s interval).
+      setTimeout(tick, 4000);
+      setInterval(tick, 5000);
+    })();
   }
   // Dashboard KPI + summary helpers extracted to admin-dashboard.js (P6-2).
   // Reachable via window.AdminDashboard.{refreshKpi, refreshSummary, ...}.

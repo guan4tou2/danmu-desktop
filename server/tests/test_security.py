@@ -1,4 +1,5 @@
 import logging
+import time
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -329,6 +330,161 @@ def test_rate_limit_records_hits_and_violations(client, app):
     assert stats["fire"]["locked_sources"] >= 1
     assert stats["totals"]["hits"] == 2
     assert stats["totals"]["violations"] == 1
+
+
+def test_p95_computation_deterministic():
+    """_percentile uses nearest-rank — verify against crafted inputs.
+
+    For sorted [1, 2, ..., 20], 95th-pctile via nearest-rank is values[18] = 19.
+    """
+    from server.services.security import _percentile
+
+    # Empty input → 0.0
+    assert _percentile([], 95) == 0.0
+    # Single value → that value
+    assert _percentile([42.0], 95) == 42.0
+    # Crafted 20-element series — 95th percentile is the 19th element (idx 18)
+    values = [float(x) for x in range(1, 21)]
+    assert _percentile(values, 95) == 19.0
+    # Burst on top — nearest-rank P95 of 20 = idx 18 = 50.0 (P100 = 60.0).
+    bursty = [1.0] * 18 + [50.0, 60.0]
+    assert _percentile(bursty, 95) == 50.0
+    assert _percentile(bursty, 100) == 60.0
+    # P50 of [1..20] → idx = ceil(10) - 1 = 9 → values[9] = 10.0
+    assert _percentile(values, 50) == 10.0
+
+
+def test_rate_limit_suggestion_below_threshold():
+    """When current_limit is well above observed P95 and violations are
+    negligible, get_rate_limit_suggestion returns None."""
+    from server.services.security import (
+        _bump_bucket_locked,
+        _rate_stats_hits,
+        _rate_stats_lock,
+        get_rate_limit_suggestion,
+        reset_rate_limit_counters,
+    )
+
+    reset_rate_limit_counters()
+
+    # Simulate 24 buckets each with 60 allowed requests = 0.2 req/s sustained.
+    now = time.time()
+    with _rate_stats_lock:
+        for i in range(24):
+            ts = now - (i * 300)
+            _bump_bucket_locked("fire", ts)
+            # Pump count to 60 by re-entering same bucket boundary.
+            from server.services.security import _rate_buckets
+            _rate_buckets["fire"][-1][1] = 60
+        _rate_stats_hits["fire"] = 24 * 60  # 1440 hits, no violations
+
+    # current_limit=200 / window=60 → effective rate cap of 3.33 req/s,
+    # well above observed 0.2 req/s P95 — should NOT suggest.
+    suggestion = get_rate_limit_suggestion("fire", current_limit=200, current_window=60)
+    assert suggestion is None
+
+
+def test_rate_limit_suggestion_when_undersized():
+    """When current_limit < suggested * 0.7, surface the suggestion."""
+    from server.services.security import (
+        _rate_buckets,
+        _rate_stats_hits,
+        _rate_stats_lock,
+        get_rate_limit_suggestion,
+        reset_rate_limit_counters,
+    )
+
+    import time as _time
+
+    reset_rate_limit_counters()
+    now = _time.time()
+    bucket_start = (int(now) // 300) * 300
+
+    # Build 24 buckets where the busiest sustained ≈ 1 req/s (300 hits / 300s).
+    with _rate_stats_lock:
+        for i in range(24):
+            _rate_buckets["fire"].append([float(bucket_start - i * 300), 300])
+        _rate_stats_hits["fire"] = 24 * 300
+
+    # current_limit=10 / window=60 → req/s cap = 0.166 → way below P95 of 1.0.
+    # suggested_limit = ceil(1.0 * 60 * 1.5) = 90 → 10 < 90 * 0.7 = 63 → suggest!
+    suggestion = get_rate_limit_suggestion("fire", current_limit=10, current_window=60)
+    assert suggestion is not None
+    assert suggestion["suggested_window"] == 60
+    assert suggestion["suggested_limit"] >= 90
+    assert suggestion["p95_per_second"] >= 0.99
+
+
+def test_rate_limit_suggestion_violations_threshold():
+    """Even if current_limit looks fine vs P95, a violations/hits > 5% must
+    trip the suggestion."""
+    from server.services.security import (
+        _bump_bucket_locked,
+        _rate_stats_hits,
+        _rate_stats_lock,
+        _rate_stats_violations,
+        get_rate_limit_suggestion,
+        reset_rate_limit_counters,
+    )
+
+    reset_rate_limit_counters()
+    now = time.time()
+    with _rate_stats_lock:
+        # Tiny baseline: 100 hits, 10 violations → 10/110 ≈ 9% violation ratio.
+        _rate_stats_hits["fire"] = 100
+        _rate_stats_violations["fire"] = 10
+        # No buckets → P95 = 0.0; current_limit looks comfortable BUT pressure
+        # ratio still kicks in.
+        _bump_bucket_locked("fire", now)
+
+    suggestion = get_rate_limit_suggestion("fire", current_limit=20, current_window=60)
+    assert suggestion is not None
+    assert suggestion["suggested_window"] == 60
+    # With P95 ≈ 0, suggested_limit clamps to 1 (max(1, ceil(0))).
+    assert suggestion["suggested_limit"] >= 1
+
+
+def test_rate_limit_suggestion_in_metrics_response(client, app):
+    """The /admin/metrics endpoint must surface the suggestion (or null) per
+    rate-limit scope so the admin UI can render the suggest banner."""
+    from server.services.security import (
+        _rate_buckets,
+        _rate_stats_hits,
+        _rate_stats_lock,
+        reset_rate_limit_counters,
+    )
+
+    import time as _time
+
+    reset_rate_limit_counters()
+    now = _time.time()
+    bucket_start = (int(now) // 300) * 300
+
+    # Saturate the FIRE bucket to force a suggestion to surface in the response.
+    with _rate_stats_lock:
+        for i in range(24):
+            _rate_buckets["fire"].append([float(bucket_start - i * 300), 300])
+        _rate_stats_hits["fire"] = 24 * 300
+
+    # Set current limit small so undersized condition fires.
+    app.config["FIRE_RATE_LIMIT"] = 10
+    app.config["FIRE_RATE_WINDOW"] = 60
+    app.config["ADMIN_RATE_LIMIT"] = 9999  # don't rate-limit ourselves out
+    app.config["ADMIN_RATE_WINDOW"] = 60
+
+    login(client)
+    res = client.get("/admin/metrics")
+    assert res.status_code == 200
+    payload = res.get_json()
+    fire = payload["rate_limits"]["fire"]
+    assert "suggestion" in fire
+    assert fire["suggestion"] is not None
+    assert fire["suggestion"]["suggested_window"] == 60
+    assert fire["suggestion"]["suggested_limit"] >= 1
+    assert fire["limit"] == 10
+    assert fire["window"] == 60
+    # API scope had no traffic — should suggest nothing.
+    assert payload["rate_limits"]["api"]["suggestion"] is None
 
 
 def test_redis_rate_limiter_allow_uses_atomic_eval():

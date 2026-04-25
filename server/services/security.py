@@ -1,11 +1,13 @@
 import hmac
 import json
 import logging
+import math
 import secrets
 import threading
 import time
 from collections import defaultdict, deque
 from functools import wraps
+from typing import Dict, List, Optional, Tuple
 
 import bcrypt
 from flask import abort, current_app, make_response, request, session
@@ -71,11 +73,21 @@ def configure_rate_limiter(limiter: BaseRateLimiter):
 
 _RATE_STATS_VIOLATOR_WINDOW = 300  # seconds — "recent" violator IP window
 
+# Per-prefix 24h history of allowed-request counts, bucketed at 5-min intervals
+# (300s × 288 buckets = 86_400s = 24h). Used by `get_rate_limit_suggestion()`
+# to derive a P95 sustained req/s value and recommend an appropriate limit.
+_RATE_BUCKET_SECONDS = 300
+_RATE_BUCKET_RETENTION = 24 * 60 * 60  # keep last 24h
+_RATE_BUCKET_MAX = _RATE_BUCKET_RETENTION // _RATE_BUCKET_SECONDS  # 288
+
 _rate_stats_lock = threading.Lock()
 _rate_stats_hits: "defaultdict[str, int]" = defaultdict(int)
 _rate_stats_violations: "defaultdict[str, int]" = defaultdict(int)
 # Each entry is a deque of (timestamp, client_ip) pairs for that prefix.
 _rate_stats_violators: "defaultdict[str, deque]" = defaultdict(deque)
+# Per-prefix list of (bucket_start_unix_ts, allowed_count) tuples, oldest first.
+# Bucket boundary aligned to floor(now / _RATE_BUCKET_SECONDS) * _RATE_BUCKET_SECONDS.
+_rate_buckets: "Dict[str, List[List[float]]]" = defaultdict(list)
 
 
 def _record_rate_event(key_prefix: str, client_ip: str, allowed: bool) -> None:
@@ -89,6 +101,7 @@ def _record_rate_event(key_prefix: str, client_ip: str, allowed: bool) -> None:
     with _rate_stats_lock:
         if allowed:
             _rate_stats_hits[key_prefix] += 1
+            _bump_bucket_locked(key_prefix, now)
         else:
             _rate_stats_violations[key_prefix] += 1
             dq = _rate_stats_violators[key_prefix]
@@ -98,6 +111,105 @@ def _record_rate_event(key_prefix: str, client_ip: str, allowed: bool) -> None:
             cutoff = now - _RATE_STATS_VIOLATOR_WINDOW
             while dq and dq[0][0] < cutoff:
                 dq.popleft()
+
+
+def _bump_bucket_locked(key_prefix: str, now: float) -> None:
+    """Increment the current 5-min bucket for ``key_prefix``.
+
+    Caller MUST hold ``_rate_stats_lock``. Drops buckets older than the 24h
+    retention window so the list is bounded to ``_RATE_BUCKET_MAX`` entries.
+    """
+    bucket_start = math.floor(now / _RATE_BUCKET_SECONDS) * _RATE_BUCKET_SECONDS
+    buckets = _rate_buckets[key_prefix]
+    if buckets and buckets[-1][0] == bucket_start:
+        buckets[-1][1] += 1
+    else:
+        buckets.append([float(bucket_start), 1])
+    # Drop buckets older than retention window (oldest first).
+    cutoff = now - _RATE_BUCKET_RETENTION
+    while buckets and buckets[0][0] < cutoff:
+        buckets.pop(0)
+    # Hard cap (defensive — retention should already bound this).
+    if len(buckets) > _RATE_BUCKET_MAX:
+        del buckets[: len(buckets) - _RATE_BUCKET_MAX]
+
+
+def _percentile(values: List[float], p: float) -> float:
+    """Compute the p-th percentile via nearest-rank on a sorted copy.
+
+    Returns 0.0 for empty input. ``p`` is in [0, 100]. Uses the C = 1 method
+    (NumPy default ``method='linear'`` would over-estimate for short series).
+    """
+    if not values:
+        return 0.0
+    s = sorted(values)
+    if len(s) == 1:
+        return float(s[0])
+    # Nearest-rank: idx = ceil(p/100 * N) - 1, clamped to [0, N-1]
+    idx = max(0, min(len(s) - 1, math.ceil((p / 100.0) * len(s)) - 1))
+    return float(s[idx])
+
+
+def _bucket_p95_per_second(key_prefix: str, now: float) -> float:
+    """Return P95 sustained req/s across the last 24h of 5-min buckets.
+
+    Each bucket value = allowed_count / bucket_seconds. Caller does NOT need
+    to hold the lock — we snapshot under the lock.
+    """
+    with _rate_stats_lock:
+        buckets = list(_rate_buckets.get(key_prefix, []))
+    if not buckets:
+        return 0.0
+    cutoff = now - _RATE_BUCKET_RETENTION
+    rates = [count / _RATE_BUCKET_SECONDS for (ts, count) in buckets if ts >= cutoff]
+    return _percentile(rates, 95)
+
+
+def get_rate_limit_suggestion(
+    key_prefix: str,
+    current_limit: int,
+    current_window: int,
+) -> Optional[Dict[str, float]]:
+    """Compute a sizing suggestion for one rate-limit scope.
+
+    Returns ``None`` when the current limit is comfortably above observed P95
+    AND violations are <5% of total requests. Otherwise returns:
+
+        {
+          "p95_per_second": float,    # P95 of last-24h 5-min bucket rates
+          "suggested_limit": int,     # ceil(p95 × current_window × 1.5)
+          "suggested_window": int,    # = current_window (we don't change it)
+        }
+
+    Trigger conditions (either sufficient):
+      * ``current_limit < suggested_limit * 0.7`` — undersized vs traffic
+      * ``violations / hits > 0.05`` — sustained violator pressure
+    """
+    if current_limit <= 0 or current_window <= 0:
+        return None
+
+    now = time.time()
+    p95 = _bucket_p95_per_second(key_prefix, now)
+    suggested_limit = max(1, math.ceil(p95 * current_window * 1.5))
+
+    with _rate_stats_lock:
+        hits = _rate_stats_hits.get(key_prefix, 0)
+        violations = _rate_stats_violations.get(key_prefix, 0)
+
+    total = hits + violations
+    violation_ratio = (violations / total) if total > 0 else 0.0
+
+    undersized = current_limit < suggested_limit * 0.7
+    pressured = violation_ratio > 0.05
+
+    if not undersized and not pressured:
+        return None
+
+    return {
+        "p95_per_second": round(p95, 3),
+        "suggested_limit": int(suggested_limit),
+        "suggested_window": int(current_window),
+    }
 
 
 def _locked_sources_for(prefix: str, now: float) -> int:
@@ -166,6 +278,7 @@ def reset_rate_limit_counters() -> None:
         _rate_stats_hits.clear()
         _rate_stats_violations.clear()
         _rate_stats_violators.clear()
+        _rate_buckets.clear()
 
 
 class RedisRateLimiter(BaseRateLimiter):

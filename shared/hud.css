@@ -3871,3 +3871,203 @@
   letter-spacing: 0.5px;
   color: var(--color-primary);
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * 2026-04-25 · Admin · Sidebar telemetry — 4 bar rows refresh
+ *
+ * Replaces the legacy 2×2 KV grid (.admin-dash-telem-grid in style.css) with
+ * a stacked layout of 4 horizontal bars: CPU / MEM / WS / RATE. Each row =
+ * [38px mono label · 1fr track · right-aligned value text]. Bar fill driven
+ * by metric / threshold ratio (cpu 100%, mem 100%, ws 100 conns, rate 50/s).
+ * ──────────────────────────────────────────────────────────────────────── */
+.admin-dash-telem-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+.admin-dash-telem-bar-row {
+  display: grid;
+  grid-template-columns: 38px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-muted, #94a3b8);
+}
+.admin-dash-telem-bar-label {
+  color: var(--color-text-muted, #94a3b8);
+  letter-spacing: 0.1em;
+}
+.admin-dash-telem-bar-track {
+  position: relative;
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(56, 189, 248, 0.08);
+  overflow: hidden;
+}
+.admin-dash-telem-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-primary, #38bdf8);
+  border-radius: 2px;
+  transition: width 320ms ease;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.35);
+}
+.admin-dash-telem-bar-fill.is-warn {
+  background: #fb7185;
+  box-shadow: 0 0 6px rgba(251, 113, 133, 0.45);
+}
+.admin-dash-telem-bar-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-bright, #e2e8f0);
+  min-width: 36px;
+  text-align: right;
+}
+.admin-dash-telem-head .status.is-warn { color: #fb7185; }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * 2026-04-25 · Admin · Command Palette polish (proto priority-2-pieces)
+ *
+ * Per-result row layout shifts from a left-justified [tag | label] pair to a
+ * three-column grid: [28×28 icon chip | label/sub | shortcut KBD]. Active row
+ * gets an accent left-border. Search bar gains a left ⌕ icon and right ⌘K
+ * chip. Scope chips show a count badge. Footer note clarifies server-only
+ * action scope.
+ * ──────────────────────────────────────────────────────────────────────── */
+.admin-cmdk-search { position: relative; }
+.admin-cmdk-search-icon {
+  font-size: 16px;
+  color: var(--color-primary, #38bdf8);
+  flex: 0 0 auto;
+  width: 18px;
+  text-align: center;
+}
+.admin-cmdk-chip { display: inline-flex; align-items: center; gap: 6px; }
+.admin-cmdk-chip .num {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  opacity: 0.6;
+  letter-spacing: 0;
+}
+.admin-cmdk-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 16px;
+}
+.admin-cmdk-icon {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(56, 189, 248, 0.06);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  border-radius: 5px;
+  color: var(--admin-text-dim, #94a3b8);
+  font-size: 13px;
+}
+.admin-cmdk-row.is-active .admin-cmdk-icon {
+  color: var(--color-primary, #38bdf8);
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.36);
+}
+.admin-cmdk-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.admin-cmdk-body .admin-cmdk-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--admin-text, #e2e8f0);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-cmdk-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: var(--admin-text-dim, #94a3b8);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-cmdk-shortcut {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--admin-text-dim, #94a3b8);
+  border: 1px solid var(--admin-line, #1e293b);
+  border-radius: 3px;
+  padding: 2px 7px;
+  min-width: 36px;
+  text-align: center;
+  white-space: nowrap;
+}
+.admin-cmdk-shortcut:empty {
+  border-color: transparent;
+  background: transparent;
+}
+.admin-cmdk-note {
+  padding: 8px 16px;
+  background: rgba(56, 189, 248, 0.04);
+  border-top: 1px solid var(--admin-line, #1e293b);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.5px;
+  color: var(--admin-text-dim, #94a3b8);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * 2026-04-25 · Admin · Rate Limits sizing-suggest banner
+ *
+ * Surfaces /admin/metrics.rate_limits.<scope>.suggestion (P95-driven). Sits
+ * inside .admin-ratelimit-row, below the row-foot. Hidden by default; the
+ * JS reveal happens when the backend returns a non-null suggestion.
+ * ──────────────────────────────────────────────────────────────────────── */
+.admin-ratelimit-suggest {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(251, 191, 36, 0.06);
+  border: 1px solid rgba(251, 191, 36, 0.28);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.3px;
+  color: var(--admin-text, #e2e8f0);
+}
+.admin-ratelimit-suggest[hidden] { display: none; }
+.admin-ratelimit-suggest-icon {
+  flex: 0 0 auto;
+  width: 18px;
+  text-align: center;
+  color: #fbbf24;
+}
+.admin-ratelimit-suggest-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.admin-ratelimit-suggest-title {
+  color: #fbbf24;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+.admin-ratelimit-suggest-detail {
+  color: var(--admin-text-dim, #94a3b8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
