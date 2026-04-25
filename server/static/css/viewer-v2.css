@@ -139,56 +139,53 @@ body.viewer-body-v2 {
   }
 }
 
-/* Hero · 2-col layout (v4 handoff chat decision):
- * left = DANMU FIRE lockup + subtitle, right = 伺服器/Overlay ConnChip + lang.
- * Single-col on narrow viewports (< 600px, P3-5 Mobile Safari parity) —
- * lockup centered, utility strip (chips + lang) wraps below. Subtitle is
- * ALWAYS visible (mobile included) per P3-5 rules, unlike the prototype
- * viewer.jsx which hides it on mobile. Sendbar stays flex:0 0 auto so the
- * shell keeps it pinned at the viewport bottom at every breakpoint. */
+/* Hero · single centered column matching prototype DanmuHero
+ * (tokens.jsx:165–206 + viewer.jsx:87–109). Vertical stack:
+ *   1. <h1> Title  — Bebas Neue cyan, drop-shadow, uppercase
+ *   2. <p>  Subtitle — slate-400, margin '14px auto 0', max-width 40rem
+ *   3. utility chip row — margin-top: 18px, flex justify-center
+ *
+ * Utility row holds 伺服器 / Overlay status chips + language picker. The
+ * prototype's single decorative `CONNECTED · #MTG-042` chip is replaced
+ * by the live connection state we need to surface (#MTG-042 was dropped
+ * per P4 — no meeting concept). Subtitle stays visible on mobile (P3-5
+ * deviation from prototype which hides it on mobile). */
 .viewer-hero {
   padding: 30px 24px 24px;
   border-bottom: 1px solid var(--hud-line);
   background: transparent;
-  display: flex;
-  align-items: center;
-  gap: 24px;
+  text-align: center;
 }
 
 .viewer-hero-lockup {
-  flex: 1 1 0;
-  min-width: 0;
-  text-align: left;
+  text-align: center;
 }
 
 .viewer-hero-utility {
-  flex: 0 0 auto;
+  margin-top: 18px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
 }
 
 @media (max-width: 599px) {
   .viewer-hero {
-    flex-direction: column;
     padding: 22px 20px 20px;
-    gap: 14px;
   }
-  .viewer-hero-lockup { text-align: center; }
   .viewer-hero-utility {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
+    margin-top: 14px;
     gap: 6px;
   }
 }
 
+/* Prototype HERO_SIZE.hero = clamp(3.2rem, 8vw, 6rem) (tokens.jsx:159).
+ * Mobile shrinks to HERO_SIZE.large = clamp(2rem, 5vw, 3.5rem). */
 .viewer-hero-title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(3rem, 7vw, 5rem);
+  font-size: clamp(3.2rem, 8vw, 6rem);
   font-weight: 400;
   color: #7dd3fc;
   text-transform: uppercase;
@@ -199,17 +196,22 @@ body.viewer-body-v2 {
     drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
 }
 
-.viewer-hero-subtitle {
-  margin: 0.75rem 0 0;
-  max-width: 32rem;
-  color: var(--color-text-secondary);
-  font-size: clamp(0.9rem, 1.6vw, 1.05rem);
-  line-height: 1.6;
-  font-weight: 400;
+@media (max-width: 599px) {
+  .viewer-hero-title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+  }
 }
 
-@media (max-width: 599px) {
-  .viewer-hero-subtitle { margin-left: auto; margin-right: auto; }
+/* Prototype DanmuHero subtitle (tokens.jsx:188–197):
+ *   margin: '14px auto 0', maxWidth: '40rem',
+ *   fontSize: 'clamp(1rem, 2vw, 1.25rem)', color: HERO_SLATE_300. */
+.viewer-hero-subtitle {
+  margin: 14px auto 0;
+  max-width: 40rem;
+  color: var(--color-text-secondary);
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  line-height: 1.6;
+  font-weight: 400;
 }
 
 /* ConnChip — 伺服器 / Overlay status pill.
