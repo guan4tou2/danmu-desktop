@@ -870,6 +870,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="admin-dash-nav-icon">⚙</span>
                                     <span>系統 & 指紋</span>
                                 </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="broadcast" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">📡</span>
+                                    <span>廣播</span>
+                                </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="security" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⛨</span>
                                     <span>安全</span>
@@ -917,7 +921,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                       <option value="ja" ${ServerI18n.currentLang === "ja" ? "selected" : ""}>JA</option>
                                       <option value="ko" ${ServerI18n.currentLang === "ko" ? "selected" : ""}>KO</option>
                                     </select>
-                                    <button class="admin-dash-broadcast" type="button" aria-live="polite">
+                                    <button class="admin-dash-broadcast" type="button" aria-live="polite"
+                                        title="切換廣播狀態" data-route="broadcast">
                                         <span class="dot"></span>
                                         ${broadcasting ? "BROADCASTING" : "STANDBY"}
                                     </button>
@@ -1396,13 +1401,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // option rows with drag handle + image toggle. Client-side queue, fires
     // each question through `/admin/poll/create` in sequence.
     settingsGrid.insertAdjacentHTML("beforeend", `
-      <div id="sec-polls" class="admin-poll-page-v5 hud-page-stack lg:col-span-2">
+      <div id="sec-polls" class="admin-poll-page-v5 hud-page-stack lg:col-span-2" data-poll-view="builder">
         <div class="admin-poll-head">
           <div class="admin-poll-kicker">POLL · 多題目 · 拖曳排序 · 每題可上傳圖片</div>
           <div class="admin-poll-title">投票</div>
         </div>
 
-        <div class="admin-poll-master-detail">
+        <!-- BUILDER VIEW -->
+        <div class="admin-poll-master-detail" data-poll-view-builder>
           <!-- LEFT · queue with real DnD -->
           <aside class="admin-poll-queue-panel">
             <div class="admin-poll-card-head">
@@ -1443,6 +1449,12 @@ document.addEventListener("DOMContentLoaded", () => {
           <main class="admin-poll-editor" data-poll-editor></main>
         </div>
 
+        <!-- LIVE HUD VIEW (rendered by renderLive()) -->
+        <div class="admin-polls-live" data-poll-view-live hidden></div>
+
+        <!-- RESULTS VIEW (rendered by renderResults()) -->
+        <div class="admin-polls-results" data-poll-view-results hidden></div>
+
         <!-- Legacy single-question inputs retained for admin-poll.js compatibility -->
         <div class="admin-poll-legacy" hidden>
           <input type="text" id="pollQuestion" />
@@ -1467,6 +1479,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!sec) return;
       const queueEl = sec.querySelector("[data-poll-queue]");
       const editorEl = sec.querySelector("[data-poll-editor]");
+      const builderEl = sec.querySelector("[data-poll-view-builder]");
+      const liveEl = sec.querySelector("[data-poll-view-live]");
+      const resultsEl = sec.querySelector("[data-poll-view-results]");
 
       const STORAGE_KEY = "danmu.adminPollQueue.v2";
       function qid() { return "q_" + Math.random().toString(36).slice(2, 8); }
@@ -1482,6 +1497,24 @@ document.addEventListener("DOMContentLoaded", () => {
         };
       }
 
+      // Live mirror of GET /admin/poll/status — populated by beginSessionPolling().
+      // Contains { state, active, current_index, started_at, questions: [{ id, text,
+      // total_votes, options: [{ key, text, count, percentage }], time_limit_seconds }] }.
+      let pollState = null;
+      // viewMode: "builder" | "live" | "results"; derived from pollState + last
+      // ended snapshot. Builder is the default; transitions:
+      //   builder → live  on session start (pollState.active === true)
+      //   live    → results on END (pollState.state === "ended" && we have data)
+      //   results → builder on "新投票 / Reset"
+      let viewMode = "builder";
+      // Last server snapshot captured at end-time so Results stays available
+      // after the server clears state. Cleared when user resets.
+      let endedSnapshot = null;
+      // Per-question results pagination index (0-based).
+      let resultsIdx = 0;
+      // Live HUD broadcast toggles + UI animation timer.
+      const liveBroadcast = { showResults: true, showTotals: true, anonymous: false, autoAdvance: false };
+      let liveTickTimer = null;
       let queue = [];
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -1608,7 +1641,432 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
       }
 
-      function render() { renderQueue(); renderEditor(); renderSessionStatus(); }
+      function render() {
+        // Decide view mode based on session + ended snapshot.
+        if (pollState && pollState.active) viewMode = "live";
+        else if (endedSnapshot) viewMode = "results";
+        else viewMode = "builder";
+        sec.dataset.pollView = viewMode;
+        builderEl.hidden = viewMode !== "builder";
+        liveEl.hidden = viewMode !== "live";
+        resultsEl.hidden = viewMode !== "results";
+        renderQueue();
+        renderEditor();
+        renderSessionStatus();
+        if (viewMode === "live") renderLive();
+        else if (viewMode === "results") renderResults();
+        // Toggle the live tick (1Hz UI refresh for the countdown ring) only
+        // when on Live view — saves CPU on Builder/Results.
+        if (viewMode === "live") startLiveTick();
+        else stopLiveTick();
+      }
+
+      function startLiveTick() {
+        if (liveTickTimer) return;
+        liveTickTimer = setInterval(() => {
+          if (viewMode !== "live" || !pollState || !pollState.active) return;
+          updateLiveCountdown();
+        }, 1000);
+      }
+      function stopLiveTick() {
+        if (liveTickTimer) { clearInterval(liveTickTimer); liveTickTimer = null; }
+      }
+
+      // ─── Live HUD ────────────────────────────────────────────────────────
+      // Computes time-left in seconds from started_at + time_limit. null if no limit.
+      function computeRemain(question, startedAt) {
+        if (!question || !question.time_limit_seconds) return null;
+        if (!startedAt) return question.time_limit_seconds;
+        const elapsed = Date.now() / 1000 - startedAt;
+        return Math.max(0, Math.round(question.time_limit_seconds - elapsed));
+      }
+      function fmtMmSs(secs) {
+        if (secs == null) return "∞";
+        const m = String(Math.floor(secs / 60)).padStart(2, "0");
+        const s = String(secs % 60).padStart(2, "0");
+        return `${m}:${s}`;
+      }
+
+      function renderLive() {
+        if (!pollState || !pollState.questions || pollState.questions.length === 0) {
+          liveEl.innerHTML = "";
+          return;
+        }
+        const idx = pollState.current_index >= 0 ? pollState.current_index : 0;
+        const total = pollState.questions.length;
+        const q = pollState.questions[idx];
+        const remain = computeRemain(q, pollState.started_at);
+        const limit = q.time_limit_seconds || 0;
+        const ringPct = limit > 0 && remain != null ? Math.max(0, Math.min(1, remain / limit)) : 1;
+        const lowTime = limit > 0 && remain != null && remain <= Math.max(5, limit * 0.15);
+        const totalVotes = q.options.reduce((s, o) => s + (o.count || 0), 0);
+        // Sort options by votes desc for the bar list (leader on top), but
+        // preserve original letter labels.
+        const sortedOpts = [...q.options].sort((a, b) => (b.count || 0) - (a.count || 0));
+        const maxCount = sortedOpts[0] ? sortedOpts[0].count : 0;
+        const nextQ = pollState.questions[idx + 1];
+
+        const ringSize = 110;
+        const ringR = ringSize / 2 - 6;
+        const ringC = 2 * Math.PI * ringR;
+        const ringDash = ringC * ringPct;
+
+        liveEl.innerHTML = `
+          <div class="admin-polls-live-grid">
+            <!-- LEFT · big HUD -->
+            <div class="admin-polls-live-card">
+              <div class="admin-polls-live-strip">
+                <span class="admin-polls-live-chip">
+                  <span class="dot"></span>LIVE · #${escapeHtml((pollState.poll_id || "").slice(-6))}
+                </span>
+                <span class="admin-polls-live-progress">
+                  第 <strong>${idx + 1}</strong> / ${total} 題
+                </span>
+                <div class="admin-polls-live-time" data-live-time>
+                  <div class="admin-polls-live-ring">
+                    <svg viewBox="0 0 ${ringSize} ${ringSize}" width="56" height="56">
+                      <circle cx="${ringSize/2}" cy="${ringSize/2}" r="${ringR}" fill="none"
+                        stroke="rgba(148,163,184,0.25)" stroke-width="4" />
+                      <circle data-live-ring cx="${ringSize/2}" cy="${ringSize/2}" r="${ringR}" fill="none"
+                        stroke="${lowTime ? '#f87171' : 'var(--color-primary)'}" stroke-width="5"
+                        stroke-dasharray="${ringDash} ${ringC}" stroke-linecap="round"
+                        transform="rotate(-90 ${ringSize/2} ${ringSize/2})"
+                        style="filter: drop-shadow(0 0 4px ${lowTime ? '#f87171' : 'var(--color-primary)'})" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="kicker">剩餘</div>
+                    <div class="mmss ${lowTime ? 'is-low' : ''}" data-live-mmss>${remain == null ? '無時限' : fmtMmSs(remain)}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="admin-polls-live-question">
+                <div class="kicker">QUESTION Q${idx + 1}</div>
+                <div class="text">${escapeHtml(q.text || "")}</div>
+              </div>
+
+              <div class="admin-polls-live-bars">
+                ${sortedOpts.map(o => {
+                  const pct = totalVotes > 0 ? (o.count / totalVotes) * 100 : 0;
+                  const isLeader = (o.count || 0) > 0 && (o.count === maxCount);
+                  return `
+                    <div class="admin-polls-live-bar ${isLeader ? 'is-leader' : ''}">
+                      <div class="row">
+                        <span class="tag">${escapeHtml(o.key)}</span>
+                        <span class="lbl">${escapeHtml(o.text || "")}</span>
+                        ${isLeader ? '<span class="lead">▲ 領先</span>' : ''}
+                        <span class="pct">${pct.toFixed(0)}%</span>
+                        <span class="cnt">${o.count} 票</span>
+                      </div>
+                      <div class="track"><div class="fill" style="width:${pct.toFixed(1)}%"></div></div>
+                    </div>
+                  `;
+                }).join("")}
+              </div>
+
+              <div class="admin-polls-live-foot">
+                <span class="meta">總票數 <strong data-live-total>${totalVotes}</strong></span>
+                ${nextQ ? `<span class="sep"></span><span class="meta">下一題 <em>${escapeHtml(nextQ.text || "")}</em></span>` : ''}
+                <div class="actions">
+                  <button type="button" class="admin-polls-live-btn" data-live-action="advance" ${idx >= total - 1 ? 'disabled' : ''}>⏭ 下一題</button>
+                  <button type="button" class="admin-polls-live-btn is-danger" data-live-action="end">◾ 結束投票</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT · queue mini + broadcast -->
+            <aside class="admin-polls-live-rail">
+              <div class="admin-polls-live-rail-card">
+                <div class="admin-poll-card-head">
+                  <span class="title">題目進度</span>
+                  <span class="kicker">PROGRESS · ${idx + 1}/${total}</span>
+                </div>
+                <div class="admin-polls-live-queue">
+                  ${pollState.questions.map((qq, i) => {
+                    const status = i < idx ? "done" : (i === idx ? "active" : "queued");
+                    return `
+                      <div class="admin-polls-live-qmini is-${status}">
+                        <span class="idx">${status === "done" ? "✓" : (i + 1)}</span>
+                        <span class="t">${escapeHtml(qq.text || "(空)")}</span>
+                        ${status === "active" ? '<span class="dot"></span>' : ''}
+                      </div>
+                    `;
+                  }).join("")}
+                </div>
+              </div>
+              <div class="admin-polls-live-rail-card">
+                <div class="admin-poll-card-head">
+                  <span class="title">即時廣播</span>
+                  <span class="kicker">BROADCAST</span>
+                </div>
+                <div class="admin-polls-live-toggles">
+                  ${[
+                    { k: "showResults", label: "結果即時顯示" },
+                    { k: "showTotals", label: "顯示總票數" },
+                    { k: "autoAdvance", label: "時限到自動下一題" },
+                    { k: "anonymous", label: "匿名投票" },
+                  ].map(t => `
+                    <label class="admin-polls-live-toggle ${liveBroadcast[t.k] ? 'is-on' : ''}" data-live-toggle="${t.k}">
+                      <span class="lbl">${t.label}</span>
+                      <span class="sw"><span class="knob"></span></span>
+                    </label>
+                  `).join("")}
+                </div>
+              </div>
+            </aside>
+          </div>
+        `;
+      }
+
+      // Updates only the countdown ring + mmss + total (avoids full re-render
+      // every second; the bars only change when /admin/poll/status fetch returns).
+      function updateLiveCountdown() {
+        if (!pollState || !pollState.active) return;
+        const idx = pollState.current_index >= 0 ? pollState.current_index : 0;
+        const q = pollState.questions[idx];
+        if (!q) return;
+        const remain = computeRemain(q, pollState.started_at);
+        const limit = q.time_limit_seconds || 0;
+        const mmssEl = liveEl.querySelector("[data-live-mmss]");
+        const ringEl = liveEl.querySelector("[data-live-ring]");
+        if (mmssEl) {
+          mmssEl.textContent = remain == null ? "無時限" : fmtMmSs(remain);
+          mmssEl.classList.toggle("is-low", limit > 0 && remain != null && remain <= Math.max(5, limit * 0.15));
+        }
+        if (ringEl && limit > 0 && remain != null) {
+          const r = +ringEl.getAttribute("r");
+          const c = 2 * Math.PI * r;
+          const pct = Math.max(0, Math.min(1, remain / limit));
+          ringEl.setAttribute("stroke-dasharray", `${c * pct} ${c}`);
+          const low = remain <= Math.max(5, limit * 0.15);
+          ringEl.setAttribute("stroke", low ? "#f87171" : "var(--color-primary)");
+          ringEl.style.filter = `drop-shadow(0 0 4px ${low ? '#f87171' : 'var(--color-primary)'})`;
+        }
+        // Auto-advance hook: if toggle is on and timer elapsed, fire advance.
+        if (liveBroadcast.autoAdvance && limit > 0 && remain === 0) {
+          const onLast = idx >= pollState.questions.length - 1;
+          if (!onLast) sessionAdvance();
+          else sessionEnd();
+        }
+      }
+
+      // ─── Results ─────────────────────────────────────────────────────────
+      function renderResults() {
+        const snap = endedSnapshot;
+        if (!snap || !snap.questions || snap.questions.length === 0) {
+          resultsEl.innerHTML = "";
+          return;
+        }
+        const total = snap.questions.length;
+        const safeIdx = Math.max(0, Math.min(resultsIdx, total - 1));
+        const q = snap.questions[safeIdx];
+        const totalVotes = q.options.reduce((s, o) => s + (o.count || 0), 0);
+        const ranked = [...q.options].sort((a, b) => (b.count || 0) - (a.count || 0));
+        const winner = ranked[0] || { key: "-", text: "—", count: 0 };
+        const runnerUp = ranked[1];
+        const winnerPct = totalVotes > 0 ? (winner.count / totalVotes) * 100 : 0;
+        const lead = runnerUp ? Math.max(0, winner.count - runnerUp.count) : winner.count;
+        const startedAt = snap.started_at || 0;
+        const endedAt = snap.ended_at || (Date.now() / 1000);
+        const durSec = Math.max(0, Math.round(endedAt - startedAt));
+
+        resultsEl.innerHTML = `
+          <div class="admin-polls-results-grid">
+            <div class="admin-polls-results-main">
+              <!-- Tabs for per-question pagination -->
+              ${total > 1 ? `
+                <div class="admin-polls-results-tabs" role="tablist">
+                  ${snap.questions.map((qq, i) => `
+                    <button type="button" role="tab" class="${i === safeIdx ? 'is-active' : ''}" data-results-tab="${i}">
+                      Q${i + 1}<span class="t">${escapeHtml((qq.text || "").slice(0, 24))}</span>
+                    </button>
+                  `).join("")}
+                </div>` : ''}
+
+              <div class="admin-polls-results-head">
+                <div class="meta">
+                  <span class="chip">ENDED</span>
+                  <span>Q${safeIdx + 1}/${total} · 進行 ${fmtMmSs(durSec)} · 共 ${totalVotes} 票</span>
+                </div>
+                <div class="text">${escapeHtml(q.text || "")}</div>
+              </div>
+
+              <div class="admin-polls-results-winner">
+                <div class="badge">${escapeHtml(winner.key)}</div>
+                <div class="info">
+                  <div class="kicker">WINNER · 領先選項</div>
+                  <div class="lbl">${escapeHtml(winner.text || "—")}</div>
+                  <div class="sub">${winner.count} 票 · ${winnerPct.toFixed(1)}% ${runnerUp ? `· 領先第 2 名 ${lead} 票` : ''}</div>
+                </div>
+                <div class="pct">${winnerPct.toFixed(0)}<span>%</span></div>
+              </div>
+
+              <div class="admin-polls-results-list">
+                <div class="admin-poll-card-head">
+                  <span class="title">完整結果</span>
+                  <span class="kicker">RESULTS · ${totalVotes} 票</span>
+                </div>
+                ${ranked.map((o, rank) => {
+                  const pct = totalVotes > 0 ? (o.count / totalVotes) * 100 : 0;
+                  const isW = rank === 0 && o.count > 0;
+                  return `
+                    <div class="admin-polls-results-bar ${isW ? 'is-winner' : ''}">
+                      <div class="row">
+                        <span class="rank">#${rank + 1}</span>
+                        <span class="tag">${escapeHtml(o.key)}</span>
+                        <span class="lbl">${escapeHtml(o.text || "")}</span>
+                        <span class="pct">${pct.toFixed(1)}%</span>
+                        <span class="cnt">${o.count} 票</span>
+                      </div>
+                      <div class="track"><div class="fill" style="width:${pct.toFixed(1)}%"></div></div>
+                    </div>
+                  `;
+                }).join("")}
+              </div>
+            </div>
+
+            <aside class="admin-polls-results-rail">
+              <div class="admin-polls-results-rail-card">
+                <div class="admin-poll-card-head">
+                  <span class="title">參與度</span>
+                  <span class="kicker">PARTICIPATION</span>
+                </div>
+                <div class="admin-polls-results-stat">
+                  <span class="big">${totalVotes}</span>
+                  <span class="unit">票 · 此題</span>
+                </div>
+                <div class="admin-polls-results-meter">
+                  <div class="fill" style="width:${Math.min(100, totalVotes ? 100 : 0)}%"></div>
+                </div>
+                <div class="admin-polls-results-meta-row">
+                  <span>選項 ${q.options.length}</span>
+                  <span>時限 ${q.time_limit_seconds ? fmtMmSs(q.time_limit_seconds) : '無'}</span>
+                </div>
+              </div>
+
+              <div class="admin-polls-results-rail-card">
+                <div class="admin-poll-card-head">
+                  <span class="title">時序</span>
+                  <span class="kicker">TIMELINE</span>
+                </div>
+                <div class="admin-polls-results-timeline">
+                  <div class="row"><span class="k">開始</span><span class="v">${snap.started_at ? new Date(snap.started_at * 1000).toLocaleTimeString() : '—'}</span></div>
+                  <div class="row"><span class="k">結束</span><span class="v">${snap.ended_at ? new Date(snap.ended_at * 1000).toLocaleTimeString() : '—'}</span></div>
+                  <div class="row"><span class="k">時長</span><span class="v">${fmtMmSs(durSec)}</span></div>
+                </div>
+                <div class="admin-polls-results-spark">
+                  ${(function(){
+                    // Cheap sparkline derived from options' counts (no per-second history available
+                    // server-side yet — surfaces relative shape of votes by option).
+                    const peak = Math.max(1, ...ranked.map(o => o.count));
+                    return ranked.map(o => `<div class="bar" style="height:${Math.max(6, (o.count / peak) * 100)}%"></div>`).join("");
+                  })()}
+                </div>
+              </div>
+
+              <div class="admin-polls-results-rail-card">
+                <div class="admin-poll-card-head">
+                  <span class="title">動作</span>
+                  <span class="kicker">EXPORT</span>
+                </div>
+                <div class="admin-polls-results-actions">
+                  <button type="button" class="admin-polls-results-btn" data-results-action="copy">⎘ 複製結果</button>
+                  <button type="button" class="admin-polls-results-btn" data-results-action="csv">⇣ 匯出 CSV</button>
+                  <button type="button" class="admin-polls-results-btn" data-results-action="json">⇣ 匯出 JSON</button>
+                  <button type="button" class="admin-polls-results-btn is-primary" data-results-action="reset">▶ 開新投票</button>
+                </div>
+              </div>
+            </aside>
+          </div>
+        `;
+      }
+
+      // Build a CSV line from the snapshot for export.
+      function buildResultsCsv(snap) {
+        const rows = [["question_index", "question", "option_key", "option_text", "count", "percentage"]];
+        snap.questions.forEach((qq, i) => {
+          const tot = qq.options.reduce((s, o) => s + (o.count || 0), 0);
+          qq.options.forEach(o => {
+            const pct = tot > 0 ? ((o.count / tot) * 100).toFixed(1) : "0";
+            rows.push([i + 1, qq.text, o.key, o.text, o.count, pct]);
+          });
+        });
+        return rows.map(r => r.map(c => {
+          const s = String(c == null ? "" : c);
+          return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+        }).join(",")).join("\n");
+      }
+
+      function downloadBlob(name, mime, text) {
+        const blob = new Blob([text], { type: mime });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.appendChild(a); a.click();
+        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+      }
+
+      // ─── Click delegation for Live + Results views ────────────────────────
+      sec.addEventListener("click", (e) => {
+        // Live HUD
+        const liveAction = e.target.closest("[data-live-action]");
+        if (liveAction) {
+          const a = liveAction.dataset.liveAction;
+          if (a === "advance") sessionAdvance();
+          else if (a === "end") sessionEnd();
+          else if (a === "pause") {
+            // Client-side: stops auto-advance + keeps state. Reflected as visual hint only.
+            liveBroadcast.autoAdvance = false;
+            renderLive();
+          }
+          return;
+        }
+        const liveToggle = e.target.closest("[data-live-toggle]");
+        if (liveToggle) {
+          const k = liveToggle.dataset.liveToggle;
+          if (k in liveBroadcast) {
+            liveBroadcast[k] = !liveBroadcast[k];
+            liveToggle.classList.toggle("is-on", liveBroadcast[k]);
+          }
+          return;
+        }
+        // Results
+        const resTab = e.target.closest("[data-results-tab]");
+        if (resTab) {
+          resultsIdx = +resTab.dataset.resultsTab || 0;
+          renderResults();
+          return;
+        }
+        const resAct = e.target.closest("[data-results-action]");
+        if (resAct) {
+          const a = resAct.dataset.resultsAction;
+          const snap = endedSnapshot;
+          if (!snap) return;
+          if (a === "copy") {
+            const text = snap.questions.map((qq, i) => {
+              const tot = qq.options.reduce((s, o) => s + (o.count || 0), 0);
+              const lines = qq.options.map(o => {
+                const pct = tot > 0 ? ((o.count / tot) * 100).toFixed(1) : "0.0";
+                return `  ${o.key}. ${o.text} — ${o.count} 票 (${pct}%)`;
+              });
+              return `Q${i + 1}: ${qq.text}\n${lines.join("\n")}`;
+            }).join("\n\n");
+            (navigator.clipboard?.writeText(text) || Promise.resolve())
+              .then(() => showToast && showToast("結果已複製", true))
+              .catch(() => showToast && showToast("複製失敗", false));
+          } else if (a === "csv") {
+            downloadBlob(`poll_${(snap.poll_id || "results").slice(-8)}.csv`, "text/csv;charset=utf-8", buildResultsCsv(snap));
+          } else if (a === "json") {
+            downloadBlob(`poll_${(snap.poll_id || "results").slice(-8)}.json`, "application/json", JSON.stringify(snap, null, 2));
+          } else if (a === "reset") {
+            endedSnapshot = null;
+            resultsIdx = 0;
+            render();
+          }
+          return;
+        }
+      });
 
       // Queue drag-reorder
       queueEl.addEventListener("dragstart", (e) => {
@@ -1856,8 +2314,10 @@ document.addEventListener("DOMContentLoaded", () => {
           if (!startRes.ok) throw new Error(startData.error || "開始失敗");
           session.active = true;
           session.currentIndex = startData.current_index ?? 0;
-          renderSessionStatus();
-          renderQueue();
+          // Seed the live mirror so renderLive() has data immediately.
+          pollState = startData;
+          endedSnapshot = null;
+          render();
           showToast && showToast("Session 已開始", true);
           beginSessionPolling();
         } catch (err) {
@@ -1872,8 +2332,8 @@ document.addEventListener("DOMContentLoaded", () => {
           if (!res.ok) throw new Error(data.error || "推進失敗");
           session.currentIndex = data.current_index;
           session.active = !!data.active;
-          renderSessionStatus();
-          renderQueue();
+          pollState = data;
+          render();
           showToast && showToast(`已推進至 Q${session.currentIndex + 1}`, true);
         } catch (err) {
           showToast && showToast(String(err.message || err), false);
@@ -1882,17 +2342,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
       async function sessionEnd() {
         try {
+          // Snapshot the current pollState BEFORE telling the server to clear it,
+          // so the Results view has data after the broadcast.
+          const beforeEnd = pollState;
           const res = await csrfFetch("/admin/poll/end", { method: "POST" });
           if (!res.ok) {
             const data = await res.json().catch(() => ({}));
             throw new Error(data.error || "結束失敗");
           }
+          if (beforeEnd && beforeEnd.questions) {
+            endedSnapshot = {
+              ...beforeEnd,
+              ended_at: Date.now() / 1000,
+            };
+            resultsIdx = beforeEnd.current_index >= 0 ? beforeEnd.current_index : 0;
+          }
           session.active = false;
           session.pollId = "";
           session.currentIndex = -1;
+          pollState = null;
           if (session.statusTimer) { clearInterval(session.statusTimer); session.statusTimer = null; }
-          renderSessionStatus();
-          renderQueue();
+          render();
           showToast && showToast("Session 已結束", true);
         } catch (err) {
           showToast && showToast(String(err.message || err), false);
@@ -1910,11 +2380,25 @@ document.addEventListener("DOMContentLoaded", () => {
             if (data.poll_id !== session.pollId) return;
             session.active = !!data.active;
             session.currentIndex = data.current_index ?? -1;
-            renderSessionStatus();
-            renderQueue();
+            const wasActive = !!(pollState && pollState.active);
+            pollState = data;
             if (!data.active) {
               clearInterval(session.statusTimer);
               session.statusTimer = null;
+              // If we were active and the server flipped to ended (e.g. via WS
+              // broadcast / external action), capture the snapshot so Results renders.
+              if (wasActive && data.questions && !endedSnapshot) {
+                endedSnapshot = { ...data, ended_at: Date.now() / 1000 };
+                resultsIdx = data.current_index >= 0 ? data.current_index : 0;
+              }
+              pollState = null;
+            }
+            // Live HUD: only re-render bars when counts actually changed,
+            // otherwise the countdown ring tick handles itself.
+            if (viewMode === "live") {
+              renderLive();
+            } else {
+              render();
             }
           } catch (_) { /* ignore */ }
         }, 2000);
@@ -1922,6 +2406,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       window.addEventListener("beforeunload", () => {
         if (session.statusTimer) { clearInterval(session.statusTimer); session.statusTimer = null; }
+        stopLiveTick();
       });
 
       // Start engine
@@ -2234,10 +2719,46 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
               </div>
             </div>
+
+            <!-- OUT OF SCOPE legend · jumps to the matching admin route -->
+            <div class="admin-viewer-theme-legend" data-vt-legend>
+              <div class="admin-viewer-theme-legend-head">
+                <span class="title">不在此頁面控制</span>
+                <span class="kicker">OUT OF SCOPE · 跳轉至對應頁</span>
+              </div>
+              <div class="admin-viewer-theme-legend-rows">
+                <button type="button" class="admin-viewer-theme-legend-row" data-vt-jump="themes">
+                  <span class="k">彈幕顏色 / 描邊 / 陰影</span>
+                  <span class="v">↗ Theme Packs</span>
+                </button>
+                <button type="button" class="admin-viewer-theme-legend-row" data-vt-jump="display">
+                  <span class="k">字級 / 速度 / 透明度</span>
+                  <span class="v">↗ Display Settings</span>
+                </button>
+                <button type="button" class="admin-viewer-theme-legend-row" data-vt-jump="effects">
+                  <span class="k">效果(.dme)</span>
+                  <span class="v">↗ Effects</span>
+                </button>
+                <button type="button" class="admin-viewer-theme-legend-row" data-vt-jump="ratelimit">
+                  <span class="k">速率限制 · 黑名單</span>
+                  <span class="v">↗ Moderation</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     `);
+
+    // Viewer Theme legend · click to switch routes
+    document.addEventListener("click", function (e) {
+      const btn = e.target.closest("[data-vt-jump]");
+      if (!btn) return;
+      const route = btn.dataset.vtJump;
+      if (!route) return;
+      e.preventDefault();
+      try { location.hash = "#/" + route; } catch (_) {}
+    });
 
     // Viewer Theme controller
     (function initViewerTheme() {
@@ -2514,10 +3035,10 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="admin-ratelimit-rows">
           ${[
-            { key: "fire",  label: "FIRE · 觀眾彈幕",   envLimit: "FIRE_RATE_LIMIT",  envWindow: "FIRE_RATE_WINDOW",  defLimit: 20, defWindow: 60 },
-            { key: "api",   label: "API · 一般請求",    envLimit: "API_RATE_LIMIT",   envWindow: "API_RATE_WINDOW",   defLimit: 30, defWindow: 60 },
-            { key: "admin", label: "ADMIN · 後台動作",  envLimit: "ADMIN_RATE_LIMIT", envWindow: "ADMIN_RATE_WINDOW", defLimit: 60, defWindow: 60 },
-            { key: "login", label: "LOGIN · 登入嘗試",  envLimit: "LOGIN_RATE_LIMIT", envWindow: "LOGIN_RATE_WINDOW", defLimit: 5,  defWindow: 300 },
+            { key: "fire",  label: "FIRE · 觀眾彈幕",   envLimit: "FIRE_RATE_LIMIT",  envWindow: "FIRE_RATE_WINDOW",  defLimit: 20, defWindow: 60, defLockout: null },
+            { key: "api",   label: "API · 一般請求",    envLimit: "API_RATE_LIMIT",   envWindow: "API_RATE_WINDOW",   defLimit: 30, defWindow: 60, defLockout: null },
+            { key: "admin", label: "ADMIN · 後台動作",  envLimit: "ADMIN_RATE_LIMIT", envWindow: "ADMIN_RATE_WINDOW", defLimit: 60, defWindow: 60, defLockout: null },
+            { key: "login", label: "LOGIN · 登入嘗試",  envLimit: "LOGIN_RATE_LIMIT", envWindow: "LOGIN_RATE_WINDOW", defLimit: 5,  defWindow: 300, defLockout: 900 },
           ].map((r) => `
             <div class="admin-ratelimit-row" data-rl-key="${r.key}">
               <div class="admin-ratelimit-row-head">
@@ -2539,6 +3060,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     <option value="3600"${r.defWindow === 3600 ? " selected" : ""}>1 hr</option>
                   </select>
                 </label>
+                ${r.key === "login" ? `
+                <label class="admin-ratelimit-field">
+                  <span>鎖定 · lockout</span>
+                  <input type="number" min="60" max="86400" value="${r.defLockout}" data-rl-lockout="${r.key}" title="觸發後鎖定秒數 · UI-only · 即將支援後端" />
+                </label>` : ""}
                 <div class="admin-ratelimit-field admin-ratelimit-bar-field">
                   <span>目前使用</span>
                   <div class="admin-ratelimit-bar">
@@ -2550,8 +3076,52 @@ document.addEventListener("DOMContentLoaded", () => {
                   <button type="button" class="admin-poll-btn is-primary" data-rl-action="save" data-rl-save="${r.key}" title="即時套用至執行中的伺服器(重啟後恢復 env 預設)">即時套用</button>
                 </div>
               </div>
+              <div class="admin-ratelimit-row-foot">
+                <svg class="admin-ratelimit-sparkline" data-rl-spark="${r.key}" viewBox="0 0 96 24" preserveAspectRatio="none" aria-hidden="true">
+                  <polyline points="" fill="none" stroke="currentColor" stroke-width="1.4" />
+                </svg>
+                <span class="admin-ratelimit-effective" data-rl-effective="${r.key}">
+                  effective_rate = ${r.defLimit} / ${r.defWindow}s = ${(r.defLimit / r.defWindow).toFixed(2)} req/s · burst = ${Math.round(r.defLimit * 1.5)}${r.key === "login" ? " · lock = " + r.defLockout + "s" : ""}
+                </span>
+              </div>
             </div>
           `).join("")}
+        </div>
+
+        <!-- Bottom row · Recent violations + IP policy (UI stub · 即將支援) -->
+        <div class="admin-ratelimit-bottom">
+          <div class="admin-ratelimit-violations">
+            <div class="admin-ratelimit-vfeed-head">
+              <span class="title">近期違規</span>
+              <span class="kicker">RECENT VIOLATIONS · 即將支援 · 後端 endpoint pending</span>
+            </div>
+            <div class="admin-ratelimit-vfeed-table">
+              <div class="admin-ratelimit-vfeed-row is-head">
+                <span>TIME</span><span>SCOPE</span><span>KEY</span><span>UA</span><span>HITS</span><span>ACTION</span>
+              </div>
+              <div class="admin-ratelimit-vfeed-empty">
+                即時違規列表將連接至 <code>/admin/metrics.recent_violations</code>。
+                目前可在「系統 → 指紋」查看歷史違規記錄。
+              </div>
+            </div>
+          </div>
+          <div class="admin-ratelimit-ip-policy">
+            <div class="admin-ratelimit-vfeed-head">
+              <span class="title">IP 黑/白名單</span>
+              <span class="kicker">IP POLICY · UI-only · 即將支援</span>
+            </div>
+            <div class="admin-ratelimit-ip-input">
+              <input type="text" id="rlIpInput" class="admin-v2-input" placeholder="IP 或 CIDR · e.g. 203.74.12.88 / 100.64.0.0/16" autocomplete="off" spellcheck="false" />
+              <select id="rlIpKind" class="admin-v2-select">
+                <option value="DENY">DENY</option>
+                <option value="ALLOW">ALLOW</option>
+              </select>
+              <button type="button" id="rlIpAdd" class="admin-poll-btn is-primary">新增</button>
+            </div>
+            <div class="admin-ratelimit-ip-list" id="rlIpList">
+              <!-- entries injected by ratelimit IP-policy stub -->
+            </div>
+          </div>
         </div>
 
         <div class="admin-ratelimit-footer">
@@ -2735,8 +3305,147 @@ document.addEventListener("DOMContentLoaded", () => {
             if (w) w.value = win;
           });
           exportPre.hidden = true;
+          renderEffectiveRates();
         }
       });
+
+      // ── Effective rate footer + sparkline + IP policy stub ─────────────
+      function renderEffectiveRates() {
+        ["fire", "api", "admin", "login"].forEach((k) => {
+          const limEl = section.querySelector(`[data-rl-limit="${k}"]`);
+          const winEl = section.querySelector(`[data-rl-window="${k}"]`);
+          const lockEl = section.querySelector(`[data-rl-lockout="${k}"]`);
+          const eff = section.querySelector(`[data-rl-effective="${k}"]`);
+          if (!limEl || !winEl || !eff) return;
+          const lim = parseInt(limEl.value, 10) || 0;
+          const win = parseInt(winEl.value, 10) || 1;
+          const rate = (lim / win).toFixed(2);
+          const burst = Math.round(lim * 1.5);
+          let txt = `effective_rate = ${lim} / ${win}s = ${rate} req/s · burst = ${burst}`;
+          if (k === "login" && lockEl) {
+            const lock = parseInt(lockEl.value, 10) || 0;
+            txt += ` · lock = ${lock}s`;
+          }
+          eff.textContent = txt;
+        });
+      }
+      section.addEventListener("input", (e) => {
+        const t = e.target;
+        if (!t || (!t.dataset.rlLimit && !t.dataset.rlLockout)) return;
+        renderEffectiveRates();
+      });
+      section.addEventListener("change", (e) => {
+        const t = e.target;
+        if (!t || !t.dataset.rlWindow) return;
+        renderEffectiveRates();
+      });
+      renderEffectiveRates();
+
+      // Sparkline · prefer real /admin/metrics.rate_limits.<k>.history; fall
+      // back to a deterministic synthetic series so the curve is stable per k.
+      function synthSeries(k, n) {
+        // simple PRNG seeded by k for reproducibility
+        let h = 0; for (let i = 0; i < k.length; i++) h = (h * 31 + k.charCodeAt(i)) | 0;
+        const out = [];
+        for (let i = 0; i < n; i++) {
+          h = (h * 1103515245 + 12345) | 0;
+          const x = ((h >>> 0) % 1000) / 1000;
+          out.push(8 + Math.sin(i / 2 + h % 7) * 6 + x * 14);
+        }
+        return out;
+      }
+      function renderSparkline(svgEl, series) {
+        if (!svgEl || !Array.isArray(series) || series.length === 0) return;
+        const W = 96, H = 24;
+        const max = Math.max(1, ...series);
+        const step = W / Math.max(1, series.length - 1);
+        const pts = series.map((v, i) => `${(i * step).toFixed(1)},${(H - 2 - (v / max) * (H - 4)).toFixed(1)}`).join(" ");
+        const line = svgEl.querySelector("polyline");
+        if (line) line.setAttribute("points", pts);
+      }
+      ["fire", "api", "admin", "login"].forEach((k) => {
+        const svg = section.querySelector(`[data-rl-spark="${k}"]`);
+        if (svg) renderSparkline(svg, synthSeries(k, 24));
+      });
+      // Try to upgrade to real metrics history if backend exposes it.
+      setTimeout(async () => {
+        try {
+          const r = await fetch("/admin/metrics", { credentials: "same-origin" });
+          if (!r.ok) return;
+          const m = await r.json();
+          const rl = m && m.rate_limits;
+          if (!rl) return;
+          ["fire", "api", "admin", "login"].forEach((k) => {
+            const hist = rl[k] && (rl[k].history || rl[k].hits_24h);
+            if (Array.isArray(hist) && hist.length) {
+              const svg = section.querySelector(`[data-rl-spark="${k}"]`);
+              if (svg) renderSparkline(svg, hist.slice(-24));
+            }
+          });
+        } catch (_) {}
+      }, 5500);
+
+      // IP policy stub (UI-only, persisted in localStorage; backend pending)
+      const IP_KEY = "danmu.ratelimit.ipPolicy.v1";
+      function readPolicy() {
+        try { return JSON.parse(localStorage.getItem(IP_KEY) || "[]") || []; }
+        catch (_) { return []; }
+      }
+      function writePolicy(arr) {
+        try { localStorage.setItem(IP_KEY, JSON.stringify(arr)); } catch (_) {}
+      }
+      function renderPolicy() {
+        const list = section.querySelector("#rlIpList");
+        if (!list) return;
+        const items = readPolicy();
+        if (items.length === 0) {
+          list.innerHTML = `<div class="admin-ratelimit-ip-empty">尚無項目 · 加入後會儲存於 localStorage(後端套用即將支援)</div>`;
+          return;
+        }
+        list.innerHTML = items.map((e, i) => `
+          <div class="admin-ratelimit-ip-row" data-ip-idx="${i}">
+            <span class="kind is-${e.kind === 'DENY' ? 'deny' : 'allow'}">${e.kind}</span>
+            <div class="meta">
+              <div class="ip">${escapeHtml(e.ip)}</div>
+              <div class="note">${escapeHtml(e.note || "")} · 加入於 ${escapeHtml(e.added || "")}</div>
+            </div>
+            <button type="button" class="admin-ratelimit-ip-del" data-ip-del="${i}" aria-label="刪除">✕</button>
+          </div>
+        `).join("");
+      }
+      const ipAdd = section.querySelector("#rlIpAdd");
+      const ipInput = section.querySelector("#rlIpInput");
+      const ipKind = section.querySelector("#rlIpKind");
+      ipAdd?.addEventListener("click", () => {
+        const ip = (ipInput.value || "").trim();
+        if (!ip) {
+          if (typeof showToast === "function") showToast("請輸入 IP 或 CIDR", false);
+          return;
+        }
+        // Loose IPv4 / CIDR / IPv6 sanity check
+        if (!/^[0-9a-fA-F:.\/]+$/.test(ip) || ip.length > 64) {
+          if (typeof showToast === "function") showToast("格式不正確", false);
+          return;
+        }
+        const items = readPolicy();
+        items.unshift({ ip, kind: ipKind.value || "DENY", note: "手動加入", added: new Date().toLocaleString() });
+        writePolicy(items.slice(0, 50));
+        ipInput.value = "";
+        renderPolicy();
+        if (typeof showToast === "function") showToast(`已加入 ${ip}(即將支援後端套用)`, true);
+      });
+      section.querySelector("#rlIpList")?.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-ip-del]");
+        if (!btn) return;
+        const idx = parseInt(btn.dataset.ipDel, 10);
+        const items = readPolicy();
+        if (Number.isFinite(idx) && idx >= 0 && idx < items.length) {
+          items.splice(idx, 1);
+          writePolicy(items);
+          renderPolicy();
+        }
+      });
+      renderPolicy();
     })();
 
     // Password Change Card (with show/hide toggles)
@@ -2864,6 +3573,7 @@ document.addEventListener("DOMContentLoaded", () => {
     system:    { title: "系統 & 指紋",      kicker: "SYSTEM · FINGERPRINT · RATE LIMITS", sections: ["sec-system-overview", "sec-scheduler", "sec-webhooks", "sec-fingerprints"] },
     security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: [] },
     backup:    { title: "備份 & 匯出",       kicker: "BACKUP · EXPORT · DANGER",          sections: [] },
+    broadcast: { title: "廣播",              kicker: "BROADCAST · LIVE / STANDBY",         sections: [] },
   };
 
   function initAdminRouter() {
@@ -2928,11 +3638,11 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    const fromHash = (window.location.hash.match(/^#\/(\w+)/) || [])[1];
+    const fromHash = (window.location.hash.match(/^#\/([\w-]+)/) || [])[1];
     applyRoute(fromHash || "dashboard");
 
     window.addEventListener("hashchange", () => {
-      const h = (window.location.hash.match(/^#\/(\w+)/) || [])[1];
+      const h = (window.location.hash.match(/^#\/([\w-]+)/) || [])[1];
       if (h) applyRoute(h);
     });
 
