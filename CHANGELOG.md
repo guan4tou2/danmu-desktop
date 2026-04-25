@@ -7,6 +7,113 @@
 
 ## [Unreleased]
 
+## [5.0.0] - 2026-04-25
+
+**Design v2 Retrofit · breaking** — admin / viewer / overlay 全面切換到
+Soft Holo HUD 美學（cyan #38bdf8 主色、IBM Plex Mono / Bebas Neue / Noto
+Sans TC、light theme 為預設）。Server-side 包含 Rate Limit telemetry、
+admin 啟動單一 endpoint、Effects 即時動畫預覽、四個 P2 邊緣狀態頁。
+Branch `claude/design-v2-retrofit` 累積 12 個 commits。
+
+### 新增 / Added
+
+- **Rate Limit hits/violations counters**：`/admin/metrics` 新增
+  `rate_limits.{fire,api,admin,login,totals}` 各帶 `hits` / `violations`
+  / `locked_sources`（最近 300s 違規來源去重 IP 數）。Admin Rate Limits
+  summary strip 從佔位 `—` 換成真實數字 + `阻擋率 X.X%`。
+  ([3845c67](#))
+- **`/admin/bootstrap`**：單次 endpoint 撈 16 個 admin 子模組初始狀態
+  （blacklist / widgets / polls / settings / filters / history / ws-auth
+  / effects / themes / webhooks / sounds / emojis / stickers / scheduler
+  / fingerprints / metrics）。前端 `window.__danmuAdminBootstrap` 5s
+  cache,init 從 ~25 個並發 GET 降到 1 個。nginx `/admin/*` limit_req
+  bypass 可在 VPS 驗證後移除。([1703371](#))
+- **Effects cards live preview (P3-2)**：8 張內建 .dme 卡片現場動畫
+  （blink / bounce / glow / rainbow / shake / spin / wave / zoom），
+  IntersectionObserver 暫停離畫面卡片,`prefers-reduced-motion` 全停。
+  ([5ed9ac7](#))
+- **P2 邊緣狀態頁**：([6899cfb](#))
+  - P2-1 Viewer 離線卡（3 次 30s 內重連失敗 → 替換 viewer body 為離線
+    卡 + 15s 倒數重試 + OpsContact 連結）
+  - P2-2 Overlay CONNECTING… 狀態（page-load 至首封 WS 訊息或 500ms 後
+    淡出）
+  - P2-4 Admin 登入鎖定（5-attempt 視窗計數 + 429 鎖定畫面 + 5min 倒數）
+- **P1 admin 頁面 retrofit**：10 個頁面從 `<details>` accordion 升級到
+  v2 shell（kicker · title · note · `.admin-v2-*` 結構卡）：
+  - Webhooks / Emojis / Sounds / Scheduler ([2ad1d70](#))
+  - Stickers / Live Feed / Fonts upload ([eb52552](#))
+  - Replay (P1-7, dedicated nav slug) ([76568ca](#))
+  - Security (P1-9) + Backup & Export (P1-10) — 新增獨立 nav slug
+    + sidebar buttons ([c38a050](#) + this release)
+- **新 nav slugs**：sidebar 新增 `歷史重播` / `安全` / `備份 & 匯出`
+  入口；admin.js `applyRoute` 同步寫入 URL hash 讓外掛 module 透過
+  `hashchange` 取得路由變更。
+
+### 改善 / Changed
+
+- **viewer/admin html color-scheme**：透過 `:has(body.viewer-body-v2)`
+  / `:has(body.admin-body)` 把 html 的 `color-scheme` 也設成 light，
+  Chromium 原生 scrollbar 從 dark 變回 light，與 prototype 對齊。
+  ([416dc4f](#))
+- **P3-6 viewer 表單標籤改單語**：`暱稱 · NICKNAME` → `暱稱`（i18n
+  驅動，4 語系）。Mono kicker 保留雙語裝飾（如 `PREVIEW · 你送出的
+  樣子`）。([6899cfb](#))
+- **P3-5 Mobile Safari viewer parity**：mobile 中斷點 640px → 600px,
+  subtitle 在 mobile 也保持顯示，2-col hero 在 ≥600px 啟用。
+  ([648e5f7](#))
+- **P5-1 user-facing naming unification**：`Danmu Desktop` /
+  `Danmu Client` user-facing 字串改為 `Danmu Fire`（Electron window
+  title、about 頁、tray tooltip、4 語系 i18n、tests/e2e、README *.md
+  prose）。**故意保留**：`package.json` 的 `productName: "Danmu
+  Desktop"`（drives `.app` 檔名 + `build.yml` artifact glob）—— 改
+  productName 必須同步更新 build.yml 與 README xattr 命令,目前先不動。
+  ([648e5f7](#))
+
+### 修復 / Fixed
+
+- 退出視覺 `透明度 · 100%` 旁邊 scrollbar 顏色（前一版 dark mode 灰）
+  與 prototype 不一致 — 現在走 light scrollbar。([416dc4f](#))
+- v2 admin shell 的 `[id^="sec-"]` route filter 之前漏接新頁,3 個新頁
+  改用 own visibility（`syncVisibility()` based on `dataset.activeRoute`
+  / `hashchange`）。
+
+### 升級 / Migration notes — v4.9.x → v5.0.0
+
+**Breaking**:
+
+1. **Token 主題語意翻轉**：`shared/tokens.css` 的 `--color-bg-base`、
+   `--color-text-primary` 等預設值改成 `light` 配色。Admin / Viewer
+   都從 light 出發；Overlay (`<body>` 無 class) 仍走 dark（OBS 透明
+   依賴）。**自訂主題包 `.dmt` 若 hardcode 暗色 hex 需要重新檢視**。
+2. **i18n key 重新對齊**：viewer 表單從 `nicknameField` / `colorField`
+   等空 key 改回 canonical `nickname` / `color`；orphan key 已清理。
+   **若有 fork 加過 *Field key 的 string 需要遷移**。
+3. **Tailwind slate utility 已 scoped 到 `.admin-body`**：viewer 不再
+   能用 `text-slate-400` 類別覆寫主題色 — 用 design tokens。
+4. **`/admin/bootstrap` 落地後 nginx `/admin/*` limit_req bypass 可移
+   除**：`deploy/nginx/sites-available/danmu-fire.conf` 內的 `location
+   ~ ^/admin/` 例外規則目前還在,等部署 + 驗證後再清理。
+5. **Admin `system` route sections 列表縮減**：`sec-security` /
+   `sec-ws-auth` 從 system route 移到新的 `security` route 下。如有
+   bookmark 直接指 `#/system` 找密碼設定的話,改指 `#/security`。
+
+**Non-breaking but worth noting**:
+
+- 原 `<details>` accordion 仍存在於 DOM,只是 `data-admin-v2-replaced`
+  + `display: none !important` 隱藏。等 1–2 個版本確認 v2 穩定後再
+  完全移除舊 markup。
+- `productName: "Danmu Desktop"` 故意未動 → `.dmg` / `.AppImage` /
+  `.exe` 仍命名 `Danmu Desktop-5.0.0-*`；想統一檔名需要協同改
+  `build.yml` 的 artifact glob 與 README 的 xattr 命令。
+
+### 驗證 / Verification
+
+- 794 tests pass（non-browser，full suite 含 1 個 pre-existing
+  Playwright timeout 與本版無關）
+- Live preview 確認 12 個改動頁面渲染正常,3 個新 nav slugs 切換正常
+- VPS 尚未部署 — branch `claude/design-v2-retrofit` 有 12 個 unpushed
+  commits
+
 ## [4.9.0] - 2026-04-21
 
 Admin observability bundle — 五支面向維運者的工具一次打包，server-only release
