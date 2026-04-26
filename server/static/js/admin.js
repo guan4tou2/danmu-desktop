@@ -793,6 +793,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <button type="button" class="admin-dash-nav-row" data-route="messages" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">≡</span>
                                     <span>訊息紀錄</span>
+                                    <span class="admin-dash-nav-badge" data-count-messages hidden>—</span>
                                     <span class="admin-dash-nav-live"></span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="history" role="tab" aria-selected="false">
@@ -813,6 +814,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <button type="button" class="admin-dash-nav-row" data-route="widgets" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⬚</span>
                                     <span>Overlay Widgets</span>
+                                    <span class="admin-dash-nav-badge" data-count-widgets hidden>—</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="themes" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">❖</span>
@@ -836,6 +838,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <button type="button" class="admin-dash-nav-row" data-route="moderation" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⊘</span>
                                     <span>敏感字 & 黑名單</span>
+                                    <span class="admin-dash-nav-badge" data-count-blacklist hidden>—</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="ratelimit" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◑</span>
@@ -851,6 +854,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <button type="button" class="admin-dash-nav-row" data-route="plugins" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⬢</span>
                                     <span>伺服器插件</span>
+                                    <span class="admin-dash-nav-badge" data-count-plugins hidden>—</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="fonts" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⌂</span>

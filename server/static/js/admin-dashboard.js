@@ -54,6 +54,63 @@
     }
   }
 
+  // ── Sidebar badge counts — prototype admin-pages.jsx:36–57 ─────────────
+  // Reads bootstrap data (single round trip) to populate the count badges
+  // that the prototype sidebar shows next to each nav item. Failures are
+  // silent — badges just stay hidden if data isn't available.
+  function _setBadge(selector, count) {
+    const el = document.querySelector(selector);
+    if (!el) return;
+    if (typeof count !== "number" || count <= 0) {
+      el.hidden = true;
+      return;
+    }
+    el.hidden = false;
+    el.textContent = count > 999 ? "999+" : String(count);
+  }
+
+  async function refreshSidebarBadges() {
+    try {
+      const boot = _bootstrap();
+      await boot.prime();
+      const blacklist = boot.get("blacklist");
+      const widgets = boot.get("widgets");
+      const histStats = boot.get("history_stats");
+      const effects = boot.get("effects");
+      const themes = boot.get("themes");
+      _setBadge(
+        "[data-count-blacklist]",
+        Array.isArray(blacklist) ? blacklist.length : 0
+      );
+      _setBadge(
+        "[data-count-widgets]",
+        Array.isArray(widgets?.widgets) ? widgets.widgets.length : 0
+      );
+      _setBadge("[data-count-messages]", histStats?.stats?.last_24h || 0);
+      _setBadge(
+        "[data-count-effects]",
+        Array.isArray(effects?.effects) ? effects.effects.length : 0
+      );
+      _setBadge(
+        "[data-count-themes]",
+        Array.isArray(themes?.themes) ? themes.themes.length : 0
+      );
+      // Plugins not in bootstrap; fetch separately + ignore failures.
+      try {
+        const r = await fetch("/admin/plugins/list", { credentials: "same-origin" });
+        if (r.ok) {
+          const d = await r.json();
+          _setBadge(
+            "[data-count-plugins]",
+            Array.isArray(d?.plugins) ? d.plugins.length : 0
+          );
+        }
+      } catch (_) {}
+    } catch (_) {
+      /* silent */
+    }
+  }
+
   // ── Quick poll inline form — prototype admin-v3.jsx:77 ─────────────────
   const POLL_KEYS = ["A", "B", "C", "D", "E", "F"];
 
@@ -166,6 +223,7 @@
   async function refreshDashboardSummary() {
     bindMessageFilters();
     bindQuickPoll();
+    refreshSidebarBadges();
     populateDashboardPoll();
     populateDashboardMessages();
     populateDashboardWidgets();
@@ -350,6 +408,7 @@
   window.AdminDashboard = {
     refreshKpi: refreshDashboardKpi,
     refreshSummary: refreshDashboardSummary,
+    refreshSidebarBadges: refreshSidebarBadges,
     populatePoll: populateDashboardPoll,
     populateMessages: populateDashboardMessages,
     populateWidgets: populateDashboardWidgets,
