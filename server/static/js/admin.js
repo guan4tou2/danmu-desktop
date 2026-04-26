@@ -3080,7 +3080,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ${[
             { key: "fire",  label: "FIRE · 觀眾彈幕",   envLimit: "FIRE_RATE_LIMIT",  envWindow: "FIRE_RATE_WINDOW",  defLimit: 20, defWindow: 60, defLockout: null },
             { key: "api",   label: "API · 一般請求",    envLimit: "API_RATE_LIMIT",   envWindow: "API_RATE_WINDOW",   defLimit: 30, defWindow: 60, defLockout: null },
-            { key: "admin", label: "ADMIN · 後台動作",  envLimit: "ADMIN_RATE_LIMIT", envWindow: "ADMIN_RATE_WINDOW", defLimit: 60, defWindow: 60, defLockout: null },
+            { key: "admin", label: "ADMIN · 後台動作",  envLimit: "ADMIN_RATE_LIMIT", envWindow: "ADMIN_RATE_WINDOW", defLimit: 300, defWindow: 60, defLockout: null },
             { key: "login", label: "LOGIN · 登入嘗試",  envLimit: "LOGIN_RATE_LIMIT", envWindow: "LOGIN_RATE_WINDOW", defLimit: 5,  defWindow: 300, defLockout: 900 },
           ].map((r) => `
             <div class="admin-ratelimit-row" data-rl-key="${r.key}">
