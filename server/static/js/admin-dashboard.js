@@ -54,8 +54,24 @@
     }
   }
 
+  // Wire up filter chips above the messages stream. Filter is purely visual
+  // (tag info isn't on /admin/history records yet) — clicking just swaps the
+  // is-active class. Idempotent: only binds once.
+  function bindMessageFilters() {
+    const chips = document.querySelectorAll(".admin-dash-msg-filter");
+    if (!chips.length || chips[0].dataset.bound === "1") return;
+    chips.forEach((c) => {
+      c.dataset.bound = "1";
+      c.addEventListener("click", () => {
+        chips.forEach((x) => x.classList.remove("is-active"));
+        c.classList.add("is-active");
+      });
+    });
+  }
+
   // Dashboard summary cards — prototype admin-v3.jsx active-poll + messages + widgets.
   async function refreshDashboardSummary() {
+    bindMessageFilters();
     populateDashboardPoll();
     populateDashboardMessages();
     populateDashboardWidgets();

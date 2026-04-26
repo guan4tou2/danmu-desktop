@@ -985,6 +985,13 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="kicker">STREAM · 可封鎖 / 標記</span>
                                     <span class="auto">▶ AUTO</span>
                                   </div>
+                                  <div class="admin-dash-msg-filters" role="tablist" aria-label="Message filter">
+                                    <button type="button" class="admin-dash-msg-filter is-active" data-msg-filter="all">全部</button>
+                                    <button type="button" class="admin-dash-msg-filter" data-msg-filter="qna">Q&amp;A</button>
+                                    <button type="button" class="admin-dash-msg-filter" data-msg-filter="poll">Poll 投票</button>
+                                    <button type="button" class="admin-dash-msg-filter" data-msg-filter="masked">已遮罩</button>
+                                    <button type="button" class="admin-dash-msg-filter" data-msg-filter="replied">已回覆</button>
+                                  </div>
                                   <div class="admin-dash-card-body admin-dash-messages" data-dash-messages>
                                     <div class="admin-dash-empty">等待訊息…</div>
                                   </div>
