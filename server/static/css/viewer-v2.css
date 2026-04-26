@@ -553,21 +553,34 @@ body.viewer-body-v2.is-dark {
   font-size: 10px;
 }
 
-/* Range slider — custom track so the cyan progress fill is visible across all
- * browsers (Safari ignores accent-color on the track in light themes). The
- * progress is driven by an inline --progress CSS var set by main.js. */
+/* Range slider — Tailwind preflight sets `input { background-color: #0000 }`
+ * which would erase the track if applied on the input itself. WebKit also
+ * renders the track via the ::-webkit-slider-runnable-track pseudo-element,
+ * not the input bg. So:
+ *   - input itself: just sizing + appearance reset
+ *   - WebKit: track gets the gradient via ::-webkit-slider-runnable-track
+ *   - Firefox: track + progress via ::-moz-range-track + ::-moz-range-progress
+ * Progress fill is driven by an inline --progress CSS var set by main.js. */
 .viewer-range {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 6px;
-  border-radius: 999px;
+  height: 16px;                /* tall enough to fit the thumb hit area */
+  background: transparent;     /* defeat Tailwind's input bg-color reset */
   outline: none;
   cursor: pointer;
-  background: var(--hud-line);
-  background-image: linear-gradient(var(--color-primary), var(--color-primary));
+  margin: 0;
+  padding: 0;
+}
+
+/* WebKit / Blink (Safari, Chrome, Edge) */
+.viewer-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background:
+    linear-gradient(var(--color-primary), var(--color-primary)) no-repeat,
+    var(--hud-line);
   background-size: var(--progress, 50%) 100%;
-  background-repeat: no-repeat;
   transition: background-size 0.12s;
 }
 
@@ -581,7 +594,21 @@ body.viewer-body-v2.is-dark {
   border: 2px solid var(--color-bg-base);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
   cursor: pointer;
+  margin-top: -5px;            /* center 16px thumb on 6px track */
   transition: transform 0.12s;
+}
+
+/* Firefox */
+.viewer-range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--hud-line);
+}
+
+.viewer-range::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px 0 0 999px;
+  background: var(--color-primary);
 }
 
 .viewer-range::-moz-range-thumb {
@@ -592,12 +619,6 @@ body.viewer-body-v2.is-dark {
   border: 2px solid var(--color-bg-base);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
   cursor: pointer;
-}
-
-.viewer-range::-moz-range-track {
-  height: 6px;
-  border-radius: 999px;
-  background: transparent;
 }
 
 .viewer-range:hover::-webkit-slider-thumb,

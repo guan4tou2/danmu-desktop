@@ -160,8 +160,16 @@
 
     try {
       const resp = await csrfFetch("/admin/scheduler/list", { method: "GET" });
+      // Skip JSON parse on non-OK so 502/504 (server restart, gateway error)
+      // doesn't blow up with "Unexpected token '<'" trying to parse HTML.
+      if (!resp.ok) {
+        list.innerHTML =
+          '<div class="admin-emojis-empty">' + escapeHTML(ServerI18n.t("loadJobsFailed")) + "</div>";
+        if (count) count.textContent = "—";
+        return;
+      }
       const data = await resp.json();
-      if (!resp.ok || !Array.isArray(data.jobs)) {
+      if (!Array.isArray(data.jobs)) {
         list.innerHTML =
           '<div class="admin-emojis-empty">' + escapeHTML(ServerI18n.t("loadJobsFailed")) + "</div>";
         if (count) count.textContent = "—";
