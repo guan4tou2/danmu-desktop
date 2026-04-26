@@ -54,6 +54,99 @@
     }
   }
 
+  // ── Quick poll inline form — prototype admin-v3.jsx:77 ─────────────────
+  const POLL_KEYS = ["A", "B", "C", "D", "E", "F"];
+
+  function _qpRow(letter, removable) {
+    return (
+      `<div class="admin-dash-qp-row">` +
+        `<span class="key">${letter}</span>` +
+        `<input type="text" placeholder="選項 ${letter}" maxlength="60" />` +
+        `<button type="button" class="rm" data-qp-rm ${removable ? "" : "hidden"}>✕</button>` +
+      `</div>`
+    );
+  }
+
+  function _qpRefreshKeys(card) {
+    const rows = card.querySelectorAll(".admin-dash-qp-row");
+    rows.forEach((row, i) => {
+      const k = POLL_KEYS[i] || "+";
+      row.querySelector(".key").textContent = k;
+      const inp = row.querySelector("input");
+      if (inp) inp.placeholder = `選項 ${k}`;
+      const rm = row.querySelector("[data-qp-rm]");
+      // Always show remove on rows past the first 2
+      if (rm) rm.hidden = i < 2;
+    });
+    const add = card.querySelector("[data-qp-add]");
+    if (add) add.hidden = rows.length >= 6;
+  }
+
+  async function _qpSubmit(card) {
+    const startBtn = card.querySelector("[data-qp-start]");
+    const question = (card.querySelector("[data-qp='question']").value || "").trim();
+    const opts = Array.from(card.querySelectorAll(".admin-dash-qp-row input"))
+      .map((i) => (i.value || "").trim())
+      .filter(Boolean);
+    if (!question) {
+      window.showToast && window.showToast("請輸入問題文字", false);
+      return;
+    }
+    if (opts.length < 2) {
+      window.showToast && window.showToast("至少需要 2 個選項", false);
+      return;
+    }
+    if (startBtn) startBtn.disabled = true;
+    try {
+      const r = await window.csrfFetch("/admin/poll/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question, options: opts }),
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      window.showToast && window.showToast("投票已開始", true);
+      // Reset form
+      card.querySelector("[data-qp='question']").value = "";
+      card.querySelectorAll(".admin-dash-qp-row input").forEach((i) => (i.value = ""));
+      // Refresh active poll card immediately
+      populateDashboardPoll();
+    } catch (e) {
+      console.error("[admin-dashboard] quick poll create failed:", e);
+      window.showToast && window.showToast("投票建立失敗", false);
+    } finally {
+      if (startBtn) startBtn.disabled = false;
+    }
+  }
+
+  function bindQuickPoll() {
+    const card = document.querySelector("[data-dash-card='poll-builder']");
+    if (!card || card.dataset.bound === "1") return;
+    card.dataset.bound = "1";
+    const optionsEl = card.querySelector("[data-qp='options']");
+    const addLink = card.querySelector("[data-qp-add]");
+    if (addLink) {
+      addLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        const count = optionsEl.querySelectorAll(".admin-dash-qp-row").length;
+        if (count >= 6) return;
+        optionsEl.insertAdjacentHTML("beforeend", _qpRow(POLL_KEYS[count] || "+", true));
+        _qpRefreshKeys(card);
+      });
+    }
+    optionsEl.addEventListener("click", (e) => {
+      const rm = e.target.closest("[data-qp-rm]");
+      if (!rm) return;
+      const row = rm.closest(".admin-dash-qp-row");
+      if (!row) return;
+      if (optionsEl.querySelectorAll(".admin-dash-qp-row").length <= 2) return;
+      row.remove();
+      _qpRefreshKeys(card);
+    });
+    const startBtn = card.querySelector("[data-qp-start]");
+    if (startBtn) startBtn.addEventListener("click", () => _qpSubmit(card));
+    _qpRefreshKeys(card);
+  }
+
   // Wire up filter chips above the messages stream. Filter is purely visual
   // (tag info isn't on /admin/history records yet) — clicking just swaps the
   // is-active class. Idempotent: only binds once.
@@ -72,6 +165,7 @@
   // Dashboard summary cards — prototype admin-v3.jsx active-poll + messages + widgets.
   async function refreshDashboardSummary() {
     bindMessageFilters();
+    bindQuickPoll();
     populateDashboardPoll();
     populateDashboardMessages();
     populateDashboardWidgets();

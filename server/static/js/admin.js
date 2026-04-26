@@ -972,11 +972,28 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                                 <div class="admin-dash-card is-span-5" data-dash-card="poll-builder">
                                   <div class="admin-dash-card-head">
-                                    <span class="title">新增投票</span>
-                                    <span class="kicker">POLL BUILDER · 2–6 選項</span>
+                                    <span class="title">快速投票</span>
+                                    <span class="kicker">QUICK POLL · 單題 · 2–6 選項</span>
+                                    <a class="admin-dash-card-head-link" href="#" data-route-link="polls">多題 builder →</a>
                                   </div>
-                                  <div class="admin-dash-card-body">
-                                    <a class="admin-dash-cta" href="#" data-route-link="polls">+ 前往投票頁建立 ▶</a>
+                                  <div class="admin-dash-card-body admin-dash-quickpoll">
+                                    <input
+                                      type="text"
+                                      class="admin-dash-qp-question"
+                                      placeholder="問題文字…"
+                                      maxlength="120"
+                                      data-qp="question"
+                                    />
+                                    <div class="admin-dash-qp-options" data-qp="options">
+                                      <div class="admin-dash-qp-row"><span class="key">A</span><input type="text" placeholder="選項 A" maxlength="60" /><button type="button" class="rm" data-qp-rm hidden>✕</button></div>
+                                      <div class="admin-dash-qp-row"><span class="key">B</span><input type="text" placeholder="選項 B" maxlength="60" /><button type="button" class="rm" data-qp-rm hidden>✕</button></div>
+                                      <div class="admin-dash-qp-row"><span class="key">C</span><input type="text" placeholder="選項 C" maxlength="60" /><button type="button" class="rm" data-qp-rm>✕</button></div>
+                                      <div class="admin-dash-qp-row"><span class="key">D</span><input type="text" placeholder="選項 D" maxlength="60" /><button type="button" class="rm" data-qp-rm>✕</button></div>
+                                    </div>
+                                    <a href="#" class="admin-dash-qp-add" data-qp-add>+ 新增選項</a>
+                                    <div class="admin-dash-qp-foot">
+                                      <button type="button" class="admin-dash-qp-start" data-qp-start>START ▶</button>
+                                    </div>
                                   </div>
                                 </div>
                                 <div class="admin-dash-card is-span-7" data-dash-card="messages">

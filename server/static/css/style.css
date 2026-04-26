@@ -437,6 +437,127 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 .admin-dash-msg-row .meta { color: var(--admin-text-dim); font-size: 10px; }
 .admin-dash-msg-row .more { color: var(--admin-text-dim); font-size: 14px; cursor: pointer; }
 
+/* Quick poll inline form — prototype admin-v3.jsx:77–110 */
+.admin-dash-card-head-link {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--color-primary);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.admin-dash-quickpoll {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-dash-qp-question {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--admin-raised);
+  border: 1px solid var(--admin-line);
+  color: var(--admin-text);
+  font-size: 13px;
+  outline: none;
+}
+
+.admin-dash-qp-question:focus {
+  border-color: var(--color-primary);
+}
+
+.admin-dash-qp-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-dash-qp-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-dash-qp-row .key {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  background: var(--admin-raised);
+  color: var(--admin-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.admin-dash-qp-row input {
+  flex: 1;
+  padding: 7px 10px;
+  border-radius: 4px;
+  background: transparent;
+  border: 1px solid var(--admin-line);
+  color: var(--admin-text);
+  font-size: 12px;
+  outline: none;
+  min-width: 0;
+}
+
+.admin-dash-qp-row input:focus {
+  border-color: var(--color-primary);
+}
+
+.admin-dash-qp-row .rm {
+  background: transparent;
+  border: none;
+  color: var(--admin-text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 6px;
+}
+
+.admin-dash-qp-row .rm:hover { color: var(--color-warning, #fbbf24); }
+
+.admin-dash-qp-add {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--color-primary);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.admin-dash-qp-add[hidden] { display: none; }
+
+.admin-dash-qp-foot {
+  margin-top: auto;
+  padding-top: 14px;
+  display: flex;
+  gap: 8px;
+}
+
+.admin-dash-qp-start {
+  margin-left: auto;
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: #000;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  letter-spacing: 1px;
+  transition: transform 0.12s;
+}
+
+.admin-dash-qp-start:hover { transform: translateY(-1px); }
+.admin-dash-qp-start:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
 .admin-dash-widget-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
