@@ -51,6 +51,29 @@
   function buildSectionHtml() {
     return `
       <div id="sec-filters" class="hud-page-stack lg:col-span-2">
+        <!-- Overview stats strip — prototype admin-pages.jsx:648 -->
+        <div class="hud-stats-strip" id="moderationStatsStrip">
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">RULES</span>
+            <span class="hud-stat-tile-value" data-mod-stat="rules">—</span>
+            <span class="hud-stat-tile-label">規則數</span>
+          </div>
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">MASKED · 24H</span>
+            <span class="hud-stat-tile-value is-amber" data-mod-stat="masked">—</span>
+            <span class="hud-stat-tile-label">今日遮罩</span>
+          </div>
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">BLOCKED · 24H</span>
+            <span class="hud-stat-tile-value is-crimson" data-mod-stat="blocked">—</span>
+            <span class="hud-stat-tile-label">今日封鎖</span>
+          </div>
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">BLACKLIST</span>
+            <span class="hud-stat-tile-value is-cyan" data-mod-stat="blacklist">—</span>
+            <span class="hud-stat-tile-label">黑名單</span>
+          </div>
+        </div>
         <div class="hud-page-grid-2" style="grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr)">
           <!-- LEFT: Rules library -->
           <div class="hud-inspector" style="min-height:auto">
@@ -213,6 +236,20 @@
     if (rulesStatEl) rulesStatEl.textContent = counts.all;
   }
 
+  // Fetch blacklist size for the moderation overview strip. Mask/block 24h
+  // counts aren't tracked server-side yet, so those tiles stay as "—".
+  async function refreshBlacklistStat() {
+    const el = document.querySelector('[data-mod-stat="blacklist"]');
+    if (!el) return;
+    try {
+      const r = await fetch("/admin/blacklist/get", { credentials: "same-origin" });
+      if (!r.ok) return;
+      const data = await r.json();
+      const arr = Array.isArray(data) ? data : (data.keywords || []);
+      el.textContent = String(arr.length);
+    } catch (_) { /* silent */ }
+  }
+
   // ── API interactions ─────────────────────────────────────────
 
   async function fetchRules() {
@@ -234,6 +271,7 @@
     list.innerHTML = `<div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">${t("loading", "Loading...")}</div>`;
     const rules = await fetchRules();
     applyFilterChips(rules);
+    refreshBlacklistStat();
     if (rules.length === 0) {
       list.innerHTML = `<div style="padding:18px 14px;text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.05em">${t("noFilterRules", "No filter rules configured.")}</div>`;
       return;

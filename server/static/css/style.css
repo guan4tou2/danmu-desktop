@@ -2849,9 +2849,10 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   margin-top: 4px;
 }
 
-.hud-stat-tile-value.is-lime  { color: #86efac; }
-.hud-stat-tile-value.is-amber { color: #fbbf24; }
-.hud-stat-tile-value.is-cyan  { color: var(--color-primary); }
+.hud-stat-tile-value.is-lime    { color: #86efac; }
+.hud-stat-tile-value.is-amber   { color: #fbbf24; }
+.hud-stat-tile-value.is-cyan    { color: var(--color-primary); }
+.hud-stat-tile-value.is-crimson { color: #f87171; }
 
 .hud-stat-tile-label {
   font-size: 11px;
