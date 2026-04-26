@@ -163,6 +163,66 @@
     }
   }
 
+  // Tile template per prototype admin-v3.jsx:160. Real widget data has
+  // {id, type, position, visible, config}; we map type→title/kind,
+  // position→category chip, visible→running dot.
+  function _widgetTile(w) {
+    const running = w.visible !== false;
+    const title = (w.config && w.config.title) || w.type || "widget";
+    const kind = (w.type || "widget").toUpperCase();
+    const cat = (w.position || "—").toUpperCase();
+    const dotColor = running
+      ? "var(--color-success, #86efac)"
+      : "var(--color-warning, #fbbf24)";
+    return `
+      <div class="admin-dash-widget-tile" data-widget-id="${_escapeHtml(w.id)}">
+        <div class="admin-dash-widget-tile-head">
+          <span class="dot" style="background:${dotColor}"></span>
+          <span class="kind">${_escapeHtml(kind)}</span>
+          <span class="cat">${_escapeHtml(cat)}</span>
+        </div>
+        <div class="title">${_escapeHtml(title)}</div>
+        <div class="uptime">STATUS · ${running ? "RUNNING" : "PAUSED"}</div>
+        <div class="actions">
+          <button type="button" class="chip" data-widget-action="toggle" data-running="${running ? "1" : "0"}">${running ? "PAUSE" : "RUN"}</button>
+          <button type="button" class="chip is-muted" data-widget-action="config">CONFIG</button>
+        </div>
+      </div>`;
+  }
+
+  async function _widgetToggle(id, currentlyRunning) {
+    try {
+      const r = await window.csrfFetch("/admin/widgets/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ widget_id: id, config: { visible: !currentlyRunning } }),
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      populateDashboardWidgets();
+    } catch (e) {
+      window.showToast && window.showToast("切換 widget 失敗", false);
+    }
+  }
+
+  function _bindWidgetActions(container) {
+    if (container.dataset.bound === "1") return;
+    container.dataset.bound = "1";
+    container.addEventListener("click", (e) => {
+      const tile = e.target.closest(".admin-dash-widget-tile");
+      if (!tile) return;
+      const action = e.target.dataset.widgetAction;
+      const id = tile.dataset.widgetId;
+      if (!action || !id) return;
+      if (action === "toggle") {
+        _widgetToggle(id, e.target.dataset.running === "1");
+      } else if (action === "config") {
+        // Navigate to widgets admin page
+        const navBtn = document.querySelector('[data-route="widgets"]');
+        if (navBtn) navBtn.click();
+      }
+    });
+  }
+
   async function populateDashboardWidgets() {
     const body = document.querySelector("[data-dash-widgets]");
     if (!body) return;
@@ -183,21 +243,11 @@
         body.innerHTML = `<div class="admin-dash-empty">尚未啟用任何 widget</div>`;
         return;
       }
-      body.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">` +
-        widgets.map(w => {
-          const running = w.enabled || w.running;
-          const dotColor = running ? "var(--color-success, #22c55e)" : "var(--admin-text-dim)";
-          return `
-            <div class="admin-dash-widget-tile">
-              <div style="display:flex;align-items:center;gap:6px">
-                <span style="width:6px;height:6px;border-radius:50%;background:${dotColor}"></span>
-                <span class="kind">${_escapeHtml(w.kind || "WIDGET")}</span>
-              </div>
-              <div class="title">${_escapeHtml(w.name || w.title || w.id || "widget")}</div>
-              <div class="uptime">${running ? "● RUNNING" : "○ PAUSED"}</div>
-            </div>`;
-        }).join("") +
+      body.innerHTML =
+        `<div class="admin-dash-widget-grid">` +
+        widgets.map(_widgetTile).join("") +
         `</div>`;
+      _bindWidgetActions(body);
     } catch (e) {
       body.innerHTML = `<div class="admin-dash-empty">無可用 widgets</div>`;
     }

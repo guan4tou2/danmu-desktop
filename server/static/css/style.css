@@ -437,11 +437,38 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 .admin-dash-msg-row .meta { color: var(--admin-text-dim); font-size: 10px; }
 .admin-dash-msg-row .more { color: var(--admin-text-dim); font-size: 14px; cursor: pointer; }
 
+.admin-dash-widget-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
 .admin-dash-widget-tile {
   border: 1px solid var(--admin-line);
   border-radius: 6px;
   padding: 10px;
   background: var(--admin-raised);
+}
+
+.admin-dash-widget-tile-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-dash-widget-tile-head .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.admin-dash-widget-tile-head .cat {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  color: var(--admin-text-dim);
 }
 
 .admin-dash-widget-tile .title {
@@ -464,6 +491,34 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   font-size: 10px;
   letter-spacing: 0.5px;
   color: var(--admin-text-dim);
+}
+
+.admin-dash-widget-tile .actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 4px;
+}
+
+.admin-dash-widget-tile .actions .chip {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--admin-line);
+  background: transparent;
+  color: var(--admin-text);
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+}
+
+.admin-dash-widget-tile .actions .chip.is-muted {
+  color: var(--admin-text-dim);
+}
+
+.admin-dash-widget-tile .actions .chip:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .admin-dash-poll-opt {
