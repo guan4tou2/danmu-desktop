@@ -2497,6 +2497,9 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="hud-kv"><span class="hud-kv-k">HTTP</span><span class="hud-kv-v" id="sysoHttpPort">:\u2014</span></div>
               <div class="hud-kv"><span class="hud-kv-k">WS</span><span class="hud-kv-v" id="sysoWsPort">:\u2014</span></div>
               <div class="hud-kv"><span class="hud-kv-k">BIND</span><span class="hud-kv-v" id="sysoBind">\u2014</span></div>
+              <div class="hud-kv"><span class="hud-kv-k">CPU USAGE</span><span class="hud-kv-v" id="sysoCpu">\u2014</span></div>
+              <div class="hud-kv"><span class="hud-kv-k">MEM RSS</span><span class="hud-kv-v" id="sysoMem">\u2014</span></div>
+              <div class="hud-kv"><span class="hud-kv-k">MSG RATE</span><span class="hud-kv-v" id="sysoMsgRate">\u2014</span></div>
               <div class="hud-kv"><span class="hud-kv-k">WS CLIENTS</span><span class="hud-kv-v" id="sysoWsClients">\u2014</span></div>
               <div class="hud-kv"><span class="hud-kv-k">QUEUE</span><span class="hud-kv-v" id="sysoQueue">\u2014</span></div>
               <div class="hud-kv"><span class="hud-kv-k">WIDGETS</span><span class="hud-kv-v" id="sysoWidgets">\u2014</span></div>
@@ -2606,10 +2609,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const rateCaps = {
         fire: { max: 60, label: "FIRE_RATE_LIMIT" },
         api: { max: 60, label: "API_RATE_LIMIT" },
-        admin: { max: 120, label: "ADMIN_RATE_LIMIT" },
+        admin: { max: 600, label: "ADMIN_RATE_LIMIT" },
         login: { max: 30, label: "LOGIN_RATE_LIMIT" },
       };
-      const rateDefaults = { fire: 20, api: 30, admin: 60, login: 5 };
+      const rateDefaults = { fire: 20, api: 30, admin: 300, login: 5 };
       const rateWindows = { fire: 60, api: 60, admin: 60, login: 300 };
       Object.keys(rateDefaults).forEach((k) => {
         const row = document.querySelector(`.hud-rate-item[data-rate="${k}"]`);
@@ -2623,18 +2626,29 @@ document.addEventListener("DOMContentLoaded", () => {
         if (bar) bar.style.width = Math.min(100, (val / max) * 100) + "%";
       });
 
-      // Fetch metrics to fill live fields
+      // Fetch metrics to fill live fields. Read latest sample from each
+      // telemetry series (cpu/mem_mb/rate/ws) to populate the new KVs.
       (async () => {
         try {
           const res = await window.csrfFetch("/admin/metrics");
           if (!res.ok) return;
           const data = await res.json();
+          const last = (a) => Array.isArray(a) && a.length ? a[a.length - 1] : null;
           const clientsEl = document.getElementById("sysoWsClients");
           if (clientsEl) clientsEl.textContent = String(data.ws_clients ?? 0);
           const qEl = document.getElementById("sysoQueue");
           if (qEl) qEl.textContent = `${data.queue_size ?? 0} / ${data.queue_capacity ?? "\u2014"}`;
           const widgEl = document.getElementById("sysoWidgets");
           if (widgEl) widgEl.textContent = String(data.active_widgets ?? 0);
+          const cpuEl = document.getElementById("sysoCpu");
+          const cpu = last(data.cpu_series);
+          if (cpuEl && cpu != null) cpuEl.textContent = `${Number(cpu).toFixed(0)}%`;
+          const memEl = document.getElementById("sysoMem");
+          const memMb = last(data.mem_mb_series);
+          if (memEl && memMb != null) memEl.textContent = `${Number(memMb).toFixed(0)} MB`;
+          const rateEl = document.getElementById("sysoMsgRate");
+          const rate = last(data.rate_series);
+          if (rateEl && rate != null) rateEl.textContent = `${(Number(rate) / 60).toFixed(1)}/s`;
         } catch (_) { /* ignore */ }
       })();
 
