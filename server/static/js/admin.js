@@ -2649,6 +2649,17 @@ document.addEventListener("DOMContentLoaded", () => {
           const rateEl = document.getElementById("sysoMsgRate");
           const rate = last(data.rate_series);
           if (rateEl && rate != null) rateEl.textContent = `${(Number(rate) / 60).toFixed(1)}/s`;
+          // UPTIME — prototype admin-pages.jsx:509 shows e.g. `UPTIME · 14d 02h`.
+          const uptEl = document.getElementById("sysoUptime");
+          if (uptEl && data.server_started_at) {
+            const sec = Math.max(0, Math.floor(Date.now() / 1000 - data.server_started_at));
+            const d = Math.floor(sec / 86400);
+            const h = Math.floor((sec % 86400) / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            uptEl.textContent = "UPTIME · " + (d > 0 ? `${d}d ${String(h).padStart(2, "0")}h` :
+              h > 0 ? `${h}h ${String(m).padStart(2, "0")}m` :
+              `${m}m ${String(sec % 60).padStart(2, "0")}s`);
+          }
         } catch (_) { /* ignore */ }
       })();
 

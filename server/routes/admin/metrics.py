@@ -14,6 +14,11 @@ from ...services.security import (
 from ...services.widgets import list_widgets
 from . import _json_response, admin_bp, rate_limit, require_login
 
+# Server start time — set once at module import (i.e. when the Flask app
+# first loads this routes package). Reported through /admin/metrics so the
+# admin System page can render an "UPTIME · 14d 02h" chip per prototype.
+_SERVER_STARTED_AT = time.time()
+
 # Default (limit, window) per scope — keeps the suggestion pre-restart sane
 # even if the operator hasn't set the env var explicitly. Mirrors the
 # fallback values in services/security.py:rate_limit decorator.
@@ -67,6 +72,7 @@ def get_metrics():
             "active_widgets": len(list_widgets()),
             "poll_state": poll_service.state,
             "server_time": time.time(),
+            "server_started_at": _SERVER_STARTED_AT,
             "rate_limits": _attach_suggestions(get_rate_limit_stats()),
             **series,
         }

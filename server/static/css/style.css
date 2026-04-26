@@ -1726,8 +1726,20 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 }
 
 .admin-poll-qrow.is-dragging { opacity: 0.35; }
-.admin-poll-qrow.is-drag-over {
-  border-top: 2px solid var(--color-primary);
+/* Drop-hint cyan line — prototype admin-polls.jsx:117 shows a glowing
+ * 3px bar at the drop target. Use ::before so the row doesn't shift. */
+.admin-poll-qrow { position: relative; }
+.admin-poll-qrow.is-drag-over::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: -2px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-primary);
+  box-shadow: 0 0 8px var(--color-primary);
+  pointer-events: none;
 }
 
 .admin-poll-qrow .drag-handle {
