@@ -195,7 +195,6 @@
   let _wsClients = 0;
   let _metricsTimer = 0;
   let _statusTimer = 0;
-  let _historyTimer = 0;
   let _tickTimer = 0;
 
   async function refreshMetrics() {
@@ -287,16 +286,13 @@
   function startTimers() {
     if (_metricsTimer) return;
     refreshMetrics();
-    refreshHistory();
     renderTick();
     _metricsTimer = setInterval(() => { refreshMetrics().then(renderTick); }, 10000);
-    _historyTimer = setInterval(() => { refreshHistory().then(renderTick); }, 30000);
     _tickTimer = setInterval(renderTick, 1000);
   }
 
   function stopTimers() {
     if (_metricsTimer) { clearInterval(_metricsTimer); _metricsTimer = 0; }
-    if (_historyTimer) { clearInterval(_historyTimer); _historyTimer = 0; }
     if (_tickTimer) { clearInterval(_tickTimer); _tickTimer = 0; }
   }
 

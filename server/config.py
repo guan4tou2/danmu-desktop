@@ -47,7 +47,11 @@ class Config:
     WS = ""
     FIRE_RATE_LIMIT = int(os.getenv("FIRE_RATE_LIMIT", "20"))
     FIRE_RATE_WINDOW = int(os.getenv("FIRE_RATE_WINDOW", "60"))
-    ADMIN_RATE_LIMIT = int(os.getenv("ADMIN_RATE_LIMIT", "60"))
+    # Admin polls /admin/metrics every 5s from telemetry tick + display
+    # settings + (optionally) broadcast page = ~24-36 req/min just for metrics,
+    # plus per-action admin updates. 300/min (5/sec average) is comfortable
+    # without losing the abuse cap.
+    ADMIN_RATE_LIMIT = int(os.getenv("ADMIN_RATE_LIMIT", "300"))
     ADMIN_RATE_WINDOW = int(os.getenv("ADMIN_RATE_WINDOW", "60"))
     API_RATE_LIMIT = int(os.getenv("API_RATE_LIMIT", "30"))
     API_RATE_WINDOW = int(os.getenv("API_RATE_WINDOW", "60"))
