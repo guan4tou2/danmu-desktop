@@ -11,6 +11,7 @@ Enabled/disabled state is persisted to plugins_state.json alongside the
 plugins directory.
 """
 
+import contextlib
 import importlib
 import importlib.util
 import json
@@ -19,6 +20,8 @@ import threading
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+from . import plugin_console
 
 logger = logging.getLogger(__name__)
 
@@ -515,18 +518,32 @@ class PluginManager:
             result_holder: List[Any] = []
             error_holder: List[BaseException] = []
 
-            def _run(m=method, ctx=context):
+            def _run(m=method, ctx=context, plugin_name=entry.instance.name):
+                # Capture plugin print()/stderr writes into the console
+                # ring buffer so admins can tail them on the Plugins page.
+                # The default behaviour without this redirect is for output
+                # to land in the server stdout (and thus docker logs) which
+                # makes per-plugin debugging painful.
+                out_stream = plugin_console._PluginStream(plugin_name, "INFO")
+                err_stream = plugin_console._PluginStream(plugin_name, "ERROR")
                 try:
-                    if hook_name == "on_fire":
-                        result_holder.append(m(ctx))
-                    elif hook_name in ("on_connect", "on_disconnect", "on_poll_vote"):
-                        m(ctx or {})
-                    else:
-                        m()
-                except StopPropagation:
-                    error_holder.append(StopPropagation())
-                except Exception as exc:
-                    error_holder.append(exc)
+                    with contextlib.redirect_stdout(out_stream), \
+                         contextlib.redirect_stderr(err_stream):
+                        try:
+                            if hook_name == "on_fire":
+                                result_holder.append(m(ctx))
+                            elif hook_name in ("on_connect", "on_disconnect", "on_poll_vote"):
+                                m(ctx or {})
+                            else:
+                                m()
+                        except StopPropagation:
+                            error_holder.append(StopPropagation())
+                        except Exception as exc:
+                            error_holder.append(exc)
+                            plugin_console.record(plugin_name, "ERROR", f"{type(exc).__name__}: {exc}")
+                finally:
+                    out_stream.flush()
+                    err_stream.flush()
 
             t = threading.Thread(target=_run, daemon=True)
             t.start()

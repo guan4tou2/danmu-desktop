@@ -95,3 +95,25 @@ def test_filter_rule():
         )
     except ValueError as e:
         return _json_response({"error": str(e)}, 400)
+
+
+@admin_bp.route("/filters/events", methods=["GET"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_login
+def get_filter_events():
+    """Recent filter match events (block / mask / replace / allow).
+
+    Powers the Moderation page 即時審核日誌. Caller passes ``?since=<seq>``
+    to get only newer events; first call should pass 0 (or omit) to fetch
+    the latest 50.
+    """
+    from ...services import filter_events
+
+    try:
+        since = int(request.args.get("since", "0") or 0)
+    except (TypeError, ValueError):
+        since = 0
+    limit = max(1, min(200, int(request.args.get("limit", "50") or 50)))
+    events = filter_events.recent(since=since, limit=limit)
+    latest_seq = events[0]["seq"] if events else since
+    return _json_response({"events": events, "latest_seq": latest_seq})

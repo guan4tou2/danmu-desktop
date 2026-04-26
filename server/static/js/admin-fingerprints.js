@@ -131,10 +131,12 @@
       var records = data.records || [];
       renderTable(records);
       if (countEl) {
-        countEl.textContent = ServerI18n.t("fingerprintCountLabel").replace(
-          "{count}",
-          String(data.count || records.length)
-        );
+        // Prototype admin-pages.jsx:556: "247 UNIQUE · 2 FLAGGED"
+        var unique = data.count || records.length;
+        var flagged = data.flagged != null
+          ? data.flagged
+          : records.filter(function (r) { return r.state === "flagged" || r.state === "blocked"; }).length;
+        countEl.textContent = unique + " UNIQUE · " + flagged + " FLAGGED";
       }
     } catch (err) {
       console.error("[admin-fingerprints] fetch failed:", err);

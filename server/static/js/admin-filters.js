@@ -487,14 +487,25 @@
   // operators can spot/block in context. (P3-1 audience-identity adoption.)
 
   const LIVE_LOG_MAX = 6;
-  /** @type {{ts:number, text:string, nickname:string, fp:string}[]} */
+  /** @type {{seq:number, ts:number, action:string, rule_id:string|null, pattern:string, text_excerpt:string, source:string|null}[]} */
   const _liveLogBuffer = [];
   let _liveLogBound = false;
+  let _liveLogTimer = 0;
+  let _liveLogLastSeq = 0;
 
   function fmtLogTime(ts) {
-    const d = new Date(ts);
+    const d = new Date(ts * 1000);  // ts is epoch seconds from server
     const pad = (n) => String(n).padStart(2, "0");
     return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+
+  function actionColor(action) {
+    const a = (action || "").toUpperCase();
+    if (a === "BLOCK") return "#f87171";    // crimson
+    if (a === "MASK" || a === "REPLACE") return "#fbbf24";   // amber
+    if (a === "REVIEW") return "var(--color-primary)";       // cyan
+    if (a === "ALLOW") return "#86efac";    // lime
+    return "var(--color-text-muted)";
   }
 
   function renderLiveLog() {
@@ -504,62 +515,41 @@
       log.innerHTML = `<div style="color:var(--color-text-muted);text-align:center;padding:10px">\u5c1a\u7121\u4e8b\u4ef6 \u00b7 \u7b49\u5f85\u898f\u5247\u547d\u4e2d...</div>`;
       return;
     }
-    log.innerHTML = "";
-    // newest first
-    for (let i = _liveLogBuffer.length - 1; i >= 0; i--) {
-      const e = _liveLogBuffer[i];
-      const row = document.createElement("div");
-      row.className = "admin-filter-log-row";
-      row.style.cssText = "display:grid;grid-template-columns:60px 1fr 160px;gap:10px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--hud-line)";
+    log.innerHTML = _liveLogBuffer.map((e) => {
+      const ts = fmtLogTime(e.ts);
+      const action = (e.action || "").toUpperCase();
+      const ac = actionColor(action);
+      const text = (e.text_excerpt || "").replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+      const pattern = (e.pattern || "").replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+      const source = (e.source || "").slice(0, 16);
+      const sourceLabel = source ? `\u00b7 ${source}` : "";
+      return `<div class="admin-filter-log-row" style="display:grid;grid-template-columns:64px 70px 1fr;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px dashed var(--hud-line)">
+        <span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">${ts}</span>
+        <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:1px;font-weight:700;color:${ac}">${action}</span>
+        <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\u300c${text}\u300d<span style="color:var(--color-text-muted)"> \u2014 \u898f\u5247 ${pattern} ${sourceLabel}</span></span>
+      </div>`;
+    }).join("");
+  }
 
-      const ts = document.createElement("span");
-      ts.style.cssText = "font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)";
-      ts.textContent = fmtLogTime(e.ts);
-      row.appendChild(ts);
-
-      const txt = document.createElement("span");
-      txt.style.cssText = "font-family:var(--font-mono);font-size:11px;color:var(--color-text-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
-      txt.textContent = e.text || "(empty)";
-      txt.title = e.text || "";
-      row.appendChild(txt);
-
-      const id = document.createElement("span");
-      if (window.AdminIdentity) {
-        id.appendChild(
-          AdminIdentity.render({
-            nickname: e.nickname || "",
-            fp: e.fp || "",
-            onNicknameClick: function (nick) {
-              const testEl = document.getElementById("filterTestText");
-              if (testEl && nick) {
-                testEl.value = nick;
-                testEl.focus();
-              }
-            },
-          })
-        );
-      }
-      row.appendChild(id);
-      log.appendChild(row);
-    }
+  async function pollFilterEvents() {
+    try {
+      const r = await fetch(`/admin/filters/events?since=${_liveLogLastSeq}`, { credentials: "same-origin" });
+      if (!r.ok) return;
+      const data = await r.json();
+      if (!Array.isArray(data.events) || data.events.length === 0) return;
+      // Server returns newest-first; merge into front (newest first), cap at LIVE_LOG_MAX.
+      _liveLogBuffer.unshift(...data.events);
+      while (_liveLogBuffer.length > LIVE_LOG_MAX) _liveLogBuffer.pop();
+      _liveLogLastSeq = data.latest_seq || _liveLogLastSeq;
+      if (document.getElementById("filterLiveLog")) renderLiveLog();
+    } catch (_) { /* silent */ }
   }
 
   function wireLiveLog() {
     if (_liveLogBound) return;
     _liveLogBound = true;
-    document.addEventListener("admin-ws-message", (e) => {
-      const msg = e && e.detail;
-      if (!msg || msg.type !== "danmu_live" || !msg.data) return;
-      _liveLogBuffer.push({
-        ts: Date.now(),
-        text: String(msg.data.text || ""),
-        nickname: String(msg.data.nickname || ""),
-        fp: String(msg.data.fingerprint || ""),
-      });
-      while (_liveLogBuffer.length > LIVE_LOG_MAX) _liveLogBuffer.shift();
-      // Only re-render if our section is currently in the DOM.
-      if (document.getElementById("filterLiveLog")) renderLiveLog();
-    });
+    pollFilterEvents();
+    _liveLogTimer = setInterval(pollFilterEvents, 4000);
   }
 
   // ── Initialization ───────────────────────────────────────────
