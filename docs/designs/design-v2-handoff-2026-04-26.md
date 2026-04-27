@@ -1,8 +1,20 @@
 # Danmu Fire · v2 Design Handoff
 
-**Last updated**: 2026-04-27 (post Sprint 2 Fire Token deep page + V1Z4 bundle redundancy audit · commit `dca32b0`)
+**Last updated**: 2026-04-27 (post Phase 1 sidebar 17-row consolidation · commit `d208e9b` · live on VPS)
 
-> ⚠️ **2026-04-27 update**：收到 bundle `V1Z4` (12 新 artboard) + 使用者指示「**仔細對齊並且檢查是否有多餘設計**」後，先做了 codebase 冗餘盤點，**暫不直接 implement 新 bundle**。請先看 [`design-v2-redundancy-audit-2026-04-27.md`](./design-v2-redundancy-audit-2026-04-27.md)，回那份的 §5 三個拍板問題（sidebar 整併？V1Z4 12 個 artboard 優先順序？是否暫停加 nav？）後再進下一輪。
+> ✅ **2026-04-27 Phase 1 done**：依照 Design reply（[`design-v2-redundancy-audit-2026-04-27.md`](./design-v2-redundancy-audit-2026-04-27.md) §8），sidebar 已從 20 → 17 row，三個整併動作都落地並部署到 VPS：
+>
+> - `messages` 獨立 + `history` 含 2-tab strip（匯出 / 重播）→ 砍掉 `replay` row
+> - `themes` 獨立 + `viewer-config` 含 2-tab strip（整頁主題 / 表單欄位）→ 砍掉 `display` + `viewer-theme` row
+> - Fire Token sub-row 移除，`#/firetoken` 仍可由 integrations 頁的「詳細統計 →」deeplink 進入
+>
+> **Mobile RWD verified at 375px** — 17 row 不爆版、tabbar 325px 內合住。**951/951 non-browser tests pass**；24/26 browser tests（同樣的 2 個 sec-security v2 retrofit 既有破口，跟整併無關）。
+>
+> **下一步邀請 Design 補的 prototype（可選，工程不阻塞）**：
+> 1. `#/history` 的 2-tab strip artboard（匯出 tab 已實作，重播 tab 用既有 admin-replay UI）
+> 2. `#/viewer-config` 的 2-tab strip artboard（PAGE tab = 既有 viewer-theme presets，FIELDS tab = 既有 display rows）
+>
+> **Phase 2 P0 開工**（依 Design 拍板順序）：About → Setup Wizard → Poll Deep-Dive。三個都是新獨立 page，sidebar 加 nav 沒問題（17 row 還有 buffer，不會回到 20+ 的擁擠狀態）。
 
 **原 last updated**: 2026-04-27 (post Sprint 1 + DanmuMarquee bundle · commit `f959b62`)
 
