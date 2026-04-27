@@ -1,6 +1,25 @@
 # Danmu Fire · v2 Design Handoff
 
-**Last updated**: 2026-04-27 (post scope-out + backend-gaps split · commit `70b6463+`)
+**Last updated**: 2026-04-28 (post Group A polish + Group B prototype copies · commit `c29743c` · live on VPS)
+
+> ✅ **2026-04-28 update**：「完全照抄」工作完成。Group A polish (`0aea208`) + Group B 全 4 個 prototype 複製 (`db5b09c` + `c29743c`)：
+>
+> - **G8** Poll Deep-Dive 加 Sentiment Index（heuristic 純 FE）+ vs 上次 placeholder
+> - **G10** Message Drawer 加 上一筆 / 下一筆 navigation（含 ←/→ 鍵盤快捷）
+> - **G11** About 4 KPI 對齊 prototype（已是最新版 / 上次檢查更新 / SERVER UPTIME / LICENSE）+ ↻ 檢查更新 action（call GitHub Releases API）
+> - **B1** ViewerBanned + ViewerPollThankYou — 兩個 viewer 全螢幕狀態頁，含 URL preview 模式（`?state=banned` / `?state=thankyou`）+ 真 trigger（fire 403 banned / fire 成功且 likely poll vote）
+> - **B2** OverlayPollLive + OverlayResultCelebration — 取代既有 280px 角落 panel，改成 prototype 同款的中央大 panel + 倒數計時 + QR、結束時 confetti + 大寫贏家字母 + 12s 自動消失
+> - **B3** AdminAudiencePage `#/audience` — 5 KPI + 7-col 觀眾列表（按 message_count 排序），實作砍掉 GEO/出席場次/SCORE 三 column（per scope-out）
+> - **B4** AdminMobilePage `#/mobile` — 主持人手機後台 375x812 框，含 iOS 狀態列 + 4 大 action card + 3 KPI + 4 quick toggle + 5-tab bottom bar，桌面預覽用
+>
+> Sidebar 現在 **21 row + broadcast topbar**。962/962 non-browser tests pass。
+>
+> 三個帳目 doc 同步：
+> - [`scope-out-2026-04-27.md`](./scope-out-2026-04-27.md) — 永遠不做（sessions / multi-actor / SHA-256 audit / Geo / Pro Edition / NLP sentiment）
+> - [`backend-extensions-pending-2026-04-27.md`](./backend-extensions-pending-2026-04-27.md) — 想照抄但要 BE 擴張（Notif detail panel / Audit ACTION dim / Poll timeline 等 15 條），等 product buy-in
+> - [`design-v2-prototype-gaps-2026-04-27.md`](./design-v2-prototype-gaps-2026-04-27.md) §F + §G — alignment audit + 11-item polish backlog
+
+**原 last updated**: 2026-04-27 (post scope-out + backend-gaps split · commit `70b6463+`)
 
 > ⚠️ **2026-04-27 產品決策**：
 > 1. **Sessions / 場次 entity** scope-out — 不做。詳見 [`scope-out-2026-04-27.md`](./scope-out-2026-04-27.md) §A。請 Design 在後續 prototype 移除 `session_id` / 「sess_xxx」/ Start Session button / 「跨場次」/ 場次內統計等概念。
