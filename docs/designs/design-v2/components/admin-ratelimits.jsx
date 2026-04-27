@@ -96,7 +96,7 @@ function AdminRateLimitsPage({ theme = 'dark' }) {
             padding: 14, background: panel, border: `1px solid ${line}`, borderRadius: radius,
             display: 'flex', alignItems: 'center', gap: 14,
           }}>
-            <HudLabel color={accent}>未套用變更 · 2 項</HudLabel>
+            <HudLabel color={accent}>UNSAVED · 2 CHANGES</HudLabel>
             <span style={{ fontSize: 12, color: textDim, fontFamily: hudTokens.fontMono }}>
               FIRE limit 10 → 15 · LOGIN lockout 900 → 1800
             </span>
@@ -262,7 +262,7 @@ function ViolationsFeed({ panel, raised, line, text, textDim, accent, radius }) 
     <div style={{ background: panel, border: `1px solid ${line}`, borderRadius: radius, display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '12px 14px', borderBottom: `1px solid ${line}`, display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: text }}>近期違規</div>
-        <HudLabel color={textDim}>RECENT VIOLATIONS · 6 筆 · 近 2 小時</HudLabel>
+        <HudLabel color={textDim}>RECENT VIOLATIONS · 6 ENTRIES · LAST 2H</HudLabel>
         <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, color: accent, letterSpacing: 1, cursor: 'pointer' }}>匯出 CSV →</span>
       </div>
       <div style={{
@@ -302,7 +302,7 @@ function IpPolicyCard({ panel, raised, line, text, textDim, accent, radius }) {
     <div style={{ background: panel, border: `1px solid ${line}`, borderRadius: radius, display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '12px 14px', borderBottom: `1px solid ${line}`, display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: text }}>IP 黑/白名單</div>
-        <HudLabel color={textDim}>IP POLICY · 4 條</HudLabel>
+        <HudLabel color={textDim}>IP POLICY · 4 RULES</HudLabel>
       </div>
       <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', gap: 6 }}>

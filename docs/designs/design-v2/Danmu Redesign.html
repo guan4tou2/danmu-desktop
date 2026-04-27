@@ -69,12 +69,14 @@
 <script type="text/babel" src="components/admin-ratelimits.jsx"></script>
 <script type="text/babel" src="components/admin-polls.jsx"></script>
 <script type="text/babel" src="components/admin-viewer-theme.jsx"></script>
+<script type="text/babel" src="components/admin-assets.jsx"></script>
 <script type="text/babel" src="components/priority-2-pieces.jsx"></script>
 <script type="text/babel" src="components/hero-scenes.jsx"></script>
 <script type="text/babel" src="components/browser-window.jsx"></script>
 <script type="text/babel" src="components/mobile-safari.jsx"></script>
 <script type="text/babel" src="components/viewer.jsx"></script>
 <script type="text/babel" src="components/desktop.jsx"></script>
+<script type="text/babel" src="components/konami.jsx"></script>
 <script type="text/babel" src="design-canvas.jsx"></script>
 
 <script type="text/babel">
@@ -133,7 +135,7 @@ function App() {
         {[
           { t: 'Danmu Fire · 觀眾端', d: '暱稱 / 文字 / 顏色 / 字型 / 字級 / 透明度 / 描邊 / 陰影 / 效果疊加 / Layout / 主題。只送不收。Poll 條件顯示；投票無 %。' },
           { t: 'Admin · 控制台', d: '移除 DISPLAY 設定卡（那在 /effects、/fonts 頁面）。主畫面聚焦：KPI / 投票建立 & 進行中 / 訊息審核 / Widgets & Plugins。Sidebar：session + telemetry。' },
-          { t: 'Desktop Client · Electron', d: '4 個關鍵畫面：首次連線 dialog / 透明 overlay 實景 / 控制視窗 / macOS tray menu。包含快捷鍵、透明度、layout、自動更新。' },
+          { t: 'Desktop Client · Electron', d: '3 個關鍵畫面：透明 overlay 實景 / 控制視窗（連線、快捷鍵、更新整合於此） / macOS tray menu。自動更新。' },
         ].map(x => (
           <div key={x.t}>
             <HudLabel color={hudTokens.cyan}>◉ {x.t}</HudLabel>
@@ -211,6 +213,9 @@ function App() {
         <DCArtboard width={1440} height={920} label="⑥ 字型管理 · Fonts" style={{ background: 'transparent' }}>
           <div data-screen-label="Admin · Fonts" style={{ width: 1440, height: 920 }}><AdminFontsPage theme={tweaks.theme} /></div>
         </DCArtboard>
+        <DCArtboard width={1440} height={1020} label="⑥-B 素材庫 · Assets Library · 統一上傳入口" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Assets Library" style={{ width: 1440, height: 1020 }}><AdminAssetsPage theme={tweaks.theme} /></div>
+        </DCArtboard>
         <DCArtboard width={1440} height={920} label="⑦ 系統 & 指紋 · System" style={{ background: 'transparent' }}>
           <div data-screen-label="Admin · System" style={{ width: 1440, height: 920 }}><AdminSystemPage theme={tweaks.theme} /></div>
         </DCArtboard>
@@ -240,21 +245,39 @@ function App() {
         </DCArtboard>
       </DCSection>
 
-      <DCSection title="Desktop Client · Electron App" subtitle="透明 overlay + Tray + 控制視窗 + 首次啟動連線精靈">
+      <DCSection title="Desktop Client · Electron App" subtitle="首次啟動：強制連線設定 → 連線後才能用 overlay / control / tray · 斷線回到設定">
+        <DCArtboard width={1200} height={780} label="⓪ 首次啟動 · Connect Gate · 必須先連線才能用" style={{ background: 'transparent' }}>
+          <div data-screen-label="Desktop · First-run Gate" style={{ width: 1200, height: 780 }}><DesktopClient theme={tweaks.theme} scenario="firstrun" /></div>
+        </DCArtboard>
         <DCArtboard width={1200} height={760} label="① 桌面實景 · 透明 overlay 疊在 Keynote 上" style={{ background: 'transparent' }}>
           <div data-screen-label="Desktop · Overlay on screen" style={{ width: 1200, height: 760 }}><DesktopClient theme={tweaks.theme} scenario="overlay" /></div>
+        </DCArtboard>
+        <DCArtboard width={1200} height={760} label="① Overlay 連線中斷 · Disconnected · 重連中" style={{ background: 'transparent' }}>
+          <div data-screen-label="Desktop · Overlay Disconnected" style={{ width: 1200, height: 760 }}><DesktopClient theme={tweaks.theme} scenario="disconnected" /></div>
         </DCArtboard>
         <DCArtboard width={1200} height={680} label="② Overlay 空連線 · Idle state · Hero lockup" style={{ background: '#000' }}>
           <div data-screen-label="Desktop · Overlay Idle" style={{ width: 1200, height: 680 }}><OverlayIdle theme={tweaks.theme} /></div>
         </DCArtboard>
-        <DCArtboard width={680} height={520} label="② 控制視窗 · 連線 / overlay / 快捷鍵 / 自動更新" style={{ background: 'transparent' }}>
-          <div data-screen-label="Desktop · Control" style={{ width: 680, height: 520 }}><DesktopClient theme={tweaks.theme} scenario="control" /></div>
+        <DCArtboard width={1200} height={680} label="② Overlay 重連中 · Reconnecting state · 第 3 次嘗試" style={{ background: '#000' }}>
+          <div data-screen-label="Desktop · Overlay Reconnecting" style={{ width: 1200, height: 680 }}><OverlayIdle theme={tweaks.theme} state="reconnecting" /></div>
         </DCArtboard>
-        <DCArtboard width={520} height={600} label="③ 首次啟動 · 連線精靈" style={{ background: 'transparent' }}>
-          <div data-screen-label="Desktop · Connect" style={{ width: 520, height: 600 }}><DesktopClient theme={tweaks.theme} scenario="connect" /></div>
+        <DCArtboard width={760} height={820} label="③ 控制視窗 · 連線 / overlay / 快捷鍵 / 更新" style={{ background: 'transparent' }}>
+          <div data-screen-label="Desktop · Control" style={{ width: 760, height: 820 }}><DesktopClient theme={tweaks.theme} scenario="control" /></div>
         </DCArtboard>
-        <DCArtboard width={520} height={460} label="④ macOS Tray Menu · 隨時快速操作" style={{ background: 'transparent' }}>
-          <div data-screen-label="Desktop · Tray" style={{ width: 520, height: 460 }}><DesktopClient theme={tweaks.theme} scenario="tray" /></div>
+        <DCArtboard width={520} height={460} label="④ macOS Tray · 已連線 · 完整選單" style={{ background: 'transparent' }}>
+          <div data-screen-label="Desktop · Tray Connected" style={{ width: 520, height: 460 }}><DesktopClient theme={tweaks.theme} scenario="tray" /></div>
+        </DCArtboard>
+        <DCArtboard width={520} height={360} label="④ macOS Tray · 連線中斷 · 只剩重連 / 設定 / 結束" style={{ background: 'transparent' }}>
+          <div data-screen-label="Desktop · Tray Disconnected" style={{ width: 520, height: 360 }}><DesktopClient theme={tweaks.theme} scenario="tray-disconnected" /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="🥚 彩蛋 · Konami Code" subtitle="↑↑↓↓←→←→ B A · 全螢幕彈幕被「凍結 → 旋轉 → 爆炸成粒子」清空 · 操作者快捷鍵，觀眾看不見 combo HUD（overlay 點擊穿透）">
+        <DCArtboard width={1200} height={780} label="① 輸入中 · Combo HUD 顯示按鍵進度（6 / 10）" style={{ background: 'transparent' }}>
+          <div data-screen-label="Konami · Inputting" style={{ width: 1200, height: 780 }}><KonamiOverlay theme={tweaks.theme} state="inputting" /></div>
+        </DCArtboard>
+        <DCArtboard width={1200} height={780} label="② 觸發 · Blast frame · 彈幕外炸 + 中央衝擊波" style={{ background: 'transparent' }}>
+          <div data-screen-label="Konami · Firing" style={{ width: 1200, height: 780 }}><KonamiOverlay theme={tweaks.theme} state="firing" /></div>
         </DCArtboard>
       </DCSection>
 

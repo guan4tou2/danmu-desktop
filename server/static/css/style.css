@@ -4646,3 +4646,153 @@ body.stream-mode .admin-hero .admin-summary-grid {
 }
 .admin-body input::placeholder,
 .admin-body textarea::placeholder { color: var(--admin-text-dim); opacity: 0.65; }
+
+/* ─── Admin Assets Library (v5.1 2026-04-27) ──────────────────────────
+ * Unified asset overview rendered by admin-assets.js. Stat strip + filter
+ * chips + grid + right rail with source-page links. Editing happens on
+ * the source pages — clicking an asset card navigates there.
+ */
+.admin-assets-page { gap: 14px; display: flex; flex-direction: column; }
+
+.admin-assets-statstrip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  padding: 14px;
+  background: var(--admin-panel, var(--color-bg-base));
+  border: 1px solid var(--hud-line);
+  border-radius: 6px;
+}
+.admin-assets-stat-head {
+  display: flex; align-items: baseline; gap: 6px;
+  font-size: 11px; color: var(--color-text-muted);
+}
+.admin-assets-stat-head .en {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em;
+  color: var(--color-text-muted); text-transform: uppercase;
+}
+.admin-assets-stat-val {
+  font-family: var(--font-display, var(--font-mono));
+  font-size: 26px; font-weight: 600; color: var(--color-text-strong);
+  letter-spacing: -0.02em; margin-top: 4px;
+}
+.admin-assets-stat-val.is-amber { color: var(--color-warning, #fbbf24); }
+.admin-assets-stat-val.is-cyan  { color: var(--color-primary); }
+
+.admin-assets-filter-row {
+  display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+}
+.admin-assets-chip {
+  padding: 5px 12px; border-radius: 4px; cursor: pointer;
+  border: 1px solid var(--hud-line);
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  transition: border-color 120ms, background 120ms, color 120ms;
+}
+.admin-assets-chip:hover { border-color: var(--hud-line-strong); }
+.admin-assets-chip.is-active {
+  border-color: var(--color-primary);
+  background: var(--hud-cyan-soft);
+  color: var(--color-primary);
+}
+.admin-assets-chip [data-count] {
+  font-size: 9px; color: inherit; opacity: 0.75; margin-left: 4px;
+}
+
+.admin-assets-grid-wrap {
+  display: grid; grid-template-columns: 1fr 320px; gap: 16px;
+}
+@media (max-width: 1100px) {
+  .admin-assets-grid-wrap { grid-template-columns: 1fr; }
+}
+
+.admin-assets-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;
+  align-content: start;
+}
+.admin-assets-empty {
+  grid-column: 1 / -1;
+  padding: 28px 14px; text-align: center;
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--color-text-muted); letter-spacing: 0.05em;
+  background: var(--admin-panel, var(--color-bg-base));
+  border: 1px dashed var(--hud-line); border-radius: 6px;
+}
+
+.admin-assets-card {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px; border-radius: 6px;
+  background: var(--admin-panel, var(--color-bg-base));
+  border: 1px solid var(--hud-line);
+  text-decoration: none; color: inherit;
+  transition: border-color 120ms, transform 120ms;
+}
+.admin-assets-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+.admin-assets-card-head {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em;
+}
+.admin-assets-card-head .kind { font-weight: 700; }
+.admin-assets-card-flag {
+  margin-left: auto;
+  padding: 1px 6px; border-radius: 3px;
+  border: 1px solid var(--hud-line);
+  font-size: 8px; letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+.admin-assets-card-name {
+  font-family: var(--font-mono); font-size: 13px;
+  color: var(--color-text-strong);
+  word-break: break-all;
+}
+.admin-assets-card-meta {
+  display: flex; align-items: center; gap: 4px;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+.admin-assets-card-meta .dot { opacity: 0.55; }
+
+.admin-assets-rail { display: flex; flex-direction: column; gap: 14px; }
+.admin-assets-rail-card {
+  padding: 14px; border-radius: 6px;
+  background: var(--admin-panel, var(--color-bg-base));
+  border: 1px solid var(--hud-line);
+}
+
+.admin-assets-source-list {
+  display: flex; flex-direction: column; gap: 4px; margin-top: 10px;
+}
+.admin-assets-source {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 4px;
+  text-decoration: none; color: inherit;
+  border: 1px solid transparent;
+  transition: background 120ms, border-color 120ms;
+}
+.admin-assets-source:hover {
+  background: var(--hud-cyan-soft);
+  border-color: var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
+}
+.admin-assets-source .ico {
+  font-size: 14px; width: 18px; text-align: center;
+}
+.admin-assets-source .lbl { font-size: 13px; color: var(--color-text-strong); }
+.admin-assets-source .en {
+  margin-left: auto;
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em;
+  color: var(--color-text-muted);
+}
+.admin-assets-source .arrow {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--color-text-muted);
+}
+.admin-assets-source-hint {
+  margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid var(--hud-line);
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.04em;
+  color: var(--color-text-muted); line-height: 1.6;
+}

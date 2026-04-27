@@ -3781,7 +3781,10 @@ document.addEventListener("DOMContentLoaded", () => {
     themes:    { title: "風格主題包",       kicker: "THEME PACKS · 彈幕樣式預設",       sections: ["sec-themes"] },
     display:   { title: "顯示設定",         kicker: "DISPLAY · 觀眾可自訂欄位",        sections: ["sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout"] },
     "viewer-theme": { title: "觀眾頁主題",  kicker: "VIEWER THEME · /fire 頁面外觀",   sections: ["sec-viewer-theme"] },
-    assets:    { title: "素材庫",           kicker: "ASSETS · EMOJI / STICKERS / SOUNDS", sections: ["sec-emojis", "sec-stickers", "sec-sounds"] },
+    // v5.1 (2026-04-27 redesign): unified Assets Library overview on top
+    // (sec-assets-overview from admin-assets.js) → existing emoji / stickers
+    // / sounds sub-sections kept below for editing per-type.
+    assets:    { title: "素材庫",           kicker: "ASSETS LIBRARY · 統一上傳入口 + 細部編輯", sections: ["sec-assets-overview", "sec-emojis", "sec-stickers", "sec-sounds"] },
     moderation:{ title: "敏感字 & 黑名單",  kicker: "MODERATION · 內建功能 · 非插件", sections: ["sec-blacklist", "sec-filters"] },
     ratelimit: { title: "速率限制",         kicker: "RATE LIMITS · 反刷屏",          sections: ["sec-ratelimit"] },
     effects:   { title: "效果庫 .dme",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },

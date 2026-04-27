@@ -69,7 +69,7 @@ function AdminViewerThemePage({ theme = 'dark' }) {
 
   return (
     <AdminPageShell route="viewer-theme" title="觀眾頁主題"
-      en="VIEWER THEME · /fire 頁面外觀 · 與 Theme Packs 完全獨立" theme={theme}>
+      en="VIEWER THEME · /fire UI APPEARANCE · INDEPENDENT FROM THEME PACKS" theme={theme}>
       {({ panel, raised, line, text, textDim, accent, radius }) => (
         <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: 20 }}>
           {/* ---------- LEFT · control panel ---------- */}
@@ -189,7 +189,7 @@ function AdminViewerThemePage({ theme = 'dark' }) {
             </VTCard>
 
             {/* Logo */}
-            <VTCard title="LOGO" en="LOGO · PNG 200×80 建議透明底" panel={panel} line={line} textDim={textDim}>
+            <VTCard title="LOGO" en="LOGO · PNG 200×80 · TRANSPARENT BG" panel={panel} line={line} textDim={textDim}>
               <div
                 onDragOver={e => { e.preventDefault(); setLogoOver(true); }}
                 onDragLeave={() => setLogoOver(false)}
@@ -246,7 +246,7 @@ function AdminViewerThemePage({ theme = 'dark' }) {
             </VTCard>
 
             {/* UI Font */}
-            <VTCard title="介面字型" en="UI FONT · /fire 頁面用" panel={panel} line={line} textDim={textDim}>
+            <VTCard title="介面字型" en="UI FONT · /fire PAGE" panel={panel} line={line} textDim={textDim}>
               <select value={t.font} onChange={e => patch({ font: e.target.value })}
                 style={{
                   width: '100%', padding: '8px 10px', borderRadius: 3,

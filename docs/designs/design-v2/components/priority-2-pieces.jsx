@@ -366,7 +366,7 @@ function QrBlock({ size = 180, accent, state }) {
 // ======================================================================
 function BroadcastToggle({ theme = 'dark' }) {
   return (
-    <AdminPageShell route="broadcast" title="廣播狀態 · Broadcast" en="BROADCAST · LIVE / STANDBY · 控制觀眾是否看到訊息" theme={theme}>
+    <AdminPageShell route="broadcast" title="廣播狀態" en="BROADCAST · LIVE / STANDBY · GATES AUDIENCE VISIBILITY" theme={theme}>
       {({ panel, raised, line, text, textDim, accent, radius }) => (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
           <div style={{ background: panel, border: `1px solid ${line}`, borderRadius: radius, padding: 20 }}>
@@ -454,7 +454,7 @@ function BroadcastToggle({ theme = 'dark' }) {
             </div>
 
             <div style={{ marginTop: 18 }}>
-              <CardHeader title="切換行為" en="TRANSITION RULES · 無確認 / 需確認" textDim={textDim} />
+              <CardHeader title="切換行為" en="TRANSITION RULES · INSTANT vs CONFIRM" textDim={textDim} />
               <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6, fontFamily: hudTokens.fontMono, fontSize: 11 }}>
                 <Rule from="STANDBY" to="LIVE"    instant color={hudTokens.lime} line={line} text={text} textDim={textDim} />
                 <Rule from="LIVE"    to="STANDBY" instant color={hudTokens.magenta} line={line} text={text} textDim={textDim} />
@@ -622,7 +622,7 @@ function ActionBtn({ accent, line, text, children }) {
 // ======================================================================
 function PollBuilderSpec({ theme = 'dark' }) {
   return (
-    <AdminPageShell route="polls" title="投票" en="POLL · 多題目 · 可排序 · 每題可上傳圖片" theme={theme}>
+    <AdminPageShell route="polls" title="投票" en="POLLS · MULTI-Q · SORTABLE · IMAGE PER QUESTION" theme={theme}>
       {({ panel, raised, line, text, textDim, accent, radius }) => {
         const questions = [
           {
@@ -667,7 +667,7 @@ function PollBuilderSpec({ theme = 'dark' }) {
           <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: 20 }}>
             {/* LEFT · Question queue (drag to reorder) */}
             <div style={{ background: panel, border: `1px solid ${line}`, borderRadius: radius, padding: 18, height: 'fit-content', position: 'sticky', top: 20 }}>
-              <CardHeader title="題目佇列" en="QUEUE · 拖曳排序 · 自動依序播放" textDim={textDim} />
+              <CardHeader title="題目佇列" en="QUEUE · DRAG TO REORDER · AUTO-PLAY IN ORDER" textDim={textDim} />
               <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {questions.map((it, i) => {
                   const isLive = it.live;
@@ -730,7 +730,7 @@ function PollBuilderSpec({ theme = 'dark' }) {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontFamily: hudTokens.fontMono, fontSize: 13, fontWeight: 700,
                 }}>1</span>
-                <CardHeader title="編輯題目 1" en="EDITING Q1 · 變更即時同步到 Overlay 預覽" textDim={textDim} />
+                <CardHeader title="編輯題目 1" en="EDITING Q1 · LIVE SYNC TO OVERLAY" textDim={textDim} />
                 <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 1, color: textDim }}>
                   Q1 / {questions.length}
                 </span>

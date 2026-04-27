@@ -98,12 +98,36 @@ function AdminPollsPage({ theme = 'dark' }) {
   };
 
   return (
-    <AdminPageShell route="polls" title="投票" en="POLL · 多題目 · 拖曳排序 · 每題可上傳圖片" theme={theme}>
+    <AdminPageShell route="polls" title="投票" en="POLLS · MULTI-Q · DRAG TO REORDER · IMAGE PER QUESTION" theme={theme}>
       {({ panel, raised, line, text, textDim, accent, radius }) => (
         <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: 20 }}>
           {/* LEFT · Question queue with real drag-reorder */}
           <div style={{ background: panel, border: `1px solid ${line}`, borderRadius: radius, padding: 18, height: 'fit-content' }}>
-            <CardHeader title="題目佇列" en="QUEUE · 按住 ⋮⋮ 拖曳排序" textDim={textDim} />
+            <CardHeader title="題目佇列" en="QUEUE · HOLD ⋮⋮ TO REORDER" textDim={textDim} />
+            {/* #3 Ghost hint bar — 拖曳中即時告訴使用者要移到哪 */}
+            {dragQId && (() => {
+              const dragging = questions.find(q => q.id === dragQId);
+              const target = questions.find(q => q.id === dragOverQ);
+              const fromIdx = questions.findIndex(q => q.id === dragQId);
+              const toIdx = target ? questions.findIndex(q => q.id === dragOverQ) : -1;
+              return (
+                <div style={{
+                  marginTop: 10, padding: '8px 10px', borderRadius: 4,
+                  background: hudTokens.cyanSoft, border: `1px dashed ${accent}`,
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  fontFamily: hudTokens.fontMono, fontSize: 10, color: accent, letterSpacing: 0.5,
+                }}>
+                  <span style={{ fontSize: 13, lineHeight: 1 }}>⋮⋮</span>
+                  <span style={{ flex: 1 }}>
+                    拖曳 #{fromIdx + 1} · {(dragging?.text || '').slice(0, 14) || '未命名'}
+                    {target && toIdx !== fromIdx && (
+                      <span style={{ color: accent, opacity: 0.7 }}> → 移到 #{toIdx + 1} {toIdx < fromIdx ? '之前' : '之後'}</span>
+                    )}
+                  </span>
+                  <span style={{ opacity: 0.6, fontSize: 9 }}>放開以套用 · ESC 取消</span>
+                </div>
+              );
+            })()}
             <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
               {questions.map((q, i) => {
                 const isActive = q.id === activeId;
@@ -203,7 +227,7 @@ function AdminPollsPage({ theme = 'dark' }) {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontFamily: hudTokens.fontMono, fontSize: 13, fontWeight: 700,
               }}>{activeIdx + 1}</span>
-              <CardHeader title={`編輯題目 ${activeIdx + 1}`} en="EDITING · 變更即時同步到 Overlay 預覽" textDim={textDim} />
+              <CardHeader title={`編輯題目 ${activeIdx + 1}`} en="EDITING · LIVE SYNC TO OVERLAY" textDim={textDim} />
               <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 1, color: textDim }}>
                 Q{activeIdx + 1} / {questions.length}
               </span>
@@ -496,7 +520,7 @@ function AdminPollsLive({ theme = 'dark' }) {
   const maxIdx = votes.indexOf(Math.max(...votes));
 
   return (
-    <AdminPageShell route="polls" title="投票 · 進行中" en="POLL IN PROGRESS · 即時結果廣播中" theme={theme}>
+    <AdminPageShell route="polls" title="投票 · 進行中" en="POLL IN PROGRESS · BROADCASTING LIVE RESULTS" theme={theme}>
       {({ panel, raised, line, text, textDim, accent, radius }) => (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 20 }}>
           {/* LEFT · big HUD */}
@@ -727,7 +751,7 @@ function AdminPollsResults({ theme = 'dark' }) {
   const rate = Math.round((q.voters / q.quorum) * 100);
 
   return (
-    <AdminPageShell route="polls" title="投票結果" en="POLL RESULTS · 已結束 · 可匯出 CSV" theme={theme}>
+    <AdminPageShell route="polls" title="投票結果" en="POLL RESULTS · ENDED · CSV EXPORT" theme={theme}>
       {({ panel, raised, line, text, textDim, accent, radius }) => (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 20 }}>
           {/* LEFT · results */}

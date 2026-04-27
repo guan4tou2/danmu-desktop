@@ -22,15 +22,27 @@ function AdminPageShell({ route, title, en, children, theme = 'dark' }) {
         width: 240, background: panel, borderRight: `1px solid ${line}`,
         display: 'flex', flexDirection: 'column',
       }}>
-        <div style={{ padding: '18px 22px 16px', borderBottom: `1px solid ${line}` }}>
-          <HeroInline
-            title="Danmu Fire"
-            suffix={
-              <span style={{ fontSize: 10, letterSpacing: 1.5, color: textDim, fontFamily: hudTokens.fontMono }}>
-                ADMIN · v4.8.7
-              </span>
-            }
-          />
+        <div style={{ padding: '20px 22px 18px', borderBottom: `1px solid ${line}` }}>
+          <div style={{
+            fontFamily: HERO_FONT_DISPLAY,
+            fontSize: 30,
+            color: HERO_SKY,
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+            fontWeight: 400,
+            lineHeight: 1,
+            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))',
+          }}>Danmu Fire</div>
+          <div style={{
+            marginTop: 8,
+            display: 'flex', alignItems: 'center', gap: 8,
+            fontFamily: hudTokens.fontMono, fontSize: 9, letterSpacing: 1.5, color: textDim,
+          }}>
+            <StatusDot color={hudTokens.lime} size={5} pulse />
+            <span>ADMIN</span>
+            <span style={{ color: line }}>·</span>
+            <span>v4.8.7</span>
+          </div>
         </div>
 
         <div style={{ flex: 1, padding: '14px 10px', overflow: 'auto' }}>
@@ -128,6 +140,7 @@ function AdminNavItem({ icon, label, active, badge, live, text, textDim, accent,
 /* ---------- Page 1: Effects Library (.dme) ---------- */
 
 function AdminEffectsPage({ theme = 'dark' }) {
+  const [dropOver, setDropOver] = React.useState(false);
   const effects = [
     { name: 'glow-soft',       cat: 'GLOW',   author: 'built-in', enabled: true,  uses: 1284, ver: '1.0.0' },
     { name: 'glow-neon',       cat: 'GLOW',   author: 'built-in', enabled: true,  uses: 892,  ver: '1.0.0' },
@@ -144,10 +157,55 @@ function AdminEffectsPage({ theme = 'dark' }) {
   ];
 
   return (
-    <AdminPageShell route="effects" title="效果庫 .dme" en="EFFECTS LIBRARY · 24 個效果 · 3 個作者貢獻" theme={theme}>
+    <AdminPageShell route="effects" title="效果庫 .dme" en="EFFECTS LIBRARY · 24 ENTRIES · 3 AUTHORS" theme={theme}>
       {({ panel, raised, line, text, textDim, accent, radius }) => (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Drop zone strip — drag-target for .dme files */}
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDropOver(true); }}
+              onDragLeave={() => setDropOver(false)}
+              onDrop={(e) => { e.preventDefault(); setDropOver(false); }}
+              style={{
+                position: 'relative', padding: '14px 16px', borderRadius: radius,
+                border: `1.5px dashed ${dropOver ? accent : line}`,
+                background: dropOver ? hudTokens.cyanSoft : raised,
+                display: 'flex', alignItems: 'center', gap: 14,
+                transition: 'background 150ms, border-color 150ms',
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{
+                width: 38, height: 38, borderRadius: 4, flexShrink: 0,
+                border: `1px solid ${dropOver ? accent : line}`,
+                background: dropOver ? `${hudTokens.cyan}22` : panel,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 18, color: dropOver ? accent : textDim,
+                transition: 'all 150ms',
+                transform: dropOver ? 'scale(1.08)' : 'scale(1)',
+              }}>{dropOver ? '↓' : '✦'}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: hudTokens.fontMono, fontSize: 11, letterSpacing: 1, color: dropOver ? accent : text }}>
+                  {dropOver ? '放開以匯入 .dme 效果包' : '拖入 .dme 檔上傳新效果 · 或點此瀏覽'}
+                </div>
+                <div style={{ marginTop: 2, fontFamily: hudTokens.fontMono, fontSize: 9, letterSpacing: 0.5, color: textDim }}>
+                  支援 .dme · .dme.zip · 最大 4 MB · 上傳後自動熱重載 · 不影響進行中效果
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                <span style={{
+                  padding: '6px 11px', borderRadius: 3,
+                  border: `1px solid ${line}`, fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 1,
+                  color: textDim, background: panel,
+                }}>↻ 熱重載</span>
+                <span style={{
+                  padding: '6px 11px', borderRadius: 3,
+                  border: `1px solid ${accent}`, fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 1,
+                  color: accent, background: hudTokens.cyanSoft,
+                }}>+ 瀏覽檔案</span>
+              </div>
+            </div>
+
             {/* Toolbar */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ display: 'flex', gap: 6 }}>
@@ -159,7 +217,9 @@ function AdminEffectsPage({ theme = 'dark' }) {
                   }}>{f}</span>
                 ))}
               </div>
-              <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, color: accent, letterSpacing: 1, cursor: 'pointer' }}>+ 上傳 .dme  ·  ↻ 熱重載</span>
+              <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 1 }}>
+                排序 · 最近使用 ▾
+              </span>
             </div>
 
             {/* Grid of effect cards */}
@@ -277,7 +337,7 @@ function AdminPluginsPage({ theme = 'dark' }) {
   ];
 
   return (
-    <AdminPageShell route="plugins" title="伺服器插件" en="PLUGIN SDK · 熱重載 · SANDBOX" theme={theme}>
+    <AdminPageShell route="plugins" title="伺服器插件" en="PLUGIN SDK · HOT-RELOAD · SANDBOX" theme={theme}>
       {({ panel, raised, line, text, textDim, accent, radius }) => (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{
@@ -388,7 +448,7 @@ function AdminFontsPage({ theme = 'dark' }) {
   ];
 
   return (
-    <AdminPageShell route="fonts" title="字型管理" en="FONT LIBRARY · 8 個字型 · 觀眾可選" theme={theme}>
+    <AdminPageShell route="fonts" title="字型管理" en="FONT LIBRARY · 8 FONTS · AUDIENCE-SELECTABLE" theme={theme}>
       {({ panel, raised, line, text, textDim, accent, radius }) => (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: 20 }}>
           <div style={{ background: panel, border: `1px solid ${line}`, borderRadius: radius, overflow: 'hidden' }}>
@@ -455,7 +515,7 @@ function AdminFontsPage({ theme = 'dark' }) {
             </div>
 
             <div style={{ background: panel, border: `1px solid ${line}`, borderRadius: radius, padding: 16 }}>
-              <HudLabel color={textDim}>SUBSETTING · 子集化</HudLabel>
+              <HudLabel color={textDim}>SUBSETTING</HudLabel>
               <div style={{ fontSize: 13, marginTop: 10 }}>自動產生子集，只載入實際用到的字</div>
               <div style={{
                 marginTop: 12, height: 8, borderRadius: 4, background: raised,
@@ -470,7 +530,7 @@ function AdminFontsPage({ theme = 'dark' }) {
             </div>
 
             <div style={{ background: panel, border: `1px solid ${line}`, borderRadius: radius, padding: 16 }}>
-              <HudLabel color={textDim}>CDN DELIVERY · 交付狀態</HudLabel>
+              <HudLabel color={textDim}>CDN DELIVERY</HudLabel>
               <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <MiniStat label="HIT RATE" value="98.4%" color={hudTokens.lime} textDim={textDim} />
                 <MiniStat label="P95 TTFB" value="42ms" color={accent} textDim={textDim} />
@@ -529,7 +589,7 @@ function AdminSystemPage({ theme = 'dark' }) {
 
           {/* Rate limits */}
           <div style={{ gridColumn: 'span 5', background: panel, border: `1px solid ${line}`, borderRadius: radius, padding: 18 }}>
-            <CardHeader title="速率限制" en="RATE LIMITS · 反刷屏" textDim={textDim} />
+            <CardHeader title="速率限制" en="RATE LIMITS · ANTI-SPAM" textDim={textDim} />
             <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
               {[
                 { label: '每用戶 · 每分鐘', value: 30, max: 60, unit: '則' },
@@ -553,30 +613,43 @@ function AdminSystemPage({ theme = 'dark' }) {
 
           {/* Fingerprint */}
           <div style={{ gridColumn: 'span 7', background: panel, border: `1px solid ${line}`, borderRadius: radius, padding: 18 }}>
-            <CardHeader title="觀眾指紋" en="FINGERPRINT · 去重 · 不需登入" textDim={textDim} right={
+            <CardHeader title="觀眾指紋" en="FINGERPRINT · DEDUPE · NO LOGIN" textDim={textDim} right={
               <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 1 }}>247 UNIQUE · 2 FLAGGED</span>
             } />
             <div style={{ marginTop: 14, fontFamily: hudTokens.fontMono, fontSize: 11 }}>
               <div style={{
-                display: 'grid', gridTemplateColumns: '110px 1fr 90px 70px 90px 60px',
+                display: 'grid', gridTemplateColumns: '120px 1fr 90px 70px 80px 60px',
                 padding: '6px 10px', color: textDim, fontSize: 9, letterSpacing: 1, borderBottom: `1px solid ${line}`,
               }}>
-                <span>HASH</span><span>UA · IP</span><span>MSGS</span><span>RATE</span><span>FIRST SEEN</span><span style={{ textAlign: 'right' }}>STATE</span>
+                <span>NICK · FP</span><span>UA · IP</span><span>MSGS</span><span>RATE</span><span>SEEN</span><span style={{ textAlign: 'right' }}>STATE</span>
               </div>
               {[
-                { h: 'fp_7a4b…2e1c', ua: 'Safari iOS · 100.64.1.42', msg: 18, rate: '0.8/m', seen: '00:12', state: 'OK',      col: text },
-                { h: 'fp_c091…8af3', ua: 'Chrome mac · 100.64.1.88', msg: 142, rate: '6.1/m', seen: '00:04', state: 'LIMITED',col: hudTokens.amber },
-                { h: 'fp_21de…9b0a', ua: 'Edge win · 100.64.2.17',   msg: 4,   rate: '0.2/m', seen: '00:22', state: 'OK',      col: text },
-                { h: 'fp_88bc…44f2', ua: 'Safari iOS · 100.64.1.59', msg: 287, rate: '14.2/m',seen: '00:02', state: 'BLOCKED', col: hudTokens.crimson },
-                { h: 'fp_4e3a…1100', ua: 'Chrome and · 100.64.3.04', msg: 9,   rate: '0.4/m', seen: '00:18', state: 'OK',      col: text },
-                { h: 'fp_55bb…77cd', ua: 'Firefox lin · 100.64.1.71', msg: 26, rate: '1.1/m', seen: '00:15', state: 'OK',      col: text },
+                // #18: 顯示「暱稱 + fp:8hex」對應; 未命名時 fp 直接當顯示名
+                { nick: '小明',     h: '7a4b2e1c', ua: 'Safari iOS · 100.64.1.42', msg: 18, rate: '0.8/m', seen: '00:12', state: 'OK',      col: text },
+                { nick: 'roy',     h: 'c0918af3', ua: 'Chrome mac · 100.64.1.88', msg: 142, rate: '6.1/m', seen: '00:04', state: 'LIMITED',col: hudTokens.amber },
+                { nick: '',        h: '21de9b0a', ua: 'Edge win · 100.64.2.17',   msg: 4,   rate: '0.2/m', seen: '00:22', state: 'OK',      col: text },
+                { nick: 'troll1',  h: '88bc44f2', ua: 'Safari iOS · 100.64.1.59', msg: 287, rate: '14.2/m',seen: '00:02', state: 'BLOCKED', col: hudTokens.crimson },
+                { nick: '',        h: '4e3a1100', ua: 'Chrome and · 100.64.3.04', msg: 9,   rate: '0.4/m', seen: '00:18', state: 'OK',      col: text },
+                { nick: '阿凱',    h: '55bb77cd', ua: 'Firefox lin · 100.64.1.71', msg: 26, rate: '1.1/m', seen: '00:15', state: 'OK',      col: text },
               ].map((f, i) => (
                 <div key={i} style={{
-                  display: 'grid', gridTemplateColumns: '110px 1fr 90px 70px 90px 60px',
+                  display: 'grid', gridTemplateColumns: '120px 1fr 90px 70px 80px 60px',
                   padding: '8px 10px', gap: 8, alignItems: 'center',
                   borderBottom: `1px solid ${line}`,
                 }}>
-                  <span style={{ color: accent }}>{f.h}</span>
+                  <span style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
+                    {f.nick ? (
+                      <>
+                        <span style={{ color: text, fontFamily: hudTokens.fontSans, fontWeight: 600, fontSize: 11, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.nick}</span>
+                        <span style={{ color: textDim, fontSize: 9, letterSpacing: 0.3 }}>fp:{f.h}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span style={{ color: accent, fontWeight: 600, fontSize: 11, letterSpacing: 0.3 }}>fp:{f.h}</span>
+                        <span style={{ color: textDim, fontFamily: hudTokens.fontSans, fontSize: 9, opacity: 0.7 }}>未命名</span>
+                      </>
+                    )}
+                  </span>
                   <span style={{ color: text }}>{f.ua}</span>
                   <span style={{ color: text }}>{f.msg}</span>
                   <span style={{ color: textDim }}>{f.rate}</span>
@@ -642,7 +715,7 @@ function AdminModerationPage({ theme = 'dark' }) {
   ];
 
   return (
-    <AdminPageShell route="moderation" title="敏感字 & 黑名單" en="MODERATION · 內建功能 · 非插件" theme={theme}>
+    <AdminPageShell route="moderation" title="敏感字 & 黑名單" en="MODERATION · BUILT-IN · NOT A PLUGIN" theme={theme}>
       {({ panel, raised, line, text, textDim, accent, radius }) => (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Overview */}
@@ -713,10 +786,10 @@ function AdminModerationPage({ theme = 'dark' }) {
                   <HudLabel color={textDim}>IP · FINGERPRINT · NICK</HudLabel>
                 </div>
                 {[
-                  { who: 'fp_88bc…44f2',  why: 'spam flood · 287/m', when: '00:02' },
+                  { who: 'fp:88bc44f2', why: 'spam flood · 287/m', when: '00:02' },
                   { who: '100.64.2.91', why: '手動封鎖',         when: '01:18' },
                   { who: '@troll_ikr',  why: '連續長廟訊息',     when: '02:44' },
-                  { who: 'fp_a011…5c19', why: '只丟廣告鏈結',      when: '3d ago' },
+                  { who: 'fp:a0115c19', why: '只丟廣告鏈結',      when: '3d ago' },
                   { who: '203.0.113.0/24', why: '匿名代理段',         when: '1w ago' },
                 ].map((b, i) => (
                   <div key={i} style={{

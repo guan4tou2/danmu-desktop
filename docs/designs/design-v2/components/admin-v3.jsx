@@ -11,7 +11,7 @@ function AdminV3SoftHolo({ density = 'comfy', theme = 'dark' }) {
     <AdminPageShell
       route="dashboard"
       title="控制台"
-      en="DASHBOARD · 直播進行中"
+      en="DASHBOARD · LIVE · 22:41"
       theme={theme}
     >
       {({ panel, raised, line, text, textDim, accent, radius }) => {
@@ -32,7 +32,7 @@ function AdminV3SoftHolo({ density = 'comfy', theme = 'dark' }) {
             <div style={{ gridColumn: 'span 7', background: panel, borderRadius: radius, border: `1px solid ${line}`, padding: pad, display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ fontSize: 14, fontWeight: 600 }}>進行中投票</div>
-                <HudLabel color={textDim}>POLL · 觀眾已同步</HudLabel>
+                <HudLabel color={textDim}>POLL · SYNCED TO AUDIENCE</HudLabel>
                 <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, color: hudTokens.magenta, letterSpacing: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <StatusDot color={hudTokens.magenta} size={6} />01:24 剩餘
                 </span>
@@ -75,7 +75,7 @@ function AdminV3SoftHolo({ density = 'comfy', theme = 'dark' }) {
 
             {/* Quick poll builder (see /polls for multi-question builder) */}
             <div style={{ gridColumn: 'span 5', background: panel, borderRadius: radius, border: `1px solid ${line}`, padding: pad, display: 'flex', flexDirection: 'column' }}>
-              <CardHeader title="快速投票" en="QUICK POLL · 單題 · 2–6 選項" textDim={textDim} right={
+              <CardHeader title="快速投票" en="QUICK POLL · SINGLE-Q · 2–6 OPTIONS" textDim={textDim} right={
                 <a style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: accent, letterSpacing: 1, textDecoration: 'none', cursor: 'pointer' }}>多題 builder →</a>
               } />
               <input placeholder="問題文字…" style={{
@@ -114,7 +114,7 @@ function AdminV3SoftHolo({ density = 'comfy', theme = 'dark' }) {
             <div style={{ gridColumn: 'span 7', background: panel, borderRadius: radius, border: `1px solid ${line}`, display: 'flex', flexDirection: 'column', minHeight: 300 }}>
               <div style={{ padding: '14px 16px', borderBottom: `1px solid ${line}`, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: 14, fontWeight: 600 }}>即時訊息</span>
-                <HudLabel color={textDim}>STREAM · 可封鎖 / 標記</HudLabel>
+                <HudLabel color={textDim}>STREAM · BLOCK · FLAG</HudLabel>
                 <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, color: accent, letterSpacing: 1 }}>▶ AUTO</span>
               </div>
               <div style={{ padding: 8, display: 'flex', gap: 6, borderBottom: `1px solid ${line}`, fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 1 }}>
@@ -155,7 +155,7 @@ function AdminV3SoftHolo({ density = 'comfy', theme = 'dark' }) {
 
             {/* Widgets + Plugins */}
             <div style={{ gridColumn: 'span 5', background: panel, borderRadius: radius, border: `1px solid ${line}`, padding: pad }}>
-              <CardHeader title="Widgets & Plugins" en="OBS WIDGETS · SERVER PLUGINS · 熱重載" textDim={textDim} right={
+              <CardHeader title="Widgets & Plugins" en="OBS WIDGETS · SERVER PLUGINS · HOT-RELOAD" textDim={textDim} right={
                 <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: accent, letterSpacing: 1, cursor: 'pointer' }}>+ 新增</span>
               } />
               <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>

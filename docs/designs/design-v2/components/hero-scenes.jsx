@@ -78,8 +78,9 @@ function AdminLogin({ theme = 'dark' }) {
 }
 
 // Overlay Idle — what the screen shows when overlay is on but nobody's fired yet.
-function OverlayIdle({ theme = 'dark' }) {
+function OverlayIdle({ theme = 'dark', state = 'ready' }) {
   const accent = hudTokens.cyan;
+  const reconnecting = state === 'reconnecting';
   return (
     <div style={{
       width: '100%', height: '100%',
@@ -96,11 +97,32 @@ function OverlayIdle({ theme = 'dark' }) {
           size="hero"
           subtitle="掃描 QR code 或輸入 138.2.59.206:4000 — 開始送彈幕"
         />
-        {/* Connection chip */}
-        <div style={{ marginTop: 26, display: 'inline-flex', alignItems: 'center', gap: 16, padding: '10px 20px', borderRadius: 999, border: `1px solid ${hudTokens.cyanLine}`, background: hudTokens.cyanSoft }}>
-          <StatusDot color={accent} size={8} />
-          <span style={{ fontFamily: hudTokens.fontMono, fontSize: 12, letterSpacing: 2, color: accent }}>OVERLAY READY</span>
-          <span style={{ fontFamily: hudTokens.fontMono, fontSize: 11, letterSpacing: 1, color: HERO_SLATE_300 }}>· 等待中</span>
+        {/* Connection chip — ready / reconnecting 兩態 */}
+        <div style={{
+          marginTop: 26, display: 'inline-flex', alignItems: 'center', gap: 16, padding: '10px 20px',
+          borderRadius: 999,
+          border: `1px solid ${reconnecting ? hudTokens.amber : hudTokens.cyanLine}`,
+          background: reconnecting ? 'rgba(245,158,11,0.12)' : hudTokens.cyanSoft,
+          transition: 'background 200ms, border-color 200ms',
+        }}>
+          {reconnecting ? (
+            <>
+              <span style={{
+                width: 10, height: 10, borderRadius: '50%',
+                border: `1.5px solid ${hudTokens.amber}`, borderTopColor: 'transparent',
+                animation: 'overlaySpin 0.7s linear infinite', display: 'inline-block',
+              }} />
+              <span style={{ fontFamily: hudTokens.fontMono, fontSize: 12, letterSpacing: 2, color: hudTokens.amber }}>RECONNECTING</span>
+              <span style={{ fontFamily: hudTokens.fontMono, fontSize: 11, letterSpacing: 1, color: HERO_SLATE_300 }}>· 第 3 次嘗試 · 4s</span>
+              <style>{`@keyframes overlaySpin { to { transform: rotate(360deg); } }`}</style>
+            </>
+          ) : (
+            <>
+              <StatusDot color={accent} size={8} />
+              <span style={{ fontFamily: hudTokens.fontMono, fontSize: 12, letterSpacing: 2, color: accent }}>OVERLAY READY</span>
+              <span style={{ fontFamily: hudTokens.fontMono, fontSize: 11, letterSpacing: 1, color: HERO_SLATE_300 }}>· 等待中</span>
+            </>
+          )}
         </div>
 
         {/* QR placeholder */}

@@ -49,7 +49,15 @@ function ViewerCore({ theme, form, inBrowser, pollEnabled }) {
   const textDim = isDark ? hudTokens.textDim : hudTokens.lightTextDim;
   const accent = hudTokens.cyan;
 
-  const [nick, setNick] = React.useState('guest#1284');
+  // viewer 不暴露 fingerprint：fp 仍存在(僅供後端/admin 使用 + avatar hue),
+  // 但 viewer UI 完全不顯示 fp 字串。
+  // 未命名時 fallback 為「訪客 #ABCD」(fp 前 4 hex 大寫,視覺上像房間代碼)。
+  const [fp] = React.useState('a3f2b9c1');
+  const guestTag = '暱稱';
+  const [nick, setNick] = React.useState('');
+  const [editingNick, setEditingNick] = React.useState(false);
+  const [nickJustSaved, setNickJustSaved] = React.useState(false);
+  const displayName = nick || guestTag;
   const [msg, setMsg] = React.useState('');
   const [color, setColor] = React.useState('#ffffff');
   const [fontSize, setFontSize] = React.useState(32);
@@ -61,6 +69,35 @@ function ViewerCore({ theme, form, inBrowser, pollEnabled }) {
   const [emojiOpen, setEmojiOpen] = React.useState(false);
   const [tab, setTab] = React.useState('fire');
   const [vote, setVote] = React.useState(null);
+
+  // #2 送出反饋 + cooldown + moderation
+  const [sendStatus, setSendStatus] = React.useState(null); // null | 'sent' | 'blocked'
+  const [cooldownEnd, setCooldownEnd] = React.useState(0);
+  const [now, setNow] = React.useState(Date.now());
+  React.useEffect(() => {
+    if (cooldownEnd === 0) return;
+    const id = setInterval(() => setNow(Date.now()), 100);
+    return () => clearInterval(id);
+  }, [cooldownEnd]);
+  const cooldownLeft = Math.max(0, (cooldownEnd - now) / 1000);
+  const onCooldown = cooldownLeft > 0;
+
+  // mock moderation: 含這些詞會被 BLOCK
+  const BLOCKED_WORDS = ['垃圾', '幹', 'spam'];
+  const willBeBlocked = (text) => BLOCKED_WORDS.some(w => text.includes(w));
+
+  const handleFire = () => {
+    if (!msg || onCooldown) return;
+    if (willBeBlocked(msg)) {
+      setSendStatus('blocked');
+      setTimeout(() => setSendStatus(null), 2400);
+      return;
+    }
+    setSendStatus('sent');
+    setMsg('');
+    setCooldownEnd(Date.now() + 3000); // 3s mock cooldown
+    setTimeout(() => setSendStatus(null), 1800);
+  };
 
   // If poll tab gets disabled, fall back to fire.
   React.useEffect(() => {
@@ -184,14 +221,17 @@ function ViewerCore({ theme, form, inBrowser, pollEnabled }) {
           <div style={{
             marginTop: 10, fontSize, fontFamily, fontWeight: 600, color,
             opacity: opacity / 100,
-            textShadow: effects.includes('glow') ? `0 0 12px ${color}, 0 2px 4px rgba(0,0,0,0.6)` : '0 2px 4px rgba(0,0,0,0.55)',
+            textShadow: (effects.includes('glow') || sendStatus === 'sent')
+              ? `0 0 ${sendStatus === 'sent' ? 24 : 12}px ${color}, 0 2px 4px rgba(0,0,0,0.6)`
+              : '0 2px 4px rgba(0,0,0,0.55)',
+            transition: 'text-shadow 300ms',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             display: 'flex', alignItems: 'baseline', gap: 10,
           }}>
             <span style={{
               fontSize: Math.max(11, fontSize * 0.42), fontFamily: hudTokens.fontMono,
               fontWeight: 500, opacity: 0.75, letterSpacing: 0.5,
-            }}>@{nick}</span>
+            }}>@{displayName}</span>
             <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {msg || '示例彈幕文字'}
             </span>
@@ -199,8 +239,14 @@ function ViewerCore({ theme, form, inBrowser, pollEnabled }) {
         </div>
 
         <Field label="暱稱" textDim={textDim}>
-          <input value={nick} onChange={e => setNick(e.target.value.slice(0, 20))} maxLength={20}
-            style={inputStyle({ line, text, raised })} />
+          <input
+            type="text"
+            value={nick}
+            onChange={e => setNick(e.target.value.slice(0, 12))}
+            maxLength={12}
+            placeholder="暱稱"
+            style={inputStyle({ line, text, raised })}
+          />
         </Field>
 
         <Field label="顏色" textDim={textDim}>
@@ -315,6 +361,23 @@ function ViewerCore({ theme, form, inBrowser, pollEnabled }) {
       {/* Send bar — Fire tab only */}
       {tab === 'fire' && (
       <div style={{ padding: `10px ${pad - 4}px 12px`, borderTop: `1px solid ${line}`, background: panel, position: 'relative' }}>
+        {/* #2 toast — sent / blocked */}
+        {sendStatus && (
+          <div style={{
+            position: 'absolute', left: '50%', bottom: 'calc(100% + 8px)',
+            transform: 'translateX(-50%)', zIndex: 10,
+            padding: '8px 14px', borderRadius: 999,
+            background: sendStatus === 'sent' ? hudTokens.lime : hudTokens.crimson,
+            color: sendStatus === 'sent' ? '#001428' : '#fff',
+            fontFamily: hudTokens.fontMono, fontSize: 11, fontWeight: 700, letterSpacing: 1,
+            boxShadow: `0 4px 20px ${sendStatus === 'sent' ? 'rgba(132,225,0,0.4)' : 'rgba(255,77,79,0.4)'}`,
+            animation: 'viewerToastIn 240ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+            whiteSpace: 'nowrap', pointerEvents: 'none',
+          }}>
+            {sendStatus === 'sent' ? '✓ 已送上螢幕' : '⚠ 此訊息含敏感字 · 已被主持人設定遮罩'}
+          </div>
+        )}
+        <style>{`@keyframes viewerToastIn { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }`}</style>
         {emojiOpen && (
           <div style={{
             position: 'absolute', left: pad - 4, right: pad - 4, bottom: '100%',
@@ -348,7 +411,8 @@ function ViewerCore({ theme, form, inBrowser, pollEnabled }) {
             ref={inputRef}
             value={msg}
             onChange={e => setMsg(e.target.value.slice(0, 100))}
-            placeholder="想對現場說點什麼？"
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleFire(); } }}
+            placeholder={onCooldown ? `冷卻中 · ${cooldownLeft.toFixed(1)}s 後可再送` : '想對現場說點什麼？'}
             maxLength={100}
             style={{
               flex: 1, background: 'transparent', border: 'none', outline: 'none',
@@ -356,16 +420,29 @@ function ViewerCore({ theme, form, inBrowser, pollEnabled }) {
               fontWeight: 500,
             }}
           />
-          <button disabled={!msg} style={{
-            padding: '9px 16px', borderRadius: 999,
-            background: msg ? accent : raised,
-            border: 'none', color: msg ? '#000' : textDim,
-            cursor: msg ? 'pointer' : 'default', fontSize: 12, fontWeight: 700,
+          <button onClick={handleFire} disabled={!msg || onCooldown} style={{
+            padding: '9px 16px', borderRadius: 999, position: 'relative', overflow: 'hidden',
+            background: onCooldown ? raised : (sendStatus === 'blocked' ? hudTokens.crimson : (msg ? accent : raised)),
+            border: 'none', color: onCooldown ? textDim : (sendStatus === 'blocked' ? '#fff' : (msg ? '#000' : textDim)),
+            cursor: (msg && !onCooldown) ? 'pointer' : 'default', fontSize: 12, fontWeight: 700,
             fontFamily: hudTokens.fontMono, letterSpacing: 1.5,
-          }}>FIRE ▶</button>
+            transition: 'background 200ms, color 200ms',
+          }}>
+            {onCooldown ? `${cooldownLeft.toFixed(1)}s` : (sendStatus === 'blocked' ? '⚠ BLOCKED' : 'FIRE ▶')}
+          </button>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 1, padding: '0 4px' }}>
-          <span>Enter 送出 · emoji 可用 :name:</span>
+          <span style={{
+            color: sendStatus === 'sent' ? hudTokens.lime
+              : sendStatus === 'blocked' ? hudTokens.crimson
+              : onCooldown ? hudTokens.amber
+              : textDim,
+          }}>
+            {sendStatus === 'sent' ? '✓ 已送上螢幕'
+              : sendStatus === 'blocked' ? '⚠ 含敏感字 · 主持人已設為遮罩'
+              : onCooldown ? `⏱ 冷卻中 · 速率限制 10/60s`
+              : 'Enter 送出 · emoji 可用 :name:'}
+          </span>
           <span style={{ color: msg.length > 90 ? hudTokens.amber : textDim }}>{msg.length}/100</span>
         </div>
       </div>
@@ -652,5 +729,117 @@ function ViewerPollTab({ data, vote, setVote, isDark, accent, text, textDim, lin
 }
 
 // Quick reply tab — REMOVED (功能取消)
+
+// IdentityChip — viewer 不顯示 fp 字串。已命名: 只顯示暱稱; 未命名: 顯示「訪客 #ABCD」+ 提示。
+// avatar hue 仍由 fp 決定(視覺穩定),但 fp 字串不出現在 UI。
+function IdentityChip({ fp, guestTag, nick, setNick, editing, setEditing, justSaved, setJustSaved, text, textDim, line, raised, accent, panel }) {
+  const inputRef = React.useRef(null);
+  const [draft, setDraft] = React.useState(nick);
+  React.useEffect(() => { if (editing && inputRef.current) inputRef.current.focus(); }, [editing]);
+  React.useEffect(() => { setDraft(nick); }, [nick, editing]);
+  React.useEffect(() => {
+    if (!justSaved) return;
+    const t = setTimeout(() => setJustSaved(false), 600);
+    return () => clearTimeout(t);
+  }, [justSaved, setJustSaved]);
+
+  const commit = () => {
+    const v = draft.trim().slice(0, 12);
+    setNick(v);
+    setEditing(false);
+    setJustSaved(true);
+  };
+  const cancel = () => { setDraft(nick); setEditing(false); };
+
+  if (editing) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        background: raised, border: `1px solid ${accent}`, borderRadius: 6,
+        padding: '8px 10px', boxShadow: `0 0 0 3px ${hudTokens.cyanSoft}`,
+      }}>
+        <input
+          ref={inputRef}
+          value={draft}
+          onChange={e => setDraft(e.target.value.slice(0, 12))}
+          onKeyDown={e => {
+            if (e.key === 'Enter') commit();
+            if (e.key === 'Escape') cancel();
+          }}
+          maxLength={12}
+          placeholder="輸入暱稱 · 最多 12 字"
+          style={{
+            flex: 1, background: 'transparent', border: 'none', outline: 'none',
+            color: text, fontFamily: hudTokens.fontSans, fontSize: 13, padding: 0,
+          }}
+        />
+        <span style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, letterSpacing: 0.5 }}>
+          {draft.length}/12
+        </span>
+        <button onClick={commit} title="儲存 · Enter" style={{
+          background: accent, color: '#000', border: 'none', borderRadius: 4,
+          padding: '3px 8px', fontFamily: hudTokens.fontMono, fontSize: 10,
+          letterSpacing: 0.5, cursor: 'pointer', fontWeight: 600,
+        }}>OK</button>
+        <button onClick={cancel} title="取消 · Esc" style={{
+          background: 'transparent', color: textDim, border: `1px solid ${line}`, borderRadius: 4,
+          padding: '3px 8px', fontFamily: hudTokens.fontMono, fontSize: 10,
+          letterSpacing: 0.5, cursor: 'pointer',
+        }}>×</button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      onClick={() => setEditing(true)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        background: justSaved
+          ? `linear-gradient(${hudTokens.cyanSoft}, ${hudTokens.cyanSoft}), ${raised}`
+          : raised,
+        border: `1px solid ${justSaved ? accent : line}`, borderRadius: 6,
+        padding: '8px 10px', cursor: 'pointer',
+        transition: 'background 400ms ease, border-color 400ms ease',
+      }}
+      title="點一下改暱稱"
+    >
+      {/* 圓形 avatar 用 fp 前 2 hex 當 hue */}
+      <span style={{
+        width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+        background: `oklch(0.65 0.15 ${(parseInt(fp.slice(0, 2), 16) * 1.41) % 360})`,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        color: '#000', fontFamily: hudTokens.fontMono, fontSize: 10, fontWeight: 700,
+      }}>{(nick || guestTag).slice(0, 1).toUpperCase()}</span>
+
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+        {nick ? (
+          <>
+            <span style={{ color: text, fontSize: 13, fontWeight: 600, fontFamily: hudTokens.fontSans, lineHeight: 1.2 }}>
+              {nick}
+            </span>
+            <span style={{ color: textDim, fontSize: 10, fontFamily: hudTokens.fontSans }}>
+              已設定暱稱 · 點此修改
+            </span>
+          </>
+        ) : (
+          <>
+            <span style={{ color: text, fontFamily: hudTokens.fontSans, fontSize: 13, fontWeight: 600, letterSpacing: 0.3, lineHeight: 1.2 }}>
+              {guestTag}
+            </span>
+            <span style={{ color: textDim, fontSize: 10, fontFamily: hudTokens.fontSans }}>
+              未命名 · 點此設定暱稱
+            </span>
+          </>
+        )}
+      </div>
+
+      <span style={{
+        fontFamily: hudTokens.fontMono, fontSize: 11, color: textDim,
+        opacity: 0.7, flexShrink: 0,
+      }}>✎</span>
+    </div>
+  );
+}
 
 Object.assign(window, { ViewerMobile, ViewerDesktop });

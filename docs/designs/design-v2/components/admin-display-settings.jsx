@@ -18,7 +18,7 @@ function AdminDisplaySettingsPage({ theme = 'dark' }) {
     <AdminPageShell
       route="display"
       title="顯示設定"
-      en="DISPLAY SETTINGS · 每列決定該參數的預設值 + 是否讓觀眾自訂 + 自訂範圍"
+      en="DISPLAY SETTINGS · 6 PARAMS · DEFAULT + AUDIENCE OVERRIDE"
       theme={theme}
     >
       {({ panel, raised, line, text, textDim, accent, radius }) => (

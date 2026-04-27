@@ -63,7 +63,7 @@ function AdminThemePacksPage({ theme = 'dark' }) {
   const activePack = packs.find(p => p.active);
 
   return (
-    <AdminPageShell route="themes" title="風格主題包" en="THEME PACKS · 彈幕樣式與特效預設" theme={theme}>
+    <AdminPageShell route="themes" title="風格主題包" en="THEME PACKS · STYLE + EFFECTS PRESETS" theme={theme}>
       {({ panel, raised, line, text, textDim, accent, radius }) => (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -131,7 +131,7 @@ function AdminThemePacksPage({ theme = 'dark' }) {
             </div>
 
             <div style={{ background: panel, border: `1px solid ${line}`, borderRadius: radius, padding: 14 }}>
-              <HudLabel color={textDim}>觀眾覆蓋 · AUDIENCE OVERRIDE</HudLabel>
+              <HudLabel color={textDim}>AUDIENCE OVERRIDE</HudLabel>
               <div style={{ fontSize: 12, color: text, marginTop: 8, lineHeight: 1.5 }}>
                 觀眾仍可在 Fire tab 的「主題」欄選擇自己的樣式。主題包只定義 <span style={{ color: accent }}>預設值</span>。
               </div>
