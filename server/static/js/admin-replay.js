@@ -11,8 +11,9 @@
  *
  * Section id is `replay-v2-section` — intentionally NOT prefixed `sec-` so the
  * shell's route-based visibility filter (admin.js applySectionVisibility) does
- * not touch it. Visibility is managed here by hashchange: shown on #/history
- * and #/replay. No admin.js / ADMIN_ROUTES changes required.
+ * not touch it. Visibility is now managed by the History page's tab strip
+ * (admin-history.js): shown on #/history when tab=replay, otherwise hidden.
+ * The replay route was retired in 2026-04-27 sidebar consolidation.
  *
  * Loaded as <script defer> in admin.html after admin-history.js.
  * Globals: csrfFetch, showToast, ServerI18n, AdminUtils.
@@ -118,9 +119,15 @@
   }
 
   function _inject() {
-    var grid = document.getElementById("settings-grid");
-    if (!grid || document.getElementById(SECTION_ID)) return;
-    grid.insertAdjacentHTML("beforeend", _renderShell());
+    if (document.getElementById(SECTION_ID)) return;
+    // 2026-04-27 sidebar consolidation: place replay UI alongside the
+    // history card (sibling of sec-history) so the tab strip sits above
+    // both — sec-history's parent is the admin-route-sections grid, not
+    // #settings-grid. Fall back to settings-grid if history not yet rendered.
+    var historyCard = document.getElementById("sec-history");
+    var host = (historyCard && historyCard.parentElement) || document.getElementById("settings-grid");
+    if (!host) return;
+    host.insertAdjacentHTML("beforeend", _renderShell());
     _bind();
     _applyHashVisibility();
     _load();
@@ -294,17 +301,35 @@
     }
   }
 
-  // Visibility: mirror the shell's route awareness without touching it.
-  // Show section ONLY on #/replay (dedicated nav slug landed via admin.js
-  // ADMIN_ROUTES). Hide elsewhere.
+  // Visibility: post 2026-04-27 sidebar consolidation, replay UI is a tab
+  // inside the History page. Driven by:
+  //   route === "history" AND body.dataset.historyTab === "replay"
+  // The tab strip (admin-history.js) toggles the body dataset.
   function _applyHashVisibility() {
     var el = document.getElementById(SECTION_ID);
     if (!el) return;
     var hash = (window.location.hash.match(/^#\/(\w[\w-]*)/) || [])[1] || "dashboard";
-    el.style.display = hash === "replay" ? "" : "none";
+    var tab = (document.body && document.body.dataset && document.body.dataset.historyTab) || "export";
+    el.style.display = (hash === "history" && tab === "replay") ? "" : "none";
   }
 
   window.addEventListener("hashchange", _applyHashVisibility);
+  // History page also dispatches this when its tab strip changes.
+  document.addEventListener("admin:history-tab", _applyHashVisibility);
+
+  // Relocate replay-v2-section to sit next to sec-history once the history
+  // card exists. Race-safe: if _inject injected into #settings-grid before
+  // sec-history was rendered, this moves it to the right parent so the
+  // history tab strip sits above both.
+  function _relocate() {
+    var el = document.getElementById(SECTION_ID);
+    var historyCard = document.getElementById("sec-history");
+    if (!el || !historyCard) return;
+    var rightParent = historyCard.parentElement;
+    if (!rightParent || el.parentElement === rightParent) return;
+    rightParent.appendChild(el);
+  }
+  document.addEventListener("admin-panel-rendered", _relocate);
 
   document.addEventListener("DOMContentLoaded", function () {
     if (!(window.DANMU_CONFIG && window.DANMU_CONFIG.session && window.DANMU_CONFIG.session.logged_in)) return;

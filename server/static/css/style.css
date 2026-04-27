@@ -5275,3 +5275,39 @@ body.stream-mode .admin-hero .admin-summary-grid {
   float: right;
 }
 .admin-ext-token-deeplink:hover { text-decoration: underline; }
+
+/* ─── v5.2 sidebar consolidation (2026-04-27) ────────────────────────── */
+/* Tab strip at the top of consolidated routes (history, viewer-config). */
+.admin-v2-tabbar {
+  display: flex; gap: 6px;
+  margin-bottom: 8px;
+  padding: 4px;
+  background: var(--color-surface, #0e1420);
+  border: 1px solid var(--color-border, #1f2937);
+  border-radius: 8px;
+}
+.admin-v2-tab {
+  flex: 1;
+  padding: 9px 14px;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted, #94a3b8);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+.admin-v2-tab:hover { color: var(--color-text-strong, #e2e8f0); }
+.admin-v2-tab.is-active {
+  color: var(--color-primary, #38bdf8);
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.15) inset;
+}
+
+/* When the History tab strip is on the "replay" tab, hide the export card.
+   sec-history visibility is otherwise controlled by admin.js applySection-
+   Visibility (route=history shows it). The CSS rule below wins because of
+   higher specificity (body[data-history-tab=replay] adds an attr selector). */
+body[data-history-tab="replay"] #sec-history { display: none !important; }

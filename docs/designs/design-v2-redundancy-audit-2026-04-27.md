@@ -170,7 +170,54 @@ sidebar 已經 21 個，再加 12 個 = 33 個。手機 RWD 一定爆。
 
 ---
 
-## 7. Production 現況（FYI）
+## 8. Design 回覆 (2026-04-27)
+
+### A. Sidebar 整併 — Yes，但 17 不是 14
+- **訊息紀錄獨立**、history 合併 export+replay (2 tab)
+- **Theme Packs 獨立**、viewer-config 合併 page+fields (2 tab)
+- Fire Token sub-row 移除
+
+> Design 論點：保留兩個獨立 surface 給不同心智模型，比為了縮數字硬合好。messages = operator 直播當下盯場、history = 過去回顧；Theme Packs = 投影到大螢幕的「輸出端外觀」、Viewer 設定 = 觀眾手機端的「輸入端外觀」。
+
+### B. V1Z4 P0 順序：About → Setup Wizard → Poll Deep-Dive
+- Message Detail Drawer 升 P1（mock 即可，inbox-style UX 延伸）
+- Audience List 留 P3（跟 history 整併要一起想）
+
+### C. 暫停加 nav 同意，先整併再開 P0
+順序：
+1. 先做 sidebar 整併（→ 17 row）
+2. 確認新 sidebar 在手機 RWD 沒爆
+3. 再開始 P0 三個（這三個都是新獨立 page，可以加 nav 了）
+
+Design 不動 prototype（這份是 spec audit），等工程整併落地後再補：
+- history / viewer-config 兩個併集 artboard 加上 tab UI
+- P0 三張 artboard
+
+---
+
+## 9. 工程執行清單（接 §8 拍板）
+
+### Phase 1: Sidebar 整併（這輪）
+- [ ] `ADMIN_ROUTES`: 移除 `replay`、`display`、`viewer-theme`、`firetoken`(sub-row 用)；rename `history` 含 `sec-history` + replay tab；新增 `viewer-config` 含 `sec-viewer-theme` + display 6 sections
+- [ ] sidebar HTML: 移除 4 個 row（replay / display / viewer-theme / firetoken sub），rename `history` 標籤、`viewer-config` 標籤
+- [ ] `admin-replay.js`: 從 `replay-v2-section` 自管 hashchange 改成 history 頁的 tab content
+- [ ] `admin-history.js`: 加 tab UI（匯出 / 重播）
+- [ ] viewer-config 頁: 加 tab UI（整頁主題 / 表單欄位），把 `sec-viewer-theme` + display 6 sections 包進兩個 tab panel
+- [ ] integrations 頁的 Fire Token deeplink: 確認 `#/firetoken` route 仍可達（route 留、只移 sidebar row）
+- [ ] `command-palette`: 移除已刪 route 的 entry，加新整併 route
+- [ ] mobile RWD 測試（admin-dash-nav）
+
+### Phase 2: P0 三個（整併確認後）
+- [ ] About page (新 route)
+- [ ] Setup Wizard（首次登入 4 步驟）
+- [ ] Poll Deep-Dive（指紋分布 / 時間軸 / 地區）
+
+### Phase 3: P1/P2/P3 視情況
+依 §B 順序，每個都先確認 backend dependency。
+
+---
+
+## 10. Production 現況（FYI）
 - branch `claude/design-v2-retrofit` @ `dca32b0` (101 commits ahead of `main`)
 - VPS `138.2.59.206:4000` 跑 `dca32b0`，container `danmu-fire` healthy
 - 951 tests passing

@@ -20,7 +20,7 @@
   const KIND_META = {
     dme:   { label: "效果",   en: "DME",     color: "var(--color-warning, #fbbf24)", route: "effects",      icon: "✦" },
     font:  { label: "字型",   en: "FONTS",   color: "var(--color-primary)",          route: "fonts",        icon: "⌂" },
-    logo:  { label: "圖片",   en: "IMAGES",  color: "#86efac",                        route: "viewer-theme", icon: "◐" },
+    logo:  { label: "圖片",   en: "IMAGES",  color: "#86efac",                        route: "viewer-config", icon: "◐" },
     theme: { label: "主題",   en: "THEMES",  color: "#c4b5fd",                        route: "themes",       icon: "❖" },
     sound: { label: "音效",   en: "SOUNDS",  color: "#f87171",                        route: "assets",       icon: "♪" },
   };

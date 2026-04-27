@@ -969,23 +969,73 @@
     });
   }
 
+  // 2026-04-27 sidebar consolidation: display merged into viewer-config
+  // route as the "fields" tab. Tab state lives on body.dataset.viewerConfigTab.
   let _lastVisibleRoute = null;
   function syncVisibility() {
     const shell = document.querySelector(".admin-dash-grid");
     const page = document.getElementById(PAGE_ID);
     if (!shell || !page) return;
     const route = shell.dataset.activeRoute || "dashboard";
-    const onPage = route === "display";
+    const tab = (document.body.dataset.viewerConfigTab) || "page";
+    const onPage = route === "viewer-config" && tab === "fields";
     page.style.display = onPage ? "" : "none";
+    // Also toggle sec-viewer-theme to mirror tab=page (the inverse).
+    const vt = document.getElementById("sec-viewer-theme");
+    if (vt) {
+      const showVT = route === "viewer-config" && tab === "page";
+      vt.style.display = showVT ? "" : "none";
+    }
     if (onPage) {
       startMetricsPoll();
-      if (_lastVisibleRoute !== "display") {
+      if (_lastVisibleRoute !== "viewer-config-fields") {
         fetchSettings().then(renderRows).catch(() => {});
       }
+      _lastVisibleRoute = "viewer-config-fields";
     } else {
       stopMetricsPoll();
+      _lastVisibleRoute = route;
     }
-    _lastVisibleRoute = route;
+  }
+
+  function _initViewerConfigTabs() {
+    if (document.getElementById("sec-viewer-config-tabs")) return; // idempotent
+    const grid = document.getElementById("settings-grid");
+    if (!grid) return;
+    const bar = document.createElement("div");
+    bar.id = "sec-viewer-config-tabs";
+    bar.className = "admin-v2-tabbar lg:col-span-2";
+    bar.innerHTML =
+      '<button type="button" class="admin-v2-tab is-active" data-vc-tab="page">整頁主題 · PAGE</button>' +
+      '<button type="button" class="admin-v2-tab" data-vc-tab="fields">表單欄位 · FIELDS</button>';
+    // Insert BEFORE sec-viewer-theme if present (so tabs appear at top of route).
+    const vt = document.getElementById("sec-viewer-theme");
+    if (vt && vt.parentNode === grid) grid.insertBefore(bar, vt);
+    else grid.appendChild(bar);
+
+    if (!document.body.dataset.viewerConfigTab) document.body.dataset.viewerConfigTab = "page";
+
+    function _apply(tab) {
+      document.body.dataset.viewerConfigTab = tab;
+      bar.querySelectorAll(".admin-v2-tab").forEach((btn) => {
+        btn.classList.toggle("is-active", btn.dataset.vcTab === tab);
+      });
+      syncVisibility();
+    }
+
+    bar.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-vc-tab]");
+      if (!btn) return;
+      _apply(btn.dataset.vcTab);
+    });
+
+    // Hide tabbar itself when not on #/viewer-config.
+    function _syncBar() {
+      const hash = (window.location.hash.match(/^#\/(\w[\w-]*)/) || [])[1] || "dashboard";
+      bar.style.display = hash === "viewer-config" ? "" : "none";
+    }
+    window.addEventListener("hashchange", _syncBar);
+    _syncBar();
   }
 
   async function inject() {
@@ -1017,9 +1067,11 @@
     document.addEventListener("admin-panel-rendered", () => {
       inject();
       hideLegacy();
+      _initViewerConfigTabs();
       syncVisibility();
     });
     inject();
+    _initViewerConfigTabs();
   }
 
   if (document.readyState === "loading") {

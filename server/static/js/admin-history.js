@@ -463,6 +463,50 @@
     });
   }
 
+  // 2026-04-27 sidebar consolidation: history page hosts a 2-tab strip
+  // (匯出 / 重播). Replay used to be its own #/replay route — now it's a
+  // tab here. Tab state lives on body.dataset.historyTab.
+  function _initHistoryTabs() {
+    if (document.getElementById("sec-history-tabs")) return; // idempotent
+    var historyCard = document.getElementById("sec-history");
+    if (!historyCard) return;
+    var parent = historyCard.parentElement;
+    if (!parent) return;
+    var bar = document.createElement("div");
+    bar.id = "sec-history-tabs";
+    bar.className = "admin-v2-tabbar lg:col-span-2";
+    bar.innerHTML =
+      '<button type="button" class="admin-v2-tab is-active" data-history-tab="export">匯出 · EXPORT</button>' +
+      '<button type="button" class="admin-v2-tab" data-history-tab="replay">重播 · REPLAY</button>';
+    parent.insertBefore(bar, historyCard);
+
+    if (!document.body.dataset.historyTab) document.body.dataset.historyTab = "export";
+
+    function _apply(tab) {
+      document.body.dataset.historyTab = tab;
+      bar.querySelectorAll(".admin-v2-tab").forEach(function (btn) {
+        btn.classList.toggle("is-active", btn.dataset.historyTab === tab);
+      });
+      // sec-history hide handled by CSS rule on body[data-history-tab="replay"]
+      // (avoids race with admin.js applySectionVisibility on hashchange).
+      // replay-v2-section listens to this event to update its own visibility.
+      document.dispatchEvent(new CustomEvent("admin:history-tab"));
+    }
+
+    bar.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-history-tab]");
+      if (!btn) return;
+      _apply(btn.dataset.historyTab);
+    });
+
+    // Re-run apply to refresh active class / dispatch on hashchange.
+    function _syncBar() {
+      _apply(document.body.dataset.historyTab || "export");
+    }
+    window.addEventListener("hashchange", _syncBar);
+    _syncBar();
+  }
+
   // admin.js renders the control panel HTML asynchronously (after an HTTP fetch),
   // so DOMContentLoaded fires before #addKeywordBtn and friends exist.
   // admin.js dispatches "admin-panel-rendered" once the DOM is ready.
@@ -470,6 +514,7 @@
     fetchBlacklist();
     fetchDanmuHistory();
     _initHistoryEventListeners();
+    _initHistoryTabs();
   });
 
   // Expose for use by admin.js WebSocket handler (blacklist_update event)

@@ -107,14 +107,15 @@ SECTION_TO_ROUTE = {
     "sec-history": "history",
     "sec-polls": "polls",
     "sec-widgets": "widgets",
-    # v5: per-setting display sections moved out of "themes" into the
-    # dedicated "display" route (admin.js:3782 ADMIN_ROUTES["display"]).
-    "sec-color": "display",
-    "sec-opacity": "display",
-    "sec-fontsize": "display",
-    "sec-speed": "display",
-    "sec-fontfamily": "display",
-    "sec-layout": "display",
+    # v5.2 (2026-04-27 sidebar consolidation): display + viewer-theme merged
+    # into "viewer-config" route with a 2-tab strip (page / fields).
+    "sec-color": "viewer-config",
+    "sec-opacity": "viewer-config",
+    "sec-fontsize": "viewer-config",
+    "sec-speed": "viewer-config",
+    "sec-fontfamily": "viewer-config",
+    "sec-layout": "viewer-config",
+    "sec-viewer-theme": "viewer-config",
     "sec-themes": "themes",
     # v5: emojis / stickers / sounds bundled into the "assets" route.
     "sec-emojis": "assets",
@@ -169,6 +170,15 @@ def _open_section(page, section_id: str):
         "sec-speed", "sec-fontfamily", "sec-layout",
     }
     if section_id in DISPLAY_LEGACY_IDS:
+        # v5.2 (2026-04-27): viewer-config route has 2 tabs. The display
+        # fields page only shows when tab=fields; flip it before waiting.
+        page.evaluate(
+            """() => {
+                const btn = document.querySelector('[data-vc-tab="fields"]');
+                if (btn) btn.click();
+            }"""
+        )
+        page.wait_for_timeout(150)
         page.wait_for_selector("#admin-display-v2-page", state="visible", timeout=5000)
         return
 

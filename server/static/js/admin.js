@@ -798,11 +798,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="history" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">↳</span>
-                                    <span>時間軸匯出</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="replay" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">▶</span>
-                                    <span>歷史重播</span>
+                                    <span>歷史</span>
                                 </button>
 
                                 <div class="admin-dash-nav-label" style="margin-top:16px">互動</div>
@@ -821,13 +817,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span>風格主題包</span>
                                     <span class="admin-dash-nav-badge" data-count-themes>—</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="display" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◐</span>
-                                    <span>顯示設定</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="viewer-theme" role="tab" aria-selected="false">
+                                <button type="button" class="admin-dash-nav-row" data-route="viewer-config" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◍</span>
-                                    <span>觀眾頁主題</span>
+                                    <span>Viewer 設定</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="assets" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◰</span>
@@ -836,10 +828,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <button type="button" class="admin-dash-nav-row" data-route="integrations" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⌨</span>
                                     <span>整合</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row admin-dash-nav-row--sub" data-route="firetoken" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⚿</span>
-                                    <span>Fire Token</span>
                                 </button>
 
                                 <div class="admin-dash-nav-label" style="margin-top:16px">審核</div>
@@ -2789,7 +2777,7 @@ document.addEventListener("DOMContentLoaded", () => {
                   <span class="k">彈幕顏色 / 描邊 / 陰影</span>
                   <span class="v">↗ Theme Packs</span>
                 </button>
-                <button type="button" class="admin-viewer-theme-legend-row" data-vt-jump="display">
+                <button type="button" class="admin-viewer-theme-legend-row" data-vt-jump="viewer-config">
                   <span class="k">字級 / 速度 / 透明度</span>
                   <span class="v">↗ Display Settings</span>
                 </button>
@@ -3782,13 +3770,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const ADMIN_ROUTES = {
     dashboard: { title: "控制台", kicker: "DASHBOARD · 活動進行中", sections: [], showKpi: true },
     messages:  { title: "訊息紀錄",         kicker: "MESSAGES · 即時訊息串",    sections: ["sec-live-feed"] },
-    history:   { title: "時間軸匯出",       kicker: "HISTORY · 時間軸 / 匯出",   sections: ["sec-history"] },
-    replay:    { title: "歷史重播",         kicker: "REPLAY · 重送歷史訊息",     sections: [] },
+    // v5.2 consolidation (2026-04-27 audit §A): merged 歷史重播 → tab inside
+    // history page. sec-history holds export, replay-v2-section holds the
+    // replay UI; admin-history.js renders a tab strip that toggles them.
+    history:   { title: "歷史",             kicker: "HISTORY · 匯出 / 重播",     sections: ["sec-history-tabs", "sec-history"] },
     polls:     { title: "投票",             kicker: "POLLS · 2–6 選項",         sections: ["sec-polls"] },
     widgets:   { title: "Overlay Widgets",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
     themes:    { title: "風格主題包",       kicker: "THEME PACKS · 彈幕樣式預設",       sections: ["sec-themes"] },
-    display:   { title: "顯示設定",         kicker: "DISPLAY · 觀眾可自訂欄位",        sections: ["sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout"] },
-    "viewer-theme": { title: "觀眾頁主題",  kicker: "VIEWER THEME · /fire 頁面外觀",   sections: ["sec-viewer-theme"] },
+    // v5.2 consolidation (2026-04-27 audit §A): viewer-theme + display merged
+    // into one route with tab strip. Default tab = page (sec-viewer-theme),
+    // alt tab = fields (sec-color/opacity/fontsize/speed/fontfamily/layout).
+    "viewer-config": { title: "Viewer 設定", kicker: "VIEWER CONFIG · 整頁主題 / 表單欄位", sections: ["sec-viewer-config-tabs", "sec-viewer-theme", "sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout"] },
     // v5.1 (2026-04-27 redesign): unified Assets Library overview on top
     // (sec-assets-overview from admin-assets.js) → existing emoji / stickers
     // / sounds sub-sections kept below for editing per-type.
@@ -3796,8 +3788,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // v5.2 Sprint 1 (2026-04-27): Extensions catalog page — Slido / Discord
     // / OBS / Bookmarklet cards + shared Fire Token UI inline.
     integrations: { title: "整合",          kicker: "INTEGRATIONS · 第三方接入 · 共用 FIRE TOKEN", sections: ["sec-extensions-overview"] },
-    // v5.2 Sprint 2 (2026-04-27 redesign artboard ⑭-B): Fire Token deep
-    // dive — token card + 24h usage chart + recent IPs + audit timeline.
+    // v5.2 Sprint 2 deeplink-only (2026-04-27 audit §A.3): Fire Token sub-row
+    // removed from sidebar. Route stays reachable via integrations → 詳細統計.
     firetoken:    { title: "Fire Token",     kicker: "ADMIN LANE · FIRE TOKEN · 用量 / IP / AUDIT",  sections: ["sec-firetoken-overview"] },
     moderation:{ title: "敏感字 & 黑名單",  kicker: "MODERATION · 內建功能 · 非插件", sections: ["sec-blacklist", "sec-filters"] },
     ratelimit: { title: "速率限制",         kicker: "RATE LIMITS · 反刷屏",          sections: ["sec-ratelimit"] },
