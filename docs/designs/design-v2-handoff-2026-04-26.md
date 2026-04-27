@@ -1,6 +1,18 @@
 # Danmu Fire · v2 Design Handoff
 
-**Last updated**: 2026-04-27 (post Phase 2 P0 全 ship · commit `d71af67` · live on VPS)
+**Last updated**: 2026-04-27 (post P1 batch \[Message Drawer + Notifications + Audit Log\] · commit `262666f` · pending VPS deploy)
+
+> ✅ **2026-04-27 P1 done**（3 commits in sequence）：
+>
+> 1. **Message Detail Drawer** (`e4919af`) — slide-in 側邊抽屜。Click `#/messages` 任一 row → drawer 開：訊息泡泡 + 5 個 action button（封禁指紋已串實 endpoint，其他 v5.3 補）+ 指紋活動 KPI（從 `/admin/fingerprints`）+ 同 fp 最近訊息（從 in-mem live-feed entries）+ BAN 預覽 box。ESC / X / backdrop click 關閉。
+> 2. **Notifications Inbox** (`fdeeb34`) — `#/notifications` 新 sidebar row（19 row）。聚合 3 來源（Rate Limit / Fire Token audit / Moderation events），**無新 backend schema**。讀取 / 封存狀態 localStorage。filter：未讀 / 全部 / 已封存 + 來源 chip。30s auto-refresh。
+> 3. **Audit Log** (`262666f`) — `#/audit` 新 sidebar row（20 row）+ 新 service `services/audit_log.py`（append-only JSON-lines @ `runtime/audit.log`，2 MiB rotate）+ 新 endpoint `GET /admin/audit`。**Persistent**（跨重啟）。Instrumented：fire_token rotate/revoke/toggle、auth login/logout/password_changed/login_failed、broadcast mode_changed。表格 5-col + JSON export + 30s refresh。**11 個新 unit test**。
+>
+> **962/962 non-browser tests pass**（951 + 11 new audit_log）。
+>
+> **P2 Sessions entity** 沒寫 FE — 改寫成設計 doc [`sessions-entity-design-2026-04-27.md`](./sessions-entity-design-2026-04-27.md)。建議分 5 個小 sprint 漸進實作（services/session.py → propagation → list/detail UI → search/audience → 持久化升級）。要 Design 拍板 §7 三個 Q 之後再開工。
+
+> ✅ **2026-04-27 Phase 2 P0 done**（commit `e60a9a4` / `0701799` / `d71af67`）：3 個 prototype 全部實作 + 部署：
 
 > ✅ **2026-04-27 Phase 1 done**（commit `d208e9b`）：sidebar 20 → 17 row。
 >
