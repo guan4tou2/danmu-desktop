@@ -229,6 +229,15 @@ def fire():
         client_ip = _extract_client_ip()
         user_agent = request.headers.get("User-Agent", "")
 
+        # Integration source tag — Slido / Discord / OBS / bookmarklet identify
+        # themselves via X-Fire-Source header (preferred) or UA prefix hint.
+        # Recorded into a 200-entry ring buffer so the admin Extensions catalog
+        # can light up status dots based on recent traffic.
+        from ..services import fire_sources
+        explicit_source = request.headers.get("X-Fire-Source", "")
+        source_label = fire_sources.detect(user_agent, explicit_source)
+        fire_sources.record(source_label, fingerprint)
+
         # Filter engine check (replaces simple blacklist check)
         filter_result = filter_engine.check(text_content, fingerprint)
         if filter_result.action == "block":

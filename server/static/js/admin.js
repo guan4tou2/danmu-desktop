@@ -833,6 +833,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="admin-dash-nav-icon">◰</span>
                                     <span>素材庫</span>
                                 </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="integrations" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⌨</span>
+                                    <span>整合</span>
+                                </button>
 
                                 <div class="admin-dash-nav-label" style="margin-top:16px">審核</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="moderation" role="tab" aria-selected="false">
@@ -3785,6 +3789,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // (sec-assets-overview from admin-assets.js) → existing emoji / stickers
     // / sounds sub-sections kept below for editing per-type.
     assets:    { title: "素材庫",           kicker: "ASSETS LIBRARY · 統一上傳入口 + 細部編輯", sections: ["sec-assets-overview", "sec-emojis", "sec-stickers", "sec-sounds"] },
+    // v5.2 Sprint 1 (2026-04-27): Extensions catalog page — Slido / Discord
+    // / OBS / Bookmarklet cards + shared Fire Token UI inline.
+    integrations: { title: "整合",          kicker: "INTEGRATIONS · 第三方接入 · 共用 FIRE TOKEN", sections: ["sec-extensions-overview"] },
     moderation:{ title: "敏感字 & 黑名單",  kicker: "MODERATION · 內建功能 · 非插件", sections: ["sec-blacklist", "sec-filters"] },
     ratelimit: { title: "速率限制",         kicker: "RATE LIMITS · 反刷屏",          sections: ["sec-ratelimit"] },
     effects:   { title: "效果庫 .dme",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },

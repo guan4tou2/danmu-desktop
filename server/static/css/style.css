@@ -4866,3 +4866,144 @@ body.stream-mode .admin-hero .admin-summary-grid {
   .admin-konami-hud-key { transition: none; }
   .admin-konami-hud-progress { transition: none; }
 }
+
+/* ─── Admin Extensions Catalog (v5.2 Sprint 1 · 2026-04-27) ─────────
+ * Single page replacing .env-only Slido setup. Card grid; Slido card
+ * has Fire Token inline UI; others are placeholders ("即將支援").
+ * Status dot per card driven by /admin/integrations/sources/recent.
+ */
+.admin-ext-page { display: flex; flex-direction: column; gap: 14px; }
+
+.admin-ext-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+}
+
+.admin-ext-card {
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 16px; border-radius: 6px;
+  background: var(--admin-panel, var(--color-bg-base));
+  border: 1px solid var(--hud-line);
+}
+
+.admin-ext-head {
+  display: flex; align-items: center; gap: 10px;
+}
+.admin-ext-status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(148, 163, 184, 0.4);
+  flex-shrink: 0;
+  transition: background 200ms, box-shadow 200ms;
+}
+.admin-ext-status-dot.is-live {
+  background: #86efac;
+  box-shadow: 0 0 8px #86efac, 0 0 16px rgba(132,204,22,0.4);
+  animation: hud-pulse 2s ease-in-out infinite;
+}
+.admin-ext-icon {
+  font-size: 22px;
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.admin-ext-title {
+  flex: 1; min-width: 0;
+}
+.admin-ext-title .name {
+  font-size: 15px; font-weight: 600; color: var(--color-text-strong);
+}
+.admin-ext-title .meta {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.05em;
+  color: var(--color-text-muted); margin-top: 2px;
+}
+.admin-ext-flag {
+  padding: 2px 8px; border-radius: 3px;
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.admin-ext-flag.is-ready {
+  background: var(--hud-cyan-soft);
+  color: var(--color-primary);
+  border: 1px solid var(--hud-cyan-line, rgba(56,189,248,0.45));
+}
+.admin-ext-flag.is-soon {
+  background: rgba(148,163,184,0.12);
+  color: var(--color-text-muted);
+  border: 1px solid var(--hud-line);
+}
+
+.admin-ext-desc {
+  margin: 0;
+  font-size: 12px; color: var(--color-text-muted); line-height: 1.6;
+}
+
+.admin-ext-install {
+  padding: 10px;
+  background: var(--color-bg-elevated, var(--color-bg-deep));
+  border: 1px solid var(--hud-line);
+  border-radius: 4px;
+}
+.admin-ext-install-steps {
+  margin: 8px 0 0 18px;
+  padding: 0;
+  font-size: 12px; color: var(--color-text-strong);
+  line-height: 1.7;
+}
+.admin-ext-install-steps li { margin-bottom: 4px; }
+.admin-ext-step-link {
+  color: var(--color-primary); text-decoration: none;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em;
+}
+.admin-ext-step-link:hover { text-decoration: underline; }
+
+.admin-ext-token {
+  padding: 12px;
+  background: var(--color-bg-deep);
+  border: 1px solid var(--hud-cyan-line, rgba(56,189,248,0.35));
+  border-radius: 4px;
+}
+.admin-ext-token-row {
+  display: flex; gap: 6px; align-items: center; margin-top: 8px;
+}
+.admin-ext-token-code {
+  flex: 1; min-width: 0;
+  padding: 8px 10px; border-radius: 3px;
+  background: var(--color-bg-base);
+  border: 1px solid var(--hud-line);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.02em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.admin-ext-token-code.is-plain {
+  color: var(--color-primary);
+  background: var(--hud-cyan-soft);
+  border-color: var(--color-primary);
+  user-select: all;
+}
+.admin-ext-token-btn {
+  padding: 8px 12px; border-radius: 3px;
+  border: 1px solid var(--hud-line);
+  background: transparent; color: var(--color-text-muted);
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: border-color 120ms, color 120ms, background 120ms;
+}
+.admin-ext-token-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--hud-cyan-soft);
+}
+.admin-ext-token-btn:disabled {
+  opacity: 0.4; cursor: default;
+}
+.admin-ext-token-btn--danger:hover:not(:disabled) {
+  border-color: #f87171;
+  color: #f87171;
+  background: rgba(248,113,113,0.08);
+}
+.admin-ext-token-hint {
+  margin-top: 8px;
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.04em;
+  color: var(--color-text-muted); line-height: 1.6;
+}
