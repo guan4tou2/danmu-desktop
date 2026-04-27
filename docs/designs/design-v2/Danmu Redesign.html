@@ -77,6 +77,13 @@
 <script type="text/babel" src="components/viewer.jsx"></script>
 <script type="text/babel" src="components/desktop.jsx"></script>
 <script type="text/babel" src="components/konami.jsx"></script>
+<script type="text/babel" src="components/admin-batch1.jsx"></script>
+<script type="text/babel" src="components/admin-batch3.jsx"></script>
+<script type="text/babel" src="components/admin-batch4.jsx"></script>
+<script type="text/babel" src="components/admin-batch4-5.jsx"></script>
+<script type="text/babel" src="components/admin-batch5.jsx"></script>
+<script type="text/babel" src="components/admin-firetoken.jsx"></script>
+<script type="text/babel" src="components/admin-batch6.jsx"></script>
 <script type="text/babel" src="design-canvas.jsx"></script>
 
 <script type="text/babel">
@@ -224,6 +231,99 @@ function App() {
         </DCArtboard>
         <DCArtboard width={1440} height={1160} label="⑨ 速率限制 · Rate Limits" style={{ background: 'transparent' }}>
           <div data-screen-label="Admin · Rate Limits" style={{ width: 1440, height: 1160 }}><AdminRateLimitsPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="⑩ 訊息紀錄 · Messages" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Messages" style={{ width: 1440, height: 920 }}><AdminMessagesPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="⑪ 時間軸匯出 · History Export" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · History" style={{ width: 1440, height: 920 }}><AdminHistoryPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="⑫ Overlay Widgets · 螢幕外掛元件" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Widgets" style={{ width: 1440, height: 920 }}><AdminWidgetsPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="⑬ 操作日誌 · Audit Log" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Audit Log" style={{ width: 1440, height: 920 }}><AdminAuditLogPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="整合 · Integrations" subtitle="Extensions / Fire Token / Webhooks / API Tokens / Backup · 對外串接 + 維運">
+        <DCArtboard width={1440} height={920} label="⑭ Extensions · 已知 extension 目錄 + Fire Token" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Extensions" style={{ width: 1440, height: 920 }}><AdminExtensionsPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={1100} label="⑭-B Fire Token · 用量 + IP log + audit (Sprint 2)" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Fire Token" style={{ width: 1440, height: 1100 }}><AdminFireTokenPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="⑮ Webhooks · 對外事件推送" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Webhooks" style={{ width: 1440, height: 920 }}><AdminWebhooksPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={1000} label="⑯ API Tokens · 整合用權杖" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · API Tokens" style={{ width: 1440, height: 1000 }}><AdminTokensPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={1000} label="⑰ 備份 & 還原 · Backup" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Backup" style={{ width: 1440, height: 1000 }}><AdminBackupPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="觀眾被禁 + Overlay 投票全屏" subtitle="ban 頁、Overlay 投票進行中、結果 celebration">
+        <DCArtboard width={375} height={812} label="Viewer · 已被禁言 (Mobile)" style={{ background: 'transparent' }}>
+          <div data-screen-label="Viewer · Banned" style={{ width: 375, height: 812 }}><ViewerBanned theme={tweaks.theme} form="mobile" /></div>
+        </DCArtboard>
+        <DCArtboard width={1280} height={720} label="Overlay · Poll Live · 全屏投票" style={{ background: 'transparent' }}>
+          <div data-screen-label="Overlay · Poll Live" style={{ width: 1280, height: 720 }}><OverlayPollLive theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1280} height={720} label="Overlay · 結果 Celebration" style={{ background: 'transparent' }}>
+          <div data-screen-label="Overlay · Result" style={{ width: 1280, height: 720 }}><OverlayResultCelebration theme={tweaks.theme} /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="無障礙 + EN i18n · A11y / Localization" subtitle="WCAG 對比度檢查工具 · Admin 全 EN 截圖示範">
+        <DCArtboard width={1440} height={920} label="WCAG 對比度檢查器" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · WCAG Checker" style={{ width: 1440, height: 920 }}><AdminWcagPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="Admin Dashboard · 英文版" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · EN Dashboard" style={{ width: 1440, height: 920 }}><AdminDashboardEN theme={tweaks.theme} /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="初次設定 · First-run Setup" subtitle="第一次啟動 Danmu Fire 的 4 步驟引導 · 設密碼 → Logo → 主題 → 語言">
+        <DCArtboard width={1100} height={820} label="Wizard · Step 1 · 設密碼" style={{ background: 'transparent' }}>
+          <div data-screen-label="Setup · Password" style={{ width: 1100, height: 820 }}><SetupWizard theme={tweaks.theme} step={0} /></div>
+        </DCArtboard>
+        <DCArtboard width={1100} height={820} label="Wizard · Step 2 · 上傳 Logo" style={{ background: 'transparent' }}>
+          <div data-screen-label="Setup · Logo" style={{ width: 1100, height: 820 }}><SetupWizard theme={tweaks.theme} step={1} /></div>
+        </DCArtboard>
+        <DCArtboard width={1100} height={820} label="Wizard · Step 3 · 選主題包" style={{ background: 'transparent' }}>
+          <div data-screen-label="Setup · Theme" style={{ width: 1100, height: 820 }}><SetupWizard theme={tweaks.theme} step={2} /></div>
+        </DCArtboard>
+        <DCArtboard width={1100} height={820} label="Wizard · Step 4 · 預設語言" style={{ background: 'transparent' }}>
+          <div data-screen-label="Setup · Language" style={{ width: 1100, height: 820 }}><SetupWizard theme={tweaks.theme} step={3} /></div>
+        </DCArtboard>
+        <DCArtboard width={1100} height={820} label="Wizard · 完成" style={{ background: 'transparent' }}>
+          <div data-screen-label="Setup · Done" style={{ width: 1100, height: 820 }}><SetupWizard theme={tweaks.theme} step={4} /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="空狀態 · Empty States" subtitle="第一次到該頁但還沒有資料的引導畫面">
+        <DCArtboard width={1440} height={760} label="Empty · 還沒有訊息" style={{ background: 'transparent' }}>
+          <div data-screen-label="Empty · Messages" style={{ width: 1440, height: 760 }}><EmptyStateMessages theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={760} label="Empty · 還沒有投票" style={{ background: 'transparent' }}>
+          <div data-screen-label="Empty · Polls" style={{ width: 1440, height: 760 }}><EmptyStatePolls theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={760} label="Empty · 還沒上傳字型" style={{ background: 'transparent' }}>
+          <div data-screen-label="Empty · Fonts" style={{ width: 1440, height: 760 }}><EmptyStateFonts theme={tweaks.theme} /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="錯誤狀態 · Error States" subtitle="連線失敗 / 速率超載 / 上傳失敗 — 統一錯誤頁">
+        <DCArtboard width={1440} height={760} label="Error · 連線失敗 · ECONNREFUSED" style={{ background: 'transparent' }}>
+          <div data-screen-label="Error · Connection Lost" style={{ width: 1440, height: 760 }}><ErrorStateConnectionLost theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={760} label="Error · 速率超載 · 慢動作模式" style={{ background: 'transparent' }}>
+          <div data-screen-label="Error · Rate Exceeded" style={{ width: 1440, height: 760 }}><ErrorStateRateExceeded theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={760} label="Error · 上傳失敗 · 字型授權檢查" style={{ background: 'transparent' }}>
+          <div data-screen-label="Error · Upload Failed" style={{ width: 1440, height: 760 }}><ErrorStateUploadFailed theme={tweaks.theme} /></div>
         </DCArtboard>
       </DCSection>
 

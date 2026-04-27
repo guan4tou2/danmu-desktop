@@ -111,3 +111,56 @@ def test_fingerprint_truncated_to_12_chars():
     with fire_sources._lock:
         last = list(fire_sources._buffer)[-1]
     assert last["fingerprint"] == "x" * 12
+
+
+# ─── recent_ips (v5.2 Sprint 2) ─────────────────────────────────────────────
+
+
+def test_recent_ips_aggregates_by_ip():
+    fire_sources.record("slido", ip="1.2.3.4", ua="slido/1.0")
+    fire_sources.record("slido", ip="1.2.3.4", ua="slido/1.0")
+    fire_sources.record("web", ip="5.6.7.8", ua="Mozilla")
+    out = fire_sources.recent_ips(window_sec=300)
+    by_ip = {r["ip"]: r for r in out}
+    assert by_ip["1.2.3.4"]["count"] == 2
+    assert by_ip["5.6.7.8"]["count"] == 1
+
+
+def test_recent_ips_sorted_by_count_desc_then_recency():
+    fire_sources.record("web", ip="A")
+    fire_sources.record("web", ip="A")
+    fire_sources.record("web", ip="A")
+    fire_sources.record("web", ip="B")
+    out = fire_sources.recent_ips(window_sec=300)
+    assert out[0]["ip"] == "A"
+    assert out[1]["ip"] == "B"
+
+
+def test_recent_ips_skips_entries_without_ip():
+    fire_sources.record("slido", fingerprint="fp1")  # no ip
+    fire_sources.record("slido", ip="1.1.1.1")
+    out = fire_sources.recent_ips(window_sec=300)
+    assert len(out) == 1
+    assert out[0]["ip"] == "1.1.1.1"
+
+
+def test_recent_ips_caps_at_limit():
+    for i in range(20):
+        fire_sources.record("web", ip=f"10.0.0.{i}")
+    out = fire_sources.recent_ips(window_sec=300, limit=5)
+    assert len(out) == 5
+
+
+def test_recent_ips_excludes_old_entries():
+    with fire_sources._lock:
+        fire_sources._buffer.append({
+            "ts": time.time() - 7200,  # 2 hours ago
+            "source": "slido",
+            "fingerprint": None,
+            "ip": "stale.ip",
+            "ua": None,
+        })
+    fire_sources.record("slido", ip="fresh.ip")
+    out = fire_sources.recent_ips(window_sec=3600)
+    assert len(out) == 1
+    assert out[0]["ip"] == "fresh.ip"

@@ -67,6 +67,12 @@ function AdminPageShell({ route, title, en, children, theme = 'dark' }) {
           <AdminNavItem icon="⬢" label="伺服器插件" badge="7" active={route === 'plugins'} text={text} textDim={textDim} accent={accent} line={line} />
           <AdminNavItem icon="⌂" label="字型管理" active={route === 'fonts'} text={text} textDim={textDim} accent={accent} line={line} />
           <AdminNavItem icon="⚙" label="系統 & 指紋" active={route === 'system'} text={text} textDim={textDim} accent={accent} line={line} />
+          <AdminNavItem icon="◷" label="操作日誌" active={route === 'audit'} text={text} textDim={textDim} accent={accent} line={line} />
+          <AdminNavSection label="整合" textDim={textDim} top />
+          <AdminNavItem icon="⌬" label="Extensions" badge="1" active={route === 'extensions'} text={text} textDim={textDim} accent={accent} line={line} />
+          <AdminNavItem icon="⇌" label="Webhooks" badge="3" active={route === 'webhooks'} text={text} textDim={textDim} accent={accent} line={line} />
+          <AdminNavItem icon="⚿" label="API Tokens" badge="4" active={route === 'tokens'} text={text} textDim={textDim} accent={accent} line={line} />
+          <AdminNavItem icon="⇪" label="備份 & 還原" active={route === 'backup'} text={text} textDim={textDim} accent={accent} line={line} />
         </div>
 
         <div style={{ padding: '12px 16px', borderTop: `1px solid ${line}`, fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 0.5, color: textDim }}>

@@ -24,8 +24,10 @@ import logging
 import os
 import secrets
 import threading
+import time as _time
+from collections import deque
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Any, Deque, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +40,33 @@ _DEFAULT_STATE: Dict = {
     "enabled": False,
     "token": "",  # raw token; only exposed once on regenerate
     "rotated_at": 0.0,
+    "created_at": 0.0,
 }
+
+# In-memory audit log of token events. Bounded ring buffer; survives only
+# while the process is alive. Entries: {ts, kind, meta}. Powers the
+# admin Fire Token page audit timeline. Persistent (cross-restart) audit
+# would require a separate JSON file or DB — out of scope for v5.2 MVP.
+_AUDIT_BUFFER_SIZE = 100
+_audit: Deque[Dict[str, Any]] = deque(maxlen=_AUDIT_BUFFER_SIZE)
+
+
+def _record_event(kind: str, meta: Optional[Dict[str, Any]] = None) -> None:
+    """Append an audit event. Called by regenerate / revoke / set_enabled."""
+    with _lock:
+        _audit.append({
+            "ts": _time.time(),
+            "kind": str(kind)[:32],
+            "meta": dict(meta or {}),
+        })
+
+
+def recent_audit(limit: int = 20) -> List[Dict[str, Any]]:
+    """Newest-first audit events. Capped at ``limit`` (1–100)."""
+    n = max(1, min(100, int(limit or 20)))
+    with _lock:
+        events = list(_audit)
+    return list(reversed(events))[:n]
 
 
 def _write_state(state: Dict) -> None:
@@ -82,6 +110,12 @@ def _load_state() -> Dict:
                     "enabled": bool(raw.get("enabled", False)),
                     "token": str(raw.get("token", "")),
                     "rotated_at": float(raw.get("rotated_at", 0.0) or 0.0),
+                    # v5.2: track creation time for the "建立時間" stat.
+                    # Migrate legacy state that lacks created_at by reusing
+                    # rotated_at (best guess for first rotation = creation).
+                    "created_at": float(
+                        raw.get("created_at", raw.get("rotated_at", 0.0)) or 0.0
+                    ),
                 }
                 return _state
         except FileNotFoundError:
@@ -112,7 +146,7 @@ def get_state() -> Dict:
 
 
 def get_public_state() -> Dict:
-    """Admin-safe view: ``{enabled, prefix, rotated_at}``. Never the raw token."""
+    """Admin-safe view. Never the raw token."""
     s = _load_state()
     token = s.get("token", "")
     prefix = (token[:6] + "…") if token else ""
@@ -120,6 +154,7 @@ def get_public_state() -> Dict:
         "enabled": bool(s.get("enabled", False)),
         "prefix": prefix,
         "rotated_at": float(s.get("rotated_at", 0.0) or 0.0),
+        "created_at": float(s.get("created_at", 0.0) or 0.0),
         "has_token": bool(token),
     }
 
@@ -129,6 +164,7 @@ def set_enabled(enabled: bool) -> Dict:
     NOT clear the token (so re-enabling restores the same secret)."""
     with _lock:
         s = dict(_load_state())
+        was = s.get("enabled")
         s["enabled"] = bool(enabled)
         try:
             _write_state(s)
@@ -136,7 +172,9 @@ def set_enabled(enabled: bool) -> Dict:
             logger.warning("fire_token: enabled-flip persist failed: %s", exc)
         global _state
         _state = s
-        return get_public_state()
+    if bool(enabled) != bool(was):
+        _record_event("toggled", {"enabled": bool(enabled)})
+    return get_public_state()
 
 
 def regenerate() -> Dict:
@@ -146,38 +184,49 @@ def regenerate() -> Dict:
     Caller (admin route) should immediately surface the token to the
     operator; subsequent reads only get the prefix.
     """
-    import time
-
     with _lock:
         new_token = secrets.token_urlsafe(24)
-        rotated = time.time()
-        s = {"enabled": True, "token": new_token, "rotated_at": rotated}
+        rotated = _time.time()
+        prev = _load_state()
+        # Preserve created_at if there was already a token; otherwise stamp now.
+        created_at = prev.get("created_at") if prev.get("token") else rotated
+        s = {
+            "enabled": True,
+            "token": new_token,
+            "rotated_at": rotated,
+            "created_at": created_at or rotated,
+        }
         try:
             _write_state(s)
         except OSError as exc:
             logger.warning("fire_token: regenerate persist failed: %s", exc)
         global _state
         _state = s
-        return {
-            "token": new_token,
-            "prefix": new_token[:6] + "…",
-            "rotated_at": rotated,
-            "enabled": True,
-        }
+    _record_event("rotated", {"prefix": new_token[:6] + "…", "first": not prev.get("token")})
+    return {
+        "token": new_token,
+        "prefix": new_token[:6] + "…",
+        "rotated_at": rotated,
+        "created_at": s["created_at"],
+        "enabled": True,
+    }
 
 
 def revoke() -> Dict:
     """Clear the token entirely (sets enabled=False, token=""). For lost
     tokens — caller can immediately call regenerate() afterwards."""
     with _lock:
-        s = {"enabled": False, "token": "", "rotated_at": 0.0}
+        prev = dict(_load_state())
+        s = {"enabled": False, "token": "", "rotated_at": 0.0, "created_at": 0.0}
         try:
             _write_state(s)
         except OSError as exc:
             logger.warning("fire_token: revoke persist failed: %s", exc)
         global _state
         _state = s
-        return get_public_state()
+    if prev.get("token"):
+        _record_event("revoked", {"prefix": prev["token"][:6] + "…"})
+    return get_public_state()
 
 
 def verify(presented: str) -> bool:
@@ -193,8 +242,9 @@ def verify(presented: str) -> bool:
 
 
 def reset_for_tests() -> None:
-    """Test helper — drop in-memory cache, leave file alone."""
+    """Test helper — drop in-memory cache + audit log, leave state file alone."""
     global _state, _write_failure_logged
     with _lock:
         _state = None
         _write_failure_logged = False
+        _audit.clear()

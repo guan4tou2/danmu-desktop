@@ -159,6 +159,7 @@ const HERO_SIZE = {
   hero:   'clamp(3.2rem, 8vw, 6rem)',
   large:  'clamp(2rem, 5vw, 3.5rem)',
   medium: '2rem',
+  small:  '1.4rem',
   inline: '1.5rem',
 };
 

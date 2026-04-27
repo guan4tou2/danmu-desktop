@@ -119,3 +119,75 @@ def test_set_enabled_preserves_token():
     assert s["token"] == r["token"]  # token preserved!
     fire_token.set_enabled(True)
     assert fire_token.verify(r["token"]) is True
+
+
+# ─── audit log (v5.2 Sprint 2) ──────────────────────────────────────────────
+
+
+def test_audit_records_rotated_event():
+    fire_token.regenerate()
+    events = fire_token.recent_audit()
+    assert any(e["kind"] == "rotated" for e in events)
+
+
+def test_audit_records_revoked_event():
+    fire_token.regenerate()
+    fire_token.revoke()
+    events = fire_token.recent_audit()
+    assert events[0]["kind"] == "revoked"  # newest first
+
+
+def test_audit_records_toggle_event_only_on_change():
+    fire_token.regenerate()  # also enables
+    pre = len(fire_token.recent_audit())
+    # Toggling to current value (already True) shouldn't emit a new event
+    fire_token.set_enabled(True)
+    assert len(fire_token.recent_audit()) == pre
+    # But flipping does
+    fire_token.set_enabled(False)
+    after = fire_token.recent_audit()
+    assert after[0]["kind"] == "toggled"
+    assert after[0]["meta"]["enabled"] is False
+
+
+def test_audit_returns_newest_first():
+    for _ in range(5):
+        fire_token.regenerate()
+    events = fire_token.recent_audit()
+    assert len(events) == 5
+    # Each entry timestamp should be >= the next (newest first)
+    for i in range(len(events) - 1):
+        assert events[i]["ts"] >= events[i + 1]["ts"]
+
+
+def test_audit_caps_at_limit():
+    for _ in range(10):
+        fire_token.regenerate()
+    assert len(fire_token.recent_audit(limit=3)) == 3
+
+
+# ─── created_at field ────────────────────────────────────────────────────────
+
+
+def test_created_at_set_on_first_regenerate():
+    r1 = fire_token.regenerate()
+    assert r1["created_at"] > 0
+    state = fire_token.get_public_state()
+    assert state["created_at"] == r1["created_at"]
+
+
+def test_created_at_preserved_across_rotations():
+    r1 = fire_token.regenerate()
+    import time as _time_mod
+    _time_mod.sleep(0.01)
+    r2 = fire_token.regenerate()
+    # rotated_at advances, created_at stays
+    assert r2["rotated_at"] > r1["rotated_at"]
+    assert r2["created_at"] == r1["created_at"]
+
+
+def test_created_at_resets_after_revoke_and_regen():
+    r1 = fire_token.regenerate()
+    fire_token.revoke()
+    r2 = fire_token.regenerate()
+    assert r2["created_at"] >= r1["rotated_at"]  # new creation after revoke

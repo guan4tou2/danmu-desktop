@@ -142,13 +142,13 @@ function ViewerCore({ theme, form, inBrowser, pollEnabled }) {
       {/* Hero lockup — Mobile + Desktop 統一三欄:
           左 logo · 中央彈幕跑馬(滿版背景) · 右 chip+lang+theme */}
       <div style={{
-        padding: isMobile ? '16px 14px 14px' : '28px 32px 22px',
+        padding: isMobile ? '14px 12px 12px' : '28px 32px 22px',
         borderBottom: `1px solid ${line}`,
         background: isDark ? 'linear-gradient(180deg, rgba(125,211,252,0.04) 0%, transparent 100%)' : 'transparent',
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',
-        gap: isMobile ? 10 : 24,
+        gap: isMobile ? 8 : 24,
         position: 'relative',
         overflow: 'hidden',
       }}>
@@ -162,11 +162,10 @@ function ViewerCore({ theme, form, inBrowser, pollEnabled }) {
             size={isMobile ? 'medium' : 'hero'}
             align="left"
             subtitle="把你的訊息送上螢幕!"
-            subStyle={{ margin: isMobile ? '4px 0 0' : '10px 0 0', fontSize: isMobile ? 12 : undefined }}
+            subStyle={{ margin: isMobile ? '4px 0 0' : '10px 0 0', fontSize: isMobile ? 11 : undefined }}
           />
         </div>
 
-        {/* mobile/desktop 都用 flex spacer 把 chip 推到右邊 */}
         <div style={{ flex: 1 }} />
 
         <div style={{

@@ -118,7 +118,10 @@
       : "";
     const tokenSection = ext.hasFireTokenUI
       ? `<div class="admin-ext-token" data-ext-token>
-          <div class="admin-v2-monolabel">FIRE TOKEN · 共享機密</div>
+          <div class="admin-v2-monolabel">
+            FIRE TOKEN · 共享機密
+            <a href="#/firetoken" class="admin-ext-token-deeplink">詳細統計 →</a>
+          </div>
           <div class="admin-ext-token-row">
             <code class="admin-ext-token-code" data-fire-token-display>未設定</code>
             <button type="button" class="admin-ext-token-btn" data-fire-token-action="copy" disabled>複製</button>

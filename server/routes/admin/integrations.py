@@ -24,6 +24,9 @@ from ...services import fire_sources, fire_token
 from ...services.security import rate_limit
 from . import _json_response, admin_bp, require_csrf, require_login
 
+# NOTE: get_rate_limit_bucket_history imported lazily inside the usage
+# handler to avoid an import cycle when this module is first loaded.
+
 
 @admin_bp.route("/integrations/fire-token", methods=["GET"])
 @rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
@@ -65,4 +68,42 @@ def get_recent_sources():
     return _json_response({
         "window_sec": window,
         "sources": fire_sources.recent_sources(window),
+    })
+
+
+@admin_bp.route("/integrations/fire-token/audit", methods=["GET"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_login
+def get_fire_token_audit():
+    """Recent token lifecycle events (rotated / revoked / toggled).
+
+    Newest-first, capped at limit (1–100). In-memory only; clears on
+    server restart. Persistent audit is v5.3+ scope.
+    """
+    try:
+        limit = int(request.args.get("limit", "20") or 20)
+    except (TypeError, ValueError):
+        limit = 20
+    return _json_response({"events": fire_token.recent_audit(limit)})
+
+
+@admin_bp.route("/integrations/fire-token/usage", methods=["GET"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_login
+def get_fire_token_usage():
+    """24h hourly + 60min per-minute usage series for the Fire Token page.
+
+    Backed by the existing rate-limit bucket history for the ``fire``
+    scope (5-min granularity, 24h retention). Aggregated to:
+      - usage_24h: 24 entries (one per hour)
+      - usage_60m: 60 entries (one per minute, last 60min)
+    """
+    from ...services.security import get_rate_limit_bucket_history
+
+    # 24h hourly aggregation (60-second granularity buckets summed per hour)
+    hourly = get_rate_limit_bucket_history("fire", 60)  # returns 24 hour entries
+    return _json_response({
+        "usage_24h": list(hourly),
+        "ceiling_per_min": 200,  # FIRE_RATE_LIMIT default
+        "ips": fire_sources.recent_ips(window_sec=3600, limit=10),
     })
