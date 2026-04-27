@@ -28,11 +28,13 @@
     <div class="overlay-idle-inner">
       <h1 class="overlay-idle-hero">Danmu Fire</h1>
       <p class="overlay-idle-subtitle">掃描 QR code 或打開伺服器網址 — 開始送彈幕</p>
-      <div class="overlay-idle-chip">
+      <div class="overlay-idle-chip" id="overlayIdleChip" data-state="ready">
         <span class="overlay-idle-chip-dot" aria-hidden="true"></span>
+        <span class="overlay-idle-chip-spinner" aria-hidden="true"></span>
         <span class="overlay-idle-chip-label">OVERLAY READY</span>
         <span class="overlay-idle-chip-suffix">· 等待中</span>
       </div>
+      <div class="overlay-idle-url" id="overlayIdleUrl">{{ request.host }}</div>
       <div class="overlay-idle-qr" aria-hidden="true">
         <svg viewBox="0 0 21 21" width="108" height="108">
           <!-- Position detection squares + sparse dot pattern -->
@@ -73,7 +75,6 @@
           <rect x="18" y="9" width="1" height="1" fill="#000"/>
         </svg>
       </div>
-      <div class="overlay-idle-url">DANMU.IM/42</div>
     </div>
   </div>
 

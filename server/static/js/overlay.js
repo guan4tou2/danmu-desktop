@@ -136,6 +136,8 @@
       reconnectAttempts = 0;
       lastHeartbeatResponse = Date.now();
       startHeartbeat();
+      // Reset idle chip back to ready palette (cyan dot, no spinner).
+      _setIdleChipState("ready");
       // Hide CONNECTING state 500ms after WS open (or when first message lands,
       // whichever fires sooner — see ws.onmessage).
       if (!connectingDidHide && !connectingHideTimer) {
@@ -148,7 +150,11 @@
       clearInterval(heartbeatInterval);
 
       var delay = getReconnectDelay(reconnectAttempts);
-      console.log("[overlay] Reconnecting in " + (delay / 1000) + "s (attempt " + (reconnectAttempts + 1) + ")");
+      var nextAttempt = reconnectAttempts + 1;
+      console.log("[overlay] Reconnecting in " + (delay / 1000) + "s (attempt " + nextAttempt + ")");
+      // Flip idle chip to amber RECONNECTING + 第 N 次嘗試 + countdown.
+      // Per prototype hero-scenes.jsx:108 reconnecting branch.
+      _setIdleChipState("reconnecting", nextAttempt, Math.round(delay / 1000));
       setTimeout(connect, delay);
       reconnectAttempts++;
     };
@@ -841,6 +847,29 @@
 
     var textNode = document.createTextNode(cfg.text || "");
     el.appendChild(textNode);
+  }
+
+  // ── Idle pill state helper ────────────────────────────────────────────────
+  // Two states per prototype hero-scenes.jsx OverlayIdle:
+  //   "ready"        — cyan dot + "OVERLAY READY · 等待中"
+  //   "reconnecting" — amber spinner + "RECONNECTING · 第 N 次嘗試 · Ms"
+  function _setIdleChipState(state, attempt, secs) {
+    var chip = document.getElementById("overlayIdleChip");
+    if (!chip) return;
+    chip.dataset.state = state;
+    var label = chip.querySelector(".overlay-idle-chip-label");
+    var suffix = chip.querySelector(".overlay-idle-chip-suffix");
+    if (state === "reconnecting") {
+      if (label) label.textContent = "RECONNECTING";
+      if (suffix) {
+        var attemptLabel = attempt ? "· 第 " + attempt + " 次嘗試" : "";
+        var timeLabel = secs ? "· " + secs + "s" : "";
+        suffix.textContent = (attemptLabel + " " + timeLabel).trim();
+      }
+    } else {
+      if (label) label.textContent = "OVERLAY READY";
+      if (suffix) suffix.textContent = "· 等待中";
+    }
   }
 
   // ── Konami easter egg ─────────────────────────────────────────────────────
