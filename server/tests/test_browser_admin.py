@@ -409,18 +409,22 @@ def test_blacklist_empty_keyword_not_submitted(admin_page):
 
 
 def test_change_password_section_exists(admin_page):
-    """安全性區塊應有密碼修改欄位"""
-    _open_section(admin_page, "sec-security")
-    admin_page.wait_for_selector("#pwCurrent", state="visible", timeout=5000)
-    assert admin_page.is_visible("#pwCurrent")
-    assert admin_page.is_visible("#pwNew")
-    assert admin_page.is_visible("#pwConfirm")
+    """安全性區塊應有密碼修改欄位（v5.0 retrofit: sec2-pw-* IDs in
+    admin-security-v2-page replaced legacy pwCurrent/pwNew/pwConfirm)."""
+    # Navigate to security route — v2 page handles its own visibility on
+    # data-active-route, doesn't go through _open_section's sec-* gate.
+    admin_page.evaluate('() => { window.location.hash = "#/security"; }')
+    admin_page.wait_for_selector("#sec2-pw-current", state="visible", timeout=5000)
+    assert admin_page.is_visible("#sec2-pw-current")
+    assert admin_page.is_visible("#sec2-pw-new")
+    assert admin_page.is_visible("#sec2-pw-confirm")
 
 
 def test_change_password_wrong_current_calls_api(admin_page):
-    """輸入錯誤舊密碼後，API 應回傳 403"""
-    _open_section(admin_page, "sec-security")
-    admin_page.wait_for_selector("#pwCurrent", state="visible", timeout=5000)
+    """輸入錯誤舊密碼後，API 應回傳 403（v5.0 retrofit: sec2-pw-form submit
+    flow replaced standalone changePasswordBtn click)."""
+    admin_page.evaluate('() => { window.location.hash = "#/security"; }')
+    admin_page.wait_for_selector("#sec2-pw-current", state="visible", timeout=5000)
 
     responses = []
     admin_page.on(
@@ -428,11 +432,12 @@ def test_change_password_wrong_current_calls_api(admin_page):
         lambda r: responses.append(r) if "change_password" in r.url else None,
     )
 
-    admin_page.fill("#pwCurrent", "wrongcurrent")
-    admin_page.fill("#pwNew", "validnewpassword1!")
-    admin_page.fill("#pwConfirm", "validnewpassword1!")
+    admin_page.fill("#sec2-pw-current", "wrongcurrent")
+    admin_page.fill("#sec2-pw-new", "validnewpassword1!")
+    admin_page.fill("#sec2-pw-confirm", "validnewpassword1!")
 
-    admin_page.locator("#changePasswordBtn").click()
+    # Submit via the form's submit button (sec2-pw-form has type=submit)
+    admin_page.locator("#sec2-pw-form button[type='submit']").click()
     admin_page.wait_for_timeout(800)
 
     pw_resp = [r for r in responses if "change_password" in r.url]
