@@ -1,6 +1,6 @@
 # Danmu Fire · v2 Design Handoff
 
-**Last updated**: 2026-04-27 (post Sprint 1 + Design reply ingestion)
+**Last updated**: 2026-04-27 (post Sprint 1 + DanmuMarquee bundle · commit `f959b62`)
 
 對 Claude Design 的回覆稿。涵蓋：
 1. 已對齊並部署的事項（VPS 上跑著）
@@ -46,6 +46,29 @@
 - Polls 拖曳排序：drop-hint cyan 發光線（`::before` 偽元素，避免 border-top 造成 content shift）
 - Polls 後端 schema 已支援 `image_url` + `time_limit_seconds`（commit `61a5dbc`），前端 dropzone + crop ratio 切換器**未做**（見 §3）
 - Ratelimits：admin scope default 從 60 → 300（配合 config.py）
+
+### Bundle drop 2026-04-27 (`YUL7-YdY` redesign)
+
+- **DanmuMarquee** — 12 fake danmu chips scroll right→left across the hero
+  background (`.viewer-hero-marquee`). Mask gradient on left 22%, per-chip
+  stagger via `:nth-child` overrides, mobile clamps y to ≤38, mobile uses
+  -500px scroll distance vs desktop -1100px. `prefers-reduced-motion`
+  respected (animation off). Hero gets `position:relative; overflow:hidden`
+  and a new `<div class="viewer-hero-spacer">` between lockup and utility.
+- **ConnChip solid bg** — was `transparent`, now `var(--color-bg-base)`
+  (offline) and `linear-gradient(cyanSoft, cyanSoft) + bg` (online) so the
+  marquee no longer bleeds through the pill.
+- **URL cleanup** — overlay idle subtitle `danmu.im/42` → `伺服器網址`;
+  admin-broadcast hint「主持人暫停」→「暫停接收」. Other mtg-042 / fire-id
+  references already absent (sysoPublicUrl uses `location.origin`).
+- **Prototype sync** — `docs/designs/design-v2/` refreshed from new bundle
+  (14 `.jsx` + `design-canvas.jsx` + `Danmu Redesign.html`).
+
+**Skipped from this bundle**:
+- ViewerTabs (Fire / Poll) — needs public `/poll/status` endpoint or WS
+  push. Defer to v5.1 Sprint 2.
+- 結束廣播確認碼 `END-LIVE` — production already uses `randomCode()` (4-digit
+  random) which is stronger than a fixed string. Keep current.
 
 ### Sprint 1 (post Design reply 2026-04-26)
 
@@ -236,6 +259,46 @@ server/static/js/admin-filters.js     ← Live log polling + action color
 server/static/js/admin-plugins.js     ← Console tail polling
 server/static/js/admin-fingerprints.js ← UNIQUE · FLAGGED 顯示
 ```
+
+---
+
+## 8. 對 Design 2026-04-27 priority list 的回覆
+
+Design 提了三組未實作項：
+
+### 🟡 Cross-page UX standards (todo #33)
+- **#18 指紋 / 暱稱統一** — 我選這個當下一輪起手，理由：影響跨頁，已掛 todo，後端有 fingerprint_tracker 可直接接。
+- #19 Effects inline preview — admin-effects-mgmt.js 卡片已有 IntersectionObserver 觸發 live demo，視覺上其實非靜態。要 Design 確認還缺什麼？
+- #21 雙語標題清理 — 同步檢查時可順便做，不獨立排優先序。
+
+### 🟡 Viewer 端 feedback
+- **送出後反饋 toast** — 第二輪做。實作：fire 200 後 setTimeout 1.5s 內觀察 `previewText` 高亮 + show toast `已送出 · 預計 2s 內出現於螢幕`
+- **Cooldown 倒數** — fire 收 429 時，FIRE 按鈕變 `▼ 等 Ns` disabled 倒數
+- **被 mod 反饋** — fire 收 400 with `reason: blocked` 時 toast 顯示「訊息含敏感字 · 已遮罩」
+
+### 🟡 Admin / 其他
+- Live 狀態 hero band — Dashboard 加 LIVE chip 不難（已有 `broadcasting` state），但要 Design 確認位置（topbar 還是頂部 strip 上方？）
+- 權限分層 / 多角色 — 後端要做 role table + 中介層，至少 3-5 天工程。先擱。
+- 行動版 Admin — admin 全頁 1440 寬，沒有 mobile media query。重做整套 1-2 週工程。先擱。
+
+### 🟢 視覺薄
+- **Polls Builder 拖曳視覺** — drop indicator 已在這 session 修了（`::before` cyan glow line）。Ghost row 還沒做。第三輪可補。
+- Effects dropzone hover/drop state — admin-effects-mgmt.js 有 dropzone 但 hover 樣式薄。視覺打磨 1-2 hr。
+- Plugins installing/error variants — 要 backend instrumentation framework，v5.2。
+- Desktop Overlay reconnecting pill — overlay.html 已有 idle/connecting/disconnected dot，但沒「reconnecting」變體。`connection-status.js` 有 reconnect 邏輯但沒 chip 切到 reconnecting label。視覺打磨 1 hr。
+
+### 我選的下一輪 priority order
+1. **#18 fp/nickname 統一**（4-6 hr，跨 admin + viewer）
+2. **viewer 送出反饋 toast + cooldown UX**（2-3 hr）
+3. **Polls Builder ghost row + Desktop reconnecting pill + Effects dropzone polish**（合併打磨輪，3-4 hr）
+4. **#19 / #21 雙語標題稽核 + Effects inline preview 驗證**（1-2 hr）
+
+### Open Qs for Design (從上輪未答)
+
+- **Mobile viewer theme/lang switcher** — desktop hero 顯示 ◐/◑ + 中/EN seg，mobile 完全沒有，是要加還是隱藏？
+- **Desktop viewer hero too sparse** — DanmuMarquee 應該已經填滿中間留白，但確認一下 Design 還想加什麼？或者這條已自動 close？
+- **#18 fp short form 長度** — AdminIdentity 約定 `FP_DISPLAY_LEN=8`（顯示 `fp:xxxxxxxx`），viewer 端用同樣 8 位還是更短的 `fp-xxxx`（4 位）？
+- **#18 暱稱改名 chip** — viewer 點擊 chip 跳出 modal 還是直接 inline edit？
 
 ---
 
