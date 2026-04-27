@@ -6338,3 +6338,220 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 .admin-live-feed-row:hover { background: rgba(56, 189, 248, 0.04); }
 
 body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
+
+/* ─── Notifications Inbox (P1, 2026-04-27) ─────────────────────────── */
+.admin-notif-page { padding: 0; }
+.admin-notif-grid {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 720px) {
+  .admin-notif-grid { grid-template-columns: 1fr; }
+}
+
+.admin-notif-filters {
+  background: var(--color-surface, #0f1421);
+  border: 1px solid var(--color-border, #1f2944);
+  border-radius: 8px;
+  padding: 14px;
+}
+.admin-notif-tabs, .admin-notif-sources {
+  display: flex; flex-direction: column; gap: 4px;
+  margin-top: 10px;
+}
+.admin-notif-tab, .admin-notif-src {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 12px;
+  color: var(--color-text-muted, #94a3b8);
+  font-family: inherit;
+  transition: all 120ms ease;
+}
+.admin-notif-tab .cnt, .admin-notif-src .cnt {
+  margin-left: auto;
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--color-text-muted, #94a3b8);
+  letter-spacing: 0.4px;
+}
+.admin-notif-tab:hover, .admin-notif-src:hover {
+  color: var(--color-text-strong, #e2e8f0);
+}
+.admin-notif-tab.is-active, .admin-notif-src.is-active {
+  background: rgba(56, 189, 248, 0.10);
+  border-color: rgba(56, 189, 248, 0.40);
+  color: var(--color-text-strong, #e2e8f0);
+}
+.admin-notif-tab.is-active .cnt, .admin-notif-src.is-active .cnt {
+  color: var(--color-primary, #38bdf8);
+}
+.admin-notif-label-top { margin-top: 14px; display: block; }
+.admin-notif-tip {
+  margin-top: 14px;
+  padding: 10px;
+  background: var(--color-bg, #0a0e1a);
+  border: 1px solid var(--color-border, #1f2944);
+  border-radius: 3px;
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.3px; line-height: 1.6;
+  color: var(--color-text-muted, #94a3b8);
+}
+.admin-notif-tip .kicker {
+  display: inline-block;
+  margin-bottom: 4px;
+  color: var(--color-primary, #38bdf8);
+}
+
+.admin-notif-main {
+  display: flex; flex-direction: column;
+  min-width: 0;
+}
+.admin-notif-toolbar {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border, #1f2944);
+  margin-bottom: 12px;
+}
+.admin-notif-summary {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.3px;
+  color: var(--color-text-strong, #e2e8f0);
+}
+.admin-notif-actions {
+  margin-left: auto;
+  display: flex; gap: 4px;
+  flex-wrap: wrap;
+}
+.admin-notif-action {
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid var(--color-border, #1f2944);
+  border-radius: 3px;
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--color-text-muted, #94a3b8);
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: all 120ms ease;
+}
+.admin-notif-action:hover {
+  color: var(--color-primary, #38bdf8);
+  border-color: rgba(56, 189, 248, 0.40);
+}
+
+.admin-notif-list {
+  display: flex; flex-direction: column; gap: 6px;
+  min-height: 200px;
+}
+.admin-notif-loading {
+  padding: 40px;
+  text-align: center;
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--color-text-muted, #94a3b8);
+}
+
+.admin-notif-item {
+  padding: 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-left: 3px solid;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+.admin-notif-item:hover {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: var(--color-border, #1f2944);
+}
+.admin-notif-item.is-unread {
+  background: var(--color-bg, #0a0e1a);
+  border-color: var(--color-border, #1f2944);
+}
+.admin-notif-item.is-read { opacity: 0.7; }
+.admin-notif-item.is-archived { opacity: 0.5; }
+.admin-notif-item .head {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 4px;
+}
+.admin-notif-item .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.admin-notif-item .sev {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.2px;
+  padding: 2px 6px;
+  border: 1px solid;
+  border-radius: 2px;
+  font-weight: 600;
+}
+.admin-notif-item .src {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--color-text-muted, #94a3b8);
+  letter-spacing: 0.3px;
+}
+.admin-notif-item .ts {
+  margin-left: auto;
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--color-text-muted, #94a3b8);
+  letter-spacing: 0.3px;
+}
+.admin-notif-item .title {
+  font-size: 13px; font-weight: 600;
+  color: var(--color-text-strong, #e2e8f0);
+  margin-bottom: 4px;
+}
+.admin-notif-item.is-read .title,
+.admin-notif-item.is-archived .title { font-weight: 400; }
+.admin-notif-item .desc {
+  font-size: 11px; line-height: 1.5;
+  color: var(--color-text-muted, #94a3b8);
+  letter-spacing: 0.2px;
+  word-break: break-word;
+}
+.admin-notif-item .actions {
+  display: flex; gap: 4px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.admin-notif-item .actions button {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--color-border, #1f2944);
+  border-radius: 2px;
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--color-text-muted, #94a3b8);
+  cursor: pointer;
+  letter-spacing: 0.3px;
+}
+.admin-notif-item .actions button:hover {
+  color: var(--color-primary, #38bdf8);
+  border-color: rgba(56, 189, 248, 0.40);
+}
+
+.admin-notif-empty {
+  padding: 40px 20px;
+  text-align: center;
+  background: var(--color-bg, #0a0e1a);
+  border: 1px dashed var(--color-border, #1f2944);
+  border-radius: 4px;
+}
+.admin-notif-empty .icon {
+  font-size: 36px;
+  color: var(--color-text-muted, #94a3b8);
+  margin-bottom: 10px;
+}
+.admin-notif-empty .t {
+  font-size: 13px; font-weight: 600;
+  color: var(--color-text-strong, #e2e8f0);
+}
+.admin-notif-empty .s {
+  margin-top: 6px;
+  font-size: 11px; line-height: 1.6;
+  color: var(--color-text-muted, #94a3b8);
+}

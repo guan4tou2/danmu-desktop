@@ -800,6 +800,11 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="admin-dash-nav-icon">↳</span>
                                     <span>歷史</span>
                                 </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="notifications" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⚑</span>
+                                    <span>通知</span>
+                                    <span class="admin-dash-nav-badge" data-count-notif hidden>—</span>
+                                </button>
 
                                 <div class="admin-dash-nav-label" style="margin-top:16px">互動</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="polls" role="tab" aria-selected="false">
@@ -3806,6 +3811,8 @@ document.addEventListener("DOMContentLoaded", () => {
     system:    { title: "系統 & 指紋",      kicker: "SYSTEM · FINGERPRINT · RATE LIMITS", sections: ["sec-system-overview", "sec-scheduler", "sec-webhooks", "sec-fingerprints"] },
     security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: ["sec-security", "sec-ws-auth"] },
     backup:    { title: "備份 & 匯出",       kicker: "BACKUP · EXPORT · DANGER",          sections: ["sec-backup"] },
+    // P1 (2026-04-27 V1Z4 batch7): aggregated alerts inbox.
+    notifications: { title: "通知",          kicker: "NOTIFICATIONS · 警示中心 · 多來源",  sections: ["sec-notifications-overview"] },
     // Phase 2 P0-1 (2026-04-27 V1Z4 batch9): version + license + changelog.
     about:     { title: "關於",               kicker: "ABOUT · 版本 · CHANGELOG · 開源資訊", sections: ["sec-about-overview"] },
     // Phase 2 P0-2 (2026-04-27 batch3): #/setup opens the Setup Wizard

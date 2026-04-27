@@ -37,6 +37,7 @@
     system:         { title: "系統 & 指紋",      kicker: "SYSTEM" },
     security:       { title: "安全",             kicker: "SECURITY" },
     backup:         { title: "備份 & 匯出",      kicker: "BACKUP" },
+    notifications:  { title: "通知",              kicker: "NOTIFICATIONS · 警示中心" },
     about:          { title: "關於",              kicker: "ABOUT · 版本 · CHANGELOG" },
   };
 
