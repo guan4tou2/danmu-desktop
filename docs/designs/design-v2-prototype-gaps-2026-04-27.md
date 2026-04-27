@@ -94,3 +94,121 @@
 5. **§C.2.2 Effects 8-card vs N-card**：固定 8 還是動態？
 
 不阻塞 Phase 2 P0 開工。Q1-Q3 我會做合理預設（all 3 sections / 用 first-run 判斷 / 從 row 上的 icon 開），Design 之後再 reply 我來調。
+
+---
+
+## F. Alignment Audit（Phase 2 P0 + P1 已 ship 的 6 個 page · 2026-04-27 補）
+
+> 使用者問：「目前都有跟 prototype 對齊嗎？」回答：**不完全**。逐項列出已 ship 工作 vs prototype 的差距，方便 Design 挑要不要回頭補。
+>
+> Legend：✅ 完全對齊 / 🟡 partial（>=70%）/ ❌ deviated（<70% 或關鍵區塊缺）
+
+### F.1 Phase 1 整併（commit `d208e9b`）— ✅ 跟 Design reply 對齊
+- Sidebar 20 → 17 row，三個整併動作都符合 [audit §8](./design-v2-redundancy-audit-2026-04-27.md#8-design-回覆-2026-04-27) 拍板
+- ⚠️ Design 還沒畫 history 2-tab artboard / viewer-config 2-tab artboard — 等 Design 補
+
+### F.2 AdminAboutPage（commit `e60a9a4`）— 🟡 partial
+| 區塊 | Prototype | 實作 | 對齊 |
+|------|-----------|------|------|
+| 版本卡 (icon + name + tag + build) | ✓ | ✓ | ✅ |
+| 4 KPI tile 內容 | 已是最新版 / 上次檢查更新 / Server uptime / 授權 (Pro · 2026-08) | UPTIME / CHANNEL / PLATFORM / LICENSE (MIT) | ❌ 4 個 tile 都不同 |
+| License 卡 (Pro Edition · 6 row) | ✓ 完整 | ❌ 砍掉 | 開源不適用 |
+| 第三方 OSS Notices | ✓ 7 deps + 完整清單 | ✓ 7 deps + pyproject.toml 連結 | ✅ |
+| Changelog（4 版 + tag） | ✓ feat/fix/perf/breaking | ✓ feat/fix（沒 perf 範例） | 🟡 |
+| 動作按鈕 | 檢查更新 + 複製版本 | 複製版本 + Setup Wizard + GitHub Releases | 🟡 |
+
+### F.3 AdminSetupWizard（commit `0701799`）— ❌ deviated
+| Step | Prototype | 實作 | 狀態 |
+|------|-----------|------|------|
+| 1 設密碼 | ✓ 表單 + 強度條 + reset hint | ❌ **砍掉** | 缺 |
+| 2 上傳 Logo | ✓ dropzone + 預覽 | ❌ **砍掉** | 缺 backend endpoint |
+| 3 主題包 | ✓ 6 packs 寫死 | ✓ 4 packs 動態（從 /admin/themes） | 🟡 |
+| 4 預設語言 | ✓ 4 lang + viewer 切語 | ✓ 同 | ✅ |
+| 5 完成 | ✓ summary | ✓ summary | ✅ |
+
+→ **5 步剩 3 步**。Design 沒拍板過砍法（自行決定）。
+
+### F.4 AdminPollDeepDivePage（commit `d71af67`）— ❌ deviated
+| 區塊 | Prototype | 實作 | 對齊 |
+|------|-----------|------|------|
+| 5 KPI tile | 總票數 / 參與率 / 持續時間 / 重複指紋 / 作弊嘗試 | 4 KPI: 總票數 / 選項數 / 指紋去重 / 狀態 | ❌ 內容全不同 |
+| Result bars | ✓ | ✓ | ✅ |
+| Sentiment +47 | ✓ | ❌ | 缺（需要 sentiment 計算） |
+| vs 上次 (Q4) ↑+12 | ✓ | ❌ | 缺（需要跨 poll 比較） |
+| Time histogram (18-min) | ✓ | ❌ placeholder | 缺 per-vote ts |
+| Geo 4-row + bars | ✓ | ❌ placeholder | 缺 GeoIP |
+| 跨選項地區交叉 | ✓ 3-row matrix | ❌ | 缺 |
+| Integrity 5-row | 指紋去重 / 同 IP / Bot / Extension / VPN | 4-row（指紋去重 / Rate limit / X-Forwarded-For / Bot） | 🟡 |
+| Actions | CSV / 分享連結 / 重啟題目 | CSV / 分享連結 / 返回 | 🟡（少「重啟」） |
+
+→ **6 區塊只實作 4**。
+
+### F.5 Message Detail Drawer（commit `e4919af`）— 🟡 form deviated
+| 項目 | Prototype | 實作 |
+|------|-----------|------|
+| Form factor | full route page (list-on-left + drawer-on-right) | slide-in overlay drawer |
+| 訊息 bubble | ✓ avatar + nick + fp + ts + status | ✓ |
+| 5 個 action | 置頂 / 遮罩 / 隱藏 / 封禁指紋 / 回覆 overlay | 5 個都在 |
+| Action 是否有實 endpoint | (prototype mock) | **只有「封禁指紋」串實，其他 4 個 toast「v5.3 待補」** |
+| FP stats 3 KPI | 本場 / 歷史 / 違規 | ✓（追蹤總數來自 /admin/fingerprints） |
+| 同指紋最近訊息 | ✓ 5 row | ✓（從 in-mem live-feed 取） |
+| BAN 預覽 | ✓ | ✓ |
+| 上一筆 / 下一筆 navigation | ✓ | ❌ 沒做 |
+
+### F.6 Notifications Inbox（commit `fdeeb34`）— ❌ deviated
+| 區塊 | Prototype | 實作 | 對齊 |
+|------|-----------|------|------|
+| Layout | 3-col（filters / list / detail） | **2-col**（filters / list） | ❌ 缺 detail 面板 |
+| Sources | Backup / Webhooks / Fire Token / Moderation / System (5 個) | Rate Limit / Fire Token / Moderation (3 個) | 🟡 缺 Backup / Webhooks / System |
+| Severity | crit / warn / info / good | ✓ 4 個 | ✅ |
+| Read state | ✓ | ✓ | ✅ |
+| Starred | ✓ ★ icon | ❌ 沒做 | 缺 |
+| Archived | ✓ | ✓ | ✅ |
+| Right detail（事件鏈 / 影響範圍 / 建議動作 / ① ② ③ buttons） | ✓ 完整 | ❌ 完全沒做 | 缺 |
+| Per-item actions | 動態（"從 D-16 還原"等 context-aware） | 固定（已讀 / 封存） | 🟡 |
+
+### F.7 Audit Log（commit `262666f`）— ❌ deviated
+> 對照 batch1 AdminAuditLogPage prototype：
+
+| 區塊 | Prototype | 實作 | 對齊 |
+|------|-----------|------|------|
+| Filter sidebar | 動作 / 操作者 / 時段 + CSV button | **來源** + 提示 box + JSON button | ❌ 缺 動作 / 操作者 / 時段 |
+| 表格 col 1 (時間) | ✓ | ✓ | ✅ |
+| 表格 col 2 | **動作** chip（UPDATE/CREATE/BLOCK… 配色） | **來源** chip | ❌ 不同維度 |
+| 表格 col 3 | 操作者 + avatar + 來源 (web/desktop) | 純文字「執行者」 | ❌ 缺 avatar 圓圈、缺 web/desktop 來源 |
+| 表格 col 4 (target) | ✓「速率限制 · FIRE」這種 human label | 原始 kind string | ❌ 沒做 human label mapping |
+| 表格 col 5 | **before → after** diff（紅 → 綠） | META JSON dump | ❌ 缺 diff 視覺 |
+| Live indicator | ● 即時 | ❌ 30s polling | 🟡 |
+| SHA-256 簽章 | "保留 90 天 · 每筆 SHA-256 簽章" | ❌ 沒做簽章 | 缺（合規場景才需要） |
+| 保留期 | 90 天 | 2 MiB rotation（時間不固定） | ❌ 不同 |
+
+→ Audit Log 對齊度最低，主要差距：缺**操作者 multi-actor**（單 admin / kevin 兩人）、缺**動作分類**（UPDATE/CREATE…）、缺 **before/after diff**。這些都需要在 audit_log.append() 時帶結構化欄位（不是 free-form meta dict）。
+
+### F.8 Sessions design doc — ✅ 對齊（沒實作）
+spec-only，等 Design 拍板 §7 三題後從 S1 開工。
+
+---
+
+## G. 修整 vs 維持的選擇（請 Design 拍板）
+
+依工程量排序，從便宜到貴：
+
+| # | 修整項目 | 工程量 | 屬性 |
+|---|---------|--------|------|
+| G1 | Audit Log 加 ACTION chip 配色 + 重新 mapping audit_log entries 帶 action 欄位 | 2 hr | 純 FE + audit_log schema 微調 |
+| G2 | Audit Log 加 before/after diff 顯示 | 2 hr | audit_log.append() 加 before/after 兩個 optional 欄位 |
+| G3 | Audit Log 加操作者 avatar + 來源 (web/desktop) | 1.5 hr | actor 已有，加 source (web/desktop) 欄位 |
+| G4 | Notifications 加右側 detail 面板（事件鏈 + 建議動作） | 4 hr | 純 FE，動作 mapping 寫死即可 |
+| G5 | Notifications 加 Webhooks / System 來源 | 3 hr | 新後端 instrumentation |
+| G6 | Setup Wizard 補密碼 step（changeable from inside admin） | 3 hr | 接 /admin/change_password endpoint |
+| G7 | Setup Wizard 補 Logo step | 4 hr (FE) + 2 hr (BE) | 要新 /admin/logo 上傳 endpoint |
+| G8 | Poll Deep-Dive 加 Sentiment Index | 2 hr | 純 FE 計算（正面 - 負面 / 100） |
+| G9 | Poll Deep-Dive 加 vs 上次 Δ | 4 hr | 需要 poll history 持久化 |
+| G10 | Message Drawer 加 上一筆 / 下一筆 navigation | 1 hr | 純 FE |
+| G11 | About 改 4 KPI tile 內容（已是最新版 / 上次檢查 / uptime / 授權→license） | 1 hr | 加「檢查更新」action（call GitHub Releases API） |
+
+**最有價值**：G1+G2+G3（Audit Log 三件，~5 hr 一起做）+ G10（Message Drawer 上一筆/下一筆，1 hr）+ G11（About 4 KPI 對齊，1 hr） = **7 hr 一輪 polish 可以把 alignment 從 ~50% 拉到 ~80%**。
+
+**最不值得**：G7（Logo step，要做新 endpoint）、G9（poll vs 上次，要做歷史 poll 持久化）— 工程量大、ROI 低。
+
+請 Design 在 §G 表格旁邊圈：要做哪幾個？要直接維持簡化版？我做完拍板的就再下一輪 ship。
