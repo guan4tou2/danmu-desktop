@@ -98,6 +98,29 @@
         </div>`;
     }).join("");
 
+    // Sentiment Index: split options into top/bottom halves (assume order
+    // positive → negative, like a Likert scale). Index = top% - bottom%.
+    // Range -100 to +100. Returns null if insufficient data.
+    const sentiment = (function () {
+      if (!total || options.length < 2) return null;
+      const half = Math.floor(options.length / 2);
+      let pos = 0, neg = 0;
+      options.forEach(function (o, i) {
+        const v = Number(o.votes != null ? o.votes : o.count) || 0;
+        const pct = (v / total) * 100;
+        if (i < half) pos += pct;
+        else if (i >= options.length - half) neg += pct;
+      });
+      return pos - neg;
+    })();
+    const sentimentSign = sentiment === null ? "—" : (sentiment > 0 ? "+" : "");
+    const sentimentVal = sentiment === null ? "—" : sentimentSign + Math.round(sentiment);
+    const sentimentColor = sentiment === null ? "var(--color-text-muted, #94a3b8)"
+      : sentiment > 20 ? "#86efac"
+      : sentiment > 0 ? "var(--color-primary, #38bdf8)"
+      : sentiment > -20 ? "var(--color-warning, #fbbf24)"
+      : "#f87171";
+
     return `
       <div class="admin-pdd-main">
         <article class="admin-pdd-card admin-pdd-header">
@@ -118,6 +141,19 @@
           <div class="admin-v2-monolabel">選項分佈 · DISTRIBUTION</div>
           <div class="admin-pdd-rows">
             ${options.length ? optionRows : '<div class="admin-pdd-empty-rows">這個 poll 還沒有選項。</div>'}
+          </div>
+
+          <div class="admin-pdd-sentiment-row">
+            <div class="admin-pdd-sentiment-tile">
+              <div class="k">SENTIMENT INDEX</div>
+              <div class="v" style="color:${sentimentColor};">${sentimentVal}</div>
+              <div class="sub">正面 - 負面 / 100（依選項順序推算）</div>
+            </div>
+            <div class="admin-pdd-sentiment-tile is-placeholder" title="需要 poll history 持久化（v5.3）">
+              <div class="k">VS 上次</div>
+              <div class="v">—</div>
+              <div class="sub">需要歷史 poll 持久化（v5.3 待補）</div>
+            </div>
           </div>
         </article>
 

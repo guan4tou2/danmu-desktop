@@ -6002,6 +6002,35 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   color: var(--color-text-muted, #94a3b8);
 }
 
+/* Sentiment Index + vs 上次 row (G8) */
+.admin-pdd-sentiment-row {
+  margin-top: 14px;
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.admin-pdd-sentiment-tile {
+  padding: 12px;
+  background: var(--color-bg, #0a0e1a);
+  border: 1px solid var(--color-border, #1f2944);
+  border-radius: 4px;
+}
+.admin-pdd-sentiment-tile.is-placeholder { opacity: 0.55; }
+.admin-pdd-sentiment-tile .k {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.2px;
+  color: var(--color-text-muted, #94a3b8);
+}
+.admin-pdd-sentiment-tile .v {
+  margin-top: 4px;
+  font-size: 28px; font-weight: 600;
+  color: var(--color-text-strong, #e2e8f0);
+  letter-spacing: 0.3px;
+}
+.admin-pdd-sentiment-tile .sub {
+  margin-top: 4px;
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.4px;
+  color: var(--color-text-muted, #94a3b8);
+}
+
 /* Placeholder card (geo / timeline) */
 .admin-pdd-placeholder { opacity: 0.85; }
 .admin-pdd-placeholder-body {
@@ -6130,8 +6159,25 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   letter-spacing: 1.5px;
   color: var(--color-primary, #38bdf8);
 }
-.admin-msgd-close {
+.admin-msgd-nav {
   margin-left: auto;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--color-border, #1f2944);
+  color: var(--color-text-muted, #94a3b8);
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px; letter-spacing: 0.4px;
+  transition: all 120ms ease;
+}
+.admin-msgd-nav + .admin-msgd-nav { margin-left: 4px; }
+.admin-msgd-nav:hover {
+  color: var(--color-primary, #38bdf8);
+  border-color: rgba(56, 189, 248, 0.40);
+}
+.admin-msgd-close {
+  margin-left: 8px;
   width: 28px; height: 28px;
   display: flex; align-items: center; justify-content: center;
   background: transparent;

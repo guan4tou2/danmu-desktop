@@ -74,10 +74,15 @@
     { n: "marshmallow",    v: "3.x",      l: "MIT" },
   ];
 
+  const UPDATE_CHECK_KEY = "danmu.about.lastUpdateCheck";
+
   let _state = {
     serverStartedAt: 0,
     serverTime: 0,
     appVersion: "—",
+    latestVersion: null,
+    lastCheckedAt: 0,
+    isLatest: null,
   };
 
   function buildSection() {
@@ -102,15 +107,15 @@
                 </div>
               </div>
               <div class="admin-about-stats" data-about-stats>
-                <div class="admin-about-stat"><div class="k">UPTIME</div><div class="v" data-about-uptime>—</div></div>
-                <div class="admin-about-stat"><div class="k">CHANNEL</div><div class="v" data-about-channel>stable</div></div>
-                <div class="admin-about-stat"><div class="k">PLATFORM</div><div class="v" data-about-platform>web · electron</div></div>
+                <div class="admin-about-stat"><div class="k">已是最新版</div><div class="v" data-about-update>—</div></div>
+                <div class="admin-about-stat"><div class="k">上次檢查更新</div><div class="v" data-about-checked>從未檢查</div></div>
+                <div class="admin-about-stat"><div class="k">SERVER UPTIME</div><div class="v" data-about-uptime>—</div></div>
                 <div class="admin-about-stat"><div class="k">LICENSE</div><div class="v">MIT</div></div>
               </div>
               <div class="admin-about-actions">
+                <button type="button" class="admin-about-btn admin-about-btn--accent" data-about-action="check-update">↻ 檢查更新</button>
                 <button type="button" class="admin-about-btn" data-about-action="copy">📋 複製版本資訊</button>
                 <button type="button" class="admin-about-btn" data-about-action="setup-wizard">⚙ 重新開啟設定精靈</button>
-                <a class="admin-about-btn admin-about-btn--accent" href="${REPO_URL}/releases/latest" target="_blank" rel="noopener noreferrer">↻ GitHub Releases</a>
               </div>
             </article>
 
@@ -179,6 +184,8 @@
     const tagEl = document.querySelector("[data-about-tag]");
     const buildEl = document.querySelector("[data-about-build]");
     const upEl = document.querySelector("[data-about-uptime]");
+    const updEl = document.querySelector("[data-about-update]");
+    const checkedEl = document.querySelector("[data-about-checked]");
     if (tagEl) tagEl.textContent = `v${_state.appVersion}`;
     if (buildEl) {
       const channel = (window.DANMU_CONFIG && window.DANMU_CONFIG.session && window.DANMU_CONFIG.session.environment) || "production";
@@ -188,6 +195,84 @@
       const upSec = _state.serverStartedAt ? (_state.serverTime - _state.serverStartedAt) : 0;
       upEl.textContent = _formatUptime(upSec);
     }
+    if (updEl) {
+      if (_state.isLatest === true) updEl.textContent = "✓ 是";
+      else if (_state.isLatest === false) updEl.textContent = "▲ 有新版 " + (_state.latestVersion || "");
+      else updEl.textContent = "—";
+      updEl.style.color = _state.isLatest === true ? "#86efac"
+        : _state.isLatest === false ? "var(--color-warning, #fbbf24)"
+        : "";
+    }
+    if (checkedEl) {
+      checkedEl.textContent = _state.lastCheckedAt
+        ? _humanDelta(_state.lastCheckedAt) + "前"
+        : "從未檢查";
+    }
+  }
+
+  function _humanDelta(unix) {
+    const t = Number(unix) || 0;
+    if (!t) return "—";
+    const ms = String(t).length > 12 ? t : t * 1000;
+    const diffSec = (Date.now() - ms) / 1000;
+    if (diffSec < 60) return Math.floor(diffSec) + " 秒";
+    if (diffSec < 3600) return Math.floor(diffSec / 60) + " 分鐘";
+    if (diffSec < 86400) return Math.floor(diffSec / 3600) + " 小時";
+    return Math.floor(diffSec / 86400) + " 天";
+  }
+
+  function _versionGreaterThan(a, b) {
+    // Compare semver-like strings (e.g. "5.1.0" > "5.0.0"). Returns true
+    // when a > b. Strips leading "v" and ignores -prerelease tags.
+    const parse = (s) => String(s || "").replace(/^v/i, "").split("-")[0]
+      .split(".").map(function (n) { return parseInt(n, 10) || 0; });
+    const aa = parse(a), bb = parse(b);
+    const len = Math.max(aa.length, bb.length);
+    for (let i = 0; i < len; i++) {
+      const ai = aa[i] || 0, bi = bb[i] || 0;
+      if (ai > bi) return true;
+      if (ai < bi) return false;
+    }
+    return false;
+  }
+
+  async function _checkUpdate({ silent } = {}) {
+    if (!silent) window.showToast && window.showToast("檢查更新中…", true);
+    try {
+      const r = await fetch("https://api.github.com/repos/guan4tou2/danmu-desktop/releases/latest", {
+        headers: { "Accept": "application/vnd.github+json" },
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const data = await r.json();
+      const tag = (data.tag_name || "").replace(/^v/i, "");
+      _state.latestVersion = tag;
+      _state.lastCheckedAt = Date.now();
+      _state.isLatest = !_versionGreaterThan(tag, _state.appVersion);
+      try { localStorage.setItem(UPDATE_CHECK_KEY, JSON.stringify({
+        ts: _state.lastCheckedAt, latest: tag, isLatest: _state.isLatest,
+      })); } catch (_) {}
+      _renderState();
+      if (!silent) {
+        window.showToast && window.showToast(
+          _state.isLatest ? "已是最新版（v" + _state.appVersion + "）"
+            : "有新版可用：v" + tag,
+          true
+        );
+      }
+    } catch (e) {
+      if (!silent) window.showToast && window.showToast("檢查更新失敗：" + (e.message || ""), false);
+    }
+  }
+
+  function _loadCachedUpdateCheck() {
+    try {
+      const raw = localStorage.getItem(UPDATE_CHECK_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      _state.latestVersion = data.latest;
+      _state.lastCheckedAt = Number(data.ts) || 0;
+      _state.isLatest = !!data.isLatest;
+    } catch (_) {}
   }
 
   async function _fetchMetrics() {
@@ -228,6 +313,7 @@
     if (!grid || document.getElementById(PAGE_ID)) return;
     grid.insertAdjacentHTML("beforeend", buildSection());
     _state.appVersion = (window.DANMU_CONFIG && (window.DANMU_CONFIG.appVersion || window.DANMU_CONFIG.app_version)) || "—";
+    _loadCachedUpdateCheck();
     _renderState();
 
     const page = document.getElementById(PAGE_ID);
@@ -237,6 +323,7 @@
         if (!btn) return;
         const action = btn.dataset.aboutAction;
         if (action === "copy") _copyVersionInfo();
+        else if (action === "check-update") _checkUpdate({ silent: false });
         else if (action === "setup-wizard") {
           if (window.AdminSetupWizard && typeof window.AdminSetupWizard.open === "function") {
             window.AdminSetupWizard.open();

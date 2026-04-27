@@ -67,7 +67,38 @@
   }
 
   function _onKey(e) {
-    if (e.key === "Escape" && _state.open) _close();
+    if (!_state.open) return;
+    if (e.key === "Escape") { _close(); return; }
+    if (e.key === "ArrowLeft" || e.key === "k") { _navigate(-1); e.preventDefault(); return; }
+    if (e.key === "ArrowRight" || e.key === "j") { _navigate(+1); e.preventDefault(); return; }
+  }
+
+  // ── prev / next ──────────────────────────────────────────────────
+
+  // direction: -1 = 上一筆 (newer / 較新)、+1 = 下一筆 (older / 較舊)
+  // Live-feed entries[] is oldest-first internally but rendered newest-first,
+  // so "下一筆" means moving DOWN the visible list = index - 1 in storage.
+  function _navigate(direction) {
+    if (!_state.entry) return;
+    let entries = [];
+    if (window.AdminLiveFeed && typeof window.AdminLiveFeed.getEntries === "function") {
+      entries = window.AdminLiveFeed.getEntries();
+    }
+    if (!entries.length) return;
+    const idx = entries.findIndex(function (e) { return e.id === _state.entry.id; });
+    if (idx < 0) return;
+    // Flip direction: visual "下一筆" → older → entries[idx - 1]
+    const targetIdx = idx + (-direction);
+    if (targetIdx < 0 || targetIdx >= entries.length) {
+      window.showToast && window.showToast(direction < 0 ? "已是最新一筆" : "已是最舊一筆", false);
+      return;
+    }
+    const target = entries[targetIdx];
+    _state.entry = target;
+    _state.fingerprintRecord = null;
+    _collectSameFpEntries(target);
+    _render();
+    if (target.data && target.data.fingerprint) _fetchFingerprintStats(target.data.fingerprint);
   }
 
   // ── data ─────────────────────────────────────────────────────────
@@ -122,6 +153,8 @@
       const a = btn.dataset.msgdAction;
       if (a === "close") _close();
       else if (a === "ban-fp") _banFingerprint();
+      else if (a === "prev") _navigate(-1);
+      else if (a === "next") _navigate(+1);
       else if (a === "placeholder") {
         const lbl = btn.dataset.msgdLabel || "此操作";
         window.showToast && window.showToast(lbl + " · v5.3 待補", false);
@@ -173,6 +206,8 @@
     return `
       <header class="admin-msgd-head">
         <span class="admin-msgd-kicker">MESSAGE · INSPECTOR</span>
+        <button type="button" class="admin-msgd-nav" data-msgd-action="prev" aria-label="Previous message" title="上一筆 ←">← 上一筆</button>
+        <button type="button" class="admin-msgd-nav" data-msgd-action="next" aria-label="Next message" title="下一筆 →">下一筆 →</button>
         <button type="button" class="admin-msgd-close" data-msgd-action="close" aria-label="Close drawer">✕</button>
       </header>
 
