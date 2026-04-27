@@ -1429,7 +1429,10 @@ document.addEventListener("DOMContentLoaded", () => {
       <div id="sec-polls" class="admin-poll-page-v5 hud-page-stack lg:col-span-2" data-poll-view="builder">
         <div class="admin-poll-head">
           <div class="admin-poll-kicker">POLL · 多題目 · 拖曳排序 · 每題可上傳圖片</div>
-          <div class="admin-poll-title">投票</div>
+          <div class="admin-poll-title">
+            投票
+            <a class="admin-poll-deeplink" href="#/poll-deepdive" title="投票深度分析">📊 深度分析 →</a>
+          </div>
         </div>
 
         <!-- BUILDER VIEW -->
@@ -3809,6 +3812,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // overlay (not a sidebar nav). Route exists so admin.js doesn't bounce
     // the hash back to /dashboard.
     setup:     { title: "設定精靈",           kicker: "SETUP WIZARD · 初次設定 · 可重跑",   sections: [] },
+    // Phase 2 P0-3 (2026-04-27 batch8): #/poll-deepdive opens analytics
+    // for current/last poll. Entry point = 📊 button on polls page.
+    "poll-deepdive": { title: "投票深度分析",  kicker: "POLL ANALYTICS · 選項分佈 · 誠信檢查", sections: ["sec-poll-deepdive-overview"] },
     broadcast: { title: "廣播",              kicker: "BROADCAST · LIVE / STANDBY",         sections: [] },
   };
 
