@@ -35,17 +35,38 @@
     <main class="viewer-main-card">
       <div class="viewer-shell">
 
-        <!-- Hero · 2-col layout (v4 handoff chat decision):
-             left column = DANMU FIRE + subtitle (centered block)
-             right column = 伺服器 / Overlay ConnChip stack + language picker
+        <!-- Hero · 3-col layout (prototype viewer.jsx:106 redesign 2026-04-27):
+             left column   = DANMU FIRE + subtitle
+             middle (full-width absolute background) = DanmuMarquee scrolling 12 chips
+             right column  = 伺服器 / Overlay ConnChip stack + language picker
              Mobile uses `is-mini` chip variant. -->
         <section class="viewer-hero animate-fade-in-scale-up">
+          <!-- Decorative DanmuMarquee — 12 fake danmu scroll right→left behind
+               the hero. Pure visual; no informational role. Mask gradient on
+               left 22% so the logo stays legible. -->
+          <div class="viewer-hero-marquee" aria-hidden="true">
+            <span class="viewer-mq-item viewer-mq-i0" style="color:#fb7185">🔥🔥🔥</span>
+            <span class="viewer-mq-item viewer-mq-i1" style="color:#7dd3fc">+1</span>
+            <span class="viewer-mq-item viewer-mq-i2" style="color:#fcd34d">哈哈哈</span>
+            <span class="viewer-mq-item viewer-mq-i3" style="color:#38bdf8">👏</span>
+            <span class="viewer-mq-item viewer-mq-i4" style="color:#a3e635">講得好！</span>
+            <span class="viewer-mq-item viewer-mq-i5" style="color:#c4b5fd">✨ wow</span>
+            <span class="viewer-mq-item viewer-mq-i6" style="color:#7dd3fc">666</span>
+            <span class="viewer-mq-item viewer-mq-i7" style="color:#fcd34d">💯</span>
+            <span class="viewer-mq-item viewer-mq-i8" style="color:#a3e635">+1 同意</span>
+            <span class="viewer-mq-item viewer-mq-i9" style="color:#fb7185">GG</span>
+            <span class="viewer-mq-item viewer-mq-i10" style="color:#38bdf8">太強了</span>
+            <span class="viewer-mq-item viewer-mq-i11" style="color:#c4b5fd">謝謝主持</span>
+          </div>
+
           <div class="viewer-hero-lockup">
             <h1 class="viewer-hero-title" data-i18n="mainTitle">Danmu Fire</h1>
             <p class="viewer-hero-subtitle" data-i18n="mainSubtitle">
               Send your message to the screen!
             </p>
           </div>
+
+          <div class="viewer-hero-spacer" aria-hidden="true"></div>
 
           <div class="viewer-hero-utility" role="status" aria-live="polite">
             <span id="connectionStatus" class="viewer-conn-chip">

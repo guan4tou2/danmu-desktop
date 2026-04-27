@@ -1,7 +1,7 @@
 // Mobile Safari chrome — tiny URL bar top + home indicator bottom.
 // Used to frame web pages inside an iOS device, emphasizing "this is a website, not an app".
 
-function MobileSafariChrome({ url = 'danmu.im/42', children, dark = false }) {
+function MobileSafariChrome({ url = '138.2.59.206:4000', children, dark = false }) {
   const bg = dark ? '#1c1c1e' : '#f2f2f7';
   const bar = dark ? 'rgba(44,44,46,0.92)' : 'rgba(246,246,248,0.92)';
   const text = dark ? '#fff' : '#000';

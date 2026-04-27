@@ -23,7 +23,9 @@ function AdminDisplaySettingsPage({ theme = 'dark' }) {
     >
       {({ panel, raised, line, text, textDim, accent, radius }) => (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20 }}>
-          {/* Left · row list */}
+          {/* Left · preview on top + row list */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
+          <PreviewCard cfg={cfg} tokens={{ panel, line, textDim, accent, radius }} />
           <div style={{
             background: panel, border: `1px solid ${line}`, borderRadius: radius, overflow: 'hidden',
           }}>
@@ -148,10 +150,11 @@ function AdminDisplaySettingsPage({ theme = 'dark' }) {
             />
           </div>
 
-          {/* Right rail */}
+          </div>
+
+          {/* Right rail · summary only (preview moved to top of left col, deploy is implicit/auto-sync) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <PreviewCard cfg={cfg} tokens={{ panel, line, textDim, accent, radius }} />
-            <DeployCard tokens={{ panel, raised, line, text, textDim, accent, radius }} />
+            <AutoSyncCard tokens={{ panel, raised, line, text, textDim, accent, radius }} />
             <SummaryCard cfg={cfg} tokens={{ panel, raised, line, text, textDim, accent, radius }} />
           </div>
         </div>
@@ -371,26 +374,35 @@ function PreviewCard({ cfg, tokens }) {
 }
 
 // ---------------------------------------------------------------
-// DeployCard — 推送動作
-function DeployCard({ tokens }) {
+// AutoSyncCard — 取代 DeployCard。Display Settings 採隱式 deploy:
+// 任何修改即時送到 overlay,無「套用」按鈕。這張卡只是說明目前同步狀態。
+function AutoSyncCard({ tokens }) {
   const { panel, raised, line, text, textDim, accent, radius } = tokens;
   return (
     <div style={{ background: panel, border: `1px solid ${line}`, borderRadius: radius, padding: 14 }}>
-      <CardHeader title="推送動作" en="DEPLOY" textDim={textDim} />
+      <CardHeader title="自動同步" en="AUTO-SYNC · IMPLICIT DEPLOY" textDim={textDim} />
+      <div style={{
+        marginTop: 12, display: 'flex', alignItems: 'center', gap: 10,
+        padding: '10px 12px', borderRadius: 4,
+        background: hudTokens.cyanSoft, border: `1px solid ${accent}`,
+      }}>
+        <StatusDot color={accent} size={6} pulse />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: hudTokens.fontMono, fontSize: 11, color: accent, letterSpacing: 1, fontWeight: 700 }}>同步中 · LIVE</div>
+          <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, marginTop: 2, letterSpacing: 0.4 }}>更動即推送 · overlay 與下次刷新觀眾即生效</div>
+        </div>
+      </div>
       <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
         <button style={{
-          flex: 1, padding: '10px', borderRadius: 4, border: `1px solid ${accent}`,
-          background: accent, color: '#000', cursor: 'pointer',
-          fontFamily: hudTokens.fontMono, fontSize: 11, letterSpacing: 1.5, fontWeight: 700,
-        }}>▶ 即時套用</button>
-        <button style={{
-          padding: '10px 14px', borderRadius: 4, border: `1px solid ${line}`,
+          flex: 1, padding: '8px', borderRadius: 4, border: `1px solid ${line}`,
           background: 'transparent', color: text, cursor: 'pointer',
-          fontFamily: hudTokens.fontMono, fontSize: 11, letterSpacing: 1,
-        }}>還原預設</button>
-      </div>
-      <div style={{ marginTop: 8, fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, letterSpacing: 0.5 }}>
-        即時同步到 overlay · 觀眾端下次刷新 viewer 生效
+          fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 1,
+        }}>↺ 還原預設</button>
+        <button style={{
+          flex: 1, padding: '8px', borderRadius: 4, border: `1px solid ${line}`,
+          background: 'transparent', color: text, cursor: 'pointer',
+          fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 1,
+        }}>↗ 匯出 JSON</button>
       </div>
     </div>
   );

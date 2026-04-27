@@ -342,7 +342,7 @@ function AdminViewerThemePage({ theme = 'dark' }) {
                 fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 1,
                 display: 'flex', justifyContent: 'space-between',
               }}>
-                <span>URL · danmu.im/42</span>
+                <span>URL · 138.2.59.206:4000</span>
                 <span style={{ color: accent }}>VIEWER · {previewDevice.toUpperCase()}</span>
               </div>
             </div>

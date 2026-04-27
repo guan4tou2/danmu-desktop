@@ -94,7 +94,7 @@ function OverlayIdle({ theme = 'dark' }) {
           title="Danmu Fire"
           theme={theme}
           size="hero"
-          subtitle="掃描 QR code 或打開 danmu.im/42 — 開始送彈幕"
+          subtitle="掃描 QR code 或輸入 138.2.59.206:4000 — 開始送彈幕"
         />
         {/* Connection chip */}
         <div style={{ marginTop: 26, display: 'inline-flex', alignItems: 'center', gap: 16, padding: '10px 20px', borderRadius: 999, border: `1px solid ${hudTokens.cyanLine}`, background: hudTokens.cyanSoft }}>
@@ -123,7 +123,7 @@ function OverlayIdle({ theme = 'dark' }) {
           </svg>
         </div>
         <div style={{ marginTop: 12, fontFamily: hudTokens.fontMono, fontSize: 11, letterSpacing: 2, color: HERO_SLATE_300 }}>
-          DANMU.IM/42
+          138.2.59.206:4000
         </div>
       </div>
     </div>

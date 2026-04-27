@@ -153,7 +153,7 @@
             </div>
 
             <div class="admin-broadcast-hint">
-              切換為立即生效 · WebSocket 仍保持連線 · 觀眾側看到「主持人暫停」而非斷線。
+              切換為立即生效 · WebSocket 仍保持連線 · 觀眾側看到「暫停接收」而非斷線。
               <br><span style="opacity:.7">即將支援 · 後端 /admin/broadcast/toggle endpoint pending。目前僅前端 UI 狀態切換。</span>
             </div>
           </div>

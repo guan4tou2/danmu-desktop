@@ -136,12 +136,20 @@ body.viewer-body-v2.is-dark {
   display: flex;
   align-items: center;
   gap: 24px;
+  /* DanmuMarquee runs absolutely-positioned behind the hero content; clip
+   * overflow so chips that haven't scrolled in yet stay invisible. */
+  position: relative;
+  overflow: hidden;
 }
 
 .viewer-hero-lockup {
-  flex: 1 1 0;
+  /* Logo is flexShrink:0 so it doesn't compete with the chip column for
+   * space — a center spacer (.viewer-hero-spacer) absorbs the slack. */
+  flex: 0 0 auto;
   min-width: 0;
   text-align: left;
+  position: relative;
+  z-index: 2;
 }
 
 .viewer-hero-utility {
@@ -150,6 +158,82 @@ body.viewer-body-v2.is-dark {
   flex-direction: column;
   align-items: flex-end;
   gap: 4px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Marquee — 12 fake danmu chips scroll right→left across the hero. Pure
+ * decoration; mask gradient on the left so the logo stays legible. */
+.viewer-hero-marquee {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 22%, #000 38%, #000 88%, transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0, transparent 22%, #000 38%, #000 88%, transparent 100%);
+}
+
+.viewer-mq-item {
+  position: absolute;
+  left: 100%;
+  font-family: var(--font-sans, sans-serif);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  animation: viewer-mq-scroll 16s linear infinite;
+  text-shadow: 0 0 8px currentColor;
+  /* per-chip y/opacity/duration via :nth-child overrides below */
+}
+
+@keyframes viewer-mq-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-1100px); }
+}
+
+@media (max-width: 599px) {
+  .viewer-mq-item {
+    font-size: 12px;
+    animation-name: viewer-mq-scroll-mobile;
+  }
+  @keyframes viewer-mq-scroll-mobile {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-500px); }
+  }
+}
+
+/* Per-chip stagger: y / delay / duration / opacity. Matches prototype
+ * viewer.jsx:526 items array. Mobile clamps y to ≤38 so chips don't fall
+ * outside the shorter mobile hero. */
+.viewer-mq-i0  { top: 16px; opacity: 0.32; animation-delay: 0s;     animation-duration: 14s; }
+.viewer-mq-i1  { top: 44px; opacity: 0.28; animation-delay: 1.8s;   animation-duration: 17s; }
+.viewer-mq-i2  { top: 6px;  opacity: 0.36; animation-delay: 3.4s;   animation-duration: 16s; }
+.viewer-mq-i3  { top: 56px; opacity: 0.32; animation-delay: 5.0s;   animation-duration: 13s; }
+.viewer-mq-i4  { top: 28px; opacity: 0.26; animation-delay: 6.4s;   animation-duration: 19s; }
+.viewer-mq-i5  { top: 4px;  opacity: 0.30; animation-delay: 7.8s;   animation-duration: 15s; }
+.viewer-mq-i6  { top: 50px; opacity: 0.26; animation-delay: 9.0s;   animation-duration: 16s; }
+.viewer-mq-i7  { top: 22px; opacity: 0.36; animation-delay: 10.4s;  animation-duration: 13s; }
+.viewer-mq-i8  { top: 38px; opacity: 0.28; animation-delay: 11.6s;  animation-duration: 17s; }
+.viewer-mq-i9  { top: 12px; opacity: 0.32; animation-delay: 13.0s;  animation-duration: 14s; }
+.viewer-mq-i10 { top: 60px; opacity: 0.30; animation-delay: 14.2s;  animation-duration: 18s; }
+.viewer-mq-i11 { top: 32px; opacity: 0.26; animation-delay: 15.6s;  animation-duration: 16s; }
+
+@media (max-width: 599px) {
+  .viewer-mq-i3  { top: 38px; }
+  .viewer-mq-i6  { top: 38px; }
+  .viewer-mq-i10 { top: 38px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewer-mq-item { animation: none; opacity: 0; }
+}
+
+/* Center spacer pushes chip column flush right while marquee owns the
+ * middle area visually. */
+.viewer-hero-spacer {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 @media (max-width: 599px) {
@@ -219,7 +303,11 @@ body.viewer-body-v2.is-dark {
   padding: 4px 10px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--hud-line);
-  background: transparent;
+  /* Solid panel bg so the DanmuMarquee scrolling behind the hero doesn't
+   * bleed through. Prototype viewer.jsx:427 layers cyanSoft on top of bg
+   * for the online state — we approximate with a single panel-coloured
+   * solid here and let .is-online / :has() override with the cyan tint. */
+  background: var(--color-bg-base);
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 1px;
@@ -227,11 +315,12 @@ body.viewer-body-v2.is-dark {
   white-space: nowrap;
 }
 
-/* When the chip wraps a connected/live dot, treat the whole chip as
- * online (cyan-soft fill + cyan-tint border). */
+/* Online — stacked gradient: cyanSoft tint on top of the solid panel bg. */
 .viewer-conn-chip:has(.connection-dot--connected),
 .viewer-conn-chip:has(.connection-dot--live) {
-  background: var(--hud-cyan-soft);
+  background:
+    linear-gradient(var(--hud-cyan-soft), var(--hud-cyan-soft)),
+    var(--color-bg-base);
   border-color: var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
 }
 

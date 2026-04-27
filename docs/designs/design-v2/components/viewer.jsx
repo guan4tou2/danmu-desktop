@@ -3,11 +3,11 @@
 // effects (8, stackable) / emoji picker inline-insert. Max 100 chars. Button = FIRE.
 // NO: Poll tab, sticker quick-panel, quick-reply phrases, per-message stroke/shadow.
 
-function ViewerMobile({ theme = 'dark', inBrowser = false }) {
-  return <ViewerCore theme={theme} form="mobile" inBrowser={inBrowser} />;
+function ViewerMobile({ theme = 'dark', inBrowser = false, pollEnabled = false }) {
+  return <ViewerCore theme={theme} form="mobile" inBrowser={inBrowser} pollEnabled={pollEnabled} />;
 }
-function ViewerDesktop({ theme = 'dark', inBrowser = false }) {
-  return <ViewerCore theme={theme} form="desktop" inBrowser={inBrowser} />;
+function ViewerDesktop({ theme = 'dark', inBrowser = false, pollEnabled = false }) {
+  return <ViewerCore theme={theme} form="desktop" inBrowser={inBrowser} pollEnabled={pollEnabled} />;
 }
 
 // Emoji set available to the viewer (from admin-managed Emojis module).
@@ -27,7 +27,19 @@ const VIEWER_FONTS = [
   'Arial', 'Georgia', 'Courier New',
 ];
 
-function ViewerCore({ theme, form, inBrowser }) {
+// Poll demo data (admin pushes; viewer votes)
+const POLL_DEMO = {
+  q: '今天最有收穫的是？',
+  options: [
+    { k: 'a', label: 'A. Demo 現場',     pct: 42, votes: 104 },
+    { k: 'b', label: 'B. 架構說明', pct: 28, votes: 69 },
+    { k: 'c', label: 'C. Q&A',                  pct: 18, votes: 45 },
+    { k: 'd', label: 'D. Roadmap',              pct: 12, votes: 29 },
+  ],
+  total: 247,
+};
+
+function ViewerCore({ theme, form, inBrowser, pollEnabled }) {
   const isDark = theme === 'dark';
   const bg = isDark ? hudTokens.bg0 : hudTokens.lightBg0;
   const panel = isDark ? hudTokens.bg1 : '#fff';
@@ -47,6 +59,13 @@ function ViewerCore({ theme, form, inBrowser }) {
   const [effects, setEffects] = React.useState(['glow']);
   const [layout, setLayout] = React.useState('scroll');
   const [emojiOpen, setEmojiOpen] = React.useState(false);
+  const [tab, setTab] = React.useState('fire');
+  const [vote, setVote] = React.useState(null);
+
+  // If poll tab gets disabled, fall back to fire.
+  React.useEffect(() => {
+    if (tab === 'poll' && !pollEnabled) setTab('fire');
+  }, [pollEnabled, tab]);
   const inputRef = React.useRef(null);
 
   const toggleEffect = (e) =>
@@ -83,50 +102,64 @@ function ViewerCore({ theme, form, inBrowser }) {
         </div>
       )}
 
-      {/* Hero lockup — 左右兩欄 (mobile + desktop 統一):
-          左 · Danmu Fire logo + 副標題
-          右 · 伺服器 / Overlay 連線 chip + (desktop) 語言 & 主題切換 */}
+      {/* Hero lockup — Mobile + Desktop 統一三欄:
+          左 logo · 中央彈幕跑馬(滿版背景) · 右 chip+lang+theme */}
       <div style={{
-        padding: isMobile ? '18px 16px 16px' : '28px 32px 22px',
+        padding: isMobile ? '16px 14px 14px' : '28px 32px 22px',
         borderBottom: `1px solid ${line}`,
         background: isDark ? 'linear-gradient(180deg, rgba(125,211,252,0.04) 0%, transparent 100%)' : 'transparent',
         display: 'flex',
+        flexDirection: 'row',
         alignItems: 'center',
         gap: isMobile ? 10 : 24,
         position: 'relative',
+        overflow: 'hidden',
       }}>
-        <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+        {/* 滿版彈幕跑馬 — 壓在最底層,文字從右飛到左穿過整個 hero */}
+        <DanmuMarquee isDark={isDark} accent={accent} isMobile={isMobile} />
+
+        <div style={{ minWidth: 0, flexShrink: 0, textAlign: 'left', position: 'relative', zIndex: 2 }}>
           <DanmuHero
             title="Danmu Fire"
             theme={theme}
             size={isMobile ? 'medium' : 'hero'}
             align="left"
             subtitle="把你的訊息送上螢幕!"
-            subStyle={{ margin: isMobile ? '6px 0 0' : '10px 0 0', fontSize: isMobile ? 12 : undefined }}
+            subStyle={{ margin: isMobile ? '4px 0 0' : '10px 0 0', fontSize: isMobile ? 12 : undefined }}
           />
         </div>
+
+        {/* mobile/desktop 都用 flex spacer 把 chip 推到右邊 */}
+        <div style={{ flex: 1 }} />
+
         <div style={{
-          flexShrink: 0, display: 'flex', flexDirection: 'column',
-          gap: 4, alignItems: 'flex-end',
+          flexShrink: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: 4,
+          position: 'relative', zIndex: 2,
         }}>
-          <ConnChip label="伺服器" state="online" accent={accent} textDim={textDim} mini={isMobile} />
-          <ConnChip label="Overlay" state="offline" textDim={textDim} line={line} mini={isMobile} />
-          {!isMobile && (
-            <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
-              <Seg>
-                <SegBtn on>中</SegBtn>
-                <SegBtn>EN</SegBtn>
-              </Seg>
-              <Seg>
-                <SegBtn on={isDark}>◐</SegBtn>
-                <SegBtn on={!isDark}>◑</SegBtn>
-              </Seg>
-            </div>
-          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+            <ConnChip label="伺服器" state="online" accent={accent} textDim={textDim} mini={isMobile} bg={panel} />
+            <ConnChip label="Overlay" state="offline" textDim={textDim} line={line} mini={isMobile} bg={panel} />
+          </div>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4 }}>
+            <LangSelect isDark={isDark} text={text} textDim={textDim} line={line} raised={raised} mini={isMobile} />
+            <ThemeToggle isDark={isDark} text={text} textDim={textDim} line={line} accent={accent} mini={isMobile} />
+          </div>
         </div>
       </div>
 
+      {/* Tabs — Fire 永遠在,Poll 依 admin 開關 */}
+      <ViewerTabs
+        tab={tab} setTab={setTab}
+        pollEnabled={pollEnabled}
+        accent={accent} text={text} textDim={textDim} line={line}
+      />
+
       <div style={{ flex: 1, overflow: 'auto', padding: `${pad}px ${pad}px ${pad + 6}px`, minHeight: 0 }}>
+        {tab === 'fire' && (<>
         {/* Live preview — 模擬「投到螢幕上」;dark/light 各自的深色舞台背景 */}
         <div style={{
           background: isDark
@@ -268,9 +301,19 @@ function ViewerCore({ theme, form, inBrowser }) {
             })}
           </div>
         </Field>
+        </>)}
+
+        {tab === 'poll' && (
+          <ViewerPollTab
+            data={POLL_DEMO} vote={vote} setVote={setVote}
+            isDark={isDark} accent={accent} text={text} textDim={textDim}
+            line={line} raised={raised} panel={panel}
+          />
+        )}
       </div>
 
-      {/* Send bar with inline emoji picker */}
+      {/* Send bar — Fire tab only */}
+      {tab === 'fire' && (
       <div style={{ padding: `10px ${pad - 4}px 12px`, borderTop: `1px solid ${line}`, background: panel, position: 'relative' }}>
         {emojiOpen && (
           <div style={{
@@ -326,6 +369,7 @@ function ViewerCore({ theme, form, inBrowser }) {
           <span style={{ color: msg.length > 90 ? hudTokens.amber : textDim }}>{msg.length}/100</span>
         </div>
       </div>
+      )}
       {isMobile && !inBrowser && <div style={{ height: 20, background: panel }} />}
     </div>
   );
@@ -371,15 +415,19 @@ function SegBtn({ on, children }) {
   );
 }
 
-// Connection chip — 伺服器 / Overlay 單行小膠囊
-function ConnChip({ label, state, accent, textDim, line, mini }) {
+// Connection chip — 伺服器 / Overlay 單行小膠囊 · bg 為實心背景(避免被彈幕透出)
+function ConnChip({ label, state, accent, textDim, line, mini, bg }) {
   const online = state === 'online';
   const color = online ? (accent || hudTokens.cyan) : (textDim || hudTokens.textDim);
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: mini ? 4 : 6,
       padding: mini ? '2px 7px' : '4px 10px', borderRadius: 999,
-      background: online ? hudTokens.cyanSoft : 'transparent',
+      // 兩層: bg 提供實心底,online 時上 cyanSoft 疊色
+      background: bg
+        ? (online ? `linear-gradient(${hudTokens.cyanSoft}, ${hudTokens.cyanSoft}), ${bg}` : bg)
+        : (online ? hudTokens.cyanSoft : 'transparent'),
+      backgroundOrigin: 'border-box',
       border: `1px solid ${online ? hudTokens.cyanLine : (line || 'rgba(148,163,184,0.25)')}`,
       fontFamily: hudTokens.fontMono, fontSize: mini ? 9 : 10, letterSpacing: mini ? 0.5 : 1, color,
       whiteSpace: 'nowrap',
@@ -390,5 +438,219 @@ function ConnChip({ label, state, accent, textDim, line, mini }) {
     </span>
   );
 }
+
+// Lang dropdown — endonyms 4 langs · mobile 同 desktop
+function LangSelect({ isDark, text, textDim, line, raised, mini }) {
+  const [v, setV] = React.useState('zh-Hant');
+  return (
+    <div style={{
+      position: 'relative',
+      background: raised, border: `1px solid ${line}`, borderRadius: 6,
+      display: 'inline-flex', alignItems: 'center',
+      padding: mini ? '0 16px 0 8px' : '0 18px 0 10px',
+      height: mini ? 22 : 26,
+    }}>
+      <span style={{
+        fontFamily: hudTokens.fontMono, fontSize: mini ? 10 : 11, color: text,
+        letterSpacing: 0.3, fontWeight: 500,
+      }}>
+        {v === 'zh-Hant' ? '中文' : v === 'en' ? 'English' : v === 'ja' ? '日本語' : '한국어'}
+      </span>
+      <span style={{
+        position: 'absolute', right: mini ? 5 : 6, top: '50%', transform: 'translateY(-50%)',
+        color: textDim, fontFamily: hudTokens.fontMono, fontSize: 8, pointerEvents: 'none',
+      }}>▾</span>
+      <select value={v} onChange={e => setV(e.target.value)} style={{
+        position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer',
+        appearance: 'none', WebkitAppearance: 'none',
+        colorScheme: isDark ? 'dark' : 'light',
+      }}>
+        <option value="zh-Hant">中文</option>
+        <option value="en">English</option>
+        <option value="ja">日本語</option>
+        <option value="ko">한국어</option>
+      </select>
+    </div>
+  );
+}
+
+// Theme toggle — single icon button (mobile + desktop 統一)
+function ThemeToggle({ isDark, text, line, accent, mini }) {
+  return (
+    <button style={{
+      width: mini ? 22 : 26, height: mini ? 22 : 26, borderRadius: 6,
+      border: `1px solid ${line}`, background: hudTokens.cyanSoft,
+      color: accent, cursor: 'pointer',
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: hudTokens.fontMono, fontSize: mini ? 11 : 12, padding: 0,
+    }} title={isDark ? '切換到淺色' : '切換到深色'}>
+      {isDark ? '◐' : '◑'}
+    </button>
+  );
+}
+
+// Tabs bar — Fire 永遠在,Poll 依 admin 開關
+function ViewerTabs({ tab, setTab, pollEnabled, accent, text, textDim, line }) {
+  const tabs = [
+    { k: 'fire',  zh: 'Fire',   sub: '送彈幕', show: true },
+    { k: 'poll',  zh: 'Poll',   sub: '即時投票', show: pollEnabled },
+  ].filter(t => t.show);
+  if (tabs.length <= 1) return null;
+  return (
+    <div role="tablist" style={{
+      display: 'flex', borderBottom: `1px solid ${line}`,
+      paddingLeft: 12, gap: 0, position: 'relative',
+    }}>
+      {tabs.map(t => {
+        const on = tab === t.k;
+        return (
+          <button key={t.k} role="tab" aria-selected={on} onClick={() => setTab(t.k)} style={{
+            padding: '12px 18px', border: 'none', background: 'transparent', cursor: 'pointer',
+            display: 'flex', alignItems: 'baseline', gap: 8,
+            color: on ? accent : text,
+            borderBottom: on ? `2px solid ${accent}` : '2px solid transparent',
+            marginBottom: -1, fontFamily: hudTokens.fontSans,
+          }}>
+            <span style={{ fontSize: 14, fontWeight: on ? 700 : 500, letterSpacing: 0.3 }}>{t.zh}</span>
+            <span style={{ fontFamily: hudTokens.fontMono, fontSize: 9, letterSpacing: 1, color: on ? accent : textDim, textTransform: 'uppercase' }}>{t.sub}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// Hero 全寬彈幕跑馬燈 — 壓在 z-index: 0,文字從右飛過整個 hero 到左邊穿過 logo。
+// 純裝飾,無資訊。多條彈幕各自獨立速度/Y軸/顏色/透明度。
+function DanmuMarquee({ isDark, accent, isMobile }) {
+  const items = [
+    { t: '🔥🔥🔥',           c: '#fb7185', d: 0,    s: 14, y: 16, op: 0.32 },
+    { t: '+1',               c: '#7dd3fc', d: 1.8,  s: 17, y: 44, op: 0.28 },
+    { t: '哈哈哈',          c: '#fcd34d', d: 3.4,  s: 16, y: 6,  op: 0.36 },
+    { t: '👏',               c: accent,    d: 5.0,  s: 13, y: 56, op: 0.32 },
+    { t: '講得好！',         c: '#a3e635', d: 6.4,  s: 19, y: 28, op: 0.26 },
+    { t: '✨ wow',           c: '#c4b5fd', d: 7.8,  s: 15, y: 4,  op: 0.30 },
+    { t: '666',              c: '#7dd3fc', d: 9.0,  s: 16, y: 50, op: 0.26 },
+    { t: '💯',               c: '#fcd34d', d: 10.4, s: 13, y: 22, op: 0.36 },
+    { t: '+1 同意',          c: '#a3e635', d: 11.6, s: 17, y: 38, op: 0.28 },
+    { t: 'GG',               c: '#fb7185', d: 13.0, s: 14, y: 12, op: 0.32 },
+    { t: '太強了',          c: accent,    d: 14.2, s: 18, y: 60, op: 0.30 },
+    { t: '謝謝主持',        c: '#c4b5fd', d: 15.6, s: 16, y: 32, op: 0.26 },
+  ];
+  // mobile hero 較矮(~62px),clamp y 軸到較小範圍
+  const mqClass = isMobile ? 'dm-mq-item-mobile' : 'dm-mq-item';
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 0,
+      pointerEvents: 'none', overflow: 'hidden',
+      maskImage: 'linear-gradient(90deg, transparent 0, transparent 22%, #000 38%, #000 88%, transparent 100%)',
+      WebkitMaskImage: 'linear-gradient(90deg, transparent 0, transparent 22%, #000 38%, #000 88%, transparent 100%)',
+    }}>
+      {items.map((m, i) => (
+        <div key={i} className={mqClass} style={{
+          position: 'absolute', top: isMobile ? Math.min(m.y, 38) : m.y, left: '100%',
+          color: m.c, opacity: m.op,
+          fontFamily: hudTokens.fontSans, fontWeight: 700, fontSize: isMobile ? 12 : 14,
+          whiteSpace: 'nowrap', letterSpacing: 0.3,
+          textShadow: `0 0 8px ${m.c}55`,
+          animationDelay: `${m.d}s`,
+          animationDuration: `${m.s}s`,
+        }}>{m.t}</div>
+      ))}
+      <style>{`
+        @keyframes dm-mq-scroll {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-1100px); }
+        }
+        @keyframes dm-mq-scroll-mobile {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-500px); }
+        }
+        .dm-mq-item {
+          animation-name: dm-mq-scroll;
+          animation-iteration-count: infinite;
+          animation-timing-function: linear;
+        }
+        .dm-mq-item-mobile {
+          animation-name: dm-mq-scroll-mobile;
+          animation-iteration-count: infinite;
+          animation-timing-function: linear;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// Poll tab content
+function ViewerPollTab({ data, vote, setVote, isDark, accent, text, textDim, line, raised, panel }) {
+  const voted = vote != null;
+  return (
+    <div>
+      <div style={{
+        padding: '14px 16px', borderRadius: 8,
+        background: isDark ? 'rgba(125,211,252,0.06)' : 'rgba(125,211,252,0.08)',
+        border: `1px solid ${isDark ? 'rgba(125,211,252,0.25)' : 'rgba(125,211,252,0.4)'}`,
+        marginBottom: 14,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontFamily: hudTokens.fontMono, fontSize: 9, letterSpacing: 1.4, color: textDim }}>
+          <StatusDot color={accent} size={5} pulse />
+          <span>POLL · 主持人推送</span>
+          <span style={{ marginLeft: 'auto', color: textDim }}>{data.total} 票</span>
+        </div>
+        <div style={{ fontSize: 16, fontWeight: 600, color: text, lineHeight: 1.4 }}>{data.q}</div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {data.options.map(o => {
+          const selected = vote === o.k;
+          return (
+            <button key={o.k} onClick={() => setVote(o.k)}
+              disabled={voted && !selected}
+              style={{
+                position: 'relative', textAlign: 'left',
+                padding: '12px 14px', borderRadius: 8, overflow: 'hidden',
+                border: `1px solid ${selected ? accent : line}`,
+                background: selected ? hudTokens.cyanSoft : raised,
+                color: text, cursor: voted && !selected ? 'default' : 'pointer',
+                opacity: voted && !selected ? 0.7 : 1,
+                fontFamily: hudTokens.fontSans, fontSize: 14, fontWeight: 500,
+              }}>
+              {voted && (
+                <div style={{
+                  position: 'absolute', inset: 0, width: `${o.pct}%`,
+                  background: selected
+                    ? 'linear-gradient(90deg, rgba(125,211,252,0.22), rgba(125,211,252,0.08))'
+                    : (isDark ? 'rgba(148,163,184,0.10)' : 'rgba(148,163,184,0.14)'),
+                  pointerEvents: 'none',
+                }} />
+              )}
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{
+                  width: 18, height: 18, borderRadius: '50%',
+                  border: `1.5px solid ${selected ? accent : line}`,
+                  background: selected ? accent : 'transparent', flexShrink: 0,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#000', fontSize: 11,
+                }}>{selected ? '✓' : ''}</span>
+                <span style={{ flex: 1, minWidth: 0 }}>{o.label}</span>
+                {voted && (
+                  <span style={{ fontFamily: hudTokens.fontMono, fontSize: 12, fontWeight: 700, color: selected ? accent : textDim, letterSpacing: 0.5 }}>
+                    {o.pct}%
+                  </span>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ marginTop: 14, fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 0.5, color: textDim, textAlign: 'center' }}>
+        {voted ? '你已投票 · 結果即時更新' : '選擇一個選項即送出 · 不可更改'}
+      </div>
+    </div>
+  );
+}
+
+// Quick reply tab — REMOVED (功能取消)
 
 Object.assign(window, { ViewerMobile, ViewerDesktop });

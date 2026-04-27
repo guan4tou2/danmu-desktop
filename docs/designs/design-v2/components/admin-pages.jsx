@@ -44,6 +44,7 @@ function AdminPageShell({ route, title, en, children, theme = 'dark' }) {
           <AdminNavItem icon="⬚" label="Overlay Widgets" badge="2" active={route === 'widgets'} text={text} textDim={textDim} accent={accent} line={line} />
           <AdminNavItem icon="❖" label="風格主題包" badge="6" active={route === 'themes'} text={text} textDim={textDim} accent={accent} line={line} />
           <AdminNavItem icon="◐" label="顯示設定" active={route === 'display'} text={text} textDim={textDim} accent={accent} line={line} />
+          <AdminNavItem icon="▦" label="素材庫" active={route === 'assets'} text={text} textDim={textDim} accent={accent} line={line} />
 
           <AdminNavSection label="審核" textDim={textDim} top />
           <AdminNavItem icon="⊘" label="敏感字 & 黑名單" badge="847" active={route === 'moderation'} text={text} textDim={textDim} accent={accent} line={line} />
@@ -521,8 +522,8 @@ function AdminSystemPage({ theme = 'dark' }) {
             </div>
             <div style={{ marginTop: 18, padding: 12, background: raised, borderRadius: 4, fontFamily: hudTokens.fontMono, fontSize: 11, color: text }}>
               <div style={{ color: textDim, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>PUBLIC URL</div>
-              <div style={{ color: accent }}>https://danmu.roy.im/live/mtg-042</div>
-              <div style={{ marginTop: 4, color: textDim, fontSize: 10 }}>QR ·  觀眾掃碼即加入  ·  短網址 danmu.im/42</div>
+              <div style={{ color: accent }}>https://138.2.59.206:4000/</div>
+              <div style={{ marginTop: 4, color: textDim, fontSize: 10 }}>QR · 觀眾掃碼即加入 · 可點擊複製</div>
             </div>
           </div>
 

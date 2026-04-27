@@ -412,7 +412,7 @@ function BroadcastToggle({ theme = 'dark' }) {
               marginTop: 18, padding: 12, background: raised, borderRadius: 4,
               fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 0.5, lineHeight: 1.7,
             }}>
-              切換為立即生效 · WebSocket 仍保持連線 · 觀眾側會看到「主持人暫停」而非斷線。
+              切換為立即生效 · WebSocket 仍保持連線 · 觀眾側會看到「暫停接收」而非斷線。
             </div>
           </div>
 
@@ -433,7 +433,7 @@ function BroadcastToggle({ theme = 'dark' }) {
                 fontFamily: hudTokens.fontMono, fontSize: 11,
               }}>
                 <span style={{ color: textDim }}>確認碼</span>
-                <input defaultValue="#MTG-042" style={{
+                <input defaultValue="END-LIVE" style={{
                   flex: 1, padding: '8px 10px', borderRadius: 4, background: raised,
                   border: `1px solid ${line}`, color: text, fontFamily: hudTokens.fontMono, outline: 'none',
                 }} />

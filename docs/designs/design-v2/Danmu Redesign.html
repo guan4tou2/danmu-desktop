@@ -53,13 +53,8 @@
     <button data-val="dark" class="on">DARK</button>
     <button data-val="light">LIGHT</button>
   </div>
-  <div class="label">POLL · 主持人開啟</div>
+  <div class="label">POLL</div>
   <div class="row" data-group="pollEnabled">
-    <button data-val="true" class="on">ON</button>
-    <button data-val="false">OFF</button>
-  </div>
-  <div class="label">QUICK · 主持人開啟</div>
-  <div class="row" data-group="quickEnabled">
     <button data-val="true" class="on">ON</button>
     <button data-val="false">OFF</button>
   </div>
@@ -85,8 +80,7 @@
 <script type="text/babel">
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "theme": "light",
-  "pollEnabled": "true",
-  "quickEnabled": "true"
+  "pollEnabled": "false"
 }/*EDITMODE-END*/;
 
 function App() {
@@ -117,7 +111,6 @@ function App() {
   }, []);
 
   const pollOn = tweaks.pollEnabled === 'true' || tweaks.pollEnabled === true;
-  const quickOn = tweaks.quickEnabled === 'true' || tweaks.quickEnabled === true;
 
   const Intro = () => (
     <div data-screen-label="00 README" style={{
@@ -138,7 +131,7 @@ function App() {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18, marginTop: 28, paddingTop: 22, borderTop: `1px solid ${hudTokens.line}` }}>
         {[
-          { t: 'Danmu Fire · 觀眾端', d: '暱稱 / 文字 / 顏色 / 字型 / 字級 / 透明度 / 描邊 / 陰影 / 效果疊加 / Layout / 主題。只送不收。Poll & Quick 條件顯示；投票無 %。' },
+          { t: 'Danmu Fire · 觀眾端', d: '暱稱 / 文字 / 顏色 / 字型 / 字級 / 透明度 / 描邊 / 陰影 / 效果疊加 / Layout / 主題。只送不收。Poll 條件顯示；投票無 %。' },
           { t: 'Admin · 控制台', d: '移除 DISPLAY 設定卡（那在 /effects、/fonts 頁面）。主畫面聚焦：KPI / 投票建立 & 進行中 / 訊息審核 / Widgets & Plugins。Sidebar：session + telemetry。' },
           { t: 'Desktop Client · Electron', d: '4 個關鍵畫面：首次連線 dialog / 透明 overlay 實景 / 控制視窗 / macOS tray menu。包含快捷鍵、透明度、layout、自動更新。' },
         ].map(x => (
@@ -150,7 +143,13 @@ function App() {
       </div>
       <div style={{ marginTop: 18, padding: 12, background: hudTokens.cyanSoft, border: `1px solid ${hudTokens.cyanLine}`, fontSize: 12, color: hudTokens.text, lineHeight: 1.6 }}>
         <HudLabel color={hudTokens.cyan}>TRY</HudLabel>
-        <div style={{ marginTop: 4 }}>右下 Tweaks 切換 Poll / Quick — 觀眾端 Fire/Poll tab 會即時出現或隱藏。</div>
+        <div style={{ marginTop: 4 }}>右下 Tweaks 切換 Poll — 觀眾端 Poll tab 會即時出現或隱藏。</div>
+      </div>
+      <div style={{ marginTop: 10, padding: 10, background: 'rgba(252,211,77,0.08)', border: '1px solid rgba(252,211,77,0.35)', fontSize: 11, color: hudTokens.text, lineHeight: 1.55 }}>
+        <HudLabel color={hudTokens.amber}>v5.0 DESIGN REPLY · 2026-04-26</HudLabel>
+        <div style={{ marginTop: 4, fontFamily: hudTokens.fontMono, fontSize: 10, color: hudTokens.textDim, letterSpacing: 0.3 }}>
+          <b style={{ color: hudTokens.text }}>已對齊 handoff:</b> Display Settings 移除右 rail DeployCard,preview 移到中欄頂部 + 隱式 deploy(自動同步)。Polls dropzone + crop 切換器已在 prototype。Sidebar 11 nav,廣播只留 topbar 燈號。Mobile 假狀態列僅 prototype mockup,viewer 不需畫。
+        </div>
       </div>
     </div>
   );
@@ -161,29 +160,29 @@ function App() {
       <div style={{ height: 60 }} />
 
       <DCSection title="Danmu Fire · 觀眾端" subtitle="完整欄位對齊原版 user-facing 頁面，統一以「網站」呈現 — 手機 Safari / 桌面 Chrome，不是 App">
-        <DCArtboard width={375} height={812} label="Mobile · Safari · danmu.im/42" style={{ background: '#000', borderRadius: 36, overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
+        <DCArtboard width={375} height={812} label="Mobile · Safari · 138.2.59.206:4000" style={{ background: '#000', borderRadius: 36, overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
           <div data-screen-label="Viewer Mobile Web" style={{ width: 375, height: 812 }}>
-            <MobileSafariChrome url="danmu.im/42" dark={tweaks.theme === 'dark'}>
-              <ViewerMobile theme={tweaks.theme} pollEnabled={pollOn} quickEnabled={quickOn} inBrowser />
+            <MobileSafariChrome url="138.2.59.206:4000" dark={tweaks.theme === 'dark'}>
+              <ViewerMobile theme={tweaks.theme} pollEnabled={pollOn} inBrowser />
             </MobileSafariChrome>
           </div>
         </DCArtboard>
-        <DCArtboard width={900} height={760} label="Desktop · Chrome · danmu.im/42" style={{ background: 'transparent' }}>
+        <DCArtboard width={900} height={760} label="Desktop · Chrome · 138.2.59.206:4000" style={{ background: 'transparent' }}>
           <div data-screen-label="Viewer Desktop Web" style={{ width: 900, height: 760 }}>
             <ChromeWindow
               width={900} height={760}
-              tabs={[{ title: 'Danmu · #MTG-042' }, { title: 'Keynote' }, { title: '筆記' }]}
+              tabs={[{ title: 'Danmu · Live' }, { title: 'Keynote' }, { title: '筆記' }]}
               activeIndex={0}
-              url="https://danmu.roy.im/live/mtg-042"
+              url="https://138.2.59.206:4000/"
             >
               <div style={{ width: '100%', height: '100%' }}>
-                <ViewerDesktop theme={tweaks.theme} pollEnabled={pollOn} quickEnabled={quickOn} />
+                <ViewerDesktop theme={tweaks.theme} pollEnabled={pollOn} />
               </div>
             </ChromeWindow>
           </div>
         </DCArtboard>
         <DCPostIt top={-30} left={1320} rotate={2} width={240}>
-          試試右下 Tweaks 切換 POLL / QUICK — Fire tab 下方的快速回應與 Poll tab 會出現或隱藏
+          試試右下 Tweaks 切換 POLL — 觀眾端 Poll tab 會出現或隱藏
         </DCPostIt>
       </DCSection>
 
