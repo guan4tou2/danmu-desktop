@@ -316,6 +316,34 @@ def reset_rate_limit_counters() -> None:
         _rate_buckets.clear()
 
 
+def recent_violations(limit: int = 30) -> List[dict]:
+    """Return the most recent rate-limit violations across all scopes.
+
+    Powers the Ratelimits page 近期違規 feed. Each entry::
+
+        {"ts": float, "scope": "fire"|"api"|"admin"|"login", "ip": str}
+
+    Newest first. Capped at ``limit``. Pulls from
+    ``_rate_stats_violators`` which the rate_limit decorator populates on
+    every 429.
+    """
+    prefixes = ("fire", "api", "admin", "login")
+    out: List[dict] = []
+    now = time.time()
+    cutoff = now - _RATE_STATS_VIOLATOR_WINDOW
+    with _rate_stats_lock:
+        for p in prefixes:
+            dq = _rate_stats_violators.get(p)
+            if not dq:
+                continue
+            for ts, ip in dq:
+                if ts < cutoff:
+                    continue
+                out.append({"ts": ts, "scope": p, "ip": ip})
+    out.sort(key=lambda e: e["ts"], reverse=True)
+    return out[:limit]
+
+
 class RedisRateLimiter(BaseRateLimiter):
     _ALLOW_SCRIPT = """
 local key = KEYS[1]

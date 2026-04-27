@@ -159,21 +159,29 @@
               </div>
             </div>
 
-            <div class="admin-dsp2-card admin-dsp2-deploy">
+            <!-- AutoSyncCard — prototype admin-display-settings.jsx:379+ replaces
+                 the legacy DeployCard. Display Settings uses implicit deploy:
+                 every postUpdate() ships immediately, no apply button. This
+                 card is just the status indicator + revert + export JSON. -->
+            <div class="admin-dsp2-card admin-dsp2-autosync" style="padding:14px;background:var(--admin-panel,var(--color-bg-base));border:1px solid var(--hud-line);border-radius:6px;display:flex;flex-direction:column;gap:10px">
               <div class="admin-v2-monolabel admin-dsp2-card-head">
-                <span>${escapeHtml(t("displayDeployTitle", "推送動作"))}</span>
-                <span class="admin-dsp2-card-head-en">DEPLOY</span>
+                <span>${escapeHtml(t("displayAutoSyncTitle", "自動同步"))}</span>
+                <span class="admin-dsp2-card-head-en">AUTO-SYNC · IMPLICIT DEPLOY</span>
               </div>
-              <div class="admin-dsp2-deploy-row">
-                <button type="button" class="admin-dsp2-btn admin-dsp2-btn-primary" id="dsp2-deploy">
-                  ${escapeHtml(t("displayDeployApply", "▶ 即時套用"))}
-                </button>
-                <button type="button" class="admin-dsp2-btn admin-dsp2-btn-ghost" id="dsp2-revert">
-                  ${escapeHtml(t("displayDeployRevert", "還原預設"))}
-                </button>
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:4px;background:var(--hud-cyan-soft);border:1px solid var(--color-primary)">
+                <span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;background:var(--color-primary);box-shadow:0 0 6px var(--color-primary);animation:hud-pulse 2s ease-in-out infinite"></span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-family:var(--font-mono);font-size:11px;color:var(--color-primary);letter-spacing:0.1em;font-weight:700">${escapeHtml(t("displayAutoSyncLive", "同步中 · LIVE"))}</div>
+                  <div style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);margin-top:2px;letter-spacing:0.04em">${escapeHtml(t("displayAutoSyncNote", "更動即推送 · overlay 與下次刷新觀眾即生效"))}</div>
+                </div>
               </div>
-              <div class="admin-dsp2-deploy-note">
-                ${escapeHtml(t("displayDeployNote", "即時同步到 overlay · 觀眾端下次刷新 viewer 生效"))}
+              <div style="display:flex;gap:8px">
+                <button type="button" class="admin-dsp2-btn admin-dsp2-btn-ghost" id="dsp2-revert" style="flex:1;padding:8px;border-radius:4px;border:1px solid var(--hud-line);background:transparent;color:var(--color-text-strong);cursor:pointer;font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em">
+                  ↺ ${escapeHtml(t("displayDeployRevert", "還原預設"))}
+                </button>
+                <button type="button" class="admin-dsp2-btn admin-dsp2-btn-ghost" id="dsp2-export" style="flex:1;padding:8px;border-radius:4px;border:1px solid var(--hud-line);background:transparent;color:var(--color-text-strong);cursor:pointer;font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em">
+                  ↗ ${escapeHtml(t("displayExportJson", "匯出 JSON"))}
+                </button>
               </div>
             </div>
 
@@ -706,7 +714,29 @@
     }
   }
 
-  // ─── Apply-to-all / revert ──────────────────────────────────────────
+  // ─── Apply-to-all / revert / export ─────────────────────────────────
+
+  function exportSettingsJson() {
+    if (!_state.options) {
+      window.showToast && window.showToast(t("loading", "載入中…"), false);
+      return;
+    }
+    const payload = {
+      exported_at: new Date().toISOString(),
+      app_version: (window.DANMU_CONFIG && window.DANMU_CONFIG.appVersion) || "",
+      options: _state.options,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `danmu-display-settings-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    window.showToast && window.showToast(t("displayExportDone", "已匯出 JSON"), true);
+  }
 
   async function deployAll() {
     if (!_state.options) return;
@@ -859,8 +889,8 @@
         postUpdate(key, 3, val);
         return;
       }
-      if (e.target && e.target.id === "dsp2-deploy") { deployAll(); return; }
       if (e.target && e.target.id === "dsp2-revert") { revertDefaults(); return; }
+      if (e.target && e.target.id === "dsp2-export") { exportSettingsJson(); return; }
     });
 
     // Number / range / color inputs

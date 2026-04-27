@@ -326,6 +326,24 @@
     const dotColor = running
       ? "var(--color-success, #86efac)"
       : "var(--color-warning, #fbbf24)";
+    // UPTIME — prototype admin-v3.jsx:177 shows e.g. `UPTIME · 02:41`. Backend
+    // (services/widgets.py) stamps `created_at` on create_widget(); when the
+    // server is restarted (or the widget pre-dates the field) we fall back to
+    // STATUS so the tile doesn't render a confusing 0:00.
+    const sinceCreated = w.created_at && running
+      ? Math.max(0, Math.floor(Date.now() / 1000 - w.created_at))
+      : null;
+    const uptimeLabel = sinceCreated != null
+      ? (() => {
+          const d = Math.floor(sinceCreated / 86400);
+          const h = Math.floor((sinceCreated % 86400) / 3600);
+          const m = Math.floor((sinceCreated % 3600) / 60);
+          const s = sinceCreated % 60;
+          if (d > 0) return `UPTIME · ${d}d ${String(h).padStart(2, "0")}h`;
+          if (h > 0) return `UPTIME · ${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+          return `UPTIME · ${m}:${String(s).padStart(2, "0")}`;
+        })()
+      : `STATUS · ${running ? "RUNNING" : "PAUSED"}`;
     return `
       <div class="admin-dash-widget-tile" data-widget-id="${_escapeHtml(w.id)}">
         <div class="admin-dash-widget-tile-head">
@@ -334,7 +352,7 @@
           <span class="cat">${_escapeHtml(cat)}</span>
         </div>
         <div class="title">${_escapeHtml(title)}</div>
-        <div class="uptime">STATUS · ${running ? "RUNNING" : "PAUSED"}</div>
+        <div class="uptime">${uptimeLabel}</div>
         <div class="actions">
           <button type="button" class="chip" data-widget-action="toggle" data-running="${running ? "1" : "0"}">${running ? "PAUSE" : "RUN"}</button>
           <button type="button" class="chip is-muted" data-widget-action="config">CONFIG</button>

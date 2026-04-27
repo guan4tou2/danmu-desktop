@@ -10,6 +10,7 @@ from ...services.security import (
     get_rate_limit_bucket_history,
     get_rate_limit_stats,
     get_rate_limit_suggestion,
+    recent_violations,
 )
 from ...services.widgets import list_widgets
 from . import _json_response, admin_bp, rate_limit, require_login
@@ -74,6 +75,7 @@ def get_metrics():
             "server_time": time.time(),
             "server_started_at": _SERVER_STARTED_AT,
             "rate_limits": _attach_suggestions(get_rate_limit_stats()),
+            "recent_violations": recent_violations(30),
             **series,
         }
     )

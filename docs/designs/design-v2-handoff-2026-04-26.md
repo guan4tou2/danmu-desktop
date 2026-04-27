@@ -1,6 +1,6 @@
 # Danmu Fire · v2 Design Handoff
 
-**Last updated**: 2026-04-26 (post Phase 1+2+3 batch · commit `8f118fd`)
+**Last updated**: 2026-04-27 (post Sprint 1 + Design reply ingestion)
 
 對 Claude Design 的回覆稿。涵蓋：
 1. 已對齊並部署的事項（VPS 上跑著）
@@ -47,6 +47,15 @@
 - Polls 後端 schema 已支援 `image_url` + `time_limit_seconds`（commit `61a5dbc`），前端 dropzone + crop ratio 切換器**未做**（見 §3）
 - Ratelimits：admin scope default 從 60 → 300（配合 config.py）
 
+### Sprint 1 (post Design reply 2026-04-26)
+
+- **Sidebar 廣播 nav 移除**（per Design: 廣播只留 topbar 燈號 + backend service 保留）
+- **Moderation MASKED·24H / BLOCKED·24H** 即時值（`filter_events.counts_24h()` 從 ring buffer aggregate；前端 4s 輪詢同步更新 stats strip）
+- **Ratelimits 近期違規 feed** 串上後端（`security.recent_violations(limit=30)` 從現有 `_rate_stats_violators` deque 抽，掛在 `/admin/metrics.recent_violations`；前端 5 分鐘窗口顯示 TIME / SCOPE / IP）
+- **Dashboard Widget UPTIME 前端**（`widgets.create_widget()` 已加 `created_at`；tile 從 `Math.floor(Date.now()/1000 - w.created_at)` 算 d/h/m/s 顯示，回退到 `STATUS · RUNNING/PAUSED`）
+- **Display Settings AutoSyncCard**（取代 DeployCard：implicit deploy 狀態指示器 + 還原預設 + **匯出 JSON** 按鈕，dsp2-export client-side Blob download）
+- **Language endonyms**（admin 與 viewer hidden select 從 EN/ZH/JA/KO 改成 English / 中文 / 日本語 / 한국어）
+
 ### Production fixes
 - admin-broadcast.js 不再噴 `refreshHistory is not defined`（移除呼叫；後端從未有 `/admin/broadcast/history`）
 - WebSocket URL 從 `wss://host/` 改成 `wss://host/ws`（nginx 只代理 `/ws` 到 4001 內部 port）
@@ -58,7 +67,7 @@
 
 ## 2. UI 已建好的 mock / partial 狀態追蹤
 
-**已從原 14 項消掉 5 項**（Phase 1+2+3 完成）：
+**已從原 14 項消掉 9 項**（Phase 1+2+3 + Sprint 1 完成）：
 
 | 位置 | 狀態 | 補真所需 / 原因 |
 |---|---|---|
@@ -66,22 +75,24 @@
 | ~~Moderation 即時審核日誌~~ | ✅ 完成 | filter_engine 命中即 push event + 前端動作著色輪詢 |
 | ~~System Server block UPTIME~~ | ✅ 完成 | metrics route module-import 時記 `_SERVER_STARTED_AT` |
 | ~~Fingerprint table FLAGGED count~~ | ✅ 完成 | routes 加 `flagged` 計數，前端標題顯示「N UNIQUE · M FLAGGED」 |
-| ~~Dashboard Widget UPTIME~~ | ✅ 部分（後端就緒）| widgets.create_widget 加 `created_at`，前端尚未渲染（小工作量） |
+| ~~Dashboard Widget UPTIME~~ | ✅ 完成 | widgets.create_widget 加 `created_at`，tile 渲染 d/h/m/s 格式 |
+| ~~Moderation MASKED·24H + BLOCKED·24H~~ | ✅ 完成（buffer-bound）| `filter_events.counts_24h()` 從 200-entry ring buffer aggregate；高流量下會吃不下完整 24h，需要 v5.2 真 aggregator |
+| ~~Ratelimits 近期違規 feed~~ | ✅ 完成（5 分鐘窗口）| 從現有 `_rate_stats_violators` deque 抽；長期窗口需 ratelimit_events ring buffer（仿 filter_events pattern） |
 
-**仍是 mock，等 Design 排序**：
+**仍是 mock，等 v5.1 Sprint 2 / v5.2**：
 
 | 位置 | mock / partial 內容 | 補真所需 |
 |---|---|---|
-| Dashboard 訊息 filter chips | 點選只切換 active 樣式，不真的過濾 | `/admin/history` 記錄需要 `tag` / `intent` 欄位（`qna` / `poll` / `masked` / `replied`） |
-| Dashboard Widget tile CALLS | 不顯示 | widgets 服務需 `call_count` |
-| Plugins 列 UPTIME / MEM / CALLS | prototype 有，實作只顯示 PRIORITY · AVG | plugins 服務需追蹤 process stats |
-| Moderation MASKED·24H + BLOCKED·24H | 顯示 `—` | filter_events.py 已有 ring buffer 可加 24h aggregator（小工作量） |
-| Ratelimits 近期違規 feed | 顯示「即時違規列表將連接至 `/admin/metrics.recent_violations`」 | `/admin/metrics` response 需新增 `recent_violations[]`，可重用 filter_events 同 pattern |
-| Ratelimits IP 黑/白名單 | UI 可新增/刪除，但不持久化也不真的 enforce | 需 IP policy service + nginx/Flask middleware |
-| Fonts CDN DELIVERY | HIT RATE / P95 TTFB / REQ/24H / EDGE 全部 `—` | 需要 CDN access log 解析 or proxy stats |
-| Fonts SUBSETTING bar | 固定顯示 38% 「節省」 | 需要 pyftsubset 整合（依賴未加） |
-| System QR · 觀眾掃碼 | 只有文字「觀眾掃碼即可加入」，沒實際 QR | 加 QR generator (qrcode.js client-side OK，~6KB) |
-| Effects YAML inspector PREVIEW | EDIT/RELOAD 動作有，但 PREVIEW 只切到 effect 卡 | 需要單檔 hot-reload preview |
+| Dashboard 訊息 filter chips | 點選只切換 active 樣式，不真的過濾 | `/admin/history` 記錄需要 `tag` / `intent` 欄位（`qna` / `poll` / `masked` / `replied`）— v5.1 Sprint 2 |
+| Polls 圖片上傳 + crop | 後端 schema 就緒，前端 dropzone + canvas crop 未做 | spec 已給（drag reposition + scroll wheel zoom，預設 16:9，≤2MB，自動壓縮 1280px）— v5.1 Sprint 2 |
+| Dashboard Widget tile CALLS | 不顯示 | widgets 服務需 `call_count` — v5.2 |
+| Plugins 列 UPTIME / MEM / CALLS | prototype 有，實作只顯示 PRIORITY · AVG | plugins 服務需追蹤 process stats — v5.2（需 instrumentation framework） |
+| Ratelimits IP 黑/白名單 | UI 可新增/刪除，但不持久化也不真的 enforce | 需 IP policy service + nginx/Flask middleware — v5.2 |
+| Fonts CDN DELIVERY | HIT RATE / P95 TTFB / REQ/24H / EDGE 全部 `—` | 需要 CDN access log 解析 or proxy stats — v5.2 |
+| Fonts SUBSETTING bar | 固定顯示 38% 「節省」 | 需要 pyftsubset 整合（依賴未加） — v5.2 |
+| System QR · 觀眾掃碼 | 只有文字「觀眾掃碼即可加入」，沒實際 QR | 加 QR generator (qrcode.js client-side OK，~6KB) — Design 確認 v5.1 Sprint 1 但這輪未做 |
+| Effects YAML inspector PREVIEW | EDIT/RELOAD 動作有，但 PREVIEW 只切到 effect 卡 | 需要單檔 hot-reload preview — v5.2 |
+| Moderation 24h aggregator (long tail) | 200-entry ring buffer 在高流量下吃不下整 24h | 真 aggregator 需要 hourly bucket persistence — v5.2 |
 
 ---
 
@@ -181,6 +192,16 @@ viewer mobile prototype 裡（`ViewerMobile`）：
 - 假狀態列 14:02 + ●●●● 訊號條（純視覺裝飾）
 - 我們**沒**畫，因為實際手機瀏覽器有自己的狀態列
 - 確認這是 prototype 的 mockup 表示 vs 真要 fake 一個？
+
+### 5.5b Open Q from Design's bundle (chat ended before resolution)
+
+Design's chat transcript closes with two unanswered questions. Need product/Design to align before implementation:
+
+- **Mobile viewer theme/lang switcher** — currently the ◐/◑ + 中/EN seg row is desktop-only (per prototype `!isMobile` guard). On mobile, user sees no way to switch theme or language. Should mobile get the seg too? Or a different control (e.g. tap-and-hold gesture, or buried in a hamburger)?
+
+- **Desktop viewer hero too sparse on wide screens** — Danmu Fire title can look tiny + lost on a 2560px monitor. Options Design hinted at: (a) cap title font-size at viewport-relative ceiling (e.g. `min(8vw, 7rem)` instead of unbounded `clamp`), (b) add a subtle decorative element on either side, (c) center-constrain the hero block while keeping body full-width.
+
+Both are pure CSS/HTML changes once Design picks a direction.
 
 ### 5.6 Edge state pages
 prototype `priority-2-pieces.jsx` 有：

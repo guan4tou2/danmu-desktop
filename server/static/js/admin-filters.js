@@ -536,6 +536,16 @@
       const r = await fetch(`/admin/filters/events?since=${_liveLogLastSeq}`, { credentials: "same-origin" });
       if (!r.ok) return;
       const data = await r.json();
+      // Always update 24h stat tiles even if no new events (counts may have
+      // dropped off as old events age out of the 24h window).
+      if (data.counts_24h) {
+        const setStat = (key, val) => {
+          const el = document.querySelector(`[data-mod-stat="${key}"]`);
+          if (el) el.textContent = val != null ? String(val) : "—";
+        };
+        setStat("masked", data.counts_24h.MASK || 0);
+        setStat("blocked", data.counts_24h.BLOCK || 0);
+      }
       if (!Array.isArray(data.events) || data.events.length === 0) return;
       // Server returns newest-first; merge into front (newest first), cap at LIVE_LOG_MAX.
       _liveLogBuffer.unshift(...data.events);

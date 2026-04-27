@@ -864,10 +864,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="admin-dash-nav-icon">⚙</span>
                                     <span>系統 & 指紋</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="broadcast" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">📡</span>
-                                    <span>廣播</span>
-                                </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="security" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⛨</span>
                                     <span>安全</span>
@@ -921,10 +917,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                     </div>
                                     <select id="server-lang-select" aria-label="Language"
                                       class="bg-slate-800/60 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-2 focus:ring-sky-400 focus:border-sky-400">
-                                      <option value="en" ${ServerI18n.currentLang === "en" ? "selected" : ""}>EN</option>
-                                      <option value="zh" ${ServerI18n.currentLang === "zh" ? "selected" : ""}>ZH</option>
-                                      <option value="ja" ${ServerI18n.currentLang === "ja" ? "selected" : ""}>JA</option>
-                                      <option value="ko" ${ServerI18n.currentLang === "ko" ? "selected" : ""}>KO</option>
+                                      <option value="en" ${ServerI18n.currentLang === "en" ? "selected" : ""}>English</option>
+                                      <option value="zh" ${ServerI18n.currentLang === "zh" ? "selected" : ""}>中文</option>
+                                      <option value="ja" ${ServerI18n.currentLang === "ja" ? "selected" : ""}>日本語</option>
+                                      <option value="ko" ${ServerI18n.currentLang === "ko" ? "selected" : ""}>한국어</option>
                                     </select>
                                     <button class="admin-dash-broadcast" type="button" aria-live="polite"
                                         title="切換廣播狀態" data-route="broadcast">
@@ -3155,15 +3151,14 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="admin-ratelimit-violations">
             <div class="admin-ratelimit-vfeed-head">
               <span class="title">近期違規</span>
-              <span class="kicker">RECENT VIOLATIONS · 即將支援 · 後端 endpoint pending</span>
+              <span class="kicker" data-rl-vcount>RECENT VIOLATIONS · 5 分鐘窗口</span>
             </div>
             <div class="admin-ratelimit-vfeed-table">
               <div class="admin-ratelimit-vfeed-row is-head">
-                <span>TIME</span><span>SCOPE</span><span>KEY</span><span>UA</span><span>HITS</span><span>ACTION</span>
+                <span>TIME</span><span>SCOPE</span><span>IP</span>
               </div>
-              <div class="admin-ratelimit-vfeed-empty">
-                即時違規列表將連接至 <code>/admin/metrics.recent_violations</code>。
-                目前可在「系統 → 指紋」查看歷史違規記錄。
+              <div class="admin-ratelimit-vfeed-body" data-rl-vbody>
+                <div class="admin-ratelimit-vfeed-empty">尚無違規 · 等待中</div>
               </div>
             </div>
           </div>
@@ -3276,8 +3271,40 @@ document.addEventListener("DOMContentLoaded", () => {
             if (violRate) violRate.textContent = "計數待 backend";
             if (locked) locked.textContent = "—";
           }
+          // 近期違規 feed — m.recent_violations is [{ts, scope, ip}], newest first.
+          _renderViolationsFeed(m && m.recent_violations);
         } catch (_) {}
       }, 4500);
+
+      function _renderViolationsFeed(events) {
+        const body = section.querySelector("[data-rl-vbody]");
+        const count = section.querySelector("[data-rl-vcount]");
+        if (!body) return;
+        const arr = Array.isArray(events) ? events : [];
+        if (count) count.textContent = `RECENT VIOLATIONS · ${arr.length} 筆 · 5 分鐘窗口`;
+        if (arr.length === 0) {
+          body.innerHTML = `<div class="admin-ratelimit-vfeed-empty">尚無違規 · 等待中</div>`;
+          return;
+        }
+        const fmtTime = (ts) => {
+          const d = new Date(ts * 1000);
+          const pad = (n) => String(n).padStart(2, "0");
+          return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        };
+        const scopeColor = (s) => ({
+          fire: "var(--color-primary)",
+          api: "#86efac",
+          admin: "#fbbf24",
+          login: "#f87171",
+        }[s] || "var(--color-text-muted)");
+        body.innerHTML = arr.slice(0, 30).map((e) => `
+          <div class="admin-ratelimit-vfeed-row">
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">${fmtTime(e.ts)}</span>
+            <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:1px;font-weight:700;color:${scopeColor(e.scope)}">${(e.scope || "").toUpperCase()}</span>
+            <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-strong)">${escapeHtml(e.ip || "")}</span>
+          </div>
+        `).join("");
+      }
 
       // Render the per-row suggest banner from a /admin/metrics response. The
       // backend (services/security.get_rate_limit_suggestion) returns null when

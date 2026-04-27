@@ -105,7 +105,8 @@ def get_filter_events():
 
     Powers the Moderation page 即時審核日誌. Caller passes ``?since=<seq>``
     to get only newer events; first call should pass 0 (or omit) to fetch
-    the latest 50.
+    the latest 50. Response also includes ``counts_24h`` for the
+    Moderation overview strip's MASKED·24H / BLOCKED·24H tiles.
     """
     from ...services import filter_events
 
@@ -116,4 +117,10 @@ def get_filter_events():
     limit = max(1, min(200, int(request.args.get("limit", "50") or 50)))
     events = filter_events.recent(since=since, limit=limit)
     latest_seq = events[0]["seq"] if events else since
-    return _json_response({"events": events, "latest_seq": latest_seq})
+    return _json_response(
+        {
+            "events": events,
+            "latest_seq": latest_seq,
+            "counts_24h": filter_events.counts_24h(),
+        }
+    )

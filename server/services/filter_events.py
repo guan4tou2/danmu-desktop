@@ -67,6 +67,32 @@ def recent(since: int = 0, limit: int = 50) -> List[Dict[str, Any]]:
     return list(reversed(events))
 
 
+def counts_24h() -> Dict[str, int]:
+    """Action counts in the last 24 hours within the ring buffer.
+
+    Powers the Moderation overview strip's MASKED·24H / BLOCKED·24H tiles.
+    Buffer is capped at 200 entries — at moderate moderation volumes this
+    covers a few hours, not a full day. Long-tail accuracy needs a real
+    aggregator (deferred to v5.2 per Design's call).
+
+    Returns: {"BLOCK": int, "MASK": int, "ALLOW": int, "REPLACE": int, "REVIEW": int}
+    """
+    cutoff = _time() - 24 * 60 * 60
+    counts = {"BLOCK": 0, "MASK": 0, "ALLOW": 0, "REPLACE": 0, "REVIEW": 0}
+    with _lock:
+        for e in _buffer:
+            if e["ts"] < cutoff:
+                continue
+            action = e.get("action", "")
+            # filter_engine emits "block" / "allow" / "replace" — map "replace"
+            # to MASK for the moderation log so the UI tag matches prototype.
+            if action == "REPLACE":
+                counts["MASK"] += 1
+            elif action in counts:
+                counts[action] += 1
+    return counts
+
+
 def clear() -> None:
     """Test helper — drop all buffered events and reset seq."""
     global _seq
