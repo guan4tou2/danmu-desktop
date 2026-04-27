@@ -9,6 +9,7 @@ _BROWSER_MODULES = [
     "tests/test_browser_admin.py",
     "tests/test_browser_fire_e2e.py",
     "tests/test_browser_overlay_render.py",
+    "tests/test_browser_p3_pages.py",
 ]
 
 

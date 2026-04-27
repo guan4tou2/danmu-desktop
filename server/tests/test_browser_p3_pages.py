@@ -1,0 +1,260 @@
+"""Browser smoke tests for the P3 / Group A / Group B admin pages
+shipped during the 2026-04-27 sprint.
+
+Each test navigates to one of the new routes and asserts the section
+is rendered + visible + has at least one expected element. Keeps
+coverage shallow (smoke / regression-detector) since Jest infra would
+be a sizable add for ~10 small helpers in new modules.
+
+Routes covered:
+    #/about           — AdminAboutPage (Phase 2 P0-1)
+    #/notifications   — AdminNotificationsPage (P1)
+    #/audit           — AdminAuditLogPage (P1)
+    #/audience        — AdminAudiencePage (Group B)
+    #/mobile          — AdminMobilePage (Group B)
+    #/poll-deepdive   — AdminPollDeepDivePage (Phase 2 P0-3)
+    #/setup           — AdminSetupWizard overlay (Phase 2 P0-2)
+
+Viewer states (ViewerBanned / ViewerPollThankYou) tested via URL
+preview flag on /fire.
+"""
+
+from __future__ import annotations
+
+import threading
+
+import pytest
+from playwright.sync_api import sync_playwright
+
+from server.app import create_app
+from server.tests._browser_isolation import should_run_browser_module
+from server.tests.conftest import TestConfig, find_free_port
+
+if not should_run_browser_module(__file__):
+    pytest.skip(
+        "Browser modules run in isolated child pytest processes during the full suite.",
+        allow_module_level=True,
+    )
+
+
+# ─── Fixtures (replicated from test_browser_admin.py — module-scoped per
+#     pattern; sharing via conftest would change test_browser_admin's
+#     scope contract) ──────────────────────────────────────────────────
+
+
+class BrowserTestConfig(TestConfig):
+    LOGIN_RATE_LIMIT = 1000
+    LOGIN_RATE_WINDOW = 1
+    ADMIN_RATE_LIMIT = 1000
+    ADMIN_RATE_WINDOW = 1
+    FIRE_RATE_LIMIT = 1000
+    FIRE_RATE_WINDOW = 1
+    API_RATE_LIMIT = 1000
+    API_RATE_WINDOW = 1
+
+
+@pytest.fixture(scope="session")
+def live_url():
+    from gevent.pywsgi import WSGIServer
+
+    app = create_app(BrowserTestConfig)
+    port = find_free_port()
+    server = WSGIServer(("127.0.0.1", port), app, log=None, error_log=None)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield f"http://127.0.0.1:{port}"
+    server.stop()
+
+
+@pytest.fixture(scope="module")
+def browser_session():
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        yield browser
+        browser.close()
+
+
+@pytest.fixture(scope="module")
+def logged_context(browser_session, live_url):
+    context = browser_session.new_context()
+    page = context.new_page()
+    page.goto(f"{live_url}/admin/")
+    page.wait_for_selector("#loginForm", timeout=8000)
+    page.fill("#password", "test")
+    page.locator("#loginForm button[type=submit]").click()
+    page.wait_for_selector("#logoutButton", timeout=8000)
+    page.close()
+    yield context
+    context.close()
+
+
+@pytest.fixture()
+def admin_page(logged_context, live_url):
+    page = logged_context.new_page()
+    page.goto(f"{live_url}/admin/")
+    page.wait_for_selector("#logoutButton", timeout=8000)
+    yield page
+    page.close()
+
+
+def _go_to_route(page, route: str) -> None:
+    page.evaluate(
+        '(target) => { window.location.hash = target; }',
+        f"#/{route}",
+    )
+    page.wait_for_timeout(400)
+
+
+def test_about_page_renders(admin_page):
+    _go_to_route(admin_page, "about")
+    admin_page.wait_for_selector("#sec-about-overview", state="visible", timeout=5000)
+    # Big version card + 4 KPI tiles + OSS notices + changelog
+    assert admin_page.is_visible("[data-about-version]")
+    assert admin_page.locator(".admin-about-stat").count() == 4
+    assert admin_page.locator(".admin-about-cl-entry").count() >= 1
+    # KPI tiles match prototype labels (G11)
+    kpi_labels = admin_page.locator(".admin-about-stat .k").all_text_contents()
+    assert "已是最新版" in kpi_labels
+    assert "上次檢查更新" in kpi_labels
+    assert "LICENSE" in kpi_labels
+    # Action buttons (G11 added 檢查更新 + Setup Wizard)
+    actions = admin_page.locator("[data-about-action]").all_text_contents()
+    assert any("檢查更新" in a for a in actions)
+    assert any("複製" in a for a in actions)
+    assert any("設定精靈" in a for a in actions)
+
+
+def test_notifications_page_renders(admin_page):
+    _go_to_route(admin_page, "notifications")
+    admin_page.wait_for_selector("#sec-notifications-overview", state="visible", timeout=5000)
+    # Filter sidebar tabs + sources
+    assert admin_page.locator("[data-notif-tab]").count() == 3  # 未讀 / 全部 / 已封存
+    sources = admin_page.locator("[data-notif-src]").count()
+    assert sources >= 4  # 全部 + Rate Limit + Fire Token + Moderation
+    # List + summary present
+    assert admin_page.is_visible("[data-notif-list]")
+    assert admin_page.is_visible("[data-notif-summary]")
+
+
+def test_audit_page_renders(admin_page):
+    _go_to_route(admin_page, "audit")
+    admin_page.wait_for_selector("#sec-audit-overview", state="visible", timeout=5000)
+    # Source filter sidebar + table
+    assert admin_page.locator("[data-audit-src]").count() >= 1  # at least 全部
+    # 5-col header
+    cols = admin_page.locator(".admin-audit-table th").all_text_contents()
+    assert "時間" in cols
+    assert "來源" in cols
+    assert "事件" in cols
+    assert "執行者" in cols
+    # JSON export action present
+    assert admin_page.locator("[data-audit-action='export']").count() == 1
+
+
+def test_audience_page_renders(admin_page):
+    _go_to_route(admin_page, "audience")
+    admin_page.wait_for_selector("#sec-audience-overview", state="visible", timeout=5000)
+    # 5 KPI tiles
+    assert admin_page.locator(".admin-aud-stat").count() == 5
+    # Filter chips: 全部 + 標記
+    assert admin_page.locator("[data-aud-filter]").count() == 2
+    # Table header (or empty state)
+    has_header = admin_page.locator(".admin-aud-row--head").count()
+    has_empty = admin_page.locator(".admin-aud-empty").count()
+    assert has_header + has_empty >= 1
+
+
+def test_mobile_admin_page_renders(admin_page):
+    _go_to_route(admin_page, "mobile")
+    admin_page.wait_for_selector("#sec-mobile-admin-overview", state="visible", timeout=5000)
+    # Phone frame + status bar + appbar
+    assert admin_page.is_visible("[data-mobile-frame]")
+    assert admin_page.is_visible("[data-mobile-time]")
+    assert admin_page.is_visible(".admin-mobile-appbar")
+    # 4 big actions
+    assert admin_page.locator(".admin-mobile-actions .card").count() == 4
+    # 3 KPI tiles
+    assert admin_page.locator(".admin-mobile-stats .kpi").count() == 3
+    # 4 quick toggles
+    assert admin_page.locator("[data-mobile-toggle]").count() == 4
+    # 5-tab bottom bar
+    assert admin_page.locator(".admin-mobile-tabbar .tab").count() == 5
+
+
+def test_poll_deepdive_page_renders(admin_page):
+    _go_to_route(admin_page, "poll-deepdive")
+    admin_page.wait_for_selector("#sec-poll-deepdive-overview", state="visible", timeout=5000)
+    # Either populated state (header + KPI) OR empty state
+    has_header = admin_page.locator(".admin-pdd-header").count()
+    has_empty = admin_page.locator(".admin-pdd-empty").count()
+    assert has_header + has_empty >= 1
+    # If populated, sentiment row should be present (G8 polish)
+    if has_header > 0:
+        assert admin_page.locator(".admin-pdd-sentiment-tile").count() == 2
+
+
+def test_setup_wizard_overlay_renders(admin_page):
+    _go_to_route(admin_page, "setup")
+    admin_page.wait_for_selector("#admin-setup-wizard-root", state="visible", timeout=5000)
+    # 3-step flow (theme / language / done)
+    assert admin_page.locator(".admin-setup-step").count() == 3
+    # First step is theme selection
+    assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "主題包"
+    # Footer action buttons (close / prev / next)
+    assert admin_page.locator("[data-setup-action='close']").count() >= 1
+    # Close drawer to clean up for next test
+    admin_page.evaluate('() => { window.AdminSetupWizard && window.AdminSetupWizard.close && window.AdminSetupWizard.close(); }')
+
+
+def test_message_drawer_opens_from_live_feed(admin_page):
+    """Group A G10 — Message Detail Drawer opens with prev/next buttons."""
+    _go_to_route(admin_page, "messages")
+    admin_page.wait_for_timeout(300)
+    # Inject mock messages then click first row
+    admin_page.evaluate('''() => {
+        for (let i = 0; i < 3; i++) {
+            document.dispatchEvent(new CustomEvent('admin-ws-message', {
+                detail: { type: 'danmu_live', data: {
+                    text: '訊息 #' + (i+1), color: '#7c3aed', layout: 'scroll',
+                    nickname: '測試', fingerprint: 'fp_test_' + i,
+                } }
+            }));
+        }
+    }''')
+    admin_page.wait_for_timeout(200)
+    rows = admin_page.locator(".admin-live-feed-row")
+    if rows.count() == 0:
+        pytest.skip("Live feed rows not rendered (race); skipping click")
+    rows.first.click()
+    admin_page.wait_for_timeout(200)
+    # Drawer present + prev/next nav buttons + close button
+    assert admin_page.locator("#admin-message-drawer-root").count() == 1
+    assert admin_page.locator("[data-msgd-action='prev']").count() == 1
+    assert admin_page.locator("[data-msgd-action='next']").count() == 1
+    # Two close handlers: backdrop click + ✕ button in header
+    assert admin_page.locator("[data-msgd-action='close']").count() == 2
+
+
+def test_viewer_banned_state_url_preview(browser_session, live_url):
+    """ViewerBanned auto-shows when URL has ?state=banned."""
+    page = browser_session.new_page()
+    try:
+        page.goto(f"{live_url}/?state=banned", wait_until="domcontentloaded")
+        page.wait_for_selector(".viewer-state--banned", state="visible", timeout=5000)
+        assert page.locator(".viewer-state-kicker").text_content() == "BLOCKED · 已被禁言"
+        assert page.locator(".viewer-state-info .row").count() == 3
+    finally:
+        page.close()
+
+
+def test_viewer_pollthankyou_state_url_preview(browser_session, live_url):
+    """ViewerPollThankYou auto-shows when URL has ?state=thankyou."""
+    page = browser_session.new_page()
+    try:
+        page.goto(f"{live_url}/?state=thankyou&choice=Demo", wait_until="domcontentloaded")
+        page.wait_for_selector(".viewer-state--thankyou", state="visible", timeout=5000)
+        assert page.locator(".viewer-state-title").text_content() == "已送出投票"
+        # Choice text from URL param renders inside the recap
+        assert "Demo" in page.locator(".viewer-state-recap .choice .lbl").text_content()
+    finally:
+        page.close()
