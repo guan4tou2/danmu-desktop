@@ -451,7 +451,29 @@
     }
 
     if (entries.length > 0) renderList();
+
+    // 2026-04-27 P1: row click → open Message Detail Drawer.
+    // Ignore clicks on existing inline action buttons (.admin-v2-chip)
+    // and on the bulk-select checkbox to keep their behavior.
+    if (listEl) {
+      listEl.addEventListener("click", function (e) {
+        if (e.target.closest("button, input, .admin-live-feed-actions, .admin-live-feed-check")) return;
+        const row = e.target.closest(".admin-live-feed-row");
+        if (!row) return;
+        const id = row.dataset.id;
+        if (!id) return;
+        const entry = entries.find(function (en) { return en.id === id; });
+        if (entry && window.AdminMessageDrawer) {
+          window.AdminMessageDrawer.open(entry);
+        }
+      });
+    }
   }
+
+  // Expose for admin-message-drawer.js to read same-fp messages.
+  window.AdminLiveFeed = {
+    getEntries: function () { return entries.slice(); },
+  };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
