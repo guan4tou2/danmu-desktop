@@ -23,6 +23,7 @@ const {
 const { initGlobalEffects } = require("./renderer-modules/konami");
 const { initParticleBg } = require("./renderer-modules/particle-bg");
 const { initUpdateStatus } = require("./renderer-modules/update-status");
+const { init: initFirstRunGate } = require("./renderer-modules/first-run-gate");
 
 // Translation helper
 function t(key) {
@@ -43,6 +44,9 @@ const initRenderer = async () => {
     // ── Synchronous module initialization (before any awaits) ────────────
     initTrackManager();
     initGlobalEffects();
+    // First-run connection gate — auto-opens iff no saved server config.
+    // Hooks into existing host-input/port-input on confirm.
+    initFirstRunGate();
 
     initOverlayControls({
       state,
