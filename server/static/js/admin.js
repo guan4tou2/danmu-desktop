@@ -868,6 +868,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="admin-dash-nav-icon">⤓</span>
                                     <span>備份 & 匯出</span>
                                 </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="about" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">ⓘ</span>
+                                    <span>關於</span>
+                                </button>
                             </nav>
                             <div class="admin-dash-telem">
                                 <div class="admin-dash-telem-head">
@@ -3799,6 +3803,8 @@ document.addEventListener("DOMContentLoaded", () => {
     system:    { title: "系統 & 指紋",      kicker: "SYSTEM · FINGERPRINT · RATE LIMITS", sections: ["sec-system-overview", "sec-scheduler", "sec-webhooks", "sec-fingerprints"] },
     security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: ["sec-security", "sec-ws-auth"] },
     backup:    { title: "備份 & 匯出",       kicker: "BACKUP · EXPORT · DANGER",          sections: ["sec-backup"] },
+    // Phase 2 P0-1 (2026-04-27 V1Z4 batch9): version + license + changelog.
+    about:     { title: "關於",               kicker: "ABOUT · 版本 · CHANGELOG · 開源資訊", sections: ["sec-about-overview"] },
     broadcast: { title: "廣播",              kicker: "BROADCAST · LIVE / STANDBY",         sections: [] },
   };
 
