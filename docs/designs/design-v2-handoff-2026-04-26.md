@@ -1,6 +1,12 @@
 # Danmu Fire · v2 Design Handoff
 
-**Last updated**: 2026-04-27 (post P1 batch \[Message Drawer + Notifications + Audit Log\] · commit `262666f` · pending VPS deploy)
+**Last updated**: 2026-04-27 (post scope-out + backend-gaps split · commit `70b6463+`)
+
+> ⚠️ **2026-04-27 產品決策**：
+> 1. **Sessions / 場次 entity** scope-out — 不做。詳見 [`scope-out-2026-04-27.md`](./scope-out-2026-04-27.md) §A。請 Design 在後續 prototype 移除 `session_id` / 「sess_xxx」/ Start Session button / 「跨場次」/ 場次內統計等概念。
+> 2. **Multi-actor / Pro Edition / SHA-256 audit / Geo / SIEM / Sentiment ML** 也都 scope-out（見 scope-out doc §B-§F）。
+> 3. **Backend 擴張** 全部列在 [`backend-extensions-pending-2026-04-27.md`](./backend-extensions-pending-2026-04-27.md) 等 Design / 產品 buy-in。**工程不會主動補後端**。
+> 4. **「完全照抄」純 FE 工作** 繼續做（Group A polish + Group B viewer/overlay 變體 + Audience/Mobile）。
 
 > ✅ **2026-04-27 P1 done**（3 commits in sequence）：
 >

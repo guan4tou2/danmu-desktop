@@ -12,29 +12,41 @@
 
 ---
 
-## B. 還沒 ship 的 prototype（17 個 artboard）
+## B. 還沒 ship 的 prototype
 
-| # | 元件 | 來源 bundle | Phase | Backend 依賴 | 工程預估 |
-|---|------|------------|-------|-------------|----------|
-| 1 | **AdminAboutPage** | V1Z4 batch9 | 2 P0 | 無 | 0.5 hr |
-| 2 | **AdminOnboardingTour** (Setup Wizard 4 步驟) | 2b76A6ot batch3 / V1Z4 batch9 重申 | 2 P0 | 無（用既有 settings API） | 2-3 hr |
-| 3 | **AdminPollDeepDivePage** | V1Z4 batch7 | 2 P0 | 無（指紋 + poll record 都已存在） | 2-3 hr |
-| 4 | AdminMessageDetailPage | V1Z4 batch7 #2 | 3 P1 | 無（mock 即可） | 1.5 hr |
-| 5 | AdminNotificationsPage | V1Z4 batch7 #1 | 3 P1 | **要新 alert source schema** | 4-6 hr (FE) + 4-8 hr (BE) |
-| 6 | AdminAuditLogPage | 2b76A6ot batch1 | 3 P1 | **要新 audit table**（fire_token 已有 in-mem audit，要改持久化） | 3-5 hr |
-| 7 | AdminSessionsPage + SessionDetail | V1Z4 batch8 #1 | 3 P2 | **要新 session entity**（目前訊息只有 ts，沒 session_id） | 8-12 hr |
-| 8 | AdminSearchPage（跨場次） | V1Z4 batch7 #3 | 3 P2 | 跟 #7 連動（沒 session 切不出範圍） | 跟 #7 一起 |
-| 9 | AdminAudiencePage | V1Z4 batch7 #4 | 3 P3 | 跟 history 整併要一起想 | 3-4 hr |
-| 10 | AdminMobilePage | V1Z4 batch8 #3 | 3 P3 | 無（純 RWD） | 4-6 hr |
-| 11 | AdminWcagPage + AdminDashboardEN（EN sweep） | 2b76A6ot batch5 | 3 P2 | 無（i18n strings） | 6-10 hr |
-| 12 | AdminTokensPage（per-integration ACL） | 2b76A6ot batch6 | 3 P2 | **要新 token table**（目前只有 Fire Token 單一 shared bearer） | 6-8 hr (FE) + 4-6 hr (BE) |
-| 13 | AdminWebhooksPage v2 retrofit | 2b76A6ot batch6 | 3 P2 | 無（後端已有 webhooks model） | 3-4 hr |
-| 14 | ViewerBanned / ViewerPollThankYou | 2b76A6ot batch4 | 3 P2 | 無 | 1-2 hr |
-| 15 | OverlayPollLive / OverlayResultCelebration | 2b76A6ot batch4 | 3 P2 | 無 | 2-3 hr |
-| 16 | OverlayIdleQR (full state machine) | 2b76A6ot batch4 | 3 P3 | 無（idle/connecting/disconnected dot 已有） | 1-2 hr |
-| 17 | DesktopTrayPopover / WindowPicker | V1Z4 batch9 #11-12 | 3 P3 | Electron 端，獨立 sprint | 6-10 hr |
+> 2026-04-27 update：拆三組：**SHIP**（純 FE 照抄、現在做）/ **WAIT**（要 BE 擴張，等 Design buy-in，見 [`backend-extensions-pending`](./backend-extensions-pending-2026-04-27.md)）/ **CUT**（產品決策不做，見 [`scope-out`](./scope-out-2026-04-27.md)）。
 
-**合計工程量**：純前端可立刻做的 ~= 30-40 hr；含 backend 變動的（#5/#6/#7/#12）~= 60-90 hr。
+### B.1 SHIP — 純 FE 1:1 照抄（現在做）
+
+| # | 元件 | 來源 | 工程 |
+|---|------|------|------|
+| 1 | **AdminAboutPage** | V1Z4 batch9 | ✅ ship 完 (`e60a9a4`) — 待 G11 polish |
+| 2 | **AdminOnboardingTour / Setup Wizard** | 2b76A6ot batch3 | 🟡 ship 簡化版 (`0701799`) — 5 步剩 3 步 |
+| 3 | **AdminPollDeepDivePage** | V1Z4 batch8 | 🟡 ship 4/6 區塊 (`d71af67`) |
+| 4 | **AdminMessageDetailPage** | V1Z4 batch7 | 🟡 ship overlay drawer 形式 (`e4919af`) |
+| 5 | **AdminNotificationsPage** | V1Z4 batch7 | 🟡 ship 2-col (`fdeeb34`) — detail panel 等 B1 buy-in |
+| 6 | **AdminAuditLogPage** | 2b76A6ot batch1 | 🟡 ship simplified (`262666f`) — ACTION/diff 等 B5/B6 buy-in |
+| 14 | ViewerBanned / ViewerPollThankYou | 2b76A6ot batch4 | 🚧 **下一輪做** — 1-2 hr 純 FE 照抄 |
+| 15 | OverlayPollLive / OverlayResultCelebration | 2b76A6ot batch4 | 🚧 **下一輪做** — 2-3 hr 純 FE 照抄 |
+| 16 | OverlayIdleQR full state machine | 2b76A6ot batch4 | 🚧 可做 — 1-2 hr |
+| 9 | AdminAudiencePage | V1Z4 batch7 #4 | 🚧 可做 — **去掉「出席場次數」column** 後 3 hr 純 FE |
+| 10 | AdminMobilePage | V1Z4 batch8 #3 | 🚧 可做 — 4-6 hr 純 RWD |
+
+### B.2 WAIT — Design 確認 BE 擴張要不要做（見 [backend-extensions-pending](./backend-extensions-pending-2026-04-27.md)）
+
+| # | 元件 | 缺什麼 BE |
+|---|------|-----------|
+| 11 | AdminWcagPage + AdminDashboardEN（EN sweep） | i18n strings 全套（純 FE 但是工程量大，建議獨立 sprint） |
+| 12 | AdminTokensPage（per-integration ACL） | **要新 token table**（目前只有 Fire Token 單一 shared bearer） |
+| 13 | AdminWebhooksPage v2 retrofit | 後端 OK，純 FE 重畫，3-4 hr |
+| 17 | DesktopTrayPopover / WindowPicker | Electron 端，獨立 sprint，6-10 hr |
+
+### B.3 CUT — scope-out（**永遠不做**，見 [scope-out](./scope-out-2026-04-27.md)）
+
+| # | 元件 | 原因 |
+|---|------|------|
+| 7 | AdminSessionsPage + SessionDetail | sessions entity scope-out |
+| 8 | AdminSearchPage（跨場次） | sessions scope-out → 改成 #/history 內的全文搜尋 |
 
 ---
 
