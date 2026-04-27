@@ -196,31 +196,90 @@
 
 → Audit Log 對齊度最低，主要差距：缺**操作者 multi-actor**（單 admin / kevin 兩人）、缺**動作分類**（UPDATE/CREATE…）、缺 **before/after diff**。這些都需要在 audit_log.append() 時帶結構化欄位（不是 free-form meta dict）。
 
-### F.8 Sessions design doc — ✅ 對齊（沒實作）
+### F.8 ViewerBanned + ViewerPollThankYou（commit `db5b09c`）— 🟡 partial trigger
+| 項目 | Prototype | 實作 | 對齊 |
+|------|-----------|------|------|
+| ViewerBanned 視覺 | red HUD frame + slash icon + identifier + tip | ✓ 1:1 抄 | ✅ |
+| ViewerPollThankYou 視覺 | check + recap + live count + 回到聊天 | ✓ 1:1 抄（live count tile 沒做即時計算） | 🟡 |
+| Banned trigger | 服務器決定後 push | ✓ /fire 403 + ban/block 關鍵字 → 自動觸發 | ✅ |
+| ThankYou trigger | viewer 投完票 push | 🟡 純 FE heuristic：fire 成功 + 文字單字母 A-Z | 🟡（false positive 可能） |
+| URL preview | — | ✓ `?state=banned` / `?state=thankyou` | ✅ |
+
+### F.9 OverlayPollLive + OverlayResultCelebration（commit `db5b09c`）— ✅ 對齊
+| 項目 | Prototype | 實作 |
+|------|-----------|------|
+| Active panel 中央 76% 寬 | ✓ | ✓ |
+| 4 option bars + LEADING chip | ✓ | ✓（含色帶 + glow + 動畫） |
+| 倒數計時 + decay bar | ✓ | ✓（從 started_at + time_limit_seconds 算） |
+| QR badge + 於手機投票 | ✓ | ✓（badge 是 placeholder 文字「QR」，沒嵌實際 QR 圖） |
+| Celebration 24 confetti | ✓ | ✓ |
+| 大寫贏家字母 + 動畫 pop | ✓ | ✓ |
+| 12s 自動消失 | ✓ | ✓ |
+| 取代既有 280px 角落 panel | — | ✓ |
+
+→ **唯一 gap**：QR 沒嵌真 QR 圖（純文字 placeholder），prototype 也只是文字示意。可後補 qrcode lib。
+
+### F.10 AdminAudiencePage（commit `db5b09c`）— 🟡 simplified per scope-out
+| 區塊 | Prototype | 實作 | 對齊 |
+|------|-----------|------|------|
+| 5 KPI tile | 當前連線 / 5min 活躍 / 訊息/min / 高風險 / 已封禁 | 當前指紋 / 5min 活躍 / 總訊息 / 已標記 / 已封禁 | 🟡 |
+| 7-col 列表 | avatar / nick·fp / ip+geo / ua / joined / msgs / score / status / actions | avatar / nick·fp / ip+ua / joined / msgs / status / actions | 🟡 砍 GEO + SCORE |
+| 高風險右側 detail panel | ✓（5-rule flag + 近 5 分鐘訊息 + 4 建議動作） | ❌ 完全沒做 | 缺 |
+| Filter chips | 全部 / 高風險 / 重複指紋 / extension | 全部 / 標記 | 🟡 |
+| ban action | ✓ | ✓（接 /admin/live/block） | ✅ |
+| kick action | ✓ | ❌ 沒做 | 缺（沒 endpoint） |
+
+→ **最大 gap**：高風險右側 detail panel 沒做。其他依 [scope-out](./scope-out-2026-04-27.md) 砍掉的（geo / 出席場次 / score）已標清楚。
+
+### F.11 AdminMobilePage（commit `c29743c`）— ✅ 對齊
+| 項目 | Prototype | 實作 |
+|------|-----------|------|
+| 375x812 phone frame | ✓ | ✓（桌面預覽用 rounded + shadow） |
+| iOS 狀態列 | ✓ | ✓ |
+| App header | ✓ | ✓（real time 連線/elapsed） |
+| Live ticker 3 row | ✓（mock data） | ✓（從 in-mem live-feed entries） |
+| 4 big actions | 啟動投票 / 釘選 / 暫停 / 清空 | ✓（啟動投票 + 暫停 真 endpoint，釘選 + 清空 標 v5.3 待補） |
+| 3 KPI tile | ✓ | ✓（從 /admin/metrics 拉） |
+| 4 quick toggles | ✓ | 🟡 純 client side（持久化要新 endpoint） |
+| 5-tab bottom bar | ✓ | ✓（連到 dashboard / polls / messages / notifications / about） |
+
+→ **gap**：toggles client-side only（沒持久化）+ 釘選 / 清空螢幕 沒 backend endpoint。
+
+### F.12 Sessions design doc — ✅ 對齊（沒實作）
 spec-only，等 Design 拍板 §7 三題後從 S1 開工。
 
 ---
 
-## G. 修整 vs 維持的選擇（請 Design 拍板）
+## G. 修整 vs 維持（status snapshot）
 
-依工程量排序，從便宜到貴：
+| # | 修整項目 | 狀態 | Commit |
+|---|---------|------|--------|
+| G1 | Audit Log 加 ACTION chip 配色 | 🟡 移到 [backend-pending B5](./backend-extensions-pending-2026-04-27.md) | — |
+| G2 | Audit Log 加 before/after diff | 🟡 移到 [backend-pending B6](./backend-extensions-pending-2026-04-27.md) | — |
+| G3 | Audit Log 加操作者 avatar + web/desktop source | 🟡 移到 [backend-pending B7](./backend-extensions-pending-2026-04-27.md) | — |
+| G4 | Notifications 加右側 detail 面板 | 🟡 移到 [backend-pending B1](./backend-extensions-pending-2026-04-27.md) | — |
+| G5 | Notifications 加 Webhooks / System 來源 | 🟡 移到 [backend-pending B2](./backend-extensions-pending-2026-04-27.md) | — |
+| G6 | Setup Wizard 補密碼 step | 🟡 移到 [backend-pending B3](./backend-extensions-pending-2026-04-27.md) | — |
+| G7 | Setup Wizard 補 Logo step | 🟡 移到 [backend-pending B4](./backend-extensions-pending-2026-04-27.md) | — |
+| G8 | Poll Deep-Dive 加 Sentiment Index | ✅ **shipped** | `0aea208` |
+| G9 | Poll Deep-Dive 加 vs 上次 Δ | 🟡 移到 [backend-pending B9](./backend-extensions-pending-2026-04-27.md) | — |
+| G10 | Message Drawer 加 上一筆 / 下一筆 | ✅ **shipped** | `0aea208` |
+| G11 | About 改 4 KPI tile 內容 + 檢查更新 button | ✅ **shipped** | `0aea208` |
 
-| # | 修整項目 | 工程量 | 屬性 |
-|---|---------|--------|------|
-| G1 | Audit Log 加 ACTION chip 配色 + 重新 mapping audit_log entries 帶 action 欄位 | 2 hr | 純 FE + audit_log schema 微調 |
-| G2 | Audit Log 加 before/after diff 顯示 | 2 hr | audit_log.append() 加 before/after 兩個 optional 欄位 |
-| G3 | Audit Log 加操作者 avatar + 來源 (web/desktop) | 1.5 hr | actor 已有，加 source (web/desktop) 欄位 |
-| G4 | Notifications 加右側 detail 面板（事件鏈 + 建議動作） | 4 hr | 純 FE，動作 mapping 寫死即可 |
-| G5 | Notifications 加 Webhooks / System 來源 | 3 hr | 新後端 instrumentation |
-| G6 | Setup Wizard 補密碼 step（changeable from inside admin） | 3 hr | 接 /admin/change_password endpoint |
-| G7 | Setup Wizard 補 Logo step | 4 hr (FE) + 2 hr (BE) | 要新 /admin/logo 上傳 endpoint |
-| G8 | Poll Deep-Dive 加 Sentiment Index | 2 hr | 純 FE 計算（正面 - 負面 / 100） |
-| G9 | Poll Deep-Dive 加 vs 上次 Δ | 4 hr | 需要 poll history 持久化 |
-| G10 | Message Drawer 加 上一筆 / 下一筆 navigation | 1 hr | 純 FE |
-| G11 | About 改 4 KPI tile 內容（已是最新版 / 上次檢查 / uptime / 授權→license） | 1 hr | 加「檢查更新」action（call GitHub Releases API） |
+**這輪純 FE 對齊工作完成**：G8 + G10 + G11 都已 ship，把 About / Drawer / Poll Deep-Dive 對齊度拉高到 ~80%。
 
-**最有價值**：G1+G2+G3（Audit Log 三件，~5 hr 一起做）+ G10（Message Drawer 上一筆/下一筆，1 hr）+ G11（About 4 KPI 對齊，1 hr） = **7 hr 一輪 polish 可以把 alignment 從 ~50% 拉到 ~80%**。
+**剩下要 BE 擴張的（G1-G7、G9）** 等 Design 在 [backend-extensions-pending](./backend-extensions-pending-2026-04-27.md) 表格圈要做哪幾個。
 
-**最不值得**：G7（Logo step，要做新 endpoint）、G9（poll vs 上次，要做歷史 poll 持久化）— 工程量大、ROI 低。
+---
 
-請 Design 在 §G 表格旁邊圈：要做哪幾個？要直接維持簡化版？我做完拍板的就再下一輪 ship。
+## H. 還沒實作的 prototype（簡表）
+
+| 元件 | Bundle | 狀態 | 備註 |
+|------|--------|------|------|
+| OverlayIdleQR full state machine | batch4 | 🟡 部分（idle/connecting/disconnected dot 已有） | full QR overlay 1-2 hr 可補 |
+| AdminWcagPage + AdminDashboardEN | batch5 | ❌ 沒做 | EN i18n 大工程 |
+| AdminTokensPage（per-integration ACL） | batch6 | ❌ 沒做 | 要新 token table，已標 backend-pending B12 |
+| AdminWebhooksPage v2 retrofit | batch6 | ❌ 沒做 | 純 FE，3-4 hr |
+| DesktopTrayPopover / WindowPicker | batch9 | ❌ 沒做 | Electron 端，獨立 sprint |
+| AdminSessionsPage / SessionDetail | batch8 | ❌ scope-out | sessions entity 不做 |
+| AdminSearchPage（跨場次） | batch7 | ❌ scope-out | sessions 連動 |
