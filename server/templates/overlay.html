@@ -84,6 +84,7 @@
       wsToken: {{ (ws_token or '')|tojson }}
     };
   </script>
+  <script src="{{ url_for('static', filename='js/overlay-poll.js') }}"></script>
   <script src="{{ url_for('static', filename='js/overlay.js') }}"></script>
 </body>
 </html>

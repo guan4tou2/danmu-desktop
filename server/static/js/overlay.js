@@ -218,8 +218,21 @@
           return;
         }
 
-        // Poll update — show live voting panel on overlay (DOM-based, no innerHTML)
+        // Poll update — delegate to OverlayPoll (overlay-poll.js) which renders
+        // the prototype-aligned full-screen variants:
+        //   active → centered panel + bars + countdown + QR
+        //   ended  → winner-reveal celebration with confetti
+        // Replaces the legacy 280px corner panel (pre-2026-04-27).
         if (data.type === "poll_update") {
+          if (window.OverlayPoll && typeof window.OverlayPoll.render === "function") {
+            window.OverlayPoll.render(data);
+          }
+          var legacyPanel = document.getElementById("poll-panel");
+          if (legacyPanel) legacyPanel.remove();
+          return;
+        }
+
+        if (false) { // legacy panel disabled — kept inline for git diff readability
           var panel = document.getElementById("poll-panel");
 
           if (data.state === "idle") {

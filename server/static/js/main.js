@@ -796,6 +796,16 @@ document.addEventListener("DOMContentLoaded", () => {
   // admin-only. Active theme is applied server-side; viewer just fires text.
 
   // --- Send Button Loading State ---
+  // P3 ViewerPollThankYou heuristic: text is a single A-Z letter that
+  // looks like a poll vote. We don't know server-side whether a poll is
+  // active, so this is best-effort. False positives just briefly show the
+  // thank-you screen — user can dismiss via 「回到聊天」.
+  function _isLikelyPollVote(text) {
+    if (!text) return false;
+    const t = String(text).trim().toUpperCase();
+    return t.length === 1 && t >= "A" && t <= "Z";
+  }
+
   function setSendLoading(loading) {
     if (!elements.btnSend) return;
     elements.btnSend.disabled = loading;
@@ -861,15 +871,42 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       if (response.ok) {
+        const submittedText = elements.danmuText.value;
         elements.danmuText.value = "";
         updateCharCount();
         updatePreview();
         showToast(ServerI18n.t("danmuFired"), true);
+        // P3 ViewerPollThankYou: if poll active and submitted text matched
+        // an option key (single A/B/C…), show thank-you state. Falls back
+        // to a heuristic; future viewer-side poll widget would carry the
+        // mapping explicitly.
+        try {
+          if (window.ViewerStates && _isLikelyPollVote(submittedText)) {
+            window.ViewerStates.showThankYou({
+              question: window._lastPollQuestion || "進行中的投票",
+              choice: submittedText.trim().toUpperCase(),
+              fp: clientFingerprint,
+            });
+          }
+        } catch (_) { }
       } else {
         let message = ServerI18n.t("failedToSend");
         try {
           const data = await response.json();
           message = (typeof data.error === "string" ? data.error : data.error?.message) || message;
+          // P3 ViewerBanned: 403 with banned/blocked reason → show banned
+          // state instead of just a toast.
+          if (response.status === 403 && window.ViewerStates) {
+            const lower = String(message).toLowerCase();
+            if (lower.indexOf("ban") !== -1 || lower.indexOf("block") !== -1
+                || message.indexOf("禁言") !== -1 || message.indexOf("封鎖") !== -1) {
+              window.ViewerStates.showBanned({
+                fp: clientFingerprint,
+                reason: message,
+              });
+              return;
+            }
+          }
         } catch (_) { }
         showToast(message, false);
       }

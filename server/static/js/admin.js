@@ -845,6 +845,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="admin-dash-nav-icon">◑</span>
                                     <span>速率限制</span>
                                 </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="audience" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⌂</span>
+                                    <span>觀眾</span>
+                                </button>
 
                                 <div class="admin-dash-nav-label" style="margin-top:16px">設定</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="effects" role="tab" aria-selected="false">
@@ -3817,6 +3821,8 @@ document.addEventListener("DOMContentLoaded", () => {
     backup:    { title: "備份 & 匯出",       kicker: "BACKUP · EXPORT · DANGER",          sections: ["sec-backup"] },
     // P1 (2026-04-27 V1Z4 batch7): aggregated alerts inbox.
     notifications: { title: "通知",          kicker: "NOTIFICATIONS · 警示中心 · 多來源",  sections: ["sec-notifications-overview"] },
+    // P3 Group B (2026-04-27 V1Z4 batch7): fingerprint aggregation list.
+    audience:  { title: "觀眾",               kicker: "AUDIENCE · 即時指紋聚合",           sections: ["sec-audience-overview"] },
     // P1 (2026-04-27 batch1): persistent audit trail (read-only history).
     audit:     { title: "審計日誌",           kicker: "AUDIT LOG · 持久事件紀錄 · DISK-BACKED", sections: ["sec-audit-overview"] },
     // Phase 2 P0-1 (2026-04-27 V1Z4 batch9): version + license + changelog.
