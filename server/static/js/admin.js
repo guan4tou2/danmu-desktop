@@ -877,6 +877,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="admin-dash-nav-icon">⊜</span>
                                     <span>審計日誌</span>
                                 </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="mobile" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">▤</span>
+                                    <span>Mobile</span>
+                                </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="backup" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⤓</span>
                                     <span>備份 & 匯出</span>
@@ -3825,6 +3829,8 @@ document.addEventListener("DOMContentLoaded", () => {
     audience:  { title: "觀眾",               kicker: "AUDIENCE · 即時指紋聚合",           sections: ["sec-audience-overview"] },
     // P1 (2026-04-27 batch1): persistent audit trail (read-only history).
     audit:     { title: "審計日誌",           kicker: "AUDIT LOG · 持久事件紀錄 · DISK-BACKED", sections: ["sec-audit-overview"] },
+    // P3 Group B (2026-04-27 V1Z4 batch8 #3): host-on-phone admin layout.
+    mobile:    { title: "Mobile",             kicker: "MOBILE ADMIN · 主持人手機後台",      sections: ["sec-mobile-admin-overview"] },
     // Phase 2 P0-1 (2026-04-27 V1Z4 batch9): version + license + changelog.
     about:     { title: "關於",               kicker: "ABOUT · 版本 · CHANGELOG · 開源資訊", sections: ["sec-about-overview"] },
     // Phase 2 P0-2 (2026-04-27 batch3): #/setup opens the Setup Wizard
