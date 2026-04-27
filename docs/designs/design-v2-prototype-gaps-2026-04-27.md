@@ -272,14 +272,72 @@ spec-only，等 Design 拍板 §7 三題後從 S1 開工。
 
 ---
 
-## H. 還沒實作的 prototype（簡表）
+## H. 還沒實作的 prototype（完整清單）
 
-| 元件 | Bundle | 狀態 | 備註 |
-|------|--------|------|------|
-| OverlayIdleQR full state machine | batch4 | 🟡 部分（idle/connecting/disconnected dot 已有） | full QR overlay 1-2 hr 可補 |
-| AdminWcagPage + AdminDashboardEN | batch5 | ❌ 沒做 | EN i18n 大工程 |
-| AdminTokensPage（per-integration ACL） | batch6 | ❌ 沒做 | 要新 token table，已標 backend-pending B12 |
-| AdminWebhooksPage v2 retrofit | batch6 | ❌ 沒做 | 純 FE，3-4 hr |
-| DesktopTrayPopover / WindowPicker | batch9 | ❌ 沒做 | Electron 端，獨立 sprint |
-| AdminSessionsPage / SessionDetail | batch8 | ❌ scope-out | sessions entity 不做 |
-| AdminSearchPage（跨場次） | batch7 | ❌ scope-out | sessions 連動 |
+### H.1 純 FE 工作（純照抄就能 ship）
+
+| 元件 | Bundle | 工程估計 | 備註 |
+|------|--------|----------|------|
+| OverlayIdleQR full state machine | batch4 | 1-2 hr | idle/connecting/disconnected dot 已有，full QR overlay 沒做 |
+| AdminWebhooksPage v2 retrofit | batch6 | 3-4 hr | 後端已有 webhooks model，純 FE 重畫 |
+| **AdminAudiencePage 右側 detail panel** | batch7 | 3-4 hr | 高風險 5-rule flag + 近 5 分鐘訊息 + 4 建議動作（F.10 漏記，2026-04-28 補） |
+| Notifications "starred" feature | batch7 | 1 hr | localStorage backed |
+| Setup Wizard 6 packs | batch3 | 0.5 hr | prototype 寫死 6 個（neon/sakura/matrix/twilight 多 4 個），現在只用 /admin/themes 動態 4 個 |
+| Poll Deep-Dive 5th KPI tile (重複指紋 + 作弊嘗試) | batch8 | 1 hr | 加 fingerprint 重複次數 KPI |
+
+### H.2 要新後端能力
+
+| 元件 | 缺什麼 | 紀錄 |
+|------|--------|------|
+| AdminTokensPage（per-integration ACL） | 要新 token table | [backend-pending B12](./backend-extensions-pending-2026-04-27.md) |
+| AdminWcagPage + AdminDashboardEN | 全套 EN i18n strings | 🟡 大型獨立 sprint，純 FE 但 6-10 hr |
+| Audit Log multi-actor / ACTION dim / before-after / source platform | audit_log schema 擴張 | [B5/B6/B7](./backend-extensions-pending-2026-04-27.md) |
+| Notifications detail panel + Webhooks/System sources | 新 alert schema | [B1/B2](./backend-extensions-pending-2026-04-27.md) |
+| Setup Wizard 補 password + Logo step | /admin/logo upload + first-run check | [B3/B4](./backend-extensions-pending-2026-04-27.md) |
+| Poll Deep-Dive Time histogram / vs 上次 Δ | per-vote timestamp + poll history persistence | [B8/B9](./backend-extensions-pending-2026-04-27.md) |
+
+### H.3 Electron 端
+
+| 元件 | Bundle | 工程估計 | 備註 |
+|------|--------|----------|------|
+| DesktopTrayPopover | V1Z4 batch9 #11 | 4-6 hr | macOS 風 tray dropdown，含 mini stats + quick actions + shortcut hints |
+| DesktopWindowPicker | V1Z4 batch9 #12 | 3-4 hr | 多 overlay window 管理 picker |
+
+→ Electron 端 **獨立 sprint**，不影響 server 工作。`danmu-desktop/main-modules/` 加新模組即可。
+
+### H.4 Scope-out（永遠不做）
+
+見 [`scope-out-2026-04-27.md`](./scope-out-2026-04-27.md) — Sessions / 跨場次 search / multi-actor / SHA-256 audit / Geo / Pro Edition / NLP sentiment。
+
+---
+
+## I. 重構債（2026-04-28 健康評估）
+
+### I.1 admin.js 還是太大（4065 行）
+
+`renderControlPanel()` 從 line 728 開始 ~3000 行**全是 inline HTML 字串模板** — 32 個 section 都長在那。最大欠債。
+
+**拆分提案**：每個 section 拆成 admin-templates/sec-*.js，回傳字串供 admin.js 拼接。或更激進：改成 lit-html / 純 template literals 由各模組自己 inject HTML。
+
+工程量：1.5-2 天。風險：每個 section 都有 currentSettings closure 依賴，refactor 要小心。
+
+### I.2 其他大檔（次要）
+
+| 檔案 | 行數 | 拆分方向 |
+|------|------|----------|
+| main.js (viewer) | 1403 | viewer 端可拆出 connection-status / preview-render / fire-submit 三大塊 |
+| admin-display.js | 1082 | OK，view 密集；可考慮把 row template 抽成獨立函式 |
+| overlay.js | 973 | 可拆 widget renderer / effect injection / poll panel（poll 已拆出 overlay-poll.js） |
+| admin-effects-mgmt.js | 814 | 可拆 list / editor / preview |
+| child-ws-script.js (Electron) | 756 | Electron 子視窗 WS bridge，可拆 connect / message / reconnect |
+
+### I.3 不在 scope 但可以順手清的
+
+- **30 個 admin-*.js 模組** — 命名 / 載入順序在 admin.html 散亂，可在後續 build pipeline 整合 bundling（webpack / rollup）取代手動 `<script defer>` 大列
+- 部份模組（admin-konami / admin-broadcast / admin-events）只有 100-200 行可以保留現況
+
+### I.4 不要碰的（cohesive，重構不划算）
+
+- admin-poll.js / admin-poll-deepdive.js — view + state 緊密耦合
+- admin-replay-controls.js / admin-history.js — 剛拆過，邊界 clean
+- viewer-states.js / overlay-poll.js — 新檔，本就是 1:1 prototype 對應
