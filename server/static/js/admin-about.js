@@ -109,6 +109,7 @@
               </div>
               <div class="admin-about-actions">
                 <button type="button" class="admin-about-btn" data-about-action="copy">📋 複製版本資訊</button>
+                <button type="button" class="admin-about-btn" data-about-action="setup-wizard">⚙ 重新開啟設定精靈</button>
                 <a class="admin-about-btn admin-about-btn--accent" href="${REPO_URL}/releases/latest" target="_blank" rel="noopener noreferrer">↻ GitHub Releases</a>
               </div>
             </article>
@@ -234,7 +235,13 @@
       page.addEventListener("click", function (e) {
         const btn = e.target.closest("[data-about-action]");
         if (!btn) return;
-        if (btn.dataset.aboutAction === "copy") _copyVersionInfo();
+        const action = btn.dataset.aboutAction;
+        if (action === "copy") _copyVersionInfo();
+        else if (action === "setup-wizard") {
+          if (window.AdminSetupWizard && typeof window.AdminSetupWizard.open === "function") {
+            window.AdminSetupWizard.open();
+          }
+        }
       });
     }
 

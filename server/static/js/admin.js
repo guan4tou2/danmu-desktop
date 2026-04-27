@@ -3805,6 +3805,10 @@ document.addEventListener("DOMContentLoaded", () => {
     backup:    { title: "備份 & 匯出",       kicker: "BACKUP · EXPORT · DANGER",          sections: ["sec-backup"] },
     // Phase 2 P0-1 (2026-04-27 V1Z4 batch9): version + license + changelog.
     about:     { title: "關於",               kicker: "ABOUT · 版本 · CHANGELOG · 開源資訊", sections: ["sec-about-overview"] },
+    // Phase 2 P0-2 (2026-04-27 batch3): #/setup opens the Setup Wizard
+    // overlay (not a sidebar nav). Route exists so admin.js doesn't bounce
+    // the hash back to /dashboard.
+    setup:     { title: "設定精靈",           kicker: "SETUP WIZARD · 初次設定 · 可重跑",   sections: [] },
     broadcast: { title: "廣播",              kicker: "BROADCAST · LIVE / STANDBY",         sections: [] },
   };
 
