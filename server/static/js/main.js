@@ -1186,6 +1186,105 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (_) { }
       }
 
+      // Identity chip — prototype #18 (2026-04-27): one-line `[@nick · fp:xxxxxxxx]`
+      // chip that replaces the legacy nickname input field. fp:xxxxxxxx is
+      // the SHA-256(clientFingerprint) first 8 hex chars, matching what
+      // services/fingerprint_tracker.py stores so admin observatory rows
+      // line up. Click → inline edit; Enter save, Esc cancel, blur save.
+      (function wireIdentityChip() {
+        const chip = document.getElementById("identityChip");
+        if (!chip || !nicknameInput) return;
+        const nickEl = document.getElementById("identityChipNick");
+        const fpEl = document.getElementById("identityChipFp");
+
+        const renderChip = async () => {
+          const nick = (nicknameInput.value || "").trim();
+          if (nick) {
+            nickEl.textContent = "@" + nick;
+            nickEl.hidden = false;
+          } else {
+            nickEl.hidden = true;
+          }
+          // Compute fp:8hex (SHA-256(raw fp) first 8). Falls back to a
+          // truncated raw fp if SubtleCrypto isn't available.
+          if (fpEl && !fpEl.dataset.computed) {
+            try {
+              if (window.crypto && crypto.subtle) {
+                const buf = await crypto.subtle.digest(
+                  "SHA-256",
+                  new TextEncoder().encode(clientFingerprint),
+                );
+                const hex = Array.from(new Uint8Array(buf))
+                  .map((b) => b.toString(16).padStart(2, "0"))
+                  .join("");
+                fpEl.textContent = "fp:" + hex.slice(0, 8);
+                fpEl.dataset.computed = "1";
+              } else {
+                fpEl.textContent = "fp:" + clientFingerprint.replace(/[^a-f0-9]/gi, "").slice(0, 8).toLowerCase().padEnd(8, "0");
+                fpEl.dataset.computed = "1";
+              }
+            } catch (_) {
+              fpEl.textContent = "fp:········";
+            }
+          }
+        };
+
+        const enterEditMode = () => {
+          chip.dataset.mode = "edit";
+          nicknameInput.hidden = false;
+          nickEl.hidden = true;
+          fpEl.style.opacity = "0.4";
+          requestAnimationFrame(() => {
+            nicknameInput.focus();
+            nicknameInput.select();
+          });
+        };
+
+        const exitEditMode = (commit) => {
+          if (commit) {
+            const v = (nicknameInput.value || "").trim().slice(0, 12);
+            nicknameInput.value = v;
+            try { localStorage.setItem("danmu_nickname", v); } catch (_) { }
+            // Brief flash to confirm save (0.4s fade).
+            chip.classList.add("is-confirm");
+            setTimeout(() => chip.classList.remove("is-confirm"), 400);
+          } else {
+            // Esc → revert to last saved
+            try {
+              nicknameInput.value = localStorage.getItem("danmu_nickname") || "";
+            } catch (_) { }
+          }
+          chip.dataset.mode = "display";
+          nicknameInput.hidden = true;
+          fpEl.style.opacity = "";
+          renderChip();
+          updatePreview();
+        };
+
+        chip.addEventListener("click", (e) => {
+          if (chip.dataset.mode === "edit") return;
+          if (e.target.closest("#nicknameInput")) return;
+          enterEditMode();
+        });
+        chip.addEventListener("keydown", (e) => {
+          if (chip.dataset.mode !== "display") return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            enterEditMode();
+          }
+        });
+        nicknameInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); exitEditMode(true); }
+          else if (e.key === "Escape") { e.preventDefault(); exitEditMode(false); }
+        });
+        nicknameInput.addEventListener("blur", () => {
+          if (chip.dataset.mode === "edit") exitEditMode(true);
+        });
+        nicknameInput.addEventListener("input", renderChip);
+
+        renderChip();
+      })();
+
       // Layout mode buttons
       const layoutBtns = document.querySelectorAll(".layout-btn");
       const layoutSelect = document.getElementById("layoutSelect");

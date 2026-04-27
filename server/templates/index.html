@@ -116,20 +116,31 @@
             </div>
           </div>
 
-          <!-- Nickname -->
+          <!-- Identity chip — prototype #18 (2026-04-27): unifies the
+               legacy nickname field with the viewer's own fingerprint.
+               Display mode: `[@nickname · fp:xxxxxxxx]` or just `[fp:xxxxxxxx]`.
+               Click → inline edit (Enter save / Esc cancel / 12 char max).
+               Same fp:8hex format as AdminIdentity (FP_DISPLAY_LEN=8) so
+               admin-side history rows show the same id as the viewer chip. -->
           {% if options.get('Nickname', [True])[0] %}
           <div id="nicknameControl" class="viewer-field">
-            <label class="viewer-field-label" for="nicknameInput">
-              <span data-i18n="nickname">暱稱</span>
+            <label class="viewer-field-label" for="identityChipInput">
+              <span data-i18n="identity">身分</span>
+              <span class="viewer-field-label__value" data-i18n="identityHint"> · 點擊可改名</span>
             </label>
-            <input
-              type="text"
-              id="nicknameInput"
-              class="viewer-input"
-              maxlength="20"
-              placeholder="Anonymous"
-              data-i18n-placeholder="anonymousPlaceholder"
-            />
+            <div id="identityChip" class="viewer-identity-chip" data-mode="display" tabindex="0" role="button" aria-label="Edit nickname">
+              <span id="identityChipNick" class="viewer-identity-chip-nick"></span>
+              <span id="identityChipFp" class="viewer-identity-chip-fp">fp:········</span>
+              <input
+                type="text"
+                id="nicknameInput"
+                class="viewer-identity-chip-input"
+                maxlength="12"
+                placeholder="Anonymous"
+                data-i18n-placeholder="anonymousPlaceholder"
+                hidden
+              />
+            </div>
           </div>
           {% endif %}
 

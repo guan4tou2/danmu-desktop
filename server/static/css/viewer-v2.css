@@ -541,6 +541,77 @@ body.viewer-body-v2.is-dark {
   color: var(--color-text-bright);
 }
 
+/* Identity chip — prototype #18 (2026-04-27).
+ * Display: `[@nick · fp:xxxxxxxx]`. Click → inline edit input replaces nick.
+ * Esc cancels, Enter / blur saves. 0.4s confirm flash on save. */
+.viewer-identity-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--hud-line);
+  cursor: text;
+  transition: border-color 0.15s, background 0.15s;
+  min-height: 40px;
+  box-sizing: border-box;
+}
+
+.viewer-identity-chip[data-mode="edit"] {
+  border-color: var(--color-primary);
+}
+
+.viewer-identity-chip:hover[data-mode="display"] {
+  border-color: var(--hud-line-strong);
+}
+
+.viewer-identity-chip-nick {
+  font-family: var(--font-sans, sans-serif);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: 0.01em;
+}
+
+.viewer-identity-chip-fp {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  transition: opacity 0.15s;
+  margin-left: auto;
+}
+
+.viewer-identity-chip-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-sans, sans-serif);
+  padding: 0;
+}
+
+/* Save confirm flash — 0.4s pale-cyan fade per Design spec. */
+.viewer-identity-chip.is-confirm {
+  background: var(--hud-cyan-soft);
+  border-color: var(--color-primary);
+  animation: viewer-identity-confirm 0.4s ease-out;
+}
+
+@keyframes viewer-identity-confirm {
+  0%   { background: var(--hud-cyan-soft); border-color: var(--color-primary); }
+  100% { background: var(--color-bg-elevated); border-color: var(--hud-line); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewer-identity-chip.is-confirm { animation: none; }
+}
+
 /* Text input — raised background + hairline border. */
 .viewer-input {
   width: 100%;
