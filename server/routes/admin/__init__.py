@@ -57,6 +57,7 @@ from . import (  # noqa: E402, F401
     filters,
     fingerprints,
     history,
+    konami,
     live,
     metrics,
     plugins,

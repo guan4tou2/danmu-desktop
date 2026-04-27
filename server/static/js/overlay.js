@@ -196,6 +196,16 @@
           return;
         }
 
+        // Konami easter egg — admin pressed ↑↑↓↓←→←→BA. Freeze every visible
+        // danmu in place, scale up + rotate + fly outward as particles, then
+        // remove the lot. Pure visual; no state change.
+        if (data.type === "konami") {
+          if (typeof window.__konamiTrigger === "function") {
+            window.__konamiTrigger();
+          }
+          return;
+        }
+
         // Widget sync — render persistent overlay widgets
         if (data.type === "widget_sync") {
           renderWidgets(data.widgets || []);
@@ -832,6 +842,89 @@
     var textNode = document.createTextNode(cfg.text || "");
     el.appendChild(textNode);
   }
+
+  // ── Konami easter egg ─────────────────────────────────────────────────────
+  // Triggered by admin POST /admin/konami/trigger → WS broadcast → onmessage
+  // dispatches `{type:"konami"}` here. Freezes every visible danmu, scales
+  // them up + spins outward 360°, fades to 0, then removes all of them.
+  // Pure visual; no state change. Reduced-motion clients skip the animation
+  // and just clear the screen.
+  window.__konamiTrigger = function () {
+    var nodes = document.querySelectorAll(
+      "h1.danmu, img.danmu, div.danmu-wrapper, div[style*='translateX']"
+    );
+    if (!nodes.length) return;
+
+    var prefersReduced = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) {
+      nodes.forEach(function (n) { n.remove(); });
+      return;
+    }
+
+    var screenW = window.innerWidth || document.documentElement.clientWidth;
+    var screenH = window.innerHeight || document.documentElement.clientHeight;
+    var cx = screenW / 2;
+    var cy = screenH / 2;
+    var maxFly = Math.max(screenW, screenH) * 0.7;
+    var DURATION_MS = 1200;
+
+    nodes.forEach(function (el, i) {
+      var rect = el.getBoundingClientRect();
+      // Pin each element at its current screen position so the existing
+      // scroll/float animation no longer tugs it sideways.
+      el.style.transition = "none";
+      el.style.animation = "none";
+      el.style.position = "fixed";
+      el.style.left = rect.left + "px";
+      el.style.top = rect.top + "px";
+      el.style.right = "auto";
+      el.style.bottom = "auto";
+      el.style.transform = "none";
+      el.style.willChange = "transform, opacity";
+      el.style.zIndex = "10000";
+
+      // Compute outward vector relative to screen centre. Items already
+      // off-centre fly further in their natural direction; centred items
+      // get a deterministic angle from their index so they don't pile up.
+      var elCx = rect.left + rect.width / 2;
+      var elCy = rect.top + rect.height / 2;
+      var dx = elCx - cx;
+      var dy = elCy - cy;
+      var len = Math.sqrt(dx * dx + dy * dy);
+      if (len < 40) {
+        var ang = (i * 137.5) * Math.PI / 180;  // golden-angle stagger
+        dx = Math.cos(ang);
+        dy = Math.sin(ang);
+        len = 1;
+      }
+      var ux = dx / len;
+      var uy = dy / len;
+      var fly = maxFly * (0.6 + Math.random() * 0.6);
+      var flyX = ux * fly;
+      var flyY = uy * fly;
+      var spin = (Math.random() < 0.5 ? -1 : 1) * (180 + Math.random() * 540);
+
+      // Force layout flush before applying the transition so Safari picks
+      // up the initial position frame.
+      void el.offsetWidth;
+
+      el.style.transition =
+        "transform " + DURATION_MS + "ms cubic-bezier(0.22, 0.94, 0.62, 1), " +
+        "opacity " + DURATION_MS + "ms ease-out";
+      el.style.transform =
+        "translate(" + flyX.toFixed(0) + "px, " + flyY.toFixed(0) + "px) " +
+        "rotate(" + spin.toFixed(0) + "deg) scale(2.4)";
+      el.style.opacity = "0";
+    });
+
+    setTimeout(function () {
+      nodes.forEach(function (n) {
+        if (n && n.parentNode) n.parentNode.removeChild(n);
+      });
+      console.log("[overlay] 🎮 KONAMI · cleared", nodes.length, "danmu");
+    }, DURATION_MS + 50);
+  };
 
   // ── Start ──────────────────────────────────────────────────────────────────
   connect();

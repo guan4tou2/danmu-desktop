@@ -4796,3 +4796,73 @@ body.stream-mode .admin-hero .admin-summary-grid {
   font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.04em;
   color: var(--color-text-muted); line-height: 1.6;
 }
+
+/* ─── Admin Konami easter egg HUD (v5.1 2026-04-27) ───────────────────
+ * Bottom-right corner combo indicator. Only visible to the operator —
+ * overlay (web danmu screen) has separate freeze+explode animation
+ * driven by overlay.js on receiving the WS broadcast.
+ */
+.admin-konami-hud {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: rgba(2, 6, 23, 0.92);
+  border: 1px solid var(--hud-cyan-line, rgba(56, 189, 248, 0.5));
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+  font-family: var(--font-mono);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 150ms, transform 150ms;
+}
+.admin-konami-hud.is-on {
+  opacity: 1;
+  transform: translateY(0);
+}
+.admin-konami-hud-label {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--color-primary);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.admin-konami-hud-keys {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.admin-konami-hud-key {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: rgba(148, 163, 184, 0.7);
+  background: rgba(15, 23, 42, 0.6);
+  transition: border-color 100ms, color 100ms, background 100ms;
+}
+.admin-konami-hud-key.is-filled {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--hud-cyan-soft);
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.4);
+}
+.admin-konami-hud-progress {
+  margin-top: 6px;
+  height: 2px;
+  width: 0;
+  background: var(--color-primary);
+  border-radius: 1px;
+  transition: width 120ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-konami-hud { transition: none; }
+  .admin-konami-hud-key { transition: none; }
+  .admin-konami-hud-progress { transition: none; }
+}
