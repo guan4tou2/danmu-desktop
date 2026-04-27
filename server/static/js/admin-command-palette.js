@@ -38,6 +38,7 @@
     security:       { title: "安全",             kicker: "SECURITY" },
     backup:         { title: "備份 & 匯出",      kicker: "BACKUP" },
     notifications:  { title: "通知",              kicker: "NOTIFICATIONS · 警示中心" },
+    audit:          { title: "審計日誌",           kicker: "AUDIT LOG · 持久事件紀錄" },
     about:          { title: "關於",              kicker: "ABOUT · 版本 · CHANGELOG" },
   };
 

@@ -83,6 +83,16 @@ def broadcast_toggle():
         sanitize_log_string(prev_state.get("mode") or "?"),
         sanitize_log_string(mode),
     )
+    try:
+        from ...services import audit_log
+        audit_log.append(
+            "broadcast",
+            "mode_changed",
+            actor="admin",
+            meta={"from": prev_state.get("mode"), "to": mode},
+        )
+    except Exception:
+        pass
 
     # Transition STANDBY → LIVE: drain queued messages over ~2s.
     if prev_state.get("mode") == "standby" and mode == "live":

@@ -52,13 +52,26 @@ _audit: Deque[Dict[str, Any]] = deque(maxlen=_AUDIT_BUFFER_SIZE)
 
 
 def _record_event(kind: str, meta: Optional[Dict[str, Any]] = None) -> None:
-    """Append an audit event. Called by regenerate / revoke / set_enabled."""
+    """Append an audit event. Called by regenerate / revoke / set_enabled.
+
+    Writes to the local in-memory deque (powers the Fire Token page audit
+    timeline) AND to the persistent ``audit_log`` (powers #/audit, survives
+    restarts). The local deque stays for backwards compatibility with the
+    integrations Fire Token deep-page that already reads it.
+    """
     with _lock:
         _audit.append({
             "ts": _time.time(),
             "kind": str(kind)[:32],
             "meta": dict(meta or {}),
         })
+    # Persistent audit log — best-effort, runs outside the fire_token lock
+    # so a slow disk doesn't block token rotation.
+    try:
+        from . import audit_log
+        audit_log.append("fire_token", kind, actor="admin", meta=meta)
+    except Exception:  # pragma: no cover — defensive against import-time issues
+        logger.debug("audit_log dispatch failed", exc_info=True)
 
 
 def recent_audit(limit: int = 20) -> List[Dict[str, Any]]:

@@ -869,6 +869,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="admin-dash-nav-icon">⛨</span>
                                     <span>安全</span>
                                 </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="audit" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⊜</span>
+                                    <span>審計日誌</span>
+                                </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="backup" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⤓</span>
                                     <span>備份 & 匯出</span>
@@ -3813,6 +3817,8 @@ document.addEventListener("DOMContentLoaded", () => {
     backup:    { title: "備份 & 匯出",       kicker: "BACKUP · EXPORT · DANGER",          sections: ["sec-backup"] },
     // P1 (2026-04-27 V1Z4 batch7): aggregated alerts inbox.
     notifications: { title: "通知",          kicker: "NOTIFICATIONS · 警示中心 · 多來源",  sections: ["sec-notifications-overview"] },
+    // P1 (2026-04-27 batch1): persistent audit trail (read-only history).
+    audit:     { title: "審計日誌",           kicker: "AUDIT LOG · 持久事件紀錄 · DISK-BACKED", sections: ["sec-audit-overview"] },
     // Phase 2 P0-1 (2026-04-27 V1Z4 batch9): version + license + changelog.
     about:     { title: "關於",               kicker: "ABOUT · 版本 · CHANGELOG · 開源資訊", sections: ["sec-about-overview"] },
     // Phase 2 P0-2 (2026-04-27 batch3): #/setup opens the Setup Wizard
