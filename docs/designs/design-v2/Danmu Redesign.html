@@ -84,6 +84,9 @@
 <script type="text/babel" src="components/admin-batch5.jsx"></script>
 <script type="text/babel" src="components/admin-firetoken.jsx"></script>
 <script type="text/babel" src="components/admin-batch6.jsx"></script>
+<script type="text/babel" src="components/admin-batch7.jsx"></script>
+<script type="text/babel" src="components/admin-batch8.jsx"></script>
+<script type="text/babel" src="components/admin-batch9.jsx"></script>
 <script type="text/babel" src="design-canvas.jsx"></script>
 
 <script type="text/babel">
@@ -369,6 +372,63 @@ function App() {
         </DCArtboard>
         <DCArtboard width={520} height={360} label="④ macOS Tray · 連線中斷 · 只剩重連 / 設定 / 結束" style={{ background: 'transparent' }}>
           <div data-screen-label="Desktop · Tray Disconnected" style={{ width: 520, height: 360 }}><DesktopClient theme={tweaks.theme} scenario="tray-disconnected" /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="運維 · Operator Inbox & Investigation" subtitle="通知中心 + 訊息細節 drawer + 跨場次搜尋 + 觀眾列表 — 主持人/管理員每天的工具">
+        <DCArtboard width={1440} height={920} label="⑱ 通知中心 · Notifications Inbox" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Notifications" style={{ width: 1440, height: 920 }}><AdminNotificationsPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="⑲ 訊息細節 Drawer · 點 Messages 一筆訊息" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Message Detail" style={{ width: 1440, height: 920 }}><AdminMessageDetailPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="⑳ 跨場次搜尋 · Global Search · operator query" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Search" style={{ width: 1440, height: 920 }}><AdminSearchPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="㉑ 觀眾列表 · Live Audience · 高風險偵測" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Audience" style={{ width: 1440, height: 920 }}><AdminAudiencePage theme={tweaks.theme} /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="歷史分析 · Sessions & Analytics" subtitle="場次紀錄列表 + 時間軸重播 + 投票完整分析 + 主持人手機後台">
+        <DCArtboard width={1440} height={920} label="㉒ 場次紀錄 · Sessions History" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Sessions" style={{ width: 1440, height: 920 }}><AdminSessionsPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="㉓ 時間軸重播 · Session Replay · 密度時間軸 + 章節" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Session Detail" style={{ width: 1440, height: 920 }}><AdminSessionDetailPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="㉔ 投票完整分析 · Poll Deep-Dive · geo + integrity" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Poll Detail" style={{ width: 1440, height: 920 }}><AdminPollDeepDivePage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={375} height={812} label="㉕ Mobile Admin · 主持人手機後台" style={{ background: '#000', borderRadius: 36, overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
+          <div data-screen-label="Admin · Mobile" style={{ width: 375, height: 812 }}><AdminMobilePage theme={tweaks.theme} /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="新手引導 + 系統資訊 · Onboarding & About" subtitle="第一次進來的氣泡指引 + 版本/授權/changelog">
+        <DCArtboard width={1440} height={920} label="㉖ Onboarding Step 1 · 即時控制台" style={{ background: 'transparent' }}>
+          <div data-screen-label="Onboarding · Step 1" style={{ width: 1440, height: 920 }}><AdminOnboardingTour theme={tweaks.theme} step={1} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="㉗ Onboarding Step 2 · ⌘K 命令面板介紹" style={{ background: 'transparent' }}>
+          <div data-screen-label="Onboarding · Step 2" style={{ width: 1440, height: 920 }}><AdminOnboardingTour theme={tweaks.theme} step={2} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="㉘ Onboarding Step 5 · 完成" style={{ background: 'transparent' }}>
+          <div data-screen-label="Onboarding · Done" style={{ width: 1440, height: 920 }}><AdminOnboardingTour theme={tweaks.theme} step={5} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="㉙ About · 版本 / 授權 / Changelog" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · About" style={{ width: 1440, height: 920 }}><AdminAboutPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="桌面整合 + 觀眾尾端 · Desktop & Viewer Extras" subtitle="macOS tray popover · Overlay 視窗選擇器 · 觀眾投票完成">
+        <DCArtboard width={1200} height={780} label="㉚ Desktop · Tray Popover · 從選單列展開" style={{ background: 'transparent' }}>
+          <div data-screen-label="Desktop · Tray Popover" style={{ width: 1200, height: 780 }}><DesktopTrayPopover theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1100} height={760} label="㉛ Overlay · Window Picker · 選擇要疊彈幕的視窗" style={{ background: 'transparent' }}>
+          <div data-screen-label="Desktop · Window Picker" style={{ width: 1100, height: 760 }}><DesktopWindowPicker theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={375} height={812} label="㉜ Viewer · 投票完成 Thank-you" style={{ background: '#000', borderRadius: 36, overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
+          <div data-screen-label="Viewer · Vote Sent" style={{ width: 375, height: 812 }}><ViewerPollThankYou theme={tweaks.theme} /></div>
         </DCArtboard>
       </DCSection>
 

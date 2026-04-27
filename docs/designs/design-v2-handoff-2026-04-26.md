@@ -1,6 +1,10 @@
 # Danmu Fire · v2 Design Handoff
 
-**Last updated**: 2026-04-27 (post Sprint 1 + DanmuMarquee bundle · commit `f959b62`)
+**Last updated**: 2026-04-27 (post Sprint 2 Fire Token deep page + V1Z4 bundle redundancy audit · commit `dca32b0`)
+
+> ⚠️ **2026-04-27 update**：收到 bundle `V1Z4` (12 新 artboard) + 使用者指示「**仔細對齊並且檢查是否有多餘設計**」後，先做了 codebase 冗餘盤點，**暫不直接 implement 新 bundle**。請先看 [`design-v2-redundancy-audit-2026-04-27.md`](./design-v2-redundancy-audit-2026-04-27.md)，回那份的 §5 三個拍板問題（sidebar 整併？V1Z4 12 個 artboard 優先順序？是否暫停加 nav？）後再進下一輪。
+
+**原 last updated**: 2026-04-27 (post Sprint 1 + DanmuMarquee bundle · commit `f959b62`)
 
 對 Claude Design 的回覆稿。涵蓋：
 1. 已對齊並部署的事項（VPS 上跑著）
