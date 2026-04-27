@@ -1,20 +1,35 @@
 # Danmu Fire · v2 Design Handoff
 
-**Last updated**: 2026-04-27 (post Phase 1 sidebar 17-row consolidation · commit `d208e9b` · live on VPS)
+**Last updated**: 2026-04-27 (post Phase 2 P0 全 ship · commit `d71af67` · live on VPS)
 
-> ✅ **2026-04-27 Phase 1 done**：依照 Design reply（[`design-v2-redundancy-audit-2026-04-27.md`](./design-v2-redundancy-audit-2026-04-27.md) §8），sidebar 已從 20 → 17 row，三個整併動作都落地並部署到 VPS：
+> ✅ **2026-04-27 Phase 1 done**（commit `d208e9b`）：sidebar 20 → 17 row。
 >
 > - `messages` 獨立 + `history` 含 2-tab strip（匯出 / 重播）→ 砍掉 `replay` row
 > - `themes` 獨立 + `viewer-config` 含 2-tab strip（整頁主題 / 表單欄位）→ 砍掉 `display` + `viewer-theme` row
-> - Fire Token sub-row 移除，`#/firetoken` 仍可由 integrations 頁的「詳細統計 →」deeplink 進入
+> - Fire Token sub-row 移除，`#/firetoken` 仍可由 integrations 頁「詳細統計 →」deeplink 進入
 >
-> **Mobile RWD verified at 375px** — 17 row 不爆版、tabbar 325px 內合住。**951/951 non-browser tests pass**；24/26 browser tests（同樣的 2 個 sec-security v2 retrofit 既有破口，跟整併無關）。
+> ✅ **2026-04-27 Phase 2 P0 done**（commit `e60a9a4` / `0701799` / `d71af67`）：3 個 prototype 全部實作 + 部署：
 >
-> **下一步邀請 Design 補的 prototype（可選，工程不阻塞）**：
-> 1. `#/history` 的 2-tab strip artboard（匯出 tab 已實作，重播 tab 用既有 admin-replay UI）
-> 2. `#/viewer-config` 的 2-tab strip artboard（PAGE tab = 既有 viewer-theme presets，FIELDS tab = 既有 display rows）
+> 1. **AdminAboutPage** (`#/about`) — sidebar 新增「關於」row（18 row）。版本卡 + uptime（從 `/admin/metrics` server_started_at 算）+ 4 個 KPI tile + OSS Notices + 4 版 changelog + 📋 Copy 版本資訊 + ⚙ 重新開啟設定精靈 + ↻ GitHub Releases。
+> 2. **AdminSetupWizard** (`#/setup`，overlay) — 3-step modal（主題包 → 語言 → 完成）。原 prototype 的「設密碼」+「上傳 Logo」step 被砍：admin 已 logged-in 時改密碼是 Security route 的事，logo 沒 backend endpoint 要 v5.3 補。Trigger：URL hash `#/setup` 或 About 頁面按鈕。**不**自動跳出（避免打擾 legacy 使用者）。
+> 3. **AdminPollDeepDivePage** (`#/poll-deepdive`) — entry = polls 頁 header 的「📊 深度分析 →」deeplink。Real：State chip + question + 4-tile KPI + 選項分佈 bar chart（從 `/admin/poll/status` 即時拉，5s 自動 refresh）+ Integrity 4 row + ↓ Export CSV + 📋 copy share link。Placeholder（標 v5.3 待補 + 連到 [`prototype-gaps`](./design-v2-prototype-gaps-2026-04-27.md)）：投票時間直方圖（要 per-vote timestamp）、地理分佈（要 GeoIP lookup）。
 >
-> **Phase 2 P0 開工**（依 Design 拍板順序）：About → Setup Wizard → Poll Deep-Dive。三個都是新獨立 page，sidebar 加 nav 沒問題（17 row 還有 buffer，不會回到 20+ 的擁擠狀態）。
+> **Mobile RWD** verified at 375px on all 3 pages. **951/951 non-browser tests pass**；24/26 browser tests（pre-existing sec-security retrofit 兩個 fail，無關）。Sidebar 現在是 18 row + 廣播 topbar，加 P0-2/3 兩個 overlay/route 沒占 sidebar slot，整體仍在 audit §A 拍板的「保留 buffer」範圍內。
+>
+> **下一步邀請 Design 補的 prototype**（不阻塞工程，但有就更完整）：
+> 1. `#/history` 2-tab strip artboard
+> 2. `#/viewer-config` 2-tab strip artboard
+> 3. About 頁 prototype 已存在（V1Z4 batch9）但「Pro Edition License」section 我們開源沒做 — Design 可確認簡化版 OK
+> 4. Setup Wizard prototype 是 4-step（含密碼 + Logo），實作砍成 3-step — Design 可確認砍法或回頭做
+> 5. Poll Deep-Dive prototype 完整 6 區塊，實作只做 4 區（KPI + 分佈 + Integrity + Actions），缺 Timeline/Geo placeholder 中 — 標清楚等 v5.3 telemetry
+>
+> **下一輪可開**（依 [`prototype-gaps`](./design-v2-prototype-gaps-2026-04-27.md) §B）：
+> - **P1（純 FE）**：Message Detail Drawer（mock）
+> - **P1（要新 schema）**：Notifications Inbox + Audit Log（要 alert source + audit table 持久化）
+> - **P2（要新 entity）**：Sessions list/detail + Cross-session search（要 session_id 切割訊息）
+> - **P3（小工程）**：Audience List / Mobile Admin / OverlayPollLive / ViewerBanned / OverlayResultCelebration
+>
+> 最快的下一輪 = P1 Message Detail Drawer + P1 Notifications mock UI。要我接著做就喊。
 
 **原 last updated**: 2026-04-27 (post Sprint 1 + DanmuMarquee bundle · commit `f959b62`)
 
