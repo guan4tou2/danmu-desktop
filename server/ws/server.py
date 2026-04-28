@@ -285,6 +285,13 @@ def run_ws_server(ws_port, logger):
             max_size=ws_max_size,
             max_queue=ws_max_queue,
             write_limit=ws_write_limit,
+            # Protocol-level WS pings — drop dead connections so the overlay
+            # count chip doesn't show "1 個" when the actual browser tab is
+            # gone. nginx reverse proxies keep upstream tunnels half-open
+            # past the client TCP RST, so we need explicit keepalive at the
+            # WS layer to detect those zombies.
+            ping_interval=20,
+            ping_timeout=10,
         )
         logger.info("WebSocket server started on port %s", ws_port)
         forwarding_task = asyncio.create_task(_forward_messages(logger))
