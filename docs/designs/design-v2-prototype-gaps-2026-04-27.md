@@ -272,6 +272,54 @@ spec-only，等 Design 拍板 §7 三題後從 S1 開工。
 
 ---
 
+## J. Viewer / Overlay 對齊 audit（2026-04-28 補）
+
+### J.1 Viewer (`/`) — prototype viewer.jsx vs 實作
+
+| 區塊 | Prototype | 實作 | 對齊 |
+|------|-----------|------|------|
+| Hero 3-col layout（logo / DanmuMarquee / chip+lang+theme） | ✓ | ✓ | ✅ |
+| LangSelect | 4-option dropdown 含 `中文/English/日本語/한국어` + ▾ icon | ✅ **2026-04-28 修**（之前是 2-button 中/EN seg，丟掉 ja/ko） | ✅ |
+| ThemeToggle | 單一 icon button，◐ 表深色/◑ 表淺色，click 切換 | ✅ **2026-04-28 修**（之前是 2-button seg + 預設 light，prototype 預設 dark） | ✅ |
+| Identity chip `@nick · fp:xxxxxxxx` | ✓ | ✓（IdentityChip module） | ✅ |
+| DanmuMarquee 滿版背景動畫 | ✓ | ✓ | ✅ |
+| Connection chips（●伺服器/Overlay 連結中） | ✓ | ✓ | ✅ |
+| Fire/Poll tabs bar | ✓（poll active 時顯示 2 tab，否則只 fire 不顯示 bar） | ❌ **完全沒做**（沒 tab 系統） | 缺 |
+| ViewerPollTab（投票卡 + 投票按鈕 + 投票進度） | ✓ | ❌ **完全沒做** — 觀眾投票目前只能用 fire 文字 A/B/C | 缺 |
+| Live preview 模擬「投到螢幕上」 | ✓ | ✓ | ✅ |
+| Color picker / font / size / opacity | ✓ | ✓ | ✅ |
+| Effects toggle row | ✓（從 admin-managed Effects pull） | ✓ | ✅ |
+| Sendbar pin to bottom | ✓ | ✓ | ✅ |
+
+→ **Viewer 主要 gap**：Fire/Poll tabs + ViewerPollTab UI（純 FE，~150 行+ WS poll_update 訂閱）。可做但是另一個 sprint。
+
+### J.2 Overlay — prototype OverlayOnDesktop / OverlayIdle / OverlayPollLive vs 實作
+
+| 區塊 | Prototype | 實作 | 對齊 |
+|------|-----------|------|------|
+| 主訊息 stream | ✓ | ✓ | ✅ |
+| OverlayConnecting / OverlayIdle dot | ✓ basic | ✓（idle/connecting/disconnected dot） | ✅ |
+| OverlayIdleQR full state（QR + URL + chip） | ✓ | 🟡 部分（未拼 full QR overlay） | 缺（H.1） |
+| OverlayPollLive（中央全螢幕 poll panel + countdown） | ✓ | ✅ shipped commit `db5b09c` | ✅ |
+| OverlayResultCelebration（confetti + 大寫贏家） | ✓ | ✅ shipped commit `db5b09c` | ✅ |
+| Widgets（Score/Marquee/Banner） | ✓ | ✓（admin-widgets.js） | ✅ |
+| Effects（.dme 熱插拔） | ✓ | ✓ | ✅ |
+
+### J.3 Electron Client — prototype DesktopClient / ControlWindow / Tray vs 實作
+
+| 區塊 | Prototype | 實作 | 對齊 |
+|------|-----------|------|------|
+| Overlay window 多螢幕支援 | ✓ | ✓ | ✅ |
+| ControlWindow（伺服器位址 / 開啟 overlay） | ✓ | ✓ | ✅ |
+| Tray menu（基本） | ✓ | ✓ | ✅ |
+| FirstRunGate（連線前的提示） | ✓ | ✓ shipped `04013bd` | ✅ |
+| Konami easter egg | ✓ | ✓ shipped `42f6d56` | ✅ |
+| DesktopTrayPopover（mini stats + actions） | ✓ V1Z4 batch9 #11 | ❌ 沒做（H.3） | 缺 |
+| DesktopWindowPicker（多 overlay window 管理） | ✓ V1Z4 batch9 #12 | ❌ 沒做（H.3） | 缺 |
+| Tokens.css 同步 | shared/tokens.css | ✅ symlinked 2026-04-28（之前是 stale 副本，差 `--color-warning` 一行） | ✅ |
+
+---
+
 ## H. 還沒實作的 prototype（完整清單）
 
 ### H.1 純 FE 工作（純照抄就能 ship）

@@ -599,48 +599,43 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ── Theme toggle (◐ dark / ◑ light) — prototype viewer.jsx:120 ────────────
-  // Persist choice to localStorage; default = light (matches prototype default).
-  const themeBtns = document.querySelectorAll(".viewer-seg-btn[data-theme]");
-  if (themeBtns.length) {
+  // ── Theme toggle (single icon button) — prototype viewer.jsx:553 ──────────
+  // Icon shows current state: ◐ when dark, ◑ when light. Click toggles.
+  // Default = dark (matches prototype `theme = 'dark'` default in ViewerCore).
+  const themeBtn = document.querySelector("[data-viewer-theme-toggle]");
+  if (themeBtn) {
+    const iconEl = themeBtn.querySelector("[data-viewer-theme-icon]");
     const applyTheme = (mode) => {
-      document.body.classList.toggle("is-dark", mode === "dark");
-      themeBtns.forEach((b) => {
-        const on = b.dataset.theme === mode;
-        b.classList.toggle("is-active", on);
-        b.setAttribute("aria-pressed", on ? "true" : "false");
-      });
+      const dark = mode === "dark";
+      document.body.classList.toggle("is-dark", dark);
+      if (iconEl) iconEl.textContent = dark ? "◐" : "◑";
+      themeBtn.setAttribute("aria-pressed", dark ? "true" : "false");
+      themeBtn.title = dark ? "切換到淺色" : "切換到深色";
       try { localStorage.setItem("viewer-theme", mode); } catch (_) {}
     };
-    let initial = "light";
-    try { initial = localStorage.getItem("viewer-theme") || "light"; } catch (_) {}
+    let initial = "dark";
+    try { initial = localStorage.getItem("viewer-theme") || "dark"; } catch (_) {}
     applyTheme(initial);
-    themeBtns.forEach((b) => b.addEventListener("click", () => applyTheme(b.dataset.theme)));
+    themeBtn.addEventListener("click", () => {
+      const cur = document.body.classList.contains("is-dark") ? "dark" : "light";
+      applyTheme(cur === "dark" ? "light" : "dark");
+    });
   }
 
-  // ── Language Seg (中 / EN) — mirrors the hidden #server-lang-select ────────
-  // The legacy <select> stays in the DOM so existing i18n.js wiring keeps
-  // working; clicks on the visible Seg buttons just dispatch a change event.
-  const langBtns = document.querySelectorAll(".viewer-seg-btn[data-lang]");
+  // ── Language dropdown (4 langs) — prototype viewer.jsx:519 ────────────────
+  // Native <select> overlay; the visible label mirrors the current selection.
+  // i18n.js already wires the change event on #server-lang-select.
   const langSelect = document.getElementById("server-lang-select");
-  if (langBtns.length && langSelect) {
-    const syncLangSeg = () => {
-      const cur = (langSelect.value || "zh").toLowerCase().startsWith("zh") ? "zh" : "en";
-      langBtns.forEach((b) => {
-        const on = b.dataset.lang === cur;
-        b.classList.toggle("is-active", on);
-        b.setAttribute("aria-pressed", on ? "true" : "false");
-      });
+  const langCurrentLabel = document.querySelector("[data-viewer-lang-current]");
+  if (langSelect && langCurrentLabel) {
+    const LABEL_BY_VAL = { zh: "中文", en: "English", ja: "日本語", ko: "한국어" };
+    const syncLangLabel = () => {
+      const v = (langSelect.value || "zh").toLowerCase();
+      const key = v.startsWith("zh") ? "zh" : v.startsWith("en") ? "en" : v.startsWith("ja") ? "ja" : v.startsWith("ko") ? "ko" : "zh";
+      langCurrentLabel.textContent = LABEL_BY_VAL[key] || "中文";
     };
-    syncLangSeg();
-    langBtns.forEach((b) =>
-      b.addEventListener("click", () => {
-        langSelect.value = b.dataset.lang;
-        langSelect.dispatchEvent(new Event("change", { bubbles: true }));
-        syncLangSeg();
-      })
-    );
-    langSelect.addEventListener("change", syncLangSeg);
+    syncLangLabel();
+    langSelect.addEventListener("change", syncLangLabel);
   }
 
   if (elements.userFontSelect) {

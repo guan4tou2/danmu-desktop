@@ -77,24 +77,26 @@
               <span class="viewer-conn-chip-dot connection-dot--disconnected"></span>
               <span class="viewer-conn-chip-value" id="overlayLabel" data-i18n="overlayNone">–</span>
             </span>
-            <!-- Hidden legacy <select> kept so existing i18n.js wiring still
-                 reads the current language; the visible UI is the Seg below
-                 (prototype viewer.jsx:115–124). -->
-            <select id="server-lang-select" class="viewer-hero-lang-hidden" aria-hidden="true" tabindex="-1">
-              <option value="en">English</option>
-              <option value="zh">中文</option>
-              <option value="ja">日本語</option>
-              <option value="ko">한국어</option>
-            </select>
+            <!-- prototype viewer.jsx LangSelect (line 519) — text label + native
+                 <select> overlay so the user sees the current language and
+                 can pick from all 4 (zh / en / ja / ko). The label updates
+                 on change; i18n.js binds to #server-lang-select for switching. -->
             <div class="viewer-hero-seg-row">
-              <div class="viewer-seg" role="group" aria-label="Language">
-                <button type="button" class="viewer-seg-btn is-active" data-lang="zh">中</button>
-                <button type="button" class="viewer-seg-btn" data-lang="en">EN</button>
+              <div class="viewer-lang-select" role="group" aria-label="Language">
+                <span class="viewer-lang-current" data-viewer-lang-current>中文</span>
+                <span class="viewer-lang-arrow" aria-hidden="true">▾</span>
+                <select id="server-lang-select" class="viewer-lang-native" aria-label="Language">
+                  <option value="zh">中文</option>
+                  <option value="en">English</option>
+                  <option value="ja">日本語</option>
+                  <option value="ko">한국어</option>
+                </select>
               </div>
-              <div class="viewer-seg" role="group" aria-label="Theme">
-                <button type="button" class="viewer-seg-btn" data-theme="dark" aria-pressed="false" aria-label="Dark">◐</button>
-                <button type="button" class="viewer-seg-btn is-active" data-theme="light" aria-pressed="true" aria-label="Light">◑</button>
-              </div>
+              <!-- prototype ThemeToggle (line 553) — single icon button.
+                   Icon = ◐ when dark, ◑ when light. Toggle on click. -->
+              <button type="button" class="viewer-theme-toggle" data-viewer-theme-toggle aria-label="Theme">
+                <span data-viewer-theme-icon>◑</span>
+              </button>
             </div>
           </div>
         </section>
