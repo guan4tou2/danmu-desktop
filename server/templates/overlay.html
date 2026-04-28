@@ -21,59 +21,56 @@
     <div class="overlay-connecting-label">CONNECTING&hellip;</div>
   </div>
 
-  <!-- Overlay Idle · Hero Lockup — prototype hero-scenes.jsx:86 OverlayIdle.
-       Hidden by default. Invoke via window.OverlayIdle.{show,hide,toggle}. -->
-  <div id="overlay-idle" aria-hidden="true">
+  <!-- Overlay Idle · prototype priority-2-pieces.jsx:174 OverlayIdleQR.
+       4 states: idle / scanning / paired / failed. HUD framing (4 corner
+       brackets) + top bar (version + state chip) + center hero + 29×29 QR
+       + 6-char pairing code + state-specific action row.
+       Hidden by default. Invoke via window.OverlayIdle.{show,hide,setState}. -->
+  <div id="overlay-idle" aria-hidden="true" data-state="idle">
     <div class="overlay-idle-backdrop" aria-hidden="true"></div>
+
+    <!-- HUD corner brackets -->
+    <span class="overlay-idle-corner is-tl" aria-hidden="true"></span>
+    <span class="overlay-idle-corner is-tr" aria-hidden="true"></span>
+    <span class="overlay-idle-corner is-bl" aria-hidden="true"></span>
+    <span class="overlay-idle-corner is-br" aria-hidden="true"></span>
+
+    <!-- Top bar — DANMU FIRE · OVERLAY | version | state chip -->
+    <div class="overlay-idle-topbar" aria-hidden="true">
+      <span class="overlay-idle-topbar-brand">DANMU FIRE · OVERLAY</span>
+      <span class="overlay-idle-topbar-sep">|</span>
+      <span class="overlay-idle-topbar-meta">v{{ app_version }} · ws://{{ request.host }}</span>
+      <span class="overlay-idle-topbar-state" id="overlayIdleTopbarState">
+        <span class="overlay-idle-topbar-dot" aria-hidden="true"></span>
+        <span class="overlay-idle-topbar-en">STANDBY · WAITING FOR PAIR</span>
+      </span>
+    </div>
+
     <div class="overlay-idle-inner">
       <h1 class="overlay-idle-hero">Danmu Fire</h1>
-      <p class="overlay-idle-subtitle">掃描 QR code 或打開伺服器網址 — 開始送彈幕</p>
-      <div class="overlay-idle-chip" id="overlayIdleChip" data-state="ready">
+      <p class="overlay-idle-subtitle" id="overlayIdleSubtitle">用手機掃描 QR 連入 {{ request.host }}</p>
+
+      <div class="overlay-idle-chip" id="overlayIdleChip" data-state="idle">
         <span class="overlay-idle-chip-dot" aria-hidden="true"></span>
         <span class="overlay-idle-chip-spinner" aria-hidden="true"></span>
-        <span class="overlay-idle-chip-label">OVERLAY READY</span>
-        <span class="overlay-idle-chip-suffix">· 等待中</span>
+        <span class="overlay-idle-chip-label">等待配對</span>
       </div>
-      <div class="overlay-idle-url" id="overlayIdleUrl">{{ request.host }}</div>
-      <div class="overlay-idle-qr" aria-hidden="true">
-        <svg viewBox="0 0 21 21" width="108" height="108">
-          <!-- Position detection squares + sparse dot pattern -->
-          <rect x="0" y="0" width="7" height="7" fill="#fff"/>
-          <rect x="0" y="0" width="7" height="1" fill="#000"/>
-          <rect x="0" y="6" width="7" height="1" fill="#000"/>
-          <rect x="0" y="0" width="1" height="7" fill="#000"/>
-          <rect x="6" y="0" width="1" height="7" fill="#000"/>
-          <rect x="2" y="2" width="3" height="3" fill="#000"/>
-          <rect x="14" y="0" width="7" height="1" fill="#000"/>
-          <rect x="14" y="6" width="7" height="1" fill="#000"/>
-          <rect x="14" y="0" width="1" height="7" fill="#000"/>
-          <rect x="20" y="0" width="1" height="7" fill="#000"/>
-          <rect x="16" y="2" width="3" height="3" fill="#000"/>
-          <rect x="0" y="14" width="7" height="1" fill="#000"/>
-          <rect x="0" y="20" width="7" height="1" fill="#000"/>
-          <rect x="0" y="14" width="1" height="7" fill="#000"/>
-          <rect x="6" y="14" width="1" height="7" fill="#000"/>
-          <rect x="2" y="16" width="3" height="3" fill="#000"/>
-          <!-- Sparse data cells (deterministic pattern) -->
-          <rect x="8" y="2" width="1" height="1" fill="#000"/>
-          <rect x="10" y="4" width="1" height="1" fill="#000"/>
-          <rect x="12" y="3" width="1" height="1" fill="#000"/>
-          <rect x="9" y="8" width="1" height="1" fill="#000"/>
-          <rect x="11" y="9" width="1" height="1" fill="#000"/>
-          <rect x="14" y="9" width="1" height="1" fill="#000"/>
-          <rect x="8" y="11" width="1" height="1" fill="#000"/>
-          <rect x="16" y="11" width="1" height="1" fill="#000"/>
-          <rect x="4" y="9" width="1" height="1" fill="#000"/>
-          <rect x="9" y="14" width="1" height="1" fill="#000"/>
-          <rect x="11" y="16" width="1" height="1" fill="#000"/>
-          <rect x="13" y="18" width="1" height="1" fill="#000"/>
-          <rect x="15" y="15" width="1" height="1" fill="#000"/>
-          <rect x="17" y="17" width="1" height="1" fill="#000"/>
-          <rect x="19" y="13" width="1" height="1" fill="#000"/>
-          <rect x="10" y="12" width="1" height="1" fill="#000"/>
-          <rect x="14" y="13" width="1" height="1" fill="#000"/>
-          <rect x="18" y="9" width="1" height="1" fill="#000"/>
-        </svg>
+
+      <div class="overlay-idle-qr-wrap">
+        <div class="overlay-idle-qr" id="overlayIdleQr" aria-hidden="true">
+          <!-- 29×29 fake QR populated by overlay.js on first show. -->
+        </div>
+        <div class="overlay-idle-qr-overlay" id="overlayIdleQrOverlay" aria-hidden="true">
+          <span class="overlay-idle-qr-icon"></span>
+        </div>
+      </div>
+
+      <div class="overlay-idle-note" id="overlayIdleNote">
+        或輸入 6 碼連線碼: <span class="overlay-idle-pair-code" id="overlayIdlePairCode">··-··-··</span>
+      </div>
+
+      <div class="overlay-idle-actions" id="overlayIdleActions">
+        <span class="overlay-idle-hint">⌥⌘C 複製配對碼 · ESC 進入設定</span>
       </div>
     </div>
   </div>

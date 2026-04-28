@@ -17,14 +17,132 @@
   var defaultFontSize = parseInt(params.get("fontSize"), 10) || 0; // 0 = use server value
   var defaultOpacity = parseInt(params.get("opacity"), 10) || 0;  // 0 = use server value
 
-  // ── Overlay Idle (Hero Lockup) ─────────────────────────────────────────────
-  // Manual-only control. Hidden by default. Exposed as window.OverlayIdle
-  // so the desktop client / tray menu (or the admin remote) can invoke it.
+  // ── Overlay Idle / QR (4-state Hero Lockup) ──────────────────────────────
+  // Prototype priority-2-pieces.jsx:174 OverlayIdleQR. States:
+  //   idle      — STANDBY, cyan dot, hint text
+  //   scanning  — magenta pulse ring around QR, "PAIRING · HANDSHAKE"
+  //   paired    — green ✓ over QR, "PAIRED · CONNECTED" + 開始廣播 button
+  //   failed    — red ⚠ over QR, "UNREACHABLE" + 重試 / 手動輸入 buttons
+  // Manual control — admin / tray / desktop client invoke setState(state).
   var idleEl = null;
+  var idleStateConfig = {
+    idle: {
+      en: "STANDBY · WAITING FOR PAIR",
+      label: "等待配對",
+      subtitle: function (host) { return "用手機掃描 QR 連入 " + host; },
+      noteHtml: function (code) { return '或輸入 6 碼連線碼: <span class="overlay-idle-pair-code" id="overlayIdlePairCode">' + code + '</span>'; },
+      actionsHtml: '<span class="overlay-idle-hint">⌥⌘C 複製配對碼 · ESC 進入設定</span>',
+    },
+    scanning: {
+      en: "PAIRING · HANDSHAKE",
+      label: "掃描中",
+      subtitle: function () { return "偵測到裝置 · 正在握手"; },
+      noteHtml: function () { return "iPhone · Safari · 192.168.1.84"; },
+      actionsHtml: '<span class="overlay-idle-hint">⌥⌘C 複製配對碼 · ESC 進入設定</span>',
+    },
+    paired: {
+      en: "PAIRED · CONNECTED",
+      label: "已連線",
+      subtitle: function () { return "247 位觀眾已進入 · Q&A 可開始"; },
+      noteHtml: function () { return "Danmu Fire 已啟動 · 你可以講話了"; },
+      actionsHtml: '<button type="button" class="overlay-idle-btn overlay-idle-btn-primary" data-overlay-idle-action="broadcast">▶ 開始廣播 · SPACE</button>',
+    },
+    failed: {
+      en: "UNREACHABLE · NO SERVER",
+      label: "連線失敗",
+      subtitle: function (host) { return "找不到 " + host + " · 檢查網路"; },
+      noteHtml: function () { return "確認 Server 啟動 · 或手動輸入 ws:// 位址"; },
+      actionsHtml:
+        '<button type="button" class="overlay-idle-btn overlay-idle-btn-primary" data-overlay-idle-action="retry">▶ 重試連線</button>' +
+        '<button type="button" class="overlay-idle-btn overlay-idle-btn-secondary" data-overlay-idle-action="manual">手動輸入位址</button>',
+    },
+  };
+  var PAIR_CODE_KEY = "danmu.overlayPairCode.v1";
+
+  function _generatePairCode() {
+    try {
+      var cached = localStorage.getItem(PAIR_CODE_KEY);
+      if (cached && /^\d{2}-\d{2}-\d{2}$/.test(cached)) return cached;
+    } catch (_) {}
+    var rand = function () { return String(Math.floor(Math.random() * 100)).padStart(2, "0"); };
+    var code = rand() + "-" + rand() + "-" + rand();
+    try { localStorage.setItem(PAIR_CODE_KEY, code); } catch (_) {}
+    return code;
+  }
+
+  // Deterministic 29×29 fake-QR pattern with finder boxes at TL/TR/BL.
+  // Matches prototype QrBlock seeded random (seed=42, threshold=0.5).
+  function _renderQr() {
+    var qr = document.getElementById("overlayIdleQr");
+    if (!qr || qr.dataset.rendered === "1") return;
+    var N = 29;
+    var size = 168; // 180 - 2*6 padding
+    var cell = size / N;
+    // LCG from prototype line 319
+    var s = 42 >>> 0;
+    var rand = function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 0xFFFFFFFF; };
+    var cells = [];
+    for (var i = 0; i < N * N; i++) cells.push(rand() > 0.5 ? 1 : 0);
+    // Stamp finder boxes at TL / TR / BL.
+    function stamp(cx, cy) {
+      for (var y = 0; y < 7; y++) for (var x = 0; x < 7; x++) {
+        var xx = cx + x, yy = cy + y;
+        if (xx < N && yy < N) {
+          var edge = x === 0 || x === 6 || y === 0 || y === 6;
+          var inner = x >= 2 && x <= 4 && y >= 2 && y <= 4;
+          cells[yy * N + xx] = (edge || inner) ? 1 : 0;
+        }
+      }
+      // Quiet ring around finder box
+      for (var yy2 = -1; yy2 < 8; yy2++) for (var xx2 = -1; xx2 < 8; xx2++) {
+        if (xx2 === -1 || xx2 === 7 || yy2 === -1 || yy2 === 7) {
+          var rx = cx + xx2, ry = cy + yy2;
+          if (rx >= 0 && rx < N && ry >= 0 && ry < N) cells[ry * N + rx] = 0;
+        }
+      }
+    }
+    stamp(0, 0); stamp(N - 7, 0); stamp(0, N - 7);
+    var rects = "";
+    for (var k = 0; k < cells.length; k++) {
+      if (cells[k]) {
+        var x = (k % N) * cell;
+        var y = Math.floor(k / N) * cell;
+        rects += '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + cell.toFixed(2) + '" height="' + cell.toFixed(2) + '" fill="#000"/>';
+      }
+    }
+    qr.innerHTML =
+      '<svg viewBox="0 0 ' + size + ' ' + size + '" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">' +
+      rects + '</svg>';
+    qr.dataset.rendered = "1";
+  }
+
+  function _hostName() {
+    try { return window.location.host; } catch (_) { return "danmu.local:4001"; }
+  }
+
+  function _setIdleState(state) {
+    if (!idleEl) idleEl = document.getElementById("overlay-idle");
+    if (!idleEl) return;
+    var cfg = idleStateConfig[state] || idleStateConfig.idle;
+    idleEl.dataset.state = state;
+    var host = _hostName();
+    var subtitleEl = document.getElementById("overlayIdleSubtitle");
+    if (subtitleEl) subtitleEl.textContent = cfg.subtitle(host);
+    var chipLabel = idleEl.querySelector(".overlay-idle-chip-label");
+    if (chipLabel) chipLabel.textContent = cfg.label;
+    var topbarEn = idleEl.querySelector(".overlay-idle-topbar-en");
+    if (topbarEn) topbarEn.textContent = cfg.en;
+    var noteEl = document.getElementById("overlayIdleNote");
+    if (noteEl) noteEl.innerHTML = cfg.noteHtml(_generatePairCode());
+    var actionsEl = document.getElementById("overlayIdleActions");
+    if (actionsEl) actionsEl.innerHTML = cfg.actionsHtml;
+  }
 
   function showIdle() {
     if (!idleEl) idleEl = document.getElementById("overlay-idle");
     if (!idleEl) return;
+    _renderQr();
+    if (!idleEl.dataset.state) _setIdleState("idle");
     idleEl.classList.remove("is-fading");
     idleEl.classList.add("is-visible");
   }
@@ -44,6 +162,7 @@
   window.OverlayIdle = {
     show: showIdle,
     hide: hideIdle,
+    setState: _setIdleState,
     toggle: function () {
       if (!idleEl) idleEl = document.getElementById("overlay-idle");
       if (idleEl && idleEl.classList.contains("is-visible")) hideIdle();
@@ -53,6 +172,19 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     idleEl = document.getElementById("overlay-idle");
+    if (idleEl) {
+      idleEl.addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-overlay-idle-action]");
+        if (!btn) return;
+        var act = btn.dataset.overlayIdleAction;
+        if (act === "broadcast") hideIdle();
+        else if (act === "retry") _setIdleState("idle");
+        else if (act === "manual") {
+          // Future: open manual ws:// prompt. For now, log.
+          console.info("[overlay-idle] manual address entry requested");
+        }
+      });
+    }
   });
 
   // ── Overlay Connecting (P2-2) ──────────────────────────────────────────────
@@ -136,8 +268,8 @@
       reconnectAttempts = 0;
       lastHeartbeatResponse = Date.now();
       startHeartbeat();
-      // Reset idle chip back to ready palette (cyan dot, no spinner).
-      _setIdleChipState("ready");
+      // Reset idle state back to "idle" palette (cyan dot, no spinner).
+      _setIdleState("idle");
       // Hide CONNECTING state 500ms after WS open (or when first message lands,
       // whichever fires sooner — see ws.onmessage).
       if (!connectingDidHide && !connectingHideTimer) {
@@ -152,9 +284,10 @@
       var delay = getReconnectDelay(reconnectAttempts);
       var nextAttempt = reconnectAttempts + 1;
       console.log("[overlay] Reconnecting in " + (delay / 1000) + "s (attempt " + nextAttempt + ")");
-      // Flip idle chip to amber RECONNECTING + 第 N 次嘗試 + countdown.
-      // Per prototype hero-scenes.jsx:108 reconnecting branch.
-      _setIdleChipState("reconnecting", nextAttempt, Math.round(delay / 1000));
+      // Flip idle to "scanning" (magenta pulse) — prototype OverlayIdleQR
+      // doesn't expose a separate "reconnecting" state, so we map both
+      // first-pair handshake and reconnect attempts to the same visual.
+      _setIdleState("scanning");
       setTimeout(connect, delay);
       reconnectAttempts++;
     };
@@ -860,29 +993,6 @@
 
     var textNode = document.createTextNode(cfg.text || "");
     el.appendChild(textNode);
-  }
-
-  // ── Idle pill state helper ────────────────────────────────────────────────
-  // Two states per prototype hero-scenes.jsx OverlayIdle:
-  //   "ready"        — cyan dot + "OVERLAY READY · 等待中"
-  //   "reconnecting" — amber spinner + "RECONNECTING · 第 N 次嘗試 · Ms"
-  function _setIdleChipState(state, attempt, secs) {
-    var chip = document.getElementById("overlayIdleChip");
-    if (!chip) return;
-    chip.dataset.state = state;
-    var label = chip.querySelector(".overlay-idle-chip-label");
-    var suffix = chip.querySelector(".overlay-idle-chip-suffix");
-    if (state === "reconnecting") {
-      if (label) label.textContent = "RECONNECTING";
-      if (suffix) {
-        var attemptLabel = attempt ? "· 第 " + attempt + " 次嘗試" : "";
-        var timeLabel = secs ? "· " + secs + "s" : "";
-        suffix.textContent = (attemptLabel + " " + timeLabel).trim();
-      }
-    } else {
-      if (label) label.textContent = "OVERLAY READY";
-      if (suffix) suffix.textContent = "· 等待中";
-    }
   }
 
   // ── Konami easter egg ─────────────────────────────────────────────────────

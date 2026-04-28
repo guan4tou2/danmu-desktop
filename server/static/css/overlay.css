@@ -8,10 +8,12 @@ body {
 }
 #danmubody { position: relative; width: 100%; height: 100%; }
 
-/* ─────────── Overlay Idle (Hero Lockup) ───────────
- * Prototype hero-scenes.jsx:86 OverlayIdle (dark theme).
- * Full-viewport radial bg, grid backdrop, centered hero + chip + QR.
- * Hidden by default; invoke via window.OverlayIdle.{show,hide,toggle}. */
+/* ─────────── Overlay Idle (Hero Lockup + QR) ───────────
+ * Prototype priority-2-pieces.jsx:174 OverlayIdleQR.
+ * 4 states (data-state on #overlay-idle): idle / scanning / paired / failed.
+ * HUD framing (4 corner brackets) + top bar + hero + 29×29 QR + 6-char code +
+ * state-specific action row.
+ * Hidden by default; invoke via window.OverlayIdle.{show,hide,setState}. */
 #overlay-idle {
   position: fixed;
   inset: 0;
@@ -21,29 +23,79 @@ body {
   justify-content: center;
   flex-direction: column;
   padding: 40px;
-  color: #fff;
-  background: radial-gradient(ellipse at 50% 40%, #0b1220 0%, #000 80%);
+  color: #e2e8f0;
+  background: #000;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% 40%, rgba(125, 211, 252, 0.08) 0%, transparent 70%),
+    linear-gradient(to right, rgba(125, 211, 252, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(125, 211, 252, 0.04) 1px, transparent 1px);
+  background-size: auto, 40px 40px, 40px 40px;
   overflow: hidden;
   pointer-events: none;
-  transition: opacity 500ms ease;
+  transition: opacity 500ms ease, background-image 250ms;
+  font-family: "Zen Kaku Gothic New", "Noto Sans TC", -apple-system, system-ui, sans-serif;
+}
+
+/* Failed state dims the radial glow. */
+#overlay-idle[data-state="failed"] {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% 40%, rgba(125, 211, 252, 0.02) 0%, transparent 70%),
+    linear-gradient(to right, rgba(125, 211, 252, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(125, 211, 252, 0.04) 1px, transparent 1px);
 }
 
 #overlay-idle.is-visible { display: flex; opacity: 1; }
 #overlay-idle.is-fading  { opacity: 0; }
 
-/* HudBackdrop — cyan grid masked by radial. opacity=0.2 in prototype. */
-.overlay-idle-backdrop {
+/* HUD corner brackets — 4 corners, 22×22, 1px cyan, opacity 0.55. */
+.overlay-idle-corner {
   position: absolute;
-  inset: 0;
+  width: 22px;
+  height: 22px;
+  opacity: 0.55;
   pointer-events: none;
-  opacity: 0.2;
-  background-image:
-    linear-gradient(rgba(56, 189, 248, 0.45) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(56, 189, 248, 0.45) 1px, transparent 1px);
-  background-size: 40px 40px;
-  -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, transparent 70%);
-          mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, transparent 70%);
 }
+.overlay-idle-corner.is-tl { top: 24px; left: 24px;  border-top: 1px solid #38bdf8;    border-left: 1px solid #38bdf8; }
+.overlay-idle-corner.is-tr { top: 24px; right: 24px; border-top: 1px solid #38bdf8;    border-right: 1px solid #38bdf8; }
+.overlay-idle-corner.is-bl { bottom: 24px; left: 24px;  border-bottom: 1px solid #38bdf8; border-left: 1px solid #38bdf8; }
+.overlay-idle-corner.is-br { bottom: 24px; right: 24px; border-bottom: 1px solid #38bdf8; border-right: 1px solid #38bdf8; }
+
+/* Top bar — fixed at the top, mono 11px, cyan brand + dim version + state chip. */
+.overlay-idle-topbar {
+  position: absolute;
+  top: 30px;
+  left: 60px;
+  right: 60px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: rgba(148, 163, 184, 0.7);
+}
+.overlay-idle-topbar-brand { color: #38bdf8; }
+.overlay-idle-topbar-state {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.overlay-idle-topbar-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8;
+}
+#overlay-idle[data-state="scanning"] .overlay-idle-topbar-dot { background: #f0abfc; box-shadow: 0 0 8px #f0abfc; animation: overlay-idle-pulse 1.2s infinite; }
+#overlay-idle[data-state="paired"]   .overlay-idle-topbar-dot { background: #86efac; box-shadow: 0 0 8px #86efac; }
+#overlay-idle[data-state="failed"]   .overlay-idle-topbar-dot { background: #fb7185; box-shadow: 0 0 8px #fb7185; }
+#overlay-idle[data-state="idle"]     .overlay-idle-topbar-en { color: #38bdf8; }
+#overlay-idle[data-state="scanning"] .overlay-idle-topbar-en { color: #f0abfc; }
+#overlay-idle[data-state="paired"]   .overlay-idle-topbar-en { color: #86efac; }
+#overlay-idle[data-state="failed"]   .overlay-idle-topbar-en { color: #fb7185; }
 
 .overlay-idle-inner {
   position: relative;
@@ -76,109 +128,201 @@ body {
   font-family: "Zen Kaku Gothic New", "Noto Sans TC", -apple-system, system-ui, sans-serif;
 }
 
-/* OVERLAY READY chip */
+/* State chip — colour switches with #overlay-idle[data-state]. */
 .overlay-idle-chip {
-  margin-top: 26px;
+  margin-top: 18px;
   display: inline-flex;
   align-items: center;
-  gap: 16px;
-  padding: 10px 20px;
+  gap: 8px;
+  padding: 6px 14px;
   border-radius: 999px;
   border: 1px solid rgba(56, 189, 248, 0.45);
   background: rgba(56, 189, 248, 0.12);
-  transition: background 200ms, border-color 200ms;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: #38bdf8;
+  transition: background 200ms, border-color 200ms, color 200ms;
 }
-
-/* Reconnecting state — prototype hero-scenes.jsx:104+ flips chip palette
- * to amber + replaces the cyan dot with a spinning ring. */
-.overlay-idle-chip[data-state="reconnecting"] {
-  border-color: rgba(245, 158, 11, 0.55);
-  background: rgba(245, 158, 11, 0.12);
-}
-.overlay-idle-chip[data-state="reconnecting"] .overlay-idle-chip-dot {
-  display: none;
-}
-.overlay-idle-chip[data-state="reconnecting"] .overlay-idle-chip-spinner {
-  display: inline-block;
-}
-.overlay-idle-chip[data-state="reconnecting"] .overlay-idle-chip-label {
-  color: #fbbf24;
-}
-
 .overlay-idle-chip-dot {
   display: inline-block;
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: #38bdf8;
-  box-shadow: 0 0 8px #38bdf8, 0 0 16px rgba(56, 189, 248, 0.33);
-  animation: overlay-idle-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 6px #38bdf8;
 }
-
-/* Hidden by default; only shown when chip is in reconnecting state. */
 .overlay-idle-chip-spinner {
   display: none;
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  border: 1.5px solid #fbbf24;
+  border: 1.5px solid currentColor;
   border-top-color: transparent;
   animation: overlay-idle-spin 0.7s linear infinite;
 }
 
-@keyframes overlay-idle-spin {
-  to { transform: rotate(360deg); }
+#overlay-idle[data-state="scanning"] .overlay-idle-chip {
+  border-color: #f0abfc;
+  background: rgba(240, 171, 252, 0.12);
+  color: #f0abfc;
+}
+#overlay-idle[data-state="scanning"] .overlay-idle-chip-dot {
+  background: #f0abfc;
+  box-shadow: 0 0 6px #f0abfc;
+  animation: overlay-idle-pulse 1.2s infinite;
 }
 
+#overlay-idle[data-state="paired"] .overlay-idle-chip {
+  border-color: #86efac;
+  background: rgba(134, 239, 172, 0.12);
+  color: #86efac;
+}
+#overlay-idle[data-state="paired"] .overlay-idle-chip-dot {
+  background: #86efac;
+  box-shadow: 0 0 6px #86efac;
+}
+
+#overlay-idle[data-state="failed"] .overlay-idle-chip {
+  border-color: #fb7185;
+  background: rgba(251, 113, 133, 0.08);
+  color: #fb7185;
+}
+#overlay-idle[data-state="failed"] .overlay-idle-chip-dot {
+  background: #fb7185;
+  box-shadow: 0 0 6px #fb7185;
+}
+
+@keyframes overlay-idle-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
-  .overlay-idle-chip-spinner { animation: none; }
+  .overlay-idle-chip-spinner,
+  .overlay-idle-chip-dot,
+  .overlay-idle-topbar-dot,
+  .overlay-idle-qr-scan-ring { animation: none !important; }
 }
 
-.overlay-idle-chip-label {
+/* QR — prototype size 180×180 white card, 29×29 cells. */
+.overlay-idle-qr-wrap {
+  position: relative;
+  margin: 24px auto 0;
+  width: 180px;
+  height: 180px;
+}
+.overlay-idle-qr {
+  width: 180px;
+  height: 180px;
+  background: #fff;
+  padding: 6px;
+  border-radius: 6px;
+  box-shadow: 0 0 40px rgba(125, 211, 252, 0.3);
+  transition: opacity 0.3s;
+}
+.overlay-idle-qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+/* Dim QR while interacting / connected / failed (prototype dim=true). */
+#overlay-idle[data-state="scanning"] .overlay-idle-qr,
+#overlay-idle[data-state="paired"]   .overlay-idle-qr,
+#overlay-idle[data-state="failed"]   .overlay-idle-qr { opacity: 0.35; }
+
+/* QR overlay — pulse ring (scanning) / ✓ (paired) / ⚠ (failed). */
+.overlay-idle-qr-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+#overlay-idle[data-state="scanning"] .overlay-idle-qr-overlay {
+  display: flex;
+  border: 2px solid #f0abfc;
+  box-shadow: 0 0 30px #f0abfc;
+  animation: overlay-idle-scan-pulse 1.2s infinite;
+}
+#overlay-idle[data-state="paired"] .overlay-idle-qr-overlay {
+  display: flex;
+  background: rgba(0, 0, 0, 0.7);
+}
+#overlay-idle[data-state="failed"] .overlay-idle-qr-overlay {
+  display: flex;
+  background: rgba(0, 0, 0, 0.7);
+}
+.overlay-idle-qr-icon {
+  font-family: "Zen Kaku Gothic New", "Noto Sans TC", system-ui, sans-serif;
+}
+#overlay-idle[data-state="paired"] .overlay-idle-qr-icon::before {
+  content: "✓";
+  color: #86efac;
+  font-size: 72px;
+  text-shadow: 0 0 20px #86efac;
+}
+#overlay-idle[data-state="failed"] .overlay-idle-qr-icon::before {
+  content: "⚠";
+  color: #fb7185;
+  font-size: 60px;
+  text-shadow: 0 0 20px #fb7185;
+}
+
+@keyframes overlay-idle-scan-pulse {
+  0%, 100% { box-shadow: 0 0 30px #f0abfc; opacity: 1; }
+  50%      { box-shadow: 0 0 50px #f0abfc; opacity: 0.7; }
+}
+
+/* Note line — "或輸入 6 碼連線碼: 84-29-17" */
+.overlay-idle-note {
+  margin-top: 14px;
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 12px;
-  letter-spacing: 2px;
-  color: #38bdf8;
-  text-transform: uppercase;
-}
-
-.overlay-idle-chip-suffix {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 11px;
   letter-spacing: 1px;
-  color: #cbd5e1;
+  color: rgba(148, 163, 184, 0.7);
 }
+.overlay-idle-pair-code {
+  color: #38bdf8;
+  letter-spacing: 2px;
+}
+#overlay-idle[data-state="failed"] .overlay-idle-note,
+#overlay-idle[data-state="failed"] .overlay-idle-pair-code { color: #fb7185; }
 
-/* QR placeholder — 140x140 white card, 108x108 SVG centered */
-.overlay-idle-qr {
-  margin: 34px auto 0;
-  width: 140px;
-  height: 140px;
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  position: relative;
-  display: flex;
+/* Action row — state-conditional hint / paired button / failed retry buttons. */
+.overlay-idle-actions {
+  margin-top: 20px;
+  display: inline-flex;
+  gap: 10px;
   align-items: center;
   justify-content: center;
 }
-
-.overlay-idle-qr svg {
-  display: block;
-  width: 108px;
-  height: 108px;
+.overlay-idle-hint {
+  padding: 8px 14px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: rgba(148, 163, 184, 0.7);
 }
-
-.overlay-idle-url {
-  margin-top: 12px;
+.overlay-idle-btn {
+  padding: 9px 18px;
+  border-radius: 4px;
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
-  letter-spacing: 2px;
-  color: #cbd5e1;
-  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.overlay-idle-btn-primary {
+  border: 1px solid #38bdf8;
+  background: #38bdf8;
+  color: #000;
+  font-weight: 700;
+}
+.overlay-idle-btn-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: transparent;
+  color: #e2e8f0;
+  letter-spacing: 1px;
 }
 
-/* prototype tokens.jsx:19 — hud-pulse */
 @keyframes overlay-idle-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%      { opacity: 0.6; transform: scale(0.9); }

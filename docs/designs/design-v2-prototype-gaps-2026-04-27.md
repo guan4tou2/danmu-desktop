@@ -326,7 +326,7 @@ spec-only，等 Design 拍板 §7 三題後從 S1 開工。
 
 | 元件 | Bundle | 工程估計 | 備註 |
 |------|--------|----------|------|
-| OverlayIdleQR full state machine | batch4 | 1-2 hr | idle/connecting/disconnected dot 已有，full QR overlay 沒做 |
+| ~~OverlayIdleQR full state machine~~ | ~~batch4~~ | ~~1-2 hr~~ | ✅ shipped 2026-04-28 — 4 state machine（idle/scanning/paired/failed）+ HUD 4 corner brackets + top bar version chip + 29×29 fake QR + 6-char pairing code + state-conditional action row |
 | AdminWebhooksPage v2 retrofit | batch6 | 3-4 hr | 後端已有 webhooks model，純 FE 重畫 |
 | **AdminAudiencePage 右側 detail panel** | batch7 | 3-4 hr | 高風險 5-rule flag + 近 5 分鐘訊息 + 4 建議動作（F.10 漏記，2026-04-28 補） |
 | Notifications "starred" feature | batch7 | 1 hr | localStorage backed |
