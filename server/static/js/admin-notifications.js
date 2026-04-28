@@ -12,9 +12,10 @@
  *     → severity info (rotated/toggle), good (revoked)
  *   ✓ /admin/filters/events → moderation filter hits → severity warn
  *
- * Read/archive state lives in localStorage (per-event id):
- *   danmu.notifications.read = JSON [id1, id2, ...]
+ * Read/archive/starred state lives in localStorage (per-event id):
+ *   danmu.notifications.read     = JSON [id1, id2, ...]
  *   danmu.notifications.archived = JSON [id1, id2, ...]
+ *   danmu.notifications.starred  = JSON [id1, id2, ...]  (added 2026-04-28)
  *
  * Sidebar nav: 通知 (under 總覽 group)
  *
@@ -26,6 +27,7 @@
   const PAGE_ID = "sec-notifications-overview";
   const READ_KEY = "danmu.notifications.read";
   const ARCHIVE_KEY = "danmu.notifications.archived";
+  const STAR_KEY = "danmu.notifications.starred";
 
   const escapeHtml = (window.AdminUtils && window.AdminUtils.escapeHtml) || function (s) {
     return String(s).replace(/[&<>"']/g, function (c) {
@@ -62,6 +64,7 @@
   }
   const _isRead = (id) => _readSet(READ_KEY).has(id);
   const _isArchived = (id) => _readSet(ARCHIVE_KEY).has(id);
+  const _isStarred = (id) => _readSet(STAR_KEY).has(id);
   function _markRead(id) {
     const s = _readSet(READ_KEY); s.add(id); _writeSet(READ_KEY, s);
   }
@@ -70,6 +73,11 @@
   }
   function _markArchived(id) {
     const s = _readSet(ARCHIVE_KEY); s.add(id); _writeSet(ARCHIVE_KEY, s);
+  }
+  function _toggleStar(id) {
+    const s = _readSet(STAR_KEY);
+    if (s.has(id)) s.delete(id); else s.add(id);
+    _writeSet(STAR_KEY, s);
   }
 
   // ── data aggregation ─────────────────────────────────────────────
@@ -178,6 +186,7 @@
             <div class="admin-notif-tabs" data-notif-tabs>
               <button type="button" class="admin-notif-tab is-active" data-notif-tab="unread">未讀<span class="cnt" data-cnt-unread>—</span></button>
               <button type="button" class="admin-notif-tab" data-notif-tab="all">全部<span class="cnt" data-cnt-all>—</span></button>
+              <button type="button" class="admin-notif-tab" data-notif-tab="starred">已標記<span class="cnt" data-cnt-starred>—</span></button>
               <button type="button" class="admin-notif-tab" data-notif-tab="archived">已封存<span class="cnt" data-cnt-archived>—</span></button>
             </div>
 
@@ -217,8 +226,10 @@
       if (_state.filterSrc !== "all" && it.src !== _state.filterSrc) return false;
       const archived = _isArchived(it.id);
       const read = _isRead(it.id);
+      const starred = _isStarred(it.id);
       if (_state.filterTab === "unread") return !archived && !read;
       if (_state.filterTab === "archived") return archived;
+      if (_state.filterTab === "starred") return !archived && starred;
       // all = include both read + unread, exclude archived
       return !archived;
     });
@@ -241,11 +252,13 @@
       const sev = SEVERITY[it.sev] || SEVERITY.info;
       const archived = _isArchived(it.id);
       const read = _isRead(it.id);
+      const starred = _isStarred(it.id);
       const tsLabel = it.ts ? _humanDelta(it.ts) : "—";
       return `
-        <article class="admin-notif-item ${archived ? "is-archived" : (read ? "is-read" : "is-unread")}" data-notif-id="${escapeHtml(it.id)}" style="border-left-color:${sev.color}">
+        <article class="admin-notif-item ${archived ? "is-archived" : (read ? "is-read" : "is-unread")} ${starred ? "is-starred" : ""}" data-notif-id="${escapeHtml(it.id)}" style="border-left-color:${sev.color}">
           <div class="head">
             ${!read && !archived ? `<span class="dot" style="background:${sev.color};box-shadow:0 0 6px ${sev.color}"></span>` : ''}
+            ${starred ? `<span class="star" aria-label="starred" title="已標記">★</span>` : ''}
             <span class="sev" style="color:${sev.color};background:${sev.bg};border-color:${sev.border};">${sev.label}</span>
             <span class="src">${escapeHtml(it.src)}</span>
             <span class="ts">${escapeHtml(tsLabel)}</span>
@@ -253,6 +266,7 @@
           <div class="title">${escapeHtml(it.title)}</div>
           <div class="desc">${escapeHtml(it.desc)}</div>
           <div class="actions">
+            <button type="button" class="${starred ? "is-on" : ""}" data-notif-row-action="star" data-notif-id="${escapeHtml(it.id)}" title="${starred ? "取消標記" : "標記重要"}">${starred ? "★ 已標記" : "☆ 標記"}</button>
             ${archived
               ? `<button type="button" data-notif-row-action="unarchive" data-notif-id="${escapeHtml(it.id)}">↺ 取消封存</button>`
               : `${read
@@ -269,10 +283,12 @@
     const unread = items.filter(function (it) { return !_isRead(it.id) && !_isArchived(it.id); }).length;
     const total = items.filter(function (it) { return !_isArchived(it.id); }).length;
     const archived = items.filter(function (it) { return _isArchived(it.id); }).length;
+    const starred = items.filter(function (it) { return _isStarred(it.id) && !_isArchived(it.id); }).length;
 
     const set = function (sel, v) { const el = document.querySelector(sel); if (el) el.textContent = String(v); };
     set("[data-cnt-unread]", unread);
     set("[data-cnt-all]", total);
+    set("[data-cnt-starred]", starred);
     set("[data-cnt-archived]", archived);
     set("[data-cnt-src-all]", items.length);
     set("[data-cnt-src-rl]", items.filter(function (i) { return i.src === "Rate Limit"; }).length);
@@ -282,7 +298,7 @@
     const summary = document.querySelector("[data-notif-summary]");
     if (summary) {
       const filtered = _filteredItems().length;
-      const tabName = { unread: "未讀", all: "全部", archived: "已封存" }[_state.filterTab] || "—";
+      const tabName = { unread: "未讀", all: "全部", starred: "已標記", archived: "已封存" }[_state.filterTab] || "—";
       summary.textContent = tabName + " · " + filtered + " 筆";
     }
   }
@@ -339,6 +355,7 @@
       }
       const rowAction = e.target.closest("[data-notif-row-action]");
       if (rowAction) {
+        e.stopPropagation(); // prevent the parent-card "click → mark read" handler
         const id = rowAction.dataset.notifId;
         const a = rowAction.dataset.notifRowAction;
         if (a === "read") _markRead(id);
@@ -346,6 +363,8 @@
         else if (a === "archive") _markArchived(id);
         else if (a === "unarchive") {
           const s = _readSet(ARCHIVE_KEY); s.delete(id); _writeSet(ARCHIVE_KEY, s);
+        } else if (a === "star") {
+          _toggleStar(id);
         }
         _renderList(); _renderSummary();
         return;
