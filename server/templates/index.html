@@ -118,12 +118,9 @@
             </div>
           </div>
 
-          <!-- Identity chip — prototype #18 (2026-04-27): unifies the
-               legacy nickname field with the viewer's own fingerprint.
-               Display mode: `[@nickname · fp:xxxxxxxx]` or just `[fp:xxxxxxxx]`.
-               Click → inline edit (Enter save / Esc cancel / 12 char max).
-               Same fp:8hex format as AdminIdentity (FP_DISPLAY_LEN=8) so
-               admin-side history rows show the same id as the viewer chip. -->
+          <!-- Identity chip — viewer-side display is just `@nickname` (fp
+               is admin-side only). Click → inline edit (Enter save / Esc
+               cancel / 12 char max). -->
           {% if options.get('Nickname', [True])[0] %}
           <div id="nicknameControl" class="viewer-field">
             <label class="viewer-field-label" for="identityChipInput">
@@ -132,7 +129,6 @@
             </label>
             <div id="identityChip" class="viewer-identity-chip" data-mode="display" tabindex="0" role="button" aria-label="Edit nickname">
               <span id="identityChipNick" class="viewer-identity-chip-nick"></span>
-              <span id="identityChipFp" class="viewer-identity-chip-fp">fp:········</span>
               <input
                 type="text"
                 id="nicknameInput"

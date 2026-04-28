@@ -389,3 +389,33 @@ spec-only，等 Design 拍板 §7 三題後從 S1 開工。
 - admin-poll.js / admin-poll-deepdive.js — view + state 緊密耦合
 - admin-replay-controls.js / admin-history.js — 剛拆過，邊界 clean
 - viewer-states.js / overlay-poll.js — 新檔，本就是 1:1 prototype 對應
+
+---
+
+## K. 2026-04-28 修整 / 待 Design buy-in
+
+### K.1 已修（直接照 prototype）
+
+| # | 修整 | 起因 | Commit |
+|---|------|------|--------|
+| 1 | Viewer LangSelect → 4-option dropdown（中文 / English / 日本語 / 한국어）+ ▾ 圖示 | 之前是 2-button 中/EN seg，丟掉 ja/ko | `2d9b54b` |
+| 2 | Viewer ThemeToggle → 單一 icon 按鈕（◐/◑），預設 dark | 之前是 2-button ◐/◑ 並排 | `2d9b54b` |
+| 3 | Viewer hero seg row 在 mobile 也顯示（mini 22px 變體） | 之前 mobile 整個 `display: none`，看不到語言/主題切換 | `060c663` |
+| 4 | Viewer 排版（layout-btn）radio 行為修復 | toggle 沒清 `is-active`，多選會疊 highlight | (pending) |
+| 5 | Viewer 身分 chip 移除 `fp:xxxxxxxx` 顯示 | 觀眾端不該看到 fingerprint hash | (pending) |
+
+### K.2 Prototype 沒設計、需要 Design 補
+
+| # | 區塊 | 觀察到的現狀 | 建議 |
+|---|------|--------------|------|
+| 1 | **效果參數面板**（每個選中效果之下的 速度/高度/間隔/樣式 sliders + selects） | prototype `viewer.jsx:301-322` 只設計到「8 個效果按鈕 cyan-soft 反白」，沒延伸 per-effect 參數 UI；當前實作是灰底 panel + cyan label | 需要 Design 補 per-effect param panel artboard（dark/light 各一） |
+| 2 | **效果按鈕 selected 視覺** | 截圖顯示 selected 是深藍實底（看起來像 hudTokens.cyan 直接當 bg），prototype 規定 `cyanSoft` 淺底 + `accent` 邊框 + `fontWeight 600` | 需要 Design 確認「現在實作的深藍底」算偏離還是允許；若偏離，工程改回 `var(--hud-cyan-soft)` |
+| 3 | **viewer Identity chip** | `身分 · 點擊可改名` field 沒有對應 prototype（prototype 的 viewer 暱稱是 plain input，沒有 chip 容器） | 確認 chip pattern 要 keep 還是 fallback 回 plain input；目前已移除 `fp:xxxxxxxx` 內容 |
+
+### K.3 跟 Design 對齊用的截圖（VPS 上線後可拍）
+
+- `viewer-effects-panel.png`（截「效果」section 含展開的 per-effect 參數）
+- `viewer-layout-radio.png`（截 5 個排版 radio + toggle 後的 active state）
+- `viewer-identity-no-fp.png`（截「身分 · 點擊可改名」field 沒 fp 的版本）
+
+→ 這 3 張塞進 design conversation handoff，請 Design 在下一輪補 K.2 的 artboard。
