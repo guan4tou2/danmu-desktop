@@ -5306,11 +5306,272 @@ body.stream-mode .admin-hero .admin-summary-grid {
   box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.15) inset;
 }
 
-/* When the History tab strip is on the "replay" tab, hide the export card.
-   sec-history visibility is otherwise controlled by admin.js applySection-
-   Visibility (route=history shows it). The CSS rule below wins because of
-   higher specificity (body[data-history-tab=replay] adds an attr selector). */
+/* History tab visibility — 3 tabs: export (v2 picker) / list (v1 detail) /
+   replay. body[data-history-tab] drives which pane shows.
+   - export tab → only #history-v2-section
+   - list tab → only #sec-history (legacy detail viewer)
+   - replay tab → only #replay-v2-section
+*/
+body[data-history-tab="export"] #sec-history { display: none !important; }
+body[data-history-tab="export"] #replay-v2-section { display: none !important; }
+body[data-history-tab="list"] #history-v2-section { display: none !important; }
+body[data-history-tab="list"] #replay-v2-section { display: none !important; }
 body[data-history-tab="replay"] #sec-history { display: none !important; }
+body[data-history-tab="replay"] #history-v2-section { display: none !important; }
+
+/* History v2 (Timeline Export) page — prototype admin-batch1.jsx:218.
+   Mirrors AdminPageShell layout: 1fr 380px grid, two card panes. */
+#history-v2-section.history-v2-section {
+  background: transparent;
+  padding: 0;
+  border: none;
+  box-shadow: none;
+}
+.histv2-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 1024px) {
+  .histv2-grid { grid-template-columns: 1fr; }
+}
+.histv2-pane {
+  background: var(--color-bg-elevated, #1e293b);
+  border: 1px solid var(--hud-line, rgba(148, 163, 184, 0.18));
+  border-radius: 8px;
+  padding: 24px;
+  overflow: auto;
+}
+.histv2-recent { padding: 18px; }
+
+.histv2-section-hd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--color-primary, #38bdf8);
+  margin: 14px 0 10px;
+  text-transform: uppercase;
+}
+.histv2-section-hd:first-child { margin-top: 0; }
+
+.histv2-chips, .histv2-toggles {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.histv2-chip, .histv2-toggle {
+  padding: 8px 14px;
+  border: 1px solid var(--hud-line, rgba(148, 163, 184, 0.18));
+  background: transparent;
+  color: var(--color-text-primary, #e2e8f0);
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.histv2-chip:hover, .histv2-toggle:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+}
+.histv2-chip.is-active {
+  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.08));
+  border-color: var(--color-primary, #38bdf8);
+  color: var(--color-primary, #38bdf8);
+}
+.histv2-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+}
+.histv2-toggle.is-on {
+  background: rgba(56, 189, 248, 0.11);
+  border-color: var(--color-primary, #38bdf8);
+  color: var(--color-primary, #38bdf8);
+}
+.histv2-toggle-mark {
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.histv2-formats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 28px;
+}
+@media (max-width: 600px) {
+  .histv2-formats { grid-template-columns: 1fr; }
+}
+.histv2-fmt {
+  position: relative;
+  padding: 14px;
+  border-radius: 6px;
+  background: var(--color-bg-base, #0f172a);
+  border: 2px solid var(--hud-line, rgba(148, 163, 184, 0.18));
+  color: var(--color-text-primary, #e2e8f0);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+.histv2-fmt:hover { border-color: rgba(56, 189, 248, 0.4); }
+.histv2-fmt.is-selected {
+  border-color: var(--color-primary, #38bdf8);
+}
+.histv2-fmt.is-selected .histv2-fmt-ext {
+  color: var(--color-primary, #38bdf8);
+}
+.histv2-fmt-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-primary, #38bdf8);
+  color: #000;
+  font-weight: 700;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.histv2-fmt-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  background: var(--color-warning, #fbbf24);
+  color: #000;
+  border-radius: 3px;
+}
+.histv2-fmt-ext {
+  font-family: var(--font-display, var(--font-sans));
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.histv2-fmt-desc {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 6px;
+  line-height: 1.5;
+  min-height: 48px;
+}
+
+.histv2-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 8px;
+}
+.histv2-go {
+  padding: 12px 26px;
+  border-radius: 4px;
+  border: none;
+  background: var(--color-primary, #38bdf8);
+  color: #000;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+}
+.histv2-go:hover { filter: brightness(1.05); }
+.histv2-go:disabled { opacity: 0.5; cursor: wait; }
+.histv2-estimate {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.5px;
+}
+
+.histv2-recent-hd {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.histv2-recent-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}
+.histv2-recent-period {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+.histv2-recent-row {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--hud-line, rgba(148, 163, 184, 0.18));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+.histv2-recent-row:last-child { border-bottom: none; }
+.histv2-recent-fmt {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.08));
+  color: var(--color-primary, #38bdf8);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+.histv2-recent-meta { flex: 1; min-width: 0; }
+.histv2-recent-name {
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.histv2-recent-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.3px;
+  margin-top: 2px;
+}
+.histv2-recent-empty {
+  padding: 24px 12px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.histv2-privacy {
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--color-text-primary);
+  line-height: 1.6;
+}
+.histv2-privacy-hd {
+  color: var(--color-warning, #fbbf24);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
 
 /* ─── About page (Phase 2 P0-1, 2026-04-27) ──────────────────────────── */
 .admin-about-page { padding: 0; }

@@ -477,6 +477,7 @@
     bar.className = "admin-v2-tabbar lg:col-span-2";
     bar.innerHTML =
       '<button type="button" class="admin-v2-tab is-active" data-history-tab="export">匯出 · EXPORT</button>' +
+      '<button type="button" class="admin-v2-tab" data-history-tab="list">列表 · LIST</button>' +
       '<button type="button" class="admin-v2-tab" data-history-tab="replay">重播 · REPLAY</button>';
     parent.insertBefore(bar, historyCard);
 

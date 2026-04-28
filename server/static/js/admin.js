@@ -1065,7 +1065,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // v5.2 consolidation (2026-04-27 audit §A): merged 歷史重播 → tab inside
     // history page. sec-history holds export, replay-v2-section holds the
     // replay UI; admin-history.js renders a tab strip that toggles them.
-    history:   { title: "歷史",             kicker: "HISTORY · 匯出 / 重播",     sections: ["sec-history-tabs", "sec-history"] },
+    history:   { title: "歷史",             kicker: "HISTORY · 匯出 / 重播",     sections: ["sec-history-tabs", "history-v2-section", "sec-history"] },
     polls:     { title: "投票",             kicker: "POLLS · 2–6 選項",         sections: ["sec-polls"] },
     widgets:   { title: "Overlay Widgets",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
     themes:    { title: "風格主題包",       kicker: "THEME PACKS · 彈幕樣式預設",       sections: ["sec-themes"] },
