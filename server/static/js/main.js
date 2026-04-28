@@ -1218,75 +1218,18 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (_) { }
       }
 
-      // Identity chip — `@nickname` only. Server-side keeps the fp
-       // for moderation; the viewer never displays it.
-      // Click → inline edit; Enter save, Esc cancel, blur save.
-      (function wireIdentityChip() {
-        const chip = document.getElementById("identityChip");
-        if (!chip || !nicknameInput) return;
-        const nickEl = document.getElementById("identityChipNick");
-
-        const renderChip = () => {
-          const nick = (nicknameInput.value || "").trim();
-          if (nick) {
-            nickEl.textContent = "@" + nick;
-            nickEl.hidden = false;
-          } else {
-            nickEl.textContent = "";
-            nickEl.hidden = true;
-          }
+      // Nickname → preview-nick (top-left of the preview block) live
+      // sync. No `@` prefix. Save to localStorage on change.
+      (function wireNickname() {
+        if (!nicknameInput) return;
+        const previewNick = document.getElementById("previewNick");
+        const renderNick = () => {
+          const v = (nicknameInput.value || "").trim();
+          if (previewNick) previewNick.textContent = v;
+          try { localStorage.setItem("danmu_nickname", v); } catch (_) {}
         };
-
-        const enterEditMode = () => {
-          chip.dataset.mode = "edit";
-          nicknameInput.hidden = false;
-          nickEl.hidden = true;
-          requestAnimationFrame(() => {
-            nicknameInput.focus();
-            nicknameInput.select();
-          });
-        };
-
-        const exitEditMode = (commit) => {
-          if (commit) {
-            const v = (nicknameInput.value || "").trim().slice(0, 12);
-            nicknameInput.value = v;
-            try { localStorage.setItem("danmu_nickname", v); } catch (_) { }
-            chip.classList.add("is-confirm");
-            setTimeout(() => chip.classList.remove("is-confirm"), 400);
-          } else {
-            try {
-              nicknameInput.value = localStorage.getItem("danmu_nickname") || "";
-            } catch (_) { }
-          }
-          chip.dataset.mode = "display";
-          nicknameInput.hidden = true;
-          renderChip();
-          updatePreview();
-        };
-
-        chip.addEventListener("click", (e) => {
-          if (chip.dataset.mode === "edit") return;
-          if (e.target.closest("#nicknameInput")) return;
-          enterEditMode();
-        });
-        chip.addEventListener("keydown", (e) => {
-          if (chip.dataset.mode !== "display") return;
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            enterEditMode();
-          }
-        });
-        nicknameInput.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") { e.preventDefault(); exitEditMode(true); }
-          else if (e.key === "Escape") { e.preventDefault(); exitEditMode(false); }
-        });
-        nicknameInput.addEventListener("blur", () => {
-          if (chip.dataset.mode === "edit") exitEditMode(true);
-        });
-        nicknameInput.addEventListener("input", renderChip);
-
-        renderChip();
+        nicknameInput.addEventListener("input", renderNick);
+        renderNick();
       })();
 
       // Layout mode buttons

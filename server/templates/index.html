@@ -104,11 +104,12 @@
         <!-- Scrollable body — preview + fields -->
         <div class="viewer-body">
 
-          <!-- Live preview strip -->
+          <!-- Live preview strip — nickname renders in the top-left
+               (`#previewNick`) and is wired to `#nicknameInput` below. -->
           <div class="viewer-preview">
             <div class="viewer-preview-kicker" data-i18n="previewKicker">預覽 · 你送出的樣子</div>
             <div class="viewer-preview-row" aria-live="polite">
-              <span id="previewNick" class="viewer-preview-nick">@guest</span>
+              <span id="previewNick" class="viewer-preview-nick"></span>
               <span
                 id="previewText"
                 class="viewer-preview-text"
@@ -118,27 +119,22 @@
             </div>
           </div>
 
-          <!-- Identity chip — viewer-side display is just `@nickname` (fp
-               is admin-side only). Click → inline edit (Enter save / Esc
-               cancel / 12 char max). -->
+          <!-- Nickname — plain text input. Live-updates `#previewNick`
+               above (top-left of the preview block). No `@` prefix. -->
           {% if options.get('Nickname', [True])[0] %}
           <div id="nicknameControl" class="viewer-field">
-            <label class="viewer-field-label" for="identityChipInput">
+            <label class="viewer-field-label" for="nicknameInput">
               <span data-i18n="identity">身分</span>
-              <span class="viewer-field-label__value" data-i18n="identityHint"> · 點擊可改名</span>
             </label>
-            <div id="identityChip" class="viewer-identity-chip" data-mode="display" tabindex="0" role="button" aria-label="Edit nickname">
-              <span id="identityChipNick" class="viewer-identity-chip-nick"></span>
-              <input
-                type="text"
-                id="nicknameInput"
-                class="viewer-identity-chip-input"
-                maxlength="12"
-                placeholder="Anonymous"
-                data-i18n-placeholder="anonymousPlaceholder"
-                hidden
-              />
-            </div>
+            <input
+              type="text"
+              id="nicknameInput"
+              class="viewer-input"
+              maxlength="12"
+              placeholder="Anonymous"
+              data-i18n-placeholder="anonymousPlaceholder"
+              autocomplete="off"
+            />
           </div>
           {% endif %}
 
