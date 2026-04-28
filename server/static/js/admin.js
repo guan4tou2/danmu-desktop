@@ -54,9 +54,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Kick off as early as possible — parallel with HTML parse.
   primeBootstrap();
 
-  const FONT_REFRESH_BUFFER_SECONDS = 60;
-  let adminFontRefreshTimer = null;
-  let adminFontCache = [];
   let currentSettings = {};
 
   // Module-level handles for beforeunload cleanup
@@ -74,21 +71,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // bootstrapSection are defined above.
   window.AdminBootstrap = { primeBootstrap, bootstrapSection };
 
-  function scheduleAdminFontRefresh(ttlSeconds) {
-    if (adminFontRefreshTimer) {
-      clearTimeout(adminFontRefreshTimer);
-    }
-    if (!ttlSeconds || Number.isNaN(ttlSeconds)) {
-      return;
-    }
-    const delay = Math.max(
-      (ttlSeconds - FONT_REFRESH_BUFFER_SECONDS) * 1000,
-      60 * 1000
-    );
-    adminFontRefreshTimer = setTimeout(() => {
-      populateFontFamilyDropdowns();
-    }, delay);
-  }
 
   // Get latest settings from backend
   async function fetchLatestSettings() {
@@ -774,182 +756,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const settingsGrid = document.getElementById("settings-grid");
 
-    // Color Settings
-    settingsGrid.insertAdjacentHTML("beforeend", settingCard(
-      "Color",
-      ServerI18n.t("colorSetting"),
-      ServerI18n.t("colorSettingDesc"),
-      currentSettings.Color[0],
-      `
-                        <label for="setting-color-3" class="text-sm font-medium text-slate-300">${ServerI18n.t("specificColor")}</label>
-                        <input id="setting-color-3" type="color" class="setting-input mt-1 w-full h-10 p-1 bg-slate-800 border-slate-700 rounded-lg cursor-pointer" data-key="Color" data-index="3" value="${formatColor(
-        "#" + currentSettings.Color[3]
-      )}" disabled>
-                    `,
-      `
-                        <label for="setting-color-3" class="text-sm font-medium text-slate-300">${ServerI18n.t("specificColor")}</label>
-                        <input id="setting-color-3" type="color" class="setting-input mt-1 w-full h-10 p-1 bg-slate-800 border-slate-700 rounded-lg cursor-pointer" data-key="Color" data-index="3" value="${formatColor(
-        "#" + currentSettings.Color[3]
-      )}">
-                    `
-    ));
-
-    // Opacity Settings
-    settingsGrid.insertAdjacentHTML("beforeend", settingCard(
-      "Opacity",
-      ServerI18n.t("opacitySetting"),
-      ServerI18n.t("opacitySettingDesc"),
-      currentSettings.Opacity[0],
-      `
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="setting-opacity-1" class="text-sm font-medium text-slate-300">${ServerI18n.t("minPercent")}</label>
-                                <input id="setting-opacity-1" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="1" value="${escapeHtml(String(currentSettings.Opacity[1]))}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
-                            </div>
-                            <div>
-                                <label for="setting-opacity-2" class="text-sm font-medium text-slate-300">${ServerI18n.t("maxPercent")}</label>
-                                <input id="setting-opacity-2" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="2" value="${escapeHtml(String(currentSettings.Opacity[2]))}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
-                            </div>
-                        </div>
-                    `,
-      `
-                        <label for="setting-opacity-3" class="text-sm font-medium text-slate-300">${ServerI18n.t("specificOpacity")}</label>
-                        <input id="setting-opacity-3" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Opacity" data-index="3" value="${escapeHtml(String(currentSettings.Opacity[3]))}" min="${settingRanges.Opacity.min}" max="${settingRanges.Opacity.max}" step="1">
-                    `
-    ));
-
-    // Font Size Settings
-    settingsGrid.insertAdjacentHTML("beforeend", settingCard(
-      "FontSize",
-      ServerI18n.t("fontSizeSetting"),
-      ServerI18n.t("fontSizeSettingDesc"),
-      currentSettings.FontSize[0],
-      `
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="setting-fontsize-1" class="text-sm font-medium text-slate-300">${ServerI18n.t("minPx")}</label>
-                                <input id="setting-fontsize-1" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="1" value="${escapeHtml(String(currentSettings.FontSize[1]))}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
-                            </div>
-                            <div>
-                                <label for="setting-fontsize-2" class="text-sm font-medium text-slate-300">${ServerI18n.t("maxPx")}</label>
-                                <input id="setting-fontsize-2" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="2" value="${escapeHtml(String(currentSettings.FontSize[2]))}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
-                            </div>
-                        </div>
-                    `,
-      `
-                        <label for="setting-fontsize-3" class="text-sm font-medium text-slate-300">${ServerI18n.t("specificSizePx")}</label>
-                        <input id="setting-fontsize-3" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="FontSize" data-index="3" value="${escapeHtml(String(currentSettings.FontSize[3]))}" min="${settingRanges.FontSize.min}" max="${settingRanges.FontSize.max}" step="1">
-                    `
-    ));
-
-    // Speed Settings
-    settingsGrid.insertAdjacentHTML("beforeend", settingCard(
-      "Speed",
-      ServerI18n.t("speedSetting"),
-      ServerI18n.t("speedSettingDesc"),
-      currentSettings.Speed[0],
-      `
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="setting-speed-1" class="text-sm font-medium text-slate-300">${ServerI18n.t("slowest")}</label>
-                                <input id="setting-speed-1" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="1" value="${escapeHtml(String(currentSettings.Speed[1]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="0.1">
-                            </div>
-                            <div>
-                                <label for="setting-speed-2" class="text-sm font-medium text-slate-300">${ServerI18n.t("fastest")}</label>
-                                <input id="setting-speed-2" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="2" value="${escapeHtml(String(currentSettings.Speed[2]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="0.1">
-                            </div>
-                        </div>
-                        <small class="text-slate-400 text-xs block mt-2">${ServerI18n.t("speedHint")}</small>
-                    `,
-      `
-                        <label for="setting-speed-3" class="text-sm font-medium text-slate-300">${ServerI18n.t("specificSpeed")}</label>
-                        <input id="setting-speed-3" type="number" class="setting-input mt-1 w-full p-2.5 bg-slate-800 border-2 border-slate-700 rounded-lg text-center" data-key="Speed" data-index="3" value="${escapeHtml(String(currentSettings.Speed[3]))}" min="${settingRanges.Speed.min}" max="${settingRanges.Speed.max}" step="0.1">
-                        <small class="text-slate-400 text-xs block mt-2">${ServerI18n.t("speedHint")}</small>
-                    `
-    ));
-
-    // Font Family Setting (moved below speed)
-    const fontFamilyEnabled =
-      currentSettings.FontFamily && currentSettings.FontFamily[0] === true;
-    const fontFamilyDescription = fontFamilyEnabled
-      ? ServerI18n.t("fontFamilyDescEnabled")
-      : ServerI18n.t("fontFamilyDescDisabled");
-
-    const fontFamilyCardContent = `
-            <div>
-                <label class="text-sm font-medium text-slate-300">${ServerI18n.t("fontForDanmus")}</label>
-                <select class="setting-input mt-1 w-full p-2 bg-slate-800 border-2 border-slate-700 rounded-lg" data-key="FontFamily" data-index="3" id="fontFamilySelect">
-                    <!-- Options will be populated by JS -->
-                </select>
-            </div>
-            <div class="mt-4">
-                <label class="text-sm font-medium text-slate-300">${ServerI18n.t("uploadNewFont")}</label>
-                <input type="file" id="fontUploadInput" accept=".ttf" class="mt-1 w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500"/>
-                <button id="uploadFontBtn" class="mt-2 w-full bg-sky-600 hover:bg-sky-500 text-white font-semibold py-2 px-4 rounded-lg">${ServerI18n.t("uploadFont")}</button>
-            </div>
-            <small class="text-slate-400 text-xs block mt-2">${ServerI18n.t("fontUploadHint")}</small>
-            `;
-
-    settingsGrid.insertAdjacentHTML("beforeend", settingCard(
-      "FontFamily",
-      ServerI18n.t("fontFamilyConfig"),
-      fontFamilyDescription, // Dynamic description
-      fontFamilyEnabled, // isEnabled (this now means "allow user choice")
-      fontFamilyCardContent, // Content is the same regardless of toggle for admin
-      fontFamilyCardContent // Content is the same
-    ));
-    // Use setTimeout to ensure DOM is ready before populating dropdowns
-    setTimeout(() => {
-      populateFontFamilyDropdowns();
-    }, 0);
-
-    // Layout Setting Card
-    const layoutEnabled = currentSettings.Layout ? currentSettings.Layout[0] !== false : true;
-    const currentLayout = currentSettings.Layout ? currentSettings.Layout[3] : "scroll";
-    const layoutOptions = ["scroll", "top_fixed", "bottom_fixed", "float", "rise"];
-    const layoutLabels = {
-      scroll: ServerI18n.t("layoutScroll"),
-      top_fixed: ServerI18n.t("layoutTopFixed"),
-      bottom_fixed: ServerI18n.t("layoutBottomFixed"),
-      float: ServerI18n.t("layoutFloat"),
-      rise: ServerI18n.t("layoutRise"),
-    };
-    const layoutCardContent = `
-      <div>
-        <label class="text-sm font-medium text-slate-300">${ServerI18n.t("defaultLayout")}</label>
-        <div class="flex flex-wrap gap-2 mt-2">
-          ${layoutOptions.map(mode => `
-            <button type="button"
-              class="layout-btn px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${mode === currentLayout ? "bg-sky-600 border-sky-500 text-white" : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"}"
-              data-mode="${mode}">${layoutLabels[mode] || mode}</button>
-          `).join("")}
-        </div>
-        <input type="hidden" class="setting-input" data-key="Layout" data-index="3" id="layoutSelect" value="${escapeHtml(currentLayout)}">
-      </div>`;
-    settingsGrid.insertAdjacentHTML("beforeend", settingCard(
-      "Layout",
-      ServerI18n.t("layoutSetting"),
-      layoutEnabled ? ServerI18n.t("layoutDescEnabled") : ServerI18n.t("layoutDescDisabled"),
-      layoutEnabled,
-      layoutCardContent,
-      layoutCardContent
-    ));
-    // Layout button click handler
-    setTimeout(() => {
-      const layoutBtns = document.querySelectorAll(".layout-btn");
-      layoutBtns.forEach(btn => {
-        btn.addEventListener("click", async () => {
-          const mode = btn.dataset.mode;
-          document.getElementById("layoutSelect").value = mode;
-          layoutBtns.forEach(b => {
-            b.className = b.className.replace(/bg-sky-600 border-sky-500 text-white/, "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700");
-          });
-          btn.className = btn.className.replace(/bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700/, "bg-sky-600 border-sky-500 text-white");
-          await updateSetting("Layout", mode, 3);
-        });
-      });
-    }, 0);
-
     // Effects Enable/Disable Card
     const effectsEnabled = currentSettings.Effects ? currentSettings.Effects[0] !== false : true;
     settingsGrid.insertAdjacentHTML("beforeend", settingCard(
@@ -1461,13 +1267,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-    // Font upload button event listeners
-    const uploadFontBtn = document.getElementById("uploadFontBtn");
-    if (uploadFontBtn) {
-      uploadFontBtn.addEventListener("click", () =>
-        handleFontUpload("fontUploadInput", "uploadFontBtn")
-      );
-    }
 
   }
 
@@ -1488,106 +1287,7 @@ document.addEventListener("DOMContentLoaded", () => {
     render();
   }
 
-  async function populateFontFamilyDropdowns() {
-    try {
-      const response = await csrfFetch("/admin/get_fonts");
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        showToast(err.error || "Failed to fetch font list.", false);
-        return;
-      }
-      const payload = await response.json();
-      const fonts = payload.fonts || [];
-      adminFontCache = fonts;
-      scheduleAdminFontRefresh(payload.tokenTTL || 0);
 
-      const selectElement = document.getElementById("fontFamilySelect");
-      const currentFontName = currentSettings.FontFamily[3];
-
-      if (!selectElement) return;
-      selectElement.innerHTML = "";
-
-      let foundCurrentFont = false;
-      fonts.forEach((font) => {
-        const option = document.createElement("option");
-        option.value = font.name;
-        option.textContent = `${font.name} (${font.type === "default"
-          ? ServerI18n.t("fontTypeDefault")
-          : font.type === "system"
-            ? ServerI18n.t("fontTypeSystem")
-            : ServerI18n.t("fontTypeUploaded")
-          })`;
-        option.dataset.fontUrl = font.url || "";
-        option.dataset.expiresAt = font.expiresAt || "";
-        if (font.name === currentFontName) {
-          option.selected = true;
-          foundCurrentFont = true;
-        }
-        selectElement.appendChild(option);
-      });
-
-      if (!foundCurrentFont) {
-        const notoOption = Array.from(selectElement.options).find(
-          (opt) => opt.value === "NotoSansTC"
-        );
-        if (notoOption) {
-          notoOption.selected = true;
-        } else if (selectElement.options.length > 0) {
-          selectElement.options[0].selected = true;
-        }
-      }
-    } catch (error) {
-      console.error("Error populating font dropdowns:", error);
-      showToast(ServerI18n.t("errorLoadingFonts"), false);
-    }
-  }
-
-  async function handleFontUpload(inputId, buttonId) {
-    const fileInput = document.getElementById(inputId);
-    const file = fileInput ? fileInput.files[0] : null;
-
-    if (!file) {
-      showToast(ServerI18n.t("selectTTFFile"), false);
-      return;
-    }
-
-    if (!file.name.toLowerCase().endsWith(".ttf")) {
-      showToast(ServerI18n.t("invalidFileType"), false);
-      fileInput.value = ""; // Clear the input
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("fontfile", file);
-    formData.append("csrf_token", csrfToken);
-
-    try {
-      const response = await csrfFetch("/admin/upload_font", {
-        method: "POST",
-        body: formData,
-      });
-      const result = await response.json();
-      if (response.ok) {
-        showToast(result.message || "Font uploaded successfully!", true);
-        fileInput.value = ""; // Clear the input
-        await populateFontFamilyDropdowns(); // Refresh font list
-        // Optionally, select the newly uploaded font
-        const newFontName = file.name.substring(0, file.name.lastIndexOf(".")); // Get name without .ttf
-        const selectElement = document.getElementById("fontFamilySelect");
-        if (selectElement) {
-          // Check if this font is already an option, if not, populate might add it
-          // For now, just set value and update setting. populateFontFamilyDropdowns will fix selection if needed.
-          selectElement.value = newFontName;
-        }
-        await updateSetting("FontFamily", newFontName, 3); // Update setting and this will trigger re-render and repopulate
-      } else {
-        showToast(result.error || "Font upload failed.", false);
-      }
-    } catch (error) {
-      console.error("Font upload error:", error);
-      showToast(ServerI18n.t("fontUploadError"), false);
-    }
-  }
 
   // Themes management extracted to admin-themes.js (window.AdminThemes)
   function initThemesManagement() {
