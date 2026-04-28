@@ -121,6 +121,42 @@
       : sentiment > -20 ? "var(--color-warning, #fbbf24)"
       : "#f87171";
 
+    // 持續時間 — derive from started_at + (active ? now : ended_at). Falls
+    // back to "—" when poll is idle (never started). Prototype admin-batch8.jsx:477.
+    const durationVal = (function () {
+      const started = Number(poll.started_at) || 0;
+      if (!started) return "—";
+      const ended = state === "active"
+        ? Date.now() / 1000
+        : (Number(poll.ended_at) || started);
+      const sec = Math.max(0, Math.floor(ended - started));
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return m + "m " + String(s).padStart(2, "0") + "s";
+    })();
+
+    // 參與率 — best-effort: total / overlay_count snapshot. Server doesn't
+    // currently expose audience size, so we use the live overlay_count as a
+    // proxy. Falls back to placeholder if unknown. Prototype line 476.
+    const audience = Number(window._lastOverlayCount) || 0;
+    const participationVal = audience > 0
+      ? ((total / audience) * 100).toFixed(1) + "%"
+      : "—";
+    const participationSub = audience > 0
+      ? total + " / " + audience + " 觀眾"
+      : "需 audience snapshot";
+
+    // 重複指紋 — count of rejected re-votes per question (BE adds it).
+    // Falls back to 0 (lime) if BE hasn't shipped the field yet.
+    const duplicates = (function () {
+      const qs = Array.isArray(poll.questions) ? poll.questions : [];
+      let sum = 0;
+      for (const q of qs) sum += Number(q.duplicate_attempts) || 0;
+      // Legacy single-question payload (current_index === 0 → first q).
+      if (!qs.length) sum = Number(poll.duplicate_attempts) || 0;
+      return sum;
+    })();
+
     return `
       <div class="admin-pdd-main">
         <article class="admin-pdd-card admin-pdd-header">
@@ -131,9 +167,10 @@
           <div class="admin-pdd-question">${escapeHtml(question)}</div>
           <div class="admin-pdd-kpis">
             <div class="admin-pdd-kpi"><div class="k">總票數</div><div class="v" style="color:#86efac">${total}</div></div>
-            <div class="admin-pdd-kpi"><div class="k">選項數</div><div class="v">${options.length}</div></div>
-            <div class="admin-pdd-kpi"><div class="k">指紋去重</div><div class="v" style="color:#86efac">已啟用</div><div class="sub">同一指紋僅計 1 票</div></div>
-            <div class="admin-pdd-kpi"><div class="k">狀態</div><div class="v" style="color:var(--color-primary)">${escapeHtml(state.toUpperCase())}</div></div>
+            <div class="admin-pdd-kpi"><div class="k">參與率</div><div class="v" style="color:var(--color-primary)">${participationVal}</div><div class="sub">${escapeHtml(participationSub)}</div></div>
+            <div class="admin-pdd-kpi"><div class="k">持續時間</div><div class="v">${escapeHtml(durationVal)}</div></div>
+            <div class="admin-pdd-kpi"><div class="k">重複指紋</div><div class="v" style="color:${duplicates > 0 ? "var(--color-warning, #fbbf24)" : "#86efac"}">${duplicates}</div><div class="sub">已自動去重</div></div>
+            <div class="admin-pdd-kpi is-placeholder" title="需要 IP tracking（後續 BE 擴張）"><div class="k">作弊嘗試</div><div class="v">—</div><div class="sub">同 IP 連投（待 BE 擴張）</div></div>
           </div>
         </article>
 

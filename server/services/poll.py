@@ -158,7 +158,9 @@ class PollService:
             "current_index": -1,
             "active": False,
             "started_at": None,
+            "ended_at": None,
             "voters_per_question": voters_per_question,
+            "duplicate_attempts": {},
         }
 
     # ─── Lifecycle ──────────────────────────────────────────────────────────
@@ -209,6 +211,7 @@ class PollService:
         with self._lock:
             if self._poll and self._poll["active"]:
                 self._poll["active"] = False
+                self._poll["ended_at"] = time.time()
                 self._broadcast_locked()
 
     def reset(self):
@@ -228,6 +231,10 @@ class PollService:
                 current["id"], set()
             )
             if voter_id in voters:
+                # Track duplicate attempts so the deep-dive KPI can surface
+                # them per prototype admin-batch8.jsx:478 「重複指紋」 tile.
+                attempts = self._poll.setdefault("duplicate_attempts", {})
+                attempts[current["id"]] = attempts.get(current["id"], 0) + 1
                 return False
             key_upper = option_key.upper()
             for opt in current["options"]:
@@ -284,14 +291,15 @@ class PollService:
             "active": self._poll["active"],
             "current_index": self._poll["current_index"],
             "started_at": self._poll["started_at"],
+            "ended_at": self._poll.get("ended_at"),
             "questions": questions_view,
             "question_count": len(questions_view),
             **legacy,
         }
 
-    @staticmethod
-    def _serialize_question(q: Dict[str, Any]) -> Dict[str, Any]:
+    def _serialize_question(self, q: Dict[str, Any]) -> Dict[str, Any]:
         total = sum(o["count"] for o in q["options"])
+        attempts = (self._poll.get("duplicate_attempts") or {}) if self._poll else {}
         return {
             "id": q["id"],
             "text": q["text"],
@@ -299,6 +307,7 @@ class PollService:
             "time_limit_seconds": q.get("time_limit_seconds"),
             "order": q.get("order", 0),
             "total_votes": total,
+            "duplicate_attempts": int(attempts.get(q["id"], 0)),
             "options": [
                 {
                     "key": o["key"],
