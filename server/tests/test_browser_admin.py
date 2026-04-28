@@ -128,9 +128,8 @@ SECTION_TO_ROUTE = {
     "sec-plugins": "plugins",
     "sec-fonts": "fonts",
     "sec-system-overview": "system",
-    # v5: sec-security has its own dedicated route alongside system.
-    "sec-security": "security",
-    "sec-ws-auth": "system",
+    # v5.2 Group D-3 R6 (2026-04-28): sec-security / sec-ws-auth legacy
+    # cards removed; admin-security-v2-page (sec2-pw-*) owns this route.
     "sec-scheduler": "system",
     "sec-webhooks": "system",
     "sec-fingerprints": "system",

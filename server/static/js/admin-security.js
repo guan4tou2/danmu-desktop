@@ -1,14 +1,12 @@
 /**
  * Admin Security (P1-9) — dedicated Soft Holo HUD page.
  *
- * Covers change password + WS token + session/audit skeletons. The legacy
- * <details> cards (sec-security / sec-ws-auth) injected by admin.js still
- * carry the real form handlers (see admin.js section handlers for
- * /admin/change_password and /admin/ws-auth). This module injects an
- * *additional* v2-styled page targeted at the already-existing `system`
- * route (admin.js ADMIN_ROUTES has no `security` nav slug — documented as
- * a blocker in docs/design-v2-backlog.md P1-9). The legacy cards are
- * hidden via JS so only the v2 view shows under `#/system`.
+ * Covers change password + WS token + session/audit skeletons.
+ * As of 2026-04-28 (Group D-3 R6) this module fully owns the security
+ * route — the legacy sec-security / sec-ws-auth <details> cards in
+ * admin.js were deleted along with their inline handlers (changePasswordBtn,
+ * wsAuth* IIFE, password-toggle). Form submit + token rotate / save / copy
+ * all live here.
  *
  * Endpoints used (existing, no backend changes):
  *   POST /admin/change_password       { current_password, new_password, confirm_password }
@@ -296,14 +294,10 @@
     loadWsAuth();
   }
 
-  // Hide the legacy sec-security / sec-ws-auth <details> cards that admin.js
-  // injects, so only the v2 page renders under the system route.
-  function hideLegacyCards() {
-    ["sec-security", "sec-ws-auth"].forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.setAttribute("data-admin-v2-replaced", "1");
-    });
-  }
+  // Legacy cards (sec-security / sec-ws-auth) were removed from admin.js
+  // 2026-04-28 (Group D-3 R6). Function kept as a no-op so callers below
+  // don't need conditional wiring; safe to delete in a follow-up.
+  function hideLegacyCards() { /* noop — cards removed */ }
 
   // Own visibility: the admin.js router only touches [id^="sec-"]. Our page
   // id starts with "admin-", so we manage display based on data-active-route.

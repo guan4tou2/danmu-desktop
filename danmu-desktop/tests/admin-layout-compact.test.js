@@ -19,7 +19,8 @@ test("admin panel uses design-v2 dash grid + route-based sections", () => {
   // Sections still rendered inline by admin.js renderControlPanel():
   expect(adminSrc).toContain('id="sec-blacklist"');
   expect(adminSrc).toContain('id="sec-history"');
-  expect(adminSrc).toContain('id="sec-security"');
+  // sec-security / sec-ws-auth removed 2026-04-28 (Group D-3 R6) — fully
+  // owned by admin-security-v2-page (sec2-pw-* IDs) in admin-security.js.
 
   // Sections extracted to dedicated modules (Group D-3 split). The HTML
   // uses template literals with SECTION_ID, so we assert the const + the

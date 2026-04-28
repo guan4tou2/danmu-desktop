@@ -1162,88 +1162,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Rate Limits editable card — extracted to admin-ratelimit.js
     // (Group D-3 split, 2026-04-28). Self-binds on admin-panel-rendered.
 
-    // Password Change Card (with show/hide toggles)
-    settingsGrid.insertAdjacentHTML("beforeend", `
-                    <details id="sec-security" class="group admin-v3-card" ${isOpen("sec-security") ? "open" : ""}>
-                        <summary class="flex items-center justify-between cursor-pointer list-none">
-                            <div>
-                                <h3 class="text-lg font-bold text-white">${ServerI18n.t("changePassword")}</h3>
-                                <p class="text-sm text-slate-300">${ServerI18n.t("changePasswordDesc")}</p>
-                            </div>
-                            <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
-                        </summary>
-                        <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-3">
-                            <div class="password-wrapper">
-                                <input id="pwCurrent" type="password" placeholder="${ServerI18n.t("currentPassword")}"
-                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400">
-                                <button type="button" class="password-toggle" data-target="pwCurrent" aria-label="Toggle password visibility">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                </button>
-                            </div>
-                            <div class="password-wrapper">
-                                <input id="pwNew" type="password" placeholder="${ServerI18n.t("newPassword")}"
-                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400">
-                                <button type="button" class="password-toggle" data-target="pwNew" aria-label="Toggle password visibility">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                </button>
-                            </div>
-                            <div class="password-wrapper">
-                                <input id="pwConfirm" type="password" placeholder="${ServerI18n.t("confirmNewPassword")}"
-                                    class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400">
-                                <button type="button" class="password-toggle" data-target="pwConfirm" aria-label="Toggle password visibility">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                </button>
-                            </div>
-                            <button id="changePasswordBtn"
-                                class="w-full px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-colors text-sm font-semibold">
-                                ${ServerI18n.t("changePasswordBtn")}
-                            </button>
-                        </div>
-                    </details>
-
-                    <details id="sec-ws-auth" class="group admin-v3-card" ${isOpen("sec-ws-auth") ? "open" : ""}>
-                        <summary class="flex items-center justify-between cursor-pointer list-none">
-                            <div>
-                                <h3 class="text-lg font-bold text-white">${ServerI18n.t("wsAuthTitle")}</h3>
-                                <p class="text-sm text-slate-300">${ServerI18n.t("wsAuthDesc")}</p>
-                            </div>
-                            <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
-                        </summary>
-                        <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-4">
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input id="wsAuthRequireToggle" type="checkbox" class="toggle-checkbox w-4 h-4 accent-sky-500" />
-                                <span class="text-sm text-white">${ServerI18n.t("wsAuthRequireLabel")}</span>
-                            </label>
-                            <p class="text-xs text-slate-400">${ServerI18n.t("wsAuthRequireHint")}</p>
-                            <div class="space-y-2">
-                                <label for="wsAuthTokenInput" class="block text-sm text-slate-200">${ServerI18n.t("wsAuthTokenLabel")}</label>
-                                <div class="password-wrapper">
-                                    <input id="wsAuthTokenInput" type="password"
-                                        class="w-full px-3 py-2 pr-10 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm font-mono placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
-                                        placeholder="${ServerI18n.t("wsAuthTokenPlaceholder")}" autocomplete="off" spellcheck="false">
-                                    <button type="button" class="password-toggle" data-target="wsAuthTokenInput" aria-label="Toggle token visibility">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    </button>
-                                </div>
-                                <p class="text-xs text-slate-400">${ServerI18n.t("wsAuthTokenHint")}</p>
-                            </div>
-                            <div class="flex gap-2">
-                                <button id="wsAuthSaveBtn"
-                                    class="flex-1 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-colors text-sm font-semibold">
-                                    ${ServerI18n.t("wsAuthSaveBtn")}
-                                </button>
-                                <button id="wsAuthRotateBtn"
-                                    class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm font-semibold">
-                                    ${ServerI18n.t("wsAuthRotateBtn")}
-                                </button>
-                                <button id="wsAuthCopyBtn"
-                                    class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm font-semibold">
-                                    ${ServerI18n.t("wsAuthCopyBtn")}
-                                </button>
-                            </div>
-                        </div>
-                    </details>
-                `);
+    // Password Change + WS Auth — fully owned by admin-security.js v2 page
+    // (admin-security-v2-page). Legacy sec-security / sec-ws-auth <details>
+    // cards + their inline handlers (changePasswordBtn / wsAuth* / password
+    // -toggle) were removed 2026-04-28 Group D-3 R6 since the v2 page covers
+    // identical functionality with sec2-pw-* IDs.
 
     addEventListeners();
     initAdminSectionLayout();
@@ -1360,7 +1283,9 @@ document.addEventListener("DOMContentLoaded", () => {
     plugins:   { title: "伺服器插件",       kicker: "PLUGIN SDK · 熱重載 · SANDBOX", sections: ["sec-plugins"] },
     fonts:     { title: "字型管理",         kicker: "FONT LIBRARY · 觀眾可選",   sections: ["sec-fonts"] },
     system:    { title: "系統 & 指紋",      kicker: "SYSTEM · FINGERPRINT · RATE LIMITS", sections: ["sec-system-overview", "sec-scheduler", "sec-webhooks", "sec-fingerprints"] },
-    security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: ["sec-security", "sec-ws-auth"] },
+    // Security route is fully owned by admin-security-v2-page (admin-security.js).
+    // sections=[] because the v2 page handles its own visibility on data-active-route.
+    security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: [] },
     backup:    { title: "備份 & 匯出",       kicker: "BACKUP · EXPORT · DANGER",          sections: ["sec-backup"] },
     // P1 (2026-04-27 V1Z4 batch7): aggregated alerts inbox.
     notifications: { title: "通知",          kicker: "NOTIFICATIONS · 警示中心 · 多來源",  sections: ["sec-notifications-overview"] },
@@ -1534,138 +1459,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Replay controls — wired by admin-replay-controls.js (extracted module).
 
-    // Password change button
-    const changePasswordBtn = document.getElementById("changePasswordBtn");
-    if (changePasswordBtn) {
-      changePasswordBtn.addEventListener("click", async () => {
-        const current = document.getElementById("pwCurrent")?.value || "";
-        const newPw = document.getElementById("pwNew")?.value || "";
-        const confirm = document.getElementById("pwConfirm")?.value || "";
 
-        if (!current || !newPw || !confirm) {
-          showToast(ServerI18n.t("allFieldsRequired"), false);
-          return;
-        }
-
-        try {
-          const res = await csrfFetch("/admin/change_password", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              current_password: current,
-              new_password: newPw,
-              confirm_password: confirm,
-            }),
-          });
-          const data = await res.json();
-          if (res.ok) {
-            showToast(data.message || "Password changed!", true);
-            // Clear the fields
-            ["pwCurrent", "pwNew", "pwConfirm"].forEach((id) => {
-              const el = document.getElementById(id);
-              if (el) el.value = "";
-            });
-          } else {
-            showToast(data.error || "Failed to change password.", false);
-          }
-        } catch (e) {
-          showToast(ServerI18n.t("passwordChangeError"), false);
-        }
-      });
-    }
-
-    // WS auth toggle/token — hydrate current state then wire save/rotate/copy
-    (function initWsAuthPanel() {
-      const toggle = document.getElementById("wsAuthRequireToggle");
-      const tokenInput = document.getElementById("wsAuthTokenInput");
-      const saveBtn = document.getElementById("wsAuthSaveBtn");
-      const rotateBtn = document.getElementById("wsAuthRotateBtn");
-      const copyBtn = document.getElementById("wsAuthCopyBtn");
-      if (!toggle || !tokenInput || !saveBtn || !rotateBtn || !copyBtn) return;
-
-      // The generic `.toggle-checkbox` handler (in addEventListeners above)
-      // skips elements without a `name` attribute, so this widget is not
-      // bound to the /admin/Set auto-POST path. Our Save button is the only
-      // thing that writes to the server.
-
-      function applyState(state) {
-        toggle.checked = !!state.require_token;
-        tokenInput.value = state.token || "";
-      }
-
-      fetch("/admin/ws-auth", { credentials: "same-origin" })
-        .then((r) => (r.ok ? r.json() : Promise.reject(r)))
-        .then(applyState)
-        .catch(() => {
-          /* silent — admin can still fill in fields manually */
-        });
-
-      saveBtn.addEventListener("click", async () => {
-        const body = {
-          require_token: toggle.checked,
-          token: tokenInput.value.trim(),
-        };
-        if (body.require_token && !body.token) {
-          showToast(ServerI18n.t("wsAuthTokenRequired"), false);
-          return;
-        }
-        try {
-          const res = await csrfFetch("/admin/ws-auth", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          });
-          const data = await res.json();
-          if (res.ok) {
-            applyState(data);
-            showToast(ServerI18n.t("wsAuthSaved"), true);
-          } else {
-            showToast(data.error || ServerI18n.t("wsAuthSaveFailed"), false);
-          }
-        } catch (e) {
-          showToast(ServerI18n.t("wsAuthSaveFailed"), false);
-        }
-      });
-
-      rotateBtn.addEventListener("click", async () => {
-        try {
-          const res = await csrfFetch("/admin/ws-auth/rotate", { method: "POST" });
-          const data = await res.json();
-          if (res.ok) {
-            applyState(data);
-            showToast(ServerI18n.t("wsAuthRotated"), true);
-          } else {
-            showToast(data.error || ServerI18n.t("wsAuthSaveFailed"), false);
-          }
-        } catch (e) {
-          showToast(ServerI18n.t("wsAuthSaveFailed"), false);
-        }
-      });
-
-      copyBtn.addEventListener("click", async () => {
-        const value = tokenInput.value;
-        if (!value) {
-          showToast(ServerI18n.t("wsAuthTokenEmpty"), false);
-          return;
-        }
-        try {
-          if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(value);
-          } else {
-            // Fallback for non-HTTPS dev — select + execCommand still ships
-            // in Firefox/Safari.
-            const originalType = tokenInput.type;
-            tokenInput.type = "text";
-            tokenInput.select();
-            document.execCommand("copy");
-            tokenInput.type = originalType;
-          }
-          showToast(ServerI18n.t("wsAuthCopied"), true);
-        } catch (e) {
-          showToast(ServerI18n.t("wsAuthCopyFailed"), false);
-        }
-      });
-    })();
 
     // Font upload button event listeners
     const uploadFontBtn = document.getElementById("uploadFontBtn");
@@ -1675,20 +1469,6 @@ document.addEventListener("DOMContentLoaded", () => {
       );
     }
 
-    // Password show/hide toggles
-    document.querySelectorAll(".password-toggle").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const targetId = btn.dataset.target;
-        const input = document.getElementById(targetId);
-        if (!input) return;
-        const isPassword = input.type === "password";
-        input.type = isPassword ? "text" : "password";
-        // Swap icon: eye ↔ eye-off
-        btn.innerHTML = isPassword
-          ? '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"/></svg>'
-          : '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>';
-      });
-    });
   }
 
   // Main Render Function
