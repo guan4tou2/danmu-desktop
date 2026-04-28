@@ -458,3 +458,71 @@ User Q: 「需要叫 design 設計 rwd 嗎 mobile 的樣式」
 - `viewer-identity-no-fp.png`（截「身分 · 點擊可改名」field 沒 fp 的版本）
 
 → 這 3 張塞進 design conversation handoff，請 Design 在下一輪補 K.2 的 artboard。
+
+---
+
+## L. DESIGN 缺項 · single source of truth（2026-04-28 整合）
+
+> 這節把整份 doc 散在 §C / §H.2 / §K.2 / §K.2b 的「Design 還沒設計到」整理成單一清單，方便直接丟 Design 開會用。
+>
+> 三個分類：
+> - **L.1** = prototype **完全沒畫**，工程 ship 時自己腦補的 → 需要 artboard 補拍板
+> - **L.2** = prototype **有畫但工程偏離** → 需要 Design 確認偏離是否 OK
+> - **L.3** = prototype **有畫但需要新 BE schema** → Design 要拍板 BE 擴張要不要做
+
+### L.1 Prototype 完全沒畫 · 工程腦補（最高優先 · 6 項）
+
+| # | 缺項 | 工程現況 | 建議 Design 動作 |
+|---|------|----------|-----------------|
+| 1 | **效果參數面板**（每個選中效果之下的 速度/高度/間隔/樣式 sliders + selects） | prototype `viewer.jsx:301-322` 只設計到「8 個效果按鈕反白」，沒延伸 per-effect param UI；當前實作是灰底 panel + cyan label，dark/light 各自 OK 但沒 spec | 補 per-effect param panel artboard（dark/light × 8 種效果，可只示意 1-2 個） |
+| 2 | **History 2-tab strip**（匯出 / 重播） | `#/history` 上方 2-tab，CSS 切 sec-history vs replay-v2-section | 補 `AdminHistoryTabbedPage` artboard — 雙 tab strip + 兩 tab content 切換示意 |
+| 3 | **History 3-tab strip**（匯出 v2 / 列表 v1 / 重播） | 2026-04-28 retrofit 加了第三個 tab（列表 = legacy 表格） | 同 #2，但 3 tab 版本（建議跟 #2 合併設計） |
+| 4 | **Viewer Config 2-tab strip**（整頁主題 / 表單欄位） | `#/viewer-config` 上方 2-tab，切 sec-viewer-theme vs admin-display-v2-page | 補 `AdminViewerConfigTabbedPage` artboard — 雙 tab strip + 兩 tab content 切換示意 |
+| 5 | **Admin desktop 的 768/480 RWD breakpoint** | prototype 全部 `1440×900`；目前 css `@media` 是 fallback「能擠就擠」，不是設計過的 layout | 挑 3-5 個高頻 page（dashboard / messages / poll / broadcast / history）補 768 + 480 兩個 breakpoint artboard |
+| 6 | **Setup Wizard 6-pack mode** | prototype `admin-batch3.jsx:198 WizStepTheme` 寫死 6 個 hardcoded packs（classic/neon/mono/sakura/matrix/twilight），實作走 `/admin/themes` 動態 4 個 | 確認：要不要工程 ship 6 個 hardcoded（覆蓋 dynamic 結果），還是 Design 接受 dynamic 4 個 |
+
+### L.2 Prototype 有畫但工程偏離 · 待 Design 拍板（4 項）
+
+| # | 元件 | Prototype 規格 | 工程實作 | Design 拍板 |
+|---|------|----------------|----------|-------------|
+| 1 | **效果按鈕 selected 視覺** | `cyanSoft` 淺底 + `accent` 邊框 + `fontWeight 600` | 截圖顯示是深藍實底（看起來像 hudTokens.cyan 直接當 bg） | 確認偏離是否允許；若不允許，工程改回 `var(--hud-cyan-soft)` |
+| 2 | **AdminPollsPage 格局** | 12-col grid（active poll 7 + builder 5） | master-detail（左清單 + 右編輯） | 確認偏離是否允許；工程選擇是 RWD 友善優先 |
+| 3 | **Effects 8-card 是否動態** | prototype 寫死 8 張 | 實作 `已選 N / 8`（支援未來擴張） | 確認：保持 8 張固定？還是支援自訂上傳後變 N 張？ |
+| 4 | **Viewer Identity field** | prototype 是 plain `<input>` | 中間做過 chip + fp 顯示，2026-04-28 又改回 plain input + nickname live-sync 到 preview 左上角 | 確認 plain input 是 final，還是要 chip pattern |
+
+### L.3 Prototype 有畫但需要新 BE schema（7 項，全進獨立 sprint）
+
+對照 [`backend-extensions-pending-2026-04-27.md`](./backend-extensions-pending-2026-04-27.md)。Design 要先拍板「BE 擴張要做嗎」，才有後續 artboard 細修空間。
+
+| # | 元件 | 缺什麼 BE | 規模 |
+|---|------|-----------|------|
+| 1 | AdminTokensPage（per-integration ACL） | 新 token table | 中（需要 schema design） |
+| 2 | AdminWcagPage + AdminDashboardEN | 全套 EN i18n strings | 大（6-10 hr 純 FE 但要全套翻譯） |
+| 3 | Audit Log multi-actor / ACTION dim / before-after / source platform | audit_log schema 擴張 | 中-大 |
+| 4 | Notifications detail panel + Webhooks/System sources | 新 alert schema | 中 |
+| 5 | Setup Wizard password + Logo step | /admin/logo upload + first-run check endpoint | 小 |
+| 6 | Poll Deep-Dive Time histogram / vs 上次 Δ | per-vote timestamp + poll history persistence | 中 |
+| 7 | AdminAudiencePage 出席場次 / Sessions entity | sessions table | 大（牽動很多 page） |
+
+### L.4 獨立 Sprint：Mobile / Electron（2 項）
+
+| # | 元件 | Prototype | 工程估計 | 備註 |
+|---|------|-----------|----------|------|
+| 1 | **AdminMobilePage**（獨立手機 form-factor） | `admin-batch8.jsx:642`（375×812 iOS chrome + ticker + action grid） | 4-6 hr 純 FE | 不是 desktop 的 RWD 縮版，是另一個 dedicated phone page |
+| 2 | **DesktopTrayPopover** + **DesktopWindowPicker**（Electron 端） | `V1Z4 batch9 #11/#12` | 7-10 hr | 獨立 Electron sprint，加新 main-modules |
+
+→ 這兩塊不阻塞 server 工作，可平行開展。
+
+### L.5 已 ship · prototype 補 artboard 即可（記錄用）
+
+工程做完了 prototype 沒畫過，Design 拍板後直接做的，建議補 artboard 讓未來 onboarding/重構有 reference：
+
+1. ✅ **OverlayIdleQR 4-state machine**（idle/scanning/paired/failed）— commit `13072df`，prototype `priority-2-pieces.jsx:174` 已對齊
+2. ✅ **AdminHistoryPage v2 timeline export**（3-step picker + recent exports）— commit `94ce6c1`，prototype `admin-batch1.jsx:218` 已對齊
+3. ✅ **Viewer body 字體放大**（label 9→11px、input 13→15px、color hex 10→12px、font select 13→15px）— commit `54c2408`，無 prototype 對應，user feedback 驅動
+
+---
+
+## 給 Design 的一句話 TL;DR
+
+優先補 **L.1 的 6 個 missing artboard**（沒 prototype 工程只能腦補，往後重構或 onboarding 都會卡），確認 **L.2 的 4 個偏離 OK 不 OK**（已 ship 但等於沒 spec），然後拍板 **L.3 的 7 個 BE 擴張要不要做**（決定 sprint 切片）。L.4 兩塊獨立做沒差。
