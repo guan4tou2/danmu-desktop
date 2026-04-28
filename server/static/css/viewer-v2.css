@@ -376,16 +376,13 @@ body.viewer-body-v2.is-dark {
 }
 
 /* Lang select + theme toggle row — prototype viewer.jsx:184-185
- * (LangSelect line 519, ThemeToggle line 553). Desktop only. */
+ * (LangSelect line 519, ThemeToggle line 553). Visible on every viewport;
+ * mobile uses the prototype `mini` variant (22px instead of 26px). */
 .viewer-hero-seg-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px; /* prototype gap: 6 */
   margin-top: 4px;
-}
-
-@media (max-width: 599px) {
-  .viewer-hero-seg-row { display: none; }
 }
 
 /* LangSelect — prototype viewer.jsx:519. Native <select> overlay so
@@ -451,6 +448,24 @@ body.viewer-body-v2.is-dark {
 }
 .viewer-theme-toggle:hover {
   background: rgba(56, 189, 248, 0.16);
+}
+
+/* Mobile mini variant — prototype LangSelect mini: padding 0 16px 0 8px,
+ * height 22, font-size 10. ThemeToggle mini: 22×22, font-size 11. */
+@media (max-width: 599px) {
+  .viewer-lang-select {
+    height: 22px;
+    padding: 0 16px 0 8px;
+  }
+  .viewer-lang-current { font-size: 10px; }
+  .viewer-lang-arrow {
+    right: 5px;
+  }
+  .viewer-theme-toggle {
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
+  }
 }
 
 /* Body — prototype viewer.jsx:129 — `flex:1, overflow:auto, padding: pad`.
