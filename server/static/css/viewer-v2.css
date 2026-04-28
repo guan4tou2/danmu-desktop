@@ -525,9 +525,9 @@ body.viewer-body-v2.is-dark {
   left: 10px;
   z-index: 1;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   color: rgba(148, 163, 184, 0.7);
-  letter-spacing: 1.5px;
+  letter-spacing: 1.4px;
 }
 
 .viewer-preview-row {
@@ -572,8 +572,8 @@ body.viewer-body-v2.is-dark {
 .viewer-field-label {
   display: block;
   font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 1.5px;
+  font-size: 11px;
+  letter-spacing: 1.4px;
   color: var(--color-text-secondary);
   margin-bottom: 6px;
   text-transform: uppercase;
@@ -660,10 +660,10 @@ body.viewer-body-v2.is-dark {
   background: var(--color-bg-elevated);
   border: 1px solid var(--hud-line);
   color: var(--color-text-primary);
-  padding: 0.625rem 0.75rem;
+  padding: 0.7rem 0.85rem;
   border-radius: 6px;
   outline: none;
-  font-size: 13px;
+  font-size: 15px;
   box-sizing: border-box;
 }
 
@@ -718,7 +718,7 @@ body.viewer-body-v2.is-dark {
 .viewer-color-hex {
   margin-left: auto;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.5px;
   color: var(--color-text-secondary);
   text-transform: uppercase;
@@ -731,12 +731,12 @@ body.viewer-body-v2.is-dark {
 
 .viewer-select {
   width: 100%;
-  padding: 9px 34px 9px 12px;
+  padding: 11px 36px 11px 14px;
   border-radius: 6px;
   background: var(--color-bg-elevated);
   border: 1px solid var(--hud-line);
   color: var(--color-text-primary);
-  font-size: 13px;
+  font-size: 15px;
   outline: none;
   cursor: pointer;
   appearance: none;

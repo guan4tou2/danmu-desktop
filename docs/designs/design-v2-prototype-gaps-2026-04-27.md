@@ -404,13 +404,28 @@ spec-only，等 Design 拍板 §7 三題後從 S1 開工。
 | 4 | Viewer 排版（layout-btn）radio 行為修復 | toggle 沒清 `is-active`，多選會疊 highlight | (pending) |
 | 5 | Viewer 身分 chip 移除 `fp:xxxxxxxx` 顯示 | 觀眾端不該看到 fingerprint hash | (pending) |
 
+### K.1b 字體放大（user feedback 2026-04-28）
+
+prototype `viewer.jsx` 用 9-10px mono uppercase label，桌機看 OK，但手機 + 中年觀眾回報「太小」。把 viewer body 的字統一往上拉一檔：
+
+| 元件 | 原 | 改 |
+|------|-----|-----|
+| `.viewer-field-label`（身分 / 顏色 / 字級…） | 9px | 11px |
+| `.viewer-preview-kicker`（預覽 · 你送出的樣子） | 9px | 11px |
+| `.viewer-input`（暱稱 input） | 13px | 15px |
+| `.viewer-color-hex`（#FFFFFF 讀數） | 10px | 12px |
+| `.viewer-select`（字型下拉） | 13px / pad 9-12 | 15px / pad 11-14 |
+
+→ Design 後續若要用 prototype 原 9px 規格，把這條 K.1b 翻回去就好（單一 commit）。
+
 ### K.2 Prototype 沒設計、需要 Design 補
 
 | # | 區塊 | 觀察到的現狀 | 建議 |
 |---|------|--------------|------|
 | 1 | **效果參數面板**（每個選中效果之下的 速度/高度/間隔/樣式 sliders + selects） | prototype `viewer.jsx:301-322` 只設計到「8 個效果按鈕 cyan-soft 反白」，沒延伸 per-effect 參數 UI；當前實作是灰底 panel + cyan label | 需要 Design 補 per-effect param panel artboard（dark/light 各一） |
 | 2 | **效果按鈕 selected 視覺** | 截圖顯示 selected 是深藍實底（看起來像 hudTokens.cyan 直接當 bg），prototype 規定 `cyanSoft` 淺底 + `accent` 邊框 + `fontWeight 600` | 需要 Design 確認「現在實作的深藍底」算偏離還是允許；若偏離，工程改回 `var(--hud-cyan-soft)` |
-| 3 | **viewer Identity chip** | `身分 · 點擊可改名` field 沒有對應 prototype（prototype 的 viewer 暱稱是 plain input，沒有 chip 容器） | 確認 chip pattern 要 keep 還是 fallback 回 plain input；目前已移除 `fp:xxxxxxxx` 內容 |
+| 3 | **viewer Identity chip** | `身分 · 點擊可改名` field 沒有對應 prototype（prototype 的 viewer 暱稱是 plain input，沒有 chip 容器） | 已 fallback 為 plain `<input class="viewer-input">`；暱稱直接 live 同步到 preview 左上角，沒 `@` 前綴 |
+| 4 | **AdminHistoryPage v2 retrofit** | prototype `admin-batch1.jsx:218` 已設計好「時間軸匯出」(① 時間範圍 chips / ② 內容篩選 toggles / ③ 輸出格式 cards JSON·CSV·SRT / 右側 最近匯出 list) | **prototype 已存在但工程還沒 retrofit**。目前 `/admin/#/history` 跑的還是 v1 表格 + 搜尋 + clear 按鈕。SHIP 列表（§B.1 應補一筆 `AdminHistoryPage v2`），約 4-6 hr 純 FE |
 
 ### K.3 跟 Design 對齊用的截圖（VPS 上線後可拍）
 
