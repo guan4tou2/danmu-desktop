@@ -19,8 +19,16 @@
  *   ✓ STATUS (active / flagged / blocked + extension chip if Slido fp)
  *   ✓ ACTIONS (ban via existing /admin/live/block)
  *
- * The prototype's right detail panel (high-risk inspection with action
- * buttons) is deferred — for v1 the row-click action is direct ban.
+ * Right detail panel (prototype admin-batch7.jsx:723) — 2026-04-29 ship.
+ * Click any row to open the inspection drawer:
+ *   - HIGH RISK / FLAGGED / NORMAL chip + close (✕)
+ *   - Avatar + nick + fp
+ *   - ⚠ FLAG block: rule list synthesized from message_count + state
+ *     (real BE flags require new schema; we derive heuristics from
+ *     existing fields — message_count, state, ip frequency)
+ *   - 近 5 分鐘訊息: fetched from /admin/history filtered by fingerprint
+ *   - 建議動作: ban (real) / mask (real if filters API exposes) /
+ *     kick (placeholder, no kick endpoint) / mark-safe (clears flag)
  *
  * Loaded as <script defer> in admin.html.
  */
@@ -50,6 +58,9 @@
     records: [],
     filter: "all",
     refreshTimer: 0,
+    selectedFp: null,
+    detailMessages: [],     // last-5-min messages for selectedFp
+    detailLoading: false,
   };
 
   function _hashColor(fp) {
@@ -82,15 +93,20 @@
         <div class="admin-aud-grid">
           <div class="admin-aud-stats" data-aud-stats></div>
 
-          <div class="admin-aud-table-wrap">
-            <div class="admin-aud-toolbar">
-              <span class="admin-aud-summary" data-aud-summary>讀取中…</span>
-              <span class="admin-aud-filters" data-aud-filters></span>
-              <button type="button" class="admin-aud-refresh" data-aud-action="refresh">↻</button>
+          <div class="admin-aud-main-row">
+            <div class="admin-aud-table-wrap">
+              <div class="admin-aud-toolbar">
+                <span class="admin-aud-summary" data-aud-summary>讀取中…</span>
+                <span class="admin-aud-filters" data-aud-filters></span>
+                <button type="button" class="admin-aud-refresh" data-aud-action="refresh">↻</button>
+              </div>
+              <div class="admin-aud-list" data-aud-list>
+                <div class="admin-aud-loading">載入觀眾列表中…</div>
+              </div>
             </div>
-            <div class="admin-aud-list" data-aud-list>
-              <div class="admin-aud-loading">載入觀眾列表中…</div>
-            </div>
+            <aside class="admin-aud-detail" data-aud-detail hidden>
+              <!-- populated by _renderDetail() on row click -->
+            </aside>
           </div>
         </div>
       </div>`;
@@ -176,8 +192,9 @@
       const msgs = Number(r.message_count) || 0;
       const stateKey = r.state || "active";
       const stateMeta = STATE_META[stateKey] || STATE_META.active;
+      const selectedCls = _state.selectedFp === fp ? " is-selected" : "";
       return `
-        <div class="admin-aud-row" data-aud-row data-aud-fp="${escapeHtml(fp)}">
+        <div class="admin-aud-row${selectedCls}" data-aud-row data-aud-fp="${escapeHtml(fp)}">
           <span class="col col-avatar">
             <span class="avatar" style="background:${color}">${escapeHtml(initial)}</span>
           </span>
@@ -202,6 +219,149 @@
     list.innerHTML = headerHtml + rowsHtml;
   }
 
+  // ── detail panel ─────────────────────────────────────────────────
+
+  function _findRecord(fp) {
+    if (!fp) return null;
+    return _state.records.find(function (r) { return r.fingerprint === fp; }) || null;
+  }
+
+  // Synthesize a risk assessment from fields the BE already provides.
+  // Real BE risk schema is in §H.2 — until that lands, we surface
+  // observable heuristics so the panel isn't empty.
+  function _assessRisk(rec) {
+    if (!rec) return { level: "normal", color: "#86efac", label: "NORMAL", rules: [] };
+    const rules = [];
+    const msgs = Number(rec.message_count) || 0;
+    const fp = rec.fingerprint || "";
+    if (rec.state === "blocked") rules.push("已被封禁 · 訊息自動遮罩中");
+    if (rec.state === "flagged") rules.push("已被標記 · 等待人工確認");
+    if (msgs >= 25) rules.push("訊息量 " + msgs + " 則 · 超過 spam threshold(25)");
+    else if (msgs >= 15) rules.push("訊息量 " + msgs + " 則 · 接近 spam threshold(25)");
+    // Same-IP-multi-fp signal (if BE exposes it later we'll surface it)
+    const sameIp = _state.records.filter(function (r) {
+      return r.ip && rec.ip && r.ip === rec.ip;
+    }).length;
+    if (sameIp >= 3) rules.push("同 IP " + sameIp + " 個指紋 · 可能換裝置 / VPN");
+    if (fp.indexOf("slido") === 0 || fp.indexOf("ext_") === 0) {
+      rules.push("Slido / extension 橋接 · 訊息來自 fire token");
+    }
+    if (rec.nickname === "匿名" || !rec.nickname) {
+      rules.push("使用者未設暱稱（首次出現）");
+    }
+    let level = "normal";
+    let color = "#86efac";
+    let label = "NORMAL";
+    if (rec.state === "blocked") { level = "blocked"; color = "#f87171"; label = "BLOCKED"; }
+    else if (rec.state === "flagged" || msgs >= 25) { level = "high"; color = "#f87171"; label = "HIGH RISK"; }
+    else if (msgs >= 15 || sameIp >= 3) { level = "mid"; color = "#fbbf24"; label = "MID"; }
+    return { level: level, color: color, label: label, rules: rules };
+  }
+
+  async function _loadRecentMessages(fp) {
+    _state.detailLoading = true;
+    try {
+      const r = await fetch("/admin/history?hours=1&limit=200", { credentials: "same-origin" });
+      if (!r.ok) { _state.detailMessages = []; return; }
+      const data = await r.json();
+      const records = Array.isArray(data.records) ? data.records : [];
+      const cutoff = Date.now() - 5 * 60 * 1000; // last 5 min
+      _state.detailMessages = records
+        .filter(function (m) {
+          if ((m.fingerprint || "") !== fp) return false;
+          const ts = m.timestamp ? new Date(m.timestamp).getTime() : 0;
+          return ts >= cutoff;
+        })
+        .slice(0, 8); // cap render
+    } catch (_) {
+      _state.detailMessages = [];
+    } finally {
+      _state.detailLoading = false;
+    }
+  }
+
+  function _renderDetail() {
+    const detail = document.querySelector("[data-aud-detail]");
+    if (!detail) return;
+    const fp = _state.selectedFp;
+    if (!fp) {
+      detail.hidden = true;
+      detail.innerHTML = "";
+      return;
+    }
+    const rec = _findRecord(fp);
+    if (!rec) {
+      _state.selectedFp = null;
+      detail.hidden = true;
+      return;
+    }
+    detail.hidden = false;
+    const risk = _assessRisk(rec);
+    detail.dataset.riskLevel = risk.level;
+    const color = _hashColor(fp);
+    const nick = rec.nickname || "匿名";
+    const initial = nick === "匿名" ? "?" : nick.slice(0, 1);
+    const fpShort = "fp:" + (fp || "").slice(0, 8);
+    const rulesHtml = risk.rules.length
+      ? risk.rules.map(function (r) { return "<li>" + escapeHtml(r) + "</li>"; }).join("")
+      : '<li class="ok">未觸發任何 flag · 行為正常</li>';
+
+    let messagesHtml = "";
+    if (_state.detailLoading) {
+      messagesHtml = '<div class="admin-aud-detail-loading">載入訊息中…</div>';
+    } else if (_state.detailMessages.length === 0) {
+      messagesHtml = '<div class="admin-aud-detail-empty">近 5 分鐘無訊息</div>';
+    } else {
+      messagesHtml = _state.detailMessages.map(function (m) {
+        const status = m.muted ? "MASKED" : (m.banned ? "BLOCKED" : "SHOWN");
+        const statusColor = m.muted ? "#fbbf24" : (m.banned ? "#f87171" : "#86efac");
+        const tsLabel = m.timestamp
+          ? new Date(m.timestamp).toLocaleTimeString("zh-TW", { hour12: false })
+          : "—";
+        return (
+          '<div class="admin-aud-detail-msg">' +
+            '<span class="ts">' + escapeHtml(tsLabel) + '</span>' +
+            '<span class="m">' + escapeHtml(m.text || "") + '</span>' +
+            '<span class="s" style="color:' + statusColor + '">' + status + '</span>' +
+          '</div>'
+        );
+      }).join("");
+    }
+
+    detail.innerHTML =
+      '<div class="admin-aud-detail-head">' +
+        '<span class="risk" style="color:' + risk.color + ';border-color:' + risk.color + '55;background:' + risk.color + '1c;">' + escapeHtml(risk.label) + '</span>' +
+        '<button type="button" class="close" data-aud-action="close-detail" aria-label="關閉">✕</button>' +
+      '</div>' +
+      '<div class="admin-aud-detail-id">' +
+        '<span class="avatar" style="background:' + color + '">' + escapeHtml(initial) + '</span>' +
+        '<div>' +
+          '<div class="nick">' + escapeHtml(nick) + '</div>' +
+          '<div class="fp">' + escapeHtml(fpShort) + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="admin-aud-detail-flag" data-risk="' + risk.level + '">' +
+        '<div class="hd">⚠ FLAG · 觸發 ' + risk.rules.length + ' 條規則</div>' +
+        '<ul>' + rulesHtml + '</ul>' +
+      '</div>' +
+      '<div class="admin-v2-monolabel admin-aud-detail-label">近 5 分鐘訊息</div>' +
+      '<div class="admin-aud-detail-messages">' + messagesHtml + '</div>' +
+      '<div class="admin-v2-monolabel admin-aud-detail-label">建議動作</div>' +
+      '<div class="admin-aud-detail-actions">' +
+        '<button type="button" class="primary" data-aud-action="detail-ban" data-aud-fp="' + escapeHtml(fp) + '">⊗ 立即封禁指紋 · 7 天</button>' +
+        '<button type="button" class="warn" data-aud-action="detail-mask" data-aud-fp="' + escapeHtml(fp) + '">◐ 改為遮罩模式</button>' +
+        '<button type="button" data-aud-action="detail-kick" data-aud-fp="' + escapeHtml(fp) + '" disabled title="尚未實作 kick endpoint">👢 踢出此場（待 BE 擴張）</button>' +
+        '<button type="button" data-aud-action="detail-safe" data-aud-fp="' + escapeHtml(fp) + '">✓ 標記安全 · 解除 flag</button>' +
+      '</div>';
+  }
+
+  function _selectFp(fp) {
+    _state.selectedFp = fp;
+    _state.detailMessages = [];
+    _renderDetail();
+    _loadRecentMessages(fp).then(_renderDetail);
+  }
+
   // ── data ─────────────────────────────────────────────────────────
 
   async function _fetch() {
@@ -213,7 +373,64 @@
       _renderStats();
       _renderFilters();
       _renderList();
+      // refresh detail panel if open (record may have updated counts)
+      if (_state.selectedFp) _renderDetail();
     } catch (_) { /* silent */ }
+  }
+
+  async function _maskFingerprint(fp) {
+    if (!fp || fp === "—") return;
+    try {
+      const r = await window.csrfFetch("/admin/filters/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "fingerprint",
+          pattern: fp,
+          action: "mask",
+          priority: 0,
+          enabled: true,
+        }),
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      window.showToast && window.showToast("已加入遮罩 fp:" + fp.slice(0, 8), true);
+      _fetch();
+    } catch (e) {
+      window.showToast && window.showToast("遮罩失敗：" + (e.message || ""), false);
+    }
+  }
+
+  // Mark safe = remove every fingerprint filter rule pointing at this fp.
+  // Uses /admin/filters/list + cascading /admin/filters/remove. Best-effort
+  // — UI shows count of rules cleared.
+  async function _markSafe(fp) {
+    if (!fp || fp === "—") return;
+    try {
+      const r = await fetch("/admin/filters/list", { credentials: "same-origin" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const data = await r.json();
+      const rules = Array.isArray(data.rules) ? data.rules : [];
+      const matches = rules.filter(function (rule) {
+        return rule && rule.type === "fingerprint" && rule.pattern === fp;
+      });
+      if (matches.length === 0) {
+        window.showToast && window.showToast("該指紋目前沒有過濾規則", true);
+        return;
+      }
+      let removed = 0;
+      for (const m of matches) {
+        const rr = await window.csrfFetch("/admin/filters/remove", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rule_id: m.rule_id || m.id }),
+        }).catch(function () { return { ok: false }; });
+        if (rr.ok) removed += 1;
+      }
+      window.showToast && window.showToast("已清除 " + removed + " 條規則 fp:" + fp.slice(0, 8), true);
+      _fetch();
+    } catch (e) {
+      window.showToast && window.showToast("解除失敗：" + (e.message || ""), false);
+    }
   }
 
   async function _ban(fp) {
@@ -255,6 +472,25 @@
       const refresh = e.target.closest("[data-aud-action='refresh']");
       if (refresh) {
         _fetch();
+        return;
+      }
+      // Detail panel actions
+      const closeDetail = e.target.closest("[data-aud-action='close-detail']");
+      if (closeDetail) {
+        _state.selectedFp = null;
+        _renderDetail();
+        return;
+      }
+      const detailBan = e.target.closest("[data-aud-action='detail-ban']");
+      if (detailBan) { _ban(detailBan.dataset.audFp); return; }
+      const detailMask = e.target.closest("[data-aud-action='detail-mask']");
+      if (detailMask) { _maskFingerprint(detailMask.dataset.audFp); return; }
+      const detailSafe = e.target.closest("[data-aud-action='detail-safe']");
+      if (detailSafe) { _markSafe(detailSafe.dataset.audFp); return; }
+      // Row click → open detail (only if click wasn't on action / filter button)
+      const row = e.target.closest("[data-aud-row]");
+      if (row && !e.target.closest("button")) {
+        _selectFp(row.dataset.audFp);
         return;
       }
     });
