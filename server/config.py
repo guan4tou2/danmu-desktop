@@ -53,7 +53,12 @@ class Config:
     # without losing the abuse cap.
     ADMIN_RATE_LIMIT = int(os.getenv("ADMIN_RATE_LIMIT", "300"))
     ADMIN_RATE_WINDOW = int(os.getenv("ADMIN_RATE_WINDOW", "60"))
-    API_RATE_LIMIT = int(os.getenv("API_RATE_LIMIT", "30"))
+    # 2026-04-28: bumped 30→120. The "api" scope is shared across all routes
+    # decorated with `rate_limit("api", ...)` — `/stickers`, `/check_blacklist`,
+    # etc. — so a single SPA page-load + admin auto-poll could blow through 30
+    # in a 60s window when multiple tabs were open. 120 leaves room for that
+    # workload without losing the abuse cap.
+    API_RATE_LIMIT = int(os.getenv("API_RATE_LIMIT", "120"))
     API_RATE_WINDOW = int(os.getenv("API_RATE_WINDOW", "60"))
     RATE_LIMIT_BACKEND = os.getenv("RATE_LIMIT_BACKEND", "memory")
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
