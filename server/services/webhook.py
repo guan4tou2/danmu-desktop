@@ -45,6 +45,9 @@ class WebhookConfig:
         "last_status",
         "last_error",
         "created_at",
+        "success_count",
+        "fail_count",
+        "last_delivery_at",
     )
 
     def __init__(
