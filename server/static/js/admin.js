@@ -60,6 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let _adminWs = null;
   let _adminWsReconnectTimer = null;
   let _adminSectionObserver = null;
+  let _routeHashHandler = null;
   // Guard: initAdminRouter() is called on every renderControlPanel(); we must
   // only attach the document click + window hashchange handlers ONCE or each
   // click fires N handlers and the backstage toggle cancels itself.
@@ -1270,12 +1271,18 @@ document.addEventListener("DOMContentLoaded", () => {
         toggle.setAttribute("aria-expanded", String(!isOpen));
         toggle.classList.toggle("is-open", !isOpen);
       });
-
-      window.addEventListener("hashchange", () => {
-        const h = (window.location.hash.match(/^#\/([\w-]+)/) || [])[1];
-        if (h) applyRoute(h);
-      });
     }
+
+    // Rebind hash listener on every router init so hash changes always target
+    // the latest shell/applyRoute closure after panel re-render.
+    if (_routeHashHandler) {
+      window.removeEventListener("hashchange", _routeHashHandler);
+    }
+    _routeHashHandler = () => {
+      const h = (window.location.hash.match(/^#\/([\w-]+)/) || [])[1];
+      if (h) applyRoute(h);
+    };
+    window.addEventListener("hashchange", _routeHashHandler);
 
     shell.querySelectorAll("[data-route]").forEach((btn) => {
       btn.addEventListener("click", (e) => {
