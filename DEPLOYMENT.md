@@ -81,6 +81,15 @@ SERVER_IP=1.2.3.4        # Optional: your public IP (included in cert SAN)
 SERVER_DOMAIN=my.lan     # Optional: hostname (included in cert SAN)
 ```
 
+By default, nginx listens on **port 443** (HTTPS) and **port 80** (HTTP→HTTPS
+redirect). On a VPS where 443 is already taken or firewalled (e.g., Oracle Cloud
+with NetBird/Caddy occupying 443), remap to non-standard ports via `.env`:
+
+```
+HTTP_PORT=4080    # host port that maps to nginx's internal port 80
+HTTPS_PORT=4000   # host port that maps to nginx's internal port 443
+```
+
 ```bash
 docker compose --profile https up -d
 ```
@@ -309,6 +318,8 @@ Key variables:
 | `ACME_EMAIL` | — | Required for Traefik mode |
 | `SERVER_IP` | — | VPS public IP for self-signed cert SAN |
 | `SERVER_DOMAIN` | — | Hostname for self-signed cert SAN |
+| `HTTP_PORT` | `80` | Host port for HTTP (nginx → redirect to HTTPS). Change when 80 is taken |
+| `HTTPS_PORT` | `443` | Host port for HTTPS (nginx → app). Change when 443 is taken |
 | `REDIS_PASSWORD` | `changeme` | Redis auth password |
 | `WS_REQUIRE_TOKEN` | see note | **First-boot seed only since v4.8.0.** After first boot, authoritative state lives in `server/runtime/ws_auth.json` and is controlled from the admin UI. If this env var is unset on a fresh install, the server seeds secure-on with a generated token. Explicit `false` is respected and never flipped back on. |
 | `WS_AUTH_TOKEN` | — | Same as above — first-boot seed only. The admin UI is authoritative after the runtime file exists. |
@@ -365,6 +376,43 @@ docker compose -f docker-compose.yml -f docker-compose.desktop.yml \
 
 v4.8.2+ `setup.sh init` detects this at install time and prints the chown
 command when `id -u` ≠ 1000.
+
+**Nginx config change not taking effect after `git pull`**
+
+Docker bind-mounts a *file* (e.g. `nginx/nginx-https.conf`) by inode. `git pull`
+replaces the file on disk with a new inode, so the running container still reads
+the old content even after `nginx -s reload` or `docker compose restart`.
+
+Fix: recreate the container after any `git pull` that touches an nginx config:
+
+```bash
+git pull origin <branch>
+docker compose stop reverse-proxy-https
+docker compose up -d reverse-proxy-https
+```
+
+`up -d` (not `restart`) forces Docker to re-open the bind-mount path, picking up
+the new inode. Runtime state (certs, logs) is unaffected.
+
+**SSL certificate auto-generation fails (`openssl: not found`)**
+
+The nginx entrypoint runs `apk add openssl` inside the container to generate a
+self-signed cert. If Alpine's package registry is unreachable (e.g. no outbound
+internet from the VPS), the container exits with
+`[danmu] ERROR: Failed to generate certificate.`
+
+Workaround — generate the cert on the host first, then start the container:
+
+```bash
+openssl req -x509 -nodes -newkey rsa:2048 \
+  -keyout nginx/certs/privkey.pem \
+  -out nginx/certs/fullchain.pem \
+  -days 365 -subj "/CN=${SERVER_IP:-localhost}" \
+  -addext "subjectAltName=IP:${SERVER_IP:-127.0.0.1},IP:127.0.0.1,DNS:localhost"
+docker compose --profile https up -d
+```
+
+The entrypoint skips generation when `fullchain.pem` + `privkey.pem` already exist.
 
 **Cloud firewall blocking 4000 / 4001 (Oracle Cloud / AWS / GCP)**
 
