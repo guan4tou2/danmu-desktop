@@ -51,6 +51,28 @@ def list_webhooks():
     return _json_response({"webhooks": webhook_service.list_hooks()})
 
 
+@admin_bp.route("/webhooks/deliveries", methods=["GET"])
+@require_login
+def list_deliveries():
+    """Recent webhook delivery log (in-memory ring buffer, last 100).
+
+    Powers the prototype admin-batch6 Delivery log table. Caller can
+    pass ?limit=N to cap the response (default 50, max 100).
+    """
+    from ...services.webhook import webhook_service
+
+    try:
+        limit = int(request.args.get("limit", "50") or 50)
+    except (TypeError, ValueError):
+        limit = 50
+    return _json_response(
+        {
+            "deliveries": webhook_service.list_deliveries(limit=limit),
+            "stats": webhook_service.get_delivery_stats(),
+        }
+    )
+
+
 @admin_bp.route("/webhooks/test", methods=["POST"])
 @rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
