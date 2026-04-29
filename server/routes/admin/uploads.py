@@ -3,7 +3,7 @@
 import magic
 from flask import current_app, request
 
-from ...services.fonts import delete_uploaded_font, list_uploaded_fonts, save_uploaded_font
+from ...services.fonts import delete_uploaded_font, list_available_fonts, list_uploaded_fonts, save_uploaded_font, toggle_font
 from ...services.security import rate_limit
 from . import (
     _STICKER_ALLOWED_MIME,
@@ -57,7 +57,26 @@ def upload_font():
 @admin_bp.route("/fonts", methods=["GET"])
 @require_login
 def list_fonts():
-    return _json_response({"fonts": list_uploaded_fonts()})
+    return _json_response(list_available_fonts(include_disabled=True))
+
+
+@admin_bp.route("/fonts/<name>/toggle", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+@require_login
+def toggle_font_route(name):
+    data = request.get_json(silent=True) or {}
+    enabled = data.get("enabled")
+    if not isinstance(enabled, bool):
+        return _json_response({"error": "enabled must be a boolean"}, 400)
+    try:
+        new_allowlist = toggle_font(name, enabled)
+    except ValueError as exc:
+        return _json_response({"error": str(exc)}, 400)
+    current_app.logger.info(
+        "Font '%s' %s", sanitize_log_string(name), "enabled" if enabled else "disabled"
+    )
+    return _json_response({"status": "OK", "allowlist": new_allowlist})
 
 
 @admin_bp.route("/fonts/<name>", methods=["DELETE"])

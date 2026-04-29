@@ -296,7 +296,7 @@ def test_list_fonts_requires_login(client):
     assert resp.status_code in (302, 401, 403)
 
 
-def test_list_fonts_returns_uploaded_only(client):
+def test_list_fonts_returns_full_catalog(client):
     from pathlib import Path
 
     from server import state
@@ -307,8 +307,14 @@ def test_list_fonts_returns_uploaded_only(client):
     data = resp.get_json()
     assert "fonts" in data
     names = [f["name"] for f in data["fonts"]]
+    # Uploaded font is present
     assert "Mine" in names
-    assert "NotoSansTC" not in names
+    # Full catalog now includes built-in fonts (NotoSansTC bundled + catalog)
+    assert "NotoSansTC" in names
+    # Each font has metadata fields
+    mine = next(f for f in data["fonts"] if f["name"] == "Mine")
+    assert mine["type"] == "uploaded"
+    assert "status" in mine
 
 
 def test_delete_font_removes_existing(client):
