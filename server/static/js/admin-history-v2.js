@@ -370,14 +370,28 @@
     sec.className = "admin-v3-card lg:col-span-2 history-v2-section";
     historyCard.parentElement.insertBefore(sec, historyCard);
     _renderShell();
+    _applyHashVisibility();
+  }
+
+  // Section id is `history-v2-section` — intentionally NOT prefixed `sec-`
+  // so admin.js applySectionVisibility() (which only filters [id^="sec-"])
+  // doesn't touch it. We manage own visibility here to avoid leaking into
+  // every other route (#/widgets / #/themes etc.).
+  // Visible when: route === "history" AND body.dataset.historyTab === "export".
+  function _applyHashVisibility() {
+    var el = _section();
+    if (!el) return;
+    var hash = (window.location.hash.match(/^#\/(\w[\w-]*)/) || [])[1] || "dashboard";
+    var tab = (document.body && document.body.dataset && document.body.dataset.historyTab) || "export";
+    el.style.display = (hash === "history" && tab === "export") ? "" : "none";
   }
 
   document.addEventListener("admin-panel-rendered", function () {
     _ensureSection();
   });
 
-  // Visibility — body[data-history-tab] drives which pane shows.
-  // CSS handles display rules; this module just builds the DOM once.
+  window.addEventListener("hashchange", _applyHashVisibility);
+  document.addEventListener("admin:history-tab", _applyHashVisibility);
 
   window.AdminHistoryV2 = {
     refresh: _refreshEstimate,
