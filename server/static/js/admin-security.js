@@ -67,7 +67,7 @@
           </div>
           <label class="admin-security-toggle">
             <input id="sec2-wsa-toggle" type="checkbox" />
-            <span>要求 overlay 客戶端提供 token</span>
+            <span>啟用 token 驗證（overlay 連線需帶 token）</span>
           </label>
           <div class="admin-security-field" style="margin-top:10px">
             <span class="admin-v2-monolabel">TOKEN · 12–128 字元</span>

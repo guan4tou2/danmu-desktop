@@ -330,11 +330,62 @@
     _state.loading = true;
     _renderTable();
     try {
-      var r = await fetch("/admin/sessions?hours=168", { credentials: "same-origin" });
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      var data = await r.json();
-      _state.sessions = Array.isArray(data.sessions) ? data.sessions : [];
-      _state.total = typeof data.total === "number" ? data.total : _state.sessions.length;
+      // Fetch both the explicit archive (managed lifecycle) and the
+      // history-derived sessions (fallback for older data before lifecycle was added).
+      var [archiveRes, derivedRes] = await Promise.all([
+        fetch("/admin/session/archive?limit=100", { credentials: "same-origin" }),
+        fetch("/admin/sessions?hours=168", { credentials: "same-origin" }),
+      ]);
+
+      var archiveSessions = [];
+      var derivedSessions = [];
+
+      if (archiveRes.ok) {
+        var archiveData = await archiveRes.json();
+        archiveSessions = Array.isArray(archiveData.sessions) ? archiveData.sessions : [];
+        // Mark archive sessions as explicitly managed
+        archiveSessions.forEach(function (s) { s._explicit = true; });
+      }
+
+      if (derivedRes.ok) {
+        var derivedData = await derivedRes.json();
+        derivedSessions = Array.isArray(derivedData.sessions) ? derivedData.sessions : [];
+      }
+
+      // Merge: prefer archive records; deduplicate by id
+      var merged = archiveSessions.slice();
+      var archiveIds = new Set(archiveSessions.map(function (s) { return s.id; }));
+      derivedSessions.forEach(function (s) {
+        if (!archiveIds.has(s.id)) merged.push(s);
+      });
+      // Sort newest-first by started_at (numeric or ISO string)
+      merged.sort(function (a, b) {
+        var ta = typeof a.started_at === "number" ? a.started_at : Date.parse(a.started_at || 0);
+        var tb = typeof b.started_at === "number" ? b.started_at : Date.parse(b.started_at || 0);
+        return tb - ta;
+      });
+
+      // Also prepend currently live session if any
+      try {
+        var liveRes = await fetch("/admin/session/current", { credentials: "same-origin" });
+        if (liveRes.ok) {
+          var liveData = await liveRes.json();
+          if (liveData.status === "live") {
+            var liveSession = Object.assign({}, liveData, {
+              id: liveData.id,
+              ended_at: null,
+              is_live: true,
+              msg_count: 0,
+              viewer_count: 0,
+              _explicit: true,
+            });
+            merged.unshift(liveSession);
+          }
+        }
+      } catch (_) { /* silent */ }
+
+      _state.sessions = merged;
+      _state.total = merged.length;
     } catch (e) {
       console.error("[admin-sessions] fetch error:", e);
       _state.sessions = [];

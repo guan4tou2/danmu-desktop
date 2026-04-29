@@ -978,6 +978,54 @@ document.addEventListener("DOMContentLoaded", () => {
   pollOverlayStatus();
   setInterval(pollOverlayStatus, 5000);
 
+  // --- Session ended handler ---
+  // Called when admin closes the active session. Behavior is admin-configured:
+  //   "continue"     — do nothing (viewer keeps working in IDLE mode)
+  //   "ended_screen" — disable input, show full-screen ended overlay
+  //   "reload"       — auto-reload page after 3 s
+  function _handleSessionEnded(behavior) {
+    console.log("[viewer] session_ended received, behavior:", behavior);
+    if (behavior === "continue") return;
+
+    if (behavior === "reload") {
+      setTimeout(() => { window.location.reload(); }, 3000);
+      return;
+    }
+
+    if (behavior === "ended_screen") {
+      // Disable the message form
+      const form = document.getElementById("fireForm") || document.querySelector("form");
+      if (form) {
+        form.querySelectorAll("input, button, textarea").forEach((el) => { el.disabled = true; });
+      }
+      // Show ended overlay (reuse viewer-state system if available, else inject)
+      if (window.ViewerStates && window.ViewerStates.show) {
+        window.ViewerStates.show("ended");
+      } else {
+        _showSessionEndedFallback();
+      }
+    }
+  }
+
+  function _showSessionEndedFallback() {
+    const existing = document.getElementById("viewer-session-ended-overlay");
+    if (existing) return;
+    const el = document.createElement("div");
+    el.id = "viewer-session-ended-overlay";
+    el.style.cssText = [
+      "position:fixed", "inset:0", "z-index:9000",
+      "background:rgba(10,14,26,.92)",
+      "display:flex", "flex-direction:column",
+      "align-items:center", "justify-content:center",
+      "color:#e6e8ee", "font-family:inherit", "text-align:center", "padding:32px",
+    ].join(";");
+    el.innerHTML = `
+      <div style="font-size:48px;margin-bottom:16px">🎉</div>
+      <div style="font-size:22px;font-weight:700;margin-bottom:8px">本場活動已結束</div>
+      <div style="font-size:14px;color:#9aa4b2;line-height:1.6">感謝您的參與！</div>`;
+    document.body.appendChild(el);
+  }
+
   // --- WebSocket ---
   let _wsReconnectAttempt = 0;
   const WS_BASE_DELAY = 3000;
@@ -1142,6 +1190,8 @@ document.addEventListener("DOMContentLoaded", () => {
           applyEffectsVisibility(currentSettings);
 
           updatePreview();
+        } else if (data.type === "session_ended") {
+          _handleSessionEnded(data.behavior || "continue");
         }
       } catch (e) {
         console.error("Error processing WebSocket message:", e);

@@ -222,6 +222,15 @@ def test_fire_while_standby_queues_then_drains(app, client):
     ws_queue._queue.clear()
 
     token = _login_csrf(client)
+
+    # Open a session — broadcast toggle to "live" now requires an active session.
+    res = client.post(
+        "/admin/session/open",
+        json={"name": "Test drain session"},
+        headers={"X-CSRF-Token": token},
+    )
+    assert res.status_code == 200, res.data
+
     # Toggle to standby.
     res = client.post(
         "/admin/broadcast/toggle",

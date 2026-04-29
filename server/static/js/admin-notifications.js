@@ -47,6 +47,7 @@
     filterTab: "unread", // all / unread / starred / archived
     filterSrc: "all",
     refreshTimer: 0,
+    selectedId: null,  // detail pane
   };
 
   // ── localStorage helpers ────────────────────────────────────────
@@ -94,6 +95,7 @@
     _state.items = merged;
     _renderList();
     _renderSummary();
+    _renderDetail();
   }
 
   async function _fetchMetrics() {
@@ -180,7 +182,7 @@
           <p class="admin-v2-note">集中所有警示來源（速率限制 / Fire Token 事件 / 敏感字觸發）。讀取 / 封存狀態存在瀏覽器 localStorage。</p>
         </div>
 
-        <div class="admin-notif-grid">
+        <div class="admin-notif-grid admin-notif-grid--3col" data-notif-outer>
           <aside class="admin-notif-filters">
             <div class="admin-v2-monolabel">分組 · GROUP</div>
             <div class="admin-notif-tabs" data-notif-tabs>
@@ -217,6 +219,10 @@
               <div class="admin-notif-loading">載入通知中…</div>
             </div>
           </main>
+
+          <aside class="admin-notif-detail" data-notif-detail hidden>
+            <div class="admin-notif-detail-inner" data-notif-detail-inner></div>
+          </aside>
         </div>
       </div>`;
   }
@@ -303,6 +309,40 @@
     }
   }
 
+  function _renderDetail() {
+    const detail = document.querySelector("[data-notif-detail]");
+    const inner  = document.querySelector("[data-notif-detail-inner]");
+    if (!detail || !inner) return;
+    const it = _state.selectedId && _state.items.find(function (i) { return i.id === _state.selectedId; });
+    if (!it) { detail.hidden = true; return; }
+    detail.hidden = false;
+    const sev = SEVERITY[it.sev] || SEVERITY.info;
+    const tsLabel = it.ts ? new Date(it.ts).toLocaleString("zh-TW") : "—";
+    const raw = it.raw ? JSON.stringify(it.raw, null, 2) : "—";
+    inner.innerHTML = `
+      <div class="admin-notif-detail-head">
+        <span class="admin-v2-monolabel">DETAIL</span>
+        <button type="button" class="admin-notif-detail-close" data-notif-action="close-detail" aria-label="關閉">✕</button>
+      </div>
+      <div class="admin-notif-detail-sev" style="color:${escapeHtml(sev.color)};border-color:${escapeHtml(sev.border)};background:${escapeHtml(sev.bg)}">
+        <span class="badge">${escapeHtml(sev.label)}</span>
+        <span class="src">${escapeHtml(it.src)}</span>
+      </div>
+      <div class="admin-notif-detail-title">${escapeHtml(it.title)}</div>
+      <div class="admin-notif-detail-ts">⏱ ${escapeHtml(tsLabel)}</div>
+      <div class="admin-notif-detail-desc">${escapeHtml(it.desc)}</div>
+      <div class="admin-notif-detail-raw-label">原始資料</div>
+      <pre class="admin-notif-detail-raw">${escapeHtml(raw)}</pre>
+      <div class="admin-notif-detail-actions">
+        ${!_isRead(it.id) && !_isArchived(it.id)
+          ? `<button type="button" class="admin-notif-action" data-notif-row-action="read" data-notif-id="${escapeHtml(it.id)}">✓ 標記已讀</button>`
+          : ""}
+        ${!_isArchived(it.id)
+          ? `<button type="button" class="admin-notif-action" data-notif-row-action="archive" data-notif-id="${escapeHtml(it.id)}">↓ 封存</button>`
+          : `<button type="button" class="admin-notif-action" data-notif-row-action="unarchive" data-notif-id="${escapeHtml(it.id)}">↺ 取消封存</button>`}
+      </div>`;
+  }
+
   function _humanDelta(t) {
     if (!t) return "—";
     const diffSec = (Date.now() - t) / 1000;
@@ -350,12 +390,15 @@
           window.showToast && window.showToast("已封存目前清單", true);
         } else if (action.dataset.notifAction === "refresh") {
           _fetchAll();
+        } else if (action.dataset.notifAction === "close-detail") {
+          _state.selectedId = null;
+          _renderDetail();
         }
         return;
       }
       const rowAction = e.target.closest("[data-notif-row-action]");
       if (rowAction) {
-        e.stopPropagation(); // prevent the parent-card "click → mark read" handler
+        e.stopPropagation();
         const id = rowAction.dataset.notifId;
         const a = rowAction.dataset.notifRowAction;
         if (a === "read") _markRead(id);
@@ -366,17 +409,20 @@
         } else if (a === "star") {
           _toggleStar(id);
         }
-        _renderList(); _renderSummary();
+        _renderList(); _renderSummary(); _renderDetail();
         return;
       }
-      // Click anywhere on item card → mark read (if unread)
+      // Click anywhere on item card → open detail pane + mark read
       const item = e.target.closest("[data-notif-id]");
       if (item) {
         const id = item.dataset.notifId;
-        if (id && !_isRead(id) && !_isArchived(id)) {
+        if (!id) return;
+        _state.selectedId = id;
+        if (!_isRead(id) && !_isArchived(id)) {
           _markRead(id);
           _renderList(); _renderSummary();
         }
+        _renderDetail();
       }
     });
   }

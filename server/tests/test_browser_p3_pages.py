@@ -127,8 +127,8 @@ def test_about_page_renders(admin_page):
 def test_notifications_page_renders(admin_page):
     _go_to_route(admin_page, "notifications")
     admin_page.wait_for_selector("#sec-notifications-overview", state="visible", timeout=5000)
-    # Filter sidebar tabs + sources
-    assert admin_page.locator("[data-notif-tab]").count() == 3  # 未讀 / 全部 / 已封存
+    # Filter sidebar tabs + sources (未讀 / 全部 / 已標記 / 已封存)
+    assert admin_page.locator("[data-notif-tab]").count() == 4
     sources = admin_page.locator("[data-notif-src]").count()
     assert sources >= 4  # 全部 + Rate Limit + Fire Token + Moderation
     # List + summary present
@@ -196,10 +196,10 @@ def test_poll_deepdive_page_renders(admin_page):
 def test_setup_wizard_overlay_renders(admin_page):
     _go_to_route(admin_page, "setup")
     admin_page.wait_for_selector("#admin-setup-wizard-root", state="visible", timeout=5000)
-    # 3-step flow (theme / language / done)
-    assert admin_page.locator(".admin-setup-step").count() == 3
-    # First step is theme selection
-    assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "主題包"
+    # 5-step flow (password / logo / theme / language / done)
+    assert admin_page.locator(".admin-setup-step").count() == 5
+    # First step is password
+    assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "密碼"
     # Footer action buttons (close / prev / next)
     assert admin_page.locator("[data-setup-action='close']").count() >= 1
     # Close drawer to clean up for next test

@@ -52,6 +52,24 @@ def _isolate_webhook_store(tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def _isolate_session(tmp_path):
+    """Per-test session state isolation; default IDLE."""
+    from server.services import session_service as sess_mod
+
+    original_state = sess_mod._STATE_FILE
+    original_archive = sess_mod._ARCHIVE_FILE
+    sess_mod._STATE_FILE = tmp_path / "active_session.json"
+    sess_mod._ARCHIVE_FILE = tmp_path / "sessions_archive.jsonl"
+    sess_mod.reset_for_tests()
+    try:
+        yield
+    finally:
+        sess_mod._STATE_FILE = original_state
+        sess_mod._ARCHIVE_FILE = original_archive
+        sess_mod.reset_for_tests()
+
+
+@pytest.fixture(autouse=True)
 def _isolate_broadcast(tmp_path):
     """Per-test broadcast state file isolation; default LIVE.
 

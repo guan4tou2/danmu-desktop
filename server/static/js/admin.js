@@ -478,28 +478,19 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <span class="admin-dash-brand-suffix">ADMIN · v${window.APP_VERSION || "4.8.7"}</span>
                             </div>
                             <nav class="admin-dash-nav" role="tablist" aria-label="Admin pages">
-                                <div class="admin-dash-nav-label">總覽</div>
+
+                                <!-- ── PRIMARY: Live 操作核心 (7 items) ──────── -->
+                                <div class="admin-dash-nav-label">LIVE 操作</div>
                                 <button type="button" class="admin-dash-nav-row is-active" data-route="dashboard" role="tab" aria-selected="true">
                                     <span class="admin-dash-nav-icon">◉</span>
                                     <span>控制台</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="messages" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">≡</span>
-                                    <span>訊息紀錄</span>
+                                    <span>訊息</span>
                                     <span class="admin-dash-nav-badge" data-count-messages hidden>—</span>
                                     <span class="admin-dash-nav-live"></span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="history" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">↳</span>
-                                    <span>歷史</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="notifications" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⚑</span>
-                                    <span>通知</span>
-                                    <span class="admin-dash-nav-badge" data-count-notif hidden>—</span>
-                                </button>
-
-                                <div class="admin-dash-nav-label" style="margin-top:16px">互動</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="polls" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◈</span>
                                     <span>投票</span>
@@ -507,95 +498,130 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="widgets" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⬚</span>
-                                    <span>Overlay Widgets</span>
+                                    <span>Widgets</span>
                                     <span class="admin-dash-nav-badge" data-count-widgets hidden>—</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="themes" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">❖</span>
-                                    <span>風格主題包</span>
-                                    <span class="admin-dash-nav-badge" data-count-themes>—</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="viewer-config" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◍</span>
-                                    <span>Viewer 設定</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="assets" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◰</span>
-                                    <span>素材庫</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="integrations" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⌨</span>
-                                    <span>整合</span>
-                                </button>
-
-                                <div class="admin-dash-nav-label" style="margin-top:16px">審核</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="moderation" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⊘</span>
-                                    <span>敏感字 & 黑名單</span>
+                                    <span>審核</span>
                                     <span class="admin-dash-nav-badge" data-count-blacklist hidden>—</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="ratelimit" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◑</span>
-                                    <span>速率限制</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="audience" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⌂</span>
                                     <span>觀眾</span>
                                 </button>
-
-                                <div class="admin-dash-nav-label" style="margin-top:16px">設定</div>
-                                <button type="button" class="admin-dash-nav-row" data-route="effects" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">✦</span>
-                                    <span>效果庫 .dme</span>
-                                    <span class="admin-dash-nav-badge" data-count-effects>—</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="plugins" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⬢</span>
-                                    <span>伺服器插件</span>
-                                    <span class="admin-dash-nav-badge" data-count-plugins hidden>—</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="fonts" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⌂</span>
-                                    <span>字型管理</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="system" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⚙</span>
-                                    <span>系統 & 指紋</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="security" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⛨</span>
-                                    <span>安全</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="audit" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⊜</span>
-                                    <span>審計日誌</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="mobile" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">▤</span>
-                                    <span>Mobile</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="backup" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⤓</span>
-                                    <span>備份 & 匯出</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="about" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">ⓘ</span>
-                                    <span>關於</span>
-                                </button>
-
-                                <div class="admin-dash-nav-label" style="margin-top:16px">開發者</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="sessions" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">▦</span>
-                                    <span>場次</span>
+                                    <span>場次記錄</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="search" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⌕</span>
-                                    <span>搜尋</span>
+
+                                <!-- ── BACKSTAGE TOGGLE ───────────────────────── -->
+                                <button type="button" class="admin-dash-backstage-toggle" data-backstage-toggle aria-expanded="false" aria-controls="admin-backstage-panel">
+                                    <span class="admin-dash-backstage-icon">⚙</span>
+                                    <span>後台 &amp; 設定</span>
+                                    <span class="admin-dash-backstage-arrow" aria-hidden="true">›</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="api-tokens" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⌗</span>
-                                    <span>API Tokens</span>
-                                </button>
+
+                                <!-- ── BACKSTAGE PANEL (collapsible) ─────────── -->
+                                <div id="admin-backstage-panel" class="admin-dash-backstage-panel" data-backstage-panel hidden>
+
+                                    <div class="admin-dash-nav-label admin-dash-nav-label--sub">歷史 &amp; 分析</div>
+                                    <button type="button" class="admin-dash-nav-row" data-route="history" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">↳</span>
+                                        <span>歷史紀錄</span>
+                                    </button>
+                                    <button type="button" class="admin-dash-nav-row" data-route="search" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">⌕</span>
+                                        <span>搜尋</span>
+                                    </button>
+                                    <button type="button" class="admin-dash-nav-row" data-route="notifications" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">⚑</span>
+                                        <span>通知</span>
+                                        <span class="admin-dash-nav-badge" data-count-notif hidden>—</span>
+                                    </button>
+                                    <button type="button" class="admin-dash-nav-row" data-route="audit" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">⊜</span>
+                                        <span>審計日誌</span>
+                                    </button>
+                                    <button type="button" class="admin-dash-nav-row" data-route="broadcast" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">◎</span>
+                                        <span>廣播 / 顯示控制</span>
+                                    </button>
+
+                                    <div class="admin-dash-nav-label admin-dash-nav-label--sub" style="margin-top:12px">視覺 &amp; 內容</div>
+                                    <button type="button" class="admin-dash-nav-row" data-route="themes" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">❖</span>
+                                        <span>主題包</span>
+                                        <span class="admin-dash-nav-badge" data-count-themes>—</span>
+                                    </button>
+                                    <button type="button" class="admin-dash-nav-row" data-route="viewer-config" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">◍</span>
+                                        <span>Viewer 設定</span>
+                                    </button>
+                                    <button type="button" class="admin-dash-nav-row" data-route="effects" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">✦</span>
+                                        <span>效果庫</span>
+                                        <span class="admin-dash-nav-badge" data-count-effects>—</span>
+                                    </button>
+                                    <button type="button" class="admin-dash-nav-row" data-route="fonts" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">Aa</span>
+                                        <span>字型</span>
+                                    </button>
+                                    <button type="button" class="admin-dash-nav-row" data-route="assets" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">◰</span>
+                                        <span>素材庫</span>
+                                    </button>
+
+                                    <div class="admin-dash-nav-label admin-dash-nav-label--sub" style="margin-top:12px">整合 &amp; 自動化</div>
+                                    <button type="button" class="admin-dash-nav-row" data-route="integrations" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">⌨</span>
+                                        <span>整合 &amp; Fire Token</span>
+                                    </button>
+                                    <button type="button" class="admin-dash-nav-row" data-route="plugins" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">⬢</span>
+                                        <span>插件</span>
+                                        <span class="admin-dash-nav-badge" data-count-plugins hidden>—</span>
+                                    </button>
+                                    <button type="button" class="admin-dash-nav-row" data-route="scheduler" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">◷</span>
+                                        <span>排程</span>
+                                    </button>
+                                    <button type="button" class="admin-dash-nav-row" data-route="api-tokens" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">⌗</span>
+                                        <span>API Tokens</span>
+                                    </button>
+
+                                    <div class="admin-dash-nav-label admin-dash-nav-label--sub" style="margin-top:12px">系統</div>
+                                    <button type="button" class="admin-dash-nav-row" data-route="ratelimit" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">◑</span>
+                                        <span>速率限制</span>
+                                    </button>
+                                    <button type="button" class="admin-dash-nav-row" data-route="system" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">⚙</span>
+                                        <span>系統 &amp; 指紋</span>
+                                    </button>
+                                    <button type="button" class="admin-dash-nav-row" data-route="security" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">⛨</span>
+                                        <span>安全</span>
+                                    </button>
+                                    <button type="button" class="admin-dash-nav-row" data-route="backup" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">⤓</span>
+                                        <span>備份 &amp; 匯出</span>
+                                    </button>
+                                    <button type="button" class="admin-dash-nav-row" data-route="mobile" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">▤</span>
+                                        <span>Mobile</span>
+                                    </button>
+                                    <button type="button" class="admin-dash-nav-row" data-route="wcag" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">⊙</span>
+                                        <span>WCAG 對比度</span>
+                                    </button>
+                                    <button type="button" class="admin-dash-nav-row" data-route="about" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">ⓘ</span>
+                                        <span>關於</span>
+                                    </button>
+                                </div><!-- /backstage-panel -->
+
                             </nav>
                             <div class="admin-dash-telem">
                                 <div class="admin-dash-telem-head">
@@ -657,6 +683,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                     </button>
                                 </div>
                             </header>
+
+                            <!-- Session banner — hidden until JS populates -->
+                            <div id="admin-session-banner" class="admin-session-banner" data-route-view="dashboard" hidden></div>
 
                             <section class="admin-kpi-strip" data-route-view="dashboard">
                                 <div class="admin-kpi-tile" data-kpi="messages">
@@ -1007,6 +1036,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // these fire concurrently. Stagger 1.5s + 3s after init.
     setTimeout(() => { window.AdminDashboard?.refreshKpi?.(); }, 1500);
     setTimeout(() => { window.AdminDashboard?.refreshSummary?.(); }, 3000);
+    setTimeout(() => { window.AdminDashboard?.startSessionPolling?.(); }, 800);
 
     // Sidebar TELEMETRY · 4-bar refresh — proto admin-pages.jsx 4 TelemBar rows.
     // Pulls latest CPU% / MEM% / WS clients / msg-rate from /admin/metrics
@@ -1130,6 +1160,10 @@ document.addEventListener("DOMContentLoaded", () => {
     "session-detail": { title: "場次詳情",    kicker: "SESSION DETAIL · 密度時間軸 · 訊息回顧", sections: ["sec-session-detail-overview"] },
     search:       { title: "搜尋",            kicker: "SEARCH · 全文搜尋 · 跨場次",          sections: ["sec-search-overview"] },
     "api-tokens": { title: "API Tokens",      kicker: "API TOKENS · 開發者存取 · 權限管理",  sections: ["sec-api-tokens-overview"] },
+    // A11y + i18n tools (2026-04-29)
+    wcag:         { title: "WCAG 對比度",      kicker: "A11Y · WCAG 2.1 CONTRAST CHECKER",    sections: ["sec-wcag-overview"] },
+    // Onboarding route — overlay only, no section
+    "onboarding-tour": { title: "新手導覽",    kicker: "ONBOARDING · 5 步驟快速上手",          sections: [] },
   };
 
   function initAdminRouter() {
@@ -1182,10 +1216,50 @@ document.addEventListener("DOMContentLoaded", () => {
         el.style.display = currentRoute === "dashboard" ? "" : "none";
       });
 
+      // Session banner polling — start when on dashboard, stop otherwise
+      if (currentRoute === "dashboard") {
+        window.AdminDashboard?.startSessionPolling?.();
+      } else {
+        window.AdminDashboard?.stopSessionPolling?.();
+      }
+
       applySectionVisibility();
+
+      // Auto-expand backstage panel when navigating to a secondary route
+      _syncBackstagePanel(currentRoute);
 
       try { history.replaceState(null, "", "#/" + currentRoute); } catch (e) { /* ignore */ }
     };
+
+    // ── Backstage toggle ─────────────────────────────────────────────────────
+    // Primary routes: always visible nav items
+    const _primaryRoutes = new Set([
+      "dashboard", "messages", "polls", "widgets", "moderation", "audience", "sessions",
+    ]);
+
+    function _syncBackstagePanel(route) {
+      const panel = document.getElementById("admin-backstage-panel");
+      const toggle = document.querySelector("[data-backstage-toggle]");
+      if (!panel || !toggle) return;
+      const isSecondary = !_primaryRoutes.has(route);
+      if (isSecondary) {
+        panel.hidden = false;
+        toggle.setAttribute("aria-expanded", "true");
+        toggle.classList.add("is-open");
+      }
+      // Don't auto-collapse when switching to primary — user opened it intentionally
+    }
+
+    document.addEventListener("click", (e) => {
+      const toggle = e.target.closest("[data-backstage-toggle]");
+      if (!toggle) return;
+      const panel = document.getElementById("admin-backstage-panel");
+      if (!panel) return;
+      const isOpen = !panel.hidden;
+      panel.hidden = isOpen;
+      toggle.setAttribute("aria-expanded", String(!isOpen));
+      toggle.classList.toggle("is-open", !isOpen);
+    });
 
     shell.querySelectorAll("[data-route]").forEach((btn) => {
       btn.addEventListener("click", (e) => {

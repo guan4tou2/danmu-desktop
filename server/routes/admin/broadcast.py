@@ -53,8 +53,14 @@ def _drain_queue_async(items):
 @rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_login
 def broadcast_status():
-    """Return current broadcast state (mode + started_at + counters + queue size)."""
+    """Return current broadcast state (mode + started_at + counters + queue size + session)."""
     state = broadcast_svc.get_state()
+    # Attach session status so the broadcast page can show session-aware UI.
+    try:
+        from ...services import session_service
+        state["session"] = session_service.get_state()
+    except Exception:
+        state["session"] = None
     # `started_at` is unix seconds (float) or None — frontend expects ms-style
     # comparison, but JSON-serialised seconds is fine for the JS Date wrapper.
     return _json_response(state)
@@ -75,6 +81,19 @@ def broadcast_toggle():
         return _json_response(
             {"error": f"mode must be one of {list(broadcast_svc.VALID_MODES)}"}, 400
         )
+
+    # Session integration: broadcast can only go LIVE when a session is active.
+    # IDLE state forces standby — broadcast is a sub-control of the session lifecycle.
+    if mode == "live":
+        try:
+            from ...services import session_service
+            if not session_service.is_live():
+                return _json_response(
+                    {"error": "請先開啟場次才能啟動廣播", "code": "no_active_session"},
+                    409,
+                )
+        except Exception:
+            pass  # If session_service unavailable, allow (graceful degradation)
 
     prev_state = broadcast_svc.get_state()
     new_state = broadcast_svc.set_mode(mode)

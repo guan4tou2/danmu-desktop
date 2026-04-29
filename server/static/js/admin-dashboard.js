@@ -423,6 +423,194 @@
     }
   }
 
+  // ── Session management ───────────────────────────────────────────────────
+  // Session banner lives in #admin-session-banner (injected by admin.js into
+  // the dashboard section, data-route-view="dashboard").
+  // Polls /admin/session/current every 10 s while dashboard is visible.
+
+  let _sessionState = null;
+  let _sessionPollTimer = null;
+  let _sessionTimerInterval = null;
+
+  function _fmtDuration(startedAt) {
+    const secs = Math.max(0, Math.floor((Date.now() / 1000) - startedAt));
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+
+  function _renderSessionBanner(state) {
+    const banner = document.getElementById("admin-session-banner");
+    if (!banner) return;
+    _sessionState = state;
+    const isLive = state && state.status === "live";
+
+    if (!isLive) {
+      // IDLE — show "開啟場次" form
+      banner.hidden = false;
+      banner.innerHTML = `
+        <div class="admin-session-banner-idle">
+          <span class="admin-session-banner-idle-label">目前沒有進行中的場次</span>
+          <div class="admin-session-open-row">
+            <input type="text" class="admin-session-name-input" placeholder="場次名稱（必填）…" maxlength="120" data-sess-name />
+            <button type="button" class="admin-session-open-btn" data-sess-action="open">▶ 開啟場次</button>
+          </div>
+          <div class="admin-session-banner-idle-hint">開啟後自動啟動廣播，訊息開始歸檔至本場次</div>
+        </div>`;
+    } else {
+      // LIVE — show session info + controls
+      const started = state.started_at || (Date.now() / 1000);
+      banner.hidden = false;
+      banner.innerHTML = `
+        <div class="admin-session-banner-live">
+          <div class="admin-session-live-dot"></div>
+          <div class="admin-session-live-info">
+            <span class="admin-session-live-name">${_escapeHtml(state.name || "場次")}</span>
+            <span class="admin-session-live-timer" data-sess-timer></span>
+          </div>
+          <div class="admin-session-live-actions">
+            <button type="button" class="admin-session-pause-btn" data-sess-action="pause-display" title="暂停 overlay 顯示，繼續收訊息">⏸ 暫停顯示</button>
+            <button type="button" class="admin-session-end-btn" data-sess-action="close">■ 結束場次</button>
+          </div>
+          <div class="admin-session-live-behavior">
+            <span class="admin-session-live-behavior-label">結束後 viewer：</span>
+            <select class="admin-session-behavior-select" data-sess-behavior>
+              <option value="continue" ${state.viewer_end_behavior === "continue" ? "selected" : ""}>繼續運作</option>
+              <option value="ended_screen" ${state.viewer_end_behavior === "ended_screen" ? "selected" : ""}>顯示結束畫面</option>
+              <option value="reload" ${state.viewer_end_behavior === "reload" ? "selected" : ""}>自動重新載入</option>
+            </select>
+          </div>
+        </div>`;
+
+      // Start ticking timer
+      _startSessionTimer(started);
+    }
+
+    // Bind actions (delegate from banner)
+    if (!banner.dataset.bound) {
+      banner.dataset.bound = "1";
+      banner.addEventListener("click", _handleSessionBannerClick);
+      banner.addEventListener("change", _handleSessionBannerChange);
+    }
+  }
+
+  function _startSessionTimer(startedAt) {
+    if (_sessionTimerInterval) clearInterval(_sessionTimerInterval);
+    const updateTimer = () => {
+      const el = document.querySelector("[data-sess-timer]");
+      if (el) el.textContent = _fmtDuration(startedAt);
+    };
+    updateTimer();
+    _sessionTimerInterval = setInterval(updateTimer, 1000);
+  }
+
+  function _stopSessionTimer() {
+    if (_sessionTimerInterval) { clearInterval(_sessionTimerInterval); _sessionTimerInterval = null; }
+  }
+
+  async function _handleSessionBannerClick(e) {
+    const btn = e.target.closest("[data-sess-action]");
+    if (!btn) return;
+    const action = btn.dataset.sessAction;
+
+    if (action === "open") {
+      const input = document.querySelector("[data-sess-name]");
+      const name = (input ? input.value : "").trim();
+      if (!name) { input && input.focus(); window.showToast && window.showToast("請輸入場次名稱", false); return; }
+      btn.disabled = true;
+      try {
+        const r = await window.csrfFetch("/admin/session/open", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name }),
+        });
+        const data = await r.json();
+        if (!r.ok) { window.showToast && window.showToast(data.error || "開啟失敗", false); return; }
+        window.showToast && window.showToast("場次「" + name + "」已開始", true);
+        _renderSessionBanner(data.session);
+      } catch (err) {
+        window.showToast && window.showToast("開啟場次失敗", false);
+      } finally {
+        btn.disabled = false;
+      }
+    } else if (action === "close") {
+      if (!confirm("確定要結束這個場次？\n訊息將停止歸檔，廣播將切換為 STANDBY。")) return;
+      btn.disabled = true;
+      try {
+        const r = await window.csrfFetch("/admin/session/close", { method: "POST" });
+        const data = await r.json();
+        if (!r.ok) { window.showToast && window.showToast(data.error || "結束失敗", false); return; }
+        window.showToast && window.showToast("場次已結束並歸檔", true);
+        _stopSessionTimer();
+        _renderSessionBanner({ status: "idle", viewer_end_behavior: data.archived && data.archived.viewer_end_behavior || "continue" });
+      } catch (err) {
+        window.showToast && window.showToast("結束場次失敗", false);
+      } finally {
+        btn.disabled = false;
+      }
+    } else if (action === "pause-display") {
+      // Toggle broadcast mode via existing broadcast route
+      try {
+        const statusRes = await fetch("/admin/broadcast/status", { credentials: "same-origin" });
+        if (!statusRes.ok) return;
+        const status = await statusRes.json();
+        const nextMode = status.mode === "live" ? "standby" : "live";
+        const r = await window.csrfFetch("/admin/broadcast/toggle", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode: nextMode }),
+        });
+        if (!r.ok) return;
+        const btn2 = document.querySelector("[data-sess-action='pause-display']");
+        if (btn2) {
+          btn2.textContent = nextMode === "standby" ? "▶ 恢復顯示" : "⏸ 暫停顯示";
+          btn2.classList.toggle("is-paused", nextMode === "standby");
+        }
+        window.showToast && window.showToast(nextMode === "standby" ? "已暫停 overlay 顯示" : "已恢復 overlay 顯示", true);
+      } catch (err) {
+        window.showToast && window.showToast("切換顯示失敗", false);
+      }
+    }
+  }
+
+  async function _handleSessionBannerChange(e) {
+    const sel = e.target.closest("[data-sess-behavior]");
+    if (!sel) return;
+    try {
+      const r = await window.csrfFetch("/admin/session/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ viewer_end_behavior: sel.value }),
+      });
+      if (!r.ok) { window.showToast && window.showToast("設定失敗", false); return; }
+      window.showToast && window.showToast("Viewer 結束行為已更新", true);
+    } catch (err) {
+      window.showToast && window.showToast("設定失敗", false);
+    }
+  }
+
+  async function refreshSessionBanner() {
+    try {
+      const r = await fetch("/admin/session/current", { credentials: "same-origin" });
+      if (!r.ok) return;
+      const data = await r.json();
+      _renderSessionBanner(data);
+    } catch (_) { /* silent */ }
+  }
+
+  function startSessionPolling() {
+    refreshSessionBanner();
+    if (_sessionPollTimer) clearInterval(_sessionPollTimer);
+    _sessionPollTimer = setInterval(refreshSessionBanner, 10000);
+  }
+
+  function stopSessionPolling() {
+    if (_sessionPollTimer) { clearInterval(_sessionPollTimer); _sessionPollTimer = null; }
+    _stopSessionTimer();
+  }
+
   window.AdminDashboard = {
     refreshKpi: refreshDashboardKpi,
     refreshSummary: refreshDashboardSummary,
@@ -430,5 +618,8 @@
     populatePoll: populateDashboardPoll,
     populateMessages: populateDashboardMessages,
     populateWidgets: populateDashboardWidgets,
+    refreshSessionBanner,
+    startSessionPolling,
+    stopSessionPolling,
   };
 })();

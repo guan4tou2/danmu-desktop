@@ -217,9 +217,15 @@
     if (!sessionId) { _showError("缺少場次 ID"); return; }
     _setLoading(true);
     try {
-      const r = await fetch(`/admin/sessions/${encodeURIComponent(sessionId)}`, {
+      // Try history-derived sessions first; fall back to lifecycle archive.
+      let r = await fetch(`/admin/sessions/${encodeURIComponent(sessionId)}`, {
         credentials: "same-origin",
       });
+      if (r.status === 404) {
+        r = await fetch(`/admin/session/archive/${encodeURIComponent(sessionId)}`, {
+          credentials: "same-origin",
+        });
+      }
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
       _state.session = data.session || null;
