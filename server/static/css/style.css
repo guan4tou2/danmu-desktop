@@ -8617,3 +8617,13 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   margin-top: 8px;
   margin-bottom: 2px;
 }
+/* 關於 — standalone item pinned below backstage panel with a faint separator */
+.admin-dash-nav-row--about {
+  margin-top: 8px;
+  border-top: 1px solid var(--color-border, #1f2944);
+  padding-top: 4px;
+  opacity: 0.7;
+}
+.admin-dash-nav-row--about:hover {
+  opacity: 1;
+}

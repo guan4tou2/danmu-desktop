@@ -483,7 +483,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
                             <nav class="admin-dash-nav" role="tablist" aria-label="Admin pages">
 
-                                <!-- ── PRIMARY: Live 操作核心 (7 items) ──────── -->
+                                <!-- ── PRIMARY: Live 操作核心 (8 items) ──────── -->
                                 <div class="admin-dash-nav-label">LIVE 操作</div>
                                 <button type="button" class="admin-dash-nav-row is-active" data-route="dashboard" role="tab" aria-selected="true">
                                     <span class="admin-dash-nav-icon">◉</span>
@@ -516,7 +516,11 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="sessions" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">▦</span>
-                                    <span>場次記錄</span>
+                                    <span>場次管理</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="broadcast" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◎</span>
+                                    <span>廣播控制</span>
                                 </button>
 
                                 <!-- ── BACKSTAGE TOGGLE ───────────────────────── -->
@@ -538,18 +542,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <span class="admin-dash-nav-icon">⌕</span>
                                         <span>搜尋</span>
                                     </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="notifications" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">⚑</span>
-                                        <span>通知</span>
-                                        <span class="admin-dash-nav-badge" data-count-notif hidden>—</span>
-                                    </button>
                                     <button type="button" class="admin-dash-nav-row" data-route="audit" role="tab" aria-selected="false">
                                         <span class="admin-dash-nav-icon">⊜</span>
                                         <span>審計日誌</span>
-                                    </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="broadcast" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">◎</span>
-                                        <span>廣播 / 顯示控制</span>
                                     </button>
 
                                     <div class="admin-dash-nav-label admin-dash-nav-label--sub" style="margin-top:12px">視覺 &amp; 內容</div>
@@ -594,8 +589,17 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <span class="admin-dash-nav-icon">⌗</span>
                                         <span>API Tokens</span>
                                     </button>
+                                    <button type="button" class="admin-dash-nav-row" data-route="wcag" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">⊙</span>
+                                        <span>WCAG 對比度</span>
+                                    </button>
 
-                                    <div class="admin-dash-nav-label admin-dash-nav-label--sub" style="margin-top:12px">系統</div>
+                                    <div class="admin-dash-nav-label admin-dash-nav-label--sub" style="margin-top:12px">管理 &amp; 監控</div>
+                                    <button type="button" class="admin-dash-nav-row" data-route="notifications" role="tab" aria-selected="false">
+                                        <span class="admin-dash-nav-icon">⚑</span>
+                                        <span>通知</span>
+                                        <span class="admin-dash-nav-badge" data-count-notif hidden>—</span>
+                                    </button>
                                     <button type="button" class="admin-dash-nav-row" data-route="ratelimit" role="tab" aria-selected="false">
                                         <span class="admin-dash-nav-icon">◑</span>
                                         <span>速率限制</span>
@@ -616,15 +620,14 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <span class="admin-dash-nav-icon">▤</span>
                                         <span>Mobile</span>
                                     </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="wcag" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">⊙</span>
-                                        <span>WCAG 對比度</span>
-                                    </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="about" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">ⓘ</span>
-                                        <span>關於</span>
-                                    </button>
+
                                 </div><!-- /backstage-panel -->
+
+                                <!-- ── STANDALONE: always visible at nav bottom ── -->
+                                <button type="button" class="admin-dash-nav-row admin-dash-nav-row--about" data-route="about" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">ⓘ</span>
+                                    <span>關於</span>
+                                </button>
 
                             </nav>
                             <div class="admin-dash-telem">
@@ -1236,9 +1239,9 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // ── Backstage toggle ─────────────────────────────────────────────────────
-    // Primary routes: always visible nav items
+    // Primary routes: always visible nav items (broadcast is operational — LIVE/STANDBY toggle)
     const _primaryRoutes = new Set([
-      "dashboard", "messages", "polls", "widgets", "moderation", "audience", "sessions",
+      "dashboard", "messages", "polls", "widgets", "moderation", "audience", "sessions", "broadcast",
     ]);
 
     function _syncBackstagePanel(route) {
