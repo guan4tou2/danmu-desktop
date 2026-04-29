@@ -60,6 +60,10 @@ document.addEventListener("DOMContentLoaded", () => {
   let _adminWs = null;
   let _adminWsReconnectTimer = null;
   let _adminSectionObserver = null;
+  // Guard: initAdminRouter() is called on every renderControlPanel(); we must
+  // only attach the document click + window hashchange handlers ONCE or each
+  // click fires N handlers and the backstage toggle cancels itself.
+  let _backstageHandlerBound = false;
   // _effectModalRestoreFocusEl moved to admin-effects-mgmt.js
   var loadDetailsState = window.AdminUtils.loadDetailsState;
   var saveDetailsState = window.AdminUtils.saveDetailsState;
@@ -1250,16 +1254,25 @@ document.addEventListener("DOMContentLoaded", () => {
       // Don't auto-collapse when switching to primary — user opened it intentionally
     }
 
-    document.addEventListener("click", (e) => {
-      const toggle = e.target.closest("[data-backstage-toggle]");
-      if (!toggle) return;
-      const panel = document.getElementById("admin-backstage-panel");
-      if (!panel) return;
-      const isOpen = !panel.hidden;
-      panel.hidden = isOpen;
-      toggle.setAttribute("aria-expanded", String(!isOpen));
-      toggle.classList.toggle("is-open", !isOpen);
-    });
+    if (!_backstageHandlerBound) {
+      _backstageHandlerBound = true;
+
+      document.addEventListener("click", (e) => {
+        const toggle = e.target.closest("[data-backstage-toggle]");
+        if (!toggle) return;
+        const panel = document.getElementById("admin-backstage-panel");
+        if (!panel) return;
+        const isOpen = !panel.hidden;
+        panel.hidden = isOpen;
+        toggle.setAttribute("aria-expanded", String(!isOpen));
+        toggle.classList.toggle("is-open", !isOpen);
+      });
+
+      window.addEventListener("hashchange", () => {
+        const h = (window.location.hash.match(/^#\/([\w-]+)/) || [])[1];
+        if (h) applyRoute(h);
+      });
+    }
 
     shell.querySelectorAll("[data-route]").forEach((btn) => {
       btn.addEventListener("click", (e) => {
@@ -1270,11 +1283,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const fromHash = (window.location.hash.match(/^#\/([\w-]+)/) || [])[1];
     applyRoute(fromHash || "dashboard");
-
-    window.addEventListener("hashchange", () => {
-      const h = (window.location.hash.match(/^#\/([\w-]+)/) || [])[1];
-      if (h) applyRoute(h);
-    });
 
     // Late-injected sections (admin-sounds.js, admin-emojis.js, etc. inject
     // after scheduleIdleTask). Watch the main area for new [id^="sec-"]
