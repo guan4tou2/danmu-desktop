@@ -38,7 +38,7 @@
 |---|------|-----------|
 | 11 | AdminWcagPage + AdminDashboardEN（EN sweep） | i18n strings 全套（純 FE 但是工程量大，建議獨立 sprint） |
 | 12 | AdminTokensPage（per-integration ACL） | **要新 token table**（目前只有 Fire Token 單一 shared bearer） |
-| 13 | AdminWebhooksPage v2 retrofit | 後端 OK，純 FE 重畫，3-4 hr |
+| 13 | AdminWebhooksPage v2 retrofit | ✅ shipped 2026-04-29（`f552a89`）— BE 加 success_count/fail_count/last_delivery_at + delivery log ring buffer + /admin/webhooks/deliveries endpoint |
 | 17 | DesktopTrayPopover / WindowPicker | Electron 端，獨立 sprint，6-10 hr |
 
 ### B.3 CUT — scope-out（**永遠不做**，見 [scope-out](./scope-out-2026-04-27.md)）
@@ -549,9 +549,9 @@ User Q: 「需要叫 design 設計 rwd 嗎 mobile 的樣式」
 | AdminAudiencePage | V1Z4 batch7 #4 | 🟡 simplified | F.10（detail panel ✅ shipped 2026-04-29 / kick endpoint 沒做） |
 | AdminMobilePage | V1Z4 batch8 #3 | ✅ aligned | F.11（toggles client-side / 釘選 + 清空 backend 沒做） |
 | AdminHistoryPage（時間軸匯出） | admin-batch1.jsx:218 | ✅ aligned | shipped 2026-04-28（commit `94ce6c1`） |
-| AdminWebhooksPage | admin-batch6.jsx:6 | 🟡 v2 shell only | **🚧 still pending** — header stats + delivery log panel 沒做 |
+| AdminWebhooksPage | admin-batch6.jsx:6 | ✅ aligned | shipped 2026-04-29（commit `f552a89`）— 4-KPI stats + endpoint cards (success rate bar + ✓/✗ counters) + delivery log + 380px right detail panel（event matrix + retry policy + payload sample + 3 actions）|
 
-→ **唯一還沒做完的 prototype-aligned 工作：AdminWebhooksPage v2 retrofit**（4 KPI stats strip + 380px 右側 delivery log panel + endpoint cards 美化）。
+→ **§H.1 prototype-ready 全部 ship 完了**。剩下的工作都需要 Design 拍板（§A artboard）或 BE 擴張（§C），不是工程能單方面推進的。
 
 ### M.2 Design 缺項紀錄完整度
 
