@@ -145,40 +145,18 @@ def test_toggle_invalid_mode(client):
     assert res.status_code == 400
 
 
-def test_toggle_to_live_blocked_without_session(client):
-    """P0-3 regression: broadcast page no longer has its own ENDED path;
-    toggling to live is blocked (409) when no active session exists.
-    This ensures the session gate in broadcast.py is exercised and that
-    the old writeState / ENDED UI-only path cannot bypass the gate.
+def test_toggle_to_live_without_session(client):
+    """Broadcast and sessions are independent: toggling to live must succeed
+    even when no session is open.
     """
     token = _login_csrf(client)
-    # No session open — toggle to live must be rejected
-    res = client.post(
-        "/admin/broadcast/toggle",
-        json={"mode": "live"},
-        headers={"X-CSRF-Token": token},
-    )
-    assert res.status_code == 409
-    body = json.loads(res.data)
-    assert body.get("code") == "no_active_session"
-
-
-def test_toggle_to_live_allowed_with_active_session(client):
-    """P0-3: toggle to live succeeds when a session is open."""
-    token = _login_csrf(client)
-    # First go standby (allowed without session)
+    # Go standby first
     client.post(
         "/admin/broadcast/toggle",
         json={"mode": "standby"},
         headers={"X-CSRF-Token": token},
     )
-    # Open a session
-    client.post(
-        "/admin/session/open",
-        json={"name": "Enable LIVE test"},
-        headers={"X-CSRF-Token": token},
-    )
-    # Now toggle to live must succeed
+    # Toggle to live — no session required
     res = client.post(
         "/admin/broadcast/toggle",
         json={"mode": "live"},
@@ -284,14 +262,6 @@ def test_fire_while_standby_queues_then_drains(app, client):
     ws_queue._queue.clear()
 
     token = _login_csrf(client)
-
-    # Open a session — broadcast toggle to "live" now requires an active session.
-    res = client.post(
-        "/admin/session/open",
-        json={"name": "Test drain session"},
-        headers={"X-CSRF-Token": token},
-    )
-    assert res.status_code == 200, res.data
 
     # Toggle to standby.
     res = client.post(

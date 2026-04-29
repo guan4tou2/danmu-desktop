@@ -196,16 +196,10 @@
     const toggle = page.querySelector("[data-bc-toggle]");
     if (!meta || !title || !strip || !dot || !toggle) return;
 
-    const sessionIdle = !_sessionState || _sessionState.status !== "live";
     const isLive = state.mode === "live";
     const elapsed = isLive && state.started_at ? Date.now() - state.started_at : 0;
 
-    // Session-aware titles
-    if (sessionIdle) {
-      title.textContent = "待機 · 尚無進行中場次";
-    } else {
-      title.textContent = isLive ? "LIVE · 顯示中" : "STANDBY · 顯示已暫停";
-    }
+    title.textContent = isLive ? "LIVE · 顯示中" : "STANDBY · 顯示已暫停";
 
     const totalMsgs = (_serverState && _serverState.total_messages) || 0;
     const queued = (_serverState && _serverState.queue_size) || 0;
@@ -217,16 +211,10 @@
     strip.dataset.mode = state.mode;
     dot.dataset.mode = state.mode;
 
-    // Toggle button: disabled when no session (can't go live without session)
-    if (sessionIdle) {
-      toggle.textContent = "請先開啟場次";
-      toggle.disabled = true;
-      toggle.title = "在控制台開啟場次後，此處才能切換廣播顯示";
-    } else {
-      toggle.disabled = false;
-      toggle.title = "";
-      toggle.textContent = isLive ? "⏸ 暫停顯示" : "▶ 恢復顯示";
-    }
+    // Broadcast and sessions are independent — toggle is always enabled
+    toggle.disabled = false;
+    toggle.title = "";
+    toggle.textContent = isLive ? "⏸ 暫停顯示" : "▶ 恢復顯示";
     toggle.dataset.bcMode = state.mode;
   }
 

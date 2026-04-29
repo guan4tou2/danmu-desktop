@@ -82,19 +82,6 @@ def broadcast_toggle():
             {"error": f"mode must be one of {list(broadcast_svc.VALID_MODES)}"}, 400
         )
 
-    # Session integration: broadcast can only go LIVE when a session is active.
-    # IDLE state forces standby — broadcast is a sub-control of the session lifecycle.
-    if mode == "live":
-        try:
-            from ...services import session_service
-            if not session_service.is_live():
-                return _json_response(
-                    {"error": "請先開啟場次才能啟動廣播", "code": "no_active_session"},
-                    409,
-                )
-        except Exception:
-            pass  # If session_service unavailable, allow (graceful degradation)
-
     prev_state = broadcast_svc.get_state()
     new_state = broadcast_svc.set_mode(mode)
     current_app.logger.info(
