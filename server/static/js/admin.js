@@ -582,6 +582,20 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="admin-dash-nav-icon">ⓘ</span>
                                     <span>關於</span>
                                 </button>
+
+                                <div class="admin-dash-nav-label" style="margin-top:16px">開發者</div>
+                                <button type="button" class="admin-dash-nav-row" data-route="sessions" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">▦</span>
+                                    <span>場次</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="search" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⌕</span>
+                                    <span>搜尋</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="api-tokens" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⌗</span>
+                                    <span>API Tokens</span>
+                                </button>
                             </nav>
                             <div class="admin-dash-telem">
                                 <div class="admin-dash-telem-head">
@@ -1111,6 +1125,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // for current/last poll. Entry point = 📊 button on polls page.
     "poll-deepdive": { title: "投票深度分析",  kicker: "POLL ANALYTICS · 選項分佈 · 誠信檢查", sections: ["sec-poll-deepdive-overview"] },
     broadcast: { title: "廣播",              kicker: "BROADCAST · LIVE / STANDBY",         sections: [] },
+    // Missing prototype pages — implemented 2026-04-29
+    sessions:     { title: "場次",            kicker: "SESSIONS · 場次列表 · 即時 / 歷史",  sections: ["sec-sessions-overview"] },
+    "session-detail": { title: "場次詳情",    kicker: "SESSION DETAIL · 密度時間軸 · 訊息回顧", sections: ["sec-session-detail-overview"] },
+    search:       { title: "搜尋",            kicker: "SEARCH · 全文搜尋 · 跨場次",          sections: ["sec-search-overview"] },
+    "api-tokens": { title: "API Tokens",      kicker: "API TOKENS · 開發者存取 · 權限管理",  sections: ["sec-api-tokens-overview"] },
   };
 
   function initAdminRouter() {
