@@ -196,9 +196,11 @@ def test_browser_submit_danmu_appears_in_history(browser_session, server_ports):
         page.locator("#loginForm button[type=submit]").click()
         page.wait_for_selector("#logoutButton", timeout=8000)
 
-        # 切換到 history route（retrofit 後 admin 為 hash-based 路由）後再展開 <details>
+        # 切換到 history route（retrofit 後預設 tab=export，歷史列表在 list tab）
         page.evaluate("window.location.hash = '#/history'")
-        page.wait_for_timeout(300)
+        page.wait_for_selector("#sec-history-tabs", state="visible", timeout=5000)
+        page.locator('#sec-history-tabs [data-history-tab="list"]').click()
+        page.wait_for_timeout(250)
         page.wait_for_selector("#sec-history", state="visible", timeout=5000)
         details = page.locator("#sec-history")
         if details.get_attribute("open") is None:
