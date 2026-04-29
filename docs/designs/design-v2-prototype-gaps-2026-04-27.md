@@ -22,15 +22,15 @@
 |---|------|------|------|
 | 1 | **AdminAboutPage** | V1Z4 batch9 | ✅ ship 完 (`e60a9a4`) — 待 G11 polish |
 | 2 | **AdminOnboardingTour / Setup Wizard** | 2b76A6ot batch3 | 🟡 ship 簡化版 (`0701799`) — 5 步剩 3 步 |
-| 3 | **AdminPollDeepDivePage** | V1Z4 batch8 | 🟡 ship 4/6 區塊 (`d71af67`) |
+| 3 | **AdminPollDeepDivePage** | V1Z4 batch8 | 🟡 ship 5/6 區塊 — 5-KPI tile retrofit done (`309cd5b`)，剩 Time histogram / Geo / cross-tab matrix 等 BE B8/B9/B10 |
 | 4 | **AdminMessageDetailPage** | V1Z4 batch7 | 🟡 ship overlay drawer 形式 (`e4919af`) |
-| 5 | **AdminNotificationsPage** | V1Z4 batch7 | 🟡 ship 2-col (`fdeeb34`) — detail panel 等 B1 buy-in |
+| 5 | **AdminNotificationsPage** | V1Z4 batch7 | 🟡 ship 2-col (`fdeeb34`) + starred filter + ★ indicator (`fe72880`) — 3-col detail panel 等 B1 buy-in |
 | 6 | **AdminAuditLogPage** | 2b76A6ot batch1 | 🟡 ship simplified (`262666f`) — ACTION/diff 等 B5/B6 buy-in |
-| 14 | ViewerBanned / ViewerPollThankYou | 2b76A6ot batch4 | 🚧 **下一輪做** — 1-2 hr 純 FE 照抄 |
-| 15 | OverlayPollLive / OverlayResultCelebration | 2b76A6ot batch4 | 🚧 **下一輪做** — 2-3 hr 純 FE 照抄 |
-| 16 | OverlayIdleQR full state machine | 2b76A6ot batch4 | 🚧 可做 — 1-2 hr |
-| 9 | AdminAudiencePage | V1Z4 batch7 #4 | 🚧 可做 — **去掉「出席場次數」column** 後 3 hr 純 FE |
-| 10 | AdminMobilePage | V1Z4 batch8 #3 | 🚧 可做 — 4-6 hr 純 RWD |
+| 14 | ViewerBanned / ViewerPollThankYou | 2b76A6ot batch4 | ✅ shipped — `viewer-states.js`（ViewerBanned auto on 403 banned/blocked + ViewerPollThankYou via showThankYou API） |
+| 15 | OverlayPollLive / OverlayResultCelebration | 2b76A6ot batch4 | ✅ shipped (`db5b09c`) |
+| 16 | OverlayIdleQR full state machine | 2b76A6ot batch4 | ✅ shipped (`13072df`) — idle/scanning/paired/failed 4 states + HUD framing + 6-char pair code |
+| 9 | AdminAudiencePage | V1Z4 batch7 #4 | ✅ shipped 主表 + detail panel (`8bef996`) — 360px 右 rail + 5-rule flag + 近 5 分鐘訊息 + 4 建議動作 |
+| 10 | AdminMobilePage | V1Z4 batch8 #3 | 🚧 4-6 hr 純 RWD（獨立 form-factor，移到 [`design-handoff D.1`](./design-handoff-needs-2026-04-28.md#d1-adminmobilepage手機-form-factor)） |
 
 ### B.2 WAIT — Design 確認 BE 擴張要不要做（見 [backend-extensions-pending](./backend-extensions-pending-2026-04-27.md)）
 
@@ -140,20 +140,20 @@
 
 → **5 步剩 3 步**。Design 沒拍板過砍法（自行決定）。
 
-### F.4 AdminPollDeepDivePage（commit `d71af67`）— ❌ deviated
+### F.4 AdminPollDeepDivePage（commit `d71af67` + retrofit `309cd5b` 2026-04-29）— 🟡 partial（5/6 ship）
 | 區塊 | Prototype | 實作 | 對齊 |
 |------|-----------|------|------|
-| 5 KPI tile | 總票數 / 參與率 / 持續時間 / 重複指紋 / 作弊嘗試 | 4 KPI: 總票數 / 選項數 / 指紋去重 / 狀態 | ❌ 內容全不同 |
+| 5 KPI tile | 總票數 / 參與率 / 持續時間 / 重複指紋 / 作弊嘗試 | ✅ 5 KPI 對齊（commit `309cd5b`）— 參與率 / 作弊嘗試 是 placeholder「待 BE 擴張」 | 🟡（佈局對 / 兩格無資料） |
 | Result bars | ✓ | ✓ | ✅ |
-| Sentiment +47 | ✓ | ❌ | 缺（需要 sentiment 計算） |
-| vs 上次 (Q4) ↑+12 | ✓ | ❌ | 缺（需要跨 poll 比較） |
-| Time histogram (18-min) | ✓ | ❌ placeholder | 缺 per-vote ts |
-| Geo 4-row + bars | ✓ | ❌ placeholder | 缺 GeoIP |
-| 跨選項地區交叉 | ✓ 3-row matrix | ❌ | 缺 |
+| Sentiment +47 | ✓ | ✓ Sentiment Index +N（半半分計算） | ✅ |
+| vs 上次 (Q4) ↑+12 | ✓ | ❌ placeholder | 缺（需要 poll history 持久化 BE B9） |
+| Time histogram (18-min) | ✓ | ❌ placeholder | 缺 per-vote timestamp（BE B8） |
+| Geo 4-row + bars | ✓ | ❌ scope-out | scope-out（無 GeoIP） |
+| 跨選項地區交叉 | ✓ 3-row matrix | ❌ scope-out | scope-out（無 GeoIP） |
 | Integrity 5-row | 指紋去重 / 同 IP / Bot / Extension / VPN | 4-row（指紋去重 / Rate limit / X-Forwarded-For / Bot） | 🟡 |
 | Actions | CSV / 分享連結 / 重啟題目 | CSV / 分享連結 / 返回 | 🟡（少「重啟」） |
 
-→ **6 區塊只實作 4**。
+→ **5/6 區塊 ship**（剩 vs 上次 / Time histogram 等 BE B8/B9 buy-in）。
 
 ### F.5 Message Detail Drawer（commit `e4919af`）— 🟡 form deviated
 | 項目 | Prototype | 實作 |
@@ -167,17 +167,17 @@
 | BAN 預覽 | ✓ | ✓ |
 | 上一筆 / 下一筆 navigation | ✓ | ❌ 沒做 |
 
-### F.6 Notifications Inbox（commit `fdeeb34`）— ❌ deviated
+### F.6 Notifications Inbox（commit `fdeeb34` + starred `fe72880` 2026-04-29）— 🟡 partial（detail panel 待 BE）
 | 區塊 | Prototype | 實作 | 對齊 |
 |------|-----------|------|------|
-| Layout | 3-col（filters / list / detail） | **2-col**（filters / list） | ❌ 缺 detail 面板 |
-| Sources | Backup / Webhooks / Fire Token / Moderation / System (5 個) | Rate Limit / Fire Token / Moderation (3 個) | 🟡 缺 Backup / Webhooks / System |
+| Layout | 3-col（filters / list / detail） | **2-col**（filters / list） | ❌ 缺 detail 面板（待 BE B1 buy-in） |
+| Sources | Backup / Webhooks / Fire Token / Moderation / System (5 個) | Rate Limit / Fire Token / Moderation (3 個) | 🟡 缺 Backup / Webhooks / System（BE B1） |
 | Severity | crit / warn / info / good | ✓ 4 個 | ✅ |
 | Read state | ✓ | ✓ | ✅ |
-| Starred | ✓ ★ icon | ❌ 沒做 | 缺 |
+| Starred | ✓ ★ icon | ✅ shipped (`fe72880`)：「已標記」filter tab + ★ icon + amber tint | ✅ |
 | Archived | ✓ | ✓ | ✅ |
-| Right detail（事件鏈 / 影響範圍 / 建議動作 / ① ② ③ buttons） | ✓ 完整 | ❌ 完全沒做 | 缺 |
-| Per-item actions | 動態（"從 D-16 還原"等 context-aware） | 固定（已讀 / 封存） | 🟡 |
+| Right detail（事件鏈 / 影響範圍 / 建議動作 / ① ② ③ buttons） | ✓ 完整 | ❌ 完全沒做（待 BE B1 alert schema） | 缺 |
+| Per-item actions | 動態（"從 D-16 還原"等 context-aware） | 固定（已讀 / 封存 / 標記 / 取消標記） | 🟡 |
 
 ### F.7 Audit Log（commit `262666f`）— ❌ deviated
 > 對照 batch1 AdminAuditLogPage prototype：
@@ -219,17 +219,17 @@
 
 → **唯一 gap**：QR 沒嵌真 QR 圖（純文字 placeholder），prototype 也只是文字示意。可後補 qrcode lib。
 
-### F.10 AdminAudiencePage（commit `db5b09c`）— 🟡 simplified per scope-out
+### F.10 AdminAudiencePage（commit `db5b09c` + detail panel `8bef996` 2026-04-29）— 🟡 simplified per scope-out
 | 區塊 | Prototype | 實作 | 對齊 |
 |------|-----------|------|------|
 | 5 KPI tile | 當前連線 / 5min 活躍 / 訊息/min / 高風險 / 已封禁 | 當前指紋 / 5min 活躍 / 總訊息 / 已標記 / 已封禁 | 🟡 |
 | 7-col 列表 | avatar / nick·fp / ip+geo / ua / joined / msgs / score / status / actions | avatar / nick·fp / ip+ua / joined / msgs / status / actions | 🟡 砍 GEO + SCORE |
-| 高風險右側 detail panel | ✓（5-rule flag + 近 5 分鐘訊息 + 4 建議動作） | ❌ 完全沒做 | 缺 |
+| 高風險右側 detail panel | ✓（5-rule flag + 近 5 分鐘訊息 + 4 建議動作） | ✅ shipped (`8bef996`)：HIGH RISK / FLAGGED / MID / NORMAL chip + ✕ + avatar+nick+fp + 5-rule flag（msg threshold + same-IP cluster + nickname missing 啟發式）+ 近 5 分鐘訊息（filtered from /admin/history）+ 4 個 action buttons | ✅ |
+| 4 建議動作 | 立即封禁 / 改為遮罩 / 踢出 / 標記安全 | 立即封禁 (real) / 改為遮罩 (real, /admin/filters/add) / 踢出（disabled placeholder, 沒 endpoint）/ 標記安全 (real, /admin/filters/list+remove cascade) | 🟡 3/4 real |
 | Filter chips | 全部 / 高風險 / 重複指紋 / extension | 全部 / 標記 | 🟡 |
 | ban action | ✓ | ✓（接 /admin/live/block） | ✅ |
-| kick action | ✓ | ❌ 沒做 | 缺（沒 endpoint） |
 
-→ **最大 gap**：高風險右側 detail panel 沒做。其他依 [scope-out](./scope-out-2026-04-27.md) 砍掉的（geo / 出席場次 / score）已標清楚。
+→ 主表 + 右 detail panel 對齊。剩 GEO / SCORE 依 [scope-out](./scope-out-2026-04-27.md) 砍。kick action 沒 endpoint，後續加。
 
 ### F.11 AdminMobilePage（commit `c29743c`）— ✅ 對齊
 | 項目 | Prototype | 實作 |
@@ -526,3 +526,43 @@ User Q: 「需要叫 design 設計 rwd 嗎 mobile 的樣式」
 ## 給 Design 的一句話 TL;DR
 
 優先補 **L.1 的 6 個 missing artboard**（沒 prototype 工程只能腦補，往後重構或 onboarding 都會卡），確認 **L.2 的 4 個偏離 OK 不 OK**（已 ship 但等於沒 spec），然後拍板 **L.3 的 7 個 BE 擴張要不要做**（決定 sprint 切片）。L.4 兩塊獨立做沒差。
+
+---
+
+## M. 對齊狀態 snapshot · 2026-04-29
+
+> 答兩題：「還有沒對齊的嗎」「Design 缺項都記到了嗎」
+
+### M.1 對齊狀態總表（pure-FE / 有 prototype 的）
+
+| Page / 元件 | Prototype 來源 | 對齊度 | 狀態 |
+|-------------|----------------|--------|------|
+| AdminAboutPage | V1Z4 batch9 | 🟡 partial | F.2（License / Pro Edition 砍掉，OSS 故意偏離） |
+| AdminSetupWizard | 2b76A6ot batch3 | ❌ deviated | F.3（password / Logo step 砍 — 等 BE B3/B4；6→4 packs 等 Design A.5） |
+| AdminPollDeepDivePage | V1Z4 batch8 | 🟡 5/6 | F.4（5-KPI ✅ / vs 上次 + Time histogram 等 BE B8/B9） |
+| AdminMessageDetailPage | V1Z4 batch7 | 🟡 form-deviated | F.5（drawer 而非 full-page；上下筆 nav 沒做） |
+| AdminNotificationsPage | V1Z4 batch7 | 🟡 partial | F.6（starred ✅ / 3-col detail 等 BE B1） |
+| AdminAuditLogPage | 2b76A6ot batch1 | ❌ deviated | F.7（缺 multi-actor / 動作分類 / before-after diff — BE B5/B6/B7） |
+| ViewerBanned + PollThankYou | 2b76A6ot batch4 | ✅ aligned | F.8 |
+| OverlayPollLive + ResultCelebration | 2b76A6ot batch4 | ✅ aligned | F.9（commit `db5b09c`） |
+| OverlayIdleQR | 2b76A6ot batch4 | ✅ aligned | shipped 2026-04-28（commit `13072df`） |
+| AdminAudiencePage | V1Z4 batch7 #4 | 🟡 simplified | F.10（detail panel ✅ shipped 2026-04-29 / kick endpoint 沒做） |
+| AdminMobilePage | V1Z4 batch8 #3 | ✅ aligned | F.11（toggles client-side / 釘選 + 清空 backend 沒做） |
+| AdminHistoryPage（時間軸匯出） | admin-batch1.jsx:218 | ✅ aligned | shipped 2026-04-28（commit `94ce6c1`） |
+| AdminWebhooksPage | admin-batch6.jsx:6 | 🟡 v2 shell only | **🚧 still pending** — header stats + delivery log panel 沒做 |
+
+→ **唯一還沒做完的 prototype-aligned 工作：AdminWebhooksPage v2 retrofit**（4 KPI stats strip + 380px 右側 delivery log panel + endpoint cards 美化）。
+
+### M.2 Design 缺項紀錄完整度
+
+| 類別 | 紀錄位置 | 狀態 |
+|------|----------|------|
+| 沒 artboard 的（A.1-A.6） | [`design-handoff-needs-2026-04-28.md §A`](./design-handoff-needs-2026-04-28.md#a-需要補的-artboard最高優先) | ✅ 完整 |
+| Prototype 有但工程偏離（B.1-B.4） | 同上 §B | ✅ 完整 |
+| 需要 BE schema 才能畫（C.1-C.7） | 同上 §C + [`backend-extensions-pending`](./backend-extensions-pending-2026-04-27.md) | ✅ 完整 |
+| 獨立 form-factor（D.1-D.2） | 同上 §D | ✅ 完整 |
+| 已 ship · prototype 沒畫過 | 同上「已 ship」段落 | ✅ 完整（5 條） |
+| RWD / mobile breakpoint | §K.2b + handoff §A.4 | ✅ 完整 |
+| Scope-out（永遠不做） | [`scope-out-2026-04-27.md`](./scope-out-2026-04-27.md) | ✅ 完整 |
+
+→ **所有 Design 需要拍板 / 設計的項目都已記錄**，handoff doc 就是 single-source-of-truth，可以直接交給 Design。
