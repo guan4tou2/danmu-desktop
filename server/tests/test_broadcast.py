@@ -145,6 +145,68 @@ def test_toggle_invalid_mode(client):
     assert res.status_code == 400
 
 
+def test_toggle_to_live_blocked_without_session(client):
+    """P0-3 regression: broadcast page no longer has its own ENDED path;
+    toggling to live is blocked (409) when no active session exists.
+    This ensures the session gate in broadcast.py is exercised and that
+    the old writeState / ENDED UI-only path cannot bypass the gate.
+    """
+    token = _login_csrf(client)
+    # No session open — toggle to live must be rejected
+    res = client.post(
+        "/admin/broadcast/toggle",
+        json={"mode": "live"},
+        headers={"X-CSRF-Token": token},
+    )
+    assert res.status_code == 409
+    body = json.loads(res.data)
+    assert body.get("code") == "no_active_session"
+
+
+def test_toggle_to_live_allowed_with_active_session(client):
+    """P0-3: toggle to live succeeds when a session is open."""
+    token = _login_csrf(client)
+    # First go standby (allowed without session)
+    client.post(
+        "/admin/broadcast/toggle",
+        json={"mode": "standby"},
+        headers={"X-CSRF-Token": token},
+    )
+    # Open a session
+    client.post(
+        "/admin/session/open",
+        json={"name": "Enable LIVE test"},
+        headers={"X-CSRF-Token": token},
+    )
+    # Now toggle to live must succeed
+    res = client.post(
+        "/admin/broadcast/toggle",
+        json={"mode": "live"},
+        headers={"X-CSRF-Token": token},
+    )
+    assert res.status_code == 200
+    assert json.loads(res.data)["mode"] == "live"
+
+
+def test_status_includes_session_state(client):
+    """Broadcast status must embed current session state (used by admin-broadcast.js
+    to decide whether toggle button is enabled).
+    """
+    token = _login_csrf(client)
+    # Open a session
+    client.post(
+        "/admin/session/open",
+        json={"name": "Status session"},
+        headers={"X-CSRF-Token": token},
+    )
+    res = client.get("/admin/broadcast/status")
+    assert res.status_code == 200
+    body = json.loads(res.data)
+    assert "session" in body
+    assert body["session"]["status"] == "live"
+    assert body["session"]["name"] == "Status session"
+
+
 def test_toggle_missing_body(client):
     token = _login_csrf(client)
     res = client.post(
