@@ -39,7 +39,7 @@
             </div>
             <div style="padding:16px;display:grid;grid-template-columns:repeat(3, 1fr);gap:12px">
               <div class="hud-kv"><span class="hud-kv-k">HTTP</span><span class="hud-kv-v" id="sysoHttpPort">:—</span></div>
-              <div class="hud-kv"><span class="hud-kv-k">WS</span><span class="hud-kv-v" id="sysoWsPort">:—</span></div>
+              <div class="hud-kv" title="專屬 WebSocket server (Electron desktop + overlay 連線)"><span class="hud-kv-k">WS</span><span class="hud-kv-v" id="sysoWsPort">:—</span></div>
               <div class="hud-kv"><span class="hud-kv-k">BIND</span><span class="hud-kv-v" id="sysoBind">—</span></div>
               <div class="hud-kv"><span class="hud-kv-k">CPU USAGE</span><span class="hud-kv-v" id="sysoCpu">—</span></div>
               <div class="hud-kv"><span class="hud-kv-k">MEM RSS</span><span class="hud-kv-v" id="sysoMem">—</span></div>
@@ -120,8 +120,13 @@
     if (verEl && cfg.appVersion) verEl.textContent = "v" + cfg.appVersion;
     const portEl = document.getElementById("sysoHttpPort");
     if (portEl) portEl.textContent = ":" + (location.port || "80");
+    // WS port = the dedicated websockets server (Electron desktop + overlay
+    // clients connect here). Distinct from the flask-sock channel mounted
+    // on /ws on the HTTP port (admin live feed). The "WS CLIENTS" KPI below
+    // counts connections to *this* dedicated server, so they have to match.
     const wsPortEl = document.getElementById("sysoWsPort");
-    if (wsPortEl) wsPortEl.textContent = ":" + (location.port || "80") + "/ws";
+    const wsPort = (cfg && cfg.wsPort) || 4001;
+    if (wsPortEl) wsPortEl.textContent = ":" + wsPort;
     const bindEl = document.getElementById("sysoBind");
     if (bindEl) bindEl.textContent = location.hostname;
 
