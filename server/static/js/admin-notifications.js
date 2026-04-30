@@ -236,7 +236,7 @@
               <button type="button" class="admin-notif-src" data-notif-src="Fire Token">Fire Token<span class="cnt" data-cnt-src-ft>—</span></button>
               <button type="button" class="admin-notif-src" data-notif-src="Webhooks">Webhooks<span class="cnt" data-cnt-src-wh>—</span></button>
               <button type="button" class="admin-notif-src" data-notif-src="System">System<span class="cnt" data-cnt-src-sys>—</span></button>
-              <button type="button" class="admin-notif-src" data-notif-src="Backup">Backup<span class="cnt" data-cnt-src-bk>—</span></button>
+              <div class="admin-notif-src admin-notif-src-placeholder admin-be-placeholder-control" data-notif-src="Backup" data-notif-disabled="1" role="note">[PLACEHOLDER] Backup（待 BE）<span class="cnt" data-cnt-src-bk>—</span></div>
               <button type="button" class="admin-notif-src" data-notif-src="Moderation">Moderation<span class="cnt" data-cnt-src-mod>—</span></button>
             </div>
 
@@ -261,7 +261,7 @@
               <span class="admin-notif-actions">
                 <button type="button" class="admin-notif-action" data-notif-action="mark-all-read">✓ 全部已讀</button>
                 <button type="button" class="admin-notif-action" data-notif-action="archive-all">↓ 封存全部</button>
-                <button type="button" class="admin-notif-action" data-notif-action="pref">⚙ 通知偏好</button>
+                <span class="admin-be-placeholder-control admin-be-placeholder-inline">[PLACEHOLDER] 通知偏好（待 Design）</span>
               </span>
             </div>
             <div class="admin-notif-list" data-notif-list>
@@ -366,9 +366,10 @@
     });
     const backupBtn = document.querySelector("[data-notif-src='Backup']");
     if (backupBtn) {
-      backupBtn.classList.toggle("is-disabled", !backupImplemented);
+      backupBtn.classList.toggle("is-disabled", true);
+      backupBtn.setAttribute("data-notif-disabled", backupImplemented ? "0" : "1");
       backupBtn.title = backupImplemented
-        ? "Backup 來源已啟用"
+        ? "Backup 來源已啟用（待 UI 切換）"
         : "Backup 來源尚未實作（等待後端）";
     }
 
@@ -441,6 +442,7 @@
       }
       const src = e.target.closest("[data-notif-src]");
       if (src) {
+        if (src.dataset.notifDisabled === "1") return;
         _state.filterSrc = src.dataset.notifSrc;
         page.querySelectorAll("[data-notif-src]").forEach(function (s) {
           if (s.dataset.notifSrc !== undefined) {
@@ -473,8 +475,6 @@
           window.showToast && window.showToast("已封存目前清單", true);
         } else if (action.dataset.notifAction === "refresh") {
           _fetchAll();
-        } else if (action.dataset.notifAction === "pref") {
-          window.showToast && window.showToast("通知偏好設定待設計補稿（placeholder）", false);
         } else if (action.dataset.notifAction === "close-detail") {
           _state.selectedId = null;
           _renderDetail();

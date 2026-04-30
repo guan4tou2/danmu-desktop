@@ -350,7 +350,7 @@
       '<div class="admin-aud-detail-actions">' +
         '<button type="button" class="primary" data-aud-action="detail-ban" data-aud-fp="' + escapeHtml(fp) + '">⊗ 立即封禁指紋 · 7 天</button>' +
         '<button type="button" class="warn" data-aud-action="detail-mask" data-aud-fp="' + escapeHtml(fp) + '">◐ 改為遮罩模式</button>' +
-        '<button type="button" data-aud-action="detail-kick" data-aud-fp="' + escapeHtml(fp) + '" disabled title="尚未實作 kick endpoint">👢 踢出此場（待 BE 擴張）</button>' +
+        '<div class="admin-be-placeholder-control admin-be-placeholder-inline admin-aud-be-placeholder">[PLACEHOLDER] 👢 踢出此場（待 BE endpoint）</div>' +
         '<button type="button" data-aud-action="detail-safe" data-aud-fp="' + escapeHtml(fp) + '">✓ 標記安全 · 解除 flag</button>' +
       '</div>';
   }

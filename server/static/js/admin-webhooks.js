@@ -273,8 +273,6 @@
       }
       const detailPing = e.target.closest("[data-wh-action='detail-ping']");
       if (detailPing) { _testWebhook(detailPing.dataset.whHookId); return; }
-      const detailToggle = e.target.closest("[data-wh-action='detail-toggle']");
-      if (detailToggle) { _toggleEnabled(detailToggle.dataset.whHookId); return; }
       const detailDelete = e.target.closest("[data-wh-action='detail-delete']");
       if (detailDelete) { _deleteWebhook(detailDelete.dataset.whHookId); return; }
 
@@ -527,7 +525,7 @@
       '<pre class="admin-wh-detail-payload">' + _escHtml(JSON.stringify(samplePayload, null, 2)) + '</pre>' +
       '<div class="admin-wh-detail-actions">' +
         '<button type="button" class="primary" data-wh-action="detail-ping" data-wh-hook-id="' + _escHtml(hook.id) + '">↻ 送測試 ping</button>' +
-        '<button type="button" class="warn" data-wh-action="detail-toggle" data-wh-hook-id="' + _escHtml(hook.id) + '">' + (enabled ? "⏸ 暫停" : "▶ 啟用") + '</button>' +
+        '<div class="admin-be-placeholder-control admin-be-placeholder-inline">[PLACEHOLDER] ' + (enabled ? "⏸ 暫停" : "▶ 啟用") + '（待 BE：/admin/webhooks/toggle）</div>' +
         '<button type="button" class="danger" data-wh-action="detail-delete" data-wh-hook-id="' + _escHtml(hook.id) + '">⊘ 刪除</button>' +
       '</div>';
   }
@@ -551,12 +549,6 @@
       console.error("Webhook test error:", err);
       showToast(ServerI18n.t("testFailed") || "測試失敗", false);
     }
-  }
-
-  async function _toggleEnabled(hookId) {
-    // No dedicated toggle endpoint — emulate via re-register pattern.
-    // For now toast + future BE work flagged in the note.
-    showToast("暫停 / 啟用 endpoint 需新 /admin/webhooks/toggle endpoint（待 BE 擴張）", false);
   }
 
   async function _deleteWebhook(hookId) {

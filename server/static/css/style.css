@@ -5360,6 +5360,28 @@ body.stream-mode .admin-hero .admin-summary-grid {
   background: rgba(56, 189, 248, 0.10);
 }
 
+/* BE-blocked controls (strict 1:1 mode):
+   render as text+box placeholder, never as clickable actions. */
+.admin-be-placeholder-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 1px dashed var(--color-border, #334155);
+  background: rgba(15, 23, 42, 0.55);
+  color: var(--color-text-muted, #94a3b8);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  line-height: 1.5;
+  cursor: default;
+  user-select: none;
+}
+.admin-be-placeholder-inline {
+  pointer-events: none;
+}
+
 /* History tab visibility — 3 tabs: export (v2 picker) / list (v1 detail) /
    replay. body[data-history-tab] drives which pane shows.
    - export tab → only #history-v2-section
@@ -7126,9 +7148,17 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-notif-src.is-disabled {
   opacity: 0.6;
   border-style: dashed;
+  pointer-events: none;
+  cursor: default;
 }
 .admin-notif-tab.is-active .cnt, .admin-notif-src.is-active .cnt {
   color: var(--color-primary, #38bdf8);
+}
+.admin-notif-src.admin-notif-src-placeholder {
+  justify-content: flex-start;
+}
+.admin-notif-src.admin-notif-src-placeholder .cnt {
+  margin-left: auto;
 }
 .admin-notif-label-top { margin-top: 14px; display: block; }
 .admin-notif-tip {
@@ -7926,6 +7956,12 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   opacity: 0.5;
   cursor: not-allowed;
 }
+.admin-aud-detail-actions .admin-be-placeholder-control {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 10px;
+  font-size: 11px;
+}
 .admin-aud-empty {
   padding: 40px 20px; text-align: center;
 }
@@ -8681,6 +8717,10 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-wh-detail-actions button.danger {
   color: #f87171;
   border-color: rgba(248, 113, 113, 0.40);
+}
+.admin-wh-detail-actions .admin-be-placeholder-control {
+  flex: 1;
+  justify-content: center;
 }
 
 .admin-wh-empty {

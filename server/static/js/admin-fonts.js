@@ -143,7 +143,7 @@
         </div>
         <div class="admin-proto-empty-actions">
           ${loggedIn ? '<button type="button" class="admin-proto-empty-primary" data-empty-cta="fonts-upload-first">⇪ 上傳字型</button>' : ''}
-          <button type="button" class="admin-proto-empty-secondary" data-empty-cta="fonts-google">從 Google Fonts</button>
+          <span class="admin-be-placeholder-control admin-be-placeholder-inline">[PLACEHOLDER] 從 Google Fonts（待 BE）</span>
         </div>
         <div class="admin-proto-empty-hint">支援格式 · WOFF2 · WOFF · TTF · OTF</div>
       </div>
@@ -156,12 +156,6 @@
           if (fi) fi.click();
         });
       }
-    }
-    var googleBtn = host.querySelector('[data-empty-cta="fonts-google"]');
-    if (googleBtn) {
-      googleBtn.addEventListener("click", function () {
-        window.showToast("Google Fonts 匯入流程待後端串接。", false);
-      });
     }
   }
 

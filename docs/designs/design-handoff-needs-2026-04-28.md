@@ -45,6 +45,7 @@
 | Webhooks ↔ Audit | 已寫入 `register / test / unregister` 審計事件，可在 audit 與 notifications 直接看到 |
 | Messages / Polls / Fonts Empty State | 已移除工程自加 emoji 通用卡；改為 prototype 文案與結構（Messages:「還沒有人發送訊息」、Polls:「還沒有任何投票」、Fonts:「尚未上傳自訂字型」） |
 | Viewer Poll tab | 依 prototype `pollEnabled=false`，viewer 端預設關閉 Poll 分頁（只保留 Fire）；避免未定義流程直接露出 |
+| BE 阻塞控制項 | `Webhooks Toggle` / `Backup Source Filter` / `Audience Kick` / `Google Fonts Import` 均改為不可點的 `[PLACEHOLDER]` 文字+方框，避免誤判為可操作 |
 | History / Viewer Config tabs | 因缺 tabbed artboard，已改為 `[PLACEHOLDER]` 文字+方框容器（保留既有功能） |
 | Viewer Effect parameters | 因缺 per-effect 面板稿，已改為 `[PLACEHOLDER] Effect Parameters` 文字+方框 |
 
