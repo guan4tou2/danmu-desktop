@@ -5,7 +5,7 @@ import re as _re
 
 from flask import request
 
-from ...services import messaging
+from ...services import audit_log, messaging
 from ...services.security import rate_limit
 from ...services.validation import WebhookSchema, validate_request
 from . import _json_response, admin_bp, require_csrf, require_login
@@ -24,6 +24,16 @@ def register_webhook():
 
     try:
         hook_id = webhook_service.register(validated)
+        audit_log.append(
+            "webhooks",
+            "register",
+            actor="admin",
+            meta={
+                "hook_id": hook_id,
+                "url": validated.get("url"),
+                "events": list(validated.get("events") or []),
+            },
+        )
         return _json_response({"hook_id": hook_id})
     except ValueError as e:
         return _json_response({"error": str(e)}, 400)
@@ -39,6 +49,12 @@ def unregister_webhook():
     from ...services.webhook import webhook_service
 
     if webhook_service.unregister(hook_id):
+        audit_log.append(
+            "webhooks",
+            "unregister",
+            actor="admin",
+            meta={"hook_id": hook_id},
+        )
         return _json_response({"message": "Webhook removed"})
     return _json_response({"error": "Webhook not found"}, 404)
 
@@ -84,6 +100,12 @@ def test_webhook():
     from ...services.webhook import webhook_service
 
     webhook_service.emit("test", {"text": "Test from danmu admin", "hook_id": hook_id})
+    audit_log.append(
+        "webhooks",
+        "test",
+        actor="admin",
+        meta={"hook_id": hook_id},
+    )
     return _json_response({"message": "Test webhook sent"})
 
 

@@ -38,7 +38,11 @@
   let _state = {
     events: [],
     sources: [],
+    actions: [],
+    actors: [],
     filterSource: "all",
+    filterAction: "all",
+    filterActor: "all",
     refreshTimer: 0,
   };
 
@@ -58,6 +62,16 @@
             <div class="admin-v2-monolabel">來源 · SOURCE</div>
             <div class="admin-audit-source-list" data-audit-sources>
               <button type="button" class="admin-audit-src is-active" data-audit-src="all">全部<span class="cnt" data-audit-cnt-all>—</span></button>
+            </div>
+
+            <div class="admin-v2-monolabel admin-audit-label-top">動作 · ACTION</div>
+            <div class="admin-audit-source-list" data-audit-actions>
+              <button type="button" class="admin-audit-src is-active" data-audit-action-filter="all">全部<span class="cnt">—</span></button>
+            </div>
+
+            <div class="admin-v2-monolabel admin-audit-label-top">執行者 · ACTOR</div>
+            <div class="admin-audit-source-list" data-audit-actors>
+              <button type="button" class="admin-audit-src is-active" data-audit-actor-filter="all">全部<span class="cnt">—</span></button>
             </div>
 
             <div class="admin-audit-tip">
@@ -111,12 +125,30 @@
     } catch (_) { return "—"; }
   }
 
+  function _matchesSource(event, source) {
+    return source === "all" || event.source === source;
+  }
+
+  function _matchesAction(event, action) {
+    return action === "all" || String(event.action || event.kind || "").toLowerCase() === String(action || "").toLowerCase();
+  }
+
+  function _matchesActor(event, actor) {
+    return actor === "all" || String(event.actor || "") === actor;
+  }
+
+  function _filteredEvents() {
+    return _state.events.filter(function (e) {
+      return _matchesSource(e, _state.filterSource)
+        && _matchesAction(e, _state.filterAction)
+        && _matchesActor(e, _state.filterActor);
+    });
+  }
+
   function _renderRows() {
     const tbody = document.querySelector("[data-audit-rows]");
     if (!tbody) return;
-    const events = _state.filterSource === "all"
-      ? _state.events
-      : _state.events.filter(function (e) { return e.source === _state.filterSource; });
+    const events = _filteredEvents();
     if (events.length === 0) {
       tbody.innerHTML = `<tr><td colspan="5" class="admin-audit-empty">沒有符合條件的紀錄。</td></tr>`;
       return;
@@ -124,7 +156,10 @@
     tbody.innerHTML = events.map(function (e) {
       const meta = SOURCE_META[e.source] || { label: e.source, color: "var(--color-text-muted)" };
       const metaJson = JSON.stringify(e.meta || {});
-      const metaText = metaJson === "{}" ? "—" : metaJson;
+      const beforeAfter = (e.before !== null && e.before !== undefined) || (e.after !== null && e.after !== undefined)
+        ? `before: ${JSON.stringify(e.before)} -> after: ${JSON.stringify(e.after)}`
+        : "";
+      const metaText = metaJson === "{}" ? (beforeAfter || "—") : [beforeAfter, metaJson].filter(Boolean).join(" · ");
       return `
         <tr class="admin-audit-row">
           <td class="col-ts">${escapeHtml(_formatTs(e.ts))}</td>
@@ -141,9 +176,12 @@
   function _renderSources() {
     const list = document.querySelector("[data-audit-sources]");
     if (!list) return;
-    const allBtn = `<button type="button" class="admin-audit-src ${_state.filterSource === "all" ? "is-active" : ""}" data-audit-src="all">全部<span class="cnt">${_state.events.length}</span></button>`;
+    const countScope = _state.events.filter(function (e) {
+      return _matchesAction(e, _state.filterAction) && _matchesActor(e, _state.filterActor);
+    });
+    const allBtn = `<button type="button" class="admin-audit-src ${_state.filterSource === "all" ? "is-active" : ""}" data-audit-src="all">全部<span class="cnt">${countScope.length}</span></button>`;
     const srcButtons = (_state.sources || []).map(function (s) {
-      const cnt = _state.events.filter(function (e) { return e.source === s; }).length;
+      const cnt = countScope.filter(function (e) { return e.source === s; }).length;
       const active = _state.filterSource === s;
       const meta = SOURCE_META[s] || { label: s };
       return `<button type="button" class="admin-audit-src ${active ? "is-active" : ""}" data-audit-src="${escapeHtml(s)}">${escapeHtml(meta.label)}<span class="cnt">${cnt}</span></button>`;
@@ -151,13 +189,47 @@
     list.innerHTML = allBtn + srcButtons;
   }
 
+  function _renderActions() {
+    const list = document.querySelector("[data-audit-actions]");
+    if (!list) return;
+    const countScope = _state.events.filter(function (e) {
+      return _matchesSource(e, _state.filterSource) && _matchesActor(e, _state.filterActor);
+    });
+    const allBtn = `<button type="button" class="admin-audit-src ${_state.filterAction === "all" ? "is-active" : ""}" data-audit-action-filter="all">全部<span class="cnt">${countScope.length}</span></button>`;
+    const actionButtons = (_state.actions || []).map(function (actionKey) {
+      const normalized = String(actionKey || "").toLowerCase();
+      const cnt = countScope.filter(function (e) {
+        return String(e.action || e.kind || "").toLowerCase() === normalized;
+      }).length;
+      const active = _state.filterAction === normalized;
+      return `<button type="button" class="admin-audit-src ${active ? "is-active" : ""}" data-audit-action-filter="${escapeHtml(normalized)}">${escapeHtml(normalized.toUpperCase())}<span class="cnt">${cnt}</span></button>`;
+    }).join("");
+    list.innerHTML = allBtn + actionButtons;
+  }
+
+  function _renderActors() {
+    const list = document.querySelector("[data-audit-actors]");
+    if (!list) return;
+    const countScope = _state.events.filter(function (e) {
+      return _matchesSource(e, _state.filterSource) && _matchesAction(e, _state.filterAction);
+    });
+    const allBtn = `<button type="button" class="admin-audit-src ${_state.filterActor === "all" ? "is-active" : ""}" data-audit-actor-filter="all">全部<span class="cnt">${countScope.length}</span></button>`;
+    const actorButtons = (_state.actors || []).map(function (actor) {
+      const cnt = countScope.filter(function (e) { return String(e.actor || "") === actor; }).length;
+      const active = _state.filterActor === actor;
+      return `<button type="button" class="admin-audit-src ${active ? "is-active" : ""}" data-audit-actor-filter="${escapeHtml(actor)}">${escapeHtml(actor)}<span class="cnt">${cnt}</span></button>`;
+    }).join("");
+    list.innerHTML = allBtn + actorButtons;
+  }
+
   function _renderSummary() {
     const summary = document.querySelector("[data-audit-summary]");
     if (!summary) return;
-    const filtered = _state.filterSource === "all"
-      ? _state.events.length
-      : _state.events.filter(function (e) { return e.source === _state.filterSource; }).length;
-    summary.textContent = (_state.filterSource === "all" ? "全部" : SOURCE_META[_state.filterSource]?.label || _state.filterSource) + " · " + filtered + " 筆";
+    const filtered = _filteredEvents().length;
+    const srcLabel = _state.filterSource === "all" ? "全部來源" : (SOURCE_META[_state.filterSource]?.label || _state.filterSource);
+    const actionLabel = _state.filterAction === "all" ? "全部動作" : _state.filterAction.toUpperCase();
+    const actorLabel = _state.filterActor === "all" ? "全部執行者" : _state.filterActor;
+    summary.textContent = srcLabel + " · " + actionLabel + " · " + actorLabel + " · " + filtered + " 筆";
   }
 
   // ── data ─────────────────────────────────────────────────────────
@@ -169,7 +241,15 @@
       const data = await r.json();
       _state.events = Array.isArray(data.events) ? data.events : [];
       _state.sources = Array.isArray(data.sources) ? data.sources : [];
+      _state.actions = Array.isArray(data.contract && data.contract.actions)
+        ? data.contract.actions.map(function (a) { return String(a || "").toLowerCase(); }).filter(Boolean)
+        : [];
+      _state.actors = Array.isArray(data.contract && data.contract.actors)
+        ? data.contract.actors.map(function (a) { return String(a || ""); }).filter(Boolean)
+        : [];
       _renderSources();
+      _renderActions();
+      _renderActors();
       _renderRows();
       _renderSummary();
     } catch (_) { /* silent */ }
@@ -200,9 +280,31 @@
     if (!page) return;
     page.addEventListener("click", function (e) {
       const src = e.target.closest("[data-audit-src]");
-      if (src) {
+      if (src && src.dataset.auditSrc !== undefined) {
         _state.filterSource = src.dataset.auditSrc;
         _renderSources();
+        _renderActions();
+        _renderActors();
+        _renderRows();
+        _renderSummary();
+        return;
+      }
+      const actionFilter = e.target.closest("[data-audit-action-filter]");
+      if (actionFilter) {
+        _state.filterAction = actionFilter.dataset.auditActionFilter;
+        _renderSources();
+        _renderActions();
+        _renderActors();
+        _renderRows();
+        _renderSummary();
+        return;
+      }
+      const actorFilter = e.target.closest("[data-audit-actor-filter]");
+      if (actorFilter) {
+        _state.filterActor = actorFilter.dataset.auditActorFilter;
+        _renderSources();
+        _renderActions();
+        _renderActors();
         _renderRows();
         _renderSummary();
         return;

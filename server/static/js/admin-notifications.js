@@ -2,15 +2,16 @@
  * Admin · Notifications Inbox (P1, 2026-04-27).
  *
  * Mirrors docs/designs/design-v2/components/admin-batch7.jsx
- * AdminNotificationsPage. v1 is a 2-column layout (filters left, list
- * right); the prototype's third "selected detail" pane is folded into
- * an inline expansion in v1 to keep scope manageable.
+ * AdminNotificationsPage. Current implementation is 3-column:
+ * filters + list + detail pane.
  *
  * Aggregates from existing endpoints — NO new backend schema:
  *   ✓ /admin/metrics → recent_violations (rate limit hits) → severity warn
  *   ✓ /admin/integrations/fire-token/audit → token rotated/revoked/toggled
  *     → severity info (rotated/toggle), good (revoked)
  *   ✓ /admin/filters/events → moderation filter hits → severity warn
+ *   ✓ /admin/audit?source=webhooks → webhook lifecycle/test events
+ *   ✓ /admin/audit (auth/broadcast/system*) → system channel events
  *
  * Read/archive/starred state lives in localStorage (per-event id):
  *   danmu.notifications.read     = JSON [id1, id2, ...]
@@ -44,6 +45,7 @@
 
   let _state = {
     items: [],         // aggregated [{id, sev, src, ts, title, desc}]
+    sourceCatalog: [],
     filterTab: "unread", // all / unread / starred / archived
     filterSrc: "all",
     refreshTimer: 0,
@@ -85,17 +87,28 @@
 
   async function _fetchAll() {
     const tasks = [
+      _fetchSourceCatalog().catch(function () { return []; }),
       _fetchMetrics().catch(function () { return []; }),
       _fetchTokenAudit().catch(function () { return []; }),
       _fetchFilterEvents().catch(function () { return []; }),
+      _fetchWebhookAudit().catch(function () { return []; }),
+      _fetchSystemAudit().catch(function () { return []; }),
     ];
     const results = await Promise.all(tasks);
-    const merged = results.flat();
+    _state.sourceCatalog = Array.isArray(results[0]) ? results[0] : [];
+    const merged = results.slice(1).flat();
     merged.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
     _state.items = merged;
     _renderList();
     _renderSummary();
     _renderDetail();
+  }
+
+  async function _fetchSourceCatalog() {
+    const r = await fetch("/admin/integrations/sources/recent", { credentials: "same-origin" });
+    if (!r.ok) return [];
+    const data = await r.json();
+    return Array.isArray(data.source_catalog) ? data.source_catalog : [];
   }
 
   async function _fetchMetrics() {
@@ -171,6 +184,53 @@
     });
   }
 
+  async function _fetchWebhookAudit() {
+    const r = await fetch("/admin/audit?source=webhooks&limit=100", { credentials: "same-origin" });
+    if (!r.ok) return [];
+    const data = await r.json();
+    const events = Array.isArray(data.events) ? data.events : [];
+    return events.map(function (e, i) {
+      const ts = (Number(e.ts) || 0) * 1000;
+      const kind = String(e.kind || "?");
+      const id = "wh-" + (e.ts || i) + "-" + kind + "-" + i;
+      const sev = (kind === "unregister") ? "warn" : "info";
+      return {
+        id: id,
+        sev: sev,
+        src: "Webhooks",
+        ts: ts,
+        title: "Webhook 事件 · " + kind,
+        desc: "執行者：" + (e.actor || "system") + (e.meta ? " · " + JSON.stringify(e.meta) : ""),
+        raw: e,
+      };
+    });
+  }
+
+  async function _fetchSystemAudit() {
+    const r = await fetch("/admin/audit?limit=120", { credentials: "same-origin" });
+    if (!r.ok) return [];
+    const data = await r.json();
+    const events = Array.isArray(data.events) ? data.events : [];
+    const allowed = new Set(["auth", "broadcast", "system", "session", "sessions"]);
+    return events.filter(function (e) {
+      return allowed.has(String(e.source || ""));
+    }).map(function (e, i) {
+      const ts = (Number(e.ts) || 0) * 1000;
+      const kind = String(e.kind || "?");
+      const id = "sys-" + (e.ts || i) + "-" + (e.source || "x") + "-" + kind + "-" + i;
+      const sev = kind === "login_failed" ? "warn" : "info";
+      return {
+        id: id,
+        sev: sev,
+        src: "System",
+        ts: ts,
+        title: "系統事件 · " + kind,
+        desc: "來源：" + (e.source || "?") + " · 執行者：" + (e.actor || "system"),
+        raw: e,
+      };
+    });
+  }
+
   // ── render ───────────────────────────────────────────────────────
 
   function buildSection() {
@@ -198,11 +258,14 @@
               <button type="button" class="admin-notif-src" data-notif-src="Rate Limit">Rate Limit<span class="cnt" data-cnt-src-rl>—</span></button>
               <button type="button" class="admin-notif-src" data-notif-src="Fire Token">Fire Token<span class="cnt" data-cnt-src-ft>—</span></button>
               <button type="button" class="admin-notif-src" data-notif-src="Moderation">Moderation<span class="cnt" data-cnt-src-mod>—</span></button>
+              <button type="button" class="admin-notif-src" data-notif-src="Webhooks">Webhooks<span class="cnt" data-cnt-src-wh>—</span></button>
+              <button type="button" class="admin-notif-src" data-notif-src="System">System<span class="cnt" data-cnt-src-sys>—</span></button>
+              <button type="button" class="admin-notif-src" data-notif-src="Backup">Backup<span class="cnt" data-cnt-src-bk>—</span></button>
             </div>
 
             <div class="admin-notif-tip">
               <span class="kicker">提示</span>
-              通知保留條件由各 backend service 決定（rate limits 30 筆、fire token audit 100 筆、filters log 即時 fetch）。讀取 / 封存狀態為瀏覽器本地。
+              通知保留條件由各 backend service 決定（rate limits 30 筆、fire token audit 100 筆、filters log 即時 fetch、audit.log 近期事件）。讀取 / 封存狀態為瀏覽器本地。
             </div>
           </aside>
 
@@ -250,7 +313,7 @@
         <div class="admin-notif-empty">
           <div class="icon">◌</div>
           <div class="t">沒有符合條件的通知</div>
-          <div class="s">當有新事件（速率限制觸發 / token 事件 / 敏感字命中）時會自動出現在這裡。</div>
+          <div class="s">當有新事件（速率限制 / token / moderation / webhooks / system）時會自動出現在這裡。</div>
         </div>`;
       return;
     }
@@ -300,6 +363,20 @@
     set("[data-cnt-src-rl]", items.filter(function (i) { return i.src === "Rate Limit"; }).length);
     set("[data-cnt-src-ft]", items.filter(function (i) { return i.src === "Fire Token"; }).length);
     set("[data-cnt-src-mod]", items.filter(function (i) { return i.src === "Moderation"; }).length);
+    set("[data-cnt-src-wh]", items.filter(function (i) { return i.src === "Webhooks"; }).length);
+    set("[data-cnt-src-sys]", items.filter(function (i) { return i.src === "System"; }).length);
+    set("[data-cnt-src-bk]", items.filter(function (i) { return i.src === "Backup"; }).length);
+
+    const backupImplemented = (_state.sourceCatalog || []).some(function (row) {
+      return row && row.id === "backup" && row.implemented === true;
+    });
+    const backupBtn = document.querySelector("[data-notif-src='Backup']");
+    if (backupBtn) {
+      backupBtn.classList.toggle("is-disabled", !backupImplemented);
+      backupBtn.title = backupImplemented
+        ? "Backup 來源已啟用"
+        : "Backup 來源尚未實作（等待後端）";
+    }
 
     const summary = document.querySelector("[data-notif-summary]");
     if (summary) {

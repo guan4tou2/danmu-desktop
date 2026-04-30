@@ -17,6 +17,28 @@
 
 ---
 
+## 2026-04-30 最新基線（請以本段為準）
+
+### 仍缺 Design 稿（需補 artboard / spec）
+
+| 類別 | 項目 | 目前狀態 | 需要 Design 交付 |
+|------|------|----------|------------------|
+| Admin | EN Dashboard | 尚無獨立頁/稿件 | 補 EN 版 dashboard artboard + 文案規格 |
+| Admin RWD | Desktop 768 / 480 | 現在為工程 fallback | 補高頻頁 breakpoint（Dashboard / Messages / Polls / Broadcast / History） |
+| Viewer | Effects 參數面板 | 有功能、無正式設計稿 | 補 per-effect parameter panel（dark/light） |
+| Admin | History tabbed page | 工程已有 3 tabs，prototype 無完整 tabbed 稿 | 補 `AdminHistoryTabbedPage` |
+| Admin | Viewer Config tabbed page | 工程已有 2 tabs，prototype 無此稿 | 補 `AdminViewerConfigTabbedPage` |
+
+### 本輪已完成對齊（不用再列缺稿）
+
+| 功能 | 對齊狀態 |
+|------|----------|
+| Notifications | 已是 3 欄（filters/list/detail），來源補到 `Rate Limit / Fire Token / Moderation / Webhooks / System / Backup(placeholder)` |
+| Audit Log | 已補 `ACTION / ACTOR` 篩選與 `before→after` 欄位語義（無資料時顯示占位） |
+| Webhooks ↔ Audit | 已寫入 `register / test / unregister` 審計事件，可在 audit 與 notifications 直接看到 |
+
+---
+
 ## 2026-04-30 補充（Setup Wizard 契約凍結）
 
 - 密碼步驟使用 `POST /admin/change_password`，Logo 步驟使用 `POST /admin/logo`。

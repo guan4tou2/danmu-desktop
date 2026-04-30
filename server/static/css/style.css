@@ -6979,6 +6979,10 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   border-color: rgba(56, 189, 248, 0.40);
   color: var(--color-text-strong, #e2e8f0);
 }
+.admin-notif-src.is-disabled {
+  opacity: 0.6;
+  border-style: dashed;
+}
 .admin-notif-tab.is-active .cnt, .admin-notif-src.is-active .cnt {
   color: var(--color-primary, #38bdf8);
 }
@@ -7292,6 +7296,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   display: flex; flex-direction: column; gap: 4px;
   margin-top: 10px;
 }
+.admin-audit-label-top { margin-top: 12px; display: block; }
 .admin-audit-src {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 10px;
