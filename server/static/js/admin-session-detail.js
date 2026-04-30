@@ -288,7 +288,7 @@
     const durEl = document.querySelector("[data-sd-meta-duration]");
     const titleEl = document.querySelector("[data-sd-title]");
 
-    const sid = (sess && sess.session_id) || _state.sessionId || "—";
+    const sid = (sess && (sess.session_id || sess.id)) || _state.sessionId || "—";
     if (idEl) idEl.textContent = sid;
     if (startEl) startEl.textContent = _fmtTimestamp(sess && (sess.started_at || sess.start_time));
     if (durEl) durEl.textContent = _fmtDuration(sess && (sess.duration_s || sess.duration));
