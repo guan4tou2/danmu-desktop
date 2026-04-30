@@ -169,6 +169,22 @@ def test_browser_submit_danmu_reaches_overlay(browser_session, server_ports):
         context.close()
 
 
+def test_viewer_identity_label_uses_nickname(browser_session, server_ports):
+    """Viewer identity field label should be 昵称/暱稱 semantics, not generic 身分."""
+    http_port, _ = server_ports
+
+    context = browser_session.new_context()
+    page = context.new_page()
+    try:
+        page.goto(f"http://127.0.0.1:{http_port}/")
+        page.wait_for_selector("#nicknameInput", timeout=8000)
+        label = page.locator('label[for="nicknameInput"] span').first.text_content() or ""
+        assert "暱稱" in label
+    finally:
+        page.close()
+        context.close()
+
+
 def test_viewer_poll_tab_hidden_by_default(browser_session, server_ports):
     """Viewer should keep poll tab disabled by default (prototype pollEnabled=false)."""
     http_port, _ = server_ports

@@ -87,49 +87,6 @@
     _setAllTabActive();
   }
 
-  function _viewerJoinUrl() {
-    const base = `${window.location.protocol}//${window.location.host}`;
-    return `${base}/`;
-  }
-
-  async function _copyViewerUrl() {
-    const url = _viewerJoinUrl();
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(url);
-        showToast("已複製觀眾頁網址", true);
-        return;
-      }
-    } catch (_) {
-      /* ignore and fallback */
-    }
-    window.prompt("複製觀眾頁網址", url);
-  }
-
-  function _createPrototypeMessagesEmptyState() {
-    const box = document.createElement("div");
-    box.className = "admin-proto-empty admin-proto-empty--messages";
-    box.setAttribute("data-empty-kind", "live-feed");
-    box.innerHTML = `
-      <div class="admin-proto-empty-title">還沒有人發送訊息</div>
-      <div class="admin-proto-empty-desc">把這個 QR 投到舞台上,觀眾掃進去即可開始發彈幕。</div>
-      <div class="admin-proto-empty-qr">
-        <span class="admin-proto-empty-qr-box">QR</span>
-        <div class="admin-proto-empty-qr-meta">
-          <div class="admin-proto-empty-qr-url">${escapeAttr(_viewerJoinUrl())}</div>
-          <div class="admin-proto-empty-qr-label">觀眾頁網址</div>
-        </div>
-        <button type="button" class="admin-proto-empty-qr-copy" data-empty-cta="live-feed-copy-url">複製</button>
-      </div>
-      <div class="admin-proto-empty-hint">或在 Overlay 上開啟 QR Carousel widget</div>
-    `;
-    const copyBtn = box.querySelector('[data-empty-cta="live-feed-copy-url"]');
-    if (copyBtn) {
-      copyBtn.addEventListener("click", _copyViewerUrl);
-    }
-    return box;
-  }
-
   function _createPlaceholderEmptyState(title, body, ctaLabel, ctaId, onCta) {
     const box = document.createElement("div");
     box.className = "admin-proto-placeholder-box admin-live-feed-empty-placeholder";
@@ -330,7 +287,13 @@
             togglePause
           )
         : entries.length === 0
-          ? _createPrototypeMessagesEmptyState()
+          ? _createPlaceholderEmptyState(
+              "[PLACEHOLDER] Live Feed Empty",
+              "Prototype 與目前 route 定義不一致，暫以文字+方框占位。",
+              null,
+              null,
+              null
+            )
           : _createPlaceholderEmptyState(
               "[PLACEHOLDER] Live Feed No Result",
               "Prototype 未提供搜尋無結果狀態版面，暫以文字+方框占位。",
