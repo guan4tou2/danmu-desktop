@@ -400,6 +400,11 @@ def test_vote_targets_current_question_via_fire(client, isolated_poll_dir, monke
     # Vote "A" via /fire — should land on Q1 only
     resp = client.post("/fire", json={"text": "A", "fingerprint": "voter-1"})
     assert resp.status_code == 200
+    payload = resp.get_json()
+    assert payload["status"] == "OK"
+    assert payload["poll_vote"]["accepted"] is True
+    assert payload["poll_vote"]["key"] == "A"
+    assert payload["poll_vote"]["question"] == "Q1?"
     s = poll_service.get_status()
     assert s["questions"][0]["options"][0]["count"] == 1
     assert s["questions"][1]["options"][0]["count"] == 0
@@ -408,9 +413,32 @@ def test_vote_targets_current_question_via_fire(client, isolated_poll_dir, monke
     authed_post_json(client, "/admin/poll/advance", {})
     resp = client.post("/fire", json={"text": "A", "fingerprint": "voter-1"})
     assert resp.status_code == 200
+    payload = resp.get_json()
+    assert payload["poll_vote"]["accepted"] is True
+    assert payload["poll_vote"]["question"] == "Q2?"
     s = poll_service.get_status()
     assert s["questions"][0]["options"][0]["count"] == 1  # frozen
     assert s["questions"][1]["options"][0]["count"] == 1  # new
+
+
+def test_non_vote_fire_response_has_no_poll_vote_meta(client, monkeypatch):
+    """Server-driven poll flags should appear only for valid poll-option votes."""
+    from server.services import messaging  # ty: ignore[unresolved-import]
+    from server.services.ws_state import update_ws_client_count  # ty: ignore[unresolved-import]
+
+    update_ws_client_count(1)
+    monkeypatch.setattr(messaging, "forward_to_ws_server", lambda _data: True)
+    authed_post_json(
+        client,
+        "/admin/poll/create",
+        {"question": "Q?", "options": ["Yes", "No"]},
+    )
+
+    resp = client.post("/fire", json={"text": "hello world", "fingerprint": "voter-1"})
+    assert resp.status_code == 200
+    payload = resp.get_json()
+    assert payload["status"] == "OK"
+    assert "poll_vote" not in payload
 
 
 def test_status_back_compat_shape(client):

@@ -124,12 +124,21 @@ const initRenderer = async () => {
       const screenSelect = document.getElementById("screen-select");
       if (screenSelect) {
         const selectedBeforePopulate = parseInt(screenSelect.value, 10);
+        const syncPreferredDisplayId = () => {
+          if (typeof api.setOverlayDisplayId !== "function") return;
+          const opt = screenSelect.options[screenSelect.selectedIndex];
+          if (!opt) return;
+          const displayId = Number(opt.dataset.displayId);
+          if (!Number.isInteger(displayId)) return;
+          api.setOverlayDisplayId(displayId);
+        };
 
         api.getDisplays().then((displays) => {
           screenSelect.innerHTML = "";
           displays.forEach((display, index) => {
             const option = document.createElement("option");
             option.value = index;
+            option.dataset.displayId = String(display.id);
             option.textContent = `Display ${index + 1} (${display.size.width}x${
               display.size.height
             }) ${display.primary ? "[Primary]" : ""}`;
@@ -145,7 +154,10 @@ const initRenderer = async () => {
           screenSelect.value = String(
             hasSavedSelection ? selectedBeforePopulate : fallbackIndex
           );
+          syncPreferredDisplayId();
         });
+
+        screenSelect.addEventListener("change", syncPreferredDisplayId);
       }
     }
   } finally {

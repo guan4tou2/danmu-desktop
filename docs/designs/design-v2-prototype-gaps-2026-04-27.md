@@ -39,14 +39,14 @@
 | 11 | AdminWcagPage + AdminDashboardEN（EN sweep） | i18n strings 全套（純 FE 但是工程量大，建議獨立 sprint） |
 | 12 | AdminTokensPage（per-integration ACL） | **要新 token table**（目前只有 Fire Token 單一 shared bearer） |
 | 13 | AdminWebhooksPage v2 retrofit | ✅ shipped 2026-04-29（`f552a89`）— BE 加 success_count/fail_count/last_delivery_at + delivery log ring buffer + /admin/webhooks/deliveries endpoint |
-| 17 | DesktopTrayPopover / WindowPicker | Electron 端，獨立 sprint，6-10 hr |
+| 17 | DesktopTrayPopover / WindowPicker | ✅ shipped 2026-04-30（tray popover + display picker fallback） |
 
-### B.3 CUT — scope-out（**永遠不做**，見 [scope-out](./scope-out-2026-04-27.md)）
+### B.3 Historical（原 scope-out，已被 lifecycle 決策覆蓋）
 
 | # | 元件 | 原因 |
 |---|------|------|
-| 7 | AdminSessionsPage + SessionDetail | sessions entity scope-out |
-| 8 | AdminSearchPage（跨場次） | sessions scope-out → 改成 #/history 內的全文搜尋 |
+| 7 | AdminSessionsPage + SessionDetail | ✅ 已上線（lifecycle session） |
+| 8 | AdminSearchPage（跨場次） | ✅ 已上線（`#/search`） |
 
 ---
 
@@ -314,8 +314,8 @@ spec-only，等 Design 拍板 §7 三題後從 S1 開工。
 | Tray menu（基本） | ✓ | ✓ | ✅ |
 | FirstRunGate（連線前的提示） | ✓ | ✓ shipped `04013bd` | ✅ |
 | Konami easter egg | ✓ | ✓ shipped `42f6d56` | ✅ |
-| DesktopTrayPopover（mini stats + actions） | ✓ V1Z4 batch9 #11 | ❌ 沒做（H.3） | 缺 |
-| DesktopWindowPicker（多 overlay window 管理） | ✓ V1Z4 batch9 #12 | ❌ 沒做（H.3） | 缺 |
+| DesktopTrayPopover（mini stats + actions） | ✓ V1Z4 batch9 #11 | ✅ shipped 2026-04-30 | ✅ |
+| DesktopWindowPicker（多 overlay window 管理） | ✓ V1Z4 batch9 #12 | ✅ shipped 2026-04-30（含 primary fallback） | ✅ |
 | Tokens.css 同步 | shared/tokens.css | ✅ symlinked 2026-04-28（之前是 stale 副本，差 `--color-warning` 一行） | ✅ |
 
 ---
@@ -344,18 +344,18 @@ spec-only，等 Design 拍板 §7 三題後從 S1 開工。
 | Setup Wizard 補 password + Logo step | /admin/logo upload + first-run check | [B3/B4](./backend-extensions-pending-2026-04-27.md) |
 | Poll Deep-Dive Time histogram / vs 上次 Δ | per-vote timestamp + poll history persistence | [B8/B9](./backend-extensions-pending-2026-04-27.md) |
 
-### H.3 Electron 端
+### H.3 Electron 端（已完成）
 
 | 元件 | Bundle | 工程估計 | 備註 |
 |------|--------|----------|------|
-| DesktopTrayPopover | V1Z4 batch9 #11 | 4-6 hr | macOS 風 tray dropdown，含 mini stats + quick actions + shortcut hints |
-| DesktopWindowPicker | V1Z4 batch9 #12 | 3-4 hr | 多 overlay window 管理 picker |
+| DesktopTrayPopover | V1Z4 batch9 #11 | 0 hr（done） | ✅ 已上線（mini stats + shortcuts hint） |
+| DesktopWindowPicker | V1Z4 batch9 #12 | 0 hr（done） | ✅ 已上線（preferred display + primary fallback） |
 
-→ Electron 端 **獨立 sprint**，不影響 server 工作。`danmu-desktop/main-modules/` 加新模組即可。
+→ Electron 端獨立 sprint 已於 2026-04-30 完成，轉入維運/細節 polish。
 
 ### H.4 Scope-out（永遠不做）
 
-見 [`scope-out-2026-04-27.md`](./scope-out-2026-04-27.md) — Sessions / 跨場次 search / multi-actor / SHA-256 audit / Geo / Pro Edition / NLP sentiment。
+見 [`scope-out-2026-04-27.md`](./scope-out-2026-04-27.md) — multi-actor / SHA-256 audit / Geo / Pro Edition / NLP sentiment。（Sessions / Search 已被 lifecycle 決策覆蓋）
 
 ---
 

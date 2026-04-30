@@ -45,6 +45,10 @@
     // lang step
     selectedLang: "",
     allowViewerLangSwitch: true,
+    capabilities: {
+      password: null,
+      logo: null,
+    },
   };
 
   // ── trigger ──────────────────────────────────────────────────────
@@ -63,6 +67,7 @@
       document.body.insertAdjacentHTML("beforeend", _renderShell());
       _bindShell();
     }
+    _fetchCapabilities();
     _fetchThemes();
     _renderStep();
   }
@@ -178,11 +183,17 @@
     const barW = Math.min(100, _state.pwStrength * 20) + "%";
     const barCol = _state.pwStrength >= 4 ? "#86efac" : _state.pwStrength >= 2 ? "#fbbf24" : "#f87171";
     const strengthLabel = ["", "弱", "普通", "中等", "強", "很好"][Math.min(_state.pwStrength, 5)] || "";
+    const blocked = _state.capabilities.password === false;
     return `
       <div class="admin-setup-step-pad">
         <div class="admin-setup-step-kicker">STEP 01</div>
         <h2 class="admin-setup-step-title">變更管理密碼</h2>
         <p class="admin-setup-step-desc">可選。如要設定新密碼,請填寫下方三個欄位；若想跳過,直接按「下一步」。</p>
+        ${blocked ? `
+          <div class="admin-setup-backend-blocked" data-setup-blocked="password">
+            <b>Blocked by backend</b>
+            <span>/admin/change_password endpoint unavailable，已切換為略過此步驟。</span>
+          </div>` : ""}
         <div class="admin-setup-pw-form">
           <div class="admin-setup-field">
             <label class="admin-setup-field-label">目前密碼</label>
@@ -215,11 +226,17 @@
 
   function _renderLogoStep() {
     const hasLogo = !!_state.logoDataUrl;
+    const blocked = _state.capabilities.logo === false;
     return `
       <div class="admin-setup-step-pad">
         <div class="admin-setup-step-kicker">STEP 02</div>
         <h2 class="admin-setup-step-title">上傳活動 Logo</h2>
         <p class="admin-setup-step-desc">可選。Logo 會顯示在觀眾頁頂部。建議 PNG 透明背景，512×512 以上。可略過,日後在素材庫上傳。</p>
+        ${blocked ? `
+          <div class="admin-setup-backend-blocked" data-setup-blocked="logo">
+            <b>Blocked by backend</b>
+            <span>/admin/logo endpoint unavailable，已切換為略過此步驟。</span>
+          </div>` : ""}
         <div class="admin-setup-logo-grid">
           <div class="admin-setup-dropzone ${hasLogo ? "has-file" : ""}" data-setup-dropzone>
             ${hasLogo
@@ -454,6 +471,26 @@
     } catch (_) { /* silent */ }
   }
 
+  async function _probeEndpoint(url) {
+    try {
+      const r = await fetch(url, { method: "OPTIONS", credentials: "same-origin" });
+      if (r.status === 404) return false;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  async function _fetchCapabilities() {
+    const [passwordOk, logoOk] = await Promise.all([
+      _probeEndpoint("/admin/change_password"),
+      _probeEndpoint("/admin/logo"),
+    ]);
+    _state.capabilities.password = !!passwordOk;
+    _state.capabilities.logo = !!logoOk;
+    if (_state.open && (_state.step === 0 || _state.step === 1)) _renderStep();
+  }
+
   async function _savePassword() {
     const cur = _state.currentPw;
     const nw  = _state.newPw;
@@ -547,11 +584,23 @@
   async function _onNext() {
     const cur = STEPS[_state.step];
     if (cur.id === "password") {
+      if (_state.capabilities.password === false) {
+        window.showToast && window.showToast("後端尚未提供 /admin/change_password，已略過此步驟", false);
+        _state.step += 1;
+        _renderStep();
+        return;
+      }
       const ok = await _savePassword();
       if (!ok) return;
       _state.step += 1;
       _renderStep();
     } else if (cur.id === "logo") {
+      if (_state.capabilities.logo === false) {
+        window.showToast && window.showToast("後端尚未提供 /admin/logo，已略過此步驟", false);
+        _state.step += 1;
+        _renderStep();
+        return;
+      }
       const ok = await _saveLogo();
       if (!ok) return;
       _state.step += 1;
@@ -581,6 +630,14 @@
     },
     isCompleted: function () {
       try { return !!localStorage.getItem(STORAGE_KEY); } catch (_) { return false; }
+    },
+    close: function () {
+      _close();
+    },
+    __setCapabilityForTest: function (key, value) {
+      if (!key || !Object.prototype.hasOwnProperty.call(_state.capabilities, key)) return;
+      _state.capabilities[key] = !!value;
+      if (_state.open) _renderStep();
     },
   };
 

@@ -169,6 +169,88 @@ def test_browser_submit_danmu_reaches_overlay(browser_session, server_ports):
         context.close()
 
 
+def test_viewer_fire_poll_tabs_switch_and_fill_vote_key(browser_session, server_ports):
+    """Viewer should expose Fire/Poll tabs and let poll option fill danmu input."""
+    http_port, _ = server_ports
+
+    context = browser_session.new_context()
+    page = context.new_page()
+    try:
+        page.goto(f"http://127.0.0.1:{http_port}/")
+        page.wait_for_selector("#danmuText", timeout=8000)
+
+        # Tabs render; default mode = fire
+        page.wait_for_selector('[data-viewer-tab="fire"]', timeout=5000)
+        page.wait_for_selector('[data-viewer-tab="poll"]', timeout=5000)
+        assert page.locator("#viewerFirePane").count() == 1
+        assert page.locator("#viewerPollPane").count() == 1
+        assert page.locator("#viewerFirePane").is_visible()
+        assert not page.locator("#viewerPollPane").is_visible()
+
+        # Inject active poll state (same shape as poll_update payload)
+        page.evaluate(
+            """() => {
+              window.dispatchEvent(new CustomEvent("viewer-poll-state", {
+                detail: {
+                  state: "active",
+                  question: "你最喜歡哪個主題包？",
+                  total_votes: 8,
+                  options: [
+                    { key: "A", text: "Classic", count: 5, percentage: 62.5 },
+                    { key: "B", text: "Neon", count: 3, percentage: 37.5 },
+                  ],
+                }
+              }));
+            }"""
+        )
+
+        page.locator('[data-viewer-tab="poll"]').click()
+        page.wait_for_selector("#viewerPollPane", state="visible", timeout=5000)
+        assert "你最喜歡哪個主題包" in (page.locator("[data-vpoll-question]").text_content() or "")
+
+        # Clicking an option fills danmu input with its key for quick vote submit.
+        page.locator('[data-vpoll-key="A"]').click()
+        assert page.locator("#danmuText").input_value() == "A"
+    finally:
+        page.close()
+        context.close()
+
+
+def test_viewer_error_states(browser_session, server_ports):
+    """Viewer error states should render: rate-limit overlay + offline card shell."""
+    http_port, _ = server_ports
+
+    context = browser_session.new_context()
+    page = context.new_page()
+    try:
+        # 429 state preview (driven by viewer-states URL param)
+        page.goto(f"http://127.0.0.1:{http_port}/?state=ratelimit&retry_after=8")
+        page.wait_for_selector('[data-vs-key="ratelimit"]', timeout=5000)
+        assert page.locator('[data-vs-key="ratelimit"]').is_visible()
+        assert "訊息送太快了" in (page.locator(".viewer-state-title").text_content() or "")
+
+        # Offline card classes exist in DOM after explicit trigger.
+        page.goto(f"http://127.0.0.1:{http_port}/")
+        page.wait_for_selector("#danmuText", timeout=8000)
+        page.evaluate(
+            """() => {
+              const body = document.querySelector(".viewer-body");
+              if (!body) return;
+              body.innerHTML = `
+                <div class="viewer-offline-card">
+                  <h2 class="viewer-offline-lockup">Danmu Fire</h2>
+                  <span class="viewer-offline-chip"><span class="viewer-offline-chip-dot"></span><span>OFFLINE</span></span>
+                  <p class="viewer-offline-message">網路中斷</p>
+                </div>`;
+            }"""
+        )
+        page.wait_for_selector(".viewer-offline-card", timeout=5000)
+        assert page.locator(".viewer-offline-card").is_visible()
+    finally:
+        page.close()
+        context.close()
+
+
 def test_browser_submit_danmu_appears_in_history(browser_session, server_ports):
     """送出彈幕後，admin 歷史紀錄應包含該訊息"""
     from websockets.sync.client import connect

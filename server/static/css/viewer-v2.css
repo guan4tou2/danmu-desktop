@@ -468,6 +468,192 @@ body.viewer-body-v2.is-dark {
   }
 }
 
+/* Viewer Fire/Poll tabs + pane switcher. */
+.viewer-tabbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--hud-line);
+}
+
+.viewer-tab {
+  appearance: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--color-text-primary);
+  padding: 10px 18px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  cursor: pointer;
+  margin-bottom: -1px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.viewer-tab-label {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.viewer-tab-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.viewer-tab:hover {
+  border-bottom-color: var(--hud-line-strong);
+  color: var(--color-text-primary);
+}
+
+.viewer-tab.is-active,
+.viewer-tab[aria-selected="true"] {
+  border-bottom-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.viewer-tab.is-active .viewer-tab-label,
+.viewer-tab[aria-selected="true"] .viewer-tab-label {
+  font-weight: 700;
+}
+
+.viewer-tab.is-active .viewer-tab-sub,
+.viewer-tab[aria-selected="true"] .viewer-tab-sub {
+  color: #38bdf8;
+}
+
+.viewer-pane {
+  flex: 1 1 0;
+  min-height: 0;
+  display: none;
+}
+
+.viewer-pane.is-active {
+  display: flex;
+  flex-direction: column;
+}
+
+.viewer-pane[hidden] {
+  display: none !important;
+}
+
+/* Poll pane */
+.viewer-poll-card {
+  margin: 20px 24px 24px;
+  padding: 16px;
+  border: 1px solid rgba(125, 211, 252, 0.25);
+  border-radius: 10px;
+  background: rgba(125, 211, 252, 0.06);
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.08);
+}
+
+.viewer-poll-kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.viewer-poll-question {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--color-text-primary);
+}
+
+.viewer-poll-meta {
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.viewer-poll-options {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.viewer-poll-option {
+  width: 100%;
+  border: 1px solid var(--hud-line);
+  border-radius: 8px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.viewer-poll-option:hover {
+  border-color: rgba(56, 189, 248, 0.68);
+  background: rgba(56, 189, 248, 0.08);
+  transform: translateY(-1px);
+}
+
+.viewer-poll-option-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.viewer-poll-option-key {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  color: #38bdf8;
+  min-width: 22px;
+}
+
+.viewer-poll-option-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.viewer-poll-option-stat {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 599px) {
+  .viewer-tabbar {
+    padding: 0 10px;
+  }
+
+  .viewer-tab {
+    padding: 9px 12px;
+    gap: 6px;
+  }
+
+  .viewer-tab-label {
+    font-size: 13px;
+  }
+
+  .viewer-tab-sub {
+    font-size: 8px;
+  }
+
+  .viewer-poll-card {
+    margin: 16px;
+    padding: 14px;
+  }
+
+  .viewer-poll-question {
+    font-size: 20px;
+  }
+}
+
 /* Body — prototype viewer.jsx:129 — `flex:1, overflow:auto, padding: pad`.
  * Inner scroll on every viewport so the sendbar pins to the bottom. */
 .viewer-body {
@@ -1154,6 +1340,98 @@ body.viewer-has-topstrip .viewer-topstrip {
   }
 }
 
+/* Offline full-panel (P2-1). */
+.viewer-offline-card {
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: linear-gradient(
+    180deg,
+    rgba(248, 113, 113, 0.08) 0%,
+    rgba(15, 23, 42, 0.75) 100%
+  );
+}
+.viewer-offline-lockup {
+  margin: 0;
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  font-size: clamp(2rem, 6vw, 2.8rem);
+  color: #fca5a5;
+}
+.viewer-offline-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  color: #fecaca;
+}
+.viewer-offline-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f87171;
+  box-shadow: 0 0 8px rgba(248, 113, 113, 0.7);
+}
+.viewer-offline-message {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+}
+.viewer-offline-message small {
+  display: block;
+  margin-top: 6px;
+  color: var(--color-text-secondary);
+}
+.viewer-offline-countdown {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--color-text-secondary);
+}
+.viewer-offline-countdown #offlineCountdownValue {
+  font-size: 20px;
+  color: #fca5a5;
+  font-weight: 700;
+}
+.viewer-offline-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.viewer-offline-btn {
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(248, 113, 113, 0.12);
+  color: #fecaca;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.viewer-offline-btn:hover {
+  background: rgba(248, 113, 113, 0.2);
+}
+.viewer-offline-btn.is-secondary {
+  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+}
+
 /* ─── Viewer states (P3 Group B, 2026-04-27) ──────────────────────── */
 /* Full-screen overlays for ViewerBanned + ViewerPollThankYou. Replaces
    the chat surface when triggered (data-viewer-state on body). */
@@ -1374,3 +1652,18 @@ body[data-viewer-state] {
   color: var(--color-text-muted, #64748b);
 }
 
+/* Rate-limit variant */
+.viewer-state-ratelimit-icon {
+  border-color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  color: #fbbf24;
+  box-shadow: 0 0 40px rgba(251, 191, 36, 0.3), inset 0 0 24px rgba(251, 191, 36, 0.14);
+}
+.viewer-state-kicker--warn {
+  color: #fbbf24;
+}
+.viewer-state-action--warn {
+  background: #fbbf24;
+  color: #111827;
+  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.35);
+}

@@ -73,16 +73,33 @@
     _pollStatusTimer = setInterval(fetchStatus, 2000);
   }
 
+  function _renderPollEmptyState() {
+    var wrap = document.createElement("div");
+    wrap.className = "admin-empty-state";
+    wrap.setAttribute("data-empty-kind", "poll");
+    wrap.innerHTML = `
+      <div class="admin-empty-state-icon">🗳</div>
+      <div class="admin-empty-state-title">目前沒有進行中的投票</div>
+      <div class="admin-empty-state-desc">${ServerI18n.t("pollNoActive")}</div>
+      <button type="button" class="admin-empty-state-cta" data-empty-cta="poll-create">前往建立題目</button>
+    `;
+    var cta = wrap.querySelector('[data-empty-cta="poll-create"]');
+    if (cta) {
+      cta.addEventListener("click", function () {
+        var addBtn = document.querySelector('#sec-polls [data-poll-action="add"]');
+        if (addBtn) addBtn.click();
+      });
+    }
+    return wrap;
+  }
+
   function _renderPollStatus(data) {
     var display = document.getElementById("pollStatusDisplay");
     if (!display) return;
     display.textContent = "";
 
     if (!data || data.state === "idle") {
-      var noActive = document.createElement("span");
-      noActive.className = "text-slate-400";
-      noActive.textContent = ServerI18n.t("pollNoActive");
-      display.appendChild(noActive);
+      display.appendChild(_renderPollEmptyState());
       return;
     }
     var total = data.total_votes || 0;
@@ -139,6 +156,11 @@
   }
 
   function _initPollEventListeners() {
+    var pollRoot = document.getElementById("sec-polls");
+    if (!pollRoot) return;
+    if (pollRoot.dataset.pollLegacyBound === "1") return;
+    pollRoot.dataset.pollLegacyBound = "1";
+
     var pollCreateBtn = document.getElementById("pollCreateBtn");
     if (pollCreateBtn) pollCreateBtn.addEventListener("click", _createPoll);
     var pollEndBtn = document.getElementById("pollEndBtn");
@@ -173,12 +195,12 @@
       });
     }
 
-    var pollDetails = document.getElementById("sec-polls");
+    var pollDetails = pollRoot;
     if (pollDetails) {
       pollDetails.addEventListener("toggle", function () {
         if (pollDetails.open) _pollPollStatus();
       });
-      if (pollDetails.open) _pollPollStatus();
+      _pollPollStatus();
     }
 
     window.addEventListener("beforeunload", function () {
@@ -191,5 +213,12 @@
   // admin.js dispatches "admin-panel-rendered" once the DOM is ready.
   document.addEventListener("admin-panel-rendered", function () {
     _initPollEventListeners();
+  });
+  document.addEventListener("DOMContentLoaded", function () {
+    _initPollEventListeners();
+  });
+  window.addEventListener("hashchange", function () {
+    var hash = window.location.hash || "";
+    if (hash.indexOf("/polls") !== -1) _initPollEventListeners();
   });
 })();

@@ -10,6 +10,21 @@ from ...services.security import rate_limit
 from . import _json_response, admin_bp, require_csrf, require_login, sanitize_log_string
 
 
+def _gap_contract():
+    return {
+        "poll_deepdive": {
+            "time_histogram": None,
+            "delta_vs_previous": None,
+            "geo_breakdown": None,
+        },
+        "audience": {
+            "geo_supported": False,
+            "risk_score_supported": False,
+            "kick_endpoint_supported": False,
+        },
+    }
+
+
 def _clamp_hours(hours):
     """Clamp hours parameter to [1, 168] range."""
     return max(1, min(hours, 168))
@@ -61,6 +76,7 @@ def get_danmu_history():
                 "records": records,
                 "stats": stats,
                 "query": {"hours": hours, "limit": limit},
+                "contract": _gap_contract(),
             }
         )
     except Exception as exc:
@@ -139,11 +155,11 @@ def list_sessions():
     hours = _clamp_hours(request.args.get("hours", 168, type=int))
 
     if not history_service.danmu_history:
-        return _json_response({"sessions": [], "total": 0})
+        return _json_response({"sessions": [], "total": 0, "contract": _gap_contract()})
 
     records = history_service.danmu_history.get_recent(hours=hours, limit=10000)
     sessions = _derive_sessions(records, gap_minutes=30)
-    return _json_response({"sessions": sessions, "total": len(sessions)})
+    return _json_response({"sessions": sessions, "total": len(sessions), "contract": _gap_contract()})
 
 
 @admin_bp.route("/sessions/<session_id>", methods=["GET"])
@@ -154,14 +170,14 @@ def get_session(session_id):
     hours = _clamp_hours(request.args.get("hours", 168, type=int))
 
     if not history_service.danmu_history:
-        return _json_response({"error": "No history"}, 404)
+        return _json_response({"error": "No history", "contract": _gap_contract()}, 404)
 
     all_records = history_service.danmu_history.get_recent(hours=hours, limit=10000)
     sessions = _derive_sessions(all_records, gap_minutes=30)
 
     sess = next((s for s in sessions if s["id"] == session_id), None)
     if not sess:
-        return _json_response({"error": "Session not found"}, 404)
+        return _json_response({"error": "Session not found", "contract": _gap_contract()}, 404)
 
     # Collect this session's records (reversed so oldest-first for timeline)
     session_records = [r for r in reversed(all_records)
@@ -174,6 +190,7 @@ def get_session(session_id):
         "session": sess,
         "records": session_records[:2000],
         "density": density,
+        "contract": _gap_contract(),
     })
 
 
@@ -191,13 +208,13 @@ def search_history():
     """
     q = (request.args.get("q") or "").strip()
     if not q or len(q) > 100:
-        return _json_response({"error": "q must be 1-100 characters"}, 400)
+        return _json_response({"error": "q must be 1-100 characters", "contract": _gap_contract()}, 400)
 
     hours = _clamp_hours(request.args.get("hours", 168, type=int))
     limit = max(1, min(request.args.get("limit", 200, type=int), 500))
 
     if not history_service.danmu_history:
-        return _json_response({"results": [], "total": 0, "query": q})
+        return _json_response({"results": [], "total": 0, "query": q, "contract": _gap_contract()})
 
     records = history_service.danmu_history.get_recent(hours=hours, limit=5000)
 
@@ -212,7 +229,7 @@ def search_history():
         if len(results) >= limit:
             break
 
-    return _json_response({"results": results, "total": len(results), "query": q})
+    return _json_response({"results": results, "total": len(results), "query": q, "contract": _gap_contract()})
 
 
 # ---------------------------------------------------------------------------

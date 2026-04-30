@@ -16,8 +16,8 @@
 |---|------|---------|---------|---------|----------|
 | **B1** | Notifications 右側 detail 面板（事件鏈 / 影響範圍 / 建議動作） | 每個 audit / violation event 沒有 chain / impact / suggested-action 結構欄位。要在 audit_log.append 時帶這些 | 4-6 hr（schema + per-source instrumentation） | 4 hr（detail panel UI） | 🟢 **值得做** — Notifications inbox 沒這個就只是個 list；加上去才像真 ops tool |
 | **B2** | Notifications 加 Webhooks / System / Backup sources | 後端沒對 webhook 失敗 / system error / backup snapshot 做 audit_log instrumentation | 3 hr（3 個來源各加幾行 audit_log.append） | 0（FE 已支援） | 🟢 **值得做** — 工程量小，補上 inbox 就完整 |
-| **B3** | Setup Wizard 補密碼 step | `/admin/change_password` 已存在，但需要 current password 驗證；要 wizard 內整合「目前還沒有 admin password」這個 first-run 狀態 | 1 hr（first-run detect endpoint） | 2 hr（wizard step） | 🟡 改變決策 — 維持目前 3-step 也 OK，加 password step 真正 first-run 才有意義 |
-| **B4** | Setup Wizard 補 Logo step | 缺 `/admin/logo` 上傳 endpoint。要新 multipart upload + 存到 user_uploads/，可選 viewer hero 用 | 4-6 hr（endpoint + 存 + viewer 讀） | 3 hr（dropzone + 預覽） | 🟡 — 看 Design 覺得 logo 多重要。沒 logo 也能跑，純 nice-to-have |
+| **B3** | Setup Wizard 密碼 step（狀態提示契約） | `POST /admin/change_password` 已上線；前端新增 capability 探測，endpoint 不可用時顯示 `blocked by backend` 並允許略過 | 0（已上線） | 0（已上線） | ✅ done（2026-04-30） |
+| **B4** | Setup Wizard Logo step（狀態提示契約） | `POST /admin/logo` 已上線；前端新增 capability 探測，endpoint 不可用時顯示 `blocked by backend` 並允許略過 | 0（已上線） | 0（已上線） | ✅ done（2026-04-30） |
 | **B5** | Audit Log 加 ACTION 維度（UPDATE / CREATE / BLOCK / TOGGLE / ...） | 目前 audit_log entries 用 free-form `kind` (rotated / login / mode_changed)。要對每個 source 補 action category mapping | 1 hr（mapping 函式） | 1 hr（chip 配色 + filter） | 🟢 **值得做** — Audit Log 對齊度最低，加這個馬上接近 prototype |
 | **B6** | Audit Log 加 before / after diff | 目前 audit_log entries 不帶 before/after。要每個 instrument 點主動帶這兩個欄位（toggle: from→to / settings change: old→new） | 3-4 hr（per-source 改寫） | 1 hr（紅綠 diff display） | 🟢 **值得做** — 跟 B5 一起做最有效率 |
 | **B7** | Audit Log 加 source platform（web / desktop） | session 訊息分不出來自 web admin 還是 desktop tray。要看 request 的 User-Agent / origin 推斷 | 2 hr（中介層 detect + tag） | 1 hr（顯示 icon） | 🟡 — desktop tray 暫時沒太多 audit-worthy actions，可延 |
@@ -42,6 +42,19 @@
 3. B8 — Poll Time Histogram（~4 hr）
 
 合計 ~25 hr，全做完 Audit Log + Notifications + Poll Deep-Dive 對齊度從 ~50% 推到 ~95%。
+
+---
+
+## 2026-04-30 補充：先行 contract placeholders（不含商業邏輯）
+
+為避免前端渲染依賴缺口時 schema 漂移，已先上線以下 placeholder 契約：
+
+- `GET /admin/audit`：每筆事件固定帶 `action/platform/before/after`，並回 `contract.actions/actors/supports_*`
+- `GET /admin/integrations/sources/recent`：固定回 `source_catalog`（含 backup/webhooks/system 未實作標記）
+- `GET /admin/api-tokens`：固定回 `contract.available_integrations` + token `integration_acl` placeholder
+- `GET /admin/history` / `GET /admin/search` / `GET /admin/sessions*`：固定回 `contract.poll_deepdive` 與 `contract.audience` placeholders
+
+> 以上僅保證前端可以穩定顯示缺口狀態，不代表對應能力已實作。
 
 ---
 

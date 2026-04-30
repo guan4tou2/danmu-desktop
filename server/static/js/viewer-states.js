@@ -5,7 +5,7 @@
  *   - docs/designs/design-v2/components/admin-batch4.jsx ViewerBanned
  *   - docs/designs/design-v2/components/admin-batch9.jsx ViewerPollThankYou
  *
- * Two full-screen viewer states that overlay the normal /fire page:
+ * Three full-screen viewer states that overlay the normal /fire page:
  *
  *   1. ViewerBanned — IP/fingerprint blocked, replaces the send form
  *      with a HUD-styled BLOCKED panel + identifier + reason.
@@ -13,11 +13,14 @@
  *   2. ViewerPollThankYou — submitted a poll vote, shows confirmation
  *      with recap card + live participation count + 「回到聊天」 button.
  *
+ *   3. ViewerRateLimited — /fire returns HTTP 429, show cooldown screen.
+ *
  * Triggers:
  *   - URL param `?state=banned` or `?state=thankyou` → preview / demo
  *   - 403 from /fire with error containing "block" or "ban" → ViewerBanned
  *   - Successful fire when poll is active AND text matches option key →
  *     ViewerPollThankYou (wired in main.js after fire 200)
+ *   - 429 from /fire → ViewerRateLimited
  *
  * Loaded on the viewer page (/fire) only — admin pages skip via guard.
  */
@@ -112,6 +115,28 @@
       </div>`;
   }
 
+  // ── ViewerRateLimited ───────────────────────────────────────────
+
+  function _renderRateLimited(opts) {
+    const retryAfter = Number((opts && opts.retryAfter) || 0);
+    const retryText = retryAfter > 0 ? `${retryAfter} 秒後再試` : "請稍後再試";
+    return `
+      <div class="viewer-state viewer-state--ratelimit" data-vs-key="ratelimit">
+        <div class="viewer-state-thanks-icon viewer-state-ratelimit-icon">
+          <span class="check">⏱</span>
+        </div>
+
+        <div class="viewer-state-kicker viewer-state-kicker--warn">RATE LIMITED · 暫時限流</div>
+        <h2 class="viewer-state-title viewer-state-title--center">訊息送太快了</h2>
+        <p class="viewer-state-desc viewer-state-desc--center">
+          為了避免刷屏，系統暫時限制發送頻率。<br>
+          ${_escape(retryText)}
+        </p>
+
+        <button type="button" class="viewer-state-action viewer-state-action--warn" data-vs-action="hide">知道了</button>
+      </div>`;
+  }
+
   function _escape(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -148,6 +173,12 @@
     document.body.dataset.viewerState = "thankyou";
   }
 
+  function _showRateLimited(opts) {
+    const root = _ensureRoot();
+    root.innerHTML = _renderRateLimited(opts || {});
+    document.body.dataset.viewerState = "ratelimit";
+  }
+
   function _hide() {
     const root = document.getElementById(ROOT_ID);
     if (root) root.innerHTML = "";
@@ -157,6 +188,7 @@
   window.ViewerStates = {
     showBanned: _showBanned,
     showThankYou: _showThankYou,
+    showRateLimited: _showRateLimited,
     hide: _hide,
   };
 
@@ -176,6 +208,10 @@
         question: params.get("q") || "示範題目：你最喜歡哪個主題包?",
         choice: params.get("choice") || "選項 A",
         fp: params.get("fp") || "",
+      });
+    } else if (state === "ratelimit") {
+      _showRateLimited({
+        retryAfter: Number(params.get("retry_after") || 0),
       });
     }
   });

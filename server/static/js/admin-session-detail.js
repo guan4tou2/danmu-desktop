@@ -33,6 +33,7 @@
     error: null,
     playbackSpeed: 1,
   };
+  let _hashListenerBound = false;
 
   // ── helpers ───────────────────────────────────────────────────────────────
 
@@ -474,21 +475,29 @@
     if (hash.indexOf("/session-detail") === -1) return;
 
     const newId = _parseSessionId();
-    if (newId && newId !== _state.sessionId) {
-      _state.sessionId = newId;
-      _fetchSession(newId);
+    if (!newId) {
+      _state.sessionId = null;
+      _showError("請從場次列表選擇一個場次");
+      return;
     }
+    _state.sessionId = newId;
+    _fetchSession(newId);
   }
 
   // ── init ──────────────────────────────────────────────────────────────────
 
   function init() {
     const grid = document.getElementById("settings-grid");
-    if (!grid || document.getElementById(PAGE_ID)) return;
-    grid.insertAdjacentHTML("beforeend", buildSection());
+    if (!grid) return;
 
-    const page = document.getElementById(PAGE_ID);
-    if (page) {
+    let page = document.getElementById(PAGE_ID);
+    if (!page) {
+      grid.insertAdjacentHTML("beforeend", buildSection());
+      page = document.getElementById(PAGE_ID);
+    }
+
+    if (page && page.dataset.sdBound !== "1") {
+      page.dataset.sdBound = "1";
       // Delegated click handler
       page.addEventListener("click", function (e) {
         // Action buttons (data-sd-action)
@@ -516,7 +525,10 @@
     }
 
     // Listen for hash changes to support in-page navigation
-    window.addEventListener("hashchange", _onHashChange);
+    if (!_hashListenerBound) {
+      _hashListenerBound = true;
+      window.addEventListener("hashchange", _onHashChange);
+    }
   }
 
   document.addEventListener("DOMContentLoaded", function () {
@@ -534,5 +546,13 @@
     if (document.getElementById("settings-grid") && !document.getElementById(PAGE_ID) && hash.indexOf("/session-detail") !== -1) {
       init();
     }
+    window.addEventListener("admin-route-changed", function (ev) {
+      const route = ev && ev.detail && ev.detail.route;
+      if (route === "session-detail") init();
+    });
+    window.addEventListener("hashchange", function () {
+      const cur = window.location.hash || "";
+      if (cur.indexOf("/session-detail") !== -1) init();
+    });
   });
 })();

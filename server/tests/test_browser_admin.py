@@ -567,6 +567,27 @@ def test_poll_create_and_end(admin_page):
     admin_page.wait_for_timeout(500)
 
 
+def test_admin_fullpage_empty_states(admin_page):
+    """無資料時三個關鍵頁面應顯示 full-page empty state（含可識別 selector）"""
+    _open_section(admin_page, "sec-live-feed")
+    admin_page.wait_for_selector('[data-empty-kind="live-feed"]', state="visible", timeout=5000)
+    assert admin_page.is_visible('[data-empty-kind="live-feed"]')
+
+    _open_section(admin_page, "sec-polls")
+    admin_page.evaluate(
+        """
+        const r = document.getElementById('pollResetBtn');
+        if (r) r.click();
+        """
+    )
+    admin_page.wait_for_selector('#pollStatusDisplay [data-empty-kind="poll"]', state="visible", timeout=5000)
+    assert admin_page.is_visible('#pollStatusDisplay [data-empty-kind="poll"]')
+
+    _open_section(admin_page, "sec-fonts")
+    admin_page.wait_for_selector('[data-empty-kind="fonts"]', state="visible", timeout=5000)
+    assert admin_page.is_visible('[data-empty-kind="fonts"]')
+
+
 # ─── Themes UI ─────────────────────────────────────────────────────────────────
 
 

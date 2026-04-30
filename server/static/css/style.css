@@ -1668,8 +1668,16 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 
 .admin-poll-master-detail {
   display: grid;
-  grid-template-columns: 380px 1fr;
+  /* Prototype-like 12-col balance (builder 5 + active editor 7) while
+   * preserving current master-detail interaction model. */
+  grid-template-columns: minmax(300px, 5fr) minmax(420px, 7fr);
   gap: 20px;
+}
+
+@media (max-width: 1280px) {
+  .admin-poll-master-detail {
+    grid-template-columns: minmax(280px, 38%) minmax(0, 62%);
+  }
 }
 
 @media (max-width: 960px) {
@@ -1717,7 +1725,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 
 .admin-poll-qrow.is-active {
   border-color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.08);
+  background: var(--hud-cyan-soft);
 }
 
 .admin-poll-qrow.is-running {
@@ -1792,7 +1800,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 .admin-poll-qrow .editing-chip {
   padding: 2px 7px;
   border-radius: 999px;
-  background: rgba(56, 189, 248, 0.12);
+  background: var(--hud-cyan-soft);
   border: 1px solid var(--color-primary);
   font-family: var(--font-mono);
   font-size: 9px;
@@ -1841,7 +1849,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 
 .admin-poll-mode button.is-active {
   border-color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.08);
+  background: var(--hud-cyan-soft);
   color: var(--color-primary);
 }
 
@@ -3839,12 +3847,13 @@ body.stream-mode .admin-hero .admin-summary-grid {
 
 /* Effect button active (selected) state */
 .effect-btn--active {
-  background-color: var(--color-active-btn) !important;
-  /* Semantic text token, not absolute white — `--color-text-primary`
-   * (#f1f5f9) keeps WCAG AA contrast (~5.1:1) against `--color-active-btn`
-   * (#0369a1) and matches the rest of the UI's text treatment. */
-  color: var(--color-text-primary) !important;
-  border-color: var(--color-primary-hover) !important;
+  /* Prototype alignment (viewer.jsx):
+   * selected = cyanSoft tint + accent border + 600 weight.
+   * Use !important to override the generic .viewer-chip baseline. */
+  background-color: var(--hud-cyan-soft) !important;
+  color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  font-weight: 600;
 }
 
 /* Admin Toggle Checkbox */
@@ -5920,6 +5929,24 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   letter-spacing: 0.2px;
   margin-bottom: 22px;
 }
+.admin-setup-backend-blocked {
+  margin: -6px 0 18px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  border-radius: 4px;
+  background: rgba(248, 113, 113, 0.08);
+  color: #fecaca;
+  font-size: 12px;
+}
+.admin-setup-backend-blocked b {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
 
 /* Theme step */
 .admin-setup-theme-grid {
@@ -6780,6 +6807,121 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   text-align: center;
   color: var(--color-text-muted, #94a3b8);
   font-size: 12px;
+}
+
+/* Shared full-page empty state blocks (messages / polls / fonts). */
+.admin-empty-state {
+  position: relative;
+  border: 1px solid var(--hud-cyan-line, rgba(125, 211, 252, 0.3));
+  background: linear-gradient(180deg, rgba(125, 211, 252, 0.06), rgba(8, 14, 26, 0.78));
+  border-radius: 8px;
+  padding: 22px 18px;
+  text-align: center;
+  overflow: hidden;
+}
+.admin-empty-state::before,
+.admin-empty-state::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--hud-cyan-line, rgba(125, 211, 252, 0.35));
+  pointer-events: none;
+}
+.admin-empty-state::before {
+  left: 10px;
+  top: 10px;
+  border-right: none;
+  border-bottom: none;
+}
+.admin-empty-state::after {
+  right: 10px;
+  bottom: 10px;
+  border-left: none;
+  border-top: none;
+}
+.admin-empty-state-icon {
+  font-size: 34px;
+  line-height: 1;
+  color: var(--color-primary, #38bdf8);
+}
+.admin-empty-state-title {
+  margin-top: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary, #e2e8f0);
+}
+.admin-empty-state-desc {
+  margin: 8px auto 0;
+  max-width: 520px;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--color-text-secondary, #94a3b8);
+}
+.admin-empty-state-cta {
+  margin-top: 14px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.1);
+  color: var(--color-primary, #38bdf8);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+.admin-empty-state-cta:hover {
+  background: rgba(56, 189, 248, 0.18);
+}
+.admin-empty-state--stream {
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.admin-empty-state--fonts {
+  margin-top: 12px;
+}
+.admin-empty-state[data-empty-kind="poll"] {
+  margin-top: 10px;
+}
+.admin-live-feed-list {
+  min-height: 300px;
+}
+.admin-font-upload-error {
+  margin-top: 10px;
+}
+.admin-error-panel {
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(248, 113, 113, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+}
+.admin-error-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fecaca;
+}
+.admin-error-panel-desc {
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.55;
+  color: #fca5a5;
+}
+.admin-error-panel-cta {
+  margin-top: 10px;
+  padding: 7px 10px;
+  border: 1px solid rgba(248, 113, 113, 0.5);
+  border-radius: 6px;
+  background: rgba(248, 113, 113, 0.16);
+  color: #fee2e2;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+.admin-error-panel-cta:hover {
+  background: rgba(248, 113, 113, 0.24);
 }
 
 /* Live feed row clickability */

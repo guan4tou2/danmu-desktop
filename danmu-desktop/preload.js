@@ -47,6 +47,11 @@ try {
         wsAuthToken
       );
     },
+    setOverlayDisplayId: (displayId) => {
+      const normalized = Number(displayId);
+      if (!Number.isInteger(normalized)) return;
+      ipcRenderer.send("set-overlay-display-id", normalized);
+    },
     close: () => {
       console.log("[Preload] API.close called");
       ipcRenderer.send("closeChildWindows");

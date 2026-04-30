@@ -270,13 +270,25 @@ def fire():
             data.update(plugin_result)
             text_content = data.get("text", text_content)
 
+        poll_vote_meta = None
+
         # Check if text is a poll vote
         if poll_service.state == "active":
             text_upper = text_content.strip().upper()
             option_keys = poll_service.get_option_keys()
             if text_upper in option_keys:
                 voter_id = fingerprint or request.remote_addr or "unknown"
-                poll_service.vote(text_upper, voter_id)
+                accepted = poll_service.vote(text_upper, voter_id)
+                question_text = ""
+                try:
+                    question_text = poll_service.get_status().get("question", "")
+                except Exception:
+                    question_text = ""
+                poll_vote_meta = {
+                    "accepted": bool(accepted),
+                    "key": text_upper,
+                    "question": question_text,
+                }
                 # Vote still passes through as normal danmu
 
         data = _resolve_danmu_style(data)
@@ -301,7 +313,10 @@ def fire():
             except Exception:
                 pass  # webhook failure should never block danmu
 
-            return _json_response({"status": "OK"}, 200)
+            response_payload = {"status": "OK"}
+            if poll_vote_meta is not None:
+                response_payload["poll_vote"] = poll_vote_meta
+            return _json_response(response_payload, 200)
         return _json_response({"error": "Failed to enqueue message"}, 503)
     except Exception as exc:
         return _log_and_internal_error("Send Error", exc)

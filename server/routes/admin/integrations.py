@@ -32,7 +32,12 @@ from . import _json_response, admin_bp, require_csrf, require_login
 @rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_login
 def get_fire_token_state():
-    return _json_response(fire_token.get_public_state())
+    state = dict(fire_token.get_public_state())
+    state["contract"] = {
+        "acl_matrix_supported": False,
+        "token_policy_scope": "global_fire_token_only",
+    }
+    return _json_response(state)
 
 
 @admin_bp.route("/integrations/fire-token/regenerate", methods=["POST"])
@@ -68,6 +73,15 @@ def get_recent_sources():
     return _json_response({
         "window_sec": window,
         "sources": fire_sources.recent_sources(window),
+        # Stable schema so notifications UI can render unavailable channels.
+        "source_catalog": [
+            {"id": "rate_limit", "implemented": True},
+            {"id": "fire_token", "implemented": True},
+            {"id": "moderation", "implemented": True},
+            {"id": "backup", "implemented": False},
+            {"id": "webhooks", "implemented": False},
+            {"id": "system", "implemented": False},
+        ],
     })
 
 

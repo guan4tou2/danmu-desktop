@@ -5,6 +5,36 @@ const { sanitizeLog } = require("../shared/utils");
 const { getChildWsScript } = require("./child-ws-script");
 
 /**
+ * Pick a display with a stable fallback chain:
+ * preferred ID -> preferred index -> primary -> first display.
+ */
+function pickOverlayDisplay(displays, options = {}) {
+  if (!Array.isArray(displays) || displays.length === 0) return null;
+  const preferredDisplayId = Number.isInteger(options.preferredDisplayId)
+    ? options.preferredDisplayId
+    : null;
+  const preferredIndex = Number.isInteger(options.preferredIndex)
+    ? options.preferredIndex
+    : null;
+  const primaryDisplayId = Number.isInteger(options.primaryDisplayId)
+    ? options.primaryDisplayId
+    : null;
+
+  if (preferredDisplayId !== null) {
+    const byId = displays.find((d) => d && d.id === preferredDisplayId);
+    if (byId) return byId;
+  }
+  if (preferredIndex !== null && preferredIndex >= 0 && preferredIndex < displays.length) {
+    return displays[preferredIndex];
+  }
+  if (primaryDisplayId !== null) {
+    const primary = displays.find((d) => d && d.id === primaryDisplayId);
+    if (primary) return primary;
+  }
+  return displays[0];
+}
+
+/**
  * Creates and configures the main application window.
  * @param {Object[]} childWindows - Mutable array shared with IPC handlers
  * @param {Function} onKonamiTrigger - Callback to trigger Konami effect on all child windows
@@ -237,4 +267,4 @@ function createAboutWindow(mainWindow) {
   return aboutWindow;
 }
 
-module.exports = { createWindow, setupChildWindow, createAboutWindow };
+module.exports = { createWindow, setupChildWindow, createAboutWindow, pickOverlayDisplay };

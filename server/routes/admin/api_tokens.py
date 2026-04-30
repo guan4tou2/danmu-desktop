@@ -7,11 +7,25 @@ from ...services.security import rate_limit
 from . import _json_response, admin_bp, require_csrf, require_login
 
 
+def _token_with_contract_fields(token):
+    out = dict(token or {})
+    out.setdefault("integration_acl", None)
+    return out
+
+
+def _contract_payload():
+    return {
+        "acl_matrix_supported": False,
+        "available_integrations": ["fire_token", "webhooks", "backup", "system", "moderation"],
+    }
+
+
 @admin_bp.route("/api-tokens", methods=["GET"])
 @rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_login
 def list_api_tokens():
-    return _json_response({"tokens": svc.list_tokens()})
+    tokens = [_token_with_contract_fields(t) for t in svc.list_tokens()]
+    return _json_response({"tokens": tokens, "contract": _contract_payload()})
 
 
 @admin_bp.route("/api-tokens", methods=["POST"])
@@ -34,7 +48,7 @@ def create_api_token():
     except ValueError as exc:
         return _json_response({"error": str(exc)}, 400)
 
-    return _json_response(token)
+    return _json_response(_token_with_contract_fields(token))
 
 
 @admin_bp.route("/api-tokens/<token_id>", methods=["DELETE"])
@@ -57,4 +71,4 @@ def update_api_token(token_id):
     updated = svc.update_token(token_id, data)
     if not updated:
         return _json_response({"error": "Token not found"}, 404)
-    return _json_response(updated)
+    return _json_response(_token_with_contract_fields(updated))

@@ -74,6 +74,23 @@
     return true;
   }
 
+  function createEmptyState(opts) {
+    const box = document.createElement("div");
+    box.className = "admin-empty-state admin-empty-state--stream";
+    if (opts.kind) box.setAttribute("data-empty-kind", opts.kind);
+    box.innerHTML = `
+      <div class="admin-empty-state-icon">${escapeAttr(opts.icon || "◎")}</div>
+      <div class="admin-empty-state-title">${escapeAttr(opts.title || "暫無資料")}</div>
+      <div class="admin-empty-state-desc">${escapeAttr(opts.desc || "")}</div>
+      ${opts.cta ? `<button type="button" class="admin-empty-state-cta" data-empty-cta="${escapeAttr(opts.ctaId || "")}">${escapeAttr(opts.cta)}</button>` : ""}
+    `;
+    if (opts.onCta && opts.ctaId) {
+      const btn = box.querySelector(`[data-empty-cta="${opts.ctaId}"]`);
+      if (btn) btn.addEventListener("click", opts.onCta);
+    }
+    return box;
+  }
+
   // ── Render a single entry row ────────────────────────────
 
   function createEntryEl(entry) {
@@ -249,13 +266,49 @@
 
     listEl.textContent = "";
     if (frag.childNodes.length === 0) {
-      const empty = document.createElement("div");
-      empty.className = "admin-live-feed-empty";
-      empty.textContent = paused
-        ? ServerI18n.t("liveFeedPaused")
+      const empty = paused
+        ? createEmptyState({
+            icon: "⏸",
+            title: "目前已暫停接收",
+            desc: ServerI18n.t("liveFeedPaused"),
+            cta: ServerI18n.t("resumeBtn"),
+            ctaId: "live-feed-resume",
+            onCta: togglePause,
+          })
         : entries.length === 0
-          ? ServerI18n.t("liveFeedWaiting")
-          : ServerI18n.t("liveFeedNoMatches");
+          ? createEmptyState({
+              kind: "live-feed",
+              icon: "💬",
+              title: "等待第一則訊息",
+              desc: ServerI18n.t("liveFeedWaiting"),
+              cta: ServerI18n.t("clearBtn"),
+              ctaId: "live-feed-clear",
+              onCta: function () {
+                searchTerm = "";
+                if (searchInput) searchInput.value = "";
+                filterTab = "all";
+                document
+                  .querySelectorAll(".admin-live-feed-tab")
+                  .forEach((x) => x.classList.toggle("is-active", x.dataset.tab === "all"));
+                renderList();
+              },
+            })
+          : createEmptyState({
+              icon: "🔎",
+              title: "沒有符合條件的訊息",
+              desc: ServerI18n.t("liveFeedNoMatches"),
+              cta: "清除搜尋條件",
+              ctaId: "live-feed-reset",
+              onCta: function () {
+                searchTerm = "";
+                if (searchInput) searchInput.value = "";
+                filterTab = "all";
+                document
+                  .querySelectorAll(".admin-live-feed-tab")
+                  .forEach((x) => x.classList.toggle("is-active", x.dataset.tab === "all"));
+                renderList();
+              },
+            });
       listEl.appendChild(empty);
     } else {
       listEl.appendChild(frag);
@@ -450,7 +503,7 @@
       });
     }
 
-    if (entries.length > 0) renderList();
+    renderList();
 
     // 2026-04-27 P1: row click → open Message Detail Drawer.
     // Ignore clicks on existing inline action buttons (.admin-v2-chip)

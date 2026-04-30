@@ -4,7 +4,7 @@ const { BrowserWindow } = require("electron");
 const net = require("net");
 const path = require("path");
 const { sanitizeLog } = require("../shared/utils");
-const { setupChildWindow } = require("./window-manager");
+const { setupChildWindow, pickOverlayDisplay } = require("./window-manager");
 
 /**
  * Returns true if the IPC event sender is the main window's webContents.
@@ -70,6 +70,7 @@ function isValidIpAddress(ip) {
 }
 
 let _ipcRegistered = false;
+let _preferredOverlayDisplayId = null;
 
 /**
  * Registers all ipcMain handlers for the application.
@@ -101,6 +102,19 @@ function setupIpcHandlers(getMainWindow, childWindows) {
         status: "stopped",
       });
     }
+  });
+
+  // Persist preferred overlay display ID for single-display mode.
+  ipcMain.on("set-overlay-display-id", (event, displayId) => {
+    const mainWindow = getMainWindow();
+    if (!isFromMainWindow(event, mainWindow)) {
+      console.warn("[Main] set-overlay-display-id: rejected IPC from untrusted sender");
+      return;
+    }
+    const normalized = Number(displayId);
+    if (!Number.isInteger(normalized)) return;
+    _preferredOverlayDisplayId = normalized;
+    console.log(`[Main] Preferred overlay display set to ID ${sanitizeLog(normalized)}`);
   });
 
   // Forward connection status from child windows to main window
@@ -423,18 +437,18 @@ function setupIpcHandlers(getMainWindow, childWindows) {
         );
       } else {
         console.log("[Main] Sync multi-display DISABLED. Creating window for selected display.");
-        if (displayIndex < 0 || displayIndex >= displays.length) {
-          console.error(
-            "[Main] Invalid display index:",
-            sanitizeLog(displayIndex)
-          );
+        const primary = screen.getPrimaryDisplay();
+        const selectedDisplay = pickOverlayDisplay(displays, {
+          preferredDisplayId: _preferredOverlayDisplayId,
+          preferredIndex: Number.isInteger(displayIndex) ? displayIndex : null,
+          primaryDisplayId: primary && primary.id,
+        });
+        if (!selectedDisplay) {
+          console.error("[Main] Unable to resolve display target");
           return;
         }
-        const selectedDisplay = displays[displayIndex];
         console.log(
-          `[Main] Creating child window for selected display ${sanitizeLog(
-            displayIndex
-          )} (ID: ${sanitizeLog(selectedDisplay.id)}).`
+          `[Main] Creating child window for selected display (ID: ${sanitizeLog(selectedDisplay.id)}).`
         );
         const newChild = new BrowserWindow(childWindowOptions);
         setupChildWindow(

@@ -3,6 +3,7 @@ const { app, Tray, Menu, nativeImage, ipcMain } = require("electron");
 const path = require("path");
 const { sanitizeLog } = require("./shared/utils");
 const { createWindow, createAboutWindow } = require("./main-modules/window-manager");
+const { buildTrayPopoverSections } = require("./main-modules/tray-popover");
 const { setupIpcHandlers } = require("./main-modules/ipc-handlers");
 const { setupAutoUpdater } = require("./main-modules/auto-updater");
 
@@ -74,6 +75,7 @@ app.whenReady().then(() => {
 
   let trayStatusText = "⊘ Disconnected";
   let trayServerUrl = "";
+  let trayReceivePaused = false;
 
   // Broadcast an overlay-idle-toggle message to every live child window.
   // mode: 'show' | 'hide' | 'toggle'
@@ -146,6 +148,12 @@ app.whenReady().then(() => {
       { label: `● ${pkgName}    v${version}`, enabled: false },
       { label: trayServerUrl ? `${trayStatusText} · ${trayServerUrl}` : trayStatusText, enabled: false },
       { type: "separator" },
+      ...buildTrayPopoverSections({
+        overlayCount: childWindows.filter((cw) => cw && !cw.isDestroyed()).length,
+        receivePaused: trayReceivePaused,
+        serverText: trayStatusText,
+        updaterPhase: updateInfo.phase,
+      }),
       ...updateEntries,
       {
         label: "顯示 overlay",
@@ -158,7 +166,11 @@ app.whenReady().then(() => {
         label: "暫停接收",
         accelerator: "CommandOrControl+Shift+P",
         enabled: hasOverlay,
-        click: () => dispatchToRenderer("pause"),
+        click: () => {
+          trayReceivePaused = !trayReceivePaused;
+          dispatchToRenderer("pause");
+          rebuildTrayMenu();
+        },
       },
       {
         label: "清空畫面",

@@ -101,8 +101,34 @@
           </div>
         </section>
 
-        <!-- Scrollable body — preview + fields -->
-        <div class="viewer-body">
+        <div class="viewer-tabbar" role="tablist" aria-label="Viewer mode">
+          <button
+            type="button"
+            class="viewer-tab is-active"
+            role="tab"
+            aria-selected="true"
+            aria-controls="viewerFirePane"
+            data-viewer-tab="fire"
+          >
+            <span class="viewer-tab-label">Fire</span>
+            <span class="viewer-tab-sub">送彈幕</span>
+          </button>
+          <button
+            type="button"
+            class="viewer-tab"
+            role="tab"
+            aria-selected="false"
+            aria-controls="viewerPollPane"
+            data-viewer-tab="poll"
+          >
+            <span class="viewer-tab-label">Poll</span>
+            <span class="viewer-tab-sub">即時投票</span>
+          </button>
+        </div>
+
+        <section id="viewerFirePane" class="viewer-pane is-active" data-viewer-pane="fire">
+          <!-- Scrollable body — preview + fields -->
+          <div class="viewer-body">
 
           <!-- Live preview strip — nickname renders in the top-left
                (`#previewNick`) and is wired to `#nicknameInput` below. -->
@@ -322,7 +348,17 @@
             <input type="hidden" id="layoutSelect" value="scroll" />
           </div>
           {% endif %}
-        </div>
+          </div>
+        </section>
+
+        <section id="viewerPollPane" class="viewer-pane" data-viewer-pane="poll" hidden>
+          <div class="viewer-poll-card">
+            <div class="viewer-poll-kicker" data-vpoll-state-label>即時投票</div>
+            <h2 class="viewer-poll-question" data-vpoll-question>目前沒有進行中的投票</h2>
+            <p class="viewer-poll-meta" data-vpoll-meta>請先切回 Fire 模式送出訊息</p>
+            <div class="viewer-poll-options" data-vpoll-options></div>
+          </div>
+        </section>
 
         <!-- Send bar — pill input + emoji button + FIRE. Emoji popover holds
              the legacy #emojiPicker grid so main.js can populate it without

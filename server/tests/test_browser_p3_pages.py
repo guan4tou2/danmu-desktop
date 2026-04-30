@@ -206,6 +206,84 @@ def test_setup_wizard_overlay_renders(admin_page):
     admin_page.evaluate('() => { window.AdminSetupWizard && window.AdminSetupWizard.close && window.AdminSetupWizard.close(); }')
 
 
+def test_setup_wizard_step_dependency_hints(admin_page):
+    """Task 5 regression: show backend dependency hints for step 1/2 when unavailable."""
+    _go_to_route(admin_page, "setup")
+    admin_page.wait_for_selector("#admin-setup-wizard-root", state="visible", timeout=5000)
+
+    # Simulate missing backend endpoints for password/logo from the page runtime.
+    admin_page.evaluate(
+        """() => {
+          if (!window.AdminSetupWizard || typeof window.AdminSetupWizard.__setCapabilityForTest !== "function") {
+            throw new Error("missing AdminSetupWizard.__setCapabilityForTest");
+          }
+          window.AdminSetupWizard.__setCapabilityForTest("password", false);
+          window.AdminSetupWizard.__setCapabilityForTest("logo", false);
+        }"""
+    )
+    admin_page.wait_for_selector("[data-setup-blocked='password']", state="visible", timeout=5000)
+
+    admin_page.locator("[data-setup-action='next']").click()
+    admin_page.wait_for_selector("[data-setup-blocked='logo']", state="visible", timeout=5000)
+
+
+def test_session_detail_falls_back_to_archive_endpoint(admin_page):
+    """Regression (P0-2): lifecycle session detail should fallback to archive API."""
+    _go_to_route(admin_page, "dashboard")
+    admin_page.wait_for_selector("#logoutButton", state="visible", timeout=5000)
+
+    # Create a lifecycle session with no history records, then close it so
+    # /admin/sessions/<id> is expected to 404 and UI must fallback to archive detail.
+    session_id = admin_page.evaluate(
+        """async () => {
+          const openRes = await window.csrfFetch("/admin/session/open", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: "browser-regression-archive-fallback" }),
+          });
+          const openData = await openRes.json();
+          if (!openRes.ok) {
+            throw new Error(openData.error || ("open failed: " + openRes.status));
+          }
+          const id = openData && openData.session && openData.session.id;
+          if (!id) throw new Error("missing session id");
+
+          const closeRes = await window.csrfFetch("/admin/session/close", { method: "POST" });
+          const closeData = await closeRes.json();
+          if (!closeRes.ok) {
+            throw new Error(closeData.error || ("close failed: " + closeRes.status));
+          }
+          return id;
+        }"""
+    )
+    assert session_id and str(session_id).startswith("sess_")
+
+    seen = {}
+
+    def _on_response(resp):
+        url = resp.url
+        if f"/admin/sessions/{session_id}" in url:
+            seen["derived"] = resp.status
+        if f"/admin/session/archive/{session_id}" in url:
+            seen["archive"] = resp.status
+
+    admin_page.on("response", _on_response)
+    try:
+        admin_page.evaluate(
+            '(sid) => { window.location.hash = "#/session-detail?id=" + encodeURIComponent(sid); }',
+            session_id,
+        )
+        admin_page.wait_for_selector("#sec-session-detail-overview", state="visible", timeout=6000)
+        admin_page.wait_for_selector("[data-sd-session-header]", state="visible", timeout=6000)
+        admin_page.wait_for_timeout(400)
+    finally:
+        admin_page.remove_listener("response", _on_response)
+
+    assert seen.get("derived") == 404
+    assert seen.get("archive") == 200
+    assert session_id in (admin_page.locator("[data-sd-session-id]").text_content() or "")
+
+
 def test_message_drawer_opens_from_live_feed(admin_page):
     """Group A G10 — Message Detail Drawer opens with prev/next buttons."""
     _go_to_route(admin_page, "messages")

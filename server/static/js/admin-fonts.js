@@ -52,6 +52,7 @@
                 <span id="fontsTotalSize" style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.12em">總計 —</span>
               </div>
             </div>
+            <div id="adminFontEmptyStateHost"></div>
             ${loggedIn ? `
             <div class="admin-v2-card admin-fonts-upload-card" id="adminFontDropWrap" style="margin-top:12px">
               <div class="admin-v2-monolabel" style="margin-bottom:8px">+ 上傳自訂字型</div>
@@ -67,6 +68,7 @@
                 <div class="admin-fonts-drop-hint">.TTF / .OTF / .WOFF2 · 最大 5 MB · 前端會驗證 magic bytes</div>
                 <div id="adminFontDropStatus" class="admin-fonts-drop-status" hidden></div>
               </div>
+              <div id="adminFontUploadError" class="admin-font-upload-error" hidden></div>
             </div>` : ""}
           </div>
 
@@ -123,6 +125,33 @@
 
   var currentDefaultFont = null;
   var _allFonts = [];
+
+  function renderFontsEmptyState(fonts, loggedIn) {
+    var host = document.getElementById("adminFontEmptyStateHost");
+    if (!host) return;
+    const hasUploaded = (fonts || []).some((f) => f.type === "uploaded");
+    if (hasUploaded) {
+      host.innerHTML = "";
+      return;
+    }
+    host.innerHTML = `
+      <div class="admin-empty-state admin-empty-state--fonts" data-empty-kind="fonts">
+        <div class="admin-empty-state-icon">🅵</div>
+        <div class="admin-empty-state-title">尚未上傳自訂字型</div>
+        <div class="admin-empty-state-desc">目前僅使用內建字型。上傳第一個字型後可供觀眾切換。</div>
+        ${loggedIn ? '<button type="button" class="admin-empty-state-cta" data-empty-cta="fonts-upload-first">上傳第一個字型</button>' : ''}
+      </div>
+    `;
+    if (loggedIn) {
+      var btn = host.querySelector('[data-empty-cta="fonts-upload-first"]');
+      if (btn) {
+        btn.addEventListener("click", function () {
+          var fi = document.getElementById("adminFontFileInput");
+          if (fi) fi.click();
+        });
+      }
+    }
+  }
 
   function fontRow(font, loggedIn) {
     const weight = font.weight || "—";
@@ -230,6 +259,7 @@
       var data = await resp.json();
       var fonts = data.fonts || [];
       _allFonts = fonts;
+      renderFontsEmptyState(fonts, loggedIn);
 
       if (fonts.length === 0) {
         listEl.innerHTML =
@@ -245,6 +275,7 @@
       console.error("[admin-fonts] fetch failed:", err);
       listEl.innerHTML =
         `<div class="hud-table-row" style="grid-template-columns: 1fr;"><span class="text-xs text-red-400">${ServerI18n.t("loadFontsFailed")}</span></div>`;
+      renderFontsEmptyState([], loggedIn);
     }
   }
 
@@ -323,23 +354,52 @@
     el.classList.toggle("is-bad", kind === "bad");
   }
 
+  function setUploadError(message) {
+    const panel = document.getElementById("adminFontUploadError");
+    if (!panel) return;
+    if (!message) {
+      panel.hidden = true;
+      panel.innerHTML = "";
+      return;
+    }
+    panel.hidden = false;
+    panel.innerHTML = `
+      <div class="admin-error-panel" data-error-kind="font-upload">
+        <div class="admin-error-panel-title">字型上傳失敗</div>
+        <div class="admin-error-panel-desc">${escapeHtml(message)}</div>
+        <button type="button" class="admin-error-panel-cta" data-font-error-retry>重新選擇檔案</button>
+      </div>
+    `;
+    const retryBtn = panel.querySelector("[data-font-error-retry]");
+    if (retryBtn) {
+      retryBtn.addEventListener("click", function () {
+        const fi = document.getElementById("adminFontFileInput");
+        if (fi) fi.click();
+      });
+    }
+  }
+
   async function uploadFile(file) {
     if (!file) return;
+    setUploadError("");
     const name = file.name.toLowerCase();
     if (!/\.(ttf|otf|woff2)$/.test(name)) {
       window.showToast(ServerI18n.t("invalidFileType"), false);
       setDropStatus("副檔名不支援 — 僅限 .TTF / .OTF / .WOFF2", "bad");
+      setUploadError("副檔名不支援，僅限 .TTF / .OTF / .WOFF2。");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
       window.showToast("檔案超過 5 MB", false);
       setDropStatus("檔案超過 5 MB", "bad");
+      setUploadError("檔案大小超過 5 MB，請壓縮或改用較小字型檔。");
       return;
     }
     const magic = await detectFontMagic(file);
     if (!magic) {
       window.showToast("檔案不是合法字型", false);
       setDropStatus("magic bytes 無效 — 檔案不是合法字型", "bad");
+      setUploadError("magic bytes 驗證失敗，檔案內容不是有效字型。");
       return;
     }
     setDropStatus(`驗證通過 · ${magic} · ${(file.size / 1024).toFixed(1)} KB · 上傳中…`, "good");
@@ -351,15 +411,18 @@
       if (resp.ok) {
         window.showToast(data.message || ServerI18n.t("fontUploadFallback"));
         setDropStatus(`已上傳 · ${file.name}`, "good");
+        setUploadError("");
         await fetchAndRenderFonts();
       } else {
         window.showToast(data.error || ServerI18n.t("uploadFailed"), false);
         setDropStatus(data.error || "上傳失敗", "bad");
+        setUploadError(data.error || "上傳失敗，請稍後再試。");
       }
     } catch (err) {
       console.error("[admin-fonts] upload error:", err);
       window.showToast(ServerI18n.t("uploadNetworkError"), false);
       setDropStatus("網路錯誤", "bad");
+      setUploadError("網路連線中斷，請檢查後重試。");
     }
   }
 

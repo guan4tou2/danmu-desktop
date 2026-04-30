@@ -54,6 +54,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Send bar pill — border turns cyan when text is present
     sendbarPill: document.getElementById("sendbarPill"),
+
+    // Viewer tabs + poll pane
+    viewerTabButtons: Array.from(document.querySelectorAll("[data-viewer-tab]")),
+    viewerFirePane: document.getElementById("viewerFirePane"),
+    viewerPollPane: document.getElementById("viewerPollPane"),
+    pollStateLabel: document.querySelector("[data-vpoll-state-label]"),
+    pollQuestion: document.querySelector("[data-vpoll-question]"),
+    pollMeta: document.querySelector("[data-vpoll-meta]"),
+    pollOptions: document.querySelector("[data-vpoll-options]"),
   };
 
   // --- Helper utilities ---
@@ -76,6 +85,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const FONT_REFRESH_BUFFER_SECONDS = 60;
   let fontsCache = [];
   let emojiCache = []; // [{name, url, filename}] — populated by /emojis fetch
+  let _viewerMode = "fire";
+  let _viewerPollState = {
+    state: "idle",
+    question: "",
+    options: [],
+    totalVotes: 0,
+  };
   const FONT_CACHE_STORAGE_KEY = "danmu-fonts-cache";
   const clientFingerprint = getOrCreateFingerprint();
 
@@ -445,6 +461,162 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  function _setViewerMode(mode) {
+    const nextMode = mode === "poll" ? "poll" : "fire";
+    _viewerMode = nextMode;
+    if (elements.viewerFirePane) {
+      const isFire = nextMode === "fire";
+      elements.viewerFirePane.hidden = !isFire;
+      elements.viewerFirePane.classList.toggle("is-active", isFire);
+    }
+    if (elements.viewerPollPane) {
+      const isPoll = nextMode === "poll";
+      elements.viewerPollPane.hidden = !isPoll;
+      elements.viewerPollPane.classList.toggle("is-active", isPoll);
+    }
+    (elements.viewerTabButtons || []).forEach((btn) => {
+      const isActive = btn.dataset.viewerTab === nextMode;
+      btn.classList.toggle("is-active", isActive);
+      btn.setAttribute("aria-selected", isActive ? "true" : "false");
+      btn.setAttribute("tabindex", isActive ? "0" : "-1");
+    });
+  }
+
+  function _normalizePollState(raw) {
+    if (!raw || typeof raw !== "object") {
+      return { state: "idle", question: "", options: [], totalVotes: 0 };
+    }
+    const state = String(raw.state || "idle");
+    const list = Array.isArray(raw.questions) ? raw.questions : [];
+    const idx = Number.isInteger(raw.current_index) ? raw.current_index : -1;
+    const currentQuestion =
+      list.length > 0
+        ? (idx >= 0 && idx < list.length ? list[idx] : list[0])
+        : null;
+    const question = String(
+      currentQuestion?.text || raw.question || ""
+    ).trim();
+    const rawOptions = Array.isArray(currentQuestion?.options)
+      ? currentQuestion.options
+      : Array.isArray(raw.options)
+        ? raw.options
+        : [];
+    const normalizedOptions = rawOptions
+      .map((opt) => {
+        const key = String(opt?.key || "").trim().toUpperCase();
+        if (!key) return null;
+        const countNum = Number(opt?.count);
+        const count = Number.isFinite(countNum) ? countNum : 0;
+        const pctNum = Number(opt?.percentage);
+        const percentage = Number.isFinite(pctNum) ? pctNum : 0;
+        return {
+          key,
+          text: String(opt?.text || key),
+          count,
+          percentage,
+        };
+      })
+      .filter(Boolean);
+    let totalVotesNum = Number(currentQuestion?.total_votes);
+    if (!Number.isFinite(totalVotesNum)) {
+      totalVotesNum = Number(raw.total_votes);
+    }
+    if (!Number.isFinite(totalVotesNum)) {
+      totalVotesNum = normalizedOptions.reduce((acc, item) => acc + item.count, 0);
+    }
+    return {
+      state,
+      question,
+      options: normalizedOptions,
+      totalVotes: totalVotesNum,
+    };
+  }
+
+  function _renderPollPane() {
+    if (!elements.pollQuestion || !elements.pollMeta || !elements.pollOptions) {
+      return;
+    }
+    const poll = _viewerPollState;
+    if (elements.pollStateLabel) {
+      elements.pollStateLabel.textContent =
+        poll.state === "active"
+          ? "即時投票 · 進行中"
+          : poll.state === "ended"
+            ? "即時投票 · 已結束"
+            : "即時投票";
+    }
+    if (poll.question) {
+      elements.pollQuestion.textContent = poll.question;
+    } else {
+      elements.pollQuestion.textContent = "目前沒有進行中的投票";
+    }
+    elements.pollMeta.textContent =
+      poll.state === "active"
+        ? `總票數 ${poll.totalVotes}`
+        : poll.state === "ended"
+          ? "投票已結束，可切回 Fire 模式送出一般訊息"
+          : "請先切回 Fire 模式送出訊息";
+
+    elements.pollOptions.innerHTML = "";
+    if (!poll.options.length) return;
+    poll.options.forEach((opt) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "viewer-poll-option";
+      button.dataset.vpollKey = opt.key;
+      button.setAttribute("data-vpoll-key", opt.key);
+
+      const row = document.createElement("div");
+      row.className = "viewer-poll-option-row";
+
+      const key = document.createElement("span");
+      key.className = "viewer-poll-option-key";
+      key.textContent = opt.key;
+
+      const text = document.createElement("span");
+      text.className = "viewer-poll-option-text";
+      text.textContent = opt.text;
+
+      const stat = document.createElement("span");
+      stat.className = "viewer-poll-option-stat";
+      stat.textContent = `${opt.count} (${opt.percentage}%)`;
+
+      row.appendChild(key);
+      row.appendChild(text);
+      row.appendChild(stat);
+      button.appendChild(row);
+
+      button.addEventListener("click", () => {
+        if (!elements.danmuText) return;
+        elements.danmuText.value = opt.key;
+        elements.danmuText.dispatchEvent(new Event("input", { bubbles: true }));
+        elements.danmuText.focus();
+        _setViewerMode("fire");
+      });
+      elements.pollOptions.appendChild(button);
+    });
+  }
+
+  function _applyPollState(raw) {
+    _viewerPollState = _normalizePollState(raw);
+    if (_viewerPollState.question) {
+      window._lastPollQuestion = _viewerPollState.question;
+    }
+    _renderPollPane();
+  }
+
+  function _bindViewerTabs() {
+    if (!elements.viewerTabButtons || elements.viewerTabButtons.length === 0) {
+      return;
+    }
+    elements.viewerTabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        _setViewerMode(btn.dataset.viewerTab || "fire");
+      });
+    });
+    _setViewerMode("fire");
+  }
+
   async function populateUserFontDropdown(
     forceRefresh = false,
     background = false
@@ -638,6 +810,12 @@ document.addEventListener("DOMContentLoaded", () => {
     langSelect.addEventListener("change", syncLangLabel);
   }
 
+  _bindViewerTabs();
+  _renderPollPane();
+  window.addEventListener("viewer-poll-state", (event) => {
+    _applyPollState(event.detail || {});
+  });
+
   if (elements.userFontSelect) {
     elements.userFontSelect.addEventListener("change", updatePreview);
   }
@@ -791,15 +969,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // admin-only. Active theme is applied server-side; viewer just fires text.
 
   // --- Send Button Loading State ---
-  // P3 ViewerPollThankYou heuristic: text is a single A-Z letter that
-  // looks like a poll vote. We don't know server-side whether a poll is
-  // active, so this is best-effort. False positives just briefly show the
-  // thank-you screen — user can dismiss via 「回到聊天」.
-  function _isLikelyPollVote(text) {
-    if (!text) return false;
-    const t = String(text).trim().toUpperCase();
-    return t.length === 1 && t >= "A" && t <= "Z";
-  }
 
   function setSendLoading(loading) {
     if (!elements.btnSend) return;
@@ -864,30 +1033,51 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         body: JSON.stringify(payload),
       });
+      let responseData = {};
+      try {
+        responseData = await response.json();
+      } catch (_) {
+        responseData = {};
+      }
 
       if (response.ok) {
-        const submittedText = elements.danmuText.value;
         elements.danmuText.value = "";
         updateCharCount();
         updatePreview();
-        showToast(ServerI18n.t("danmuFired"), true);
-        // P3 ViewerPollThankYou: if poll active and submitted text matched
-        // an option key (single A/B/C…), show thank-you state. Falls back
-        // to a heuristic; future viewer-side poll widget would carry the
-        // mapping explicitly.
         try {
-          if (window.ViewerStates && _isLikelyPollVote(submittedText)) {
+          if (window.ViewerStates && document.body.dataset.viewerState === "ratelimit") {
+            window.ViewerStates.hide();
+          }
+        } catch (_) {}
+        showToast(ServerI18n.t("danmuFired"), true);
+        // Server-driven thank-you: only show when /fire explicitly confirms
+        // this message was accepted as a poll vote.
+        try {
+          const vote = responseData && responseData.poll_vote;
+          if (window.ViewerStates && vote && vote.accepted === true) {
             window.ViewerStates.showThankYou({
-              question: window._lastPollQuestion || "進行中的投票",
-              choice: submittedText.trim().toUpperCase(),
+              question: vote.question || window._lastPollQuestion || "進行中的投票",
+              choice: vote.key || "",
               fp: clientFingerprint,
             });
           }
         } catch (_) { }
       } else {
+        if (response.status === 429) {
+          const retryAfterHeader = response.headers.get("Retry-After");
+          const retryAfter = Number.parseInt(retryAfterHeader || "0", 10);
+          if (window.ViewerStates && typeof window.ViewerStates.showRateLimited === "function") {
+            window.ViewerStates.showRateLimited({
+              retryAfter: Number.isFinite(retryAfter) ? retryAfter : 0,
+            });
+          } else {
+            showToast("發送太快，請稍後再試", false);
+          }
+          return;
+        }
         let message = ServerI18n.t("failedToSend");
         try {
-          const data = await response.json();
+          const data = responseData || {};
           message = (typeof data.error === "string" ? data.error : data.error?.message) || message;
           // P3 ViewerBanned: 403 with banned/blocked reason → show banned
           // state instead of just a toast.
@@ -1068,6 +1258,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function showOfflineCard() {
+    _setViewerMode("fire");
     const body = document.querySelector(".viewer-body");
     if (!body || _offlineCardActive) return;
     _offlineCardActive = true;
@@ -1170,7 +1361,9 @@ document.addEventListener("DOMContentLoaded", () => {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.type === "settings_changed") {
+        if (data.type === "poll_update") {
+          _applyPollState(data);
+        } else if (data.type === "settings_changed") {
           console.log("Settings updated:", data.settings);
           currentSettings = data.settings;
 
