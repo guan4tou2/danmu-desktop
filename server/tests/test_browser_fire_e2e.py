@@ -169,8 +169,8 @@ def test_browser_submit_danmu_reaches_overlay(browser_session, server_ports):
         context.close()
 
 
-def test_viewer_fire_poll_tabs_switch_and_fill_vote_key(browser_session, server_ports):
-    """Viewer should expose Fire/Poll tabs and let poll option fill danmu input."""
+def test_viewer_poll_tab_hidden_by_default(browser_session, server_ports):
+    """Viewer should keep poll tab disabled by default (prototype pollEnabled=false)."""
     http_port, _ = server_ports
 
     context = browser_session.new_context()
@@ -179,38 +179,12 @@ def test_viewer_fire_poll_tabs_switch_and_fill_vote_key(browser_session, server_
         page.goto(f"http://127.0.0.1:{http_port}/")
         page.wait_for_selector("#danmuText", timeout=8000)
 
-        # Tabs render; default mode = fire
-        page.wait_for_selector('[data-viewer-tab="fire"]', timeout=5000)
-        page.wait_for_selector('[data-viewer-tab="poll"]', timeout=5000)
+        # Poll tab/pane should be hidden by default; fire pane stays active.
+        page.wait_for_selector("#viewerFirePane", state="visible", timeout=5000)
         assert page.locator("#viewerFirePane").count() == 1
-        assert page.locator("#viewerPollPane").count() == 1
         assert page.locator("#viewerFirePane").is_visible()
-        assert not page.locator("#viewerPollPane").is_visible()
-
-        # Inject active poll state (same shape as poll_update payload)
-        page.evaluate(
-            """() => {
-              window.dispatchEvent(new CustomEvent("viewer-poll-state", {
-                detail: {
-                  state: "active",
-                  question: "你最喜歡哪個主題包？",
-                  total_votes: 8,
-                  options: [
-                    { key: "A", text: "Classic", count: 5, percentage: 62.5 },
-                    { key: "B", text: "Neon", count: 3, percentage: 37.5 },
-                  ],
-                }
-              }));
-            }"""
-        )
-
-        page.locator('[data-viewer-tab="poll"]').click()
-        page.wait_for_selector("#viewerPollPane", state="visible", timeout=5000)
-        assert "你最喜歡哪個主題包" in (page.locator("[data-vpoll-question]").text_content() or "")
-
-        # Clicking an option fills danmu input with its key for quick vote submit.
-        page.locator('[data-vpoll-key="A"]').click()
-        assert page.locator("#danmuText").input_value() == "A"
+        assert page.locator('[data-viewer-tab="poll"]').count() == 0
+        assert page.locator("#viewerPollPane").count() == 0
     finally:
         page.close()
         context.close()

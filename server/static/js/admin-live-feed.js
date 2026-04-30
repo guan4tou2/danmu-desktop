@@ -74,19 +74,74 @@
     return true;
   }
 
-  function createEmptyState(opts) {
+  function _setAllTabActive() {
+    filterTab = "all";
+    document
+      .querySelectorAll(".admin-live-feed-tab")
+      .forEach((x) => x.classList.toggle("is-active", x.dataset.tab === "all"));
+  }
+
+  function _clearSearchAndFilters() {
+    searchTerm = "";
+    if (searchInput) searchInput.value = "";
+    _setAllTabActive();
+  }
+
+  function _viewerJoinUrl() {
+    const base = `${window.location.protocol}//${window.location.host}`;
+    return `${base}/`;
+  }
+
+  async function _copyViewerUrl() {
+    const url = _viewerJoinUrl();
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+        showToast("已複製觀眾頁網址", true);
+        return;
+      }
+    } catch (_) {
+      /* ignore and fallback */
+    }
+    window.prompt("複製觀眾頁網址", url);
+  }
+
+  function _createPrototypeMessagesEmptyState() {
     const box = document.createElement("div");
-    box.className = "admin-empty-state admin-empty-state--stream";
-    if (opts.kind) box.setAttribute("data-empty-kind", opts.kind);
+    box.className = "admin-proto-empty admin-proto-empty--messages";
+    box.setAttribute("data-empty-kind", "live-feed");
     box.innerHTML = `
-      <div class="admin-empty-state-icon">${escapeAttr(opts.icon || "◎")}</div>
-      <div class="admin-empty-state-title">${escapeAttr(opts.title || "暫無資料")}</div>
-      <div class="admin-empty-state-desc">${escapeAttr(opts.desc || "")}</div>
-      ${opts.cta ? `<button type="button" class="admin-empty-state-cta" data-empty-cta="${escapeAttr(opts.ctaId || "")}">${escapeAttr(opts.cta)}</button>` : ""}
+      <div class="admin-proto-empty-title">還沒有人發送訊息</div>
+      <div class="admin-proto-empty-desc">把這個 QR 投到舞台上,觀眾掃進去即可開始發彈幕。</div>
+      <div class="admin-proto-empty-qr">
+        <span class="admin-proto-empty-qr-box">QR</span>
+        <div class="admin-proto-empty-qr-meta">
+          <div class="admin-proto-empty-qr-url">${escapeAttr(_viewerJoinUrl())}</div>
+          <div class="admin-proto-empty-qr-label">觀眾頁網址</div>
+        </div>
+        <button type="button" class="admin-proto-empty-qr-copy" data-empty-cta="live-feed-copy-url">複製</button>
+      </div>
+      <div class="admin-proto-empty-hint">或在 Overlay 上開啟 QR Carousel widget</div>
     `;
-    if (opts.onCta && opts.ctaId) {
-      const btn = box.querySelector(`[data-empty-cta="${opts.ctaId}"]`);
-      if (btn) btn.addEventListener("click", opts.onCta);
+    const copyBtn = box.querySelector('[data-empty-cta="live-feed-copy-url"]');
+    if (copyBtn) {
+      copyBtn.addEventListener("click", _copyViewerUrl);
+    }
+    return box;
+  }
+
+  function _createPlaceholderEmptyState(title, body, ctaLabel, ctaId, onCta) {
+    const box = document.createElement("div");
+    box.className = "admin-proto-placeholder-box admin-live-feed-empty-placeholder";
+    box.innerHTML =
+      `<div class="admin-proto-placeholder-title">${escapeAttr(title)}</div>` +
+      `<div class="admin-proto-placeholder-body">${escapeAttr(body)}</div>` +
+      (ctaLabel
+        ? `<div class="admin-proto-placeholder-actions"><button type="button" class="admin-proto-placeholder-btn is-active" data-empty-cta="${escapeAttr(ctaId || "")}">${escapeAttr(ctaLabel)}</button></div>`
+        : "");
+    if (ctaLabel && ctaId && onCta) {
+      const btn = box.querySelector(`[data-empty-cta="${ctaId}"]`);
+      if (btn) btn.addEventListener("click", onCta);
     }
     return box;
   }
@@ -267,48 +322,25 @@
     listEl.textContent = "";
     if (frag.childNodes.length === 0) {
       const empty = paused
-        ? createEmptyState({
-            icon: "⏸",
-            title: "目前已暫停接收",
-            desc: ServerI18n.t("liveFeedPaused"),
-            cta: ServerI18n.t("resumeBtn"),
-            ctaId: "live-feed-resume",
-            onCta: togglePause,
-          })
+        ? _createPlaceholderEmptyState(
+            "[PLACEHOLDER] Live Feed Paused",
+            "Prototype 未提供暫停接收狀態版面，暫以文字+方框占位。",
+            ServerI18n.t("resumeBtn"),
+            "live-feed-resume",
+            togglePause
+          )
         : entries.length === 0
-          ? createEmptyState({
-              kind: "live-feed",
-              icon: "💬",
-              title: "等待第一則訊息",
-              desc: ServerI18n.t("liveFeedWaiting"),
-              cta: ServerI18n.t("clearBtn"),
-              ctaId: "live-feed-clear",
-              onCta: function () {
-                searchTerm = "";
-                if (searchInput) searchInput.value = "";
-                filterTab = "all";
-                document
-                  .querySelectorAll(".admin-live-feed-tab")
-                  .forEach((x) => x.classList.toggle("is-active", x.dataset.tab === "all"));
+          ? _createPrototypeMessagesEmptyState()
+          : _createPlaceholderEmptyState(
+              "[PLACEHOLDER] Live Feed No Result",
+              "Prototype 未提供搜尋無結果狀態版面，暫以文字+方框占位。",
+              "清除搜尋條件",
+              "live-feed-reset",
+              function () {
+                _clearSearchAndFilters();
                 renderList();
-              },
-            })
-          : createEmptyState({
-              icon: "🔎",
-              title: "沒有符合條件的訊息",
-              desc: ServerI18n.t("liveFeedNoMatches"),
-              cta: "清除搜尋條件",
-              ctaId: "live-feed-reset",
-              onCta: function () {
-                searchTerm = "";
-                if (searchInput) searchInput.value = "";
-                filterTab = "all";
-                document
-                  .querySelectorAll(".admin-live-feed-tab")
-                  .forEach((x) => x.classList.toggle("is-active", x.dataset.tab === "all"));
-                renderList();
-              },
-            });
+              }
+            );
       listEl.appendChild(empty);
     } else {
       listEl.appendChild(frag);

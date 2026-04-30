@@ -65,6 +65,41 @@ document.addEventListener("DOMContentLoaded", () => {
     pollOptions: document.querySelector("[data-vpoll-options]"),
   };
 
+  function _resolveViewerPollEnabled() {
+    // Prototype baseline (Danmu Redesign.html) defaults pollEnabled=false.
+    // Keep viewer poll closed unless explicitly enabled.
+    try {
+      const cfg = window.DANMU_CONFIG?.viewer?.pollEnabled;
+      if (cfg === true || cfg === "true" || cfg === 1 || cfg === "1") return true;
+    } catch (_) {
+      /* ignore */
+    }
+    try {
+      const q = new URLSearchParams(window.location.search).get("poll");
+      if (!q) return false;
+      return q === "1" || q.toLowerCase() === "true" || q.toLowerCase() === "on";
+    } catch (_) {
+      return false;
+    }
+  }
+
+  const VIEWER_POLL_ENABLED = _resolveViewerPollEnabled();
+
+  function _applyViewerPollGate() {
+    if (VIEWER_POLL_ENABLED) return;
+    const pollTabBtn = document.querySelector('[data-viewer-tab="poll"]');
+    if (pollTabBtn) pollTabBtn.remove();
+    if (elements.viewerPollPane) {
+      elements.viewerPollPane.remove();
+      elements.viewerPollPane = null;
+    }
+    const tabbar = document.querySelector(".viewer-tabbar");
+    elements.viewerTabButtons = Array.from(document.querySelectorAll("[data-viewer-tab]"));
+    if (tabbar && elements.viewerTabButtons.length <= 1) {
+      tabbar.setAttribute("hidden", "");
+    }
+  }
+
   // --- Helper utilities ---
   const scheduleIdleTask = (cb, timeout = 500) => {
     if ("requestIdleCallback" in window) {
@@ -462,7 +497,8 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   function _setViewerMode(mode) {
-    const nextMode = mode === "poll" ? "poll" : "fire";
+    const nextMode =
+      VIEWER_POLL_ENABLED && mode === "poll" ? "poll" : "fire";
     _viewerMode = nextMode;
     if (elements.viewerFirePane) {
       const isFire = nextMode === "fire";
@@ -533,6 +569,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function _renderPollPane() {
+    if (!VIEWER_POLL_ENABLED) return;
     if (!elements.pollQuestion || !elements.pollMeta || !elements.pollOptions) {
       return;
     }
@@ -598,6 +635,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function _applyPollState(raw) {
+    if (!VIEWER_POLL_ENABLED) return;
     _viewerPollState = _normalizePollState(raw);
     if (_viewerPollState.question) {
       window._lastPollQuestion = _viewerPollState.question;
@@ -810,11 +848,14 @@ document.addEventListener("DOMContentLoaded", () => {
     langSelect.addEventListener("change", syncLangLabel);
   }
 
+  _applyViewerPollGate();
   _bindViewerTabs();
   _renderPollPane();
-  window.addEventListener("viewer-poll-state", (event) => {
-    _applyPollState(event.detail || {});
-  });
+  if (VIEWER_POLL_ENABLED) {
+    window.addEventListener("viewer-poll-state", (event) => {
+      _applyPollState(event.detail || {});
+    });
+  }
 
   if (elements.userFontSelect) {
     elements.userFontSelect.addEventListener("change", updatePreview);
@@ -1359,7 +1400,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.type === "poll_update") {
+        if (data.type === "poll_update" && VIEWER_POLL_ENABLED) {
           _applyPollState(data);
         } else if (data.type === "settings_changed") {
           console.log("Settings updated:", data.settings);

@@ -34,6 +34,7 @@
 | Viewer | Effects 參數面板 | 有功能、無正式設計稿 | 補 per-effect parameter panel（dark/light） |
 | Admin | History tabbed page | 工程已有 3 tabs，prototype 無完整 tabbed 稿 | 補 `AdminHistoryTabbedPage` |
 | Admin | Viewer Config tabbed page | 工程已有 2 tabs，prototype 無此稿 | 補 `AdminViewerConfigTabbedPage` |
+| Admin | Messages 進階空狀態 | `Paused` / `No Result` 在 prototype 無獨立 artboard，現改為 `[PLACEHOLDER]` | 補 `MessagesPausedState`、`MessagesNoResultState`（含 CTA 規格） |
 
 ### 本輪已完成對齊（不用再列缺稿）
 
@@ -42,6 +43,8 @@
 | Notifications | 已是 3 欄（filters/list/detail），來源為 `Fire Token / Webhooks / Backup(placeholder) / Moderation / System`，並補 `SEVERITY` 群組 |
 | Audit Log | 已對齊 `ACTION / ACTOR / RANGE` 篩選與 `before→after` 語義 |
 | Webhooks ↔ Audit | 已寫入 `register / test / unregister` 審計事件，可在 audit 與 notifications 直接看到 |
+| Messages / Polls / Fonts Empty State | 已移除工程自加 emoji 通用卡；改為 prototype 文案與結構（Messages:「還沒有人發送訊息」、Polls:「還沒有任何投票」、Fonts:「尚未上傳自訂字型」） |
+| Viewer Poll tab | 依 prototype `pollEnabled=false`，viewer 端預設關閉 Poll 分頁（只保留 Fire）；避免未定義流程直接露出 |
 | History / Viewer Config tabs | 因缺 tabbed artboard，已改為 `[PLACEHOLDER]` 文字+方框容器（保留既有功能） |
 | Viewer Effect parameters | 因缺 per-effect 面板稿，已改為 `[PLACEHOLDER] Effect Parameters` 文字+方框 |
 

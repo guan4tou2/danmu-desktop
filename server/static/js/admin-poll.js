@@ -75,19 +75,44 @@
 
   function _renderPollEmptyState() {
     var wrap = document.createElement("div");
-    wrap.className = "admin-empty-state";
+    wrap.className = "admin-proto-empty admin-proto-empty--poll";
     wrap.setAttribute("data-empty-kind", "poll");
     wrap.innerHTML = `
-      <div class="admin-empty-state-icon">🗳</div>
-      <div class="admin-empty-state-title">目前沒有進行中的投票</div>
-      <div class="admin-empty-state-desc">${ServerI18n.t("pollNoActive")}</div>
-      <button type="button" class="admin-empty-state-cta" data-empty-cta="poll-create">前往建立題目</button>
+      <div class="admin-proto-empty-title">還沒有任何投票</div>
+      <div class="admin-proto-empty-desc">建好的投票會排在這裡,可即時推到 Overlay,也可以用模板快速建立。</div>
+      <div class="admin-proto-empty-actions">
+        <button type="button" class="admin-proto-empty-primary" data-empty-cta="poll-create">+ 新建投票</button>
+        <button type="button" class="admin-proto-empty-secondary" data-empty-cta="poll-template">從模板</button>
+      </div>
+      <div class="admin-proto-poll-template-grid">
+        <div class="admin-proto-poll-template-card">
+          <div class="t">是 / 否</div>
+          <div class="d">最簡 2 選項</div>
+          <div class="eta">建立 ~5s</div>
+        </div>
+        <div class="admin-proto-poll-template-card">
+          <div class="t">滿意度</div>
+          <div class="d">1-5 星</div>
+          <div class="eta">建立 ~10s</div>
+        </div>
+        <div class="admin-proto-poll-template-card">
+          <div class="t">多選題</div>
+          <div class="d">4 個 + 圖片</div>
+          <div class="eta">建立 ~30s</div>
+        </div>
+      </div>
     `;
     var cta = wrap.querySelector('[data-empty-cta="poll-create"]');
     if (cta) {
       cta.addEventListener("click", function () {
         var addBtn = document.querySelector('#sec-polls [data-poll-action="add"]');
         if (addBtn) addBtn.click();
+      });
+    }
+    var tplBtn = wrap.querySelector('[data-empty-cta="poll-template"]');
+    if (tplBtn) {
+      tplBtn.addEventListener("click", function () {
+        window.showToast("模板功能尚未接後端，先用新增題目建立。", false);
       });
     }
     return wrap;

@@ -6854,81 +6854,180 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   font-size: 12px;
 }
 
-/* Shared full-page empty state blocks (messages / polls / fonts). */
-.admin-empty-state {
+/* Strict prototype-aligned empty state blocks (Messages / Polls / Fonts). */
+.admin-proto-empty {
   position: relative;
+  min-height: 300px;
   border: 1px solid var(--hud-cyan-line, rgba(125, 211, 252, 0.3));
-  background: linear-gradient(180deg, rgba(125, 211, 252, 0.06), rgba(8, 14, 26, 0.78));
+  background:
+    linear-gradient(180deg, rgba(125, 211, 252, 0.05), rgba(8, 14, 26, 0.86));
   border-radius: 8px;
-  padding: 22px 18px;
+  padding: 30px 22px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   overflow: hidden;
 }
-.admin-empty-state::before,
-.admin-empty-state::after {
+.admin-proto-empty::before,
+.admin-proto-empty::after {
   content: "";
   position: absolute;
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   border: 1px solid var(--hud-cyan-line, rgba(125, 211, 252, 0.35));
   pointer-events: none;
 }
-.admin-empty-state::before {
-  left: 10px;
-  top: 10px;
+.admin-proto-empty::before {
+  left: 14px;
+  top: 14px;
   border-right: none;
   border-bottom: none;
 }
-.admin-empty-state::after {
-  right: 10px;
-  bottom: 10px;
+.admin-proto-empty::after {
+  right: 14px;
+  bottom: 14px;
   border-left: none;
   border-top: none;
 }
-.admin-empty-state-icon {
-  font-size: 34px;
-  line-height: 1;
+.admin-proto-empty-title {
+  margin: 0;
+  font-family: var(--font-display, "Zen Kaku Gothic New", "Noto Sans TC", sans-serif);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--color-text-strong, #e2e8f0);
+}
+.admin-proto-empty-desc {
+  margin: 0;
+  max-width: 520px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--color-text-muted, #94a3b8);
+}
+.admin-proto-empty-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 2px;
+}
+.admin-proto-empty-primary,
+.admin-proto-empty-secondary {
+  padding: 10px 18px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+.admin-proto-empty-primary {
+  border: 1px solid color-mix(in srgb, var(--color-primary, #38bdf8) 70%, #ffffff 0%);
+  background: var(--color-primary, #38bdf8);
+  color: #07101a;
+  font-weight: 700;
+}
+.admin-proto-empty-secondary {
+  border: 1px solid var(--color-border, #334155);
+  background: transparent;
+  color: var(--color-text-strong, #e2e8f0);
+}
+.admin-proto-empty-hint {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted, #94a3b8);
+}
+.admin-proto-empty--poll {
+  margin-top: 10px;
+}
+.admin-proto-empty--fonts {
+  margin-top: 12px;
+}
+.admin-proto-poll-template-grid {
+  width: 100%;
+  max-width: 700px;
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.admin-proto-poll-template-card {
+  text-align: left;
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid var(--hud-cyan-line, rgba(125, 211, 252, 0.3));
+  background: rgba(56, 189, 248, 0.08);
+}
+.admin-proto-poll-template-card .t {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-strong, #e2e8f0);
+}
+.admin-proto-poll-template-card .d {
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--color-text-muted, #94a3b8);
+}
+.admin-proto-poll-template-card .eta {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
   color: var(--color-primary, #38bdf8);
 }
-.admin-empty-state-title {
-  margin-top: 10px;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--color-text-primary, #e2e8f0);
+.admin-proto-empty-qr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 4px;
+  border: 1px solid var(--hud-cyan-line, rgba(125, 211, 252, 0.3));
+  background: rgba(56, 189, 248, 0.08);
 }
-.admin-empty-state-desc {
-  margin: 8px auto 0;
-  max-width: 520px;
-  font-size: 12px;
-  line-height: 1.65;
-  color: var(--color-text-secondary, #94a3b8);
+.admin-proto-empty-qr-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #000000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
 }
-.admin-empty-state-cta {
-  margin-top: 14px;
-  padding: 8px 14px;
-  border-radius: 6px;
-  border: 1px solid rgba(56, 189, 248, 0.45);
-  background: rgba(56, 189, 248, 0.1);
+.admin-proto-empty-qr-meta {
+  text-align: left;
+}
+.admin-proto-empty-qr-url {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: var(--color-primary, #38bdf8);
+}
+.admin-proto-empty-qr-label {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted, #94a3b8);
+}
+.admin-proto-empty-qr-copy {
+  margin-left: 12px;
+  padding: 6px 12px;
+  border-radius: 3px;
+  border: 1px solid var(--color-primary, #38bdf8);
+  background: transparent;
   color: var(--color-primary, #38bdf8);
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.5px;
   cursor: pointer;
 }
-.admin-empty-state-cta:hover {
-  background: rgba(56, 189, 248, 0.18);
-}
-.admin-empty-state--stream {
+.admin-live-feed-empty-placeholder {
   min-height: 300px;
-  display: flex;
-  flex-direction: column;
+  margin-top: 0;
   justify-content: center;
-}
-.admin-empty-state--fonts {
-  margin-top: 12px;
-}
-.admin-empty-state[data-empty-kind="poll"] {
-  margin-top: 10px;
 }
 .admin-live-feed-list {
   min-height: 300px;

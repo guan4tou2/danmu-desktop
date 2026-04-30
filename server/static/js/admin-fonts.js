@@ -135,11 +135,17 @@
       return;
     }
     host.innerHTML = `
-      <div class="admin-empty-state admin-empty-state--fonts" data-empty-kind="fonts">
-        <div class="admin-empty-state-icon">🅵</div>
-        <div class="admin-empty-state-title">尚未上傳自訂字型</div>
-        <div class="admin-empty-state-desc">目前僅使用內建字型。上傳第一個字型後可供觀眾切換。</div>
-        ${loggedIn ? '<button type="button" class="admin-empty-state-cta" data-empty-cta="fonts-upload-first">上傳第一個字型</button>' : ''}
+      <div class="admin-proto-empty admin-proto-empty--fonts" data-empty-kind="fonts">
+        <div class="admin-proto-empty-title">尚未上傳自訂字型</div>
+        <div class="admin-proto-empty-desc">
+          預設使用 Noto Sans TC + IBM Plex Mono。<br/>
+          上傳 .woff2 / .ttf 可給觀眾選用,或設為 Overlay 預設字型。
+        </div>
+        <div class="admin-proto-empty-actions">
+          ${loggedIn ? '<button type="button" class="admin-proto-empty-primary" data-empty-cta="fonts-upload-first">⇪ 上傳字型</button>' : ''}
+          <button type="button" class="admin-proto-empty-secondary" data-empty-cta="fonts-google">從 Google Fonts</button>
+        </div>
+        <div class="admin-proto-empty-hint">支援格式 · WOFF2 · WOFF · TTF · OTF</div>
       </div>
     `;
     if (loggedIn) {
@@ -150,6 +156,12 @@
           if (fi) fi.click();
         });
       }
+    }
+    var googleBtn = host.querySelector('[data-empty-cta="fonts-google"]');
+    if (googleBtn) {
+      googleBtn.addEventListener("click", function () {
+        window.showToast("Google Fonts 匯入流程待後端串接。", false);
+      });
     }
   }
 
