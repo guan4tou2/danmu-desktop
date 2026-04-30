@@ -875,22 +875,20 @@ document.addEventListener("DOMContentLoaded", () => {
   function _refreshParamsPanel() {
     if (!elements.effectParamsPanel) return;
     elements.effectParamsPanel.innerHTML = "";
-    for (const [name, params] of Object.entries(selectedEffects)) {
+    let hasUndesignedPanel = false;
+    for (const [name] of Object.entries(selectedEffects)) {
       const def = _effectDefs.find((e) => e.name === name);
       if (!def || !def.params || Object.keys(def.params).length === 0) continue;
-
-      const section = document.createElement("div");
-      section.className = "bg-slate-800/60 rounded-lg p-2 space-y-1";
-
-      const title = document.createElement("p");
-      title.className = "text-xs font-medium text-sky-400 mb-1";
-      title.textContent = def.label;
-      section.appendChild(title);
-
-      for (const [pkey, pdef] of Object.entries(def.params)) {
-        section.appendChild(_renderParamControl(name, pkey, pdef, params[pkey]));
-      }
-      elements.effectParamsPanel.appendChild(section);
+      hasUndesignedPanel = true;
+      break;
+    }
+    if (hasUndesignedPanel) {
+      elements.effectParamsPanel.innerHTML = [
+        '<div class="rounded-md border border-dashed border-slate-600 bg-slate-900/40 p-3">',
+        '<p class="text-xs font-mono text-slate-300">[PLACEHOLDER] Effect Parameters</p>',
+        '<p class="mt-1 text-xs text-slate-400">Prototype 尚未提供每個效果的參數面板設計，暫以文字+方框占位。</p>',
+        "</div>",
+      ].join("");
     }
   }
 

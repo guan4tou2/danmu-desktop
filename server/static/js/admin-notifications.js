@@ -6,7 +6,6 @@
  * filters + list + detail pane.
  *
  * Aggregates from existing endpoints — NO new backend schema:
- *   ✓ /admin/metrics → recent_violations (rate limit hits) → severity warn
  *   ✓ /admin/integrations/fire-token/audit → token rotated/revoked/toggled
  *     → severity info (rotated/toggle), good (revoked)
  *   ✓ /admin/filters/events → moderation filter hits → severity warn
@@ -48,6 +47,7 @@
     sourceCatalog: [],
     filterTab: "unread", // all / unread / starred / archived
     filterSrc: "all",
+    filterSev: "all",
     refreshTimer: 0,
     selectedId: null,  // detail pane
   };
@@ -88,7 +88,6 @@
   async function _fetchAll() {
     const tasks = [
       _fetchSourceCatalog().catch(function () { return []; }),
-      _fetchMetrics().catch(function () { return []; }),
       _fetchTokenAudit().catch(function () { return []; }),
       _fetchFilterEvents().catch(function () { return []; }),
       _fetchWebhookAudit().catch(function () { return []; }),
@@ -109,27 +108,6 @@
     if (!r.ok) return [];
     const data = await r.json();
     return Array.isArray(data.source_catalog) ? data.source_catalog : [];
-  }
-
-  async function _fetchMetrics() {
-    const r = await fetch("/admin/metrics", { credentials: "same-origin" });
-    if (!r.ok) return [];
-    const data = await r.json();
-    const violations = Array.isArray(data.recent_violations) ? data.recent_violations : [];
-    return violations.map(function (v, i) {
-      const ts = (Number(v.ts) || 0) * 1000;
-      const id = "vlt-" + (v.ts || i) + "-" + (v.scope || "x");
-      return {
-        id: id,
-        sev: v.scope === "fire" ? "warn" : "info",
-        src: "Rate Limit",
-        ts: ts,
-        title: "速率限制觸發 · scope=" + (v.scope || "?"),
-        desc: "IP " + (v.ip || "?") + " 在 " + (v.scope || "?") + " 速率限制下被擋。" +
-              (v.violations ? "今日累計 " + v.violations + " 次。" : ""),
-        raw: v,
-      };
-    });
   }
 
   async function _fetchTokenAudit() {
@@ -255,12 +233,20 @@
             <div class="admin-v2-monolabel admin-notif-label-top">來源 · SOURCE</div>
             <div class="admin-notif-sources" data-notif-sources>
               <button type="button" class="admin-notif-src is-active" data-notif-src="all">全部<span class="cnt" data-cnt-src-all>—</span></button>
-              <button type="button" class="admin-notif-src" data-notif-src="Rate Limit">Rate Limit<span class="cnt" data-cnt-src-rl>—</span></button>
               <button type="button" class="admin-notif-src" data-notif-src="Fire Token">Fire Token<span class="cnt" data-cnt-src-ft>—</span></button>
-              <button type="button" class="admin-notif-src" data-notif-src="Moderation">Moderation<span class="cnt" data-cnt-src-mod>—</span></button>
               <button type="button" class="admin-notif-src" data-notif-src="Webhooks">Webhooks<span class="cnt" data-cnt-src-wh>—</span></button>
               <button type="button" class="admin-notif-src" data-notif-src="System">System<span class="cnt" data-cnt-src-sys>—</span></button>
               <button type="button" class="admin-notif-src" data-notif-src="Backup">Backup<span class="cnt" data-cnt-src-bk>—</span></button>
+              <button type="button" class="admin-notif-src" data-notif-src="Moderation">Moderation<span class="cnt" data-cnt-src-mod>—</span></button>
+            </div>
+
+            <div class="admin-v2-monolabel admin-notif-label-top">嚴重度 · SEVERITY</div>
+            <div class="admin-notif-sources" data-notif-severity>
+              <button type="button" class="admin-notif-src is-active" data-notif-sev="all">全部<span class="cnt" data-cnt-sev-all>—</span></button>
+              <button type="button" class="admin-notif-src" data-notif-sev="crit">CRIT<span class="cnt" data-cnt-sev-crit>—</span></button>
+              <button type="button" class="admin-notif-src" data-notif-sev="warn">WARN<span class="cnt" data-cnt-sev-warn>—</span></button>
+              <button type="button" class="admin-notif-src" data-notif-sev="info">INFO<span class="cnt" data-cnt-sev-info>—</span></button>
+              <button type="button" class="admin-notif-src" data-notif-sev="good">OK<span class="cnt" data-cnt-sev-good>—</span></button>
             </div>
 
             <div class="admin-notif-tip">
@@ -274,8 +260,8 @@
               <span class="admin-notif-summary" data-notif-summary>讀取中…</span>
               <span class="admin-notif-actions">
                 <button type="button" class="admin-notif-action" data-notif-action="mark-all-read">✓ 全部已讀</button>
-                <button type="button" class="admin-notif-action" data-notif-action="archive-all">↓ 封存目前清單</button>
-                <button type="button" class="admin-notif-action" data-notif-action="refresh">↻ 重新整理</button>
+                <button type="button" class="admin-notif-action" data-notif-action="archive-all">↓ 封存全部</button>
+                <button type="button" class="admin-notif-action" data-notif-action="pref">⚙ 通知偏好</button>
               </span>
             </div>
             <div class="admin-notif-list" data-notif-list>
@@ -293,6 +279,7 @@
   function _filteredItems() {
     return _state.items.filter(function (it) {
       if (_state.filterSrc !== "all" && it.src !== _state.filterSrc) return false;
+      if (_state.filterSev !== "all" && it.sev !== _state.filterSev) return false;
       const archived = _isArchived(it.id);
       const read = _isRead(it.id);
       const starred = _isStarred(it.id);
@@ -359,13 +346,20 @@
     set("[data-cnt-all]", total);
     set("[data-cnt-starred]", starred);
     set("[data-cnt-archived]", archived);
-    set("[data-cnt-src-all]", items.length);
-    set("[data-cnt-src-rl]", items.filter(function (i) { return i.src === "Rate Limit"; }).length);
+    const activeItems = items.filter(function (i) {
+      return _state.filterSev === "all" || i.sev === _state.filterSev;
+    });
+    set("[data-cnt-src-all]", activeItems.length);
     set("[data-cnt-src-ft]", items.filter(function (i) { return i.src === "Fire Token"; }).length);
     set("[data-cnt-src-mod]", items.filter(function (i) { return i.src === "Moderation"; }).length);
     set("[data-cnt-src-wh]", items.filter(function (i) { return i.src === "Webhooks"; }).length);
     set("[data-cnt-src-sys]", items.filter(function (i) { return i.src === "System"; }).length);
     set("[data-cnt-src-bk]", items.filter(function (i) { return i.src === "Backup"; }).length);
+    set("[data-cnt-sev-all]", items.length);
+    set("[data-cnt-sev-crit]", items.filter(function (i) { return i.sev === "crit"; }).length);
+    set("[data-cnt-sev-warn]", items.filter(function (i) { return i.sev === "warn"; }).length);
+    set("[data-cnt-sev-info]", items.filter(function (i) { return i.sev === "info"; }).length);
+    set("[data-cnt-sev-good]", items.filter(function (i) { return i.sev === "good"; }).length);
 
     const backupImplemented = (_state.sourceCatalog || []).some(function (row) {
       return row && row.id === "backup" && row.implemented === true;
@@ -449,7 +443,19 @@
       if (src) {
         _state.filterSrc = src.dataset.notifSrc;
         page.querySelectorAll("[data-notif-src]").forEach(function (s) {
-          s.classList.toggle("is-active", s.dataset.notifSrc === _state.filterSrc);
+          if (s.dataset.notifSrc !== undefined) {
+            s.classList.toggle("is-active", s.dataset.notifSrc === _state.filterSrc);
+          }
+        });
+        _renderList();
+        _renderSummary();
+        return;
+      }
+      const sev = e.target.closest("[data-notif-sev]");
+      if (sev) {
+        _state.filterSev = sev.dataset.notifSev;
+        page.querySelectorAll("[data-notif-sev]").forEach(function (s) {
+          s.classList.toggle("is-active", s.dataset.notifSev === _state.filterSev);
         });
         _renderList();
         _renderSummary();
@@ -467,6 +473,8 @@
           window.showToast && window.showToast("已封存目前清單", true);
         } else if (action.dataset.notifAction === "refresh") {
           _fetchAll();
+        } else if (action.dataset.notifAction === "pref") {
+          window.showToast && window.showToast("通知偏好設定待設計補稿（placeholder）", false);
         } else if (action.dataset.notifAction === "close-detail") {
           _state.selectedId = null;
           _renderDetail();

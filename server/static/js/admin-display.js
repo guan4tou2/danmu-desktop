@@ -969,8 +969,9 @@
     });
   }
 
-  // 2026-04-27 sidebar consolidation: display merged into viewer-config
-  // route as the "fields" tab. Tab state lives on body.dataset.viewerConfigTab.
+  // Strict prototype mode (2026-04-30): viewer-config tabbed container keeps
+  // current behavior but tab visuals are replaced with text+box placeholder
+  // until design provides an approved tabbed artboard.
   let _lastVisibleRoute = null;
   function syncVisibility() {
     const shell = document.querySelector(".admin-dash-grid");
@@ -1004,10 +1005,14 @@
     if (!grid) return;
     const bar = document.createElement("div");
     bar.id = "sec-viewer-config-tabs";
-    bar.className = "admin-v2-tabbar lg:col-span-2";
+    bar.className = "admin-proto-placeholder-box lg:col-span-2";
     bar.innerHTML =
-      '<button type="button" class="admin-v2-tab is-active" data-vc-tab="page">整頁主題 · PAGE</button>' +
-      '<button type="button" class="admin-v2-tab" data-vc-tab="fields">表單欄位 · FIELDS</button>';
+      '<div class="admin-proto-placeholder-title">[PLACEHOLDER] Viewer Config Tabs</div>' +
+      '<div class="admin-proto-placeholder-body">Prototype 缺少 viewer-config tabbed 容器設計，暫以文字+方框占位。</div>' +
+      '<div class="admin-proto-placeholder-actions">' +
+      '<button type="button" class="admin-proto-placeholder-btn is-active" data-vc-tab="page">整頁主題 · PAGE</button>' +
+      '<button type="button" class="admin-proto-placeholder-btn" data-vc-tab="fields">表單欄位 · FIELDS</button>' +
+      '</div>';
     // Insert BEFORE sec-viewer-theme if present (so tabs appear at top of route).
     const vt = document.getElementById("sec-viewer-theme");
     if (vt && vt.parentNode === grid) grid.insertBefore(bar, vt);
@@ -1017,7 +1022,7 @@
 
     function _apply(tab) {
       document.body.dataset.viewerConfigTab = tab;
-      bar.querySelectorAll(".admin-v2-tab").forEach((btn) => {
+      bar.querySelectorAll("[data-vc-tab]").forEach((btn) => {
         btn.classList.toggle("is-active", btn.dataset.vcTab === tab);
       });
       syncVisibility();

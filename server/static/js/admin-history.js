@@ -463,9 +463,10 @@
     });
   }
 
-  // 2026-04-27 sidebar consolidation: history page hosts a 2-tab strip
-  // (匯出 / 重播). Replay used to be its own #/replay route — now it's a
-  // tab here. Tab state lives on body.dataset.historyTab.
+  // Strict prototype mode (2026-04-30): history tabbed container still
+  // preserves functionality, but the tab-strip visual is reduced to a
+  // plain placeholder text+box until design provides an approved tabbed
+  // artboard.
   function _initHistoryTabs() {
     if (document.getElementById("sec-history-tabs")) return; // idempotent
     var historyCard = document.getElementById("sec-history");
@@ -474,18 +475,22 @@
     if (!parent) return;
     var bar = document.createElement("div");
     bar.id = "sec-history-tabs";
-    bar.className = "admin-v2-tabbar lg:col-span-2";
+    bar.className = "admin-proto-placeholder-box lg:col-span-2";
     bar.innerHTML =
-      '<button type="button" class="admin-v2-tab is-active" data-history-tab="export">匯出 · EXPORT</button>' +
-      '<button type="button" class="admin-v2-tab" data-history-tab="list">列表 · LIST</button>' +
-      '<button type="button" class="admin-v2-tab" data-history-tab="replay">重播 · REPLAY</button>';
+      '<div class="admin-proto-placeholder-title">[PLACEHOLDER] History Tabs</div>' +
+      '<div class="admin-proto-placeholder-body">Prototype 缺少 history tabbed 容器設計，暫以文字+方框占位。</div>' +
+      '<div class="admin-proto-placeholder-actions">' +
+      '<button type="button" class="admin-proto-placeholder-btn is-active" data-history-tab="export">匯出 · EXPORT</button>' +
+      '<button type="button" class="admin-proto-placeholder-btn" data-history-tab="list">列表 · LIST</button>' +
+      '<button type="button" class="admin-proto-placeholder-btn" data-history-tab="replay">重播 · REPLAY</button>' +
+      '</div>';
     parent.insertBefore(bar, historyCard);
 
     if (!document.body.dataset.historyTab) document.body.dataset.historyTab = "export";
 
     function _apply(tab) {
       document.body.dataset.historyTab = tab;
-      bar.querySelectorAll(".admin-v2-tab").forEach(function (btn) {
+      bar.querySelectorAll("[data-history-tab]").forEach(function (btn) {
         btn.classList.toggle("is-active", btn.dataset.historyTab === tab);
       });
       // sec-history hide handled by CSS rule on body[data-history-tab="replay"]

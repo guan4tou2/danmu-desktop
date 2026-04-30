@@ -5315,6 +5315,51 @@ body.stream-mode .admin-hero .admin-summary-grid {
   box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.15) inset;
 }
 
+/* Strict 1:1 prototype placeholders (2026-04-30):
+   only text + boxed controls for missing design artboards. */
+.admin-proto-placeholder-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px dashed var(--color-border, #334155);
+  background: var(--color-surface, #0e1420);
+}
+.admin-proto-placeholder-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--color-text-strong, #e2e8f0);
+}
+.admin-proto-placeholder-body {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--color-text-muted, #94a3b8);
+}
+.admin-proto-placeholder-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.admin-proto-placeholder-btn {
+  padding: 7px 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  border-radius: 4px;
+  border: 1px solid var(--color-border, #334155);
+  background: transparent;
+  color: var(--color-text-muted, #94a3b8);
+  cursor: pointer;
+}
+.admin-proto-placeholder-btn.is-active {
+  color: var(--color-primary, #38bdf8);
+  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.10);
+}
+
 /* History tab visibility — 3 tabs: export (v2 picker) / list (v1 detail) /
    replay. body[data-history-tab] drives which pane shows.
    - export tab → only #history-v2-section

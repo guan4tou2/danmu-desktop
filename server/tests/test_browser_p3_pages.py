@@ -130,7 +130,7 @@ def test_notifications_page_renders(admin_page):
     # Filter sidebar tabs + sources (未讀 / 全部 / 已標記 / 已封存)
     assert admin_page.locator("[data-notif-tab]").count() == 4
     sources = admin_page.locator("[data-notif-src]").count()
-    assert sources >= 4  # 全部 + Rate Limit + Fire Token + Moderation
+    assert sources >= 6  # 全部 + Fire Token + Webhooks + System + Backup + Moderation
     # List + summary present
     assert admin_page.is_visible("[data-notif-list]")
     assert admin_page.is_visible("[data-notif-summary]")
@@ -139,8 +139,10 @@ def test_notifications_page_renders(admin_page):
 def test_audit_page_renders(admin_page):
     _go_to_route(admin_page, "audit")
     admin_page.wait_for_selector("#sec-audit-overview", state="visible", timeout=5000)
-    # Source filter sidebar + table
-    assert admin_page.locator("[data-audit-src]").count() >= 1  # at least 全部
+    # ACTION / ACTOR / RANGE filters + table
+    assert admin_page.locator("[data-audit-action-filter]").count() >= 1
+    assert admin_page.locator("[data-audit-actor-filter]").count() >= 1
+    assert admin_page.locator("[data-audit-time-filter]").count() >= 3
     # 5-col header
     cols = admin_page.locator(".admin-audit-table th").all_text_contents()
     assert "時間" in cols
