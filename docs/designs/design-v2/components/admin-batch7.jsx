@@ -309,9 +309,16 @@ function AdminMessageDetailPage({ theme = 'dark' }) {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: accent, letterSpacing: 1.5 }}>MESSAGE · INSPECTOR</span>
-                <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 11, color: textDim, cursor: 'pointer' }}>← 上一筆</span>
-                <span style={{ fontFamily: hudTokens.fontMono, fontSize: 11, color: textDim, cursor: 'pointer' }}>下一筆 →</span>
-                <span style={{ fontFamily: hudTokens.fontMono, fontSize: 14, color: textDim, cursor: 'pointer' }}>✕</span>
+                <span style={{ fontFamily: hudTokens.fontMono, fontSize: 11, color: textDim, letterSpacing: 0.3, marginLeft: 'auto' }}>14 / 1,287</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: hudTokens.fontMono, fontSize: 11, color: textDim, cursor: 'pointer' }}>
+                  <Keycap>J</Keycap> 上一筆
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: hudTokens.fontMono, fontSize: 11, color: textDim, cursor: 'pointer' }}>
+                  下一筆 <Keycap>K</Keycap>
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: hudTokens.fontMono, fontSize: 14, color: textDim, cursor: 'pointer' }}>
+                  <Keycap>Esc</Keycap>
+                </span>
               </div>
 
               {/* Message bubble */}
@@ -780,6 +787,19 @@ function AdminAudiencePage({ theme = 'dark' }) {
         );
       }}
     </AdminPageShell>
+  );
+}
+
+function Keycap({ children }) {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: hudTokens.fontMono, fontSize: 9, fontWeight: 600, letterSpacing: 0.3,
+      padding: '1px 5px', borderRadius: 2,
+      background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.18)',
+      color: 'inherit', lineHeight: '14px', boxShadow: '0 1px 0 rgba(255,255,255,0.12)',
+      userSelect: 'none',
+    }}>{children}</span>
   );
 }
 

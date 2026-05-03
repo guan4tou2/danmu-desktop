@@ -169,12 +169,13 @@ def _open_section(page, section_id: str):
         "sec-speed", "sec-fontfamily", "sec-layout",
     }
     if section_id in DISPLAY_LEGACY_IDS:
-        # v5.2 (2026-04-27): viewer-config route has 2 tabs. The display
-        # fields page only shows when tab=fields; flip it before waiting.
+        # v5.3 strict prototype mode: tab UI is placeholder-only; force the
+        # internal state to fields so legacy display tests can still access
+        # #admin-display-v2-page deterministically.
         page.evaluate(
             """() => {
-                const btn = document.querySelector('[data-vc-tab="fields"]');
-                if (btn) btn.click();
+                document.body.dataset.viewerConfigTab = 'fields';
+                window.dispatchEvent(new Event('hashchange'));
             }"""
         )
         page.wait_for_timeout(150)

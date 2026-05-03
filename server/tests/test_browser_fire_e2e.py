@@ -268,10 +268,17 @@ def test_browser_submit_danmu_appears_in_history(browser_session, server_ports):
         page.locator("#loginForm button[type=submit]").click()
         page.wait_for_selector("#logoutButton", timeout=8000)
 
-        # 切換到 history route（retrofit 後預設 tab=export，歷史列表在 list tab）
+        # 切換到 history route（strict prototype mode 下 tab UI 為 placeholder，
+        # 直接切 internal state 到 list）
         page.evaluate("window.location.hash = '#/history'")
         page.wait_for_selector("#sec-history-tabs", state="visible", timeout=5000)
-        page.locator('#sec-history-tabs [data-history-tab="list"]').click()
+        page.evaluate(
+            """() => {
+                document.body.dataset.historyTab = 'list';
+                document.dispatchEvent(new CustomEvent('admin:history-tab'));
+                window.dispatchEvent(new Event('hashchange'));
+            }"""
+        )
         page.wait_for_timeout(250)
         page.wait_for_selector("#sec-history", state="visible", timeout=5000)
         details = page.locator("#sec-history")

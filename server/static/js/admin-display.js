@@ -969,9 +969,9 @@
     });
   }
 
-  // Strict prototype mode (2026-04-30): viewer-config tabbed container keeps
-  // current behavior but tab visuals are replaced with text+box placeholder
-  // until design provides an approved tabbed artboard.
+  // Strict prototype mode (2026-04-30): viewer-config tabbed container is a
+  // text+box placeholder only (non-interactive) until design ships a tabbed
+  // artboard.
   let _lastVisibleRoute = null;
   function syncVisibility() {
     const shell = document.querySelector(".admin-dash-grid");
@@ -1010,8 +1010,8 @@
       '<div class="admin-proto-placeholder-title">[PLACEHOLDER] Viewer Config Tabs</div>' +
       '<div class="admin-proto-placeholder-body">Prototype 缺少 viewer-config tabbed 容器設計，暫以文字+方框占位。</div>' +
       '<div class="admin-proto-placeholder-actions">' +
-      '<button type="button" class="admin-proto-placeholder-btn is-active" data-vc-tab="page">整頁主題 · PAGE</button>' +
-      '<button type="button" class="admin-proto-placeholder-btn" data-vc-tab="fields">表單欄位 · FIELDS</button>' +
+      '<span class="admin-be-placeholder-control admin-be-placeholder-inline">PAGE</span>' +
+      '<span class="admin-be-placeholder-control admin-be-placeholder-inline">FIELDS</span>' +
       '</div>';
     // Insert BEFORE sec-viewer-theme if present (so tabs appear at top of route).
     const vt = document.getElementById("sec-viewer-theme");
@@ -1020,24 +1020,11 @@
 
     if (!document.body.dataset.viewerConfigTab) document.body.dataset.viewerConfigTab = "page";
 
-    function _apply(tab) {
-      document.body.dataset.viewerConfigTab = tab;
-      bar.querySelectorAll("[data-vc-tab]").forEach((btn) => {
-        btn.classList.toggle("is-active", btn.dataset.vcTab === tab);
-      });
-      syncVisibility();
-    }
-
-    bar.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-vc-tab]");
-      if (!btn) return;
-      _apply(btn.dataset.vcTab);
-    });
-
     // Hide tabbar itself when not on #/viewer-config.
     function _syncBar() {
       const hash = (window.location.hash.match(/^#\/(\w[\w-]*)/) || [])[1] || "dashboard";
       bar.style.display = hash === "viewer-config" ? "" : "none";
+      syncVisibility();
     }
     window.addEventListener("hashchange", _syncBar);
     _syncBar();

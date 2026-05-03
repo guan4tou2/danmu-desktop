@@ -463,10 +463,9 @@
     });
   }
 
-  // Strict prototype mode (2026-04-30): history tabbed container still
-  // preserves functionality, but the tab-strip visual is reduced to a
-  // plain placeholder text+box until design provides an approved tabbed
-  // artboard.
+  // Strict prototype mode (2026-04-30): history tabbed container renders as
+  // plain text+box placeholder only (non-interactive) until design provides
+  // an approved tabbed artboard.
   function _initHistoryTabs() {
     if (document.getElementById("sec-history-tabs")) return; // idempotent
     var historyCard = document.getElementById("sec-history");
@@ -480,34 +479,17 @@
       '<div class="admin-proto-placeholder-title">[PLACEHOLDER] History Tabs</div>' +
       '<div class="admin-proto-placeholder-body">Prototype 缺少 history tabbed 容器設計，暫以文字+方框占位。</div>' +
       '<div class="admin-proto-placeholder-actions">' +
-      '<button type="button" class="admin-proto-placeholder-btn is-active" data-history-tab="export">匯出 · EXPORT</button>' +
-      '<button type="button" class="admin-proto-placeholder-btn" data-history-tab="list">列表 · LIST</button>' +
-      '<button type="button" class="admin-proto-placeholder-btn" data-history-tab="replay">重播 · REPLAY</button>' +
+      '<span class="admin-be-placeholder-control admin-be-placeholder-inline">EXPORT</span>' +
+      '<span class="admin-be-placeholder-control admin-be-placeholder-inline">LIST</span>' +
+      '<span class="admin-be-placeholder-control admin-be-placeholder-inline">REPLAY</span>' +
       '</div>';
     parent.insertBefore(bar, historyCard);
 
     if (!document.body.dataset.historyTab) document.body.dataset.historyTab = "export";
 
-    function _apply(tab) {
-      document.body.dataset.historyTab = tab;
-      bar.querySelectorAll("[data-history-tab]").forEach(function (btn) {
-        btn.classList.toggle("is-active", btn.dataset.historyTab === tab);
-      });
-      // sec-history hide handled by CSS rule on body[data-history-tab="replay"]
-      // (avoids race with admin.js applySectionVisibility on hashchange).
-      // replay-v2-section listens to this event to update its own visibility.
-      document.dispatchEvent(new CustomEvent("admin:history-tab"));
-    }
-
-    bar.addEventListener("click", function (e) {
-      var btn = e.target.closest("[data-history-tab]");
-      if (!btn) return;
-      _apply(btn.dataset.historyTab);
-    });
-
     // Re-run apply to refresh active class / dispatch on hashchange.
     function _syncBar() {
-      _apply(document.body.dataset.historyTab || "export");
+      document.dispatchEvent(new CustomEvent("admin:history-tab"));
     }
     window.addEventListener("hashchange", _syncBar);
     _syncBar();

@@ -91,6 +91,7 @@
                 <button type="button" class="admin-audit-action" data-audit-action="export">↓ 匯出 JSON</button>
                 <button type="button" class="admin-audit-action" data-audit-action="refresh">↻ 重新整理</button>
               </span>
+              <span class="admin-audit-hash-chip">SHA-256</span>
             </div>
             <div class="admin-audit-table-wrap">
               <table class="admin-audit-table">
@@ -154,6 +155,25 @@
     });
   }
 
+  function _actorChipHtml(actor) {
+    if (!actor || actor === "—") return '<span style="color:var(--color-text-muted)">—</span>';
+    const initial = escapeHtml(actor.charAt(0).toUpperCase());
+    const name = escapeHtml(actor);
+    return `<span class="admin-audit-actor-chip"><span class="admin-audit-actor-av">${initial}</span>${name}</span>`;
+  }
+
+  function _diffPairHtml(before, after) {
+    const hasBefore = before !== null && before !== undefined;
+    const hasAfter = after !== null && after !== undefined;
+    if (!hasBefore && !hasAfter) return null;
+    const bStr = hasBefore ? escapeHtml(JSON.stringify(before)) : null;
+    const aStr = hasAfter ? escapeHtml(JSON.stringify(after)) : null;
+    if (hasBefore) {
+      return `<span class="admin-audit-diff"><span class="admin-audit-diff-b">${bStr}</span> → <span class="admin-audit-diff-a">${aStr}</span></span>`;
+    }
+    return `<span class="admin-audit-diff"><span class="admin-audit-diff-a">${aStr}</span></span>`;
+  }
+
   function _renderRows() {
     const tbody = document.querySelector("[data-audit-rows]");
     if (!tbody) return;
@@ -165,10 +185,16 @@
     tbody.innerHTML = events.map(function (e) {
       const meta = SOURCE_META[e.source] || { label: e.source, color: "var(--color-text-muted)" };
       const metaJson = JSON.stringify(e.meta || {});
-      const beforeAfter = (e.before !== null && e.before !== undefined) || (e.after !== null && e.after !== undefined)
-        ? `before: ${JSON.stringify(e.before)} -> after: ${JSON.stringify(e.after)}`
-        : "";
-      const metaText = metaJson === "{}" ? (beforeAfter || "—") : [beforeAfter, metaJson].filter(Boolean).join(" · ");
+      const hasDiff = (e.before !== null && e.before !== undefined) || (e.after !== null && e.after !== undefined);
+      const diffHtml = hasDiff ? _diffPairHtml(e.before, e.after) : null;
+      let metaHtml;
+      if (diffHtml) {
+        metaHtml = metaJson === "{}" ? diffHtml : `${diffHtml} <code class="admin-audit-meta-extra">${escapeHtml(metaJson)}</code>`;
+      } else {
+        const beforeAfter = hasDiff ? `before: ${JSON.stringify(e.before)} -> after: ${JSON.stringify(e.after)}` : "";
+        const metaText = metaJson === "{}" ? (beforeAfter || "—") : [beforeAfter, metaJson].filter(Boolean).join(" · ");
+        metaHtml = `<code>${escapeHtml(metaText)}</code>`;
+      }
       return `
         <tr class="admin-audit-row">
           <td class="col-ts">${escapeHtml(_formatTs(e.ts))}</td>
@@ -176,8 +202,8 @@
             <span class="admin-audit-src-chip" style="color:${meta.color};border-color:${meta.color}55;background:${meta.color}1c;">${escapeHtml(meta.label)}</span>
           </td>
           <td class="col-kind">${escapeHtml(e.kind || "—")}</td>
-          <td class="col-actor">${escapeHtml(e.actor || "—")}</td>
-          <td class="col-meta"><code>${escapeHtml(metaText)}</code></td>
+          <td class="col-actor">${_actorChipHtml(e.actor)}</td>
+          <td class="col-meta">${metaHtml}</td>
         </tr>`;
     }).join("");
   }

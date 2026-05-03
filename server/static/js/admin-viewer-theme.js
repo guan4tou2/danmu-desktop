@@ -86,7 +86,7 @@
             </div>
 
             <div class="admin-vt-persist">
-              <button type="button" class="admin-poll-btn is-primary" data-vt-action="apply">▶ 立即套用</button>
+              <span class="admin-be-placeholder-control admin-be-placeholder-inline" role="note">[PLACEHOLDER] 立即套用（待 BE 廣播）</span>
               <button type="button" class="admin-poll-btn is-ghost" data-vt-action="reset">恢復預設</button>
             </div>
           </div>
@@ -361,8 +361,6 @@
           state = { ...PRESETS[0], logo: null };
           presetId = "default";
           persist(); render();
-        } else if (act.dataset.vtAction === "apply") {
-          if (typeof showToast === "function") showToast("已套用 · 變更將廣播給所有 viewer (backend pending)", true);
         }
       }
     });

@@ -82,7 +82,7 @@
       <div class="admin-proto-empty-desc">建好的投票會排在這裡,可即時推到 Overlay,也可以用模板快速建立。</div>
       <div class="admin-proto-empty-actions">
         <button type="button" class="admin-proto-empty-primary" data-empty-cta="poll-create">+ 新建投票</button>
-        <button type="button" class="admin-proto-empty-secondary" data-empty-cta="poll-template">從模板</button>
+        <span class="admin-be-placeholder-control admin-be-placeholder-inline" role="note">[PLACEHOLDER] 從模板（待 BE）</span>
       </div>
       <div class="admin-proto-poll-template-grid">
         <div class="admin-proto-poll-template-card">
@@ -107,12 +107,6 @@
       cta.addEventListener("click", function () {
         var addBtn = document.querySelector('#sec-polls [data-poll-action="add"]');
         if (addBtn) addBtn.click();
-      });
-    }
-    var tplBtn = wrap.querySelector('[data-empty-cta="poll-template"]');
-    if (tplBtn) {
-      tplBtn.addEventListener("click", function () {
-        window.showToast("模板功能尚未接後端，先用新增題目建立。", false);
       });
     }
     return wrap;

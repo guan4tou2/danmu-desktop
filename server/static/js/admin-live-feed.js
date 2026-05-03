@@ -87,19 +87,13 @@
     _setAllTabActive();
   }
 
-  function _createPlaceholderEmptyState(title, body, ctaLabel, ctaId, onCta) {
+  function _createPlaceholderEmptyState(title, body) {
     const box = document.createElement("div");
     box.className = "admin-proto-placeholder-box admin-live-feed-empty-placeholder";
+    box.setAttribute("data-empty-kind", "live-feed");
     box.innerHTML =
       `<div class="admin-proto-placeholder-title">${escapeAttr(title)}</div>` +
-      `<div class="admin-proto-placeholder-body">${escapeAttr(body)}</div>` +
-      (ctaLabel
-        ? `<div class="admin-proto-placeholder-actions"><button type="button" class="admin-proto-placeholder-btn is-active" data-empty-cta="${escapeAttr(ctaId || "")}">${escapeAttr(ctaLabel)}</button></div>`
-        : "");
-    if (ctaLabel && ctaId && onCta) {
-      const btn = box.querySelector(`[data-empty-cta="${ctaId}"]`);
-      if (btn) btn.addEventListener("click", onCta);
-    }
+      `<div class="admin-proto-placeholder-body">${escapeAttr(body)}</div>`;
     return box;
   }
 
@@ -281,28 +275,16 @@
       const empty = paused
         ? _createPlaceholderEmptyState(
             "[PLACEHOLDER] Live Feed Paused",
-            "Prototype 未提供暫停接收狀態版面，暫以文字+方框占位。",
-            ServerI18n.t("resumeBtn"),
-            "live-feed-resume",
-            togglePause
+            "Prototype 未提供暫停接收狀態版面，暫以文字+方框占位。"
           )
         : entries.length === 0
           ? _createPlaceholderEmptyState(
               "[PLACEHOLDER] Live Feed Empty",
-              "Prototype 與目前 route 定義不一致，暫以文字+方框占位。",
-              null,
-              null,
-              null
+              "Prototype 與目前 route 定義不一致，暫以文字+方框占位。"
             )
           : _createPlaceholderEmptyState(
               "[PLACEHOLDER] Live Feed No Result",
-              "Prototype 未提供搜尋無結果狀態版面，暫以文字+方框占位。",
-              "清除搜尋條件",
-              "live-feed-reset",
-              function () {
-                _clearSearchAndFilters();
-                renderList();
-              }
+              "Prototype 未提供搜尋無結果狀態版面，暫以文字+方框占位。"
             );
       listEl.appendChild(empty);
     } else {

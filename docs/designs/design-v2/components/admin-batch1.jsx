@@ -715,7 +715,15 @@ function AdminAuditLogPage({ theme = 'dark' }) {
               <div style={{ padding: '10px 16px', borderBottom: `1px solid ${line}`, display: 'flex', alignItems: 'center', gap: 12 }}>
                 <HudLabel color={textDim}>事件 · 247 筆</HudLabel>
                 <span style={{ fontFamily: hudTokens.fontMono, fontSize: 11, color: hudTokens.lime, letterSpacing: 0.5 }}>● 即時</span>
-                <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim }}>保留 90 天 · 每筆 SHA-256 簽章</span>
+                <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 0.3 }}>保留 90 天</span>
+                  <span style={{
+                    fontFamily: hudTokens.fontMono, fontSize: 9, letterSpacing: 0.6,
+                    padding: '2px 7px', borderRadius: 2,
+                    background: `${textDim}14`, border: `1px solid ${textDim}44`,
+                    color: textDim,
+                  }}>SHA-256</span>
+                </span>
               </div>
               <div style={{ flex: 1, overflow: 'auto' }}>
                 {events.map((e, i) => (
@@ -732,24 +740,9 @@ function AdminAuditLogPage({ theme = 'dark' }) {
                       border: `1px solid ${actCol[e.act]}55`,
                       textAlign: 'center', fontWeight: 700,
                     }}>{e.act}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: text }}>
-                      <span style={{ width: 22, height: 22, borderRadius: '50%', background: hudTokens.cyanSoft, color: accent, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>{e.who[0].toUpperCase()}</span>
-                      <span>{e.who}</span>
-                      <span style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, letterSpacing: 0.3 }}>{e.src}</span>
-                    </span>
+                    <ActorChip who={e.who} src={e.src} text={text} accent={accent} textDim={textDim} />
                     <span style={{ color: text }}>{e.target}</span>
-                    <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 0.3 }}>
-                      {e.before && (
-                        <>
-                          <span style={{ color: hudTokens.crimson }}>{e.before}</span>
-                          <span style={{ margin: '0 6px' }}>→</span>
-                          <span style={{ color: hudTokens.lime }}>{e.after}</span>
-                        </>
-                      )}
-                      {!e.before && e.after && (
-                        <span style={{ color: hudTokens.lime }}>{e.after}</span>
-                      )}
-                    </span>
+                    <DiffPair before={e.before} after={e.after} textDim={textDim} />
                   </div>
                 ))}
               </div>
@@ -758,6 +751,35 @@ function AdminAuditLogPage({ theme = 'dark' }) {
         );
       }}
     </AdminPageShell>
+  );
+}
+function ActorChip({ who, src, text, accent, textDim }) {
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: text }}>
+      <span style={{
+        width: 22, height: 22, borderRadius: '50%',
+        background: hudTokens.cyanSoft, color: accent,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 10, fontWeight: 700,
+      }}>{who[0].toUpperCase()}</span>
+      <span>{who}</span>
+      <span style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, letterSpacing: 0.3 }}>{src}</span>
+    </span>
+  );
+}
+function DiffPair({ before, after, textDim }) {
+  return (
+    <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 0.3 }}>
+      {before ? (
+        <>
+          <span style={{ color: hudTokens.crimson }}>{before}</span>
+          <span style={{ margin: '0 6px' }}>→</span>
+          <span style={{ color: hudTokens.lime }}>{after}</span>
+        </>
+      ) : after ? (
+        <span style={{ color: hudTokens.lime }}>{after}</span>
+      ) : null}
+    </span>
   );
 }
 function FilterGroup({ label, textDim, top, children }) {

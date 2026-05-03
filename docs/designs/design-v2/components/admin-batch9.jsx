@@ -234,7 +234,7 @@ function AdminAboutPage({ theme = 'dark' }) {
                     { k: '已是最新版',  v: '✓',      c: hudTokens.lime },
                     { k: '上次檢查更新', v: '12 分鐘前', c: textDim },
                     { k: 'Server uptime', v: '14d 6h',  c: text },
-                    { k: '授權 · License', v: 'Pro · 2026-08', c: hudTokens.amber },
+                    { k: '授權 · License', v: 'Pro · 2026-08', c: text },
                   ].map((c, i) => (
                     <div key={i} style={{ padding: 10, background: raised, border: `1px solid ${line}`, borderRadius: 3 }}>
                       <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, letterSpacing: 1 }}>{c.k}</div>
@@ -441,7 +441,7 @@ function DesktopTrayPopover({ theme = 'dark' }) {
           ].map((s, i) => (
             <div key={i} style={{ padding: 8, background: raised, border: `1px solid ${line}`, borderRadius: 3, textAlign: 'center' }}>
               <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, letterSpacing: 1 }}>{s.k}</div>
-              <div style={{ color: s.c, fontSize: 16, fontWeight: 600, marginTop: 2 }}>{s.v}</div>
+              <div style={{ color: s.c, fontSize: 14, fontWeight: 600, marginTop: 2 }}>{s.v}</div>
             </div>
           ))}
         </div>

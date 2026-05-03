@@ -69,7 +69,7 @@
               <div class="title" data-mobile-event-title>${escapeHtml(_state.eventTitle)}</div>
               <div class="sub" data-mobile-event-sub>● — viewers · — elapsed</div>
             </div>
-            <button type="button" class="end-btn" data-mobile-action="end">結束</button>
+            <span class="end-btn admin-be-placeholder-control admin-mobile-end-placeholder" role="note">結束</span>
           </header>
 
           <div class="admin-mobile-body">
@@ -92,21 +92,21 @@
                 <div class="lbl">啟動投票</div>
                 <div class="sub">前往投票管理</div>
               </button>
-              <button type="button" class="card is-amber" data-mobile-action="pin">
+              <div class="card is-amber is-placeholder" role="note">
                 <div class="icon">★</div>
                 <div class="lbl">釘選一則</div>
-                <div class="sub">v5.3 待補</div>
-              </button>
+                <div class="sub">[PLACEHOLDER] 待 BE</div>
+              </div>
               <button type="button" class="card" data-mobile-action="pause">
                 <div class="icon">⏸</div>
                 <div class="lbl" data-mobile-pause-label>暫停接收</div>
                 <div class="sub">慢動作模式</div>
               </button>
-              <button type="button" class="card" data-mobile-action="panic">
+              <div class="card is-placeholder" role="note">
                 <div class="icon">🚫</div>
                 <div class="lbl">清空螢幕</div>
-                <div class="sub">v5.3 待補</div>
-              </button>
+                <div class="sub">[PLACEHOLDER] 待 BE</div>
+              </div>
             </section>
 
             <!-- Live stats -->
@@ -124,7 +124,7 @@
               <div class="kicker">快速開關</div>
               ${TOGGLES.map(function (t) {
                 return `
-                  <div class="toggle-row" data-mobile-toggle="${escapeHtml(t.id)}">
+                  <div class="toggle-row is-placeholder" data-mobile-toggle="${escapeHtml(t.id)}">
                     <span class="lbl">${escapeHtml(t.label)}</span>
                     <span class="switch ${t.on ? "is-on" : ""}" aria-pressed="${t.on}"></span>
                   </div>`;
@@ -235,21 +235,7 @@
         const a = action.dataset.mobileAction;
         if (a === "poll-start") { location.hash = "#/polls"; }
         else if (a === "pause") { _toggleBroadcast(); }
-        else if (a === "end") { _confirmEnd(); }
-        else if (a === "pin" || a === "panic") {
-          window.showToast && window.showToast("此功能 v5.3 待補", false);
-        }
         return;
-      }
-      const toggle = e.target.closest("[data-mobile-toggle]");
-      if (toggle) {
-        const sw = toggle.querySelector(".switch");
-        if (sw) {
-          const on = !sw.classList.contains("is-on");
-          sw.classList.toggle("is-on", on);
-          sw.setAttribute("aria-pressed", on);
-          window.showToast && window.showToast(toggle.querySelector(".lbl").textContent + (on ? " · 已啟用" : " · 已停用"), true);
-        }
       }
     });
   }
@@ -272,11 +258,6 @@
     } catch (e) {
       window.showToast && window.showToast("切換失敗：" + (e.message || ""), false);
     }
-  }
-
-  function _confirmEnd() {
-    if (!confirm("結束目前活動？這只是視覺示範，不會真的關閉 server。")) return;
-    window.showToast && window.showToast("（demo）標記為已結束", true);
   }
 
   function _syncVisibility() {

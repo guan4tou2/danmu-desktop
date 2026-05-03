@@ -3,8 +3,7 @@
  * Group D-3 split, second pass).
  *
  * Owns sec-ratelimit · 4-scope rate-limit editor + summary tiles +
- * sparklines + violations feed + IP policy stub. Mirrors prototype
- * admin-ratelimits.jsx.
+ * sparklines + violations feed. Mirrors prototype admin-ratelimits.jsx.
  *
  * Renders into #settings-grid on `admin-panel-rendered`. Shares the
  * /admin/bootstrap fan-out cache via window.AdminBootstrap.
@@ -138,18 +137,13 @@
           <div class="admin-ratelimit-ip-policy">
             <div class="admin-ratelimit-vfeed-head">
               <span class="title">IP 黑/白名單</span>
-              <span class="kicker">IP POLICY · UI-only · 即將支援</span>
+              <span class="kicker">IP POLICY · BACKEND PENDING</span>
             </div>
             <div class="admin-ratelimit-ip-input">
-              <input type="text" id="rlIpInput" class="admin-v2-input" placeholder="IP 或 CIDR · e.g. 203.74.12.88 / 100.64.0.0/16" autocomplete="off" spellcheck="false" />
-              <select id="rlIpKind" class="admin-v2-select">
-                <option value="DENY">DENY</option>
-                <option value="ALLOW">ALLOW</option>
-              </select>
-              <button type="button" id="rlIpAdd" class="admin-poll-btn is-primary">新增</button>
+              <span class="admin-be-placeholder-control" role="note">[PLACEHOLDER] IP/CIDR 編輯（待 BE endpoint）</span>
             </div>
             <div class="admin-ratelimit-ip-list" id="rlIpList">
-              <!-- entries injected by ratelimit IP-policy stub -->
+              <div class="admin-ratelimit-vfeed-empty">[PLACEHOLDER] 待後端提供可編輯清單</div>
             </div>
           </div>
         </div>
@@ -484,66 +478,6 @@
       } catch (_) { /* */ }
     }, 5500);
 
-    // IP policy stub (UI-only, persisted in localStorage; backend pending)
-    const IP_KEY = "danmu.ratelimit.ipPolicy.v1";
-    function readPolicy() {
-      try { return JSON.parse(localStorage.getItem(IP_KEY) || "[]") || []; }
-      catch (_) { return []; }
-    }
-    function writePolicy(arr) {
-      try { localStorage.setItem(IP_KEY, JSON.stringify(arr)); } catch (_) { /* */ }
-    }
-    function renderPolicy() {
-      const list = section.querySelector("#rlIpList");
-      if (!list) return;
-      const items = readPolicy();
-      if (items.length === 0) {
-        list.innerHTML = `<div class="admin-ratelimit-ip-empty">尚無項目 · 加入後會儲存於 localStorage(後端套用即將支援)</div>`;
-        return;
-      }
-      list.innerHTML = items.map((e, i) => `
-        <div class="admin-ratelimit-ip-row" data-ip-idx="${i}">
-          <span class="kind is-${e.kind === 'DENY' ? 'deny' : 'allow'}">${e.kind}</span>
-          <div class="meta">
-            <div class="ip">${escapeHtml(e.ip)}</div>
-            <div class="note">${escapeHtml(e.note || "")} · 加入於 ${escapeHtml(e.added || "")}</div>
-          </div>
-          <button type="button" class="admin-ratelimit-ip-del" data-ip-del="${i}" aria-label="刪除">✕</button>
-        </div>
-      `).join("");
-    }
-    const ipAdd = section.querySelector("#rlIpAdd");
-    const ipInput = section.querySelector("#rlIpInput");
-    const ipKind = section.querySelector("#rlIpKind");
-    ipAdd?.addEventListener("click", () => {
-      const ip = (ipInput.value || "").trim();
-      if (!ip) {
-        if (typeof showToast === "function") showToast("請輸入 IP 或 CIDR", false);
-        return;
-      }
-      if (!/^[0-9a-fA-F:.\/]+$/.test(ip) || ip.length > 64) {
-        if (typeof showToast === "function") showToast("格式不正確", false);
-        return;
-      }
-      const items = readPolicy();
-      items.unshift({ ip, kind: ipKind.value || "DENY", note: "手動加入", added: new Date().toLocaleString() });
-      writePolicy(items.slice(0, 50));
-      ipInput.value = "";
-      renderPolicy();
-      if (typeof showToast === "function") showToast(`已加入 ${ip}(即將支援後端套用)`, true);
-    });
-    section.querySelector("#rlIpList")?.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-ip-del]");
-      if (!btn) return;
-      const idx = parseInt(btn.dataset.ipDel, 10);
-      const items = readPolicy();
-      if (Number.isFinite(idx) && idx >= 0 && idx < items.length) {
-        items.splice(idx, 1);
-        writePolicy(items);
-        renderPolicy();
-      }
-    });
-    renderPolicy();
   }
 
   function init() {

@@ -14,8 +14,8 @@
  *
  * Action buttons (★ pin / ◐ mask / ⊘ hide / ⊗ ban / ↗ overlay-reply):
  *   ⊗ ban-fingerprint wires to existing /admin/live/block (live-feed
- *     already does this); the others are placeholders calling showToast
- *     with "v5.3 待補" until the moderation API gains the ops.
+ *     already does this); other BE-blocked controls render as non-clickable
+ *     placeholder boxes in strict prototype mode.
  *
  * Loaded as <script defer> in admin.html. Globals: csrfFetch, showToast,
  * AdminUtils, AdminIdentity.
@@ -155,10 +155,6 @@
       else if (a === "ban-fp") _banFingerprint();
       else if (a === "prev") _navigate(-1);
       else if (a === "next") _navigate(+1);
-      else if (a === "placeholder") {
-        const lbl = btn.dataset.msgdLabel || "此操作";
-        window.showToast && window.showToast(lbl + " · v5.3 待補", false);
-      }
     });
   }
 
@@ -203,12 +199,25 @@
         </div>`;
     }).join("");
 
+    let _navCounter = "";
+    {
+      let _allEntries = [];
+      if (window.AdminLiveFeed && typeof window.AdminLiveFeed.getEntries === "function") {
+        _allEntries = window.AdminLiveFeed.getEntries();
+      }
+      if (_allEntries.length > 0) {
+        const _idx = _allEntries.findIndex(function (en) { return en.id === entry.id; });
+        if (_idx >= 0) _navCounter = (_idx + 1) + " / " + _allEntries.length;
+      }
+    }
+
     return `
       <header class="admin-msgd-head">
         <span class="admin-msgd-kicker">MESSAGE · INSPECTOR</span>
-        <button type="button" class="admin-msgd-nav" data-msgd-action="prev" aria-label="Previous message" title="上一筆 ←">← 上一筆</button>
-        <button type="button" class="admin-msgd-nav" data-msgd-action="next" aria-label="Next message" title="下一筆 →">下一筆 →</button>
-        <button type="button" class="admin-msgd-close" data-msgd-action="close" aria-label="Close drawer">✕</button>
+        ${_navCounter ? `<span class="admin-msgd-counter">${_navCounter}</span>` : ""}
+        <button type="button" class="admin-msgd-nav" data-msgd-action="prev" aria-label="Previous message" title="上一筆"><span class="admin-msgd-keycap">K</span> 上一筆</button>
+        <button type="button" class="admin-msgd-nav" data-msgd-action="next" aria-label="Next message" title="下一筆">下一筆 <span class="admin-msgd-keycap">J</span></button>
+        <button type="button" class="admin-msgd-close" data-msgd-action="close" aria-label="Close drawer"><span class="admin-msgd-keycap">Esc</span></button>
       </header>
 
       <article class="admin-msgd-bubble">
@@ -229,11 +238,11 @@
       </article>
 
       <div class="admin-msgd-actions">
-        <button type="button" data-msgd-action="placeholder" data-msgd-label="置頂"><span class="icon">★</span><span class="lbl">置頂</span></button>
-        <button type="button" data-msgd-action="placeholder" data-msgd-label="遮罩"><span class="icon">◐</span><span class="lbl">遮罩</span></button>
-        <button type="button" data-msgd-action="placeholder" data-msgd-label="隱藏"><span class="icon">⊘</span><span class="lbl">隱藏</span></button>
+        <span class="admin-be-placeholder-control admin-msgd-action-placeholder" role="note"><span class="icon">★</span><span class="lbl">置頂</span></span>
+        <span class="admin-be-placeholder-control admin-msgd-action-placeholder" role="note"><span class="icon">◐</span><span class="lbl">遮罩</span></span>
+        <span class="admin-be-placeholder-control admin-msgd-action-placeholder" role="note"><span class="icon">⊘</span><span class="lbl">隱藏</span></span>
         <button type="button" data-msgd-action="ban-fp" class="is-danger" ${fp === "—" ? "disabled" : ""}><span class="icon">⊗</span><span class="lbl">封禁指紋</span></button>
-        <button type="button" data-msgd-action="placeholder" data-msgd-label="回覆 overlay"><span class="icon">↗</span><span class="lbl">overlay</span></button>
+        <span class="admin-be-placeholder-control admin-msgd-action-placeholder" role="note"><span class="icon">↗</span><span class="lbl">overlay</span></span>
       </div>
 
       <div class="admin-v2-monolabel">指紋活動 · fp:${escapeHtml(fpShort)}</div>
