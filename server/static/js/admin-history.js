@@ -463,36 +463,121 @@
     });
   }
 
-  // Strict prototype mode (2026-04-30): history tabbed container renders as
-  // plain text+box placeholder only (non-interactive) until design provides
-  // an approved tabbed artboard.
+  // DS-001: AdminHistoryTabbedPage (admin-tabbed.jsx). Three tabs:
+  // EXPORT (↓) → history-v2-section, LIST (☰) → sec-history-list,
+  // REPLAY (▶) → sec-history.
   function _initHistoryTabs() {
     if (document.getElementById("sec-history-tabs")) return; // idempotent
     var historyCard = document.getElementById("sec-history");
     if (!historyCard) return;
     var parent = historyCard.parentElement;
     if (!parent) return;
+
     var bar = document.createElement("div");
     bar.id = "sec-history-tabs";
-    bar.className = "admin-proto-placeholder-box lg:col-span-2";
+    bar.className = "admin-tabstrip lg:col-span-2";
     bar.innerHTML =
-      '<div class="admin-proto-placeholder-title">[PLACEHOLDER] History Tabs</div>' +
-      '<div class="admin-proto-placeholder-body">Prototype 缺少 history tabbed 容器設計，暫以文字+方框占位。</div>' +
-      '<div class="admin-proto-placeholder-actions">' +
-      '<span class="admin-be-placeholder-control admin-be-placeholder-inline">EXPORT</span>' +
-      '<span class="admin-be-placeholder-control admin-be-placeholder-inline">LIST</span>' +
-      '<span class="admin-be-placeholder-control admin-be-placeholder-inline">REPLAY</span>' +
-      '</div>';
+      _makeTabBtn("export", "↓", "時間軸匯出", "EXPORT") +
+      _makeTabBtn("list",   "☰", "訊息清單",   "LIST") +
+      _makeTabBtn("replay", "▶", "重播",       "REPLAY") +
+      '<span style="flex:1"></span>';
     parent.insertBefore(bar, historyCard);
+
+    // LIST section (rendered on demand)
+    if (!document.getElementById("sec-history-list")) {
+      var listSec = document.createElement("div");
+      listSec.id = "sec-history-list";
+      listSec.className = "admin-v3-card lg:col-span-2 admin-history-list-section";
+      parent.insertBefore(listSec, historyCard);
+    }
 
     if (!document.body.dataset.historyTab) document.body.dataset.historyTab = "export";
 
-    // Re-run apply to refresh active class / dispatch on hashchange.
-    function _syncBar() {
-      document.dispatchEvent(new CustomEvent("admin:history-tab"));
+    bar.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-history-tab]");
+      if (!btn) return;
+      document.body.dataset.historyTab = btn.dataset.historyTab;
+      _syncHistoryTabs();
+    });
+
+    function _syncHistoryTabs() {
+      var active = document.body.dataset.historyTab || "export";
+      bar.querySelectorAll("[data-history-tab]").forEach(function (b) {
+        b.classList.toggle("is-active", b.dataset.historyTab === active);
+        b.setAttribute("aria-selected", b.dataset.historyTab === active ? "true" : "false");
+      });
+      var exportSec = document.getElementById("history-v2-section");
+      var replaySec = document.getElementById("sec-history");
+      var listSec   = document.getElementById("sec-history-list");
+      if (exportSec) exportSec.style.display = active === "export" ? "" : "none";
+      if (replaySec) replaySec.style.display  = active === "replay" ? "" : "none";
+      if (listSec)   listSec.style.display    = active === "list"   ? "" : "none";
+      if (active === "list" && listSec && !listSec.dataset.loaded) {
+        listSec.dataset.loaded = "1";
+        _loadHistoryList(listSec);
+      }
+      document.dispatchEvent(new CustomEvent("admin:history-tab", { detail: { tab: active } }));
     }
-    window.addEventListener("hashchange", _syncBar);
-    _syncBar();
+
+    window.addEventListener("hashchange", function () {
+      var hash = (window.location.hash.match(/^#\/([\w-]+)/) || [])[1] || "";
+      if (hash === "history") _syncHistoryTabs();
+    });
+    _syncHistoryTabs();
+  }
+
+  function _makeTabBtn(key, icon, zh, en) {
+    return '<button type="button" class="admin-tabstrip-tab" data-history-tab="' + key + '" role="tab" aria-selected="false">' +
+      '<span class="admin-tabstrip-icon">' + icon + '</span>' +
+      '<span>' + zh + '</span>' +
+      '<span class="admin-tabstrip-en">' + en + '</span>' +
+      '<span class="admin-tabstrip-tab__indicator"></span>' +
+      '</button>';
+  }
+
+  var _historyListEscape = (window.AdminUtils && window.AdminUtils.escapeHtml) || function (s) {
+    return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; });
+  };
+
+  async function _loadHistoryList(container) {
+    container.innerHTML = '<div class="admin-history-list-loading">載入中…</div>';
+    try {
+      var r = await fetch("/admin/history?hours=24&limit=300", { credentials: "same-origin" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      var data = await r.json();
+      var records = Array.isArray(data) ? data : (data.messages || data.records || []);
+      _renderHistoryList(container, records);
+    } catch (e) {
+      container.innerHTML = '<div class="admin-history-list-err">載入失敗：' + _historyListEscape(String(e)) + '</div>';
+    }
+  }
+
+  function _renderHistoryList(container, records) {
+    if (!records.length) {
+      container.innerHTML = '<div class="admin-history-list-empty">目前沒有訊息紀錄。</div>';
+      return;
+    }
+    var rows = records.slice(0, 300).map(function (r) {
+      var ts = r.timestamp ? new Date(r.timestamp).toLocaleTimeString("zh-TW", { hour12: false }) : "—";
+      var nick = _historyListEscape(r.nickname || r.fingerprint || "匿名");
+      var state, cls, msgHtml;
+      if (r.banned || r.blocked) { state = "BLOCKED"; cls = "blocked"; msgHtml = "<em>已封鎖</em>"; }
+      else if (r.muted) { state = "MASKED"; cls = "masked"; msgHtml = "<em>已遮罩</em>"; }
+      else { state = "SHOWN"; cls = "shown"; msgHtml = _historyListEscape((r.text || "").slice(0, 80)); }
+      return '<div class="admin-history-list-row">' +
+        '<span class="t">' + ts + '</span>' +
+        '<span class="n">' + nick + '</span>' +
+        '<span class="m">' + msgHtml + '</span>' +
+        '<span class="s is-' + cls + '">' + state + '</span>' +
+        '</div>';
+    }).join("");
+    container.innerHTML =
+      '<div class="admin-history-list-head">' +
+        '<span class="admin-v2-monolabel">訊息清單 · 近 24 小時</span>' +
+        '<span class="admin-history-list-count">● ' + records.length + ' 筆</span>' +
+      '</div>' +
+      '<div class="admin-history-list-header"><span class="t">TIME</span><span class="n">NICK</span><span class="m">MESSAGE</span><span class="s">STATE</span></div>' +
+      '<div class="admin-history-list-body">' + rows + '</div>';
   }
 
   // admin.js renders the control panel HTML asynchronously (after an HTTP fetch),

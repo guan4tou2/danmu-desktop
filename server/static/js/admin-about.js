@@ -107,10 +107,22 @@
                 </div>
               </div>
               <div class="admin-about-stats" data-about-stats>
-                <div class="admin-about-stat"><div class="k">已是最新版</div><div class="v" data-about-update>—</div></div>
-                <div class="admin-about-stat"><div class="k">上次檢查更新</div><div class="v" data-about-checked>從未檢查</div></div>
-                <div class="admin-about-stat"><div class="k">SERVER UPTIME</div><div class="v" data-about-uptime>—</div></div>
-                <div class="admin-about-stat"><div class="k">LICENSE</div><div class="v">MIT</div></div>
+                <div class="admin-about-stat">
+                  <div class="k">版本狀態</div>
+                  <div class="v-row"><span class="vi" style="color:var(--hud-lime,#a3e635)">✓</span><span class="v" data-about-update>—</span></div>
+                </div>
+                <div class="admin-about-stat">
+                  <div class="k">上次檢查</div>
+                  <div class="v-row"><span class="vi" style="color:var(--color-text-muted,#94a3b8)">↻</span><span class="v" data-about-checked>從未檢查</span></div>
+                </div>
+                <div class="admin-about-stat">
+                  <div class="k">SERVER UPTIME</div>
+                  <div class="v-row"><span class="vi" style="color:var(--hud-lime,#a3e635)">●</span><span class="v" data-about-uptime>—</span></div>
+                </div>
+                <div class="admin-about-stat">
+                  <div class="k">LICENSE</div>
+                  <div class="v-row"><span class="vi" style="color:var(--color-text-muted,#94a3b8)">◆</span><span class="v">MIT</span></div>
+                </div>
               </div>
               <div class="admin-about-actions">
                 <button type="button" class="admin-about-btn admin-about-btn--accent" data-about-action="check-update">↻ 檢查更新</button>

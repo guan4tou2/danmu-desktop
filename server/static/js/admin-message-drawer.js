@@ -215,9 +215,9 @@
       <header class="admin-msgd-head">
         <span class="admin-msgd-kicker">MESSAGE · INSPECTOR</span>
         ${_navCounter ? `<span class="admin-msgd-counter">${_navCounter}</span>` : ""}
-        <button type="button" class="admin-msgd-nav" data-msgd-action="prev" aria-label="Previous message" title="上一筆"><span class="admin-msgd-keycap">K</span> 上一筆</button>
-        <button type="button" class="admin-msgd-nav" data-msgd-action="next" aria-label="Next message" title="下一筆">下一筆 <span class="admin-msgd-keycap">J</span></button>
-        <button type="button" class="admin-msgd-close" data-msgd-action="close" aria-label="Close drawer"><span class="admin-msgd-keycap">Esc</span></button>
+        <button type="button" class="admin-msgd-nav" data-msgd-action="prev" aria-label="Previous message" title="上一筆 · K"><span class="arrow">↑</span><span class="admin-msgd-keycap">K</span></button>
+        <button type="button" class="admin-msgd-nav" data-msgd-action="next" aria-label="Next message" title="下一筆 · J"><span class="arrow">↓</span><span class="admin-msgd-keycap">J</span></button>
+        <button type="button" class="admin-msgd-close" data-msgd-action="close" aria-label="Close drawer" title="關閉 · Esc"><span class="arrow">✕</span><span class="admin-msgd-keycap">Esc</span></button>
       </header>
 
       <article class="admin-msgd-bubble">

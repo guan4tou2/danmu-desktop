@@ -969,9 +969,6 @@
     });
   }
 
-  // Strict prototype mode (2026-04-30): viewer-config tabbed container is a
-  // text+box placeholder only (non-interactive) until design ships a tabbed
-  // artboard.
   let _lastVisibleRoute = null;
   function syncVisibility() {
     const shell = document.querySelector(".admin-dash-grid");
@@ -979,51 +976,197 @@
     if (!shell || !page) return;
     const route = shell.dataset.activeRoute || "dashboard";
     const tab = (document.body.dataset.viewerConfigTab) || "page";
-    const onPage = route === "viewer-config" && tab === "fields";
-    page.style.display = onPage ? "" : "none";
-    // Also toggle sec-viewer-theme to mirror tab=page (the inverse).
+    // DS-002: admin-display-v2-page is not shown on viewer-config route;
+    // sec-viewer-config-fields panel takes the FIELDS slot.
+    page.style.display = "none";
     const vt = document.getElementById("sec-viewer-theme");
     if (vt) {
-      const showVT = route === "viewer-config" && tab === "page";
-      vt.style.display = showVT ? "" : "none";
+      vt.style.display = (route === "viewer-config" && tab === "page") ? "" : "none";
     }
-    if (onPage) {
-      startMetricsPoll();
-      if (_lastVisibleRoute !== "viewer-config-fields") {
-        fetchSettings().then(renderRows).catch(() => {});
-      }
-      _lastVisibleRoute = "viewer-config-fields";
-    } else {
-      stopMetricsPoll();
-      _lastVisibleRoute = route;
+    const vf = document.getElementById("sec-viewer-config-fields");
+    if (vf) {
+      vf.style.display = (route === "viewer-config" && tab === "fields") ? "" : "none";
     }
+    stopMetricsPoll();
+    _lastVisibleRoute = route;
   }
 
   function _initViewerConfigTabs() {
     if (document.getElementById("sec-viewer-config-tabs")) return; // idempotent
     const grid = document.getElementById("settings-grid");
     if (!grid) return;
+
+    // ── Tab strip bar ─────────────────────────────────────────────────────
     const bar = document.createElement("div");
     bar.id = "sec-viewer-config-tabs";
-    bar.className = "admin-proto-placeholder-box lg:col-span-2";
-    bar.innerHTML =
-      '<div class="admin-proto-placeholder-title">[PLACEHOLDER] Viewer Config Tabs</div>' +
-      '<div class="admin-proto-placeholder-body">Prototype 缺少 viewer-config tabbed 容器設計，暫以文字+方框占位。</div>' +
-      '<div class="admin-proto-placeholder-actions">' +
-      '<span class="admin-be-placeholder-control admin-be-placeholder-inline">PAGE</span>' +
-      '<span class="admin-be-placeholder-control admin-be-placeholder-inline">FIELDS</span>' +
+    bar.className = "admin-tabstrip lg:col-span-2";
+    bar.setAttribute("role", "tablist");
+
+    function _makeTabBtn(key, icon, zh, en) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.setAttribute("role", "tab");
+      btn.dataset.tab = key;
+      btn.className = "admin-tabstrip-tab" + (key === "page" ? " is-active" : "");
+      btn.setAttribute("aria-selected", key === "page" ? "true" : "false");
+      btn.innerHTML =
+        '<span style="display:inline-flex;align-items:center;gap:6px">' +
+          '<span class="admin-tabstrip-icon">' + icon + "</span>" +
+          "<span>" + zh + "</span>" +
+          '<span class="admin-tabstrip-en">' + en + "</span>" +
+        "</span>" +
+        '<span class="admin-tabstrip-tab__indicator"></span>';
+      btn.addEventListener("click", function () {
+        bar.querySelectorAll(".admin-tabstrip-tab").forEach(function (b) {
+          b.classList.remove("is-active");
+          b.setAttribute("aria-selected", "false");
+        });
+        btn.classList.add("is-active");
+        btn.setAttribute("aria-selected", "true");
+        document.body.dataset.viewerConfigTab = key;
+        syncVisibility();
+      });
+      return btn;
+    }
+
+    bar.appendChild(_makeTabBtn("page",   "◧", "整頁主題", "PAGE"));
+    bar.appendChild(_makeTabBtn("fields", "☷", "表單欄位", "FIELDS"));
+    const spacer = document.createElement("span");
+    spacer.style.flex = "1";
+    bar.appendChild(spacer);
+
+    // ── Info banner ───────────────────────────────────────────────────────
+    const infoBanner = document.createElement("div");
+    infoBanner.id = "sec-viewer-config-info";
+    infoBanner.className = "lg:col-span-2";
+    infoBanner.innerHTML =
+      '<div class="admin-vc-info-banner">' +
+        '<span class="admin-vc-info-accent">觀眾頁主題</span> 控制 <code>/fire</code> 的整體外觀（背景、tab、字色）；' +
+        '<span class="admin-vc-info-accent" style="margin-left:4px">表單欄位</span> 控制觀眾在「發送 danmu」表單上看到的輸入（暱稱 / 顏色 / 字級 / 描邊 …）。兩者獨立。' +
       '</div>';
-    // Insert BEFORE sec-viewer-theme if present (so tabs appear at top of route).
+
+    // ── FIELDS panel ──────────────────────────────────────────────────────
+    const FIELD_DEFS = [
+      { k: "暱稱 / Nickname",  desc: "單行文字輸入，viewer 顯示為作者名",       on: true,  pinned: true },
+      { k: "訊息 / Message",   desc: "主要 textarea（必填，長度上限 80）",       on: true,  pinned: true },
+      { k: "顏色 / Color",     desc: "6 個預設色票 + 自訂 hex",                  on: true },
+      { k: "字型 / Font",      desc: "從 Font Library 選擇",                     on: true },
+      { k: "字級 / Size",      desc: "small / regular / large 三段",             on: true },
+      { k: "透明度 / Opacity", desc: "0.4 / 0.7 / 1.0 三段",                     on: true },
+      { k: "描邊 / Stroke",    desc: "黑邊 toggle",                               on: true },
+      { k: "陰影 / Shadow",    desc: "soft / hard / none",                        on: true },
+      { k: "效果 / Effect",    desc: "可選 1–3 個從 Effect Library",              on: false },
+      { k: "匿名送出",          desc: "隱藏 nickname，顯示 fp_xxxx",               on: false },
+      { k: "附加圖片",          desc: "BE 尚未支援",                              on: false, blocked: true },
+    ];
+
+    const fieldsPanel = document.createElement("div");
+    fieldsPanel.id = "sec-viewer-config-fields";
+    fieldsPanel.className = "admin-vc-fields-grid lg:col-span-2";
+
+    // Left: field list
+    const leftCol = document.createElement("div");
+    leftCol.className = "admin-vc-col-panel";
+
+    const head = document.createElement("div");
+    head.className = "admin-vc-fields-head";
+    const shownCount = FIELD_DEFS.filter(function (f) { return f.on; }).length;
+    const hiddenCount = FIELD_DEFS.length - shownCount;
+    head.innerHTML =
+      '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:1px">觀眾表單欄位 · ' + FIELD_DEFS.length + ' 項</span>' +
+      '<span class="admin-vc-fields-count">顯示 ' + shownCount + " · 隱藏 " + hiddenCount + "</span>";
+    leftCol.appendChild(head);
+
+    const fieldsList = document.createElement("div");
+    fieldsList.className = "admin-vc-fields-list";
+
+    FIELD_DEFS.forEach(function (f) {
+      const row = document.createElement("div");
+      row.className = "admin-vc-field-row" + (f.blocked ? " is-blocked" : "");
+
+      const dot = document.createElement("span");
+      dot.className = "admin-vc-field-dot" + (f.on ? " is-on" : "");
+      row.appendChild(dot);
+
+      const info = document.createElement("div");
+      var badgeHtml = "";
+      if (f.pinned) badgeHtml = '<span class="admin-vc-field-badge admin-vc-field-badge--required">必填</span>';
+      if (f.blocked) badgeHtml = '<span class="admin-vc-field-badge admin-vc-field-badge--blocked">BE BLOCKED</span>';
+      info.innerHTML =
+        '<div class="admin-vc-field-label">' + escapeHtml(f.k) + badgeHtml + "</div>" +
+        '<div class="admin-vc-field-desc">' + escapeHtml(f.desc) + "</div>";
+      row.appendChild(info);
+
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "admin-vc-toggle " + (f.on ? "is-on" : "is-off");
+      toggle.textContent = f.on ? "顯示" : "隱藏";
+      if (f.blocked || f.pinned) {
+        toggle.disabled = true;
+        toggle.className += " disabled";
+      } else {
+        var _on = f.on;
+        toggle.addEventListener("click", function () {
+          _on = !_on;
+          toggle.className = "admin-vc-toggle " + (_on ? "is-on" : "is-off");
+          toggle.textContent = _on ? "顯示" : "隱藏";
+          dot.className = "admin-vc-field-dot" + (_on ? " is-on" : "");
+        });
+      }
+      row.appendChild(toggle);
+      fieldsList.appendChild(row);
+    });
+    leftCol.appendChild(fieldsList);
+
+    // Right: preview
+    const rightCol = document.createElement("div");
+    rightCol.className = "admin-vc-col-panel";
+    const SWATCH_COLORS = ["#fde68a", "#a7f3d0", "#bae6fd", "#fbcfe8", "#c4b5fd", "#fff"];
+    var swatchHtml = SWATCH_COLORS.map(function (c, i) {
+      return '<span class="admin-vc-swatch-dot" style="background:' + c +
+        ";border:" + (i === 0 ? "2px solid var(--color-primary,#38bdf8)" : "1px solid var(--color-border,#1f2944)") +
+        '"></span>';
+    }).join("");
+
+    rightCol.innerHTML =
+      '<div style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.5px">觀眾端預覽</div>' +
+      '<div class="admin-vc-preview-form">' +
+        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">暱稱 / Nickname <span style="color:var(--hud-crimson,#f87171)">*</span></div><div class="admin-vc-preview-input">阿傑</div></div>' +
+        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">訊息 / Message <span style="color:var(--hud-crimson,#f87171)">*</span></div><div class="admin-vc-preview-input" style="min-height:56px">+1 求簡報</div></div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">顏色</div><div class="admin-vc-preview-input"><span class="admin-vc-swatch">' + swatchHtml + "</span></div></div>" +
+          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">字級</div><div class="admin-vc-preview-input">small · <b>regular</b> · large</div></div>' +
+        "</div>" +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">透明度</div><div class="admin-vc-preview-input">0.4 · 0.7 · <b>1.0</b></div></div>' +
+          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">描邊</div><div class="admin-vc-preview-input">○ <b>● 黑邊</b></div></div>' +
+        "</div>" +
+        '<div class="admin-vc-preview-submit">↗ 發送 DANMU</div>' +
+      "</div>" +
+      '<div class="admin-vc-tip">· 隱藏的欄位仍會以預設值送出（顏色用主題色、字級 regular）。</div>';
+
+    fieldsPanel.appendChild(leftCol);
+    fieldsPanel.appendChild(rightCol);
+
+    // ── Insert before sec-viewer-theme ────────────────────────────────────
     const vt = document.getElementById("sec-viewer-theme");
-    if (vt && vt.parentNode === grid) grid.insertBefore(bar, vt);
-    else grid.appendChild(bar);
+    if (vt && vt.parentNode === grid) {
+      grid.insertBefore(bar, vt);
+      grid.insertBefore(infoBanner, vt);
+      grid.insertBefore(fieldsPanel, vt);
+    } else {
+      grid.appendChild(bar);
+      grid.appendChild(infoBanner);
+      grid.appendChild(fieldsPanel);
+    }
 
     if (!document.body.dataset.viewerConfigTab) document.body.dataset.viewerConfigTab = "page";
 
-    // Hide tabbar itself when not on #/viewer-config.
     function _syncBar() {
       const hash = (window.location.hash.match(/^#\/(\w[\w-]*)/) || [])[1] || "dashboard";
-      bar.style.display = hash === "viewer-config" ? "" : "none";
+      const visible = hash === "viewer-config";
+      bar.style.display = visible ? "" : "none";
+      infoBanner.style.display = visible ? "" : "none";
       syncVisibility();
     }
     window.addEventListener("hashchange", _syncBar);

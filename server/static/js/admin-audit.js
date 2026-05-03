@@ -91,7 +91,8 @@
                 <button type="button" class="admin-audit-action" data-audit-action="export">↓ 匯出 JSON</button>
                 <button type="button" class="admin-audit-action" data-audit-action="refresh">↻ 重新整理</button>
               </span>
-              <span class="admin-audit-hash-chip">SHA-256</span>
+              <span class="admin-audit-hash-chip" title="每筆事件以 SHA-256 串接前一筆，單筆無法竄改"><span class="icon">⛨</span><span>SHA-256 · 不可竄改</span></span>
+              <span class="admin-audit-retain">保留 90 天</span>
             </div>
             <div class="admin-audit-table-wrap">
               <table class="admin-audit-table">

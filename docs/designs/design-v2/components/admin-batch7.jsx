@@ -309,15 +309,30 @@ function AdminMessageDetailPage({ theme = 'dark' }) {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: accent, letterSpacing: 1.5 }}>MESSAGE · INSPECTOR</span>
-                <span style={{ fontFamily: hudTokens.fontMono, fontSize: 11, color: textDim, letterSpacing: 0.3, marginLeft: 'auto' }}>14 / 1,287</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: hudTokens.fontMono, fontSize: 11, color: textDim, cursor: 'pointer' }}>
-                  <Keycap>J</Keycap> 上一筆
+                <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 0.4 }}>14 / 1,287</span>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  padding: '3px 7px', border: `1px solid ${line}`, borderRadius: 3,
+                  fontFamily: hudTokens.fontMono, fontSize: 10, color: text, letterSpacing: 0.4, cursor: 'pointer',
+                }} title="上一筆 · K">
+                  <span style={{ fontSize: 11 }}>↑</span>
+                  <span style={{ color: textDim, fontSize: 9, padding: '0 3px', border: `1px solid ${line}`, borderRadius: 2, lineHeight: 1.4 }}>K</span>
                 </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: hudTokens.fontMono, fontSize: 11, color: textDim, cursor: 'pointer' }}>
-                  下一筆 <Keycap>K</Keycap>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  padding: '3px 7px', border: `1px solid ${line}`, borderRadius: 3,
+                  fontFamily: hudTokens.fontMono, fontSize: 10, color: text, letterSpacing: 0.4, cursor: 'pointer',
+                }} title="下一筆 · J">
+                  <span style={{ fontSize: 11 }}>↓</span>
+                  <span style={{ color: textDim, fontSize: 9, padding: '0 3px', border: `1px solid ${line}`, borderRadius: 2, lineHeight: 1.4 }}>J</span>
                 </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: hudTokens.fontMono, fontSize: 14, color: textDim, cursor: 'pointer' }}>
-                  <Keycap>Esc</Keycap>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4, marginLeft: 4,
+                  padding: '3px 7px', border: `1px solid ${line}`, borderRadius: 3,
+                  fontFamily: hudTokens.fontMono, fontSize: 10, color: text, letterSpacing: 0.4, cursor: 'pointer',
+                }} title="關閉 · Esc">
+                  <span style={{ fontSize: 11 }}>✕</span>
+                  <span style={{ color: textDim, fontSize: 9, padding: '0 3px', border: `1px solid ${line}`, borderRadius: 2, lineHeight: 1.4 }}>Esc</span>
                 </span>
               </div>
 
@@ -787,19 +802,6 @@ function AdminAudiencePage({ theme = 'dark' }) {
         );
       }}
     </AdminPageShell>
-  );
-}
-
-function Keycap({ children }) {
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      fontFamily: hudTokens.fontMono, fontSize: 9, fontWeight: 600, letterSpacing: 0.3,
-      padding: '1px 5px', borderRadius: 2,
-      background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.18)',
-      color: 'inherit', lineHeight: '14px', boxShadow: '0 1px 0 rgba(255,255,255,0.12)',
-      userSelect: 'none',
-    }}>{children}</span>
   );
 }
 
