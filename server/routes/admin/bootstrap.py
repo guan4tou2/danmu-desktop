@@ -10,6 +10,20 @@ Each section mirrors the payload shape of its underlying per-section route
 Services are called directly to avoid paying decorator/CSRF overhead 16 times.
 Any section that raises is captured as ``{"_error": str(e)}`` so one broken
 subsystem does not sink the whole bundle.
+
+IA mapping (per docs/design-v2-backlog.md § P0-0, 2026-05-04):
+
+S-tier (live console — dashboard nav):
+    metrics, polls, effects, blacklist, filters
+
+A-tier (each-event prep — appearance / assets / widgets / broadcast nav):
+    themes, settings, sounds, emojis, stickers, widgets, ws_auth
+
+B-tier (occasional — automation / history nav):
+    webhooks, scheduler, history_stats, fingerprints
+
+C-tier (system accordion) is intentionally NOT in bootstrap — those pages are
+visited rarely and fetched on-demand to keep the first-paint payload small.
 """
 
 from flask import current_app

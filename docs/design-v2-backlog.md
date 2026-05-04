@@ -37,6 +37,161 @@ Noto Sans TC (UI).
 These decisions change how multiple pages behave. Resolve first so downstream
 designs don't have to be redone.
 
+### P0-0 · Positioning pivot + IA restructure (32 → 10 nav)
+
+> **Added 2026-05-04. This item supersedes parts of P0-2/P0-3, P1-* page-by-page
+> retrofits, P3-* dashboard polish, and parts of P5-1.** Read this first.
+
+**Context.** v5.0.0 shipped a 32-route admin with 50 JS modules / 23,177 lines.
+The information architecture grew by accretion (one nav slot per feature) rather
+than by use case. Symptom: ⌘K command palette is now necessary just to navigate
+the admin — i.e. IA has failed and search is patching it. Backlog still queues
+multi-question polls, Plugin SDK, multi-pack stickers, and Logo upload — every
+addition makes the navigation worse.
+
+The remaining design work in this doc was scoped before the positioning was
+sharp. Most items are still valid as **content briefs**, but their **placement**
+in the nav is now wrong.
+
+**Polestar (decided 2026-05-04 with project owner).**
+
+> **danmu-desktop is a desktop tool for a single presenter at a 1–4 hour
+> small/mid-sized event, used to drive audience interaction and warm up the
+> atmosphere.** It is not a moderation platform, not an enterprise integration
+> hub, not a data warehouse. Polls / Effects / Emojis / Stickers / Sounds /
+> Themes are the product. Audit / API tokens / Plugin SDK / Webhooks are tail.
+
+**Operating cadence.** Hybrid: there is a default kit, but every event tweaks
+themes, blacklist, presenter name, poll deck. Setup happens 30 min before; the
+real interaction window is 1–4 hours of live operation.
+
+**Frequency tiers.** Use this to decide nav prominence and visual weight:
+
+| Tier | Cadence | Features |
+|---|---|---|
+| **S** — visible at all times during the event | every minute live | dashboard / live-feed, polls, effects, fast moderation |
+| **A** — touched each event during prep or mid-event tweaks | each event | themes + viewer-theme + display + fonts, emojis + stickers + sounds, widgets, broadcast |
+| **B** — touched every few events / monthly | monthly | scheduler, ratelimit, history + sessions + search + replay, notifications, audience |
+| **C** — deploy / new device / special incident | 1–3× per year | setup, system, security, firetoken, backup, audit, about, wcag, mobile, integrations, plugins |
+
+**Goal.** Restructure the admin nav from **32 → 10**, and reframe the
+Dashboard from "summary cards" into **a live control console** that surfaces
+S-tier operations directly without sub-nav.
+
+**Final nav structure (10 items, ordered).**
+
+| # | Nav slug | Type | Contains (was) |
+|---|---|---|---|
+| 1 | `dashboard` | Live console | Live feed (was `messages`), 4 quick actions (open poll · trigger effect · add to blacklist · push broadcast), KPI strip, notification tray bell (was `notifications`), recent moderation w/ undo |
+| 2 | `polls` | Single page | Poll builder + history + scheduling (already in v5) |
+| 3 | `effects` | Single page | Effects library + .dme management (kept independent — core differentiator) |
+| 4 | `moderation` | Tabbed | blacklist + filters + ratelimit + fingerprints |
+| 5 | `widgets` | Single page | Overlay widgets (kept A-tier per owner — used every event) |
+| 6 | `appearance` | Tabbed | themes + viewer-theme + display + fonts |
+| 7 | `assets` | Already merged | emojis + stickers + sounds (preserve current `assets` page) |
+| 8 | `automation` | Tabbed | scheduler + webhooks + plugins (plugins on "Advanced" tab) |
+| 9 | `history` | Tabbed | sessions + search + audit + replay + audience |
+| 10 | `system` | Accordion | setup + security + firetoken + backup + about + integrations + wcag + mobile |
+
+**Removed from main nav (NOT removed from product — endpoints preserved).**
+
+| Slug | Disposition |
+|---|---|
+| `messages` | Live feed lifts to `dashboard` body |
+| `notifications` | Becomes a topbar bell with tray dropdown |
+| `broadcast` | Becomes the "推播訊息" quick-action button on `dashboard` |
+| `setup` | First-run modal triggered automatically; reachable from `system` |
+| `onboarding-tour` | Becomes a contextual spotlight first time the user enters each section; no nav slot |
+| `wcag` | Becomes an inline contrast check inside `appearance` color editors |
+| `mobile` | Treated as RWD breakpoints, not a separate page |
+| `themes` `viewer-theme` `display` `fonts` | Tabs inside `appearance` |
+| `sessions` `search` `audit` `replay` `audience` | Tabs inside `history` |
+| `security` `firetoken` `backup` `about` `integrations` `plugins` | Sections in `system` accordion |
+
+**Frozen until requested by real users.**
+
+- P0-1 multi-question polls + per-question image — schema bump too large for current usage signal
+- P1-4 multi-pack stickers — same
+- P6-3 Plugin SDK Stage 2 expansion — already deferred 2026-04-24, stays deferred
+- Onboarding Tour expansion beyond contextual spotlight
+
+**UX requirements (for Claude Design).**
+
+1. **`dashboard` is the centerpiece.** Design it as a single-screen live console
+   (no inner scroll on 13" laptop at 1440×900). The screen exists for the 1–4
+   hours where the presenter glances at it between sentences:
+   - 60% area: live message feed, newest at top, auto-scroll w/ pause-on-hover
+   - 4 large quick-action targets visible at all times: poll launcher, effect
+     trigger row (8 .dme cards as a strip), blacklist textbox, broadcast textbox
+   - KPI rail (online viewers · msg/s · queue depth · session timer)
+   - Topbar: notification bell · session selector · settings cog (jumps to nav)
+   - No "summary card" decoration; everything visible is interactive
+2. **Tabbed pages (`moderation`, `appearance`, `automation`, `history`)** must
+   share a common tabbed container component. Tab order = frequency-of-use,
+   not alphabetical. Default tab = the one most likely needed mid-event.
+3. **`system` accordion**: each row is a leaf settings page. Default-collapsed.
+   No mid-event reason to open this; design it to feel "back of the manual".
+4. **Notification tray bell**: dropdown with last 10 events, severity color,
+   click → jump to relevant page. Replaces the standalone `notifications` nav.
+5. **Quick-action implementation note**: backend endpoints already exist
+   (`/admin/polls/start`, `/admin/effects/preview`, `/admin/blacklist`,
+   `/admin/broadcast`). Dashboard wires to existing routes — no new API needed
+   for v1 of the live console.
+6. **Mobile**: design dashboard at 360px first; tabs collapse to a select;
+   accordion already mobile-friendly. The `mobile` page disappears.
+
+**Technical constraints.**
+
+- All current endpoints under `/admin/*` MUST remain reachable (v5.0.0 is live
+  on Oracle VPS; some users may have URL bookmarks, Electron config may persist
+  hash routes). Removing from nav ≠ removing endpoint.
+- `/admin/bootstrap` already returns 16 sections covering S+A tier data; no
+  schema change needed for the dashboard pivot. Audit / sessions / replay are
+  fetched on-demand when entering the History tab.
+- i18n: every nav label needs zh-TW + en strings; existing key prefix is
+  `adminNav.*`. New tab containers need new keys.
+- Tests: `test_browser_p3_pages.py` asserts current nav structure — needs
+  update once new IA lands.
+
+**Open questions for Claude Design.**
+
+1. Topbar layout when both notification bell AND session selector are present
+   on small viewports — stacked, hidden behind menu, or session selector moves
+   into the cog dropdown?
+2. Effect trigger strip on dashboard: 8 cards horizontal scrolling, or 4×2 grid
+   collapsing the rest behind "more"?
+3. Quick-action results (e.g. "blacklisted ✓", "poll started ✓") — toast,
+   inline confirmation, or both?
+4. Should the live console show the *moderator's own* recent actions in a
+   sidebar, or rely on the topbar notification tray for that?
+
+**Items in this doc that this section now scopes down.**
+
+- P0-2 (Viewer Theme separate from Theme Packs): still valid as a *concept*
+  but now lives as a tab inside `appearance`, not a standalone nav.
+- P0-3 (Display Settings per-setting toggle): still valid; lives as a tab
+  inside `appearance`.
+- P1-1 (Webhooks dedicated page): scoped down to a tab inside `automation`.
+- P1-2 (Sounds dedicated page): already merged into `assets` in v5; this
+  doc's P1-2 is obsolete.
+- P1-3 (Emojis dedicated page): same — merged into `assets`.
+- P1-4 (Stickers dedicated page): same — merged into `assets`. Multi-pack
+  remains frozen.
+- P1-5 (Scheduler dedicated page): scoped down to a tab inside `automation`.
+- P1-6 (Live Feed dedicated page): replaced — live feed is now the dashboard
+  body, not a separate page.
+- P1-7 (Replay dedicated page): scoped down to a tab inside `history`.
+- P1-8 (Fonts upload): kept as a tab inside `appearance`.
+- P1-9 (Security dedicated page): scoped down to a section inside `system`
+  accordion.
+- P1-10 (Backup & Export): scoped down to a section inside `system` accordion.
+- P3-7 (Dashboard topbar consistency): superseded — dashboard is being fully
+  redesigned, topbar is part of that.
+- P5-1 (User-facing naming "Danmu Fire"): still applies, but only inside the
+  10 final pages.
+
+---
+
 ### P0-1 · Polls — multi-question with ordering + per-question image
 
 **Context.** Polls are the second-largest interaction surface after danmu.
@@ -813,8 +968,14 @@ work restarts, start with Stage 1 (file reorg), not Stage 2.
 | 2026-04-24 | Fingerprint primary ID, nickname display-only, global format | User |
 | 2026-04-24 | Effects live inline preview, all-on (<1% CPU) | User |
 | 2026-04-24 | Poll-as-plugin deferred; revisit via Stage 1 file reorg first | User |
+| 2026-05-04 | **Polestar locked: single presenter, mid-size event, interaction + atmosphere** | User (office-hours session) |
+| 2026-05-04 | **Admin nav restructured 32 → 10**, Dashboard pivots to live control console | User (office-hours session) |
+| 2026-05-04 | Widgets stays A-tier independent; Effects stays independent (core differentiator) | User |
+| 2026-05-04 | C-tier 11 pages collapse into single `system` nav with accordion | User |
+| 2026-05-04 | P0-1 multi-question polls, P1-4 multi-pack stickers frozen until real-user demand | User |
+| 2026-05-04 | All `/admin/*` endpoints preserved; nav reduction is purely IA, not deletion | User |
 
 ---
 
-*Last updated: 2026-04-24*
+*Last updated: 2026-05-04*
 *Copy-paste this doc into a Claude Design chat; each P-tier item is self-contained.*
