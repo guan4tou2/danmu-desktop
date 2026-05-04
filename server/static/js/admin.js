@@ -1243,6 +1243,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let currentRoute = "dashboard";
 
+    let _activeTab = null;  // last-applied tab for currentRoute (Slice 3)
+
     const applySectionVisibility = () => {
       const cfg = ADMIN_ROUTES[currentRoute];
       const wanted = new Set(cfg.sections);
@@ -1256,16 +1258,31 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         el.style.display = wanted.has(el.id) ? "" : "none";
       });
+      // Slice 3: tab-aware visibility wins over route-level visibility for
+      // tabbed nav routes. Must run AFTER the route-level pass so this
+      // overrides display="" for inactive-tab sections. Also runs after
+      // MutationObserver-triggered re-application so late-injected sections
+      // respect the active tab.
+      if (_activeTab && window.AdminTabs?.hasTabsFor?.(currentRoute)) {
+        window.AdminTabs.applyTabSectionVisibility(currentRoute, _activeTab, shell);
+      }
     };
 
-    const applyRoute = (name) => {
+    const applyRoute = (name, requestedTab) => {
       currentRoute = ADMIN_ROUTES[name] ? name : "dashboard";
       shell.dataset.activeRoute = currentRoute;
-      // Sync URL hash so external pages (admin-replay/security/backup) that
-      // listen for `hashchange` re-evaluate their visibility. No-op if hash
-      // already matches (prevents the click → setHash → hashchange → applyRoute
-      // recursion from looping). Replace, not push, to keep history clean.
-      const wantedHash = "#/" + currentRoute;
+
+      // Resolve tab (Slice 3): hint > sessionStorage > default. Returns null
+      // for nav routes that don't opt into tabs.
+      const activeTab = window.AdminTabs?.hasTabsFor?.(currentRoute)
+        ? window.AdminTabs.resolveActiveTab(currentRoute, requestedTab)
+        : null;
+
+      // Sync URL hash. Use buildHash to preserve `#/<nav>/<tab>` when
+      // the nav owns tabs; otherwise plain `#/<nav>`.
+      const wantedHash = window.AdminRouter?.buildHash
+        ? window.AdminRouter.buildHash(currentRoute, activeTab)
+        : "#/" + currentRoute;
       if (window.location.hash !== wantedHash) {
         try { history.replaceState(null, "", wantedHash); } catch (_) {}
         window.dispatchEvent(new HashChangeEvent("hashchange"));
@@ -1294,13 +1311,47 @@ document.addEventListener("DOMContentLoaded", () => {
         window.AdminDashboard?.stopSessionPolling?.();
       }
 
+      // Slice 3: stash tab so applySectionVisibility (and the MutationObserver
+      // re-fire path) respects per-tab visibility. Cleared for non-tabbed routes.
+      _activeTab = activeTab;
+      if (activeTab) {
+        window.AdminRouter?.tabMemory?.set?.(currentRoute, activeTab);
+      }
+
       applySectionVisibility();
+
+      _renderTabStripFor(currentRoute, activeTab);
 
       // Auto-expand backstage panel when navigating to a secondary route
       _syncBackstagePanel(currentRoute);
 
-      try { history.replaceState(null, "", "#/" + currentRoute); } catch (e) { /* ignore */ }
+      try { history.replaceState(null, "", wantedHash); } catch (e) { /* ignore */ }
     };
+
+    // Mounts (or removes) the tab strip in the topbar host. Strip lives
+    // between `.admin-dash-topbar` and the route-view sections.
+    function _renderTabStripFor(nav, activeTab) {
+      // Find or create the host once. Anchor under topbar so kicker+title
+      // stay visible above the tabs.
+      let host = shell.querySelector("[data-admin-tabs-host]");
+      if (!host) {
+        const topbar = shell.querySelector(".admin-dash-topbar");
+        if (!topbar) return;
+        host = document.createElement("div");
+        host.dataset.adminTabsHost = "";
+        topbar.insertAdjacentElement("afterend", host);
+      }
+      host.innerHTML = "";
+      if (!window.AdminTabs?.hasTabsFor?.(nav) || !activeTab) {
+        host.hidden = true;
+        return;
+      }
+      host.hidden = false;
+      const strip = window.AdminTabs.renderTabStrip(nav, activeTab, {
+        onSelect: (tab) => applyRoute(nav, tab),
+      });
+      if (strip) host.appendChild(strip);
+    }
 
     // ── Backstage toggle ─────────────────────────────────────────────────────
     // Primary routes: always visible nav items (broadcast is operational — LIVE/STANDBY toggle)
@@ -1343,8 +1394,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     _routeHashHandler = () => {
       const parsed = _parseHashRoute(window.location.hash);
-      if (parsed) applyRoute(parsed.nav);
-      // tab segment captured but unused in Slice 2; Slice 3 will pass it through.
+      if (parsed) applyRoute(parsed.nav, parsed.tab);
     };
     window.addEventListener("hashchange", _routeHashHandler);
 
@@ -1356,7 +1406,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const fromHash = _parseHashRoute(window.location.hash);
-    applyRoute(fromHash?.nav || "dashboard");
+    applyRoute(fromHash?.nav || "dashboard", fromHash?.tab || null);
 
     // Late-injected sections (admin-sounds.js, admin-emojis.js, etc. inject
     // after scheduleIdleTask). Watch the main area for new [id^="sec-"]

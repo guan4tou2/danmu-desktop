@@ -9426,3 +9426,64 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-dash-nav-row--about:hover {
   opacity: 1;
 }
+
+/* ── P0-0a · Tab strip (Slice 3) ──────────────────────────────────────── */
+[data-admin-tabs-host] {
+  padding: 0 24px;
+  border-bottom: 1px solid var(--color-border, #1f2944);
+  background: var(--color-panel, #0f172a);
+}
+[data-admin-tabs-host][hidden] { display: none; }
+
+.admin-tabs-strip {
+  display: flex;
+  gap: 4px;
+  align-items: stretch;
+  height: 40px;
+}
+
+.admin-tabs-btn {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 14px;
+  font-family: inherit;
+  text-align: left;
+  transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+
+.admin-tabs-btn:hover {
+  color: #f1f5f9;
+  background: rgba(56, 189, 248, 0.06);
+}
+
+.admin-tabs-btn.is-active {
+  color: #38bdf8;
+  border-bottom-color: rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.admin-tabs-btn-label {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.admin-tabs-btn-en {
+  font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 1.4px;
+  opacity: 0.7;
+}
+
+@media (max-width: 640px) {
+  [data-admin-tabs-host] { padding: 0 12px; }
+  .admin-tabs-btn { padding: 0 10px; }
+  .admin-tabs-btn-en { display: none; }
+}
