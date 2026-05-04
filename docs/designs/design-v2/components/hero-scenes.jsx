@@ -95,7 +95,7 @@ function OverlayIdle({ theme = 'dark', state = 'ready' }) {
           title="Danmu Fire"
           theme={theme}
           size="hero"
-          subtitle="掃描 QR code 或輸入 138.2.59.206:4000 — 開始送彈幕"
+          subtitle="掃描 QR code 或輸入 192.0.2.1:4000 — 開始送彈幕"
         />
         {/* Connection chip — ready / reconnecting 兩態 */}
         <div style={{
@@ -145,7 +145,7 @@ function OverlayIdle({ theme = 'dark', state = 'ready' }) {
           </svg>
         </div>
         <div style={{ marginTop: 12, fontFamily: hudTokens.fontMono, fontSize: 11, letterSpacing: 2, color: HERO_SLATE_300 }}>
-          138.2.59.206:4000
+          192.0.2.1:4000
         </div>
       </div>
     </div>

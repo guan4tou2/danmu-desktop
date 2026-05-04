@@ -588,7 +588,7 @@ function AdminSystemPage({ theme = 'dark' }) {
             </div>
             <div style={{ marginTop: 18, padding: 12, background: raised, borderRadius: 4, fontFamily: hudTokens.fontMono, fontSize: 11, color: text }}>
               <div style={{ color: textDim, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>PUBLIC URL</div>
-              <div style={{ color: accent }}>https://138.2.59.206:4000/</div>
+              <div style={{ color: accent }}>https://192.0.2.1:4000/</div>
               <div style={{ marginTop: 4, color: textDim, fontSize: 10 }}>QR · 觀眾掃碼即加入 · 可點擊複製</div>
             </div>
           </div>

@@ -429,7 +429,7 @@ function DesktopTrayPopover({ theme = 'dark' }) {
         <div style={{ padding: '12px 14px', borderBottom: `1px solid ${line}`, display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: hudTokens.lime, boxShadow: `0 0 6px ${hudTokens.lime}` }} />
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: text }}>已連線到 138.2.59.206:4000</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: text }}>已連線到 192.0.2.1:4000</div>
             <div style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: hudTokens.lime, marginTop: 2, letterSpacing: 0.3 }}>● 287 viewers · 64 msg/min</div>
           </div>
           <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, padding: '2px 6px', background: raised, border: `1px solid ${line}`, borderRadius: 2, letterSpacing: 0.4 }}>v2.4.1</span>

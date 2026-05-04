@@ -203,20 +203,20 @@ function App() {
       </DCSection>
 
       <DCSection title="Danmu Fire · 觀眾端" subtitle="完整欄位對齊原版 user-facing 頁面，統一以「網站」呈現 — 手機 Safari / 桌面 Chrome，不是 App">
-        <DCArtboard width={375} height={812} label="Mobile · Safari · 138.2.59.206:4000" style={{ background: '#000', borderRadius: 36, overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
+        <DCArtboard width={375} height={812} label="Mobile · Safari · 192.0.2.1:4000" style={{ background: '#000', borderRadius: 36, overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
           <div data-screen-label="Viewer Mobile Web" style={{ width: 375, height: 812 }}>
-            <MobileSafariChrome url="138.2.59.206:4000" dark={tweaks.theme === 'dark'}>
+            <MobileSafariChrome url="192.0.2.1:4000" dark={tweaks.theme === 'dark'}>
               <ViewerMobile theme={tweaks.theme} pollEnabled={pollOn} inBrowser />
             </MobileSafariChrome>
           </div>
         </DCArtboard>
-        <DCArtboard width={900} height={760} label="Desktop · Chrome · 138.2.59.206:4000" style={{ background: 'transparent' }}>
+        <DCArtboard width={900} height={760} label="Desktop · Chrome · 192.0.2.1:4000" style={{ background: 'transparent' }}>
           <div data-screen-label="Viewer Desktop Web" style={{ width: 900, height: 760 }}>
             <ChromeWindow
               width={900} height={760}
               tabs={[{ title: 'Danmu · Live' }, { title: 'Keynote' }, { title: '筆記' }]}
               activeIndex={0}
-              url="https://138.2.59.206:4000/"
+              url="https://192.0.2.1:4000/"
             >
               <div style={{ width: '100%', height: '100%' }}>
                 <ViewerDesktop theme={tweaks.theme} pollEnabled={pollOn} />

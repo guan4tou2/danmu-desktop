@@ -1,19 +1,29 @@
 """Browser smoke tests for the P3 / Group A / Group B admin pages
 shipped during the 2026-04-27 sprint.
 
-Each test navigates to one of the new routes and asserts the section
+Each test navigates to one of the routes and asserts the section
 is rendered + visible + has at least one expected element. Keeps
 coverage shallow (smoke / regression-detector) since Jest infra would
 be a sizable add for ~10 small helpers in new modules.
 
-Routes covered:
-    #/about           — AdminAboutPage (Phase 2 P0-1)
-    #/notifications   — AdminNotificationsPage (P1)
-    #/audit           — AdminAuditLogPage (P1)
-    #/audience        — AdminAudiencePage (Group B)
-    #/mobile          — AdminMobilePage (Group B)
-    #/poll-deepdive   — AdminPollDeepDivePage (Phase 2 P0-3)
-    #/setup           — AdminSetupWizard overlay (Phase 2 P0-2)
+Routes covered (post-5.1.0 these route through alias redirects to new
+P0-0 nav, but the section IDs are unchanged so the tests still match
+on `#sec-*-overview` visibility):
+
+    #/about         → #/system/about      — AdminAboutPage
+    #/notifications →                       — AdminNotificationsPage (no alias)
+    #/audit         → #/history/audit     — AdminAuditLogPage
+    #/audience      → #/history/audience  — AdminAudiencePage
+    #/mobile        → #/system/mobile     — AdminMobilePage
+    #/poll-deepdive →                       — AdminPollDeepDivePage (no alias)
+    #/setup         →                       — AdminSetupWizard overlay (no alias)
+
+The legacy URLs above still work via _routeAliases — `_go_to_route`
+sets the legacy hash, admin.js applyRoute resolves it to the new nav+
+tab/accordion home, and the section's visibility is governed by
+applyTabSectionVisibility (tabbed) or AdminSystemAccordion (system).
+Slice 8 also added `dataset.activeLeaf` so admin-*.js modules check
+the leaf slug instead of the route name.
 
 Viewer states (ViewerBanned / ViewerPollThankYou) tested via URL
 preview flag on /fire.
@@ -338,3 +348,58 @@ def test_viewer_pollthankyou_state_url_preview(browser_session, live_url):
         assert "Demo" in page.locator(".viewer-state-recap .choice .lbl").text_content()
     finally:
         page.close()
+
+
+# ─── 5.1.0 P0-0 IA migration coverage ──────────────────────────────────────
+
+
+def test_ia_alias_redirect_audit_to_history(admin_page):
+    """Slice 4: legacy #/audit must redirect to #/history/audit and
+    activate the audit tab inside the history nav."""
+    _go_to_route(admin_page, "audit")
+    # URL gets rewritten by applyRoute via buildHash
+    final_hash = admin_page.evaluate('() => window.location.hash')
+    assert final_hash == "#/history/audit", f"expected redirect, got {final_hash}"
+    # The shell exposes the canonical leaf to legacy modules
+    leaf = admin_page.evaluate('() => document.querySelector(".admin-dash-grid").dataset.activeLeaf')
+    assert leaf == "audit"
+    # Audit section is the only visible history-tab body
+    admin_page.wait_for_selector("#sec-audit-overview", state="visible", timeout=5000)
+
+
+def test_ia_tab_strip_renders_for_moderation(admin_page):
+    """Slice 3: tabbed nav routes mount a tab strip in the topbar host."""
+    _go_to_route(admin_page, "moderation")
+    admin_page.wait_for_selector(".admin-tabs-strip", state="attached", timeout=5000)
+    # 4 tabs per P0-0a (blacklist / filters / ratelimit / fingerprints)
+    assert admin_page.locator(".admin-tabs-btn").count() == 4
+    # Default tab = blacklist (locked decision in tab-chrome.jsx)
+    active = admin_page.locator(".admin-tabs-btn.is-active").get_attribute("data-tab")
+    assert active == "blacklist"
+
+
+def test_ia_system_accordion_renders(admin_page):
+    """Slice 6: system route shows the 8-leaf accordion."""
+    _go_to_route(admin_page, "system")
+    admin_page.wait_for_selector(".admin-system-accordion", state="attached", timeout=5000)
+    rows = admin_page.locator(".admin-system-accordion-row")
+    assert rows.count() == 8
+    # Single-open default — first row (system overview) is open
+    open_rows = admin_page.locator(".admin-system-accordion-row.is-open")
+    assert open_rows.count() == 1
+
+
+def test_ia_deep_link_preserves_tab(admin_page):
+    """Slice 2 + 3: deep-linking #/<nav>/<tab> activates the tab directly,
+    skipping the default."""
+    admin_page.evaluate(
+        '() => { window.location.hash = "#/moderation/filters"; }'
+    )
+    admin_page.wait_for_timeout(400)
+    active = admin_page.locator(".admin-tabs-btn.is-active").get_attribute("data-tab")
+    assert active == "filters"
+    # Inactive tab section hidden
+    blacklist_display = admin_page.evaluate(
+        '() => document.getElementById("sec-blacklist").style.display'
+    )
+    assert blacklist_display == "none"

@@ -371,7 +371,7 @@ Design 提了三組未實作項：
 ---
 
 ## 部署環境
-- VPS: Oracle 138.2.59.206:4000（HTTPS via nginx）
+- VPS: Oracle 192.0.2.1:4000（HTTPS via nginx）
 - 容器：`danmu-fire` + `danmu-reverse-proxy-https`
 - 當前 commit：`8f118fd` on `claude/design-v2-retrofit`
 - 未 merge main（main 仍 v4.8.x）

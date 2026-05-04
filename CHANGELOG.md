@@ -509,8 +509,8 @@ Admin observability bundle — 五支面向維運者的工具一次打包，serv
 - **nginx `Host: $host` 丟 port → Flask redirect 走到錯 port (CRITICAL)**：
   v4.8.3 的 ProxyFix 讓 `/admin → /admin/` redirect 走 HTTPS 了，但 nginx
   用 `proxy_set_header Host $host;` 把 port **剝掉**（`$host` 只有 hostname，
-  不含 port）。Flask 看到 `Host: 138.2.59.206`，redirect 預設 HTTPS →
-  `https://138.2.59.206/admin/` → 443 → 在 shared-host 環境（例如 Oracle
+  不含 port）。Flask 看到 `Host: 192.0.2.1`，redirect 預設 HTTPS →
+  `https://192.0.2.1/admin/` → 443 → 在 shared-host 環境（例如 Oracle
   Cloud 同 VM 跑 netbird-caddy 或其他 web service 在 443）會被別的服務接走。
 
   修法：兩個 nginx config（`nginx-https.conf` + `nginx.conf`）把
