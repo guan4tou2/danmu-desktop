@@ -2707,8 +2707,8 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #f43f5e;
-  box-shadow: 0 0 8px #f43f5e;
+  background: #f87171;
+  box-shadow: 0 0 8px #f87171;
   animation: adminPollsLivePulse 1.4s ease-in-out infinite;
 }
 @keyframes adminPollsLivePulse {
@@ -2915,7 +2915,7 @@
 }
 .admin-polls-live-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .admin-polls-live-btn.is-danger {
-  border-color: #f43f5e;
+  border-color: #f87171;
   background: rgba(244, 63, 94, 0.12);
   color: #f87171;
   font-weight: 700;

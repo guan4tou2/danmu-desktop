@@ -29,7 +29,12 @@
       });
     });
 
-    activate("overlay");
+    // 5.1.0: when first-run gate is showing (not yet configured), land on
+    // the conn tab so the gate is the visible content. Sidebar stays
+    // clickable; user can navigate to other tabs while gate persists.
+    var gate = document.getElementById("firstRunGate");
+    var gateOpen = gate && !gate.hasAttribute("hidden");
+    activate(gateOpen ? "conn" : "overlay");
 
     // Platform stamp — macOS / Windows / Linux
     try {
