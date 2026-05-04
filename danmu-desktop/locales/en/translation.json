@@ -44,7 +44,7 @@
   "updateRemindLater": "Remind me later",
   "updateSkipVersion": "Skip this version",
   "updateSectionTitle": "Updates",
-  "updateSectionKicker": "AUTO-UPDATE · CHANGELOG",
+  "updateSectionKicker": "UPDATES",
   "updateCheckNow": "Check now",
   "updatePrefsKicker": "UPDATE BEHAVIOR",
   "updatePrefAutoDownload": "Auto-download updates",
@@ -69,5 +69,18 @@
   "firstrunRememberHint": "Stored in localStorage · resettable from ⚙ Connection → Reset",
   "firstrunDocsLink": "Deployment docs →",
   "firstrunSkip": "Set up later",
-  "firstrunConfirm": "Connect and start receiving →"
+  "firstrunConfirm": "Connect and start receiving →",
+  "overlaySectionTitle": "Overlay",
+  "overlaySectionKicker": "DISPLAY",
+  "overlayCardTitle": "Show danmu overlay",
+  "overlayCardHint": "Toggle anytime with ⌘⇧D",
+  "overlayActionStart": "▶ Start receiving",
+  "overlayActionPause": "⏸ Pause",
+  "overlayActionClear": "⌫ Clear screen",
+  "overlayNoteKicker": "NOTE",
+  "overlayNoteBody": "Font, color, size, opacity, speed, layout, and effects of each danmu are parameters the audience attaches when sending — not configured here. This window only controls whether the overlay is shown, which display it lives on, and the server connection.",
+  "sectionKeysTitle": "Shortcuts",
+  "sectionKeysKicker": "SHORTCUTS",
+  "sectionAboutTitle": "About",
+  "sectionAboutKicker": "ABOUT"
 }

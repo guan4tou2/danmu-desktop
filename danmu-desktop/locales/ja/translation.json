@@ -44,7 +44,7 @@
   "updateRemindLater": "後で通知",
   "updateSkipVersion": "このバージョンをスキップ",
   "updateSectionTitle": "アップデート",
-  "updateSectionKicker": "AUTO-UPDATE · CHANGELOG",
+  "updateSectionKicker": "UPDATES",
   "updateCheckNow": "今すぐ確認",
   "updatePrefsKicker": "UPDATE BEHAVIOR",
   "updatePrefAutoDownload": "更新を自動ダウンロード",
@@ -69,5 +69,18 @@
   "firstrunRememberHint": "localStorage に保存 · ⚙ 接続 → リセットで解除可能",
   "firstrunDocsLink": "デプロイ手順 →",
   "firstrunSkip": "後で設定",
-  "firstrunConfirm": "接続して受信開始 →"
+  "firstrunConfirm": "接続して受信開始 →",
+  "overlaySectionTitle": "Overlay",
+  "overlaySectionKicker": "DISPLAY",
+  "overlayCardTitle": "弾幕オーバーレイを表示",
+  "overlayCardHint": "⌘⇧D でいつでも切替",
+  "overlayActionStart": "▶ 受信開始",
+  "overlayActionPause": "⏸ 一時停止",
+  "overlayActionClear": "⌫ 画面クリア",
+  "overlayNoteKicker": "NOTE",
+  "overlayNoteBody": "弾幕のフォント・色・サイズ・透明度・速度・レイアウト・エフェクトは観客が送信時に付与するパラメータで、このウィンドウでは設定しません。ここで決めるのは overlay の表示有無・表示先ディスプレイ・サーバー接続だけです。",
+  "sectionKeysTitle": "ショートカット",
+  "sectionKeysKicker": "SHORTCUTS",
+  "sectionAboutTitle": "アバウト",
+  "sectionAboutKicker": "ABOUT"
 }

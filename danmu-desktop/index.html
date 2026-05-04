@@ -335,15 +335,15 @@
              Hidden by default — 5.1.0 demoted overlay to second nav. -->
         <section class="client-section" data-section="overlay" hidden>
           <div class="client-section-head">
-            <div class="client-section-title">Overlay 控制</div>
-            <div class="client-section-kicker">DISPLAY · 透明層 · 點擊穿透</div>
+            <div class="client-section-title" data-i18n="overlaySectionTitle">Overlay</div>
+            <div class="client-section-kicker" data-i18n="overlaySectionKicker">DISPLAY</div>
           </div>
 
           <!-- Toggle card: show/hide overlay window -->
           <div class="client-overlay-card">
             <div class="client-overlay-card-body">
-              <div class="title">顯示彈幕 Overlay</div>
-              <div class="dim">任何時候可用 ⌘⇧D 快速切換</div>
+              <div class="title" data-i18n="overlayCardTitle">顯示彈幕 Overlay</div>
+              <div class="dim" data-i18n="overlayCardHint">任何時候可用 ⌘⇧D 快速切換</div>
             </div>
             <label class="client-toggle">
               <input type="checkbox" data-client-overlay-toggle />
@@ -364,15 +364,15 @@
 
           <!-- Action buttons row -->
           <div class="client-overlay-actions">
-            <button type="button" class="client-action-btn is-primary" data-client-overlay-action="start">▶ 開始接收</button>
-            <button type="button" class="client-action-btn" data-client-overlay-action="pause">⏸ 暫停</button>
-            <button type="button" class="client-action-btn" data-client-overlay-action="clear">⌫ 清空畫面</button>
+            <button type="button" class="client-action-btn is-primary" data-client-overlay-action="start" data-i18n="overlayActionStart">▶ 開始接收</button>
+            <button type="button" class="client-action-btn" data-client-overlay-action="pause" data-i18n="overlayActionPause">⏸ 暫停</button>
+            <button type="button" class="client-action-btn" data-client-overlay-action="clear" data-i18n="overlayActionClear">⌫ 清空畫面</button>
           </div>
 
           <!-- NOTE: viewer params live in the viewer, not here (prototype:240) -->
           <div class="client-overlay-note">
-            <span class="kicker">NOTE</span>
-            <p>彈幕的字體、顏色、大小、透明度、速度、排版與效果為<b>觀眾每次發送時帶上的參數</b>,不在此視窗控制。此視窗僅決定 overlay 是否顯示、顯示於哪個螢幕,以及與 server 的連線。</p>
+            <span class="kicker" data-i18n="overlayNoteKicker">NOTE</span>
+            <p data-i18n="overlayNoteBody">彈幕的字體、顏色、大小、透明度、速度、排版與效果為<b>觀眾每次發送時帶上的參數</b>,不在此視窗控制。此視窗僅決定 overlay 是否顯示、顯示於哪個螢幕,以及與 server 的連線。</p>
           </div>
 
         <!-- Action Buttons -->
@@ -449,7 +449,7 @@
         <section class="client-section" data-section="keys" hidden>
           <div class="client-section-head">
             <div class="client-section-title" data-i18n="sectionKeysTitle">快捷鍵</div>
-            <div class="client-section-kicker" data-i18n="sectionKeysKicker">SHORTCUTS · 點擊自訂</div>
+            <div class="client-section-kicker" data-i18n="sectionKeysKicker">SHORTCUTS</div>
           </div>
           <div class="client-keys-card">
             <div class="client-keys-row">
@@ -479,7 +479,7 @@
         <section class="client-section" data-section="update" hidden>
           <div class="client-section-head">
             <div class="client-section-title" data-i18n="updateSectionTitle">更新</div>
-            <div class="client-section-kicker" data-i18n="updateSectionKicker">AUTO-UPDATE · CHANGELOG</div>
+            <div class="client-section-kicker" data-i18n="updateSectionKicker">UPDATES</div>
           </div>
 
           <div class="client-update-status">
@@ -529,7 +529,7 @@
         <section class="client-section" data-section="about" hidden>
           <div class="client-section-head">
             <div class="client-section-title" data-i18n="sectionAboutTitle">關於</div>
-            <div class="client-section-kicker" data-i18n="sectionAboutKicker">ABOUT · 版本 · 更新</div>
+            <div class="client-section-kicker" data-i18n="sectionAboutKicker">ABOUT</div>
           </div>
           <div class="client-about-card">
             <div class="client-about-logo">

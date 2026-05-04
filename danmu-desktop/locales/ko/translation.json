@@ -44,7 +44,7 @@
   "updateRemindLater": "나중에 알림",
   "updateSkipVersion": "이 버전 건너뛰기",
   "updateSectionTitle": "업데이트",
-  "updateSectionKicker": "AUTO-UPDATE · CHANGELOG",
+  "updateSectionKicker": "UPDATES",
   "updateCheckNow": "지금 확인",
   "updatePrefsKicker": "UPDATE BEHAVIOR",
   "updatePrefAutoDownload": "업데이트 자동 다운로드",
@@ -69,5 +69,18 @@
   "firstrunRememberHint": "localStorage 저장 · ⚙ 연결 → 재설정에서 초기화 가능",
   "firstrunDocsLink": "배포 문서 →",
   "firstrunSkip": "나중에 설정",
-  "firstrunConfirm": "연결하고 수신 시작 →"
+  "firstrunConfirm": "연결하고 수신 시작 →",
+  "overlaySectionTitle": "Overlay",
+  "overlaySectionKicker": "DISPLAY",
+  "overlayCardTitle": "댄무 오버레이 표시",
+  "overlayCardHint": "⌘⇧D 로 언제든 전환",
+  "overlayActionStart": "▶ 수신 시작",
+  "overlayActionPause": "⏸ 일시 정지",
+  "overlayActionClear": "⌫ 화면 지우기",
+  "overlayNoteKicker": "NOTE",
+  "overlayNoteBody": "댄무의 글꼴·색상·크기·투명도·속도·레이아웃·효과는 관객이 전송 시 함께 보내는 파라미터로 이 창에서는 설정하지 않습니다. 이 창은 오버레이 표시 여부·표시 디스플레이·서버 연결만 결정합니다.",
+  "sectionKeysTitle": "단축키",
+  "sectionKeysKicker": "SHORTCUTS",
+  "sectionAboutTitle": "정보",
+  "sectionAboutKicker": "ABOUT"
 }
