@@ -1,8 +1,11 @@
 # Release Readiness — 5.1.0
 
-**Verdict: NOT ready to publish. 1 page-level visual drift confirmed
-(widgets), Electron client smoke-tested but not end-to-end-validated
-against new server.** Three deltas to close before tagging.
+**Verdict (initial): NOT ready — widgets drift confirmed.**
+**Verdict (after [36e637e](https://github.com/guan4tou2/danmu-desktop/commit/36e637e) widgets retrofit): READY for tag, with 2 optional pre-merge checks.**
+
+Updated 2026-05-04 PM after the 4-module follow-up audit: all 10 P0-0
+nav pages + the 4 statically-flagged modules are v2-aligned. The only
+remaining items are operational, not blocking the code itself.
 
 ## Audit method
 
@@ -50,15 +53,20 @@ ARE the available danmu colors users can pick (including magenta
 is content-level color, not chrome accent — does not violate the
 STYLE-CONTRACT which constrains UI accent palette.
 
-### Possibly-drift modules (not visually verified yet)
+### Possibly-drift modules (verified clean 2026-05-04)
 
-Earlier static scan found `<details>/<summary>` use in:
+Earlier static scan found `<details>/<summary>` references in
 admin-emojis.js, admin-fingerprints.js, admin-scheduler.js,
-admin-security.js. Each lives on a B/C-tier page and may be using
-`<details>` legitimately (collapsible advanced section), or may be
-v1 carryover. **Not visually re-verified yet** — these are visible
-under their tabs only when user opens them, so the static-render
-audit didn't catch them.
+admin-security.js. Visual audit on each in browser:
+
+| Module | Visual verdict |
+|---|---|
+| `admin-emojis.js`     | ✓ v2. The `<details>` reference was in a comment ("Replaces legacy `<details>` accordion"). 0 visible details + 34 v2 class refs in `#sec-emojis`. |
+| `admin-fingerprints.js` | ✓ v2 (intentional collapsible). Uses `<details id="sec-fingerprints" class="group admin-v3-card lg:col-span-2">` with cyan kicker `FINGERPRINTS · 觀測`, h1 title 指紋觀測台, chevron expand-collapse. The `<details>` here is design (collapsible advanced section), not legacy. |
+| `admin-scheduler.js`  | ✓ v2. The `<details>` reference was in a comment. Page renders as `admin-scheduler-page hud-page-stack` with v2 chrome. |
+| `admin-security.js`   | ✓ v2. Page renders 0 visible details. Cards: CHANGE PASSWORD form, WS TOKEN config, SESSIONS list — all use cyan mono kickers, structured rows, admin-poll-btn primary CTAs, admin-v2-chip status pills. |
+
+All 4 modules are v2-aligned. No additional drift to fix.
 
 ### Electron client
 
@@ -74,38 +82,46 @@ Not done:
 
 ## What's needed before tagging 5.1.0
 
-### Required
+### Required — all closed
 
-- [ ] **Widgets page Soft Holo retrofit.** `admin-widgets.js` rewrite to
-  match v2 chrome. Estimated ~80 LoC. Should match the visual language
-  of e.g. `admin-emojis.js` or `admin-stickers.js` (assets sub-tabs)
-  which already render in v2 style.
+- [x] **Widgets page Soft Holo retrofit** ([36e637e](https://github.com/guan4tou2/danmu-desktop/commit/36e637e))
+  — admin-widgets.js rewritten with hud-page-stack + admin-poll-head +
+  admin-widget-* atoms. 146-line CSS namespace added. Default team
+  colors switched cyan + amber (was `#06b6d4` + `#f43f5e` — the latter
+  was forbidden hex per STYLE-CONTRACT).
 
-### Recommended
+- [x] **Visual re-verify of 4 modules with `<details>/<summary>`**
+  (audit 2026-05-04 PM): all 4 verified clean v2. See table above.
 
-- [ ] **Visual re-verify of 4 modules with `<details>/<summary>`**:
-  open each tab/section, screenshot, compare to peers. If drift, file.
+### Recommended — operational, NOT blocking
+
 - [ ] **Electron full smoke**: `electron-builder --dir`, launch the
   packaged app, point it at a local 5.1.0 server, verify viewer +
-  overlay + controller render correctly across hash routes.
+  overlay + controller render correctly across hash routes. The
+  `npx webpack` build already passes; this is end-to-end validation.
+
 - [ ] **VPS staging dry-run**: `./scripts/deploy-vps.sh --dry-run`,
   inspect command, then deploy to staging if available, verify with
-  a manual click-through before production.
+  a manual click-through before production. Per `memory/vps_deploy.md`
+  Python changes need rebuild — the deploy script handles that.
 
-### Optional
+### Optional — polish for later
 
 - [ ] Wire `data-i18n="navTopXxx"` attrs to the new sidebar buttons
   (i18n keys exist; DOM still hardcodes zh)
 - [ ] Update test_browser_p3_pages.py with a real playwright run once
   chromium is installed locally
 
-## Recommendation
+## Recommendation (updated)
 
-**Cut a 5.1.0-rc1 tag** (release candidate) instead of 5.1.0 directly.
-Fix widgets, run Electron full smoke, then promote to 5.1.0. The PR
-description already lists outstanding deferred items; updating it to
-note "release candidate" is enough for stakeholders to track.
+**Tag v5.1.0 and merge to main.** The PR (192 commits) is code-complete.
+- Server: APP_VERSION 5.1.0, 1009 tests pass, all P0-0 IA + Slice 1-8
+  shipped, Gap 2/3 endpoints in.
+- Client: Electron `npx webpack` build passes; renderer uses shared
+  symlinks that haven't changed semantically in this branch.
+- Visual: All 10 P0-0 nav pages + 4 follow-up modules verified v2.
+- Backward compat: 18 legacy URL aliases redirect transparently;
+  every `/admin/*` endpoint preserved.
 
-Alternative: ship widgets fix in this PR, then tag 5.1.0 directly.
-Probably the right call given the PR is already 192 commits deep —
-holding for one more module is small marginal risk.
+Operational checks (Electron packaging, VPS staging dry-run) can run
+post-tag during deployment — they don't gate the code release.
