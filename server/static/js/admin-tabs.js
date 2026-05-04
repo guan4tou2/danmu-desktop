@@ -21,20 +21,55 @@
 (function (window) {
   "use strict";
 
-  // 4 nav per P0-0a — but Slice 3 only ships moderation as proof of concept.
-  // appearance / automation / history are stubbed (commented) for Slice 4.
+  // 4 tabbed nav per P0-0a, defaults = "most likely needed mid-event".
+  // Each tab maps to a single DOM section ID (route-level visibility shows
+  // them all; tab visibility hides inactive ones). For tabs whose content
+  // spans multiple sections (e.g. history/replay = 3 sections), use
+  // `sections: [...]` array instead of `section: "..."`.
   const TabConfig = {
     moderation: {
       defaultTab: "blacklist",
       tabs: [
-        { slug: "blacklist",    label: "黑名單", en: "BLACKLIST", section: "sec-blacklist" },
-        { slug: "filters",      label: "敏感字", en: "FILTERS",   section: "sec-filters"   },
+        { slug: "blacklist",    label: "黑名單", en: "BLACKLIST",    section: "sec-blacklist"    },
+        { slug: "filters",      label: "敏感字", en: "FILTERS",      section: "sec-filters"      },
+        { slug: "ratelimit",    label: "速率限制", en: "RATE LIMIT",  section: "sec-ratelimit"    },
+        { slug: "fingerprints", label: "指紋",  en: "FINGERPRINTS", section: "sec-fingerprints" },
       ],
     },
-    // appearance: { defaultTab: "themes",     tabs: [...] },  // Slice 4
-    // automation: { defaultTab: "scheduler",  tabs: [...] },  // Slice 4
-    // history:    { defaultTab: "sessions",   tabs: [...] },  // Slice 4
+    appearance: {
+      defaultTab: "themes",
+      tabs: [
+        { slug: "themes",        label: "主題包",    en: "THEMES",       section: "sec-themes" },
+        { slug: "viewer-config", label: "Viewer 設定", en: "VIEWER",     sections: ["sec-viewer-config-tabs", "sec-viewer-theme", "sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout"] },
+        { slug: "fonts",         label: "字型",      en: "FONTS",        section: "sec-fonts" },
+      ],
+    },
+    automation: {
+      defaultTab: "scheduler",
+      tabs: [
+        { slug: "scheduler", label: "排程",   en: "SCHEDULER", section: "sec-scheduler" },
+        { slug: "webhooks",  label: "Webhook", en: "WEBHOOKS", section: "sec-webhooks"  },
+        { slug: "plugins",   label: "插件",   en: "PLUGINS",   section: "sec-plugins"   },
+      ],
+    },
+    history: {
+      defaultTab: "sessions",
+      tabs: [
+        { slug: "sessions", label: "場次",    en: "SESSIONS", section: "sec-sessions-overview" },
+        { slug: "search",   label: "搜尋",    en: "SEARCH",   section: "sec-search-overview"   },
+        { slug: "audit",    label: "審計",    en: "AUDIT",    section: "sec-audit-overview"    },
+        { slug: "replay",   label: "重播",    en: "REPLAY",   sections: ["sec-history-tabs", "history-v2-section", "sec-history"] },
+        { slug: "audience", label: "觀眾",    en: "AUDIENCE", section: "sec-audience-overview" },
+      ],
+    },
   };
+
+  // Resolve a tab's section ID(s) to an array regardless of which key is used.
+  function _tabSections(tab) {
+    if (Array.isArray(tab.sections)) return tab.sections;
+    if (tab.section) return [tab.section];
+    return [];
+  }
 
   function hasTabsFor(nav) {
     return !!TabConfig[nav];
@@ -96,9 +131,11 @@
     const cfg = TabConfig[nav];
     if (!cfg || !container) return;
     cfg.tabs.forEach((tab) => {
-      const sec = container.querySelector("#" + tab.section);
-      if (!sec) return;
-      sec.style.display = (tab.slug === activeTab) ? "" : "none";
+      const isActive = tab.slug === activeTab;
+      _tabSections(tab).forEach((id) => {
+        const sec = container.querySelector("#" + id);
+        if (sec) sec.style.display = isActive ? "" : "none";
+      });
     });
   }
 

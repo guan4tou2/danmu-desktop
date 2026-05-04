@@ -76,9 +76,35 @@ document.addEventListener("DOMContentLoaded", () => {
   // Slice 3 wires tab into applyRoute; Slice 4 populates _routeAliases.
   // ────────────────────────────────────────────────────────────────────
 
-  // Maps deprecated single-segment routes → P0-0 nav homes. Empty in
-  // Slice 2; populated in Slice 4 when we collapse e.g. `audit` → `history`.
+  // Maps deprecated single-segment routes → P0-0 nav homes.
+  // Slice 4: each entry is either a string (just nav redirect) or a
+  // {nav, tab} object (redirect to specific tab inside the new nav).
+  // Slice 8 will remove the alias map once all callers use new routes.
   const _routeAliases = Object.create(null);
+  Object.assign(_routeAliases, {
+    // === Moderation tabs ===
+    ratelimit:    { nav: "moderation", tab: "ratelimit" },
+    fingerprints: { nav: "moderation", tab: "fingerprints" },
+    // (note: `moderation` is its own nav, blacklist+filters are tabs there)
+
+    // === Appearance tabs ===
+    themes:         { nav: "appearance", tab: "themes" },
+    "viewer-config": { nav: "appearance", tab: "viewer-config" },
+    fonts:          { nav: "appearance", tab: "fonts" },
+
+    // === Automation tabs ===
+    scheduler: { nav: "automation", tab: "scheduler" },
+    webhooks:  { nav: "automation", tab: "webhooks" },
+    plugins:   { nav: "automation", tab: "plugins" },
+
+    // === History tabs ===
+    sessions:        { nav: "history", tab: "sessions" },
+    "session-detail": { nav: "history", tab: "sessions" },  // collapses to sessions tab
+    search:          { nav: "history", tab: "search" },
+    audit:           { nav: "history", tab: "audit" },
+    audience:        { nav: "history", tab: "audience" },
+    // (note: `history` route itself = the replay tab inside history nav)
+  });
 
   // Per-nav last-active-tab memory (sessionStorage). Cleared on logout.
   const _routeTabMemory = {
@@ -95,13 +121,23 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Parse `#/<nav>` or `#/<nav>/<tab>`. Returns `{nav, tab}` or `null`.
-  // `nav` is alias-resolved (e.g. `audit` → `history` once Slice 4 lands).
+  // Aliases can be either a plain string (nav rename) or an object
+  // `{nav, tab}` (Slice 4: redirect deprecated route to specific tab inside
+  // a new tabbed nav). Explicit URL tab segment wins over alias-supplied tab.
   function _parseHashRoute(hash) {
     const m = (hash || "").match(/^#\/([\w-]+)(?:\/([\w-]+))?/);
     if (!m) return null;
     const rawNav = m[1];
-    const nav = _routeAliases[rawNav] || rawNav;
-    return { nav, tab: m[2] || null, raw: rawNav };
+    const explicitTab = m[2] || null;
+    const alias = _routeAliases[rawNav];
+    let nav = rawNav, aliasTab = null;
+    if (typeof alias === "string") {
+      nav = alias;
+    } else if (alias && typeof alias === "object") {
+      nav = alias.nav || rawNav;
+      aliasTab = alias.tab || null;
+    }
+    return { nav, tab: explicitTab || aliasTab, raw: rawNav };
   }
 
   // Build a hash route. Used by Slice 3 tab clicks.
@@ -542,118 +578,59 @@ document.addEventListener("DOMContentLoaded", () => {
                                      P0-0 final nav structure. Slice 4 will collapse each
                                      group to a single nav button + tab/accordion content. -->
 
-                                <!-- 1. DASHBOARD ─────────────────────────────── -->
-                                <div class="admin-dash-nav-label">DASHBOARD</div>
+                                <!-- ── P0-0 Final 10 Nav (Slice 4: collapsed) ────────
+                                     4 tabbed nav (moderation/appearance/automation/
+                                     history) hide their sub-pages behind tab strips.
+                                     The S/A-tier 7 nav are first; B/C are after.
+                                     System group still has individual rows; Slice 6
+                                     will collapse those into the system accordion. -->
+
                                 <button type="button" class="admin-dash-nav-row is-active" data-route="dashboard" role="tab" aria-selected="true">
                                     <span class="admin-dash-nav-icon">⌂</span>
                                     <span>控制台</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="messages" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">≡</span>
-                                    <span>訊息</span>
-                                    <span class="admin-dash-nav-badge" data-count-messages hidden>—</span>
-                                    <span class="admin-dash-nav-live"></span>
-                                </button>
-
-                                <!-- 2. POLLS ─────────────────────────────────── -->
-                                <div class="admin-dash-nav-label" style="margin-top:12px">POLLS</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="polls" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◉</span>
                                     <span>投票</span>
                                     <span class="admin-dash-nav-live"></span>
                                 </button>
-
-                                <!-- 3. EFFECTS ───────────────────────────────── -->
-                                <div class="admin-dash-nav-label" style="margin-top:12px">EFFECTS</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="effects" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">✦</span>
-                                    <span>效果庫</span>
+                                    <span>效果</span>
                                     <span class="admin-dash-nav-badge" data-count-effects>—</span>
                                 </button>
-
-                                <!-- 4. MODERATION ───────────────────────────── -->
-                                <div class="admin-dash-nav-label" style="margin-top:12px">MODERATION</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="moderation" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⊘</span>
-                                    <span>黑名單 &amp; 敏感字</span>
+                                    <span>審核</span>
                                     <span class="admin-dash-nav-badge" data-count-blacklist hidden>—</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="ratelimit" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◑</span>
-                                    <span>速率限制</span>
-                                </button>
-
-                                <!-- 5. WIDGETS ───────────────────────────────── -->
-                                <div class="admin-dash-nav-label" style="margin-top:12px">WIDGETS</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="widgets" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◫</span>
-                                    <span>Overlay 小工具</span>
+                                    <span>小工具</span>
                                     <span class="admin-dash-nav-badge" data-count-widgets hidden>—</span>
                                 </button>
-
-                                <!-- 6. APPEARANCE ───────────────────────────── -->
-                                <div class="admin-dash-nav-label" style="margin-top:12px">APPEARANCE</div>
-                                <button type="button" class="admin-dash-nav-row" data-route="themes" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">❖</span>
-                                    <span>主題包</span>
-                                    <span class="admin-dash-nav-badge" data-count-themes>—</span>
+                                <button type="button" class="admin-dash-nav-row" data-route="appearance" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◐</span>
+                                    <span>外觀</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="viewer-config" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◍</span>
-                                    <span>Viewer 設定</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="fonts" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">Aa</span>
-                                    <span>字型</span>
-                                </button>
-
-                                <!-- 7. ASSETS ────────────────────────────────── -->
-                                <div class="admin-dash-nav-label" style="margin-top:12px">ASSETS</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="assets" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⌬</span>
-                                    <span>素材庫</span>
+                                    <span>素材</span>
                                 </button>
-
-                                <!-- 8. AUTOMATION ───────────────────────────── -->
-                                <div class="admin-dash-nav-label" style="margin-top:12px">AUTOMATION</div>
-                                <button type="button" class="admin-dash-nav-row" data-route="scheduler" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◷</span>
-                                    <span>排程</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="plugins" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⬢</span>
-                                    <span>插件</span>
-                                    <span class="admin-dash-nav-badge" data-count-plugins hidden>—</span>
-                                </button>
-
-                                <!-- 9. HISTORY ──────────────────────────────── -->
-                                <div class="admin-dash-nav-label" style="margin-top:12px">HISTORY</div>
-                                <button type="button" class="admin-dash-nav-row" data-route="sessions" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">▦</span>
-                                    <span>場次管理</span>
+                                <button type="button" class="admin-dash-nav-row" data-route="automation" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">↻</span>
+                                    <span>自動化</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="history" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">↳</span>
-                                    <span>歷史紀錄</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="search" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⌕</span>
-                                    <span>搜尋</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="audit" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⊜</span>
-                                    <span>審計日誌</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="audience" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⌬</span>
-                                    <span>觀眾</span>
+                                    <span class="admin-dash-nav-icon">⌚</span>
+                                    <span>歷史</span>
                                 </button>
 
-                                <!-- 10. SYSTEM ──────────────────────────────── -->
+                                <!-- SYSTEM group — Slice 6 will collapse into accordion ── -->
                                 <div class="admin-dash-nav-label" style="margin-top:12px">SYSTEM</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="system" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⚙</span>
-                                    <span>系統 &amp; 指紋</span>
+                                    <span>系統</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="security" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⛨</span>
@@ -661,7 +638,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="integrations" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⌨</span>
-                                    <span>整合 &amp; Fire Token</span>
+                                    <span>整合</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="api-tokens" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⌗</span>
@@ -669,7 +646,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="backup" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⤓</span>
-                                    <span>備份 &amp; 匯出</span>
+                                    <span>備份</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="notifications" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⚑</span>
@@ -678,11 +655,11 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="broadcast" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◎</span>
-                                    <span>廣播控制</span>
+                                    <span>廣播</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="wcag" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⊙</span>
-                                    <span>WCAG 對比度</span>
+                                    <span>WCAG</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="mobile" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">▤</span>
@@ -1177,17 +1154,31 @@ document.addEventListener("DOMContentLoaded", () => {
   const ADMIN_ROUTES = {
     dashboard: { title: "控制台", kicker: "DASHBOARD · 活動進行中", sections: [], showKpi: true },
     messages:  { title: "訊息紀錄",         kicker: "MESSAGES · 即時訊息串",    sections: ["sec-live-feed"] },
-    // v5.2 consolidation (2026-04-27 audit §A): merged 歷史重播 → tab inside
-    // history page. sec-history holds export, replay-v2-section holds the
-    // replay UI; admin-history.js renders a tab strip that toggles them.
-    history:   { title: "歷史",             kicker: "HISTORY · 匯出 / 重播",     sections: ["sec-history-tabs", "history-v2-section", "sec-history"] },
+    // Slice 4 (P0-0): history is now the merged tabbed nav (sessions /
+    // search / audit / replay / audience). Each tab's section is hidden
+    // when not active by AdminTabs.applyTabSectionVisibility. Replay tab
+    // owns sec-history-tabs + history-v2-section + sec-history.
+    history:   { title: "歷史",             kicker: "HISTORY · 場次 / 搜尋 / 審計 / 重播 / 觀眾", sections: ["sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "history-v2-section", "sec-history", "sec-audience-overview"] },
     polls:     { title: "投票",             kicker: "POLLS · 2–6 選項",         sections: ["sec-polls"] },
     widgets:   { title: "Overlay Widgets",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
     themes:    { title: "風格主題包",       kicker: "THEME PACKS · 彈幕樣式預設",       sections: ["sec-themes"] },
     // v5.2 consolidation (2026-04-27 audit §A): viewer-theme + display merged
     // into one route with tab strip. Default tab = page (sec-viewer-theme),
     // alt tab = fields (sec-color/opacity/fontsize/speed/fontfamily/layout).
+    // Slice 4: kept for backward compat — alias redirects #/viewer-config →
+    // #/appearance/viewer-config.
     "viewer-config": { title: "Viewer 設定", kicker: "VIEWER CONFIG · 整頁主題 / 表單欄位", sections: ["sec-viewer-config-tabs", "sec-viewer-theme", "sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout"] },
+
+    // Slice 4: appearance is the tabbed nav merging themes + viewer-config + fonts.
+    // 3 tabs (themes default / viewer-config / fonts). Note: P0-0a originally
+    // specified 4 tabs splitting viewer-theme and display; we keep them merged
+    // under viewer-config for now — splitting deferred to a later slice.
+    appearance: { title: "外觀", kicker: "APPEARANCE · 主題 / Viewer / 字型", sections: ["sec-themes", "sec-viewer-config-tabs", "sec-viewer-theme", "sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout", "sec-fonts"] },
+
+    // Slice 4: automation is the tabbed nav for scheduler + webhooks + plugins.
+    // sec-scheduler + sec-webhooks currently live inside the system route's
+    // sections; they get pulled into automation here so the route owns visibility.
+    automation: { title: "自動化", kicker: "AUTOMATION · 排程 / Webhook / 插件", sections: ["sec-scheduler", "sec-webhooks", "sec-plugins"] },
     // v5.1 (2026-04-27 redesign): unified Assets Library overview on top
     // (sec-assets-overview from admin-assets.js) → existing emoji / stickers
     // / sounds sub-sections kept below for editing per-type.
@@ -1198,7 +1189,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // v5.2 Sprint 2 deeplink-only (2026-04-27 audit §A.3): Fire Token sub-row
     // removed from sidebar. Route stays reachable via integrations → 詳細統計.
     firetoken:    { title: "Fire Token",     kicker: "ADMIN LANE · FIRE TOKEN · 用量 / IP / AUDIT",  sections: ["sec-firetoken-overview"] },
-    moderation:{ title: "敏感字 & 黑名單",  kicker: "MODERATION · 內建功能 · 非插件", sections: ["sec-blacklist", "sec-filters"] },
+    // Slice 4: moderation extended to host 4 tabs (blacklist / filters /
+    // ratelimit / fingerprints). Each tab's section gets hidden by
+    // AdminTabs.applyTabSectionVisibility when not active.
+    moderation:{ title: "審核",  kicker: "MODERATION · 黑名單 / 敏感字 / 速率 / 指紋", sections: ["sec-blacklist", "sec-filters", "sec-ratelimit", "sec-fingerprints"] },
     ratelimit: { title: "速率限制",         kicker: "RATE LIMITS · 反刷屏",          sections: ["sec-ratelimit"] },
     effects:   { title: "效果庫 .dme",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },
     plugins:   { title: "伺服器插件",       kicker: "PLUGIN SDK · 熱重載 · SANDBOX", sections: ["sec-plugins"] },
