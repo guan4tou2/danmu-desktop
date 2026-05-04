@@ -65,6 +65,58 @@ document.addEventListener("DOMContentLoaded", () => {
   // only attach the document click + window hashchange handlers ONCE or each
   // click fires N handlers and the backstage toggle cancels itself.
   let _backstageHandlerBound = false;
+
+  // ────────────────────────────────────────────────────────────────────
+  // Slice 2 — Hash route compat layer (P0-0a + design-v2-backlog § P0-0)
+  //
+  // Adds infrastructure for `#/<nav>/<tab>` deep links + per-nav last-tab
+  // memory + alias map for legacy → P0-0 route migration. NO behavioral
+  // change in Slice 2: `_parseHashRoute` returns `{nav, tab}` but only
+  // `nav` is consumed today (tab is captured for forward compatibility).
+  // Slice 3 wires tab into applyRoute; Slice 4 populates _routeAliases.
+  // ────────────────────────────────────────────────────────────────────
+
+  // Maps deprecated single-segment routes → P0-0 nav homes. Empty in
+  // Slice 2; populated in Slice 4 when we collapse e.g. `audit` → `history`.
+  const _routeAliases = Object.create(null);
+
+  // Per-nav last-active-tab memory (sessionStorage). Cleared on logout.
+  const _routeTabMemory = {
+    _key: (nav) => "admin:tab:" + nav,
+    get(nav) {
+      try { return sessionStorage.getItem(this._key(nav)) || null; } catch (_) { return null; }
+    },
+    set(nav, tab) {
+      try {
+        if (tab) sessionStorage.setItem(this._key(nav), tab);
+        else sessionStorage.removeItem(this._key(nav));
+      } catch (_) { /* ignore quota / private mode */ }
+    },
+  };
+
+  // Parse `#/<nav>` or `#/<nav>/<tab>`. Returns `{nav, tab}` or `null`.
+  // `nav` is alias-resolved (e.g. `audit` → `history` once Slice 4 lands).
+  function _parseHashRoute(hash) {
+    const m = (hash || "").match(/^#\/([\w-]+)(?:\/([\w-]+))?/);
+    if (!m) return null;
+    const rawNav = m[1];
+    const nav = _routeAliases[rawNav] || rawNav;
+    return { nav, tab: m[2] || null, raw: rawNav };
+  }
+
+  // Build a hash route. Used by Slice 3 tab clicks.
+  function _buildHashRoute(nav, tab) {
+    return tab ? "#/" + nav + "/" + tab : "#/" + nav;
+  }
+
+  // Expose so admin-* modules (tab container in Slice 3) can read/write.
+  window.AdminRouter = window.AdminRouter || {};
+  Object.assign(window.AdminRouter, {
+    aliases: _routeAliases,
+    tabMemory: _routeTabMemory,
+    parseHash: _parseHashRoute,
+    buildHash: _buildHashRoute,
+  });
   // _effectModalRestoreFocusEl moved to admin-effects-mgmt.js
   var loadDetailsState = window.AdminUtils.loadDetailsState;
   var saveDetailsState = window.AdminUtils.saveDetailsState;
@@ -1290,8 +1342,9 @@ document.addEventListener("DOMContentLoaded", () => {
       window.removeEventListener("hashchange", _routeHashHandler);
     }
     _routeHashHandler = () => {
-      const h = (window.location.hash.match(/^#\/([\w-]+)/) || [])[1];
-      if (h) applyRoute(h);
+      const parsed = _parseHashRoute(window.location.hash);
+      if (parsed) applyRoute(parsed.nav);
+      // tab segment captured but unused in Slice 2; Slice 3 will pass it through.
     };
     window.addEventListener("hashchange", _routeHashHandler);
 
@@ -1302,8 +1355,8 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    const fromHash = (window.location.hash.match(/^#\/([\w-]+)/) || [])[1];
-    applyRoute(fromHash || "dashboard");
+    const fromHash = _parseHashRoute(window.location.hash);
+    applyRoute(fromHash?.nav || "dashboard");
 
     // Late-injected sections (admin-sounds.js, admin-emojis.js, etc. inject
     // after scheduleIdleTask). Watch the main area for new [id^="sec-"]
