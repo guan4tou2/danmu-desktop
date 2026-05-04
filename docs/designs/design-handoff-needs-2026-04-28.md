@@ -6,6 +6,37 @@
 
 ---
 
+## 2026-05-04 · 第二批設計包收到（最新狀態）
+
+> 2026-05-04 收到新的 handoff bundle。本次新增 3 個 artboard 檔案，並確認 4 條 PM 決議。
+
+### 新增的 artboard 檔案
+
+| 檔案 | 說明 |
+|------|------|
+| `docs/designs/design-v2/components/ia-spec.jsx` | IA Spec §H — Route 可見性矩陣 / Session 狀態圖 / Live 操作員路徑 |
+| `docs/designs/design-v2/components/decisions-log.jsx` | Decisions Log · 2026-04-28 sprint lock — 4 條 PM 確認決議 |
+| `docs/designs/design-v2/components/viewer-effects-panel.jsx` | DS-004 · Viewer Effects 參數面板（dark/light × bounce/blink 兩示例） |
+
+### 2026-04-28 sprint lock 決議（來自 decisions-log.jsx）
+
+| ID | 主題 | 決議 | 狀態 |
+|----|------|------|------|
+| B.3 / DS-010 | Identity 欄位 | plain input，文案固定「暱稱 / Nickname」| **LOCKED** — 不再討論 dropdown / floating label |
+| B.1 / DS-006 | Polls layout | 接受 master-detail 偏離（RWD 優先） | **ACCEPTED** — 768px stack / 480px 全屏 |
+| DS-007 | Message Detail | drawer 為 final，full-page route 移除 | **FULL PAGE DROPPED** — 工程已完成（無 /messages/:id 路由） |
+| DS-008 | Notifications | 維持 prototype 3 欄（left filter / center list / right detail） | **KEPT AS-IS** |
+
+### DS-004 工程實作狀態（2026-05-04）
+
+- ✅ 效果 inspector 從原本的「YAML 原文」升級為 DS-004 參數面板
+- ✅ YAML 自動解析：float/int 參數 → 靜態 slider 視覺，select → segmented radio
+- ✅ WCAG warn box：COLOR 類 duration < 0.33s → WARN / < 0.25s → BLOCK
+- ✅ LIVE PREVIEW：3 背景（dark / light / photo）注入 CSS 動畫
+- 🔲 互動式 slider（拖動即時更新）— 留待後續 sprint（需要 `POST /admin/effects/save` params 欄位支援）
+
+---
+
 ## 優先級一覽
 
 | 區塊 | 件數 | 阻塞工程？ | 建議交付順序 |

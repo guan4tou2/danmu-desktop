@@ -3119,6 +3119,177 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   gap: 6px;
 }
 
+/* DS-004 · Effect Parameter Panel (inside hud-inspector-body) ────────────── */
+.hud-inspector-body.has-param-panel {
+  white-space: normal;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: inherit;
+}
+.fx-param-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.fx-section-head {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--color-text-muted);
+  letter-spacing: 1.5px;
+  margin-bottom: 10px;
+}
+.fx-divider {
+  height: 1px;
+  background: var(--color-border, #1f2944);
+  margin: 0 -14px;
+}
+/* Slider */
+.fx-slider-track {
+  position: relative;
+  height: 6px;
+  background: var(--color-bg-elevated, #0f1524);
+  border: 1px solid var(--color-border, #1f2944);
+  border-radius: 3px;
+}
+.fx-slider-fill {
+  position: absolute;
+  left: 0; top: -1px; bottom: -1px;
+  background: var(--color-primary, #38bdf8);
+  border-radius: 3px;
+  opacity: 0.85;
+}
+.fx-slider-knob {
+  position: absolute;
+  top: -5px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--admin-panel, #0f1421);
+  border: 2px solid var(--color-primary, #38bdf8);
+  box-shadow: 0 0 8px rgba(56,189,248,0.40);
+  transform: translateX(-50%);
+}
+.fx-slider-minmax {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.3px;
+}
+/* Radio / segmented */
+.fx-radio-group {
+  display: flex;
+  background: var(--color-bg-elevated, #0f1524);
+  border: 1px solid var(--color-border, #1f2944);
+  border-radius: 3px;
+  padding: 2px;
+  gap: 2px;
+}
+.fx-radio-btn {
+  flex: 1;
+  padding: 5px 6px;
+  border: none;
+  cursor: default;
+  background: transparent;
+  color: var(--color-text-dim, #9aa4b2);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.4px;
+  font-weight: 600;
+  border-radius: 2px;
+  text-align: center;
+}
+.fx-radio-btn.is-active {
+  background: var(--color-primary, #38bdf8);
+  color: #0B1020;
+}
+/* Warn box */
+.fx-warn-box {
+  padding: 9px 10px;
+  border-radius: 3px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: rgba(132,204,22,0.10);
+  border: 1px solid rgba(132,204,22,0.45);
+}
+.fx-warn-box.is-amber {
+  background: rgba(251,191,36,0.10);
+  border-color: rgba(251,191,36,0.45);
+}
+.fx-warn-box.is-crimson {
+  background: rgba(244,63,94,0.10);
+  border-color: rgba(244,63,94,0.45);
+}
+.fx-warn-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  font-weight: 600;
+  flex-shrink: 0;
+  background: rgba(132,204,22,0.12);
+  border: 1px solid rgba(132,204,22,0.45);
+  color: var(--hud-lime, #84cc16);
+}
+.fx-warn-chip.is-amber {
+  background: rgba(251,191,36,0.12);
+  border-color: rgba(251,191,36,0.45);
+  color: var(--hud-amber, #fbbf24);
+}
+.fx-warn-chip.is-crimson {
+  background: rgba(244,63,94,0.12);
+  border-color: rgba(244,63,94,0.45);
+  color: var(--hud-crimson, #f43f5e);
+}
+.fx-warn-text {
+  font-size: 10.5px;
+  color: var(--color-text-strong, #e2e8f0);
+  line-height: 1.55;
+  flex: 1;
+}
+/* Live preview 3-grid */
+.fx-preview-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+.fx-preview-cell {
+  position: relative;
+  border-radius: 3px;
+  border: 1px solid var(--color-border, #1f2944);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 68px;
+  overflow: hidden;
+}
+.fx-preview-cell.is-dark  { background: #0B0E18; }
+.fx-preview-cell.is-light { background: #F8FAFC; }
+.fx-preview-cell.is-photo {
+  background: linear-gradient(135deg, #5B5142 0%, #886A45 30%, #4A6B82 60%, #2D3F58 100%);
+}
+.fx-preview-bg-label {
+  position: absolute;
+  top: 4px; left: 5px;
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: 0.9px;
+  color: rgba(154,164,178,0.65);
+  pointer-events: none;
+}
+.fx-preview-text {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  display: inline-block;
+}
+
 .hud-banned-row {
   display: flex;
   align-items: center;

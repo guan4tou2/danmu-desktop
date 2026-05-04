@@ -746,6 +746,210 @@
       .replace(/'/g, "&#39;");
   }
 
+  // ── DS-004 · Effect Parameter Panel helpers ──────────────────────────────
+
+  function _parseEffectYaml(content) {
+    const result = { name: "", label: "", description: "", params: [] };
+    if (!content) return result;
+    const lines = content.split("\n");
+    let mode = "top";
+    let currentParam = null;
+
+    for (const rawLine of lines) {
+      const stripped = rawLine.replace(/\r$/, "");
+      const trimmed = stripped.trimStart();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const indent = stripped.length - trimmed.length;
+
+      if (indent === 0) {
+        mode = "top";
+        if (currentParam) { result.params.push(currentParam); currentParam = null; }
+        if (trimmed === "params:") { mode = "params"; continue; }
+        const m = trimmed.match(/^([a-z_]+):\s*(.+)$/);
+        if (m) {
+          if (m[1] === "name") result.name = m[2].trim();
+          else if (m[1] === "label") result.label = m[2].trim();
+          else if (m[1] === "description") result.description = m[2].trim();
+        }
+        continue;
+      }
+
+      if (mode !== "params" && mode !== "param-fields" && mode !== "options") continue;
+
+      if (indent === 2 && (mode === "params" || mode === "param-fields" || mode === "options")) {
+        if (currentParam) { result.params.push(currentParam); currentParam = null; }
+        const m = trimmed.match(/^(\w+):$/);
+        if (m) { currentParam = { key: m[1] }; mode = "param-fields"; }
+        continue;
+      }
+
+      if (indent === 4 && mode === "param-fields" && currentParam) {
+        const m = trimmed.match(/^(\w+):\s*(.*)$/);
+        if (m) {
+          const k = m[1], v = m[2].trim();
+          if (k === "label") currentParam.label = v;
+          else if (k === "type") currentParam.type = v;
+          else if (k === "default") currentParam.default = v;
+          else if (k === "min") currentParam.min = parseFloat(v);
+          else if (k === "max") currentParam.max = parseFloat(v);
+          else if (k === "step") currentParam.step = parseFloat(v);
+          else if (k === "options") { currentParam.options = []; mode = "options"; }
+        }
+        continue;
+      }
+
+      if (mode === "options" && currentParam && indent >= 6) {
+        const mv = trimmed.match(/^-\s*value:\s*(.+)$/);
+        if (mv) { if (!currentParam.options) currentParam.options = []; currentParam.options.push({ value: mv[1].trim(), label: mv[1].trim() }); }
+        const ml = trimmed.match(/^label:\s*(.+)$/);
+        if (ml && currentParam.options && currentParam.options.length > 0) {
+          currentParam.options[currentParam.options.length - 1].label = ml[1].trim();
+        }
+      }
+    }
+
+    if (currentParam) result.params.push(currentParam);
+    return result;
+  }
+
+  function _extractEffectAnimation(yamlContent, parsedYaml) {
+    const kfMatch = yamlContent.match(/^keyframes:\s*\|(.+?)(?=^\w|\Z)/ms);
+    let keyframes = kfMatch ? kfMatch[1] : "";
+    const animMatch = yamlContent.match(/^animation:\s*["']?(.+?)["']?\s*$/m);
+    let animTemplate = animMatch ? animMatch[1].trim() : "";
+    for (const p of parsedYaml.params) {
+      const val = p.default !== undefined ? p.default : "";
+      const re = new RegExp(`\\{${p.key}\\}`, "g");
+      keyframes = keyframes.replace(re, val);
+      animTemplate = animTemplate.replace(re, val);
+    }
+    return { keyframes, animation: animTemplate };
+  }
+
+  function _computeWarnTone(category, params) {
+    if (category === "COLOR") {
+      const dur = params.find((p) => p.key === "duration");
+      if (dur && dur.default) {
+        const d = parseFloat(dur.default);
+        if (d < 0.25) return "crimson";
+        if (d < 0.33) return "amber";
+      }
+    }
+    if (category === "MOTION") {
+      const h = params.find((p) => p.key === "height");
+      if (h && h.default) {
+        const v = parseFloat(h.default);
+        if (v > 30) return "crimson";
+        if (v > 24) return "amber";
+      }
+    }
+    return "lime";
+  }
+
+  function _getWarnText(category, tone) {
+    if (category === "COLOR") {
+      if (tone === "crimson") return "頻率 > 4× 可能誘發光敏性癲癇，WCAG 2.1 SC 2.3.1 封鎖";
+      if (tone === "amber")   return "頻率 > 3× 接近 WCAG 2.1 SC 2.3.1 警告閾值";
+      return "頻率在 WCAG 安全範圍內";
+    }
+    if (tone === "crimson") return "振幅 > 30px 在低端裝置可能掉幀，建議 ≤ 24px";
+    if (tone === "amber")   return "振幅 > 24px 可能影響效能，建議適度調整";
+    return "參數在建議範圍內，效能良好";
+  }
+
+  function _renderEffectParamPanel(eff, yamlContent) {
+    const parsed = _parseEffectYaml(yamlContent);
+    const { keyframes, animation } = _extractEffectAnimation(yamlContent, parsed);
+    const category = detectCategory(eff.name);
+    const numericParams = parsed.params.filter((p) => p.type !== "select");
+    const selectParams  = parsed.params.filter((p) => p.type === "select");
+    const tone = _computeWarnTone(category, parsed.params);
+    const warnLabel = tone === "crimson" ? "BLOCK" : tone === "amber" ? "WARN" : "OK";
+    const warnText  = _getWarnText(category, tone);
+
+    // Inline animation CSS for preview cells
+    const animId  = "fx-anim-" + eff.name.replace(/[^a-z0-9]/gi, "-");
+    const previewCSS = (keyframes && animation)
+      ? `<style id="${escapeHtml(animId)}">${keyframes}</style>`
+      : "";
+    const animAttr = animation ? `animation:${animation};animation-play-state:running;` : "";
+
+    // §1 sliders
+    let slidersHTML = numericParams.map((p) => {
+      const val = parseFloat(p.default) || 0;
+      const mn  = p.min ?? 0;
+      const mx  = p.max ?? 100;
+      const pct = Math.max(0, Math.min(100, ((val - mn) / (mx - mn)) * 100));
+      const unitMatch = (p.label || "").match(/\(([^)]+)\)$/);
+      const unit = unitMatch ? unitMatch[1] : "";
+      const labelText = p.label || p.key;
+      return `<div style="display:flex;flex-direction:column;gap:2px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:7px">
+          <span style="font-size:11px;color:var(--color-text-strong,#e2e8f0);font-weight:500">${escapeHtml(labelText)}</span>
+          <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-strong,#e2e8f0)">
+            ${val}<span style="color:var(--color-text-muted);margin-left:2px">${escapeHtml(unit)}</span>
+          </span>
+        </div>
+        <div class="fx-slider-track">
+          <div class="fx-slider-fill" style="width:${pct}%"></div>
+          <div class="fx-slider-knob" style="left:${pct}%"></div>
+        </div>
+        <div class="fx-slider-minmax">
+          <span>${mn}${escapeHtml(unit)}</span><span>${mx}${escapeHtml(unit)}</span>
+        </div>
+      </div>`;
+    }).join("") || `<span style="font-size:11px;color:var(--color-text-muted)">此效果無數值參數</span>`;
+
+    // §2 select/radio
+    let selectHTML = selectParams.map((p) => {
+      const options = p.options || [];
+      const def = String(p.default || "");
+      const btns = options.map((o) =>
+        `<span class="fx-radio-btn${(o.value === def || o.label === def) ? " is-active" : ""}">${escapeHtml(o.label)}</span>`
+      ).join("");
+      return `<div>
+        <div style="font-size:11px;color:var(--color-text-strong,#e2e8f0);font-weight:500;margin-bottom:7px">${escapeHtml(p.label || p.key)}</div>
+        <div class="fx-radio-group">${btns || "<span>—</span>"}</div>
+      </div>`;
+    }).join("");
+
+    // Preview cells
+    const previewCells = ["dark", "light", "photo"].map((bg) => {
+      const textColor = bg === "light" ? "#0F172A" : "#ffffff";
+      return `<div class="fx-preview-cell is-${bg}">
+        <span class="fx-preview-bg-label">${bg.toUpperCase()}</span>
+        <span class="fx-preview-text" style="${animAttr}color:${textColor}">ABC</span>
+      </div>`;
+    }).join("");
+
+    let html = `${previewCSS}<div class="fx-param-body">
+      <div>
+        <div class="fx-section-head">§1 · 動態參數</div>
+        <div style="display:flex;flex-direction:column;gap:14px">${slidersHTML}</div>
+      </div>`;
+
+    if (selectHTML) {
+      html += `<div class="fx-divider"></div>
+      <div>
+        <div class="fx-section-head">§2 · 控制選項</div>
+        <div style="display:flex;flex-direction:column;gap:12px">${selectHTML}</div>
+      </div>`;
+    }
+
+    html += `<div class="fx-divider"></div>
+      <div>
+        <div class="fx-section-head">LIVE PREVIEW</div>
+        <div class="fx-preview-3">${previewCells}</div>
+      </div>
+      <div class="fx-warn-box${tone !== "lime" ? " is-" + tone : ""}">
+        <span class="fx-warn-chip${tone !== "lime" ? " is-" + tone : ""}">${warnLabel}</span>
+        <span class="fx-warn-text">${escapeHtml(warnText)}</span>
+      </div>
+    </div>`;
+
+    return html;
+  }
+
   async function selectEffect(eff) {
     _effectsState.selected = eff.name;
     const inspector = document.getElementById("effectsInspector");
@@ -755,9 +959,12 @@
     const body = document.getElementById("effectsInspectorBody");
     if (!inspector) return;
     if (dot) dot.className = "hud-status-dot is-live";
-    if (titleEl) titleEl.textContent = eff.filename || eff.name;
+    if (titleEl) titleEl.textContent = eff.label || eff.name;
     if (kicker) kicker.textContent = "LOADING";
-    if (body) body.textContent = "# \u8f09\u5165\u4e2d\u2026";
+    if (body) {
+      body.className = "hud-inspector-body";
+      body.textContent = "# \u8f09\u5165\u4e2d\u2026";
+    }
 
     // mark selected card
     document.querySelectorAll(".hud-effect-card").forEach((c) => {
@@ -768,14 +975,24 @@
       const res = await csrfFetch(`/admin/effects/${encodeURIComponent(eff.name)}/content`);
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        if (body) body.textContent = data.content || "";
-        if (kicker) kicker.textContent = "HOT-RELOADED";
+        const yamlContent = data.content || "";
+        if (body) {
+          body.className = "hud-inspector-body has-param-panel";
+          body.innerHTML = _renderEffectParamPanel(eff, yamlContent);
+        }
+        if (kicker) kicker.textContent = detectCategory(eff.name);
       } else {
-        if (body) body.textContent = "# " + (data.error || ServerI18n.t("effectLoadContentFailed"));
+        if (body) {
+          body.className = "hud-inspector-body";
+          body.textContent = "# " + (data.error || ServerI18n.t("effectLoadContentFailed"));
+        }
         if (kicker) kicker.textContent = "ERROR";
       }
     } catch (_) {
-      if (body) body.textContent = "# " + ServerI18n.t("effectsNetworkError");
+      if (body) {
+        body.className = "hud-inspector-body";
+        body.textContent = "# " + ServerI18n.t("effectsNetworkError");
+      }
       if (kicker) kicker.textContent = "NETWORK";
     }
   }
