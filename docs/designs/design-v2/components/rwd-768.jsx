@@ -13,25 +13,25 @@
 // viewport; the surrounding frame adds ~28px chrome on each side.
 
 const _r768 = {
-  bg:        '#0B1020',
-  panel:     '#0F1421',
-  raised:    '#13192C',
-  raised2:   '#172037',
-  line:      '#1F2944',
-  lineSoft:  '#1A2238',
-  text:      '#E6E8EE',
-  textDim:   '#9aa4b2',
-  textMute:  '#6b7385',
-  cyan:      '#38bdf8',
-  cyanSoft:  'rgba(56,189,248,0.12)',
-  cyanLine:  'rgba(56,189,248,0.45)',
-  lime:      '#84cc16',
-  amber:     '#fbbf24',
-  magenta:   '#f472b6',
-  crimson:   '#f43f5e',
-  violet:    '#a78bfa',
-  fontSans:  '"Noto Sans TC", "Zen Kaku Gothic New", -apple-system, system-ui, sans-serif',
-  fontMono:  '"IBM Plex Mono", ui-monospace, monospace',
+  bg:        hudTokens.bg0,
+  panel:     hudTokens.bg1,
+  raised:    hudTokens.bg2,
+  raised2:   hudTokens.bg3,
+  line:      hudTokens.line,
+  lineSoft:  hudTokens.line,
+  text:      hudTokens.text,
+  textDim:   hudTokens.textDim,
+  textMute:  hudTokens.textMute,
+  cyan:      hudTokens.cyan,
+  cyanSoft:  hudTokens.cyanSoft,
+  cyanLine:  hudTokens.cyanLine,
+  lime:      hudTokens.lime,
+  amber:     hudTokens.amber,
+  magenta:   hudTokens.amber,    // compat
+  crimson:   hudTokens.crimson,
+  violet:    hudTokens.cyan,     // compat
+  fontSans:  hudTokens.fontSans,
+  fontMono:  hudTokens.fontMono,
 };
 
 // shared 768 frame: tablet bezel + topbar + breakpoint indicator
@@ -76,8 +76,8 @@ function _F768({ route, title, en, badge, children }) {
         {badge && (
           <span style={{
             fontFamily: _r768.fontMono, fontSize: 9, color: _r768.lime, letterSpacing: 1,
-            padding: '3px 8px', background: 'rgba(132,204,22,0.13)',
-            border: `1px solid rgba(132,204,22,0.45)`, borderRadius: 2,
+            padding: '3px 8px', background: 'rgba(134, 239, 172,0.13)',
+            border: `1px solid rgba(134, 239, 172,0.45)`, borderRadius: 2,
           }}>{badge}</span>
         )}
         <span style={{
@@ -104,10 +104,10 @@ function _F768({ route, title, en, badge, children }) {
 function _R768Tag({ tone, mono, children }) {
   const c = {
     cyan:    { fg: _r768.cyan,    bg: _r768.cyanSoft,                 br: _r768.cyanLine },
-    lime:    { fg: _r768.lime,    bg: 'rgba(132,204,22,0.13)',       br: 'rgba(132,204,22,0.45)' },
+    lime:    { fg: _r768.lime,    bg: 'rgba(134, 239, 172,0.13)',       br: 'rgba(134, 239, 172,0.45)' },
     amber:   { fg: _r768.amber,   bg: 'rgba(251,191,36,0.13)',       br: 'rgba(251,191,36,0.45)' },
-    crimson: { fg: _r768.crimson, bg: 'rgba(244,63,94,0.13)',        br: 'rgba(244,63,94,0.45)' },
-    magenta: { fg: _r768.magenta, bg: 'rgba(244,114,182,0.13)',      br: 'rgba(244,114,182,0.45)' },
+    crimson: { fg: _r768.crimson, bg: 'rgba(248, 113, 113,0.13)',        br: 'rgba(248, 113, 113,0.45)' },
+    magenta: { fg: _r768.magenta, bg: 'rgba(251,191,36,0.13)',      br: 'rgba(251,191,36,0.45)' },
     mute:    { fg: _r768.textMute, bg: 'transparent',                br: _r768.line },
   }[tone || 'mute'];
   return (
@@ -216,7 +216,7 @@ function RwdMessages768() {
             fontFamily: _r768.fontMono, fontSize: 11, color: _r768.text, letterSpacing: 0.3,
           }}>
             <span>⊟ 篩選</span>
-            <span style={{ padding: '0 5px', background: _r768.cyan, color: '#0B1020', borderRadius: 2, fontSize: 9, fontWeight: 700 }}>3</span>
+            <span style={{ padding: '0 5px', background: _r768.cyan, color: hudTokens.bg0, borderRadius: 2, fontSize: 9, fontWeight: 700 }}>3</span>
           </span>
           <div style={{ flex: 1, minWidth: 0, padding: '7px 12px', background: _r768.panel, border: `1px solid ${_r768.line}`, borderRadius: 4 }}>
             <span style={{ fontFamily: _r768.fontMono, fontSize: 11, color: _r768.textMute, letterSpacing: 0.3 }}>⌕ 搜尋訊息 / 暱稱 / 指紋…</span>
@@ -237,9 +237,9 @@ function RwdMessages768() {
             <span key={i} style={{
               fontFamily: _r768.fontMono, fontSize: 9.5, letterSpacing: 0.8,
               padding: '4px 8px', borderRadius: 2,
-              background: f.tone === 'lime' ? 'rgba(132,204,22,0.13)' : f.tone === 'amber' ? 'rgba(251,191,36,0.13)' : _r768.cyanSoft,
+              background: f.tone === 'lime' ? 'rgba(134, 239, 172,0.13)' : f.tone === 'amber' ? 'rgba(251,191,36,0.13)' : _r768.cyanSoft,
               color: f.tone === 'lime' ? _r768.lime : f.tone === 'amber' ? _r768.amber : _r768.cyan,
-              border: `1px solid ${f.tone === 'lime' ? 'rgba(132,204,22,0.45)' : f.tone === 'amber' ? 'rgba(251,191,36,0.45)' : _r768.cyanLine}`,
+              border: `1px solid ${f.tone === 'lime' ? 'rgba(134, 239, 172,0.45)' : f.tone === 'amber' ? 'rgba(251,191,36,0.45)' : _r768.cyanLine}`,
               display: 'inline-flex', alignItems: 'center', gap: 4,
             }}>
               {f.l} <span>×</span>
@@ -355,7 +355,7 @@ function RwdPolls768() {
           <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <span style={{
               padding: '10px 14px', borderRadius: 3, textAlign: 'center',
-              background: _r768.amber, color: '#0B1020',
+              background: _r768.amber, color: hudTokens.bg0,
               fontFamily: _r768.fontMono, fontSize: 11, letterSpacing: 1, fontWeight: 700,
             }}>結束投票 · 顯示結果</span>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -384,14 +384,14 @@ function RwdBroadcast768() {
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14, height: '100%', overflow: 'auto' }}>
         {/* state hero */}
         <div style={{
-          padding: 18, background: 'rgba(132,204,22,0.10)', border: `1px solid rgba(132,204,22,0.45)`, borderRadius: 4,
+          padding: 18, background: 'rgba(134, 239, 172,0.10)', border: `1px solid rgba(134, 239, 172,0.45)`, borderRadius: 4,
           display: 'flex', alignItems: 'center', gap: 14,
         }}>
           <div style={{
             width: 56, height: 56, borderRadius: '50%',
-            background: 'rgba(132,204,22,0.18)', border: `2px solid ${_r768.lime}`,
+            background: 'rgba(134, 239, 172,0.18)', border: `2px solid ${_r768.lime}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: `0 0 16px rgba(132,204,22,0.5)`,
+            boxShadow: `0 0 16px rgba(134, 239, 172,0.5)`,
           }}>
             <span style={{ width: 14, height: 14, borderRadius: '50%', background: _r768.lime }} />
           </div>
@@ -405,7 +405,7 @@ function RwdBroadcast768() {
         {/* primary CTA full width */}
         <span style={{
           padding: '14px 16px', borderRadius: 4, textAlign: 'center',
-          background: _r768.amber, color: '#0B1020',
+          background: _r768.amber, color: hudTokens.bg0,
           fontFamily: _r768.fontMono, fontSize: 13, letterSpacing: 1.2, fontWeight: 700,
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         }}>
@@ -421,7 +421,7 @@ function RwdBroadcast768() {
           ].map((b, i) => (
             <span key={i} style={{
               padding: '12px 14px', borderRadius: 3, textAlign: 'center',
-              background: _r768.panel, border: `1px solid ${b.tone === 'crimson' ? 'rgba(244,63,94,0.45)' : _r768.cyanLine}`,
+              background: _r768.panel, border: `1px solid ${b.tone === 'crimson' ? 'rgba(248, 113, 113,0.45)' : _r768.cyanLine}`,
               color: b.tone === 'crimson' ? _r768.crimson : _r768.cyan,
               fontFamily: _r768.fontMono, fontSize: 11, letterSpacing: 0.6,
               display: 'flex', flexDirection: 'column', gap: 4,
@@ -476,7 +476,7 @@ function RwdNotifications768() {
             fontFamily: _r768.fontMono, fontSize: 11, color: _r768.text,
           }}>
             <span>⊟</span><span>分類</span>
-            <span style={{ padding: '0 5px', background: _r768.cyan, color: '#0B1020', borderRadius: 2, fontSize: 9, fontWeight: 700 }}>2</span>
+            <span style={{ padding: '0 5px', background: _r768.cyan, color: hudTokens.bg0, borderRadius: 2, fontSize: 9, fontWeight: 700 }}>2</span>
           </span>
           {['全部 32', '未讀 14', '系統 8', '安全 3'].map((c, i) => (
             <span key={c} style={{
@@ -497,7 +497,7 @@ function RwdNotifications768() {
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
               <span style={{
                 width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                background: 'rgba(244,63,94,0.18)', border: `1.5px solid ${_r768.crimson}`,
+                background: 'rgba(248, 113, 113,0.18)', border: `1.5px solid ${_r768.crimson}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontFamily: _r768.fontMono, fontSize: 14, color: _r768.crimson,
               }}>!</span>
@@ -513,7 +513,7 @@ function RwdNotifications768() {
                   IP <code style={{ fontFamily: _r768.fontMono, color: _r768.text }}>192.168.5.12</code> 在 8 秒內送出 23 則訊息,系統已自動冷卻 5 分鐘。建議:檢視來源、考慮永久封禁。
                 </div>
                 <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-                  <span style={{ padding: '5px 10px', borderRadius: 2, background: _r768.crimson, color: '#0B1020', fontFamily: _r768.fontMono, fontSize: 10, letterSpacing: 0.5, fontWeight: 600 }}>永久封禁 IP</span>
+                  <span style={{ padding: '5px 10px', borderRadius: 2, background: _r768.crimson, color: hudTokens.bg0, fontFamily: _r768.fontMono, fontSize: 10, letterSpacing: 0.5, fontWeight: 600 }}>永久封禁 IP</span>
                   <span style={{ padding: '5px 10px', borderRadius: 2, background: _r768.raised, color: _r768.text, border: `1px solid ${_r768.line}`, fontFamily: _r768.fontMono, fontSize: 10, letterSpacing: 0.5 }}>檢視來源</span>
                   <span style={{ padding: '5px 10px', borderRadius: 2, background: _r768.raised, color: _r768.textDim, border: `1px solid ${_r768.line}`, fontFamily: _r768.fontMono, fontSize: 10, letterSpacing: 0.5 }}>標記已讀</span>
                 </div>

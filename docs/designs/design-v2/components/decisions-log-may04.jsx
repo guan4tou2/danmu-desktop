@@ -4,35 +4,37 @@
 // Q1–Q4 是 Live Console 的 4 個 open question lock。
 // Q3 額外帶一個「使用條件」的細化規則(toast 普適 / inline 只在可撤銷時出)。
 
+// Token aliases — proxy to hudTokens (single source of truth).
+// magenta/violet kept as compat aliases mapping to amber/cyan respectively.
 const _d504 = {
-  bg:        '#0B1020',
-  panel:     '#0F1421',
-  raised:    '#13192C',
-  raised2:   '#172037',
-  line:      '#1F2944',
-  lineSoft:  '#1A2238',
-  text:      '#E6E8EE',
-  textDim:   '#9aa4b2',
-  textMute:  '#6b7385',
-  cyan:      '#38bdf8',
-  cyanSoft:  'rgba(56,189,248,0.12)',
-  cyanLine:  'rgba(56,189,248,0.45)',
-  lime:      '#84cc16',
-  amber:     '#fbbf24',
-  crimson:   '#f43f5e',
-  magenta:   '#f472b6',
-  violet:    '#a78bfa',
-  fontSans:  '"Noto Sans TC", "Zen Kaku Gothic New", -apple-system, system-ui, sans-serif',
-  fontMono:  '"IBM Plex Mono", ui-monospace, monospace',
+  bg:        hudTokens.bg0,
+  panel:     hudTokens.bg1,
+  raised:    hudTokens.bg2,
+  raised2:   hudTokens.bg3,
+  line:      hudTokens.line,
+  lineSoft:  hudTokens.line,
+  text:      hudTokens.text,
+  textDim:   hudTokens.textDim,
+  textMute:  hudTokens.textMute,
+  cyan:      hudTokens.cyan,
+  cyanSoft:  hudTokens.cyanSoft,
+  cyanLine:  hudTokens.cyanLine,
+  lime:      hudTokens.lime,
+  amber:     hudTokens.amber,
+  crimson:   hudTokens.crimson,
+  magenta:   hudTokens.amber,    // compat — was '#fbbf24', now amber
+  violet:    hudTokens.cyan,     // compat — was '#38bdf8', now cyan
+  fontSans:  hudTokens.fontSans,
+  fontMono:  hudTokens.fontMono,
 };
 
 function _D504Chip({ tone, children, sm }) {
   const c = {
-    locked:   { bg: 'rgba(132,204,22,0.14)', fg: _d504.lime,    br: 'rgba(132,204,22,0.55)' },
-    pivot:    { bg: 'rgba(167,139,250,0.14)', fg: _d504.violet, br: 'rgba(167,139,250,0.55)' },
+    locked:   { bg: 'rgba(134, 239, 172,0.14)', fg: _d504.lime,    br: 'rgba(134, 239, 172,0.55)' },
+    pivot:    { bg: 'rgba(56,189,248,0.14)', fg: _d504.violet, br: 'rgba(56,189,248,0.55)' },
     accept:   { bg: _d504.cyanSoft,           fg: _d504.cyan,    br: _d504.cyanLine },
     keep:     { bg: 'rgba(251,191,36,0.12)',  fg: _d504.amber,   br: 'rgba(251,191,36,0.45)' },
-    drop:     { bg: 'rgba(244,63,94,0.12)',   fg: _d504.crimson, br: 'rgba(244,63,94,0.45)' },
+    drop:     { bg: 'rgba(248, 113, 113,0.12)',   fg: _d504.crimson, br: 'rgba(248, 113, 113,0.45)' },
     mono:     { bg: 'transparent',            fg: _d504.textDim, br: _d504.line },
   }[tone];
   return (
@@ -170,7 +172,7 @@ function DecisionsLog2026May04() {
             display: 'grid', gridTemplateColumns: '170px 1fr 180px',
             padding: '13px 18px', gap: 14, alignItems: 'flex-start',
             borderBottom: i < rows.length - 1 ? `1px solid ${_d504.lineSoft}` : 'none',
-            background: i === 0 ? 'rgba(167,139,250,0.04)' : 'transparent',
+            background: i === 0 ? 'rgba(56,189,248,0.04)' : 'transparent',
           }}>
             {/* id */}
             <div>
@@ -257,7 +259,7 @@ function DecisionsLog2026May04() {
               <div style={{ fontFamily: _d504.fontMono, fontSize: 8.5, color: _d504.textMute, letterSpacing: 1.2, marginBottom: 5 }}>觀感 · 範例</div>
               <div style={{
                 padding: '5px 8px', borderRadius: 2,
-                background: 'rgba(132,204,22,0.10)', border: `1px solid rgba(132,204,22,0.45)`,
+                background: 'rgba(134, 239, 172,0.10)', border: `1px solid rgba(134, 239, 172,0.45)`,
                 display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6,
               }}>
                 <span style={{ fontFamily: _d504.fontMono, fontSize: 9.5, color: _d504.lime, letterSpacing: 0.4, flex: 1 }}>

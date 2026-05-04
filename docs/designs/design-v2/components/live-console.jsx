@@ -23,36 +23,36 @@
 // All variants live in this single component, default to the "recommended" pick.
 
 const _lc = {
-  bg:        '#0A0E1A',
-  panel:     '#0F1421',
-  raised:    '#13192C',
-  raised2:   '#172037',
-  line:      '#1F2944',
-  lineSoft:  '#1A2238',
-  text:      '#E6E8EE',
-  textDim:   '#9aa4b2',
-  textMute:  '#6b7385',
-  cyan:      '#38bdf8',
-  cyanSoft:  'rgba(56,189,248,0.12)',
-  cyanLine:  'rgba(56,189,248,0.45)',
-  lime:      '#84cc16',
-  amber:     '#fbbf24',
-  magenta:   '#f472b6',
-  crimson:   '#f43f5e',
-  violet:    '#a78bfa',
-  fontSans:  '"Noto Sans TC", "Zen Kaku Gothic New", -apple-system, system-ui, sans-serif',
-  fontMono:  '"IBM Plex Mono", ui-monospace, monospace',
+  bg:        hudTokens.bg0,
+  panel:     hudTokens.bg1,
+  raised:    hudTokens.bg2,
+  raised2:   hudTokens.bg3,
+  line:      hudTokens.line,
+  lineSoft:  hudTokens.line,
+  text:      hudTokens.text,
+  textDim:   hudTokens.textDim,
+  textMute:  hudTokens.textMute,
+  cyan:      hudTokens.cyan,
+  cyanSoft:  hudTokens.cyanSoft,
+  cyanLine:  hudTokens.cyanLine,
+  lime:      hudTokens.lime,
+  amber:     hudTokens.amber,
+  magenta:   hudTokens.amber,    // compat — was '#fbbf24', now amber
+  crimson:   hudTokens.crimson,
+  violet:    hudTokens.cyan,     // compat — was '#38bdf8', now cyan
+  fontSans:  hudTokens.fontSans,
+  fontMono:  hudTokens.fontMono,
   fontDisp:  '"Bebas Neue", sans-serif',
 };
 
 function _Pill({ tone, mono, sm, children }) {
   const c = {
     cyan:    { fg: _lc.cyan,    bg: _lc.cyanSoft,            br: _lc.cyanLine },
-    lime:    { fg: _lc.lime,    bg: 'rgba(132,204,22,0.13)', br: 'rgba(132,204,22,0.45)' },
+    lime:    { fg: _lc.lime,    bg: 'rgba(134, 239, 172,0.13)', br: 'rgba(134, 239, 172,0.45)' },
     amber:   { fg: _lc.amber,   bg: 'rgba(251,191,36,0.13)', br: 'rgba(251,191,36,0.45)' },
-    crimson: { fg: _lc.crimson, bg: 'rgba(244,63,94,0.13)',  br: 'rgba(244,63,94,0.45)' },
-    magenta: { fg: _lc.magenta, bg: 'rgba(244,114,182,0.13)', br: 'rgba(244,114,182,0.45)' },
-    violet:  { fg: _lc.violet,  bg: 'rgba(167,139,250,0.13)', br: 'rgba(167,139,250,0.45)' },
+    crimson: { fg: _lc.crimson, bg: 'rgba(248, 113, 113,0.13)',  br: 'rgba(248, 113, 113,0.45)' },
+    magenta: { fg: _lc.magenta, bg: 'rgba(251,191,36,0.13)', br: 'rgba(251,191,36,0.45)' },
+    violet:  { fg: _lc.violet,  bg: 'rgba(56,189,248,0.13)', br: 'rgba(56,189,248,0.45)' },
     mute:    { fg: _lc.textMute, bg: 'transparent',           br: _lc.line },
   }[tone || 'mute'];
   return (
@@ -109,14 +109,14 @@ function LiveConsoleDashboard({
 
   // 8 effects (.dme)
   const effects = [
-    { name: '彩虹漸變',  en: 'rainbow',     bg: 'linear-gradient(90deg,#f43f5e,#fbbf24,#84cc16,#38bdf8,#a78bfa)' },
-    { name: '彈跳',      en: 'bounce',      bg: '#13192C', accent: _lc.amber },
-    { name: '螢光',      en: 'glow-cyan',   bg: '#13192C', accent: _lc.cyan },
-    { name: '震動',      en: 'shake',       bg: '#13192C', accent: _lc.crimson },
-    { name: '粒子爆破',  en: 'particles',   bg: '#13192C', accent: _lc.violet },
-    { name: '漸顯',      en: 'fade-in',     bg: '#13192C', accent: _lc.lime },
-    { name: '加粗描邊',  en: 'stroke',      bg: '#13192C', accent: _lc.text },
-    { name: '閃爍',      en: 'flicker',     bg: '#13192C', accent: _lc.magenta },
+    { name: '彩虹漸變',  en: 'rainbow',     bg: `linear-gradient(90deg, ${hudTokens.crimson}, ${hudTokens.amber}, ${hudTokens.lime}, ${hudTokens.cyan})` },
+    { name: '彈跳',      en: 'bounce',      bg: '#1e293b', accent: _lc.amber },
+    { name: '螢光',      en: 'glow-cyan',   bg: '#1e293b', accent: _lc.cyan },
+    { name: '震動',      en: 'shake',       bg: '#1e293b', accent: _lc.crimson },
+    { name: '粒子爆破',  en: 'particles',   bg: '#1e293b', accent: _lc.violet },
+    { name: '漸顯',      en: 'fade-in',     bg: '#1e293b', accent: _lc.lime },
+    { name: '加粗描邊',  en: 'stroke',      bg: '#1e293b', accent: _lc.text },
+    { name: '閃爍',      en: 'flicker',     bg: '#1e293b', accent: _lc.magenta },
   ];
 
   // recent moderator actions (sidebar variant)
@@ -148,9 +148,9 @@ function LiveConsoleDashboard({
         }}>
           <span style={{
             width: 22, height: 22, borderRadius: 4,
-            background: 'linear-gradient(135deg, #f43f5e, #fbbf24)',
+            background: 'linear-gradient(135deg, ${hudTokens.crimson}, ${hudTokens.amber})',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: _lc.fontDisp, fontSize: 13, color: '#0A0E1A', fontWeight: 700,
+            fontFamily: _lc.fontDisp, fontSize: 13, color: hudTokens.bg0, fontWeight: 700,
           }}>D</span>
           <div>
             <div style={{ fontFamily: _lc.fontDisp, fontSize: 15, color: _lc.text, lineHeight: 1, letterSpacing: 0.5 }}>DANMU FIRE</div>
@@ -270,7 +270,7 @@ function LiveConsoleDashboard({
                 {k.spark.map((h, j) => (
                   <span key={j} style={{
                     flex: 1, height: `${(h / 80) * 100}%`,
-                    background: k.tone === 'cyan' ? _lc.cyanLine : k.tone === 'lime' ? 'rgba(132,204,22,0.5)' : k.tone === 'amber' ? 'rgba(251,191,36,0.5)' : 'rgba(167,139,250,0.5)',
+                    background: k.tone === 'cyan' ? _lc.cyanLine : k.tone === 'lime' ? 'rgba(134, 239, 172,0.5)' : k.tone === 'amber' ? 'rgba(251,191,36,0.5)' : 'rgba(56,189,248,0.5)',
                     borderRadius: 0.5, opacity: j === 19 ? 1 : 0.7,
                   }} />
                 ))}
@@ -395,12 +395,12 @@ function LiveConsoleDashboard({
                       display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
                       padding: '5px 7px', position: 'relative', overflow: 'hidden',
                     }}>
-                      <span style={{ fontFamily: _lc.fontMono, fontSize: 8, color: e.accent || '#0A0E1A', letterSpacing: 0.8, fontWeight: 700 }}>{e.en.toUpperCase()}</span>
+                      <span style={{ fontFamily: _lc.fontMono, fontSize: 8, color: e.accent || '#020617', letterSpacing: 0.8, fontWeight: 700 }}>{e.en.toUpperCase()}</span>
                       <span style={{
                         fontFamily: _lc.fontDisp, fontSize: 18, letterSpacing: 1,
-                        color: e.accent || '#0A0E1A', textAlign: 'center', lineHeight: 1,
+                        color: e.accent || '#020617', textAlign: 'center', lineHeight: 1,
                       }}>ABC</span>
-                      <span style={{ fontSize: 8.5, color: e.accent ? _lc.textDim : '#0A0E1A', textAlign: 'center' }}>{e.name}</span>
+                      <span style={{ fontSize: 8.5, color: e.accent ? _lc.textDim : '#020617', textAlign: 'center' }}>{e.name}</span>
                     </div>
                   ))}
                 </div>
@@ -413,9 +413,9 @@ function LiveConsoleDashboard({
                       display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
                       padding: '5px 7px',
                     }}>
-                      <span style={{ fontFamily: _lc.fontMono, fontSize: 8, color: e.accent || '#0A0E1A', letterSpacing: 0.8, fontWeight: 700 }}>{e.en.toUpperCase()}</span>
-                      <span style={{ fontFamily: _lc.fontDisp, fontSize: 16, letterSpacing: 1, color: e.accent || '#0A0E1A', textAlign: 'center', lineHeight: 1 }}>ABC</span>
-                      <span style={{ fontSize: 8.5, color: e.accent ? _lc.textDim : '#0A0E1A', textAlign: 'center' }}>{e.name}</span>
+                      <span style={{ fontFamily: _lc.fontMono, fontSize: 8, color: e.accent || '#020617', letterSpacing: 0.8, fontWeight: 700 }}>{e.en.toUpperCase()}</span>
+                      <span style={{ fontFamily: _lc.fontDisp, fontSize: 16, letterSpacing: 1, color: e.accent || '#020617', textAlign: 'center', lineHeight: 1 }}>ABC</span>
+                      <span style={{ fontSize: 8.5, color: e.accent ? _lc.textDim : '#020617', textAlign: 'center' }}>{e.name}</span>
                     </div>
                   ))}
                   <div style={{
@@ -441,7 +441,7 @@ function LiveConsoleDashboard({
                 </div>
                 <span style={{
                   padding: '10px 14px', borderRadius: 3,
-                  background: _lc.magenta, color: '#0A0E1A',
+                  background: _lc.magenta, color: hudTokens.bg0,
                   fontFamily: _lc.fontMono, fontSize: 11, letterSpacing: 0.8, fontWeight: 700, flexShrink: 0,
                 }}>啟動 ▶</span>
               </div>
@@ -462,7 +462,7 @@ function LiveConsoleDashboard({
                 }}>fp_ 或 @暱稱…</div>
                 <span style={{
                   padding: '7px 12px', borderRadius: 3,
-                  background: _lc.crimson, color: '#0A0E1A',
+                  background: _lc.crimson, color: hudTokens.bg0,
                   fontFamily: _lc.fontMono, fontSize: 10.5, letterSpacing: 0.8, fontWeight: 700,
                 }}>+ 加入</span>
               </div>
@@ -470,7 +470,7 @@ function LiveConsoleDashboard({
                 {['fp:a3f200', 'fp:88c100', '@spam_bot', 'fp:5c8e21'].map((c, i) => (
                   <span key={i} style={{
                     padding: '2px 6px', borderRadius: 2,
-                    background: 'rgba(244,63,94,0.10)', border: `1px solid rgba(244,63,94,0.35)`,
+                    background: 'rgba(248, 113, 113,0.10)', border: `1px solid rgba(248, 113, 113,0.35)`,
                     color: _lc.crimson,
                     fontFamily: _lc.fontMono, fontSize: 9, letterSpacing: 0.3,
                   }}>{c} ×</span>
@@ -496,7 +496,7 @@ function LiveConsoleDashboard({
                 }}>休息 10 分鐘 · 14:30 回來</div>
                 <span style={{
                   padding: '7px 12px', borderRadius: 3,
-                  background: _lc.cyan, color: '#0A0E1A',
+                  background: _lc.cyan, color: hudTokens.bg0,
                   fontFamily: _lc.fontMono, fontSize: 10.5, letterSpacing: 0.8, fontWeight: 700,
                 }}>推送 ↗</span>
               </div>
@@ -506,7 +506,7 @@ function LiveConsoleDashboard({
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 6,
                   padding: '5px 8px', borderRadius: 2,
-                  background: 'rgba(132,204,22,0.10)', border: `1px solid rgba(132,204,22,0.45)`,
+                  background: 'rgba(134, 239, 172,0.10)', border: `1px solid rgba(134, 239, 172,0.45)`,
                   fontFamily: _lc.fontMono, fontSize: 9.5, color: _lc.lime, letterSpacing: 0.4,
                 }}>
                   <span>✓</span>
@@ -555,14 +555,14 @@ function LiveConsoleDashboard({
         <div style={{
           position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)',
           padding: '10px 16px', borderRadius: 3,
-          background: _lc.raised2, border: `1px solid rgba(132,204,22,0.45)`,
+          background: _lc.raised2, border: `1px solid rgba(134, 239, 172,0.45)`,
           boxShadow: '0 8px 28px rgba(0,0,0,0.6)',
           display: 'flex', alignItems: 'center', gap: 10,
           fontFamily: _lc.fontSans, fontSize: 12, color: _lc.text,
         }}>
           <span style={{
             width: 18, height: 18, borderRadius: '50%',
-            background: 'rgba(132,204,22,0.25)', border: `1.5px solid ${_lc.lime}`,
+            background: 'rgba(134, 239, 172,0.25)', border: `1.5px solid ${_lc.lime}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: _lc.lime, fontSize: 11, fontWeight: 700,
           }}>✓</span>

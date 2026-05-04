@@ -21,25 +21,25 @@
 // Calm tabs (no count) show no badge.
 
 const _tab = {
-  bg:        '#0A0E1A',
-  panel:     '#0F1421',
-  raised:    '#13192C',
-  raised2:   '#172037',
-  line:      '#1F2944',
-  lineSoft:  '#1A2238',
-  text:      '#E6E8EE',
-  textDim:   '#9aa4b2',
-  textMute:  '#6b7385',
-  cyan:      '#38bdf8',
-  cyanSoft:  'rgba(56,189,248,0.12)',
-  cyanLine:  'rgba(56,189,248,0.45)',
-  lime:      '#84cc16',
-  amber:     '#fbbf24',
-  magenta:   '#f472b6',
-  crimson:   '#f43f5e',
-  violet:    '#a78bfa',
-  fontSans:  '"Noto Sans TC", "Zen Kaku Gothic New", -apple-system, system-ui, sans-serif',
-  fontMono:  '"IBM Plex Mono", ui-monospace, monospace',
+  bg:        hudTokens.bg0,
+  panel:     hudTokens.bg1,
+  raised:    hudTokens.bg2,
+  raised2:   hudTokens.bg3,
+  line:      hudTokens.line,
+  lineSoft:  hudTokens.line,
+  text:      hudTokens.text,
+  textDim:   hudTokens.textDim,
+  textMute:  hudTokens.textMute,
+  cyan:      hudTokens.cyan,
+  cyanSoft:  hudTokens.cyanSoft,
+  cyanLine:  hudTokens.cyanLine,
+  lime:      hudTokens.lime,
+  amber:     hudTokens.amber,
+  magenta:   hudTokens.amber,    // compat — was '#fbbf24', now amber
+  crimson:   hudTokens.crimson,
+  violet:    hudTokens.cyan,     // compat — was '#38bdf8', now cyan
+  fontSans:  hudTokens.fontSans,
+  fontMono:  hudTokens.fontMono,
   fontDisp:  '"Bebas Neue", sans-serif',
 };
 
@@ -69,9 +69,9 @@ function _TabTopbar({ activeNav }) {
       }}>
         <span style={{
           width: 22, height: 22, borderRadius: 4,
-          background: 'linear-gradient(135deg, #f43f5e, #fbbf24)',
+          background: `linear-gradient(135deg, ${hudTokens.crimson}, ${hudTokens.amber})`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: _tab.fontDisp, fontSize: 13, color: '#0A0E1A', fontWeight: 700,
+          fontFamily: _tab.fontDisp, fontSize: 13, color: hudTokens.bg0, fontWeight: 700,
         }}>D</span>
         <div>
           <div style={{ fontFamily: _tab.fontDisp, fontSize: 15, color: _tab.text, lineHeight: 1, letterSpacing: 0.5 }}>DANMU FIRE</div>
@@ -140,10 +140,10 @@ function _TabTopbar({ activeNav }) {
 // shared page header (kicker + title + meta + page CTA)
 function _TabHeader({ kicker, kickerEn, title, meta, cta, ctaTone = 'cyan' }) {
   const tones = {
-    cyan:    { bg: _tab.cyan,    fg: '#0A0E1A' },
-    crimson: { bg: _tab.crimson, fg: '#0A0E1A' },
-    lime:    { bg: _tab.lime,    fg: '#0A0E1A' },
-    amber:   { bg: _tab.amber,   fg: '#0A0E1A' },
+    cyan:    { bg: _tab.cyan,    fg: '#020617' },
+    crimson: { bg: _tab.crimson, fg: '#020617' },
+    lime:    { bg: _tab.lime,    fg: '#020617' },
+    amber:   { bg: _tab.amber,   fg: '#020617' },
   };
   const t = tones[ctaTone];
   return (
@@ -198,9 +198,9 @@ function _TabStrip({ tabs, active }) {
             {t.badge != null && t.badge > 0 && (
               <span style={{
                 padding: '1px 5px', borderRadius: 2,
-                background: t.badgeTone === 'crimson' ? 'rgba(244,63,94,0.18)' : t.badgeTone === 'amber' ? 'rgba(251,191,36,0.18)' : _tab.cyanSoft,
+                background: t.badgeTone === 'crimson' ? 'rgba(248, 113, 113,0.18)' : t.badgeTone === 'amber' ? 'rgba(251,191,36,0.18)' : _tab.cyanSoft,
                 color: t.badgeTone === 'crimson' ? _tab.crimson : t.badgeTone === 'amber' ? _tab.amber : _tab.cyan,
-                border: `1px solid ${t.badgeTone === 'crimson' ? 'rgba(244,63,94,0.45)' : t.badgeTone === 'amber' ? 'rgba(251,191,36,0.45)' : _tab.cyanLine}`,
+                border: `1px solid ${t.badgeTone === 'crimson' ? 'rgba(248, 113, 113,0.45)' : t.badgeTone === 'amber' ? 'rgba(251,191,36,0.45)' : _tab.cyanLine}`,
                 fontFamily: _tab.fontMono, fontSize: 9, fontWeight: 700, letterSpacing: 0.3, lineHeight: 1.3,
               }}>{t.badge}</span>
             )}
@@ -253,7 +253,7 @@ function TabChromeSpec() {
         </div>
         <span style={{
           padding: '3px 9px', borderRadius: 2,
-          background: 'rgba(132,204,22,0.14)', color: _tab.lime, border: `1px solid rgba(132,204,22,0.55)`,
+          background: 'rgba(134, 239, 172,0.14)', color: _tab.lime, border: `1px solid rgba(134, 239, 172,0.55)`,
           fontFamily: _tab.fontMono, fontSize: 10, fontWeight: 600, letterSpacing: 1.2,
         }}>SPEC LOCKED · 2026-05-04</span>
       </div>
@@ -278,7 +278,7 @@ function TabChromeSpec() {
           </div>
           <span style={{
             padding: '8px 14px', borderRadius: 3,
-            background: _tab.cyan, color: '#0A0E1A',
+            background: _tab.cyan, color: hudTokens.bg0,
             fontFamily: _tab.fontMono, fontSize: 10.5, letterSpacing: 0.8, fontWeight: 700,
           }}>④ 頁面 CTA</span>
         </div>
@@ -303,9 +303,9 @@ function TabChromeSpec() {
               {t.badge != null && (
                 <span style={{
                   padding: '1px 5px', borderRadius: 2,
-                  background: t.tone === 'crimson' ? 'rgba(244,63,94,0.18)' : t.tone === 'amber' ? 'rgba(251,191,36,0.18)' : _tab.cyanSoft,
+                  background: t.tone === 'crimson' ? 'rgba(248, 113, 113,0.18)' : t.tone === 'amber' ? 'rgba(251,191,36,0.18)' : _tab.cyanSoft,
                   color: t.tone === 'crimson' ? _tab.crimson : t.tone === 'amber' ? _tab.amber : _tab.cyan,
-                  border: `1px solid ${t.tone === 'crimson' ? 'rgba(244,63,94,0.45)' : t.tone === 'amber' ? 'rgba(251,191,36,0.45)' : _tab.cyanLine}`,
+                  border: `1px solid ${t.tone === 'crimson' ? 'rgba(248, 113, 113,0.45)' : t.tone === 'amber' ? 'rgba(251,191,36,0.45)' : _tab.cyanLine}`,
                   fontFamily: _tab.fontMono, fontSize: 8.5, fontWeight: 700,
                 }}>⑥ {t.badge}</span>
               )}
@@ -381,8 +381,8 @@ function TabChromeSpec() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{
                   width: 14, height: 14, borderRadius: 2,
-                  background: r.tone === 'crimson' ? 'rgba(244,63,94,0.18)' : r.tone === 'amber' ? 'rgba(251,191,36,0.18)' : _tab.cyanSoft,
-                  border: `1px solid ${r.tone === 'crimson' ? 'rgba(244,63,94,0.45)' : r.tone === 'amber' ? 'rgba(251,191,36,0.45)' : _tab.cyanLine}`,
+                  background: r.tone === 'crimson' ? 'rgba(248, 113, 113,0.18)' : r.tone === 'amber' ? 'rgba(251,191,36,0.18)' : _tab.cyanSoft,
+                  border: `1px solid ${r.tone === 'crimson' ? 'rgba(248, 113, 113,0.45)' : r.tone === 'amber' ? 'rgba(251,191,36,0.45)' : _tab.cyanLine}`,
                 }} />
                 <span style={{ fontFamily: _tab.fontMono, fontSize: 9.5, color: _tab.text, letterSpacing: 1, fontWeight: 600 }}>{r.label}</span>
               </div>
@@ -417,8 +417,8 @@ function TabChromeSpec() {
             }}>
               <span>黑名單 · BLACKLIST</span>
               <span style={{
-                padding: '0 4px', borderRadius: 2, background: 'rgba(244,63,94,0.18)', color: _tab.crimson,
-                fontFamily: _tab.fontMono, fontSize: 8.5, border: `1px solid rgba(244,63,94,0.45)`, fontWeight: 700,
+                padding: '0 4px', borderRadius: 2, background: 'rgba(248, 113, 113,0.18)', color: _tab.crimson,
+                fontFamily: _tab.fontMono, fontSize: 8.5, border: `1px solid rgba(248, 113, 113,0.45)`, fontWeight: 700,
               }}>23</span>
               <span style={{ marginLeft: 'auto', color: _tab.textMute, fontFamily: _tab.fontMono }}>▾</span>
             </div>
@@ -519,9 +519,9 @@ function ModerationPage() {
               }}>
                 <span style={{
                   display: 'inline-block', padding: '2px 6px', borderRadius: 2,
-                  background: b.kind === 'fp' ? _tab.cyanSoft : b.kind === 'name' ? 'rgba(244,114,182,0.13)' : 'rgba(167,139,250,0.13)',
+                  background: b.kind === 'fp' ? _tab.cyanSoft : b.kind === 'name' ? 'rgba(251,191,36,0.13)' : 'rgba(56,189,248,0.13)',
                   color: b.kind === 'fp' ? _tab.cyan : b.kind === 'name' ? _tab.magenta : _tab.violet,
-                  border: `1px solid ${b.kind === 'fp' ? _tab.cyanLine : b.kind === 'name' ? 'rgba(244,114,182,0.45)' : 'rgba(167,139,250,0.45)'}`,
+                  border: `1px solid ${b.kind === 'fp' ? _tab.cyanLine : b.kind === 'name' ? 'rgba(251,191,36,0.45)' : 'rgba(56,189,248,0.45)'}`,
                   fontFamily: _tab.fontMono, fontSize: 9, fontWeight: 600, letterSpacing: 0.6, width: 'fit-content',
                 }}>{b.kind.toUpperCase()}</span>
                 <span style={{ fontFamily: _tab.fontMono, fontSize: 11.5, color: _tab.text, letterSpacing: 0.3 }}>{b.v}</span>
@@ -532,7 +532,7 @@ function ModerationPage() {
                 </span>
                 <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                   <span style={{ padding: '3px 7px', background: 'transparent', border: `1px solid ${_tab.line}`, borderRadius: 2, color: _tab.textDim, fontFamily: _tab.fontMono, fontSize: 9.5, letterSpacing: 0.4 }}>編輯</span>
-                  <span style={{ padding: '3px 7px', background: 'transparent', border: `1px solid rgba(132,204,22,0.45)`, borderRadius: 2, color: _tab.lime, fontFamily: _tab.fontMono, fontSize: 9.5, letterSpacing: 0.4 }}>↶</span>
+                  <span style={{ padding: '3px 7px', background: 'transparent', border: `1px solid rgba(134, 239, 172,0.45)`, borderRadius: 2, color: _tab.lime, fontFamily: _tab.fontMono, fontSize: 9.5, letterSpacing: 0.4 }}>↶</span>
                 </div>
               </div>
             ))}
@@ -555,7 +555,7 @@ function AppearancePage() {
   const themePacks = [
     { id: 'cyber',     name: '賽博龐克',  bg: 'linear-gradient(135deg,#0a0a3e,#3a0a6e)',  accent: '#38bdf8', sample: 'ABCDEF', active: true,  count: 12 },
     { id: 'sakura',    name: '櫻花祭',    bg: 'linear-gradient(135deg,#ffe5ec,#ff8fa8)',  accent: '#c8186a', sample: 'ABCDEF', count: 8 },
-    { id: 'forest',    name: '深林',      bg: 'linear-gradient(135deg,#0d2818,#1a4530)',  accent: '#84cc16', sample: 'ABCDEF', count: 6 },
+    { id: 'forest',    name: '深林',      bg: 'linear-gradient(135deg,#0d2818,#1a4530)',  accent: '#86efac', sample: 'ABCDEF', count: 6 },
     { id: 'neon',      name: '霓虹',      bg: 'linear-gradient(135deg,#1a0033,#330066)',  accent: '#ff00ff', sample: 'ABCDEF', count: 10 },
     { id: 'sunset',    name: '黃昏',      bg: 'linear-gradient(135deg,#ff6b35,#f7931e)',  accent: '#fff', sample: 'ABCDEF', count: 7 },
     { id: 'ocean',     name: '海',        bg: 'linear-gradient(135deg,#003d5b,#005c8a)',  accent: '#7fdfff', sample: 'ABCDEF', count: 9 },
@@ -600,7 +600,7 @@ function AppearancePage() {
                   {p.active && (
                     <span style={{
                       padding: '1px 5px', borderRadius: 2,
-                      background: _tab.cyan, color: '#0A0E1A',
+                      background: _tab.cyan, color: hudTokens.bg0,
                       fontFamily: _tab.fontMono, fontSize: 8, fontWeight: 700, letterSpacing: 0.6,
                     }}>ACTIVE</span>
                   )}
@@ -656,7 +656,7 @@ function AppearancePage() {
             ))}
           </div>
           <div style={{ marginTop: 'auto', display: 'flex', gap: 6 }}>
-            <span style={{ flex: 1, padding: '9px 10px', textAlign: 'center', borderRadius: 3, background: _tab.cyan, color: '#0A0E1A', fontFamily: _tab.fontMono, fontSize: 11, fontWeight: 700, letterSpacing: 0.6 }}>套用為預設</span>
+            <span style={{ flex: 1, padding: '9px 10px', textAlign: 'center', borderRadius: 3, background: _tab.cyan, color: hudTokens.bg0, fontFamily: _tab.fontMono, fontSize: 11, fontWeight: 700, letterSpacing: 0.6 }}>套用為預設</span>
             <span style={{ padding: '9px 12px', borderRadius: 3, background: _tab.raised, color: _tab.textDim, border: `1px solid ${_tab.line}`, fontFamily: _tab.fontMono, fontSize: 10, letterSpacing: 0.5 }}>複製</span>
           </div>
         </div>
@@ -717,9 +717,9 @@ function AutomationPage() {
                 <span style={{ fontSize: 12, color: _tab.text, fontWeight: 500 }}>{s.name}</span>
                 <span style={{
                   display: 'inline-block', padding: '1px 6px', borderRadius: 2,
-                  background: s.type === 'cron' ? 'rgba(167,139,250,0.13)' : s.type === '每日' ? 'rgba(132,204,22,0.13)' : s.type === '每週' ? _tab.cyanSoft : 'rgba(251,191,36,0.13)',
+                  background: s.type === 'cron' ? 'rgba(56,189,248,0.13)' : s.type === '每日' ? 'rgba(134, 239, 172,0.13)' : s.type === '每週' ? _tab.cyanSoft : 'rgba(251,191,36,0.13)',
                   color: s.type === 'cron' ? _tab.violet : s.type === '每日' ? _tab.lime : s.type === '每週' ? _tab.cyan : _tab.amber,
-                  border: `1px solid ${s.type === 'cron' ? 'rgba(167,139,250,0.45)' : s.type === '每日' ? 'rgba(132,204,22,0.45)' : s.type === '每週' ? _tab.cyanLine : 'rgba(251,191,36,0.45)'}`,
+                  border: `1px solid ${s.type === 'cron' ? 'rgba(56,189,248,0.45)' : s.type === '每日' ? 'rgba(134, 239, 172,0.45)' : s.type === '每週' ? _tab.cyanLine : 'rgba(251,191,36,0.45)'}`,
                   fontFamily: _tab.fontMono, fontSize: 9, fontWeight: 600, letterSpacing: 0.4, width: 'fit-content',
                 }}>{s.type}</span>
                 <span style={{ fontFamily: _tab.fontMono, fontSize: 10.5, color: _tab.textDim, letterSpacing: 0.3 }}>{s.when}</span>
@@ -728,8 +728,8 @@ function AutomationPage() {
                 <span style={{ textAlign: 'right' }}>
                   <span style={{
                     display: 'inline-block', width: 26, height: 14, borderRadius: 8, position: 'relative',
-                    background: s.on ? 'rgba(132,204,22,0.4)' : _tab.raised,
-                    border: `1px solid ${s.on ? 'rgba(132,204,22,0.6)' : _tab.line}`,
+                    background: s.on ? 'rgba(134, 239, 172,0.4)' : _tab.raised,
+                    border: `1px solid ${s.on ? 'rgba(134, 239, 172,0.6)' : _tab.line}`,
                   }}>
                     <span style={{
                       position: 'absolute', top: 1, [s.on ? 'right' : 'left']: 1,
@@ -871,8 +871,8 @@ function HistoryPage() {
                 <div>
                   <span style={{
                     display: 'inline-block', padding: '1px 6px', borderRadius: 2,
-                    background: s.open ? 'rgba(132,204,22,0.13)' : 'transparent',
-                    border: `1px solid ${s.open ? 'rgba(132,204,22,0.45)' : _tab.line}`,
+                    background: s.open ? 'rgba(134, 239, 172,0.13)' : 'transparent',
+                    border: `1px solid ${s.open ? 'rgba(134, 239, 172,0.45)' : _tab.line}`,
                     color: s.open ? _tab.lime : _tab.textMute,
                     fontFamily: _tab.fontMono, fontSize: 9, fontWeight: 600, letterSpacing: 0.6,
                   }}>{s.open ? '● OPEN' : 'CLOSED'}</span>

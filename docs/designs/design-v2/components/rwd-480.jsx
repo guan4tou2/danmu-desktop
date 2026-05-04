@@ -11,25 +11,25 @@
 // Each artboard rendered inside an iPhone-like Safari frame so 480px reads as portrait phone.
 
 const _r480 = {
-  bg:        '#0B1020',
-  panel:     '#0F1421',
-  raised:    '#13192C',
-  raised2:   '#172037',
-  line:      '#1F2944',
-  lineSoft:  '#1A2238',
-  text:      '#E6E8EE',
-  textDim:   '#9aa4b2',
-  textMute:  '#6b7385',
-  cyan:      '#38bdf8',
-  cyanSoft:  'rgba(56,189,248,0.12)',
-  cyanLine:  'rgba(56,189,248,0.45)',
-  lime:      '#84cc16',
-  amber:     '#fbbf24',
-  magenta:   '#f472b6',
-  crimson:   '#f43f5e',
-  violet:    '#a78bfa',
-  fontSans:  '"Noto Sans TC", "Zen Kaku Gothic New", -apple-system, system-ui, sans-serif',
-  fontMono:  '"IBM Plex Mono", ui-monospace, monospace',
+  bg:        hudTokens.bg0,
+  panel:     hudTokens.bg1,
+  raised:    hudTokens.bg2,
+  raised2:   hudTokens.bg3,
+  line:      hudTokens.line,
+  lineSoft:  hudTokens.line,
+  text:      hudTokens.text,
+  textDim:   hudTokens.textDim,
+  textMute:  hudTokens.textMute,
+  cyan:      hudTokens.cyan,
+  cyanSoft:  hudTokens.cyanSoft,
+  cyanLine:  hudTokens.cyanLine,
+  lime:      hudTokens.lime,
+  amber:     hudTokens.amber,
+  magenta:   hudTokens.amber,    // compat
+  crimson:   hudTokens.crimson,
+  violet:    hudTokens.cyan,     // compat
+  fontSans:  hudTokens.fontSans,
+  fontMono:  hudTokens.fontMono,
 };
 
 // shared 480 frame
@@ -84,8 +84,8 @@ function _F480({ route, title, en, badge, back, children, hideTopbar }) {
           {badge && (
             <span style={{
               fontFamily: _r480.fontMono, fontSize: 9, color: _r480.lime, letterSpacing: 1,
-              padding: '3px 7px', background: 'rgba(132,204,22,0.13)',
-              border: `1px solid rgba(132,204,22,0.45)`, borderRadius: 2,
+              padding: '3px 7px', background: 'rgba(134, 239, 172,0.13)',
+              border: `1px solid rgba(134, 239, 172,0.45)`, borderRadius: 2,
             }}>{badge}</span>
           )}
         </div>
@@ -107,10 +107,10 @@ function _F480({ route, title, en, badge, back, children, hideTopbar }) {
 function _Tag480({ tone, mono, children, sm }) {
   const c = {
     cyan:    { fg: _r480.cyan,    bg: _r480.cyanSoft,           br: _r480.cyanLine },
-    lime:    { fg: _r480.lime,    bg: 'rgba(132,204,22,0.13)', br: 'rgba(132,204,22,0.45)' },
+    lime:    { fg: _r480.lime,    bg: 'rgba(134, 239, 172,0.13)', br: 'rgba(134, 239, 172,0.45)' },
     amber:   { fg: _r480.amber,   bg: 'rgba(251,191,36,0.13)', br: 'rgba(251,191,36,0.45)' },
-    crimson: { fg: _r480.crimson, bg: 'rgba(244,63,94,0.13)',  br: 'rgba(244,63,94,0.45)' },
-    magenta: { fg: _r480.magenta, bg: 'rgba(244,114,182,0.13)', br: 'rgba(244,114,182,0.45)' },
+    crimson: { fg: _r480.crimson, bg: 'rgba(248, 113, 113,0.13)',  br: 'rgba(248, 113, 113,0.45)' },
+    magenta: { fg: _r480.magenta, bg: 'rgba(251,191,36,0.13)', br: 'rgba(251,191,36,0.45)' },
     mute:    { fg: _r480.textMute, bg: 'transparent',          br: _r480.line },
   }[tone || 'mute'];
   return (
@@ -235,7 +235,7 @@ function RwdMessages480() {
             fontFamily: _r480.fontMono, fontSize: 11, color: _r480.text,
           }}>
             <span>⊟</span>
-            <span style={{ padding: '0 4px', background: _r480.cyan, color: '#0B1020', borderRadius: 2, fontSize: 9, fontWeight: 700 }}>3</span>
+            <span style={{ padding: '0 4px', background: _r480.cyan, color: hudTokens.bg0, borderRadius: 2, fontSize: 9, fontWeight: 700 }}>3</span>
           </span>
         </div>
 
@@ -344,7 +344,7 @@ function RwdPolls480() {
         <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <span style={{
             padding: '12px 14px', borderRadius: 3, textAlign: 'center',
-            background: _r480.amber, color: '#0B1020',
+            background: _r480.amber, color: hudTokens.bg0,
             fontFamily: _r480.fontMono, fontSize: 12, letterSpacing: 1, fontWeight: 700,
           }}>結束投票 · 顯示結果</span>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
@@ -372,14 +372,14 @@ function RwdBroadcast480() {
       <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 12, height: '100%', overflow: 'auto' }}>
         {/* state hero compact */}
         <div style={{
-          padding: 14, background: 'rgba(132,204,22,0.10)', border: `1px solid rgba(132,204,22,0.45)`, borderRadius: 4,
+          padding: 14, background: 'rgba(134, 239, 172,0.10)', border: `1px solid rgba(134, 239, 172,0.45)`, borderRadius: 4,
           display: 'flex', alignItems: 'center', gap: 12,
         }}>
           <div style={{
             width: 44, height: 44, borderRadius: '50%',
-            background: 'rgba(132,204,22,0.18)', border: `2px solid ${_r480.lime}`,
+            background: 'rgba(134, 239, 172,0.18)', border: `2px solid ${_r480.lime}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: `0 0 12px rgba(132,204,22,0.5)`, flexShrink: 0,
+            boxShadow: `0 0 12px rgba(134, 239, 172,0.5)`, flexShrink: 0,
           }}>
             <span style={{ width: 10, height: 10, borderRadius: '50%', background: _r480.lime }} />
           </div>
@@ -393,7 +393,7 @@ function RwdBroadcast480() {
         {/* primary CTA */}
         <span style={{
           padding: '14px 14px', borderRadius: 4, textAlign: 'center',
-          background: _r480.amber, color: '#0B1020',
+          background: _r480.amber, color: hudTokens.bg0,
           fontFamily: _r480.fontMono, fontSize: 12, letterSpacing: 1, fontWeight: 700,
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
         }}>
@@ -408,7 +408,7 @@ function RwdBroadcast480() {
           ].map((b, i) => (
             <span key={i} style={{
               padding: '11px 10px', borderRadius: 3, textAlign: 'center',
-              background: _r480.panel, border: `1px solid ${b.tone === 'crimson' ? 'rgba(244,63,94,0.45)' : _r480.cyanLine}`,
+              background: _r480.panel, border: `1px solid ${b.tone === 'crimson' ? 'rgba(248, 113, 113,0.45)' : _r480.cyanLine}`,
               color: b.tone === 'crimson' ? _r480.crimson : _r480.cyan,
               display: 'flex', flexDirection: 'column', gap: 3,
               fontFamily: _r480.fontMono, fontSize: 11, letterSpacing: 0.5,
@@ -458,12 +458,12 @@ function RwdNotifications480() {
         {/* hero */}
         <div style={{
           padding: 14, borderRadius: 4,
-          background: 'rgba(244,63,94,0.10)', border: `1px solid rgba(244,63,94,0.45)`,
+          background: 'rgba(248, 113, 113,0.10)', border: `1px solid rgba(248, 113, 113,0.45)`,
           display: 'flex', gap: 12, alignItems: 'flex-start',
         }}>
           <span style={{
             width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-            background: 'rgba(244,63,94,0.18)', border: `1.5px solid ${_r480.crimson}`,
+            background: 'rgba(248, 113, 113,0.18)', border: `1.5px solid ${_r480.crimson}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontFamily: _r480.fontMono, fontSize: 14, color: _r480.crimson,
           }}>!</span>
@@ -501,7 +501,7 @@ function RwdNotifications480() {
         <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <span style={{
             padding: '12px 14px', borderRadius: 3, textAlign: 'center',
-            background: _r480.crimson, color: '#0B1020',
+            background: _r480.crimson, color: hudTokens.bg0,
             fontFamily: _r480.fontMono, fontSize: 12, letterSpacing: 1, fontWeight: 700,
           }}>永久封禁 IP</span>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>

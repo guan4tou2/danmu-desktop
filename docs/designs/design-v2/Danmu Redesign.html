@@ -96,6 +96,7 @@
   <script type="text/babel" src="components/rwd-480.jsx"></script>
   <script type="text/babel" src="components/live-console.jsx"></script>
   <script type="text/babel" src="components/tab-chrome.jsx"></script>
+  <script type="text/babel" src="components/system-accordion.jsx"></script>
 <script type="text/babel" src="design-canvas.jsx"></script>
 
 <script type="text/babel">
@@ -275,6 +276,15 @@ function App() {
           <div data-screen-label="P0-0 · Toast Bell-only" style={{ width: 1440, height: 900 }}>
             <LiveConsoleDashboard topbar="compact" strip="scroll" feedback="toast" recent="bell" showToast={true} />
           </div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="DS-010 · System 手風琴 · 8 段 default-collapsed" subtitle="setup / security / firetoken / backup / integrations / wcag / mobile / about · single-open · deep-link via #hash">
+        <DCArtboard width={1440} height={920} label="DS-010 · SPEC · row anatomy + expand rules + health dot legend + 排序" style={{ background: 'transparent' }}>
+          <div data-screen-label="DS-010 · Spec" style={{ width: 1440, height: 920 }}><SystemAccordionSpec /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={1100} label="system 頁 · setup 展開 · 其餘 7 段收起" style={{ background: 'transparent' }}>
+          <div data-screen-label="System · Setup expanded" style={{ width: 1440, height: 1100 }}><SystemAccordionPage /></div>
         </DCArtboard>
       </DCSection>
 

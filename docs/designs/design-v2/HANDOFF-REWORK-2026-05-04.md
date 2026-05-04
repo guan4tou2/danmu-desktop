@@ -125,3 +125,94 @@ Before redelivering each file, verify:
 - [ ] Display font for hero text uses `<DanmuHero>` / `<HeroInline>`
 - [ ] `live-console.jsx` dashboard section: rewritten to `AdminV3SoftHolo`
   panel grid (KPI strip / 進行中投票 + 快速投票 / 即時訊息 + Widgets)
+
+---
+
+## Round 2 follow-up (2026-05-04 PM, after first redo)
+
+Round 1 result: **partial pass.** Landed:
+
+- ✓ `magenta` / `violet` token keys gone (mapped to amber / cyan via comment)
+- ✓ Private `_lc` / `_tab` / `_d504` / `_r768` / `_r480` blocks now alias
+  through `hudTokens.<key>` instead of holding raw drift hexes
+
+Owner cleaned up mechanically (commit follows): replaced 47 forbidden
+rgba + 24 forbidden hex literals in inline styles. **Do not undo these.**
+
+Round 2 still needs the following — these are STRUCTURAL, not mechanical,
+so they need design judgement:
+
+### R2-1 — Wrap admin pages in `AdminPageShell` (priority: high)
+
+`live-console.jsx`, `tab-chrome.jsx` (4 page mockups), `rwd-768.jsx`,
+`rwd-480.jsx` are all admin pages but none use `AdminPageShell`. Currently
+each builds its own private `_TabTopbar` / inline topbar.
+
+**Required:** Replace the per-file private topbar with `<AdminPageShell
+route="..." title="..." en="...">` wrapper. Pass page-specific body as
+the children render-prop. The 10-nav structure is the canonical one
+locked in `design-v2-backlog.md` § P0-0; `AdminPageShell` already knows it.
+
+`decisions-log-may04.jsx` is a non-admin documentation artboard — exempt.
+
+### R2-2 — Rewrite `live-console.jsx` dashboard structure (priority: high)
+
+Round 1 kept the original "Live Console" layout (60% feed + 40% stacked
+quick-action zones + sidebar). Owner reviewed and rejected as overpacked
+at 1440×900.
+
+**Required:** Replace `LiveConsoleDashboard` body with the
+`AdminV3SoftHolo` 12-col 3-row panel grid:
+
+- Row 1 (span 12): KPI strip — 訊息總數 + 高峰/分鐘 only (no 4-tile rail)
+- Row 2: 進行中投票 (span 7) + 快速投票 builder (span 5)
+- Row 3: 即時訊息 stream (span 7) + Widgets & Plugins grid (span 5)
+
+See `docs/designs/design-v2/components/admin-v3.jsx` for the reference.
+
+Effects do NOT live on the dashboard. Effects strip removed entirely
+from this file. Q4 sidebar removed entirely. Q1 (compact topbar) and
+Q3 (toast + inline complement rule) remain locked.
+
+### R2-3 — Fully rewrite `system-accordion.jsx` (priority: high)
+
+The new file shipped in this round is fully off-contract: private
+`_sys` block with raw forbidden hexes (`#0A0E1A`, `#84cc16`, `#f43f5e`,
+`#f472b6`, `#a78bfa`), zero `hudTokens` references, zero
+`AdminPageShell`. The contract was right there in the bundle.
+
+**Required:** Full rewrite from scratch:
+
+1. No private `_sys` block — use `hudTokens` directly
+2. No raw forbidden hexes (see §3 of the contract)
+3. No magenta / violet keys or values
+4. Wrap in `<AdminPageShell route="system" title="系統" en="SYSTEM · ACCORDION">`
+5. Use `HudLabel` / `StatusDot` / `CardHeader` shared components
+6. 8 sections in the order specified in `design-v2-backlog.md` P0-0:
+   `setup, security, firetoken, backup, integrations, wcag, mobile, about`
+
+Owner has NOT carried `system-accordion.jsx` into the repo until this
+rewrite ships. Until then, the system accordion does not exist as a
+canonical artboard.
+
+### R2-4 — Drop the private alias blocks (priority: low)
+
+Currently round 1 kept `const _lc = { bg: hudTokens.bg0, ... }` as a
+local naming alias. Functionally identical to using `hudTokens.bg0`
+directly, but adds a layer that future contributors can drift. If
+the rewrites in R2-1/R2-2/R2-3 already eliminate these blocks, no
+extra work needed. If they survive, drop them and use `hudTokens.<key>`
+inline.
+
+---
+
+### Round 2 paste-ready prompt
+
+> Read `docs/designs/design-v2/HANDOFF-REWORK-2026-05-04.md` "Round 2
+> follow-up" section + `STYLE-CONTRACT.md` first. Round 1 partial pass
+> recognized — token block alias is acceptable as a transitional state.
+> Round 2 must address R2-1 (AdminPageShell wrapping for 4 admin
+> artboards), R2-2 (`live-console.jsx` dashboard rewrite to AdminV3SoftHolo
+> panel grid per `admin-v3.jsx`), R2-3 (full rewrite of
+> `system-accordion.jsx` from scratch using `hudTokens` + `AdminPageShell`).
+> Same delivery checklist applies.
