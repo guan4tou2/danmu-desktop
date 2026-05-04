@@ -4,45 +4,22 @@
 // Q1–Q4 是 Live Console 的 4 個 open question lock。
 // Q3 額外帶一個「使用條件」的細化規則(toast 普適 / inline 只在可撤銷時出)。
 
-// Token aliases — proxy to hudTokens (single source of truth).
-// magenta/violet kept as compat aliases mapping to amber/cyan respectively.
-const _d504 = {
-  bg:        hudTokens.bg0,
-  panel:     hudTokens.bg1,
-  raised:    hudTokens.bg2,
-  raised2:   hudTokens.bg3,
-  line:      hudTokens.line,
-  lineSoft:  hudTokens.line,
-  text:      hudTokens.text,
-  textDim:   hudTokens.textDim,
-  textMute:  hudTokens.textMute,
-  cyan:      hudTokens.cyan,
-  cyanSoft:  hudTokens.cyanSoft,
-  cyanLine:  hudTokens.cyanLine,
-  lime:      hudTokens.lime,
-  amber:     hudTokens.amber,
-  crimson:   hudTokens.crimson,
-  magenta:   hudTokens.amber,    // compat — was '#fbbf24', now amber
-  violet:    hudTokens.cyan,     // compat — was '#38bdf8', now cyan
-  fontSans:  hudTokens.fontSans,
-  fontMono:  hudTokens.fontMono,
-};
 
 function _D504Chip({ tone, children, sm }) {
   const c = {
-    locked:   { bg: 'rgba(134, 239, 172,0.14)', fg: _d504.lime,    br: 'rgba(134, 239, 172,0.55)' },
-    pivot:    { bg: 'rgba(56,189,248,0.14)', fg: _d504.violet, br: 'rgba(56,189,248,0.55)' },
-    accept:   { bg: _d504.cyanSoft,           fg: _d504.cyan,    br: _d504.cyanLine },
-    keep:     { bg: 'rgba(251,191,36,0.12)',  fg: _d504.amber,   br: 'rgba(251,191,36,0.45)' },
-    drop:     { bg: 'rgba(248, 113, 113,0.12)',   fg: _d504.crimson, br: 'rgba(248, 113, 113,0.45)' },
-    mono:     { bg: 'transparent',            fg: _d504.textDim, br: _d504.line },
+    locked:   { bg: 'rgba(134, 239, 172,0.14)', fg: hudTokens.lime,    br: 'rgba(134, 239, 172,0.55)' },
+    pivot:    { bg: 'rgba(56,189,248,0.14)', fg: hudTokens.cyan, br: 'rgba(56,189,248,0.55)' },
+    accept:   { bg: hudTokens.cyanSoft,           fg: hudTokens.cyan,    br: hudTokens.cyanLine },
+    keep:     { bg: 'rgba(251,191,36,0.12)',  fg: hudTokens.amber,   br: 'rgba(251,191,36,0.45)' },
+    drop:     { bg: 'rgba(248, 113, 113,0.12)',   fg: hudTokens.crimson, br: 'rgba(248, 113, 113,0.45)' },
+    mono:     { bg: 'transparent',            fg: hudTokens.textDim, br: hudTokens.line },
   }[tone];
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 5,
       padding: sm ? '2px 6px' : '3px 8px', borderRadius: 2,
       background: c.bg, color: c.fg, border: `1px solid ${c.br}`,
-      fontFamily: _d504.fontMono, fontSize: sm ? 9 : 10, fontWeight: 600, letterSpacing: 1.2,
+      fontFamily: hudTokens.fontMono, fontSize: sm ? 9 : 10, fontWeight: 600, letterSpacing: 1.2,
     }}>{children}</span>
   );
 }
@@ -111,8 +88,8 @@ function DecisionsLog2026May04() {
 
   return (
     <div style={{
-      width: 1440, height: 920, background: _d504.bg, color: _d504.text,
-      fontFamily: _d504.fontSans, padding: '24px 32px 28px',
+      width: 1440, height: 920, background: hudTokens.bg0, color: hudTokens.text,
+      fontFamily: hudTokens.fontSans, padding: '24px 32px 28px',
       display: 'flex', flexDirection: 'column', gap: 14,
       boxSizing: 'border-box', position: 'relative', overflow: 'hidden',
     }}>
@@ -125,7 +102,7 @@ function DecisionsLog2026May04() {
       ].map((c, i) => (
         <span key={i} style={{
           position: 'absolute', ...c, width: 14, height: 14,
-          borderTop: `1px solid ${_d504.cyanLine}`, borderLeft: `1px solid ${_d504.cyanLine}`,
+          borderTop: `1px solid ${hudTokens.cyanLine}`, borderLeft: `1px solid ${hudTokens.cyanLine}`,
           transform: `rotate(${c.r})`, transformOrigin: 'top left',
         }} />
       ))}
@@ -133,20 +110,20 @@ function DecisionsLog2026May04() {
       {/* HEADER */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, flexShrink: 0 }}>
         <div>
-          <div style={{ fontFamily: _d504.fontMono, fontSize: 10, letterSpacing: 2.5, color: _d504.violet }}>
+          <div style={{ fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 2.5, color: hudTokens.cyan }}>
             DECISIONS LOG · 2026-05-04 IA PIVOT LOCK
           </div>
           <div style={{ fontSize: 22, fontWeight: 700, marginTop: 5, letterSpacing: -0.2 }}>
             P0-0 admin nav 32 → 10 + Live Console Q1–Q4
           </div>
-          <div style={{ fontSize: 11.5, color: _d504.textDim, marginTop: 5, lineHeight: 1.6, maxWidth: 940 }}>
+          <div style={{ fontSize: 11.5, color: hudTokens.textDim, marginTop: 5, lineHeight: 1.6, maxWidth: 940 }}>
             對應 design-v2-backlog.md P0-0(2026-05-04 office-hours)+ Live Console 的 4 個 open question。
             本批 lock 之後,Q1–Q4 不再 reopen,整個 admin IA 以新 10-nav 為 source of truth。
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
           <_D504Chip tone="locked">SIGNED-OFF</_D504Chip>
-          <div style={{ fontFamily: _d504.fontMono, fontSize: 10, color: _d504.textMute, letterSpacing: 0.3 }}>
+          <div style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: hudTokens.textMute, letterSpacing: 0.3 }}>
             sprint · 2026-05-04 → 2026-05-18
           </div>
         </div>
@@ -154,13 +131,13 @@ function DecisionsLog2026May04() {
 
       {/* DECISIONS table — 5 rows */}
       <div style={{
-        flex: '0 0 auto', background: _d504.panel, border: `1px solid ${_d504.line}`, borderRadius: 4,
+        flex: '0 0 auto', background: hudTokens.bg1, border: `1px solid ${hudTokens.line}`, borderRadius: 4,
         display: 'flex', flexDirection: 'column', minHeight: 0,
       }}>
         <div style={{
           display: 'grid', gridTemplateColumns: '170px 1fr 180px',
-          padding: '10px 18px', borderBottom: `1px solid ${_d504.line}`,
-          fontFamily: _d504.fontMono, fontSize: 9.5, color: _d504.textDim, letterSpacing: 1.5,
+          padding: '10px 18px', borderBottom: `1px solid ${hudTokens.line}`,
+          fontFamily: hudTokens.fontMono, fontSize: 9.5, color: hudTokens.textDim, letterSpacing: 1.5,
         }}>
           <span>ITEM · TOPIC</span>
           <span>DECISION · DETAIL · ACTION</span>
@@ -171,38 +148,38 @@ function DecisionsLog2026May04() {
           <div key={row.id} style={{
             display: 'grid', gridTemplateColumns: '170px 1fr 180px',
             padding: '13px 18px', gap: 14, alignItems: 'flex-start',
-            borderBottom: i < rows.length - 1 ? `1px solid ${_d504.lineSoft}` : 'none',
+            borderBottom: i < rows.length - 1 ? `1px solid ${hudTokens.line}` : 'none',
             background: i === 0 ? 'rgba(56,189,248,0.04)' : 'transparent',
           }}>
             {/* id */}
             <div>
-              <div style={{ fontFamily: _d504.fontMono, fontSize: 10.5, color: i === 0 ? _d504.violet : _d504.cyan, letterSpacing: 0.4, fontWeight: 600 }}>
+              <div style={{ fontFamily: hudTokens.fontMono, fontSize: 10.5, color: i === 0 ? hudTokens.cyan : hudTokens.cyan, letterSpacing: 0.4, fontWeight: 600 }}>
                 {row.id}
               </div>
-              <div style={{ fontSize: 12, color: _d504.text, marginTop: 5, fontWeight: 500, lineHeight: 1.4 }}>
+              <div style={{ fontSize: 12, color: hudTokens.text, marginTop: 5, fontWeight: 500, lineHeight: 1.4 }}>
                 {row.topic}
               </div>
             </div>
 
             {/* decision body */}
             <div>
-              <div style={{ fontSize: 13, color: _d504.text, fontWeight: 600, lineHeight: 1.4 }}>
+              <div style={{ fontSize: 13, color: hudTokens.text, fontWeight: 600, lineHeight: 1.4 }}>
                 → {row.decision}
               </div>
-              <div style={{ fontSize: 11, color: _d504.textDim, marginTop: 6, lineHeight: 1.6 }}>
+              <div style={{ fontSize: 11, color: hudTokens.textDim, marginTop: 6, lineHeight: 1.6 }}>
                 {row.detail}
               </div>
               <div style={{
                 marginTop: 7, padding: '6px 9px',
-                background: _d504.raised, border: `1px solid ${_d504.line}`, borderRadius: 2,
+                background: hudTokens.bg2, border: `1px solid ${hudTokens.line}`, borderRadius: 2,
                 display: 'flex', gap: 7, alignItems: 'flex-start',
               }}>
                 <span style={{
-                  fontFamily: _d504.fontMono, fontSize: 9, color: _d504.amber, letterSpacing: 1.2,
+                  fontFamily: hudTokens.fontMono, fontSize: 9, color: hudTokens.amber, letterSpacing: 1.2,
                   padding: '1px 5px', border: `1px solid rgba(251,191,36,0.45)`, borderRadius: 2,
                   flexShrink: 0, marginTop: 1, fontWeight: 600,
                 }}>NEXT</span>
-                <span style={{ fontFamily: _d504.fontMono, fontSize: 10.5, color: _d504.text, lineHeight: 1.55, letterSpacing: 0.1 }}>
+                <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10.5, color: hudTokens.text, lineHeight: 1.55, letterSpacing: 0.1 }}>
                   {row.action}
                 </span>
               </div>
@@ -218,56 +195,56 @@ function DecisionsLog2026May04() {
 
       {/* Q3 細化規則 — 動作分類矩陣 */}
       <div style={{
-        flex: 1, minHeight: 0, background: _d504.panel, border: `1px solid ${_d504.line}`, borderRadius: 4,
+        flex: 1, minHeight: 0, background: hudTokens.bg1, border: `1px solid ${hudTokens.line}`, borderRadius: 4,
         display: 'flex', flexDirection: 'column', overflow: 'hidden',
       }}>
         <div style={{
-          padding: '10px 18px', borderBottom: `1px solid ${_d504.line}`,
+          padding: '10px 18px', borderBottom: `1px solid ${hudTokens.line}`,
           display: 'flex', alignItems: 'center', gap: 10,
         }}>
           <_D504Chip tone="accept" sm>Q3 · 細化規則</_D504Chip>
-          <span style={{ fontSize: 12, color: _d504.text, fontWeight: 600 }}>哪些動作出 inline 綠橫條</span>
-          <span style={{ marginLeft: 'auto', fontFamily: _d504.fontMono, fontSize: 9, color: _d504.textMute, letterSpacing: 1 }}>
+          <span style={{ fontSize: 12, color: hudTokens.text, fontWeight: 600 }}>哪些動作出 inline 綠橫條</span>
+          <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 9, color: hudTokens.textMute, letterSpacing: 1 }}>
             判斷依據 · 動作是否可程序化撤銷
           </span>
         </div>
 
         <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
           {/* reversible — both 出 */}
-          <div style={{ padding: '12px 18px', borderRight: `1px solid ${_d504.lineSoft}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ padding: '12px 18px', borderRight: `1px solid ${hudTokens.line}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              <span style={{ fontFamily: _d504.fontMono, fontSize: 10, color: _d504.lime, letterSpacing: 1.5, fontWeight: 600 }}>REVERSIBLE</span>
-              <span style={{ fontSize: 11, color: _d504.text }}>toast + inline · 含 ↶ 撤銷</span>
-              <span style={{ marginLeft: 'auto', fontFamily: _d504.fontMono, fontSize: 9, color: _d504.textMute }}>4 個</span>
+              <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: hudTokens.lime, letterSpacing: 1.5, fontWeight: 600 }}>REVERSIBLE</span>
+              <span style={{ fontSize: 11, color: hudTokens.text }}>toast + inline · 含 ↶ 撤銷</span>
+              <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 9, color: hudTokens.textMute }}>4 個</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {q3Rules.filter(r => r.kind === 'reversible').map((r, i) => (
                 <div key={i} style={{
                   display: 'grid', gridTemplateColumns: '120px 1fr 14px', gap: 10, alignItems: 'baseline',
-                  padding: '5px 9px', background: _d504.raised, borderRadius: 2,
-                  border: `1px solid ${_d504.lineSoft}`,
+                  padding: '5px 9px', background: hudTokens.bg2, borderRadius: 2,
+                  border: `1px solid ${hudTokens.line}`,
                 }}>
-                  <span style={{ fontSize: 11.5, color: _d504.text, fontWeight: 500 }}>{r.op}</span>
-                  <span style={{ fontFamily: _d504.fontMono, fontSize: 9.5, color: _d504.textDim, letterSpacing: 0.2 }}>{r.note}</span>
-                  <span style={{ color: _d504.lime, fontFamily: _d504.fontMono, fontSize: 11, textAlign: 'right' }}>↶</span>
+                  <span style={{ fontSize: 11.5, color: hudTokens.text, fontWeight: 500 }}>{r.op}</span>
+                  <span style={{ fontFamily: hudTokens.fontMono, fontSize: 9.5, color: hudTokens.textDim, letterSpacing: 0.2 }}>{r.note}</span>
+                  <span style={{ color: hudTokens.lime, fontFamily: hudTokens.fontMono, fontSize: 11, textAlign: 'right' }}>↶</span>
                 </div>
               ))}
             </div>
 
             {/* visual mock — both 顯示 */}
-            <div style={{ marginTop: 4, padding: '8px 10px', background: _d504.bg, border: `1px dashed ${_d504.line}`, borderRadius: 2 }}>
-              <div style={{ fontFamily: _d504.fontMono, fontSize: 8.5, color: _d504.textMute, letterSpacing: 1.2, marginBottom: 5 }}>觀感 · 範例</div>
+            <div style={{ marginTop: 4, padding: '8px 10px', background: hudTokens.bg0, border: `1px dashed ${hudTokens.line}`, borderRadius: 2 }}>
+              <div style={{ fontFamily: hudTokens.fontMono, fontSize: 8.5, color: hudTokens.textMute, letterSpacing: 1.2, marginBottom: 5 }}>觀感 · 範例</div>
               <div style={{
                 padding: '5px 8px', borderRadius: 2,
                 background: 'rgba(134, 239, 172,0.10)', border: `1px solid rgba(134, 239, 172,0.45)`,
                 display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6,
               }}>
-                <span style={{ fontFamily: _d504.fontMono, fontSize: 9.5, color: _d504.lime, letterSpacing: 0.4, flex: 1 }}>
+                <span style={{ fontFamily: hudTokens.fontMono, fontSize: 9.5, color: hudTokens.lime, letterSpacing: 0.4, flex: 1 }}>
                   ✓ 已加入黑名單 · fp:a3f200 · 1.2s 前
                 </span>
-                <span style={{ fontFamily: _d504.fontMono, fontSize: 9, color: _d504.textDim }}>↶ 撤回</span>
+                <span style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: hudTokens.textDim }}>↶ 撤回</span>
               </div>
-              <div style={{ fontFamily: _d504.fontMono, fontSize: 8.5, color: _d504.textMute, letterSpacing: 0.4, textAlign: 'center' }}>
+              <div style={{ fontFamily: hudTokens.fontMono, fontSize: 8.5, color: hudTokens.textMute, letterSpacing: 0.4, textAlign: 'center' }}>
                 ↑ inline · 在動作面板內 · 5s 後淡出
               </div>
             </div>
@@ -276,43 +253,43 @@ function DecisionsLog2026May04() {
           {/* irreversible — toast only */}
           <div style={{ padding: '12px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              <span style={{ fontFamily: _d504.fontMono, fontSize: 10, color: _d504.amber, letterSpacing: 1.5, fontWeight: 600 }}>IRREVERSIBLE</span>
-              <span style={{ fontSize: 11, color: _d504.text }}>toast only · 不出 inline</span>
-              <span style={{ marginLeft: 'auto', fontFamily: _d504.fontMono, fontSize: 9, color: _d504.textMute }}>4 個</span>
+              <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: hudTokens.amber, letterSpacing: 1.5, fontWeight: 600 }}>IRREVERSIBLE</span>
+              <span style={{ fontSize: 11, color: hudTokens.text }}>toast only · 不出 inline</span>
+              <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 9, color: hudTokens.textMute }}>4 個</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {q3Rules.filter(r => r.kind === 'irreversible').map((r, i) => (
                 <div key={i} style={{
                   display: 'grid', gridTemplateColumns: '120px 1fr 14px', gap: 10, alignItems: 'baseline',
-                  padding: '5px 9px', background: _d504.raised, borderRadius: 2,
-                  border: `1px solid ${_d504.lineSoft}`,
+                  padding: '5px 9px', background: hudTokens.bg2, borderRadius: 2,
+                  border: `1px solid ${hudTokens.line}`,
                 }}>
-                  <span style={{ fontSize: 11.5, color: _d504.text, fontWeight: 500 }}>{r.op}</span>
-                  <span style={{ fontFamily: _d504.fontMono, fontSize: 9.5, color: _d504.textDim, letterSpacing: 0.2 }}>{r.note}</span>
-                  <span style={{ color: _d504.textMute, fontFamily: _d504.fontMono, fontSize: 11, textAlign: 'right' }}>—</span>
+                  <span style={{ fontSize: 11.5, color: hudTokens.text, fontWeight: 500 }}>{r.op}</span>
+                  <span style={{ fontFamily: hudTokens.fontMono, fontSize: 9.5, color: hudTokens.textDim, letterSpacing: 0.2 }}>{r.note}</span>
+                  <span style={{ color: hudTokens.textMute, fontFamily: hudTokens.fontMono, fontSize: 11, textAlign: 'right' }}>—</span>
                 </div>
               ))}
             </div>
 
             {/* visual mock — toast only */}
-            <div style={{ marginTop: 4, padding: '8px 10px', background: _d504.bg, border: `1px dashed ${_d504.line}`, borderRadius: 2 }}>
-              <div style={{ fontFamily: _d504.fontMono, fontSize: 8.5, color: _d504.textMute, letterSpacing: 1.2, marginBottom: 5 }}>觀感 · 範例</div>
+            <div style={{ marginTop: 4, padding: '8px 10px', background: hudTokens.bg0, border: `1px dashed ${hudTokens.line}`, borderRadius: 2 }}>
+              <div style={{ fontFamily: hudTokens.fontMono, fontSize: 8.5, color: hudTokens.textMute, letterSpacing: 1.2, marginBottom: 5 }}>觀感 · 範例</div>
               <div style={{
                 padding: '5px 10px', borderRadius: 2,
-                background: _d504.raised2, border: `1px solid ${_d504.cyanLine}`,
+                background: hudTokens.bg3, border: `1px solid ${hudTokens.cyanLine}`,
                 display: 'inline-flex', alignItems: 'center', gap: 6,
-                fontFamily: _d504.fontSans, fontSize: 10.5, color: _d504.text,
+                fontFamily: hudTokens.fontSans, fontSize: 10.5, color: hudTokens.text,
                 boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
               }}>
                 <span style={{
                   width: 14, height: 14, borderRadius: '50%',
-                  background: 'rgba(56,189,248,0.25)', border: `1.5px solid ${_d504.cyan}`,
+                  background: 'rgba(56,189,248,0.25)', border: `1.5px solid ${hudTokens.cyan}`,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  color: _d504.cyan, fontSize: 9, fontWeight: 700,
+                  color: hudTokens.cyan, fontSize: 9, fontWeight: 700,
                 }}>✓</span>
                 <span>已推送到 184 位觀眾</span>
               </div>
-              <div style={{ fontFamily: _d504.fontMono, fontSize: 8.5, color: _d504.textMute, letterSpacing: 0.4, textAlign: 'center', marginTop: 5 }}>
+              <div style={{ fontFamily: hudTokens.fontMono, fontSize: 8.5, color: hudTokens.textMute, letterSpacing: 0.4, textAlign: 'center', marginTop: 5 }}>
                 ↑ toast · 螢幕底部置中 · 3s 後消失 · 無 ↶
               </div>
             </div>
@@ -342,18 +319,18 @@ function DecisionsLog2026May04() {
           },
         ].map((b, i) => (
           <div key={i} style={{
-            background: _d504.panel, border: `1px solid ${_d504.line}`, borderRadius: 4, padding: 10,
+            background: hudTokens.bg1, border: `1px solid ${hudTokens.line}`, borderRadius: 4, padding: 10,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
               <span style={{
                 width: 6, height: 6, borderRadius: '50%',
-                background: b.tone === 'lime' ? _d504.lime : b.tone === 'cyan' ? _d504.cyan : _d504.amber,
+                background: b.tone === 'lime' ? hudTokens.lime : b.tone === 'cyan' ? hudTokens.cyan : hudTokens.amber,
               }} />
-              <span style={{ fontFamily: _d504.fontMono, fontSize: 9.5, color: _d504.textDim, letterSpacing: 1.5 }}>
+              <span style={{ fontFamily: hudTokens.fontMono, fontSize: 9.5, color: hudTokens.textDim, letterSpacing: 1.5 }}>
                 {b.t.toUpperCase()}
               </span>
             </div>
-            <div style={{ fontSize: 11, color: _d504.text, lineHeight: 1.55 }}>{b.body}</div>
+            <div style={{ fontSize: 11, color: hudTokens.text, lineHeight: 1.55 }}>{b.body}</div>
           </div>
         ))}
       </div>

@@ -5,63 +5,30 @@
 // (AdminEffectsPage). It tunes per-effect runtime params, shows a live preview of the
 // effect on a sample danmu, and previews against both background contexts.
 
-const _fx = {
-  // dark tokens
-  darkBg:        '#020617',
-  darkPanel:     '#0f172a',
-  darkRaised:    '#1e293b',
-  darkLine:      'rgba(148, 163, 184, 0.18)',
-  darkLineSoft:  'rgba(148, 163, 184, 0.18)',
-  darkText:      '#f1f5f9',
-  darkTextDim:   '#94a3b8',
-  darkTextMute:  '#64748b',
-
-  // light tokens
-  lightBg:       '#F4F6FA',
-  lightPanel:    '#FFFFFF',
-  lightRaised:   '#F8FAFC',
-  lightLine:     '#E2E8F0',
-  lightLineSoft: '#EDF1F7',
-  lightText:     '#0F172A',
-  lightTextDim:  '#475569',
-  lightTextMute: '#94A3B8',
-
-  // shared accents
-  cyan:     '#38bdf8',
-  cyanLine: 'rgba(56,189,248,0.45)',
-  lime:     '#86efac',
-  amber:    '#fbbf24',
-  magenta:  '#fbbf24',
-  crimson:  '#f87171',
-
-  fontSans:    '"Noto Sans TC", "Zen Kaku Gothic New", -apple-system, system-ui, sans-serif',
-  fontMono:    '"IBM Plex Mono", ui-monospace, monospace',
-  fontDisplay: '"Zen Kaku Gothic New", "Noto Sans TC", sans-serif',
-};
-
 function _fxTokens(theme) {
   const dark = theme === 'dark';
+  const T = hudTokens;
   return {
-    bg:       dark ? _fx.darkBg : _fx.lightBg,
-    panel:    dark ? _fx.darkPanel : _fx.lightPanel,
-    raised:   dark ? _fx.darkRaised : _fx.lightRaised,
-    line:     dark ? _fx.darkLine : _fx.lightLine,
-    lineSoft: dark ? _fx.darkLineSoft : _fx.lightLineSoft,
-    text:     dark ? _fx.darkText : _fx.lightText,
-    textDim:  dark ? _fx.darkTextDim : _fx.lightTextDim,
-    textMute: dark ? _fx.darkTextMute : _fx.lightTextMute,
-    accent:   _fx.cyan,
-    accentSoft: dark ? 'rgba(56,189,248,0.12)' : 'rgba(56,189,248,0.10)',
-    panelShadow: dark ? 'none' : '0 1px 2px rgba(15,23,42,0.04)',
+    bg:         dark ? T.bg0         : T.lightBg0,
+    panel:      dark ? T.bg1         : T.lightBg1,
+    raised:     dark ? T.bg2         : T.lightBg2,
+    line:       dark ? T.line        : T.lightLine,
+    lineSoft:   dark ? T.line        : T.lightLine,
+    text:       dark ? T.text        : T.lightText,
+    textDim:    dark ? T.textDim     : T.lightTextDim,
+    textMute:   dark ? T.textMute    : '#94A3B8',
+    accent:     T.cyan,
+    accentSoft: dark ? T.cyanSoft    : 'rgba(56,189,248,0.10)',
+    panelShadow: dark ? 'none'       : '0 1px 2px rgba(15,23,42,0.04)',
   };
 }
 
 function _FxChip({ tone = 'mute', children, t }) {
   const colorMap = {
-    cyan:    { fg: _fx.cyan,    bg: 'rgba(56,189,248,0.12)',  br: _fx.cyanLine },
-    lime:    { fg: _fx.lime,    bg: 'rgba(134, 239, 172,0.13)',  br: 'rgba(134, 239, 172,0.45)' },
-    amber:   { fg: _fx.amber,   bg: 'rgba(251,191,36,0.13)',  br: 'rgba(251,191,36,0.45)' },
-    crimson: { fg: _fx.crimson, bg: 'rgba(248, 113, 113,0.13)',   br: 'rgba(248, 113, 113,0.45)' },
+    cyan:    { fg: hudTokens.cyan,    bg: 'rgba(56,189,248,0.12)',  br: hudTokens.cyanLine },
+    lime:    { fg: hudTokens.lime,    bg: 'rgba(134, 239, 172,0.13)',  br: 'rgba(134,239,172,0.45)' },
+    amber:   { fg: hudTokens.amber,   bg: 'rgba(251,191,36,0.13)',  br: 'rgba(251,191,36,0.45)' },
+    crimson: { fg: hudTokens.crimson, bg: 'rgba(248, 113, 113,0.13)',   br: 'rgba(248,113,113,0.45)' },
     mute:    { fg: t.textMute,  bg: 'transparent',            br: t.line },
   }[tone];
   return (
@@ -69,7 +36,7 @@ function _FxChip({ tone = 'mute', children, t }) {
       display: 'inline-flex', alignItems: 'center', gap: 4,
       padding: '2px 7px', borderRadius: 2,
       background: colorMap.bg, color: colorMap.fg, border: `1px solid ${colorMap.br}`,
-      fontFamily: _fx.fontMono, fontSize: 9.5, letterSpacing: 1, fontWeight: 600,
+      fontFamily: hudTokens.fontMono, fontSize: 9.5, letterSpacing: 1, fontWeight: 600,
     }}>{children}</span>
   );
 }
@@ -80,7 +47,7 @@ function _FxSlider({ t, label, unit, value, min, max, knobAt }) {
     <div>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
         <span style={{ fontSize: 11, color: t.text, fontWeight: 500 }}>{label}</span>
-        <span style={{ fontFamily: _fx.fontMono, fontSize: 11, color: t.text, letterSpacing: 0.3 }}>
+        <span style={{ fontFamily: hudTokens.fontMono, fontSize: 11, color: t.text, letterSpacing: 0.3 }}>
           {value}
           <span style={{ color: t.textMute, marginLeft: 3 }}>{unit}</span>
         </span>
@@ -94,7 +61,7 @@ function _FxSlider({ t, label, unit, value, min, max, knobAt }) {
           boxShadow: `0 0 8px ${t.accent}66`,
         }} />
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontFamily: _fx.fontMono, fontSize: 9, color: t.textMute, letterSpacing: 0.3 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontFamily: hudTokens.fontMono, fontSize: 9, color: t.textMute, letterSpacing: 0.3 }}>
         <span>{min}{unit}</span>
         <span>{max}{unit}</span>
       </div>
@@ -112,8 +79,8 @@ function _FxRadio({ t, label, options, picked }) {
             flex: 1, padding: '6px 10px',
             border: 'none', cursor: 'pointer',
             background: o === picked ? t.accent : 'transparent',
-            color: o === picked ? (t === _fxTokens('dark') ? '#020617' : '#FFFFFF') : t.textDim,
-            fontFamily: _fx.fontMono, fontSize: 10, letterSpacing: 0.5, fontWeight: 600,
+            color: o === picked ? (t === _fxTokens('dark') ? hudTokens.bg0 : '#FFFFFF') : t.textDim,
+            fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 0.5, fontWeight: 600,
             borderRadius: 2, transition: 'all 120ms',
           }}>{o}</button>
         ))}
@@ -131,7 +98,7 @@ function _FxColor({ t, label, color }) {
         background: t.raised, border: `1px solid ${t.line}`, borderRadius: 3,
       }}>
         <div style={{ width: 24, height: 24, borderRadius: 3, background: color, border: `1px solid ${t.line}`, flexShrink: 0 }} />
-        <span style={{ fontFamily: _fx.fontMono, fontSize: 11, color: t.text, letterSpacing: 0.3, flex: 1 }}>{color}</span>
+        <span style={{ fontFamily: hudTokens.fontMono, fontSize: 11, color: t.text, letterSpacing: 0.3, flex: 1 }}>{color}</span>
         <_FxChip t={t} tone="mute">PICK</_FxChip>
       </div>
     </div>
@@ -183,16 +150,16 @@ function _FxPreviewChip({ t, kind, bgKind, text = '舉手 +1', amplitude, rate, 
       <style>{css}</style>
       {/* corner labels */}
       <span style={{
-        position: 'absolute', top: 6, left: 8, fontFamily: _fx.fontMono, fontSize: 8.5,
+        position: 'absolute', top: 6, left: 8, fontFamily: hudTokens.fontMono, fontSize: 8.5,
         color: bgKind === 'dark' ? '#94a3b8' : '#94A3B8', letterSpacing: 1.2,
       }}>BG · {bgKind.toUpperCase()}</span>
       <span style={{
-        position: 'absolute', top: 6, right: 8, fontFamily: _fx.fontMono, fontSize: 8.5,
+        position: 'absolute', top: 6, right: 8, fontFamily: hudTokens.fontMono, fontSize: 8.5,
         color: bgKind === 'dark' ? '#64748b' : '#94A3B8', letterSpacing: 1.2,
       }}>{rate}× · {amplitude}{kind === 'bounce' ? 'px' : '%'}</span>
       {/* sample danmu */}
       <div style={{
-        fontFamily: _fx.fontDisplay, fontSize: 26, fontWeight: 700,
+        fontFamily: hudTokens.fontDisplay, fontSize: 26, fontWeight: 700,
         color: color, textShadow: shadow,
         animation: `${animName} ${dur} ease-in-out infinite`,
         letterSpacing: 0.5,
@@ -235,13 +202,13 @@ function ViewerEffectsParamPanel({ theme = 'dark', effect = 'bounce-cartoon' }) 
   return (
     <div style={{
       width: 1440, height: 920, background: t.bg, color: t.text,
-      fontFamily: _fx.fontSans, padding: '24px 28px',
+      fontFamily: hudTokens.fontSans, padding: '24px 28px',
       display: 'flex', flexDirection: 'column', gap: 18,
       boxSizing: 'border-box',
     }}>
       {/* breadcrumb topbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span style={{ fontFamily: _fx.fontMono, fontSize: 10, color: t.textMute, letterSpacing: 1.3 }}>
+        <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: t.textMute, letterSpacing: 1.3 }}>
           #/effects → {effect} → 參數調整
         </span>
         <span style={{ flex: 1 }} />
@@ -254,12 +221,12 @@ function ViewerEffectsParamPanel({ theme = 'dark', effect = 'bounce-cartoon' }) 
       {/* header */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24 }}>
         <div>
-          <div style={{ fontFamily: _fx.fontMono, fontSize: 10, letterSpacing: 2.2, color: t.accent }}>
+          <div style={{ fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 2.2, color: t.accent }}>
             DS-004 · VIEWER EFFECTS · PARAM PANEL
           </div>
           <div style={{ fontSize: 26, fontWeight: 700, marginTop: 6, letterSpacing: -0.3 }}>
             {effect}
-            <span style={{ fontFamily: _fx.fontMono, fontSize: 13, color: t.textDim, marginLeft: 14, fontWeight: 400, letterSpacing: 0.5 }}>
+            <span style={{ fontFamily: hudTokens.fontMono, fontSize: 13, color: t.textDim, marginLeft: 14, fontWeight: 400, letterSpacing: 0.5 }}>
               · {ef.kind === 'bounce' ? '彈跳' : '閃爍'} · {theme.toUpperCase()} 模式
             </span>
           </div>
@@ -267,13 +234,13 @@ function ViewerEffectsParamPanel({ theme = 'dark', effect = 'bounce-cartoon' }) 
         <div style={{ display: 'flex', gap: 8 }}>
           <span style={{
             padding: '8px 14px', borderRadius: 3, border: `1px solid ${t.line}`,
-            background: t.panel, fontFamily: _fx.fontMono, fontSize: 11, color: t.textDim, letterSpacing: 0.8,
+            background: t.panel, fontFamily: hudTokens.fontMono, fontSize: 11, color: t.textDim, letterSpacing: 0.8,
             cursor: 'pointer',
           }}>↺ 還原預設</span>
           <span style={{
             padding: '8px 14px', borderRadius: 3,
-            background: t.accent, color: isDark ? '#020617' : '#FFFFFF',
-            fontFamily: _fx.fontMono, fontSize: 11, letterSpacing: 0.8, fontWeight: 600,
+            background: t.accent, color: isDark ? hudTokens.bg0 : '#FFFFFF',
+            fontFamily: hudTokens.fontMono, fontSize: 11, letterSpacing: 0.8, fontWeight: 600,
             cursor: 'pointer',
           }}>套用到 overlay</span>
         </div>
@@ -288,7 +255,7 @@ function ViewerEffectsParamPanel({ theme = 'dark', effect = 'bounce-cartoon' }) 
           boxShadow: t.panelShadow, overflow: 'auto',
         }}>
           <div>
-            <div style={{ fontFamily: _fx.fontMono, fontSize: 10, color: t.textDim, letterSpacing: 1.5, marginBottom: 10 }}>
+            <div style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: t.textDim, letterSpacing: 1.5, marginBottom: 10 }}>
               §1 · 動態參數
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -301,7 +268,7 @@ function ViewerEffectsParamPanel({ theme = 'dark', effect = 'bounce-cartoon' }) 
           <div style={{ height: 1, background: t.line }} />
 
           <div>
-            <div style={{ fontFamily: _fx.fontMono, fontSize: 10, color: t.textDim, letterSpacing: 1.5, marginBottom: 10 }}>
+            <div style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: t.textDim, letterSpacing: 1.5, marginBottom: 10 }}>
               §2 · 視覺
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -313,7 +280,7 @@ function ViewerEffectsParamPanel({ theme = 'dark', effect = 'bounce-cartoon' }) 
           <div style={{ height: 1, background: t.line }} />
 
           <div>
-            <div style={{ fontFamily: _fx.fontMono, fontSize: 10, color: t.textDim, letterSpacing: 1.5, marginBottom: 10 }}>
+            <div style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: t.textDim, letterSpacing: 1.5, marginBottom: 10 }}>
               §3 · 行為
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -325,8 +292,8 @@ function ViewerEffectsParamPanel({ theme = 'dark', effect = 'bounce-cartoon' }) 
           {/* warn box bottom */}
           <div style={{
             marginTop: 'auto', padding: 10, borderRadius: 3,
-            background: tone === 'crimson' ? 'rgba(248, 113, 113,0.10)' : tone === 'amber' ? 'rgba(251,191,36,0.10)' : 'rgba(134, 239, 172,0.10)',
-            border: `1px solid ${tone === 'crimson' ? 'rgba(248, 113, 113,0.45)' : tone === 'amber' ? 'rgba(251,191,36,0.45)' : 'rgba(134, 239, 172,0.45)'}`,
+            background: tone === 'crimson' ? 'rgba(248,113,113,0.10)' : tone === 'amber' ? 'rgba(251,191,36,0.10)' : 'rgba(134,239,172,0.10)',
+            border: `1px solid ${tone === 'crimson' ? 'rgba(248,113,113,0.45)' : tone === 'amber' ? 'rgba(251,191,36,0.45)' : 'rgba(134,239,172,0.45)'}`,
             display: 'flex', gap: 8, alignItems: 'flex-start',
           }}>
             <_FxChip t={t} tone={tone}>{tone === 'crimson' ? 'BLOCK' : tone === 'amber' ? 'WARN' : 'OK'}</_FxChip>
@@ -343,7 +310,7 @@ function ViewerEffectsParamPanel({ theme = 'dark', effect = 'bounce-cartoon' }) 
             boxShadow: t.panelShadow,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontFamily: _fx.fontMono, fontSize: 10, color: t.textDim, letterSpacing: 1.5 }}>
+              <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: t.textDim, letterSpacing: 1.5 }}>
                 LIVE PREVIEW · 3 BACKGROUND CONTEXTS
               </span>
             </div>
@@ -377,10 +344,10 @@ function ViewerEffectsParamPanel({ theme = 'dark', effect = 'bounce-cartoon' }) 
                 background: t.panel, border: `1px solid ${t.line}`, borderRadius: 4,
                 padding: '10px 12px', boxShadow: t.panelShadow,
               }}>
-                <div style={{ fontFamily: _fx.fontMono, fontSize: 9, color: t.textMute, letterSpacing: 1.2 }}>{m.l.toUpperCase()}</div>
+                <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: t.textMute, letterSpacing: 1.2 }}>{m.l.toUpperCase()}</div>
                 <div style={{ marginTop: 4, display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                  <span style={{ fontFamily: _fx.fontDisplay, fontSize: 22, fontWeight: 700, color: m.tone === 'crimson' ? _fx.crimson : m.tone === 'cyan' ? _fx.cyan : _fx.lime, letterSpacing: -0.5 }}>{m.v}</span>
-                  {m.u && <span style={{ fontFamily: _fx.fontMono, fontSize: 11, color: t.textDim }}>{m.u}</span>}
+                  <span style={{ fontFamily: hudTokens.fontDisplay, fontSize: 22, fontWeight: 700, color: m.tone === 'crimson' ? hudTokens.crimson : m.tone === 'cyan' ? hudTokens.cyan : hudTokens.lime, letterSpacing: -0.5 }}>{m.v}</span>
+                  {m.u && <span style={{ fontFamily: hudTokens.fontMono, fontSize: 11, color: t.textDim }}>{m.u}</span>}
                 </div>
               </div>
             ))}
