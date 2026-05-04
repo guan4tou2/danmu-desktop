@@ -9557,3 +9557,68 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   [data-admin-tabs-host].admin-tabs-host--accordion { padding: 12px; }
   .admin-system-accordion-en { display: none; }
 }
+
+/* ── Slice 5 · Inline undo bar (Q3 reversible action feedback) ─────────── */
+[data-quick-action-host] {
+  padding: 0 24px;
+  margin-top: 8px;
+  pointer-events: none;
+}
+
+.admin-quick-action-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: rgba(134, 239, 172, 0.10);
+  border: 1px solid rgba(134, 239, 172, 0.45);
+  color: #86efac;
+  font-family: inherit;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.admin-quick-action-bar.is-entering {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.admin-quick-action-bar.is-leaving {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+.admin-quick-action-bar-text {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.admin-quick-action-bar-undo {
+  background: transparent;
+  border: 1px solid rgba(134, 239, 172, 0.45);
+  border-radius: 4px;
+  color: #86efac;
+  cursor: pointer;
+  font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  padding: 3px 9px;
+  letter-spacing: 0.4px;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.admin-quick-action-bar-undo:hover {
+  background: rgba(134, 239, 172, 0.18);
+  color: #f1f5f9;
+}
+
+.admin-quick-action-bar-undo:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+@media (max-width: 640px) {
+  [data-quick-action-host] { padding: 0 12px; }
+}

@@ -82,9 +82,30 @@
       });
       const data = await response.json();
       if (response.ok) {
-        showToast(data.message || "Keyword added.", true);
         keywordInput.value = ""; // Clear input
         fetchBlacklist(); // Refresh list
+        // Slice 5 · Q3 reversible-action feedback: toast (universal) +
+        // inline green bar with ↶ undo for ~5s. AdminQuickAction handles
+        // the bar lifecycle; we wire the undo to /admin/blacklist/remove.
+        if (window.AdminQuickAction) {
+          window.AdminQuickAction.fire({
+            label: data.message || `已加入黑名單 · ${keyword}`,
+            undo: {
+              label: "撤回",
+              run: async () => {
+                const r = await window.csrfFetch("/admin/blacklist/remove", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ keyword }),
+                });
+                if (!r.ok) throw new Error("remove failed");
+                fetchBlacklist();
+              },
+            },
+          });
+        } else {
+          showToast(data.message || "Keyword added.", true);
+        }
       } else {
         showToast(data.error || "Failed to add keyword.", false);
       }
