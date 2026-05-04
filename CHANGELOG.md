@@ -7,11 +7,170 @@
 
 ## [Unreleased]
 
-**Design v2 second wave · 2026-04-25 PM** — alignment with the
-refreshed Claude Design handoff bundle (新 `admin-display-settings.jsx`
-/ `admin-polls.jsx` / `admin-ratelimits.jsx` / `admin-viewer-theme.jsx`
-/ `priority-2-pieces.jsx` 五個新元件 + viewer / tokens / hero refresh).
-Production deployed at `609108d` after the original `[5.0.0]` cut.
+(no items pending)
+
+## [5.1.0] - 2026-05-04
+
+**P0-0 IA Migration + Polestar Lock-in** — admin nav consolidates from
+32 routes to a P0-0 final shape: 10 top-level buttons (dashboard / polls
+/ effects / moderation / widgets / appearance / assets / automation /
+history / system) + standalone 安全. The polestar was locked 2026-05-04
+in the office-hours session: **single presenter, mid-size event,
+interaction + atmosphere**. All `/admin/*` endpoints preserved; old hash
+URLs redirect via aliases so bookmarks keep working. Branch
+`claude/design-v2-retrofit` accumulated 26 commits over 8 engineering
+slices + 4 design handoff rounds.
+
+### 新增 / Added — IA migration
+
+- **P0-0 sidebar collapsed to 10 P0-0 nav buttons + 安全**
+  ([f74a771](#) Slice 1, [f40d179](#) Slice 4, [9a375a7](#) Slice 6).
+  `dashboard` / `polls` / `effects` / `moderation` / `widgets` /
+  `appearance` / `assets` / `automation` / `history` / `system` —
+  4 of these (moderation / appearance / automation / history) are
+  tabbed; `system` is an accordion of 8 leaves (setup / firetoken /
+  api-tokens / backup / integrations / wcag / mobile / about).
+- **Hash deep-linking** ([98161c6](#) Slice 2): `#/<nav>/<tab>` deep
+  links work end-to-end. `window.AdminRouter.{parseHash, buildHash,
+  tabMemory, aliases}` exposed for module use. Tab choice persists
+  per-nav in `sessionStorage`.
+- **Tab container shared component** ([82c6338](#) Slice 3) —
+  `server/static/js/admin-tabs.js`, ~200 LoC. Used by 4 tabbed nav
+  routes. Each tab can map to a single section ID or a list of section
+  IDs (e.g. `history/replay` spans 3 sections). `applyTabSectionVisibility`
+  hides inactive tabs even after MutationObserver re-fires.
+- **System accordion shell** ([9a375a7](#) Slice 6) — `server/static/
+  js/admin-system-accordion.js`, ~120 LoC. Vertical accordion with
+  single-open semantics, `sessionStorage` memory of last-open section.
+- **11 legacy URL aliases redirect to new nav+tab** ([f40d179](#)
+  Slice 4 + [9a375a7](#) Slice 6): `audit / sessions / search / audience`
+  → `history/<tab>`; `themes / viewer-config / fonts` → `appearance/<tab>`;
+  `scheduler / webhooks / plugins` → `automation/<tab>`; `ratelimit /
+  fingerprints` → `moderation/<tab>`; `firetoken / api-tokens / backup
+  / integrations / wcag / mobile / about` → `system/<tab>`. Aliases
+  carry `{nav, tab}` so the leaf tab gets activated automatically.
+- **Q3 reversible-action feedback** ([9282c34](#) Slice 5) —
+  `server/static/js/admin-quick-action.js`. Toast (universal) + inline
+  green undo bar (only when reversible) per decisions-log-may04 Q3 rule.
+  First wired into blacklist add: success → toast + ↶ button; click ↶ →
+  POST `/admin/blacklist/remove` + "已撤銷" toast. Auto-dismiss after 5s.
+- **Backend Gap 2 — `POST /admin/effects/<name>/fire`** ([daa6080](#)
+  Slice 7): broadcasts `effect_pulse` payload to overlay clients +
+  admin WS so dashboard live-console can echo "fired ✓" toast. Bypass
+  STANDBY gate (non-danmu payload). target = `banner` | `next-danmu`,
+  duration_ms clamped [200, 8000], audited.
+- **Backend Gap 3 — `POST /admin/broadcast/send`** ([daa6080](#)
+  Slice 7): admin pushes danmu directly to overlay, bypasses
+  rate-limit + filter + STANDBY gate (operator messages aren't
+  audience traffic). Marked `source: "admin"` + nickname "ADMIN" for
+  overlay styling. Text 1–500 chars, no control chars.
+- **`/admin/bootstrap` adds `session` + `audit` sections**
+  ([1060bf7](#)) — live-console dashboard topbar (session selector)
+  and notification bell (system events) read from first-paint payload.
+  History tab (audit/sessions/audience deep-pages) stays B-tier
+  on-demand.
+- **`shell.dataset.activeLeaf`** ([c0be5fc](#) Slice 8) — canonical
+  leaf slug (active tab if tabbed/accordion'd, else top route) for
+  legacy `admin-*.js` modules to read. 10 modules updated to use it
+  (admin-audit / admin-audience / admin-backup / admin-broadcast /
+  admin-mobile / admin-notifications / admin-poll-deepdive /
+  admin-search / admin-sessions).
+
+### 修改 / Changed — IA + UX polish
+
+- **Telemetry MEM display** ([263894a](#)): switched from absolute
+  `5764 MB` (no context, arbitrary 1024 MB threshold) to `80%`
+  matching CPU's format. `vm.percent` now drives bar fill (real
+  pressure %, warn at ≥90%). Hover tooltip carries `5.5 / 16.0 GB used`
+  for absolute context. `mem_total_mb` exposed via `/admin/metrics`.
+- **Topbar admin** ([f74a771](#)–[c0be5fc](#)): removed legacy
+  backstage panel toggle + collapsible panel; Slice 1's flat IA
+  superseded it. ~50 lines of CSS + JS deleted.
+- **Dashboard kept AdminV3SoftHolo panel grid** — owner reviewed the
+  alternate "live-console" handoff layout and rejected as overpacked
+  at 1440×900 (60% feed + 40% stacked quick-action zones + sidebar).
+  Existing 12-col 3-row grid (KPI strip / 進行中投票 + 快速投票 /
+  即時訊息 + Widgets) kept as-is.
+
+### 新增 / Added — Design batch (pre-IA, pre-deployed at `609108d`)
+
+- **Stickers 多 pack 模型 (P1-4 後端)**：`services/stickers.py` +
+  `StickerPack {id, name, enabled, weight, order}` + `Sticker.pack_id`
+  FK；持久化到 `runtime/stickers/{packs,stickers}.json`；首次載入時
+  migrate 既有 stickers 到 `default` pack（idempotent）。新 endpoint
+  集合：`/admin/stickers/packs/{create,<id>/toggle,<id>/rename,
+  <id>/reorder,<id>}` + `POST /admin/stickers/<name>/assign`。
+  Admin UI sidebar 顯示真 pack 列表 + 增改刪。([12f0e22](#))
+- **Sounds per-tile inline volume (P1-2 後續)**：`services/sound.py`
+  per-sound volume 0..1 持久化到 `runtime/sounds/sound_volumes.json`；
+  rule volume 仍會覆蓋。`POST /admin/sounds/<name>/volume`。每張
+  Sound tile 加 100px 滑桿。([12f0e22](#))
+- **Effects user .dme live preview (P3-2 後續)**：用戶上傳的 .dme 卡
+  片現在也會即時動畫(原本只有 8 個 builtin)。透過 lazy-fetch
+  `/admin/effects/<name>/content` + `/admin/effects/preview` 取得
+  rendered keyframes，注入 `<style>` 並套用到 demo 文字。Cache 與
+  IntersectionObserver 復用。([12f0e22](#))
+- **Polls 多題 session + 圖片上傳 (P0-1)**：`PollService` 改寫成
+  question-session state machine，仍 backward-compat 提供 legacy
+  `state.question` / `options` 派生欄位。新 endpoint `/admin/poll/
+  {create,start,advance}`、`POST /admin/poll/<id>/upload-image/<qid>`
+  (多 part / ≤2 MB / JPG·PNG·WebP / magic-byte / path-traversal)。
+  公開 `/polls/media/<path>` 提供圖片讀取。Admin UI 多題 Builder +
+  per-question image upload + START SESSION / 下一題 / 結束 控制器。
+  17 新測試。([61a5dbc](#))
+- **Polls Live HUD + Results 頁**：active 狀態替換 Builder 為 Live
+  HUD（CountdownRing 1Hz / leader 漸層 / queue mini / 自動下一題 +
+  overlay 顯示 toggle）；ended 狀態替換為 Results（per-question Tab
+  + winner callout + ranked bars + Participation/Timeline + Export
+  rail CSV/JSON/copy）。([609108d](#))
+- **Broadcast 獨立後台頁 (`/admin/#/broadcast`)**：state strip + LIVE
+  · 廣播中 + uptime/connections/messages 計時 + `⏸ 切到 STANDBY`，
+  END BROADCAST 卡需輸入 `STANDBY` 確認碼 + `■ 結束廣播` crimson 按
+  鈕；附 LIVE vs STANDBY 5-bullet 對比。([609108d](#))
+
+### 新增 / Added — Design assets + governance
+
+- **STYLE-CONTRACT.md** ([7ffef3c](#)) — locked palette, forbidden
+  hexes (the drift traps from 2026-05-04 handoff), forbidden color
+  families (magenta/violet — re-introduced and rejected), required
+  chrome wrapper, delivery checklist self-verification, paste-ready
+  prompt for the next Claude Design conversation.
+- **HANDOFF-REWORK-2026-05-04.md** ([5ef14d1](#)) — per-file rework
+  brief that drove rounds 2 + 3 of design handoff.
+- **Engineering plan** ([46e6798](#)) — 8 slices documenting the IA
+  migration with effort estimates + safety-first ordering.
+- **Backend prep doc** ([1060bf7](#)) — Q3 quick-action endpoint
+  audit + 3 gap analysis (Gaps 2 + 3 shipped this release; Gap 1
+  message-level moderation deferred pending UX decision on
+  hide-message vs mute-fingerprint model).
+- **5 Claude Design components carried into repo** through 3 rework
+  rounds: `live-console.jsx` (rejected as overpacked, kept as
+  reference), `tab-chrome.jsx` (canonical for P0-0a), `system-
+  accordion.jsx`, `decisions-log-may04.jsx`, `rwd-768.jsx`,
+  `rwd-480.jsx`. All inline forbidden hexes + rgba mechanically
+  cleaned to canonical hudTokens-equivalent values.
+
+### 修正 / Fixed
+
+- **MutationObserver respects active tab** ([82c6338](#)) — when
+  late-injected sections fire `applySectionVisibility` re-application,
+  the active tab's section visibility is now preserved (previously
+  any DOM mutation reset display="" for all in-route sections,
+  showing inactive tab content).
+- **Session-detail query param preserved** ([c0be5fc](#)) —
+  `#/session-detail?id=xxx` no longer alias-redirected (the parser
+  would have stripped `?id=`). Kept as its own route.
+
+### 工程指標 / Engineering Metrics
+
+- **Tests**: 1009 passed (was 995 before this release) + 4 skipped +
+  14 new tests across Slice 7 endpoints (effects/fire + broadcast/send
+  validation, auth gates, queue insertion, STANDBY bypass).
+- **Net LoC**: ~+1300 across 8 engineering slices, plus ~+300 design
+  doc / handoff. Slice 8 cleanup deleted 73 lines (backstage dead code).
+- **Sidebar**: 28 nav rows (5.0.0) → 11 nav buttons (10 P0-0 + 安全).
+- **`/admin/*` endpoint count**: unchanged (every legacy endpoint
+  preserved; new: `/admin/effects/<name>/fire` + `/admin/broadcast/send`).
 
 ### 新增 / Added
 
