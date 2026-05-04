@@ -67,18 +67,23 @@
     <div class="client-shell" data-client-shell>
       <aside class="client-sidebar" role="navigation" aria-label="Client sections">
         <nav class="client-nav">
-          <button type="button" class="client-nav-btn is-active" data-nav="overlay">
-            <span class="client-nav-icon">▢</span>
-            <span class="client-nav-label">
-              <span class="zh">Overlay</span>
-              <span class="en">DISPLAY</span>
-            </span>
-          </button>
-          <button type="button" class="client-nav-btn" data-nav="conn">
+          <!-- 5.1.0: 連線 sits at the top so first-run users land directly
+               on the setup tab without re-orienting. Order deviates from
+               prototype desktop.jsx:143 (overlay first) per owner request.
+               is-active starts on conn to avoid a flash before client-nav.js
+               bootstrap; activate() will rebalance based on actual state. -->
+          <button type="button" class="client-nav-btn is-active" data-nav="conn">
             <span class="client-nav-icon">⇌</span>
             <span class="client-nav-label">
               <span class="zh">連線</span>
               <span class="en">CONNECTION</span>
+            </span>
+          </button>
+          <button type="button" class="client-nav-btn" data-nav="overlay">
+            <span class="client-nav-icon">▢</span>
+            <span class="client-nav-label">
+              <span class="zh">Overlay</span>
+              <span class="en">DISPLAY</span>
             </span>
           </button>
           <button type="button" class="client-nav-btn" data-nav="keys">
@@ -134,8 +139,10 @@
           </select>
         </div>
 
-        <!-- Section: Connection (prototype desktop.jsx ConnSection:250) -->
-        <section class="client-section" data-section="conn" hidden>
+        <!-- Section: Connection (prototype desktop.jsx ConnSection:250).
+             Default-visible (no `hidden`) — 5.1.0 promoted conn to first
+             nav so first-run users land here directly. -->
+        <section class="client-section" data-section="conn">
           <!-- First-run setup gate (5.1.0: moved from fullscreen overlay
                to inline conn-tab card so the sidebar stays clickable). -->
           <div id="firstRunGate" class="client-firstrun-gate" hidden role="region" aria-label="First-run server setup">
@@ -324,8 +331,9 @@
           </div>
         </section>
 
-        <!-- Section: Overlay display & controls (prototype desktop.jsx OverlaySection:203) -->
-        <section class="client-section" data-section="overlay">
+        <!-- Section: Overlay display & controls (prototype desktop.jsx OverlaySection:203).
+             Hidden by default — 5.1.0 demoted overlay to second nav. -->
+        <section class="client-section" data-section="overlay" hidden>
           <div class="client-section-head">
             <div class="client-section-title">Overlay 控制</div>
             <div class="client-section-kicker">DISPLAY · 透明層 · 點擊穿透</div>
