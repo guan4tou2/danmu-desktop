@@ -206,6 +206,94 @@ no inner scroll. Decisions:
 
 ---
 
+### P0-0a · Tab container shared chrome (moderation / appearance / automation / history)
+
+> **Added 2026-05-04. Sub-item of P0-0.** Specifies the shared chrome that
+> backs 4 of the 10 final nav pages. Solving this first (before `system`
+> accordion) gives 4× leverage and sets the visual language for the whole
+> settings layer.
+
+**Context.** P0-0 collapses 17 legacy nav slots into 4 tabbed pages. All 4 use
+the same chrome — same tab strip, same kicker placement, same loading rules,
+same mobile collapse. Without a shared component, four teams would re-solve
+the same UX questions four times and drift visually. Solving the chrome once
+also unlocks the `system` accordion, which can reuse the same kicker / section
+header conventions.
+
+**Scope.** 4 tabbed pages:
+
+| Nav | Tabs (left → right, frequency order) | Default tab |
+|---|---|---|
+| `moderation` | **blacklist** · filters · ratelimit · fingerprints | blacklist |
+| `appearance` | **themes** · viewer-theme · display · fonts | themes |
+| `automation` | **scheduler** · webhooks · plugins (Advanced) | scheduler |
+| `history` | **sessions** · search · audit · replay · audience | sessions |
+
+**Default tab rule.** "Most likely needed mid-event" → first tab. Defaults
+above are picked by what the presenter reaches for during a 1–4 hour live
+event (`blacklist` for trolls; `themes` for opening setup; `scheduler` for
+fire-at-time presets; `sessions` for "what just happened"). Tab order also
+follows frequency, not alphabetical or technical grouping.
+
+**UX requirements.**
+
+1. **Single shared component.** One React-style tabbed container reused by
+   all 4 pages. Page-specific content slots into the body; chrome (tab strip,
+   header, kicker) is identical.
+2. **Persisted last-active tab per nav.** When user leaves `moderation` on
+   the `filters` tab and comes back, restore `filters`, not the default. Use
+   `sessionStorage` (clears on logout). Cross-session persistence not needed.
+3. **Deep-linkable tabs.** URL hash format: `#/<nav>/<tab>` (e.g.
+   `#/moderation/blacklist`). Plain `#/<nav>` falls through to the default
+   tab. Bookmarkable, shareable, back-button works.
+4. **Badges on tab labels.** Each tab can publish a badge count (e.g.
+   `blacklist (23)`, `webhooks (3 failing)`). Badge tone: neutral for
+   neutral counts, amber for "needs attention" (failing webhooks, expired
+   schedules), crimson for "broken" (rate-limit hits in last 60s). Badges
+   refresh on the same cadence as the dashboard KPI rail.
+5. **Mobile collapse.** Below 640px, tab strip becomes a `<select>` element.
+   Native styling, no custom dropdown. Active tab body stays full-width.
+6. **Loading per tab.** Switching tabs MUST NOT block — show a 200ms
+   skeleton if the tab's data isn't in the bootstrap snapshot, otherwise
+   render instantly. Don't lock the tab strip during fetch.
+7. **Empty states.** Each tab's empty state lives inside the tab body, not
+   the chrome. Chrome stays consistent regardless of tab content.
+8. **Heterogeneous content shapes.** Chrome must accommodate four different
+   content patterns without forcing a layout assumption: rule list +
+   detail (moderation), color picker + live preview (appearance), calendar
+   or list (automation), timeline + filter rail (history). The chrome
+   provides only header + kicker + tab strip; below that, each tab owns
+   its own layout.
+
+**Technical constraints.**
+
+- All current sub-page endpoints already exist (e.g. `/admin/blacklist`,
+  `/admin/filters`, `/admin/ratelimit`). The chrome doesn't fetch — each
+  tab body fetches what it needs (or reads from the bootstrap snapshot).
+- `/admin/bootstrap` already returns `blacklist`, `filters`, `themes`,
+  `scheduler`, `webhooks` — covers the S/A-tier defaults. Audit / sessions
+  / audience etc. lazy-load on tab activation since they're B-tier.
+- `i18n` keys: `adminTabs.<nav>.<tab>.label` + `adminTabs.<nav>.<tab>.kicker`.
+  Both zh-TW and en strings required at the same time as the tab lands.
+- Tests: `test_browser_p3_pages.py` will need a tabbed-navigation helper.
+  Each tab change should be assertable independently.
+
+**Open questions for Claude Design.**
+
+1. Tab strip visual treatment — underlined active tab, pill, segmented
+   control, or something else? Must match the live-console dashboard's
+   visual register (cyan accent on slate-950).
+2. Badge placement — inline after the label (`Webhooks (3)`) or as a small
+   dot? Affects label width; inline costs more horizontal space but reads
+   faster.
+3. Tab strip overflow at 1440 — `appearance` has 4 tabs, `history` has 5.
+   Does the strip ever need horizontal scroll, or do we cap at 5 and force
+   any further additions to use a sub-page model?
+4. Sticky tab strip when the body is long-scrollable? Most relevant for
+   `history` (long lists) and `appearance` (long settings forms).
+
+---
+
 ### P0-1 · Polls — multi-question with ordering + per-question image
 
 **Context.** Polls are the second-largest interaction surface after danmu.
@@ -993,6 +1081,7 @@ work restarts, start with Stage 1 (file reorg), not Stage 2.
 | 2026-05-04 | Effect strip = 8 cards horizontal scroll, no "more" toggle — Q2 resolved | Claude Design + User |
 | 2026-05-04 | Feedback = toast (universal) + inline green bar (undoable actions only) — Q3 resolved | Claude Design + User |
 | 2026-05-04 | Recent actions = right-rail sidebar; bell reserved for system events — Q4 resolved | Claude Design + User |
+| 2026-05-04 | Tab chrome shared across moderation/appearance/automation/history; default tab = mid-event likely; badges + deep-links + sessionStorage persistence (P0-0a) | User |
 
 ---
 
