@@ -104,6 +104,16 @@ document.addEventListener("DOMContentLoaded", () => {
     audit:           { nav: "history", tab: "audit" },
     audience:        { nav: "history", tab: "audience" },
     // (note: `history` route itself = the replay tab inside history nav)
+
+    // === System accordion (Slice 6) — alias old C-tier routes to system/<slug> ===
+    firetoken:    { nav: "system", tab: "firetoken" },
+    "api-tokens": { nav: "system", tab: "api-tokens" },
+    backup:       { nav: "system", tab: "backup" },
+    integrations: { nav: "system", tab: "integrations" },
+    wcag:         { nav: "system", tab: "wcag" },
+    mobile:       { nav: "system", tab: "mobile" },
+    about:        { nav: "system", tab: "about" },
+    // (note: security stays as its own route — admin-security.js owns it)
   });
 
   // Per-nav last-active-tab memory (sessionStorage). Cleared on logout.
@@ -626,8 +636,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span>歷史</span>
                                 </button>
 
-                                <!-- SYSTEM group — Slice 6 will collapse into accordion ── -->
-                                <div class="admin-dash-nav-label" style="margin-top:12px">SYSTEM</div>
+                                <!-- 10. SYSTEM (Slice 6: accordion hosts firetoken /
+                                     api-tokens / backup / integrations / wcag / mobile /
+                                     about). Security keeps its own row — admin-security.js
+                                     owns visibility via data-active-route="security". -->
                                 <button type="button" class="admin-dash-nav-row" data-route="system" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⚙</span>
                                     <span>系統</span>
@@ -635,39 +647,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <button type="button" class="admin-dash-nav-row" data-route="security" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⛨</span>
                                     <span>安全</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="integrations" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⌨</span>
-                                    <span>整合</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="api-tokens" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⌗</span>
-                                    <span>API Tokens</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="backup" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⤓</span>
-                                    <span>備份</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="notifications" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⚑</span>
-                                    <span>通知</span>
-                                    <span class="admin-dash-nav-badge" data-count-notif hidden>—</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="broadcast" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◎</span>
-                                    <span>廣播</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="wcag" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⊙</span>
-                                    <span>WCAG</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="mobile" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">▤</span>
-                                    <span>Mobile</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row admin-dash-nav-row--about" data-route="about" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">ⓘ</span>
-                                    <span>關於</span>
                                 </button>
 
                             </nav>
@@ -1197,7 +1176,10 @@ document.addEventListener("DOMContentLoaded", () => {
     effects:   { title: "效果庫 .dme",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },
     plugins:   { title: "伺服器插件",       kicker: "PLUGIN SDK · 熱重載 · SANDBOX", sections: ["sec-plugins"] },
     fonts:     { title: "字型管理",         kicker: "FONT LIBRARY · 觀眾可選",   sections: ["sec-fonts"] },
-    system:    { title: "系統 & 指紋",      kicker: "SYSTEM · FINGERPRINT · RATE LIMITS", sections: ["sec-system-overview", "sec-scheduler", "sec-webhooks", "sec-fingerprints"] },
+    // Slice 6: system hosts the C-tier accordion (8 sections). scheduler /
+    // webhooks moved to automation; fingerprints moved to moderation. The
+    // accordion shell is rendered by admin-system-accordion.js.
+    system:    { title: "系統",  kicker: "SYSTEM · 設定 / 金鑰 / 備份 / 整合 / 無障礙 / 手機 / 關於", sections: ["sec-system-overview", "sec-firetoken-overview", "sec-api-tokens-overview", "sec-backup", "sec-extensions-overview", "sec-wcag-overview", "sec-mobile-admin-overview", "sec-about-overview"] },
     // Security route is fully owned by admin-security-v2-page (admin-security.js).
     // sections=[] because the v2 page handles its own visibility on data-active-route.
     security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: [] },
@@ -1237,7 +1219,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let currentRoute = "dashboard";
 
-    let _activeTab = null;  // last-applied tab for currentRoute (Slice 3)
+    let _activeTab = null;  // last-applied tab for currentRoute (Slice 3 + 6)
 
     const applySectionVisibility = () => {
       const cfg = ADMIN_ROUTES[currentRoute];
@@ -1253,12 +1235,14 @@ document.addEventListener("DOMContentLoaded", () => {
         el.style.display = wanted.has(el.id) ? "" : "none";
       });
       // Slice 3: tab-aware visibility wins over route-level visibility for
-      // tabbed nav routes. Must run AFTER the route-level pass so this
-      // overrides display="" for inactive-tab sections. Also runs after
-      // MutationObserver-triggered re-application so late-injected sections
-      // respect the active tab.
+      // tabbed nav routes.
       if (_activeTab && window.AdminTabs?.hasTabsFor?.(currentRoute)) {
         window.AdminTabs.applyTabSectionVisibility(currentRoute, _activeTab, shell);
+      }
+      // Slice 6: system accordion treats `_activeTab` as the open accordion
+      // slug. Hides all other system sections so only one shows at a time.
+      if (currentRoute === "system" && window.AdminSystemAccordion) {
+        window.AdminSystemAccordion.applySectionVisibility(_activeTab, shell);
       }
     };
 
@@ -1268,9 +1252,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Resolve tab (Slice 3): hint > sessionStorage > default. Returns null
       // for nav routes that don't opt into tabs.
-      const activeTab = window.AdminTabs?.hasTabsFor?.(currentRoute)
-        ? window.AdminTabs.resolveActiveTab(currentRoute, requestedTab)
-        : null;
+      // Slice 6: system route uses AdminSystemAccordion — same shape but
+      // resolves to a system accordion slug instead of a tab slug.
+      let activeTab;
+      if (window.AdminTabs?.hasTabsFor?.(currentRoute)) {
+        activeTab = window.AdminTabs.resolveActiveTab(currentRoute, requestedTab);
+      } else if (currentRoute === "system" && window.AdminSystemAccordion) {
+        activeTab = window.AdminSystemAccordion.resolveActiveSlug(requestedTab);
+      } else {
+        activeTab = null;
+      }
 
       // Sync URL hash. Use buildHash to preserve `#/<nav>/<tab>` when
       // the nav owns tabs; otherwise plain `#/<nav>`.
@@ -1305,11 +1296,16 @@ document.addEventListener("DOMContentLoaded", () => {
         window.AdminDashboard?.stopSessionPolling?.();
       }
 
-      // Slice 3: stash tab so applySectionVisibility (and the MutationObserver
-      // re-fire path) respects per-tab visibility. Cleared for non-tabbed routes.
+      // Slice 3 + 6: stash tab/slug so applySectionVisibility (and the
+      // MutationObserver re-fire path) respects per-tab visibility. Cleared
+      // for non-tabbed/non-accordion routes.
       _activeTab = activeTab;
       if (activeTab) {
-        window.AdminRouter?.tabMemory?.set?.(currentRoute, activeTab);
+        if (currentRoute === "system" && window.AdminSystemAccordion) {
+          window.AdminSystemAccordion._setMem(activeTab);
+        } else {
+          window.AdminRouter?.tabMemory?.set?.(currentRoute, activeTab);
+        }
       }
 
       applySectionVisibility();
@@ -1322,11 +1318,9 @@ document.addEventListener("DOMContentLoaded", () => {
       try { history.replaceState(null, "", wantedHash); } catch (e) { /* ignore */ }
     };
 
-    // Mounts (or removes) the tab strip in the topbar host. Strip lives
-    // between `.admin-dash-topbar` and the route-view sections.
+    // Mounts (or removes) the tab strip / system accordion in the topbar host.
+    // Strip lives between `.admin-dash-topbar` and the route-view sections.
     function _renderTabStripFor(nav, activeTab) {
-      // Find or create the host once. Anchor under topbar so kicker+title
-      // stay visible above the tabs.
       let host = shell.querySelector("[data-admin-tabs-host]");
       if (!host) {
         const topbar = shell.querySelector(".admin-dash-topbar");
@@ -1336,15 +1330,31 @@ document.addEventListener("DOMContentLoaded", () => {
         topbar.insertAdjacentElement("afterend", host);
       }
       host.innerHTML = "";
-      if (!window.AdminTabs?.hasTabsFor?.(nav) || !activeTab) {
-        host.hidden = true;
+
+      // Slice 3: tabbed nav routes
+      if (window.AdminTabs?.hasTabsFor?.(nav) && activeTab) {
+        host.hidden = false;
+        const strip = window.AdminTabs.renderTabStrip(nav, activeTab, {
+          onSelect: (tab) => applyRoute(nav, tab),
+        });
+        if (strip) host.appendChild(strip);
+        host.classList.remove("admin-tabs-host--accordion");
         return;
       }
-      host.hidden = false;
-      const strip = window.AdminTabs.renderTabStrip(nav, activeTab, {
-        onSelect: (tab) => applyRoute(nav, tab),
-      });
-      if (strip) host.appendChild(strip);
+
+      // Slice 6: system accordion (vertical accordion replaces horizontal strip)
+      if (nav === "system" && window.AdminSystemAccordion && activeTab) {
+        host.hidden = false;
+        host.classList.add("admin-tabs-host--accordion");
+        const acc = window.AdminSystemAccordion.renderAccordion(activeTab, {
+          onSelect: (slug) => applyRoute("system", slug),
+        });
+        if (acc) host.appendChild(acc);
+        return;
+      }
+
+      host.classList.remove("admin-tabs-host--accordion");
+      host.hidden = true;
     }
 
     // ── Backstage toggle ─────────────────────────────────────────────────────

@@ -9487,3 +9487,73 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   .admin-tabs-btn { padding: 0 10px; }
   .admin-tabs-btn-en { display: none; }
 }
+
+/* ── Slice 6 · System accordion (vertical mode of tabs host) ───────────── */
+[data-admin-tabs-host].admin-tabs-host--accordion {
+  padding: 16px 24px;
+  background: var(--color-panel, #0f172a);
+  border-bottom: 1px solid var(--color-border, #1f2944);
+}
+
+.admin-system-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 720px;
+}
+
+.admin-system-accordion-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid var(--color-border, #1f2944);
+  border-radius: 4px;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.admin-system-accordion-row:hover {
+  background: rgba(56, 189, 248, 0.06);
+  color: #f1f5f9;
+}
+
+.admin-system-accordion-row.is-open {
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+}
+
+.admin-system-accordion-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.admin-system-accordion-en {
+  font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 1.4px;
+  opacity: 0.7;
+}
+
+.admin-system-accordion-chev {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  transition: transform 0.12s ease;
+  opacity: 0.6;
+}
+
+.admin-system-accordion-row.is-open .admin-system-accordion-chev {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+@media (max-width: 640px) {
+  [data-admin-tabs-host].admin-tabs-host--accordion { padding: 12px; }
+  .admin-system-accordion-en { display: none; }
+}
