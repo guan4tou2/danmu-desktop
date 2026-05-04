@@ -1067,17 +1067,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Sidebar TELEMETRY · 4-bar refresh — proto admin-pages.jsx 4 TelemBar rows.
     // Pulls latest CPU% / MEM% / WS clients / msg-rate from /admin/metrics
-    // every 5 s. Bar fill is metric_value / threshold (CPU 100%, MEM 100%,
-    // WS 100 conns, RATE 50 req/s) clamped to [0, 100].
+    // every 5 s. Bar fill: CPU + MEM use the real % (vm.percent / cpu_percent);
+    // WS + RATE clamp against operator-meaningful thresholds (100 conns, 50 req/s).
+    // MEM display: "80%" to align with CPU. Tooltip carries the absolute
+    // "used / total GB" so the operator can dig in if pressure is suspicious.
     (function setupTelemetryBars() {
       const el = document.querySelector("[data-telem-bars]");
       if (!el) return;
       const status = document.querySelector("[data-telem-status]");
-      // MEM threshold is in MB (sidebar shows e.g. "MEM 218 MB"); 1 GB used
-      // marks the warn line. CPU is percent, WS is connections, RATE is req/s.
-      const THRESHOLDS = { cpu: 100, mem: 1024, ws: 100, rate: 50 };
+      const THRESHOLDS = { cpu: 100, mem: 100, ws: 100, rate: 50 };
 
-      function _set(metric, pct, valueText, healthy) {
+      function _set(metric, pct, valueText, healthy, tooltip) {
         const fill = el.querySelector(`[data-telem-fill="${metric}"]`);
         const value = el.querySelector(`[data-telem-value="${metric}"]`);
         if (fill) {
@@ -1085,6 +1085,19 @@ document.addEventListener("DOMContentLoaded", () => {
           fill.classList.toggle("is-warn", !healthy);
         }
         if (value) value.textContent = valueText;
+        const row = el.querySelector(`[data-telem-row="${metric}"]`);
+        if (row && tooltip) row.setAttribute("title", tooltip);
+      }
+
+      // Build "5.9 / 16.0 GB" tooltip for MEM (or "MB" form when total < 1024).
+      function _memTooltip(usedMb, totalMb) {
+        if (!totalMb || totalMb <= 0) return Math.round(usedMb) + " MB used";
+        if (totalMb >= 1024) {
+          const u = (usedMb / 1024).toFixed(1);
+          const t = (totalMb / 1024).toFixed(1);
+          return `${u} / ${t} GB used`;
+        }
+        return `${Math.round(usedMb)} / ${Math.round(totalMb)} MB used`;
       }
 
       async function tick() {
@@ -1098,19 +1111,18 @@ document.addEventListener("DOMContentLoaded", () => {
           const wsArr    = m.ws_series     || [];
           const rateArr  = m.rate_series   || [];
           const last = (a) => a.length ? a[a.length - 1] : 0;
-          const cpuPct  = Number(last(cpuArr) || 0);
-          // Sidebar MEM shows used MB (matches admin-pages.jsx prototype "MEM 218 MB").
-          // Fall back to 0 when telemetry hasn't sampled yet; warn at >=1 GB used.
-          const memMb   = Number(last(memMbArr) || 0);
-          const memPct  = Number(last(memArr) || 0);
-          const wsCount = Number(last(wsArr)  || (m.ws_clients || 0));
+          const cpuPct   = Number(last(cpuArr) || 0);
+          const memPct   = Number(last(memArr) || 0);
+          const memMb    = Number(last(memMbArr) || 0);
+          const memTotal = Number(m.mem_total_mb || 0);
+          const wsCount  = Number(last(wsArr)  || (m.ws_clients || 0));
           // rate_series accumulates per-minute; convert to per-second for the
           // sidebar so the threshold bar matches the user mental model.
           const ratePerSec = Number(last(rateArr) || 0) / 60;
 
-          _set("cpu",  (cpuPct / THRESHOLDS.cpu) * 100, `${cpuPct.toFixed(0)}%`,    cpuPct  < 90);
-          _set("mem",  (memMb  / THRESHOLDS.mem) * 100, `${Math.round(memMb)} MB`,  memMb < THRESHOLDS.mem);
-          _set("ws",   (wsCount / THRESHOLDS.ws)   * 100, String(wsCount),            wsCount < 100);
+          _set("cpu",  cpuPct,                              `${cpuPct.toFixed(0)}%`, cpuPct < 90);
+          _set("mem",  memPct,                              `${memPct.toFixed(0)}%`, memPct < 90, _memTooltip(memMb, memTotal));
+          _set("ws",   (wsCount / THRESHOLDS.ws)   * 100,   String(wsCount),         wsCount < 100);
           _set("rate", (ratePerSec / THRESHOLDS.rate) * 100, `${ratePerSec.toFixed(1)}/s`, ratePerSec < 40);
 
           if (status) {
