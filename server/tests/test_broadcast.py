@@ -294,3 +294,91 @@ def test_fire_while_standby_queues_then_drains(app, client):
     assert len(ws_queue._queue) == 1
     assert ws_queue._queue[0]["text"] == "queued one"
     assert broadcast_svc.queue_size() == 0
+
+
+# ─── Slice 7 · /admin/broadcast/send (Gap 3) ────────────────────────────────
+
+
+def test_broadcast_send_requires_login(client):
+    res = client.post("/admin/broadcast/send", json={"text": "hi"})
+    assert res.status_code in (302, 401, 403)
+
+
+def test_broadcast_send_requires_csrf(client):
+    client.post("/login", data={"password": "test"}, follow_redirects=True)
+    res = client.post("/admin/broadcast/send", json={"text": "hi"})
+    assert res.status_code == 403
+
+
+def test_broadcast_send_writes_to_overlay_queue(client):
+    from server.services import ws_queue
+    ws_queue._queue.clear()
+    token = _login_csrf(client)
+    res = client.post(
+        "/admin/broadcast/send",
+        json={"text": "歡迎大家"},
+        headers={"X-CSRF-Token": token},
+    )
+    assert res.status_code == 200, res.data
+    body = json.loads(res.data)
+    assert body["sent"] is True
+    assert body["source"] == "admin"
+    # Payload landed in overlay queue with admin marker.
+    assert len(ws_queue._queue) == 1
+    payload = ws_queue._queue[0]
+    assert payload["text"] == "歡迎大家"
+    assert payload["source"] == "admin"
+
+
+def test_broadcast_send_bypasses_standby(client):
+    """Admin push must hit overlay even when broadcast is in STANDBY."""
+    from server.services import ws_queue
+    ws_queue._queue.clear()
+    token = _login_csrf(client)
+    # Go standby
+    client.post("/admin/broadcast/toggle", json={"mode": "standby"},
+                headers={"X-CSRF-Token": token})
+    # Admin send — should still hit overlay
+    res = client.post("/admin/broadcast/send", json={"text": "operator speaking"},
+                      headers={"X-CSRF-Token": token})
+    assert res.status_code == 200
+    assert len(ws_queue._queue) == 1
+    # And NOT enqueued in broadcast pending (which is for audience traffic)
+    assert broadcast_svc.queue_size() == 0
+
+
+def test_broadcast_send_rejects_empty_text(client):
+    token = _login_csrf(client)
+    res = client.post("/admin/broadcast/send", json={"text": "   "},
+                      headers={"X-CSRF-Token": token})
+    assert res.status_code == 400
+
+
+def test_broadcast_send_rejects_overlong_text(client):
+    token = _login_csrf(client)
+    res = client.post("/admin/broadcast/send", json={"text": "x" * 501},
+                      headers={"X-CSRF-Token": token})
+    assert res.status_code == 400
+
+
+def test_broadcast_send_rejects_control_chars(client):
+    token = _login_csrf(client)
+    res = client.post("/admin/broadcast/send", json={"text": "evil\x07"},
+                      headers={"X-CSRF-Token": token})
+    assert res.status_code == 400
+
+
+def test_broadcast_send_passes_through_style_params(client):
+    from server.services import ws_queue
+    ws_queue._queue.clear()
+    token = _login_csrf(client)
+    res = client.post(
+        "/admin/broadcast/send",
+        json={"text": "styled", "color": "#38bdf8", "size": 32, "speed": 5},
+        headers={"X-CSRF-Token": token},
+    )
+    assert res.status_code == 200
+    payload = ws_queue._queue[0]
+    assert payload["color"] == "#38bdf8"
+    assert payload["size"] == 32
+    assert payload["speed"] == 5

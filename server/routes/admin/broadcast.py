@@ -3,6 +3,7 @@
 Endpoints:
   * ``GET  /admin/broadcast/status`` — return current state (login required)
   * ``POST /admin/broadcast/toggle`` — change mode (CSRF + login + rate-limit)
+  * ``POST /admin/broadcast/send``   — admin pushes danmu (Slice 7, Gap 3)
 
 When toggling back to LIVE from STANDBY, the queued messages drain to overlay
 over ~2 seconds via a background thread so a flood of stored danmu doesn't
@@ -110,3 +111,69 @@ def broadcast_toggle():
             )
 
     return _json_response(new_state)
+
+
+# Slice 7 — Gap 3 from docs/backend-prep-2026-05-04.md.
+# Admin-side danmu push. Bypasses rate-limit + filter (admin is trusted)
+# AND the broadcast LIVE/STANDBY gate (admin pushes are always live —
+# they don't queue during STANDBY because that's the operator speaking).
+# Marks payload with `source: "admin"` so overlay can style differently.
+@admin_bp.route("/broadcast/send", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+@require_login
+def broadcast_send():
+    """Admin pushes a danmu directly to overlay.
+
+    Body: ``{"text": str, "color"?: str, "size"?: int, "speed"?: int,
+             "opacity"?: int, "layout"?: str}``
+
+    Validation: text 1–500 chars, no control chars. Optional style params
+    are passed through; overlay applies its defaults for missing fields.
+    """
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return _json_response({"error": "Body must be a JSON object"}, 400)
+
+    text = payload.get("text")
+    if not isinstance(text, str):
+        return _json_response({"error": "text is required (string)"}, 400)
+    text = text.strip()
+    if not text:
+        return _json_response({"error": "text must be non-empty"}, 400)
+    if len(text) > 500:
+        return _json_response({"error": "text must be ≤ 500 characters"}, 400)
+    # Reject ASCII control chars (newlines OK — overlay treats them as space).
+    if any(ord(c) < 32 and c not in "\n\t" for c in text):
+        return _json_response({"error": "text contains invalid control characters"}, 400)
+
+    data = {
+        "text": text,
+        "source": "admin",
+        "nickname": "ADMIN",
+    }
+    # Optional style passthroughs — overlay validates again client-side.
+    for k in ("color", "size", "speed", "opacity", "layout", "fontfamily"):
+        if k in payload:
+            data[k] = payload[k]
+
+    # bypass_broadcast_gate=True so the message hits overlay even when the
+    # broadcast is in STANDBY — admin pushes are operator messages, not
+    # audience traffic to be queued.
+    ok = messaging.forward_to_ws_server(data, bypass_broadcast_gate=True)
+    if not ok:
+        return _json_response({"error": "Forward to overlay failed"}, 502)
+
+    current_app.logger.info(
+        "Admin broadcast sent: text='%s' (%d chars)",
+        sanitize_log_string(text[:80]),
+        len(text),
+    )
+    try:
+        from ...services import audit_log
+        audit_log.append("broadcast", "admin_sent", actor="admin",
+                         meta={"text_preview": text[:120], "len": len(text)})
+    except Exception:
+        pass
+
+    return _json_response({"sent": True, "text": text, "source": "admin"})
