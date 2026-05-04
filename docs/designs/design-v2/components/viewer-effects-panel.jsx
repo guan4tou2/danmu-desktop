@@ -7,14 +7,14 @@
 
 const _fx = {
   // dark tokens
-  darkBg:        '#0B1020',
-  darkPanel:     '#0F1421',
-  darkRaised:    '#13192C',
-  darkLine:      '#1F2944',
-  darkLineSoft:  '#1A2238',
-  darkText:      '#E6E8EE',
-  darkTextDim:   '#9aa4b2',
-  darkTextMute:  '#6b7385',
+  darkBg:        '#020617',
+  darkPanel:     '#0f172a',
+  darkRaised:    '#1e293b',
+  darkLine:      'rgba(148, 163, 184, 0.18)',
+  darkLineSoft:  'rgba(148, 163, 184, 0.18)',
+  darkText:      '#f1f5f9',
+  darkTextDim:   '#94a3b8',
+  darkTextMute:  '#64748b',
 
   // light tokens
   lightBg:       '#F4F6FA',
@@ -29,10 +29,10 @@ const _fx = {
   // shared accents
   cyan:     '#38bdf8',
   cyanLine: 'rgba(56,189,248,0.45)',
-  lime:     '#84cc16',
+  lime:     '#86efac',
   amber:    '#fbbf24',
-  magenta:  '#f472b6',
-  crimson:  '#f43f5e',
+  magenta:  '#fbbf24',
+  crimson:  '#f87171',
 
   fontSans:    '"Noto Sans TC", "Zen Kaku Gothic New", -apple-system, system-ui, sans-serif',
   fontMono:    '"IBM Plex Mono", ui-monospace, monospace',
@@ -59,9 +59,9 @@ function _fxTokens(theme) {
 function _FxChip({ tone = 'mute', children, t }) {
   const colorMap = {
     cyan:    { fg: _fx.cyan,    bg: 'rgba(56,189,248,0.12)',  br: _fx.cyanLine },
-    lime:    { fg: _fx.lime,    bg: 'rgba(132,204,22,0.13)',  br: 'rgba(132,204,22,0.45)' },
+    lime:    { fg: _fx.lime,    bg: 'rgba(134, 239, 172,0.13)',  br: 'rgba(134, 239, 172,0.45)' },
     amber:   { fg: _fx.amber,   bg: 'rgba(251,191,36,0.13)',  br: 'rgba(251,191,36,0.45)' },
-    crimson: { fg: _fx.crimson, bg: 'rgba(244,63,94,0.13)',   br: 'rgba(244,63,94,0.45)' },
+    crimson: { fg: _fx.crimson, bg: 'rgba(248, 113, 113,0.13)',   br: 'rgba(248, 113, 113,0.45)' },
     mute:    { fg: t.textMute,  bg: 'transparent',            br: t.line },
   }[tone];
   return (
@@ -112,7 +112,7 @@ function _FxRadio({ t, label, options, picked }) {
             flex: 1, padding: '6px 10px',
             border: 'none', cursor: 'pointer',
             background: o === picked ? t.accent : 'transparent',
-            color: o === picked ? (t === _fxTokens('dark') ? '#0B1020' : '#FFFFFF') : t.textDim,
+            color: o === picked ? (t === _fxTokens('dark') ? '#020617' : '#FFFFFF') : t.textDim,
             fontFamily: _fx.fontMono, fontSize: 10, letterSpacing: 0.5, fontWeight: 600,
             borderRadius: 2, transition: 'all 120ms',
           }}>{o}</button>
@@ -152,7 +152,7 @@ function _FxToggle({ t, label, on, hint }) {
         transition: 'background 150ms',
       }}>
         <div style={{
-          width: 12, height: 12, borderRadius: '50%', background: on ? '#0B1020' : t.textDim,
+          width: 12, height: 12, borderRadius: '50%', background: on ? '#020617' : t.textDim,
           transform: on ? 'translateX(14px)' : 'translateX(0)', transition: 'transform 150ms',
         }} />
       </div>
@@ -184,11 +184,11 @@ function _FxPreviewChip({ t, kind, bgKind, text = '舉手 +1', amplitude, rate, 
       {/* corner labels */}
       <span style={{
         position: 'absolute', top: 6, left: 8, fontFamily: _fx.fontMono, fontSize: 8.5,
-        color: bgKind === 'dark' ? '#9aa4b2' : '#94A3B8', letterSpacing: 1.2,
+        color: bgKind === 'dark' ? '#94a3b8' : '#94A3B8', letterSpacing: 1.2,
       }}>BG · {bgKind.toUpperCase()}</span>
       <span style={{
         position: 'absolute', top: 6, right: 8, fontFamily: _fx.fontMono, fontSize: 8.5,
-        color: bgKind === 'dark' ? '#6b7385' : '#94A3B8', letterSpacing: 1.2,
+        color: bgKind === 'dark' ? '#64748b' : '#94A3B8', letterSpacing: 1.2,
       }}>{rate}× · {amplitude}{kind === 'bounce' ? 'px' : '%'}</span>
       {/* sample danmu */}
       <div style={{
@@ -272,7 +272,7 @@ function ViewerEffectsParamPanel({ theme = 'dark', effect = 'bounce-cartoon' }) 
           }}>↺ 還原預設</span>
           <span style={{
             padding: '8px 14px', borderRadius: 3,
-            background: t.accent, color: isDark ? '#0B1020' : '#FFFFFF',
+            background: t.accent, color: isDark ? '#020617' : '#FFFFFF',
             fontFamily: _fx.fontMono, fontSize: 11, letterSpacing: 0.8, fontWeight: 600,
             cursor: 'pointer',
           }}>套用到 overlay</span>
@@ -325,8 +325,8 @@ function ViewerEffectsParamPanel({ theme = 'dark', effect = 'bounce-cartoon' }) 
           {/* warn box bottom */}
           <div style={{
             marginTop: 'auto', padding: 10, borderRadius: 3,
-            background: tone === 'crimson' ? 'rgba(244,63,94,0.10)' : tone === 'amber' ? 'rgba(251,191,36,0.10)' : 'rgba(132,204,22,0.10)',
-            border: `1px solid ${tone === 'crimson' ? 'rgba(244,63,94,0.45)' : tone === 'amber' ? 'rgba(251,191,36,0.45)' : 'rgba(132,204,22,0.45)'}`,
+            background: tone === 'crimson' ? 'rgba(248, 113, 113,0.10)' : tone === 'amber' ? 'rgba(251,191,36,0.10)' : 'rgba(134, 239, 172,0.10)',
+            border: `1px solid ${tone === 'crimson' ? 'rgba(248, 113, 113,0.45)' : tone === 'amber' ? 'rgba(251,191,36,0.45)' : 'rgba(134, 239, 172,0.45)'}`,
             display: 'flex', gap: 8, alignItems: 'flex-start',
           }}>
             <_FxChip t={t} tone={tone}>{tone === 'crimson' ? 'BLOCK' : tone === 'amber' ? 'WARN' : 'OK'}</_FxChip>

@@ -637,7 +637,7 @@ function AdminAudiencePage({ theme = 'dark' }) {
         const audience = [
           { fp: 'fp_a3f2…b9c1', nick: '阿傑',           geo: 'TW · Taipei',  ip: '203.0.113.42',  ua: 'iPhone · Safari',  joined: '32m',  msgs: 14, score: 92, status: 'active',   color: '#7c3aed', risk: 'low' },
           { fp: 'fp_8d7e…2f4a', nick: 'Yvonne',         geo: 'TW · Taipei',  ip: '198.51.100.7',  ua: 'Mac · Chrome',     joined: '28m',  msgs: 8,  score: 88, status: 'active',   color: '#06b6d4', risk: 'low' },
-          { fp: 'fp_4c1b…7d8e', nick: '訪客6824',       geo: 'JP · Tokyo',   ip: '198.51.100.42', ua: 'Mac · Safari',     joined: '24m',  msgs: 4,  score: 64, status: 'active',   color: '#84cc16', risk: 'low' },
+          { fp: 'fp_4c1b…7d8e', nick: '訪客6824',       geo: 'JP · Tokyo',   ip: '198.51.100.42', ua: 'Mac · Safari',     joined: '24m',  msgs: 4,  score: 64, status: 'active',   color: '#86efac', risk: 'low' },
           { fp: 'fp_2d9e…8a3c', nick: '小明',           geo: 'TW · Taoyuan', ip: '100.64.2.91',   ua: 'Android · Chrome', joined: '18m',  msgs: 22, score: 97, status: 'active',   color: '#f97316', risk: 'low' },
           { fp: 'fp_9e1c…4d2f', nick: '匿名',           geo: 'US · CA',      ip: '54.230.18.4',   ua: 'Linux · Firefox',  joined: '14m',  msgs: 38, score: 32, status: 'flagged',  color: '#ef4444', risk: 'high', warn: '5min 12 訊息 · 接近 spam threshold' },
           { fp: 'fp_1a4f…9b3d', nick: '阿傑',           geo: 'TW · Taipei',  ip: '203.0.113.42',  ua: 'iPad · Safari',    joined: '12m',  msgs: 6,  score: 84, status: 'duplicate', color: '#7c3aed', risk: 'low', warn: '同 IP+暱稱 · 可能是同人換裝置' },

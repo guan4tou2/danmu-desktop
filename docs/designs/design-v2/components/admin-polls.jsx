@@ -536,7 +536,7 @@ function AdminPollsLive({ theme = 'dark' }) {
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', gap: 6,
                   padding: '4px 10px', borderRadius: 999,
-                  background: 'rgba(244,63,94,0.12)', border: '1px solid rgba(244,63,94,0.6)',
+                  background: 'rgba(248, 113, 113,0.12)', border: '1px solid rgba(248, 113, 113,0.6)',
                 }}>
                   <span style={{
                     width: 7, height: 7, borderRadius: '50%', background: '#F43F5E',
@@ -630,7 +630,7 @@ function AdminPollsLive({ theme = 'dark' }) {
                 <button style={liveBtn(line, text, textDim)}>⏭ 下一題</button>
                 <button style={{
                   padding: '9px 18px', borderRadius: 4,
-                  border: '1px solid #F43F5E', background: 'rgba(244,63,94,0.12)',
+                  border: '1px solid #F43F5E', background: 'rgba(248, 113, 113,0.12)',
                   color: '#F87171', cursor: 'pointer',
                   fontFamily: hudTokens.fontMono, fontSize: 11, letterSpacing: 1.5, fontWeight: 700,
                 }}>■ 結束投票</button>

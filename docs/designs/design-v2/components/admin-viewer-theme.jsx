@@ -437,7 +437,7 @@ function wcagLevel(r) {
   if (r >= 7)   return { tag: 'AAA',  bg: 'rgba(134,239,172,0.15)', border: '#86EFAC', fg: '#86EFAC' };
   if (r >= 4.5) return { tag: 'AA',   bg: 'rgba(125,211,252,0.15)', border: '#7DD3FC', fg: '#7DD3FC' };
   if (r >= 3)   return { tag: 'AA/LG', bg: 'rgba(252,211,77,0.15)', border: '#FCD34D', fg: '#FCD34D' };
-  return { tag: 'FAIL', bg: 'rgba(244,63,94,0.15)', border: '#F43F5E', fg: '#F87171' };
+  return { tag: 'FAIL', bg: 'rgba(248, 113, 113,0.15)', border: '#F43F5E', fg: '#F87171' };
 }
 
 function WCAGChip({ label, ratio, textDim, accent }) {

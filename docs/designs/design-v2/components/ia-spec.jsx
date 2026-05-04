@@ -7,20 +7,20 @@
 // All three share the same column tokens so they read as one spec.
 
 const _ia = {
-  bg:        '#0B1020',
-  panel:     '#0F1421',
-  raised:    '#13192C',
-  line:      '#1F2944',
-  lineSoft:  '#1A2238',
-  text:      '#E6E8EE',
-  textDim:   '#9aa4b2',
-  textMute:  '#6b7385',
+  bg:        '#020617',
+  panel:     '#0f172a',
+  raised:    '#1e293b',
+  line:      'rgba(148, 163, 184, 0.18)',
+  lineSoft:  'rgba(148, 163, 184, 0.18)',
+  text:      '#f1f5f9',
+  textDim:   '#94a3b8',
+  textMute:  '#64748b',
   cyan:      '#38bdf8',
   cyanSoft:  'rgba(56,189,248,0.12)',
   cyanLine:  'rgba(56,189,248,0.45)',
-  lime:      '#84cc16',
+  lime:      '#86efac',
   amber:     '#fbbf24',
-  crimson:   '#f43f5e',
+  crimson:   '#f87171',
   fontSans:  '"Noto Sans TC", "Zen Kaku Gothic New", -apple-system, system-ui, sans-serif',
   fontMono:  '"IBM Plex Mono", ui-monospace, monospace',
 };
@@ -59,9 +59,9 @@ function _Tag({ tone = 'neutral', children, mono }) {
   const c = {
     neutral: { bg: 'transparent',     fg: _ia.textDim, br: _ia.line },
     cyan:    { bg: _ia.cyanSoft,      fg: _ia.cyan,    br: _ia.cyanLine },
-    lime:    { bg: 'rgba(132,204,22,0.12)', fg: _ia.lime,   br: 'rgba(132,204,22,0.45)' },
+    lime:    { bg: 'rgba(134, 239, 172,0.12)', fg: _ia.lime,   br: 'rgba(134, 239, 172,0.45)' },
     amber:   { bg: 'rgba(251,191,36,0.12)', fg: _ia.amber,  br: 'rgba(251,191,36,0.45)' },
-    crimson: { bg: 'rgba(244,63,94,0.12)',  fg: _ia.crimson, br: 'rgba(244,63,94,0.45)' },
+    crimson: { bg: 'rgba(248, 113, 113,0.12)',  fg: _ia.crimson, br: 'rgba(248, 113, 113,0.45)' },
     mute:    { bg: 'rgba(107,115,133,0.10)', fg: _ia.textMute, br: 'rgba(107,115,133,0.4)' },
   }[tone];
   return (

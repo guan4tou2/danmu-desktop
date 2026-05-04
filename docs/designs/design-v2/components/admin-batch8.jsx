@@ -217,7 +217,7 @@ function AdminSessionDetailPage({ theme = 'dark' }) {
           { t: '14:42:13.428', n: '阿傑',       fp: 'fp_a3f2', m: '+1 完全同意',                            c: '#7c3aed', s: 'shown' },
           { t: '14:42:12.917', n: 'Slido user', fp: 'fp_3b91', m: '請問這個 metric 是季度還是年度?',       c: hudTokens.amber, s: 'shown', ext: true },
           { t: '14:42:12.402', n: '小明',       fp: 'fp_2d9e', m: '👏👏👏👏👏',                              c: '#f97316', s: 'shown' },
-          { t: '14:42:11.844', n: '訪客6824',   fp: 'fp_4c1b', m: '聲音可以再大一點嗎',                     c: '#84cc16', s: 'shown' },
+          { t: '14:42:11.844', n: '訪客6824',   fp: 'fp_4c1b', m: '聲音可以再大一點嗎',                     c: '#86efac', s: 'shown' },
           { t: '14:42:11.218', n: '匿名',       fp: 'fp_9e1c', m: '<已遮罩 · 重複訊息>',                    c: '#ef4444', s: 'masked' },
           { t: '14:42:10.604', n: '阿傑',       fp: 'fp_a3f2', m: '簡報可以分享嗎',                          c: '#7c3aed', s: 'shown' },
           { t: '14:42:10.022', n: 'Yvonne',     fp: 'fp_8d7e', m: '同問 +1',                                 c: '#06b6d4', s: 'shown' },
@@ -385,7 +385,7 @@ function AdminSessionDetailPage({ theme = 'dark' }) {
                   { n: '小明', c: '#f97316', msgs: 142 },
                   { n: '阿傑', c: '#7c3aed', msgs: 88 },
                   { n: 'Yvonne', c: '#06b6d4', msgs: 64 },
-                  { n: '訪客6824', c: '#84cc16', msgs: 38 },
+                  { n: '訪客6824', c: '#86efac', msgs: 38 },
                 ].map((p, i) => {
                   const max = 287;
                   return (
@@ -629,9 +629,9 @@ function AdminPollDeepDivePage({ theme = 'dark' }) {
 function KVB({ k, v, sub, col }) {
   return (
     <div>
-      <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: '#9aa4b2', letterSpacing: 1.2 }}>{k}</div>
+      <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: '#94a3b8', letterSpacing: 1.2 }}>{k}</div>
       <div style={{ color: col, fontSize: 22, fontWeight: 600, marginTop: 2 }}>{v}</div>
-      {sub && <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: '#9aa4b2', marginTop: 2, letterSpacing: 0.4 }}>{sub}</div>}
+      {sub && <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: '#94a3b8', marginTop: 2, letterSpacing: 0.4 }}>{sub}</div>}
     </div>
   );
 }
@@ -642,12 +642,12 @@ function KVB({ k, v, sub, col }) {
 function AdminMobilePage({ theme = 'dark', view = 'home' }) {
   // We'll render this without the desktop AdminPageShell — it's a phone form.
   const dark = theme !== 'light';
-  const bg     = dark ? '#0A0E1A' : '#F2F4F7';
-  const panel  = dark ? '#0F1421' : '#FFFFFF';
-  const raised = dark ? '#13192C' : '#F7F9FC';
-  const text   = dark ? '#E6E8EE' : '#0F1421';
-  const textDim= dark ? '#9aa4b2' : '#5b6478';
-  const line   = dark ? '#1F2944' : '#D9DEE8';
+  const bg     = dark ? '#020617' : '#F2F4F7';
+  const panel  = dark ? '#0f172a' : '#FFFFFF';
+  const raised = dark ? '#1e293b' : '#F7F9FC';
+  const text   = dark ? '#f1f5f9' : '#0f172a';
+  const textDim= dark ? '#94a3b8' : '#5b6478';
+  const line   = dark ? 'rgba(148, 163, 184, 0.18)' : '#D9DEE8';
   const accent = hudTokens.cyan;
 
   const fontMono = hudTokens.fontMono;

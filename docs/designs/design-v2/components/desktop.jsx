@@ -401,7 +401,7 @@ function UpdateSection({ panel, raised, line, text, textDim, accent }) {
       }}>
         <div style={{
           width: 44, height: 44, borderRadius: 8,
-          background: 'rgba(132, 204, 22, 0.12)', border: `1px solid ${hudTokens.lime}55`,
+          background: 'rgba(134, 239, 172, 0.12)', border: `1px solid ${hudTokens.lime}55`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: hudTokens.lime, fontSize: 22,
         }}>✓</div>
@@ -750,7 +750,7 @@ function FirstRunGate({ theme }) {
                   <span style={{
                     width: 18, height: 18, borderRadius: '50%',
                     border: `1px solid ${active ? accent : done ? hudTokens.lime : line}`,
-                    background: active ? hudTokens.cyanSoft : done ? 'rgba(132,204,22,0.12)' : 'transparent',
+                    background: active ? hudTokens.cyanSoft : done ? 'rgba(134, 239, 172,0.12)' : 'transparent',
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 10, fontWeight: 600,
                   }}>{done ? '✓' : idx}</span>

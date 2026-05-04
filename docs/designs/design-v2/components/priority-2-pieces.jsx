@@ -509,7 +509,7 @@ function OverlayMiniCtrl({ theme = 'dark' }) {
 
   return (
     <div style={{
-      width: '100%', height: '100%', background: '#0A0E1A', color: text,
+      width: '100%', height: '100%', background: '#020617', color: text,
       fontFamily: hudTokens.fontSans, position: 'relative', overflow: 'hidden',
     }}>
       {/* Fake presentation slide background */}

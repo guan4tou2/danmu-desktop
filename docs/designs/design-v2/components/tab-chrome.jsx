@@ -43,136 +43,7 @@ const _tab = {
   fontDisp:  '"Bebas Neue", sans-serif',
 };
 
-// shared topbar (mini version — focus is on tabs, not full nav)
-function _TabTopbar({ activeNav }) {
-  const nav = [
-    { slug: 'dashboard',  zh: '控制台',     icon: '⌂' },
-    { slug: 'polls',      zh: '投票',       icon: '◉' },
-    { slug: 'effects',    zh: '效果',       icon: '✦' },
-    { slug: 'moderation', zh: '審核',       icon: '⊘' },
-    { slug: 'widgets',    zh: '小工具',     icon: '◫' },
-    { slug: 'appearance', zh: '外觀',       icon: '◐' },
-    { slug: 'assets',     zh: '素材',       icon: '⌬' },
-    { slug: 'automation', zh: '自動化',     icon: '↻' },
-    { slug: 'history',    zh: '歷史',       icon: '⌚' },
-    { slug: 'system',     zh: '系統',       icon: '⚙' },
-  ];
-  return (
-    <div style={{
-      height: 44, flexShrink: 0,
-      background: _tab.panel, borderBottom: `1px solid ${_tab.line}`,
-      display: 'flex', alignItems: 'stretch',
-    }}>
-      <div style={{
-        width: 200, padding: '0 16px', display: 'flex', alignItems: 'center', gap: 8,
-        borderRight: `1px solid ${_tab.line}`,
-      }}>
-        <span style={{
-          width: 22, height: 22, borderRadius: 4,
-          background: `linear-gradient(135deg, ${hudTokens.crimson}, ${hudTokens.amber})`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: _tab.fontDisp, fontSize: 13, color: hudTokens.bg0, fontWeight: 700,
-        }}>D</span>
-        <div>
-          <div style={{ fontFamily: _tab.fontDisp, fontSize: 15, color: _tab.text, lineHeight: 1, letterSpacing: 0.5 }}>DANMU FIRE</div>
-          <div style={{ fontFamily: _tab.fontMono, fontSize: 8, color: _tab.cyan, letterSpacing: 1.2, marginTop: 2 }}>v5.0.0</div>
-        </div>
-      </div>
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 6px', gap: 1 }}>
-        {nav.map((n, i) => (
-          <span key={i} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '6px 10px', borderRadius: 3,
-            background: n.slug === activeNav ? _tab.cyanSoft : 'transparent',
-            border: `1px solid ${n.slug === activeNav ? _tab.cyanLine : 'transparent'}`,
-            color: n.slug === activeNav ? _tab.cyan : _tab.textDim,
-            fontFamily: _tab.fontMono, fontSize: 10, letterSpacing: 0.6, fontWeight: 600,
-            whiteSpace: 'nowrap',
-          }}>
-            <span style={{ fontSize: 12 }}>{n.icon}</span>
-            <span style={{ fontFamily: _tab.fontSans, fontSize: 11 }}>{n.zh}</span>
-          </span>
-        ))}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', borderLeft: `1px solid ${_tab.line}` }}>
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8, padding: '0 12px', height: '100%',
-          borderRight: `1px solid ${_tab.line}`,
-        }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: _tab.lime, boxShadow: `0 0 6px ${_tab.lime}` }} />
-          <div>
-            <div style={{ fontFamily: _tab.fontMono, fontSize: 8, color: _tab.lime, letterSpacing: 1.1 }}>OPEN · 02:42:18</div>
-            <div style={{ fontSize: 11, color: _tab.text, marginTop: 1 }}>keynote · Q1 全員大會</div>
-          </div>
-          <span style={{ fontFamily: _tab.fontMono, fontSize: 11, color: _tab.textMute, marginLeft: 4 }}>▾</span>
-        </span>
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0 12px', height: '100%',
-          borderRight: `1px solid ${_tab.line}`,
-          fontFamily: _tab.fontMono, fontSize: 10, color: _tab.textDim,
-        }}>
-          <span style={{ fontSize: 13 }}>⌕</span>
-          <span style={{ padding: '1px 5px', background: _tab.raised, border: `1px solid ${_tab.line}`, borderRadius: 2, fontSize: 9, color: _tab.text }}>⌘K</span>
-        </span>
-        <span style={{
-          position: 'relative',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          width: 44, height: 44, borderRight: `1px solid ${_tab.line}`,
-          color: _tab.textDim, fontSize: 14,
-        }}>🔔
-          <span style={{
-            position: 'absolute', top: 8, right: 8,
-            width: 14, height: 14, borderRadius: '50%',
-            background: _tab.crimson, color: _tab.text,
-            fontFamily: _tab.fontMono, fontSize: 8, fontWeight: 700,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>3</span>
-        </span>
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          width: 44, height: 44, color: _tab.textDim, fontSize: 14,
-        }}>⚙</span>
-      </div>
-    </div>
-  );
-}
-
-// shared page header (kicker + title + meta + page CTA)
-function _TabHeader({ kicker, kickerEn, title, meta, cta, ctaTone = 'cyan' }) {
-  const tones = {
-    cyan:    { bg: _tab.cyan,    fg: '#020617' },
-    crimson: { bg: _tab.crimson, fg: '#020617' },
-    lime:    { bg: _tab.lime,    fg: '#020617' },
-    amber:   { bg: _tab.amber,   fg: '#020617' },
-  };
-  const t = tones[ctaTone];
-  return (
-    <div style={{
-      height: 76, flexShrink: 0, padding: '0 32px',
-      background: _tab.bg, borderBottom: `1px solid ${_tab.line}`,
-      display: 'flex', alignItems: 'center', gap: 24,
-    }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <span style={{ fontFamily: _tab.fontMono, fontSize: 9.5, color: _tab.cyan, letterSpacing: 1.8, fontWeight: 600 }}>{kicker}</span>
-          <span style={{ fontFamily: _tab.fontMono, fontSize: 9, color: _tab.textMute, letterSpacing: 1.5 }}>· {kickerEn}</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginTop: 6 }}>
-          <span style={{ fontSize: 22, fontWeight: 700, color: _tab.text, letterSpacing: -0.3 }}>{title}</span>
-          {meta && <span style={{ fontFamily: _tab.fontMono, fontSize: 11, color: _tab.textDim, letterSpacing: 0.4 }}>· {meta}</span>}
-        </div>
-      </div>
-      {cta && (
-        <span style={{
-          padding: '10px 18px', borderRadius: 3,
-          background: t.bg, color: t.fg,
-          fontFamily: _tab.fontMono, fontSize: 11, letterSpacing: 0.8, fontWeight: 700,
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-        }}>{cta}</span>
-      )}
-    </div>
-  );
-}
+// topbar handled by AdminPageShell
 
 // shared tab strip
 function _TabStrip({ tabs, active }) {
@@ -446,7 +317,7 @@ function TabChromeSpec() {
 }
 
 // ─── 2) MODERATION — default = blacklist ─────────────────────────────────
-function ModerationPage() {
+function ModerationPage({ theme = 'dark' }) {
   const tabs = [
     { id: 'blacklist',     zh: '黑名單', en: 'BLACKLIST',     badge: 28, badgeTone: 'cyan' },
     { id: 'filters',       zh: '敏感字', en: 'FILTERS',       badge: 142, badgeTone: 'cyan' },
@@ -466,20 +337,11 @@ function ModerationPage() {
   ];
 
   return (
-    <div style={{
-      width: 1440, height: 900, background: _tab.bg, color: _tab.text,
-      fontFamily: _tab.fontSans, display: 'flex', flexDirection: 'column', overflow: 'hidden',
-    }}>
-      <_TabTopbar activeNav="moderation" />
-      <_TabHeader
-        kicker="審核" kickerEn="MODERATION"
-        title="審核工具" meta="28 已封禁 · 142 敏感字 · 1 違規待審"
-        cta="+ 加入黑名單" ctaTone="crimson"
-      />
-      <_TabStrip tabs={tabs} active="blacklist" />
-
-      {/* body — blacklist content */}
-      <div style={{ flex: 1, minHeight: 0, padding: 24, display: 'flex', flexDirection: 'column', gap: 14, overflow: 'hidden' }}>
+    <AdminPageShell route="moderation" title="審核工具" en="ADMIN LANE · MODERATION · BLACKLIST · FILTERS · RATE LIMIT · FINGERPRINTS" theme={theme}>
+      {({ panel, raised, line, text, textDim, accent, radius }) => (
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+          <_TabStrip tabs={tabs} active="blacklist" />
+          <div style={{ flex: 1, minHeight: 0, padding: 24, display: 'flex', flexDirection: 'column', gap: 14, overflow: 'hidden' }}>
         {/* search + filter */}
         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
           <div style={{ flex: 1, padding: '8px 12px', background: _tab.panel, border: `1px solid ${_tab.line}`, borderRadius: 3 }}>
@@ -538,13 +400,15 @@ function ModerationPage() {
             ))}
           </div>
         </div>
-      </div>
-    </div>
+          </div>
+        </div>
+      )}
+    </AdminPageShell>
   );
 }
 
 // ─── 3) APPEARANCE — default = themes ────────────────────────────────────
-function AppearancePage() {
+function AppearancePage({ theme = 'dark' }) {
   const tabs = [
     { id: 'themes',        zh: '主題包', en: 'THEME PACKS',  badge: 4,  badgeTone: 'cyan' },
     { id: 'viewer-theme',  zh: '觀眾主題', en: 'VIEWER THEME', badge: null },
@@ -564,19 +428,11 @@ function AppearancePage() {
   ];
 
   return (
-    <div style={{
-      width: 1440, height: 900, background: _tab.bg, color: _tab.text,
-      fontFamily: _tab.fontSans, display: 'flex', flexDirection: 'column', overflow: 'hidden',
-    }}>
-      <_TabTopbar activeNav="appearance" />
-      <_TabHeader
-        kicker="外觀" kickerEn="APPEARANCE"
-        title="主題與顯示" meta="4 主題包 · 5 字型 · 觀眾權限 6 項"
-        cta="+ 新建主題包" ctaTone="cyan"
-      />
-      <_TabStrip tabs={tabs} active="themes" />
-
-      <div style={{ flex: 1, minHeight: 0, padding: 24, display: 'grid', gridTemplateColumns: '1fr 360px', gap: 16, overflow: 'hidden' }}>
+    <AdminPageShell route="appearance" title="主題與顯示" en="ADMIN LANE · APPEARANCE · THEME PACKS · VIEWER THEME · DISPLAY · FONTS" theme={theme}>
+      {({ panel, raised, line, text, textDim, accent, radius }) => (
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+          <_TabStrip tabs={tabs} active="themes" />
+          <div style={{ flex: 1, minHeight: 0, padding: 24, display: 'grid', gridTemplateColumns: '1fr 360px', gap: 16, overflow: 'hidden' }}>
         {/* left: pack grid */}
         <div style={{ background: _tab.panel, border: `1px solid ${_tab.line}`, borderRadius: 3, padding: 18, display: 'flex', flexDirection: 'column', gap: 14, overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -660,13 +516,15 @@ function AppearancePage() {
             <span style={{ padding: '9px 12px', borderRadius: 3, background: _tab.raised, color: _tab.textDim, border: `1px solid ${_tab.line}`, fontFamily: _tab.fontMono, fontSize: 10, letterSpacing: 0.5 }}>複製</span>
           </div>
         </div>
-      </div>
-    </div>
+          </div>
+        </div>
+      )}
+    </AdminPageShell>
   );
 }
 
 // ─── 4) AUTOMATION — default = scheduler ─────────────────────────────────
-function AutomationPage() {
+function AutomationPage({ theme = 'dark' }) {
   const tabs = [
     { id: 'scheduler',  zh: '排程',     en: 'SCHEDULER', badge: 7,  badgeTone: 'cyan' },
     { id: 'webhooks',   zh: 'Webhooks', en: 'WEBHOOKS',  badge: 2,  badgeTone: 'crimson' },
@@ -684,19 +542,11 @@ function AutomationPage() {
   ];
 
   return (
-    <div style={{
-      width: 1440, height: 900, background: _tab.bg, color: _tab.text,
-      fontFamily: _tab.fontSans, display: 'flex', flexDirection: 'column', overflow: 'hidden',
-    }}>
-      <_TabTopbar activeNav="automation" />
-      <_TabHeader
-        kicker="自動化" kickerEn="AUTOMATION"
-        title="排程與整合" meta="7 排程啟用 · 5 webhooks · 2 連續失敗"
-        cta="+ 新增排程" ctaTone="cyan"
-      />
-      <_TabStrip tabs={tabs} active="scheduler" />
-
-      <div style={{ flex: 1, minHeight: 0, padding: 24, display: 'grid', gridTemplateColumns: '1fr 480px', gap: 16, overflow: 'hidden' }}>
+    <AdminPageShell route="automation" title="排程與整合" en="ADMIN LANE · AUTOMATION · SCHEDULER · WEBHOOKS · ADVANCED" theme={theme}>
+      {({ panel, raised, line, text, textDim, accent, radius }) => (
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+          <_TabStrip tabs={tabs} active="scheduler" />
+          <div style={{ flex: 1, minHeight: 0, padding: 24, display: 'grid', gridTemplateColumns: '1fr 480px', gap: 16, overflow: 'hidden' }}>
         {/* left: schedule list */}
         <div style={{ background: _tab.panel, border: `1px solid ${_tab.line}`, borderRadius: 3, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{
@@ -789,13 +639,15 @@ function AutomationPage() {
             ))}
           </div>
         </div>
-      </div>
-    </div>
+          </div>
+        </div>
+      )}
+    </AdminPageShell>
   );
 }
 
 // ─── 5) HISTORY — default = sessions ─────────────────────────────────────
-function HistoryPage() {
+function HistoryPage({ theme = 'dark' }) {
   const tabs = [
     { id: 'sessions', zh: '場次',   en: 'SESSIONS', badge: 142, badgeTone: 'cyan' },
     { id: 'search',   zh: '搜尋',   en: 'SEARCH',   badge: null },
@@ -816,19 +668,11 @@ function HistoryPage() {
   ];
 
   return (
-    <div style={{
-      width: 1440, height: 900, background: _tab.bg, color: _tab.text,
-      fontFamily: _tab.fontSans, display: 'flex', flexDirection: 'column', overflow: 'hidden',
-    }}>
-      <_TabTopbar activeNav="history" />
-      <_TabHeader
-        kicker="歷史" kickerEn="HISTORY"
-        title="場次與分析" meta="142 場次 · 2,148 累計觀眾 · 5 審計待看"
-        cta="↗ 匯出" ctaTone="cyan"
-      />
-      <_TabStrip tabs={tabs} active="sessions" />
-
-      <div style={{ flex: 1, minHeight: 0, padding: 24, display: 'flex', flexDirection: 'column', gap: 14, overflow: 'hidden' }}>
+    <AdminPageShell route="history" title="場次與分析" en="ADMIN LANE · HISTORY · SESSIONS · SEARCH · AUDIT · REPLAY · AUDIENCE" theme={theme}>
+      {({ panel, raised, line, text, textDim, accent, radius }) => (
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+          <_TabStrip tabs={tabs} active="sessions" />
+          <div style={{ flex: 1, minHeight: 0, padding: 24, display: 'flex', flexDirection: 'column', gap: 14, overflow: 'hidden' }}>
         {/* filter row */}
         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
           <div style={{ flex: 1, padding: '8px 12px', background: _tab.panel, border: `1px solid ${_tab.line}`, borderRadius: 3 }}>
@@ -890,8 +734,10 @@ function HistoryPage() {
             ))}
           </div>
         </div>
-      </div>
-    </div>
+          </div>
+        </div>
+      )}
+    </AdminPageShell>
   );
 }
 

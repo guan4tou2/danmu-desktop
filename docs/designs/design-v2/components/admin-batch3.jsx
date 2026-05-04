@@ -198,11 +198,11 @@ function WizStepLogo({ text, textDim, accent, raised, line, panel }) {
 function WizStepTheme({ text, textDim, accent, raised, line, panel }) {
   const themes = [
     { id: 'classic', name: '經典 CLASSIC',   sub: '白底彩字 · 預設',   colors: ['#ffffff', '#38bdf8', '#fbbf24', '#86efac'], hot: true },
-    { id: 'neon',    name: '霓虹 NEON',      sub: '高飽和 · 派對風',  colors: ['#fb7185', '#a78bfa', '#22d3ee', '#fde047'] },
+    { id: 'neon',    name: '霓虹 NEON',      sub: '高飽和 · 派對風',  colors: ['#fb7185', '#38bdf8', '#22d3ee', '#fde047'] },
     { id: 'mono',    name: '極簡 MONO',      sub: '黑白 · 商務場景',  colors: ['#ffffff', '#cbd5e1', '#64748b', '#0f172a'] },
     { id: 'sakura',  name: '櫻花 SAKURA',    sub: '柔和 · 文化活動',  colors: ['#fbcfe8', '#f9a8d4', '#fdf4ff', '#ffffff'] },
     { id: 'matrix',  name: '矩陣 MATRIX',    sub: '綠 · hacker',     colors: ['#22c55e', '#86efac', '#dcfce7', '#16a34a'] },
-    { id: 'twilight', name: '暮光 TWILIGHT', sub: '深紫 · 夜間活動',  colors: ['#a78bfa', '#c4b5fd', '#7dd3fc', '#fbbf24'] },
+    { id: 'twilight', name: '暮光 TWILIGHT', sub: '深紫 · 夜間活動',  colors: ['#38bdf8', '#c4b5fd', '#7dd3fc', '#fbbf24'] },
   ];
   return (
     <div>

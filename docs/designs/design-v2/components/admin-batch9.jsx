@@ -362,12 +362,12 @@ function AdminAboutPage({ theme = 'dark' }) {
 // =========================================================================
 function DesktopTrayPopover({ theme = 'dark' }) {
   const dark = theme !== 'light';
-  const bg = dark ? '#0A0E1A' : '#F2F4F7';
-  const panel = dark ? '#0F1421' : '#FFFFFF';
-  const raised = dark ? '#13192C' : '#F7F9FC';
-  const text = dark ? '#E6E8EE' : '#0F1421';
-  const textDim = dark ? '#9aa4b2' : '#5b6478';
-  const line = dark ? '#1F2944' : '#D9DEE8';
+  const bg = dark ? '#020617' : '#F2F4F7';
+  const panel = dark ? '#0f172a' : '#FFFFFF';
+  const raised = dark ? '#1e293b' : '#F7F9FC';
+  const text = dark ? '#f1f5f9' : '#0f172a';
+  const textDim = dark ? '#94a3b8' : '#5b6478';
+  const line = dark ? 'rgba(148, 163, 184, 0.18)' : '#D9DEE8';
   const accent = hudTokens.cyan;
 
   return (
@@ -493,9 +493,9 @@ function DesktopTrayPopover({ theme = 'dark' }) {
 }
 
 function DesktopWindowPicker({ theme = 'dark' }) {
-  const text = '#E6E8EE';
-  const textDim = '#9aa4b2';
-  const line = '#1F2944';
+  const text = '#f1f5f9';
+  const textDim = '#94a3b8';
+  const line = 'rgba(148, 163, 184, 0.18)';
   const accent = hudTokens.cyan;
 
   // Mock detected windows
@@ -510,7 +510,7 @@ function DesktopWindowPicker({ theme = 'dark' }) {
 
   return (
     <div style={{
-      width: 1100, height: 760, background: '#0A0E1A', color: text, fontFamily: hudTokens.font,
+      width: 1100, height: 760, background: '#020617', color: text, fontFamily: hudTokens.font,
       display: 'flex', flexDirection: 'column', overflow: 'hidden',
     }}>
       {/* macOS chrome */}
@@ -535,12 +535,12 @@ function DesktopWindowPicker({ theme = 'dark' }) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
           {windows.map((w, i) => {
             const selected = i === 0;
-            const tagColMap = { recommended: hudTokens.lime, browser: accent, video: '#a78bfa', broadcast: hudTokens.amber, screen: textDim };
+            const tagColMap = { recommended: hudTokens.lime, browser: accent, video: '#38bdf8', broadcast: hudTokens.amber, screen: textDim };
             const tagLabelMap = { recommended: '★ 建議', browser: '瀏覽器', video: '視訊', broadcast: '直播', screen: '整個螢幕' };
             const tagC = tagColMap[w.tag];
             return (
               <div key={i} style={{
-                background: selected ? hudTokens.cyanSoft : '#0F1421',
+                background: selected ? hudTokens.cyanSoft : '#0f172a',
                 border: `1px solid ${selected ? accent : line}`,
                 borderRadius: 6, overflow: 'hidden', cursor: 'pointer',
                 boxShadow: selected ? `0 0 0 2px ${accent}33, 0 8px 24px ${accent}22` : 'none',
@@ -597,7 +597,7 @@ function DesktopWindowPicker({ theme = 'dark' }) {
         </div>
 
         <div style={{
-          marginTop: 20, padding: 12, background: '#0F1421', border: `1px solid ${line}`, borderRadius: 4,
+          marginTop: 20, padding: 12, background: '#0f172a', border: `1px solid ${line}`, borderRadius: 4,
           display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: textDim,
         }}>
           <span style={{ color: accent, fontSize: 14 }}>ℹ</span>
@@ -621,11 +621,11 @@ function DesktopWindowPicker({ theme = 'dark' }) {
 // =========================================================================
 function ViewerPollThankYou({ theme = 'dark' }) {
   const dark = theme !== 'light';
-  const bg = dark ? '#0A0E1A' : '#F2F4F7';
-  const panel = dark ? '#0F1421' : '#FFFFFF';
-  const text = dark ? '#E6E8EE' : '#0F1421';
-  const textDim = dark ? '#9aa4b2' : '#5b6478';
-  const line = dark ? '#1F2944' : '#D9DEE8';
+  const bg = dark ? '#020617' : '#F2F4F7';
+  const panel = dark ? '#0f172a' : '#FFFFFF';
+  const text = dark ? '#f1f5f9' : '#0f172a';
+  const textDim = dark ? '#94a3b8' : '#5b6478';
+  const line = dark ? 'rgba(148, 163, 184, 0.18)' : '#D9DEE8';
   const accent = hudTokens.cyan;
 
   return (

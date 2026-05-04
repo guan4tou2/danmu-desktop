@@ -210,7 +210,7 @@ function OverlayPollLive({ theme = 'dark' }) {
         <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
           {[
             { k: 'A', label: '即時翻譯',      v: 102, p: 41, lead: true,  color: hudTokens.cyan },
-            { k: 'B', label: '雲端錄影',      v: 78,  p: 32,             color: '#a78bfa' },
+            { k: 'B', label: '雲端錄影',      v: 78,  p: 32,             color: '#38bdf8' },
             { k: 'C', label: 'AI 摘要',       v: 44,  p: 18,             color: hudTokens.amber },
             { k: 'D', label: '多語字幕同步',  v: 23,  p: 9,              color: hudTokens.lime },
           ].map(o => (
@@ -330,7 +330,7 @@ function OverlayResultCelebration({ theme = 'dark' }) {
       {/* Confetti dots */}
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
         {Array.from({ length: 28 }).map((_, i) => {
-          const colors = [hudTokens.cyan, hudTokens.amber, hudTokens.lime, '#a78bfa', '#fb7185', '#fde047'];
+          const colors = [hudTokens.cyan, hudTokens.amber, hudTokens.lime, '#38bdf8', '#fb7185', '#fde047'];
           const c = colors[i % colors.length];
           return (
             <div key={i} className="orc-confetti" style={{
@@ -440,7 +440,7 @@ function OverlayResultCelebration({ theme = 'dark' }) {
         display: 'flex', gap: 18, alignItems: 'center', zIndex: 10,
       }}>
         {[
-          { k: 'B', label: '雲端錄影',     pct: 32, col: '#a78bfa' },
+          { k: 'B', label: '雲端錄影',     pct: 32, col: '#38bdf8' },
           { k: 'C', label: 'AI 摘要',      pct: 18, col: hudTokens.amber },
           { k: 'D', label: '多語字幕同步', pct: 9,  col: hudTokens.lime },
         ].map(r => (
