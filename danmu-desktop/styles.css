@@ -289,9 +289,7 @@ details summary svg {
   display: flex;
   align-items: center;
   gap: 8px;
-  /* Left padding leaves room for macOS native traffic lights drawn by
-     titleBarStyle:"hidden" — ~78px wide cluster including margin. */
-  padding: 0 12px 0 80px;
+  padding: 0 12px;
   height: 36px;
   background: rgba(15, 23, 42, 0.92);
   border-bottom: 1px solid rgba(148, 163, 184, 0.18);
@@ -300,6 +298,14 @@ details summary svg {
   font-family: "JetBrains Mono", ui-monospace, monospace;
   /* Make the title bar draggable like a native chrome */
   -webkit-app-region: drag;
+}
+
+/* On macOS the window uses titleBarStyle:"hidden" so native traffic
+   lights overlap the top-left of this region — leave 80px padding so
+   our title text + status pill don't sit underneath them. Windows /
+   Linux keep their default frame above this area, so 12px is enough. */
+body[data-os="mac"] .client-titlebar {
+  padding-left: 80px;
 }
 
 /* Buttons / status / interactive elements inside titlebar opt out of drag */

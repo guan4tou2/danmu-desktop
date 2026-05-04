@@ -36,16 +36,24 @@
     var gateOpen = gate && !gate.hasAttribute("hidden");
     activate(gateOpen ? "conn" : "overlay");
 
-    // Platform stamp — macOS / Windows / Linux
+    // Platform stamp — macOS / Windows / Linux. Used for:
+    //   - sidebar version footer label (data-client-platform)
+    //   - about page (data-client-about-platform)
+    //   - body[data-os] gate so CSS can adapt to platform-specific
+    //     chrome — e.g. macOS leaves room for native traffic lights
+    //     overlapping the HTML titlebar (titleBarStyle: "hidden"),
+    //     Windows/Linux keep their default frame and don't overlap.
     try {
       var plat = (navigator.platform || "").toLowerCase();
-      var label = plat.indexOf("mac") >= 0
-        ? "macOS"
+      var os = plat.indexOf("mac") >= 0
+        ? "mac"
         : plat.indexOf("win") >= 0
-        ? "Windows"
+        ? "win"
         : plat.indexOf("linux") >= 0
-        ? "Linux"
-        : "Desktop";
+        ? "linux"
+        : "desktop";
+      var label = os === "mac" ? "macOS" : os === "win" ? "Windows" : os === "linux" ? "Linux" : "Desktop";
+      document.body.setAttribute("data-os", os);
       document
         .querySelectorAll("[data-client-platform], [data-client-about-platform]")
         .forEach(function (el) { el.textContent = label; });
