@@ -153,17 +153,31 @@ S-tier operations directly without sub-nav.
 - Tests: `test_browser_p3_pages.py` asserts current nav structure — needs
   update once new IA lands.
 
-**Open questions for Claude Design.**
+**Resolved 2026-05-04 (with Claude Design).** Layout locked at 1440×900 / 13"
+no inner scroll. Decisions:
 
-1. Topbar layout when both notification bell AND session selector are present
-   on small viewports — stacked, hidden behind menu, or session selector moves
-   into the cog dropdown?
-2. Effect trigger strip on dashboard: 8 cards horizontal scrolling, or 4×2 grid
-   collapsing the rest behind "more"?
-3. Quick-action results (e.g. "blacklisted ✓", "poll started ✓") — toast,
-   inline confirmation, or both?
-4. Should the live console show the *moderator's own* recent actions in a
-   sidebar, or rely on the topbar notification tray for that?
+1. **Topbar = compact (zh label + icon, no EN kicker).** Right cluster has 4
+   slots (session selector · ⌘K · bell · cog). EN kicker would push the
+   session selector off the line at 1440. EN kicker dropped from topbar; it
+   was decoration, not function.
+2. **Effect trigger strip = 8 cards horizontal scroll.** Hiding 4 behind a
+   "more" toggle reduces trigger frequency, which is anti-polestar (Effects
+   are core to atmosphere). Horizontal scroll keeps all 8 reachable in one
+   gesture on desktop. Mobile RWD breakpoint may switch to 4×2 grid; that's
+   a separate decision.
+3. **Quick-action feedback = toast + inline (rule-bound).** Toast is the
+   universal success notification — fires on every quick-action result
+   ("blacklisted ✓", "poll started ✓", "broadcast sent ✓"). Inline green
+   bar appears **only when the action is undoable** — blacklist / mute /
+   block-message. Non-undoable actions (poll start, broadcast push) get
+   toast only. This makes the two channels semantically non-overlapping
+   so they never compete for the same eye-second.
+4. **Recent actions = right-rail sidebar, not bell-only.** Live console is
+   used for 1–4 continuous hours; presenter needs zero-click access to
+   their own recent moderation history with undo buttons. The bell stays
+   for system/server notifications (e.g. webhook failure, rate-limit
+   threshold crossed). Sidebar shows last ~10 own actions with one-tap
+   undo where applicable.
 
 **Items in this doc that this section now scopes down.**
 
@@ -974,6 +988,11 @@ work restarts, start with Stage 1 (file reorg), not Stage 2.
 | 2026-05-04 | C-tier 11 pages collapse into single `system` nav with accordion | User |
 | 2026-05-04 | P0-1 multi-question polls, P1-4 multi-pack stickers frozen until real-user demand | User |
 | 2026-05-04 | All `/admin/*` endpoints preserved; nav reduction is purely IA, not deletion | User |
+| 2026-05-04 | Layout locked 1440×900 / 13" no inner scroll | Claude Design + User |
+| 2026-05-04 | Topbar = compact (zh + icon, no EN kicker) — Q1 resolved | Claude Design + User |
+| 2026-05-04 | Effect strip = 8 cards horizontal scroll, no "more" toggle — Q2 resolved | Claude Design + User |
+| 2026-05-04 | Feedback = toast (universal) + inline green bar (undoable actions only) — Q3 resolved | Claude Design + User |
+| 2026-05-04 | Recent actions = right-rail sidebar; bell reserved for system events — Q4 resolved | Claude Design + User |
 
 ---
 
