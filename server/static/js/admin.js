@@ -484,10 +484,16 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
                             <nav class="admin-dash-nav" role="tablist" aria-label="Admin pages">
 
-                                <!-- ── PRIMARY: Live 操作核心 (8 items) ──────── -->
-                                <div class="admin-dash-nav-label">LIVE 操作</div>
+                                <!-- ── P0-0 IA · 10 groups (Slice 1: visual reorg only) ─────
+                                     Existing data-route attributes preserved, hash routes
+                                     unchanged. Group labels match docs/design-v2-backlog.md
+                                     P0-0 final nav structure. Slice 4 will collapse each
+                                     group to a single nav button + tab/accordion content. -->
+
+                                <!-- 1. DASHBOARD ─────────────────────────────── -->
+                                <div class="admin-dash-nav-label">DASHBOARD</div>
                                 <button type="button" class="admin-dash-nav-row is-active" data-route="dashboard" role="tab" aria-selected="true">
-                                    <span class="admin-dash-nav-icon">◉</span>
+                                    <span class="admin-dash-nav-icon">⌂</span>
                                     <span>控制台</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="messages" role="tab" aria-selected="false">
@@ -496,135 +502,140 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="admin-dash-nav-badge" data-count-messages hidden>—</span>
                                     <span class="admin-dash-nav-live"></span>
                                 </button>
+
+                                <!-- 2. POLLS ─────────────────────────────────── -->
+                                <div class="admin-dash-nav-label" style="margin-top:12px">POLLS</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="polls" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◈</span>
+                                    <span class="admin-dash-nav-icon">◉</span>
                                     <span>投票</span>
                                     <span class="admin-dash-nav-live"></span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="widgets" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⬚</span>
-                                    <span>Widgets</span>
-                                    <span class="admin-dash-nav-badge" data-count-widgets hidden>—</span>
+
+                                <!-- 3. EFFECTS ───────────────────────────────── -->
+                                <div class="admin-dash-nav-label" style="margin-top:12px">EFFECTS</div>
+                                <button type="button" class="admin-dash-nav-row" data-route="effects" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">✦</span>
+                                    <span>效果庫</span>
+                                    <span class="admin-dash-nav-badge" data-count-effects>—</span>
                                 </button>
+
+                                <!-- 4. MODERATION ───────────────────────────── -->
+                                <div class="admin-dash-nav-label" style="margin-top:12px">MODERATION</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="moderation" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⊘</span>
-                                    <span>審核</span>
+                                    <span>黑名單 &amp; 敏感字</span>
                                     <span class="admin-dash-nav-badge" data-count-blacklist hidden>—</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="audience" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⌂</span>
-                                    <span>觀眾</span>
+                                <button type="button" class="admin-dash-nav-row" data-route="ratelimit" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◑</span>
+                                    <span>速率限制</span>
                                 </button>
+
+                                <!-- 5. WIDGETS ───────────────────────────────── -->
+                                <div class="admin-dash-nav-label" style="margin-top:12px">WIDGETS</div>
+                                <button type="button" class="admin-dash-nav-row" data-route="widgets" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◫</span>
+                                    <span>Overlay 小工具</span>
+                                    <span class="admin-dash-nav-badge" data-count-widgets hidden>—</span>
+                                </button>
+
+                                <!-- 6. APPEARANCE ───────────────────────────── -->
+                                <div class="admin-dash-nav-label" style="margin-top:12px">APPEARANCE</div>
+                                <button type="button" class="admin-dash-nav-row" data-route="themes" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">❖</span>
+                                    <span>主題包</span>
+                                    <span class="admin-dash-nav-badge" data-count-themes>—</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="viewer-config" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◍</span>
+                                    <span>Viewer 設定</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="fonts" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">Aa</span>
+                                    <span>字型</span>
+                                </button>
+
+                                <!-- 7. ASSETS ────────────────────────────────── -->
+                                <div class="admin-dash-nav-label" style="margin-top:12px">ASSETS</div>
+                                <button type="button" class="admin-dash-nav-row" data-route="assets" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⌬</span>
+                                    <span>素材庫</span>
+                                </button>
+
+                                <!-- 8. AUTOMATION ───────────────────────────── -->
+                                <div class="admin-dash-nav-label" style="margin-top:12px">AUTOMATION</div>
+                                <button type="button" class="admin-dash-nav-row" data-route="scheduler" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◷</span>
+                                    <span>排程</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="plugins" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⬢</span>
+                                    <span>插件</span>
+                                    <span class="admin-dash-nav-badge" data-count-plugins hidden>—</span>
+                                </button>
+
+                                <!-- 9. HISTORY ──────────────────────────────── -->
+                                <div class="admin-dash-nav-label" style="margin-top:12px">HISTORY</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="sessions" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">▦</span>
                                     <span>場次管理</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="history" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">↳</span>
+                                    <span>歷史紀錄</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="search" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⌕</span>
+                                    <span>搜尋</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="audit" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⊜</span>
+                                    <span>審計日誌</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="audience" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⌬</span>
+                                    <span>觀眾</span>
+                                </button>
+
+                                <!-- 10. SYSTEM ──────────────────────────────── -->
+                                <div class="admin-dash-nav-label" style="margin-top:12px">SYSTEM</div>
+                                <button type="button" class="admin-dash-nav-row" data-route="system" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⚙</span>
+                                    <span>系統 &amp; 指紋</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="security" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⛨</span>
+                                    <span>安全</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="integrations" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⌨</span>
+                                    <span>整合 &amp; Fire Token</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="api-tokens" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⌗</span>
+                                    <span>API Tokens</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="backup" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⤓</span>
+                                    <span>備份 &amp; 匯出</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="notifications" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⚑</span>
+                                    <span>通知</span>
+                                    <span class="admin-dash-nav-badge" data-count-notif hidden>—</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="broadcast" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◎</span>
                                     <span>廣播控制</span>
                                 </button>
-
-                                <!-- ── BACKSTAGE TOGGLE ───────────────────────── -->
-                                <button type="button" class="admin-dash-backstage-toggle" data-backstage-toggle aria-expanded="false" aria-controls="admin-backstage-panel">
-                                    <span class="admin-dash-backstage-icon">⚙</span>
-                                    <span>後台 &amp; 設定</span>
-                                    <span class="admin-dash-backstage-arrow" aria-hidden="true">›</span>
+                                <button type="button" class="admin-dash-nav-row" data-route="wcag" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⊙</span>
+                                    <span>WCAG 對比度</span>
                                 </button>
-
-                                <!-- ── BACKSTAGE PANEL (collapsible) ─────────── -->
-                                <div id="admin-backstage-panel" class="admin-dash-backstage-panel" data-backstage-panel hidden>
-
-                                    <div class="admin-dash-nav-label admin-dash-nav-label--sub">歷史 &amp; 分析</div>
-                                    <button type="button" class="admin-dash-nav-row" data-route="history" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">↳</span>
-                                        <span>歷史紀錄</span>
-                                    </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="search" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">⌕</span>
-                                        <span>搜尋</span>
-                                    </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="audit" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">⊜</span>
-                                        <span>審計日誌</span>
-                                    </button>
-
-                                    <div class="admin-dash-nav-label admin-dash-nav-label--sub" style="margin-top:12px">視覺 &amp; 內容</div>
-                                    <button type="button" class="admin-dash-nav-row" data-route="themes" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">❖</span>
-                                        <span>主題包</span>
-                                        <span class="admin-dash-nav-badge" data-count-themes>—</span>
-                                    </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="viewer-config" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">◍</span>
-                                        <span>Viewer 設定</span>
-                                    </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="effects" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">✦</span>
-                                        <span>效果庫</span>
-                                        <span class="admin-dash-nav-badge" data-count-effects>—</span>
-                                    </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="fonts" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">Aa</span>
-                                        <span>字型</span>
-                                    </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="assets" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">◰</span>
-                                        <span>素材庫</span>
-                                    </button>
-
-                                    <div class="admin-dash-nav-label admin-dash-nav-label--sub" style="margin-top:12px">整合 &amp; 自動化</div>
-                                    <button type="button" class="admin-dash-nav-row" data-route="integrations" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">⌨</span>
-                                        <span>整合 &amp; Fire Token</span>
-                                    </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="plugins" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">⬢</span>
-                                        <span>插件</span>
-                                        <span class="admin-dash-nav-badge" data-count-plugins hidden>—</span>
-                                    </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="scheduler" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">◷</span>
-                                        <span>排程</span>
-                                    </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="api-tokens" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">⌗</span>
-                                        <span>API Tokens</span>
-                                    </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="wcag" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">⊙</span>
-                                        <span>WCAG 對比度</span>
-                                    </button>
-
-                                    <div class="admin-dash-nav-label admin-dash-nav-label--sub" style="margin-top:12px">管理 &amp; 監控</div>
-                                    <button type="button" class="admin-dash-nav-row" data-route="notifications" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">⚑</span>
-                                        <span>通知</span>
-                                        <span class="admin-dash-nav-badge" data-count-notif hidden>—</span>
-                                    </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="ratelimit" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">◑</span>
-                                        <span>速率限制</span>
-                                    </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="system" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">⚙</span>
-                                        <span>系統 &amp; 指紋</span>
-                                    </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="security" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">⛨</span>
-                                        <span>安全</span>
-                                    </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="backup" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">⤓</span>
-                                        <span>備份 &amp; 匯出</span>
-                                    </button>
-                                    <button type="button" class="admin-dash-nav-row" data-route="mobile" role="tab" aria-selected="false">
-                                        <span class="admin-dash-nav-icon">▤</span>
-                                        <span>Mobile</span>
-                                    </button>
-
-                                </div><!-- /backstage-panel -->
-
-                                <!-- ── STANDALONE: always visible at nav bottom ── -->
+                                <button type="button" class="admin-dash-nav-row" data-route="mobile" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">▤</span>
+                                    <span>Mobile</span>
+                                </button>
                                 <button type="button" class="admin-dash-nav-row admin-dash-nav-row--about" data-route="about" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">ⓘ</span>
                                     <span>關於</span>
