@@ -289,25 +289,25 @@ details summary svg {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 12px;
+  /* Left padding leaves room for macOS native traffic lights drawn by
+     titleBarStyle:"hidden" — ~78px wide cluster including margin. */
+  padding: 0 12px 0 80px;
   height: 36px;
   background: rgba(15, 23, 42, 0.92);
   border-bottom: 1px solid rgba(148, 163, 184, 0.18);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   font-family: "JetBrains Mono", ui-monospace, monospace;
+  /* Make the title bar draggable like a native chrome */
+  -webkit-app-region: drag;
 }
 
-.client-titlebar-light {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  flex-shrink: 0;
+/* Buttons / status / interactive elements inside titlebar opt out of drag */
+.client-titlebar button,
+.client-titlebar .client-titlebar-status,
+.client-titlebar .client-titlebar-update {
+  -webkit-app-region: no-drag;
 }
-
-.client-titlebar-light--red    { background: #ff5f57; }
-.client-titlebar-light--amber  { background: #febc2e; }
-.client-titlebar-light--green  { background: #28c840; }
 
 .client-titlebar-label {
   flex: 1;

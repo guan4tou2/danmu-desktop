@@ -31,11 +31,11 @@
     <a href="#main-content" class="skip-link" data-i18n="skipToMainContent">Skip to main content</a>
 
     <!-- Title bar — prototype desktop.jsx ControlWindow:152.
-         macOS traffic lights + centered label + CONNECTED status dot. -->
+         5.1.0: removed fake macOS traffic lights — main-modules/window-manager.js
+         now uses titleBarStyle:"hidden" so macOS draws the real ones over the
+         left edge of this region. CSS adds padding-left so the title text
+         doesn't overlap them. -->
     <header class="client-titlebar" role="banner">
-      <span class="client-titlebar-light client-titlebar-light--red" aria-hidden="true"></span>
-      <span class="client-titlebar-light client-titlebar-light--amber" aria-hidden="true"></span>
-      <span class="client-titlebar-light client-titlebar-light--green" aria-hidden="true"></span>
       <span class="client-titlebar-label">Danmu Fire</span>
       <!-- Update badge (P2-3) — hidden until autoUpdater fires update-available -->
       <button

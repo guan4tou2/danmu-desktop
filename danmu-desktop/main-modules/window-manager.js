@@ -58,6 +58,13 @@ function createWindow(childWindows, onKonamiTrigger) {
     minHeight: 700,
     resizable: true,
     autoHideMenuBar: true,
+    // 5.1.0: titleBarStyle "hidden" hides Electron's default title bar so
+    // the HTML `.client-titlebar` is the visual title bar. macOS still
+    // paints the native traffic-light buttons (close/min/max) at the
+    // top-left, but they overlay the empty title-bar region — no
+    // duplication with the prototype's fake dots (which are now removed).
+    // On Windows / Linux this option is a no-op (default frame stays).
+    titleBarStyle: "hidden",
     // macOS Space 修復：不使用 show:false + ready-to-show 模式
     // macOS 在建立隱藏視窗時會把它分配到任意 Space，
     // 之後 show() 時視窗就出現在錯誤的桌面。

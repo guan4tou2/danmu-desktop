@@ -149,13 +149,16 @@ function open() {
   setStep("server");
   setTestResult(null);
   renderRecent();
-  // Pre-fill from existing inputs if present (migration path).
+  // Pre-fill from existing inputs if present (migration path). Do NOT
+  // fill defaults when there's nothing saved — first-time users should
+  // see empty fields with placeholders ("e.g., 192.0.2.1" / "4001"),
+  // not pre-typed values that might be wrong.
   const hostEl = document.getElementById("host-input");
   const portEl = document.getElementById("port-input");
   const grHost = document.getElementById("firstRunHost");
   const grPort = document.getElementById("firstRunPort");
   if (hostEl && grHost && hostEl.value) grHost.value = hostEl.value;
-  if (portEl && grPort) grPort.value = portEl.value || "4001";
+  if (portEl && grPort && portEl.value) grPort.value = portEl.value;
   const confirmBtn = gate.querySelector('[data-firstrun-action="confirm"]');
   if (confirmBtn) confirmBtn.disabled = true;
   setTimeout(() => {
