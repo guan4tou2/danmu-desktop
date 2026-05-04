@@ -513,7 +513,7 @@
   }
 
   function _syncVisibility() {
-    const route = document.querySelector(".admin-dash-grid")?.dataset?.activeRoute || "dashboard";
+    const route = document.querySelector(".admin-dash-grid")?.dataset?.activeLeaf || "dashboard";
     const onPage = route === "notifications";
     if (onPage) {
       _fetchAll();

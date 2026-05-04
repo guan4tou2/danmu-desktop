@@ -428,7 +428,7 @@
     var shell = document.querySelector(".admin-dash-grid");
     var page = document.getElementById(PAGE_ID);
     if (!shell || !page) return;
-    var route = shell.dataset.activeRoute || "dashboard";
+    var route = shell.dataset.activeLeaf || "dashboard";
     page.style.display = route === "search" ? "" : "none";
   }
 

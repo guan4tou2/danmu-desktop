@@ -12,7 +12,7 @@
  *
  * Section id is intentionally NOT prefixed `sec-` so admin.js router's
  * [id^="sec-"] visibility sweep leaves it alone — this module manages its
- * own show/hide via shell.dataset.activeRoute === "broadcast".
+ * own show/hide via shell.dataset.activeLeaf === "broadcast".
  */
 (function () {
   "use strict";
@@ -257,7 +257,7 @@
     const shell = document.querySelector(".admin-dash-grid");
     const page = document.getElementById(PAGE_ID);
     if (!shell || !page) return;
-    const route = shell.dataset.activeRoute || "dashboard";
+    const route = shell.dataset.activeLeaf || "dashboard";
     const visible = route === "broadcast";
     page.style.display = visible ? "" : "none";
     if (visible) startTimers();

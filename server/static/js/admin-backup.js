@@ -317,7 +317,7 @@
     const shell = document.querySelector(".admin-dash-grid");
     const page = document.getElementById(PAGE_ID);
     if (!shell || !page) return;
-    const route = shell.dataset.activeRoute || "dashboard";
+    const route = shell.dataset.activeLeaf || "dashboard";
     page.style.display = route === "backup" ? "" : "none";
   }
 

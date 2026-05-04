@@ -9364,59 +9364,10 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   cursor: pointer;
 }
 
-/* ─── Backstage Nav (Option B, 2026-04-29) ──────────────────────────────── */
-.admin-dash-backstage-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  margin-top: 16px;
-  padding: 9px 10px;
-  background: transparent;
-  border: 1px dashed var(--color-border, #1f2944);
-  border-radius: 4px;
-  cursor: pointer;
-  text-align: left;
-  font-size: 11px;
-  font-family: var(--font-mono);
-  letter-spacing: 0.4px;
-  color: var(--color-text-muted, #94a3b8);
-  transition: all 120ms ease;
-}
-.admin-dash-backstage-toggle:hover,
-.admin-dash-backstage-toggle.is-open {
-  color: var(--color-text-strong, #e2e8f0);
-  border-color: rgba(56, 189, 248, 0.35);
-  background: rgba(56, 189, 248, 0.04);
-}
-.admin-dash-backstage-icon {
-  font-size: 12px;
-  flex-shrink: 0;
-}
-.admin-dash-backstage-arrow {
-  margin-left: auto;
-  font-size: 14px;
-  transition: transform 180ms ease;
-}
-.admin-dash-backstage-toggle.is-open .admin-dash-backstage-arrow {
-  transform: rotate(90deg);
-}
-.admin-dash-backstage-panel {
-  margin-top: 6px;
-  padding-top: 4px;
-  border-top: 1px solid var(--color-border, #1f2944);
-}
-.admin-dash-backstage-panel[hidden] { display: none; }
-.admin-dash-nav-label--sub {
-  font-size: 9px;
-  letter-spacing: 1px;
-  color: var(--color-text-muted, #94a3b8);
-  opacity: 0.7;
-  padding-left: 8px;
-  margin-top: 8px;
-  margin-bottom: 2px;
-}
-/* 關於 — standalone item pinned below backstage panel with a faint separator */
+/* Slice 8: Backstage panel CSS removed — Slice 4 collapsed the sidebar to
+ * 10 P0-0 buttons + Slice 6 added system accordion, so the dashed-border
+ * collapsible panel + sub-labels have nothing to host. */
+/* 關於 — standalone item pinned below sidebar with a faint separator */
 .admin-dash-nav-row--about {
   margin-top: 8px;
   border-top: 1px solid var(--color-border, #1f2944);

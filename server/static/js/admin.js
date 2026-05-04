@@ -61,10 +61,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let _adminWsReconnectTimer = null;
   let _adminSectionObserver = null;
   let _routeHashHandler = null;
-  // Guard: initAdminRouter() is called on every renderControlPanel(); we must
-  // only attach the document click + window hashchange handlers ONCE or each
-  // click fires N handlers and the backstage toggle cancels itself.
-  let _backstageHandlerBound = false;
 
   // ────────────────────────────────────────────────────────────────────
   // Slice 2 — Hash route compat layer (P0-0a + design-v2-backlog § P0-0)
@@ -99,7 +95,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // === History tabs ===
     sessions:        { nav: "history", tab: "sessions" },
-    "session-detail": { nav: "history", tab: "sessions" },  // collapses to sessions tab
+    // Note: session-detail is intentionally NOT aliased — its hash carries
+    // a `?id=xxx` query that the parser would strip. session-detail keeps
+    // its own route; admin-session-detail.js owns navigation back via UI.
     search:          { nav: "history", tab: "search" },
     audit:           { nav: "history", tab: "audit" },
     audience:        { nav: "history", tab: "audience" },
@@ -1261,6 +1259,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const applyRoute = (name, requestedTab) => {
       currentRoute = ADMIN_ROUTES[name] ? name : "dashboard";
       shell.dataset.activeRoute = currentRoute;
+      // Slice 8: legacy modules (admin-backup / admin-audit / admin-audience /
+      // admin-mobile / admin-search / admin-sessions / admin-session-detail /
+      // admin-notifications / admin-broadcast / admin-poll-deepdive) check the
+      // shell's active route to decide their own visibility. After Slice 4/6
+      // alias redirect, `dataset.activeRoute` is the P0-0 top nav (history,
+      // system, etc.) — not the leaf those modules expect. `activeLeaf` carries
+      // the canonical leaf slug: tab slug if tabbed/accordion, else top route.
+      // Legacy modules read this instead so they keep working under aliases.
 
       // Resolve tab (Slice 3): hint > sessionStorage > default. Returns null
       // for nav routes that don't opt into tabs.
@@ -1319,13 +1325,12 @@ document.addEventListener("DOMContentLoaded", () => {
           window.AdminRouter?.tabMemory?.set?.(currentRoute, activeTab);
         }
       }
+      // Slice 8: expose canonical leaf slug for legacy modules.
+      shell.dataset.activeLeaf = activeTab || currentRoute;
 
       applySectionVisibility();
 
       _renderTabStripFor(currentRoute, activeTab);
-
-      // Auto-expand backstage panel when navigating to a secondary route
-      _syncBackstagePanel(currentRoute);
 
       try { history.replaceState(null, "", wantedHash); } catch (e) { /* ignore */ }
     };
@@ -1369,39 +1374,10 @@ document.addEventListener("DOMContentLoaded", () => {
       host.hidden = true;
     }
 
-    // ── Backstage toggle ─────────────────────────────────────────────────────
-    // Primary routes: always visible nav items (broadcast is operational — LIVE/STANDBY toggle)
-    const _primaryRoutes = new Set([
-      "dashboard", "messages", "polls", "widgets", "moderation", "audience", "sessions", "broadcast",
-    ]);
-
-    function _syncBackstagePanel(route) {
-      const panel = document.getElementById("admin-backstage-panel");
-      const toggle = document.querySelector("[data-backstage-toggle]");
-      if (!panel || !toggle) return;
-      const isSecondary = !_primaryRoutes.has(route);
-      if (isSecondary) {
-        panel.hidden = false;
-        toggle.setAttribute("aria-expanded", "true");
-        toggle.classList.add("is-open");
-      }
-      // Don't auto-collapse when switching to primary — user opened it intentionally
-    }
-
-    if (!_backstageHandlerBound) {
-      _backstageHandlerBound = true;
-
-      document.addEventListener("click", (e) => {
-        const toggle = e.target.closest("[data-backstage-toggle]");
-        if (!toggle) return;
-        const panel = document.getElementById("admin-backstage-panel");
-        if (!panel) return;
-        const isOpen = !panel.hidden;
-        panel.hidden = isOpen;
-        toggle.setAttribute("aria-expanded", String(!isOpen));
-        toggle.classList.toggle("is-open", !isOpen);
-      });
-    }
+    // Slice 8: backstage toggle + collapsible panel removed (Slice 4 collapsed
+    // the sidebar to 10 P0-0 buttons, the panel had nothing to host). The
+    // _backstageHandlerBound guard above is now also dead — kept as no-op
+    // until next code-quality pass.
 
     // Rebind hash listener on every router init so hash changes always target
     // the latest shell/applyRoute closure after panel re-render.

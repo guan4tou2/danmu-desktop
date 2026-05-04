@@ -344,7 +344,7 @@
   }
 
   function _syncVisibility() {
-    const route = document.querySelector(".admin-dash-grid")?.dataset?.activeRoute || "dashboard";
+    const route = document.querySelector(".admin-dash-grid")?.dataset?.activeLeaf || "dashboard";
     const onPage = route === "audit";
     if (onPage) {
       _fetch();
