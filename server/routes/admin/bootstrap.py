@@ -14,7 +14,7 @@ subsystem does not sink the whole bundle.
 IA mapping (per docs/design-v2-backlog.md § P0-0, 2026-05-04):
 
 S-tier (live console — dashboard nav):
-    metrics, polls, effects, blacklist, filters
+    metrics, polls, effects, blacklist, filters, session, audit
 
 A-tier (each-event prep — appearance / assets / widgets / broadcast nav):
     themes, settings, sounds, emojis, stickers, widgets, ws_auth
@@ -24,6 +24,10 @@ B-tier (occasional — automation / history nav):
 
 C-tier (system accordion) is intentionally NOT in bootstrap — those pages are
 visited rarely and fetched on-demand to keep the first-paint payload small.
+
+`session` and `audit` were added 2026-05-04 to support the live-console
+dashboard topbar (session selector) and notification bell (system events
+from audit log). Both are S-tier for live console.
 """
 
 from flask import current_app
@@ -158,6 +162,18 @@ def _metrics():
     }
 
 
+def _session():
+    from ...services import session_service
+
+    return session_service.get_state()
+
+
+def _audit():
+    from ...services import audit_log
+
+    return {"events": audit_log.recent(limit=10)}
+
+
 # Ordered section names — loaders are looked up on this module at request time
 # so tests can ``monkeypatch.setattr`` an individual loader.
 _SECTION_NAMES = (
@@ -177,6 +193,8 @@ _SECTION_NAMES = (
     "scheduler",
     "fingerprints",
     "metrics",
+    "session",
+    "audit",
 )
 
 
