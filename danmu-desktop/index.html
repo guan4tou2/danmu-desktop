@@ -152,8 +152,8 @@
                 <div class="client-firstrun-subtitle">Desktop · Electron app</div>
               </div>
 
-              <div class="client-firstrun-lead">連到你的彈幕伺服器</div>
-              <div class="client-firstrun-hint">
+              <div class="client-firstrun-lead" data-i18n="firstrunLead">連到你的彈幕伺服器</div>
+              <div class="client-firstrun-hint" data-i18n="firstrunHint">
                 首次啟動需要設定伺服器位址 · 設定後會記住，下次自動重連
               </div>
 
@@ -161,23 +161,23 @@
               <div class="client-firstrun-stepper" data-firstrun-stepper>
                 <div class="client-firstrun-step is-active" data-step="server">
                   <span class="client-firstrun-step-circle">1</span>
-                  <span class="client-firstrun-step-label">SERVER</span>
+                  <span class="client-firstrun-step-label" data-i18n="firstrunStepServer">SERVER</span>
                 </div>
                 <span class="client-firstrun-step-line"></span>
                 <div class="client-firstrun-step" data-step="test">
                   <span class="client-firstrun-step-circle">2</span>
-                  <span class="client-firstrun-step-label">TEST</span>
+                  <span class="client-firstrun-step-label" data-i18n="firstrunStepTest">TEST</span>
                 </div>
                 <span class="client-firstrun-step-line"></span>
                 <div class="client-firstrun-step" data-step="ready">
                   <span class="client-firstrun-step-circle">3</span>
-                  <span class="client-firstrun-step-label">READY</span>
+                  <span class="client-firstrun-step-label" data-i18n="firstrunStepReady">READY</span>
                 </div>
               </div>
 
               <!-- URL field + test button -->
               <div class="client-firstrun-field">
-                <div class="client-firstrun-field-label">SERVER · IP / HOST</div>
+                <div class="client-firstrun-field-label" data-i18n="firstrunFieldLabel">SERVER · IP / HOST</div>
                 <div class="client-firstrun-row">
                   <input
                     type="text"
@@ -197,10 +197,10 @@
                     inputmode="numeric"
                   />
                   <button type="button" class="client-firstrun-test-btn" id="firstRunTestBtn">
-                    <span data-firstrun-test-label>測試連線</span>
+                    <span data-firstrun-test-label data-i18n="firstrunTestBtn">測試連線</span>
                   </button>
                 </div>
-                <div class="client-firstrun-field-help">
+                <div class="client-firstrun-field-help" data-i18n="firstrunFieldHelp">
                   支援 ws:// 或 wss:// · 區網或公網皆可 · 預設 WebSocket port 4001
                 </div>
                 <div class="client-firstrun-test-result" id="firstRunTestResult" hidden></div>
@@ -208,25 +208,25 @@
 
               <!-- Recent servers (hidden when empty) -->
               <div class="client-firstrun-recent" id="firstRunRecent" hidden>
-                <div class="client-firstrun-field-label">RECENT</div>
+                <div class="client-firstrun-field-label" data-i18n="firstrunRecentLabel">RECENT</div>
                 <div class="client-firstrun-recent-list" data-firstrun-recent></div>
               </div>
 
               <!-- Remember + path note -->
               <label class="client-firstrun-remember">
                 <input type="checkbox" id="firstRunRemember" checked />
-                <span class="client-firstrun-remember-text">記住這個伺服器（下次自動連線）</span>
+                <span class="client-firstrun-remember-text" data-i18n="firstrunRemember">記住這個伺服器（下次自動連線）</span>
               </label>
-              <div class="client-firstrun-remember-hint">
+              <div class="client-firstrun-remember-hint" data-i18n="firstrunRememberHint">
                 設定存於 localStorage · 可從 ⚙ 連線 → 重新設定 重置
               </div>
 
               <!-- Footer actions -->
               <div class="client-firstrun-footer">
-                <span class="client-firstrun-footer-link" data-firstrun-action="docs">部署文件 →</span>
+                <span class="client-firstrun-footer-link" data-firstrun-action="docs" data-i18n="firstrunDocsLink">部署文件 →</span>
                 <span class="client-firstrun-footer-spacer"></span>
-                <button type="button" class="client-firstrun-skip-btn" data-firstrun-action="skip">稍後設定</button>
-                <button type="button" class="client-firstrun-confirm-btn" data-firstrun-action="confirm" disabled>
+                <button type="button" class="client-firstrun-skip-btn" data-firstrun-action="skip" data-i18n="firstrunSkip">稍後設定</button>
+                <button type="button" class="client-firstrun-confirm-btn" data-firstrun-action="confirm" disabled data-i18n="firstrunConfirm">
                   連線並開始接收 →
                 </button>
               </div>
@@ -234,8 +234,8 @@
           </div>
 
           <div class="client-section-head">
-            <div class="client-section-title">連線狀態</div>
-            <div class="client-section-kicker">CONNECTION</div>
+            <div class="client-section-title" data-i18n="connSectionTitle">連線狀態</div>
+            <div class="client-section-kicker" data-i18n="connSectionKicker">CONNECTION</div>
           </div>
 
           <!-- Top grid: SERVER + CERTIFICATE -->
@@ -478,49 +478,49 @@
              this section is a stable mount point with prototype-matched DOM. -->
         <section class="client-section" data-section="update" hidden>
           <div class="client-section-head">
-            <div class="client-section-title">更新</div>
-            <div class="client-section-kicker">AUTO-UPDATE · CHANGELOG</div>
+            <div class="client-section-title" data-i18n="updateSectionTitle">更新</div>
+            <div class="client-section-kicker" data-i18n="updateSectionKicker">AUTO-UPDATE · CHANGELOG</div>
           </div>
 
           <div class="client-update-status">
             <div class="client-update-status-icon" data-update-icon>✓</div>
             <div class="client-update-status-body">
-              <div class="client-update-status-title" data-update-status-title>已是最新版本</div>
+              <div class="client-update-status-title" data-update-status-title data-i18n="updateUpToDate">已是最新版本</div>
               <div class="client-update-status-meta">
                 <span data-client-version-inline>v5.1.0</span>
                 <span class="sep">·</span>
                 <span data-update-last-check>—</span>
               </div>
             </div>
-            <button type="button" class="client-update-check-btn" data-update-action="check">立即檢查</button>
+            <button type="button" class="client-update-check-btn" data-update-action="check" data-i18n="updateCheckNow">立即檢查</button>
           </div>
 
           <div class="client-update-prefs">
-            <div class="client-update-prefs-kicker">UPDATE BEHAVIOR</div>
+            <div class="client-update-prefs-kicker" data-i18n="updatePrefsKicker">UPDATE BEHAVIOR</div>
             <label class="client-update-pref">
               <input type="checkbox" data-update-pref="auto-download" checked />
               <span class="client-update-pref-body">
-                <span class="client-update-pref-label">自動下載更新</span>
-                <span class="client-update-pref-hint">背景下載 · 下次啟動套用</span>
+                <span class="client-update-pref-label" data-i18n="updatePrefAutoDownload">自動下載更新</span>
+                <span class="client-update-pref-hint" data-i18n="updatePrefAutoDownloadHint">背景下載 · 下次啟動套用</span>
               </span>
             </label>
             <label class="client-update-pref">
               <input type="checkbox" data-update-pref="beta-channel" />
               <span class="client-update-pref-body">
-                <span class="client-update-pref-label">加入測試版通道</span>
-                <span class="client-update-pref-hint">搶先測試新功能 · 可能不穩</span>
+                <span class="client-update-pref-label" data-i18n="updatePrefBetaChannel">加入測試版通道</span>
+                <span class="client-update-pref-hint" data-i18n="updatePrefBetaChannelHint">搶先測試新功能 · 可能不穩</span>
               </span>
             </label>
           </div>
 
           <div class="client-update-changelog">
             <div class="client-update-changelog-head">
-              <span class="client-update-changelog-kicker">RECENT CHANGES</span>
-              <a href="#" class="client-update-changelog-link" data-update-action="full-log">完整 changelog →</a>
+              <span class="client-update-changelog-kicker" data-i18n="updateChangelogKicker">RECENT CHANGES</span>
+              <a href="#" class="client-update-changelog-link" data-update-action="full-log" data-i18n="updateChangelogFullLink">完整 changelog →</a>
             </div>
             <div class="client-update-changelog-list" data-update-changelog>
               <!-- Populated by update-status.js when changelog data arrives. -->
-              <div class="client-update-changelog-empty">尚未取得 changelog 資料</div>
+              <div class="client-update-changelog-empty" data-i18n="updateChangelogEmpty">尚未取得 changelog 資料</div>
             </div>
           </div>
         </section>
