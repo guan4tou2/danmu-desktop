@@ -117,28 +117,44 @@ S-tier operations directly without sub-nav.
 
 **UX requirements (for Claude Design).**
 
-1. **`dashboard` is the centerpiece.** Design it as a single-screen live console
-   (no inner scroll on 13" laptop at 1440×900). The screen exists for the 1–4
-   hours where the presenter glances at it between sentences:
-   - 60% area: live message feed, newest at top, auto-scroll w/ pause-on-hover
-   - 4 large quick-action targets visible at all times: poll launcher, effect
-     trigger row (8 .dme cards as a strip), blacklist textbox, broadcast textbox
-   - KPI rail (online viewers · msg/s · queue depth · session timer)
-   - Topbar: notification bell · session selector · settings cog (jumps to nav)
-   - No "summary card" decoration; everything visible is interactive
-2. **Tabbed pages (`moderation`, `appearance`, `automation`, `history`)** must
-   share a common tabbed container component. Tab order = frequency-of-use,
-   not alphabetical. Default tab = the one most likely needed mid-event.
+1. **`dashboard` follows `AdminV3SoftHolo` (the original ① Dashboard 控制台
+   layout from `docs/designs/design-v2/components/admin-v3.jsx`)**, NOT the
+   live-console.jsx draft. Rationale (2026-05-04 owner review): live-console
+   crammed feed + 4 stacked quick-action zones + sidebar into 800px body and
+   felt overpacked. AdminV3SoftHolo's 12-col 3-row panel grid breathes:
+   - Row 1 (span 12): KPI strip — 訊息總數 + 高峰/分鐘 (large numbers + 12-bar
+     trend chart), no 4-tile rail
+   - Row 2: 進行中投票 (span 7, with 延長/暫停/結束 controls) + 快速投票
+     builder (span 5, single-Q with link to `/polls` for multi-Q)
+   - Row 3: 即時訊息 stream (span 7, filter chips + scroll feed + per-row
+     ⋯ menu for block/flag) + Widgets & Plugins grid (span 5, 2×2 cards
+     with status dot, RUN/PAUSE/CONFIG)
+
+   Effects do NOT appear on the dashboard — they live in their own `effects`
+   nav. This kept the dashboard focused on what's actually happening live
+   (KPIs + active poll + feed + widget health) without trying to be a
+   one-screen control panel.
+
+2. **Tabbed pages (`moderation`, `appearance`, `automation`, `history`)** use
+   the shared chrome from `tab-chrome.jsx` (canonical reference). Tab order =
+   frequency-of-use, not alphabetical. Default tab = the one most likely
+   needed mid-event. See P0-0a for full spec.
 3. **`system` accordion**: each row is a leaf settings page. Default-collapsed.
    No mid-event reason to open this; design it to feel "back of the manual".
 4. **Notification tray bell**: dropdown with last 10 events, severity color,
    click → jump to relevant page. Replaces the standalone `notifications` nav.
+   Bell is for **system events** (rate-limit threshold crossed, webhook
+   failure, scheduler missed); **moderator's own actions** stay inline in
+   the message feed via the row-level ⋯ menu, with Q3-rule undo for
+   reversible ones.
 5. **Quick-action implementation note**: backend endpoints already exist
    (`/admin/polls/start`, `/admin/effects/preview`, `/admin/blacklist`,
-   `/admin/broadcast`). Dashboard wires to existing routes — no new API needed
-   for v1 of the live console.
-6. **Mobile**: design dashboard at 360px first; tabs collapse to a select;
-   accordion already mobile-friendly. The `mobile` page disappears.
+   `/admin/broadcast`). Dashboard wires to existing routes — no new API needed.
+6. **Mobile**: 768 (iPad portrait) and 480 (phone) breakpoints specified in
+   `rwd-768.jsx` / `rwd-480.jsx`. Dashboard at 768 collapses KPI 4-col → 2-col;
+   at 480 quick-actions stack vertically. Tabs collapse to `<select>` below
+   640px. Accordion is already mobile-friendly. The `mobile` nav slot
+   disappears entirely.
 
 **Technical constraints.**
 
@@ -160,11 +176,12 @@ no inner scroll. Decisions:
    slots (session selector · ⌘K · bell · cog). EN kicker would push the
    session selector off the line at 1440. EN kicker dropped from topbar; it
    was decoration, not function.
-2. **Effect trigger strip = 8 cards horizontal scroll.** Hiding 4 behind a
-   "more" toggle reduces trigger frequency, which is anti-polestar (Effects
-   are core to atmosphere). Horizontal scroll keeps all 8 reachable in one
-   gesture on desktop. Mobile RWD breakpoint may switch to 4×2 grid; that's
-   a separate decision.
+2. **Effect trigger strip — RETRACTED for dashboard 2026-05-04.** Original
+   Q2 was framed as "where on dashboard does the effect strip go?". With
+   dashboard reverted to AdminV3SoftHolo (no effect strip), this question is
+   moot for the dashboard. The 8-cards-horizontal-scroll vs 4×2-grid trade
+   still applies on the standalone `effects` nav page — keep 8 horizontal
+   scroll there (Effects = core differentiator, hiding half is anti-polestar).
 3. **Quick-action feedback = toast + inline (rule-bound).** Toast is the
    universal success notification — fires on every quick-action result
    ("blacklisted ✓", "poll started ✓", "broadcast sent ✓"). Inline green
@@ -172,12 +189,14 @@ no inner scroll. Decisions:
    block-message. Non-undoable actions (poll start, broadcast push) get
    toast only. This makes the two channels semantically non-overlapping
    so they never compete for the same eye-second.
-4. **Recent actions = right-rail sidebar, not bell-only.** Live console is
-   used for 1–4 continuous hours; presenter needs zero-click access to
-   their own recent moderation history with undo buttons. The bell stays
-   for system/server notifications (e.g. webhook failure, rate-limit
-   threshold crossed). Sidebar shows last ~10 own actions with one-tap
-   undo where applicable.
+4. **Recent actions — RETRACTED 2026-05-04 (sidebar dropped).** Original Q4
+   chose a 220px right-rail sidebar. This was an artifact of the
+   live-console layout, which is now rejected. AdminV3SoftHolo has no
+   sidebar; the message feed already carries per-row ⋯ menu for block/flag,
+   and Q3's inline green bar provides the undo affordance for reversible
+   actions. Net: moderator's own actions live inline in the feed (zero
+   clicks to act, Q3 inline undo is zero-clicks-and-5s-grace), bell stays
+   for system events only.
 
 **Items in this doc that this section now scopes down.**
 
@@ -212,6 +231,11 @@ no inner scroll. Decisions:
 > backs 4 of the 10 final nav pages. Solving this first (before `system`
 > accordion) gives 4× leverage and sets the visual language for the whole
 > settings layer.
+>
+> **Canonical reference:** `docs/designs/design-v2/components/tab-chrome.jsx`
+> (delivered in 2026-05-04 handoff). Default-tab choices in this section
+> match the locked decisions in that file. Use the jsx as the visual /
+> structural source of truth; this section explains the rules behind it.
 
 **Context.** P0-0 collapses 17 legacy nav slots into 4 tabbed pages. All 4 use
 the same chrome — same tab strip, same kicker placement, same loading rules,
@@ -1082,6 +1106,11 @@ work restarts, start with Stage 1 (file reorg), not Stage 2.
 | 2026-05-04 | Feedback = toast (universal) + inline green bar (undoable actions only) — Q3 resolved | Claude Design + User |
 | 2026-05-04 | Recent actions = right-rail sidebar; bell reserved for system events — Q4 resolved | Claude Design + User |
 | 2026-05-04 | Tab chrome shared across moderation/appearance/automation/history; default tab = mid-event likely; badges + deep-links + sessionStorage persistence (P0-0a) | User |
+| 2026-05-04 | Claude Design handoff carried to repo (live-console.jsx, tab-chrome.jsx, decisions-log-may04.jsx, rwd-768.jsx, rwd-480.jsx) | Handoff |
+| 2026-05-04 | **Dashboard reverts to AdminV3SoftHolo (① 控制台 panel grid)**; live-console.jsx kept as reference but rejected — felt overpacked at 1440×900 | User review |
+| 2026-05-04 | Q2 retracted for dashboard scope (no effect strip on dashboard); 8 horizontal scroll still applies on the standalone effects nav page | User review |
+| 2026-05-04 | Q4 sidebar retracted; moderator's own actions stay inline in feed via ⋯ menu + Q3 inline undo; bell handles system events only | User review |
+| 2026-05-04 | Q1 (compact topbar) and Q3 (toast + inline complement rule) remain locked — both compatible with AdminV3SoftHolo | User review |
 
 ---
 

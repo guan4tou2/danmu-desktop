@@ -87,6 +87,15 @@
 <script type="text/babel" src="components/admin-batch7.jsx"></script>
 <script type="text/babel" src="components/admin-batch8.jsx"></script>
 <script type="text/babel" src="components/admin-batch9.jsx"></script>
+<script type="text/babel" src="components/admin-tabbed.jsx"></script>
+<script type="text/babel" src="components/ia-spec.jsx"></script>
+  <script type="text/babel" src="components/decisions-log.jsx"></script>
+  <script type="text/babel" src="components/decisions-log-may04.jsx"></script>
+  <script type="text/babel" src="components/viewer-effects-panel.jsx"></script>
+  <script type="text/babel" src="components/rwd-768.jsx"></script>
+  <script type="text/babel" src="components/rwd-480.jsx"></script>
+  <script type="text/babel" src="components/live-console.jsx"></script>
+  <script type="text/babel" src="components/tab-chrome.jsx"></script>
 <script type="text/babel" src="design-canvas.jsx"></script>
 
 <script type="text/babel">
@@ -171,6 +180,122 @@ function App() {
       <div style={{ padding: '0 60px' }}><Intro /></div>
       <div style={{ height: 60 }} />
 
+      <DCSection title="IA Spec · §H IA / 語義同步" subtitle="2026-04-28 handoff §H — 5 條 IA 規則的 single source of truth · 視覺 polish 之前先收斂語義">
+        <DCArtboard width={1440} height={920} label="§H · 路由可見性矩陣 · Route × Mode (rule #1 #4 #5)" style={{ background: 'transparent' }}>
+          <div data-screen-label="IA · Route Matrix" style={{ width: 1440, height: 920 }}><IASpecRouteMatrix /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="§H · 狀態語義 · Session / Broadcast (rule #2 #3)" style={{ background: 'transparent' }}>
+          <div data-screen-label="IA · State Diagrams" style={{ width: 1440, height: 920 }}><IASpecStateDiagram /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="§H · Live 模式操作流 · 3 happy paths (rule #5)" style={{ background: 'transparent' }}>
+          <div data-screen-label="IA · Live Operator Path" style={{ width: 1440, height: 920 }}><IASpecLiveOperatorPath /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="Decisions Log · 2026-04-28 sprint" subtitle="4 條 PM-confirmed 結論 · B.3 / B.1 / DS-007 / DS-008 — 取代 chat 為 source of truth">
+        <DCArtboard width={1440} height={920} label="Decisions · 4 條 sprint lock-in" style={{ background: 'transparent' }}>
+          <div data-screen-label="Decisions · 2026-04-28" style={{ width: 1440, height: 920 }}><DecisionsLog2026Apr28 /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="Decisions Log · 2026-05-04 IA pivot lock" subtitle="P0-0 admin nav 32→10 + Live Console Q1–Q4 · Q3 附互補規則（toast 普適 / inline 只在可撤銷時出）">
+        <DCArtboard width={1440} height={920} label="Decisions · 5 條 sprint lock-in (P0-0 + Q1-Q4 + Q3 規則)" style={{ background: 'transparent' }}>
+          <div data-screen-label="Decisions · 2026-05-04" style={{ width: 1440, height: 920 }}><DecisionsLog2026May04 /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="DS-004 · Viewer Effects · 參數面板" subtitle="per-effect runtime tuning panel · dark / light × 彈跳 / 閃爍 兩示例">
+        <DCArtboard width={1440} height={920} label="DS-004 · Bounce · Dark" style={{ background: 'transparent' }}>
+          <div data-screen-label="DS-004 · Bounce · Dark" style={{ width: 1440, height: 920 }}><ViewerEffectsParamPanel theme="dark" effect="bounce-cartoon" /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="DS-004 · Blink · Light" style={{ background: 'transparent' }}>
+          <div data-screen-label="DS-004 · Blink · Light" style={{ width: 1440, height: 920 }}><ViewerEffectsParamPanel theme="light" effect="blink-crt" /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="DS-003 · RWD batch1 · 768 (iPad portrait)" subtitle="6 高頻 live 頁· Dashboard · Messages · Polls · Broadcast · Notifications · Sessions — 全部套用同一個 768 frame chrome">
+        <DCArtboard width={768} height={1024} label="768 · Dashboard · 4-col KPI → 2-col" style={{ background: 'transparent' }}>
+          <div data-screen-label="768 · Dashboard" style={{ width: 768, height: 1024 }}><RwdDashboard768 /></div>
+        </DCArtboard>
+        <DCArtboard width={768} height={1024} label="768 · Messages · filters 變 drawer" style={{ background: 'transparent' }}>
+          <div data-screen-label="768 · Messages" style={{ width: 768, height: 1024 }}><RwdMessages768 /></div>
+        </DCArtboard>
+        <DCArtboard width={768} height={1024} label="768 · Polls · master-detail stack (DS-006)" style={{ background: 'transparent' }}>
+          <div data-screen-label="768 · Polls" style={{ width: 768, height: 1024 }}><RwdPolls768 /></div>
+        </DCArtboard>
+        <DCArtboard width={768} height={1024} label="768 · Broadcast · vertical action stack" style={{ background: 'transparent' }}>
+          <div data-screen-label="768 · Broadcast" style={{ width: 768, height: 1024 }}><RwdBroadcast768 /></div>
+        </DCArtboard>
+        <DCArtboard width={768} height={1024} label="768 · Notifications · list/detail stack (DS-008)" style={{ background: 'transparent' }}>
+          <div data-screen-label="768 · Notifications" style={{ width: 768, height: 1024 }}><RwdNotifications768 /></div>
+        </DCArtboard>
+        <DCArtboard width={768} height={1024} label="768 · Sessions · table → card stack" style={{ background: 'transparent' }}>
+          <div data-screen-label="768 · Sessions" style={{ width: 768, height: 1024 }}><RwdSessions768 /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="DS-003 · RWD batch2 · 480 (phone portrait)" subtitle="同 6 頁 · Polls / Notifications 按 DS-006 / DS-008 lock 變成 full-switch detail screen · list 項點擊進 editor / detail 全屏">
+        <DCArtboard width={480} height={900} label="480 · Dashboard · KPI 2-col + quick actions" style={{ background: 'transparent' }}>
+          <div data-screen-label="480 · Dashboard" style={{ width: 480, height: 900 }}><RwdDashboard480 /></div>
+        </DCArtboard>
+        <DCArtboard width={480} height={900} label="480 · Messages · swipe affordance" style={{ background: 'transparent' }}>
+          <div data-screen-label="480 · Messages" style={{ width: 480, height: 900 }}><RwdMessages480 /></div>
+        </DCArtboard>
+        <DCArtboard width={480} height={900} label="480 · Polls · editor full-screen 返回箭頭 (DS-006)" style={{ background: 'transparent' }}>
+          <div data-screen-label="480 · Polls Detail" style={{ width: 480, height: 900 }}><RwdPolls480 /></div>
+        </DCArtboard>
+        <DCArtboard width={480} height={900} label="480 · Broadcast · hero + sticky CTA" style={{ background: 'transparent' }}>
+          <div data-screen-label="480 · Broadcast" style={{ width: 480, height: 900 }}><RwdBroadcast480 /></div>
+        </DCArtboard>
+        <DCArtboard width={480} height={900} label="480 · Notifications · detail full-screen (DS-008)" style={{ background: 'transparent' }}>
+          <div data-screen-label="480 · Notification Detail" style={{ width: 480, height: 900 }}><RwdNotifications480 /></div>
+        </DCArtboard>
+        <DCArtboard width={480} height={900} label="480 · Sessions · ultra-compact card stack" style={{ background: 'transparent' }}>
+          <div data-screen-label="480 · Sessions" style={{ width: 480, height: 900 }}><RwdSessions480 /></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="P0-0 · Live Console Dashboard · 2026-05-04 IA pivot" subtitle="Polestar lock — 單主持人 1–4 小時 mid-size event · 13 吋 不滾動 · 取代舊 Dashboard 、Messages 、Notifications 、Broadcast · 4 個 open question 以 A/B 呈現">
+        <DCArtboard width={1440} height={900} label="P0-0 · 推薦預設 · 60% feed + 4 quick actions + sidebar recent + both feedback" style={{ background: 'transparent' }}>
+          <div data-screen-label="P0-0 · Live Console · default" style={{ width: 1440, height: 900 }}>
+            <LiveConsoleDashboard topbar="compact" strip="scroll" feedback="both" recent="sidebar" showToast={true} showInlineConfirm="broadcast" />
+          </div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={900} label="P0-0 · Q1 topbar · full-labels (zh + EN kicker)" style={{ background: 'transparent' }}>
+          <div data-screen-label="P0-0 · Topbar Labels" style={{ width: 1440, height: 900 }}>
+            <LiveConsoleDashboard topbar="labels" strip="scroll" feedback="both" recent="sidebar" />
+          </div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={900} label="P0-0 · Q2 effects · 4×2 grid + more (隱藏 4)" style={{ background: 'transparent' }}>
+          <div data-screen-label="P0-0 · Effects 4x2" style={{ width: 1440, height: 900 }}>
+            <LiveConsoleDashboard topbar="compact" strip="grid" feedback="inline" recent="sidebar" showInlineConfirm="broadcast" />
+          </div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={900} label="P0-0 · Q3+Q4 · toast-only · bell-only (刪 sidebar)" style={{ background: 'transparent' }}>
+          <div data-screen-label="P0-0 · Toast Bell-only" style={{ width: 1440, height: 900 }}>
+            <LiveConsoleDashboard topbar="compact" strip="scroll" feedback="toast" recent="bell" showToast={true} />
+          </div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="DS-009 · Tab 容器 chrome · 4 頁共用" subtitle="1 spec + 4 page mockup · default-tab lock (blacklist / themes / scheduler / sessions) · badge 規則 · mobile select">
+        <DCArtboard width={1440} height={920} label="DS-009 · SPEC · anatomy + default-tab + badge + RWD + keyboard" style={{ background: 'transparent' }}>
+          <div data-screen-label="DS-009 · Spec" style={{ width: 1440, height: 920 }}><TabChromeSpec /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={900} label="moderation · default = blacklist · 4 tabs" style={{ background: 'transparent' }}>
+          <div data-screen-label="Moderation · Blacklist" style={{ width: 1440, height: 900 }}><ModerationPage /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={900} label="appearance · default = themes · 4 tabs" style={{ background: 'transparent' }}>
+          <div data-screen-label="Appearance · Themes" style={{ width: 1440, height: 900 }}><AppearancePage /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={900} label="automation · default = scheduler · 3 tabs (Advanced 收 plugins)" style={{ background: 'transparent' }}>
+          <div data-screen-label="Automation · Scheduler" style={{ width: 1440, height: 900 }}><AutomationPage /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={900} label="history · default = sessions · 5 tabs" style={{ background: 'transparent' }}>
+          <div data-screen-label="History · Sessions" style={{ width: 1440, height: 900 }}><HistoryPage /></div>
+        </DCArtboard>
+      </DCSection>
+
       <DCSection title="Danmu Fire · 觀眾端" subtitle="完整欄位對齊原版 user-facing 頁面，統一以「網站」呈現 — 手機 Safari / 桌面 Chrome，不是 App">
         <DCArtboard width={375} height={812} label="Mobile · Safari · 138.2.59.206:4000" style={{ background: '#000', borderRadius: 36, overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
           <div data-screen-label="Viewer Mobile Web" style={{ width: 375, height: 812 }}>
@@ -246,6 +371,21 @@ function App() {
         </DCArtboard>
         <DCArtboard width={1440} height={920} label="⑬ 操作日誌 · Audit Log" style={{ background: 'transparent' }}>
           <div data-screen-label="Admin · Audit Log" style={{ width: 1440, height: 920 }}><AdminAuditLogPage theme={tweaks.theme} /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="DS-001 · History Tabbed · EXPORT" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · History Tabbed · Export" style={{ width: 1440, height: 920 }}><AdminHistoryTabbedPage theme={tweaks.theme} initialTab="export" /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="DS-001 · History Tabbed · LIST" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · History Tabbed · List" style={{ width: 1440, height: 920 }}><AdminHistoryTabbedPage theme={tweaks.theme} initialTab="list" /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="DS-001 · History Tabbed · REPLAY" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · History Tabbed · Replay" style={{ width: 1440, height: 920 }}><AdminHistoryTabbedPage theme={tweaks.theme} initialTab="replay" /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="DS-002 · Viewer Config · PAGE" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Viewer Config · Page" style={{ width: 1440, height: 920 }}><AdminViewerConfigTabbedPage theme={tweaks.theme} initialTab="page" /></div>
+        </DCArtboard>
+        <DCArtboard width={1440} height={920} label="DS-002 · Viewer Config · FIELDS" style={{ background: 'transparent' }}>
+          <div data-screen-label="Admin · Viewer Config · Fields" style={{ width: 1440, height: 920 }}><AdminViewerConfigTabbedPage theme={tweaks.theme} initialTab="fields" /></div>
         </DCArtboard>
       </DCSection>
 
