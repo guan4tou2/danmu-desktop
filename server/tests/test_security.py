@@ -375,6 +375,7 @@ def test_rate_limit_suggestion_below_threshold():
             _bump_bucket_locked("fire", ts)
             # Pump count to 60 by re-entering same bucket boundary.
             from server.services.security import _rate_buckets
+
             _rate_buckets["fire"][-1][1] = 60
         _rate_stats_hits["fire"] = 24 * 60  # 1440 hits, no violations
 
@@ -386,6 +387,8 @@ def test_rate_limit_suggestion_below_threshold():
 
 def test_rate_limit_suggestion_when_undersized():
     """When current_limit < suggested * 0.7, surface the suggestion."""
+    import time as _time
+
     from server.services.security import (
         _rate_buckets,
         _rate_stats_hits,
@@ -393,8 +396,6 @@ def test_rate_limit_suggestion_when_undersized():
         get_rate_limit_suggestion,
         reset_rate_limit_counters,
     )
-
-    import time as _time
 
     reset_rate_limit_counters()
     now = _time.time()
@@ -447,14 +448,14 @@ def test_rate_limit_suggestion_violations_threshold():
 def test_rate_limit_suggestion_in_metrics_response(client, app):
     """The /admin/metrics endpoint must surface the suggestion (or null) per
     rate-limit scope so the admin UI can render the suggest banner."""
+    import time as _time
+
     from server.services.security import (
         _rate_buckets,
         _rate_stats_hits,
         _rate_stats_lock,
         reset_rate_limit_counters,
     )
-
-    import time as _time
 
     reset_rate_limit_counters()
     now = _time.time()

@@ -222,18 +222,18 @@ def test_viewer_error_states(browser_session, server_ports):
         # Offline card classes exist in DOM after explicit trigger.
         page.goto(f"http://127.0.0.1:{http_port}/")
         page.wait_for_selector("#danmuText", timeout=8000)
-        page.evaluate(
-            """() => {
+        page.evaluate("""() => {
               const body = document.querySelector(".viewer-body");
               if (!body) return;
               body.innerHTML = `
                 <div class="viewer-offline-card">
                   <h2 class="viewer-offline-lockup">Danmu Fire</h2>
-                  <span class="viewer-offline-chip"><span class="viewer-offline-chip-dot"></span><span>OFFLINE</span></span>
+                  <span class="viewer-offline-chip">
+                    <span class="viewer-offline-chip-dot"></span><span>OFFLINE</span>
+                  </span>
                   <p class="viewer-offline-message">網路中斷</p>
                 </div>`;
-            }"""
-        )
+            }""")
         page.wait_for_selector(".viewer-offline-card", timeout=5000)
         assert page.locator(".viewer-offline-card").is_visible()
     finally:
@@ -272,13 +272,11 @@ def test_browser_submit_danmu_appears_in_history(browser_session, server_ports):
         # 直接切 internal state 到 list）
         page.evaluate("window.location.hash = '#/history'")
         page.wait_for_selector("#sec-history-tabs", state="visible", timeout=5000)
-        page.evaluate(
-            """() => {
+        page.evaluate("""() => {
                 document.body.dataset.historyTab = 'list';
                 document.dispatchEvent(new CustomEvent('admin:history-tab'));
                 window.dispatchEvent(new Event('hashchange'));
-            }"""
-        )
+            }""")
         page.wait_for_timeout(250)
         page.wait_for_selector("#sec-history", state="visible", timeout=5000)
         details = page.locator("#sec-history")

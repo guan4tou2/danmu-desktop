@@ -36,7 +36,9 @@ def test_audit_contract_fields_present(client):
     data = resp.get_json()
 
     assert "contract" in data
-    assert set(("actions", "actors", "supports_before_after", "supports_platform")) <= set(data["contract"])
+    assert set(("actions", "actors", "supports_before_after", "supports_platform")) <= set(
+        data["contract"]
+    )
     assert isinstance(data["events"], list)
     assert data["events"], "expected at least one event"
     ev = data["events"][0]

@@ -99,6 +99,7 @@ class FilterEngine:
                     # plain "pass" is a firehose and not what the log shows.
                     try:
                         from . import filter_events  # local import to avoid cycle
+
                         filter_events.record(
                             action=result.action,
                             rule_id=result.rule_id,

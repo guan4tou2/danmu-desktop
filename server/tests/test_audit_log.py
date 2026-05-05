@@ -18,8 +18,7 @@ def isolated_state(tmp_path, monkeypatch):
 
 
 def test_append_returns_entry_with_required_fields():
-    e = audit_log.append("fire_token", "rotated", actor="admin",
-                         meta={"prefix": "abc"})
+    e = audit_log.append("fire_token", "rotated", actor="admin", meta={"prefix": "abc"})
     assert e["source"] == "fire_token"
     assert e["kind"] == "rotated"
     assert e["actor"] == "admin"

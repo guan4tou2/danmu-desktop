@@ -100,9 +100,7 @@ class StickerService:
         try:
             data = {
                 "packs": list(self._packs.values()),
-                "stickers": [
-                    {"name": name, **meta} for name, meta in self._sticker_meta.items()
-                ],
+                "stickers": [{"name": name, **meta} for name, meta in self._sticker_meta.items()],
             }
             tmp = _PACKS_FILE.with_suffix(".tmp")
             tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -305,9 +303,7 @@ class StickerService:
             self.delete(name)
         return True
 
-    def assign_sticker(
-        self, name: str, pack_id: str, weight: Optional[float] = None
-    ) -> bool:
+    def assign_sticker(self, name: str, pack_id: str, weight: Optional[float] = None) -> bool:
         """Assign a sticker to a pack with optional weight override."""
         self._ensure_loaded()
         with self._lock:
@@ -315,9 +311,7 @@ class StickerService:
                 return False
             if name not in self._cache:
                 return False
-            meta = self._sticker_meta.get(
-                name, {"pack_id": _DEFAULT_PACK_ID, "weight": 1.0}
-            )
+            meta = self._sticker_meta.get(name, {"pack_id": _DEFAULT_PACK_ID, "weight": 1.0})
             meta["pack_id"] = pack_id
             if weight is not None:
                 try:

@@ -60,15 +60,18 @@ def _record_event(kind: str, meta: Optional[Dict[str, Any]] = None) -> None:
     integrations Fire Token deep-page that already reads it.
     """
     with _lock:
-        _audit.append({
-            "ts": _time.time(),
-            "kind": str(kind)[:32],
-            "meta": dict(meta or {}),
-        })
+        _audit.append(
+            {
+                "ts": _time.time(),
+                "kind": str(kind)[:32],
+                "meta": dict(meta or {}),
+            }
+        )
     # Persistent audit log — best-effort, runs outside the fire_token lock
     # so a slow disk doesn't block token rotation.
     try:
         from . import audit_log
+
         audit_log.append("fire_token", kind, actor="admin", meta=meta)
     except Exception:  # pragma: no cover — defensive against import-time issues
         logger.debug("audit_log dispatch failed", exc_info=True)
@@ -126,9 +129,7 @@ def _load_state() -> Dict:
                     # v5.2: track creation time for the "建立時間" stat.
                     # Migrate legacy state that lacks created_at by reusing
                     # rotated_at (best guess for first rotation = creation).
-                    "created_at": float(
-                        raw.get("created_at", raw.get("rotated_at", 0.0)) or 0.0
-                    ),
+                    "created_at": float(raw.get("created_at", raw.get("rotated_at", 0.0)) or 0.0),
                 }
                 return _state
         except FileNotFoundError:

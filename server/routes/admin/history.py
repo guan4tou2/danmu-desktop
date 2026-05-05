@@ -159,7 +159,9 @@ def list_sessions():
 
     records = history_service.danmu_history.get_recent(hours=hours, limit=10000)
     sessions = _derive_sessions(records, gap_minutes=30)
-    return _json_response({"sessions": sessions, "total": len(sessions), "contract": _gap_contract()})
+    return _json_response(
+        {"sessions": sessions, "total": len(sessions), "contract": _gap_contract()}
+    )
 
 
 @admin_bp.route("/sessions/<session_id>", methods=["GET"])
@@ -180,18 +182,21 @@ def get_session(session_id):
         return _json_response({"error": "Session not found", "contract": _gap_contract()}, 404)
 
     # Collect this session's records (reversed so oldest-first for timeline)
-    session_records = [r for r in reversed(all_records)
-                       if sess["started_at"] <= r["timestamp"] <= sess["ended_at"]]
+    session_records = [
+        r for r in reversed(all_records) if sess["started_at"] <= r["timestamp"] <= sess["ended_at"]
+    ]
 
     # Build per-minute density (up to 120 minutes)
     density = _build_density(session_records, sess["started_at"])
 
-    return _json_response({
-        "session": sess,
-        "records": session_records[:2000],
-        "density": density,
-        "contract": _gap_contract(),
-    })
+    return _json_response(
+        {
+            "session": sess,
+            "records": session_records[:2000],
+            "density": density,
+            "contract": _gap_contract(),
+        }
+    )
 
 
 @admin_bp.route("/search", methods=["GET"])
@@ -208,7 +213,9 @@ def search_history():
     """
     q = (request.args.get("q") or "").strip()
     if not q or len(q) > 100:
-        return _json_response({"error": "q must be 1-100 characters", "contract": _gap_contract()}, 400)
+        return _json_response(
+            {"error": "q must be 1-100 characters", "contract": _gap_contract()}, 400
+        )
 
     hours = _clamp_hours(request.args.get("hours", 168, type=int))
     limit = max(1, min(request.args.get("limit", 200, type=int), 500))
@@ -229,12 +236,15 @@ def search_history():
         if len(results) >= limit:
             break
 
-    return _json_response({"results": results, "total": len(results), "query": q, "contract": _gap_contract()})
+    return _json_response(
+        {"results": results, "total": len(results), "query": q, "contract": _gap_contract()}
+    )
 
 
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
+
 
 def _parse_ts(ts_str: str):
     if ts_str.endswith("Z"):

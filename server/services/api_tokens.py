@@ -139,7 +139,9 @@ def record_usage(raw: str, client_ip: str) -> Optional[Dict]:
             if t.get("token_hash") == h:
                 if not t.get("enabled"):
                     return None
-                if t.get("expires_at") and datetime.fromisoformat(t["expires_at"]) < datetime.now(timezone.utc):
+                if t.get("expires_at") and datetime.fromisoformat(t["expires_at"]) < datetime.now(
+                    timezone.utc
+                ):
                     return None
                 t["last_used_at"] = now
                 t["last_used_ip"] = client_ip

@@ -70,19 +70,21 @@ def get_recent_sources():
     except (TypeError, ValueError):
         window = 300
     window = max(60, min(window, 3600))  # clamp 1m–1h
-    return _json_response({
-        "window_sec": window,
-        "sources": fire_sources.recent_sources(window),
-        # Stable schema so notifications UI can render unavailable channels.
-        "source_catalog": [
-            {"id": "rate_limit", "implemented": True},
-            {"id": "fire_token", "implemented": True},
-            {"id": "moderation", "implemented": True},
-            {"id": "backup", "implemented": False},
-            {"id": "webhooks", "implemented": False},
-            {"id": "system", "implemented": False},
-        ],
-    })
+    return _json_response(
+        {
+            "window_sec": window,
+            "sources": fire_sources.recent_sources(window),
+            # Stable schema so notifications UI can render unavailable channels.
+            "source_catalog": [
+                {"id": "rate_limit", "implemented": True},
+                {"id": "fire_token", "implemented": True},
+                {"id": "moderation", "implemented": True},
+                {"id": "backup", "implemented": False},
+                {"id": "webhooks", "implemented": False},
+                {"id": "system", "implemented": False},
+            ],
+        }
+    )
 
 
 @admin_bp.route("/integrations/fire-token/audit", methods=["GET"])
@@ -116,8 +118,10 @@ def get_fire_token_usage():
 
     # 24h hourly aggregation (60-second granularity buckets summed per hour)
     hourly = get_rate_limit_bucket_history("fire", 60)  # returns 24 hour entries
-    return _json_response({
-        "usage_24h": list(hourly),
-        "ceiling_per_min": 200,  # FIRE_RATE_LIMIT default
-        "ips": fire_sources.recent_ips(window_sec=3600, limit=10),
-    })
+    return _json_response(
+        {
+            "usage_24h": list(hourly),
+            "ceiling_per_min": 200,  # FIRE_RATE_LIMIT default
+            "ips": fire_sources.recent_ips(window_sec=3600, limit=10),
+        }
+    )

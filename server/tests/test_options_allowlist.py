@@ -84,12 +84,12 @@ def test_migration_from_legacy_scalar_slot1(tmp_path, monkeypatch):
     idempotent (re-loading the migrated file yields the same shape).
     """
     legacy = {
-        "Color":      [True, 0, 0, "#FFFFFF"],
-        "Opacity":    [True, 0, 100, 70],
-        "FontSize":   [True, 20, 100, 50],
-        "Speed":      [True, 1, 10, 4],
+        "Color": [True, 0, 0, "#FFFFFF"],
+        "Opacity": [True, 0, 100, 70],
+        "FontSize": [True, 20, 100, 50],
+        "Speed": [True, 1, 10, 4],
         "FontFamily": [True, "", "", "NotoSansTC"],
-        "Effects":    [True, "", "", ""],
+        "Effects": [True, "", "", ""],
     }
     settings_file = tmp_path / "legacy_settings.json"
     settings_file.write_text(json.dumps(legacy))

@@ -13,7 +13,6 @@ import pytest
 
 from server.services.ws_state import update_ws_client_count
 
-
 PAYLOAD = {"text": "hello", "fontInfo": {"name": "NotoSansTC"}, "isImage": False}
 
 
@@ -47,9 +46,7 @@ def test_admin_token_bypasses_public_rate_limit(app, client, overlay_connected):
         assert r.status_code == 200, r.data
 
 
-def test_admin_token_mismatch_falls_back_to_public_limit(
-    app, client, overlay_connected
-):
+def test_admin_token_mismatch_falls_back_to_public_limit(app, client, overlay_connected):
     app.config["FIRE_ADMIN_TOKEN"] = "admin-secret"
 
     headers = {"X-Fire-Token": "wrong"}

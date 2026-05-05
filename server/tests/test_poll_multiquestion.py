@@ -16,7 +16,6 @@ import pytest
 
 from server.services.poll import PollService, poll_service  # ty: ignore[unresolved-import]
 
-
 # ─── Helpers ────────────────────────────────────────────────────────────────
 
 

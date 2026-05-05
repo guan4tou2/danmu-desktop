@@ -39,10 +39,7 @@ def _make_question(
     return {
         "id": _new_id("q_"),
         "text": text,
-        "options": [
-            {"key": chr(65 + i), "text": opt, "count": 0}
-            for i, opt in enumerate(options)
-        ],
+        "options": [{"key": chr(65 + i), "text": opt, "count": 0} for i, opt in enumerate(options)],
         "image_url": image_url,
         "time_limit_seconds": time_limit_seconds,
         "order": order,
@@ -103,9 +100,7 @@ class PollService:
         with self._lock:
             if self._poll and self._poll["active"]:
                 raise ValueError("A poll is already active")
-            self._poll = self._build_session_locked(
-                [{"text": question, "options": list(options)}]
-            )
+            self._poll = self._build_session_locked([{"text": question, "options": list(options)}])
             self._poll["current_index"] = 0
             self._poll["active"] = True
             self._poll["started_at"] = time.time()
@@ -140,9 +135,7 @@ class PollService:
             if not text:
                 raise ValueError(f"Question {idx + 1} is missing text")
             if not (2 <= len(options) <= 6):
-                raise ValueError(
-                    f"Question {idx + 1} must have between 2 and 6 options"
-                )
+                raise ValueError(f"Question {idx + 1} must have between 2 and 6 options")
             built = _make_question(
                 text,
                 [str(o).strip() for o in options],
@@ -227,9 +220,7 @@ class PollService:
             current = self._current_question_locked()
             if not self._poll or not self._poll["active"] or current is None:
                 return False
-            voters = self._poll["voters_per_question"].setdefault(
-                current["id"], set()
-            )
+            voters = self._poll["voters_per_question"].setdefault(current["id"], set())
             if voter_id in voters:
                 # Track duplicate attempts so the deep-dive KPI can surface
                 # them per prototype admin-batch8.jsx:478 「重複指紋」 tile.
@@ -262,9 +253,7 @@ class PollService:
     def _get_status_locked(self) -> Dict[str, Any]:
         if not self._poll:
             return {"state": "idle"}
-        questions_view = [
-            self._serialize_question(q) for q in self._poll["questions"]
-        ]
+        questions_view = [self._serialize_question(q) for q in self._poll["questions"]]
         current = self._current_question_locked()
         # Legacy compatibility surface: the previous single-question payload
         # had top-level `question`, `options`, `total_votes`, `poll_id`. We
@@ -313,9 +302,7 @@ class PollService:
                     "key": o["key"],
                     "text": o["text"],
                     "count": o["count"],
-                    "percentage": (
-                        round(o["count"] / total * 100, 1) if total > 0 else 0
-                    ),
+                    "percentage": (round(o["count"] / total * 100, 1) if total > 0 else 0),
                 }
                 for o in q["options"]
             ],

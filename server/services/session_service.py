@@ -22,6 +22,7 @@ viewer_end_behavior options (stored in active_session.json, admin-configurable):
   "ended_screen"  — input disabled, show "本場活動已結束" overlay
   "reload"        — viewer page auto-reloads after 3 s
 """
+
 from __future__ import annotations
 
 import errno
@@ -47,7 +48,7 @@ _write_failure_logged: bool = False
 VALID_BEHAVIORS = ("continue", "ended_screen", "reload")
 
 _DEFAULT_STATE: Dict[str, Any] = {
-    "status": "idle",          # "idle" | "live"
+    "status": "idle",  # "idle" | "live"
     "id": None,
     "name": None,
     "started_at": None,
@@ -59,12 +60,11 @@ _DEFAULT_STATE: Dict[str, Any] = {
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+
 def _atomic_write_json(path: Path, payload: Any) -> None:
     """Atomic write via tmp + os.replace. Caller must hold _lock."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(
-        path.suffix + f".tmp.{os.getpid()}.{threading.get_ident()}"
-    )
+    tmp = path.with_suffix(path.suffix + f".tmp.{os.getpid()}.{threading.get_ident()}")
     flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
     fd = os.open(tmp, flags, 0o600)
     try:
@@ -170,6 +170,7 @@ def _push_session_ended(behavior: str) -> None:
 # Public API
 # ---------------------------------------------------------------------------
 
+
 def get_state() -> Dict[str, Any]:
     """Return a copy of the current session state."""
     with _lock:
@@ -204,18 +205,21 @@ def open_session(name: str) -> Dict[str, Any]:
         # Deterministic ID from start timestamp
         sid = "sess_" + hashlib.md5(str(now).encode()).hexdigest()[:8]
 
-        _state.update({  # type: ignore[union-attr]
-            "status": "live",
-            "id": sid,
-            "name": name,
-            "started_at": now,
-        })
+        _state.update(
+            {  # type: ignore[union-attr]
+                "status": "live",
+                "id": sid,
+                "name": name,
+                "started_at": now,
+            }
+        )
         _persist()
         state_copy = dict(_state)  # type: ignore[arg-type]
 
     # Side-effect: set broadcast to live (outside lock to avoid deadlock with broadcast's own lock)
     try:
         from . import broadcast as broadcast_svc
+
         broadcast_svc.set_mode("live")
     except Exception as exc:
         logger.warning("Could not auto-set broadcast to live on session open: %s", exc)
@@ -251,12 +255,14 @@ def close_session() -> Dict[str, Any]:
         }
 
         # Reset to idle, preserving the viewer_end_behavior preference
-        _state.update({  # type: ignore[union-attr]
-            "status": "idle",
-            "id": None,
-            "name": None,
-            "started_at": None,
-        })
+        _state.update(
+            {  # type: ignore[union-attr]
+                "status": "idle",
+                "id": None,
+                "name": None,
+                "started_at": None,
+            }
+        )
         _persist()
 
     # Append archive record (outside lock)
@@ -265,6 +271,7 @@ def close_session() -> Dict[str, Any]:
     # Set broadcast to standby
     try:
         from . import broadcast as broadcast_svc
+
         broadcast_svc.set_mode("standby")
     except Exception as exc:
         logger.warning("Could not auto-set broadcast to standby on session close: %s", exc)
@@ -272,7 +279,12 @@ def close_session() -> Dict[str, Any]:
     # Push session_ended to all viewer WS connections
     _push_session_ended(behavior)
 
-    logger.info("Session closed: %s (%s), duration=%ds", archived["name"], archived["id"], archived["duration_s"])
+    logger.info(
+        "Session closed: %s (%s), duration=%ds",
+        archived["name"],
+        archived["id"],
+        archived["duration_s"],
+    )
     return archived
 
 

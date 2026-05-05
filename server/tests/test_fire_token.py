@@ -179,6 +179,7 @@ def test_created_at_set_on_first_regenerate():
 def test_created_at_preserved_across_rotations():
     r1 = fire_token.regenerate()
     import time as _time_mod
+
     _time_mod.sleep(0.01)
     r2 = fire_token.regenerate()
     # rotated_at advances, created_at stays

@@ -361,9 +361,22 @@ def test_metrics_includes_telemetry_series(client):
 # ---------------------------------------------------------------------------
 
 _BOOTSTRAP_KEYS = (
-    "blacklist", "widgets", "polls", "settings", "filters", "history_stats",
-    "ws_auth", "effects", "themes", "webhooks", "sounds", "emojis",
-    "stickers", "scheduler", "fingerprints", "metrics",
+    "blacklist",
+    "widgets",
+    "polls",
+    "settings",
+    "filters",
+    "history_stats",
+    "ws_auth",
+    "effects",
+    "themes",
+    "webhooks",
+    "sounds",
+    "emojis",
+    "stickers",
+    "scheduler",
+    "fingerprints",
+    "metrics",
 )
 
 
@@ -382,6 +395,7 @@ def test_bootstrap_returns_all_sections(client):
 
 def test_bootstrap_continues_on_section_error(client, monkeypatch):
     from server.routes.admin import bootstrap as bs
+
     monkeypatch.setattr(bs, "_widgets", lambda: (_ for _ in ()).throw(RuntimeError("boom")))
     resp = authed_get(client, "/admin/bootstrap")
     assert resp.status_code == 200

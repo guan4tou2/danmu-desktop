@@ -64,13 +64,15 @@ def record(
     if not source:
         return
     with _lock:
-        _buffer.append({
-            "ts": _time(),
-            "source": str(source)[:32],
-            "fingerprint": (str(fingerprint)[:12] if fingerprint else None),
-            "ip": (str(ip)[:64] if ip else None),
-            "ua": (str(ua)[:120] if ua else None),
-        })
+        _buffer.append(
+            {
+                "ts": _time(),
+                "source": str(source)[:32],
+                "fingerprint": (str(fingerprint)[:12] if fingerprint else None),
+                "ip": (str(ip)[:64] if ip else None),
+                "ua": (str(ua)[:120] if ua else None),
+            }
+        )
 
 
 def recent_sources(window_sec: int = 300) -> List[Dict[str, Any]]:

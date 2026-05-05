@@ -24,7 +24,7 @@ import io
 import threading
 from collections import deque
 from time import time as _time
-from typing import Any, Deque, Dict, List, Optional
+from typing import Any, Deque, Dict, List
 
 _BUFFER_SIZE = 200
 
@@ -78,6 +78,7 @@ def clear() -> None:
 
 
 # ─── stdout / stderr proxy ────────────────────────────────────────────────
+
 
 class _PluginStream(io.TextIOBase):
     """A write-only text stream that funnels into ``record()``.

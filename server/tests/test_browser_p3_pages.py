@@ -109,7 +109,7 @@ def admin_page(logged_context, live_url):
 
 def _go_to_route(page, route: str) -> None:
     page.evaluate(
-        '(target) => { window.location.hash = target; }',
+        "(target) => { window.location.hash = target; }",
         f"#/{route}",
     )
     page.wait_for_timeout(400)
@@ -215,7 +215,11 @@ def test_setup_wizard_overlay_renders(admin_page):
     # Footer action buttons (close / prev / next)
     assert admin_page.locator("[data-setup-action='close']").count() >= 1
     # Close drawer to clean up for next test
-    admin_page.evaluate('() => { window.AdminSetupWizard && window.AdminSetupWizard.close && window.AdminSetupWizard.close(); }')
+    admin_page.evaluate(
+        "() => { window.AdminSetupWizard "
+        "&& window.AdminSetupWizard.close "
+        "&& window.AdminSetupWizard.close(); }"
+    )
 
 
 def test_setup_wizard_step_dependency_hints(admin_page):
@@ -224,15 +228,14 @@ def test_setup_wizard_step_dependency_hints(admin_page):
     admin_page.wait_for_selector("#admin-setup-wizard-root", state="visible", timeout=5000)
 
     # Simulate missing backend endpoints for password/logo from the page runtime.
-    admin_page.evaluate(
-        """() => {
-          if (!window.AdminSetupWizard || typeof window.AdminSetupWizard.__setCapabilityForTest !== "function") {
+    admin_page.evaluate("""() => {
+          if (!window.AdminSetupWizard
+              || typeof window.AdminSetupWizard.__setCapabilityForTest !== "function") {
             throw new Error("missing AdminSetupWizard.__setCapabilityForTest");
           }
           window.AdminSetupWizard.__setCapabilityForTest("password", false);
           window.AdminSetupWizard.__setCapabilityForTest("logo", false);
-        }"""
-    )
+        }""")
     admin_page.wait_for_selector("[data-setup-blocked='password']", state="visible", timeout=5000)
 
     admin_page.locator("[data-setup-action='next']").click()
@@ -246,8 +249,7 @@ def test_session_detail_falls_back_to_archive_endpoint(admin_page):
 
     # Create a lifecycle session with no history records, then close it so
     # /admin/sessions/<id> is expected to 404 and UI must fallback to archive detail.
-    session_id = admin_page.evaluate(
-        """async () => {
+    session_id = admin_page.evaluate("""async () => {
           const openRes = await window.csrfFetch("/admin/session/open", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -266,8 +268,7 @@ def test_session_detail_falls_back_to_archive_endpoint(admin_page):
             throw new Error(closeData.error || ("close failed: " + closeRes.status));
           }
           return id;
-        }"""
-    )
+        }""")
     assert session_id and str(session_id).startswith("sess_")
 
     seen = {}
@@ -301,7 +302,7 @@ def test_message_drawer_opens_from_live_feed(admin_page):
     _go_to_route(admin_page, "messages")
     admin_page.wait_for_timeout(300)
     # Inject mock messages then click first row
-    admin_page.evaluate('''() => {
+    admin_page.evaluate("""() => {
         for (let i = 0; i < 3; i++) {
             document.dispatchEvent(new CustomEvent('admin-ws-message', {
                 detail: { type: 'danmu_live', data: {
@@ -310,7 +311,7 @@ def test_message_drawer_opens_from_live_feed(admin_page):
                 } }
             }));
         }
-    }''')
+    }""")
     admin_page.wait_for_timeout(200)
     rows = admin_page.locator(".admin-live-feed-row")
     if rows.count() == 0:
@@ -358,10 +359,12 @@ def test_ia_alias_redirect_audit_to_history(admin_page):
     activate the audit tab inside the history nav."""
     _go_to_route(admin_page, "audit")
     # URL gets rewritten by applyRoute via buildHash
-    final_hash = admin_page.evaluate('() => window.location.hash')
+    final_hash = admin_page.evaluate("() => window.location.hash")
     assert final_hash == "#/history/audit", f"expected redirect, got {final_hash}"
     # The shell exposes the canonical leaf to legacy modules
-    leaf = admin_page.evaluate('() => document.querySelector(".admin-dash-grid").dataset.activeLeaf')
+    leaf = admin_page.evaluate(
+        '() => document.querySelector(".admin-dash-grid").dataset.activeLeaf'
+    )
     assert leaf == "audit"
     # Audit section is the only visible history-tab body
     admin_page.wait_for_selector("#sec-audit-overview", state="visible", timeout=5000)
@@ -392,9 +395,7 @@ def test_ia_system_accordion_renders(admin_page):
 def test_ia_deep_link_preserves_tab(admin_page):
     """Slice 2 + 3: deep-linking #/<nav>/<tab> activates the tab directly,
     skipping the default."""
-    admin_page.evaluate(
-        '() => { window.location.hash = "#/moderation/filters"; }'
-    )
+    admin_page.evaluate('() => { window.location.hash = "#/moderation/filters"; }')
     admin_page.wait_for_timeout(400)
     active = admin_page.locator(".admin-tabs-btn.is-active").get_attribute("data-tab")
     assert active == "filters"

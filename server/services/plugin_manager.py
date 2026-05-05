@@ -527,8 +527,10 @@ class PluginManager:
                 out_stream = plugin_console._PluginStream(plugin_name, "INFO")
                 err_stream = plugin_console._PluginStream(plugin_name, "ERROR")
                 try:
-                    with contextlib.redirect_stdout(out_stream), \
-                         contextlib.redirect_stderr(err_stream):
+                    with (
+                        contextlib.redirect_stdout(out_stream),
+                        contextlib.redirect_stderr(err_stream),
+                    ):
                         try:
                             if hook_name == "on_fire":
                                 result_holder.append(m(ctx))
@@ -540,7 +542,9 @@ class PluginManager:
                             error_holder.append(StopPropagation())
                         except Exception as exc:
                             error_holder.append(exc)
-                            plugin_console.record(plugin_name, "ERROR", f"{type(exc).__name__}: {exc}")
+                            plugin_console.record(
+                                plugin_name, "ERROR", f"{type(exc).__name__}: {exc}"
+                            )
                 finally:
                     out_stream.flush()
                     err_stream.flush()

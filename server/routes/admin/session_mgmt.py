@@ -8,14 +8,15 @@ Endpoints:
   GET  /admin/session/archive         → list of closed sessions (newest-first)
   GET  /admin/session/archive/<id>    → single session by ID (archive or live)
 """
+
 import time
 
 from flask import request
 
 from ...services import session_service
+from ...services.security import rate_limit
 from ...utils import sanitize_log_string
 from . import _json_response, admin_bp, require_csrf, require_login
-from ...services.security import rate_limit
 
 
 @admin_bp.route("/session/current", methods=["GET"])
@@ -82,8 +83,9 @@ def session_settings():
     behavior = body.get("viewer_end_behavior")
     if behavior is not None:
         if behavior not in session_service.VALID_BEHAVIORS:
+            valid = list(session_service.VALID_BEHAVIORS)
             return _json_response(
-                {"error": f"viewer_end_behavior must be one of {list(session_service.VALID_BEHAVIORS)}"},
+                {"error": f"viewer_end_behavior must be one of {valid}"},
                 400,
             )
         try:

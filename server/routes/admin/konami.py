@@ -31,8 +31,6 @@ def trigger_konami():
         messaging.send_message(json.dumps(notification))
         current_app.logger.info("[konami] easter egg triggered")
     except Exception as exc:  # pragma: no cover — logging defence
-        current_app.logger.error(
-            "[konami] broadcast failed: %s", sanitize_log_string(str(exc))
-        )
+        current_app.logger.error("[konami] broadcast failed: %s", sanitize_log_string(str(exc)))
         return _json_response({"error": "broadcast_failed"}, 500)
     return _json_response({"status": "ok"})

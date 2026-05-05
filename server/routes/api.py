@@ -246,6 +246,7 @@ def fire():
         # Recorded into a 200-entry ring buffer so the admin Extensions catalog
         # can light up status dots and the Fire Token page's IP list works.
         from ..services import fire_sources
+
         explicit_source = request.headers.get("X-Fire-Source", "")
         source_label = fire_sources.detect(user_agent, explicit_source)
         fire_sources.record(source_label, fingerprint, client_ip, user_agent)

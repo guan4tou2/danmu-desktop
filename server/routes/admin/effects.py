@@ -217,8 +217,8 @@ def fire_effect(name):
         return _json_response({"error": "duration_ms must be an integer"}, 400)
     duration_ms = max(200, min(8000, duration_ms))
 
-    from ...services.effects import get_effect, render_effects
     from ...services import messaging
+    from ...services.effects import get_effect, render_effects
 
     if get_effect(name) is None:
         return _json_response({"error": f"Effect '{name}' not found"}, 404)
@@ -240,6 +240,7 @@ def fire_effect(name):
     # Push to overlay queue (so overlay clients see it) AND broadcast to
     # admin WS so the live-console dashboard can echo a "fired ✓" toast.
     import json
+
     try:
         messaging.send_message(json.dumps(payload))
     except Exception as exc:
@@ -264,8 +265,13 @@ def fire_effect(name):
     )
     try:
         from ...services import audit_log
-        audit_log.append("effects", "fired", actor="admin",
-                         meta={"name": name, "target": target, "duration_ms": duration_ms})
+
+        audit_log.append(
+            "effects",
+            "fired",
+            actor="admin",
+            meta={"name": name, "target": target, "duration_ms": duration_ms},
+        )
     except Exception:
         pass
 

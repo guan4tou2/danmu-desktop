@@ -8,7 +8,6 @@ dedicated endpoints.
 """
 
 import re
-import uuid
 from pathlib import Path
 
 import magic
@@ -194,9 +193,7 @@ def upload_poll_image(poll_id: str, question_id: str):
     try:
         dest.write_bytes(file_bytes)
     except OSError as exc:
-        current_app.logger.error(
-            "Failed to save poll image: %s", sanitize_log_string(str(exc))
-        )
+        current_app.logger.error("Failed to save poll image: %s", sanitize_log_string(str(exc)))
         return _json_response({"error": "Failed to save image"}, 500)
 
     image_url = f"/polls/media/{poll_id}/{question_id}.{ext}"

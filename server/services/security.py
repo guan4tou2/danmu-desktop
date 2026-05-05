@@ -9,7 +9,7 @@ import urllib.parse
 import urllib.request
 from collections import defaultdict, deque
 from functools import wraps
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import bcrypt
 from flask import abort, current_app, make_response, request, session
@@ -214,9 +214,7 @@ def get_rate_limit_suggestion(
     }
 
 
-def get_rate_limit_bucket_history(
-    key_prefix: str, granularity_minutes: int = 60
-) -> List[int]:
+def get_rate_limit_bucket_history(key_prefix: str, granularity_minutes: int = 60) -> List[int]:
     """Return a 24-element list of allowed-request counts per granularity bucket.
 
     Aggregates the 5-min bucket history (288 buckets × 5min = 24h) up to the
@@ -508,18 +506,14 @@ def enforce_fire_rate_limits(fingerprint: str | None, is_admin: bool) -> None:
     if is_admin:
         limit = int(cfg.get("FIRE_ADMIN_RATE_LIMIT", 200))
         window = int(cfg.get("FIRE_ADMIN_RATE_WINDOW", 60))
-        if limit > 0 and not rate_limiter.allow(
-            f"fire_admin:{client_ip}", limit, window
-        ):
+        if limit > 0 and not rate_limiter.allow(f"fire_admin:{client_ip}", limit, window):
             abort(429, description="Too Many Requests")
         return
 
     # Per-IP ceiling (mirrors the pre-v4.9.1 decorator behaviour).
     ip_limit = int(cfg.get("FIRE_RATE_LIMIT", 20))
     ip_window = int(cfg.get("FIRE_RATE_WINDOW", 60))
-    if ip_limit > 0 and not rate_limiter.allow(
-        f"fire:{client_ip}", ip_limit, ip_window
-    ):
+    if ip_limit > 0 and not rate_limiter.allow(f"fire:{client_ip}", ip_limit, ip_window):
         abort(429, description="Too Many Requests")
 
     fp_limit = int(cfg.get("FIRE_FINGERPRINT_RATE_LIMIT", 0))

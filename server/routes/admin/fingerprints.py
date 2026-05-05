@@ -16,9 +16,7 @@ def list_fingerprints():
         limit = 100
     records = fingerprint_tracker.list_all(limit=limit)
     flagged = sum(1 for r in records if r.get("state") in ("flagged", "blocked"))
-    return _json_response(
-        {"records": records, "count": len(records), "flagged": flagged}
-    )
+    return _json_response({"records": records, "count": len(records), "flagged": flagged})
 
 
 @admin_bp.route("/fingerprints/reset", methods=["POST"])

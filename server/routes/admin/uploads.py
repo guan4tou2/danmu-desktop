@@ -6,7 +6,12 @@ import time
 import magic
 from flask import current_app, request, send_file
 
-from ...services.fonts import delete_uploaded_font, list_available_fonts, list_uploaded_fonts, save_uploaded_font, toggle_font
+from ...services.fonts import (
+    delete_uploaded_font,
+    list_available_fonts,
+    save_uploaded_font,
+    toggle_font,
+)
 from ...services.security import rate_limit
 from . import (
     _STICKER_ALLOWED_MIME,
@@ -80,7 +85,9 @@ def upload_logo():
         current_app.logger.error("Logo save failed: %s", sanitize_log_string(str(exc)))
         return _json_response({"error": "Failed to save logo"}, 500)
 
-    current_app.logger.info("Event logo uploaded (%s, %d bytes)", sanitize_log_string(ext), len(data))
+    current_app.logger.info(
+        "Event logo uploaded (%s, %d bytes)", sanitize_log_string(ext), len(data)
+    )
     return _json_response({"url": f"/admin/logo?v={int(time.time())}"})
 
 

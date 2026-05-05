@@ -43,19 +43,22 @@ def list_audit_events():
     events = events[:limit]
 
     supports_before_after = any(
-        (e.get("before") is not None) or (e.get("after") is not None)
-        for e in events
+        (e.get("before") is not None) or (e.get("after") is not None) for e in events
     )
     supports_platform = any(e.get("platform") for e in events)
-    return _json_response({
-        "events": events,
-        "count": len(events),
-        "sources": audit_log.sources(),
-        # Prototype gap contract: ACTION / ACTOR facets + before/after diff.
-        "contract": {
-            "actions": sorted({str(e.get("action", "")).upper() for e in events if e.get("action")}),
-            "actors": sorted({str(e.get("actor", "")) for e in events if e.get("actor")}),
-            "supports_before_after": supports_before_after,
-            "supports_platform": supports_platform,
-        },
-    })
+    return _json_response(
+        {
+            "events": events,
+            "count": len(events),
+            "sources": audit_log.sources(),
+            # Prototype gap contract: ACTION / ACTOR facets + before/after diff.
+            "contract": {
+                "actions": sorted(
+                    {str(e.get("action", "")).upper() for e in events if e.get("action")}
+                ),
+                "actors": sorted({str(e.get("actor", "")) for e in events if e.get("actor")}),
+                "supports_before_after": supports_before_after,
+                "supports_platform": supports_platform,
+            },
+        }
+    )

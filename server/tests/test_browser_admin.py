@@ -165,19 +165,21 @@ def _open_section(page, section_id: str):
     # v5 display-page consolidation — sec-* IDs no longer exist for the
     # 6 display rows. Wait for the container instead.
     DISPLAY_LEGACY_IDS = {
-        "sec-color", "sec-opacity", "sec-fontsize",
-        "sec-speed", "sec-fontfamily", "sec-layout",
+        "sec-color",
+        "sec-opacity",
+        "sec-fontsize",
+        "sec-speed",
+        "sec-fontfamily",
+        "sec-layout",
     }
     if section_id in DISPLAY_LEGACY_IDS:
         # v5.3 strict prototype mode: tab UI is placeholder-only; force the
         # internal state to fields so legacy display tests can still access
         # #admin-display-v2-page deterministically.
-        page.evaluate(
-            """() => {
+        page.evaluate("""() => {
                 document.body.dataset.viewerConfigTab = 'fields';
                 window.dispatchEvent(new Event('hashchange'));
-            }"""
-        )
+            }""")
         page.wait_for_timeout(150)
         page.wait_for_selector("#admin-display-v2-page", state="visible", timeout=5000)
         return
@@ -531,15 +533,11 @@ def test_poll_create_and_end(admin_page):
     # so admin-poll.js still wires up create/end/reset against the same IDs.
     # Playwright's fill()/click() can't interact with hidden ancestors in
     # strict mode, so reach in via evaluate() and dispatch the click.
-    admin_page.evaluate(
-        "document.getElementById('pollQuestion').value = 'Test poll question?';"
-    )
-    admin_page.evaluate(
-        """
+    admin_page.evaluate("document.getElementById('pollQuestion').value = 'Test poll question?';")
+    admin_page.evaluate("""
         const inputs = document.querySelectorAll('#pollOptionsContainer input[type=text]');
         if (inputs.length >= 2) { inputs[0].value = 'Option A'; inputs[1].value = 'Option B'; }
-        """
-    )
+        """)
 
     # Create poll
     admin_page.evaluate("document.getElementById('pollCreateBtn').click()")
@@ -552,19 +550,15 @@ def test_poll_create_and_end(admin_page):
         assert data.get("state") in ("active", "ended", "idle")
 
     # End / reset via evaluate() since the legacy form is `hidden`.
-    admin_page.evaluate(
-        """
+    admin_page.evaluate("""
         const end = document.getElementById('pollEndBtn');
         if (end) end.click();
-        """
-    )
+        """)
     admin_page.wait_for_timeout(500)
-    admin_page.evaluate(
-        """
+    admin_page.evaluate("""
         const r = document.getElementById('pollResetBtn');
         if (r) r.click();
-        """
-    )
+        """)
     admin_page.wait_for_timeout(500)
 
 
@@ -575,13 +569,13 @@ def test_admin_fullpage_empty_states(admin_page):
     assert admin_page.is_visible('[data-empty-kind="live-feed"]')
 
     _open_section(admin_page, "sec-polls")
-    admin_page.evaluate(
-        """
+    admin_page.evaluate("""
         const r = document.getElementById('pollResetBtn');
         if (r) r.click();
-        """
+        """)
+    admin_page.wait_for_selector(
+        '#pollStatusDisplay [data-empty-kind="poll"]', state="visible", timeout=5000
     )
-    admin_page.wait_for_selector('#pollStatusDisplay [data-empty-kind="poll"]', state="visible", timeout=5000)
     assert admin_page.is_visible('#pollStatusDisplay [data-empty-kind="poll"]')
 
     _open_section(admin_page, "sec-fonts")

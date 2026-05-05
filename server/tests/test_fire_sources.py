@@ -67,11 +67,13 @@ def test_recent_excludes_old_events():
     """Stale entries outside the window are dropped."""
     # Inject a 1h-old slido entry directly.
     with fire_sources._lock:
-        fire_sources._buffer.append({
-            "ts": time.time() - 3600,
-            "source": "slido",
-            "fingerprint": None,
-        })
+        fire_sources._buffer.append(
+            {
+                "ts": time.time() - 3600,
+                "source": "slido",
+                "fingerprint": None,
+            }
+        )
     fire_sources.record("web")  # within window
     out = fire_sources.recent_sources(window_sec=300)
     assert len(out) == 1
@@ -153,13 +155,15 @@ def test_recent_ips_caps_at_limit():
 
 def test_recent_ips_excludes_old_entries():
     with fire_sources._lock:
-        fire_sources._buffer.append({
-            "ts": time.time() - 7200,  # 2 hours ago
-            "source": "slido",
-            "fingerprint": None,
-            "ip": "stale.ip",
-            "ua": None,
-        })
+        fire_sources._buffer.append(
+            {
+                "ts": time.time() - 7200,  # 2 hours ago
+                "source": "slido",
+                "fingerprint": None,
+                "ip": "stale.ip",
+                "ua": None,
+            }
+        )
     fire_sources.record("slido", ip="fresh.ip")
     out = fire_sources.recent_ips(window_sec=3600)
     assert len(out) == 1

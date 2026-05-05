@@ -241,9 +241,7 @@ def test_forward_bypass_flag_skips_gate(app):
 
     broadcast_svc.set_mode("standby")
     ws_queue._queue.clear()
-    result = messaging.forward_to_ws_server(
-        {"text": "drained"}, bypass_broadcast_gate=True
-    )
+    result = messaging.forward_to_ws_server({"text": "drained"}, bypass_broadcast_gate=True)
     assert result["status"] == "sent"
     assert len(ws_queue._queue) == 1
     assert broadcast_svc.queue_size() == 0
@@ -254,8 +252,7 @@ def test_forward_bypass_flag_skips_gate(app):
 
 def test_fire_while_standby_queues_then_drains(app, client):
     """Full flow: switch to standby, /fire, queue grows; switch back, drains."""
-    from server.services import ws_queue
-    from server.services import ws_state
+    from server.services import ws_queue, ws_state
 
     # Pretend an overlay is connected so /fire doesn't 503 early.
     ws_state.update_ws_client_count(1)
@@ -312,6 +309,7 @@ def test_broadcast_send_requires_csrf(client):
 
 def test_broadcast_send_writes_to_overlay_queue(client):
     from server.services import ws_queue
+
     ws_queue._queue.clear()
     token = _login_csrf(client)
     res = client.post(
@@ -333,14 +331,17 @@ def test_broadcast_send_writes_to_overlay_queue(client):
 def test_broadcast_send_bypasses_standby(client):
     """Admin push must hit overlay even when broadcast is in STANDBY."""
     from server.services import ws_queue
+
     ws_queue._queue.clear()
     token = _login_csrf(client)
     # Go standby
-    client.post("/admin/broadcast/toggle", json={"mode": "standby"},
-                headers={"X-CSRF-Token": token})
+    client.post(
+        "/admin/broadcast/toggle", json={"mode": "standby"}, headers={"X-CSRF-Token": token}
+    )
     # Admin send — should still hit overlay
-    res = client.post("/admin/broadcast/send", json={"text": "operator speaking"},
-                      headers={"X-CSRF-Token": token})
+    res = client.post(
+        "/admin/broadcast/send", json={"text": "operator speaking"}, headers={"X-CSRF-Token": token}
+    )
     assert res.status_code == 200
     assert len(ws_queue._queue) == 1
     # And NOT enqueued in broadcast pending (which is for audience traffic)
@@ -349,27 +350,31 @@ def test_broadcast_send_bypasses_standby(client):
 
 def test_broadcast_send_rejects_empty_text(client):
     token = _login_csrf(client)
-    res = client.post("/admin/broadcast/send", json={"text": "   "},
-                      headers={"X-CSRF-Token": token})
+    res = client.post(
+        "/admin/broadcast/send", json={"text": "   "}, headers={"X-CSRF-Token": token}
+    )
     assert res.status_code == 400
 
 
 def test_broadcast_send_rejects_overlong_text(client):
     token = _login_csrf(client)
-    res = client.post("/admin/broadcast/send", json={"text": "x" * 501},
-                      headers={"X-CSRF-Token": token})
+    res = client.post(
+        "/admin/broadcast/send", json={"text": "x" * 501}, headers={"X-CSRF-Token": token}
+    )
     assert res.status_code == 400
 
 
 def test_broadcast_send_rejects_control_chars(client):
     token = _login_csrf(client)
-    res = client.post("/admin/broadcast/send", json={"text": "evil\x07"},
-                      headers={"X-CSRF-Token": token})
+    res = client.post(
+        "/admin/broadcast/send", json={"text": "evil\x07"}, headers={"X-CSRF-Token": token}
+    )
     assert res.status_code == 400
 
 
 def test_broadcast_send_passes_through_style_params(client):
     from server.services import ws_queue
+
     ws_queue._queue.clear()
     token = _login_csrf(client)
     res = client.post(

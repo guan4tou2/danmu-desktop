@@ -924,6 +924,7 @@ def test_fire_requires_csrf(client):
 def test_fire_writes_effect_pulse_to_overlay(client):
     """Successful fire pushes an `effect_pulse` payload into the overlay queue."""
     from server.services import ws_queue
+
     ws_queue._queue.clear()
     token = csrf_token(client)
     resp = client.post(
@@ -945,6 +946,7 @@ def test_fire_writes_effect_pulse_to_overlay(client):
 
 def test_fire_clamps_duration(client):
     from server.services import ws_queue
+
     ws_queue._queue.clear()
     token = csrf_token(client)
     # 99999 should clamp to 8000

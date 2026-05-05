@@ -84,9 +84,9 @@ _FONT_CATALOG = [
 # NotoSansTC (bundled OTF) is always the server default; catalog fonts are
 # ON by default. System fonts (Arial/Verdana) are OFF by default but
 # the admin can toggle them on.
-_DEFAULT_ENABLED = frozenset(
-    e["name"] for e in _FONT_CATALOG if e["type"] in ("catalog",)
-) | {"NotoSansTC"}
+_DEFAULT_ENABLED = frozenset(e["name"] for e in _FONT_CATALOG if e["type"] in ("catalog",)) | {
+    "NotoSansTC"
+}
 
 _SYSTEM_NAMES = frozenset(e["name"] for e in _FONT_CATALOG if e["type"] == "system")
 
@@ -95,6 +95,7 @@ def _get_font_allowlist():
     """Return the current FontFamily allowlist from SettingsStore (slot 1)."""
     try:
         from ..managers.settings import settings_store
+
         return set(settings_store.get_allowlist("FontFamily"))
     except Exception:
         return set()
@@ -231,6 +232,7 @@ def list_available_fonts(include_disabled: bool = False):
 
     try:
         from ..managers.settings import settings_store
+
         opts = settings_store.get_options()
         default_name = opts.get("FontFamily", [None, None, None, "NotoSansTC"])[3] or "NotoSansTC"
     except Exception:
@@ -285,9 +287,9 @@ def list_available_fonts(include_disabled: bool = False):
                         "type": "default" if stem == default_name else "uploaded",
                         "foundry": "Uploaded",
                         "weight": "—",
-                        "sizeLabel": _fmt_size(os.path.getsize(
-                            os.path.join(state.USER_FONTS_DIR, filename)
-                        )),
+                        "sizeLabel": _fmt_size(
+                            os.path.getsize(os.path.join(state.USER_FONTS_DIR, filename))
+                        ),
                         "format": "TTF",
                         "status": status,
                         "expiresAt": issued_at + ttl,

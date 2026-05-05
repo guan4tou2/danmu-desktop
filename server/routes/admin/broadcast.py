@@ -59,6 +59,7 @@ def broadcast_status():
     # Attach session status so the broadcast page can show session-aware UI.
     try:
         from ...services import session_service
+
         state["session"] = session_service.get_state()
     except Exception:
         state["session"] = None
@@ -92,6 +93,7 @@ def broadcast_toggle():
     )
     try:
         from ...services import audit_log
+
         audit_log.append(
             "broadcast",
             "mode_changed",
@@ -106,9 +108,7 @@ def broadcast_toggle():
         items = broadcast_svc.drain_pending()
         if items:
             _drain_queue_async(items)
-            current_app.logger.info(
-                "Broadcast drain scheduled: %d queued messages", len(items)
-            )
+            current_app.logger.info("Broadcast drain scheduled: %d queued messages", len(items))
 
     return _json_response(new_state)
 
@@ -171,8 +171,13 @@ def broadcast_send():
     )
     try:
         from ...services import audit_log
-        audit_log.append("broadcast", "admin_sent", actor="admin",
-                         meta={"text_preview": text[:120], "len": len(text)})
+
+        audit_log.append(
+            "broadcast",
+            "admin_sent",
+            actor="admin",
+            meta={"text_preview": text[:120], "len": len(text)},
+        )
     except Exception:
         pass
 

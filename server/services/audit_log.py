@@ -29,7 +29,6 @@ Usage:
 
 from __future__ import annotations
 
-import errno
 import json
 import logging
 import os
@@ -44,7 +43,7 @@ logger = logging.getLogger(__name__)
 _LOG_FILE = Path(__file__).parent.parent / "runtime" / "audit.log"
 _BACKUP_FILE = Path(__file__).parent.parent / "runtime" / "audit.log.1"
 _MAX_FILE_BYTES = 2 * 1024 * 1024  # 2 MiB before rotating to .1
-_RING_SIZE = 500                    # in-memory cache of last N events for fast list
+_RING_SIZE = 500  # in-memory cache of last N events for fast list
 
 _lock = threading.RLock()
 _ring: Deque[Dict[str, Any]] = deque(maxlen=_RING_SIZE)
@@ -117,13 +116,15 @@ def _append_to_disk(entry: Dict[str, Any]) -> None:
         if not _write_failure_logged:
             logger.warning(
                 "audit_log: cannot persist (degrading to in-memory): %s (errno=%s)",
-                exc, getattr(exc, "errno", None),
+                exc,
+                getattr(exc, "errno", None),
             )
             _write_failure_logged = True
 
 
-def append(source: str, kind: str, *, actor: Optional[str] = None,
-           meta: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def append(
+    source: str, kind: str, *, actor: Optional[str] = None, meta: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
     """Record a new audit event. Returns the stored entry.
 
     ``source``  identifies the subsystem (fire_token, auth, broadcast, …).

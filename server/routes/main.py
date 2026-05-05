@@ -92,15 +92,19 @@ def login():
         session["csrf_token"] = issue_csrf_token()
         try:
             from ..services import audit_log
-            audit_log.append("auth", "login", actor="admin",
-                             meta={"ip": request.remote_addr or "?"})
+
+            audit_log.append(
+                "auth", "login", actor="admin", meta={"ip": request.remote_addr or "?"}
+            )
         except Exception:
             pass
         return redirect(url_for("admin_bp.admin"))
     try:
         from ..services import audit_log
-        audit_log.append("auth", "login_failed", actor=None,
-                         meta={"ip": request.remote_addr or "?"})
+
+        audit_log.append(
+            "auth", "login_failed", actor=None, meta={"ip": request.remote_addr or "?"}
+        )
     except Exception:
         pass
     flash("wrong password!")
@@ -112,8 +116,8 @@ def login():
 def logout():
     try:
         from ..services import audit_log
-        audit_log.append("auth", "logout", actor="admin",
-                         meta={"ip": request.remote_addr or "?"})
+
+        audit_log.append("auth", "logout", actor="admin", meta={"ip": request.remote_addr or "?"})
     except Exception:
         pass
     session.clear()
@@ -160,8 +164,10 @@ def change_password():
         current_app.logger.info("Admin password changed successfully")
         try:
             from ..services import audit_log
-            audit_log.append("auth", "password_changed", actor="admin",
-                             meta={"ip": request.remote_addr or "?"})
+
+            audit_log.append(
+                "auth", "password_changed", actor="admin", meta={"ip": request.remote_addr or "?"}
+            )
         except Exception:
             pass
         return _json_response({"message": "Password changed successfully"})

@@ -13,12 +13,10 @@ Regression:
         /admin/session/archive/<id> must resolve live + archived sessions
         so admin-session-detail.js fallback works.
 """
+
 import json
 
-import pytest
-
 from server.services import session_service
-
 
 # ─── helpers ─────────────────────────────────────────────────────────────────
 

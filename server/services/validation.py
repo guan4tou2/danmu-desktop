@@ -198,9 +198,7 @@ class SettingUpdateSchema(Schema):
         key = data.get("type")
         index = data.get("index")
         if index != 1 or key not in _ALLOWLIST_KEYS:
-            raise ValidationError(
-                {"value": "List value only allowed at index=1 for pick-set keys"}
-            )
+            raise ValidationError({"value": "List value only allowed at index=1 for pick-set keys"})
         if len(value) > 64:
             raise ValidationError({"value": "Allowlist entries exceed maximum count (64)"})
         for item in value:
