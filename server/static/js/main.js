@@ -587,12 +587,13 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       elements.pollQuestion.textContent = "目前沒有進行中的投票";
     }
+    const optionKeys = poll.options.map((opt) => opt.key).filter(Boolean);
     elements.pollMeta.textContent =
       poll.state === "active"
-        ? `總票數 ${poll.totalVotes}`
+        ? (optionKeys.length ? `選項 ${optionKeys.join(" / ")}` : "投票進行中")
         : poll.state === "ended"
-          ? "投票已結束，可切回 Fire 模式送出一般訊息"
-          : "請先切回 Fire 模式送出訊息";
+          ? "投票已結束"
+          : "等待主持人開啟投票";
 
     elements.pollOptions.innerHTML = "";
     if (!poll.options.length) return;
@@ -614,13 +615,8 @@ document.addEventListener("DOMContentLoaded", () => {
       text.className = "viewer-poll-option-text";
       text.textContent = opt.text;
 
-      const stat = document.createElement("span");
-      stat.className = "viewer-poll-option-stat";
-      stat.textContent = `${opt.count} (${opt.percentage}%)`;
-
       row.appendChild(key);
       row.appendChild(text);
-      row.appendChild(stat);
       button.appendChild(row);
 
       button.addEventListener("click", () => {

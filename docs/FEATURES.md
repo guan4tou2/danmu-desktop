@@ -1,12 +1,12 @@
 # Danmu Fire — Feature Specification
 
-**Status:** Canonical feature inventory (2026-04-25 PM, v5.0.0 + 2nd-wave retrofit)
+**Status:** Canonical feature inventory (2026-05-05, v5.0.0 actual admin IA)
 **Audience:** designers, PMs, Claude Design agents
 **Pairs with:** [DESIGN.md](../DESIGN.md) (design tokens), [CLAUDE.md](../CLAUDE.md) (project rules)
 
 ---
 
-## What's new in 5.0.0 + 2nd-wave (2026-04-25 PM)
+## What's new in 5.0.0 + 2nd-wave (synced 2026-05-05)
 
 Quick reference. Full notes in [CHANGELOG.md](../CHANGELOG.md).
 
@@ -18,7 +18,10 @@ Quick reference. Full notes in [CHANGELOG.md](../CHANGELOG.md).
 - **Rate Limits live-apply** — `POST /admin/ratelimit/apply` applies new caps without restart.
 - **⌘K command palette** — keyboard navigation between admin routes.
 - **Edge-state pages** — viewer offline, overlay connecting, admin lockout (4 P2 states retrofitted).
-- **Three new admin routes** — dedicated nav slugs for Replay, Security, Backup.
+- **P0-0 admin IA consolidation** — sidebar is 10 work buckets plus a standalone
+  Security row. Legacy route hashes alias into tabs, the System accordion, or
+  deeplink-only pages. Dedicated mobile-admin was removed; `/admin/` uses its
+  normal responsive layout on phones.
 - **`admin.js` modularised** — split into login + dashboard modules.
 
 ### Second wave (2026-04-25 PM, post-`acca401`)
@@ -46,6 +49,29 @@ Designers keep inventing features that already exist under different names, or p
 Product boundaries:
 - **Danmu Fire = overlay controller for livestreams.** A streamer sends text, the text flies across an OBS Browser Source overlay. That is the job.
 - **Not** a chat app, **not** a full CMS, **not** a streaming platform, **not** a payment tool. Do not design toward those.
+
+### Product axes (v5.0.0 polestar — 2026-05-04)
+
+| Axis | What it means | Primary surface |
+|---|---|---|
+| **發送 / Send** | Viewer types + fires a danmu in the shortest possible path | `server/templates/index.html` viewer page |
+| **顯示 / Display** | Overlay renders danmu on stream / projector with stable WS connection | OBS Browser Source `/overlay` + Electron overlay child window |
+| **效果 / Effects** | `.dme` keyframe bundles, themes, animations applied per-danmu | `server/effects/*.dme` + admin Effects page |
+| **素材 / Assets** | Fonts, stickers, sounds, logos, theme packs | admin Assets page (集中管理) + `server/static/{stickers,emojis,sounds}` + `server/user_fonts/` |
+
+Secondary (don't dilute the four axes above):
+
+| Secondary | When it matters |
+|---|---|
+| **Polls** | Mid-stream interactive layer; viewer votes via A/B/C danmu, **never sees counts or percentages** |
+| **Moderation** | Blacklist + filter rules + rate limits + fingerprint observability |
+| **History / Audit / Notifications** | Post-event review; not on the live operating path |
+
+Roles re-stated for v5.0.0:
+
+- `server/viewer` = 觀眾發彈幕入口（only that）
+- `server/admin` = 主播控制台（effects / assets / display 為主，polls / moderation 為輔）
+- `client (Electron)` = 顯示端 (Overlay player) — connection + screen pick + start/stop/clear + status, **不是發彈幕入口、不是設定中心**
 
 ---
 
@@ -148,7 +174,7 @@ Theme bundle flags (`palette / font / layout / bg / effects`) drive the admin ba
 | Capability | Routes | Scenario |
 |---|---|---|
 | Scheduler | `/admin/scheduler/{list,create,pause,resume,cancel}` | Timed repeating danmu (e.g. "訂閱頻道!" every 5 min); max 20 jobs |
-| Polls | `/admin/poll/{create,start,advance,status,end,reset}` + `POST /admin/poll/<id>/upload-image/<qid>` + public `GET /polls/media/<path>` | Multi-question session: each question has 2–6 options (A/B/C/D…) + optional image (≤2MB, JPG/PNG/WebP). Live vote counts broadcast to overlays. **Viewer sees no percentages — admin-only metric.** Legacy single-question shape still supported. |
+| Polls | `/admin/poll/{create,start,advance,status,end,reset}` + `POST /admin/poll/<id>/upload-image/<qid>` + public `GET /polls/media/<path>` | Multi-question session: each question has 2–6 options (A/B/C/D…) + optional image (≤2MB, JPG/PNG/WebP). Live vote counts broadcast to overlays and admin. **Viewer poll tab shows only the question and option keys/text; counts and percentages are admin-only.** Legacy single-question shape still supported. |
 | Widgets | `/admin/widgets/{list,create,update,delete,score,clear}` | Overlay widgets: scoreboard / ticker / label with position presets |
 
 ### 6. Extensions
@@ -168,8 +194,8 @@ Designers should show these controls on the admin UI but **never invent new ones
 | Login | `POST /login`, rate-limited 5/5min | `ADMIN_PASSWORD` or `ADMIN_PASSWORD_HASHED` or `.admin_password.hash` |
 | Change password | `POST /admin/change_password` | Writes bcrypt to `.admin_password.hash` |
 | CSRF | Token in session, `<meta name="csrf-token">`, `X-CSRF-Token` header | `SESSION_COOKIE_SAMESITE=Strict` |
-| Rate-limit toggles (UI) | `#/ratelimit` route, `POST /admin/ratelimit/apply` | Three tiers: fire / admin / api; in-memory or Redis; live-apply without restart |
-| WebSocket auth | `/admin/ws-auth[/rotate]` | Bearer token stored in `runtime/ws_auth.json` |
+| Rate-limit toggles (UI) | `#/moderation/ratelimit`, `POST /admin/ratelimit/apply` | Three tiers: fire / admin / api; in-memory or Redis; live-apply without restart |
+| WebSocket auth | `#/security`, `/admin/ws-auth[/rotate]` | Bearer token stored in `runtime/ws_auth.json` |
 | Trusted Hosts + ProxyFix | `TRUSTED_HOSTS`, `TRUST_X_FORWARDED_FOR` | Server-level config, not admin UI |
 | CSP + HSTS | `app.py` | Nonce per request; HSTS opt-in for prod |
 
@@ -186,31 +212,40 @@ Designers should show these controls on the admin UI but **never invent new ones
 
 ## Server admin route map → UI pages
 
-The v2 (design-v2-retrofit) admin is split into these routes. The left sidebar lists them in this order. **Do not add new routes.** Existing sections should map to these buckets:
+The admin IA is the locked P0-0 shape: 10 primary work buckets plus one
+standalone Security row. Security intentionally stays outside the System
+accordion because password / WS-token / audit work is a high-frequency operator
+entry. **Do not add new top-level rows.** Existing sections should map to these
+buckets:
 
 | Route hash | Title (ZH) | Owns sections |
 |---|---|---|
-| `#/dashboard` | 控制台 | KPI tiles, route launcher, Nickname / active Theme summary |
-| `#/messages` | 訊息紀錄 | Live feed, search |
-| `#/history` | 時間軸匯出 | History table, hourly chart, top-text chart, export, clear |
-| `#/replay` | 歷史重播 | Replay start / pause / resume / stop with speed multiplier |
-| `#/polls` | 投票 | Poll create / status / end |
-| `#/widgets` | Overlay Widgets | Widget CRUD + scoreboard updates |
-| `#/themes` | 風格主題包 | Theme selector + bundle flags + reload |
-| `#/display` | 顯示設定 | Viewer-facing defaults: Color, Opacity, FontSize, Speed, FontFamily, Layout |
-| `#/viewer-theme` | 觀眾頁主題 | `/fire` viewer page appearance |
-| `#/assets` | 素材庫 | Emojis, stickers, sounds upload + rules |
-| `#/moderation` | 敏感字 & 黑名單 | Legacy blacklist + filter engine rules + test |
-| `#/ratelimit` | 速率限制 | Fire / admin / api rate caps + backend toggle + live-apply |
-| `#/effects` | 效果庫 .dme | Effect grid + YAML editor + upload + live preview |
-| `#/plugins` | 伺服器插件 | Plugin list + enable/disable/reload |
-| `#/fonts` | 字型管理 | Upload + list + delete + live preview |
-| `#/system` | 系統 & 指紋 | System overview + scheduler + webhooks + fingerprints |
-| `#/security` | 安全 | Password change + WS auth token + audit |
-| `#/backup` | 備份 & 匯出 | Settings export / import + danger zone |
-| `#/broadcast` | 廣播 | LIVE / STANDBY mode + uptime / message count + END confirmation |
+| `#/dashboard` | 控制台 | Live console, KPI strip, quick actions, active poll summary |
+| `#/polls` | 投票 | Poll builder, active session, results, deeplink to poll deep-dive |
+| `#/effects` | 效果 | Effect library + `.dme` management / preview |
+| `#/moderation` | 審核 | Tabs: blacklist, filters, rate limits, fingerprints |
+| `#/widgets` | 小工具 | Overlay widgets: scoreboard, ticker, label |
+| `#/appearance` | 外觀 | Tabs: themes, viewer config, fonts |
+| `#/assets` | 素材 | Unified upload entry + emojis, stickers, sounds |
+| `#/automation` | 自動化 | Tabs: scheduler, webhooks, plugins |
+| `#/history` | 歷史 | Tabs: sessions, search, audit, replay, audience |
+| `#/system` | 系統 | Accordion: overview, Fire Token, API tokens, backup, integrations, WCAG, about |
+| `#/security` | 安全 | Standalone row: password change, WS auth token, current session, audit preview |
 
-Section IDs (`sec-…`) are stable identifiers. See `ADMIN_ROUTES` in [admin.js](../server/static/js/admin.js).
+Legacy hashes still resolve where useful: `#/ratelimit` → `#/moderation/ratelimit`,
+`#/themes` / `#/viewer-config` / `#/fonts` → `#/appearance/...`,
+`#/scheduler` / `#/webhooks` / `#/plugins` → `#/automation/...`,
+`#/sessions` / `#/search` / `#/audit` / `#/audience` → `#/history/...`, and
+`#/firetoken` / `#/api-tokens` / `#/backup` / `#/integrations` / `#/wcag` /
+`#/about` → `#/system/...`. `#/mobile` is deprecated and resolves to
+`#/system/system`; the dedicated mobile-admin page was removed in favor of the
+regular responsive admin shell.
+
+Deeplink-only routes remain available for workflow overlays or focused pages:
+`#/setup`, `#/poll-deepdive`, `#/broadcast`, `#/notifications`,
+`#/session-detail`, and `#/onboarding-tour`. Section IDs
+(`sec-...`) are stable identifiers. See `ADMIN_ROUTES` in
+[admin.js](../server/static/js/admin.js).
 
 ---
 
@@ -218,50 +253,75 @@ Section IDs (`sec-…`) are stable identifiers. See `ADMIN_ROUTES` in [admin.js]
 
 The Electron app at [danmu-desktop/](../danmu-desktop/) has two windows. Treat them as separate products with one shared store.
 
-### 1. Main window (`index.html`) — controller role
+### 1. Main window (`index.html`) — display controller (v5.0.0+)
 
-Streamer-side remote control. Three groups of controls:
+> **Re-positioned in v5.0.0:** the desktop client is the **顯示端 / Overlay
+> player**, not a remote control panel. Display tuning (opacity / speed /
+> font / color / stroke / shadow / track count) lives in **`/admin/`**,
+> not here. The client has four sidebar tabs total.
 
-**Connection**
-- Server host + port input
-- WebSocket auth token (optional, paste-only)
+**Connection** (sidebar `連線 / CONNECTION`, default tab on first run)
+- Server host (IP or hostname) + port input
+- WebSocket auth token (optional, paste-only — admin generates via
+  `/admin/` → WebSocket token auth section)
+- Test connection button — opens `wss://${host}:${port}/ws` and reports
+  pass/fail (matches the actual runtime URL since v5.0.0)
+- Recent servers list (persists last successful host)
+- Connection status badge (idle / connecting / connected / disconnected
+  / failed) + reconnect / latency / uptime metrics
+- TLS chip indicating `wss://` (always — v5.0.0 unified)
+
+**Overlay** (sidebar `Overlay / DISPLAY`)
 - Display target dropdown (populated from `API.getDisplays()`)
-- Sync multi-display checkbox
-- Start / Stop button → spawns the overlay child window
-- Connection status badge (idle / connecting / connected / disconnected / failed)
+- Sync multi-display checkbox (spawn one overlay per display)
+- Three primary actions:
+  - `▶ 開始接收` — spawns the overlay child window + starts WS
+  - `■ 停止接收` — closes the overlay + WS (was `⏸ 暫停`; renamed in
+    v5.0.0 because the action is a full stop, not a pause)
+  - `⌫ 清空畫面` — sends `overlay-clear` IPC to every overlay window
+    so they drop currently-rendering danmu **without disconnecting WS**
+- Note panel reminding the user that danmu styling (font / color / size /
+  opacity / speed / layout / effects) lives in the viewer + admin, not
+  here
 
-**Display tuning** (persisted as `danmu-display-settings` in localStorage)
-- Opacity slider 10–100%
-- Speed slider 1–10
-- Font size slider 20–100 px
-- Color picker (hex)
-- Text stroke toggle + width 1–5 px + color
-- Text shadow toggle + blur 1–10 px
-- Display-area top 0–80% + height 20–100% (masks where danmu can appear)
-- Max tracks 0–20 (0 = unlimited)
-- Collision detection toggle
+**Update** (sidebar `更新 / UPDATES`)
+- Current version + last-check timestamp
+- "Check now" button (manual)
+- Auto-download toggle + Beta channel opt-in
+- Recent CHANGELOG entries (top 3) + link to full changelog
+- Restart-to-install action when an update is staged
 
-**Other**
-- Test danmu input + "Send" button
-- Batch test (send N danmu with one click, 1–20)
-- Startup animation: enable / type (LINK START / 領域展開 / custom text)
-- Language selector (en / zh / ja / ko)
-- Export / import settings (JSON file)
-- Toast notifications (ephemeral)
-- Particle canvas background (decorative)
+**About** (sidebar `關於 / ABOUT`)
+- Version, platform, GitHub link, license
+
+**Persisted state** (localStorage `danmu-settings`)
+- `host`, `port`, `displayIndex`, `syncMultiDisplay`, `wsToken`
+- (No `useWss` field since v5.0.0 — wss is the only path.)
+- (No display-tuning fields — those are server-side admin settings.)
+
+**Removed in v5.0.0** (was in the old controller; now lives in admin or
+was deprecated):
+- ✗ Opacity / speed / font-size / color / stroke / shadow sliders
+- ✗ Display-area top / height masks, max tracks, collision detection
+- ✗ Test danmu input, batch test
+- ✗ Startup animation (LINK START / 領域展開 / custom) UI controls
+- ✗ Export / import settings buttons (will likely return as Advanced)
+- ✗ "Use WSS" checkbox (always wss now)
 
 ### 2. Overlay window (`child.html`) — display role
 
 Render-only. No user input. Spawned by the main window.
 
 - Frameless, transparent, click-through
-- Positioned to match selected display bounds (fullscreen or masked area)
-- Receives danmu over WS (port 4001 by default)
+- Positioned to match selected display bounds (fullscreen)
+- Receives danmu over **`wss://${host}:${port}/ws`** (v5.0.0 unified — `--profile https` terminates TLS at nginx, port 4001 exposed)
+- Self-signed cert auto-trusted via `trusted-wss-hosts` registry (scoped to current `host:port` only — never global)
 - Track manager assigns each danmu to a collision-aware lane
-- Applies display-area mask (top + height %)
+- Applies admin-side display-area mask (top + height %) when configured server-side
 - HUD label bottom-right shows active danmu count
 - Heartbeat every 15s; reconnects with exponential backoff 3–30s, max 10 attempts
-- Plays startup animation (LINK START / 領域展開 / custom) once per spawn
+- Listens for `overlay-clear` IPC from main → drops `.danmu / .danmu-wrapper / h1.danmu` nodes without touching WS
+- Plays startup animation (LINK START / 領域展開 / custom) once per spawn — settings come from `loadStartupAnimationSettings()` localStorage default; UI controls were removed from main window in v5.0.0
 - Konami code (↑↑↓↓←→←→BA) on main window triggers an effect on all children
 
 ### 3. Main process + tray
@@ -281,11 +341,11 @@ Electron-builder produces: Windows NSIS + portable, macOS .dmg, Linux AppImage +
 
 These are the canonical flows. Designs should cover all of them, and **only** these.
 
-### Scenario A — Streamer preparing to go live
-1. Launch desktop app → enter server host + port → pick display → Start
-2. Open overlay in OBS Browser Source (or use the Electron overlay)
-3. Open `/admin/` → pick theme → adjust default Color / Speed / FontSize → activate effects
-4. Test with "Send test danmu"
+### Scenario A — Streamer preparing to go live (v5.0.0)
+1. Launch desktop app → first-run gate prompts host/port → "Test connection" runs `wss://${host}:${port}/ws` against the configured server
+2. Pick display in the Overlay tab → click `▶ 開始接收` → overlay child window spawns on chosen display
+3. Open `/admin/` (browser, not in client) → pick theme → adjust default Color / Speed / FontSize → activate effects
+4. Send a real danmu from `/` (or another viewer) to confirm rendering. **Test danmu UI no longer in client — that moved to admin.**
 
 ### Scenario B — Viewer fires a danmu
 1. Visit `/`
@@ -295,16 +355,16 @@ These are the canonical flows. Designs should cover all of them, and **only** th
 ### Scenario C — Admin handles spam
 1. Spot bad danmu in `#/messages` live feed
 2. Click block → adds fingerprint to filter engine OR adds keyword to blacklist
-3. Optional: open `#/system` → Fingerprints → see rate / block count / state chip
+3. Optional: open `#/moderation/fingerprints` → see rate / block count / state chip
 
 ### Scenario D — Mid-stream poll
 1. `#/polls` → create question + 2–6 options (A/B/C/D…)
 2. Overlays broadcast poll UI (widget)
-3. Viewers vote via danmu text matching option label; **viewer never sees %** (only counts or unlabelled bars)
+3. Viewers vote via danmu text matching option label; **viewer never sees counts or percentages**
 4. Admin ends poll → results pushed to overlay
 
 ### Scenario E — Scheduled promo
-1. `#/system` → Scheduler → create job ("訂閱頻道!" every 300s)
+1. `#/automation/scheduler` → create job ("訂閱頻道!" every 300s)
 2. Server fires the message on interval while stream is live
 3. Pause / resume / cancel as needed
 
@@ -314,7 +374,7 @@ These are the canonical flows. Designs should cover all of them, and **only** th
 3. Server verifies signature → fires danmu
 
 ### Scenario G — Power-off
-1. Admin `#/system` → END SESSION → clears history
+1. Admin `#/system/backup` → END SESSION → clears history
 2. Streamer closes desktop app → tray quit → child windows auto-close
 
 ---
@@ -370,8 +430,8 @@ If a designer wants one of these, it is a **new product scope** and needs explic
 
 1. **Before designing a new screen**: find the matching capability above. If not found, stop and discuss scope.
 2. **When proposing a rename**: use the canonical term in the left column of the tables. Do not rename `Effects` to "Animations" etc.
-3. **When adding a section to a mockup**: it must map to one of the 18 admin routes listed above. Do not invent a new one.
+3. **When adding a section to a mockup**: it must map to one of the 10 admin buckets, the standalone Security row, or one of the deeplink-only routes listed above. Do not invent a new one.
 4. **When showing flows**: use the 7 scenarios above as the storyboard backbone.
 5. **When in doubt about what persists**: check the persistence map. Volatile state should not have a "Reset" button unless the data visibly accumulates (fingerprints, history, widgets).
 
-Last sync: 2026-04-25 PM against branch `claude/design-v2-retrofit` HEAD `609108d`, server `APP_VERSION = 5.0.0`.
+Last sync: 2026-05-05 against current `danmu-desktop` workspace, server `APP_VERSION = 5.0.0`.
