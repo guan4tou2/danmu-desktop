@@ -244,28 +244,28 @@
               <div class="client-conn-kicker">SERVER</div>
               <div class="client-conn-url" data-client-server-url>ws://—</div>
               <div class="client-conn-meta">
-                <span>延遲 <b data-client-latency>—</b></span>
+                <span><span data-i18n="connStatLatency">延遲</span> <b data-client-latency>—</b></span>
                 <span class="sep">·</span>
-                <span>重連 <b data-client-reconnect>0</b> 次</span>
+                <span><span data-i18n="connStatReconnect">重連</span> <b data-client-reconnect>0</b> <span data-i18n="connStatReconnectUnit">次</span></span>
                 <span class="sep">·</span>
-                <span>上線 <b data-client-uptime>—</b></span>
+                <span><span data-i18n="connStatUptime">上線</span> <b data-client-uptime>—</b></span>
               </div>
               <div class="client-conn-actions">
-                <button type="button" class="client-mini-btn" data-client-action="reconnect">↻ 重連</button>
-                <button type="button" class="client-mini-btn" data-client-action="edit-conn">⚙ 更改</button>
+                <button type="button" class="client-mini-btn" data-client-action="reconnect">↻ <span data-i18n="connBtnReconnect">重連</span></button>
+                <button type="button" class="client-mini-btn" data-client-action="edit-conn">⚙ <span data-i18n="connBtnEdit">更改</span></button>
               </div>
             </div>
 
             <div class="client-conn-card">
               <div class="client-conn-kicker">CERTIFICATE</div>
-              <div class="client-conn-url" data-client-tls-title>本機 · 無 TLS</div>
-              <div class="client-conn-note" data-client-tls-note>區網連線不需 TLS · 公網建議 wss://</div>
+              <div class="client-conn-url" data-client-tls-title data-i18n="connTlsTitle">本機 · 無 TLS</div>
+              <div class="client-conn-note" data-client-tls-note data-i18n="connTlsNote">區網連線不需 TLS · 公網建議 wss://</div>
             </div>
           </div>
 
           <!-- MESSAGE FLOW sparkline -->
           <div class="client-conn-card client-conn-flow">
-            <div class="client-conn-kicker">MESSAGE FLOW · 最近 30 秒</div>
+            <div class="client-conn-kicker"><span data-i18n="connFlowKicker">MESSAGE FLOW · 最近 30 秒</span></div>
             <svg
               class="client-conn-sparkline"
               viewBox="0 0 560 56"
@@ -277,9 +277,9 @@
               <path class="stroke" d="" />
             </svg>
             <div class="client-conn-flow-stats">
-              <span>RX · <b data-client-rx>—</b></span>
-              <span>RATE · <b class="is-accent" data-client-rate>—/s</b></span>
-              <span>PEAK · <b data-client-peak>—/s</b></span>
+              <span><span data-i18n="connFlowRx">RX</span> · <b data-client-rx>—</b></span>
+              <span><span data-i18n="connFlowRate">RATE</span> · <b class="is-accent" data-client-rate>—/s</b></span>
+              <span><span data-i18n="connFlowPeak">PEAK</span> · <b data-client-peak>—/s</b></span>
             </div>
           </div>
 
@@ -288,8 +288,8 @@
                Keeps legacy input IDs so renderer-modules bind correctly. -->
           <div class="client-conn-edit" data-client-conn-edit hidden>
             <div class="client-conn-edit-head">
-              <span class="client-conn-kicker">CONNECTION · EDIT</span>
-              <button type="button" class="client-mini-btn" data-client-action="close-conn-edit">× 關閉</button>
+              <span class="client-conn-kicker"><span data-i18n="connEditKicker">CONNECTION · EDIT</span></span>
+              <button type="button" class="client-mini-btn" data-client-action="close-conn-edit">× <span data-i18n="connBtnClose">關閉</span></button>
             </div>
             <div class="client-conn-edit-grid">
               <label class="client-conn-edit-field">
@@ -354,7 +354,7 @@
           <!-- Display picker (prototype ScreenChip grid) -->
           <div class="client-overlay-card client-overlay-screens">
             <div class="head">
-              <span class="label">顯示於</span>
+              <span class="label" data-i18n="overlayDisplayLabel">顯示於</span>
               <span class="kicker" data-client-screen-count>DISPLAY · 偵測中…</span>
             </div>
             <div class="client-screen-row" data-client-screens>

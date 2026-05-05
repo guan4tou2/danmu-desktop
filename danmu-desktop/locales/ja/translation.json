@@ -87,5 +87,22 @@
   "clientNavOverlay": "オーバーレイ",
   "clientNavKeys": "ショートカット",
   "clientNavUpdate": "アップデート",
-  "clientNavAbout": "アバウト"
+  "clientNavAbout": "アバウト",
+  "connStatLatency": "遅延",
+  "connStatReconnect": "再接続",
+  "connStatReconnectUnit": "回",
+  "connStatUptime": "稼働",
+  "connBtnReconnect": "再接続",
+  "connBtnEdit": "変更",
+  "connBtnClose": "閉じる",
+  "connTlsTitle": "ローカル · TLSなし",
+  "connTlsNote": "LAN は TLS 不要 · 公開時は wss:// 推奨",
+  "connFlowKicker": "MESSAGE FLOW · 直近 30 秒",
+  "connFlowRx": "RX",
+  "connFlowRate": "RATE",
+  "connFlowPeak": "PEAK",
+  "connEditKicker": "CONNECTION · EDIT",
+  "overlayDisplayLabel": "表示先",
+  "overlayScreenDetecting": "DISPLAY · 検出中…",
+  "overlayScreenCount": "DISPLAY · {count} 画面検出"
 }

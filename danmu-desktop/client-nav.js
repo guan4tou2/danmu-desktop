@@ -226,8 +226,9 @@
       if (!screenRow || !screenSelect) return;
       var opts = Array.prototype.slice.call(screenSelect.options);
       if (screenCount) {
-        screenCount.textContent =
-          "DISPLAY · 偵測到 " + opts.length + " 個螢幕";
+        screenCount.textContent = (typeof i18n !== "undefined")
+          ? i18n.t("overlayScreenCount", { count: opts.length })
+          : ("DISPLAY · 偵測到 " + opts.length + " 個螢幕");
       }
       screenRow.innerHTML = "";
       opts.forEach(function (opt) {
@@ -257,7 +258,9 @@
         screenRow.appendChild(chip);
       });
       if (opts.length === 0 && screenCount) {
-        screenCount.textContent = "DISPLAY · 偵測中…";
+        screenCount.textContent = (typeof i18n !== "undefined")
+          ? i18n.t("overlayScreenDetecting")
+          : "DISPLAY · 偵測中…";
       }
     }
 

@@ -87,5 +87,22 @@
   "clientNavOverlay": "Overlay",
   "clientNavKeys": "Shortcuts",
   "clientNavUpdate": "Updates",
-  "clientNavAbout": "About"
+  "clientNavAbout": "About",
+  "connStatLatency": "Latency",
+  "connStatReconnect": "Reconnects",
+  "connStatReconnectUnit": "",
+  "connStatUptime": "Uptime",
+  "connBtnReconnect": "Reconnect",
+  "connBtnEdit": "Edit",
+  "connBtnClose": "Close",
+  "connTlsTitle": "Local · no TLS",
+  "connTlsNote": "LAN doesn't need TLS · public should use wss://",
+  "connFlowKicker": "MESSAGE FLOW · last 30s",
+  "connFlowRx": "RX",
+  "connFlowRate": "RATE",
+  "connFlowPeak": "PEAK",
+  "connEditKicker": "CONNECTION · EDIT",
+  "overlayDisplayLabel": "Display on",
+  "overlayScreenDetecting": "DISPLAY · detecting…",
+  "overlayScreenCount": "DISPLAY · {count} screen(s) detected"
 }

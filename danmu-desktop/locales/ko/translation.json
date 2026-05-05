@@ -87,5 +87,22 @@
   "clientNavOverlay": "오버레이",
   "clientNavKeys": "단축키",
   "clientNavUpdate": "업데이트",
-  "clientNavAbout": "정보"
+  "clientNavAbout": "정보",
+  "connStatLatency": "지연",
+  "connStatReconnect": "재연결",
+  "connStatReconnectUnit": "회",
+  "connStatUptime": "가동",
+  "connBtnReconnect": "재연결",
+  "connBtnEdit": "변경",
+  "connBtnClose": "닫기",
+  "connTlsTitle": "로컬 · TLS 없음",
+  "connTlsNote": "LAN은 TLS 불필요 · 공개 시 wss:// 권장",
+  "connFlowKicker": "MESSAGE FLOW · 최근 30 초",
+  "connFlowRx": "RX",
+  "connFlowRate": "RATE",
+  "connFlowPeak": "PEAK",
+  "connEditKicker": "CONNECTION · EDIT",
+  "overlayDisplayLabel": "표시 위치",
+  "overlayScreenDetecting": "DISPLAY · 감지 중…",
+  "overlayScreenCount": "DISPLAY · {count} 개 화면 감지"
 }
