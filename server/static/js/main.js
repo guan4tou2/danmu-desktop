@@ -1091,7 +1091,18 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (status === "queued") {
-          showToast(ServerI18n.t("onscreenFullQueued"), true);
+          // queued can mean two distinct things:
+          //   (a) onscreen-limiter saturated → wait for slot
+          //   (b) broadcast.is_live() === false → main host paused
+          // Server tags case (b) with reason="broadcast_standby" so we
+          // can show a different message instead of the misleading
+          // "screen is full" copy.
+          const reason = (responseData && responseData.reason) || "";
+          if (reason === "broadcast_standby") {
+            showToast(ServerI18n.t("broadcastStandbyQueued"), true);
+          } else {
+            showToast(ServerI18n.t("onscreenFullQueued"), true);
+          }
         } else {
           showToast(ServerI18n.t("danmuFired"), true);
         }

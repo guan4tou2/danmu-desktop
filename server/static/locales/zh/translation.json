@@ -312,6 +312,7 @@
   "onscreenFullQueued": "畫面已滿，排隊中⋯",
   "onscreenFullDropped": "畫面已滿，請稍後再試。",
   "queueFullTryLater": "排隊已滿，請稍後再試。",
+  "broadcastStandbyQueued": "主播暫停接收中，已排隊⋯恢復後將顯示。",
   "settingsUpdated": "設定已更新",
   "updateFailed": "更新失敗",
   "colorFormatError": "顏色格式錯誤，請使用 #RRGGBB 格式",

@@ -312,6 +312,7 @@
   "onscreenFullQueued": "Screen is full — you're in the queue…",
   "onscreenFullDropped": "Screen is full — try again in a moment.",
   "queueFullTryLater": "Queue is full — please try again in a minute.",
+  "broadcastStandbyQueued": "Host paused receiving — your danmu is queued and will appear when they resume.",
   "settingsUpdated": "Settings Updated",
   "updateFailed": "Update Failed",
   "colorFormatError": "Color format error, please use #RRGGBB format",
