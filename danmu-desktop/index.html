@@ -365,7 +365,7 @@
           <!-- Action buttons row -->
           <div class="client-overlay-actions">
             <button type="button" class="client-action-btn is-primary" data-client-overlay-action="start" data-i18n="overlayActionStart">▶ 開始接收</button>
-            <button type="button" class="client-action-btn" data-client-overlay-action="pause" data-i18n="overlayActionPause">⏸ 暫停</button>
+            <button type="button" class="client-action-btn" data-client-overlay-action="stop" data-i18n="overlayActionStop">■ 停止接收</button>
             <button type="button" class="client-action-btn" data-client-overlay-action="clear" data-i18n="overlayActionClear">⌫ 清空畫面</button>
           </div>
 
@@ -375,8 +375,12 @@
             <p data-i18n="overlayNoteBody">彈幕的字體、顏色、大小、透明度、速度、排版與效果為<b>觀眾每次發送時帶上的參數</b>,不在此視窗控制。此視窗僅決定 overlay 是否顯示、顯示於哪個螢幕,以及與 server 的連線。</p>
           </div>
 
-        <!-- Action Buttons -->
-        <div class="sticky bottom-2 z-20 bg-slate-900/80 backdrop-blur-md border border-slate-700/60 rounded-xl p-3 space-y-3">
+        <!-- Legacy action button bar — KEPT IN DOM for ws-manager.js to
+             bind to #start-button / #stop-button, but visually hidden.
+             The user-facing controls are the [data-client-overlay-action]
+             buttons above (start / stop / clear). v5.0.0 review feedback:
+             two visible Start/Stop bars confuse which is the real control. -->
+        <div hidden class="sticky bottom-2 z-20 bg-slate-900/80 backdrop-blur-md border border-slate-700/60 rounded-xl p-3 space-y-3">
           <div class="flex flex-col sm:flex-row gap-3">
             <button
               id="start-button"

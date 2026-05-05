@@ -75,7 +75,7 @@
   "overlayCardTitle": "弾幕オーバーレイを表示",
   "overlayCardHint": "⌘⇧D でいつでも切替",
   "overlayActionStart": "▶ 受信開始",
-  "overlayActionPause": "⏸ 一時停止",
+  "overlayActionStop": "■ 受信停止",
   "overlayActionClear": "⌫ 画面クリア",
   "overlayNoteKicker": "NOTE",
   "overlayNoteBody": "弾幕のフォント・色・サイズ・透明度・速度・レイアウト・エフェクトは観客が送信時に付与するパラメータで、このウィンドウでは設定しません。ここで決めるのは overlay の表示有無・表示先ディスプレイ・サーバー接続だけです。",

@@ -296,14 +296,21 @@
         var a = b.getAttribute("data-client-overlay-action");
         if (a === "start") {
           if (startBtn && !startBtn.disabled) startBtn.click();
-        } else if (a === "pause") {
+        } else if (a === "stop") {
+          // v5.0.0: was "pause" — actual semantics is full stop (closes
+          // WS, hides overlay). Renamed in UI to match behaviour.
           if (stopBtn && !stopBtn.disabled) stopBtn.click();
         } else if (a === "clear") {
-          // Trigger clear via IPC if available, else fallback to stop+start.
-          if (window.API && window.API.clearOverlay) {
+          // Real clear: tell main to broadcast an `overlay-clear` IPC
+          // message to every child overlay window. They drop currently-
+          // rendered danmu without disconnecting WS. preload exposes
+          // window.API.clearOverlay; if it's missing on an old binary,
+          // do nothing rather than fall back to stop (which would
+          // silently disconnect — the prior fallback was a footgun).
+          if (window.API && typeof window.API.clearOverlay === "function") {
             window.API.clearOverlay();
-          } else if (stopBtn && !stopBtn.disabled) {
-            stopBtn.click();
+          } else {
+            console.warn("[Renderer] clearOverlay IPC not available");
           }
         }
       });

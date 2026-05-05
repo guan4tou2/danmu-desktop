@@ -84,6 +84,30 @@ function setupIpcHandlers(getMainWindow, childWindows) {
     return;
   }
   _ipcRegistered = true;
+  // Clear danmu on every overlay window without disconnecting WS.
+  // The overlay-side child-ws-script registers a listener that drops
+  // currently-rendering elements when this fires.
+  ipcMain.on("overlay-clear", (event) => {
+    const mainWindow = getMainWindow();
+    if (!isFromMainWindow(event, mainWindow)) {
+      console.warn("[Main] overlay-clear: rejected IPC from untrusted sender");
+      return;
+    }
+    childWindows.forEach((win) => {
+      if (win && !win.isDestroyed()) {
+        try {
+          win.webContents.send("overlay-clear");
+        } catch (err) {
+          console.warn(
+            "[Main] overlay-clear send failed:",
+            sanitizeLog(err && err.message ? err.message : String(err))
+          );
+        }
+      }
+    });
+    console.log(`[Main] overlay-clear dispatched to ${childWindows.length} child windows`);
+  });
+
   // Close all child windows — must originate from the main window
   ipcMain.on("closeChildWindows", (event) => {
     const mainWindow = getMainWindow();

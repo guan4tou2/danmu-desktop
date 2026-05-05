@@ -75,7 +75,7 @@
   "overlayCardTitle": "顯示彈幕 Overlay",
   "overlayCardHint": "任何時候可用 ⌘⇧D 快速切換",
   "overlayActionStart": "▶ 開始接收",
-  "overlayActionPause": "⏸ 暫停",
+  "overlayActionStop": "■ 停止接收",
   "overlayActionClear": "⌫ 清空畫面",
   "overlayNoteKicker": "NOTE",
   "overlayNoteBody": "彈幕的字體、顏色、大小、透明度、速度、排版與效果為觀眾每次發送時帶上的參數,不在此視窗控制。此視窗僅決定 overlay 是否顯示、顯示於哪個螢幕,以及與 server 的連線。",

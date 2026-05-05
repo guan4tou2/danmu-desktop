@@ -752,6 +752,20 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
         }
       })
 
+      // v5.0.0+: real "clear" — drop currently-rendering danmu without
+      // disconnecting WS. Main broadcasts overlay-clear via webContents.send;
+      // preload exposes window.API.onOverlayClear for the child to subscribe.
+      // Selectors match the onscreen-limiter e2e harness (.danmu /
+      // .danmu-wrapper / h1.danmu).
+      if (window.API && typeof window.API.onOverlayClear === 'function') {
+        window.API.onOverlayClear(function () {
+          console.log('[Overlay] overlay-clear received — removing danmu nodes');
+          document.querySelectorAll('.danmu, .danmu-wrapper, h1.danmu').forEach(function (n) {
+            try { n.remove(); } catch (_) {}
+          });
+        });
+      }
+
       connect()
     `;
 }

@@ -57,6 +57,21 @@ try {
       console.log("[Preload] API.close called");
       ipcRenderer.send("closeChildWindows");
     },
+    // Clear all currently-rendering danmu on every overlay window
+    // without disconnecting the WS — true "clear", not stop.
+    clearOverlay: () => {
+      console.log("[Preload] API.clearOverlay called");
+      ipcRenderer.send("overlay-clear");
+    },
+    // Child overlay subscribes to receive the broadcast. Main fans out
+    // the original `overlay-clear` IPC to every child via webContents.send.
+    onOverlayClear: (callback) => {
+      if (_handlers.overlayClear) {
+        ipcRenderer.removeListener("overlay-clear", _handlers.overlayClear);
+      }
+      _handlers.overlayClear = () => callback();
+      ipcRenderer.on("overlay-clear", _handlers.overlayClear);
+    },
     sendConnectionStatus: (status, attempt, maxAttempts) => {
       console.log("[Preload] API.sendConnectionStatus called with:", status);
       ipcRenderer.send("overlay-connection-status", { status, attempt, maxAttempts });

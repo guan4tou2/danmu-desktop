@@ -77,7 +77,13 @@ function tryConnectionTest(host, port) {
       resolve(false);
     }, TEST_TIMEOUT_MS);
     try {
-      ws = new WebSocket(`ws://${host}:${port}`);
+      // v5.0.0+: child overlay window connects via wss://${host}:${port}/ws
+      // (see main-modules/child-ws-script.js). Use the same URL shape here
+      // so a "test passed" outcome means the actual runtime path will work.
+      // Previously this tested ws://${host}:${port} which gave false negatives
+      // on TLS-terminated deployments + false positives on plain-WS deploys
+      // that the runtime can no longer reach.
+      ws = new WebSocket(`wss://${host}:${port}/ws`);
       ws.onopen = () => {
         if (settled) return;
         settled = true;

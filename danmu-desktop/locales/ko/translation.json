@@ -75,7 +75,7 @@
   "overlayCardTitle": "댄무 오버레이 표시",
   "overlayCardHint": "⌘⇧D 로 언제든 전환",
   "overlayActionStart": "▶ 수신 시작",
-  "overlayActionPause": "⏸ 일시 정지",
+  "overlayActionStop": "■ 수신 중지",
   "overlayActionClear": "⌫ 화면 지우기",
   "overlayNoteKicker": "NOTE",
   "overlayNoteBody": "댄무의 글꼴·색상·크기·투명도·속도·레이아웃·효과는 관객이 전송 시 함께 보내는 파라미터로 이 창에서는 설정하지 않습니다. 이 창은 오버레이 표시 여부·표시 디스플레이·서버 연결만 결정합니다.",

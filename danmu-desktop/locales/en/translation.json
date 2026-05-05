@@ -75,7 +75,7 @@
   "overlayCardTitle": "Show danmu overlay",
   "overlayCardHint": "Toggle anytime with ⌘⇧D",
   "overlayActionStart": "▶ Start receiving",
-  "overlayActionPause": "⏸ Pause",
+  "overlayActionStop": "■ Stop receiving",
   "overlayActionClear": "⌫ Clear screen",
   "overlayNoteKicker": "NOTE",
   "overlayNoteBody": "Font, color, size, opacity, speed, layout, and effects of each danmu are parameters the audience attaches when sending — not configured here. This window only controls whether the overlay is shown, which display it lives on, and the server connection.",
