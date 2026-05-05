@@ -65,8 +65,8 @@
   // ─────────────────────────────────────────────────────────────
   // Connection section — prototype ConnSection:250 live status.
   //
-  // Derives the displayed ws URL + TLS label from the existing
-  // #host-input / #port-input fields (which still drive ws-manager).
+  // Derives the displayed WSS URL from the existing #host-input /
+  // #port-input fields (which still drive ws-manager).
   // Tracks reconnect count & connected-at timestamp from the legacy
   // #status-indicator color changes.
   // ─────────────────────────────────────────────────────────────
@@ -75,50 +75,16 @@
     var port = document.getElementById("port-input");
     var token = document.getElementById("ws-token-input");
     var urlEl = document.querySelector("[data-client-server-url]");
-    var tlsTitle = document.querySelector("[data-client-tls-title]");
-    var tlsNote = document.querySelector("[data-client-tls-note]");
     var uptimeEl = document.querySelector("[data-client-uptime]");
     var reconnectEl = document.querySelector("[data-client-reconnect]");
-    var latencyEl = document.querySelector("[data-client-latency]");
-
-    function isPrivateHost(h) {
-      if (!h) return true;
-      h = h.toLowerCase();
-      return (
-        h === "localhost" ||
-        h.startsWith("127.") ||
-        h.startsWith("10.") ||
-        h.startsWith("192.168.") ||
-        /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
-        h.endsWith(".local")
-      );
-    }
 
     function renderUrl() {
       if (!urlEl) return;
       var h = (host && host.value) || "—";
       var p = (port && port.value) || "—";
       var hasToken = token && token.value;
-      var isPrivate = isPrivateHost(h);
-      var scheme = isPrivate ? "ws" : "wss";
-      urlEl.textContent = scheme + "://" + h + ":" + p + (hasToken ? " · 🔒 token" : "");
-      if (tlsTitle && tlsNote) {
-        // v5.0.0 i18n: keep data-i18n attr in sync with the scheme so
-        // i18n.updateUI() can re-translate when the user switches language.
-        var titleKey = scheme === "wss" ? "connTlsTitleWss" : "connTlsTitle";
-        var noteKey  = scheme === "wss" ? "connTlsNoteWss"  : "connTlsNote";
-        tlsTitle.setAttribute("data-i18n", titleKey);
-        tlsNote.setAttribute("data-i18n", noteKey);
-        var hasI18n = (typeof i18n !== "undefined");
-        tlsTitle.textContent = hasI18n
-          ? i18n.t(titleKey)
-          : (scheme === "wss" ? "TLS · 已加密" : "本機 · 無 TLS");
-        tlsNote.textContent = hasI18n
-          ? i18n.t(noteKey)
-          : (scheme === "wss"
-              ? "公網連線使用 wss:// · 憑證由伺服器端提供"
-              : "區網連線不需 TLS · 公網建議 wss://");
-      }
+      var scheme = "wss";
+      urlEl.textContent = scheme + "://" + h + ":" + p + "/ws" + (hasToken ? " · token" : "");
     }
 
     // Track reconnect count + uptime by watching the legacy status indicator.
@@ -180,10 +146,6 @@
         } else if (action === "close-conn-edit") {
           var panel2 = document.querySelector("[data-client-conn-edit]");
           if (panel2) panel2.setAttribute("hidden", "");
-        } else if (action === "reconnect") {
-          // Trigger the legacy Start button — it handles disconnect + reconnect.
-          var start = document.getElementById("start-button");
-          if (start && !start.disabled) start.click();
         }
       });
     });
@@ -200,7 +162,8 @@
     var startBtn = document.getElementById("start-button");
     var stopBtn = document.getElementById("stop-button");
     var screenSelect = document.getElementById("screen-select");
-    var toggle = document.querySelector("[data-client-overlay-toggle]");
+    var overlayButton = document.querySelector("[data-client-overlay-button]");
+    var overlayState = document.querySelector("[data-client-overlay-state]");
     var screenRow = document.querySelector("[data-client-screens]");
     var screenCount = document.querySelector("[data-client-screen-count]");
 
@@ -208,14 +171,24 @@
       return startBtn && startBtn.disabled; // start disabled ⇒ overlay running
     }
 
-    function renderToggle() {
-      if (!toggle) return;
-      toggle.checked = running();
+    function renderOverlayButton() {
+      if (!overlayButton) return;
+      var isRunning = running();
+      var key = isRunning ? "overlayButtonStop" : "overlayButtonStart";
+      overlayButton.classList.toggle("is-running", isRunning);
+      overlayButton.setAttribute("aria-pressed", isRunning ? "true" : "false");
+      overlayButton.setAttribute("data-state", isRunning ? "running" : "stopped");
+      if (overlayState) {
+        overlayState.setAttribute("data-i18n", key);
+        overlayState.textContent = (typeof i18n !== "undefined")
+          ? i18n.t(key)
+          : (isRunning ? "■ 關閉 Overlay" : "▶ 開啟 Overlay");
+      }
     }
 
-    if (toggle) {
-      toggle.addEventListener("change", function () {
-        if (toggle.checked) {
+    if (overlayButton) {
+      overlayButton.addEventListener("click", function () {
+        if (!running()) {
           if (startBtn && !startBtn.disabled) startBtn.click();
         } else {
           if (stopBtn && !stopBtn.disabled) stopBtn.click();
@@ -223,9 +196,9 @@
       });
     }
 
-    // Watch Start/Stop disabled state to keep toggle in sync.
+    // Watch Start/Stop disabled state to keep the visible button in sync.
     if (startBtn && typeof MutationObserver !== "undefined") {
-      var mo = new MutationObserver(renderToggle);
+      var mo = new MutationObserver(renderOverlayButton);
       mo.observe(startBtn, { attributes: true, attributeFilter: ["disabled"] });
     }
 
@@ -290,17 +263,11 @@
       }
     }, 250);
 
-    // Action buttons
+    // Secondary action buttons
     document.querySelectorAll("[data-client-overlay-action]").forEach(function (b) {
       b.addEventListener("click", function () {
         var a = b.getAttribute("data-client-overlay-action");
-        if (a === "start") {
-          if (startBtn && !startBtn.disabled) startBtn.click();
-        } else if (a === "stop") {
-          // v5.0.0: was "pause" — actual semantics is full stop (closes
-          // WS, hides overlay). Renamed in UI to match behaviour.
-          if (stopBtn && !stopBtn.disabled) stopBtn.click();
-        } else if (a === "clear") {
+        if (a === "clear") {
           // Real clear: tell main to broadcast an `overlay-clear` IPC
           // message to every child overlay window. They drop currently-
           // rendered danmu without disconnecting WS. preload exposes
@@ -316,7 +283,7 @@
       });
     });
 
-    renderToggle();
+    renderOverlayButton();
   }
 
   function bootstrap() {

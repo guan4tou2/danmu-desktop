@@ -68,8 +68,8 @@
       <aside class="client-sidebar" role="navigation" aria-label="Client sections">
         <nav class="client-nav">
           <!-- v5.0.0: 連線 sits at the top so first-run users land directly
-               on the setup tab without re-orienting. Order deviates from
-               prototype desktop.jsx:143 (overlay first) per owner request.
+               on the setup tab without re-orienting. Runtime display controls
+               stay in Overlay; maintenance lives in About.
                is-active starts on conn to avoid a flash before client-nav.js
                bootstrap; activate() will rebalance based on actual state. -->
           <button type="button" class="client-nav-btn is-active" data-nav="conn">
@@ -84,20 +84,6 @@
             <span class="client-nav-label">
               <span class="zh" data-i18n="clientNavOverlay">Overlay</span>
               <span class="en">DISPLAY</span>
-            </span>
-          </button>
-          <button type="button" class="client-nav-btn" data-nav="keys">
-            <span class="client-nav-icon">⌘</span>
-            <span class="client-nav-label">
-              <span class="zh" data-i18n="clientNavKeys">快捷鍵</span>
-              <span class="en">SHORTCUTS</span>
-            </span>
-          </button>
-          <button type="button" class="client-nav-btn" data-nav="update">
-            <span class="client-nav-icon">↻</span>
-            <span class="client-nav-label">
-              <span class="zh" data-i18n="clientNavUpdate">更新</span>
-              <span class="en">UPDATES</span>
             </span>
           </button>
           <button type="button" class="client-nav-btn" data-nav="about">
@@ -201,7 +187,7 @@
                   </button>
                 </div>
                 <div class="client-firstrun-field-help" data-i18n="firstrunFieldHelp">
-                  支援 ws:// 或 wss:// · 區網或公網皆可 · 預設 WebSocket port 4001
+                  使用 wss://HOST:PORT/ws · 預設 WebSocket port 4001
                 </div>
                 <div class="client-firstrun-test-result" id="firstRunTestResult" hidden></div>
               </div>
@@ -238,54 +224,26 @@
             <div class="client-section-kicker" data-i18n="connSectionKicker">CONNECTION</div>
           </div>
 
-          <!-- Top grid: SERVER + CERTIFICATE -->
+          <!-- Connection summary. TLS is implicit because the client always
+               connects with wss://HOST:PORT/ws in v5.0.0+. -->
           <div class="client-conn-grid">
             <div class="client-conn-card">
               <div class="client-conn-kicker">SERVER</div>
-              <div class="client-conn-url" data-client-server-url>ws://—</div>
+              <div class="client-conn-url" data-client-server-url>wss://—/ws</div>
               <div class="client-conn-meta">
-                <span><span data-i18n="connStatLatency">延遲</span> <b data-client-latency>—</b></span>
-                <span class="sep">·</span>
                 <span><span data-i18n="connStatReconnect">重連</span> <b data-client-reconnect>0</b> <span data-i18n="connStatReconnectUnit">次</span></span>
                 <span class="sep">·</span>
                 <span><span data-i18n="connStatUptime">上線</span> <b data-client-uptime>—</b></span>
               </div>
               <div class="client-conn-actions">
-                <button type="button" class="client-mini-btn" data-client-action="reconnect">↻ <span data-i18n="connBtnReconnect">重連</span></button>
                 <button type="button" class="client-mini-btn" data-client-action="edit-conn">⚙ <span data-i18n="connBtnEdit">更改</span></button>
               </div>
-            </div>
-
-            <div class="client-conn-card">
-              <div class="client-conn-kicker">CERTIFICATE</div>
-              <div class="client-conn-url" data-client-tls-title data-i18n="connTlsTitle">本機 · 無 TLS</div>
-              <div class="client-conn-note" data-client-tls-note data-i18n="connTlsNote">區網連線不需 TLS · 公網建議 wss://</div>
-            </div>
-          </div>
-
-          <!-- MESSAGE FLOW sparkline -->
-          <div class="client-conn-card client-conn-flow">
-            <div class="client-conn-kicker"><span data-i18n="connFlowKicker">MESSAGE FLOW · 最近 30 秒</span></div>
-            <svg
-              class="client-conn-sparkline"
-              viewBox="0 0 560 56"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-              data-client-sparkline
-            >
-              <path class="fill" d="" />
-              <path class="stroke" d="" />
-            </svg>
-            <div class="client-conn-flow-stats">
-              <span><span data-i18n="connFlowRx">RX</span> · <b data-client-rx>—</b></span>
-              <span><span data-i18n="connFlowRate">RATE</span> · <b class="is-accent" data-client-rate>—/s</b></span>
-              <span><span data-i18n="connFlowPeak">PEAK</span> · <b data-client-peak>—/s</b></span>
             </div>
           </div>
 
           <!-- Connection edit form (prototype ⚙ 更改).
                Hidden by default. Opens via data-client-action="edit-conn".
-               Keeps legacy input IDs so renderer-modules bind correctly. -->
+               Keeps server input IDs so renderer-modules bind correctly. -->
           <div class="client-conn-edit" data-client-conn-edit hidden>
             <div class="client-conn-edit-head">
               <span class="client-conn-kicker"><span data-i18n="connEditKicker">CONNECTION · EDIT</span></span>
@@ -319,14 +277,6 @@
                   autocomplete="off"
                 />
               </label>
-              <label class="client-conn-edit-field">
-                <span data-i18n="displayLabel">Target Display</span>
-                <select id="screen-select"></select>
-              </label>
-              <label class="client-conn-edit-check">
-                <input type="checkbox" id="sync-multi-display-checkbox" />
-                <span data-i18n="syncMultiDisplay">Enable synchronous multi-display</span>
-              </label>
             </div>
           </div>
         </section>
@@ -339,16 +289,15 @@
             <div class="client-section-kicker" data-i18n="overlaySectionKicker">DISPLAY</div>
           </div>
 
-          <!-- Toggle card: show/hide overlay window -->
+          <!-- Primary button card: show/hide overlay window -->
           <div class="client-overlay-card">
             <div class="client-overlay-card-body">
               <div class="title" data-i18n="overlayCardTitle">顯示彈幕 Overlay</div>
-              <div class="dim" data-i18n="overlayCardHint">任何時候可用 ⌘⇧D 快速切換</div>
+              <div class="dim" data-i18n="overlayCardHint">快捷鍵: ⌘⇧D</div>
             </div>
-            <label class="client-toggle">
-              <input type="checkbox" data-client-overlay-toggle />
-              <span class="track" aria-hidden="true"></span>
-            </label>
+            <button type="button" class="client-overlay-button" data-client-overlay-button aria-pressed="false">
+              <span data-client-overlay-state data-i18n="overlayButtonStart">▶ 開啟 Overlay</span>
+            </button>
           </div>
 
           <!-- Display picker (prototype ScreenChip grid) -->
@@ -360,12 +309,16 @@
             <div class="client-screen-row" data-client-screens>
               <!-- screen chips injected by client-nav.js from screen-select -->
             </div>
+            <select id="screen-select" hidden aria-hidden="true" tabindex="-1"></select>
+            <label class="client-overlay-sync">
+              <input type="checkbox" id="sync-multi-display-checkbox" />
+              <span data-i18n="syncMultiDisplay">Enable synchronous multi-display</span>
+            </label>
           </div>
 
-          <!-- Action buttons row -->
+          <!-- Secondary action: clear rendered danmu without touching WS. Start/stop
+               is owned by the primary Overlay button above. -->
           <div class="client-overlay-actions">
-            <button type="button" class="client-action-btn is-primary" data-client-overlay-action="start" data-i18n="overlayActionStart">▶ 開始接收</button>
-            <button type="button" class="client-action-btn" data-client-overlay-action="stop" data-i18n="overlayActionStop">■ 停止接收</button>
             <button type="button" class="client-action-btn" data-client-overlay-action="clear" data-i18n="overlayActionClear">⌫ 清空畫面</button>
           </div>
 
@@ -375,12 +328,11 @@
             <p data-i18n="overlayNoteBody">彈幕的字體、顏色、大小、透明度、速度、排版與效果為<b>觀眾每次發送時帶上的參數</b>,不在此視窗控制。此視窗僅決定 overlay 是否顯示、顯示於哪個螢幕,以及與 server 的連線。</p>
           </div>
 
-        <!-- Legacy action button bar — KEPT IN DOM for ws-manager.js to
-             bind to #start-button / #stop-button, but visually hidden.
-             The user-facing controls are the [data-client-overlay-action]
-             buttons above (start / stop / clear). v5.0.0 review feedback:
-             two visible Start/Stop bars confuse which is the real control. -->
-        <div hidden class="sticky bottom-2 z-20 bg-slate-900/80 backdrop-blur-md border border-slate-700/60 rounded-xl p-3 space-y-3">
+          <!-- Legacy action button bar — KEPT IN DOM for ws-manager.js to
+               bind to #start-button / #stop-button, but visually hidden.
+               The user-facing runtime control is the Overlay button above.
+               Keeping these hidden avoids rewriting ws-manager.js in this pass. -->
+          <div hidden class="sticky bottom-2 z-20 bg-slate-900/80 backdrop-blur-md border border-slate-700/60 rounded-xl p-3 space-y-3">
           <div class="flex flex-col sm:flex-row gap-3">
             <button
               id="start-button"
@@ -447,86 +399,6 @@
             </button>
           </div>
         </div>
-        </section>
-
-        <!-- Section: Shortcuts (prototype KeysSection:286) -->
-        <section class="client-section" data-section="keys" hidden>
-          <div class="client-section-head">
-            <div class="client-section-title" data-i18n="sectionKeysTitle">快捷鍵</div>
-            <div class="client-section-kicker" data-i18n="sectionKeysKicker">SHORTCUTS</div>
-          </div>
-          <div class="client-keys-card">
-            <div class="client-keys-row">
-              <span class="act" data-i18n="keyToggleOverlay">顯示 / 隱藏 overlay</span>
-              <kbd class="kbd">⌘⇧D</kbd>
-            </div>
-            <div class="client-keys-row">
-              <span class="act" data-i18n="keyPauseReceive">暫停接收</span>
-              <kbd class="kbd">⌘⇧P</kbd>
-            </div>
-            <div class="client-keys-row">
-              <span class="act" data-i18n="keyClearScreen">清空畫面</span>
-              <kbd class="kbd">⌘⇧K</kbd>
-            </div>
-            <div class="client-keys-row">
-              <span class="act" data-i18n="keySwitchDisplay">切換主螢幕 / 副螢幕</span>
-              <kbd class="kbd">⌘⇧M</kbd>
-            </div>
-          </div>
-          <div class="client-keys-hint" data-i18n="keysHint">點擊任一快捷鍵可自訂 · 偏好會立即生效</div>
-        </section>
-
-        <!-- Section: Updates (prototype UpdateSection:389).
-             Status card + behaviour toggles + recent changelog. The actual
-             auto-update wiring is owned by renderer-modules/update-status.js;
-             this section is a stable mount point with prototype-matched DOM. -->
-        <section class="client-section" data-section="update" hidden>
-          <div class="client-section-head">
-            <div class="client-section-title" data-i18n="updateSectionTitle">更新</div>
-            <div class="client-section-kicker" data-i18n="updateSectionKicker">UPDATES</div>
-          </div>
-
-          <div class="client-update-status">
-            <div class="client-update-status-icon" data-update-icon>✓</div>
-            <div class="client-update-status-body">
-              <div class="client-update-status-title" data-update-status-title data-i18n="updateUpToDate">已是最新版本</div>
-              <div class="client-update-status-meta">
-                <span data-client-version-inline>v5.0.0</span>
-                <span class="sep">·</span>
-                <span data-update-last-check>—</span>
-              </div>
-            </div>
-            <button type="button" class="client-update-check-btn" data-update-action="check" data-i18n="updateCheckNow">立即檢查</button>
-          </div>
-
-          <div class="client-update-prefs">
-            <div class="client-update-prefs-kicker" data-i18n="updatePrefsKicker">UPDATE BEHAVIOR</div>
-            <label class="client-update-pref">
-              <input type="checkbox" data-update-pref="auto-download" checked />
-              <span class="client-update-pref-body">
-                <span class="client-update-pref-label" data-i18n="updatePrefAutoDownload">自動下載更新</span>
-                <span class="client-update-pref-hint" data-i18n="updatePrefAutoDownloadHint">背景下載 · 下次啟動套用</span>
-              </span>
-            </label>
-            <label class="client-update-pref">
-              <input type="checkbox" data-update-pref="beta-channel" />
-              <span class="client-update-pref-body">
-                <span class="client-update-pref-label" data-i18n="updatePrefBetaChannel">加入測試版通道</span>
-                <span class="client-update-pref-hint" data-i18n="updatePrefBetaChannelHint">搶先測試新功能 · 可能不穩</span>
-              </span>
-            </label>
-          </div>
-
-          <div class="client-update-changelog">
-            <div class="client-update-changelog-head">
-              <span class="client-update-changelog-kicker" data-i18n="updateChangelogKicker">RECENT CHANGES</span>
-              <a href="#" class="client-update-changelog-link" data-update-action="full-log" data-i18n="updateChangelogFullLink">完整 changelog →</a>
-            </div>
-            <div class="client-update-changelog-list" data-update-changelog>
-              <!-- Populated by update-status.js when changelog data arrives. -->
-              <div class="client-update-changelog-empty" data-i18n="updateChangelogEmpty">尚未取得 changelog 資料</div>
-            </div>
-          </div>
         </section>
 
         <!-- Section: About (prototype AboutSection:318) -->

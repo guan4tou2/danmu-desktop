@@ -118,7 +118,6 @@ app.whenReady().then(() => {
 
   let trayStatusText = "⊘ Disconnected";
   let trayServerUrl = "";
-  let trayReceivePaused = false;
 
   // Broadcast an overlay-idle-toggle message to every live child window.
   // mode: 'show' | 'hide' | 'toggle'
@@ -135,25 +134,9 @@ app.whenReady().then(() => {
     return delivered;
   }
 
-  // Send a generic command to the main renderer (pause receive / clear screen).
-  function dispatchToRenderer(command) {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send("client-command", { command });
-    }
-  }
-
-  // Rebuild tray menu — mirrors prototype desktop.jsx TrayMenu:550 structure:
-  // header (● Danmu Fire + version + server status)
-  // → 顯示 overlay (✓ toggle · ⌘⇧D)
-  // → 暫停接收 (⌘⇧P)
-  // → 清空畫面 (⌘⇧K)
-  // ─────────────
-  // → 顯示於 ▸ submenu
-  // → 伺服器 ▸ submenu
-  // ─────────────
-  // → 開啟控制視窗…
-  // → 偏好設定…
-  // → 結束 Danmu
+  // Keep tray actions narrow: status, optional idle-scene toggle,
+  // app/window maintenance. Display selection and connection edits belong in
+  // the main client window so tray does not become a second controller.
   function rebuildTrayMenu() {
     const hasOverlay = childWindows.some((cw) => cw && !cw.isDestroyed());
     const version = app.getVersion();
@@ -193,48 +176,23 @@ app.whenReady().then(() => {
       { type: "separator" },
       ...buildTrayPopoverSections({
         overlayCount: childWindows.filter((cw) => cw && !cw.isDestroyed()).length,
-        receivePaused: trayReceivePaused,
         serverText: trayStatusText,
         updaterPhase: updateInfo.phase,
       }),
       ...updateEntries,
       {
-        label: "顯示 overlay",
+        label: "待機畫面",
         type: "checkbox",
         checked: hasOverlay,
         accelerator: "CommandOrControl+Shift+D",
+        enabled: hasOverlay,
         click: () => broadcastIdleToggle("toggle"),
-      },
-      {
-        label: "暫停接收",
-        accelerator: "CommandOrControl+Shift+P",
-        enabled: hasOverlay,
-        click: () => {
-          trayReceivePaused = !trayReceivePaused;
-          dispatchToRenderer("pause");
-          rebuildTrayMenu();
-        },
-      },
-      {
-        label: "清空畫面",
-        accelerator: "CommandOrControl+Shift+K",
-        enabled: hasOverlay,
-        click: () => dispatchToRenderer("clear"),
-      },
-      { type: "separator" },
-      {
-        label: "顯示於",
-        submenu: [
-          { label: "主螢幕", type: "radio", checked: true, click: () => dispatchToRenderer("display:primary") },
-          { label: "副螢幕", type: "radio", click: () => dispatchToRenderer("display:secondary") },
-        ],
       },
       {
         label: "伺服器",
         submenu: [
           { label: trayStatusText, enabled: false },
           { type: "separator" },
-          { label: "重新連線", click: () => dispatchToRenderer("reconnect") },
           { label: "更改連線…", click: showMainWindow },
         ],
       },

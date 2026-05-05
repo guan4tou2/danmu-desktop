@@ -71,7 +71,7 @@ Roles re-stated for v5.0.0:
 
 - `server/viewer` = 觀眾發彈幕入口（only that）
 - `server/admin` = 主播控制台（effects / assets / display 為主，polls / moderation 為輔）
-- `client (Electron)` = 顯示端 (Overlay player) — connection + screen pick + start/stop/clear + status, **不是發彈幕入口、不是設定中心**
+- `client (Electron)` = 顯示端 (Overlay player) — connection + screen pick + show/hide/clear + status, **不是發彈幕入口、不是設定中心**
 
 ---
 
@@ -100,7 +100,7 @@ Only four. Designs must respect them — no hybrid "power viewer" role etc.
 | **OBS streamer** | Loads `/overlay` as OBS Browser Source | Render-only — no input UI |
 | **Admin** | `/login` with password | Everything in `/admin/` — settings, moderation, content, automation, security |
 | **API / plugin / webhook** | Machine callers | POST `/fire`, receive outbound webhooks, register plugins |
-| **Desktop operator** | Runs the Electron app | Connect to the server, choose target display(s), start/stop/clear local overlay windows |
+| **Desktop operator** | Runs the Electron app | Connect to the server, choose target display(s), show/hide/clear local overlay windows |
 
 Viewers never log in. Admins never appear in the viewer UI. Desktop clients do not expose admin routes — the Electron app is a local overlay display endpoint, not a viewer surface or admin controller.
 
@@ -258,8 +258,8 @@ The Electron app at [danmu-desktop/](../danmu-desktop/) has two windows. Treat t
 > **Re-positioned in v5.0.0:** the desktop client is the **顯示端 / Overlay
 > player**, not a remote control panel. Display tuning (opacity / speed /
 > font / color / stroke / shadow / track count) lives in **`/admin/`**,
-> not here. The client currently has five sidebar tabs total: Connection,
-> Overlay, Shortcuts, Update, and About.
+> not here. The client currently has three sidebar tabs total: Connection,
+> Overlay, and About.
 
 **Connection** (sidebar `連線 / CONNECTION`, default tab on first run)
 - Server host (IP or hostname) + port input
@@ -269,36 +269,23 @@ The Electron app at [danmu-desktop/](../danmu-desktop/) has two windows. Treat t
   pass/fail (matches the actual runtime URL since v5.0.0)
 - Recent servers list (persists last successful host)
 - Connection status badge (idle / connecting / connected / disconnected
-  / failed) + reconnect / latency / uptime metrics
-- TLS chip indicating `wss://` (always — v5.0.0 unified)
+  / failed) + reconnect count / uptime metrics
 
 **Overlay** (sidebar `Overlay / DISPLAY`)
-- Display target dropdown (populated from `API.getDisplays()`)
+- Display target chips backed by `API.getDisplays()`
 - Sync multi-display checkbox (spawn one overlay per display)
-- Three primary actions:
-  - `▶ 開始接收` — spawns the overlay child window + starts WS
-  - `■ 停止接收` — closes the overlay + WS (was `⏸ 暫停`; renamed in
-    v5.0.0 because the action is a full stop, not a pause)
-  - `⌫ 清空畫面` — sends `overlay-clear` IPC to every overlay window
-    so they drop currently-rendering danmu **without disconnecting WS**
+- One primary runtime control:
+  - `開啟 / 關閉 Overlay` button — spawns/closes the overlay child window + WS
+- One secondary action:
+  - `⌫ 清空畫面` — sends `overlay-clear` IPC to every overlay window so
+    they drop currently-rendering danmu **without disconnecting WS**
 - Note panel reminding the user that danmu styling (font / color / size /
   opacity / speed / layout / effects) lives in the viewer + admin, not
   here
 
-**Shortcuts** (sidebar `快捷鍵 / SHORTCUTS`)
-- Read-only shortcut reference for display actions
-- Shows current hotkeys such as toggle overlay and clear screen
-- Does not expose admin settings or viewer style controls
-
-**Update** (sidebar `更新 / UPDATES`)
-- Current version + last-check timestamp
-- "Check now" button (manual)
-- Auto-download toggle + Beta channel opt-in
-- Recent CHANGELOG entries (top 3) + link to full changelog
-- Restart-to-install action when an update is staged
-
 **About** (sidebar `關於 / ABOUT`)
 - Version, platform, GitHub link, license
+- Update check / download progress / restart-to-install actions
 
 **Persisted state** (localStorage `danmu-settings`)
 - `host`, `port`, `displayIndex`, `syncMultiDisplay`, `wsToken`
@@ -332,7 +319,7 @@ Render-only. No user input. Spawned by the main window.
 
 ### 3. Main process + tray
 
-- Tray icon + context menu (Open / About / Quit)
+- Tray icon + context menu (status snapshot / show control window / About / Quit)
 - Auto-updater via `electron-updater` — checks GitHub Releases on startup (10s delay) and every 4h
 - About window (`about.html`) — version + GitHub link
 - IPC surface (preload bridge) — see channels in [ipc-handlers.js](../danmu-desktop/main-modules/ipc-handlers.js); do not add new channels without extending preload
@@ -349,7 +336,7 @@ These are the canonical flows. Designs should cover all of them, and **only** th
 
 ### Scenario A — Streamer preparing to go live (v5.0.0)
 1. Launch desktop app → first-run gate prompts host/port → "Test connection" runs `wss://${host}:${port}/ws` against the configured server
-2. Pick display in the Overlay tab → click `▶ 開始接收` → overlay child window spawns on chosen display
+2. Pick display in the Overlay tab → click `開啟 Overlay` → overlay child window spawns on chosen display
 3. Open `/admin/` (browser, not in client) → pick theme → adjust default Color / Speed / FontSize → activate effects
 4. Send a real danmu from `/` (or another viewer) to confirm rendering. **Test danmu UI no longer in client — that moved to admin.**
 

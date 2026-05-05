@@ -38,7 +38,7 @@ Primary product pillars:
 | Priority | Pillar | Meaning |
 |---|---|---|
 | 1 | Send | Viewer input, nickname, optional style, cooldown, blocked feedback. |
-| 2 | Display | Overlay/client connection, target display, clear/stop, tracks, speed, visual safety. |
+| 2 | Display | Overlay/client connection, target display, show/hide, clear, tracks, speed, visual safety. |
 | 3 | Effects | `.dme` library, preview, trigger, motion, performance. |
 | 4 | Assets | Fonts, emojis, stickers, sounds, logo/background, reusable packs. |
 
@@ -89,7 +89,7 @@ Repo sync status:
 | Admin prototype IA | Not aligned | `admin-pages.jsx` still shows many old/high-weight routes like messages, widgets, themes, ratelimit, plugins, fonts, audit, extensions, webhooks, API tokens, backup. |
 | Production admin IA | Partially aligned | Production sidebar is reduced but still has 11 rows including standalone `security`; target is 8 areas above. |
 | Viewer | Mostly aligned | Viewer is send-first and poll is gated off by default, but poll UI still exists as optional tab. If enabled, current JS shows vote count and percentage. New design should not show viewer-side percentages. |
-| Desktop client | Mostly aligned in current worktree | Client is display-only and current dirty files include true stop/clear/WSS fixes. Treat this as implementation-in-progress, not a reason to add more client settings. |
+| Desktop client | Mostly aligned in current worktree | Client is display-only. Current direction is three client areas only: Connection, Overlay, About. Do not re-add shortcuts, update, viewer styling, or admin settings as top-level client surfaces. |
 | Visual tokens | Partially aligned | Some prototype components still reference `hudTokens.magenta`, `tone: "violet"`, or private token aliases. Follow `STYLE-CONTRACT.md`: no violet, magenta, or private palette blocks. |
 | Copy | Needs cleanup | Remove host/presenter language. Product has only Viewer and Admin; client is display endpoint. |
 
@@ -226,4 +226,3 @@ Before sending the next handoff back to engineering:
 > Keep endpoints conceptually available under System/Advanced where needed.
 > Follow the style contract: no private tokens, no violet/magenta/purple, use
 > `hudTokens` and `AdminPageShell`.
-
