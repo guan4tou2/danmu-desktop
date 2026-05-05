@@ -2,20 +2,16 @@ from gevent import monkey
 
 monkey.patch_all()
 
-import json
 import secrets
 import threading
 import uuid
-from urllib.parse import urlsplit
 
 from flask import Flask, current_app, g, request
 from flask_cors import CORS
 from gevent.pywsgi import WSGIServer
 
 from .config import Config
-from .extensions import sock
 from .logging_config import setup_logging
-from .managers import connection_manager
 from .routes.admin import admin_bp
 from .routes.api import api_bp
 from .routes.health import health_bp
@@ -23,8 +19,7 @@ from .routes.main import main_bp
 from .services.history import init_history
 from .services.security import init_security
 from .startup_warnings import log_ws_auth_warnings
-from .utils import json_response, sanitize_log_string
-from .ws import check_connections as background_check_connections
+from .utils import json_response
 from .ws import run_ws_server
 
 
@@ -138,7 +133,6 @@ def create_app(config_class=Config):
         cors_credentials = False
     CORS(app, origins=cors_origins, supports_credentials=cors_credentials)
 
-    sock.init_app(app)
     init_security(app)
     init_history()
 
@@ -213,67 +207,6 @@ def create_app(config_class=Config):
 app = create_app()
 
 
-@sock.route("/")
-def websocket(ws):
-    origin = request.headers.get("Origin", "")
-    allowed = current_app.config.get("WEB_WS_ALLOWED_ORIGINS") or []
-
-    def _origin_matches_host(origin_url: str) -> bool:
-        if not origin_url:
-            return False
-        try:
-            parsed = urlsplit(origin_url)
-        except Exception:
-            return False
-        if parsed.scheme not in {"http", "https"}:
-            return False
-        # Compare hostname only — reverse proxies (e.g. nginx with `Host $host`)
-        # strip the port from request.host while the browser keeps it in Origin,
-        # so a literal netloc comparison would reject legitimate connections.
-        origin_host = parsed.hostname or ""
-        request_host = request.host.partition(":")[0]
-        return bool(origin_host) and origin_host == request_host
-
-    allowed_ok = origin in allowed if allowed else _origin_matches_host(origin)
-    if not allowed_ok:
-        current_app.logger.warning(
-            "Rejecting web WS connection due to Origin policy. origin=%s host=%s",
-            sanitize_log_string(origin),
-            sanitize_log_string(request.host),
-        )
-        try:
-            ws.close()
-        except Exception:
-            pass
-        return
-
-    connection_manager.register_web_connection(ws)
-    current_app.logger.info("Web server WebSocket connected")
-    while True:
-        try:
-            message = ws.receive()
-            try:
-                data = json.loads(message)
-                if data.get("type") == "heartbeat":
-                    ws.send(
-                        json.dumps(
-                            {
-                                "type": "heartbeat_ack",
-                                "timestamp": data.get("timestamp"),
-                            }
-                        )
-                    )
-                    continue
-                if data.get("type") == "pong":
-                    continue
-            except Exception:
-                pass
-        except Exception as exc:
-            current_app.logger.error("WebSocket error: %s", sanitize_log_string(str(exc)))
-            connection_manager.unregister_web_connection(ws)
-            break
-
-
 def main():
     http_port = app.config["PORT"]
     ws_port = app.config["WS_PORT"]
@@ -282,12 +215,6 @@ def main():
     from .services import telemetry
 
     telemetry.start_sampler()
-
-    # HTTP 連線保活檢查執行緒
-    check_thread = threading.Thread(
-        target=background_check_connections, args=(app.logger,), daemon=True
-    )
-    check_thread.start()
 
     # WS server 與 HTTP server 必須在同一個 process 才能共享 in-memory ws_queue
     # 使用獨立執行緒跑 asyncio event loop（gevent monkey-patch 相容）

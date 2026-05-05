@@ -1,7 +1,6 @@
 import asyncio
 import json
 import secrets
-import threading
 import time
 from urllib.parse import parse_qs, urlparse
 
@@ -12,39 +11,6 @@ from ..managers import connection_manager
 from ..services import ws_auth, ws_queue
 from ..services.ws_state import update_ws_client_count
 from ..utils import sanitize_log_string
-
-# Signals check_connections() to stop gracefully
-_stop_event = threading.Event()
-
-
-def stop_connection_checker():
-    """Call this during application shutdown to interrupt the checker immediately."""
-    _stop_event.set()
-
-
-def check_connections(logger):
-    """Periodically ping web clients to detect dead connections.
-
-    Uses Event.wait() instead of time.sleep() so the thread can be interrupted
-    immediately on shutdown rather than waiting up to 30 seconds.
-    """
-    while not _stop_event.is_set():
-        try:
-            connections_copy = connection_manager.get_web_connections()
-            if connections_copy:
-                for ws in connections_copy:
-                    try:
-                        ws.send(json.dumps({"type": "ping"}))
-                    except Exception as exc:
-                        logger.warning(
-                            "Connection dead, removing: %s",
-                            sanitize_log_string(str(exc)),
-                        )
-                        connection_manager.unregister_web_connection(ws)
-        except Exception as exc:
-            logger.warning("Error in connection checker: %s", sanitize_log_string(str(exc)))
-        # Wait up to 30 s, but wake immediately if stop is requested
-        _stop_event.wait(timeout=30)
 
 
 async def _forward_messages(logger):

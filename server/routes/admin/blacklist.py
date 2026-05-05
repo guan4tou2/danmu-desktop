@@ -6,7 +6,6 @@ from ...services.blacklist import add_keyword, list_keywords, remove_keyword
 from ...services.security import rate_limit
 from ...services.validation import BlacklistKeywordSchema, validate_request
 from . import (
-    _broadcast_blacklist_update,
     _json_response,
     admin_bp,
     require_csrf,
@@ -27,7 +26,6 @@ def add_to_blacklist_route():
     keyword = validated_data["keyword"]
     if add_keyword(keyword):
         current_app.logger.info(f"Blacklist keyword added: {sanitize_log_string(keyword)}")
-        _broadcast_blacklist_update()
         return _json_response({"message": "Keyword added"})
     current_app.logger.info(f"Blacklist keyword already exists: {sanitize_log_string(keyword)}")
     return _json_response({"message": "Keyword already exists"})
@@ -45,7 +43,6 @@ def remove_from_blacklist_route():
     keyword = validated_data["keyword"]
     if remove_keyword(keyword):
         current_app.logger.info(f"Blacklist keyword removed: {sanitize_log_string(keyword)}")
-        _broadcast_blacklist_update()
         return _json_response({"message": "Keyword removed"})
     current_app.logger.warning(f"Blacklist keyword not found: {sanitize_log_string(keyword)}")
     return _json_response({"error": "Keyword not found"}, 404)

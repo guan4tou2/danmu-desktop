@@ -11,8 +11,6 @@ admin scope. The animation runs server-side only as a broadcast trigger;
 all visual work lives in overlay.js.
 """
 
-import json
-
 from flask import current_app
 
 from ...services import messaging
@@ -28,7 +26,6 @@ def trigger_konami():
     notification = {"type": "konami"}
     try:
         messaging.forward_to_ws_server(notification)
-        messaging.send_message(json.dumps(notification))
         current_app.logger.info("[konami] easter egg triggered")
     except Exception as exc:  # pragma: no cover — logging defence
         current_app.logger.error("[konami] broadcast failed: %s", sanitize_log_string(str(exc)))

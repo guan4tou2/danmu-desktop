@@ -1,7 +1,5 @@
 """Settings toggle and update routes."""
 
-import json
-
 from flask import current_app, make_response, request
 
 from ...services import messaging
@@ -38,7 +36,6 @@ def set_option():
     try:
         notification = {"type": "settings_changed", "settings": get_options()}
         messaging.forward_to_ws_server(notification)
-        messaging.send_message(json.dumps(notification))
         current_app.logger.info(f"Setting toggled: {key} = {value}")
     except Exception as exc:
         current_app.logger.error("Change Error: %s", sanitize_log_string(str(exc)))
@@ -67,7 +64,6 @@ def update():
 
         update_setting(key, index, value)
         notification = {"type": "settings_changed", "settings": get_options()}
-        messaging.send_message(json.dumps(notification))
         messaging.forward_to_ws_server(notification)
         current_app.logger.info(f"Setting updated: {key}[{index}] = {value}")
         return make_response("OK", 200)
@@ -105,7 +101,6 @@ def update_allowlist(key):
 
     try:
         notification = {"type": "settings_changed", "settings": get_options()}
-        messaging.send_message(json.dumps(notification))
         messaging.forward_to_ws_server(notification)
         current_app.logger.info(
             "Allowlist updated: %s = %d entries",

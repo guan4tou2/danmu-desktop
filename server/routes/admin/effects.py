@@ -237,17 +237,6 @@ def fire_effect(name):
         "styleId": rendered.get("styleId"),
     }
 
-    # Push to overlay queue (so overlay clients see it) AND broadcast to
-    # admin WS so the live-console dashboard can echo a "fired ✓" toast.
-    import json
-
-    try:
-        messaging.send_message(json.dumps(payload))
-    except Exception as exc:
-        current_app.logger.warning(
-            "effect_pulse admin broadcast failed: %s", sanitize_log_string(str(exc))
-        )
-
     try:
         # forward_to_ws_server skips its broadcast-gate logic for non-danmu
         # payloads (no "text" key), so this hits overlay even in STANDBY.

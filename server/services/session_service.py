@@ -14,8 +14,10 @@ Side effects on open_session():
 Side effects on close_session():
   * Sets broadcast mode to "standby" via broadcast service.
   * Appends closed session record to sessions_archive.jsonl.
-  * Pushes {"type": "session_ended", "behavior": <viewer_end_behavior>} to all
-    web WS connections (viewer + admin pages receive it).
+
+The viewer learns about live → ended transitions by polling
+``GET /session/public-state`` (v5.0.0 Phase 2 — replaces the legacy
+``session_ended`` WS push).
 
 viewer_end_behavior options (stored in active_session.json, admin-configurable):
   "continue"      — viewer page keeps working normally (IDLE behaviour)
@@ -148,24 +150,6 @@ def _append_archive(record: Dict[str, Any]) -> None:
         logger.warning("Cannot append to sessions_archive.jsonl: %s", exc)
 
 
-def _push_session_ended(behavior: str) -> None:
-    """Push session_ended event to all web WS connections (fire-and-forget)."""
-    try:
-        import json as _json
-
-        # Import here to avoid circular imports at module load time.
-        from ..managers import connection_manager  # type: ignore[import]
-
-        payload = _json.dumps({"type": "session_ended", "behavior": behavior})
-        for client in connection_manager.get_web_connections():
-            try:
-                client.send(payload)
-            except Exception:
-                pass
-    except Exception as exc:
-        logger.warning("session_ended WS push failed: %s", exc)
-
-
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -275,9 +259,6 @@ def close_session() -> Dict[str, Any]:
         broadcast_svc.set_mode("standby")
     except Exception as exc:
         logger.warning("Could not auto-set broadcast to standby on session close: %s", exc)
-
-    # Push session_ended to all viewer WS connections
-    _push_session_ended(behavior)
 
     logger.info(
         "Session closed: %s (%s), duration=%ds",

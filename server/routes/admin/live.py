@@ -6,7 +6,7 @@ from ...services import live_feed_buffer
 from ...services.blacklist import add_keyword
 from ...services.security import rate_limit
 from ...services.validation import BlacklistKeywordSchema, validate_request
-from . import _broadcast_blacklist_update, _json_response, admin_bp, require_csrf, require_login
+from . import _json_response, admin_bp, require_csrf, require_login
 
 
 @admin_bp.route("/live-feed/recent", methods=["GET"])
@@ -54,7 +54,6 @@ def live_block():
 
     if block_type == "keyword":
         add_keyword(value)
-        _broadcast_blacklist_update()
         return _json_response({"message": f"Keyword '{value}' blocked"})
     elif block_type == "fingerprint":
         from ...services.filter_engine import filter_engine

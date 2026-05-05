@@ -1,13 +1,16 @@
-import json
-
 from flask import current_app
 
-from ..managers import connection_manager
 from ..utils import sanitize_log_string
 from . import broadcast, live_feed_buffer, onscreen_limiter, telemetry, ws_queue
 
 
 def _broadcast_live_feed(data):
+    """Append a danmu snapshot to the admin polling buffer.
+
+    Used to also push to flask-sock browser clients via send_message();
+    that path was removed in v5.0.0 Phase 2 (admin polls
+    /admin/live-feed/recent).
+    """
     if not (isinstance(data, dict) and data.get("text")):
         return
     snapshot = {
@@ -21,21 +24,10 @@ def _broadcast_live_feed(data):
         "isImage": data.get("isImage", False),
         "fingerprint": data.get("fingerprint", ""),
     }
-    # Phase 1 of admin-WS removal: append to the polling-backed ring
-    # buffer first so admin's polling primitive doesn't lag behind. The
-    # send_message() call below is still the legacy push for any client
-    # holding the flask-sock /ws connection (viewer settings_changed
-    # path) — admin no longer connects since admin.js dropped
-    # initAdminWebSocket().
     try:
         live_feed_buffer.append(snapshot)
     except Exception:
         pass  # buffer failure shouldn't block forwarding
-    try:
-        live_msg = json.dumps({"type": "danmu_live", "data": snapshot})
-        send_message(live_msg)
-    except Exception:
-        pass  # live feed broadcast failure should never block main flow
 
 
 def _raw_forward(data) -> bool:
@@ -103,15 +95,3 @@ def forward_to_ws_server(data, bypass_broadcast_gate=False):
         return result
 
     return onscreen_limiter.try_send(data, _raw_forward)
-
-
-def send_message(message):
-    for client in connection_manager.get_web_connections():
-        try:
-            client.send(message)
-        except Exception as exc:
-            current_app.logger.warning(
-                "Error sending message to client: %s",
-                sanitize_log_string(str(exc)),
-            )
-            connection_manager.unregister_web_connection(client)
