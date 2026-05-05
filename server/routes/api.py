@@ -368,20 +368,73 @@ def get_settings():
     return _json_response(get_options(), 200)
 
 
+def _sanitize_poll_for_viewer(status):
+    """Strip vote totals/percentages from poll status before sending to
+    the public viewer endpoint.
+
+    The polestar (2026-05-05) is that viewers must NOT see vote counts
+    or percentages. The viewer DOM already drops these fields, but
+    anyone reading the network response in DevTools could read them.
+    This sanitizer removes them at the wire boundary so the privacy
+    guarantee doesn't depend on client cooperation. Admin polling
+    (which DOES need totals) goes through a separate authenticated
+    `/admin/poll/state` route, not this one.
+    """
+    if not isinstance(status, dict):
+        return status
+    if status.get("state") in (None, "idle"):
+        # Idle / no poll — nothing to leak. Return the bare state so
+        # the viewer renderer can still distinguish "no poll" from
+        # "fetch failed".
+        return {"state": status.get("state") or "idle"}
+
+    def _opts(opts):
+        if not isinstance(opts, list):
+            return []
+        return [
+            {"key": o.get("key"), "text": o.get("text")}
+            for o in opts
+            if isinstance(o, dict)
+        ]
+
+    def _question(q):
+        if not isinstance(q, dict):
+            return {}
+        return {
+            "id": q.get("id"),
+            "text": q.get("text"),
+            "image_url": q.get("image_url"),
+            "time_limit_seconds": q.get("time_limit_seconds"),
+            "order": q.get("order", 0),
+            "options": _opts(q.get("options")),
+        }
+
+    questions = status.get("questions") or []
+    return {
+        "state": status.get("state"),
+        "active": status.get("active"),
+        "current_index": status.get("current_index"),
+        "started_at": status.get("started_at"),
+        "ended_at": status.get("ended_at"),
+        "question_count": status.get("question_count"),
+        "questions": [_question(q) for q in questions],
+        # Legacy single-question compat fields the normalizer still reads.
+        "question": status.get("question"),
+        "options": _opts(status.get("options")),
+    }
+
+
 @api_bp.route("/poll/public-status", methods=["GET"])
 def poll_public_status():
     """Public viewer polling endpoint replacing the legacy `poll_update`
     WS push (Phase 2 of WS removal).
 
-    Returns the current poll session shape so the viewer can render the
-    poll tab without a WebSocket connection. Counts/percentages are
-    included in the raw response for symmetry with the WS push (the
-    viewer renderer drops them per the v5.0.0 polestar — see
-    `_renderPollPane` in main.js commit f385570). Future hardening
-    could strip them server-side; for now the contract matches the
-    legacy push exactly.
+    Returns a viewer-safe shape: question text + option key/text only,
+    no vote counts, percentages, total_votes, or duplicate_attempts.
+    Admin polling that needs the full counts must go through the
+    authenticated admin route.
     """
-    return _json_response(poll_service.get_status(), 200)
+    return _json_response(_sanitize_poll_for_viewer(poll_service.get_status()), 200)
 
 
 @api_bp.route("/session/public-state", methods=["GET"])

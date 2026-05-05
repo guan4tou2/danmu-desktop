@@ -1473,6 +1473,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Connection UI — at least one successful response = "connected".
+    // Failures cascade through `_recordWsFailure()` so the existing
+    // offline-card flow (kept from the WS days) still fires after 3
+    // misses in 30s — disabled-send + countdown + ops-contact UX must
+    // not regress just because the transport changed to polling.
     if (settings || pollState || sessionState) {
       if (_consecutivePollFailures > 0) {
         _consecutivePollFailures = 0;
@@ -1481,6 +1485,7 @@ document.addEventListener("DOMContentLoaded", () => {
       updateConnectionUI("connected");
     } else {
       _consecutivePollFailures++;
+      _recordWsFailure();
       if (_consecutivePollFailures >= VIEWER_FAIL_THRESHOLD) {
         updateConnectionUI("disconnected");
       }
