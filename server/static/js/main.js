@@ -1406,73 +1406,106 @@ document.addEventListener("DOMContentLoaded", () => {
     updateSendEnabled();
   }
 
-  function connectWebSocket() {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/`;
+  // v5.0.0+ Phase 2: viewer no longer opens a WebSocket. The three
+  // legacy push types map to public polling endpoints:
+  //   poll_update      → GET /poll/public-status
+  //   settings_changed → GET /get_settings (diffed; only re-applies on change)
+  //   session_ended    → GET /session/public-state (live → ended transition)
+  // One combined 2-second tick keeps overhead minimal. Connection UI
+  // ("connected" / "disconnected") is derived from poll success rather
+  // than a real socket — operator sees the same visual state.
+  let _pollTimer = null;
+  let _settingsHash = null;
+  let _lastSessionStatus = null;
+  let _consecutivePollFailures = 0;
+  const VIEWER_POLL_INTERVAL_MS = 2000;
+  const VIEWER_FAIL_THRESHOLD = 3; // mark disconnected after 3 consecutive misses
 
-    updateConnectionUI("connecting");
-    ws = new WebSocket(wsUrl);
+  async function _pollViewerState() {
+    const fetches = [
+      fetch("/get_settings", { credentials: "same-origin" })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
+      VIEWER_POLL_ENABLED
+        ? fetch("/poll/public-status", { credentials: "same-origin" })
+            .then((r) => (r.ok ? r.json() : null))
+            .catch(() => null)
+        : Promise.resolve(null),
+      fetch("/session/public-state", { credentials: "same-origin" })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
+    ];
+    const [settings, pollState, sessionState] = await Promise.all(fetches);
 
-    ws.onopen = () => {
-      console.log("Connected to WebSocket");
-      _wsReconnectAttempt = 0;
-      _wsFailTimestamps = [];
-      if (_offlineCardActive) hideOfflineCard();
-      updateConnectionUI("connected");
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "poll_update" && VIEWER_POLL_ENABLED) {
-          _applyPollState(data);
-        } else if (data.type === "settings_changed") {
-          console.log("Settings updated:", data.settings);
-          currentSettings = data.settings;
-
-          // Update Font Selection UI
-          if (currentSettings.FontFamily && currentSettings.FontFamily[0]) {
-            if (elements.userFontSelectControl) {
-              elements.userFontSelectControl.style.display = "block";
-              populateUserFontDropdown();
-            }
-          } else {
-            if (elements.userFontSelectControl) {
-              elements.userFontSelectControl.style.display = "none";
-            }
+    // Settings — diff & re-apply on change. Initial boot fetch
+    // populates currentSettings; subsequent polls only act on a real
+    // change so we don't churn UI every tick.
+    if (settings) {
+      const hash = JSON.stringify(settings);
+      if (_settingsHash !== null && hash !== _settingsHash) {
+        currentSettings = settings;
+        if (currentSettings.FontFamily && currentSettings.FontFamily[0]) {
+          if (elements.userFontSelectControl) {
+            elements.userFontSelectControl.style.display = "block";
+            populateUserFontDropdown();
           }
-
-          // Update Effects UI visibility
-          applyEffectsVisibility(currentSettings);
-
-          updatePreview();
-        } else if (data.type === "session_ended") {
-          _handleSessionEnded(data.behavior || "continue");
+        } else if (elements.userFontSelectControl) {
+          elements.userFontSelectControl.style.display = "none";
         }
-      } catch (e) {
-        console.error("Error processing WebSocket message:", e);
+        applyEffectsVisibility(currentSettings);
+        updatePreview();
       }
-    };
+      _settingsHash = hash;
+    }
 
-    ws.onclose = () => {
-      _wsReconnectAttempt++;
-      _recordWsFailure();
-      const delay = Math.min(
-        WS_BASE_DELAY * Math.pow(2, _wsReconnectAttempt - 1),
-        WS_MAX_RECONNECT_DELAY
-      );
-      const jitter = delay * 0.2 * Math.random();
-      const totalDelay = Math.round(delay + jitter);
-      console.log(`WebSocket disconnected, retrying in ${totalDelay}ms (attempt ${_wsReconnectAttempt})...`);
-      updateConnectionUI("disconnected");
-      setTimeout(connectWebSocket, totalDelay);
-    };
+    // Poll state — feed straight into the existing renderer.
+    if (pollState) {
+      _applyPollState(pollState);
+    }
 
-    ws.onerror = (err) => {
-      console.error("WebSocket error:", err);
-      updateConnectionUI("disconnected");
-    };
+    // Session — fire ended handler on live → ended transition.
+    if (sessionState) {
+      const status = sessionState.status || sessionState.state || null;
+      if (status === "ended" && _lastSessionStatus === "live") {
+        _handleSessionEnded(sessionState.viewer_end_behavior || "continue");
+      }
+      _lastSessionStatus = status;
+    }
+
+    // Connection UI — at least one successful response = "connected".
+    if (settings || pollState || sessionState) {
+      if (_consecutivePollFailures > 0) {
+        _consecutivePollFailures = 0;
+        if (_offlineCardActive) hideOfflineCard();
+      }
+      updateConnectionUI("connected");
+    } else {
+      _consecutivePollFailures++;
+      if (_consecutivePollFailures >= VIEWER_FAIL_THRESHOLD) {
+        updateConnectionUI("disconnected");
+      }
+    }
   }
+
+  function connectWebSocket() {
+    // Function name preserved for minimal callsite churn. Now bootstraps
+    // the polling loop instead of opening a WebSocket.
+    updateConnectionUI("connecting");
+    if (_pollTimer) {
+      clearInterval(_pollTimer);
+      _pollTimer = null;
+    }
+    _pollViewerState(); // immediate first tick
+    _pollTimer = setInterval(_pollViewerState, VIEWER_POLL_INTERVAL_MS);
+  }
+
+  // Stop polling on unload to avoid background traffic.
+  window.addEventListener("beforeunload", () => {
+    if (_pollTimer) {
+      clearInterval(_pollTimer);
+      _pollTimer = null;
+    }
+  });
 
   // --- Helper: Apply Effects section visibility based on settings ---
   function applyEffectsVisibility(settings) {

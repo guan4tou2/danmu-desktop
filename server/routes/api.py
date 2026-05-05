@@ -368,6 +368,37 @@ def get_settings():
     return _json_response(get_options(), 200)
 
 
+@api_bp.route("/poll/public-status", methods=["GET"])
+def poll_public_status():
+    """Public viewer polling endpoint replacing the legacy `poll_update`
+    WS push (Phase 2 of WS removal).
+
+    Returns the current poll session shape so the viewer can render the
+    poll tab without a WebSocket connection. Counts/percentages are
+    included in the raw response for symmetry with the WS push (the
+    viewer renderer drops them per the v5.0.0 polestar — see
+    `_renderPollPane` in main.js commit f385570). Future hardening
+    could strip them server-side; for now the contract matches the
+    legacy push exactly.
+    """
+    return _json_response(poll_service.get_status(), 200)
+
+
+@api_bp.route("/session/public-state", methods=["GET"])
+def session_public_state():
+    """Public viewer polling endpoint replacing the legacy
+    `session_ended` WS push (Phase 2 of WS removal).
+
+    Returns the lightweight session state (status / name / started_at
+    / viewer_end_behavior). Viewer polls this every ~5 s and triggers
+    `_handleSessionEnded(behavior)` when status transitions
+    live → ended.
+    """
+    from ..services import session_service
+
+    return _json_response(session_service.get_state(), 200)
+
+
 @api_bp.route("/fonts", methods=["GET"])
 def public_fonts():
     return _json_response(list_available_fonts(), 200)
