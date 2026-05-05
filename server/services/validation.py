@@ -369,6 +369,22 @@ class SoundRuleSchema(Schema):
     cooldown_ms = fields.Int(load_default=1000, validate=validate.Range(min=0, max=60000))
 
 
+class OnscreenLimitsSchema(Schema):
+    """Admin onscreen-danmu traffic-shaper settings."""
+
+    class Meta:
+        unknown = EXCLUDE
+
+    max_onscreen_danmu = fields.Int(required=True, validate=validate.Range(min=0, max=200))
+    overflow_mode = fields.Str(
+        required=True,
+        validate=validate.OneOf(
+            ["drop", "queue"],
+            error="overflow_mode must be 'drop' or 'queue'",
+        ),
+    )
+
+
 class WsAuthSchema(Schema):
     """Admin WebSocket auth toggle request.
 

@@ -63,6 +63,7 @@ from . import (  # noqa: E402, F401
     konami,
     live,
     metrics,
+    onscreen_limits,
     plugins,
     poll,
     ratelimit,

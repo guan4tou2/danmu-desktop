@@ -398,6 +398,57 @@ Server-side 包含 Rate Limit telemetry、admin 啟動單一 endpoint、Effects
 - VPS 尚未部署 — branch `claude/design-v2-retrofit` 有 12 個 unpushed
   commits
 
+## [4.10.0] - 2026-04-22
+
+Onscreen danmu limiter — 新增可配置的畫面彈幕上限，避免畫面被蓋滿看不清楚
+簡報內容。Desktop + server + admin 全鏈路支援。
+
+### 新增 / Added
+
+- **可配置上限 + 兩種溢位策略**：Admin 新增 `<details id="sec-onscreen-limits">`
+  卡片可設定單一畫面上同時顯示的彈幕數量（0 = 無限，1-200）以及溢位策略：
+  - **Drop 模式**（預設）：超過上限直接丟棄新彈幕，回傳 `{"status": "dropped"}`。
+  - **Queue 模式**：FIFO 佇列（cap=50、TTL=60s），在有空位時自動補發；佇列
+    滿時回 `{"status": "rejected", "reason": "queue_full"}`。
+- **Public web 狀態感知 Toast**：`main.js` `/fire` response handler 讀取
+  `status` 欄位顯示對應訊息 — `queued`（排隊中⋯）/ `dropped`（畫面已滿）/
+  `rejected`（稍後再試）/ `sent`（彈幕已發射）。
+- **`services/onscreen_config.py`**：runtime JSON 設定持久化（`server/runtime/
+  onscreen_limits.json`，chmod 0o600），follows `ws_auth.py` 模式。
+- **`services/onscreen_limiter.py`**：`threading.RLock` 保護的 in-flight tracker，
+  `threading.Timer` 在彈幕滾動結束後自動釋放配額；queue mode 使用
+  `collections.deque` + TTL sweep。
+- **`routes/admin/onscreen_limits.py`**：`GET /admin/api/onscreen-limits` 回傳
+  目前狀態；`POST` 以 marshmallow `OnscreenLimitsSchema` 驗證後更新（要求
+  CSRF + login + admin rate limit）。
+- **i18n**：4 個語系（en/zh/ja/ko）各新增 15 個 key — admin 卡片 label /
+  hint、public toast 文案、validation error。
+- **測試**：`test_onscreen_config.py` / `test_onscreen_limiter.py` /
+  `test_admin_onscreen_limits.py` 涵蓋 state persistence、drop/queue 行為、
+  TTL expiry、admin route auth / validation。
+
+### 破壞性變更 / Breaking
+
+- **`messaging.forward_to_ws_server()` 回傳 `dict` 取代 `bool`**：回傳
+  `{"status": "sent"|"queued"|"dropped"|"rejected", "reason"?: str}`。使用
+  這個 return value 的 plugin / custom integration 需更新為讀取 `status` 欄位
+  （`status in ("sent", "queued")` 等同原本的 `True`）。`type:
+  "settings_changed"` meta 訊息會繞過 limiter 直接轉發。
+
+### 驗證 / Verification
+
+- 820 tests pass（`cd server && PYTHONPATH=.. uv run python -m pytest`）
+- `conftest.py` 新增 `_isolate_onscreen_limits` autouse fixture，預設 cap=0
+  讓現存測試不受 limiter 影響
+- **Electron GUI E2E**：`danmu-desktop/e2e/onscreen-limiter-e2e.spec.js` 用
+  Playwright `_electron` 驅動打包後的 overlay 子視窗，實測 queue 模式下
+  4 發彈幕（前 2 `sent` / 後 2 `queued`）全部在 slot 釋放後顯示於 overlay；
+  drop 模式下 3rd+4th 回 429 `{status: "dropped", reason: "full"}`。
+- `danmu-desktop/package.json` bump 4.9.0 → 4.10.0 觸發 `build.yml` binary
+  release pipeline（Electron 端無程式碼變動，但版本必須同步以觸發 CI）
+
+---
+
 ## [4.9.1] - 2026-04-22
 
 `/fire` anti-abuse hardening — 在 v4.9.0 admin observability 之後，補齊公開

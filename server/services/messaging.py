@@ -4,66 +4,49 @@ from flask import current_app
 
 from ..managers import connection_manager
 from ..utils import sanitize_log_string
-from . import broadcast, telemetry, ws_queue
+from . import broadcast, onscreen_limiter, telemetry, ws_queue
 
 
-def forward_to_ws_server(data, bypass_broadcast_gate=False):
-    """Forward danmu payload to WS overlay queue.
+def _broadcast_live_feed(data):
+    if not (isinstance(data, dict) and data.get("text")):
+        return
+    try:
+        live_msg = json.dumps(
+            {
+                "type": "danmu_live",
+                "data": {
+                    "text": data.get("text", ""),
+                    "color": data.get("color", ""),
+                    "size": data.get("size", ""),
+                    "speed": data.get("speed", ""),
+                    "opacity": data.get("opacity", ""),
+                    "nickname": data.get("nickname", ""),
+                    "layout": data.get("layout", "scroll"),
+                    "isImage": data.get("isImage", False),
+                    "fingerprint": data.get("fingerprint", ""),
+                },
+            }
+        )
+        send_message(live_msg)
+    except Exception:
+        pass  # live feed broadcast failure should never block main flow
 
-    v5.0.0+: when broadcast.is_live() is False (admin in STANDBY mode), the
-    payload is parked in broadcast's pending queue instead of being pushed
-    to overlay. The drain worker calls back here with
-    ``bypass_broadcast_gate=True`` so re-emitting drained items doesn't
-    re-park them.
 
-    Non-danmu payloads (e.g. settings_changed dicts) are NOT gated — admin
-    actions must still propagate during standby. We detect "danmu" by
-    presence of a ``"text"`` key, matching what the frontend renders.
+def _raw_forward(data) -> bool:
+    """Actual WS enqueue + telemetry + live-feed broadcast. Returns True on success.
+
+    The onscreen_limiter callback. Standby gating happens BEFORE this so a parked
+    danmu does not consume an in-flight slot.
     """
     try:
-        is_danmu = isinstance(data, dict) and data.get("text") is not None
-        if is_danmu and not bypass_broadcast_gate and not broadcast.is_live():
-            # Standby mode — park in broadcast queue, do NOT push to overlay.
-            try:
-                broadcast.enqueue_pending(data)
-            except Exception as exc:
-                current_app.logger.warning(
-                    "broadcast standby enqueue failed: %s",
-                    sanitize_log_string(str(exc)),
-                )
-            return True
-
         ws_queue.enqueue_message(data)
         telemetry.record_message()
-        if is_danmu:
+        if isinstance(data, dict) and data.get("text") is not None:
             try:
                 broadcast.increment_messages(1)
             except Exception:
                 pass  # Counter is best-effort.
-
-        # Broadcast live feed to admin WS connections (fire-and-forget)
-        if isinstance(data, dict) and data.get("text"):
-            try:
-                live_msg = json.dumps(
-                    {
-                        "type": "danmu_live",
-                        "data": {
-                            "text": data.get("text", ""),
-                            "color": data.get("color", ""),
-                            "size": data.get("size", ""),
-                            "speed": data.get("speed", ""),
-                            "opacity": data.get("opacity", ""),
-                            "nickname": data.get("nickname", ""),
-                            "layout": data.get("layout", "scroll"),
-                            "isImage": data.get("isImage", False),
-                            "fingerprint": data.get("fingerprint", ""),
-                        },
-                    }
-                )
-                send_message(live_msg)
-            except Exception:
-                pass  # live feed broadcast failure should never block main flow
-
+        _broadcast_live_feed(data)
         return True
     except Exception as exc:
         current_app.logger.error(
@@ -71,6 +54,45 @@ def forward_to_ws_server(data, bypass_broadcast_gate=False):
             sanitize_log_string(str(exc)),
         )
         return False
+
+
+def forward_to_ws_server(data, bypass_broadcast_gate=False):
+    """Forward `data` to the overlay WS subject to broadcast gate + onscreen limiter.
+
+    Returns a status dict:
+      {"status": "sent"}                                 forwarded (or parked)
+      {"status": "queued"}                               queued for later release
+      {"status": "dropped", "reason": <str>}             cap hit in drop mode,
+                                                         or forward_failed
+      {"status": "rejected", "reason": "queue_full"}     queue at cap
+
+    v5.0.0: when ``broadcast.is_live()`` is False (admin in STANDBY mode), the
+    payload is parked in broadcast's pending queue instead of pushed to overlay.
+    The drain worker calls back here with ``bypass_broadcast_gate=True`` so
+    re-emitting drained items doesn't re-park them.
+
+    Non-danmu meta payloads (settings_changed) bypass BOTH gates so admin
+    actions still propagate during standby and at limiter saturation.
+    """
+    # Meta messages bypass everything — admin toggles must reach overlay.
+    if isinstance(data, dict) and data.get("type") == "settings_changed":
+        ok = _raw_forward(data)
+        return {"status": "sent"} if ok else {"status": "dropped", "reason": "forward_failed"}
+
+    # Broadcast standby gate runs BEFORE the limiter so parked danmu don't
+    # consume in-flight slots.
+    is_danmu = isinstance(data, dict) and data.get("text") is not None
+    if is_danmu and not bypass_broadcast_gate and not broadcast.is_live():
+        try:
+            broadcast.enqueue_pending(data)
+        except Exception as exc:
+            current_app.logger.warning(
+                "broadcast standby enqueue failed: %s",
+                sanitize_log_string(str(exc)),
+            )
+        return {"status": "sent"}
+
+    return onscreen_limiter.try_send(data, _raw_forward)
 
 
 def send_message(message):

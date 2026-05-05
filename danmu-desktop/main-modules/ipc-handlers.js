@@ -173,10 +173,27 @@ function setupIpcHandlers(getMainWindow, childWindows) {
 
   ipcMain.handle("get-app-version", () => app.getVersion());
 
-  ipcMain.handle("open-external", (_, url) => {
-    // Only allow https:// URLs to prevent protocol-handler abuse
-    if (typeof url === "string" && url.startsWith("https://")) {
-      shell.openExternal(url);
+  ipcMain.handle("open-external", (event, url) => {
+    const mainWindow = getMainWindow();
+    if (!isFromMainWindow(event, mainWindow)) {
+      console.warn("[Main] open-external: rejected IPC from untrusted sender");
+      return;
+    }
+    // Only allow https:// URLs with a parseable hostname to prevent
+    // protocol-handler abuse and credentials-in-URL attacks.
+    if (typeof url !== "string" || !url.startsWith("https://")) {
+      console.warn("[Main] open-external: rejected non-https URL");
+      return;
+    }
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== "https:" || parsed.username || parsed.password) {
+        console.warn("[Main] open-external: rejected URL with credentials or bad protocol");
+        return;
+      }
+      shell.openExternal(parsed.toString());
+    } catch {
+      console.warn("[Main] open-external: rejected unparseable URL");
     }
   });
 

@@ -4,14 +4,19 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from server.services import messaging, ws_queue
+from server.services import messaging, onscreen_config, onscreen_limiter, ws_queue
 
 
 @pytest.fixture(autouse=True)
-def clean_queue():
+def clean_queue(tmp_path, monkeypatch):
+    monkeypatch.setattr(onscreen_config, "_STATE_FILE", tmp_path / "cfg.json")
+    onscreen_config._reset_for_tests()
+    onscreen_limiter.reset()
     ws_queue.dequeue_all()
     yield
     ws_queue.dequeue_all()
+    onscreen_limiter.reset()
+    onscreen_config._reset_for_tests()
 
 
 # ─── forward_to_ws_server ─────────────────────────────────────────────────────
@@ -20,23 +25,24 @@ def clean_queue():
 def test_forward_enqueues_message(app):
     with app.app_context():
         result = messaging.forward_to_ws_server({"text": "hello"})
-    assert result is True
+    assert result["status"] == "sent"
     msgs = ws_queue.dequeue_all()
     assert len(msgs) == 1
     assert msgs[0]["text"] == "hello"
 
 
-def test_forward_returns_true_on_success(app):
+def test_forward_returns_sent_status_on_success(app):
     with app.app_context():
         result = messaging.forward_to_ws_server({"x": 1})
-    assert result is True
+    assert result["status"] == "sent"
 
 
-def test_forward_returns_false_on_enqueue_exception(app):
+def test_forward_returns_dropped_on_enqueue_exception(app):
     with app.app_context():
         with patch.object(ws_queue, "enqueue_message", side_effect=RuntimeError("boom")):
             result = messaging.forward_to_ws_server({"x": 1})
-    assert result is False
+    assert result["status"] == "dropped"
+    assert result["reason"] == "forward_failed"
 
 
 def test_forward_does_not_raise_on_exception(app):
@@ -53,6 +59,32 @@ def test_forward_preserves_payload(app):
     with app.app_context():
         messaging.forward_to_ws_server(payload)
     assert ws_queue.dequeue_all()[0] == payload
+
+
+def test_forward_drops_when_cap_reached(app):
+    onscreen_config.set_state(max_onscreen_danmu=1, overflow_mode="drop")
+    with app.app_context():
+        first = messaging.forward_to_ws_server({"text": "a", "speed": 1})
+        second = messaging.forward_to_ws_server({"text": "b", "speed": 1})
+    assert first["status"] == "sent"
+    assert second == {"status": "dropped", "reason": "full"}
+
+
+def test_forward_queues_when_full_in_queue_mode(app):
+    onscreen_config.set_state(max_onscreen_danmu=1, overflow_mode="queue")
+    with app.app_context():
+        messaging.forward_to_ws_server({"text": "a", "speed": 1})
+        result = messaging.forward_to_ws_server({"text": "b", "speed": 1})
+    assert result == {"status": "queued"}
+
+
+def test_forward_settings_changed_bypasses_limiter(app):
+    onscreen_config.set_state(max_onscreen_danmu=1, overflow_mode="drop")
+    with app.app_context():
+        messaging.forward_to_ws_server({"text": "a", "speed": 1})
+        # Even though cap is full, settings_changed meta message must pass
+        result = messaging.forward_to_ws_server({"type": "settings_changed"})
+    assert result["status"] == "sent"
 
 
 # ─── send_message ─────────────────────────────────────────────────────────────
@@ -154,7 +186,7 @@ def test_forward_broadcasts_danmu_live_to_web_connections(app):
 
 
 def test_forward_live_broadcast_does_not_block_on_exception(app):
-    """Even if broadcast fails, forward_to_ws_server returns True."""
+    """Even if broadcast fails, forward_to_ws_server returns sent."""
     from unittest.mock import patch
 
     from server.services.messaging import forward_to_ws_server
@@ -163,7 +195,7 @@ def test_forward_live_broadcast_does_not_block_on_exception(app):
         mock_cm.get_web_connections.side_effect = RuntimeError("boom")
         result = forward_to_ws_server({"text": "hi", "color": "#fff"})
 
-    assert result is True
+    assert result["status"] == "sent"
 
 
 def test_forward_skips_live_broadcast_for_empty_text(app):

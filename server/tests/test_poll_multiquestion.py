@@ -382,7 +382,11 @@ def test_vote_targets_current_question_via_fire(client, isolated_poll_dir, monke
     # Pretend an overlay is connected so /fire doesn't 503.
     update_ws_client_count(1)
     # Stub the WS forward via monkeypatch so other tests aren't affected.
-    monkeypatch.setattr(messaging, "forward_to_ws_server", lambda _data: True)
+    monkeypatch.setattr(
+        messaging,
+        "forward_to_ws_server",
+        lambda _data, **_kwargs: {"status": "sent"},
+    )
 
     create_resp = authed_post_json(
         client,
@@ -401,7 +405,9 @@ def test_vote_targets_current_question_via_fire(client, isolated_poll_dir, monke
     resp = client.post("/fire", json={"text": "A", "fingerprint": "voter-1"})
     assert resp.status_code == 200
     payload = resp.get_json()
-    assert payload["status"] == "OK"
+    # v5.0.0+: /fire returns the limiter status dict ({"status": "sent"|"queued"})
+    # plus poll_vote metadata when the danmu was a recognised poll option.
+    assert payload["status"] in ("sent", "queued")
     assert payload["poll_vote"]["accepted"] is True
     assert payload["poll_vote"]["key"] == "A"
     assert payload["poll_vote"]["question"] == "Q1?"
@@ -427,7 +433,11 @@ def test_non_vote_fire_response_has_no_poll_vote_meta(client, monkeypatch):
     from server.services.ws_state import update_ws_client_count  # ty: ignore[unresolved-import]
 
     update_ws_client_count(1)
-    monkeypatch.setattr(messaging, "forward_to_ws_server", lambda _data: True)
+    monkeypatch.setattr(
+        messaging,
+        "forward_to_ws_server",
+        lambda _data, **_kwargs: {"status": "sent"},
+    )
     authed_post_json(
         client,
         "/admin/poll/create",
@@ -437,7 +447,7 @@ def test_non_vote_fire_response_has_no_poll_vote_meta(client, monkeypatch):
     resp = client.post("/fire", json={"text": "hello world", "fingerprint": "voter-1"})
     assert resp.status_code == 200
     payload = resp.get_json()
-    assert payload["status"] == "OK"
+    assert payload["status"] in ("sent", "queued")
     assert "poll_vote" not in payload
 
 

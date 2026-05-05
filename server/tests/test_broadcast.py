@@ -204,8 +204,8 @@ def test_forward_in_standby_parks_in_queue(app):
 
     broadcast_svc.set_mode("standby")
     ws_queue._queue.clear()
-    ok = messaging.forward_to_ws_server({"text": "hello", "color": "FFFFFF"})
-    assert ok is True
+    result = messaging.forward_to_ws_server({"text": "hello", "color": "FFFFFF"})
+    assert result["status"] == "sent"
     assert len(ws_queue._queue) == 0
     assert broadcast_svc.queue_size() == 1
 
@@ -216,8 +216,8 @@ def test_forward_in_live_pushes_to_overlay(app):
 
     broadcast_svc.set_mode("live")
     ws_queue._queue.clear()
-    ok = messaging.forward_to_ws_server({"text": "hello", "color": "FFFFFF"})
-    assert ok is True
+    result = messaging.forward_to_ws_server({"text": "hello", "color": "FFFFFF"})
+    assert result["status"] == "sent"
     assert len(ws_queue._queue) == 1
     assert broadcast_svc.queue_size() == 0
 
@@ -228,8 +228,8 @@ def test_forward_non_danmu_not_gated(app):
 
     broadcast_svc.set_mode("standby")
     ws_queue._queue.clear()
-    ok = messaging.forward_to_ws_server({"type": "settings_changed", "settings": {}})
-    assert ok is True
+    result = messaging.forward_to_ws_server({"type": "settings_changed", "settings": {}})
+    assert result["status"] == "sent"
     assert len(ws_queue._queue) == 1
     # No danmu queued.
     assert broadcast_svc.queue_size() == 0
@@ -241,10 +241,10 @@ def test_forward_bypass_flag_skips_gate(app):
 
     broadcast_svc.set_mode("standby")
     ws_queue._queue.clear()
-    ok = messaging.forward_to_ws_server(
+    result = messaging.forward_to_ws_server(
         {"text": "drained"}, bypass_broadcast_gate=True
     )
-    assert ok is True
+    assert result["status"] == "sent"
     assert len(ws_queue._queue) == 1
     assert broadcast_svc.queue_size() == 0
 

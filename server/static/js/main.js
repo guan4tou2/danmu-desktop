@@ -1080,15 +1080,26 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (response.ok) {
-        elements.danmuText.value = "";
-        updateCharCount();
-        updatePreview();
-        try {
-          if (window.ViewerStates && document.body.dataset.viewerState === "ratelimit") {
-            window.ViewerStates.hide();
-          }
-        } catch (_) {}
-        showToast(ServerI18n.t("danmuFired"), true);
+        const status = (responseData && responseData.status) || "sent";
+        const accepted = status === "sent" || status === "queued";
+
+        if (accepted) {
+          elements.danmuText.value = "";
+          updateCharCount();
+          updatePreview();
+          try {
+            if (window.ViewerStates && document.body.dataset.viewerState === "ratelimit") {
+              window.ViewerStates.hide();
+            }
+          } catch (_) {}
+        }
+
+        if (status === "queued") {
+          showToast(ServerI18n.t("onscreenFullQueued"), true);
+        } else {
+          showToast(ServerI18n.t("danmuFired"), true);
+        }
+
         // Server-driven thank-you: only show when /fire explicitly confirms
         // this message was accepted as a poll vote.
         try {
@@ -1117,7 +1128,13 @@ document.addEventListener("DOMContentLoaded", () => {
         let message = ServerI18n.t("failedToSend");
         try {
           const data = responseData || {};
-          message = (typeof data.error === "string" ? data.error : data.error?.message) || message;
+          if (data.status === "dropped" && data.reason === "full") {
+            message = ServerI18n.t("onscreenFullDropped");
+          } else if (data.status === "rejected" && data.reason === "queue_full") {
+            message = ServerI18n.t("queueFullTryLater");
+          } else {
+            message = (typeof data.error === "string" ? data.error : data.error?.message) || message;
+          }
           // P3 ViewerBanned: 403 with banned/blocked reason → show banned
           // state instead of just a toast.
           if (response.status === 403 && window.ViewerStates) {

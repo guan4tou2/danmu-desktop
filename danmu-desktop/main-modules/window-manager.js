@@ -1,5 +1,5 @@
 // Window creation and lifecycle management
-const { app, BrowserWindow, screen } = require("electron");
+const { app, BrowserWindow, screen, shell } = require("electron");
 const path = require("path");
 const { sanitizeLog } = require("../shared/utils");
 const { getChildWsScript } = require("./child-ws-script");
@@ -32,6 +32,29 @@ function pickOverlayDisplay(displays, options = {}) {
     if (primary) return primary;
   }
   return displays[0];
+}
+
+/**
+ * Blocks renderer-initiated navigation to any URL that isn't the bundled file://
+ * location and forbids opening new Electron windows. Prevents a compromised
+ * renderer (e.g. via a dependency XSS) from loading an attacker page that would
+ * inherit preload access to IPC.
+ */
+function hardenWebContents(webContents) {
+  webContents.on("will-navigate", (event, url) => {
+    if (!url.startsWith("file://")) {
+      event.preventDefault();
+      console.warn("[Main] Blocked navigation to:", sanitizeLog(url));
+    }
+  });
+  webContents.setWindowOpenHandler(({ url }) => {
+    console.warn("[Main] Blocked window.open to:", sanitizeLog(url));
+    return { action: "deny" };
+  });
+  webContents.on("will-attach-webview", (event) => {
+    event.preventDefault();
+    console.warn("[Main] Blocked <webview> attach");
+  });
 }
 
 /**
@@ -86,6 +109,7 @@ function createWindow(childWindows, onKonamiTrigger) {
   });
 
   mainWindow.loadFile(path.join(__dirname, "../index.html"));
+  hardenWebContents(mainWindow.webContents);
 
   mainWindow.on("minimize", (ev) => {
     ev.preventDefault();
@@ -197,6 +221,7 @@ function setupChildWindow(
   );
 
   targetWindow.loadFile(path.join(__dirname, "../child.html"));
+  hardenWebContents(targetWindow.webContents);
 
   targetWindow.once("ready-to-show", () => {
     console.log(
@@ -274,7 +299,14 @@ function createAboutWindow(mainWindow) {
     },
   });
   aboutWindow.loadFile(path.join(__dirname, "../about.html"));
+  hardenWebContents(aboutWindow.webContents);
   return aboutWindow;
 }
 
-module.exports = { createWindow, setupChildWindow, createAboutWindow, pickOverlayDisplay };
+module.exports = {
+  createWindow,
+  setupChildWindow,
+  createAboutWindow,
+  pickOverlayDisplay,
+  hardenWebContents,
+};

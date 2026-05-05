@@ -12,8 +12,11 @@ FROM python:3.11-slim AS builder
 
 WORKDIR /app/server
 
-# Copy uv from official image (no pip overhead)
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+# Copy uv from official image (no pip overhead).
+# Pinned to a specific version to prevent supply-chain drift — bump
+# deliberately when updating uv, so a compromised `:latest` tag can't
+# silently replace the builder binary.
+COPY --from=ghcr.io/astral-sh/uv:0.11.7 /uv /usr/local/bin/uv
 
 # Install only production dependencies into an isolated venv
 COPY server/pyproject.toml server/uv.lock ./

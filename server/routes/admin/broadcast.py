@@ -160,8 +160,8 @@ def broadcast_send():
     # bypass_broadcast_gate=True so the message hits overlay even when the
     # broadcast is in STANDBY — admin pushes are operator messages, not
     # audience traffic to be queued.
-    ok = messaging.forward_to_ws_server(data, bypass_broadcast_gate=True)
-    if not ok:
+    forward_result = messaging.forward_to_ws_server(data, bypass_broadcast_gate=True)
+    if forward_result.get("status") not in ("sent", "queued"):
         return _json_response({"error": "Forward to overlay failed"}, 502)
 
     current_app.logger.info(
