@@ -12,10 +12,14 @@ cd danmu-desktop
 ./setup.sh init --advanced    # + rate limits, logging, resource caps
 
 # Wizard prints the exact start command. Typically:
-docker compose --profile https up -d        # HTTPS self-signed (LAN / VPS)
-docker compose --profile http up -d         # local HTTP (dev only)
-docker compose --profile traefik up -d      # HTTPS + Let's Encrypt
+docker compose --profile https up -d        # HTTPS self-signed (LAN / VPS) — recommended
+docker compose --profile traefik up -d      # HTTPS + Let's Encrypt (public domain)
+docker compose --profile http up -d         # local HTTP (dev only — no desktop client)
 ```
+
+> **v5.0.0+:** the Electron desktop client connects via `wss://` only.
+> `--profile http` no longer supports the desktop overlay. Use
+> `--profile https` for any setup that includes the desktop client.
 
 Additional wizard commands:
 
@@ -41,37 +45,28 @@ output + `./setup.sh check` is enough.
 ## Decision Tree
 
 ```
-Need a real TLS certificate with a public domain?
-  ├─ Yes → Traefik mode  (--profile traefik)
-  └─ No → Fixed IP or LAN access?
-              ├─ Yes → HTTPS self-signed  (--profile https)
-              └─ No → Local HTTP (dev/testing only)
+Have a public domain (DNS + port 80 reachable)?
+  ├─ Yes → Traefik mode (Let's Encrypt)  (--profile traefik)
+  └─ No → HTTPS self-signed  (--profile https)        ← default
+
+Dev/test on localhost only, no Electron desktop client?
+  └─ Optional: --profile http (TLS-free, faster boot)
 
 High traffic or multi-instance?
   └─ Yes → Add Redis  (--profile redis)
 ```
 
+The desktop client is wss-only since v5.0.0; `--profile https` (or
+`--profile traefik`) is required to expose it.
+
 ---
 
 ## Modes
 
-### Local HTTP (default)
+### HTTPS with Self-Signed Certificate (default)
 
-Exposes ports 4000 (HTTP) and 4001 (WebSocket) via nginx.
-
-```bash
-docker compose --profile http up -d
-```
-
-Or with make:
-
-```bash
-make docker-up
-```
-
-### HTTPS with Self-Signed Certificate
-
-Suitable for LAN access or a VPS without a domain. A self-signed certificate is
+Suitable for LAN access or a VPS without a domain. **Default since
+v5.0.0** — the desktop client requires a TLS-terminating profile. A self-signed certificate is
 auto-generated on first start (valid 365 days).
 
 Set in `.env`:
@@ -98,6 +93,16 @@ Or: `make docker-up-https`
 
 Clients will see a browser warning about the self-signed cert. Add the cert to your
 browser's trust store to suppress it. The cert is at `nginx/certs/fullchain.pem`.
+
+**Ports exposed in https profile:**
+- `${HTTP_PORT:-80}` → nginx port 80 (HTTP → HTTPS redirect)
+- `${HTTPS_PORT:-443}` → nginx port 443 (web admin / viewer)
+- `${WS_PORT:-4001}` → nginx port 4001 (TLS, dedicated for Electron desktop)
+
+The Electron desktop client connects via `wss://<IP>:4001/ws`. The
+self-signed cert is shared with port 443 and is auto-trusted in the
+client by `trusted-wss-hosts` (registered when user types host:port
+into the Conn panel). No manual cert pinning required.
 
 ### HTTPS with Let's Encrypt (Traefik)
 
@@ -154,31 +159,25 @@ docker compose --profile http -f docker-compose.yml -f docker-compose.dev.yml up
 
 Or: `make docker-up-dev`
 
-### Desktop Client (ws + https dual transport)
+### Desktop Client (Electron — wss-only since v5.0.0)
 
-The Danmu Fire (Electron) client connects with plain `ws://IP:PORT`. This
-is a supported deployment mode: run the HTTPS admin panel on `HTTPS_PORT`
-alongside a plain WebSocket endpoint on port `4001` for desktop overlays.
-Access control on the WS port is provided by a shared token instead of TLS.
+The Danmu Fire desktop client connects via `wss://<IP>:4001/ws`. With
+the `https` or `traefik` profile, port 4001 is already exposed and
+TLS-terminated by nginx; no override file is needed.
 
-For the `https` and `traefik` profiles the dedicated WS server is
-internal-only by default. To expose it, layer the `desktop` override file on
-top of the main compose file:
-
-1. Start with the override:
+1. Start the stack normally (port 4001 is included in `--profile https`):
 
    ```bash
-   docker compose -f docker-compose.yml -f docker-compose.desktop.yml \
-     --profile https up -d
+   docker compose --profile https up -d
    ```
 
-2. Open the firewall:
+2. Open the firewall on the host:
 
    ```bash
    sudo ufw allow 4001/tcp
    ```
 
-3. Configure WS token auth (v4.8.0+):
+3. Configure WS token auth (recommended for any public-facing deploy):
 
    - **Preferred: Admin UI.** Log in at `https://<host>:<HTTPS_PORT>/admin`
      → **WebSocket token auth** section → flip the toggle on, click
@@ -194,8 +193,33 @@ top of the main compose file:
      never silently flipped on by the secure-by-default seeding.
 
 4. In the Danmu Fire app, enter the server IP, port `4001`, and paste
-   the admin-issued token into the **WS Token** field. The admin panel is
-   reached separately at `https://<host>:<HTTPS_PORT>`.
+   the admin-issued token into the **WS Token** field. The first
+   connection registers the host with `trusted-wss-hosts` so the
+   self-signed cert is auto-accepted for that exact `host:port` only
+   (no global `ignore-certificate-errors`). The admin panel is reached
+   separately at `https://<host>:<HTTPS_PORT>`.
+
+> **Why wss-only:** plain `ws://` over the public internet leaks danmu
+> content (text, nicknames, fingerprints) and exfiltrates the WS token
+> on the handshake. TLS encrypts both. The desktop client used to have
+> a "Use WSS" checkbox; it was removed in v5.0.0 since every supported
+> deployment terminates TLS.
+
+### Local Plain HTTP (dev only — no desktop client)
+
+```bash
+docker compose --profile http up -d
+```
+
+Or with make:
+
+```bash
+make docker-up
+```
+
+Plain HTTP / WS on ports 4000 + 4001. **The Electron desktop client
+will not connect — wss-only since v5.0.0.** Use this profile only for
+backend development against the web admin/viewer at `http://localhost:4000`.
 
 ---
 

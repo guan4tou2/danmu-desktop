@@ -104,10 +104,14 @@ cd danmu-desktop
 ./setup.sh gen-secret                # generate + inject SECRET_KEY only
 
 # Then start the stack. The wizard prints the exact command; common paths:
-docker compose --profile http up -d          # local HTTP
-docker compose --profile https up -d         # HTTPS self-signed (LAN / VPS)
+docker compose --profile https up -d         # HTTPS self-signed (LAN / VPS) — recommended
 docker compose --profile traefik up -d       # HTTPS + Let's Encrypt (public domain)
+docker compose --profile http up -d          # local HTTP (dev only — no desktop client)
 ```
+
+> v5.0.0+: the Electron desktop client connects via `wss://` only.
+> `--profile http` runs server + web admin/viewer fine but cannot
+> serve the desktop overlay.
 
 Full deploy guide (HTTPS modes, desktop-client WS port, Redis, backup/
 restore, upgrades): **[DEPLOYMENT.md](DEPLOYMENT.md)**.
