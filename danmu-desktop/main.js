@@ -11,18 +11,35 @@ const trustedWssHosts = require("./main-modules/trusted-wss-hosts");
 // Self-signed cert acceptance for user-configured WSS hosts only.
 // When the user enables WSS and connects to a host:port pair via the
 // Conn panel, ipc-handlers calls trustedWssHosts.add(host, port).
-// We accept self-signed certs for those exact host:port pairs;
-// every other URL still goes through normal cert validation.
+// We accept ONLY the "untrusted authority" error class (self-signed,
+// unknown CA) for those exact host:port pairs. Every other failure —
+// hostname mismatch, expired cert, revoked cert, generally invalid —
+// is rejected even for trusted hosts. This narrows the bypass to the
+// specific case our auto-generated nginx self-signed cert produces
+// and keeps real TLS guarantees against active MITM (different cert
+// presented at the same host:port would be rejected unless its CN /
+// validity / revocation also satisfied normal Chromium checks).
+//
+// Electron's `error` value is a Chromium net error string (e.g.
+// "net::ERR_CERT_AUTHORITY_INVALID"). See chromium/src/net/cert/cert_status_flags.h
+// for the full enum.
 //
 // MUST be registered BEFORE app.whenReady — Electron emits this event
 // on the app object and ignores handlers attached after the first
 // network request fires.
-app.on("certificate-error", (event, _webContents, url, _error, _cert, callback) => {
+const _SELF_SIGNED_ACCEPTABLE_ERRORS = new Set([
+  "net::ERR_CERT_AUTHORITY_INVALID", // self-signed or unknown CA
+]);
+
+app.on("certificate-error", (event, _webContents, url, error, _cert, callback) => {
   try {
     const u = new URL(url);
     const host = u.hostname;
     const port = u.port || (u.protocol === "wss:" || u.protocol === "https:" ? 443 : 80);
-    if (trustedWssHosts.has(host, port)) {
+    if (
+      trustedWssHosts.has(host, port) &&
+      _SELF_SIGNED_ACCEPTABLE_ERRORS.has(String(error))
+    ) {
       event.preventDefault();
       callback(true);
       return;

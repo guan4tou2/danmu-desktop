@@ -97,6 +97,11 @@ function setupIpcHandlers(getMainWindow, childWindows) {
       }
     });
     childWindows.length = 0;
+    // Revoke self-signed cert exceptions when overlay stops. Without
+    // this the trusted host:port stays in the registry for the rest of
+    // the app lifetime, allowing self-signed acceptance for endpoints
+    // the user is no longer connected to.
+    trustedWssHosts.clear();
     console.log("[Main] All child windows destroyed on closeChildWindows event.");
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send("overlay-connection-status", {
@@ -406,8 +411,11 @@ function setupIpcHandlers(getMainWindow, childWindows) {
       // Self-signed cert pre-authorisation: v5.0.0+ unified WSS-only,
       // every connection records the configured host so
       // app.on('certificate-error') in main.js will accept the cert for
-      // that host only. Without this, self-signed certs from the user's
-      // VPS would be rejected.
+      // that host only. Clear first so reconfigured connections drop
+      // the previous endpoint — the trust list stays scoped to the
+      // currently-active configuration, never the union of every host
+      // ever connected to.
+      trustedWssHosts.clear();
       trustedWssHosts.add(normalizedIp, portNum);
 
       // Clear existing child windows (copy array to avoid splice-during-iteration)
