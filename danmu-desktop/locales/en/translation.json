@@ -97,6 +97,8 @@
   "connBtnClose": "Close",
   "connTlsTitle": "Local · no TLS",
   "connTlsNote": "LAN doesn't need TLS · public should use wss://",
+  "connTlsTitleWss": "TLS · encrypted",
+  "connTlsNoteWss": "Public uses wss:// · certificate provided by server",
   "connFlowKicker": "MESSAGE FLOW · last 30s",
   "connFlowRx": "RX",
   "connFlowRate": "RATE",

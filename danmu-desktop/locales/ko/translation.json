@@ -97,6 +97,8 @@
   "connBtnClose": "닫기",
   "connTlsTitle": "로컬 · TLS 없음",
   "connTlsNote": "LAN은 TLS 불필요 · 공개 시 wss:// 권장",
+  "connTlsTitleWss": "TLS · 암호화됨",
+  "connTlsNoteWss": "공개 연결은 wss:// · 인증서는 서버에서 제공",
   "connFlowKicker": "MESSAGE FLOW · 최근 30 초",
   "connFlowRx": "RX",
   "connFlowRate": "RATE",

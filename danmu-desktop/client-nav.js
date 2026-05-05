@@ -103,13 +103,21 @@
       var scheme = isPrivate ? "ws" : "wss";
       urlEl.textContent = scheme + "://" + h + ":" + p + (hasToken ? " · 🔒 token" : "");
       if (tlsTitle && tlsNote) {
-        if (scheme === "wss") {
-          tlsTitle.textContent = "TLS · 已加密";
-          tlsNote.textContent = "公網連線使用 wss:// · 憑證由伺服器端提供";
-        } else {
-          tlsTitle.textContent = "本機 · 無 TLS";
-          tlsNote.textContent = "區網連線不需 TLS · 公網建議 wss://";
-        }
+        // 5.1.0 i18n: keep data-i18n attr in sync with the scheme so
+        // i18n.updateUI() can re-translate when the user switches language.
+        var titleKey = scheme === "wss" ? "connTlsTitleWss" : "connTlsTitle";
+        var noteKey  = scheme === "wss" ? "connTlsNoteWss"  : "connTlsNote";
+        tlsTitle.setAttribute("data-i18n", titleKey);
+        tlsNote.setAttribute("data-i18n", noteKey);
+        var hasI18n = (typeof i18n !== "undefined");
+        tlsTitle.textContent = hasI18n
+          ? i18n.t(titleKey)
+          : (scheme === "wss" ? "TLS · 已加密" : "本機 · 無 TLS");
+        tlsNote.textContent = hasI18n
+          ? i18n.t(noteKey)
+          : (scheme === "wss"
+              ? "公網連線使用 wss:// · 憑證由伺服器端提供"
+              : "區網連線不需 TLS · 公網建議 wss://");
       }
     }
 

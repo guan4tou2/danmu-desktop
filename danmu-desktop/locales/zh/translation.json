@@ -97,6 +97,8 @@
   "connBtnClose": "關閉",
   "connTlsTitle": "本機 · 無 TLS",
   "connTlsNote": "區網連線不需 TLS · 公網建議 wss://",
+  "connTlsTitleWss": "TLS · 已加密",
+  "connTlsNoteWss": "公網連線使用 wss:// · 憑證由伺服器端提供",
   "connFlowKicker": "MESSAGE FLOW · 最近 30 秒",
   "connFlowRx": "RX",
   "connFlowRate": "RATE",

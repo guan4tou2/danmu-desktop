@@ -97,6 +97,8 @@
   "connBtnClose": "閉じる",
   "connTlsTitle": "ローカル · TLSなし",
   "connTlsNote": "LAN は TLS 不要 · 公開時は wss:// 推奨",
+  "connTlsTitleWss": "TLS · 暗号化済み",
+  "connTlsNoteWss": "公開接続は wss:// · 証明書はサーバー側が提供",
   "connFlowKicker": "MESSAGE FLOW · 直近 30 秒",
   "connFlowRx": "RX",
   "connFlowRate": "RATE",
