@@ -6,6 +6,32 @@ const { createWindow, createAboutWindow } = require("./main-modules/window-manag
 const { buildTrayPopoverSections } = require("./main-modules/tray-popover");
 const { setupIpcHandlers } = require("./main-modules/ipc-handlers");
 const { setupAutoUpdater } = require("./main-modules/auto-updater");
+const trustedWssHosts = require("./main-modules/trusted-wss-hosts");
+
+// Self-signed cert acceptance for user-configured WSS hosts only.
+// When the user enables WSS and connects to a host:port pair via the
+// Conn panel, ipc-handlers calls trustedWssHosts.add(host, port).
+// We accept self-signed certs for those exact host:port pairs;
+// every other URL still goes through normal cert validation.
+//
+// MUST be registered BEFORE app.whenReady — Electron emits this event
+// on the app object and ignores handlers attached after the first
+// network request fires.
+app.on("certificate-error", (event, _webContents, url, _error, _cert, callback) => {
+  try {
+    const u = new URL(url);
+    const host = u.hostname;
+    const port = u.port || (u.protocol === "wss:" || u.protocol === "https:" ? 443 : 80);
+    if (trustedWssHosts.has(host, port)) {
+      event.preventDefault();
+      callback(true);
+      return;
+    }
+  } catch (_) {
+    /* fall through to default behaviour */
+  }
+  callback(false);
+});
 
 let mainWindow;
 const childWindows = [];

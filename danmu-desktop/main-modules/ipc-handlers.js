@@ -5,6 +5,7 @@ const net = require("net");
 const path = require("path");
 const { sanitizeLog } = require("../shared/utils");
 const { setupChildWindow, pickOverlayDisplay } = require("./window-manager");
+const trustedWssHosts = require("./trusted-wss-hosts");
 
 /**
  * Returns true if the IPC event sender is the main window's webContents.
@@ -376,7 +377,8 @@ function setupIpcHandlers(getMainWindow, childWindows) {
       displayIndex,
       enableSyncMultiDisplay,
       startupAnimationSettings,
-      wsAuthToken
+      wsAuthToken,
+      useWss
     ) => {
       const mainWindow = getMainWindow();
       if (!isFromMainWindow(event, mainWindow)) {
@@ -401,6 +403,14 @@ function setupIpcHandlers(getMainWindow, childWindows) {
           port
         )}, DisplayIndex=${sanitizeLog(displayIndex)}, SyncMultiDisplay=${enableSyncMultiDisplay}, HasWSToken=${authToken ? "yes" : "no"}`
       );
+
+      // Self-signed cert pre-authorisation: when user opted into WSS,
+      // record the configured host so app.on('certificate-error') in
+      // main.js will accept the cert for that host only. Without this,
+      // self-signed certs from the user's VPS would be rejected.
+      if (useWss) {
+        trustedWssHosts.add(normalizedIp, portNum);
+      }
 
       // Clear existing child windows (copy array to avoid splice-during-iteration)
       [...childWindows].forEach((win) => {
@@ -445,7 +455,8 @@ function setupIpcHandlers(getMainWindow, childWindows) {
             portNum,
             authToken,
             startupAnimationSettings,
-            childWindows
+            childWindows,
+            !!useWss
           );
           childWindows.push(newChild);
         });
@@ -475,7 +486,8 @@ function setupIpcHandlers(getMainWindow, childWindows) {
           portNum,
           authToken,
           startupAnimationSettings,
-          childWindows
+          childWindows,
+          !!useWss
         );
         childWindows.push(newChild);
         console.log("[Main] Created 1 child window for single display mode.");
