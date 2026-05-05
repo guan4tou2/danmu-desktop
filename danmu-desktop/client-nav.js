@@ -29,7 +29,7 @@
       });
     });
 
-    // 5.1.0: when first-run gate is showing (not yet configured), land on
+    // v5.0.0: when first-run gate is showing (not yet configured), land on
     // the conn tab so the gate is the visible content. Sidebar stays
     // clickable; user can navigate to other tabs while gate persists.
     var gate = document.getElementById("firstRunGate");
@@ -103,7 +103,7 @@
       var scheme = isPrivate ? "ws" : "wss";
       urlEl.textContent = scheme + "://" + h + ":" + p + (hasToken ? " · 🔒 token" : "");
       if (tlsTitle && tlsNote) {
-        // 5.1.0 i18n: keep data-i18n attr in sync with the scheme so
+        // v5.0.0 i18n: keep data-i18n attr in sync with the scheme so
         // i18n.updateUI() can re-translate when the user switches language.
         var titleKey = scheme === "wss" ? "connTlsTitleWss" : "connTlsTitle";
         var noteKey  = scheme === "wss" ? "connTlsNoteWss"  : "connTlsNote";

@@ -52,7 +52,7 @@ function createWindow(childWindows, onKonamiTrigger) {
   let lastKeyTime = Date.now();
   let isKeyDown = false;
 
-  // 5.1.0: titleBarStyle "hidden" only on macOS. macOS keeps painting
+  // v5.0.0: titleBarStyle "hidden" only on macOS. macOS keeps painting
   // native traffic lights (close/min/max) floating top-left over the
   // hidden title bar region — no duplication with the HTML titlebar.
   // On Windows/Linux this same option would HIDE all window controls

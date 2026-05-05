@@ -2,11 +2,11 @@ const { test, expect } = require("@jest/globals");
 const fs = require("fs");
 const path = require("path");
 
-// Post design-v2 retrofit + Group D-3 split: admin uses `admin-dash-grid`
-// shell with ADMIN_ROUTES router. Some sections live in admin.js, others
-// were extracted to admin-*.js modules (Phase 1 consolidation moved
-// viewer-theme into the viewer-config tab).
-test("admin panel uses design-v2 dash grid + route-based sections", () => {
+// Post v5.0.0 P0-0 IA migration: sidebar collapsed to 10 nav buttons.
+// `ratelimit` and `viewer-theme` are no longer top-level nav rows — they
+// route through alias entries onto the `moderation` and `appearance` tabs
+// respectively (see _routeAliases in admin.js).
+test("admin panel uses design-v2 dash grid + P0-0 IA sections", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc  = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
 
@@ -14,8 +14,11 @@ test("admin panel uses design-v2 dash grid + route-based sections", () => {
   expect(adminSrc).toContain("admin-dash-grid");
   expect(adminSrc).toContain("ADMIN_ROUTES");
   expect(adminSrc).toContain('data-route="dashboard"');
-  expect(adminSrc).toContain('data-route="ratelimit"');
-  expect(adminSrc).toContain('data-route="viewer-config"');
+  // P0-0 IA: 10 top-level nav buttons; ratelimit + viewer-theme moved to tabs.
+  expect(adminSrc).toContain('data-route="moderation"');
+  expect(adminSrc).toContain('data-route="appearance"');
+  // Alias entries route legacy hashes to the new IA.
+  expect(adminSrc).toMatch(/ratelimit:\s*\{\s*nav:\s*"moderation"/);
   // Sections still rendered inline by admin.js renderControlPanel():
   expect(adminSrc).toContain('id="sec-blacklist"');
   expect(adminSrc).toContain('id="sec-history"');

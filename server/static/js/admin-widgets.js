@@ -1,4 +1,4 @@
-// admin-widgets.js — Overlay widgets manager (P6-2 split, 5.1.0 Soft Holo retrofit)
+// admin-widgets.js — Overlay widgets manager (P6-2 split, v5.0.0 Soft Holo retrofit)
 //
 // Replaces the legacy <details class="settings-card"> + .btn .btn-sm shell
 // with the v2 chrome (page header / hud-page-stack / admin-widget-* atoms).

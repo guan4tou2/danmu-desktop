@@ -9,17 +9,23 @@
 
 (no items pending)
 
-## [5.1.0] - 2026-05-04
+## [5.0.0] - 2026-05-04
 
-**P0-0 IA Migration + Polestar Lock-in** — admin nav consolidates from
-32 routes to a P0-0 final shape: 10 top-level buttons (dashboard / polls
-/ effects / moderation / widgets / appearance / assets / automation /
-history / system) + standalone 安全. The polestar was locked 2026-05-04
-in the office-hours session: **single presenter, mid-size event,
-interaction + atmosphere**. All `/admin/*` endpoints preserved; old hash
-URLs redirect via aliases so bookmarks keep working. Branch
-`claude/design-v2-retrofit` accumulated 26 commits over 8 engineering
-slices + 4 design handoff rounds.
+**Design v2 Retrofit + P0-0 IA Migration + Polestar Lock-in** — first
+v5 release to main. Two phases on the same branch:
+**Phase A** ships the Soft Holo HUD aesthetic across admin / viewer /
+overlay + a long tail of admin features (multi-pack stickers, multi-
+question polls, dedicated broadcast / fonts / audit pages, etc.).
+**Phase B** consolidates admin nav from 32 routes to the P0-0 final
+shape: 10 top-level buttons (dashboard / polls / effects / moderation
+/ widgets / appearance / assets / automation / history / system) +
+standalone 安全. The polestar was locked 2026-05-04 in the
+office-hours session: **single presenter, mid-size event, interaction
++ atmosphere**. All `/admin/*` endpoints preserved; old hash URLs
+redirect via aliases so bookmarks keep working. Branch
+`claude/design-v2-retrofit` accumulated 200+ commits over 4 design
+handoff rounds + 8 engineering slices + cross-platform Electron
+polish + i18n unification.
 
 ### 新增 / Added — IA migration
 
@@ -286,15 +292,14 @@ slices + 4 design handoff rounds.
 - VPS production deployed at `609108d`：viewer / admin /
   admin-broadcast.js / admin-display.js / admin-display 顯示新樣式
 
-## [5.0.0] - 2026-04-25
+### 新增 / Added — Phase A core (2026-04 · Soft Holo HUD retrofit)
 
-**Design v2 Retrofit · breaking** — admin / viewer / overlay 全面切換到
-Soft Holo HUD 美學（cyan #38bdf8 主色、IBM Plex Mono / Bebas Neue / Noto
-Sans TC、light theme 為預設）。Server-side 包含 Rate Limit telemetry、
-admin 啟動單一 endpoint、Effects 即時動畫預覽、四個 P2 邊緣狀態頁。
-Branch `claude/design-v2-retrofit` 累積 12 個 commits。
+Admin / viewer / overlay 全面切換到 Soft Holo HUD 美學（cyan #38bdf8
+主色、IBM Plex Mono / Bebas Neue / Noto Sans TC、light theme 為預設）。
+Server-side 包含 Rate Limit telemetry、admin 啟動單一 endpoint、Effects
+即時動畫預覽、四個 P2 邊緣狀態頁。
 
-### 新增 / Added
+**核心新增 / Core additions**
 
 - **Rate Limit hits/violations counters**：`/admin/metrics` 新增
   `rate_limits.{fire,api,admin,login,totals}` 各帶 `hits` / `violations`

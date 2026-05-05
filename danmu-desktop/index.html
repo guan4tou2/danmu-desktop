@@ -31,7 +31,7 @@
     <a href="#main-content" class="skip-link" data-i18n="skipToMainContent">Skip to main content</a>
 
     <!-- Title bar — prototype desktop.jsx ControlWindow:152.
-         5.1.0: removed fake macOS traffic lights — main-modules/window-manager.js
+         v5.0.0: removed fake macOS traffic lights — main-modules/window-manager.js
          now uses titleBarStyle:"hidden" so macOS draws the real ones over the
          left edge of this region. CSS adds padding-left so the title text
          doesn't overlap them. -->
@@ -67,7 +67,7 @@
     <div class="client-shell" data-client-shell>
       <aside class="client-sidebar" role="navigation" aria-label="Client sections">
         <nav class="client-nav">
-          <!-- 5.1.0: 連線 sits at the top so first-run users land directly
+          <!-- v5.0.0: 連線 sits at the top so first-run users land directly
                on the setup tab without re-orienting. Order deviates from
                prototype desktop.jsx:143 (overlay first) per owner request.
                is-active starts on conn to avoid a flash before client-nav.js
@@ -140,10 +140,10 @@
         </div>
 
         <!-- Section: Connection (prototype desktop.jsx ConnSection:250).
-             Default-visible (no `hidden`) — 5.1.0 promoted conn to first
+             Default-visible (no `hidden`) — v5.0.0 promoted conn to first
              nav so first-run users land here directly. -->
         <section class="client-section" data-section="conn">
-          <!-- First-run setup gate (5.1.0: moved from fullscreen overlay
+          <!-- First-run setup gate (v5.0.0: moved from fullscreen overlay
                to inline conn-tab card so the sidebar stays clickable). -->
           <div id="firstRunGate" class="client-firstrun-gate" hidden role="region" aria-label="First-run server setup">
             <div class="client-firstrun-card">
@@ -332,7 +332,7 @@
         </section>
 
         <!-- Section: Overlay display & controls (prototype desktop.jsx OverlaySection:203).
-             Hidden by default — 5.1.0 demoted overlay to second nav. -->
+             Hidden by default — v5.0.0 demoted overlay to second nav. -->
         <section class="client-section" data-section="overlay" hidden>
           <div class="client-section-head">
             <div class="client-section-title" data-i18n="overlaySectionTitle">Overlay</div>
@@ -487,7 +487,7 @@
             <div class="client-update-status-body">
               <div class="client-update-status-title" data-update-status-title data-i18n="updateUpToDate">已是最新版本</div>
               <div class="client-update-status-meta">
-                <span data-client-version-inline>v5.1.0</span>
+                <span data-client-version-inline>v5.0.0</span>
                 <span class="sep">·</span>
                 <span data-update-last-check>—</span>
               </div>

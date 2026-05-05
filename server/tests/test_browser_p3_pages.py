@@ -6,7 +6,7 @@ is rendered + visible + has at least one expected element. Keeps
 coverage shallow (smoke / regression-detector) since Jest infra would
 be a sizable add for ~10 small helpers in new modules.
 
-Routes covered (post-5.1.0 these route through alias redirects to new
+Routes covered (post-v5.0.0 these route through alias redirects to new
 P0-0 nav, but the section IDs are unchanged so the tests still match
 on `#sec-*-overview` visibility):
 
@@ -350,7 +350,7 @@ def test_viewer_pollthankyou_state_url_preview(browser_session, live_url):
         page.close()
 
 
-# ─── 5.1.0 P0-0 IA migration coverage ──────────────────────────────────────
+# ─── v5.0.0 P0-0 IA migration coverage ─────────────────────────────────────
 
 
 def test_ia_alias_redirect_audit_to_history(admin_page):
