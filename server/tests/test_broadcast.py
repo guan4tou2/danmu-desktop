@@ -205,7 +205,9 @@ def test_forward_in_standby_parks_in_queue(app):
     broadcast_svc.set_mode("standby")
     ws_queue._queue.clear()
     result = messaging.forward_to_ws_server({"text": "hello", "color": "FFFFFF"})
-    assert result["status"] == "sent"
+    assert result["status"] == "queued"
+    assert result["reason"] == "broadcast_standby"
+    assert result["queue_size"] == 1
     assert len(ws_queue._queue) == 0
     assert broadcast_svc.queue_size() == 1
 

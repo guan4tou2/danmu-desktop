@@ -60,7 +60,7 @@ def forward_to_ws_server(data, bypass_broadcast_gate=False):
     """Forward `data` to the overlay WS subject to broadcast gate + onscreen limiter.
 
     Returns a status dict:
-      {"status": "sent"}                                 forwarded (or parked)
+      {"status": "sent"}                                 forwarded immediately
       {"status": "queued"}                               queued for later release
       {"status": "dropped", "reason": <str>}             cap hit in drop mode,
                                                          or forward_failed
@@ -83,14 +83,18 @@ def forward_to_ws_server(data, bypass_broadcast_gate=False):
     # consume in-flight slots.
     is_danmu = isinstance(data, dict) and data.get("text") is not None
     if is_danmu and not bypass_broadcast_gate and not broadcast.is_live():
+        queue_size = None
         try:
-            broadcast.enqueue_pending(data)
+            queue_size = broadcast.enqueue_pending(data)
         except Exception as exc:
             current_app.logger.warning(
                 "broadcast standby enqueue failed: %s",
                 sanitize_log_string(str(exc)),
             )
-        return {"status": "sent"}
+        result = {"status": "queued", "reason": "broadcast_standby"}
+        if queue_size is not None:
+            result["queue_size"] = queue_size
+        return result
 
     return onscreen_limiter.try_send(data, _raw_forward)
 
