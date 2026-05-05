@@ -175,7 +175,10 @@ jobs:
 
       - name: Run pip-audit
         working-directory: server
-        run: uv run pip-audit
+        # CVE-2026-3219 affects `pip` itself with no fix version available
+        # (https://github.com/pypa/pip/security/advisories). Build environment
+        # only — never reaches runtime — ignore until upstream ships a patch.
+        run: uv run pip-audit --ignore-vuln CVE-2026-3219
 
   pre-commit:
     runs-on: ubuntu-latest

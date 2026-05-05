@@ -41,12 +41,20 @@ test.describe("App Launch", () => {
     expect(title).toBe("Danmu Fire");
   });
 
+  // Post v5.0.0 P0-0 IA: start/stop buttons live in the Overlay section
+  // (sidebar tab `Overlay`) which is hidden by default. Navigate first.
+  async function openOverlayTab() {
+    await mainWindow.locator('[data-nav="overlay"]').click();
+  }
+
   test("main window contains start button", async () => {
+    await openOverlayTab();
     const startBtn = mainWindow.locator("#start-button");
     await expect(startBtn).toBeVisible();
   });
 
   test("main window contains stop button (disabled)", async () => {
+    await openOverlayTab();
     const stopBtn = mainWindow.locator("#stop-button");
     await expect(stopBtn).toBeVisible();
     await expect(stopBtn).toBeDisabled();
