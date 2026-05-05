@@ -92,6 +92,17 @@ def admin_page(logged_context, live_url):
     page = logged_context.new_page()
     page.goto(f"{live_url}/admin/")
     page.wait_for_selector("#logoutButton", timeout=8000)
+    # v5.0.0+: AdminOnboarding tour shows a spotlight overlay on first
+    # admin load (admin-onboarding.js DONE_KEY = "danmu.onboarding.done").
+    # Tests don't exercise the tour itself; mark it done so the overlay
+    # doesn't intercept clicks.
+    page.evaluate(
+        "() => {"
+        '  try { localStorage.setItem("danmu.onboarding.done", "1"); } catch (_) {}'
+        '  var root = document.getElementById("admin-onboarding-root");'
+        "  if (root) root.remove();"
+        "}"
+    )
     yield page
     page.close()
 
@@ -173,15 +184,17 @@ def _open_section(page, section_id: str):
         "sec-layout",
     }
     if section_id in DISPLAY_LEGACY_IDS:
-        # v5.3 strict prototype mode: tab UI is placeholder-only; force the
-        # internal state to fields so legacy display tests can still access
-        # #admin-display-v2-page deterministically.
+        # v5.3 strict prototype mode: admin-display.js explicitly hides
+        # #admin-display-v2-page (DS-002 in admin-display.js:981). The
+        # actual fields panel is #sec-viewer-config-fields, gated by
+        # body[data-viewer-config-tab="fields"]. Set the tab + reroute,
+        # then wait for the fields panel.
         page.evaluate("""() => {
                 document.body.dataset.viewerConfigTab = 'fields';
                 window.dispatchEvent(new Event('hashchange'));
             }""")
-        page.wait_for_timeout(150)
-        page.wait_for_selector("#admin-display-v2-page", state="visible", timeout=5000)
+        page.wait_for_timeout(250)
+        page.wait_for_selector("#sec-viewer-config-fields", state="visible", timeout=5000)
         return
 
     page.wait_for_selector(f"#{section_id}", state="visible", timeout=5000)

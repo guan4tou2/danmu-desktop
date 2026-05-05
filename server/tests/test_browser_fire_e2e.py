@@ -170,7 +170,11 @@ def test_browser_submit_danmu_reaches_overlay(browser_session, server_ports):
 
 
 def test_viewer_identity_label_uses_nickname(browser_session, server_ports):
-    """Viewer identity field label should be 昵称/暱稱 semantics, not generic 身分."""
+    """Viewer identity field label should be 昵称/暱稱 semantics, not generic 身分.
+
+    Page may render in en or zh depending on browser locale at test time; the
+    semantic check is that data-i18n="nickname" — accept either translation.
+    """
     http_port, _ = server_ports
 
     context = browser_session.new_context()
@@ -178,8 +182,12 @@ def test_viewer_identity_label_uses_nickname(browser_session, server_ports):
     try:
         page.goto(f"http://127.0.0.1:{http_port}/")
         page.wait_for_selector("#nicknameInput", timeout=8000)
-        label = page.locator('label[for="nicknameInput"] span').first.text_content() or ""
-        assert "暱稱" in label
+        label_span = page.locator('label[for="nicknameInput"] span').first
+        label_text = label_span.text_content() or ""
+        i18n_key = label_span.get_attribute("data-i18n") or ""
+        # Either zh ("暱稱") or en ("Nickname") satisfies the semantic intent.
+        assert i18n_key == "nickname"
+        assert "暱稱" in label_text or "Nickname" in label_text
     finally:
         page.close()
         context.close()
@@ -268,9 +276,20 @@ def test_browser_submit_danmu_appears_in_history(browser_session, server_ports):
         page.locator("#loginForm button[type=submit]").click()
         page.wait_for_selector("#logoutButton", timeout=8000)
 
-        # 切換到 history route（strict prototype mode 下 tab UI 為 placeholder，
-        # 直接切 internal state 到 list）
-        page.evaluate("window.location.hash = '#/history'")
+        # v5.0.0 P0-0 IA: history route is tabbed
+        # (sessions/search/audit/replay/audience). sec-history-tabs +
+        # sec-history live in the "replay" tab — go there directly.
+        # AdminOnboarding tour can intercept clicks on first admin load —
+        # mark it done so the spotlight doesn't block.
+        page.evaluate(
+            "() => {"
+            '  try { localStorage.setItem("danmu.onboarding.done", "1"); } catch (_) {}'
+            '  var root = document.getElementById("admin-onboarding-root");'
+            "  if (root) root.remove();"
+            "}"
+        )
+        page.evaluate("window.location.hash = '#/history/replay'")
+        page.wait_for_timeout(400)
         page.wait_for_selector("#sec-history-tabs", state="visible", timeout=5000)
         page.evaluate("""() => {
                 document.body.dataset.historyTab = 'list';

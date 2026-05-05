@@ -103,6 +103,20 @@ def admin_page(logged_context, live_url):
     page = logged_context.new_page()
     page.goto(f"{live_url}/admin/")
     page.wait_for_selector("#logoutButton", timeout=8000)
+    # v5.0.0+: AdminOnboarding tour shows a spotlight overlay on first
+    # admin load (admin-onboarding.js DONE_KEY = "danmu.onboarding.done").
+    # Tests don't exercise the tour itself; mark it done so the overlay
+    # doesn't intercept clicks on subsequent routes.
+    page.evaluate(
+        "() => {"
+        '  try { localStorage.setItem("danmu.onboarding.done", "1"); } catch (_) {}'
+        "  if (window.AdminOnboarding && window.AdminOnboarding.reset) {"
+        "    /* keep state present for next page load */"
+        "  }"
+        '  var root = document.getElementById("admin-onboarding-root");'
+        "  if (root) root.remove();"
+        "}"
+    )
     yield page
     page.close()
 
@@ -122,10 +136,10 @@ def test_about_page_renders(admin_page):
     assert admin_page.is_visible("[data-about-version]")
     assert admin_page.locator(".admin-about-stat").count() == 4
     assert admin_page.locator(".admin-about-cl-entry").count() >= 1
-    # KPI tiles match prototype labels (G11)
+    # KPI tiles match v5.0.0 retrofit labels (admin-about.js:109)
     kpi_labels = admin_page.locator(".admin-about-stat .k").all_text_contents()
-    assert "已是最新版" in kpi_labels
-    assert "上次檢查更新" in kpi_labels
+    assert "版本狀態" in kpi_labels
+    assert "上次檢查" in kpi_labels
     assert "LICENSE" in kpi_labels
     # Action buttons (G11 added 檢查更新 + Setup Wizard)
     actions = admin_page.locator("[data-about-action]").all_text_contents()

@@ -260,8 +260,14 @@ test.describe("Onscreen limiter E2E", () => {
     mainWindow = await electronApp.firstWindow();
     await mainWindow.waitForLoadState("domcontentloaded");
     await mainWindow.waitForSelector(".main-content.loaded", { timeout: 15000 });
+    // v5.0.0 P0-0 IA: conn section default visible but #host-input lives in
+    // the .client-conn-edit panel that's hidden until ⚙ 更改 is clicked.
+    // #start-button lives in the Overlay section which is hidden by default.
+    await mainWindow.locator('[data-nav="conn"]').click();
+    await mainWindow.locator('[data-client-action="edit-conn"]').click();
     await mainWindow.locator("#host-input").fill("127.0.0.1");
     await mainWindow.locator("#port-input").fill(String(WS_PORT));
+    await mainWindow.locator('[data-nav="overlay"]').click();
     await mainWindow.locator("#start-button").click();
     overlay = await getOverlayWindow(electronApp, mainWindow);
     await overlay.waitForLoadState("domcontentloaded");
