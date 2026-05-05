@@ -114,6 +114,11 @@ def _isolate_onscreen_limits(tmp_path):
     onscreen_config._reset_for_tests()
     onscreen_config.set_state(max_onscreen_danmu=0, overflow_mode="drop")
     onscreen_limiter.reset()
+    # Drop the admin live-feed polling buffer so cross-test danmu don't
+    # bleed seq numbers into this test's recent() responses.
+    from server.services import live_feed_buffer  # ty: ignore[unresolved-import]
+
+    live_feed_buffer.reset()
     # Let any in-flight timer callback from a prior test drain and settle,
     # then flush ws_queue so cross-test pollution can't bleed into this test.
     time.sleep(0.02)

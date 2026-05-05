@@ -409,7 +409,46 @@
 
   // ── Init ─────────────────────────────────────────────────
 
-  let wsListenerBound = false;
+  // v5.0.0+ admin-WS removal (Phase 1): live feed used to subscribe via
+  // CustomEvent `admin-ws-message` dispatched by admin.js's flask-sock
+  // bootstrap. Now admin polls /admin/live-feed/recent with a cursor.
+  let _pollerBound = false;
+  let _pollerTimer = null;
+  let _pollerSince = 0;
+  const _POLL_INTERVAL_MS = 1500;
+
+  async function _pollOnce() {
+    try {
+      const r = await fetch(
+        "/admin/live-feed/recent?since=" + encodeURIComponent(_pollerSince),
+        { credentials: "same-origin" }
+      );
+      if (!r.ok) return;
+      const j = await r.json();
+      if (Array.isArray(j.entries)) {
+        for (const e of j.entries) {
+          if (e && e.data) addEntry(e.data);
+        }
+      }
+      if (typeof j.next_since === "number") _pollerSince = j.next_since;
+    } catch (_) {
+      // network blip — next tick will retry from same cursor
+    }
+  }
+
+  function _bindPoller() {
+    if (_pollerBound) return;
+    _pollerBound = true;
+    // Initial fetch surfaces the current buffer head before polling kicks in
+    _pollOnce();
+    _pollerTimer = setInterval(_pollOnce, _POLL_INTERVAL_MS);
+    window.addEventListener("beforeunload", () => {
+      if (_pollerTimer) {
+        clearInterval(_pollerTimer);
+        _pollerTimer = null;
+      }
+    });
+  }
 
   function init() {
     if (!window.DANMU_CONFIG?.session?.logged_in) return;
@@ -470,15 +509,7 @@
       });
     }
 
-    if (!wsListenerBound) {
-      wsListenerBound = true;
-      document.addEventListener("admin-ws-message", (e) => {
-        const msg = e.detail;
-        if (msg && msg.type === "danmu_live" && msg.data) {
-          addEntry(msg.data);
-        }
-      });
-    }
+    _bindPoller();
 
     renderList();
 

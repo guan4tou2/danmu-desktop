@@ -70,12 +70,11 @@
         session: { logged_in: {{ session.get('logged_in') | tojson }} },
         settingRanges: {{ ranges | tojson }},
         appVersion: {{ app_version | tojson }},
-        // Web-server flask-sock channel (admin live feed + viewer push). Same
-        // origin so the proxy doesn't strip Upgrade. Path is `/ws` on the
-        // reverse proxy; Flask routes it to `@sock.route("/")` under the hood.
-        wsUrl: (window.location.protocol === "https:" ? "wss:" : "ws:") + "//" + window.location.host + "/ws",
         // Dedicated WebSocket server port (Electron desktop + overlay
         // clients connect here). Surfaced for the system-overview display.
+        // (Admin no longer opens its own WebSocket since v5.0.0+ Phase 1
+        // — live feed polls /admin/live-feed/recent. The legacy `wsUrl`
+        // field was removed.)
         wsPort: {{ ws_port | tojson }},
       };
     </script>

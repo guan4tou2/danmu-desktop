@@ -4,29 +4,35 @@ from flask import current_app
 
 from ..managers import connection_manager
 from ..utils import sanitize_log_string
-from . import broadcast, onscreen_limiter, telemetry, ws_queue
+from . import broadcast, live_feed_buffer, onscreen_limiter, telemetry, ws_queue
 
 
 def _broadcast_live_feed(data):
     if not (isinstance(data, dict) and data.get("text")):
         return
+    snapshot = {
+        "text": data.get("text", ""),
+        "color": data.get("color", ""),
+        "size": data.get("size", ""),
+        "speed": data.get("speed", ""),
+        "opacity": data.get("opacity", ""),
+        "nickname": data.get("nickname", ""),
+        "layout": data.get("layout", "scroll"),
+        "isImage": data.get("isImage", False),
+        "fingerprint": data.get("fingerprint", ""),
+    }
+    # Phase 1 of admin-WS removal: append to the polling-backed ring
+    # buffer first so admin's polling primitive doesn't lag behind. The
+    # send_message() call below is still the legacy push for any client
+    # holding the flask-sock /ws connection (viewer settings_changed
+    # path) — admin no longer connects since admin.js dropped
+    # initAdminWebSocket().
     try:
-        live_msg = json.dumps(
-            {
-                "type": "danmu_live",
-                "data": {
-                    "text": data.get("text", ""),
-                    "color": data.get("color", ""),
-                    "size": data.get("size", ""),
-                    "speed": data.get("speed", ""),
-                    "opacity": data.get("opacity", ""),
-                    "nickname": data.get("nickname", ""),
-                    "layout": data.get("layout", "scroll"),
-                    "isImage": data.get("isImage", False),
-                    "fingerprint": data.get("fingerprint", ""),
-                },
-            }
-        )
+        live_feed_buffer.append(snapshot)
+    except Exception:
+        pass  # buffer failure shouldn't block forwarding
+    try:
+        live_msg = json.dumps({"type": "danmu_live", "data": snapshot})
         send_message(live_msg)
     except Exception:
         pass  # live feed broadcast failure should never block main flow

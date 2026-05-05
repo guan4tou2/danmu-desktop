@@ -57,8 +57,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentSettings = {};
 
   // Module-level handles for beforeunload cleanup
-  let _adminWs = null;
-  let _adminWsReconnectTimer = null;
+  // (admin no longer connects to /ws since v5.0.0+ Phase 1 — live feed
+  // polls /admin/live-feed/recent; settings_changed and blacklist_update
+  // pushes were dropped along with the WS bootstrap.)
   let _adminSectionObserver = null;
   let _routeHashHandler = null;
 
@@ -1516,58 +1517,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (window.AdminEffects) window.AdminEffects.init();
   }
 
-  // --- Real-time WebSocket Listener ---
-  // Receives push notifications from the server (e.g. blacklist_update).
-  function initAdminWebSocket() {
-    const wsUrl = (window.DANMU_CONFIG || {}).wsUrl;
-    if (!wsUrl) return;
-    let _wsReconnectAttempts = 0;
-    const _wsMaxReconnectDelay = 60000;
-
-    function connect() {
-      try {
-        _adminWs = new WebSocket(wsUrl);
-
-        _adminWs.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            if (data.type === "blacklist_update") {
-              window.AdminHistory && window.AdminHistory.fetchBlacklist();
-            } else if (data.type === "settings_changed") {
-              fetchLatestSettings();
-            }
-            // Dispatch to external scripts (e.g. live feed)
-            document.dispatchEvent(new CustomEvent("admin-ws-message", { detail: data }));
-          } catch (_) {
-            // ignore non-JSON messages (heartbeat strings)
-          }
-        };
-
-        _adminWs.onopen = () => {
-          _wsReconnectAttempts = 0;
-        };
-
-        _adminWs.onclose = () => {
-          if (!_adminWsReconnectTimer) {
-            const delay = Math.min(5000 * Math.pow(2, _wsReconnectAttempts), _wsMaxReconnectDelay);
-            _wsReconnectAttempts++;
-            _adminWsReconnectTimer = setTimeout(() => {
-              _adminWsReconnectTimer = null;
-              connect();
-            }, delay);
-          }
-        };
-
-        _adminWs.onerror = () => {
-          _adminWs.close();
-        };
-      } catch (e) {
-        console.warn("[AdminWS] Failed to connect:", e);
-      }
-    }
-
-    connect();
-  }
+  // v5.0.0+ Phase 1: admin no longer opens a WebSocket. Real-time live
+  // feed migrated to polling (admin-live-feed.js polls
+  // /admin/live-feed/recent every 1.5 s). The legacy push types
+  // `blacklist_update` and `settings_changed` were multi-admin-sync
+  // niceties; they're now accepted as "manual reload to see other
+  // admin's edits" until / unless polling is added for those too.
+  // Eliminated whole class of mis-routing bugs (see commit 3e9cfef
+  // for the production reconnect-storm root cause).
 
   // Cleanup all background resources on page unload (prevents memory leaks)
   window.addEventListener("beforeunload", () => {
@@ -1579,17 +1536,7 @@ document.addEventListener("DOMContentLoaded", () => {
       clearInterval(_replayPollTimer);
       _replayPollTimer = null;
     }
-    if (_adminWsReconnectTimer) {
-      clearTimeout(_adminWsReconnectTimer);
-      _adminWsReconnectTimer = null;
-    }
-    if (_adminWs) {
-      _adminWs.onclose = null; // prevent reconnect attempt after explicit close
-      _adminWs.close();
-      _adminWs = null;
-    }
   });
 
-  initAdminWebSocket();
   init();
 });
