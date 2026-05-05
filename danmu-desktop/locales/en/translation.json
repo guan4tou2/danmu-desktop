@@ -82,5 +82,10 @@
   "sectionKeysTitle": "Shortcuts",
   "sectionKeysKicker": "SHORTCUTS",
   "sectionAboutTitle": "About",
-  "sectionAboutKicker": "ABOUT"
+  "sectionAboutKicker": "ABOUT",
+  "clientNavConn": "Connection",
+  "clientNavOverlay": "Overlay",
+  "clientNavKeys": "Shortcuts",
+  "clientNavUpdate": "Updates",
+  "clientNavAbout": "About"
 }

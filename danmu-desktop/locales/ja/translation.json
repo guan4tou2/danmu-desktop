@@ -82,5 +82,10 @@
   "sectionKeysTitle": "ショートカット",
   "sectionKeysKicker": "SHORTCUTS",
   "sectionAboutTitle": "アバウト",
-  "sectionAboutKicker": "ABOUT"
+  "sectionAboutKicker": "ABOUT",
+  "clientNavConn": "接続",
+  "clientNavOverlay": "オーバーレイ",
+  "clientNavKeys": "ショートカット",
+  "clientNavUpdate": "アップデート",
+  "clientNavAbout": "アバウト"
 }

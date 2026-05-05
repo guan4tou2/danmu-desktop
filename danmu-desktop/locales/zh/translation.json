@@ -82,5 +82,10 @@
   "sectionKeysTitle": "快捷鍵",
   "sectionKeysKicker": "SHORTCUTS",
   "sectionAboutTitle": "關於",
-  "sectionAboutKicker": "ABOUT"
+  "sectionAboutKicker": "ABOUT",
+  "clientNavConn": "連線",
+  "clientNavOverlay": "Overlay",
+  "clientNavKeys": "快捷鍵",
+  "clientNavUpdate": "更新",
+  "clientNavAbout": "關於"
 }

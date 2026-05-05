@@ -82,5 +82,10 @@
   "sectionKeysTitle": "단축키",
   "sectionKeysKicker": "SHORTCUTS",
   "sectionAboutTitle": "정보",
-  "sectionAboutKicker": "ABOUT"
+  "sectionAboutKicker": "ABOUT",
+  "clientNavConn": "연결",
+  "clientNavOverlay": "오버레이",
+  "clientNavKeys": "단축키",
+  "clientNavUpdate": "업데이트",
+  "clientNavAbout": "정보"
 }

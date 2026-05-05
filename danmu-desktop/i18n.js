@@ -91,7 +91,12 @@ const _resources = {
       "sectionKeysTitle": "Shortcuts",
       "sectionKeysKicker": "SHORTCUTS",
       "sectionAboutTitle": "About",
-      "sectionAboutKicker": "ABOUT"
+      "sectionAboutKicker": "ABOUT",
+      "clientNavConn": "Connection",
+      "clientNavOverlay": "Overlay",
+      "clientNavKeys": "Shortcuts",
+      "clientNavUpdate": "Updates",
+      "clientNavAbout": "About"
     },
     "zh": {
       "skipToMainContent": "跳至主要內容",
@@ -177,7 +182,12 @@ const _resources = {
       "sectionKeysTitle": "快捷鍵",
       "sectionKeysKicker": "SHORTCUTS",
       "sectionAboutTitle": "關於",
-      "sectionAboutKicker": "ABOUT"
+      "sectionAboutKicker": "ABOUT",
+      "clientNavConn": "連線",
+      "clientNavOverlay": "Overlay",
+      "clientNavKeys": "快捷鍵",
+      "clientNavUpdate": "更新",
+      "clientNavAbout": "關於"
     },
     "ja": {
       "skipToMainContent": "メインコンテンツへスキップ",
@@ -263,7 +273,12 @@ const _resources = {
       "sectionKeysTitle": "ショートカット",
       "sectionKeysKicker": "SHORTCUTS",
       "sectionAboutTitle": "アバウト",
-      "sectionAboutKicker": "ABOUT"
+      "sectionAboutKicker": "ABOUT",
+      "clientNavConn": "接続",
+      "clientNavOverlay": "オーバーレイ",
+      "clientNavKeys": "ショートカット",
+      "clientNavUpdate": "アップデート",
+      "clientNavAbout": "アバウト"
     },
     "ko": {
       "skipToMainContent": "본문으로 건너뛰기",
@@ -349,7 +364,12 @@ const _resources = {
       "sectionKeysTitle": "단축키",
       "sectionKeysKicker": "SHORTCUTS",
       "sectionAboutTitle": "정보",
-      "sectionAboutKicker": "ABOUT"
+      "sectionAboutKicker": "ABOUT",
+      "clientNavConn": "연결",
+      "clientNavOverlay": "오버레이",
+      "clientNavKeys": "단축키",
+      "clientNavUpdate": "업데이트",
+      "clientNavAbout": "정보"
     }
   };
 
