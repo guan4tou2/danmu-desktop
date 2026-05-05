@@ -76,6 +76,9 @@ function initOverlayControls({
     const wsToken = wsTokenInput ? wsTokenInput.value.trim() : "";
     const displayIndex = parseInt(screenSelect.value);
     const enableSyncMultiDisplay = syncMultiDisplayCheckbox.checked;
+    // v5.0.0+: WSS-only deployment unified on --profile https. The legacy
+    // ws:// path was removed; nginx terminates TLS on both 443 (web) and
+    // 4001 (desktop).
 
     // Startup animation settings come from persisted prefs (the legacy form
     // controls were removed in P5-2). Settings still ship to child windows so
@@ -300,7 +303,7 @@ function initConnectionStatusHandler({
       if (portInput) portInput.disabled = false;
       if (screenSelect) screenSelect.disabled = false;
       if (syncMultiDisplayCheckbox) syncMultiDisplayCheckbox.disabled = false;
-
+  
       const failureStatusText = getLocalizedText(
         "statusConnectionFailed",
         "Connection failed",
@@ -335,7 +338,7 @@ function initConnectionStatusHandler({
       if (portInput) portInput.disabled = false;
       if (screenSelect) screenSelect.disabled = false;
       if (syncMultiDisplayCheckbox) syncMultiDisplayCheckbox.disabled = false;
-
+  
       updateConnectionStatus("idle", t("statusStopped"));
     }
   });

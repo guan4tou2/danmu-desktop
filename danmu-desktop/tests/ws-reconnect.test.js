@@ -135,7 +135,8 @@ describe("WebSocket reconnection logic", () => {
   test("creates a WebSocket to the correct URL on first call", () => {
     evalScript(MockWS);
     expect(MockWS.instances).toHaveLength(1);
-    expect(MockWS.instances[0].url).toBe(`ws://${SCRIPT_IP}:${SCRIPT_PORT}`);
+    // v5.0.0+: WSS-only — always wss:// with /ws path.
+    expect(MockWS.instances[0].url).toBe(`wss://${SCRIPT_IP}:${SCRIPT_PORT}/ws`);
   });
 
   test("sends 'connected' status when connection opens", () => {

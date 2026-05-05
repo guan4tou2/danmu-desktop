@@ -28,6 +28,7 @@ try {
       return ipcRenderer.invoke("getDisplays");
     },
     create: (ip, port, displayIndex, enableSyncMultiDisplay, startupAnimationSettings, wsAuthToken = "") => {
+      // v5.0.0+: WSS-only — useWss param dropped (always true).
       console.log(
         "[Preload] API.create called with:",
         ip,
@@ -35,7 +36,7 @@ try {
         displayIndex,
         enableSyncMultiDisplay,
         startupAnimationSettings,
-        wsAuthToken ? "(token set)" : "(no token)"
+        wsAuthToken ? "(token set)" : "(no token)",
       );
       ipcRenderer.send(
         "createChild",

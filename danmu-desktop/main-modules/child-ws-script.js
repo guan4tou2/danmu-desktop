@@ -12,15 +12,18 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
   );
   const wsAuthTokenJson = JSON.stringify(wsAuthToken || "");
 
+  // v5.0.0+: WSS-only deployment unified on --profile https. nginx
+  // terminates TLS on port 4001 and strips the /ws prefix, so the
+  // overlay always connects via wss://IP:PORT/ws + token query.
   return `
       const IP_ADDR=${ipJson};
       const WS_PORT_NUM=${safePort};
       const STARTUP_ANIM_SETTINGS = ${startupAnimSettingsJson};
       const WS_AUTH_TOKEN = ${wsAuthTokenJson};
-      console.log(IP_ADDR, WS_PORT_NUM)
-      let url = \`ws://\${IP_ADDR}:\${WS_PORT_NUM}\`
+      console.log(IP_ADDR, WS_PORT_NUM, 'wss')
+      let url = \`wss://\${IP_ADDR}:\${WS_PORT_NUM}/ws\`
       if (WS_AUTH_TOKEN) {
-        url = \`\${url}/?token=\${encodeURIComponent(WS_AUTH_TOKEN)}\`
+        url = \`\${url}?token=\${encodeURIComponent(WS_AUTH_TOKEN)}\`
       }
       let ws = null
       let reconnectAttempts = 0

@@ -377,8 +377,7 @@ function setupIpcHandlers(getMainWindow, childWindows) {
       displayIndex,
       enableSyncMultiDisplay,
       startupAnimationSettings,
-      wsAuthToken,
-      useWss
+      wsAuthToken
     ) => {
       const mainWindow = getMainWindow();
       if (!isFromMainWindow(event, mainWindow)) {
@@ -404,13 +403,12 @@ function setupIpcHandlers(getMainWindow, childWindows) {
         )}, DisplayIndex=${sanitizeLog(displayIndex)}, SyncMultiDisplay=${enableSyncMultiDisplay}, HasWSToken=${authToken ? "yes" : "no"}`
       );
 
-      // Self-signed cert pre-authorisation: when user opted into WSS,
-      // record the configured host so app.on('certificate-error') in
-      // main.js will accept the cert for that host only. Without this,
-      // self-signed certs from the user's VPS would be rejected.
-      if (useWss) {
-        trustedWssHosts.add(normalizedIp, portNum);
-      }
+      // Self-signed cert pre-authorisation: v5.0.0+ unified WSS-only,
+      // every connection records the configured host so
+      // app.on('certificate-error') in main.js will accept the cert for
+      // that host only. Without this, self-signed certs from the user's
+      // VPS would be rejected.
+      trustedWssHosts.add(normalizedIp, portNum);
 
       // Clear existing child windows (copy array to avoid splice-during-iteration)
       [...childWindows].forEach((win) => {
@@ -455,8 +453,7 @@ function setupIpcHandlers(getMainWindow, childWindows) {
             portNum,
             authToken,
             startupAnimationSettings,
-            childWindows,
-            !!useWss
+            childWindows
           );
           childWindows.push(newChild);
         });
@@ -486,8 +483,7 @@ function setupIpcHandlers(getMainWindow, childWindows) {
           portNum,
           authToken,
           startupAnimationSettings,
-          childWindows,
-          !!useWss
+          childWindows
         );
         childWindows.push(newChild);
         console.log("[Main] Created 1 child window for single display mode.");
