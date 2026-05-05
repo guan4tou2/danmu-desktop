@@ -849,4 +849,28 @@ function FirstRunGate({ theme }) {
   );
 }
 
+function TrayRow({ label, sc, meta, isDark, danger }) {
+  const dim = isDark ? hudTokens.textDim : hudTokens.lightTextDim;
+  return (
+    <div style={{
+      display: 'flex', padding: '6px 10px', borderRadius: 4, cursor: 'pointer',
+      alignItems: 'center', color: danger ? hudTokens.crimson : undefined,
+    }}>
+      <span style={{ flex: 1 }}>{label}</span>
+      {sc && <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: dim, letterSpacing: 1 }}>{sc}</span>}
+      {meta && <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: dim, letterSpacing: 0.5 }}>{meta}</span>}
+    </div>
+  );
+}
+function TrayToggleRow({ label, sc, on, accent, isDark }) {
+  const dim = isDark ? hudTokens.textDim : hudTokens.lightTextDim;
+  return (
+    <div style={{ display: 'flex', padding: '6px 10px', borderRadius: 4, cursor: 'pointer', alignItems: 'center' }}>
+      <span style={{ width: 14, color: on ? accent : 'transparent' }}>✓</span>
+      <span style={{ flex: 1 }}>{label}</span>
+      <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: dim, letterSpacing: 1 }}>{sc}</span>
+    </div>
+  );
+}
+
 Object.assign(window, { DesktopClient });

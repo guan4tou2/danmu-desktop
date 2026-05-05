@@ -266,6 +266,7 @@ document.addEventListener("DOMContentLoaded", () => {
         "sec-polls",
         "sec-security",
         "sec-ws-auth",
+        "sec-onscreen-limits",
       ],
     },
     assets: {

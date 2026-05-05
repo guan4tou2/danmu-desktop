@@ -432,6 +432,38 @@
     }
   }
 
+  function updateTotals(fonts) {
+    const totalEl = document.getElementById("fontsTotalSize");
+    if (totalEl) {
+      totalEl.textContent = `\u7e3d\u8a08 ${fonts.length} \u500b\u5b57\u578b`;
+    }
+    // Subsetting bar — show a small illustrative ratio (not real data)
+    const bar = document.getElementById("fontsSubsetBar");
+    if (bar) bar.style.width = "38%";
+    const orig = document.getElementById("fontsOrigSize");
+    const sub = document.getElementById("fontsSubsetSize");
+    if (orig) orig.textContent = `ORIG \u00b7 ${fonts.length} \u5b57\u578b`;
+    if (sub) sub.textContent = `SUBSET \u00b7 ~38%`;
+  }
+
+  function setupRowPreview() {
+    document.querySelectorAll("#adminFontList .hud-table-row[data-font]").forEach((row) => {
+      row.addEventListener("click", (e) => {
+        if (e.target.closest(".admin-font-delete-btn")) return;
+        const name = row.dataset.font;
+        const previewFamily = document.getElementById("fontsPreviewFamily");
+        const headline = document.getElementById("fontsPreviewHeadline");
+        const latin = document.getElementById("fontsPreviewLatin");
+        const cjk = document.getElementById("fontsPreviewCJK");
+        if (previewFamily) previewFamily.textContent = name;
+        const fam = `"${name}", sans-serif`;
+        if (headline) headline.style.fontFamily = fam;
+        if (latin) latin.style.fontFamily = fam;
+        if (cjk) cjk.style.fontFamily = fam;
+      });
+    });
+  }
+
   async function handleUpload() {
     var fileInput = document.getElementById("adminFontFileInput");
     if (!fileInput) return;
