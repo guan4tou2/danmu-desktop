@@ -76,8 +76,9 @@ Every admin page MUST wrap in `AdminPageShell`:
 ```
 
 Do not build private `_TabTopbar`, `_LcTopbar`, `_TabHeader`, etc. The shared
-shell handles the topbar (with the locked 10-nav from
-`design-v2-backlog.md` § P0-0), sidebar, and route awareness.
+shell handles the topbar/sidebar/route awareness. For new designs, its nav must
+follow `HANDOFF-PRIORITY-RESET-2026-05-05.md`'s 8-area IA, not the older
+10-nav target from `design-v2-backlog.md` § P0-0.
 
 ## 6. Typography
 
@@ -107,10 +108,13 @@ distinct from the `Bebas Neue` Hero lockup.
 > Project: danmu-desktop (Electron + Flask). Branch:
 > `claude/design-v2-retrofit`. Read these in order before designing anything:
 > 1. `docs/designs/design-v2/STYLE-CONTRACT.md` — token / palette / chrome rules
-> 2. `docs/designs/design-v2/components/tokens.jsx` — `hudTokens` source of truth
-> 3. `docs/designs/design-v2/components/admin-pages.jsx` — `AdminPageShell` wrapper
-> 4. `docs/designs/design-v2/components/admin-v3.jsx` — `AdminV3SoftHolo` reference
-> 5. `docs/design-v2-backlog.md` § P0-0 + P0-0a — IA, nav, decisions
+> 2. `docs/designs/design-v2/HANDOFF-PRIORITY-RESET-2026-05-05.md` — current
+>    product priority and prototype alignment target
+> 3. `docs/designs/design-v2/components/tokens.jsx` — `hudTokens` source of truth
+> 4. `docs/designs/design-v2/components/admin-pages.jsx` — `AdminPageShell` wrapper
+> 5. `docs/designs/design-v2/components/admin-v3.jsx` — legacy dashboard reference
+> 6. `docs/design-v2-backlog.md` — historical content inventory; 2026-05-04
+>    10-nav target is superseded by the 2026-05-05 handoff
 >
 > Constraints: no private token blocks, no magenta/violet, no inventing hexes,
 > wrap admin pages in `AdminPageShell`. Pass §7 checklist before delivery.

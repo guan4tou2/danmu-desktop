@@ -40,7 +40,6 @@
     notifications:  { title: "通知",              kicker: "NOTIFICATIONS · 警示中心" },
     audience:       { title: "觀眾",              kicker: "AUDIENCE · 指紋聚合" },
     audit:          { title: "審計日誌",           kicker: "AUDIT LOG · 持久事件紀錄" },
-    mobile:         { title: "Mobile Admin",        kicker: "MOBILE · 主持人手機後台" },
     about:          { title: "關於",              kicker: "ABOUT · 版本 · CHANGELOG" },
   };
 

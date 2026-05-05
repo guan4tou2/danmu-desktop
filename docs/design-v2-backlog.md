@@ -6,6 +6,12 @@
 aligned to the v2 handoff bundle. This doc tracks the **remaining design work**
 Claude Design needs to produce before engineering can finish.
 
+**2026-05-05 priority reset:** new design work must read
+`docs/designs/design-v2/HANDOFF-PRIORITY-RESET-2026-05-05.md` before this
+backlog. The older 2026-05-04 **32 -> 10 nav** target is now superseded by an
+8-area IA focused on Send / Display / Effects / Assets. Polls and moderation
+remain, but are secondary.
+
 Each item below is self-contained and can be pasted directly into a new
 Claude Design chat. Items are ordered by blocker severity, not chronology.
 
@@ -37,10 +43,14 @@ Noto Sans TC (UI).
 These decisions change how multiple pages behave. Resolve first so downstream
 designs don't have to be redone.
 
-### P0-0 · Positioning pivot + IA restructure (32 → 10 nav)
+### P0-0 · Positioning pivot + IA restructure (legacy 32 → 10 nav, superseded)
 
 > **Added 2026-05-04. This item supersedes parts of P0-2/P0-3, P1-* page-by-page
 > retrofits, P3-* dashboard polish, and parts of P5-1.** Read this first.
+> **Superseded 2026-05-05:** use
+> `docs/designs/design-v2/HANDOFF-PRIORITY-RESET-2026-05-05.md` for the current
+> Claude Design target. Keep this section as historical context and content
+> inventory, not as the active nav target.
 
 **Context.** v5.0.0 shipped a 32-route admin with 50 JS modules / 23,177 lines.
 The information architecture grew by accretion (one nav slot per feature) rather
@@ -1111,8 +1121,10 @@ work restarts, start with Stage 1 (file reorg), not Stage 2.
 | 2026-05-04 | Q2 retracted for dashboard scope (no effect strip on dashboard); 8 horizontal scroll still applies on the standalone effects nav page | User review |
 | 2026-05-04 | Q4 sidebar retracted; moderator's own actions stay inline in feed via ⋯ menu + Q3 inline undo; bell handles system events only | User review |
 | 2026-05-04 | Q1 (compact topbar) and Q3 (toast + inline complement rule) remain locked — both compatible with AdminV3SoftHolo | User review |
+| 2026-05-05 | **Priority reset: Send / Display / Effects / Assets are primary; Polls / Moderation secondary; Client is display endpoint only** | User |
+| 2026-05-05 | **Admin target changes from 10-nav to 8 areas: Live, Display, Effects, Assets, Viewer, Polls, Moderation, System** | User + audit |
 
 ---
 
-*Last updated: 2026-05-04*
+*Last updated: 2026-05-05*
 *Copy-paste this doc into a Claude Design chat; each P-tier item is self-contained.*

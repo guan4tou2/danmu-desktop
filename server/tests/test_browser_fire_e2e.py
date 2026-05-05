@@ -214,6 +214,52 @@ def test_viewer_poll_tab_hidden_by_default(browser_session, server_ports):
         context.close()
 
 
+def test_viewer_poll_tab_hides_results(browser_session, server_ports):
+    """Viewer poll tab should show the prompt/options without vote counts or percentages."""
+    http_port, _ = server_ports
+
+    context = browser_session.new_context()
+    page = context.new_page()
+    try:
+        page.goto(f"http://127.0.0.1:{http_port}/?poll=1")
+        page.wait_for_selector('[data-viewer-tab="poll"]', timeout=8000)
+        page.locator('[data-viewer-tab="poll"]').click()
+        page.wait_for_selector("#viewerPollPane", state="visible", timeout=5000)
+
+        page.evaluate("""() => {
+              window.dispatchEvent(new CustomEvent("viewer-poll-state", {
+                detail: {
+                  type: "poll_update",
+                  state: "active",
+                  question: "下一段要玩什麼？",
+                  total_votes: 10,
+                  options: [
+                    { key: "A", text: "Boss Rush", count: 4, percentage: 40 },
+                    { key: "B", text: "Speedrun", count: 6, percentage: 60 },
+                  ],
+                },
+              }));
+            }""")
+
+        page.wait_for_selector('[data-vpoll-key="A"]', timeout=5000)
+        poll_text = page.locator("#viewerPollPane").inner_text()
+        assert "下一段要玩什麼？" in poll_text
+        assert "A" in poll_text
+        assert "Boss Rush" in poll_text
+        assert "B" in poll_text
+        assert "Speedrun" in poll_text
+        assert "總票數" not in poll_text
+        assert "10" not in poll_text
+        assert "4" not in poll_text
+        assert "6" not in poll_text
+        assert "40%" not in poll_text
+        assert "60%" not in poll_text
+        assert page.locator(".viewer-poll-option-stat").count() == 0
+    finally:
+        page.close()
+        context.close()
+
+
 def test_viewer_error_states(browser_session, server_ports):
     """Viewer error states should render: rate-limit overlay + offline card shell."""
     http_port, _ = server_ports

@@ -620,12 +620,6 @@ body.viewer-body-v2.is-dark {
   font-weight: 600;
 }
 
-.viewer-poll-option-stat {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--color-text-secondary);
-}
-
 @media (max-width: 599px) {
   .viewer-tabbar {
     padding: 0 10px;

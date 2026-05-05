@@ -83,7 +83,7 @@ Roles re-stated for v5.0.0:
 | **Overlay** | Transparent browser page loaded as an OBS Browser Source (or Electron child window) that renders danmu on top of the game/camera. |
 | **Viewer** | Any visitor at `/` who types and fires a danmu. No login. |
 | **Admin** | Password-gated operator at `/admin/`. Manages filters, themes, effects, history, automation. |
-| **Desktop client** | Electron app (`danmu-desktop/`). Acts as streamer-side remote control + local overlay host. |
+| **Desktop client** | Electron app (`danmu-desktop/`). Local display endpoint that connects to the server and hosts overlay windows on selected displays. |
 | **Effect** (`.dme`) | YAML-defined CSS keyframe bundle. Hot-reloadable. |
 | **Theme** | YAML bundle of `palette + font + layout + bg + effects_preset` flags. Hot-reloadable. |
 | **Fingerprint** | SHA-256 of IP+UA used for rate limiting and moderation without persistent accounts. |
@@ -100,9 +100,9 @@ Only four. Designs must respect them — no hybrid "power viewer" role etc.
 | **OBS streamer** | Loads `/overlay` as OBS Browser Source | Render-only — no input UI |
 | **Admin** | `/login` with password | Everything in `/admin/` — settings, moderation, content, automation, security |
 | **API / plugin / webhook** | Machine callers | POST `/fire`, receive outbound webhooks, register plugins |
-| **Desktop streamer** | Runs the Electron app | Remote-control the server + host a local overlay on a chosen display |
+| **Desktop operator** | Runs the Electron app | Connect to the server, choose target display(s), start/stop/clear local overlay windows |
 
-Viewers never log in. Admins never appear in the viewer UI. Desktop clients do not expose admin routes — the Electron app is a viewer-side tool that happens to be able to spawn an overlay window.
+Viewers never log in. Admins never appear in the viewer UI. Desktop clients do not expose admin routes — the Electron app is a local overlay display endpoint, not a viewer surface or admin controller.
 
 ---
 
@@ -258,7 +258,8 @@ The Electron app at [danmu-desktop/](../danmu-desktop/) has two windows. Treat t
 > **Re-positioned in v5.0.0:** the desktop client is the **顯示端 / Overlay
 > player**, not a remote control panel. Display tuning (opacity / speed /
 > font / color / stroke / shadow / track count) lives in **`/admin/`**,
-> not here. The client has four sidebar tabs total.
+> not here. The client currently has five sidebar tabs total: Connection,
+> Overlay, Shortcuts, Update, and About.
 
 **Connection** (sidebar `連線 / CONNECTION`, default tab on first run)
 - Server host (IP or hostname) + port input
@@ -283,6 +284,11 @@ The Electron app at [danmu-desktop/](../danmu-desktop/) has two windows. Treat t
 - Note panel reminding the user that danmu styling (font / color / size /
   opacity / speed / layout / effects) lives in the viewer + admin, not
   here
+
+**Shortcuts** (sidebar `快捷鍵 / SHORTCUTS`)
+- Read-only shortcut reference for display actions
+- Shows current hotkeys such as toggle overlay and clear screen
+- Does not expose admin settings or viewer style controls
 
 **Update** (sidebar `更新 / UPDATES`)
 - Current version + last-check timestamp

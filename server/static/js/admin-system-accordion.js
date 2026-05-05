@@ -1,6 +1,6 @@
 // AdminSystemAccordion — collapsible accordion for the system nav (P0-0).
 //
-// The system route hosts 8 C-tier leaves (per docs/design-v2-backlog § P0-0
+// The system route hosts C-tier leaves (per docs/design-v2-backlog § P0-0
 // + system-accordion.jsx visual reference). Each leaf is a section owned by
 // its own admin-*.js module. We wrap them in an accordion shell:
 //   - default-collapsed
@@ -14,12 +14,13 @@
 (function (window) {
   "use strict";
 
-  // 8 sections per P0-0 system accordion. `sectionId` = the existing
+  // Sections per P0-0 system accordion. `sectionId` = the existing
   // sec-X element owned by an admin-*.js module. `slug` = the segment in
   // #/system/<slug>. Order = frequency × danger from system-accordion.jsx.
   // Note: `security` is intentionally NOT in here — admin-security.js owns
   // its own visibility via data-active-route="security" and the security
-  // route stays standalone for now (Slice 8 may revisit).
+  // route stays standalone. Dedicated mobile-admin was removed; the admin
+  // shell handles small screens through its standard responsive layout.
   const SECTIONS = [
     { slug: "system",       zh: "系統概覽",   en: "OVERVIEW",     sectionId: "sec-system-overview" },
     { slug: "firetoken",    zh: "API 金鑰",   en: "FIRETOKEN",    sectionId: "sec-firetoken-overview" },
@@ -27,7 +28,6 @@
     { slug: "backup",       zh: "備份 & 匯出", en: "BACKUP",       sectionId: "sec-backup" },
     { slug: "integrations", zh: "整合",       en: "INTEGRATIONS", sectionId: "sec-extensions-overview" },
     { slug: "wcag",         zh: "無障礙",     en: "WCAG",         sectionId: "sec-wcag-overview" },
-    { slug: "mobile",       zh: "手機後台",   en: "MOBILE",       sectionId: "sec-mobile-admin-overview" },
     { slug: "about",        zh: "關於",       en: "ABOUT",        sectionId: "sec-about-overview" },
   ];
 

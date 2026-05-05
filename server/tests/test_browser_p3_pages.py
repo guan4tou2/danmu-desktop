@@ -14,7 +14,7 @@ on `#sec-*-overview` visibility):
     #/notifications →                       — AdminNotificationsPage (no alias)
     #/audit         → #/history/audit     — AdminAuditLogPage
     #/audience      → #/history/audience  — AdminAudiencePage
-    #/mobile        → #/system/mobile     — AdminMobilePage
+    #/mobile        → #/system            — deprecated; admin uses responsive layout
     #/poll-deepdive →                       — AdminPollDeepDivePage (no alias)
     #/setup         →                       — AdminSetupWizard overlay (no alias)
 
@@ -190,21 +190,14 @@ def test_audience_page_renders(admin_page):
     assert has_header + has_empty >= 1
 
 
-def test_mobile_admin_page_renders(admin_page):
+def test_mobile_admin_dedicated_page_removed(admin_page):
     _go_to_route(admin_page, "mobile")
-    admin_page.wait_for_selector("#sec-mobile-admin-overview", state="visible", timeout=5000)
-    # Phone frame + status bar + appbar
-    assert admin_page.is_visible("[data-mobile-frame]")
-    assert admin_page.is_visible("[data-mobile-time]")
-    assert admin_page.is_visible(".admin-mobile-appbar")
-    # 4 big actions
-    assert admin_page.locator(".admin-mobile-actions .card").count() == 4
-    # 3 KPI tiles
-    assert admin_page.locator(".admin-mobile-stats .kpi").count() == 3
-    # 4 quick toggles
-    assert admin_page.locator("[data-mobile-toggle]").count() == 4
-    # 5-tab bottom bar
-    assert admin_page.locator(".admin-mobile-tabbar .tab").count() == 5
+    admin_page.wait_for_selector(".admin-system-accordion", state="visible", timeout=5000)
+    assert admin_page.evaluate("window.location.hash") == "#/system/system"
+    assert admin_page.locator("#sec-mobile-admin-overview").count() == 0
+    assert admin_page.locator("[data-mobile-frame]").count() == 0
+    labels = admin_page.locator(".admin-system-accordion-label").all_text_contents()
+    assert "手機後台" not in labels
 
 
 def test_poll_deepdive_page_renders(admin_page):
@@ -396,14 +389,17 @@ def test_ia_tab_strip_renders_for_moderation(admin_page):
 
 
 def test_ia_system_accordion_renders(admin_page):
-    """Slice 6: system route shows the 8-leaf accordion."""
+    """Slice 6: system route shows the current system accordion leaves."""
     _go_to_route(admin_page, "system")
     admin_page.wait_for_selector(".admin-system-accordion", state="attached", timeout=5000)
     rows = admin_page.locator(".admin-system-accordion-row")
-    assert rows.count() == 8
+    assert rows.count() == 7
+    labels = admin_page.locator(".admin-system-accordion-label").all_text_contents()
+    assert "手機後台" not in labels
     # Single-open default — first row (system overview) is open
     open_rows = admin_page.locator(".admin-system-accordion-row.is-open")
     assert open_rows.count() == 1
+    assert admin_page.locator('[data-route="security"]').count() == 1
 
 
 def test_ia_deep_link_preserves_tab(admin_page):

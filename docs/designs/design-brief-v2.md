@@ -2,6 +2,12 @@
 
 給 Claude Design 的設計說明。目標：在現有 codebase 能實作的範圍內，完善前端視覺與互動，不生出沒有後端支撐的假功能。
 
+> **2026-05-05 update:** this brief is now historical baseline material. For new
+> Claude Design work, read
+> `docs/designs/design-v2/HANDOFF-PRIORITY-RESET-2026-05-05.md` first. The
+> current product priority is Send / Display / Effects / Assets. Polls and
+> moderation are secondary, and the client is only a local display endpoint.
+
 ---
 
 ## 產品定位

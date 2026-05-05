@@ -109,7 +109,8 @@ document.addEventListener("DOMContentLoaded", () => {
     backup:       { nav: "system", tab: "backup" },
     integrations: { nav: "system", tab: "integrations" },
     wcag:         { nav: "system", tab: "wcag" },
-    mobile:       { nav: "system", tab: "mobile" },
+    // Dedicated mobile-admin was removed; admin relies on the normal RWD shell.
+    mobile:       { nav: "system", tab: "system" },
     about:        { nav: "system", tab: "about" },
     // (note: security stays as its own route — admin-security.js owns it)
   });
@@ -636,7 +637,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </button>
 
                                 <!-- 10. SYSTEM (Slice 6: accordion hosts firetoken /
-                                     api-tokens / backup / integrations / wcag / mobile /
+                                     api-tokens / backup / integrations / wcag /
                                      about). Security keeps its own row — admin-security.js
                                      owns visibility via data-active-route="security". -->
                                 <button type="button" class="admin-dash-nav-row" data-route="system" role="tab" aria-selected="false">
@@ -1187,10 +1188,10 @@ document.addEventListener("DOMContentLoaded", () => {
     effects:   { title: "效果庫 .dme",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },
     plugins:   { title: "伺服器插件",       kicker: "PLUGIN SDK · 熱重載 · SANDBOX", sections: ["sec-plugins"] },
     fonts:     { title: "字型管理",         kicker: "FONT LIBRARY · 觀眾可選",   sections: ["sec-fonts"] },
-    // Slice 6: system hosts the C-tier accordion (8 sections). scheduler /
+    // Slice 6: system hosts the C-tier accordion. scheduler /
     // webhooks moved to automation; fingerprints moved to moderation. The
     // accordion shell is rendered by admin-system-accordion.js.
-    system:    { title: "系統",  kicker: "SYSTEM · 設定 / 金鑰 / 備份 / 整合 / 無障礙 / 手機 / 關於", sections: ["sec-system-overview", "sec-firetoken-overview", "sec-api-tokens-overview", "sec-backup", "sec-extensions-overview", "sec-wcag-overview", "sec-mobile-admin-overview", "sec-about-overview"] },
+    system:    { title: "系統",  kicker: "SYSTEM · 設定 / 金鑰 / 備份 / 整合 / 無障礙 / 關於", sections: ["sec-system-overview", "sec-firetoken-overview", "sec-api-tokens-overview", "sec-backup", "sec-extensions-overview", "sec-wcag-overview", "sec-about-overview"] },
     // Security route is fully owned by admin-security-v2-page (admin-security.js).
     // sections=[] because the v2 page handles its own visibility on data-active-route.
     security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: [] },
@@ -1201,8 +1202,6 @@ document.addEventListener("DOMContentLoaded", () => {
     audience:  { title: "觀眾",               kicker: "AUDIENCE · 即時指紋聚合",           sections: ["sec-audience-overview"] },
     // P1 (2026-04-27 batch1): persistent audit trail (read-only history).
     audit:     { title: "審計日誌",           kicker: "AUDIT LOG · 持久事件紀錄 · DISK-BACKED", sections: ["sec-audit-overview"] },
-    // P3 Group B (2026-04-27 V1Z4 batch8 #3): host-on-phone admin layout.
-    mobile:    { title: "Mobile",             kicker: "MOBILE ADMIN · 主持人手機後台",      sections: ["sec-mobile-admin-overview"] },
     // Phase 2 P0-1 (2026-04-27 V1Z4 batch9): version + license + changelog.
     about:     { title: "關於",               kicker: "ABOUT · 版本 · CHANGELOG · 開源資訊", sections: ["sec-about-overview"] },
     // Phase 2 P0-2 (2026-04-27 batch3): #/setup opens the Setup Wizard
@@ -1261,7 +1260,7 @@ document.addEventListener("DOMContentLoaded", () => {
       currentRoute = ADMIN_ROUTES[name] ? name : "dashboard";
       shell.dataset.activeRoute = currentRoute;
       // Slice 8: legacy modules (admin-backup / admin-audit / admin-audience /
-      // admin-mobile / admin-search / admin-sessions / admin-session-detail /
+      // admin-search / admin-sessions / admin-session-detail /
       // admin-notifications / admin-broadcast / admin-poll-deepdive) check the
       // shell's active route to decide their own visibility. After Slice 4/6
       // alias redirect, `dataset.activeRoute` is the P0-0 top nav (history,
