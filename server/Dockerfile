@@ -54,7 +54,7 @@ ENV PYTHONUNBUFFERED=1
 COPY shared/ /app/shared/
 
 # Copy application code — exclude tests, dev configs, and build artifacts
-COPY server/app.py server/config.py server/extensions.py server/logging_config.py \
+COPY server/app.py server/config.py server/logging_config.py \
      server/startup_warnings.py server/state.py server/utils.py server/ws_app.py ./
 COPY server/effects/ effects/
 COPY server/managers/ managers/
