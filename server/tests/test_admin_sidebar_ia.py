@@ -288,6 +288,116 @@ def test_deep_link_parent_navs_not_bare_redirected(admin_js: str):
                 )
 
 
+# ─── admin-display.js viewer-config visibility gate ─────────────────────────
+#
+# Reviewer P1 on b7cbc55: the visibility gate `route === "viewer-config"`
+# never fired because `_routeAliases["viewer-config"]` resolves to
+# `nav: "appearance"`, so dataset.activeRoute is "appearance" with
+# activeLeaf="viewer-config". Phase A's new top-level `viewer` route also
+# needs to render these panels but has activeLeaf="viewer". The fix is to
+# accept either: route in {viewer-config, viewer} OR leaf === viewer-config.
+
+@pytest.fixture(scope="module")
+def admin_display_js() -> str:
+    path = Path(__file__).resolve().parent.parent / "static" / "js" / "admin-display.js"
+    return path.read_text(encoding="utf-8")
+
+
+def test_viewer_config_gate_accepts_all_three_owners(admin_display_js: str):
+    """The admin-display syncVisibility() gate must consider all three
+    valid signals — direct viewer-config route, the new Phase A viewer
+    route, and the appearance/viewer-config leaf path — and use that
+    same decision to show the editable display settings page."""
+    owner_block = re.search(
+        r"function _isViewerConfigOwner\(route, leaf\)\s*\{[\s\S]*?\n\s*\}",
+        admin_display_js,
+    )
+    assert owner_block, "_isViewerConfigOwner helper not found"
+    owner_body = owner_block.group(0)
+    assert 'route === "viewer-config"' in owner_body, "must accept legacy viewer-config route"
+    assert 'route === "viewer"' in owner_body, "must accept Phase A viewer route"
+    assert 'leaf === "viewer-config"' in owner_body, "must accept appearance/viewer-config leaf"
+
+    sync_block = re.search(
+        r"function syncVisibility\(\)\s*\{[\s\S]*?_lastVisibleRoute\s*=\s*route;",
+        admin_display_js,
+    )
+    assert sync_block, "syncVisibility body not found"
+    body = sync_block.group(0)
+    assert "const isViewerConfigOwner = _isViewerConfigOwner(route, leaf)" in body, (
+        "syncVisibility must use the shared owner helper"
+    )
+    assert 'page.style.display = isViewerConfigOwner ? "" : "none"' in body, (
+        "admin-display-v2-page contains the editable Speed/Color controls; "
+        "it must become visible when the viewer-config owner gate is true"
+    )
+
+
+def test_viewer_config_tab_bar_uses_route_owner_not_raw_hash(admin_display_js: str):
+    """The viewer-config tab chrome must follow the same route/leaf owner
+    decision as syncVisibility(). A raw hash check like
+    `hash === "viewer-config"` misses #/viewer and
+    #/appearance/viewer-config."""
+    sync_bar = re.search(
+        r"function _syncBar\(\)\s*\{[\s\S]*?syncVisibility\(\);[\s\S]*?\}",
+        admin_display_js,
+    )
+    assert sync_bar, "_syncBar body not found"
+    body = sync_bar.group(0)
+    assert "_isViewerConfigOwner(route, leaf)" in body, (
+        "_syncBar must use the shared route/leaf owner check"
+    )
+    assert 'hash === "viewer-config"' not in body, (
+        "_syncBar must not rely on raw hash-only visibility"
+    )
+
+
+# ─── Command palette must not jump to a route that doesn't own the section ──
+#
+# Reviewer P2 on b7cbc55: the palette had Webhooks / Scheduler / Fingerprints
+# pointing at `#/system`, but System doesn't own those `sec-*` IDs after
+# Phase A — webhooks/scheduler live under automation tabs, fingerprints
+# under moderation tabs. The fix is to use the deep-link alias slugs
+# (`#/webhooks`, `#/scheduler`, `#/fingerprints`) which alias-resolve to
+# the correct {nav, tab} pair so AdminTabs.applyTabSectionVisibility shows
+# the right section.
+
+# Each entry: section ID → MUST NOT use this route slug (because it doesn't
+# own the section), MUST use this route slug (because alias resolves correctly).
+PALETTE_CONTRACT = [
+    # (label, must_route_to, must_NOT_route_to)
+    ("Webhooks",     "webhooks",     "system"),
+    ("Scheduler",    "scheduler",    "system"),
+    ("Fingerprints", "fingerprints", "system"),
+]
+
+
+@pytest.fixture(scope="module")
+def palette_js() -> str:
+    path = Path(__file__).resolve().parent.parent / "static" / "js" / "admin-command-palette.js"
+    return path.read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("label, must_route, must_not_route", PALETTE_CONTRACT)
+def test_palette_routes_to_owning_route(palette_js: str, label: str, must_route: str, must_not_route: str):
+    """Each palette entry must point to a route that actually renders the
+    section it scrolls to. Pre-Phase-A these jumped to `#/system`; the
+    section IDs were system-owned then, but Phase A moved ownership and
+    the palette must follow."""
+    # Find the palette entry line for this label
+    pattern = re.compile(
+        rf'\{{\s*label:\s*"{re.escape(label)}",\s*route:\s*"([^"]+)"',
+    )
+    m = pattern.search(palette_js)
+    assert m, f"palette entry for label={label!r} not found"
+    actual_route = m.group(1)
+    assert actual_route == must_route, (
+        f"{label} palette entry routes to '{actual_route}'; expected '{must_route}'. "
+        f"Routing to '{must_not_route}' would leave the section hidden because "
+        f"that route doesn't own the sec-* ID."
+    )
+
+
 # ─── i18n labels (cross-locale parity) ───────────────────────────────────────
 
 

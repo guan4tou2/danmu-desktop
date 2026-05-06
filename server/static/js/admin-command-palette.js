@@ -62,9 +62,15 @@
     { label: "Stickers",            route: "assets",    section: "sec-stickers" },
     { label: "Sounds",              route: "assets",    section: "sec-sounds" },
     { label: "字型管理",            route: "fonts",     section: "sec-fonts" },
-    { label: "Webhooks",            route: "system",    section: "sec-webhooks" },
-    { label: "Scheduler",           route: "system",    section: "sec-scheduler" },
-    { label: "Fingerprints",        route: "system",    section: "sec-fingerprints" },
+    // Phase A IA reorg (2026-05-06): webhooks/scheduler/plugins live
+    // under the automation tab strip; fingerprints lives under the
+    // moderation tab strip. `#/system` does NOT own these `sec-*` IDs,
+    // so jumping there leaves the section hidden. Use the deep-link
+    // alias slugs — `_routeAliases` resolves each to the correct
+    // {nav, tab} pair, which AdminTabs.applyTabSectionVisibility honors.
+    { label: "Webhooks",            route: "webhooks",     section: "sec-webhooks" },
+    { label: "Scheduler",           route: "scheduler",    section: "sec-scheduler" },
+    { label: "Fingerprints",        route: "fingerprints", section: "sec-fingerprints" },
     { label: "系統概覽 Overview",   route: "system",    section: "sec-system-overview" },
   ];
 

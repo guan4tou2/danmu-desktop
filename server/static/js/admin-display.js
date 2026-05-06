@@ -970,24 +970,53 @@
   }
 
   let _lastVisibleRoute = null;
+  function _isViewerConfigOwner(route, leaf) {
+    return (
+      route === "viewer-config" ||
+      route === "viewer" ||
+      leaf === "viewer-config"
+    );
+  }
+
   function syncVisibility() {
     const shell = document.querySelector(".admin-dash-grid");
     const page = document.getElementById(PAGE_ID);
     if (!shell || !page) return;
     const route = shell.dataset.activeRoute || "dashboard";
+    const leaf = shell.dataset.activeLeaf || route;
     const tab = (document.body.dataset.viewerConfigTab) || "page";
     // DS-002: admin-display-v2-page is not shown on viewer-config route;
     // sec-viewer-config-fields panel takes the FIELDS slot.
-    page.style.display = "none";
+    //
+    // Phase A IA reorg (2026-05-06): viewer-config content is reachable
+    // via three valid hashes that all resolve to the same panel set:
+    //   1. `#/viewer-config`            — alias-resolves through
+    //                                      `_routeAliases` to
+    //                                      `appearance/viewer-config`
+    //                                      (activeRoute=appearance,
+    //                                       activeLeaf=viewer-config)
+    //   2. `#/appearance/viewer-config` — direct deep-link, same shape
+    //                                      as #1
+    //   3. `#/viewer`                   — Phase A new top-level
+    //                                      (activeRoute=viewer, no tab,
+    //                                       activeLeaf=viewer)
+    // Accept either signal so the editable controls render under any of
+    // the three; the theme/form panels below still honor the inner tab.
+    const isViewerConfigOwner = _isViewerConfigOwner(route, leaf);
+    page.style.display = isViewerConfigOwner ? "" : "none";
     const vt = document.getElementById("sec-viewer-theme");
     if (vt) {
-      vt.style.display = (route === "viewer-config" && tab === "page") ? "" : "none";
+      vt.style.display = (isViewerConfigOwner && tab === "page") ? "" : "none";
     }
     const vf = document.getElementById("sec-viewer-config-fields");
     if (vf) {
-      vf.style.display = (route === "viewer-config" && tab === "fields") ? "" : "none";
+      vf.style.display = (isViewerConfigOwner && tab === "fields") ? "" : "none";
     }
-    stopMetricsPoll();
+    if (isViewerConfigOwner) {
+      if (!_state.metricsTimer) startMetricsPoll();
+    } else {
+      stopMetricsPoll();
+    }
     _lastVisibleRoute = route;
   }
 
@@ -1163,8 +1192,10 @@
     if (!document.body.dataset.viewerConfigTab) document.body.dataset.viewerConfigTab = "page";
 
     function _syncBar() {
-      const hash = (window.location.hash.match(/^#\/(\w[\w-]*)/) || [])[1] || "dashboard";
-      const visible = hash === "viewer-config";
+      const shell = document.querySelector(".admin-dash-grid");
+      const route = shell?.dataset.activeRoute || "";
+      const leaf = shell?.dataset.activeLeaf || route;
+      const visible = _isViewerConfigOwner(route, leaf);
       bar.style.display = visible ? "" : "none";
       infoBanner.style.display = visible ? "" : "none";
       syncVisibility();

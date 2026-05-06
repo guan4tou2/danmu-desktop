@@ -118,15 +118,16 @@ SECTION_TO_ROUTE = {
     "sec-history": "history",
     "sec-polls": "polls",
     "sec-widgets": "widgets",
-    # v5.2 (2026-04-27 sidebar consolidation): display + viewer-theme merged
-    # into "viewer-config" route with a 2-tab strip (page / fields).
-    "sec-color": "viewer-config",
-    "sec-opacity": "viewer-config",
-    "sec-fontsize": "viewer-config",
-    "sec-speed": "viewer-config",
-    "sec-fontfamily": "viewer-config",
-    "sec-layout": "viewer-config",
-    "sec-viewer-theme": "viewer-config",
+    # Phase A IA (2026-05-06): viewer/display defaults are now reached
+    # through the canonical viewer route. Legacy #/viewer-config still works
+    # via router aliases, but tests should exercise the visible sidebar home.
+    "sec-color": "viewer",
+    "sec-opacity": "viewer",
+    "sec-fontsize": "viewer",
+    "sec-speed": "viewer",
+    "sec-fontfamily": "viewer",
+    "sec-layout": "viewer",
+    "sec-viewer-theme": "viewer",
     "sec-themes": "themes",
     # v5: emojis / stickers / sounds bundled into the "assets" route.
     "sec-emojis": "assets",
@@ -141,9 +142,9 @@ SECTION_TO_ROUTE = {
     "sec-system-overview": "system",
     # v5.2 Group D-3 R6 (2026-04-28): sec-security / sec-ws-auth legacy
     # cards removed; admin-security-v2-page (sec2-pw-*) owns this route.
-    "sec-scheduler": "system",
-    "sec-webhooks": "system",
-    "sec-fingerprints": "system",
+    "sec-scheduler": "scheduler",
+    "sec-webhooks": "webhooks",
+    "sec-fingerprints": "fingerprints",
 }
 
 
@@ -174,7 +175,7 @@ def _open_section(page, section_id: str):
         page.wait_for_timeout(250)
 
     # v5 display-page consolidation — sec-* IDs no longer exist for the
-    # 6 display rows. Wait for the container instead.
+    # 6 display rows. Phase A exposes their editable controls at #/viewer.
     DISPLAY_LEGACY_IDS = {
         "sec-color",
         "sec-opacity",
@@ -184,17 +185,7 @@ def _open_section(page, section_id: str):
         "sec-layout",
     }
     if section_id in DISPLAY_LEGACY_IDS:
-        # v5.3 strict prototype mode: admin-display.js explicitly hides
-        # #admin-display-v2-page (DS-002 in admin-display.js:981). The
-        # actual fields panel is #sec-viewer-config-fields, gated by
-        # body[data-viewer-config-tab="fields"]. Set the tab + reroute,
-        # then wait for the fields panel.
-        page.evaluate("""() => {
-                document.body.dataset.viewerConfigTab = 'fields';
-                window.dispatchEvent(new Event('hashchange'));
-            }""")
-        page.wait_for_timeout(250)
-        page.wait_for_selector("#sec-viewer-config-fields", state="visible", timeout=5000)
+        page.wait_for_selector("#admin-display-v2-page", state="visible", timeout=5000)
         return
 
     page.wait_for_selector(f"#{section_id}", state="visible", timeout=5000)
