@@ -123,43 +123,83 @@ def test_legacy_top_level_buttons_removed(admin_js: str):
 # no `audit` slug — same trap for sessions/search/audience and
 # scheduler/webhooks/plugins.
 
-PHASE_A_SAFE_REDIRECTS = {
+# String-form bare redirects (just nav rename, tab preserved from URL).
+# Phase A entries; new home owns the same sec-* IDs.
+PHASE_A_STRING_REDIRECTS = {
     "dashboard": "live",  # both render KPI strip via data-route-view alias
     "messages": "live",  # both own sec-live-feed
     "widgets": "display",  # both own sec-widgets
 }
 
-PHASE_A_NOT_REDIRECTED = ("history", "automation", "appearance")
+# Object-form bare redirects (Phase B 2026-05-06): retired top-level routes
+# absorbed into system accordion. Each lands on the first leaf of its group
+# so users see meaningful content, not just the system overview.
+PHASE_B_OBJECT_REDIRECTS = {
+    "automation": ("system", "scheduler"),
+    "history":    ("system", "sessions"),
+}
+
+# Slugs that must NOT be in `_bareLegacyRedirects` — until Phase D, their
+# sections still live on the legacy `appearance` route.
+PHASE_A_NOT_REDIRECTED = ("appearance",)
 
 
-def test_bare_legacy_redirects_only_safe_three(admin_js: str):
-    """Only retired slugs whose new home owns the original sections may
-    redirect in Phase A. history/automation/appearance must NOT appear
-    here — their content still lives on the legacy route until Phase B/D."""
+def test_bare_legacy_string_redirects_present(admin_js: str):
+    """Phase A string-form redirects must each map to the documented new
+    home — these are the safe slugs whose target route owns the same sec-*
+    IDs the legacy slug used."""
     table_match = re.search(
         r"const _bareLegacyRedirects\s*=\s*Object\.create\(null\);\s*"
-        r"Object\.assign\(_bareLegacyRedirects,\s*\{([^}]+)\}",
+        r"Object\.assign\(_bareLegacyRedirects,\s*\{([\s\S]+?)\n\s*\}\);",
         admin_js,
-        re.DOTALL,
     )
     assert table_match, "_bareLegacyRedirects table not found in admin.js"
     body = table_match.group(1)
 
-    for legacy, target in PHASE_A_SAFE_REDIRECTS.items():
+    for legacy, target in PHASE_A_STRING_REDIRECTS.items():
         assert re.search(
             rf'\b{legacy}:\s*"{target}"', body
         ), f"_bareLegacyRedirects missing or wrong: {legacy} → {target}"
 
+
+@pytest.mark.parametrize("slug, expected", list(PHASE_B_OBJECT_REDIRECTS.items()))
+def test_bare_legacy_object_redirects_target_system_accordion(
+    admin_js: str, slug: str, expected: tuple
+):
+    """Phase B object-form redirects must point at `nav: "system"` plus the
+    correct first-leaf tab. Without the tab the user lands on the system
+    overview after typing `#/automation` — defeats the point of grouping
+    the absorbed sections."""
+    expected_nav, expected_tab = expected
+    pattern = re.compile(
+        rf'\b{slug}:\s*\{{\s*nav:\s*"{expected_nav}",\s*tab:\s*"{expected_tab}"',
+    )
+    assert pattern.search(admin_js), (
+        f"_bareLegacyRedirects.{slug} must be {{nav: '{expected_nav}', "
+        f"tab: '{expected_tab}'}}; otherwise #/{slug} drops into system "
+        f"overview instead of the absorbed group."
+    )
+
+
+def test_bare_legacy_redirects_excludes_appearance(admin_js: str):
+    """Until Phase D moves themes / viewer-config / fonts into their new
+    homes, `appearance` must NOT be in `_bareLegacyRedirects` — redirecting
+    it now would orphan those tabs."""
+    table_match = re.search(
+        r"const _bareLegacyRedirects\s*=\s*Object\.create\(null\);\s*"
+        r"Object\.assign\(_bareLegacyRedirects,\s*\{([\s\S]+?)\n\s*\}\);",
+        admin_js,
+    )
+    assert table_match, "_bareLegacyRedirects table not found"
+    body = table_match.group(1)
     for unsafe in PHASE_A_NOT_REDIRECTED:
-        # Match only as a key (start of line + colon), not in commentary.
-        # Tightened to `^<ws><slug>:` to avoid false positives.
         for line in body.splitlines():
             stripped = line.strip()
             if stripped.startswith(f"{unsafe}:"):
                 pytest.fail(
-                    f"'{unsafe}' must NOT be in _bareLegacyRedirects in Phase A — "
+                    f"'{unsafe}' must NOT be in _bareLegacyRedirects — "
                     f"its sections aren't yet owned by the redirect target. "
-                    f"Re-add only after Phase B/D moves the DOM."
+                    f"Re-add only after Phase D moves the DOM."
                 )
 
 
@@ -231,13 +271,21 @@ def test_admin_routes_keeps_legacy_aliases_alive(admin_js: str):
 
 DEEP_LINK_ALIASES = {
     # legacy slug → expected (parent_nav, tab_in_nav)
-    "audit": ("history", "audit"),
-    "sessions": ("history", "sessions"),
-    "search": ("history", "search"),
-    "audience": ("history", "audience"),
-    "scheduler": ("automation", "scheduler"),
-    "webhooks": ("automation", "webhooks"),
-    "plugins": ("automation", "plugins"),
+    # Phase B (2026-05-06): the automation + history group navs were
+    # absorbed into the system accordion, so their tabs now resolve to
+    # `nav: "system"` rather than the original parent. Bookmarks like
+    # `#/audit` still work — parser hits the alias, lands on
+    # `#/system/audit`, accordion picks the audit slug.
+    "audit": ("system", "audit"),
+    "sessions": ("system", "sessions"),
+    "search": ("system", "search"),
+    "audience": ("system", "audience"),
+    "replay": ("system", "replay"),
+    "scheduler": ("system", "scheduler"),
+    "webhooks": ("system", "webhooks"),
+    "plugins": ("system", "plugins"),
+    # Appearance still owns its tabs (Phase D pending), so themes/fonts/
+    # viewer-config keep their original parent nav.
     "themes": ("appearance", "themes"),
     "fonts": ("appearance", "fonts"),
     "viewer-config": ("appearance", "viewer-config"),
@@ -265,27 +313,143 @@ def test_deep_link_alias_resolves_to_parent_tab(admin_js: str, slug: str, parent
     )
 
 
-def test_deep_link_parent_navs_not_bare_redirected(admin_js: str):
-    """Parents of the deep-link aliases (`history`, `automation`,
-    `appearance`) must NOT appear in `_bareLegacyRedirects`, otherwise
-    the deep-link's resolved nav gets a second translation pass."""
+def test_appearance_parent_nav_not_bare_redirected(admin_js: str):
+    """Phase D will move themes / fonts / viewer-config out of `appearance`
+    into viewer + assets. Until then, `appearance` MUST NOT be in
+    `_bareLegacyRedirects` — its child aliases would get double-translated.
+
+    Phase B (2026-05-06): `history` and `automation` are intentionally
+    in the bare table now, but they no longer share a slug-collision
+    surface with their child aliases — every child (audit / sessions /
+    scheduler etc.) has been re-targeted to `nav: "system"` directly
+    rather than going through the absorbed parent. Hence safe."""
     table_match = re.search(
         r"const _bareLegacyRedirects\s*=\s*Object\.create\(null\);\s*"
-        r"Object\.assign\(_bareLegacyRedirects,\s*\{([^}]+)\}",
+        r"Object\.assign\(_bareLegacyRedirects,\s*\{([\s\S]+?)\n\s*\}\);",
         admin_js,
-        re.DOTALL,
     )
     assert table_match, "_bareLegacyRedirects table not found"
     body = table_match.group(1)
-    for parent in ("history", "automation", "appearance"):
-        for line in body.splitlines():
-            stripped = line.strip()
-            if stripped.startswith(f"{parent}:"):
-                pytest.fail(
-                    f"'{parent}' is in _bareLegacyRedirects — that would "
-                    f"break deep-link aliases under it (e.g., #/audit, "
-                    f"#/scheduler, #/themes). Phase A keeps these as-is."
-                )
+    for line in body.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("appearance:"):
+            pytest.fail(
+                "'appearance' is in _bareLegacyRedirects — that would "
+                "break deep-link aliases under it (#/themes, #/fonts, "
+                "#/viewer-config). Wait for Phase D to redirect."
+            )
+
+
+# ─── system accordion shape (Phase B 2026-05-06) ────────────────────────────
+#
+# The system route absorbs automation + history. Lock the accordion's
+# slug list + group structure so a future edit doesn't quietly drop a
+# slug or scramble the grouping that the IA-REORG-DRAFT calls for.
+
+ACCORDION_GROUPS_EXPECTED = ["settings", "tokens", "automation", "history"]
+
+ACCORDION_SLUGS_BY_GROUP = {
+    "settings":   ["system", "backup", "integrations", "wcag", "about"],
+    "tokens":     ["firetoken", "api-tokens"],
+    "automation": ["scheduler", "webhooks", "plugins"],
+    "history":    ["sessions", "search", "audit", "replay", "audience"],
+}
+
+
+@pytest.fixture(scope="module")
+def accordion_js() -> str:
+    path = (
+        Path(__file__).resolve().parent.parent
+        / "static"
+        / "js"
+        / "admin-system-accordion.js"
+    )
+    return path.read_text(encoding="utf-8")
+
+
+def test_accordion_declares_four_groups(accordion_js: str):
+    """The accordion's GROUPS array must declare exactly 4 groups in the
+    canonical order: settings → tokens → automation → history."""
+    groups_match = re.search(
+        r"const GROUPS\s*=\s*\[([\s\S]+?)\];",
+        accordion_js,
+    )
+    assert groups_match, "GROUPS array not found in admin-system-accordion.js"
+    body = groups_match.group(1)
+    found = re.findall(r'\{\s*key:\s*"([\w-]+)"', body)
+    assert found == ACCORDION_GROUPS_EXPECTED, (
+        f"accordion GROUPS order drifted.\n"
+        f"expected: {ACCORDION_GROUPS_EXPECTED}\n"
+        f"actual:   {found}"
+    )
+
+
+@pytest.mark.parametrize("group, expected_slugs", list(ACCORDION_SLUGS_BY_GROUP.items()))
+def test_accordion_section_slugs_per_group(
+    accordion_js: str, group: str, expected_slugs: list
+):
+    """Each group's slugs must appear in the SECTIONS array tagged with
+    the right `group` field. Phase B added automation + history; settings
+    + tokens are unchanged from Phase A."""
+    sections_match = re.search(
+        r"const SECTIONS\s*=\s*\[([\s\S]+?)\n\s*\];",
+        accordion_js,
+    )
+    assert sections_match, "SECTIONS array not found"
+    body = sections_match.group(1)
+    # Find slugs tagged with the requested group.
+    pattern = re.compile(
+        rf'slug:\s*"([\w-]+)"[^}}]*?group:\s*"{group}"',
+    )
+    found = pattern.findall(body)
+    assert found == expected_slugs, (
+        f"accordion SECTIONS for group={group!r} drifted.\n"
+        f"expected: {expected_slugs}\n"
+        f"actual:   {found}"
+    )
+
+
+def test_accordion_replay_uses_multi_section_bundle(accordion_js: str):
+    """The history/replay leaf historically renders 3 sections together
+    (sec-history-tabs + history-v2-section + sec-history). The accordion
+    config must keep the `sectionIds` array form for replay so all 3
+    show together when the leaf is open."""
+    pattern = re.compile(
+        r'slug:\s*"replay"[^}]*sectionIds:\s*\[\s*'
+        r'"sec-history-tabs"\s*,\s*'
+        r'"history-v2-section"\s*,\s*'
+        r'"sec-history"\s*\]',
+        re.DOTALL,
+    )
+    assert pattern.search(accordion_js), (
+        "history/replay must keep sectionIds: ['sec-history-tabs', "
+        "'history-v2-section', 'sec-history']; otherwise the replay "
+        "view loses its tab strip + body when opened."
+    )
+
+
+def test_admin_routes_system_owns_absorbed_sections(admin_js: str):
+    """ADMIN_ROUTES.system must list every section the accordion can open.
+    Without this, the route-level visibility pass would hide the absorbed
+    sections regardless of which accordion leaf is active."""
+    system_match = re.search(
+        r'\bsystem:\s*\{\s*title:[^}]*?sections:\s*\[([^\]]+)\]',
+        admin_js,
+    )
+    assert system_match, "ADMIN_ROUTES.system entry not found"
+    sections = system_match.group(1)
+    must_contain = [
+        # Phase B additions
+        "sec-scheduler", "sec-webhooks", "sec-plugins",
+        "sec-sessions-overview", "sec-search-overview", "sec-audit-overview",
+        "sec-history-tabs", "history-v2-section", "sec-history",
+        "sec-audience-overview",
+    ]
+    for sec in must_contain:
+        assert f'"{sec}"' in sections, (
+            f"ADMIN_ROUTES.system missing absorbed section {sec!r}; "
+            f"the route-level visibility pass would hide it on #/system."
+        )
 
 
 # ─── admin-display.js viewer-config visibility gate ─────────────────────────

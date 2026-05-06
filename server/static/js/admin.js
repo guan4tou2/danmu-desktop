@@ -86,14 +86,25 @@ document.addEventListener("DOMContentLoaded", () => {
   // collisions like `#/audit` (alias-resolved to nav="history") getting
   // double-translated to "system". Phase B/D collapses the rest of the
   // legacy navs once their sections move into the new owners.
+  // Each entry is either a plain string (just nav rename, tab inherited
+  // from the URL or alias) or `{nav, tab}` (Phase B 2026-05-06: redirect
+  // a retired top-level slug to a specific leaf inside the new home so
+  // bookmarks like `#/automation` land on a meaningful section instead
+  // of the system overview).
   const _bareLegacyRedirects = Object.create(null);
   Object.assign(_bareLegacyRedirects, {
     dashboard: "live",   // dashboard.sections=[]; live owns sec-live-feed → both render KPI strip via data-route-view="dashboard" alias
     messages: "live",    // both owned `sec-live-feed` exclusively
     widgets: "display",  // both own sec-widgets exclusively
-    // history / automation / appearance NOT redirected: their sections
-    // are not yet owned by the new top nav. Bare URLs still resolve to
-    // their original ADMIN_ROUTES entries until Phase B/D moves the DOM.
+    // Phase B (2026-05-06): automation + history sections were absorbed
+    // into the system accordion (admin-system-accordion.js). Bare URLs
+    // land on the first leaf of each group so users see meaningful
+    // content immediately, not the system overview.
+    automation: { nav: "system", tab: "scheduler" },
+    history:    { nav: "system", tab: "sessions" },
+    // appearance NOT redirected yet — its sections (themes / viewer-config
+    // / fonts) are still owned by the appearance route. Phase D splits
+    // them into viewer + assets and adds the redirect there.
   });
 
   // Maps deprecated single-segment routes → P0-0 nav homes.
@@ -112,20 +123,20 @@ document.addEventListener("DOMContentLoaded", () => {
     "viewer-config": { nav: "appearance", tab: "viewer-config" },
     fonts:          { nav: "appearance", tab: "fonts" },
 
-    // === Automation tabs ===
-    scheduler: { nav: "automation", tab: "scheduler" },
-    webhooks:  { nav: "automation", tab: "webhooks" },
-    plugins:   { nav: "automation", tab: "plugins" },
+    // === Automation tabs (Phase B 2026-05-06: now under system accordion) ===
+    scheduler: { nav: "system", tab: "scheduler" },
+    webhooks:  { nav: "system", tab: "webhooks" },
+    plugins:   { nav: "system", tab: "plugins" },
 
-    // === History tabs ===
-    sessions:        { nav: "history", tab: "sessions" },
+    // === History tabs (Phase B 2026-05-06: now under system accordion) ===
+    sessions:        { nav: "system", tab: "sessions" },
     // Note: session-detail is intentionally NOT aliased — its hash carries
     // a `?id=xxx` query that the parser would strip. session-detail keeps
     // its own route; admin-session-detail.js owns navigation back via UI.
-    search:          { nav: "history", tab: "search" },
-    audit:           { nav: "history", tab: "audit" },
-    audience:        { nav: "history", tab: "audience" },
-    // (note: `history` route itself = the replay tab inside history nav)
+    search:          { nav: "system", tab: "search" },
+    audit:           { nav: "system", tab: "audit" },
+    audience:        { nav: "system", tab: "audience" },
+    replay:          { nav: "system", tab: "replay" },
 
     // === System accordion (Slice 6) — alias old C-tier routes to system/<slug> ===
     firetoken:    { nav: "system", tab: "firetoken" },
@@ -169,8 +180,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!m) return null;
     let rawNav = m[1];
     const explicitTab = m[2] || null;
-    if (!explicitTab && _bareLegacyRedirects[rawNav]) {
-      rawNav = _bareLegacyRedirects[rawNav];
+    let bareTab = null;
+    if (!explicitTab) {
+      const bare = _bareLegacyRedirects[rawNav];
+      if (typeof bare === "string") {
+        rawNav = bare;
+      } else if (bare && typeof bare === "object") {
+        rawNav = bare.nav || rawNav;
+        bareTab = bare.tab || null;
+      }
     }
     const alias = _routeAliases[rawNav];
     let nav = rawNav, aliasTab = null;
@@ -180,7 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
       nav = alias.nav || rawNav;
       aliasTab = alias.tab || null;
     }
-    return { nav, tab: explicitTab || aliasTab, raw: rawNav };
+    return { nav, tab: explicitTab || aliasTab || bareTab, raw: rawNav };
   }
 
   // Build a hash route. Used by Slice 3 tab clicks.
@@ -1241,7 +1259,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // Slice 6: system hosts the C-tier accordion. scheduler /
     // webhooks moved to automation; fingerprints moved to moderation. The
     // accordion shell is rendered by admin-system-accordion.js.
-    system:    { title: "系統",  kicker: "SYSTEM · 設定 / 金鑰 / 備份 / 整合 / 無障礙 / 關於", sections: ["sec-system-overview", "sec-firetoken-overview", "sec-api-tokens-overview", "sec-backup", "sec-extensions-overview", "sec-wcag-overview", "sec-about-overview"] },
+    // Phase B (2026-05-06): system absorbs automation + history. The
+    // accordion now hosts 4 grouped panels (settings / tokens / automation /
+    // history). Sections list includes every leaf the accordion can open:
+    // settings + tokens (existing) + automation (sec-scheduler/webhooks/
+    // plugins) + history (sec-sessions-overview/search-overview/audit-
+    // overview/history-tabs/history-v2-section/sec-history/audience-
+    // overview). admin-system-accordion.js drives per-leaf visibility.
+    system:    { title: "系統",  kicker: "SYSTEM · 設定 / 金鑰 / 自動化 / 歷史", sections: ["sec-system-overview", "sec-firetoken-overview", "sec-api-tokens-overview", "sec-backup", "sec-extensions-overview", "sec-wcag-overview", "sec-about-overview", "sec-scheduler", "sec-webhooks", "sec-plugins", "sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "history-v2-section", "sec-history", "sec-audience-overview"] },
     // Security route is fully owned by admin-security-v2-page (admin-security.js).
     // sections=[] because the v2 page handles its own visibility on data-active-route.
     security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: [] },

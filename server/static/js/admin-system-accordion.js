@@ -8,30 +8,64 @@
 //   - deep-link via #/system/<slug>
 //   - sessionStorage memory of last-open section per visit
 //
-// We do NOT move sections in the DOM — the wrapper renders headers AND
-// drives visibility. Section content stays where the owner module put it.
+// Phase B (2026-05-06): the automation + history routes were collapsed into
+// system. The accordion now hosts 4 grouped panels:
+//   · settings    : system overview / backup / integrations / wcag / about
+//   · tokens      : firetoken / api-tokens
+//   · automation  : scheduler / webhooks / plugins
+//   · history     : sessions / search / audit / replay / audience
+// Sections are NOT moved in the DOM — the wrapper renders headers AND drives
+// visibility. Section content stays where the owner module put it.
 
 (function (window) {
   "use strict";
 
-  // Sections per P0-0 system accordion. `sectionId` = the existing
-  // sec-X element owned by an admin-*.js module. `slug` = the segment in
-  // #/system/<slug>. Order = frequency × danger from system-accordion.jsx.
+  // Sections per P0-0 system accordion. `sectionId` (or `sectionIds` for
+  // multi-section leaves like history/replay) = the existing sec-* element
+  // owned by an admin-*.js module. `slug` = the segment in
+  // #/system/<slug>. Order = frequency × danger.
   // Note: `security` is intentionally NOT in here — admin-security.js owns
   // its own visibility via data-active-route="security" and the security
   // route stays standalone. Dedicated mobile-admin was removed; the admin
   // shell handles small screens through its standard responsive layout.
   const SECTIONS = [
-    { slug: "system",       zh: "系統概覽",   en: "OVERVIEW",     sectionId: "sec-system-overview" },
-    { slug: "firetoken",    zh: "API 金鑰",   en: "FIRETOKEN",    sectionId: "sec-firetoken-overview" },
-    { slug: "api-tokens",   zh: "API Tokens", en: "API TOKENS",   sectionId: "sec-api-tokens-overview" },
-    { slug: "backup",       zh: "備份 & 匯出", en: "BACKUP",       sectionId: "sec-backup" },
-    { slug: "integrations", zh: "整合",       en: "INTEGRATIONS", sectionId: "sec-extensions-overview" },
-    { slug: "wcag",         zh: "無障礙",     en: "WCAG",         sectionId: "sec-wcag-overview" },
-    { slug: "about",        zh: "關於",       en: "ABOUT",        sectionId: "sec-about-overview" },
+    // ── settings group ────────────────────────────────────────────────────
+    { slug: "system",       group: "settings",   zh: "系統概覽",   en: "OVERVIEW",     sectionId: "sec-system-overview" },
+    { slug: "backup",       group: "settings",   zh: "備份 & 匯出", en: "BACKUP",       sectionId: "sec-backup" },
+    { slug: "integrations", group: "settings",   zh: "整合",       en: "INTEGRATIONS", sectionId: "sec-extensions-overview" },
+    { slug: "wcag",         group: "settings",   zh: "無障礙",     en: "WCAG",         sectionId: "sec-wcag-overview" },
+    { slug: "about",        group: "settings",   zh: "關於",       en: "ABOUT",        sectionId: "sec-about-overview" },
+    // ── tokens group ──────────────────────────────────────────────────────
+    { slug: "firetoken",    group: "tokens",     zh: "API 金鑰",   en: "FIRETOKEN",    sectionId: "sec-firetoken-overview" },
+    { slug: "api-tokens",   group: "tokens",     zh: "API Tokens", en: "API TOKENS",   sectionId: "sec-api-tokens-overview" },
+    // ── automation group (Phase B) ────────────────────────────────────────
+    { slug: "scheduler",    group: "automation", zh: "排程",       en: "SCHEDULER",    sectionId: "sec-scheduler" },
+    { slug: "webhooks",     group: "automation", zh: "Webhook",    en: "WEBHOOKS",     sectionId: "sec-webhooks" },
+    { slug: "plugins",      group: "automation", zh: "插件",       en: "PLUGINS",      sectionId: "sec-plugins" },
+    // ── history group (Phase B) ───────────────────────────────────────────
+    { slug: "sessions",     group: "history",    zh: "場次",       en: "SESSIONS",     sectionId: "sec-sessions-overview" },
+    { slug: "search",       group: "history",    zh: "搜尋",       en: "SEARCH",       sectionId: "sec-search-overview" },
+    { slug: "audit",        group: "history",    zh: "審計",       en: "AUDIT",        sectionId: "sec-audit-overview" },
+    { slug: "replay",       group: "history",    zh: "重播",       en: "REPLAY",       sectionIds: ["sec-history-tabs", "history-v2-section", "sec-history"] },
+    { slug: "audience",     group: "history",    zh: "觀眾",       en: "AUDIENCE",     sectionId: "sec-audience-overview" },
   ];
 
-  const SECTION_IDS = SECTIONS.map((s) => s.sectionId);
+  const GROUPS = [
+    { key: "settings",   zh: "設定",   en: "SETTINGS" },
+    { key: "tokens",     zh: "金鑰",   en: "TOKENS" },
+    { key: "automation", zh: "自動化", en: "AUTOMATION" },
+    { key: "history",    zh: "歷史",   en: "HISTORY" },
+  ];
+
+  // Flat list of every sec-* ID owned by the accordion (across all leaves).
+  // Single-section leaves contribute `sectionId`; multi-section leaves like
+  // history/replay contribute every entry of `sectionIds`.
+  function _idsFor(leaf) {
+    if (Array.isArray(leaf.sectionIds)) return leaf.sectionIds.slice();
+    if (leaf.sectionId) return [leaf.sectionId];
+    return [];
+  }
+  const SECTION_IDS = SECTIONS.flatMap(_idsFor);
 
   function _memKey() { return "admin:system:last-open"; }
   function _getMem() {
@@ -53,28 +87,50 @@
 
   function applySectionVisibility(activeSlug, container) {
     if (!container) return;
-    SECTIONS.forEach((s) => {
-      const el = container.querySelector("#" + s.sectionId);
-      if (el) el.style.display = (s.slug === activeSlug) ? "" : "none";
+    SECTIONS.forEach((leaf) => {
+      const ids = _idsFor(leaf);
+      const showThisLeaf = leaf.slug === activeSlug;
+      ids.forEach((id) => {
+        const el = container.querySelector("#" + id);
+        if (el) el.style.display = showThisLeaf ? "" : "none";
+      });
     });
   }
 
   // Render the accordion header strip (a vertical list of expandable rows).
   // Each row's body is the existing section element on the page; the strip
   // just controls visibility + click handling. Active row's section is
-  // shown; all others hidden.
+  // shown; all others hidden. Phase B: insert a divider+label before the
+  // first row of each group so the 4 panels read as distinct blocks.
   function renderAccordion(activeSlug, opts) {
     const wrap = document.createElement("div");
     wrap.className = "admin-system-accordion";
     wrap.dataset.adminSystemAccordion = "";
 
+    let lastGroup = null;
     SECTIONS.forEach((s) => {
+      // Group header before the first leaf of each group.
+      if (s.group && s.group !== lastGroup) {
+        const groupCfg = GROUPS.find((g) => g.key === s.group);
+        if (groupCfg) {
+          const head = document.createElement("div");
+          head.className = "admin-system-accordion-group";
+          head.dataset.group = groupCfg.key;
+          head.setAttribute("aria-hidden", "true");
+          head.innerHTML =
+            '<span class="admin-system-accordion-group-zh">' + groupCfg.zh + "</span>" +
+            '<span class="admin-system-accordion-group-en">' + groupCfg.en + "</span>";
+          wrap.appendChild(head);
+        }
+        lastGroup = s.group;
+      }
+
       const row = document.createElement("button");
       row.type = "button";
       row.className = "admin-system-accordion-row" + (s.slug === activeSlug ? " is-open" : "");
       row.dataset.slug = s.slug;
       row.setAttribute("aria-expanded", s.slug === activeSlug ? "true" : "false");
-      row.setAttribute("aria-controls", s.sectionId);
+      row.setAttribute("aria-controls", _idsFor(s)[0] || "");
 
       const label = document.createElement("span");
       label.className = "admin-system-accordion-label";
@@ -104,6 +160,7 @@
   window.AdminSystemAccordion = {
     SECTIONS,
     SECTION_IDS,
+    GROUPS,
     resolveActiveSlug,
     applySectionVisibility,
     renderAccordion,
