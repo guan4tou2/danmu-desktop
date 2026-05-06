@@ -74,16 +74,21 @@
 
   // ── trigger ──────────────────────────────────────────────────────
 
+  // Phase A IA reorg (2026-05-06): cockpit slug is now `live`; `dashboard`
+  // is a kept alias. Onboarding tour fires on either to survive bookmark
+  // drift while we land Phase B/D.
+  const COCKPIT_ROUTES = new Set(["live", "dashboard"]);
+
   function _tryAutoStart() {
     if (window.AdminOnboarding.isDone()) return;
     const route = _currentRoute();
-    if (route !== "dashboard") return;
+    if (!COCKPIT_ROUTES.has(route)) return;
     _start();
   }
 
   function _currentRoute() {
     const grid = document.querySelector(".admin-dash-grid");
-    return (grid && grid.dataset.activeRoute) || "dashboard";
+    return (grid && grid.dataset.activeRoute) || "live";
   }
 
   function _onHashChange() {
@@ -110,7 +115,7 @@
     }
     // bounce hash away if we got here via #/onboarding-tour
     if (window.location.hash === "#/onboarding-tour") {
-      try { history.replaceState(null, "", "#/dashboard"); } catch (_) {}
+      try { history.replaceState(null, "", "#/live"); } catch (_) {}
       window.dispatchEvent(new HashChangeEvent("hashchange"));
     }
   }
@@ -344,9 +349,9 @@
     window.addEventListener("hashchange", _onHashChange);
     _onHashChange();
 
-    // Auto-start on first dashboard visit (delay so dashboard content renders first)
+    // Auto-start on first cockpit visit (delay so cockpit content renders first)
     window.addEventListener("hashchange", function () {
-      if (_currentRoute() === "dashboard") {
+      if (COCKPIT_ROUTES.has(_currentRoute())) {
         setTimeout(_tryAutoStart, 600);
       }
     });

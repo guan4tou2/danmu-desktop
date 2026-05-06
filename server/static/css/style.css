@@ -2565,6 +2565,20 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   font-weight: 500;
 }
 
+/* Phase A IA reorg (2026-05-06): Security is a standalone nav row, NOT
+ * inside the System accordion (locked decision per polestar 2026-05-04).
+ * The divider + small top margin make the visual separation clear so it
+ * doesn't get mistaken for a System sub-item. */
+.admin-dash-nav-divider {
+  height: 1px;
+  background: color-mix(in srgb, var(--color-text-muted) 25%, transparent);
+  margin: 12px 12px 8px;
+}
+
+.admin-dash-nav-row[data-nav-standalone="true"] {
+  margin-top: 0;
+}
+
 .admin-dash-nav-icon {
   width: 16px;
   text-align: center;

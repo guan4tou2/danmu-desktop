@@ -596,58 +596,59 @@ document.addEventListener("DOMContentLoaded", () => {
                                      System group still has individual rows; Slice 6
                                      will collapse those into the system accordion. -->
 
-                                <button type="button" class="admin-dash-nav-row is-active" data-route="dashboard" role="tab" aria-selected="true">
-                                    <span class="admin-dash-nav-icon">⌂</span>
-                                    <span>控制台</span>
+                                <!-- Phase A IA reorg (2026-05-06): 11-row sidebar →
+                                     8 main + 1 standalone security. Old slugs
+                                     (dashboard/messages/widgets/appearance/automation/
+                                     history) redirect via HASH_REDIRECTS in the router;
+                                     no DOM moved here, only the visible nav slot list.
+                                     Order is locked by IA-REORG-DRAFT-2026-05-06.md.
+                                     Spacer + comment marks the standalone Security row
+                                     so it's visually clear it isn't part of System. -->
+
+                                <button type="button" class="admin-dash-nav-row is-active" data-route="live" role="tab" aria-selected="true">
+                                    <span class="admin-dash-nav-icon">▶</span>
+                                    <span data-i18n="adminNavLive">直播</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="polls" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◉</span>
-                                    <span>投票</span>
-                                    <span class="admin-dash-nav-live"></span>
+                                <button type="button" class="admin-dash-nav-row" data-route="display" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◫</span>
+                                    <span data-i18n="adminNavDisplay">顯示</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="effects" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">✦</span>
-                                    <span>效果</span>
+                                    <span data-i18n="adminNavEffects">效果</span>
                                     <span class="admin-dash-nav-badge" data-count-effects>—</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="moderation" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⊘</span>
-                                    <span>審核</span>
-                                    <span class="admin-dash-nav-badge" data-count-blacklist hidden>—</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="widgets" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◫</span>
-                                    <span>小工具</span>
-                                    <span class="admin-dash-nav-badge" data-count-widgets hidden>—</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="appearance" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◐</span>
-                                    <span>外觀</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="assets" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⌬</span>
-                                    <span>素材</span>
+                                    <span data-i18n="adminNavAssets">素材</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="automation" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">↻</span>
-                                    <span>自動化</span>
+                                <button type="button" class="admin-dash-nav-row" data-route="viewer" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◐</span>
+                                    <span data-i18n="adminNavViewer">觀眾頁</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="history" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⌚</span>
-                                    <span>歷史</span>
+                                <button type="button" class="admin-dash-nav-row" data-route="polls" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◉</span>
+                                    <span data-i18n="adminNavPolls">投票</span>
+                                    <span class="admin-dash-nav-live"></span>
                                 </button>
-
-                                <!-- 10. SYSTEM (Slice 6: accordion hosts firetoken /
-                                     api-tokens / backup / integrations / wcag /
-                                     about). Security keeps its own row — admin-security.js
-                                     owns visibility via data-active-route="security". -->
+                                <button type="button" class="admin-dash-nav-row" data-route="moderation" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⊘</span>
+                                    <span data-i18n="adminNavModeration">審核</span>
+                                    <span class="admin-dash-nav-badge" data-count-blacklist hidden>—</span>
+                                </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="system" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⚙</span>
-                                    <span>系統</span>
+                                    <span data-i18n="adminNavSystem">系統</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="security" role="tab" aria-selected="false">
+
+                                <!-- Standalone — security is NOT part of System per the
+                                     2026-05-04 polestar lock. Spacer + divider keeps it
+                                     visually distinct. admin-security.js owns visibility
+                                     via data-active-route="security". -->
+                                <div class="admin-dash-nav-divider" role="separator" aria-hidden="true"></div>
+                                <button type="button" class="admin-dash-nav-row" data-route="security" role="tab" aria-selected="false" data-nav-standalone="true">
                                     <span class="admin-dash-nav-icon">⛨</span>
-                                    <span>安全</span>
+                                    <span data-i18n="adminNavSecurity">安全</span>
                                 </button>
 
                             </nav>
@@ -1144,6 +1145,21 @@ document.addEventListener("DOMContentLoaded", () => {
   // Reachable via window.AdminDashboard.{refreshKpi, refreshSummary, ...}.
 
   const ADMIN_ROUTES = {
+    // Phase A IA reorg (2026-05-06): primary nav slugs are
+    //   live / display / effects / assets / viewer / polls / moderation / system
+    // plus a standalone `security` row. The legacy slugs below
+    // (dashboard / messages / widgets / appearance / automation / history)
+    // remain in this table as aliases so deeplinks + `|| "dashboard"`
+    // fallbacks in admin-*.js stay resolvable; HASH_REDIRECTS in the
+    // router rewrites them to the new canonical hash on landing.
+    // Phase B/D will move sec-* DOM under the new owners and then we can
+    // strip aliases. Until then this is pure routing — no HTML moves.
+    live:      { title: "直播", kicker: "LIVE · 操作艙 · 即時狀態", sections: ["sec-live-feed"], showKpi: true },
+    display:   { title: "顯示", kicker: "DISPLAY · OVERLAY · WIDGETS", sections: ["sec-widgets"] },
+    viewer:    { title: "觀眾頁", kicker: "VIEWER · 觀眾頁面預設", sections: ["sec-viewer-config-tabs", "sec-viewer-theme", "sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout"] },
+    // Legacy aliases — same config as their canonical home. Kept so
+    // existing `=== "dashboard"` checks + URL bookmarks keep working
+    // until Phase B/D collapses them.
     dashboard: { title: "控制台", kicker: "DASHBOARD · 活動進行中", sections: [], showKpi: true },
     messages:  { title: "訊息紀錄",         kicker: "MESSAGES · 即時訊息串",    sections: ["sec-live-feed"] },
     // Slice 4 (P0-0): history is now the merged tabbed nav (sessions /
@@ -1257,8 +1273,33 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     };
 
+    // Phase A IA reorg (2026-05-06): redirect retired top-level slugs to
+    // their new home. The mapped target route OWNS the same sec-* IDs the
+    // old slug used to render, so a `#/widgets` bookmark lands on
+    // `#/display` and sees the same widgets section. No DOM was moved —
+    // only the routing layer.
+    const HASH_REDIRECTS = {
+      dashboard: "live",
+      messages: "live",
+      widgets: "display",
+      appearance: "viewer",
+      automation: "system",
+      history: "system",
+    };
+
     const applyRoute = (name, requestedTab) => {
-      currentRoute = ADMIN_ROUTES[name] ? name : "dashboard";
+      // Apply IA-reorg redirects BEFORE route resolution. We rewrite the
+      // hash so the URL tracks the new canonical slug; the user gets a
+      // visible redirect (#/widgets → #/display) instead of a sticky
+      // legacy URL.
+      if (HASH_REDIRECTS[name]) {
+        const redirected = HASH_REDIRECTS[name];
+        try {
+          history.replaceState(null, "", "#/" + redirected);
+        } catch (_) { /* nav from chrome — ignore */ }
+        name = redirected;
+      }
+      currentRoute = ADMIN_ROUTES[name] ? name : "live";
       shell.dataset.activeRoute = currentRoute;
       // Slice 8: legacy modules (admin-backup / admin-audit / admin-audience /
       // admin-search / admin-sessions / admin-session-detail /
@@ -1304,12 +1345,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (kicker) kicker.textContent = cfg.kicker;
       if (title) title.innerHTML = cfg.title;
 
+      // Phase A IA reorg: `live` is the cockpit successor to `dashboard`;
+      // until Phase C reframes the dashboard view, `data-route-view=
+      // "dashboard"` content (KPI strip + session banner + summary) renders
+      // on both slugs so the live cockpit isn't blank.
+      const _isCockpit = currentRoute === "dashboard" || currentRoute === "live";
       shell.querySelectorAll("[data-route-view=\"dashboard\"]").forEach((el) => {
-        el.style.display = currentRoute === "dashboard" ? "" : "none";
+        el.style.display = _isCockpit ? "" : "none";
       });
 
-      // Session banner polling — start when on dashboard, stop otherwise
-      if (currentRoute === "dashboard") {
+      // Session banner polling — start on cockpit, stop otherwise
+      if (_isCockpit) {
         window.AdminDashboard?.startSessionPolling?.();
       } else {
         window.AdminDashboard?.stopSessionPolling?.();
