@@ -110,13 +110,21 @@ The bulk of admin sub-pages are `sec-foo-overview` divs whose visibility is driv
    - Remove `data-route="automation"` button.
    - Remove `data-route="history"` button.
 2. Add `live`, `display`, `viewer` entries to `ADMIN_ROUTES` (with the section lists per the table above).
-3. Add hash redirects for removed top-level routes:
-   - `widgets → display`
-   - `appearance → viewer`
-   - `automation → system` (with `?tab=automation`)
-   - `history → system` (with `?tab=history`)
-   - `messages → live`
-4. Smoke-test: every old hash still lands somewhere sensible; nothing 404s in the SPA.
+3. **Bare retired top-level slugs** redirect ONLY when the new home truly owns the original sections. Three are safe in Phase A:
+   - `dashboard → live` (both render KPI strip via `data-route-view="dashboard"` alias)
+   - `messages → live` (both own `sec-live-feed`)
+   - `widgets → display` (both own `sec-widgets`)
+
+   The other three legacy navs do NOT redirect in Phase A:
+   - `history` keeps its sections (sessions/search/audit/replay/audience) until Phase B.
+   - `automation` keeps its sections (scheduler/webhooks/plugins) until Phase B.
+   - `appearance` keeps its sections (themes/viewer-config/fonts) until Phase D.
+
+   Why: redirecting `history → system` would orphan `#/audit`, `#/sessions`, `#/search`, `#/audience` because the System accordion has no slug for them — the section content silently disappears. Same trap with `automation → system` (no scheduler slug) and `appearance → viewer` (no themes/fonts ownership). These bare URLs still resolve to their original `ADMIN_ROUTES` entry; the only thing missing is a sidebar button, which is the intended Phase A end state.
+
+4. **Deep-link aliases preserve correctness.** The bare-retired redirect is consulted on the RAW URL slug BEFORE `_routeAliases` runs, so `#/audit` (alias-resolved to `nav: "history", tab: "audit"`) is NOT touched a second time. Aliases preserved: `audit / sessions / search / audience / scheduler / webhooks / plugins / themes / fonts / viewer-config`.
+
+5. Smoke-test: every old hash + every deep-link alias still lands on its correct nav+tab; nothing 404s.
 
 Risk: low. No HTML moved, no API changes. Just routing layer.
 

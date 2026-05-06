@@ -73,6 +73,29 @@ document.addEventListener("DOMContentLoaded", () => {
   // Slice 3 wires tab into applyRoute; Slice 4 populates _routeAliases.
   // ────────────────────────────────────────────────────────────────────
 
+  // Phase A IA reorg (2026-05-06) — bare retired top-level slugs.
+  //
+  // ONLY the 3 slugs whose new home actually owns the original sections
+  // belong here. Phase A is a no-DOM-move PR; if the target route doesn't
+  // already render the same sec-* IDs, redirecting would silently lose
+  // content (cf. P1 review of d405943 where redirecting `history → system`
+  // broke `#/audit` because the System accordion has no audit slug).
+  //
+  // Crucially: this map is consulted on the RAW URL slug, BEFORE
+  // `_parseHashRoute` runs the alias map below. That ordering prevents
+  // collisions like `#/audit` (alias-resolved to nav="history") getting
+  // double-translated to "system". Phase B/D collapses the rest of the
+  // legacy navs once their sections move into the new owners.
+  const _bareLegacyRedirects = Object.create(null);
+  Object.assign(_bareLegacyRedirects, {
+    dashboard: "live",   // dashboard.sections=[]; live owns sec-live-feed → both render KPI strip via data-route-view="dashboard" alias
+    messages: "live",    // both owned `sec-live-feed` exclusively
+    widgets: "display",  // both own sec-widgets exclusively
+    // history / automation / appearance NOT redirected: their sections
+    // are not yet owned by the new top nav. Bare URLs still resolve to
+    // their original ADMIN_ROUTES entries until Phase B/D moves the DOM.
+  });
+
   // Maps deprecated single-segment routes → P0-0 nav homes.
   // Slice 4: each entry is either a string (just nav redirect) or a
   // {nav, tab} object (redirect to specific tab inside the new nav).
@@ -134,11 +157,21 @@ document.addEventListener("DOMContentLoaded", () => {
   // Aliases can be either a plain string (nav rename) or an object
   // `{nav, tab}` (Slice 4: redirect deprecated route to specific tab inside
   // a new tabbed nav). Explicit URL tab segment wins over alias-supplied tab.
+  //
+  // Phase A IA reorg: bare retired slugs (`#/dashboard`, `#/messages`,
+  // `#/widgets`) get rewritten to their new home FIRST — before any tab
+  // alias resolution. That prevents a deep-link alias such as `#/audit`
+  // (which resolves to `nav: "history"`) from being incorrectly redirected
+  // a second time. A bare URL has no tab segment, so deep-links pass
+  // through untouched.
   function _parseHashRoute(hash) {
     const m = (hash || "").match(/^#\/([\w-]+)(?:\/([\w-]+))?/);
     if (!m) return null;
-    const rawNav = m[1];
+    let rawNav = m[1];
     const explicitTab = m[2] || null;
+    if (!explicitTab && _bareLegacyRedirects[rawNav]) {
+      rawNav = _bareLegacyRedirects[rawNav];
+    }
     const alias = _routeAliases[rawNav];
     let nav = rawNav, aliasTab = null;
     if (typeof alias === "string") {
@@ -1273,32 +1306,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     };
 
-    // Phase A IA reorg (2026-05-06): redirect retired top-level slugs to
-    // their new home. The mapped target route OWNS the same sec-* IDs the
-    // old slug used to render, so a `#/widgets` bookmark lands on
-    // `#/display` and sees the same widgets section. No DOM was moved —
-    // only the routing layer.
-    const HASH_REDIRECTS = {
-      dashboard: "live",
-      messages: "live",
-      widgets: "display",
-      appearance: "viewer",
-      automation: "system",
-      history: "system",
-    };
-
     const applyRoute = (name, requestedTab) => {
-      // Apply IA-reorg redirects BEFORE route resolution. We rewrite the
-      // hash so the URL tracks the new canonical slug; the user gets a
-      // visible redirect (#/widgets → #/display) instead of a sticky
-      // legacy URL.
-      if (HASH_REDIRECTS[name]) {
-        const redirected = HASH_REDIRECTS[name];
-        try {
-          history.replaceState(null, "", "#/" + redirected);
-        } catch (_) { /* nav from chrome — ignore */ }
-        name = redirected;
-      }
       currentRoute = ADMIN_ROUTES[name] ? name : "live";
       shell.dataset.activeRoute = currentRoute;
       // Slice 8: legacy modules (admin-backup / admin-audit / admin-audience /
@@ -1445,7 +1453,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const fromHash = _parseHashRoute(window.location.hash);
-    applyRoute(fromHash?.nav || "dashboard", fromHash?.tab || null);
+    applyRoute(fromHash?.nav || "live", fromHash?.tab || null);
 
     // Late-injected sections (admin-sounds.js, admin-emojis.js, etc. inject
     // after scheduleIdleTask). Watch the main area for new [id^="sec-"]

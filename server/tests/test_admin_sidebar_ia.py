@@ -114,33 +114,74 @@ def test_legacy_top_level_buttons_removed(admin_js: str):
         )
 
 
-# ─── HASH_REDIRECTS table ────────────────────────────────────────────────────
+# ─── _bareLegacyRedirects table ──────────────────────────────────────────────
+#
+# Only the 3 retired slugs whose new home actually owns the original sec-* IDs
+# may be redirected in Phase A. The other 3 (`history / automation / appearance`)
+# live as-is until Phase B/D moves their DOM. Cf. P1 review of d405943:
+# redirecting `history → system` broke `#/audit` because System accordion has
+# no `audit` slug — same trap for sessions/search/audience and
+# scheduler/webhooks/plugins.
 
-EXPECTED_REDIRECTS = {
-    "dashboard": "live",
-    "messages": "live",
-    "widgets": "display",
-    "appearance": "viewer",
-    "automation": "system",
-    "history": "system",
+PHASE_A_SAFE_REDIRECTS = {
+    "dashboard": "live",   # both render KPI strip via data-route-view alias
+    "messages": "live",    # both own sec-live-feed
+    "widgets": "display",  # both own sec-widgets
 }
 
+PHASE_A_NOT_REDIRECTED = ("history", "automation", "appearance")
 
-def test_hash_redirects_table_complete(admin_js: str):
-    """All 6 retired top-level slugs must redirect to a sensible new
-    home so old bookmarks + cross-page links don't 404."""
+
+def test_bare_legacy_redirects_only_safe_three(admin_js: str):
+    """Only retired slugs whose new home owns the original sections may
+    redirect in Phase A. history/automation/appearance must NOT appear
+    here — their content still lives on the legacy route until Phase B/D."""
     table_match = re.search(
-        r"const HASH_REDIRECTS\s*=\s*\{([^}]+)\}",
+        r"const _bareLegacyRedirects\s*=\s*Object\.create\(null\);\s*"
+        r"Object\.assign\(_bareLegacyRedirects,\s*\{([^}]+)\}",
         admin_js,
         re.DOTALL,
     )
-    assert table_match, "HASH_REDIRECTS table not found in admin.js"
+    assert table_match, "_bareLegacyRedirects table not found in admin.js"
     body = table_match.group(1)
 
-    for legacy, target in EXPECTED_REDIRECTS.items():
+    for legacy, target in PHASE_A_SAFE_REDIRECTS.items():
         assert re.search(rf'\b{legacy}:\s*"{target}"', body), (
-            f"HASH_REDIRECTS missing or wrong: {legacy} → {target}"
+            f"_bareLegacyRedirects missing or wrong: {legacy} → {target}"
         )
+
+    for unsafe in PHASE_A_NOT_REDIRECTED:
+        # Match only as a key (start of line + colon), not in commentary.
+        # Tightened to `^<ws><slug>:` to avoid false positives.
+        for line in body.splitlines():
+            stripped = line.strip()
+            if stripped.startswith(f"{unsafe}:"):
+                pytest.fail(
+                    f"'{unsafe}' must NOT be in _bareLegacyRedirects in Phase A — "
+                    f"its sections aren't yet owned by the redirect target. "
+                    f"Re-add only after Phase B/D moves the DOM."
+                )
+
+
+def test_bare_redirects_consulted_before_alias_resolution(admin_js: str):
+    """`_parseHashRoute` must apply `_bareLegacyRedirects` BEFORE resolving
+    `_routeAliases` — otherwise a deep-linked alias like `#/audit`
+    (which resolves to `nav: "history"`) gets double-translated. The
+    fix lives inside `_parseHashRoute`; this test pins it."""
+    parser_block = re.search(
+        r"function _parseHashRoute\(hash\)\s*\{[\s\S]*?return\s*\{",
+        admin_js,
+    )
+    assert parser_block, "could not find _parseHashRoute body"
+    body = parser_block.group(0)
+    bare_idx = body.find("_bareLegacyRedirects")
+    alias_idx = body.find("_routeAliases")
+    assert bare_idx > -1, "_parseHashRoute must consult _bareLegacyRedirects"
+    assert alias_idx > -1, "_parseHashRoute must consult _routeAliases"
+    assert bare_idx < alias_idx, (
+        "bare-legacy redirect must run BEFORE alias resolution; otherwise "
+        "deep-link aliases like #/audit get double-translated."
+    )
 
 
 # ─── ADMIN_ROUTES table ──────────────────────────────────────────────────────
@@ -177,6 +218,74 @@ def test_admin_routes_keeps_legacy_aliases_alive(admin_js: str):
             f"legacy alias '{legacy_slug}' missing from ADMIN_ROUTES — "
             f"removing it would break || 'dashboard' fallbacks downstream"
         )
+
+
+# ─── Deep-link aliases must keep resolving correctly ────────────────────────
+#
+# Reviewer's specific list (P1 callout on d405943): these deep-link
+# bookmarks all alias-resolve through `_routeAliases` in admin.js to a
+# tab inside a parent nav. The Phase A redirect MUST NOT clobber them.
+# This test parses the JS source to confirm each entry is still in the
+# alias map and that none of the parent navs are in the bare-redirect
+# table (i.e., they wouldn't get re-mapped to system/viewer).
+
+DEEP_LINK_ALIASES = {
+    # legacy slug → expected (parent_nav, tab_in_nav)
+    "audit":         ("history",     "audit"),
+    "sessions":      ("history",     "sessions"),
+    "search":        ("history",     "search"),
+    "audience":      ("history",     "audience"),
+    "scheduler":     ("automation",  "scheduler"),
+    "webhooks":      ("automation",  "webhooks"),
+    "plugins":       ("automation",  "plugins"),
+    "themes":        ("appearance",  "themes"),
+    "fonts":         ("appearance",  "fonts"),
+    "viewer-config": ("appearance",  "viewer-config"),
+}
+
+
+@pytest.mark.parametrize("slug, parent_tab", list(DEEP_LINK_ALIASES.items()))
+def test_deep_link_alias_resolves_to_parent_tab(admin_js: str, slug: str, parent_tab: tuple):
+    """Each deep-link alias must map to {nav: <parent>, tab: <slug>}
+    in `_routeAliases`. Phase A's bare-legacy redirect MUST NOT touch
+    these — they live in the alias map, which runs after the bare
+    redirect, so the parent nav (e.g., "history") flows through
+    unchanged once we've ensured `history` isn't in the bare table."""
+    parent, tab = parent_tab
+    # Object keys may be bare (`scheduler:`) or quoted (`"viewer-config":`)
+    # in JS — the parser accepts both. Match either form.
+    key_pattern = rf'(?:"{re.escape(slug)}"|\b{re.escape(slug)}\b)'
+    pattern = re.compile(
+        rf'{key_pattern}\s*:\s*\{{\s*nav:\s*"{parent}",\s*tab:\s*"{tab}"',
+        re.DOTALL,
+    )
+    assert pattern.search(admin_js), (
+        f"_routeAliases.{slug} must map to nav={parent} tab={tab}; "
+        f"breaking this would orphan deep-link bookmarks."
+    )
+
+
+def test_deep_link_parent_navs_not_bare_redirected(admin_js: str):
+    """Parents of the deep-link aliases (`history`, `automation`,
+    `appearance`) must NOT appear in `_bareLegacyRedirects`, otherwise
+    the deep-link's resolved nav gets a second translation pass."""
+    table_match = re.search(
+        r"const _bareLegacyRedirects\s*=\s*Object\.create\(null\);\s*"
+        r"Object\.assign\(_bareLegacyRedirects,\s*\{([^}]+)\}",
+        admin_js,
+        re.DOTALL,
+    )
+    assert table_match, "_bareLegacyRedirects table not found"
+    body = table_match.group(1)
+    for parent in ("history", "automation", "appearance"):
+        for line in body.splitlines():
+            stripped = line.strip()
+            if stripped.startswith(f"{parent}:"):
+                pytest.fail(
+                    f"'{parent}' is in _bareLegacyRedirects — that would "
+                    f"break deep-link aliases under it (e.g., #/audit, "
+                    f"#/scheduler, #/themes). Phase A keeps these as-is."
+                )
 
 
 # ─── i18n labels (cross-locale parity) ───────────────────────────────────────
