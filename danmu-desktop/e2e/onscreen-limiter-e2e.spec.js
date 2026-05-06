@@ -2,7 +2,7 @@
 /**
  * Onscreen limiter end-to-end test — drives the real Electron overlay.
  *
- * Scenario: cap=2 queue mode, fire 4 danmu at speed=10 (≈2s scroll),
+ * Scenario: cap=2 queue mode, fire 4 fixed danmu with short duration,
  * verify:
  *   - first 2 return status=sent
  *   - next 2 return status=queued
@@ -282,7 +282,7 @@ async function countDanmuOnscreen(overlay) {
 async function postUntilAccepted(text, attempts = 12) {
   let last;
   for (let i = 0; i < attempts; i++) {
-    last = await httpPost(HTTP_PORT, "/fire", { text, speed: 10 });
+    last = await httpPost(HTTP_PORT, "/fire", { text, speed: 3, layout: "top_fixed" });
     if (last.status === 200) return last;
     await new Promise((r) => setTimeout(r, 1000));
   }
@@ -342,16 +342,18 @@ test.describe("Onscreen limiter E2E", () => {
     // Warm-up fire to confirm overlay actually connected (200 vs 503)
     const warm = await postUntilAccepted("WARMUP");
     expect(warm.status).toBe(200);
-    // Wait for warmup slot to clear (max scroll ≈ 2.1s)
-    await new Promise((r) => setTimeout(r, 2500));
+    // Wait for warmup slot to clear (top_fixed duration is 3s)
+    await new Promise((r) => setTimeout(r, 3500));
 
-    // Fire 4 rapid danmu with speed=10 (≈2s onscreen)
+    // Fire 4 rapid fixed danmu. top_fixed keeps slot duration short and
+    // avoids relying on scroll speed values that viewer validation rejects.
     const fires = [];
     for (let i = 0; i < 4; i++) {
       fires.push(
         await httpPost(HTTP_PORT, "/fire", {
           text: `Q${i}`,
-          speed: 10,
+          speed: 3,
+          layout: "top_fixed",
           color: "#ffffff",
         })
       );
@@ -371,8 +373,8 @@ test.describe("Onscreen limiter E2E", () => {
     }).catch(() => {});
     const phase1 = await countDanmuOnscreen(overlay);
 
-    // Wait ~3s for slots to release and queue to drain
-    await new Promise((r) => setTimeout(r, 3000));
+    // Wait for slots to release and queue to drain.
+    await new Promise((r) => setTimeout(r, 3500));
     const phase2 = await countDanmuOnscreen(overlay);
     await overlay.screenshot({
       path: path.join(runtimeDir, "queue-phase2-drained.png"),
@@ -393,7 +395,7 @@ test.describe("Onscreen limiter E2E", () => {
   });
 
   test("drop mode: 3rd+4th danmu rejected with status=dropped 429", async () => {
-    // Drain any residual queued/in-flight from prior test (max scroll ≈ 2.1s)
+    // Drain any residual queued/in-flight from prior test (top_fixed duration is 3s)
     await new Promise((r) => setTimeout(r, 3500));
 
     // Switch limiter to drop via admin API (login + CSRF)
@@ -411,7 +413,12 @@ test.describe("Onscreen limiter E2E", () => {
     const fires = [];
     for (let i = 0; i < 4; i++) {
       fires.push(
-        await httpPost(HTTP_PORT, "/fire", { text: `D${i}`, speed: 10, color: "#ffffff" })
+        await httpPost(HTTP_PORT, "/fire", {
+          text: `D${i}`,
+          speed: 3,
+          layout: "top_fixed",
+          color: "#ffffff",
+        })
       );
     }
     const statuses = fires.map((r) => ({ code: r.status, body: r.body }));
