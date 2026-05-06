@@ -287,11 +287,7 @@ def test_rate_limiter_window_expiry():
 def test_rate_limit_records_hits_and_violations(client, app):
     """The rate_limit decorator must feed the module-level counters so
     /admin/metrics can surface hits/violations to the v2 summary strip."""
-    from server.services.security import (
-        get_rate_limit_stats,
-        rate_limit,
-        reset_rate_limit_counters,
-    )
+    from server.services.security import get_rate_limit_stats, rate_limit, reset_rate_limit_counters
 
     reset_rate_limit_counters()
 
