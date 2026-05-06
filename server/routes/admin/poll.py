@@ -15,11 +15,7 @@ from flask import current_app, request, send_from_directory
 
 from ...services.poll import poll_service
 from ...services.security import rate_limit
-from ...services.validation import (
-    PollCreateSchema,
-    PollSessionCreateSchema,
-    validate_request,
-)
+from ...services.validation import PollCreateSchema, PollSessionCreateSchema, validate_request
 from ...utils import sanitize_log_string
 from . import _json_response, admin_bp, require_csrf, require_login
 

@@ -67,7 +67,8 @@ jobs:
         working-directory: server
         run: |
           uv run black --check .
-          uv run isort --check-only .
+          python -m pip install "isort==5.13.2"
+          python -m isort --check-only .
 
       - name: Lint with flake8
         working-directory: server
@@ -178,12 +179,9 @@ jobs:
         # CVE-2026-3219 affects `pip` itself with no fix version available
         # (https://github.com/pypa/pip/security/advisories). Build environment
         # only — never reaches runtime — ignore until upstream ships a patch.
-        env:
-          # Force pip-audit to inspect the uv-managed project environment.
-          # Without this, pip-api audits the GitHub runner Python and reports
-          # runner-owned pip CVEs that are not project dependencies.
-          PIPAPI_PYTHON_LOCATION: .venv/bin/python
-        run: uv run pip-audit --ignore-vuln CVE-2026-3219
+        run: |
+          uv export --frozen --no-dev --no-hashes --no-emit-project --output-file requirements-audit.txt
+          pip-audit -r requirements-audit.txt --ignore-vuln CVE-2026-3219
 
   pre-commit:
     runs-on: ubuntu-latest

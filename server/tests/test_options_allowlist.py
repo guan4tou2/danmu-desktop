@@ -8,12 +8,7 @@ by setting `options[key][1]` to a list of allowed values. Empty list means
 import json
 
 from server.managers.settings import SettingsStore
-from server.services.settings import (
-    PICK_SET_KEYS,
-    get_allowlist,
-    get_options,
-    set_allowlist,
-)
+from server.services.settings import PICK_SET_KEYS, get_allowlist, get_options, set_allowlist
 
 
 def _login_csrf(client):

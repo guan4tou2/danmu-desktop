@@ -10,13 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-from server.services import (
-    live_feed_buffer,
-    messaging,
-    onscreen_config,
-    onscreen_limiter,
-    ws_queue,
-)
+from server.services import live_feed_buffer, messaging, onscreen_config, onscreen_limiter, ws_queue
 
 
 @pytest.fixture(autouse=True)
