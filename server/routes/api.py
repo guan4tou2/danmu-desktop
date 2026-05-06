@@ -391,11 +391,7 @@ def _sanitize_poll_for_viewer(status):
     def _opts(opts):
         if not isinstance(opts, list):
             return []
-        return [
-            {"key": o.get("key"), "text": o.get("text")}
-            for o in opts
-            if isinstance(o, dict)
-        ]
+        return [{"key": o.get("key"), "text": o.get("text")} for o in opts if isinstance(o, dict)]
 
     def _question(q):
         if not isinstance(q, dict):

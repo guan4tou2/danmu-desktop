@@ -84,12 +84,14 @@ def test_security_row_preceded_by_divider(admin_js: str):
     """The CSS divider element must sit between the System row and the
     Security row so security visually reads as standalone."""
     pattern = re.compile(
-        r'data-route="system"[\s\S]*?<div class="admin-dash-nav-divider"[\s\S]*?data-route="security"',
+        r'data-route="system"[\s\S]*?'
+        r'<div class="admin-dash-nav-divider"[\s\S]*?'
+        r'data-route="security"',
         re.DOTALL,
     )
-    assert pattern.search(admin_js), (
-        "expected <div class='admin-dash-nav-divider'> between system and security"
-    )
+    assert pattern.search(
+        admin_js
+    ), "expected <div class='admin-dash-nav-divider'> between system and security"
 
 
 def test_legacy_top_level_buttons_removed(admin_js: str):
@@ -106,12 +108,10 @@ def test_legacy_top_level_buttons_removed(admin_js: str):
         # Buttons would be `<button … data-route="<slug>" … role="tab">`.
         # Allow the slug to appear elsewhere (e.g., comments) but not as a
         # role=tab nav button inside the sidebar block.
-        retired_btn = re.compile(
-            rf'<button[^>]*\bdata-route="{retired}"[^>]*role="tab"', re.DOTALL
-        )
-        assert not retired_btn.search(block), (
-            f"retired slug '{retired}' still has a sidebar button — should be in HASH_REDIRECTS"
-        )
+        retired_btn = re.compile(rf'<button[^>]*\bdata-route="{retired}"[^>]*role="tab"', re.DOTALL)
+        assert not retired_btn.search(
+            block
+        ), f"retired slug '{retired}' still has a sidebar button — should be in HASH_REDIRECTS"
 
 
 # ─── _bareLegacyRedirects table ──────────────────────────────────────────────
@@ -124,8 +124,8 @@ def test_legacy_top_level_buttons_removed(admin_js: str):
 # scheduler/webhooks/plugins.
 
 PHASE_A_SAFE_REDIRECTS = {
-    "dashboard": "live",   # both render KPI strip via data-route-view alias
-    "messages": "live",    # both own sec-live-feed
+    "dashboard": "live",  # both render KPI strip via data-route-view alias
+    "messages": "live",  # both own sec-live-feed
     "widgets": "display",  # both own sec-widgets
 }
 
@@ -146,9 +146,9 @@ def test_bare_legacy_redirects_only_safe_three(admin_js: str):
     body = table_match.group(1)
 
     for legacy, target in PHASE_A_SAFE_REDIRECTS.items():
-        assert re.search(rf'\b{legacy}:\s*"{target}"', body), (
-            f"_bareLegacyRedirects missing or wrong: {legacy} → {target}"
-        )
+        assert re.search(
+            rf'\b{legacy}:\s*"{target}"', body
+        ), f"_bareLegacyRedirects missing or wrong: {legacy} → {target}"
 
     for unsafe in PHASE_A_NOT_REDIRECTED:
         # Match only as a key (start of line + colon), not in commentary.
@@ -200,9 +200,9 @@ def test_admin_routes_has_new_canonical_slugs(admin_js: str):
             rf'\b{slug}:\s*\{{[^}}]*sections:\s*\[[^\]]*"{expected_section}"',
             re.DOTALL,
         )
-        assert pattern.search(admin_js), (
-            f"ADMIN_ROUTES.{slug} missing or doesn't reference {expected_section}"
-        )
+        assert pattern.search(
+            admin_js
+        ), f"ADMIN_ROUTES.{slug} missing or doesn't reference {expected_section}"
 
 
 def test_admin_routes_keeps_legacy_aliases_alive(admin_js: str):
@@ -231,16 +231,16 @@ def test_admin_routes_keeps_legacy_aliases_alive(admin_js: str):
 
 DEEP_LINK_ALIASES = {
     # legacy slug → expected (parent_nav, tab_in_nav)
-    "audit":         ("history",     "audit"),
-    "sessions":      ("history",     "sessions"),
-    "search":        ("history",     "search"),
-    "audience":      ("history",     "audience"),
-    "scheduler":     ("automation",  "scheduler"),
-    "webhooks":      ("automation",  "webhooks"),
-    "plugins":       ("automation",  "plugins"),
-    "themes":        ("appearance",  "themes"),
-    "fonts":         ("appearance",  "fonts"),
-    "viewer-config": ("appearance",  "viewer-config"),
+    "audit": ("history", "audit"),
+    "sessions": ("history", "sessions"),
+    "search": ("history", "search"),
+    "audience": ("history", "audience"),
+    "scheduler": ("automation", "scheduler"),
+    "webhooks": ("automation", "webhooks"),
+    "plugins": ("automation", "plugins"),
+    "themes": ("appearance", "themes"),
+    "fonts": ("appearance", "fonts"),
+    "viewer-config": ("appearance", "viewer-config"),
 }
 
 
@@ -297,6 +297,7 @@ def test_deep_link_parent_navs_not_bare_redirected(admin_js: str):
 # needs to render these panels but has activeLeaf="viewer". The fix is to
 # accept either: route in {viewer-config, viewer} OR leaf === viewer-config.
 
+
 @pytest.fixture(scope="module")
 def admin_display_js() -> str:
     path = Path(__file__).resolve().parent.parent / "static" / "js" / "admin-display.js"
@@ -324,9 +325,9 @@ def test_viewer_config_gate_accepts_all_three_owners(admin_display_js: str):
     )
     assert sync_block, "syncVisibility body not found"
     body = sync_block.group(0)
-    assert "const isViewerConfigOwner = _isViewerConfigOwner(route, leaf)" in body, (
-        "syncVisibility must use the shared owner helper"
-    )
+    assert (
+        "const isViewerConfigOwner = _isViewerConfigOwner(route, leaf)" in body
+    ), "syncVisibility must use the shared owner helper"
     assert 'page.style.display = isViewerConfigOwner ? "" : "none"' in body, (
         "admin-display-v2-page contains the editable Speed/Color controls; "
         "it must become visible when the viewer-config owner gate is true"
@@ -344,12 +345,12 @@ def test_viewer_config_tab_bar_uses_route_owner_not_raw_hash(admin_display_js: s
     )
     assert sync_bar, "_syncBar body not found"
     body = sync_bar.group(0)
-    assert "_isViewerConfigOwner(route, leaf)" in body, (
-        "_syncBar must use the shared route/leaf owner check"
-    )
-    assert 'hash === "viewer-config"' not in body, (
-        "_syncBar must not rely on raw hash-only visibility"
-    )
+    assert (
+        "_isViewerConfigOwner(route, leaf)" in body
+    ), "_syncBar must use the shared route/leaf owner check"
+    assert (
+        'hash === "viewer-config"' not in body
+    ), "_syncBar must not rely on raw hash-only visibility"
 
 
 # ─── Command palette must not jump to a route that doesn't own the section ──
@@ -366,8 +367,8 @@ def test_viewer_config_tab_bar_uses_route_owner_not_raw_hash(admin_display_js: s
 # own the section), MUST use this route slug (because alias resolves correctly).
 PALETTE_CONTRACT = [
     # (label, must_route_to, must_NOT_route_to)
-    ("Webhooks",     "webhooks",     "system"),
-    ("Scheduler",    "scheduler",    "system"),
+    ("Webhooks", "webhooks", "system"),
+    ("Scheduler", "scheduler", "system"),
     ("Fingerprints", "fingerprints", "system"),
 ]
 
@@ -379,7 +380,9 @@ def palette_js() -> str:
 
 
 @pytest.mark.parametrize("label, must_route, must_not_route", PALETTE_CONTRACT)
-def test_palette_routes_to_owning_route(palette_js: str, label: str, must_route: str, must_not_route: str):
+def test_palette_routes_to_owning_route(
+    palette_js: str, label: str, must_route: str, must_not_route: str
+):
     """Each palette entry must point to a route that actually renders the
     section it scrolls to. Pre-Phase-A these jumped to `#/system`; the
     section IDs were system-owned then, but Phase A moved ownership and
@@ -409,11 +412,7 @@ def test_nav_i18n_keys_present_in_all_locales(locale: str):
     """Every nav button uses a data-i18n key; all 4 locales must
     define every key so language switching doesn't leave blanks."""
     locale_path = (
-        Path(__file__).resolve().parent.parent
-        / "static"
-        / "locales"
-        / locale
-        / "translation.json"
+        Path(__file__).resolve().parent.parent / "static" / "locales" / locale / "translation.json"
     )
     body = locale_path.read_text(encoding="utf-8")
 

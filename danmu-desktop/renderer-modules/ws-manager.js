@@ -303,7 +303,7 @@ function initConnectionStatusHandler({
       if (portInput) portInput.disabled = false;
       if (screenSelect) screenSelect.disabled = false;
       if (syncMultiDisplayCheckbox) syncMultiDisplayCheckbox.disabled = false;
-  
+
       const failureStatusText = getLocalizedText(
         "statusConnectionFailed",
         "Connection failed",
@@ -338,7 +338,7 @@ function initConnectionStatusHandler({
       if (portInput) portInput.disabled = false;
       if (screenSelect) screenSelect.disabled = false;
       if (syncMultiDisplayCheckbox) syncMultiDisplayCheckbox.disabled = false;
-  
+
       updateConnectionStatus("idle", t("statusStopped"));
     }
   });

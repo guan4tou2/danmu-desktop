@@ -52,9 +52,9 @@
 
 ### 1:1 對齊執行規則（2026-04-30 起強制）
 
-1. 只允許使用 prototype 已定義元件。  
-2. 若設計缺稿，不得工程自行設計；只能用「文字 + 方框」placeholder。  
-3. placeholder 必須在 UI 上明示 `[PLACEHOLDER]`，並在本文件對應缺稿項目。  
+1. 只允許使用 prototype 已定義元件。
+2. 若設計缺稿，不得工程自行設計；只能用「文字 + 方框」placeholder。
+3. placeholder 必須在 UI 上明示 `[PLACEHOLDER]`，並在本文件對應缺稿項目。
 
 ### 仍缺 Design 稿（需補 artboard / spec）
 
@@ -151,22 +151,22 @@
 
 ### H.1 要求 Design 的交付格式
 
-1. IA map（含 route 可見性矩陣）  
-2. state semantics（Session / Broadcast 的狀態圖與文案）  
+1. IA map（含 route 可見性矩陣）
+2. state semantics（Session / Broadcast 的狀態圖與文案）
 3. Live 模式單頁操作流（主持/操作員常用路徑）
 
 ### H.2 備註（與視覺稿的先後順序）
 
-- 先更新 IA / semantics spec，再做視覺 polish。  
+- 先更新 IA / semantics spec，再做視覺 polish。
 - 若視覺稿先行但沿用舊語義，後續會再次產生「1:1 對齊錯版」。
 
 ### H.3 工程已完成（2026-04-29）
 
-- ✅ P0-2（session detail fallback）  
-  `#/session-detail?id=...` 現在會先查 `/admin/sessions/<id>`，404 時自動 fallback 到 `/admin/session/archive/<id>`。  
-- ✅ P0-3（broadcast ENDED / writeState 清理）  
-  已移除 UI-only ENDED 分支與 `writeState` 路徑，改為由 session lifecycle 統一管理「結束場次」語義。  
-- ✅ 回歸測試已補（非 browser）  
+- ✅ P0-2（session detail fallback）
+  `#/session-detail?id=...` 現在會先查 `/admin/sessions/<id>`，404 時自動 fallback 到 `/admin/session/archive/<id>`。
+- ✅ P0-3（broadcast ENDED / writeState 清理）
+  已移除 UI-only ENDED 分支與 `writeState` 路徑，改為由 session lifecycle 統一管理「結束場次」語義。
+- ✅ 回歸測試已補（非 browser）
   `test_session_mgmt.py` + `test_broadcast.py` 共 46 tests 通過，作為本批修復 baseline。
 
 ---

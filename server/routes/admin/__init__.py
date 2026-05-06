@@ -13,8 +13,8 @@ from ...services.security import rate_limit, require_csrf, require_login  # noqa
 from ...services.settings import get_options, get_setting_ranges  # noqa: F401
 from ...services.validation import validate_request  # noqa: F401
 from ...utils import allowed_file  # noqa: F401
-from ...utils import json_response as _json_response  # noqa: F401
 from ...utils import sanitize_log_string  # noqa: F401
+from ...utils import json_response as _json_response  # noqa: F401
 
 # Shared constants
 _STICKER_ALLOWED_MIME = {"image/gif", "image/png", "image/webp"}

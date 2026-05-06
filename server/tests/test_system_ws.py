@@ -17,6 +17,7 @@ import pytest
 
 from server.config import Config  # ty: ignore[unresolved-import]
 from server.services import ws_queue  # ty: ignore[unresolved-import]
+from server.ws.server import _build_tls_context  # ty: ignore[unresolved-import]
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +91,18 @@ def test_ws_server_sends_ping_to_connected_client(ws_server_port):
         raw = ws.recv()
         data = json.loads(raw)
         assert data.get("type") == "ping"
+
+
+def test_ws_tls_context_disabled_without_cert_pair(monkeypatch):
+    monkeypatch.delattr(Config, "WS_TLS_CERTFILE", raising=False)
+    monkeypatch.delattr(Config, "WS_TLS_KEYFILE", raising=False)
+
+    assert _build_tls_context() is None
+
+
+def test_ws_tls_context_requires_cert_and_key_pair():
+    with pytest.raises(ValueError, match="both certificate and key"):
+        _build_tls_context(certfile="/tmp/ws-cert.pem", keyfile=None)
 
 
 # ─── 訊息轉發測試 ─────────────────────────────────────────────────────────────

@@ -47,16 +47,19 @@ test.describe("App Launch", () => {
     await mainWindow.locator('[data-nav="overlay"]').click();
   }
 
-  test("main window contains start button", async () => {
+  test("Overlay section exposes the visible overlay action button", async () => {
     await openOverlayTab();
-    const startBtn = mainWindow.locator("#start-button");
-    await expect(startBtn).toBeVisible();
+    const overlayBtn = mainWindow.locator("[data-client-overlay-button]");
+    await expect(overlayBtn).toBeVisible();
+    await expect(overlayBtn).toHaveAttribute("data-state", "stopped");
   });
 
-  test("main window contains stop button (disabled)", async () => {
+  test("legacy start/stop controls stay hidden behind the primary overlay button", async () => {
     await openOverlayTab();
+    const startBtn = mainWindow.locator("#start-button");
     const stopBtn = mainWindow.locator("#stop-button");
-    await expect(stopBtn).toBeVisible();
+    await expect(startBtn).toBeHidden();
+    await expect(stopBtn).toBeHidden();
     await expect(stopBtn).toBeDisabled();
   });
 
@@ -104,9 +107,9 @@ test.describe("App Launch", () => {
     expect(await advanced.count()).toBe(0);
   });
 
-  test("Conn section screen selector reachable", async () => {
-    await openConnEdit();
-    const screenSelect = mainWindow.locator("#screen-select");
-    await expect(screenSelect).toBeVisible();
+  test("Overlay section screen picker is reachable", async () => {
+    await openOverlayTab();
+    const screenChip = mainWindow.locator("[data-client-screens] .client-screen-chip").first();
+    await expect(screenChip).toBeVisible();
   });
 });

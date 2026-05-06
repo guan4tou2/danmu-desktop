@@ -14,7 +14,7 @@ const { test, expect, _electron: electron } = require("@playwright/test");
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
-const { spawn } = require("child_process");
+const { execFileSync, spawn } = require("child_process");
 const http = require("http");
 
 const APP_DIR = path.join(__dirname, "..");
@@ -22,7 +22,42 @@ const PROJECT_ROOT = path.join(__dirname, "..", "..");
 const HTTP_PORT = 14100;
 const WS_PORT = 14101;
 
+function createSelfSignedCert(runtimeDir) {
+  const certPath = path.join(runtimeDir, "fullchain.pem");
+  const keyPath = path.join(runtimeDir, "privkey.pem");
+  const sanPath = path.join(runtimeDir, "san.cnf");
+  fs.writeFileSync(
+    sanPath,
+    "[req]\ndistinguished_name=req\n[SAN]\nsubjectAltName=DNS:localhost,IP:127.0.0.1\n"
+  );
+  execFileSync(
+    "openssl",
+    [
+      "req",
+      "-x509",
+      "-nodes",
+      "-newkey",
+      "rsa:2048",
+      "-keyout",
+      keyPath,
+      "-out",
+      certPath,
+      "-days",
+      "1",
+      "-subj",
+      "/CN=localhost",
+      "-extensions",
+      "SAN",
+      "-config",
+      sanPath,
+    ],
+    { stdio: "ignore" }
+  );
+  return { certPath, keyPath };
+}
+
 function startServer(runtimeDir) {
+  const { certPath, keyPath } = createSelfSignedCert(runtimeDir);
   const filterRulesPath = path.join(runtimeDir, "filter_rules.json");
   fs.writeFileSync(filterRulesPath, "[]");
   const settingsPath = path.join(runtimeDir, "settings.json");
@@ -45,9 +80,13 @@ Config.WS_REQUIRE_TOKEN = False
 Config.WS_AUTH_TOKEN = ''
 Config.WS_ALLOWED_ORIGINS = []
 Config.WS_PORT = ${WS_PORT}
+Config.WS_TLS_CERTFILE = ${JSON.stringify(certPath)}
+Config.WS_TLS_KEYFILE = ${JSON.stringify(keyPath)}
 Config.ADMIN_PASSWORD = 'test'
 Config.FIRE_RATE_LIMIT = 1000
 Config.FIRE_RATE_WINDOW = 1
+Config.CAPTCHA_PROVIDER = 'none'
+Config.CAPTCHA_SECRET = ''
 
 # Seed onscreen limits at cap=2 queue before server starts
 from server.services import onscreen_config
@@ -240,6 +279,16 @@ async function countDanmuOnscreen(overlay) {
   });
 }
 
+async function postUntilAccepted(text, attempts = 12) {
+  let last;
+  for (let i = 0; i < attempts; i++) {
+    last = await httpPost(HTTP_PORT, "/fire", { text, speed: 10 });
+    if (last.status === 200) return last;
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  return last;
+}
+
 test.describe("Onscreen limiter E2E", () => {
   let serverProc;
   let electronApp;
@@ -268,7 +317,7 @@ test.describe("Onscreen limiter E2E", () => {
     await mainWindow.locator("#host-input").fill("127.0.0.1");
     await mainWindow.locator("#port-input").fill(String(WS_PORT));
     await mainWindow.locator('[data-nav="overlay"]').click();
-    await mainWindow.locator("#start-button").click();
+    await mainWindow.locator("[data-client-overlay-button]").click();
     overlay = await getOverlayWindow(electronApp, mainWindow);
     await overlay.waitForLoadState("domcontentloaded");
     // Let WS client register with server
@@ -291,7 +340,7 @@ test.describe("Onscreen limiter E2E", () => {
 
   test("queue mode: first 2 sent, next 2 queued, all 4 eventually render", async () => {
     // Warm-up fire to confirm overlay actually connected (200 vs 503)
-    const warm = await httpPost(HTTP_PORT, "/fire", { text: "WARMUP", speed: 10 });
+    const warm = await postUntilAccepted("WARMUP");
     expect(warm.status).toBe(200);
     // Wait for warmup slot to clear (max scroll ≈ 2.1s)
     await new Promise((r) => setTimeout(r, 2500));

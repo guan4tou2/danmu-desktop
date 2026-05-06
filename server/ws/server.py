@@ -1,6 +1,7 @@
 import asyncio
 import json
 import secrets
+import ssl
 import time
 from urllib.parse import parse_qs, urlparse
 
@@ -11,6 +12,18 @@ from ..managers import connection_manager
 from ..services import ws_auth, ws_queue
 from ..services.ws_state import update_ws_client_count
 from ..utils import sanitize_log_string
+
+
+def _build_tls_context(certfile=None, keyfile=None):
+    certfile = certfile or getattr(Config, "WS_TLS_CERTFILE", None)
+    keyfile = keyfile or getattr(Config, "WS_TLS_KEYFILE", None)
+    if not certfile and not keyfile:
+        return None
+    if not certfile or not keyfile:
+        raise ValueError("WS TLS requires both certificate and key files")
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain(certfile, keyfile)
+    return context
 
 
 async def _forward_messages(logger):
@@ -244,10 +257,12 @@ def run_ws_server(ws_port, logger):
             await unregister(websocket)
 
     async def start_server():
+        tls_context = _build_tls_context()
         server = await websockets.serve(
             ws_handler,
             ws_host,
             ws_port,
+            ssl=tls_context,
             max_size=ws_max_size,
             max_queue=ws_max_queue,
             write_limit=ws_write_limit,

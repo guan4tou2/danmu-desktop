@@ -2,23 +2,30 @@ const { test, expect } = require("@jest/globals");
 const fs = require("fs");
 const path = require("path");
 
-// Post v5.0.0 P0-0 IA migration: sidebar collapsed to 10 nav buttons.
-// `ratelimit` and `viewer-theme` are no longer top-level nav rows — they
-// route through alias entries onto the `moderation` and `appearance` tabs
-// respectively (see _routeAliases in admin.js).
-test("admin panel uses design-v2 dash grid + P0-0 IA sections", () => {
+// Phase A admin IA: the visible sidebar is now 8 main areas plus standalone
+// security. Legacy deep links remain in _routeAliases / _bareLegacyRedirects.
+test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
-  const adminSrc  = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
+  const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
 
   // Shell + router anchors — these stay in admin.js.
   expect(adminSrc).toContain("admin-dash-grid");
   expect(adminSrc).toContain("ADMIN_ROUTES");
-  expect(adminSrc).toContain('data-route="dashboard"');
-  // P0-0 IA: 10 top-level nav buttons; ratelimit + viewer-theme moved to tabs.
+  expect(adminSrc).toContain('data-route="live"');
+  expect(adminSrc).toContain('data-route="display"');
+  expect(adminSrc).toContain('data-route="viewer"');
+  expect(adminSrc).not.toContain('data-route="dashboard"');
+  expect(adminSrc).not.toContain('data-route="messages"');
+  expect(adminSrc).not.toContain('data-route="widgets"');
+  // Phase A: secondary surfaces remain reachable through tabs / aliases.
   expect(adminSrc).toContain('data-route="moderation"');
-  expect(adminSrc).toContain('data-route="appearance"');
+  expect(adminSrc).toContain('data-route="system"');
+  expect(adminSrc).toContain('data-route="security"');
   // Alias entries route legacy hashes to the new IA.
   expect(adminSrc).toMatch(/ratelimit:\s*\{\s*nav:\s*"moderation"/);
+  expect(adminSrc).toMatch(/"viewer-config":\s*\{\s*nav:\s*"appearance"/);
+  expect(adminSrc).toMatch(/dashboard:\s*"live"/);
+  expect(adminSrc).toMatch(/widgets:\s*"display"/);
   // Sections still rendered inline by admin.js renderControlPanel():
   expect(adminSrc).toContain('id="sec-blacklist"');
   expect(adminSrc).toContain('id="sec-history"');

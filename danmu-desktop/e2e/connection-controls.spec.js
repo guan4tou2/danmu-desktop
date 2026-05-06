@@ -142,6 +142,7 @@ test.describe("Connection Controls", () => {
   });
 
   test("sync multi-display checkbox works", async () => {
+    await page.locator('[data-nav="overlay"]').click();
     const checkbox = page.locator("#sync-multi-display-checkbox");
     const isChecked = await checkbox.isChecked();
 
