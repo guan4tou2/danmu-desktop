@@ -223,7 +223,10 @@ def test_login_wrong_password_shows_form_again(fresh_page, live_url):
     fresh_page.goto(f"{live_url}/admin/")
     fresh_page.wait_for_selector("#loginForm", state="visible", timeout=8000)
     fresh_page.fill("#password", "wrongpassword")
-    fresh_page.locator("#loginForm button[type=submit]").click()
+    # admin-login.js probes /login with fetch, then reloads the page so the
+    # server-rendered session state drives the final login/admin view.
+    with fresh_page.expect_navigation(wait_until="load", timeout=10000):
+        fresh_page.locator("#loginForm button[type=submit]").click()
     fresh_page.wait_for_selector("#loginForm", state="visible", timeout=8000)
     assert fresh_page.is_visible("#loginForm")
     assert not fresh_page.is_visible("#logoutButton")
