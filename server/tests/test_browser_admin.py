@@ -221,10 +221,10 @@ def test_admin_page_shows_login_form(fresh_page, live_url):
 def test_login_wrong_password_shows_form_again(fresh_page, live_url):
     """密碼錯誤後應停留在登入表單"""
     fresh_page.goto(f"{live_url}/admin/")
-    fresh_page.wait_for_selector("#loginForm", timeout=8000)
+    fresh_page.wait_for_selector("#loginForm", state="visible", timeout=8000)
     fresh_page.fill("#password", "wrongpassword")
     fresh_page.locator("#loginForm button[type=submit]").click()
-    fresh_page.wait_for_selector("#loginForm", timeout=5000)
+    fresh_page.wait_for_selector("#loginForm", state="visible", timeout=8000)
     assert fresh_page.is_visible("#loginForm")
     assert not fresh_page.is_visible("#logoutButton")
 

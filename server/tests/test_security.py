@@ -7,14 +7,7 @@ import pytest
 
 from server import state
 from server.app import create_app
-from server.services.security import (
-    InMemoryRateLimiter,
-    RedisRateLimiter,
-    generate_font_token,
-    hash_password,
-    issue_csrf_token,
-    verify_password,
-)
+from server.services import security as security_svc
 from server.services.webhook import WebhookService
 from server.services.ws_state import update_ws_client_count
 from server.startup_warnings import log_ws_auth_warnings
@@ -68,7 +61,7 @@ def test_font_download_requires_token(client, tmp_path):
     test_font.write_text("data")
 
     with client.application.app_context():
-        token = generate_font_token("Sample.ttf")
+        token = security_svc.generate_font_token("Sample.ttf")
     url = f"/user_fonts/Sample.ttf?token={token}"
 
     unauthorized = client.get("/user_fonts/Sample.ttf")
@@ -85,21 +78,21 @@ def test_font_download_requires_token(client, tmp_path):
 
 
 def test_hash_and_verify_password():
-    hashed = hash_password("my-secure-password")
-    assert verify_password("my-secure-password", hashed)
-    assert not verify_password("wrong-password", hashed)
+    hashed = security_svc.hash_password("my-secure-password")
+    assert security_svc.verify_password("my-secure-password", hashed)
+    assert not security_svc.verify_password("wrong-password", hashed)
 
 
 def test_hash_produces_different_salts():
-    h1 = hash_password("same")
-    h2 = hash_password("same")
+    h1 = security_svc.hash_password("same")
+    h2 = security_svc.hash_password("same")
     assert h1 != h2  # bcrypt 每次 salt 不同
-    assert verify_password("same", h1)
-    assert verify_password("same", h2)
+    assert security_svc.verify_password("same", h1)
+    assert security_svc.verify_password("same", h2)
 
 
 def test_verify_password_invalid_hash():
-    assert not verify_password("any", "not-a-valid-bcrypt-hash")
+    assert not security_svc.verify_password("any", "not-a-valid-bcrypt-hash")
 
 
 def test_ws_require_token_disabled_emits_startup_warning(caplog):
@@ -245,21 +238,21 @@ def test_default_test_app_uses_isolated_webhook_store(client):
 
 
 def test_issue_csrf_token_is_64_char_hex():
-    token = issue_csrf_token()
+    token = security_svc.issue_csrf_token()
     assert isinstance(token, str)
     assert len(token) == 64
     int(token, 16)  # 必須是有效 hex，否則拋 ValueError
 
 
 def test_issue_csrf_token_unique():
-    assert issue_csrf_token() != issue_csrf_token()
+    assert security_svc.issue_csrf_token() != security_svc.issue_csrf_token()
 
 
 # ─── InMemoryRateLimiter ──────────────────────────────────────────────────────
 
 
 def test_rate_limiter_allows_within_limit():
-    limiter = InMemoryRateLimiter()
+    limiter = security_svc.InMemoryRateLimiter()
     assert limiter.allow("k", 3, 60)
     assert limiter.allow("k", 3, 60)
     assert limiter.allow("k", 3, 60)
@@ -267,7 +260,7 @@ def test_rate_limiter_allows_within_limit():
 
 
 def test_rate_limiter_reset_clears_history():
-    limiter = InMemoryRateLimiter()
+    limiter = security_svc.InMemoryRateLimiter()
     limiter.allow("k", 1, 60)  # exhausted
     assert not limiter.allow("k", 1, 60)
     limiter.reset()
@@ -275,7 +268,7 @@ def test_rate_limiter_reset_clears_history():
 
 
 def test_rate_limiter_different_keys_independent():
-    limiter = InMemoryRateLimiter()
+    limiter = security_svc.InMemoryRateLimiter()
     limiter.allow("a", 1, 60)
     assert not limiter.allow("a", 1, 60)  # "a" exhausted
     assert limiter.allow("b", 1, 60)  # "b" unaffected
@@ -284,7 +277,7 @@ def test_rate_limiter_different_keys_independent():
 def test_rate_limiter_window_expiry():
     import time
 
-    limiter = InMemoryRateLimiter()
+    limiter = security_svc.InMemoryRateLimiter()
     assert limiter.allow("w", 1, 0.05)  # limit=1, window=0.05s
     assert not limiter.allow("w", 1, 0.05)  # blocked
     time.sleep(0.1)
@@ -532,7 +525,7 @@ def test_bucket_history_returns_24_elements():
 
 
 def test_redis_rate_limiter_allow_uses_atomic_eval():
-    limiter = RedisRateLimiter.__new__(RedisRateLimiter)
+    limiter = security_svc.RedisRateLimiter.__new__(security_svc.RedisRateLimiter)
     limiter.client = MagicMock()
     limiter.client.eval.return_value = 1
 
@@ -543,7 +536,7 @@ def test_redis_rate_limiter_allow_uses_atomic_eval():
 
 
 def test_redis_rate_limiter_rejects_when_eval_returns_zero():
-    limiter = RedisRateLimiter.__new__(RedisRateLimiter)
+    limiter = security_svc.RedisRateLimiter.__new__(security_svc.RedisRateLimiter)
     limiter.client = MagicMock()
     limiter.client.eval.return_value = 0
 
