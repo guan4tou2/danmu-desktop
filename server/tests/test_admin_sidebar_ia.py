@@ -136,7 +136,7 @@ PHASE_A_STRING_REDIRECTS = {
 # so users see meaningful content, not just the system overview.
 PHASE_B_OBJECT_REDIRECTS = {
     "automation": ("system", "scheduler"),
-    "history":    ("system", "sessions"),
+    "history": ("system", "sessions"),
 }
 
 # Slugs that must NOT be in `_bareLegacyRedirects` — until Phase D, their
@@ -349,21 +349,16 @@ def test_appearance_parent_nav_not_bare_redirected(admin_js: str):
 ACCORDION_GROUPS_EXPECTED = ["settings", "tokens", "automation", "history"]
 
 ACCORDION_SLUGS_BY_GROUP = {
-    "settings":   ["system", "backup", "integrations", "wcag", "about"],
-    "tokens":     ["firetoken", "api-tokens"],
+    "settings": ["system", "backup", "integrations", "wcag", "about"],
+    "tokens": ["firetoken", "api-tokens"],
     "automation": ["scheduler", "webhooks", "plugins"],
-    "history":    ["sessions", "search", "audit", "replay", "audience"],
+    "history": ["sessions", "search", "audit", "replay", "audience"],
 }
 
 
 @pytest.fixture(scope="module")
 def accordion_js() -> str:
-    path = (
-        Path(__file__).resolve().parent.parent
-        / "static"
-        / "js"
-        / "admin-system-accordion.js"
-    )
+    path = Path(__file__).resolve().parent.parent / "static" / "js" / "admin-system-accordion.js"
     return path.read_text(encoding="utf-8")
 
 
@@ -385,9 +380,7 @@ def test_accordion_declares_four_groups(accordion_js: str):
 
 
 @pytest.mark.parametrize("group, expected_slugs", list(ACCORDION_SLUGS_BY_GROUP.items()))
-def test_accordion_section_slugs_per_group(
-    accordion_js: str, group: str, expected_slugs: list
-):
+def test_accordion_section_slugs_per_group(accordion_js: str, group: str, expected_slugs: list):
     """Each group's slugs must appear in the SECTIONS array tagged with
     the right `group` field. Phase B added automation + history; settings
     + tokens are unchanged from Phase A."""
@@ -433,16 +426,22 @@ def test_admin_routes_system_owns_absorbed_sections(admin_js: str):
     Without this, the route-level visibility pass would hide the absorbed
     sections regardless of which accordion leaf is active."""
     system_match = re.search(
-        r'\bsystem:\s*\{\s*title:[^}]*?sections:\s*\[([^\]]+)\]',
+        r"\bsystem:\s*\{\s*title:[^}]*?sections:\s*\[([^\]]+)\]",
         admin_js,
     )
     assert system_match, "ADMIN_ROUTES.system entry not found"
     sections = system_match.group(1)
     must_contain = [
         # Phase B additions
-        "sec-scheduler", "sec-webhooks", "sec-plugins",
-        "sec-sessions-overview", "sec-search-overview", "sec-audit-overview",
-        "sec-history-tabs", "history-v2-section", "sec-history",
+        "sec-scheduler",
+        "sec-webhooks",
+        "sec-plugins",
+        "sec-sessions-overview",
+        "sec-search-overview",
+        "sec-audit-overview",
+        "sec-history-tabs",
+        "history-v2-section",
+        "sec-history",
         "sec-audience-overview",
     ]
     for sec in must_contain:

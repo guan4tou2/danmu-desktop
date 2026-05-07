@@ -12,8 +12,8 @@ on `#sec-*-overview` visibility):
 
     #/about         → #/system/about      — AdminAboutPage
     #/notifications →                       — AdminNotificationsPage (no alias)
-    #/audit         → #/history/audit     — AdminAuditLogPage
-    #/audience      → #/history/audience  — AdminAudiencePage
+    #/audit         → #/system/audit      — AdminAuditLogPage
+    #/audience      → #/system/audience   — AdminAudiencePage
     #/mobile        → #/system            — deprecated; admin uses responsive layout
     #/poll-deepdive →                       — AdminPollDeepDivePage (no alias)
     #/setup         →                       — AdminSetupWizard overlay (no alias)
@@ -361,13 +361,13 @@ def test_viewer_pollthankyou_state_url_preview(browser_session, live_url):
 # ─── v5.0.0 P0-0 IA migration coverage ─────────────────────────────────────
 
 
-def test_ia_alias_redirect_audit_to_history(admin_page):
-    """Slice 4: legacy #/audit must redirect to #/history/audit and
-    activate the audit tab inside the history nav."""
+def test_ia_alias_redirect_audit_to_system(admin_page):
+    """Phase B: legacy #/audit must redirect to #/system/audit and
+    activate the audit leaf inside the system accordion."""
     _go_to_route(admin_page, "audit")
     # URL gets rewritten by applyRoute via buildHash
     final_hash = admin_page.evaluate("() => window.location.hash")
-    assert final_hash == "#/history/audit", f"expected redirect, got {final_hash}"
+    assert final_hash == "#/system/audit", f"expected redirect, got {final_hash}"
     # The shell exposes the canonical leaf to legacy modules
     leaf = admin_page.evaluate(
         '() => document.querySelector(".admin-dash-grid").dataset.activeLeaf'
@@ -393,7 +393,9 @@ def test_ia_system_accordion_renders(admin_page):
     _go_to_route(admin_page, "system")
     admin_page.wait_for_selector(".admin-system-accordion", state="attached", timeout=5000)
     rows = admin_page.locator(".admin-system-accordion-row")
-    assert rows.count() == 7
+    assert rows.count() == 15
+    groups = admin_page.locator(".admin-system-accordion-group")
+    assert groups.count() == 4
     labels = admin_page.locator(".admin-system-accordion-label").all_text_contents()
     assert "手機後台" not in labels
     # Single-open default — first row (system overview) is open
