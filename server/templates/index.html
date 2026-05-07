@@ -186,27 +186,17 @@
           </div>
           {% endif %}
 
-          <!-- Progressive disclosure (v5.0.0+ Tier 2) — primary block above
-               (preview / nickname / color) is what 90 % of viewers touch.
-               Font / size / opacity / speed / effects / layout are power-user
-               territory and live below the fold inside this collapsible. -->
-          <details class="viewer-advanced">
-            <summary class="viewer-advanced-summary">
-              <span class="viewer-advanced-summary-label" data-i18n="advancedAppearance">進階外觀</span>
-              <span class="viewer-advanced-summary-chevron" aria-hidden="true">▾</span>
-            </summary>
-
-            <!-- Font family -->
-            <div id="userFontSelectControl" class="viewer-field" style="display: none;">
-              <label class="viewer-field-label" for="userFontSelect">
-                <span data-i18n="font">字型</span>
-              </label>
-              <div class="viewer-select-wrap">
-                <select id="userFontSelect" class="viewer-select" aria-label="Choose font">
-                  <option value="" data-i18n="defaultFont">Default Font</option>
-                </select>
-              </div>
+          <!-- Font family -->
+          <div id="userFontSelectControl" class="viewer-field" style="display: none;">
+            <label class="viewer-field-label" for="userFontSelect">
+              <span data-i18n="font">字型</span>
+            </label>
+            <div class="viewer-select-wrap">
+              <select id="userFontSelect" class="viewer-select" aria-label="Choose font">
+                <option value="" data-i18n="defaultFont">Default Font</option>
+              </select>
             </div>
+          </div>
 
           <!-- Font size + Opacity 2-col -->
           <div class="viewer-grid-2">
@@ -358,7 +348,6 @@
             <input type="hidden" id="layoutSelect" value="scroll" />
           </div>
           {% endif %}
-          </details>
           </div>
         </section>
 
