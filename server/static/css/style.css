@@ -9169,6 +9169,39 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   max-width: 720px;
 }
 
+/* Phase B (2026-05-06): group dividers between settings / tokens /
+ * automation / history. The first group's divider gets no top margin so
+ * the panel header doesn't sit too far from the first row. */
+.admin-system-accordion-group {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 0 4px 4px;
+  margin-top: 18px;
+  border-bottom: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
+  user-select: none;
+}
+
+.admin-system-accordion-group:first-child {
+  margin-top: 0;
+}
+
+.admin-system-accordion-group-zh {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  color: var(--color-text-secondary, #94a3b8);
+  text-transform: uppercase;
+}
+
+.admin-system-accordion-group-en {
+  font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 1.6px;
+  color: var(--color-text-muted, #64748b);
+  opacity: 0.85;
+}
+
 .admin-system-accordion-row {
   display: grid;
   grid-template-columns: 1fr auto auto;
