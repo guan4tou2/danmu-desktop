@@ -24,7 +24,10 @@ from server.services.filter_engine import (  # ty: ignore[unresolved-import]
     filter_engine,
 )
 from server.services.scheduler import scheduler_service  # ty: ignore[unresolved-import]
-from server.services.security import rate_limiter  # ty: ignore[unresolved-import]
+from server.services.security import (  # ty: ignore[unresolved-import]
+    rate_limiter,
+    reset_rate_limit_counters,
+)
 from server.services.ws_state import update_ws_client_count  # ty: ignore[unresolved-import]
 from server.ws.server import run_ws_server  # ty: ignore[unresolved-import]
 
@@ -51,6 +54,50 @@ def _isolate_webhook_store(tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def _isolate_session(tmp_path):
+    """Per-test session state isolation; default IDLE."""
+    from server.services import session_service as sess_mod
+
+    original_state = sess_mod._STATE_FILE
+    original_archive = sess_mod._ARCHIVE_FILE
+    sess_mod._STATE_FILE = tmp_path / "active_session.json"
+    sess_mod._ARCHIVE_FILE = tmp_path / "sessions_archive.jsonl"
+    sess_mod.reset_for_tests()
+    try:
+        yield
+    finally:
+        sess_mod._STATE_FILE = original_state
+        sess_mod._ARCHIVE_FILE = original_archive
+        sess_mod.reset_for_tests()
+
+
+@pytest.fixture(autouse=True)
+def _isolate_broadcast(tmp_path):
+    """Per-test broadcast state file isolation; default LIVE.
+
+    v5.0.0+: ``messaging.forward_to_ws_server`` consults
+    ``broadcast.is_live()`` and parks danmu in standby. Tests that don't
+    care about broadcast state need a clean LIVE seed each time so /fire
+    behaves as v4.x did.
+    """
+    from server.services import broadcast as broadcast_mod
+
+    original_state = broadcast_mod._STATE_FILE
+    original_queue = broadcast_mod._QUEUE_FILE
+    broadcast_mod._STATE_FILE = tmp_path / "broadcast.json"
+    broadcast_mod._QUEUE_FILE = tmp_path / "broadcast_queue.json"
+    broadcast_mod.reset_for_tests()
+    # Force seed as LIVE so /fire isn't gated by default.
+    broadcast_mod.set_mode("live")
+    try:
+        yield
+    finally:
+        broadcast_mod._STATE_FILE = original_state
+        broadcast_mod._QUEUE_FILE = original_queue
+        broadcast_mod.reset_for_tests()
+
+
+@pytest.fixture(autouse=True)
 def _isolate_onscreen_limits(tmp_path):
     """Isolate onscreen-limiter state per test.
 
@@ -67,6 +114,11 @@ def _isolate_onscreen_limits(tmp_path):
     onscreen_config._reset_for_tests()
     onscreen_config.set_state(max_onscreen_danmu=0, overflow_mode="drop")
     onscreen_limiter.reset()
+    # Drop the admin live-feed polling buffer so cross-test danmu don't
+    # bleed seq numbers into this test's recent() responses.
+    from server.services import live_feed_buffer  # ty: ignore[unresolved-import]
+
+    live_feed_buffer.reset()
     # Let any in-flight timer callback from a prior test drain and settle,
     # then flush ws_queue so cross-test pollution can't bleed into this test.
     time.sleep(0.02)
@@ -243,6 +295,7 @@ def app(tmp_path):
     connection_manager.reset()
     settings_store.reset()
     rate_limiter.reset()
+    reset_rate_limit_counters()
     update_ws_client_count(0)
     eff_svc._cache.clear()
     eff_svc._mtime_map.clear()
@@ -253,7 +306,7 @@ def app(tmp_path):
     theme_svc._path_to_name.clear()
     theme_svc._active_theme = "default"
     ws_queue.dequeue_all()
-    sticker_svc.sticker_service._cache.clear()
+    sticker_svc.sticker_service._reset_for_tests()
 
 
 @pytest.fixture()

@@ -1,9 +1,17 @@
-"""Font and sticker upload/delete routes."""
+"""Font, sticker, and event-logo upload/delete routes."""
+
+import os
+import time
 
 import magic
-from flask import current_app, request
+from flask import current_app, request, send_file
 
-from ...services.fonts import delete_uploaded_font, list_uploaded_fonts, save_uploaded_font
+from ...services.fonts import (
+    delete_uploaded_font,
+    list_available_fonts,
+    save_uploaded_font,
+    toggle_font,
+)
 from ...services.security import rate_limit
 from . import (
     _STICKER_ALLOWED_MIME,
@@ -16,6 +24,88 @@ from . import (
     require_login,
     sanitize_log_string,
 )
+
+_LOGO_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "runtime")
+_LOGO_ALLOWED_MIME = {"image/png", "image/jpeg", "image/svg+xml"}
+_LOGO_MAX_SIZE = 2 * 1024 * 1024  # 2 MB
+_LOGO_EXT_MAP = {"image/png": "png", "image/jpeg": "jpg", "image/svg+xml": "svg"}
+
+
+def _logo_path():
+    for ext in ("png", "jpg", "jpeg", "svg"):
+        p = os.path.join(_LOGO_DIR, f"event_logo.{ext}")
+        if os.path.isfile(p):
+            return p
+    return None
+
+
+@admin_bp.route("/logo", methods=["GET"])
+@require_login
+def get_logo():
+    p = _logo_path()
+    if not p:
+        return _json_response({"error": "No logo uploaded"}, 404)
+    return send_file(p)
+
+
+@admin_bp.route("/logo", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+@require_login
+def upload_logo():
+    f = request.files.get("logo")
+    if not f or f.filename == "":
+        return _json_response({"error": "No file provided"}, 400)
+
+    head = f.stream.read(2048)
+    f.stream.seek(0)
+    mime = magic.from_buffer(head, mime=True)
+    if mime not in _LOGO_ALLOWED_MIME:
+        return _json_response({"error": f"Only PNG/JPG/SVG allowed (got {mime})"}, 400)
+
+    data = f.read()
+    if len(data) > _LOGO_MAX_SIZE:
+        return _json_response({"error": "File too large (max 2 MB)"}, 413)
+
+    # Remove any pre-existing logo files
+    for ext in ("png", "jpg", "jpeg", "svg"):
+        old = os.path.join(_LOGO_DIR, f"event_logo.{ext}")
+        try:
+            os.remove(old)
+        except FileNotFoundError:
+            pass
+
+    ext = _LOGO_EXT_MAP[mime]
+    dest = os.path.join(_LOGO_DIR, f"event_logo.{ext}")
+    os.makedirs(_LOGO_DIR, exist_ok=True)
+    try:
+        with open(dest, "wb") as fh:
+            fh.write(data)
+    except OSError as exc:
+        current_app.logger.error("Logo save failed: %s", sanitize_log_string(str(exc)))
+        return _json_response({"error": "Failed to save logo"}, 500)
+
+    current_app.logger.info(
+        "Event logo uploaded (%s, %d bytes)", sanitize_log_string(ext), len(data)
+    )
+    return _json_response({"url": f"/admin/logo?v={int(time.time())}"})
+
+
+@admin_bp.route("/logo", methods=["DELETE"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+@require_login
+def delete_logo():
+    deleted = False
+    for ext in ("png", "jpg", "jpeg", "svg"):
+        p = os.path.join(_LOGO_DIR, f"event_logo.{ext}")
+        try:
+            os.remove(p)
+            deleted = True
+        except FileNotFoundError:
+            pass
+    current_app.logger.info("Event logo deleted")
+    return _json_response({"deleted": deleted})
 
 
 @admin_bp.route("/upload_font", methods=["POST"])
@@ -57,7 +147,26 @@ def upload_font():
 @admin_bp.route("/fonts", methods=["GET"])
 @require_login
 def list_fonts():
-    return _json_response({"fonts": list_uploaded_fonts()})
+    return _json_response(list_available_fonts(include_disabled=True))
+
+
+@admin_bp.route("/fonts/<name>/toggle", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+@require_login
+def toggle_font_route(name):
+    data = request.get_json(silent=True) or {}
+    enabled = data.get("enabled")
+    if not isinstance(enabled, bool):
+        return _json_response({"error": "enabled must be a boolean"}, 400)
+    try:
+        new_allowlist = toggle_font(name, enabled)
+    except ValueError as exc:
+        return _json_response({"error": str(exc)}, 400)
+    current_app.logger.info(
+        "Font '%s' %s", sanitize_log_string(name), "enabled" if enabled else "disabled"
+    )
+    return _json_response({"status": "OK", "allowlist": new_allowlist})
 
 
 @admin_bp.route("/fonts/<name>", methods=["DELETE"])
@@ -130,8 +239,26 @@ def upload_sticker():
         return _json_response({"error": "Failed to save sticker"}, 500)
 
     sticker_service._scan()
+
+    # Assign to a pack if requested (defaults to "default" pack via _scan migration).
+    pack_id = (request.form.get("pack_id") or "").strip()
+    if pack_id:
+        if not sticker_service.assign_sticker(name, pack_id):
+            current_app.logger.warning(
+                "Sticker uploaded but pack assignment failed: %s -> %s",
+                sanitize_log_string(name),
+                sanitize_log_string(pack_id),
+            )
+
     current_app.logger.info("Sticker uploaded: %s", sanitize_log_string(f"{name}.{ext}"))
-    return _json_response({"name": name, "url": f"/static/stickers/{name}.{ext}"})
+    meta = sticker_service._sticker_meta.get(name, {})
+    return _json_response(
+        {
+            "name": name,
+            "url": f"/static/stickers/{name}.{ext}",
+            "pack_id": meta.get("pack_id", "default"),
+        }
+    )
 
 
 @admin_bp.route("/stickers/<name>", methods=["DELETE"])

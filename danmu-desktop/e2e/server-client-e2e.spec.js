@@ -10,7 +10,9 @@
  */
 const { test, expect, _electron: electron } = require("@playwright/test");
 const path = require("path");
-const { execSync, spawn } = require("child_process");
+const fs = require("fs");
+const os = require("os");
+const { execFileSync, spawn } = require("child_process");
 const http = require("http");
 
 const APP_DIR = path.join(__dirname, "..");
@@ -20,12 +22,57 @@ const WS_PORT = 14001;
 
 // ─── Helper: start Python server ─────────────────────────────────────────────
 
+function createSelfSignedCert(runtimeDir) {
+  const certPath = path.join(runtimeDir, "fullchain.pem");
+  const keyPath = path.join(runtimeDir, "privkey.pem");
+  const sanPath = path.join(runtimeDir, "san.cnf");
+  fs.writeFileSync(
+    sanPath,
+    "[req]\ndistinguished_name=req\n[SAN]\nsubjectAltName=DNS:localhost,IP:127.0.0.1\n"
+  );
+  execFileSync(
+    "openssl",
+    [
+      "req",
+      "-x509",
+      "-nodes",
+      "-newkey",
+      "rsa:2048",
+      "-keyout",
+      keyPath,
+      "-out",
+      certPath,
+      "-days",
+      "1",
+      "-subj",
+      "/CN=localhost",
+      "-extensions",
+      "SAN",
+      "-config",
+      sanPath,
+    ],
+    { stdio: "ignore" }
+  );
+  return { certPath, keyPath };
+}
+
 function startServer() {
+  const runtimeDir = fs.mkdtempSync(path.join(os.tmpdir(), "server-client-e2e-"));
+  const { certPath, keyPath } = createSelfSignedCert(runtimeDir);
+  const filterRulesPath = path.join(runtimeDir, "filter_rules.json");
+  const settingsPath = path.join(runtimeDir, "settings.json");
+  const webhooksPath = path.join(runtimeDir, "webhooks.json");
+  fs.writeFileSync(filterRulesPath, "[]");
+  fs.writeFileSync(settingsPath, "{}");
+  fs.writeFileSync(webhooksPath, "[]");
   const script = `
 import os, sys, threading, logging
 os.environ['ADMIN_PASSWORD'] = 'test'
 os.environ['PORT'] = '${HTTP_PORT}'
 os.environ['WS_PORT'] = '${WS_PORT}'
+os.environ['FILTER_RULES_FILE'] = ${JSON.stringify(filterRulesPath)}
+os.environ['SETTINGS_FILE'] = ${JSON.stringify(settingsPath)}
+os.environ['WEBHOOKS_PATH'] = ${JSON.stringify(webhooksPath)}
 sys.path.insert(0, '.')
 
 from server.config import Config
@@ -33,9 +80,13 @@ Config.WS_REQUIRE_TOKEN = False
 Config.WS_AUTH_TOKEN = ''
 Config.WS_ALLOWED_ORIGINS = []
 Config.WS_PORT = ${WS_PORT}
+Config.WS_TLS_CERTFILE = ${JSON.stringify(certPath)}
+Config.WS_TLS_KEYFILE = ${JSON.stringify(keyPath)}
 Config.ADMIN_PASSWORD = 'test'
 Config.FIRE_RATE_LIMIT = 1000
 Config.FIRE_RATE_WINDOW = 1
+Config.CAPTCHA_PROVIDER = 'none'
+Config.CAPTCHA_SECRET = ''
 
 from server.app import create_app
 from server.ws.server import run_ws_server
@@ -55,6 +106,7 @@ app.run(host='127.0.0.1', port=${HTTP_PORT}, use_reloader=False)
     cwd: PROJECT_ROOT,
     stdio: ["ignore", "pipe", "pipe"],
   });
+  proc.__runtimeDir = runtimeDir;
 
   return proc;
 }
@@ -110,6 +162,30 @@ function waitForPort(port, timeoutMs = 10000) {
   });
 }
 
+async function waitForFirePayloadAccepted(payload, attempts = 12) {
+  let last;
+  for (let i = 0; i < attempts; i++) {
+    last = await httpPost(HTTP_PORT, "/fire", payload);
+    if (last.status === 200) return last;
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  return last;
+}
+
+async function waitForFireAccepted(text, attempts = 12) {
+  return waitForFirePayloadAccepted({ text }, attempts);
+}
+
+async function getOverlayWindow(electronApp, mainWindow, timeoutMs = 10000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const childWindows = electronApp.windows().filter((w) => w !== mainWindow);
+    if (childWindows.length > 0) return childWindows[0];
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  throw new Error("overlay child window not found");
+}
+
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 test.describe("Server + Client E2E", () => {
@@ -117,6 +193,8 @@ test.describe("Server + Client E2E", () => {
   let serverProc;
   /** @type {import('@playwright/test').ElectronApplication} */
   let electronApp;
+  /** @type {import('@playwright/test').Page | null} */
+  let mainWindow = null;
 
   test.beforeAll(async () => {
     // 1. Start Python server
@@ -134,60 +212,56 @@ test.describe("Server + Client E2E", () => {
       // Give it time to clean up
       await new Promise((r) => setTimeout(r, 1000));
       if (!serverProc.killed) serverProc.kill("SIGKILL");
+      if (serverProc.__runtimeDir) {
+        try { fs.rmSync(serverProc.__runtimeDir, { recursive: true, force: true }); } catch (_) {}
+      }
     }
   });
 
-  test("danmu text appears in overlay after POST /fire", async () => {
-    // 2. Launch Electron app
-    electronApp = await electron.launch({
-      args: [path.join(APP_DIR, "dist", "main.bundle.js")],
-      cwd: APP_DIR,
-    });
-    const mainWindow = await electronApp.firstWindow();
-    await mainWindow.waitForLoadState("domcontentloaded");
-    // Wait for renderer to finish initializing (i18n + all event handlers)
-    await mainWindow.waitForSelector(".main-content.loaded", { timeout: 15000 });
-
-    // 3. Configure connection settings
-    await mainWindow.locator("#host-input").fill("127.0.0.1");
-    await mainWindow.locator("#port-input").fill(String(WS_PORT));
-
-    // 4. Click Start to create overlay and connect WS
-    await mainWindow.locator("#start-button").click();
-
-    // 5. Wait for overlay child window to appear
-    await mainWindow.waitForTimeout(3000);
-
-    // 6. Wait for WS connection (check connection status)
-    // Give time for WS to connect and register
-    await mainWindow.waitForTimeout(2000);
-
-    // 7. POST /fire to send a danmu
-    const fireResult = await httpPost(HTTP_PORT, "/fire", {
-      text: "E2E_TEST_DANMU_123",
-    });
-
-    // Allow 503 if overlay hasn't connected yet, retry
-    if (fireResult.status === 503) {
-      await mainWindow.waitForTimeout(3000);
-      const retry = await httpPost(HTTP_PORT, "/fire", {
-        text: "E2E_TEST_DANMU_123",
+  async function ensureOverlayStarted() {
+    if (!electronApp) {
+      electronApp = await electron.launch({
+        args: [path.join(APP_DIR, "dist", "main.bundle.js")],
+        cwd: APP_DIR,
       });
-      expect(retry.status).toBe(200);
-    } else {
-      expect(fireResult.status).toBe(200);
+    }
+    if (!mainWindow) {
+      mainWindow = await electronApp.firstWindow();
+      await mainWindow.waitForLoadState("domcontentloaded");
+      await mainWindow.waitForSelector("#main-content.loaded", { timeout: 15000 });
     }
 
-    // 8. Find the overlay child window and check for danmu
+    const overlayButton = mainWindow.locator("[data-client-overlay-button]");
+    const state = await overlayButton.getAttribute("data-state").catch(() => null);
+    if (state === "running") return mainWindow;
+
+    await mainWindow.locator('[data-nav="conn"]').click();
+    await mainWindow.locator('[data-client-action="edit-conn"]').click();
+    await mainWindow.waitForSelector("#host-input", { state: "visible", timeout: 5000 });
+    await mainWindow.locator("#host-input").fill("127.0.0.1");
+    await mainWindow.locator("#port-input").fill(String(WS_PORT));
+    await mainWindow.locator('[data-nav="overlay"]').click();
+    await overlayButton.click();
+    await getOverlayWindow(electronApp, mainWindow);
+    return mainWindow;
+  }
+
+  test("danmu text appears in overlay after POST /fire", async () => {
+    // 2. Launch Electron app and start overlay via the visible v5 action.
+    await ensureOverlayStarted();
+    if (!mainWindow) throw new Error("mainWindow not initialized");
+
+    // 3. POST /fire to send a danmu, retrying until the WSS overlay registers.
+    const fireResult = await waitForFireAccepted("E2E_TEST_DANMU_123");
+    expect(fireResult.status).toBe(200);
+
+    // 4. Find the overlay child window and check for danmu
     await mainWindow.waitForTimeout(2000);
 
-    const allWindows = electronApp.windows();
-    // Child window is the one that is NOT the main window
-    const childWindows = allWindows.filter((w) => w !== mainWindow);
+    const childWindows = electronApp.windows().filter((w) => w !== mainWindow);
 
     expect(childWindows.length).toBeGreaterThanOrEqual(1);
 
-    // Check if danmu text appears in any child window
     let found = false;
     for (const child of childWindows) {
       try {
@@ -208,29 +282,23 @@ test.describe("Server + Client E2E", () => {
   });
 
   test("danmu with effects has effectCss animation applied", async () => {
+    await ensureOverlayStarted();
+
     // Login to admin to enable effects
-    const loginRes = await httpPost(HTTP_PORT, "/login", { password: "test" });
+    await httpPost(HTTP_PORT, "/login", { password: "test" });
 
-    // Send danmu with spin effect
-    await mainWindow_waitForOverlay(electronApp);
-
-    const fireResult = await httpPost(HTTP_PORT, "/fire", {
+    const fireResult = await waitForFirePayloadAccepted({
       text: "EFFECT_TEST_SPIN",
       effects: [{ name: "spin" }],
     });
 
-    if (fireResult.status === 503) {
-      // Overlay not connected, skip
-      test.skip();
-      return;
-    }
     expect(fireResult.status).toBe(200);
 
     // Wait for danmu to render
     await new Promise((r) => setTimeout(r, 2000));
 
     const allWindows = electronApp.windows();
-    const mainWindow = await electronApp.firstWindow();
+    if (!mainWindow) throw new Error("mainWindow not initialized");
     const childWindows = allWindows.filter((w) => w !== mainWindow);
 
     let hasEffect = false;
@@ -257,22 +325,16 @@ test.describe("Server + Client E2E", () => {
   });
 
   test("multiple danmu messages all receive 200 OK", async () => {
+    await ensureOverlayStarted();
+
     // Send 3 danmus and verify all get 200 (overlay connected, messages forwarded)
     const results = [];
     for (let i = 0; i < 3; i++) {
-      const res = await httpPost(HTTP_PORT, "/fire", { text: `MULTI_TEST_${i}` });
+      const res = await waitForFireAccepted(`MULTI_TEST_${i}`, 4);
       results.push(res.status);
       await new Promise((r) => setTimeout(r, 200));
     }
 
-    // All should succeed (200) — confirms overlay is connected and WS forwarding works
     expect(results).toEqual([200, 200, 200]);
   });
 });
-
-// Helper to ensure overlay is connected
-async function mainWindow_waitForOverlay(electronApp) {
-  const mainWindow = await electronApp.firstWindow();
-  // Already started from first test
-  await mainWindow.waitForTimeout(1000);
-}

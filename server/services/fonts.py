@@ -9,6 +9,147 @@ from .. import state
 from ..services.security import generate_font_token
 from ..utils import sanitize_log_string
 
+# Curated built-in font catalog. Fonts loaded via Google Fonts CSS in the
+# HTML templates have url=None; the browser uses the pre-loaded CSS family.
+# Metadata (foundry, weight, sizeLabel, format) is informational — shown in
+# the admin Fonts page. Status "enabled"/"default"/"disabled" is derived at
+# runtime from the FontFamily allowlist in SettingsStore.
+_FONT_CATALOG = [
+    {
+        "name": "Noto Serif TC",
+        "foundry": "Google",
+        "weight": "400–900",
+        "sizeLabel": "~1.8 MB",
+        "format": "WOFF2",
+        "url": None,
+        "type": "catalog",
+    },
+    {
+        "name": "JetBrains Mono",
+        "foundry": "JetBrains",
+        "weight": "400 / 700",
+        "sizeLabel": "~220 KB",
+        "format": "WOFF2",
+        "url": None,
+        "type": "catalog",
+    },
+    {
+        "name": "Orbitron",
+        "foundry": "Google",
+        "weight": "400–900",
+        "sizeLabel": "~88 KB",
+        "format": "WOFF2",
+        "url": None,
+        "type": "catalog",
+    },
+    {
+        "name": "Klee One",
+        "foundry": "Google",
+        "weight": "400 / 600",
+        "sizeLabel": "~960 KB",
+        "format": "WOFF2",
+        "url": None,
+        "type": "catalog",
+    },
+    {
+        "name": "Bebas Neue",
+        "foundry": "Google",
+        "weight": "400",
+        "sizeLabel": "~45 KB",
+        "format": "WOFF2",
+        "url": None,
+        "type": "catalog",
+    },
+    {
+        "name": "Arial",
+        "foundry": "System",
+        "weight": "400 / 700",
+        "sizeLabel": "—",
+        "format": "SYS",
+        "url": None,
+        "type": "system",
+    },
+    {
+        "name": "Verdana",
+        "foundry": "System",
+        "weight": "400 / 700",
+        "sizeLabel": "—",
+        "format": "SYS",
+        "url": None,
+        "type": "system",
+    },
+]
+
+# Names that are enabled by default when the allowlist is empty.
+# NotoSansTC (bundled OTF) is always the server default; catalog fonts are
+# ON by default. System fonts (Arial/Verdana) are OFF by default but
+# the admin can toggle them on.
+_DEFAULT_ENABLED = frozenset(e["name"] for e in _FONT_CATALOG if e["type"] in ("catalog",)) | {
+    "NotoSansTC"
+}
+
+_SYSTEM_NAMES = frozenset(e["name"] for e in _FONT_CATALOG if e["type"] == "system")
+
+
+def _get_font_allowlist():
+    """Return the current FontFamily allowlist from SettingsStore (slot 1)."""
+    try:
+        from ..managers.settings import settings_store
+
+        return set(settings_store.get_allowlist("FontFamily"))
+    except Exception:
+        return set()
+
+
+def _resolve_status(name: str, allowlist: set, default_name: str, font_type: str = "") -> str:
+    """Determine a font's status: 'default', 'enabled', or 'disabled'.
+
+    Uploaded fonts are always 'enabled' (they're in the user's library).
+    Catalog/system fonts respect the allowlist.
+    """
+    if name == default_name:
+        return "default"
+    # Uploaded fonts: always enabled (user explicitly put them there)
+    if font_type == "uploaded":
+        return "enabled"
+    # Empty allowlist = all catalog fonts that are in _DEFAULT_ENABLED are on
+    if not allowlist:
+        if name in _DEFAULT_ENABLED:
+            return "enabled"
+        return "disabled"
+    return "enabled" if name in allowlist else "disabled"
+
+
+def toggle_font(name: str, enabled: bool) -> list:
+    """Enable or disable a font by updating the FontFamily allowlist.
+
+    Returns the updated allowlist.
+    """
+    from ..managers.settings import settings_store
+
+    current_allowlist = set(settings_store.get_allowlist("FontFamily"))
+    default_name = settings_store.get_options().get("FontFamily", [None, None, None, None])[3]
+
+    if not current_allowlist:
+        # Materialize: start from all currently-enabled names
+        current_allowlist = set(_DEFAULT_ENABLED)
+        # Always exclude the server-default from the allowlist logic (it's
+        # always accessible regardless); but keep it if it's being toggled.
+        current_allowlist.discard(default_name)
+
+    if enabled:
+        current_allowlist.add(name)
+    else:
+        current_allowlist.discard(name)
+
+    # If allowlist now matches exactly the default-enabled set (minus default
+    # font), collapse back to empty (= "all allowed") to avoid drift.
+    canonical = _DEFAULT_ENABLED - {default_name}
+    if current_allowlist == canonical:
+        current_allowlist = set()
+
+    return settings_store.set_allowlist("FontFamily", sorted(current_allowlist))
+
 
 def build_font_payload(chosen_font_name: str):
     potential_font_filename = secure_filename(f"{chosen_font_name}.ttf")
@@ -78,41 +219,94 @@ def list_uploaded_fonts():
     return [f for f in list_available_fonts()["fonts"] if f["type"] == "uploaded"]
 
 
-def list_available_fonts():
+def list_available_fonts(include_disabled: bool = False):
+    """Return the full font catalog plus uploaded fonts.
+
+    The public /fonts endpoint uses include_disabled=False (default) to show
+    only enabled+default fonts so the viewer dropdown stays clean.
+    The admin /admin/fonts endpoint passes include_disabled=True to show
+    the full catalog with status for management.
+    """
     ttl = current_app.config.get("FONT_TOKEN_EXPIRATION", 900)
     issued_at = int(time.time())
 
-    default_fonts = [
-        {
-            "name": "NotoSansTC",
-            "url": url_for("static", filename="NotoSansTC-Regular.otf"),
-            "type": "default",
-            "expiresAt": None,
-        },
-        {"name": "Arial", "url": None, "type": "system", "expiresAt": None},
-        {"name": "Verdana", "url": None, "type": "system", "expiresAt": None},
-        {"name": "Times New Roman", "url": None, "type": "system", "expiresAt": None},
-        {"name": "Courier New", "url": None, "type": "system", "expiresAt": None},
-    ]
+    try:
+        from ..managers.settings import settings_store
 
+        opts = settings_store.get_options()
+        default_name = opts.get("FontFamily", [None, None, None, "NotoSansTC"])[3] or "NotoSansTC"
+    except Exception:
+        default_name = "NotoSansTC"
+
+    allowlist = _get_font_allowlist()
+
+    # --- Bundled NotoSansTC (always present, always the fallback default) ---
+    bundled = {
+        "name": "NotoSansTC",
+        "url": url_for("static", filename="NotoSansTC-Regular.otf"),
+        "type": "default" if default_name == "NotoSansTC" else "catalog",
+        "foundry": "Google / Noto",
+        "weight": "400–900",
+        "sizeLabel": "~1.2 MB",
+        "format": "OTF",
+        "status": _resolve_status("NotoSansTC", allowlist, default_name, "catalog"),
+        "expiresAt": None,
+    }
+
+    # --- Curated catalog ---
+    catalog_fonts = []
+    for entry in _FONT_CATALOG:
+        name = entry["name"]
+        status = _resolve_status(name, allowlist, default_name, entry["type"])
+        font = {
+            **entry,
+            "status": status,
+            "expiresAt": None,
+        }
+        # Assign "default" type if it's the current default
+        if name == default_name:
+            font["type"] = "default"
+        catalog_fonts.append(font)
+
+    # --- Uploaded fonts ---
     uploaded_fonts = []
     try:
         for filename in os.listdir(state.USER_FONTS_DIR):
             if filename.lower().endswith(".ttf"):
                 token = generate_font_token(filename)
+                stem = os.path.splitext(filename)[0]
+                status = _resolve_status(stem, allowlist, default_name, "uploaded")
                 uploaded_fonts.append(
                     {
-                        "name": os.path.splitext(filename)[0],
+                        "name": stem,
                         "url": url_for(
                             "api.serve_user_font",
                             filename=filename,
                             token=token,
                         ),
-                        "type": "uploaded",
+                        "type": "default" if stem == default_name else "uploaded",
+                        "foundry": "Uploaded",
+                        "weight": "—",
+                        "sizeLabel": _fmt_size(
+                            os.path.getsize(os.path.join(state.USER_FONTS_DIR, filename))
+                        ),
+                        "format": "TTF",
+                        "status": status,
                         "expiresAt": issued_at + ttl,
                     }
                 )
     except Exception as exc:
         current_app.logger.error("Error listing uploaded fonts: %s", sanitize_log_string(str(exc)))
 
-    return {"fonts": default_fonts + uploaded_fonts, "tokenTTL": ttl}
+    all_fonts = [bundled] + catalog_fonts + uploaded_fonts
+
+    if not include_disabled:
+        all_fonts = [f for f in all_fonts if f["status"] != "disabled"]
+
+    return {"fonts": all_fonts, "tokenTTL": ttl}
+
+
+def _fmt_size(n_bytes: int) -> str:
+    if n_bytes >= 1_000_000:
+        return f"~{n_bytes / 1_000_000:.1f} MB"
+    return f"~{n_bytes // 1024} KB"

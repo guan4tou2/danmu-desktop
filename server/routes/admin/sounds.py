@@ -84,3 +84,27 @@ def remove_sound_rule():
     if sound_service.remove_rule(rule_id):
         return _json_response({"message": "Rule removed"})
     return _json_response({"error": "Rule not found"}, 404)
+
+
+@admin_bp.route("/sounds/<path:name>/volume", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+@require_login
+def set_sound_volume(name):
+    """Set per-sound default volume (0..1). P1-2 inline tile slider."""
+    if "/" in name or ".." in name or name.startswith("."):
+        return _json_response({"error": "Invalid sound name"}, 400)
+    data = request.get_json(silent=True) or {}
+    if "volume" not in data:
+        return _json_response({"error": "volume required"}, 400)
+    try:
+        volume = float(data["volume"])
+    except (TypeError, ValueError):
+        return _json_response({"error": "volume must be a number"}, 400)
+    if volume < 0 or volume > 1:
+        return _json_response({"error": "volume must be between 0 and 1"}, 400)
+    from ...services.sound import sound_service
+
+    if sound_service.set_sound_volume(name, volume):
+        return _json_response({"status": "OK", "volume": volume})
+    return _json_response({"error": "Sound not found"}, 404)

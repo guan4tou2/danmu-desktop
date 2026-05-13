@@ -31,10 +31,13 @@ class FireRequestSchema(Schema):
         load_default=None,
         validate=validate.Regexp(r"^#?[0-9a-fA-F]{6}$", error="Invalid hex color"),
     )
-    opacity = fields.Int(load_default=None, validate=validate.Range(min=0, max=100))
+    opacity = fields.Int(load_default=None, validate=validate.Range(min=20, max=100))
     size = fields.Int(load_default=None, validate=validate.Range(min=1, max=200))
-    speed = fields.Int(load_default=None, validate=validate.Range(min=1, max=10))
+    speed = fields.Float(load_default=None, validate=validate.Range(min=0.5, max=3.0))
     fingerprint = fields.Str(load_default=None, validate=validate.Length(max=128))
+    # Captcha providers (Turnstile / hCaptcha) issue tokens well under 4k chars.
+    # Accept anything up to 8k to be safe; verification itself is the real gate.
+    captcha_token = fields.Str(load_default=None, validate=validate.Length(max=8192))
     nickname = fields.Str(load_default=None, validate=validate.Length(max=20))
     layout = fields.Str(
         load_default=None,
@@ -106,7 +109,11 @@ class EffectSaveSchema(Schema):
 
 
 class PollCreateSchema(Schema):
-    """投票建立請求驗證"""
+    """投票建立請求驗證 (legacy single-question shape).
+
+    Kept for backward compat with the v4 admin UI / external callers. Maps
+    to ``PollService.create()`` which builds a 1-question session.
+    """
 
     question = fields.Str(required=True, validate=validate.Length(min=1, max=200))
     options = fields.List(
@@ -116,8 +123,50 @@ class PollCreateSchema(Schema):
     )
 
 
+class PollQuestionSchema(Schema):
+    """單一題目（用於 multi-question session）"""
+
+    text = fields.Str(required=True, validate=validate.Length(min=1, max=200))
+    options = fields.List(
+        fields.Str(validate=validate.Length(min=1, max=100)),
+        required=True,
+        validate=validate.Length(min=2, max=6),
+    )
+    image_url = fields.Str(load_default=None, validate=validate.Length(max=512))
+    time_limit_seconds = fields.Int(
+        load_default=None,
+        validate=validate.Range(min=0, max=86400),
+        allow_none=True,
+    )
+
+    class Meta:
+        unknown = EXCLUDE
+
+
+class PollSessionCreateSchema(Schema):
+    """Multi-question poll session creation."""
+
+    questions = fields.List(
+        fields.Nested(PollQuestionSchema),
+        required=True,
+        validate=validate.Length(min=1, max=20),
+    )
+
+    class Meta:
+        unknown = EXCLUDE
+
+
+_ALLOWLIST_KEYS = {"Color", "FontFamily", "Layout"}
+
+
 class SettingUpdateSchema(Schema):
-    """設定更新請求驗證"""
+    """設定更新請求驗證
+
+    v5.0.0+: when ``index == 1`` and ``type`` is a pick-set key
+    (Color / FontFamily / Layout), ``value`` may be a list of preset string
+    values (the allowlist). Numeric scalars are still accepted everywhere
+    else for back-compat with the v4 viewer/admin shape.
+    """
 
     type = fields.Str(
         required=True,
@@ -139,6 +188,37 @@ class SettingUpdateSchema(Schema):
             raise ValidationError("Value must be JSON-serializable.")
         if len(serialized) > 4096:
             raise ValidationError("Value exceeds maximum allowed size.")
+
+    @validates_schema
+    def _validate_allowlist_shape(self, data, **kwargs):
+        """If value is a list, the only legal slot is allowlist for pick-set keys."""
+        value = data.get("value")
+        if not isinstance(value, list):
+            return
+        key = data.get("type")
+        index = data.get("index")
+        if index != 1 or key not in _ALLOWLIST_KEYS:
+            raise ValidationError({"value": "List value only allowed at index=1 for pick-set keys"})
+        if len(value) > 64:
+            raise ValidationError({"value": "Allowlist entries exceed maximum count (64)"})
+        for item in value:
+            if not isinstance(item, (str, int, float)):
+                raise ValidationError({"value": "Allowlist entries must be strings"})
+            if isinstance(item, str) and len(item) > 100:
+                raise ValidationError({"value": "Allowlist entry too long (>100 chars)"})
+
+
+class AllowlistUpdateSchema(Schema):
+    """Dedicated allowlist endpoint payload — POST /admin/options/<key>/allowlist."""
+
+    class Meta:
+        unknown = EXCLUDE
+
+    allowlist = fields.List(
+        fields.Str(validate=validate.Length(min=1, max=100)),
+        required=True,
+        validate=validate.Length(max=64),
+    )
 
 
 class ToggleSettingSchema(Schema):
@@ -163,8 +243,8 @@ class SchedulerMessageSchema(Schema):
         validate=validate.Regexp(r"^#?[0-9a-fA-F]{6}$", error="Invalid hex color"),
     )
     size = fields.Int(load_default=None, validate=validate.Range(min=1, max=200))
-    speed = fields.Int(load_default=None, validate=validate.Range(min=1, max=10))
-    opacity = fields.Int(load_default=None, validate=validate.Range(min=0, max=100))
+    speed = fields.Float(load_default=None, validate=validate.Range(min=0.5, max=3.0))
+    opacity = fields.Int(load_default=None, validate=validate.Range(min=20, max=100))
 
     class Meta:
         unknown = EXCLUDE

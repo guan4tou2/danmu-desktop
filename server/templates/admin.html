@@ -18,7 +18,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700&family=Klee+One:wght@400;600&family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;600;700;800&family=Noto+Serif+TC:wght@400;500;600;700;900&family=Orbitron:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
     <link
@@ -70,7 +70,12 @@
         session: { logged_in: {{ session.get('logged_in') | tojson }} },
         settingRanges: {{ ranges | tojson }},
         appVersion: {{ app_version | tojson }},
-        wsUrl: (window.location.protocol === "https:" ? "wss:" : "ws:") + "//" + window.location.host + "/",
+        // Dedicated WebSocket server port (Electron desktop + overlay
+        // clients connect here). Surfaced for the system-overview display.
+        // (Admin no longer opens its own WebSocket since v5.0.0+ Phase 1
+        // — live feed polls /admin/live-feed/recent. The legacy `wsUrl`
+        // field was removed.)
+        wsPort: {{ ws_port | tojson }},
       };
     </script>
 
@@ -80,23 +85,58 @@
     <script defer src="{{ url_for('static', filename='js/toast.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/replay-recorder.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-utils.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-tabs.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-system-accordion.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-quick-action.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-identity.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-themes.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-effects-mgmt.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-events.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-store.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-login.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-dashboard.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-display.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-poll.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-history.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-history-v2.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-replay-controls.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-ratelimit.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-viewer-theme.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-system-overview.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-poll-builder.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-replay.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-live-feed.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-plugins.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-webhooks.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-sounds.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-emojis.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-stickers.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-assets.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-extensions.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-firetoken.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-about.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-setup-wizard.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-poll-deepdive.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-message-drawer.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-notifications.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-audit.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-audience.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-konami.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-fonts.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-scheduler.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-security.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-backup.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-broadcast.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-filters.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-fingerprints.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/admin-widgets.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-command-palette.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-sessions.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-session-detail.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-search.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-api-tokens.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-wcag.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/admin-onboarding.js') }}"></script>
   </body>
 </html>

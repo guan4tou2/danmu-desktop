@@ -4,26 +4,80 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Danmu Fire Overlay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/hud.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/overlay.css') }}">
 </head>
 <body>
   <div id="danmubody"></div>
-  <div id="overlay-idle" class="overlay-idle" role="status" aria-live="polite">
-    <div class="overlay-idle__grid" aria-hidden="true"></div>
-    <div class="overlay-idle__stack">
-      <h1 class="hud-hero-title is-hero">Danmu Fire</h1>
-      <p class="overlay-idle__subtitle">掃描 QR code 或打開 {{ join_label }} — 開始送彈幕</p>
-      <div class="overlay-idle__chip">
-        <span class="hud-dot"></span>
-        <span class="overlay-idle__chip-label">OVERLAY READY</span>
-        <span class="overlay-idle__chip-sub">· 等待中</span>
+
+  <!-- Overlay Connecting · P2-2 — shown from page-load until first WS open.
+       Hidden automatically once WS connects (or after first message arrives). -->
+  <div id="overlay-connecting" class="overlay-connecting is-visible" aria-hidden="true">
+    <div class="overlay-connecting-pulse" aria-hidden="true">&#9670;</div>
+    <div class="overlay-connecting-label">CONNECTING&hellip;</div>
+  </div>
+
+  <!-- Overlay Idle · prototype priority-2-pieces.jsx:174 OverlayIdleQR.
+       4 states: idle / scanning / paired / failed. HUD framing (4 corner
+       brackets) + top bar (version + state chip) + center hero + QR
+       + 6-char pairing code + state-specific action row.
+       Hidden by default. Invoke via window.OverlayIdle.{show,hide,setState}. -->
+  <div id="overlay-idle" aria-hidden="true" data-state="idle">
+    <div class="overlay-idle-backdrop" aria-hidden="true"></div>
+
+    <!-- HUD corner brackets -->
+    <span class="overlay-idle-corner is-tl" aria-hidden="true"></span>
+    <span class="overlay-idle-corner is-tr" aria-hidden="true"></span>
+    <span class="overlay-idle-corner is-bl" aria-hidden="true"></span>
+    <span class="overlay-idle-corner is-br" aria-hidden="true"></span>
+
+    <!-- Top bar — DANMU FIRE · OVERLAY | version | state chip -->
+    <div class="overlay-idle-topbar" aria-hidden="true">
+      <span class="overlay-idle-topbar-brand">DANMU FIRE · OVERLAY</span>
+      <span class="overlay-idle-topbar-sep">|</span>
+      <span class="overlay-idle-topbar-meta">v{{ app_version }} · {{ join_label }}</span>
+      <span class="overlay-idle-topbar-state" id="overlayIdleTopbarState">
+        <span class="overlay-idle-topbar-dot" aria-hidden="true"></span>
+        <span class="overlay-idle-topbar-en">STANDBY · WAITING FOR PAIR</span>
+      </span>
+    </div>
+
+    <div class="overlay-idle-inner">
+      <h1 class="overlay-idle-hero">Danmu Fire</h1>
+      <p class="overlay-idle-subtitle" id="overlayIdleSubtitle">用手機掃描 QR 或打開 {{ join_label }} — 開始送彈幕</p>
+
+      <div class="overlay-idle-chip" id="overlayIdleChip" data-state="idle">
+        <span class="overlay-idle-chip-dot" aria-hidden="true"></span>
+        <span class="overlay-idle-chip-spinner" aria-hidden="true"></span>
+        <span class="overlay-idle-chip-label">等待配對</span>
       </div>
-      <div class="overlay-idle__qr">{{ qr_svg|safe }}</div>
-      <div class="overlay-idle__url">{{ join_label }}</div>
+
+      <div class="overlay-idle-qr-wrap">
+        <!-- Server-rendered scannable QR svg (v4.10/main feature). overlay.js
+             leaves this alone unless dataset.rendered is unset. -->
+        <div class="overlay-idle-qr" id="overlayIdleQr" data-rendered="1" aria-hidden="true">
+          {{ qr_svg|safe }}
+        </div>
+        <div class="overlay-idle-qr-overlay" id="overlayIdleQrOverlay" aria-hidden="true">
+          <span class="overlay-idle-qr-icon"></span>
+        </div>
+      </div>
+
+      <div class="overlay-idle-note" id="overlayIdleNote">
+        或輸入 6 碼連線碼: <span class="overlay-idle-pair-code" id="overlayIdlePairCode">··-··-··</span>
+      </div>
+
+      <div class="overlay-idle-actions" id="overlayIdleActions">
+        <span class="overlay-idle-hint">⌥⌘C 複製配對碼 · ESC 進入設定</span>
+      </div>
     </div>
   </div>
+
+
   <script nonce="{{ csp_nonce }}">
     window.OVERLAY_CONFIG = {
       wsPort: {{ ws_port }},
@@ -32,6 +86,7 @@
       idleAfterMs: 30000
     };
   </script>
+  <script src="{{ url_for('static', filename='js/overlay-poll.js') }}"></script>
   <script src="{{ url_for('static', filename='js/overlay.js') }}"></script>
 </body>
 </html>

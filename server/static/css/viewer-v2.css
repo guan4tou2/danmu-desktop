@@ -3,34 +3,249 @@
  * Mirrors docs/designs/design-v2/components/viewer.jsx: DanmuHero lockup on
  * top, scrollable body with the seven fields (nickname, color, font, size +
  * opacity 2-col, speed, effects, layout), pill send bar at the bottom with
- * an emoji popover. Uses shared tokens + hud.css atoms — no hardcoded hex.
- *
- * Layout contract: .viewer-shell is a flex column (header / body / send-bar)
- * that pins to the bounding card. The host <main> already carries glass +
- * hud-corners-auto chrome from index.html.
+ * an emoji popover. Uses shared tokens — no hardcoded hex.
  */
 
-.viewer-shell {
+/* ───────── Page shell (light theme — matches prototype TWEAK_DEFAULTS) ─────
+ * Prototype renders Viewer with theme="light" by default. We redefine the
+ * shared tokens inside the viewer scope so every downstream rule (card,
+ * inputs, sendbar, preview) picks up the hudTokens.light* palette without
+ * per-rule overrides. Cyan accent stays the same in both themes.
+ *
+ * Viewport-filling flex column: body scrolls inside, sendbar pins bottom. */
+html:has(body.viewer-body-v2) {
+  height: 100%;
+  color-scheme: light;
+}
+
+body.viewer-body-v2 {
+  /* hudTokens light palette (viewer.jsx:32–37) — default */
+  --color-bg-deep: #f8fafc;              /* lightBg0 — page */
+  --color-bg-base: #ffffff;              /* lightBg1 — card */
+  --color-bg-elevated: #f1f5f9;          /* lightBg2 — raised (inputs, pill) */
+  --color-text-primary: #0f172a;         /* lightText */
+  --color-text-secondary: #475569;       /* lightTextDim */
+  --color-text-bright: #0f172a;
+  --hud-line: rgba(15, 23, 42, 0.12);    /* lightLine */
+  --hud-line-strong: rgba(15, 23, 42, 0.22);
+  background: var(--color-bg-deep);
+  color: var(--color-text-primary);
+  color-scheme: light;
+  font-family: var(--font-ui);
+  margin: 0;
+  /* Viewport-bound flex column — prototype viewer.jsx:73–78 unifies desktop
+   * + mobile: `overflow:hidden, display:flex, flexDirection:column` with the
+   * scrollable body in the middle and the sendbar pinned to the bottom. */
+  height: 100dvh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  min-height: clamp(540px, 72vh, 820px);
+}
+
+/* Dark theme — prototype viewer.jsx:32–37 (isDark branch).
+ * Switches the same scoped tokens to the hudTokens.bg0/bg1/bg2 dark palette. */
+body.viewer-body-v2.is-dark {
+  --color-bg-deep: #020617;              /* slate-950 — page */
+  --color-bg-base: #0f172a;              /* slate-900 — panel */
+  --color-bg-elevated: #1e293b;          /* slate-800 — raised */
+  --color-text-primary: #f1f5f9;         /* slate-100 */
+  --color-text-secondary: #94a3b8;       /* slate-400 */
+  --color-text-bright: #e2e8f0;
+  --hud-line: rgba(148, 163, 184, 0.18);
+  --hud-line-strong: rgba(148, 163, 184, 0.32);
+  color-scheme: dark;
+}
+
+/* Full-width per prototype viewer.jsx — `width: inBrowser ? '100%' : ...`.
+ * No card, no max-width, no side padding — content's own hero/body padding
+ * provides the 28–32px breathing room. Viewport-bound flex column so the
+ * sendbar pins to the bottom on every viewport (desktop + mobile unified). */
+.viewer-page-shell {
+  width: 100%;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   gap: 0;
 }
 
-/* Hero lockup — DanmuHero `size="hero"` (clamp 3.2rem → 6rem, Bebas Neue,
- * sky-300, drop-shadow, uppercase, 0.02em track). Subtitle in slate-300
- * capped at 40rem. Chip pill below. */
-.viewer-hero {
-  padding: clamp(1.4rem, 3vw, 1.75rem) clamp(1rem, 3vw, 1.5rem) clamp(1.2rem, 2.6vw, 1.5rem);
-  border-bottom: 1px solid var(--hud-line);
-  text-align: center;
-  background: linear-gradient(
-    180deg,
-    rgba(125, 211, 252, 0.04) 0%,
-    transparent 100%
-  );
+.viewer-main-card {
+  flex: 1 1 0;
+  min-height: 0;
+  background: var(--color-bg-base);
+  border: none;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: none;
 }
 
+/* Preset color swatch buttons — 6 circles + 1 custom (matches viewer.jsx:146) */
+.viewer-swatch-preset {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  border: 1px solid var(--hud-line);
+  background-clip: padding-box;
+  transition: transform 0.12s, border-color 0.12s;
+}
+
+.viewer-swatch-preset:hover {
+  transform: scale(1.08);
+}
+
+.viewer-swatch-preset.is-active {
+  border: 2px solid var(--color-primary);
+  outline: 1px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* FIRE button arrow — matches prototype `FIRE ▶` */
+.viewer-fire-arrow {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.viewer-shell {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Hero · 2-col layout matching the 2026-04-25 prototype
+ * (docs/designs/design-v2/components/viewer.jsx:88–113):
+ *   left  — DanmuHero (lockup left-aligned, theme-aware drop-shadow)
+ *   right — ConnChip stack (伺服器 / Overlay) + (desktop) Lang Seg + Theme Seg
+ *
+ * padding: '28px 32px 22px' desktop / '18px 16px 16px' mobile
+ * gap: 24 desktop / 10 mobile
+ * Mobile keeps both columns side-by-side (NOT stacked) — chip stack uses
+ * mini variant. */
+.viewer-hero {
+  padding: 28px 32px 22px;
+  border-bottom: 1px solid var(--hud-line);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  /* DanmuMarquee runs absolutely-positioned behind the hero content; clip
+   * overflow so chips that haven't scrolled in yet stay invisible. */
+  position: relative;
+  overflow: hidden;
+}
+
+.viewer-hero-lockup {
+  /* Logo is flexShrink:0 so it doesn't compete with the chip column for
+   * space — a center spacer (.viewer-hero-spacer) absorbs the slack. */
+  flex: 0 0 auto;
+  min-width: 0;
+  text-align: left;
+  position: relative;
+  z-index: 2;
+}
+
+.viewer-hero-utility {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Marquee — 12 fake danmu chips scroll right→left across the hero. Pure
+ * decoration; mask gradient on the left so the logo stays legible. */
+.viewer-hero-marquee {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 22%, #000 38%, #000 88%, transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0, transparent 22%, #000 38%, #000 88%, transparent 100%);
+}
+
+.viewer-mq-item {
+  position: absolute;
+  left: 100%;
+  font-family: var(--font-sans, sans-serif);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  animation: viewer-mq-scroll 16s linear infinite;
+  text-shadow: 0 0 8px currentColor;
+  /* per-chip y/opacity/duration via :nth-child overrides below */
+}
+
+@keyframes viewer-mq-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-1100px); }
+}
+
+@media (max-width: 599px) {
+  .viewer-mq-item {
+    font-size: 12px;
+    animation-name: viewer-mq-scroll-mobile;
+  }
+  @keyframes viewer-mq-scroll-mobile {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-500px); }
+  }
+}
+
+/* Per-chip stagger: y / delay / duration / opacity. Matches prototype
+ * viewer.jsx:526 items array. Mobile clamps y to ≤38 so chips don't fall
+ * outside the shorter mobile hero. */
+.viewer-mq-i0  { top: 16px; opacity: 0.32; animation-delay: 0s;     animation-duration: 14s; }
+.viewer-mq-i1  { top: 44px; opacity: 0.28; animation-delay: 1.8s;   animation-duration: 17s; }
+.viewer-mq-i2  { top: 6px;  opacity: 0.36; animation-delay: 3.4s;   animation-duration: 16s; }
+.viewer-mq-i3  { top: 56px; opacity: 0.32; animation-delay: 5.0s;   animation-duration: 13s; }
+.viewer-mq-i4  { top: 28px; opacity: 0.26; animation-delay: 6.4s;   animation-duration: 19s; }
+.viewer-mq-i5  { top: 4px;  opacity: 0.30; animation-delay: 7.8s;   animation-duration: 15s; }
+.viewer-mq-i6  { top: 50px; opacity: 0.26; animation-delay: 9.0s;   animation-duration: 16s; }
+.viewer-mq-i7  { top: 22px; opacity: 0.36; animation-delay: 10.4s;  animation-duration: 13s; }
+.viewer-mq-i8  { top: 38px; opacity: 0.28; animation-delay: 11.6s;  animation-duration: 17s; }
+.viewer-mq-i9  { top: 12px; opacity: 0.32; animation-delay: 13.0s;  animation-duration: 14s; }
+.viewer-mq-i10 { top: 60px; opacity: 0.30; animation-delay: 14.2s;  animation-duration: 18s; }
+.viewer-mq-i11 { top: 32px; opacity: 0.26; animation-delay: 15.6s;  animation-duration: 16s; }
+
+@media (max-width: 599px) {
+  .viewer-mq-i3  { top: 38px; }
+  .viewer-mq-i6  { top: 38px; }
+  .viewer-mq-i10 { top: 38px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewer-mq-item { animation: none; opacity: 0; }
+}
+
+/* Center spacer pushes chip column flush right while marquee owns the
+ * middle area visually. */
+.viewer-hero-spacer {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (max-width: 599px) {
+  .viewer-hero {
+    padding: 18px 16px 16px;
+    gap: 10px;
+  }
+}
+
+/* Prototype tokens.jsx HERO_SIZE.hero = clamp(3.2rem, 8vw, 6rem).
+ * Mobile in new prototype uses 'medium' = '2rem' (smaller than the prior
+ * 'large' clamp). Light-theme drop-shadow (matches DanmuHero light branch). */
 .viewer-hero-title {
   margin: 0;
   font-family: var(--font-display);
@@ -45,71 +260,454 @@
     drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
 }
 
+@media (max-width: 599px) {
+  .viewer-hero-title {
+    font-size: 2rem;
+  }
+}
+
+/* Prototype subtitle override (viewer.jsx:101 subStyle):
+ * desktop: margin '10px 0 0' / inherits HERO_SLATE_300 / no maxWidth lock
+ * mobile: margin '6px 0 0' / fontSize 12 */
 .viewer-hero-subtitle {
-  margin: 0.875rem auto 0;
-  max-width: 40rem;
-  color: var(--color-text-bright);
+  margin: 10px 0 0;
+  color: var(--color-text-secondary);
   font-size: clamp(1rem, 2vw, 1.25rem);
   line-height: 1.6;
   font-weight: 400;
 }
 
-.viewer-hero-chip-row {
-  margin-top: 1.125rem;
-  display: flex;
-  justify-content: center;
-}
-
-.viewer-hero-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.25rem 0.625rem;
-  border-radius: var(--radius-pill);
-  background: var(--hud-cyan-soft);
-  border: 1px solid var(--hud-cyan-line);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.15em;
-  color: var(--color-primary);
-  text-transform: uppercase;
-}
-
-/* Scrollable body — holds preview + all field rows. */
-.viewer-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  padding: 1.5rem 1.5rem 1.75rem;
-  overflow: auto;
-}
-
-@media (max-width: 520px) {
-  .viewer-body {
-    padding: 1rem 1rem 1.25rem;
+@media (max-width: 599px) {
+  .viewer-hero-subtitle {
+    margin: 6px 0 0;
+    font-size: 12px;
   }
 }
 
-/* Live preview strip — dark inset panel with PREVIEW kicker. */
+/* ConnChip — 伺服器 / Overlay status pill matching the 2026-04-25
+ * prototype viewer.jsx ConnChip (lines 376–399 of new bundle):
+ *   padding: '4px 10px' / mini '2px 7px'
+ *   borderRadius: 999
+ *   background: online ? cyanSoft : transparent
+ *   border: 1px online cyanLine / offline line
+ *   font-mono 10px / mini 9px, letter-spacing 1px / mini 0.5px
+ *   gap: 6 / mini 4
+ *
+ * Online state is signalled by `.connection-dot--connected` /
+ * `.connection-dot--live` on the dot child; the parent gets is-online
+ * via JS (or fall back to scoped child selector). */
+.viewer-conn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--hud-line);
+  /* Solid panel bg so the DanmuMarquee scrolling behind the hero doesn't
+   * bleed through. Prototype viewer.jsx:427 layers cyanSoft on top of bg
+   * for the online state — we approximate with a single panel-coloured
+   * solid here and let .is-online / :has() override with the cyan tint. */
+  background: var(--color-bg-base);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+/* Online — stacked gradient: cyanSoft tint on top of the solid panel bg. */
+.viewer-conn-chip:has(.connection-dot--connected),
+.viewer-conn-chip:has(.connection-dot--live) {
+  background:
+    linear-gradient(var(--hud-cyan-soft), var(--hud-cyan-soft)),
+    var(--color-bg-base);
+  border-color: var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
+}
+
+.viewer-conn-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #94a3b8;
+  flex-shrink: 0;
+}
+
+.viewer-conn-chip-dot.connection-dot--connected,
+.viewer-conn-chip-dot.connection-dot--live {
+  background: var(--color-primary);
+  box-shadow: 0 0 6px var(--color-primary);
+  animation: viewer-conn-pulse 2s ease-in-out infinite;
+}
+
+.viewer-conn-chip-dot.connection-dot--connecting {
+  background: var(--color-warning, #fbbf24);
+  box-shadow: 0 0 4px var(--color-warning, #fbbf24);
+}
+
+.viewer-conn-chip-dot.connection-dot--disconnected,
+.viewer-conn-chip-dot.connection-dot--failed {
+  background: #f87171;
+}
+
+.viewer-conn-chip-label {
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.viewer-conn-chip-value {
+  font-weight: 500;
+}
+
+@media (max-width: 599px) {
+  .viewer-conn-chip {
+    /* prototype mini variant: 2px 7px / 9px / 0.5px / gap 4 */
+    font-size: 9px;
+    padding: 2px 7px;
+    letter-spacing: 0.5px;
+    gap: 4px;
+  }
+  .viewer-conn-chip-label { display: none; }
+}
+
+@keyframes viewer-conn-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.65; transform: scale(0.88); }
+}
+
+/* Lang select + theme toggle row — prototype viewer.jsx:184-185
+ * (LangSelect line 519, ThemeToggle line 553). Visible on every viewport;
+ * mobile uses the prototype `mini` variant (22px instead of 26px). */
+.viewer-hero-seg-row {
+  display: flex;
+  align-items: center;
+  gap: 6px; /* prototype gap: 6 */
+  margin-top: 4px;
+}
+
+/* LangSelect — prototype viewer.jsx:519. Native <select> overlay so
+ * the user gets all 4 languages (zh / en / ja / ko); visible label is
+ * the current selection in monospace + dropdown arrow. */
+.viewer-lang-select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 18px 0 10px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--hud-line);
+  border-radius: 6px;
+}
+.viewer-lang-current {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+.viewer-lang-arrow {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--color-text-secondary);
+  pointer-events: none;
+}
+.viewer-lang-native {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  background: transparent;
+}
+
+/* ThemeToggle — prototype viewer.jsx:553. Single icon button, ◐ when
+ * dark / ◑ when light, click to flip. */
+.viewer-theme-toggle {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid var(--hud-line);
+  background: var(--hud-cyan-soft);
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+}
+.viewer-theme-toggle:hover {
+  background: rgba(56, 189, 248, 0.16);
+}
+
+/* Mobile mini variant — prototype LangSelect mini: padding 0 16px 0 8px,
+ * height 22, font-size 10. ThemeToggle mini: 22×22, font-size 11. */
+@media (max-width: 599px) {
+  .viewer-lang-select {
+    height: 22px;
+    padding: 0 16px 0 8px;
+  }
+  .viewer-lang-current { font-size: 10px; }
+  .viewer-lang-arrow {
+    right: 5px;
+  }
+  .viewer-theme-toggle {
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
+  }
+}
+
+/* Viewer Fire/Poll tabs + pane switcher. */
+.viewer-tabbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--hud-line);
+}
+
+.viewer-tab {
+  appearance: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--color-text-primary);
+  padding: 10px 18px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  cursor: pointer;
+  margin-bottom: -1px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.viewer-tab-label {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.viewer-tab-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.viewer-tab:hover {
+  border-bottom-color: var(--hud-line-strong);
+  color: var(--color-text-primary);
+}
+
+.viewer-tab.is-active,
+.viewer-tab[aria-selected="true"] {
+  border-bottom-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.viewer-tab.is-active .viewer-tab-label,
+.viewer-tab[aria-selected="true"] .viewer-tab-label {
+  font-weight: 700;
+}
+
+.viewer-tab.is-active .viewer-tab-sub,
+.viewer-tab[aria-selected="true"] .viewer-tab-sub {
+  color: #38bdf8;
+}
+
+.viewer-pane {
+  flex: 1 1 0;
+  min-height: 0;
+  display: none;
+}
+
+.viewer-pane.is-active {
+  display: flex;
+  flex-direction: column;
+}
+
+.viewer-pane[hidden] {
+  display: none !important;
+}
+
+/* Poll pane */
+.viewer-poll-card {
+  margin: 20px 24px 24px;
+  padding: 16px;
+  border: 1px solid rgba(125, 211, 252, 0.25);
+  border-radius: 10px;
+  background: rgba(125, 211, 252, 0.06);
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.08);
+}
+
+.viewer-poll-kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.viewer-poll-question {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--color-text-primary);
+}
+
+.viewer-poll-meta {
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.viewer-poll-options {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.viewer-poll-option {
+  width: 100%;
+  border: 1px solid var(--hud-line);
+  border-radius: 8px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.viewer-poll-option:hover {
+  border-color: rgba(56, 189, 248, 0.68);
+  background: rgba(56, 189, 248, 0.08);
+  transform: translateY(-1px);
+}
+
+.viewer-poll-option-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.viewer-poll-option-key {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  color: #38bdf8;
+  min-width: 22px;
+}
+
+.viewer-poll-option-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+@media (max-width: 599px) {
+  .viewer-tabbar {
+    padding: 0 10px;
+  }
+
+  .viewer-tab {
+    padding: 9px 12px;
+    gap: 6px;
+  }
+
+  .viewer-tab-label {
+    font-size: 13px;
+  }
+
+  .viewer-tab-sub {
+    font-size: 8px;
+  }
+
+  .viewer-poll-card {
+    margin: 16px;
+    padding: 14px;
+  }
+
+  .viewer-poll-question {
+    font-size: 20px;
+  }
+}
+
+/* Body — prototype viewer.jsx:129 — `flex:1, overflow:auto, padding: pad`.
+ * Inner scroll on every viewport so the sendbar pins to the bottom. */
+.viewer-body {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 24px 24px 30px; /* prototype viewer.jsx:111 desktop */
+}
+
+@media (max-width: 599px) {
+  .viewer-body {
+    padding: 16px 16px 22px; /* prototype mobile: pad=16, pad+6=22 */
+  }
+}
+
+/* Live preview strip — 模擬「投到螢幕上」.
+ * Per 2026-04-25 prototype viewer.jsx:118–143 (light branch):
+ * gradient 135deg #0f172a → #1e293b, cyan glow border, soft inset shadow
+ * with scanline texture pseudo-element. Stays dark even in light theme so
+ * danmu colors (white/cyan/amber/etc.) remain legible. */
 .viewer-preview {
   position: relative;
   overflow: hidden;
   min-height: 72px;
   padding: 18px 14px;
   margin-bottom: 1rem;
-  background: #000814;
-  border: 1px solid var(--hud-line);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border: 1px solid rgba(125, 211, 252, 0.25);
   border-radius: 8px;
+  color: #f1f5f9;
+  box-shadow:
+    0 4px 14px rgba(15, 23, 42, 0.18),
+    inset 0 0 40px rgba(125, 211, 252, 0.08);
+}
+
+/* Subtle scanline texture overlay — sells the "screen" feel. */
+.viewer-preview::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0,
+    transparent 3px,
+    rgba(255, 255, 255, 0.015) 3px,
+    rgba(255, 255, 255, 0.015) 4px
+  );
 }
 
 .viewer-preview-kicker {
   position: absolute;
   top: 6px;
   left: 10px;
+  z-index: 1;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   color: rgba(148, 163, 184, 0.7);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
+  letter-spacing: 1.4px;
 }
 
 .viewer-preview-row {
@@ -127,15 +725,19 @@
   font-family: var(--font-mono);
   font-weight: 500;
   opacity: 0.75;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.5px;
 }
 
+/* Default preview shadow — prototype viewer.jsx:125 fallback when glow off:
+ *   '0 2px 4px rgba(0,0,0,0.55)'. Glow-effect handler in main.js may add
+ *   a coloured halo on top via inline style. */
 .viewer-preview-text {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: all 0.3s;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.55);
+  transition: font-size 0.2s, opacity 0.2s;
 }
 
 /* Field — 9px mono tracked uppercase label above control. */
@@ -150,15 +752,86 @@
 .viewer-field-label {
   display: block;
   font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.15em;
+  font-size: 11px;
+  letter-spacing: 1.4px;
   color: var(--color-text-secondary);
-  margin-bottom: 0.375rem;
+  margin-bottom: 6px;
   text-transform: uppercase;
 }
 
 .viewer-field-label__value {
   color: var(--color-text-bright);
+}
+
+/* Identity chip — prototype #18 (2026-04-27).
+ * Display: `[@nick · fp:xxxxxxxx]`. Click → inline edit input replaces nick.
+ * Esc cancels, Enter / blur saves. 0.4s confirm flash on save. */
+.viewer-identity-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--hud-line);
+  cursor: text;
+  transition: border-color 0.15s, background 0.15s;
+  min-height: 40px;
+  box-sizing: border-box;
+}
+
+.viewer-identity-chip[data-mode="edit"] {
+  border-color: var(--color-primary);
+}
+
+.viewer-identity-chip:hover[data-mode="display"] {
+  border-color: var(--hud-line-strong);
+}
+
+.viewer-identity-chip-nick {
+  font-family: var(--font-sans, sans-serif);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: 0.01em;
+}
+
+.viewer-identity-chip-fp {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  transition: opacity 0.15s;
+  margin-left: auto;
+}
+
+.viewer-identity-chip-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-sans, sans-serif);
+  padding: 0;
+}
+
+/* Save confirm flash — 0.4s pale-cyan fade per Design spec. */
+.viewer-identity-chip.is-confirm {
+  background: var(--hud-cyan-soft);
+  border-color: var(--color-primary);
+  animation: viewer-identity-confirm 0.4s ease-out;
+}
+
+@keyframes viewer-identity-confirm {
+  0%   { background: var(--hud-cyan-soft); border-color: var(--color-primary); }
+  100% { background: var(--color-bg-elevated); border-color: var(--hud-line); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewer-identity-chip.is-confirm { animation: none; }
 }
 
 /* Text input — raised background + hairline border. */
@@ -167,10 +840,10 @@
   background: var(--color-bg-elevated);
   border: 1px solid var(--hud-line);
   color: var(--color-text-primary);
-  padding: 0.625rem 0.75rem;
+  padding: 0.7rem 0.85rem;
   border-radius: 6px;
   outline: none;
-  font-size: 13px;
+  font-size: 15px;
   box-sizing: border-box;
 }
 
@@ -225,8 +898,8 @@
 .viewer-color-hex {
   margin-left: auto;
   font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.03em;
+  font-size: 12px;
+  letter-spacing: 0.5px;
   color: var(--color-text-secondary);
   text-transform: uppercase;
 }
@@ -238,12 +911,12 @@
 
 .viewer-select {
   width: 100%;
-  padding: 9px 34px 9px 12px;
+  padding: 11px 36px 11px 14px;
   border-radius: 6px;
   background: var(--color-bg-elevated);
   border: 1px solid var(--hud-line);
   color: var(--color-text-primary);
-  font-size: 13px;
+  font-size: 15px;
   outline: none;
   cursor: pointer;
   appearance: none;
@@ -262,11 +935,77 @@
   font-size: 10px;
 }
 
-/* Range slider — thin 4px track, accentColor driven. */
+/* Range slider — Tailwind preflight sets `input { background-color: #0000 }`
+ * which would erase the track if applied on the input itself. WebKit also
+ * renders the track via the ::-webkit-slider-runnable-track pseudo-element,
+ * not the input bg. So:
+ *   - input itself: just sizing + appearance reset
+ *   - WebKit: track gets the gradient via ::-webkit-slider-runnable-track
+ *   - Firefox: track + progress via ::-moz-range-track + ::-moz-range-progress
+ * Progress fill is driven by an inline --progress CSS var set by main.js. */
 .viewer-range {
+  -webkit-appearance: none;
+  appearance: none;
   width: 100%;
-  accent-color: var(--color-primary);
-  height: 4px;
+  height: 16px;                /* tall enough to fit the thumb hit area */
+  background: transparent;     /* defeat Tailwind's input bg-color reset */
+  outline: none;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+}
+
+/* WebKit / Blink (Safari, Chrome, Edge) */
+.viewer-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background:
+    linear-gradient(var(--color-primary), var(--color-primary)) no-repeat,
+    var(--hud-line);
+  background-size: var(--progress, 50%) 100%;
+  transition: background-size 0.12s;
+}
+
+.viewer-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  border: 2px solid var(--color-bg-base);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  margin-top: -5px;            /* center 16px thumb on 6px track */
+  transition: transform 0.12s;
+}
+
+/* Firefox */
+.viewer-range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--hud-line);
+}
+
+.viewer-range::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px 0 0 999px;
+  background: var(--color-primary);
+}
+
+.viewer-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  border: 2px solid var(--color-bg-base);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.viewer-range:hover::-webkit-slider-thumb,
+.viewer-range:focus::-webkit-slider-thumb {
+  transform: scale(1.15);
 }
 
 /* 2-column grid for fontSize + opacity. */
@@ -356,18 +1095,19 @@
 .viewer-layout-btn__sub {
   font-family: var(--font-mono);
   font-size: 9px;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.5px;
   color: var(--color-text-secondary);
   text-transform: uppercase;
 }
 
 .viewer-layout-btn.is-active .viewer-layout-btn__sub {
   color: var(--color-primary);
-  opacity: 0.8;
 }
 
-/* Send bar — pill container with emoji ☺ button + input + FIRE. */
+/* Send bar — pill container with emoji ☺ button + input + FIRE.
+ * flex:0 0 auto pins it to the bottom of the shell/viewport. */
 .viewer-sendbar {
+  flex: 0 0 auto;
   position: relative;
   padding: 0.625rem 1.25rem 0.75rem;
   border-top: 1px solid var(--hud-line);
@@ -381,7 +1121,7 @@
   padding: 4px 4px 4px 10px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--hud-line);
-  background: var(--color-bg-deep);
+  background: var(--color-bg-elevated); /* lightBg2 in light theme */
   transition: border-color 0.15s;
 }
 
@@ -424,7 +1164,7 @@
 }
 
 .viewer-fire-btn {
-  padding: 0.5625rem 1rem;
+  padding: 9px 16px;
   border-radius: var(--radius-pill);
   background: var(--color-bg-elevated);
   border: none;
@@ -433,10 +1173,10 @@
   font-size: 12px;
   font-weight: 700;
   font-family: var(--font-mono);
-  letter-spacing: 0.15em;
+  letter-spacing: 1.5px;
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
+  gap: 6px;
   transition: background 0.15s, color 0.15s, transform 0.15s;
   flex-shrink: 0;
 }
@@ -463,12 +1203,12 @@
 .viewer-sendbar-meta {
   display: flex;
   justify-content: space-between;
-  margin-top: 0.375rem;
-  padding: 0 0.25rem;
+  margin-top: 6px;
+  padding: 0 4px;
   font-family: var(--font-mono);
   font-size: 10px;
   color: var(--color-text-secondary);
-  letter-spacing: 0.05em;
+  letter-spacing: 1px;
 }
 
 .viewer-sendbar-meta__count.is-near {
@@ -533,8 +1273,14 @@
   height: 22px;
 }
 
-/* Header bar — status + language picker (stays above hero on small). */
+/* Header bar — prototype viewer omits this when inBrowser=true, so we
+ * hide it by default. Language picker + connection status still render
+ * but are tucked away; re-show by toggling `.viewer-has-topstrip` on body. */
 .viewer-topstrip {
+  display: none;
+}
+
+body.viewer-has-topstrip .viewer-topstrip {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -542,7 +1288,7 @@
   padding: 0.5rem 1.25rem 0;
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.15em;
+  letter-spacing: 1.5px;
   color: var(--color-text-secondary);
   text-transform: uppercase;
 }
@@ -586,4 +1332,332 @@
   .viewer-fire-btn:not([disabled]):hover {
     transform: none;
   }
+}
+
+/* Offline full-panel (P2-1). */
+.viewer-offline-card {
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: linear-gradient(
+    180deg,
+    rgba(248, 113, 113, 0.08) 0%,
+    rgba(15, 23, 42, 0.75) 100%
+  );
+}
+.viewer-offline-lockup {
+  margin: 0;
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  font-size: clamp(2rem, 6vw, 2.8rem);
+  color: #fca5a5;
+}
+.viewer-offline-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  color: #fecaca;
+}
+.viewer-offline-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f87171;
+  box-shadow: 0 0 8px rgba(248, 113, 113, 0.7);
+}
+.viewer-offline-message {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+}
+.viewer-offline-message small {
+  display: block;
+  margin-top: 6px;
+  color: var(--color-text-secondary);
+}
+.viewer-offline-countdown {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--color-text-secondary);
+}
+.viewer-offline-countdown #offlineCountdownValue {
+  font-size: 20px;
+  color: #fca5a5;
+  font-weight: 700;
+}
+.viewer-offline-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.viewer-offline-btn {
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(248, 113, 113, 0.12);
+  color: #fecaca;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.viewer-offline-btn:hover {
+  background: rgba(248, 113, 113, 0.2);
+}
+.viewer-offline-btn.is-secondary {
+  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+}
+
+/* ─── Viewer states (P3 Group B, 2026-04-27) ──────────────────────── */
+/* Full-screen overlays for ViewerBanned + ViewerPollThankYou. Replaces
+   the chat surface when triggered (data-viewer-state on body). */
+.viewer-state-root {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+  z-index: 100;
+}
+body[data-viewer-state] .viewer-state-root { pointer-events: auto; }
+body[data-viewer-state] .viewer-page-shell { display: none; }
+body[data-viewer-state] {
+  background: var(--color-bg-deep, #050910);
+  min-height: 100vh;
+}
+
+.viewer-state {
+  position: relative;
+  width: 100%; max-width: 480px;
+  margin: 0 auto;
+  padding: 32px 28px 40px;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  font-family: var(--font-sans);
+  color: var(--color-text-bright, #e2e8f0);
+}
+
+/* Banned variant */
+.viewer-state-frame {
+  position: absolute; inset: 12px;
+  border: 1px solid rgba(248, 113, 113, 0.40);
+  border-radius: 8px;
+  pointer-events: none;
+}
+.viewer-state-corner {
+  position: absolute;
+  width: 16px; height: 16px;
+  border-color: #f87171;
+  border-style: solid;
+  border-width: 0;
+  pointer-events: none;
+}
+.viewer-state-corner--tl { top: 12px; left: 12px; border-top-width: 2px; border-left-width: 2px; }
+.viewer-state-corner--tr { top: 12px; right: 12px; border-top-width: 2px; border-right-width: 2px; }
+.viewer-state-corner--bl { bottom: 12px; left: 12px; border-bottom-width: 2px; border-left-width: 2px; }
+.viewer-state-corner--br { bottom: 12px; right: 12px; border-bottom-width: 2px; border-right-width: 2px; }
+
+.viewer-state-banned-icon {
+  position: relative;
+  width: 110px; height: 110px;
+  margin: 24px 0;
+  border-radius: 50%;
+  border: 3px solid #f87171;
+  background: rgba(248, 113, 113, 0.06);
+  display: flex; align-items: center; justify-content: center;
+  color: #f87171;
+  font-size: 56px; font-weight: 700;
+  box-shadow: 0 0 32px rgba(248, 113, 113, 0.20);
+}
+.viewer-state-banned-icon .slash {
+  position: absolute; left: 50%; top: 50%;
+  width: 70%; height: 4px;
+  background: #f87171;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  border-radius: 2px;
+}
+
+.viewer-state-kicker {
+  font-family: var(--font-mono);
+  font-size: 10px; letter-spacing: 2.5px;
+  color: #f87171;
+  margin-bottom: 8px;
+}
+.viewer-state-title {
+  margin: 0; font-size: 22px; font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.viewer-state-title--center { text-align: center; }
+.viewer-state-desc {
+  font-size: 13px; line-height: 1.7;
+  color: var(--color-text-secondary, #94a3b8);
+  margin-top: 12px;
+  max-width: 380px;
+}
+.viewer-state-desc--center { text-align: center; }
+
+.viewer-state-info {
+  margin-top: 24px; padding: 12px 16px;
+  background: var(--color-bg-card, rgba(15, 23, 42, 0.75));
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  border-radius: 4px;
+  display: flex; flex-direction: column; gap: 8px;
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--color-text-muted, #64748b);
+  letter-spacing: 0.4px;
+  width: 100%;
+}
+.viewer-state-info .row {
+  display: flex; justify-content: space-between; gap: 16px;
+}
+.viewer-state-info .v { color: var(--color-text-bright, #e2e8f0); }
+
+.viewer-state-tip {
+  margin-top: 18px; padding: 10px 14px;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.40);
+  border-radius: 4px;
+  font-size: 11px; line-height: 1.6;
+  color: var(--color-text-bright, #e2e8f0);
+  max-width: 380px;
+  text-align: left;
+}
+.viewer-state-tip .kicker {
+  display: block;
+  color: var(--color-primary, #38bdf8);
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.5px;
+  margin-bottom: 4px;
+}
+
+/* Thank-you variant */
+.viewer-state-thanks-icon {
+  position: relative;
+  width: 96px; height: 96px;
+  margin-top: 40px;
+  margin-bottom: 18px;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.08);
+  border: 2px solid var(--color-primary, #38bdf8);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-primary, #38bdf8);
+  font-size: 48px;
+  box-shadow: 0 0 40px rgba(56, 189, 248, 0.35), inset 0 0 24px rgba(56, 189, 248, 0.14);
+}
+.viewer-state-thanks-icon .ring {
+  position: absolute; border-radius: 50%;
+  pointer-events: none;
+}
+.viewer-state-thanks-icon .ring-1 {
+  inset: -10px; border: 1px solid rgba(56, 189, 248, 0.35);
+}
+.viewer-state-thanks-icon .ring-2 {
+  inset: -22px; border: 1px solid rgba(56, 189, 248, 0.14);
+}
+
+.viewer-state-recap {
+  width: 100%; max-width: 380px;
+  margin-top: 16px; padding: 16px;
+  background: var(--color-bg-card, rgba(15, 23, 42, 0.75));
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  text-align: left;
+}
+.viewer-state-recap .kicker {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.2px;
+  color: var(--color-text-muted, #64748b);
+  margin-bottom: 6px;
+}
+.viewer-state-recap .question {
+  font-size: 14px; font-weight: 600; line-height: 1.5;
+  margin-bottom: 12px;
+}
+.viewer-state-recap .choice {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid var(--color-primary, #38bdf8);
+  border-radius: 4px;
+}
+.viewer-state-recap .choice .check {
+  width: 20px; height: 20px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--color-primary, #38bdf8);
+  color: #000;
+  border-radius: 50%;
+  font-size: 12px; font-weight: 700;
+  flex-shrink: 0;
+}
+.viewer-state-recap .choice .lbl {
+  flex: 1; font-size: 14px; font-weight: 600;
+}
+.viewer-state-recap .choice .ts {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--color-text-muted, #64748b);
+}
+.viewer-state-recap .meta {
+  margin-top: 10px;
+  font-family: var(--font-mono); font-size: 10px;
+  line-height: 1.7; letter-spacing: 0.3px;
+  color: var(--color-text-muted, #64748b);
+}
+.viewer-state-recap .meta .dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--color-text-muted, #64748b);
+  margin-right: 6px;
+}
+.viewer-state-recap .meta .dot.is-good { background: #86efac; box-shadow: 0 0 4px #86efac; }
+
+.viewer-state-action {
+  margin-top: 16px;
+  width: 100%; max-width: 380px;
+  padding: 14px;
+  background: var(--color-primary, #38bdf8);
+  color: #000;
+  border: none; border-radius: 8px;
+  font-size: 14px; font-weight: 600;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35);
+  transition: transform 140ms ease;
+}
+.viewer-state-action:hover { transform: translateY(-1px); }
+.viewer-state-trace {
+  margin-top: 14px;
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.3px;
+  color: var(--color-text-muted, #64748b);
+}
+
+/* Rate-limit variant */
+.viewer-state-ratelimit-icon {
+  border-color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  color: #fbbf24;
+  box-shadow: 0 0 40px rgba(251, 191, 36, 0.3), inset 0 0 24px rgba(251, 191, 36, 0.14);
+}
+.viewer-state-kicker--warn {
+  color: #fbbf24;
+}
+.viewer-state-action--warn {
+  background: #fbbf24;
+  color: #111827;
+  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.35);
 }

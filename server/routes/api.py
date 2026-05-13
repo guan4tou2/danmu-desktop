@@ -2,6 +2,7 @@ import html
 import re
 
 from flask import Blueprint, current_app, make_response, request, send_from_directory, session
+from werkzeug.exceptions import HTTPException
 
 from .. import state
 from ..services import fingerprint_tracker
@@ -18,7 +19,14 @@ from ..services.ip import get_client_ip as _extract_client_ip
 from ..services.layout import get_all_modes, get_layout_config, get_layout_css
 from ..services.plugin_manager import plugin_manager
 from ..services.poll import poll_service
-from ..services.security import rate_limit, require_csrf, verify_font_token
+from ..services.security import (
+    enforce_fire_rate_limits,
+    is_fire_admin,
+    rate_limit,
+    require_csrf,
+    verify_captcha,
+    verify_font_token,
+)
 from ..services.settings import get_options
 from ..services.sound import sound_service
 from ..services.stickers import sticker_service
@@ -108,9 +116,9 @@ def _resolve_danmu_style(data):
     raw_color = _pick(data.pop("color", None), options.get("Color", [True, 0, 0, "#FFFFFF"]))
     data["color"] = str(raw_color).lstrip("#")
 
-    data["opacity"] = _pick(data.pop("opacity", None), options.get("Opacity", [True, 0, 100, 70]))
-    data["size"] = _pick(data.pop("size", None), options.get("FontSize", [True, 20, 100, 50]))
-    data["speed"] = _pick(data.pop("speed", None), options.get("Speed", [True, 1, 10, 4]))
+    data["opacity"] = _pick(data.pop("opacity", None), options.get("Opacity", [True, 20, 100, 100]))
+    data["size"] = _pick(data.pop("size", None), options.get("FontSize", [True, 16, 64, 32]))
+    data["speed"] = _pick(data.pop("speed", None), options.get("Speed", [True, 0.5, 3.0, 1.0]))
 
     # Apply active theme defaults for textStyles
     active_theme = theme_svc.get_active()
@@ -201,11 +209,14 @@ def _record_history_if_enabled(data, fingerprint, client_ip):
     history_service.danmu_history.add(history_payload)
 
 
-# NOTE: /fire is a public endpoint (no auth required) — CSRF protection is
-# intentionally omitted. Rate limiting + fingerprint tracking provide abuse
-# protection. Do NOT add @require_csrf here.
+# NOTE: /fire is a public endpoint (no session auth required) — CSRF protection
+# is intentionally omitted. Abuse protection instead layered as: per-IP rate
+# limit, per-fingerprint rate limit, global rate limit, and optional captcha.
+# Clients with a valid `X-Fire-Token` header bypass the public ceiling and use
+# the admin lane (also rate-limited, but more generously). Do NOT add
+# @require_csrf or @rate_limit decorators — all checks run inline so the admin
+# token can bypass them before limits are charged.
 @api_bp.route("/fire", methods=["POST"])
-@rate_limit("fire")
 def fire():
     """發送彈幕"""
     if get_ws_client_count() <= 0:
@@ -225,9 +236,31 @@ def fire():
             return _internal_plain_error_response()
 
         fingerprint = data.pop("fingerprint", None)
+        captcha_token = data.pop("captcha_token", None)
         text_content = data.get("text", "")
         client_ip = _extract_client_ip()
         user_agent = request.headers.get("User-Agent", "")
+
+        # Integration source tag — Slido / Discord / OBS / bookmarklet identify
+        # themselves via X-Fire-Source header (preferred) or UA prefix hint.
+        # Recorded into a 200-entry ring buffer so the admin Extensions catalog
+        # can light up status dots and the Fire Token page's IP list works.
+        from ..services import fire_sources
+
+        explicit_source = request.headers.get("X-Fire-Source", "")
+        source_label = fire_sources.detect(user_agent, explicit_source)
+        fire_sources.record(source_label, fingerprint, client_ip, user_agent)
+
+        admin_client = is_fire_admin()
+
+        # Captcha gate (public only; admin lane skips).
+        if not admin_client:
+            header_captcha = request.headers.get("X-Captcha-Token")
+            if not verify_captcha(captcha_token or header_captcha):
+                return _json_response({"error": "Captcha verification failed"}, 400)
+
+        # Rate-limit chain. Aborts 429 internally; flask converts to response.
+        enforce_fire_rate_limits(fingerprint, admin_client)
 
         # Filter engine check (replaces simple blacklist check)
         filter_result = filter_engine.check(text_content, fingerprint)
@@ -261,13 +294,25 @@ def fire():
             data.update(plugin_result)
             text_content = data.get("text", text_content)
 
+        poll_vote_meta = None
+
         # Check if text is a poll vote
         if poll_service.state == "active":
             text_upper = text_content.strip().upper()
             option_keys = poll_service.get_option_keys()
             if text_upper in option_keys:
                 voter_id = fingerprint or request.remote_addr or "unknown"
-                poll_service.vote(text_upper, voter_id)
+                accepted = poll_service.vote(text_upper, voter_id)
+                question_text = ""
+                try:
+                    question_text = poll_service.get_status().get("question", "")
+                except Exception:
+                    question_text = ""
+                poll_vote_meta = {
+                    "accepted": bool(accepted),
+                    "key": text_upper,
+                    "question": question_text,
+                }
                 # Vote still passes through as normal danmu
 
         data = _resolve_danmu_style(data)
@@ -294,12 +339,18 @@ def fire():
             except Exception:
                 pass  # webhook failure should never block danmu
 
-            return _json_response(forward_result, 200)
+            response_payload = dict(forward_result)
+            if poll_vote_meta is not None:
+                response_payload["poll_vote"] = poll_vote_meta
+            return _json_response(response_payload, 200)
         if status == "rejected":
             return _json_response(forward_result, 429)
         if status == "dropped" and forward_result.get("reason") == "full":
             return _json_response(forward_result, 429)
         return _json_response(forward_result, 503)
+    except HTTPException:
+        # Rate-limit aborts (429) and similar must propagate verbatim.
+        raise
     except Exception as exc:
         return _log_and_internal_error("Send Error", exc)
 
@@ -315,6 +366,86 @@ def serve_user_font(filename):
 @api_bp.route("/get_settings", methods=["GET"])
 def get_settings():
     return _json_response(get_options(), 200)
+
+
+def _sanitize_poll_for_viewer(status):
+    """Strip vote totals/percentages from poll status before sending to
+    the public viewer endpoint.
+
+    The polestar (2026-05-05) is that viewers must NOT see vote counts
+    or percentages. The viewer DOM already drops these fields, but
+    anyone reading the network response in DevTools could read them.
+    This sanitizer removes them at the wire boundary so the privacy
+    guarantee doesn't depend on client cooperation. Admin polling
+    (which DOES need totals) goes through a separate authenticated
+    `/admin/poll/state` route, not this one.
+    """
+    if not isinstance(status, dict):
+        return status
+    if status.get("state") in (None, "idle"):
+        # Idle / no poll — nothing to leak. Return the bare state so
+        # the viewer renderer can still distinguish "no poll" from
+        # "fetch failed".
+        return {"state": status.get("state") or "idle"}
+
+    def _opts(opts):
+        if not isinstance(opts, list):
+            return []
+        return [{"key": o.get("key"), "text": o.get("text")} for o in opts if isinstance(o, dict)]
+
+    def _question(q):
+        if not isinstance(q, dict):
+            return {}
+        return {
+            "id": q.get("id"),
+            "text": q.get("text"),
+            "image_url": q.get("image_url"),
+            "time_limit_seconds": q.get("time_limit_seconds"),
+            "order": q.get("order", 0),
+            "options": _opts(q.get("options")),
+        }
+
+    questions = status.get("questions") or []
+    return {
+        "state": status.get("state"),
+        "active": status.get("active"),
+        "current_index": status.get("current_index"),
+        "started_at": status.get("started_at"),
+        "ended_at": status.get("ended_at"),
+        "question_count": status.get("question_count"),
+        "questions": [_question(q) for q in questions],
+        # Legacy single-question compat fields the normalizer still reads.
+        "question": status.get("question"),
+        "options": _opts(status.get("options")),
+    }
+
+
+@api_bp.route("/poll/public-status", methods=["GET"])
+def poll_public_status():
+    """Public viewer polling endpoint replacing the legacy `poll_update`
+    WS push (Phase 2 of WS removal).
+
+    Returns a viewer-safe shape: question text + option key/text only,
+    no vote counts, percentages, total_votes, or duplicate_attempts.
+    Admin polling that needs the full counts must go through the
+    authenticated admin route.
+    """
+    return _json_response(_sanitize_poll_for_viewer(poll_service.get_status()), 200)
+
+
+@api_bp.route("/session/public-state", methods=["GET"])
+def session_public_state():
+    """Public viewer polling endpoint replacing the legacy
+    `session_ended` WS push (Phase 2 of WS removal).
+
+    Returns the lightweight session state (status / name / started_at
+    / viewer_end_behavior). Viewer polls this every ~5 s and triggers
+    `_handleSessionEnded(behavior)` when status transitions
+    live → ended.
+    """
+    from ..services import session_service
+
+    return _json_response(session_service.get_state(), 200)
 
 
 @api_bp.route("/fonts", methods=["GET"])

@@ -16,7 +16,7 @@ import time
 import urllib.error
 import urllib.request
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -45,6 +45,9 @@ class WebhookConfig:
         "last_status",
         "last_error",
         "created_at",
+        "success_count",
+        "fail_count",
+        "last_delivery_at",
     )
 
     def __init__(
@@ -60,6 +63,9 @@ class WebhookConfig:
         last_status: Optional[int] = None,
         last_error: Optional[str] = None,
         created_at: Optional[str] = None,
+        success_count: int = 0,
+        fail_count: int = 0,
+        last_delivery_at: Optional[str] = None,
     ) -> None:
         self.id: str = id or uuid.uuid4().hex[:8]
         self.url: str = url
@@ -71,6 +77,12 @@ class WebhookConfig:
         self.last_status: Optional[int] = last_status
         self.last_error: Optional[str] = last_error
         self.created_at: str = created_at or datetime.now(timezone.utc).isoformat()
+        # Delivery counters — surfaced in /admin/webhooks/list for the
+        # prototype admin-batch6.jsx:6 stats strip and per-endpoint
+        # success-rate bar. Persisted across restarts.
+        self.success_count: int = max(0, int(success_count))
+        self.fail_count: int = max(0, int(fail_count))
+        self.last_delivery_at: Optional[str] = last_delivery_at
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -84,6 +96,9 @@ class WebhookConfig:
             "last_status": self.last_status,
             "last_error": self.last_error,
             "created_at": self.created_at,
+            "success_count": self.success_count,
+            "fail_count": self.fail_count,
+            "last_delivery_at": self.last_delivery_at,
         }
 
     @classmethod
@@ -99,6 +114,9 @@ class WebhookConfig:
             last_status=d.get("last_status"),
             last_error=d.get("last_error"),
             created_at=d.get("created_at"),
+            success_count=d.get("success_count", 0),
+            fail_count=d.get("fail_count", 0),
+            last_delivery_at=d.get("last_delivery_at"),
         )
 
 
@@ -115,9 +133,80 @@ class WebhookService:
                     inst = super().__new__(cls)
                     inst._hooks: Dict[str, WebhookConfig] = {}
                     inst._lock = threading.Lock()
+                    # In-memory delivery log ring buffer (last 100 events).
+                    # Powers the prototype admin-batch6 Delivery log table —
+                    # not persisted (deliberate; rotation cost on every send
+                    # would be high, and FE re-fetches on page entry).
+                    inst._delivery_log: List[Dict[str, Any]] = []
+                    inst._delivery_log_max: int = 100
                     inst._load()
                     cls._instance = inst
         return cls._instance
+
+    # ── Delivery log (in-memory ring buffer) ─────────────────────────────
+
+    def _log_delivery(
+        self,
+        *,
+        hook_id: str,
+        hook_url: str,
+        event: str,
+        code: Optional[int],
+        duration_ms: int,
+        retries: int,
+        ok: bool,
+        dropped: bool = False,
+    ) -> None:
+        with self._lock:
+            entry = {
+                "ts": datetime.now(timezone.utc).isoformat(),
+                "hook_id": hook_id,
+                "hook_url": hook_url,
+                "event": event,
+                "code": code,
+                "duration_ms": int(duration_ms),
+                "retries": int(retries),
+                "ok": bool(ok),
+                "dropped": bool(dropped),
+            }
+            self._delivery_log.insert(0, entry)
+            if len(self._delivery_log) > self._delivery_log_max:
+                self._delivery_log[:] = self._delivery_log[: self._delivery_log_max]
+
+    def list_deliveries(self, limit: int = 50) -> List[Dict[str, Any]]:
+        with self._lock:
+            return list(self._delivery_log[: max(1, min(limit, self._delivery_log_max))])
+
+    def get_delivery_stats(self) -> Dict[str, Any]:
+        """Aggregate stats for the prototype 4-KPI strip."""
+        with self._lock:
+            hooks = list(self._hooks.values())
+            now = datetime.now(timezone.utc)
+            day_ago = now - timedelta(days=1)
+            recent_24h = 0
+            recent_failed = 0
+            recent_dropped = 0
+            for entry in self._delivery_log:
+                try:
+                    ts = datetime.fromisoformat(entry["ts"])
+                except (ValueError, TypeError):
+                    continue
+                if ts < day_ago:
+                    continue
+                recent_24h += 1
+                if not entry.get("ok"):
+                    if entry.get("dropped"):
+                        recent_dropped += 1
+                    else:
+                        recent_failed += 1
+            enabled = sum(1 for h in hooks if h.enabled)
+            return {
+                "endpoints_enabled": enabled,
+                "endpoints_total": len(hooks),
+                "deliveries_24h": recent_24h,
+                "failed_pending_retry": recent_failed,
+                "dropped_24h": recent_dropped,
+            }
 
     # ── Persistence ──────────────────────────────────────────────────────
 
@@ -283,7 +372,9 @@ class WebhookService:
             ).hexdigest()
 
         last_exc: Optional[Exception] = None
+        last_status: Optional[int] = None
         attempts = hook.retry_count + 1  # first try + retries
+        started = time.time()
 
         for attempt in range(attempts):
             if attempt > 0:
@@ -305,7 +396,17 @@ class WebhookService:
 
                 with urllib.request.urlopen(req, timeout=_REQUEST_TIMEOUT) as resp:
                     status = resp.status
-                    self._update_status(hook.id, status, None)
+                    self._update_status(hook.id, status, None, ok=True)
+                    duration_ms = int((time.time() - started) * 1000)
+                    self._log_delivery(
+                        hook_id=hook.id,
+                        hook_url=hook.url,
+                        event=event,
+                        code=status,
+                        duration_ms=duration_ms,
+                        retries=attempt,
+                        ok=True,
+                    )
                     logger.debug(
                         "Webhook %s -> %s [%d] (attempt %d)",
                         hook.id,
@@ -317,6 +418,7 @@ class WebhookService:
 
             except Exception as exc:
                 last_exc = exc
+                last_status = getattr(exc, "code", None)
                 logger.warning(
                     "Webhook %s attempt %d/%d failed: %s",
                     hook.id,
@@ -327,17 +429,39 @@ class WebhookService:
 
         # all retries exhausted
         error_msg = str(last_exc) if last_exc else "unknown error"
-        self._update_status(hook.id, None, error_msg)
+        self._update_status(hook.id, last_status, error_msg, ok=False)
+        duration_ms = int((time.time() - started) * 1000)
+        self._log_delivery(
+            hook_id=hook.id,
+            hook_url=hook.url,
+            event=event,
+            code=last_status,
+            duration_ms=duration_ms,
+            retries=attempts - 1,
+            ok=False,
+            dropped=True,
+        )
         logger.error("Webhook %s failed after %d attempts: %s", hook.id, attempts, error_msg)
 
-    def _update_status(self, hook_id: str, status: Optional[int], error: Optional[str]) -> None:
-        """Persist last_status / last_error for a hook."""
+    def _update_status(
+        self,
+        hook_id: str,
+        status: Optional[int],
+        error: Optional[str],
+        ok: Optional[bool] = None,
+    ) -> None:
+        """Persist last_status / last_error + bump success/fail counters."""
         with self._lock:
             hook = self._hooks.get(hook_id)
             if hook is None:
                 return
             hook.last_status = status
             hook.last_error = error
+            hook.last_delivery_at = datetime.now(timezone.utc).isoformat()
+            if ok is True:
+                hook.success_count += 1
+            elif ok is False:
+                hook.fail_count += 1
             self._save()
 
     # ── Payload formatting ───────────────────────────────────────────────

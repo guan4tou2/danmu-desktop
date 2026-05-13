@@ -158,7 +158,8 @@ describe("child-ws-script execution", () => {
     });
 
     expect(MockWebSocket.instances.length).toBeGreaterThanOrEqual(1);
-    expect(MockWebSocket.instances[0].url).toBe("ws://127.0.0.1:9487");
+    // v5.0.0+: WSS-only — always wss:// with /ws path.
+    expect(MockWebSocket.instances[0].url).toBe("wss://127.0.0.1:9487/ws");
   });
 
   test("WebSocket URL includes token when provided", () => {
@@ -184,7 +185,8 @@ describe("child-ws-script execution", () => {
     });
 
     expect(MockWebSocket.instances.length).toBeGreaterThanOrEqual(1);
-    expect(MockWebSocket.instances[0].url).toBe("ws://10.0.0.1:8080");
+    // v5.0.0+: WSS-only — always wss:// with /ws path.
+    expect(MockWebSocket.instances[0].url).toBe("wss://10.0.0.1:8080/ws");
   });
 
   test("sendConnectionStatus calls window.API.sendConnectionStatus", () => {

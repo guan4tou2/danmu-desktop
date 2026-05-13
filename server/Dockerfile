@@ -27,7 +27,7 @@ FROM python:3.11-slim AS runtime
 
 LABEL maintainer="guan4tou2 <mole30608@gmail.com>"
 LABEL org.opencontainers.image.source="https://github.com/guan4tou2/danmu-desktop"
-LABEL org.opencontainers.image.description="Danmu Desktop Server"
+LABEL org.opencontainers.image.description="Danmu Fire Server"
 
 WORKDIR /app/server
 
@@ -54,7 +54,7 @@ ENV PYTHONUNBUFFERED=1
 COPY shared/ /app/shared/
 
 # Copy application code — exclude tests, dev configs, and build artifacts
-COPY server/app.py server/config.py server/extensions.py server/logging_config.py \
+COPY server/app.py server/config.py server/logging_config.py \
      server/startup_warnings.py server/state.py server/utils.py server/ws_app.py ./
 COPY server/effects/ effects/
 COPY server/managers/ managers/

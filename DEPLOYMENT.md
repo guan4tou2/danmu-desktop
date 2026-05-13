@@ -12,10 +12,14 @@ cd danmu-desktop
 ./setup.sh init --advanced    # + rate limits, logging, resource caps
 
 # Wizard prints the exact start command. Typically:
-docker compose --profile https up -d        # HTTPS self-signed (LAN / VPS)
-docker compose --profile http up -d         # local HTTP (dev only)
-docker compose --profile traefik up -d      # HTTPS + Let's Encrypt
+docker compose --profile https up -d        # HTTPS self-signed (LAN / VPS) — recommended
+docker compose --profile traefik up -d      # HTTPS + Let's Encrypt (public domain)
+docker compose --profile http up -d         # local HTTP (dev only — no desktop client)
 ```
+
+> **v5.0.0+:** the Electron desktop client connects via `wss://` only.
+> `--profile http` no longer supports the desktop overlay. Use
+> `--profile https` for any setup that includes the desktop client.
 
 Additional wizard commands:
 
@@ -41,37 +45,28 @@ output + `./setup.sh check` is enough.
 ## Decision Tree
 
 ```
-Need a real TLS certificate with a public domain?
-  ├─ Yes → Traefik mode  (--profile traefik)
-  └─ No → Fixed IP or LAN access?
-              ├─ Yes → HTTPS self-signed  (--profile https)
-              └─ No → Local HTTP (dev/testing only)
+Have a public domain (DNS + port 80 reachable)?
+  ├─ Yes → Traefik mode (Let's Encrypt)  (--profile traefik)
+  └─ No → HTTPS self-signed  (--profile https)        ← default
+
+Dev/test on localhost only, no Electron desktop client?
+  └─ Optional: --profile http (TLS-free, faster boot)
 
 High traffic or multi-instance?
   └─ Yes → Add Redis  (--profile redis)
 ```
 
+The desktop client is wss-only since v5.0.0; `--profile https` (or
+`--profile traefik`) is required to expose it.
+
 ---
 
 ## Modes
 
-### Local HTTP (default)
+### HTTPS with Self-Signed Certificate (default)
 
-Exposes ports 4000 (HTTP) and 4001 (WebSocket) via nginx.
-
-```bash
-docker compose --profile http up -d
-```
-
-Or with make:
-
-```bash
-make docker-up
-```
-
-### HTTPS with Self-Signed Certificate
-
-Suitable for LAN access or a VPS without a domain. A self-signed certificate is
+Suitable for LAN access or a VPS without a domain. **Default since
+v5.0.0** — the desktop client requires a TLS-terminating profile. A self-signed certificate is
 auto-generated on first start (valid 365 days).
 
 Set in `.env`:
@@ -79,6 +74,15 @@ Set in `.env`:
 ```
 SERVER_IP=1.2.3.4        # Optional: your public IP (included in cert SAN)
 SERVER_DOMAIN=my.lan     # Optional: hostname (included in cert SAN)
+```
+
+By default, nginx listens on **port 443** (HTTPS) and **port 80** (HTTP→HTTPS
+redirect). On a VPS where 443 is already taken or firewalled (e.g., Oracle Cloud
+with NetBird/Caddy occupying 443), remap to non-standard ports via `.env`:
+
+```
+HTTP_PORT=4080    # host port that maps to nginx's internal port 80
+HTTPS_PORT=4000   # host port that maps to nginx's internal port 443
 ```
 
 ```bash
@@ -89,6 +93,16 @@ Or: `make docker-up-https`
 
 Clients will see a browser warning about the self-signed cert. Add the cert to your
 browser's trust store to suppress it. The cert is at `nginx/certs/fullchain.pem`.
+
+**Ports exposed in https profile:**
+- `${HTTP_PORT:-80}` → nginx port 80 (HTTP → HTTPS redirect)
+- `${HTTPS_PORT:-443}` → nginx port 443 (web admin / viewer)
+- `${WS_PORT:-4001}` → nginx port 4001 (TLS, dedicated for Electron desktop)
+
+The Electron desktop client connects via `wss://<IP>:4001/ws`. The
+self-signed cert is shared with port 443 and is auto-trusted in the
+client by `trusted-wss-hosts` (registered when user types host:port
+into the Conn panel). No manual cert pinning required.
 
 ### HTTPS with Let's Encrypt (Traefik)
 
@@ -145,31 +159,25 @@ docker compose --profile http -f docker-compose.yml -f docker-compose.dev.yml up
 
 Or: `make docker-up-dev`
 
-### Desktop Client (ws + https dual transport)
+### Desktop Client (Electron — wss-only since v5.0.0)
 
-The Danmu Desktop (Electron) client connects with plain `ws://IP:PORT`. This
-is a supported deployment mode: run the HTTPS admin panel on `HTTPS_PORT`
-alongside a plain WebSocket endpoint on port `4001` for desktop overlays.
-Access control on the WS port is provided by a shared token instead of TLS.
+The Danmu Fire desktop client connects via `wss://<IP>:4001/ws`. With
+the `https` or `traefik` profile, port 4001 is already exposed and
+TLS-terminated by nginx; no override file is needed.
 
-For the `https` and `traefik` profiles the dedicated WS server is
-internal-only by default. To expose it, layer the `desktop` override file on
-top of the main compose file:
-
-1. Start with the override:
+1. Start the stack normally (port 4001 is included in `--profile https`):
 
    ```bash
-   docker compose -f docker-compose.yml -f docker-compose.desktop.yml \
-     --profile https up -d
+   docker compose --profile https up -d
    ```
 
-2. Open the firewall:
+2. Open the firewall on the host:
 
    ```bash
    sudo ufw allow 4001/tcp
    ```
 
-3. Configure WS token auth (v4.8.0+):
+3. Configure WS token auth (recommended for any public-facing deploy):
 
    - **Preferred: Admin UI.** Log in at `https://<host>:<HTTPS_PORT>/admin`
      → **WebSocket token auth** section → flip the toggle on, click
@@ -184,9 +192,34 @@ top of the main compose file:
      in `.env` before first boot. Explicit env values are respected and
      never silently flipped on by the secure-by-default seeding.
 
-4. In the Danmu Desktop app, enter the server IP, port `4001`, and paste
-   the admin-issued token into the **WS Token** field. The admin panel is
-   reached separately at `https://<host>:<HTTPS_PORT>`.
+4. In the Danmu Fire app, enter the server IP, port `4001`, and paste
+   the admin-issued token into the **WS Token** field. The first
+   connection registers the host with `trusted-wss-hosts` so the
+   self-signed cert is auto-accepted for that exact `host:port` only
+   (no global `ignore-certificate-errors`). The admin panel is reached
+   separately at `https://<host>:<HTTPS_PORT>`.
+
+> **Why wss-only:** plain `ws://` over the public internet leaks danmu
+> content (text, nicknames, fingerprints) and exfiltrates the WS token
+> on the handshake. TLS encrypts both. The desktop client used to have
+> a "Use WSS" checkbox; it was removed in v5.0.0 since every supported
+> deployment terminates TLS.
+
+### Local Plain HTTP (dev only — no desktop client)
+
+```bash
+docker compose --profile http up -d
+```
+
+Or with make:
+
+```bash
+make docker-up
+```
+
+Plain HTTP / WS on ports 4000 + 4001. **The Electron desktop client
+will not connect — wss-only since v5.0.0.** Use this profile only for
+backend development against the web admin/viewer at `http://localhost:4000`.
 
 ---
 
@@ -309,6 +342,8 @@ Key variables:
 | `ACME_EMAIL` | — | Required for Traefik mode |
 | `SERVER_IP` | — | VPS public IP for self-signed cert SAN |
 | `SERVER_DOMAIN` | — | Hostname for self-signed cert SAN |
+| `HTTP_PORT` | `80` | Host port for HTTP (nginx → redirect to HTTPS). Change when 80 is taken |
+| `HTTPS_PORT` | `443` | Host port for HTTPS (nginx → app). Change when 443 is taken |
 | `REDIS_PASSWORD` | `changeme` | Redis auth password |
 | `WS_REQUIRE_TOKEN` | see note | **First-boot seed only since v4.8.0.** After first boot, authoritative state lives in `server/runtime/ws_auth.json` and is controlled from the admin UI. If this env var is unset on a fresh install, the server seeds secure-on with a generated token. Explicit `false` is respected and never flipped back on. |
 | `WS_AUTH_TOKEN` | — | Same as above — first-boot seed only. The admin UI is authoritative after the runtime file exists. |
@@ -365,6 +400,43 @@ docker compose -f docker-compose.yml -f docker-compose.desktop.yml \
 
 v4.8.2+ `setup.sh init` detects this at install time and prints the chown
 command when `id -u` ≠ 1000.
+
+**Nginx config change not taking effect after `git pull`**
+
+Docker bind-mounts a *file* (e.g. `nginx/nginx-https.conf`) by inode. `git pull`
+replaces the file on disk with a new inode, so the running container still reads
+the old content even after `nginx -s reload` or `docker compose restart`.
+
+Fix: recreate the container after any `git pull` that touches an nginx config:
+
+```bash
+git pull origin <branch>
+docker compose stop reverse-proxy-https
+docker compose up -d reverse-proxy-https
+```
+
+`up -d` (not `restart`) forces Docker to re-open the bind-mount path, picking up
+the new inode. Runtime state (certs, logs) is unaffected.
+
+**SSL certificate auto-generation fails (`openssl: not found`)**
+
+The nginx entrypoint runs `apk add openssl` inside the container to generate a
+self-signed cert. If Alpine's package registry is unreachable (e.g. no outbound
+internet from the VPS), the container exits with
+`[danmu] ERROR: Failed to generate certificate.`
+
+Workaround — generate the cert on the host first, then start the container:
+
+```bash
+openssl req -x509 -nodes -newkey rsa:2048 \
+  -keyout nginx/certs/privkey.pem \
+  -out nginx/certs/fullchain.pem \
+  -days 365 -subj "/CN=${SERVER_IP:-localhost}" \
+  -addext "subjectAltName=IP:${SERVER_IP:-127.0.0.1},IP:127.0.0.1,DNS:localhost"
+docker compose --profile https up -d
+```
+
+The entrypoint skips generation when `fullchain.pem` + `privkey.pem` already exist.
 
 **Cloud firewall blocking 4000 / 4001 (Oracle Cloud / AWS / GCP)**
 

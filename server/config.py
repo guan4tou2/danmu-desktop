@@ -39,7 +39,7 @@ class Config:
     # Priority: runtime hash file > ADMIN_PASSWORD_HASHED env var > plaintext ADMIN_PASSWORD
     ADMIN_PASSWORD_HASHED = load_runtime_hash() or os.getenv("ADMIN_PASSWORD_HASHED", "")
     APP_NAME = "Danmu Fire"
-    APP_VERSION = "4.10.0"
+    APP_VERSION = "5.0.0"
     PORT = int(os.getenv("PORT", "4000"))
     WS_PORT = int(os.getenv("WS_PORT", "4001"))
     ENV = os.getenv("ENV", "development").lower()
@@ -47,9 +47,38 @@ class Config:
     WS = ""
     FIRE_RATE_LIMIT = int(os.getenv("FIRE_RATE_LIMIT", "20"))
     FIRE_RATE_WINDOW = int(os.getenv("FIRE_RATE_WINDOW", "60"))
-    ADMIN_RATE_LIMIT = int(os.getenv("ADMIN_RATE_LIMIT", "60"))
+    # Per-fingerprint ceiling (0 disables). Stops users who rotate IPs
+    # (VPN / mobile) from bypassing per-IP limits via /fire.
+    FIRE_FINGERPRINT_RATE_LIMIT = int(os.getenv("FIRE_FINGERPRINT_RATE_LIMIT", "30"))
+    FIRE_FINGERPRINT_RATE_WINDOW = int(os.getenv("FIRE_FINGERPRINT_RATE_WINDOW", "60"))
+    # Global ceiling across all clients (0 disables). Protects the overlay
+    # from distributed-IP floods that individually stay under per-IP caps.
+    GLOBAL_FIRE_RATE_LIMIT = int(os.getenv("GLOBAL_FIRE_RATE_LIMIT", "0"))
+    GLOBAL_FIRE_RATE_WINDOW = int(os.getenv("GLOBAL_FIRE_RATE_WINDOW", "60"))
+    # Shared secret for privileged /fire clients (e.g. Slido extension).
+    # If set, requests with a matching `X-Fire-Token` header skip the
+    # public rate limits and captcha, using the higher admin ceiling below.
+    # Empty string disables the admin lane entirely.
+    FIRE_ADMIN_TOKEN = os.getenv("FIRE_ADMIN_TOKEN", "")
+    FIRE_ADMIN_RATE_LIMIT = int(os.getenv("FIRE_ADMIN_RATE_LIMIT", "200"))
+    FIRE_ADMIN_RATE_WINDOW = int(os.getenv("FIRE_ADMIN_RATE_WINDOW", "60"))
+    # Captcha verification for public /fire (extension admin lane bypasses).
+    # Provider: "none" (default, disabled), "turnstile", "hcaptcha".
+    CAPTCHA_PROVIDER = os.getenv("CAPTCHA_PROVIDER", "none").lower()
+    CAPTCHA_SITE_KEY = os.getenv("CAPTCHA_SITE_KEY", "")
+    CAPTCHA_SECRET = os.getenv("CAPTCHA_SECRET", "")
+    # Admin polls /admin/metrics every 5s from telemetry tick + display
+    # settings + (optionally) broadcast page = ~24-36 req/min just for metrics,
+    # plus per-action admin updates. 300/min (5/sec average) is comfortable
+    # without losing the abuse cap.
+    ADMIN_RATE_LIMIT = int(os.getenv("ADMIN_RATE_LIMIT", "300"))
     ADMIN_RATE_WINDOW = int(os.getenv("ADMIN_RATE_WINDOW", "60"))
-    API_RATE_LIMIT = int(os.getenv("API_RATE_LIMIT", "30"))
+    # 2026-04-28: bumped 30→120. The "api" scope is shared across all routes
+    # decorated with `rate_limit("api", ...)` — `/stickers`, `/check_blacklist`,
+    # etc. — so a single SPA page-load + admin auto-poll could blow through 30
+    # in a 60s window when multiple tabs were open. 120 leaves room for that
+    # workload without losing the abuse cap.
+    API_RATE_LIMIT = int(os.getenv("API_RATE_LIMIT", "120"))
     API_RATE_WINDOW = int(os.getenv("API_RATE_WINDOW", "60"))
     RATE_LIMIT_BACKEND = os.getenv("RATE_LIMIT_BACKEND", "memory")
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")

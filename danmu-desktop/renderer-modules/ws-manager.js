@@ -25,7 +25,6 @@ function initOverlayControls({
   validateIP,
   validatePort,
   saveSettings,
-  saveStartupAnimationSettings,
   loadSettings,
   loadStartupAnimationSettings,
   updateConnectionStatus,
@@ -77,23 +76,21 @@ function initOverlayControls({
     const wsToken = wsTokenInput ? wsTokenInput.value.trim() : "";
     const displayIndex = parseInt(screenSelect.value);
     const enableSyncMultiDisplay = syncMultiDisplayCheckbox.checked;
+    // v5.0.0+: WSS-only deployment unified on --profile https. The legacy
+    // ws:// path was removed; nginx terminates TLS on both 443 (web) and
+    // 4001 (desktop).
 
-    const startupAnimToggle = document.getElementById("startup-animation-toggle");
-    const animTypeSelect = document.getElementById("animation-type-select");
-    const customAnimText = document.getElementById("custom-animation-text");
-
+    // Startup animation settings come from persisted prefs (the legacy form
+    // controls were removed in P5-2). Settings still ship to child windows so
+    // overlays can show LINK START / 領域展開 on first connect.
+    const persistedAnim = loadStartupAnimationSettings();
     const startupAnimationSettings = {
-      enabled: startupAnimToggle ? startupAnimToggle.checked : true,
-      type: animTypeSelect ? animTypeSelect.value : "link-start",
-      customText: customAnimText ? customAnimText.value : "",
+      enabled: persistedAnim.enabled,
+      type: persistedAnim.type,
+      customText: persistedAnim.customText,
     };
 
     saveSettings(IP, PORT, displayIndex, enableSyncMultiDisplay, wsToken);
-    saveStartupAnimationSettings(
-      startupAnimationSettings.enabled,
-      startupAnimationSettings.type,
-      startupAnimationSettings.customText
-    );
 
     console.log(
       `[Renderer] Starting overlay with: IP=${sanitizeLog(IP)}, PORT=${sanitizeLog(
@@ -217,67 +214,10 @@ function initOverlayControls({
     showToast(t("toastSettingsLoaded"), "info");
   }
 
-  // Startup animation settings
-  const startupAnimToggle = document.getElementById("startup-animation-toggle");
-  const animTypeSelect = document.getElementById("animation-type-select");
-  const customAnimText = document.getElementById("custom-animation-text");
-  const customAnimTextContainer = document.getElementById("custom-animation-text-container");
-  const startupAnimControls = document.getElementById("startup-animation-controls");
-
-  const savedAnimSettings = loadStartupAnimationSettings();
-  if (startupAnimToggle) {
-    startupAnimToggle.checked = savedAnimSettings.enabled;
-    if (startupAnimControls) {
-      startupAnimControls.style.display = savedAnimSettings.enabled ? "block" : "none";
-    }
-  }
-  if (animTypeSelect) {
-    animTypeSelect.value = savedAnimSettings.type;
-    if (customAnimTextContainer) {
-      customAnimTextContainer.classList.toggle("hidden", savedAnimSettings.type !== "custom");
-    }
-  }
-  if (customAnimText) {
-    customAnimText.value = savedAnimSettings.customText || "";
-  }
-
-  if (startupAnimToggle) {
-    startupAnimToggle.addEventListener("change", () => {
-      const enabled = startupAnimToggle.checked;
-      if (startupAnimControls) {
-        startupAnimControls.style.display = enabled ? "block" : "none";
-      }
-      saveStartupAnimationSettings(
-        enabled,
-        animTypeSelect ? animTypeSelect.value : "link-start",
-        customAnimText ? customAnimText.value : ""
-      );
-    });
-  }
-
-  if (animTypeSelect) {
-    animTypeSelect.addEventListener("change", () => {
-      const type = animTypeSelect.value;
-      if (customAnimTextContainer) {
-        customAnimTextContainer.classList.toggle("hidden", type !== "custom");
-      }
-      saveStartupAnimationSettings(
-        startupAnimToggle ? startupAnimToggle.checked : true,
-        type,
-        customAnimText ? customAnimText.value : ""
-      );
-    });
-  }
-
-  if (customAnimText) {
-    customAnimText.addEventListener("input", () => {
-      saveStartupAnimationSettings(
-        startupAnimToggle ? startupAnimToggle.checked : true,
-        animTypeSelect ? animTypeSelect.value : "link-start",
-        customAnimText.value
-      );
-    });
-  }
+  // Startup animation settings — UI controls were removed in P5-2; this
+  // reduces to a touch of `loadStartupAnimationSettings()` so the underlying
+  // localStorage entry is created with sensible defaults if missing.
+  loadStartupAnimationSettings();
 
   // Initial sync multi-display state
   if (syncMultiDisplayCheckbox && syncMultiDisplayCheckbox.checked) {

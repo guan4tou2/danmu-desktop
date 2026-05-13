@@ -42,6 +42,204 @@
 
   if (hideIdle) hideIdleScene();
 
+  // ── Overlay Idle / QR (4-state Hero Lockup) ──────────────────────────────
+  // Prototype priority-2-pieces.jsx:174 OverlayIdleQR. States:
+  //   idle      — STANDBY, cyan dot, hint text
+  //   scanning  — magenta pulse ring around QR, "PAIRING · HANDSHAKE"
+  //   paired    — green ✓ over QR, "PAIRED · CONNECTED" + 開始廣播 button
+  //   failed    — red ⚠ over QR, "UNREACHABLE" + 重試 / 手動輸入 buttons
+  // Manual control — admin / tray / desktop client invoke setState(state).
+  var idleEl = null;
+  var idleStateConfig = {
+    idle: {
+      en: "STANDBY · WAITING FOR PAIR",
+      label: "等待配對",
+      subtitle: function (host) { return "用手機掃描 QR 連入 " + host; },
+      noteHtml: function (code) { return '或輸入 6 碼連線碼: <span class="overlay-idle-pair-code" id="overlayIdlePairCode">' + code + '</span>'; },
+      actionsHtml: '<span class="overlay-idle-hint">⌥⌘C 複製配對碼 · ESC 進入設定</span>',
+    },
+    scanning: {
+      en: "PAIRING · HANDSHAKE",
+      label: "掃描中",
+      subtitle: function () { return "偵測到裝置 · 正在握手"; },
+      noteHtml: function () { return "iPhone · Safari · 192.168.1.84"; },
+      actionsHtml: '<span class="overlay-idle-hint">⌥⌘C 複製配對碼 · ESC 進入設定</span>',
+    },
+    paired: {
+      en: "PAIRED · CONNECTED",
+      label: "已連線",
+      subtitle: function () { return "247 位觀眾已進入 · Q&A 可開始"; },
+      noteHtml: function () { return "Danmu Fire 已啟動 · 你可以講話了"; },
+      actionsHtml: '<button type="button" class="overlay-idle-btn overlay-idle-btn-primary" data-overlay-idle-action="broadcast">▶ 開始廣播 · SPACE</button>',
+    },
+    failed: {
+      en: "UNREACHABLE · NO SERVER",
+      label: "連線失敗",
+      subtitle: function (host) { return "找不到 " + host + " · 檢查網路"; },
+      noteHtml: function () { return "確認 Server 啟動 · 或手動輸入 ws:// 位址"; },
+      actionsHtml:
+        '<button type="button" class="overlay-idle-btn overlay-idle-btn-primary" data-overlay-idle-action="retry">▶ 重試連線</button>' +
+        '<button type="button" class="overlay-idle-btn overlay-idle-btn-secondary" data-overlay-idle-action="manual">手動輸入位址</button>',
+    },
+  };
+  var PAIR_CODE_KEY = "danmu.overlayPairCode.v1";
+
+  function _generatePairCode() {
+    try {
+      var cached = localStorage.getItem(PAIR_CODE_KEY);
+      if (cached && /^\d{2}-\d{2}-\d{2}$/.test(cached)) return cached;
+    } catch (_) {}
+    var rand = function () { return String(Math.floor(Math.random() * 100)).padStart(2, "0"); };
+    var code = rand() + "-" + rand() + "-" + rand();
+    try { localStorage.setItem(PAIR_CODE_KEY, code); } catch (_) {}
+    return code;
+  }
+
+  // Deterministic 29×29 fake-QR pattern with finder boxes at TL/TR/BL.
+  // Matches prototype QrBlock seeded random (seed=42, threshold=0.5).
+  function _renderQr() {
+    var qr = document.getElementById("overlayIdleQr");
+    if (!qr || qr.dataset.rendered === "1") return;
+    var N = 29;
+    var size = 168; // 180 - 2*6 padding
+    var cell = size / N;
+    // LCG from prototype line 319
+    var s = 42 >>> 0;
+    var rand = function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 0xFFFFFFFF; };
+    var cells = [];
+    for (var i = 0; i < N * N; i++) cells.push(rand() > 0.5 ? 1 : 0);
+    // Stamp finder boxes at TL / TR / BL.
+    function stamp(cx, cy) {
+      for (var y = 0; y < 7; y++) for (var x = 0; x < 7; x++) {
+        var xx = cx + x, yy = cy + y;
+        if (xx < N && yy < N) {
+          var edge = x === 0 || x === 6 || y === 0 || y === 6;
+          var inner = x >= 2 && x <= 4 && y >= 2 && y <= 4;
+          cells[yy * N + xx] = (edge || inner) ? 1 : 0;
+        }
+      }
+      // Quiet ring around finder box
+      for (var yy2 = -1; yy2 < 8; yy2++) for (var xx2 = -1; xx2 < 8; xx2++) {
+        if (xx2 === -1 || xx2 === 7 || yy2 === -1 || yy2 === 7) {
+          var rx = cx + xx2, ry = cy + yy2;
+          if (rx >= 0 && rx < N && ry >= 0 && ry < N) cells[ry * N + rx] = 0;
+        }
+      }
+    }
+    stamp(0, 0); stamp(N - 7, 0); stamp(0, N - 7);
+    var rects = "";
+    for (var k = 0; k < cells.length; k++) {
+      if (cells[k]) {
+        var x = (k % N) * cell;
+        var y = Math.floor(k / N) * cell;
+        rects += '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + cell.toFixed(2) + '" height="' + cell.toFixed(2) + '" fill="#000"/>';
+      }
+    }
+    qr.innerHTML =
+      '<svg viewBox="0 0 ' + size + ' ' + size + '" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">' +
+      rects + '</svg>';
+    qr.dataset.rendered = "1";
+  }
+
+  function _hostName() {
+    try { return window.location.host; } catch (_) { return "danmu.local:4001"; }
+  }
+
+  function _setIdleState(state) {
+    if (!idleEl) idleEl = document.getElementById("overlay-idle");
+    if (!idleEl) return;
+    var cfg = idleStateConfig[state] || idleStateConfig.idle;
+    idleEl.dataset.state = state;
+    var host = _hostName();
+    var subtitleEl = document.getElementById("overlayIdleSubtitle");
+    if (subtitleEl) subtitleEl.textContent = cfg.subtitle(host);
+    var chipLabel = idleEl.querySelector(".overlay-idle-chip-label");
+    if (chipLabel) chipLabel.textContent = cfg.label;
+    var topbarEn = idleEl.querySelector(".overlay-idle-topbar-en");
+    if (topbarEn) topbarEn.textContent = cfg.en;
+    var noteEl = document.getElementById("overlayIdleNote");
+    if (noteEl) noteEl.innerHTML = cfg.noteHtml(_generatePairCode());
+    var actionsEl = document.getElementById("overlayIdleActions");
+    if (actionsEl) actionsEl.innerHTML = cfg.actionsHtml;
+  }
+
+  function showIdle() {
+    if (!idleEl) idleEl = document.getElementById("overlay-idle");
+    if (!idleEl) return;
+    _renderQr();
+    if (!idleEl.dataset.state) _setIdleState("idle");
+    idleEl.classList.remove("is-fading");
+    idleEl.classList.add("is-visible");
+  }
+
+  function hideIdle() {
+    if (!idleEl) idleEl = document.getElementById("overlay-idle");
+    if (!idleEl) return;
+    idleEl.classList.add("is-fading");
+    setTimeout(function () {
+      if (idleEl) {
+        idleEl.classList.remove("is-visible");
+        idleEl.classList.remove("is-fading");
+      }
+    }, 550);
+  }
+
+  window.OverlayIdle = {
+    show: showIdle,
+    hide: hideIdle,
+    setState: _setIdleState,
+    toggle: function () {
+      if (!idleEl) idleEl = document.getElementById("overlay-idle");
+      if (idleEl && idleEl.classList.contains("is-visible")) hideIdle();
+      else showIdle();
+    }
+  };
+
+  document.addEventListener("DOMContentLoaded", function () {
+    idleEl = document.getElementById("overlay-idle");
+    if (idleEl) {
+      idleEl.addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-overlay-idle-action]");
+        if (!btn) return;
+        var act = btn.dataset.overlayIdleAction;
+        if (act === "broadcast") hideIdle();
+        else if (act === "retry") _setIdleState("idle");
+        else if (act === "manual") {
+          // Future: open manual ws:// prompt. For now, log.
+          console.info("[overlay-idle] manual address entry requested");
+        }
+      });
+    }
+  });
+
+  // ── Overlay Connecting (P2-2) ──────────────────────────────────────────────
+  // Shown from page-load until the first WS message arrives (or 500ms after
+  // WS open, whichever is sooner). Transparent-safe — sits above the black
+  // chromakey but below danmu elements; hidden via class + display:none.
+  var connectingEl = null;
+  var connectingHideTimer = null;
+  var connectingDidHide = false;
+
+  function hideConnecting() {
+    if (connectingDidHide) return;
+    connectingDidHide = true;
+    if (connectingHideTimer) {
+      clearTimeout(connectingHideTimer);
+      connectingHideTimer = null;
+    }
+    if (!connectingEl) connectingEl = document.getElementById("overlay-connecting");
+    if (!connectingEl) return;
+    connectingEl.classList.remove("is-visible");
+    connectingEl.classList.add("is-fading");
+    setTimeout(function () {
+      if (connectingEl) connectingEl.style.display = "none";
+    }, 360);
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    connectingEl = document.getElementById("overlay-connecting");
+  });
+
   // ── WebSocket state ────────────────────────────────────────────────────────
   var ws = null;
   var reconnectAttempts = 0;
@@ -95,6 +293,13 @@
       reconnectAttempts = 0;
       lastHeartbeatResponse = Date.now();
       startHeartbeat();
+      // Reset idle state back to "idle" palette (cyan dot, no spinner).
+      _setIdleState("idle");
+      // Hide CONNECTING state 500ms after WS open (or when first message lands,
+      // whichever fires sooner — see ws.onmessage).
+      if (!connectingDidHide && !connectingHideTimer) {
+        connectingHideTimer = setTimeout(hideConnecting, 500);
+      }
     };
 
     ws.onclose = function (event) {
@@ -102,7 +307,12 @@
       clearInterval(heartbeatInterval);
 
       var delay = getReconnectDelay(reconnectAttempts);
-      console.log("[overlay] Reconnecting in " + (delay / 1000) + "s (attempt " + (reconnectAttempts + 1) + ")");
+      var nextAttempt = reconnectAttempts + 1;
+      console.log("[overlay] Reconnecting in " + (delay / 1000) + "s (attempt " + nextAttempt + ")");
+      // Flip idle to "scanning" (magenta pulse) — prototype OverlayIdleQR
+      // doesn't expose a separate "reconnecting" state, so we map both
+      // first-pair handshake and reconnect attempts to the same visual.
+      _setIdleState("scanning");
       setTimeout(connect, delay);
       reconnectAttempts++;
     };
@@ -113,6 +323,8 @@
 
     ws.onmessage = function (event) {
       lastHeartbeatResponse = Date.now();
+      // Hide CONNECTING state on the first real message (beats the 500ms timer).
+      if (!connectingDidHide) hideConnecting();
       var txt = event.data;
 
       if (txt === "connection" || txt === "heartbeat_ack") {
@@ -150,14 +362,37 @@
           return;
         }
 
+        // Konami easter egg — admin pressed ↑↑↓↓←→←→BA. Freeze every visible
+        // danmu in place, scale up + rotate + fly outward as particles, then
+        // remove the lot. Pure visual; no state change.
+        if (data.type === "konami") {
+          if (typeof window.__konamiTrigger === "function") {
+            window.__konamiTrigger();
+          }
+          return;
+        }
+
         // Widget sync — render persistent overlay widgets
         if (data.type === "widget_sync") {
           renderWidgets(data.widgets || []);
           return;
         }
 
-        // Poll update — show live voting panel on overlay (DOM-based, no innerHTML)
+        // Poll update — delegate to OverlayPoll (overlay-poll.js) which renders
+        // the prototype-aligned full-screen variants:
+        //   active → centered panel + bars + countdown + QR
+        //   ended  → winner-reveal celebration with confetti
+        // Replaces the legacy 280px corner panel (pre-2026-04-27).
         if (data.type === "poll_update") {
+          if (window.OverlayPoll && typeof window.OverlayPoll.render === "function") {
+            window.OverlayPoll.render(data);
+          }
+          var legacyPanel = document.getElementById("poll-panel");
+          if (legacyPanel) legacyPanel.remove();
+          return;
+        }
+
+        if (false) { // legacy panel disabled — kept inline for git diff readability
           var panel = document.getElementById("poll-panel");
 
           if (data.state === "idle") {
@@ -198,8 +433,10 @@
             labelLeft.appendChild(keyBold);
             labelLeft.appendChild(document.createTextNode(" " + o.text));
 
+            // Viewer-facing poll: show vote count only. Per design brief the
+            // viewer never sees percentages (admin-only metric).
             var labelRight = document.createElement("span");
-            labelRight.textContent = o.count + " (" + o.percentage + "%)";
+            labelRight.textContent = String(o.count);
 
             labelRow.appendChild(labelLeft);
             labelRow.appendChild(labelRight);
@@ -267,7 +504,7 @@
           data.opacity,
           "#" + data.color,
           data.size,
-          parseInt(data.speed, 10),
+          parseFloat(data.speed) || 1.0,
           data.fontInfo,
           data.textStyles || { textStroke: true, strokeWidth: 2, strokeColor: "#000000", textShadow: false, shadowBlur: 4 },
           data.displayArea || { top: 0, height: 100 },
@@ -313,7 +550,7 @@
     var now = Date.now();
     var maxTime = 20000;
     var minTime = 2000;
-    var duration = maxTime - ((speed - 1) * (maxTime - minTime)) / 9;
+    var duration = maxTime - ((speed - 0.5) * (maxTime - minTime)) / 2.5;
 
     // Purge expired entries
     for (var i = danmuTracks.length - 1; i >= 0; i--) {
@@ -361,7 +598,7 @@
     opacity = opacity || 75;
     color = color || "#ffffff";
     size = size || 50;
-    speed = speed || 7;
+    speed = speed || 1.0;
     fontInfo = fontInfo || { name: "NotoSansTC", url: null, type: "default" };
     textStyles = textStyles || { textStroke: true, strokeWidth: 2, strokeColor: "#000000", textShadow: false, shadowBlur: 4 };
     displayArea = displayArea || { top: 0, height: 100 };
@@ -476,10 +713,10 @@
         var userOpacity = (opacity || 75) * 0.01;
         wrapper.style.opacity = String(userOpacity);
 
-        var currentSpeed = Math.max(1, Math.min(10, isNaN(speed) ? 5 : speed));
+        var currentSpeed = Math.max(0.5, Math.min(3.0, isNaN(speed) ? 1.0 : speed));
         var maxTime = 20000;
         var minTime = 2000;
-        var duration = maxTime - ((currentSpeed - 1) * (maxTime - minTime)) / 9;
+        var duration = maxTime - ((currentSpeed - 0.5) * (maxTime - minTime)) / 2.5;
         duration = Math.max(minTime, Math.min(maxTime, duration));
 
         // Apply .dme effect to inner element
@@ -786,6 +1023,89 @@
     var textNode = document.createTextNode(cfg.text || "");
     el.appendChild(textNode);
   }
+
+  // ── Konami easter egg ─────────────────────────────────────────────────────
+  // Triggered by admin POST /admin/konami/trigger → WS broadcast → onmessage
+  // dispatches `{type:"konami"}` here. Freezes every visible danmu, scales
+  // them up + spins outward 360°, fades to 0, then removes all of them.
+  // Pure visual; no state change. Reduced-motion clients skip the animation
+  // and just clear the screen.
+  window.__konamiTrigger = function () {
+    var nodes = document.querySelectorAll(
+      "h1.danmu, img.danmu, div.danmu-wrapper, div[style*='translateX']"
+    );
+    if (!nodes.length) return;
+
+    var prefersReduced = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) {
+      nodes.forEach(function (n) { n.remove(); });
+      return;
+    }
+
+    var screenW = window.innerWidth || document.documentElement.clientWidth;
+    var screenH = window.innerHeight || document.documentElement.clientHeight;
+    var cx = screenW / 2;
+    var cy = screenH / 2;
+    var maxFly = Math.max(screenW, screenH) * 0.7;
+    var DURATION_MS = 1200;
+
+    nodes.forEach(function (el, i) {
+      var rect = el.getBoundingClientRect();
+      // Pin each element at its current screen position so the existing
+      // scroll/float animation no longer tugs it sideways.
+      el.style.transition = "none";
+      el.style.animation = "none";
+      el.style.position = "fixed";
+      el.style.left = rect.left + "px";
+      el.style.top = rect.top + "px";
+      el.style.right = "auto";
+      el.style.bottom = "auto";
+      el.style.transform = "none";
+      el.style.willChange = "transform, opacity";
+      el.style.zIndex = "10000";
+
+      // Compute outward vector relative to screen centre. Items already
+      // off-centre fly further in their natural direction; centred items
+      // get a deterministic angle from their index so they don't pile up.
+      var elCx = rect.left + rect.width / 2;
+      var elCy = rect.top + rect.height / 2;
+      var dx = elCx - cx;
+      var dy = elCy - cy;
+      var len = Math.sqrt(dx * dx + dy * dy);
+      if (len < 40) {
+        var ang = (i * 137.5) * Math.PI / 180;  // golden-angle stagger
+        dx = Math.cos(ang);
+        dy = Math.sin(ang);
+        len = 1;
+      }
+      var ux = dx / len;
+      var uy = dy / len;
+      var fly = maxFly * (0.6 + Math.random() * 0.6);
+      var flyX = ux * fly;
+      var flyY = uy * fly;
+      var spin = (Math.random() < 0.5 ? -1 : 1) * (180 + Math.random() * 540);
+
+      // Force layout flush before applying the transition so Safari picks
+      // up the initial position frame.
+      void el.offsetWidth;
+
+      el.style.transition =
+        "transform " + DURATION_MS + "ms cubic-bezier(0.22, 0.94, 0.62, 1), " +
+        "opacity " + DURATION_MS + "ms ease-out";
+      el.style.transform =
+        "translate(" + flyX.toFixed(0) + "px, " + flyY.toFixed(0) + "px) " +
+        "rotate(" + spin.toFixed(0) + "deg) scale(2.4)";
+      el.style.opacity = "0";
+    });
+
+    setTimeout(function () {
+      nodes.forEach(function (n) {
+        if (n && n.parentNode) n.parentNode.removeChild(n);
+      });
+      console.log("[overlay] 🎮 KONAMI · cleared", nodes.length, "danmu");
+    }, DURATION_MS + 50);
+  };
 
   // ── Start ──────────────────────────────────────────────────────────────────
   connect();

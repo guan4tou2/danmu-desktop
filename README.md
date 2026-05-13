@@ -5,6 +5,8 @@ Display bullet screen directly on the desktop
 
 [中文說明](https://github.com/guan4tou2/danmu-desktop/blob/main/README-CH.md)
 
+For a complete capability inventory (server routes, admin pages, persistence map, scope guardrails), see [docs/FEATURES.md](docs/FEATURES.md).
+
 ![img](img/danmu%20display.png)
 
 ## Overview
@@ -102,10 +104,14 @@ cd danmu-desktop
 ./setup.sh gen-secret                # generate + inject SECRET_KEY only
 
 # Then start the stack. The wizard prints the exact command; common paths:
-docker compose --profile http up -d          # local HTTP
-docker compose --profile https up -d         # HTTPS self-signed (LAN / VPS)
+docker compose --profile https up -d         # HTTPS self-signed (LAN / VPS) — recommended
 docker compose --profile traefik up -d       # HTTPS + Let's Encrypt (public domain)
+docker compose --profile http up -d          # local HTTP (dev only — no desktop client)
 ```
+
+> v5.0.0+: the Electron desktop client connects via `wss://` only.
+> `--profile http` runs server + web admin/viewer fine but cannot
+> serve the desktop overlay.
 
 Full deploy guide (HTTPS modes, desktop-client WS port, Redis, backup/
 restore, upgrades): **[DEPLOYMENT.md](DEPLOYMENT.md)**.
@@ -214,7 +220,7 @@ Every other setting ships a safe default; `.env.example` shows them all.
 ## Port Configuration
 
 - `4000`: Web interface (HTTP via reverse proxy)
-- `4001`: Danmu Desktop Client connection (WebSocket via reverse proxy)
+- `4001`: Danmu Fire client connection (WebSocket via reverse proxy)
 
 ## References
 

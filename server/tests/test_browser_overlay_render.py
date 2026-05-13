@@ -305,13 +305,13 @@ def test_danmu_disappears_after_animation(browser_session, server_ports):
     try:
         _fire(
             http_port,
-            {"text": "disappear_test", "speed": 10},
+            {"text": "disappear_test", "speed": 3.0},
         )
 
         danmu = page.locator("h1.danmu", has_text="disappear_test")
         danmu.first.wait_for(timeout=5000)
 
-        # speed=10 最快 duration ~2s，等待消失
+        # speed=3.0 最快 duration ~2s，等待消失
         page.wait_for_timeout(5000)
 
         count = page.locator("h1.danmu", has_text="disappear_test").count()

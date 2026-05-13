@@ -2,6 +2,19 @@
 
 給 Claude Design 的設計說明。目標：在現有 codebase 能實作的範圍內，完善前端視覺與互動，不生出沒有後端支撐的假功能。
 
+> **2026-05-13 update:** this brief is now historical baseline material. For new
+> Claude Design work, read these files in order:
+> `docs/designs/design-v2/STYLE-CONTRACT.md`,
+> `docs/designs/design-v2/HANDOFF-PRIORITY-RESET-2026-05-05.md`, and
+> `docs/designs/design-v2/HANDOFF-ENGINEERING-UPDATE-2026-05-13.md`.
+> If the current discussion references `danmu (3).zip`, also read
+> `docs/designs/design-v2/HANDOFF-ZIP3-REVIEW-2026-05-14.md`.
+> If the current discussion is about the Electron desktop client, also read
+> `docs/designs/desktop-finalization-2026-05-14.md`.
+> The current product priority is Send / Display / Effects / Assets. Polls and
+> moderation are secondary, the client is only a local display endpoint, and
+> `Security` now belongs under `System`.
+
 ---
 
 ## 產品定位
@@ -67,12 +80,17 @@ Danmu Fire 是即時彈幕送字系統：
 | System | `settings.py` / `ws_auth.py` | 全域設定 |
 | **Fingerprint**（新）| 待實作 | 觀眾指紋 hash/msgs/rate/state |
 
-### Desktop Client 4 場景
+### Desktop Client Canonical Scenes
 
-1. **Overlay on Desktop** — 透明 overlay 疊在任何視窗上
-2. **Control Window** — sidebar：Overlay / Connection / Shortcuts / About
-3. **Connect Dialog** — 3 步：Server → Auth & Prefs → Done
-4. **Tray Menu**（macOS menubar）— 顯示/隱藏 overlay、暫停、清空、偏好、退出
+1. **Desktop · Control Window** — 只保留 `Connection / Overlay / About`，且依序排列
+2. **Desktop · Overlay on Desktop** — 透明 overlay 疊在任何視窗上
+3. **Desktop · Tray · Connected**
+4. **Desktop · Tray · Disconnected**
+
+補充：
+- `Desktop · First-run Gate` 不再是獨立 scene，整合到 `Control Window > Connection`
+- `Desktop · Window Picker` 不再是獨立 scene
+- `Desktop · Tray Popover` 不再是獨立 scene
 
 ---
 

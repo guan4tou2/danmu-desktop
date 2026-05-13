@@ -12,7 +12,7 @@
 
   /* Semantic */
   --color-success: #22c55e;
-  --color-warning: #eab308;
+  --color-warning: #fbbf24;            /* amber-400 — prototype hudTokens.amber */
   --color-error: #ef4444;
   --color-error-hover: #dc2626;
   --color-error-light: #f87171;

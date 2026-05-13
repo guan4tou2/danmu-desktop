@@ -278,3 +278,1448 @@ details summary svg {
     border-radius: var(--radius-pill);
   }
 }
+
+/* ───────────── Title bar (prototype desktop.jsx ControlWindow:152) ─────────────
+ * Sticky macOS-style bar at the top: traffic lights + label + CONNECTED dot.
+ * Uses position: sticky so it stays visible while content scrolls. */
+.client-titlebar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 36px;
+  background: rgba(15, 23, 42, 0.92);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  /* Make the title bar draggable like a native chrome */
+  -webkit-app-region: drag;
+}
+
+/* On macOS the window uses titleBarStyle:"hidden" so native traffic
+   lights overlap the top-left of this region — leave 80px padding so
+   our title text + status pill don't sit underneath them. Windows /
+   Linux keep their default frame above this area, so 12px is enough. */
+body[data-os="mac"] .client-titlebar {
+  padding-left: 80px;
+}
+
+/* Buttons / status / interactive elements inside titlebar opt out of drag */
+.client-titlebar button,
+.client-titlebar .client-titlebar-status,
+.client-titlebar .client-titlebar-update {
+  -webkit-app-region: no-drag;
+}
+
+.client-titlebar-label {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.client-titlebar-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: rgba(148, 163, 184, 0.9);
+  text-transform: uppercase;
+}
+
+.client-titlebar-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #94a3b8;
+  box-shadow: 0 0 6px rgba(148, 163, 184, 0.4);
+}
+
+.client-titlebar-status-dot[data-client-status="connected"] {
+  background: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8, 0 0 12px rgba(56, 189, 248, 0.4);
+  animation: client-titlebar-pulse 2s ease-in-out infinite;
+}
+
+.client-titlebar-status-dot[data-client-status="connecting"] {
+  background: #fbbf24;
+  box-shadow: 0 0 6px #fbbf24;
+}
+
+.client-titlebar-status[data-client-status="connected"] .client-titlebar-status-text,
+.client-titlebar-status-dot[data-client-status="connected"] + .client-titlebar-status-text {
+  color: #38bdf8;
+}
+
+@keyframes client-titlebar-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.6; transform: scale(0.85); }
+}
+
+/* ───────────── Title bar update badge (P2-3) ─────────────
+ * Small chip beside the centered label. Pulses when an update is staged. */
+.client-titlebar-update {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.client-titlebar-update[hidden] { display: none !important; }
+
+.client-titlebar-update:hover {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: #38bdf8;
+}
+
+.client-titlebar-update .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8, 0 0 12px rgba(56, 189, 248, 0.5);
+  animation: client-titlebar-pulse 1.6s ease-in-out infinite;
+}
+
+/* ───────────── Update card (P2-3) — about section ─────────────
+ * Inline release-notes + progress bar + Restart/Skip/Later buttons. */
+.client-update-card {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.client-update-card[hidden] { display: none !important; }
+
+.client-update-card .head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.client-update-card .title-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.client-update-card .kicker {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #38bdf8;
+  text-transform: uppercase;
+}
+
+.client-update-card .title {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(241, 245, 249, 0.95);
+}
+
+.client-update-card .version {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  color: rgba(148, 163, 184, 0.85);
+  letter-spacing: 0.5px;
+}
+
+.client-update-card .notes {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(241, 245, 249, 0.85);
+  white-space: pre-wrap;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.client-update-card .notes[hidden] { display: none !important; }
+
+.client-update-card .progress {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.client-update-card .progress[hidden] { display: none !important; }
+
+.client-update-card .progress-track {
+  flex: 1 1 auto;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.18);
+  overflow: hidden;
+}
+
+.client-update-card .progress-fill {
+  height: 100%;
+  background: linear-gradient(to right, #38bdf8, #0ea5e9);
+  transition: width 0.2s ease;
+  border-radius: 999px;
+}
+
+.client-update-card .progress-label {
+  flex: 0 0 auto;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: rgba(241, 245, 249, 0.85);
+  min-width: 40px;
+  text-align: right;
+}
+
+.client-update-card .error {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #fca5a5;
+}
+
+.client-update-card .error[hidden] { display: none !important; }
+
+.client-update-card .actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.client-update-card .actions .client-action-btn[hidden] { display: none !important; }
+
+.client-update-card .actions .client-action-btn.is-primary {
+  border-color: #38bdf8;
+  background: #38bdf8;
+  color: #000;
+  font-weight: 600;
+}
+
+.client-update-card .actions .client-action-btn.is-primary:hover {
+  background: #7dd3fc;
+  border-color: #7dd3fc;
+  color: #000;
+}
+
+/* ───────────── Client Shell (prototype desktop.jsx ControlWindow:151) ─────────────
+ * Flex row: Sidebar (168px) + Main (flex 1, scroll). Sits below title bar.
+ * Sits on top of the #vanta-bg particle layer via z-index.  */
+.client-shell {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  min-height: calc(100vh - 36px);
+  width: 100%;
+}
+
+.client-sidebar {
+  flex: 0 0 168px;
+  background: rgba(15, 23, 42, 0.85);
+  border-right: 1px solid rgba(148, 163, 184, 0.18);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+}
+
+.client-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.client-nav-btn {
+  all: unset;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(241, 245, 249, 0.9);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.client-nav-btn:hover {
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.client-nav-btn.is-active {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+}
+
+.client-nav-icon {
+  width: 14px;
+  text-align: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.client-nav-label {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  min-width: 0;
+}
+
+.client-nav-label .zh {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.client-nav-btn.is-active .client-nav-label .zh {
+  font-weight: 600;
+}
+
+.client-nav-label .en {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: rgba(148, 163, 184, 0.8);
+  margin-top: 1px;
+}
+
+.client-sidebar-foot {
+  margin-top: auto;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  color: rgba(148, 163, 184, 0.85);
+  line-height: 1.6;
+}
+
+.client-sidebar-foot .ver { color: rgba(241, 245, 249, 0.9); }
+
+.client-sidebar-foot .status {
+  color: #86efac;
+  margin-top: 2px;
+  letter-spacing: 1px;
+}
+
+.client-sidebar-foot .status .dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #86efac;
+  margin-right: 4px;
+  vertical-align: 0;
+  box-shadow: 0 0 6px rgba(134, 239, 172, 0.5);
+}
+
+.client-main {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 22px;
+  overflow: auto;
+}
+
+.client-toprow {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.client-section {
+  display: block;
+}
+
+.client-section[hidden] {
+  display: none !important;
+}
+
+.client-section-head {
+  margin-bottom: 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.client-section-title {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: rgba(241, 245, 249, 0.95);
+}
+
+.client-section-kicker {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(148, 163, 184, 0.8);
+  text-transform: uppercase;
+}
+
+/* Shortcuts list */
+.client-keys-card {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  padding: 14px;
+  backdrop-filter: blur(8px);
+}
+
+.client-keys-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 6px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.client-keys-row:last-child { border-bottom: none; }
+
+.client-keys-row .act {
+  flex: 1;
+  font-size: 13px;
+  color: rgba(241, 245, 249, 0.9);
+}
+
+.client-keys-row .kbd {
+  padding: 4px 10px;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.12);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: #38bdf8;
+}
+
+.client-keys-hint {
+  margin-top: 14px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+/* ── Update section (5.1.0 — closes prototype gap UpdateSection:389) ── */
+.client-update-status {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.5);
+  margin-bottom: 14px;
+}
+.client-update-status-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  background: rgba(134, 239, 172, 0.12);
+  border: 1px solid rgba(134, 239, 172, 0.45);
+  color: #86efac;
+  flex-shrink: 0;
+}
+.client-update-status-icon[data-update-icon="warn"] {
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.45);
+  color: #fbbf24;
+}
+.client-update-status-body { flex: 1; min-width: 0; }
+.client-update-status-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(241, 245, 249, 0.95);
+}
+.client-update-status-meta {
+  margin-top: 3px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: rgba(148, 163, 184, 0.85);
+}
+.client-update-status-meta .sep { margin: 0 6px; opacity: 0.5; }
+.client-update-check-btn {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 6px;
+  color: #38bdf8;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.client-update-check-btn:hover {
+  background: rgba(56, 189, 248, 0.12);
+  color: #f1f5f9;
+}
+
+.client-update-prefs {
+  padding: 14px 16px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.5);
+  margin-bottom: 14px;
+}
+.client-update-prefs-kicker {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: rgba(148, 163, 184, 0.85);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.client-update-pref {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+.client-update-pref input[type="checkbox"] {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+.client-update-pref-body { display: flex; flex-direction: column; gap: 2px; }
+.client-update-pref-label {
+  font-size: 13px;
+  color: rgba(241, 245, 249, 0.9);
+}
+.client-update-pref-hint {
+  font-size: 11px;
+  color: rgba(148, 163, 184, 0.85);
+}
+
+.client-update-changelog {
+  padding: 14px 16px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.5);
+}
+.client-update-changelog-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.client-update-changelog-kicker {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: rgba(148, 163, 184, 0.85);
+  text-transform: uppercase;
+}
+.client-update-changelog-link {
+  margin-left: auto;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: #38bdf8;
+  text-decoration: none;
+}
+.client-update-changelog-link:hover { color: #7dd3fc; }
+.client-update-changelog-empty {
+  padding: 12px 0;
+  font-size: 12px;
+  color: rgba(148, 163, 184, 0.7);
+  text-align: center;
+}
+
+/* About card */
+.client-about-card {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 14px;
+  backdrop-filter: blur(8px);
+}
+
+.client-about-logo object,
+.client-about-logo img {
+  display: block;
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+}
+
+.client-about-body .title {
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(241, 245, 249, 0.95);
+}
+
+.client-about-body .meta {
+  margin-top: 2px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: rgba(148, 163, 184, 0.85);
+}
+
+.client-about-body .status {
+  margin-top: 4px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #86efac;
+}
+
+.client-about-body .status .dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #86efac;
+  margin-right: 4px;
+  vertical-align: 0;
+  box-shadow: 0 0 6px rgba(134, 239, 172, 0.5);
+}
+
+.client-about-actions {
+  margin-left: auto;
+}
+
+.client-action-btn {
+  padding: 9px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: transparent;
+  color: rgba(241, 245, 249, 0.9);
+  font-size: 12px;
+  font-weight: 500;
+  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+
+.client-action-btn:hover {
+  border-color: #38bdf8;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.06);
+}
+
+.client-about-desc {
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.45);
+  font-size: 12px;
+  line-height: 1.7;
+  color: rgba(241, 245, 249, 0.85);
+  backdrop-filter: blur(6px);
+}
+
+.client-about-footer {
+  margin-top: 10px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: rgba(148, 163, 184, 0.7);
+}
+
+/* ───────────── Connection section (prototype ConnSection:250) ─────────────
+ * Server summary only; TLS is implicit because runtime always uses WSS.
+ * Legacy host/port/token inputs hidden behind the ⚙ 更改 action. */
+.client-conn-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 780px) {
+  .client-conn-grid { grid-template-columns: 1fr; }
+}
+
+.client-conn-card {
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(8px);
+}
+
+.client-conn-kicker {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(148, 163, 184, 0.8);
+  text-transform: uppercase;
+}
+
+.client-conn-url {
+  margin-top: 6px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(241, 245, 249, 0.95);
+  word-break: break-all;
+}
+
+.client-conn-meta {
+  margin-top: 4px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: rgba(148, 163, 184, 0.8);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.client-conn-meta .sep { color: rgba(148, 163, 184, 0.5); }
+.client-conn-meta b { font-weight: 500; color: rgba(241, 245, 249, 0.95); }
+
+.client-conn-note {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.client-conn-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 6px;
+}
+
+.client-mini-btn {
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.35);
+  color: rgba(241, 245, 249, 0.9);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.client-mini-btn:hover {
+  border-color: #38bdf8;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+}
+
+/* Message flow sparkline card */
+.client-conn-flow .client-conn-sparkline {
+  display: block;
+  width: 100%;
+  height: 56px;
+  margin-top: 10px;
+}
+
+.client-conn-sparkline .fill { fill: #38bdf8; opacity: 0.12; }
+.client-conn-sparkline .stroke {
+  fill: none;
+  stroke: #38bdf8;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.client-conn-flow-stats {
+  margin-top: 8px;
+  display: flex;
+  gap: 20px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.client-conn-flow-stats b { font-weight: 500; color: rgba(241, 245, 249, 0.95); }
+.client-conn-flow-stats b.is-accent { color: #38bdf8; }
+
+/* Connection edit form — expanded via ⚙ 更改 */
+.client-conn-edit {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(8px);
+}
+
+.client-conn-edit[hidden] { display: none; }
+
+.client-conn-edit-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.client-conn-edit-head .client-mini-btn { margin-left: auto; }
+
+.client-conn-edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .client-conn-edit-grid { grid-template-columns: 1fr; }
+}
+
+.client-conn-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(241, 245, 249, 0.9);
+}
+
+.client-conn-edit-field > span {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: rgba(148, 163, 184, 0.8);
+  text-transform: uppercase;
+}
+
+.client-conn-edit-field input,
+.client-conn-edit-field select {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.6);
+  color: rgba(241, 245, 249, 0.95);
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.client-conn-edit-field input:focus,
+.client-conn-edit-field select:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
+}
+
+.client-conn-edit-check {
+  grid-column: span 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(241, 245, 249, 0.9);
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .client-conn-edit-check { grid-column: span 1; }
+}
+
+.client-conn-edit-check input[type="checkbox"] {
+  accent-color: #38bdf8;
+}
+
+/* ───────────── Overlay section (prototype OverlaySection:203) ─────────────
+ * Show/hide primary button + display picker + action buttons + NOTE.
+ * Legacy Preview & Settings accordion is tucked away in client-overlay-advanced. */
+.client-overlay-card {
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.client-overlay-card .client-overlay-card-body { flex: 1; }
+
+.client-overlay-card .title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(241, 245, 249, 0.95);
+}
+
+.client-overlay-card .dim {
+  margin-top: 2px;
+  font-size: 11px;
+  color: rgba(148, 163, 184, 0.85);
+}
+
+.client-overlay-button {
+  min-width: 132px;
+  padding: 10px 16px;
+  border-radius: 7px;
+  border: 1px solid #38bdf8;
+  background: #38bdf8;
+  color: #020617;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+  flex-shrink: 0;
+}
+
+.client-overlay-button:hover {
+  background: #7dd3fc;
+  border-color: #7dd3fc;
+  box-shadow: 0 10px 24px rgba(56, 189, 248, 0.18);
+  transform: translateY(-1px);
+}
+
+.client-overlay-button.is-running {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(248, 113, 113, 0.7);
+  color: #fecaca;
+}
+
+.client-overlay-button.is-running:hover {
+  background: rgba(239, 68, 68, 0.24);
+  border-color: rgba(252, 165, 165, 0.85);
+  box-shadow: 0 10px 24px rgba(239, 68, 68, 0.14);
+}
+
+/* Display picker (prototype ScreenChip row) */
+.client-overlay-screens {
+  display: block;
+}
+
+.client-overlay-screens .head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.client-overlay-screens .head .label {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(241, 245, 249, 0.9);
+}
+
+.client-overlay-screens .head .kicker {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(148, 163, 184, 0.8);
+  text-transform: uppercase;
+}
+
+.client-screen-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.client-screen-chip {
+  flex: 1 1 200px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+  text-align: left;
+  color: rgba(241, 245, 249, 0.9);
+  font: inherit;
+}
+
+.client-screen-chip .head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.client-screen-chip .box {
+  width: 26px;
+  height: 18px;
+  border-radius: 2px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.client-screen-chip .name {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(241, 245, 249, 0.9);
+}
+
+.client-screen-chip .check {
+  margin-left: auto;
+  color: #38bdf8;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  opacity: 0;
+}
+
+.client-screen-chip .meta {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.client-screen-chip.is-active {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.client-screen-chip.is-active .box {
+  background: #38bdf8;
+  border-color: #38bdf8;
+}
+
+.client-screen-chip.is-active .name { color: #38bdf8; font-weight: 600; }
+.client-screen-chip.is-active .check { opacity: 1; }
+
+.client-overlay-sync {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(203, 213, 225, 0.86);
+  font-size: 12px;
+}
+
+.client-overlay-sync input {
+  accent-color: #38bdf8;
+}
+
+/* Overlay action buttons (secondary actions only; start/stop uses the primary button) */
+.client-overlay-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.client-overlay-actions .client-action-btn {
+  padding: 9px 16px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: transparent;
+  color: rgba(241, 245, 249, 0.9);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.client-overlay-actions .client-action-btn:hover {
+  border-color: #38bdf8;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.06);
+}
+
+.client-overlay-actions .client-action-btn.is-primary {
+  border-color: #38bdf8;
+  background: #38bdf8;
+  color: #000;
+  font-weight: 600;
+}
+
+.client-overlay-actions .client-action-btn.is-primary:hover {
+  background: #7dd3fc;
+  border-color: #7dd3fc;
+  color: #000;
+}
+
+/* NOTE panel (prototype OverlaySection:239) */
+.client-overlay-note {
+  padding: 12px;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: rgba(148, 163, 184, 0.85);
+  margin-bottom: 14px;
+}
+
+.client-overlay-note .kicker {
+  display: inline-block;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #38bdf8;
+  text-transform: uppercase;
+}
+
+.client-overlay-note p {
+  margin: 4px 0 0;
+}
+
+.client-overlay-note b { color: rgba(241, 245, 249, 0.95); font-weight: 600; }
+
+
+/* ─── First-run connection setup ─────────────────────────────────────────
+ * Originally derived from prototype desktop.jsx FirstRunGate, but now
+ * rendered inline inside the Connection tab instead of as a standalone
+ * desktop surface. Hidden after successful test+confirm or "稍後設定".
+ * Reusable via window.FirstRunGate.open() (e.g. menu → 重新設定).
+ */
+/* 5.1.0: Gate moved from fullscreen overlay to inline conn-tab card.
+   Sidebar stays clickable; user can navigate to other tabs while the
+   conn tab carries the setup flow. Old `position: fixed; z-index: 9000`
+   was a UX bug — invisible-blocked sidebar buttons. */
+.client-firstrun-gate {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 18px;
+}
+.client-firstrun-gate[hidden] { display: none; }
+
+.client-firstrun-card {
+  width: 560px;
+  max-width: calc(100vw - 32px);
+  padding: 36px 40px 32px;
+  background: var(--admin-panel, #0f172a);
+  border: 1px solid var(--hud-line, rgba(148,163,184,0.18));
+  border-radius: 12px;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.45);
+  font-family: var(--font-sans, sans-serif);
+  color: var(--color-text-primary, #f1f5f9);
+}
+
+.client-firstrun-hero {
+  text-align: center;
+  margin-bottom: 22px;
+}
+.client-firstrun-title {
+  margin: 0;
+  font-family: var(--font-display, "Bebas Neue"), sans-serif;
+  font-size: 48px;
+  letter-spacing: 0.04em;
+  color: var(--color-primary, #38bdf8);
+  text-transform: uppercase;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+}
+.client-firstrun-subtitle {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--color-text-muted, #94a3b8);
+  text-transform: uppercase;
+}
+
+.client-firstrun-lead {
+  font-size: 14px;
+  color: var(--color-text-strong, #f1f5f9);
+  margin-bottom: 4px;
+}
+.client-firstrun-hint {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+  margin-bottom: 18px;
+  line-height: 1.6;
+}
+
+.client-firstrun-stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+.client-firstrun-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+}
+.client-firstrun-step-circle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--hud-line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: inherit;
+}
+.client-firstrun-step.is-active {
+  color: var(--color-primary);
+}
+.client-firstrun-step.is-active .client-firstrun-step-circle {
+  border-color: var(--color-primary);
+  background: var(--hud-cyan-soft, rgba(56,189,248,0.12));
+}
+.client-firstrun-step.is-done {
+  color: #86efac;
+}
+.client-firstrun-step.is-done .client-firstrun-step-circle {
+  border-color: #86efac;
+  background: rgba(132,204,22,0.12);
+}
+.client-firstrun-step.is-done .client-firstrun-step-circle::before {
+  content: "✓";
+}
+.client-firstrun-step.is-done .client-firstrun-step-circle {
+  font-size: 10px;
+}
+.client-firstrun-step-line {
+  flex: 1;
+  height: 1px;
+  background: var(--hud-line);
+}
+
+.client-firstrun-field {
+  margin-bottom: 14px;
+}
+.client-firstrun-field-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.12em;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.client-firstrun-row {
+  display: flex;
+  gap: 8px;
+}
+.client-firstrun-input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  background: var(--color-bg-deep, #020617);
+  border: 1px solid var(--color-primary);
+  border-radius: 6px;
+  color: var(--color-text-strong, #f1f5f9);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  outline: none;
+  box-shadow: 0 0 0 3px var(--hud-cyan-soft);
+}
+.client-firstrun-input--port {
+  flex: 0 0 80px;
+}
+.client-firstrun-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--hud-cyan-soft);
+}
+.client-firstrun-test-btn {
+  padding: 12px 18px;
+  border-radius: 6px;
+  background: var(--color-primary);
+  color: #000;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 120ms;
+}
+.client-firstrun-test-btn:hover { background: #0ea5e9; }
+.client-firstrun-test-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.client-firstrun-field-help {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+  line-height: 1.6;
+}
+
+.client-firstrun-test-result {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.client-firstrun-test-result.is-pending {
+  background: var(--hud-cyan-soft);
+  color: var(--color-primary);
+}
+.client-firstrun-test-result.is-good {
+  background: rgba(132,204,22,0.12);
+  color: #86efac;
+  border: 1px solid rgba(132,204,22,0.4);
+}
+.client-firstrun-test-result.is-bad {
+  background: rgba(248,113,113,0.12);
+  color: #f87171;
+  border: 1px solid rgba(248,113,113,0.4);
+}
+
+.client-firstrun-recent {
+  padding: 12px;
+  border-radius: 6px;
+  background: var(--color-bg-elevated, #1e293b);
+  border: 1px solid var(--hud-line);
+  margin-bottom: 18px;
+}
+.client-firstrun-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+}
+.client-firstrun-recent-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 6px 4px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+}
+.client-firstrun-recent-row:hover {
+  background: var(--hud-cyan-soft);
+}
+.client-firstrun-recent-row .addr {
+  flex: 1;
+  text-align: left;
+  font-size: 12px;
+  color: var(--color-text-strong);
+}
+.client-firstrun-recent-row .when {
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.client-firstrun-remember {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+.client-firstrun-remember input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+}
+.client-firstrun-remember-text {
+  font-size: 12px;
+  color: var(--color-text-strong);
+}
+.client-firstrun-remember-hint {
+  margin: 0 0 22px 26px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+  line-height: 1.6;
+}
+
+.client-firstrun-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hud-line);
+}
+.client-firstrun-footer-link {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  text-decoration: none;
+}
+.client-firstrun-footer-link:hover { color: var(--color-primary); }
+.client-firstrun-footer-spacer { flex: 1; }
+.client-firstrun-skip-btn {
+  padding: 9px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--hud-line);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 500;
+}
+.client-firstrun-skip-btn:hover {
+  border-color: var(--hud-line-strong);
+  color: var(--color-text-strong);
+}
+.client-firstrun-confirm-btn {
+  padding: 9px 22px;
+  border-radius: 6px;
+  border: none;
+  background: var(--color-primary);
+  color: #000;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.client-firstrun-confirm-btn:disabled {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+.client-firstrun-bg-hint {
+  position: absolute;
+  bottom: 16px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}

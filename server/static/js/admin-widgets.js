@@ -1,22 +1,16 @@
+// admin-widgets.js — Overlay widgets manager (P6-2 split, v5.0.0 Soft Holo retrofit)
+//
+// Replaces the legacy <details class="settings-card"> + .btn .btn-sm shell
+// with the v2 chrome (page header / hud-page-stack / admin-widget-* atoms).
+// Behavior unchanged — same /admin/widgets/* API, same widget kinds, same
+// position whitelist. Only the DOM + classes changed.
+
 (function () {
   "use strict";
 
   document.addEventListener("DOMContentLoaded", () => {
     if (!window.DANMU_CONFIG?.session?.logged_in) return;
-    var loadDetailsState = window.AdminUtils.loadDetailsState;
-    var saveDetailsState = window.AdminUtils.saveDetailsState;
     var escapeHtml = window.AdminUtils.escapeHtml;
-
-    function isOpen(id, defaultOpen = false) {
-      var state = loadDetailsState();
-      return state[id] !== undefined ? state[id] : defaultOpen;
-    }
-
-    function saveDetailsToggle(detailsEl) {
-      var state = loadDetailsState();
-      state[detailsEl.id] = detailsEl.open;
-      saveDetailsState(state);
-    }
 
     let widgetsInjecting = false;
     const observer = new MutationObserver(() => {
@@ -31,27 +25,37 @@
 
     // ── Section injection ────────────────────────────────────────────────
     function injectWidgetsSection(grid) {
-      const section = document.createElement("details");
+      const section = document.createElement("div");
       section.id = "sec-widgets";
-      section.className = "settings-card";
-      if (isOpen("sec-widgets")) section.setAttribute("open", "");
-      section.addEventListener("toggle", () => saveDetailsToggle(section));
+      section.className = "admin-widgets-page hud-page-stack lg:col-span-2";
+
+      const i18n = (k, fallback) => {
+        const v = window.ServerI18n?.t?.(k);
+        return (v && v !== k) ? v : (fallback || k);
+      };
 
       section.innerHTML = `
-        <summary><strong>${escapeHtml(ServerI18n.t("widgetsTitle"))}</strong>
-          <span class="desc">${escapeHtml(ServerI18n.t("widgetsDesc"))}</span>
-        </summary>
-        <div class="settings-content" style="padding:12px;">
-          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
-            <button id="widget-add-scoreboard" class="btn btn-sm">+ ${escapeHtml(ServerI18n.t("widgetScoreboard"))}</button>
-            <button id="widget-add-ticker" class="btn btn-sm">+ ${escapeHtml(ServerI18n.t("widgetTicker"))}</button>
-            <button id="widget-add-label" class="btn btn-sm">+ ${escapeHtml(ServerI18n.t("widgetLabel"))}</button>
-            <button id="widget-clear-all" class="btn btn-sm btn-danger" style="margin-left:auto;">
-              ${escapeHtml(ServerI18n.t("clearAll"))}
-            </button>
-          </div>
-          <div id="widgets-list"></div>
-        </div>`;
+        <div class="admin-poll-head">
+          <div class="admin-poll-kicker">OVERLAY WIDGETS · 分數板 · 跑馬燈 · 標籤</div>
+          <div class="admin-poll-title">${escapeHtml(i18n("widgetsTitle", "Overlay Widgets"))}</div>
+          <p class="admin-poll-subnote">${escapeHtml(i18n("widgetsDesc", "在 OBS 覆蓋層上新增分數板、跑馬燈或文字標籤"))}</p>
+        </div>
+        <div class="admin-widgets-actions">
+          <button id="widget-add-scoreboard" type="button" class="admin-poll-btn is-primary">
+            + ${escapeHtml(i18n("widgetScoreboard", "分數板"))}
+          </button>
+          <button id="widget-add-ticker" type="button" class="admin-poll-btn is-primary">
+            + ${escapeHtml(i18n("widgetTicker", "跑馬燈"))}
+          </button>
+          <button id="widget-add-label" type="button" class="admin-poll-btn is-primary">
+            + ${escapeHtml(i18n("widgetLabel", "標籤"))}
+          </button>
+          <span class="spacer"></span>
+          <button id="widget-clear-all" type="button" class="admin-poll-btn is-ghost">
+            ${escapeHtml(i18n("clearAll", "全部清除"))}
+          </button>
+        </div>
+        <div id="widgets-list" class="admin-widgets-list"></div>`;
 
       grid.appendChild(section);
 
@@ -89,12 +93,15 @@
     }
 
     async function createWidget(type) {
+      // Default colors picked from the locked palette (cyan / amber).
+      // No more #f43f5e — STYLE-CONTRACT bans it for chrome; the user can
+      // still pick any color they want via the per-team color input below.
       const defaults = {
         scoreboard: {
           title: "Score",
           teams: [
-            { name: "Team A", score: 0, color: "#06b6d4" },
-            { name: "Team B", score: 0, color: "#f43f5e" },
+            { name: "Team A", score: 0, color: "#38bdf8" },
+            { name: "Team B", score: 0, color: "#fbbf24" },
           ],
           position: "top-left",
         },
@@ -119,7 +126,8 @@
     }
 
     async function deleteWidget(id) {
-      if (!confirm(ServerI18n.t("widgetDeleteConfirm"))) return;
+      const t = window.ServerI18n?.t?.("widgetDeleteConfirm") || "刪除這個小工具?";
+      if (!confirm(t)) return;
       try {
         await api("delete", "POST", { id });
         loadWidgets();
@@ -147,7 +155,8 @@
     }
 
     async function clearAllWidgets() {
-      if (!confirm(ServerI18n.t("widgetClearConfirm"))) return;
+      const t = window.ServerI18n?.t?.("widgetClearConfirm") || "清除所有小工具?";
+      if (!confirm(t)) return;
       try {
         await api("clear", "POST", {});
         loadWidgets();
@@ -168,139 +177,148 @@
       container.innerHTML = "";
 
       if (widgets.length === 0) {
-        container.innerHTML = `<div style="color:#94a3b8;font-size:13px;padding:12px;">${escapeHtml(ServerI18n.t("widgetNone"))}</div>`;
+        const empty = document.createElement("div");
+        empty.className = "admin-widgets-empty";
+        empty.textContent = window.ServerI18n?.t?.("widgetNone") || "尚無小工具，點擊上方按鈕新增。";
+        container.appendChild(empty);
         return;
       }
 
       widgets.forEach((w) => {
-        const card = document.createElement("div");
-        card.style.cssText = "border:1px solid #334155;border-radius:8px;padding:12px;margin-bottom:10px;background:#0f172a;";
-
-        const header = document.createElement("div");
-        header.style.cssText = "display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;";
-
-        const typeLabel = document.createElement("span");
-        typeLabel.style.cssText = "font-weight:bold;text-transform:uppercase;font-size:11px;letter-spacing:1px;color:#06b6d4;";
-        typeLabel.textContent = w.type;
-        header.appendChild(typeLabel);
-
-        const actions = document.createElement("div");
-        actions.style.display = "flex";
-        actions.style.gap = "6px";
-
-        const toggleBtn = document.createElement("button");
-        toggleBtn.className = "btn btn-sm";
-        toggleBtn.textContent = w.visible ? ServerI18n.t("widgetHide") : ServerI18n.t("widgetShow");
-        toggleBtn.addEventListener("click", () => updateWidget(w.id, { visible: !w.visible }));
-        actions.appendChild(toggleBtn);
-
-        const delBtn = document.createElement("button");
-        delBtn.className = "btn btn-sm btn-danger";
-        delBtn.textContent = ServerI18n.t("remove");
-        delBtn.addEventListener("click", () => deleteWidget(w.id));
-        actions.appendChild(delBtn);
-
-        header.appendChild(actions);
-        card.appendChild(header);
-
-        // Position selector
-        const posRow = document.createElement("div");
-        posRow.style.cssText = "margin-bottom:8px;display:flex;align-items:center;gap:8px;";
-        const posLabel = document.createElement("span");
-        posLabel.style.cssText = "font-size:12px;color:#94a3b8;";
-        posLabel.textContent = ServerI18n.t("widgetPosition") + ":";
-        posRow.appendChild(posLabel);
-
-        const posSelect = document.createElement("select");
-        posSelect.style.cssText = "font-size:12px;background:#1e293b;color:white;border:1px solid #334155;border-radius:4px;padding:2px 6px;";
-        POSITIONS.forEach((p) => {
-          const opt = document.createElement("option");
-          opt.value = p;
-          opt.textContent = p;
-          if (p === w.position) opt.selected = true;
-          posSelect.appendChild(opt);
-        });
-        posSelect.addEventListener("change", () => updateWidget(w.id, { position: posSelect.value }));
-        posRow.appendChild(posSelect);
-        card.appendChild(posRow);
-
-        // Type-specific controls
-        if (w.type === "scoreboard") renderScoreboardControls(card, w);
-        else if (w.type === "ticker") renderTickerControls(card, w);
-        else if (w.type === "label") renderLabelControls(card, w);
-
-        container.appendChild(card);
+        container.appendChild(_renderCard(w));
       });
     }
 
-    function renderScoreboardControls(card, w) {
+    function _renderCard(w) {
+      const card = document.createElement("div");
+      card.className = "admin-widget-card";
+
+      // Head: type kicker + position label + actions
+      const head = document.createElement("div");
+      head.className = "admin-widget-card-head";
+
+      const typeLabel = document.createElement("span");
+      typeLabel.className = "admin-widget-card-type";
+      typeLabel.textContent = w.type;
+      head.appendChild(typeLabel);
+
+      const posLabel = document.createElement("span");
+      posLabel.className = "admin-widget-card-pos";
+      posLabel.textContent = "POS · " + (w.position || "?");
+      head.appendChild(posLabel);
+
+      const actions = document.createElement("div");
+      actions.className = "admin-widget-card-actions";
+
+      const toggleBtn = document.createElement("button");
+      toggleBtn.type = "button";
+      toggleBtn.className = "admin-poll-btn is-ghost";
+      toggleBtn.textContent = w.visible
+        ? (window.ServerI18n?.t?.("widgetHide") || "隱藏")
+        : (window.ServerI18n?.t?.("widgetShow") || "顯示");
+      toggleBtn.addEventListener("click", () => updateWidget(w.id, { visible: !w.visible }));
+      actions.appendChild(toggleBtn);
+
+      const delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "admin-poll-btn is-ghost";
+      delBtn.textContent = window.ServerI18n?.t?.("remove") || "移除";
+      delBtn.addEventListener("click", () => deleteWidget(w.id));
+      actions.appendChild(delBtn);
+
+      head.appendChild(actions);
+      card.appendChild(head);
+
+      // Body
+      const body = document.createElement("div");
+      body.className = "admin-widget-card-body";
+
+      // Position selector row
+      const posRow = _selectRow(
+        window.ServerI18n?.t?.("widgetPosition") || "POSITION",
+        POSITIONS,
+        w.position,
+        (val) => updateWidget(w.id, { position: val }),
+      );
+      body.appendChild(posRow);
+
+      // Type-specific controls
+      if (w.type === "scoreboard") _renderScoreboardControls(body, w);
+      else if (w.type === "ticker") _renderTickerControls(body, w);
+      else if (w.type === "label") _renderLabelControls(body, w);
+
+      card.appendChild(body);
+      return card;
+    }
+
+    function _renderScoreboardControls(body, w) {
       const cfg = w.config || {};
 
-      // Title input
-      const titleRow = _inputRow(ServerI18n.t("widgetScoreboardTitle"), cfg.title || "", (val) => {
-        updateWidget(w.id, { title: val });
-      });
-      card.appendChild(titleRow);
+      const titleRow = _inputRow(
+        window.ServerI18n?.t?.("widgetScoreboardTitle") || "TITLE",
+        cfg.title || "",
+        (val) => updateWidget(w.id, { title: val }),
+      );
+      body.appendChild(titleRow);
 
-      // Teams
       (cfg.teams || []).forEach((team, i) => {
-        const teamRow = document.createElement("div");
-        teamRow.style.cssText = "display:flex;align-items:center;gap:8px;margin-top:6px;";
+        const row = document.createElement("div");
+        row.className = "admin-widget-team";
 
         const colorInput = document.createElement("input");
         colorInput.type = "color";
-        colorInput.value = team.color || "#06b6d4";
-        colorInput.style.cssText = "width:28px;height:28px;border:none;cursor:pointer;";
+        colorInput.value = team.color || "#38bdf8";
+        colorInput.className = "admin-widget-team-color";
         colorInput.addEventListener("change", () => {
           const teams = [...cfg.teams];
           teams[i] = { ...teams[i], color: colorInput.value };
           updateWidget(w.id, { teams });
         });
-        teamRow.appendChild(colorInput);
+        row.appendChild(colorInput);
 
         const nameInput = document.createElement("input");
         nameInput.type = "text";
         nameInput.value = team.name;
-        nameInput.style.cssText = "flex:1;background:#1e293b;color:white;border:1px solid #334155;border-radius:4px;padding:4px 8px;font-size:13px;";
+        nameInput.className = "admin-widget-input";
         nameInput.addEventListener("change", () => {
           const teams = [...cfg.teams];
           teams[i] = { ...teams[i], name: nameInput.value };
           updateWidget(w.id, { teams });
         });
-        teamRow.appendChild(nameInput);
+        row.appendChild(nameInput);
 
-        const scoreDisplay = document.createElement("span");
-        scoreDisplay.style.cssText = "font-size:20px;font-weight:bold;min-width:30px;text-align:center;";
-        scoreDisplay.textContent = team.score;
-        teamRow.appendChild(scoreDisplay);
+        const scoreSpan = document.createElement("span");
+        scoreSpan.className = "admin-widget-team-score";
+        scoreSpan.textContent = team.score;
+        row.appendChild(scoreSpan);
 
         const minusBtn = document.createElement("button");
-        minusBtn.className = "btn btn-sm";
-        minusBtn.textContent = "-";
+        minusBtn.type = "button";
+        minusBtn.className = "admin-widget-step";
+        minusBtn.textContent = "−";
         minusBtn.addEventListener("click", () => updateScore(w.id, i, -1));
-        teamRow.appendChild(minusBtn);
+        row.appendChild(minusBtn);
 
         const plusBtn = document.createElement("button");
-        plusBtn.className = "btn btn-sm";
+        plusBtn.type = "button";
+        plusBtn.className = "admin-widget-step";
         plusBtn.textContent = "+";
         plusBtn.addEventListener("click", () => updateScore(w.id, i, 1));
-        teamRow.appendChild(plusBtn);
+        row.appendChild(plusBtn);
 
-        card.appendChild(teamRow);
+        body.appendChild(row);
       });
     }
 
-    function renderTickerControls(card, w) {
+    function _renderTickerControls(body, w) {
       const cfg = w.config || {};
 
-      // Speed slider
       const speedRow = document.createElement("div");
-      speedRow.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:6px;";
-      const speedLabel = document.createElement("span");
-      speedLabel.style.cssText = "font-size:12px;color:#94a3b8;min-width:60px;";
-      speedLabel.textContent = ServerI18n.t("speed") + ":";
-      speedRow.appendChild(speedLabel);
-
+      speedRow.className = "admin-widget-row";
+      const speedLbl = document.createElement("span");
+      speedLbl.className = "lbl";
+      speedLbl.textContent = window.ServerI18n?.t?.("speed") || "SPEED";
+      speedRow.appendChild(speedLbl);
       const speedSlider = document.createElement("input");
       speedSlider.type = "range";
       speedSlider.min = "10";
@@ -311,56 +329,88 @@
         updateWidget(w.id, { speed: parseInt(speedSlider.value) });
       });
       speedRow.appendChild(speedSlider);
-      card.appendChild(speedRow);
+      const speedVal = document.createElement("span");
+      speedVal.style.cssText = "min-width:38px;font-family:var(--font-mono);font-size:12px;color:var(--color-primary,#38bdf8);text-align:right";
+      speedVal.textContent = speedSlider.value;
+      speedSlider.addEventListener("input", () => { speedVal.textContent = speedSlider.value; });
+      speedRow.appendChild(speedVal);
+      body.appendChild(speedRow);
 
-      // Messages textarea
-      const msgsLabel = document.createElement("div");
-      msgsLabel.style.cssText = "font-size:12px;color:#94a3b8;margin-bottom:4px;";
-      msgsLabel.textContent = ServerI18n.t("widgetTickerMessages") + ":";
-      card.appendChild(msgsLabel);
-
+      const msgsRow = document.createElement("div");
+      msgsRow.className = "admin-widget-row";
+      msgsRow.style.alignItems = "flex-start";
+      const msgsLbl = document.createElement("span");
+      msgsLbl.className = "lbl";
+      msgsLbl.textContent = window.ServerI18n?.t?.("widgetTickerMessages") || "MESSAGES";
+      msgsRow.appendChild(msgsLbl);
       const textarea = document.createElement("textarea");
+      textarea.className = "admin-widget-textarea";
       textarea.value = (cfg.messages || []).join("\n");
       textarea.rows = 3;
-      textarea.style.cssText = "width:100%;background:#1e293b;color:white;border:1px solid #334155;border-radius:4px;padding:6px 8px;font-size:13px;resize:vertical;";
-      textarea.placeholder = ServerI18n.t("widgetTickerPlaceholder");
+      textarea.placeholder = window.ServerI18n?.t?.("widgetTickerPlaceholder") || "每行一則訊息";
       textarea.addEventListener("change", () => {
         const messages = textarea.value.split("\n").filter((m) => m.trim());
         updateWidget(w.id, { messages });
       });
-      card.appendChild(textarea);
+      msgsRow.appendChild(textarea);
+      body.appendChild(msgsRow);
     }
 
-    function renderLabelControls(card, w) {
+    function _renderLabelControls(body, w) {
       const cfg = w.config || {};
 
-      const textRow = _inputRow(ServerI18n.t("widgetLabelText"), cfg.text || "", (val) => {
-        updateWidget(w.id, { text: val });
-      });
-      card.appendChild(textRow);
+      body.appendChild(_inputRow(
+        window.ServerI18n?.t?.("widgetLabelText") || "TEXT",
+        cfg.text || "",
+        (val) => updateWidget(w.id, { text: val }),
+      ));
 
-      const sizeRow = _inputRow(ServerI18n.t("size"), String(cfg.fontSize || 24), (val) => {
-        updateWidget(w.id, { fontSize: parseInt(val) || 24 });
-      }, "number");
-      card.appendChild(sizeRow);
+      body.appendChild(_inputRow(
+        window.ServerI18n?.t?.("size") || "SIZE",
+        String(cfg.fontSize || 24),
+        (val) => updateWidget(w.id, { fontSize: parseInt(val) || 24 }),
+        "number",
+      ));
     }
 
     function _inputRow(label, value, onChange, type = "text") {
       const row = document.createElement("div");
-      row.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:6px;";
+      row.className = "admin-widget-row";
 
       const lbl = document.createElement("span");
-      lbl.style.cssText = "font-size:12px;color:#94a3b8;min-width:60px;";
-      lbl.textContent = label + ":";
+      lbl.className = "lbl";
+      lbl.textContent = label;
       row.appendChild(lbl);
 
       const input = document.createElement("input");
       input.type = type;
       input.value = value;
-      input.style.cssText = "flex:1;background:#1e293b;color:white;border:1px solid #334155;border-radius:4px;padding:4px 8px;font-size:13px;";
+      input.className = "admin-widget-input";
       input.addEventListener("change", () => onChange(input.value));
       row.appendChild(input);
+      return row;
+    }
 
+    function _selectRow(label, options, current, onChange) {
+      const row = document.createElement("div");
+      row.className = "admin-widget-row";
+
+      const lbl = document.createElement("span");
+      lbl.className = "lbl";
+      lbl.textContent = label;
+      row.appendChild(lbl);
+
+      const select = document.createElement("select");
+      select.className = "admin-widget-select";
+      options.forEach((opt) => {
+        const o = document.createElement("option");
+        o.value = opt;
+        o.textContent = opt;
+        if (opt === current) o.selected = true;
+        select.appendChild(o);
+      });
+      select.addEventListener("change", () => onChange(select.value));
+      row.appendChild(select);
       return row;
     }
   });

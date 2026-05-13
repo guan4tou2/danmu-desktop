@@ -1,6 +1,6 @@
-// Theme Packs (風格主題包) — Admin page to manage preset visual bundles.
-// Each pack bundles: color palette + effect stack + font + layout + background
-// So presenters can switch the entire vibe in one click, not tweak 10 knobs.
+// Theme Packs (風格主題包) — 只定義「彈幕本身」的樣式:
+// 配色 · 字型 · 特效疊加 · 排版 (layout)
+// 不控制背景 (背景由 Overlay 頁面本體 / 投影軟體控制)
 
 function AdminThemePacksPage({ theme = 'dark' }) {
   const packs = [
@@ -12,7 +12,6 @@ function AdminThemePacksPage({ theme = 'dark' }) {
       font: 'Noto Sans TC',
       layout: 'scroll · 右→左',
       effects: ['glow-soft'],
-      bg: 'bg-none',
     },
     {
       id: 'neon', zh: '霓虹', en: 'NEON',
@@ -22,7 +21,6 @@ function AdminThemePacksPage({ theme = 'dark' }) {
       font: 'Orbitron + Noto TC',
       layout: 'scroll + rise 混合',
       effects: ['glow-neon', 'shake-light', 'rainbow-cycle'],
-      bg: 'grid-lines',
     },
     {
       id: 'retro', zh: '復古', en: 'RETRO',
@@ -32,17 +30,15 @@ function AdminThemePacksPage({ theme = 'dark' }) {
       font: 'Klee One + Zpix',
       layout: 'scroll · 慢速',
       effects: ['blink-crt', 'typewriter'],
-      bg: 'scanlines',
     },
     {
       id: 'cinema', zh: '電影', en: 'CINEMA',
-      desc: '上黑邊、字幕風格 — 適合放映',
+      desc: '字幕風格 · 置中 — 適合放映',
       active: false, builtin: true, uses: 203,
       sw: ['#ffcc70', '#e07a5f', '#2a9d8f'],
       font: 'Noto Serif TC',
       layout: 'bottom · 置中',
       effects: ['zoom-in-out'],
-      bg: 'letterbox',
     },
     {
       id: 'pride', zh: '驕傲', en: 'PRIDE',
@@ -52,7 +48,6 @@ function AdminThemePacksPage({ theme = 'dark' }) {
       font: 'Noto Sans TC',
       layout: 'scroll + rise',
       effects: ['rainbow-cycle', 'glow-soft'],
-      bg: 'bg-none',
     },
     {
       id: 'study', zh: '讀書會', en: 'STUDY',
@@ -62,14 +57,13 @@ function AdminThemePacksPage({ theme = 'dark' }) {
       font: 'Noto Serif TC',
       layout: 'bottom · 慢速',
       effects: [],
-      bg: 'paper',
     },
   ];
 
   const activePack = packs.find(p => p.active);
 
   return (
-    <AdminPageShell route="themes" title="風格主題包" en="THEME PACKS · 彈幕樣式與特效預設" theme={theme}>
+    <AdminPageShell route="themes" title="風格主題包" en="THEME PACKS · STYLE + EFFECTS PRESETS" theme={theme}>
       {({ panel, raised, line, text, textDim, accent, radius }) => (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -119,7 +113,6 @@ function AdminThemePacksPage({ theme = 'dark' }) {
                 } text={text} textDim={textDim} />
                 <SpecRow k="字型" v={activePack.font} text={text} textDim={textDim} />
                 <SpecRow k="Layout" v={activePack.layout} text={text} textDim={textDim} />
-                <SpecRow k="背景" v={activePack.bg} text={text} textDim={textDim} />
                 <div>
                   <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, letterSpacing: 1, color: textDim, marginBottom: 6 }}>特效疊加</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
@@ -138,34 +131,13 @@ function AdminThemePacksPage({ theme = 'dark' }) {
             </div>
 
             <div style={{ background: panel, border: `1px solid ${line}`, borderRadius: radius, padding: 14 }}>
-              <HudLabel color={textDim}>觀眾覆蓋 · AUDIENCE OVERRIDE</HudLabel>
+              <HudLabel color={textDim}>AUDIENCE OVERRIDE</HudLabel>
               <div style={{ fontSize: 12, color: text, marginTop: 8, lineHeight: 1.5 }}>
                 觀眾仍可在 Fire tab 的「主題」欄選擇自己的樣式。主題包只定義 <span style={{ color: accent }}>預設值</span>。
               </div>
               <div style={{ marginTop: 10, display: 'flex', gap: 6 }}>
                 <Toggle label="允許覆蓋" on text={text} line={line} accent={accent} />
                 <Toggle label="強制鎖定" text={text} line={line} accent={accent} />
-              </div>
-            </div>
-
-            <div style={{ background: panel, border: `1px solid ${line}`, borderRadius: radius, padding: 14 }}>
-              <HudLabel color={textDim}>排程切換 · SCHEDULE</HudLabel>
-              <div style={{ fontSize: 12, color: text, marginTop: 8 }}>根據時段自動切換主題包</div>
-              <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {[
-                  { t: '19:00 · 暖場', p: 'RETRO' },
-                  { t: '19:30 · 主題演講', p: 'DEFAULT' },
-                  { t: '21:00 · 問答', p: 'NEON' },
-                ].map(s => (
-                  <div key={s.t} style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '6px 10px', background: raised, borderRadius: 4,
-                    fontFamily: hudTokens.fontMono, fontSize: 11,
-                  }}>
-                    <span style={{ color: textDim }}>{s.t}</span>
-                    <span style={{ marginLeft: 'auto', color: accent, letterSpacing: 1 }}>→ {s.p}</span>
-                  </div>
-                ))}
               </div>
             </div>
           </div>
@@ -242,21 +214,13 @@ function ThemePackCard({ pack, panel, raised, line, text, textDim, accent, radiu
 }
 
 function PreviewStrip({ pack, compact }) {
-  // Mock danmu items styled per pack
+  // Mock danmu items styled per pack (背景固定為彈幕示範用暗底,非 theme pack 管控)
   const items = [
-    { txt: '太精彩了！', y: 0.2, x: 0.1, col: 0 },
-    { txt: '請問這部分可以展開嗎？', y: 0.5, x: 0.4, col: 1 },
+    { txt: '太精彩了!', y: 0.2, x: 0.1, col: 0 },
+    { txt: '請問這部分可以展開嗎?', y: 0.5, x: 0.4, col: 1 },
     { txt: '🔥🔥 同意', y: 0.75, x: 0.15, col: 2 },
     { txt: '想看 demo', y: 0.35, x: 0.65, col: 0 },
   ].slice(0, compact ? 3 : 4);
-
-  const bg = {
-    'grid-lines': 'repeating-linear-gradient(0deg, rgba(0,231,255,0.08) 0, rgba(0,231,255,0.08) 1px, transparent 1px, transparent 20px), repeating-linear-gradient(90deg, rgba(0,231,255,0.08) 0, rgba(0,231,255,0.08) 1px, transparent 1px, transparent 20px)',
-    'scanlines': 'repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 3px)',
-    'letterbox': 'linear-gradient(180deg, #000 0, #000 18%, #0a0a0a 18%, #0a0a0a 82%, #000 82%, #000 100%)',
-    'paper': 'radial-gradient(ellipse at center, #f5f0e4 0%, #e8dfc9 100%)',
-    'bg-none': '#0a0a12',
-  }[pack.bg] || '#0a0a12';
 
   const shadow = {
     default: '0 0 2px rgba(0,0,0,0.9)',
@@ -268,11 +232,10 @@ function PreviewStrip({ pack, compact }) {
   }[pack.id] || '0 0 2px rgba(0,0,0,0.9)';
 
   const fontFam = pack.id === 'cinema' ? 'serif' : pack.id === 'retro' ? 'monospace' : hudTokens.fontSans;
-  const textColor = pack.id === 'study' ? '#1c1917' : '#fff';
   const fontSize = compact ? 13 : 15;
 
   return (
-    <div style={{ position: 'absolute', inset: 0, background: bg }}>
+    <div style={{ position: 'absolute', inset: 0 }}>
       {items.map((it, i) => (
         <div key={i} style={{
           position: 'absolute',
@@ -281,7 +244,7 @@ function PreviewStrip({ pack, compact }) {
           fontFamily: fontFam,
           fontSize,
           fontWeight: pack.id === 'neon' ? 700 : 600,
-          color: it.col === 0 ? textColor : pack.sw[it.col],
+          color: it.col === 0 ? '#fff' : pack.sw[it.col],
           textShadow: shadow,
           letterSpacing: pack.id === 'retro' ? 1 : 0,
           whiteSpace: 'nowrap',

@@ -114,6 +114,75 @@
 
       // Initial load
       fetchPlugins();
+      // Live console tail
+      startConsoleTail();
+    }
+
+    // ---- Live console tail (LIVE CONSOLE panel) ----
+
+    let _consoleSeq = 0;
+    let _consoleTimer = 0;
+    const _consoleLines = [];
+    const CONSOLE_MAX_LINES = 80;
+
+    function lvClass(level) {
+      const lv = (level || "INFO").toUpperCase();
+      if (lv === "ERROR") return "hud-console-lv-error";
+      if (lv === "WARN") return "hud-console-lv-warn";
+      if (lv === "DEBUG") return "hud-console-lv-debug";
+      return "hud-console-lv-info";
+    }
+
+    function fmtConsoleTime(ts) {
+      const d = new Date(ts * 1000);
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    function renderConsole() {
+      const body = document.getElementById("pluginsConsoleBody");
+      if (!body) return;
+      if (_consoleLines.length === 0) {
+        body.innerHTML = `
+          <div class="hud-console-line">
+            <span style="color:var(--color-text-muted)">—</span>
+            <span class="hud-console-lv-debug">INFO</span>
+            <span style="color:var(--color-primary)">plugin-manager</span>
+            <span style="color:var(--color-text-strong)">Console stream becomes live when plugins emit stdout/stderr.</span>
+          </div>`;
+        return;
+      }
+      body.innerHTML = _consoleLines.map((e) => {
+        const ts = fmtConsoleTime(e.ts);
+        const msg = (e.msg || "").replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+        const plugin = (e.plugin || "—").replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+        return `<div class="hud-console-line">
+          <span style="color:var(--color-text-muted)">${ts}</span>
+          <span class="${lvClass(e.level)}">${(e.level || "INFO").toUpperCase()}</span>
+          <span style="color:var(--color-primary)">${plugin}</span>
+          <span style="color:var(--color-text-strong)">${msg}</span>
+        </div>`;
+      }).join("");
+    }
+
+    async function pollConsole() {
+      try {
+        const r = await fetch(`/admin/plugins/console?since=${_consoleSeq}`, { credentials: "same-origin" });
+        if (!r.ok) return;
+        const data = await r.json();
+        if (!Array.isArray(data.events) || data.events.length === 0) return;
+        // Server returns newest-first; prepend so the panel shows newest first.
+        _consoleLines.unshift(...data.events);
+        while (_consoleLines.length > CONSOLE_MAX_LINES) _consoleLines.pop();
+        _consoleSeq = data.latest_seq || _consoleSeq;
+        renderConsole();
+      } catch (_) { /* silent */ }
+    }
+
+    function startConsoleTail() {
+      if (_consoleTimer) return;
+      pollConsole();
+      _consoleTimer = setInterval(pollConsole, 5000);
     }
 
     // ---- API helpers ----

@@ -879,3 +879,90 @@ def test_preview_invalid_yaml_returns_error(client):
     assert resp.status_code == 400
     data = json.loads(resp.data)
     assert "error" in data
+
+
+# ─── Slice 7 · /admin/effects/<name>/fire (Gap 2) ───────────────────────────
+
+
+def test_fire_unknown_effect_returns_404(client):
+    token = csrf_token(client)
+    resp = client.post(
+        "/admin/effects/no-such-effect/fire",
+        json={},
+        headers={"X-CSRF-Token": token},
+    )
+    assert resp.status_code == 404
+
+
+def test_fire_invalid_name_format_returns_400(client):
+    token = csrf_token(client)
+    resp = client.post(
+        "/admin/effects/has spaces/fire",
+        json={},
+        headers={"X-CSRF-Token": token},
+    )
+    assert resp.status_code in (400, 404)  # depends on URL parsing
+
+
+def test_fire_invalid_target_returns_400(client):
+    token = csrf_token(client)
+    # bounce ships in server/effects/
+    resp = client.post(
+        "/admin/effects/bounce/fire",
+        json={"target": "elsewhere"},
+        headers={"X-CSRF-Token": token},
+    )
+    assert resp.status_code == 400
+
+
+def test_fire_requires_csrf(client):
+    client.post("/login", data={"password": "test"}, follow_redirects=True)
+    resp = client.post("/admin/effects/bounce/fire", json={})
+    assert resp.status_code == 403
+
+
+def test_fire_writes_effect_pulse_to_overlay(client):
+    """Successful fire pushes an `effect_pulse` payload into the overlay queue."""
+    from server.services import ws_queue
+
+    ws_queue._queue.clear()
+    token = csrf_token(client)
+    resp = client.post(
+        "/admin/effects/bounce/fire",
+        json={"duration_ms": 1200, "target": "banner"},
+        headers={"X-CSRF-Token": token},
+    )
+    assert resp.status_code == 200, resp.data
+    body = json.loads(resp.data)
+    assert body["fired"] is True
+    assert body["payload"]["type"] == "effect_pulse"
+    assert body["payload"]["name"] == "bounce"
+    assert body["payload"]["duration_ms"] == 1200
+    # Overlay queue picked it up.
+    assert len(ws_queue._queue) == 1
+    assert ws_queue._queue[0]["type"] == "effect_pulse"
+    assert ws_queue._queue[0]["name"] == "bounce"
+
+
+def test_fire_clamps_duration(client):
+    from server.services import ws_queue
+
+    ws_queue._queue.clear()
+    token = csrf_token(client)
+    # 99999 should clamp to 8000
+    resp = client.post(
+        "/admin/effects/bounce/fire",
+        json={"duration_ms": 99999},
+        headers={"X-CSRF-Token": token},
+    )
+    assert resp.status_code == 200
+    assert json.loads(resp.data)["payload"]["duration_ms"] == 8000
+    # 0 should clamp to 200
+    ws_queue._queue.clear()
+    resp = client.post(
+        "/admin/effects/bounce/fire",
+        json={"duration_ms": 0},
+        headers={"X-CSRF-Token": token},
+    )
+    assert resp.status_code == 200
+    assert json.loads(resp.data)["payload"]["duration_ms"] == 200

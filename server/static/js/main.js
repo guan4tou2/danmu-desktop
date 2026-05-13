@@ -1,24 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // --- VANTA.js background initialization ---
-  try {
-    VANTA.NET({
-      el: "#vanta-bg",
-      mouseControls: true,
-      touchControls: true,
-      gyroControls: false,
-      minHeight: 200.0,
-      minWidth: 200.0,
-      scale: 1.0,
-      scaleMobile: 1.0,
-      color: 0x3b82f6,
-      backgroundColor: 0x000000,
-      points: 12.0,
-      maxDistance: 25.0,
-      spacing: 18.0,
-    });
-  } catch (e) {
-    console.warn("Vanta.js failed to initialize", e);
-  }
+  // Viewer v2 background is a static dark navy gradient (see viewer-v2.css).
+  // VANTA.NET animation was removed to match the handoff design — the viewer
+  // page is a calm launcher, not a screensaver.
 
   // --- Element selectors ---
   const elements = {
@@ -52,6 +35,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Effect UI
     effectButtons: document.getElementById("effectButtons"),
     effectParamsPanel: document.getElementById("effectParamsPanel"),
+    effectsCount: document.getElementById("effectsCount"),
+    effectsTotal: document.getElementById("effectsTotal"),
 
     // Toast container
     toastContainer: document.getElementById("toast-container"),
@@ -66,7 +51,54 @@ document.addEventListener("DOMContentLoaded", () => {
     connectionLabel: document.getElementById("connectionLabel"),
     overlayStatus: document.getElementById("overlayStatus"),
     overlayLabel: document.getElementById("overlayLabel"),
+
+    // Send bar pill — border turns cyan when text is present
+    sendbarPill: document.getElementById("sendbarPill"),
+
+    // Viewer tabs + poll pane
+    viewerTabButtons: Array.from(document.querySelectorAll("[data-viewer-tab]")),
+    viewerFirePane: document.getElementById("viewerFirePane"),
+    viewerPollPane: document.getElementById("viewerPollPane"),
+    pollStateLabel: document.querySelector("[data-vpoll-state-label]"),
+    pollQuestion: document.querySelector("[data-vpoll-question]"),
+    pollMeta: document.querySelector("[data-vpoll-meta]"),
+    pollOptions: document.querySelector("[data-vpoll-options]"),
   };
+
+  function _resolveViewerPollEnabled() {
+    // Prototype baseline (Danmu Redesign.html) defaults pollEnabled=false.
+    // Keep viewer poll closed unless explicitly enabled.
+    try {
+      const cfg = window.DANMU_CONFIG?.viewer?.pollEnabled;
+      if (cfg === true || cfg === "true" || cfg === 1 || cfg === "1") return true;
+    } catch (_) {
+      /* ignore */
+    }
+    try {
+      const q = new URLSearchParams(window.location.search).get("poll");
+      if (!q) return false;
+      return q === "1" || q.toLowerCase() === "true" || q.toLowerCase() === "on";
+    } catch (_) {
+      return false;
+    }
+  }
+
+  const VIEWER_POLL_ENABLED = _resolveViewerPollEnabled();
+
+  function _applyViewerPollGate() {
+    if (VIEWER_POLL_ENABLED) return;
+    const pollTabBtn = document.querySelector('[data-viewer-tab="poll"]');
+    if (pollTabBtn) pollTabBtn.remove();
+    if (elements.viewerPollPane) {
+      elements.viewerPollPane.remove();
+      elements.viewerPollPane = null;
+    }
+    const tabbar = document.querySelector(".viewer-tabbar");
+    elements.viewerTabButtons = Array.from(document.querySelectorAll("[data-viewer-tab]"));
+    if (tabbar && elements.viewerTabButtons.length <= 1) {
+      tabbar.setAttribute("hidden", "");
+    }
+  }
 
   // --- Helper utilities ---
   const scheduleIdleTask = (cb, timeout = 500) => {
@@ -88,6 +120,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const FONT_REFRESH_BUFFER_SECONDS = 60;
   let fontsCache = [];
   let emojiCache = []; // [{name, url, filename}] — populated by /emojis fetch
+  let _viewerMode = "fire";
+  let _viewerPollState = {
+    state: "idle",
+    question: "",
+    options: [],
+    totalVotes: 0,
+  };
   const FONT_CACHE_STORAGE_KEY = "danmu-fonts-cache";
   const clientFingerprint = getOrCreateFingerprint();
 
@@ -362,7 +401,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const updateCharCount = () => {
     const count = elements.danmuText.value.length;
     elements.charCount.textContent = `${count}/100`;
-    elements.charCount.classList.toggle("text-red-400", count >= 90);
+    elements.charCount.classList.toggle("is-near", count >= 90);
   };
 
   // Update preview
@@ -414,10 +453,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Apply styles
     if (elements.colorInput) {
-      elements.previewText.style.color = elements.colorInput.value;
+      const color = elements.colorInput.value;
+      elements.previewText.style.color = color;
+      // Glow effect: viewer.jsx — `0 0 12px ${color}, 0 2px 4px rgba(0,0,0,0.6)`
+      elements.previewText.style.textShadow = selectedEffects["glow"]
+        ? `0 0 12px ${color}, 0 2px 4px rgba(0,0,0,0.6)`
+        : "";
     }
     if (elements.sizeInput) {
-      elements.previewText.style.fontSize = `${elements.sizeInput.value}px`;
+      const fontSize = parseFloat(elements.sizeInput.value) || 32;
+      elements.previewText.style.fontSize = `${fontSize}px`;
+      // Prototype viewer.jsx:130 — @nick scales with main fontSize:
+      //   fontSize: max(11, fontSize * 0.42)
+      const previewNick = document.getElementById("previewNick");
+      if (previewNick) {
+        previewNick.style.fontSize = `${Math.max(11, fontSize * 0.42)}px`;
+      }
     }
     if (elements.opacityRange) {
       elements.previewText.style.opacity = elements.opacityRange.value / 100;
@@ -444,6 +495,161 @@ document.addEventListener("DOMContentLoaded", () => {
       elements.previewText.style.fontFamily = "inherit";
     }
   };
+
+  function _setViewerMode(mode) {
+    const nextMode =
+      VIEWER_POLL_ENABLED && mode === "poll" ? "poll" : "fire";
+    _viewerMode = nextMode;
+    if (elements.viewerFirePane) {
+      const isFire = nextMode === "fire";
+      elements.viewerFirePane.hidden = !isFire;
+      elements.viewerFirePane.classList.toggle("is-active", isFire);
+    }
+    if (elements.viewerPollPane) {
+      const isPoll = nextMode === "poll";
+      elements.viewerPollPane.hidden = !isPoll;
+      elements.viewerPollPane.classList.toggle("is-active", isPoll);
+    }
+    (elements.viewerTabButtons || []).forEach((btn) => {
+      const isActive = btn.dataset.viewerTab === nextMode;
+      btn.classList.toggle("is-active", isActive);
+      btn.setAttribute("aria-selected", isActive ? "true" : "false");
+      btn.setAttribute("tabindex", isActive ? "0" : "-1");
+    });
+  }
+
+  function _normalizePollState(raw) {
+    if (!raw || typeof raw !== "object") {
+      return { state: "idle", question: "", options: [], totalVotes: 0 };
+    }
+    const state = String(raw.state || "idle");
+    const list = Array.isArray(raw.questions) ? raw.questions : [];
+    const idx = Number.isInteger(raw.current_index) ? raw.current_index : -1;
+    const currentQuestion =
+      list.length > 0
+        ? (idx >= 0 && idx < list.length ? list[idx] : list[0])
+        : null;
+    const question = String(
+      currentQuestion?.text || raw.question || ""
+    ).trim();
+    const rawOptions = Array.isArray(currentQuestion?.options)
+      ? currentQuestion.options
+      : Array.isArray(raw.options)
+        ? raw.options
+        : [];
+    const normalizedOptions = rawOptions
+      .map((opt) => {
+        const key = String(opt?.key || "").trim().toUpperCase();
+        if (!key) return null;
+        const countNum = Number(opt?.count);
+        const count = Number.isFinite(countNum) ? countNum : 0;
+        const pctNum = Number(opt?.percentage);
+        const percentage = Number.isFinite(pctNum) ? pctNum : 0;
+        return {
+          key,
+          text: String(opt?.text || key),
+          count,
+          percentage,
+        };
+      })
+      .filter(Boolean);
+    let totalVotesNum = Number(currentQuestion?.total_votes);
+    if (!Number.isFinite(totalVotesNum)) {
+      totalVotesNum = Number(raw.total_votes);
+    }
+    if (!Number.isFinite(totalVotesNum)) {
+      totalVotesNum = normalizedOptions.reduce((acc, item) => acc + item.count, 0);
+    }
+    return {
+      state,
+      question,
+      options: normalizedOptions,
+      totalVotes: totalVotesNum,
+    };
+  }
+
+  function _renderPollPane() {
+    if (!VIEWER_POLL_ENABLED) return;
+    if (!elements.pollQuestion || !elements.pollMeta || !elements.pollOptions) {
+      return;
+    }
+    const poll = _viewerPollState;
+    if (elements.pollStateLabel) {
+      elements.pollStateLabel.textContent =
+        poll.state === "active"
+          ? "即時投票 · 進行中"
+          : poll.state === "ended"
+            ? "即時投票 · 已結束"
+            : "即時投票";
+    }
+    if (poll.question) {
+      elements.pollQuestion.textContent = poll.question;
+    } else {
+      elements.pollQuestion.textContent = "目前沒有進行中的投票";
+    }
+    const optionKeys = poll.options.map((opt) => opt.key).filter(Boolean);
+    elements.pollMeta.textContent =
+      poll.state === "active"
+        ? (optionKeys.length ? `選項 ${optionKeys.join(" / ")}` : "投票進行中")
+        : poll.state === "ended"
+          ? "投票已結束"
+          : "等待主持人開啟投票";
+
+    elements.pollOptions.innerHTML = "";
+    if (!poll.options.length) return;
+    poll.options.forEach((opt) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "viewer-poll-option";
+      button.dataset.vpollKey = opt.key;
+      button.setAttribute("data-vpoll-key", opt.key);
+
+      const row = document.createElement("div");
+      row.className = "viewer-poll-option-row";
+
+      const key = document.createElement("span");
+      key.className = "viewer-poll-option-key";
+      key.textContent = opt.key;
+
+      const text = document.createElement("span");
+      text.className = "viewer-poll-option-text";
+      text.textContent = opt.text;
+
+      row.appendChild(key);
+      row.appendChild(text);
+      button.appendChild(row);
+
+      button.addEventListener("click", () => {
+        if (!elements.danmuText) return;
+        elements.danmuText.value = opt.key;
+        elements.danmuText.dispatchEvent(new Event("input", { bubbles: true }));
+        elements.danmuText.focus();
+        _setViewerMode("fire");
+      });
+      elements.pollOptions.appendChild(button);
+    });
+  }
+
+  function _applyPollState(raw) {
+    if (!VIEWER_POLL_ENABLED) return;
+    _viewerPollState = _normalizePollState(raw);
+    if (_viewerPollState.question) {
+      window._lastPollQuestion = _viewerPollState.question;
+    }
+    _renderPollPane();
+  }
+
+  function _bindViewerTabs() {
+    if (!elements.viewerTabButtons || elements.viewerTabButtons.length === 0) {
+      return;
+    }
+    elements.viewerTabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        _setViewerMode(btn.dataset.viewerTab || "fire");
+      });
+    });
+    _setViewerMode("fire");
+  }
 
   async function populateUserFontDropdown(
     forceRefresh = false,
@@ -493,6 +699,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!elements.btnSend) return;
     const hasText = elements.danmuText.value.trim().length > 0;
     elements.btnSend.disabled = !hasText;
+    elements.sendbarPill?.classList.toggle("is-active", hasText);
   };
   elements.danmuText.addEventListener("input", () => {
     updateCharCount();
@@ -520,29 +727,129 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.colorGradientPreview.style.backgroundImage = "none";
         elements.colorGradientPreview.style.backgroundColor = color;
       }
-      updatePreview();
-    });
-  }
-
-  if (elements.sizeInput) {
-    elements.sizeInput.addEventListener("input", (e) => {
-      if (elements.sizeValue) {
-        elements.sizeValue.textContent = `${e.target.value}px`;
+      const swatches = document.querySelectorAll(".viewer-swatch-preset");
+      let matched = false;
+      swatches.forEach((sw) => {
+        const c = (sw.getAttribute("data-color") || "").toLowerCase();
+        if (c === color.toLowerCase()) {
+          sw.classList.add("is-active");
+          matched = true;
+        } else {
+          sw.classList.remove("is-active");
+        }
+      });
+      if (elements.danmuText) {
+        elements.danmuText.style.color = color;
       }
       updatePreview();
     });
   }
 
+  document.querySelectorAll(".viewer-swatch-preset").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const color = btn.getAttribute("data-color");
+      if (!color || !elements.colorInput) return;
+      elements.colorInput.value = color;
+      elements.colorInput.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  });
+
+  // Update --progress CSS var so the cyan track fill in viewer-v2.css matches
+  // the slider's value (Safari ignores accent-color on the track).
+  const _syncRangeProgress = (el) => {
+    if (!el) return;
+    const min = parseFloat(el.min) || 0;
+    const max = parseFloat(el.max) || 100;
+    const val = parseFloat(el.value);
+    const pct = max > min ? ((val - min) / (max - min)) * 100 : 50;
+    el.style.setProperty("--progress", `${pct}%`);
+  };
+
+  if (elements.sizeInput) {
+    _syncRangeProgress(elements.sizeInput);
+    elements.sizeInput.addEventListener("input", (e) => {
+      if (elements.sizeValue) {
+        // HTML wraps with literal `px` after </span> — write number only.
+        elements.sizeValue.textContent = e.target.value;
+      }
+      _syncRangeProgress(e.target);
+      updatePreview();
+    });
+  }
+
+  // Init speed display with one decimal to match prototype `1.0x` shape.
+  if (elements.speedRange && elements.speedValue) {
+    const sv = parseFloat(elements.speedRange.value);
+    if (Number.isFinite(sv)) elements.speedValue.textContent = sv.toFixed(1);
+  }
+
   if (elements.opacityRange) {
+    _syncRangeProgress(elements.opacityRange);
     elements.opacityRange.addEventListener("input", (e) => {
-      elements.opacityValue.textContent = `${e.target.value}%`;
+      // HTML wraps with literal `%` after </span> — write number only.
+      elements.opacityValue.textContent = e.target.value;
+      _syncRangeProgress(e.target);
       updatePreview();
     });
   }
 
   if (elements.speedRange) {
+    _syncRangeProgress(elements.speedRange);
     elements.speedRange.addEventListener("input", (e) => {
-      elements.speedValue.textContent = e.target.value;
+      // Match prototype `${speed.toFixed(1)}x` — always show one decimal
+      // (e.g. 1.0x not 1x) so the column doesn't shrink when speed lands
+      // on an integer.
+      const v = parseFloat(e.target.value);
+      elements.speedValue.textContent = Number.isFinite(v) ? v.toFixed(1) : e.target.value;
+      _syncRangeProgress(e.target);
+    });
+  }
+
+  // ── Theme toggle (single icon button) — prototype viewer.jsx:553 ──────────
+  // Icon shows current state: ◐ when dark, ◑ when light. Click toggles.
+  // Default = dark (matches prototype `theme = 'dark'` default in ViewerCore).
+  const themeBtn = document.querySelector("[data-viewer-theme-toggle]");
+  if (themeBtn) {
+    const iconEl = themeBtn.querySelector("[data-viewer-theme-icon]");
+    const applyTheme = (mode) => {
+      const dark = mode === "dark";
+      document.body.classList.toggle("is-dark", dark);
+      if (iconEl) iconEl.textContent = dark ? "◐" : "◑";
+      themeBtn.setAttribute("aria-pressed", dark ? "true" : "false");
+      themeBtn.title = dark ? "切換到淺色" : "切換到深色";
+      try { localStorage.setItem("viewer-theme", mode); } catch (_) {}
+    };
+    let initial = "dark";
+    try { initial = localStorage.getItem("viewer-theme") || "dark"; } catch (_) {}
+    applyTheme(initial);
+    themeBtn.addEventListener("click", () => {
+      const cur = document.body.classList.contains("is-dark") ? "dark" : "light";
+      applyTheme(cur === "dark" ? "light" : "dark");
+    });
+  }
+
+  // ── Language dropdown (4 langs) — prototype viewer.jsx:519 ────────────────
+  // Native <select> overlay; the visible label mirrors the current selection.
+  // i18n.js already wires the change event on #server-lang-select.
+  const langSelect = document.getElementById("server-lang-select");
+  const langCurrentLabel = document.querySelector("[data-viewer-lang-current]");
+  if (langSelect && langCurrentLabel) {
+    const LABEL_BY_VAL = { zh: "中文", en: "English", ja: "日本語", ko: "한국어" };
+    const syncLangLabel = () => {
+      const v = (langSelect.value || "zh").toLowerCase();
+      const key = v.startsWith("zh") ? "zh" : v.startsWith("en") ? "en" : v.startsWith("ja") ? "ja" : v.startsWith("ko") ? "ko" : "zh";
+      langCurrentLabel.textContent = LABEL_BY_VAL[key] || "中文";
+    };
+    syncLangLabel();
+    langSelect.addEventListener("change", syncLangLabel);
+  }
+
+  _applyViewerPollGate();
+  _bindViewerTabs();
+  _renderPollPane();
+  if (VIEWER_POLL_ENABLED) {
+    window.addEventListener("viewer-poll-state", (event) => {
+      _applyPollState(event.detail || {});
     });
   }
 
@@ -605,58 +912,74 @@ document.addEventListener("DOMContentLoaded", () => {
   function _refreshParamsPanel() {
     if (!elements.effectParamsPanel) return;
     elements.effectParamsPanel.innerHTML = "";
-    for (const [name, params] of Object.entries(selectedEffects)) {
+    let hasUndesignedPanel = false;
+    for (const [name] of Object.entries(selectedEffects)) {
       const def = _effectDefs.find((e) => e.name === name);
       if (!def || !def.params || Object.keys(def.params).length === 0) continue;
+      hasUndesignedPanel = true;
+      break;
+    }
+    if (hasUndesignedPanel) {
+      elements.effectParamsPanel.innerHTML = [
+        '<div class="rounded-md border border-dashed border-slate-600 bg-slate-900/40 p-3">',
+        '<p class="text-xs font-mono text-slate-300">[PLACEHOLDER] Effect Parameters</p>',
+        '<p class="mt-1 text-xs text-slate-400">Prototype 尚未提供每個效果的參數面板設計，暫以文字+方框占位。</p>',
+        "</div>",
+      ].join("");
+    }
+  }
 
-      const section = document.createElement("div");
-      section.className = "bg-slate-800/60 rounded-lg p-2 space-y-1";
-
-      const title = document.createElement("p");
-      title.className = "text-xs font-medium text-sky-400 mb-1";
-      title.textContent = def.label;
-      section.appendChild(title);
-
-      for (const [pkey, pdef] of Object.entries(def.params)) {
-        section.appendChild(_renderParamControl(name, pkey, pdef, params[pkey]));
-      }
-      elements.effectParamsPanel.appendChild(section);
+  function _updateEffectsCount() {
+    if (elements.effectsCount) {
+      elements.effectsCount.textContent = String(Object.keys(selectedEffects).length);
     }
   }
 
   function _buildEffectButtons(effects) {
     if (!elements.effectButtons) return;
     elements.effectButtons.innerHTML = "";
+    if (elements.effectsTotal) {
+      elements.effectsTotal.textContent = String(effects.length);
+    }
+    _updateEffectsCount();
 
     effects.forEach((eff) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.dataset.effectName = eff.name;
-      btn.className = "effect-btn px-3 py-1 rounded-full text-xs font-medium border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors";
+      btn.className = "effect-btn viewer-chip";
       btn.title = eff.description || "";
       var effI18nKey = "effect_" + eff.name;
-      btn.textContent = ServerI18n.t(effI18nKey) !== effI18nKey ? ServerI18n.t(effI18nKey) : (eff.label || eff.name);
+      var label = ServerI18n.t(effI18nKey) !== effI18nKey ? ServerI18n.t(effI18nKey) : (eff.label || eff.name);
+      var bullet = document.createElement("span");
+      bullet.className = "viewer-chip-bullet";
+      bullet.textContent = "\u25CB"; // ○ off
+      btn.appendChild(bullet);
+      btn.appendChild(document.createTextNode(" " + label));
       btn.setAttribute("aria-pressed", "false");
       btn.addEventListener("click", () => {
         if (selectedEffects[eff.name]) {
           delete selectedEffects[eff.name];
-          btn.classList.remove("effect-btn--active");
+          btn.classList.remove("effect-btn--active", "is-active");
           btn.setAttribute("aria-pressed", "false");
+          bullet.textContent = "\u25CB";
         } else {
-          // Build default params
           const defaults = {};
           for (const [k, v] of Object.entries(eff.params || {})) defaults[k] = v.default;
           selectedEffects[eff.name] = defaults;
-          btn.classList.add("effect-btn--active");
+          btn.classList.add("effect-btn--active", "is-active");
           btn.setAttribute("aria-pressed", "true");
+          bullet.textContent = "\u25CF"; // ● on
         }
+        _updateEffectsCount();
         _refreshParamsPanel();
+        updatePreview();
       });
       elements.effectButtons.appendChild(btn);
     });
 
     if (effects.length === 0) {
-      elements.effectButtons.innerHTML = `<span class="text-xs text-slate-400">${ServerI18n.t("noEffectsAvailable")}</span>`;
+      elements.effectButtons.innerHTML = `<span class="viewer-field-label">${ServerI18n.t("noEffectsAvailable")}</span>`;
     }
   }
 
@@ -677,72 +1000,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadEffects();
 
-  // ── Theme Selector ────────────────────────────────────────────────────────
-
-  let _activeThemeName = "default";
-
-  async function loadThemes() {
-    try {
-      const res = await fetch("/themes");
-      if (!res.ok) return;
-      const data = await res.json();
-      const themes = data.themes || [];
-      _activeThemeName = data.active || "default";
-      _buildThemeSelector(themes, _activeThemeName);
-    } catch (e) {
-      console.warn("[Themes] Failed to load themes:", e.message);
-    }
-  }
-
-  function _buildThemeSelector(themes, activeName) {
-    const effectControl = document.getElementById("effectControl");
-    if (!effectControl) return;
-
-    // Remove existing theme selector if any
-    const existing = document.getElementById("themeSelector");
-    if (existing) existing.remove();
-
-    if (themes.length === 0) return;
-
-    const wrapper = document.createElement("div");
-    wrapper.id = "themeSelector";
-    wrapper.className = "flex items-center gap-2 mb-2";
-
-    const label = document.createElement("span");
-    label.className = "text-xs text-slate-400 shrink-0";
-    label.textContent = "Theme";
-    wrapper.appendChild(label);
-
-    const select = document.createElement("select");
-    select.id = "themeSelect";
-    select.className =
-      "bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded px-2 py-1 flex-1";
-
-    themes.forEach((t) => {
-      const opt = document.createElement("option");
-      opt.value = t.name;
-      var tLabelKey = "theme_" + t.name;
-      var tDescKey = tLabelKey + "_desc";
-      var tLabel = ServerI18n.t(tLabelKey) !== tLabelKey ? ServerI18n.t(tLabelKey) : t.label;
-      var tDesc = ServerI18n.t(tDescKey) !== tDescKey ? ServerI18n.t(tDescKey) : t.description;
-      opt.textContent = tLabel + " - " + tDesc;
-      if (t.name === activeName) opt.selected = true;
-      select.appendChild(opt);
-    });
-
-    select.addEventListener("change", () => {
-      _activeThemeName = select.value;
-    });
-
-    wrapper.appendChild(select);
-
-    // Insert before effectControl
-    effectControl.parentNode.insertBefore(wrapper, effectControl);
-  }
-
-  loadThemes();
+  // Theme selector removed from viewer — per design brief, theme packs are
+  // admin-only. Active theme is applied server-side; viewer just fires text.
 
   // --- Send Button Loading State ---
+
   function setSendLoading(loading) {
     if (!elements.btnSend) return;
     elements.btnSend.disabled = loading;
@@ -785,7 +1047,7 @@ document.addEventListener("DOMContentLoaded", () => {
         text: text,
         color: elements.colorInput ? elements.colorInput.value : null,
         size: elements.sizeInput ? parseInt(elements.sizeInput.value) : null,
-        speed: elements.speedRange ? parseInt(elements.speedRange.value) : null,
+        speed: elements.speedRange ? parseFloat(elements.speedRange.value) : null,
         opacity: elements.opacityRange
           ? parseInt(elements.opacityRange.value)
           : null,
@@ -806,37 +1068,94 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         body: JSON.stringify(payload),
       });
+      let responseData = {};
+      try {
+        responseData = await response.json();
+      } catch (_) {
+        responseData = {};
+      }
 
       if (response.ok) {
-        let body = {};
-        try { body = await response.json(); } catch (_) { }
-        const status = body.status || "sent";
+        const status = (responseData && responseData.status) || "sent";
         const accepted = status === "sent" || status === "queued";
 
         if (accepted) {
           elements.danmuText.value = "";
           updateCharCount();
           updatePreview();
+          try {
+            if (window.ViewerStates && document.body.dataset.viewerState === "ratelimit") {
+              window.ViewerStates.hide();
+            }
+          } catch (_) {}
         }
 
-        if (status === "sent") {
-          showToast(ServerI18n.t("danmuFired"), true);
-        } else if (status === "queued") {
-          showToast(ServerI18n.t("onscreenFullQueued"), true);
+        if (status === "queued") {
+          // queued can mean two distinct things:
+          //   (a) onscreen-limiter saturated → wait for slot
+          //   (b) broadcast.is_live() === false → main host paused
+          // Server tags case (b) with reason="broadcast_standby" so we
+          // can show a different message instead of the misleading
+          // "screen is full" copy.
+          const reason = (responseData && responseData.reason) || "";
+          if (reason === "broadcast_standby") {
+            showToast(ServerI18n.t("broadcastStandbyQueued"), true);
+          } else {
+            showToast(ServerI18n.t("onscreenFullQueued"), true);
+          }
         } else {
           showToast(ServerI18n.t("danmuFired"), true);
         }
+
+        // Server-driven thank-you: only show when /fire explicitly confirms
+        // this message was accepted as a poll vote.
+        try {
+          const vote = responseData && responseData.poll_vote;
+          if (window.ViewerStates && vote && vote.accepted === true) {
+            window.ViewerStates.showThankYou({
+              question: vote.question || window._lastPollQuestion || "進行中的投票",
+              choice: vote.key || "",
+              fp: clientFingerprint,
+            });
+          }
+        } catch (_) { }
       } else {
-        let message = ServerI18n.t("failedToSend");
-        let data = null;
-        try { data = await response.json(); } catch (_) { }
-        if (data && data.status === "dropped" && data.reason === "full") {
-          message = ServerI18n.t("onscreenFullDropped");
-        } else if (data && data.status === "rejected" && data.reason === "queue_full") {
-          message = ServerI18n.t("queueFullTryLater");
-        } else if (data) {
-          message = (typeof data.error === "string" ? data.error : data.error?.message) || message;
+        if (response.status === 429) {
+          const retryAfterHeader = response.headers.get("Retry-After");
+          const retryAfter = Number.parseInt(retryAfterHeader || "0", 10);
+          if (window.ViewerStates && typeof window.ViewerStates.showRateLimited === "function") {
+            window.ViewerStates.showRateLimited({
+              retryAfter: Number.isFinite(retryAfter) ? retryAfter : 0,
+            });
+          } else {
+            showToast("發送太快，請稍後再試", false);
+          }
+          return;
         }
+        let message = ServerI18n.t("failedToSend");
+        try {
+          const data = responseData || {};
+          if (data.status === "dropped" && data.reason === "full") {
+            message = ServerI18n.t("onscreenFullDropped");
+          } else if (data.status === "rejected" && data.reason === "queue_full") {
+            message = ServerI18n.t("queueFullTryLater");
+          } else {
+            message = (typeof data.error === "string" ? data.error : data.error?.message) || message;
+          }
+          // P3 ViewerBanned: 403 with banned/blocked reason → show banned
+          // state instead of just a toast.
+          if (response.status === 403 && window.ViewerStates) {
+            const lower = String(message).toLowerCase();
+            if (lower.indexOf("ban") !== -1 || lower.indexOf("block") !== -1
+                || message.indexOf("禁言") !== -1 || message.indexOf("封鎖") !== -1) {
+              window.ViewerStates.showBanned({
+                fp: clientFingerprint,
+                reason: message,
+              });
+              return;
+            }
+          }
+        } catch (_) { }
         showToast(message, false);
       }
     } catch (error) {
@@ -848,12 +1167,27 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --- Connection Status UI ---
+  // Dot lives inside a viewer-conn-chip; target it by the state-bearing class,
+  // not by `.connection-dot` (the base class was dropped in the 2-col hero).
+  function _resetDotState(dot) {
+    if (!dot) return;
+    dot.classList.remove(
+      "connection-dot--connected",
+      "connection-dot--connecting",
+      "connection-dot--disconnected",
+      "connection-dot--failed",
+      "connection-dot--live",
+    );
+  }
+
   function updateConnectionUI(state) {
     if (!elements.connectionStatus) return;
-    const dot = elements.connectionStatus.querySelector(".connection-dot");
+    const dot = elements.connectionStatus.querySelector("[class*='connection-dot--']") ||
+                elements.connectionStatus.querySelector(".viewer-conn-chip-dot") ||
+                elements.connectionStatus.querySelector(".connection-dot");
     if (!dot || !elements.connectionLabel) return;
 
-    dot.className = "connection-dot"; // reset
+    _resetDotState(dot);
     switch (state) {
       case "connected":
         dot.classList.add("connection-dot--connected");
@@ -873,9 +1207,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Overlay Status Polling ---
   function updateOverlayUI(count) {
     if (!elements.overlayStatus || !elements.overlayLabel) return;
-    const dot = elements.overlayStatus.querySelector(".connection-dot");
+    const dot = elements.overlayStatus.querySelector("[class*='connection-dot--']") ||
+                elements.overlayStatus.querySelector(".viewer-conn-chip-dot") ||
+                elements.overlayStatus.querySelector(".connection-dot");
     if (!dot) return;
-    dot.className = "connection-dot";
+    _resetDotState(dot);
     if (count > 0) {
       dot.classList.add("connection-dot--connected");
       elements.overlayLabel.textContent = ServerI18n.t("overlayConnected").replace("{n}", count);
@@ -895,71 +1231,286 @@ document.addEventListener("DOMContentLoaded", () => {
   pollOverlayStatus();
   setInterval(pollOverlayStatus, 5000);
 
+  // --- Session ended handler ---
+  // Called when admin closes the active session. Behavior is admin-configured:
+  //   "continue"     — do nothing (viewer keeps working in IDLE mode)
+  //   "ended_screen" — disable input, show full-screen ended overlay
+  //   "reload"       — auto-reload page after 3 s
+  function _handleSessionEnded(behavior) {
+    console.log("[viewer] session_ended received, behavior:", behavior);
+    if (behavior === "continue") return;
+
+    if (behavior === "reload") {
+      setTimeout(() => { window.location.reload(); }, 3000);
+      return;
+    }
+
+    if (behavior === "ended_screen") {
+      // Disable the message form
+      const form = document.getElementById("fireForm") || document.querySelector("form");
+      if (form) {
+        form.querySelectorAll("input, button, textarea").forEach((el) => { el.disabled = true; });
+      }
+      // Show ended overlay (reuse viewer-state system if available, else inject)
+      if (window.ViewerStates && window.ViewerStates.show) {
+        window.ViewerStates.show("ended");
+      } else {
+        _showSessionEndedFallback();
+      }
+    }
+  }
+
+  function _showSessionEndedFallback() {
+    const existing = document.getElementById("viewer-session-ended-overlay");
+    if (existing) return;
+    const el = document.createElement("div");
+    el.id = "viewer-session-ended-overlay";
+    el.style.cssText = [
+      "position:fixed", "inset:0", "z-index:9000",
+      "background:rgba(10,14,26,.92)",
+      "display:flex", "flex-direction:column",
+      "align-items:center", "justify-content:center",
+      "color:#e6e8ee", "font-family:inherit", "text-align:center", "padding:32px",
+    ].join(";");
+    el.innerHTML = `
+      <div style="font-size:48px;margin-bottom:16px">🎉</div>
+      <div style="font-size:22px;font-weight:700;margin-bottom:8px">本場活動已結束</div>
+      <div style="font-size:14px;color:#9aa4b2;line-height:1.6">感謝您的參與！</div>`;
+    document.body.appendChild(el);
+  }
+
   // --- WebSocket ---
   let _wsReconnectAttempt = 0;
   const WS_BASE_DELAY = 3000;
   const WS_MAX_RECONNECT_DELAY = 30000;
 
-  function connectWebSocket() {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/`;
+  // ── Offline state (P2-1) ──────────────────────────────────────────────────
+  // After 3 failed reconnect attempts within a 30s window we swap the
+  // .viewer-body content with the offline card. Resets on successful connect.
+  const OFFLINE_FAIL_THRESHOLD = 3;
+  const OFFLINE_WINDOW_MS = 30000;
+  const OFFLINE_RETRY_SECONDS = 15;
+  let _wsFailTimestamps = [];
+  let _offlineCardActive = false;
+  let _offlineCountdownTimer = null;
+  let _offlineBodyHtml = null;
 
-    updateConnectionUI("connecting");
-    ws = new WebSocket(wsUrl);
-
-    ws.onopen = () => {
-      console.log("Connected to WebSocket");
-      _wsReconnectAttempt = 0;
-      updateConnectionUI("connected");
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "settings_changed") {
-          console.log("Settings updated:", data.settings);
-          currentSettings = data.settings;
-
-          // Update Font Selection UI
-          if (currentSettings.FontFamily && currentSettings.FontFamily[0]) {
-            if (elements.userFontSelectControl) {
-              elements.userFontSelectControl.style.display = "block";
-              populateUserFontDropdown();
-            }
-          } else {
-            if (elements.userFontSelectControl) {
-              elements.userFontSelectControl.style.display = "none";
-            }
-          }
-
-          // Update Effects UI visibility
-          applyEffectsVisibility(currentSettings);
-
-          updatePreview();
-        }
-      } catch (e) {
-        console.error("Error processing WebSocket message:", e);
-      }
-    };
-
-    ws.onclose = () => {
-      _wsReconnectAttempt++;
-      const delay = Math.min(
-        WS_BASE_DELAY * Math.pow(2, _wsReconnectAttempt - 1),
-        WS_MAX_RECONNECT_DELAY
-      );
-      const jitter = delay * 0.2 * Math.random();
-      const totalDelay = Math.round(delay + jitter);
-      console.log(`WebSocket disconnected, retrying in ${totalDelay}ms (attempt ${_wsReconnectAttempt})...`);
-      updateConnectionUI("disconnected");
-      setTimeout(connectWebSocket, totalDelay);
-    };
-
-    ws.onerror = (err) => {
-      console.error("WebSocket error:", err);
-      updateConnectionUI("disconnected");
-    };
+  function _recordWsFailure() {
+    const now = Date.now();
+    _wsFailTimestamps.push(now);
+    _wsFailTimestamps = _wsFailTimestamps.filter(
+      (t) => now - t <= OFFLINE_WINDOW_MS
+    );
+    if (
+      !_offlineCardActive &&
+      _wsFailTimestamps.length >= OFFLINE_FAIL_THRESHOLD
+    ) {
+      showOfflineCard();
+    }
   }
+
+  function _getOpsContact() {
+    // Optional operator contact — read from /get_settings payload. Safe to
+    // call even if the key is absent (we only render if truthy).
+    if (currentSettings && typeof currentSettings.OpsContact !== "undefined") {
+      const oc = currentSettings.OpsContact;
+      if (Array.isArray(oc)) return oc[3] || oc[0] || null;
+      if (typeof oc === "string") return oc;
+    }
+    return null;
+  }
+
+  function showOfflineCard() {
+    _setViewerMode("fire");
+    const body = document.querySelector(".viewer-body");
+    if (!body || _offlineCardActive) return;
+    _offlineCardActive = true;
+    _offlineBodyHtml = body.innerHTML;
+
+    const opsContact = _getOpsContact();
+    const contactHtml = opsContact
+      ? `<a class="viewer-offline-btn is-secondary" href="${opsContact}" target="_blank" rel="noopener noreferrer">${ServerI18n.t("offlineContactOps")}</a>`
+      : "";
+
+    body.innerHTML = `
+      <div class="viewer-offline-card" role="alert" aria-live="assertive">
+        <h2 class="viewer-offline-lockup">Danmu Fire</h2>
+        <span class="viewer-offline-chip">
+          <span class="viewer-offline-chip-dot" aria-hidden="true"></span>
+          <span>${ServerI18n.t("offlineStatus")}</span>
+        </span>
+        <p class="viewer-offline-message">
+          ${ServerI18n.t("offlineMessage")}
+          <small>${ServerI18n.t("offlineHint")}</small>
+        </p>
+        <div class="viewer-offline-countdown" id="offlineCountdown" aria-live="polite">
+          <span id="offlineCountdownValue">${OFFLINE_RETRY_SECONDS}</span>
+          <span>${ServerI18n.t("offlineRetryUnit")}</span>
+        </div>
+        <div class="viewer-offline-actions">
+          <button type="button" class="viewer-offline-btn" id="offlineReloadBtn">
+            ${ServerI18n.t("offlineReload")}
+          </button>
+          ${contactHtml}
+        </div>
+      </div>
+    `;
+
+    // Disable sendbar while offline (keep visible per design).
+    if (elements.btnSend) elements.btnSend.disabled = true;
+    if (elements.danmuText) elements.danmuText.disabled = true;
+
+    const btn = document.getElementById("offlineReloadBtn");
+    if (btn) btn.addEventListener("click", () => window.location.reload());
+    _startOfflineCountdown();
+  }
+
+  function _startOfflineCountdown() {
+    let remaining = OFFLINE_RETRY_SECONDS;
+    const valueEl = document.getElementById("offlineCountdownValue");
+    if (_offlineCountdownTimer) clearInterval(_offlineCountdownTimer);
+    _offlineCountdownTimer = setInterval(() => {
+      remaining -= 1;
+      if (valueEl) valueEl.textContent = String(Math.max(0, remaining));
+      if (remaining <= 0) {
+        clearInterval(_offlineCountdownTimer);
+        _offlineCountdownTimer = null;
+        // One nudge — trigger an immediate reconnect attempt. ws.onclose
+        // already schedules retries, but we collapse the backoff here.
+        try { if (ws && ws.readyState !== WebSocket.OPEN) ws.close(); } catch (_) {}
+        connectWebSocket();
+        // Reset countdown for the next cycle (still offline = keep visible).
+        if (_offlineCardActive) _startOfflineCountdown();
+      }
+    }, 1000);
+  }
+
+  function hideOfflineCard() {
+    if (!_offlineCardActive) return;
+    _offlineCardActive = false;
+    _wsFailTimestamps = [];
+    if (_offlineCountdownTimer) {
+      clearInterval(_offlineCountdownTimer);
+      _offlineCountdownTimer = null;
+    }
+    const body = document.querySelector(".viewer-body");
+    if (body && _offlineBodyHtml !== null) {
+      body.innerHTML = _offlineBodyHtml;
+      _offlineBodyHtml = null;
+      // Re-bind controls after DOM restore — easiest is a soft reload of the
+      // nickname/fields, but most values are driven by settings + WS push.
+      // Just re-run input wiring for the core inputs that persisted via IDs.
+    }
+    if (elements.btnSend) elements.btnSend.disabled = false;
+    if (elements.danmuText) elements.danmuText.disabled = false;
+    updateSendEnabled();
+  }
+
+  // v5.0.0+ Phase 2: viewer no longer opens a WebSocket. The three
+  // legacy push types map to public polling endpoints:
+  //   poll_update      → GET /poll/public-status
+  //   settings_changed → GET /get_settings (diffed; only re-applies on change)
+  //   session_ended    → GET /session/public-state (live → ended transition)
+  // One combined 2-second tick keeps overhead minimal. Connection UI
+  // ("connected" / "disconnected") is derived from poll success rather
+  // than a real socket — operator sees the same visual state.
+  let _pollTimer = null;
+  let _settingsHash = null;
+  let _lastSessionStatus = null;
+  let _consecutivePollFailures = 0;
+  const VIEWER_POLL_INTERVAL_MS = 2000;
+  const VIEWER_FAIL_THRESHOLD = 3; // mark disconnected after 3 consecutive misses
+
+  async function _pollViewerState() {
+    const fetches = [
+      fetch("/get_settings", { credentials: "same-origin" })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
+      VIEWER_POLL_ENABLED
+        ? fetch("/poll/public-status", { credentials: "same-origin" })
+            .then((r) => (r.ok ? r.json() : null))
+            .catch(() => null)
+        : Promise.resolve(null),
+      fetch("/session/public-state", { credentials: "same-origin" })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
+    ];
+    const [settings, pollState, sessionState] = await Promise.all(fetches);
+
+    // Settings — diff & re-apply on change. Initial boot fetch
+    // populates currentSettings; subsequent polls only act on a real
+    // change so we don't churn UI every tick.
+    if (settings) {
+      const hash = JSON.stringify(settings);
+      if (_settingsHash !== null && hash !== _settingsHash) {
+        currentSettings = settings;
+        if (currentSettings.FontFamily && currentSettings.FontFamily[0]) {
+          if (elements.userFontSelectControl) {
+            elements.userFontSelectControl.style.display = "block";
+            populateUserFontDropdown();
+          }
+        } else if (elements.userFontSelectControl) {
+          elements.userFontSelectControl.style.display = "none";
+        }
+        applyEffectsVisibility(currentSettings);
+        updatePreview();
+      }
+      _settingsHash = hash;
+    }
+
+    // Poll state — feed straight into the existing renderer.
+    if (pollState) {
+      _applyPollState(pollState);
+    }
+
+    // Session — fire ended handler on live → ended transition.
+    if (sessionState) {
+      const status = sessionState.status || sessionState.state || null;
+      if (status === "ended" && _lastSessionStatus === "live") {
+        _handleSessionEnded(sessionState.viewer_end_behavior || "continue");
+      }
+      _lastSessionStatus = status;
+    }
+
+    // Connection UI — at least one successful response = "connected".
+    // Failures cascade through `_recordWsFailure()` so the existing
+    // offline-card flow (kept from the WS days) still fires after 3
+    // misses in 30s — disabled-send + countdown + ops-contact UX must
+    // not regress just because the transport changed to polling.
+    if (settings || pollState || sessionState) {
+      if (_consecutivePollFailures > 0) {
+        _consecutivePollFailures = 0;
+        if (_offlineCardActive) hideOfflineCard();
+      }
+      updateConnectionUI("connected");
+    } else {
+      _consecutivePollFailures++;
+      _recordWsFailure();
+      if (_consecutivePollFailures >= VIEWER_FAIL_THRESHOLD) {
+        updateConnectionUI("disconnected");
+      }
+    }
+  }
+
+  function connectWebSocket() {
+    // Function name preserved for minimal callsite churn. Now bootstraps
+    // the polling loop instead of opening a WebSocket.
+    updateConnectionUI("connecting");
+    if (_pollTimer) {
+      clearInterval(_pollTimer);
+      _pollTimer = null;
+    }
+    _pollViewerState(); // immediate first tick
+    _pollTimer = setInterval(_pollViewerState, VIEWER_POLL_INTERVAL_MS);
+  }
+
+  // Stop polling on unload to avoid background traffic.
+  window.addEventListener("beforeunload", () => {
+    if (_pollTimer) {
+      clearInterval(_pollTimer);
+      _pollTimer = null;
+    }
+  });
 
   // --- Helper: Apply Effects section visibility based on settings ---
   function applyEffectsVisibility(settings) {
@@ -1011,6 +1562,20 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (_) { }
       }
 
+      // Nickname → preview-nick (top-left of the preview block) live
+      // sync. No `@` prefix. Save to localStorage on change.
+      (function wireNickname() {
+        if (!nicknameInput) return;
+        const previewNick = document.getElementById("previewNick");
+        const renderNick = () => {
+          const v = (nicknameInput.value || "").trim();
+          if (previewNick) previewNick.textContent = v;
+          try { localStorage.setItem("danmu_nickname", v); } catch (_) {}
+        };
+        nicknameInput.addEventListener("input", renderNick);
+        renderNick();
+      })();
+
       // Layout mode buttons
       const layoutBtns = document.querySelectorAll(".layout-btn");
       const layoutSelect = document.getElementById("layoutSelect");
@@ -1018,12 +1583,12 @@ document.addEventListener("DOMContentLoaded", () => {
         layoutBtns.forEach((btn) => {
           btn.addEventListener("click", () => {
             layoutBtns.forEach((b) => {
-              b.classList.remove("active", "bg-sky-500/20", "text-sky-300", "border-sky-500/30");
+              b.classList.remove("active", "is-active", "bg-sky-500/20", "text-sky-300", "border-sky-500/30");
               b.classList.add("bg-slate-700/50", "text-slate-300", "border-slate-600/30");
               b.setAttribute("aria-pressed", "false");
             });
             btn.classList.remove("bg-slate-700/50", "text-slate-300", "border-slate-600/30");
-            btn.classList.add("active", "bg-sky-500/20", "text-sky-300", "border-sky-500/30");
+            btn.classList.add("active", "is-active", "bg-sky-500/20", "text-sky-300", "border-sky-500/30");
             btn.setAttribute("aria-pressed", "true");
             layoutSelect.value = btn.dataset.layout;
           });

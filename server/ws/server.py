@@ -1,7 +1,7 @@
 import asyncio
 import json
 import secrets
-import threading
+import ssl
 import time
 from urllib.parse import parse_qs, urlparse
 
@@ -13,38 +13,17 @@ from ..services import ws_auth, ws_queue
 from ..services.ws_state import update_ws_client_count
 from ..utils import sanitize_log_string
 
-# Signals check_connections() to stop gracefully
-_stop_event = threading.Event()
 
-
-def stop_connection_checker():
-    """Call this during application shutdown to interrupt the checker immediately."""
-    _stop_event.set()
-
-
-def check_connections(logger):
-    """Periodically ping web clients to detect dead connections.
-
-    Uses Event.wait() instead of time.sleep() so the thread can be interrupted
-    immediately on shutdown rather than waiting up to 30 seconds.
-    """
-    while not _stop_event.is_set():
-        try:
-            connections_copy = connection_manager.get_web_connections()
-            if connections_copy:
-                for ws in connections_copy:
-                    try:
-                        ws.send(json.dumps({"type": "ping"}))
-                    except Exception as exc:
-                        logger.warning(
-                            "Connection dead, removing: %s",
-                            sanitize_log_string(str(exc)),
-                        )
-                        connection_manager.unregister_web_connection(ws)
-        except Exception as exc:
-            logger.warning("Error in connection checker: %s", sanitize_log_string(str(exc)))
-        # Wait up to 30 s, but wake immediately if stop is requested
-        _stop_event.wait(timeout=30)
+def _build_tls_context(certfile=None, keyfile=None):
+    certfile = certfile or getattr(Config, "WS_TLS_CERTFILE", None)
+    keyfile = keyfile or getattr(Config, "WS_TLS_KEYFILE", None)
+    if not certfile and not keyfile:
+        return None
+    if not certfile or not keyfile:
+        raise ValueError("WS TLS requires both certificate and key files")
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain(certfile, keyfile)
+    return context
 
 
 async def _forward_messages(logger):
@@ -278,13 +257,22 @@ def run_ws_server(ws_port, logger):
             await unregister(websocket)
 
     async def start_server():
+        tls_context = _build_tls_context()
         server = await websockets.serve(
             ws_handler,
             ws_host,
             ws_port,
+            ssl=tls_context,
             max_size=ws_max_size,
             max_queue=ws_max_queue,
             write_limit=ws_write_limit,
+            # Protocol-level WS pings — drop dead connections so the overlay
+            # count chip doesn't show "1 個" when the actual browser tab is
+            # gone. nginx reverse proxies keep upstream tunnels half-open
+            # past the client TCP RST, so we need explicit keepalive at the
+            # WS layer to detect those zombies.
+            ping_interval=20,
+            ping_timeout=10,
         )
         logger.info("WebSocket server started on port %s", ws_port)
         forwarding_task = asyncio.create_task(_forward_messages(logger))

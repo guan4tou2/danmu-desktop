@@ -103,7 +103,12 @@ services:
         condition: service_healthy
         required: false
 
-  # ── HTTP mode (--profile http) ────────────────────────────────────────────
+  # ── HTTP mode (--profile http) — DEPRECATED (v5.0.0+) ────────────────────
+  # Plain HTTP nginx, no TLS. Suitable for local dev / LAN-only test runs
+  # ONLY. The Electron desktop client always connects via wss:// since
+  # v5.0.0 — http profile breaks the overlay flow. Use --profile https
+  # (self-signed cert, fully automated) or --profile traefik
+  # (Let's Encrypt) for any setup that wires the desktop client.
   reverse-proxy:
     profiles: [http]
     image: nginx:1.27-alpine
@@ -138,6 +143,7 @@ services:
     ports:
       - "${HTTP_PORT:-80}:80"
       - "${HTTPS_PORT:-443}:443"
+      - "${WS_PORT:-4001}:4001"
     volumes:
       - ./nginx/nginx-https.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/certs:/etc/nginx/certs

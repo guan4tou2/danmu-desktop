@@ -94,6 +94,21 @@ class FilterEngine:
                     continue
                 result = self._evaluate(rule, text, fingerprint)
                 if result is not None:
+                    # Record the match for the moderation live log. Only
+                    # actual matches (block/allow/replace) are recorded;
+                    # plain "pass" is a firehose and not what the log shows.
+                    try:
+                        from . import filter_events  # local import to avoid cycle
+
+                        filter_events.record(
+                            action=result.action,
+                            rule_id=result.rule_id,
+                            pattern=rule.pattern,
+                            text=text,
+                            source=fingerprint,
+                        )
+                    except Exception:
+                        pass  # logging must never break filtering
                     return result
         return FilterResult(action="pass", text=text)
 

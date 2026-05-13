@@ -28,6 +28,7 @@ try {
       return ipcRenderer.invoke("getDisplays");
     },
     create: (ip, port, displayIndex, enableSyncMultiDisplay, startupAnimationSettings, wsAuthToken = "") => {
+      // v5.0.0+: WSS-only — useWss param dropped (always true).
       console.log(
         "[Preload] API.create called with:",
         ip,
@@ -35,7 +36,7 @@ try {
         displayIndex,
         enableSyncMultiDisplay,
         startupAnimationSettings,
-        wsAuthToken ? "(token set)" : "(no token)"
+        wsAuthToken ? "(token set)" : "(no token)",
       );
       ipcRenderer.send(
         "createChild",
@@ -47,9 +48,29 @@ try {
         wsAuthToken
       );
     },
+    setOverlayDisplayId: (displayId) => {
+      const normalized = Number(displayId);
+      if (!Number.isInteger(normalized)) return;
+      ipcRenderer.send("set-overlay-display-id", normalized);
+    },
     close: () => {
       console.log("[Preload] API.close called");
       ipcRenderer.send("closeChildWindows");
+    },
+    // Clear all currently-rendering danmu on every overlay window
+    // without disconnecting the WS — true "clear", not stop.
+    clearOverlay: () => {
+      console.log("[Preload] API.clearOverlay called");
+      ipcRenderer.send("overlay-clear");
+    },
+    // Child overlay subscribes to receive the broadcast. Main fans out
+    // the original `overlay-clear` IPC to every child via webContents.send.
+    onOverlayClear: (callback) => {
+      if (_handlers.overlayClear) {
+        ipcRenderer.removeListener("overlay-clear", _handlers.overlayClear);
+      }
+      _handlers.overlayClear = () => callback();
+      ipcRenderer.on("overlay-clear", _handlers.overlayClear);
     },
     sendConnectionStatus: (status, attempt, maxAttempts) => {
       console.log("[Preload] API.sendConnectionStatus called with:", status);
@@ -118,6 +139,40 @@ try {
       }
       _handlers.konamiEffect = () => callback();
       ipcRenderer.on("konami-effect", _handlers.konamiEffect);
+    },
+    // Overlay Idle · Hero Lockup toggle (tray menu → main → child)
+    onToggleIdle: (callback) => {
+      if (_handlers.toggleIdle) {
+        ipcRenderer.removeListener("overlay-idle-toggle", _handlers.toggleIdle);
+      }
+      _handlers.toggleIdle = (event, data) => callback(data || {});
+      ipcRenderer.on("overlay-idle-toggle", _handlers.toggleIdle);
+    },
+    toggleOverlayIdle: (mode) => {
+      // mode: 'show' | 'hide' | 'toggle'
+      ipcRenderer.send("overlay-idle-request", { mode: mode || "toggle" });
+    },
+    // ── Auto-updater UX (P2-3) ────────────────────────────────────────────
+    // Subscribe to update lifecycle events from main process.
+    onUpdateStatus: (callback) => {
+      if (_handlers.updateStatus) {
+        ipcRenderer.removeListener("update:status", _handlers.updateStatus);
+      }
+      _handlers.updateStatus = (event, data) => callback(data || {});
+      ipcRenderer.on("update:status", _handlers.updateStatus);
+    },
+    // Send a user action to the updater. action ∈
+    //   "install" | "later" | "skip" | "check-now" | "request-state"
+    sendUpdateAction: (action, version) => {
+      const allowed = ["install", "later", "skip", "check-now", "request-state"];
+      if (!allowed.includes(action)) {
+        console.warn("[Preload] sendUpdateAction: invalid action", action);
+        return;
+      }
+      ipcRenderer.send("update:action", {
+        action,
+        version: typeof version === "string" ? version : undefined,
+      });
     },
   });
   // Note: Logging window.API here is from preload's context, not renderer's.

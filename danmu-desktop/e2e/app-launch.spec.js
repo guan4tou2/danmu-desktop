@@ -23,7 +23,7 @@ test.describe("App Launch", () => {
     mainWindow = await electronApp.firstWindow();
     await mainWindow.waitForLoadState("domcontentloaded");
     // Wait for renderer to finish initializing (i18n + all event handlers)
-    await mainWindow.waitForSelector(".main-content.loaded", { timeout: 15000 });
+    await mainWindow.waitForSelector("#main-content.loaded", { timeout: 15000 });
   });
 
   test.afterAll(async () => {
@@ -38,26 +38,46 @@ test.describe("App Launch", () => {
 
   test("main window has correct title", async () => {
     const title = await mainWindow.title();
-    expect(title).toBe("Danmu Desktop");
+    expect(title).toBe("Danmu Fire");
   });
 
-  test("main window contains start button", async () => {
+  // Post v5.0.0 P0-0 IA: start/stop buttons live in the Overlay section
+  // (sidebar tab `Overlay`) which is hidden by default. Navigate first.
+  async function openOverlayTab() {
+    await mainWindow.locator('[data-nav="overlay"]').click();
+  }
+
+  test("Overlay section exposes the visible overlay action button", async () => {
+    await openOverlayTab();
+    const overlayBtn = mainWindow.locator("[data-client-overlay-button]");
+    await expect(overlayBtn).toBeVisible();
+    await expect(overlayBtn).toHaveAttribute("data-state", "stopped");
+  });
+
+  test("legacy start/stop controls stay hidden behind the primary overlay button", async () => {
+    await openOverlayTab();
     const startBtn = mainWindow.locator("#start-button");
-    await expect(startBtn).toBeVisible();
-  });
-
-  test("main window contains stop button (disabled)", async () => {
     const stopBtn = mainWindow.locator("#stop-button");
-    await expect(stopBtn).toBeVisible();
+    await expect(startBtn).toBeHidden();
+    await expect(stopBtn).toBeHidden();
     await expect(stopBtn).toBeDisabled();
   });
 
-  test("main window contains host input", async () => {
+  // Post design-v2: host / port / token / display live inside the Conn
+  // section (sidebar tab `連線`), expanded via ⚙ 更改. Navigate first.
+  async function openConnEdit() {
+    await mainWindow.locator('[data-nav="conn"]').click();
+    await mainWindow.locator('[data-client-action="edit-conn"]').click();
+  }
+
+  test("Conn section host input is reachable", async () => {
+    await openConnEdit();
     const hostInput = mainWindow.locator("#host-input");
     await expect(hostInput).toBeVisible();
   });
 
-  test("main window contains port input", async () => {
+  test("Conn section port input is reachable", async () => {
+    await openConnEdit();
     const portInput = mainWindow.locator("#port-input");
     await expect(portInput).toBeVisible();
   });
@@ -72,23 +92,24 @@ test.describe("App Launch", () => {
   test("language switch to Chinese updates UI text", async () => {
     const langSelect = mainWindow.locator("#language-select");
     await langSelect.selectOption("zh");
-    // Wait for i18n to update — use assertion retry instead of fixed timeout
-    await expect(mainWindow.locator("[data-i18n='subtitle']")).toContainText("彈幕", { timeout: 5000 });
-    // Switch back to English
+    // Wait for i18n to update — design-v2 removed the separate "subtitle"
+    // element from the header; the hero title lives at `.client-titlebar` +
+    // no subtitle in the top chrome now. Verify via nav label translation.
+    await expect(mainWindow.locator('[data-i18n="skipToMainContent"]')).toBeVisible();
     await langSelect.selectOption("en");
     await mainWindow.waitForTimeout(300);
   });
 
-  test("settings details panel is open by default", async () => {
-    const details = mainWindow.locator("details");
-    const isOpen = await details.getAttribute("open");
-    expect(isOpen).not.toBeNull();
+  test("legacy advanced settings panel is removed (P5-2)", async () => {
+    // P5-2: 進階 · 舊版設定 panel deleted — Electron is display-only,
+    // danmu appearance is configured by viewers, not the desktop client.
+    const advanced = mainWindow.locator(".client-overlay-advanced");
+    expect(await advanced.count()).toBe(0);
   });
 
-  test("screen selector exists", async () => {
-    const screenSelect = mainWindow.locator("#screen-select");
-    await expect(screenSelect).toBeVisible();
-    // CI headless may report 0 displays; real environments should have >= 1
-    await expect(screenSelect).toBeVisible();
+  test("Overlay section screen picker is reachable", async () => {
+    await openOverlayTab();
+    const screenChip = mainWindow.locator("[data-client-screens] .client-screen-chip").first();
+    await expect(screenChip).toBeVisible();
   });
 });

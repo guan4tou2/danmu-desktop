@@ -92,6 +92,17 @@ def admin_page(logged_context, live_url):
     page = logged_context.new_page()
     page.goto(f"{live_url}/admin/")
     page.wait_for_selector("#logoutButton", timeout=8000)
+    # v5.0.0+: AdminOnboarding tour shows a spotlight overlay on first
+    # admin load (admin-onboarding.js DONE_KEY = "danmu.onboarding.done").
+    # Tests don't exercise the tour itself; mark it done so the overlay
+    # doesn't intercept clicks.
+    page.evaluate(
+        "() => {"
+        '  try { localStorage.setItem("danmu.onboarding.done", "1"); } catch (_) {}'
+        '  var root = document.getElementById("admin-onboarding-root");'
+        "  if (root) root.remove();"
+        "}"
+    )
     yield page
     page.close()
 
@@ -107,16 +118,21 @@ SECTION_TO_ROUTE = {
     "sec-history": "history",
     "sec-polls": "polls",
     "sec-widgets": "widgets",
-    "sec-color": "themes",
-    "sec-opacity": "themes",
-    "sec-fontsize": "themes",
-    "sec-speed": "themes",
-    "sec-fontfamily": "themes",
-    "sec-layout": "themes",
+    # Phase A IA (2026-05-06): viewer/display defaults are now reached
+    # through the canonical viewer route. Legacy #/viewer-config still works
+    # via router aliases, but tests should exercise the visible sidebar home.
+    "sec-color": "viewer",
+    "sec-opacity": "viewer",
+    "sec-fontsize": "viewer",
+    "sec-speed": "viewer",
+    "sec-fontfamily": "viewer",
+    "sec-layout": "viewer",
+    "sec-viewer-theme": "viewer",
     "sec-themes": "themes",
-    "sec-emojis": "themes",
-    "sec-stickers": "themes",
-    "sec-sounds": "themes",
+    # v5: emojis / stickers / sounds bundled into the "assets" route.
+    "sec-emojis": "assets",
+    "sec-stickers": "assets",
+    "sec-sounds": "assets",
     "sec-blacklist": "moderation",
     "sec-filters": "moderation",
     "sec-effects": "effects",
@@ -124,11 +140,11 @@ SECTION_TO_ROUTE = {
     "sec-plugins": "plugins",
     "sec-fonts": "fonts",
     "sec-system-overview": "system",
-    "sec-security": "system",
-    "sec-ws-auth": "system",
-    "sec-scheduler": "system",
-    "sec-webhooks": "system",
-    "sec-fingerprints": "system",
+    # v5.2 Group D-3 R6 (2026-04-28): sec-security / sec-ws-auth legacy
+    # cards removed; admin-security-v2-page (sec2-pw-*) owns this route.
+    "sec-scheduler": "scheduler",
+    "sec-webhooks": "webhooks",
+    "sec-fingerprints": "fingerprints",
 }
 
 
@@ -139,7 +155,11 @@ def _open_section(page, section_id: str):
       • Route layer：hash-based 切換 display:none / ""（適用所有 sec-*）
       • Inner expand：部分 section 本身仍是 <details>（sec-themes / sec-polls /
         sec-security / sec-widgets ...），需額外點 summary 展開內容。
-    本 helper 兩者都處理。
+
+    v5 (2026-04-26): per-setting sections (sec-color / sec-opacity / sec-speed /
+    sec-fontsize / sec-fontfamily / sec-layout) collapsed into one
+    #admin-display-v2-page rendered by admin-display.js. Legacy IDs no
+    longer exist; fall back to waiting for the page container instead.
     """
     route = SECTION_TO_ROUTE.get(section_id)
     if route:
@@ -153,6 +173,21 @@ def _open_section(page, section_id: str):
             f"#/{route}",
         )
         page.wait_for_timeout(250)
+
+    # v5 display-page consolidation — sec-* IDs no longer exist for the
+    # 6 display rows. Phase A exposes their editable controls at #/viewer.
+    DISPLAY_LEGACY_IDS = {
+        "sec-color",
+        "sec-opacity",
+        "sec-fontsize",
+        "sec-speed",
+        "sec-fontfamily",
+        "sec-layout",
+    }
+    if section_id in DISPLAY_LEGACY_IDS:
+        page.wait_for_selector("#admin-display-v2-page", state="visible", timeout=5000)
+        return
+
     page.wait_for_selector(f"#{section_id}", state="visible", timeout=5000)
 
     # 若 section 是 <details>，確保它展開（內部元素才會 visible）。
@@ -186,10 +221,13 @@ def test_admin_page_shows_login_form(fresh_page, live_url):
 def test_login_wrong_password_shows_form_again(fresh_page, live_url):
     """密碼錯誤後應停留在登入表單"""
     fresh_page.goto(f"{live_url}/admin/")
-    fresh_page.wait_for_selector("#loginForm", timeout=8000)
+    fresh_page.wait_for_selector("#loginForm", state="visible", timeout=8000)
     fresh_page.fill("#password", "wrongpassword")
-    fresh_page.locator("#loginForm button[type=submit]").click()
-    fresh_page.wait_for_selector("#loginForm", timeout=5000)
+    # admin-login.js probes /login with fetch, then reloads the page so the
+    # server-rendered session state drives the final login/admin view.
+    with fresh_page.expect_navigation(wait_until="load", timeout=10000):
+        fresh_page.locator("#loginForm button[type=submit]").click()
+    fresh_page.wait_for_selector("#loginForm", state="visible", timeout=8000)
     assert fresh_page.is_visible("#loginForm")
     assert not fresh_page.is_visible("#logoutButton")
 
@@ -234,29 +272,34 @@ def test_admin_panel_has_effects_section(admin_page):
 
 
 def test_admin_panel_has_speed_input(admin_page):
-    # Speed 預設為啟用（Speed[0]=True），顯示 index=1（最慢）與 index=2（最快）
+    # v5: per-setting display rows collapsed into #admin-display-v2-page.
+    # Speed default is on (Speed[0]=True) and renders a single number
+    # input for the value (data-num-index="3").
     _open_section(admin_page, "sec-speed")
-    speed = admin_page.locator('[data-key="Speed"][data-index="1"]')
+    speed = admin_page.locator('[data-num-key="Speed"][data-num-index="3"]')
     assert speed.is_visible()
 
 
 def test_admin_panel_speed_initial_value(admin_page):
-    """Speed 啟用時，最慢值預設為 1（系統預設 Speed[1]=1）"""
+    """Speed 啟用時，預設值為 1.0×（系統預設 Speed[3]=1.0）"""
     _open_section(admin_page, "sec-speed")
-    speed = admin_page.locator('[data-key="Speed"][data-index="1"]')
-    assert speed.input_value() == "1"
+    speed = admin_page.locator('[data-num-key="Speed"][data-num-index="3"]')
+    val = speed.input_value()
+    # accept either int or float string ("1" or "1.0") since admin-display.js
+    # may serialise without trailing zero
+    assert float(val) == 1.0
 
 
 # ─── 設定修改 ─────────────────────────────────────────────────────────────────
 
 
 def test_settings_speed_change_calls_api(admin_page):
-    """修改 Speed 最慢值後，應觸發 /admin/update API（回 200）"""
+    """修改 Speed 預設值後，應觸發 /admin/update API（回 200）"""
     _open_section(admin_page, "sec-speed")
     responses = []
     admin_page.on("response", lambda r: responses.append(r) if "/admin/update" in r.url else None)
 
-    speed = admin_page.locator('[data-key="Speed"][data-index="1"]')
+    speed = admin_page.locator('[data-num-key="Speed"][data-num-index="3"]')
     speed.fill("2")
     speed.dispatch_event("change")
     admin_page.wait_for_timeout(800)
@@ -267,22 +310,23 @@ def test_settings_speed_change_calls_api(admin_page):
 
 
 def test_settings_speed_reflects_new_value(admin_page):
-    """修改 Speed 最慢值後，input 的值應即時反映"""
+    """修改 Speed 預設值後，input 的值應即時反映"""
     _open_section(admin_page, "sec-speed")
-    speed = admin_page.locator('[data-key="Speed"][data-index="1"]')
+    speed = admin_page.locator('[data-num-key="Speed"][data-num-index="3"]')
     speed.fill("3")
     speed.dispatch_event("change")
     admin_page.wait_for_timeout(500)
-    assert speed.input_value() == "3"
+    assert float(speed.input_value()) == 3.0
 
 
 def test_settings_color_toggle_calls_api(admin_page):
-    """切換 Color 的 toggle checkbox 應發送 /admin/Set 請求（回 200）"""
+    """切換 Color 的 audience toggle 應發送 /admin/Set 請求（回 200）"""
     _open_section(admin_page, "sec-color")
     responses = []
     admin_page.on("response", lambda r: responses.append(r) if "/admin/Set" in r.url else None)
 
-    color_toggle = admin_page.locator("#toggle-Color")
+    # v5: toggle is a button with data-toggle-key, not a checkbox #toggle-Color.
+    color_toggle = admin_page.locator('[data-toggle-key="Color"]')
     color_toggle.click()
     admin_page.wait_for_timeout(500)
 
@@ -374,18 +418,22 @@ def test_blacklist_empty_keyword_not_submitted(admin_page):
 
 
 def test_change_password_section_exists(admin_page):
-    """安全性區塊應有密碼修改欄位"""
-    _open_section(admin_page, "sec-security")
-    admin_page.wait_for_selector("#pwCurrent", state="visible", timeout=5000)
-    assert admin_page.is_visible("#pwCurrent")
-    assert admin_page.is_visible("#pwNew")
-    assert admin_page.is_visible("#pwConfirm")
+    """安全性區塊應有密碼修改欄位（v5.0 retrofit: sec2-pw-* IDs in
+    admin-security-v2-page replaced legacy pwCurrent/pwNew/pwConfirm)."""
+    # Navigate to security route — v2 page handles its own visibility on
+    # data-active-route, doesn't go through _open_section's sec-* gate.
+    admin_page.evaluate('() => { window.location.hash = "#/security"; }')
+    admin_page.wait_for_selector("#sec2-pw-current", state="visible", timeout=5000)
+    assert admin_page.is_visible("#sec2-pw-current")
+    assert admin_page.is_visible("#sec2-pw-new")
+    assert admin_page.is_visible("#sec2-pw-confirm")
 
 
 def test_change_password_wrong_current_calls_api(admin_page):
-    """輸入錯誤舊密碼後，API 應回傳 403"""
-    _open_section(admin_page, "sec-security")
-    admin_page.wait_for_selector("#pwCurrent", state="visible", timeout=5000)
+    """輸入錯誤舊密碼後，API 應回傳 403（v5.0 retrofit: sec2-pw-form submit
+    flow replaced standalone changePasswordBtn click)."""
+    admin_page.evaluate('() => { window.location.hash = "#/security"; }')
+    admin_page.wait_for_selector("#sec2-pw-current", state="visible", timeout=5000)
 
     responses = []
     admin_page.on(
@@ -393,11 +441,12 @@ def test_change_password_wrong_current_calls_api(admin_page):
         lambda r: responses.append(r) if "change_password" in r.url else None,
     )
 
-    admin_page.fill("#pwCurrent", "wrongcurrent")
-    admin_page.fill("#pwNew", "validnewpassword1!")
-    admin_page.fill("#pwConfirm", "validnewpassword1!")
+    admin_page.fill("#sec2-pw-current", "wrongcurrent")
+    admin_page.fill("#sec2-pw-new", "validnewpassword1!")
+    admin_page.fill("#sec2-pw-confirm", "validnewpassword1!")
 
-    admin_page.locator("#changePasswordBtn").click()
+    # Submit via the form's submit button (sec2-pw-form has type=submit)
+    admin_page.locator("#sec2-pw-form button[type='submit']").click()
     admin_page.wait_for_timeout(800)
 
     pw_resp = [r for r in responses if "change_password" in r.url]
@@ -487,15 +536,18 @@ def test_poll_create_and_end(admin_page):
     """建立投票、驗證狀態、結束投票"""
     _open_section(admin_page, "sec-polls")
 
-    # Fill poll form
-    admin_page.fill("#pollQuestion", "Test poll question?")
-    option_inputs = admin_page.locator("#pollOptionsContainer input[type=text]")
-    if option_inputs.count() >= 2:
-        option_inputs.nth(0).fill("Option A")
-        option_inputs.nth(1).fill("Option B")
+    # v5 wraps the legacy single-question inputs in <div class="admin-poll-legacy" hidden>
+    # so admin-poll.js still wires up create/end/reset against the same IDs.
+    # Playwright's fill()/click() can't interact with hidden ancestors in
+    # strict mode, so reach in via evaluate() and dispatch the click.
+    admin_page.evaluate("document.getElementById('pollQuestion').value = 'Test poll question?';")
+    admin_page.evaluate("""
+        const inputs = document.querySelectorAll('#pollOptionsContainer input[type=text]');
+        if (inputs.length >= 2) { inputs[0].value = 'Option A'; inputs[1].value = 'Option B'; }
+        """)
 
     # Create poll
-    admin_page.locator("#pollCreateBtn").click()
+    admin_page.evaluate("document.getElementById('pollCreateBtn').click()")
     admin_page.wait_for_timeout(1000)
 
     # Verify poll is active via API
@@ -504,17 +556,38 @@ def test_poll_create_and_end(admin_page):
         data = resp.json()
         assert data.get("state") in ("active", "ended", "idle")
 
-    # End poll
-    end_btn = admin_page.locator("#pollEndBtn")
-    if end_btn.count() > 0 and end_btn.is_visible():
-        end_btn.click()
-        admin_page.wait_for_timeout(500)
+    # End / reset via evaluate() since the legacy form is `hidden`.
+    admin_page.evaluate("""
+        const end = document.getElementById('pollEndBtn');
+        if (end) end.click();
+        """)
+    admin_page.wait_for_timeout(500)
+    admin_page.evaluate("""
+        const r = document.getElementById('pollResetBtn');
+        if (r) r.click();
+        """)
+    admin_page.wait_for_timeout(500)
 
-    # Reset poll
-    reset_btn = admin_page.locator("#pollResetBtn")
-    if reset_btn.count() > 0 and reset_btn.is_visible():
-        reset_btn.click()
-        admin_page.wait_for_timeout(500)
+
+def test_admin_fullpage_empty_states(admin_page):
+    """無資料時三個關鍵頁面應顯示 full-page empty state（含可識別 selector）"""
+    _open_section(admin_page, "sec-live-feed")
+    admin_page.wait_for_selector('[data-empty-kind="live-feed"]', state="visible", timeout=5000)
+    assert admin_page.is_visible('[data-empty-kind="live-feed"]')
+
+    _open_section(admin_page, "sec-polls")
+    admin_page.evaluate("""
+        const r = document.getElementById('pollResetBtn');
+        if (r) r.click();
+        """)
+    admin_page.wait_for_selector(
+        '#pollStatusDisplay [data-empty-kind="poll"]', state="visible", timeout=5000
+    )
+    assert admin_page.is_visible('#pollStatusDisplay [data-empty-kind="poll"]')
+
+    _open_section(admin_page, "sec-fonts")
+    admin_page.wait_for_selector('[data-empty-kind="fonts"]', state="visible", timeout=5000)
+    assert admin_page.is_visible('[data-empty-kind="fonts"]')
 
 
 # ─── Themes UI ─────────────────────────────────────────────────────────────────

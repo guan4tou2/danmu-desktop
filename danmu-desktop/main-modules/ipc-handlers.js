@@ -4,7 +4,8 @@ const { BrowserWindow } = require("electron");
 const net = require("net");
 const path = require("path");
 const { sanitizeLog } = require("../shared/utils");
-const { setupChildWindow } = require("./window-manager");
+const { setupChildWindow, pickOverlayDisplay } = require("./window-manager");
+const trustedWssHosts = require("./trusted-wss-hosts");
 
 /**
  * Returns true if the IPC event sender is the main window's webContents.
@@ -70,6 +71,7 @@ function isValidIpAddress(ip) {
 }
 
 let _ipcRegistered = false;
+let _preferredOverlayDisplayId = null;
 
 /**
  * Registers all ipcMain handlers for the application.
@@ -82,6 +84,30 @@ function setupIpcHandlers(getMainWindow, childWindows) {
     return;
   }
   _ipcRegistered = true;
+  // Clear danmu on every overlay window without disconnecting WS.
+  // The overlay-side child-ws-script registers a listener that drops
+  // currently-rendering elements when this fires.
+  ipcMain.on("overlay-clear", (event) => {
+    const mainWindow = getMainWindow();
+    if (!isFromMainWindow(event, mainWindow)) {
+      console.warn("[Main] overlay-clear: rejected IPC from untrusted sender");
+      return;
+    }
+    childWindows.forEach((win) => {
+      if (win && !win.isDestroyed()) {
+        try {
+          win.webContents.send("overlay-clear");
+        } catch (err) {
+          console.warn(
+            "[Main] overlay-clear send failed:",
+            sanitizeLog(err && err.message ? err.message : String(err))
+          );
+        }
+      }
+    });
+    console.log(`[Main] overlay-clear dispatched to ${childWindows.length} child windows`);
+  });
+
   // Close all child windows — must originate from the main window
   ipcMain.on("closeChildWindows", (event) => {
     const mainWindow = getMainWindow();
@@ -95,12 +121,30 @@ function setupIpcHandlers(getMainWindow, childWindows) {
       }
     });
     childWindows.length = 0;
+    // Revoke self-signed cert exceptions when overlay stops. Without
+    // this the trusted host:port stays in the registry for the rest of
+    // the app lifetime, allowing self-signed acceptance for endpoints
+    // the user is no longer connected to.
+    trustedWssHosts.clear();
     console.log("[Main] All child windows destroyed on closeChildWindows event.");
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send("overlay-connection-status", {
         status: "stopped",
       });
     }
+  });
+
+  // Persist preferred overlay display ID for single-display mode.
+  ipcMain.on("set-overlay-display-id", (event, displayId) => {
+    const mainWindow = getMainWindow();
+    if (!isFromMainWindow(event, mainWindow)) {
+      console.warn("[Main] set-overlay-display-id: rejected IPC from untrusted sender");
+      return;
+    }
+    const normalized = Number(displayId);
+    if (!Number.isInteger(normalized)) return;
+    _preferredOverlayDisplayId = normalized;
+    console.log(`[Main] Preferred overlay display set to ID ${sanitizeLog(normalized)}`);
   });
 
   // Forward connection status from child windows to main window
@@ -388,6 +432,16 @@ function setupIpcHandlers(getMainWindow, childWindows) {
         )}, DisplayIndex=${sanitizeLog(displayIndex)}, SyncMultiDisplay=${enableSyncMultiDisplay}, HasWSToken=${authToken ? "yes" : "no"}`
       );
 
+      // Self-signed cert pre-authorisation: v5.0.0+ unified WSS-only,
+      // every connection records the configured host so
+      // app.on('certificate-error') in main.js will accept the cert for
+      // that host only. Clear first so reconfigured connections drop
+      // the previous endpoint — the trust list stays scoped to the
+      // currently-active configuration, never the union of every host
+      // ever connected to.
+      trustedWssHosts.clear();
+      trustedWssHosts.add(normalizedIp, portNum);
+
       // Clear existing child windows (copy array to avoid splice-during-iteration)
       [...childWindows].forEach((win) => {
         if (win && !win.isDestroyed()) {
@@ -440,18 +494,18 @@ function setupIpcHandlers(getMainWindow, childWindows) {
         );
       } else {
         console.log("[Main] Sync multi-display DISABLED. Creating window for selected display.");
-        if (displayIndex < 0 || displayIndex >= displays.length) {
-          console.error(
-            "[Main] Invalid display index:",
-            sanitizeLog(displayIndex)
-          );
+        const primary = screen.getPrimaryDisplay();
+        const selectedDisplay = pickOverlayDisplay(displays, {
+          preferredDisplayId: _preferredOverlayDisplayId,
+          preferredIndex: Number.isInteger(displayIndex) ? displayIndex : null,
+          primaryDisplayId: primary && primary.id,
+        });
+        if (!selectedDisplay) {
+          console.error("[Main] Unable to resolve display target");
           return;
         }
-        const selectedDisplay = displays[displayIndex];
         console.log(
-          `[Main] Creating child window for selected display ${sanitizeLog(
-            displayIndex
-          )} (ID: ${sanitizeLog(selectedDisplay.id)}).`
+          `[Main] Creating child window for selected display (ID: ${sanitizeLog(selectedDisplay.id)}).`
         );
         const newChild = new BrowserWindow(childWindowOptions);
         setupChildWindow(

@@ -51,6 +51,29 @@
   function buildSectionHtml() {
     return `
       <div id="sec-filters" class="hud-page-stack lg:col-span-2">
+        <!-- Overview stats strip — prototype admin-pages.jsx:648 -->
+        <div class="hud-stats-strip" id="moderationStatsStrip">
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">RULES</span>
+            <span class="hud-stat-tile-value" data-mod-stat="rules">—</span>
+            <span class="hud-stat-tile-label">規則數</span>
+          </div>
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">MASKED · 24H</span>
+            <span class="hud-stat-tile-value is-amber" data-mod-stat="masked">—</span>
+            <span class="hud-stat-tile-label">今日遮罩</span>
+          </div>
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">BLOCKED · 24H</span>
+            <span class="hud-stat-tile-value is-crimson" data-mod-stat="blocked">—</span>
+            <span class="hud-stat-tile-label">今日封鎖</span>
+          </div>
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">BLACKLIST</span>
+            <span class="hud-stat-tile-value is-cyan" data-mod-stat="blacklist">—</span>
+            <span class="hud-stat-tile-label">黑名單</span>
+          </div>
+        </div>
         <div class="hud-page-grid-2" style="grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr)">
           <!-- LEFT: Rules library -->
           <div class="hud-inspector" style="min-height:auto">
@@ -213,6 +236,20 @@
     if (rulesStatEl) rulesStatEl.textContent = counts.all;
   }
 
+  // Fetch blacklist size for the moderation overview strip. Mask/block 24h
+  // counts aren't tracked server-side yet, so those tiles stay as "—".
+  async function refreshBlacklistStat() {
+    const el = document.querySelector('[data-mod-stat="blacklist"]');
+    if (!el) return;
+    try {
+      const r = await fetch("/admin/blacklist/get", { credentials: "same-origin" });
+      if (!r.ok) return;
+      const data = await r.json();
+      const arr = Array.isArray(data) ? data : (data.keywords || []);
+      el.textContent = String(arr.length);
+    } catch (_) { /* silent */ }
+  }
+
   // ── API interactions ─────────────────────────────────────────
 
   async function fetchRules() {
@@ -234,6 +271,7 @@
     list.innerHTML = `<div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">${t("loading", "Loading...")}</div>`;
     const rules = await fetchRules();
     applyFilterChips(rules);
+    refreshBlacklistStat();
     if (rules.length === 0) {
       list.innerHTML = `<div style="padding:18px 14px;text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.05em">${t("noFilterRules", "No filter rules configured.")}</div>`;
       return;
@@ -443,6 +481,87 @@
     });
   }
 
+  // ── Live moderation log ──────────────────────────────────────
+  // Server has no dedicated filter-match WS event today, so we surface
+  // the last 6 danmu_live entries with the shared AdminIdentity stack so
+  // operators can spot/block in context. (P3-1 audience-identity adoption.)
+
+  const LIVE_LOG_MAX = 6;
+  /** @type {{seq:number, ts:number, action:string, rule_id:string|null, pattern:string, text_excerpt:string, source:string|null}[]} */
+  const _liveLogBuffer = [];
+  let _liveLogBound = false;
+  let _liveLogTimer = 0;
+  let _liveLogLastSeq = 0;
+
+  function fmtLogTime(ts) {
+    const d = new Date(ts * 1000);  // ts is epoch seconds from server
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+
+  function actionColor(action) {
+    const a = (action || "").toUpperCase();
+    if (a === "BLOCK") return "#f87171";    // crimson
+    if (a === "MASK" || a === "REPLACE") return "#fbbf24";   // amber
+    if (a === "REVIEW") return "var(--color-primary)";       // cyan
+    if (a === "ALLOW") return "#86efac";    // lime
+    return "var(--color-text-muted)";
+  }
+
+  function renderLiveLog() {
+    const log = document.getElementById("filterLiveLog");
+    if (!log) return;
+    if (_liveLogBuffer.length === 0) {
+      log.innerHTML = `<div style="color:var(--color-text-muted);text-align:center;padding:10px">\u5c1a\u7121\u4e8b\u4ef6 \u00b7 \u7b49\u5f85\u898f\u5247\u547d\u4e2d...</div>`;
+      return;
+    }
+    log.innerHTML = _liveLogBuffer.map((e) => {
+      const ts = fmtLogTime(e.ts);
+      const action = (e.action || "").toUpperCase();
+      const ac = actionColor(action);
+      const text = (e.text_excerpt || "").replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+      const pattern = (e.pattern || "").replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+      const source = (e.source || "").slice(0, 16);
+      const sourceLabel = source ? `\u00b7 ${source}` : "";
+      return `<div class="admin-filter-log-row" style="display:grid;grid-template-columns:64px 70px 1fr;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px dashed var(--hud-line)">
+        <span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">${ts}</span>
+        <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:1px;font-weight:700;color:${ac}">${action}</span>
+        <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\u300c${text}\u300d<span style="color:var(--color-text-muted)"> \u2014 \u898f\u5247 ${pattern} ${sourceLabel}</span></span>
+      </div>`;
+    }).join("");
+  }
+
+  async function pollFilterEvents() {
+    try {
+      const r = await fetch(`/admin/filters/events?since=${_liveLogLastSeq}`, { credentials: "same-origin" });
+      if (!r.ok) return;
+      const data = await r.json();
+      // Always update 24h stat tiles even if no new events (counts may have
+      // dropped off as old events age out of the 24h window).
+      if (data.counts_24h) {
+        const setStat = (key, val) => {
+          const el = document.querySelector(`[data-mod-stat="${key}"]`);
+          if (el) el.textContent = val != null ? String(val) : "—";
+        };
+        setStat("masked", data.counts_24h.MASK || 0);
+        setStat("blocked", data.counts_24h.BLOCK || 0);
+      }
+      if (!Array.isArray(data.events) || data.events.length === 0) return;
+      // Server returns newest-first; merge into front (newest first), cap at LIVE_LOG_MAX.
+      _liveLogBuffer.unshift(...data.events);
+      while (_liveLogBuffer.length > LIVE_LOG_MAX) _liveLogBuffer.pop();
+      _liveLogLastSeq = data.latest_seq || _liveLogLastSeq;
+      if (document.getElementById("filterLiveLog")) renderLiveLog();
+    } catch (_) { /* silent */ }
+  }
+
+  function wireLiveLog() {
+    if (_liveLogBound) return;
+    _liveLogBound = true;
+    pollFilterEvents();
+    _liveLogTimer = setInterval(pollFilterEvents, 4000);
+  }
+
   // ── Initialization ───────────────────────────────────────────
 
   function init() {
@@ -527,6 +646,8 @@
 
     // Initial load
     refreshRulesList();
+    wireLiveLog();
+    renderLiveLog();
   }
 
   // admin.js rebuilds the entire DOM via innerHTML on every renderControlPanel()
