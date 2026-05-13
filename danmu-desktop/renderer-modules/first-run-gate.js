@@ -1,7 +1,9 @@
-// First-run connection gate.
+// First-run connection setup.
 //
-// Per prototype desktop.jsx FirstRunGate. Covers the main UI on first launch
-// when no server settings are persisted in localStorage. Three-step flow:
+// The design bundle originally modeled this as a standalone "FirstRunGate"
+// surface. In the shipped desktop client it renders inline inside the
+// Connection tab when no server settings are persisted in localStorage.
+// Three-step flow:
 //   1. SERVER  — host + port input
 //   2. TEST    — try a WS open with timeout; mark step done on success
 //   3. READY   — confirm enables overlay; saves to localStorage; closes gate

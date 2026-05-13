@@ -44,8 +44,8 @@ const initRenderer = async () => {
     // ── Synchronous module initialization (before any awaits) ────────────
     initTrackManager();
     initGlobalEffects();
-    // First-run connection gate — auto-opens iff no saved server config.
-    // Hooks into existing host-input/port-input on confirm.
+    // Inline connection setup card — auto-opens inside the Connection tab
+    // iff no saved server config exists, then hydrates host/port on confirm.
     initFirstRunGate();
 
     initOverlayControls({

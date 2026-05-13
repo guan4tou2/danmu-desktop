@@ -3,7 +3,6 @@ const { app, Tray, Menu, nativeImage, ipcMain } = require("electron");
 const path = require("path");
 const { sanitizeLog } = require("./shared/utils");
 const { createWindow, createAboutWindow } = require("./main-modules/window-manager");
-const { buildTrayPopoverSections } = require("./main-modules/tray-popover");
 const { setupIpcHandlers } = require("./main-modules/ipc-handlers");
 const { setupAutoUpdater } = require("./main-modules/auto-updater");
 const trustedWssHosts = require("./main-modules/trusted-wss-hosts");
@@ -174,11 +173,11 @@ app.whenReady().then(() => {
       { label: `● ${pkgName}    v${version}`, enabled: false },
       { label: trayServerUrl ? `${trayStatusText} · ${trayServerUrl}` : trayStatusText, enabled: false },
       { type: "separator" },
-      ...buildTrayPopoverSections({
-        overlayCount: childWindows.filter((cw) => cw && !cw.isDestroyed()).length,
-        serverText: trayStatusText,
-        updaterPhase: updateInfo.phase,
-      }),
+      { label: `Overlay 視窗：${childWindows.filter((cw) => cw && !cw.isDestroyed()).length}`, enabled: false },
+      ...(updateInfo.phase && updateInfo.phase !== "idle"
+        ? [{ label: `更新狀態：${updateInfo.phase}`, enabled: false }]
+        : []),
+      { type: "separator" },
       ...updateEntries,
       {
         label: "待機畫面",

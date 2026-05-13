@@ -64,6 +64,8 @@ test("overlay section owns display selection and has one visible runtime control
 test("tray menu does not expose dead secondary runtime controls", () => {
   const main = readMainProcess();
 
+  expect(main).not.toContain('require("./main-modules/tray-popover")');
+  expect(main).not.toContain("buildTrayPopoverSections");
   expect(main).toContain('label: "待機畫面"');
   expect(main).not.toContain('label: "顯示 overlay"');
   expect(main).not.toContain('dispatchToRenderer("pause")');

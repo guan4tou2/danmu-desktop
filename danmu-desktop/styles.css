@@ -1392,11 +1392,11 @@ body[data-os="mac"] .client-titlebar {
 .client-overlay-note b { color: rgba(241, 245, 249, 0.95); font-weight: 600; }
 
 
-/* ─── First-run connection gate ──────────────────────────────────────────
- * Prototype desktop.jsx FirstRunGate (2026-04-27 redesign bundle).
- * Covers main UI on first launch when no server settings persisted.
- * Hidden after successful test+confirm or "稍後設定". Reusable via
- * window.FirstRunGate.open() (e.g. menu → 重新設定).
+/* ─── First-run connection setup ─────────────────────────────────────────
+ * Originally derived from prototype desktop.jsx FirstRunGate, but now
+ * rendered inline inside the Connection tab instead of as a standalone
+ * desktop surface. Hidden after successful test+confirm or "稍後設定".
+ * Reusable via window.FirstRunGate.open() (e.g. menu → 重新設定).
  */
 /* 5.1.0: Gate moved from fullscreen overlay to inline conn-tab card.
    Sidebar stays clickable; user can navigate to other tabs while the
