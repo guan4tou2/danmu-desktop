@@ -5,6 +5,33 @@
 **Repo reference:** `docs/designs/design-v2/`
 **Status:** engineering has aligned part of the new IA in production; the next design bundle must build on that state instead of reverting to the older zip structure.
 
+## 2026-05-14 zip3 Update
+
+Reviewed bundle: `/Users/guantou/Downloads/danmu (3).zip`
+
+Formal review doc:
+
+- `docs/designs/design-v2/HANDOFF-ZIP3-REVIEW-2026-05-14.md`
+
+What zip3 aligned correctly:
+
+- it adopts the 8-area admin shell
+- it moves `Security` under `System`
+- it makes `Display` vs `Viewer` ownership explicit
+- it acknowledges the 2026-05-13 engineering baseline directly in `Danmu Redesign v3.html`
+
+What still prevents zip3 from becoming canonical by itself:
+
+- the bundle still ships only the older `HANDOFF-REWORK-2026-05-04.md`
+- several repo-open decisions are marked closed inside artboards without a new canonical handoff note
+- `AdminViewerPageV2` still includes a viewer-side `Stroke / Shadow` field toggle, which conflicts with repo rules
+- `System` leaf simplification is not accompanied by a route / migration mapping for still-supported leaves
+
+Current interpretation:
+
+- zip3 is a strong directional improvement
+- repo handoff docs remain canonical until Design ships one internally consistent bundle that includes the current rules and conflict resolutions
+
 ## Read First
 
 1. `docs/designs/design-v2/STYLE-CONTRACT.md`

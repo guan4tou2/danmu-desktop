@@ -45,11 +45,14 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   expect(ratelimitSrc).toContain('admin-ratelimit-page');
   expect(displaySrc).toContain('route === "display"');
   expect(displaySrc).toContain('route === "viewer"');
+  expect(displaySrc).toContain("Display 控制 overlay / client / 目標顯示器");
   expect(securitySrc).toContain('route === "system"');
   expect(securitySrc).toContain('leaf === "security"');
+  expect(securitySrc).toContain("System › Security");
   expect(systemSrc).toContain("slug: \"security\"");
   expect(systemSrc).toContain("sectionId: \"admin-security-v2-page\"");
   expect(viewerThemeSrc).toContain('SECTION_ID = "sec-viewer-theme"');
   expect(viewerThemeSrc).toContain('admin-vt-page');
   expect(viewerThemeSrc).toContain('data-vt-jump="display"');
+  expect(viewerThemeSrc).toContain("Overlay 排版 / 顯示器 / 連線狀態請到 <b>Display</b>");
 });

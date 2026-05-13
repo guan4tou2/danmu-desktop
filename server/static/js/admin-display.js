@@ -118,6 +118,7 @@
         <div class="admin-v2-head">
           <div class="admin-v2-kicker">DISPLAY SETTINGS · 每列決定該參數的預設值 + 是否讓觀眾自訂 + 自訂範圍</div>
           <div class="admin-v2-title">${escapeHtml(t("displaySettingsTitle", "顯示設定"))}</div>
+          <p class="admin-v2-note">Display 控制 overlay / client / 目標顯示器 / idle QR；<b>Viewer</b> 控制 <code>/fire</code> 主題與欄位。</p>
         </div>
 
         <div class="admin-dsp2-grid">

@@ -26,12 +26,12 @@
 
   function pageTemplate() {
     return `
-      <div id="${PAGE_ID}" class="admin-security-page hud-page-stack lg:col-span-2">
+        <div id="${PAGE_ID}" class="admin-security-page hud-page-stack lg:col-span-2">
         <div class="admin-v2-head">
-          <div class="admin-v2-kicker">SECURITY · 密碼 · WS TOKEN · 審計</div>
-          <div class="admin-v2-title">安全</div>
+          <div class="admin-v2-kicker">SYSTEM · SECURITY · 密碼 · WS TOKEN · 審計</div>
+          <div class="admin-v2-title">System › Security</div>
           <p class="admin-v2-note">
-            管理員密碼、WS 認證 Token 與操作審計。單一管理員模式,無角色分離。
+            管理員密碼、WS 認證 Token 與操作審計。此頁位於 <b>System</b> 之下，單一管理員模式、無角色分離。
           </p>
         </div>
 

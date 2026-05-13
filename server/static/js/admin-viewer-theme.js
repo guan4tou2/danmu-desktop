@@ -35,7 +35,7 @@
           <span class="icon">◉</span>
           <div>
             <div class="kicker">SCOPE</div>
-            <p>僅影響觀眾進入 <code>/fire</code> 時看到的頁面外觀;彈幕本身的顏色 / 描邊 / 陰影由 <b>Theme Packs</b> 管理。</p>
+            <p>僅影響觀眾進入 <code>/fire</code> 時看到的頁面外觀;彈幕本身的顏色 / 描邊 / 陰影由 <b>Theme Packs</b> 管理。Overlay 排版 / 顯示器 / 連線狀態請到 <b>Display</b>。</p>
           </div>
         </div>
 
