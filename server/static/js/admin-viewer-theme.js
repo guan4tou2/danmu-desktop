@@ -4,7 +4,7 @@
  *
  * Owns sec-viewer-theme — controls /fire page chrome (bg / primary /
  * hero / mode / logo / UI font). Independent from Theme Packs (彈幕
- * themes); shows up under #/viewer-config tab=page.
+ * themes); shows up under the top-level Viewer route.
  *
  * Mirrors prototype admin-viewer-theme.jsx. Client-side state via
  * localStorage(danmu.viewerTheme.v1); backend persistence pending
@@ -130,7 +130,7 @@
                   <span class="k">彈幕顏色 / 描邊 / 陰影</span>
                   <span class="v">↗ Theme Packs</span>
                 </button>
-                <button type="button" class="admin-viewer-theme-legend-row" data-vt-jump="viewer-config">
+                <button type="button" class="admin-viewer-theme-legend-row" data-vt-jump="display">
                   <span class="k">字級 / 速度 / 透明度</span>
                   <span class="v">↗ Display Settings</span>
                 </button>

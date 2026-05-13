@@ -11,7 +11,7 @@
 // Phase B (2026-05-06): the automation + history routes were collapsed into
 // system. The accordion now hosts 4 grouped panels:
 //   · settings    : system overview / backup / integrations / wcag / about
-//   · tokens      : firetoken / api-tokens
+//   · access      : security / firetoken / api-tokens
 //   · automation  : scheduler / webhooks / plugins
 //   · history     : sessions / search / audit / replay / audience
 // Sections are NOT moved in the DOM — the wrapper renders headers AND drives
@@ -24,10 +24,8 @@
   // multi-section leaves like history/replay) = the existing sec-* element
   // owned by an admin-*.js module. `slug` = the segment in
   // #/system/<slug>. Order = frequency × danger.
-  // Note: `security` is intentionally NOT in here — admin-security.js owns
-  // its own visibility via data-active-route="security" and the security
-  // route stays standalone. Dedicated mobile-admin was removed; the admin
-  // shell handles small screens through its standard responsive layout.
+  // Dedicated mobile-admin was removed; the admin shell handles small screens
+  // through its standard responsive layout.
   const SECTIONS = [
     // ── settings group ────────────────────────────────────────────────────
     { slug: "system",       group: "settings",   zh: "系統概覽",   en: "OVERVIEW",     sectionId: "sec-system-overview" },
@@ -35,9 +33,10 @@
     { slug: "integrations", group: "settings",   zh: "整合",       en: "INTEGRATIONS", sectionId: "sec-extensions-overview" },
     { slug: "wcag",         group: "settings",   zh: "無障礙",     en: "WCAG",         sectionId: "sec-wcag-overview" },
     { slug: "about",        group: "settings",   zh: "關於",       en: "ABOUT",        sectionId: "sec-about-overview" },
-    // ── tokens group ──────────────────────────────────────────────────────
-    { slug: "firetoken",    group: "tokens",     zh: "API 金鑰",   en: "FIRETOKEN",    sectionId: "sec-firetoken-overview" },
-    { slug: "api-tokens",   group: "tokens",     zh: "API Tokens", en: "API TOKENS",   sectionId: "sec-api-tokens-overview" },
+    // ── access group ──────────────────────────────────────────────────────
+    { slug: "security",     group: "access",     zh: "安全",       en: "SECURITY",     sectionId: "admin-security-v2-page" },
+    { slug: "firetoken",    group: "access",     zh: "API 金鑰",   en: "FIRETOKEN",    sectionId: "sec-firetoken-overview" },
+    { slug: "api-tokens",   group: "access",     zh: "API Tokens", en: "API TOKENS",   sectionId: "sec-api-tokens-overview" },
     // ── automation group (Phase B) ────────────────────────────────────────
     { slug: "scheduler",    group: "automation", zh: "排程",       en: "SCHEDULER",    sectionId: "sec-scheduler" },
     { slug: "webhooks",     group: "automation", zh: "Webhook",    en: "WEBHOOKS",     sectionId: "sec-webhooks" },
@@ -52,7 +51,7 @@
 
   const GROUPS = [
     { key: "settings",   zh: "設定",   en: "SETTINGS" },
-    { key: "tokens",     zh: "金鑰",   en: "TOKENS" },
+    { key: "access",     zh: "存取",   en: "ACCESS" },
     { key: "automation", zh: "自動化", en: "AUTOMATION" },
     { key: "history",    zh: "歷史",   en: "HISTORY" },
   ];

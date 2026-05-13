@@ -300,13 +300,15 @@
   function hideLegacyCards() { /* noop — cards removed */ }
 
   // Own visibility: the admin.js router only touches [id^="sec-"]. Our page
-  // id starts with "admin-", so we manage display based on data-active-route.
+  // id starts with "admin-", so we manage display from the shell's
+  // active route + active leaf.
   function syncVisibility() {
     const shell = document.querySelector(".admin-dash-grid");
     const page = document.getElementById(PAGE_ID);
     if (!shell || !page) return;
-    const route = shell.dataset.activeRoute || "dashboard";
-    page.style.display = route === "security" ? "" : "none";
+    const route = shell.dataset.activeRoute || "live";
+    const leaf = shell.dataset.activeLeaf || route;
+    page.style.display = route === "system" && leaf === "security" ? "" : "none";
   }
 
   function inject() {
@@ -320,6 +322,16 @@
 
   function boot() {
     if (!window.DANMU_CONFIG?.session?.logged_in) return;
+    let shellObserver = null;
+    function bindShellObserver() {
+      const shell = document.querySelector(".admin-dash-grid");
+      if (!shell || shellObserver) return;
+      shellObserver = new MutationObserver(syncVisibility);
+      shellObserver.observe(shell, {
+        attributes: true,
+        attributeFilter: ["data-active-route", "data-active-leaf"],
+      });
+    }
     const observer = new MutationObserver(() => {
       if (document.getElementById("settings-grid") && !document.getElementById(PAGE_ID)) {
         inject();
@@ -327,6 +339,7 @@
         // legacy cards re-injected on admin re-render; keep them hidden
         hideLegacyCards();
       }
+      bindShellObserver();
       syncVisibility();
     });
     observer.observe(document.body, { childList: true, subtree: true });
@@ -335,8 +348,10 @@
       // admin.js fires this after re-rendering settings-grid; re-inject.
       inject();
       hideLegacyCards();
+      bindShellObserver();
       syncVisibility();
     });
+    bindShellObserver();
     inject();
   }
 

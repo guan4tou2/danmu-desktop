@@ -970,11 +970,16 @@
   }
 
   let _lastVisibleRoute = null;
-  function _isViewerConfigOwner(route, leaf) {
+  function _isDisplayOwner(route, leaf) {
+    return route === "display" || leaf === "display";
+  }
+
+  function _isViewerOwner(route, leaf) {
     return (
       route === "viewer-config" ||
       route === "viewer" ||
-      leaf === "viewer-config"
+      leaf === "viewer-config" ||
+      leaf === "viewer"
     );
   }
 
@@ -982,37 +987,36 @@
     const shell = document.querySelector(".admin-dash-grid");
     const page = document.getElementById(PAGE_ID);
     if (!shell || !page) return;
-    const route = shell.dataset.activeRoute || "dashboard";
+    const route = shell.dataset.activeRoute || "live";
     const leaf = shell.dataset.activeLeaf || route;
     const tab = (document.body.dataset.viewerConfigTab) || "page";
-    // DS-002: admin-display-v2-page is not shown on viewer-config route;
-    // sec-viewer-config-fields panel takes the FIELDS slot.
+    // The main display-settings surface now belongs to the top-level
+    // Display route from the handoff bundle, while the viewer route keeps
+    // the /fire page theme + field toggles.
     //
-    // Phase A IA reorg (2026-05-06): viewer-config content is reachable
-    // via three valid hashes that all resolve to the same panel set:
-    //   1. `#/viewer-config`            — alias-resolves through
-    //                                      `_routeAliases` to
-    //                                      `appearance/viewer-config`
-    //                                      (activeRoute=appearance,
-    //                                       activeLeaf=viewer-config)
-    //   2. `#/appearance/viewer-config` — direct deep-link, same shape
-    //                                      as #1
-    //   3. `#/viewer`                   — Phase A new top-level
-    //                                      (activeRoute=viewer, no tab,
-    //                                       activeLeaf=viewer)
-    // Accept either signal so the editable controls render under any of
-    // the three; the theme/form panels below still honor the inner tab.
-    const isViewerConfigOwner = _isViewerConfigOwner(route, leaf);
-    page.style.display = isViewerConfigOwner ? "" : "none";
+    // Legacy `#/viewer-config` hashes are still accepted as viewer aliases
+    // via the router, so the viewer-owned panels continue to render for both
+    // `viewer` and `viewer-config`.
+    const isDisplayOwner = _isDisplayOwner(route, leaf);
+    const isViewerOwner = _isViewerOwner(route, leaf);
+    page.style.display = isDisplayOwner ? "" : "none";
     const vt = document.getElementById("sec-viewer-theme");
     if (vt) {
-      vt.style.display = (isViewerConfigOwner && tab === "page") ? "" : "none";
+      vt.style.display = (isViewerOwner && tab === "page") ? "" : "none";
     }
     const vf = document.getElementById("sec-viewer-config-fields");
     if (vf) {
-      vf.style.display = (isViewerConfigOwner && tab === "fields") ? "" : "none";
+      vf.style.display = (isViewerOwner && tab === "fields") ? "" : "none";
     }
-    if (isViewerConfigOwner) {
+    const info = document.getElementById("sec-viewer-config-info");
+    if (info) {
+      info.style.display = isViewerOwner ? "" : "none";
+    }
+    const tabs = document.getElementById("sec-viewer-config-tabs");
+    if (tabs) {
+      tabs.style.display = isViewerOwner ? "" : "none";
+    }
+    if (isDisplayOwner) {
       if (!_state.metricsTimer) startMetricsPoll();
     } else {
       stopMetricsPoll();

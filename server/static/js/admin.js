@@ -102,9 +102,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // content immediately, not the system overview.
     automation: { nav: "system", tab: "scheduler" },
     history:    { nav: "system", tab: "sessions" },
-    // appearance NOT redirected yet — its sections (themes / viewer-config
-    // / fonts) are still owned by the appearance route. Phase D splits
-    // them into viewer + assets and adds the redirect there.
+    // appearance NOT redirected yet — its themes / fonts sections still live
+    // under the hidden appearance route. Viewer config now resolves through
+    // the visible viewer route.
   });
 
   // Maps deprecated single-segment routes → P0-0 nav homes.
@@ -118,10 +118,10 @@ document.addEventListener("DOMContentLoaded", () => {
     fingerprints: { nav: "moderation", tab: "fingerprints" },
     // (note: `moderation` is its own nav, blacklist+filters are tabs there)
 
-    // === Appearance tabs ===
-    themes:         { nav: "appearance", tab: "themes" },
-    "viewer-config": { nav: "appearance", tab: "viewer-config" },
-    fonts:          { nav: "appearance", tab: "fonts" },
+    // === Appearance / viewer aliases ===
+    themes:          { nav: "appearance", tab: "themes" },
+    "viewer-config": { nav: "viewer" },
+    fonts:           { nav: "appearance", tab: "fonts" },
 
     // === Automation tabs (Phase B 2026-05-06: now under system accordion) ===
     scheduler: { nav: "system", tab: "scheduler" },
@@ -147,7 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Dedicated mobile-admin was removed; admin relies on the normal RWD shell.
     mobile:       { nav: "system", tab: "system" },
     about:        { nav: "system", tab: "about" },
-    // (note: security stays as its own route — admin-security.js owns it)
+    security:     { nav: "system", tab: "security" },
   });
 
   // Per-nav last-active-tab memory (sessionStorage). Cleared on logout.
@@ -648,13 +648,13 @@ document.addEventListener("DOMContentLoaded", () => {
                                      will collapse those into the system accordion. -->
 
                                 <!-- Phase A IA reorg (2026-05-06): 11-row sidebar →
-                                     8 main + 1 standalone security. Old slugs
+                                     8 main areas. Old slugs
                                      (dashboard/messages/widgets/appearance/automation/
                                      history) redirect via HASH_REDIRECTS in the router;
                                      no DOM moved here, only the visible nav slot list.
                                      Order is locked by IA-REORG-DRAFT-2026-05-06.md.
-                                     Spacer + comment marks the standalone Security row
-                                     so it's visually clear it isn't part of System. -->
+                                     System owns access/security leaves through
+                                     the accordion, matching the design handoff. -->
 
                                 <button type="button" class="admin-dash-nav-row is-active" data-route="live" role="tab" aria-selected="true">
                                     <span class="admin-dash-nav-icon">▶</span>
@@ -690,16 +690,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <button type="button" class="admin-dash-nav-row" data-route="system" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⚙</span>
                                     <span data-i18n="adminNavSystem">系統</span>
-                                </button>
-
-                                <!-- Standalone — security is NOT part of System per the
-                                     2026-05-04 polestar lock. Spacer + divider keeps it
-                                     visually distinct. admin-security.js owns visibility
-                                     via data-active-route="security". -->
-                                <div class="admin-dash-nav-divider" role="separator" aria-hidden="true"></div>
-                                <button type="button" class="admin-dash-nav-row" data-route="security" role="tab" aria-selected="false" data-nav-standalone="true">
-                                    <span class="admin-dash-nav-icon">⛨</span>
-                                    <span data-i18n="adminNavSecurity">安全</span>
                                 </button>
 
                             </nav>
@@ -1197,8 +1187,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const ADMIN_ROUTES = {
     // Phase A IA reorg (2026-05-06): primary nav slugs are
-    //   live / display / effects / assets / viewer / polls / moderation / system
-    // plus a standalone `security` row. The legacy slugs below
+    //   live / display / effects / assets / viewer / polls / moderation / system.
+    // The legacy slugs below
     // (dashboard / messages / widgets / appearance / automation / history)
     // remain in this table as aliases so deeplinks + `|| "dashboard"`
     // fallbacks in admin-*.js stay resolvable; HASH_REDIRECTS in the
@@ -1206,8 +1196,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Phase B/D will move sec-* DOM under the new owners and then we can
     // strip aliases. Until then this is pure routing — no HTML moves.
     live:      { title: "直播", kicker: "LIVE · 操作艙 · 即時狀態", sections: ["sec-live-feed"], showKpi: true },
-    display:   { title: "顯示", kicker: "DISPLAY · OVERLAY · WIDGETS", sections: ["sec-widgets"] },
-    viewer:    { title: "觀眾頁", kicker: "VIEWER · 觀眾頁面預設", sections: ["sec-viewer-config-tabs", "sec-viewer-theme", "sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout"] },
+    display:   { title: "顯示", kicker: "DISPLAY · OVERLAY · DEFAULTS · WIDGETS", sections: ["sec-widgets"] },
+    viewer:    { title: "觀眾頁", kicker: "VIEWER · 頁面預設 · 欄位設定", sections: ["sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields"] },
     // Legacy aliases — same config as their canonical home. Kept so
     // existing `=== "dashboard"` checks + URL bookmarks keep working
     // until Phase B/D collapses them.
@@ -1224,9 +1214,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // v5.2 consolidation (2026-04-27 audit §A): viewer-theme + display merged
     // into one route with tab strip. Default tab = page (sec-viewer-theme),
     // alt tab = fields (sec-color/opacity/fontsize/speed/fontfamily/layout).
-    // Slice 4: kept for backward compat — alias redirects #/viewer-config →
-    // #/appearance/viewer-config.
-    "viewer-config": { title: "Viewer 設定", kicker: "VIEWER CONFIG · 整頁主題 / 表單欄位", sections: ["sec-viewer-config-tabs", "sec-viewer-theme", "sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout"] },
+    // Slice 4: kept for backward compat — legacy #/viewer-config deep-links
+    // resolve to the visible Viewer route.
+    "viewer-config": { title: "Viewer 設定", kicker: "VIEWER CONFIG · 整頁主題 / 表單欄位", sections: ["sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields"] },
 
     // Slice 4: appearance is the tabbed nav merging themes + viewer-config + fonts.
     // 3 tabs (themes default / viewer-config / fonts). Note: P0-0a originally
@@ -1260,15 +1250,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // webhooks moved to automation; fingerprints moved to moderation. The
     // accordion shell is rendered by admin-system-accordion.js.
     // Phase B (2026-05-06): system absorbs automation + history. The
-    // accordion now hosts 4 grouped panels (settings / tokens / automation /
+    // accordion now hosts the back-office leaves (settings / access / automation /
     // history). Sections list includes every leaf the accordion can open:
-    // settings + tokens (existing) + automation (sec-scheduler/webhooks/
+    // settings + access (existing) + automation (sec-scheduler/webhooks/
     // plugins) + history (sec-sessions-overview/search-overview/audit-
     // overview/history-tabs/history-v2-section/sec-history/audience-
     // overview). admin-system-accordion.js drives per-leaf visibility.
     system:    { title: "系統",  kicker: "SYSTEM · 設定 / 金鑰 / 自動化 / 歷史", sections: ["sec-system-overview", "sec-firetoken-overview", "sec-api-tokens-overview", "sec-backup", "sec-extensions-overview", "sec-wcag-overview", "sec-about-overview", "sec-scheduler", "sec-webhooks", "sec-plugins", "sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "history-v2-section", "sec-history", "sec-audience-overview"] },
-    // Security route is fully owned by admin-security-v2-page (admin-security.js).
-    // sections=[] because the v2 page handles its own visibility on data-active-route.
+    // Legacy alias target only. Security now resolves under system/security;
+    // the v2 page handles its own visibility from activeRoute + activeLeaf.
     security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: [] },
     backup:    { title: "備份 & 匯出",       kicker: "BACKUP · EXPORT · DANGER",          sections: ["sec-backup"] },
     // P1 (2026-04-27 V1Z4 batch7): aggregated alerts inbox.
