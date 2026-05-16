@@ -121,6 +121,8 @@ const _resources = {
       "connLastMeta": "Last used · auto-fill",
       "connLastNever": "Never used",
       "aboutCopyright": "© 2025 · Open source at github.com/guan4tou2/danmu-desktop",
+      "aboutDesc": "Danmu Fire is a real-time danmu broadcast system. Viewers type from phones or laptops; messages render on the big-screen overlay.",
+      "checkForUpdates": "Check for updates",
       "overlayDisplayLabel": "Display on",
       "overlayScreenDetecting": "DISPLAY · detecting…",
       "overlayScreenCount": "DISPLAY · {count} screen(s) detected"
@@ -239,6 +241,8 @@ const _resources = {
       "connLastMeta": "上次使用 · 自動帶入",
       "connLastNever": "尚未連線",
       "aboutCopyright": "© 2025 · Open source at github.com/guan4tou2/danmu-desktop",
+      "aboutDesc": "Danmu Fire 是即時彈幕送字系統。觀眾用手機或桌機網頁輸入文字,送到主場大螢幕的 overlay。",
+      "checkForUpdates": "檢查更新",
       "overlayDisplayLabel": "顯示於",
       "overlayScreenDetecting": "DISPLAY · 偵測中…",
       "overlayScreenCount": "DISPLAY · 偵測到 {count} 個螢幕"
@@ -357,6 +361,8 @@ const _resources = {
       "connLastMeta": "前回使用 · 自動入力",
       "connLastNever": "未接続",
       "aboutCopyright": "© 2025 · Open source at github.com/guan4tou2/danmu-desktop",
+      "aboutDesc": "Danmu Fire はリアルタイム弾幕システムです。視聴者はスマホや PC からテキストを送信し、メイン画面の overlay に表示されます。",
+      "checkForUpdates": "アップデートを確認",
       "overlayDisplayLabel": "表示先",
       "overlayScreenDetecting": "DISPLAY · 検出中…",
       "overlayScreenCount": "DISPLAY · {count} 画面検出"
@@ -475,6 +481,8 @@ const _resources = {
       "connLastMeta": "마지막 사용 · 자동 입력",
       "connLastNever": "미사용",
       "aboutCopyright": "© 2025 · Open source at github.com/guan4tou2/danmu-desktop",
+      "aboutDesc": "Danmu Fire 는 실시간 댄무 송신 시스템입니다. 시청자가 모바일이나 PC 에서 텍스트를 입력하면 메인 화면 overlay 에 표시됩니다.",
+      "checkForUpdates": "업데이트 확인",
       "overlayDisplayLabel": "표시 위치",
       "overlayScreenDetecting": "DISPLAY · 감지 중…",
       "overlayScreenCount": "DISPLAY · {count} 개 화면 감지"
@@ -509,12 +517,12 @@ const i18n = {
     return text;
   },
 
+  // setLanguage stays as a programmatic hook (useful for tests + future
+  // need), but no longer persists to localStorage. The desktop app
+  // follows the system locale; no in-app override.
   setLanguage(lang) {
     if (!SUPPORTED.includes(lang)) return;
     this.currentLang = lang;
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem("danmu-lang", lang);
-    }
     // Update <html lang=""> so CSS :lang() picks the right CJK font
     if (typeof document !== "undefined" && document.documentElement) {
       document.documentElement.lang = lang;
@@ -522,13 +530,13 @@ const i18n = {
     this.updateUI();
   },
 
-  /** Detect and apply the correct language (async — uses Electron IPC if available). */
+  /** Detect and apply the correct language (async — uses Electron IPC if
+   *  available). 2026-05-16: localStorage 'danmu-lang' override removed;
+   *  Electron desktop follows the system locale via app.getLocale(). If
+   *  a stale 'danmu-lang' key exists from a previous version, sweep it. */
   async loadLanguage() {
-    const saved =
-      typeof localStorage !== "undefined" && localStorage.getItem("danmu-lang");
-    if (saved && SUPPORTED.includes(saved)) {
-      this.currentLang = saved;
-      return;
+    if (typeof localStorage !== "undefined") {
+      try { localStorage.removeItem("danmu-lang"); } catch (_) {}
     }
 
     // Try Electron system locale first

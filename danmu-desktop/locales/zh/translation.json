@@ -112,6 +112,8 @@
   "connLastMeta": "上次使用 · 自動帶入",
   "connLastNever": "尚未連線",
   "aboutCopyright": "© 2025 · Open source at github.com/guan4tou2/danmu-desktop",
+  "aboutDesc": "Danmu Fire 是即時彈幕送字系統。觀眾用手機或桌機網頁輸入文字,送到主場大螢幕的 overlay。",
+  "checkForUpdates": "檢查更新",
   "overlayDisplayLabel": "顯示於",
   "overlayScreenDetecting": "DISPLAY · 偵測中…",
   "overlayScreenCount": "DISPLAY · 偵測到 {count} 個螢幕"

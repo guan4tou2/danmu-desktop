@@ -112,6 +112,8 @@
   "connLastMeta": "마지막 사용 · 자동 입력",
   "connLastNever": "미사용",
   "aboutCopyright": "© 2025 · Open source at github.com/guan4tou2/danmu-desktop",
+  "aboutDesc": "Danmu Fire 는 실시간 댄무 송신 시스템입니다. 시청자가 모바일이나 PC 에서 텍스트를 입력하면 메인 화면 overlay 에 표시됩니다.",
+  "checkForUpdates": "업데이트 확인",
   "overlayDisplayLabel": "표시 위치",
   "overlayScreenDetecting": "DISPLAY · 감지 중…",
   "overlayScreenCount": "DISPLAY · {count} 개 화면 감지"

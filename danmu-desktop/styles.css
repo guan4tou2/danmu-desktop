@@ -315,9 +315,18 @@ body[data-os="mac"] .client-titlebar {
   -webkit-app-region: no-drag;
 }
 
-.client-titlebar-label {
+/* Title + status centered together as one group; update badge sits right.
+   The center wrapper is flex:1 so absolute-positioned siblings (badge)
+   don't shift the centered group when toggled. */
+.client-titlebar-center {
   flex: 1;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.client-titlebar-label {
   font-size: 12px;
   letter-spacing: 1px;
   color: rgba(148, 163, 184, 0.9);

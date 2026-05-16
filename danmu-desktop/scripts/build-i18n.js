@@ -73,12 +73,12 @@ const i18n = {
     return text;
   },
 
+  // setLanguage stays as a programmatic hook (useful for tests + future
+  // need), but no longer persists to localStorage. The desktop app
+  // follows the system locale; no in-app override.
   setLanguage(lang) {
     if (!SUPPORTED.includes(lang)) return;
     this.currentLang = lang;
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem("danmu-lang", lang);
-    }
     // Update <html lang=""> so CSS :lang() picks the right CJK font
     if (typeof document !== "undefined" && document.documentElement) {
       document.documentElement.lang = lang;
@@ -86,13 +86,13 @@ const i18n = {
     this.updateUI();
   },
 
-  /** Detect and apply the correct language (async — uses Electron IPC if available). */
+  /** Detect and apply the correct language (async — uses Electron IPC if
+   *  available). 2026-05-16: localStorage 'danmu-lang' override removed;
+   *  Electron desktop follows the system locale via app.getLocale(). If
+   *  a stale 'danmu-lang' key exists from a previous version, sweep it. */
   async loadLanguage() {
-    const saved =
-      typeof localStorage !== "undefined" && localStorage.getItem("danmu-lang");
-    if (saved && SUPPORTED.includes(saved)) {
-      this.currentLang = saved;
-      return;
+    if (typeof localStorage !== "undefined") {
+      try { localStorage.removeItem("danmu-lang"); } catch (_) {}
     }
 
     // Try Electron system locale first

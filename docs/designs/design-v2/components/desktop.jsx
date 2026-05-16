@@ -153,7 +153,11 @@ function ControlWindow({ theme, defaultTestState, forceSection }) {
       <div style={{ height: 36, display: 'flex', alignItems: 'center', padding: '0 12px', borderBottom: `1px solid ${line}`, background: panel, flexShrink: 0, WebkitAppRegion: 'drag' }}>
         <div style={{ width: 68, flexShrink: 0 }} />
         <span style={{ flex: 1, textAlign: 'center', fontSize: 12, color: textDim, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          <span style={{ fontFamily: hudTokens.fontMono, letterSpacing: 1 }}>Danmu Fire</span>
+          {/* Titlebar uses the product identity `Danmu Desktop` to match
+              package.json productName + macOS window menu. The user-facing
+              brand `Danmu Fire` is used in the body (hero, first-run,
+              tray items). */}
+          <span style={{ fontFamily: hudTokens.fontMono, letterSpacing: 1 }}>Danmu Desktop</span>
           <span style={{ fontSize: 9, fontFamily: hudTokens.fontMono, letterSpacing: 1, color: accent, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <StatusDot color={accent} size={5} />CONNECTED
           </span>

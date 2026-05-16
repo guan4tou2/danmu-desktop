@@ -71,6 +71,16 @@ function renderAboutCard(t) {
   const phase = _state.phase || "idle";
   const version = _state.version;
 
+  // 2026-05-16: idle / not-available states keep the card hidden — the
+  // hero's UP TO DATE pill already conveys "you're current", a second
+  // "You're up to date" panel just clutters the About page. The card
+  // surfaces only when there's something actionable (checking / available
+  // / downloading / downloaded / error).
+  if (phase === "idle" || phase === "not-available") {
+    card.hidden = true;
+    return;
+  }
+
   // Default visibility
   card.hidden = false;
   if (errorEl) errorEl.hidden = true;

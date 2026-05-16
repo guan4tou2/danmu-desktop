@@ -40,27 +40,30 @@ describe("t()", () => {
 // ---------------------------------------------------------------------------
 
 describe("setLanguage()", () => {
+  // 2026-05-16: language selector removed from the Electron app — the
+  // desktop client follows the system locale via app.getLocale(). The
+  // setLanguage() programmatic hook is kept (useful for tests + future
+  // need) but no longer persists to localStorage; that's by design.
   test("changes currentLang to a valid language", () => {
     i18n.setLanguage("zh");
     expect(i18n.currentLang).toBe("zh");
   });
 
-  test("persists the chosen language to localStorage", () => {
+  test("does NOT persist to localStorage (system-locale only)", () => {
+    localStorage.removeItem("danmu-lang");
     i18n.setLanguage("zh");
-    expect(localStorage.getItem("danmu-lang")).toBe("zh");
+    expect(localStorage.getItem("danmu-lang")).toBeNull();
   });
 
   test("switching back to en works", () => {
     i18n.setLanguage("zh");
     i18n.setLanguage("en");
     expect(i18n.currentLang).toBe("en");
-    expect(localStorage.getItem("danmu-lang")).toBe("en");
   });
 
   test("ignores an unknown language code", () => {
     i18n.setLanguage("fr");
     expect(i18n.currentLang).toBe("en"); // unchanged
-    expect(localStorage.getItem("danmu-lang")).toBeNull();
   });
 
   test("calls updateUI when setting a valid language", () => {
@@ -83,13 +86,17 @@ describe("setLanguage()", () => {
 // ---------------------------------------------------------------------------
 
 describe("loadLanguage()", () => {
-  test("restores language from localStorage", async () => {
+  // 2026-05-16: localStorage restoration removed. loadLanguage now goes
+  // straight to system locale (Electron app.getLocale() via IPC) and
+  // falls back to navigator.language. Any stale danmu-lang key is
+  // swept on load so old user choices don't outlive the migration.
+  test("sweeps stale danmu-lang localStorage key on load", async () => {
     localStorage.setItem("danmu-lang", "zh");
     await i18n.loadLanguage();
-    expect(i18n.currentLang).toBe("zh");
+    expect(localStorage.getItem("danmu-lang")).toBeNull();
   });
 
-  test("ignores unknown language stored in localStorage", async () => {
+  test("ignores a stale danmu-lang and falls through to system/browser", async () => {
     localStorage.setItem("danmu-lang", "fr");
     await i18n.loadLanguage();
     // Falls through to browser detection; default env has no zh navigator.language

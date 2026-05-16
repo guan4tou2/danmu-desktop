@@ -38,6 +38,10 @@ const REQUIRED_KEYS = [
   "connLastKicker",
   "connLastMeta",
   "connLastNever",
+  // About page
+  "aboutCopyright",
+  "aboutDesc",
+  "checkForUpdates",
 ];
 
 // Retired keys — must not appear (UI elements they label are gone).

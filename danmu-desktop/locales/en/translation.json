@@ -112,6 +112,8 @@
   "connLastMeta": "Last used · auto-fill",
   "connLastNever": "Never used",
   "aboutCopyright": "© 2025 · Open source at github.com/guan4tou2/danmu-desktop",
+  "aboutDesc": "Danmu Fire is a real-time danmu broadcast system. Viewers type from phones or laptops; messages render on the big-screen overlay.",
+  "checkForUpdates": "Check for updates",
   "overlayDisplayLabel": "Display on",
   "overlayScreenDetecting": "DISPLAY · detecting…",
   "overlayScreenCount": "DISPLAY · {count} screen(s) detected"

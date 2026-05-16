@@ -112,6 +112,8 @@
   "connLastMeta": "前回使用 · 自動入力",
   "connLastNever": "未接続",
   "aboutCopyright": "© 2025 · Open source at github.com/guan4tou2/danmu-desktop",
+  "aboutDesc": "Danmu Fire はリアルタイム弾幕システムです。視聴者はスマホや PC からテキストを送信し、メイン画面の overlay に表示されます。",
+  "checkForUpdates": "アップデートを確認",
   "overlayDisplayLabel": "表示先",
   "overlayScreenDetecting": "DISPLAY · 検出中…",
   "overlayScreenCount": "DISPLAY · {count} 画面検出"

@@ -107,19 +107,14 @@ const initRenderer = async () => {
     // ── i18n (async, with timeout guard to prevent hang in CI) ──────────
     if (typeof i18n !== "undefined") {
       try {
+        // 2026-05-16: language selector removed — Electron follows the
+        // system locale via window.API.getSystemLocale() (resolves to
+        // main process `app.getLocale()`); no in-app toggle.
         await Promise.race([
           i18n.loadLanguage(),
           new Promise((resolve) => setTimeout(resolve, 2000)),
         ]);
         i18n.updateUI();
-
-        const languageSelect = document.getElementById("language-select");
-        if (languageSelect) {
-          languageSelect.value = i18n.currentLang;
-          languageSelect.addEventListener("change", (e) => {
-            i18n.setLanguage(e.target.value);
-          });
-        }
       } catch (_) {
         // i18n failure — continue with HTML defaults
       }

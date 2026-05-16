@@ -36,8 +36,21 @@
          left edge of this region. CSS adds padding-left so the title text
          doesn't overlap them. -->
     <header class="client-titlebar" role="banner">
-      <span class="client-titlebar-label">Danmu Fire</span>
-      <!-- Update badge (P2-3) — hidden until autoUpdater fires update-available -->
+      <!-- Label + status centered together as one unit, per design v3-r6.
+           macOS native traffic lights overlap the left edge — handled by
+           padding-left on body[data-os="mac"]. Title shows the product
+           identity (matches package.json productName); user-facing brand
+           "Danmu Fire" is used in the body (hero, first-run, tray items). -->
+      <div class="client-titlebar-center">
+        <span class="client-titlebar-label">Danmu Desktop</span>
+        <span class="client-titlebar-status" role="status" aria-live="polite">
+          <span class="client-titlebar-status-dot" data-client-status="disconnected"></span>
+          <span class="client-titlebar-status-text" data-i18n="disconnected">DISCONNECTED</span>
+        </span>
+      </div>
+      <!-- Update badge (P2-3) — hidden until autoUpdater fires
+           update-available; sits in the right slot, doesn't disturb the
+           centered title group. -->
       <button
         type="button"
         id="titlebar-update-badge"
@@ -48,10 +61,6 @@
         <span class="dot" aria-hidden="true"></span>
         <span class="label" data-i18n="updateAvailableShort">UPDATE</span>
       </button>
-      <span class="client-titlebar-status" role="status" aria-live="polite">
-        <span class="client-titlebar-status-dot" data-client-status="disconnected"></span>
-        <span class="client-titlebar-status-text" data-i18n="disconnected">DISCONNECTED</span>
-      </span>
     </header>
 
     <!-- Dynamic Background -->
@@ -105,7 +114,9 @@
         tabindex="-1"
         class="client-main"
       >
-        <!-- Top utility row — language + legacy connection chip -->
+        <!-- Top utility row — legacy connection chip only.
+             2026-05-16: language selector removed; Electron follows the
+             system locale automatically via app.getLocale(). -->
         <div class="client-toprow">
           <div id="connection-status" class="hidden">
             <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg glass-effect">
@@ -113,16 +124,6 @@
               <span id="status-text" class="text-xs font-medium whitespace-nowrap"></span>
             </div>
           </div>
-          <select
-            id="language-select"
-            class="form-input px-3 py-2 rounded-lg text-sm"
-            aria-label="Select language"
-          >
-            <option value="en">English</option>
-            <option value="zh">繁體中文</option>
-            <option value="ja">日本語</option>
-            <option value="ko">한국어</option>
-          </select>
         </div>
 
         <!-- Section: Connection (prototype desktop.jsx ConnSection:250).
