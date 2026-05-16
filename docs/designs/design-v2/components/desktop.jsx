@@ -296,12 +296,14 @@ function ConnSection({ panel, raised, line, text, textDim, accent, bg }) {
         )}
       </div>
 
-      {/* AUTH · admin password (optional, collapsed by default) */}
+      {/* AUTH · WebSocket Token (optional, collapsed by default).
+          NOT an admin password — desktop only subscribes to the broadcast
+          channel. Required when server has WS_REQUIRE_TOKEN=true. */}
       <div style={{ padding: 14, borderRadius: 8, border: `1px solid ${line}`, background: panel, marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => setPwOpen(!pwOpen)}>
           <span style={{ fontSize: 12, color: textDim }}>{pwOpen ? '▾' : '▸'}</span>
-          <span style={{ fontSize: 13, fontWeight: 500 }}>管理密碼</span>
-          <HudLabel color={textDim}>OPTIONAL · ADMIN ACCESS</HudLabel>
+          <span style={{ fontSize: 13, fontWeight: 500 }}>WebSocket Token</span>
+          <HudLabel color={textDim}>OPTIONAL · WSS HANDSHAKE</HudLabel>
           <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, color: pwOpen ? accent : textDim, letterSpacing: 0.5 }}>
             {pwOpen ? '展開' : '未設定 · 點此設定'}
           </span>
@@ -310,27 +312,17 @@ function ConnSection({ panel, raised, line, text, textDim, accent, bg }) {
           <div style={{ marginTop: 10 }}>
             <input
               type="password"
-              placeholder="僅當你要使用 admin 後台時填寫"
+              placeholder="Server 啟用 WS_REQUIRE_TOKEN 時，從 admin 抄出 token 貼入"
               style={{
                 width: '100%', padding: '10px 12px', background: bg, border: `1px solid ${line}`, borderRadius: 6,
                 color: text, fontFamily: hudTokens.fontMono, fontSize: 13, outline: 'none', boxSizing: 'border-box',
               }}
             />
             <div style={{ marginTop: 6, fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, letterSpacing: 0.3, lineHeight: 1.5 }}>
-              密碼存於 macOS Keychain · 僅本機可讀
+              僅當 server 啟用 WS_REQUIRE_TOKEN 時需要 · 從 Admin → System → Security 取得
             </div>
           </div>
         )}
-      </div>
-
-      {/* STARTUP · auto-start toggles */}
-      <div style={{ padding: 14, borderRadius: 8, border: `1px solid ${line}`, background: panel, marginBottom: 14 }}>
-        <HudLabel color={textDim}>STARTUP</HudLabel>
-        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <StartupRow label="開機啟動 & 自動連線" hint="登入後立即在背景連線到 server" on accent={accent} line={line} text={text} textDim={textDim} />
-          <StartupRow label="連線後自動顯示 overlay" hint="不必手動開啟透明層" on accent={accent} line={line} text={text} textDim={textDim} />
-          <StartupRow label="背景時保持連線"     hint="關閉控制視窗時仍接收彈幕" on accent={accent} line={line} text={text} textDim={textDim} />
-        </div>
       </div>
 
       {/* RECENT · last-N servers */}
@@ -361,23 +353,7 @@ function ConnSection({ panel, raised, line, text, textDim, accent, bg }) {
         </div>
       </div>
 
-      <div style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 0.5 }}>
-        部署文件 → <span style={{ color: accent, cursor: 'pointer' }}>github.com/.../docs/server-setup</span>
-      </div>
     </>
-  );
-}
-
-function StartupRow({ label, hint, on, accent, line, text, textDim }) {
-  const [v, setV] = React.useState(on);
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 12, fontWeight: 500, color: text }}>{label}</div>
-        <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, letterSpacing: 0.3, marginTop: 2 }}>{hint}</div>
-      </div>
-      <span onClick={() => setV(!v)} style={{ cursor: 'pointer' }}><Toggle on={v} accent={accent} line={line} /></span>
-    </div>
   );
 }
 
@@ -540,24 +516,18 @@ function TrayMenu({ theme, disconnected }) {
             {disconnected ? '連線中斷 · 重連中…' : '已連線 · ws://danmu.local:4001'}
           </div>
         </div>
-        {disconnected ? (
-          <>
-            <TrayRow label="連線設定…" isDark={isDark} />
-            <TrayRow label="開啟控制視窗…" isDark={isDark} />
-            <div style={{ height: 1, background: isDark ? hudTokens.line : hudTokens.lightLine, margin: '4px 0' }} />
-            <TrayRow label="關於 Danmu Desktop…" isDark={isDark} />
-            <TrayRow label="結束 Danmu" isDark={isDark} danger />
-          </>
-        ) : (
-          <>
-            <TrayRow label="Overlay 狀態" meta="顯示中" isDark={isDark} />
-            <TrayRow label="伺服器" meta="已連線" isDark={isDark} />
-            <div style={{ height: 1, background: isDark ? hudTokens.line : hudTokens.lightLine, margin: '4px 0' }} />
-            <TrayRow label="開啟控制視窗…" isDark={isDark} />
-            <TrayRow label="關於 Danmu Desktop…" isDark={isDark} />
-            <TrayRow label="結束 Danmu" isDark={isDark} danger />
-          </>
-        )}
+        {/* Single canonical schema — only status text + accent color change
+            between Connected / Disconnected. Mirrors main.js rebuildTrayMenu. */}
+        <TrayRow label="Overlay 視窗" meta={disconnected ? '0 個' : '1 個'} isDark={isDark} />
+        <TrayToggleRow label="待機畫面" sc="⌘⇧D" on={!disconnected} accent={accent} isDark={isDark} />
+        <div style={{ height: 1, background: isDark ? hudTokens.line : hudTokens.lightLine, margin: '4px 0' }} />
+        <TrayRow label="伺服器" meta={disconnected ? '中斷 ▸' : '已連線 ▸'} isDark={isDark} />
+        <div style={{ height: 1, background: isDark ? hudTokens.line : hudTokens.lightLine, margin: '4px 0' }} />
+        <TrayRow label="開啟控制視窗…" sc="⌘⇧C" isDark={isDark} />
+        <TrayRow label="偏好設定…" isDark={isDark} />
+        <TrayRow label="關於 Danmu Fire…" isDark={isDark} />
+        <div style={{ height: 1, background: isDark ? hudTokens.line : hudTokens.lightLine, margin: '4px 0' }} />
+        <TrayRow label="結束 Danmu" isDark={isDark} danger />
       </div>
     </div>
   );
@@ -577,19 +547,6 @@ function TrayRow({ label, sc, meta, isDark, danger }) {
   );
 }
 
-function TrayRow({ label, sc, meta, isDark, danger }) {
-  const dim = isDark ? hudTokens.textDim : hudTokens.lightTextDim;
-  return (
-    <div style={{
-      display: 'flex', padding: '6px 10px', borderRadius: 4, cursor: 'pointer',
-      alignItems: 'center', color: danger ? hudTokens.crimson : undefined,
-    }}>
-      <span style={{ flex: 1 }}>{label}</span>
-      {sc && <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: dim, letterSpacing: 1 }}>{sc}</span>}
-      {meta && <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: dim, letterSpacing: 0.5 }}>{meta}</span>}
-    </div>
-  );
-}
 function TrayToggleRow({ label, sc, on, accent, isDark }) {
   const dim = isDark ? hudTokens.textDim : hudTokens.lightTextDim;
   return (

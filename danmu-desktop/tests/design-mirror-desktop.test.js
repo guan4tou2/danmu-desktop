@@ -22,6 +22,63 @@ test("desktop design component mirror only models connection, overlay, and about
   expect(src).not.toContain("function FirstRunGate");
 });
 
+test("ConnSection AUTH panel labels the field as WebSocket Token, not admin password", () => {
+  // 2026-05-16 alignment: desktop client never authenticates as admin.
+  // The `pw` field gates the WSS handshake when WS_REQUIRE_TOKEN=true.
+  const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
+
+  expect(src).toContain("WebSocket Token");
+  expect(src).toContain("OPTIONAL · WSS HANDSHAKE");
+  expect(src).not.toContain("管理密碼");
+  expect(src).not.toContain("OPTIONAL · ADMIN ACCESS");
+  expect(src).not.toContain("macOS Keychain");
+  expect(src).not.toContain("admin 後台");
+  // Don't redirect users to Fire Token — that's a different surface.
+  expect(src).not.toMatch(/Admin → System → Fire Token/);
+});
+
+test("ConnSection does not show a persistent deployment-docs link", () => {
+  // The first-run gate may keep a docs hint; ConnSection itself must not.
+  const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
+
+  expect(src).not.toContain("github.com/.../docs/server-setup");
+  expect(src).not.toMatch(/部署文件 →[\s\S]{0,80}server-setup/);
+});
+
+test("ConnSection has no STARTUP toggle block (unimplemented in Electron app)", () => {
+  // 2026-05-16: removed three toggles (autostart / auto-show overlay /
+  // background keep-alive) — none are wired in main.js / renderer-modules.
+  // Keeping mockup-only toggles in the mirror leads engineers to chase
+  // ghost features.
+  const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
+
+  expect(src).not.toContain("function StartupRow");
+  expect(src).not.toContain("<StartupRow");
+  expect(src).not.toContain("開機啟動 & 自動連線");
+  expect(src).not.toContain("背景時保持連線");
+});
+
+test("TrayMenu uses a single canonical schema, status-only state difference", () => {
+  // 2026-05-13/16 engineering update: tray is status-only, not a popover
+  // controller. Connected vs Disconnected must show the same item list,
+  // with status text + accent color reflecting state.
+  const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
+
+  // Items shared across both states
+  expect(src).toMatch(/<TrayRow label="Overlay 視窗"/);
+  expect(src).toMatch(/<TrayToggleRow label="待機畫面" sc="⌘⇧D"/);
+  expect(src).toMatch(/<TrayRow label="伺服器"/);
+  expect(src).toMatch(/<TrayRow label="開啟控制視窗…" sc="⌘⇧C"/);
+  expect(src).toMatch(/<TrayRow label="偏好設定…"/);
+  expect(src).toMatch(/<TrayRow label="結束 Danmu"/);
+  // Schema must not branch — no separate Disconnected-only `連線設定` row
+  // or Connected-only `Overlay 狀態 顯示中` etc.
+  expect(src).not.toMatch(/label="Overlay 狀態" meta="顯示中"/);
+  expect(src).not.toMatch(/label="連線設定…"/);
+  // Don't reintroduce a second overlay toggle alongside 待機畫面.
+  expect(src).not.toMatch(/label="顯示 overlay" sc="⌘⇧D"/);
+});
+
 test("desktop HTML mirrors do not publish standalone first-run, tray popover, or window picker surfaces", () => {
   const v2Html = readRepoFile("docs", "designs", "design-v2", "Danmu Redesign.html");
   const legacyHtml = readRepoFile("docs", "designs", "Danmu Redesign.html");
