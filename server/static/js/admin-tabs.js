@@ -40,7 +40,7 @@
       defaultTab: "themes",
       tabs: [
         { slug: "themes",        label: "主題包",    en: "THEMES",       section: "sec-themes" },
-        { slug: "viewer-config", label: "Viewer 設定", en: "VIEWER",     sections: ["sec-viewer-config-tabs", "sec-viewer-theme", "sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout"] },
+        { slug: "viewer-config", label: "Viewer 設定", en: "VIEWER",     sections: ["sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits"] },
         { slug: "fonts",         label: "字型",      en: "FONTS",        section: "sec-fonts" },
       ],
     },

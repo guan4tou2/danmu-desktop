@@ -56,3 +56,83 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   expect(viewerThemeSrc).toContain('data-vt-jump="display"');
   expect(viewerThemeSrc).toContain("Overlay 排版 / 顯示器 / 連線狀態請到 <b>Display</b>");
 });
+
+test("admin Viewer field inventory matches the canonical viewer spec", () => {
+  const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
+  const displaySrc = fs.readFileSync(path.join(staticDir, "admin-display.js"), "utf8");
+
+  expect(displaySrc).toContain("Viewer 管理 <b>觀眾頁</b>");
+  expect(displaySrc).toContain("主題樣式由 Theme Packs");
+  expect(displaySrc).toContain("速度 / Speed");
+  expect(displaySrc).toContain("排版 / Layout");
+  expect(displaySrc).toContain("效果 / Effect");
+  expect(displaySrc).not.toContain("描邊 / Stroke");
+  expect(displaySrc).not.toContain("陰影 / Shadow");
+  expect(displaySrc).not.toContain("匿名送出");
+  expect(displaySrc).not.toContain("附加圖片");
+});
+
+test("admin Viewer surface exposes language/copy and defaults/limits guidance", () => {
+  const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
+  const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
+  const displaySrc = fs.readFileSync(path.join(staticDir, "admin-display.js"), "utf8");
+
+  expect(adminSrc).toContain("VIEWER · 頁面預設 · 欄位設定 · 文案 / 限制");
+  expect(displaySrc).toContain("LANGUAGE / COPY");
+  expect(displaySrc).toContain("UI language");
+  expect(displaySrc).toContain("Placeholder");
+  expect(displaySrc).toContain("Submit button");
+  expect(displaySrc).toContain("DEFAULTS / LIMITS");
+  expect(displaySrc).toContain("Nickname ≤ 20");
+  expect(displaySrc).toContain("Message 1–100");
+  expect(displaySrc).toContain("FIRE rate 20 / 60s");
+  expect(displaySrc).toContain("Poll 預設關閉");
+  expect(adminSrc).toContain('sec-viewer-config-defaults');
+  expect(adminSrc).toContain('sec-viewer-config-limits');
+  expect(displaySrc).toContain('_makeTabBtn("defaults"');
+  expect(displaySrc).toContain('_makeTabBtn("limits"');
+  expect(displaySrc).toContain('sec-viewer-config-defaults');
+  expect(displaySrc).toContain('sec-viewer-config-limits');
+});
+
+test("editable viewer defaults now live under Viewer > Defaults, not Display", () => {
+  const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
+  const displaySrc = fs.readFileSync(path.join(staticDir, "admin-display.js"), "utf8");
+
+  expect(displaySrc).toContain('const tab = (document.body.dataset.viewerConfigTab) || "defaults";');
+  expect(displaySrc).toContain('page.style.display = (isViewerOwner && tab === "defaults") ? "" : "none";');
+  expect(displaySrc).toContain('document.body.dataset.viewerConfigTab = "defaults"');
+});
+
+test("Viewer entry points use the canonical viewer route instead of legacy viewer-config", () => {
+  const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
+  const paletteSrc = fs.readFileSync(path.join(staticDir, "admin-command-palette.js"), "utf8");
+  const assetsSrc = fs.readFileSync(path.join(staticDir, "admin-assets.js"), "utf8");
+  const tabsSrc = fs.readFileSync(path.join(staticDir, "admin-tabs.js"), "utf8");
+  const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
+
+  expect(paletteSrc).toContain('viewer:         { title: "觀眾頁"');
+  expect(paletteSrc).toContain('label: "觀眾頁主題"');
+  expect(paletteSrc).toContain('route: "viewer", tab: "page", section: "sec-viewer-theme"');
+  expect(paletteSrc).toContain('label: "表單欄位 Viewer fields"');
+  expect(paletteSrc).toContain('route: "viewer", tab: "fields", section: "sec-viewer-config-fields"');
+  expect(paletteSrc).toContain('label: "送出預設 Viewer defaults"');
+  expect(paletteSrc).toContain('route: "viewer", tab: "defaults", section: "admin-display-v2-page"');
+  expect(paletteSrc).toContain('label: "限制 / 文案 Viewer limits"');
+  expect(paletteSrc).toContain('route: "viewer", tab: "limits", section: "sec-viewer-config-limits"');
+  expect(paletteSrc).toContain('if (item.tab) document.body.dataset.viewerConfigTab = item.tab;');
+  expect(paletteSrc).not.toContain('route: "viewer-config"');
+
+  expect(assetsSrc).toContain('route: "viewer"');
+  expect(assetsSrc).not.toContain('route: "viewer-config"');
+
+  expect(tabsSrc).toContain('{ slug: "viewer-config", label: "Viewer 設定", en: "VIEWER",     sections: ["sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits"] }');
+  expect(tabsSrc).not.toContain('sec-color');
+  expect(tabsSrc).not.toContain('sec-opacity');
+  expect(tabsSrc).not.toContain('sec-fontsize');
+  expect(tabsSrc).not.toContain('sec-speed');
+  expect(tabsSrc).not.toContain('sec-fontfamily');
+  expect(tabsSrc).not.toContain('sec-layout');
+
+  expect(adminSrc).toContain('appearance: { title: "外觀", kicker: "APPEARANCE · 主題 / Viewer / 字型", sections: ["sec-themes", "sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits", "sec-fonts"] }');
+});

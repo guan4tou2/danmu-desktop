@@ -116,9 +116,9 @@
     return `
       <div id="${PAGE_ID}" class="admin-dsp2-page hud-page-stack lg:col-span-2">
         <div class="admin-v2-head">
-          <div class="admin-v2-kicker">DISPLAY SETTINGS · 每列決定該參數的預設值 + 是否讓觀眾自訂 + 自訂範圍</div>
-          <div class="admin-v2-title">${escapeHtml(t("displaySettingsTitle", "顯示設定"))}</div>
-          <p class="admin-v2-note">Display 控制 overlay / client / 目標顯示器 / idle QR；<b>Viewer</b> 控制 <code>/fire</code> 主題與欄位。</p>
+          <div class="admin-v2-kicker">VIEWER DEFAULTS · 每列決定觀眾送出 danmu 時的預設值 + 是否開放自訂</div>
+          <div class="admin-v2-title">${escapeHtml(t("viewerDefaultsTitle", "觀眾頁預設"))}</div>
+          <p class="admin-v2-note">Display 控制 overlay / client / 目標顯示器 / idle QR；<b>Viewer</b> 在此設定 <code>/fire</code> 的送出預設、欄位與文案。</p>
         </div>
 
         <div class="admin-dsp2-grid">
@@ -990,7 +990,7 @@
     if (!shell || !page) return;
     const route = shell.dataset.activeRoute || "live";
     const leaf = shell.dataset.activeLeaf || route;
-    const tab = (document.body.dataset.viewerConfigTab) || "page";
+    const tab = (document.body.dataset.viewerConfigTab) || "defaults";
     // The main display-settings surface now belongs to the top-level
     // Display route from the handoff bundle, while the viewer route keeps
     // the /fire page theme + field toggles.
@@ -998,9 +998,8 @@
     // Legacy `#/viewer-config` hashes are still accepted as viewer aliases
     // via the router, so the viewer-owned panels continue to render for both
     // `viewer` and `viewer-config`.
-    const isDisplayOwner = _isDisplayOwner(route, leaf);
     const isViewerOwner = _isViewerOwner(route, leaf);
-    page.style.display = isDisplayOwner ? "" : "none";
+    page.style.display = (isViewerOwner && tab === "defaults") ? "" : "none";
     const vt = document.getElementById("sec-viewer-theme");
     if (vt) {
       vt.style.display = (isViewerOwner && tab === "page") ? "" : "none";
@@ -1008,6 +1007,14 @@
     const vf = document.getElementById("sec-viewer-config-fields");
     if (vf) {
       vf.style.display = (isViewerOwner && tab === "fields") ? "" : "none";
+    }
+    const vd = document.getElementById("sec-viewer-config-defaults");
+    if (vd) {
+      vd.style.display = (isViewerOwner && tab === "defaults") ? "" : "none";
+    }
+    const vl = document.getElementById("sec-viewer-config-limits");
+    if (vl) {
+      vl.style.display = (isViewerOwner && tab === "limits") ? "" : "none";
     }
     const info = document.getElementById("sec-viewer-config-info");
     if (info) {
@@ -1017,7 +1024,7 @@
     if (tabs) {
       tabs.style.display = isViewerOwner ? "" : "none";
     }
-    if (isDisplayOwner) {
+    if (_isDisplayOwner(route, leaf)) {
       if (!_state.metricsTimer) startMetricsPoll();
     } else {
       stopMetricsPoll();
@@ -1041,8 +1048,8 @@
       btn.type = "button";
       btn.setAttribute("role", "tab");
       btn.dataset.tab = key;
-      btn.className = "admin-tabstrip-tab" + (key === "page" ? " is-active" : "");
-      btn.setAttribute("aria-selected", key === "page" ? "true" : "false");
+      btn.className = "admin-tabstrip-tab" + (key === "defaults" ? " is-active" : "");
+      btn.setAttribute("aria-selected", key === "defaults" ? "true" : "false");
       btn.innerHTML =
         '<span style="display:inline-flex;align-items:center;gap:6px">' +
           '<span class="admin-tabstrip-icon">' + icon + "</span>" +
@@ -1065,6 +1072,8 @@
 
     bar.appendChild(_makeTabBtn("page",   "◧", "整頁主題", "PAGE"));
     bar.appendChild(_makeTabBtn("fields", "☷", "表單欄位", "FIELDS"));
+    bar.appendChild(_makeTabBtn("defaults", "◫", "送出預設", "DEFAULTS"));
+    bar.appendChild(_makeTabBtn("limits", "⊘", "限制 / 文案", "LIMITS"));
     const spacer = document.createElement("span");
     spacer.style.flex = "1";
     bar.appendChild(spacer);
@@ -1075,8 +1084,8 @@
     infoBanner.className = "lg:col-span-2";
     infoBanner.innerHTML =
       '<div class="admin-vc-info-banner">' +
-        '<span class="admin-vc-info-accent">觀眾頁主題</span> 控制 <code>/fire</code> 的整體外觀（背景、tab、字色）；' +
-        '<span class="admin-vc-info-accent" style="margin-left:4px">表單欄位</span> 控制觀眾在「發送 danmu」表單上看到的輸入（暱稱 / 顏色 / 字級 / 描邊 …）。兩者獨立。' +
+        'Viewer 管理 <b>觀眾頁</b>：<span class="admin-vc-info-accent">觀眾頁主題</span> 控制 <code>/fire</code> 的整體外觀（背景、tab、字色）；' +
+        '<span class="admin-vc-info-accent" style="margin-left:4px">表單欄位</span> 控制觀眾在「發送 danmu」表單上看到的輸入（暱稱 / 顏色 / 字級 / 速度 / 排版 / 效果）。主題樣式由 Theme Packs 全域管理。' +
       '</div>';
 
     // ── FIELDS panel ──────────────────────────────────────────────────────
@@ -1087,11 +1096,9 @@
       { k: "字型 / Font",      desc: "從 Font Library 選擇",                     on: true },
       { k: "字級 / Size",      desc: "small / regular / large 三段",             on: true },
       { k: "透明度 / Opacity", desc: "0.4 / 0.7 / 1.0 三段",                     on: true },
-      { k: "描邊 / Stroke",    desc: "黑邊 toggle",                               on: true },
-      { k: "陰影 / Shadow",    desc: "soft / hard / none",                        on: true },
+      { k: "速度 / Speed",     desc: "0.5× / 1.0× / 2.0× 內選定預設",             on: true },
+      { k: "排版 / Layout",    desc: "scroll / top / bottom / float / rise",      on: true },
       { k: "效果 / Effect",    desc: "可選 1–3 個從 Effect Library",              on: false },
-      { k: "匿名送出",          desc: "隱藏 nickname，顯示 fp_xxxx",               on: false },
-      { k: "附加圖片",          desc: "BE 尚未支援",                              on: false, blocked: true },
     ];
 
     const fieldsPanel = document.createElement("div");
@@ -1169,38 +1176,104 @@
         '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">訊息 / Message <span style="color:var(--hud-crimson,#f87171)">*</span></div><div class="admin-vc-preview-input" style="min-height:56px">+1 求簡報</div></div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
           '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">顏色</div><div class="admin-vc-preview-input"><span class="admin-vc-swatch">' + swatchHtml + "</span></div></div>" +
-          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">字級</div><div class="admin-vc-preview-input">small · <b>regular</b> · large</div></div>' +
+          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">字型</div><div class="admin-vc-preview-input">Noto Sans TC · <b>Zen Kaku</b></div></div>' +
         "</div>" +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">字級</div><div class="admin-vc-preview-input">small · <b>regular</b> · large</div></div>' +
           '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">透明度</div><div class="admin-vc-preview-input">0.4 · 0.7 · <b>1.0</b></div></div>' +
-          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">描邊</div><div class="admin-vc-preview-input">○ <b>● 黑邊</b></div></div>' +
+        "</div>" +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">速度</div><div class="admin-vc-preview-input">0.5× · <b>1.0×</b> · 2.0×</div></div>' +
+          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">排版</div><div class="admin-vc-preview-input"><b>scroll</b> · top · bottom · float · rise</div></div>' +
+        "</div>" +
+        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">效果</div><div class="admin-vc-preview-input">glow · <b>bounce</b> · wave</div></div>' +
+        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">樣式邊界</div><div class="admin-vc-preview-input">描邊 / 陰影由 Theme Packs 全域控制</div></div>' +
         "</div>" +
         '<div class="admin-vc-preview-submit">↗ 發送 DANMU</div>' +
       "</div>" +
-      '<div class="admin-vc-tip">· 隱藏的欄位仍會以預設值送出（顏色用主題色、字級 regular）。</div>';
+      '<div class="admin-vc-tip">· 隱藏的欄位仍會以預設值送出；描邊 / 陰影不在 viewer 單筆欄位內，而由 Theme Packs 全域決定。</div>';
 
     fieldsPanel.appendChild(leftCol);
     fieldsPanel.appendChild(rightCol);
+
+    const defaultsPanel = document.createElement("div");
+    defaultsPanel.id = "sec-viewer-config-defaults";
+    defaultsPanel.className = "admin-vc-fields-grid lg:col-span-2";
+    defaultsPanel.innerHTML =
+      '<div class="admin-vc-col-panel">' +
+        '<div class="admin-vc-preview-label">DEFAULTS</div>' +
+        '<div class="admin-vc-preview-input">' +
+          '<div style="display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:start">' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Color</span><span>主題色票為預設，viewer 可改</span>' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Font</span><span>Zen Kaku / Noto Sans TC 為主</span>' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Size</span><span>regular</span>' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Opacity</span><span>1.0</span>' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Speed</span><span>1.0×</span>' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Layout</span><span>scroll</span>' +
+          "</div>" +
+        "</div>" +
+      "</div>" +
+      '<div class="admin-vc-col-panel">' +
+        '<div class="admin-vc-preview-label">LANGUAGE / COPY</div>' +
+        '<div class="admin-vc-preview-input">' +
+          '<div style="display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:start">' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">UI language</span><span>繁體中文 (zh-Hant)</span>' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Placeholder</span><span>想對現場說點什麼？</span>' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Submit button</span><span>FIRE</span>' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Poll prompt</span><span>選擇你的答案</span>' +
+          "</div>" +
+        "</div>" +
+      "</div>";
+
+    const limitsPanel = document.createElement("div");
+    limitsPanel.id = "sec-viewer-config-limits";
+    limitsPanel.className = "admin-vc-fields-grid lg:col-span-2";
+    limitsPanel.innerHTML =
+      '<div class="admin-vc-col-panel">' +
+        '<div class="admin-vc-preview-label">DEFAULTS / LIMITS</div>' +
+        '<div class="admin-vc-preview-input">' +
+          '<div style="display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:start">' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Nickname ≤ 20</span><span>超出會被截斷 / 拒絕</span>' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Message 1–100</span><span>viewer 字數條與後端驗證一致</span>' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">FIRE rate 20 / 60s</span><span>更細的反刷屏規則請到 Moderation</span>' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Poll 預設關閉</span><span>viewer 仍以發送 danmu 為主，投票是次要 flow</span>' +
+          "</div>" +
+        "</div>" +
+      "</div>" +
+      '<div class="admin-vc-col-panel">' +
+        '<div class="admin-vc-preview-label">BOUNDARIES</div>' +
+        '<div class="admin-vc-preview-input">' +
+          '<div style="display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:start">' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Theme styling</span><span>描邊 / 陰影由 Theme Packs 全域控制</span>' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Display status</span><span>overlay / 顯示器 / OBS 由 Display 管理</span>' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Rate policy</span><span>精細限流與黑名單請到 Moderation</span>' +
+          "</div>" +
+        "</div>" +
+      "</div>";
 
     // ── Insert before sec-viewer-theme ────────────────────────────────────
     const vt = document.getElementById("sec-viewer-theme");
     if (vt && vt.parentNode === grid) {
       grid.insertBefore(bar, vt);
       grid.insertBefore(infoBanner, vt);
+      grid.insertBefore(limitsPanel, vt);
+      grid.insertBefore(defaultsPanel, vt);
       grid.insertBefore(fieldsPanel, vt);
     } else {
       grid.appendChild(bar);
       grid.appendChild(infoBanner);
+      grid.appendChild(defaultsPanel);
+      grid.appendChild(limitsPanel);
       grid.appendChild(fieldsPanel);
     }
 
-    if (!document.body.dataset.viewerConfigTab) document.body.dataset.viewerConfigTab = "page";
+    if (!document.body.dataset.viewerConfigTab) document.body.dataset.viewerConfigTab = "defaults";
 
     function _syncBar() {
       const shell = document.querySelector(".admin-dash-grid");
       const route = shell?.dataset.activeRoute || "";
       const leaf = shell?.dataset.activeLeaf || route;
-      const visible = _isViewerConfigOwner(route, leaf);
+      const visible = _isViewerOwner(route, leaf);
       bar.style.display = visible ? "" : "none";
       infoBanner.style.display = visible ? "" : "none";
       syncVisibility();

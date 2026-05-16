@@ -25,7 +25,7 @@
     polls:          { title: "投票",             kicker: "POLLS" },
     widgets:        { title: "Overlay Widgets",  kicker: "WIDGETS" },
     themes:         { title: "風格主題包",       kicker: "THEMES" },
-    "viewer-config":{ title: "Viewer 設定",       kicker: "VIEWER CONFIG · 整頁主題 / 表單欄位" },
+    viewer:         { title: "觀眾頁",           kicker: "VIEWER · 頁面預設 · 欄位設定 · 文案 / 限制" },
     assets:         { title: "素材庫",           kicker: "ASSETS" },
     integrations:   { title: "整合",              kicker: "INTEGRATIONS" },
     firetoken:      { title: "Fire Token",        kicker: "FIRE TOKEN" },
@@ -46,13 +46,10 @@
   // Setting → {route, sectionId} map. Selecting jumps to the route then
   // scrolls to the section id.
   const SETTINGS = [
-    { label: "顏色 Color",          route: "viewer-config", section: "sec-color" },
-    { label: "透明度 Opacity",      route: "viewer-config", section: "sec-opacity" },
-    { label: "字級 Font size",      route: "viewer-config", section: "sec-fontsize" },
-    { label: "速度 Speed",          route: "viewer-config", section: "sec-speed" },
-    { label: "字型 Font family",    route: "viewer-config", section: "sec-fontfamily" },
-    { label: "版型 Layout",         route: "viewer-config", section: "sec-layout" },
-    { label: "觀眾頁主題",          route: "viewer-config", section: "sec-viewer-theme" },
+    { label: "觀眾頁主題",              route: "viewer", tab: "page", section: "sec-viewer-theme" },
+    { label: "表單欄位 Viewer fields",  route: "viewer", tab: "fields", section: "sec-viewer-config-fields" },
+    { label: "送出預設 Viewer defaults", route: "viewer", tab: "defaults", section: "admin-display-v2-page" },
+    { label: "限制 / 文案 Viewer limits", route: "viewer", tab: "limits", section: "sec-viewer-config-limits" },
     { label: "黑名單 Blacklist",    route: "moderation",section: "sec-blacklist" },
     { label: "敏感字過濾 Filters",  route: "moderation",section: "sec-filters" },
     { label: "速率限制 Rate limit", route: "ratelimit", section: "sec-ratelimit" },
@@ -297,7 +294,9 @@
       window.location.hash = "#/" + item.route;
       close();
     } else if (item.type === "setting") {
+      if (item.tab) document.body.dataset.viewerConfigTab = item.tab;
       window.location.hash = "#/" + item.route;
+      setTimeout(() => window.dispatchEvent(new Event("hashchange")), 20);
       // Scroll after route applies (admin.js applyRoute toggles display).
       setTimeout(() => {
         const el = document.getElementById(item.section);
@@ -363,9 +362,10 @@
     return SETTINGS.map((s) => ({
       type: "setting",
       route: s.route,
+      tab: s.tab,
       section: s.section,
       label: s.label,
-      sub: `setting · ${s.section.replace("sec-", "")} · ${s.route}`,
+      sub: `setting · ${(s.tab || s.section).replace("sec-", "")} · ${s.route}`,
       icon: "⚙",
       score: _fuzzyScore(s.label, q),
     })).filter((x) => x.score >= 0);

@@ -1197,7 +1197,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // strip aliases. Until then this is pure routing — no HTML moves.
     live:      { title: "直播", kicker: "LIVE · 操作艙 · 即時狀態", sections: ["sec-live-feed"], showKpi: true },
     display:   { title: "顯示", kicker: "DISPLAY · OVERLAY · DEFAULTS · WIDGETS", sections: ["sec-widgets"] },
-    viewer:    { title: "觀眾頁", kicker: "VIEWER · 頁面預設 · 欄位設定", sections: ["sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields"] },
+    viewer:    { title: "觀眾頁", kicker: "VIEWER · 頁面預設 · 欄位設定 · 文案 / 限制", sections: ["sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits"] },
     // Legacy aliases — same config as their canonical home. Kept so
     // existing `=== "dashboard"` checks + URL bookmarks keep working
     // until Phase B/D collapses them.
@@ -1211,18 +1211,14 @@ document.addEventListener("DOMContentLoaded", () => {
     polls:     { title: "投票",             kicker: "POLLS · 2–6 選項",         sections: ["sec-polls"] },
     widgets:   { title: "Overlay Widgets",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
     themes:    { title: "風格主題包",       kicker: "THEME PACKS · 彈幕樣式預設",       sections: ["sec-themes"] },
-    // v5.2 consolidation (2026-04-27 audit §A): viewer-theme + display merged
-    // into one route with tab strip. Default tab = page (sec-viewer-theme),
-    // alt tab = fields (sec-color/opacity/fontsize/speed/fontfamily/layout).
-    // Slice 4: kept for backward compat — legacy #/viewer-config deep-links
-    // resolve to the visible Viewer route.
-    "viewer-config": { title: "Viewer 設定", kicker: "VIEWER CONFIG · 整頁主題 / 表單欄位", sections: ["sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields"] },
+    // Viewer owns the page/fields/defaults/limits surface. Legacy
+    // `#/viewer-config` deep-links still resolve here for backward compat.
+    "viewer-config": { title: "Viewer 設定", kicker: "VIEWER CONFIG · 整頁主題 / 表單欄位 / 文案 / 限制", sections: ["sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits"] },
 
-    // Slice 4: appearance is the tabbed nav merging themes + viewer-config + fonts.
-    // 3 tabs (themes default / viewer-config / fonts). Note: P0-0a originally
-    // specified 4 tabs splitting viewer-theme and display; we keep them merged
-    // under viewer-config for now — splitting deferred to a later slice.
-    appearance: { title: "外觀", kicker: "APPEARANCE · 主題 / Viewer / 字型", sections: ["sec-themes", "sec-viewer-config-tabs", "sec-viewer-theme", "sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout", "sec-fonts"] },
+    // Hidden legacy shell retained for bookmarks / compat. The viewer tab here
+    // mirrors the canonical Viewer surface instead of the retired sec-color/*
+    // cards so alias routes don't regress to the old model.
+    appearance: { title: "外觀", kicker: "APPEARANCE · 主題 / Viewer / 字型", sections: ["sec-themes", "sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits", "sec-fonts"] },
 
     // Slice 4: automation is the tabbed nav for scheduler + webhooks + plugins.
     // sec-scheduler + sec-webhooks currently live inside the system route's
