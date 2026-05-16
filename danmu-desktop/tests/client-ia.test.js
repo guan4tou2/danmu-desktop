@@ -35,6 +35,11 @@ test("connection section only owns server configuration, not display runtime con
   const html = readClientHtml();
   const conn = section(html, "conn");
 
+  // 2026-05-16 conn-section impl alignment: split host/port fields kept
+  // as HIDDEN compat inputs so ws-manager continues to read from
+  // `#host-input` / `#port-input` / `#ws-token-input`. The user-facing
+  // surface is a single Server field — see the conn-section structure test
+  // below.
   expect(conn).toContain('id="host-input"');
   expect(conn).toContain('id="port-input"');
   expect(conn).toContain('id="ws-token-input"');
@@ -44,6 +49,48 @@ test("connection section only owns server configuration, not display runtime con
   expect(conn).not.toContain('data-client-action="reconnect"');
   expect(conn).not.toContain('id="screen-select"');
   expect(conn).not.toContain('id="sync-multi-display-checkbox"');
+});
+
+test("connection section follows the configure-only design with three always-visible cards", () => {
+  // 2026-05-16 v3-r5 alignment: three always-visible cards on the conn page:
+  //   1. Server card — TestChip, host display, canonical preview, ⚐ 測試,
+  //      in-place edit via ✎ pencil
+  //   2. WebSocket Token card — collapsible <details> AUTH panel, never
+  //      gated behind ⚙ 更改
+  //   3. LAST USED SERVER card — single most-recent entry from localStorage
+  // Live `重連 X 次 / 上線 Y` meta is removed (impl source of truth: design
+  // v3-r5 ConnSection).
+  const html = readClientHtml();
+  const conn = section(html, "conn");
+
+  // Server card: in-place edit + test chip + canonical preview
+  expect(conn).toMatch(/id="conn-server-input"/);
+  expect(conn).toMatch(/data-conn-canonical-preview/);
+  expect(conn).toMatch(/data-conn-test-btn/);
+  expect(conn).toMatch(/data-conn-test-chip/);
+  expect(conn).toMatch(/data-conn-display/);
+  expect(conn).toMatch(/data-conn-edit\b/);
+  expect(conn).toMatch(/data-conn-edit-save/);
+  expect(conn).toMatch(/data-conn-edit-cancel/);
+
+  // AUTH card is its own <details> panel, NOT nested inside the edit form
+  expect(conn).toMatch(/<details[^>]+class="client-conn-card client-conn-auth-panel"[^>]+data-conn-auth-panel/);
+
+  // LAST USED SERVER card
+  expect(conn).toMatch(/data-conn-last-server/);
+  expect(conn).toMatch(/data-conn-last-addr/);
+  expect(conn).toMatch(/data-i18n="connLastKicker"/);
+
+  // Removed live-status chrome + retired edit-panel container — must not regress.
+  expect(conn).not.toMatch(/data-client-reconnect/);
+  expect(conn).not.toMatch(/data-client-uptime/);
+  expect(conn).not.toMatch(/連線狀態/);
+  expect(conn).not.toMatch(/data-client-conn-edit/);
+
+  // Hidden compat fields stay so ws-manager start/stop keeps working
+  // unchanged. They must be `hidden` attribute.
+  expect(conn).toMatch(/<input[^>]+id="host-input"[^>]+hidden/);
+  expect(conn).toMatch(/<input[^>]+id="port-input"[^>]+hidden/);
 });
 
 test("overlay section owns display selection and has one visible runtime control model", () => {

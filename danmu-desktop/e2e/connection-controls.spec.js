@@ -19,13 +19,36 @@ test.describe("Connection Controls", () => {
     await page.waitForLoadState("domcontentloaded");
     // Wait for renderer to finish initializing (i18n + all event handlers)
     await page.waitForSelector("#main-content.loaded", { timeout: 15000 });
-    // Post design-v2: host / port / token / screen-select / sync-multi live
-    // inside the Conn section (sidebar tab `連線`) behind the ⚙ 更改 panel.
-    // Open both once so per-test fills can target the inputs directly.
+    // 2026-05-16 conn-section impl alignment: host / port are now `hidden`
+    // compat fields synced from the public `#conn-server-input` via the
+    // conn-parser. The edit panel is still gated behind ⚙ 更改 so we open
+    // it once for the per-test interactions below.
     await page.locator('[data-nav="conn"]').click();
     await page.locator('[data-client-action="edit-conn"]').click();
-    await page.waitForSelector("#host-input", { state: "visible", timeout: 5000 });
+    await page.waitForSelector("#conn-server-input", { state: "visible", timeout: 5000 });
   });
+
+  // Helper: populate the conn-server-input AND the hidden compat fields
+  // directly so ws-manager's start-button validation reads consistent
+  // values. The wire module dispatches the same sync via input events but
+  // tests benefit from deterministic state.
+  async function setServer(host, port) {
+    await page.evaluate(({ h, p }) => {
+      const sv = document.getElementById("conn-server-input");
+      const hi = document.getElementById("host-input");
+      const pi = document.getElementById("port-input");
+      const combined = p === 443 || p === "" ? h : `${h}:${p}`;
+      if (sv) sv.value = combined;
+      if (hi) {
+        hi.value = h;
+        hi.dispatchEvent(new Event("input"));
+      }
+      if (pi) {
+        pi.value = String(p);
+        pi.dispatchEvent(new Event("input"));
+      }
+    }, { h: host, p: port });
+  }
 
   test.afterAll(async () => {
     if (electronApp) await electronApp.close();
@@ -34,24 +57,18 @@ test.describe("Connection Controls", () => {
   // ─── Input Validation ──────────────────────────────────────────────────
 
   test("start button with empty host shows error toast", async () => {
-    // Clear inputs
-    await page.locator("#host-input").fill("");
-    await page.locator("#port-input").fill("4001");
+    await setServer("", "4001");
 
     await page.evaluate(() => document.getElementById("start-button").click());
     await page.waitForTimeout(500);
 
-    // Toast should appear with error
-    const toast = page.locator("#toast-container .toast-error, #toast-container [class*='error']");
-    // Check any toast appeared (the exact class varies)
     const toastContainer = page.locator("#toast-container");
     const toastCount = await toastContainer.locator("> div").count();
     expect(toastCount).toBeGreaterThanOrEqual(1);
   });
 
   test("start button with invalid IP shows error toast", async () => {
-    await page.locator("#host-input").fill("not-valid-ip!!!");
-    await page.locator("#port-input").fill("4001");
+    await setServer("not-valid-ip!!!", "4001");
 
     // Clear previous toasts
     await page.evaluate(() => {
@@ -67,8 +84,7 @@ test.describe("Connection Controls", () => {
   });
 
   test("start button with invalid port shows error toast", async () => {
-    await page.locator("#host-input").fill("127.0.0.1");
-    await page.locator("#port-input").fill("999999");
+    await setServer("127.0.0.1", "999999");
 
     await page.evaluate(() => {
       document.getElementById("toast-container").innerHTML = "";
@@ -83,8 +99,7 @@ test.describe("Connection Controls", () => {
   });
 
   test("start button with empty port shows error toast", async () => {
-    await page.locator("#host-input").fill("127.0.0.1");
-    await page.locator("#port-input").fill("");
+    await setServer("127.0.0.1", "");
 
     await page.evaluate(() => {
       document.getElementById("toast-container").innerHTML = "";
@@ -112,28 +127,42 @@ test.describe("Connection Controls", () => {
 
   // ─── Connection Settings ───────────────────────────────────────────────
 
-  test("host input accepts valid IP address", async () => {
-    const hostInput = page.locator("#host-input");
-    await hostInput.fill("192.168.1.100");
-    const value = await hostInput.inputValue();
-    expect(value).toBe("192.168.1.100");
+  test("server input accepts IP address and syncs to hidden host-input", async () => {
+    const serverInput = page.locator("#conn-server-input");
+    await serverInput.fill("192.168.1.100");
+    // Hidden compat field is populated via the conn-parser auto-strip sync.
+    const hostValue = await page.evaluate(() => document.getElementById("host-input").value);
+    expect(hostValue).toBe("192.168.1.100");
   });
 
-  test("host input accepts domain name", async () => {
-    const hostInput = page.locator("#host-input");
-    await hostInput.fill("example.com");
-    const value = await hostInput.inputValue();
-    expect(value).toBe("example.com");
+  test("server input accepts domain name with port and splits via parser", async () => {
+    const serverInput = page.locator("#conn-server-input");
+    await serverInput.fill("example.com:4001");
+    const [host, port] = await page.evaluate(() => [
+      document.getElementById("host-input").value,
+      document.getElementById("port-input").value,
+    ]);
+    expect(host).toBe("example.com");
+    expect(port).toBe("4001");
   });
 
-  test("port input accepts valid port", async () => {
-    const portInput = page.locator("#port-input");
-    await portInput.fill("8080");
-    const value = await portInput.inputValue();
-    expect(value).toBe("8080");
+  test("server input strips wss:// scheme + /ws path", async () => {
+    const serverInput = page.locator("#conn-server-input");
+    await serverInput.fill("wss://danmu.acme.co/ws");
+    const [host, port] = await page.evaluate(() => [
+      document.getElementById("host-input").value,
+      document.getElementById("port-input").value,
+    ]);
+    expect(host).toBe("danmu.acme.co");
+    expect(port).toBe("443");
   });
 
-  test("ws token input exists and accepts input", async () => {
+  test("ws token input lives in the collapsible auth panel and accepts input", async () => {
+    // Open the <details> auth panel first so the input is visible.
+    await page.evaluate(() => {
+      const panel = document.querySelector("[data-conn-auth-panel]");
+      if (panel) panel.open = true;
+    });
     const tokenInput = page.locator("#ws-token-input");
     await expect(tokenInput).toBeVisible();
     await tokenInput.fill("my-secret-token");

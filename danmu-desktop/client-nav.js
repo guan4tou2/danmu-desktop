@@ -136,19 +136,10 @@
     renderUrl();
     onStatusChange();
 
-    // Action buttons
-    document.querySelectorAll("[data-client-action]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var action = btn.getAttribute("data-client-action");
-        if (action === "edit-conn") {
-          var panel = document.querySelector("[data-client-conn-edit]");
-          if (panel) panel.removeAttribute("hidden");
-        } else if (action === "close-conn-edit") {
-          var panel2 = document.querySelector("[data-client-conn-edit]");
-          if (panel2) panel2.setAttribute("hidden", "");
-        }
-      });
-    });
+    // Action buttons. `edit-conn` / `close-conn-edit` panel toggle was
+    // retired with the 2026-05-16 in-place edit refactor — those handlers
+    // live in renderer-modules/conn-section-wire.js now. No remaining
+    // actions need wiring here.
   }
 
   // ─────────────────────────────────────────────────────────────

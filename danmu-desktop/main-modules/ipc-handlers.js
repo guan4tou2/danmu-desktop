@@ -396,6 +396,127 @@ function setupIpcHandlers(getMainWindow, childWindows) {
     });
   });
 
+  // One-shot WSS handshake validation for the conn page's ⚐ 測試 button.
+  // Spawns a hidden BrowserWindow whose WebSocket inherits the app's
+  // `certificate-error` trust check via `trustedWssHosts`. The host:port is
+  // added to the trust set for the duration of the test; if the test was
+  // negative AND the host wasn't already trusted, we revert so the set
+  // stays scoped to the currently-active configuration.
+  //
+  // Granular error vocabulary documented for the UI's chip:
+  //   timeout / unauthorized / connection-refused / dns-failure /
+  //   tls-error / unknown / invalid-input
+  // The browser WebSocket API masks most network errors; for v1 the
+  // handler distinguishes timeout and `unauthorized` (close 1008) and
+  // pattern-matches error.message for the rest. Future hardening: switch
+  // to Electron's net module for direct ECONNREFUSED / ENOTFOUND / CERT_*
+  // signals.
+  ipcMain.handle("conn:test", async (event, payload) => {
+    const mainWindow = getMainWindow();
+    if (!isFromMainWindow(event, mainWindow)) {
+      console.warn("[Main] conn:test: rejected IPC from untrusted sender");
+      return { ok: false, error: "invalid-input" };
+    }
+    const host = payload && typeof payload.host === "string" ? payload.host.trim() : "";
+    const portNum = Number(payload && payload.port);
+    if (!host || !Number.isInteger(portNum) || portNum < 1 || portNum > 65535) {
+      return { ok: false, error: "invalid-input" };
+    }
+    const token = payload && typeof payload.token === "string" ? payload.token : "";
+
+    const trustedBefore = trustedWssHosts.has(host, portNum);
+    if (!trustedBefore) trustedWssHosts.add(host, portNum);
+
+    const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : "";
+    const url = `wss://${host}:${portNum}/ws${tokenQuery}`;
+    const testWindow = new BrowserWindow({
+      show: false,
+      width: 100,
+      height: 100,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        webSecurity: true,
+        allowRunningInsecureContent: false,
+        experimentalFeatures: false,
+      },
+    });
+
+    const TIMEOUT_MS = 5000;
+    const result = await new Promise((resolve) => {
+      let settled = false;
+      const finish = (val) => {
+        if (settled) return;
+        settled = true;
+        resolve(val);
+      };
+      const timeoutId = setTimeout(() => finish({ ok: false, error: "timeout" }), TIMEOUT_MS);
+
+      testWindow
+        .loadURL("about:blank")
+        .then(() =>
+          testWindow.webContents.executeJavaScript(
+            `new Promise((resolveJs) => {
+              const start = Date.now();
+              let done = false;
+              const ws = new WebSocket(${JSON.stringify(url)});
+              ws.onopen = () => {
+                if (done) return;
+                done = true;
+                const latencyMs = Date.now() - start;
+                try { ws.close(1000); } catch (_) {}
+                resolveJs({ ok: true, latencyMs });
+              };
+              ws.onerror = () => {
+                // The browser API gives us no useful detail here; let
+                // onclose handle the actual close code mapping.
+              };
+              ws.onclose = (e) => {
+                if (done) return;
+                done = true;
+                resolveJs({ ok: false, error: 'wsclose', closeCode: e.code });
+              };
+            })`,
+            true
+          )
+        )
+        .then((jsResult) => {
+          clearTimeout(timeoutId);
+          if (!jsResult || typeof jsResult !== "object") {
+            return finish({ ok: false, error: "unknown" });
+          }
+          if (jsResult.ok) {
+            return finish({ ok: true, latencyMs: Number(jsResult.latencyMs) || 0 });
+          }
+          const closeCode = Number(jsResult.closeCode);
+          if (closeCode === 1008) return finish({ ok: false, error: "unauthorized" });
+          // close codes 1006 / 1015 (TLS handshake) / 1011 etc. all fall
+          // through. Browser WS doesn't expose ECONNREFUSED / ENOTFOUND.
+          return finish({ ok: false, error: "unknown" });
+        })
+        .catch((err) => {
+          clearTimeout(timeoutId);
+          const msg = err && err.message ? String(err.message) : "";
+          // Pattern-match in case Electron surfaces lower-level network
+          // errors through executeJavaScript rejection. Best-effort.
+          if (msg.includes("ECONNREFUSED")) return finish({ ok: false, error: "connection-refused" });
+          if (msg.includes("ENOTFOUND")) return finish({ ok: false, error: "dns-failure" });
+          if (msg.includes("CERT_") || msg.includes("ERR_CERT")) {
+            return finish({ ok: false, error: "tls-error" });
+          }
+          return finish({ ok: false, error: "unknown" });
+        });
+    });
+
+    if (!testWindow.isDestroyed()) testWindow.destroy();
+    if (!result.ok && !trustedBefore) {
+      // Test was negative for a host we hadn't previously trusted —
+      // pull it back out so the set doesn't accumulate stale trust.
+      trustedWssHosts.remove(host, portNum);
+    }
+    return result;
+  });
+
   // Create child overlay windows — restricted to main window
   ipcMain.on(
     "createChild",

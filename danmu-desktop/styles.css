@@ -945,13 +945,13 @@ body[data-os="mac"] .client-titlebar {
   backdrop-filter: blur(6px);
 }
 
-.client-about-footer {
-  margin-top: 10px;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.5px;
+/* Copyright inline inside .client-about-desc per design AboutSection
+   (single card, <br /> separator). Tone-down via textDim color. */
+.client-about-copyright {
   color: rgba(148, 163, 184, 0.7);
+  font-size: 11px;
 }
+
 
 /* ───────────── Connection section (prototype ConnSection:250) ─────────────
  * Server summary only; TLS is implicit because runtime always uses WSS.
@@ -1018,6 +1018,313 @@ body[data-os="mac"] .client-titlebar {
   margin-top: 10px;
   display: flex;
   gap: 6px;
+}
+
+/* 2026-05-16 conn-section impl alignment — configure-only model.
+   Three always-visible cards: Server / WebSocket Token / LAST USED SERVER.
+   The grid container (.client-conn-grid above) already stacks single
+   column with gap; nothing more to do here. */
+
+.client-conn-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.client-conn-card-meta {
+  margin-left: auto;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: rgba(148, 163, 184, 0.7);
+}
+
+.client-conn-host-row {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  cursor: text;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.client-conn-host-row:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(56, 189, 248, 0.04);
+}
+
+.client-conn-host-row:focus {
+  outline: none;
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+.client-conn-host-row:hover .client-conn-edit-pencil {
+  color: #38bdf8;
+}
+
+.client-conn-host {
+  flex: 1;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(241, 245, 249, 0.95);
+  word-break: break-all;
+}
+
+.client-conn-edit-pencil {
+  flex: none;
+  font-size: 11px;
+  color: rgba(148, 163, 184, 0.7);
+  pointer-events: none;
+  transition: color 0.12s ease;
+}
+
+.client-conn-preview-row {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.client-conn-preview {
+  flex: 1;
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.06);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+  color: #38bdf8;
+  word-break: break-all;
+}
+
+.client-conn-test-chip {
+  margin-top: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: transparent;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.client-conn-test-chip[data-state="testing"] {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(56, 189, 248, 0.06);
+  color: #38bdf8;
+}
+
+.client-conn-test-chip[data-state="ok"] {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(56, 189, 248, 0.06);
+  color: #38bdf8;
+}
+
+.client-conn-test-chip[data-state="fail"] {
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.08);
+  color: #fbbf24;
+}
+
+.client-conn-test-btn {
+  flex: none;
+  padding: 5px 14px;
+  border-radius: 4px;
+  border: 1px solid #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  font-family: ui-sans-serif, system-ui, "PingFang TC", sans-serif;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.client-conn-test-btn:hover {
+  background: #38bdf8;
+  color: #0f172a;
+}
+
+/* In-place edit row inside the Server card. */
+[data-conn-edit][hidden] { display: none; }
+
+.client-conn-edit-label {
+  margin-top: 8px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: rgba(148, 163, 184, 0.8);
+  text-transform: uppercase;
+}
+
+.client-conn-edit-row {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.client-conn-edit-row input {
+  flex: 1;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid #38bdf8;
+  border-radius: 6px;
+  color: rgba(241, 245, 249, 0.95);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+.client-conn-edit-save {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: none;
+  background: #38bdf8;
+  color: #0f172a;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+.client-conn-edit-save:hover { background: #22c1f5; }
+
+.client-conn-edit-cancel {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: transparent;
+  color: rgba(148, 163, 184, 0.8);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.client-conn-edit-cancel:hover { color: rgba(241, 245, 249, 0.95); border-color: rgba(148, 163, 184, 0.5); }
+
+/* LAST USED SERVER row */
+.client-conn-last-row {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.client-conn-last-addr {
+  flex: 1;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  color: rgba(241, 245, 249, 0.95);
+  word-break: break-all;
+}
+
+.client-conn-last-when {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  color: rgba(148, 163, 184, 0.7);
+}
+
+.client-conn-hint {
+  margin-top: 8px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.3px;
+  line-height: 1.5;
+  color: rgba(148, 163, 184, 0.7);
+}
+
+.client-conn-edit-help {
+  margin-top: 6px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.3px;
+  line-height: 1.5;
+  color: rgba(148, 163, 184, 0.7);
+}
+
+/* AUTH card uses <details>. Inherits .client-conn-card padding/border
+   from the shared card class; nothing extra needed for the container. */
+.client-conn-auth-panel { padding: 14px; }
+.client-conn-auth-panel[open] .client-conn-auth-status { display: none; }
+
+.client-conn-auth-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(241, 245, 249, 0.95);
+  list-style: none;
+}
+
+.client-conn-auth-title { flex: none; }
+
+.client-conn-auth-status {
+  margin-left: auto;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: rgba(148, 163, 184, 0.7);
+}
+
+.client-conn-auth-summary::-webkit-details-marker { display: none; }
+
+.client-conn-auth-summary::before {
+  content: "▸";
+  font-size: 12px;
+  color: rgba(148, 163, 184, 0.8);
+  transition: transform 0.12s ease;
+}
+
+.client-conn-auth-panel[open] .client-conn-auth-summary::before {
+  transform: rotate(90deg);
+}
+
+.client-conn-auth-kicker {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(148, 163, 184, 0.8);
+  text-transform: uppercase;
+}
+
+.client-conn-auth-panel input[type="password"] {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 6px;
+  color: rgba(241, 245, 249, 0.95);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.client-conn-auth-panel input[type="password"]:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
 }
 
 .client-mini-btn {

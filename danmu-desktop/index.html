@@ -220,65 +220,100 @@
           </div>
 
           <div class="client-section-head">
-            <div class="client-section-title" data-i18n="connSectionTitle">連線狀態</div>
-            <div class="client-section-kicker" data-i18n="connSectionKicker">CONNECTION</div>
+            <div class="client-section-title" data-i18n="connSectionTitle">連線設定</div>
+            <div class="client-section-kicker" data-i18n="connSectionKicker">SERVER · CONFIGURE</div>
           </div>
 
-          <!-- Connection summary. TLS is implicit because the client always
-               connects with wss://HOST:PORT/ws in v5.0.0+. -->
+          <!-- 2026-05-16 conn-section impl alignment (configure-only model
+               per design v3-r3 ConnSection). Three always-visible cards:
+                 1. Server (test chip + host display/edit + canonical preview + ⚐ 測試)
+                 2. WebSocket Token (collapsible, OPTIONAL · WSS HANDSHAKE)
+                 3. LAST USED SERVER (single most-recent entry)
+               The conn page no longer shows live connection state — that
+               lives on the Overlay tab while the overlay child window is
+               running. Hidden host-input / port-input live at section end
+               so ws-manager continues to read the same IDs. -->
           <div class="client-conn-grid">
             <div class="client-conn-card">
               <div class="client-conn-kicker">SERVER</div>
-              <div class="client-conn-url" data-client-server-url>wss://—/ws</div>
-              <div class="client-conn-meta">
-                <span><span data-i18n="connStatReconnect">重連</span> <b data-client-reconnect>0</b> <span data-i18n="connStatReconnectUnit">次</span></span>
-                <span class="sep">·</span>
-                <span><span data-i18n="connStatUptime">上線</span> <b data-client-uptime>—</b></span>
+
+              <!-- Test chip — driven by ConnTest state machine -->
+              <div class="client-conn-test-chip" data-conn-test-chip data-state="idle" data-i18n="connTestChipIdle">LAST TEST · —</div>
+
+              <!-- Display mode (default visible). Click the whole row to
+                   enter in-place edit; the ✎ is decorative. Default text
+                   `—` is replaced at boot by conn-section-wire from
+                   localStorage (host/port/wsToken). -->
+              <div data-conn-display>
+                <div class="client-conn-host-row" data-client-action="edit-conn" role="button" tabindex="0" aria-label="Edit server">
+                  <span class="client-conn-host" data-client-server-host>—</span>
+                  <span class="client-conn-edit-pencil" aria-hidden="true">✎</span>
+                </div>
+                <div class="client-conn-preview-row">
+                  <div class="client-conn-preview" data-conn-canonical-preview>wss://—/ws</div>
+                  <button type="button" class="client-conn-test-btn" data-conn-test-btn>
+                    <span data-i18n="connTestBtn">⚐ 測試</span>
+                  </button>
+                </div>
               </div>
-              <div class="client-conn-actions">
-                <button type="button" class="client-mini-btn" data-client-action="edit-conn">⚙ <span data-i18n="connBtnEdit">更改</span></button>
+
+              <!-- Edit mode (default hidden). Activates via data-client-action="edit-conn". -->
+              <div data-conn-edit hidden>
+                <div class="client-conn-edit-label" data-i18n="connServerLabel">Server</div>
+                <div class="client-conn-edit-row">
+                  <input
+                    type="text"
+                    id="conn-server-input"
+                    data-i18n-placeholder="connServerPlaceholder"
+                    placeholder="danmu.acme.co 或 192.168.1.50:8443"
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
+                  <button type="button" class="client-conn-edit-save" data-conn-edit-save data-i18n="connBtnApply">套用</button>
+                  <button type="button" class="client-conn-edit-cancel" data-conn-edit-cancel data-i18n="connBtnCancel">取消</button>
+                </div>
+                <div class="client-conn-edit-help" data-i18n="connServerHelp">輸入 hostname 或 host:port · 自動 strip wss:// / https:// / /ws · port 預設 443（隱藏）</div>
+              </div>
+
+              <div class="client-conn-hint" data-i18n="connTestHint">測試：one-shot WSS handshake 驗證，不觸發 overlay、不留 connection</div>
+            </div>
+
+            <!-- AUTH · WebSocket Token (always visible, collapsed by default) -->
+            <details class="client-conn-card client-conn-auth-panel" data-conn-auth-panel>
+              <summary class="client-conn-auth-summary">
+                <span class="client-conn-auth-title" data-i18n="connAuthSummary">WebSocket Token</span>
+                <span class="client-conn-auth-kicker" data-i18n="connAuthKicker">OPTIONAL · WSS HANDSHAKE</span>
+                <span class="client-conn-auth-status" data-conn-auth-status data-i18n="connAuthStatusUnset">未設定 · 點此設定</span>
+              </summary>
+              <input
+                type="password"
+                id="ws-token-input"
+                data-i18n-placeholder="connTokenPlaceholder"
+                placeholder="Server 啟用 WS_REQUIRE_TOKEN 時，從 admin 抄出 token 貼入"
+                autocomplete="off"
+              />
+              <div class="client-conn-edit-help" data-i18n="connAuthHint">僅當 server 啟用 WS_REQUIRE_TOKEN 時需要 · 從 Admin → System → Security 取得</div>
+            </details>
+
+            <!-- LAST USED SERVER (always visible, single most-recent entry).
+                 Impl stores ONE server in localStorage; this card mirrors
+                 that single-entry shape from `renderer-modules/settings.js`. -->
+            <div class="client-conn-card">
+              <div class="client-conn-card-head">
+                <span class="client-conn-kicker" data-i18n="connLastKicker">LAST USED SERVER</span>
+                <span class="client-conn-card-meta" data-i18n="connLastMeta">上次使用 · 自動帶入</span>
+              </div>
+              <div class="client-conn-last-row" data-conn-last-server>
+                <span class="client-conn-last-addr" data-conn-last-addr>—</span>
+                <span class="client-conn-last-when" data-conn-last-when data-i18n="connLastNever">尚未連線</span>
               </div>
             </div>
           </div>
 
-          <!-- Connection edit form (prototype ⚙ 更改).
-               Hidden by default. Opens via data-client-action="edit-conn".
-               Keeps server input IDs so renderer-modules bind correctly. -->
-          <div class="client-conn-edit" data-client-conn-edit hidden>
-            <div class="client-conn-edit-head">
-              <span class="client-conn-kicker"><span data-i18n="connEditKicker">CONNECTION · EDIT</span></span>
-              <button type="button" class="client-mini-btn" data-client-action="close-conn-edit">× <span data-i18n="connBtnClose">關閉</span></button>
-            </div>
-            <div class="client-conn-edit-grid">
-              <label class="client-conn-edit-field">
-                <span data-i18n="hostLabel">Server Address</span>
-                <input
-                  type="text"
-                  id="host-input"
-                  data-i18n-placeholder="hostPlaceholder"
-                  placeholder="e.g., 127.0.0.1 or mydomain.com"
-                />
-              </label>
-              <label class="client-conn-edit-field">
-                <span data-i18n="portLabel">WebSocket Port</span>
-                <input
-                  type="text"
-                  id="port-input"
-                  data-i18n-placeholder="portPlaceholder"
-                  placeholder="e.g., 4001"
-                />
-              </label>
-              <label class="client-conn-edit-field">
-                <span>WebSocket Token (optional)</span>
-                <input
-                  type="password"
-                  id="ws-token-input"
-                  placeholder="Set if server enables WS_REQUIRE_TOKEN"
-                  autocomplete="off"
-                />
-              </label>
-            </div>
-          </div>
+          <!-- Hidden compat inputs — populated from #conn-server-input via
+               the conn-parser. ws-manager start/stop reads from these IDs. -->
+          <input type="text" id="host-input" hidden aria-hidden="true" tabindex="-1" />
+          <input type="text" id="port-input" hidden aria-hidden="true" tabindex="-1" />
         </section>
 
         <!-- Section: Overlay display & controls (prototype desktop.jsx OverlaySection:203).
@@ -403,9 +438,11 @@
 
         <!-- Section: About (prototype AboutSection:318) -->
         <section class="client-section" data-section="about" hidden>
+          <!-- 2026-05-16 alignment with design v3 AboutSection: title only,
+               no kicker (other sections keep their kicker; About is
+               intentionally bare per design). -->
           <div class="client-section-head">
             <div class="client-section-title" data-i18n="sectionAboutTitle">關於</div>
-            <div class="client-section-kicker" data-i18n="sectionAboutKicker">ABOUT</div>
           </div>
           <div class="client-about-card">
             <div class="client-about-logo">
@@ -415,7 +452,9 @@
             </div>
             <div class="client-about-body">
               <div class="title">Danmu Fire</div>
-              <div class="meta"><span data-client-about-version>v5.0.0</span> · Electron · <span data-client-about-platform>macOS</span></div>
+              <!-- Electron version is pinned to package.json's major; bump
+                   together if you upgrade the Electron dep. -->
+              <div class="meta"><span data-client-about-version>v5.0.0</span> · Electron 41 · <span data-client-about-platform>macOS</span></div>
               <div class="status"><span class="dot"></span> UP TO DATE</div>
             </div>
             <div class="client-about-actions">
@@ -474,10 +513,13 @@
               >Skip this version</button>
             </div>
           </section>
-          <div class="client-about-desc" data-i18n="aboutDesc">
-            Danmu Fire 是即時彈幕送字系統。觀眾用手機或桌機網頁輸入文字,送到主場大螢幕的 overlay。
+          <!-- Description card. Copyright lives inline per design (single
+               card, <br /> separator) — no standalone footer. -->
+          <div class="client-about-desc">
+            <span data-i18n="aboutDesc">Danmu Fire 是即時彈幕送字系統。觀眾用手機或桌機網頁輸入文字,送到主場大螢幕的 overlay。</span>
+            <br />
+            <span class="client-about-copyright" data-i18n="aboutCopyright">© 2025 · Open source at github.com/guan4tou2/danmu-desktop</span>
           </div>
-          <div class="client-about-footer">© 2025 · github.com/guan4tou2/danmu-desktop</div>
         </section>
       </main>
     </div>

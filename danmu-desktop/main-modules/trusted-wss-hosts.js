@@ -23,6 +23,14 @@ function has(host, port) {
   return _hosts.has(`${host}:${Number(port)}`);
 }
 
+// Remove a single host:port entry. Used by `conn:test` to revert temporary
+// trust extension when the test was negative — keeps the set scoped to the
+// currently active configuration.
+function remove(host, port) {
+  if (typeof host !== "string") return;
+  _hosts.delete(`${host}:${Number(port)}`);
+}
+
 function clear() {
   _hosts.clear();
 }
@@ -31,4 +39,4 @@ function snapshot() {
   return Array.from(_hosts);
 }
 
-module.exports = { add, has, clear, snapshot };
+module.exports = { add, remove, has, clear, snapshot };

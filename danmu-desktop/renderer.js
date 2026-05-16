@@ -24,6 +24,7 @@ const { initGlobalEffects } = require("./renderer-modules/konami");
 const { initParticleBg } = require("./renderer-modules/particle-bg");
 const { initUpdateStatus } = require("./renderer-modules/update-status");
 const { init: initFirstRunGate } = require("./renderer-modules/first-run-gate");
+const { initConnSection } = require("./renderer-modules/conn-section-wire");
 
 // Translation helper
 function t(key) {
@@ -47,6 +48,12 @@ const initRenderer = async () => {
     // Inline connection setup card — auto-opens inside the Connection tab
     // iff no saved server config exists, then hydrates host/port on confirm.
     initFirstRunGate();
+
+    // Conn section wire — unified Server field ↔ hidden host/port compat
+    // fields, canonical preview, and ⚐ 測試 button. Must run AFTER
+    // initFirstRunGate so the recent-server list has hydrated host-input,
+    // and BEFORE initOverlayControls hydrates from settings.
+    initConnSection({});
 
     initOverlayControls({
       state,

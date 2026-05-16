@@ -116,6 +116,16 @@ try {
       return ipcRenderer.invoke("getSystemLocale");
     },
     getAppVersion: () => ipcRenderer.invoke("get-app-version"),
+    // Silent one-shot WSS handshake validation for the conn page's
+    // ⚐ 測試 button. Returns Promise<{ok, latencyMs?, error?}>.
+    testConnection: (opts) => {
+      const payload = opts && typeof opts === "object" ? opts : {};
+      return ipcRenderer.invoke("conn:test", {
+        host: typeof payload.host === "string" ? payload.host : "",
+        port: Number(payload.port),
+        token: typeof payload.token === "string" ? payload.token : "",
+      });
+    },
     openExternal: (url) => ipcRenderer.invoke("open-external", url),
     updateTrayStatus: (text) => ipcRenderer.send("update-tray-status", text),
     // IPC Listeners for main -> renderer events
