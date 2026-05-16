@@ -144,6 +144,25 @@ test("AboutSection changelog demo does not reference removed concepts", () => {
   expect(slice).not.toMatch(/Sparkline 改為/);
 });
 
+test("ConnSection shows a single LAST SERVER entry, not a multi-server list", () => {
+  // 2026-05-16: impl stores ONE server in localStorage (host/port/wsToken/
+  // displayIndex single key). The design mirror was previously showing 3
+  // demo entries — design fiction. Decision: align mirror to impl truth.
+  // If multi-server history is added later, the section can grow back.
+  const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
+  const slice = src.split(/function ConnSection/)[1].split(/\nfunction /)[0];
+
+  // Section is labeled LAST SERVER (singular), not RECENT CONNECTIONS (plural).
+  expect(slice).toContain("LAST SERVER");
+  expect(slice).not.toContain("RECENT CONNECTIONS");
+  // Exactly one RecentRow inside ConnSection.
+  const recentRowCount = (slice.match(/<RecentRow\b/g) || []).length;
+  expect(recentRowCount).toBe(1);
+  // The retired demo entries must not come back.
+  expect(slice).not.toContain('addr="danmu.acme.co"');
+  expect(slice).not.toContain('addr="192.168.1.50:8443"');
+});
+
 test("DesktopClient + ControlWindow forward testState through to ConnSection", () => {
   // The 4 conn test-state artboards (idle/testing/ok/fail) need the
   // prop chain DesktopClient(testState) → ControlWindow(defaultTestState)

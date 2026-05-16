@@ -439,24 +439,23 @@ function ConnSection({ panel, raised, line, text, textDim, accent, bg, testState
         )}
       </div>
 
-      {/* RECENT · last-N servers (host-only; canonical wss://HOST/ws derived).
-          TODO (2026-05-16): impl currently stores ONE server in localStorage
-          (host/port/wsToken/displayIndex single key). The 3 demo entries
-          below are design fiction. Two paths to align — A) trim mirror to
-          1 entry, B) impl adds multi-server history schema. Engineering
-          confirmation needed before either move. Keep 3 here for now so
-          the design proposal stays visible. */}
+      {/* LAST SERVER · single most-recent entry (host-only; canonical
+          wss://HOST/ws derived).
+          2026-05-16: impl stores ONE server in localStorage
+          (host/port/wsToken/displayIndex single key) — see
+          `renderer-modules/settings.js`. Showing 1 entry here keeps the
+          design honest about the underlying schema. If future scope adds
+          a multi-server history (storage refactor first), the section can
+          grow back to a list. */}
       <div style={{ padding: 14, borderRadius: 8, border: `1px solid ${line}`, background: panel, marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <HudLabel color={textDim}>RECENT CONNECTIONS</HudLabel>
+          <HudLabel color={textDim}>LAST SERVER</HudLabel>
           <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 0.5 }}>
-            點擊以快速切換
+            上次使用 · 自動帶入
           </span>
         </div>
-        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <RecentRow addr="danmu.local"          when="上次 · 昨天 16:30" accent={accent} line={line} text={text} textDim={textDim} active />
-          <RecentRow addr="danmu.acme.co"        when="3 天前"   accent={accent} line={line} text={text} textDim={textDim} />
-          <RecentRow addr="192.168.1.50:8443"    when="1 週前"   accent={accent} line={line} text={text} textDim={textDim} />
+        <div style={{ marginTop: 10 }}>
+          <RecentRow addr="danmu.local" when="上次 · 昨天 16:30" accent={accent} line={line} text={text} textDim={textDim} active />
         </div>
       </div>
     </>
