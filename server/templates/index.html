@@ -23,7 +23,11 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/viewer-v2.css') }}" />
 </head>
 
-<body class="viewer-body-v2 min-h-screen overflow-x-hidden">
+<body
+  class="viewer-body-v2 min-h-screen overflow-x-hidden"
+  data-viewer-theme-mode="{{ options.get('ViewerThemeMode', [True, 'auto'])[1] }}"
+  data-viewer-lang-mode="{{ options.get('ViewerLangMode', [True, 'auto'])[1] }}"
+>
   <!-- Skip to main content -->
   <a href="#danmuText"
     class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-sky-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg">Skip
@@ -77,27 +81,11 @@
               <span class="viewer-conn-chip-dot connection-dot--disconnected"></span>
               <span class="viewer-conn-chip-value" id="overlayLabel" data-i18n="overlayNone">–</span>
             </span>
-            <!-- prototype viewer.jsx LangSelect (line 519) — text label + native
-                 <select> overlay so the user sees the current language and
-                 can pick from all 4 (zh / en / ja / ko). The label updates
-                 on change; i18n.js binds to #server-lang-select for switching. -->
-            <div class="viewer-hero-seg-row">
-              <div class="viewer-lang-select" role="group" aria-label="Language">
-                <span class="viewer-lang-current" data-viewer-lang-current>中文</span>
-                <span class="viewer-lang-arrow" aria-hidden="true">▾</span>
-                <select id="server-lang-select" class="viewer-lang-native" aria-label="Language">
-                  <option value="zh">中文</option>
-                  <option value="en">English</option>
-                  <option value="ja">日本語</option>
-                  <option value="ko">한국어</option>
-                </select>
-              </div>
-              <!-- prototype ThemeToggle (line 553) — single icon button.
-                   Icon = ◐ when dark, ◑ when light. Toggle on click. -->
-              <button type="button" class="viewer-theme-toggle" data-viewer-theme-toggle aria-label="Theme">
-                <span data-viewer-theme-icon>◑</span>
-              </button>
-            </div>
+            <!-- 2026-05-16: theme toggle + language dropdown removed.
+                 Viewer follows system: `prefers-color-scheme` for theme,
+                 `navigator.language` for locale. Admin can force either
+                 via Admin → Viewer → Page Theme (Theme Mode / Language
+                 Mode radios). Audience never chooses UI controls. -->
           </div>
         </section>
 
@@ -127,21 +115,36 @@
         </div>
 
         <section id="viewerFirePane" class="viewer-pane is-active" data-viewer-pane="fire">
-          <!-- Scrollable body — preview + fields -->
+          <!-- Scrollable body — preview + fields.
+               2026-05-16 RWD: the inner content is capped at max-width
+               560px on desktop (via .viewer-fire-content) so the form
+               doesn't stretch the full width on wide screens. Sendbar
+               sits outside .viewer-body and stays full-width. -->
           <div class="viewer-body">
+          <div class="viewer-fire-content">
 
           <!-- Live preview strip — nickname renders in the top-left
-               (`#previewNick`) and is wired to `#nicknameInput` below. -->
+               (`#previewNick`) and is wired to `#nicknameInput` below.
+               2026-05-16 marquee (design v3-r8): inner `.viewer-preview-track`
+               is absolute-positioned and animated right→left via
+               `--viewer-preview-duration` CSS var (driven by the speed
+               slider). Kicker carries a faint cyan `#previewSpeedBadge`
+               showing the current speed value live. -->
           <div class="viewer-preview">
-            <div class="viewer-preview-kicker" data-i18n="previewKicker">預覽 · 你送出的樣子</div>
+            <div class="viewer-preview-kicker">
+              <span data-i18n="previewKicker">預覽 · 你送出的樣子</span>
+              <span id="previewSpeedBadge" class="viewer-preview-speed" aria-hidden="true">{{ "%.1f"|format(options.Speed[3]) }}x</span>
+            </div>
             <div class="viewer-preview-row" aria-live="polite">
-              <span id="previewNick" class="viewer-preview-nick"></span>
-              <span
-                id="previewText"
-                class="viewer-preview-text"
-                data-i18n="preview"
-                style="font-size: 32px;"
-              >示例彈幕文字</span>
+              <div class="viewer-preview-track">
+                <span id="previewNick" class="viewer-preview-nick"></span>
+                <span
+                  id="previewText"
+                  class="viewer-preview-text"
+                  data-i18n="preview"
+                  style="font-size: 32px;"
+                >示例彈幕文字</span>
+              </div>
             </div>
           </div>
 
@@ -198,8 +201,9 @@
             </div>
           </div>
 
-          <!-- Font size + Opacity 2-col -->
-          <div class="viewer-grid-2">
+          <!-- Size / Opacity / Speed — 3-col on desktop, 2-col + speed
+               wrap on mobile (per design v3-r8 RWD adjustment). -->
+          <div class="viewer-grid-fields">
             {% if options.FontSize[0] %}
             <div id="fontSizeControl" class="viewer-field is-nomb">
               <label class="viewer-field-label" for="sizeInput">
@@ -240,36 +244,37 @@
               />
             </div>
             {% endif %}
+
+            {% if options.Speed[0] %}
+            <div id="speedControl" class="viewer-field is-nomb">
+              <label class="viewer-field-label" for="speedRange">
+                <span data-i18n="speed">速度</span>
+                <span class="viewer-field-label__value"> · <span id="speedValue">{{
+                  "%.1f"|format(options.Speed[3]) }}</span>x</span>
+              </label>
+              <input
+                type="range"
+                id="speedRange"
+                class="viewer-range"
+                min="{{ options.Speed[1] }}"
+                max="{{ options.Speed[2] }}"
+                step="0.1"
+                value="{{ options.Speed[3] }}"
+                aria-label="Scroll speed"
+                aria-valuemin="{{ options.Speed[1] }}"
+                aria-valuemax="{{ options.Speed[2] }}"
+              />
+            </div>
+            {% endif %}
           </div>
 
-          <!-- Speed -->
-          {% if options.Speed[0] %}
-          <div id="speedControl" class="viewer-field">
-            <label class="viewer-field-label" for="speedRange">
-              <span data-i18n="speed">速度</span>
-              <span class="viewer-field-label__value"> <span id="speedValue">{{
-                "%.1f"|format(options.Speed[3]) }}</span>x</span>
-            </label>
-            <input
-              type="range"
-              id="speedRange"
-              class="viewer-range"
-              min="{{ options.Speed[1] }}"
-              max="{{ options.Speed[2] }}"
-              step="0.1"
-              value="{{ options.Speed[3] }}"
-              aria-label="Scroll speed"
-              aria-valuemin="{{ options.Speed[1] }}"
-              aria-valuemax="{{ options.Speed[2] }}"
-            />
-          </div>
-          {% endif %}
-
-          <!-- Effects (dynamically loaded from /effects API by main.js) -->
+          <!-- Effects (dynamically loaded from /effects API by main.js).
+               2026-05-17: label trimmed to "效果 · 可疊加" — the 已選 X / 8
+               counter was redundant with the visible chip pressed-state. -->
           <div id="effectControl" class="viewer-field">
             <label class="viewer-field-label">
               <span data-i18n="effects">效果</span>
-              <span class="viewer-field-label__value"> 已選 <span id="effectsCount">0</span> / <span id="effectsTotal">8</span> · <span data-i18n="multiSelectToStack">可疊加</span></span>
+              <span class="viewer-field-label__value"> · <span data-i18n="multiSelectToStack">可疊加</span></span>
             </label>
             <div
               id="effectButtons"
@@ -279,7 +284,8 @@
             >
               <span class="viewer-field-label" data-i18n="loadingEffects">Loading...</span>
             </div>
-            <div id="effectParamsPanel" class="mt-3 space-y-3"></div>
+            <!-- Effect-parameters panel intentionally absent — design
+                 hasn't shipped a per-effect params surface yet. -->
           </div>
 
           <!-- Layout 5-grid -->
@@ -348,7 +354,8 @@
             <input type="hidden" id="layoutSelect" value="scroll" />
           </div>
           {% endif %}
-          </div>
+          </div><!-- /.viewer-fire-content -->
+          </div><!-- /.viewer-body -->
         </section>
 
         <section id="viewerPollPane" class="viewer-pane" data-viewer-pane="poll" hidden>
@@ -448,7 +455,20 @@
   <!-- Scripts -->
   <script src="{{ url_for('static', filename='vendor/i18next.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
-  <script nonce="{{ csp_nonce }}">ServerI18n.init();</script>
+  <script nonce="{{ csp_nonce }}">
+    // 2026-05-16: viewer is system-driven — sweep any stale user-saved
+    // language so detectLang() falls through to navigator.language.
+    try { localStorage.removeItem("danmu-server-lang"); } catch (_) {}
+    ServerI18n.init();
+    // Apply admin's ViewerLangMode override (force-zh / force-en / ...)
+    // if set. `auto` keeps the navigator.language pick from detectLang().
+    (function () {
+      var mode = (document.body && document.body.dataset.viewerLangMode) || "auto";
+      if (mode === "auto") return;
+      var lang = mode.replace(/^force-/, "");
+      if (lang) ServerI18n.setLanguage(lang);
+    })();
+  </script>
   <script defer src="{{ url_for('static', filename='js/toast.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/viewer-states.js') }}"></script>

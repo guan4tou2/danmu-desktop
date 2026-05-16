@@ -25,6 +25,20 @@ _DEFAULT_OPTIONS = {
     "Effects": [True, "", "", ""],
     # Layout is a pick-set; default scroll, allowlist empty (= all five modes).
     "Layout": [True, [], "", "scroll"],
+    # 2026-05-16: viewer page system-driven defaults with admin force override.
+    # Slot 0 is enabled (always True; toggle is the mode itself); slot 1 is
+    # the mode. Theme mode ∈ {"auto", "force-light", "force-dark"}; lang
+    # mode ∈ {"auto", "force-zh", "force-en", "force-ja", "force-ko"}.
+    # `auto` lets the viewer follow `prefers-color-scheme` / `navigator.language`.
+    "ViewerThemeMode": [True, "auto"],
+    "ViewerLangMode": [True, "auto"],
+}
+
+# Enum-valued keys: validated against an explicit allowed set rather than
+# the numeric range / pick-set machinery.
+_ENUM_VALUE_KEYS = {
+    "ViewerThemeMode": ("auto", "force-light", "force-dark"),
+    "ViewerLangMode": ("auto", "force-zh", "force-en", "force-ja", "force-ko"),
 }
 
 _RANGES = {
@@ -128,6 +142,20 @@ class SettingsStore:
                     self._options[key][index] = str(value)
                 else:
                     self._options[key][index] = value
+                self._persist()
+                return copy.deepcopy(self._options[key])
+
+            # 2026-05-16: enum-valued keys (viewer theme/lang mode) accept
+            # only documented mode strings at slot 1. Slot 0 still acts as
+            # the boolean toggle (always True in practice — the mode is
+            # the toggle).
+            if key in _ENUM_VALUE_KEYS and index == 1:
+                allowed = _ENUM_VALUE_KEYS[key]
+                if value not in allowed:
+                    raise ValueError(
+                        f"{key} value must be one of {allowed}, got {value!r}"
+                    )
+                self._options[key][index] = value
                 self._persist()
                 return copy.deepcopy(self._options[key])
 

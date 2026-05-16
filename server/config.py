@@ -181,7 +181,12 @@ class Config:
         str(Path(__file__).parent / "static" / "emojis"),
     )
 
-    # Admin settable option keys
+    # Admin settable option keys.
+    # ViewerThemeMode + ViewerLangMode (2026-05-16) hold the admin's
+    # force-override for the viewer page: each is `[True, mode]` where
+    # mode ∈ {"auto", "force-light"/"force-dark"} or {"auto",
+    # "force-zh"/"force-en"/"force-ja"/"force-ko"}. `auto` defers to
+    # `prefers-color-scheme` / `navigator.language` respectively.
     SETTABLE_OPTION_KEYS = {
         "Color",
         "Opacity",
@@ -191,4 +196,6 @@ class Config:
         "Effects",
         "Layout",
         "Nickname",
+        "ViewerThemeMode",
+        "ViewerLangMode",
     }

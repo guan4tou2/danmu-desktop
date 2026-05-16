@@ -703,22 +703,70 @@ body.viewer-body-v2.is-dark {
   position: absolute;
   top: 6px;
   left: 10px;
+  right: 10px;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--font-mono);
   font-size: 11px;
   color: rgba(148, 163, 184, 0.7);
   letter-spacing: 1.4px;
 }
 
+/* Speed badge inside the kicker — sits flush right, faint cyan so it
+   reads as "current speed" without competing with the kicker label. */
+.viewer-preview-speed {
+  margin-left: auto;
+  color: rgba(125, 211, 252, 0.5);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+/* 2026-05-16 marquee preview (design v3-r8): preview text actually
+   scrolls right→left so viewers see the speed change live. Duration
+   = max(2, 8 / speed)s, set as a CSS variable by main.js whenever the
+   speed slider moves. The row has a fixed height (font-size + line)
+   so the scrolling text never collapses the panel. */
 .viewer-preview-row {
   margin-top: 10px;
-  display: flex;
+  position: relative;
+  overflow: hidden;
+  height: calc(var(--viewer-preview-font-size, 32px) * 1.4);
+  /* Enable container query units (cqw) for the keyframe below — the
+     track starts at 100cqw (container's right edge) regardless of how
+     short the inner content is. Without this, translateX(100%) only
+     offsets by the track's own width, so short messages appear to
+     start halfway in. */
+  container-type: inline-size;
+}
+
+.viewer-preview-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-flex;
   align-items: baseline;
   gap: 10px;
   font-weight: 600;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  animation: dm-preview-scroll var(--viewer-preview-duration, 8s) linear infinite;
+}
+
+@keyframes dm-preview-scroll {
+  /* 0% — track sits one container-width to the right of its origin, so
+     the left edge is exactly at the container's right edge (fully off-
+     screen on the right). */
+  0%   { transform: translateX(100cqw); }
+  /* 100% — track moves -100% of its own width, so the right edge ends
+     at the container's left edge (fully off-screen on the left). */
+  100% { transform: translateX(-100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Respect users who prefer no motion — keep the panel static. */
+  .viewer-preview-track { animation: none; transform: none; }
 }
 
 .viewer-preview-nick {
@@ -730,14 +778,32 @@ body.viewer-body-v2.is-dark {
 
 /* Default preview shadow — prototype viewer.jsx:125 fallback when glow off:
  *   '0 2px 4px rgba(0,0,0,0.55)'. Glow-effect handler in main.js may add
- *   a coloured halo on top via inline style. */
+ *   a coloured halo on top via inline style.
+ * 2026-05-17: `display: inline-block` so transform-based effects
+ * (spin / bounce / zoom / wave / shake) actually animate the span. */
 .viewer-preview-text {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: inline-block;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.55);
   transition: font-size 0.2s, opacity 0.2s;
+}
+
+/* 2026-05-17 preview-side effect keyframes (vp- prefix to avoid
+   colliding with overlay's de- set in shared/danmu-effects.js).
+   `selectedEffects` is multi-select, so updatePreview() in main.js
+   joins matching animations into a comma-separated list and applies
+   to .viewer-preview-text. The marquee transform on the parent
+   .viewer-preview-track is independent and doesn't conflict. */
+@keyframes vp-blink   { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes vp-shake   { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+@keyframes vp-bounce  { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes vp-spin    { to { transform: rotate(360deg); } }
+@keyframes vp-rainbow { to { filter: hue-rotate(360deg); } }
+@keyframes vp-wave    { 0%, 100% { transform: skewX(0deg); } 50% { transform: skewX(8deg); } }
+@keyframes vp-zoom    { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+
+@media (prefers-reduced-motion: reduce) {
+  /* All decorative preview effects respect the system motion preference. */
+  .viewer-preview-text { animation: none !important; }
 }
 
 /* Field — 9px mono tracked uppercase label above control. */
@@ -1008,12 +1074,41 @@ body.viewer-body-v2.is-dark {
   transform: scale(1.15);
 }
 
-/* 2-column grid for fontSize + opacity. */
-.viewer-grid-2 {
+/* 2026-05-16 RWD per design v3-r8:
+   Desktop: size / opacity / speed in a single 3-col row.
+   Mobile (≤599px): drops to 2-col so size + opacity stay together
+   and speed wraps below as a full-width row (grid auto-wrap). */
+.viewer-grid-fields {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 0.75rem;
   margin-bottom: 0.875rem;
+}
+
+@media (max-width: 599px) {
+  .viewer-grid-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+  .viewer-grid-fields > #speedControl {
+    /* Span both columns so the speed slider keeps its full handle width. */
+    grid-column: 1 / -1;
+  }
+}
+
+/* 2026-05-16 RWD per design v3-r8: cap fire-pane form width on desktop
+   so the slider/composer don't stretch the full pane. Mobile keeps the
+   pane padding for full width (no max-width). The wrapping sendbar
+   sits outside .viewer-body and stays full-width. */
+.viewer-fire-content {
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+@media (max-width: 599px) {
+  .viewer-fire-content {
+    max-width: 100%;
+    margin: 0;
+  }
 }
 
 /* Effects/Layout chip grid. */

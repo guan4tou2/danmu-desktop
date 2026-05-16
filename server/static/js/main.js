@@ -34,9 +34,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Effect UI
     effectButtons: document.getElementById("effectButtons"),
-    effectParamsPanel: document.getElementById("effectParamsPanel"),
-    effectsCount: document.getElementById("effectsCount"),
-    effectsTotal: document.getElementById("effectsTotal"),
+    // effectParamsPanel + effectsCount + effectsTotal removed 2026-05-17 —
+    // design hasn't provided a per-effect params surface ([PLACEHOLDER]
+    // block was noise), and the "已選 X / 8" counter was redundant with
+    // the chip pressed-state. Element refs kept as null so existing
+    // null-guards keep working.
+    effectParamsPanel: null,
+    effectsCount: null,
+    effectsTotal: null,
 
     // Toast container
     toastContainer: document.getElementById("toast-container"),
@@ -460,6 +465,24 @@ document.addEventListener("DOMContentLoaded", () => {
         ? `0 0 12px ${color}, 0 2px 4px rgba(0,0,0,0.6)`
         : "";
     }
+
+    // 2026-05-17: surface non-glow effects in the preview marquee.
+    // Multi-select stacks, so we build a comma-separated CSS animation
+    // string. Matching keyframes are defined in viewer-v2.css with the
+    // `vp-` prefix. Glow stays inline-style only (text-shadow above).
+    const _EFFECT_ANIMATIONS = {
+      blink:   "vp-blink 0.6s step-start infinite",
+      shake:   "vp-shake 0.25s ease-in-out infinite",
+      bounce:  "vp-bounce 0.6s ease-in-out infinite",
+      spin:    "vp-spin 1.5s linear infinite",
+      rainbow: "vp-rainbow 3s linear infinite",
+      wave:    "vp-wave 0.5s ease-in-out infinite",
+      zoom:    "vp-zoom 0.8s ease-in-out infinite",
+    };
+    const _animList = Object.keys(selectedEffects)
+      .map((name) => _EFFECT_ANIMATIONS[name])
+      .filter(Boolean);
+    elements.previewText.style.animation = _animList.join(", ");
     if (elements.sizeInput) {
       const fontSize = parseFloat(elements.sizeInput.value) || 32;
       elements.previewText.style.fontSize = `${fontSize}px`;
@@ -469,6 +492,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (previewNick) {
         previewNick.style.fontSize = `${Math.max(11, fontSize * 0.42)}px`;
       }
+      // Push the size into the marquee row so the panel height tracks
+      // the chosen font-size (height = fontSize * 1.4 per design v3-r8).
+      const row = document.querySelector(".viewer-preview-row");
+      if (row) row.style.setProperty("--viewer-preview-font-size", fontSize + "px");
     }
     if (elements.opacityRange) {
       elements.previewText.style.opacity = elements.opacityRange.value / 100;
@@ -777,10 +804,26 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ── Preview marquee speed (design v3-r8) ──────────────────────────────────
+  // Slider value drives `--viewer-preview-duration` on .viewer-preview-row,
+  // which the CSS keyframe `dm-preview-scroll` reads. Formula matches the
+  // design prototype: max(2, 8 / speed) seconds. 1x → 8s, 2x → 4s, 3x → 2.7s.
+  // Faster speed = shorter cycle = visibly faster scroll.
+  const _previewRow = document.querySelector(".viewer-preview-row");
+  const _previewSpeedBadge = document.getElementById("previewSpeedBadge");
+  function _applyPreviewSpeed(speed) {
+    const v = Number(speed);
+    if (!Number.isFinite(v) || v <= 0) return;
+    const duration = Math.max(2, 8 / v);
+    if (_previewRow) _previewRow.style.setProperty("--viewer-preview-duration", duration.toFixed(2) + "s");
+    if (_previewSpeedBadge) _previewSpeedBadge.textContent = v.toFixed(1) + "x";
+  }
+
   // Init speed display with one decimal to match prototype `1.0x` shape.
   if (elements.speedRange && elements.speedValue) {
     const sv = parseFloat(elements.speedRange.value);
     if (Number.isFinite(sv)) elements.speedValue.textContent = sv.toFixed(1);
+    _applyPreviewSpeed(sv);
   }
 
   if (elements.opacityRange) {
@@ -802,47 +845,42 @@ document.addEventListener("DOMContentLoaded", () => {
       const v = parseFloat(e.target.value);
       elements.speedValue.textContent = Number.isFinite(v) ? v.toFixed(1) : e.target.value;
       _syncRangeProgress(e.target);
+      _applyPreviewSpeed(v);
     });
   }
 
-  // ── Theme toggle (single icon button) — prototype viewer.jsx:553 ──────────
-  // Icon shows current state: ◐ when dark, ◑ when light. Click toggles.
-  // Default = dark (matches prototype `theme = 'dark'` default in ViewerCore).
-  const themeBtn = document.querySelector("[data-viewer-theme-toggle]");
-  if (themeBtn) {
-    const iconEl = themeBtn.querySelector("[data-viewer-theme-icon]");
-    const applyTheme = (mode) => {
-      const dark = mode === "dark";
-      document.body.classList.toggle("is-dark", dark);
-      if (iconEl) iconEl.textContent = dark ? "◐" : "◑";
-      themeBtn.setAttribute("aria-pressed", dark ? "true" : "false");
-      themeBtn.title = dark ? "切換到淺色" : "切換到深色";
-      try { localStorage.setItem("viewer-theme", mode); } catch (_) {}
+  // ── Viewer theme · system-driven (2026-05-16) ────────────────────────────
+  // Default follows `prefers-color-scheme`; admin can force light/dark via
+  // ViewerThemeMode option ("auto" / "force-light" / "force-dark") rendered
+  // into body[data-viewer-theme-mode] by the template. No in-UI toggle —
+  // audience never picks.
+  const _applyViewerTheme = (mode) => {
+    const mql = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+    const sysDark = mql ? mql.matches : false;
+    const dark = mode === "force-dark" || (mode !== "force-light" && sysDark);
+    document.body.classList.toggle("is-dark", dark);
+  };
+  // Initial apply uses the admin-supplied mode (defaults to "auto"); the
+  // template renders the current option into body[data-viewer-theme-mode].
+  _applyViewerTheme(document.body.dataset.viewerThemeMode || "auto");
+  if (window.matchMedia) {
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    const onSysThemeChange = () => {
+      const mode = document.body.dataset.viewerThemeMode || "auto";
+      // Only auto-apply when admin hasn't forced one.
+      if (mode === "auto") _applyViewerTheme("auto");
     };
-    let initial = "dark";
-    try { initial = localStorage.getItem("viewer-theme") || "dark"; } catch (_) {}
-    applyTheme(initial);
-    themeBtn.addEventListener("click", () => {
-      const cur = document.body.classList.contains("is-dark") ? "dark" : "light";
-      applyTheme(cur === "dark" ? "light" : "dark");
-    });
+    if (typeof mql.addEventListener === "function") {
+      mql.addEventListener("change", onSysThemeChange);
+    } else if (typeof mql.addListener === "function") {
+      mql.addListener(onSysThemeChange); // Safari < 14 fallback
+    }
   }
-
-  // ── Language dropdown (4 langs) — prototype viewer.jsx:519 ────────────────
-  // Native <select> overlay; the visible label mirrors the current selection.
-  // i18n.js already wires the change event on #server-lang-select.
-  const langSelect = document.getElementById("server-lang-select");
-  const langCurrentLabel = document.querySelector("[data-viewer-lang-current]");
-  if (langSelect && langCurrentLabel) {
-    const LABEL_BY_VAL = { zh: "中文", en: "English", ja: "日本語", ko: "한국어" };
-    const syncLangLabel = () => {
-      const v = (langSelect.value || "zh").toLowerCase();
-      const key = v.startsWith("zh") ? "zh" : v.startsWith("en") ? "en" : v.startsWith("ja") ? "ja" : v.startsWith("ko") ? "ko" : "zh";
-      langCurrentLabel.textContent = LABEL_BY_VAL[key] || "中文";
-    };
-    syncLangLabel();
-    langSelect.addEventListener("change", syncLangLabel);
-  }
+  // Expose for runtime override (e.g. settings refresh via SSE later).
+  window.applyViewerTheme = (mode) => {
+    document.body.dataset.viewerThemeMode = mode || "auto";
+    _applyViewerTheme(mode);
+  };
 
   _applyViewerPollGate();
   _bindViewerTabs();
@@ -909,31 +947,13 @@ document.addEventListener("DOMContentLoaded", () => {
     return wrap;
   }
 
-  function _refreshParamsPanel() {
-    if (!elements.effectParamsPanel) return;
-    elements.effectParamsPanel.innerHTML = "";
-    let hasUndesignedPanel = false;
-    for (const [name] of Object.entries(selectedEffects)) {
-      const def = _effectDefs.find((e) => e.name === name);
-      if (!def || !def.params || Object.keys(def.params).length === 0) continue;
-      hasUndesignedPanel = true;
-      break;
-    }
-    if (hasUndesignedPanel) {
-      elements.effectParamsPanel.innerHTML = [
-        '<div class="rounded-md border border-dashed border-slate-600 bg-slate-900/40 p-3">',
-        '<p class="text-xs font-mono text-slate-300">[PLACEHOLDER] Effect Parameters</p>',
-        '<p class="mt-1 text-xs text-slate-400">Prototype 尚未提供每個效果的參數面板設計，暫以文字+方框占位。</p>',
-        "</div>",
-      ].join("");
-    }
-  }
-
-  function _updateEffectsCount() {
-    if (elements.effectsCount) {
-      elements.effectsCount.textContent = String(Object.keys(selectedEffects).length);
-    }
-  }
+  // 2026-05-17: _refreshParamsPanel + _updateEffectsCount intentionally
+  // become no-ops. The "[PLACEHOLDER] Effect Parameters" dashed box and
+  // the "已選 X / 8" counter were both removed from the viewer label —
+  // their DOM targets no longer exist. The functions stay for call-site
+  // compat so existing toggle handlers don't need rewiring.
+  function _refreshParamsPanel() { /* no-op */ }
+  function _updateEffectsCount() { /* no-op */ }
 
   function _buildEffectButtons(effects) {
     if (!elements.effectButtons) return;

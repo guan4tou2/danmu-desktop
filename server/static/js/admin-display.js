@@ -1214,15 +1214,18 @@
         "</div>" +
       "</div>" +
       '<div class="admin-vc-col-panel">' +
-        '<div class="admin-vc-preview-label">LANGUAGE / COPY</div>' +
+        '<div class="admin-vc-preview-label">ADMIN CONTROLLED</div>' +
         '<div class="admin-vc-preview-input">' +
           '<div style="display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:start">' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">UI language</span><span>繁體中文 (zh-Hant)</span>' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">UI language</span><span>Auto (follow browser)</span>' +
             '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Placeholder</span><span>想對現場說點什麼？</span>' +
             '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Submit button</span><span>FIRE</span>' +
             '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Poll prompt</span><span>選擇你的答案</span>' +
           "</div>" +
-        "</div>" +
+          '<div style="margin-top:10px;font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);line-height:1.6">' +
+            '觀眾端不提供語言切換。預設跟隨瀏覽器語言；admin 可在 Viewer Page Theme 強制指定。' +
+          '</div>' +
+        '</div>' +
       "</div>";
 
     const limitsPanel = document.createElement("div");

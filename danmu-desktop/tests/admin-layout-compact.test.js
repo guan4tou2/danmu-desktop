@@ -78,10 +78,17 @@ test("admin Viewer surface exposes language/copy and defaults/limits guidance", 
   const displaySrc = fs.readFileSync(path.join(staticDir, "admin-display.js"), "utf8");
 
   expect(adminSrc).toContain("VIEWER · 頁面預設 · 欄位設定 · 文案 / 限制");
-  expect(displaySrc).toContain("LANGUAGE / COPY");
+  // 2026-05-16: viewer language is system-driven — admin-controlled
+  // override lives in Viewer › Page Theme. Fields panel labels this
+  // section ADMIN CONTROLLED (no in-viewer toggle) instead of the
+  // earlier LANGUAGE / COPY heading.
+  expect(displaySrc).toContain("ADMIN CONTROLLED");
+  expect(displaySrc).not.toContain("LANGUAGE / COPY");
   expect(displaySrc).toContain("UI language");
+  expect(displaySrc).toContain("Auto (follow browser)");
   expect(displaySrc).toContain("Placeholder");
   expect(displaySrc).toContain("Submit button");
+  expect(displaySrc).toContain("觀眾端不提供語言切換");
   expect(displaySrc).toContain("DEFAULTS / LIMITS");
   expect(displaySrc).toContain("Nickname ≤ 20");
   expect(displaySrc).toContain("Message 1–100");

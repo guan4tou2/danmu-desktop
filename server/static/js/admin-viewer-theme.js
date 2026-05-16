@@ -47,11 +47,51 @@
             </div>
 
             <div class="admin-vt-card">
-              <div class="admin-vt-card-head"><span class="title">明暗模式</span><span class="kicker">MODE</span></div>
+              <div class="admin-vt-card-head"><span class="title">預覽明暗</span><span class="kicker">PREVIEW MODE · 僅本卡片預覽，不影響觀眾</span></div>
               <div class="admin-vt-mode" data-vt-mode>
                 <button type="button" data-vt-mode-btn="dark"><span class="icon">◐</span><span class="lbl">深色</span><span class="sub">DARK</span></button>
                 <button type="button" data-vt-mode-btn="light"><span class="icon">☼</span><span class="lbl">淺色</span><span class="sub">LIGHT</span></button>
                 <button type="button" data-vt-mode-btn="auto"><span class="icon">◑</span><span class="lbl">跟隨系統</span><span class="sub">AUTO</span></button>
+              </div>
+            </div>
+
+            <!-- 2026-05-16: VIEWER FORCE OVERRIDE — pushes to backend.
+                 Audience /fire follows prefers-color-scheme + navigator.language
+                 by default; admin can force theme + language from here. The
+                 in-viewer toggles were removed, so this card is the only
+                 way to override. -->
+            <div class="admin-vt-card admin-vt-force">
+              <div class="admin-vt-card-head">
+                <span class="title">觀眾頁強制覆寫</span>
+                <span class="kicker">VIEWER FORCE OVERRIDE · 推送到 /fire</span>
+              </div>
+              <div class="admin-vt-force-row">
+                <div class="admin-vt-force-label">
+                  <span class="title">主題</span>
+                  <span class="kicker">THEME MODE · 覆寫 prefers-color-scheme</span>
+                </div>
+                <div class="admin-vt-mode" data-vt-theme-force>
+                  <button type="button" data-vt-theme-btn="auto"><span class="icon">◑</span><span class="lbl">跟隨系統</span><span class="sub">AUTO</span></button>
+                  <button type="button" data-vt-theme-btn="force-light"><span class="icon">☼</span><span class="lbl">強制淺色</span><span class="sub">FORCE LIGHT</span></button>
+                  <button type="button" data-vt-theme-btn="force-dark"><span class="icon">◐</span><span class="lbl">強制深色</span><span class="sub">FORCE DARK</span></button>
+                </div>
+              </div>
+              <div class="admin-vt-force-row">
+                <div class="admin-vt-force-label">
+                  <span class="title">語言</span>
+                  <span class="kicker">LANGUAGE MODE · 覆寫 navigator.language</span>
+                </div>
+                <div class="admin-vt-mode" data-vt-lang-force>
+                  <button type="button" data-vt-lang-btn="auto"><span class="icon">⌬</span><span class="lbl">跟隨瀏覽器</span><span class="sub">AUTO</span></button>
+                  <button type="button" data-vt-lang-btn="force-zh"><span class="icon">中</span><span class="lbl">繁體中文</span><span class="sub">FORCE ZH</span></button>
+                  <button type="button" data-vt-lang-btn="force-en"><span class="icon">EN</span><span class="lbl">English</span><span class="sub">FORCE EN</span></button>
+                  <button type="button" data-vt-lang-btn="force-ja"><span class="icon">日</span><span class="lbl">日本語</span><span class="sub">FORCE JA</span></button>
+                  <button type="button" data-vt-lang-btn="force-ko"><span class="icon">한</span><span class="lbl">한국어</span><span class="sub">FORCE KO</span></button>
+                </div>
+              </div>
+              <div class="admin-vt-force-note">
+                <span class="kicker">BOUNDARY</span>
+                <p>觀眾打開 <code>/fire</code> 時，主題跟隨 <code>prefers-color-scheme</code>、語言跟隨 <code>navigator.language</code>；右上角不再顯示主題切換或語言下拉。要強制統一外觀（例：conference 統一深色配投影），在此設定。</p>
               </div>
             </div>
 
@@ -289,6 +329,50 @@
       }
     }
 
+    // ── Viewer force-override (theme + lang) — pushes to /admin/update ──
+    // Default to "auto" until hydrateForceModes() fetches the persisted
+    // value from /get_settings.
+    let forceTheme = "auto";
+    let forceLang = "auto";
+
+    function renderForceModes() {
+      root.querySelectorAll("[data-vt-theme-btn]").forEach(b => {
+        b.classList.toggle("is-active", b.dataset.vtThemeBtn === forceTheme);
+      });
+      root.querySelectorAll("[data-vt-lang-btn]").forEach(b => {
+        b.classList.toggle("is-active", b.dataset.vtLangBtn === forceLang);
+      });
+    }
+
+    async function hydrateForceModes() {
+      try {
+        const res = await fetch("/get_settings", { credentials: "same-origin" });
+        if (!res.ok) return;
+        const opts = await res.json();
+        const t = opts && opts.ViewerThemeMode && opts.ViewerThemeMode[1];
+        const l = opts && opts.ViewerLangMode && opts.ViewerLangMode[1];
+        if (typeof t === "string") forceTheme = t;
+        if (typeof l === "string") forceLang = l;
+        renderForceModes();
+      } catch (_) { /* leave defaults */ }
+    }
+
+    async function postForceMode(key, value) {
+      if (!window.csrfFetch) return;
+      try {
+        const res = await window.csrfFetch("/admin/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: key, value, index: 1 }),
+        });
+        if (!res.ok) throw new Error(res.status);
+        if (window.showToast) window.showToast(`${key} = ${value}`, true);
+      } catch (e) {
+        console.warn("[admin-viewer-theme] force-mode update failed:", e);
+        if (window.showToast) window.showToast(`更新 ${key} 失敗`, false);
+      }
+    }
+
     function render() {
       renderPresets();
       renderMode();
@@ -297,6 +381,7 @@
       renderFont();
       renderContrast();
       renderPreview();
+      renderForceModes();
     }
 
     root.addEventListener("input", (e) => {
@@ -343,6 +428,20 @@
         persist(); render();
         return;
       }
+      const themeForceBtn = e.target.closest("[data-vt-theme-btn]");
+      if (themeForceBtn) {
+        forceTheme = themeForceBtn.dataset.vtThemeBtn;
+        renderForceModes();
+        postForceMode("ViewerThemeMode", forceTheme);
+        return;
+      }
+      const langForceBtn = e.target.closest("[data-vt-lang-btn]");
+      if (langForceBtn) {
+        forceLang = langForceBtn.dataset.vtLangBtn;
+        renderForceModes();
+        postForceMode("ViewerLangMode", forceLang);
+        return;
+      }
       const logoRem = e.target.closest("[data-vt-logo-remove]");
       if (logoRem) {
         state.logo = null;
@@ -366,6 +465,7 @@
     });
 
     render();
+    hydrateForceModes();
   }
 
   // Document-level legend click delegate (deeplink to other admin routes)
