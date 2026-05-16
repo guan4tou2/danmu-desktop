@@ -149,7 +149,7 @@ function App() {
         {[
           { t: 'Danmu Fire · 觀眾端', d: '暱稱 / 文字 / 顏色 / 字型 / 字級 / 透明度 / 描邊 / 陰影 / 效果疊加 / Layout / 主題。只送不收。Poll 條件顯示；投票無 %。' },
           { t: 'Admin · 控制台', d: '移除 DISPLAY 設定卡（那在 /effects、/fonts 頁面）。主畫面聚焦：KPI / 投票建立 & 進行中 / 訊息審核 / Widgets & Plugins。Sidebar：session + telemetry。' },
-          { t: 'Desktop Client · Electron', d: '3 個關鍵畫面：透明 overlay 實景 / 控制視窗（連線、快捷鍵、更新整合於此） / macOS tray menu。自動更新。' },
+          { t: 'Desktop Client · Electron', d: 'Control Window 只保留 Connection / Overlay / About；overlay 分 live / disconnected / idle / reconnecting；tray 只交 connected / disconnected 狀態，不再是 popover。' },
         ].map(x => (
           <div key={x.t}>
             <HudLabel color={hudTokens.cyan}>◉ {x.t}</HudLabel>
@@ -394,29 +394,26 @@ function App() {
         </DCArtboard>
       </DCSection>
 
-      <DCSection title="Desktop Client · Electron App" subtitle="首次啟動：強制連線設定 → 連線後才能用 overlay / control / tray · 斷線回到設定">
-        <DCArtboard width={1200} height={780} label="⓪ 首次啟動 · Connect Gate · 必須先連線才能用" style={{ background: 'transparent' }}>
-          <div data-screen-label="Desktop · First-run Gate" style={{ width: 1200, height: 780 }}><DesktopClient theme={tweaks.theme} scenario="firstrun" /></div>
+      <DCSection title="Desktop Client · Electron App" subtitle="Control Window → Overlay Live / Disconnected / Idle / Reconnecting → Tray Connected / Tray Disconnected">
+        <DCArtboard width={760} height={820} label="Desktop · Control Window" style={{ background: 'transparent' }}>
+          <div data-screen-label="Desktop · Control Window" style={{ width: 760, height: 820 }}><DesktopClient theme={tweaks.theme} scenario="control" /></div>
         </DCArtboard>
-        <DCArtboard width={1200} height={760} label="① 桌面實景 · 透明 overlay 疊在 Keynote 上" style={{ background: 'transparent' }}>
-          <div data-screen-label="Desktop · Overlay on screen" style={{ width: 1200, height: 760 }}><DesktopClient theme={tweaks.theme} scenario="overlay" /></div>
+        <DCArtboard width={1200} height={760} label="Desktop · Overlay Live" style={{ background: 'transparent' }}>
+          <div data-screen-label="Desktop · Overlay Live" style={{ width: 1200, height: 760 }}><DesktopClient theme={tweaks.theme} scenario="overlay" /></div>
         </DCArtboard>
-        <DCArtboard width={1200} height={760} label="① Overlay 連線中斷 · Disconnected · 重連中" style={{ background: 'transparent' }}>
+        <DCArtboard width={1200} height={760} label="Desktop · Overlay Disconnected" style={{ background: 'transparent' }}>
           <div data-screen-label="Desktop · Overlay Disconnected" style={{ width: 1200, height: 760 }}><DesktopClient theme={tweaks.theme} scenario="disconnected" /></div>
         </DCArtboard>
-        <DCArtboard width={1200} height={680} label="② Overlay 空連線 · Idle state · Hero lockup" style={{ background: '#000' }}>
+        <DCArtboard width={1200} height={680} label="Desktop · Overlay Idle" style={{ background: '#000' }}>
           <div data-screen-label="Desktop · Overlay Idle" style={{ width: 1200, height: 680 }}><OverlayIdle theme={tweaks.theme} /></div>
         </DCArtboard>
-        <DCArtboard width={1200} height={680} label="② Overlay 重連中 · Reconnecting state · 第 3 次嘗試" style={{ background: '#000' }}>
+        <DCArtboard width={1200} height={680} label="Desktop · Overlay Reconnecting" style={{ background: '#000' }}>
           <div data-screen-label="Desktop · Overlay Reconnecting" style={{ width: 1200, height: 680 }}><OverlayIdle theme={tweaks.theme} state="reconnecting" /></div>
         </DCArtboard>
-        <DCArtboard width={760} height={820} label="③ 控制視窗 · 連線 / overlay / 快捷鍵 / 更新" style={{ background: 'transparent' }}>
-          <div data-screen-label="Desktop · Control" style={{ width: 760, height: 820 }}><DesktopClient theme={tweaks.theme} scenario="control" /></div>
-        </DCArtboard>
-        <DCArtboard width={520} height={460} label="④ macOS Tray · 已連線 · 完整選單" style={{ background: 'transparent' }}>
+        <DCArtboard width={520} height={460} label="Desktop · Tray · Connected" style={{ background: 'transparent' }}>
           <div data-screen-label="Desktop · Tray Connected" style={{ width: 520, height: 460 }}><DesktopClient theme={tweaks.theme} scenario="tray" /></div>
         </DCArtboard>
-        <DCArtboard width={520} height={360} label="④ macOS Tray · 連線中斷 · 只剩重連 / 設定 / 結束" style={{ background: 'transparent' }}>
+        <DCArtboard width={520} height={360} label="Desktop · Tray · Disconnected" style={{ background: 'transparent' }}>
           <div data-screen-label="Desktop · Tray Disconnected" style={{ width: 520, height: 360 }}><DesktopClient theme={tweaks.theme} scenario="tray-disconnected" /></div>
         </DCArtboard>
       </DCSection>
@@ -466,13 +463,7 @@ function App() {
         </DCArtboard>
       </DCSection>
 
-      <DCSection title="桌面整合 + 觀眾尾端 · Desktop & Viewer Extras" subtitle="macOS tray popover · Overlay 視窗選擇器 · 觀眾投票完成">
-        <DCArtboard width={1200} height={780} label="㉚ Desktop · Tray Popover · 從選單列展開" style={{ background: 'transparent' }}>
-          <div data-screen-label="Desktop · Tray Popover" style={{ width: 1200, height: 780 }}><DesktopTrayPopover theme={tweaks.theme} /></div>
-        </DCArtboard>
-        <DCArtboard width={1100} height={760} label="㉛ Overlay · Window Picker · 選擇要疊彈幕的視窗" style={{ background: 'transparent' }}>
-          <div data-screen-label="Desktop · Window Picker" style={{ width: 1100, height: 760 }}><DesktopWindowPicker theme={tweaks.theme} /></div>
-        </DCArtboard>
+      <DCSection title="觀眾尾端 · Viewer Extras" subtitle="投票完成 thank-you">
         <DCArtboard width={375} height={812} label="㉜ Viewer · 投票完成 Thank-you" style={{ background: '#000', borderRadius: 36, overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
           <div data-screen-label="Viewer · Vote Sent" style={{ width: 375, height: 812 }}><ViewerPollThankYou theme={tweaks.theme} /></div>
         </DCArtboard>

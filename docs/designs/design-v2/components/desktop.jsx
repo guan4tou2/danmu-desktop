@@ -1,10 +1,9 @@
-// Desktop Client (Electron) — 5 scenarios.
-// firstrun (gate) → overlay + control + tray → disconnected fallback.
-// NO host/主持人 language anywhere. Control window is DISPLAY control only,
-// not viewer send params (those live in the viewer).
+// Desktop Client (Electron) — canonical desktop mirror.
+// Control Window uses only Connection / Overlay / About as primary sections.
+// Tray is status-only, not a second controller. First-run is represented as
+// inline connection setup, not as a standalone desktop surface.
 
 function DesktopClient({ theme = 'dark', scenario = 'overlay' }) {
-  if (scenario === 'firstrun')     return <FirstRunGate    theme={theme} />;
   if (scenario === 'overlay')      return <OverlayOnDesktop theme={theme} />;
   if (scenario === 'disconnected') return <OverlayOnDesktop theme={theme} disconnected />;
   if (scenario === 'control')      return <ControlWindow   theme={theme} />;
@@ -124,7 +123,7 @@ function MiniBtn({ children, on }) {
 }
 
 /* ------------------- 2. Control Window ------------------- */
-// Sidebar: Overlay / Connection / Shortcuts / About
+// Sidebar: Connection / Overlay / About
 // NO viewer send params (font/opacity/speed — those are viewer-only).
 // Focuses on DISPLAY control: on/off, screen target, server health.
 
@@ -138,13 +137,11 @@ function ControlWindow({ theme }) {
   const textDim = isDark ? hudTokens.textDim : hudTokens.lightTextDim;
   const accent = hudTokens.cyan;
 
-  const [section, setSection] = React.useState('overlay');
+  const [section, setSection] = React.useState('conn');
 
   const navItems = [
-    { k: 'overlay', icon: '▢', zh: 'Overlay',  en: 'DISPLAY' },
     { k: 'conn',    icon: '⇌', zh: '連線',     en: 'CONNECTION' },
-    { k: 'keys',    icon: '⌘', zh: '快捷鍵',   en: 'SHORTCUTS' },
-    { k: 'update',  icon: '↻', zh: '更新',     en: 'UPDATES' },
+    { k: 'overlay', icon: '▢', zh: 'Overlay',  en: 'DISPLAY' },
     { k: 'about',   icon: '○', zh: '關於',     en: 'ABOUT' },
   ];
 
@@ -191,10 +188,8 @@ function ControlWindow({ theme }) {
 
         {/* Main */}
         <div style={{ flex: 1, padding: 22, overflow: 'auto' }}>
-          {section === 'overlay' && <OverlaySection {...{ panel, raised, line, text, textDim, accent }} />}
           {section === 'conn'    && <ConnSection    {...{ panel, raised, line, text, textDim, accent, bg }} />}
-          {section === 'keys'    && <KeysSection    {...{ panel, raised, line, text, textDim, accent }} />}
-          {section === 'update'  && <UpdateSection  {...{ panel, raised, line, text, textDim, accent }} />}
+          {section === 'overlay' && <OverlaySection {...{ panel, raised, line, text, textDim, accent }} />}
           {section === 'about'   && <AboutSection   {...{ panel, raised, line, text, textDim, accent }} />}
         </div>
       </div>
@@ -386,61 +381,6 @@ function StartupRow({ label, hint, on, accent, line, text, textDim }) {
   );
 }
 
-function UpdateSection({ panel, raised, line, text, textDim, accent }) {
-  return (
-    <>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 600, letterSpacing: -0.2 }}>更新</div>
-        <HudLabel color={textDim}>AUTO-UPDATE · CHANGELOG</HudLabel>
-      </div>
-
-      {/* Status card */}
-      <div style={{
-        padding: 16, borderRadius: 8, border: `1px solid ${line}`, background: panel,
-        display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14,
-      }}>
-        <div style={{
-          width: 44, height: 44, borderRadius: 8,
-          background: 'rgba(134, 239, 172, 0.12)', border: `1px solid ${hudTokens.lime}55`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: hudTokens.lime, fontSize: 22,
-        }}>✓</div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: text }}>已是最新版本</div>
-          <div style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 0.5, marginTop: 3 }}>
-            v4.8.7 · 5 分鐘前檢查 · 下次自動檢查 24h 後
-          </div>
-        </div>
-        <ActionBtn accent={accent} line={line} text={text}>立即檢查</ActionBtn>
-      </div>
-
-      {/* Update preferences */}
-      <div style={{ padding: 14, borderRadius: 8, border: `1px solid ${line}`, background: panel, marginBottom: 14 }}>
-        <HudLabel color={textDim}>UPDATE BEHAVIOR</HudLabel>
-        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <StartupRow label="自動下載更新"   hint="背景下載 · 下次啟動套用" on  accent={accent} line={line} text={text} textDim={textDim} />
-          <StartupRow label="加入測試版通道" hint="搶先測試新功能 · 可能不穩"  accent={accent} line={line} text={text} textDim={textDim} />
-        </div>
-      </div>
-
-      {/* Changelog */}
-      <div style={{ padding: 14, borderRadius: 8, border: `1px solid ${line}`, background: panel }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <HudLabel color={textDim}>RECENT CHANGES</HudLabel>
-          <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, color: accent, letterSpacing: 0.5, cursor: 'pointer' }}>
-            完整 changelog →
-          </span>
-        </div>
-        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column' }}>
-          <ChangeRow ver="4.8.7" date="2025-08-12" tag="CURRENT" tagColor={accent} items={['修復多螢幕切換時 overlay 閃爍', 'Tray 圖示在 macOS 26 上的對齊']} text={text} textDim={textDim} line={line} />
-          <ChangeRow ver="4.8.6" date="2025-08-04" items={['新增 ⌘⇧M 切換主/副螢幕', 'Sparkline 改為 30s 滾動']} text={text} textDim={textDim} line={line} />
-          <ChangeRow ver="4.8.5" date="2025-07-28" items={['密碼存入 macOS Keychain', 'WebSocket 重連退避策略']} text={text} textDim={textDim} line={line} last />
-        </div>
-      </div>
-    </>
-  );
-}
-
 function ChangeRow({ ver, date, tag, tagColor, items, text, textDim, line, last }) {
   return (
     <div style={{ padding: '10px 0', borderBottom: last ? 'none' : `1px solid ${line}` }}>
@@ -459,38 +399,6 @@ function ChangeRow({ ver, date, tag, tagColor, items, text, textDim, line, last 
         {items.map((it, i) => <li key={i}>{it}</li>)}
       </ul>
     </div>
-  );
-}
-
-function KeysSection({ panel, raised, line, text, textDim, accent }) {
-  const keys = [
-    { act: '顯示 / 隱藏 overlay', sc: '⌘⇧D' },
-    { act: '暫停接收',          sc: '⌘⇧P' },
-    { act: '清空畫面',          sc: '⌘⇧K' },
-    { act: '開啟控制視窗',      sc: '⌘⇧C' },
-    { act: '切換主螢幕 / 副螢幕', sc: '⌘⇧M' },
-  ];
-  return (
-    <>
-      <div style={{ fontSize: 18, fontWeight: 600, letterSpacing: -0.2, marginBottom: 14 }}>快捷鍵</div>
-      <div style={{ padding: 14, borderRadius: 8, border: `1px solid ${line}`, background: panel, overflow: 'hidden' }}>
-        {keys.map((k, i) => (
-          <div key={k.sc} style={{
-            display: 'flex', alignItems: 'center', padding: '10px 6px',
-            borderBottom: i === keys.length - 1 ? 'none' : `1px solid ${line}`,
-          }}>
-            <span style={{ flex: 1, fontSize: 13 }}>{k.act}</span>
-            <span style={{
-              fontFamily: hudTokens.fontMono, fontSize: 12, color: accent, letterSpacing: 1,
-              padding: '4px 10px', border: `1px solid ${hudTokens.cyanLine}`, borderRadius: 4, background: hudTokens.cyanSoft,
-            }}>{k.sc}</span>
-          </div>
-        ))}
-      </div>
-      <div style={{ marginTop: 14, fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 0.5 }}>
-        點擊任一快捷鍵可自訂 · 偏好會立即生效
-      </div>
-    </>
   );
 }
 
@@ -517,6 +425,18 @@ function AboutSection({ panel, raised, line, text, textDim, accent }) {
         Danmu 是即時彈幕送字系統。觀眾用手機或桌機網頁輸入文字，送到主場大螢幕的 overlay。
         <br />
         <span style={{ color: textDim }}>© 2025 · Open source at github.com/…</span>
+      </div>
+      <div style={{ marginTop: 14, padding: 14, borderRadius: 8, border: `1px solid ${line}`, background: panel }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <HudLabel color={textDim}>RECENT CHANGES</HudLabel>
+          <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, color: accent, letterSpacing: 0.5, cursor: 'pointer' }}>
+            完整 changelog →
+          </span>
+        </div>
+        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column' }}>
+          <ChangeRow ver="4.8.7" date="2025-08-12" tag="CURRENT" tagColor={accent} items={['修復多螢幕切換時 overlay 閃爍', 'Tray 圖示在 macOS 26 上的對齊']} text={text} textDim={textDim} line={line} />
+          <ChangeRow ver="4.8.6" date="2025-08-04" items={['新增 ⌘⇧M 切換主/副螢幕', 'Sparkline 改為 30s 滾動']} text={text} textDim={textDim} line={line} last />
+        </div>
       </div>
     </>
   );
@@ -622,29 +542,20 @@ function TrayMenu({ theme, disconnected }) {
         </div>
         {disconnected ? (
           <>
-            <TrayRow label="重新連線…" sc="↵" isDark={isDark} accent={accent} />
             <TrayRow label="連線設定…" isDark={isDark} />
+            <TrayRow label="開啟控制視窗…" isDark={isDark} />
             <div style={{ height: 1, background: isDark ? hudTokens.line : hudTokens.lightLine, margin: '4px 0' }} />
             <TrayRow label="關於 Danmu Desktop…" isDark={isDark} />
             <TrayRow label="結束 Danmu" isDark={isDark} danger />
           </>
         ) : (
           <>
-        {/* Toggle overlay */}
-        <TrayToggleRow label="顯示 overlay" sc="⌘⇧D" on accent={accent} isDark={isDark} />
-        <TrayRow label="暫停接收" sc="⌘⇧P" isDark={isDark} />
-        <TrayRow label="清空畫面" sc="⌘⇧K" isDark={isDark} />
-
-        <div style={{ height: 1, background: isDark ? hudTokens.line : hudTokens.lightLine, margin: '4px 0' }} />
-
-        <TrayRow label="顯示於" meta="主螢幕 ▸" isDark={isDark} />
-        <TrayRow label="伺服器" meta="已連線 ▸" isDark={isDark} />
-
-        <div style={{ height: 1, background: isDark ? hudTokens.line : hudTokens.lightLine, margin: '4px 0' }} />
-
-        <TrayRow label="開啟控制視窗…" isDark={isDark} />
-        <TrayRow label="偏好設定…" isDark={isDark} />
-        <TrayRow label="結束 Danmu" isDark={isDark} danger />
+            <TrayRow label="Overlay 狀態" meta="顯示中" isDark={isDark} />
+            <TrayRow label="伺服器" meta="已連線" isDark={isDark} />
+            <div style={{ height: 1, background: isDark ? hudTokens.line : hudTokens.lightLine, margin: '4px 0' }} />
+            <TrayRow label="開啟控制視窗…" isDark={isDark} />
+            <TrayRow label="關於 Danmu Desktop…" isDark={isDark} />
+            <TrayRow label="結束 Danmu" isDark={isDark} danger />
           </>
         )}
       </div>
@@ -662,189 +573,6 @@ function TrayRow({ label, sc, meta, isDark, danger }) {
       <span style={{ flex: 1 }}>{label}</span>
       {sc && <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: dim, letterSpacing: 1 }}>{sc}</span>}
       {meta && <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: dim, letterSpacing: 0.5 }}>{meta}</span>}
-    </div>
-  );
-}
-function TrayToggleRow({ label, sc, on, accent, isDark }) {
-  const dim = isDark ? hudTokens.textDim : hudTokens.lightTextDim;
-  return (
-    <div style={{ display: 'flex', padding: '6px 10px', borderRadius: 4, cursor: 'pointer', alignItems: 'center' }}>
-      <span style={{ width: 14, color: on ? accent : 'transparent' }}>✓</span>
-      <span style={{ flex: 1 }}>{label}</span>
-      <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: dim, letterSpacing: 1 }}>{sc}</span>
-    </div>
-  );
-}
-
-/* ------------------- 5. First-run Gate ------------------- */
-// Modal-as-app — until user enters server URL & validates, the rest of
-// the app is unavailable. Reveals on every launch if no server.yaml exists,
-// or if last-known server can't be reached after timeout.
-
-function FirstRunGate({ theme }) {
-  const isDark = theme === 'dark';
-  const bg = isDark ? hudTokens.bg0 : hudTokens.lightBg0;
-  const panel = isDark ? hudTokens.bg1 : '#fff';
-  const raised = isDark ? hudTokens.bg2 : hudTokens.lightBg2;
-  const line = isDark ? hudTokens.line : hudTokens.lightLine;
-  const text = isDark ? hudTokens.text : hudTokens.lightText;
-  const textDim = isDark ? hudTokens.textDim : hudTokens.lightTextDim;
-  const accent = hudTokens.cyan;
-  const [step, setStep] = React.useState(2); // 1 welcome · 2 server · 3 testing · 4 done
-  const [url, setUrl] = React.useState('ws://danmu.local:4001');
-  const [remember, setRemember] = React.useState(true);
-
-  return (
-    <div style={{
-      width: '100%', height: '100%', position: 'relative',
-      background: isDark
-        ? 'radial-gradient(circle at 30% 20%, #1e293b 0%, #020617 60%)'
-        : 'radial-gradient(circle at 30% 20%, #e2e8f0 0%, #cbd5e1 60%)',
-      fontFamily: hudTokens.fontSans, color: text, overflow: 'hidden',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>
-      {/* macOS title bar */}
-      <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: 36,
-        background: panel, borderBottom: `1px solid ${line}`,
-        display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px',
-      }}>
-        <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#ff5f57' }} />
-        <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#febc2e' }} />
-        <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#28c840' }} />
-        <span style={{ flex: 1, textAlign: 'center', fontSize: 12, fontFamily: hudTokens.fontMono, letterSpacing: 1, color: textDim }}>
-          Danmu Desktop · 連線設定
-        </span>
-        <StatusDot color={hudTokens.amber} size={6} />
-        <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: hudTokens.amber, letterSpacing: 1 }}>NO CONNECTION</span>
-      </div>
-
-      {/* Card */}
-      <div style={{
-        width: 560, marginTop: 24, padding: '36px 40px 32px',
-        background: panel, border: `1px solid ${line}`, borderRadius: 12,
-        boxShadow: '0 30px 60px rgba(0,0,0,0.45)',
-      }}>
-        {/* Hero */}
-        <div style={{ textAlign: 'center', marginBottom: 22 }}>
-          <DanmuHero title="Danmu Fire" size="medium" align="center" subtitle="Desktop · Electron app" />
-        </div>
-
-        <div style={{ fontSize: 14, color: text, marginBottom: 4 }}>連到你的彈幕伺服器</div>
-        <div style={{ fontFamily: hudTokens.fontMono, fontSize: 11, color: textDim, letterSpacing: 0.3, marginBottom: 18, lineHeight: 1.6 }}>
-          首次啟動需要設定伺服器位址 · 設定後會記住，下次自動重連
-        </div>
-
-        {/* Stepper */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 22, fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 1 }}>
-          {['SERVER', 'TEST', 'READY'].map((label, i) => {
-            const idx = i + 1;
-            const active = step === idx + 1;  // 2 = server, 3 = test, 4 = ready
-            const done = step > idx + 1;
-            return (
-              <React.Fragment key={label}>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  color: active ? accent : done ? hudTokens.lime : textDim,
-                }}>
-                  <span style={{
-                    width: 18, height: 18, borderRadius: '50%',
-                    border: `1px solid ${active ? accent : done ? hudTokens.lime : line}`,
-                    background: active ? hudTokens.cyanSoft : done ? 'rgba(134, 239, 172,0.12)' : 'transparent',
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 10, fontWeight: 600,
-                  }}>{done ? '✓' : idx}</span>
-                  <span>{label}</span>
-                </span>
-                {i < 2 && <span style={{ flex: 1, height: 1, background: line }} />}
-              </React.Fragment>
-            );
-          })}
-        </div>
-
-        {/* URL field */}
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 1, marginBottom: 6 }}>SERVER URL</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              value={url}
-              onChange={e => setUrl(e.target.value)}
-              style={{
-                flex: 1, padding: '12px 14px', background: bg, border: `1px solid ${accent}`, borderRadius: 6,
-                color: text, fontFamily: hudTokens.fontMono, fontSize: 14, outline: 'none', boxSizing: 'border-box',
-                boxShadow: `0 0 0 3px ${hudTokens.cyanSoft}`,
-              }}
-            />
-            <span style={{
-              padding: '12px 18px', borderRadius: 6, background: accent, color: '#000',
-              fontFamily: hudTokens.fontMono, fontSize: 12, fontWeight: 600, letterSpacing: 1,
-              cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
-            }}>測試連線</span>
-          </div>
-          <div style={{ marginTop: 6, fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 0.3, lineHeight: 1.6 }}>
-            支援 ws:// 或 wss:// · 區網或公網皆可
-          </div>
-        </div>
-
-        {/* Recent (if any) */}
-        <div style={{
-          padding: 12, borderRadius: 6, background: raised, border: `1px solid ${line}`,
-          marginBottom: 18,
-        }}>
-          <div style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 1, marginBottom: 8 }}>之前用過</div>
-          {[
-            { addr: 'wss://danmu.acme.co', when: '昨天' },
-            { addr: 'ws://192.168.1.50:4001', when: '3 天前' },
-          ].map(r => (
-            <div key={r.addr} style={{ display: 'flex', alignItems: 'center', padding: '5px 0', cursor: 'pointer' }}>
-              <span style={{ flex: 1, fontFamily: hudTokens.fontMono, fontSize: 12, color: text }}>{r.addr}</span>
-              <span style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, letterSpacing: 0.5 }}>{r.when}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Remember + admin pwd */}
-        <div style={{ marginBottom: 22, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => setRemember(!remember)}>
-            <span style={{
-              width: 16, height: 16, borderRadius: 3,
-              border: `1.5px solid ${remember ? accent : line}`,
-              background: remember ? accent : 'transparent',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              color: '#000', fontSize: 11, fontWeight: 700,
-            }}>{remember ? '✓' : ''}</span>
-            <span style={{ fontSize: 12, color: text }}>記住這個伺服器（下次自動連線）</span>
-          </div>
-          <div style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 0.3, lineHeight: 1.6, marginLeft: 26 }}>
-            設定存於 <span style={{ color: text }}>~/.danmu/server.yaml</span> · 密碼存入 macOS Keychain
-          </div>
-        </div>
-
-        {/* Footer actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 18, borderTop: `1px solid ${line}` }}>
-          <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 0.3, cursor: 'pointer' }}>
-            部署文件 →
-          </span>
-          <span style={{ flex: 1 }} />
-          <span style={{
-            padding: '9px 16px', borderRadius: 6, border: `1px solid ${line}`, color: textDim,
-            fontSize: 12, fontWeight: 500, cursor: 'pointer',
-          }}>稍後設定</span>
-          <span style={{
-            padding: '9px 22px', borderRadius: 6, background: accent, color: '#000',
-            fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-          }}>連線並開始接收 →</span>
-        </div>
-      </div>
-
-      {/* Background hint */}
-      <div style={{
-        position: 'absolute', bottom: 16, left: 0, right: 0, textAlign: 'center',
-        fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 0.5,
-      }}>
-        未完成設定前無法使用 overlay · 可從 ⌘Q 結束
-      </div>
     </div>
   );
 }

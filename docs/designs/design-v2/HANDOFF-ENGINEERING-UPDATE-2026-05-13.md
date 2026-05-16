@@ -32,6 +32,35 @@ Current interpretation:
 - zip3 is a strong directional improvement
 - repo handoff docs remain canonical until Design ships one internally consistent bundle that includes the current rules and conflict resolutions
 
+## 2026-05-14 zip4 Desktop Clarification
+
+Reviewed bundle: `/Users/guantou/Downloads/danmu (4).zip`
+
+Formal review doc:
+
+- `docs/designs/design-v2/HANDOFF-ZIP4-DESKTOP-REVIEW-2026-05-14.md`
+
+What zip4 desktop aligned correctly:
+
+- standalone `First-run Gate` artboard is removed
+- standalone `Tray Popover` artboard is removed
+- standalone `Window Picker` artboard is removed
+- desktop scene order now starts with `Desktop · Control Window`
+- overlay and tray state artboards match the intended three-surface model
+
+What still prevents zip4 desktop from being canonical by itself:
+
+- `components/desktop.jsx` still models `ControlWindow` as `Overlay / Connection / Shortcuts / Update / About`
+- the default control-window section is still `overlay`, not `conn`
+- standalone `FirstRunGate` still exists in source
+- older tray/controller concepts still exist in source even though the artboards were removed
+
+Current interpretation:
+
+- zip4 desktop is aligned at the artboard level
+- zip4 desktop source is still partial
+- repo handoff docs and repo-tracked desktop mirrors remain the canonical source of truth until the bundle source matches them directly
+
 ## Read First
 
 1. `docs/designs/design-v2/STYLE-CONTRACT.md`

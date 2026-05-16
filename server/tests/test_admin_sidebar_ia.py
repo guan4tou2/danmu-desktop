@@ -46,65 +46,60 @@ EXPECTED_NAV_ORDER = [
     "polls",
     "moderation",
     "system",
-    "security",  # standalone — last row, after divider
 ]
 
 
-def test_sidebar_renders_nine_nav_rows_in_locked_order(admin_js: str):
-    """Sidebar HTML must declare data-route in this exact order."""
+def test_sidebar_renders_eight_nav_rows_in_locked_order(admin_js: str):
+    """Sidebar HTML must declare data-route in this exact 8-area order
+    (2026-05-13 engineering update: security moved into System accordion
+    as an `access` leaf, no longer a standalone sidebar row)."""
     pattern = re.compile(r'<button[^>]*\bdata-route="([\w-]+)"[^>]*role="tab"', re.DOTALL)
     found = pattern.findall(admin_js)
     # Multiple data-route="…" occurrences exist throughout admin.js
-    # (other UI bits also use them); restrict to the first run that
-    # hits all 9 expected slugs in order. The first 9 nav buttons are
-    # the sidebar.
-    actual_first_nine = found[:9]
-    assert actual_first_nine == EXPECTED_NAV_ORDER, (
-        f"sidebar nav order drifted from IA-REORG-DRAFT.\n"
+    # (other UI bits also use them); restrict to the first run of 8
+    # sidebar nav buttons.
+    actual_first_eight = found[:8]
+    assert actual_first_eight == EXPECTED_NAV_ORDER, (
+        f"sidebar nav order drifted from the 8-area IA baseline.\n"
         f"expected: {EXPECTED_NAV_ORDER}\n"
-        f"actual:   {actual_first_nine}"
+        f"actual:   {actual_first_eight}"
     )
 
 
-def test_security_row_has_standalone_marker(admin_js: str):
-    """security must carry data-nav-standalone='true' so CSS divider
-    layout makes the visual separation obvious — locked decision per
-    polestar 2026-05-04: security is NOT inside System accordion."""
+def test_security_is_not_a_standalone_sidebar_row(admin_js: str):
+    """Per the 2026-05-13 engineering update, `security` must NOT exist as
+    a top-level sidebar nav row. Its UI lives under System accordion's
+    `access` group as a leaf. Bookmarks like `#/security` still work via
+    the `_routeAliases` mapping to `{ nav: "system", tab: "security" }`."""
     pattern = re.compile(
-        r'<button[^>]*\bdata-route="security"[^>]*\bdata-nav-standalone="true"',
+        r'<button[^>]*\bdata-route="security"[^>]*role="tab"',
         re.DOTALL,
     )
-    assert pattern.search(admin_js), (
-        "security button must have data-nav-standalone='true'; "
-        "if you removed it, you also broke the standalone polestar lock."
+    assert not pattern.search(admin_js), (
+        "security must not be a top-level sidebar row — it belongs in "
+        "the System accordion `access` group per the 8-area IA."
     )
-
-
-def test_security_row_preceded_by_divider(admin_js: str):
-    """The CSS divider element must sit between the System row and the
-    Security row so security visually reads as standalone."""
-    pattern = re.compile(
-        r'data-route="system"[\s\S]*?'
-        r'<div class="admin-dash-nav-divider"[\s\S]*?'
-        r'data-route="security"',
-        re.DOTALL,
-    )
-    assert pattern.search(
-        admin_js
-    ), "expected <div class='admin-dash-nav-divider'> between system and security"
 
 
 def test_legacy_top_level_buttons_removed(admin_js: str):
     """Old top-level rows must no longer be visible nav buttons.
-    They live in HASH_REDIRECTS instead."""
+    They live in HASH_REDIRECTS or `_routeAliases` instead."""
     sidebar_block = re.search(
-        r"data-route=\"live\".*?data-route=\"security\"",
+        r"data-route=\"live\".*?data-route=\"system\".*?</button>",
         admin_js,
         re.DOTALL,
     )
     assert sidebar_block, "could not find sidebar block to scope removal check"
     block = sidebar_block.group(0)
-    for retired in ("widgets", "appearance", "automation", "history", "dashboard", "messages"):
+    for retired in (
+        "widgets",
+        "appearance",
+        "automation",
+        "history",
+        "dashboard",
+        "messages",
+        "security",
+    ):
         # Buttons would be `<button … data-route="<slug>" … role="tab">`.
         # Allow the slug to appear elsewhere (e.g., comments) but not as a
         # role=tab nav button inside the sidebar block.
@@ -284,11 +279,16 @@ DEEP_LINK_ALIASES = {
     "scheduler": ("system", "scheduler"),
     "webhooks": ("system", "webhooks"),
     "plugins": ("system", "plugins"),
-    # Appearance still owns its tabs (Phase D pending), so themes/fonts/
-    # viewer-config keep their original parent nav.
+    # 2026-05-13 engineering update: security moved under System accordion's
+    # `access` leaf. Bookmarks like `#/security` still work via this alias.
+    "security": ("system", "security"),
+    # Appearance still owns its theme/font tabs (Phase D pending).
     "themes": ("appearance", "themes"),
     "fonts": ("appearance", "fonts"),
-    "viewer-config": ("appearance", "viewer-config"),
+    # `viewer-config` is a parent-only alias: `{ nav: "viewer" }` with no
+    # tab key, since the viewer route already owns the canonical tabbed
+    # surface. Covered separately by
+    # `test_viewer_config_alias_targets_viewer_parent`.
 }
 
 
@@ -310,6 +310,23 @@ def test_deep_link_alias_resolves_to_parent_tab(admin_js: str, slug: str, parent
     assert pattern.search(admin_js), (
         f"_routeAliases.{slug} must map to nav={parent} tab={tab}; "
         f"breaking this would orphan deep-link bookmarks."
+    )
+
+
+def test_viewer_config_alias_targets_viewer_parent(admin_js: str):
+    """`viewer-config` is a parent-only alias — `{ nav: "viewer" }` with
+    no tab key. The viewer route owns the canonical tabbed surface
+    (page / fields / defaults / limits), so the legacy bookmark just
+    lands on that route and tab state comes from
+    `document.body.dataset.viewerConfigTab`."""
+    pattern = re.compile(
+        r'"viewer-config"\s*:\s*\{\s*nav:\s*"viewer"\s*\}',
+        re.DOTALL,
+    )
+    assert pattern.search(admin_js), (
+        '_routeAliases["viewer-config"] must equal { nav: "viewer" } '
+        "(parent-only, no tab) so legacy bookmarks keep landing on the "
+        "canonical Viewer tabbed surface."
     )
 
 
@@ -346,11 +363,14 @@ def test_appearance_parent_nav_not_bare_redirected(admin_js: str):
 # slug list + group structure so a future edit doesn't quietly drop a
 # slug or scramble the grouping that the IA-REORG-DRAFT calls for.
 
-ACCORDION_GROUPS_EXPECTED = ["settings", "tokens", "automation", "history"]
+ACCORDION_GROUPS_EXPECTED = ["settings", "access", "automation", "history"]
 
+# 2026-05-13 engineering update: security is the first leaf of the
+# `access` group (which replaces the older `tokens` group). The
+# remaining settings / automation / history slugs are unchanged.
 ACCORDION_SLUGS_BY_GROUP = {
     "settings": ["system", "backup", "integrations", "wcag", "about"],
-    "tokens": ["firetoken", "api-tokens"],
+    "access": ["security", "firetoken", "api-tokens"],
     "automation": ["scheduler", "webhooks", "plugins"],
     "history": ["sessions", "search", "audit", "replay", "audience"],
 }
@@ -467,20 +487,28 @@ def admin_display_js() -> str:
     return path.read_text(encoding="utf-8")
 
 
-def test_viewer_config_gate_accepts_all_three_owners(admin_display_js: str):
-    """The admin-display syncVisibility() gate must consider all three
-    valid signals — direct viewer-config route, the new Phase A viewer
-    route, and the appearance/viewer-config leaf path — and use that
-    same decision to show the editable display settings page."""
+def test_viewer_owner_gate_accepts_all_four_owners(admin_display_js: str):
+    """The admin-display syncVisibility() gate must consider every valid
+    owner signal — `route === "viewer-config"` (legacy bookmark) or
+    `route === "viewer"` (canonical), plus the matching leaf paths —
+    and use the resulting flag to decide which tab panel renders.
+
+    2026-05-13 engineering update: the editable per-parameter table
+    (color / opacity / font-size / speed / layout) is now the
+    Viewer › Defaults tab; the helper was renamed from
+    `_isViewerConfigOwner` → `_isViewerOwner` to reflect that the
+    surface now belongs to the Viewer route, not a legacy viewer-config
+    sub-page."""
     owner_block = re.search(
-        r"function _isViewerConfigOwner\(route, leaf\)\s*\{[\s\S]*?\n\s*\}",
+        r"function _isViewerOwner\(route, leaf\)\s*\{[\s\S]*?\n\s*\}",
         admin_display_js,
     )
-    assert owner_block, "_isViewerConfigOwner helper not found"
+    assert owner_block, "_isViewerOwner helper not found"
     owner_body = owner_block.group(0)
     assert 'route === "viewer-config"' in owner_body, "must accept legacy viewer-config route"
-    assert 'route === "viewer"' in owner_body, "must accept Phase A viewer route"
+    assert 'route === "viewer"' in owner_body, "must accept canonical viewer route"
     assert 'leaf === "viewer-config"' in owner_body, "must accept appearance/viewer-config leaf"
+    assert 'leaf === "viewer"' in owner_body, "must accept system or alias viewer leaf"
 
     sync_block = re.search(
         r"function syncVisibility\(\)\s*\{[\s\S]*?_lastVisibleRoute\s*=\s*route;",
@@ -489,16 +517,19 @@ def test_viewer_config_gate_accepts_all_three_owners(admin_display_js: str):
     assert sync_block, "syncVisibility body not found"
     body = sync_block.group(0)
     assert (
-        "const isViewerConfigOwner = _isViewerConfigOwner(route, leaf)" in body
+        "const isViewerOwner = _isViewerOwner(route, leaf)" in body
     ), "syncVisibility must use the shared owner helper"
-    assert 'page.style.display = isViewerConfigOwner ? "" : "none"' in body, (
-        "admin-display-v2-page contains the editable Speed/Color controls; "
-        "it must become visible when the viewer-config owner gate is true"
+    assert (
+        'page.style.display = (isViewerOwner && tab === "defaults") ? "" : "none"' in body
+    ), (
+        "admin-display-v2-page now hosts the Viewer › Defaults tab; it "
+        "must become visible only when the viewer owner gate is true "
+        "AND the defaults tab is active."
     )
 
 
-def test_viewer_config_tab_bar_uses_route_owner_not_raw_hash(admin_display_js: str):
-    """The viewer-config tab chrome must follow the same route/leaf owner
+def test_viewer_owner_tab_bar_uses_route_owner_not_raw_hash(admin_display_js: str):
+    """The viewer tab chrome must follow the same route/leaf owner
     decision as syncVisibility(). A raw hash check like
     `hash === "viewer-config"` misses #/viewer and
     #/appearance/viewer-config."""
@@ -509,7 +540,7 @@ def test_viewer_config_tab_bar_uses_route_owner_not_raw_hash(admin_display_js: s
     assert sync_bar, "_syncBar body not found"
     body = sync_bar.group(0)
     assert (
-        "_isViewerConfigOwner(route, leaf)" in body
+        "_isViewerOwner(route, leaf)" in body
     ), "_syncBar must use the shared route/leaf owner check"
     assert (
         'hash === "viewer-config"' not in body
