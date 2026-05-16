@@ -91,6 +91,59 @@ test("ConnSection uses single host field + canonical URL preview + test button",
   expect(src).toMatch(/addr="danmu\.local"/);
 });
 
+test("OverlaySection primary control is a button (with state text), not a Toggle switch", () => {
+  // 2026-05-16: impl uses `<button data-client-overlay-button>` with copy
+  // that flips between "▶ 開啟 Overlay" / "◼ 關閉 Overlay" — a deliberate
+  // affordance for an action (spawn/destroy overlay window), not a status
+  // sync. The design must match that pattern, not show a Toggle switch.
+  const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
+
+  // The OverlaySection-scoped slice — read from the function start to the
+  // next `function ` declaration so we don't catch ConnSection's pattern.
+  const slice = src.split(/function OverlaySection/)[1].split(/\nfunction /)[0];
+
+  expect(slice).toMatch(/▶ 開啟 Overlay/);
+  expect(slice).toMatch(/◼ 關閉 Overlay/);
+  expect(slice).toMatch(/aria-pressed=\{open\}/);
+  // No Toggle switch inside OverlaySection.
+  expect(slice).not.toMatch(/<Toggle\b/);
+});
+
+test("OverlaySection has no redundant start/pause action buttons", () => {
+  // 2026-05-16: impl `index.html:319-323` shows only `⌫ 清空畫面` in the
+  // actions row. The primary button above owns start/stop. Reintroducing
+  // `▶ 開始接收` or `⏸ 暫停` here duplicates that control.
+  const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
+  const slice = src.split(/function OverlaySection/)[1].split(/\nfunction /)[0];
+
+  expect(slice).toMatch(/⌫ 清空畫面/);
+  expect(slice).not.toMatch(/▶ 開始接收/);
+  expect(slice).not.toMatch(/⏸ 暫停/);
+});
+
+test("OverlaySection exposes the sync multi-display checkbox", () => {
+  // 2026-05-16: impl has `#sync-multi-display-checkbox`. Without this in
+  // the design mirror, multi-monitor operators have no UI affordance for
+  // mirrored overlay placement.
+  const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
+  const slice = src.split(/function OverlaySection/)[1].split(/\nfunction /)[0];
+
+  expect(slice).toMatch(/Enable synchronous multi-display/);
+  expect(slice).toMatch(/所有螢幕同步顯示 overlay/);
+});
+
+test("AboutSection changelog demo does not reference removed concepts", () => {
+  // 2026-05-16: the fake changelog rows previously mentioned `密碼存入
+  // macOS Keychain` (wrong-concept admin password) and `Sparkline 改為
+  // 30s 滾動` (sparkline since removed from ConnSection). Even as demo
+  // copy, these mislead new readers into thinking the features exist.
+  const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
+  const slice = src.split(/function AboutSection/)[1].split(/\nfunction /)[0];
+
+  expect(slice).not.toMatch(/密碼存入 macOS Keychain/);
+  expect(slice).not.toMatch(/Sparkline 改為/);
+});
+
 test("DesktopClient + ControlWindow forward testState through to ConnSection", () => {
   // The 4 conn test-state artboards (idle/testing/ok/fail) need the
   // prop chain DesktopClient(testState) → ControlWindow(defaultTestState)

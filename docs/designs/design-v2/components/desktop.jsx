@@ -198,6 +198,12 @@ function ControlWindow({ theme, defaultTestState }) {
 }
 
 function OverlaySection({ panel, raised, line, text, textDim, accent }) {
+  // Mockup-only on/off state; real impl reads `data-client-overlay-button`
+  // aria-pressed and drives the button copy via overlay-button state in
+  // `client-nav.js` (see renderer-modules/connection-status.js).
+  const [open, setOpen] = React.useState(true);
+  const [syncMulti, setSyncMulti] = React.useState(false);
+
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 14 }}>
@@ -205,15 +211,31 @@ function OverlaySection({ panel, raised, line, text, textDim, accent }) {
         <HudLabel color={textDim}>透明層 · 點擊穿透</HudLabel>
       </div>
 
+      {/* Primary control — button, not Toggle. Button state text is the
+          source of truth ("▶ 開啟 Overlay" ↔ "◼ 關閉 Overlay"), matching
+          the Electron client's `data-client-overlay-button`. */}
       <div style={{
         padding: 14, borderRadius: 8, border: `1px solid ${line}`, background: panel,
         display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14,
       }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 600 }}>顯示彈幕 Overlay</div>
-          <div style={{ fontSize: 11, color: textDim, marginTop: 2 }}>任何時候可用 ⌘⇧D 快速切換</div>
+          <div style={{ fontSize: 11, color: textDim, marginTop: 2 }}>快捷鍵: ⌘⇧D</div>
         </div>
-        <Toggle on accent={accent} line={line} />
+        <span
+          onClick={() => setOpen(!open)}
+          aria-pressed={open}
+          style={{
+            padding: '10px 18px', borderRadius: 6,
+            background: open ? accent : 'transparent',
+            color: open ? '#000' : accent,
+            border: `1px solid ${accent}`,
+            fontFamily: hudTokens.fontSans, fontSize: 13, fontWeight: 600, letterSpacing: 0.5,
+            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+          }}
+        >
+          {open ? '◼ 關閉 Overlay' : '▶ 開啟 Overlay'}
+        </span>
       </div>
 
       <div style={{ padding: 14, borderRadius: 8, border: `1px solid ${line}`, background: panel, marginBottom: 14 }}>
@@ -222,14 +244,38 @@ function OverlaySection({ panel, raised, line, text, textDim, accent }) {
           <HudLabel color={textDim}>DISPLAY · 2 SCREENS DETECTED</HudLabel>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          <ScreenChip label="主螢幕" meta="Built-in · 2560×1600" active accent={accent} line={line} text={text} textDim={textDim} />
+          <ScreenChip label="主螢幕" meta="Built-in · 2560×1600" active={!syncMulti} accent={accent} line={line} text={text} textDim={textDim} />
           <ScreenChip label="副螢幕" meta="HDMI-1 · 1920×1080" accent={accent} line={line} text={text} textDim={textDim} />
         </div>
+        {/* Sync multi-display checkbox — mirrors impl
+            `#sync-multi-display-checkbox`. When on, screen-picker is
+            disabled and overlay spans every detected display. */}
+        <label style={{
+          marginTop: 10, display: 'flex', alignItems: 'center', gap: 8,
+          fontSize: 12, color: text, cursor: 'pointer',
+        }}>
+          <span
+            onClick={() => setSyncMulti(!syncMulti)}
+            style={{
+              width: 16, height: 16, borderRadius: 3,
+              border: `1.5px solid ${syncMulti ? accent : line}`,
+              background: syncMulti ? accent : 'transparent',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              color: '#000', fontSize: 11, fontWeight: 700, flexShrink: 0,
+            }}
+          >{syncMulti ? '✓' : ''}</span>
+          <span>Enable synchronous multi-display</span>
+          <span style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, letterSpacing: 0.3, marginLeft: 'auto' }}>
+            所有螢幕同步顯示 overlay
+          </span>
+        </label>
       </div>
 
+      {/* Single secondary action. Start/stop is owned by the primary button
+          above; any extra "start receive" / "pause" buttons would duplicate
+          that control and are intentionally absent in impl
+          (`index.html` only has clear). */}
       <div style={{ display: 'flex', gap: 8 }}>
-        <ActionBtn main accent={accent}>▶ 開始接收</ActionBtn>
-        <ActionBtn accent={accent} line={line} text={text}>⏸ 暫停</ActionBtn>
         <ActionBtn accent={accent} line={line} text={text}>⌫ 清空畫面</ActionBtn>
       </div>
 
@@ -393,7 +439,13 @@ function ConnSection({ panel, raised, line, text, textDim, accent, bg, testState
         )}
       </div>
 
-      {/* RECENT · last-N servers (host-only; canonical wss://HOST/ws derived) */}
+      {/* RECENT · last-N servers (host-only; canonical wss://HOST/ws derived).
+          TODO (2026-05-16): impl currently stores ONE server in localStorage
+          (host/port/wsToken/displayIndex single key). The 3 demo entries
+          below are design fiction. Two paths to align — A) trim mirror to
+          1 entry, B) impl adds multi-server history schema. Engineering
+          confirmation needed before either move. Keep 3 here for now so
+          the design proposal stays visible. */}
       <div style={{ padding: 14, borderRadius: 8, border: `1px solid ${line}`, background: panel, marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <HudLabel color={textDim}>RECENT CONNECTIONS</HudLabel>
@@ -465,7 +517,7 @@ function AboutSection({ panel, raised, line, text, textDim, accent }) {
         </div>
         <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column' }}>
           <ChangeRow ver="4.8.7" date="2025-08-12" tag="CURRENT" tagColor={accent} items={['修復多螢幕切換時 overlay 閃爍', 'Tray 圖示在 macOS 26 上的對齊']} text={text} textDim={textDim} line={line} />
-          <ChangeRow ver="4.8.6" date="2025-08-04" items={['新增 ⌘⇧M 切換主/副螢幕', 'Sparkline 改為 30s 滾動']} text={text} textDim={textDim} line={line} last />
+          <ChangeRow ver="4.8.6" date="2025-08-04" items={['新增 ⌘⇧M 切換主/副螢幕', 'WebSocket 重連退避策略 (3s → 30s + jitter)']} text={text} textDim={textDim} line={line} last />
         </div>
       </div>
     </>
