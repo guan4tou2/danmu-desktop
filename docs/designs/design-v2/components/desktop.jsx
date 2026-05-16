@@ -3,10 +3,10 @@
 // Tray is status-only, not a second controller. First-run is represented as
 // inline connection setup, not as a standalone desktop surface.
 
-function DesktopClient({ theme = 'dark', scenario = 'overlay', testState }) {
+function DesktopClient({ theme = 'dark', scenario = 'overlay', testState, forceSection }) {
   if (scenario === 'overlay')      return <OverlayOnDesktop theme={theme} />;
   if (scenario === 'disconnected') return <OverlayOnDesktop theme={theme} disconnected />;
-  if (scenario === 'control')      return <ControlWindow   theme={theme} defaultTestState={testState} />;
+  if (scenario === 'control')      return <ControlWindow   theme={theme} defaultTestState={testState} forceSection={forceSection} />;
   if (scenario === 'tray')         return <TrayMenu        theme={theme} />;
   if (scenario === 'tray-disconnected') return <TrayMenu   theme={theme} disconnected />;
   return null;
@@ -95,7 +95,7 @@ function OverlayOnDesktop({ theme, disconnected }) {
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>Danmu Desktop</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>Danmu Fire</span>
               <span style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 0.5 }}>14:02</span>
             </div>
             <div style={{ fontSize: 13, fontWeight: 600, color: hudTokens.amber, marginBottom: 4 }}>無法連線到伺服器</div>
@@ -127,7 +127,7 @@ function MiniBtn({ children, on }) {
 // NO viewer send params (font/opacity/speed — those are viewer-only).
 // Focuses on DISPLAY control: on/off, screen target, server health.
 
-function ControlWindow({ theme, defaultTestState }) {
+function ControlWindow({ theme, defaultTestState, forceSection }) {
   const isDark = theme === 'dark';
   const bg = isDark ? hudTokens.bg0 : hudTokens.lightBg0;
   const panel = isDark ? hudTokens.bg1 : '#fff';
@@ -137,7 +137,7 @@ function ControlWindow({ theme, defaultTestState }) {
   const textDim = isDark ? hudTokens.textDim : hudTokens.lightTextDim;
   const accent = hudTokens.cyan;
 
-  const [section, setSection] = React.useState('conn');
+  const [section, setSection] = React.useState(forceSection || 'conn');
 
   const navItems = [
     { k: 'conn',    icon: '⇌', zh: '連線',     en: 'CONNECTION' },
@@ -147,16 +147,18 @@ function ControlWindow({ theme, defaultTestState }) {
 
   return (
     <div style={{ width: '100%', height: '100%', background: bg, color: text, fontFamily: hudTokens.fontSans, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Title bar */}
-      <div style={{ height: 36, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', borderBottom: `1px solid ${line}`, background: panel }}>
-        <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#ff5f57' }} />
-        <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#febc2e' }} />
-        <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#28c840' }} />
-        <span style={{ flex: 1, textAlign: 'center', fontSize: 12, fontFamily: hudTokens.fontMono, letterSpacing: 1, color: textDim }}>
-          Danmu Desktop
+      {/* macOS title bar — leave 68px on the left for native traffic
+          lights (macOS renders them in titleBarStyle:'hidden'). Don't
+          draw fake red/yellow/green buttons — let the OS own that chrome. */}
+      <div style={{ height: 36, display: 'flex', alignItems: 'center', padding: '0 12px', borderBottom: `1px solid ${line}`, background: panel, flexShrink: 0, WebkitAppRegion: 'drag' }}>
+        <div style={{ width: 68, flexShrink: 0 }} />
+        <span style={{ flex: 1, textAlign: 'center', fontSize: 12, color: textDim, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <span style={{ fontFamily: hudTokens.fontMono, letterSpacing: 1 }}>Danmu Fire</span>
+          <span style={{ fontSize: 9, fontFamily: hudTokens.fontMono, letterSpacing: 1, color: accent, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <StatusDot color={accent} size={5} />CONNECTED
+          </span>
         </span>
-        <StatusDot color={accent} size={6} />
-        <span style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 1 }}>CONNECTED</span>
+        <div style={{ width: 68, flexShrink: 0 }} />
       </div>
 
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
@@ -439,7 +441,7 @@ function ConnSection({ panel, raised, line, text, textDim, accent, bg, testState
         )}
       </div>
 
-      {/* LAST SERVER · single most-recent entry (host-only; canonical
+      {/* LAST USED SERVER · single most-recent entry (host-only; canonical
           wss://HOST/ws derived).
           2026-05-16: impl stores ONE server in localStorage
           (host/port/wsToken/displayIndex single key) — see
@@ -449,7 +451,7 @@ function ConnSection({ panel, raised, line, text, textDim, accent, bg, testState
           grow back to a list. */}
       <div style={{ padding: 14, borderRadius: 8, border: `1px solid ${line}`, background: panel, marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <HudLabel color={textDim}>LAST SERVER</HudLabel>
+          <HudLabel color={textDim}>LAST USED SERVER</HudLabel>
           <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 0.5 }}>
             上次使用 · 自動帶入
           </span>
@@ -462,28 +464,13 @@ function ConnSection({ panel, raised, line, text, textDim, accent, bg, testState
   );
 }
 
-function ChangeRow({ ver, date, tag, tagColor, items, text, textDim, line, last }) {
-  return (
-    <div style={{ padding: '10px 0', borderBottom: last ? 'none' : `1px solid ${line}` }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-        <span style={{ fontFamily: hudTokens.fontMono, fontSize: 12, fontWeight: 600, color: text, letterSpacing: 0.3 }}>v{ver}</span>
-        <span style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, letterSpacing: 0.3 }}>{date}</span>
-        {tag && (
-          <span style={{
-            fontFamily: hudTokens.fontMono, fontSize: 8, letterSpacing: 1,
-            padding: '1px 6px', borderRadius: 2, color: tagColor,
-            background: hudTokens.cyanSoft, border: `1px solid ${tagColor}55`,
-          }}>{tag}</span>
-        )}
-      </div>
-      <ul style={{ margin: 0, padding: '0 0 0 16px', fontSize: 11, color: textDim, lineHeight: 1.7 }}>
-        {items.map((it, i) => <li key={i}>{it}</li>)}
-      </ul>
-    </div>
-  );
-}
-
 function AboutSection({ panel, raised, line, text, textDim, accent }) {
+  // 2026-05-16: stripped RECENT CHANGES card per user direction — the
+  // Electron app's auto-updater already surfaces lifecycle UI when there's
+  // something to show; a static changelog list duplicates that and clutters
+  // the about page. Hero + description (with inline copyright) only.
+  // Product name canonical is `Danmu Fire` (polestar lock); `Danmu Desktop`
+  // is kept only in package.json + build artifact glob for release compat.
   return (
     <>
       <div style={{ fontSize: 18, fontWeight: 600, letterSpacing: -0.2, marginBottom: 14 }}>關於</div>
@@ -494,8 +481,8 @@ function AboutSection({ panel, raised, line, text, textDim, accent }) {
           color: '#000', fontFamily: hudTokens.fontDisplay, fontWeight: 700, fontSize: 28,
         }}>弾</div>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 600 }}>Danmu Desktop</div>
-          <div style={{ fontSize: 11, color: textDim, marginTop: 2, fontFamily: hudTokens.fontMono, letterSpacing: 0.5 }}>v4.8.7 · Electron 28 · macOS</div>
+          <div style={{ fontSize: 16, fontWeight: 600 }}>Danmu Fire</div>
+          <div style={{ fontSize: 11, color: textDim, marginTop: 2, fontFamily: hudTokens.fontMono, letterSpacing: 0.5 }}>v5.0.0 · Electron 41 · macOS</div>
           <div style={{ fontSize: 11, color: hudTokens.lime, marginTop: 4, fontFamily: hudTokens.fontMono, letterSpacing: 1 }}>● UP TO DATE</div>
         </div>
         <div style={{ marginLeft: 'auto' }}>
@@ -506,19 +493,6 @@ function AboutSection({ panel, raised, line, text, textDim, accent }) {
         Danmu 是即時彈幕送字系統。觀眾用手機或桌機網頁輸入文字，送到主場大螢幕的 overlay。
         <br />
         <span style={{ color: textDim }}>© 2025 · Open source at github.com/…</span>
-      </div>
-      <div style={{ marginTop: 14, padding: 14, borderRadius: 8, border: `1px solid ${line}`, background: panel }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <HudLabel color={textDim}>RECENT CHANGES</HudLabel>
-          <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, color: accent, letterSpacing: 0.5, cursor: 'pointer' }}>
-            完整 changelog →
-          </span>
-        </div>
-        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column' }}>
-          <ChangeRow ver="4.8.7" date="2025-08-12" tag="CURRENT" tagColor={accent} items={['修復多螢幕切換時 overlay 閃爍', 'Tray 圖示在 macOS 26 上的對齊']} text={text} textDim={textDim} line={line} />
-          <ChangeRow ver="4.8.6" date="2025-08-04" items={['新增 ⌘⇧M 切換主/副螢幕', 'WebSocket Token UI 從 conn 區整理']} text={text} textDim={textDim} line={line} />
-          <ChangeRow ver="4.8.5" date="2025-07-28" items={['WebSocket 重連退避策略 (3s → 30s + jitter)', 'TrayMenu 改為 status-only']} text={text} textDim={textDim} line={line} last />
-        </div>
       </div>
     </>
   );
@@ -615,8 +589,8 @@ function TrayMenu({ theme, disconnected }) {
         <div style={{ padding: '8px 10px', borderBottom: `1px solid ${isDark ? hudTokens.line : hudTokens.lightLine}`, marginBottom: 4 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <StatusDot color={accent} size={7} />
-            <span style={{ fontWeight: 600 }}>Danmu Desktop</span>
-            <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 9, color: isDark ? hudTokens.textDim : hudTokens.lightTextDim, letterSpacing: 1 }}>v4.8.7</span>
+            <span style={{ fontWeight: 600 }}>Danmu Fire</span>
+            <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 9, color: isDark ? hudTokens.textDim : hudTokens.lightTextDim, letterSpacing: 1 }}>v5.0.0</span>
           </div>
           <div style={{ fontSize: 10, color: isDark ? hudTokens.textDim : hudTokens.lightTextDim, fontFamily: hudTokens.fontMono, letterSpacing: 0.5, marginTop: 4 }}>
             {disconnected ? '連線中斷 · 重連中…' : '已連線 · wss://danmu.local/ws'}

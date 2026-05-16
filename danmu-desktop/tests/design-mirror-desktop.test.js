@@ -10,7 +10,9 @@ function readRepoFile(...parts) {
 test("desktop design component mirror only models connection, overlay, and about as primary control-window sections", () => {
   const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
 
-  expect(src).toContain("const [section, setSection] = React.useState('conn');");
+  // Default section is 'conn'; forceSection prop overrides for canvas
+  // per-section artboards.
+  expect(src).toMatch(/const \[section, setSection\] = React\.useState\(forceSection \|\| ['"]conn['"]\)/);
   expect(src).toContain("{ k: 'conn'");
   expect(src).toContain("{ k: 'overlay'");
   expect(src).toContain("{ k: 'about'");
@@ -144,7 +146,7 @@ test("AboutSection changelog demo does not reference removed concepts", () => {
   expect(slice).not.toMatch(/Sparkline 改為/);
 });
 
-test("ConnSection shows a single LAST SERVER entry, not a multi-server list", () => {
+test("ConnSection shows a single LAST USED SERVER entry, not a multi-server list", () => {
   // 2026-05-16: impl stores ONE server in localStorage (host/port/wsToken/
   // displayIndex single key). The design mirror was previously showing 3
   // demo entries — design fiction. Decision: align mirror to impl truth.
@@ -152,8 +154,8 @@ test("ConnSection shows a single LAST SERVER entry, not a multi-server list", ()
   const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
   const slice = src.split(/function ConnSection/)[1].split(/\nfunction /)[0];
 
-  // Section is labeled LAST SERVER (singular), not RECENT CONNECTIONS (plural).
-  expect(slice).toContain("LAST SERVER");
+  // Section is labeled LAST USED SERVER (singular), not RECENT CONNECTIONS.
+  expect(slice).toContain("LAST USED SERVER");
   expect(slice).not.toContain("RECENT CONNECTIONS");
   // Exactly one RecentRow inside ConnSection.
   const recentRowCount = (slice.match(/<RecentRow\b/g) || []).length;
@@ -161,6 +163,47 @@ test("ConnSection shows a single LAST SERVER entry, not a multi-server list", ()
   // The retired demo entries must not come back.
   expect(slice).not.toContain('addr="danmu.acme.co"');
   expect(slice).not.toContain('addr="192.168.1.50:8443"');
+});
+
+test("ControlWindow titlebar reserves space for native traffic lights — no fake macOS chrome", () => {
+  // 2026-05-16: per user direction "你不應該自己實作視窗控制按鈕". Don't
+  // draw red/yellow/green dots in HTML — Electron with
+  // titleBarStyle:'hidden' lets the OS render the real traffic lights.
+  // The titlebar should leave a 68px spacer on the left for them.
+  const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
+  const slice = src.split(/function ControlWindow/)[1].split(/\nfunction /)[0];
+
+  expect(slice).not.toMatch(/background:\s*['"]#ff5f57['"]/); // red traffic light
+  expect(slice).not.toMatch(/background:\s*['"]#febc2e['"]/); // yellow
+  expect(slice).not.toMatch(/background:\s*['"]#28c840['"]/); // green
+  // Left + right 68px spacers for native traffic light area.
+  expect(slice).toMatch(/width:\s*68/);
+  // Window-drag region declared.
+  expect(slice).toMatch(/WebkitAppRegion:\s*['"]drag['"]/);
+});
+
+test("ControlWindow + DesktopClient forward forceSection for per-section artboards", () => {
+  // 2026-05-16 v3-r6: the design canvas renders each ControlWindow section
+  // (conn / overlay / about) as its own artboard via the `forceSection`
+  // prop chain. Lock the signature so future edits don't break the canvas.
+  const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
+
+  expect(src).toMatch(/function DesktopClient\(\{[^}]*forceSection[^}]*\}/);
+  expect(src).toMatch(/function ControlWindow\(\{[^}]*forceSection[^}]*\}/);
+  expect(src).toMatch(/forceSection\s*\|\|\s*['"]conn['"]/);
+});
+
+test("Desktop mirror uses `Danmu Fire` user-facing name (not `Danmu Desktop`)", () => {
+  // Polestar lock: user-facing UI is `Danmu Fire`. `Danmu Desktop` is
+  // reserved for package.json productName + build artifact glob (release
+  // compat only). The mirror must reflect the user-facing canonical.
+  const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
+
+  // Strip line comments so the polestar explanation doesn't trigger.
+  const noLineComments = src.replace(/\/\/[^\n]*/g, "");
+  expect(noLineComments).not.toMatch(/Danmu Desktop/);
+  // Must contain Danmu Fire in titlebar, hero, tray header.
+  expect(src).toMatch(/Danmu Fire/);
 });
 
 test("DesktopClient + ControlWindow forward testState through to ConnSection", () => {
