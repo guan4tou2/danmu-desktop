@@ -517,7 +517,8 @@ function AboutSection({ panel, raised, line, text, textDim, accent }) {
         </div>
         <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column' }}>
           <ChangeRow ver="4.8.7" date="2025-08-12" tag="CURRENT" tagColor={accent} items={['修復多螢幕切換時 overlay 閃爍', 'Tray 圖示在 macOS 26 上的對齊']} text={text} textDim={textDim} line={line} />
-          <ChangeRow ver="4.8.6" date="2025-08-04" items={['新增 ⌘⇧M 切換主/副螢幕', 'WebSocket 重連退避策略 (3s → 30s + jitter)']} text={text} textDim={textDim} line={line} last />
+          <ChangeRow ver="4.8.6" date="2025-08-04" items={['新增 ⌘⇧M 切換主/副螢幕', 'WebSocket Token UI 從 conn 區整理']} text={text} textDim={textDim} line={line} />
+          <ChangeRow ver="4.8.5" date="2025-07-28" items={['WebSocket 重連退避策略 (3s → 30s + jitter)', 'TrayMenu 改為 status-only']} text={text} textDim={textDim} line={line} last />
         </div>
       </div>
     </>
