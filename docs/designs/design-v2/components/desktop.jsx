@@ -3,10 +3,10 @@
 // Tray is status-only, not a second controller. First-run is represented as
 // inline connection setup, not as a standalone desktop surface.
 
-function DesktopClient({ theme = 'dark', scenario = 'overlay' }) {
+function DesktopClient({ theme = 'dark', scenario = 'overlay', testState }) {
   if (scenario === 'overlay')      return <OverlayOnDesktop theme={theme} />;
   if (scenario === 'disconnected') return <OverlayOnDesktop theme={theme} disconnected />;
-  if (scenario === 'control')      return <ControlWindow   theme={theme} />;
+  if (scenario === 'control')      return <ControlWindow   theme={theme} defaultTestState={testState} />;
   if (scenario === 'tray')         return <TrayMenu        theme={theme} />;
   if (scenario === 'tray-disconnected') return <TrayMenu   theme={theme} disconnected />;
   return null;
@@ -100,7 +100,7 @@ function OverlayOnDesktop({ theme, disconnected }) {
             </div>
             <div style={{ fontSize: 13, fontWeight: 600, color: hudTokens.amber, marginBottom: 4 }}>無法連線到伺服器</div>
             <div style={{ fontFamily: hudTokens.fontMono, fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: 0.3, lineHeight: 1.5 }}>
-              ws://danmu.local:4001<br />
+              wss://danmu.local/ws<br />
               重連中（第 4 次）· 退避 8s
             </div>
           </div>
@@ -127,7 +127,7 @@ function MiniBtn({ children, on }) {
 // NO viewer send params (font/opacity/speed — those are viewer-only).
 // Focuses on DISPLAY control: on/off, screen target, server health.
 
-function ControlWindow({ theme }) {
+function ControlWindow({ theme, defaultTestState }) {
   const isDark = theme === 'dark';
   const bg = isDark ? hudTokens.bg0 : hudTokens.lightBg0;
   const panel = isDark ? hudTokens.bg1 : '#fff';
@@ -188,7 +188,7 @@ function ControlWindow({ theme }) {
 
         {/* Main */}
         <div style={{ flex: 1, padding: 22, overflow: 'auto' }}>
-          {section === 'conn'    && <ConnSection    {...{ panel, raised, line, text, textDim, accent, bg }} />}
+          {section === 'conn'    && <ConnSection    {...{ panel, raised, line, text, textDim, accent, bg }} testState={defaultTestState} />}
           {section === 'overlay' && <OverlaySection {...{ panel, raised, line, text, textDim, accent }} />}
           {section === 'about'   && <AboutSection   {...{ panel, raised, line, text, textDim, accent }} />}
         </div>
@@ -244,56 +244,124 @@ function OverlaySection({ panel, raised, line, text, textDim, accent }) {
   );
 }
 
-function ConnSection({ panel, raised, line, text, textDim, accent, bg }) {
+function ConnSection({ panel, raised, line, text, textDim, accent, bg, testState }) {
   const [editing, setEditing] = React.useState(false);
-  const [url, setUrl] = React.useState('ws://danmu.local:4001');
+  const [host, setHost] = React.useState('danmu.local');
   const [pwOpen, setPwOpen] = React.useState(false);
+  // 4 states: idle (未測試) / testing (測試中) / ok (成功) / fail (失敗).
+  // Driven by silent one-shot WSS handshake — NOT a live connection
+  // status, since the conn page has no overlay (overlay tab owns that).
+  const [tState, setTState] = React.useState(testState || 'idle');
+
+  // Parse host input → canonical URL.
+  // Accepts: hostname, host:port, or full URL (auto-strips
+  // wss:// / https:// scheme + trailing /ws or /).
+  const parseHost = (raw) => raw.trim()
+    .replace(/^wss?:\/\//, '').replace(/^https?:\/\//, '')
+    .replace(/\/ws\/?$/, '').replace(/\/$/, '');
+  const parsed = parseHost(host);
+  // Port 443 is the default (hidden); custom ports stay in the host string.
+  const canonicalUrl = `wss://${parsed}/ws`;
+
+  const TestChip = () => {
+    const chipStyles = {
+      idle:    { color: textDim,         icon: '—', label: 'LAST TEST · —' },
+      testing: { color: accent,          icon: '⟳', label: '測試中…' },
+      ok:      { color: accent,          icon: '✓', label: '02:41:08 · 23ms' },
+      fail:    { color: hudTokens.amber, icon: '✗', label: '02:41:08 · Connection refused' },
+    };
+    const c = chipStyles[tState];
+    return (
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        padding: '4px 10px', borderRadius: 4,
+        background: tState === 'idle' ? 'transparent' : `${c.color}11`,
+        border: `1px solid ${tState === 'idle' ? line : `${c.color}33`}`,
+        fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 0.5, color: c.color,
+      }}>
+        <span>{c.icon}</span>
+        <span>{c.label}</span>
+      </div>
+    );
+  };
 
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 14 }}>
         <div style={{ fontSize: 18, fontWeight: 600, letterSpacing: -0.2 }}>連線設定</div>
-        <HudLabel color={textDim}>SERVER · AUTH · STARTUP</HudLabel>
+        <HudLabel color={textDim}>SERVER · CONFIGURE</HudLabel>
       </div>
 
-      {/* SERVER · live status + inline-editable URL */}
+      {/* SERVER · single host field + live canonical preview + test button.
+          Conn page is configure-only — NO live connection here; live status
+          lives in OverlaySection while the overlay window is running. */}
       <div style={{ padding: 14, borderRadius: 8, border: `1px solid ${line}`, background: panel, marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-          <StatusDot color={accent} size={6} />
-          <HudLabel color={textDim}>SERVER · CONNECTED · 02:41:08</HudLabel>
-          <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 0.5 }}>
-            延遲 23ms · 重連 0 次
-          </span>
+        <div style={{ marginBottom: 10 }}>
+          <TestChip />
         </div>
+
         {editing ? (
-          <div style={{ display: 'flex', gap: 6 }}>
-            <input
-              value={url}
-              onChange={e => setUrl(e.target.value)}
-              autoFocus
-              style={{
-                flex: 1, padding: '10px 12px', background: bg, border: `1px solid ${accent}`, borderRadius: 6,
-                color: text, fontFamily: hudTokens.fontMono, fontSize: 13, outline: 'none', boxSizing: 'border-box',
-                boxShadow: `0 0 0 3px ${hudTokens.cyanSoft}`,
-              }}
-            />
-            <span onClick={() => setEditing(false)} style={{
-              padding: '8px 14px', borderRadius: 6, background: accent, color: '#000',
-              fontFamily: hudTokens.fontMono, fontSize: 11, fontWeight: 600, letterSpacing: 1,
-              cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
-            }}>套用</span>
-            <span onClick={() => { setEditing(false); setUrl('ws://danmu.local:4001'); }} style={{
-              padding: '8px 12px', borderRadius: 6, border: `1px solid ${line}`, color: textDim,
-              fontFamily: hudTokens.fontMono, fontSize: 11, cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
-            }}>取消</span>
+          <div>
+            <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, letterSpacing: 1, marginBottom: 6 }}>SERVER</div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                value={host}
+                onChange={e => setHost(e.target.value)}
+                autoFocus
+                placeholder="danmu.acme.co 或 192.168.1.50:8443"
+                style={{
+                  flex: 1, padding: '10px 12px', background: bg, border: `1px solid ${accent}`, borderRadius: 6,
+                  color: text, fontFamily: hudTokens.fontMono, fontSize: 13, outline: 'none', boxSizing: 'border-box',
+                  boxShadow: `0 0 0 3px ${hudTokens.cyanSoft}`,
+                }}
+              />
+              <span onClick={() => { setHost(parseHost(host)); setEditing(false); }} style={{
+                padding: '8px 14px', borderRadius: 6, background: accent, color: '#000',
+                fontFamily: hudTokens.fontMono, fontSize: 11, fontWeight: 600, letterSpacing: 1,
+                cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
+              }}>套用</span>
+              <span onClick={() => { setEditing(false); setHost('danmu.local'); }} style={{
+                padding: '8px 12px', borderRadius: 6, border: `1px solid ${line}`, color: textDim,
+                fontFamily: hudTokens.fontMono, fontSize: 11, cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
+              }}>取消</span>
+            </div>
+            <div style={{ marginTop: 6, fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, letterSpacing: 0.3, lineHeight: 1.5 }}>
+              輸入 hostname 或 host:port · 自動 strip wss:// / https:// / /ws · port 預設 443（隱藏）
+            </div>
           </div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ flex: 1, padding: '10px 12px', background: raised, borderRadius: 6, fontFamily: hudTokens.fontMono, fontSize: 13, color: text, border: `1px solid ${line}` }}>{url}</span>
-            <MiniBtn onClick={() => setEditing(true)}>⚙ 更改</MiniBtn>
-            <MiniBtn>↻ 重連</MiniBtn>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div onClick={() => setEditing(true)} style={{
+              padding: '10px 12px', background: raised, borderRadius: 6,
+              fontFamily: hudTokens.fontMono, fontSize: 13, color: text,
+              border: `1px solid ${line}`, cursor: 'text',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <span style={{ flex: 1 }}>{parsed}</span>
+              <span style={{ fontSize: 11, color: textDim, flexShrink: 0 }}>✎</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{
+                flex: 1, padding: '6px 12px', borderRadius: 4,
+                background: `${accent}08`, border: `1px solid ${accent}22`,
+                fontFamily: hudTokens.fontMono, fontSize: 11, color: accent, letterSpacing: 0.3,
+              }}>
+                {canonicalUrl}
+              </div>
+              {/* Mockup-only: click cycles state for canvas demo. Real impl
+                  fires a one-shot WSS handshake via IPC. */}
+              <span onClick={() => setTState(tState === 'ok' ? 'fail' : tState === 'fail' ? 'idle' : tState === 'idle' ? 'testing' : 'ok')} style={{
+                flex: 'none', padding: '6px 12px', textAlign: 'center', borderRadius: 4,
+                border: `1px solid ${accent}`, background: hudTokens.cyanSoft,
+                color: accent, fontSize: 11, cursor: 'pointer', fontFamily: hudTokens.fontSans,
+              }}>⚐ 測試</span>
+            </div>
           </div>
         )}
+
+        <div style={{ marginTop: 8, fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, letterSpacing: 0.3, lineHeight: 1.5 }}>
+          測試：one-shot WSS handshake 驗證，不觸發 overlay、不留 connection
+        </div>
       </div>
 
       {/* AUTH · WebSocket Token (optional, collapsed by default).
@@ -325,7 +393,7 @@ function ConnSection({ panel, raised, line, text, textDim, accent, bg }) {
         )}
       </div>
 
-      {/* RECENT · last-N servers */}
+      {/* RECENT · last-N servers (host-only; canonical wss://HOST/ws derived) */}
       <div style={{ padding: 14, borderRadius: 8, border: `1px solid ${line}`, background: panel, marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <HudLabel color={textDim}>RECENT CONNECTIONS</HudLabel>
@@ -334,25 +402,11 @@ function ConnSection({ panel, raised, line, text, textDim, accent, bg }) {
           </span>
         </div>
         <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <RecentRow addr="ws://danmu.local:4001"  when="目前 · 02:41:08" accent={accent} line={line} text={text} textDim={textDim} active />
-          <RecentRow addr="wss://danmu.acme.co"    when="昨天 14:22"   accent={accent} line={line} text={text} textDim={textDim} />
-          <RecentRow addr="ws://192.168.1.50:4001" when="3 天前"      accent={accent} line={line} text={text} textDim={textDim} />
+          <RecentRow addr="danmu.local"          when="上次 · 昨天 16:30" accent={accent} line={line} text={text} textDim={textDim} active />
+          <RecentRow addr="danmu.acme.co"        when="3 天前"   accent={accent} line={line} text={text} textDim={textDim} />
+          <RecentRow addr="192.168.1.50:8443"    when="1 週前"   accent={accent} line={line} text={text} textDim={textDim} />
         </div>
       </div>
-
-      {/* MESSAGE FLOW · sparkline */}
-      <div style={{ padding: 14, borderRadius: 8, border: `1px solid ${line}`, background: panel, marginBottom: 14 }}>
-        <HudLabel color={textDim}>MESSAGE FLOW · LAST 30s</HudLabel>
-        <div style={{ marginTop: 10 }}>
-          <Sparkline data={[2, 4, 3, 6, 5, 7, 9, 6, 8, 11, 8, 10, 9, 12, 14, 11, 13, 15, 12, 10, 8, 11, 14, 16, 13, 11, 9, 12, 15, 18]} color={accent} width={560} height={56} />
-        </div>
-        <div style={{ display: 'flex', gap: 20, marginTop: 8, fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 0.5 }}>
-          <span>RX · <span style={{ color: text }}>1,284</span></span>
-          <span>RATE · <span style={{ color: accent }}>4.2/s</span></span>
-          <span>PEAK · <span style={{ color: text }}>18/s</span></span>
-        </div>
-      </div>
-
     </>
   );
 }
@@ -513,7 +567,7 @@ function TrayMenu({ theme, disconnected }) {
             <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 9, color: isDark ? hudTokens.textDim : hudTokens.lightTextDim, letterSpacing: 1 }}>v4.8.7</span>
           </div>
           <div style={{ fontSize: 10, color: isDark ? hudTokens.textDim : hudTokens.lightTextDim, fontFamily: hudTokens.fontMono, letterSpacing: 0.5, marginTop: 4 }}>
-            {disconnected ? '連線中斷 · 重連中…' : '已連線 · ws://danmu.local:4001'}
+            {disconnected ? '連線中斷 · 重連中…' : '已連線 · wss://danmu.local/ws'}
           </div>
         </div>
         {/* Single canonical schema — only status text + accent color change

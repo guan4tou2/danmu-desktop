@@ -45,6 +45,65 @@ test("ConnSection does not show a persistent deployment-docs link", () => {
   expect(src).not.toMatch(/部署文件 →[\s\S]{0,80}server-setup/);
 });
 
+test("ConnSection is configure-only — no live-connection chrome, no overlay trigger", () => {
+  // 2026-05-16 alignment: WS connection ≡ overlay child window. The conn
+  // page has no independent connection lifecycle; it only configures
+  // server URL + token. Therefore no SERVER · CONNECTED status, no
+  // latency/reconnect-count meta, no message-flow sparkline, and no
+  // ↻ 重連 button (reconnecting from conn page would mean spawning a new
+  // overlay — that's the overlay tab's job).
+  const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
+
+  expect(src).not.toMatch(/SERVER · CONNECTED · \d/);
+  expect(src).not.toMatch(/延遲 \d+ms · 重連 \d+ 次/);
+  expect(src).not.toMatch(/MESSAGE FLOW · LAST 30s/);
+  expect(src).not.toContain("RATE · 4.2/s");
+  expect(src).not.toContain("↻ 重連");
+  // ConnSection kicker now reads "configure-only," not the old
+  // "SERVER · AUTH · STARTUP" trio that implied a live surface.
+  expect(src).toContain("SERVER · CONFIGURE");
+  expect(src).not.toContain("SERVER · AUTH · STARTUP");
+});
+
+test("ConnSection uses single host field + canonical URL preview + test button", () => {
+  // 2026-05-16: replaced `ws://danmu.local:4001` split-field model with a
+  // single host input (port 443 default, hidden), auto-stripped of scheme
+  // + /ws path. Live preview shows the canonical wss://HOST/ws derived URL.
+  // ⚐ 測試 (silent one-shot handshake) replaces the destructive ↻ 重連.
+  const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
+
+  // No legacy ws:// (v5.0.0+ is WSS-only).
+  expect(src).not.toMatch(/ws:\/\/danmu\.local:4001/);
+  // Canonical URL builder + scheme/path auto-strip.
+  expect(src).toMatch(/wss:\/\/\$\{parsed\}\/ws/);
+  expect(src).toMatch(/\.replace\(\/\^wss\?:/);
+  expect(src).toMatch(/\.replace\(\/\\\/ws\\\/\?\$/);
+  // 4-state TestChip (idle / testing / ok / fail).
+  expect(src).toContain("'LAST TEST · —'");
+  expect(src).toContain("'測試中…'");
+  expect(src).toMatch(/icon: '✓'/);
+  expect(src).toMatch(/icon: '✗'/);
+  // ⚐ 測試 button replaces ↻ 重連.
+  expect(src).toContain("⚐ 測試");
+  expect(src).toMatch(/one-shot WSS handshake/);
+  // Recent connections are host-only, no legacy ws://.../:4001 format.
+  expect(src).not.toMatch(/addr="ws:\/\//);
+  expect(src).toMatch(/addr="danmu\.local"/);
+});
+
+test("DesktopClient + ControlWindow forward testState through to ConnSection", () => {
+  // The 4 conn test-state artboards (idle/testing/ok/fail) need the
+  // prop chain DesktopClient(testState) → ControlWindow(defaultTestState)
+  // → ConnSection(testState) to render distinct states from the canvas.
+  const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
+
+  expect(src).toMatch(/function DesktopClient\(\{[^}]*testState[^}]*\}/);
+  expect(src).toMatch(/function ControlWindow\(\{[^}]*defaultTestState[^}]*\}/);
+  expect(src).toMatch(/function ConnSection\(\{[^}]*testState[^}]*\}/);
+  expect(src).toMatch(/<ControlWindow\s+theme=\{theme\}\s+defaultTestState=\{testState\}/);
+  expect(src).toMatch(/<ConnSection[\s\S]*?testState=\{defaultTestState\}/);
+});
+
 test("ConnSection has no STARTUP toggle block (unimplemented in Electron app)", () => {
   // 2026-05-16: removed three toggles (autostart / auto-show overlay /
   // background keep-alive) — none are wired in main.js / renderer-modules.
