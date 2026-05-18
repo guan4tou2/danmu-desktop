@@ -93,7 +93,7 @@
 
         <h2 class="viewer-state-title viewer-state-title--center">已送出投票</h2>
         <p class="viewer-state-desc viewer-state-desc--center">
-          結果會在主持人關閉投票後一起公佈，不會即時顯示。
+          結果會在管理者關閉投票後一起公佈，不會即時顯示。
         </p>
 
         <div class="viewer-state-recap">
@@ -106,7 +106,7 @@
           </div>
           <div class="meta">
             <div><span class="dot is-good"></span>投票已記錄 · 不可重投</div>
-            <div><span class="dot"></span>結果將在主持人關閉投票後公佈</div>
+            <div><span class="dot"></span>結果將在管理者關閉投票後公佈</div>
           </div>
         </div>
 

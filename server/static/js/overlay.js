@@ -70,7 +70,7 @@
       label: "已連線",
       subtitle: function () { return "247 位觀眾已進入 · Q&A 可開始"; },
       noteHtml: function () { return "Danmu Fire 已啟動 · 你可以講話了"; },
-      actionsHtml: '<button type="button" class="overlay-idle-btn overlay-idle-btn-primary" data-overlay-idle-action="broadcast">▶ 開始廣播 · SPACE</button>',
+      actionsHtml: '<button type="button" class="overlay-idle-btn overlay-idle-btn-primary" data-overlay-idle-action="broadcast">▶ 開始顯示 · SPACE</button>',
     },
     failed: {
       en: "UNREACHABLE · NO SERVER",
@@ -245,6 +245,81 @@
   var reconnectAttempts = 0;
   var heartbeatInterval = null;
   var lastHeartbeatResponse = Date.now();
+
+  // ── 2026-05-18 design v4-r6: silent-mode chrome ────────────────────────────
+  // Full-screen overlay that takes over when WS reconnect attempts ≥ 3.
+  // Concentric pulsing rings, dim Danmu Fire branding, attempt counter,
+  // last-connected timestamp, target WS URL. Hidden on reconnect.
+  var _silentModeEl = null;
+  var _silentLastConnected = null;
+  var _silentTimer = 0;
+
+  function _showSilentMode(info) {
+    if (!_silentLastConnected && lastHeartbeatResponse) _silentLastConnected = lastHeartbeatResponse;
+    var el = document.getElementById("overlay-silent-mode");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "overlay-silent-mode";
+      el.className = "overlay-silent";
+      el.innerHTML = ''
+        + '<div class="overlay-silent__chrome">'
+        + '  <div class="overlay-silent__brand">Danmu Fire</div>'
+        + '  <span class="overlay-silent__mode">OVERLAY · SILENT MODE</span>'
+        + '  <span class="overlay-silent__pill">'
+        + '    <span class="overlay-silent__pill-dot"></span>DISCONNECTED'
+        + '  </span>'
+        + '</div>'
+        + '<div class="overlay-silent__center">'
+        + '  <div class="overlay-silent__ring overlay-silent__ring--outer">'
+        + '    <div class="overlay-silent__ring overlay-silent__ring--inner">'
+        + '      <div class="overlay-silent__core"></div>'
+        + '    </div>'
+        + '  </div>'
+        + '  <div class="overlay-silent__title">重連中...</div>'
+        + '  <div class="overlay-silent__sub" data-silent-sub>WebSocket unreachable · — 秒後再試</div>'
+        + '  <div class="overlay-silent__note">NO DANMU RENDERING · OVERLAY PAUSED</div>'
+        + '  <div class="overlay-silent__attempt" data-silent-attempt>ATTEMPT — / ∞ · BACKOFF —</div>'
+        + '</div>'
+        + '<div class="overlay-silent__last" data-silent-last>LAST CONNECTED · —</div>'
+        + '<div class="overlay-silent__target" data-silent-target>TARGET · —</div>';
+      document.body.appendChild(el);
+      _silentModeEl = el;
+    }
+    _silentModeEl = el;
+
+    var backoffSec = Math.round((info.backoffMs || 0) / 1000);
+    var subEl = el.querySelector("[data-silent-sub]");
+    var attemptEl = el.querySelector("[data-silent-attempt]");
+    var lastEl = el.querySelector("[data-silent-last]");
+    var targetEl = el.querySelector("[data-silent-target]");
+    if (subEl) subEl.textContent = "WebSocket unreachable · " + backoffSec + " 秒後再試";
+    if (attemptEl) attemptEl.textContent = "ATTEMPT " + info.attempt + " / ∞ · BACKOFF " + backoffSec + "s · EXPONENTIAL";
+    if (targetEl) targetEl.textContent = "TARGET · " + (info.target || "—");
+
+    if (!_silentTimer) {
+      _silentTimer = setInterval(function () {
+        var lastNode = _silentModeEl && _silentModeEl.querySelector("[data-silent-last]");
+        if (!lastNode || !_silentLastConnected) return;
+        var ago = (Date.now() - _silentLastConnected) / 1000;
+        var label;
+        if (ago < 60) label = Math.floor(ago) + "s AGO";
+        else label = Math.floor(ago / 60) + "m " + Math.floor(ago % 60) + "s AGO";
+        var d = new Date(_silentLastConnected);
+        var pad = function (n) { return ("0" + n).slice(-2); };
+        lastNode.textContent = "LAST CONNECTED · "
+          + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds())
+          + " · " + label;
+      }, 1000);
+    }
+  }
+
+  function _hideSilentMode() {
+    if (_silentModeEl && _silentModeEl.parentNode) {
+      _silentModeEl.parentNode.removeChild(_silentModeEl);
+    }
+    _silentModeEl = null;
+    if (_silentTimer) { clearInterval(_silentTimer); _silentTimer = 0; }
+  }
   var HEARTBEAT_TIMEOUT = 30000;
 
   function getReconnectDelay(attempt) {
@@ -300,6 +375,8 @@
       if (!connectingDidHide && !connectingHideTimer) {
         connectingHideTimer = setTimeout(hideConnecting, 500);
       }
+      // 2026-05-18 design v4-r6: clear silent-mode chrome on reconnect.
+      _hideSilentMode();
     };
 
     ws.onclose = function (event) {
@@ -313,6 +390,17 @@
       // doesn't expose a separate "reconnecting" state, so we map both
       // first-pair handshake and reconnect attempts to the same visual.
       _setIdleState("scanning");
+      // 2026-05-18 design v4-r6: after 3 failed reconnects, switch the
+      // entire overlay to silent-mode chrome (concentric pulsing rings +
+      // attempt counter + target WS URL). Renders OVER the overlay so
+      // any straggler danmu still on screen fade behind the dim layer.
+      if (reconnectAttempts >= 3) {
+        _showSilentMode({
+          attempt: reconnectAttempts + 1,
+          backoffMs: delay,
+          target: url,
+        });
+      }
       setTimeout(connect, delay);
       reconnectAttempts++;
     };
