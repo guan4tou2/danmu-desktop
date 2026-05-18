@@ -67,8 +67,7 @@ jobs:
         working-directory: server
         run: |
           uv run black --check .
-          python -m pip install "isort==5.13.2"
-          python -m isort --check-only .
+          uv run isort --check-only .
 
       - name: Lint with flake8
         working-directory: server
@@ -84,11 +83,14 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: danmu-desktop/package-lock.json
+          cache-dependency-path: |
+            danmu-desktop/package-lock.json
+            server/package-lock.json
 
       - name: Install dependencies
-        working-directory: danmu-desktop
-        run: npm install
+        run: |
+          cd danmu-desktop && npm install
+          cd ../server && npm install
 
       - name: Verify client i18n.js is up-to-date
         working-directory: danmu-desktop
@@ -102,10 +104,28 @@ jobs:
           node scripts/build-i18n.js
           git diff --exit-code static/js/i18n.js || { echo "❌ server i18n.js is stale — run 'npm run build:i18n' in server/ and commit"; exit 1; }
 
-      - name: Verify tokens.css is in sync
+      - name: Verify tokens.css symlink
         run: |
-          diff shared/tokens.css server/static/css/tokens.css \
-            || { echo "❌ tokens out of sync — run 'make copy-tokens' and commit"; exit 1; }
+          if [ ! -L server/static/css/tokens.css ]; then
+            echo "❌ server/static/css/tokens.css is not a symlink — run 'make copy-tokens' and commit"
+            exit 1
+          fi
+          TARGET=$(readlink server/static/css/tokens.css)
+          if [ "$TARGET" != "../../../shared/tokens.css" ]; then
+            echo "❌ symlink points to '$TARGET', expected '../../../shared/tokens.css' — run 'make copy-tokens' and commit"
+            exit 1
+          fi
+          if [ ! -f server/static/css/tokens.css ]; then
+            echo "❌ symlink target does not exist — shared/tokens.css missing"
+            exit 1
+          fi
+          echo "✓ tokens.css symlink OK → $TARGET"
+
+      - name: Verify tailwind.css is up-to-date
+        working-directory: server
+        run: |
+          npm run build:css
+          git diff --exit-code static/css/tailwind.css || { echo "❌ tailwind.css is stale — run 'npm run build:css' in server/ and commit"; exit 1; }
 
       - name: Run Jest tests
         working-directory: danmu-desktop

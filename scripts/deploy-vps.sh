@@ -7,21 +7,30 @@
 # image — must rebuild + recreate the container, not just restart.
 #
 # Required env (export or set in your shell):
-#   DANMU_VPS_HOST     — SSH user@host (e.g. ubuntu@<your-vps-ip>)
-#   DANMU_VPS_KEY      — SSH key path  (e.g. ~/.ssh/orcale)
+#   DANMU_VPS_HOST     — SSH user@host or SSH config alias (e.g. oracle-e2)
+#   DANMU_VPS_KEY      — SSH key path (optional if using SSH config alias)
 #   DANMU_VPS_PROJECT  — repo path on the VPS (default: ~/danmu-desktop)
 #
 # Optional flags:
 #   --branch <name>    — branch to pull (default: current local branch)
 #   --no-build         — skip image rebuild (assets-only update; faster)
 #   --no-restart       — pull only, don't touch the container
+#   --verify           — run healthcheck after deploy (auto-detects HTTP/HTTPS)
 #   --dry-run          — print the SSH command instead of running it
 #
 # Usage examples:
 #   ./scripts/deploy-vps.sh
 #   ./scripts/deploy-vps.sh --branch main
 #   ./scripts/deploy-vps.sh --no-build      # static/runtime changes only
+#   ./scripts/deploy-vps.sh --verify        # deploy + auto healthcheck
 #   ./scripts/deploy-vps.sh --dry-run
+#
+# Preset shortcuts (export in your shell profile):
+#   # Oracle VPS (original, nginx self-signed HTTPS profile)
+#   export DANMU_VPS_HOST=ubuntu@138.2.59.206 DANMU_VPS_KEY=~/.ssh/orcale
+#
+#   # Oracle E2 (Caddy reverse proxy, server-only HTTP)
+#   export DANMU_VPS_HOST=oracle-e2
 
 set -euo pipefail
 
@@ -32,6 +41,7 @@ PROJECT="${DANMU_VPS_PROJECT:-~/danmu-desktop}"
 BRANCH=""
 DO_BUILD=1
 DO_RESTART=1
+DO_VERIFY=0
 DRY_RUN=0
 
 # ── Argument parsing ────────────────────────────────────────────────────────
@@ -40,9 +50,10 @@ while [[ $# -gt 0 ]]; do
     --branch)     BRANCH="$2"; shift 2 ;;
     --no-build)   DO_BUILD=0;  shift   ;;
     --no-restart) DO_RESTART=0; shift  ;;
+    --verify)     DO_VERIFY=1; shift   ;;
     --dry-run)    DRY_RUN=1;   shift   ;;
     -h|--help)
-      sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *)
@@ -60,12 +71,17 @@ fi
 
 # ── Validate env ─────────────────────────────────────────────────────────────
 if [[ -z "$HOST" ]]; then
-  echo "ERROR: DANMU_VPS_HOST not set (e.g. export DANMU_VPS_HOST=ubuntu@<your-vps-ip>)" >&2
+  echo "ERROR: DANMU_VPS_HOST not set (e.g. export DANMU_VPS_HOST=oracle-e2)" >&2
   exit 1
 fi
 
 # Build the remote command pipeline.
-remote_cmd="cd ${PROJECT} && git pull origin ${BRANCH}"
+remote_cmd="cd ${PROJECT}"
+
+# Warn if .env has local changes not tracked by git
+remote_cmd="${remote_cmd} && if git diff --name-only HEAD 2>/dev/null | grep -q '^\.env$'; then echo '[WARN] .env has uncommitted changes — verify env vars are correct'; fi"
+
+remote_cmd="${remote_cmd} && git pull origin ${BRANCH}"
 if [[ "$DO_BUILD" -eq 1 ]]; then
   remote_cmd="${remote_cmd} && docker compose build server"
 fi
@@ -99,5 +115,28 @@ fi
 ssh "${ssh_args[@]}"
 
 echo
-echo "✓ Deploy finished. Verify with:"
-echo "  ssh${KEY:+ -i ${KEY}} ${HOST} 'curl -sk https://127.0.0.1:4000/health | head -c 200'"
+echo "✓ Deploy finished."
+
+# ── Verify (optional) ───────────────────────────────────────────────────────
+if [[ "$DO_VERIFY" -eq 1 ]]; then
+  echo "→ Running healthcheck..."
+  # Auto-detect: try HTTP first (server-only / external reverse proxy),
+  # fall back to HTTPS (nginx sidecar profile).
+  verify_ssh=()
+  if [[ -n "$KEY" ]]; then
+    verify_ssh+=(-i "$KEY")
+  fi
+  HEALTH=$(ssh "${verify_ssh[@]}" "$HOST" \
+    "sleep 5 && curl -sf http://127.0.0.1:4000/health 2>/dev/null || curl -skf https://127.0.0.1:4000/health 2>/dev/null || echo FAIL" \
+  )
+  if [[ "$HEALTH" == "FAIL" ]]; then
+    echo "✗ Healthcheck failed — server may still be starting. Check with:"
+    echo "  ssh${KEY:+ -i ${KEY}} ${HOST} 'docker compose -f ${PROJECT}/docker-compose.yml logs --tail 20 server'"
+    exit 1
+  else
+    echo "✓ Healthcheck passed: ${HEALTH:0:120}"
+  fi
+else
+  echo "  Verify manually:"
+  echo "  ssh${KEY:+ -i ${KEY}} ${HOST} 'curl -sf http://127.0.0.1:4000/health || curl -skf https://127.0.0.1:4000/health'"
+fi

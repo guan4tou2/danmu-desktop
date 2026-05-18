@@ -6,16 +6,20 @@ on:
       - main
     paths:
       - "server/**"
+      - "shared/**"
       - "docker-compose.yml"
       - "server/Dockerfile"
+      - ".env.example"
       - ".github/workflows/docker-build.yml"
   pull_request:
     branches:
       - main
     paths:
       - "server/**"
+      - "shared/**"
       - "docker-compose.yml"
       - "server/Dockerfile"
+      - ".env.example"
       - ".github/workflows/docker-build.yml"
 
 permissions:
