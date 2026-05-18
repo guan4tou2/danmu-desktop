@@ -7,9 +7,11 @@ import magic
 from flask import current_app, request, send_file
 
 from ...services.fonts import (
+    SUBSET_PRESETS,
     delete_uploaded_font,
     list_available_fonts,
     save_uploaded_font,
+    subset_uploaded_font,
     toggle_font,
 )
 from ...services.security import rate_limit
@@ -277,3 +279,63 @@ def delete_sticker(name):
 
     current_app.logger.info("Sticker deleted: %s", sanitize_log_string(name))
     return _json_response({"status": "OK"})
+
+
+# ─── Font subset (P1 #5, 2026-05-18) ─────────────────────────────────────────
+#
+# Shrink an uploaded font down to a unicode range. Reduces .ttf payload
+# 10-50× for viewer download. Optional pyftsubset dep — endpoint returns
+# 503 when fontTools isn't installed.
+
+
+@admin_bp.route("/fonts/subset/presets", methods=["GET"])
+@require_login
+def font_subset_presets():
+    """List preset unicode ranges (latin / cjk_common / kana / ...)."""
+    return _json_response({"presets": SUBSET_PRESETS})
+
+
+@admin_bp.route("/fonts/<font_name>/subset", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+@require_login
+def subset_font(font_name):
+    """Subset an uploaded font in-place. Body: {unicode_range | preset}.
+
+    Returns the size diff + glyph count. Endpoint replaces the .ttf file
+    atomically. Caller is responsible for refreshing /fonts cache.
+    """
+    data = request.get_json(silent=True) or {}
+    preset = data.get("preset")
+    unicode_range = data.get("unicode_range")
+    if preset and not unicode_range:
+        if preset not in SUBSET_PRESETS:
+            return _json_response(
+                {"error": f"unknown preset; valid: {sorted(SUBSET_PRESETS.keys())}"},
+                400,
+            )
+        unicode_range = SUBSET_PRESETS[preset]
+    if not unicode_range:
+        return _json_response(
+            {"error": "either `unicode_range` or `preset` is required"}, 400
+        )
+    try:
+        result = subset_uploaded_font(font_name, unicode_range)
+        current_app.logger.info(
+            "Font '%s' subset: %d → %d bytes (%.1f%% saved, %d codepoints)",
+            sanitize_log_string(font_name),
+            result["original_size"],
+            result["new_size"],
+            result["saved_ratio"] * 100,
+            result["codepoint_count"],
+        )
+        return _json_response(result)
+    except RuntimeError as exc:
+        # fontTools missing — surface clearly so admin can install dep.
+        return _json_response(
+            {"error": str(exc), "code": "fonttools_missing"}, 503
+        )
+    except FileNotFoundError as exc:
+        return _json_response({"error": str(exc)}, 404)
+    except ValueError as exc:
+        return _json_response({"error": str(exc)}, 400)

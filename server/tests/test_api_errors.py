@@ -55,13 +55,32 @@ def test_rate_limit_error_returns_json(client):
 
 
 def test_not_found_returns_json_error(client):
-    response = client.get("/non-existent-route")
+    # 2026-05-18 design v4-r5: 404 is content-negotiated — browsers get
+    # the friendly HTML page (errors/404.html), API callers must opt-in
+    # to JSON by sending Accept: application/json (or X-Requested-With).
+    response = client.get(
+        "/non-existent-route",
+        headers={"Accept": "application/json"},
+    )
     assert response.status_code == 404
     assert response.is_json
     body = response.get_json()
     assert "error" in body
     assert "not found" in body["error"].lower()
     assert "X-Request-ID" in response.headers
+
+
+def test_not_found_returns_html_for_browser(client):
+    """Browser navigation (Accept: text/html) gets the v4-r5 error page."""
+    response = client.get(
+        "/non-existent-route",
+        headers={"Accept": "text/html"},
+    )
+    assert response.status_code == 404
+    assert not response.is_json
+    body = response.data.decode("utf-8")
+    assert "admin-err" in body
+    assert "找不到頁面" in body
 
 
 def test_health_endpoint_has_request_id(client):

@@ -107,21 +107,44 @@ class PollService:
             self._broadcast_locked()
             return self._poll["poll_id"]
 
-    def create_session(self, questions: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def create_session(
+        self,
+        questions: List[Dict[str, Any]],
+        *,
+        mode: str = "manual",
+        default_duration_s: Optional[int] = None,
+        title: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """Create a multi-question poll session in 'pending' state.
 
         ``questions`` is a list of dicts ``{text, options, image_url?,
         time_limit_seconds?}``. The session is created but not started — call
         :meth:`start` to flip ``active=True`` and ``current_index=0``.
 
+        Per design v4 brief P1 #1 (2026-05-18):
+          * ``mode`` is ``"manual"`` (admin clicks 下一題) or ``"auto"``
+            (frontend enforces per-question timer).
+          * ``default_duration_s`` is the fallback ``time_limit_seconds``
+            for questions that didn't specify their own.
+          * ``title`` labels the session in admin UI (e.g. "本場討論").
+
         Returns the full status payload.
         """
         if not questions:
             raise ValueError("At least one question is required")
+        if mode not in ("manual", "auto"):
+            raise ValueError("mode must be 'manual' or 'auto'")
+        if default_duration_s is not None and default_duration_s <= 0:
+            raise ValueError("default_duration_s must be > 0")
         with self._lock:
             if self._poll and self._poll["active"]:
                 raise ValueError("A poll is already active")
             self._poll = self._build_session_locked(questions)
+            # Stamp session-level metadata after build (build_session_locked
+            # only fills per-question fields).
+            self._poll["mode"] = mode
+            self._poll["default_duration_s"] = default_duration_s
+            self._poll["title"] = (title or "").strip() or None
             self._broadcast_locked()
             return self._get_status_locked()
 
@@ -283,6 +306,10 @@ class PollService:
             "ended_at": self._poll.get("ended_at"),
             "questions": questions_view,
             "question_count": len(questions_view),
+            # Design v4 brief P1 #1 (2026-05-18) — session-level metadata.
+            "mode": self._poll.get("mode", "manual"),
+            "default_duration_s": self._poll.get("default_duration_s"),
+            "title": self._poll.get("title"),
             **legacy,
         }
 

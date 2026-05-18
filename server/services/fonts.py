@@ -1,6 +1,7 @@
 import os
 import time
 from pathlib import Path
+from typing import Any, Dict
 
 from flask import current_app, url_for
 from werkzeug.utils import secure_filename
@@ -217,6 +218,130 @@ def delete_uploaded_font(font_name: str) -> bool:
 def list_uploaded_fonts():
     """Return only user-uploaded fonts (admin management view)."""
     return [f for f in list_available_fonts()["fonts"] if f["type"] == "uploaded"]
+
+
+# ─── Subset (P1 #5, 2026-05-18) ──────────────────────────────────────────────
+#
+# Optional pyftsubset integration. Lets admin shrink an uploaded font down to
+# only the glyphs it needs (Latin / CJK BMP / kana / custom range). Reduces
+# .ttf payload size 10-50× for viewer download.
+#
+# fontTools is NOT a hard dep; if missing, `subset_uploaded_font()` raises
+# `RuntimeError` so callers can surface a clear 503 to the admin. Install via
+# `uv add fonttools` or `pip install fonttools` when ready to enable.
+
+# Common preset ranges (mirror what admin UI will offer):
+SUBSET_PRESETS = {
+    "latin":      "U+0020-007E,U+00A0-00FF",
+    "latin_ext":  "U+0020-024F,U+1E00-1EFF",
+    "cjk_common": "U+4E00-9FFF",                       # Han BMP
+    "cjk_full":   "U+3000-303F,U+3040-309F,U+30A0-30FF,U+4E00-9FFF,U+FF00-FFEF",  # punct+hiragana+katakana+han+halfwidth
+    "kana":       "U+3040-30FF,U+FF00-FFEF",            # JP kana only
+    "hangul":     "U+AC00-D7AF,U+1100-11FF,U+3130-318F",
+}
+
+
+def _parse_unicode_range(range_str: str) -> "set[int]":
+    """Parse `U+0020-007E,U+4E00-9FFF` into a set of codepoint ints.
+
+    Accepts comma-separated single codepoints (`U+0041`) or ranges (`U+0020-007E`).
+    Case-insensitive `U+` prefix. Raises ValueError on malformed input.
+    """
+    if not range_str or not isinstance(range_str, str):
+        raise ValueError("unicode_range must be a non-empty string")
+    result: "set[int]" = set()
+    for token in range_str.split(","):
+        token = token.strip().upper().lstrip("U+")
+        if not token:
+            continue
+        if "-" in token:
+            lo_s, hi_s = token.split("-", 1)
+            try:
+                lo = int(lo_s, 16)
+                hi = int(hi_s, 16)
+            except ValueError as exc:
+                raise ValueError(f"Invalid hex range: {token}") from exc
+            if lo > hi:
+                raise ValueError(f"Range lo > hi: {token}")
+            # Cap a single range at 200k codepoints to avoid memory blow-up.
+            if hi - lo > 200_000:
+                raise ValueError(f"Range too large: {token}")
+            result.update(range(lo, hi + 1))
+        else:
+            try:
+                result.add(int(token, 16))
+            except ValueError as exc:
+                raise ValueError(f"Invalid hex codepoint: {token}") from exc
+    if not result:
+        raise ValueError("unicode_range parsed to empty set")
+    if len(result) > 500_000:
+        raise ValueError("unicode_range total exceeds 500k codepoints")
+    return result
+
+
+def subset_uploaded_font(font_name: str, unicode_range: str) -> Dict[str, Any]:
+    """Subset an uploaded font in-place. Returns size diff + glyph counts.
+
+    Raises:
+        ValueError:   bad font_name, path traversal, malformed unicode_range.
+        FileNotFoundError: target font doesn't exist.
+        RuntimeError: fontTools missing (admin should install fonttools dep).
+                      Surfaced LAST so callers get input-validation errors
+                      first when the dep is absent.
+    """
+    # Validate input shape BEFORE attempting the optional dep import — lets
+    # callers surface a clean 400 on bad input even when the runtime can't
+    # actually subset (returns 503 only when input is valid).
+    codepoints = _parse_unicode_range(unicode_range)
+
+    # Reuse delete_uploaded_font's path-traversal pattern.
+    if not font_name or not font_name.strip():
+        raise ValueError("Invalid font name")
+    candidate_filename = secure_filename(f"{font_name}.ttf")
+    if not candidate_filename or Path(candidate_filename).stem == "":
+        raise ValueError("Invalid font name")
+    fonts_dir = Path(state.USER_FONTS_DIR).resolve()
+    target_path = (fonts_dir / candidate_filename).resolve()
+    if not target_path.is_relative_to(fonts_dir):
+        raise ValueError("Invalid font filename or path traversal attempt detected.")
+    if not target_path.exists():
+        raise FileNotFoundError(f"Font {font_name} not found")
+
+    try:
+        from fontTools.subset import Subsetter, Options
+        from fontTools.ttLib import TTFont
+    except ImportError as exc:
+        raise RuntimeError(
+            "fontTools not installed; run `uv add fonttools` to enable subsetting"
+        ) from exc
+
+    original_size = target_path.stat().st_size
+
+    # Load + subset in-memory, then atomic-write back to the same path.
+    font = TTFont(str(target_path))
+    options = Options()
+    options.layout_features = ["*"]
+    options.name_IDs = ["*"]
+    options.notdef_glyph = True
+    options.recalc_bounds = True
+    subsetter = Subsetter(options=options)
+    subsetter.populate(unicodes=list(codepoints))
+    subsetter.subset(font)
+
+    tmp_path = target_path.with_suffix(".ttf.tmp")
+    font.save(str(tmp_path))
+    font.close()
+    tmp_path.replace(target_path)
+
+    new_size = target_path.stat().st_size
+    return {
+        "font_name": font_name,
+        "original_size": original_size,
+        "new_size": new_size,
+        "saved_bytes": max(0, original_size - new_size),
+        "saved_ratio": (1.0 - new_size / original_size) if original_size > 0 else 0.0,
+        "codepoint_count": len(codepoints),
+    }
 
 
 def list_available_fonts(include_disabled: bool = False):

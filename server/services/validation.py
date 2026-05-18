@@ -297,7 +297,10 @@ class FilterRuleSchema(Schema):
     replacement = fields.Str(load_default="***", validate=validate.Length(max=200))
     action = fields.Str(
         load_default="block",
-        validate=validate.OneOf(["block", "replace", "allow"]),
+        # 2026-05-18 design v4-r3: `review` action holds matched messages
+        # in the moderation queue for human approve/reject. See
+        # services/mod_queue.py + admin-modqueue.js.
+        validate=validate.OneOf(["block", "replace", "allow", "review"]),
     )
     priority = fields.Int(load_default=100, validate=validate.Range(min=0, max=9999))
     enabled = fields.Bool(load_default=True)
@@ -326,7 +329,7 @@ class FilterRuleUpdateSchema(FilterRuleSchema):
     )
     pattern = fields.Str(validate=validate.Length(min=1, max=500))
     replacement = fields.Str(validate=validate.Length(max=200))
-    action = fields.Str(validate=validate.OneOf(["block", "replace", "allow"]))
+    action = fields.Str(validate=validate.OneOf(["block", "replace", "allow", "review"]))
     priority = fields.Int(validate=validate.Range(min=0, max=9999))
     enabled = fields.Bool()
     max_count = fields.Int(validate=validate.Range(min=1, max=100))

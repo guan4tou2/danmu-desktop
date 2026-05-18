@@ -260,6 +260,13 @@ class FilterEngine:
                         reason=f"Keyword allow: '{rule.pattern}'",
                         rule_id=rule.id,
                     )
+                if rule.action == "review":
+                    return FilterResult(
+                        action="review",
+                        text=text,
+                        reason=f"Keyword review: '{rule.pattern}'",
+                        rule_id=rule.id,
+                    )
             return None
 
         if rule.type == "regex":
@@ -277,6 +284,13 @@ class FilterEngine:
                         action="allow",
                         text=text,
                         reason=f"Regex allow: '{rule.pattern}'",
+                        rule_id=rule.id,
+                    )
+                if rule.action == "review":
+                    return FilterResult(
+                        action="review",
+                        text=text,
+                        reason=f"Regex review: '{rule.pattern}'",
                         rule_id=rule.id,
                     )
             return None

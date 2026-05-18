@@ -19,6 +19,20 @@ Each entry shape:
       "meta":   {arbitrary payload, kept small}
     }
 
+Time-bound bans (design v4 2026-05-18 prep): when source="moderation" and
+kind="ban" / "mute", callers SHOULD include in meta:
+    {
+      "target_kind": "fingerprint" | "ip" | "nick",
+      "target":      "<value>",
+      "duration_s":  3600,                 # 0 / null = permanent
+      "expires_at":  1714202000.0,         # epoch seconds, null if permanent
+      "reason":      "<short string>"
+    }
+The reaper (when implemented) reads kind="ban" events in reverse-chrono
+order, filters by target, and treats the row as active iff
+expires_at is null or expires_at > now. This shape keeps the existing
+audit_log immutable + append-only; no separate ban table needed.
+
 Usage:
     from ..services import audit_log
     audit_log.append("fire_token", "rotated", actor="admin",

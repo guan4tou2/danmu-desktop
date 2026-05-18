@@ -183,10 +183,48 @@ def create_app(config_class=Config):
     app.register_blueprint(api_bp)
     app.register_blueprint(health_bp)
 
-    # Error handlers (simple JSON responses, no unused APIError abstraction)
+    # Error handlers — content-negotiated. API / fetch() callers get JSON;
+    # browser navigations get the design-v4-r5 full-screen error template.
+    # See server/templates/errors/_layout.html and 500.html / 502.html /
+    # 503.html for the page chrome.
+
+    def _wants_json():
+        """Best-effort detection of API-style callers.
+
+        Flask sets `request.is_json` only for explicit Content-Type. We
+        also opt-in by `/admin/` API prefix, X-Requested-With XHR header,
+        or `Accept: application/json` header that beats text/html.
+        """
+        from flask import request
+
+        if request.is_json:
+            return True
+        accept = request.accept_mimetypes
+        if accept.best == "application/json":
+            return True
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return True
+        # Routes under /admin/ that are not the panel itself (/admin/, /admin/index, etc.)
+        # are API endpoints → JSON. The top-level admin shell pages will not hit
+        # 500 in normal flow because they render a static template successfully.
+        path = (request.path or "").rstrip("/")
+        if path.startswith("/admin/") and not (
+            path == "/admin" or path == "/admin/index"
+        ):
+            return True
+        if path.startswith("/api/"):
+            return True
+        return False
+
     @app.errorhandler(404)
-    def handle_not_found(error):
-        return json_response({"error": "Resource not found"}, 404)
+    def handle_not_found(error):  # noqa: ARG001
+        if _wants_json():
+            return json_response({"error": "Resource not found"}, 404)
+        from flask import render_template
+        return render_template(
+            "errors/404.html",
+            surface="admin" if (request.path or "").startswith("/admin") else "viewer",
+        ), 404
 
     @app.errorhandler(500)
     def handle_internal_error(error):
@@ -195,11 +233,48 @@ def create_app(config_class=Config):
             str(error),
             getattr(g, "request_id", "N/A"),
         )
-        return json_response({"error": "An internal error has occurred"}, 500)
+        if _wants_json():
+            return json_response({"error": "An internal error has occurred"}, 500)
+        from flask import render_template
+        return render_template(
+            "errors/500.html",
+            surface="admin" if (request.path or "").startswith("/admin") else "viewer",
+            event_id=getattr(g, "request_id", None),
+        ), 500
 
     @app.errorhandler(429)
-    def handle_rate_limit(error):
+    def handle_rate_limit(error):  # noqa: ARG001
         return json_response({"error": "Too many requests. Please try again later."}, 429)
+
+    @app.errorhandler(502)
+    def handle_bad_gateway(error):  # noqa: ARG001
+        if _wants_json():
+            return json_response({"error": "Bad gateway"}, 502)
+        from flask import render_template
+        return render_template(
+            "errors/502.html",
+            surface="admin" if (request.path or "").startswith("/admin") else "viewer",
+        ), 502
+
+    @app.errorhandler(503)
+    def handle_service_unavailable(error):
+        retry_after = 8
+        try:
+            if isinstance(error.description, dict):
+                retry_after = int(error.description.get("retry_after", 8))
+        except Exception:
+            retry_after = 8
+        if _wants_json():
+            return json_response(
+                {"error": "Service unavailable", "retry_after": retry_after}, 503
+            )
+        from flask import render_template
+        resp = render_template(
+            "errors/503.html",
+            surface="admin" if (request.path or "").startswith("/admin") else "viewer",
+            retry_after=retry_after,
+        )
+        return resp, 503, {"Retry-After": str(retry_after)}
 
     return app
 

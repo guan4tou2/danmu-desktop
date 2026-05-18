@@ -53,6 +53,34 @@ def test_set_mode_invalid_raises():
         broadcast_svc.set_mode("ended")
 
 
+# 2026-05-18 polestar pivot (P2-7): overlay_on / overlay_off aliases.
+
+def test_set_mode_accepts_overlay_on_alias():
+    """`overlay_on` normalizes to legacy `live` for storage compat."""
+    broadcast_svc.set_mode("standby")
+    new = broadcast_svc.set_mode("overlay_on")
+    assert new["mode"] == "live"
+    assert broadcast_svc.is_live() is True
+    assert broadcast_svc.is_overlay_on() is True
+    assert broadcast_svc.is_overlay_off() is False
+
+
+def test_set_mode_accepts_overlay_off_alias():
+    """`overlay_off` normalizes to legacy `standby`."""
+    broadcast_svc.set_mode("live")
+    new = broadcast_svc.set_mode("overlay_off")
+    assert new["mode"] == "standby"
+    assert broadcast_svc.is_overlay_on() is False
+    assert broadcast_svc.is_overlay_off() is True
+
+
+def test_overlay_predicates_track_set_mode():
+    broadcast_svc.set_mode("overlay_on")
+    assert broadcast_svc.is_overlay_on() is True
+    broadcast_svc.set_mode("overlay_off")
+    assert broadcast_svc.is_overlay_off() is True
+
+
 def test_enqueue_pending_persists_and_returns_size():
     n = broadcast_svc.enqueue_pending({"text": "hi"})
     assert n == 1

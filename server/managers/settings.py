@@ -32,6 +32,11 @@ _DEFAULT_OPTIONS = {
     # `auto` lets the viewer follow `prefers-color-scheme` / `navigator.language`.
     "ViewerThemeMode": [True, "auto"],
     "ViewerLangMode": [True, "auto"],
+    # 2026-05-17 design v3-r10: post-fire client cooldown in seconds.
+    # Slot 0 enables/disables; slot 1 is the duration (0 disables entirely
+    # even when slot 0 is True — pick whichever surface is more convenient
+    # in the admin UI). Server-side 429 retry-after always wins.
+    "ViewerFireCooldownSec": [True, 3.0],
 }
 
 # Enum-valued keys: validated against an explicit allowed set rather than
@@ -45,6 +50,7 @@ _RANGES = {
     "Speed": {"min": 0.5, "max": 3.0},
     "Opacity": {"min": 20, "max": 100},
     "FontSize": {"min": 16, "max": 64},
+    "ViewerFireCooldownSec": {"min": 0.0, "max": 10.0},
 }
 
 
@@ -160,7 +166,10 @@ class SettingsStore:
                 return copy.deepcopy(self._options[key])
 
             if key in self._ranges:
-                value = round(float(value), 1) if key == "Speed" else int(value)
+                if key in ("Speed", "ViewerFireCooldownSec"):
+                    value = round(float(value), 1)
+                else:
+                    value = int(value)
                 limits = self._ranges[key]
                 if not (limits["min"] <= value <= limits["max"]):
                     raise ValueError(

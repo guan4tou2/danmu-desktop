@@ -273,6 +273,30 @@ def fire():
         if filter_result.action == "replace":
             data["text"] = filter_result.text
             text_content = filter_result.text
+        # 2026-05-18 design v4-r3: `review` action holds the message in
+        # the moderation queue for human approve/reject. Respond 202 so
+        # the viewer knows the message was accepted but isn't visible yet.
+        if filter_result.action == "review":
+            try:
+                from ..services.mod_queue import mod_queue
+                rule_name = (filter_result.reason or "review")[:60]
+                qid = mod_queue.enqueue(
+                    text_content,
+                    fingerprint=fingerprint or "",
+                    nickname=str(data.get("nickname") or "")[:64],
+                    rule_name=rule_name,
+                    pattern=rule_name,
+                )
+                mod_queue.start_reaper()
+                return _json_response(
+                    {"status": "queued_for_review", "queue_id": qid},
+                    202,
+                )
+            except Exception:
+                # Best-effort: if queue insertion fails for any reason,
+                # err on the side of letting the message through rather
+                # than silently dropping it.
+                pass
 
         # Fallback: also check legacy blacklist
         if contains_keyword(text_content):

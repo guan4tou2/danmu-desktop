@@ -1,9 +1,16 @@
-"""Broadcast state — admin-controlled LIVE / STANDBY gate.
+"""Overlay state — admin-controlled OVERLAY ON / OFF gate.
 
-v5.0.0+: replaces the localStorage-only stub in ``admin-broadcast.js`` with a
-server-side source of truth. When ``mode == "standby"``, ``/fire`` calls into
+2026-05-18 polestar pivot (P2-7): module is named ``broadcast`` for
+historical reasons but the actual semantics are the 2-state overlay
+toggle (`on` / `off`) with optional pause sub-state on the frontend.
+Internal storage continues to use ``"live"`` / ``"standby"`` strings so
+existing ``server/runtime/broadcast.json`` files keep parsing; ``set_mode``
+also accepts the polestar aliases ``"overlay_on"`` / ``"overlay_off"`` and
+normalizes them to the legacy values.
+
+When ``mode == "standby"`` (overlay off), ``/fire`` calls into
 ``enqueue_pending()`` instead of pushing directly to overlay; on transition
-back to ``"live"``, the queued danmu drain over ~2s.
+back to ``"live"`` (overlay on), the queued danmu drain over ~2s.
 
 Persistence:
   * ``state``: ``server/runtime/broadcast.json`` — atomic write via tmp+rename.
@@ -40,11 +47,23 @@ _queue: Optional[List[Dict[str, Any]]] = None
 _write_failure_logged: bool = False
 
 VALID_MODES = ("live", "standby")
+# 2026-05-18 polestar (P2-7): polestar vocabulary maps onto the same
+# 2-state machine. Accept both forms at the API boundary; normalize to
+# legacy values for storage compatibility.
+_MODE_ALIASES: Dict[str, str] = {
+    "overlay_on":  "live",
+    "overlay_off": "standby",
+}
 _DEFAULT_STATE: Dict[str, Any] = {
     "mode": "live",
     "started_at": None,
     "total_messages": 0,
 }
+
+
+def _normalize_mode(mode: str) -> str:
+    """Translate polestar alias (overlay_on/off) → legacy live/standby."""
+    return _MODE_ALIASES.get(mode, mode)
 
 
 def _atomic_write_json(path: Path, payload: Any) -> None:
@@ -162,16 +181,34 @@ def is_live() -> bool:
         return _state.get("mode") == "live"
 
 
+# 2026-05-18 polestar aliases (P2-7) — preferred name for new callers.
+def is_overlay_on() -> bool:
+    """Polestar-aligned alias for ``is_live()``."""
+    return is_live()
+
+
+def is_overlay_off() -> bool:
+    """Polestar-aligned alias for ``not is_live()``."""
+    return not is_live()
+
+
 def set_mode(mode: str) -> Dict[str, Any]:
-    """Transition to ``mode`` (one of VALID_MODES). Returns new state.
+    """Transition to ``mode``. Accepts legacy ``live``/``standby`` or the
+    polestar aliases ``overlay_on``/``overlay_off`` (2026-05-18 P2-7).
+    Returns new state.
 
     Side effects:
-      * STANDBY → LIVE: reset ``started_at`` to now (new broadcast session).
-      * LIVE → STANDBY: ``started_at`` retained; messages received in this
-        period accumulate in the queue and drain on next live transition.
+      * OFF → ON (standby → live): reset ``started_at`` to now (new
+        overlay window starts).
+      * ON → OFF (live → standby): ``started_at`` retained; messages
+        accumulate in the queue and drain on next ON transition.
     """
+    mode = _normalize_mode(mode)
     if mode not in VALID_MODES:
-        raise ValueError(f"mode must be one of {VALID_MODES}")
+        raise ValueError(
+            f"mode must be one of {VALID_MODES} or aliases "
+            f"{tuple(_MODE_ALIASES.keys())}"
+        )
     with _lock:
         _ensure_loaded()
         prev = _state.get("mode")

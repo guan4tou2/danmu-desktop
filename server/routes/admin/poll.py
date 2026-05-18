@@ -62,7 +62,25 @@ def create_poll():
         if errors:
             return _json_response({"error": "Validation failed", "details": errors}, 400)
         try:
-            status = poll_service.create_session(validated["questions"])
+            # Design v4 brief P1 #1 (2026-05-18) — optional session metadata.
+            mode_raw = data.get("mode", "manual")
+            mode = mode_raw if mode_raw in ("manual", "auto") else "manual"
+            default_dur = data.get("default_duration_s")
+            try:
+                default_dur = int(default_dur) if default_dur is not None else None
+            except (TypeError, ValueError):
+                default_dur = None
+            title = data.get("title")
+            if isinstance(title, str):
+                title = title.strip()[:120]  # cap for sanity
+            else:
+                title = None
+            status = poll_service.create_session(
+                validated["questions"],
+                mode=mode,
+                default_duration_s=default_dur,
+                title=title,
+            )
             return _json_response({"poll_id": status["poll_id"], **status})
         except ValueError as exc:
             return _json_response({"error": str(exc)}, 409)
