@@ -65,9 +65,21 @@ test.describe("App Launch", () => {
 
   // Post design-v2: host / port / token / display live inside the Conn
   // section (sidebar tab `連線`), expanded via ⚙ 更改. Navigate first.
+  // Wait for the conn section to actually render before clicking the
+  // edit-conn host-row — beforeAll keeps the same page across tests so
+  // an earlier test may have left a different nav target active and the
+  // section needs a tick to attach.
   async function openConnEdit() {
     await mainWindow.locator('[data-nav="conn"]').click();
+    await mainWindow.waitForSelector(
+      '[data-client-action="edit-conn"]',
+      { state: "visible", timeout: 10000 },
+    );
     await mainWindow.locator('[data-client-action="edit-conn"]').click();
+    await mainWindow.waitForSelector("#conn-server-input", {
+      state: "visible",
+      timeout: 5000,
+    });
   }
 
   test("Conn section host:port input is reachable", async () => {

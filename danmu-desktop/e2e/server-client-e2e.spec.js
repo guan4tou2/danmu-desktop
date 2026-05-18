@@ -235,11 +235,30 @@ test.describe("Server + Client E2E", () => {
     const state = await overlayButton.getAttribute("data-state").catch(() => null);
     if (state === "running") return mainWindow;
 
+    // 2026-05-16: #host-input / #port-input are now hidden compat fields
+    // synced from the public #conn-server-input. Fill the visible combined
+    // field, then directly populate the compat IDs so ws-manager's
+    // start-button validation reads consistent values without waiting on
+    // the conn-parser's input-event roundtrip.
     await mainWindow.locator('[data-nav="conn"]').click();
     await mainWindow.locator('[data-client-action="edit-conn"]').click();
-    await mainWindow.waitForSelector("#host-input", { state: "visible", timeout: 5000 });
-    await mainWindow.locator("#host-input").fill("127.0.0.1");
-    await mainWindow.locator("#port-input").fill(String(WS_PORT));
+    await mainWindow.waitForSelector("#conn-server-input", { state: "visible", timeout: 5000 });
+    await mainWindow.locator("#conn-server-input").fill(`127.0.0.1:${WS_PORT}`);
+    await mainWindow.evaluate(
+      ({ h, p }) => {
+        const hi = document.getElementById("host-input");
+        const pi = document.getElementById("port-input");
+        if (hi) {
+          hi.value = h;
+          hi.dispatchEvent(new Event("input"));
+        }
+        if (pi) {
+          pi.value = String(p);
+          pi.dispatchEvent(new Event("input"));
+        }
+      },
+      { h: "127.0.0.1", p: WS_PORT },
+    );
     await mainWindow.locator('[data-nav="overlay"]').click();
     await overlayButton.click();
     await getOverlayWindow(electronApp, mainWindow);

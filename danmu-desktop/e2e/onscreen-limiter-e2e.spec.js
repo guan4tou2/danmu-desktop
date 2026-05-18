@@ -309,13 +309,30 @@ test.describe("Onscreen limiter E2E", () => {
     mainWindow = await electronApp.firstWindow();
     await mainWindow.waitForLoadState("domcontentloaded");
     await mainWindow.waitForSelector("#main-content.loaded", { timeout: 15000 });
-    // v5.0.0 P0-0 IA: conn section default visible but #host-input lives in
-    // the .client-conn-edit panel that's hidden until ⚙ 更改 is clicked.
-    // The primary overlay action lives in the Overlay section.
+    // v5.0.0 P0-0 IA: conn section default visible but the editable input
+    // lives in the .client-conn-edit panel that's hidden until ⚙ 更改 is
+    // clicked. 2026-05-16: host/port collapsed into one #conn-server-input;
+    // the legacy #host-input / #port-input are now hidden compat fields
+    // synced via input events (or directly here for deterministic state).
     await mainWindow.locator('[data-nav="conn"]').click();
     await mainWindow.locator('[data-client-action="edit-conn"]').click();
-    await mainWindow.locator("#host-input").fill("127.0.0.1");
-    await mainWindow.locator("#port-input").fill(String(WS_PORT));
+    await mainWindow.waitForSelector("#conn-server-input", { state: "visible", timeout: 5000 });
+    await mainWindow.locator("#conn-server-input").fill(`127.0.0.1:${WS_PORT}`);
+    await mainWindow.evaluate(
+      ({ h, p }) => {
+        const hi = document.getElementById("host-input");
+        const pi = document.getElementById("port-input");
+        if (hi) {
+          hi.value = h;
+          hi.dispatchEvent(new Event("input"));
+        }
+        if (pi) {
+          pi.value = String(p);
+          pi.dispatchEvent(new Event("input"));
+        }
+      },
+      { h: "127.0.0.1", p: WS_PORT },
+    );
     await mainWindow.locator('[data-nav="overlay"]').click();
     await mainWindow.locator("[data-client-overlay-button]").click();
     overlay = await getOverlayWindow(electronApp, mainWindow);
