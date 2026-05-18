@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Danmu Fire</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self';"
+    />
+    <link rel="stylesheet" href="tokens.css" />
+    <link rel="stylesheet" href="tray-popover.css" />
+  </head>
+  <body>
+    <div class="popover">
+      <!-- Header -->
+      <div class="popover-header">
+        <img src="assets/icon.png" width="28" height="28" alt="" class="popover-icon" />
+        <div class="popover-title">
+          <span class="popover-app-name">Danmu Fire</span>
+          <span class="popover-version" id="appVersion"></span>
+        </div>
+      </div>
+
+      <!-- Connection status -->
+      <div class="popover-section">
+        <div class="popover-status" id="connStatus">
+          <span class="popover-status-dot" id="statusDot"></span>
+          <span class="popover-status-text" id="statusText">Disconnected</span>
+        </div>
+        <div class="popover-server-url" id="serverUrl"></div>
+      </div>
+
+      <!-- Overlay info + controls -->
+      <div class="popover-section">
+        <div class="popover-row">
+          <span class="popover-label">Overlay</span>
+          <span class="popover-badge" id="overlayCount">0</span>
+        </div>
+        <div class="popover-row">
+          <span class="popover-label">待機畫面</span>
+          <button class="popover-toggle" id="idleToggle" disabled>
+            <span class="popover-toggle-track"><span class="popover-toggle-thumb"></span></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Update banner (hidden by default) -->
+      <div class="popover-section popover-update" id="updateBanner" hidden>
+        <span class="popover-update-text" id="updateText"></span>
+      </div>
+
+      <!-- Actions -->
+      <div class="popover-actions">
+        <button class="popover-btn" id="btnOpen">開啟控制視窗</button>
+        <button class="popover-btn" id="btnAbout">關於</button>
+        <button class="popover-btn popover-btn-quit" id="btnQuit">結束 Danmu</button>
+      </div>
+    </div>
+    <script src="tray-popover-renderer.js"></script>
+  </body>
+</html>
