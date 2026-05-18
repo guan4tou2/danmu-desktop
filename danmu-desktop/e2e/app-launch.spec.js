@@ -32,8 +32,11 @@ test.describe("App Launch", () => {
 
   test("main window appears", async () => {
     expect(mainWindow).toBeTruthy();
-    const isVisible = await mainWindow.isVisible("body");
-    expect(isVisible).toBe(true);
+    // Page.isVisible(selector) is the deprecated synchronous form and
+    // returns false in xvfb-headless Electron CI even when the window
+    // is fully loaded (next test reads the title fine). Use the locator
+    // form which actually waits for visibility computation.
+    await expect(mainWindow.locator("body")).toBeVisible();
   });
 
   test("main window has correct title", async () => {
@@ -65,12 +68,14 @@ test.describe("App Launch", () => {
 
   // Post design-v2: host / port / token / display live inside the Conn
   // section (sidebar tab `連線`), expanded via ⚙ 更改. Navigate first.
-  // Wait for the conn section to actually render before clicking the
-  // edit-conn host-row — beforeAll keeps the same page across tests so
-  // an earlier test may have left a different nav target active and the
-  // section needs a tick to attach.
+  // beforeAll keeps the same page across tests so we may already be in
+  // edit mode from a prior test — in which case data-conn-display is
+  // hidden and clicking edit-conn would time out. Check first and
+  // short-circuit if #conn-server-input is already visible.
   async function openConnEdit() {
     await mainWindow.locator('[data-nav="conn"]').click();
+    const serverInput = mainWindow.locator("#conn-server-input");
+    if (await serverInput.isVisible().catch(() => false)) return;
     await mainWindow.waitForSelector(
       '[data-client-action="edit-conn"]',
       { state: "visible", timeout: 10000 },
