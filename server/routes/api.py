@@ -279,6 +279,7 @@ def fire():
         if filter_result.action == "review":
             try:
                 from ..services.mod_queue import mod_queue
+
                 rule_name = (filter_result.reason or "review")[:60]
                 qid = mod_queue.enqueue(
                     text_content,

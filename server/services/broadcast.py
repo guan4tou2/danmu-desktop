@@ -51,7 +51,7 @@ VALID_MODES = ("live", "standby")
 # 2-state machine. Accept both forms at the API boundary; normalize to
 # legacy values for storage compatibility.
 _MODE_ALIASES: Dict[str, str] = {
-    "overlay_on":  "live",
+    "overlay_on": "live",
     "overlay_off": "standby",
 }
 _DEFAULT_STATE: Dict[str, Any] = {
@@ -206,8 +206,7 @@ def set_mode(mode: str) -> Dict[str, Any]:
     mode = _normalize_mode(mode)
     if mode not in VALID_MODES:
         raise ValueError(
-            f"mode must be one of {VALID_MODES} or aliases "
-            f"{tuple(_MODE_ALIASES.keys())}"
+            f"mode must be one of {VALID_MODES} or aliases " f"{tuple(_MODE_ALIASES.keys())}"
         )
     with _lock:
         _ensure_loaded()

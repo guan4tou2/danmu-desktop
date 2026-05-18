@@ -38,9 +38,7 @@ _MAX_REASON = 200
 
 def _validate_target_kind(target_kind: str) -> None:
     if target_kind not in _VALID_KINDS:
-        raise ValueError(
-            f"target_kind must be one of {sorted(_VALID_KINDS)}, got {target_kind!r}"
-        )
+        raise ValueError(f"target_kind must be one of {sorted(_VALID_KINDS)}, got {target_kind!r}")
 
 
 def add_ban(
@@ -163,18 +161,20 @@ def list_active(now: Optional[float] = None) -> List[Dict[str, Any]]:
         else:
             status = "expired"
             remaining = 0
-        rows.append({
-            "target_kind": kind_,
-            "target": target,
-            "kind": action,
-            "reason": meta.get("reason") or "",
-            "status": status,
-            "duration_s": duration_s,
-            "expires_at": expires_at,
-            "remaining_s": remaining,
-            "actor": ev.get("actor") or "admin",
-            "created_at": ev.get("ts"),
-        })
+        rows.append(
+            {
+                "target_kind": kind_,
+                "target": target,
+                "kind": action,
+                "reason": meta.get("reason") or "",
+                "status": status,
+                "duration_s": duration_s,
+                "expires_at": expires_at,
+                "remaining_s": remaining,
+                "actor": ev.get("actor") or "admin",
+                "created_at": ev.get("ts"),
+            }
+        )
 
     # Sort: active first (by remaining asc), then permanent, then expired.
     def _sort_key(r: Dict[str, Any]) -> Tuple[int, float]:
@@ -182,6 +182,7 @@ def list_active(now: Optional[float] = None) -> List[Dict[str, Any]]:
         # For active sort by remaining ascending; others by created_at desc.
         secondary = r.get("remaining_s") if r["status"] == "active" else -(r.get("created_at") or 0)
         return (order, secondary or 0)
+
     rows.sort(key=_sort_key)
     return rows
 

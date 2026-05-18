@@ -208,9 +208,7 @@ def create_app(config_class=Config):
         # are API endpoints → JSON. The top-level admin shell pages will not hit
         # 500 in normal flow because they render a static template successfully.
         path = (request.path or "").rstrip("/")
-        if path.startswith("/admin/") and not (
-            path == "/admin" or path == "/admin/index"
-        ):
+        if path.startswith("/admin/") and not (path == "/admin" or path == "/admin/index"):
             return True
         if path.startswith("/api/"):
             return True
@@ -221,10 +219,14 @@ def create_app(config_class=Config):
         if _wants_json():
             return json_response({"error": "Resource not found"}, 404)
         from flask import render_template
-        return render_template(
-            "errors/404.html",
-            surface="admin" if (request.path or "").startswith("/admin") else "viewer",
-        ), 404
+
+        return (
+            render_template(
+                "errors/404.html",
+                surface="admin" if (request.path or "").startswith("/admin") else "viewer",
+            ),
+            404,
+        )
 
     @app.errorhandler(500)
     def handle_internal_error(error):
@@ -236,11 +238,15 @@ def create_app(config_class=Config):
         if _wants_json():
             return json_response({"error": "An internal error has occurred"}, 500)
         from flask import render_template
-        return render_template(
-            "errors/500.html",
-            surface="admin" if (request.path or "").startswith("/admin") else "viewer",
-            event_id=getattr(g, "request_id", None),
-        ), 500
+
+        return (
+            render_template(
+                "errors/500.html",
+                surface="admin" if (request.path or "").startswith("/admin") else "viewer",
+                event_id=getattr(g, "request_id", None),
+            ),
+            500,
+        )
 
     @app.errorhandler(429)
     def handle_rate_limit(error):  # noqa: ARG001
@@ -251,10 +257,14 @@ def create_app(config_class=Config):
         if _wants_json():
             return json_response({"error": "Bad gateway"}, 502)
         from flask import render_template
-        return render_template(
-            "errors/502.html",
-            surface="admin" if (request.path or "").startswith("/admin") else "viewer",
-        ), 502
+
+        return (
+            render_template(
+                "errors/502.html",
+                surface="admin" if (request.path or "").startswith("/admin") else "viewer",
+            ),
+            502,
+        )
 
     @app.errorhandler(503)
     def handle_service_unavailable(error):
@@ -265,10 +275,9 @@ def create_app(config_class=Config):
         except Exception:
             retry_after = 8
         if _wants_json():
-            return json_response(
-                {"error": "Service unavailable", "retry_after": retry_after}, 503
-            )
+            return json_response({"error": "Service unavailable", "retry_after": retry_after}, 503)
         from flask import render_template
+
         resp = render_template(
             "errors/503.html",
             surface="admin" if (request.path or "").startswith("/admin") else "viewer",

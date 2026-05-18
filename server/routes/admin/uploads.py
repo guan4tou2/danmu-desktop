@@ -316,9 +316,7 @@ def subset_font(font_name):
             )
         unicode_range = SUBSET_PRESETS[preset]
     if not unicode_range:
-        return _json_response(
-            {"error": "either `unicode_range` or `preset` is required"}, 400
-        )
+        return _json_response({"error": "either `unicode_range` or `preset` is required"}, 400)
     try:
         result = subset_uploaded_font(font_name, unicode_range)
         current_app.logger.info(
@@ -332,9 +330,7 @@ def subset_font(font_name):
         return _json_response(result)
     except RuntimeError as exc:
         # fontTools missing — surface clearly so admin can install dep.
-        return _json_response(
-            {"error": str(exc), "code": "fonttools_missing"}, 503
-        )
+        return _json_response({"error": str(exc), "code": "fonttools_missing"}, 503)
     except FileNotFoundError as exc:
         return _json_response({"error": str(exc)}, 404)
     except ValueError as exc:

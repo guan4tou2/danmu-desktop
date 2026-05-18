@@ -147,9 +147,7 @@ class _ModQueue:
             return 0
         with self._lock:
             target_ids = [
-                p["id"]
-                for p in list(self._pending)
-                if severity in (None, "", p.get("severity"))
+                p["id"] for p in list(self._pending) if severity in (None, "", p.get("severity"))
             ]
         applied = 0
         for qid in target_ids:

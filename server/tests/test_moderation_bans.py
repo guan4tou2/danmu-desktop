@@ -1,7 +1,6 @@
 """Time-bound ban service tests (design v4 brief 0518-2)."""
 
 import time
-from unittest.mock import patch
 
 import pytest
 

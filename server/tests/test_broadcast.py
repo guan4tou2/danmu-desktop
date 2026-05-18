@@ -55,6 +55,7 @@ def test_set_mode_invalid_raises():
 
 # 2026-05-18 polestar pivot (P2-7): overlay_on / overlay_off aliases.
 
+
 def test_set_mode_accepts_overlay_on_alias():
     """`overlay_on` normalizes to legacy `live` for storage compat."""
     broadcast_svc.set_mode("standby")

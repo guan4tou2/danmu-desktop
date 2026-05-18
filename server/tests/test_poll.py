@@ -175,6 +175,7 @@ def test_vote_returns_false_when_idle():
 
 # Design v4 brief P1 #1 (2026-05-18): session metadata fields.
 
+
 def test_create_session_default_mode_is_manual():
     svc = PollService()
     status = svc.create_session([{"text": "Q1", "options": ["A", "B"]}])
@@ -199,9 +200,7 @@ def test_create_session_accepts_auto_mode_and_metadata():
 def test_create_session_invalid_mode_raises():
     svc = PollService()
     try:
-        svc.create_session(
-            [{"text": "Q1", "options": ["A", "B"]}], mode="weird"
-        )
+        svc.create_session([{"text": "Q1", "options": ["A", "B"]}], mode="weird")
         raise AssertionError("ValueError not raised")
     except ValueError as e:
         assert "mode" in str(e)
@@ -210,9 +209,7 @@ def test_create_session_invalid_mode_raises():
 def test_create_session_negative_duration_raises():
     svc = PollService()
     try:
-        svc.create_session(
-            [{"text": "Q1", "options": ["A", "B"]}], default_duration_s=-1
-        )
+        svc.create_session([{"text": "Q1", "options": ["A", "B"]}], default_duration_s=-1)
         raise AssertionError("ValueError not raised")
     except ValueError as e:
         assert "duration_s" in str(e)

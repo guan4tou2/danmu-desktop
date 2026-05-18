@@ -519,9 +519,7 @@ def test_viewer_owner_gate_accepts_all_four_owners(admin_display_js: str):
     assert (
         "const isViewerOwner = _isViewerOwner(route, leaf)" in body
     ), "syncVisibility must use the shared owner helper"
-    assert (
-        'page.style.display = (isViewerOwner && tab === "defaults") ? "" : "none"' in body
-    ), (
+    assert 'page.style.display = (isViewerOwner && tab === "defaults") ? "" : "none"' in body, (
         "admin-display-v2-page now hosts the Viewer › Defaults tab; it "
         "must become visible only when the viewer owner gate is true "
         "AND the defaults tab is active."

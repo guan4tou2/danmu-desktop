@@ -232,12 +232,13 @@ def list_uploaded_fonts():
 
 # Common preset ranges (mirror what admin UI will offer):
 SUBSET_PRESETS = {
-    "latin":      "U+0020-007E,U+00A0-00FF",
-    "latin_ext":  "U+0020-024F,U+1E00-1EFF",
-    "cjk_common": "U+4E00-9FFF",                       # Han BMP
-    "cjk_full":   "U+3000-303F,U+3040-309F,U+30A0-30FF,U+4E00-9FFF,U+FF00-FFEF",  # punct+hiragana+katakana+han+halfwidth
-    "kana":       "U+3040-30FF,U+FF00-FFEF",            # JP kana only
-    "hangul":     "U+AC00-D7AF,U+1100-11FF,U+3130-318F",
+    "latin": "U+0020-007E,U+00A0-00FF",
+    "latin_ext": "U+0020-024F,U+1E00-1EFF",
+    "cjk_common": "U+4E00-9FFF",  # Han BMP
+    # punct+hiragana+katakana+han+halfwidth
+    "cjk_full": "U+3000-303F,U+3040-309F,U+30A0-30FF,U+4E00-9FFF,U+FF00-FFEF",
+    "kana": "U+3040-30FF,U+FF00-FFEF",  # JP kana only
+    "hangul": "U+AC00-D7AF,U+1100-11FF,U+3130-318F",
 }
 
 
@@ -308,7 +309,7 @@ def subset_uploaded_font(font_name: str, unicode_range: str) -> Dict[str, Any]:
         raise FileNotFoundError(f"Font {font_name} not found")
 
     try:
-        from fontTools.subset import Subsetter, Options
+        from fontTools.subset import Options, Subsetter
         from fontTools.ttLib import TTFont
     except ImportError as exc:
         raise RuntimeError(

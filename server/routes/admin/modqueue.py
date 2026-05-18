@@ -109,19 +109,35 @@ def modqueue_seed():
     if not current_app.config.get("DEBUG"):
         return _json_response({"error": "debug-only"}, 403)
     samples = [
-        ("快加我 Line: scam_king 🎁 免費禮物等你拿！", "dd4a21", "訪客9988",
-         "REGEX · 加.*line", "加.*line", "high"),
-        ("CHECK OUT https://t.me/spam_channel 免費看片", "71a2e3", "訪客0712",
-         "REGEX · t.me", "t.me", "high"),
-        ("選舉投票給三號比較好", "2b1100", "kevin",
-         "REGEX · 選舉|投票給", "選舉|投票給", "medium"),
-        ("🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥", "33aa44", "訪客3344",
-         "FILTER · emoji-only", "emoji-only", "low"),
+        (
+            "快加我 Line: scam_king 🎁 免費禮物等你拿！",
+            "dd4a21",
+            "訪客9988",
+            "REGEX · 加.*line",
+            "加.*line",
+            "high",
+        ),
+        (
+            "CHECK OUT https://t.me/spam_channel 免費看片",
+            "71a2e3",
+            "訪客0712",
+            "REGEX · t.me",
+            "t.me",
+            "high",
+        ),
+        ("選舉投票給三號比較好", "2b1100", "kevin", "REGEX · 選舉|投票給", "選舉|投票給", "medium"),
+        ("🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥", "33aa44", "訪客3344", "FILTER · emoji-only", "emoji-only", "low"),
     ]
     ids = []
     for text, fp, nick, rule, pat, sev in samples:
-        ids.append(mod_queue.enqueue(
-            text, fingerprint=fp, nickname=nick,
-            rule_name=rule, pattern=pat, severity=sev,
-        ))
+        ids.append(
+            mod_queue.enqueue(
+                text,
+                fingerprint=fp,
+                nickname=nick,
+                rule_name=rule,
+                pattern=pat,
+                severity=sev,
+            )
+        )
     return _json_response({"ok": True, "ids": ids})

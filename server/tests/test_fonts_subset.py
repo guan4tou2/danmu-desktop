@@ -1,7 +1,5 @@
 """Font subset service tests (P1 #5, 2026-05-18)."""
 
-from unittest.mock import patch
-
 import pytest
 
 from server.services import fonts as fonts_svc
@@ -64,9 +62,7 @@ def test_parse_unicode_range_total_caps():
     """Multiple ranges that together exceed 500k codepoints raise."""
     # 200k each, total = 600k, just over cap
     parts = ",".join([f"U+{i:04X}-{i + 200_000 - 1:04X}" for i in range(0, 1, 1)])
-    parts = (
-        "U+000000-02FFFF,U+030000-05FFFF,U+060000-08FFFF"
-    )  # 3 * 200k = 600k
+    parts = "U+000000-02FFFF,U+030000-05FFFF,U+060000-08FFFF"  # 3 * 200k = 600k
     with pytest.raises(ValueError, match="exceeds 500k"):
         fonts_svc._parse_unicode_range(parts)
 
@@ -78,9 +74,7 @@ def test_subset_presets_have_valid_ranges():
         assert len(codepoints) > 0, f"Preset {name} parsed to empty"
 
 
-def test_subset_uploaded_font_raises_when_fonttools_missing(
-    monkeypatch, tmp_path
-):
+def test_subset_uploaded_font_raises_when_fonttools_missing(monkeypatch, tmp_path):
     """Endpoint surfaces a clear runtime error when dep is absent."""
     # Set up a real placeholder file so input validation passes.
     monkeypatch.setattr(fonts_svc.state, "USER_FONTS_DIR", str(tmp_path))
@@ -89,6 +83,7 @@ def test_subset_uploaded_font_raises_when_fonttools_missing(
 
     # Force the import inside subset_uploaded_font to fail.
     import builtins
+
     real_import = builtins.__import__
 
     def fake_import(name, *args, **kwargs):

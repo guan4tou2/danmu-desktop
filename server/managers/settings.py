@@ -158,9 +158,7 @@ class SettingsStore:
             if key in _ENUM_VALUE_KEYS and index == 1:
                 allowed = _ENUM_VALUE_KEYS[key]
                 if value not in allowed:
-                    raise ValueError(
-                        f"{key} value must be one of {allowed}, got {value!r}"
-                    )
+                    raise ValueError(f"{key} value must be one of {allowed}, got {value!r}")
                 self._options[key][index] = value
                 self._persist()
                 return copy.deepcopy(self._options[key])
