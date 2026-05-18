@@ -116,5 +116,11 @@
   "checkForUpdates": "Check for updates",
   "overlayDisplayLabel": "Display on",
   "overlayScreenDetecting": "DISPLAY · detecting…",
-  "overlayScreenCount": "DISPLAY · {count} screen(s) detected"
+  "overlayScreenCount": "DISPLAY · {count} screen(s) detected",
+  "windowPickerBtn": "🖥 Window Picker",
+  "windowPickerTitle": "Window Picker",
+  "windowPickerScreens": "Screens",
+  "windowPickerWindows": "Windows",
+  "windowPickerLoading": "Loading…",
+  "windowPickerHint": "Select a screen or window to position the overlay"
 }

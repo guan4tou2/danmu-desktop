@@ -116,6 +116,7 @@ try {
       return ipcRenderer.invoke("getSystemLocale");
     },
     getAppVersion: () => ipcRenderer.invoke("get-app-version"),
+    getCapturerSources: () => ipcRenderer.invoke("get-capturer-sources"),
     // Silent one-shot WSS handshake validation for the conn page's
     // ⚐ 測試 button. Returns Promise<{ok, latencyMs?, error?}>.
     testConnection: (opts) => {

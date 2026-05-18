@@ -116,5 +116,11 @@
   "checkForUpdates": "檢查更新",
   "overlayDisplayLabel": "顯示於",
   "overlayScreenDetecting": "DISPLAY · 偵測中…",
-  "overlayScreenCount": "DISPLAY · 偵測到 {count} 個螢幕"
+  "overlayScreenCount": "DISPLAY · 偵測到 {count} 個螢幕",
+  "windowPickerBtn": "🖥 視窗選擇器",
+  "windowPickerTitle": "視窗選擇器",
+  "windowPickerScreens": "螢幕",
+  "windowPickerWindows": "視窗",
+  "windowPickerLoading": "載入中…",
+  "windowPickerHint": "選擇螢幕或視窗以定位 Overlay"
 }

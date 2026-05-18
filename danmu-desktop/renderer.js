@@ -25,6 +25,7 @@ const { initParticleBg } = require("./renderer-modules/particle-bg");
 const { initUpdateStatus } = require("./renderer-modules/update-status");
 const { init: initFirstRunGate } = require("./renderer-modules/first-run-gate");
 const { initConnSection } = require("./renderer-modules/conn-section-wire");
+const { initWindowPicker } = require("./renderer-modules/window-picker");
 
 // Translation helper
 function t(key) {
@@ -81,6 +82,7 @@ const initRenderer = async () => {
     // Auto-updater UX (P2-3) — title bar badge + About card + toast.
     // Safe no-op if API.onUpdateStatus is missing (e.g. older preload).
     initUpdateStatus({ t, showToast });
+    initWindowPicker(api);
 
     // Canvas 2D particle network background (main window only)
     if (document.getElementById("vanta-bg")) {

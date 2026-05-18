@@ -346,6 +346,7 @@
               <!-- screen chips injected by client-nav.js from screen-select -->
             </div>
             <select id="screen-select" hidden aria-hidden="true" tabindex="-1"></select>
+            <button type="button" class="client-action-btn client-window-picker-btn" id="openWindowPicker" data-i18n="windowPickerBtn">🖥 視窗選擇器</button>
             <label class="client-overlay-sync">
               <input type="checkbox" id="sync-multi-display-checkbox" />
               <span data-i18n="syncMultiDisplay">Enable synchronous multi-display</span>
@@ -523,6 +524,26 @@
           </div>
         </section>
       </main>
+    </div>
+
+    <!-- Window Picker modal (#117) -->
+    <div class="wp-backdrop" id="wpBackdrop" hidden>
+      <div class="wp-modal">
+        <div class="wp-header">
+          <h2 class="wp-title" data-i18n="windowPickerTitle">視窗選擇器</h2>
+          <button type="button" class="wp-close" id="wpClose" aria-label="Close">&times;</button>
+        </div>
+        <div class="wp-tabs">
+          <button type="button" class="wp-tab active" data-wp-tab="screen" data-i18n="windowPickerScreens">螢幕</button>
+          <button type="button" class="wp-tab" data-wp-tab="window" data-i18n="windowPickerWindows">視窗</button>
+        </div>
+        <div class="wp-grid" id="wpGrid">
+          <div class="wp-loading" data-i18n="windowPickerLoading">載入中…</div>
+        </div>
+        <div class="wp-footer">
+          <span class="wp-hint" id="wpHint" data-i18n="windowPickerHint">選擇螢幕或視窗以定位 Overlay</span>
+        </div>
+      </div>
     </div>
 
     <!-- Renderer Logic (bundled locally for instant load) -->

@@ -116,5 +116,11 @@
   "checkForUpdates": "업데이트 확인",
   "overlayDisplayLabel": "표시 위치",
   "overlayScreenDetecting": "DISPLAY · 감지 중…",
-  "overlayScreenCount": "DISPLAY · {count} 개 화면 감지"
+  "overlayScreenCount": "DISPLAY · {count} 개 화면 감지",
+  "windowPickerBtn": "🖥 창 선택기",
+  "windowPickerTitle": "창 선택기",
+  "windowPickerScreens": "화면",
+  "windowPickerWindows": "창",
+  "windowPickerLoading": "로딩 중…",
+  "windowPickerHint": "Overlay를 배치할 화면 또는 창을 선택하세요"
 }

@@ -125,7 +125,13 @@ const _resources = {
       "checkForUpdates": "Check for updates",
       "overlayDisplayLabel": "Display on",
       "overlayScreenDetecting": "DISPLAY · detecting…",
-      "overlayScreenCount": "DISPLAY · {count} screen(s) detected"
+      "overlayScreenCount": "DISPLAY · {count} screen(s) detected",
+      "windowPickerBtn": "🖥 Window Picker",
+      "windowPickerTitle": "Window Picker",
+      "windowPickerScreens": "Screens",
+      "windowPickerWindows": "Windows",
+      "windowPickerLoading": "Loading…",
+      "windowPickerHint": "Select a screen or window to position the overlay"
     },
     "zh": {
       "skipToMainContent": "跳至主要內容",
@@ -245,7 +251,13 @@ const _resources = {
       "checkForUpdates": "檢查更新",
       "overlayDisplayLabel": "顯示於",
       "overlayScreenDetecting": "DISPLAY · 偵測中…",
-      "overlayScreenCount": "DISPLAY · 偵測到 {count} 個螢幕"
+      "overlayScreenCount": "DISPLAY · 偵測到 {count} 個螢幕",
+      "windowPickerBtn": "🖥 視窗選擇器",
+      "windowPickerTitle": "視窗選擇器",
+      "windowPickerScreens": "螢幕",
+      "windowPickerWindows": "視窗",
+      "windowPickerLoading": "載入中…",
+      "windowPickerHint": "選擇螢幕或視窗以定位 Overlay"
     },
     "ja": {
       "skipToMainContent": "メインコンテンツへスキップ",
@@ -365,7 +377,13 @@ const _resources = {
       "checkForUpdates": "アップデートを確認",
       "overlayDisplayLabel": "表示先",
       "overlayScreenDetecting": "DISPLAY · 検出中…",
-      "overlayScreenCount": "DISPLAY · {count} 画面検出"
+      "overlayScreenCount": "DISPLAY · {count} 画面検出",
+      "windowPickerBtn": "🖥 ウィンドウ選択",
+      "windowPickerTitle": "ウィンドウ選択",
+      "windowPickerScreens": "画面",
+      "windowPickerWindows": "ウィンドウ",
+      "windowPickerLoading": "読み込み中…",
+      "windowPickerHint": "画面またはウィンドウを選択して Overlay を配置"
     },
     "ko": {
       "skipToMainContent": "본문으로 건너뛰기",
@@ -485,7 +503,13 @@ const _resources = {
       "checkForUpdates": "업데이트 확인",
       "overlayDisplayLabel": "표시 위치",
       "overlayScreenDetecting": "DISPLAY · 감지 중…",
-      "overlayScreenCount": "DISPLAY · {count} 개 화면 감지"
+      "overlayScreenCount": "DISPLAY · {count} 개 화면 감지",
+      "windowPickerBtn": "🖥 창 선택기",
+      "windowPickerTitle": "창 선택기",
+      "windowPickerScreens": "화면",
+      "windowPickerWindows": "창",
+      "windowPickerLoading": "로딩 중…",
+      "windowPickerHint": "Overlay를 배치할 화면 또는 창을 선택하세요"
     }
   };
 

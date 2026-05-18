@@ -116,5 +116,11 @@
   "checkForUpdates": "アップデートを確認",
   "overlayDisplayLabel": "表示先",
   "overlayScreenDetecting": "DISPLAY · 検出中…",
-  "overlayScreenCount": "DISPLAY · {count} 画面検出"
+  "overlayScreenCount": "DISPLAY · {count} 画面検出",
+  "windowPickerBtn": "🖥 ウィンドウ選択",
+  "windowPickerTitle": "ウィンドウ選択",
+  "windowPickerScreens": "画面",
+  "windowPickerWindows": "ウィンドウ",
+  "windowPickerLoading": "読み込み中…",
+  "windowPickerHint": "画面またはウィンドウを選択して Overlay を配置"
 }
