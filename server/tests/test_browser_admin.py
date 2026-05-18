@@ -133,8 +133,11 @@ SECTION_TO_ROUTE = {
     "sec-emojis": "assets",
     "sec-stickers": "assets",
     "sec-sounds": "assets",
-    "sec-blacklist": "moderation",
-    "sec-filters": "moderation",
+    # 5.1.0 brief 0518-v3: moderation now has 6 tabs. blacklist/filters live
+    # under their own sub-route hashes (#/moderation/blacklist etc.) since
+    # the default lands on queue.
+    "sec-blacklist": "moderation/blacklist",
+    "sec-filters": "moderation/filters",
     "sec-effects": "effects",
     "sec-effects-mgmt": "effects",
     "sec-plugins": "plugins",

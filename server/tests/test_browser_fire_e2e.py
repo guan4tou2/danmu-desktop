@@ -174,6 +174,10 @@ def test_viewer_identity_label_uses_nickname(browser_session, server_ports):
 
     Page may render in en or zh depending on browser locale at test time; the
     semantic check is that data-i18n="nickname" — accept either translation.
+
+    5.1.0 (brief 0518-4c): nickname moved into a chip popover. The hidden
+    #nicknameInput remains in the DOM as the data source for the fire flow,
+    but the visible label now lives inside #nicknameControl > label > span.
     """
     http_port, _ = server_ports
 
@@ -181,8 +185,9 @@ def test_viewer_identity_label_uses_nickname(browser_session, server_ports):
     page = context.new_page()
     try:
         page.goto(f"http://127.0.0.1:{http_port}/")
-        page.wait_for_selector("#nicknameInput", timeout=8000)
-        label_span = page.locator('label[for="nicknameInput"] span').first
+        # Wait for the visible chip control rather than the hidden input.
+        page.wait_for_selector("#nicknameControl", timeout=8000)
+        label_span = page.locator('#nicknameControl label span[data-i18n="nickname"]').first
         label_text = label_span.text_content() or ""
         i18n_key = label_span.get_attribute("data-i18n") or ""
         # Either zh ("暱稱") or en ("Nickname") satisfies the semantic intent.

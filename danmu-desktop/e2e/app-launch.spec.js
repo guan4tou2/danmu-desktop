@@ -70,34 +70,31 @@ test.describe("App Launch", () => {
     await mainWindow.locator('[data-client-action="edit-conn"]').click();
   }
 
-  test("Conn section host input is reachable", async () => {
+  test("Conn section host:port input is reachable", async () => {
+    // 5.0.0 collapsed host + port into one #conn-server-input (combined
+    // hostname[:port] field). The legacy #host-input / #port-input compat
+    // inputs still exist in the DOM but are intentionally hidden — they get
+    // populated from #conn-server-input via the conn-parser so ws-manager
+    // can keep reading the same IDs.
     await openConnEdit();
-    const hostInput = mainWindow.locator("#host-input");
-    await expect(hostInput).toBeVisible();
+    const serverInput = mainWindow.locator("#conn-server-input");
+    await expect(serverInput).toBeVisible();
   });
 
-  test("Conn section port input is reachable", async () => {
+  test("legacy host/port inputs stay hidden (kept for ws-manager compat)", async () => {
     await openConnEdit();
-    const portInput = mainWindow.locator("#port-input");
-    await expect(portInput).toBeVisible();
+    await expect(mainWindow.locator("#host-input")).toBeHidden();
+    await expect(mainWindow.locator("#port-input")).toBeHidden();
   });
 
-  test("main window contains language selector", async () => {
-    const langSelect = mainWindow.locator("#language-select");
-    await expect(langSelect).toBeVisible();
-    const options = langSelect.locator("option");
-    expect(await options.count()).toBe(4);
-  });
-
-  test("language switch to Chinese updates UI text", async () => {
-    const langSelect = mainWindow.locator("#language-select");
-    await langSelect.selectOption("zh");
-    // Wait for i18n to update — design-v2 removed the separate "subtitle"
-    // element from the header; the hero title lives at `.client-titlebar` +
-    // no subtitle in the top chrome now. Verify via nav label translation.
-    await expect(mainWindow.locator('[data-i18n="skipToMainContent"]')).toBeVisible();
-    await langSelect.selectOption("en");
-    await mainWindow.waitForTimeout(300);
+  test("main window has localized titlebar (Electron follows system locale)", async () => {
+    // 2026-05-16: language selector removed. Electron now follows the OS
+    // locale via app.getLocale(); the picker is gone from the client UI.
+    // Verify i18n is still wired up by checking a known data-i18n element.
+    const skipLink = mainWindow.locator('[data-i18n="skipToMainContent"]');
+    await expect(skipLink).toHaveAttribute("data-i18n", "skipToMainContent");
+    const langAttr = await mainWindow.locator("html").getAttribute("lang");
+    expect(["en", "zh", "ja", "ko"]).toContain(langAttr);
   });
 
   test("legacy advanced settings panel is removed (P5-2)", async () => {

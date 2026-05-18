@@ -381,11 +381,12 @@ def test_ia_tab_strip_renders_for_moderation(admin_page):
     """Slice 3: tabbed nav routes mount a tab strip in the topbar host."""
     _go_to_route(admin_page, "moderation")
     admin_page.wait_for_selector(".admin-tabs-strip", state="attached", timeout=5000)
-    # 4 tabs per P0-0a (blacklist / filters / ratelimit / fingerprints)
-    assert admin_page.locator(".admin-tabs-btn").count() == 4
-    # Default tab = blacklist (locked decision in tab-chrome.jsx)
+    # 6 tabs per design v4 brief 0518-v3 (queue / bans / blacklist /
+    # filters / ratelimit / fingerprints — bans + queue added 5.1.0)
+    assert admin_page.locator(".admin-tabs-btn").count() == 6
+    # Default tab = queue (locked decision in admin-tabs.js TabConfig.moderation)
     active = admin_page.locator(".admin-tabs-btn.is-active").get_attribute("data-tab")
-    assert active == "blacklist"
+    assert active == "queue"
 
 
 def test_ia_system_accordion_renders(admin_page):
@@ -393,7 +394,8 @@ def test_ia_system_accordion_renders(admin_page):
     _go_to_route(admin_page, "system")
     admin_page.wait_for_selector(".admin-system-accordion", state="attached", timeout=5000)
     rows = admin_page.locator(".admin-system-accordion-row")
-    assert rows.count() == 15
+    # 16 rows after v3 IA canonical added `access` leaf under Security (2026-05-16)
+    assert rows.count() == 16
     groups = admin_page.locator(".admin-system-accordion-group")
     assert groups.count() == 4
     labels = admin_page.locator(".admin-system-accordion-label").all_text_contents()
@@ -401,7 +403,9 @@ def test_ia_system_accordion_renders(admin_page):
     # Single-open default — first row (system overview) is open
     open_rows = admin_page.locator(".admin-system-accordion-row.is-open")
     assert open_rows.count() == 1
-    assert admin_page.locator('[data-route="security"]').count() == 1
+    # v3 IA canonical (2026-05-16): Security collapsed into System accordion
+    # under the `access` group — no standalone `security` route in the sidebar.
+    assert admin_page.locator('.admin-system-accordion-row[data-slug="security"]').count() == 1
 
 
 def test_ia_deep_link_preserves_tab(admin_page):
