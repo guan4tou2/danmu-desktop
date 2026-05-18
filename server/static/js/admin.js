@@ -1385,8 +1385,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const kicker = shell.querySelector("[data-route-kicker]");
       const title = shell.querySelector("[data-route-title]");
-      if (kicker) kicker.textContent = cfg.kicker;
-      if (title) title.innerHTML = cfg.title;
+      var _t = window.ServerI18n ? window.ServerI18n.t.bind(window.ServerI18n) : function (k) { return k; };
+      var _titleKey = "adminRouteTitle_" + currentRoute;
+      var _kickerKey = "adminRouteKicker_" + currentRoute;
+      var _titleText = _t(_titleKey);
+      var _kickerText = _t(_kickerKey);
+      if (kicker) kicker.textContent = (_kickerText !== _kickerKey) ? _kickerText : cfg.kicker;
+      if (title) title.innerHTML = (_titleText !== _titleKey) ? _titleText : cfg.title;
 
       // Phase A IA reorg: `live` is the cockpit successor to `dashboard`;
       // until Phase C reframes the dashboard view, `data-route-view=
@@ -1489,6 +1494,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const fromHash = _parseHashRoute(window.location.hash);
     applyRoute(fromHash?.nav || "live", fromHash?.tab || null);
+
+    // Expose for i18n: re-apply route title/kicker on language change
+    window._adminNavigateTo = () => applyRoute(currentRoute, _activeTab);
 
     // Late-injected sections (admin-sounds.js, admin-emojis.js, etc. inject
     // after scheduleIdleTask). Watch the main area for new [id^="sec-"]
