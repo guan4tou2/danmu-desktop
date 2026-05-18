@@ -37,6 +37,10 @@
   var _sessions = [];     // [{key, label, records[]}] newest-first
   var _activeSessionKey = null;
   var _filtered = [];     // message list currently displayed
+  // v4 P3-2 transport state — playhead index into _filtered (0 = oldest,
+  // _filtered.length - 1 = newest). Step/seek buttons move this; the
+  // waveform `is-now` marker tracks it.
+  var _playheadIdx = 0;
 
   function _dayKey(ts) {
     var d = new Date(ts);
@@ -102,8 +106,27 @@
             '<button type="button" id="replayV2Refresh" class="admin-v2-chip">↻ ' + esc(t("refreshBtn", "Refresh")) + '</button>' +
             '<button type="button" id="replayV2ExportJson" class="admin-v2-chip" style="margin-left:auto">⇩ JSON</button>' +
           '</div>' +
-          '<div class="admin-replay-histogram" id="replayV2Histogram" aria-hidden="true"></div>' +
           '<div class="admin-replay-meta" id="replayV2Meta">—</div>' +
+        '</div>' +
+        // v4 P3-2 waveform + transport (2026-05-19) — replaces flat
+        // histogram. Bars: pre-now muted, played bright, current amber.
+        '<div class="admin-v2-card">' +
+          '<div class="admin-replay-waveform">' +
+            '<div class="admin-replay-waveform-head">' +
+              '<span class="lbl">MESSAGE DENSITY · WAVEFORM</span>' +
+              '<span class="ts" id="replayV2WaveTs">--:--</span>' +
+            '</div>' +
+            '<div class="admin-replay-waveform-bars" id="replayV2WaveBars" role="img" aria-label="message density"></div>' +
+          '</div>' +
+          '<div class="admin-replay-transport" style="margin-top:10px">' +
+            '<button type="button" class="admin-replay-transport-btn" id="replayV2Rewind"  title="回到開頭">⏮</button>' +
+            '<button type="button" class="admin-replay-transport-btn" id="replayV2StepBack" title="退一步">◀</button>' +
+            '<button type="button" class="admin-replay-transport-btn is-primary" id="replayV2Play" title="播放">▶</button>' +
+            '<button type="button" class="admin-replay-transport-btn" id="replayV2StepFwd"  title="進一步">▶</button>' +
+            '<button type="button" class="admin-replay-transport-btn" id="replayV2Forward" title="到結尾">⏭</button>' +
+            '<span class="admin-replay-transport-time"><span class="now" id="replayV2TransNow">00:00</span> / <span id="replayV2TransTotal">00:00</span></span>' +
+            '<span class="admin-replay-transport-speed">SPEED · <span id="replayV2TransSpeed">1×</span></span>' +
+          '</div>' +
         '</div>' +
         '<div class="admin-v2-card admin-replay-list-card">' +
           '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">' +
@@ -154,6 +177,73 @@
         if (!isNaN(idx)) _refire(idx, btn);
       }
     });
+
+    // v4 P3-2 transport buttons (2026-05-19). Step/seek move playhead;
+    // play triggers batch re-fire from playhead to end. Pause is wired
+    // visually but the BE /admin/replay endpoint doesn't currently expose
+    // a cancel token — pausing just halts further re-fire queueing.
+    function _seek(delta) {
+      if (!_filtered.length) return;
+      _playheadIdx = Math.max(0, Math.min(_filtered.length, _playheadIdx + delta));
+      _renderSelected();
+    }
+    function _seekTo(n) {
+      if (!_filtered.length) return;
+      _playheadIdx = Math.max(0, Math.min(_filtered.length, n));
+      _renderSelected();
+    }
+    var rew = document.getElementById("replayV2Rewind");
+    if (rew) rew.addEventListener("click", function () { _seekTo(0); });
+    var fwd = document.getElementById("replayV2Forward");
+    if (fwd) fwd.addEventListener("click", function () { _seekTo(_filtered.length); });
+    var stepBack = document.getElementById("replayV2StepBack");
+    if (stepBack) stepBack.addEventListener("click", function () { _seek(-1); });
+    var stepFwd = document.getElementById("replayV2StepFwd");
+    if (stepFwd) stepFwd.addEventListener("click", function () { _seek(1); });
+    var play = document.getElementById("replayV2Play");
+    if (play) play.addEventListener("click", _batchPlay);
+    // Mirror speed selector text to the transport read-out.
+    var speedSel = document.getElementById("replayV2Speed");
+    if (speedSel) speedSel.addEventListener("change", function () {
+      var t = document.getElementById("replayV2TransSpeed");
+      if (t) t.textContent = (speedSel.value || "1") + "×";
+    });
+  }
+
+  // Batch play — re-fire records from current playhead to end at the
+  // chosen speed. The BE /admin/replay endpoint accepts a `records[]`
+  // batch with `speedMultiplier`; we slice the tail accordingly. After
+  // each call the playhead jumps to the end (no streaming progress yet).
+  async function _batchPlay() {
+    if (!_filtered.length) return;
+    var btn = document.getElementById("replayV2Play");
+    var speedSel = document.getElementById("replayV2Speed");
+    var speed = parseFloat((speedSel && speedSel.value) || "1") || 1;
+    // _filtered is newest-first; replay from playhead → end means
+    // taking records[ _filtered.length - 1 - playheadIdx ... 0 ] reversed.
+    var startIdx = _filtered.length - 1 - _playheadIdx;
+    if (startIdx < 0) return;
+    var batch = _filtered.slice(0, startIdx + 1).slice().reverse();
+    if (!batch.length) return;
+    try {
+      if (btn) { btn.disabled = true; btn.textContent = "…"; }
+      var res = await csrfFetch("/admin/replay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ records: batch, speedMultiplier: Math.max(0.1, speed) }),
+      });
+      if (res.ok) {
+        showToast(t("replayStarted", "Replay started") + " · " + batch.length, true);
+        _playheadIdx = _filtered.length;
+        _renderSelected();
+      } else {
+        showToast(t("replayFailed", "Replay failed"), false);
+      }
+    } catch (_e) {
+      showToast(t("replayFailed", "Replay failed"), false);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = "▶"; }
+    }
   }
 
   async function _load() {
@@ -195,11 +285,17 @@
     var list = document.getElementById("replayV2List");
     var count = document.getElementById("replayV2Count");
     var meta = document.getElementById("replayV2Meta");
-    var hist = document.getElementById("replayV2Histogram");
+    var waveBars = document.getElementById("replayV2WaveBars");
+    var waveTs = document.getElementById("replayV2WaveTs");
+    var transNow = document.getElementById("replayV2TransNow");
+    var transTotal = document.getElementById("replayV2TransTotal");
     if (list) list.innerHTML = '<div class="admin-replay-empty">' + esc(t("noHistoryYet", "No history recorded yet.")) + '</div>';
     if (count) count.textContent = "0";
     if (meta) meta.textContent = "—";
-    if (hist) hist.innerHTML = "";
+    if (waveBars) waveBars.innerHTML = "";
+    if (waveTs) waveTs.textContent = "--:--";
+    if (transNow) transNow.textContent = "00:00";
+    if (transTotal) transTotal.textContent = "00:00";
     _filtered = [];
   }
 
@@ -220,18 +316,47 @@
         (last && last.timestamp ? new Date(last.timestamp).toLocaleTimeString() : "—");
     }
 
-    // Histogram (40 bins across session span).
-    var h = _histogram(_filtered, 40);
-    var hist = document.getElementById("replayV2Histogram");
-    if (hist) {
+    // v4 P3-2 waveform (2026-05-19) — 80-bin message density.
+    // is-now marker tracks _playheadIdx (defaults to end-of-stream when
+    // not playing). is-played bars get higher opacity so the user can
+    // see what's already been re-fired in this session.
+    var h = _histogram(_filtered, 80);
+    var waveBars = document.getElementById("replayV2WaveBars");
+    var waveTs = document.getElementById("replayV2WaveTs");
+    if (waveBars) {
       if (!h.bars.length) {
-        hist.innerHTML = "";
+        waveBars.innerHTML = "";
       } else {
-        hist.innerHTML = h.bars.map(function (v) {
+        var nowBin = typeof _playheadIdx === "number"
+          ? Math.min(h.bars.length - 1, Math.floor((_playheadIdx / Math.max(1, _filtered.length)) * h.bars.length))
+          : h.bars.length - 1;
+        waveBars.innerHTML = h.bars.map(function (v, i) {
           var pct = Math.round((v / h.max) * 100);
-          return '<span class="admin-replay-bar" style="height:' + Math.max(2, pct) + '%" title="' + v + '"></span>';
+          var cls = i < nowBin ? "is-played" : i === nowBin ? "is-now" : "";
+          return '<span class="' + cls + '" style="height:' + Math.max(2, pct) + '%" title="' + v + '"></span>';
         }).join("");
       }
+    }
+
+    // Transport time labels — total = session message count, now = playhead.
+    var transNow = document.getElementById("replayV2TransNow");
+    var transTotal = document.getElementById("replayV2TransTotal");
+    var transSpeed = document.getElementById("replayV2TransSpeed");
+    var speedSel = document.getElementById("replayV2Speed");
+    function _fmtMS(n) {
+      var s = Math.max(0, Math.floor(n));
+      return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+    }
+    var totalDur = _filtered.length;
+    var nowDur = typeof _playheadIdx === "number" ? Math.min(totalDur, _playheadIdx) : 0;
+    if (transTotal) transTotal.textContent = _fmtMS(totalDur);
+    if (transNow) transNow.textContent = _fmtMS(nowDur);
+    if (transSpeed && speedSel) transSpeed.textContent = (speedSel.value || "1") + "×";
+    if (waveTs) {
+      var current = _filtered[_filtered.length - 1 - nowDur];
+      waveTs.textContent = current && current.timestamp
+        ? new Date(current.timestamp).toLocaleTimeString("zh-TW", { hour12: false }).slice(0, 8)
+        : "--:--";
     }
 
     _renderList();
@@ -302,15 +427,33 @@
   }
 
   // Visibility: post 2026-04-27 sidebar consolidation, replay UI is a tab
-  // inside the History page. Driven by:
-  //   route === "history" AND body.dataset.historyTab === "replay"
-  // The tab strip (admin-history.js) toggles the body dataset.
+  // inside the History page. IA v5 router writes the resolved route +
+  // active leaf to `.admin-dash-grid` dataset, which is the source of
+  // truth (body.dataset.historyTab is set by admin-history.js's tab strip
+  // but doesn't fire on direct-URL navigation like #/history/replay).
+  // 2026-05-19: prefer shell dataset; fall back to hash parsing for the
+  // first paint before router applies, and to body dataset for legacy
+  // tab-strip clicks. Same fix pattern as admin-modqueue.js.
   function _applyHashVisibility() {
     var el = document.getElementById(SECTION_ID);
     if (!el) return;
-    var hash = (window.location.hash.match(/^#\/(\w[\w-]*)/) || [])[1] || "dashboard";
-    var tab = (document.body && document.body.dataset && document.body.dataset.historyTab) || "export";
-    el.style.display = (hash === "history" && tab === "replay") ? "" : "none";
+    var shell = document.querySelector(".admin-dash-grid");
+    var parts = (window.location.hash || "").replace("#/", "").split("/");
+    var route = (shell && shell.dataset && shell.dataset.activeRoute) || parts[0] || "dashboard";
+    var leaf = (shell && shell.dataset && shell.dataset.activeLeaf)
+      || parts[1]
+      || (document.body && document.body.dataset && document.body.dataset.historyTab)
+      || "";
+    var shouldShow = (route === "history" && leaf === "replay");
+    el.style.display = shouldShow ? "" : "none";
+    // Sync body.dataset.historyTab too — there's a CSS rule
+    //   body[data-history-tab="export"] #replay-v2-section { display: none }
+    // that overrides inline display when navigated via direct URL (admin-
+    // history.js's tab strip is what normally writes this attr). Keep
+    // body and shell in sync so both selectors agree.
+    if (route === "history" && document.body && document.body.dataset) {
+      document.body.dataset.historyTab = leaf || "export";
+    }
   }
 
   window.addEventListener("hashchange", _applyHashVisibility);
