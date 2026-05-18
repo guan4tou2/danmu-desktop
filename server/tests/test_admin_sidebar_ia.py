@@ -1,23 +1,20 @@
-"""Phase A IA reorg contract tests (2026-05-06).
+"""Sidebar IA contract tests (2026-05-18 v5: Danmu Redesign v4 grouped nav).
 
-Locks the admin sidebar order, the legacy → new slug redirects, and the
-standalone-security row marker so future edits don't quietly drift the
-IA back to the 11-row sprawl. These run as plain source-text checks
-against `server/static/js/admin.js` — no browser, no Playwright; CI
-catches regressions in seconds.
+Locks the admin sidebar order and structure. The 2026-05-18 redesign moved
+from a flat 8-area nav to a 5-section grouped nav (~19 items) per the
+Danmu Redesign v4 admin-pages.jsx prototype:
+  · 總覽: live / messages / history
+  · 互動: polls / widgets / themes / display / assets / viewer
+  · 審核: moderation / ratelimit
+  · 設定: effects / plugins / fonts / system / audit
+  · 整合: extensions / webhooks / api-tokens / backup
 
-Owner ack on the IA:
-  · 8 main slugs in this exact order: live / display / effects /
-    assets / viewer / polls / moderation / system
-  · security stays standalone (NOT inside System accordion)
-  · old hashes (#/dashboard #/messages #/widgets #/appearance
-    #/automation #/history) must NOT 404 — they redirect to a sensible
-    new home
+Items that resolve via _routeAliases (themes/widgets/plugins/fonts/audit/
+extensions/webhooks/api-tokens/backup/ratelimit) navigate correctly through
+applyRoute's alias resolution; the alias-button is-active matcher keeps
+the clicked button highlighted.
 
-If a test here fails, the sidebar HTML, the HASH_REDIRECTS table, or
-ADMIN_ROUTES probably drifted. Verify against
-docs/designs/design-v2/IA-REORG-DRAFT-2026-05-06.md before "fixing" the
-test.
+Old hashes (#/dashboard #/appearance #/automation) still redirect.
 """
 
 # pyright: reportMissingImports=false
@@ -38,31 +35,44 @@ def admin_js() -> str:
 # ─── Sidebar order ────────────────────────────────────────────────────────────
 
 EXPECTED_NAV_ORDER = [
+    # 總覽
     "live",
+    "messages",
+    "history",
+    # 互動
+    "polls",
+    "widgets",
+    "themes",
     "display",
-    "effects",
     "assets",
     "viewer",
-    "polls",
+    # 審核
     "moderation",
+    "ratelimit",
+    # 設定
+    "effects",
+    "plugins",
+    "fonts",
     "system",
+    "audit",
+    # 整合
+    "extensions",
+    "webhooks",
+    "api-tokens",
+    "backup",
 ]
 
 
-def test_sidebar_renders_eight_nav_rows_in_locked_order(admin_js: str):
-    """Sidebar HTML must declare data-route in this exact 8-area order
-    (2026-05-13 engineering update: security moved into System accordion
-    as an `access` leaf, no longer a standalone sidebar row)."""
+def test_sidebar_renders_nav_rows_in_locked_order(admin_js: str):
+    """Sidebar HTML must declare data-route in the v5 5-section order
+    (2026-05-18 Danmu Redesign v4 grouped nav)."""
     pattern = re.compile(r'<button[^>]*\bdata-route="([\w-]+)"[^>]*role="tab"', re.DOTALL)
     found = pattern.findall(admin_js)
-    # Multiple data-route="…" occurrences exist throughout admin.js
-    # (other UI bits also use them); restrict to the first run of 8
-    # sidebar nav buttons.
-    actual_first_eight = found[:8]
-    assert actual_first_eight == EXPECTED_NAV_ORDER, (
-        f"sidebar nav order drifted from the 8-area IA baseline.\n"
+    actual = found[: len(EXPECTED_NAV_ORDER)]
+    assert actual == EXPECTED_NAV_ORDER, (
+        f"sidebar nav order drifted from the v5 grouped IA baseline.\n"
         f"expected: {EXPECTED_NAV_ORDER}\n"
-        f"actual:   {actual_first_eight}"
+        f"actual:   {actual}"
     )
 
 
@@ -81,68 +91,38 @@ def test_security_is_not_a_standalone_sidebar_row(admin_js: str):
     )
 
 
-def test_legacy_top_level_buttons_removed(admin_js: str):
-    """Old top-level rows must no longer be visible nav buttons.
-    They live in HASH_REDIRECTS or `_routeAliases` instead."""
-    sidebar_block = re.search(
-        r"data-route=\"live\".*?data-route=\"system\".*?</button>",
-        admin_js,
-        re.DOTALL,
-    )
-    assert sidebar_block, "could not find sidebar block to scope removal check"
-    block = sidebar_block.group(0)
-    for retired in (
-        "widgets",
-        "appearance",
-        "automation",
-        "history",
-        "dashboard",
-        "messages",
-        "security",
-    ):
-        # Buttons would be `<button … data-route="<slug>" … role="tab">`.
-        # Allow the slug to appear elsewhere (e.g., comments) but not as a
-        # role=tab nav button inside the sidebar block.
-        retired_btn = re.compile(rf'<button[^>]*\bdata-route="{retired}"[^>]*role="tab"', re.DOTALL)
-        assert not retired_btn.search(
-            block
-        ), f"retired slug '{retired}' still has a sidebar button — should be in HASH_REDIRECTS"
+def test_truly_retired_slugs_have_no_sidebar_button(admin_js: str):
+    """Slugs explicitly removed from the design (dashboard / appearance /
+    automation / security) must NOT exist as sidebar buttons. Their hash
+    routes still redirect via _bareLegacyRedirects / _routeAliases."""
+    pattern = re.compile(r'<button[^>]*\bdata-route="([\w-]+)"[^>]*role="tab"', re.DOTALL)
+    found = pattern.findall(admin_js)
+    sidebar_slugs = set(found[: len(EXPECTED_NAV_ORDER)])
+    for retired in ("dashboard", "appearance", "automation", "security"):
+        assert retired not in sidebar_slugs, (
+            f"retired slug '{retired}' has a sidebar button — should live "
+            f"in _bareLegacyRedirects / _routeAliases only"
+        )
 
 
 # ─── _bareLegacyRedirects table ──────────────────────────────────────────────
 #
-# Only the 3 retired slugs whose new home actually owns the original sec-* IDs
-# may be redirected in Phase A. The other 3 (`history / automation / appearance`)
-# live as-is until Phase B/D moves their DOM. Cf. P1 review of d405943:
-# redirecting `history → system` broke `#/audit` because System accordion has
-# no `audit` slug — same trap for sessions/search/audience and
-# scheduler/webhooks/plugins.
+# 2026-05-18 (v5 grouped sidebar): widgets / messages / history are now
+# first-class top-level routes via _routeAliases, no longer bare-redirected.
+# Only dashboard / automation remain as fully retired bare redirects.
 
-# String-form bare redirects (just nav rename, tab preserved from URL).
-# Phase A entries; new home owns the same sec-* IDs.
 PHASE_A_STRING_REDIRECTS = {
     "dashboard": "live",  # both render KPI strip via data-route-view alias
-    "messages": "live",  # both own sec-live-feed
-    "widgets": "display",  # both own sec-widgets
 }
 
-# Object-form bare redirects (Phase B 2026-05-06): retired top-level routes
-# absorbed into system accordion. Each lands on the first leaf of its group
-# so users see meaningful content, not just the system overview.
 PHASE_B_OBJECT_REDIRECTS = {
     "automation": ("system", "scheduler"),
-    "history": ("system", "sessions"),
 }
-
-# Slugs that must NOT be in `_bareLegacyRedirects` — until Phase D, their
-# sections still live on the legacy `appearance` route.
-PHASE_A_NOT_REDIRECTED = ("appearance",)
 
 
 def test_bare_legacy_string_redirects_present(admin_js: str):
-    """Phase A string-form redirects must each map to the documented new
-    home — these are the safe slugs whose target route owns the same sec-*
-    IDs the legacy slug used."""
+    """String-form bare redirects must map retired slugs to the correct
+    surviving home."""
     table_match = re.search(
         r"const _bareLegacyRedirects\s*=\s*Object\.create\(null\);\s*"
         r"Object\.assign\(_bareLegacyRedirects,\s*\{([\s\S]+?)\n\s*\}\);",
@@ -150,7 +130,6 @@ def test_bare_legacy_string_redirects_present(admin_js: str):
     )
     assert table_match, "_bareLegacyRedirects table not found in admin.js"
     body = table_match.group(1)
-
     for legacy, target in PHASE_A_STRING_REDIRECTS.items():
         assert re.search(
             rf'\b{legacy}:\s*"{target}"', body
@@ -161,41 +140,16 @@ def test_bare_legacy_string_redirects_present(admin_js: str):
 def test_bare_legacy_object_redirects_target_system_accordion(
     admin_js: str, slug: str, expected: tuple
 ):
-    """Phase B object-form redirects must point at `nav: "system"` plus the
-    correct first-leaf tab. Without the tab the user lands on the system
-    overview after typing `#/automation` — defeats the point of grouping
-    the absorbed sections."""
+    """Object-form bare redirects must point at `nav: "system"` plus the
+    correct first-leaf tab."""
     expected_nav, expected_tab = expected
     pattern = re.compile(
         rf'\b{slug}:\s*\{{\s*nav:\s*"{expected_nav}",\s*tab:\s*"{expected_tab}"',
     )
     assert pattern.search(admin_js), (
         f"_bareLegacyRedirects.{slug} must be {{nav: '{expected_nav}', "
-        f"tab: '{expected_tab}'}}; otherwise #/{slug} drops into system "
-        f"overview instead of the absorbed group."
+        f"tab: '{expected_tab}'}}"
     )
-
-
-def test_bare_legacy_redirects_excludes_appearance(admin_js: str):
-    """Until Phase D moves themes / viewer-config / fonts into their new
-    homes, `appearance` must NOT be in `_bareLegacyRedirects` — redirecting
-    it now would orphan those tabs."""
-    table_match = re.search(
-        r"const _bareLegacyRedirects\s*=\s*Object\.create\(null\);\s*"
-        r"Object\.assign\(_bareLegacyRedirects,\s*\{([\s\S]+?)\n\s*\}\);",
-        admin_js,
-    )
-    assert table_match, "_bareLegacyRedirects table not found"
-    body = table_match.group(1)
-    for unsafe in PHASE_A_NOT_REDIRECTED:
-        for line in body.splitlines():
-            stripped = line.strip()
-            if stripped.startswith(f"{unsafe}:"):
-                pytest.fail(
-                    f"'{unsafe}' must NOT be in _bareLegacyRedirects — "
-                    f"its sections aren't yet owned by the redirect target. "
-                    f"Re-add only after Phase D moves the DOM."
-                )
 
 
 def test_bare_redirects_consulted_before_alias_resolution(admin_js: str):
@@ -266,29 +220,17 @@ def test_admin_routes_keeps_legacy_aliases_alive(admin_js: str):
 
 DEEP_LINK_ALIASES = {
     # legacy slug → expected (parent_nav, tab_in_nav)
-    # Phase B (2026-05-06): the automation + history group navs were
-    # absorbed into the system accordion, so their tabs now resolve to
-    # `nav: "system"` rather than the original parent. Bookmarks like
-    # `#/audit` still work — parser hits the alias, lands on
-    # `#/system/audit`, accordion picks the audit slug.
-    "audit": ("system", "audit"),
+    # 2026-05-18 v5: themes / fonts / audit / plugins promoted to first-class
+    # sidebar slugs with their own ADMIN_ROUTES entries. Their alias entries
+    # were removed so #/themes etc. resolve directly. Items below stay aliased
+    # because they remain accordion-only leaves.
     "sessions": ("system", "sessions"),
     "search": ("system", "search"),
     "audience": ("system", "audience"),
     "replay": ("system", "replay"),
     "scheduler": ("system", "scheduler"),
     "webhooks": ("system", "webhooks"),
-    "plugins": ("system", "plugins"),
-    # 2026-05-13 engineering update: security moved under System accordion's
-    # `access` leaf. Bookmarks like `#/security` still work via this alias.
     "security": ("system", "security"),
-    # Appearance still owns its theme/font tabs (Phase D pending).
-    "themes": ("appearance", "themes"),
-    "fonts": ("appearance", "fonts"),
-    # `viewer-config` is a parent-only alias: `{ nav: "viewer" }` with no
-    # tab key, since the viewer route already owns the canonical tabbed
-    # surface. Covered separately by
-    # `test_viewer_config_alias_targets_viewer_parent`.
 }
 
 
@@ -596,6 +538,13 @@ def test_palette_routes_to_owning_route(
 # ─── i18n labels (cross-locale parity) ───────────────────────────────────────
 
 
+def _slug_to_i18n_key(slug: str) -> str:
+    """Convert a route slug to its `adminNav<PascalCase>` i18n key. Handles
+    hyphenated slugs like `api-tokens` → `adminNavApiTokens`."""
+    parts = slug.split("-")
+    return "adminNav" + "".join(p[:1].upper() + p[1:] for p in parts)
+
+
 @pytest.mark.parametrize(
     "locale",
     ["zh", "en", "ja", "ko"],
@@ -609,6 +558,5 @@ def test_nav_i18n_keys_present_in_all_locales(locale: str):
     body = locale_path.read_text(encoding="utf-8")
 
     for slug in EXPECTED_NAV_ORDER:
-        # adminNavLive, adminNavDisplay, …, adminNavSecurity
-        key = f'"adminNav{slug.title()}"'
+        key = f'"{_slug_to_i18n_key(slug)}"'
         assert key in body, f"{locale}/translation.json missing {key}"
