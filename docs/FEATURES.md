@@ -34,7 +34,7 @@ Triggered by Claude Design fetching a refreshed handoff bundle (5 new admin comp
 - **Stickers multi-pack model (P1-4 backend)** — `StickerPack {id, name, enabled, weight, order}` + `Sticker.pack_id` FK persisted to `runtime/stickers/{packs,stickers}.json`. Idempotent migration assigns existing stickers to a synthetic `default` pack. New endpoints `POST /admin/stickers/packs/{create,<id>/toggle,<id>/rename,<id>/reorder,<id>}` + `POST /admin/stickers/<name>/assign`.
 - **Sounds per-tile inline volume (P1-2)** — per-sound volume 0..1 persisted to `runtime/sounds/sound_volumes.json`; trigger-rule volume cascades over per-sound default. Inline 100-px slider per Sound tile.
 - **Effects user `.dme` live preview (P3-2 follow-up)** — user-uploaded `.dme` cards now animate too (was: builtin-8-only). Lazy-fetches `/admin/effects/<name>/content` + `/admin/effects/preview`, injects keyframes, observes IntersectionObserver for off-screen pause.
-- **Broadcast dedicated admin page (`/admin/#/broadcast`)** — state strip with circular cyan dot + `LIVE · 廣播中` + uptime/connections/messages meta + `⏸ 切到 STANDBY` magenta button; END BROADCAST card with `STANDBY` confirmation-code input + crimson `■ 結束廣播` (disabled until match) + LIVE-vs-STANDBY 5-bullet comparison.
+- **Overlay 控制 dedicated admin page (`/admin/#/overlay`, legacy `#/broadcast` alias)** — state strip with circular cyan dot + `OVERLAY · ON` + uptime/connections/messages meta + `■ 停止顯示` button (toggles to OFF); session lifecycle (start/end/archive) lives in `#/sessions`. Polestar 2026-05-18: 2-state overlay toggle replaces the legacy 4-state broadcast lifecycle.
 - **Rate Limits enhancements** — LOGIN scope adds LOCKOUT seconds knob; per-scope 24-bar sparkline; `effective_rate = N/W · burst = round(N×1.5)` mono footer; bottom row gains ViolationsFeed (TIME / SCOPE / KEY / UA / HITS / [BLOCK]) + IpPolicyCard (DENY/ALLOW list).
 - **Viewer Theme out-of-scope legend** — card under preview frame links to the right route per scope (彈幕色 → Theme Packs / 字級 → Display Settings / 效果 → Effects / 速率限制 → Moderation).
 - **Viewer prototype parity sweep** — hero 2-col restored (left lockup + right ConnChip stack); single-language form labels; preview gradient + scanline; ConnChip `·` interpunct + `cyanSoft` online state; full-width `？` placeholder; Layout sub `右→左`; Hero font-size `clamp(3.2rem, 8vw, 6rem)` matching `HERO_SIZE.hero`.
@@ -242,8 +242,8 @@ Legacy hashes still resolve where useful: `#/ratelimit` → `#/moderation/rateli
 regular responsive admin shell.
 
 Deeplink-only routes remain available for workflow overlays or focused pages:
-`#/setup`, `#/poll-deepdive`, `#/broadcast`, `#/notifications`,
-`#/session-detail`, and `#/onboarding-tour`. Section IDs
+`#/setup`, `#/poll-deepdive`, `#/overlay` (legacy `#/broadcast` alias),
+`#/notifications`, `#/session-detail`, and `#/onboarding-tour`. Section IDs
 (`sec-...`) are stable identifiers. See `ADMIN_ROUTES` in
 [admin.js](../server/static/js/admin.js).
 

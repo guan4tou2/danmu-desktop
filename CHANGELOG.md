@@ -9,6 +9,59 @@
 
 (no items pending)
 
+## [5.1.0] - 2026-05-18
+
+**Polestar pivot + design v4 brief 0518 series + P1 backlog wrap.**
+Minor bump because all backend storage formats stay backward-compatible
+(`live`/`standby` JSON, `broadcast` audit source, runtime files), all
+removed routes are alias-redirected, and tests stay green throughout
+(1120 → 1164). Operators upgrading from 5.0.0 see new vocab + UI
+additions; no migration required.
+
+### 新增 / Added — Polestar pivot + design v4 brief 0518 series (2026-05-18)
+
+- **Replay annotations** ([services/replay_annotations.py](server/services/replay_annotations.py) + [admin-session-detail.js](server/static/js/admin-session-detail.js)) — admin can pin highlight / vote / note / warning markers to a session timeline. Shape-encoded markers (star / circle / square), hover-CTA `+ 在 XX:XX 加註記`, HudConfirm modal with label chip group + 280-char textarea, sticky right-rail list with delete. POST/GET/DELETE `/admin/replay/annotations`. Append-only JSON-lines storage.
+- **Time-bound bans** ([services/moderation_bans.py](server/services/moderation_bans.py) + [admin-modbans.js](server/static/js/admin-modbans.js)) — moderate by fingerprint / IP / nick with duration presets (1h / 6h / 24h / 7d / 永久 + 自訂 number-input with 小時/天 toggle). Audit-log-backed (no reaper thread; lazy-check at read). Permanent bans require second confirm. Expires chip shows `2h 14m 剩餘` with pulse on active, crimson `永久` on permanent, dim `已過期 · auto-unban` on expired.
+- **Sessions chronological bucket reframe** ([admin-sessions.js](server/static/js/admin-sessions.js)) — replaces 8-col table with 今天 / 昨天 / 本週 / 更早 bucket headers with collapse toggle + per-session row showing sparkline, msgs count, fingerprint count. Polestar vocab: 「資料切片 · TIME WINDOWS」.
+- **Moderation 6 sub-tabs** ([admin-tabs.js](server/static/js/admin-tabs.js) + [admin.js](server/static/js/admin.js)) — `#/moderation` now hosts 審核佇列 / 封禁管理 / 黑名單 / 敏感字 / 速率限制 / 指紋. Old `#/modqueue` / `#/modbans` deep links alias-redirect into the tabbed shell so bookmarks keep working.
+- **Polls multi-question + per-question image (P1 #1)** ([services/poll.py](server/services/poll.py) + [admin-poll-builder.js](server/static/js/admin-poll-builder.js) + [main.js](server/static/js/main.js)) — session-level `mode` (manual / auto), `default_duration_s`, `title` carried through `create_session` → status payload. Viewer shows image hero (mobile ≤160px / desktop ≤200px, 16:9 cover), progress dots (current cyan + wider with glow, past dim, future neutral), and rAF auto-mode timer bar that resets per question. Viewer never sees counts/percentages (polestar lock).
+- **Fonts subset (P1 #5)** ([services/fonts.py](server/services/fonts.py) + [admin-fonts.js](server/static/js/admin-fonts.js)) — `SUBSET_PRESETS` with 6 entries (latin / latin_ext / cjk_common / cjk_full / kana / hangul) + `_parse_unicode_range()` + `subset_uploaded_font()`. Admin modal multi-selects presets + optional custom unicode-range textarea. Backend uses fontTools (optional dep — graceful 503 if missing, `uv add fonttools` to enable).
+- **Mobile hamburger sheet** ([main.js](server/static/js/main.js) + [index.html](server/templates/index.html)) — new viewer settings sheet with theme tri-state (深色/淺色/系統) + lang quad-state (中/EN/日/한). Visible only at ≤768px.
+- **Desktop viewer ☼/◐/☾ theme chip** — 3-segment in hero, hidden on mobile (hamburger covers there). Reuses unified `theme-mode` storage.
+- **Viewer nickname chip + floating popover** — chip replaces inline input; tap opens popover with confirm/cancel. Hidden source input preserved so existing fire flow + localStorage logic unchanged.
+
+### 變更 / Changed — Polestar pivot (2026-05-18)
+
+- **Theme unification** — single `localStorage.theme-mode` key (`auto` / `light` / `dark`) + `<html data-theme="...">` mechanism shared between admin topbar toggle, mobile hamburger sheet, and viewer-desktop chip. Cross-tab `storage` event sync. Legacy `admin-theme-mode` + `viewer.theme.override` keys auto-migrate on first read.
+- **`#/broadcast` → `#/overlay` route rename** ([admin.js](server/static/js/admin.js)) — sidebar `data-route="overlay"`. Old hash kept as alias for bookmarks. `admin-broadcast.js` checks both leaves. Backend API `/admin/broadcast/*` unchanged (internal).
+- **`services/broadcast.py` accepts polestar aliases** — `set_mode()` takes `overlay_on` / `overlay_off` (legacy `live` / `standby` still work). `is_overlay_on()` / `is_overlay_off()` predicates added. Storage stays `live` / `standby` in `runtime/broadcast.json` for backward compat.
+- **Vocab sweep** — admin-broadcast.js / command palette / quick-action FAB / dashboard / help drawer / locales (zh/en/ja/ko) / audit category label / overlay idle template all updated from 「STANDBY / LIVE」 to 「OVERLAY ON / OFF」 vocab. Idle overlay shows 「IDLE · WAITING FOR PAIR」 (overlay state, not broadcast state).
+- **Light theme audit pass 2** — added `--hover-tint-{weak,strong,_}` theme-aware tokens. 9 hardcoded `rgba(255, 255, 255, X)` hover backgrounds migrated to tokens.
+- **Viewer light theme 3 token fixes** — hero filter switches from heavy black drop-shadow to subtle 0.08 opacity in light mode, color shifts to sky-600. Nickname chip border sky-400 → sky-600 + opacity 0.45 → 0.35. Marquee filter `brightness(0.7) saturate(1.15) contrast(1.15)` to shift pale -300 shades into -600 territory on white.
+- **Moderation queue + bans nav placement** — `defaultTab: "queue"` so moderation route lands on queue.
+
+### Polish (2026-05-18)
+
+- **Skeleton consistency** — AdminSkeletons wired into Sessions, Modbans, Audit first-paint (replaces 「載入中…」flat text).
+- **Motion language** — `--ease-spring` overshoot on theme chip + modbans preset chip `scale(1.05)` active state. Toast slide-in uses spring via inline transition.
+- **Tablet breakpoints** — Polls master-detail stacks at ≤1023 (was ≤960). Effects card runs 2 cols at 769-1023 (was cramped 3 cols).
+- **Dead route cleanup** — `modqueue` / `modbans` / `broadcast` standalone ADMIN_ROUTES entries removed (now alias-only).
+
+### Open Qs decisions (recorded)
+
+- 4a Mobile theme/lang switcher → hamburger sheet
+- 4b Viewer fp display → hidden (audience never sees `fp:xxxxxxxx`)
+- 4c Nickname rename → floating popover
+- 4d Hero whitespace → closed (DanmuMarquee fills it)
+- Annotation custom labels → A: keep 4 fixed (highlight/vote/note/warning)
+- ban_expired auto-emit → A: accept lazy (no reaper thread)
+- Sessions pagination → A: accept client-side (typical polestar deployment is <100 sessions/week)
+
+### Tests
+
+- **1164 server pytest pass** (up from 1120 pre-session — 44 new tests across replay_annotations / moderation_bans / poll metadata / fonts subset / broadcast overlay aliases)
+- 444 jest pass (unchanged)
+
 ## [5.0.0] - 2026-05-04
 
 **Design v2 Retrofit + P0-0 IA Migration + Polestar Lock-in** — first

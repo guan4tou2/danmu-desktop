@@ -96,7 +96,7 @@ img{
   font-family: "Bebas Neue", "Noto Sans TC", "Noto Sans CJK TC", sans-serif;
   font-size: clamp(3.2rem, 8vw, 6rem);
   font-weight: 400;
-  color: #7dd3fc;
+  color: var(--color-primary-light);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -108,7 +108,7 @@ img{
 .overlay-idle-subtitle {
   margin: 14px auto 0;
   max-width: 40rem;
-  color: #cbd5e1;
+  color: var(--color-text-bright);
   font-size: clamp(1rem, 2vw, 1.25rem);
   line-height: 1.6;
   font-weight: 400;
@@ -131,8 +131,8 @@ img{
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #38bdf8;
-  box-shadow: 0 0 8px #38bdf8, 0 0 16px rgba(56, 189, 248, 0.33);
+  background: var(--color-primary);
+  box-shadow: 0 0 8px var(--color-primary), 0 0 16px rgba(56, 189, 248, 0.33);
   animation: overlay-idle-pulse 2s ease-in-out infinite;
 }
 
@@ -140,7 +140,7 @@ img{
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 12px;
   letter-spacing: 2px;
-  color: #38bdf8;
+  color: var(--color-primary);
   text-transform: uppercase;
 }
 
@@ -148,7 +148,7 @@ img{
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
   letter-spacing: 1px;
-  color: #cbd5e1;
+  color: var(--color-text-bright);
 }
 
 .overlay-idle-qr {
@@ -175,7 +175,7 @@ img{
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
   letter-spacing: 2px;
-  color: #cbd5e1;
+  color: var(--color-text-bright);
   text-transform: uppercase;
 }
 

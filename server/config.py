@@ -39,7 +39,7 @@ class Config:
     # Priority: runtime hash file > ADMIN_PASSWORD_HASHED env var > plaintext ADMIN_PASSWORD
     ADMIN_PASSWORD_HASHED = load_runtime_hash() or os.getenv("ADMIN_PASSWORD_HASHED", "")
     APP_NAME = "Danmu Fire"
-    APP_VERSION = "5.0.0"
+    APP_VERSION = "5.1.0"
     PORT = int(os.getenv("PORT", "4000"))
     WS_PORT = int(os.getenv("WS_PORT", "4001"))
     ENV = os.getenv("ENV", "development").lower()
@@ -187,6 +187,10 @@ class Config:
     # mode ∈ {"auto", "force-light"/"force-dark"} or {"auto",
     # "force-zh"/"force-en"/"force-ja"/"force-ko"}. `auto` defers to
     # `prefers-color-scheme` / `navigator.language` respectively.
+    # ViewerFireCooldownSec (2026-05-17 design v3-r10) is the per-fire
+    # client-side cooldown applied after a successful /fire — `[True, sec]`
+    # where sec is a float 0–10. 0 disables. Server-side 429 retry-after
+    # always wins for actual rate-limit responses.
     SETTABLE_OPTION_KEYS = {
         "Color",
         "Opacity",
@@ -198,4 +202,5 @@ class Config:
         "Nickname",
         "ViewerThemeMode",
         "ViewerLangMode",
+        "ViewerFireCooldownSec",
     }
