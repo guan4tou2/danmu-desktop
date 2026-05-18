@@ -14120,3 +14120,644 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-audit-row--timeline[data-severity="warn"] .admin-audit-action {
   color: var(--hud-amber, #fbbf24);
 }
+
+/* ──────────────────────────────────────────────────────────────────────
+ * Plugin Upload Flow (v5 Batch 11, batch11-plugin-upload.jsx, 2026-05-19)
+ * 4-step modal triggered by `+ 上傳 .py/.js` button on #/plugins.
+ * 640px modal with step indicator + state-driven body swap.
+ * ────────────────────────────────────────────────────────────────────── */
+.admin-pu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+:root[data-theme="light"] .admin-pu-backdrop {
+  background: rgba(15, 23, 42, 0.35);
+}
+
+body.admin-pu-open { overflow: hidden; }
+
+.admin-pu-modal {
+  width: 640px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 64px);
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.admin-pu-head {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--admin-line);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-pu-close {
+  margin-left: auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--admin-text-dim);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.admin-pu-close:hover {
+  background: var(--admin-raised);
+  color: var(--admin-text);
+}
+
+/* Step indicator */
+.admin-pu-steps {
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--admin-line);
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.admin-pu-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.admin-pu-step .circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid var(--admin-text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--admin-text-dim);
+  background: transparent;
+}
+
+.admin-pu-step .label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.8px;
+  color: var(--admin-text-dim);
+}
+
+.admin-pu-step.is-active .circle {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--admin-bg);
+}
+
+.admin-pu-step.is-active .label { color: var(--admin-text); }
+
+.admin-pu-step.is-done .circle {
+  border-color: var(--hud-lime, #86efac);
+  background: var(--hud-lime, #86efac);
+  color: var(--admin-bg);
+}
+
+.admin-pu-step.is-done .label { color: var(--admin-text-dim); }
+
+.admin-pu-step-line {
+  flex: 1;
+  height: 1px;
+  background: var(--admin-line);
+  margin: 0 8px;
+  align-self: center;
+}
+
+.admin-pu-step-line.is-done { background: var(--hud-lime, #86efac); }
+
+/* Body container */
+.admin-pu-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Foot CTA row */
+.admin-pu-foot {
+  padding: 0 24px 24px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.admin-pu-btn {
+  padding: 8px 20px;
+  border-radius: 6px;
+  border: 1px solid var(--admin-line);
+  background: transparent;
+  color: var(--admin-text-dim);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+}
+
+.admin-pu-btn:hover:not(.is-disabled):not(:disabled) {
+  border-color: var(--hud-line-strong, rgba(148, 163, 184, 0.35));
+  color: var(--admin-text);
+}
+
+.admin-pu-btn.is-primary {
+  border-color: var(--color-primary);
+  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.admin-pu-btn.is-warn {
+  border-color: var(--hud-amber, #fbbf24);
+  background: var(--hud-amber, #fbbf24);
+  color: var(--admin-bg);
+  font-weight: 700;
+}
+
+.admin-pu-btn.is-disabled,
+.admin-pu-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Step 1 · Dropzone */
+.admin-pu-step1 {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-pu-dropzone {
+  padding: 48px 24px;
+  border-radius: 6px;
+  border: 2px dashed var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
+  background: transparent;
+  text-align: center;
+  transition: all 150ms ease;
+  cursor: pointer;
+}
+
+.admin-pu-dropzone.is-over {
+  border-color: var(--color-primary);
+  border-style: solid;
+  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
+}
+
+.admin-pu-dropzone.is-error {
+  border-color: var(--hud-crimson, #f87171);
+  background: rgba(248, 113, 113, 0.04);
+}
+
+.admin-pu-dropzone-icon {
+  font-size: 36px;
+  color: var(--admin-text-dim);
+  margin-bottom: 12px;
+  line-height: 1;
+}
+
+.admin-pu-dropzone.is-over .admin-pu-dropzone-icon { color: var(--color-primary); }
+.admin-pu-dropzone.is-error .admin-pu-dropzone-icon { color: var(--hud-crimson, #f87171); }
+
+.admin-pu-dropzone-msg {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--admin-text);
+  font-weight: 500;
+}
+
+.admin-pu-dropzone.is-over .admin-pu-dropzone-msg { color: var(--color-primary); }
+.admin-pu-dropzone.is-error .admin-pu-dropzone-msg { color: var(--hud-crimson, #f87171); }
+
+.admin-pu-dropzone-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--admin-text-dim);
+  margin-top: 8px;
+}
+
+/* Step 2 loading */
+.admin-pu-step2-loading {
+  padding: 60px 24px;
+  text-align: center;
+}
+
+.admin-pu-spinner {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto;
+  border-radius: 50%;
+  border: 3px solid var(--admin-line);
+  border-top-color: var(--color-primary);
+  animation: pu-spin 1s linear infinite;
+}
+
+.admin-pu-spinner.is-large {
+  width: 48px;
+  height: 48px;
+  border-width: 3px;
+}
+
+@keyframes pu-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.admin-pu-loading-msg {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--admin-text);
+  margin-top: 16px;
+}
+
+.admin-pu-loading-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--admin-text-dim);
+  margin-top: 6px;
+}
+
+/* Step 2 · Manifest preview */
+.admin-pu-step2 {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.admin-pu-manifest-card {
+  background: var(--admin-raised);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.admin-pu-manifest-head {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--admin-line);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-pu-manifest-head .name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--admin-text);
+}
+
+.admin-pu-manifest-head .author {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--admin-text-dim);
+}
+
+.admin-pu-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  border: 1px solid var(--admin-line);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  font-weight: 500;
+  color: var(--admin-text-dim);
+  background: transparent;
+}
+
+.admin-pu-pill.is-cyan {
+  border-color: rgba(56, 189, 248, 0.45);
+  color: var(--hud-cyan, #38bdf8);
+  background: rgba(56, 189, 248, 0.06);
+}
+
+.admin-pu-pill.is-amber {
+  border-color: rgba(251, 191, 36, 0.45);
+  color: var(--hud-amber, #fbbf24);
+  background: rgba(251, 191, 36, 0.06);
+}
+
+.admin-pu-pill.is-crimson {
+  border-color: rgba(248, 113, 113, 0.45);
+  color: var(--hud-crimson, #f87171);
+  background: rgba(248, 113, 113, 0.06);
+}
+
+.admin-pu-manifest-desc {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--admin-line);
+  font-size: 12px;
+  color: var(--admin-text-dim);
+}
+
+.admin-pu-section {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--admin-line);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-pu-manifest-card .admin-pu-section:last-child { border-bottom: none; }
+
+.admin-pu-perm-list,
+.admin-pu-dep-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-pu-perm-row,
+.admin-pu-dep-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.admin-pu-perm-row .dot { font-size: 12px; color: var(--admin-text-dim); }
+.admin-pu-perm-row.is-req .dot { color: var(--hud-cyan, #38bdf8); }
+.admin-pu-perm-row.is-not .dot { color: var(--admin-text-dim); opacity: 0.5; }
+.admin-pu-perm-row .key {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--admin-text);
+  min-width: 130px;
+}
+.admin-pu-perm-row.is-not .key { color: var(--admin-text-dim); opacity: 0.6; }
+.admin-pu-perm-row .label { color: var(--admin-text-dim); }
+
+.admin-pu-dep-row .dot { font-size: 10px; }
+.admin-pu-dep-row.is-ok   .dot { color: var(--hud-lime, #86efac); }
+.admin-pu-dep-row.is-warn .dot { color: var(--hud-amber, #fbbf24); }
+.admin-pu-dep-row.is-err  .dot { color: var(--hud-crimson, #f87171); }
+.admin-pu-dep-row .name {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--admin-text);
+  min-width: 100px;
+}
+.admin-pu-dep-row .note {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--admin-text-dim);
+}
+.admin-pu-dep-row.is-warn .note { color: var(--hud-amber, #fbbf24); }
+.admin-pu-dep-row.is-err  .note { color: var(--hud-crimson, #f87171); }
+
+/* Step 2 error variants */
+.admin-pu-syntax-card {
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+}
+
+.admin-pu-syntax-head {
+  padding: 8px 12px;
+  background: rgba(248, 113, 113, 0.10);
+  border-bottom: 1px solid rgba(248, 113, 113, 0.35);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--hud-crimson, #f87171);
+  font-weight: 600;
+}
+
+.admin-pu-syntax-head .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hud-crimson, #f87171);
+  box-shadow: 0 0 4px var(--hud-crimson, #f87171);
+}
+
+.admin-pu-syntax-body {
+  margin: 0;
+  padding: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.8;
+  background: rgba(248, 113, 113, 0.04);
+  color: var(--admin-text);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.admin-pu-no-manifest {
+  padding: 16px;
+  border-radius: 6px;
+  background: rgba(251, 191, 36, 0.06);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  text-align: center;
+}
+
+.admin-pu-no-manifest-icon {
+  font-size: 20px;
+  color: var(--hud-amber, #fbbf24);
+  margin-bottom: 8px;
+}
+
+.admin-pu-no-manifest-title {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--hud-amber, #fbbf24);
+  font-weight: 600;
+}
+
+.admin-pu-no-manifest-body {
+  font-size: 11px;
+  color: var(--admin-text-dim);
+  margin-top: 8px;
+  line-height: 1.6;
+}
+
+.admin-pu-manifest-example {
+  display: inline-block;
+  margin: 8px auto 0;
+  padding: 10px;
+  border-radius: 4px;
+  background: var(--admin-raised);
+  border: 1px solid var(--admin-line);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--admin-text-dim);
+  text-align: left;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+.admin-pu-no-manifest-ack {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 11px;
+  color: var(--admin-text);
+  cursor: pointer;
+}
+
+.admin-pu-no-manifest-ack input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+
+.admin-pu-dup-banner {
+  padding: 10px 12px;
+  border-radius: 4px;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--hud-amber, #fbbf24);
+}
+
+.admin-pu-dup-banner .mono {
+  font-weight: 700;
+  color: var(--admin-text);
+}
+
+/* Step 3 · Confirm */
+.admin-pu-confirm {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.admin-pu-confirm-icon {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--hud-amber, #fbbf24);
+}
+
+.admin-pu-confirm-title {
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--admin-text);
+}
+
+.admin-pu-confirm-hint {
+  font-size: 12px;
+  color: var(--admin-text-dim);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.admin-pu-confirm-target {
+  padding: 12px;
+  border-radius: 6px;
+  background: var(--admin-raised);
+  border: 1px solid var(--admin-line);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-pu-confirm-target .name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--admin-text);
+}
+
+.admin-pu-confirm .admin-pu-section {
+  padding: 0;
+  border: none;
+}
+
+.admin-pu-confirm-perm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--admin-text);
+  margin: 2px 0;
+}
+
+.admin-pu-confirm-perm .mono {
+  font-family: var(--font-mono);
+}
+
+.admin-pu-confirm-perm::before {
+  display: none;
+}
+
+.admin-pu-confirm-empty {
+  font-size: 10px;
+  color: var(--admin-text-dim);
+  font-style: italic;
+}
+
+.admin-pu-confirm-steps {
+  margin: 0;
+  padding-left: 22px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--admin-text-dim);
+  line-height: 1.8;
+}
+
+.admin-pu-confirm .admin-pu-foot {
+  padding: 0;
+}
+
+.admin-pu-confirm .admin-pu-foot .admin-pu-btn { flex: 1; }
+
+/* Step 4 · Installing */
+.admin-pu-installing {
+  padding: 60px 24px 40px;
+  text-align: center;
+}
+
+.admin-pu-installing-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--admin-text);
+  margin-top: 16px;
+}
+
+.admin-pu-installing-progress {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-primary);
+  margin-top: 8px;
+  letter-spacing: 0.5px;
+}
+
+.admin-pu-installing-hint {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--admin-text-dim);
+  margin-top: 12px;
+}
