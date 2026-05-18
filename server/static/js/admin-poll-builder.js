@@ -429,8 +429,8 @@
               </div>
               <div class="admin-polls-live-rail-card">
                 <div class="admin-poll-card-head">
-                  <span class="title">即時廣播</span>
-                  <span class="kicker">BROADCAST</span>
+                  <span class="title">即時推送</span>
+                  <span class="kicker">OVERLAY PUSH</span>
                 </div>
                 <div class="admin-polls-live-toggles">
                   ${[
@@ -927,10 +927,24 @@
           };
         });
         try {
+          // Design v4 brief P1 #1 (2026-05-18) — send session metadata:
+          // mode (manual/auto), default_duration_s (auto-mode fallback),
+          // and the optional session title. Backend persists all three
+          // and broadcasts them in poll_update for viewer to consume.
+          const defaultDuration = (() => {
+            const timers = queue
+              .map((q) => Number(q.timer) || 0)
+              .filter((n) => n > 0);
+            return timers.length ? Math.round(timers.reduce((a, b) => a + b, 0) / timers.length) : null;
+          })();
           const createRes = await csrfFetch("/admin/poll/create", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ questions: payload }),
+            body: JSON.stringify({
+              questions: payload,
+              mode: mode || "manual",
+              default_duration_s: defaultDuration,
+            }),
           });
           const createData = await createRes.json().catch(() => ({}));
           if (!createRes.ok) throw new Error(createData.error || "建立失敗");

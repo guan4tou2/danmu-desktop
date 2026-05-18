@@ -36,7 +36,13 @@
     total: 0,
     filter: "all",     // "all" | "live" | "ended"
     selectedId: null,
-    loading: false,
+    // Start true so first paint shows AdminSkeletons preview instead
+    // of a flash of empty container before the API responds.
+    loading: true,
+    // Bucket-list reframe (design v4 brief 0518-3, 2026-05-18). Each bucket
+    // is keyed by its label ('今天', '昨天', '本週', '更早'). Default-closed
+    // for older buckets; today + yesterday open by default.
+    bucketsCollapsed: { "本週": true, "更早": true },
   };
 
   // ── helpers ──────────────────────────────────────────────────────────────
@@ -89,6 +95,71 @@
     return _state.sessions;
   }
 
+  // Bucket grouping (design v4 brief 0518-3, 2026-05-18).
+  // Sessions → today / yesterday / this-week / earlier. Day boundary in
+  // local time (server returns ISO; new Date parses to local).
+  function _groupIntoBuckets(sessions) {
+    var now = new Date();
+    var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var yesterdayStart = new Date(todayStart.getTime() - 86400 * 1000);
+    var weekStart = new Date(todayStart.getTime() - 7 * 86400 * 1000);
+    var buckets = [
+      { label: "今天",   range: "TODAY",     sessions: [], from: todayStart },
+      { label: "昨天",   range: "YESTERDAY", sessions: [], from: yesterdayStart, to: todayStart },
+      { label: "本週",   range: "THIS WEEK", sessions: [], from: weekStart, to: yesterdayStart },
+      { label: "更早",   range: "EARLIER",   sessions: [], to: weekStart },
+    ];
+    sessions.forEach(function (s) {
+      var ts = s.started_at ? new Date(s.started_at) : null;
+      if (!ts || isNaN(ts.getTime())) { buckets[3].sessions.push(s); return; }
+      if (ts >= todayStart)        buckets[0].sessions.push(s);
+      else if (ts >= yesterdayStart) buckets[1].sessions.push(s);
+      else if (ts >= weekStart)      buckets[2].sessions.push(s);
+      else                           buckets[3].sessions.push(s);
+    });
+    // Compute aggregates per bucket
+    buckets.forEach(function (b) {
+      b.count = b.sessions.length;
+      b.totalMsgs = b.sessions.reduce(function (a, s) { return a + (Number(s.msg_count) || 0); }, 0);
+      b.totalViewers = b.sessions.reduce(function (a, s) { return a + (Number(s.viewer_count) || 0); }, 0);
+    });
+    return buckets;
+  }
+
+  function _fmtDateRange(b) {
+    if (b.label === "今天") {
+      return _fmtYMD(new Date());
+    }
+    if (b.label === "昨天") {
+      var y = new Date(Date.now() - 86400 * 1000);
+      return _fmtYMD(y);
+    }
+    if (b.label === "本週") {
+      var s = new Date(Date.now() - 7 * 86400 * 1000);
+      var e = new Date(Date.now() - 2 * 86400 * 1000);
+      return _fmtMD(s) + " – " + _fmtMD(e);
+    }
+    var weekStart = new Date(Date.now() - 7 * 86400 * 1000);
+    return "< " + _fmtYMD(weekStart);
+  }
+
+  function _fmtYMD(d) {
+    var pad = function (n) { return String(n).padStart(2, "0"); };
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+  function _fmtMD(d) {
+    var pad = function (n) { return String(n).padStart(2, "0"); };
+    return pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+  function _fmtHM(isoStr) {
+    if (!isoStr) return "—";
+    try {
+      var d = new Date(isoStr);
+      var pad = function (n) { return String(n).padStart(2, "0"); };
+      return pad(d.getHours()) + ":" + pad(d.getMinutes());
+    } catch (_) { return ""; }
+  }
+
   function _selectedSession() {
     if (!_state.selectedId) return null;
     for (var i = 0; i < _state.sessions.length; i++) {
@@ -102,11 +173,13 @@
   function buildSection() {
     return '<div id="' + PAGE_ID + '" class="admin-sessions-page hud-page-stack lg:col-span-2">'
 
-      // ── page header
+      // ── page header (polestar 2026-05-18 reframe: session = data slice /
+      //    time window, not "broadcast show". 內容仍是訊息 / 投票 / 統計 的
+      //    時間切片 — overlay 的開關只是切片的起點 trigger，不是切片本身。)
       + '<div class="admin-v2-head">'
-      +   '<div class="admin-v2-kicker">SESSIONS · 場次管理 · 歷史紀錄</div>'
+      +   '<div class="admin-v2-kicker">SESSIONS · 資料切片 · TIME WINDOWS</div>'
       +   '<div class="admin-v2-title">場次</div>'
-      +   '<p class="admin-v2-note">每次廣播開啟為一個場次。點選場次查看詳細統計，或點「詳細 →」進入完整分析頁面。</p>'
+      +   '<p class="admin-v2-note">場次 = 一段時間窗口（包含訊息 / 投票 / 統計）。Overlay 開啟為 trigger，但場次本身的角色是「資料切片」— 切完即歸檔到 history。點選查看詳細統計，或進入完整分析頁面。</p>'
       + '</div>'
 
       // ── KPI strip (full width, 4 tiles)
@@ -129,14 +202,12 @@
       +     '<button type="button" class="admin-v2-tab" data-sessions-filter="ended">已結束</button>'
       +   '</div>'
 
-      +   '<div class="admin-v2-card" style="padding:0;overflow:hidden">'
-      +     '<div id="admin-sessions-table-wrap">'
-      +       _buildTableHead()
-      +       '<div id="admin-sessions-table-body" style="min-height:60px">'
-      +         '<div style="padding:24px;text-align:center;color:var(--admin-text-dim);font-size:13px">載入中…</div>'
-      +       '</div>'
-      +     '</div>'
-      +   '</div>'
+      // Bucket list container — replaces the legacy 8-col table
+      // (design v4 brief 0518-3, 2026-05-18). Each bucket has its own
+      // header + collapsible session rows; no shared table head. First
+      // paint is empty; _renderTable() injects the skeleton on first
+      // call when _state.loading=true.
+      +   '<div id="admin-sessions-table-body" class="admin-sessions-buckets" style="min-height:60px"></div>'
 
       + '</div>'
 
@@ -204,7 +275,15 @@
     if (!bodyEl) return;
 
     if (_state.loading) {
-      bodyEl.innerHTML = '<div style="padding:24px;text-align:center;color:var(--admin-text-dim);font-size:13px">載入中…</div>';
+      // Use AdminSkeletons.listRows when available — gives users a
+      // structural preview of the bucket-list instead of a flat spinner.
+      // (2026-05-18 polestar polish: skeleton consistency.)
+      if (window.AdminSkeletons) {
+        bodyEl.innerHTML = "";
+        bodyEl.appendChild(window.AdminSkeletons.listRows({ rows: 5 }));
+      } else {
+        bodyEl.innerHTML = '<div style="padding:24px;text-align:center;color:var(--admin-text-dim);font-size:13px">載入中…</div>';
+      }
       return;
     }
 
@@ -214,53 +293,73 @@
       return;
     }
 
-    var html = list.map(function (s) {
-      var live = !!s.is_live;
-      var dotColor = live ? "#4ade80" : "var(--admin-line)";
-      var dotGlow  = live ? "0 0 6px rgba(74,222,128,0.6)" : "none";
-      var idShort  = _escHtml((s.id || "").slice(0, 12));
-      var startTs  = _escHtml(formatTs(s.started_at));
-      var dur      = _escHtml(formatDuration(s.duration_s));
-      var msgs     = Number(s.msg_count) || 0;
-      var viewers  = Number(s.viewer_count) || 0;
-      var spark    = buildSparkline(s.sparkline, 18);
-      var sid      = _escHtml(s.id || "");
-      var isSelected = _state.selectedId === s.id;
-      var rowBg = isSelected
-        ? "background:rgba(56,189,248,0.07);border-left:2px solid var(--color-primary)"
-        : "border-left:2px solid transparent";
+    // ── Bucket-grouped view (design v4 brief 0518-3, Option C) ──────
+    var buckets = _groupIntoBuckets(list);
+    var html = buckets.map(function (b) {
+      var collapsed = !!_state.bucketsCollapsed[b.label];
+      var hasSessions = b.sessions.length > 0;
+      // Empty buckets still render header (zero state) so users see structure.
+      var dateRange = _fmtDateRange(b);
 
-      return '<div class="admin-sessions-row" data-session-id="' + sid + '" role="button" tabindex="0" style="'
-        + 'display:grid;grid-template-columns:28px 1fr 140px 80px 70px 60px 60px 80px;'
-        + 'gap:0 8px;padding:9px 12px;align-items:center;cursor:pointer;'
-        + 'border-bottom:1px solid var(--admin-line);transition:background 120ms;'
-        + rowBg + '">'
-        // status dot
-        + '<span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;'
-        +       'background:' + dotColor + ';box-shadow:' + dotGlow + ';display:inline-block"></span>'
-        // session id
-        + '<span style="font-family:var(--font-mono);font-size:11px;color:var(--admin-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
-        +   idShort + (live ? ' <span style="color:#4ade80;font-size:9px;letter-spacing:1px">● LIVE</span>' : '')
-        + '</span>'
-        // started_at
-        + '<span style="font-family:var(--font-mono);font-size:11px;color:var(--admin-text-dim)">' + startTs + '</span>'
-        // duration
-        + '<span style="font-family:var(--font-mono);font-size:11px;color:var(--admin-text-dim)">' + dur + '</span>'
-        // msg count (accent)
-        + '<span style="font-family:var(--font-mono);font-size:11px;color:var(--color-primary)">' + msgs.toLocaleString() + '</span>'
-        // viewer count
-        + '<span style="font-family:var(--font-mono);font-size:11px;color:var(--admin-text)">' + viewers.toLocaleString() + '</span>'
-        // sparkline
-        + '<span style="display:flex;align-items:flex-end;height:18px">' + spark + '</span>'
-        // detail button
-        + '<span style="text-align:right">'
-        +   '<button type="button" class="admin-sessions-detail-btn"'
-        +           ' data-session-id="' + sid + '"'
-        +           ' style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.5px;'
-        +                   'color:var(--color-primary);background:transparent;border:none;'
-        +                   'cursor:pointer;padding:4px 0">詳細 →</button>'
-        + '</span>'
+      var header = ''
+        + '<div class="admin-sessions-bucket-head" data-sessions-bucket="' + _escHtml(b.label) + '" role="button" tabindex="0">'
+        +   '<span class="admin-sessions-bucket-chev" aria-hidden="true">' + (collapsed ? '▸' : '▾') + '</span>'
+        +   '<span class="admin-sessions-bucket-label">' + _escHtml(b.label) + '</span>'
+        +   '<span class="admin-sessions-bucket-en">' + _escHtml(b.range) + '</span>'
+        +   '<span class="admin-sessions-bucket-date">' + _escHtml(dateRange) + '</span>'
+        +   '<span class="admin-sessions-bucket-spacer"></span>'
+        +   '<span class="admin-sessions-bucket-stat">' + b.count + ' sessions</span>'
+        +   '<span class="admin-sessions-bucket-sep">·</span>'
+        +   '<span class="admin-sessions-bucket-stat is-accent">' + b.totalMsgs.toLocaleString() + ' msgs</span>'
+        +   '<span class="admin-sessions-bucket-sep">·</span>'
+        +   '<span class="admin-sessions-bucket-stat is-lime">' + b.totalViewers.toLocaleString() + ' viewers</span>'
         + '</div>';
+
+      var rows = "";
+      if (!collapsed && hasSessions) {
+        rows = b.sessions.map(function (s) {
+          var live    = !!s.is_live;
+          var sid     = _escHtml(s.id || "");
+          var idShort = _escHtml((s.id || "").slice(0, 12));
+          var startHM = _fmtHM(s.started_at);
+          var dur     = formatDuration(s.duration_s);
+          var msgs    = Number(s.msg_count) || 0;
+          var viewers = Number(s.viewer_count) || 0;
+          var spark   = buildSparkline(s.sparkline, 18);
+          var isSelected = _state.selectedId === s.id;
+          var name    = _escHtml(s.name || ("場次 " + idShort));
+          return ''
+            + '<div class="admin-sessions-bucket-row' + (isSelected ? ' is-selected' : '') + '"'
+            +      ' data-session-id="' + sid + '" role="button" tabindex="0">'
+            +   '<span class="admin-sessions-bucket-dot' + (live ? ' is-live' : '') + '"></span>'
+            +   '<div class="admin-sessions-bucket-row-main">'
+            +     '<div class="admin-sessions-bucket-row-title">'
+            +       '<span class="admin-sessions-bucket-row-name">' + name + '</span>'
+            +       (live ? '<span class="admin-sessions-bucket-row-live">LIVE</span>' : '')
+            +     '</div>'
+            +     '<div class="admin-sessions-bucket-row-meta">'
+            +       _escHtml(startHM) + ' · ' + _escHtml(dur) + ' · ' + idShort
+            +     '</div>'
+            +   '</div>'
+            +   '<div class="admin-sessions-bucket-row-stats">'
+            +     '<div class="admin-sessions-bucket-row-stat">'
+            +       '<div class="admin-sessions-bucket-row-stat-en">MSGS</div>'
+            +       '<div class="admin-sessions-bucket-row-stat-v is-accent">' + msgs.toLocaleString() + '</div>'
+            +     '</div>'
+            +     '<div class="admin-sessions-bucket-row-stat">'
+            +       '<div class="admin-sessions-bucket-row-stat-en">FP</div>'
+            +       '<div class="admin-sessions-bucket-row-stat-v is-lime">' + viewers + '</div>'
+            +     '</div>'
+            +     '<span class="admin-sessions-bucket-row-spark">' + spark + '</span>'
+            +   '</div>'
+            +   '<button type="button" class="admin-sessions-detail-btn" data-session-id="' + sid + '">→</button>'
+            + '</div>';
+        }).join("");
+      } else if (!collapsed && !hasSessions) {
+        rows = '<div class="admin-sessions-bucket-empty">此期間沒有場次</div>';
+      }
+
+      return '<div class="admin-sessions-bucket' + (collapsed ? ' is-collapsed' : '') + '">' + header + rows + '</div>';
     }).join("");
 
     bodyEl.innerHTML = html;
@@ -443,7 +542,23 @@
         return;
       }
 
-      // Row click → select
+      // Bucket header toggle (design v4 brief 0518-3)
+      var bucketHead = e.target.closest("[data-sessions-bucket]");
+      if (bucketHead) {
+        var key = bucketHead.dataset.sessionsBucket;
+        _state.bucketsCollapsed[key] = !_state.bucketsCollapsed[key];
+        _renderTable();
+        return;
+      }
+
+      // Bucket row click → select for right-rail preview
+      var bucketRow = e.target.closest(".admin-sessions-bucket-row");
+      if (bucketRow) {
+        _selectSession(bucketRow.dataset.sessionId || null);
+        return;
+      }
+
+      // Legacy row click (kept defensively if any consumer still produces it)
       var row = e.target.closest(".admin-sessions-row");
       if (row) {
         _selectSession(row.dataset.sessionId || null);
@@ -451,10 +566,18 @@
       }
     });
 
-    // Keyboard navigation on rows
+    // Keyboard navigation on rows + bucket headers
     page.addEventListener("keydown", function (e) {
       if (e.key !== "Enter" && e.key !== " ") return;
-      var row = e.target.closest(".admin-sessions-row");
+      var bucketHead = e.target.closest("[data-sessions-bucket]");
+      if (bucketHead) {
+        e.preventDefault();
+        var key = bucketHead.dataset.sessionsBucket;
+        _state.bucketsCollapsed[key] = !_state.bucketsCollapsed[key];
+        _renderTable();
+        return;
+      }
+      var row = e.target.closest(".admin-sessions-bucket-row, .admin-sessions-row");
       if (row) {
         e.preventDefault();
         _selectSession(row.dataset.sessionId || null);

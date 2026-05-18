@@ -35,11 +35,17 @@
     });
   };
 
+  // Severity palette — kept in lockstep with admin-events-log.js so System
+  // Events 與通知中心 share visual language (design v4 2026-05-17).
+  //   crit  → #ff4d4f (error tier, matches admin-ev-v4__row[data-sev=error])
+  //   warn  → #fbbf24 (warn  tier, matches admin-ev-v4__row[data-sev=warn])
+  //   info  → #38bdf8 (info  tier, matches admin-ev-v4__row[data-sev=info])
+  //   good  → #86efac (success — no events-log equivalent yet)
   const SEVERITY = {
-    crit: { label: "CRIT", color: "#f87171", bg: "rgba(248,113,113,0.10)", border: "rgba(248,113,113,0.40)" },
-    warn: { label: "WARN", color: "var(--color-warning, #fbbf24)", bg: "rgba(251,191,36,0.10)", border: "rgba(251,191,36,0.40)" },
-    info: { label: "INFO", color: "var(--color-primary, #38bdf8)", bg: "rgba(56,189,248,0.10)", border: "rgba(56,189,248,0.40)" },
-    good: { label: "GOOD", color: "#86efac", bg: "rgba(134,239,172,0.10)", border: "rgba(134,239,172,0.40)" },
+    crit: { label: "CRIT", color: "#ff4d4f", bg: "rgba(255,77,79,0.10)", border: "rgba(255,77,79,0.40)", sevKey: "error" },
+    warn: { label: "WARN", color: "#fbbf24", bg: "rgba(251,191,36,0.10)", border: "rgba(251,191,36,0.40)", sevKey: "warn" },
+    info: { label: "INFO", color: "#38bdf8", bg: "rgba(56,189,248,0.10)", border: "rgba(56,189,248,0.40)", sevKey: "info" },
+    good: { label: "OK",   color: "#86efac", bg: "rgba(134,239,172,0.10)", border: "rgba(134,239,172,0.40)", sevKey: "good" },
   };
 
   let _state = {
@@ -220,6 +226,11 @@
           <p class="admin-v2-note">集中所有警示來源（速率限制 / Fire Token 事件 / 敏感字觸發）。讀取 / 封存狀態存在瀏覽器 localStorage。</p>
         </div>
 
+        <!-- vs events explainer — pairs with admin-events-log.js explainer. -->
+        <div class="admin-ev-v4__explain admin-notif-explain">
+          ℹ 通知 ≠ <a href="#/events">系統事件</a>。通知 = 需要管理者關注 / 處理的訊息（warn 以上的 fire token 撤銷、moderation drop、webhook 故障）；事件 = 完整自動化日誌（含 info-tier 全部變更）。
+        </div>
+
         <div class="admin-notif-grid admin-notif-grid--3col" data-notif-outer>
           <aside class="admin-notif-filters">
             <div class="admin-v2-monolabel">分組 · GROUP</div>
@@ -311,7 +322,7 @@
       const starred = _isStarred(it.id);
       const tsLabel = it.ts ? _humanDelta(it.ts) : "—";
       return `
-        <article class="admin-notif-item ${archived ? "is-archived" : (read ? "is-read" : "is-unread")} ${starred ? "is-starred" : ""}" data-notif-id="${escapeHtml(it.id)}" style="border-left-color:${sev.color}">
+        <article class="admin-notif-item ${archived ? "is-archived" : (read ? "is-read" : "is-unread")} ${starred ? "is-starred" : ""}" data-notif-id="${escapeHtml(it.id)}" data-sev="${sev.sevKey || it.sev}" style="border-left-color:${sev.color}">
           <div class="head">
             ${!read && !archived ? `<span class="dot" style="background:${sev.color};box-shadow:0 0 6px ${sev.color}"></span>` : ''}
             ${starred ? `<span class="star" aria-label="starred" title="已標記">★</span>` : ''}

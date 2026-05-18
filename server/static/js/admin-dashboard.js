@@ -457,7 +457,7 @@
             <input type="text" class="admin-session-name-input" placeholder="場次名稱（必填）…" maxlength="120" data-sess-name />
             <button type="button" class="admin-session-open-btn" data-sess-action="open">▶ 開啟場次</button>
           </div>
-          <div class="admin-session-banner-idle-hint">開啟後自動啟動廣播，訊息開始歸檔至本場次</div>
+          <div class="admin-session-banner-idle-hint">開啟後自動啟動 Overlay，訊息開始歸檔至本場次</div>
         </div>`;
     } else {
       // LIVE — show session info + controls
@@ -536,7 +536,7 @@
         btn.disabled = false;
       }
     } else if (action === "close") {
-      if (!confirm("確定要結束這個場次？\n訊息將停止歸檔，廣播將切換為 STANDBY。")) return;
+      if (!confirm("確定要結束這個場次？\n訊息將停止歸檔，Overlay 將切換為 OFF。")) return;
       btn.disabled = true;
       try {
         const r = await window.csrfFetch("/admin/session/close", { method: "POST" });

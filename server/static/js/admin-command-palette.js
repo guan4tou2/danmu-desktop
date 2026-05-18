@@ -112,15 +112,15 @@
         .catch(() => _toast("重載失敗", false)),
     },
     {
-      id: "end-broadcast",
-      label: "結束廣播",
-      sub: "切到 STANDBY 模式",
+      id: "overlay-off",
+      label: "停止 Overlay",
+      sub: "切到 OVERLAY OFF",
       action: () => _csrfFetch("/admin/broadcast/toggle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "standby" }),
+        body: JSON.stringify({ mode: "overlay_off" }),
       })
-        .then((r) => _toast(r.ok ? "已切換為 STANDBY" : "切換失敗", r.ok))
+        .then((r) => _toast(r.ok ? "已切換為 OVERLAY OFF" : "切換失敗", r.ok))
         .catch(() => _toast("切換失敗", false)),
     },
     {

@@ -21,61 +21,50 @@
 
   // ─── Build Section HTML ────────────────────────────────────────────
 
+  // 2026-05-17 design v4: dashed-border upload zone at top, quota chip,
+  // 8-col grid, audience preview row at bottom. The classic name+file
+  // upload form is retained inside the dashed zone so the keyboard flow
+  // still works — drag-drop is a progressive enhancement (next iteration).
   function buildSection() {
     return `
-      <div id="${SECTION_ID}" class="admin-emojis-page hud-page-stack lg:col-span-2">
+      <div id="${SECTION_ID}" class="admin-emojis-page admin-em-v4 hud-page-stack lg:col-span-2">
         <div class="admin-v2-head">
-          <div class="admin-v2-kicker">EMOJIS · :NAME: 插入 · 觀眾可用</div>
-          <div class="admin-v2-title">表情符號</div>
-          <p class="admin-v2-note">
-            觀眾透過 <code>:name:</code> 插入圖片表情 — 最大 80KB 每張。
-          </p>
+          <div class="admin-v2-kicker">ASSETS · EMOJIS · CUSTOM :NAME: SYNTAX</div>
+          <div class="admin-v2-title">Emoji 庫</div>
         </div>
 
-        <!-- Upload form + search -->
-        <div class="admin-v2-card">
-          <div class="admin-v2-monolabel" style="margin-bottom:10px">+ 新增表情</div>
-          <div class="admin-emojis-toolbar">
-            <label class="admin-webhooks-field">
-              <span class="admin-v2-monolabel">NAME · :name:</span>
-              <input
-                type="text"
-                id="emojiNameInput"
-                placeholder="my_emoji"
-                maxlength="32"
-                pattern="[a-zA-Z0-9_]+"
-                autocomplete="off"
-                class="admin-v2-input"
-              />
-            </label>
-            <label class="admin-webhooks-field">
-              <span class="admin-v2-monolabel">FILE · PNG/GIF/WEBP</span>
-              <input
-                type="file"
-                id="emojiFileInput"
-                accept="${ACCEPTED_TYPES}"
-                class="admin-v2-input"
-              />
-            </label>
-            <button id="emojiUploadBtn" type="button" class="admin-poll-btn is-primary">上傳</button>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:12px">
-            <span class="admin-v2-monolabel">SEARCH</span>
-            <input
-              id="emojiSearchInput"
-              type="search"
-              placeholder=":name 過濾"
-              class="admin-v2-input"
-              style="flex:1;max-width:280px"
-            />
-            <span class="admin-v2-monolabel" style="margin-left:auto" id="emojiCount">—</span>
+        <!-- Upload zone (dashed dropzone) -->
+        <div class="admin-em-v4__upzone" data-em-dropzone>
+          <div class="admin-em-v4__upicon">↑</div>
+          <div class="admin-em-v4__upcopy">
+            <div class="admin-em-v4__uptitle">拖入 PNG / GIF / WEBP 上傳新 Emoji · 或填表單</div>
+            <div class="admin-em-v4__upsub">64×64 推薦 · 最大 128KB · 支援動圖 GIF</div>
+            <div class="admin-em-v4__upform">
+              <input id="emojiNameInput" type="text" placeholder=":name:" maxlength="32" pattern="[a-zA-Z0-9_]+" autocomplete="off" />
+              <input id="emojiFileInput" type="file" accept="${ACCEPTED_TYPES}" />
+              <button id="emojiUploadBtn" type="button">+ 上傳</button>
+            </div>
           </div>
         </div>
 
-        <!-- Emoji Grid -->
-        <div class="admin-v2-card">
-          <div id="emojiGrid" class="admin-emojis-grid">
-            <div class="admin-emojis-empty">${escapeHtml(ServerI18n.t("loadingEmojis"))}</div>
+        <!-- Quota + search toolbar -->
+        <div class="admin-em-v4__toolbar">
+          <span class="admin-em-v4__quota-label" data-em-quota-label>已用 0 / 100</span>
+          <div class="admin-em-v4__quota-bar"><div class="admin-em-v4__quota-fill" data-em-quota-fill style="width:0%"></div></div>
+          <span class="admin-em-v4__quota-size" data-em-quota-size>總計 0 KB</span>
+          <span class="admin-em-v4__spacer"></span>
+          <input id="emojiSearchInput" type="search" placeholder=":name 過濾" class="admin-em-v4__search" />
+          <span class="admin-em-v4__count" id="emojiCount">0</span>
+        </div>
+
+        <!-- 8-col emoji grid (initial state: skeleton, swapped by renderGrid) -->
+        <div id="emojiGrid" class="admin-em-v4__grid"></div>
+
+        <!-- Audience preview row -->
+        <div class="admin-em-v4__preview" data-em-preview>
+          <div class="admin-em-v4__preview-label">觀眾預覽 · AUDIENCE PREVIEW</div>
+          <div class="admin-em-v4__preview-body" data-em-preview-body>
+            <span class="admin-em-v4__preview-empty">上傳第一個 emoji 後此處會出現預覽。</span>
           </div>
         </div>
       </div>
@@ -84,20 +73,60 @@
 
   // ─── Render Emoji Card ─────────────────────────────────────────────
 
+  // Design v4 tile: image + :name: + dimensions/size + green dot (always on
+  // for now — backend has no per-emoji enable toggle yet). Copy/delete on
+  // hover via overlay actions.
   function emojiCard(emoji) {
     const label = ":" + emoji.name + ":";
+    const sizeKB = emoji.size_bytes
+      ? Math.round(emoji.size_bytes / 1024) + "KB"
+      : "—";
+    const dims = (emoji.width && emoji.height)
+      ? emoji.width + "×" + emoji.height
+      : "";
+    const meta = [dims, sizeKB].filter(Boolean).join(" · ");
     return (
-      '<div class="admin-emojis-tile">' +
-      '<img src="' + escapeAttr(emoji.url) + '" alt="' + escapeAttr(label) + '" width="48" height="48" loading="lazy" />' +
-      '<span class="label" title="' + escapeAttr(label) + '">' + escapeHtml(label) + "</span>" +
-      '<div class="actions">' +
-      '<button type="button" class="emoji-copy-btn admin-v2-chip" data-label="' + escapeAttr(label) + '" title="' + escapeAttr(ServerI18n.t("copyToClipboard")) + '">' +
-      escapeHtml(ServerI18n.t("copyBtn")) + "</button>" +
-      '<button type="button" class="emoji-delete-btn admin-v2-chip is-bad" data-name="' + escapeAttr(emoji.name) + '" title="' + escapeAttr(ServerI18n.t("deleteEmoji")) + '">' +
-      "×</button>" +
-      "</div>" +
-      "</div>"
+      '<div class="admin-em-v4__tile" data-em-name="' + escapeAttr(emoji.name) + '">' +
+      '<div class="admin-em-v4__tile-thumb">' +
+      '<img src="' + escapeAttr(emoji.url) + '" alt="' + escapeAttr(label) + '" loading="lazy" />' +
+      '</div>' +
+      '<div class="admin-em-v4__tile-name">' + escapeHtml(label) + '</div>' +
+      '<div class="admin-em-v4__tile-meta">' + escapeHtml(meta) + '</div>' +
+      '<span class="admin-em-v4__tile-dot" aria-label="enabled"></span>' +
+      '<div class="admin-em-v4__tile-actions">' +
+      '<button type="button" class="emoji-copy-btn" data-label="' + escapeAttr(label) + '" title="' + escapeAttr(ServerI18n.t("copyToClipboard")) + '">複製</button>' +
+      '<button type="button" class="emoji-delete-btn" data-name="' + escapeAttr(emoji.name) + '" title="' + escapeAttr(ServerI18n.t("deleteEmoji")) + '">×</button>' +
+      '</div>' +
+      '</div>'
     );
+  }
+
+  function _updateQuota(emojis) {
+    const label = document.querySelector("[data-em-quota-label]");
+    const fill  = document.querySelector("[data-em-quota-fill]");
+    const sizeEl = document.querySelector("[data-em-quota-size]");
+    if (!label || !fill || !sizeEl) return;
+    const n = emojis.length;
+    const max = 100;
+    label.textContent = `已用 ${n} / ${max}`;
+    fill.style.width = Math.min(100, (n / max) * 100) + "%";
+    const totalKB = emojis.reduce((s, e) => s + (e.size_bytes || 0), 0) / 1024;
+    sizeEl.textContent = `總計 ${totalKB < 1024 ? totalKB.toFixed(0) + " KB" : (totalKB / 1024).toFixed(1) + " MB"}`;
+  }
+
+  function _renderPreview(emojis) {
+    const body = document.querySelector("[data-em-preview-body]");
+    if (!body) return;
+    if (!emojis || emojis.length === 0) {
+      body.innerHTML = '<span class="admin-em-v4__preview-empty">上傳第一個 emoji 後此處會出現預覽。</span>';
+      return;
+    }
+    const sample = emojis.slice(0, 3);
+    const parts = sample.map((e) =>
+      `<span class="admin-em-v4__preview-pair"><code>:${escapeHtml(e.name)}:</code> → ` +
+      `<img src="${escapeAttr(e.url)}" alt=":${escapeAttr(e.name)}:" /></span>`
+    );
+    body.innerHTML = `觀眾鍵入 ${parts.join(" · ")}`;
   }
 
   function escapeAttr(s) {
@@ -112,15 +141,64 @@
     if (!grid) return;
 
     if (!emojis || emojis.length === 0) {
-      grid.innerHTML =
-        '<div class="admin-emojis-empty">' +
-        escapeHtml(ServerI18n.t("noEmojisUploaded")) +
-        "</div>";
-      if (count) count.textContent = "0 項";
-      return;
+      // 2026-05-18 design v4-r2: show shared empty-state card instead of
+      // a single-line `noEmojisUploaded` string. AdminEmpty falls back
+      // gracefully if the helper hasn't loaded yet.
+      if (window.AdminEmpty) {
+        grid.innerHTML = "";
+        grid.appendChild(window.AdminEmpty.renderCustom({
+          icon: "⊞",
+          title: "尚無自訂 Emoji",
+          desc: "上傳 PNG / GIF（64×64 推薦），觀眾以 :name: 觸發。",
+          actionLabel: "+ 上傳第一個 Emoji",
+          action: function () {
+            var fileInput = document.getElementById("emojiFileInput");
+            if (fileInput) fileInput.click();
+          },
+        }));
+      } else {
+        grid.innerHTML = '<div class="admin-emojis-empty">' +
+          escapeHtml(ServerI18n.t("noEmojisUploaded")) + "</div>";
+      }
+      if (count) count.textContent = "0";
+    } else {
+      grid.innerHTML = emojis.map(emojiCard).join("");
+      if (count) count.textContent = String(emojis.length);
     }
-    grid.innerHTML = emojis.map(emojiCard).join("");
-    if (count) count.textContent = emojis.length + " 項";
+    // Quota + preview track the *unfiltered* cache, not the search-filtered list.
+    _updateQuota(_cache);
+    _renderPreview(_cache);
+  }
+
+  // 2026-05-18 design v4-r2: show skeleton during initial fetch.
+  function _renderLoadingSkeleton() {
+    var grid = document.getElementById("emojiGrid");
+    if (!grid) return;
+    if (window.AdminSkeletons) {
+      grid.innerHTML = "";
+      // Render 8 placeholder tiles styled like real ones — wraps in a flex
+      // row that matches the 8-col grid layout.
+      for (var i = 0; i < 8; i++) {
+        var tile = document.createElement("div");
+        tile.className = "admin-em-v4__tile admin-em-v4__tile--skel";
+        var thumb = document.createElement("div");
+        thumb.className = "admin-em-v4__tile-thumb";
+        var img = document.createElement("div");
+        img.className = "admin-skel";
+        img.style.width = "100%"; img.style.height = "100%";
+        thumb.appendChild(img);
+        tile.appendChild(thumb);
+        var name = document.createElement("div");
+        name.className = "admin-skel admin-skel-bar";
+        name.style.width = "60%"; name.style.height = "8px";
+        name.style.margin = "6px auto";
+        tile.appendChild(name);
+        grid.appendChild(tile);
+      }
+    } else {
+      grid.innerHTML = '<div class="admin-emojis-empty">' +
+        escapeHtml(ServerI18n.t("loadingEmojis")) + "</div>";
+    }
   }
 
   async function fetchAndRenderEmojis() {
@@ -306,6 +384,48 @@
       });
     }
 
+    // 2026-05-17 design v4: dashed dropzone accepts drag-drop. We don't
+    // auto-name from filename — user still picks `:name:` to avoid
+    // accidentally exposing source path / weird unicode.
+    var dropzone = document.querySelector("[data-em-dropzone]");
+    var fileInput = document.getElementById("emojiFileInput");
+    if (dropzone && fileInput) {
+      ["dragenter", "dragover"].forEach(function (ev) {
+        dropzone.addEventListener(ev, function (e) {
+          e.preventDefault();
+          dropzone.classList.add("is-dragover");
+        });
+      });
+      ["dragleave", "drop"].forEach(function (ev) {
+        dropzone.addEventListener(ev, function (e) {
+          e.preventDefault();
+          dropzone.classList.remove("is-dragover");
+        });
+      });
+      dropzone.addEventListener("drop", function (e) {
+        var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (f) {
+          var dt = new DataTransfer();
+          dt.items.add(f);
+          fileInput.files = dt.files;
+          var nameInput = document.getElementById("emojiNameInput");
+          if (nameInput && !nameInput.value) {
+            var base = f.name.replace(/\.[a-z0-9]+$/i, "").replace(/[^a-zA-Z0-9_]/g, "_");
+            nameInput.value = base.slice(0, 32);
+            nameInput.focus();
+          }
+          // 2026-05-18 design v4-r6: 3rd dropzone state — "processing".
+          // Add class for the ~400ms window before upload kicks in so
+          // CSS shows spinner + solid border + pulse.
+          dropzone.classList.add("is-dropping");
+          setTimeout(function () {
+            dropzone.classList.remove("is-dropping");
+          }, 1200);
+        }
+      });
+    }
+
+    _renderLoadingSkeleton();
     fetchAndRenderEmojis();
   }
 

@@ -185,6 +185,12 @@
         );
       }
       if (font.type === "uploaded") {
+        // P1 #5 (2026-05-18 design v4): subset action for uploaded fonts only.
+        // Built-in / Google fonts already optimized; subsetting them would
+        // confuse cache + delivery.
+        actionBtns.push(
+          `<button class="admin-font-subset-btn hud-effect-chip" data-name="${escapeHtml(font.name)}" title="縮減字型大小 · 只保留指定字元範圍">⊗ 子集化</button>`
+        );
         actionBtns.push(
           `<button class="admin-font-delete-btn hud-effect-chip" data-name="${escapeHtml(font.name)}">${escapeHtml(ServerI18n.t("deleteBtn"))}</button>`
         );
@@ -205,6 +211,153 @@
         `<div style="text-align:right">${statusPill}</div>` +
       `</div>`
     );
+  }
+
+  // ─── Font subset (P1 #5, design v4 2026-05-18) ─────────────────────────
+  // Lazy-load preset list once; cache for re-opens.
+  let _subsetPresets = null;
+
+  // Glyph + size estimates per preset (mirrors design admin-font-subset.jsx).
+  // These are rough heuristics — backend doesn't return estimates because
+  // actual savings depend on the font's existing coverage.
+  const SUBSET_PRESET_META = {
+    latin:      { label: "Latin",       glyphs: "224",    estSize: "48 KB" },
+    latin_ext:  { label: "Latin Ext",   glyphs: "608",    estSize: "120 KB" },
+    cjk_common: { label: "中文 BMP",     glyphs: "20,992", estSize: "1.8 MB" },
+    cjk_full:   { label: "中日韓全集",   glyphs: "29,810", estSize: "2.6 MB" },
+    kana:       { label: "假名",         glyphs: "352",    estSize: "84 KB" },
+    hangul:     { label: "한글",         glyphs: "11,400", estSize: "1.4 MB" },
+  };
+
+  async function _loadSubsetPresets() {
+    if (_subsetPresets) return _subsetPresets;
+    try {
+      const r = await fetch("/admin/fonts/subset/presets", { credentials: "same-origin" });
+      if (!r.ok) return {};
+      const data = await r.json();
+      _subsetPresets = data.presets || {};
+      return _subsetPresets;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function _formatBytes(n) {
+    if (!n || !Number.isFinite(n)) return "—";
+    if (n < 1024) return n + " B";
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
+    return (n / (1024 * 1024)).toFixed(2) + " MB";
+  }
+
+  async function openSubsetModal(fontName) {
+    if (!window.HudConfirm) {
+      window.showToast?.("子集化需要 HudConfirm modal", false);
+      return;
+    }
+    const presets = await _loadSubsetPresets();
+    if (!Object.keys(presets).length) {
+      window.showToast?.("無法載入子集 preset", false);
+      return;
+    }
+    // Default selected: cjk_common + latin (Chinese-traditional baseline).
+    const selected = new Set(["cjk_common", "latin"]);
+    let customRange = "";
+
+    const body = document.createElement("div");
+    body.className = "admin-font-subset-modal-body";
+    const renderInner = () => {
+      const chips = Object.keys(presets).map((id) => {
+        const meta = SUBSET_PRESET_META[id] || { label: id, glyphs: "—", estSize: "—" };
+        const on = selected.has(id);
+        return `
+          <label class="admin-font-subset-chip${on ? " is-active" : ""}" data-subset-preset="${id}">
+            <span class="admin-font-subset-chip-check">${on ? "✓" : ""}</span>
+            <span class="admin-font-subset-chip-label">${escapeHtml(meta.label)}</span>
+            <span class="admin-font-subset-chip-range">${escapeHtml(presets[id])}</span>
+            <span class="admin-font-subset-chip-meta">${meta.glyphs} glyphs · ${meta.estSize}</span>
+          </label>`;
+      }).join("");
+      body.innerHTML = `
+        <div class="admin-font-subset-target">
+          <span class="admin-font-subset-target-glyph">永</span>
+          <div>
+            <div class="admin-v2-monolabel">FONT</div>
+            <div class="admin-font-subset-target-name">${escapeHtml(fontName)}</div>
+          </div>
+        </div>
+        <div class="admin-font-subset-section">
+          <div class="admin-v2-monolabel">SUBSET PRESETS · 多選</div>
+          <div class="admin-font-subset-chips">${chips}</div>
+        </div>
+        <div class="admin-font-subset-section">
+          <div class="admin-v2-monolabel">CUSTOM UNICODE RANGE（選填）</div>
+          <textarea class="admin-font-subset-custom" data-subset-custom
+            placeholder="U+4E00-9FFF, U+FF00-FFEF">${escapeHtml(customRange)}</textarea>
+          <div class="admin-font-subset-hint">逗號分隔 · 支援 U+XXXX / U+XXXX-XXXX</div>
+        </div>
+        <div class="admin-font-subset-warn">⚠ 子集化在原檔覆寫 · 無法復原 · 不在範圍內的字元將無法顯示</div>`;
+      body.querySelectorAll("[data-subset-preset]").forEach((el) => {
+        el.addEventListener("click", (e) => {
+          e.preventDefault();
+          const id = el.dataset.subsetPreset;
+          if (selected.has(id)) selected.delete(id); else selected.add(id);
+          renderInner();
+        });
+      });
+      const cust = body.querySelector("[data-subset-custom]");
+      if (cust) cust.addEventListener("input", () => { customRange = cust.value; });
+    };
+    renderInner();
+
+    const ok = await window.HudConfirm.open({
+      icon: "⊗",
+      title: "子集化字型",
+      subtitle: "SUBSET · IRREVERSIBLE IN-PLACE OPERATION",
+      severity: "warn",
+      confirmLabel: "產生子集",
+      cancelLabel: "取消",
+      body: body,
+      width: 540,
+    });
+    if (!ok) return;
+    // Combine selected presets + custom range into one unicode_range string.
+    const ranges = [];
+    selected.forEach((id) => { if (presets[id]) ranges.push(presets[id]); });
+    if (customRange.trim()) ranges.push(customRange.trim());
+    if (!ranges.length) {
+      window.showToast?.("請至少選一個 preset 或輸入自訂範圍", false);
+      return;
+    }
+    await _runSubset(fontName, ranges.join(","));
+  }
+
+  async function _runSubset(fontName, unicodeRange) {
+    try {
+      window.showToast?.(`子集化 ${fontName} 中…`, true);
+      const r = await window.csrfFetch(`/admin/fonts/${encodeURIComponent(fontName)}/subset`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ unicode_range: unicodeRange }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.status === 503) {
+        window.showToast?.("後端缺 fontTools — 請執行 `uv add fonttools`", false);
+        return;
+      }
+      if (!r.ok) {
+        window.showToast?.(data.error || `子集化失敗 (HTTP ${r.status})`, false);
+        return;
+      }
+      const saved = data.saved_bytes || 0;
+      const pct = Math.round((data.saved_ratio || 0) * 100);
+      window.showToast?.(
+        `${fontName} 子集化完成 · ${_formatBytes(data.original_size)} → ${_formatBytes(data.new_size)} (-${pct}%)`,
+        true,
+      );
+      fetchAndRenderFonts();
+    } catch (e) {
+      window.showToast?.(`子集化失敗：${e.message || "未知錯誤"}`, false);
+    }
   }
 
   async function setAsDefault(name) {
@@ -533,6 +686,12 @@
           e.stopPropagation();
           const isEnabled = toggleBtn.dataset.enabled === "true";
           doToggle(toggleBtn.dataset.name, isEnabled);
+          return;
+        }
+        var subsetBtn = e.target.closest(".admin-font-subset-btn");
+        if (subsetBtn) {
+          e.stopPropagation();
+          openSubsetModal(subsetBtn.dataset.name);
         }
       });
     }

@@ -397,8 +397,8 @@
     return `
       <div id="${SECTION_ID}" class="admin-sounds-page hud-page-stack lg:col-span-2">
         <div class="admin-v2-head">
-          <div class="admin-v2-kicker">SOUNDS · 觸發音效 · .MP3/.WAV</div>
-          <div class="admin-v2-title">音效庫</div>
+          <div class="admin-v2-kicker">ASSETS · SOUNDS · EVENT-TRIGGERED</div>
+          <div class="admin-v2-title">聲音庫</div>
           <p class="admin-v2-note">
             關鍵字命中或事件觸發時在 overlay 播放 — 最長 10 秒,最大 500KB。
           </p>

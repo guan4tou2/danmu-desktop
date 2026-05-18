@@ -248,8 +248,8 @@
       `
       <div id="${SECTION_ID}" class="admin-scheduler-page hud-page-stack lg:col-span-2">
         <div class="admin-v2-head">
-          <div class="admin-v2-kicker">SCHEDULER · CRON + ONE-SHOT</div>
-          <div class="admin-v2-title">排程播出</div>
+          <div class="admin-v2-kicker">SYSTEM · SCHEDULER · CRON / AT / RECURRING</div>
+          <div class="admin-v2-title">排程器</div>
           <p class="admin-v2-note">
             按時間/週期自動送出彈幕 — 使用 apscheduler,時區以伺服器為準。
           </p>

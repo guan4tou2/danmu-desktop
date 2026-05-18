@@ -716,7 +716,28 @@
 
       // ── Delete handler
       delBtn.addEventListener("click", async () => {
-        if (!confirm(ServerI18n.t("deleteEffectConfirm").replace("{name}", eff.label || eff.name))) return;
+        // 2026-05-18 design v4-r2 DeleteConfirm: use HudConfirm modal if
+        // helper has loaded, fall back to native confirm() otherwise.
+        const effName = eff.label || eff.name;
+        const ok = window.HudConfirm
+          ? await window.HudConfirm.open({
+              icon: "⊗",
+              title: "刪除確認",
+              subtitle: "DELETE · THIS ACTION CANNOT BE UNDONE",
+              severity: "danger",
+              body: `
+                <div style="font-size:13px;color:var(--hud-text, #f1f5f9);line-height:1.7;">
+                  確定要刪除 <span style="font-family:var(--hud-font-mono, ui-monospace, monospace);color:var(--hud-cyan, #38bdf8);font-weight:600;">${effName}.dme</span> 嗎？
+                </div>
+                <div style="margin-top:12px;padding:10px 12px;border-radius:4px;background:rgba(255,77,79,0.05);border:1px solid rgba(255,77,79,0.19);font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:10px;color:var(--hud-crimson, #f87171);letter-spacing:0.3px;">
+                  刪除後無法復原，已使用此效果的歷史訊息將顯示為預設樣式。
+                </div>`,
+              confirmLabel: "確認刪除",
+              cancelLabel: "取消",
+              width: 400,
+            })
+          : confirm(ServerI18n.t("deleteEffectConfirm").replace("{name}", effName));
+        if (!ok) return;
         try {
           const res = await csrfFetch("/admin/effects/delete", {
             method: "POST",

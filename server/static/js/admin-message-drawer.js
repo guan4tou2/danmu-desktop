@@ -152,7 +152,12 @@
       e.stopPropagation();
       const a = btn.dataset.msgdAction;
       if (a === "close") _close();
-      else if (a === "ban-fp") _banFingerprint();
+      else if (a === "ban-fp") _openBanConfirm();
+      else if (a === "ban-fp-quick") _banFingerprint();
+      else if (a === "mute-fp") _muteFingerprint();
+      else if (a === "mask-msg") _maskMessage();
+      else if (a === "blacklist-kw") _blacklistKeyword();
+      else if (a === "reply") _sendHostReply();
       else if (a === "prev") _navigate(-1);
       else if (a === "next") _navigate(+1);
     });
@@ -166,109 +171,84 @@
     body.innerHTML = _renderBody();
   }
 
+  // 2026-05-17 design v4 drawer layout:
+  //   header (avatar + @nick + fp + time) → message body → Sender Profile
+  //   → Moderation → Reply → footer (PREV / NEXT)
   function _renderBody() {
     const entry = _state.entry;
     if (!entry) return '<div class="admin-msgd-empty">沒有資料</div>';
     const d = entry.data || {};
     const fp = d.fingerprint || "—";
     const fpShort = fp === "—" ? "—" : fp.slice(0, FP_DISPLAY_LEN);
-    const ts = entry.ts ? new Date(entry.ts).toLocaleString("zh-TW", { hour12: false }) : "—";
+    const fpFull  = fp === "—" ? "—" : fp.slice(0, 12);
+    const ts = entry.ts ? _shortTime(entry.ts) : "—";
     const nick = d.nickname || "匿名";
-    const nickInitial = nick.charAt(0) || "?";
-    const color = d.color || "#7c3aed";
-    const status = entry.muted ? "MASKED" : "SHOWN";
-    const statusCls = entry.muted ? "is-warn" : "is-good";
 
     const fpRec = _state.fingerprintRecord || {};
     const totalCount = Number(fpRec.message_count) || 0;
     const violations = Number(fpRec.violation_count) || 0;
-    const firstSeen = fpRec.first_seen ? _humanDelta(fpRec.first_seen) : "—";
 
     const sameFp = _state.sameFpEntries || [];
-    const sameFpRows = sameFp.map(function (e, i) {
-      const sd = e.data || e;
-      const text = sd.text || sd.message || "";
-      const t = e.ts ? _shortTime(e.ts) : "—";
-      const isCurrent = e.id && entry.id && e.id === entry.id;
-      const masked = !!e.muted;
-      return `
-        <div class="admin-msgd-fp-row ${isCurrent ? "is-current" : ""}">
-          <span class="t">${escapeHtml(t)}</span>
-          <span class="m">${escapeHtml(text.slice(0, 60))}</span>
-          <span class="s ${masked ? "is-masked" : ""}">${masked ? "MASKED" : "SENT"}</span>
-        </div>`;
-    }).join("");
+    const avgLen = sameFp.length
+      ? Math.round(sameFp.reduce((s, e) => s + (((e.data || e).text || "").length), 0) / sameFp.length)
+      : (d.text || "").length;
 
-    let _navCounter = "";
-    {
-      let _allEntries = [];
-      if (window.AdminLiveFeed && typeof window.AdminLiveFeed.getEntries === "function") {
-        _allEntries = window.AdminLiveFeed.getEntries();
-      }
-      if (_allEntries.length > 0) {
-        const _idx = _allEntries.findIndex(function (en) { return en.id === entry.id; });
-        if (_idx >= 0) _navCounter = (_idx + 1) + " / " + _allEntries.length;
-      }
-    }
+    // fp-derived hue for avatar (matches design v4 P0Avatar).
+    let hue = 0;
+    for (let i = 0; i < fp.length; i++) hue = (hue * 31 + fp.charCodeAt(i)) & 0xffff;
+    hue = hue % 360;
 
     return `
-      <header class="admin-msgd-head">
-        <span class="admin-msgd-kicker">MESSAGE · INSPECTOR</span>
-        ${_navCounter ? `<span class="admin-msgd-counter">${_navCounter}</span>` : ""}
-        <button type="button" class="admin-msgd-nav" data-msgd-action="prev" aria-label="Previous message" title="上一筆 · K"><span class="arrow">↑</span><span class="admin-msgd-keycap">K</span></button>
-        <button type="button" class="admin-msgd-nav" data-msgd-action="next" aria-label="Next message" title="下一筆 · J"><span class="arrow">↓</span><span class="admin-msgd-keycap">J</span></button>
-        <button type="button" class="admin-msgd-close" data-msgd-action="close" aria-label="Close drawer" title="關閉 · Esc"><span class="arrow">✕</span><span class="admin-msgd-keycap">Esc</span></button>
+      <header class="admin-msgd-v4__topbar">
+        <span class="admin-msgd-v4__kicker">MESSAGE DETAIL</span>
+        <span class="admin-msgd-v4__spacer"></span>
+        <button type="button" class="admin-msgd-v4__close" data-msgd-action="close" title="關閉 · Esc">✕</button>
       </header>
 
-      <article class="admin-msgd-bubble">
-        <div class="admin-msgd-bubble-head">
-          <div class="admin-msgd-avatar" style="background:${escapeHtml(color)}">${escapeHtml(nickInitial)}</div>
-          <div class="admin-msgd-bubble-meta">
-            <div class="nick">${escapeHtml(nick)}</div>
-            <div class="ts">fp:${escapeHtml(fpShort)} · ${escapeHtml(ts)}</div>
-          </div>
-          <span class="admin-msgd-status ${statusCls}">${status}</span>
+      <div class="admin-msgd-v4__header">
+        <span class="admin-msgd-v4__avatar" style="background: oklch(0.65 0.18 ${hue})">${escapeHtml((nick || "?").slice(0, 2).toUpperCase())}</span>
+        <div class="admin-msgd-v4__id">
+          <div class="admin-msgd-v4__nick">@${escapeHtml(nick)}</div>
+          <div class="admin-msgd-v4__fp">fp:${escapeHtml(fpFull)}</div>
         </div>
-        <div class="admin-msgd-bubble-text">${escapeHtml(d.text || "")}</div>
-        <div class="admin-msgd-bubble-foot">
-          <span>id <b>${escapeHtml((entry.id || "—").slice(0, 12))}</b></span>
-          ${d.layout ? `<span>layout <b>${escapeHtml(d.layout)}</b></span>` : ""}
-          ${d.color ? `<span>color <b style="color:${escapeHtml(d.color)};">${escapeHtml(d.color)}</b></span>` : ""}
+        <span class="admin-msgd-v4__ts">${escapeHtml(ts)}</span>
+      </div>
+
+      <div class="admin-msgd-v4__body">${escapeHtml(d.text || "")}</div>
+
+      <section class="admin-msgd-v4__section">
+        <div class="admin-msgd-v4__seclabel">發送者 · SENDER PROFILE</div>
+        <div class="admin-msgd-v4__sender-stats">
+          <div><div class="k">累計訊息</div><div class="v">${totalCount || sameFp.length}</div></div>
+          <div><div class="k">平均長度</div><div class="v dim">${avgLen}<span class="u">字</span></div></div>
+          <div><div class="k">敏感字次</div><div class="v ${violations > 0 ? "warn" : "good"}">${violations}</div></div>
         </div>
-      </article>
+        <div class="admin-msgd-v4__sender-meta">
+          IP · ${escapeHtml(d.ip || "—")}<br/>
+          UA · ${escapeHtml(d.user_agent || d.ua || "—")}
+        </div>
+      </section>
 
-      <div class="admin-msgd-actions">
-        <span class="admin-be-placeholder-control admin-msgd-action-placeholder" role="note"><span class="icon">★</span><span class="lbl">置頂</span></span>
-        <span class="admin-be-placeholder-control admin-msgd-action-placeholder" role="note"><span class="icon">◐</span><span class="lbl">遮罩</span></span>
-        <span class="admin-be-placeholder-control admin-msgd-action-placeholder" role="note"><span class="icon">⊘</span><span class="lbl">隱藏</span></span>
-        <button type="button" data-msgd-action="ban-fp" class="is-danger" ${fp === "—" ? "disabled" : ""}><span class="icon">⊗</span><span class="lbl">封禁指紋</span></button>
-        <span class="admin-be-placeholder-control admin-msgd-action-placeholder" role="note"><span class="icon">↗</span><span class="lbl">overlay</span></span>
-      </div>
+      <section class="admin-msgd-v4__section">
+        <div class="admin-msgd-v4__seclabel">審核 · MODERATION</div>
+        <div class="admin-msgd-v4__mod-buttons">
+          <button type="button" class="admin-msgd-v4__modbtn is-ban" data-msgd-action="ban-fp" ${fp === "—" ? "disabled" : ""}>⊘ Ban</button>
+          <button type="button" class="admin-msgd-v4__modbtn is-mute" data-msgd-action="mute-fp" ${fp === "—" ? "disabled" : ""}>◐ Mute</button>
+          <button type="button" class="admin-msgd-v4__modbtn is-mask" data-msgd-action="mask-msg">◑ Mask</button>
+          <button type="button" class="admin-msgd-v4__modbtn is-blacklist" data-msgd-action="blacklist-kw">+ 黑名單</button>
+        </div>
+      </section>
 
-      <div class="admin-v2-monolabel">指紋活動 · fp:${escapeHtml(fpShort)}</div>
-      <div class="admin-msgd-fp-stats">
-        <div class="kpi"><div class="k">本場</div><div class="v">${sameFp.length}<span class="unit">則</span></div></div>
-        <div class="kpi"><div class="k">追蹤總數</div><div class="v">${totalCount}<span class="unit">則</span></div></div>
-        <div class="kpi"><div class="k">違規</div><div class="v ${violations > 0 ? "is-warn" : ""}">${violations}</div></div>
-      </div>
+      <section class="admin-msgd-v4__section is-grow">
+        <div class="admin-msgd-v4__seclabel">回覆 · REPLY AS ADMIN</div>
+        <textarea class="admin-msgd-v4__reply" data-msgd-reply placeholder="以管理者身分回覆…" rows="3"></textarea>
+        <button type="button" class="admin-msgd-v4__replybtn" data-msgd-action="reply">發送回覆</button>
+      </section>
 
-      <div class="admin-msgd-fp-meta">
-        ${firstSeen !== "—" ? `首次出現 <b>${escapeHtml(firstSeen)}</b>` : "首次出現 <b>—</b>"}
-        ${nick && nick !== "匿名" ? ` · 暱稱 <b>${escapeHtml(nick)}</b>` : ""}
-        ${fpRec.state ? ` · 狀態 <b class="state-${escapeHtml(fpRec.state)}">${escapeHtml(fpRec.state)}</b>` : ""}
-      </div>
-
-      <div class="admin-v2-monolabel admin-msgd-section-top">同指紋最近訊息</div>
-      <div class="admin-msgd-fp-list">
-        ${sameFpRows || '<div class="admin-msgd-empty-rows">本場沒有同指紋的其他訊息。</div>'}
-      </div>
-
-      ${fp !== "—" ? `
-        <div class="admin-msgd-ban-preview">
-          <span class="kicker">BAN 預覽</span>
-          <div>封禁此指紋會把該觀眾在<b>本場後續</b>所有訊息都自動遮罩，<b>不會</b>影響歷史訊息。</div>
-          <div class="impact">預估影響：本場已收到 <b style="color:var(--color-warning, #fbbf24);">${sameFp.length} 則</b> 此指紋訊息（其中 ${sameFp.filter(function (e) { return e.muted; }).length} 則已遮罩）。</div>
-        </div>` : ""}
+      <footer class="admin-msgd-v4__footer">
+        <button type="button" data-msgd-action="prev">← PREV</button>
+        <button type="button" data-msgd-action="next">NEXT →</button>
+      </footer>
     `;
   }
 
@@ -297,21 +277,135 @@
 
   // ── ban via existing /admin/live/block ──────────────────────────
 
-  async function _banFingerprint() {
+  async function _banFingerprint(reason) {
     const fp = _state.entry && _state.entry.data && _state.entry.data.fingerprint;
     if (!fp) return;
-    if (!confirm("確定封禁此指紋？該指紋之後在本場發出的訊息會自動遮罩。")) return;
     try {
       const r = await window.csrfFetch("/admin/live/block", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "fingerprint", value: fp }),
+        body: JSON.stringify({ type: "fingerprint", value: fp, reason: reason || "" }),
       });
       if (!r.ok) throw new Error("HTTP " + r.status);
       window.showToast && window.showToast("已封禁 fp:" + fp.slice(0, 8), true);
+      _closeBanConfirm();
       _close();
     } catch (e) {
       window.showToast && window.showToast("封禁失敗：" + (e.message || ""), false);
+    }
+  }
+
+  // 2026-05-18 design v4-r2: BanConfirm migrated to the shared HudConfirm
+  // helper. Keeps the same 4-chip duration UI + reason input (built as a
+  // detached DOM node and passed as `body`). Backend still only supports
+  // permanent — the timed chips remain disabled.
+  async function _openBanConfirm() {
+    const d = (_state.entry && _state.entry.data) || {};
+    const fp = d.fingerprint || "—";
+    if (fp === "—") return;
+    const fpFull = fp.slice(0, 12);
+    const nick = d.nickname || "匿名";
+    let hue = 0;
+    for (let i = 0; i < fp.length; i++) hue = (hue * 31 + fp.charCodeAt(i)) & 0xffff;
+    hue = hue % 360;
+
+    const body = document.createElement("div");
+    body.innerHTML = `
+      <div class="admin-bancfm-target">
+        <span class="admin-bancfm-avatar" style="background: oklch(0.65 0.18 ${hue})">${escapeHtml((nick || "?").slice(0, 2).toUpperCase())}</span>
+        <div class="admin-bancfm-meta">
+          <div class="nick">@${escapeHtml(nick)}</div>
+          <div class="fp">fp:${escapeHtml(fpFull)}</div>
+          <div class="ip">IP · ${escapeHtml(d.ip || "—")} · ${escapeHtml(d.user_agent || d.ua || "—")}</div>
+        </div>
+      </div>
+      <div class="admin-bancfm-section">
+        <div class="admin-bancfm-sec-label">封禁時長</div>
+        <div class="admin-bancfm-duration">
+          <span class="admin-bancfm-dchip is-disabled" title="後端尚未支援時限 ban">1 小時</span>
+          <span class="admin-bancfm-dchip is-disabled" title="後端尚未支援時限 ban">24 小時</span>
+          <span class="admin-bancfm-dchip is-disabled" title="後端尚未支援時限 ban">7 天</span>
+          <span class="admin-bancfm-dchip is-active">永久</span>
+        </div>
+      </div>
+      <div class="admin-bancfm-section">
+        <div class="admin-bancfm-sec-label">原因（選填）</div>
+        <input type="text" class="admin-bancfm-reason" data-ban-reason placeholder="e.g. 持續發送垃圾訊息" maxlength="200" />
+      </div>
+      <div class="admin-bancfm-warn">⚠ 該指紋下所有訊息將被遮罩，該指紋將被加入黑名單。</div>`;
+
+    if (!window.HudConfirm) {
+      // Fallback to native confirm if helper hasn't loaded yet.
+      if (confirm("確定封禁此指紋？該指紋之後在本場發出的訊息會自動遮罩。")) {
+        return _banFingerprint("");
+      }
+      return;
+    }
+    const ok = await window.HudConfirm.open({
+      icon: "⊘",
+      title: "封禁確認",
+      subtitle: "BAN CONFIRM · IRREVERSIBLE UNTIL MANUAL LIFT",
+      severity: "danger",
+      body,
+      confirmLabel: "確認封禁",
+      cancelLabel: "取消",
+      width: 480,
+    });
+    if (!ok) return;
+    const reason = (body.querySelector("[data-ban-reason]") || {}).value || "";
+    return _banFingerprint(reason.trim());
+  }
+  // Stub kept for any straggler call sites that referenced the old close
+  // function; HudConfirm now manages its own close lifecycle.
+  function _closeBanConfirm() { /* no-op; HudConfirm self-closes */ }
+
+  async function _muteFingerprint() {
+    // Mute = same backend call as ban (permanent block of fp). Surfaced as
+    // "softer" action just because design v4 spec separates them; backend
+    // model is identical until tiered moderation lands.
+    return _banFingerprint("[mute]");
+  }
+  async function _maskMessage() {
+    // Mask a single message in the live feed (frontend-only — same UX as
+    // /admin/live/block with type=keyword on the message text).
+    const text = _state.entry && _state.entry.data && _state.entry.data.text;
+    if (!text) return;
+    if (!confirm("把此訊息加入黑名單關鍵字？")) return;
+    try {
+      const r = await window.csrfFetch("/admin/live/block", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "keyword", value: text }),
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      window.showToast && window.showToast("已加入黑名單", true);
+      _close();
+    } catch (e) {
+      window.showToast && window.showToast("失敗：" + (e.message || ""), false);
+    }
+  }
+  async function _blacklistKeyword() {
+    // Alias of _maskMessage — design v4 shows both buttons (Mask vs 黑名單)
+    // but backend has one endpoint. We keep both for UI parity, future
+    // server-side split (mask = current-session only / 黑名單 = persistent)
+    // is the natural follow-up.
+    return _maskMessage();
+  }
+  async function _sendHostReply() {
+    const ta = document.querySelector("[data-msgd-reply]");
+    const text = ta ? ta.value.trim() : "";
+    if (!text) return;
+    try {
+      const r = await window.csrfFetch("/admin/broadcast/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      window.showToast && window.showToast("已以管理者身分發送", true);
+      if (ta) ta.value = "";
+    } catch (e) {
+      window.showToast && window.showToast("發送失敗：" + (e.message || ""), false);
     }
   }
 

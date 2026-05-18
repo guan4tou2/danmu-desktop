@@ -52,8 +52,8 @@
     return `
       <div id="${SECTION_ID}" class="admin-stickers-page hud-page-stack lg:col-span-2">
         <div class="admin-v2-head">
-          <div class="admin-v2-kicker">STICKERS · 貼圖包 · 隨機觸發</div>
-          <div class="admin-v2-title">貼圖</div>
+          <div class="admin-v2-kicker">ASSETS · STICKERS · QUICK-SEND FOR AUDIENCE</div>
+          <div class="admin-v2-title">Sticker 包管理</div>
           <p class="admin-v2-note">
             比 emoji 大的浮動圖像 — 最大 300KB,按權重隨機。
           </p>

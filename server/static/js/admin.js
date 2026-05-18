@@ -116,6 +116,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // === Moderation tabs ===
     ratelimit:    { nav: "moderation", tab: "ratelimit" },
     fingerprints: { nav: "moderation", tab: "fingerprints" },
+    // brief 0518-v3 #2 (2026-05-18): queue + bans now moderation tabs.
+    // Keep deep-link aliases so old bookmarks (#/modqueue, #/modbans) still
+    // route correctly into the new tabbed shell.
+    modqueue:     { nav: "moderation", tab: "queue" },
+    modbans:      { nav: "moderation", tab: "bans" },
+    // 2026-05-18 P2-6 polestar rename: `broadcast` slug aligned with the
+    // user-facing "Overlay 控制" title. Old #/broadcast bookmarks resolve
+    // to the same route via this alias.
+    broadcast:    { nav: "overlay" },
     // (note: `moderation` is its own nav, blacklist+filters are tabs there)
 
     // === Appearance / viewer aliases ===
@@ -313,6 +322,10 @@ document.addEventListener("DOMContentLoaded", () => {
       containerId: "moderation-grid",
       orderedIds: [
         "sec-live-feed",
+        // brief 0518-v3 #2 (2026-05-18): moderation queue + bans now live
+        // here as tabs (defined in admin-tabs.js TabConfig.moderation).
+        "sec-modqueue",
+        "sec-modbans-overview",
         "sec-blacklist",
         "sec-history",
         "sec-filters",
@@ -658,7 +671,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                                 <button type="button" class="admin-dash-nav-row is-active" data-route="live" role="tab" aria-selected="true">
                                     <span class="admin-dash-nav-icon">▶</span>
-                                    <span data-i18n="adminNavLive">直播</span>
+                                    <span data-i18n="adminNavLive">即時</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="display" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◫</span>
@@ -743,9 +756,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                       <option value="ko" ${ServerI18n.currentLang === "ko" ? "selected" : ""}>한국어</option>
                                     </select>
                                     <button class="admin-dash-broadcast" type="button" aria-live="polite"
-                                        title="切換廣播狀態" data-route="broadcast">
+                                        title="切換 Overlay 狀態" data-route="overlay">
                                         <span class="dot"></span>
-                                        ${broadcasting ? "BROADCASTING" : "STANDBY"}
+                                        ${broadcasting ? "OVERLAY · ON" : "OVERLAY · OFF"}
                                     </button>
                                     <button id="logoutButton" class="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -1195,7 +1208,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // router rewrites them to the new canonical hash on landing.
     // Phase B/D will move sec-* DOM under the new owners and then we can
     // strip aliases. Until then this is pure routing — no HTML moves.
-    live:      { title: "直播", kicker: "LIVE · 操作艙 · 即時狀態", sections: ["sec-live-feed"], showKpi: true },
+    live:      { title: "即時", kicker: "LIVE · 操作艙 · 即時狀態", sections: ["sec-live-feed"], showKpi: true },
     display:   { title: "顯示", kicker: "DISPLAY · OVERLAY · DEFAULTS · WIDGETS", sections: ["sec-widgets"] },
     viewer:    { title: "觀眾頁", kicker: "VIEWER · 頁面預設 · 欄位設定 · 文案 / 限制", sections: ["sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits"] },
     // Legacy aliases — same config as their canonical home. Kept so
@@ -1237,7 +1250,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Slice 4: moderation extended to host 4 tabs (blacklist / filters /
     // ratelimit / fingerprints). Each tab's section gets hidden by
     // AdminTabs.applyTabSectionVisibility when not active.
-    moderation:{ title: "審核",  kicker: "MODERATION · 黑名單 / 敏感字 / 速率 / 指紋", sections: ["sec-blacklist", "sec-filters", "sec-ratelimit", "sec-fingerprints"] },
+    // brief 0518-v3 #2: moderation gained queue + bans tabs (was deep-link only).
+    moderation:{ title: "審核",  kicker: "MODERATION · 佇列 / 封禁 / 黑名單 / 敏感字 / 速率 / 指紋", sections: ["sec-modqueue", "sec-modbans-overview", "sec-blacklist", "sec-filters", "sec-ratelimit", "sec-fingerprints"] },
     ratelimit: { title: "速率限制",         kicker: "RATE LIMITS · 反刷屏",          sections: ["sec-ratelimit"] },
     effects:   { title: "效果庫 .dme",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },
     plugins:   { title: "伺服器插件",       kicker: "PLUGIN SDK · 熱重載 · SANDBOX", sections: ["sec-plugins"] },
@@ -1263,6 +1277,13 @@ document.addEventListener("DOMContentLoaded", () => {
     audience:  { title: "觀眾",               kicker: "AUDIENCE · 即時指紋聚合",           sections: ["sec-audience-overview"] },
     // P1 (2026-04-27 batch1): persistent audit trail (read-only history).
     audit:     { title: "審計日誌",           kicker: "AUDIT LOG · 持久事件紀錄 · DISK-BACKED", sections: ["sec-audit-overview"] },
+    // P2-3 (2026-05-17 design v4): system event stream — aliases /admin/audit
+    // backend with a v4 visual treatment (severity dot/chip + simpler row).
+    events:    { title: "系統事件",           kicker: "SYSTEM · EVENTS · AUTO-EMITTED",    sections: ["sec-events"] },
+    // 2026-05-18 brief 0518-v3 #2: modqueue + modbans live as moderation
+    // sub-tabs (see TabConfig in admin-tabs.js). Deep-link entries
+    // `#/modqueue` / `#/modbans` are alias-redirected to the moderation
+    // route before ADMIN_ROUTES lookup, so no standalone entries needed.
     // Phase 2 P0-1 (2026-04-27 V1Z4 batch9): version + license + changelog.
     about:     { title: "關於",               kicker: "ABOUT · 版本 · CHANGELOG · 開源資訊", sections: ["sec-about-overview"] },
     // Phase 2 P0-2 (2026-04-27 batch3): #/setup opens the Setup Wizard
@@ -1272,7 +1293,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Phase 2 P0-3 (2026-04-27 batch8): #/poll-deepdive opens analytics
     // for current/last poll. Entry point = 📊 button on polls page.
     "poll-deepdive": { title: "投票深度分析",  kicker: "POLL ANALYTICS · 選項分佈 · 誠信檢查", sections: ["sec-poll-deepdive-overview"] },
-    broadcast: { title: "廣播",              kicker: "BROADCAST · LIVE / STANDBY",         sections: [] },
+    // 2026-05-18 P2-6 rename: route slug now matches the page title.
+    // `broadcast` is alias-only (see _routeAliases above) — alias rewrites
+    // the nav before this lookup so a standalone entry is dead code.
+    overlay:   { title: "Overlay 控制",        kicker: "OVERLAY · ON / OFF / PAUSED",       sections: [] },
     // Missing prototype pages — implemented 2026-04-29
     sessions:     { title: "場次",            kicker: "SESSIONS · 場次列表 · 即時 / 歷史",  sections: ["sec-sessions-overview"] },
     "session-detail": { title: "場次詳情",    kicker: "SESSION DETAIL · 密度時間軸 · 訊息回顧", sections: ["sec-session-detail-overview"] },

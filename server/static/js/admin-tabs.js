@@ -28,8 +28,13 @@
   // `sections: [...]` array instead of `section: "..."`.
   const TabConfig = {
     moderation: {
-      defaultTab: "blacklist",
+      // 2026-05-18 brief 0518-v3 #2: queue + bans now top-level moderation
+      // tabs (was deep-link only). Default lands on `queue` since active
+      // workflow starts there.
+      defaultTab: "queue",
       tabs: [
+        { slug: "queue",        label: "審核佇列", en: "QUEUE",       section: "sec-modqueue"     },
+        { slug: "bans",         label: "封禁管理", en: "BANS",        section: "sec-modbans-overview" },
         { slug: "blacklist",    label: "黑名單", en: "BLACKLIST",    section: "sec-blacklist"    },
         { slug: "filters",      label: "敏感字", en: "FILTERS",      section: "sec-filters"      },
         { slug: "ratelimit",    label: "速率限制", en: "RATE LIMIT",  section: "sec-ratelimit"    },

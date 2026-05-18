@@ -74,6 +74,35 @@
             <span class="hud-stat-tile-label">黑名單</span>
           </div>
         </div>
+        <!-- 2026-05-18 design v4 P2-1: Quick Filters bar \u2014 one-shot
+             preset toggles built on top of /admin/filters backend.
+             Each toggle creates / removes a regex rule. The existing
+             custom rules library below is the same regex store. -->
+        <div class="admin-flt-v4__explain">
+          <span class="admin-flt-v4__amber-kicker">\u26a1 \u81e8\u6642\u898f\u5247</span>
+          \u5373\u6642\u751f\u6548 \u00b7 \u4e0d\u5beb\u9032\u9ed1\u540d\u55ae \u00b7 \u76f4\u64ad\u7d50\u675f\u5f8c\u53ef\u4e00\u9375\u6e05\u9664\u3002
+          <span class="admin-flt-v4__spacer"></span>
+          <span class="admin-flt-v4__dim-kicker">vs. \u9ed1\u540d\u55ae = \u9577\u671f\u6c38\u4e45\u898f\u5247</span>
+        </div>
+        <div class="admin-flt-v4__card">
+          <div class="admin-flt-v4__head">
+            <span class="admin-flt-v4__kicker">QUICK FILTERS \u00b7 \u4e00\u9375\u958b\u95dc \u00b7 \u5373\u6642\u751f\u6548</span>
+          </div>
+          <div class="admin-flt-v4__quick" data-flt-quick>
+            ${[
+              { id: "url",       label: "\u542b URL",       pattern: "https?://[^\\s]+", action: "block" },
+              { id: "allcaps",   label: "\u5168\u5927\u5beb",       pattern: "^[A-Z\\W\\s]{8,}$", action: "mask" },
+              { id: "repeat",    label: "\u91cd\u8907\u8a0a\u606f",     pattern: "(.)\\1{6,}", action: "mask" },
+              { id: "emojionly", label: "Emoji-only",  pattern: "^[\\p{Emoji}\\s]+$", action: "block" },
+            ].map((q) => `
+              <button type="button" class="admin-flt-v4__qchip" data-flt-quick-id="${q.id}" data-flt-pattern="${q.pattern}" data-flt-action="${q.action}" data-flt-label="${q.label}">
+                <span class="admin-flt-v4__qchip-toggle"><span class="admin-flt-v4__qchip-knob"></span></span>
+                <span class="admin-flt-v4__qchip-label">${q.label}</span>
+                <span class="admin-flt-v4__qchip-hits" data-flt-quick-hits="${q.id}">\u2014</span>
+              </button>`).join("")}
+          </div>
+        </div>
+
         <div class="hud-page-grid-2" style="grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr)">
           <!-- LEFT: Rules library -->
           <div class="hud-inspector" style="min-height:auto">
@@ -562,6 +591,86 @@
     _liveLogTimer = setInterval(pollFilterEvents, 4000);
   }
 
+  // ── 2026-05-18 design v4 P2-1: Quick Filters chips ───────────────
+  // Each chip toggles a regex rule via /admin/filters/{add,remove}.
+  // Active rule ids are cached in `_quickRuleIds` and named with a
+  // sentinel prefix so we can recognise them on rule list refresh.
+  const _quickRuleIds = Object.create(null);  // id → rule_id
+  const QUICK_NAME_PREFIX = "[QUICK]";
+
+  function _findQuickRuleByLabel(rules, label) {
+    return rules.find((r) => (r.name || "").startsWith(QUICK_NAME_PREFIX + " " + label));
+  }
+
+  async function _refreshQuickFromRules() {
+    const rules = await fetchRules().catch(() => []);
+    document.querySelectorAll(".admin-flt-v4__qchip").forEach((chip) => {
+      const label = chip.dataset.fltLabel;
+      const hit = _findQuickRuleByLabel(rules, label);
+      const active = !!hit && hit.enabled !== false;
+      chip.classList.toggle("is-active", active);
+      if (hit) _quickRuleIds[chip.dataset.fltQuickId] = hit.id || hit.rule_id;
+      else delete _quickRuleIds[chip.dataset.fltQuickId];
+    });
+  }
+
+  async function _toggleQuickFilter(chip) {
+    const id = chip.dataset.fltQuickId;
+    const pattern = chip.dataset.fltPattern;
+    const action = chip.dataset.fltAction;
+    const label = chip.dataset.fltLabel;
+    const existing = _quickRuleIds[id];
+    if (existing) {
+      // turn off
+      const r = await csrfFetch("/admin/filters/remove", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rule_id: existing }),
+      });
+      if (r.ok) {
+        delete _quickRuleIds[id];
+        chip.classList.remove("is-active");
+        showToast(`已關閉「${label}」`, true);
+      } else {
+        showToast("關閉失敗", false);
+      }
+    } else {
+      // turn on
+      const r = await csrfFetch("/admin/filters/add", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "regex",
+          name: `${QUICK_NAME_PREFIX} ${label}`,
+          pattern,
+          action,
+          enabled: true,
+          priority: 50,
+        }),
+      });
+      if (r.ok) {
+        const data = await r.json().catch(() => ({}));
+        if (data.rule_id) _quickRuleIds[id] = data.rule_id;
+        chip.classList.add("is-active");
+        showToast(`已啟用「${label}」`, true);
+      } else {
+        const body = await r.json().catch(() => ({}));
+        showToast("啟用失敗 · " + (body.error || ""), false);
+      }
+    }
+    // Refresh the rule list too so the regex table reflects the toggle.
+    if (typeof renderRules === "function") renderRules();
+  }
+
+  function wireQuickFilters() {
+    const wrap = document.querySelector("[data-flt-quick]");
+    if (!wrap) return;
+    wrap.addEventListener("click", (e) => {
+      const chip = e.target.closest(".admin-flt-v4__qchip");
+      if (!chip) return;
+      _toggleQuickFilter(chip);
+    });
+    _refreshQuickFromRules();
+  }
+
   // ── Initialization ───────────────────────────────────────────
 
   function init() {
@@ -572,6 +681,7 @@
     settingsGrid.insertAdjacentHTML("beforeend", buildSectionHtml());
 
     wireFilterChips();
+    wireQuickFilters();
 
     // Type selector changes form visibility
     const typeEl = document.getElementById("filterType");

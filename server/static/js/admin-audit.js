@@ -29,10 +29,13 @@
     });
   };
 
+  // SOURCE_META keys mirror backend audit `source` field (audit_log entries).
+  // The `broadcast` source key stays because it's the storage value; only
+  // the human label updates to polestar vocab (2026-05-18).
   const SOURCE_META = {
     auth:       { label: "Auth",       color: "var(--color-primary, #38bdf8)" },
     fire_token: { label: "Fire Token", color: "#86efac" },
-    broadcast:  { label: "Broadcast",  color: "var(--color-warning, #fbbf24)" },
+    broadcast:  { label: "Overlay",    color: "var(--color-warning, #fbbf24)" },
   };
 
   let _state = {
@@ -106,7 +109,18 @@
                   </tr>
                 </thead>
                 <tbody data-audit-rows>
-                  <tr><td colspan="5" class="admin-audit-loading">載入中…</td></tr>
+                  <!-- Table-row skeleton (polestar polish 2026-05-18) —
+                       5 ghost rows with shimmer bars matching the column
+                       widths above. Replaced by _renderRows() once API
+                       returns. -->
+                  ${Array.from({ length: 5 }).map(() => `
+                    <tr class="admin-audit-row admin-audit-row--skel" aria-hidden="true">
+                      <td><span class="admin-skel admin-skel-bar" style="width:60px;height:10px"></span></td>
+                      <td><span class="admin-skel admin-skel-bar" style="width:80px;height:10px"></span></td>
+                      <td><span class="admin-skel admin-skel-bar" style="width:140px;height:10px"></span></td>
+                      <td><span class="admin-skel admin-skel-bar" style="width:60px;height:10px"></span></td>
+                      <td><span class="admin-skel admin-skel-bar" style="width:200px;height:10px"></span></td>
+                    </tr>`).join("")}
                 </tbody>
               </table>
             </div>

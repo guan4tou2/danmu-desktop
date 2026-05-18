@@ -1,18 +1,26 @@
 /**
- * Admin Broadcast (P2) — dedicated Soft Holo HUD page.
+ * Admin Overlay 控制 (P2, polestar 2026-05-18) — dedicated Soft Holo HUD page.
  *
- * One state card: big circular dot, LIVE/STANDBY title, runtime meta
+ * One state card: big circular dot, OVERLAY ON / OFF title, runtime meta
  * (uptime · ws clients · message count), toggle button disabled when no
  * active session.
  *
  * v5.0.0+: backend is source of truth (server/services/broadcast.py +
  * server/routes/admin/broadcast.py). Toggle posts to /admin/broadcast/toggle;
  * status is polled every 5 s. Session state is included in the status response.
- * ENDED is managed via session lifecycle — use 「結束場次」 in the dashboard.
+ * Session lifecycle (start/end/archive) lives in admin-sessions.js.
+ *
+ * 2026-05-18 P2-6 rename: module file still named `admin-broadcast.js` for
+ * historical reasons but the user-facing slug is `#/overlay` and the
+ * vocabulary is "Overlay" (legacy `#/broadcast` deep links alias-redirect
+ * via _routeAliases in admin.js). Backend storage keeps `live`/`standby`
+ * for runtime/broadcast.json compatibility; backend service accepts the
+ * polestar aliases `overlay_on`/`overlay_off` (see services/broadcast.py).
  *
  * Section id is intentionally NOT prefixed `sec-` so admin.js router's
  * [id^="sec-"] visibility sweep leaves it alone — this module manages its
- * own show/hide via shell.dataset.activeLeaf === "broadcast".
+ * own show/hide via shell.dataset.activeLeaf check ("overlay" or
+ * "broadcast" for old bookmarks).
  */
 (function () {
   "use strict";
@@ -87,91 +95,102 @@
     return `${hh}:${mm}:${ss}`;
   }
 
+  // 2026-05-17 design v4: 4-state (standby/live/paused/ended) — derived
+  // from backend `mode` + session state. Backend still has only 2 modes,
+  // so the 4-state is a frontend projection:
+  //   standby  ← mode=standby AND session idle/none → pre-broadcast
+  //   live     ← mode=live
+  //   paused   ← mode=standby AND session active   → was live, paused
+  //   ended    ← session ended
+  function _derive4State() {
+    const m = _serverState.mode || "standby";
+    const sess = _sessionState || {};
+    const sessState = sess.state || "idle";
+    if (sessState === "ended") return "ended";
+    if (m === "live") return "live";
+    if (sessState === "active") return "paused";
+    return "standby";
+  }
+
   function pageTemplate() {
     return `
-      <div id="${PAGE_ID}" class="admin-broadcast-page hud-page-stack lg:col-span-2">
+      <div id="${PAGE_ID}" class="admin-broadcast-page admin-bc-v4 admin-bc-v5 hud-page-stack lg:col-span-2" data-bc-state="standby">
         <div class="admin-v2-head">
-          <div class="admin-v2-kicker">BROADCAST · 顯示控制 · 場次進行中才可切換</div>
-          <div class="admin-v2-title">廣播 / 顯示控制</div>
-          <p class="admin-v2-note">
-            場次開啟後可在此暫停 / 恢復 overlay 顯示。
-            LIVE · 訊息即時推送給 overlay ·
-            STANDBY · 訊息暫停顯示（仍歸檔到場次）。
-          </p>
+          <div class="admin-v2-kicker" data-bc-en>OVERLAY · OFF</div>
+          <div class="admin-v2-title" data-bc-title>Overlay 控制</div>
         </div>
 
-        <div class="admin-broadcast-grid">
-          <!-- LEFT: current LIVE / STANDBY card -->
-          <div class="admin-v2-card admin-broadcast-card">
-            <div class="admin-v2-monolabel" style="margin-bottom:12px">CURRENT STATE · 當前狀態</div>
-            <div class="admin-broadcast-state-strip" data-bc-strip>
-              <div class="admin-broadcast-bigdot" data-bc-bigdot>
-                <span class="dot"></span>
-              </div>
-              <div class="admin-broadcast-state-meta">
-                <div class="admin-broadcast-state-title" data-bc-title>LIVE · 廣播中</div>
-                <div class="admin-broadcast-state-line" data-bc-meta>00:00:00 進行中 · — 連線 · — 則訊息</div>
-              </div>
-              <button type="button" class="admin-broadcast-toggle" data-bc-toggle>⏸ 切到 STANDBY</button>
-            </div>
-
-            <div style="margin-top:18px">
-              <div class="admin-v2-monolabel" style="margin-bottom:10px">LIVE vs STANDBY · 行為差異</div>
-              <div class="admin-broadcast-cmp">
-                <div class="admin-broadcast-cmp-col is-live">
-                  <div class="admin-broadcast-cmp-label">LIVE</div>
-                  <ul>
-                    <li>觀眾訊息推送到 Overlay</li>
-                    <li>queue 啟用</li>
-                    <li>投票運作</li>
-                    <li>OBS Widgets 顯示</li>
-                    <li>時間軸記錄</li>
-                  </ul>
-                </div>
-                <div class="admin-broadcast-cmp-col is-standby">
-                  <div class="admin-broadcast-cmp-label">STANDBY</div>
-                  <ul>
-                    <li>訊息暫存(不推送)</li>
-                    <li>queue 凍結</li>
-                    <li>投票暫停</li>
-                    <li>OBS Widgets 隱藏</li>
-                    <li>時間軸停止</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            <div class="admin-broadcast-hint">
-              切換為立即生效 · WebSocket 仍保持連線 · 觀眾側看到「暫停接收」而非斷線。
-            </div>
+        <!-- Body slot — content swaps by state (ended uses a centered card) -->
+        <div class="admin-bc-v4__body" data-bc-body>
+          <!-- Status indicator (centered, calm) -->
+          <div class="admin-bc-v5__status-row">
+            <span class="admin-bc-v4__statedot" data-bc-statedot></span>
+            <span class="admin-bc-v5__status-label" data-bc-statelabel>OVERLAY OFF</span>
           </div>
 
-          <!-- RIGHT: transition rules + close-session redirect -->
-          <div class="admin-v2-card admin-broadcast-card">
-            <div class="admin-v2-monolabel" style="margin-bottom:8px">TRANSITION RULES · 切換行為</div>
-            <div class="admin-broadcast-rules">
-              <div class="admin-broadcast-rule"><span>STANDBY</span><span>→</span><span class="is-live">LIVE</span><span class="tag is-instant">● 即時切換</span></div>
-              <div class="admin-broadcast-rule"><span class="is-live">LIVE</span><span>→</span><span class="is-standby">STANDBY</span><span class="tag is-instant">● 即時切換</span></div>
-            </div>
-            <div style="margin-top:20px">
-              <div class="admin-v2-monolabel" style="margin-bottom:8px;color:#FB7185">結束場次</div>
-              <p style="font-size:0.85rem;opacity:.75;margin:0 0 14px">
-                結束直播請至「控制台」點「結束場次」。場次結束後廣播自動切回 STANDBY，
-                觀眾頁依設定顯示結束畫面或自動重載。
-              </p>
-              <button type="button" class="admin-broadcast-toggle"
-                style="font-size:0.82rem;padding:6px 14px" data-bc-go-dashboard>
-                ↩ 前往控制台
-              </button>
+          <!-- Stats strip — 4 tiles (SESSION ACTIVITY framing) -->
+          <div class="admin-bc-v4__stats" data-bc-stats>
+            <div class="admin-bc-v4__stat"><div class="admin-bc-v4__stat-en">SESSION TIME</div><div class="admin-bc-v4__stat-v" data-bc-stat-elapsed>—</div></div>
+            <div class="admin-bc-v4__stat"><div class="admin-bc-v4__stat-en">MESSAGES</div><div class="admin-bc-v4__stat-v" data-bc-stat-msgs>0</div></div>
+            <div class="admin-bc-v4__stat"><div class="admin-bc-v4__stat-en">UNIQUE FP</div><div class="admin-bc-v4__stat-v" data-bc-stat-fp>0</div></div>
+            <div class="admin-bc-v4__stat"><div class="admin-bc-v4__stat-en">FIRE COUNT</div><div class="admin-bc-v4__stat-v" data-bc-stat-fire>0</div></div>
+          </div>
+
+          <!-- Primary toggle (2-state + paused sub-state) -->
+          <div class="admin-bc-v4__big-wrap">
+            <button type="button" class="admin-bc-v4__big" data-bc-big>▶ 開始顯示</button>
+          </div>
+
+          <!-- Confirm hint when ON -->
+          <div class="admin-bc-v4__confirm-hint admin-bc-v5__confirm-hint" data-bc-confirm-hint hidden>
+            停止顯示前會彈出確認 · Overlay 停止後訊息繼續接收但不渲染
+          </div>
+
+          <!-- Secondary controls — only PAUSE + CLEAR (session lifecycle lives elsewhere) -->
+          <div class="admin-bc-v4__secondary admin-bc-v5__secondary" data-bc-secondary>
+            <button type="button" class="admin-bc-v4__sec is-pause" data-bc-pause>
+              <span class="admin-bc-v4__sec-label">◐ 暫停顯示</span>
+              <span class="admin-bc-v4__sec-hint">PAUSE RENDERING</span>
+            </button>
+            <button type="button" class="admin-bc-v4__sec is-clear" data-bc-clear>
+              <span class="admin-bc-v4__sec-label">⊗ 清空螢幕</span>
+              <span class="admin-bc-v4__sec-hint">CLEAR ONSCREEN</span>
+            </button>
+          </div>
+
+          <!-- Session context card — overlay is the toggle, session is the data slice -->
+          <div class="admin-bc-v5__session-ctx" data-bc-session-ctx>
+            <div class="admin-bc-v5__session-label">SESSION CONTEXT · 資料切片</div>
+            <div class="admin-bc-v5__session-row">
+              <span class="admin-bc-v5__session-id" data-bc-session-id>—</span>
+              <span class="admin-bc-v5__session-meta" data-bc-session-started>Started · —</span>
+              <span class="admin-bc-v5__session-meta" data-bc-session-window>Window · —</span>
+              <span class="admin-bc-v5__spacer"></span>
+              <a class="admin-bc-v5__session-link" href="#/sessions">管理 Sessions →</a>
             </div>
           </div>
+        </div>
+
+        <!-- Ended state card (rendered only when session has been formally ended) -->
+        <div class="admin-bc-v4__ended" data-bc-ended hidden>
+          <div class="admin-bc-v4__ended-icon">■</div>
+          <div class="admin-bc-v4__ended-title">場次已結束</div>
+          <div class="admin-bc-v4__ended-en" data-bc-ended-en>SESSION ENDED</div>
+          <div class="admin-bc-v4__ended-stats">
+            <div><div class="admin-bc-v4__stat-en">DURATION</div><div data-bc-end-dur>—</div></div>
+            <div><div class="admin-bc-v4__stat-en">MESSAGES</div><div data-bc-end-msgs>—</div></div>
+            <div><div class="admin-bc-v4__stat-en">UNIQUE FP</div><div data-bc-end-fp>—</div></div>
+            <div><div class="admin-bc-v4__stat-en">FIRE COUNT</div><div data-bc-end-fire>—</div></div>
+          </div>
+          <a class="admin-bc-v4__ended-link" data-bc-go-sessions href="#/sessions">查看 Sessions →</a>
         </div>
       </div>`;
   }
 
-  // ---- live numbers (ws_clients + total messages) -----------------------
+  // ---- live numbers (ws_clients + unique fp + fire counts) --------------
 
   let _wsClients = 0;
+  let _uniqueFp = 0;
   let _metricsTimer = 0;
   let _statusTimer = 0;
   let _tickTimer = 0;
@@ -183,58 +202,278 @@
       const m = await r.json();
       _wsClients = m.ws_clients || 0;
     } catch (_) {}
+    // Unique fp count comes from a separate endpoint — best-effort, cheap
+    // when admin-fingerprints in-memory tracker is warm.
+    try {
+      const r = await fetch("/admin/fingerprints?limit=1", { credentials: "same-origin" });
+      if (r.ok) {
+        const j = await r.json();
+        if (typeof j.total === "number") _uniqueFp = j.total;
+      }
+    } catch (_) {}
   }
+
+  // 2026-05-18 polestar pivot: 2-state primary (off/on) + paused sub-state
+  // + ended (rare, only when session is formally closed). Names softened
+  // from "broadcast" framing.
+  const _titleMap = {
+    standby: { zh: "Overlay 控制",      en: "OVERLAY · OFF" },
+    live:    { zh: "Overlay 控制",      en: "OVERLAY · ON" },
+    paused:  { zh: "Overlay 控制",      en: "OVERLAY · PAUSED" },
+    ended:   { zh: "場次已結束",         en: "SESSION ENDED" },
+  };
+  const _statusLabels = {
+    standby: "OVERLAY OFF",
+    live:    "OVERLAY ON",
+    paused:  "OVERLAY PAUSED",
+    ended:   "SESSION ENDED",
+  };
 
   function renderTick() {
     const page = document.getElementById(PAGE_ID);
     if (!page) return;
-    const state = readState();
-    const meta = page.querySelector("[data-bc-meta]");
-    const title = page.querySelector("[data-bc-title]");
-    const strip = page.querySelector("[data-bc-strip]");
-    const dot = page.querySelector("[data-bc-bigdot]");
-    const toggle = page.querySelector("[data-bc-toggle]");
-    if (!meta || !title || !strip || !dot || !toggle) return;
+    const state = _derive4State();
+    const isLive = state === "live", isPaused = state === "paused",
+          isEnded = state === "ended", isStandby = state === "standby";
 
-    const isLive = state.mode === "live";
-    const elapsed = isLive && state.started_at ? Date.now() - state.started_at : 0;
+    page.dataset.bcState = state;
+    const titleEl = page.querySelector("[data-bc-title]");
+    const enEl    = page.querySelector("[data-bc-en]");
+    if (titleEl) titleEl.textContent = _titleMap[state].zh;
+    if (enEl) {
+      const elapsedSecs = (isLive && _serverState.started_at)
+        ? Date.now() / 1000 - _serverState.started_at : 0;
+      enEl.textContent = isLive
+        ? `OVERLAY · ON · ${fmtDuration(elapsedSecs * 1000)}`
+        : isEnded && _sessionState?.ended_at
+          ? `SESSION ENDED · ${new Date(_sessionState.ended_at * 1000).toISOString().slice(0,10)}`
+          : _titleMap[state].en;
+    }
 
-    title.textContent = isLive ? "LIVE · 顯示中" : "STANDBY · 顯示已暫停";
+    const body = page.querySelector("[data-bc-body]");
+    const ended = page.querySelector("[data-bc-ended]");
+    if (body && ended) {
+      body.hidden = isEnded;
+      ended.hidden = !isEnded;
+    }
 
-    const totalMsgs = (_serverState && _serverState.total_messages) || 0;
-    const queued = (_serverState && _serverState.queue_size) || 0;
-    const tail = state.mode === "standby" && queued > 0
-      ? ` · queue ${queued.toLocaleString()}`
-      : "";
-    const sessionLabel = _sessionState && _sessionState.name ? ` · 場次: ${_sessionState.name}` : "";
-    meta.textContent = `${fmtDuration(elapsed)} ${isLive ? "進行中" : "暫停中"} · ${_wsClients.toLocaleString()} 連線 · ${totalMsgs.toLocaleString()} 則訊息${tail}${sessionLabel}`;
-    strip.dataset.mode = state.mode;
-    dot.dataset.mode = state.mode;
+    // Status banner
+    const stateDot   = page.querySelector("[data-bc-statedot]");
+    const stateLabel = page.querySelector("[data-bc-statelabel]");
+    const elapsedEl  = page.querySelector("[data-bc-elapsed]");
+    const schedEl    = page.querySelector("[data-bc-sched]");
+    if (stateDot) stateDot.dataset.state = state;
+    if (stateLabel) {
+      stateLabel.textContent = _statusLabels[state] || _statusLabels.standby;
+      stateLabel.dataset.state = state;
+    }
+    if (elapsedEl) {
+      const elapsedMs = (isLive && _serverState.started_at)
+        ? Date.now() - _serverState.started_at * 1000 : 0;
+      elapsedEl.textContent = fmtDuration(elapsedMs);
+      elapsedEl.hidden = !isLive;
+    }
+    // Scheduled-start countdown: surfaces when session has scheduled_at in future
+    if (schedEl) {
+      const startsAt = _sessionState?.scheduled_at;
+      if (isStandby && typeof startsAt === "number" && startsAt > Date.now() / 1000) {
+        const left = Math.max(0, startsAt - Date.now() / 1000);
+        const mm = String(Math.floor(left / 60)).padStart(2, "0");
+        const ss = String(Math.floor(left % 60)).padStart(2, "0");
+        const start = new Date(startsAt * 1000);
+        const hhmm = `${String(start.getHours()).padStart(2,"0")}:${String(start.getMinutes()).padStart(2,"0")}`;
+        schedEl.textContent = `⏰ 預定 ${hhmm} · 倒數 ${mm}:${ss}`;
+        schedEl.hidden = false;
+      } else {
+        schedEl.hidden = true;
+      }
+    }
 
-    // Broadcast and sessions are independent — toggle is always enabled
-    toggle.disabled = false;
-    toggle.title = "";
-    toggle.textContent = isLive ? "⏸ 暫停顯示" : "▶ 恢復顯示";
-    toggle.dataset.bcMode = state.mode;
+    // Stats strip
+    const totalMsgs = _serverState.total_messages || 0;
+    const fireCount = _serverState.fire_count || totalMsgs;
+    const elapsedSecs = (_serverState.started_at && (isLive || isPaused))
+      ? Date.now() / 1000 - _serverState.started_at : 0;
+    const elapsedStr = isStandby ? "—" : fmtDuration(elapsedSecs * 1000).slice(3); // mm:ss
+    const setText = (sel, v) => { const el = page.querySelector(sel); if (el) el.textContent = v; };
+    setText("[data-bc-stat-elapsed]", isStandby ? "—" : elapsedStr);
+    setText("[data-bc-stat-msgs]",    isStandby ? "0" : totalMsgs.toLocaleString());
+    setText("[data-bc-stat-fp]",      isStandby ? "0" : _uniqueFp.toLocaleString());
+    setText("[data-bc-stat-fire]",    isStandby ? "0" : fireCount.toLocaleString());
+
+    // Session context card — shows the time-slice the overlay belongs to.
+    // Hidden when no session exists. (Session is the data slice, overlay
+    // is just the on/off toggle for that slice's rendering surface.)
+    const sessCtx = page.querySelector("[data-bc-session-ctx]");
+    if (sessCtx) {
+      const sess = _sessionState || {};
+      const hasSession = !!(sess.id || sess.name);
+      sessCtx.hidden = !hasSession;
+      if (hasSession) {
+        const idEl = page.querySelector("[data-bc-session-id]");
+        const startedEl = page.querySelector("[data-bc-session-started]");
+        const windowEl = page.querySelector("[data-bc-session-window]");
+        if (idEl) idEl.textContent = sess.name || sess.id || "—";
+        if (startedEl) {
+          const startedAt = sess.started_at;
+          if (typeof startedAt === "number") {
+            const d = new Date(startedAt * 1000);
+            const pad = (n) => String(n).padStart(2, "0");
+            startedEl.textContent = `Started · ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+          } else {
+            startedEl.textContent = "Started · —";
+          }
+        }
+        if (windowEl) {
+          const startedAt = sess.started_at;
+          if (typeof startedAt === "number") {
+            const winMs = Date.now() - startedAt * 1000;
+            windowEl.textContent = `Window · ${fmtDuration(winMs).slice(3)}`;
+          } else {
+            windowEl.textContent = "Window · —";
+          }
+        }
+      }
+    }
+
+    // Primary toggle — calmer 2-state framing per polestar pivot.
+    //   off    → cyan-filled "▶ 開始顯示" (primary CTA)
+    //   on     → soft outline "■ 停止顯示" (less dramatic than v4-r6)
+    //   paused → amber-filled "▶ 繼續顯示" (resume highlight)
+    const big = page.querySelector("[data-bc-big]");
+    if (big) {
+      if (isLive) {
+        big.className = "admin-bc-v4__big admin-bc-v5__big is-on";
+        big.textContent = "■ 停止顯示";
+      } else if (isPaused) {
+        big.className = "admin-bc-v4__big admin-bc-v5__big is-resume";
+        big.textContent = "▶ 繼續顯示";
+      } else {
+        big.className = "admin-bc-v4__big admin-bc-v5__big is-off";
+        big.textContent = "▶ 開始顯示";
+      }
+    }
+
+    // Confirm hint visibility
+    const confirmHint = page.querySelector("[data-bc-confirm-hint]");
+    if (confirmHint) confirmHint.hidden = !isLive;
+
+    // Secondary controls — disabled in standby/ended. Archive button
+    // was removed in the polestar pivot (session end belongs to Sessions
+    // page, not Overlay control).
+    page.querySelectorAll("[data-bc-pause], [data-bc-clear]")
+      .forEach((b) => {
+        b.disabled = isStandby || isEnded;
+        if (b.matches("[data-bc-pause]")) {
+          b.classList.toggle("is-active", isPaused);
+        }
+      });
+
+    // Ended-state stats fill
+    if (isEnded) {
+      const sess = _sessionState || {};
+      const dur = sess.duration_sec ? fmtDuration(sess.duration_sec * 1000).slice(3) : "—";
+      setText("[data-bc-end-dur]", dur);
+      setText("[data-bc-end-msgs]", String(sess.total_messages || totalMsgs || "—"));
+      setText("[data-bc-end-fp]",   String(sess.unique_fp || _uniqueFp || "—"));
+      setText("[data-bc-end-fire]", String(sess.fire_count || fireCount || "—"));
+    }
   }
 
-  async function onToggleClick() {
-    const state = readState();
-    const next = state.mode === "live" ? "standby" : "live";
+  async function onBigClick() {
+    const state = _derive4State();
+    if (state === "standby") {
+      const ok = await postToggle("live");
+      if (ok) window.showToast && showToast("已切換到 LIVE", true);
+    } else if (state === "paused") {
+      const ok = await postToggle("live");
+      if (ok) window.showToast && showToast("已 RESUME · queue 將排空", true);
+    } else if (state === "live") {
+      // 2026-05-18 design v4-r2: HudConfirm with elapsed-stats body.
+      // Falls back to native confirm() if helper hasn't loaded yet.
+      const elapsedMs = (_serverState.started_at ? Date.now() - _serverState.started_at * 1000 : 0);
+      const elapsedStr = fmtDuration(elapsedMs);
+      const msgs = _serverState.total_messages || 0;
+      const fp = _uniqueFp.toLocaleString();
+      const ok = window.HudConfirm
+        ? await window.HudConfirm.open({
+            icon: "■",
+            title: "停止顯示",
+            subtitle: "STOP OVERLAY · MESSAGES CONTINUE TO BE RECEIVED",
+            severity: "warn",
+            body: `
+              <div style="font-size:13px;color:var(--hud-text, #f1f5f9);line-height:1.7;">
+                Overlay 將停止渲染彈幕。訊息仍會繼續接收並記錄到 session 中。
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 12px;margin-top:12px;background:var(--hud-bg2, #182239);border-radius:6px;border:1px solid var(--hud-line, rgba(148,163,184,0.18));text-align:center;">
+                <div><div style="font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:9px;letter-spacing:1px;color:var(--hud-text-dim, #94a3b8);">MSGS</div><div style="font-size:14px;font-weight:600;margin-top:2px;">${msgs.toLocaleString()}</div></div>
+                <div><div style="font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:9px;letter-spacing:1px;color:var(--hud-text-dim, #94a3b8);">FP</div><div style="font-size:14px;font-weight:600;margin-top:2px;">${fp}</div></div>
+                <div><div style="font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:9px;letter-spacing:1px;color:var(--hud-text-dim, #94a3b8);">TIME</div><div style="font-size:14px;font-weight:600;margin-top:2px;">${elapsedStr}</div></div>
+              </div>
+              <div style="margin-top:12px;font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:10px;letter-spacing:0.3px;color:var(--hud-amber, #fbbf24);">
+                ⚠ Session 資料不受影響 · 可隨時重新開始顯示
+              </div>`,
+            confirmLabel: "停止顯示",
+            cancelLabel: "取消",
+            width: 440,
+          })
+        : confirm("確定要停止顯示嗎？訊息會繼續接收，但 overlay 不再渲染。");
+      if (!ok) return;
+      // Stop overlay rendering; session lifecycle stays separate.
+      const success = await postToggle("standby");
+      if (success) window.showToast && showToast("已停止顯示 · OVERLAY OFF", true);
+    }
+    renderTick();
+  }
+
+  async function onPauseClick() {
+    const state = _derive4State();
+    const next = state === "paused" ? "live" : "standby";
     const ok = await postToggle(next);
     if (ok) {
-      window.showToast && showToast(next === "live" ? "已切回 LIVE · queue 將排空" : "已切到 STANDBY", true);
+      window.showToast && showToast(
+        next === "live" ? "已恢復接收" : "已暫停接收 · 訊息會排入 queue", true);
       renderTick();
+    }
+  }
+
+  async function onClearClick() {
+    if (!confirm("清空 overlay 螢幕上目前顯示的所有彈幕？")) return;
+    try {
+      const r = await window.csrfFetch("/admin/overlay/clear", { method: "POST" });
+      if (r.ok) window.showToast && showToast("已清空 overlay", true);
+      else window.showToast && showToast("清空失敗 · 後端尚未實作此端點", false);
+    } catch (_) {
+      window.showToast && showToast("清空失敗", false);
+    }
+  }
+
+  async function onArchiveClick() {
+    if (!confirm("結束並存檔此場次？此操作無法復原。")) return;
+    try {
+      const r = await window.csrfFetch("/admin/session/close", { method: "POST" });
+      if (r.ok) {
+        window.showToast && showToast("場次已結束並存檔", true);
+        fetchStatus();
+      } else {
+        const body = await r.json().catch(() => ({}));
+        window.showToast && showToast("結束場次失敗 · " + (body.error || `HTTP ${r.status}`), false);
+      }
+    } catch (_) {
+      window.showToast && showToast("結束場次失敗 · 網路錯誤", false);
     }
   }
 
   function bind() {
     const page = document.getElementById(PAGE_ID);
     if (!page) return;
-    page.querySelector("[data-bc-toggle]")?.addEventListener("click", onToggleClick);
-    page.querySelector("[data-bc-go-dashboard]")?.addEventListener("click", () => {
-      location.hash = "#/dashboard";
-    });
+    page.querySelector("[data-bc-big]")?.addEventListener("click", onBigClick);
+    page.querySelector("[data-bc-pause]")?.addEventListener("click", onPauseClick);
+    page.querySelector("[data-bc-clear]")?.addEventListener("click", onClearClick);
+    // [data-bc-archive] button removed in v5 polestar pivot — session
+    // end-and-archive lives on the Sessions page now. onArchiveClick()
+    // function is kept (dead code) only because the Sessions page may
+    // later import it; safe to delete in a follow-up.
   }
 
   function startTimers() {
@@ -258,7 +497,9 @@
     const page = document.getElementById(PAGE_ID);
     if (!shell || !page) return;
     const route = shell.dataset.activeLeaf || "dashboard";
-    const visible = route === "broadcast";
+    // 2026-05-18 P2-6 polestar rename: `overlay` is the canonical slug,
+    // `broadcast` kept as alias for old bookmarks.
+    const visible = route === "overlay" || route === "broadcast";
     page.style.display = visible ? "" : "none";
     if (visible) startTimers();
     else stopTimers();
