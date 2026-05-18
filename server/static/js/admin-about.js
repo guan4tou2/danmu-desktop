@@ -34,7 +34,16 @@
 
   const CHANGELOG = [
     {
-      v: "5.0.0", d: "2026-04-25", tag: "current", notes: [
+      v: "5.1.0", d: "2026-05-18", tag: "current", notes: [
+        { t: "feat", l: "Polestar pivot · #/broadcast → #/overlay · overlay_on/off 別名 · 4-state UI (off/on/paused/ended)" },
+        { t: "feat", l: "Brief 0518 系列 · replay annotations · time-bound bans · sessions bucket · 多題 polls + 圖片 · fonts subset" },
+        { t: "feat", l: "Moderation 6 sub-tabs · 審核佇列 / 封禁 / 黑名單 / 敏感字 / 速率 / 指紋" },
+        { t: "feat", l: "Viewer mobile hamburger sheet · 桌機 ☼/◐/☾ theme chip · 暱稱浮動 popover" },
+        { t: "feat", l: "P0-0 IA migration · sidebar 8-area flat → 5-section grouped (總覽/互動/審核/設定/整合)" },
+      ],
+    },
+    {
+      v: "5.0.0", d: "2026-04-25", tag: "", notes: [
         { t: "feat", l: "Design v2 retrofit · 22 commit sprint · 整套 admin shell + 10 個 page 重構" },
         { t: "feat", l: "⌘K 命令面板 · effects 8-card live preview · Edge state pages" },
         { t: "feat", l: "Slido extension v0.2.0 + Fire Token shared bearer + Audit timeline" },

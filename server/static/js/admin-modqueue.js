@@ -331,10 +331,16 @@
     const shell = document.querySelector(".admin-dash-grid");
     const page = document.getElementById(SECTION_ID);
     if (!page) return;
-    const route = shell?.dataset.activeLeaf
-      || (location.hash || "").replace("#/", "").split("/")[0]
-      || "";
-    const visible = route === "modqueue";
+    // IA v5: admin.js router writes the resolved route to
+    // `shell.dataset.activeRoute` and the active tab leaf to
+    // `shell.dataset.activeLeaf`. `#/modqueue` aliases to
+    // moderation/queue, so prefer those dataset fields. Fall back to
+    // parsing the raw hash for early-paint and legacy paths.
+    const parts = (location.hash || "").replace("#/", "").split("/");
+    const route = shell?.dataset.activeRoute || parts[0] || "";
+    const tab = shell?.dataset.activeLeaf || parts[1] || "";
+    const visible = route === "modqueue"
+      || (route === "moderation" && (tab === "queue" || tab === "" || tab === "moderation"));
     page.style.display = visible ? "" : "none";
     if (visible) {
       _fetch();
@@ -347,7 +353,12 @@
   }
 
   function init() {
-    const grid = document.getElementById("settings-grid");
+    // brief 0518-v3 #2 (2026-05-18): modqueue lives under the moderation
+    // group as a tab, so the section belongs in moderation-grid, not the
+    // legacy settings-grid. Falls back to settings-grid for the bootstrap
+    // window where moderation-grid isn't mounted yet.
+    const grid = document.getElementById("moderation-grid")
+      || document.getElementById("settings-grid");
     if (!grid || document.getElementById(SECTION_ID)) return;
     grid.insertAdjacentHTML("beforeend", _template());
     _bind();
@@ -357,7 +368,9 @@
   document.addEventListener("DOMContentLoaded", function () {
     if (!window.DANMU_CONFIG?.session?.logged_in) return;
     const observer = new MutationObserver(function () {
-      if (document.getElementById("settings-grid") && !document.getElementById(SECTION_ID)) {
+      const grid = document.getElementById("moderation-grid")
+        || document.getElementById("settings-grid");
+      if (grid && !document.getElementById(SECTION_ID)) {
         init();
       }
       _syncVisibility();

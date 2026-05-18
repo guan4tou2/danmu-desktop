@@ -306,10 +306,22 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 
 .admin-dash-card.is-span-7 { grid-column: span 7; }
 .admin-dash-card.is-span-5 { grid-column: span 5; }
+.admin-dash-card.is-span-3 { grid-column: span 3; }
+.admin-dash-card.is-span-2 { grid-column: span 2; }
+
+@media (max-width: 1200px) {
+  /* v4 7+3+2 layout collapses to 7+5 (feed + actions stacked) then full width
+   * on tablet. QUICK ACTIONS and MY ACTIONS stack side-by-side at md, then
+   * stack vertically below feed at sm. */
+  .admin-dash-card.is-span-3 { grid-column: span 7; }
+  .admin-dash-card.is-span-2 { grid-column: span 5; }
+}
 
 @media (max-width: 1100px) {
   .admin-dash-card.is-span-7,
-  .admin-dash-card.is-span-5 { grid-column: span 12; }
+  .admin-dash-card.is-span-5,
+  .admin-dash-card.is-span-3,
+  .admin-dash-card.is-span-2 { grid-column: span 12; }
 }
 
 .admin-dash-card-head {
@@ -422,20 +434,95 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 
 .admin-dash-msg-row {
   display: grid;
-  grid-template-columns: 62px 74px 1fr auto;
+  grid-template-columns: 64px 56px 1fr auto;
   padding: 8px 4px;
   gap: 10px;
-  align-items: center;
+  align-items: baseline;
   border-bottom: 1px solid var(--admin-line);
+  transition: background 120ms ease;
 }
 
 .admin-dash-msg-row:last-child { border-bottom: none; }
+.admin-dash-msg-row:hover { background: var(--hover-tint-weak, rgba(255, 255, 255, 0.02)); }
 
 .admin-dash-msg-row .time { color: var(--admin-text-dim); font-size: 10px; }
-.admin-dash-msg-row .tag  { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
-.admin-dash-msg-row .text { font-family: var(--font-ui); font-size: 12px; color: var(--admin-text); }
-.admin-dash-msg-row .meta { color: var(--admin-text-dim); font-size: 10px; }
-.admin-dash-msg-row .more { color: var(--admin-text-dim); font-size: 14px; cursor: pointer; }
+
+/* Tag pill — design v4 _LCPill mono small. Color tone matches row class. */
+.admin-dash-msg-row .tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  font-weight: 600;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.admin-dash-msg-row .tag.is-cyan    { background: rgba(56, 189, 248, 0.12); color: var(--hud-cyan, #38bdf8); border: 1px solid rgba(56, 189, 248, 0.45); }
+.admin-dash-msg-row .tag.is-amber   { background: rgba(251, 191, 36, 0.12); color: var(--hud-amber, #fbbf24); border: 1px solid rgba(251, 191, 36, 0.45); }
+.admin-dash-msg-row .tag.is-lime    { background: rgba(134, 239, 172, 0.12); color: var(--hud-lime, #86efac); border: 1px solid rgba(134, 239, 172, 0.45); }
+.admin-dash-msg-row .tag.is-crimson { background: rgba(248, 113, 113, 0.12); color: var(--hud-crimson, #f87171); border: 1px solid rgba(248, 113, 113, 0.45); }
+
+/* v4 single-line message: @user · fp · text, all baseline-aligned. */
+.admin-dash-msg-row .msg-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.admin-dash-msg-row .msg-line .user { flex-shrink: 0; font-family: var(--font-ui); font-size: 12px; font-weight: 500; color: var(--admin-text); }
+.admin-dash-msg-row .msg-line .fp   { flex-shrink: 0; font-family: var(--font-mono); font-size: 9.5px; color: var(--admin-text-dim); }
+.admin-dash-msg-row .msg-line .text { font-family: var(--font-ui); font-size: 12.5px; color: var(--admin-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-dash-msg-row .msg-line .text.is-masked { color: var(--admin-text-dim); font-style: italic; }
+
+/* Action chips — collapse to 0.35 opacity until row hover, per v4. */
+.admin-dash-msg-row .msg-actions {
+  display: flex;
+  gap: 3px;
+  opacity: 0.35;
+  transition: opacity 120ms ease;
+  flex-shrink: 0;
+}
+
+.admin-dash-msg-row:hover .msg-actions { opacity: 1; }
+
+.admin-dash-msg-row .msg-action {
+  padding: 2px 7px;
+  border-radius: 2px;
+  border: 1px solid var(--admin-line);
+  background: transparent;
+  color: var(--admin-text-dim);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+
+.admin-dash-msg-row .msg-action:hover {
+  border-color: var(--hud-line-strong, rgba(148, 163, 184, 0.35));
+  color: var(--admin-text);
+}
+
+.admin-dash-msg-row .msg-action.is-crimson {
+  border-color: rgba(248, 113, 113, 0.35);
+  color: var(--hud-crimson, #f87171);
+}
+
+.admin-dash-msg-row .msg-action.is-crimson:hover {
+  border-color: var(--hud-crimson, #f87171);
+}
+
+.admin-dash-msg-row.is-masked-row .msg-line .text {
+  color: var(--admin-text-dim);
+  text-decoration: line-through;
+  opacity: 0.7;
+}
 
 /* Quick poll inline form — prototype admin-v3.jsx:77–110 */
 .admin-dash-card-head-link {
@@ -557,6 +644,259 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 
 .admin-dash-qp-start:hover { transform: translateY(-1px); }
 .admin-dash-qp-start:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+/* ──────────────────────────────────────────────────────────────────────
+ * QUICK ACTIONS panel (design v4 live-console.jsx:170)
+ * 4 stacked sub-panels: Effects · Poll · Blacklist · Broadcast.
+ * Each panel has a HUD-mono kicker, an inline action (input + button or
+ * chip strip), and an external "→" link for full edit. Color modifier
+ * classes (.is-cyan / .is-amber / .is-crimson) tint the kicker + CTA.
+ * ────────────────────────────────────────────────────────────────────── */
+.admin-dash-quickactions {
+  padding: 14px;
+  min-height: 0;
+}
+
+.admin-dash-qa-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-dash-qa-panel {
+  background: var(--admin-raised);
+  border: 1px solid var(--admin-line);
+  border-radius: 4px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-dash-qa-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.admin-dash-qa-head .key {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.3px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.admin-dash-qa-head .count {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.4px;
+  color: var(--admin-text-dim);
+}
+
+/* Color tint per panel — matches HUD signal palette. */
+.admin-dash-qa-panel.is-cyan    .admin-dash-qa-head .key { color: var(--hud-cyan, #38bdf8); }
+.admin-dash-qa-panel.is-amber   .admin-dash-qa-head .key { color: var(--hud-amber, #fbbf24); }
+.admin-dash-qa-panel.is-lime    .admin-dash-qa-head .key { color: var(--hud-lime, #86efac); }
+.admin-dash-qa-panel.is-crimson .admin-dash-qa-head .key { color: var(--hud-crimson, #f87171); }
+
+.admin-dash-qa-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.admin-dash-qa-input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--admin-text);
+  outline: none;
+}
+
+.admin-dash-qa-input::placeholder {
+  color: var(--admin-text-dim);
+  font-family: var(--font-mono);
+}
+
+.admin-dash-qa-input:focus {
+  border-color: var(--color-primary);
+}
+
+.admin-dash-qa-cta {
+  padding: 7px 12px;
+  border: none;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  color: var(--admin-bg);
+  transition: opacity 0.12s, transform 0.12s;
+}
+
+.admin-dash-qa-cta:hover { transform: translateY(-1px); }
+.admin-dash-qa-cta:active { transform: translateY(0); }
+.admin-dash-qa-cta:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+.admin-dash-qa-cta.is-cyan    { background: var(--hud-cyan, #38bdf8); }
+.admin-dash-qa-cta.is-amber   { background: var(--hud-amber, #fbbf24); }
+.admin-dash-qa-cta.is-lime    { background: var(--hud-lime, #86efac); }
+.admin-dash-qa-cta.is-crimson { background: var(--hud-crimson, #f87171); }
+
+.admin-dash-qa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.admin-dash-qa-chip {
+  padding: 3px 7px;
+  border-radius: 2px;
+  border: 1px solid var(--admin-line);
+  background: var(--admin-panel);
+  color: var(--admin-text-dim);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.admin-dash-qa-chip.is-loading { opacity: 0.55; }
+
+.admin-dash-qa-chip.is-crimson {
+  border-color: rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.10);
+  color: var(--hud-crimson, #f87171);
+}
+
+.admin-dash-qa-chip.is-cyan {
+  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.10);
+  color: var(--hud-cyan, #38bdf8);
+}
+
+.admin-dash-qa-body {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--admin-text);
+}
+
+.admin-dash-qa-empty {
+  padding: 6px 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--admin-text-dim);
+  letter-spacing: 0.3px;
+}
+
+.admin-dash-qa-link {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.admin-dash-qa-link:hover { text-decoration: underline; }
+
+/* Compact poll options inside ② POLL panel — overrides for the regular
+ * .admin-dash-qp-options that was originally designed for a span-5 card. */
+.admin-dash-qa-options { padding: 4px 0; }
+.admin-dash-qa-options .admin-dash-qp-row { gap: 6px; }
+.admin-dash-qa-options .admin-dash-qp-row .key {
+  width: 22px; height: 22px; font-size: 10px;
+}
+.admin-dash-qa-options .admin-dash-qp-row input { padding: 6px 8px; font-size: 11px; }
+
+.admin-dash-qa-panel .admin-dash-qp-foot { padding: 4px 0; }
+.admin-dash-qa-panel .admin-dash-qp-foot[hidden] { display: none; }
+.admin-dash-qa-panel .admin-dash-qp-start { padding: 7px 12px; font-size: 11px; letter-spacing: 1px; }
+
+/* ──────────────────────────────────────────────────────────────────────
+ * MY ACTIONS sidebar (design v4 live-console.jsx:252)
+ * Recent admin audit-log entries. Each row: chip + target text + ts.
+ * ────────────────────────────────────────────────────────────────────── */
+.admin-dash-myactions {
+  padding: 0;
+  overflow: hidden;
+}
+
+.admin-dash-myactions .admin-dash-card-head {
+  padding: 14px 14px 10px;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--admin-line);
+}
+
+.admin-dash-myactions .admin-dash-card-head .kicker {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--hud-lime, #86efac);
+}
+
+.admin-dash-myactions-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  max-height: 360px;
+}
+
+.admin-dash-myaction-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--admin-line);
+}
+
+.admin-dash-myaction-row:last-child { border-bottom: none; }
+
+.admin-dash-myaction-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.admin-dash-myaction-chip {
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.admin-dash-myaction-chip.is-cyan    { background: rgba(56, 189, 248, 0.12); color: var(--hud-cyan, #38bdf8);    border: 1px solid rgba(56, 189, 248, 0.45); }
+.admin-dash-myaction-chip.is-amber   { background: rgba(251, 191, 36, 0.12); color: var(--hud-amber, #fbbf24);   border: 1px solid rgba(251, 191, 36, 0.45); }
+.admin-dash-myaction-chip.is-lime    { background: rgba(134, 239, 172, 0.12); color: var(--hud-lime, #86efac);   border: 1px solid rgba(134, 239, 172, 0.45); }
+.admin-dash-myaction-chip.is-crimson { background: rgba(248, 113, 113, 0.12); color: var(--hud-crimson, #f87171); border: 1px solid rgba(248, 113, 113, 0.45); }
+.admin-dash-myaction-chip.is-mute    { background: transparent; color: var(--admin-text-dim); border: 1px solid var(--admin-line); }
+
+.admin-dash-myaction-time {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--admin-text-dim);
+}
+
+.admin-dash-myaction-target {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--admin-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .admin-dash-widget-grid {
   display: grid;
@@ -2750,6 +3090,11 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   gap: var(--space-5);
 }
 
+/* Design v4 (live-console.jsx) – 4-tile HUD telemetry row. */
+.admin-kpi-strip.is-4col {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .admin-kpi-tile {
   display: flex;
   flex-direction: column;
@@ -2798,7 +3143,29 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   flex: 1;
   min-height: 2px;
   background: var(--color-primary);
+  border-radius: 0.5px;
 }
+
+/* v4 spec — last bar (current bucket) renders at full opacity to
+ * cue "this is now". Prior bars fade per their height so the trend
+ * still reads. admin-dashboard.js already encodes that via inline
+ * opacity per bar; this is the baseline for tiles whose data hasn't
+ * loaded yet (placeholder kpiBars output). */
+.admin-kpi-tile-bars > span:last-child {
+  opacity: 1 !important;
+}
+
+/* Color modifiers per tile — match design v4 live-console.jsx KPI
+ * tints (cyan/amber/lime/text). The value font + sparkline bars
+ * adopt the modifier color so the strip reads as a HUD row. */
+.admin-kpi-tile.is-cyan .admin-kpi-tile-value { color: var(--hud-cyan, #38bdf8); }
+.admin-kpi-tile.is-cyan .admin-kpi-tile-bars > span { background: var(--hud-cyan, #38bdf8); }
+.admin-kpi-tile.is-amber .admin-kpi-tile-value { color: var(--hud-amber, #fbbf24); }
+.admin-kpi-tile.is-amber .admin-kpi-tile-bars > span { background: var(--hud-amber, #fbbf24); }
+.admin-kpi-tile.is-lime .admin-kpi-tile-value { color: var(--hud-lime, #86efac); }
+.admin-kpi-tile.is-lime .admin-kpi-tile-bars > span { background: var(--hud-lime, #86efac); }
+.admin-kpi-tile.is-text .admin-kpi-tile-value { color: var(--color-text-bright); }
+.admin-kpi-tile.is-text .admin-kpi-tile-bars > span { background: var(--color-text-secondary); }
 
 .admin-kpi-tile-delta {
   font-family: var(--font-mono);
@@ -2808,7 +3175,15 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 }
 
 .admin-kpi-tile-delta.is-success {
-  color: #84cc16;
+  color: var(--hud-lime, #86efac);
+}
+
+.admin-kpi-tile-delta.is-warn {
+  color: var(--hud-amber, #fbbf24);
+}
+
+.admin-kpi-tile-delta.is-info {
+  color: var(--hud-cyan, #38bdf8);
 }
 
 .admin-kpi-tile-delta.is-muted {
