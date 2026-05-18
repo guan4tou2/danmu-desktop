@@ -45,6 +45,9 @@ output + `./setup.sh check` is enough.
 ## Decision Tree
 
 ```
+Already have a reverse proxy (Caddy / nginx / Cloudflare Tunnel)?
+  └─ Yes → External reverse proxy mode (no --profile, server only)
+
 Have a public domain (DNS + port 80 reachable)?
   ├─ Yes → Traefik mode (Let's Encrypt)  (--profile traefik)
   └─ No → HTTPS self-signed  (--profile https)        ← default
@@ -56,8 +59,9 @@ High traffic or multi-instance?
   └─ Yes → Add Redis  (--profile redis)
 ```
 
-The desktop client is wss-only since v5.0.0; `--profile https` (or
-`--profile traefik`) is required to expose it.
+The desktop client is wss-only since v5.0.0; TLS must be terminated
+somewhere — by a compose profile (`https` / `traefik`) or by your
+existing reverse proxy.
 
 ---
 
@@ -205,6 +209,73 @@ TLS-terminated by nginx; no override file is needed.
 > a "Use WSS" checkbox; it was removed in v5.0.0 since every supported
 > deployment terminates TLS.
 
+### External Reverse Proxy (Caddy / nginx / Cloudflare Tunnel)
+
+If your VPS already runs a reverse proxy that terminates TLS, run the
+server container alone — no compose profile needed:
+
+```bash
+docker compose up -d server          # just the app, no nginx/traefik sidecar
+```
+
+Or: `make docker-up-server`
+
+The server listens on HTTP `4000` (web) and `4001` (WebSocket). Your
+reverse proxy handles TLS and forwards to those ports.
+
+Set in `.env`:
+
+```
+TRUST_X_FORWARDED_FOR=true   # required — so rate limiting sees real client IPs
+TRUSTED_HOSTS=localhost,127.0.0.1,danmu.example.com   # include your public domain
+SESSION_COOKIE_SECURE=true
+```
+
+**Caddy example** (add to your existing Caddyfile):
+
+```
+danmu.example.com {
+    handle /ws {
+        reverse_proxy danmu-fire:4001
+    }
+    handle {
+        reverse_proxy danmu-fire:4000
+    }
+}
+```
+
+If Caddy runs outside the danmu compose stack, connect it to the danmu
+network so it can reach `danmu-fire` by container name:
+
+```bash
+docker network connect danmu-desktop_default caddy
+```
+
+**nginx example** (site config snippet):
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name danmu.example.com;
+
+    location /ws {
+        proxy_pass http://danmu-fire:4001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass http://danmu-fire:4000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
 ### Local Plain HTTP (dev only — no desktop client)
 
 ```bash
@@ -344,6 +415,9 @@ Key variables:
 | `SERVER_DOMAIN` | — | Hostname for self-signed cert SAN |
 | `HTTP_PORT` | `80` | Host port for HTTP (nginx → redirect to HTTPS). Change when 80 is taken |
 | `HTTPS_PORT` | `443` | Host port for HTTPS (nginx → app). Change when 443 is taken |
+| `TRUSTED_HOSTS` | `localhost,127.0.0.1` | Comma-separated hostnames the server accepts. Add your public domain when behind a reverse proxy |
+| `TRUST_X_FORWARDED_FOR` | `false` | Set `true` ONLY when behind a trusted reverse proxy (Caddy/nginx/Traefik). Enables `ProxyFix` so rate limiting uses real client IPs. **Security risk if `true` without a proxy — clients can spoof IPs** |
+| `SESSION_COOKIE_SECURE` | — | Must be `true` in production (HTTPS). Server refuses to start in production without it |
 | `REDIS_PASSWORD` | `changeme` | Redis auth password |
 | `WS_REQUIRE_TOKEN` | see note | **First-boot seed only since v4.8.0.** After first boot, authoritative state lives in `server/runtime/ws_auth.json` and is controlled from the admin UI. If this env var is unset on a fresh install, the server seeds secure-on with a generated token. Explicit `false` is respected and never flipped back on. |
 | `WS_AUTH_TOKEN` | — | Same as above — first-boot seed only. The admin UI is authoritative after the runtime file exists. |

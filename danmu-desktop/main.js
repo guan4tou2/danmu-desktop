@@ -2,7 +2,7 @@
 const { app, Tray, Menu, nativeImage, ipcMain } = require("electron");
 const path = require("path");
 const { sanitizeLog } = require("./shared/utils");
-const { createWindow, createAboutWindow } = require("./main-modules/window-manager");
+const { createWindow, createAboutWindow, createTrayPopover } = require("./main-modules/window-manager");
 const { setupIpcHandlers } = require("./main-modules/ipc-handlers");
 const { setupAutoUpdater } = require("./main-modules/auto-updater");
 const trustedWssHosts = require("./main-modules/trusted-wss-hosts");
@@ -76,8 +76,9 @@ app.whenReady().then(() => {
       updateInfo.version = state.version || null;
       try {
         if (tray) rebuildTrayMenu();
+        pushPopoverState();
       } catch (_) {
-        // tray may not yet be created (very early checks) — ignore
+        // tray/popover may not yet be created (very early checks) — ignore
       }
     }
   );
@@ -222,8 +223,79 @@ app.whenReady().then(() => {
   rebuildTrayMenu();
   tray.setToolTip("Danmu Fire");
 
-  // Update tray status label from renderer — restricted to main window
-  ipcMain.on("update-tray-status", (event, text) => {
+  // ── Tray popover ──────────────────────────────────────────────────
+  let trayPopover = null;
+  let idleActive = false;
+
+  function getTrayPopoverState() {
+    const connected = trayStatusText.includes("●") || trayStatusText.includes("Connected");
+    const connecting = trayStatusText.includes("Connecting") || trayStatusText.includes("連線中");
+    return {
+      connected,
+      connecting,
+      serverUrl: trayServerUrl,
+      overlayCount: childWindows.filter((cw) => cw && !cw.isDestroyed()).length,
+      idleActive,
+      updatePhase: updateInfo.phase,
+      updateVersion: updateInfo.version,
+    };
+  }
+
+  function pushPopoverState() {
+    if (trayPopover && !trayPopover.isDestroyed()) {
+      trayPopover.webContents.send("tray-popover-update", getTrayPopoverState());
+    }
+  }
+
+  function showTrayPopover() {
+    if (trayPopover && !trayPopover.isDestroyed()) {
+      trayPopover.focus();
+      return;
+    }
+    trayPopover = createTrayPopover(tray);
+    trayPopover.on("closed", () => { trayPopover = null; });
+  }
+
+  function hideTrayPopover() {
+    if (trayPopover && !trayPopover.isDestroyed()) {
+      trayPopover.close();
+      trayPopover = null;
+    }
+  }
+
+  function toggleTrayPopover() {
+    if (trayPopover && !trayPopover.isDestroyed()) {
+      hideTrayPopover();
+    } else {
+      showTrayPopover();
+    }
+  }
+
+  // Popover IPC
+  ipcMain.handle("get-tray-popover-state", () => getTrayPopoverState());
+
+  ipcMain.on("tray-popover-action", (event, action) => {
+    hideTrayPopover();
+    switch (action) {
+      case "open-main":
+        showMainWindow();
+        break;
+      case "about":
+        createAboutWindow(mainWindow);
+        break;
+      case "quit":
+        [...childWindows].forEach((win) => {
+          if (win && !win.isDestroyed()) win.destroy();
+        });
+        childWindows.length = 0;
+        app.quit();
+        break;
+    }
+  });
+
+  // Update tray status label from renderer — restricted to main window.
+  // Accepts (text) or (text, serverUrl) for backward compat.
+  ipcMain.on("update-tray-status", (event, text, url) => {
     if (
       !mainWindow ||
       mainWindow.isDestroyed() ||
@@ -232,8 +304,10 @@ app.whenReady().then(() => {
       console.warn("[Main] update-tray-status: rejected IPC from untrusted sender");
       return;
     }
-    trayStatusText = String(text).slice(0, 50); // cap length for safety
+    trayStatusText = String(text).slice(0, 50);
+    if (typeof url === "string") trayServerUrl = url.slice(0, 80);
     rebuildTrayMenu();
+    pushPopoverState();
   });
 
   // Main window requests an overlay-idle toggle (button / shortcut)
@@ -241,13 +315,15 @@ app.whenReady().then(() => {
     const mode = (data && data.mode) || "toggle";
     if (!["show", "hide", "toggle"].includes(mode)) return;
     broadcastIdleToggle(mode);
+    if (mode === "toggle") idleActive = !idleActive;
+    else if (mode === "show") idleActive = true;
+    else idleActive = false;
+    pushPopoverState();
   });
 
-  // macOS 設了 contextMenu 後 double-click 不觸發，改用 click
-  // Windows/Linux 保留 double-click 開啟視窗
-  if (process.platform === "darwin") {
-    tray.on("click", showMainWindow);
-  } else {
+  // Left-click tray → toggle popover; right-click → context menu (default)
+  tray.on("click", toggleTrayPopover);
+  if (process.platform !== "darwin") {
     tray.on("double-click", showMainWindow);
   }
 

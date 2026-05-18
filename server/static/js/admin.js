@@ -94,17 +94,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const _bareLegacyRedirects = Object.create(null);
   Object.assign(_bareLegacyRedirects, {
     dashboard: "live",   // dashboard.sections=[]; live owns sec-live-feed → both render KPI strip via data-route-view="dashboard" alias
-    messages: "live",    // both owned `sec-live-feed` exclusively
-    widgets: "display",  // both own sec-widgets exclusively
-    // Phase B (2026-05-06): automation + history sections were absorbed
-    // into the system accordion (admin-system-accordion.js). Bare URLs
-    // land on the first leaf of each group so users see meaningful
-    // content immediately, not the system overview.
+    // 2026-05-18 v5: widgets / messages / history / themes / fonts / plugins /
+    // audit / webhooks / api-tokens / backup / ratelimit / extensions promoted
+    // to first-class sidebar slugs via _routeAliases entries below — no
+    // bare redirect needed; applyRoute() resolves them at click time.
     automation: { nav: "system", tab: "scheduler" },
-    history:    { nav: "system", tab: "sessions" },
-    // appearance NOT redirected yet — its themes / fonts sections still live
-    // under the hidden appearance route. Viewer config now resolves through
-    // the visible viewer route.
   });
 
   // Maps deprecated single-segment routes → P0-0 nav homes.
@@ -114,7 +108,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const _routeAliases = Object.create(null);
   Object.assign(_routeAliases, {
     // === Moderation tabs ===
-    ratelimit:    { nav: "moderation", tab: "ratelimit" },
+    // 2026-05-18 v5: ratelimit promoted to first-class sidebar slug (has its
+    // own ADMIN_ROUTES entry). Alias removed so #/ratelimit resolves directly.
     fingerprints: { nav: "moderation", tab: "fingerprints" },
     // brief 0518-v3 #2 (2026-05-18): queue + bans now moderation tabs.
     // Keep deep-link aliases so old bookmarks (#/modqueue, #/modbans) still
@@ -128,30 +123,31 @@ document.addEventListener("DOMContentLoaded", () => {
     // (note: `moderation` is its own nav, blacklist+filters are tabs there)
 
     // === Appearance / viewer aliases ===
-    themes:          { nav: "appearance", tab: "themes" },
+    // 2026-05-18 v5: themes / fonts promoted to first-class sidebar slugs.
+    // Aliases removed so #/themes and #/fonts resolve directly to their
+    // own ADMIN_ROUTES entries (no longer detour through appearance).
     "viewer-config": { nav: "viewer" },
-    fonts:           { nav: "appearance", tab: "fonts" },
 
     // === Automation tabs (Phase B 2026-05-06: now under system accordion) ===
+    // 2026-05-18 v5: plugins promoted to first-class sidebar slug.
     scheduler: { nav: "system", tab: "scheduler" },
     webhooks:  { nav: "system", tab: "webhooks" },
-    plugins:   { nav: "system", tab: "plugins" },
 
     // === History tabs (Phase B 2026-05-06: now under system accordion) ===
+    // 2026-05-18 v5: audit promoted to first-class sidebar slug.
     sessions:        { nav: "system", tab: "sessions" },
     // Note: session-detail is intentionally NOT aliased — its hash carries
     // a `?id=xxx` query that the parser would strip. session-detail keeps
     // its own route; admin-session-detail.js owns navigation back via UI.
     search:          { nav: "system", tab: "search" },
-    audit:           { nav: "system", tab: "audit" },
     audience:        { nav: "system", tab: "audience" },
     replay:          { nav: "system", tab: "replay" },
 
     // === System accordion (Slice 6) — alias old C-tier routes to system/<slug> ===
+    // 2026-05-18 v5: api-tokens / backup promoted to first-class sidebar slugs.
     firetoken:    { nav: "system", tab: "firetoken" },
-    "api-tokens": { nav: "system", tab: "api-tokens" },
-    backup:       { nav: "system", tab: "backup" },
     integrations: { nav: "system", tab: "integrations" },
+    extensions:   { nav: "integrations" },  // 2026-05-18 v5: sidebar "Extensions" → integrations route
     wcag:         { nav: "system", tab: "wcag" },
     // Dedicated mobile-admin was removed; admin relies on the normal RWD shell.
     mobile:       { nav: "system", tab: "system" },
@@ -646,65 +642,109 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <span class="admin-dash-brand-suffix">ADMIN · v${window.APP_VERSION || "4.8.7"}</span>
                             </div>
                             <nav class="admin-dash-nav" role="tablist" aria-label="Admin pages">
+                                <!-- Design v4 grouped nav (2026-05-18): 5-section structure
+                                     per Danmu Redesign v4 admin-pages.jsx. Items that resolve
+                                     to alias targets (themes/widgets/plugins/fonts/audit/
+                                     extensions/webhooks/api-tokens/backup/ratelimit) navigate
+                                     via _routeAliases; applyRoute() resolves them. The active
+                                     button matches the URL's raw slug so the clicked item
+                                     stays highlighted even after alias redirect. -->
 
-                                <!-- ── P0-0 IA · 10 groups (Slice 1: visual reorg only) ─────
-                                     Existing data-route attributes preserved, hash routes
-                                     unchanged. Group labels match docs/design-v2-backlog.md
-                                     P0-0 final nav structure. Slice 4 will collapse each
-                                     group to a single nav button + tab/accordion content. -->
-
-                                <!-- ── P0-0 Final 10 Nav (Slice 4: collapsed) ────────
-                                     4 tabbed nav (moderation/appearance/automation/
-                                     history) hide their sub-pages behind tab strips.
-                                     The S/A-tier 7 nav are first; B/C are after.
-                                     System group still has individual rows; Slice 6
-                                     will collapse those into the system accordion. -->
-
-                                <!-- Phase A IA reorg (2026-05-06): 11-row sidebar →
-                                     8 main areas. Old slugs
-                                     (dashboard/messages/widgets/appearance/automation/
-                                     history) redirect via HASH_REDIRECTS in the router;
-                                     no DOM moved here, only the visible nav slot list.
-                                     Order is locked by IA-REORG-DRAFT-2026-05-06.md.
-                                     System owns access/security leaves through
-                                     the accordion, matching the design handoff. -->
-
+                                <div class="admin-dash-nav-label">總覽</div>
                                 <button type="button" class="admin-dash-nav-row is-active" data-route="live" role="tab" aria-selected="true">
-                                    <span class="admin-dash-nav-icon">▶</span>
-                                    <span data-i18n="adminNavLive">即時</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="display" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◫</span>
-                                    <span data-i18n="adminNavDisplay">顯示</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="effects" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">✦</span>
-                                    <span data-i18n="adminNavEffects">效果</span>
-                                    <span class="admin-dash-nav-badge" data-count-effects>—</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="assets" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⌬</span>
-                                    <span data-i18n="adminNavAssets">素材</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="viewer" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◐</span>
-                                    <span data-i18n="adminNavViewer">觀眾頁</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="polls" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◉</span>
+                                    <span data-i18n="adminNavLive">控制台</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="messages" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">≡</span>
+                                    <span data-i18n="adminNavMessages">訊息紀錄</span>
+                                    <span class="admin-dash-nav-badge" data-count-messages hidden>—</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="history" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">↳</span>
+                                    <span data-i18n="adminNavHistory">時間軸匯出</span>
+                                </button>
+
+                                <div class="admin-dash-nav-label">互動</div>
+                                <button type="button" class="admin-dash-nav-row" data-route="polls" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◈</span>
                                     <span data-i18n="adminNavPolls">投票</span>
                                     <span class="admin-dash-nav-live"></span>
                                 </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="widgets" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⬚</span>
+                                    <span data-i18n="adminNavWidgets">Overlay Widgets</span>
+                                    <span class="admin-dash-nav-badge" data-count-widgets hidden>—</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="themes" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">❖</span>
+                                    <span data-i18n="adminNavThemes">風格主題包</span>
+                                    <span class="admin-dash-nav-badge" data-count-themes hidden>—</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="display" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◐</span>
+                                    <span data-i18n="adminNavDisplay">顯示設定</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="assets" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">▦</span>
+                                    <span data-i18n="adminNavAssets">素材庫</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="viewer" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◑</span>
+                                    <span data-i18n="adminNavViewer">觀眾頁</span>
+                                </button>
+
+                                <div class="admin-dash-nav-label">審核</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="moderation" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⊘</span>
-                                    <span data-i18n="adminNavModeration">審核</span>
+                                    <span data-i18n="adminNavModeration">敏感字 &amp; 黑名單</span>
                                     <span class="admin-dash-nav-badge" data-count-blacklist hidden>—</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="ratelimit" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◔</span>
+                                    <span data-i18n="adminNavRatelimit">速率限制</span>
+                                </button>
+
+                                <div class="admin-dash-nav-label">設定</div>
+                                <button type="button" class="admin-dash-nav-row" data-route="effects" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">✦</span>
+                                    <span data-i18n="adminNavEffects">效果庫 .dme</span>
+                                    <span class="admin-dash-nav-badge" data-count-effects>—</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="plugins" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⬢</span>
+                                    <span data-i18n="adminNavPlugins">伺服器插件</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="fonts" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⌂</span>
+                                    <span data-i18n="adminNavFonts">字型管理</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="system" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⚙</span>
-                                    <span data-i18n="adminNavSystem">系統</span>
+                                    <span data-i18n="adminNavSystem">系統 &amp; 指紋</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="audit" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◷</span>
+                                    <span data-i18n="adminNavAudit">操作日誌</span>
                                 </button>
 
+                                <div class="admin-dash-nav-label">整合</div>
+                                <button type="button" class="admin-dash-nav-row" data-route="extensions" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⌬</span>
+                                    <span data-i18n="adminNavExtensions">Extensions</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="webhooks" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⇌</span>
+                                    <span data-i18n="adminNavWebhooks">Webhooks</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="api-tokens" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⚿</span>
+                                    <span data-i18n="adminNavApiTokens">API Tokens</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="backup" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⇪</span>
+                                    <span data-i18n="adminNavBackup">備份 &amp; 還原</span>
+                                </button>
                             </nav>
                             <div class="admin-dash-telem">
                                 <div class="admin-dash-telem-head">
@@ -1341,7 +1381,31 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     };
 
-    const applyRoute = (name, requestedTab) => {
+    const applyRoute = (name, requestedTab, rawName) => {
+      // Track original/raw nav slug so the clicked alias button keeps
+      // is-active after redirect (design v4 grouped sidebar 2026-05-18).
+      rawName = rawName || name;
+      // If called with an alias slug (e.g. "themes"), resolve to its real
+      // route via _bareLegacyRedirects / _routeAliases. Hash-driven calls
+      // already pre-resolve in _parseHashRoute; this branch handles direct
+      // click → applyRoute(slug) where slug isn't in ADMIN_ROUTES.
+      if (!ADMIN_ROUTES[name]) {
+        const bare = _bareLegacyRedirects[name];
+        if (typeof bare === "string") {
+          name = bare;
+        } else if (bare && typeof bare === "object") {
+          if (bare.nav) name = bare.nav;
+          if (!requestedTab && bare.tab) requestedTab = bare.tab;
+        } else {
+          const alias = _routeAliases[name];
+          if (typeof alias === "string") {
+            name = alias;
+          } else if (alias && typeof alias === "object") {
+            if (alias.nav) name = alias.nav;
+            if (!requestedTab && alias.tab) requestedTab = alias.tab;
+          }
+        }
+      }
       currentRoute = ADMIN_ROUTES[name] ? name : "live";
       shell.dataset.activeRoute = currentRoute;
       // Slice 8: legacy modules (admin-backup / admin-audit / admin-audience /
@@ -1366,27 +1430,43 @@ document.addEventListener("DOMContentLoaded", () => {
         activeTab = null;
       }
 
-      // Sync URL hash. Use buildHash to preserve `#/<nav>/<tab>` when
-      // the nav owns tabs; otherwise plain `#/<nav>`.
-      const wantedHash = window.AdminRouter?.buildHash
-        ? window.AdminRouter.buildHash(currentRoute, activeTab)
-        : "#/" + currentRoute;
+      // Sync URL hash. When applyRoute was called with an alias slug
+      // (rawName differs from resolved currentRoute), keep rawName in
+      // the URL so the matching sidebar button stays highlighted on
+      // re-entry via hashchange. Otherwise use canonical `#/<nav>(/<tab>)`.
+      const wantedHash = (rawName && rawName !== currentRoute)
+        ? "#/" + rawName
+        : (window.AdminRouter?.buildHash
+            ? window.AdminRouter.buildHash(currentRoute, activeTab)
+            : "#/" + currentRoute);
       if (window.location.hash !== wantedHash) {
         try { history.replaceState(null, "", wantedHash); } catch (_) {}
         window.dispatchEvent(new HashChangeEvent("hashchange"));
       }
       const cfg = ADMIN_ROUTES[currentRoute];
 
-      shell.querySelectorAll("[data-route]").forEach((btn) => {
-        const on = btn.dataset.route === currentRoute;
+      // Active state — prefer the alias button (matching rawName) over the
+      // resolved-nav button so the user's clicked sidebar item stays lit
+      // after alias redirect. Falls back to currentRoute match otherwise.
+      const _allBtns = Array.from(shell.querySelectorAll("[data-route]"));
+      const _aliasBtn = (rawName !== currentRoute)
+        ? _allBtns.find((b) => b.dataset.route === rawName)
+        : null;
+      _allBtns.forEach((btn) => {
+        const on = _aliasBtn ? (btn === _aliasBtn) : (btn.dataset.route === currentRoute);
         btn.classList.toggle("is-active", on);
         btn.setAttribute("aria-selected", on ? "true" : "false");
       });
 
       const kicker = shell.querySelector("[data-route-kicker]");
       const title = shell.querySelector("[data-route-title]");
-      if (kicker) kicker.textContent = cfg.kicker;
-      if (title) title.innerHTML = cfg.title;
+      var _t = window.ServerI18n ? window.ServerI18n.t.bind(window.ServerI18n) : function (k) { return k; };
+      var _titleKey = "adminRouteTitle_" + currentRoute;
+      var _kickerKey = "adminRouteKicker_" + currentRoute;
+      var _titleText = _t(_titleKey);
+      var _kickerText = _t(_kickerKey);
+      if (kicker) kicker.textContent = (_kickerText !== _kickerKey) ? _kickerText : cfg.kicker;
+      if (title) title.innerHTML = (_titleText !== _titleKey) ? _titleText : cfg.title;
 
       // Phase A IA reorg: `live` is the cockpit successor to `dashboard`;
       // until Phase C reframes the dashboard view, `data-route-view=
@@ -1476,7 +1556,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     _routeHashHandler = () => {
       const parsed = _parseHashRoute(window.location.hash);
-      if (parsed) applyRoute(parsed.nav, parsed.tab);
+      // Capture user-typed slug (before alias resolution) so the matching
+      // sidebar button stays highlighted under the 5-section grouped nav.
+      const m = (window.location.hash || "").match(/^#\/([\w-]+)/);
+      const urlRaw = m ? m[1] : null;
+      if (parsed) applyRoute(parsed.nav, parsed.tab, urlRaw || parsed.raw);
     };
     window.addEventListener("hashchange", _routeHashHandler);
 
@@ -1488,7 +1572,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const fromHash = _parseHashRoute(window.location.hash);
-    applyRoute(fromHash?.nav || "live", fromHash?.tab || null);
+    const _initMatch = (window.location.hash || "").match(/^#\/([\w-]+)/);
+    const _initRaw = _initMatch ? _initMatch[1] : (fromHash?.raw || fromHash?.nav || "live");
+    applyRoute(fromHash?.nav || "live", fromHash?.tab || null, _initRaw);
+
+    // Expose for i18n: re-apply route title/kicker on language change
+    window._adminNavigateTo = () => applyRoute(currentRoute, _activeTab);
 
     // Late-injected sections (admin-sounds.js, admin-emojis.js, etc. inject
     // after scheduleIdleTask). Watch the main area for new [id^="sec-"]

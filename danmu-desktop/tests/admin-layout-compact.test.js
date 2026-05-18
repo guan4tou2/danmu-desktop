@@ -15,17 +15,18 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   expect(adminSrc).toContain('data-route="display"');
   expect(adminSrc).toContain('data-route="viewer"');
   expect(adminSrc).not.toContain('data-route="dashboard"');
-  expect(adminSrc).not.toContain('data-route="messages"');
-  expect(adminSrc).not.toContain('data-route="widgets"');
+  // 2026-05-18 v5: messages + widgets promoted to first-class sidebar slugs.
+  expect(adminSrc).toContain('data-route="messages"');
+  expect(adminSrc).toContain('data-route="widgets"');
+  // security still lives under System as an alias, not a standalone nav button.
   expect(adminSrc).not.toContain('data-route="security"');
   // Secondary surfaces remain reachable through tabs / aliases.
   expect(adminSrc).toContain('data-route="moderation"');
   expect(adminSrc).toContain('data-route="system"');
   // Alias entries route legacy hashes to the new IA.
-  expect(adminSrc).toMatch(/ratelimit:\s*\{\s*nav:\s*"moderation"/);
+  // 2026-05-18 v5: ratelimit promoted to first-class slug (no longer alias).
   expect(adminSrc).toMatch(/"viewer-config":\s*\{\s*nav:\s*"viewer"/);
   expect(adminSrc).toMatch(/dashboard:\s*"live"/);
-  expect(adminSrc).toMatch(/widgets:\s*"display"/);
   expect(adminSrc).toMatch(/security:\s*\{\s*nav:\s*"system",\s*tab:\s*"security"/);
   // Sections still rendered inline by admin.js renderControlPanel():
   expect(adminSrc).toContain('id="sec-blacklist"');

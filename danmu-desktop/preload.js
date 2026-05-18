@@ -116,6 +116,7 @@ try {
       return ipcRenderer.invoke("getSystemLocale");
     },
     getAppVersion: () => ipcRenderer.invoke("get-app-version"),
+    getCapturerSources: () => ipcRenderer.invoke("get-capturer-sources"),
     // Silent one-shot WSS handshake validation for the conn page's
     // ⚐ 測試 button. Returns Promise<{ok, latencyMs?, error?}>.
     testConnection: (opts) => {
@@ -127,7 +128,17 @@ try {
       });
     },
     openExternal: (url) => ipcRenderer.invoke("open-external", url),
-    updateTrayStatus: (text) => ipcRenderer.send("update-tray-status", text),
+    updateTrayStatus: (text, serverUrl) => ipcRenderer.send("update-tray-status", text, serverUrl || ""),
+    // Tray popover
+    getTrayPopoverState: () => ipcRenderer.invoke("get-tray-popover-state"),
+    onTrayPopoverUpdate: (callback) => {
+      if (_handlers.trayPopoverUpdate) {
+        ipcRenderer.removeListener("tray-popover-update", _handlers.trayPopoverUpdate);
+      }
+      _handlers.trayPopoverUpdate = (event, data) => callback(data);
+      ipcRenderer.on("tray-popover-update", _handlers.trayPopoverUpdate);
+    },
+    trayPopoverAction: (action) => ipcRenderer.send("tray-popover-action", action),
     // IPC Listeners for main -> renderer events
     onUpdateDisplayOptions: (callback) => {
       if (_handlers.updateDisplayOptions) {

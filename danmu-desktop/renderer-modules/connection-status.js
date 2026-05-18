@@ -49,9 +49,14 @@ function updateConnectionStatus(status, text, shouldShow = true) {
         disconnected: "⊘ Disconnected",
         "connection-failed": "⊘ Connection Failed",
       };
-      window.API.updateTrayStatus(
-        shouldShow ? (trayLabels[status] || "⊘ Disconnected") : "⊘ Disconnected"
-      );
+      const label = shouldShow ? (trayLabels[status] || "⊘ Disconnected") : "⊘ Disconnected";
+      let serverUrl = "";
+      try {
+        const host = localStorage.getItem("serverHost") || "";
+        const port = localStorage.getItem("serverPort") || "";
+        if (host) serverUrl = port ? host + ":" + port : host;
+      } catch (_) {}
+      window.API.updateTrayStatus(label, serverUrl);
     }
 
     if (shouldShow) {

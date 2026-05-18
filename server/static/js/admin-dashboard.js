@@ -37,6 +37,13 @@
       if (tileMsg) {
         tileMsg.querySelector("[data-kpi-value]").textContent = total.toLocaleString();
         tileMsg.querySelector("[data-kpi-delta]").textContent = `+${last24h.toLocaleString()} / 24h`;
+        if (dist.length) {
+          const maxC = Math.max(1, ...dist.map(e => e.count));
+          const msgBars = dist.slice(-12).map(e => Math.max(2, Math.round((e.count / maxC) * 12)));
+          tileMsg.querySelector("[data-kpi-bars]").innerHTML = msgBars.map(h =>
+            `<span style="height:${h}px;opacity:${0.3 + h/20}"></span>`
+          ).join("");
+        }
       }
       const tilePeak = document.querySelector('[data-kpi="peak"]');
       if (tilePeak) {

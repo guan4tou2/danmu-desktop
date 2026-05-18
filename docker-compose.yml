@@ -37,7 +37,7 @@ services:
       - WEB_WS_ALLOWED_ORIGINS=${WEB_WS_ALLOWED_ORIGINS:-}
       - WS_MAX_CONNECTIONS=${WS_MAX_CONNECTIONS:-200}
       - WS_MAX_CONNECTIONS_PER_IP=${WS_MAX_CONNECTIONS_PER_IP:-10}
-      - TRUST_X_FORWARDED_FOR=true
+      - TRUST_X_FORWARDED_FOR=${TRUST_X_FORWARDED_FOR:-false}
       # Redirect filter rules + settings + webhooks into the persisted runtime
       # volume. Overridable via .env. See DEPLOYMENT.md § Data persistence.
       - FILTER_RULES_FILE=${FILTER_RULES_FILE:-/app/server/runtime/filter_rules.json}

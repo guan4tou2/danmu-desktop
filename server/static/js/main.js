@@ -2369,61 +2369,39 @@ document.addEventListener("DOMContentLoaded", () => {
         renderNick();
       })();
 
-      // Nickname chip + floating popover (design v4 brief 0518-4c).
-      // The chip opens a popover with an editable copy of the nickname;
-      // Confirm commits to the hidden source input (which fires its own
-      // `input` event so the wireNickname() sync runs).
+      // Nickname chip → inline edit. Click chip to swap it for an input
+      // in the same position; Enter / blur commits, Escape cancels.
       (function wireNicknameChip() {
         const chipBtn = document.getElementById("nicknameChipBtn");
-        const popover = document.querySelector("[data-nickname-popover]");
-        const popInput = document.querySelector("[data-nickname-popover-input]");
-        const confirmBtn = document.querySelector("[data-nickname-confirm]");
-        const cancelBtn = document.querySelector("[data-nickname-cancel]");
-        if (!chipBtn || !popover || !popInput || !confirmBtn || !cancelBtn || !nicknameInput) return;
+        const inlineInput = document.querySelector("[data-nickname-inline-input]");
+        if (!chipBtn || !inlineInput || !nicknameInput) return;
 
-        let _outsideHandler = null;
-        const closePopover = () => {
-          popover.hidden = true;
-          chipBtn.setAttribute("aria-expanded", "false");
-          if (_outsideHandler) {
-            document.removeEventListener("click", _outsideHandler, true);
-            _outsideHandler = null;
-          }
+        let _prev = "";
+        const enterEdit = () => {
+          _prev = nicknameInput.value || "";
+          inlineInput.value = _prev;
+          chipBtn.hidden = true;
+          inlineInput.hidden = false;
+          setTimeout(() => { try { inlineInput.focus(); inlineInput.select(); } catch (_) {} }, 20);
         };
-        const openPopover = () => {
-          popInput.value = nicknameInput.value || "";
-          popover.hidden = false;
-          chipBtn.setAttribute("aria-expanded", "true");
-          setTimeout(() => { try { popInput.focus(); popInput.select(); } catch (_) {} }, 30);
-          _outsideHandler = (e) => {
-            if (!popover.contains(e.target) && !chipBtn.contains(e.target)) closePopover();
-          };
-          document.addEventListener("click", _outsideHandler, true);
-        };
-        const commitAndClose = () => {
-          const v = (popInput.value || "").trim();
+        const commit = () => {
+          const v = (inlineInput.value || "").trim();
           nicknameInput.value = v;
-          // Fire input event so wireNickname() sync logic runs.
           nicknameInput.dispatchEvent(new Event("input", { bubbles: true }));
-          closePopover();
+          inlineInput.hidden = true;
+          chipBtn.hidden = false;
+        };
+        const cancel = () => {
+          inlineInput.hidden = true;
+          chipBtn.hidden = false;
         };
 
-        chipBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          if (popover.hidden) openPopover(); else closePopover();
+        chipBtn.addEventListener("click", enterEdit);
+        inlineInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); commit(); }
+          if (e.key === "Escape") { e.preventDefault(); cancel(); }
         });
-        confirmBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          commitAndClose();
-        });
-        cancelBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          closePopover();
-        });
-        popInput.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") { e.preventDefault(); commitAndClose(); }
-          if (e.key === "Escape") { e.preventDefault(); closePopover(); }
-        });
+        inlineInput.addEventListener("blur", () => { commit(); });
       })();
 
       // Layout mode buttons

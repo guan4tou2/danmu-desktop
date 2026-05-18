@@ -228,11 +228,7 @@
             </div>
           </div>
 
-          <!-- Nickname — chip + floating popover edit (design v4 brief
-               0518-4c, 2026-05-18). The `#nicknameInput` is kept under the
-               chip so existing main.js / localStorage logic still reads
-               `nicknameInput.value`. Tapping the chip opens a popover with
-               an editable input + confirm/cancel. -->
+          <!-- Nickname — inline edit (click chip → input in place) -->
           {% if options.get('Nickname', [True])[0] %}
           <div id="nicknameControl" class="viewer-field viewer-nickname-chip-mode">
             <label class="viewer-field-label">
@@ -244,11 +240,19 @@
                 class="viewer-nickname-chip"
                 id="nicknameChipBtn"
                 data-nickname-chip
-                aria-haspopup="dialog"
               >
                 <span class="viewer-nickname-chip-text" data-nickname-display>Anonymous</span>
                 <span class="viewer-nickname-chip-edit" aria-hidden="true">✎</span>
               </button>
+              <input
+                type="text"
+                class="viewer-nickname-inline-input"
+                data-nickname-inline-input
+                maxlength="12"
+                placeholder="Anonymous"
+                autocomplete="off"
+                hidden
+              />
               <span class="viewer-nickname-hint" data-i18n="nicknameClickHint">← 點擊改名</span>
             </div>
             <!-- Hidden source input — kept in DOM so existing fire flow
@@ -263,23 +267,6 @@
               autocomplete="off"
               hidden
             />
-            <!-- Floating popover (renders on chip click) -->
-            <div class="viewer-nickname-popover" data-nickname-popover hidden role="dialog" aria-label="改名">
-              <div class="viewer-nickname-popover-arrow" aria-hidden="true"></div>
-              <div class="viewer-nickname-popover-label">NEW NICKNAME</div>
-              <input
-                type="text"
-                class="viewer-nickname-popover-input"
-                data-nickname-popover-input
-                maxlength="12"
-                placeholder="Anonymous"
-                autocomplete="off"
-              />
-              <div class="viewer-nickname-popover-actions">
-                <button type="button" class="viewer-nickname-popover-cancel" data-nickname-cancel data-i18n="cancel">取消</button>
-                <button type="button" class="viewer-nickname-popover-confirm" data-nickname-confirm data-i18n="confirm">確認</button>
-              </div>
-            </div>
           </div>
           {% endif %}
 

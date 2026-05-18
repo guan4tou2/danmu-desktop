@@ -1,5 +1,5 @@
 // All IPC event handler definitions
-const { ipcMain, screen, app, shell } = require("electron");
+const { ipcMain, screen, app, shell, desktopCapturer } = require("electron");
 const { BrowserWindow } = require("electron");
 const net = require("net");
 const path = require("path");
@@ -184,6 +184,34 @@ function setupIpcHandlers(getMainWindow, childWindows) {
       sanitizedDisplays.length
     );
     return sanitizedDisplays;
+  });
+
+  // desktopCapturer sources — screens + windows with thumbnails.
+  // Returns serializable array (NativeImage → dataURL).
+  ipcMain.handle("get-capturer-sources", async (event) => {
+    const mainWindow = getMainWindow();
+    if (!isFromMainWindow(event, mainWindow)) {
+      console.warn("[Main] get-capturer-sources: rejected IPC from untrusted sender");
+      return [];
+    }
+    try {
+      const sources = await desktopCapturer.getSources({
+        types: ["screen", "window"],
+        thumbnailSize: { width: 320, height: 180 },
+        fetchWindowIcons: true,
+      });
+      return sources.map((s) => ({
+        id: s.id,
+        name: s.name,
+        displayId: s.display_id,
+        thumbnail: s.thumbnail ? s.thumbnail.toDataURL() : "",
+        appIcon: s.appIcon ? s.appIcon.toDataURL() : "",
+        isScreen: s.id.startsWith("screen:"),
+      }));
+    } catch (err) {
+      console.error("[Main] get-capturer-sources error:", err.message);
+      return [];
+    }
   });
 
   // Get system locale — restricted to main window
