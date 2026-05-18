@@ -177,6 +177,23 @@ jobs:
           ELECTRON_DISABLE_SANDBOX: 1
         run: xvfb-run --auto-servernum npx playwright test
 
+      - name: Verify electron-builder packaging
+        working-directory: danmu-desktop
+        run: |
+          npx electron-builder --dir --linux
+          # Verify the unpacked app directory was created
+          if [ ! -d pack/linux-unpacked ]; then
+            echo "❌ electron-builder --dir did not produce pack/linux-unpacked"
+            exit 1
+          fi
+          # Verify critical files are present in the packaged app
+          RESOURCES=pack/linux-unpacked/resources
+          if [ ! -f "$RESOURCES/app.asar" ]; then
+            echo "❌ app.asar missing from packaged output"
+            exit 1
+          fi
+          echo "✓ electron-builder packaging verified ($(du -sh pack/linux-unpacked | cut -f1))"
+
   pip-audit:
     runs-on: ubuntu-latest
     steps:
