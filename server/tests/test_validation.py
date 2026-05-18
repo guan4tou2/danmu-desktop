@@ -55,7 +55,7 @@ def test_fire_schema_opacity_out_of_range():
 
 
 def test_fire_schema_opacity_boundary_valid():
-    for val in (0, 50, 100):
+    for val in (20, 50, 100):
         result, errors = _load(FireRequestSchema, {"text": "hi", "opacity": val})
         assert errors is None, f"opacity={val} should be valid"
         assert result["opacity"] == val

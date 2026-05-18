@@ -2,20 +2,16 @@ from gevent import monkey
 
 monkey.patch_all()
 
-import json
 import secrets
 import threading
 import uuid
-from urllib.parse import urlsplit
 
 from flask import Flask, current_app, g, request
 from flask_cors import CORS
 from gevent.pywsgi import WSGIServer
 
 from .config import Config
-from .extensions import sock
 from .logging_config import setup_logging
-from .managers import connection_manager
 from .routes.admin import admin_bp
 from .routes.api import api_bp
 from .routes.health import health_bp
@@ -23,8 +19,7 @@ from .routes.main import main_bp
 from .services.history import init_history
 from .services.security import init_security
 from .startup_warnings import log_ws_auth_warnings
-from .utils import json_response, sanitize_log_string
-from .ws import check_connections as background_check_connections
+from .utils import json_response
 from .ws import run_ws_server
 
 
@@ -138,7 +133,6 @@ def create_app(config_class=Config):
         cors_credentials = False
     CORS(app, origins=cors_origins, supports_credentials=cors_credentials)
 
-    sock.init_app(app)
     init_security(app)
     init_history()
 
@@ -155,6 +149,8 @@ def create_app(config_class=Config):
             "csp_nonce": getattr(g, "csp_nonce", ""),
             "app_version": Config.APP_VERSION,
             "app_name": Config.APP_NAME,
+            "captcha_provider": Config.CAPTCHA_PROVIDER,
+            "captcha_site_key": Config.CAPTCHA_SITE_KEY,
         }
 
     @app.after_request
@@ -187,10 +183,50 @@ def create_app(config_class=Config):
     app.register_blueprint(api_bp)
     app.register_blueprint(health_bp)
 
-    # Error handlers (simple JSON responses, no unused APIError abstraction)
+    # Error handlers — content-negotiated. API / fetch() callers get JSON;
+    # browser navigations get the design-v4-r5 full-screen error template.
+    # See server/templates/errors/_layout.html and 500.html / 502.html /
+    # 503.html for the page chrome.
+
+    def _wants_json():
+        """Best-effort detection of API-style callers.
+
+        Flask sets `request.is_json` only for explicit Content-Type. We
+        also opt-in by `/admin/` API prefix, X-Requested-With XHR header,
+        or `Accept: application/json` header that beats text/html.
+        """
+        from flask import request
+
+        if request.is_json:
+            return True
+        accept = request.accept_mimetypes
+        if accept.best == "application/json":
+            return True
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return True
+        # Routes under /admin/ that are not the panel itself (/admin/, /admin/index, etc.)
+        # are API endpoints → JSON. The top-level admin shell pages will not hit
+        # 500 in normal flow because they render a static template successfully.
+        path = (request.path or "").rstrip("/")
+        if path.startswith("/admin/") and not (path == "/admin" or path == "/admin/index"):
+            return True
+        if path.startswith("/api/"):
+            return True
+        return False
+
     @app.errorhandler(404)
-    def handle_not_found(error):
-        return json_response({"error": "Resource not found"}, 404)
+    def handle_not_found(error):  # noqa: ARG001
+        if _wants_json():
+            return json_response({"error": "Resource not found"}, 404)
+        from flask import render_template
+
+        return (
+            render_template(
+                "errors/404.html",
+                surface="admin" if (request.path or "").startswith("/admin") else "viewer",
+            ),
+            404,
+        )
 
     @app.errorhandler(500)
     def handle_internal_error(error):
@@ -199,77 +235,60 @@ def create_app(config_class=Config):
             str(error),
             getattr(g, "request_id", "N/A"),
         )
-        return json_response({"error": "An internal error has occurred"}, 500)
+        if _wants_json():
+            return json_response({"error": "An internal error has occurred"}, 500)
+        from flask import render_template
+
+        return (
+            render_template(
+                "errors/500.html",
+                surface="admin" if (request.path or "").startswith("/admin") else "viewer",
+                event_id=getattr(g, "request_id", None),
+            ),
+            500,
+        )
 
     @app.errorhandler(429)
-    def handle_rate_limit(error):
+    def handle_rate_limit(error):  # noqa: ARG001
         return json_response({"error": "Too many requests. Please try again later."}, 429)
+
+    @app.errorhandler(502)
+    def handle_bad_gateway(error):  # noqa: ARG001
+        if _wants_json():
+            return json_response({"error": "Bad gateway"}, 502)
+        from flask import render_template
+
+        return (
+            render_template(
+                "errors/502.html",
+                surface="admin" if (request.path or "").startswith("/admin") else "viewer",
+            ),
+            502,
+        )
+
+    @app.errorhandler(503)
+    def handle_service_unavailable(error):
+        retry_after = 8
+        try:
+            if isinstance(error.description, dict):
+                retry_after = int(error.description.get("retry_after", 8))
+        except Exception:
+            retry_after = 8
+        if _wants_json():
+            return json_response({"error": "Service unavailable", "retry_after": retry_after}, 503)
+        from flask import render_template
+
+        resp = render_template(
+            "errors/503.html",
+            surface="admin" if (request.path or "").startswith("/admin") else "viewer",
+            retry_after=retry_after,
+        )
+        return resp, 503, {"Retry-After": str(retry_after)}
 
     return app
 
 
 app = create_app()
-
-
-@sock.route("/")
-def websocket(ws):
-    origin = request.headers.get("Origin", "")
-    allowed = current_app.config.get("WEB_WS_ALLOWED_ORIGINS") or []
-
-    def _origin_matches_host(origin_url: str) -> bool:
-        if not origin_url:
-            return False
-        try:
-            parsed = urlsplit(origin_url)
-        except Exception:
-            return False
-        if parsed.scheme not in {"http", "https"}:
-            return False
-        # Compare hostname only — reverse proxies (e.g. nginx with `Host $host`)
-        # strip the port from request.host while the browser keeps it in Origin,
-        # so a literal netloc comparison would reject legitimate connections.
-        origin_host = parsed.hostname or ""
-        request_host = request.host.partition(":")[0]
-        return bool(origin_host) and origin_host == request_host
-
-    allowed_ok = origin in allowed if allowed else _origin_matches_host(origin)
-    if not allowed_ok:
-        current_app.logger.warning(
-            "Rejecting web WS connection due to Origin policy. origin=%s host=%s",
-            sanitize_log_string(origin),
-            sanitize_log_string(request.host),
-        )
-        try:
-            ws.close()
-        except Exception:
-            pass
-        return
-
-    connection_manager.register_web_connection(ws)
-    current_app.logger.info("Web server WebSocket connected")
-    while True:
-        try:
-            message = ws.receive()
-            try:
-                data = json.loads(message)
-                if data.get("type") == "heartbeat":
-                    ws.send(
-                        json.dumps(
-                            {
-                                "type": "heartbeat_ack",
-                                "timestamp": data.get("timestamp"),
-                            }
-                        )
-                    )
-                    continue
-                if data.get("type") == "pong":
-                    continue
-            except Exception:
-                pass
-        except Exception as exc:
-            current_app.logger.error("WebSocket error: %s", sanitize_log_string(str(exc)))
-            connection_manager.unregister_web_connection(ws)
-            break
 
 
 def main():
@@ -280,12 +299,6 @@ def main():
     from .services import telemetry
 
     telemetry.start_sampler()
-
-    # HTTP 連線保活檢查執行緒
-    check_thread = threading.Thread(
-        target=background_check_connections, args=(app.logger,), daemon=True
-    )
-    check_thread.start()
 
     # WS server 與 HTTP server 必須在同一個 process 才能共享 in-memory ws_queue
     # 使用獨立執行緒跑 asyncio event loop（gevent monkey-patch 相容）

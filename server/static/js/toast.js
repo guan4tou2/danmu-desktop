@@ -11,8 +11,15 @@
 
     const toastElement = document.createElement("div");
     toastElement.className =
-      "flex items-center w-full max-w-xs p-4 mb-4 space-x-4 text-gray-500 bg-white divide-x divide-gray-200 rounded-lg shadow dark:text-gray-400 dark:divide-gray-700 space-x dark:bg-gray-800 transform transition-all duration-300 ease-in-out opacity-0 translate-x-full";
+      "flex items-center w-full max-w-xs p-4 mb-4 space-x-4 text-gray-500 bg-white divide-x divide-gray-200 rounded-lg shadow dark:text-gray-400 dark:divide-gray-700 space-x dark:bg-gray-800 transform transition-all opacity-0 translate-x-full";
     toastElement.setAttribute("role", "alert");
+    // 2026-05-18 motion language — slide-in uses spring (slight overshoot
+    // for a "ding!" entrance); slide-out uses ease-in-out (clean exit).
+    // Read tokens from documentElement so dark/light shouldn't matter.
+    const rs = getComputedStyle(document.documentElement);
+    const motionNormal = rs.getPropertyValue("--motion-normal").trim() || "180ms";
+    const easeSpring = rs.getPropertyValue("--ease-spring").trim() || "cubic-bezier(0.34, 1.56, 0.64, 1)";
+    toastElement.style.transition = `transform ${motionNormal} ${easeSpring}, opacity ${motionNormal} ease-out`;
 
     const iconSvg = isSuccess
       ? `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`

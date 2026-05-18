@@ -74,6 +74,22 @@ function updateConnectionStatus(status, text, shouldShow = true) {
       currentConnectionStatus = null;
     }
 
+    // Title bar status dot — prototype desktop.jsx ControlWindow:160
+    const titleDot = document.querySelector(".client-titlebar-status-dot");
+    const titleText = document.querySelector(".client-titlebar-status-text");
+    if (titleDot && titleText) {
+      const titleMap = {
+        idle:          { key: "disconnected",       label: "DISCONNECTED" },
+        connecting:    { key: "connecting",         label: "CONNECTING…" },
+        connected:     { key: "connected",          label: "CONNECTED" },
+        disconnected:  { key: "disconnected",       label: "DISCONNECTED" },
+        "connection-failed": { key: "disconnected", label: "FAILED" },
+      };
+      const m = titleMap[status] || titleMap.disconnected;
+      titleDot.setAttribute("data-client-status", m.key);
+      titleText.textContent = m.label;
+    }
+
     statusUpdateTimeout = null;
   }, 100);
 }

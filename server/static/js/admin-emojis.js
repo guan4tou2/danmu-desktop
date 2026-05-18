@@ -3,97 +3,130 @@
  *
  * Loaded as <script defer> in admin.html.
  * Globals: csrfFetch, showToast, ServerI18n
+ *
+ * v2 retrofit: page-level v2 shell (kicker + title + note) + emoji tile grid +
+ * inline search/upload. Replaces legacy <details> accordion.
  */
 (function () {
   "use strict";
 
-  var loadDetailsState = window.AdminUtils.loadDetailsState;
-  var saveDetailsState = window.AdminUtils.saveDetailsState;
   var escapeHtml = window.AdminUtils.escapeHtml;
 
   const NAME_RE = /^[a-zA-Z0-9_]{1,32}$/;
   const ACCEPTED_TYPES = ".png,.gif,.webp";
+  const SECTION_ID = "sec-emojis";
 
-  function isOpen(id) {
-    const s = loadDetailsState();
-    return s[id] !== undefined ? s[id] : false;
-  }
+  // Hold last-fetched list so search can filter client-side.
+  let _cache = [];
 
   // ─── Build Section HTML ────────────────────────────────────────────
 
+  // 2026-05-17 design v4: dashed-border upload zone at top, quota chip,
+  // 8-col grid, audience preview row at bottom. The classic name+file
+  // upload form is retained inside the dashed zone so the keyboard flow
+  // still works — drag-drop is a progressive enhancement (next iteration).
   function buildSection() {
     return `
-      <details id="sec-emojis" class="group admin-v3-card lg:col-span-2" ${isOpen("sec-emojis") ? "open" : ""}>
-        <summary class="flex items-center justify-between cursor-pointer list-none">
-          <div>
-            <h3 class="text-lg font-bold text-white">${ServerI18n.t("emojiStickersTitle")}</h3>
-            <p class="text-sm text-slate-300">${ServerI18n.t("emojiStickersDesc")}</p>
-          </div>
-          <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
-        </summary>
-        <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-5">
-          <!-- Upload Form -->
-          <div class="flex flex-col sm:flex-row gap-3 items-end">
-            <div class="flex-1 min-w-0">
-              <label for="emojiNameInput" class="text-sm font-medium text-slate-300">${ServerI18n.t("emojiNameLabel")}</label>
-              <input
-                type="text"
-                id="emojiNameInput"
-                placeholder="my_emoji"
-                maxlength="32"
-                pattern="[a-zA-Z0-9_]+"
-                autocomplete="off"
-                class="mt-1 w-full p-2 bg-slate-800/80 border-2 border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-all duration-300 text-sm"
-              />
-            </div>
-            <div class="flex-1 min-w-0">
-              <label for="emojiFileInput" class="text-sm font-medium text-slate-300">${ServerI18n.t("emojiImageLabel")}</label>
-              <input
-                type="file"
-                id="emojiFileInput"
-                accept="${ACCEPTED_TYPES}"
-                class="mt-1 w-full text-sm text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500 file:cursor-pointer file:transition-colors bg-slate-800/80 border-2 border-slate-700 rounded-lg"
-              />
-            </div>
-            <button
-              id="emojiUploadBtn"
-              class="flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm whitespace-nowrap"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              ${ServerI18n.t("uploadBtn")}
-            </button>
-          </div>
+      <div id="${SECTION_ID}" class="admin-emojis-page admin-em-v4 hud-page-stack lg:col-span-2">
+        <div class="admin-v2-head">
+          <div class="admin-v2-kicker">ASSETS · EMOJIS · CUSTOM :NAME: SYNTAX</div>
+          <div class="admin-v2-title">Emoji 庫</div>
+        </div>
 
-          <!-- Usage hint -->
-          <p class="text-xs text-slate-400 select-all">
-            ${ServerI18n.t("emojiUsageHint")}
-          </p>
-
-          <!-- Emoji Grid -->
-          <div id="emojiGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-            <span class="text-xs text-slate-400 col-span-full">${ServerI18n.t("loadingEmojis")}</span>
+        <!-- Upload zone (dashed dropzone) -->
+        <div class="admin-em-v4__upzone" data-em-dropzone>
+          <div class="admin-em-v4__upicon">↑</div>
+          <div class="admin-em-v4__upcopy">
+            <div class="admin-em-v4__uptitle">拖入 PNG / GIF / WEBP 上傳新 Emoji · 或填表單</div>
+            <div class="admin-em-v4__upsub">64×64 推薦 · 最大 128KB · 支援動圖 GIF</div>
+            <div class="admin-em-v4__upform">
+              <input id="emojiNameInput" type="text" placeholder=":name:" maxlength="32" pattern="[a-zA-Z0-9_]+" autocomplete="off" />
+              <input id="emojiFileInput" type="file" accept="${ACCEPTED_TYPES}" />
+              <button id="emojiUploadBtn" type="button">+ 上傳</button>
+            </div>
           </div>
         </div>
-      </details>
+
+        <!-- Quota + search toolbar -->
+        <div class="admin-em-v4__toolbar">
+          <span class="admin-em-v4__quota-label" data-em-quota-label>已用 0 / 100</span>
+          <div class="admin-em-v4__quota-bar"><div class="admin-em-v4__quota-fill" data-em-quota-fill style="width:0%"></div></div>
+          <span class="admin-em-v4__quota-size" data-em-quota-size>總計 0 KB</span>
+          <span class="admin-em-v4__spacer"></span>
+          <input id="emojiSearchInput" type="search" placeholder=":name 過濾" class="admin-em-v4__search" />
+          <span class="admin-em-v4__count" id="emojiCount">0</span>
+        </div>
+
+        <!-- 8-col emoji grid (initial state: skeleton, swapped by renderGrid) -->
+        <div id="emojiGrid" class="admin-em-v4__grid"></div>
+
+        <!-- Audience preview row -->
+        <div class="admin-em-v4__preview" data-em-preview>
+          <div class="admin-em-v4__preview-label">觀眾預覽 · AUDIENCE PREVIEW</div>
+          <div class="admin-em-v4__preview-body" data-em-preview-body>
+            <span class="admin-em-v4__preview-empty">上傳第一個 emoji 後此處會出現預覽。</span>
+          </div>
+        </div>
+      </div>
     `;
   }
 
   // ─── Render Emoji Card ─────────────────────────────────────────────
 
+  // Design v4 tile: image + :name: + dimensions/size + green dot (always on
+  // for now — backend has no per-emoji enable toggle yet). Copy/delete on
+  // hover via overlay actions.
   function emojiCard(emoji) {
-    // emoji: {name, url, filename}
     const label = ":" + emoji.name + ":";
+    const sizeKB = emoji.size_bytes
+      ? Math.round(emoji.size_bytes / 1024) + "KB"
+      : "—";
+    const dims = (emoji.width && emoji.height)
+      ? emoji.width + "×" + emoji.height
+      : "";
+    const meta = [dims, sizeKB].filter(Boolean).join(" · ");
     return (
-      '<div class="group/card flex flex-col items-center gap-1.5 p-2 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-sky-500/50 transition-all duration-200">' +
-        '<img src="' + escapeAttr(emoji.url) + '" alt="' + escapeAttr(label) + '" ' +
-          'width="48" height="48" loading="lazy" class="w-12 h-12 object-contain rounded" />' +
-        '<span class="text-[10px] text-slate-400 truncate max-w-full" title="' + escapeAttr(label) + '">' + escapeHtml(label) + "</span>" +
-        '<div class="flex gap-1">' +
-          '<button class="emoji-copy-btn px-1.5 py-0.5 text-[10px] rounded bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors" data-label="' + escapeAttr(label) + '" title="' + escapeAttr(ServerI18n.t("copyToClipboard")) + '">' + escapeHtml(ServerI18n.t("copyBtn")) + '</button>' +
-          '<button class="emoji-delete-btn px-1.5 py-0.5 text-[10px] rounded bg-red-900/60 hover:bg-red-700 text-red-300 transition-colors" data-name="' + escapeAttr(emoji.name) + '" title="' + escapeAttr(ServerI18n.t("deleteEmoji")) + '">' + escapeHtml(ServerI18n.t("deleteBtn")) + '</button>' +
-        "</div>" +
-      "</div>"
+      '<div class="admin-em-v4__tile" data-em-name="' + escapeAttr(emoji.name) + '">' +
+      '<div class="admin-em-v4__tile-thumb">' +
+      '<img src="' + escapeAttr(emoji.url) + '" alt="' + escapeAttr(label) + '" loading="lazy" />' +
+      '</div>' +
+      '<div class="admin-em-v4__tile-name">' + escapeHtml(label) + '</div>' +
+      '<div class="admin-em-v4__tile-meta">' + escapeHtml(meta) + '</div>' +
+      '<span class="admin-em-v4__tile-dot" aria-label="enabled"></span>' +
+      '<div class="admin-em-v4__tile-actions">' +
+      '<button type="button" class="emoji-copy-btn" data-label="' + escapeAttr(label) + '" title="' + escapeAttr(ServerI18n.t("copyToClipboard")) + '">複製</button>' +
+      '<button type="button" class="emoji-delete-btn" data-name="' + escapeAttr(emoji.name) + '" title="' + escapeAttr(ServerI18n.t("deleteEmoji")) + '">×</button>' +
+      '</div>' +
+      '</div>'
     );
+  }
+
+  function _updateQuota(emojis) {
+    const label = document.querySelector("[data-em-quota-label]");
+    const fill  = document.querySelector("[data-em-quota-fill]");
+    const sizeEl = document.querySelector("[data-em-quota-size]");
+    if (!label || !fill || !sizeEl) return;
+    const n = emojis.length;
+    const max = 100;
+    label.textContent = `已用 ${n} / ${max}`;
+    fill.style.width = Math.min(100, (n / max) * 100) + "%";
+    const totalKB = emojis.reduce((s, e) => s + (e.size_bytes || 0), 0) / 1024;
+    sizeEl.textContent = `總計 ${totalKB < 1024 ? totalKB.toFixed(0) + " KB" : (totalKB / 1024).toFixed(1) + " MB"}`;
+  }
+
+  function _renderPreview(emojis) {
+    const body = document.querySelector("[data-em-preview-body]");
+    if (!body) return;
+    if (!emojis || emojis.length === 0) {
+      body.innerHTML = '<span class="admin-em-v4__preview-empty">上傳第一個 emoji 後此處會出現預覽。</span>';
+      return;
+    }
+    const sample = emojis.slice(0, 3);
+    const parts = sample.map((e) =>
+      `<span class="admin-em-v4__preview-pair"><code>:${escapeHtml(e.name)}:</code> → ` +
+      `<img src="${escapeAttr(e.url)}" alt=":${escapeAttr(e.name)}:" /></span>`
+    );
+    body.innerHTML = `觀眾鍵入 ${parts.join(" · ")}`;
   }
 
   function escapeAttr(s) {
@@ -102,10 +135,73 @@
 
   // ─── Fetch & Render ────────────────────────────────────────────────
 
-  async function fetchAndRenderEmojis() {
+  function renderGrid(emojis) {
     var grid = document.getElementById("emojiGrid");
+    var count = document.getElementById("emojiCount");
     if (!grid) return;
 
+    if (!emojis || emojis.length === 0) {
+      // 2026-05-18 design v4-r2: show shared empty-state card instead of
+      // a single-line `noEmojisUploaded` string. AdminEmpty falls back
+      // gracefully if the helper hasn't loaded yet.
+      if (window.AdminEmpty) {
+        grid.innerHTML = "";
+        grid.appendChild(window.AdminEmpty.renderCustom({
+          icon: "⊞",
+          title: "尚無自訂 Emoji",
+          desc: "上傳 PNG / GIF（64×64 推薦），觀眾以 :name: 觸發。",
+          actionLabel: "+ 上傳第一個 Emoji",
+          action: function () {
+            var fileInput = document.getElementById("emojiFileInput");
+            if (fileInput) fileInput.click();
+          },
+        }));
+      } else {
+        grid.innerHTML = '<div class="admin-emojis-empty">' +
+          escapeHtml(ServerI18n.t("noEmojisUploaded")) + "</div>";
+      }
+      if (count) count.textContent = "0";
+    } else {
+      grid.innerHTML = emojis.map(emojiCard).join("");
+      if (count) count.textContent = String(emojis.length);
+    }
+    // Quota + preview track the *unfiltered* cache, not the search-filtered list.
+    _updateQuota(_cache);
+    _renderPreview(_cache);
+  }
+
+  // 2026-05-18 design v4-r2: show skeleton during initial fetch.
+  function _renderLoadingSkeleton() {
+    var grid = document.getElementById("emojiGrid");
+    if (!grid) return;
+    if (window.AdminSkeletons) {
+      grid.innerHTML = "";
+      // Render 8 placeholder tiles styled like real ones — wraps in a flex
+      // row that matches the 8-col grid layout.
+      for (var i = 0; i < 8; i++) {
+        var tile = document.createElement("div");
+        tile.className = "admin-em-v4__tile admin-em-v4__tile--skel";
+        var thumb = document.createElement("div");
+        thumb.className = "admin-em-v4__tile-thumb";
+        var img = document.createElement("div");
+        img.className = "admin-skel";
+        img.style.width = "100%"; img.style.height = "100%";
+        thumb.appendChild(img);
+        tile.appendChild(thumb);
+        var name = document.createElement("div");
+        name.className = "admin-skel admin-skel-bar";
+        name.style.width = "60%"; name.style.height = "8px";
+        name.style.margin = "6px auto";
+        tile.appendChild(name);
+        grid.appendChild(tile);
+      }
+    } else {
+      grid.innerHTML = '<div class="admin-emojis-empty">' +
+        escapeHtml(ServerI18n.t("loadingEmojis")) + "</div>";
+    }
+  }
+
+  async function fetchAndRenderEmojis() {
     try {
       var resp = await fetch("/admin/emojis/list", {
         method: "GET",
@@ -113,20 +209,29 @@
       });
       if (!resp.ok) throw new Error("HTTP " + resp.status);
       var data = await resp.json();
-      var emojis = data.emojis || [];
-
-      if (emojis.length === 0) {
-        grid.innerHTML =
-          '<span class="text-xs text-slate-400 col-span-full">' + ServerI18n.t("noEmojisUploaded") + '</span>';
-        return;
-      }
-
-      grid.innerHTML = emojis.map(emojiCard).join("");
+      _cache = data.emojis || [];
+      applySearchFilter();
     } catch (err) {
       console.error("[admin-emojis] fetch failed:", err);
-      grid.innerHTML =
-        '<span class="text-xs text-red-400 col-span-full">' + ServerI18n.t("loadEmojiFailed") + '</span>';
+      var grid = document.getElementById("emojiGrid");
+      if (grid) {
+        grid.innerHTML =
+          '<div class="admin-emojis-empty" style="color:#f87171">' +
+          escapeHtml(ServerI18n.t("loadEmojiFailed")) +
+          "</div>";
+      }
     }
+  }
+
+  function applySearchFilter() {
+    var search = document.getElementById("emojiSearchInput");
+    var q = (search && search.value || "").trim().toLowerCase();
+    var filtered = q
+      ? _cache.filter(function (e) {
+          return (e.name || "").toLowerCase().includes(q);
+        })
+      : _cache;
+    renderGrid(filtered);
   }
 
   // ─── Upload ────────────────────────────────────────────────────────
@@ -188,7 +293,7 @@
       showToast(ServerI18n.t("uploadNetworkError"), false);
     } finally {
       uploadBtn.disabled = false;
-      uploadBtn.textContent = ServerI18n.t("uploadBtn");
+      uploadBtn.textContent = "上傳";
     }
   }
 
@@ -224,7 +329,6 @@
       await navigator.clipboard.writeText(label);
       showToast(ServerI18n.t("copiedLabel").replace("{label}", label));
     } catch (_) {
-      // Fallback for insecure contexts
       var ta = document.createElement("textarea");
       ta.value = label;
       ta.style.position = "fixed";
@@ -241,28 +345,15 @@
 
   function init() {
     var settingsGrid = document.getElementById("settings-grid");
-    if (!settingsGrid) return; // Not logged in / panel not rendered yet
+    if (!settingsGrid) return;
 
-    // Insert the emojis section
     settingsGrid.insertAdjacentHTML("beforeend", buildSection());
 
-    // Persist details open/close state
-    var detailsEl = document.getElementById("sec-emojis");
-    if (detailsEl) {
-      detailsEl.addEventListener("toggle", function () {
-        var current = loadDetailsState();
-        current["sec-emojis"] = detailsEl.open;
-        saveDetailsState(current);
-      });
-    }
-
-    // Upload button
     var uploadBtn = document.getElementById("emojiUploadBtn");
     if (uploadBtn) {
       uploadBtn.addEventListener("click", handleUpload);
     }
 
-    // Allow Enter key on name input to trigger upload
     var nameInput = document.getElementById("emojiNameInput");
     if (nameInput) {
       nameInput.addEventListener("keydown", function (e) {
@@ -273,7 +364,11 @@
       });
     }
 
-    // Delegated click handler for copy/delete buttons in the grid
+    var search = document.getElementById("emojiSearchInput");
+    if (search) {
+      search.addEventListener("input", applySearchFilter);
+    }
+
     var grid = document.getElementById("emojiGrid");
     if (grid) {
       grid.addEventListener("click", function (e) {
@@ -289,18 +384,55 @@
       });
     }
 
-    // Initial fetch
+    // 2026-05-17 design v4: dashed dropzone accepts drag-drop. We don't
+    // auto-name from filename — user still picks `:name:` to avoid
+    // accidentally exposing source path / weird unicode.
+    var dropzone = document.querySelector("[data-em-dropzone]");
+    var fileInput = document.getElementById("emojiFileInput");
+    if (dropzone && fileInput) {
+      ["dragenter", "dragover"].forEach(function (ev) {
+        dropzone.addEventListener(ev, function (e) {
+          e.preventDefault();
+          dropzone.classList.add("is-dragover");
+        });
+      });
+      ["dragleave", "drop"].forEach(function (ev) {
+        dropzone.addEventListener(ev, function (e) {
+          e.preventDefault();
+          dropzone.classList.remove("is-dragover");
+        });
+      });
+      dropzone.addEventListener("drop", function (e) {
+        var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (f) {
+          var dt = new DataTransfer();
+          dt.items.add(f);
+          fileInput.files = dt.files;
+          var nameInput = document.getElementById("emojiNameInput");
+          if (nameInput && !nameInput.value) {
+            var base = f.name.replace(/\.[a-z0-9]+$/i, "").replace(/[^a-zA-Z0-9_]/g, "_");
+            nameInput.value = base.slice(0, 32);
+            nameInput.focus();
+          }
+          // 2026-05-18 design v4-r6: 3rd dropzone state — "processing".
+          // Add class for the ~400ms window before upload kicks in so
+          // CSS shows spinner + solid border + pulse.
+          dropzone.classList.add("is-dropping");
+          setTimeout(function () {
+            dropzone.classList.remove("is-dropping");
+          }, 1200);
+        }
+      });
+    }
+
+    _renderLoadingSkeleton();
     fetchAndRenderEmojis();
   }
-
-  // Wait for admin.js to render the control panel. admin.js rebuilds the
-  // entire DOM via innerHTML on every renderControlPanel() call, so we keep
-  // observing and re-inject when our section is wiped out.
 
   document.addEventListener("DOMContentLoaded", function () {
     if (!window.DANMU_CONFIG || !window.DANMU_CONFIG.session || !window.DANMU_CONFIG.session.logged_in) return;
     var observer = new MutationObserver(function () {
-      if (document.getElementById("settings-grid") && !document.getElementById("sec-emojis")) {
+      if (document.getElementById("settings-grid") && !document.getElementById(SECTION_ID)) {
         init();
       }
     });
@@ -309,8 +441,7 @@
       subtree: true,
     });
 
-    // Also check immediately
-    if (document.getElementById("settings-grid") && !document.getElementById("sec-emojis")) {
+    if (document.getElementById("settings-grid") && !document.getElementById(SECTION_ID)) {
       init();
     }
   });

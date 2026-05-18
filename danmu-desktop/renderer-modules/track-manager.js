@@ -27,6 +27,11 @@ function initTrackManager() {
   };
   window.addEventListener("resize", _resizeHandler);
 
+  // PUBLIC API — tested in track-manager.test.js, not yet wired to a UI
+  // control surface. v5 admin Display Settings page does NOT expose track
+  // count / collision; restoring that entry-point is tracked as eng-review
+  // P1 [A3]. Keep this hook in place so reconnecting it from the admin UI
+  // (or a future Electron settings panel) is a one-liner.
   window.updateDanmuTrackSettings = function (maxTracks, collisionDetection) {
     store.set("trackSettings", { maxTracks, collisionDetection });
     console.log("[Track Settings] Updated:", store.get("trackSettings"));

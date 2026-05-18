@@ -21,6 +21,7 @@ function buildDOM() {
     <input id="ws-token-input" value="" />
     <select id="screen-select"><option value="0">0</option></select>
     <input id="sync-multi-display-checkbox" type="checkbox" />
+    <input id="use-wss-checkbox" type="checkbox" />
     <button id="start-button">Start</button>
     <button id="stop-button" disabled>Stop</button>
     <div id="toast-container"></div>
@@ -143,6 +144,7 @@ describe("initOverlayControls() – start button validation", () => {
     document.getElementById("host-input").value = "localhost";
     document.getElementById("port-input").value = "8080";
     clickStart();
+    // v5.0.0+: WSS-only — useWss param dropped from api.create.
     expect(create).toHaveBeenCalledWith(
       "localhost", "8080", expect.any(Number), expect.any(Boolean),
       expect.any(Object), expect.any(String)

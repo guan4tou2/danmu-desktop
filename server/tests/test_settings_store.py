@@ -65,33 +65,33 @@ def test_set_toggle_unknown_key_is_noop():
 
 def test_update_speed_valid():
     s = _store()
-    result = s.update_value("Speed", 3, 7)
-    assert result[3] == 7
-    assert s.get_options()["Speed"][3] == 7
+    result = s.update_value("Speed", 3, 2.0)
+    assert result[3] == 2.0
+    assert s.get_options()["Speed"][3] == 2.0
 
 
-def test_update_speed_string_coerced_to_int():
+def test_update_speed_string_coerced_to_float():
     s = _store()
-    s.update_value("Speed", 3, "6")
-    assert s.get_options()["Speed"][3] == 6
+    s.update_value("Speed", 3, "1.5")
+    assert s.get_options()["Speed"][3] == 1.5
 
 
 def test_update_speed_out_of_range_raises():
     s = _store()
     with pytest.raises(ValueError):
-        s.update_value("Speed", 3, 11)  # max=10
+        s.update_value("Speed", 3, 11)  # max=3.0
 
 
 def test_update_speed_below_min_raises():
     s = _store()
     with pytest.raises(ValueError):
-        s.update_value("Speed", 3, 0)  # min=1
+        s.update_value("Speed", 3, 0)  # min=0.5
 
 
 def test_update_opacity_boundary():
     s = _store()
-    s.update_value("Opacity", 3, 0)
-    assert s.get_options()["Opacity"][3] == 0
+    s.update_value("Opacity", 3, 20)
+    assert s.get_options()["Opacity"][3] == 20
     s.update_value("Opacity", 3, 100)
     assert s.get_options()["Opacity"][3] == 100
 
@@ -137,11 +137,11 @@ def test_update_effects_toggle_index():
 
 def test_reset_restores_defaults():
     s = _store()
-    s.update_value("Speed", 3, 9)
+    s.update_value("Speed", 3, 2.5)
     s.set_toggle("Color", False)
     s.reset()
     opts = s.get_options()
-    assert opts["Speed"][3] == 4  # default
+    assert opts["Speed"][3] == 1.0  # default
     assert opts["Color"][0] is True  # default
 
 
@@ -150,7 +150,7 @@ def test_reset_returns_deep_copy_of_defaults():
     s.reset()
     opts = s.get_options()
     opts["Speed"][3] = 999
-    assert s.get_options()["Speed"][3] == 4  # not affected
+    assert s.get_options()["Speed"][3] == 1.0  # not affected
 
 
 # ─── get_ranges ──────────────────────────────────────────────────────────────
@@ -162,15 +162,15 @@ def test_get_ranges_contains_expected_keys():
     assert "Speed" in ranges
     assert "Opacity" in ranges
     assert "FontSize" in ranges
-    assert ranges["Speed"] == {"min": 1, "max": 10}
+    assert ranges["Speed"] == {"min": 0.5, "max": 3.0}
 
 
 def test_settings_persist_across_instances():
     s1 = _store()
-    s1.update_value("Speed", 3, 8)
+    s1.update_value("Speed", 3, 2.0)
 
     s2 = _store()
-    assert s2.get_options()["Speed"][3] == 8
+    assert s2.get_options()["Speed"][3] == 2.0
 
 
 def test_corrupt_settings_file_falls_back_to_defaults(tmp_path, monkeypatch):
@@ -179,7 +179,7 @@ def test_corrupt_settings_file_falls_back_to_defaults(tmp_path, monkeypatch):
     monkeypatch.setenv("SETTINGS_FILE", str(settings_file))
 
     s = SettingsStore()
-    assert s.get_options()["Speed"][3] == 4
+    assert s.get_options()["Speed"][3] == 1.0
 
 
 # ─── update_value — type validation ──────────────────────────────────────────

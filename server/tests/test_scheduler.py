@@ -41,6 +41,9 @@ def test_list_jobs_shows_created_job(mock_send, svc):
     assert jobs[0]["messages"] == SAMPLE_MESSAGES
     assert jobs[0]["interval_sec"] == 5
     assert jobs[0]["repeat_count"] == -1
+    # next_run_at is exposed so the UI can show the next fire time.
+    assert isinstance(jobs[0]["next_run_at"], float)
+    assert jobs[0]["next_run_at"] > 0
 
 
 # ─── 3. Cancel sets state to cancelled ──────────────────────────────────────

@@ -1,0 +1,33 @@
+{% extends "errors/_layout.html" %}
+{% set tone = "crimson" %}
+{% set icon = "⚠" %}
+{% set title = "服務暫時無法使用" if not _is_admin else "伺服器錯誤" %}
+{% set subtitle = "HTTP 500 · INTERNAL SERVER ERROR" %}
+{% set desc =
+  "後端處理請求時發生錯誤。此事件已自動記錄到系統事件日誌。"
+  if _is_admin else
+  "伺服器遇到未預期的錯誤，請稍後再試。如果問題持續發生，請聯繫活動主辦方。" %}
+{% set retry_label = "重新載入頁面" if _is_admin else "重新載入" %}
+{% set retry_countdown = "15s" if _is_admin else "12s" %}
+{% set retry_countdown_sec = 15 if _is_admin else 12 %}
+{% set secondary = "← 返回控制台" if _is_admin else "← 返回首頁" %}
+{% set secondary_href = "/admin/" if _is_admin else "/" %}
+
+{% block extra %}
+  {% if _is_admin and event_id %}
+  <div class="admin-err__hint admin-err__hint--ok">
+    <span class="admin-err__hint-dot"></span>
+    <span>已記錄到 Events · event_id: <code>{{ event_id }}</code></span>
+  </div>
+  {% else %}
+  <div class="admin-err__trace admin-err__trace--inline">
+    <span class="admin-err__trace-status">ERROR</span> · {{ request.path }} · 500 · <span data-err-ts></span>
+  </div>
+  <script {% if csp_nonce %}nonce="{{ csp_nonce }}"{% endif %}>
+    (function () {
+      var el = document.querySelector("[data-err-ts]");
+      if (el) el.textContent = new Date().toLocaleTimeString();
+    })();
+  </script>
+  {% endif %}
+{% endblock %}

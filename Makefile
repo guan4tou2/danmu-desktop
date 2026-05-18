@@ -33,16 +33,16 @@ run: ## 啟動伺服器（開發模式）
 docker-build: ## 建置 Docker image（從 source）
 	docker compose build
 
-docker-up: ## 啟動容器（HTTP 模式，從 source build）
+docker-up: ## 啟動容器（HTTP 模式，dev only — desktop client 不可用，從 source build）
 	docker compose --profile http up -d --build
 
-docker-up-prebuilt: ## 啟動容器（HTTP 模式，使用預建 image）
+docker-up-prebuilt: ## 啟動容器（HTTP 模式，dev only — desktop client 不可用，使用預建 image）
 	docker compose --profile http up -d --no-build
 
-docker-up-dev: ## 啟動容器（開發模式，熱重載）
+docker-up-dev: ## 啟動容器（開發模式，熱重載；dev only — desktop client 不可用）
 	docker compose --profile http -f docker-compose.yml -f docker-compose.dev.yml up -d
 
-docker-up-https: ## 啟動容器（HTTPS 自簽憑證）
+docker-up-https: ## 啟動容器（HTTPS 自簽憑證 — v5.0.0+ 推薦預設）
 	docker compose --profile https up -d
 
 docker-up-https-redis: ## 啟動容器（HTTPS + Redis rate limiter）

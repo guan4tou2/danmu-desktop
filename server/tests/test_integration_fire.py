@@ -233,11 +233,11 @@ def test_fire_allows_user_color_when_enabled(client):
 
 def test_fire_uses_admin_default_speed_when_user_omits(client):
     """使用者未傳入 speed 時應使用管理員預設值"""
-    settings_store.update_value("Speed", 3, 7)
+    settings_store.update_value("Speed", 3, 2.0)
     resp = client.post("/fire", json={"text": "hi"})
     assert resp.status_code == 200
     msg = ws_queue.dequeue_all()[0]
-    assert msg["speed"] == 7
+    assert msg["speed"] == 2.0
 
 
 def test_fire_effects_disabled_sets_null_effect_css(client):

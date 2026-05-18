@@ -5,6 +5,8 @@ Display bullet screen directly on the desktop
 
 [中文說明](https://github.com/guan4tou2/danmu-desktop/blob/main/README-CH.md)
 
+For a complete capability inventory (server routes, admin pages, persistence map, scope guardrails), see [docs/FEATURES.md](docs/FEATURES.md).
+
 ![img](img/danmu%20display.png)
 
 ## Overview
@@ -56,7 +58,15 @@ Predefined visual themes (default, neon, retro, cinema) that set color, stroke, 
 
 ### Interactive Polls
 
-Admin creates polls with 2-6 options. Viewers vote by sending option keys (A/B/C) as danmu. Live results display on the overlay with real-time vote counts.
+Admin creates polls with 2-6 options across **multiple sequential questions** (5.1.0+). Each question can carry an optional hero image and a per-question time limit. Viewers vote by sending option keys (A/B/C) as danmu. Audience never sees vote counts/percentages — those are admin-only. Live results display on the overlay with real-time counts.
+
+### Time-bound Bans & Replay Annotations (5.1.0+)
+
+Time-bound bans: moderate by fingerprint / IP / nickname with duration presets (1h / 6h / 24h / 7d / 永久) or custom hours. Stored in append-only audit log, no reaper thread. Replay annotations: admin pins highlight/vote/note/warning markers to a session timeline for post-session review.
+
+### Font Subsetting (5.1.0+)
+
+Shrink uploaded fonts to a chosen unicode range (Latin / CJK BMP / CJK full / Kana / Hangul / custom). Typical reduction: 5+ MB → 100 KB (90%+). Requires `fonttools` dep (`uv add fonttools`).
 
 ### Overlay Widgets
 
@@ -102,10 +112,14 @@ cd danmu-desktop
 ./setup.sh gen-secret                # generate + inject SECRET_KEY only
 
 # Then start the stack. The wizard prints the exact command; common paths:
-docker compose --profile http up -d          # local HTTP
-docker compose --profile https up -d         # HTTPS self-signed (LAN / VPS)
+docker compose --profile https up -d         # HTTPS self-signed (LAN / VPS) — recommended
 docker compose --profile traefik up -d       # HTTPS + Let's Encrypt (public domain)
+docker compose --profile http up -d          # local HTTP (dev only — no desktop client)
 ```
+
+> v5.0.0+: the Electron desktop client connects via `wss://` only.
+> `--profile http` runs server + web admin/viewer fine but cannot
+> serve the desktop overlay.
 
 Full deploy guide (HTTPS modes, desktop-client WS port, Redis, backup/
 restore, upgrades): **[DEPLOYMENT.md](DEPLOYMENT.md)**.
@@ -214,7 +228,7 @@ Every other setting ships a safe default; `.env.example` shows them all.
 ## Port Configuration
 
 - `4000`: Web interface (HTTP via reverse proxy)
-- `4001`: Danmu Desktop Client connection (WebSocket via reverse proxy)
+- `4001`: Danmu Fire client connection (WebSocket via reverse proxy)
 
 ## References
 

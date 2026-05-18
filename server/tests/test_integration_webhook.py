@@ -219,3 +219,46 @@ def test_incoming_webhook_unknown_hook_returns_404(client):
         content_type="application/json",
     )
     assert resp.status_code == 404
+
+
+def test_webhook_admin_actions_are_written_to_audit_log(client):
+    """Regression: webhook admin actions should be queryable from /admin/audit."""
+    token = _login(client)
+    headers = {"X-CSRF-Token": token}
+
+    reg = client.post(
+        "/admin/webhooks/register",
+        json={
+            "url": "https://example.com/notify",
+            "events": ["on_danmu"],
+            "format": "json",
+            "secret": "audit-secret",
+        },
+        headers=headers,
+    )
+    assert reg.status_code == 200
+    hook_id = reg.get_json()["hook_id"]
+
+    tst = client.post(
+        "/admin/webhooks/test",
+        json={"hook_id": hook_id},
+        headers=headers,
+    )
+    assert tst.status_code == 200
+
+    unreg = client.post(
+        "/admin/webhooks/unregister",
+        json={"hook_id": hook_id},
+        headers=headers,
+    )
+    assert unreg.status_code == 200
+
+    # Read via admin audit API contract.
+    client.post("/login", data={"password": "test"}, follow_redirects=True)
+    audit_resp = client.get("/admin/audit?source=webhooks")
+    assert audit_resp.status_code == 200
+    events = audit_resp.get_json()["events"]
+    kinds = [e.get("kind") for e in events]
+    assert "register" in kinds
+    assert "test" in kinds
+    assert "unregister" in kinds

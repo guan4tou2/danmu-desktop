@@ -171,3 +171,81 @@ def test_status_includes_poll_id():
 def test_vote_returns_false_when_idle():
     svc = PollService()
     assert svc.vote("A", "user1") is False
+
+
+# Design v4 brief P1 #1 (2026-05-18): session metadata fields.
+
+
+def test_create_session_default_mode_is_manual():
+    svc = PollService()
+    status = svc.create_session([{"text": "Q1", "options": ["A", "B"]}])
+    assert status["mode"] == "manual"
+    assert status["default_duration_s"] is None
+    assert status["title"] is None
+
+
+def test_create_session_accepts_auto_mode_and_metadata():
+    svc = PollService()
+    status = svc.create_session(
+        [{"text": "Q1", "options": ["A", "B"]}],
+        mode="auto",
+        default_duration_s=60,
+        title="本場討論",
+    )
+    assert status["mode"] == "auto"
+    assert status["default_duration_s"] == 60
+    assert status["title"] == "本場討論"
+
+
+def test_create_session_invalid_mode_raises():
+    svc = PollService()
+    try:
+        svc.create_session([{"text": "Q1", "options": ["A", "B"]}], mode="weird")
+        raise AssertionError("ValueError not raised")
+    except ValueError as e:
+        assert "mode" in str(e)
+
+
+def test_create_session_negative_duration_raises():
+    svc = PollService()
+    try:
+        svc.create_session([{"text": "Q1", "options": ["A", "B"]}], default_duration_s=-1)
+        raise AssertionError("ValueError not raised")
+    except ValueError as e:
+        assert "duration_s" in str(e)
+
+
+def test_status_carries_metadata_through_advance():
+    """Metadata sticks across advance / vote / end transitions."""
+    svc = PollService()
+    svc.create_session(
+        [
+            {"text": "Q1", "options": ["A", "B"]},
+            {"text": "Q2", "options": ["X", "Y", "Z"]},
+        ],
+        mode="auto",
+        default_duration_s=90,
+        title="Discussion",
+    )
+    svc.start()
+    svc.advance()
+    status = svc.get_status()
+    assert status["mode"] == "auto"
+    assert status["default_duration_s"] == 90
+    assert status["title"] == "Discussion"
+    assert status["current_index"] == 1
+    svc.end()
+    status = svc.get_status()
+    assert status["mode"] == "auto"
+    assert status["title"] == "Discussion"
+
+
+def test_legacy_create_omits_metadata_gracefully():
+    """Legacy single-Q `create()` doesn't set new fields, status carries defaults."""
+    svc = PollService()
+    svc.create("Pick", ["A", "B"])
+    status = svc.get_status()
+    # Legacy path doesn't seed mode/title — get_status falls back to defaults.
+    assert status.get("mode") == "manual"
+    assert status.get("default_duration_s") is None
+    assert status.get("title") is None

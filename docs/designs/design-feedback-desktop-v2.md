@@ -1,6 +1,16 @@
 # Desktop 場景回饋 (design v2)
 
-送給 Claude Design 的下一輪修訂清單。Tray 保留不動,其他三個場景需要改。
+> **2026-05-14 update:** this file is now historical feedback only.
+> Canonical desktop direction moved to
+> `docs/designs/desktop-finalization-2026-05-14.md`.
+> In particular:
+> - `Desktop · Window Picker` removed
+> - `Desktop · Tray Popover` removed
+> - `Desktop · First-run Gate` removed as a standalone scene
+> - desktop top-level structure is now `Connection / Overlay / About`
+
+送給 Claude Design 的上一輪修訂清單。若與
+`desktop-finalization-2026-05-14.md` 衝突，以新文件為準。
 
 ---
 

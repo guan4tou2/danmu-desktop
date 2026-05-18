@@ -22,29 +22,24 @@
   function buildSection() {
     return `
       <details id="sec-fingerprints" class="group admin-v3-card lg:col-span-2" ${isOpen("sec-fingerprints") ? "open" : ""}>
-        <summary class="flex items-center justify-between cursor-pointer list-none">
+        <summary class="flex items-center justify-between">
           <div>
-            <h3 class="text-lg font-bold text-white">${ServerI18n.t("fingerprintsTitle")}</h3>
-            <p class="text-sm text-slate-300">${ServerI18n.t("fingerprintsDesc")}</p>
+            <span class="admin-v3-card-kicker is-accent">FINGERPRINTS &middot; 觀測</span>
+            <h3 style="font-size:18px;font-weight:600;color:var(--color-text-strong);margin:0">${escapeHtml(ServerI18n.t("fingerprintsTitle"))}</h3>
+            <p style="font-size:13px;color:var(--color-text-muted);margin:4px 0 0">${escapeHtml(ServerI18n.t("fingerprintsDesc"))}</p>
           </div>
-          <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
+          <span style="color:var(--color-text-muted);transition:transform 180ms ease" class="group-open:rotate-180">⌄</span>
         </summary>
-        <div class="mt-4 pt-4 border-t border-slate-700/50 space-y-4">
-          <div class="flex items-center justify-between gap-3">
-            <span id="adminFingerprintCount" class="text-xs text-slate-400 font-mono">—</span>
-            <div class="flex items-center gap-2">
-              <button
-                id="adminFingerprintRefreshBtn"
-                class="text-xs px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
-              >${ServerI18n.t("refreshBtn")}</button>
-              <button
-                id="adminFingerprintResetBtn"
-                class="text-xs px-3 py-1.5 rounded-lg bg-red-900/60 hover:bg-red-700 text-red-200 border border-red-800 transition-colors"
-              >${ServerI18n.t("fingerprintResetBtn")}</button>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--admin-line);display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <span id="adminFingerprintCount" style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;color:var(--color-text-muted);text-transform:uppercase">—</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button id="adminFingerprintRefreshBtn" class="hud-toolbar-action" type="button">${escapeHtml(ServerI18n.t("refreshBtn"))}</button>
+              <button id="adminFingerprintResetBtn" class="hud-toolbar-action" type="button" style="color:#f87171">${escapeHtml(ServerI18n.t("fingerprintResetBtn"))}</button>
             </div>
           </div>
-          <div id="adminFingerprintTableWrap" class="overflow-x-auto">
-            <span class="text-xs text-slate-400">${ServerI18n.t("loadingFingerprints")}</span>
+          <div id="adminFingerprintTableWrap">
+            <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;color:var(--color-text-muted);text-transform:uppercase">${escapeHtml(ServerI18n.t("loadingFingerprints"))}</span>
           </div>
         </div>
       </details>
@@ -53,17 +48,11 @@
 
   function stateBadge(state) {
     var label = ServerI18n.t("fingerprintState_" + state);
-    var cls = "bg-slate-700/60 text-slate-300 border-slate-600";
-    if (state === "blocked") cls = "bg-red-900/60 text-red-200 border-red-700";
-    else if (state === "flagged") cls = "bg-amber-900/60 text-amber-200 border-amber-700";
-    else if (state === "active") cls = "bg-sky-900/40 text-sky-200 border-sky-800";
-    return (
-      '<span class="inline-block text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded border ' +
-      cls +
-      '">' +
-      escapeHtml(label) +
-      "</span>"
-    );
+    var variant = "";
+    if (state === "blocked") variant = " is-danger";
+    else if (state === "flagged") variant = " is-amber";
+    else if (state === "active") variant = " is-cyan";
+    return '<span class="hud-pill' + variant + '">' + escapeHtml(label) + "</span>";
   }
 
   function formatTs(sec) {
@@ -82,45 +71,52 @@
 
     if (!records || records.length === 0) {
       wrap.innerHTML =
-        '<span class="text-xs text-slate-400">' +
+        '<div class="hud-table"><div class="hud-table-row" style="grid-template-columns:1fr">' +
+        '<span style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;color:var(--color-text-muted);text-transform:uppercase">' +
         escapeHtml(ServerI18n.t("noFingerprints")) +
-        "</span>";
+        "</span></div></div>";
       return;
     }
 
+    var cols = "minmax(110px, 1.1fr) minmax(110px, 1fr) minmax(0, 1.6fr) 70px 70px 70px 90px 90px";
+
     var header =
-      '<thead class="text-[10px] font-mono uppercase tracking-wider text-slate-400 border-b border-slate-700/50">' +
-        "<tr>" +
-          '<th class="text-left py-2 pr-3">' + escapeHtml(ServerI18n.t("fingerprintCol_hash")) + "</th>" +
-          '<th class="text-left py-2 pr-3">' + escapeHtml(ServerI18n.t("fingerprintCol_ip")) + "</th>" +
-          '<th class="text-left py-2 pr-3 hidden md:table-cell">' + escapeHtml(ServerI18n.t("fingerprintCol_ua")) + "</th>" +
-          '<th class="text-right py-2 pr-3">' + escapeHtml(ServerI18n.t("fingerprintCol_msgs")) + "</th>" +
-          '<th class="text-right py-2 pr-3">' + escapeHtml(ServerI18n.t("fingerprintCol_rate")) + "</th>" +
-          '<th class="text-right py-2 pr-3">' + escapeHtml(ServerI18n.t("fingerprintCol_blocked")) + "</th>" +
-          '<th class="text-left py-2 pr-3">' + escapeHtml(ServerI18n.t("fingerprintCol_state")) + "</th>" +
-          '<th class="text-left py-2">' + escapeHtml(ServerI18n.t("fingerprintCol_lastSeen")) + "</th>" +
-        "</tr>" +
-      "</thead>";
+      '<div class="hud-table-head" style="grid-template-columns:' + cols + '">' +
+        "<span>" + escapeHtml(ServerI18n.t("fingerprintCol_hash")) + "</span>" +
+        "<span>" + escapeHtml(ServerI18n.t("fingerprintCol_ip")) + "</span>" +
+        "<span>" + escapeHtml(ServerI18n.t("fingerprintCol_ua")) + "</span>" +
+        '<span style="text-align:right">' + escapeHtml(ServerI18n.t("fingerprintCol_msgs")) + "</span>" +
+        '<span style="text-align:right">' + escapeHtml(ServerI18n.t("fingerprintCol_rate")) + "</span>" +
+        '<span style="text-align:right">' + escapeHtml(ServerI18n.t("fingerprintCol_blocked")) + "</span>" +
+        "<span>" + escapeHtml(ServerI18n.t("fingerprintCol_state")) + "</span>" +
+        "<span>" + escapeHtml(ServerI18n.t("fingerprintCol_lastSeen")) + "</span>" +
+      "</div>";
 
     var rows = records
       .map(function (r) {
+        var blockedVal = r.blocked | 0;
+        var blockedColor = blockedVal > 0 ? "#f87171" : "var(--color-text-muted)";
+        var hash = r.hash || "";
+        // P3-1: AdminIdentity.focusFingerprint() locates rows by data-fp-hash.
+        // Server sends the 12-char SHA-256 prefix in `hash`; first 8 are shown
+        // as `fp:xxxxxxxx` to match the AdminIdentity short-form (FP_DISPLAY_LEN=8).
+        var fpShort = hash.slice(0, 8);
         return (
-          '<tr class="border-b border-slate-800/60 text-sm text-slate-200 hover:bg-slate-800/30">' +
-            '<td class="py-2 pr-3 font-mono text-xs text-slate-300">' + escapeHtml(r.hash || "") + "</td>" +
-            '<td class="py-2 pr-3 font-mono text-xs">' + escapeHtml(r.ip || "—") + "</td>" +
-            '<td class="py-2 pr-3 text-xs text-slate-400 hidden md:table-cell max-w-xs truncate" title="' + escapeHtml(r.ua || "") + '">' + escapeHtml(r.ua || "—") + "</td>" +
-            '<td class="py-2 pr-3 text-right font-mono">' + (r.msgs | 0) + "</td>" +
-            '<td class="py-2 pr-3 text-right font-mono">' + (r.rate_per_min | 0) + "</td>" +
-            '<td class="py-2 pr-3 text-right font-mono ' + ((r.blocked | 0) > 0 ? "text-red-300" : "text-slate-400") + '">' + (r.blocked | 0) + "</td>" +
-            '<td class="py-2 pr-3">' + stateBadge(r.state || "active") + "</td>" +
-            '<td class="py-2 text-xs text-slate-400 font-mono">' + escapeHtml(formatTs(r.last_seen)) + "</td>" +
-          "</tr>"
+          '<div class="hud-table-row admin-fp-row" data-fp-hash="' + escapeHtml(hash) + '" style="grid-template-columns:' + cols + '">' +
+            '<span class="admin-identity-fp" style="font-family:var(--font-mono);font-size:12px;color:var(--color-text-strong);overflow:hidden;text-overflow:ellipsis" title="' + escapeHtml(hash) + '">fp:' + escapeHtml(fpShort) + "</span>" +
+            '<span class="admin-identity-ip" style="font-size:12px;color:var(--color-text-muted)">' + escapeHtml(r.ip || "—") + "</span>" +
+            '<span style="font-size:12px;color:var(--color-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escapeHtml(r.ua || "") + '">' + escapeHtml(r.ua || "—") + "</span>" +
+            '<span style="text-align:right;font-family:var(--font-mono);font-size:13px;color:var(--color-text-strong)">' + (r.msgs | 0) + "</span>" +
+            '<span style="text-align:right;font-family:var(--font-mono);font-size:13px;color:var(--color-text-strong)">' + (r.rate_per_min | 0) + "</span>" +
+            '<span style="text-align:right;font-family:var(--font-mono);font-size:13px;color:' + blockedColor + '">' + blockedVal + "</span>" +
+            "<span>" + stateBadge(r.state || "active") + "</span>" +
+            '<span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">' + escapeHtml(formatTs(r.last_seen)) + "</span>" +
+          "</div>"
         );
       })
       .join("");
 
-    wrap.innerHTML =
-      '<table class="min-w-full text-sm">' + header + "<tbody>" + rows + "</tbody></table>";
+    wrap.innerHTML = '<div class="hud-table">' + header + rows + "</div>";
   }
 
   async function fetchAndRender() {
@@ -135,17 +131,19 @@
       var records = data.records || [];
       renderTable(records);
       if (countEl) {
-        countEl.textContent = ServerI18n.t("fingerprintCountLabel").replace(
-          "{count}",
-          String(data.count || records.length)
-        );
+        // Prototype admin-pages.jsx:556: "247 UNIQUE · 2 FLAGGED"
+        var unique = data.count || records.length;
+        var flagged = data.flagged != null
+          ? data.flagged
+          : records.filter(function (r) { return r.state === "flagged" || r.state === "blocked"; }).length;
+        countEl.textContent = unique + " UNIQUE · " + flagged + " FLAGGED";
       }
     } catch (err) {
       console.error("[admin-fingerprints] fetch failed:", err);
       var wrap = document.getElementById("adminFingerprintTableWrap");
       if (wrap) {
         wrap.innerHTML =
-          '<span class="text-xs text-red-400">' +
+          '<span class="hud-pill is-danger">' +
           escapeHtml(ServerI18n.t("loadFingerprintsFailed")) +
           "</span>";
       }

@@ -16,10 +16,12 @@ def svc(tmp_path):
     sounds_dir = tmp_path / "sounds"
     sounds_dir.mkdir()
     rules_file = sounds_dir / "sound_rules.json"
+    volumes_file = sounds_dir / "sound_volumes.json"
 
     with (
         patch.object(sound_mod, "_SOUNDS_DIR", sounds_dir),
         patch.object(sound_mod, "_RULES_FILE", rules_file),
+        patch.object(sound_mod, "_VOLUMES_FILE", volumes_file),
     ):
         service = SoundService()
         yield service
@@ -190,8 +192,73 @@ def test_list_sounds(svc, tmp_path):
     # Force a rescan
     svc._dir_mtime = 0.0
     result = svc.list_sounds()
+    names = [s["name"] for s in result]
 
-    assert "a.mp3" in result
-    assert "b.ogg" in result
-    assert "c.wav" in result
-    assert "ignore.txt" not in result
+    assert "a.mp3" in names
+    assert "b.ogg" in names
+    assert "c.wav" in names
+    assert "ignore.txt" not in names
+    for entry in result:
+        assert entry["volume"] == 1.0
+        assert entry["url"].startswith("/static/sounds/")
+
+
+# ── 11. per-sound volume (P1-2) ───────────────────────────────────────────
+
+
+def test_set_sound_volume_persists(svc, tmp_path):
+    f = tmp_path / "sounds" / "tone.mp3"
+    f.write_bytes(b"\x00")
+    svc._dir_mtime = 0.0
+    assert svc.set_sound_volume("tone.mp3", 0.4) is True
+    assert svc.get_sound_volume("tone.mp3") == 0.4
+    listed = next(s for s in svc.list_sounds() if s["name"] == "tone.mp3")
+    assert listed["volume"] == 0.4
+
+
+def test_set_sound_volume_clamps(svc, tmp_path):
+    f = tmp_path / "sounds" / "loud.mp3"
+    f.write_bytes(b"\x00")
+    svc._dir_mtime = 0.0
+    svc.set_sound_volume("loud.mp3", 5.0)
+    assert svc.get_sound_volume("loud.mp3") == 1.0
+    svc.set_sound_volume("loud.mp3", -1)
+    assert svc.get_sound_volume("loud.mp3") == 0.0
+
+
+def test_set_sound_volume_missing_file_returns_false(svc):
+    assert svc.set_sound_volume("ghost.mp3", 0.5) is False
+
+
+def test_match_falls_back_to_sound_volume(svc, tmp_path):
+    f = tmp_path / "sounds" / "ping.mp3"
+    f.write_bytes(b"\x00")
+    svc._dir_mtime = 0.0
+    svc.set_sound_volume("ping.mp3", 0.3)
+    # Rule with no explicit volume → fall back to sound default
+    svc.add_rule(
+        {
+            "trigger_type": "all",
+            "sound_name": "ping.mp3",
+        }
+    )
+    result = svc.match("hello")
+    assert result is not None
+    assert result["volume"] == 0.3
+
+
+def test_match_rule_volume_overrides_sound_volume(svc, tmp_path):
+    f = tmp_path / "sounds" / "ping.mp3"
+    f.write_bytes(b"\x00")
+    svc._dir_mtime = 0.0
+    svc.set_sound_volume("ping.mp3", 0.3)
+    svc.add_rule(
+        {
+            "trigger_type": "all",
+            "sound_name": "ping.mp3",
+            "volume": 0.9,
+        }
+    )
+    result = svc.match("hello")
+    assert result is not None
+    assert result["volume"] == 0.9

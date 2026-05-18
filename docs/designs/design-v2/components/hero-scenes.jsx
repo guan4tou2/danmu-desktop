@@ -27,6 +27,7 @@ function AdminLogin({ theme = 'dark' }) {
         <div style={{ textAlign: 'center', paddingBottom: 22, borderBottom: `1px solid ${line}` }}>
           <DanmuHero
             title="Danmu Fire"
+            theme={theme}
             size="large"
             subtitle="管理後台登入"
             subStyle={{ fontSize: 13, margin: '10px 0 0', color: textDim }}
@@ -35,31 +36,25 @@ function AdminLogin({ theme = 'dark' }) {
 
         {/* Form */}
         <div style={{ marginTop: 22 }}>
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, letterSpacing: 1.5, color: textDim, marginBottom: 6 }}>
-              USERNAME · 帳號
-            </div>
-            <input defaultValue="admin" style={{
-              width: '100%', padding: '11px 14px', background: raised,
-              border: `1px solid ${line}`, borderRadius: 6, color: text,
-              fontFamily: hudTokens.fontMono, fontSize: 13, outline: 'none', boxSizing: 'border-box',
-            }} />
-          </div>
           <div style={{ marginBottom: 18 }}>
             <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, letterSpacing: 1.5, color: textDim, marginBottom: 6 }}>
-              PASSWORD · 密碼
+              管理密碼
             </div>
             <input type="password" defaultValue="••••••••••" style={{
               width: '100%', padding: '11px 14px', background: raised,
               border: `1px solid ${line}`, borderRadius: 6, color: text,
               fontFamily: hudTokens.fontMono, fontSize: 13, outline: 'none', boxSizing: 'border-box',
+              letterSpacing: 3,
             }} />
+            <div style={{ marginTop: 8, fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 0.5 }}>
+              密碼於 config.yaml 設定 · 忘記可從 server CLI 重設
+            </div>
           </div>
           <button style={{
             width: '100%', padding: '12px 16px', background: accent, color: '#000',
             border: 'none', borderRadius: 6, cursor: 'pointer',
             fontFamily: hudTokens.fontMono, fontSize: 12, fontWeight: 700, letterSpacing: 2,
-          }}>登入 ▶ SIGN IN</button>
+          }}>登入 ▶</button>
         </div>
 
         {/* Status chip */}
@@ -70,7 +65,7 @@ function AdminLogin({ theme = 'dark' }) {
             background: hudTokens.cyanSoft, border: `1px solid ${hudTokens.cyanLine}`,
             fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 1.5, color: accent,
           }}>
-            <StatusDot color={accent} size={6} />SERVER · ONLINE
+            <StatusDot color={accent} size={6} />伺服器上線
           </span>
           <span style={{
             padding: '4px 10px', borderRadius: 999, border: `1px solid ${line}`,
@@ -83,8 +78,9 @@ function AdminLogin({ theme = 'dark' }) {
 }
 
 // Overlay Idle — what the screen shows when overlay is on but nobody's fired yet.
-function OverlayIdle({ theme = 'dark' }) {
+function OverlayIdle({ theme = 'dark', state = 'ready' }) {
   const accent = hudTokens.cyan;
+  const reconnecting = state === 'reconnecting';
   return (
     <div style={{
       width: '100%', height: '100%',
@@ -97,14 +93,36 @@ function OverlayIdle({ theme = 'dark' }) {
       <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
         <DanmuHero
           title="Danmu Fire"
+          theme={theme}
           size="hero"
-          subtitle="掃描 QR code 或打開 danmu.im/42 — 開始送彈幕"
+          subtitle="掃描 QR code 或輸入 192.0.2.1:4000 — 開始送彈幕"
         />
-        {/* Connection chip */}
-        <div style={{ marginTop: 26, display: 'inline-flex', alignItems: 'center', gap: 16, padding: '10px 20px', borderRadius: 999, border: `1px solid ${hudTokens.cyanLine}`, background: hudTokens.cyanSoft }}>
-          <StatusDot color={accent} size={8} />
-          <span style={{ fontFamily: hudTokens.fontMono, fontSize: 12, letterSpacing: 2, color: accent }}>OVERLAY READY</span>
-          <span style={{ fontFamily: hudTokens.fontMono, fontSize: 11, letterSpacing: 1, color: HERO_SLATE_300 }}>· 等待中</span>
+        {/* Connection chip — ready / reconnecting 兩態 */}
+        <div style={{
+          marginTop: 26, display: 'inline-flex', alignItems: 'center', gap: 16, padding: '10px 20px',
+          borderRadius: 999,
+          border: `1px solid ${reconnecting ? hudTokens.amber : hudTokens.cyanLine}`,
+          background: reconnecting ? 'rgba(245,158,11,0.12)' : hudTokens.cyanSoft,
+          transition: 'background 200ms, border-color 200ms',
+        }}>
+          {reconnecting ? (
+            <>
+              <span style={{
+                width: 10, height: 10, borderRadius: '50%',
+                border: `1.5px solid ${hudTokens.amber}`, borderTopColor: 'transparent',
+                animation: 'overlaySpin 0.7s linear infinite', display: 'inline-block',
+              }} />
+              <span style={{ fontFamily: hudTokens.fontMono, fontSize: 12, letterSpacing: 2, color: hudTokens.amber }}>RECONNECTING</span>
+              <span style={{ fontFamily: hudTokens.fontMono, fontSize: 11, letterSpacing: 1, color: HERO_SLATE_300 }}>· 第 3 次嘗試 · 4s</span>
+              <style>{`@keyframes overlaySpin { to { transform: rotate(360deg); } }`}</style>
+            </>
+          ) : (
+            <>
+              <StatusDot color={accent} size={8} />
+              <span style={{ fontFamily: hudTokens.fontMono, fontSize: 12, letterSpacing: 2, color: accent }}>OVERLAY READY</span>
+              <span style={{ fontFamily: hudTokens.fontMono, fontSize: 11, letterSpacing: 1, color: HERO_SLATE_300 }}>· 等待中</span>
+            </>
+          )}
         </div>
 
         {/* QR placeholder */}
@@ -127,7 +145,7 @@ function OverlayIdle({ theme = 'dark' }) {
           </svg>
         </div>
         <div style={{ marginTop: 12, fontFamily: hudTokens.fontMono, fontSize: 11, letterSpacing: 2, color: HERO_SLATE_300 }}>
-          DANMU.IM/42
+          192.0.2.1:4000
         </div>
       </div>
     </div>

@@ -11,6 +11,7 @@ describe("saveSettings / loadSettings", () => {
   });
 
   test("roundtrip: saved values are returned by loadSettings", () => {
+    // v5.0.0+: useWss param dropped (always wss).
     saveSettings("localhost", "8080", 0, false, "tok123");
     const result = loadSettings();
     expect(result).toEqual({

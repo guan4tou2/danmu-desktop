@@ -12,15 +12,18 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
   );
   const wsAuthTokenJson = JSON.stringify(wsAuthToken || "");
 
+  // v5.0.0+: WSS-only deployment unified on --profile https. nginx
+  // terminates TLS on port 4001 and strips the /ws prefix, so the
+  // overlay always connects via wss://IP:PORT/ws + token query.
   return `
       const IP_ADDR=${ipJson};
       const WS_PORT_NUM=${safePort};
       const STARTUP_ANIM_SETTINGS = ${startupAnimSettingsJson};
       const WS_AUTH_TOKEN = ${wsAuthTokenJson};
-      console.log(IP_ADDR, WS_PORT_NUM)
-      let url = \`ws://\${IP_ADDR}:\${WS_PORT_NUM}\`
+      console.log(IP_ADDR, WS_PORT_NUM, 'wss')
+      let url = \`wss://\${IP_ADDR}:\${WS_PORT_NUM}/ws\`
       if (WS_AUTH_TOKEN) {
-        url = \`\${url}/?token=\${encodeURIComponent(WS_AUTH_TOKEN)}\`
+        url = \`\${url}?token=\${encodeURIComponent(WS_AUTH_TOKEN)}\`
       }
       let ws = null
       let reconnectAttempts = 0
@@ -510,6 +513,73 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
                 return;
               }
 
+              // Konami easter egg from web admin (POST /admin/konami/trigger
+              // → server WS broadcast). Local Electron Konami detection still
+              // goes through the existing IPC path in renderer-modules/konami.js;
+              // this handler is the bridge for web-admin-triggered events so
+              // ALL connected overlays (web + Electron) react together.
+              if (data.type === "konami") {
+                try {
+                  if (typeof window.__konamiTrigger === "function") {
+                    window.__konamiTrigger();
+                  } else {
+                    // Fallback: same freeze + explode + clear used by overlay.js
+                    var nodes = document.querySelectorAll(
+                      "h1.danmu, img.danmu, div.danmu-wrapper, div[style*='translateX']"
+                    );
+                    if (nodes.length) {
+                      var screenW = window.innerWidth;
+                      var screenH = window.innerHeight;
+                      var cx = screenW / 2;
+                      var cy = screenH / 2;
+                      var maxFly = Math.max(screenW, screenH) * 0.7;
+                      var DURATION = 1200;
+                      nodes.forEach(function (el, i) {
+                        var rect = el.getBoundingClientRect();
+                        el.style.transition = "none";
+                        el.style.animation = "none";
+                        el.style.position = "fixed";
+                        el.style.left = rect.left + "px";
+                        el.style.top = rect.top + "px";
+                        el.style.right = "auto";
+                        el.style.bottom = "auto";
+                        el.style.transform = "none";
+                        el.style.zIndex = "10000";
+                        var elCx = rect.left + rect.width / 2;
+                        var elCy = rect.top + rect.height / 2;
+                        var dx = elCx - cx;
+                        var dy = elCy - cy;
+                        var len = Math.sqrt(dx * dx + dy * dy);
+                        if (len < 40) {
+                          var ang = (i * 137.5) * Math.PI / 180;
+                          dx = Math.cos(ang); dy = Math.sin(ang); len = 1;
+                        }
+                        var fly = maxFly * (0.6 + Math.random() * 0.6);
+                        var flyX = (dx / len) * fly;
+                        var flyY = (dy / len) * fly;
+                        var spin = (Math.random() < 0.5 ? -1 : 1) * (180 + Math.random() * 540);
+                        void el.offsetWidth;
+                        el.style.transition =
+                          "transform " + DURATION + "ms cubic-bezier(0.22, 0.94, 0.62, 1), opacity " + DURATION + "ms ease-out";
+                        el.style.transform =
+                          "translate(" + flyX.toFixed(0) + "px, " + flyY.toFixed(0) + "px) rotate(" +
+                          spin.toFixed(0) + "deg) scale(2.4)";
+                        el.style.opacity = "0";
+                      });
+                      setTimeout(function () {
+                        nodes.forEach(function (n) {
+                          if (n && n.parentNode) n.parentNode.removeChild(n);
+                        });
+                      }, DURATION + 50);
+                    }
+                  }
+                  console.log("[WebSocket] Konami easter egg triggered by admin");
+                } catch (err) {
+                  console.warn("[WebSocket] Konami trigger error:", err && err.message);
+                }
+                return;
+              }
+
               // 投票系統：即時顯示投票面板
               if (data.type === "poll_update") {
                 let panel = document.getElementById("poll-panel");
@@ -681,6 +751,20 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
           }
         }
       })
+
+      // v5.0.0+: real "clear" — drop currently-rendering danmu without
+      // disconnecting WS. Main broadcasts overlay-clear via webContents.send;
+      // preload exposes window.API.onOverlayClear for the child to subscribe.
+      // Selectors match the onscreen-limiter e2e harness (.danmu /
+      // .danmu-wrapper / h1.danmu).
+      if (window.API && typeof window.API.onOverlayClear === 'function') {
+        window.API.onOverlayClear(function () {
+          console.log('[Overlay] overlay-clear received — removing danmu nodes');
+          document.querySelectorAll('.danmu, .danmu-wrapper, h1.danmu').forEach(function (n) {
+            try { n.remove(); } catch (_) {}
+          });
+        });
+      }
 
       connect()
     `;

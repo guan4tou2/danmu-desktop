@@ -6,7 +6,6 @@ dependencies = [
     "blinker",
     "click",
     "flask",
-    "flask-sock",
     "gevent",
     "greenlet",
     "h11",
@@ -16,7 +15,6 @@ dependencies = [
     "python-dotenv",
     "python-magic>=0.4.27",
     "setuptools",
-    "simple-websocket",
     "websockets",
     "werkzeug",
     "wsproto",
@@ -29,6 +27,8 @@ dependencies = [
     "requests>=2.33.1",
     "psutil>=5.9.0",
     "qrcode>=8.0",
+    "fonttools>=4.63.0",
+    "urllib3>=2.7.0",
 ]
 
 [project.optional-dependencies]

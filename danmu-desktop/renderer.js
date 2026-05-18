@@ -13,14 +13,8 @@ const { validateIP, validatePort } = require("./renderer-modules/validation");
 const {
   saveSettings,
   loadSettings,
-  saveStartupAnimationSettings,
   loadStartupAnimationSettings,
 } = require("./renderer-modules/settings");
-const {
-  DEFAULT_DANMU_SETTINGS,
-  initDanmuSettings,
-  loadDanmuSettings,
-} = require("./renderer-modules/danmu-settings");
 const { initTrackManager } = require("./renderer-modules/track-manager");
 const {
   initOverlayControls,
@@ -28,6 +22,9 @@ const {
 } = require("./renderer-modules/ws-manager");
 const { initGlobalEffects } = require("./renderer-modules/konami");
 const { initParticleBg } = require("./renderer-modules/particle-bg");
+const { initUpdateStatus } = require("./renderer-modules/update-status");
+const { init: initFirstRunGate } = require("./renderer-modules/first-run-gate");
+const { initConnSection } = require("./renderer-modules/conn-section-wire");
 
 // Translation helper
 function t(key) {
@@ -41,9 +38,6 @@ const state = {
   connectionSuccessNotified: false,
 };
 
-// Danmu display settings (shared between danmu-settings and ws-manager)
-const danmuSettings = { ...DEFAULT_DANMU_SETTINGS };
-
 // Main initialization — runs after DOM is ready.
 // Uses try/finally so .main-content.loaded is always added even if init throws.
 const initRenderer = async () => {
@@ -51,6 +45,15 @@ const initRenderer = async () => {
     // ── Synchronous module initialization (before any awaits) ────────────
     initTrackManager();
     initGlobalEffects();
+    // Inline connection setup card — auto-opens inside the Connection tab
+    // iff no saved server config exists, then hydrates host/port on confirm.
+    initFirstRunGate();
+
+    // Conn section wire — unified Server field ↔ hidden host/port compat
+    // fields, canonical preview, and ⚐ 測試 button. Must run AFTER
+    // initFirstRunGate so the recent-server list has hydrated host-input,
+    // and BEFORE initOverlayControls hydrates from settings.
+    initConnSection({});
 
     initOverlayControls({
       state,
@@ -59,7 +62,6 @@ const initRenderer = async () => {
       validateIP,
       validatePort,
       saveSettings,
-      saveStartupAnimationSettings,
       loadSettings,
       loadStartupAnimationSettings,
       updateConnectionStatus,
@@ -76,8 +78,9 @@ const initRenderer = async () => {
       getCurrentStatus,
     });
 
-    initDanmuSettings(danmuSettings, showToast, t);
-    loadDanmuSettings(danmuSettings);
+    // Auto-updater UX (P2-3) — title bar badge + About card + toast.
+    // Safe no-op if API.onUpdateStatus is missing (e.g. older preload).
+    initUpdateStatus({ t, showToast });
 
     // Canvas 2D particle network background (main window only)
     if (document.getElementById("vanta-bg")) {
@@ -104,19 +107,14 @@ const initRenderer = async () => {
     // ── i18n (async, with timeout guard to prevent hang in CI) ──────────
     if (typeof i18n !== "undefined") {
       try {
+        // 2026-05-16: language selector removed — Electron follows the
+        // system locale via window.API.getSystemLocale() (resolves to
+        // main process `app.getLocale()`); no in-app toggle.
         await Promise.race([
           i18n.loadLanguage(),
           new Promise((resolve) => setTimeout(resolve, 2000)),
         ]);
         i18n.updateUI();
-
-        const languageSelect = document.getElementById("language-select");
-        if (languageSelect) {
-          languageSelect.value = i18n.currentLang;
-          languageSelect.addEventListener("change", (e) => {
-            i18n.setLanguage(e.target.value);
-          });
-        }
       } catch (_) {
         // i18n failure — continue with HTML defaults
       }
@@ -128,12 +126,21 @@ const initRenderer = async () => {
       const screenSelect = document.getElementById("screen-select");
       if (screenSelect) {
         const selectedBeforePopulate = parseInt(screenSelect.value, 10);
+        const syncPreferredDisplayId = () => {
+          if (typeof api.setOverlayDisplayId !== "function") return;
+          const opt = screenSelect.options[screenSelect.selectedIndex];
+          if (!opt) return;
+          const displayId = Number(opt.dataset.displayId);
+          if (!Number.isInteger(displayId)) return;
+          api.setOverlayDisplayId(displayId);
+        };
 
         api.getDisplays().then((displays) => {
           screenSelect.innerHTML = "";
           displays.forEach((display, index) => {
             const option = document.createElement("option");
             option.value = index;
+            option.dataset.displayId = String(display.id);
             option.textContent = `Display ${index + 1} (${display.size.width}x${
               display.size.height
             }) ${display.primary ? "[Primary]" : ""}`;
@@ -149,13 +156,21 @@ const initRenderer = async () => {
           screenSelect.value = String(
             hasSavedSelection ? selectedBeforePopulate : fallbackIndex
           );
+          syncPreferredDisplayId();
         });
+
+        screenSelect.addEventListener("change", syncPreferredDisplayId);
       }
     }
   } finally {
     // Always signal that the renderer has finished initializing.
     // E2e tests wait for this class before interacting with the page.
-    const mainContent = document.querySelector(".main-content");
+    // Post design-v2 retrofit the wrapper class is `client-main`; target by
+    // the stable `#main-content` id which exists in both shells.
+    const mainContent =
+      document.querySelector("#main-content") ||
+      document.querySelector(".main-content") ||
+      document.querySelector(".client-main");
     if (mainContent) mainContent.classList.add("loaded");
   }
 };

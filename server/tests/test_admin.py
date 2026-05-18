@@ -176,7 +176,7 @@ def test_update_invalid_setting_type(client):
 
 def test_update_speed_out_of_range(client):
     res = authed_post(client, "/admin/update", {"type": "Speed", "index": 3, "value": 99})
-    # Should fail validation (Speed max is 10)
+    # Should fail validation (Speed max is 3.0)
     assert res.status_code == 400
 
 
@@ -184,7 +184,7 @@ def test_update_speed_valid(client):
     token = csrf_token(client)
     res = client.post(
         "/admin/update",
-        json={"type": "Speed", "index": 3, "value": 7},
+        json={"type": "Speed", "index": 3, "value": 2.0},
         headers={"X-CSRF-Token": token},
     )
     assert res.status_code == 200

@@ -6,8 +6,8 @@
 
 body {
   font-family: "Noto Sans TC", "Noto Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  background: #0f172a;
-  color: #f1f5f9;
+  background: var(--color-bg-base, #0f172a);
+  color: var(--color-text-primary);
   height: 100vh;
   display: flex;
   align-items: center;
@@ -31,7 +31,7 @@ body {
 .app-name {
   font-size: 1.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #38bdf8, #3b82f6);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -40,19 +40,19 @@ body {
 
 .app-version {
   font-size: 0.875rem;
-  color: #94a3b8;
+  color: var(--color-text-secondary, #94a3b8);
   margin-bottom: 0.75rem;
 }
 
 .app-desc {
   font-size: 0.875rem;
-  color: #cbd5e1;
+  color: var(--color-text-bright);
   margin-bottom: 0.5rem;
 }
 
 .app-link a {
   font-size: 0.75rem;
-  color: #38bdf8;
+  color: var(--color-primary);
   text-decoration: none;
 }
 
@@ -66,7 +66,7 @@ body {
   background: rgba(30, 41, 59, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.5rem;
-  color: #f1f5f9;
+  color: var(--color-text-primary);
   font-family: inherit;
   font-size: 0.875rem;
   cursor: pointer;

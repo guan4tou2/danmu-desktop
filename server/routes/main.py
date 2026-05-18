@@ -26,6 +26,19 @@ from ..utils import sanitize_log_string
 main_bp = Blueprint("main", __name__)
 
 
+@main_bp.route("/polls/media/<path:rel_path>")
+def poll_media(rel_path: str):
+    """Serve uploaded poll question images.
+
+    Path-traversal-guarded; the writer/validator lives in
+    :mod:`server.routes.admin.poll` so all bytes-on-disk concerns share one
+    code path.
+    """
+    from .admin.poll import _safe_send_poll_media
+
+    return _safe_send_poll_media(rel_path)
+
+
 @main_bp.route("/")
 def index():
     ws_port = current_app.config["WS_PORT"]
@@ -77,7 +90,23 @@ def login():
         session.clear()
         session["logged_in"] = True
         session["csrf_token"] = issue_csrf_token()
+        try:
+            from ..services import audit_log
+
+            audit_log.append(
+                "auth", "login", actor="admin", meta={"ip": request.remote_addr or "?"}
+            )
+        except Exception:
+            pass
         return redirect(url_for("admin_bp.admin"))
+    try:
+        from ..services import audit_log
+
+        audit_log.append(
+            "auth", "login_failed", actor=None, meta={"ip": request.remote_addr or "?"}
+        )
+    except Exception:
+        pass
     flash("wrong password!")
     return redirect(url_for("admin_bp.admin"))
 
@@ -85,6 +114,12 @@ def login():
 @main_bp.route("/logout", methods=["POST"])
 @require_csrf
 def logout():
+    try:
+        from ..services import audit_log
+
+        audit_log.append("auth", "logout", actor="admin", meta={"ip": request.remote_addr or "?"})
+    except Exception:
+        pass
     session.clear()
     return redirect(url_for("admin_bp.admin"))
 
@@ -127,6 +162,14 @@ def change_password():
         # Update the live config so subsequent logins use the new hash immediately
         current_app.config["ADMIN_PASSWORD_HASHED"] = new_hash
         current_app.logger.info("Admin password changed successfully")
+        try:
+            from ..services import audit_log
+
+            audit_log.append(
+                "auth", "password_changed", actor="admin", meta={"ip": request.remote_addr or "?"}
+            )
+        except Exception:
+            pass
         return _json_response({"message": "Password changed successfully"})
     except Exception as exc:
         current_app.logger.error("Failed to save password hash: %s", sanitize_log_string(str(exc)))

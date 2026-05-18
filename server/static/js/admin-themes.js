@@ -31,36 +31,77 @@
     if (!container) return;
     container.innerHTML = "";
 
+    const count = document.querySelector("[data-theme-pack-count]");
+    if (count) {
+      const builtin = themes.filter(t => t.bundled !== false).length;
+      const custom = themes.length - builtin;
+      count.textContent = `${themes.length} PACKS · ${builtin} 內建${custom > 0 ? " · " + custom + " 社群" : ""}`;
+    }
+
     if (themes.length === 0) {
-      container.innerHTML = '<span class="text-xs text-slate-400">' + ServerI18n.t("noThemesFound") + '</span>';
+      container.innerHTML = '<span class="theme-pack-muted" style="padding:14px">' + ServerI18n.t("noThemesFound") + '</span>';
       return;
     }
 
+    // Theme pack card — prototype admin-theme-packs.jsx ThemePackCard.
+    // Each card: swatches + name/en + desc + font/layout/effects/bg + actions.
     themes.forEach((theme) => {
       const isActive = theme.name === activeName;
+      const label = escapeHtml(
+        ServerI18n.t("theme_" + theme.name) !== "theme_" + theme.name
+          ? ServerI18n.t("theme_" + theme.name)
+          : (theme.label || theme.name)
+      );
+      const desc = escapeHtml(
+        ServerI18n.t("theme_" + theme.name + "_desc") !== "theme_" + theme.name + "_desc"
+          ? ServerI18n.t("theme_" + theme.name + "_desc")
+          : (theme.description || "")
+      );
+      const palette = theme.palette && theme.palette.length
+        ? theme.palette.slice(0, 3)
+        : [theme.styles?.color || "#ffffff", "#38bdf8", "#e879f9"];
+      const effects = (theme.effects_preset || [])
+        .map(e => typeof e === "string" ? e : (e.name || ""))
+        .filter(Boolean);
+      const fontFam = theme.font?.family || "Noto Sans TC";
+      const layout = theme.layout || "scroll · 右→左";
+      const builtin = theme.bundled !== false;
+
       const card = document.createElement("div");
-      card.className = `flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 ${
-        isActive
-          ? "border-sky-500 bg-sky-500/10"
-          : "border-slate-700 bg-slate-800/60 hover:border-slate-500"
-      }`;
-
+      card.className = `theme-pack-card${isActive ? " is-active" : ""}`;
       card.innerHTML = `
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2">
-            <span class="text-sm font-semibold text-white">${escapeHtml(ServerI18n.t("theme_" + theme.name) !== "theme_" + theme.name ? ServerI18n.t("theme_" + theme.name) : theme.label)}</span>
-            <span class="text-xs text-slate-400">${escapeHtml(theme.name)}</span>
-            ${isActive ? '<span class="text-[10px] px-1.5 py-0.5 bg-sky-600 text-white rounded-full font-medium">' + ServerI18n.t("themeActiveBadge") + '</span>' : ""}
+        <div class="theme-pack-card-head">
+          <div class="theme-pack-swatches">
+            ${palette.map(c => `<span class="theme-pack-swatch" style="background:${escapeHtml(c)}"></span>`).join("")}
           </div>
-          <p class="text-xs text-slate-400 mt-0.5 truncate">${escapeHtml(ServerI18n.t("theme_" + theme.name + "_desc") !== "theme_" + theme.name + "_desc" ? ServerI18n.t("theme_" + theme.name + "_desc") : theme.description)}</p>
+          <div class="theme-pack-title">
+            <span class="zh">${label}</span>
+            <span class="en">${escapeHtml((theme.name || "").toUpperCase())}</span>
+          </div>
+          <span class="theme-pack-status${isActive ? " is-active" : ""}">
+            ${isActive ? "● ACTIVE" : "○ INACTIVE"}
+          </span>
         </div>
-        ${
-          isActive
-            ? ""
-            : '<button class="theme-activate-btn px-3 py-1.5 text-xs font-medium bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-colors shrink-0" data-theme="' + escapeHtml(theme.name) + '">' + ServerI18n.t("setActiveBtn") + '</button>'
-        }
+        <p class="theme-pack-desc">${desc}</p>
+        <div class="theme-pack-meta">
+          <div class="row"><span class="k">FONT</span><span class="v">${escapeHtml(fontFam)}</span></div>
+          <div class="row"><span class="k">LAYOUT</span><span class="v">${escapeHtml(layout)}</span></div>
+          <div class="row"><span class="k">FX</span><span class="v">${
+            effects.length
+              ? effects.map(e => `<span class="theme-pack-chip">${escapeHtml(e)}</span>`).join(" ")
+              : '<span class="theme-pack-muted">—</span>'
+          }</span></div>
+        </div>
+        <div class="theme-pack-foot">
+          <span class="theme-pack-badge${builtin ? " is-builtin" : ""}">${builtin ? "BUILT-IN" : "CUSTOM"}</span>
+          <div class="theme-pack-actions">
+            ${isActive
+              ? '<span class="theme-pack-btn is-disabled">已啟用</span>'
+              : `<button class="theme-pack-btn is-primary theme-activate-btn" data-theme="${escapeHtml(theme.name)}">啟用 ▶</button>`
+            }
+          </div>
+        </div>
       `;
-
       container.appendChild(card);
     });
 

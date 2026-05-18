@@ -2,22 +2,16 @@ import threading
 
 
 class ConnectionManager:
+    """Tracks dedicated overlay WebSocket clients (asyncio server on port 4001).
+
+    The flask-sock browser-WS path was removed in v5.0.0 Phase 2 — admin and
+    viewer both poll over HTTP now, so the only remaining live socket is the
+    one OBS / Electron overlay opens to receive danmu in real time.
+    """
+
     def __init__(self):
         self._lock = threading.Lock()
-        self._web_connections = set()
         self._ws_clients = set()
-
-    def register_web_connection(self, ws):
-        with self._lock:
-            self._web_connections.add(ws)
-
-    def unregister_web_connection(self, ws):
-        with self._lock:
-            self._web_connections.discard(ws)
-
-    def get_web_connections(self):
-        with self._lock:
-            return list(self._web_connections)
 
     def register_ws_client(self, client):
         with self._lock:
@@ -33,9 +27,8 @@ class ConnectionManager:
 
     def has_ws_clients(self):
         with self._lock:
-            return bool(self._ws_clients or self._web_connections)
+            return bool(self._ws_clients)
 
     def reset(self):
         with self._lock:
-            self._web_connections.clear()
             self._ws_clients.clear()

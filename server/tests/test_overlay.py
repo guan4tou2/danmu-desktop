@@ -26,11 +26,13 @@ def test_overlay_has_ws_token_placeholder(client):
 def test_overlay_renders_idle_scene(client):
     rv = client.get("/overlay")
     body = rv.data
+    # P2 OverlayIdle (v5.0.0 prototype-aligned: corner brackets + topbar +
+    # chip + QR + pairing code + actions row).
     assert b'id="overlay-idle"' in body
-    assert b"hud-hero-title" in body
+    assert b"overlay-idle-hero" in body
     assert b"Danmu Fire" in body
-    assert b"OVERLAY READY" in body
-    # QR is inlined as an SVG path
+    assert b"overlay-idle-chip-label" in body
+    # QR is server-rendered (qr_svg) — inlined as SVG path.
     assert b"<svg" in body
     assert b"<path" in body
 

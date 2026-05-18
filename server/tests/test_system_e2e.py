@@ -199,14 +199,14 @@ def test_admin_setting_change_notifies_overlay(client, ws_server_port):
         token = _login(client)
         client.post(
             "/admin/update",
-            json={"type": "Speed", "index": 3, "value": 6},
+            json={"type": "Speed", "index": 3, "value": 2.0},
             headers={"X-CSRF-Token": token},
         )
 
         notification = _recv_type(ws, "settings_changed", timeout=2.0)
         assert notification is not None, "overlay did not receive settings_changed"
         assert "settings" in notification
-        assert notification["settings"]["Speed"][3] == 6
+        assert notification["settings"]["Speed"][3] == 2.0
 
 
 def test_admin_toggle_notifies_overlay(client, ws_server_port):

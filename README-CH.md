@@ -4,6 +4,8 @@
 
 [English README](https://github.com/guan4tou2/danmu-desktop/blob/main/README.md)
 
+完整功能清單（伺服器路由、管理頁面、持久化對照、範圍規範）詳見 [docs/FEATURES.md](docs/FEATURES.md)。
+
 ![img](img/danmu%20display.png)
 
 ## 概述
@@ -101,10 +103,13 @@ cd danmu-desktop
 ./setup.sh gen-secret                # 只產生並寫入 SECRET_KEY
 
 # 再啟動 stack。精靈會印出確切指令，常見路徑：
-docker compose --profile http up -d          # 本機 HTTP
-docker compose --profile https up -d         # HTTPS 自簽（LAN / VPS）
+docker compose --profile https up -d         # HTTPS 自簽（LAN / VPS）— 推薦
 docker compose --profile traefik up -d       # HTTPS + Let's Encrypt（公網 domain）
+docker compose --profile http up -d          # 本機 HTTP（僅 dev — 桌面客戶端不可用）
 ```
+
+> v5.0.0+：Electron 桌面客戶端固定走 `wss://`。`--profile http` 可
+> 跑後端 + web admin/viewer，但 desktop overlay 無法連線。
 
 完整部署文件（HTTPS 模式、桌面客戶端 WS port、Redis、備份/還原、升級）：
 **[DEPLOYMENT.md](DEPLOYMENT.md)**。
@@ -211,7 +216,7 @@ PYTHONPATH=.. uv run python -m server.app    # HTTP + WS 都從這邊起
 ## 端口配置
 
 - `4000`：網頁介面（HTTP，可經反向代理）
-- `4001`：Danmu Desktop 客戶端連接（WebSocket，可經反向代理）
+- `4001`：Danmu Fire 客戶端連接（WebSocket，可經反向代理）
 
 ## 參考資料
 

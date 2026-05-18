@@ -159,6 +159,7 @@ const HERO_SIZE = {
   hero:   'clamp(3.2rem, 8vw, 6rem)',
   large:  'clamp(2rem, 5vw, 3.5rem)',
   medium: '2rem',
+  small:  '1.4rem',
   inline: '1.5rem',
 };
 
@@ -168,9 +169,14 @@ function DanmuHero({
   size = 'hero',
   align = 'center',
   chip,
+  theme = 'dark',
   style = {},
   subStyle = {},
 }) {
+  // Dark → cyan glow (drop-shadow 在暗底看不見);light → drop shadow
+  const heroFilter = theme === 'dark'
+    ? 'drop-shadow(0 0 18px rgba(125,211,252,0.55)) drop-shadow(0 0 3px rgba(125,211,252,0.9)) drop-shadow(0 4px 10px rgba(0,0,0,0.6))'
+    : 'drop-shadow(0 10px 15px rgba(0,0,0,0.45)) drop-shadow(0 4px 6px rgba(0,0,0,0.3))';
   return (
     <div style={{ textAlign: align, ...style }}>
       <h1 style={{
@@ -182,7 +188,7 @@ function DanmuHero({
         textTransform: 'uppercase',
         letterSpacing: '0.02em',
         lineHeight: 1,
-        filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.45)) drop-shadow(0 4px 6px rgba(0,0,0,0.3))',
+        filter: heroFilter,
       }}>{title}</h1>
       {subtitle && (
         <p style={{

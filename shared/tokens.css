@@ -2,9 +2,11 @@
   /* Brand */
   --color-primary: #38bdf8;
   --color-primary-hover: #0ea5e9;
+  --color-primary-light: #7dd3fc;  /* cyan-300 — lighter cyan for hero / hover-up state */
   --color-secondary: #3b82f6;
   --color-accent: #06b6d4;
   --color-accent-light: #22d3ee;   /* cyan-400 — brighter accent for stats/data viz */
+  --color-accent-dark: #0891b2;    /* cyan-600 — gradient endpoint */
 
   /* Absolutes (rare but real: a checkbox handle, a glyph that must be
    * pure white, etc. Prefer text-primary / text-bright first.) */
@@ -12,10 +14,17 @@
 
   /* Semantic */
   --color-success: #22c55e;
-  --color-warning: #eab308;
-  --color-error: #ef4444;
+  --color-success-light: #86efac;      /* emerald-300 — used for success dots / pulse rings */
+  --color-warning: #fbbf24;            /* amber-400 — prototype hudTokens.amber */
+  --color-error: #ef4444;              /* form-level red (validation errors) */
   --color-error-hover: #dc2626;
   --color-error-light: #f87171;
+  --color-danger: #ff4d4f;             /* destructive-action red (Ban / Delete) — slightly brighter than --color-error */
+
+  /* HUD alias set lives further down in this file alongside the legacy
+   * --hud-cut / --hud-corner-* atoms (line ~135). --color-danger is the
+   * one new semantic token v4 actually needs — see Ban / Delete buttons
+   * in style.css that already call var(--color-danger, #ff4d4f). */
 
   /* Surface / Background — aligned to HUD prototype (tokens.jsx) */
   --color-bg-deep: #020617;          /* slate-950 — viewport */
@@ -27,6 +36,14 @@
   --color-bg-input-solid: rgba(30, 41, 59, 1);
   --color-bg-input-disabled: rgba(30, 41, 59, 0.5);
   --color-overlay: rgba(0, 0, 0, 0.6);
+
+  /* Theme-aware overlay tints — replace hardcoded rgba(255,255,255,X)
+   * row/button hover so they correctly invert on light theme. Dark
+   * mode = subtle white lift; light mode override below = subtle slate
+   * darken. (2026-05-18 polestar light audit pass 2.) */
+  --hover-tint-weak:   rgba(255, 255, 255, 0.02);
+  --hover-tint:        rgba(255, 255, 255, 0.04);
+  --hover-tint-strong: rgba(255, 255, 255, 0.08);
 
   /* Border */
   --color-border: rgba(255, 255, 255, 0.1);
@@ -104,6 +121,17 @@
   --radius-xl: 1rem;
   --radius-pill: 999px;
 
+  /* Motion (design v4 2026-05-18 — page transitions, micro-interactions).
+   * Tokens harvested from existing CSS sweep: hover/focus = ~120ms (snappy),
+   * drawer / accordion = ~180ms (perceptible), page swap = ~240ms (smooth).
+   * Ease curves: in-out for natural drawer slides, out for entrances. */
+  --motion-fast:   120ms;     /* tab/chip hover, button color shift */
+  --motion-normal: 180ms;     /* drawer slide, accordion expand, dropdown */
+  --motion-slow:   240ms;     /* page transitions, large layout shifts */
+  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out:   cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);  /* slight overshoot — chips/toasts */
+
   /* HUD atoms (design-v2) — angular-cut panels, L-bracket corners,
    * monospace labels. Kept as tokens so Electron + server share values. */
   --hud-cut: 14px;                                /* diagonal notch size on .hud-panel */
@@ -118,7 +146,22 @@
   --hud-cyan: #38bdf8;               /* sky-400 — primary signal */
   --hud-amber: #fbbf24;              /* amber-400 — live/recording/warn */
   --hud-lime: #86efac;               /* green-300 — healthy/ok */
-  --hud-crimson: #f87171;            /* red-400 — danger/drop */
+  --hud-crimson: #f87171;            /* red-400 — danger/drop (form-level) */
+
+  /* 2026-05-18 design v4 aliases — naming used by the prototype
+   * (hudTokens.text / bg0 / bg1 / bg2 / fontMono …). Existing v4 CSS
+   * calls var(--hud-…) with a hex fallback; these resolve the token
+   * to the underlying semantic --color-… so a change in one place
+   * propagates. Values match shared/hud.css's :root @ line ~14. */
+  --hud-text:        var(--color-text-primary);
+  --hud-text-dim:    var(--color-text-secondary);
+  --hud-textDim:     var(--color-text-secondary);     /* camelCase shim some prototypes use */
+  --hud-bg0:         #050912;                          /* deepest panel */
+  --hud-bg1:         #0c1424;                          /* card panel */
+  --hud-bg2:         #182239;                          /* elevated raised */
+  --hud-font-mono:   var(--font-mono);
+  --hud-font-sans:   var(--font-ui);
+  --hud-font-display: var(--font-display);
 
   /* AdminPageShell (admin-pages.jsx) — LIGHT theme.
    * The prototype canvas mounts admin with theme='light' (TWEAK_DEFAULTS).
@@ -130,4 +173,119 @@
   --admin-line: rgba(15, 23, 42, 0.12);      /* lightLine */
   --admin-text: #0f172a;                     /* lightText — slate-900 */
   --admin-text-dim: #475569;                 /* lightTextDim — slate-600 */
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 2026-05-18 design v4-r7 polestar pivot — full light theme.
+ * Activated by either:
+ *   1. <html data-theme="light"> attribute (manual override)
+ *   2. @media (prefers-color-scheme: light) wrapping the same rules
+ *      (system-driven; bottom of file)
+ *
+ * Token strategy: swap the --hud-* alias values + a few --color-* base
+ * tokens so existing rules that call var(--hud-bg1, ...) automatically
+ * resolve to the light counterpart. Accent shades shift -2 steps darker
+ * (e.g. sky-400 → sky-600) to keep WCAG AA contrast on white.
+ *
+ * Contrast verified per design v4-r7 admin-polestar.jsx TokenSwapTable:
+ *   text          slate-900 on white   = 15.4:1 ✓ AAA
+ *   text-dim      slate-600 on white   =  5.9:1 ✓ AA body
+ *   cyan          sky-600   on white   =  4.6:1 ✓ AA
+ *   amber         amber-600 on white   =  4.5:1 ✓ AA
+ *   lime          green-600 on white   =  4.6:1 ✓ AA
+ *   crimson       red-600   on white   =  4.6:1 ✓ AA
+ * ────────────────────────────────────────────────────────────────────── */
+:root[data-theme="light"] {
+  /* Surface */
+  --color-bg-base:     #ffffff;
+  --color-bg-deep:     #f8fafc;
+  --color-bg-elevated: #f1f5f9;
+  --color-bg-row-hover: #e2e8f0;
+
+  /* Text */
+  --color-text-primary:   #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted:     #94a3b8;
+  --color-text-bright:    #020617;
+
+  /* Brand / accent — shift -2 steps for WCAG AA on white */
+  --color-primary:       #0284c7;   /* sky-600 */
+  --color-primary-hover: #0369a1;   /* sky-700 */
+  --color-primary-light: #38bdf8;   /* sky-400 — used for hovers only */
+  --color-warning:       #d97706;   /* amber-600 */
+  --color-error:         #dc2626;   /* red-600 */
+  --color-error-hover:   #b91c1c;   /* red-700 */
+  --color-error-light:   #f87171;
+  --color-danger:        #dc2626;   /* same as error in light */
+  --color-success:       #16a34a;   /* green-600 */
+  --color-success-light: #22c55e;   /* green-500 */
+
+  /* Border */
+  --color-border:        rgba(15, 23, 42, 0.10);
+  --color-border-strong: rgba(15, 23, 42, 0.18);
+
+  /* Hover tints — invert direction on light (subtle slate darken
+   * instead of subtle white lift). */
+  --hover-tint-weak:     rgba(15, 23, 42, 0.03);
+  --hover-tint:          rgba(15, 23, 42, 0.05);
+  --hover-tint-strong:   rgba(15, 23, 42, 0.09);
+
+  /* HUD alias overrides */
+  --hud-bg0:         #f8fafc;
+  --hud-bg1:         #ffffff;
+  --hud-bg2:         #f1f5f9;
+  --hud-text:        var(--color-text-primary);
+  --hud-text-dim:    var(--color-text-secondary);
+  --hud-textDim:     var(--color-text-secondary);
+  --hud-line:        rgba(15, 23, 42, 0.10);
+  --hud-line-strong: rgba(15, 23, 42, 0.18);
+  --hud-cyan:        var(--color-primary);
+  --hud-cyan-soft:   rgba(2, 132, 199, 0.08);
+  --hud-cyan-line:   rgba(2, 132, 199, 0.30);
+  --hud-amber:       var(--color-warning);
+  --hud-lime:        var(--color-success);
+  --hud-crimson:     var(--color-danger);
+}
+
+/* System preference fallback — only applies when no explicit data-theme
+   is set on <html>. Lets users who haven't manually toggled still get
+   the light variant automatically. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]):not([data-theme="light"]) {
+    --color-bg-base:     #ffffff;
+    --color-bg-deep:     #f8fafc;
+    --color-bg-elevated: #f1f5f9;
+    --color-bg-row-hover: #e2e8f0;
+    --color-text-primary:   #0f172a;
+    --color-text-secondary: #475569;
+    --color-text-muted:     #94a3b8;
+    --color-text-bright:    #020617;
+    --color-primary:       #0284c7;
+    --color-primary-hover: #0369a1;
+    --color-warning:       #d97706;
+    --color-error:         #dc2626;
+    --color-error-hover:   #b91c1c;
+    --color-danger:        #dc2626;
+    --color-success:       #16a34a;
+    --color-success-light: #22c55e;
+    --color-border:        rgba(15, 23, 42, 0.10);
+    --color-border-strong: rgba(15, 23, 42, 0.18);
+    --hover-tint-weak:     rgba(15, 23, 42, 0.03);
+    --hover-tint:          rgba(15, 23, 42, 0.05);
+    --hover-tint-strong:   rgba(15, 23, 42, 0.09);
+    --hud-bg0:         #f8fafc;
+    --hud-bg1:         #ffffff;
+    --hud-bg2:         #f1f5f9;
+    --hud-text:        var(--color-text-primary);
+    --hud-text-dim:    var(--color-text-secondary);
+    --hud-textDim:     var(--color-text-secondary);
+    --hud-line:        rgba(15, 23, 42, 0.10);
+    --hud-line-strong: rgba(15, 23, 42, 0.18);
+    --hud-cyan:        var(--color-primary);
+    --hud-cyan-soft:   rgba(2, 132, 199, 0.08);
+    --hud-cyan-line:   rgba(2, 132, 199, 0.30);
+    --hud-amber:       var(--color-warning);
+    --hud-lime:        var(--color-success);
+    --hud-crimson:     var(--color-danger);
+  }
 }

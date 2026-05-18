@@ -191,9 +191,9 @@ describe("getLocalizedText()", () => {
   });
 
   test("returns i18n.t() result when i18n is defined and key is known", () => {
-    global.i18n = { t: (k) => (k === "title" ? "Danmu Desktop" : k), currentLang: "en" };
+    global.i18n = { t: (k) => (k === "title" ? "Danmu Fire" : k), currentLang: "en" };
     const { getLocalizedText } = load();
-    expect(getLocalizedText("title", "fallback")).toBe("Danmu Desktop");
+    expect(getLocalizedText("title", "fallback")).toBe("Danmu Fire");
   });
 
   test("falls back to fallbackZh when i18n lang is zh and t() returns the raw key", () => {

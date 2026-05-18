@@ -1,4 +1,4 @@
-# Danmu Desktop Server
+# Danmu Fire Server
 
 彈幕桌面伺服器端應用程式。
 

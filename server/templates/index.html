@@ -16,114 +16,290 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700&family=Klee+One:wght@400;600&family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;600;700;800&family=Noto+Serif+TC:wght@400;500;600;700;900&family=Orbitron:wght@400;500;600;700;800;900&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/hud.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/viewer-v2.css') }}" />
 </head>
 
-<body class="bg-black text-white min-h-screen overflow-x-hidden">
+<body
+  class="viewer-body-v2 min-h-screen overflow-x-hidden"
+  data-viewer-theme-mode="{{ options.get('ViewerThemeMode', [True, 'auto'])[1] }}"
+  data-viewer-lang-mode="{{ options.get('ViewerLangMode', [True, 'auto'])[1] }}"
+>
   <!-- Skip to main content -->
   <a href="#danmuText"
     class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-sky-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg">Skip
     to main content</a>
 
-  <!-- Background Animation Container -->
-  <div id="vanta-bg" class="fixed top-0 left-0 w-full h-full -z-10" aria-hidden="true"></div>
-
-  <div class="container server-home-shell mx-auto px-4 py-8 relative z-10">
+  <div class="viewer-page-shell">
 
     <!-- Main Card — design-v2 Viewer port (see docs/designs/design-v2/components/viewer.jsx) -->
-    <main
-      class="glass-effect hud-corners-auto server-main-shell rounded-3xl shadow-2xl mb-8 overflow-hidden transition-all duration-300"
-    >
+    <main class="viewer-main-card">
       <div class="viewer-shell">
 
-        <!-- Top strip — status chips + language picker above hero -->
-        <div class="viewer-topstrip" role="status" aria-live="polite">
-          <div>
-            <span id="connectionStatus" class="viewer-topstrip-status">
-              <span class="connection-dot connection-dot--connecting"></span>
-              <span id="connectionLabel" data-i18n="connecting">Connecting...</span>
-            </span>
-            <span id="overlayStatus" class="viewer-topstrip-status">
-              <span class="connection-dot connection-dot--disconnected"></span>
-              <span id="overlayLabel" data-i18n="overlayNone">Overlay: –</span>
-            </span>
-          </div>
-          <select id="server-lang-select" class="viewer-topstrip-select" aria-label="Language">
-            <option value="en">EN</option>
-            <option value="zh">ZH</option>
-            <option value="ja">JA</option>
-            <option value="ko">KO</option>
-          </select>
-        </div>
-
-        <!-- Hero lockup — DanmuHero size="hero" -->
+        <!-- Hero · 3-col layout (prototype viewer.jsx:106 redesign 2026-04-27):
+             left column   = DANMU FIRE + subtitle
+             middle (full-width absolute background) = DanmuMarquee scrolling 12 chips
+             right column  = 伺服器 / Overlay ConnChip stack + language picker
+             Mobile uses `is-mini` chip variant. -->
         <section class="viewer-hero animate-fade-in-scale-up">
-          <h1 class="viewer-hero-title" data-i18n="mainTitle">Danmu Fire</h1>
-          <p class="viewer-hero-subtitle" data-i18n="mainSubtitle">
-            Send your message to the screen!
-          </p>
-          <div class="viewer-hero-chip-row">
-            <span class="viewer-hero-chip" aria-hidden="true">
-              <span class="hud-dot"></span>
-              <span data-i18n="heroConnected">CONNECTED · LIVE</span>
+          <!-- Decorative DanmuMarquee — 12 fake danmu scroll right→left behind
+               the hero. Pure visual; no informational role. Mask gradient on
+               left 22% so the logo stays legible. -->
+          <div class="viewer-hero-marquee" aria-hidden="true">
+            <span class="viewer-mq-item viewer-mq-i0" style="color:#fb7185">🔥🔥🔥</span>
+            <span class="viewer-mq-item viewer-mq-i1" style="color:#7dd3fc">+1</span>
+            <span class="viewer-mq-item viewer-mq-i2" style="color:#fcd34d">哈哈哈</span>
+            <span class="viewer-mq-item viewer-mq-i3" style="color:#38bdf8">👏</span>
+            <span class="viewer-mq-item viewer-mq-i4" style="color:#a3e635">講得好！</span>
+            <span class="viewer-mq-item viewer-mq-i5" style="color:#c4b5fd">✨ wow</span>
+            <span class="viewer-mq-item viewer-mq-i6" style="color:#7dd3fc">666</span>
+            <span class="viewer-mq-item viewer-mq-i7" style="color:#fcd34d">💯</span>
+            <span class="viewer-mq-item viewer-mq-i8" style="color:#a3e635">+1 同意</span>
+            <span class="viewer-mq-item viewer-mq-i9" style="color:#fb7185">GG</span>
+            <span class="viewer-mq-item viewer-mq-i10" style="color:#38bdf8">太強了</span>
+            <span class="viewer-mq-item viewer-mq-i11" style="color:#c4b5fd">謝謝</span>
+          </div>
+
+          <div class="viewer-hero-lockup">
+            <h1 class="viewer-hero-title" data-i18n="mainTitle">Danmu Fire</h1>
+            <p class="viewer-hero-subtitle" data-i18n="mainSubtitle">
+              Send your message to the screen!
+            </p>
+          </div>
+
+          <div class="viewer-hero-spacer" aria-hidden="true"></div>
+
+          <div class="viewer-hero-utility" role="status" aria-live="polite">
+            <span id="connectionStatus" class="viewer-conn-chip">
+              <span class="viewer-conn-chip-dot connection-dot--connecting"></span>
+              <span class="viewer-conn-chip-value" id="connectionLabel" data-i18n="connecting">Connecting…</span>
             </span>
+            <span id="overlayStatus" class="viewer-conn-chip">
+              <span class="viewer-conn-chip-dot connection-dot--disconnected"></span>
+              <span class="viewer-conn-chip-value" id="overlayLabel" data-i18n="overlayNone">–</span>
+            </span>
+            <!-- Desktop theme chip — design v4 brief 0518-v3 #1 (2026-05-18).
+                 3-segment toggle (淺色 / 自動 / 深色). Reuses `theme-mode`
+                 storage + applyViewerTheme(). Hidden on mobile (where the
+                 hamburger sheet at viewer-mobile-sheet does the same job). -->
+            <div
+              id="viewerThemeChip"
+              class="viewer-theme-chip"
+              role="radiogroup"
+              aria-label="外觀主題"
+            >
+              <button
+                type="button"
+                class="viewer-theme-chip-seg"
+                data-theme-choice="light"
+                role="radio"
+                aria-checked="false"
+                title="淺色"
+              >☼</button>
+              <button
+                type="button"
+                class="viewer-theme-chip-seg is-active"
+                data-theme-choice="auto"
+                role="radio"
+                aria-checked="true"
+                title="自動"
+              >◐</button>
+              <button
+                type="button"
+                class="viewer-theme-chip-seg"
+                data-theme-choice="dark"
+                role="radio"
+                aria-checked="false"
+                title="深色"
+              >☾</button>
+            </div>
+            <!-- Hamburger (mobile only — design v4 brief 0518-4a 2026-05-18).
+                 Opens a bottom sheet with theme tri-state + lang selector.
+                 Desktop hides this button via @media (min-width: 769px) since
+                 mobile is the explicit target for the new switcher.
+                 Per polestar pivot: audience can override system theme/lang
+                 but admin still has final say via Viewer page settings. -->
+            <button
+              type="button"
+              id="viewerHamburger"
+              class="viewer-hamburger"
+              aria-label="設定"
+              aria-haspopup="dialog"
+              aria-expanded="false"
+            >☰</button>
           </div>
         </section>
 
-        <!-- Scrollable body — preview + fields -->
-        <div class="viewer-body">
+        <!-- Mobile settings bottom sheet — opens via #viewerHamburger.
+             Hidden on desktop. Render at viewer-shell level so it overlays
+             everything correctly. -->
+        <div id="viewerMobileSheet" class="viewer-mobile-sheet" hidden role="dialog" aria-label="設定" aria-modal="true">
+          <div class="viewer-mobile-sheet-backdrop" data-mobile-sheet-close></div>
+          <div class="viewer-mobile-sheet-panel">
+            <div class="viewer-mobile-sheet-grabber" aria-hidden="true"></div>
+            <div class="viewer-mobile-sheet-head">
+              <span class="viewer-mobile-sheet-title" data-i18n="settings">設定</span>
+              <button type="button" class="viewer-mobile-sheet-close" data-mobile-sheet-close aria-label="關閉">✕</button>
+            </div>
+            <!-- Theme tri-state -->
+            <div class="viewer-mobile-sheet-row">
+              <span class="viewer-mobile-sheet-label" data-i18n="themeAppearance">外觀主題</span>
+              <div class="viewer-mobile-sheet-spacer"></div>
+              <div class="viewer-mobile-sheet-segment" role="radiogroup" aria-label="外觀主題">
+                <button type="button" class="viewer-mobile-sheet-seg" data-theme-choice="dark" role="radio" aria-checked="false" data-i18n="themeDark">深色</button>
+                <button type="button" class="viewer-mobile-sheet-seg" data-theme-choice="light" role="radio" aria-checked="false" data-i18n="themeLight">淺色</button>
+                <button type="button" class="viewer-mobile-sheet-seg" data-theme-choice="auto" role="radio" aria-checked="true" data-i18n="themeAuto">系統</button>
+              </div>
+            </div>
+            <!-- Lang selector -->
+            <div class="viewer-mobile-sheet-row">
+              <span class="viewer-mobile-sheet-label" data-i18n="language">語言</span>
+              <div class="viewer-mobile-sheet-spacer"></div>
+              <div class="viewer-mobile-sheet-segment" role="radiogroup" aria-label="語言">
+                <button type="button" class="viewer-mobile-sheet-seg" data-lang-choice="zh" role="radio" aria-checked="true">中文</button>
+                <button type="button" class="viewer-mobile-sheet-seg" data-lang-choice="en" role="radio" aria-checked="false">EN</button>
+                <button type="button" class="viewer-mobile-sheet-seg" data-lang-choice="ja" role="radio" aria-checked="false">日</button>
+                <button type="button" class="viewer-mobile-sheet-seg" data-lang-choice="ko" role="radio" aria-checked="false">한</button>
+              </div>
+            </div>
+            <div class="viewer-mobile-sheet-foot">v{{ app_version }}</div>
+          </div>
+        </div>
 
-          <!-- Live preview strip -->
+        <div class="viewer-tabbar" role="tablist" aria-label="Viewer mode">
+          <button
+            type="button"
+            class="viewer-tab is-active"
+            role="tab"
+            aria-selected="true"
+            aria-controls="viewerFirePane"
+            data-viewer-tab="fire"
+          >
+            <span class="viewer-tab-label">Fire</span>
+            <span class="viewer-tab-sub">送彈幕</span>
+          </button>
+          <button
+            type="button"
+            class="viewer-tab"
+            role="tab"
+            aria-selected="false"
+            aria-controls="viewerPollPane"
+            data-viewer-tab="poll"
+          >
+            <span class="viewer-tab-label">Poll</span>
+            <span class="viewer-tab-sub">即時投票</span>
+          </button>
+        </div>
+
+        <section id="viewerFirePane" class="viewer-pane is-active" data-viewer-pane="fire">
+          <!-- Scrollable body — preview + fields.
+               2026-05-16 RWD: the inner content is capped at max-width
+               560px on desktop (via .viewer-fire-content) so the form
+               doesn't stretch the full width on wide screens. Sendbar
+               sits outside .viewer-body and stays full-width. -->
+          <div class="viewer-body">
+          <div class="viewer-fire-content">
+
+          <!-- Live preview strip — nickname renders in the top-left
+               (`#previewNick`) and is wired to `#nicknameInput` below.
+               2026-05-16 marquee (design v3-r8): inner `.viewer-preview-track`
+               is absolute-positioned and animated right→left via
+               `--viewer-preview-duration` CSS var (driven by the speed
+               slider). Kicker carries a faint cyan `#previewSpeedBadge`
+               showing the current speed value live. -->
           <div class="viewer-preview">
-            <div class="viewer-preview-kicker" data-i18n="previewKicker">PREVIEW · 你送出的樣子</div>
+            <div class="viewer-preview-kicker">
+              <span data-i18n="previewKicker">預覽 · 你送出的樣子</span>
+              <span id="previewSpeedBadge" class="viewer-preview-speed" aria-hidden="true">{{ "%.1f"|format(options.Speed[3]) }}x</span>
+            </div>
             <div class="viewer-preview-row" aria-live="polite">
-              <span id="previewNick" class="viewer-preview-nick">@guest</span>
-              <span
-                id="previewText"
-                class="viewer-preview-text"
-                data-i18n="preview"
-                style="font-size: 32px;"
-              >示例彈幕文字</span>
+              <div class="viewer-preview-track">
+                <span id="previewNick" class="viewer-preview-nick"></span>
+                <span
+                  id="previewText"
+                  class="viewer-preview-text"
+                  data-i18n="preview"
+                  style="font-size: 32px;"
+                >示例彈幕文字</span>
+              </div>
             </div>
           </div>
 
-          <!-- Nickname -->
+          <!-- Nickname — chip + floating popover edit (design v4 brief
+               0518-4c, 2026-05-18). The `#nicknameInput` is kept under the
+               chip so existing main.js / localStorage logic still reads
+               `nicknameInput.value`. Tapping the chip opens a popover with
+               an editable input + confirm/cancel. -->
           {% if options.get('Nickname', [True])[0] %}
-          <div id="nicknameControl" class="viewer-field">
-            <label class="viewer-field-label" for="nicknameInput">
-              <span data-i18n="nicknameField">暱稱 · NICKNAME</span>
+          <div id="nicknameControl" class="viewer-field viewer-nickname-chip-mode">
+            <label class="viewer-field-label">
+              <span data-i18n="nickname">暱稱</span>
             </label>
+            <div class="viewer-nickname-row" data-nickname-row>
+              <button
+                type="button"
+                class="viewer-nickname-chip"
+                id="nicknameChipBtn"
+                data-nickname-chip
+                aria-haspopup="dialog"
+              >
+                <span class="viewer-nickname-chip-text" data-nickname-display>Anonymous</span>
+                <span class="viewer-nickname-chip-edit" aria-hidden="true">✎</span>
+              </button>
+              <span class="viewer-nickname-hint" data-i18n="nicknameClickHint">← 點擊改名</span>
+            </div>
+            <!-- Hidden source input — kept in DOM so existing fire flow
+                 reads its value without code change. -->
             <input
               type="text"
               id="nicknameInput"
-              class="viewer-input"
-              maxlength="20"
+              class="viewer-input viewer-nickname-source"
+              maxlength="12"
               placeholder="Anonymous"
               data-i18n-placeholder="anonymousPlaceholder"
+              autocomplete="off"
+              hidden
             />
+            <!-- Floating popover (renders on chip click) -->
+            <div class="viewer-nickname-popover" data-nickname-popover hidden role="dialog" aria-label="改名">
+              <div class="viewer-nickname-popover-arrow" aria-hidden="true"></div>
+              <div class="viewer-nickname-popover-label">NEW NICKNAME</div>
+              <input
+                type="text"
+                class="viewer-nickname-popover-input"
+                data-nickname-popover-input
+                maxlength="12"
+                placeholder="Anonymous"
+                autocomplete="off"
+              />
+              <div class="viewer-nickname-popover-actions">
+                <button type="button" class="viewer-nickname-popover-cancel" data-nickname-cancel data-i18n="cancel">取消</button>
+                <button type="button" class="viewer-nickname-popover-confirm" data-nickname-confirm data-i18n="confirm">確認</button>
+              </div>
+            </div>
           </div>
           {% endif %}
 
-          <!-- Color + hex readout -->
+          <!-- Color + hex readout · 6 preset swatches + custom picker -->
           {% if options.Color[0] %}
           <div id="colorControl" class="viewer-field">
             <label class="viewer-field-label">
-              <span data-i18n="colorField">顏色 · COLOR</span>
+              <span data-i18n="color">顏色</span>
             </label>
             <div class="viewer-color-row">
-              <div
-                id="colorGradientPreview"
-                class="viewer-swatch is-active"
-                style="background:#ffffff;"
-                aria-hidden="true"
-              ></div>
+              <button type="button" class="viewer-swatch-preset is-active" data-color="#ffffff" aria-label="White" style="background:#ffffff"></button>
+              <button type="button" class="viewer-swatch-preset" data-color="#38bdf8" aria-label="Cyan" style="background:#38bdf8"></button>
+              <button type="button" class="viewer-swatch-preset" data-color="#fbbf24" aria-label="Amber" style="background:#fbbf24"></button>
+              <button type="button" class="viewer-swatch-preset" data-color="#86efac" aria-label="Lime" style="background:#86efac"></button>
+              <button type="button" class="viewer-swatch-preset" data-color="#f87171" aria-label="Crimson" style="background:#f87171"></button>
+              <button type="button" class="viewer-swatch-preset" data-color="#ffd166" aria-label="Gold" style="background:#ffd166"></button>
               <label class="viewer-swatch viewer-swatch--custom" aria-label="Choose custom color">
                 +<input type="color" id="colorInput" value="#ffffff" aria-label="Choose danmu color" />
               </label>
+              <div id="colorGradientPreview" hidden aria-hidden="true"></div>
               <span id="colorValue" class="viewer-color-hex">#FFFFFF</span>
             </div>
           </div>
@@ -132,7 +308,7 @@
           <!-- Font family -->
           <div id="userFontSelectControl" class="viewer-field" style="display: none;">
             <label class="viewer-field-label" for="userFontSelect">
-              <span data-i18n="fontField">字型 · FONT FAMILY</span>
+              <span data-i18n="font">字型</span>
             </label>
             <div class="viewer-select-wrap">
               <select id="userFontSelect" class="viewer-select" aria-label="Choose font">
@@ -141,14 +317,15 @@
             </div>
           </div>
 
-          <!-- Font size + Opacity 2-col -->
-          <div class="viewer-grid-2">
+          <!-- Size / Opacity / Speed — 3-col on desktop, 2-col + speed
+               wrap on mobile (per design v3-r8 RWD adjustment). -->
+          <div class="viewer-grid-fields">
             {% if options.FontSize[0] %}
             <div id="fontSizeControl" class="viewer-field is-nomb">
               <label class="viewer-field-label" for="sizeInput">
-                <span data-i18n="sizeField">字級</span>
+                <span data-i18n="size">字級</span>
                 <span class="viewer-field-label__value"> · <span id="sizeValue">{{
-                  (options.FontSize[1] + options.FontSize[2]) // 2 }}</span>px</span>
+                  options.FontSize[3] }}</span>px</span>
               </label>
               <input
                 type="range"
@@ -156,7 +333,7 @@
                 class="viewer-range"
                 min="{{ options.FontSize[1] }}"
                 max="{{ options.FontSize[2] }}"
-                value="{{ (options.FontSize[1] + options.FontSize[2]) // 2 }}"
+                value="{{ options.FontSize[3] }}"
                 aria-label="Font size"
                 aria-valuemin="{{ options.FontSize[1] }}"
                 aria-valuemax="{{ options.FontSize[2] }}"
@@ -167,8 +344,8 @@
             {% if options.Opacity[0] %}
             <div id="opacityControl" class="viewer-field is-nomb">
               <label class="viewer-field-label" for="opacityRange">
-                <span data-i18n="opacityField">透明度</span>
-                <span class="viewer-field-label__value"> · <span id="opacityValue">100</span>%</span>
+                <span data-i18n="opacity">透明度</span>
+                <span class="viewer-field-label__value"> · <span id="opacityValue">{{ options.Opacity[3] }}</span>%</span>
               </label>
               <input
                 type="range"
@@ -176,42 +353,44 @@
                 class="viewer-range"
                 min="{{ options.Opacity[1] }}"
                 max="{{ options.Opacity[2] }}"
-                value="100"
+                value="{{ options.Opacity[3] }}"
                 aria-label="Text opacity"
                 aria-valuemin="{{ options.Opacity[1] }}"
                 aria-valuemax="{{ options.Opacity[2] }}"
               />
             </div>
             {% endif %}
+
+            {% if options.Speed[0] %}
+            <div id="speedControl" class="viewer-field is-nomb">
+              <label class="viewer-field-label" for="speedRange">
+                <span data-i18n="speed">速度</span>
+                <span class="viewer-field-label__value"> · <span id="speedValue">{{
+                  "%.1f"|format(options.Speed[3]) }}</span>x</span>
+              </label>
+              <input
+                type="range"
+                id="speedRange"
+                class="viewer-range"
+                min="{{ options.Speed[1] }}"
+                max="{{ options.Speed[2] }}"
+                step="0.1"
+                value="{{ options.Speed[3] }}"
+                aria-label="Scroll speed"
+                aria-valuemin="{{ options.Speed[1] }}"
+                aria-valuemax="{{ options.Speed[2] }}"
+              />
+            </div>
+            {% endif %}
           </div>
 
-          <!-- Speed -->
-          {% if options.Speed[0] %}
-          <div id="speedControl" class="viewer-field">
-            <label class="viewer-field-label" for="speedRange">
-              <span data-i18n="speedField">速度 · SPEED</span>
-              <span class="viewer-field-label__value"> · <span id="speedValue">{{
-                (options.Speed[1] + options.Speed[2]) // 2 }}</span>x</span>
-            </label>
-            <input
-              type="range"
-              id="speedRange"
-              class="viewer-range"
-              min="{{ options.Speed[1] }}"
-              max="{{ options.Speed[2] }}"
-              value="{{ (options.Speed[1] + options.Speed[2]) // 2 }}"
-              aria-label="Scroll speed"
-              aria-valuemin="{{ options.Speed[1] }}"
-              aria-valuemax="{{ options.Speed[2] }}"
-            />
-          </div>
-          {% endif %}
-
-          <!-- Effects (dynamically loaded from /effects API by main.js) -->
+          <!-- Effects (dynamically loaded from /effects API by main.js).
+               2026-05-17: label trimmed to "效果 · 可疊加" — the 已選 X / 8
+               counter was redundant with the visible chip pressed-state. -->
           <div id="effectControl" class="viewer-field">
             <label class="viewer-field-label">
-              <span data-i18n="effectsField">效果 · EFFECTS</span>
-              <span class="viewer-field-label__value" data-i18n="multiSelectToStack"> · 可疊加</span>
+              <span data-i18n="effects">效果</span>
+              <span class="viewer-field-label__value"> · <span data-i18n="multiSelectToStack">可疊加</span></span>
             </label>
             <div
               id="effectButtons"
@@ -221,14 +400,24 @@
             >
               <span class="viewer-field-label" data-i18n="loadingEffects">Loading...</span>
             </div>
-            <div id="effectParamsPanel" class="mt-3 space-y-3"></div>
+            <!-- 2026-05-17 design v3-r10: per-effect parameter cards.
+                 Each selected effect renders its own cyan-tinted card with
+                 2-col slider grid (1-col when only 1 param). main.js
+                 _refreshParamsPanel() populates this. -->
+            <div
+              id="effectParamsPanel"
+              class="viewer-effect-params"
+              role="group"
+              aria-label="Effect parameters"
+              hidden
+            ></div>
           </div>
 
           <!-- Layout 5-grid -->
           {% if options.get('Layout', [True])[0] %}
           <div id="layoutControl" class="viewer-field is-nomb">
             <label class="viewer-field-label">
-              <span data-i18n="layoutField">排版 · LAYOUT</span>
+              <span data-i18n="layoutMode">排版</span>
             </label>
             <div
               class="viewer-layout-grid"
@@ -244,7 +433,7 @@
                 class="layout-btn viewer-layout-btn active is-active"
               >
                 <span class="viewer-layout-btn__zh" data-i18n="layoutScroll">滾動</span>
-                <span class="viewer-layout-btn__sub">R→L</span>
+                <span class="viewer-layout-btn__sub">右→左</span>
               </button>
               <button
                 type="button"
@@ -274,7 +463,7 @@
                 class="layout-btn viewer-layout-btn"
               >
                 <span class="viewer-layout-btn__zh" data-i18n="layoutFloat">浮動</span>
-                <span class="viewer-layout-btn__sub">RND</span>
+                <span class="viewer-layout-btn__sub">RANDOM</span>
               </button>
               <button
                 type="button"
@@ -284,18 +473,53 @@
                 class="layout-btn viewer-layout-btn"
               >
                 <span class="viewer-layout-btn__zh" data-i18n="layoutRise">上升</span>
-                <span class="viewer-layout-btn__sub">B→T</span>
+                <span class="viewer-layout-btn__sub">底→頂</span>
               </button>
             </div>
             <input type="hidden" id="layoutSelect" value="scroll" />
           </div>
           {% endif %}
-        </div>
+          </div><!-- /.viewer-fire-content -->
+          </div><!-- /.viewer-body -->
+        </section>
+
+        <section id="viewerPollPane" class="viewer-pane" data-viewer-pane="poll" hidden>
+          <div class="viewer-poll-card">
+            <div class="viewer-poll-kicker" data-vpoll-state-label>即時投票</div>
+            <!-- Multi-Q image hero (design v4 brief P1 #1, 2026-05-18).
+                 Hidden when no image_url on current question. ≤2MB.
+                 16:9 aspect-fit. Mobile ≤160px, desktop ≤200px. -->
+            <div class="viewer-poll-image" data-vpoll-image hidden>
+              <img class="viewer-poll-image-img" data-vpoll-image-img alt="" />
+            </div>
+            <h2 class="viewer-poll-question" data-vpoll-question>目前沒有進行中的投票</h2>
+            <p class="viewer-poll-meta" data-vpoll-meta>請先切回 Fire 模式送出訊息</p>
+            <div class="viewer-poll-options" data-vpoll-options></div>
+            <!-- Auto-mode timer bar — progress-only, no second-count text
+                 per design Q2 decision. Hidden in manual mode + idle. -->
+            <div class="viewer-poll-timer" data-vpoll-timer hidden>
+              <div class="viewer-poll-timer-fill" data-vpoll-timer-fill style="width:0%"></div>
+            </div>
+            <!-- Progress dots — current question highlighted (cyan, wider),
+                 past dim, future bg2. Only renders when questionCount > 1. -->
+            <div class="viewer-poll-dots" data-vpoll-dots hidden></div>
+          </div>
+        </section>
 
         <!-- Send bar — pill input + emoji button + FIRE. Emoji popover holds
              the legacy #emojiPicker grid so main.js can populate it without
              needing new IDs. -->
         <div class="viewer-sendbar">
+          <!-- 2026-05-17 design v3-r10: inline send-status banner above the
+               pill. Lime when sent, crimson when blocked. Animated in via
+               .is-active. Auto-clears after ~2s (handled by main.js). -->
+          <div
+            id="sendStatusBanner"
+            class="viewer-sendbar-banner"
+            role="status"
+            aria-live="polite"
+            hidden
+          ></div>
           <div id="emojiPopover" class="viewer-emoji-popover" aria-hidden="true">
             <div id="emojiPicker" class="viewer-emoji-popover-grid"></div>
           </div>
@@ -313,7 +537,7 @@
               class="viewer-sendbar-input"
               maxlength="100"
               aria-describedby="charCount"
-              placeholder="想對現場說點什麼?"
+              placeholder="想對現場說點什麼？"
               data-i18n-placeholder="placeholder"
               autocomplete="off"
             />
@@ -324,17 +548,7 @@
               disabled
             >
               <span id="btnSendText" data-i18n="fireDanmu">FIRE</span>
-              <svg
-                id="btnSendIcon"
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+              <span id="btnSendIcon" class="viewer-fire-arrow" aria-hidden="true">▶</span>
               <svg
                 id="btnSendSpinner"
                 class="btn-spinner hidden"
@@ -388,13 +602,25 @@
   </div>
 
   <!-- Scripts -->
-  <script defer src="{{ url_for('static', filename='vendor/three.min.js') }}"></script>
-  <script defer src="{{ url_for('static', filename='vendor/vanta.net.min.js') }}"></script>
   <script src="{{ url_for('static', filename='vendor/i18next.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
-  <script nonce="{{ csp_nonce }}">ServerI18n.init();</script>
+  <script nonce="{{ csp_nonce }}">
+    // 2026-05-16: viewer is system-driven — sweep any stale user-saved
+    // language so detectLang() falls through to navigator.language.
+    try { localStorage.removeItem("danmu-server-lang"); } catch (_) {}
+    ServerI18n.init();
+    // Apply admin's ViewerLangMode override (force-zh / force-en / ...)
+    // if set. `auto` keeps the navigator.language pick from detectLang().
+    (function () {
+      var mode = (document.body && document.body.dataset.viewerLangMode) || "auto";
+      if (mode === "auto") return;
+      var lang = mode.replace(/^force-/, "");
+      if (lang) ServerI18n.setLanguage(lang);
+    })();
+  </script>
   <script defer src="{{ url_for('static', filename='js/toast.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='js/viewer-states.js') }}"></script>
 </body>
 
 </html>

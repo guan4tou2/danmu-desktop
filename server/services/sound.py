@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 _SOUNDS_DIR = Path(__file__).parent.parent / "static" / "sounds"
 _RULES_FILE = _SOUNDS_DIR / "sound_rules.json"
+_VOLUMES_FILE = _SOUNDS_DIR / "sound_volumes.json"
 _SCAN_INTERVAL = 5.0
 _MAX_UPLOAD_SIZE = 1 * 1024 * 1024  # 1 MB
 _ALLOWED_EXTENSIONS = {"mp3", "ogg", "wav"}
@@ -53,9 +54,11 @@ class SoundService:
         self._rules: List[Dict[str, Any]] = []
         self._cooldowns: Dict[str, float] = {}  # rule_id -> last trigger monotonic time
         self._sound_files: List[str] = []
+        self._volumes: Dict[str, float] = {}  # filename -> per-sound default volume
         self._dir_mtime: float = 0.0
         self._last_scan: float = 0.0
         self._load_rules()
+        self._load_volumes()
         self._initialized = True
 
     # ─── Rules persistence ────────────────────────────────────────────────
@@ -89,6 +92,64 @@ class SoundService:
             tmp_path.replace(_RULES_FILE)
         except Exception as e:
             logger.error("[Sound] Failed to save rules: %s", e)
+
+    # ─── Per-sound volume persistence (P1-2) ─────────────────────────────
+
+    def _load_volumes(self) -> None:
+        """Load per-sound default volumes (filename -> 0..1)."""
+        _SOUNDS_DIR.mkdir(parents=True, exist_ok=True)
+        if not _VOLUMES_FILE.exists():
+            self._volumes = {}
+            return
+        try:
+            data = json.loads(_VOLUMES_FILE.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                cleaned = {}
+                for k, v in data.items():
+                    try:
+                        cleaned[str(k)] = max(0.0, min(1.0, float(v)))
+                    except (TypeError, ValueError):
+                        continue
+                self._volumes = cleaned
+            else:
+                self._volumes = {}
+        except Exception as e:
+            logger.error("[Sound] Failed to load volumes: %s", e)
+            self._volumes = {}
+
+    def _save_volumes(self) -> None:
+        """Persist current volumes to JSON. Caller must hold self._lock."""
+        _SOUNDS_DIR.mkdir(parents=True, exist_ok=True)
+        try:
+            tmp_path = _VOLUMES_FILE.with_suffix(".tmp")
+            tmp_path.write_text(
+                json.dumps(self._volumes, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            tmp_path.replace(_VOLUMES_FILE)
+        except Exception as e:
+            logger.error("[Sound] Failed to save volumes: %s", e)
+
+    def get_sound_volume(self, name: str) -> float:
+        """Return the per-sound default volume (1.0 if unset)."""
+        with self._lock:
+            return float(self._volumes.get(name, 1.0))
+
+    def set_sound_volume(self, name: str, volume: float) -> bool:
+        """Set the per-sound default volume. Returns False if file missing."""
+        try:
+            v = float(volume)
+        except (TypeError, ValueError):
+            return False
+        v = max(0.0, min(1.0, v))
+        if not (_SOUNDS_DIR / name).is_file():
+            self._maybe_scan(force=True)
+            if not (_SOUNDS_DIR / name).is_file():
+                return False
+        with self._lock:
+            self._volumes[name] = v
+            self._save_volumes()
+        return True
 
     # ─── Directory scanning ───────────────────────────────────────────────
 
@@ -127,8 +188,28 @@ class SoundService:
 
     # ─── Sound file management ────────────────────────────────────────────
 
-    def list_sounds(self) -> List[str]:
-        """Return list of available sound filenames."""
+    def list_sounds(self) -> List[Dict[str, Any]]:
+        """Return list of available sounds [{name, url, volume}].
+
+        Note: prior to P1-2 this returned bare filenames as strings; the admin
+        UI always treated entries as objects, so this shape change closes a
+        latent bug while adding the per-sound default volume.
+        """
+        self._maybe_scan()
+        with self._lock:
+            files = list(self._sound_files)
+            volumes = dict(self._volumes)
+        return [
+            {
+                "name": fname,
+                "url": f"{_SOUND_URL_PREFIX}{fname}",
+                "volume": float(volumes.get(fname, 1.0)),
+            }
+            for fname in files
+        ]
+
+    def list_sound_filenames(self) -> List[str]:
+        """Internal helper for code paths that want bare filenames."""
         self._maybe_scan()
         with self._lock:
             return list(self._sound_files)
@@ -224,11 +305,15 @@ class SoundService:
         if not sound_name:
             return None
 
-        try:
-            volume = float(data.get("volume", 1.0))
-        except (TypeError, ValueError):
-            volume = 1.0
-        volume = max(0.0, min(1.0, volume))
+        # volume: None (not set) → fall back to per-sound default at match time.
+        raw_vol = data.get("volume", None)
+        if raw_vol is None or raw_vol == "":
+            volume = None
+        else:
+            try:
+                volume = max(0.0, min(1.0, float(raw_vol)))
+            except (TypeError, ValueError):
+                volume = 1.0
 
         try:
             cooldown_ms = int(data.get("cooldown_ms", 0))
@@ -363,9 +448,18 @@ class SoundService:
             with self._lock:
                 self._cooldowns[rule_id] = now
 
+            # Effective volume: rule.volume overrides sound default when set;
+            # otherwise fall back to the sound's stored default (P1-2).
+            rule_vol = rule.get("volume")
+            if rule_vol is None:
+                with self._lock:
+                    effective_vol = float(self._volumes.get(sound_name, 1.0))
+            else:
+                effective_vol = float(rule_vol)
+
             return {
                 "url": f"{_SOUND_URL_PREFIX}{sound_name}",
-                "volume": rule.get("volume", 1.0),
+                "volume": effective_vol,
             }
 
         return None

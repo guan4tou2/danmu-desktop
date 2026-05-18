@@ -51,3 +51,28 @@ def reload_plugins():
 
     plugin_manager.reload()
     return _json_response({"plugins": plugin_manager.list_plugins()})
+
+
+@admin_bp.route("/plugins/console", methods=["GET"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_login
+def plugin_console_tail():
+    """Tail recent plugin stdout/stderr.
+
+    Caller passes ``?since=<seq>`` to fetch only newer lines; first call
+    should pass 0 to fetch the latest 100. Optional ``?plugin=<name>``
+    filters to a single plugin.
+    """
+    from ...services import plugin_console
+
+    try:
+        since = int(request.args.get("since", "0") or 0)
+    except (TypeError, ValueError):
+        since = 0
+    limit = max(1, min(200, int(request.args.get("limit", "100") or 100)))
+    plugin_filter = (request.args.get("plugin", "") or "").strip()
+    events = plugin_console.recent(since=since, limit=limit)
+    if plugin_filter:
+        events = [e for e in events if e["plugin"] == plugin_filter]
+    latest_seq = events[0]["seq"] if events else since
+    return _json_response({"events": events, "latest_seq": latest_seq})

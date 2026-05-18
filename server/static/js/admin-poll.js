@@ -73,16 +73,52 @@
     _pollStatusTimer = setInterval(fetchStatus, 2000);
   }
 
+  function _renderPollEmptyState() {
+    var wrap = document.createElement("div");
+    wrap.className = "admin-proto-empty admin-proto-empty--poll";
+    wrap.setAttribute("data-empty-kind", "poll");
+    wrap.innerHTML = `
+      <div class="admin-proto-empty-title">還沒有任何投票</div>
+      <div class="admin-proto-empty-desc">建好的投票會排在這裡,可即時推到 Overlay,也可以用模板快速建立。</div>
+      <div class="admin-proto-empty-actions">
+        <button type="button" class="admin-proto-empty-primary" data-empty-cta="poll-create">+ 新建投票</button>
+        <span class="admin-be-placeholder-control admin-be-placeholder-inline" role="note">[PLACEHOLDER] 從模板（待 BE）</span>
+      </div>
+      <div class="admin-proto-poll-template-grid">
+        <div class="admin-proto-poll-template-card">
+          <div class="t">是 / 否</div>
+          <div class="d">最簡 2 選項</div>
+          <div class="eta">建立 ~5s</div>
+        </div>
+        <div class="admin-proto-poll-template-card">
+          <div class="t">滿意度</div>
+          <div class="d">1-5 星</div>
+          <div class="eta">建立 ~10s</div>
+        </div>
+        <div class="admin-proto-poll-template-card">
+          <div class="t">多選題</div>
+          <div class="d">4 個 + 圖片</div>
+          <div class="eta">建立 ~30s</div>
+        </div>
+      </div>
+    `;
+    var cta = wrap.querySelector('[data-empty-cta="poll-create"]');
+    if (cta) {
+      cta.addEventListener("click", function () {
+        var addBtn = document.querySelector('#sec-polls [data-poll-action="add"]');
+        if (addBtn) addBtn.click();
+      });
+    }
+    return wrap;
+  }
+
   function _renderPollStatus(data) {
     var display = document.getElementById("pollStatusDisplay");
     if (!display) return;
     display.textContent = "";
 
     if (!data || data.state === "idle") {
-      var noActive = document.createElement("span");
-      noActive.className = "text-slate-400";
-      noActive.textContent = ServerI18n.t("pollNoActive");
-      display.appendChild(noActive);
+      display.appendChild(_renderPollEmptyState());
       return;
     }
     var total = data.total_votes || 0;
@@ -139,6 +175,11 @@
   }
 
   function _initPollEventListeners() {
+    var pollRoot = document.getElementById("sec-polls");
+    if (!pollRoot) return;
+    if (pollRoot.dataset.pollLegacyBound === "1") return;
+    pollRoot.dataset.pollLegacyBound = "1";
+
     var pollCreateBtn = document.getElementById("pollCreateBtn");
     if (pollCreateBtn) pollCreateBtn.addEventListener("click", _createPoll);
     var pollEndBtn = document.getElementById("pollEndBtn");
@@ -173,12 +214,12 @@
       });
     }
 
-    var pollDetails = document.getElementById("sec-polls");
+    var pollDetails = pollRoot;
     if (pollDetails) {
       pollDetails.addEventListener("toggle", function () {
         if (pollDetails.open) _pollPollStatus();
       });
-      if (pollDetails.open) _pollPollStatus();
+      _pollPollStatus();
     }
 
     window.addEventListener("beforeunload", function () {
@@ -191,5 +232,12 @@
   // admin.js dispatches "admin-panel-rendered" once the DOM is ready.
   document.addEventListener("admin-panel-rendered", function () {
     _initPollEventListeners();
+  });
+  document.addEventListener("DOMContentLoaded", function () {
+    _initPollEventListeners();
+  });
+  window.addEventListener("hashchange", function () {
+    var hash = window.location.hash || "";
+    if (hash.indexOf("/polls") !== -1) _initPollEventListeners();
   });
 })();

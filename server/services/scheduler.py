@@ -57,6 +57,7 @@ class SchedulerService:
                 )
 
             job_id = uuid.uuid4().hex[:8]
+            now = time.time()
             self._jobs[job_id] = {
                 "id": job_id,
                 "messages": messages,
@@ -65,7 +66,8 @@ class SchedulerService:
                 "current_index": 0,
                 "remaining": repeat_count,
                 "state": "active",
-                "created_at": time.time(),
+                "created_at": now,
+                "next_run_at": now + start_delay,
             }
 
             timer = threading.Timer(start_delay, self._run_job, args=(job_id,))
@@ -111,6 +113,7 @@ class SchedulerService:
             if not job or job["state"] != "paused":
                 return False
             job["state"] = "active"
+            job["next_run_at"] = time.time() + job["interval_sec"]
             timer = threading.Timer(job["interval_sec"], self._run_job, args=(job_id,))
             timer.daemon = True
             self._timers[job_id] = timer
@@ -131,6 +134,7 @@ class SchedulerService:
                     "current_index": job["current_index"],
                     "state": job["state"],
                     "created_at": job["created_at"],
+                    "next_run_at": job.get("next_run_at"),
                 }
                 for job in self._jobs.values()
                 if job["state"] != "cancelled"
@@ -182,10 +186,12 @@ class SchedulerService:
 
             if finished:
                 job["state"] = "cancelled"
+                job["next_run_at"] = None
                 logger.info("Scheduler job %s completed all repeats", job_id)
                 return
 
             # Schedule next fire
+            job["next_run_at"] = time.time() + interval
             timer = threading.Timer(interval, self._run_job, args=(job_id,))
             timer.daemon = True
             self._timers[job_id] = timer

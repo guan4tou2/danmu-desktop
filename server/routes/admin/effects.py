@@ -173,3 +173,95 @@ def reload_effects_admin():
 
     effects = load_all(force=True)
     return _json_response({"message": "Effects reloaded", "count": len(effects)})
+
+
+# Slice 7 — Gap 2 from docs/backend-prep-2026-05-04.md.
+# Difference vs /effects/preview: preview returns the rendered CSS to the
+# admin (so they can audit it). Fire actually pushes an "effect_pulse"
+# message to overlay clients so the audience sees the effect play live.
+# Used by the dashboard's effect-trigger quick-action (P0-0 live console).
+@admin_bp.route("/effects/<name>/fire", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+@require_login
+def fire_effect(name):
+    """Broadcast a .dme effect to overlay clients now.
+
+    Body (optional JSON): ``{"params": {...}, "duration_ms": int, "target": str}``
+        * params      — effect parameter overrides; merged into render_effects input
+        * duration_ms — how long overlay should keep the synthetic visual
+                        (defaults to 1500 ms; clamped to [200, 8000])
+        * target      — "banner" (full-width pulse) or "next-danmu" (apply to
+                        the next audience message). Default "banner".
+
+    Sends a single ``effect_pulse`` payload via the admin WS broadcast
+    pipeline. Overlay JS (Slice 5 wiring) renders it as a synthetic visual.
+    Returns the rendered animation/keyframes so the admin UI can echo a
+    preview if it wants to.
+    """
+    if not _SAFE_EFFECT_NAME.match(name):
+        return _json_response({"error": "Invalid effect name format"}, 400)
+
+    body = request.get_json(silent=True) or {}
+    params = body.get("params") or {}
+    if not isinstance(params, dict):
+        return _json_response({"error": "params must be a JSON object"}, 400)
+
+    target = body.get("target", "banner")
+    if target not in ("banner", "next-danmu"):
+        return _json_response({"error": "target must be 'banner' or 'next-danmu'"}, 400)
+
+    try:
+        duration_ms = int(body.get("duration_ms", 1500))
+    except (TypeError, ValueError):
+        return _json_response({"error": "duration_ms must be an integer"}, 400)
+    duration_ms = max(200, min(8000, duration_ms))
+
+    from ...services import messaging
+    from ...services.effects import get_effect, render_effects
+
+    if get_effect(name) is None:
+        return _json_response({"error": f"Effect '{name}' not found"}, 404)
+
+    rendered = render_effects([{"name": name, "params": params}])
+    if rendered is None:
+        return _json_response({"error": "Effect render failed"}, 500)
+
+    payload = {
+        "type": "effect_pulse",
+        "name": name,
+        "target": target,
+        "duration_ms": duration_ms,
+        "animation": rendered.get("animation"),
+        "keyframes": rendered.get("keyframes"),
+        "styleId": rendered.get("styleId"),
+    }
+
+    try:
+        # forward_to_ws_server skips its broadcast-gate logic for non-danmu
+        # payloads (no "text" key), so this hits overlay even in STANDBY.
+        messaging.forward_to_ws_server(payload)
+    except Exception as exc:
+        current_app.logger.warning(
+            "effect_pulse overlay forward failed: %s", sanitize_log_string(str(exc))
+        )
+
+    current_app.logger.info(
+        "Effect fired: %s (target=%s duration=%dms)",
+        sanitize_log_string(name),
+        sanitize_log_string(target),
+        duration_ms,
+    )
+    try:
+        from ...services import audit_log
+
+        audit_log.append(
+            "effects",
+            "fired",
+            actor="admin",
+            meta={"name": name, "target": target, "duration_ms": duration_ms},
+        )
+    except Exception:
+        pass
+
+    return _json_response({"fired": True, "payload": payload})

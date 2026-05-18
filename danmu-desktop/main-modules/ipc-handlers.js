@@ -4,7 +4,8 @@ const { BrowserWindow } = require("electron");
 const net = require("net");
 const path = require("path");
 const { sanitizeLog } = require("../shared/utils");
-const { setupChildWindow } = require("./window-manager");
+const { setupChildWindow, pickOverlayDisplay } = require("./window-manager");
+const trustedWssHosts = require("./trusted-wss-hosts");
 
 /**
  * Returns true if the IPC event sender is the main window's webContents.
@@ -70,6 +71,7 @@ function isValidIpAddress(ip) {
 }
 
 let _ipcRegistered = false;
+let _preferredOverlayDisplayId = null;
 
 /**
  * Registers all ipcMain handlers for the application.
@@ -82,6 +84,30 @@ function setupIpcHandlers(getMainWindow, childWindows) {
     return;
   }
   _ipcRegistered = true;
+  // Clear danmu on every overlay window without disconnecting WS.
+  // The overlay-side child-ws-script registers a listener that drops
+  // currently-rendering elements when this fires.
+  ipcMain.on("overlay-clear", (event) => {
+    const mainWindow = getMainWindow();
+    if (!isFromMainWindow(event, mainWindow)) {
+      console.warn("[Main] overlay-clear: rejected IPC from untrusted sender");
+      return;
+    }
+    childWindows.forEach((win) => {
+      if (win && !win.isDestroyed()) {
+        try {
+          win.webContents.send("overlay-clear");
+        } catch (err) {
+          console.warn(
+            "[Main] overlay-clear send failed:",
+            sanitizeLog(err && err.message ? err.message : String(err))
+          );
+        }
+      }
+    });
+    console.log(`[Main] overlay-clear dispatched to ${childWindows.length} child windows`);
+  });
+
   // Close all child windows — must originate from the main window
   ipcMain.on("closeChildWindows", (event) => {
     const mainWindow = getMainWindow();
@@ -95,12 +121,30 @@ function setupIpcHandlers(getMainWindow, childWindows) {
       }
     });
     childWindows.length = 0;
+    // Revoke self-signed cert exceptions when overlay stops. Without
+    // this the trusted host:port stays in the registry for the rest of
+    // the app lifetime, allowing self-signed acceptance for endpoints
+    // the user is no longer connected to.
+    trustedWssHosts.clear();
     console.log("[Main] All child windows destroyed on closeChildWindows event.");
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send("overlay-connection-status", {
         status: "stopped",
       });
     }
+  });
+
+  // Persist preferred overlay display ID for single-display mode.
+  ipcMain.on("set-overlay-display-id", (event, displayId) => {
+    const mainWindow = getMainWindow();
+    if (!isFromMainWindow(event, mainWindow)) {
+      console.warn("[Main] set-overlay-display-id: rejected IPC from untrusted sender");
+      return;
+    }
+    const normalized = Number(displayId);
+    if (!Number.isInteger(normalized)) return;
+    _preferredOverlayDisplayId = normalized;
+    console.log(`[Main] Preferred overlay display set to ID ${sanitizeLog(normalized)}`);
   });
 
   // Forward connection status from child windows to main window
@@ -352,6 +396,127 @@ function setupIpcHandlers(getMainWindow, childWindows) {
     });
   });
 
+  // One-shot WSS handshake validation for the conn page's ⚐ 測試 button.
+  // Spawns a hidden BrowserWindow whose WebSocket inherits the app's
+  // `certificate-error` trust check via `trustedWssHosts`. The host:port is
+  // added to the trust set for the duration of the test; if the test was
+  // negative AND the host wasn't already trusted, we revert so the set
+  // stays scoped to the currently-active configuration.
+  //
+  // Granular error vocabulary documented for the UI's chip:
+  //   timeout / unauthorized / connection-refused / dns-failure /
+  //   tls-error / unknown / invalid-input
+  // The browser WebSocket API masks most network errors; for v1 the
+  // handler distinguishes timeout and `unauthorized` (close 1008) and
+  // pattern-matches error.message for the rest. Future hardening: switch
+  // to Electron's net module for direct ECONNREFUSED / ENOTFOUND / CERT_*
+  // signals.
+  ipcMain.handle("conn:test", async (event, payload) => {
+    const mainWindow = getMainWindow();
+    if (!isFromMainWindow(event, mainWindow)) {
+      console.warn("[Main] conn:test: rejected IPC from untrusted sender");
+      return { ok: false, error: "invalid-input" };
+    }
+    const host = payload && typeof payload.host === "string" ? payload.host.trim() : "";
+    const portNum = Number(payload && payload.port);
+    if (!host || !Number.isInteger(portNum) || portNum < 1 || portNum > 65535) {
+      return { ok: false, error: "invalid-input" };
+    }
+    const token = payload && typeof payload.token === "string" ? payload.token : "";
+
+    const trustedBefore = trustedWssHosts.has(host, portNum);
+    if (!trustedBefore) trustedWssHosts.add(host, portNum);
+
+    const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : "";
+    const url = `wss://${host}:${portNum}/ws${tokenQuery}`;
+    const testWindow = new BrowserWindow({
+      show: false,
+      width: 100,
+      height: 100,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        webSecurity: true,
+        allowRunningInsecureContent: false,
+        experimentalFeatures: false,
+      },
+    });
+
+    const TIMEOUT_MS = 5000;
+    const result = await new Promise((resolve) => {
+      let settled = false;
+      const finish = (val) => {
+        if (settled) return;
+        settled = true;
+        resolve(val);
+      };
+      const timeoutId = setTimeout(() => finish({ ok: false, error: "timeout" }), TIMEOUT_MS);
+
+      testWindow
+        .loadURL("about:blank")
+        .then(() =>
+          testWindow.webContents.executeJavaScript(
+            `new Promise((resolveJs) => {
+              const start = Date.now();
+              let done = false;
+              const ws = new WebSocket(${JSON.stringify(url)});
+              ws.onopen = () => {
+                if (done) return;
+                done = true;
+                const latencyMs = Date.now() - start;
+                try { ws.close(1000); } catch (_) {}
+                resolveJs({ ok: true, latencyMs });
+              };
+              ws.onerror = () => {
+                // The browser API gives us no useful detail here; let
+                // onclose handle the actual close code mapping.
+              };
+              ws.onclose = (e) => {
+                if (done) return;
+                done = true;
+                resolveJs({ ok: false, error: 'wsclose', closeCode: e.code });
+              };
+            })`,
+            true
+          )
+        )
+        .then((jsResult) => {
+          clearTimeout(timeoutId);
+          if (!jsResult || typeof jsResult !== "object") {
+            return finish({ ok: false, error: "unknown" });
+          }
+          if (jsResult.ok) {
+            return finish({ ok: true, latencyMs: Number(jsResult.latencyMs) || 0 });
+          }
+          const closeCode = Number(jsResult.closeCode);
+          if (closeCode === 1008) return finish({ ok: false, error: "unauthorized" });
+          // close codes 1006 / 1015 (TLS handshake) / 1011 etc. all fall
+          // through. Browser WS doesn't expose ECONNREFUSED / ENOTFOUND.
+          return finish({ ok: false, error: "unknown" });
+        })
+        .catch((err) => {
+          clearTimeout(timeoutId);
+          const msg = err && err.message ? String(err.message) : "";
+          // Pattern-match in case Electron surfaces lower-level network
+          // errors through executeJavaScript rejection. Best-effort.
+          if (msg.includes("ECONNREFUSED")) return finish({ ok: false, error: "connection-refused" });
+          if (msg.includes("ENOTFOUND")) return finish({ ok: false, error: "dns-failure" });
+          if (msg.includes("CERT_") || msg.includes("ERR_CERT")) {
+            return finish({ ok: false, error: "tls-error" });
+          }
+          return finish({ ok: false, error: "unknown" });
+        });
+    });
+
+    if (!testWindow.isDestroyed()) testWindow.destroy();
+    if (!result.ok && !trustedBefore) {
+      // Test was negative for a host we hadn't previously trusted —
+      // pull it back out so the set doesn't accumulate stale trust.
+      trustedWssHosts.remove(host, portNum);
+    }
+    return result;
+  });
+
   // Create child overlay windows — restricted to main window
   ipcMain.on(
     "createChild",
@@ -387,6 +552,16 @@ function setupIpcHandlers(getMainWindow, childWindows) {
           port
         )}, DisplayIndex=${sanitizeLog(displayIndex)}, SyncMultiDisplay=${enableSyncMultiDisplay}, HasWSToken=${authToken ? "yes" : "no"}`
       );
+
+      // Self-signed cert pre-authorisation: v5.0.0+ unified WSS-only,
+      // every connection records the configured host so
+      // app.on('certificate-error') in main.js will accept the cert for
+      // that host only. Clear first so reconfigured connections drop
+      // the previous endpoint — the trust list stays scoped to the
+      // currently-active configuration, never the union of every host
+      // ever connected to.
+      trustedWssHosts.clear();
+      trustedWssHosts.add(normalizedIp, portNum);
 
       // Clear existing child windows (copy array to avoid splice-during-iteration)
       [...childWindows].forEach((win) => {
@@ -440,18 +615,18 @@ function setupIpcHandlers(getMainWindow, childWindows) {
         );
       } else {
         console.log("[Main] Sync multi-display DISABLED. Creating window for selected display.");
-        if (displayIndex < 0 || displayIndex >= displays.length) {
-          console.error(
-            "[Main] Invalid display index:",
-            sanitizeLog(displayIndex)
-          );
+        const primary = screen.getPrimaryDisplay();
+        const selectedDisplay = pickOverlayDisplay(displays, {
+          preferredDisplayId: _preferredOverlayDisplayId,
+          preferredIndex: Number.isInteger(displayIndex) ? displayIndex : null,
+          primaryDisplayId: primary && primary.id,
+        });
+        if (!selectedDisplay) {
+          console.error("[Main] Unable to resolve display target");
           return;
         }
-        const selectedDisplay = displays[displayIndex];
         console.log(
-          `[Main] Creating child window for selected display ${sanitizeLog(
-            displayIndex
-          )} (ID: ${sanitizeLog(selectedDisplay.id)}).`
+          `[Main] Creating child window for selected display (ID: ${sanitizeLog(selectedDisplay.id)}).`
         );
         const newChild = new BrowserWindow(childWindowOptions);
         setupChildWindow(

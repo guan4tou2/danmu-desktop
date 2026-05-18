@@ -9,11 +9,14 @@
             default-src 'self';
             script-src 'self';
             style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-            font-src https://fonts.gstatic.com data:;
+            font-src 'self' https://fonts.gstatic.com data:;
             img-src 'self' https: http://127.0.0.1:* http://localhost:* data:;
             connect-src ws: wss:;
           "
         />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;600&display=swap">
         <link href="./child.css" rel="stylesheet">
         <link href="./hud.css" rel="stylesheet">
         <title></title>
@@ -23,7 +26,62 @@
         <!-- Danmu in-flight counter (bottom-right corner) -->
         <div id="danmu-counter" class="hud-label is-accent" aria-live="polite" aria-label="Active danmu count"></div>
 
+        <!-- Overlay Idle · Hero Lockup — prototype hero-scenes.jsx:86 OverlayIdle.
+             Hidden by default. Invoked manually via tray / window.API.toggleOverlayIdle. -->
+        <div id="overlay-idle" aria-hidden="true">
+          <div class="overlay-idle-backdrop" aria-hidden="true"></div>
+          <div class="overlay-idle-inner">
+            <h1 class="overlay-idle-hero">Danmu Fire</h1>
+            <p class="overlay-idle-subtitle">掃描 QR code 或打開 danmu.im/42 — 開始送彈幕</p>
+            <div class="overlay-idle-chip">
+              <span class="overlay-idle-chip-dot" aria-hidden="true"></span>
+              <span class="overlay-idle-chip-label">OVERLAY READY</span>
+              <span class="overlay-idle-chip-suffix">· 等待中</span>
+            </div>
+            <div class="overlay-idle-qr" aria-hidden="true">
+              <svg viewBox="0 0 21 21" width="108" height="108">
+                <rect x="0" y="0" width="7" height="7" fill="#fff"/>
+                <rect x="0" y="0" width="7" height="1" fill="#000"/>
+                <rect x="0" y="6" width="7" height="1" fill="#000"/>
+                <rect x="0" y="0" width="1" height="7" fill="#000"/>
+                <rect x="6" y="0" width="1" height="7" fill="#000"/>
+                <rect x="2" y="2" width="3" height="3" fill="#000"/>
+                <rect x="14" y="0" width="7" height="1" fill="#000"/>
+                <rect x="14" y="6" width="7" height="1" fill="#000"/>
+                <rect x="14" y="0" width="1" height="7" fill="#000"/>
+                <rect x="20" y="0" width="1" height="7" fill="#000"/>
+                <rect x="16" y="2" width="3" height="3" fill="#000"/>
+                <rect x="0" y="14" width="7" height="1" fill="#000"/>
+                <rect x="0" y="20" width="7" height="1" fill="#000"/>
+                <rect x="0" y="14" width="1" height="7" fill="#000"/>
+                <rect x="6" y="14" width="1" height="7" fill="#000"/>
+                <rect x="2" y="16" width="3" height="3" fill="#000"/>
+                <rect x="8" y="2" width="1" height="1" fill="#000"/>
+                <rect x="10" y="4" width="1" height="1" fill="#000"/>
+                <rect x="12" y="3" width="1" height="1" fill="#000"/>
+                <rect x="9" y="8" width="1" height="1" fill="#000"/>
+                <rect x="11" y="9" width="1" height="1" fill="#000"/>
+                <rect x="14" y="9" width="1" height="1" fill="#000"/>
+                <rect x="8" y="11" width="1" height="1" fill="#000"/>
+                <rect x="16" y="11" width="1" height="1" fill="#000"/>
+                <rect x="4" y="9" width="1" height="1" fill="#000"/>
+                <rect x="9" y="14" width="1" height="1" fill="#000"/>
+                <rect x="11" y="16" width="1" height="1" fill="#000"/>
+                <rect x="13" y="18" width="1" height="1" fill="#000"/>
+                <rect x="15" y="15" width="1" height="1" fill="#000"/>
+                <rect x="17" y="17" width="1" height="1" fill="#000"/>
+                <rect x="19" y="13" width="1" height="1" fill="#000"/>
+                <rect x="10" y="12" width="1" height="1" fill="#000"/>
+                <rect x="14" y="13" width="1" height="1" fill="#000"/>
+                <rect x="18" y="9" width="1" height="1" fill="#000"/>
+              </svg>
+            </div>
+            <div class="overlay-idle-url">DANMU.IM/42</div>
+          </div>
+        </div>
+
         <script src="./dist/renderer.bundle.js"></script>
+        <script src="./overlay-idle.js"></script>
     </body>
 
 </html>

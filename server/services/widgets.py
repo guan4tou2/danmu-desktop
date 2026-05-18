@@ -8,6 +8,7 @@ alongside danmu. Widgets are broadcast to overlay clients via the WS queue.
 import logging
 import re
 import threading
+import time
 import uuid
 from typing import Dict, List, Optional
 
@@ -63,6 +64,7 @@ def create_widget(widget_type: str, config: dict) -> dict:
         "type": widget_type,
         "position": position,
         "visible": True,
+        "created_at": time.time(),
         "config": _validate_config(widget_type, config),
     }
 

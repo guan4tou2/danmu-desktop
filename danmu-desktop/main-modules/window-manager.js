@@ -5,6 +5,36 @@ const { sanitizeLog } = require("../shared/utils");
 const { getChildWsScript } = require("./child-ws-script");
 
 /**
+ * Pick a display with a stable fallback chain:
+ * preferred ID -> preferred index -> primary -> first display.
+ */
+function pickOverlayDisplay(displays, options = {}) {
+  if (!Array.isArray(displays) || displays.length === 0) return null;
+  const preferredDisplayId = Number.isInteger(options.preferredDisplayId)
+    ? options.preferredDisplayId
+    : null;
+  const preferredIndex = Number.isInteger(options.preferredIndex)
+    ? options.preferredIndex
+    : null;
+  const primaryDisplayId = Number.isInteger(options.primaryDisplayId)
+    ? options.primaryDisplayId
+    : null;
+
+  if (preferredDisplayId !== null) {
+    const byId = displays.find((d) => d && d.id === preferredDisplayId);
+    if (byId) return byId;
+  }
+  if (preferredIndex !== null && preferredIndex >= 0 && preferredIndex < displays.length) {
+    return displays[preferredIndex];
+  }
+  if (primaryDisplayId !== null) {
+    const primary = displays.find((d) => d && d.id === primaryDisplayId);
+    if (primary) return primary;
+  }
+  return displays[0];
+}
+
+/**
  * Blocks renderer-initiated navigation to any URL that isn't the bundled file://
  * location and forbids opening new Electron windows. Prevents a compromised
  * renderer (e.g. via a dependency XSS) from loading an attacker page that would
@@ -45,12 +75,22 @@ function createWindow(childWindows, onKonamiTrigger) {
   let lastKeyTime = Date.now();
   let isKeyDown = false;
 
+  // v5.0.0: titleBarStyle "hidden" only on macOS. macOS keeps painting
+  // native traffic lights (close/min/max) floating top-left over the
+  // hidden title bar region — no duplication with the HTML titlebar.
+  // On Windows/Linux this same option would HIDE all window controls
+  // entirely (no close button), so we only apply it on darwin and let
+  // Windows/Linux keep their default frame chrome with native controls.
+  const isMac = process.platform === "darwin";
+  const titleBarOpts = isMac ? { titleBarStyle: "hidden" } : {};
+
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 900,
     minHeight: 700,
     resizable: true,
     autoHideMenuBar: true,
+    ...titleBarOpts,
     // macOS Space 修復：不使用 show:false + ready-to-show 模式
     // macOS 在建立隱藏視窗時會把它分配到任意 Space，
     // 之後 show() 時視窗就出現在錯誤的桌面。
@@ -248,7 +288,7 @@ function createAboutWindow(mainWindow) {
     height: 320,
     resizable: false,
     autoHideMenuBar: true,
-    title: "About Danmu Desktop",
+    title: "About Danmu Fire",
     parent: mainWindow && !mainWindow.isDestroyed() ? mainWindow : null,
     modal: true,
     webPreferences: {
@@ -263,4 +303,10 @@ function createAboutWindow(mainWindow) {
   return aboutWindow;
 }
 
-module.exports = { createWindow, setupChildWindow, createAboutWindow, hardenWebContents };
+module.exports = {
+  createWindow,
+  setupChildWindow,
+  createAboutWindow,
+  pickOverlayDisplay,
+  hardenWebContents,
+};

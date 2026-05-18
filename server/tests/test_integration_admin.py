@@ -85,10 +85,10 @@ def test_get_blacklist_reflects_add(client):
 def test_admin_set_speed_default_then_fire_uses_new_speed(client):
     """Admin 更改 Speed 預設值 + 關閉自訂，fire 應使用新設定"""
     token = _login(client)
-    # 更新 Speed 預設值為 7
+    # 更新 Speed 預設值為 2.0
     client.post(
         "/admin/update",
-        json={"type": "Speed", "index": 3, "value": 7},
+        json={"type": "Speed", "index": 3, "value": 2.0},
         headers={"X-CSRF-Token": token},
     )
     # 禁止使用者自訂 Speed
@@ -102,7 +102,7 @@ def test_admin_set_speed_default_then_fire_uses_new_speed(client):
     assert resp.status_code == 200
     msgs = ws_queue.dequeue_all()
     danmu = next(m for m in msgs if "speed" in m)
-    assert danmu["speed"] == 7  # 使用者傳入的 1 被管理員設定覆寫
+    assert danmu["speed"] == 2.0  # 使用者傳入的 1.0 被管理員設定（2.0）覆寫
 
 
 def test_admin_toggle_effects_off_suppresses_effects(client):
@@ -153,13 +153,13 @@ def test_get_settings_reflects_admin_update(client):
     token = _login(client)
     client.post(
         "/admin/update",
-        json={"type": "Speed", "index": 3, "value": 8},
+        json={"type": "Speed", "index": 3, "value": 2.0},
         headers={"X-CSRF-Token": token},
     )
 
     resp = client.get("/get_settings")
     assert resp.status_code == 200
-    assert resp.get_json()["Speed"][3] == 8
+    assert resp.get_json()["Speed"][3] == 2.0
 
 
 def test_get_settings_reflects_admin_toggle(client):
@@ -179,16 +179,16 @@ def test_get_settings_reflects_admin_toggle(client):
 
 def test_sequential_fires_use_updated_settings(client):
     """先 fire 使用舊設定，Admin 更改後 fire 應使用新設定"""
-    # 第一次 fire，使用預設 Speed（=4）
+    # 第一次 fire，使用預設 Speed（=1.0）
     r1 = client.post("/fire", json={"text": "first"})
     assert r1.status_code == 200
     speed_before = ws_queue.dequeue_all()[0]["speed"]
 
-    # Admin 改 Speed 預設為 9 且強制使用
+    # Admin 改 Speed 預設為 2.5 且強制使用
     token = _login(client)
     client.post(
         "/admin/update",
-        json={"type": "Speed", "index": 3, "value": 9},
+        json={"type": "Speed", "index": 3, "value": 2.5},
         headers={"X-CSRF-Token": token},
     )
     client.post(
@@ -197,13 +197,13 @@ def test_sequential_fires_use_updated_settings(client):
     # 清除 admin 操作產生的 settings_changed 通知
     ws_queue.dequeue_all()
 
-    # 第二次 fire，使用者想要 speed=1 但被管理員鎖定
-    r2 = client.post("/fire", json={"text": "second", "speed": 1})
+    # 第二次 fire，使用者想要 speed=1.0 但被管理員鎖定
+    r2 = client.post("/fire", json={"text": "second", "speed": 1.0})
     assert r2.status_code == 200
     msgs2 = ws_queue.dequeue_all()
     speed_after = next(m for m in msgs2 if "speed" in m)["speed"]
 
-    assert speed_after == 9
+    assert speed_after == 2.5
     assert speed_after != speed_before
 
 
