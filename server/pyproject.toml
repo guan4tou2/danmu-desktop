@@ -27,6 +27,7 @@ dependencies = [
     "requests>=2.33.1",
     "psutil>=5.9.0",
     "qrcode>=8.0",
+    "fonttools>=4.63.0",
 ]
 
 [project.optional-dependencies]
