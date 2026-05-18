@@ -1,0 +1,14 @@
+{% extends "errors/_layout.html" %}
+{% set tone = "info" %}
+{% set icon = "?" %}
+{% set title = "找不到頁面" %}
+{% set subtitle = "HTTP 404 · NOT FOUND" %}
+{% set desc = "請求的網址不存在，可能已被移動或刪除。" %}
+{% set secondary = "← 返回首頁" %}
+{% set secondary_href = "/admin/" if _is_admin else "/" %}
+
+{% block extra %}
+  <div class="admin-err__trace admin-err__trace--inline">
+    <span class="admin-err__trace-status admin-err__trace-status--info">NOT FOUND</span> · {{ request.path }}
+  </div>
+{% endblock %}

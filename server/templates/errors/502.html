@@ -1,0 +1,18 @@
+{% extends "errors/_layout.html" %}
+{% set tone = "amber" %}
+{% set icon = "⟳" %}
+{% set title = "重新連線中" %}
+{% set subtitle = "502 BAD GATEWAY · NETWORK UNREACHABLE" %}
+{% set desc = "與伺服器的連線已中斷。正在嘗試重新連線，請確認網路狀態。" %}
+{% set retry_label = "立即重試" %}
+{% set retry_countdown = "下次重試 · 5s" %}
+{% set retry_countdown_sec = 5 %}
+{% set secondary = "← 返回首頁" %}
+{% set secondary_href = "/admin/" if _is_admin else "/" %}
+
+{% block extra %}
+  <div class="admin-err__reconnect-pulse">
+    <span class="admin-err__reconnect-dot"></span>
+    RECONNECTING · ATTEMPT {{ attempt|default(1) }} / {{ max_attempts|default(10) }}
+  </div>
+{% endblock %}

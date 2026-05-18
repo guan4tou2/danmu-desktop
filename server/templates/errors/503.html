@@ -1,0 +1,41 @@
+{% extends "errors/_layout.html" %}
+{% set tone = "amber" %}
+{% set icon = "⏳" %}
+{% set title = "伺服器忙碌中" %}
+{% set subtitle = "HTTP 503 · SERVICE UNAVAILABLE" %}
+{% set desc = "目前連線人數過多，伺服器正在處理排隊請求。頁面將自動重新載入。" %}
+{% set retry_label = "重新載入" %}
+{% set retry_countdown = (retry_after|default(8)|string) + "s" %}
+{% set retry_countdown_sec = retry_after|default(8) %}
+{% set secondary = "← 返回首頁" %}
+{% set secondary_href = "/admin/" if _is_admin else "/" %}
+
+{% block extra %}
+  <div class="admin-err__progress">
+    <div class="admin-err__progress-bar"><div class="admin-err__progress-fill" data-tone="amber" data-err-progress></div></div>
+    <div class="admin-err__progress-labels">
+      <span>0s</span>
+      <span class="admin-err__progress-end">{{ retry_after|default(8) }}s</span>
+    </div>
+  </div>
+  {% if queue_position %}
+  <div class="admin-err__hint admin-err__hint--amber">
+    QUEUE POSITION · #{{ queue_position }}{% if queue_total %} / ~{{ queue_total }} concurrent{% endif %}
+  </div>
+  {% endif %}
+  <script {% if csp_nonce %}nonce="{{ csp_nonce }}"{% endif %}>
+    (function () {
+      var fill = document.querySelector("[data-err-progress]");
+      if (!fill) return;
+      var total = {{ retry_after|default(8) }};
+      var left = total;
+      fill.style.width = "0%";
+      var id = setInterval(function () {
+        left -= 0.1;
+        var pct = ((total - left) / total) * 100;
+        fill.style.width = Math.min(100, pct) + "%";
+        if (left <= 0) clearInterval(id);
+      }, 100);
+    })();
+  </script>
+{% endblock %}

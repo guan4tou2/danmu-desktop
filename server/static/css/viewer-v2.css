@@ -174,6 +174,16 @@ body.viewer-body-v2.is-dark {
           mask-image: linear-gradient(90deg, transparent 0, transparent 22%, #000 38%, #000 88%, transparent 100%);
 }
 
+/* Light theme — design v4 brief 0518-v3 #3 fix (2026-05-18).
+   Marquee chips use inline pale colors (sky-300, amber-300, lime-400 etc.)
+   tuned for dark backdrop. On white they look washed out. Apply a global
+   filter that effectively shifts pale -300/-400 shades into -600/-700
+   territory: lower brightness, bump contrast + saturate. Cheaper than
+   overriding 12 inline-style declarations with !important. */
+body.viewer-body-v2:not(.is-dark) .viewer-hero-marquee {
+  filter: brightness(0.7) saturate(1.15) contrast(1.15);
+}
+
 .viewer-mq-item {
   position: absolute;
   left: 100%;
@@ -258,6 +268,15 @@ body.viewer-body-v2.is-dark {
   filter:
     drop-shadow(0 10px 15px rgba(0, 0, 0, 0.45))
     drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+}
+
+/* Light theme — design v4 brief 0518-v3 #3 fix (2026-05-18).
+   Dark theme's heavy black drop-shadow makes the sky-300 cyan text look
+   muddy on white. Swap to sky-600 + a subtle shadow that lifts the text
+   without competing with the page chrome. WCAG: sky-600 on slate-50 = 4.6:1 ✓ AA. */
+body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
+  color: #0284c7;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
 }
 
 @media (max-width: 599px) {
@@ -793,17 +812,89 @@ body.viewer-body-v2.is-dark {
    joins matching animations into a comma-separated list and applies
    to .viewer-preview-text. The marquee transform on the parent
    .viewer-preview-track is independent and doesn't conflict. */
-@keyframes vp-blink   { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-@keyframes vp-shake   { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
-@keyframes vp-bounce  { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+/* 2026-05-17 design v3-r10: effect keyframes read CSS custom
+   properties on .viewer-preview-text so the parameter sliders on
+   each cyan card retune the animation live. Defaults match the
+   spec values in main.js EFFECT_PARAM_SPEC. */
+@keyframes vp-blink   { 0%, 100% { opacity: 1; } 50% { opacity: var(--vp-blink-min, 0); } }
+@keyframes vp-shake   {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(calc(var(--vp-shake-strength, 4px) * -1)); }
+  75%      { transform: translateX(var(--vp-shake-strength, 4px)); }
+}
+@keyframes vp-bounce  { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(var(--vp-bounce-height, -16px)); } }
 @keyframes vp-spin    { to { transform: rotate(360deg); } }
-@keyframes vp-rainbow { to { filter: hue-rotate(360deg); } }
-@keyframes vp-wave    { 0%, 100% { transform: skewX(0deg); } 50% { transform: skewX(8deg); } }
-@keyframes vp-zoom    { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+@keyframes vp-rainbow { to { filter: hue-rotate(360deg) saturate(var(--vp-rainbow-sat, 0.9)); } }
+@keyframes vp-wave    {
+  0%, 100% { transform: translateY(0); }
+  25%      { transform: translateY(calc(var(--vp-wave-amplitude, 8px) * -1)); }
+  75%      { transform: translateY(var(--vp-wave-amplitude, 8px)); }
+}
+@keyframes vp-zoom    { 0%, 100% { transform: scale(1); } 50% { transform: scale(var(--vp-zoom-max, 1.5)); } }
 
 @media (prefers-reduced-motion: reduce) {
   /* All decorative preview effects respect the system motion preference. */
   .viewer-preview-text { animation: none !important; }
+}
+
+/* 2026-05-17 design v3-r10: per-effect parameter cards. Sits under the
+   8 effect pill buttons; each selected effect renders one cyan-tinted
+   card with a 2-col slider grid (1-col when only one param). */
+.viewer-effect-params {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+.viewer-effect-params[hidden] { display: none; }
+
+.viewer-effect-params-card {
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(56, 189, 248, 0.20); /* accent + 0x33 alpha */
+  background: rgba(56, 189, 248, 0.05);       /* hudTokens.cyanSoft */
+}
+
+.viewer-effect-params-card__title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--viewer-accent, #38bdf8);
+  margin-bottom: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 1px;
+}
+
+.viewer-effect-params-card__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.viewer-effect-params-card__grid.is-single {
+  grid-template-columns: 1fr;
+}
+
+.viewer-effect-params-card__row-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.viewer-effect-params-card__label {
+  font-size: 10px;
+  color: var(--viewer-text-dim, rgba(148, 163, 184, 0.85));
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.5px;
+}
+
+.viewer-effect-params-card__value {
+  font-size: 10px;
+  color: var(--viewer-accent, #38bdf8);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.viewer-effect-params-card__slider {
+  width: 100%;
+  accent-color: var(--viewer-accent, #38bdf8);
 }
 
 /* Field — 9px mono tracked uppercase label above control. */
@@ -1219,6 +1310,51 @@ body.viewer-body-v2.is-dark {
   background: var(--color-bg-elevated); /* lightBg2 in light theme */
   transition: border-color 0.15s;
 }
+
+/* 2026-05-17 design v3-r10: inline send-status banner anchored above the
+   pill. Lime when sent (signals "delivered"), crimson when blocked. JS
+   toggles [hidden] + is-sent / is-blocked, then auto-clears. */
+.viewer-sendbar { position: relative; }
+.viewer-sendbar-banner {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: viewer-banner-in 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.viewer-sendbar-banner[hidden] { display: none; }
+.viewer-sendbar-banner.is-sent {
+  background: #84e100;
+  color: #001428;
+  box-shadow: 0 4px 20px rgba(132, 225, 0, 0.4);
+}
+.viewer-sendbar-banner.is-blocked {
+  background: #ff4d4f;
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(255, 77, 79, 0.4);
+}
+@keyframes viewer-banner-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .viewer-sendbar-banner { animation: none; }
+}
+
+/* Sendbar hint state colors — design v3-r10 line 478-489. JS sets
+   data-state on the hint span; CSS recolors. */
+.viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="sent"]     { color: #84e100; }
+.viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="blocked"]  { color: #ff4d4f; }
+.viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="cooldown"] { color: #fbbf24; }
 
 .viewer-sendbar-pill.is-active {
   border-color: var(--color-primary);
@@ -1755,4 +1891,429 @@ body[data-viewer-state] {
   background: #fbbf24;
   color: #111827;
   box-shadow: 0 4px 16px rgba(251, 191, 36, 0.35);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * Nickname chip + floating popover (design v4 brief 0518-4c, 2026-05-18)
+ * Replaces the bare input with a tappable chip that opens an in-place
+ * popover for editing. Source input stays in DOM (hidden) so existing
+ * fire flow / localStorage logic is untouched.
+ * ═══════════════════════════════════════════════════════════════════ */
+.viewer-nickname-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+.viewer-nickname-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.10);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary, #38bdf8);
+  cursor: pointer;
+  transition: background var(--motion-fast, 120ms) var(--ease-out, ease),
+              border-color var(--motion-fast, 120ms) var(--ease-out, ease);
+}
+.viewer-nickname-chip:hover,
+.viewer-nickname-chip[aria-expanded="true"] {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.6);
+}
+
+/* Light theme — design v4 brief 0518-v3 #3 fix (2026-05-18).
+   sky-400 chip border is too pale on white. Swap to sky-600 (-2 shade
+   for AA contrast) and bump border opacity 0.25 → 0.35 per audit. */
+body.viewer-body-v2:not(.is-dark) .viewer-nickname-chip {
+  background: rgba(2, 132, 199, 0.08);
+  border-color: rgba(2, 132, 199, 0.35);
+  color: #0284c7;
+}
+body.viewer-body-v2:not(.is-dark) .viewer-nickname-chip:hover,
+body.viewer-body-v2:not(.is-dark) .viewer-nickname-chip[aria-expanded="true"] {
+  background: rgba(2, 132, 199, 0.14);
+  border-color: rgba(2, 132, 199, 0.55);
+}
+
+.viewer-nickname-chip-text {
+  letter-spacing: 0.3px;
+}
+.viewer-nickname-chip-edit {
+  font-size: 11px;
+  opacity: 0.7;
+}
+.viewer-nickname-hint {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  color: var(--color-text-muted, #94a3b8);
+  letter-spacing: 0.3px;
+}
+
+/* Hide the source input but keep it in DOM (so fire flow + listeners work). */
+.viewer-nickname-source[hidden] { display: none !important; }
+
+/* Floating popover — anchored under the chip row */
+.viewer-nickname-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 50;
+  width: 220px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--hud-bg1, #0c1424);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.viewer-nickname-popover[hidden] { display: none; }
+.viewer-nickname-popover-arrow {
+  position: absolute;
+  top: -6px;
+  left: 24px;
+  width: 12px;
+  height: 12px;
+  background: var(--hud-bg1, #0c1424);
+  border-top: 1px solid rgba(56, 189, 248, 0.45);
+  border-left: 1px solid rgba(56, 189, 248, 0.45);
+  transform: rotate(45deg);
+}
+.viewer-nickname-popover-label {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--color-text-muted, #94a3b8);
+  margin-bottom: 6px;
+}
+.viewer-nickname-popover-input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 4px;
+  background: var(--hud-bg2, #182239);
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  color: var(--color-text-primary, #f1f5f9);
+  font-family: var(--font-ui, system-ui, sans-serif);
+  font-size: 13px;
+  outline: none;
+}
+.viewer-nickname-popover-input:focus {
+  border-color: var(--color-primary, #38bdf8);
+}
+.viewer-nickname-popover-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.viewer-nickname-popover-cancel,
+.viewer-nickname-popover-confirm {
+  flex: 1;
+  padding: 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background var(--motion-fast, 120ms) var(--ease-out, ease);
+}
+.viewer-nickname-popover-cancel {
+  background: transparent;
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  color: var(--color-text-muted, #94a3b8);
+}
+.viewer-nickname-popover-cancel:hover {
+  border-color: var(--color-text-secondary, #94a3b8);
+  color: var(--color-text-primary, #f1f5f9);
+}
+.viewer-nickname-popover-confirm {
+  border: 1px solid var(--color-primary, #38bdf8);
+  background: var(--color-primary, #38bdf8);
+  color: #000;
+  font-weight: 700;
+}
+.viewer-nickname-popover-confirm:hover {
+  background: var(--color-primary-hover, #0ea5e9);
+}
+
+/* Narrow viewer — hide the "← 點擊改名" hint, chip is self-explanatory */
+@media (max-width: 480px) {
+  .viewer-nickname-hint { display: none; }
+  .viewer-nickname-popover { width: calc(100vw - 32px); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * Mobile hamburger + settings bottom sheet
+ * (design v4 brief 0518-4a, 2026-05-18)
+ *
+ * Desktop hides the hamburger entirely — theme + lang stay system-driven
+ * with admin override per Viewer page settings. Mobile shows the
+ * hamburger in viewer-hero-utility; tapping opens a bottom sheet with
+ * theme tri-state (深色/淺色/系統) + lang quad-state (中/EN/日/한).
+ * ═══════════════════════════════════════════════════════════════════ */
+.viewer-hamburger {
+  display: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.08);
+  color: var(--color-primary, #38bdf8);
+  font-size: 16px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.viewer-hamburger:active {
+  background: rgba(56, 189, 248, 0.2);
+}
+
+/* Visible on mobile only */
+@media (max-width: 768px) {
+  .viewer-hamburger { display: inline-flex; }
+}
+
+/* Bottom sheet container */
+.viewer-mobile-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+}
+.viewer-mobile-sheet[hidden] { display: none; }
+.viewer-mobile-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity var(--motion-normal, 180ms) var(--ease-in-out, ease);
+  pointer-events: auto;
+}
+.viewer-mobile-sheet.is-open .viewer-mobile-sheet-backdrop {
+  opacity: 1;
+}
+.viewer-mobile-sheet-panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--hud-bg1, #0c1424);
+  border-top: 2px solid var(--color-primary, #38bdf8);
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.6);
+  transform: translateY(100%);
+  transition: transform var(--motion-normal, 180ms) var(--ease-out, ease);
+  pointer-events: auto;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.viewer-mobile-sheet.is-open .viewer-mobile-sheet-panel {
+  transform: translateY(0);
+}
+.viewer-mobile-sheet-grabber {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-border, rgba(255, 255, 255, 0.18));
+  margin: 8px auto 4px;
+}
+.viewer-mobile-sheet-head {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.viewer-mobile-sheet-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary, #f1f5f9);
+  flex: 1;
+}
+.viewer-mobile-sheet-close {
+  font-size: 16px;
+  color: var(--color-text-muted, #94a3b8);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.viewer-mobile-sheet-row {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-border, rgba(255, 255, 255, 0.06));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.viewer-mobile-sheet-row:last-of-type { border-bottom: 0; }
+.viewer-mobile-sheet-label {
+  font-size: 13px;
+  color: var(--color-text-primary, #f1f5f9);
+}
+.viewer-mobile-sheet-spacer { flex: 1; }
+.viewer-mobile-sheet-segment {
+  display: flex;
+  gap: 4px;
+}
+.viewer-mobile-sheet-seg {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  background: transparent;
+  color: var(--color-text-muted, #94a3b8);
+  cursor: pointer;
+  transition: all var(--motion-fast, 120ms) var(--ease-out, ease);
+}
+.viewer-mobile-sheet-seg.is-active {
+  border-color: var(--color-primary, #38bdf8);
+  background: rgba(56, 189, 248, 0.10);
+  color: var(--color-primary, #38bdf8);
+}
+.viewer-mobile-sheet-foot {
+  padding: 16px;
+  text-align: center;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 9px;
+  color: var(--color-text-muted, #94a3b8);
+}
+
+/* Desktop — bottom sheet never opens (hamburger is display:none anyway). */
+@media (min-width: 769px) {
+  .viewer-mobile-sheet { display: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * Desktop theme chip (design v4 brief 0518-v3 #1, 2026-05-18)
+ * 3-segment ☼/◐/☾ toggle in viewer-hero-utility. Hidden on mobile
+ * (replaced by hamburger bottom sheet). Reuses theme-mode storage key.
+ * ═══════════════════════════════════════════════════════════════════ */
+.viewer-theme-chip {
+  display: inline-flex;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--hud-line, rgba(15, 23, 42, 0.12));
+  flex-shrink: 0;
+}
+.viewer-theme-chip-seg {
+  padding: 5px 10px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0;
+  color: var(--color-text-secondary, #475569);
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--hud-line, rgba(15, 23, 42, 0.12));
+  cursor: pointer;
+  /* Background + color use ease-out (snap hover); transform uses spring
+     (slight overshoot when going active). 2026-05-18 motion language. */
+  transition: background var(--motion-fast, 120ms) var(--ease-out, ease),
+              color var(--motion-fast, 120ms) var(--ease-out, ease),
+              transform var(--motion-normal, 180ms) var(--ease-spring, ease);
+  min-width: 32px;
+  text-align: center;
+  transform: scale(1);
+}
+.viewer-theme-chip-seg.is-active {
+  transform: scale(1.05);
+}
+.viewer-theme-chip-seg:last-child { border-right: 0; }
+.viewer-theme-chip-seg:hover {
+  color: var(--color-text-primary, #0f172a);
+}
+.viewer-theme-chip-seg.is-active {
+  background: rgba(2, 132, 199, 0.08);
+  color: var(--color-primary, #0284c7);
+}
+/* Dark theme variant — accent color shift for slightly brighter sky-400 */
+body.viewer-body-v2.is-dark .viewer-theme-chip-seg.is-active {
+  background: rgba(56, 189, 248, 0.10);
+  color: var(--hud-cyan, #38bdf8);
+}
+body.viewer-body-v2.is-dark .viewer-theme-chip,
+body.viewer-body-v2.is-dark .viewer-theme-chip-seg {
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+/* Mobile (≤768px) — hide desktop chip; hamburger sheet covers same flow */
+@media (max-width: 768px) {
+  .viewer-theme-chip { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * Viewer poll multi-Q (design v4 brief P1 #1, 2026-05-18)
+ * Image hero · progress dots · auto-mode timer bar.
+ * Counts/percentages stay polestar-locked (admin-only).
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.viewer-poll-image {
+  width: 100%;
+  max-height: 200px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--color-bg-elevated, #f1f5f9);
+  border: 1px solid var(--hud-line, rgba(15, 23, 42, 0.12));
+}
+.viewer-poll-image[hidden] { display: none; }
+.viewer-poll-image-img {
+  width: 100%;
+  height: auto;
+  max-height: 200px;
+  object-fit: cover;  /* 16:9 fit; long images crop, short images letterbox */
+  display: block;
+}
+
+@media (max-width: 599px) {
+  .viewer-poll-image,
+  .viewer-poll-image-img {
+    max-height: 160px;
+  }
+}
+
+/* Progress dots — current cyan + wider; past dim; future neutral. */
+.viewer-poll-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+.viewer-poll-dots[hidden] { display: none; }
+.viewer-poll-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--color-bg-elevated, #1e293b);
+  transition: width var(--motion-normal, 180ms) var(--ease-out, ease),
+              background var(--motion-fast, 120ms) var(--ease-out, ease);
+}
+.viewer-poll-dot.is-past {
+  background: var(--color-text-muted, #94a3b8);
+}
+.viewer-poll-dot.is-current {
+  background: var(--color-primary, #38bdf8);
+  width: 20px;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+}
+
+/* Auto-mode timer bar — sits between options and dots. */
+.viewer-poll-timer {
+  margin-top: 14px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-bg-elevated, #1e293b);
+  overflow: hidden;
+}
+.viewer-poll-timer[hidden] { display: none; }
+.viewer-poll-timer-fill {
+  height: 100%;
+  background: var(--hud-lime, #86efac);
+  border-radius: 2px;
+  /* No CSS transition — JS rAF updates width every frame for smooth
+     countdown. transition would fight the rAF updates. */
 }
