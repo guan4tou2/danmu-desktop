@@ -230,6 +230,62 @@ def upload_plugin():
     )
 
 
+@admin_bp.route("/plugins/uninstall", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+@require_login
+def uninstall_plugin():
+    """Remove a user-uploaded plugin file (v5 Batch 11 follow-up).
+
+    Body: ``{"filename": "<basename>.py" }`` — the file to delete from
+    `server/user_plugins/`. Bundled plugins in `server/plugins/` are
+    never removable by this endpoint (returns 403). After deletion the
+    plugin manager is reloaded so the runtime drops the plugin.
+    """
+    data = request.get_json(silent=True) or {}
+    filename = (data.get("filename") or "").strip()
+    if not filename:
+        return _json_response({"error": "filename required"}, 400)
+
+    # Reject anything that looks like a path — only basenames allowed.
+    safe = secure_filename(filename)
+    if not safe or safe != filename or not safe.endswith(_PLUGIN_EXTS):
+        return _json_response({"error": "Invalid filename"}, 400)
+
+    target = _user_plugins_dir() / safe
+    # secure_filename + the equality check above already block traversal,
+    # but pin the resolved path to the user-plugins dir as a second
+    # safety net so any symlink chicanery still can't escape.
+    try:
+        resolved = target.resolve()
+        user_dir_resolved = _user_plugins_dir().resolve()
+    except OSError as e:
+        return _json_response({"error": f"Path resolution failed: {e}"}, 500)
+    if not str(resolved).startswith(str(user_dir_resolved) + "/") \
+            and resolved != user_dir_resolved / safe:
+        return _json_response({"error": "Forbidden path"}, 403)
+
+    if not target.exists():
+        return _json_response({"error": "File not found"}, 404)
+
+    try:
+        target.unlink()
+    except OSError as e:
+        return _json_response({"error": f"Delete failed: {e}"}, 500)
+
+    from ...services.plugin_manager import plugin_manager
+
+    plugin_manager.reload()
+
+    audit_log.append(
+        "plugins",
+        "uninstall",
+        actor="admin",
+        meta={"filename": safe},
+    )
+    return _json_response({"removed": safe})
+
+
 @admin_bp.route("/plugins/list", methods=["GET"])
 @require_login
 def list_plugins():

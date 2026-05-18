@@ -295,7 +295,7 @@
     }
 
     function renderPlugin(plugin) {
-      const { name, version, description, priority, enabled } = plugin;
+      const { name, version, description, priority, enabled, is_user: isUser, file: filename } = plugin;
       const toggleId = `plugin-toggle-${name}`;
       const priorityCls = priorityPillClass(priority);
       const priorityLabel = priorityLabelFor(priority);
@@ -303,6 +303,16 @@
 
       // v5 batch10-plugins.jsx row spec: dot / name+desc / version mono /
       // PRI · LABEL pill (3-color) / LANG pill / sliding toggle switch.
+      // User-uploaded plugins get an extra ⊘ uninstall icon — bundled
+      // examples stay read-only (no removal button).
+      const uninstallBtn = isUser && filename
+        ? `<button type="button" class="plugin-uninstall admin-plugins-uninstall"
+            data-plugin-filename="${escapeHtml(filename)}"
+            data-plugin-name="${escapeHtml(name)}"
+            title="移除此使用者上傳的插件"
+            aria-label="Uninstall plugin ${escapeHtml(name)}">⊘</button>`
+        : "";
+
       return `
         <div class="admin-plugins-row" data-plugin="${escapeHtml(name)}">
           <span class="admin-plugins-dot ${enabled ? "is-running" : "is-paused"}" aria-hidden="true"></span>
@@ -314,6 +324,7 @@
           <span class="admin-plugins-pill ${priorityCls}">${priority != null ? priority : "—"}${priorityLabel ? " · " + priorityLabel : ""}</span>
           <span class="admin-plugins-pill is-lang is-${lang.toLowerCase()}">${lang}</span>
           <div class="admin-plugins-toggle-cell">
+            ${uninstallBtn}
             <label class="admin-plugins-switch" for="${toggleId}">
               <input type="checkbox" id="${toggleId}" role="switch"
                 aria-checked="${!!enabled}" aria-label="Toggle plugin ${escapeHtml(name)}"
@@ -327,6 +338,26 @@
           </div>
         </div>
       `;
+    }
+
+    async function uninstallPlugin(name, filename) {
+      if (!confirm(`確定移除插件「${name}」？\n\n檔案 server/user_plugins/${filename} 會被刪除，無法復原。`)) return;
+      try {
+        const res = await csrfFetch("/admin/plugins/uninstall", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          showToast(data.error || `移除失敗 (HTTP ${res.status})`, false);
+          return;
+        }
+        showToast(`${name} 已移除`, true);
+        await fetchPlugins();
+      } catch (e) {
+        showToast(`網路錯誤：${e.message || ""}`, false);
+      }
     }
 
     function detectLang(plugin) {
@@ -358,6 +389,12 @@
           const pluginName = this.dataset.pluginName;
           const enable = this.checked;
           await togglePlugin(pluginName, enable, this);
+        });
+      });
+      // v5 Batch 11 follow-up — uninstall button on user-uploaded rows.
+      container.querySelectorAll(".plugin-uninstall").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          uninstallPlugin(this.dataset.pluginName, this.dataset.pluginFilename);
         });
       });
     }

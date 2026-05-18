@@ -14761,3 +14761,35 @@ body.admin-pu-open { overflow: hidden; }
   color: var(--admin-text-dim);
   margin-top: 12px;
 }
+
+/* Plugin uninstall button — v5 Batch 11 follow-up (2026-05-19). Only
+ * rendered on user-uploaded plugin rows (is_user=true). Sits inside the
+ * .admin-plugins-toggle-cell next to the on/off switch. */
+.admin-plugins-toggle-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.admin-plugins-uninstall {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid var(--admin-line);
+  background: transparent;
+  color: var(--admin-text-dim);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-plugins-uninstall:hover {
+  border-color: rgba(248, 113, 113, 0.55);
+  background: rgba(248, 113, 113, 0.10);
+  color: var(--hud-crimson, #f87171);
+}
