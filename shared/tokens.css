@@ -60,6 +60,14 @@
   --color-text-muted: #64748b;       /* slate-500 — HUD textMute */
   --color-text-bright: #e2e8f0;
 
+  /* Legacy aliases — map old names used in style.css to canonical tokens */
+  --color-text-strong: var(--color-text-bright);
+  --color-text-dim: var(--color-text-secondary);
+  --color-bg: #0a0e1a;
+  --color-surface: #0c1424;
+  --color-panel: var(--color-bg-base);
+  --color-border-soft: var(--hud-line);
+
   /* State colours */
   --color-connected: #14b8a6;
   --color-connected-dark: #0d9488;
@@ -92,8 +100,9 @@
   --font-ui: "Noto Sans", "Noto Sans TC", "Noto Sans JP", "Noto Sans KR", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
-  /* Backwards compat: consumers that still read --font-family */
+  /* Backwards compat: consumers that still read --font-family / --font-sans */
   --font-family: var(--font-ui);
+  --font-sans: var(--font-ui);
 
   /* Type scale — 4px-rounded modular scale (base 16px) */
   --text-2xs: 0.75rem;   /* 12px — kicker / caption */
@@ -230,6 +239,14 @@
   --hover-tint:          rgba(15, 23, 42, 0.05);
   --hover-tint-strong:   rgba(15, 23, 42, 0.09);
 
+  /* Legacy alias overrides */
+  --color-text-strong: var(--color-text-bright);
+  --color-text-dim: var(--color-text-secondary);
+  --color-bg: var(--color-bg-deep);
+  --color-surface: var(--color-bg-elevated);
+  --color-panel: var(--color-bg-base);
+  --color-border-soft: var(--hud-line);
+
   /* HUD alias overrides */
   --hud-bg0:         #f8fafc;
   --hud-bg1:         #ffffff;
@@ -287,5 +304,11 @@
     --hud-amber:       var(--color-warning);
     --hud-lime:        var(--color-success);
     --hud-crimson:     var(--color-danger);
+    --color-text-strong: var(--color-text-bright);
+    --color-text-dim: var(--color-text-secondary);
+    --color-bg: var(--color-bg-deep);
+    --color-surface: var(--color-bg-elevated);
+    --color-panel: var(--color-bg-base);
+    --color-border-soft: var(--hud-line);
   }
 }
