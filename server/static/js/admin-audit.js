@@ -189,6 +189,26 @@
     return `<span class="admin-audit-diff"><span class="admin-audit-diff-a">${aStr}</span></span>`;
   }
 
+  // v5 batch10-yellow.jsx AuditLogPage timeline row format (2026-05-19).
+  // Severity is derived from action keyword:
+  //   block / revoke / delete / ban     → danger (crimson)
+  //   warn / fail / timeout / error     → warn (amber)
+  //   anything else                     → info (mute)
+  // Left column: timestamp + severity dot (vertical stack).
+  // Right column: actor chip + action + → target meta + detail row.
+  function _severityOf(e) {
+    const a = String(e.action || e.kind || "").toLowerCase();
+    if (/(block|ban|revoke|delete|kick|reject)/.test(a)) return "danger";
+    if (/(fail|error|timeout|denied|warn|exceed)/.test(a)) return "warn";
+    return "info";
+  }
+
+  function _severityColor(sev) {
+    return sev === "danger" ? "var(--hud-crimson, #f87171)"
+      : sev === "warn" ? "var(--hud-amber, #fbbf24)"
+      : "var(--color-text-muted, #94a3b8)";
+  }
+
   function _renderRows() {
     const tbody = document.querySelector("[data-audit-rows]");
     if (!tbody) return;
@@ -199,26 +219,37 @@
     }
     tbody.innerHTML = events.map(function (e) {
       const meta = SOURCE_META[e.source] || { label: e.source, color: "var(--color-text-muted)" };
+      const sev = _severityOf(e);
+      const sevColor = _severityColor(sev);
+      const target = (e.meta && (e.meta.target || e.meta.keyword || e.meta.fp
+        || e.meta.fingerprint || e.meta.name || e.meta.mode || e.meta.session
+        || e.meta.hook_id)) || (e.target || "");
       const metaJson = JSON.stringify(e.meta || {});
       const hasDiff = (e.before !== null && e.before !== undefined) || (e.after !== null && e.after !== undefined);
       const diffHtml = hasDiff ? _diffPairHtml(e.before, e.after) : null;
-      let metaHtml;
+      let detailHtml = "";
       if (diffHtml) {
-        metaHtml = metaJson === "{}" ? diffHtml : `${diffHtml} <code class="admin-audit-meta-extra">${escapeHtml(metaJson)}</code>`;
-      } else {
-        const beforeAfter = hasDiff ? `before: ${JSON.stringify(e.before)} -> after: ${JSON.stringify(e.after)}` : "";
-        const metaText = metaJson === "{}" ? (beforeAfter || "—") : [beforeAfter, metaJson].filter(Boolean).join(" · ");
-        metaHtml = `<code>${escapeHtml(metaText)}</code>`;
+        detailHtml = metaJson === "{}"
+          ? diffHtml
+          : `${diffHtml} <code class="admin-audit-meta-extra">${escapeHtml(metaJson)}</code>`;
+      } else if (metaJson !== "{}") {
+        detailHtml = `<code class="admin-audit-meta-extra">${escapeHtml(metaJson)}</code>`;
       }
       return `
-        <tr class="admin-audit-row">
-          <td class="col-ts">${escapeHtml(_formatTs(e.ts))}</td>
-          <td class="col-src">
-            <span class="admin-audit-src-chip" style="color:${meta.color};border-color:${meta.color}55;background:${meta.color}1c;">${escapeHtml(meta.label)}</span>
+        <tr class="admin-audit-row admin-audit-row--timeline" data-severity="${sev}">
+          <td class="admin-audit-cell-stamp" colspan="2">
+            <div class="admin-audit-ts">${escapeHtml(_formatTs(e.ts))}</div>
+            <span class="admin-audit-sev-dot" style="background:${sevColor};box-shadow:0 0 6px ${sevColor}"></span>
           </td>
-          <td class="col-kind">${escapeHtml(e.kind || "—")}</td>
-          <td class="col-actor">${_actorChipHtml(e.actor)}</td>
-          <td class="col-meta">${metaHtml}</td>
+          <td class="admin-audit-cell-body" colspan="3">
+            <div class="admin-audit-row-head">
+              ${_actorChipHtml(e.actor)}
+              <span class="admin-audit-action">${escapeHtml(e.action || e.kind || "—")}</span>
+              ${target ? `<span class="admin-audit-target">→ ${escapeHtml(String(target))}</span>` : ""}
+              <span class="admin-audit-src-chip" style="margin-left:auto;color:${meta.color};border-color:${meta.color}55;background:${meta.color}1c;">${escapeHtml(meta.label)}</span>
+            </div>
+            ${detailHtml ? `<div class="admin-audit-row-detail">${detailHtml}</div>` : ""}
+          </td>
         </tr>`;
     }).join("");
   }
