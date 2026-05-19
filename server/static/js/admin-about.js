@@ -233,8 +233,8 @@
       if (_state.isLatest === true) updEl.textContent = "✓ 是";
       else if (_state.isLatest === false) updEl.textContent = "▲ 有新版 " + (_state.latestVersion || "");
       else updEl.textContent = "—";
-      updEl.style.color = _state.isLatest === true ? "#86efac"
-        : _state.isLatest === false ? "var(--color-warning, #fbbf24)"
+      updEl.style.color = _state.isLatest === true ? "var(--hud-lime)"
+        : _state.isLatest === false ? "var(--hud-amber)"
         : "";
     }
     if (checkedEl) {

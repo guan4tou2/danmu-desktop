@@ -216,7 +216,7 @@
       var grid = document.getElementById("emojiGrid");
       if (grid) {
         grid.innerHTML =
-          '<div class="admin-emojis-empty" style="color:#f87171">' +
+          '<div class="admin-emojis-empty" style="color:var(--hud-crimson)">' +
           escapeHtml(ServerI18n.t("loadEmojiFailed")) +
           "</div>";
       }

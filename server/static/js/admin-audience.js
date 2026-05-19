@@ -43,10 +43,10 @@
   };
 
   const STATE_META = {
-    active:    { color: "#86efac", label: "ACTIVE" },
-    flagged:   { color: "#fbbf24", label: "FLAGGED" },
-    blocked:   { color: "#f87171", label: "BLOCKED" },
-    duplicate: { color: "#fbbf24", label: "DUPLICATE" },
+    active:    { color: "var(--hud-lime)", label: "ACTIVE" },
+    flagged:   { color: "var(--hud-amber)", label: "FLAGGED" },
+    blocked:   { color: "var(--hud-crimson)", label: "BLOCKED" },
+    duplicate: { color: "var(--hud-amber)", label: "DUPLICATE" },
     extension: { color: "var(--color-primary, #38bdf8)", label: "EXTENSION" },
     idle:      { color: "var(--color-text-muted, #94a3b8)", label: "IDLE" },
   };
@@ -140,10 +140,10 @@
     }).length;
     stats.innerHTML = `
       <div class="admin-aud-stat"><div class="k">當前指紋</div><div class="v">${total}</div></div>
-      <div class="admin-aud-stat"><div class="k">5min 活躍</div><div class="v" style="color:#86efac">${activeFiveMin}</div></div>
-      <div class="admin-aud-stat"><div class="k">總訊息</div><div class="v" style="color:var(--color-primary, #38bdf8)">${totalMsgs}</div></div>
-      <div class="admin-aud-stat"><div class="k">已標記</div><div class="v" style="color:#fbbf24">${flagged}</div></div>
-      <div class="admin-aud-stat"><div class="k">已封禁</div><div class="v" style="color:#f87171">${blocked}</div></div>`;
+      <div class="admin-aud-stat"><div class="k">5min 活躍</div><div class="v" style="color:var(--hud-lime)">${activeFiveMin}</div></div>
+      <div class="admin-aud-stat"><div class="k">總訊息</div><div class="v" style="color:var(--color-primary)">${totalMsgs}</div></div>
+      <div class="admin-aud-stat"><div class="k">已標記</div><div class="v" style="color:var(--hud-amber)">${flagged}</div></div>
+      <div class="admin-aud-stat"><div class="k">已封禁</div><div class="v" style="color:var(--hud-crimson)">${blocked}</div></div>`;
   }
 
   function _renderFilters() {
@@ -230,7 +230,7 @@
   // Real BE risk schema is in §H.2 — until that lands, we surface
   // observable heuristics so the panel isn't empty.
   function _assessRisk(rec) {
-    if (!rec) return { level: "normal", color: "#86efac", label: "NORMAL", rules: [] };
+    if (!rec) return { level: "normal", color: "var(--hud-lime)", label: "NORMAL", rules: [] };
     const rules = [];
     const msgs = Number(rec.message_count) || 0;
     const fp = rec.fingerprint || "";
@@ -250,11 +250,11 @@
       rules.push("使用者未設暱稱（首次出現）");
     }
     let level = "normal";
-    let color = "#86efac";
+    let color = "var(--hud-lime)";
     let label = "NORMAL";
-    if (rec.state === "blocked") { level = "blocked"; color = "#f87171"; label = "BLOCKED"; }
-    else if (rec.state === "flagged" || msgs >= 25) { level = "high"; color = "#f87171"; label = "HIGH RISK"; }
-    else if (msgs >= 15 || sameIp >= 3) { level = "mid"; color = "#fbbf24"; label = "MID"; }
+    if (rec.state === "blocked") { level = "blocked"; color = "var(--hud-crimson)"; label = "BLOCKED"; }
+    else if (rec.state === "flagged" || msgs >= 25) { level = "high"; color = "var(--hud-crimson)"; label = "HIGH RISK"; }
+    else if (msgs >= 15 || sameIp >= 3) { level = "mid"; color = "var(--hud-amber)"; label = "MID"; }
     return { level: level, color: color, label: label, rules: rules };
   }
 
@@ -314,7 +314,7 @@
     } else {
       messagesHtml = _state.detailMessages.map(function (m) {
         const status = m.muted ? "MASKED" : (m.banned ? "BLOCKED" : "SHOWN");
-        const statusColor = m.muted ? "#fbbf24" : (m.banned ? "#f87171" : "#86efac");
+        const statusColor = m.muted ? "var(--hud-amber)" : (m.banned ? "var(--hud-crimson)" : "var(--hud-lime)");
         const tsLabel = m.timestamp
           ? new Date(m.timestamp).toLocaleTimeString("zh-TW", { hour12: false })
           : "—";

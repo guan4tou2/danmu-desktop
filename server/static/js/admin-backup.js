@@ -146,7 +146,7 @@
         <div class="admin-v2-card admin-backup-zone is-danger" data-zone="danger">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
             <span class="admin-v2-dot is-bad"></span>
-            <span class="admin-v2-monolabel" style="color:#f87171">ZONE 3 · DANGER</span>
+            <span class="admin-v2-monolabel" style="color:var(--hud-crimson)">ZONE 3 · DANGER</span>
           </div>
 
           <!-- Clear history -->
