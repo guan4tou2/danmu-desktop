@@ -29,10 +29,12 @@ def audience_list():
         limit = int(request.args.get("limit", "100") or 100)
     except (TypeError, ValueError):
         limit = 100
-    return _json_response({
-        "entries": audience_svc.list_entries(limit=limit),
-        "stats": audience_svc.stats(),
-    })
+    return _json_response(
+        {
+            "entries": audience_svc.list_entries(limit=limit),
+            "stats": audience_svc.stats(),
+        }
+    )
 
 
 @admin_bp.route("/audience/stats", methods=["GET"])
