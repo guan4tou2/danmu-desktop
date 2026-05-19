@@ -492,8 +492,7 @@
       }
     });
 
-    document.getElementById("effectUploadInput")?.addEventListener("change", async (e) => {
-      const file = e.target.files?.[0];
+    async function _uploadEffectFile(file) {
       if (!file) return;
       const formData = new FormData();
       formData.append("effectfile", file);
@@ -508,10 +507,37 @@
         }
       } catch (_) {
         showToast(ServerI18n.t("effectsNetworkError"), false);
-      } finally {
-        e.target.value = "";
       }
+    }
+
+    document.getElementById("effectUploadInput")?.addEventListener("change", async (e) => {
+      await _uploadEffectFile(e.target.files?.[0]);
+      e.target.value = "";
     });
+
+    // v5 Batch 12 polish: drag-drop on the dropzone — accepts .dme files
+    // and forwards to the same upload handler. Hover state via CSS class
+    // is-drag.
+    const dropzone = document.getElementById("effectsDropzone");
+    if (dropzone) {
+      const onEnter = (e) => { e.preventDefault(); dropzone.classList.add("is-drag"); };
+      const onLeave = (e) => { e.preventDefault(); dropzone.classList.remove("is-drag"); };
+      const onDrop = async (e) => {
+        e.preventDefault();
+        dropzone.classList.remove("is-drag");
+        const file = e.dataTransfer?.files?.[0];
+        if (!file) return;
+        if (!/\.(dme|dme\.zip)$/i.test(file.name)) {
+          showToast(".dme / .dme.zip 才接受", false);
+          return;
+        }
+        await _uploadEffectFile(file);
+      };
+      dropzone.addEventListener("dragenter", onEnter);
+      dropzone.addEventListener("dragover", onEnter);
+      dropzone.addEventListener("dragleave", onLeave);
+      dropzone.addEventListener("drop", onDrop);
+    }
   }
 
   // ── Category detection + filter state ───────────────────────────────────────

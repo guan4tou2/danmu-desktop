@@ -119,6 +119,24 @@ def list_all(limit: int = 100) -> List[Dict[str, Any]]:
     return snapshot[: max(1, min(limit, MAX_RECORDS))]
 
 
+def list_with_raw(limit: int = 100) -> List[Dict[str, Any]]:
+    """Same as :func:`list_all` but each entry also carries its raw
+    fingerprint under the ``"fingerprint"`` key.
+
+    The raw fp is the cookie value used by `/fire` — sensitive enough
+    that we don't want it on the standard admin fingerprints view
+    (which exposes the truncated hash), but the audience kick path
+    needs the raw form to issue a moderation_bans ban. Adding this
+    optional accessor keeps the privacy boundary clear: any caller
+    that needs raw fp must explicitly ask for it.
+    """
+    now = time.time()
+    with _lock:
+        ordered = sorted(_records.items(), key=lambda kv: kv[1].last_seen, reverse=True)
+        snapshot = [{"fingerprint": fp, **rec.to_dict(now)} for fp, rec in ordered]
+    return snapshot[: max(1, min(limit, MAX_RECORDS))]
+
+
 def get(fingerprint: str) -> Optional[Dict[str, Any]]:
     now = time.time()
     with _lock:

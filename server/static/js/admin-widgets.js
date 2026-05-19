@@ -250,23 +250,37 @@
         return;
       }
 
-      widgets.forEach((w) => {
-        container.appendChild(_renderCard(w));
+      widgets.forEach((w, idx) => {
+        container.appendChild(_renderCard(w, idx));
       });
     }
 
-    function _renderCard(w) {
+    function _renderCard(w, idx) {
       const card = document.createElement("div");
       card.className = "admin-widget-card";
+      if (w.visible !== false) card.classList.add("is-on");
 
       // Head: type kicker + position label + actions
       const head = document.createElement("div");
       head.className = "admin-widget-card-head";
 
+      // v5 Batch 12 polish: L# layer chip (derived from list order) +
+      // type label + URL display. Layer ordering will become
+      // user-controllable when drag-sort lands; for now layer == idx.
+      const layerChip = document.createElement("span");
+      layerChip.className = "admin-widget-card-layer";
+      layerChip.textContent = "L" + (idx != null ? idx : 0);
+      head.appendChild(layerChip);
+
       const typeLabel = document.createElement("span");
       typeLabel.className = "admin-widget-card-type";
       typeLabel.textContent = w.type;
       head.appendChild(typeLabel);
+
+      const urlChip = document.createElement("span");
+      urlChip.className = "admin-widget-card-url";
+      urlChip.textContent = `/overlay/${w.type || "widget"}`;
+      head.appendChild(urlChip);
 
       const posLabel = document.createElement("span");
       posLabel.className = "admin-widget-card-pos";

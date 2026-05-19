@@ -1041,6 +1041,20 @@ document.addEventListener("DOMContentLoaded", () => {
       <div id="sec-effects-mgmt" class="hud-page-stack lg:col-span-2">
         <div class="hud-page-grid-2">
           <div class="hud-page-stack" style="gap:16px">
+            <!-- v5 Batch 12 polish: dashed-cyan drop zone per
+                 batch12-effects.jsx EffectsLibraryPage. Replaces the
+                 inline upload button; clicking the zone triggers the
+                 same #effectUploadInput. Drag-and-drop wired below. -->
+            <label for="effectUploadInput" class="admin-effects-dropzone" id="effectsDropzone">
+              <span class="admin-effects-dropzone__icon">\u2726</span>
+              <div class="admin-effects-dropzone__copy">
+                <div class="admin-effects-dropzone__title">\u62d6\u5165 .dme \u6a94\u4e0a\u50b3\u65b0\u6548\u679c \u00b7 \u6216\u9ede\u6b64\u700f\u89bd</div>
+                <div class="admin-effects-dropzone__hint">\u652f\u63f4 .dme \u00b7 .dme.zip \u00b7 \u6700\u5927 4 MB \u00b7 \u4e0a\u50b3\u5f8c\u81ea\u52d5\u71b1\u91cd\u8f09</div>
+              </div>
+              <span class="admin-effects-dropzone__cta">+ \u700f\u89bd\u6a94\u6848</span>
+              <input type="file" id="effectUploadInput" accept=".dme" class="hidden">
+            </label>
+
             <div class="hud-filter-row" id="effectsFilterRow">
               <span class="hud-filter-chip is-active" data-effect-filter="ALL">\u5168\u90e8 \u2014</span>
             </div>
@@ -1050,10 +1064,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 <button id="effectReloadBtn" class="hud-toolbar-action" type="button">
                   \u21bb ${ServerI18n.t("reload")}
                 </button>
-                <label for="effectUploadInput" class="hud-toolbar-action" style="cursor:pointer">
-                  + ${ServerI18n.t("uploadDme")}
-                </label>
-                <input type="file" id="effectUploadInput" accept=".dme" class="hidden">
               </div>
             </div>
             <div id="effectsList" class="hud-effects-grid">
