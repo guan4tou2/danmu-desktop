@@ -171,17 +171,17 @@
     historyListDiv.innerHTML = "";
     if (records.length === 0) {
       historyListDiv.innerHTML =
-        `<p class="text-slate-400 text-sm text-center py-4">${ServerI18n.t("noDanmuFound")}</p>`;
+        `<p class="admin-history-empty">${ServerI18n.t("noDanmuFound")}</p>`;
       return;
     }
 
     records.forEach((record, idx) => {
       const recordEl = document.createElement("div");
-      recordEl.className = "bg-slate-700/50 p-3 rounded-lg space-y-1 flex gap-2 items-start";
+      recordEl.className = "admin-history-record";
 
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
-      checkbox.className = "accent-sky-500 mt-1 shrink-0 replay-record-cb";
+      checkbox.className = "admin-history-cb replay-record-cb";
       checkbox.dataset.recordIndex = idx;
       recordEl.appendChild(checkbox);
 
@@ -192,14 +192,13 @@
       headerEl.className = "flex items-start justify-between gap-2";
 
       const timeEl = document.createElement("div");
-      timeEl.className = "text-xs text-slate-400 shrink-0";
+      timeEl.className = "admin-history-time";
       timeEl.textContent = formatTimestamp(record.timestamp);
 
       // "Block" quick-action button (text only, non-image danmu)
       if (record.text && !record.isImage) {
         const blockBtn = document.createElement("button");
-        blockBtn.className =
-          "text-xs px-2 py-0.5 rounded bg-red-700/60 hover:bg-red-700 text-slate-200 transition-colors shrink-0";
+        blockBtn.className = "admin-history-block-btn";
         blockBtn.textContent = ServerI18n.t("block");
         blockBtn.title = ServerI18n.t("blockTitle");
         blockBtn.addEventListener("click", async () => {
@@ -221,11 +220,11 @@
       headerEl.prepend(timeEl);
 
       const textEl = document.createElement("div");
-      textEl.className = "text-white text-sm break-words";
+      textEl.className = "admin-history-text";
       textEl.textContent = record.text || "(empty)";
 
       const metaEl = document.createElement("div");
-      metaEl.className = "text-xs text-slate-400 flex flex-wrap gap-x-3 gap-y-1";
+      metaEl.className = "admin-history-meta";
       const metaParts = [];
       if (record.color) metaParts.push(`Color: #${record.color}`);
       if (record.size) metaParts.push(`Size: ${record.size}`);
@@ -292,9 +291,9 @@
       if (statsDiv) {
         statsDiv.innerHTML = `
           <div class="flex gap-4 text-xs">
-            <span>${ServerI18n.t("total")} <span class="text-white font-semibold">${stats.total}</span></span>
-            <span>${ServerI18n.t("last24h")} <span class="text-white font-semibold">${stats.last_24h}</span></span>
-            <span>${ServerI18n.t("showing")} <span class="text-white font-semibold">${records.length}</span></span>
+            <span>${ServerI18n.t("total")} <span class="admin-history-stat-val">${stats.total}</span></span>
+            <span>${ServerI18n.t("last24h")} <span class="admin-history-stat-val">${stats.last_24h}</span></span>
+            <span>${ServerI18n.t("showing")} <span class="admin-history-stat-val">${records.length}</span></span>
           </div>`;
       }
 

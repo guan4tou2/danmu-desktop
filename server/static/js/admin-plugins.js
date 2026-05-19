@@ -452,14 +452,5 @@
       }
     }
 
-    // ---- Utility ----
-
-    function priorityBadgeColor(priority) {
-      if (priority == null) return "bg-slate-600 text-slate-300";
-      if (priority <= 10) return "bg-red-900/60 text-red-300";
-      if (priority <= 50) return "bg-amber-900/60 text-amber-300";
-      return "bg-slate-700 text-slate-300";
-    }
-
   });
 })();

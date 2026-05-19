@@ -1170,6 +1170,37 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 .admin-poll-link.is-muted:hover { color: var(--admin-text); }
 
 /* ──────────────────────────────────────────────────────────────────────────
+ * History record cards — admin-history.js renderHistoryRecords()
+ * ────────────────────────────────────────────────────────────────────────── */
+.admin-history-record {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 12px;
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-lg);
+}
+.admin-history-record + .admin-history-record { margin-top: 4px; }
+.admin-history-cb { accent-color: var(--color-primary); margin-top: 4px; flex-shrink: 0; }
+.admin-history-time { font-size: var(--text-xs); color: var(--color-text-muted); flex-shrink: 0; }
+.admin-history-block-btn {
+  font-size: var(--text-xs);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--hud-crimson) 25%, transparent);
+  color: var(--color-text-secondary);
+  transition: background 150ms var(--ease-out);
+}
+.admin-history-block-btn:hover { background: var(--hud-crimson); color: #000; }
+.admin-history-text { color: var(--color-text-primary); font-size: var(--text-sm); word-break: break-words; }
+.admin-history-meta { font-size: var(--text-xs); color: var(--color-text-muted); display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.admin-history-empty { color: var(--color-text-muted); font-size: var(--text-sm); text-align: center; padding: 16px 0; }
+.admin-history-stat-val { color: var(--color-text-primary); font-weight: 600; }
+
+/* ──────────────────────────────────────────────────────────────────────────
  * Theme Pack cards — prototype admin-theme-packs.jsx grid of preset bundles.
  * ────────────────────────────────────────────────────────────────────────── */
 #themesList {

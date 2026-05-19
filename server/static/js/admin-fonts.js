@@ -44,7 +44,7 @@
               </div>
               <div id="adminFontList">
                 <div class="hud-table-row" style="grid-template-columns: 1fr;">
-                  <span class="text-xs text-slate-400">${ServerI18n.t("loadingFonts")}</span>
+                  <span style="font-size:11px;color:var(--color-text-muted)">${ServerI18n.t("loadingFonts")}</span>
                 </div>
               </div>
               <div class="hud-table-foot" style="padding:14px 16px;display:flex;align-items:center;gap:10px;">
@@ -111,7 +111,7 @@
                 <span class="admin-v3-card-kicker" style="margin:0">CDN DELIVERY · 交付狀態</span>
               </div>
               <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                <div class="hud-kv"><span class="hud-kv-k">HIT RATE</span><span class="hud-kv-v" style="color:#86efac" id="fontsCdnHit">—</span></div>
+                <div class="hud-kv"><span class="hud-kv-k">HIT RATE</span><span class="hud-kv-v" style="color:var(--hud-lime)" id="fontsCdnHit">—</span></div>
                 <div class="hud-kv"><span class="hud-kv-k">P95 TTFB</span><span class="hud-kv-v" style="color:var(--color-primary)" id="fontsCdnTtfb">—</span></div>
                 <div class="hud-kv"><span class="hud-kv-k">REQ/24H</span><span class="hud-kv-v" id="fontsCdnReq">—</span></div>
                 <div class="hud-kv"><span class="hud-kv-k">EDGE</span><span class="hud-kv-v" id="fontsCdnEdge">LOCAL</span></div>
@@ -422,7 +422,7 @@
 
       if (fonts.length === 0) {
         listEl.innerHTML =
-          `<div class="hud-table-row" style="grid-template-columns: 1fr;"><span class="text-xs text-slate-400">${ServerI18n.t("noFontsUploaded")}</span></div>`;
+          `<div class="hud-table-row" style="grid-template-columns: 1fr;"><span style="font-size:11px;color:var(--color-text-muted)">${ServerI18n.t("noFontsUploaded")}</span></div>`;
         updateTotals(fonts);
         return;
       }
@@ -433,7 +433,7 @@
     } catch (err) {
       console.error("[admin-fonts] fetch failed:", err);
       listEl.innerHTML =
-        `<div class="hud-table-row" style="grid-template-columns: 1fr;"><span class="text-xs text-red-400">${ServerI18n.t("loadFontsFailed")}</span></div>`;
+        `<div class="hud-table-row" style="grid-template-columns: 1fr;"><span style="font-size:11px;color:var(--hud-crimson)">${ServerI18n.t("loadFontsFailed")}</span></div>`;
       renderFontsEmptyState([], loggedIn);
     }
   }

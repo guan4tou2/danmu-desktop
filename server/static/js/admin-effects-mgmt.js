@@ -262,13 +262,15 @@
       wrapper.className = "flex flex-col gap-0.5";
 
       const label = document.createElement("label");
-      label.className = "text-[0.65rem] text-slate-400 font-mono";
+      label.className = "font-mono";
+      label.style.cssText = "font-size:0.65rem;color:var(--color-text-muted)";
       label.textContent = `${key} (${type})`;
       wrapper.appendChild(label);
 
       if (type === "select" && Array.isArray(def.options)) {
         const sel = document.createElement("select");
-        sel.className = "bg-slate-950 text-slate-300 text-xs border border-slate-700 rounded px-2 py-1 outline-none";
+        sel.className = "admin-v2-select";
+        sel.style.cssText = "font-size:12px;padding:4px 8px";
         sel.dataset.paramKey = key;
         for (const opt of def.options) {
           const o = document.createElement("option");
@@ -298,10 +300,12 @@
         input.step = step;
         input.value = defaultVal;
         input.dataset.paramKey = key;
-        input.className = "flex-1 accent-sky-500";
+        input.className = "flex-1";
+        input.style.accentColor = "var(--color-primary)";
 
         const valDisplay = document.createElement("span");
-        valDisplay.className = "text-xs text-slate-400 font-mono w-10 text-right";
+        valDisplay.className = "font-mono";
+        valDisplay.style.cssText = "font-size:12px;color:var(--color-text-muted);width:2.5rem;text-align:right";
         valDisplay.textContent = String(defaultVal);
 
         input.addEventListener("input", () => {
@@ -383,38 +387,39 @@
     if (!document.getElementById("effectEditModal")) {
       document.body.insertAdjacentHTML("beforeend", `
         <div id="effectEditModal" role="dialog" aria-modal="true" aria-labelledby="effectEditModalTitle" aria-describedby="effectEditModalFile" class="hidden fixed inset-0 z-[9999] items-center justify-content-center" style="background:rgba(0,0,0,0.72);">
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-[1100px] mx-4 shadow-2xl flex flex-col max-h-[88vh] overflow-hidden">
-            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800 shrink-0">
+          <div class="rounded-2xl w-full max-w-[1100px] mx-4 shadow-2xl flex flex-col max-h-[88vh] overflow-hidden" style="background:var(--color-bg-deep);border:1px solid var(--admin-line)">
+            <div class="flex items-center justify-between px-5 py-4 shrink-0" style="border-bottom:1px solid var(--admin-line)">
               <div>
-                <p id="effectEditModalTitle" class="font-bold text-slate-100 text-sm m-0"></p>
-                <p id="effectEditModalFile" class="text-[0.7rem] text-slate-400 font-mono mt-0.5 m-0"></p>
+                <p id="effectEditModalTitle" class="font-bold text-sm m-0" style="color:var(--color-text-strong)"></p>
+                <p id="effectEditModalFile" class="font-mono mt-0.5 m-0" style="font-size:0.7rem;color:var(--color-text-muted)"></p>
               </div>
-              <button id="effectEditModalClose" title="Close" aria-label="Close" class="text-slate-400 hover:text-slate-300 bg-transparent border-none cursor-pointer p-1 rounded flex items-center leading-none transition-colors">
+              <button id="effectEditModalClose" title="Close" aria-label="Close" class="bg-transparent border-none cursor-pointer p-1 rounded flex items-center leading-none transition-colors" style="color:var(--color-text-muted)">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
             <div class="flex-1 overflow-hidden flex min-h-0">
               <div class="flex-1 overflow-hidden px-5 py-4 min-h-0 flex flex-col">
                 <textarea id="effectEditModalTextarea"
-                  class="w-full flex-1 min-h-[300px] bg-slate-950 text-slate-300 text-xs font-mono border border-slate-700 rounded-lg p-3 resize-none outline-none block"
+                  class="w-full flex-1 min-h-[300px] text-xs font-mono rounded-lg p-3 resize-none outline-none block"
+                  style="background:var(--color-bg-elevated);color:var(--color-text-secondary);border:1px solid var(--admin-line)"
                   spellcheck="false"></textarea>
               </div>
-              <div id="effectPreviewPane" class="w-[360px] shrink-0 border-l border-slate-800 px-4 py-4 flex flex-col gap-3 overflow-y-auto">
+              <div id="effectPreviewPane" class="w-[360px] shrink-0 px-4 py-4 flex flex-col gap-3 overflow-y-auto" style="border-left:1px solid var(--admin-line)">
                 <div class="flex items-center justify-between">
-                  <p class="text-xs font-semibold text-slate-400 m-0">${ServerI18n.t("livePreviewLabel")}</p>
-                  <button id="effectPreviewRefreshBtn" class="px-2 py-0.5 text-[0.65rem] font-medium text-slate-400 border border-slate-700 rounded bg-transparent cursor-pointer transition-colors hover:text-sky-300 hover:border-sky-500">${ServerI18n.t("refresh")}</button>
+                  <p class="text-xs font-semibold m-0" style="color:var(--color-text-muted)">${ServerI18n.t("livePreviewLabel")}</p>
+                  <button id="effectPreviewRefreshBtn" class="px-2 py-0.5 font-medium rounded bg-transparent cursor-pointer transition-colors" style="font-size:0.65rem;color:var(--color-text-muted);border:1px solid var(--admin-line)">${ServerI18n.t("refresh")}</button>
                 </div>
-                <div id="effectPreviewBox" style="background:#1e293b;padding:20px;border-radius:8px;display:flex;align-items:center;justify-content:center;min-height:80px;">
-                  <span id="effectPreviewText" style="font-size:32px;color:white;display:inline-block;">${ServerI18n.t("previewText")}</span>
+                <div id="effectPreviewBox" style="background:var(--color-bg-elevated);padding:20px;border-radius:8px;display:flex;align-items:center;justify-content:center;min-height:80px;">
+                  <span id="effectPreviewText" style="font-size:32px;color:var(--color-text-strong);display:inline-block;">${ServerI18n.t("previewText")}</span>
                 </div>
                 <style id="effectPreviewStyle"></style>
                 <div id="effectPreviewParams" class="flex flex-col gap-2"></div>
-                <p id="effectPreviewError" class="text-xs text-red-400 m-0 hidden"></p>
+                <p id="effectPreviewError" class="text-xs m-0 hidden" style="color:var(--hud-crimson)"></p>
               </div>
             </div>
-            <div class="flex justify-end gap-2 px-5 py-3 border-t border-slate-800 shrink-0">
-              <button id="effectEditModalCancel" class="px-4 py-1.5 text-sm text-slate-400 border border-slate-700 rounded-lg bg-transparent cursor-pointer hover:text-slate-200 hover:border-slate-500 transition-colors">${ServerI18n.t("cancel")}</button>
-              <button id="effectEditModalSave" class="px-4 py-1.5 text-sm font-semibold bg-sky-700 hover:bg-sky-600 text-white border-none rounded-lg cursor-pointer transition-colors">${ServerI18n.t("saveChanges")}</button>
+            <div class="flex justify-end gap-2 px-5 py-3 shrink-0" style="border-top:1px solid var(--admin-line)">
+              <button id="effectEditModalCancel" class="admin-poll-btn is-ghost">${ServerI18n.t("cancel")}</button>
+              <button id="effectEditModalSave" class="admin-poll-btn is-primary">${ServerI18n.t("saveChanges")}</button>
             </div>
           </div>
         </div>
@@ -563,7 +568,7 @@
     try {
       const res = await csrfFetch("/admin/effects");
       if (!res.ok) {
-        container.innerHTML = '<span class="text-xs text-red-400" style="grid-column:1 / -1">' + ServerI18n.t("effectsLoadFailed") + '</span>';
+        container.innerHTML = '<span style="font-size:11px;color:var(--hud-crimson);grid-column:1 / -1">' + ServerI18n.t("effectsLoadFailed") + '</span>';
         return;
       }
       const data = await res.json();
@@ -571,7 +576,7 @@
       renderFilterRow();
       renderEffectsList();
     } catch (_) {
-      container.innerHTML = '<span class="text-xs text-red-400" style="grid-column:1 / -1">' + ServerI18n.t("effectsNetworkError") + '</span>';
+      container.innerHTML = '<span style="font-size:11px;color:var(--hud-crimson);grid-column:1 / -1">' + ServerI18n.t("effectsNetworkError") + '</span>';
     }
   }
 
@@ -625,7 +630,7 @@
 
     if (!filtered.length) {
       container.innerHTML =
-        '<span class="text-xs text-slate-400" style="grid-column:1 / -1">' +
+        '<span style="font-size:11px;color:var(--color-text-muted);grid-column:1 / -1">' +
         (all.length ? "\u6c92\u6709\u7b26\u5408\u904e\u6ffe\u7684\u6548\u679c" : ServerI18n.t("noEffectsLoaded")) +
         '</span>';
       return;
