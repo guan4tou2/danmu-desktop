@@ -1,12 +1,10 @@
 """Tests for /admin/plugins/upload and /admin/plugins/uninstall (v5 Batch 11)."""
 
 import io
-from pathlib import Path
 
 import pytest
 
 from server.routes.admin import plugins as plugins_route
-
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 

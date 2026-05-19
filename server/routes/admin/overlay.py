@@ -43,6 +43,7 @@ def overlay_clear():
         # ops instead of silently swallowed.
         try:
             from ...services.webhook import webhook_service
+
             webhook_service.emit("on_overlay_clear", {"actor": "admin"})
         except Exception as exc:
             current_app.logger.warning(

@@ -53,15 +53,15 @@ _USER_PLUGINS_DIR = _SERVER_ROOT / "user_plugins"
 
 _BACKUP_VERSION = "1"
 _MAX_IMPORT_SIZE = 16 * 1024 * 1024  # 16 MB — sanity cap on uploaded backups
-_MAX_FILE_COUNT = 2000               # refuse pathologically large tarballs
+_MAX_FILE_COUNT = 2000  # refuse pathologically large tarballs
 
 # Subset of state directories we pack/unpack. Order matters only for
 # manifest readability — extraction iterates the tarball's own member list.
 _INCLUDE_DIRS: List[tuple] = [
     # (label, source_dir, archive_prefix, glob_pattern)
-    ("runtime",      _RUNTIME_DIR,      "runtime",      "*.json"),
-    ("effects",      _EFFECTS_DIR,      "effects",      "*.dme"),
-    ("plugins",      _PLUGINS_DIR,      "plugins",      "*"),
+    ("runtime", _RUNTIME_DIR, "runtime", "*.json"),
+    ("effects", _EFFECTS_DIR, "effects", "*.dme"),
+    ("plugins", _PLUGINS_DIR, "plugins", "*"),
     ("user_plugins", _USER_PLUGINS_DIR, "user_plugins", "*"),
 ]
 
@@ -114,17 +114,19 @@ def pack(target_path: Optional[Union[str, Path]] = None) -> bytes:
                 info.mtime = int(f.stat().st_mtime)
                 info.mode = 0o644
                 tar.addfile(info, io.BytesIO(data))
-                included.append({
-                    "label": label,
-                    "path": arc_name,
-                    "size": len(data),
-                    "sha256": _sha256(data),
-                })
+                included.append(
+                    {
+                        "label": label,
+                        "path": arc_name,
+                        "size": len(data),
+                        "sha256": _sha256(data),
+                    }
+                )
 
         # Manifest goes last so its hash reflects the full inventory.
-        manifest_bytes = json.dumps(
-            _build_manifest(included), ensure_ascii=False, indent=2
-        ).encode("utf-8")
+        manifest_bytes = json.dumps(_build_manifest(included), ensure_ascii=False, indent=2).encode(
+            "utf-8"
+        )
         info = tarfile.TarInfo(name="manifest.json")
         info.size = len(manifest_bytes)
         info.mtime = int(time.time())
@@ -262,11 +264,13 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
             continue
 
         safe_writes.append((target, data))
-        out["members"].append({
-            "path": m.name,
-            "size": m.size,
-            "label": prefix,
-        })
+        out["members"].append(
+            {
+                "path": m.name,
+                "size": m.size,
+                "label": prefix,
+            }
+        )
 
     tar.close()
 

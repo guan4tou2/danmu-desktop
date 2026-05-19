@@ -8,7 +8,6 @@ import pytest
 from server.services import history as hist_svc
 from server.services.history import DanmuHistory
 
-
 # ─── Helpers ────────────────────────────────────────────────────────────────
 
 
@@ -112,11 +111,13 @@ def test_search_since_overrides_hours(client, fresh_history):
     # Manually craft a record stamped 200 hours ago — bypasses .add() so
     # we control the timestamp.
     old_ts = (datetime.now(timezone.utc) - timedelta(hours=200)).isoformat()
-    fresh_history._records.append({
-        "timestamp": old_ts,
-        "text": "ancient message",
-        "fingerprint": "fp_old",
-    })
+    fresh_history._records.append(
+        {
+            "timestamp": old_ts,
+            "text": "ancient message",
+            "fingerprint": "fp_old",
+        }
+    )
     # Without since= the default hours=168 hides it.
     resp = search(client, q="ancient")
     assert resp.status_code == 200
@@ -197,12 +198,14 @@ def test_search_status_default_is_shown(client, fresh_history):
 
 def test_search_status_filters_out_other_statuses(client, fresh_history):
     _seed(fresh_history, text="hi")  # default "shown"
-    fresh_history._records.append({
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "text": "hi pinned",
-        "status": "pinned",
-        "fingerprint": "fp_pin",
-    })
+    fresh_history._records.append(
+        {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "text": "hi pinned",
+            "status": "pinned",
+            "fingerprint": "fp_pin",
+        }
+    )
     # Only `shown` requested → masks out pinned.
     resp = search(client, q="hi", status="shown")
     body = resp.get_json()
@@ -212,18 +215,22 @@ def test_search_status_filters_out_other_statuses(client, fresh_history):
 
 def test_search_status_multi_value(client, fresh_history):
     _seed(fresh_history, text="hi")  # shown
-    fresh_history._records.append({
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "text": "hi pinned",
-        "status": "pinned",
-        "fingerprint": "fp_pin",
-    })
-    fresh_history._records.append({
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "text": "hi blocked",
-        "status": "blocked",
-        "fingerprint": "fp_blk",
-    })
+    fresh_history._records.append(
+        {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "text": "hi pinned",
+            "status": "pinned",
+            "fingerprint": "fp_pin",
+        }
+    )
+    fresh_history._records.append(
+        {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "text": "hi blocked",
+            "status": "blocked",
+            "fingerprint": "fp_blk",
+        }
+    )
     resp = search(client, q="hi", status="shown,pinned")
     body = resp.get_json()
     assert body["total"] == 2
@@ -245,9 +252,9 @@ def test_search_status_invalid_value_ignored(client, fresh_history):
 
 
 def test_search_combines_type_and_fp(client, fresh_history):
-    _seed(fresh_history, text="mix", isImage=True,  fingerprint="fp_a")
+    _seed(fresh_history, text="mix", isImage=True, fingerprint="fp_a")
     _seed(fresh_history, text="mix", isImage=False, fingerprint="fp_a")
-    _seed(fresh_history, text="mix", isImage=True,  fingerprint="fp_b")
+    _seed(fresh_history, text="mix", isImage=True, fingerprint="fp_b")
     resp = search(client, q="mix", type="image", fp="fp_a")
     body = resp.get_json()
     assert body["total"] == 1

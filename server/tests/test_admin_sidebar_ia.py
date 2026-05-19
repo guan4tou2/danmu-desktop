@@ -147,8 +147,7 @@ def test_bare_legacy_object_redirects_target_system_accordion(
         rf'\b{slug}:\s*\{{\s*nav:\s*"{expected_nav}",\s*tab:\s*"{expected_tab}"',
     )
     assert pattern.search(admin_js), (
-        f"_bareLegacyRedirects.{slug} must be {{nav: '{expected_nav}', "
-        f"tab: '{expected_tab}'}}"
+        f"_bareLegacyRedirects.{slug} must be {{nav: '{expected_nav}', " f"tab: '{expected_tab}'}}"
     )
 
 

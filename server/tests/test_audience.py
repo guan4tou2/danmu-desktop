@@ -5,7 +5,6 @@ import pytest
 from server.services import audience as audience_svc
 from server.services import fingerprint_tracker
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────
 
 
@@ -28,6 +27,7 @@ def _isolate_audience(tmp_path, monkeypatch):
     # Also isolate moderation_bans persistence so kick tests don't pollute the
     # real audit log.
     from server.services import moderation_bans
+
     monkeypatch.setattr(moderation_bans, "_BANS_FILE", tmp_path / "bans.json", raising=False)
     yield
     audience_svc.reset_for_test()

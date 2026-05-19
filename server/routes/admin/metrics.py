@@ -70,6 +70,7 @@ def get_metrics():
     # defaults. Reads via current_app.config so ratelimit/apply edits
     # are reflected immediately (no restart needed).
     from flask import current_app
+
     rl_config = {
         scope: {
             "limit": int(current_app.config.get(f"{scope.upper()}_RATE_LIMIT", 0) or 0),

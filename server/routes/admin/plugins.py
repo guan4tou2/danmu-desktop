@@ -32,11 +32,40 @@ _MANIFEST_LINE_RE = re.compile(
     r"^\s*(?:#|//)\s*@(?P<key>[a-zA-Z_][a-zA-Z0-9_]{0,63})\s+(?P<val>.{1,512})$"
 )
 _PYTHON_STDLIB_HINT = {
-    "abc", "ast", "asyncio", "base64", "collections", "contextlib", "copy",
-    "dataclasses", "datetime", "enum", "functools", "hashlib", "io", "itertools",
-    "json", "logging", "math", "os", "pathlib", "random", "re", "shutil", "socket",
-    "string", "subprocess", "sys", "tempfile", "threading", "time", "typing",
-    "urllib", "uuid", "warnings", "weakref",
+    "abc",
+    "ast",
+    "asyncio",
+    "base64",
+    "collections",
+    "contextlib",
+    "copy",
+    "dataclasses",
+    "datetime",
+    "enum",
+    "functools",
+    "hashlib",
+    "io",
+    "itertools",
+    "json",
+    "logging",
+    "math",
+    "os",
+    "pathlib",
+    "random",
+    "re",
+    "shutil",
+    "socket",
+    "string",
+    "subprocess",
+    "sys",
+    "tempfile",
+    "threading",
+    "time",
+    "typing",
+    "urllib",
+    "uuid",
+    "warnings",
+    "weakref",
 }
 
 
@@ -241,6 +270,7 @@ def upload_plugin():
     # broken receiver doesn't go undetected for hours.
     try:
         from ...services.webhook import webhook_service
+
         webhook_service.emit(
             "on_plugin_change",
             {
@@ -252,6 +282,7 @@ def upload_plugin():
         )
     except Exception as exc:
         import logging
+
         logging.getLogger(__name__).warning(
             "on_plugin_change (install) webhook emit failed: %s", exc
         )
@@ -297,8 +328,10 @@ def uninstall_plugin():
         user_dir_resolved = _user_plugins_dir().resolve()
     except OSError as e:
         return _json_response({"error": f"Path resolution failed: {e}"}, 500)
-    if not str(resolved).startswith(str(user_dir_resolved) + "/") \
-            and resolved != user_dir_resolved / safe:
+    if (
+        not str(resolved).startswith(str(user_dir_resolved) + "/")
+        and resolved != user_dir_resolved / safe
+    ):
         return _json_response({"error": "Forbidden path"}, 403)
 
     if not target.exists():
@@ -322,12 +355,14 @@ def uninstall_plugin():
 
     try:
         from ...services.webhook import webhook_service
+
         webhook_service.emit(
             "on_plugin_change",
             {"action": "uninstall", "filename": safe},
         )
     except Exception as exc:
         import logging
+
         logging.getLogger(__name__).warning(
             "on_plugin_change (uninstall) webhook emit failed: %s", exc
         )

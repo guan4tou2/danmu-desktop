@@ -9,7 +9,6 @@ import pytest
 
 from server.services import backup as backup_svc
 
-
 # ── Helpers ────────────────────────────────────────────────────────────────
 
 
@@ -45,9 +44,9 @@ def isolated_backup_dirs(tmp_path, monkeypatch):
         backup_svc,
         "_INCLUDE_DIRS",
         [
-            ("runtime",      runtime,      "runtime",      "*.json"),
-            ("effects",      effects,      "effects",      "*.dme"),
-            ("plugins",      plugins,      "plugins",      "*"),
+            ("runtime", runtime, "runtime", "*.json"),
+            ("effects", effects, "effects", "*.dme"),
+            ("plugins", plugins, "plugins", "*"),
             ("user_plugins", user_plugins, "user_plugins", "*"),
         ],
     )

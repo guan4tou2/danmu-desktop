@@ -263,9 +263,11 @@ def search_history():
     # status=shown,pinned,... — empty set means no filter.
     _VALID_STATUSES = {"shown", "pinned", "masked", "blocked"}
     raw_status = (request.args.get("status") or "").strip()
-    status_filter = {
-        s.strip() for s in raw_status.split(",") if s.strip() in _VALID_STATUSES
-    } if raw_status else set()
+    status_filter = (
+        {s.strip() for s in raw_status.split(",") if s.strip() in _VALID_STATUSES}
+        if raw_status
+        else set()
+    )
 
     # Shared `filters` envelope — emitted by both the empty-history
     # short-circuit and the normal response path so the FE can rely on
@@ -279,13 +281,15 @@ def search_history():
     }
 
     if not history_service.danmu_history:
-        return _json_response({
-            "results": [],
-            "total": 0,
-            "query": q,
-            "filters": filters_envelope,
-            "contract": _gap_contract(),
-        })
+        return _json_response(
+            {
+                "results": [],
+                "total": 0,
+                "query": q,
+                "filters": filters_envelope,
+                "contract": _gap_contract(),
+            }
+        )
 
     # When since/until provided, query the underlying record store with the
     # explicit range (covers cases beyond the 168-hour ceiling). Otherwise

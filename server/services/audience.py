@@ -45,8 +45,11 @@ from server.config import Config
 
 logger = logging.getLogger(__name__)
 
-_STATE_FILE = Path(Config.RUNTIME_DIR) / "audience.json" if hasattr(Config, "RUNTIME_DIR") \
+_STATE_FILE = (
+    Path(Config.RUNTIME_DIR) / "audience.json"
+    if hasattr(Config, "RUNTIME_DIR")
     else Path(__file__).resolve().parent.parent / "runtime" / "audience.json"
+)
 
 _lock = threading.Lock()
 # raw fingerprint → overlay dict

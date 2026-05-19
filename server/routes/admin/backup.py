@@ -39,6 +39,7 @@ def backup_export():
     # Filename embeds an ISO-ish timestamp so multiple snapshots from
     # the same day don't collide in the operator's Downloads folder.
     import time
+
     stamp = time.strftime("%Y%m%d-%H%M%S")
     headers = {
         "Content-Type": "application/gzip",
@@ -96,6 +97,7 @@ def backup_manifest():
     on page load to show "your snapshot would be N MB / M files".
     """
     from pathlib import Path
+
     from server.services.backup import _INCLUDE_DIRS
 
     included = []
@@ -111,13 +113,17 @@ def backup_manifest():
             except OSError:
                 continue
             total += sz
-            included.append({
-                "label": label,
-                "path": f"{prefix}/{fp.relative_to(src_dir).as_posix()}",
-                "size": sz,
-            })
-    return _json_response({
-        "file_count": len(included),
-        "total_bytes": total,
-        "files": included,
-    })
+            included.append(
+                {
+                    "label": label,
+                    "path": f"{prefix}/{fp.relative_to(src_dir).as_posix()}",
+                    "size": sz,
+                }
+            )
+    return _json_response(
+        {
+            "file_count": len(included),
+            "total_bytes": total,
+            "files": included,
+        }
+    )
