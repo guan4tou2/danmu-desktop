@@ -125,28 +125,28 @@
     var maxCount = Math.max(1, ...data.options.map(function (o) { return o.count; }));
 
     var card = document.createElement("div");
-    card.className = "mt-2 p-3 bg-slate-800/60 rounded-lg border border-slate-700/50";
+    card.className = "admin-poll-status-card";
 
     var headerRow = document.createElement("div");
-    headerRow.className = "flex items-center gap-2 mb-2";
+    headerRow.className = "admin-poll-status-header";
     var dot = document.createElement("span");
-    dot.className = "inline-block w-2 h-2 rounded-full " + (data.state === "active" ? "bg-green-400 animate-pulse" : "bg-yellow-400");
+    dot.className = "admin-poll-status-dot" + (data.state === "active" ? " is-active" : " is-ended");
     headerRow.appendChild(dot);
     var questionEl = document.createElement("span");
-    questionEl.className = "text-white font-semibold text-sm";
+    questionEl.className = "admin-poll-status-question";
     questionEl.textContent = data.question || "";
     headerRow.appendChild(questionEl);
     var stateEl = document.createElement("span");
-    stateEl.className = "text-xs text-slate-400 ml-auto";
+    stateEl.className = "admin-poll-status-state";
     stateEl.textContent = data.state;
     headerRow.appendChild(stateEl);
     card.appendChild(headerRow);
 
     data.options.forEach(function (o) {
       var row = document.createElement("div");
-      row.className = "mb-1.5";
+      row.className = "admin-poll-status-row";
       var labelRow = document.createElement("div");
-      labelRow.className = "flex justify-between text-xs text-slate-300 mb-0.5";
+      labelRow.className = "admin-poll-status-label";
       var labelLeft = document.createElement("span");
       var keyBold = document.createElement("b");
       keyBold.textContent = o.key + ".";
@@ -157,9 +157,9 @@
       labelRow.appendChild(labelLeft);
       labelRow.appendChild(labelRight);
       var barBg = document.createElement("div");
-      barBg.className = "bg-slate-700/50 rounded h-2 overflow-hidden";
+      barBg.className = "admin-poll-status-bar";
       var barFill = document.createElement("div");
-      barFill.className = "h-full rounded bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-300";
+      barFill.className = "admin-poll-status-bar-fill";
       barFill.style.width = (o.count / maxCount * 100) + "%";
       barBg.appendChild(barFill);
       row.appendChild(labelRow);
@@ -168,7 +168,7 @@
     });
 
     var footer = document.createElement("div");
-    footer.className = "text-xs text-slate-400 mt-1";
+    footer.className = "admin-poll-status-footer";
     footer.textContent = ServerI18n.t("pollTotalVotes").replace("{0}", total);
     card.appendChild(footer);
     display.appendChild(card);
@@ -196,7 +196,7 @@
         if (count >= 6) { window.showToast(ServerI18n.t("maxPollOptions"), false); return; }
         var input = document.createElement("input");
         input.type = "text";
-        input.className = "poll-option-input w-full p-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm";
+        input.className = "poll-option-input admin-v2-input";
         input.placeholder = String.fromCharCode(65 + count) + ". Option " + (count + 1);
         input.maxLength = 100;
         container.appendChild(input);
