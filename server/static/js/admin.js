@@ -1594,6 +1594,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
       applySectionVisibility();
 
+      // Tab-aware modules (admin-display.js viewer tabs, etc.) need to
+      // re-apply per-tab visibility AFTER applySectionVisibility — that
+      // pass writes inline display="" on every wanted sec-* and clobbers
+      // anything syncVisibility set on the earlier hashchange. Dispatching
+      // here gives those modules a stable hook that runs last.
+      document.dispatchEvent(new CustomEvent("admin-route-applied", {
+        detail: { route: currentRoute, leaf: activeTab },
+      }));
+
       _renderTabStripFor(currentRoute, activeTab);
 
       try { history.replaceState(null, "", wantedHash); } catch (e) { /* ignore */ }

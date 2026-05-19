@@ -8261,10 +8261,6 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   .admin-dash-sidebar,
   .admin-sidebar,
   .admin-shell-sidebar { display: none !important; }
-  /* Existing FAB stays but shrinks on mobile. */
-  .admin-qa-fab { top: 60px; right: 12px; }
-  .admin-qa-fab__btn { width: 36px; height: 36px; font-size: 16px; }
-  .admin-qa-fab__menu { width: calc(100vw - 24px); max-width: 320px; }
 }
 
 /* ── Modal-as-bottom-sheet at <= 600px ── */
@@ -8828,111 +8824,6 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   font-family: var(--font-mono);
   font-size: 9px; letter-spacing: 0.5px;
   color: var(--color-text-muted);
-}
-
-/* ─── Admin Quick Action FAB (P3-1, design v4 2026-05-17) ───────────
-   Floating "+" top-right · 7-action menu (with kbd shortcuts).
-   Mounted at <body> level by admin-quick-action-fab.js. */
-.admin-qa-fab {
-  position: fixed; top: 16px; right: 16px; z-index: 9100;
-}
-.admin-qa-fab__btn {
-  width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
-  background: var(--color-primary); color: #000;
-  border: none;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; font-weight: 700;
-  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.33), 0 2px 8px rgba(0, 0, 0, 0.3);
-  transition: transform 0.15s;
-}
-.admin-qa-fab__btn:hover { transform: scale(1.05); }
-.admin-qa-fab[data-state="open"] .admin-qa-fab__btn { transform: rotate(45deg); }
-
-.admin-qa-fab__backdrop {
-  position: fixed; inset: 0; z-index: -1;
-  background: rgba(0, 0, 0, 0.5);
-  animation: hud-fade-in 160ms ease-out;
-}
-.admin-qa-fab__menu {
-  position: absolute; top: 0; right: 0; width: 320px;
-  background: var(--color-surface);
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 6px; overflow: hidden;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
-  animation: qa-fab-slide 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-@keyframes qa-fab-slide {
-  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.admin-qa-fab__menu-head {
-  display: flex; align-items: center; gap: 8px;
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
-}
-.admin-qa-fab__kicker {
-  font-family: var(--font-mono);
-  font-size: 9px; letter-spacing: 1.5px;
-  color: var(--color-primary);
-  text-transform: uppercase;
-}
-.admin-qa-fab__spacer { flex: 1; }
-.admin-qa-fab__esc {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--color-text-muted);
-}
-
-.admin-qa-fab__row {
-  width: 100%;
-  padding: 10px 16px;
-  display: flex; align-items: center; gap: 10px;
-  background: transparent; border: none; cursor: pointer;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-  text-align: left;
-}
-.admin-qa-fab__row:last-child { border-bottom: none; }
-.admin-qa-fab__row:hover:not(:disabled) {
-  background: rgba(56, 189, 248, 0.07);
-}
-.admin-qa-fab__row:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.admin-qa-fab__icon {
-  width: 28px; height: 28px; border-radius: 4px;
-  background: var(--color-bg-elevated, #182239);
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px;
-  color: var(--color-primary);
-  flex-shrink: 0;
-}
-.admin-qa-fab__txt { flex: 1; min-width: 0; }
-.admin-qa-fab__label {
-  display: block;
-  font-size: 12px; font-weight: 500;
-  color: var(--color-text-strong);
-}
-.admin-qa-fab__desc {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 9px; letter-spacing: 0.3px;
-  color: var(--color-text-muted);
-  margin-top: 1px;
-}
-.admin-qa-fab__kbd {
-  flex-shrink: 0;
-  padding: 2px 8px; border-radius: 3px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--color-text-muted);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .admin-qa-fab__btn:hover { transform: none; }
-  .admin-qa-fab__menu { animation: none; }
-  .admin-qa-fab__backdrop { animation: none; }
 }
 
 /* ─── Admin Live Filters (P2-1, design v4 2026-05-18) ────────────────

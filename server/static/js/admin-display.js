@@ -1311,6 +1311,9 @@
     });
     observer.observe(document.body, { childList: true, subtree: true });
     window.addEventListener("hashchange", syncVisibility);
+    // admin.js dispatches this AFTER applySectionVisibility() — re-running
+    // syncVisibility here ensures our per-tab display:"none" survives.
+    document.addEventListener("admin-route-applied", syncVisibility);
     document.addEventListener("admin-panel-rendered", () => {
       inject();
       hideLegacy();
