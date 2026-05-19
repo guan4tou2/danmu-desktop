@@ -35,6 +35,14 @@ def overlay_clear():
             audit_log.append("broadcast", "overlay_cleared", actor="admin")
         except Exception:
             pass
+        # Webhook v2 — operators subscribing to on_overlay_clear get a
+        # ping every time admin nukes the visible danmu (useful for OBS
+        # scene swaps / external scoreboards that want to reset visuals).
+        try:
+            from ...services.webhook import webhook_service
+            webhook_service.emit("on_overlay_clear", {"actor": "admin"})
+        except Exception:
+            pass
     except Exception as exc:  # pragma: no cover — best-effort logging
         current_app.logger.error(
             "[overlay] clear broadcast failed: %s", sanitize_log_string(str(exc))

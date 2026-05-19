@@ -89,6 +89,67 @@ def list_deliveries():
     )
 
 
+@admin_bp.route("/webhooks/toggle", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+@require_login
+def toggle_webhook():
+    """Flip a webhook's `enabled` flag in one call (event vocab v2).
+
+    Body: ``{"hook_id": "<id>", "enabled": true|false}`` — explicit
+    boolean preferred. Missing ``enabled`` flips the current value (used
+    by the FE's row-level switch when it doesn't track state locally).
+    """
+    data = request.get_json(silent=True) or {}
+    hook_id = (data.get("hook_id") or "").strip()
+    if not hook_id:
+        return _json_response({"error": "hook_id required"}, 400)
+
+    from ...services.webhook import webhook_service
+
+    existing = webhook_service.get_hook(hook_id)
+    if not existing:
+        return _json_response({"error": "Webhook not found"}, 404)
+
+    if "enabled" in data:
+        next_state = bool(data["enabled"])
+    else:
+        next_state = not bool(existing.get("enabled"))
+
+    webhook_service.update_hook(hook_id, {"enabled": next_state})
+
+    audit_log.append(
+        "webhooks",
+        "toggle",
+        actor="admin",
+        meta={"hook_id": hook_id, "enabled": next_state},
+    )
+    return _json_response({"hook_id": hook_id, "enabled": next_state})
+
+
+@admin_bp.route("/webhooks/events", methods=["GET"])
+@require_login
+def list_webhook_events():
+    """Return the canonical event vocabulary so the FE can render an
+    up-to-date subscription checklist without hard-coding the list.
+
+    Each entry carries ``slug`` (the constant used in /register `events`
+    arrays) and a short bilingual ``desc`` for the admin UI."""
+    catalog = [
+        {"slug": "on_danmu",         "zh": "彈幕送出",       "en": "Danmu accepted"},
+        {"slug": "on_danmu_blocked", "zh": "彈幕被擋",       "en": "Danmu blocked"},
+        {"slug": "on_poll_create",   "zh": "投票建立",       "en": "Poll created"},
+        {"slug": "on_poll_vote",     "zh": "投票一次",       "en": "Single vote"},
+        {"slug": "on_poll_end",      "zh": "投票結束",       "en": "Poll ended"},
+        {"slug": "on_session_start", "zh": "場次開啟 / Overlay ON",  "en": "Session start"},
+        {"slug": "on_session_end",   "zh": "場次結束 / Overlay OFF", "en": "Session end"},
+        {"slug": "on_overlay_clear", "zh": "清空 Overlay",   "en": "Overlay cleared"},
+        {"slug": "on_audit_alert",   "zh": "審計警示",       "en": "Audit alert ≥ warn"},
+        {"slug": "on_plugin_change", "zh": "插件變動",       "en": "Plugin install/uninstall"},
+    ]
+    return _json_response({"events": catalog})
+
+
 @admin_bp.route("/webhooks/test", methods=["POST"])
 @rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf

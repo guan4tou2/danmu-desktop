@@ -220,6 +220,22 @@ def upload_plugin():
         },
     )
 
+    # Webhook v2 event — operators subscribing to plugin lifecycle
+    # see installs without polling /admin/plugins/list.
+    try:
+        from ...services.webhook import webhook_service
+        webhook_service.emit(
+            "on_plugin_change",
+            {
+                "action": "install",
+                "filename": filename,
+                "name": candidate_name,
+                "version": manifest.get("version"),
+            },
+        )
+    except Exception:
+        pass  # webhook failure must never block the install path
+
     return _json_response(
         {
             "installed": filename,
@@ -283,6 +299,16 @@ def uninstall_plugin():
         actor="admin",
         meta={"filename": safe},
     )
+
+    try:
+        from ...services.webhook import webhook_service
+        webhook_service.emit(
+            "on_plugin_change",
+            {"action": "uninstall", "filename": safe},
+        )
+    except Exception:
+        pass
+
     return _json_response({"removed": safe})
 
 
