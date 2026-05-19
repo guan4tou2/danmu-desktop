@@ -132,20 +132,14 @@ def _go_to_route(page, route: str) -> None:
 def test_about_page_renders(admin_page):
     _go_to_route(admin_page, "about")
     admin_page.wait_for_selector("#sec-about-overview", state="visible", timeout=5000)
-    # Big version card + 4 KPI tiles + OSS notices + changelog
+    # v5 yellow: version card + system info + changelog + license row
     assert admin_page.is_visible("[data-about-version]")
-    assert admin_page.locator(".admin-about-stat").count() == 4
-    assert admin_page.locator(".admin-about-cl-entry").count() >= 1
-    # KPI tiles match v5.0.0 retrofit labels (admin-about.js:109)
-    kpi_labels = admin_page.locator(".admin-about-stat .k").all_text_contents()
-    assert "版本狀態" in kpi_labels
-    assert "上次檢查" in kpi_labels
-    assert "LICENSE" in kpi_labels
-    # Action buttons (G11 added 檢查更新 + Setup Wizard)
-    actions = admin_page.locator("[data-about-action]").all_text_contents()
-    assert any("檢查更新" in a for a in actions)
-    assert any("複製" in a for a in actions)
-    assert any("設定精靈" in a for a in actions)
+    assert admin_page.locator(".admin-about-stat").count() == 0
+    assert admin_page.locator("[data-about-system-row]").count() >= 6
+    assert admin_page.locator("[data-about-changelog-item]").count() >= 3
+    assert admin_page.is_visible("[data-about-license]")
+    license_text = admin_page.locator("[data-about-license]").text_content() or ""
+    assert "MIT License" in license_text
 
 
 def test_notifications_page_renders(admin_page):
@@ -163,18 +157,12 @@ def test_notifications_page_renders(admin_page):
 def test_audit_page_renders(admin_page):
     _go_to_route(admin_page, "audit")
     admin_page.wait_for_selector("#sec-audit-overview", state="visible", timeout=5000)
-    # ACTION / ACTOR / RANGE filters + table
-    assert admin_page.locator("[data-audit-action-filter]").count() >= 1
-    assert admin_page.locator("[data-audit-actor-filter]").count() >= 1
-    assert admin_page.locator("[data-audit-time-filter]").count() >= 3
-    # 5-col header
-    cols = admin_page.locator(".admin-audit-table th").all_text_contents()
-    assert "時間" in cols
-    assert "來源" in cols
-    assert "事件" in cols
-    assert "執行者" in cols
-    # JSON export action present
-    assert admin_page.locator("[data-audit-action='export']").count() == 1
+    # v5 yellow: compact toolbar filters + timeline rows
+    assert admin_page.locator("[data-audit-actor-filter]").count() == 3
+    assert admin_page.locator("[data-audit-severity-filter]").count() == 3
+    assert admin_page.locator("[data-audit-export]").count() == 1
+    assert admin_page.locator(".admin-audit-timeline-row").count() >= 1
+    assert admin_page.locator(".admin-audit-table").count() == 0
 
 
 def test_audience_page_renders(admin_page):
@@ -215,10 +203,15 @@ def test_poll_deepdive_page_renders(admin_page):
 def test_setup_wizard_overlay_renders(admin_page):
     _go_to_route(admin_page, "setup")
     admin_page.wait_for_selector("#admin-setup-wizard-root", state="visible", timeout=5000)
-    # 5-step flow (password / logo / theme / language / done)
+    # v5 yellow: server / display / moderation / theme / finish
     assert admin_page.locator(".admin-setup-step").count() == 5
-    # First step is password
-    assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "密碼"
+    labels = admin_page.locator(".admin-setup-step .lbl").all_text_contents()
+    assert labels == ["伺服器基本設定", "顯示規則", "審核策略", "外觀主題", "完成"]
+    assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "伺服器基本設定"
+    assert admin_page.is_visible("[data-setup-field='server-name']")
+    assert admin_page.is_visible("[data-setup-field='public-url']")
+    assert admin_page.is_visible("[data-setup-field='http-port']")
+    assert admin_page.is_visible("[data-setup-field='ws-port']")
     # Footer action buttons (close / prev / next)
     assert admin_page.locator("[data-setup-action='close']").count() >= 1
     # Close drawer to clean up for next test
@@ -229,24 +222,22 @@ def test_setup_wizard_overlay_renders(admin_page):
     )
 
 
-def test_setup_wizard_step_dependency_hints(admin_page):
-    """Task 5 regression: show backend dependency hints for step 1/2 when unavailable."""
+def test_setup_wizard_step_flow_matches_v5_design(admin_page):
+    """Wizard should follow the v5 step model and end on the finish state."""
     _go_to_route(admin_page, "setup")
     admin_page.wait_for_selector("#admin-setup-wizard-root", state="visible", timeout=5000)
-
-    # Simulate missing backend endpoints for password/logo from the page runtime.
-    admin_page.evaluate("""() => {
-          if (!window.AdminSetupWizard
-              || typeof window.AdminSetupWizard.__setCapabilityForTest !== "function") {
-            throw new Error("missing AdminSetupWizard.__setCapabilityForTest");
-          }
-          window.AdminSetupWizard.__setCapabilityForTest("password", false);
-          window.AdminSetupWizard.__setCapabilityForTest("logo", false);
-        }""")
-    admin_page.wait_for_selector("[data-setup-blocked='password']", state="visible", timeout=5000)
-
     admin_page.locator("[data-setup-action='next']").click()
-    admin_page.wait_for_selector("[data-setup-blocked='logo']", state="visible", timeout=5000)
+    admin_page.wait_for_selector(".admin-setup-step.is-active .lbl", state="visible", timeout=5000)
+    assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "顯示規則"
+    assert admin_page.locator("[data-setup-display-toggle]").count() >= 3
+    admin_page.locator("[data-setup-action='next']").click()
+    assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "審核策略"
+    assert admin_page.locator("[data-setup-moderation-toggle]").count() >= 3
+    admin_page.locator("[data-setup-action='next']").click()
+    assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "外觀主題"
+    admin_page.locator("[data-setup-action='next']").click()
+    assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "完成"
+    assert admin_page.is_visible("[data-setup-complete-cta]")
 
 
 def test_session_detail_falls_back_to_archive_endpoint(admin_page):

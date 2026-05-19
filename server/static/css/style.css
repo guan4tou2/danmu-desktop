@@ -7109,6 +7109,122 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   background: #5fc8ff;
 }
 
+
+/* v5 Yellow wizard refit (2026-05-19) */
+.admin-setup-field-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.6px;
+  color: var(--color-text-muted);
+}
+
+.admin-setup-input[readonly] {
+  font-family: var(--font-mono);
+  cursor: default;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.admin-setup-server-fields,
+.admin-setup-toggle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-setup-toggle-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border, #1f2944);
+  border-radius: 8px;
+  background: var(--color-bg);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+}
+
+.admin-setup-toggle-row:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.04);
+  transform: translateY(-1px);
+}
+
+.admin-setup-toggle-row.is-on {
+  border-color: rgba(134, 239, 172, 0.35);
+}
+
+.admin-setup-toggle-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-setup-toggle-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-strong);
+}
+
+.admin-setup-toggle-desc {
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
+.admin-setup-toggle-switch {
+  width: 40px;
+  height: 22px;
+  padding: 2px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border, #1f2944);
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-shrink: 0;
+  transition: background 120ms ease, border-color 120ms ease, justify-content 120ms ease;
+}
+
+.admin-setup-toggle-switch .thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.admin-setup-toggle-switch.is-on {
+  justify-content: flex-end;
+  background: rgba(134, 239, 172, 0.9);
+  border-color: rgba(134, 239, 172, 0.9);
+}
+
+.admin-setup-done-cta {
+  margin-top: 20px;
+  padding: 12px 32px;
+  border-radius: 8px;
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: #000;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 1.4px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 120ms ease, filter 120ms ease;
+}
+
+.admin-setup-done-cta:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+
 body[data-setup-wizard-open="1"] { overflow: hidden; }
 
 /* ─── Poll Deep-Dive (Phase 2 P0-3, 2026-04-27) ────────────────────── */
