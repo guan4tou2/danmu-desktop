@@ -1108,18 +1108,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Theme Management Card
     settingsGrid.insertAdjacentHTML("beforeend", `
-      <details id="sec-themes" class="group admin-v3-card" ${isOpen("sec-themes") ? "open" : ""}>
-        <summary class="flex items-center justify-between cursor-pointer list-none">
-          <div>
-            <h3 class="text-lg font-bold text-white" data-i18n="styleThemePacks">${ServerI18n.t("styleThemePacks")}</h3>
-            <p class="text-sm text-slate-300" data-i18n="themesSectionDesc">${ServerI18n.t("themesSectionDesc")}</p>
-          </div>
-          <span class="text-slate-400 transition-transform group-open:rotate-180">\u2304</span>
-        </summary>
-        <div class="mt-4 pt-4 border-t border-slate-700/50">
-          <div class="flex items-center gap-2 mb-4">
-            <button id="themeReloadBtn"
-              class="px-3 py-1.5 text-xs font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors flex items-center gap-1">
+      <div id="sec-themes" class="hud-page-stack lg:col-span-2">
+        <div class="admin-v2-head">
+          <div class="admin-v2-kicker">THEME PACKS \u00b7 \u5f48\u5e55\u6a23\u5f0f\u9810\u8a2d</div>
+          <div class="admin-v2-title" data-i18n="styleThemePacks">${ServerI18n.t("styleThemePacks")}</div>
+          <p class="admin-v2-note" data-i18n="themesSectionDesc">${ServerI18n.t("themesSectionDesc")}</p>
+        </div>
+        <div class="admin-v2-card" style="padding:14px;margin-top:12px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <button id="themeReloadBtn" class="admin-poll-btn is-ghost">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
               Reload
             </button>
@@ -1132,7 +1129,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <span class="theme-pack-muted" style="padding:14px">載入主題包…</span>
           </div>
         </div>
-      </details>
+      </div>
     `);
     scheduleIdleTask(initThemesManagement);
 
