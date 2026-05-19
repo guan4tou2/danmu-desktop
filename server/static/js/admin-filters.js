@@ -237,7 +237,7 @@
 
   function renderRuleRow(rule) {
     const typePill = TYPE_PILL[rule.type] || "is-default";
-    const actionCol = ACTION_COLOR[rule.action] || "#94a3b8";
+    const actionCol = ACTION_COLOR[rule.action] || "var(--color-text-muted)";
     const typeLabel = rule.type === "keyword" ? "WORD" : rule.type.toUpperCase();
 
     let patternText = rule.pattern;

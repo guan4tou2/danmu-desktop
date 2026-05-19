@@ -106,7 +106,7 @@
             '<span class="admin-v2-monolabel" style="font-size:9px">VOL</span>' +
             '<input type="range" class="sound-volume-slider" data-name="' + escapeHtml(sound.name) + '" ' +
               'min="0" max="100" step="1" value="' + volPct + '" ' +
-              'style="flex:1;min-width:80px;max-width:120px;accent-color:#38bdf8" />' +
+              'style="flex:1;min-width:80px;max-width:120px;accent-color:var(--color-primary)" />' +
             '<span class="admin-v2-monolabel sound-volume-label" data-name="' + escapeHtml(sound.name) + '" style="min-width:32px;text-align:right">' + volPct + "%</span>" +
           "</div>" +
           '<div class="actions" style="margin-top:6px">' +
