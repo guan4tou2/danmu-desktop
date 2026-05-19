@@ -506,7 +506,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }).join("");
 
       let topTextRows = topTexts.map((t, i) =>
-        `<tr class="border-t border-slate-700/50"><td class="py-1 pr-3 text-slate-400">${i + 1}</td><td class="py-1 pr-3 text-white text-sm">${escapeHtml(t.text)}</td><td class="py-1 text-sky-400 font-mono text-sm">${t.count}</td></tr>`
+        `<tr style="border-top:1px solid var(--admin-line)"><td class="py-1 pr-3" style="color:var(--admin-text-dim)">${i + 1}</td><td class="py-1 pr-3 text-sm" style="color:var(--admin-text)">${escapeHtml(t.text)}</td><td class="py-1 font-mono text-sm" style="color:var(--color-primary)">${t.count}</td></tr>`
       ).join("");
 
       dashDiv.innerHTML = `
@@ -526,14 +526,14 @@ document.addEventListener("DOMContentLoaded", () => {
               <h4 class="history-dashboard-title">${ServerI18n.t("hourlyDistribution")}</h4>
               <span class="history-dashboard-caption">${hours}h window</span>
             </div>
-            <div class="stats-chart">${chartBars || `<span class="text-xs text-slate-400">${ServerI18n.t("noData")}</span>`}</div>
+            <div class="stats-chart">${chartBars || `<span class="text-xs" style="color:var(--admin-text-dim)">${ServerI18n.t("noData")}</span>`}</div>
           </div>
           <div class="history-dashboard-card history-dashboard-card--table">
             <div class="history-dashboard-title-row">
               <h4 class="history-dashboard-title">${ServerI18n.t("topTexts")}</h4>
               <span class="history-dashboard-caption">Top 10</span>
             </div>
-            ${topTexts.length ? `<table class="w-full text-xs"><tbody>${topTextRows}</tbody></table>` : `<span class="text-xs text-slate-400">${ServerI18n.t("noData")}</span>`}
+            ${topTexts.length ? `<table class="w-full text-xs"><tbody>${topTextRows}</tbody></table>` : `<span class="text-xs" style="color:var(--admin-text-dim)">${ServerI18n.t("noData")}</span>`}
           </div>
         </div>`;
     } catch (err) {
@@ -607,16 +607,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div id="sec-${id.toLowerCase()}" class="admin-v3-card">
                         <div class="flex items-center justify-between">
                             <div class="flex-grow pr-4">
-                                <h3 class="text-lg font-bold text-white">${title}</h3>
-                                <p class="text-sm text-slate-300">${description}</p>
+                                <h3 class="text-lg font-bold" style="color:var(--admin-text)">${title}</h3>
+                                <p class="text-sm" style="color:var(--admin-text-dim)">${description}</p>
                             </div>
                             <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in flex-shrink-0">
                                 <input type="checkbox" name="${id}" id="toggle-${id}" role="switch" aria-checked="${isEnabled}" aria-label="Toggle ${title}" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer" ${isEnabled ? "checked" : ""
       } />
-                                <label for="toggle-${id}" class="toggle-label block overflow-hidden h-7 rounded-full bg-slate-700 cursor-pointer"></label>
+                                <label for="toggle-${id}" class="toggle-label block overflow-hidden h-7 rounded-full cursor-pointer" style="background:var(--color-bg-elevated)"></label>
                             </div>
                         </div>
-                        <div class="mt-4 pt-4 border-t border-slate-700/50">
+                        <div class="mt-4 pt-4" style="border-top:1px solid var(--admin-line)">
                             ${isEnabled ? enabledContent : disabledContent}
                         </div>
                     </div>
@@ -793,7 +793,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <span class="sep">⌘K</span>
                                     </div>
                                     <select id="server-lang-select" aria-label="Language"
-                                      class="bg-slate-800/60 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-2 focus:ring-sky-400 focus:border-sky-400">
+                                      class="admin-v2-select" style="font-size:var(--text-xs);padding:8px">
                                       <option value="en" ${ServerI18n.currentLang === "en" ? "selected" : ""}>English</option>
                                       <option value="zh" ${ServerI18n.currentLang === "zh" ? "selected" : ""}>中文</option>
                                       <option value="ja" ${ServerI18n.currentLang === "ja" ? "selected" : ""}>日本語</option>
@@ -804,7 +804,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <span class="dot"></span>
                                         ${broadcasting ? "OVERLAY · ON" : "OVERLAY · OFF"}
                                     </button>
-                                    <button id="logoutButton" class="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm">
+                                    <button id="logoutButton" class="admin-poll-btn is-ghost" style="color:var(--color-danger);border-color:var(--color-danger);display:flex;align-items:center;gap:6px">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                                         <span data-i18n="logout">${ServerI18n.t("logout")}</span>
                                     </button>
@@ -1027,8 +1027,8 @@ document.addEventListener("DOMContentLoaded", () => {
       ServerI18n.t("effectsSetting"),
       ServerI18n.t("effectsSettingDesc"),
       effectsEnabled,
-      `<p class="text-sm text-slate-300">${ServerI18n.t("effectsEnabledMsg")}</p>`,
-      `<p class="text-sm text-slate-300">${ServerI18n.t("effectsDisabledMsg")}</p>`
+      `<p class="text-sm" style="color:var(--admin-text-dim)">${ServerI18n.t("effectsEnabledMsg")}</p>`,
+      `<p class="text-sm" style="color:var(--admin-text-dim)">${ServerI18n.t("effectsDisabledMsg")}</p>`
     ));
 
     // Effects Management — AdminEffectsPage layout (1fr + 340px YAML inspector)
@@ -1054,7 +1054,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <span class="hud-filter-chip is-active" data-effect-filter="ALL">\u5168\u90e8 \u2014</span>
             </div>
             <div class="flex items-center justify-between" style="gap:8px">
-              <p class="text-xs text-slate-400 m-0">${ServerI18n.t("effectsManagementDesc")}</p>
+              <p class="text-xs m-0" style="color:var(--admin-text-dim)">${ServerI18n.t("effectsManagementDesc")}</p>
               <div class="flex items-center" style="gap:6px">
                 <button id="effectReloadBtn" class="hud-toolbar-action" type="button">
                   \u21bb ${ServerI18n.t("reload")}
@@ -1062,7 +1062,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
             </div>
             <div id="effectsList" class="hud-effects-grid">
-              <span class="text-xs text-slate-400" style="grid-column:1 / -1">${ServerI18n.t("loadingEffectsAdmin")}</span>
+              <span class="text-xs" style="color:var(--admin-text-dim);grid-column:1 / -1">${ServerI18n.t("loadingEffectsAdmin")}</span>
             </div>
           </div>
 
@@ -1173,7 +1173,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <div style="padding:14px;display:grid;grid-template-columns:1fr auto;gap:8px;border-bottom:1px solid var(--hud-line-strong)">
             <input type="text" id="newKeywordInput" placeholder="${ServerI18n.t("enterKeyword")}"
-              class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:ring-2 focus:ring-sky-400 focus:border-sky-400">
+              class="admin-v2-input w-full">
             <button id="addKeywordBtn" type="button" class="hud-toolbar-action is-primary">+ ${ServerI18n.t("addKeyword")}</button>
           </div>
           <div id="blacklistKeywords" class="max-h-72 overflow-y-auto" style="padding:8px 14px">
@@ -1185,58 +1185,54 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Danmu History Card
     settingsGrid.insertAdjacentHTML("beforeend", `
-                    <details id="sec-history" class="group admin-v3-card lg:col-span-2" ${isOpen("sec-history") ? "open" : ""}>
-                        <summary class="flex items-center justify-between cursor-pointer list-none">
-                            <div>
-                                <h3 class="text-lg font-bold text-white">${ServerI18n.t("danmuHistory")}</h3>
-                                <p class="text-sm text-slate-300">${ServerI18n.t("danmuHistoryDesc")}</p>
-                            </div>
-                            <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
-                        </summary>
-                        <div class="mt-4 pt-4 border-t border-slate-700/50 history-section-body">
+                    <div id="sec-history" class="admin-v3-card lg:col-span-2">
+                        <div>
+                            <h3 class="text-lg font-bold" style="color:var(--admin-text)">${ServerI18n.t("danmuHistory")}</h3>
+                            <p class="text-sm" style="color:var(--admin-text-dim)">${ServerI18n.t("danmuHistoryDesc")}</p>
+                        </div>
+                        <div class="mt-4 pt-4 history-section-body" style="border-top:1px solid var(--admin-line)">
                             <div id="statsDashboard"></div>
                             <div class="space-y-3">
                                 <div class="history-command-bar">
-                                    <label class="text-sm font-medium text-slate-300">${ServerI18n.t("timeRange")}</label>
-                                    <select id="historyHours" class="px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400">
+                                    <label class="text-sm font-medium" style="color:var(--admin-text-dim)">${ServerI18n.t("timeRange")}</label>
+                                    <select id="historyHours" class="admin-v2-select">
                                         <option value="1">${ServerI18n.t("last1Hour")}</option>
                                         <option value="6">${ServerI18n.t("last6Hours")}</option>
                                         <option value="24" selected>${ServerI18n.t("last24Hours")}</option>
                                         <option value="72">${ServerI18n.t("last3Days")}</option>
                                         <option value="168">${ServerI18n.t("last7Days")}</option>
                                     </select>
-                                    <button id="refreshHistoryBtn" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("refreshBtn")}</button>
-                                    <button id="exportHistoryBtn" class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("exportCSV")}</button>
-                                    <button id="clearHistoryBtn" class="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("clearAll")}</button>
-                                    <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none ml-auto">
-                                        <input type="checkbox" id="historyAutoRefresh" class="accent-sky-500">
+                                    <button id="refreshHistoryBtn" class="admin-poll-btn is-primary">${ServerI18n.t("refreshBtn")}</button>
+                                    <button id="exportHistoryBtn" class="admin-poll-btn is-ghost">${ServerI18n.t("exportCSV")}</button>
+                                    <button id="clearHistoryBtn" class="admin-poll-btn is-ghost" style="color:var(--color-danger);border-color:var(--color-danger)">${ServerI18n.t("clearAll")}</button>
+                                    <label class="flex items-center gap-2 text-xs cursor-pointer select-none ml-auto" style="color:var(--admin-text-dim)">
+                                        <input type="checkbox" id="historyAutoRefresh" style="accent-color:var(--color-primary)">
                                         ${ServerI18n.t("autoRefresh")}
                                     </label>
                                 </div>
                                 <input id="historySearch" type="search" placeholder="${ServerI18n.t("searchHistory")}"
-                                    class="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm
-                                           placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400">
+                                    class="admin-v2-input w-full">
                                 <div id="replayToolbar" class="history-replay-toolbar">
-                                    <button id="replayStartBtn" class="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors text-sm">▶ ${ServerI18n.t("replaySelected")}</button>
-                                    <button id="replayPauseBtn" class="px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors text-sm hidden">⏸ ${ServerI18n.t("pause")}</button>
-                                    <button id="replayResumeBtn" class="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors text-sm hidden">▶ ${ServerI18n.t("resume")}</button>
-                                    <button id="replayStopBtn" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors text-sm hidden">⏹ ${ServerI18n.t("stop")}</button>
-                                    <select id="replaySpeed" class="px-2 py-1.5 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm">
+                                    <button id="replayStartBtn" class="admin-poll-btn is-primary" style="--btn-bg:var(--color-success)">▶ ${ServerI18n.t("replaySelected")}</button>
+                                    <button id="replayPauseBtn" class="admin-poll-btn is-ghost hidden">⏸ ${ServerI18n.t("pause")}</button>
+                                    <button id="replayResumeBtn" class="admin-poll-btn is-primary hidden" style="--btn-bg:var(--color-success)">▶ ${ServerI18n.t("resume")}</button>
+                                    <button id="replayStopBtn" class="admin-poll-btn is-ghost hidden" style="color:var(--color-danger);border-color:var(--color-danger)">⏹ ${ServerI18n.t("stop")}</button>
+                                    <select id="replaySpeed" class="admin-v2-select">
                                         <option value="1">1x</option>
                                         <option value="2">2x</option>
                                         <option value="5">5x</option>
                                         <option value="10">10x</option>
                                     </select>
-                                    <button id="replayRecordBtn" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg transition-colors text-sm">⏺ ${ServerI18n.t("recordReplay") || "Record Replay"}</button>
-                                    <span id="replayRecordingIndicator" class="text-sm text-red-400 hidden">⏺ <span id="replayRecordingTimer">00:00</span></span>
-                                    <button id="exportJsonBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors text-sm">${ServerI18n.t("exportJSON") || "Export JSON"}</button>
-                                    <span id="replayProgress" class="text-sm text-slate-400 hidden"></span>
+                                    <button id="replayRecordBtn" class="admin-poll-btn is-ghost" style="color:var(--color-danger);border-color:var(--color-danger)">⏺ ${ServerI18n.t("recordReplay") || "Record Replay"}</button>
+                                    <span id="replayRecordingIndicator" class="text-sm hidden" style="color:var(--color-danger)">⏺ <span id="replayRecordingTimer">00:00</span></span>
+                                    <button id="exportJsonBtn" class="admin-poll-btn is-ghost">${ServerI18n.t("exportJSON") || "Export JSON"}</button>
+                                    <span id="replayProgress" class="text-sm hidden" style="color:var(--admin-text-dim)"></span>
                                 </div>
-                                <div id="historyStats" class="history-stats-strip text-sm text-slate-400"></div>
+                                <div id="historyStats" class="history-stats-strip text-sm" style="color:var(--admin-text-dim)"></div>
                                 <div class="history-list-shell">
                                 <div class="flex items-center gap-2 mb-1">
-                                    <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none">
-                                        <input type="checkbox" id="historySelectAll" class="accent-sky-500">
+                                    <label class="flex items-center gap-2 text-xs cursor-pointer select-none" style="color:var(--admin-text-dim)">
+                                        <input type="checkbox" id="historySelectAll" style="accent-color:var(--color-primary)">
                                         ${ServerI18n.t("selectAll")}
                                     </label>
                                 </div>
@@ -1246,7 +1242,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                             </div>
                         </div>
-                    </details>
+                    </div>
                 `);
 
     // Polls Builder (multi-question master-detail) — extracted to
