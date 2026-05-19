@@ -6,7 +6,6 @@ import pytest
 
 from server.services.webhook import _VALID_EVENTS, WebhookService
 
-
 # ─── Service-level: vocab v2 ────────────────────────────────────────────────
 
 
@@ -60,7 +59,7 @@ def _config(**overrides):
 
 def test_register_accepts_v2_event():
     svc = WebhookService()
-    hook_id = svc.register(_config(events=["on_session_start", "on_overlay_clear"]))
+    svc.register(_config(events=["on_session_start", "on_overlay_clear"]))
     hooks = svc.list_hooks()
     assert set(hooks[0]["events"]) == {"on_session_start", "on_overlay_clear"}
 

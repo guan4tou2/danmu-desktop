@@ -36,20 +36,20 @@ _VALID_FORMATS = {"json", "discord", "slack"}
 # webhooks, but the emit sites for those land in follow-up batches.
 _VALID_EVENTS = {
     # Core danmu lifecycle
-    "on_danmu",            # danmu accepted into the queue
-    "on_danmu_blocked",    # danmu rejected (blacklist / filter / rate limit)
+    "on_danmu",  # danmu accepted into the queue
+    "on_danmu_blocked",  # danmu rejected (blacklist / filter / rate limit)
     # Poll lifecycle
     "on_poll_create",
-    "on_poll_vote",        # single vote cast
+    "on_poll_vote",  # single vote cast
     "on_poll_end",
     # Broadcast / session lifecycle
-    "on_session_start",    # operator flipped overlay to LIVE / session opened
-    "on_session_end",      # operator flipped to STANDBY / session closed
+    "on_session_start",  # operator flipped overlay to LIVE / session opened
+    "on_session_end",  # operator flipped to STANDBY / session closed
     # Overlay control
-    "on_overlay_clear",    # admin cleared the on-screen danmu stack
+    "on_overlay_clear",  # admin cleared the on-screen danmu stack
     # Operator surfaces
-    "on_audit_alert",      # audit_log entry with severity >= warn
-    "on_plugin_change",    # plugin uploaded or uninstalled
+    "on_audit_alert",  # audit_log entry with severity >= warn
+    "on_plugin_change",  # plugin uploaded or uninstalled
 }
 
 

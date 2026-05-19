@@ -28,7 +28,18 @@
 
   const CHANGELOG = [
     {
-      v: "5.1.0", d: "2026-05-18", tag: "current", notes: [
+      v: "5.2.0", d: "2026-05-19", tag: "current", notes: [
+        { t: "feat", l: "Danmu Redesign v5 finish · Batch 12 closes design coverage 22/28 → 28/28" },
+        { t: "feat", l: "BE audience module · risk score · flag / kick / unkick · /admin/audience/*" },
+        { t: "feat", l: "BE backup pack · .tar.gz export / dry-run / atomic apply · /admin/backup/*" },
+        { t: "feat", l: "Help Drawer v5 · 360 px route-aware tips + shortcuts + glossary + resources" },
+        { t: "feat", l: "Webhook event vocab 3 → 10 · toggle endpoint · session/overlay/plugin emit sites" },
+        { t: "feat", l: "/admin/search filters · since/until/type/fp/status · custom date range" },
+        { t: "fix",  l: "◐ 顯示設定 retired · merged into viewer 4-tab (page/fields/defaults/limits)" },
+      ],
+    },
+    {
+      v: "5.1.0", d: "2026-05-18", tag: "", notes: [
         { t: "feat", l: "Polestar pivot · #/broadcast → #/overlay · overlay_on/off 別名 · 4-state UI (off/on/paused/ended)" },
         { t: "feat", l: "Brief 0518 系列 · replay annotations · time-bound bans · sessions bucket · 多題 polls + 圖片 · fonts subset" },
         { t: "feat", l: "Moderation 6 sub-tabs · 審核佇列 / 封禁 / 黑名單 / 敏感字 / 速率 / 指紋" },

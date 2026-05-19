@@ -141,16 +141,16 @@ def list_webhook_events():
     Each entry carries ``slug`` (the constant used in /register `events`
     arrays) and a short bilingual ``desc`` for the admin UI."""
     catalog = [
-        {"slug": "on_danmu",         "zh": "彈幕送出",       "en": "Danmu accepted"},
-        {"slug": "on_danmu_blocked", "zh": "彈幕被擋",       "en": "Danmu blocked"},
-        {"slug": "on_poll_create",   "zh": "投票建立",       "en": "Poll created"},
-        {"slug": "on_poll_vote",     "zh": "投票一次",       "en": "Single vote"},
-        {"slug": "on_poll_end",      "zh": "投票結束",       "en": "Poll ended"},
-        {"slug": "on_session_start", "zh": "場次開啟 / Overlay ON",  "en": "Session start"},
-        {"slug": "on_session_end",   "zh": "場次結束 / Overlay OFF", "en": "Session end"},
-        {"slug": "on_overlay_clear", "zh": "清空 Overlay",   "en": "Overlay cleared"},
-        {"slug": "on_audit_alert",   "zh": "審計警示",       "en": "Audit alert ≥ warn"},
-        {"slug": "on_plugin_change", "zh": "插件變動",       "en": "Plugin install/uninstall"},
+        {"slug": "on_danmu", "zh": "彈幕送出", "en": "Danmu accepted"},
+        {"slug": "on_danmu_blocked", "zh": "彈幕被擋", "en": "Danmu blocked"},
+        {"slug": "on_poll_create", "zh": "投票建立", "en": "Poll created"},
+        {"slug": "on_poll_vote", "zh": "投票一次", "en": "Single vote"},
+        {"slug": "on_poll_end", "zh": "投票結束", "en": "Poll ended"},
+        {"slug": "on_session_start", "zh": "場次開啟 / Overlay ON", "en": "Session start"},
+        {"slug": "on_session_end", "zh": "場次結束 / Overlay OFF", "en": "Session end"},
+        {"slug": "on_overlay_clear", "zh": "清空 Overlay", "en": "Overlay cleared"},
+        {"slug": "on_audit_alert", "zh": "審計警示", "en": "Audit alert ≥ warn"},
+        {"slug": "on_plugin_change", "zh": "插件變動", "en": "Plugin install/uninstall"},
     ]
     return _json_response({"events": catalog})
 

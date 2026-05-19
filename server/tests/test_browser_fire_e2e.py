@@ -342,10 +342,18 @@ def test_browser_submit_danmu_appears_in_history(browser_session, server_ports):
         page.evaluate("window.location.hash = '#/history/replay'")
         page.wait_for_timeout(400)
         page.wait_for_selector("#sec-history-tabs", state="visible", timeout=5000)
+        # 2026-05-19 (PR #122): IA v5 made shell.dataset.activeLeaf the
+        # source of truth — admin-replay.js's _applyHashVisibility now
+        # syncs body.dataset.historyTab FROM the shell, overriding any
+        # body-level set. So to put the page in "list" tab, we have to
+        # update both: shell dataset (router state) AND body dataset
+        # (CSS gates). The legacy tab-strip click flow does this via
+        # admin-history.js but the test bypasses that strip.
         page.evaluate("""() => {
+                const shell = document.querySelector('.admin-dash-grid');
+                if (shell) shell.dataset.activeLeaf = 'list';
                 document.body.dataset.historyTab = 'list';
                 document.dispatchEvent(new CustomEvent('admin:history-tab'));
-                window.dispatchEvent(new Event('hashchange'));
             }""")
         page.wait_for_timeout(250)
         page.wait_for_selector("#sec-history", state="visible", timeout=5000)
