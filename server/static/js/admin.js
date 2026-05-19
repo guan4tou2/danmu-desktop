@@ -127,6 +127,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Aliases removed so #/themes and #/fonts resolve directly to their
     // own ADMIN_ROUTES entries (no longer detour through appearance).
     "viewer-config": { nav: "viewer" },
+    // 2026-05-19 v5 IA: `display` sidebar item removed; its content (overlay
+    // defaults + audience-customizable params) lives under viewer.defaults
+    // tab. Bookmarks like #/display land on the merged page instead of
+    // 404-ing into widgets.
+    display:         { nav: "viewer", tab: "defaults" },
 
     // === Automation tabs (Phase B 2026-05-06: now under system accordion) ===
     // 2026-05-18 v5: plugins promoted to first-class sidebar slug.
@@ -681,10 +686,13 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span data-i18n="adminNavThemes">風格主題包</span>
                                     <span class="admin-dash-nav-badge" data-count-themes hidden>—</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="display" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◐</span>
-                                    <span data-i18n="adminNavDisplay">顯示設定</span>
-                                </button>
+                                <!-- v5 IA (2026-05-19): the ◐ 顯示設定 sidebar
+                                     item was removed; its content (overlay /
+                                     viewer defaults) was already absorbed by
+                                     the viewer route's 4-tab layout
+                                     (page/fields/defaults/limits). Legacy
+                                     #/display bookmarks redirect to
+                                     #/viewer/defaults via _bareLegacyRedirects. -->
                                 <button type="button" class="admin-dash-nav-row" data-route="assets" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">▦</span>
                                     <span data-i18n="adminNavAssets">素材庫</span>

@@ -10620,6 +10620,153 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   width: 18px; height: 18px; border-radius: 9px;
 }
 
+/* ─── Viewer Config — Limits tab (v5 IA, 2026-05-19) ───────────────────
+   Design ref: batch11-viewer-4tab.jsx _VwLimitsTab. Two cards in a 1:1
+   grid plus a span-2 status strip below. Drops to single column ≤960px. */
+.admin-vc-limits-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+}
+@media (max-width: 960px) {
+  .admin-vc-limits-grid { grid-template-columns: 1fr; }
+}
+.admin-vc-limit-card {
+  background: var(--color-bg-elevated, #0f1524);
+  border: 1px solid var(--color-border, #1f2944); border-radius: 4px;
+  overflow: hidden;
+}
+.admin-vc-limit-card__head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border, #1f2944);
+}
+.admin-vc-limit-card__dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--color-text-muted);
+}
+.admin-vc-limit-card__dot.is-amber {
+  background: var(--color-amber, #fbbf24);
+  box-shadow: 0 0 6px var(--color-amber, #fbbf24);
+}
+.admin-vc-limit-card__dot.is-cyan {
+  background: var(--color-primary);
+  box-shadow: 0 0 6px var(--color-primary);
+}
+.admin-vc-limit-card__zh {
+  font-size: 13px; font-weight: 600; color: var(--color-text-strong);
+}
+.admin-vc-limit-card__en {
+  font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 1.5px;
+  color: var(--color-text-muted);
+}
+.admin-vc-limit-card__edit {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 1px;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+.admin-vc-limit-card__edit:hover { text-decoration: underline; }
+
+.admin-vc-limit-row {
+  display: grid; grid-template-columns: 1fr auto 140px;
+  align-items: center; gap: 14px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-border, #1f2944);
+}
+.admin-vc-limit-row:last-of-type { border-bottom: none; }
+.admin-vc-limit-row__label { min-width: 0; }
+.admin-vc-limit-row__zh {
+  font-size: 13px; font-weight: 500; color: var(--color-text-strong);
+}
+.admin-vc-limit-row__en {
+  display: block; margin-top: 1px;
+  font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 1.5px;
+  color: var(--color-text-muted);
+}
+.admin-vc-limit-row__value {
+  min-width: 80px; padding: 6px 12px;
+  background: var(--color-bg, #050a18);
+  border: 1px solid var(--color-border, #1f2944); border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 14px; font-weight: 600; text-align: center;
+}
+.admin-vc-limit-row__unit {
+  font-size: 10px; font-weight: 400; margin-left: 4px;
+  color: var(--color-text-muted);
+}
+.admin-vc-limit-row__hint {
+  font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 0.3px; line-height: 1.5;
+  color: var(--color-text-muted);
+  max-width: 140px;
+}
+
+.admin-vc-limit-card__foot {
+  padding: 10px 14px;
+  border-top: 1px solid var(--color-border, #1f2944);
+  font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 0.3px;
+  color: var(--color-text-muted);
+}
+.admin-vc-limit-card__deferred {
+  padding: 10px 14px;
+  border-top: 1px solid var(--color-border, #1f2944);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.admin-vc-limit-card__deferred-row {
+  display: flex; align-items: center; gap: 8px;
+  opacity: 0.45;
+  font-size: 11px; color: var(--color-text-muted);
+}
+.admin-vc-limit-card__deferred-tag {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 8px; letter-spacing: 0.5px;
+  color: var(--color-amber, #fbbf24);
+}
+
+.admin-vc-limit-status {
+  grid-column: span 2;
+  display: flex; align-items: center; gap: 16px;
+  padding: 10px 14px;
+  background: var(--color-bg-elevated, #0f1524);
+  border: 1px solid var(--color-border, #1f2944); border-radius: 4px;
+}
+@media (max-width: 960px) {
+  .admin-vc-limit-status { grid-column: span 1; flex-wrap: wrap; }
+}
+.admin-vc-limit-status__label {
+  font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 1.5px;
+  color: var(--color-text-muted);
+}
+.admin-vc-limit-status__metric {
+  display: flex; align-items: baseline; gap: 6px;
+}
+.admin-vc-limit-status__metric-en {
+  font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 0.8px;
+  color: var(--color-text-muted);
+}
+.admin-vc-limit-status__metric-val {
+  font-family: var(--font-mono);
+  font-size: 14px; font-weight: 600;
+  color: var(--color-text-strong);
+}
+.admin-vc-limit-status__metric-val.is-amber { color: var(--color-amber, #fbbf24); }
+.admin-vc-limit-status__metric-val.is-crimson { color: var(--color-crimson, #f87171); }
+.admin-vc-limit-status__metric-val.is-mute { color: var(--color-text-muted); }
+.admin-vc-limit-status__spacer { flex: 1; }
+.admin-vc-limit-status__detail {
+  font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 0.5px;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+.admin-vc-limit-status__detail:hover { text-decoration: underline; }
+
 /* ─── Audience (P3 Group B, 2026-04-27) ────────────────────────────── */
 .admin-audience-page { padding: 0; }
 .admin-aud-grid { display: flex; flex-direction: column; gap: 14px; }

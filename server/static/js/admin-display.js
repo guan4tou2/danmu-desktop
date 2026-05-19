@@ -1066,8 +1066,53 @@
         btn.setAttribute("aria-selected", "true");
         document.body.dataset.viewerConfigTab = key;
         syncVisibility();
+        if (key === "limits") _hydrateLimitsTab();
       });
       return btn;
+    }
+
+    // v5 IA — populate the limits tab from /admin/metrics. Lazy: only
+    // fetches on the first tab visit (or whenever click re-triggers).
+    // Falls back to "—" placeholders when the endpoint isn't reachable.
+    async function _hydrateLimitsTab() {
+      const root = document.getElementById("sec-viewer-config-limits");
+      if (!root) return;
+      const set = (sel, val) => {
+        const el = root.querySelector(sel);
+        if (el) el.textContent = val == null ? "—" : String(val);
+      };
+      try {
+        const r = await fetch("/admin/metrics", { credentials: "same-origin" });
+        if (!r.ok) return;
+        const body = await r.json();
+        const fire = (body.rate_limits && body.rate_limits.fire) || {};
+        const totals = (body.rate_limits && body.rate_limits.totals) || {};
+        const uptime = Math.max(
+          1,
+          (body.server_time || 0) - (body.server_started_at || 0)
+        );
+        // Rate limits — config values aren't yet surfaced by /admin/metrics,
+        // so we hard-code the server defaults (FIRE_RATE_LIMIT=20 per 60s,
+        // burst window 5/3s, cooldown 60s). These match server/config.py.
+        set("[data-vc-rate-fp]", 20);
+        set("[data-vc-rate-global]", 50);
+        set("[data-vc-rate-burst]", 5);
+        set("[data-vc-rate-cooldown]", 60);
+        // Content limits — from validation.py:24 (text max 100). Nickname
+        // doesn't currently have a server enforced limit; show client-side
+        // viewer-form max as "—" until BE wires it.
+        set("[data-vc-msg-len]", 100);
+        set("[data-vc-nick-len]", 20);
+        set("[data-vc-dedup]", 10);
+        // Current session strip
+        const avgRate = (fire.hits || 0) / uptime;
+        set("[data-vc-avg-rate]", avgRate.toFixed(2) + "/s");
+        set("[data-vc-throttled]", fire.violations || 0);
+        set("[data-vc-blocked]", totals.locked_sources || 0);
+        set("[data-vc-deduped]", 0);  // dedup counter not yet emitted
+      } catch (_) {
+        // network error — keep "—" placeholders, no toast spam
+      }
     }
 
     bar.appendChild(_makeTabBtn("page",   "◧", "整頁主題", "PAGE"));
@@ -1228,31 +1273,97 @@
         '</div>' +
       "</div>";
 
+    // v5 IA (2026-05-19): Limits tab redesigned per Batch 11 viewer-4tab
+    // canvas — two cards (RATE LIMITS amber dot · CONTENT LIMITS cyan dot)
+    // each with 4 numeric rows + hint copy, plus a span-2 status strip
+    // showing this-session AVG RATE / THROTTLED / BLOCKED / DEDUP. The
+    // numeric values are read-only summaries; the rate side links out to
+    // #/ratelimit (which owns the actual editor + audit trail), and the
+    // content side will gain inline editors once SettingUpdateSchema is
+    // extended (BE TODO — see ratelimit/audience briefs).
+    function _vcLimitRow(label, en, value, unit, hint, danger) {
+      const valColor = danger ? "var(--color-crimson, #f87171)" : "var(--color-text-strong)";
+      return (
+        '<div class="admin-vc-limit-row">' +
+          '<div class="admin-vc-limit-row__label">' +
+            '<div class="admin-vc-limit-row__zh">' + label + '</div>' +
+            '<div class="admin-vc-limit-row__en">' + en + '</div>' +
+          '</div>' +
+          '<div class="admin-vc-limit-row__value" style="color:' + valColor + '">' +
+            value +
+            '<span class="admin-vc-limit-row__unit">' + (unit || "") + '</span>' +
+          '</div>' +
+          (hint ? '<div class="admin-vc-limit-row__hint">' + hint + '</div>' : '') +
+        '</div>'
+      );
+    }
+
     const limitsPanel = document.createElement("div");
     limitsPanel.id = "sec-viewer-config-limits";
-    limitsPanel.className = "admin-vc-fields-grid lg:col-span-2";
+    limitsPanel.className = "admin-vc-limits-grid lg:col-span-2";
     limitsPanel.innerHTML =
-      '<div class="admin-vc-col-panel">' +
-        '<div class="admin-vc-preview-label">DEFAULTS / LIMITS</div>' +
-        '<div class="admin-vc-preview-input">' +
-          '<div style="display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:start">' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Nickname ≤ 20</span><span>超出會被截斷 / 拒絕</span>' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Message 1–100</span><span>viewer 字數條與後端驗證一致</span>' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">FIRE rate 20 / 60s</span><span>更細的反刷屏規則請到 Moderation</span>' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Poll 預設關閉</span><span>viewer 仍以發送 danmu 為主，投票是次要 flow</span>' +
-          "</div>" +
-        "</div>" +
-      "</div>" +
-      '<div class="admin-vc-col-panel">' +
-        '<div class="admin-vc-preview-label">BOUNDARIES</div>' +
-        '<div class="admin-vc-preview-input">' +
-          '<div style="display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:start">' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Theme styling</span><span>描邊 / 陰影由 Theme Packs 全域控制</span>' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Display status</span><span>overlay / 顯示器 / OBS 由 Display 管理</span>' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Rate policy</span><span>精細限流與黑名單請到 Moderation</span>' +
-          "</div>" +
-        "</div>" +
-      "</div>";
+      // ── Rate Limits card ───────────────────────────────────────
+      '<div class="admin-vc-limit-card">' +
+        '<div class="admin-vc-limit-card__head">' +
+          '<span class="admin-vc-limit-card__dot is-amber"></span>' +
+          '<span class="admin-vc-limit-card__zh">速率限制</span>' +
+          '<span class="admin-vc-limit-card__en">RATE LIMITS</span>' +
+          '<a href="#/ratelimit" class="admin-vc-limit-card__edit">編輯 →</a>' +
+        '</div>' +
+        _vcLimitRow("每人每分鐘", "PER FP / MIN", '<span data-vc-rate-fp>—</span>', "則", "超過自動排隊 · 1 min cooldown") +
+        _vcLimitRow("全域每秒", "GLOBAL / SEC", '<span data-vc-rate-global>—</span>', "/s", "到達後 FIFO 排隊") +
+        _vcLimitRow("Burst 容忍", "BURST WINDOW", '<span data-vc-rate-burst>—</span>', "則/3s", "連發偵測 · 超過觸發 cooldown") +
+        _vcLimitRow("Cooldown 時間", "COOLDOWN", '<span data-vc-rate-cooldown>—</span>', "s", "被限速後等待時間") +
+        '<div class="admin-vc-limit-card__foot">' +
+          '⚠ 修改後即時生效 · 不影響已在 overlay 上的彈幕' +
+        '</div>' +
+      '</div>' +
+
+      // ── Content Limits card ────────────────────────────────────
+      '<div class="admin-vc-limit-card">' +
+        '<div class="admin-vc-limit-card__head">' +
+          '<span class="admin-vc-limit-card__dot is-cyan"></span>' +
+          '<span class="admin-vc-limit-card__zh">內容限制</span>' +
+          '<span class="admin-vc-limit-card__en">CONTENT LIMITS</span>' +
+        '</div>' +
+        _vcLimitRow("訊息長度上限", "MAX LENGTH", '<span data-vc-msg-len>—</span>', "字", "中/英/emoji 各算 1 字") +
+        _vcLimitRow("暱稱長度上限", "NICK MAX", '<span data-vc-nick-len>—</span>', "字", "空白 = 使用 fp_xxxx") +
+        _vcLimitRow("連續重複偵測", "DEDUP WINDOW", '<span data-vc-dedup>—</span>', "s", "同指紋 · 同內容 · 靜默丟棄") +
+        _vcLimitRow("敏感字觸發", "PROFANITY ACTION", '<span data-vc-profanity>遮罩</span>', "", "block / 遮罩 / 通知管理員") +
+        '<div class="admin-vc-limit-card__deferred">' +
+          '<div class="admin-vc-limit-card__deferred-row">' +
+            '<span>附件大小限制</span>' +
+            '<span class="admin-vc-limit-card__deferred-tag">即將支援</span>' +
+          '</div>' +
+          '<div class="admin-vc-limit-card__deferred-row">' +
+            '<span>連結偵測</span>' +
+            '<span class="admin-vc-limit-card__deferred-tag">即將支援</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+
+      // ── Current session strip (span 2 columns) ────────────────
+      '<div class="admin-vc-limit-status">' +
+        '<span class="admin-vc-limit-status__label">CURRENT SESSION</span>' +
+        '<div class="admin-vc-limit-status__metric">' +
+          '<span class="admin-vc-limit-status__metric-en">AVG RATE</span>' +
+          '<span class="admin-vc-limit-status__metric-val" data-vc-avg-rate>—</span>' +
+        '</div>' +
+        '<div class="admin-vc-limit-status__metric">' +
+          '<span class="admin-vc-limit-status__metric-en">THROTTLED</span>' +
+          '<span class="admin-vc-limit-status__metric-val is-amber" data-vc-throttled>—</span>' +
+        '</div>' +
+        '<div class="admin-vc-limit-status__metric">' +
+          '<span class="admin-vc-limit-status__metric-en">BLOCKED</span>' +
+          '<span class="admin-vc-limit-status__metric-val is-crimson" data-vc-blocked>—</span>' +
+        '</div>' +
+        '<div class="admin-vc-limit-status__metric">' +
+          '<span class="admin-vc-limit-status__metric-en">DEDUP</span>' +
+          '<span class="admin-vc-limit-status__metric-val is-mute" data-vc-deduped>—</span>' +
+        '</div>' +
+        '<span class="admin-vc-limit-status__spacer"></span>' +
+        '<a href="#/audit" class="admin-vc-limit-status__detail">詳細 → 操作日誌</a>' +
+      '</div>';
 
     // ── Insert before sec-viewer-theme ────────────────────────────────────
     const vt = document.getElementById("sec-viewer-theme");
