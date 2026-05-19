@@ -179,9 +179,22 @@ def test_audience_page_renders(admin_page):
 
 
 def test_mobile_admin_dedicated_page_removed(admin_page):
+    """#/mobile is alias-redirected to system. v5 IA preserves the
+    user-typed slug in the URL (for sidebar highlight after alias
+    redirect — see admin.js applyRoute wantedHash branch), so we
+    verify the canonical state via shell.dataset, not via location.hash.
+    """
     _go_to_route(admin_page, "mobile")
     admin_page.wait_for_selector(".admin-system-accordion", state="visible", timeout=5000)
-    assert admin_page.evaluate("window.location.hash") == "#/system/system"
+    shell_route = admin_page.evaluate(
+        '() => document.querySelector(".admin-dash-grid").dataset.activeRoute'
+    )
+    shell_leaf = admin_page.evaluate(
+        '() => document.querySelector(".admin-dash-grid").dataset.activeLeaf'
+    )
+    assert shell_route == "system", f"alias should resolve to system, got {shell_route}"
+    assert shell_leaf == "system", f"alias should default leaf to system, got {shell_leaf}"
+    # Dedicated mobile-admin UI is gone — these are the real removal asserts
     assert admin_page.locator("#sec-mobile-admin-overview").count() == 0
     assert admin_page.locator("[data-mobile-frame]").count() == 0
     labels = admin_page.locator(".admin-system-accordion-label").all_text_contents()
@@ -353,18 +366,25 @@ def test_viewer_pollthankyou_state_url_preview(browser_session, live_url):
 
 
 def test_ia_alias_redirect_audit_to_system(admin_page):
-    """Phase B: legacy #/audit must redirect to #/system/audit and
-    activate the audit leaf inside the system accordion."""
+    """v5 IA (2026-05-19): audit was promoted from system accordion
+    leaf to a first-class top-level route (b172eec). #/audit now
+    resolves directly to its own ADMIN_ROUTES entry — no redirect.
+    The sec-audit-overview section is still the canonical body, just
+    rendered outside the system accordion now.
+
+    Original Phase B redirect (#/audit → #/system/audit) is preserved
+    via the system accordion config (admin-system-accordion.js SECTIONS
+    still lists `audit`), so deep-link bookmarks like #/system/audit
+    still work — covered separately.
+    """
     _go_to_route(admin_page, "audit")
-    # URL gets rewritten by applyRoute via buildHash
     final_hash = admin_page.evaluate("() => window.location.hash")
-    assert final_hash == "#/system/audit", f"expected redirect, got {final_hash}"
-    # The shell exposes the canonical leaf to legacy modules
-    leaf = admin_page.evaluate(
-        '() => document.querySelector(".admin-dash-grid").dataset.activeLeaf'
+    assert final_hash == "#/audit", f"audit is first-class, got {final_hash}"
+    shell_route = admin_page.evaluate(
+        '() => document.querySelector(".admin-dash-grid").dataset.activeRoute'
     )
-    assert leaf == "audit"
-    # Audit section is the only visible history-tab body
+    assert shell_route == "audit", f"expected first-class audit route, got {shell_route}"
+    # Section is visible at the top level (not inside the system accordion)
     admin_page.wait_for_selector("#sec-audit-overview", state="visible", timeout=5000)
 
 
