@@ -30,9 +30,9 @@
 
   const POLL_HTML = `
       <div id="sec-polls" class="admin-poll-page-v5 hud-page-stack lg:col-span-2" data-poll-view="builder">
-        <div class="admin-poll-head">
-          <div class="admin-poll-kicker">POLL · 多題目 · 拖曳排序 · 每題可上傳圖片</div>
-          <div class="admin-poll-title">
+        <div class="admin-v2-head">
+          <div class="admin-v2-kicker">POLL · 多題目 · 拖曳排序 · 每題可上傳圖片</div>
+          <div class="admin-v2-title">
             投票
             <a class="admin-poll-deeplink" href="#/poll-deepdive" title="投票深度分析">📊 深度分析 →</a>
           </div>
