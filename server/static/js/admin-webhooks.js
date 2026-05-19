@@ -334,15 +334,15 @@
       </div>
       <div class="admin-wh-stat">
         <div class="k">近 24H 推送</div>
-        <div class="v" style="color:#86efac">${s.deliveries_24h.toLocaleString ? s.deliveries_24h.toLocaleString() : s.deliveries_24h}</div>
+        <div class="v" style="color:var(--hud-lime)">${s.deliveries_24h.toLocaleString ? s.deliveries_24h.toLocaleString() : s.deliveries_24h}</div>
       </div>
       <div class="admin-wh-stat">
         <div class="k">失敗（待重試）</div>
-        <div class="v" style="color:${s.failed_pending_retry > 0 ? '#fbbf24' : '#94a3b8'}">${s.failed_pending_retry}</div>
+        <div class="v" style="color:${s.failed_pending_retry > 0 ? 'var(--hud-amber)' : 'var(--color-text-secondary)'}">${s.failed_pending_retry}</div>
       </div>
       <div class="admin-wh-stat">
         <div class="k">已放棄（&gt; ${getRetryCap()} 次）</div>
-        <div class="v" style="color:${s.dropped_24h > 0 ? '#f87171' : '#94a3b8'}">${s.dropped_24h}</div>
+        <div class="v" style="color:${s.dropped_24h > 0 ? 'var(--hud-crimson)' : 'var(--color-text-secondary)'}">${s.dropped_24h}</div>
       </div>`;
   }
 
@@ -380,7 +380,7 @@
       : (lastStatus && lastStatus >= 400) || hook.last_error
         ? "degraded"
         : "active";
-    const statusColor = isError === "active" ? "#86efac" : isError === "degraded" ? "#fbbf24" : "#94a3b8";
+    const statusColor = isError === "active" ? "var(--hud-lime)" : isError === "degraded" ? "var(--hud-amber)" : "var(--color-text-secondary)";
     const statusLabel = isError === "active" ? "ACTIVE" : isError === "degraded" ? "DEGRADED" : "PAUSED";
     const selectedCls = _state.selectedHookId === hook.id ? " is-selected" : "";
 
@@ -438,12 +438,12 @@
     list.innerHTML = filtered.map(function (d) {
       const ts = d.ts ? new Date(d.ts).toLocaleTimeString("zh-TW", { hour12: false }) : "—";
       const codeLabel = d.code ? String(d.code) : "—";
-      const codeColor = d.ok ? "#86efac" : "#f87171";
+      const codeColor = d.ok ? "var(--hud-lime)" : "var(--hud-crimson)";
       const dur = d.duration_ms ? (d.duration_ms >= 1000 ? (d.duration_ms / 1000).toFixed(1) + "s" : d.duration_ms + "ms") : "—";
-      const durColor = d.ok ? "var(--color-text-strong)" : "#fbbf24";
+      const durColor = d.ok ? "var(--color-text-strong)" : "var(--hud-amber)";
       const ep = _escHtml(_formatHostname(d.hook_url || ""));
       const retries = (d.retries || 0) === 0 ? "—" : "×" + d.retries;
-      const retryColor = (d.retries || 0) > 0 ? "#fbbf24" : "var(--color-text-muted)";
+      const retryColor = (d.retries || 0) > 0 ? "var(--hud-amber)" : "var(--color-text-muted)";
       return `
         <div class="admin-wh-log-row${d.dropped ? ' is-dropped' : ''}">
           <span class="time">${_escHtml(ts)}</span>
@@ -478,10 +478,10 @@
     const enabled = hook.enabled !== false;
     const lastStatus = Number(hook.last_status) || null;
     const dotColor = !enabled
-      ? "#94a3b8"
+      ? "var(--color-text-secondary)"
       : (lastStatus && lastStatus >= 400) || hook.last_error
-        ? "#fbbf24"
-        : "#86efac";
+        ? "var(--hud-amber)"
+        : "var(--hud-lime)";
 
     const hookEvents = new Set(hook.events || []);
     const eventsHtml = PROTOTYPE_EVENT_KEYS.map(function (e) {
@@ -519,7 +519,7 @@
         '<div><span class="k">Max retries</span><span class="v">' + (hook.retry_count != null ? hook.retry_count : 3) + '</span></div>' +
         '<div><span class="k">Backoff</span><span class="v">exponential · 1s → 2s → 4s</span></div>' +
         '<div><span class="k">Timeout</span><span class="v">5,000 ms</span></div>' +
-        '<div><span class="k">HMAC sign</span><span class="v" style="color:#86efac">' + (hook.secret ? "SHA-256 · X-Webhook-Signature" : "—（未設 secret）") + '</span></div>' +
+        '<div><span class="k">HMAC sign</span><span class="v" style="color:var(--hud-lime)">' + (hook.secret ? "SHA-256 · X-Webhook-Signature" : "—（未設 secret）") + '</span></div>' +
       '</div>' +
       '<div class="admin-v2-monolabel admin-wh-detail-label">PAYLOAD SAMPLE</div>' +
       '<pre class="admin-wh-detail-payload">' + _escHtml(JSON.stringify(samplePayload, null, 2)) + '</pre>' +
