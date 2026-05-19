@@ -29,6 +29,7 @@ dependencies = [
     "qrcode>=8.0",
     "fonttools>=4.63.0",
     "urllib3>=2.7.0",
+    "flask-sock>=0.7.0",
 ]
 
 [project.optional-dependencies]

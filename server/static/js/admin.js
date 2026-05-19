@@ -137,28 +137,23 @@ document.addEventListener("DOMContentLoaded", () => {
     // === Automation tabs (Phase B 2026-05-06: now under system accordion) ===
     // 2026-05-18 v5: plugins promoted to first-class sidebar slug.
     scheduler: { nav: "system", tab: "scheduler" },
-    webhooks:  { nav: "system", tab: "webhooks" },
+    // 2026-05-19: webhooks/search/audience/about/security promoted to
+    // first-class routes with their own ADMIN_ROUTES entries. Aliases
+    // removed so _parseHashRoute returns the leaf slug directly.
 
     // === History tabs (Phase B 2026-05-06: now under system accordion) ===
     // 2026-05-18 v5: audit promoted to first-class sidebar slug.
-    sessions:        { nav: "system", tab: "sessions" },
     // Note: session-detail is intentionally NOT aliased — its hash carries
     // a `?id=xxx` query that the parser would strip. session-detail keeps
     // its own route; admin-session-detail.js owns navigation back via UI.
-    search:          { nav: "system", tab: "search" },
-    audience:        { nav: "system", tab: "audience" },
     replay:          { nav: "system", tab: "replay" },
 
     // === System accordion (Slice 6) — alias old C-tier routes to system/<slug> ===
     // 2026-05-18 v5: api-tokens / backup promoted to first-class sidebar slugs.
-    firetoken:    { nav: "system", tab: "firetoken" },
     integrations: { nav: "system", tab: "integrations" },
     extensions:   { nav: "integrations" },  // 2026-05-18 v5: sidebar "Extensions" → integrations route
-    wcag:         { nav: "system", tab: "wcag" },
     // Dedicated mobile-admin was removed; admin relies on the normal RWD shell.
     mobile:       { nav: "system", tab: "system" },
-    about:        { nav: "system", tab: "about" },
-    security:     { nav: "system", tab: "security" },
   });
 
   // Per-nav last-active-tab memory (sessionStorage). Cleared on logout.
@@ -1435,6 +1430,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ratelimit: { title: "速率限制",         kicker: "RATE LIMITS · 反刷屏",          sections: ["sec-ratelimit"] },
     effects:   { title: "效果庫 .dme",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },
     plugins:   { title: "伺服器插件",       kicker: "PLUGIN SDK · 熱重載 · SANDBOX", sections: ["sec-plugins"] },
+    webhooks:  { title: "Webhooks",          kicker: "WEBHOOKS · 端點 · 投遞紀錄 · 重送", sections: ["sec-webhooks"] },
     fonts:     { title: "字型管理",         kicker: "FONT LIBRARY · 觀眾可選",   sections: ["sec-fonts"] },
     // Slice 6: system hosts the C-tier accordion. scheduler /
     // webhooks moved to automation; fingerprints moved to moderation. The

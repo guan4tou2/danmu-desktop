@@ -264,6 +264,20 @@
   --hud-crimson:     var(--color-danger);
 }
 
+/* Explicit dark override — resets --admin-* tokens so .admin-body
+   (which reads these) correctly flips back to the dark palette when the
+   operator manually toggles to dark via the theme switcher. Without
+   this, .admin-body always renders light because --admin-* are defined
+   as static light hex values in :root. */
+:root[data-theme="dark"] {
+  --admin-bg:       #020617;
+  --admin-panel:    #0f172a;
+  --admin-raised:   #1e293b;
+  --admin-line:     rgba(148, 163, 184, 0.18);
+  --admin-text:     #f1f5f9;
+  --admin-text-dim: #94a3b8;
+}
+
 /* System preference fallback — only applies when no explicit data-theme
    is set on <html>. Lets users who haven't manually toggled still get
    the light variant automatically. */

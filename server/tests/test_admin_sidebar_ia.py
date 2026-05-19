@@ -251,16 +251,16 @@ DEEP_LINK_ALIASES = {
     # legacy slug → expected (parent_nav, tab_in_nav)
     # 2026-05-18 v5: themes / fonts / audit / plugins promoted to first-class
     # sidebar slugs with their own ADMIN_ROUTES entries. Their alias entries
-    # were removed so #/themes etc. resolve directly. Items below stay aliased
-    # because they remain accordion-only leaves.
-    "sessions": ("system", "sessions"),
-    "search": ("system", "search"),
-    "audience": ("system", "audience"),
+    # were removed so #/themes etc. resolve directly.
+    # 2026-05-19 v5.2: sessions / search / audience / webhooks / security
+    # promoted to first-class routes. Only replay / scheduler remain aliased.
     "replay": ("system", "replay"),
     "scheduler": ("system", "scheduler"),
-    "webhooks": ("system", "webhooks"),
-    "security": ("system", "security"),
 }
+
+# Routes promoted from system accordion aliases to first-class ADMIN_ROUTES
+# entries. Verify they have their own route config (not aliased).
+PROMOTED_TO_FIRST_CLASS = ["sessions", "search", "audience", "webhooks", "security"]
 
 
 @pytest.mark.parametrize("slug, parent_tab", list(DEEP_LINK_ALIASES.items()))
@@ -282,6 +282,35 @@ def test_deep_link_alias_resolves_to_parent_tab(admin_js: str, slug: str, parent
         f"_routeAliases.{slug} must map to nav={parent} tab={tab}; "
         f"breaking this would orphan deep-link bookmarks."
     )
+
+
+@pytest.mark.parametrize("slug", PROMOTED_TO_FIRST_CLASS)
+def test_promoted_route_has_own_admin_routes_entry(admin_js: str, slug: str):
+    """Routes promoted from system accordion must have their own
+    ADMIN_ROUTES entry and must NOT appear in _routeAliases."""
+    key_pattern = rf'(?:"{re.escape(slug)}"|\b{re.escape(slug)}\b)'
+    # Must be in ADMIN_ROUTES (has title/kicker/sections)
+    route_pattern = re.compile(
+        rf'{key_pattern}\s*:\s*\{{\s*title:',
+        re.DOTALL,
+    )
+    assert route_pattern.search(admin_js), (
+        f"ADMIN_ROUTES must have a first-class entry for '{slug}'."
+    )
+    # Must NOT be in _routeAliases (would intercept before ADMIN_ROUTES)
+    alias_block = re.search(
+        r'_routeAliases\s*\)\s*;?\s*\n\s*Object\.assign\(_routeAliases,\s*\{(.*?)\}\)',
+        admin_js, re.DOTALL,
+    )
+    if alias_block:
+        alias_content = alias_block.group(1)
+        alias_pattern = re.compile(
+            rf'^\s*{key_pattern}\s*:', re.MULTILINE,
+        )
+        assert not alias_pattern.search(alias_content), (
+            f"'{slug}' must NOT be in _routeAliases — it has its own "
+            f"ADMIN_ROUTES entry and the alias would intercept it."
+        )
 
 
 def test_viewer_config_alias_targets_viewer_parent(admin_js: str):

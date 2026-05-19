@@ -460,7 +460,7 @@
     if (!shell || !page) return;
     const route = shell.dataset.activeRoute || "live";
     const leaf = shell.dataset.activeLeaf || route;
-    page.style.display = route === "system" && leaf === "security" ? "" : "none";
+    page.style.display = (route === "security") || (route === "system" && leaf === "security") ? "" : "none";
   }
 
   function inject() {

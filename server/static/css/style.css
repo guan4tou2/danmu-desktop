@@ -12,6 +12,9 @@ html {
 html:has(body.admin-body) {
   color-scheme: light;
 }
+html[data-theme="dark"]:has(body.admin-body) {
+  color-scheme: dark;
+}
 
 /* Respect user's motion preference — disable animation for vestibular safety */
 @media (prefers-reduced-motion: reduce) {
@@ -117,6 +120,10 @@ button:disabled,
   min-height: 100vh;
   color: var(--admin-text);
   font-family: var(--font-ui);
+}
+
+html[data-theme="dark"] .admin-body {
+  color-scheme: dark;
 }
 
 .admin-app-shell {
@@ -1466,10 +1473,10 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   border: 1px solid var(--admin-line);
 }
 
-.admin-vt-color-row .grade.is-good { color: #86efac; border-color: #86efac; }
+.admin-vt-color-row .grade.is-good { color: var(--hud-lime, #86efac); border-color: var(--hud-lime, #86efac); }
 .admin-vt-color-row .grade.is-ok   { color: var(--color-primary); border-color: var(--color-primary); }
-.admin-vt-color-row .grade.is-meh  { color: #fbbf24; border-color: #fbbf24; }
-.admin-vt-color-row .grade.is-fail { color: #f87171; border-color: #f87171; }
+.admin-vt-color-row .grade.is-meh  { color: var(--hud-amber, #fbbf24); border-color: var(--hud-amber, #fbbf24); }
+.admin-vt-color-row .grade.is-fail { color: var(--hud-crimson, #f87171); border-color: var(--hud-crimson, #f87171); }
 
 .admin-vt-color-row .bottom {
   display: flex;
@@ -1653,10 +1660,10 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   color: var(--admin-text-dim);
 }
 
-.vt-contrast-chip.is-good { color: #86efac; border-color: #86efac; }
+.vt-contrast-chip.is-good { color: var(--hud-lime, #86efac); border-color: var(--hud-lime, #86efac); }
 .vt-contrast-chip.is-ok   { color: var(--color-primary); border-color: var(--color-primary); }
-.vt-contrast-chip.is-meh  { color: #fbbf24; border-color: #fbbf24; }
-.vt-contrast-chip.is-fail { color: #f87171; border-color: #f87171; }
+.vt-contrast-chip.is-meh  { color: var(--hud-amber, #fbbf24); border-color: var(--hud-amber, #fbbf24); }
+.vt-contrast-chip.is-fail { color: var(--hud-crimson, #f87171); border-color: var(--hud-crimson, #f87171); }
 
 .admin-vt-preview-frame {
   flex: 1;
@@ -1845,9 +1852,9 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   letter-spacing: 0.5px;
 }
 
-.admin-ratelimit-summary .delta.is-good   { color: #86efac; }
-.admin-ratelimit-summary .delta.is-warn   { color: #fbbf24; }
-.admin-ratelimit-summary .delta.is-danger { color: #f87171; }
+.admin-ratelimit-summary .delta.is-good   { color: var(--hud-lime, #86efac); }
+.admin-ratelimit-summary .delta.is-warn   { color: var(--hud-amber, #fbbf24); }
+.admin-ratelimit-summary .delta.is-danger { color: var(--hud-crimson, #f87171); }
 .admin-ratelimit-summary .delta.is-muted  { color: var(--admin-text-dim); }
 
 .admin-ratelimit-head {
@@ -2421,8 +2428,8 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 }
 
 .admin-poll-opt .opt-remove:hover {
-  color: #f87171;
-  border-color: #f87171;
+  color: var(--hud-crimson, #f87171);
+  border-color: var(--hud-crimson, #f87171);
 }
 
 .admin-poll-opt-add {
@@ -2609,8 +2616,8 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 }
 
 .admin-poll-q-btn.is-danger:hover {
-  color: #f87171;
-  border-color: #f87171;
+  color: var(--hud-crimson, #f87171);
+  border-color: var(--hud-crimson, #f87171);
 }
 
 .admin-poll-q-body {
@@ -5847,8 +5854,8 @@ body.stream-mode .admin-hero .admin-summary-grid {
   opacity: 0.4; cursor: default;
 }
 .admin-ext-token-btn--danger:hover:not(:disabled) {
-  border-color: #f87171;
-  color: #f87171;
+  border-color: var(--hud-crimson, #f87171);
+  color: var(--hud-crimson, #f87171);
   background: rgba(248,113,113,0.08);
 }
 .admin-ext-token-hint {
@@ -5928,7 +5935,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   font-family: var(--font-mono); font-size: 10px;
   letter-spacing: 0.06em;
 }
-.admin-ft-status.is-good  { color: #86efac; }
+.admin-ft-status.is-good  { color: var(--hud-lime, #86efac); }
 .admin-ft-status.is-warn  { color: var(--color-warning); }
 .admin-ft-status.is-muted { color: var(--color-text-muted); }
 
@@ -5947,7 +5954,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .admin-ft-token-code.is-plain {
-  color: #86efac;
+  color: var(--hud-lime, #86efac);
   user-select: all;
 }
 .admin-ft-action-btn {
@@ -5974,7 +5981,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
 .admin-ft-action-btn--danger {
   background: rgba(248, 113, 113, 0.10);
   border-color: rgba(248, 113, 113, 0.45);
-  color: #f87171;
+  color: var(--hud-crimson, #f87171);
 }
 .admin-ft-action-btn--danger:hover:not(:disabled) { background: rgba(248, 113, 113, 0.22); }
 
@@ -5997,7 +6004,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   font-size: 14px; margin-top: 2px;
   font-weight: 600;
 }
-.admin-ft-token-stats .v.is-good { color: #86efac; }
+.admin-ft-token-stats .v.is-good { color: var(--hud-lime, #86efac); }
 .admin-ft-token-stats .v.is-cyan { color: var(--color-primary); }
 
 /* 24h chart */
@@ -6049,7 +6056,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
 .admin-ft-audit-row .kind { font-weight: 600; }
 .admin-ft-audit-row .detail { color: var(--color-text-muted); font-size: 10px; }
 .admin-ft-audit-row.is-rotated .kind { color: var(--color-primary); }
-.admin-ft-audit-row.is-revoked .kind { color: #f87171; }
+.admin-ft-audit-row.is-revoked .kind { color: var(--hud-crimson, #f87171); }
 .admin-ft-audit-row.is-toggled .kind { color: var(--color-warning); }
 
 /* IP list */
