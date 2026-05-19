@@ -99,6 +99,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // to first-class sidebar slugs via _routeAliases entries below — no
     // bare redirect needed; applyRoute() resolves them at click time.
     automation: { nav: "system", tab: "scheduler" },
+    // 2026-05-19 v5 IA: ◐ 顯示設定 sidebar item retired; its content
+    // (overlay/viewer defaults) was already absorbed by viewer's 4-tab
+    // layout. Bare redirect (not alias) so #/display bookmarks resolve
+    // BEFORE ADMIN_ROUTES lookup — otherwise the legacy display entry
+    // would intercept.
+    display:    { nav: "viewer", tab: "defaults" },
   });
 
   // Maps deprecated single-segment routes → P0-0 nav homes.
@@ -127,11 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Aliases removed so #/themes and #/fonts resolve directly to their
     // own ADMIN_ROUTES entries (no longer detour through appearance).
     "viewer-config": { nav: "viewer" },
-    // 2026-05-19 v5 IA: `display` sidebar item removed; its content (overlay
-    // defaults + audience-customizable params) lives under viewer.defaults
-    // tab. Bookmarks like #/display land on the merged page instead of
-    // 404-ing into widgets.
-    display:         { nav: "viewer", tab: "defaults" },
 
     // === Automation tabs (Phase B 2026-05-06: now under system accordion) ===
     // 2026-05-18 v5: plugins promoted to first-class sidebar slug.
@@ -1351,7 +1352,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Phase B/D will move sec-* DOM under the new owners and then we can
     // strip aliases. Until then this is pure routing — no HTML moves.
     live:      { title: "即時", kicker: "LIVE · 操作艙 · 即時狀態", sections: ["sec-live-feed"], showKpi: true },
-    display:   { title: "顯示", kicker: "DISPLAY · OVERLAY · DEFAULTS · WIDGETS", sections: ["sec-widgets"] },
+    // 2026-05-19 v5 IA: `display` route retired. The bare-legacy
+    // redirect (`#/display` → `#/viewer/defaults`) intercepts before
+    // this lookup, so dropping the ADMIN_ROUTES entry is safe and
+    // signals "this slug is no longer canonical".
     viewer:    { title: "觀眾頁", kicker: "VIEWER · 頁面預設 · 欄位設定 · 文案 / 限制", sections: ["sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits"] },
     // Legacy aliases — same config as their canonical home. Kept so
     // existing `=== "dashboard"` checks + URL bookmarks keep working
