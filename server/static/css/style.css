@@ -3876,6 +3876,96 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   margin-left: auto;
   font-size: 10px; color: var(--hud-textDim);
 }
+
+/* ─── v5 Batch 12-2: System Overview banner + right rail ─────────────── */
+.admin-soh-v4__banner {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px;
+  border-radius: 6px;
+  background: rgba(134, 239, 172, 0.05);
+  border: 1px solid rgba(134, 239, 172, 0.25);
+}
+.admin-soh-v4__banner.is-warn {
+  background: rgba(251, 191, 36, 0.06);
+  border-color: rgba(251, 191, 36, 0.30);
+}
+.admin-soh-v4__banner-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--hud-lime, #86efac);
+  box-shadow: 0 0 8px var(--hud-lime, #86efac);
+}
+.admin-soh-v4__banner-title {
+  font-size: 15px; font-weight: 600;
+  color: var(--color-text-strong);
+}
+.admin-soh-v4__banner-sub {
+  font-family: var(--hud-font-mono);
+  font-size: 10px;
+  color: var(--hud-textDim);
+  margin-top: 2px;
+}
+.admin-soh-v4__banner-recheck {
+  background: transparent; border: 1px solid var(--hud-line);
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-family: var(--hud-font-mono);
+  font-size: 10px; letter-spacing: 0.5px;
+  color: var(--hud-textDim); cursor: pointer;
+}
+.admin-soh-v4__banner-recheck:hover { color: var(--hud-cyan); border-color: var(--hud-cyan); }
+.admin-soh-v4__banner-recheck:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.admin-soh-v4__rail {
+  display: flex; flex-direction: column; gap: 14px;
+}
+.admin-soh-v4__quickcard,
+.admin-soh-v4__cfgcard {
+  padding: 14px;
+  background: var(--hud-bg1, var(--color-bg-elevated));
+  border: 1px solid var(--hud-line);
+  border-radius: 6px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.admin-soh-v4__qa {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--hud-line);
+  background: transparent;
+  color: var(--color-text-strong);
+  font-family: var(--hud-font-mono);
+  font-size: 10px; letter-spacing: 0.5px;
+  text-align: left; text-decoration: none;
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer;
+}
+.admin-soh-v4__qa.is-cyan { color: var(--hud-cyan); }
+.admin-soh-v4__qa.is-disabled {
+  border-color: rgba(148, 163, 184, 0.20);
+  color: var(--hud-textDim);
+  opacity: 0.5; cursor: not-allowed;
+}
+.admin-soh-v4__qa:hover:not(.is-disabled):not(:disabled) {
+  background: rgba(56, 189, 248, 0.06);
+}
+.admin-soh-v4__qa-hint {
+  margin-left: auto;
+  font-size: 8px;
+  color: var(--hud-amber);
+}
+.admin-soh-v4__cfgrow {
+  display: flex; justify-content: space-between;
+  font-family: var(--hud-font-mono);
+  font-size: 10px;
+}
+.admin-soh-v4__cfgrow span {
+  font-size: 9px; letter-spacing: 0.5px;
+  color: var(--hud-textDim);
+}
+.admin-soh-v4__cfgrow code {
+  color: var(--color-text-strong);
+  background: transparent;
+  font-size: 10px;
+}
 .hud-system-grid > .hud-inspector {
   min-height: auto;
 }
@@ -7503,8 +7593,10 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   animation: hud-fade-in 160ms ease-out;
 }
 .admin-help__drawer {
+  /* v5 Batch 12-1 (2026-05-19): width tightened 460 → 360 per
+     batch12-help.jsx HelpDrawer spec. */
   position: relative;
-  width: 100%; max-width: 460px;
+  width: 100%; max-width: 360px;
   height: 100vh; height: 100dvh;
   background: var(--hud-bg1);
   color: var(--color-text-strong);
@@ -7520,84 +7612,138 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 }
 
 .admin-help__head {
-  display: flex; align-items: center; gap: 10px;
-  padding: 16px 20px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--hud-line);
 }
 .admin-help__title {
-  font-size: 16px; font-weight: 600;
+  font-size: 15px; font-weight: 600;
   color: var(--color-text-strong);
 }
-.admin-help__subtitle {
-  font-family: var(--font-mono);
-  font-size: 9px; letter-spacing: 1.5px;
-  color: var(--color-primary);
-  margin-top: 2px;
-}
+.admin-help__head-kbd { font-size: 9px; padding: 1px 6px; }
 .admin-help__spacer { flex: 1; }
 .admin-help__close {
   background: transparent; border: none; cursor: pointer;
   color: var(--color-text-muted);
-  font-size: 16px; padding: 4px 8px;
+  font-size: 14px; padding: 2px 6px;
 }
-.admin-help__close:hover { color: var(--color-text-primary); }
+.admin-help__close:hover { color: var(--color-text-strong); }
 
 .admin-help__body {
   flex: 1; overflow: auto;
-  padding: 16px 20px;
-  display: flex; flex-direction: column; gap: 22px;
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 18px;
 }
-.admin-help__section { display: flex; flex-direction: column; gap: 10px; }
+.admin-help__section { display: flex; flex-direction: column; gap: 8px; }
 .admin-help__sec-label {
   font-family: var(--font-mono);
   font-size: 9px; letter-spacing: 1.5px;
   color: var(--color-text-muted);
   text-transform: uppercase;
 }
-.admin-help__row {
-  display: flex; align-items: flex-start; gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.10);
+
+/* ─ Route-specific tips block ─ */
+.admin-help__route-head {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px;
 }
-.admin-help__row:last-child { border-bottom: none; }
-.admin-help__keys {
-  display: flex; gap: 4px; flex-shrink: 0;
-  min-width: 90px;
+.admin-help__route-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 0 6px var(--color-primary);
 }
-.admin-help__kbd {
-  padding: 2px 7px; border-radius: 3px;
-  background: var(--hud-bg2);
-  border: 1px solid rgba(148, 163, 184, 0.30);
+.admin-help__route-title {
+  font-size: 13px; font-weight: 600;
+  color: var(--color-text-strong);
+}
+.admin-help__route-tag {
   font-family: var(--font-mono);
-  font-size: 10px; font-weight: 600;
-  color: var(--color-text-primary);
+  font-size: 9px; letter-spacing: 1.5px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+.admin-help__tips { display: flex; flex-direction: column; gap: 6px; }
+.admin-help__tip {
+  padding: 8px 10px; border-radius: 4px;
+  background: var(--hud-bg2, var(--color-bg-elevated));
+  border: 1px solid var(--hud-line);
+  font-size: 11px; color: var(--color-text-strong); line-height: 1.5;
+  display: flex; gap: 8px;
+}
+.admin-help__tip-arrow {
+  flex-shrink: 0;
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+/* ─ Shortcuts list ─ */
+.admin-help__shortcuts { display: flex; flex-direction: column; gap: 4px; }
+.admin-help__shortcut {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 0;
+}
+.admin-help__keys { display: flex; gap: 3px; flex-shrink: 0; }
+.admin-help__kbd {
+  padding: 2px 6px; border-radius: 3px;
+  background: var(--hud-bg2, var(--color-bg-elevated));
+  border: 1px solid var(--hud-line);
+  font-family: var(--font-mono);
+  font-size: 10px; font-weight: 500;
+  color: var(--color-text-strong);
   letter-spacing: 0.3px;
   line-height: 1.2;
+  min-width: 20px; text-align: center;
 }
-.admin-help__desc {
+.admin-help__shortcut-desc {
+  font-size: 11px; color: var(--color-text-muted);
+}
+
+/* ─ Glossary list ─ */
+.admin-help__glossary { display: flex; flex-direction: column; gap: 6px; }
+.admin-help__glossary-row {
+  padding: 6px 8px; border-radius: 4px;
+  background: var(--hud-bg2, var(--color-bg-elevated));
+}
+.admin-help__glossary-term {
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 600;
+  color: var(--color-primary);
+}
+.admin-help__glossary-def {
+  font-size: 10px; color: var(--color-text-muted);
+  margin-top: 2px; line-height: 1.4;
+}
+
+/* ─ Resources list ─ */
+.admin-help__resources { display: flex; flex-direction: column; gap: 4px; }
+.admin-help__resource {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 0;
+  text-decoration: none;
+}
+.admin-help__resource:hover .admin-help__resource-label { text-decoration: underline; }
+.admin-help__resource-label {
+  font-size: 11px; color: var(--color-primary);
+}
+.admin-help__resource-url {
+  font-family: var(--font-mono);
+  font-size: 9px; color: var(--color-text-muted);
   flex: 1; min-width: 0;
-  font-size: 12px; line-height: 1.6;
-  color: var(--color-text-secondary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.admin-help__desc b {
-  color: var(--color-text-strong);
-  font-weight: 600;
+.admin-help__resource-arrow {
+  color: var(--color-text-muted); font-size: 10px;
 }
 
 .admin-help__foot {
-  display: flex; align-items: center; gap: 8px;
-  padding: 12px 20px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 16px;
   border-top: 1px solid var(--hud-line);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
   color: var(--color-text-muted);
 }
-.admin-help__more {
-  margin-left: auto;
-  color: var(--color-primary);
-  text-decoration: none;
-}
-.admin-help__more:hover { text-decoration: underline; }
 
 @media (max-width: 600px) {
   .admin-help__drawer {
@@ -14946,4 +15092,364 @@ body.admin-pu-open { overflow: hidden; }
   border-color: rgba(248, 113, 113, 0.55);
   background: rgba(248, 113, 113, 0.10);
   color: var(--hud-crimson, #f87171);
+}
+
+/* ─── v5 Batch 12-3: Security SecCard grid ────────────────────────────
+   2-col grid of cards; each card has a 3-px left-border tint per status
+   (is-lime/cyan/amber/crimson). is-span2 makes a card span both columns
+   (used for AUDIT LOG link + DANGER ZONE). admin-security-form +
+   admin-security-tokenrow etc. live inside cards. */
+.admin-security-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+@media (max-width: 960px) {
+  .admin-security-grid { grid-template-columns: 1fr; }
+}
+.admin-sec-card {
+  background: var(--hud-bg1, var(--color-bg-elevated));
+  border: 1px solid var(--hud-line);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+.admin-sec-card.is-lime    { box-shadow: inset 3px 0 0 var(--hud-lime, #86efac); }
+.admin-sec-card.is-cyan    { box-shadow: inset 3px 0 0 var(--hud-cyan, #38bdf8); }
+.admin-sec-card.is-amber   { box-shadow: inset 3px 0 0 var(--hud-amber, #fbbf24); }
+.admin-sec-card.is-crimson { box-shadow: inset 3px 0 0 var(--hud-crimson, #f87171); }
+.admin-sec-card.is-span2   { grid-column: span 2; }
+@media (max-width: 960px) {
+  .admin-sec-card.is-span2 { grid-column: span 1; }
+}
+
+.admin-sec-card__head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--hud-line);
+}
+.admin-sec-card__zh {
+  font-size: 13px; font-weight: 600;
+  color: var(--color-text-strong);
+}
+.admin-sec-card__en {
+  font-family: var(--hud-font-mono);
+  font-size: 9px; letter-spacing: 1.5px;
+  color: var(--hud-textDim);
+}
+.admin-sec-card__spacer { flex: 1; }
+.admin-sec-card__link {
+  font-family: var(--hud-font-mono);
+  font-size: 10px; letter-spacing: 0.5px;
+  color: var(--hud-cyan);
+  text-decoration: none;
+}
+.admin-sec-card__link:hover { text-decoration: underline; }
+.admin-sec-card__body {
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+
+.admin-sec-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 4px 0;
+}
+.admin-sec-row__dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--hud-textDim);
+  flex-shrink: 0;
+}
+.admin-sec-row__dot.is-lime    { background: var(--hud-lime, #86efac); }
+.admin-sec-row__dot.is-cyan    { background: var(--hud-cyan, #38bdf8); }
+.admin-sec-row__dot.is-amber   { background: var(--hud-amber, #fbbf24); }
+.admin-sec-row__dot.is-crimson { background: var(--hud-crimson, #f87171); }
+.admin-sec-row__main { flex: 1; min-width: 0; }
+.admin-sec-row__label {
+  font-size: 12px; font-weight: 500;
+  color: var(--color-text-strong);
+}
+.admin-sec-row__value {
+  font-family: var(--hud-font-mono);
+  font-size: 10px; color: var(--hud-textDim);
+  margin-top: 1px;
+}
+.admin-sec-row__action {
+  font-family: var(--hud-font-mono);
+  font-size: 9px; letter-spacing: 0.5px;
+  padding: 4px 10px; border-radius: 3px;
+  border: 1px solid var(--hud-line);
+  color: var(--hud-textDim);
+}
+.admin-sec-row__hint {
+  font-family: var(--hud-font-mono);
+  font-size: 8px;
+  color: var(--hud-amber, #fbbf24);
+}
+
+.admin-sec-card__note {
+  font-size: 11px; color: var(--hud-textDim); line-height: 1.6;
+  margin: 0;
+}
+.admin-sec-card__note code {
+  font-family: var(--hud-font-mono);
+  font-size: 10px;
+  background: transparent;
+  color: var(--hud-cyan, #38bdf8);
+}
+.admin-sec-card__deferred {
+  padding: 8px 10px; border-radius: 4px;
+  background: var(--hud-bg2, transparent);
+  border: 1.5px dashed var(--hud-line);
+  font-family: var(--hud-font-mono);
+  font-size: 11px;
+  color: var(--hud-textDim);
+  text-align: center;
+}
+.admin-sec-card__be-hint {
+  font-family: var(--hud-font-mono);
+  font-size: 8px;
+  color: var(--hud-amber, #fbbf24);
+}
+
+/* Form fields reused inside cards (kept from prior implementation) */
+.admin-security-form {
+  display: flex; flex-direction: column; gap: 10px;
+}
+.admin-security-field {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.admin-security-strength {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 4px;
+}
+.admin-security-strength-bar {
+  flex: 1; height: 4px; border-radius: 2px;
+  background: var(--hud-bg2, var(--color-bg));
+  overflow: hidden;
+}
+.admin-security-strength-bar > span {
+  display: block; height: 100%;
+  background: var(--hud-cyan, #38bdf8);
+  transition: width 160ms;
+}
+.admin-security-strength-bar > span.is-bad   { background: var(--hud-crimson, #f87171); }
+.admin-security-strength-bar > span.is-warn  { background: var(--hud-amber, #fbbf24); }
+.admin-security-strength-bar > span.is-good  { background: var(--hud-lime, #86efac); }
+.admin-security-toggle {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px;
+}
+.admin-security-tokenrow {
+  display: flex; gap: 6px; align-items: center;
+}
+.admin-security-tokenrow .admin-v2-input {
+  flex: 1; min-width: 0;
+}
+.admin-security-tokenmeta {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 10px;
+}
+.admin-security-timestamp {
+  font-family: var(--hud-font-mono);
+  color: var(--hud-textDim);
+}
+
+/* Danger zone — 3 stacked destructive buttons inside the span-2 card */
+.admin-sec-dangerzone {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+}
+@media (max-width: 760px) {
+  .admin-sec-dangerzone { grid-template-columns: 1fr; }
+}
+.admin-sec-danger {
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(248, 113, 113, 0.30);
+  background: rgba(248, 113, 113, 0.05);
+  color: var(--hud-crimson, #f87171);
+  text-align: left;
+  display: flex; flex-direction: column; gap: 4px;
+  cursor: pointer;
+}
+.admin-sec-danger.is-amber {
+  border-color: rgba(251, 191, 36, 0.30);
+  background: rgba(251, 191, 36, 0.05);
+  color: var(--hud-amber, #fbbf24);
+}
+.admin-sec-danger:hover { filter: brightness(1.1); }
+.admin-sec-danger__title {
+  font-family: var(--hud-font-mono);
+  font-size: 11px; font-weight: 600;
+}
+.admin-sec-danger__desc {
+  font-size: 10px;
+  color: var(--hud-textDim);
+}
+
+/* ─── v5 Batch 12-4: System Events filter additions ─────────────────────
+   Category chips below severity chips + LIVE pulse dot per
+   batch12-system.jsx SystemEventsPage. */
+.admin-ev-v4__cat-chips {
+  display: flex; gap: 3px; flex-wrap: wrap;
+  margin-left: 12px;
+}
+.admin-ev-v4__cat-chip {
+  padding: 3px 8px;
+  border-radius: 3px;
+  border: 1px solid var(--hud-line);
+  background: transparent;
+  font-family: var(--hud-font-mono);
+  font-size: 8px; letter-spacing: 0.5px;
+  color: var(--hud-textDim);
+  cursor: pointer;
+}
+.admin-ev-v4__cat-chip.is-active {
+  border-color: var(--hud-cyan, #38bdf8);
+  color: var(--hud-cyan, #38bdf8);
+  background: rgba(56, 189, 248, 0.06);
+}
+.admin-ev-v4__cat-chip:hover:not(.is-active) {
+  border-color: var(--hud-textDim);
+  color: var(--color-text-strong);
+}
+.admin-ev-v4__live-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--hud-lime, #86efac);
+  box-shadow: 0 0 6px var(--hud-lime, #86efac);
+  animation: hud-pulse 2s ease-in-out infinite;
+}
+.admin-ev-v4__live-label {
+  font-family: var(--hud-font-mono);
+  font-size: 9px; letter-spacing: 0.5px;
+  color: var(--hud-lime, #86efac);
+}
+
+/* ─── v5 Batch 12-5: Effects library right-rail cards ──────────────────
+   Library stats + stacking rules cards stacked under the YAML inspector
+   per batch12-effects.jsx EffectsLibraryPage. */
+.admin-eflib-card {
+  background: var(--hud-bg1, var(--color-bg-elevated));
+  border: 1px solid var(--hud-line);
+  border-radius: 6px;
+  padding: 14px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.admin-eflib-label {
+  font-family: var(--hud-font-mono);
+  font-size: 9px; letter-spacing: 1.5px;
+  color: var(--hud-textDim);
+  text-transform: uppercase;
+}
+.admin-eflib-statgrid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.admin-eflib-stat-en {
+  font-family: var(--hud-font-mono);
+  font-size: 8px; letter-spacing: 1px;
+  color: var(--hud-textDim);
+}
+.admin-eflib-stat-v {
+  font-family: var(--hud-font-mono);
+  font-size: 18px; font-weight: 600;
+  color: var(--color-text-strong);
+  margin-top: 2px;
+}
+.admin-eflib-stat-v.is-lime { color: var(--hud-lime, #86efac); }
+.admin-eflib-stat-v.is-cyan { color: var(--hud-cyan, #38bdf8); }
+.admin-eflib-rules {
+  list-style: none; margin: 0; padding: 0;
+  font-family: var(--hud-font-mono);
+  font-size: 10px; line-height: 1.7;
+  color: var(--hud-textDim);
+}
+
+/* ─── v5 Batch 12-6: Overlay Widgets KPI strip + right rail ─────────────
+   Per batch12-overlay-widgets.jsx OverlayWidgetsPage. 4-col KPI strip
+   at top + 2-col grid (widget list left / OBS URL card + preview right). */
+.admin-ow-kpis {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+}
+.admin-ow-kpi {
+  padding: 10px;
+  background: var(--hud-bg1, var(--color-bg-elevated));
+  border: 1px solid var(--hud-line);
+  border-radius: 6px;
+}
+.admin-ow-kpi-en {
+  font-family: var(--hud-font-mono);
+  font-size: 8px; letter-spacing: 1px;
+  color: var(--hud-textDim);
+}
+.admin-ow-kpi-v {
+  font-family: var(--hud-font-mono);
+  font-size: 20px; font-weight: 600;
+  color: var(--color-text-strong);
+  margin-top: 2px;
+  letter-spacing: -0.5px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.admin-ow-kpi-v.is-lime { color: var(--hud-lime, #86efac); }
+.admin-ow-kpi-v.is-cyan { color: var(--hud-cyan, #38bdf8); }
+
+.admin-ow-grid {
+  display: grid; grid-template-columns: 1fr 340px; gap: 16px;
+  align-items: start;
+}
+@media (max-width: 960px) {
+  .admin-ow-grid { grid-template-columns: 1fr; }
+  .admin-ow-kpis { grid-template-columns: 1fr 1fr; }
+}
+.admin-ow-main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.admin-ow-rail {
+  display: flex; flex-direction: column; gap: 14px;
+  position: sticky; top: 0;
+}
+.admin-ow-card {
+  background: var(--hud-bg1, var(--color-bg-elevated));
+  border: 1px solid var(--hud-line);
+  border-radius: 6px;
+  padding: 14px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.admin-ow-card-label {
+  font-family: var(--hud-font-mono);
+  font-size: 9px; letter-spacing: 1.5px;
+  color: var(--hud-textDim);
+  text-transform: uppercase;
+}
+.admin-ow-card-note {
+  margin: 0;
+  font-size: 11px; line-height: 1.6;
+  color: var(--hud-textDim);
+}
+.admin-ow-urlrow {
+  display: flex; align-items: center; gap: 8px;
+}
+.admin-ow-url {
+  flex: 1; padding: 8px 10px;
+  background: var(--hud-bg2, var(--color-bg));
+  border: 1px solid var(--hud-line);
+  border-radius: 4px;
+  font-family: var(--hud-font-mono);
+  font-size: 11px;
+  color: var(--hud-cyan, #38bdf8);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.admin-ow-card-meta {
+  display: flex; justify-content: space-between;
+  font-family: var(--hud-font-mono);
+  font-size: 9px;
+}
+.admin-ow-card-meta span { color: var(--hud-textDim); letter-spacing: 0.5px; }
+.admin-ow-card-meta code { color: var(--color-text-strong); background: transparent; }
+.admin-ow-preview {
+  aspect-ratio: 16 / 9;
+  background:
+    linear-gradient(to right, rgba(125,211,252,0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(125,211,252,0.04) 1px, transparent 1px),
+    #000;
+  background-size: 24px 24px;
+  border: 1px solid var(--hud-line); border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--hud-font-mono);
+  font-size: 10px;
+  color: var(--hud-textDim);
 }

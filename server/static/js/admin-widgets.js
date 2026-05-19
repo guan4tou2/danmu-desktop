@@ -34,28 +34,70 @@
         return (v && v !== k) ? v : (fallback || k);
       };
 
+      // v5 Batch 12-6 (2026-05-19): added KPI strip + right-rail OBS
+      // Browser Source URL card per batch12-overlay-widgets.jsx
+      // OverlayWidgetsPage. The widget cards themselves keep the
+      // existing edit-modal flow — only the page chrome lifts to v5.
+      const obsBase = location.origin + "/overlay";
       section.innerHTML = `
         <div class="admin-poll-head">
           <div class="admin-poll-kicker">OVERLAY WIDGETS · 分數板 · 跑馬燈 · 標籤</div>
           <div class="admin-poll-title">${escapeHtml(i18n("widgetsTitle", "Overlay Widgets"))}</div>
           <p class="admin-poll-subnote">${escapeHtml(i18n("widgetsDesc", "在 OBS 覆蓋層上新增分數板、跑馬燈或文字標籤"))}</p>
         </div>
-        <div class="admin-widgets-actions">
-          <button id="widget-add-scoreboard" type="button" class="admin-poll-btn is-primary">
-            + ${escapeHtml(i18n("widgetScoreboard", "分數板"))}
-          </button>
-          <button id="widget-add-ticker" type="button" class="admin-poll-btn is-primary">
-            + ${escapeHtml(i18n("widgetTicker", "跑馬燈"))}
-          </button>
-          <button id="widget-add-label" type="button" class="admin-poll-btn is-primary">
-            + ${escapeHtml(i18n("widgetLabel", "標籤"))}
-          </button>
-          <span class="spacer"></span>
-          <button id="widget-clear-all" type="button" class="admin-poll-btn is-ghost">
-            ${escapeHtml(i18n("clearAll", "全部清除"))}
-          </button>
+
+        <!-- KPI strip -->
+        <div class="admin-ow-kpis">
+          <div class="admin-ow-kpi"><div class="admin-ow-kpi-en">TOTAL</div><div class="admin-ow-kpi-v" data-ow-total>—</div></div>
+          <div class="admin-ow-kpi"><div class="admin-ow-kpi-en">ACTIVE</div><div class="admin-ow-kpi-v is-lime" data-ow-active>—</div></div>
+          <div class="admin-ow-kpi"><div class="admin-ow-kpi-en">KINDS</div><div class="admin-ow-kpi-v is-cyan" data-ow-kinds>—</div></div>
+          <div class="admin-ow-kpi"><div class="admin-ow-kpi-en">OBS URL</div><div class="admin-ow-kpi-v" style="font-size:11px">${escapeHtml(obsBase)}</div></div>
         </div>
-        <div id="widgets-list" class="admin-widgets-list"></div>`;
+
+        <div class="admin-ow-grid">
+          <div class="admin-ow-main">
+            <div class="admin-widgets-actions">
+              <button id="widget-add-scoreboard" type="button" class="admin-poll-btn is-primary">
+                + ${escapeHtml(i18n("widgetScoreboard", "分數板"))}
+              </button>
+              <button id="widget-add-ticker" type="button" class="admin-poll-btn is-primary">
+                + ${escapeHtml(i18n("widgetTicker", "跑馬燈"))}
+              </button>
+              <button id="widget-add-label" type="button" class="admin-poll-btn is-primary">
+                + ${escapeHtml(i18n("widgetLabel", "標籤"))}
+              </button>
+              <span class="spacer"></span>
+              <button id="widget-clear-all" type="button" class="admin-poll-btn is-ghost">
+                ${escapeHtml(i18n("clearAll", "全部清除"))}
+              </button>
+            </div>
+            <div id="widgets-list" class="admin-widgets-list"></div>
+          </div>
+
+          <!-- v5 right rail: OBS Browser Source card -->
+          <aside class="admin-ow-rail">
+            <div class="admin-ow-card">
+              <div class="admin-ow-card-label">OBS BROWSER SOURCE</div>
+              <p class="admin-ow-card-note">
+                在 OBS 的 Browser Source 把 URL 設成以下值即可拉入 overlay。
+                透明背景、自動更新。
+              </p>
+              <div class="admin-ow-urlrow">
+                <code class="admin-ow-url" data-ow-obs-url>${escapeHtml(obsBase)}</code>
+                <button type="button" class="admin-poll-btn is-ghost" data-ow-copy>複製</button>
+              </div>
+              <div class="admin-ow-card-meta">
+                <span>建議解析度</span><code>1920 × 1080</code>
+              </div>
+            </div>
+            <div class="admin-ow-card">
+              <div class="admin-ow-card-label">16:9 預覽</div>
+              <div class="admin-ow-preview">
+                <span>overlay preview</span>
+              </div>
+            </div>
+          </aside>
+        </div>`;
 
       grid.appendChild(section);
 
@@ -64,7 +106,30 @@
       document.getElementById("widget-add-label").addEventListener("click", () => createWidget("label"));
       document.getElementById("widget-clear-all").addEventListener("click", clearAllWidgets);
 
+      // v5: OBS URL copy
+      section.querySelector("[data-ow-copy]")?.addEventListener("click", () => {
+        const url = section.querySelector("[data-ow-obs-url]")?.textContent || "";
+        navigator.clipboard?.writeText(url).then(
+          () => window.showToast?.("OBS URL 已複製", true),
+          () => window.showToast?.("複製失敗", false)
+        );
+      });
+
       loadWidgets();
+    }
+
+    // v5: update KPI strip whenever the widget list changes.
+    function _updateOwKpis(widgets) {
+      const set = (sel, val) => {
+        const el = document.querySelector(sel);
+        if (el) el.textContent = val == null ? "—" : String(val);
+      };
+      const total = widgets.length;
+      const active = widgets.filter((w) => w.enabled !== false).length;
+      const kinds = new Set(widgets.map((w) => w.type || w.kind)).size;
+      set("[data-ow-total]", total);
+      set("[data-ow-active]", active);
+      set("[data-ow-kinds]", kinds);
     }
 
     // ── API helpers ──────────────────────────────────────────────────────
@@ -174,6 +239,7 @@
     function renderWidgetsList(widgets) {
       const container = document.getElementById("widgets-list");
       if (!container) return;
+      _updateOwKpis(widgets);
       container.innerHTML = "";
 
       if (widgets.length === 0) {

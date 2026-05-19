@@ -570,10 +570,29 @@
     });
   }
 
+  // v5 Batch 12-5: hydrate the "LIBRARY STATS" card per
+  // batch12-effects.jsx. Called from renderEffectsList every refresh
+  // so the numbers stay in sync with the list above.
+  function _updateLibraryStats(all) {
+    const set = (sel, val) => {
+      const el = document.querySelector(sel);
+      if (el) el.textContent = val == null ? "—" : String(val);
+    };
+    const total = all.length;
+    const active = all.filter((e) => e.enabled !== false).length;
+    const cats = new Set(all.map((e) => detectCategory(e.name)));
+    const user = all.filter((e) => !_BUILTIN_EFFECT_ANIMATIONS[e.name]).length;
+    set("[data-eflib-total]", total);
+    set("[data-eflib-active]", active);
+    set("[data-eflib-cats]", cats.size);
+    set("[data-eflib-user]", user);
+  }
+
   function renderEffectsList() {
     const container = document.getElementById("effectsList");
     if (!container) return;
     const all = _effectsState.all;
+    _updateLibraryStats(all);
     const filtered = _effectsState.filter === "ALL"
       ? all
       : all.filter((e) => detectCategory(e.name) === _effectsState.filter);

@@ -1061,16 +1061,40 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           </div>
 
-          <aside class="hud-inspector" id="effectsInspector">
-            <div class="hud-inspector-head">
-              <span class="hud-status-dot is-paused" id="effectsInspectorDot"></span>
-              <span id="effectsInspectorTitle" style="font-size:13px;font-weight:600;color:var(--color-text-strong)">\u2014</span>
-              <span class="admin-v3-card-kicker" id="effectsInspectorKicker" style="margin:0">IDLE</span>
+          <aside class="hud-page-stack" style="gap:14px;position:sticky;top:0">
+            <div class="hud-inspector" id="effectsInspector">
+              <div class="hud-inspector-head">
+                <span class="hud-status-dot is-paused" id="effectsInspectorDot"></span>
+                <span id="effectsInspectorTitle" style="font-size:13px;font-weight:600;color:var(--color-text-strong)">\u2014</span>
+                <span class="admin-v3-card-kicker" id="effectsInspectorKicker" style="margin:0">IDLE</span>
+              </div>
+              <pre class="hud-inspector-body" id="effectsInspectorBody"># \u9ede\u9078\u4e00\u500b\u6548\u679c\u4ee5\u986f\u793a YAML \u5167\u5bb9</pre>
+              <div class="hud-inspector-foot">
+                <button type="button" class="hud-toolbar-action" id="effectsInspectorReload" style="flex:1">\u21bb RELOAD</button>
+                <button type="button" class="hud-toolbar-action is-primary" id="effectsInspectorEdit" style="flex:1">EDIT</button>
+              </div>
             </div>
-            <pre class="hud-inspector-body" id="effectsInspectorBody"># \u9ede\u9078\u4e00\u500b\u6548\u679c\u4ee5\u986f\u793a YAML \u5167\u5bb9</pre>
-            <div class="hud-inspector-foot">
-              <button type="button" class="hud-toolbar-action" id="effectsInspectorReload" style="flex:1">\u21bb RELOAD</button>
-              <button type="button" class="hud-toolbar-action is-primary" id="effectsInspectorEdit" style="flex:1">EDIT</button>
+
+            <!-- v5 Batch 12-5: Library stats card per batch12-effects.jsx -->
+            <div class="admin-eflib-card">
+              <div class="admin-eflib-label">LIBRARY STATS</div>
+              <div class="admin-eflib-statgrid">
+                <div><div class="admin-eflib-stat-en">TOTAL</div><div class="admin-eflib-stat-v" data-eflib-total>\u2014</div></div>
+                <div><div class="admin-eflib-stat-en">ACTIVE</div><div class="admin-eflib-stat-v is-lime" data-eflib-active>\u2014</div></div>
+                <div><div class="admin-eflib-stat-en">CATEGORIES</div><div class="admin-eflib-stat-v" data-eflib-cats>\u2014</div></div>
+                <div><div class="admin-eflib-stat-en">USER UPLOADS</div><div class="admin-eflib-stat-v is-cyan" data-eflib-user>\u2014</div></div>
+              </div>
+            </div>
+
+            <!-- v5 Batch 12-5: Stacking rules info card -->
+            <div class="admin-eflib-card">
+              <div class="admin-eflib-label">STACKING RULES</div>
+              <ul class="admin-eflib-rules">
+                <li>\u00b7 \u540c\u985e\u6548\u679c\u4e92\u65a5\uff08\u6700\u5f8c\u4e00\u500b\u751f\u6548\uff09</li>
+                <li>\u00b7 \u8de8\u985e\u53ef\u758a\u52a0\uff08\u6700\u591a 3 \u5c64\uff09</li>
+                <li>\u00b7 \u89c0\u773e\u53ef\u9078 1\u20133 \u500b\u6548\u679c</li>
+                <li>\u00b7 priority \u4f4e\u7684\u5148\u7b97</li>
+              </ul>
             </div>
           </aside>
         </div>

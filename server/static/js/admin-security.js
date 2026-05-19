@@ -25,95 +25,236 @@
   var _escHtml = window.AdminUtils.escapeHtml;
 
   function pageTemplate() {
+    // v5 Batch 12-3 (2026-05-19): 2-col SecCard grid with tinted left
+    // border per batch12-system.jsx SecurityPage. 7 cards total — 4
+    // working (password / session / WS / audit-link) + 3 informational
+    // 待-BE placeholders (IP allowlist / CORS / TLS) + DANGER ZONE
+    // (span-2 row at bottom). Working JS handlers untouched.
     return `
         <div id="${PAGE_ID}" class="admin-security-page hud-page-stack lg:col-span-2">
         <div class="admin-v2-head">
-          <div class="admin-v2-kicker">SYSTEM · SECURITY · 密碼 · WS TOKEN · 審計</div>
-          <div class="admin-v2-title">System › Security</div>
+          <div class="admin-v2-kicker">SECURITY · AUTH · ACCESS · TOKENS</div>
+          <div class="admin-v2-title">安全性</div>
           <p class="admin-v2-note">
-            管理員密碼、WS 認證 Token 與操作審計。此頁位於 <b>System</b> 之下，單一管理員模式、無角色分離。
+            單一管理員模式、無角色分離。下方卡片左側色條代表狀態：lime = 已就緒、cyan = 進行中、amber = 警告、crimson = 危險。
           </p>
         </div>
 
-        <!-- Change password -->
-        <form id="sec2-pw-form" class="admin-v2-card" autocomplete="off">
-          <div class="admin-v2-monolabel" style="margin-bottom:10px">CHANGE PASSWORD · 變更密碼</div>
-          <div class="admin-security-form">
-            <label class="admin-security-field">
-              <span class="admin-v2-monolabel">CURRENT</span>
-              <input id="sec2-pw-current" type="password" required autocomplete="current-password" class="admin-v2-input" />
-            </label>
-            <label class="admin-security-field">
-              <span class="admin-v2-monolabel">NEW · ≥8</span>
-              <input id="sec2-pw-new" type="password" required minlength="8" autocomplete="new-password" class="admin-v2-input" />
-              <div class="admin-security-strength">
-                <div class="admin-security-strength-bar"><span id="sec2-pw-meter" style="width:0%"></span></div>
-                <span id="sec2-pw-label" class="admin-v2-monolabel">—</span>
+        <div class="admin-security-grid">
+
+          <!-- ① Admin password — change password form -->
+          <div class="admin-sec-card is-lime">
+            <div class="admin-sec-card__head">
+              <span class="admin-sec-card__zh">管理員密碼</span>
+              <span class="admin-sec-card__en">ADMIN PASSWORD</span>
+            </div>
+            <div class="admin-sec-card__body">
+              <form id="sec2-pw-form" class="admin-security-form" autocomplete="off">
+                <label class="admin-security-field">
+                  <span class="admin-v2-monolabel">CURRENT</span>
+                  <input id="sec2-pw-current" type="password" required autocomplete="current-password" class="admin-v2-input" />
+                </label>
+                <label class="admin-security-field">
+                  <span class="admin-v2-monolabel">NEW · ≥8</span>
+                  <input id="sec2-pw-new" type="password" required minlength="8" autocomplete="new-password" class="admin-v2-input" />
+                  <div class="admin-security-strength">
+                    <div class="admin-security-strength-bar"><span id="sec2-pw-meter" style="width:0%"></span></div>
+                    <span id="sec2-pw-label" class="admin-v2-monolabel">—</span>
+                  </div>
+                </label>
+                <label class="admin-security-field">
+                  <span class="admin-v2-monolabel">CONFIRM</span>
+                  <input id="sec2-pw-confirm" type="password" required autocomplete="new-password" class="admin-v2-input" />
+                </label>
+                <button type="submit" class="admin-poll-btn is-primary">變更密碼</button>
+              </form>
+            </div>
+          </div>
+
+          <!-- ② Admin session -->
+          <div class="admin-sec-card is-cyan">
+            <div class="admin-sec-card__head">
+              <span class="admin-sec-card__zh">工作階段</span>
+              <span class="admin-sec-card__en">ADMIN SESSION</span>
+            </div>
+            <div class="admin-sec-card__body">
+              <div class="admin-sec-row">
+                <span class="admin-sec-row__dot is-lime"></span>
+                <div class="admin-sec-row__main">
+                  <div class="admin-sec-row__label">目前 Session</div>
+                  <div class="admin-sec-row__value" id="sec2-session-self-line">—</div>
+                </div>
               </div>
-            </label>
-            <label class="admin-security-field">
-              <span class="admin-v2-monolabel">CONFIRM</span>
-              <input id="sec2-pw-confirm" type="password" required autocomplete="new-password" class="admin-v2-input" />
-            </label>
-            <button type="submit" class="admin-poll-btn is-primary">變更密碼</button>
-          </div>
-        </form>
-
-        <!-- WS Token -->
-        <div class="admin-v2-card">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-            <span class="admin-v2-monolabel">WS TOKEN · OVERLAY 驗證</span>
-            <span id="sec2-wsa-status" class="admin-v2-chip">載入中…</span>
-          </div>
-          <label class="admin-security-toggle">
-            <input id="sec2-wsa-toggle" type="checkbox" />
-            <span>啟用 token 驗證（overlay 連線需帶 token）</span>
-          </label>
-          <div class="admin-security-field" style="margin-top:10px">
-            <span class="admin-v2-monolabel">TOKEN · 12–128 字元</span>
-            <div class="admin-security-tokenrow">
-              <input id="sec2-wsa-token" type="password" class="admin-v2-input" placeholder="未設定" autocomplete="off" spellcheck="false" />
-              <button type="button" id="sec2-wsa-reveal" class="admin-v2-chip">👁</button>
-              <button type="button" id="sec2-wsa-copy" class="admin-v2-chip">複製</button>
-              <button type="button" id="sec2-wsa-rotate" class="admin-v2-chip is-warn">重新產生</button>
+              <div class="admin-sec-row">
+                <span class="admin-sec-row__dot is-lime"></span>
+                <div class="admin-sec-row__main">
+                  <div class="admin-sec-row__label">Token TTL</div>
+                  <div class="admin-sec-row__value">24h · 自動續期</div>
+                </div>
+              </div>
+              <div class="admin-sec-row">
+                <span class="admin-sec-row__dot is-lime"></span>
+                <div class="admin-sec-row__main">
+                  <div class="admin-sec-row__label">其他裝置</div>
+                  <div class="admin-sec-row__value">無（單會話）</div>
+                </div>
+                <span class="admin-sec-row__hint">待 BE</span>
+              </div>
             </div>
           </div>
-          <div class="admin-security-tokenmeta">
-            <span class="admin-v2-monolabel">LAST ROTATION</span>
-            <span id="sec2-wsa-lastrot" class="admin-security-timestamp">—</span>
-            <button type="button" id="sec2-wsa-save" class="admin-poll-btn is-primary" style="margin-left:auto">儲存</button>
-          </div>
-        </div>
 
-        <!-- Session table (skeleton) -->
-        <div class="admin-v2-card">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-            <span class="admin-v2-monolabel">SESSIONS · 活躍登入</span>
-            <span class="admin-v2-chip">1 項</span>
-          </div>
-          <div class="admin-security-table">
-            <div class="admin-security-row is-head">
-              <span>IP</span><span>UA</span><span>LAST-ACTIVE</span><span>ACTION</span>
+          <!-- ③ WS token — overlay viewer auth -->
+          <div class="admin-sec-card is-cyan">
+            <div class="admin-sec-card__head">
+              <span class="admin-sec-card__zh">WebSocket 令牌</span>
+              <span class="admin-sec-card__en">WS TOKEN · VIEWER AUTH</span>
+              <span class="admin-sec-card__spacer"></span>
+              <span id="sec2-wsa-status" class="admin-v2-chip">載入中…</span>
             </div>
-            <div class="admin-security-row" id="sec2-session-self">
-              <span id="sec2-session-ip" class="admin-security-mono">—</span>
-              <span id="sec2-session-ua" class="admin-security-mono admin-security-truncate" title="">—</span>
-              <span class="admin-security-mono">此刻</span>
-              <span class="admin-v2-chip">目前登入</span>
+            <div class="admin-sec-card__body">
+              <label class="admin-security-toggle">
+                <input id="sec2-wsa-toggle" type="checkbox" />
+                <span>啟用 token 驗證（overlay 連線需帶 token）</span>
+              </label>
+              <div class="admin-security-field">
+                <span class="admin-v2-monolabel">TOKEN · 12–128 字元</span>
+                <div class="admin-security-tokenrow">
+                  <input id="sec2-wsa-token" type="password" class="admin-v2-input" placeholder="未設定" autocomplete="off" spellcheck="false" />
+                  <button type="button" id="sec2-wsa-reveal" class="admin-v2-chip">👁</button>
+                  <button type="button" id="sec2-wsa-copy" class="admin-v2-chip">複製</button>
+                  <button type="button" id="sec2-wsa-rotate" class="admin-v2-chip is-warn">重新產生</button>
+                </div>
+              </div>
+              <div class="admin-security-tokenmeta">
+                <span class="admin-v2-monolabel">LAST ROTATION</span>
+                <span id="sec2-wsa-lastrot" class="admin-security-timestamp">—</span>
+                <button type="button" id="sec2-wsa-save" class="admin-poll-btn is-primary" style="margin-left:auto">儲存</button>
+              </div>
             </div>
           </div>
-          <p class="admin-security-deferred">多會話列表 · 逐一撤銷 — 即將支援 (需後端 endpoint)</p>
-        </div>
 
-        <!-- Audit log (skeleton) -->
-        <div class="admin-v2-card">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-            <span class="admin-v2-monolabel">AUDIT LOG · 操作審計</span>
+          <!-- ④ IP allowlist — 待 BE -->
+          <div class="admin-sec-card is-amber">
+            <div class="admin-sec-card__head">
+              <span class="admin-sec-card__zh">IP 存取限制</span>
+              <span class="admin-sec-card__en">IP ALLOWLIST</span>
+            </div>
+            <div class="admin-sec-card__body">
+              <div class="admin-sec-row">
+                <span class="admin-sec-row__dot is-amber"></span>
+                <div class="admin-sec-row__main">
+                  <div class="admin-sec-row__label">狀態</div>
+                  <div class="admin-sec-row__value">未啟用 — 所有 IP 可存取 admin</div>
+                </div>
+              </div>
+              <p class="admin-sec-card__note">
+                啟用後僅允許列表內 IP 存取 <code>/admin</code>。viewer 端不受影響。
+              </p>
+              <div class="admin-sec-card__deferred">+ 新增允許 IP / CIDR</div>
+              <div class="admin-sec-card__be-hint">⚠ 待 BE</div>
+            </div>
           </div>
-          <div class="admin-security-audit-empty">
-            <div class="admin-v2-monolabel">NO DATA</div>
-            <p>操作審計日誌 — 即將支援 (需後端 endpoint)</p>
+
+          <!-- ⑤ CORS — informational -->
+          <div class="admin-sec-card">
+            <div class="admin-sec-card__head">
+              <span class="admin-sec-card__zh">CORS 設定</span>
+              <span class="admin-sec-card__en">CROSS-ORIGIN</span>
+            </div>
+            <div class="admin-sec-card__body">
+              <div class="admin-sec-row">
+                <span class="admin-sec-row__dot is-amber"></span>
+                <div class="admin-sec-row__main">
+                  <div class="admin-sec-row__label">允許來源</div>
+                  <div class="admin-sec-row__value">* (全部)</div>
+                </div>
+                <span class="admin-sec-row__action">編輯</span>
+              </div>
+              <div class="admin-sec-row">
+                <span class="admin-sec-row__dot is-lime"></span>
+                <div class="admin-sec-row__main">
+                  <div class="admin-sec-row__label">Credentials</div>
+                  <div class="admin-sec-row__value">false（與 wildcard origin 互斥）</div>
+                </div>
+              </div>
+              <div class="admin-sec-row">
+                <span class="admin-sec-row__dot is-lime"></span>
+                <div class="admin-sec-row__main">
+                  <div class="admin-sec-row__label">Methods</div>
+                  <div class="admin-sec-row__value">GET, POST, DELETE</div>
+                </div>
+              </div>
+            </div>
           </div>
+
+          <!-- ⑥ HTTPS / TLS -->
+          <div class="admin-sec-card">
+            <div class="admin-sec-card__head">
+              <span class="admin-sec-card__zh">HTTPS / TLS</span>
+              <span class="admin-sec-card__en">TRANSPORT SECURITY</span>
+            </div>
+            <div class="admin-sec-card__body">
+              <div class="admin-sec-row">
+                <span class="admin-sec-row__dot" id="sec2-tls-dot"></span>
+                <div class="admin-sec-row__main">
+                  <div class="admin-sec-row__label">狀態</div>
+                  <div class="admin-sec-row__value" id="sec2-tls-status">—</div>
+                </div>
+              </div>
+              <p class="admin-sec-card__note">
+                建議在反向代理（nginx / Caddy）層啟用 TLS。
+              </p>
+              <div class="admin-sec-row">
+                <span class="admin-sec-row__dot is-amber"></span>
+                <div class="admin-sec-row__main">
+                  <div class="admin-sec-row__label">HSTS Header</div>
+                  <div class="admin-sec-row__value">未設定</div>
+                </div>
+                <span class="admin-sec-row__hint">待 BE</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ⑦ Audit log link (span-2) -->
+          <div class="admin-sec-card is-span2">
+            <div class="admin-sec-card__head">
+              <span class="admin-sec-card__zh">操作審計</span>
+              <span class="admin-sec-card__en">AUDIT LOG</span>
+              <span class="admin-sec-card__spacer"></span>
+              <a href="#/audit" class="admin-sec-card__link">查看完整日誌 →</a>
+            </div>
+            <div class="admin-sec-card__body">
+              <p class="admin-sec-card__note">
+                每筆 admin 動作（登入 / 密碼變更 / token 輪替 / plugin 上傳 / overlay clear / 等）
+                都自動寫入 audit log，可在 <a href="#/audit">#/audit</a> 查詢與匯出。
+              </p>
+            </div>
+          </div>
+
+          <!-- ⑧ DANGER ZONE (span-2 row) -->
+          <div class="admin-sec-card is-crimson is-span2">
+            <div class="admin-sec-card__head">
+              <span class="admin-sec-card__zh">危險操作</span>
+              <span class="admin-sec-card__en">DANGER ZONE</span>
+            </div>
+            <div class="admin-sec-card__body">
+              <div class="admin-sec-dangerzone">
+                <button type="button" class="admin-sec-danger" data-sec-danger="revoke-tokens">
+                  <span class="admin-sec-danger__title">撤銷所有 API Token</span>
+                  <span class="admin-sec-danger__desc">立即停用所有整合</span>
+                </button>
+                <button type="button" class="admin-sec-danger" data-sec-danger="revoke-firetoken">
+                  <span class="admin-sec-danger__title">撤銷 Fire Token</span>
+                  <span class="admin-sec-danger__desc">所有 extension 斷線</span>
+                </button>
+                <button type="button" class="admin-sec-danger is-amber" data-sec-danger="reset-ws">
+                  <span class="admin-sec-danger__title">重設 WS Token</span>
+                  <span class="admin-sec-danger__desc">所有 viewer 需重連</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>`;
   }
@@ -269,13 +410,24 @@
   }
 
   function fillSessionRow() {
-    const ipEl = document.getElementById("sec2-session-ip");
-    const uaEl = document.getElementById("sec2-session-ua");
-    // Session IP isn't readable client-side; leave as placeholder.
-    if (ipEl) ipEl.textContent = "目前主機";
-    if (uaEl) {
-      uaEl.textContent = (navigator.userAgent || "unknown").slice(0, 96);
-      uaEl.title = navigator.userAgent || "";
+    // v5 layout uses sec2-session-self-line — single line summary instead
+    // of the old multi-column table. Old IDs (sec2-session-ip/-ua) no
+    // longer exist; this function targets the new structure.
+    const line = document.getElementById("sec2-session-self-line");
+    if (line) {
+      const ua = (navigator.userAgent || "").match(/(Chrome|Firefox|Safari|Edg|Opera)\/[\d.]+/);
+      const platform = navigator.platform || navigator.userAgentData?.platform || "";
+      const browser = ua ? ua[0].split("/")[0] : "Browser";
+      line.textContent = `${browser} · ${platform} · 目前主機 · 活躍中`;
+    }
+    // TLS status — driven by location.protocol since we can't probe the
+    // server's HSTS / cert config from the client.
+    const tlsDot = document.getElementById("sec2-tls-dot");
+    const tlsStatus = document.getElementById("sec2-tls-status");
+    if (tlsDot && tlsStatus) {
+      const isHttps = location.protocol === "https:";
+      tlsDot.classList.add(isHttps ? "is-lime" : "is-crimson");
+      tlsStatus.textContent = isHttps ? "已啟用 — HTTPS" : "未啟用 — 使用 HTTP";
     }
   }
 

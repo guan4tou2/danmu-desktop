@@ -54,27 +54,27 @@ Also covered (deep-link only, no sidebar slug):
 | `replay`          | 場次重播       | [admin-replay.js](../../server/static/js/admin-replay.js), [admin-history.js](../../server/static/js/admin-history.js) | `admin-pages.jsx` (ReplayPage) |
 | `onboarding-tour` | 新手導覽       | [admin-onboarding.js](../../server/static/js/admin-onboarding.js) | `admin-pages.jsx` (OnboardingOverlay) |
 
-### 🟡 older prototype — design exists but pre-v5 (6)
+### 🟡 older prototype — design exists but pre-v5 (0)
 
-These pages have working implementations but the visual treatment
-comes from a v2/v3/v4 mockup, not a v5 batch10 final canvas. The
-gap is mostly token-level (color palette / typography / clip-path
-chrome) rather than functional.
+_2026-05-19 (PR #122) — Batch 12 cleared the older-prototype queue.
+All 6 pages in this row got v5 chrome refreshes per batch12-*.jsx._
 
-| Sidebar slug | Page | Implementation | Design source | What's needed |
-|---|---|---|---|---|
-| (`system`/`system-overview` accordion leaf) | System Overview | [admin-system-overview.js](../../server/static/js/admin-system-overview.js) | `admin-p2p3.jsx` (SystemOverview) | v5 KPI strip + service-health card refresh |
-| (`system/security` accordion leaf) | Security | [admin-security.js](../../server/static/js/admin-security.js) | `admin-shell-8area.jsx` (SecurityPanel) | Move from 8-area shell into v5 first-class layout (token cards + audit-trail strip) |
-| `events` | 系統事件 | [admin-events.js](../../server/static/js/admin-events.js), [admin-events-log.js](../../server/static/js/admin-events-log.js) | `admin-p2p3.jsx` (AdminEventsPage) | Severity-dot timeline + filter chips (similar to v5 audit.js but separate model) |
-| `effects` | 效果庫 .dme | [admin-effects-mgmt.js](../../server/static/js/admin-effects-mgmt.js) | `admin-pages.jsx` (EffectsLibrary) | v5 8-card live preview already shipped — chrome could use kicker/title refresh |
-| (`widgets` v4 chrome) | Overlay Widgets (full page) | [admin-widgets.js](../../server/static/js/admin-widgets.js) | `admin-batch1.jsx` (WidgetsPage) | Page chrome → v5 token system; current is v4 |
-| Desktop chrome / tray / window picker | Electron app surface | `danmu-desktop/main-modules/window-manager.js`, `tray.js` (Electron, not admin route) | `admin-batch9.jsx` (TrayPopover, WindowPicker), `desktop.jsx` (marked non-final) | Designer decision needed: which file is canonical |
+| Sidebar slug | Page | Implementation | Now-canonical design |
+|---|---|---|---|
+| (system overview accordion leaf) | System Overview | [admin-system-overview.js](../../server/static/js/admin-system-overview.js) | `batch12-system.jsx` SystemOverviewPage |
+| (system security accordion leaf) | Security | [admin-security.js](../../server/static/js/admin-security.js) | `batch12-system.jsx` SecurityPage |
+| `events` | 系統事件 | [admin-events-log.js](../../server/static/js/admin-events-log.js) | `batch12-system.jsx` SystemEventsPage |
+| `effects` | 效果庫 .dme | [admin-effects-mgmt.js](../../server/static/js/admin-effects-mgmt.js) | `batch12-effects.jsx` |
+| `widgets` | Overlay Widgets | [admin-widgets.js](../../server/static/js/admin-widgets.js) | `batch12-overlay-widgets.jsx` |
+| Desktop chrome (tray popover) | Tray popover | [danmu-desktop/tray-popover.html](../../danmu-desktop/tray-popover.html) | `batch12-desktop-chrome.jsx` TrayPopover. **Partial implementation**: tray popover refit landed; Window Picker + Disconnected-state UI deferred (would require new Electron BrowserWindows). |
 
-### 🔴 no dedicated design (1 main + N helpers)
+### 🔴 no dedicated design (0 main + N helpers)
 
-| Surface | Implementation | Notes |
-|---|---|---|
-| `Help Drawer` | [admin-help-drawer.js](../../server/static/js/admin-help-drawer.js) | No mockup in any handoff bundle. Currently a hand-rolled drawer; brief needed if we want it visually aligned with the v5 system. |
+_2026-05-19 — Help Drawer brief shipped in batch12-help.jsx and was
+implemented in commit landing alongside this doc update. There are
+no longer any main surfaces missing a design._
+
+Helper-level surfaces still intentionally component-level only:
 
 Helpers (component-level only, by design — not a gap):
 
@@ -87,44 +87,38 @@ Helpers (component-level only, by design — not a gap):
 
 ## Summary
 
-- **Main pages with v5 final design**: 22/28 (≈ 79%)
-- **Older prototype (functional, visually pre-v5)**: 6/28 (≈ 21%)
-- **Truly missing a dedicated design**: 1 (Help Drawer)
+**As of Batch 12 (2026-05-19, PR #122):**
+
+- **Main pages with v5 final design**: 28/28 (≈ 100%)
+- **Older prototype (functional, visually pre-v5)**: 0/28
+- **Truly missing a dedicated design**: 0 (Help Drawer shipped)
+
+Original baseline (this doc's first version):
+- 22/28 final v5 (79%) → 28/28 (100%)
+- 6/28 older prototype → 0/28
+- 1/28 no design → 0/28
 
 ## Recommended next actions
 
-In priority order:
+All Batch 12 items shipped in PR #122. Remaining design follow-ups
+are small / nice-to-have:
 
-1. **Help Drawer brief** (small) — only main surface with no design.
-   Probably a one-pager covering the drawer chrome + content tabs
-   (keyboard shortcuts / settings glossary / contact). Can reuse the
-   plugin upload modal's panel pattern.
+1. **Window Picker + Disconnected state UI** (Electron) — `batch12-
+   desktop-chrome.jsx` has spec; engineering would need new Electron
+   BrowserWindow + IPC wiring. Currently the tray popover refit shipped
+   alone (sufficient for v1).
 
-2. **Events page v5 refresh** (medium) — currently using p2p3
-   prototype chrome. Closest v5 sibling is `audit-yellow` (similar
-   severity-coded timeline). Could likely converge to shared
-   `admin-audit-timeline-row` styles after one designer pass.
+2. **Effects drop-zone polish** — `batch12-effects.jsx` spec'd a
+   dashed cyan drop-zone card; we shipped library stats + stacking
+   rules only. Drop-zone visual could be lifted from the plugin
+   upload modal's Step 1 dropzone (already implemented).
 
-3. **System Overview v5 refresh** (medium) — heaviest pre-v5 page.
-   Replace the accordion-leaf wrapper with a proper KPI strip + 3
-   service-health cards + container metrics matching the live
-   cockpit (`#/live`).
+3. **Widgets per-card v5 polish** — `batch12-overlay-widgets.jsx`
+   has rich per-widget card spec (drag handle / L# layer chip /
+   collapsed param chips). Shipped KPI strip + OBS source URL card
+   only. Per-card refit would touch the existing edit-modal flow.
 
-4. **Security page refactor** (medium) — currently embeds the
-   8-area-shell mockup. Move to v5 first-class layout with the
-   crimson-accent danger zones and audit-trail strip pattern.
-
-5. **Widgets v5 chrome lift** (small) — content is already in v4
-   shape; just needs the v5 admin-v2-head + kicker treatment.
-
-6. **Effects chrome refresh** (small) — same as Widgets; the 8-card
-   live preview is already v5-quality, the page frame around it is
-   not.
-
-7. **Desktop chrome decision** (designer task, not eng) — pick
-   `admin-batch9.jsx` (TrayPopover + WindowPicker) or `desktop.jsx`
-   as canonical. Currently engineering hasn't shipped either against
-   v5.
+These are all polish — main IA / design coverage is complete.
 
 Helpers (Toast, HudConfirm, Skeleton, Accordion, Mobile Nav, Reconnect
 Banner) are component-level by design and don't need page-scale design

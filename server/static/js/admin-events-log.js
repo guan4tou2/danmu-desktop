@@ -27,9 +27,25 @@
   let _state = {
     events: [],
     filterSev: "all",  // all | info | warn | error
-    filterType: "all", // all | specific source
+    filterCat: "all",  // v5: all | ws | msg | plugin | webhook | rate | system | filter | overlay | backup
     timer: 0,
   };
+
+  function _category(ev) {
+    // Derive category from source or kind. v5 chip values:
+    // ws / msg / plugin / webhook / rate / system / filter / overlay / backup.
+    const src = (ev.source || ev.kind || "").toLowerCase();
+    const action = (ev.action || "").toLowerCase();
+    if (src.includes("plugin") || action.includes("plugin")) return "plugin";
+    if (src.includes("webhook") || action.includes("webhook")) return "webhook";
+    if (src.includes("rate") || action.includes("rate") || action.includes("limit")) return "rate";
+    if (src.includes("filter") || action.includes("filter")) return "filter";
+    if (src.includes("overlay") || action.includes("overlay") || src === "broadcast") return "overlay";
+    if (src.includes("backup") || action.includes("backup")) return "backup";
+    if (src.includes("msg") || src === "messaging") return "msg";
+    if (src.includes("ws") || src === "websocket") return "ws";
+    return "system";
+  }
 
   // ── Severity heuristic ──────────────────────────────────────────────
   // Audit log entries don't carry an explicit severity. We derive it from
@@ -87,7 +103,8 @@
           <a href="#/audit">操作日誌</a> = 人為動作（誰改了什麼設定）。
         </div>
 
-        <!-- Filter bar -->
+        <!-- v5 Batch 12-4 (2026-05-19): added category chip row + LIVE
+             pulse indicator per batch12-system.jsx SystemEventsPage. -->
         <div class="admin-ev-v4__filterbar">
           <div class="admin-ev-v4__sev-chips" role="tablist">
             <button type="button" class="admin-ev-v4__sev-chip is-active" data-ev-sev="all">全部 <span class="admin-ev-v4__sev-count" data-ev-cnt="all">0</span></button>
@@ -95,9 +112,24 @@
             <button type="button" class="admin-ev-v4__sev-chip is-warn"  data-ev-sev="warn">WARN <span class="admin-ev-v4__sev-count" data-ev-cnt="warn">0</span></button>
             <button type="button" class="admin-ev-v4__sev-chip is-error" data-ev-sev="error">ERROR <span class="admin-ev-v4__sev-count" data-ev-cnt="error">0</span></button>
           </div>
+          <div class="admin-ev-v4__cat-chips" role="tablist" aria-label="Category filter">
+            <button type="button" class="admin-ev-v4__cat-chip is-active" data-ev-cat="all">全部</button>
+            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="ws">ws</button>
+            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="msg">msg</button>
+            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="plugin">plugin</button>
+            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="webhook">webhook</button>
+            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="rate">rate</button>
+            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="system">system</button>
+            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="filter">filter</button>
+            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="overlay">overlay</button>
+            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="backup">backup</button>
+          </div>
           <span class="admin-ev-v4__spacer"></span>
+          <span class="admin-ev-v4__live-dot"></span>
+          <span class="admin-ev-v4__live-label">LIVE</span>
           <span class="admin-ev-v4__count" data-ev-total>0</span>
           <button type="button" class="admin-ev-v4__refresh" data-ev-action="refresh">↻ 重新整理</button>
+          <button type="button" class="admin-ev-v4__refresh" data-ev-action="export">↓ 匯出</button>
         </div>
 
         <!-- Events table -->
@@ -123,6 +155,7 @@
     const all = _state.events;
     const visible = all.filter((e) => {
       if (_state.filterSev !== "all" && _severity(e) !== _state.filterSev) return false;
+      if (_state.filterCat !== "all" && _category(e) !== _state.filterCat) return false;
       return true;
     });
     if (visible.length === 0) {
@@ -181,8 +214,30 @@
         _render();
         return;
       }
+      const cat = e.target.closest("[data-ev-cat]");
+      if (cat) {
+        root.querySelectorAll("[data-ev-cat]").forEach((b) => b.classList.toggle("is-active", b === cat));
+        _state.filterCat = cat.dataset.evCat;
+        _render();
+        return;
+      }
       const act = e.target.closest("[data-ev-action]");
-      if (act && act.dataset.evAction === "refresh") _fetch();
+      if (!act) return;
+      if (act.dataset.evAction === "refresh") {
+        _fetch();
+      } else if (act.dataset.evAction === "export") {
+        // Download visible events as JSON. Same filter as on-screen.
+        const blob = new Blob([JSON.stringify(_state.events, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `events-${new Date().toISOString().slice(0,19).replace(/[:T]/g, "")}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        window.showToast?.("已下載事件 JSON", true);
+      }
     });
   }
 
