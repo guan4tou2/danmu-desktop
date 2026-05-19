@@ -116,7 +116,12 @@ def toggle_webhook():
     else:
         next_state = not bool(existing.get("enabled"))
 
-    webhook_service.update_hook(hook_id, {"enabled": next_state})
+    # update_hook returns False if the hook was removed between our
+    # get_hook above and this call. Surfacing as 404 (instead of a
+    # misleading 200 + audit log) prevents the FE from caching a
+    # phantom "enabled=true" state for a hook that no longer exists.
+    if not webhook_service.update_hook(hook_id, {"enabled": next_state}):
+        return _json_response({"error": "Webhook not found (race)"}, 404)
 
     audit_log.append(
         "webhooks",

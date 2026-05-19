@@ -13526,7 +13526,17 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
   border-radius: 6px;
-  overflow: hidden;
+  /* 2026-05-19 (PR review): on narrow viewports the 24-column hour
+     header overflows the card. Switching from overflow:hidden to
+     overflow-x:auto lets users scroll horizontally instead of
+     truncating timestamps. Add a min-width so the columns don't
+     squish below readable size. */
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.admin-sch-timeline-head,
+.admin-sch-timeline-row {
+  min-width: 760px;  /* 70px label + 24 × ~28px columns */
 }
 
 .admin-sch-timeline-head {
@@ -13638,7 +13648,16 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
   border-radius: 6px;
-  overflow: hidden;
+  /* 2026-05-19 (PR review): 7-day fixed grid was clipping under
+     narrow viewports; let it scroll horizontally with a min-width
+     so the day cells stay legible. */
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.admin-sch-calendar-head,
+.admin-sch-calendar-body {
+  min-width: 700px;  /* 7 × ~100px columns */
 }
 
 .admin-sch-calendar-head {

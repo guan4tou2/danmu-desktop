@@ -267,8 +267,25 @@ def search_history():
         s.strip() for s in raw_status.split(",") if s.strip() in _VALID_STATUSES
     } if raw_status else set()
 
+    # Shared `filters` envelope — emitted by both the empty-history
+    # short-circuit and the normal response path so the FE can rely on
+    # a stable schema regardless of which branch handled the request.
+    filters_envelope = {
+        "since": since_dt.isoformat() if since_dt else None,
+        "until": until_dt.isoformat() if until_dt else None,
+        "type": type_filter or None,
+        "fp": fp_filter or None,
+        "status": sorted(status_filter) or None,
+    }
+
     if not history_service.danmu_history:
-        return _json_response({"results": [], "total": 0, "query": q, "contract": _gap_contract()})
+        return _json_response({
+            "results": [],
+            "total": 0,
+            "query": q,
+            "filters": filters_envelope,
+            "contract": _gap_contract(),
+        })
 
     # When since/until provided, query the underlying record store with the
     # explicit range (covers cases beyond the 168-hour ceiling). Otherwise
@@ -315,13 +332,7 @@ def search_history():
             "results": results,
             "total": len(results),
             "query": q,
-            "filters": {
-                "since": since_dt.isoformat() if since_dt else None,
-                "until": until_dt.isoformat() if until_dt else None,
-                "type": type_filter or None,
-                "fp": fp_filter or None,
-                "status": sorted(status_filter) or None,
-            },
+            "filters": filters_envelope,
             "contract": _gap_contract(),
         }
     )

@@ -1087,24 +1087,27 @@
         const body = await r.json();
         const fire = (body.rate_limits && body.rate_limits.fire) || {};
         const totals = (body.rate_limits && body.rate_limits.totals) || {};
+        // 2026-05-19 (PR review): pull config from rate_limit_config
+        // instead of hard-coding. Old responses (pre-config-injection
+        // server) fall back to per-deployment defaults.
+        const cfg = (body.rate_limit_config && body.rate_limit_config.fire) || {};
         const uptime = Math.max(
           1,
           (body.server_time || 0) - (body.server_started_at || 0)
         );
-        // Rate limits — config values aren't yet surfaced by /admin/metrics,
-        // so we hard-code the server defaults (FIRE_RATE_LIMIT=20 per 60s,
-        // burst window 5/3s, cooldown 60s). These match server/config.py.
-        set("[data-vc-rate-fp]", 20);
-        set("[data-vc-rate-global]", 50);
-        set("[data-vc-rate-burst]", 5);
-        set("[data-vc-rate-cooldown]", 60);
-        // Content limits — from validation.py:24 (text max 100). Nickname
-        // doesn't currently have a server enforced limit; show client-side
-        // viewer-form max as "—" until BE wires it.
+        // Rate limits — `fire` scope drives the visible per-FP limit.
+        // Global/burst/cooldown don't have their own config keys yet,
+        // so render "—" rather than mislead with hardcoded numbers.
+        set("[data-vc-rate-fp]", cfg.limit || "—");
+        set("[data-vc-rate-global]", "—");
+        set("[data-vc-rate-burst]", "—");
+        set("[data-vc-rate-cooldown]", cfg.window || "—");
+        // Content limits — text max from validation.py is 100. Surface
+        // as "—" until exposed via a config endpoint to avoid drift.
         set("[data-vc-msg-len]", 100);
-        set("[data-vc-nick-len]", 20);
-        set("[data-vc-dedup]", 10);
-        // Current session strip
+        set("[data-vc-nick-len]", "—");
+        set("[data-vc-dedup]", "—");
+        // Current session strip — live counter data, fine to compute
         const avgRate = (fire.hits || 0) / uptime;
         set("[data-vc-avg-rate]", avgRate.toFixed(2) + "/s");
         set("[data-vc-throttled]", fire.violations || 0);

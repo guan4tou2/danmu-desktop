@@ -18,7 +18,19 @@ _PLUGIN_MAX_BYTES = 256 * 1024
 _PLUGIN_EXTS = (".py", ".js")
 # Match `# @key value` (Python) or `// @key value` (JS) on lines before
 # any code. We stop scanning when we hit a non-comment, non-blank line.
-_MANIFEST_LINE_RE = re.compile(r"^\s*(?:#|//)\s*@(?P<key>[a-zA-Z_][a-zA-Z0-9_]*)\s+(?P<val>.+?)\s*$")
+#
+# Regex hardened (2026-05-19, CodeQL alert): the previous pattern used
+# both a lazy `.+?` and a trailing `\s*$` which can backtrack
+# polynomially on adversarial inputs like `# @A  …  ` with many
+# whitespace runs. The fix is two-step:
+#   1. _parse_manifest now pre-strips whitespace via `raw.rstrip()`
+#      before matching, so the regex never sees trailing whitespace.
+#   2. The regex drops `\s*$` and matches a bounded value with a
+#      possessive-style `.{1,512}` upper limit, removing the
+#      backtracking surface entirely.
+_MANIFEST_LINE_RE = re.compile(
+    r"^\s*(?:#|//)\s*@(?P<key>[a-zA-Z_][a-zA-Z0-9_]{0,63})\s+(?P<val>.{1,512})$"
+)
 _PYTHON_STDLIB_HINT = {
     "abc", "ast", "asyncio", "base64", "collections", "contextlib", "copy",
     "dataclasses", "datetime", "enum", "functools", "hashlib", "io", "itertools",
@@ -42,7 +54,10 @@ def _parse_manifest(text: str) -> dict:
             continue
         if not (stripped.startswith("#") or stripped.startswith("//")):
             break
-        m = _MANIFEST_LINE_RE.match(raw)
+        # rstrip BEFORE the regex match so trailing whitespace never
+        # contributes to backtracking — see CodeQL note on
+        # _MANIFEST_LINE_RE above.
+        m = _MANIFEST_LINE_RE.match(raw.rstrip())
         if not m:
             continue
         key = m.group("key").lower()
@@ -221,7 +236,9 @@ def upload_plugin():
     )
 
     # Webhook v2 event — operators subscribing to plugin lifecycle
-    # see installs without polling /admin/plugins/list.
+    # see installs without polling /admin/plugins/list. Webhook
+    # failures must not block the install path, but log them so a
+    # broken receiver doesn't go undetected for hours.
     try:
         from ...services.webhook import webhook_service
         webhook_service.emit(
@@ -233,8 +250,11 @@ def upload_plugin():
                 "version": manifest.get("version"),
             },
         )
-    except Exception:
-        pass  # webhook failure must never block the install path
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning(
+            "on_plugin_change (install) webhook emit failed: %s", exc
+        )
 
     return _json_response(
         {
@@ -306,8 +326,11 @@ def uninstall_plugin():
             "on_plugin_change",
             {"action": "uninstall", "filename": safe},
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning(
+            "on_plugin_change (uninstall) webhook emit failed: %s", exc
+        )
 
     return _json_response({"removed": safe})
 

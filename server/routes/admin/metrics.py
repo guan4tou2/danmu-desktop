@@ -64,6 +64,20 @@ def get_metrics():
     queue_len = len(ws_queue._queue)
     series = telemetry.get_series()
 
+    # 2026-05-19 (PR review): expose live rate-limit *config* alongside
+    # the counter snapshot so the viewer Limits tab + the ratelimit page
+    # can show actual server-resolved values instead of hardcoded
+    # defaults. Reads via current_app.config so ratelimit/apply edits
+    # are reflected immediately (no restart needed).
+    from flask import current_app
+    rl_config = {
+        scope: {
+            "limit": int(current_app.config.get(f"{scope.upper()}_RATE_LIMIT", 0) or 0),
+            "window": int(current_app.config.get(f"{scope.upper()}_RATE_WINDOW", 0) or 0),
+        }
+        for scope in ("fire", "api", "admin", "login")
+    }
+
     return _json_response(
         {
             "ws_clients": state.get("ws_clients", 0),
@@ -75,6 +89,7 @@ def get_metrics():
             "server_time": time.time(),
             "server_started_at": _SERVER_STARTED_AT,
             "rate_limits": _attach_suggestions(get_rate_limit_stats()),
+            "rate_limit_config": rl_config,
             "recent_violations": recent_violations(30),
             **series,
         }

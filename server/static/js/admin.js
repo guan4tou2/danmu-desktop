@@ -645,7 +645,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <aside class="admin-dash-sidebar" aria-label="Admin navigation">
                             <div class="admin-dash-brand">
                                 <span class="admin-dash-brand-hero">Danmu Fire</span>
-                                <span class="admin-dash-brand-suffix">ADMIN · v${config.appVersion || ""}</span>
+                                <span class="admin-dash-brand-suffix">ADMIN · v${config.appVersion || config.app_version || (window.APP_VERSION || "")}</span>
                             </div>
                             <nav class="admin-dash-nav" role="tablist" aria-label="Admin pages">
                                 <!-- Design v4 grouped nav (2026-05-18): 5-section structure
