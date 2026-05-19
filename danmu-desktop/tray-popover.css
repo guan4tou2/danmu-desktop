@@ -235,3 +235,76 @@ body {
   background: rgba(239, 68, 68, 0.1);
   color: var(--color-error-light, #f87171);
 }
+
+/* ─── v5 Batch 12-7: TrayPopover additions ──────────────────────────────
+   New: header status dot, overlay state line, 3-col stats strip,
+   primary overlay-toggle CTA. Keeps existing chrome below. */
+.popover-header-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--color-text-muted, #94a3b8);
+  margin-left: auto;
+}
+.popover-header-dot[data-state="on"] {
+  background: #86efac;
+  box-shadow: 0 0 8px #86efac;
+}
+.popover-header-dot[data-state="paused"] {
+  background: #fbbf24;
+  box-shadow: 0 0 8px #fbbf24;
+}
+
+.popover-section--status {
+  background: rgba(255, 255, 255, 0.02);
+}
+.popover-overlay-row {
+  display: flex; align-items: baseline; gap: 8px;
+  margin-bottom: 8px;
+}
+.popover-overlay-state {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+  color: var(--color-text-muted, #94a3b8);
+}
+.popover-overlay-state[data-state="on"] { color: #86efac; }
+.popover-overlay-state[data-state="paused"] { color: #fbbf24; }
+.popover-overlay-uptime {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  color: var(--color-text-muted, #94a3b8);
+}
+.popover-stats {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
+}
+.popover-stat-en {
+  display: block;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 7px; letter-spacing: 1px;
+  color: var(--color-text-muted, #94a3b8);
+}
+.popover-stat-v {
+  display: block;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 14px; font-weight: 600;
+  color: var(--color-text-bright, #f8fafc);
+  margin-top: 1px;
+}
+
+.popover-actions--v5 { gap: 4px; }
+.popover-btn-primary {
+  border: 1px solid #86efac !important;
+  background: rgba(134, 239, 172, 0.10) !important;
+  color: #86efac !important;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.5px;
+  text-align: center !important;
+}
+.popover-btn-primary[data-state="on"] {
+  border-color: #fbbf24 !important;
+  background: rgba(251, 191, 36, 0.10) !important;
+  color: #fbbf24 !important;
+}
+.popover-btn-ghost {
+  font-size: 11px;
+  color: var(--color-text-muted, #94a3b8);
+}

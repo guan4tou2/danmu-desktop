@@ -153,6 +153,125 @@
     }
   }
 
+  // v4 P1-4 view renderers (2026-05-19). Both views project the same
+  // job list against time. Backend jobs are interval-based (no cron), so
+  // we anchor them at next_run_at when known, otherwise at "now".
+
+  function _eventType(job) {
+    // Heuristic per first message text — overlay can't tell apart
+    // poll/theme/webhook from the message yet, so we default to msg.
+    return "msg";
+  }
+
+  function _eventIcon(type) {
+    return { poll: "⊷", msg: "◈", theme: "❖", mute: "🔇", webhook: "⇌" }[type] || "◈";
+  }
+
+  function _jobAnchorHour(job) {
+    if (job.next_run_at) {
+      const d = new Date(job.next_run_at * 1000);
+      return d.getHours();
+    }
+    return new Date().getHours();
+  }
+
+  function _jobTimeLabel(job) {
+    if (job.next_run_at) {
+      const d = new Date(job.next_run_at * 1000);
+      return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    }
+    return "--:--";
+  }
+
+  function _jobDesc(job) {
+    const id = job.id || "job";
+    const count = job.message_count;
+    return "Job #" + id + (count != null ? " · " + count + " messages" : "");
+  }
+
+  function renderTimeline(jobs) {
+    const host = document.querySelector("[data-sch-timeline]");
+    if (!host) return;
+    const hours = [];
+    const nowHour = new Date().getHours();
+    for (let h = 0; h < 24; h++) {
+      const isPeak = h >= Math.max(0, nowHour - 1) && h <= Math.min(23, nowHour + 2);
+      hours.push(
+        '<div class="admin-sch-timeline-hour' + (isPeak ? " is-peak" : "") + '">' +
+          String(h).padStart(2, "0") +
+        "</div>"
+      );
+    }
+
+    const rowsHtml = (jobs || []).map(function (job) {
+      const t = _eventType(job);
+      const ic = _eventIcon(t);
+      const on = job.status !== "paused";
+      const conflict = false; // backend doesn't surface conflicts yet
+      return (
+        '<div class="admin-sch-timeline-row' + (on ? "" : " is-off") + '">' +
+          '<div class="admin-sch-timeline-row-time">' + escapeHTML(_jobTimeLabel(job)) + "</div>" +
+          '<div class="admin-sch-timeline-row-body">' +
+            '<span class="admin-sch-evt-icon is-' + t + '">' + ic + "</span>" +
+            '<span class="admin-sch-evt-desc">' + escapeHTML(_jobDesc(job)) + "</span>" +
+            (conflict ? '<span class="admin-sch-evt-conflict">⚠ CONFLICT</span>' : "") +
+            '<span class="admin-sch-evt-state' + (on ? " is-on" : "") + '">' + (on ? "ON" : "OFF") + "</span>" +
+          "</div>" +
+        "</div>"
+      );
+    }).join("");
+
+    host.innerHTML =
+      '<div class="admin-sch-timeline-head">' +
+        '<div class="admin-sch-timeline-head-label">HOUR</div>' +
+        '<div class="admin-sch-timeline-hours">' + hours.join("") + "</div>" +
+      "</div>" +
+      (rowsHtml || '<div class="admin-emojis-empty" style="padding:24px;text-align:center">' + escapeHTML(ServerI18n.t("noActiveJobs")) + "</div>");
+  }
+
+  function renderCalendar(jobs) {
+    const host = document.querySelector("[data-sch-calendar]");
+    if (!host) return;
+    const dayNames = ["一", "二", "三", "四", "五", "六", "日"];
+    const today = new Date();
+    const todayIdx = (today.getDay() + 6) % 7; // Mon=0, Sun=6
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - todayIdx);
+
+    const headHtml = dayNames.map(function (d, i) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      const isToday = i === todayIdx;
+      return (
+        '<div class="admin-sch-calendar-day-head' + (isToday ? " is-today" : "") + '">' +
+          escapeHTML(d) +
+          '<span class="date">' + date.getDate() + "</span>" +
+        "</div>"
+      );
+    }).join("");
+
+    // For now project every job into today's column (no per-day scheduling
+    // in backend yet); future BE work: cron expression + per-day fan-out.
+    const bodyHtml = [0, 1, 2, 3, 4, 5, 6].map(function (i) {
+      const chips = i === todayIdx
+        ? (jobs || []).slice(0, 5).map(function (job) {
+            const t = _eventType(job);
+            const ic = _eventIcon(t);
+            return (
+              '<span class="admin-sch-cal-chip is-' + t + '">' +
+                escapeHTML(_jobTimeLabel(job)) + " " + ic +
+              "</span>"
+            );
+          }).join("")
+        : "";
+      return '<div class="admin-sch-calendar-cell">' + chips + "</div>";
+    }).join("");
+
+    host.innerHTML =
+      '<div class="admin-sch-calendar-head">' + headHtml + "</div>" +
+      '<div class="admin-sch-calendar-body">' + bodyHtml + "</div>";
+  }
+
   async function fetchJobs() {
     const list = document.getElementById("schedulerJobsList");
     const count = document.getElementById("schedulerJobsCount");
@@ -176,6 +295,15 @@
         return;
       }
       if (count) count.textContent = data.jobs.length + " 項";
+
+      // v4 P1-4 — render timeline + calendar from job list (2026-05-19).
+      renderTimeline(data.jobs);
+      renderCalendar(data.jobs);
+      const meta = document.querySelector("[data-sch-meta]");
+      if (meta) {
+        const today = new Date().toISOString().slice(0, 10);
+        meta.textContent = "今天 · " + today + " · " + data.jobs.length + " 排程";
+      }
 
       if (data.jobs.length === 0) {
         list.innerHTML =
@@ -255,6 +383,23 @@
           </p>
         </div>
 
+        <!-- v4 P1-4 view toggle (2026-05-19) — 24H TIMELINE / 7-DAY CALENDAR.
+             Visualizes active jobs against time so conflicts and load
+             spread are obvious at a glance. Falls back to job list below. -->
+        <div class="admin-sch-toolbar">
+          <div class="admin-sch-view-toggle" role="tablist">
+            <button type="button" class="admin-sch-view-btn is-active" data-sch-view="timeline" role="tab" aria-selected="true">24H TIMELINE</button>
+            <button type="button" class="admin-sch-view-btn" data-sch-view="calendar" role="tab" aria-selected="false">7-DAY CALENDAR</button>
+          </div>
+          <span class="admin-sch-meta" data-sch-meta>—</span>
+        </div>
+
+        <!-- 24H TIMELINE view (rendered by renderTimeline()) -->
+        <div class="admin-sch-timeline" data-sch-timeline></div>
+
+        <!-- 7-DAY CALENDAR view (hidden until view toggles) -->
+        <div class="admin-sch-calendar" data-sch-calendar hidden></div>
+
         <!-- Create job form -->
         <div class="admin-v2-card">
           <div class="admin-v2-monolabel" style="margin-bottom:10px">+ 新增排程</div>
@@ -293,6 +438,23 @@
       </div>
     `
     );
+
+    // Bind view toggle (v4 P1-4 timeline/calendar) — renderTimeline /
+    // renderCalendar both run from fetchJobs() result.
+    const viewToggle = document.querySelectorAll("[data-sch-view]");
+    viewToggle.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const view = btn.dataset.schView;
+        viewToggle.forEach((b) => {
+          b.classList.toggle("is-active", b === btn);
+          b.setAttribute("aria-selected", b === btn ? "true" : "false");
+        });
+        const tl = document.querySelector("[data-sch-timeline]");
+        const cal = document.querySelector("[data-sch-calendar]");
+        if (tl) tl.hidden = view !== "timeline";
+        if (cal) cal.hidden = view !== "calendar";
+      });
+    });
 
     // Add initial empty message row
     addMessageRow("", "#ffffff", 48);

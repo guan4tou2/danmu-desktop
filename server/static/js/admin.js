@@ -99,6 +99,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // to first-class sidebar slugs via _routeAliases entries below — no
     // bare redirect needed; applyRoute() resolves them at click time.
     automation: { nav: "system", tab: "scheduler" },
+    // 2026-05-19 v5 IA: ◐ 顯示設定 sidebar item retired; its content
+    // (overlay/viewer defaults) was already absorbed by viewer's 4-tab
+    // layout. Bare redirect (not alias) so #/display bookmarks resolve
+    // BEFORE ADMIN_ROUTES lookup — otherwise the legacy display entry
+    // would intercept.
+    display:    { nav: "viewer", tab: "defaults" },
   });
 
   // Maps deprecated single-segment routes → P0-0 nav homes.
@@ -639,7 +645,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <aside class="admin-dash-sidebar" aria-label="Admin navigation">
                             <div class="admin-dash-brand">
                                 <span class="admin-dash-brand-hero">Danmu Fire</span>
-                                <span class="admin-dash-brand-suffix">ADMIN · v${window.APP_VERSION || "4.8.7"}</span>
+                                <span class="admin-dash-brand-suffix">ADMIN · v${config.appVersion || config.app_version || (window.APP_VERSION || "")}</span>
                             </div>
                             <nav class="admin-dash-nav" role="tablist" aria-label="Admin pages">
                                 <!-- Design v4 grouped nav (2026-05-18): 5-section structure
@@ -681,10 +687,13 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span data-i18n="adminNavThemes">風格主題包</span>
                                     <span class="admin-dash-nav-badge" data-count-themes hidden>—</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="display" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◐</span>
-                                    <span data-i18n="adminNavDisplay">顯示設定</span>
-                                </button>
+                                <!-- v5 IA (2026-05-19): the ◐ 顯示設定 sidebar
+                                     item was removed; its content (overlay /
+                                     viewer defaults) was already absorbed by
+                                     the viewer route's 4-tab layout
+                                     (page/fields/defaults/limits). Legacy
+                                     #/display bookmarks redirect to
+                                     #/viewer/defaults via _bareLegacyRedirects. -->
                                 <button type="button" class="admin-dash-nav-row" data-route="assets" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">▦</span>
                                     <span data-i18n="adminNavAssets">素材庫</span>
@@ -810,8 +819,17 @@ document.addEventListener("DOMContentLoaded", () => {
                             <!-- Session banner — hidden until JS populates -->
                             <div id="admin-session-banner" class="admin-session-banner" data-route-view="dashboard" hidden></div>
 
-                            <section class="admin-kpi-strip" data-route-view="dashboard">
-                                <div class="admin-kpi-tile" data-kpi="messages">
+                            <!-- KPI strip — design v4 live-console.jsx:85 spec.
+                                 4 tiles: MESSAGES (cyan) / PEAK (amber) / UNIQUE FP
+                                 (lime) / SESSION (text). Each tile has a 20-bar
+                                 sparkline; the last bar is the current bucket
+                                 rendered at full opacity, prior bars fade. Color
+                                 modifier classes (is-cyan/is-amber/is-lime/is-text)
+                                 colorize the value + sparkline so the strip reads
+                                 as a HUD telemetry row. Sparkline contents are
+                                 hydrated by admin-dashboard.js refreshKpi(). -->
+                            <section class="admin-kpi-strip is-4col" data-route-view="dashboard">
+                                <div class="admin-kpi-tile is-cyan" data-kpi="messages">
                                     <div class="admin-kpi-tile-head">
                                         <span class="label">訊息總數</span>
                                         <span class="en">MESSAGES</span>
@@ -820,7 +838,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <div class="admin-kpi-tile-bars" data-kpi-bars>${kpiBars(6)}</div>
                                     <div class="admin-kpi-tile-delta is-success" data-kpi-delta>載入中…</div>
                                 </div>
-                                <div class="admin-kpi-tile" data-kpi="peak">
+                                <div class="admin-kpi-tile is-amber" data-kpi="peak">
                                     <div class="admin-kpi-tile-head">
                                         <span class="label">高峰/分鐘</span>
                                         <span class="en">PEAK</span>
@@ -829,53 +847,42 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <div class="admin-kpi-tile-bars" data-kpi-bars>${kpiBars(6)}</div>
                                     <div class="admin-kpi-tile-delta is-muted" data-kpi-delta>計算中…</div>
                                 </div>
+                                <div class="admin-kpi-tile is-lime" data-kpi="unique-fp">
+                                    <div class="admin-kpi-tile-head">
+                                        <span class="label">獨立指紋</span>
+                                        <span class="en">UNIQUE FP</span>
+                                    </div>
+                                    <div class="admin-kpi-tile-value" data-kpi-value>—</div>
+                                    <div class="admin-kpi-tile-bars" data-kpi-bars>${kpiBars(7)}</div>
+                                    <div class="admin-kpi-tile-delta is-muted" data-kpi-delta>近 24h</div>
+                                </div>
+                                <div class="admin-kpi-tile is-text" data-kpi="session">
+                                    <div class="admin-kpi-tile-head">
+                                        <span class="label">本場時長</span>
+                                        <span class="en">SESSION</span>
+                                    </div>
+                                    <div class="admin-kpi-tile-value" data-kpi-value>—</div>
+                                    <div class="admin-kpi-tile-bars" data-kpi-bars>${kpiBars(3)}</div>
+                                    <div class="admin-kpi-tile-delta is-muted" data-kpi-delta>等待場次…</div>
+                                </div>
                             </section>
 
-                            <!-- Dashboard summary grid — prototype admin-v3.jsx:100+
-                                 12-col grid: active poll (7) + poll builder (5),
-                                 messages stream (7) + widgets & plugins (5). -->
+                            <!-- Dashboard summary grid — design v4 live-console.jsx:80
+                                 12-col grid: LIVE FEED (7) + QUICK ACTIONS (3) +
+                                 MY ACTIONS (2). The QUICK ACTIONS panel stacks
+                                 4 sub-panels (Effects/Poll/Blacklist/Broadcast)
+                                 mapped to F1–F4 shortcuts in the prototype. Active
+                                 poll status and quick-poll launch live INSIDE the
+                                 ② POLL sub-panel so polls are not a top-level card
+                                 anymore — full poll editing lives on /polls.
+                                 Widgets card was removed from dashboard; widget
+                                 management is on /widgets. -->
                             <section class="admin-dash-summary" data-route-view="dashboard">
                               <div class="admin-dash-summary-grid">
-                                <div class="admin-dash-card is-span-7" data-dash-card="active-poll">
-                                  <div class="admin-dash-card-head">
-                                    <span class="title">進行中投票</span>
-                                    <span class="kicker">POLL · 觀眾已同步</span>
-                                    <span class="timer" data-dash-poll-timer></span>
-                                  </div>
-                                  <div class="admin-dash-card-body" data-dash-poll-body>
-                                    <div class="admin-dash-empty">尚無進行中投票 · 切換至「投票」頁建立</div>
-                                  </div>
-                                </div>
-                                <div class="admin-dash-card is-span-5" data-dash-card="poll-builder">
-                                  <div class="admin-dash-card-head">
-                                    <span class="title">快速投票</span>
-                                    <span class="kicker">QUICK POLL · 單題 · 2–6 選項</span>
-                                    <a class="admin-dash-card-head-link" href="#" data-route-link="polls">多題 builder →</a>
-                                  </div>
-                                  <div class="admin-dash-card-body admin-dash-quickpoll">
-                                    <input
-                                      type="text"
-                                      class="admin-dash-qp-question"
-                                      placeholder="問題文字…"
-                                      maxlength="120"
-                                      data-qp="question"
-                                    />
-                                    <div class="admin-dash-qp-options" data-qp="options">
-                                      <div class="admin-dash-qp-row"><span class="key">A</span><input type="text" placeholder="選項 A" maxlength="60" /><button type="button" class="rm" data-qp-rm hidden>✕</button></div>
-                                      <div class="admin-dash-qp-row"><span class="key">B</span><input type="text" placeholder="選項 B" maxlength="60" /><button type="button" class="rm" data-qp-rm hidden>✕</button></div>
-                                      <div class="admin-dash-qp-row"><span class="key">C</span><input type="text" placeholder="選項 C" maxlength="60" /><button type="button" class="rm" data-qp-rm>✕</button></div>
-                                      <div class="admin-dash-qp-row"><span class="key">D</span><input type="text" placeholder="選項 D" maxlength="60" /><button type="button" class="rm" data-qp-rm>✕</button></div>
-                                    </div>
-                                    <a href="#" class="admin-dash-qp-add" data-qp-add>+ 新增選項</a>
-                                    <div class="admin-dash-qp-foot">
-                                      <button type="button" class="admin-dash-qp-start" data-qp-start>START ▶</button>
-                                    </div>
-                                  </div>
-                                </div>
                                 <div class="admin-dash-card is-span-7" data-dash-card="messages">
                                   <div class="admin-dash-card-head">
                                     <span class="title">即時訊息</span>
-                                    <span class="kicker">STREAM · 可封鎖 / 標記</span>
+                                    <span class="kicker">LIVE FEED · 可封鎖 / 標記</span>
                                     <span class="auto">▶ AUTO</span>
                                   </div>
                                   <div class="admin-dash-msg-filters" role="tablist" aria-label="Message filter">
@@ -889,13 +896,109 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <div class="admin-dash-empty">等待訊息…</div>
                                   </div>
                                 </div>
-                                <div class="admin-dash-card is-span-5" data-dash-card="widgets">
+
+                                <!-- QUICK ACTIONS (span 3) — 4 stacked sub-panels.
+                                     Effects/Blacklist/Broadcast link out to their
+                                     dedicated pages for full edit; Poll sub-panel
+                                     can launch a quick poll inline (existing
+                                     data-qp bindings still wire up to /admin/poll/create). -->
+                                <div class="admin-dash-card is-span-3 admin-dash-quickactions" data-dash-card="quickactions">
                                   <div class="admin-dash-card-head">
-                                    <span class="title">Widgets &amp; Plugins</span>
-                                    <span class="kicker">OBS · 熱重載</span>
+                                    <span class="title">Quick Actions</span>
+                                    <span class="kicker">F1–F4</span>
                                   </div>
-                                  <div class="admin-dash-card-body" data-dash-widgets>
-                                    <div class="admin-dash-empty">載入中…</div>
+                                  <div class="admin-dash-qa-stack">
+                                    <!-- ① EFFECTS -->
+                                    <div class="admin-dash-qa-panel is-cyan" data-qa-panel="effects">
+                                      <div class="admin-dash-qa-head">
+                                        <span class="key">① EFFECTS · F1</span>
+                                        <span class="count" data-qa-effects-count>—</span>
+                                      </div>
+                                      <div class="admin-dash-qa-chips" data-qa-effects-chips>
+                                        <span class="admin-dash-qa-chip is-loading">載入中…</span>
+                                      </div>
+                                      <a class="admin-dash-qa-link" href="#" data-route-link="effects">編輯 →</a>
+                                    </div>
+
+                                    <!-- POLL panel (F2) - active poll status + quick launch.
+                                         data-dash-card poll-builder lives on the panel
+                                         itself so bindQuickPoll() can query the options
+                                         and foot from a single scope. populateDashboardPoll
+                                         finds the body and timer via direct attribute
+                                         selectors so no separate marker is needed. -->
+                                    <div class="admin-dash-qa-panel is-amber" data-qa-panel="poll" data-dash-card="poll-builder">
+                                      <div class="admin-dash-qa-head">
+                                        <span class="key">② POLL · F2</span>
+                                        <span class="count" data-dash-poll-timer></span>
+                                      </div>
+                                      <div class="admin-dash-qa-body" data-dash-poll-body>
+                                        <div class="admin-dash-qa-empty">尚無進行中投票</div>
+                                      </div>
+                                      <div class="admin-dash-qa-row">
+                                        <input
+                                          type="text"
+                                          class="admin-dash-qa-input"
+                                          placeholder="新投票問題…"
+                                          maxlength="120"
+                                          data-qp="question"
+                                          aria-label="新投票問題"
+                                        />
+                                        <button type="button" class="admin-dash-qa-cta is-amber" data-qa-poll-expand>新建 ▶</button>
+                                      </div>
+                                      <div class="admin-dash-qp-options admin-dash-qa-options" data-qp="options" hidden>
+                                        <div class="admin-dash-qp-row"><span class="key">A</span><input type="text" placeholder="選項 A" maxlength="60" /><button type="button" class="rm" data-qp-rm hidden>✕</button></div>
+                                        <div class="admin-dash-qp-row"><span class="key">B</span><input type="text" placeholder="選項 B" maxlength="60" /><button type="button" class="rm" data-qp-rm hidden>✕</button></div>
+                                      </div>
+                                      <div class="admin-dash-qp-foot" data-qa-poll-foot hidden>
+                                        <a href="#" class="admin-dash-qp-add" data-qp-add>+ 新增選項</a>
+                                        <button type="button" class="admin-dash-qp-start" data-qp-start>START ▶</button>
+                                      </div>
+                                      <a class="admin-dash-qa-link" href="#" data-route-link="polls">多題 builder →</a>
+                                    </div>
+
+                                    <!-- ③ BLACKLIST -->
+                                    <div class="admin-dash-qa-panel is-crimson" data-qa-panel="blacklist">
+                                      <div class="admin-dash-qa-head">
+                                        <span class="key">③ BLACKLIST · F3</span>
+                                        <span class="count" data-qa-blacklist-count>—</span>
+                                      </div>
+                                      <div class="admin-dash-qa-row">
+                                        <input
+                                          type="text"
+                                          class="admin-dash-qa-input"
+                                          placeholder="fp_ 或 @暱稱…"
+                                          maxlength="120"
+                                          data-qa-blacklist-input
+                                          aria-label="新增黑名單關鍵字"
+                                        />
+                                        <button type="button" class="admin-dash-qa-cta is-crimson" data-qa-blacklist-add>+ 加入</button>
+                                      </div>
+                                      <div class="admin-dash-qa-chips" data-qa-blacklist-chips></div>
+                                    </div>
+
+                                    <!-- ④ BROADCAST — links to broadcast subsystem -->
+                                    <div class="admin-dash-qa-panel is-cyan" data-qa-panel="broadcast">
+                                      <div class="admin-dash-qa-head">
+                                        <span class="key">④ BROADCAST · F4</span>
+                                        <span class="count" data-qa-broadcast-status>—</span>
+                                      </div>
+                                      <a class="admin-dash-qa-link" href="#" data-route-link="overlay">Overlay 控制 →</a>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <!-- MY ACTIONS (span 2) — recent admin audit log,
+                                     mirrors v4 live-console.jsx MY ACTIONS sidebar.
+                                     Each row: action chip + target + timestamp.
+                                     Data: /admin/audit?limit=8&actor=admin (see
+                                     server/routes/admin/audit.py). -->
+                                <div class="admin-dash-card is-span-2 admin-dash-myactions" data-dash-card="myactions">
+                                  <div class="admin-dash-card-head">
+                                    <span class="title">My Actions</span>
+                                    <span class="kicker" data-dash-myactions-count>0</span>
+                                  </div>
+                                  <div class="admin-dash-myactions-body" data-dash-myactions-body>
+                                    <div class="admin-dash-empty">尚無動作紀錄</div>
                                   </div>
                                 </div>
                               </div>
@@ -938,6 +1041,20 @@ document.addEventListener("DOMContentLoaded", () => {
       <div id="sec-effects-mgmt" class="hud-page-stack lg:col-span-2">
         <div class="hud-page-grid-2">
           <div class="hud-page-stack" style="gap:16px">
+            <!-- v5 Batch 12 polish: dashed-cyan drop zone per
+                 batch12-effects.jsx EffectsLibraryPage. Replaces the
+                 inline upload button; clicking the zone triggers the
+                 same #effectUploadInput. Drag-and-drop wired below. -->
+            <label for="effectUploadInput" class="admin-effects-dropzone" id="effectsDropzone">
+              <span class="admin-effects-dropzone__icon">\u2726</span>
+              <div class="admin-effects-dropzone__copy">
+                <div class="admin-effects-dropzone__title">\u62d6\u5165 .dme \u6a94\u4e0a\u50b3\u65b0\u6548\u679c \u00b7 \u6216\u9ede\u6b64\u700f\u89bd</div>
+                <div class="admin-effects-dropzone__hint">\u652f\u63f4 .dme \u00b7 .dme.zip \u00b7 \u6700\u5927 4 MB \u00b7 \u4e0a\u50b3\u5f8c\u81ea\u52d5\u71b1\u91cd\u8f09</div>
+              </div>
+              <span class="admin-effects-dropzone__cta">+ \u700f\u89bd\u6a94\u6848</span>
+              <input type="file" id="effectUploadInput" accept=".dme" class="hidden">
+            </label>
+
             <div class="hud-filter-row" id="effectsFilterRow">
               <span class="hud-filter-chip is-active" data-effect-filter="ALL">\u5168\u90e8 \u2014</span>
             </div>
@@ -947,10 +1064,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 <button id="effectReloadBtn" class="hud-toolbar-action" type="button">
                   \u21bb ${ServerI18n.t("reload")}
                 </button>
-                <label for="effectUploadInput" class="hud-toolbar-action" style="cursor:pointer">
-                  + ${ServerI18n.t("uploadDme")}
-                </label>
-                <input type="file" id="effectUploadInput" accept=".dme" class="hidden">
               </div>
             </div>
             <div id="effectsList" class="hud-effects-grid">
@@ -958,16 +1071,40 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           </div>
 
-          <aside class="hud-inspector" id="effectsInspector">
-            <div class="hud-inspector-head">
-              <span class="hud-status-dot is-paused" id="effectsInspectorDot"></span>
-              <span id="effectsInspectorTitle" style="font-size:13px;font-weight:600;color:var(--color-text-strong)">\u2014</span>
-              <span class="admin-v3-card-kicker" id="effectsInspectorKicker" style="margin:0">IDLE</span>
+          <aside class="hud-page-stack" style="gap:14px;position:sticky;top:0">
+            <div class="hud-inspector" id="effectsInspector">
+              <div class="hud-inspector-head">
+                <span class="hud-status-dot is-paused" id="effectsInspectorDot"></span>
+                <span id="effectsInspectorTitle" style="font-size:13px;font-weight:600;color:var(--color-text-strong)">\u2014</span>
+                <span class="admin-v3-card-kicker" id="effectsInspectorKicker" style="margin:0">IDLE</span>
+              </div>
+              <pre class="hud-inspector-body" id="effectsInspectorBody"># \u9ede\u9078\u4e00\u500b\u6548\u679c\u4ee5\u986f\u793a YAML \u5167\u5bb9</pre>
+              <div class="hud-inspector-foot">
+                <button type="button" class="hud-toolbar-action" id="effectsInspectorReload" style="flex:1">\u21bb RELOAD</button>
+                <button type="button" class="hud-toolbar-action is-primary" id="effectsInspectorEdit" style="flex:1">EDIT</button>
+              </div>
             </div>
-            <pre class="hud-inspector-body" id="effectsInspectorBody"># \u9ede\u9078\u4e00\u500b\u6548\u679c\u4ee5\u986f\u793a YAML \u5167\u5bb9</pre>
-            <div class="hud-inspector-foot">
-              <button type="button" class="hud-toolbar-action" id="effectsInspectorReload" style="flex:1">\u21bb RELOAD</button>
-              <button type="button" class="hud-toolbar-action is-primary" id="effectsInspectorEdit" style="flex:1">EDIT</button>
+
+            <!-- v5 Batch 12-5: Library stats card per batch12-effects.jsx -->
+            <div class="admin-eflib-card">
+              <div class="admin-eflib-label">LIBRARY STATS</div>
+              <div class="admin-eflib-statgrid">
+                <div><div class="admin-eflib-stat-en">TOTAL</div><div class="admin-eflib-stat-v" data-eflib-total>\u2014</div></div>
+                <div><div class="admin-eflib-stat-en">ACTIVE</div><div class="admin-eflib-stat-v is-lime" data-eflib-active>\u2014</div></div>
+                <div><div class="admin-eflib-stat-en">CATEGORIES</div><div class="admin-eflib-stat-v" data-eflib-cats>\u2014</div></div>
+                <div><div class="admin-eflib-stat-en">USER UPLOADS</div><div class="admin-eflib-stat-v is-cyan" data-eflib-user>\u2014</div></div>
+              </div>
+            </div>
+
+            <!-- v5 Batch 12-5: Stacking rules info card -->
+            <div class="admin-eflib-card">
+              <div class="admin-eflib-label">STACKING RULES</div>
+              <ul class="admin-eflib-rules">
+                <li>\u00b7 \u540c\u985e\u6548\u679c\u4e92\u65a5\uff08\u6700\u5f8c\u4e00\u500b\u751f\u6548\uff09</li>
+                <li>\u00b7 \u8de8\u985e\u53ef\u758a\u52a0\uff08\u6700\u591a 3 \u5c64\uff09</li>
+                <li>\u00b7 \u89c0\u773e\u53ef\u9078 1\u20133 \u500b\u6548\u679c</li>
+                <li>\u00b7 priority \u4f4e\u7684\u5148\u7b97</li>
+              </ul>
             </div>
           </aside>
         </div>
@@ -1249,7 +1386,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Phase B/D will move sec-* DOM under the new owners and then we can
     // strip aliases. Until then this is pure routing — no HTML moves.
     live:      { title: "即時", kicker: "LIVE · 操作艙 · 即時狀態", sections: ["sec-live-feed"], showKpi: true },
-    display:   { title: "顯示", kicker: "DISPLAY · OVERLAY · DEFAULTS · WIDGETS", sections: ["sec-widgets"] },
+    // 2026-05-19 v5 IA: `display` route retired. The bare-legacy
+    // redirect (`#/display` → `#/viewer/defaults`) intercepts before
+    // this lookup, so dropping the ADMIN_ROUTES entry is safe and
+    // signals "this slug is no longer canonical".
     viewer:    { title: "觀眾頁", kicker: "VIEWER · 頁面預設 · 欄位設定 · 文案 / 限制", sections: ["sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits"] },
     // Legacy aliases — same config as their canonical home. Kept so
     // existing `=== "dashboard"` checks + URL bookmarks keep working
@@ -1499,6 +1639,15 @@ document.addEventListener("DOMContentLoaded", () => {
       shell.dataset.activeLeaf = activeTab || currentRoute;
 
       applySectionVisibility();
+
+      // Tab-aware modules (admin-display.js viewer tabs, etc.) need to
+      // re-apply per-tab visibility AFTER applySectionVisibility — that
+      // pass writes inline display="" on every wanted sec-* and clobbers
+      // anything syncVisibility set on the earlier hashchange. Dispatching
+      // here gives those modules a stable hook that runs last.
+      document.dispatchEvent(new CustomEvent("admin-route-applied", {
+        detail: { route: currentRoute, leaf: activeTab },
+      }));
 
       _renderTabStripFor(currentRoute, activeTab);
 

@@ -1,23 +1,13 @@
 /**
- * Admin · Audit Log (P1, 2026-04-27).
+ * Admin · Audit Log (v5 Yellow alignment, 2026-05-19).
  *
- * Persistent cross-restart event trail. Backed by services/audit_log.py
- * (append-only JSON-lines at runtime/audit.log, 2 MiB rotation cap).
+ * Refreshed to match Danmu Redesign v5 Batch 10 Yellow:
+ *   - compact toolbar
+ *   - fixed actor filters (全部 / admin / system)
+ *   - fixed severity filters (INFO / WARN / DANGER)
+ *   - timeline rows instead of a tabular grid
  *
- * Sources currently emitted (from server side):
- *   - fire_token: rotated / revoked / toggled
- *   - auth:       login / login_failed / logout / password_changed
- *   - broadcast:  mode_changed
- *   (more sources can be added by importing services.audit_log and
- *    calling audit_log.append(source, kind, actor=, meta=) — no FE changes.)
- *
- * Differences vs Notifications Inbox:
- *   - Audit Log is read-only history, persisted on disk, no read/archive
- *     state — it's the durable record.
- *   - Notifications is the "things that need your attention right now",
- *     localStorage-backed, can be marked read / archived.
- *
- * Loaded as <script defer> in admin.html.
+ * Data source remains GET /admin/audit?limit=200.
  */
 (function () {
   "use strict";
@@ -29,102 +19,65 @@
     });
   };
 
-  // SOURCE_META keys mirror backend audit `source` field (audit_log entries).
-  // The `broadcast` source key stays because it's the storage value; only
-  // the human label updates to polestar vocab (2026-05-18).
   const SOURCE_META = {
-    auth:       { label: "Auth",       color: "var(--color-primary, #38bdf8)" },
-    fire_token: { label: "Fire Token", color: "#86efac" },
-    broadcast:  { label: "Overlay",    color: "var(--color-warning, #fbbf24)" },
+    auth:       { label: "Auth" },
+    fire_token: { label: "Fire Token" },
+    broadcast:  { label: "Overlay" },
+    moderation: { label: "Moderation" },
+    session:    { label: "Session" },
   };
 
   let _state = {
     events: [],
-    actions: [],
-    actors: [],
-    filterAction: "all",
     filterActor: "all",
-    filterTime: "24h",
+    filterSeverity: "all",
     refreshTimer: 0,
   };
-
-  // ── render ───────────────────────────────────────────────────────
 
   function buildSection() {
     return `
       <div id="${PAGE_ID}" class="admin-audit-page hud-page-stack lg:col-span-2">
         <div class="admin-v2-head">
-          <div class="admin-v2-kicker">AUDIT LOG · 持久事件紀錄</div>
-          <div class="admin-v2-title">審計日誌</div>
-          <p class="admin-v2-note">跨重啟保留的事件紀錄，存在 <code>server/runtime/audit.log</code>（append-only JSON-lines，2 MiB 自動 rotate 到 <code>.1</code>）。</p>
+          <div class="admin-v2-kicker">AUDIT LOG · 管理員 + 系統事件</div>
+          <div class="admin-v2-title">操作日誌</div>
+          <p class="admin-v2-note">跨重啟保留的事件紀錄，存在 <code>server/runtime/audit.log</code>。v5 Yellow 以 timeline 呈現最近管理與系統動作。</p>
         </div>
 
-        <div class="admin-audit-grid">
-          <aside class="admin-audit-filters">
-            <div class="admin-v2-monolabel admin-audit-label-top">動作 · ACTION</div>
-            <div class="admin-audit-source-list" data-audit-actions>
-              <button type="button" class="admin-audit-src is-active" data-audit-action-filter="all">全部<span class="cnt">—</span></button>
-            </div>
+        <div class="admin-audit-toolbar-v5">
+          <div class="admin-audit-chip-group" data-audit-actor-group>
+            <button type="button" class="admin-audit-filter-chip is-active" data-audit-actor-filter="all">全部</button>
+            <button type="button" class="admin-audit-filter-chip" data-audit-actor-filter="admin">admin</button>
+            <button type="button" class="admin-audit-filter-chip" data-audit-actor-filter="system">system</button>
+          </div>
+          <div class="admin-audit-chip-group" data-audit-severity-group>
+            <button type="button" class="admin-audit-filter-chip" data-severity="info" data-audit-severity-filter="info">INFO</button>
+            <button type="button" class="admin-audit-filter-chip" data-severity="warn" data-audit-severity-filter="warn">WARN</button>
+            <button type="button" class="admin-audit-filter-chip" data-severity="danger" data-audit-severity-filter="danger">DANGER</button>
+          </div>
+          <span class="admin-audit-toolbar-spacer"></span>
+          <span class="admin-audit-summary" data-audit-summary>讀取中…</span>
+          <button type="button" class="admin-audit-action" data-audit-export>↓ 匯出</button>
+          <button type="button" class="admin-audit-action" data-audit-refresh>↻ 重新整理</button>
+        </div>
 
-            <div class="admin-v2-monolabel admin-audit-label-top">執行者 · ACTOR</div>
-            <div class="admin-audit-source-list" data-audit-actors>
-              <button type="button" class="admin-audit-src is-active" data-audit-actor-filter="all">全部<span class="cnt">—</span></button>
-            </div>
-
-            <div class="admin-v2-monolabel admin-audit-label-top">時段 · RANGE</div>
-            <div class="admin-audit-source-list" data-audit-time>
-              <button type="button" class="admin-audit-src is-active" data-audit-time-filter="24h">近 24 小時<span class="cnt">●</span></button>
-              <button type="button" class="admin-audit-src" data-audit-time-filter="7d">近 7 天<span class="cnt">○</span></button>
-              <button type="button" class="admin-audit-src" data-audit-time-filter="30d">近 30 天<span class="cnt">○</span></button>
-              <button type="button" class="admin-audit-src" data-audit-time-filter="custom">自訂…<span class="cnt">□</span></button>
-            </div>
-
-            <div class="admin-audit-tip">
-              <span class="kicker">提示</span>
-              審計紀錄為 read-only 歷史；要操作 / 標記請看 <a href="#/notifications">通知</a> 頁。<br/>
-              <br/>
-              超過 2 MiB 會 rotate 一次到 <code>audit.log.1</code>；要長期保留建議用 cron 同步到 S3 / SIEM。
-            </div>
-          </aside>
-
-          <main class="admin-audit-main">
-            <div class="admin-audit-toolbar">
-              <span class="admin-audit-summary" data-audit-summary>讀取中…</span>
-              <span class="admin-audit-actions">
-                <button type="button" class="admin-audit-action" data-audit-action="export">↓ 匯出 JSON</button>
-                <button type="button" class="admin-audit-action" data-audit-action="refresh">↻ 重新整理</button>
-              </span>
-              <span class="admin-audit-hash-chip" title="每筆事件以 SHA-256 串接前一筆，單筆無法竄改"><span class="icon">⛨</span><span>SHA-256 · 不可竄改</span></span>
-              <span class="admin-audit-retain">保留 90 天</span>
-            </div>
-            <div class="admin-audit-table-wrap">
-              <table class="admin-audit-table">
-                <thead>
-                  <tr>
-                    <th class="col-ts">時間</th>
-                    <th class="col-src">來源</th>
-                    <th class="col-kind">事件</th>
-                    <th class="col-actor">執行者</th>
-                    <th class="col-meta">META</th>
-                  </tr>
-                </thead>
-                <tbody data-audit-rows>
-                  <!-- Table-row skeleton (polestar polish 2026-05-18) —
-                       5 ghost rows with shimmer bars matching the column
-                       widths above. Replaced by _renderRows() once API
-                       returns. -->
-                  ${Array.from({ length: 5 }).map(() => `
-                    <tr class="admin-audit-row admin-audit-row--skel" aria-hidden="true">
-                      <td><span class="admin-skel admin-skel-bar" style="width:60px;height:10px"></span></td>
-                      <td><span class="admin-skel admin-skel-bar" style="width:80px;height:10px"></span></td>
-                      <td><span class="admin-skel admin-skel-bar" style="width:140px;height:10px"></span></td>
-                      <td><span class="admin-skel admin-skel-bar" style="width:60px;height:10px"></span></td>
-                      <td><span class="admin-skel admin-skel-bar" style="width:200px;height:10px"></span></td>
-                    </tr>`).join("")}
-                </tbody>
-              </table>
-            </div>
-          </main>
+        <div class="admin-audit-timeline" data-audit-rows>
+          ${Array.from({ length: 5 }).map(function () {
+            return `
+              <div class="admin-audit-timeline-row admin-audit-timeline-row--skeleton" aria-hidden="true">
+                <div class="admin-audit-cell-stamp">
+                  <span class="admin-skel admin-skel-bar" style="width:42px;height:9px"></span>
+                  <span class="admin-skel admin-skel-bar" style="width:7px;height:7px;border-radius:50%"></span>
+                </div>
+                <div class="admin-audit-cell-body">
+                  <div class="admin-audit-row-head">
+                    <span class="admin-skel admin-skel-bar" style="width:46px;height:10px"></span>
+                    <span class="admin-skel admin-skel-bar" style="width:120px;height:10px"></span>
+                    <span class="admin-skel admin-skel-bar" style="width:90px;height:10px"></span>
+                  </div>
+                  <span class="admin-skel admin-skel-bar" style="width:220px;height:10px"></span>
+                </div>
+              </div>`;
+          }).join("")}
         </div>
       </div>`;
   }
@@ -132,169 +85,156 @@
   function _formatTs(ts) {
     if (!ts) return "—";
     try {
-      const d = new Date(ts * 1000);
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const dd = String(d.getDate()).padStart(2, "0");
+      const d = new Date(Number(ts) * 1000);
       const hh = String(d.getHours()).padStart(2, "0");
       const mm = String(d.getMinutes()).padStart(2, "0");
       const ss = String(d.getSeconds()).padStart(2, "0");
-      return `${y}-${m}-${dd} ${hh}:${mm}:${ss}`;
-    } catch (_) { return "—"; }
+      return `${hh}:${mm}:${ss}`;
+    } catch (_) {
+      return "—";
+    }
   }
 
-  function _matchesAction(event, action) {
-    return action === "all" || String(event.action || event.kind || "").toLowerCase() === String(action || "").toLowerCase();
+  function _severityOf(event) {
+    const action = String(event.action || event.kind || "").toLowerCase();
+    if (/(block|ban|revoke|delete|kick|reject|drop)/.test(action)) return "danger";
+    if (/(fail|error|timeout|warn|rate|deny|denied|limit)/.test(action)) return "warn";
+    return "info";
   }
 
-  function _matchesActor(event, actor) {
-    return actor === "all" || String(event.actor || "") === actor;
+  function _severityColor(severity) {
+    return severity === "danger"
+      ? "var(--hud-crimson, #f87171)"
+      : severity === "warn"
+        ? "var(--hud-amber, #fbbf24)"
+        : "var(--color-text-muted, #94a3b8)";
   }
 
-  function _matchesTime(event, spanKey) {
-    if (!event || !event.ts) return false;
-    if (spanKey === "custom") return true;
-    const nowSec = Date.now() / 1000;
-    const delta = nowSec - Number(event.ts);
-    if (spanKey === "24h") return delta <= 24 * 3600;
-    if (spanKey === "7d") return delta <= 7 * 24 * 3600;
-    if (spanKey === "30d") return delta <= 30 * 24 * 3600;
-    return true;
+  function _matchesActor(event) {
+    return _state.filterActor === "all" || String(event.actor || "").toLowerCase() === _state.filterActor;
+  }
+
+  function _matchesSeverity(event) {
+    return _state.filterSeverity === "all" || _severityOf(event) === _state.filterSeverity;
   }
 
   function _filteredEvents() {
-    return _state.events.filter(function (e) {
-      return _matchesAction(e, _state.filterAction)
-        && _matchesActor(e, _state.filterActor)
-        && _matchesTime(e, _state.filterTime);
+    return _state.events.filter(function (event) {
+      return _matchesActor(event) && _matchesSeverity(event);
     });
   }
 
-  function _actorChipHtml(actor) {
-    if (!actor || actor === "—") return '<span style="color:var(--color-text-muted)">—</span>';
-    const initial = escapeHtml(actor.charAt(0).toUpperCase());
-    const name = escapeHtml(actor);
-    return `<span class="admin-audit-actor-chip"><span class="admin-audit-actor-av">${initial}</span>${name}</span>`;
+  function _targetOf(event) {
+    const meta = event && event.meta && typeof event.meta === "object" ? event.meta : {};
+    return meta.target || meta.keyword || meta.fp || meta.fingerprint || meta.name || meta.mode || meta.session
+      || meta.hook_id || event.target || "";
   }
 
   function _diffPairHtml(before, after) {
     const hasBefore = before !== null && before !== undefined;
     const hasAfter = after !== null && after !== undefined;
-    if (!hasBefore && !hasAfter) return null;
-    const bStr = hasBefore ? escapeHtml(JSON.stringify(before)) : null;
-    const aStr = hasAfter ? escapeHtml(JSON.stringify(after)) : null;
-    if (hasBefore) {
-      return `<span class="admin-audit-diff"><span class="admin-audit-diff-b">${bStr}</span> → <span class="admin-audit-diff-a">${aStr}</span></span>`;
+    if (!hasBefore && !hasAfter) return "";
+    const beforeText = hasBefore ? escapeHtml(JSON.stringify(before)) : "";
+    const afterText = hasAfter ? escapeHtml(JSON.stringify(after)) : "";
+    if (!hasBefore) return `<span class="admin-audit-diff"><span class="admin-audit-diff-a">${afterText}</span></span>`;
+    return `<span class="admin-audit-diff"><span class="admin-audit-diff-b">${beforeText}</span> → <span class="admin-audit-diff-a">${afterText}</span></span>`;
+  }
+
+  function _detailHtml(event) {
+    const meta = event && event.meta && typeof event.meta === "object" ? event.meta : {};
+    const detailParts = [];
+    if (event.detail) detailParts.push(`<span>${escapeHtml(String(event.detail))}</span>`);
+    const diffHtml = _diffPairHtml(event.before, event.after);
+    if (diffHtml) detailParts.push(diffHtml);
+
+    const compactMeta = Object.assign({}, meta);
+    ["target", "keyword", "fp", "fingerprint", "name", "mode", "session", "hook_id"].forEach(function (key) {
+      delete compactMeta[key];
+    });
+    const metaKeys = Object.keys(compactMeta);
+    if (metaKeys.length) {
+      detailParts.push(`<code class="admin-audit-meta-extra">${escapeHtml(JSON.stringify(compactMeta))}</code>`);
     }
-    return `<span class="admin-audit-diff"><span class="admin-audit-diff-a">${aStr}</span></span>`;
+
+    if (!detailParts.length) {
+      const sourceLabel = (SOURCE_META[event.source] && SOURCE_META[event.source].label) || event.source || "system";
+      detailParts.push(`<span>${escapeHtml(String(sourceLabel))}</span>`);
+    }
+    return detailParts.join(" ");
+  }
+
+  function _actorPillClass(actor) {
+    return actor === "admin" ? "admin-audit-row-pill is-admin"
+      : actor === "system" ? "admin-audit-row-pill"
+        : "admin-audit-row-pill is-generic";
   }
 
   function _renderRows() {
-    const tbody = document.querySelector("[data-audit-rows]");
-    if (!tbody) return;
+    const container = document.querySelector("[data-audit-rows]");
+    if (!container) return;
     const events = _filteredEvents();
-    if (events.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" class="admin-audit-empty">沒有符合條件的紀錄。</td></tr>`;
+    if (!events.length) {
+      container.innerHTML = `<div class="admin-audit-empty">沒有符合條件的紀錄。</div>`;
       return;
     }
-    tbody.innerHTML = events.map(function (e) {
-      const meta = SOURCE_META[e.source] || { label: e.source, color: "var(--color-text-muted)" };
-      const metaJson = JSON.stringify(e.meta || {});
-      const hasDiff = (e.before !== null && e.before !== undefined) || (e.after !== null && e.after !== undefined);
-      const diffHtml = hasDiff ? _diffPairHtml(e.before, e.after) : null;
-      let metaHtml;
-      if (diffHtml) {
-        metaHtml = metaJson === "{}" ? diffHtml : `${diffHtml} <code class="admin-audit-meta-extra">${escapeHtml(metaJson)}</code>`;
-      } else {
-        const beforeAfter = hasDiff ? `before: ${JSON.stringify(e.before)} -> after: ${JSON.stringify(e.after)}` : "";
-        const metaText = metaJson === "{}" ? (beforeAfter || "—") : [beforeAfter, metaJson].filter(Boolean).join(" · ");
-        metaHtml = `<code>${escapeHtml(metaText)}</code>`;
-      }
+
+    container.innerHTML = events.map(function (event) {
+      const severity = _severityOf(event);
+      const severityColor = _severityColor(severity);
+      const actor = String(event.actor || "system");
+      const target = _targetOf(event);
       return `
-        <tr class="admin-audit-row">
-          <td class="col-ts">${escapeHtml(_formatTs(e.ts))}</td>
-          <td class="col-src">
-            <span class="admin-audit-src-chip" style="color:${meta.color};border-color:${meta.color}55;background:${meta.color}1c;">${escapeHtml(meta.label)}</span>
-          </td>
-          <td class="col-kind">${escapeHtml(e.kind || "—")}</td>
-          <td class="col-actor">${_actorChipHtml(e.actor)}</td>
-          <td class="col-meta">${metaHtml}</td>
-        </tr>`;
+        <div class="admin-audit-timeline-row" data-severity="${severity}">
+          <div class="admin-audit-cell-stamp">
+            <span class="admin-audit-ts">${escapeHtml(_formatTs(event.ts))}</span>
+            <span class="admin-audit-sev-dot" style="background:${severityColor};box-shadow:0 0 6px ${severityColor}"></span>
+          </div>
+          <div class="admin-audit-cell-body">
+            <div class="admin-audit-row-head">
+              <span class="${_actorPillClass(actor)}">${escapeHtml(actor)}</span>
+              <span class="admin-audit-event-action">${escapeHtml(String(event.action || event.kind || "—"))}</span>
+              ${target ? `<span class="admin-audit-target">→ ${escapeHtml(String(target))}</span>` : ""}
+            </div>
+            <div class="admin-audit-row-detail">${_detailHtml(event)}</div>
+          </div>
+        </div>`;
     }).join("");
-  }
-
-  function _renderActions() {
-    const list = document.querySelector("[data-audit-actions]");
-    if (!list) return;
-    const countScope = _state.events.filter(function (e) {
-      return _matchesActor(e, _state.filterActor) && _matchesTime(e, _state.filterTime);
-    });
-    const allBtn = `<button type="button" class="admin-audit-src ${_state.filterAction === "all" ? "is-active" : ""}" data-audit-action-filter="all">全部<span class="cnt">${countScope.length}</span></button>`;
-    const actionButtons = (_state.actions || []).map(function (actionKey) {
-      const normalized = String(actionKey || "").toLowerCase();
-      const cnt = countScope.filter(function (e) {
-        return String(e.action || e.kind || "").toLowerCase() === normalized;
-      }).length;
-      const active = _state.filterAction === normalized;
-      return `<button type="button" class="admin-audit-src ${active ? "is-active" : ""}" data-audit-action-filter="${escapeHtml(normalized)}">${escapeHtml(normalized.toUpperCase())}<span class="cnt">${cnt}</span></button>`;
-    }).join("");
-    list.innerHTML = allBtn + actionButtons;
-  }
-
-  function _renderActors() {
-    const list = document.querySelector("[data-audit-actors]");
-    if (!list) return;
-    const countScope = _state.events.filter(function (e) {
-      return _matchesAction(e, _state.filterAction) && _matchesTime(e, _state.filterTime);
-    });
-    const allBtn = `<button type="button" class="admin-audit-src ${_state.filterActor === "all" ? "is-active" : ""}" data-audit-actor-filter="all">全部<span class="cnt">${countScope.length}</span></button>`;
-    const actorButtons = (_state.actors || []).map(function (actor) {
-      const cnt = countScope.filter(function (e) { return String(e.actor || "") === actor; }).length;
-      const active = _state.filterActor === actor;
-      return `<button type="button" class="admin-audit-src ${active ? "is-active" : ""}" data-audit-actor-filter="${escapeHtml(actor)}">${escapeHtml(actor)}<span class="cnt">${cnt}</span></button>`;
-    }).join("");
-    list.innerHTML = allBtn + actorButtons;
-  }
-
-  function _renderTime() {
-    const root = document.querySelector("[data-audit-time]");
-    if (!root) return;
-    root.querySelectorAll("[data-audit-time-filter]").forEach(function (btn) {
-      btn.classList.toggle("is-active", btn.dataset.auditTimeFilter === _state.filterTime);
-    });
   }
 
   function _renderSummary() {
     const summary = document.querySelector("[data-audit-summary]");
     if (!summary) return;
-    const filtered = _filteredEvents().length;
-    const actionLabel = _state.filterAction === "all" ? "全部動作" : _state.filterAction.toUpperCase();
-    const actorLabel = _state.filterActor === "all" ? "全部執行者" : _state.filterActor;
-    const rangeLabel = _state.filterTime === "24h" ? "24h"
-      : (_state.filterTime === "7d" ? "7d" : (_state.filterTime === "30d" ? "30d" : "custom"));
-    summary.textContent = "範圍 " + rangeLabel + " · " + actionLabel + " · " + actorLabel + " · " + filtered + " 筆";
+    const count = _filteredEvents().length;
+    const actor = _state.filterActor === "all" ? "全部角色" : _state.filterActor;
+    const severity = _state.filterSeverity === "all" ? "全部層級" : _state.filterSeverity.toUpperCase();
+    summary.textContent = `${count} 筆 · ${actor} · ${severity}`;
   }
 
-  // ── data ─────────────────────────────────────────────────────────
+  function _renderFilters() {
+    document.querySelectorAll("[data-audit-actor-filter]").forEach(function (button) {
+      button.classList.toggle("is-active", button.dataset.auditActorFilter === _state.filterActor);
+    });
+    document.querySelectorAll("[data-audit-severity-filter]").forEach(function (button) {
+      button.classList.toggle("is-active", button.dataset.auditSeverityFilter === _state.filterSeverity);
+    });
+  }
 
   async function _fetch() {
     try {
-      const r = await fetch("/admin/audit?limit=200", { credentials: "same-origin" });
-      if (!r.ok) return;
-      const data = await r.json();
-      _state.events = Array.isArray(data.events) ? data.events : [];
-      _state.actions = Array.isArray(data.contract && data.contract.actions)
-        ? data.contract.actions.map(function (a) { return String(a || "").toLowerCase(); }).filter(Boolean)
-        : [];
-      _state.actors = Array.isArray(data.contract && data.contract.actors)
-        ? data.contract.actors.map(function (a) { return String(a || ""); }).filter(Boolean)
-        : [];
-      _renderActions();
-      _renderActors();
-      _renderTime();
+      const response = await fetch("/admin/audit?limit=200", { credentials: "same-origin" });
+      if (!response.ok) return;
+      const data = await response.json();
+      const records = Array.isArray(data.events) ? data.events.slice() : [];
+      records.sort(function (a, b) {
+        return Number(b.ts || 0) - Number(a.ts || 0);
+      });
+      _state.events = records;
+      _renderFilters();
       _renderRows();
       _renderSummary();
-    } catch (_) { /* silent */ }
+    } catch (_) {
+      /* silent */
+    }
   }
 
   function _exportJson() {
@@ -305,54 +245,46 @@
     }
     const blob = new Blob([JSON.stringify(events, null, 2)], { type: "application/json;charset=utf-8" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "audit-" + new Date().toISOString().slice(0, 10) + ".json";
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "audit-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
     window.showToast && window.showToast("已匯出 " + events.length + " 筆紀錄", true);
   }
 
-  // ── handlers ─────────────────────────────────────────────────────
-
   function _bind() {
     const page = document.getElementById(PAGE_ID);
     if (!page) return;
-    page.addEventListener("click", function (e) {
-      const actionFilter = e.target.closest("[data-audit-action-filter]");
-      if (actionFilter) {
-        _state.filterAction = actionFilter.dataset.auditActionFilter;
-        _renderActions();
-        _renderActors();
-        _renderTime();
-        _renderRows();
-        _renderSummary();
-        return;
-      }
-      const actorFilter = e.target.closest("[data-audit-actor-filter]");
+    page.addEventListener("click", function (event) {
+      const actorFilter = event.target.closest("[data-audit-actor-filter]");
       if (actorFilter) {
-        _state.filterActor = actorFilter.dataset.auditActorFilter;
-        _renderActions();
-        _renderActors();
-        _renderTime();
+        _state.filterActor = actorFilter.dataset.auditActorFilter || "all";
+        _renderFilters();
         _renderRows();
         _renderSummary();
         return;
       }
-      const timeFilter = e.target.closest("[data-audit-time-filter]");
-      if (timeFilter) {
-        _state.filterTime = timeFilter.dataset.auditTimeFilter || "24h";
-        _renderActions();
-        _renderActors();
-        _renderTime();
+
+      const severityFilter = event.target.closest("[data-audit-severity-filter]");
+      if (severityFilter) {
+        const nextSeverity = severityFilter.dataset.auditSeverityFilter || "all";
+        _state.filterSeverity = _state.filterSeverity === nextSeverity ? "all" : nextSeverity;
+        _renderFilters();
         _renderRows();
         _renderSummary();
         return;
       }
-      const action = e.target.closest("[data-audit-action]");
-      if (action) {
-        if (action.dataset.auditAction === "refresh") _fetch();
-        else if (action.dataset.auditAction === "export") _exportJson();
+
+      if (event.target.closest("[data-audit-export]")) {
+        _exportJson();
+        return;
+      }
+
+      if (event.target.closest("[data-audit-refresh]")) {
+        _fetch();
       }
     });
   }
@@ -387,7 +319,8 @@
       }
     });
     observer.observe(document.getElementById("app-container") || document.body, {
-      childList: true, subtree: true,
+      childList: true,
+      subtree: true,
     });
     if (document.getElementById("settings-grid") && !document.getElementById(PAGE_ID)) {
       init();

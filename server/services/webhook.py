@@ -28,7 +28,29 @@ _WEBHOOKS_FILE = Path(Config.WEBHOOKS_PATH)
 _MAX_HOOKS = 20
 _REQUEST_TIMEOUT = 10  # seconds
 _VALID_FORMATS = {"json", "discord", "slack"}
-_VALID_EVENTS = {"on_danmu", "on_poll_create", "on_poll_end"}
+# Event vocab v2 (2026-05-19) — expanded from 3 → 10 events. Existing
+# `on_danmu` / `on_poll_create` / `on_poll_end` keep their semantics.
+# Newer events are wired progressively: session/overlay/plugin emit sites
+# land in this batch; the danmu_blocked / poll_vote / audit_alert /
+# config_change subscribers are accepted now so operators can pre-register
+# webhooks, but the emit sites for those land in follow-up batches.
+_VALID_EVENTS = {
+    # Core danmu lifecycle
+    "on_danmu",  # danmu accepted into the queue
+    "on_danmu_blocked",  # danmu rejected (blacklist / filter / rate limit)
+    # Poll lifecycle
+    "on_poll_create",
+    "on_poll_vote",  # single vote cast
+    "on_poll_end",
+    # Broadcast / session lifecycle
+    "on_session_start",  # operator flipped overlay to LIVE / session opened
+    "on_session_end",  # operator flipped to STANDBY / session closed
+    # Overlay control
+    "on_overlay_clear",  # admin cleared the on-screen danmu stack
+    # Operator surfaces
+    "on_audit_alert",  # audit_log entry with severity >= warn
+    "on_plugin_change",  # plugin uploaded or uninstalled
+}
 
 
 class WebhookConfig:

@@ -12,7 +12,12 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   expect(adminSrc).toContain("admin-dash-grid");
   expect(adminSrc).toContain("ADMIN_ROUTES");
   expect(adminSrc).toContain('data-route="live"');
-  expect(adminSrc).toContain('data-route="display"');
+  // 2026-05-19 v5 IA: `display` sidebar item retired. Its content
+  // (overlay / viewer defaults) was already absorbed by viewer's
+  // 4-tab layout. Legacy `#/display` bookmarks alias-redirect to
+  // `#/viewer/defaults` via _bareLegacyRedirects.
+  expect(adminSrc).not.toContain('data-route="display"');
+  expect(adminSrc).toMatch(/display:\s*\{\s*nav:\s*"viewer",\s*tab:\s*"defaults"/);
   expect(adminSrc).toContain('data-route="viewer"');
   expect(adminSrc).not.toContain('data-route="dashboard"');
   // 2026-05-18 v5: messages + widgets promoted to first-class sidebar slugs.
@@ -49,7 +54,10 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   expect(displaySrc).toContain("Display 控制 overlay / client / 目標顯示器");
   expect(securitySrc).toContain('route === "system"');
   expect(securitySrc).toContain('leaf === "security"');
-  expect(securitySrc).toContain("System › Security");
+  // 2026-05-19 v5 Batch 12-3: security page title shortened from
+  // "System › Security" to just "安全性" per batch12-system.jsx.
+  expect(securitySrc).toContain("安全性");
+  expect(securitySrc).toContain("SECURITY · AUTH · ACCESS · TOKENS");
   expect(systemSrc).toContain("slug: \"security\"");
   expect(systemSrc).toContain("sectionId: \"admin-security-v2-page\"");
   expect(viewerThemeSrc).toContain('SECTION_ID = "sec-viewer-theme"');
@@ -90,11 +98,17 @@ test("admin Viewer surface exposes language/copy and defaults/limits guidance", 
   expect(displaySrc).toContain("Placeholder");
   expect(displaySrc).toContain("Submit button");
   expect(displaySrc).toContain("觀眾端不提供語言切換");
-  expect(displaySrc).toContain("DEFAULTS / LIMITS");
-  expect(displaySrc).toContain("Nickname ≤ 20");
-  expect(displaySrc).toContain("Message 1–100");
-  expect(displaySrc).toContain("FIRE rate 20 / 60s");
-  expect(displaySrc).toContain("Poll 預設關閉");
+  // 2026-05-19 v5: Limits tab rewritten per batch11-viewer-4tab.jsx.
+  // Old static "DEFAULTS / LIMITS" text panel replaced with 2 cards
+  // (RATE LIMITS + CONTENT LIMITS) + CURRENT SESSION strip, populated
+  // live from /admin/metrics.rate_limit_config.
+  expect(displaySrc).toContain("RATE LIMITS");
+  expect(displaySrc).toContain("CONTENT LIMITS");
+  expect(displaySrc).toContain("速率限制");
+  expect(displaySrc).toContain("內容限制");
+  expect(displaySrc).toContain('admin-vc-limits-grid');
+  expect(displaySrc).toContain('data-vc-rate-fp');
+  expect(displaySrc).toContain('data-vc-msg-len');
   expect(adminSrc).toContain('sec-viewer-config-defaults');
   expect(adminSrc).toContain('sec-viewer-config-limits');
   expect(displaySrc).toContain('_makeTabBtn("defaults"');

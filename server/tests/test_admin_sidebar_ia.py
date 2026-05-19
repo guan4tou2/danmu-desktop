@@ -1,10 +1,11 @@
-"""Sidebar IA contract tests (2026-05-18 v5: Danmu Redesign v4 grouped nav).
+"""Sidebar IA contract tests (2026-05-19 v5 IA: Danmu Redesign v5 grouped nav).
 
-Locks the admin sidebar order and structure. The 2026-05-18 redesign moved
-from a flat 8-area nav to a 5-section grouped nav (~19 items) per the
-Danmu Redesign v4 admin-pages.jsx prototype:
+Locks the admin sidebar order and structure. The 2026-05-19 sweep
+(commit 12e4c90) removed the `◐ 顯示設定` item — its overlay/viewer
+defaults content was already absorbed by the viewer route's 4-tab
+layout (page/fields/defaults/limits). Current grouped nav (~19 items):
   · 總覽: live / messages / history
-  · 互動: polls / widgets / themes / display / assets / viewer
+  · 互動: polls / widgets / themes / assets / viewer
   · 審核: moderation / ratelimit
   · 設定: effects / plugins / fonts / system / audit
   · 整合: extensions / webhooks / api-tokens / backup
@@ -14,7 +15,7 @@ extensions/webhooks/api-tokens/backup/ratelimit) navigate correctly through
 applyRoute's alias resolution; the alias-button is-active matcher keeps
 the clicked button highlighted.
 
-Old hashes (#/dashboard #/appearance #/automation) still redirect.
+Old hashes (#/dashboard #/appearance #/automation #/display) still redirect.
 """
 
 # pyright: reportMissingImports=false
@@ -39,11 +40,10 @@ EXPECTED_NAV_ORDER = [
     "live",
     "messages",
     "history",
-    # 互動
+    # 互動 (2026-05-19 v5 IA: `display` retired — content merged into viewer's 4 tabs)
     "polls",
     "widgets",
     "themes",
-    "display",
     "assets",
     "viewer",
     # 審核
@@ -147,8 +147,7 @@ def test_bare_legacy_object_redirects_target_system_accordion(
         rf'\b{slug}:\s*\{{\s*nav:\s*"{expected_nav}",\s*tab:\s*"{expected_tab}"',
     )
     assert pattern.search(admin_js), (
-        f"_bareLegacyRedirects.{slug} must be {{nav: '{expected_nav}', "
-        f"tab: '{expected_tab}'}}"
+        f"_bareLegacyRedirects.{slug} must be {{nav: '{expected_nav}', " f"tab: '{expected_tab}'}}"
     )
 
 
@@ -177,12 +176,16 @@ def test_bare_redirects_consulted_before_alias_resolution(admin_js: str):
 
 
 def test_admin_routes_has_new_canonical_slugs(admin_js: str):
-    """live/display/viewer must exist in ADMIN_ROUTES with non-empty
-    section lists pointing at EXISTING sec-* IDs (so each slug has
-    something to render in Phase A — DOM moves are deferred to B/D)."""
+    """live/viewer must exist in ADMIN_ROUTES with non-empty section
+    lists pointing at EXISTING sec-* IDs (so each slug has something
+    to render in Phase A — DOM moves are deferred to B/D).
+
+    2026-05-19 v5 IA: `display` was removed from this list — its
+    sidebar item retired and the route slug demoted to a bare-legacy
+    redirect (#/display → #/viewer/defaults). Coverage is now in
+    test_display_bare_legacy_redirect below."""
     for slug, expected_section in [
         ("live", "sec-live-feed"),
-        ("display", "sec-widgets"),
         ("viewer", "sec-viewer-config-tabs"),
     ]:
         pattern = re.compile(
@@ -192,6 +195,32 @@ def test_admin_routes_has_new_canonical_slugs(admin_js: str):
         assert pattern.search(
             admin_js
         ), f"ADMIN_ROUTES.{slug} missing or doesn't reference {expected_section}"
+
+
+def test_display_bare_legacy_redirect(admin_js: str):
+    """v5 IA (2026-05-19): #/display deep-link must redirect to
+    #/viewer/defaults via _bareLegacyRedirects (NOT _routeAliases —
+    those only fire when ADMIN_ROUTES lookup misses, but ADMIN_ROUTES
+    used to have a `display` entry that would shadow the alias. The
+    bare-legacy path runs BEFORE the ADMIN_ROUTES check.)"""
+    bare_redirect = re.compile(
+        r"_bareLegacyRedirects.*?display:\s*\{\s*nav:\s*['\"]viewer['\"]"
+        r"\s*,\s*tab:\s*['\"]defaults['\"]",
+        re.DOTALL,
+    )
+    assert bare_redirect.search(admin_js), (
+        "expected display: { nav: 'viewer', tab: 'defaults' } in "
+        "_bareLegacyRedirects so #/display lands on viewer's defaults tab"
+    )
+    # Also assert the dead ADMIN_ROUTES.display entry got cleaned up
+    # (otherwise the bare redirect is shadowed).
+    legacy_routes_entry = re.compile(
+        r"\n\s*display:\s*\{\s*title:",  # ADMIN_ROUTES style: title before sections
+    )
+    assert not legacy_routes_entry.search(admin_js), (
+        "ADMIN_ROUTES.display must be removed — leaving it shadows "
+        "the _bareLegacyRedirects entry and breaks the v5 IA intent"
+    )
 
 
 def test_admin_routes_keeps_legacy_aliases_alive(admin_js: str):

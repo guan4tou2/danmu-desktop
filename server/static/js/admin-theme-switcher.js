@@ -87,15 +87,25 @@
   }
 
   function _mount() {
-    if (document.getElementById(BTN_ID)) return;
     if (!document.body.classList.contains("admin-body")) return;
     if (!window.DANMU_CONFIG?.session?.logged_in) return;
     // Inject the toggle next to the existing broadcast / logout buttons
-    // in the admin topbar. Falls back to a fixed-position chip if the
-    // topbar selector isn't present yet.
+    // in the admin topbar. If the topbar isn't ready yet we fall back to
+    // a fixed-position chip; once the anchor appears (admin shell renders
+    // after JS init), promote the floating button into the topbar so the
+    // design v4 chrome stays clean — no stray floating UI.
     const anchor = document.querySelector(".admin-dash-broadcast")
       || document.querySelector("#logoutButton")
       || null;
+    const existing = document.getElementById(BTN_ID);
+    if (existing) {
+      if (anchor && existing.classList.contains("admin-theme-toggle--floating")
+          && anchor.parentNode && !anchor.parentNode.contains(existing)) {
+        existing.classList.remove("admin-theme-toggle--floating");
+        anchor.parentNode.insertBefore(existing, anchor);
+      }
+      return;
+    }
     const btn = document.createElement("button");
     btn.id = BTN_ID;
     btn.type = "button";

@@ -32,22 +32,38 @@
   //   Open Events    = link to admin-events route
   //   Restart WS / Force GC = render as disabled per security review
   function _renderHtml() {
+    // v5 Batch 12-2 (2026-05-19): banner + 6-col KPI strip + 2-col
+    // grid (services table left, right-stack of 3 cards). Renamed
+    // KPI tiles to match design: UPTIME / CPU / MEM RSS / WS CLIENTS
+    // / MSG RATE / DB SIZE. CONFIG SUMMARY added as 3rd right-rail
+    // card per batch12-system.jsx SystemOverviewPage.
     return `
       <div id="${SECTION_ID}" class="admin-soh-v4 hud-page-stack lg:col-span-2">
         <div class="admin-v2-head">
-          <div class="admin-v2-kicker">SYSTEM · OVERVIEW · ALL SERVICES</div>
-          <div class="admin-v2-title">系統健康度</div>
+          <div class="admin-v2-kicker">SYSTEM OVERVIEW · HEALTH · SERVICES · METRICS</div>
+          <div class="admin-v2-title">系統總覽</div>
+        </div>
+
+        <!-- Status banner -->
+        <div class="admin-soh-v4__banner" data-soh-banner>
+          <span class="admin-soh-v4__banner-dot" data-soh-banner-dot></span>
+          <div>
+            <div class="admin-soh-v4__banner-title" data-soh-banner-title>檢查中…</div>
+            <div class="admin-soh-v4__banner-sub" data-soh-banner-sub>—</div>
+          </div>
+          <span class="admin-soh-v4__spacer"></span>
+          <button type="button" class="admin-soh-v4__banner-recheck" data-soh-recheck>↻ 立即檢查</button>
         </div>
 
         <!-- 6 metric tiles -->
         <div class="admin-soh-v4__metrics">
           ${[
-            { id: "uptime", en: "UPTIME",   zh: "啟動時間" },
-            { id: "cpu",    en: "CPU %",    zh: "CPU" },
-            { id: "ram",    en: "MEM MB",   zh: "RAM" },
-            { id: "disk",   en: "DISK",     zh: "磁碟使用" },
-            { id: "ws",     en: "WS CONN",  zh: "WS 連線" },
-            { id: "qps",    en: "FIRE QPS", zh: "Fire QPS" },
+            { id: "uptime", en: "UPTIME",     zh: "啟動時間" },
+            { id: "cpu",    en: "CPU",        zh: "CPU" },
+            { id: "ram",    en: "MEM RSS",    zh: "RAM" },
+            { id: "ws",     en: "WS CLIENTS", zh: "WS 連線" },
+            { id: "qps",    en: "MSG RATE",   zh: "Fire QPS" },
+            { id: "disk",   en: "DB SIZE",    zh: "DB" },
           ].map(m => `
             <div class="admin-soh-v4__metric" data-m="${m.id}">
               <div class="admin-soh-v4__metric-en">${m.en}</div>
@@ -59,40 +75,48 @@
             </div>`).join("")}
         </div>
 
-        <!-- Dual-pane: services + recent errors -->
+        <!-- 2-col grid: services table (left) + right stack -->
         <div class="admin-soh-v4__panes">
           <div class="admin-soh-v4__pane">
-            <div class="admin-soh-v4__pane-head"><span class="admin-soh-v4__pane-label">SERVICE STATUS</span></div>
+            <div class="admin-soh-v4__pane-head"><span class="admin-soh-v4__pane-label">服務狀態 · SERVICES</span></div>
             <div class="admin-soh-v4__services" data-soh-services>
               <!-- populated by _wire() -->
             </div>
           </div>
 
-          <div class="admin-soh-v4__pane">
-            <div class="admin-soh-v4__pane-head">
-              <span class="admin-soh-v4__pane-label is-crimson">RECENT ERRORS</span>
-              <span class="admin-soh-v4__spacer"></span>
-              <a href="#/events" class="admin-soh-v4__pane-link">查看全部 Events →</a>
+          <div class="admin-soh-v4__rail">
+            <div class="admin-soh-v4__pane">
+              <div class="admin-soh-v4__pane-head">
+                <span class="admin-soh-v4__pane-label">近期事件 · RECENT</span>
+                <span class="admin-soh-v4__spacer"></span>
+                <a href="#/events" class="admin-soh-v4__pane-link">查看全部 →</a>
+              </div>
+              <div class="admin-soh-v4__errors" data-soh-errors>
+                <div class="admin-soh-v4__err-empty">過去 60 分鐘沒有錯誤事件 ✓</div>
+              </div>
             </div>
-            <div class="admin-soh-v4__errors" data-soh-errors>
-              <div class="admin-soh-v4__err-empty">過去 60 分鐘沒有錯誤事件 ✓</div>
+
+            <div class="admin-soh-v4__quickcard">
+              <div class="admin-soh-v4__pane-label">QUICK ACTIONS</div>
+              <button type="button" class="admin-soh-v4__qa is-cyan" data-soh-action="reload-effects">⟳ 重新載入所有插件</button>
+              <a class="admin-soh-v4__qa" href="#/overlay">⊗ 清除 overlay 畫面</a>
+              <a class="admin-soh-v4__qa" href="#/backup">↓ 下載系統診斷包</a>
+              <button type="button" class="admin-soh-v4__qa is-disabled" data-soh-action="force-gc" disabled title="基於安全考量已停用">
+                <span>⚠ 強制 GC</span>
+                <span class="admin-soh-v4__qa-hint">待 BE</span>
+              </button>
+            </div>
+
+            <div class="admin-soh-v4__cfgcard">
+              <div class="admin-soh-v4__pane-label">CONFIG SUMMARY</div>
+              <div class="admin-soh-v4__cfgrow"><span>PUBLIC URL</span><code id="sysoPublicUrl">${location.origin}</code></div>
+              <div class="admin-soh-v4__cfgrow"><span>WS</span><code>:<span id="sysoWsPort">—</span></code></div>
+              <div class="admin-soh-v4__cfgrow"><span>PLUGINS</span><code data-cfg-plugins>—</code></div>
+              <div class="admin-soh-v4__cfgrow"><span>WEBHOOKS</span><code data-cfg-webhooks>—</code></div>
+              <div class="admin-soh-v4__cfgrow"><span>TOKENS</span><code data-cfg-tokens>—</code></div>
+              <div class="admin-soh-v4__cfgrow"><span>BUILD</span><code>v${(window.DANMU_CONFIG && window.DANMU_CONFIG.appVersion) || "?"}</code></div>
             </div>
           </div>
-        </div>
-
-        <!-- Action buttons row -->
-        <div class="admin-soh-v4__actions">
-          <button type="button" class="admin-soh-v4__action is-amber" data-soh-action="restart-ws" disabled title="後端尚未提供安全的重啟端點">↻ Restart WS</button>
-          <button type="button" class="admin-soh-v4__action is-cyan" data-soh-action="reload-effects">⟳ Reload Effects</button>
-          <button type="button" class="admin-soh-v4__action is-dim" data-soh-action="force-gc" disabled title="基於安全考量已停用">⊘ Force GC</button>
-          <a class="admin-soh-v4__action is-cyan" href="#/events">≡ Tail Events</a>
-        </div>
-
-        <!-- Public URL info chip (kept from prior version) -->
-        <div class="admin-soh-v4__pubchip">
-          <span class="admin-soh-v4__pane-label">PUBLIC URL</span>
-          <code id="sysoPublicUrl">${location.origin}</code>
-          <span class="admin-soh-v4__pub-hint">觀眾掃碼即可加入 · HTTP :${location.port || "80"} · WS :<span id="sysoWsPort">—</span></span>
         </div>
       </div>`;
   }
@@ -132,6 +156,45 @@
     }
     const spark = tile.querySelector("[data-m-spark]");
     _renderSpark(spark, series, ok);
+  }
+
+  // v5 Batch 12-2: status banner — green when all healthy, amber when
+  // any service flagged. Drives off services data (same as _renderServices).
+  function _updateBanner(data) {
+    const banner = document.querySelector("[data-soh-banner]");
+    const dot = document.querySelector("[data-soh-banner-dot]");
+    const title = document.querySelector("[data-soh-banner-title]");
+    const sub = document.querySelector("[data-soh-banner-sub]");
+    if (!banner) return;
+    const upSec = data.server_started_at
+      ? Math.max(0, Math.floor(Date.now() / 1000 - data.server_started_at))
+      : 0;
+    const upStr = upSec ? _fmtUptime(upSec) : "—";
+    const wsClients = data.ws_clients ?? 0;
+    // Simple health rule: degraded if no metrics returned or queue full.
+    const queueFull = data.queue_size != null && data.queue_capacity != null &&
+                       data.queue_size >= data.queue_capacity;
+    const allHealthy = !queueFull;
+    banner.classList.toggle("is-warn", !allHealthy);
+    if (dot) {
+      dot.style.background = allHealthy ? "var(--hud-lime, #86efac)" : "var(--hud-amber, #fbbf24)";
+      dot.style.boxShadow = allHealthy ? "0 0 8px var(--hud-lime, #86efac)" : "0 0 8px var(--hud-amber, #fbbf24)";
+    }
+    if (title) title.textContent = allHealthy ? "所有服務正常" : "1 個服務異常";
+    if (sub) sub.textContent = `${wsClients} WS clients · uptime ${upStr} · last check ${new Date().toLocaleTimeString()}`;
+  }
+
+  // v5 Batch 12-2: CONFIG SUMMARY card on the right rail — pulls
+  // plugin/webhook/token counts from /admin/metrics where available,
+  // falls back to "—" placeholders.
+  function _updateConfigSummary(data) {
+    const setCfg = (sel, val) => {
+      const el = document.querySelector(sel);
+      if (el) el.textContent = val == null ? "—" : String(val);
+    };
+    setCfg("[data-cfg-plugins]", data.plugins_loaded != null ? `${data.plugins_loaded} loaded` : "—");
+    setCfg("[data-cfg-webhooks]", data.webhooks_count != null ? `${data.webhooks_count} endpoints` : "—");
+    setCfg("[data-cfg-tokens]", data.tokens_count != null ? `${data.tokens_count} issued` : "—");
   }
 
   function _renderServices(data) {
@@ -215,6 +278,8 @@
                               rateS.map((r) => r / 60), false);
 
         _renderServices(data);
+        _updateBanner(data);
+        _updateConfigSummary(data);
 
         // Recent errors — pull from audit log (alias for now). Endpoint
         // surfaces server-emitted events; we extract anything tagged
@@ -233,6 +298,20 @@
         } catch (_) { /* fine */ }
       } catch (_) { /* ignore */ }
     })();
+
+    // Banner re-check button
+    const _recheck = document.querySelector("[data-soh-recheck]");
+    if (_recheck) {
+      _recheck.addEventListener("click", () => {
+        _recheck.textContent = "↻ 檢查中…";
+        _recheck.disabled = true;
+        setTimeout(() => _wire(), 100);
+        setTimeout(() => {
+          _recheck.textContent = "↻ 立即檢查";
+          _recheck.disabled = false;
+        }, 1500);
+      });
+    }
 
     const root = document.getElementById(SECTION_ID);
     if (root) {

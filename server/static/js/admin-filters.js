@@ -51,6 +51,18 @@
   function buildSectionHtml() {
     return `
       <div id="sec-filters" class="hud-page-stack lg:col-span-2">
+        <!-- v4 P2-1 chrome (added 2026-05-19) — was missing kicker/title.
+             Page used to render straight into hud-stats-strip without a
+             section header. -->
+        <div class="admin-v2-head">
+          <div class="admin-v2-kicker">MODERATION · LIVE FILTERS · 規則 / 命中 / 即時</div>
+          <div class="admin-v2-title">敏感字 &amp; 過濾規則</div>
+          <p class="admin-v2-note">
+            關鍵字 / regex / 替換 / 速率規則。命中後動作支援 block / replace / allow，
+            每條規則可即時開關，命中次數即時累計。
+          </p>
+        </div>
+
         <!-- Overview stats strip — prototype admin-pages.jsx:648 -->
         <div class="hud-stats-strip" id="moderationStatsStrip">
           <div class="hud-stat-tile">

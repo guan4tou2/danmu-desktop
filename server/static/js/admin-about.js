@@ -1,19 +1,13 @@
 /**
  * Admin · About page (Phase 2 P0-1, 2026-04-27).
  *
- * Mirrors docs/designs/design-v2/components/admin-batch9.jsx
- * AdminAboutPage. We're open-source / single-tenant, so the prototype's
- * "Pro Edition · License · cust_xxx" license card doesn't fit. Layout:
+ * v5 batch10-yellow alignment:
  *
- *   ┌─ LEFT (1fr) ──────────────────┐ ┌─ RIGHT (1fr) ───────────────┐
- *   │ Big version card              │ │ Changelog (recent versions) │
- *   │  • app icon + name            │ │  • per-version notes        │
- *   │  • v5.0.0 + build channel     │ │  • feat/fix/perf tags       │
- *   │  • 4 stat tiles               │ ├─────────────────────────────┤
- *   │  • check-update + copy btns   │ │ Support links               │
- *   ├──────────────────────────────┤ │  • docs / github / issues   │
- *   │ OSS Notices (key dependencies)│ └─────────────────────────────┘
- *   └──────────────────────────────┘
+ *   ┌─ full width version card ────────────────────────────────┐
+ *   │ Danmu Fire / version / build + compact action buttons    │
+ *   ├─ system info ─────────────────┬─ changelog ─────────────┤
+ *   │ 6-row technical summary       │ recent versions          │
+ *   └─ full width license row ────────────────────────────────┘
  *
  * Sidebar nav slug: `about` (added under "設定" group bottom).
  *
@@ -34,7 +28,27 @@
 
   const CHANGELOG = [
     {
-      v: "5.0.0", d: "2026-04-25", tag: "current", notes: [
+      v: "5.2.0", d: "2026-05-19", tag: "current", notes: [
+        { t: "feat", l: "Danmu Redesign v5 finish · Batch 12 closes design coverage 22/28 → 28/28" },
+        { t: "feat", l: "BE audience module · risk score · flag / kick / unkick · /admin/audience/*" },
+        { t: "feat", l: "BE backup pack · .tar.gz export / dry-run / atomic apply · /admin/backup/*" },
+        { t: "feat", l: "Help Drawer v5 · 360 px route-aware tips + shortcuts + glossary + resources" },
+        { t: "feat", l: "Webhook event vocab 3 → 10 · toggle endpoint · session/overlay/plugin emit sites" },
+        { t: "feat", l: "/admin/search filters · since/until/type/fp/status · custom date range" },
+        { t: "fix",  l: "◐ 顯示設定 retired · merged into viewer 4-tab (page/fields/defaults/limits)" },
+      ],
+    },
+    {
+      v: "5.1.0", d: "2026-05-18", tag: "", notes: [
+        { t: "feat", l: "Polestar pivot · #/broadcast → #/overlay · overlay_on/off 別名 · 4-state UI (off/on/paused/ended)" },
+        { t: "feat", l: "Brief 0518 系列 · replay annotations · time-bound bans · sessions bucket · 多題 polls + 圖片 · fonts subset" },
+        { t: "feat", l: "Moderation 6 sub-tabs · 審核佇列 / 封禁 / 黑名單 / 敏感字 / 速率 / 指紋" },
+        { t: "feat", l: "Viewer mobile hamburger sheet · 桌機 ☼/◐/☾ theme chip · 暱稱浮動 popover" },
+        { t: "feat", l: "P0-0 IA migration · sidebar 8-area flat → 5-section grouped (總覽/互動/審核/設定/整合)" },
+      ],
+    },
+    {
+      v: "5.0.0", d: "2026-04-25", tag: "", notes: [
         { t: "feat", l: "Design v2 retrofit · 22 commit sprint · 整套 admin shell + 10 個 page 重構" },
         { t: "feat", l: "⌘K 命令面板 · effects 8-card live preview · Edge state pages" },
         { t: "feat", l: "Slido extension v0.2.0 + Fire Token shared bearer + Audit timeline" },
@@ -95,90 +109,94 @@
         </div>
 
         <div class="admin-about-grid">
-          <div class="admin-about-col">
-            <article class="admin-about-version-card" data-about-version>
-              <div class="admin-about-version-glow" aria-hidden="true"></div>
-              <div class="admin-about-version-head">
-                <div class="admin-about-version-icon">▲</div>
-                <div class="admin-about-version-meta">
-                  <div class="admin-about-version-name">${APP_NAME}</div>
-                  <div class="admin-about-version-tag" data-about-tag>v—</div>
-                  <div class="admin-about-version-build" data-about-build>—</div>
-                </div>
+          <article class="admin-about-version-card" data-about-version style="grid-column:1 / -1">
+            <div class="admin-about-version-glow" aria-hidden="true"></div>
+            <div class="admin-about-version-head">
+              <div class="admin-about-version-icon">▲</div>
+              <div class="admin-about-version-meta">
+                <div class="admin-about-version-name">${APP_NAME}</div>
+                <div class="admin-about-version-tag" data-about-tag>v—</div>
+                <div class="admin-about-version-build" data-about-build>—</div>
               </div>
-              <div class="admin-about-stats" data-about-stats>
-                <div class="admin-about-stat">
-                  <div class="k">版本狀態</div>
-                  <div class="v-row"><span class="vi" style="color:var(--hud-lime,#a3e635)">✓</span><span class="v" data-about-update>—</span></div>
-                </div>
-                <div class="admin-about-stat">
-                  <div class="k">上次檢查</div>
-                  <div class="v-row"><span class="vi" style="color:var(--color-text-muted,#94a3b8)">↻</span><span class="v" data-about-checked>從未檢查</span></div>
-                </div>
-                <div class="admin-about-stat">
-                  <div class="k">SERVER UPTIME</div>
-                  <div class="v-row"><span class="vi" style="color:var(--hud-lime,#a3e635)">●</span><span class="v" data-about-uptime>—</span></div>
-                </div>
-                <div class="admin-about-stat">
-                  <div class="k">LICENSE</div>
-                  <div class="v-row"><span class="vi" style="color:var(--color-text-muted,#94a3b8)">◆</span><span class="v">MIT</span></div>
-                </div>
-              </div>
-              <div class="admin-about-actions">
-                <button type="button" class="admin-about-btn admin-about-btn--accent" data-about-action="check-update">↻ 檢查更新</button>
-                <button type="button" class="admin-about-btn" data-about-action="copy">📋 複製版本資訊</button>
-                <button type="button" class="admin-about-btn" data-about-action="setup-wizard">⚙ 重新開啟設定精靈</button>
-                <button type="button" class="admin-about-btn" data-about-action="onboarding">▶ 重新顯示提示</button>
-              </div>
-            </article>
+            </div>
+            <div class="admin-about-actions">
+              <button type="button" class="admin-about-btn admin-about-btn--accent" data-about-action="check-update">↻ 檢查更新</button>
+              <button type="button" class="admin-about-btn" data-about-action="copy">📋 複製版本資訊</button>
+              <button type="button" class="admin-about-btn" data-about-action="setup-wizard">⚙ 重新開啟設定精靈</button>
+              <button type="button" class="admin-about-btn" data-about-action="onboarding">▶ 重新顯示提示</button>
+            </div>
+          </article>
 
-            <article class="admin-about-oss">
-              <div class="admin-v2-monolabel">第三方授權 · OSS NOTICES</div>
-              <div class="admin-about-oss-list">
-                ${OSS_DEPS.map((d) => `
-                  <div class="admin-about-oss-row">
-                    <span class="n">${escapeHtml(d.n)}</span>
-                    <span class="v">${escapeHtml(d.v)}</span>
-                    <span class="l">${escapeHtml(d.l)}</span>
-                  </div>
-                `).join("")}
+          <article class="admin-about-oss" data-about-system>
+            <div class="admin-v2-monolabel">SYSTEM · SERVER INFO</div>
+            <div class="admin-about-oss-list" style="margin-top:12px">
+              <div class="admin-about-oss-row" data-about-system-row>
+                <span class="n">VERSION STATUS</span>
+                <span class="v" style="grid-column: span 2" data-about-update>—</span>
               </div>
-              <a class="admin-about-oss-more" href="${REPO_URL}/blob/main/server/pyproject.toml" target="_blank" rel="noopener noreferrer">完整 dependency 清單 →</a>
-            </article>
-          </div>
+              <div class="admin-about-oss-row" data-about-system-row>
+                <span class="n">LAST CHECK</span>
+                <span class="v" style="grid-column: span 2" data-about-checked>從未檢查</span>
+              </div>
+              <div class="admin-about-oss-row" data-about-system-row>
+                <span class="n">SERVER UPTIME</span>
+                <span class="v" style="grid-column: span 2" data-about-uptime>—</span>
+              </div>
+              <div class="admin-about-oss-row" data-about-system-row>
+                <span class="n">ENVIRONMENT</span>
+                <span class="v" style="grid-column: span 2" data-about-env>production</span>
+              </div>
+              <div class="admin-about-oss-row" data-about-system-row>
+                <span class="n">WS PORT</span>
+                <span class="v" style="grid-column: span 2" data-about-ws-port>—</span>
+              </div>
+              <div class="admin-about-oss-row" data-about-system-row>
+                <span class="n">ADMIN URL</span>
+                <span class="v" style="grid-column: span 2" data-about-admin-url>${escapeHtml(location.origin + "/admin/")}</span>
+              </div>
+            </div>
+          </article>
 
-          <div class="admin-about-col">
-            <article class="admin-about-changelog">
-              <div class="admin-about-changelog-head">
-                <span class="admin-v2-monolabel">更新紀錄 · CHANGELOG</span>
-                <a class="admin-about-changelog-more" href="${REPO_URL}/releases" target="_blank" rel="noopener noreferrer">完整紀錄 →</a>
+          <article class="admin-about-changelog">
+            <div class="admin-about-changelog-head">
+              <span class="admin-v2-monolabel">CHANGELOG · RECENT RELEASES</span>
+              <a class="admin-about-changelog-more" href="${REPO_URL}/releases" target="_blank" rel="noopener noreferrer">完整紀錄 →</a>
+            </div>
+            ${CHANGELOG.slice(0, 4).map((cl) => `
+              <div class="admin-about-cl-entry" data-about-changelog-item>
+                <div class="admin-about-cl-head">
+                  <span class="ver">v${escapeHtml(cl.v)}</span>
+                  ${cl.tag === "current" ? '<span class="cur">● 目前版本</span>' : ""}
+                  <span class="date">${escapeHtml(cl.d)}</span>
+                </div>
+                <div class="admin-about-cl-notes">
+                  ${cl.notes.slice(0, 3).map((n) => `
+                    <div class="admin-about-cl-row">
+                      <span class="tag tag-${escapeHtml(n.t)}">${escapeHtml(n.t.toUpperCase())}</span>
+                      <span class="msg">${escapeHtml(n.l)}</span>
+                    </div>
+                  `).join("")}
+                </div>
               </div>
-              ${CHANGELOG.map((cl) => `
-                <div class="admin-about-cl-entry">
-                  <div class="admin-about-cl-head">
-                    <span class="ver">v${escapeHtml(cl.v)}</span>
-                    ${cl.tag === "current" ? '<span class="cur">● 目前版本</span>' : ""}
-                    <span class="date">${escapeHtml(cl.d)}</span>
-                  </div>
-                  <div class="admin-about-cl-notes">
-                    ${cl.notes.map((n) => `
-                      <div class="admin-about-cl-row">
-                        <span class="tag tag-${escapeHtml(n.t)}">${escapeHtml(n.t.toUpperCase())}</span>
-                        <span class="msg">${escapeHtml(n.l)}</span>
-                      </div>
-                    `).join("")}
-                  </div>
+            `).join("")}
+          </article>
+
+          <article class="admin-about-oss" data-about-license style="grid-column:1 / -1">
+            <div class="admin-v2-monolabel">LICENSE · OPEN SOURCE</div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px">
+              <span style="font-size:12px;color:var(--color-text-strong)">MIT License · © 2026 Danmu Fire Contributors</span>
+              <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-primary)">GitHub →</span>
+            </div>
+            <div class="admin-about-oss-list" style="margin-top:12px">
+              ${OSS_DEPS.slice(0, 6).map((d) => `
+                <div class="admin-about-oss-row">
+                  <span class="n">${escapeHtml(d.n)}</span>
+                  <span class="v">${escapeHtml(d.v)}</span>
+                  <span class="l">${escapeHtml(d.l)}</span>
                 </div>
               `).join("")}
-
-              <div class="admin-about-support">
-                <div class="t">有問題？</div>
-                <a href="${REPO_URL}#readme" target="_blank" rel="noopener noreferrer">📖 README</a>
-                <a href="${REPO_URL}/issues" target="_blank" rel="noopener noreferrer">🐛 GitHub Issues</a>
-                <a href="${REPO_URL}/discussions" target="_blank" rel="noopener noreferrer">💬 Discussions</a>
-              </div>
-            </article>
-          </div>
+            </div>
+          </article>
         </div>
       </div>`;
   }
@@ -199,10 +217,13 @@
     const upEl = document.querySelector("[data-about-uptime]");
     const updEl = document.querySelector("[data-about-update]");
     const checkedEl = document.querySelector("[data-about-checked]");
+    const envEl = document.querySelector("[data-about-env]");
+    const wsPortEl = document.querySelector("[data-about-ws-port]");
     if (tagEl) tagEl.textContent = `v${_state.appVersion}`;
     if (buildEl) {
       const channel = (window.DANMU_CONFIG && window.DANMU_CONFIG.session && window.DANMU_CONFIG.session.environment) || "production";
-      buildEl.textContent = `${channel} · stable channel`;
+      buildEl.textContent = `BUILD · ${channel} · stable channel`;
+      if (envEl) envEl.textContent = channel;
     }
     if (upEl) {
       const upSec = _state.serverStartedAt ? (_state.serverTime - _state.serverStartedAt) : 0;
@@ -220,6 +241,10 @@
       checkedEl.textContent = _state.lastCheckedAt
         ? _humanDelta(_state.lastCheckedAt) + "前"
         : "從未檢查";
+    }
+    if (wsPortEl) {
+      const cfg = window.DANMU_CONFIG || {};
+      wsPortEl.textContent = cfg.wsPort ? `:${cfg.wsPort}` : "—";
     }
   }
 

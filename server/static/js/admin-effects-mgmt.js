@@ -492,8 +492,7 @@
       }
     });
 
-    document.getElementById("effectUploadInput")?.addEventListener("change", async (e) => {
-      const file = e.target.files?.[0];
+    async function _uploadEffectFile(file) {
       if (!file) return;
       const formData = new FormData();
       formData.append("effectfile", file);
@@ -508,10 +507,37 @@
         }
       } catch (_) {
         showToast(ServerI18n.t("effectsNetworkError"), false);
-      } finally {
-        e.target.value = "";
       }
+    }
+
+    document.getElementById("effectUploadInput")?.addEventListener("change", async (e) => {
+      await _uploadEffectFile(e.target.files?.[0]);
+      e.target.value = "";
     });
+
+    // v5 Batch 12 polish: drag-drop on the dropzone — accepts .dme files
+    // and forwards to the same upload handler. Hover state via CSS class
+    // is-drag.
+    const dropzone = document.getElementById("effectsDropzone");
+    if (dropzone) {
+      const onEnter = (e) => { e.preventDefault(); dropzone.classList.add("is-drag"); };
+      const onLeave = (e) => { e.preventDefault(); dropzone.classList.remove("is-drag"); };
+      const onDrop = async (e) => {
+        e.preventDefault();
+        dropzone.classList.remove("is-drag");
+        const file = e.dataTransfer?.files?.[0];
+        if (!file) return;
+        if (!/\.(dme|dme\.zip)$/i.test(file.name)) {
+          showToast(".dme / .dme.zip 才接受", false);
+          return;
+        }
+        await _uploadEffectFile(file);
+      };
+      dropzone.addEventListener("dragenter", onEnter);
+      dropzone.addEventListener("dragover", onEnter);
+      dropzone.addEventListener("dragleave", onLeave);
+      dropzone.addEventListener("drop", onDrop);
+    }
   }
 
   // ── Category detection + filter state ───────────────────────────────────────
@@ -570,10 +596,29 @@
     });
   }
 
+  // v5 Batch 12-5: hydrate the "LIBRARY STATS" card per
+  // batch12-effects.jsx. Called from renderEffectsList every refresh
+  // so the numbers stay in sync with the list above.
+  function _updateLibraryStats(all) {
+    const set = (sel, val) => {
+      const el = document.querySelector(sel);
+      if (el) el.textContent = val == null ? "—" : String(val);
+    };
+    const total = all.length;
+    const active = all.filter((e) => e.enabled !== false).length;
+    const cats = new Set(all.map((e) => detectCategory(e.name)));
+    const user = all.filter((e) => !_BUILTIN_EFFECT_ANIMATIONS[e.name]).length;
+    set("[data-eflib-total]", total);
+    set("[data-eflib-active]", active);
+    set("[data-eflib-cats]", cats.size);
+    set("[data-eflib-user]", user);
+  }
+
   function renderEffectsList() {
     const container = document.getElementById("effectsList");
     if (!container) return;
     const all = _effectsState.all;
+    _updateLibraryStats(all);
     const filtered = _effectsState.filter === "ALL"
       ? all
       : all.filter((e) => detectCategory(e.name) === _effectsState.filter);

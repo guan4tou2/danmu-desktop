@@ -404,74 +404,79 @@
           </p>
         </div>
 
-        <!-- Upload Sound -->
-        <div class="admin-v2-card">
-          <div class="admin-v2-monolabel" style="margin-bottom:10px">+ 上傳音效</div>
-          <div class="admin-sounds-form">
-            <label class="admin-webhooks-field">
-              <span class="admin-v2-monolabel">FILE · MP3/OGG/WAV</span>
-              <input type="file" id="soundFileInput" accept=".mp3,.ogg,.wav,audio/mpeg,audio/ogg,audio/wav" class="admin-v2-input" />
-            </label>
-            <label class="admin-webhooks-field">
-              <span class="admin-v2-monolabel">NAME</span>
-              <input type="text" id="soundNameInput" placeholder="${escapeHtml(ServerI18n.t("soundNamePlaceholder"))}" maxlength="100" class="admin-v2-input" />
-            </label>
-            <div class="admin-sounds-form-full" style="display:flex;justify-content:flex-end">
-              <button id="soundUploadBtn" type="button" class="admin-poll-btn is-primary">上傳</button>
+        <!-- v4 P1-3 dual-column layout (2026-05-19 retrofit) — sounds
+             library left, trigger rules right. Matches admin-p1.jsx
+             AdminSoundsPage spec. Falls back to single column at <960px. -->
+        <div class="admin-sounds-layout">
+          <!-- LEFT: Sound library (upload + list) -->
+          <div class="admin-v2-card admin-sounds-col">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <span class="admin-v2-monolabel">SOUND LIBRARY · 庫存</span>
+            </div>
+            <div id="soundsList" class="admin-sounds-grid"></div>
+
+            <!-- Upload form (collapsed into library card per v4 spec) -->
+            <div class="admin-sounds-upload-foot">
+              <div class="admin-v2-monolabel" style="margin-bottom:8px">+ 上傳音效</div>
+              <div class="admin-sounds-form">
+                <label class="admin-webhooks-field">
+                  <span class="admin-v2-monolabel">FILE · MP3/OGG/WAV</span>
+                  <input type="file" id="soundFileInput" accept=".mp3,.ogg,.wav,audio/mpeg,audio/ogg,audio/wav" class="admin-v2-input" />
+                </label>
+                <label class="admin-webhooks-field">
+                  <span class="admin-v2-monolabel">NAME</span>
+                  <input type="text" id="soundNameInput" placeholder="${escapeHtml(ServerI18n.t("soundNamePlaceholder"))}" maxlength="100" class="admin-v2-input" />
+                </label>
+                <div class="admin-sounds-form-full" style="display:flex;justify-content:flex-end">
+                  <button id="soundUploadBtn" type="button" class="admin-poll-btn is-primary">上傳</button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Available Sounds -->
-        <div class="admin-v2-card">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-            <span class="admin-v2-monolabel">SOUNDS · 庫存</span>
-          </div>
-          <div id="soundsList" class="admin-sounds-grid"></div>
-        </div>
+          <!-- RIGHT: Trigger rules (form + list) -->
+          <div class="admin-v2-card admin-sounds-col">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <span class="admin-v2-monolabel">TRIGGER RULES · EVENT → SOUND</span>
+            </div>
+            <div id="rulesList" class="admin-sounds-rules"></div>
 
-        <!-- Sound Rules -->
-        <div class="admin-v2-card">
-          <div class="admin-v2-monolabel" style="margin-bottom:10px">+ 新增觸發規則</div>
-          <div class="admin-sounds-form">
-            <label class="admin-webhooks-field">
-              <span class="admin-v2-monolabel">TRIGGER TYPE</span>
-              <select id="ruleTriggerType" class="admin-v2-select">
-                <option value="keyword">${escapeHtml(ServerI18n.t("triggerTypeKeyword"))}</option>
-                <option value="effect">${escapeHtml(ServerI18n.t("triggerTypeEffect"))}</option>
-                <option value="all">${escapeHtml(ServerI18n.t("triggerTypeAll"))}</option>
-              </select>
-            </label>
-            <label class="admin-webhooks-field">
-              <span class="admin-v2-monolabel">TRIGGER VALUE</span>
-              <input type="text" id="ruleTriggerValue" placeholder="${escapeHtml(ServerI18n.t("triggerValueKeywordPlaceholder"))}" class="admin-v2-input" />
-            </label>
-            <label class="admin-webhooks-field admin-sounds-form-full">
-              <span class="admin-v2-monolabel">SOUND</span>
-              <select id="ruleSoundName" class="admin-v2-select">
-                <option value="" disabled>${escapeHtml(ServerI18n.t("soundLoading"))}</option>
-              </select>
-            </label>
-            <label class="admin-webhooks-field">
-              <span class="admin-v2-monolabel">VOLUME · <span id="ruleVolumeLabel">80%</span></span>
-              <input type="range" id="ruleVolume" min="0" max="100" value="80" class="admin-v2-input" />
-            </label>
-            <label class="admin-webhooks-field">
-              <span class="admin-v2-monolabel">COOLDOWN · MS</span>
-              <input type="number" id="ruleCooldown" min="0" step="100" value="1000" class="admin-v2-input" />
-            </label>
-            <div class="admin-sounds-form-full" style="display:flex;justify-content:flex-end">
-              <button id="addRuleBtn" type="button" class="admin-poll-btn is-primary">新增規則</button>
+            <!-- New rule form (collapsed into rules card per v4 spec) -->
+            <div class="admin-sounds-rule-foot">
+              <div class="admin-v2-monolabel" style="margin-bottom:8px">+ 新增觸發規則</div>
+              <div class="admin-sounds-form">
+                <label class="admin-webhooks-field">
+                  <span class="admin-v2-monolabel">TRIGGER TYPE</span>
+                  <select id="ruleTriggerType" class="admin-v2-select">
+                    <option value="keyword">${escapeHtml(ServerI18n.t("triggerTypeKeyword"))}</option>
+                    <option value="effect">${escapeHtml(ServerI18n.t("triggerTypeEffect"))}</option>
+                    <option value="all">${escapeHtml(ServerI18n.t("triggerTypeAll"))}</option>
+                  </select>
+                </label>
+                <label class="admin-webhooks-field">
+                  <span class="admin-v2-monolabel">TRIGGER VALUE</span>
+                  <input type="text" id="ruleTriggerValue" placeholder="${escapeHtml(ServerI18n.t("triggerValueKeywordPlaceholder"))}" class="admin-v2-input" />
+                </label>
+                <label class="admin-webhooks-field admin-sounds-form-full">
+                  <span class="admin-v2-monolabel">SOUND</span>
+                  <select id="ruleSoundName" class="admin-v2-select">
+                    <option value="" disabled>${escapeHtml(ServerI18n.t("soundLoading"))}</option>
+                  </select>
+                </label>
+                <label class="admin-webhooks-field">
+                  <span class="admin-v2-monolabel">VOLUME · <span id="ruleVolumeLabel">80%</span></span>
+                  <input type="range" id="ruleVolume" min="0" max="100" value="80" class="admin-v2-input" />
+                </label>
+                <label class="admin-webhooks-field">
+                  <span class="admin-v2-monolabel">COOLDOWN · MS</span>
+                  <input type="number" id="ruleCooldown" min="0" step="100" value="1000" class="admin-v2-input" />
+                </label>
+                <div class="admin-sounds-form-full" style="display:flex;justify-content:flex-end">
+                  <button id="addRuleBtn" type="button" class="admin-poll-btn is-primary">新增規則</button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-
-        <!-- Active Rules -->
-        <div class="admin-v2-card">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-            <span class="admin-v2-monolabel">RULES · 已啟用</span>
-          </div>
-          <div id="rulesList" class="admin-sounds-rules"></div>
         </div>
       </div>
     `;

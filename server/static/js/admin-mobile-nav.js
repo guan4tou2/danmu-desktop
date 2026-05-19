@@ -6,7 +6,6 @@
  * which:
  *   - hides .admin-dash-sidebar (desktop only)
  *   - shows .admin-mobile-nav (this module's bottom bar)
- *   - shrinks .admin-qa-fab to 36px
  *   - converts HudConfirm modal + message drawer + scheduler sheet to
  *     bottom sheets via CSS rules in style.css
  *

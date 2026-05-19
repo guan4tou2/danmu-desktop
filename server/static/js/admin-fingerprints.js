@@ -20,39 +20,39 @@
   }
 
   function buildSection() {
+    // v5 batch10-audience.jsx FingerprintsPage retrofit (2026-05-19).
+    // Was a legacy <details> collapse card; now a full v4 page with
+    // admin-v2-head, toolbar (count + refresh + reset), and 8-col table.
     return `
-      <details id="sec-fingerprints" class="group admin-v3-card lg:col-span-2" ${isOpen("sec-fingerprints") ? "open" : ""}>
-        <summary class="flex items-center justify-between">
-          <div>
-            <span class="admin-v3-card-kicker is-accent">FINGERPRINTS &middot; 觀測</span>
-            <h3 style="font-size:18px;font-weight:600;color:var(--color-text-strong);margin:0">${escapeHtml(ServerI18n.t("fingerprintsTitle"))}</h3>
-            <p style="font-size:13px;color:var(--color-text-muted);margin:4px 0 0">${escapeHtml(ServerI18n.t("fingerprintsDesc"))}</p>
-          </div>
-          <span style="color:var(--color-text-muted);transition:transform 180ms ease" class="group-open:rotate-180">⌄</span>
-        </summary>
-        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--admin-line);display:flex;flex-direction:column;gap:14px">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-            <span id="adminFingerprintCount" style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;color:var(--color-text-muted);text-transform:uppercase">—</span>
-            <div style="display:flex;align-items:center;gap:8px">
-              <button id="adminFingerprintRefreshBtn" class="hud-toolbar-action" type="button">${escapeHtml(ServerI18n.t("refreshBtn"))}</button>
-              <button id="adminFingerprintResetBtn" class="hud-toolbar-action" type="button" style="color:#f87171">${escapeHtml(ServerI18n.t("fingerprintResetBtn"))}</button>
-            </div>
-          </div>
-          <div id="adminFingerprintTableWrap">
-            <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;color:var(--color-text-muted);text-transform:uppercase">${escapeHtml(ServerI18n.t("loadingFingerprints"))}</span>
-          </div>
+      <div id="sec-fingerprints" class="admin-fp-page hud-page-stack lg:col-span-2">
+        <div class="admin-v2-head">
+          <div class="admin-v2-kicker">FINGERPRINTS · 觀測 · 技術檢視</div>
+          <div class="admin-v2-title">${escapeHtml(ServerI18n.t("fingerprintsTitle"))}</div>
+          <p class="admin-v2-note">${escapeHtml(ServerI18n.t("fingerprintsDesc"))}</p>
         </div>
-      </details>
+
+        <div class="admin-fp-toolbar">
+          <span id="adminFingerprintCount" class="admin-fp-count">—</span>
+          <span style="flex:1"></span>
+          <button id="adminFingerprintRefreshBtn" class="admin-fp-toolbar-btn" type="button">↻ ${escapeHtml(ServerI18n.t("refreshBtn"))}</button>
+          <button id="adminFingerprintResetBtn" class="admin-fp-toolbar-btn is-danger" type="button">${escapeHtml(ServerI18n.t("fingerprintResetBtn"))}</button>
+        </div>
+
+        <div class="admin-fp-card" id="adminFingerprintTableWrap">
+          <div class="admin-fp-loading">${escapeHtml(ServerI18n.t("loadingFingerprints"))}</div>
+        </div>
+      </div>
     `;
   }
 
   function stateBadge(state) {
     var label = ServerI18n.t("fingerprintState_" + state);
     var variant = "";
-    if (state === "blocked") variant = " is-danger";
+    if (state === "blocked") variant = " is-crimson";
     else if (state === "flagged") variant = " is-amber";
     else if (state === "active") variant = " is-cyan";
-    return '<span class="hud-pill' + variant + '">' + escapeHtml(label) + "</span>";
+    else variant = " is-mute";
+    return '<span class="admin-fp-state' + variant + '">' + escapeHtml(label) + "</span>";
   }
 
   function formatTs(sec) {
@@ -71,52 +71,50 @@
 
     if (!records || records.length === 0) {
       wrap.innerHTML =
-        '<div class="hud-table"><div class="hud-table-row" style="grid-template-columns:1fr">' +
-        '<span style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;color:var(--color-text-muted);text-transform:uppercase">' +
+        '<div class="admin-fp-empty">' +
         escapeHtml(ServerI18n.t("noFingerprints")) +
-        "</span></div></div>";
+        "</div>";
       return;
     }
 
-    var cols = "minmax(110px, 1.1fr) minmax(110px, 1fr) minmax(0, 1.6fr) 70px 70px 70px 90px 90px";
-
+    // v5 batch10-audience.jsx FingerprintsPage: 8-col table
+    // HASH / IP / UA / MSGS / RATE / BLOCKED / STATE / LAST SEEN
     var header =
-      '<div class="hud-table-head" style="grid-template-columns:' + cols + '">' +
-        "<span>" + escapeHtml(ServerI18n.t("fingerprintCol_hash")) + "</span>" +
-        "<span>" + escapeHtml(ServerI18n.t("fingerprintCol_ip")) + "</span>" +
-        "<span>" + escapeHtml(ServerI18n.t("fingerprintCol_ua")) + "</span>" +
-        '<span style="text-align:right">' + escapeHtml(ServerI18n.t("fingerprintCol_msgs")) + "</span>" +
-        '<span style="text-align:right">' + escapeHtml(ServerI18n.t("fingerprintCol_rate")) + "</span>" +
-        '<span style="text-align:right">' + escapeHtml(ServerI18n.t("fingerprintCol_blocked")) + "</span>" +
-        "<span>" + escapeHtml(ServerI18n.t("fingerprintCol_state")) + "</span>" +
-        "<span>" + escapeHtml(ServerI18n.t("fingerprintCol_lastSeen")) + "</span>" +
-      "</div>";
+      '<div class="admin-fp-row admin-fp-row--head">' +
+        '<span>' + escapeHtml(ServerI18n.t("fingerprintCol_hash")) + '</span>' +
+        '<span>' + escapeHtml(ServerI18n.t("fingerprintCol_ip")) + '</span>' +
+        '<span>' + escapeHtml(ServerI18n.t("fingerprintCol_ua")) + '</span>' +
+        '<span class="num">' + escapeHtml(ServerI18n.t("fingerprintCol_msgs")) + '</span>' +
+        '<span class="num">' + escapeHtml(ServerI18n.t("fingerprintCol_rate")) + '</span>' +
+        '<span class="num">' + escapeHtml(ServerI18n.t("fingerprintCol_blocked")) + '</span>' +
+        '<span>' + escapeHtml(ServerI18n.t("fingerprintCol_state")) + '</span>' +
+        '<span>' + escapeHtml(ServerI18n.t("fingerprintCol_lastSeen")) + '</span>' +
+      '</div>';
 
     var rows = records
       .map(function (r) {
         var blockedVal = r.blocked | 0;
-        var blockedColor = blockedVal > 0 ? "#f87171" : "var(--color-text-muted)";
         var hash = r.hash || "";
         // P3-1: AdminIdentity.focusFingerprint() locates rows by data-fp-hash.
-        // Server sends the 12-char SHA-256 prefix in `hash`; first 8 are shown
-        // as `fp:xxxxxxxx` to match the AdminIdentity short-form (FP_DISPLAY_LEN=8).
+        // Server sends the 12-char SHA-256 prefix; first 8 are shown as
+        // `fp:xxxxxxxx` to match the AdminIdentity short-form.
         var fpShort = hash.slice(0, 8);
         return (
-          '<div class="hud-table-row admin-fp-row" data-fp-hash="' + escapeHtml(hash) + '" style="grid-template-columns:' + cols + '">' +
-            '<span class="admin-identity-fp" style="font-family:var(--font-mono);font-size:12px;color:var(--color-text-strong);overflow:hidden;text-overflow:ellipsis" title="' + escapeHtml(hash) + '">fp:' + escapeHtml(fpShort) + "</span>" +
-            '<span class="admin-identity-ip" style="font-size:12px;color:var(--color-text-muted)">' + escapeHtml(r.ip || "—") + "</span>" +
-            '<span style="font-size:12px;color:var(--color-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escapeHtml(r.ua || "") + '">' + escapeHtml(r.ua || "—") + "</span>" +
-            '<span style="text-align:right;font-family:var(--font-mono);font-size:13px;color:var(--color-text-strong)">' + (r.msgs | 0) + "</span>" +
-            '<span style="text-align:right;font-family:var(--font-mono);font-size:13px;color:var(--color-text-strong)">' + (r.rate_per_min | 0) + "</span>" +
-            '<span style="text-align:right;font-family:var(--font-mono);font-size:13px;color:' + blockedColor + '">' + blockedVal + "</span>" +
-            "<span>" + stateBadge(r.state || "active") + "</span>" +
-            '<span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">' + escapeHtml(formatTs(r.last_seen)) + "</span>" +
-          "</div>"
+          '<div class="admin-fp-row admin-fp-data" data-fp-hash="' + escapeHtml(hash) + '">' +
+            '<span class="admin-fp-hash admin-identity-fp" title="' + escapeHtml(hash) + '">fp:' + escapeHtml(fpShort) + '</span>' +
+            '<span class="admin-fp-ip admin-identity-ip">' + escapeHtml(r.ip || "—") + '</span>' +
+            '<span class="admin-fp-ua" title="' + escapeHtml(r.ua || "") + '">' + escapeHtml(r.ua || "—") + '</span>' +
+            '<span class="admin-fp-num">' + (r.msgs | 0) + '</span>' +
+            '<span class="admin-fp-num">' + (r.rate_per_min | 0) + '/m</span>' +
+            '<span class="admin-fp-num ' + (blockedVal > 0 ? "is-crimson" : "is-mute") + '">' + blockedVal + '</span>' +
+            '<span>' + stateBadge(r.state || "active") + '</span>' +
+            '<span class="admin-fp-ts">' + escapeHtml(formatTs(r.last_seen)) + '</span>' +
+          '</div>'
         );
       })
       .join("");
 
-    wrap.innerHTML = '<div class="hud-table">' + header + rows + "</div>";
+    wrap.innerHTML = header + rows;
   }
 
   async function fetchAndRender() {
@@ -174,8 +172,10 @@
   function startAutoRefresh() {
     stopAutoRefresh();
     _refreshTimer = setInterval(function () {
-      var detailsEl = document.getElementById("sec-fingerprints");
-      if (detailsEl && detailsEl.open) {
+      var sec = document.getElementById("sec-fingerprints");
+      // 2026-05-19: section is now a full v4 page (not <details>), so
+      // refresh whenever the page is visible (display ≠ none).
+      if (sec && sec.offsetParent !== null) {
         fetchAndRender();
       }
     }, REFRESH_INTERVAL_MS);
@@ -189,20 +189,14 @@
   }
 
   function init() {
-    var settingsGrid = document.getElementById("settings-grid");
-    if (!settingsGrid) return;
+    // 2026-05-19: prefer moderation-grid (sec-fingerprints is the
+    // moderation/fingerprints tab leaf) — falls back to settings-grid
+    // during bootstrap before moderation-grid is mounted.
+    var grid = document.getElementById("moderation-grid")
+      || document.getElementById("settings-grid");
+    if (!grid) return;
 
-    settingsGrid.insertAdjacentHTML("beforeend", buildSection());
-
-    var detailsEl = document.getElementById("sec-fingerprints");
-    if (detailsEl) {
-      detailsEl.addEventListener("toggle", function () {
-        var current = loadDetailsState();
-        current["sec-fingerprints"] = detailsEl.open;
-        saveDetailsState(current);
-        if (detailsEl.open) fetchAndRender();
-      });
-    }
+    grid.insertAdjacentHTML("beforeend", buildSection());
 
     var refreshBtn = document.getElementById("adminFingerprintRefreshBtn");
     if (refreshBtn) refreshBtn.addEventListener("click", fetchAndRender);
@@ -217,10 +211,9 @@
   document.addEventListener("DOMContentLoaded", function () {
     if (!window.DANMU_CONFIG || !window.DANMU_CONFIG.session || !window.DANMU_CONFIG.session.logged_in) return;
     var observer = new MutationObserver(function () {
-      if (
-        document.getElementById("settings-grid") &&
-        !document.getElementById("sec-fingerprints")
-      ) {
+      var grid = document.getElementById("moderation-grid")
+        || document.getElementById("settings-grid");
+      if (grid && !document.getElementById("sec-fingerprints")) {
         init();
       }
     });
@@ -229,10 +222,9 @@
       subtree: true,
     });
 
-    if (
-      document.getElementById("settings-grid") &&
-      !document.getElementById("sec-fingerprints")
-    ) {
+    var grid0 = document.getElementById("moderation-grid")
+      || document.getElementById("settings-grid");
+    if (grid0 && !document.getElementById("sec-fingerprints")) {
       init();
     }
   });

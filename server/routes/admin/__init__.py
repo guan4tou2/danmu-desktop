@@ -36,7 +36,9 @@ def _ensure_logged_in():
 # Import sub-modules to register their routes on admin_bp
 from . import (  # noqa: E402, F401
     api_tokens,
+    audience,
     audit,
+    backup,
     blacklist,
     bootstrap,
     broadcast,

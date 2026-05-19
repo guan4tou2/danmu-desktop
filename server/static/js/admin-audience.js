@@ -348,10 +348,22 @@
       '<div class="admin-aud-detail-messages">' + messagesHtml + '</div>' +
       '<div class="admin-v2-monolabel admin-aud-detail-label">建議動作</div>' +
       '<div class="admin-aud-detail-actions">' +
+        // Primary ban (long-term moderation_bans entry) — still useful
+        // even alongside kick because it scopes to all bans, not just
+        // audience-overlay state.
         '<button type="button" class="primary" data-aud-action="detail-ban" data-aud-fp="' + escapeHtml(fp) + '">⊗ 立即封禁指紋 · 7 天</button>' +
         '<button type="button" class="warn" data-aud-action="detail-mask" data-aud-fp="' + escapeHtml(fp) + '">◐ 改為遮罩模式</button>' +
-        '<div class="admin-be-placeholder-control admin-be-placeholder-inline admin-aud-be-placeholder">[PLACEHOLDER] 👢 踢出此場（待 BE endpoint）</div>' +
-        '<button type="button" data-aud-action="detail-safe" data-aud-fp="' + escapeHtml(fp) + '">✓ 標記安全 · 解除 flag</button>' +
+        // Kick (= audience kick endpoint, also adds permanent fp ban).
+        // Toggle to unkick when the row is already kicked.
+        (rec.is_kicked
+          ? '<button type="button" class="warn" data-aud-action="unkick" data-aud-fp="' + escapeHtml(fp) + '">↺ 撤銷踢出</button>'
+          : '<button type="button" data-aud-action="kick" data-aud-fp="' + escapeHtml(fp) + '">👢 踢出此場</button>'
+        ) +
+        // Flag toggle — admin-set, overlays risk score.
+        '<button type="button" data-aud-action="flag" data-aud-fp="' + escapeHtml(fp) + '" data-aud-flagged="' + (rec.is_flagged ? "true" : "false") + '">' +
+          (rec.is_flagged ? "★ 取消標記" : "☆ 標記為可疑") +
+        '</button>' +
+        '<button type="button" data-aud-action="detail-safe" data-aud-fp="' + escapeHtml(fp) + '">✓ 標記安全 · 解除 filter rules</button>' +
       '</div>';
   }
 
@@ -365,17 +377,86 @@
   // ── data ─────────────────────────────────────────────────────────
 
   async function _fetch() {
+    // 2026-05-19: switched from /admin/fingerprints to /admin/audience/list
+    // (which wraps fingerprints + adds risk_score / risk_factors /
+    // is_flagged / is_kicked / kick_reason). Older /admin/fingerprints
+    // is still used by the moderation Fingerprints tab — separate surface.
     try {
-      const r = await fetch("/admin/fingerprints?limit=500", { credentials: "same-origin" });
+      const r = await fetch("/admin/audience/list?limit=500", { credentials: "same-origin" });
       if (!r.ok) return;
       const data = await r.json();
-      _state.records = Array.isArray(data.records) ? data.records : [];
+      // Audience entries carry both the live record fields AND the new
+      // overlay state — same row shape consumers expect, just richer.
+      _state.records = Array.isArray(data.entries) ? data.entries : [];
+      _state.serverStats = (data && data.stats) || null;
       _renderStats();
       _renderFilters();
       _renderList();
-      // refresh detail panel if open (record may have updated counts)
       if (_state.selectedFp) _renderDetail();
     } catch (_) { /* silent */ }
+  }
+
+  // ── New audience-layer actions ──────────────────────────────────
+
+  // Flag (or unflag) a fingerprint. note is optional admin-side comment.
+  async function _flagToggle(fp, flagged, note) {
+    if (!fp) return;
+    try {
+      const r = await window.csrfFetch("/admin/audience/flag", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fingerprint: fp, flagged: !!flagged, note: note || "" }),
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      window.showToast && window.showToast(
+        flagged ? ("已標記 fp:" + fp.slice(0, 8)) : ("已取消標記 fp:" + fp.slice(0, 8)),
+        true
+      );
+      _fetch();
+    } catch (e) {
+      window.showToast && window.showToast("標記操作失敗：" + (e.message || ""), false);
+    }
+  }
+
+  // Kick (= permanent fp ban via moderation_bans). Confirm via native
+  // dialog because it's destructive — promote to HudConfirm later if
+  // the modal pattern is wired here.
+  async function _kick(fp, reason) {
+    if (!fp || fp === "—") return;
+    const why = reason != null ? reason : (window.prompt(
+      "踢出指紋 fp:" + fp.slice(0, 8) + " — 輸入原因（可空）",
+      ""
+    ) || "");
+    if (why === null) return;  // user cancelled
+    try {
+      const r = await window.csrfFetch("/admin/audience/kick", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fingerprint: fp, reason: why }),
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      window.showToast && window.showToast("已踢出 fp:" + fp.slice(0, 8), true);
+      _fetch();
+    } catch (e) {
+      window.showToast && window.showToast("踢出失敗：" + (e.message || ""), false);
+    }
+  }
+
+  async function _unkick(fp) {
+    if (!fp) return;
+    if (!confirm("撤銷對 fp:" + fp.slice(0, 8) + " 的踢出？該指紋之後又可送出彈幕。")) return;
+    try {
+      const r = await window.csrfFetch("/admin/audience/unkick", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fingerprint: fp }),
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      window.showToast && window.showToast("已撤銷踢出", true);
+      _fetch();
+    } catch (e) {
+      window.showToast && window.showToast("撤銷失敗：" + (e.message || ""), false);
+    }
   }
 
   async function _maskFingerprint(fp) {
@@ -487,6 +568,17 @@
       if (detailMask) { _maskFingerprint(detailMask.dataset.audFp); return; }
       const detailSafe = e.target.closest("[data-aud-action='detail-safe']");
       if (detailSafe) { _markSafe(detailSafe.dataset.audFp); return; }
+      // New audience-layer actions (2026-05-19)
+      const flag = e.target.closest("[data-aud-action='flag']");
+      if (flag) {
+        e.stopPropagation();
+        _flagToggle(flag.dataset.audFp, flag.dataset.audFlagged !== "true");
+        return;
+      }
+      const kick = e.target.closest("[data-aud-action='kick']");
+      if (kick) { e.stopPropagation(); _kick(kick.dataset.audFp); return; }
+      const unkick = e.target.closest("[data-aud-action='unkick']");
+      if (unkick) { e.stopPropagation(); _unkick(unkick.dataset.audFp); return; }
       // Row click → open detail (only if click wasn't on action / filter button)
       const row = e.target.closest("[data-aud-row]");
       if (row && !e.target.closest("button")) {

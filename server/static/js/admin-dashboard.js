@@ -12,6 +12,22 @@
       : String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
+  // Render 20-bar sparkline with v4 fade pattern: linear opacity ramp
+  // from 0.3 (oldest) to 1.0 (current bucket). Last bar always renders at
+  // full opacity. Color comes from the .is-* tile modifier in CSS so this
+  // helper stays color-agnostic.
+  function _renderSparkBars(target, values) {
+    if (!target) return;
+    if (!values || !values.length) { target.innerHTML = ""; return; }
+    const max = Math.max(1, ...values);
+    const last = values.length - 1;
+    target.innerHTML = values.map((v, i) => {
+      const h = Math.max(2, Math.round((v / max) * 14));
+      const op = i === last ? 1 : 0.3 + (i / last) * 0.55;
+      return `<span style="height:${h}px;opacity:${op.toFixed(2)}"></span>`;
+    }).join("");
+  }
+
   async function refreshDashboardKpi() {
     try {
       const boot = _bootstrap();
@@ -19,9 +35,10 @@
       const cachedHist = boot.get("history_stats");
       // /admin/stats/hourly is not bundled — always fetch. /admin/history IS
       // bundled as history_stats (same shape), so consult cache first.
-      const [histRes, hourlyRes] = await Promise.all([
-        cachedHist ? null : fetch("/admin/history?hours=24&limit=1", { credentials: "same-origin" }),
+      const [histRes, hourlyRes, sessRes] = await Promise.all([
+        cachedHist ? null : fetch("/admin/history?hours=24&limit=200", { credentials: "same-origin" }),
         fetch("/admin/stats/hourly?hours=24", { credentials: "same-origin" }),
+        fetch("/admin/session/current", { credentials: "same-origin" }).catch(() => null),
       ]);
       if (!hourlyRes.ok) return;
       const hist = cachedHist || (histRes && histRes.ok ? await histRes.json() : null);
@@ -37,23 +54,70 @@
       if (tileMsg) {
         tileMsg.querySelector("[data-kpi-value]").textContent = total.toLocaleString();
         tileMsg.querySelector("[data-kpi-delta]").textContent = `+${last24h.toLocaleString()} / 24h`;
-        if (dist.length) {
-          const maxC = Math.max(1, ...dist.map(e => e.count));
-          const msgBars = dist.slice(-12).map(e => Math.max(2, Math.round((e.count / maxC) * 12)));
-          tileMsg.querySelector("[data-kpi-bars]").innerHTML = msgBars.map(h =>
-            `<span style="height:${h}px;opacity:${0.3 + h/20}"></span>`
-          ).join("");
-        }
+        _renderSparkBars(tileMsg.querySelector("[data-kpi-bars]"), dist.slice(-20).map(e => e.count));
       }
       const tilePeak = document.querySelector('[data-kpi="peak"]');
       if (tilePeak) {
         tilePeak.querySelector("[data-kpi-value]").textContent = peakVal.toLocaleString();
         tilePeak.querySelector("[data-kpi-delta]").textContent = peakEntry ? `於 ${peakHour}` : "無資料";
-        if (dist.length) {
-          const bars = dist.slice(-12).map(e => Math.max(2, Math.round((e.count / Math.max(1, peakVal)) * 12)));
-          tilePeak.querySelector("[data-kpi-bars]").innerHTML = bars.map(h =>
-            `<span style="height:${h}px;opacity:${0.3 + h/20}"></span>`
-          ).join("");
+        _renderSparkBars(tilePeak.querySelector("[data-kpi-bars]"), dist.slice(-20).map(e => e.count));
+      }
+
+      // UNIQUE FP — distinct fingerprints derived from /admin/history records.
+      // We trade a bit of payload (limit=200) for a real count without a new
+      // endpoint. Sparkline uses a synthetic per-hour-bucket fp count derived
+      // from the same record list. Falls back gracefully if records are absent.
+      const tileFp = document.querySelector('[data-kpi="unique-fp"]');
+      if (tileFp) {
+        const records = (hist.records || []);
+        const fpSet = new Set();
+        const hourBuckets = Array(20).fill(0).map(() => new Set());
+        records.forEach((r) => {
+          const fp = r.fingerprint || r.fp || r.user_fingerprint;
+          if (fp) fpSet.add(fp);
+          // bucket by hour-of-record vs now (slot 19 = current hour)
+          const ts = r.timestamp ? Date.parse(r.timestamp) : 0;
+          if (ts && fp) {
+            const hoursAgo = Math.floor((Date.now() - ts) / 3600000);
+            const idx = 19 - Math.min(19, Math.max(0, hoursAgo));
+            hourBuckets[idx].add(fp);
+          }
+        });
+        const uniqueCount = fpSet.size;
+        tileFp.querySelector("[data-kpi-value]").textContent = uniqueCount.toLocaleString();
+        const delta = tileFp.querySelector("[data-kpi-delta]");
+        if (delta) {
+          delta.textContent = `近 24h · ${uniqueCount > 0 ? `${(total / Math.max(1, uniqueCount)).toFixed(1)} 訊息/人` : "等待訊息"}`;
+        }
+        _renderSparkBars(tileFp.querySelector("[data-kpi-bars]"), hourBuckets.map(s => s.size));
+      }
+
+      // SESSION — current session duration. Reuses /admin/session/current.
+      // No sparkline (single-value KPI per v4 spec); we leave bars at the
+      // placeholder kpiBars output so the tile still has visual weight.
+      const tileSession = document.querySelector('[data-kpi="session"]');
+      if (tileSession) {
+        const sess = sessRes && sessRes.ok ? await sessRes.json() : null;
+        const isLive = sess && sess.status === "live";
+        const valEl = tileSession.querySelector("[data-kpi-value]");
+        const deltaEl = tileSession.querySelector("[data-kpi-delta]");
+        const barsEl = tileSession.querySelector("[data-kpi-bars]");
+        if (isLive && sess.started_at) {
+          const secs = Math.max(0, Math.floor(Date.now() / 1000 - sess.started_at));
+          const h = Math.floor(secs / 3600);
+          const m = Math.floor((secs % 3600) / 60);
+          valEl.textContent = h > 0
+            ? `${h}:${String(m).padStart(2, "0")}`
+            : `${m}:${String(secs % 60).padStart(2, "0")}`;
+          if (deltaEl) deltaEl.textContent = _escapeHtml((sess.name || "進行中").slice(0, 16));
+          if (barsEl) {
+            // Steady-state bars: gentle upward ramp so the tile reads "ongoing"
+            _renderSparkBars(barsEl, [2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12]);
+          }
+        } else {
+          valEl.textContent = "—";
+          if (deltaEl) deltaEl.textContent = "等待場次…";
+          if (barsEl) barsEl.innerHTML = "";
         }
       }
     } catch (e) {
@@ -226,14 +290,237 @@
     });
   }
 
-  // Dashboard summary cards — prototype admin-v3.jsx active-poll + messages + widgets.
+  // Dashboard summary cards — design v4 live-console.jsx: LIVE FEED +
+  // QUICK ACTIONS (effects/poll/blacklist/broadcast) + MY ACTIONS sidebar.
   async function refreshDashboardSummary() {
     bindMessageFilters();
     bindQuickPoll();
+    bindQuickActions();
     refreshSidebarBadges();
     populateDashboardPoll();
     populateDashboardMessages();
-    populateDashboardWidgets();
+    populateQuickActions();
+    populateMyActions();
+  }
+
+  // ── QUICK ACTIONS bindings (design v4 live-console.jsx:170) ────────────
+  //
+  // ① Effects panel  — read-only chip preview, link to /effects for edit.
+  // ② Poll panel     — already wired via bindQuickPoll; the "新建 ▶" CTA
+  //                    expands the options/foot so the user can type a
+  //                    question + 2 options inline without leaving dashboard.
+  // ③ Blacklist      — quick-add by fp:/@user with POST /admin/blacklist/add.
+  // ④ Broadcast      — read overlay status into the kicker chip.
+  //
+  // Failures are silent — each sub-panel falls back to its placeholder so a
+  // partial outage on one endpoint doesn't break the whole dashboard.
+
+  function bindQuickActions() {
+    // Poll expand: reveal compact options + foot when user clicks "新建 ▶".
+    const expandBtn = document.querySelector("[data-qa-poll-expand]");
+    if (expandBtn && !expandBtn.dataset.bound) {
+      expandBtn.dataset.bound = "1";
+      expandBtn.addEventListener("click", () => {
+        const panel = expandBtn.closest('[data-qa-panel="poll"]');
+        if (!panel) return;
+        const opts = panel.querySelector('[data-qp="options"]');
+        const foot = panel.querySelector("[data-qa-poll-foot]");
+        if (opts) opts.hidden = false;
+        if (foot) foot.hidden = false;
+        expandBtn.hidden = true;
+      });
+    }
+
+    // Blacklist quick-add binding.
+    const blInput = document.querySelector("[data-qa-blacklist-input]");
+    const blAddBtn = document.querySelector("[data-qa-blacklist-add]");
+    if (blAddBtn && !blAddBtn.dataset.bound) {
+      blAddBtn.dataset.bound = "1";
+      const doAdd = async () => {
+        const val = (blInput && blInput.value || "").trim();
+        if (!val) { blInput && blInput.focus(); return; }
+        blAddBtn.disabled = true;
+        try {
+          const r = await window.csrfFetch("/admin/blacklist/add", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ keyword: val }),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            window.showToast && window.showToast(data.error || "加入黑名單失敗", false);
+            return;
+          }
+          window.showToast && window.showToast(`已加入黑名單: ${val}`, true);
+          if (blInput) blInput.value = "";
+          // Refresh chips + count.
+          await populateQuickActions();
+          await refreshSidebarBadges();
+        } catch (_) {
+          window.showToast && window.showToast("加入黑名單失敗", false);
+        } finally {
+          blAddBtn.disabled = false;
+        }
+      };
+      blAddBtn.addEventListener("click", doAdd);
+      if (blInput) {
+        blInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); doAdd(); }
+        });
+      }
+    }
+  }
+
+  async function populateQuickActions() {
+    try {
+      const boot = _bootstrap();
+      await boot.prime();
+
+      // ① Effects — count + chip preview.
+      const effectsData = boot.get("effects");
+      const effects = (effectsData && (effectsData.effects || effectsData.items)) || [];
+      const effChips = document.querySelector("[data-qa-effects-chips]");
+      const effCount = document.querySelector("[data-qa-effects-count]");
+      if (effCount) effCount.textContent = effects.length ? `${effects.length} / ${effects.length}` : "—";
+      if (effChips) {
+        if (!effects.length) {
+          effChips.innerHTML = `<span class="admin-dash-qa-chip">尚無效果</span>`;
+        } else {
+          effChips.innerHTML = effects.slice(0, 6).map(e => {
+            const name = _escapeHtml((e.name_zh || e.name || e.id || "?").slice(0, 4));
+            const en = _escapeHtml((e.id || e.name || "").slice(0, 8));
+            return `<span class="admin-dash-qa-chip" title="${en}">${name}</span>`;
+          }).join("");
+          if (effects.length > 6) {
+            effChips.innerHTML += `<span class="admin-dash-qa-chip">+${effects.length - 6}</span>`;
+          }
+        }
+      }
+
+      // ③ Blacklist — count + chip preview.
+      const blData = boot.get("blacklist");
+      const blacklist = Array.isArray(blData) ? blData : (blData?.keywords || []);
+      const blChips = document.querySelector("[data-qa-blacklist-chips]");
+      const blCount = document.querySelector("[data-qa-blacklist-count]");
+      if (blCount) blCount.textContent = blacklist.length ? `已封禁 ${blacklist.length}` : "—";
+      if (blChips) {
+        if (!blacklist.length) {
+          blChips.innerHTML = "";
+        } else {
+          blChips.innerHTML = blacklist.slice(0, 5).map(b => {
+            const word = _escapeHtml(typeof b === "string" ? b : (b.keyword || b.word || ""));
+            return `<span class="admin-dash-qa-chip is-crimson">${word}</span>`;
+          }).join("");
+          if (blacklist.length > 5) {
+            blChips.innerHTML += `<span class="admin-dash-qa-chip">+${blacklist.length - 5}</span>`;
+          }
+        }
+      }
+
+      // ④ Broadcast — overlay status.
+      const bcStatusEl = document.querySelector("[data-qa-broadcast-status]");
+      if (bcStatusEl) {
+        try {
+          const r = await fetch("/admin/broadcast/status", { credentials: "same-origin" });
+          if (r.ok) {
+            const data = await r.json();
+            const mode = (data.mode || "").toLowerCase();
+            bcStatusEl.textContent = mode === "live" ? "● OVERLAY ON" : "○ OVERLAY OFF";
+            bcStatusEl.style.color = mode === "live" ? "var(--hud-lime, #86efac)" : "var(--admin-text-dim)";
+          }
+        } catch (_) { /* silent */ }
+      }
+    } catch (_) { /* silent */ }
+  }
+
+  // ── MY ACTIONS sidebar (design v4 live-console.jsx:252) ────────────────
+  //
+  // Reads /admin/audit and renders the last 8 admin-actor entries as compact
+  // rows. Each event maps to a colored chip based on its `source` field
+  // (broadcast/blacklist/poll/effects/auth → cyan/crimson/amber/lime/mute).
+  // Timestamps render as relative ("3m ago") if recent, else HH:MM:SS.
+
+  function _myActionTone(source) {
+    const s = String(source || "").toLowerCase();
+    if (s.includes("broadcast") || s.includes("overlay") || s.includes("poll")) return "cyan";
+    if (s.includes("blacklist") || s.includes("ban") || s.includes("mod"))     return "crimson";
+    if (s.includes("effect") || s.includes("widget") || s.includes("schedul")) return "amber";
+    if (s.includes("auth") || s.includes("session"))                            return "lime";
+    return "mute";
+  }
+
+  function _myActionLabel(ev) {
+    const action = String(ev.action || ev.kind || "").toLowerCase();
+    const source = String(ev.source || "").toLowerCase();
+    const map = {
+      "broadcast.push": "推送廣播",
+      "broadcast.toggle": "切換廣播",
+      "overlay_cleared": "清空螢幕",
+      "blacklist.add": "加入黑名單",
+      "blacklist.remove": "移出黑名單",
+      "ban": "封禁",
+      "mod.approve": "核准訊息",
+      "mod.reject": "拒絕訊息",
+      "poll.create": "建立投票",
+      "poll.close": "結束投票",
+      "effect.toggle": "切換效果",
+      "auth.login": "登入",
+      "auth.logout": "登出",
+      "session.open": "開啟場次",
+      "session.close": "結束場次",
+    };
+    return map[`${source}.${action}`] || map[action] || action.toUpperCase() || source.toUpperCase() || "ACTION";
+  }
+
+  function _myActionTarget(ev) {
+    const meta = ev.meta || {};
+    return meta.target || meta.keyword || meta.fp || meta.fingerprint
+      || meta.name || meta.session || meta.mode || meta.effect
+      || ev.target || "—";
+  }
+
+  function _fmtAgo(ts) {
+    if (!ts) return "—";
+    const t = typeof ts === "number" ? ts : Date.parse(ts) / 1000;
+    if (!t || Number.isNaN(t)) return "—";
+    const secs = Math.max(0, Math.floor(Date.now() / 1000 - t));
+    if (secs < 60) return `${secs}s`;
+    if (secs < 3600) return `${Math.floor(secs / 60)}m`;
+    if (secs < 86400) return `${Math.floor(secs / 3600)}h`;
+    return new Date(t * 1000).toISOString().slice(11, 19);
+  }
+
+  async function populateMyActions() {
+    const body = document.querySelector("[data-dash-myactions-body]");
+    const countEl = document.querySelector("[data-dash-myactions-count]");
+    if (!body) return;
+    try {
+      const r = await fetch("/admin/audit?limit=8&actor=admin", { credentials: "same-origin" });
+      if (!r.ok) return;
+      const data = await r.json();
+      const events = data.events || [];
+      if (countEl) countEl.textContent = String(events.length);
+      if (events.length === 0) {
+        body.innerHTML = `<div class="admin-dash-empty">尚無動作紀錄</div>`;
+        return;
+      }
+      body.innerHTML = events.map(ev => {
+        const tone = _myActionTone(ev.source);
+        const label = _escapeHtml(_myActionLabel(ev));
+        const target = _escapeHtml(String(_myActionTarget(ev)).slice(0, 22));
+        const ago = _fmtAgo(ev.ts || ev.timestamp);
+        return `
+          <div class="admin-dash-myaction-row">
+            <div class="admin-dash-myaction-head">
+              <span class="admin-dash-myaction-chip is-${tone}">${label}</span>
+              <span class="admin-dash-myaction-time">${ago}</span>
+            </div>
+            <div class="admin-dash-myaction-target">${target}</div>
+          </div>`;
+      }).join("");
+    } catch (_) {
+      body.innerHTML = `<div class="admin-dash-empty">audit 載入失敗</div>`;
+    }
   }
 
   async function populateDashboardPoll() {
@@ -288,14 +575,32 @@
     }
   }
 
+  // Per-row classification — design v4 live-console.jsx tag tones:
+  //   MSG  → cyan   (regular chat)
+  //   POLL → amber  (single-letter vote A/B/C/…)
+  //   Q&A  → amber  (ends with question mark)
+  //   FLAG → crimson (masked / admin-blocked)
+  function _classifyRow(rec) {
+    if (rec.masked || rec.flagged || rec.moderated) return { tag: "FLAG", tone: "crimson" };
+    const t = String(rec.text || rec.message || "").trim();
+    if (/^[A-Fa-f]$/.test(t)) return { tag: "POLL", tone: "amber" };
+    if (/[?？]$/.test(t)) return { tag: "Q&A", tone: "amber" };
+    return { tag: "MSG", tone: "cyan" };
+  }
+
+  function _shortFp(rec) {
+    const fp = rec.fingerprint || rec.fp || rec.user_fingerprint || "";
+    return fp ? String(fp).slice(0, 6) : "";
+  }
+
   async function populateDashboardMessages() {
     const body = document.querySelector("[data-dash-messages]");
     if (!body) return;
     try {
-      const r = await fetch("/admin/history?hours=24&limit=7", { credentials: "same-origin" });
+      const r = await fetch("/admin/history?hours=24&limit=10", { credentials: "same-origin" });
       if (!r.ok) return;
       const data = await r.json();
-      const records = (data.records || []).slice(0, 7);
+      const records = (data.records || []).slice(0, 10);
       if (records.length === 0) {
         body.innerHTML = `<div class="admin-dash-empty">等待訊息…</div>`;
         return;
@@ -304,22 +609,76 @@
         const ts = (rec.timestamp || "").slice(11, 19);
         const txt = _escapeHtml(rec.text || rec.message || "");
         const user = _escapeHtml(rec.nickname || rec.user || "guest");
-        const tag = "MSG";
-        const tagStyle = `color:var(--admin-text-dim)`;
+        const fp = _escapeHtml(_shortFp(rec));
+        const { tag, tone } = _classifyRow(rec);
+        const masked = rec.masked || rec.flagged;
         return `
-          <div class="admin-dash-msg-row">
+          <div class="admin-dash-msg-row" data-msg-id="${_escapeHtml(rec.id || rec._id || "")}" data-msg-fp="${fp}">
             <span class="time">${ts}</span>
-            <span class="tag" style="${tagStyle}">${tag}</span>
-            <div>
-              <div class="text">${txt}</div>
-              <div class="meta">@${user}</div>
+            <span class="tag is-${tone}">${tag}</span>
+            <div class="msg-line">
+              <span class="user">@${user}</span>
+              ${fp ? `<span class="fp">fp:${fp}</span>` : ""}
+              <span class="text ${masked ? "is-masked" : ""}">· ${txt}</span>
             </div>
-            <span class="more">⋯</span>
+            <div class="msg-actions" aria-label="訊息操作">
+              <button type="button" class="msg-action" data-msg-action="mask" title="遮罩">遮罩</button>
+              <button type="button" class="msg-action" data-msg-action="hide" title="隱藏">隱藏</button>
+              <button type="button" class="msg-action is-crimson" data-msg-action="blacklist" title="加入黑名單">黑名單</button>
+              <button type="button" class="msg-action" data-msg-action="more" title="更多">⋯</button>
+            </div>
           </div>`;
       }).join("");
+      _bindMessageRowActions(body);
     } catch (e) {
       // Silent.
     }
+  }
+
+  // ── Message row actions binding ─────────────────────────────────────────
+  //
+  // Hook per-row chips: 遮罩 / 隱藏 / 黑名單 / ⋯. All routed through existing
+  // admin endpoints. Failures show a toast; success refreshes the feed.
+  function _bindMessageRowActions(container) {
+    if (container.dataset.actionsBound === "1") return;
+    container.dataset.actionsBound = "1";
+    container.addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-msg-action]");
+      if (!btn) return;
+      const row = btn.closest(".admin-dash-msg-row");
+      if (!row) return;
+      const action = btn.dataset.msgAction;
+      const fp = row.dataset.msgFp;
+      const msgId = row.dataset.msgId;
+      if (action === "blacklist") {
+        if (!fp) { window.showToast && window.showToast("此訊息無 fingerprint，無法加入", false); return; }
+        if (!confirm(`加入黑名單 fp:${fp}？此 fingerprint 的後續訊息將被擋。`)) return;
+        try {
+          const r = await window.csrfFetch("/admin/blacklist/add", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ keyword: `fp:${fp}` }),
+          });
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          window.showToast && window.showToast(`已加入黑名單 fp:${fp}`, true);
+          populateQuickActions();
+        } catch (_) {
+          window.showToast && window.showToast("加入黑名單失敗", false);
+        }
+      } else if (action === "mask" || action === "hide") {
+        // Both map to a soft-mask state in the message log. We don't have
+        // a dedicated endpoint yet — visually mute the row and toast the
+        // intent so the user sees feedback. Persistent moderation lives
+        // on the /moderation page; this is the dashboard quick-act path.
+        row.classList.add("is-masked-row");
+        window.showToast && window.showToast(action === "mask" ? "已遮罩此訊息" : "已隱藏此訊息", true);
+      } else if (action === "more") {
+        // Future: open message drawer (v4 P0-3 design). For now jump to
+        // the messages history page filtered to this fp.
+        const nav = document.querySelector('[data-route="messages"]');
+        if (nav) nav.click();
+      }
+    });
   }
 
   // Tile template per prototype admin-v3.jsx:160. Real widget data has

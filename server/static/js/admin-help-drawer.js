@@ -1,236 +1,219 @@
 /**
- * Admin · Help Drawer (F1) — design v4 follow-up to ⌘K palette.
+ * Admin · Help Drawer (Batch 12-1, 2026-05-19 v5).
  *
  * Slide-in right drawer with contextual help for the active route.
- * Triggered by F1 / `?` keystroke (when no input is focused) or via
+ * Triggered by F1 / ? / ⌘/ when no input is focused, or via
  * `window.AdminHelp.open()`. Closes on Esc / backdrop / ✕.
  *
- * Content is per-route — when no specific entry exists, falls back to
- * the global "Getting Started" section. Each section is a sequence of
- * shortcuts (key + label) + free-form tips.
+ * v5 layout per batch12-help.jsx:
+ *   ┌─ 360px ────────────────────────────┐
+ *   │ Help · ⌘/                       ✕ │  ← header
+ *   ├────────────────────────────────────┤
+ *   │ ● <route-title>     目前頁面      │  ← route-specific block
+ *   │   → tip 1                          │
+ *   │   → tip 2                          │
+ *   │                                    │
+ *   │ 鍵盤快捷鍵 · SHORTCUTS             │  ← global section
+ *   │   ⌘ K     全域搜尋                 │
+ *   │   ⌘ ⇧ O  Overlay 開關              │
+ *   │   ...                              │
+ *   │                                    │
+ *   │ 術語 · GLOSSARY                    │  ← global section
+ *   │   Overlay  Electron/OBS 上的彈幕… │
+ *   │   ...                              │
+ *   │                                    │
+ *   │ 資源 · RESOURCES                   │  ← global section
+ *   │   API 文件   docs.danmufire.dev ↗ │
+ *   │   ...                              │
+ *   ├────────────────────────────────────┤
+ *   │ Danmu Fire vX.X · ⌘/ 開啟 Help    │  ← footer
+ *   └────────────────────────────────────┘
  *
- * Lives at <body> level so it overlays any page. Style match: cyan
- * left-border on the drawer, dark HUD panel, mono section labels.
+ * The drawer reuses the cyan-left-border HUD chrome. Width tightened
+ * from the legacy 460px to the design's 360px. SHORTCUTS / GLOSSARY /
+ * RESOURCES are constant across routes; only the top route block
+ * changes based on the active hash.
  */
 (function () {
   "use strict";
 
   const ROOT_ID = "admin-help-drawer-root";
 
-  // Per-route help content. Key matches the first segment of location.hash
-  // (e.g. `#/live` → `live`). `_default` is the fallback.
-  const HELP = {
+  // Per-route tips. Key = first hash segment (or alias) → array of
+  // strings. `_default` is the fallback when no route key matches.
+  // HTML-escaped at render time so descriptions are plain text.
+  const ROUTE_TIPS = {
     _default: {
-      title: "Help",
-      subtitle: "DANMU FIRE · KEYBOARD & WORKFLOW",
-      sections: [
-        {
-          label: "GLOBAL SHORTCUTS",
-          rows: [
-            { keys: ["F1"],        desc: "開關此說明面板" },
-            { keys: ["⌘", "K"],   desc: "命令搜尋面板" },
-            { keys: ["⌘", "⇧", "L"], desc: "切到即時訊息流" },
-            { keys: ["⌘", "⇧", "S"], desc: "Overlay 切換到 OFF" },
-            { keys: ["⌘", "⇧", "C"], desc: "清空 overlay 螢幕" },
-            { keys: ["Esc"],       desc: "關閉抽屜 / Modal" },
-          ],
-        },
-        {
-          label: "WORKFLOW",
-          rows: [
-            { desc: "1. <b>Live</b> 開場前先在這檢查預備內容 · 看 overlay 狀態" },
-            { desc: "2. 進行中以 <b>Live Feed</b> 為主畫面 · 點訊息開 detail drawer" },
-            { desc: "3. 敏感字命中時 <b>審核佇列</b> 會出現 ─ 30 秒未處理自動拒絕" },
-            { desc: "4. 結束前用「結束並存檔」歸檔場次到 history" },
-          ],
-        },
+      title: "Danmu Fire",
+      tips: [
+        "F1 / ? / ⌘/ 任一鍵可開關此面板",
+        "⌘K 開全域命令搜尋；Esc 關 modal / drawer",
+        "頂部 KPI 數字可點擊跳到對應頁面",
       ],
     },
 
     live: {
-      title: "Live · 即時",
-      subtitle: "OVERLAY · LIVE FEED · MODERATION QUEUE",
-      sections: [
-        {
-          label: "OVERLAY 2-STATE TOGGLE",
-          rows: [
-            { desc: "<b>OFF</b>：彈幕不渲染到 overlay · 但訊息仍正常接收 / 歸檔" },
-            { desc: "<b>ON</b>：彈幕即時渲染 · 點 ▶ 開始顯示 啟動 / ■ 停止顯示 關閉" },
-            { desc: "<b>PAUSED</b>：暫停渲染但 session 仍進行 · 訊息排入 queue · 恢復後 drain" },
-            { desc: "Session 概念是「資料切片」(time window)，跟 overlay 開關獨立" },
-          ],
-        },
-        {
-          label: "LIVE FEED",
-          rows: [
-            { desc: "點訊息列開啟右側 message-drawer 看詳情 + Ban / Mute / Mask" },
-            { desc: "頂部 chip 篩選：全部 / 含敏感字 / 已封鎖 / 待審" },
-            { desc: "COMPACT/COMFY toggle 切換行密度" },
-            { desc: "手機左滑訊息列顯示 MASK / MUTE / BAN 按鈕" },
-          ],
-        },
-        {
-          label: "VOCABULARY (post 2026-05-18 pivot)",
-          rows: [
-            { desc: "沒有「主持人 / Host / 直播」這些字 · 只有「管理者 / Overlay / 場次」" },
-            { desc: "Overlay = 顯示器開關（toggle）" },
-            { desc: "Session = 資料切片（time window，含訊息 / 投票 / 統計）" },
-          ],
-        },
-      ],
-    },
-
-    broadcast: {
-      // Alias for the route slug — same content as `live` overlay section.
-      title: "Overlay 控制",
-      subtitle: "OVERLAY TOGGLE · SESSION CONTEXT",
-      sections: [
-        {
-          label: "BUTTONS",
-          rows: [
-            { desc: "<b>▶ 開始顯示</b>：cyan-filled — primary CTA · 觸發 overlay 渲染" },
-            { desc: "<b>■ 停止顯示</b>：soft outline — 點擊會跳 confirm modal" },
-            { desc: "<b>▶ 繼續顯示</b>：amber-filled — paused 狀態的 resume" },
-            { desc: "<b>◐ 暫停顯示</b>：secondary — 暫停渲染 (session 仍進行)" },
-            { desc: "<b>⊗ 清空螢幕</b>：secondary — 清掉 overlay 上現有的所有彈幕" },
-          ],
-        },
-        {
-          label: "SESSION CONTEXT",
-          rows: [
-            { desc: "頁尾顯示 session id + Started 時間 + Window 時長" },
-            { desc: "「管理 Sessions →」link 跳到 Sessions 頁，session 結束 / 歸檔在那裡" },
-          ],
-        },
-      ],
-    },
-
-    overlay: {
-      // Same as broadcast — kept as separate alias because design v4-r7
-      // calls the page "Overlay 控制" and admin.js routes through 'broadcast'.
-      title: "Overlay 控制",
-      subtitle: "OVERLAY TOGGLE · SESSION CONTEXT",
-      sections: [
-        {
-          label: "短暫整理",
-          rows: [
-            { desc: "看 <b>broadcast</b> route help — 兩個 alias 內容相同" },
-          ],
-        },
-      ],
-    },
-
-    moderation: {
-      title: "Moderation · 審核",
-      subtitle: "FILTERS · BLACKLIST · QUEUE",
-      sections: [
-        {
-          label: "REGEX FILTERS",
-          rows: [
-            { desc: "Quick Filters chip 為臨時規則 · 場次結束自動失效" },
-            { desc: "黑名單為長期規則 · 跨場次保留" },
-            { desc: "Filter 動作：<b>block</b> 拒絕 / <b>replace</b> 改字 / <b>review</b> 進審核佇列 / <b>allow</b> 強制通過" },
-          ],
-        },
-        {
-          label: "MODERATION QUEUE",
-          rows: [
-            { desc: "命中 <b>review</b> action 的訊息進入這裡 ─ 30s 未處理自動 reject" },
-            { desc: "Approve 通過後訊息推到 overlay · Reject 丟棄" },
-            { desc: "Bulk action：APPROVE ALL LOW / REJECT ALL HIGH" },
-          ],
-        },
+      title: "控制台",
+      tips: [
+        "上方 KPI 條顯示即時 session 統計",
+        "右欄 Quick Actions：F1-F4 對應 Effects / Poll / Blacklist / Overlay",
+        "點任何 KPI 數字可跳轉到對應頁面",
       ],
     },
 
     polls: {
-      title: "Polls · 投票",
-      subtitle: "POLL · MASTER-DETAIL · BUILDER",
-      sections: [
-        {
-          label: "POLL LIFECYCLE",
-          rows: [
-            { desc: "pending → active → ended，新建為 pending" },
-            { desc: "active 時觀眾打 A / B / C / D 投票 (大小寫皆可)" },
-            { desc: "多題投票：observers 投完一題自動下一題" },
-            { desc: "<b>polestar lock</b>：觀眾端永遠不顯示計票/百分比" },
-          ],
-        },
+      title: "投票",
+      tips: [
+        "pending → active → ended，新建為 pending",
+        "active 時觀眾打 A/B/C/D 投票（大小寫皆可）",
+        "多題投票：投完一題自動推下一題",
+        "polestar lock：觀眾端永遠不顯示計票/百分比",
       ],
     },
 
-    system: {
-      title: "System · 系統",
-      subtitle: "OVERVIEW · SECURITY · BACKUP",
-      sections: [
-        {
-          label: "SECTIONS",
-          rows: [
-            { desc: "<b>Overview</b>：6 metric tiles + 服務狀態 + recent errors" },
-            { desc: "<b>Security</b>：admin password、WS token、IP allowlist" },
-            { desc: "<b>Backup</b>：場次歸檔匯出 JSON / CSV" },
-            { desc: "<b>API Tokens</b>：external integration tokens" },
-          ],
-        },
-        {
-          label: "MAINTENANCE",
-          rows: [
-            { desc: "Reload Effects：重新掃 .dme 目錄不需重啟 server" },
-            { desc: "重啟 WS / Force GC 出於安全考量已 disabled" },
-          ],
-        },
+    widgets: {
+      title: "Overlay Widgets",
+      tips: [
+        "啟用的 widget 顯示在 OBS / Electron overlay 上層",
+        "計分板 / 跑馬燈 / 標籤可同時啟用，順序由 layer 決定",
+        "OBS browser source URL 在頁面頂部可一鍵複製",
       ],
     },
 
-    sessions: {
-      title: "Sessions · 場次",
-      subtitle: "DATA SLICES · TIME WINDOWS",
-      sections: [
-        {
-          label: "WHAT IS A SESSION",
-          rows: [
-            { desc: "「場次」= 一段時間切片，內含訊息 / 投票 / 統計 — 不是「直播」" },
-            { desc: "Overlay 開啟 trigger 新 session · 但 overlay 關掉 ≠ session 結束" },
-            { desc: "點「結束並存檔」才把切片歸檔到 history (唯讀)" },
-          ],
-        },
-        {
-          label: "FILTERS",
-          rows: [
-            { desc: "<b>全部</b>：所有歷史切片（含進行中）" },
-            { desc: "<b>進行中</b>：still open (尚未存檔) 的 active slice" },
-            { desc: "<b>已結束</b>：已歸檔的唯讀 slice" },
-          ],
-        },
+    moderation: {
+      title: "審核",
+      tips: [
+        "Quick Filters chip 為臨時規則，場次結束自動失效",
+        "黑名單為長期規則，跨場次保留",
+        "filter action：block / replace / review / allow",
+        "review 命中的訊息進入審核佇列，30s 未處理自動拒絕",
+      ],
+    },
+
+    webhooks: {
+      title: "Webhooks",
+      tips: [
+        "每個 endpoint 右側 ↻ 測試 會發 ping 一次",
+        "失敗的 delivery 自動重試 3 次（1s → 2s → 4s）",
+        "HMAC-SHA256 簽署用 X-Webhook-Signature header",
+      ],
+    },
+
+    "api-tokens": {
+      title: "API Tokens",
+      tips: [
+        "Token 僅在產生時顯示一次 — 請立即複製保存",
+        "admin:* scope 擁有完整管理員權限，建議只用於 CI/CD",
+        "90 天未使用的 token 會自動標記為 inactive",
+      ],
+    },
+
+    plugins: {
+      title: "伺服器插件",
+      tips: [
+        "插件是伺服器端程式碼 (.py/.js)，有完整系統存取權",
+        "Priority 值越小越先執行 — CRITICAL (≤10) 優於 HIGH (≤50)",
+        "Hot-reload 不會中斷正在處理的訊息",
+      ],
+    },
+
+    overlay: {
+      title: "Overlay 控制",
+      tips: [
+        "▶ 開始顯示 / ■ 停止顯示 切換渲染",
+        "◐ 暫停顯示：session 仍進行但 overlay 凍結，恢復後 drain queue",
+        "⊗ 清空螢幕：抹掉 overlay 上現存彈幕（會發 webhook on_overlay_clear）",
+      ],
+    },
+
+    broadcast: {
+      // Alias for overlay — same content
+      title: "Overlay 控制",
+      tips: [
+        "▶ 開始顯示 / ■ 停止顯示 切換渲染",
+        "◐ 暫停顯示：session 仍進行但 overlay 凍結，恢復後 drain queue",
+        "⊗ 清空螢幕：抹掉 overlay 上現存彈幕（會發 webhook on_overlay_clear）",
+      ],
+    },
+
+    viewer: {
+      title: "觀眾頁",
+      tips: [
+        "4 個 tab：Page (整頁主題) / Fields (表單欄位) / Defaults (送出預設) / Limits (限制)",
+        "Defaults tab 可逐參數開放觀眾自訂",
+        "限制 tab 顯示 rate / dedup / 內容長度 — 編輯在 #/ratelimit",
       ],
     },
 
     modqueue: {
-      title: "Moderation Queue · 審核佇列",
-      subtitle: "SWIMLANE · 30S AUTO-REJECT",
-      sections: [
-        {
-          label: "COLUMNS",
-          rows: [
-            { desc: "<b>PENDING</b> (amber)：等待 admin 決定 · 每張卡有 30 秒倒數" },
-            { desc: "<b>APPROVED</b> (lime)：通過後推到 overlay" },
-            { desc: "<b>REJECTED</b> (crimson)：丟棄 ─ AUTO-REJECTED 表示倒數結束" },
-          ],
-        },
-        {
-          label: "RULE",
-          rows: [
-            { desc: "建立 filter rule 並設 action=review，命中的訊息自動進這裡" },
-            { desc: "或在 Moderation > Filters 開啟 Quick Filters chips" },
-          ],
-        },
+      title: "審核佇列",
+      tips: [
+        "PENDING amber：等管理員 30 秒倒數",
+        "APPROVED lime：通過後推 overlay",
+        "REJECTED crimson：丟棄；AUTO-REJECTED 表示倒數結束",
+        "建 filter rule 設 action=review 命中的訊息自動進此頁",
+      ],
+    },
+
+    sessions: {
+      title: "場次",
+      tips: [
+        "場次 = 一段時間切片（含訊息 / 投票 / 統計），不是「直播」",
+        "Overlay 開啟自動開新 session；Overlay 關掉 ≠ session 結束",
+        "「結束並存檔」才把切片歸檔到 history（唯讀）",
+      ],
+    },
+
+    system: {
+      title: "系統",
+      tips: [
+        "Overview：metric tiles + 服務狀態 + recent errors",
+        "Security：密碼 / WS token / IP allowlist",
+        "Backup：場次歸檔匯出 JSON / CSV",
+        "重啟 WS / Force GC 已停用（安全考量）",
       ],
     },
   };
 
+  // Global shortcuts — constant across all routes per the v5 spec.
+  const SHORTCUTS = [
+    { keys: ["⌘", "K"],        desc: "全域搜尋" },
+    { keys: ["F1"],            desc: "開啟 Help" },
+    { keys: ["⌘", "/"],        desc: "開啟 Help（替代鍵）" },
+    { keys: ["⌘", "⇧", "L"],  desc: "切到即時訊息流" },
+    { keys: ["⌘", "⇧", "S"],  desc: "Overlay 切換 OFF" },
+    { keys: ["⌘", "⇧", "C"],  desc: "清空 overlay 螢幕" },
+    { keys: ["Esc"],           desc: "關閉抽屜 / Modal" },
+  ];
+
+  // Terminology cheat-sheet — clarifies post-pivot vocabulary that
+  // operators commonly confuse with adjacent web concepts.
+  const GLOSSARY = [
+    { term: "Overlay",          def: "Electron / OBS 上的彈幕顯示層，不是 viewer 頁面" },
+    { term: "Session",          def: "一段時間切片的資料範圍，不是使用者 session" },
+    { term: "Fire Token",       def: "Extension 共用的認證密鑰，和 API Token 是分開的" },
+    { term: "Fingerprint (fp)", def: "基於瀏覽器特徵的匿名身份辨識，不需要登入" },
+    { term: ".dme",             def: "Danmu Effect 格式 — YAML 定義的 CSS 動畫包" },
+  ];
+
+  // External resource links — opens in a new tab.
+  const RESOURCES = [
+    { label: "GitHub Repo",    url: "https://github.com/guan4tou2/danmu-desktop" },
+    { label: "Issues",         url: "https://github.com/guan4tou2/danmu-desktop/issues" },
+    { label: "CHANGELOG",      url: "https://github.com/guan4tou2/danmu-desktop/blob/main/CHANGELOG.md" },
+    { label: "Plugin SDK",     url: "https://github.com/guan4tou2/danmu-desktop/tree/main/server/plugins" },
+  ];
+
+  function _esc(s) {
+    if (s == null) return "";
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[c];
+    });
+  }
+
   function _routeKey() {
     const slug = (location.hash || "").replace("#/", "").split("/")[0] || "";
-    if (HELP[slug]) return slug;
+    if (ROUTE_TIPS[slug]) return slug;
     return "_default";
   }
 
@@ -243,33 +226,72 @@
   }
 
   function _renderBody() {
-    const entry = HELP[_routeKey()];
-    const sections = entry.sections.map((sec) => `
-      <section class="admin-help__section">
-        <div class="admin-help__sec-label">${sec.label}</div>
-        ${sec.rows.map((r) => {
-          const keys = (r.keys || []).map((k) => `<kbd class="admin-help__kbd">${k}</kbd>`).join("");
-          return `<div class="admin-help__row">
-            ${keys ? `<div class="admin-help__keys">${keys}</div>` : ""}
-            <div class="admin-help__desc">${r.desc || ""}</div>
-          </div>`;
-        }).join("")}
-      </section>`).join("");
+    const entry = ROUTE_TIPS[_routeKey()];
+    const version = (window.DANMU_CONFIG && window.DANMU_CONFIG.appVersion) || "";
+
+    const tipsHtml = entry.tips.map((tip) => `
+      <div class="admin-help__tip">
+        <span class="admin-help__tip-arrow">→</span>
+        <span>${_esc(tip)}</span>
+      </div>`).join("");
+
+    const shortcutsHtml = SHORTCUTS.map((s) => `
+      <div class="admin-help__shortcut">
+        <div class="admin-help__keys">
+          ${s.keys.map((k) => `<kbd class="admin-help__kbd">${_esc(k)}</kbd>`).join("")}
+        </div>
+        <span class="admin-help__shortcut-desc">${_esc(s.desc)}</span>
+      </div>`).join("");
+
+    const glossaryHtml = GLOSSARY.map((g) => `
+      <div class="admin-help__glossary-row">
+        <div class="admin-help__glossary-term">${_esc(g.term)}</div>
+        <div class="admin-help__glossary-def">${_esc(g.def)}</div>
+      </div>`).join("");
+
+    const resourcesHtml = RESOURCES.map((r) => `
+      <a class="admin-help__resource" href="${_esc(r.url)}" target="_blank" rel="noopener noreferrer">
+        <span class="admin-help__resource-label">${_esc(r.label)}</span>
+        <span class="admin-help__resource-url">${_esc(r.url.replace(/^https?:\/\//, ""))}</span>
+        <span class="admin-help__resource-arrow">↗</span>
+      </a>`).join("");
+
     return `
       <header class="admin-help__head">
-        <div>
-          <div class="admin-help__title" id="admin-help-title">${entry.title}</div>
-          <div class="admin-help__subtitle">${entry.subtitle}</div>
-        </div>
+        <span class="admin-help__title" id="admin-help-title">Help</span>
+        <kbd class="admin-help__kbd admin-help__head-kbd">⌘ /</kbd>
         <span class="admin-help__spacer"></span>
         <button type="button" class="admin-help__close" data-help-close aria-label="Close">✕</button>
       </header>
       <div class="admin-help__body">
-        ${sections}
+
+        <section class="admin-help__section">
+          <div class="admin-help__route-head">
+            <span class="admin-help__route-dot"></span>
+            <span class="admin-help__route-title">${_esc(entry.title)}</span>
+            <span class="admin-help__route-tag">目前頁面</span>
+          </div>
+          <div class="admin-help__tips">${tipsHtml}</div>
+        </section>
+
+        <section class="admin-help__section">
+          <div class="admin-help__sec-label">鍵盤快捷鍵 · SHORTCUTS</div>
+          <div class="admin-help__shortcuts">${shortcutsHtml}</div>
+        </section>
+
+        <section class="admin-help__section">
+          <div class="admin-help__sec-label">術語 · GLOSSARY</div>
+          <div class="admin-help__glossary">${glossaryHtml}</div>
+        </section>
+
+        <section class="admin-help__section">
+          <div class="admin-help__sec-label">資源 · RESOURCES</div>
+          <div class="admin-help__resources">${resourcesHtml}</div>
+        </section>
+
       </div>
       <footer class="admin-help__foot">
-        <span>按 <kbd class="admin-help__kbd">F1</kbd> 或 <kbd class="admin-help__kbd">Esc</kbd> 關閉</span>
-        <a class="admin-help__more" href="https://github.com/guan4tou2/danmu-desktop" target="_blank" rel="noopener noreferrer">完整文件 →</a>
+        Danmu Fire ${version ? "v" + _esc(version) : ""} · 按 ⌘/ 或 F1 開關
       </footer>`;
   }
 
@@ -304,7 +326,9 @@
     // Don't intercept when user is typing.
     const t = e.target;
     if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
-    if (e.key === "F1" || (e.key === "?" && !e.ctrlKey && !e.metaKey)) {
+    // F1 / ? toggle (legacy) + ⌘/ (v5 spec).
+    const isSlash = e.key === "/" && (e.metaKey || e.ctrlKey);
+    if (e.key === "F1" || (e.key === "?" && !e.ctrlKey && !e.metaKey) || isSlash) {
       e.preventDefault();
       toggle();
     }

@@ -207,9 +207,17 @@ def search_history():
 
     Query params:
       q         – search term (required, 1-100 chars)
-      hours     – look-back window in hours (1-168, default 168)
+      hours     – look-back window in hours (1-168, default 168);
+                  ignored when `since` is provided.
+      since     – ISO 8601 timestamp (UTC). Overrides `hours`.
+      until     – ISO 8601 timestamp (UTC). Optional upper bound.
+      type      – "text" or "image" — filter by isImage flag.
+      fp        – exact fingerprint match (substring elsewhere → use this
+                  for "show me everything from this client").
+      status    – comma-list of: shown, pinned, masked, blocked.
+                  Records carry an optional `status` field (default "shown");
+                  unknown statuses are dropped from the filter set.
       limit     – max results (1-500, default 200)
-      status    – comma-list of: shown, pinned, masked, blocked
     """
     q = (request.args.get("q") or "").strip()
     if not q or len(q) > 100:
@@ -217,17 +225,104 @@ def search_history():
             {"error": "q must be 1-100 characters", "contract": _gap_contract()}, 400
         )
 
+    # ── Custom date range (overrides hours when provided) ───────────────
+    since_ts = (request.args.get("since") or "").strip()
+    until_ts = (request.args.get("until") or "").strip()
+    since_dt = until_dt = None
+    if since_ts:
+        try:
+            since_dt = _parse_ts(since_ts)
+        except ValueError:
+            return _json_response(
+                {"error": "since must be ISO 8601", "contract": _gap_contract()}, 400
+            )
+    if until_ts:
+        try:
+            until_dt = _parse_ts(until_ts)
+        except ValueError:
+            return _json_response(
+                {"error": "until must be ISO 8601", "contract": _gap_contract()}, 400
+            )
+    if since_dt and until_dt and since_dt >= until_dt:
+        return _json_response(
+            {"error": "since must be before until", "contract": _gap_contract()}, 400
+        )
+
     hours = _clamp_hours(request.args.get("hours", 168, type=int))
     limit = max(1, min(request.args.get("limit", 200, type=int), 500))
 
-    if not history_service.danmu_history:
-        return _json_response({"results": [], "total": 0, "query": q, "contract": _gap_contract()})
+    # type=text|image — None means no filter.
+    type_filter = (request.args.get("type") or "").strip().lower()
+    if type_filter and type_filter not in ("text", "image"):
+        return _json_response(
+            {"error": "type must be 'text' or 'image'", "contract": _gap_contract()}, 400
+        )
 
-    records = history_service.danmu_history.get_recent(hours=hours, limit=5000)
+    fp_filter = (request.args.get("fp") or "").strip()
+
+    # status=shown,pinned,... — empty set means no filter.
+    _VALID_STATUSES = {"shown", "pinned", "masked", "blocked"}
+    raw_status = (request.args.get("status") or "").strip()
+    status_filter = (
+        {s.strip() for s in raw_status.split(",") if s.strip() in _VALID_STATUSES}
+        if raw_status
+        else set()
+    )
+
+    # Shared `filters` envelope — emitted by both the empty-history
+    # short-circuit and the normal response path so the FE can rely on
+    # a stable schema regardless of which branch handled the request.
+    filters_envelope = {
+        "since": since_dt.isoformat() if since_dt else None,
+        "until": until_dt.isoformat() if until_dt else None,
+        "type": type_filter or None,
+        "fp": fp_filter or None,
+        "status": sorted(status_filter) or None,
+    }
+
+    if not history_service.danmu_history:
+        return _json_response(
+            {
+                "results": [],
+                "total": 0,
+                "query": q,
+                "filters": filters_envelope,
+                "contract": _gap_contract(),
+            }
+        )
+
+    # When since/until provided, query the underlying record store with the
+    # explicit range (covers cases beyond the 168-hour ceiling). Otherwise
+    # fall back to the hours-based recent window.
+    if since_dt or until_dt:
+        records = history_service.danmu_history.get_records(
+            start_time=since_dt, end_time=until_dt, limit=5000
+        )
+    else:
+        records = history_service.danmu_history.get_recent(hours=hours, limit=5000)
 
     q_lower = q.lower()
     results = []
     for r in records:
+        # status: default "shown" so older records (no status field) still
+        # pass when no explicit status filter is set OR when "shown" is
+        # included in the requested status set.
+        rec_status = r.get("status") or "shown"
+        if status_filter and rec_status not in status_filter:
+            continue
+
+        # type filter — isImage truthy → "image", else "text"
+        if type_filter:
+            is_image = bool(r.get("isImage"))
+            if type_filter == "image" and not is_image:
+                continue
+            if type_filter == "text" and is_image:
+                continue
+
+        # fp filter — exact match (we already substring-search via `q`)
+        if fp_filter and r.get("fingerprint") != fp_filter:
+            continue
+
         text = r.get("text", "")
         nick = r.get("nickname", "") or ""
         fp = r.get("fingerprint", "") or ""
@@ -237,7 +332,13 @@ def search_history():
             break
 
     return _json_response(
-        {"results": results, "total": len(results), "query": q, "contract": _gap_contract()}
+        {
+            "results": results,
+            "total": len(results),
+            "query": q,
+            "filters": filters_envelope,
+            "contract": _gap_contract(),
+        }
     )
 
 

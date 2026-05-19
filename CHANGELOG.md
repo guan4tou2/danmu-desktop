@@ -9,6 +9,60 @@
 
 (no items pending)
 
+## [5.2.0] - 2026-05-19
+
+**Danmu Redesign v5 finish — full design coverage + new BE modules + IA hygiene.**
+Minor bump because all backend additions are additive (no breaking schema
+changes), IA reshuffles preserve URL backward-compat via alias maps, and
+the test suite stays green throughout (1216 → 1255 + 38 new). Operators
+upgrading from 5.1.0 see new admin pages and 2 new backend modules
+(audience + backup); no migration required.
+
+### 新增 / Added — Audience + Backup BE modules (2026-05-19)
+
+- **Audience aggregation service** ([services/audience.py](server/services/audience.py) + [routes/admin/audience.py](server/routes/admin/audience.py)) — fingerprint-level overlay layered on top of `fingerprint_tracker`. New `AudienceEntry` merges live counters (msgs / rate / blocked / first-last seen) with persisted overlay state (is_flagged / flag_note / is_kicked / kick_reason / kicked_at) and a derived 0-100 risk score with transparent factor list. Risk rubric: rate > 60 → +30 'high_rate', blocked > 5 → +25 'blocked_msgs', state blocked → +20, state flagged → +15, is_kicked → +10, admin_flagged → +10, heavy_recent → +5. Endpoints: `GET /admin/audience/list`, `GET /admin/audience/stats`, `GET /admin/audience/<fp>`, `POST /admin/audience/flag`, `POST /admin/audience/kick`, `POST /admin/audience/unkick`. Kick path issues a permanent fp ban via `moderation_bans.add_ban`, so future `/fire` is blocked at the rate-limit layer. Persists overlay state to `runtime/audience.json` (atomic tmp + replace).
+- **Backup pack / unpack service** ([services/backup.py](server/services/backup.py) + [routes/admin/backup.py](server/routes/admin/backup.py)) — single-shot full-state `.tar.gz` snapshot covering `runtime/*.json` + `effects/*.dme` + `plugins/*` + `user_plugins/*` with per-file sha256 + manifest. Endpoints: `GET /admin/backup/export` (streams tarball with `Content-Disposition: attachment`), `POST /admin/backup/import?dry_run=true` (returns member list without writing), `POST /admin/backup/import` (atomic per-file apply via tmp + replace), `GET /admin/backup/manifest` (cheap pre-export size preview). Safety rules: 16 MB upload cap, 2000 file count cap, whitelist of archive prefixes, rejects `..` traversal / symlinks / absolute paths, resolved-path stays under source dir.
+- **Webhook event vocab v2** ([services/webhook.py](server/services/webhook.py) + [routes/admin/webhooks.py](server/routes/admin/webhooks.py)) — `_VALID_EVENTS` expanded from 3 → 10 (`on_danmu_blocked` / `on_poll_vote` / `on_session_start` / `on_session_end` / `on_overlay_clear` / `on_audit_alert` / `on_plugin_change` added). New endpoints: `POST /admin/webhooks/toggle` (one-shot enable/disable, race-safe), `GET /admin/webhooks/events` (bilingual catalogue so the FE doesn't hard-code). Emit sites wired in `session_service.open_session` / `close_session`, `routes/admin/overlay.py /clear`, and `routes/admin/plugins.py upload/uninstall`. Subscribers for the remaining 4 events (danmu_blocked / poll_vote / audit_alert) can pre-register; emit sites land in follow-up batches.
+- **Search filters expansion** ([routes/admin/history.py](server/routes/admin/history.py)) — `/admin/search` now accepts `since=` / `until=` (ISO 8601, bypasses 168-hour ceiling), `type=text|image` (filter by isImage flag), `fp=` (exact fingerprint match), `status=shown,pinned,masked,blocked` (defaults missing records to 'shown'). Response carries a `filters` envelope so the FE can render active filter chips without re-deriving from the URL.
+
+### 新增 / Added — v5 design coverage (2026-05-19)
+
+- **Help Drawer v5** ([admin-help-drawer.js](server/static/js/admin-help-drawer.js)) — 360 px side drawer per `batch12-help.jsx`. Route-aware tips for 14 routes + global SHORTCUTS / GLOSSARY / RESOURCES sections. Triggered by F1 / `?` / ⌘/ (new). Only main surface that previously had no design — gap closed.
+- **System Overview refit** ([admin-system-overview.js](server/static/js/admin-system-overview.js)) — top status banner (lime when healthy, amber when degraded) + 6-KPI strip (UPTIME / CPU / MEM RSS / WS CLIENTS / MSG RATE / DB SIZE) + 2-col grid with services table left + right-stack of 3 cards (RECENT events / QUICK ACTIONS / CONFIG SUMMARY). Per `batch12-system.jsx` SystemOverviewPage.
+- **Security page refit** ([admin-security.js](server/static/js/admin-security.js)) — 2-col SecCard grid + 2 span-2 cards (8 total). Tinted left-border per status (lime / cyan / amber / crimson). SecRow pattern: status-dot + label + value + optional action chip + optional 待 BE hint. DANGER ZONE span-2 holds 3 destructive buttons (revoke API tokens / Fire Token / WS Token). Per `batch12-system.jsx` SecurityPage.
+- **System Events polish** ([admin-events-log.js](server/static/js/admin-events-log.js)) — category chip row (9 chips: ws/msg/plugin/webhook/rate/system/filter/overlay/backup), LIVE pulse indicator, JSON export action. Per `batch12-system.jsx` SystemEventsPage.
+- **Effects right-rail** ([admin-effects-mgmt.js](server/static/js/admin-effects-mgmt.js) + [admin.js](server/static/js/admin.js)) — LIBRARY STATS card (TOTAL / ACTIVE / CATEGORIES / USER UPLOADS) + STACKING RULES info card, both stacked below the existing YAML inspector. Per `batch12-effects.jsx`.
+- **Overlay Widgets v5 chrome** ([admin-widgets.js](server/static/js/admin-widgets.js)) — KPI strip (TOTAL / ACTIVE / KINDS / OBS URL) + right-rail OBS Browser Source URL card with one-click copy + 16:9 mini preview placeholder. Per-card head gains L# layer chip + URL display + lime left-border when active. Per `batch12-overlay-widgets.jsx`.
+- **Tray Popover refit** ([danmu-desktop/tray-popover.html](danmu-desktop/tray-popover.html)) — status dot header + overlay state line (OVERLAY ON/OFF/PAUSED + uptime) + 3-col stats strip (MSGS/FP/RATE) + primary CTA (啟動/暫停/繼續) + Quick actions row (清空螢幕 / 開啟管理介面 / 關於 / 結束). Window Picker + Disconnected-state UI deferred (need new Electron BrowserWindow + IPC plumbing).
+- **Yellow batch refit** ([admin-about.js](server/static/js/admin-about.js) + [admin-audit.js](server/static/js/admin-audit.js) + [admin-setup-wizard.js](server/static/js/admin-setup-wizard.js)) — about page becomes full-width version card + system info + changelog + license row; audit log moves to compact toolbar (3 actor + 3 severity chips) + timeline rows; setup wizard rebuilds as 5-step `伺服器基本設定 / 顯示規則 / 審核策略 / 外觀主題 / 完成`. Per `batch10-yellow.jsx`.
+- **Viewer 4-tab + Limits tab redesign** ([admin-display.js](server/static/js/admin-display.js)) — `#/viewer` now hosts `page · fields · defaults · limits` with proper tab isolation (previously all 4 sections rendered simultaneously). Limits tab redesigned per `batch11-viewer-4tab.jsx`: 2 cards (RATE LIMITS amber + CONTENT LIMITS cyan) with hint copy + span-2 CURRENT SESSION strip (AVG RATE / THROTTLED / BLOCKED / DEDUP). Live values pulled from `/admin/metrics.rate_limit_config` (newly exposed) — no more hardcoded numbers.
+- **Plugin upload flow** ([routes/admin/plugins.py](server/routes/admin/plugins.py) + [admin-plugins-upload.js](server/static/js/admin-plugins-upload.js)) — 4-step modal lifecycle (picker → manifest preview → confirm → installing). Manifest parser extracts `# @name` / `# @version` / `# @author` / `# @priority` / `# @permissions` from top-of-file comments. AST-based import extraction + stdlib hint set + `importlib.util.find_spec` for dep classification. Atomic write to `user_plugins/` + `plugin_manager.reload()` for hot-load. Companion `POST /admin/plugins/uninstall` removes user plugins. From Batch 11 design (`batch11-plugin-upload.jsx`).
+
+### 變更 / Changed — IA hygiene + admin chrome (2026-05-19)
+
+- **`◐ 顯示設定` sidebar item retired** ([admin.js](server/static/js/admin.js)) — content (overlay/viewer defaults) was already absorbed by `#/viewer`'s 4-tab layout. Interaction sidebar group goes 6 → 5 items. Legacy `#/display` bookmarks alias-redirect to `#/viewer/defaults` via `_bareLegacyRedirects`.
+- **Viewer 4-tab visibility fix** ([admin.js](server/static/js/admin.js) + [admin-display.js](server/static/js/admin-display.js)) — `applyRoute` now dispatches `admin-route-applied` AFTER `applySectionVisibility()` so tab-aware modules (admin-display.js's `syncVisibility`) re-apply per-tab visibility instead of being clobbered by the route-level pass.
+- **Floating `+` QuickAction FAB removed** ([admin.html](server/templates/admin.html) + style.css) — wasn't in the v5 design. Deleted `admin-quick-action-fab.js` (162 LoC) + `.admin-qa-fab*` CSS block (~105 LoC).
+- **Theme toggle (☀/☾) mount race fix** ([admin-theme-switcher.js](server/static/js/admin-theme-switcher.js)) — when the topbar wasn't ready at first mount, the toggle fell back to `--floating` chrome and the MutationObserver re-mount was blocked by an early-return on `getElementById(BTN_ID)`. Now detects the floating fallback + re-parents into `.admin-dash-topbar-actions` when the anchor appears.
+- **`audit` promoted to first-class route** ([admin.js](server/static/js/admin.js)) — `#/audit` stays as `#/audit` instead of redirecting to `#/system/audit`. The system accordion still lists audit as a leaf, so deep-link `#/system/audit` bookmarks still work.
+- **Effects drop-zone visual** ([admin.js](server/static/js/admin.js) + [admin-effects-mgmt.js](server/static/js/admin-effects-mgmt.js)) — inline upload button replaced with a dashed-cyan drop-zone card. Drag-drop wired with `.dme` extension validation and `.is-drag` hover state.
+
+### Tests + Documentation (2026-05-19)
+
+- **+ 38 new server tests** — 20 search filter (test_admin_search.py), 13 webhook event vocab v2 (test_webhook_events_v2.py), 21 audience (test_audience.py), 17 backup (test_backup.py), 25 plugin upload (test_admin_plugins_upload.py — from Batch 11). Total **1255 passed / 4 skipped / 106 s**.
+- **`docs/designs/design-coverage-2026-05-19.md`** — single-source-of-truth matrix tracking every admin surface × v5 design status. Started at 22/28 (79%) v5 coverage with 6 older-prototype + 1 no-design row; Batch 12 closes both to 0. Includes maintenance guidance.
+- **5 design briefs** in `docs/designs/`: batch1 (Webhooks/API Tokens/Backup) · batch2 (Plugins/Extensions/Poll Deepdive) · batch3 (Search/Audience/Fingerprints) · batch4 (Plugin upload flow) · coverage matrix.
+
+### PR review fixes (2026-05-19)
+
+- `/admin/search` empty-history path no longer drops the `filters` envelope.
+- 5 webhook emit sites (overlay/clear · session open/close · plugin install/uninstall) now `logger.warning` on failure instead of silent swallow.
+- `/admin/webhooks/toggle` race fix — checks `update_hook` return value to surface 404 if hook removed between get + update.
+- `admin.js` sidebar version: `appVersion → app_version → window.APP_VERSION → ""` fallback chain.
+- CodeQL polynomial-regex alert on `plugins.py` manifest parser hardened: `raw.rstrip()` before match + bounded `.{1,512}` value + `\w` key cap 64 + dropped trailing `\s*$`.
+- Scheduler timeline + calendar gain `overflow-x:auto` so narrow viewports get horizontal scroll instead of clipped columns.
+- Viewer Limits tab pulls live values from `/admin/metrics.rate_limit_config` (newly exposed) instead of hardcoded `20/50/5/60/100/20/10` defaults.
+
 ## [5.1.0] - 2026-05-18
 
 **Polestar pivot + design v4 brief 0518 series + P1 backlog wrap.**

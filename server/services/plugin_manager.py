@@ -454,12 +454,19 @@ class PluginManager:
     # ---- introspection -----------------------------------------------------
 
     def list_plugins(self) -> List[Dict[str, Any]]:
-        """Return a list of dicts describing each loaded plugin."""
+        """Return a list of dicts describing each loaded plugin.
+
+        Includes `file` (basename) + `is_user` (origin discriminator) so
+        the admin UI can show an uninstall control on user-uploaded
+        plugins only — bundled examples stay read-only.
+        """
         self._maybe_scan()
         with self._lock:
             result = []
             for entry in self._plugins.values():
                 inst = entry.instance
+                fp = str(entry.filepath or "")
+                is_user = bool(fp) and fp.startswith(str(_USER_PLUGINS_DIR))
                 result.append(
                     {
                         "name": inst.name,
@@ -467,6 +474,8 @@ class PluginManager:
                         "description": inst.description,
                         "enabled": entry.enabled,
                         "priority": inst.priority,
+                        "file": Path(fp).name if fp else None,
+                        "is_user": is_user,
                     }
                 )
         return sorted(result, key=lambda p: (p["priority"], p["name"]))

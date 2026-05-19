@@ -208,6 +208,19 @@ def open_session(name: str) -> Dict[str, Any]:
     except Exception as exc:
         logger.warning("Could not auto-set broadcast to live on session open: %s", exc)
 
+    # Webhook v2 — fire-and-forget on_session_start. Logged at warning
+    # so broken webhook config is visible during ops/debug instead of
+    # silently swallowed.
+    try:
+        from . import webhook as webhook_svc
+
+        webhook_svc.webhook_service.emit(
+            "on_session_start",
+            {"id": sid, "name": name, "started_at": now},
+        )
+    except Exception as exc:
+        logger.warning("on_session_start webhook emit failed: %s", exc)
+
     logger.info("Session opened: %s (%s)", name, sid)
     return state_copy
 
@@ -259,6 +272,16 @@ def close_session() -> Dict[str, Any]:
         broadcast_svc.set_mode("standby")
     except Exception as exc:
         logger.warning("Could not auto-set broadcast to standby on session close: %s", exc)
+
+    # Webhook v2 — fire-and-forget on_session_end with the archived
+    # session metadata (id/name/duration/started/ended). Logged at
+    # warning so broken webhook config is visible during ops/debug.
+    try:
+        from . import webhook as webhook_svc
+
+        webhook_svc.webhook_service.emit("on_session_end", dict(archived))
+    except Exception as exc:
+        logger.warning("on_session_end webhook emit failed: %s", exc)
 
     logger.info(
         "Session closed: %s (%s), duration=%ds",

@@ -12,7 +12,13 @@
     <link rel="stylesheet" href="tray-popover.css" />
   </head>
   <body>
-    <div class="popover">
+    <!-- v5 Batch 12-7 (2026-05-19): TrayPopover refit per
+         batch12-desktop-chrome.jsx. Adds the 3-col stats strip
+         (MSGS/FP/RATE), overlay status header (OVERLAY ON/OFF/PAUSED
+         + uptime), and the primary 暫停 action with state-aware
+         label. Kept existing connection-status, idle toggle, update
+         banner, and 開啟/結束 actions. -->
+    <div class="popover popover--v5">
       <!-- Header -->
       <div class="popover-header">
         <img src="assets/icon.png" width="28" height="28" alt="" class="popover-icon" />
@@ -20,18 +26,40 @@
           <span class="popover-app-name">Danmu Fire</span>
           <span class="popover-version" id="appVersion"></span>
         </div>
+        <span class="popover-header-dot" id="statusDot"></span>
       </div>
 
-      <!-- Connection status -->
+      <!-- Overlay status + 3-col stats strip -->
+      <div class="popover-section popover-section--status">
+        <div class="popover-overlay-row">
+          <span class="popover-overlay-state" id="overlayState">OVERLAY OFF</span>
+          <span class="popover-overlay-uptime" id="overlayUptime"></span>
+        </div>
+        <div class="popover-stats">
+          <div class="popover-stat">
+            <span class="popover-stat-en">MSGS</span>
+            <span class="popover-stat-v" id="statMsgs">—</span>
+          </div>
+          <div class="popover-stat">
+            <span class="popover-stat-en">FP</span>
+            <span class="popover-stat-v" id="statFp">—</span>
+          </div>
+          <div class="popover-stat">
+            <span class="popover-stat-en">RATE</span>
+            <span class="popover-stat-v" id="statRate">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Connection status (kept for transport-layer visibility) -->
       <div class="popover-section">
         <div class="popover-status" id="connStatus">
-          <span class="popover-status-dot" id="statusDot"></span>
           <span class="popover-status-text" id="statusText">Disconnected</span>
         </div>
         <div class="popover-server-url" id="serverUrl"></div>
       </div>
 
-      <!-- Overlay info + controls -->
+      <!-- Overlay controls (idle toggle kept) -->
       <div class="popover-section">
         <div class="popover-row">
           <span class="popover-label">Overlay</span>
@@ -50,11 +78,13 @@
         <span class="popover-update-text" id="updateText"></span>
       </div>
 
-      <!-- Actions -->
-      <div class="popover-actions">
-        <button class="popover-btn" id="btnOpen">開啟控制視窗</button>
-        <button class="popover-btn" id="btnAbout">關於</button>
-        <button class="popover-btn popover-btn-quit" id="btnQuit">結束 Danmu</button>
+      <!-- Quick actions (v5: primary overlay-toggle + clear screen) -->
+      <div class="popover-actions popover-actions--v5">
+        <button class="popover-btn popover-btn-primary" id="btnOverlayToggle">▶ 啟動 Overlay</button>
+        <button class="popover-btn" id="btnClearScreen">⊗ 清空螢幕</button>
+        <button class="popover-btn" id="btnOpen">⚙ 開啟管理介面</button>
+        <button class="popover-btn popover-btn-ghost" id="btnAbout">關於</button>
+        <button class="popover-btn popover-btn-quit" id="btnQuit">結束</button>
       </div>
     </div>
     <script src="tray-popover-renderer.js"></script>
