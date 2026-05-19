@@ -12,9 +12,8 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
   );
   const wsAuthTokenJson = JSON.stringify(wsAuthToken || "");
 
-  // v5.0.0+: WSS-only deployment unified on --profile https. nginx
-  // terminates TLS on port 4001 and strips the /ws prefix, so the
-  // overlay always connects via wss://IP:PORT/ws + token query.
+  // v5.3.0+: WS merged onto Flask's port. The overlay connects via
+  // wss://IP:PORT/ws + token query (same port as the web UI).
   return `
       const IP_ADDR=${ipJson};
       const WS_PORT_NUM=${safePort};

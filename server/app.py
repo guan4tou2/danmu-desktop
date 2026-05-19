@@ -3,7 +3,6 @@ from gevent import monkey
 monkey.patch_all()
 
 import secrets
-import threading
 import uuid
 
 from flask import Flask, current_app, g, request
@@ -20,7 +19,7 @@ from .services.history import init_history
 from .services.security import init_security
 from .startup_warnings import log_ws_auth_warnings
 from .utils import json_response
-from .ws import run_ws_server
+from .ws import init_ws, start_ws_broadcast
 
 
 def _build_content_security_policy(nonce: str) -> str:
@@ -285,6 +284,8 @@ def create_app(config_class=Config):
         )
         return resp, 503, {"Retry-After": str(retry_after)}
 
+    init_ws(app)
+
     return app
 
 
@@ -293,18 +294,11 @@ app = create_app()
 
 def main():
     http_port = app.config["PORT"]
-    ws_port = app.config["WS_PORT"]
 
-    # Start telemetry sampler for admin dashboard sparklines
     from .services import telemetry
 
     telemetry.start_sampler()
-
-    # WS server 與 HTTP server 必須在同一個 process 才能共享 in-memory ws_queue
-    # 使用獨立執行緒跑 asyncio event loop（gevent monkey-patch 相容）
-    ws_thread = threading.Thread(target=run_ws_server, args=(ws_port, app.logger), daemon=True)
-    ws_thread.start()
-    app.logger.info("WebSocket server thread started on port %s", ws_port)
+    start_ws_broadcast()
 
     WSGIServer(("0.0.0.0", http_port), app).serve_forever()
 
