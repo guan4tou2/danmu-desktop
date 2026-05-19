@@ -41,10 +41,10 @@
   // Annotation label spec — kept in lockstep with admin-brief-0518.jsx
   // (design v4 2026-05-18). Shape glyph maps to CSS clip-path / border-radius.
   const ANN_LABEL_SPEC = {
-    highlight: { icon: "★", color: "#38bdf8", label: "HIGHLIGHT", shape: "star" },
-    vote:      { icon: "⊷", color: "#fbbf24", label: "VOTE",      shape: "circle" },
-    note:      { icon: "●", color: "#94a3b8", label: "NOTE",      shape: "circle" },
-    warning:   { icon: "!", color: "#f87171", label: "WARNING",   shape: "square" },
+    highlight: { icon: "★", color: "var(--color-primary)", label: "HIGHLIGHT", shape: "star" },
+    vote:      { icon: "⊷", color: "var(--hud-amber)", label: "VOTE",      shape: "circle" },
+    note:      { icon: "●", color: "var(--color-text-muted)", label: "NOTE",      shape: "circle" },
+    warning:   { icon: "!", color: "var(--hud-crimson)", label: "WARNING",   shape: "square" },
   };
 
   // ── helpers ───────────────────────────────────────────────────────────────

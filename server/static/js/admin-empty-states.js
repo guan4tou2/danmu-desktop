@@ -22,11 +22,11 @@
   "use strict";
 
   const T = {
-    cyan:    "#38bdf8",
-    amber:   "#fbbf24",
-    lime:    "#86efac",
-    crimson: "#fb7185",
-    textDim: "#94a3b8",
+    cyan:    "var(--color-primary)",
+    amber:   "var(--hud-amber)",
+    lime:    "var(--hud-lime)",
+    crimson: "var(--hud-crimson)",
+    textDim: "var(--color-text-muted)",
   };
 
   // Design v4-r2 named empty states.

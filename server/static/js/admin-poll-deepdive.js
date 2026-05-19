@@ -79,7 +79,7 @@
         ? '<span class="admin-pdd-chip is-ended">● ENDED</span>'
         : '<span class="admin-pdd-chip is-idle">○ IDLE</span>');
 
-    const colorPalette = ["#86efac", "var(--color-primary)", "#fbbf24", "#f87171", "#c4b5fd", "#fb923c"];
+    const colorPalette = ["var(--hud-lime)", "var(--color-primary)", "var(--hud-amber)", "var(--hud-crimson)", "#c4b5fd", "#fb923c"];
 
     const optionRows = options.map(function (o, i) {
       const votes = Number(o.votes != null ? o.votes : o.count) || 0;
@@ -115,11 +115,11 @@
     })();
     const sentimentSign = sentiment === null ? "—" : (sentiment > 0 ? "+" : "");
     const sentimentVal = sentiment === null ? "—" : sentimentSign + Math.round(sentiment);
-    const sentimentColor = sentiment === null ? "var(--color-text-muted, #94a3b8)"
-      : sentiment > 20 ? "#86efac"
-      : sentiment > 0 ? "var(--color-primary, #38bdf8)"
-      : sentiment > -20 ? "var(--color-warning, #fbbf24)"
-      : "#f87171";
+    const sentimentColor = sentiment === null ? "var(--color-text-muted)"
+      : sentiment > 20 ? "var(--hud-lime)"
+      : sentiment > 0 ? "var(--color-primary)"
+      : sentiment > -20 ? "var(--hud-amber)"
+      : "var(--hud-crimson)";
 
     // 持續時間 — derive from started_at + (active ? now : ended_at). Falls
     // back to "—" when poll is idle (never started). Prototype admin-batch8.jsx:477.
@@ -166,10 +166,10 @@
           </div>
           <div class="admin-pdd-question">${escapeHtml(question)}</div>
           <div class="admin-pdd-kpis">
-            <div class="admin-pdd-kpi"><div class="k">總票數</div><div class="v" style="color:#86efac">${total}</div></div>
+            <div class="admin-pdd-kpi"><div class="k">總票數</div><div class="v" style="color:var(--hud-lime)">${total}</div></div>
             <div class="admin-pdd-kpi"><div class="k">參與率</div><div class="v" style="color:var(--color-primary)">${participationVal}</div><div class="sub">${escapeHtml(participationSub)}</div></div>
             <div class="admin-pdd-kpi"><div class="k">持續時間</div><div class="v">${escapeHtml(durationVal)}</div></div>
-            <div class="admin-pdd-kpi"><div class="k">重複指紋</div><div class="v" style="color:${duplicates > 0 ? "var(--color-warning, #fbbf24)" : "#86efac"}">${duplicates}</div><div class="sub">已自動去重</div></div>
+            <div class="admin-pdd-kpi"><div class="k">重複指紋</div><div class="v" style="color:${duplicates > 0 ? "var(--hud-amber)" : "var(--hud-lime)"}">${duplicates}</div><div class="sub">已自動去重</div></div>
             <div class="admin-pdd-kpi is-placeholder" title="需要 IP tracking（後續 BE 擴張）"><div class="k">作弊嘗試</div><div class="v">—</div><div class="sub">同 IP 連投（待 BE 擴張）</div></div>
           </div>
         </article>

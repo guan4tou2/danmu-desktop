@@ -111,7 +111,7 @@
         el = window.AdminEmpty.renderCustom({
           icon: "⏸", title: "Live Feed 已暫停",
           desc: hint || "目前不接收新訊息 — 點頂部「Resume」恢復串流。",
-          accent: "#fbbf24",
+          accent: "var(--hud-amber)",
         });
       } else if (kind === "no-result") {
         el = window.AdminEmpty.renderCustom({

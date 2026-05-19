@@ -38,7 +38,7 @@
           keywordEl.className = "hud-banned-row";
 
           const iconSpan = document.createElement("span");
-          iconSpan.style.cssText = "color:#f87171;font-family:var(--font-mono);font-size:13px";
+          iconSpan.style.cssText = "color:var(--hud-crimson);font-family:var(--font-mono);font-size:13px";
           iconSpan.textContent = "\u2298";
 
           const keywordSpan = document.createElement("span");

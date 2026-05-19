@@ -41,9 +41,9 @@
   };
 
   const ACTION_COLOR = {
-    block: "#f87171",
-    replace: "#fbbf24",
-    allow: "#a3e635",
+    block: "var(--hud-crimson)",
+    replace: "var(--hud-amber)",
+    allow: "var(--hud-lime)",
   };
 
   // ── Section HTML ─────────────────────────────────────────────
@@ -542,10 +542,10 @@
 
   function actionColor(action) {
     const a = (action || "").toUpperCase();
-    if (a === "BLOCK") return "#f87171";    // crimson
-    if (a === "MASK" || a === "REPLACE") return "#fbbf24";   // amber
-    if (a === "REVIEW") return "var(--color-primary)";       // cyan
-    if (a === "ALLOW") return "#86efac";    // lime
+    if (a === "BLOCK") return "var(--hud-crimson)";
+    if (a === "MASK" || a === "REPLACE") return "var(--hud-amber)";
+    if (a === "REVIEW") return "var(--color-primary)";
+    if (a === "ALLOW") return "var(--hud-lime)";
     return "var(--color-text-muted)";
   }
 

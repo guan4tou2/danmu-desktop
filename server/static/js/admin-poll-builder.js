@@ -193,7 +193,7 @@
               <div class="text">${escapeHtml(q.text || "(空題目)")}</div>
               <div class="meta">${q.options.length} 選項 · ${q.timer === 0 ? "無時限" : q.timer + "s"} · ${hasImg ? "含圖 " + q.crop : "純文字"}</div>
             </div>
-            ${sessionRunning ? '<span class="editing-chip" style="background:#86efac20;color:#86efac">● LIVE</span>' : (q.id === activeId ? '<span class="editing-chip">● 編輯中</span>' : "")}
+            ${sessionRunning ? '<span class="editing-chip" style="background:rgba(134,239,172,0.12);color:var(--hud-lime)">● LIVE</span>' : (q.id === activeId ? '<span class="editing-chip">● 編輯中</span>' : "")}
           `;
           queueEl.appendChild(row);
         });
@@ -360,10 +360,10 @@
                       <circle cx="${ringSize/2}" cy="${ringSize/2}" r="${ringR}" fill="none"
                         stroke="rgba(148,163,184,0.25)" stroke-width="4" />
                       <circle data-live-ring cx="${ringSize/2}" cy="${ringSize/2}" r="${ringR}" fill="none"
-                        stroke="${lowTime ? '#f87171' : 'var(--color-primary)'}" stroke-width="5"
+                        stroke="${lowTime ? 'var(--hud-crimson)' : 'var(--color-primary)'}" stroke-width="5"
                         stroke-dasharray="${ringDash} ${ringC}" stroke-linecap="round"
                         transform="rotate(-90 ${ringSize/2} ${ringSize/2})"
-                        style="filter: drop-shadow(0 0 4px ${lowTime ? '#f87171' : 'var(--color-primary)'})" />
+                        style="filter: drop-shadow(0 0 4px ${lowTime ? 'var(--hud-crimson)' : 'var(--color-primary)'})" />
                     </svg>
                   </div>
                   <div>
@@ -472,8 +472,8 @@
           const pct = Math.max(0, Math.min(1, remain / limit));
           ringEl.setAttribute("stroke-dasharray", `${c * pct} ${c}`);
           const low = remain <= Math.max(5, limit * 0.15);
-          ringEl.setAttribute("stroke", low ? "#f87171" : "var(--color-primary)");
-          ringEl.style.filter = `drop-shadow(0 0 4px ${low ? '#f87171' : 'var(--color-primary)'})`;
+          ringEl.setAttribute("stroke", low ? "var(--hud-crimson)" : "var(--color-primary)");
+          ringEl.style.filter = `drop-shadow(0 0 4px ${low ? 'var(--hud-crimson)' : 'var(--color-primary)'})`;
         }
         // Auto-advance hook: if toggle is on and timer elapsed, fire advance.
         if (liveBroadcast.autoAdvance && limit > 0 && remain === 0) {

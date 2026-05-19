@@ -141,7 +141,7 @@
         icon: "✓",
         title: "佇列已清空",
         desc: "所有待審訊息已處理完畢。當新的敏感訊息被過濾時，會自動出現在這裡。",
-        accent: "#86efac",
+        accent: "var(--hud-lime)",
         actionLabel: "← 回到 Live Feed",
         action: function () { location.hash = "#/live"; },
         extra: '<a href="#/audit" style="color:var(--color-primary, #38bdf8); text-decoration:underline">查看審核紀錄 →</a>',

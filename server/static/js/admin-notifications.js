@@ -42,10 +42,10 @@
   //   info  → #38bdf8 (info  tier, matches admin-ev-v4__row[data-sev=info])
   //   good  → #86efac (success — no events-log equivalent yet)
   const SEVERITY = {
-    crit: { label: "CRIT", color: "#ff4d4f", bg: "rgba(255,77,79,0.10)", border: "rgba(255,77,79,0.40)", sevKey: "error" },
-    warn: { label: "WARN", color: "#fbbf24", bg: "rgba(251,191,36,0.10)", border: "rgba(251,191,36,0.40)", sevKey: "warn" },
-    info: { label: "INFO", color: "#38bdf8", bg: "rgba(56,189,248,0.10)", border: "rgba(56,189,248,0.40)", sevKey: "info" },
-    good: { label: "OK",   color: "#86efac", bg: "rgba(134,239,172,0.10)", border: "rgba(134,239,172,0.40)", sevKey: "good" },
+    crit: { label: "CRIT", color: "var(--hud-crimson)", bg: "rgba(255,77,79,0.10)", border: "rgba(255,77,79,0.40)", sevKey: "error" },
+    warn: { label: "WARN", color: "var(--hud-amber)", bg: "rgba(251,191,36,0.10)", border: "rgba(251,191,36,0.40)", sevKey: "warn" },
+    info: { label: "INFO", color: "var(--color-primary)", bg: "rgba(56,189,248,0.10)", border: "rgba(56,189,248,0.40)", sevKey: "info" },
+    good: { label: "OK",   color: "var(--hud-lime)", bg: "rgba(134,239,172,0.10)", border: "rgba(134,239,172,0.40)", sevKey: "good" },
   };
 
   let _state = {

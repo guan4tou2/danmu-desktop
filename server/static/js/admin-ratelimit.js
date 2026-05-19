@@ -248,9 +248,9 @@
       };
       const scopeColor = (s) => ({
         fire: "var(--color-primary)",
-        api: "#86efac",
-        admin: "#fbbf24",
-        login: "#f87171",
+        api: "var(--hud-lime)",
+        admin: "var(--hud-amber)",
+        login: "var(--hud-crimson)",
       }[s] || "var(--color-text-muted)");
       body.innerHTML = arr.slice(0, 30).map((e) => `
         <div class="admin-ratelimit-vfeed-row">

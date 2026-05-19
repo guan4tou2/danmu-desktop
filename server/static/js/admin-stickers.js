@@ -214,7 +214,7 @@
     } catch (err) {
       console.error("[admin-stickers] fetch failed:", err);
       grid.innerHTML =
-        '<div class="admin-stickers-empty" style="color:#f87171">' +
+        '<div class="admin-stickers-empty" style="color:var(--hud-crimson)">' +
         escapeHtml(ServerI18n.t("loadStickersFailed")) +
         "</div>";
     }

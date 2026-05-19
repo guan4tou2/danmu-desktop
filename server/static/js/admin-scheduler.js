@@ -317,7 +317,7 @@
     } catch (err) {
       console.error("Scheduler fetch error:", err);
       list.innerHTML =
-        '<div class="admin-emojis-empty" style="color:#f87171">' +
+        '<div class="admin-emojis-empty" style="color:var(--hud-crimson)">' +
         escapeHTML(ServerI18n.t("loadJobsError")) +
         "</div>";
     }

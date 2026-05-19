@@ -54,7 +54,7 @@
       name: "OBS Plugin",
       version: "—",
       icon: "◎",
-      color: "#86efac",
+      color: "var(--hud-lime)",
       desc: "OBS Studio Lua 腳本，把 hotkey 觸發的彈幕送到伺服器。",
       status: "soon",
       sourceMatch: "obs",
