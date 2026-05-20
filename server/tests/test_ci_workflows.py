@@ -128,15 +128,26 @@ def test_deployment_docs_present_scenario_based_setup_choices():
 def test_release_docs_do_not_advertise_installers_or_windows_updater_metadata():
     readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
     readme_ch = (REPO_ROOT / "README-CH.md").read_text(encoding="utf-8")
+    features = (REPO_ROOT / "docs" / "FEATURES.md").read_text(encoding="utf-8")
     changelog = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
 
     assert "Available as both installer and portable version" not in readme
     assert "Auto-update from GitHub Releases" not in readme
+    assert "creating GitHub Releases with auto-update metadata" not in readme
     assert "portable desktop package" in readme
     assert "Windows updater metadata is not published" in readme
 
     assert "可攜式桌面套件" in readme_ch
     assert "不發布更新 metadata" in readme_ch
+
+    assert "Windows NSIS + portable" not in features
+    assert "macOS .dmg" not in features
+    assert "first-run gate prompts host/port" not in features
+    assert "Windows portable x64" in features
+    assert "`.exe`" in features
+    assert "macOS arm64 `.zip`" in features
+    assert "Windows updater metadata is" in features
+    assert "intentionally unpublished" in features
 
     assert "## [Unreleased]\n\n(no items pending)" not in changelog
     assert "portable-only desktop packaging policy" in changelog

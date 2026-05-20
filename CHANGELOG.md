@@ -14,6 +14,9 @@
   AppImage / `.deb`.
 - Windows updater metadata remains unpublished while the Windows release channel
   stays portable-only; macOS update metadata continues to target the ZIP package.
+- Release workflow and feature inventory docs now use the same policy wording,
+  including macOS ZIP updater metadata, Windows portable-only output, and no
+  desktop first-run gate.
 
 ## [5.3.1] - 2026-05-20
 
