@@ -1,4 +1,5 @@
 import tomllib
+import json
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -25,3 +26,21 @@ def test_runtime_dependencies_require_idna_security_floor():
     deps = [dep.replace(" ", "").lower() for dep in data["project"]["dependencies"]]
 
     assert "idna>=3.15" in deps
+
+
+def test_desktop_release_targets_are_portable_only():
+    package = REPO_ROOT / "danmu-desktop" / "package.json"
+    data = json.loads(package.read_text(encoding="utf-8"))
+    build = data["build"]
+
+    assert build["win"]["target"] == ["portable"]
+    assert build["mac"]["target"] == ["zip"]
+
+
+def test_release_workflow_does_not_upload_installer_artifacts():
+    workflow = REPO_ROOT / ".github" / "workflows" / "build.yml"
+    body = workflow.read_text(encoding="utf-8")
+
+    assert "Danmu Desktop*-mac-arm64.dmg" not in body
+    assert "Danmu Desktop*-mac-arm64.zip" in body
+    assert "Danmu Desktop*-win-x64.exe" in body

@@ -9,6 +9,23 @@
 
 (no items pending)
 
+## [5.3.1] - 2026-05-20
+
+**Portable-only desktop release packaging.**
+Patch release that keeps the `v5.3.0` desktop/runtime behavior intact while
+removing installer-style desktop artifacts from the release pipeline.
+
+### 變更 / Changed
+
+- Windows release target now builds only the portable x64 executable; NSIS
+  installer output is disabled.
+- macOS release target now builds only the arm64 ZIP package; DMG output is
+  disabled.
+- GitHub release upload patterns now exclude macOS DMG artifacts and pin the
+  Windows upload to the portable x64 executable.
+- Release notes now state the portable-only packaging policy and the current
+  ad-hoc signing / non-notarized macOS limitation.
+
 ## [5.3.0] - 2026-05-20
 
 **Desktop finalization + unified WebSocket runtime + admin cleanup.**
