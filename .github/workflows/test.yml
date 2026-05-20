@@ -216,9 +216,12 @@ jobs:
         # CVE-2026-3219 affects `pip` itself with no fix version available
         # (https://github.com/pypa/pip/security/advisories). Build environment
         # only — never reaches runtime — ignore until upstream ships a patch.
+        # PYSEC-2024-271 currently flags latest `flask-cors` 6.0.2 with no fix
+        # version. Keep the package pinned to the latest release and ignore
+        # this advisory until upstream or the advisory database publishes a fix.
         run: |
           uv export --frozen --no-dev --no-hashes --no-emit-project --output-file requirements-audit.txt
-          pip-audit -r requirements-audit.txt --ignore-vuln CVE-2026-3219
+          pip-audit -r requirements-audit.txt --ignore-vuln CVE-2026-3219 --ignore-vuln PYSEC-2024-271
 
   pre-commit:
     runs-on: ubuntu-latest

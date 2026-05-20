@@ -97,10 +97,8 @@ jobs:
           set -e
           docker run -d --name test-server \
             -e ADMIN_PASSWORD=test \
-            -e WS_HOST=0.0.0.0 \
             -e WS_REQUIRE_TOKEN=false \
             -p 4000:4000 \
-            -p 4001:4001 \
             $LOCAL_IMAGE
           # WS_REQUIRE_TOKEN=false opts out of v4.8's secure-by-default
           # seeding so the smoke test can connect without obtaining a token
@@ -129,6 +127,23 @@ jobs:
             exit 1
           fi
 
+          WS_READY=0
+          for i in {1..12}; do
+            if docker exec test-server python3 -c "from websockets.sync.client import connect; ws = connect('ws://127.0.0.1:4000/ws', open_timeout=1); ws.close()" >/dev/null 2>&1; then
+              echo "WebSocket route is up"
+              WS_READY=1
+              break
+            fi
+            echo "Waiting for WebSocket route... ($i/12)"
+            sleep 1
+          done
+          if [ "$WS_READY" -ne 1 ]; then
+            echo "WebSocket route did not become ready in time"
+            docker logs test-server || true
+            docker rm -f test-server || true
+            exit 1
+          fi
+
           echo "=== Smoke test: verify core routes ==="
           curl -fsS http://localhost:4000/ > /dev/null
           echo "[PASS] GET / (main page)"
@@ -137,42 +152,40 @@ jobs:
 
           echo "=== Smoke test: /fire + WS delivery ==="
           # Use Python inside the container (always available) to:
-          # 1. Connect a WS client to port 4001
+          # 1. Connect a WS client to Flask's /ws route
           # 2. POST /fire with a test danmu
           # 3. Verify the WS client receives the message
           docker exec test-server python3 -c "
-          import json, threading, time
+          import json, time, urllib.request
           from websockets.sync.client import connect
 
           received = []
-          def ws_listener():
-              with connect('ws://127.0.0.1:4001') as ws:
-                  while True:
-                      msg = ws.recv(timeout=10)
-                      if msg == 'connection':
-                          continue
-                      data = json.loads(msg) if isinstance(msg, str) else msg
-                      if isinstance(data, dict) and data.get('type') in ('ping', 'heartbeat_ack'):
-                          if data.get('type') == 'ping':
-                              ws.send(json.dumps({'type': 'pong'}))
-                          continue
-                      received.append(data)
+          with connect('ws://127.0.0.1:4000/ws') as ws:
+              req = urllib.request.Request(
+                  'http://127.0.0.1:4000/fire',
+                  data=json.dumps({'text': 'docker_smoke_test'}).encode(),
+                  headers={'Content-Type': 'application/json'},
+              )
+              resp = urllib.request.urlopen(req)
+              assert resp.status == 200, f'/fire returned {resp.status}'
+
+              deadline = time.monotonic() + 10
+              while time.monotonic() < deadline:
+                  remaining = max(0.1, deadline - time.monotonic())
+                  try:
+                      msg = ws.recv(timeout=remaining)
+                  except TimeoutError:
                       break
+                  if msg == 'connection':
+                      continue
+                  data = json.loads(msg) if isinstance(msg, str) else msg
+                  if isinstance(data, dict) and data.get('type') in ('ping', 'heartbeat_ack'):
+                      if data.get('type') == 'ping':
+                          ws.send(json.dumps({'type': 'pong'}))
+                      continue
+                  received.append(data)
+                  break
 
-          t = threading.Thread(target=ws_listener, daemon=True)
-          t.start()
-          time.sleep(1)  # Wait for WS registration
-
-          import urllib.request
-          req = urllib.request.Request(
-              'http://127.0.0.1:4000/fire',
-              data=json.dumps({'text': 'docker_smoke_test'}).encode(),
-              headers={'Content-Type': 'application/json'},
-          )
-          resp = urllib.request.urlopen(req)
-          assert resp.status == 200, f'/fire returned {resp.status}'
-
-          t.join(timeout=5)
           assert len(received) == 1, f'Expected 1 message, got {len(received)}'
           assert received[0]['text'] == 'docker_smoke_test', f'Wrong text: {received[0].get(\"text\")}'
           print('[PASS] POST /fire -> WS client received danmu')
