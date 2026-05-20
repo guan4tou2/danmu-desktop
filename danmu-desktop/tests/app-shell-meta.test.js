@@ -7,10 +7,10 @@ const {
 describe("app-shell-meta", () => {
   beforeEach(() => {
     document.body.innerHTML = `
-      <div class="ver"><span data-client-version>v5.2.0</span></div>
+      <div class="ver"><span data-client-version>v—</span></div>
       <div class="meta">
-        <span data-client-about-version>v5.2.0</span>
-        <span data-client-about-electron-version>Electron 42.1.0</span>
+        <span data-client-about-version>v—</span>
+        <span data-client-about-electron-version>Electron —</span>
       </div>
     `;
   });
@@ -51,13 +51,13 @@ describe("app-shell-meta", () => {
     await initAppShellMeta({});
 
     expect(document.querySelector("[data-client-version]").textContent).toBe(
-      "v5.2.0"
+      "v—"
     );
     expect(
       document.querySelector("[data-client-about-version]").textContent
-    ).toBe("v5.2.0");
+    ).toBe("v—");
     expect(
       document.querySelector("[data-client-about-electron-version]").textContent
-    ).toBe("Electron 42.1.0");
+    ).toBe("Electron —");
   });
 });

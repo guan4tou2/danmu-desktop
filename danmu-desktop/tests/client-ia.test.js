@@ -150,16 +150,20 @@ test("overlay section owns display selection and has one visible runtime control
   expect(overlay).not.toContain('data-client-overlay-action="stop"');
 });
 
-test("client shell version fallbacks match the current desktop package version", () => {
+test("client shell metadata fallbacks are release-neutral", () => {
   const html = readClientHtml();
   const version = readClientPackageVersion();
   const electronVersion = readClientElectronVersion();
 
-  expect(html).toContain(`<span data-client-version>v${version}</span>`);
-  expect(html).toContain(`<span data-client-about-version>v${version}</span>`);
-  expect(html).toContain(
-    `<span data-client-about-electron-version>Electron ${electronVersion}</span>`
-  );
+  expect(html).toContain(`<span data-client-version>v—</span>`);
+  expect(html).toContain(`<span data-client-about-version>v—</span>`);
+  expect(html).toContain(`<span data-client-about-electron-version>Electron —</span>`);
+  expect(html).toContain(`<span data-client-platform>Desktop</span>`);
+  expect(html).toContain(`<span data-client-about-platform>Desktop</span>`);
+  expect(html).not.toContain(`>v${version}<`);
+  expect(html).not.toContain(`>Electron ${electronVersion}<`);
+  expect(html).not.toContain(`<span data-client-platform>macOS</span>`);
+  expect(html).not.toContain(`<span data-client-about-platform>macOS</span>`);
 });
 
 test("tray menu exposes v3 canonical schema: overlay toggle + idle + no dead controls", () => {
