@@ -212,7 +212,10 @@ Every other setting ships a safe default; `.env.example` shows them all.
 
 - Workflow `.github/workflows/docker-build.yml` builds and tests the server image on each PR/push.
 - Workflow `.github/workflows/test.yml` runs Python tests with coverage reporting and `pip-audit` for CVE scanning.
-- Workflow `.github/workflows/build.yml` builds Electron app for Windows, macOS, and Linux on version bump, creating GitHub Releases with auto-update metadata.
+- Workflow `.github/workflows/build.yml` builds Electron app for Windows,
+  macOS, and Linux on version bump, then publishes GitHub Releases with
+  portable desktop artifacts. macOS ZIP updater metadata is published; Windows
+  updater metadata stays unpublished while Windows remains portable-only.
 - Set GitHub secrets `DOCKERHUB_USERNAME` + `DOCKERHUB_TOKEN` (Docker Hub access token) to auto-publish `DOCKERHUB_USERNAME/danmu-server:latest` and a commit-SHA tag whenever `main` is updated.
 
 ## Testing & Coverage

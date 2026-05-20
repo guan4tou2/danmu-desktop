@@ -320,13 +320,19 @@ Render-only. No user input. Spawned by the main window.
 ### 3. Main process + tray
 
 - Tray icon + context menu (status snapshot / show control window / About / Quit)
-- Auto-updater via `electron-updater` — checks GitHub Releases on startup (10s delay) and every 4h
+- Auto-updater UX via `electron-updater` — checks GitHub Releases on startup
+  (10s delay) and every 4h where platform updater metadata is published.
+  Current policy publishes macOS ZIP metadata only; Windows updater metadata is
+  intentionally unpublished while Windows remains portable-only.
 - About window (`about.html`) — version + GitHub link
 - IPC surface (preload bridge) — see channels in [ipc-handlers.js](../danmu-desktop/main-modules/ipc-handlers.js); do not add new channels without extending preload
 
 ### 4. Packaging
 
-Electron-builder produces: Windows NSIS + portable, macOS .dmg, Linux AppImage + .deb. Auto-update publishes to GitHub Releases for this repo.
+Electron-builder produces portable-only release artifacts: Windows portable x64
+`.exe`, macOS arm64 `.zip`, and Linux AppImage + `.deb`. GitHub Releases publish
+macOS ZIP updater metadata; Windows updater metadata is intentionally
+unpublished while Windows remains portable-only.
 
 ---
 
@@ -335,7 +341,7 @@ Electron-builder produces: Windows NSIS + portable, macOS .dmg, Linux AppImage +
 These are the canonical flows. Designs should cover all of them, and **only** these.
 
 ### Scenario A — Streamer preparing to go live (v5.0.0)
-1. Launch desktop app → first-run gate prompts host/port → "Test connection" runs `wss://${host}:${port}/ws` against the configured server
+1. Launch desktop app → Connection tab accepts host/port → "Test connection" runs `wss://${host}:${port}/ws` against the configured server
 2. Pick display in the Overlay tab → click `開啟 Overlay` → overlay child window spawns on chosen display
 3. Open `/admin/` (browser, not in client) → pick theme → adjust default Color / Speed / FontSize → activate effects
 4. Send a real danmu from `/` (or another viewer) to confirm rendering. **Test danmu UI no longer in client — that moved to admin.**
