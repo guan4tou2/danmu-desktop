@@ -45,7 +45,7 @@
     { slug: "sessions",     group: "history",    zh: "場次",       en: "SESSIONS",     sectionId: "sec-sessions-overview" },
     { slug: "search",       group: "history",    zh: "搜尋",       en: "SEARCH",       sectionId: "sec-search-overview" },
     { slug: "audit",        group: "history",    zh: "審計",       en: "AUDIT",        sectionId: "sec-audit-overview" },
-    { slug: "replay",       group: "history",    zh: "重播",       en: "REPLAY",       sectionIds: ["sec-history-tabs", "history-v2-section", "sec-history"] },
+    { slug: "replay",       group: "history",    zh: "重播",       en: "REPLAY",       sectionIds: ["sec-history-tabs", "history-v2-section", "sec-history-list", "sec-history"] },
     { slug: "audience",     group: "history",    zh: "觀眾",       en: "AUDIENCE",     sectionId: "sec-audience-overview" },
   ];
 

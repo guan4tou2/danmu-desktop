@@ -39,6 +39,8 @@ def server_ports():
         import sys, os, threading, logging
         sys.path.insert(0, ".")
         os.environ.setdefault("SETTINGS_FILE", "/tmp/_test_fire_e2e_settings.json")
+        os.environ["ADMIN_PASSWORD"] = "test"
+        os.environ["ADMIN_PASSWORD_HASHED"] = ""
 
         from server.config import Config
         Config.WS_REQUIRE_TOKEN = False
@@ -48,6 +50,7 @@ def server_ports():
         Config.TESTING = True
         Config.SECRET_KEY = "test-secret"
         Config.ADMIN_PASSWORD = "test"
+        Config.ADMIN_PASSWORD_HASHED = ""
         Config.FIRE_RATE_LIMIT = 1000
         Config.FIRE_RATE_WINDOW = 1
         Config.LOGIN_RATE_LIMIT = 1000
@@ -68,7 +71,7 @@ def server_ports():
         # 啟動 Flask HTTP 伺服器
         app = create_app(Config)
         print("READY", flush=True)
-        app.run(host="127.0.0.1", port={http_port}, use_reloader=False)
+        app.run(host="127.0.0.1", port={http_port}, use_reloader=False, threaded=True)
     """)
 
     proc = subprocess.Popen(
@@ -305,6 +308,7 @@ def test_browser_submit_danmu_appears_in_history(browser_session, server_ports):
     from websockets.sync.client import connect
 
     http_port, ws_port = server_ports
+    message = f"history_e2e_check_{int(time.time() * 1000)}"
 
     context = browser_session.new_context()
     page = context.new_page()
@@ -316,60 +320,47 @@ def test_browser_submit_danmu_appears_in_history(browser_session, server_ports):
             # 送出彈幕
             page.goto(f"http://127.0.0.1:{http_port}/")
             page.wait_for_selector("#danmuText", timeout=8000)
-            page.fill("#danmuText", "history_e2e_check")
-            page.locator("#btnSend").click()
+            page.fill("#danmuText", message)
+            with page.expect_response(lambda r: r.url.endswith("/fire"), timeout=8000) as fire_info:
+                page.locator("#btnSend").click()
+            fire_resp = fire_info.value
+            assert fire_resp.status == 200, fire_resp.text()
             page.wait_for_timeout(1500)
 
-        # 登入 admin
-        page.goto(f"http://127.0.0.1:{http_port}/admin/")
-        page.wait_for_selector("#loginForm", timeout=8000)
-        page.fill("#password", "test")
-        page.locator("#loginForm button[type=submit]").click()
-        page.wait_for_selector("#logoutButton", timeout=8000)
-
-        # v5.0.0 P0-0 IA: history route is tabbed
-        # (sessions/search/audit/replay/audience). sec-history-tabs +
-        # sec-history live in the "replay" tab — go there directly.
-        # AdminOnboarding tour can intercept clicks on first admin load —
-        # mark it done so the spotlight doesn't block.
-        page.evaluate(
-            "() => {"
-            '  try { localStorage.setItem("danmu.onboarding.done", "1"); } catch (_) {}'
-            '  var root = document.getElementById("admin-onboarding-root");'
-            "  if (root) root.remove();"
-            "}"
+        # Login UI is covered by test_browser_admin.py. This flow focuses on
+        # the lifecycle contract: browser fire -> admin history data.
+        login_status = page.evaluate(
+            """async () => {
+                const body = new URLSearchParams();
+                body.set("password", "test");
+                const res = await fetch("/login", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: body.toString(),
+                });
+                return res.status;
+            }"""
         )
-        page.evaluate("window.location.hash = '#/history/replay'")
-        page.wait_for_timeout(400)
-        page.wait_for_selector("#sec-history-tabs", state="visible", timeout=5000)
-        # 2026-05-19 (PR #122): IA v5 made shell.dataset.activeLeaf the
-        # source of truth — admin-replay.js's _applyHashVisibility now
-        # syncs body.dataset.historyTab FROM the shell, overriding any
-        # body-level set. So to put the page in "list" tab, we have to
-        # update both: shell dataset (router state) AND body dataset
-        # (CSS gates). The legacy tab-strip click flow does this via
-        # admin-history.js but the test bypasses that strip.
-        page.evaluate("""() => {
-                const shell = document.querySelector('.admin-dash-grid');
-                if (shell) shell.dataset.activeLeaf = 'list';
-                document.body.dataset.historyTab = 'list';
-                document.dispatchEvent(new CustomEvent('admin:history-tab'));
-            }""")
-        page.wait_for_timeout(250)
-        page.wait_for_selector("#sec-history", state="visible", timeout=5000)
-        details = page.locator("#sec-history")
-        if details.get_attribute("open") is None:
-            details.locator("summary").click()
-            page.wait_for_timeout(400)
-
-        # 等待歷史紀錄載入
-        page.wait_for_timeout(1500)
-
-        # 確認歷史紀錄包含送出的文字
-        history_text = page.locator("#sec-history").inner_text()
-        assert (
-            "history_e2e_check" in history_text
-        ), f"History should contain 'history_e2e_check', got: {history_text[:300]}"
+        assert 200 <= login_status < 400, f"login request failed: {login_status}"
+        deadline = time.monotonic() + 8
+        records = []
+        while time.monotonic() < deadline:
+            payload = page.evaluate(
+                """async () => {
+                    const res = await fetch("/admin/history?hours=24&limit=300", {
+                        credentials: "same-origin",
+                    });
+                    return await res.json();
+                }"""
+            )
+            records = payload.get("messages") or payload.get("records") or []
+            if any(r.get("text") == message for r in records):
+                break
+            time.sleep(0.25)
+        assert any(r.get("text") == message for r in records), (
+            f"History should contain {message!r}, got: {records[:3]}"
+        )
     finally:
         page.close()
         context.close()

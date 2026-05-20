@@ -63,7 +63,7 @@
         { slug: "sessions", label: "場次",    en: "SESSIONS", section: "sec-sessions-overview" },
         { slug: "search",   label: "搜尋",    en: "SEARCH",   section: "sec-search-overview"   },
         { slug: "audit",    label: "審計",    en: "AUDIT",    section: "sec-audit-overview"    },
-        { slug: "replay",   label: "重播",    en: "REPLAY",   sections: ["sec-history-tabs", "history-v2-section", "sec-history"] },
+        { slug: "replay",   label: "重播",    en: "REPLAY",   sections: ["sec-history-tabs", "history-v2-section", "sec-history-list", "sec-history"] },
         { slug: "audience", label: "觀眾",    en: "AUDIENCE", section: "sec-audience-overview" },
       ],
     },

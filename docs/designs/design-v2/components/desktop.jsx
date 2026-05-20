@@ -95,7 +95,7 @@ function OverlayOnDesktop({ theme, disconnected }) {
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>Danmu Fire</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>Danmu Desktop</span>
               <span style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 0.5 }}>14:02</span>
             </div>
             <div style={{ fontSize: 13, fontWeight: 600, color: hudTokens.amber, marginBottom: 4 }}>無法連線到伺服器</div>
@@ -154,9 +154,7 @@ function ControlWindow({ theme, defaultTestState, forceSection }) {
         <div style={{ width: 68, flexShrink: 0 }} />
         <span style={{ flex: 1, textAlign: 'center', fontSize: 12, color: textDim, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
           {/* Titlebar uses the product identity `Danmu Desktop` to match
-              package.json productName + macOS window menu. The user-facing
-              brand `Danmu Fire` is used in the body (hero, first-run,
-              tray items). */}
+              package.json productName + macOS window menu. */}
           <span style={{ fontFamily: hudTokens.fontMono, letterSpacing: 1 }}>Danmu Desktop</span>
           <span style={{ fontSize: 9, fontFamily: hudTokens.fontMono, letterSpacing: 1, color: accent, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <StatusDot color={accent} size={5} />CONNECTED
@@ -473,8 +471,7 @@ function AboutSection({ panel, raised, line, text, textDim, accent }) {
   // Electron app's auto-updater already surfaces lifecycle UI when there's
   // something to show; a static changelog list duplicates that and clutters
   // the about page. Hero + description (with inline copyright) only.
-  // Product name canonical is `Danmu Fire` (polestar lock); `Danmu Desktop`
-  // is kept only in package.json + build artifact glob for release compat.
+  // v3 desktop shell identity uses `Danmu Desktop` in About.
   return (
     <>
       <div style={{ fontSize: 18, fontWeight: 600, letterSpacing: -0.2, marginBottom: 14 }}>關於</div>
@@ -485,7 +482,7 @@ function AboutSection({ panel, raised, line, text, textDim, accent }) {
           color: '#000', fontFamily: hudTokens.fontDisplay, fontWeight: 700, fontSize: 28,
         }}>弾</div>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 600 }}>Danmu Fire</div>
+          <div style={{ fontSize: 16, fontWeight: 600 }}>Danmu Desktop</div>
           <div style={{ fontSize: 11, color: textDim, marginTop: 2, fontFamily: hudTokens.fontMono, letterSpacing: 0.5 }}>v5.0.0 · Electron 41 · macOS</div>
           <div style={{ fontSize: 11, color: hudTokens.lime, marginTop: 4, fontFamily: hudTokens.fontMono, letterSpacing: 1 }}>● UP TO DATE</div>
         </div>
@@ -593,7 +590,7 @@ function TrayMenu({ theme, disconnected }) {
         <div style={{ padding: '8px 10px', borderBottom: `1px solid ${isDark ? hudTokens.line : hudTokens.lightLine}`, marginBottom: 4 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <StatusDot color={accent} size={7} />
-            <span style={{ fontWeight: 600 }}>Danmu Fire</span>
+            <span style={{ fontWeight: 600 }}>Danmu Desktop</span>
             <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 9, color: isDark ? hudTokens.textDim : hudTokens.lightTextDim, letterSpacing: 1 }}>v5.0.0</span>
           </div>
           <div style={{ fontSize: 10, color: isDark ? hudTokens.textDim : hudTokens.lightTextDim, fontFamily: hudTokens.fontMono, letterSpacing: 0.5, marginTop: 4 }}>
@@ -609,7 +606,7 @@ function TrayMenu({ theme, disconnected }) {
         <div style={{ height: 1, background: isDark ? hudTokens.line : hudTokens.lightLine, margin: '4px 0' }} />
         <TrayRow label="開啟控制視窗…" sc="⌘⇧C" isDark={isDark} />
         <TrayRow label="偏好設定…" isDark={isDark} />
-        <TrayRow label="關於 Danmu Fire…" isDark={isDark} />
+        <TrayRow label="關於 Danmu Desktop…" isDark={isDark} />
         <div style={{ height: 1, background: isDark ? hudTokens.line : hudTokens.lightLine, margin: '4px 0' }} />
         <TrayRow label="結束 Danmu" isDark={isDark} danger />
       </div>

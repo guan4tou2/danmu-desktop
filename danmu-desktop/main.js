@@ -245,6 +245,10 @@ app.whenReady().then(() => {
         label: "開啟控制視窗…",
         click: showMainWindow,
       },
+      {
+        label: "偏好設定…",
+        click: showMainWindow,
+      },
       { label: `關於 ${pkgName}…`, click: () => createAboutWindow(mainWindow) },
       { type: "separator" },
       {

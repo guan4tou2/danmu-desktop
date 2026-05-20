@@ -2,8 +2,8 @@ const { test, expect } = require("@jest/globals");
 const fs = require("fs");
 const path = require("path");
 
-// Design v2 handoff alignment: the visible sidebar is 8 main areas and
-// security lives under System rather than as a standalone top-level nav.
+// Design v2 handoff alignment: the visible sidebar keeps security out of
+// the top-level nav while the router still exposes a direct security route.
 test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
@@ -23,7 +23,7 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   // 2026-05-18 v5: messages + widgets promoted to first-class sidebar slugs.
   expect(adminSrc).toContain('data-route="messages"');
   expect(adminSrc).toContain('data-route="widgets"');
-  // security still lives under System as an alias, not a standalone nav button.
+  // security is not a standalone nav button.
   expect(adminSrc).not.toContain('data-route="security"');
   // Secondary surfaces remain reachable through tabs / aliases.
   expect(adminSrc).toContain('data-route="moderation"');
@@ -32,7 +32,7 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   // 2026-05-18 v5: ratelimit promoted to first-class slug (no longer alias).
   expect(adminSrc).toMatch(/"viewer-config":\s*\{\s*nav:\s*"viewer"/);
   expect(adminSrc).toMatch(/dashboard:\s*"live"/);
-  expect(adminSrc).toMatch(/security:\s*\{\s*nav:\s*"system",\s*tab:\s*"security"/);
+  expect(adminSrc).toMatch(/security:\s*\{\s*title:\s*"安全"/);
   // Sections still rendered inline by admin.js renderControlPanel():
   expect(adminSrc).toContain('id="sec-blacklist"');
   expect(adminSrc).toContain('id="sec-history"');

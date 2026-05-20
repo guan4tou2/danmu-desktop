@@ -193,12 +193,9 @@ test("ControlWindow + DesktopClient forward forceSection for per-section artboar
   expect(src).toMatch(/forceSection\s*\|\|\s*['"]conn['"]/);
 });
 
-test("Desktop mirror uses `Danmu Fire` user-facing name in body (titlebar is the productName exception)", () => {
-  // Polestar lock: user-facing body UI is `Danmu Fire`. `Danmu Desktop`
-  // is the product identity — package.json productName + macOS window
-  // menu chrome — and that one place stays "Danmu Desktop" so the OS
-  // window title matches the bundle id. Hero / first-run / tray items
-  // / disconnected toast all use `Danmu Fire`.
+test("Desktop mirror uses `Danmu Desktop` for desktop shell identity", () => {
+  // v3 desktop design uses `Danmu Desktop` for the shell identity:
+  // titlebar, About card, tray header, and disconnected desktop toast.
   const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
 
   // Strip line/block comments so the polestar explanation doesn't
@@ -206,26 +203,26 @@ test("Desktop mirror uses `Danmu Fire` user-facing name in body (titlebar is the
   const stripComments = (s) =>
     s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
 
-  // Hero in AboutSection must be "Danmu Fire".
+  // Hero in AboutSection must be "Danmu Desktop".
   const aboutSlice = stripComments(
     src.split(/function AboutSection/)[1].split(/\nfunction /)[0]
   );
-  expect(aboutSlice).toMatch(/Danmu Fire/);
-  expect(aboutSlice).not.toMatch(/Danmu Desktop/);
+  expect(aboutSlice).toMatch(/Danmu Desktop/);
+  expect(aboutSlice).not.toMatch(/Danmu Fire/);
 
-  // TrayMenu header must be "Danmu Fire".
+  // TrayMenu header and About row must be "Danmu Desktop".
   const traySlice = stripComments(
     src.split(/function TrayMenu/)[1].split(/\nfunction /)[0]
   );
-  expect(traySlice).toMatch(/Danmu Fire/);
-  expect(traySlice).not.toMatch(/Danmu Desktop/);
+  expect(traySlice).toMatch(/Danmu Desktop/);
+  expect(traySlice).not.toMatch(/Danmu Fire/);
 
-  // OverlayOnDesktop disconnected toast must be "Danmu Fire".
+  // OverlayOnDesktop disconnected toast must be "Danmu Desktop".
   const overlaySlice = stripComments(
     src.split(/function OverlayOnDesktop/)[1].split(/\nfunction /)[0]
   );
-  expect(overlaySlice).toMatch(/Danmu Fire/);
-  expect(overlaySlice).not.toMatch(/Danmu Desktop/);
+  expect(overlaySlice).toMatch(/Danmu Desktop/);
+  expect(overlaySlice).not.toMatch(/Danmu Fire/);
 });
 
 test("DesktopClient + ControlWindow forward testState through to ConnSection", () => {

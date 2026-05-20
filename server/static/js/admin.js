@@ -1387,8 +1387,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Slice 4 (P0-0): history is now the merged tabbed nav (sessions /
     // search / audit / replay / audience). Each tab's section is hidden
     // when not active by AdminTabs.applyTabSectionVisibility. Replay tab
-    // owns sec-history-tabs + history-v2-section + sec-history.
-    history:   { title: "歷史",             kicker: "HISTORY · 場次 / 搜尋 / 審計 / 重播 / 觀眾", sections: ["sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "history-v2-section", "sec-history", "sec-audience-overview"] },
+    // owns sec-history-tabs + history-v2-section + sec-history-list + sec-history.
+    history:   { title: "歷史",             kicker: "HISTORY · 場次 / 搜尋 / 審計 / 重播 / 觀眾", sections: ["sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "history-v2-section", "sec-history-list", "sec-history", "sec-audience-overview"] },
     polls:     { title: "投票",             kicker: "POLLS · 2–6 選項",         sections: ["sec-polls"] },
     widgets:   { title: "Overlay Widgets",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
     themes:    { title: "風格主題包",       kicker: "THEME PACKS · 彈幕樣式預設",       sections: ["sec-themes"] },
@@ -1433,9 +1433,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // history). Sections list includes every leaf the accordion can open:
     // settings + access (existing) + automation (sec-scheduler/webhooks/
     // plugins) + history (sec-sessions-overview/search-overview/audit-
-    // overview/history-tabs/history-v2-section/sec-history/audience-
+    // overview/history-tabs/history-v2-section/sec-history-list/sec-history/audience-
     // overview). admin-system-accordion.js drives per-leaf visibility.
-    system:    { title: "系統",  kicker: "SYSTEM · 設定 / 金鑰 / 自動化 / 歷史", sections: ["sec-system-overview", "sec-firetoken-overview", "sec-api-tokens-overview", "sec-backup", "sec-extensions-overview", "sec-wcag-overview", "sec-about-overview", "sec-scheduler", "sec-webhooks", "sec-plugins", "sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "history-v2-section", "sec-history", "sec-audience-overview"] },
+    system:    { title: "系統",  kicker: "SYSTEM · 設定 / 金鑰 / 自動化 / 歷史", sections: ["sec-system-overview", "sec-firetoken-overview", "sec-api-tokens-overview", "sec-backup", "sec-extensions-overview", "sec-wcag-overview", "sec-about-overview", "sec-scheduler", "sec-webhooks", "sec-plugins", "sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "history-v2-section", "sec-history-list", "sec-history", "sec-audience-overview"] },
     // Legacy alias target only. Security now resolves under system/security;
     // the v2 page handles its own visibility from activeRoute + activeLeaf.
     security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: [] },

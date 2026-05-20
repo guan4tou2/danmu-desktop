@@ -423,21 +423,22 @@ def test_accordion_section_slugs_per_group(accordion_js: str, group: str, expect
 
 
 def test_accordion_replay_uses_multi_section_bundle(accordion_js: str):
-    """The history/replay leaf historically renders 3 sections together
-    (sec-history-tabs + history-v2-section + sec-history). The accordion
-    config must keep the `sectionIds` array form for replay so all 3
+    """The history/replay leaf renders the history tab bundle together
+    (sec-history-tabs + history-v2-section + sec-history-list + sec-history).
+    The accordion config must keep the `sectionIds` array form for replay so all
     show together when the leaf is open."""
     pattern = re.compile(
         r'slug:\s*"replay"[^}]*sectionIds:\s*\[\s*'
         r'"sec-history-tabs"\s*,\s*'
         r'"history-v2-section"\s*,\s*'
+        r'"sec-history-list"\s*,\s*'
         r'"sec-history"\s*\]',
         re.DOTALL,
     )
     assert pattern.search(accordion_js), (
         "history/replay must keep sectionIds: ['sec-history-tabs', "
-        "'history-v2-section', 'sec-history']; otherwise the replay "
-        "view loses its tab strip + body when opened."
+        "'history-v2-section', 'sec-history-list', 'sec-history']; "
+        "otherwise the replay view loses its tab strip + body when opened."
     )
 
 
@@ -461,6 +462,7 @@ def test_admin_routes_system_owns_absorbed_sections(admin_js: str):
         "sec-audit-overview",
         "sec-history-tabs",
         "history-v2-section",
+        "sec-history-list",
         "sec-history",
         "sec-audience-overview",
     ]

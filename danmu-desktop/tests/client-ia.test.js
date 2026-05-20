@@ -141,6 +141,8 @@ test("tray menu exposes v3 canonical schema: overlay toggle + idle + no dead con
   // v3 canonical items: "顯示 overlay" (⌘⇧D) + "待機畫面" (sub-item)
   expect(main).toContain('"顯示 overlay"');
   expect(main).toContain("待機畫面");
+  expect(main).toContain('"偏好設定…"');
+  expect(main).toMatch(/label:\s*"偏好設定…",\s*click:\s*showMainWindow/s);
 
   // No dead dispatcher-style runtime controls in tray
   expect(main).not.toContain('dispatchToRenderer("pause")');
