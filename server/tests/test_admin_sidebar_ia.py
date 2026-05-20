@@ -573,6 +573,10 @@ def palette_js() -> str:
     return path.read_text(encoding="utf-8")
 
 
+def test_palette_has_no_debug_console_logging(palette_js: str):
+    assert "console.log" not in palette_js
+
+
 @pytest.mark.parametrize("label, must_route, must_not_route", PALETTE_CONTRACT)
 def test_palette_routes_to_owning_route(
     palette_js: str, label: str, must_route: str, must_not_route: str

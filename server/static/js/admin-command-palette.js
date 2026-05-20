@@ -98,8 +98,6 @@
   function _toast(msg, ok) {
     if (typeof window.showToast === "function") {
       window.showToast(msg, ok !== false);
-    } else {
-      console.log("[cmdk]", msg);
     }
   }
   const ACTIONS = [
