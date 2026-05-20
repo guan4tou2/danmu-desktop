@@ -98,7 +98,7 @@ jobs:
           docker run -d --name test-server \
             -e ADMIN_PASSWORD=test \
             -e WS_REQUIRE_TOKEN=false \
-            -p 4000:4000 \
+            -p 8080:8080 \
             $LOCAL_IMAGE
           # WS_REQUIRE_TOKEN=false opts out of v4.8's secure-by-default
           # seeding so the smoke test can connect without obtaining a token
@@ -112,7 +112,7 @@ jobs:
               docker rm -f test-server || true
               exit 1
             fi
-            if curl -fsS http://localhost:4000/health >/dev/null 2>&1; then
+            if curl -fsS http://localhost:8080/health >/dev/null 2>&1; then
               echo "Server is up"
               READY=1
               break
@@ -129,7 +129,7 @@ jobs:
 
           WS_READY=0
           for i in {1..12}; do
-            if docker exec test-server python3 -c "from websockets.sync.client import connect; ws = connect('ws://127.0.0.1:4000/ws', open_timeout=1); ws.close()" >/dev/null 2>&1; then
+            if docker exec test-server python3 -c "from websockets.sync.client import connect; ws = connect('ws://127.0.0.1:8080/ws', open_timeout=1); ws.close()" >/dev/null 2>&1; then
               echo "WebSocket route is up"
               WS_READY=1
               break
@@ -145,9 +145,9 @@ jobs:
           fi
 
           echo "=== Smoke test: verify core routes ==="
-          curl -fsS http://localhost:4000/ > /dev/null
+          curl -fsS http://localhost:8080/ > /dev/null
           echo "[PASS] GET / (main page)"
-          curl -fsS http://localhost:4000/overlay > /dev/null
+          curl -fsS http://localhost:8080/overlay > /dev/null
           echo "[PASS] GET /overlay (OBS page)"
 
           echo "=== Smoke test: /fire + WS delivery ==="
@@ -160,9 +160,9 @@ jobs:
           from websockets.sync.client import connect
 
           received = []
-          with connect('ws://127.0.0.1:4000/ws') as ws:
+          with connect('ws://127.0.0.1:8080/ws') as ws:
               req = urllib.request.Request(
-                  'http://127.0.0.1:4000/fire',
+                  'http://127.0.0.1:8080/fire',
                   data=json.dumps({'text': 'docker_smoke_test'}).encode(),
                   headers={'Content-Type': 'application/json'},
               )

@@ -141,7 +141,7 @@ def test_fire_with_effect_delivers_effectCss_to_overlay(client, ws_server_port, 
     temp_dme("test_hotreload_fire", animation="dme-test_hotreload_fire 2s ease infinite")
     eff_svc._scan()
 
-    with connect(f"ws://127.0.0.1:{ws_server_port}") as ws:
+    with connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws:
         assert _wait_overlay_registered()
 
         _login(client)

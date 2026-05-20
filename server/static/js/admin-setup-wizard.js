@@ -67,7 +67,7 @@
     serverName: "Danmu Fire",
     publicUrl: "",
     httpPort: ":4000",
-    wsPort: ":4001",
+    wsPath: "/ws",
     displayRules: [
       {
         id: "dedupe",
@@ -116,7 +116,7 @@
     _state.serverName = "Danmu Fire";
     _state.publicUrl = loc.origin + "/";
     _state.httpPort = ":" + port;
-    _state.wsPort = ":" + String((window.DANMU_CONFIG && window.DANMU_CONFIG.wsPort) || "4001");
+    _state.wsPath = (window.DANMU_CONFIG && window.DANMU_CONFIG.wsPath) || "/ws";
   }
 
   function _onHashChange() {
@@ -245,12 +245,12 @@
       <div class="admin-setup-step-pad">
         <div class="admin-setup-step-kicker">STEP 01</div>
         <h2 class="admin-setup-step-title">伺服器基本設定</h2>
-        <p class="admin-setup-step-desc">v5 設計把第一步收斂成目前部署快照，先確認公開入口與 WS 埠號是否正確，再往後配置顯示與審核策略。</p>
+        <p class="admin-setup-step-desc">v5 設計把第一步收斂成目前部署快照，先確認公開入口與同源 WS path 是否正確，再往後配置顯示與審核策略。</p>
         <div class="admin-setup-server-fields">
           ${_renderShellField("server-name", "伺服器名稱", "SERVER NAME", _state.serverName)}
           ${_renderShellField("public-url", "公開 URL", "PUBLIC URL", _state.publicUrl)}
           ${_renderShellField("http-port", "HTTP Port", "PORT", _state.httpPort)}
-          ${_renderShellField("ws-port", "WebSocket Port", "WS PORT", _state.wsPort)}
+          ${_renderShellField("ws-path", "WebSocket Path", "WS PATH", _state.wsPath)}
         </div>
       </div>`;
   }

@@ -11,8 +11,9 @@
 docker-compose up -d
 ```
 
-> Compose 預設會啟動 Nginx `reverse-proxy`，對外端口為 `4000/4001`，server 容器僅內網可見。
-> 可選 HTTPS：放置 `nginx/certs/fullchain.pem` 與 `nginx/certs/privkey.pem` 後，使用 `docker-compose --profile https up -d` 啟用 `80/443` 反向代理與 HTTP→HTTPS 轉址。
+> 正式部署對外只需要 `443` HTTPS/WSS 入口；WebSocket 走同一個入口的 `/ws`
+>（`wss://<host>/ws`）。
+> 放置 `nginx/certs/fullchain.pem` 與 `nginx/certs/privkey.pem` 後，使用 `docker-compose --profile https up -d` 啟用 `443` HTTPS/WSS 反向代理。
 
 ### 手動安裝
 
@@ -30,19 +31,15 @@ docker-compose up -d
 
 3. 啟動服務：
    ```bash
-   # HTTP 伺服器
+   # HTTP + WebSocket (/ws) 都由同一個 Flask/gevent server 提供
    PYTHONPATH=.. uv run python -m server.app
-
-   # WebSocket 伺服器（另一個終端）
-   PYTHONPATH=.. uv run python -m server.ws_app
    ```
 
 ## 專案結構
 
 ```
 server/
-├── app.py              # HTTP 伺服器主程式
-├── ws_app.py           # WebSocket 伺服器主程式
+├── app.py              # HTTP + WebSocket (/ws) 伺服器主程式
 ├── config.py           # 配置管理
 ├── routes/             # Flask 路由藍圖
 │   ├── admin.py        # 管理員面板路由
@@ -57,7 +54,7 @@ server/
 │   ├── connections.py  # 連線管理
 │   └── settings.py     # 設定儲存
 ├── ws/                 # WebSocket 相關
-│   └── server.py       # WebSocket 伺服器實作
+│   └── flask_ws.py     # Flask /ws route 實作
 ├── templates/          # HTML 模板
 ├── static/             # 靜態資源
 └── tests/              # 測試檔案

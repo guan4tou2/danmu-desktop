@@ -19,9 +19,9 @@ describe("parseServerInput", () => {
   });
 
   test("host:port → host + parsed port", () => {
-    expect(parseServerInput("danmu.acme.co:4001")).toEqual({
+    expect(parseServerInput("danmu.acme.co:443")).toEqual({
       host: "danmu.acme.co",
-      port: 4001,
+      port: 443,
     });
   });
 
@@ -40,9 +40,9 @@ describe("parseServerInput", () => {
   });
 
   test("ws:// scheme + whitespace trimmed (IPv4)", () => {
-    expect(parseServerInput("  ws://192.168.1.50:4001  ")).toEqual({
+    expect(parseServerInput("  ws://192.168.1.50:443  ")).toEqual({
       host: "192.168.1.50",
-      port: 4001,
+      port: 443,
     });
   });
 
@@ -98,9 +98,9 @@ describe("buildCanonicalUrl", () => {
     );
   });
 
-  test("IPv4 + custom port", () => {
-    expect(buildCanonicalUrl({ host: "192.168.1.50", port: 4001 })).toBe(
-      "wss://192.168.1.50:4001/ws"
+  test("IPv4 + default port 443 hidden in URL", () => {
+    expect(buildCanonicalUrl({ host: "192.168.1.50", port: 443 })).toBe(
+      "wss://192.168.1.50/ws"
     );
   });
 });
@@ -122,7 +122,7 @@ describe("formatDisplayHost", () => {
     const cases = [
       { host: "danmu.acme.co", port: 443 },
       { host: "danmu.acme.co", port: 8443 },
-      { host: "192.168.1.50", port: 4001 },
+      { host: "192.168.1.50", port: 443 },
     ];
     for (const c of cases) {
       expect(parseServerInput(formatDisplayHost(c))).toEqual(c);

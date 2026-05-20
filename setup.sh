@@ -106,15 +106,18 @@ _init() {
 
   # Mode selection
   echo "Select deployment mode:"
-  echo "  1) Local HTTP (dev/testing, no HTTPS)"
-  echo "  2) HTTPS with self-signed certificate (LAN / VPS, no domain required)"
-  echo "  3) Traefik + Let's Encrypt (requires public domain)"
+  echo "  1) IP/localhost + HTTP (dev/testing only, no Desktop release)"
+  echo "  2) IP + HTTPS self-signed (LAN / VPS, no domain required)"
+  echo "  3) Domain + HTTPS self-signed (domain/private DNS, no Let's Encrypt)"
+  echo "  4) Domain + HTTPS Let's Encrypt (public domain, requires port 443)"
   echo ""
-  read -rp "Mode [1/2/3]: " mode
+  local _DEPLOYMENT_TARGET=""
+  read -rp "Mode [1/2/3/4]: " mode
   case "$mode" in
-    1) _PROFILE="http" ;;
-    2) _PROFILE="https" ;;
-    3) _PROFILE="traefik" ;;
+    1) _PROFILE="http"; _DEPLOYMENT_TARGET="ip-http" ;;
+    2) _PROFILE="https"; _DEPLOYMENT_TARGET="ip-https" ;;
+    3) _PROFILE="https"; _DEPLOYMENT_TARGET="domain-https-self-signed" ;;
+    4) _PROFILE="traefik"; _DEPLOYMENT_TARGET="domain-https-letsencrypt" ;;
     *) _error "Invalid choice"; exit 1 ;;
   esac
 
@@ -126,18 +129,16 @@ _init() {
     _REDIS=true
   fi
 
-  # Desktop client (exposes WS port 4001; token auth is optional).
-  # Default Y because running this server without the overlay WS port is
-  # rare — almost everyone wants the Electron overlay to connect.
   local _desktop=false _ws_token_required=false ws_token=""
-  read -rp "Expose WebSocket port 4001 for Danmu Desktop client? [Y/n]: " use_desktop
+  read -rp "Configure Danmu Desktop client connection hints? [Y/n]: " use_desktop
   if [ "${use_desktop,,}" != "n" ]; then
     _desktop=true
     echo ""
-    _info "Token auth protects port 4001 from anyone on the network connecting."
-    _info "Default N assumes LAN-only / firewall-protected. Enable if the VPS"
-    _info "exposes 4001 to the public internet without a firewall rule."
-    read -rp "Require a shared token for the WS port? [y/N]: " use_token
+    _info "WebSocket uses the same HTTPS/web port at /ws."
+    _info "Token auth protects /ws from anyone on the network connecting."
+    _info "Default N assumes LAN-only / firewall-protected. Enable if the web"
+    _info "entrypoint is exposed to the public internet."
+    read -rp "Require a shared token for /ws? [y/N]: " use_token
     if [ "${use_token,,}" = "y" ]; then
       _ws_token_required=true
       ws_token=$(python3 -c 'import secrets; print(secrets.token_hex(32))' 2>/dev/null || openssl rand -hex 32)
@@ -170,12 +171,20 @@ _init() {
   # HTTPS extras
   local server_ip="" server_domain=""
   if [ "$_PROFILE" = "https" ]; then
-    read -rp "Public IP (optional, for SAN — leave blank for localhost only): " server_ip
-    read -rp "Domain (optional, for SAN — leave blank for localhost only): " server_domain
+    if [ "$_DEPLOYMENT_TARGET" = "ip-https" ]; then
+      read -rp "Server IP for HTTPS cert SAN (LAN or VPS IP): " server_ip
+      [ -z "$server_ip" ] && { _error "Server IP is required for IP + HTTPS mode"; exit 1; }
+      read -rp "Additional domain for HTTPS cert SAN (optional): " server_domain
+    elif [ "$_DEPLOYMENT_TARGET" = "domain-https-self-signed" ]; then
+      read -rp "Domain/hostname for HTTPS cert SAN: " server_domain
+      [ -z "$server_domain" ] && { _error "Domain is required for Domain + HTTPS self-signed mode"; exit 1; }
+      read -rp "Additional IP for HTTPS cert SAN (optional): " server_ip
+    fi
   fi
 
-  # Port selection for https/traefik (auto-detect conflicts on 80/443)
-  local http_port="80" https_port="443"
+  # Formal deployment uses a single public HTTPS/WSS port. Default to 443,
+  # but allow operators to pick one explicit custom port before validation.
+  local https_port="443"
 
   # Probe whether a port is already listening. Tries `ss` (Linux) then
   # `lsof` (macOS default) then `netstat`. Returns 0 if in use, 1 if free,
@@ -240,63 +249,25 @@ _init() {
     return 0
   }
 
-  if [ "$_PROFILE" = "https" ] || [ "$_PROFILE" = "traefik" ]; then
-    local conflict=""
-    if ss -ltn 2>/dev/null | awk '{print $4}' | grep -Eq ':80$';  then conflict="${conflict}80 "; fi
-    if ss -ltn 2>/dev/null | awk '{print $4}' | grep -Eq ':443$'; then conflict="${conflict}443 "; fi
-    if [ -n "$conflict" ]; then
-      _warn "Port(s) already in use: ${conflict}— defaulting to 4080/4000."
-      http_port="4080"
-      https_port="4000"
-    fi
-    if [ "$_PROFILE" = "https" ]; then
-      # Loop until user gives valid, non-colliding ports. Keeps last-known-
-      # good defaults intact on retry; validates into temp vars so a bad typo
-      # doesn't poison the "press Enter to accept" default next round. If
-      # HTTPS fails, HTTP isn't re-asked.
-      #
-      # Port-in-use is a SOFT failure: offer an override for cases where the
-      # operator knows they're replacing an existing listener (e.g. old
-      # danmu container still running on that port).
-      _accept_occupied_port() {
-        local label="$1" n="$2" ans
-        read -rp "  Use $label $n anyway (you'll replace whatever's listening)? [y/N]: " ans
-        [ "${ans,,}" = "y" ]
-      }
-      while true; do
-        local _hp_in _sp_in _hp_val _sp_val _rc
-        read -rp "HTTP port [${http_port}]: " _hp_in
-        _hp_val="${_hp_in:-$http_port}"
-        # `set -e` fires on any non-zero return from a plain call, so capture
-        # the return code via `|| _rc=$?` — that idiom is one of the few ways
-        # to get rc from a failing command without tripping set -e.
-        _rc=0
-        _valid_port "$_hp_val" "HTTP port" true || _rc=$?
-        case "$_rc" in
-          0) : ;;                                          # free — good
-          1) continue ;;                                   # format/range bad
-          2) _accept_occupied_port "HTTP port" "$_hp_val" || continue ;;
-        esac
-
-        read -rp "HTTPS port [${https_port}]: " _sp_in
-        _sp_val="${_sp_in:-$https_port}"
-        _rc=0
-        _valid_port "$_sp_val" "HTTPS port" true || _rc=$?
-        case "$_rc" in
-          0) : ;;
-          1) continue ;;
-          2) _accept_occupied_port "HTTPS port" "$_sp_val" || continue ;;
-        esac
-
-        if [ "$_hp_val" = "$_sp_val" ]; then
-          _error "HTTP and HTTPS ports cannot be the same ($_hp_val). Pick different ports."
-          continue
-        fi
-        http_port="$_hp_val"
-        https_port="$_sp_val"
-        break
-      done
-    fi
+  if [ "$_PROFILE" = "https" ]; then
+    while true; do
+      local _sp_in _sp_val _rc
+      read -rp "HTTPS/WSS port [${https_port}]: " _sp_in
+      _sp_val="${_sp_in:-$https_port}"
+      _rc=0
+      _valid_port "$_sp_val" "HTTPS/WSS port" true || _rc=$?
+      case "$_rc" in
+        0) https_port="$_sp_val"; break ;;
+        1) continue ;;
+        2) _error "HTTPS/WSS port $_sp_val is already in use. Pick a free custom HTTPS/WSS port, then rerun setup."
+           exit 1 ;;
+      esac
+    done
+  elif [ "$_PROFILE" = "traefik" ]; then
+    _valid_port "$https_port" "HTTPS/WSS port" true || {
+      _error "Traefik / Let's Encrypt mode requires port 443. Free port 443, then rerun setup."
+      exit 1
+    }
   fi
 
   # ── Advanced prompts (only with --advanced) ────────────────────────────────
@@ -390,10 +361,7 @@ _init() {
 
   # Networking
   _set_env ENV      "production"
-  _set_env PORT     "4000"
-  _set_env WS_PORT  "4001"
-  if [ "$_PROFILE" = "https" ] || [ "$_PROFILE" = "traefik" ]; then
-    _set_env HTTP_PORT  "$http_port"
+  if [ "$_PROFILE" = "https" ]; then
     _set_env HTTPS_PORT "$https_port"
   fi
   [ -n "$domain" ]        && _set_env DOMAIN        "$domain"
@@ -474,18 +442,14 @@ _init() {
   echo ""
   _info "To start Danmu Fire, run:"
   echo ""
-  local _compose_files=""
-  if [ "$_desktop" = "true" ]; then
-    _compose_files=" -f docker-compose.yml -f docker-compose.desktop.yml"
-  fi
-  echo "    docker compose${_compose_files} --profile ${_PROFILE}${redis_profile} up -d"
+  echo "    docker compose --profile ${_PROFILE}${redis_profile} up -d"
   echo ""
 
   # Access URL hint
-  local _url_host="${server_ip:-${domain:-localhost}}"
+  local _url_host="${server_ip:-${server_domain:-${domain:-localhost}}}"
   case "$_PROFILE" in
     http)
-      _info "Then open: http://${_url_host}:${PORT:-4000}"
+      _info "HTTP dev profile is not a formal desktop/viewer deployment. Use HTTPS on port 443 for real runs."
       ;;
     https)
       if [ "$https_port" = "443" ]; then
@@ -502,16 +466,23 @@ _init() {
 
   if [ "$_desktop" = "true" ]; then
     echo ""
-    _info "Desktop client (ws + https dual transport):"
+    _info "Desktop client:"
     echo "    Host:  ${_url_host}"
-    echo "    Port:  4001"
+    if [ "$_PROFILE" = "traefik" ]; then
+      echo "    Port:  443"
+    elif [ "$_PROFILE" = "https" ]; then
+      echo "    Port:  ${https_port}"
+    else
+      echo "    Port:  n/a (dev web only; Electron requires HTTPS)"
+    fi
+    echo "    Path:  /ws"
     if [ "$_ws_token_required" = "true" ]; then
       echo "    Token: ${ws_token}"
     else
-      _warn "Token auth disabled — anyone who can reach port 4001 can connect."
+      _warn "Token auth disabled — anyone who can reach the web port can connect to /ws."
     fi
     echo ""
-    _info "Open firewall for the WS port:  sudo ufw allow 4001/tcp"
+    _info "Open firewall for the HTTPS/web port only."
   fi
 
   echo ""

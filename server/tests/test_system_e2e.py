@@ -4,10 +4,10 @@
   POST /fire (Flask test client)
       ↓ messaging.forward_to_ws_server()
       ↓ ws_queue.enqueue_message()
-      ↓ _forward_messages() (asyncio, 0.5s 週期)
+      ↓ _forward_messages() (gevent, 0.5s 週期)
   WebSocket overlay client (websockets.sync.client)
 
-每個測試都使用真實的 asyncio WS 伺服器（conftest session fixture ws_server_port）
+每個測試都使用真實的 Flask /ws 伺服器（conftest session fixture ws_server_port）
 以及 Flask test client，共享同一個 in-process ws_queue。
 """
 
@@ -60,7 +60,7 @@ def _recv_type(ws, msg_type: str, timeout: float = 2.0):
 
 
 def _wait_overlay_registered(minimum: int = 1, timeout: float = 2.0) -> bool:
-    """等待 WS 伺服器完成 register()，確認 ws_client_count >= minimum"""
+    """等待 Flask /ws 伺服器完成 register()，確認 ws_client_count >= minimum"""
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if get_ws_client_count() >= minimum:
@@ -90,7 +90,7 @@ def _login(client):
 
 def test_fire_message_reaches_overlay(client, ws_server_port):
     """POST /fire 後，overlay WS client 應收到包含相同 text 的 payload"""
-    with connect(f"ws://127.0.0.1:{ws_server_port}") as ws:
+    with connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws:
         assert _wait_overlay_registered(), "WS server did not register client in time"
 
         resp = client.post("/fire", json={"text": "hello overlay"})
@@ -103,7 +103,7 @@ def test_fire_message_reaches_overlay(client, ws_server_port):
 
 def test_fire_payload_structure_at_overlay(client, ws_server_port):
     """overlay 收到的 payload 應包含 color/opacity/size/speed/fontInfo"""
-    with connect(f"ws://127.0.0.1:{ws_server_port}") as ws:
+    with connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws:
         assert _wait_overlay_registered()
 
         client.post("/fire", json={"text": "styled"})
@@ -116,7 +116,7 @@ def test_fire_payload_structure_at_overlay(client, ws_server_port):
 
 def test_fire_color_arrives_without_hash(client, ws_server_port):
     """overlay 收到的 color 不應含 #"""
-    with connect(f"ws://127.0.0.1:{ws_server_port}") as ws:
+    with connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws:
         assert _wait_overlay_registered()
 
         client.post("/fire", json={"text": "color test", "color": "#AABBCC"})
@@ -129,7 +129,7 @@ def test_fire_color_arrives_without_hash(client, ws_server_port):
 
 def test_fire_image_flag_preserved(client, ws_server_port):
     """isImage=True 應原封不動傳到 overlay"""
-    with connect(f"ws://127.0.0.1:{ws_server_port}") as ws:
+    with connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws:
         assert _wait_overlay_registered()
 
         client.post(
@@ -152,7 +152,7 @@ def test_blacklisted_fire_not_delivered_to_overlay(client, ws_server_port):
     """被黑名單攔截的 fire 不應入列，overlay 不應收到任何 danmu"""
     state.blacklist.add("BANNED_WORD")
     try:
-        with connect(f"ws://127.0.0.1:{ws_server_port}") as ws:
+        with connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws:
             assert _wait_overlay_registered()
 
             resp = client.post("/fire", json={"text": "this has BANNED_WORD"})
@@ -171,8 +171,8 @@ def test_blacklisted_fire_not_delivered_to_overlay(client, ws_server_port):
 def test_multiple_overlays_all_receive(client, ws_server_port):
     """兩個 overlay 同時連線，POST /fire 後兩個都應收到訊息"""
     with (
-        connect(f"ws://127.0.0.1:{ws_server_port}") as ws1,
-        connect(f"ws://127.0.0.1:{ws_server_port}") as ws2,
+        connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws1,
+        connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws2,
     ):
         assert _wait_overlay_registered(minimum=2), "expected 2 clients"
 
@@ -192,7 +192,7 @@ def test_multiple_overlays_all_receive(client, ws_server_port):
 
 def test_admin_setting_change_notifies_overlay(client, ws_server_port):
     """Admin 更新設定後，overlay 應收到 {'type': 'settings_changed', 'settings': {...}}"""
-    with connect(f"ws://127.0.0.1:{ws_server_port}") as ws:
+    with connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws:
         assert _wait_overlay_registered()
         ws_queue.dequeue_all()  # 清除連線初期可能殘留的 queue 項目
 
@@ -211,7 +211,7 @@ def test_admin_setting_change_notifies_overlay(client, ws_server_port):
 
 def test_admin_toggle_notifies_overlay(client, ws_server_port):
     """Admin 切換 Effects 開關，overlay 應收到 settings_changed"""
-    with connect(f"ws://127.0.0.1:{ws_server_port}") as ws:
+    with connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws:
         assert _wait_overlay_registered()
         ws_queue.dequeue_all()
 
@@ -233,9 +233,9 @@ def test_admin_toggle_notifies_overlay(client, ws_server_port):
 def test_fire_returns_503_after_overlay_disconnects(client, ws_server_port):
     """overlay 斷線後 /fire 應回傳 503"""
     # 確保先連再斷
-    with connect(f"ws://127.0.0.1:{ws_server_port}"):
+    with connect(f"ws://127.0.0.1:{ws_server_port}/ws"):
         assert _wait_overlay_registered()
-    # ws context 結束，overlay 已斷線；等待 WS 伺服器 unregister
+    # ws context 結束，overlay 已斷線；等待 Flask /ws 伺服器 unregister
     deadline = time.monotonic() + 2.0
     while time.monotonic() < deadline and get_ws_client_count() > 0:
         time.sleep(0.05)
@@ -250,7 +250,7 @@ def test_fire_returns_503_after_overlay_disconnects(client, ws_server_port):
 def test_fire_succeeds_after_overlay_reconnects(client, ws_server_port):
     """overlay 重新連線後 /fire 應恢復正常"""
     # 先斷線
-    with connect(f"ws://127.0.0.1:{ws_server_port}"):
+    with connect(f"ws://127.0.0.1:{ws_server_port}/ws"):
         pass
     # 等待斷線完成
     deadline = time.monotonic() + 2.0
@@ -258,7 +258,7 @@ def test_fire_succeeds_after_overlay_reconnects(client, ws_server_port):
         time.sleep(0.05)
 
     # 重新連線
-    with connect(f"ws://127.0.0.1:{ws_server_port}") as ws:
+    with connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws:
         assert _wait_overlay_registered()
 
         resp = client.post("/fire", json={"text": "reconnected"})
@@ -293,7 +293,7 @@ def test_concurrent_fires_all_delivered(ws_server_port):
     NUM = 50
     expected_texts = {f"concurrent-{i}" for i in range(NUM)}
 
-    with connect(f"ws://127.0.0.1:{ws_server_port}") as ws:
+    with connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws:
         assert _wait_overlay_registered()
 
         def _fire(i):

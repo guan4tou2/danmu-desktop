@@ -109,14 +109,13 @@ def test_ws_require_token_disabled_emits_startup_warning(caplog):
         log_ws_auth_warnings(
             logger,
             {
-                "WS_HOST": "127.0.0.1",
-                "WS_PORT": 4001,
                 "ENV": "development",
             },
         )
 
     assert "WS token auth is disabled" in caplog.text
-    assert "reachable without token auth" not in caplog.text
+    assert "/ws endpoint" in caplog.text
+    assert "Public /ws endpoint" not in caplog.text
 
 
 def test_ws_require_token_disabled_on_public_host_emits_stronger_warning(caplog):
@@ -130,14 +129,12 @@ def test_ws_require_token_disabled_on_public_host_emits_stronger_warning(caplog)
         log_ws_auth_warnings(
             logger,
             {
-                "WS_HOST": "0.0.0.0",
-                "WS_PORT": 4001,
                 "ENV": "production",
             },
         )
 
     assert "WS token auth is disabled" in caplog.text
-    assert "reachable without token auth" in caplog.text
+    assert "Public /ws endpoint" in caplog.text
 
 
 def test_production_requires_explicit_secret_key():
@@ -152,8 +149,6 @@ def test_production_requires_explicit_secret_key():
         TRUSTED_HOSTS = ["example.com"]
         WS_REQUIRE_TOKEN = False
         WS_AUTH_TOKEN = ""
-        WS_HOST = "127.0.0.1"
-        WS_PORT = 4001
         LOG_LEVEL = "INFO"
         RATE_LIMIT_BACKEND = "memory"
         SETTINGS_FILE = "/tmp/test-danmu-settings.json"
@@ -174,8 +169,6 @@ def test_production_requires_secure_session_cookie():
         TRUSTED_HOSTS = ["example.com"]
         WS_REQUIRE_TOKEN = False
         WS_AUTH_TOKEN = ""
-        WS_HOST = "127.0.0.1"
-        WS_PORT = 4001
         LOG_LEVEL = "INFO"
         RATE_LIMIT_BACKEND = "memory"
         SETTINGS_FILE = "/tmp/test-danmu-settings.json"
@@ -196,8 +189,6 @@ def test_production_requires_trusted_hosts():
         TRUSTED_HOSTS = None
         WS_REQUIRE_TOKEN = False
         WS_AUTH_TOKEN = ""
-        WS_HOST = "127.0.0.1"
-        WS_PORT = 4001
         LOG_LEVEL = "INFO"
         RATE_LIMIT_BACKEND = "memory"
         SETTINGS_FILE = "/tmp/test-danmu-settings.json"
@@ -218,8 +209,6 @@ def test_production_allows_safe_security_baseline():
         TRUSTED_HOSTS = ["example.com"]
         WS_REQUIRE_TOKEN = False
         WS_AUTH_TOKEN = ""
-        WS_HOST = "127.0.0.1"
-        WS_PORT = 4001
         LOG_LEVEL = "INFO"
         RATE_LIMIT_BACKEND = "memory"
         SETTINGS_FILE = "/tmp/test-danmu-settings.json"

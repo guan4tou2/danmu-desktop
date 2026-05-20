@@ -74,7 +74,7 @@ Add persistent scoreboards, tickers, and labels to the OBS overlay. Manage posit
 
 ### OBS Browser Source
 
-Use `http://your-server:4000/overlay` as an OBS Browser Source to display danmu without the Electron app. Transparent background, auto-connects via WebSocket.
+Use `https://your-server/overlay` as an OBS Browser Source to display danmu without the Electron app. Transparent background, auto-connects via WebSocket.
 
 ### Plugin SDK
 
@@ -94,14 +94,16 @@ Record live danmu sessions as JSON timelines for offline replay or analysis. Ava
    sudo xattr -r -d com.apple.quarantine 'Danmu Desktop.app'
    ```
 3. Launch the app
-4. Enter the server's IP + WebSocket port (default: `4001`)
+4. Enter the server host + HTTPS/web port printed by the setup wizard
 
 ### Server Setup
 
 The canonical path is `./setup.sh init` — an interactive wizard that
 picks sensible defaults for your environment, generates secrets, and
-writes `.env` for you. This covers HTTP dev, HTTPS self-signed (LAN /
-VPS), and Traefik + Let's Encrypt (public domain) in one flow.
+writes `.env` for you. It presents user-facing scenarios: IP/localhost +
+HTTP dev, IP + HTTPS self-signed, Domain + HTTPS self-signed, and Domain +
+HTTPS Let's Encrypt. The two self-signed HTTPS choices share the same
+compose profile; only the certificate SAN prompts differ.
 
 ```bash
 git clone https://github.com/guan4tou2/danmu-desktop.git
@@ -112,42 +114,36 @@ cd danmu-desktop
 ./setup.sh gen-secret                # generate + inject SECRET_KEY only
 
 # Then start the stack. The wizard prints the exact command; common paths:
-docker compose --profile https up -d         # HTTPS self-signed (LAN / VPS) — recommended
-docker compose --profile traefik up -d       # HTTPS + Let's Encrypt (public domain)
-docker compose --profile http up -d          # local HTTP (dev only — no desktop client)
+docker compose --profile https up -d         # IP/Domain + HTTPS self-signed — recommended
+docker compose --profile traefik up -d       # Domain + HTTPS Let's Encrypt
+docker compose --profile http up -d          # IP/localhost + HTTP dev only
 ```
 
-> v5.0.0+: the Electron desktop client connects via `wss://` only.
+> v5.0.0+: the Electron desktop client connects via `wss://` only. The
+> formal external endpoint is HTTPS/WSS on port `443`, with WebSocket at
+> `/ws` on the same web origin.
 > `--profile http` runs server + web admin/viewer fine but cannot
 > serve the desktop overlay.
 
-Full deploy guide (HTTPS modes, desktop-client WS port, Redis, backup/
+Full deploy guide (HTTPS modes, desktop-client connection, Redis, backup/
 restore, upgrades): **[DEPLOYMENT.md](DEPLOYMENT.md)**.
 
 #### Shortcut: prebuilt image, no clone
 
 If you only want the server binary and don't need source access:
 
-```bash
-docker run -d --name danmu-server \
-  -p 4000:4000 -p 4001:4001 \
-  -e ADMIN_PASSWORD=your_secure_password \
-  -e SECRET_KEY=$(openssl rand -hex 32) \
-  -e ENV=production \
-  -v "$(pwd)/danmu-runtime:/app/server/runtime" \
-  -v "$(pwd)/danmu-user-plugins:/app/server/user_plugins" \
-  -v "$(pwd)/danmu-user-fonts:/app/server/user_fonts" \
-  --restart unless-stopped \
-  ghcr.io/guan4tou2/danmu-server:latest
-```
+Use the prebuilt `ghcr.io/guan4tou2/danmu-server:latest` image behind an
+HTTPS reverse proxy. Do not publish the app container directly; expose only
+the TLS endpoint on port `443`.
 
 `SECRET_KEY` is required in production — production startup refuses to
 boot with an ephemeral key. `openssl rand -hex 32` inlines a fresh one;
 save it if you want consistent sessions across container recreates.
 
 Multi-arch (`linux/amd64` + `linux/arm64/v8`). Tags: `latest`, `main`,
-`<git-sha>`. For HTTPS on this path you need to front the container with
-your own reverse proxy.
+`<git-sha>`. This shortcut exposes the app's internal HTTP upstream. For
+desktop use, front it with HTTPS on port `443` and forward `/ws` to the same
+private upstream.
 
 #### Manual (no Docker)
 
@@ -157,18 +153,18 @@ cp .env.example .env
 # Edit .env: set ADMIN_PASSWORD
 
 cd server && uv venv && uv sync
-PYTHONPATH=.. uv run python -m server.app    # HTTP + WS both run from here
+PYTHONPATH=.. uv run python -m server.app    # HTTP + /ws both run from here
 ```
 
 ### Accessing the server
 
-After start-up, open:
+After start-up, open the HTTPS endpoint printed by the wizard:
 
-- Main interface: `http://<host>:<port>`
-- Admin panel: `http://<host>:<port>/admin`
-- OBS overlay: `http://<host>:<port>/overlay`
+- Main interface: `https://<host>`
+- Admin panel: `https://<host>/admin`
+- OBS overlay: `https://<host>/overlay`
 
-(Replace `<host>` and `<port>` with whatever the wizard printed.)
+Desktop and viewer traffic should use that HTTPS origin only.
 
 ### Environment variables
 
@@ -180,11 +176,10 @@ for you:
 | `ADMIN_PASSWORD` / `ADMIN_PASSWORD_HASHED` | Admin login (at least one required) |
 | `SECRET_KEY` | Flask session key (wizard / `gen-secret` generates this) |
 | `ENV` | `production` enables strict session/HSTS defaults |
-| `PORT` / `WS_PORT` | HTTP and WebSocket ports (defaults 4000 / 4001) |
-| `HTTPS_PORT` | External HTTPS port for `--profile https` / `traefik` |
+| `HTTPS_PORT` | Self-signed HTTPS profile override; default is `443`, desktop still uses the same port with `/ws` |
 | `TRUSTED_HOSTS` | Comma-separated allowlist for Host header |
 | `SESSION_COOKIE_SECURE` | `true` in production over HTTPS |
-| `WS_REQUIRE_TOKEN` / `WS_AUTH_TOKEN` | Optional shared-token auth for port 4001 |
+| `WS_REQUIRE_TOKEN` / `WS_AUTH_TOKEN` | Optional shared-token auth for `/ws` |
 | `RATE_LIMIT_BACKEND` | `memory` or `redis` (set up via `--profile redis`) |
 
 Every other setting ships a safe default; `.env.example` shows them all.
@@ -194,7 +189,7 @@ Every other setting ships a safe default; `.env.example` shows them all.
 - GitHub Advanced Security and Dependabot are enabled for this repository.
 - OSV scanning runs on `push`, `pull_request`, and scheduled jobs via `.github/workflows/osv-scanner.yml`.
 - Frontend lockfile enforces `serialize-javascript@7.0.3` through npm overrides to address advisory `GHSA-5c6j-r48x-rmvq`.
-- Dedicated WS auth is disabled by default (`WS_REQUIRE_TOKEN=false`). If port `4001` is reachable beyond localhost or a trusted LAN, any reachable client can connect unless you enable token auth or restrict the network path.
+- WS auth is disabled by default (`WS_REQUIRE_TOKEN=false`). If the web port is reachable beyond localhost or a trusted LAN, any reachable client can connect to `/ws` unless you enable token auth or restrict the network path.
 - Production startup now refuses an ephemeral `SECRET_KEY`, `SESSION_COOKIE_SECURE=false`, or missing `TRUSTED_HOSTS`. Set those explicitly before deploying.
 - The app now emits a nonce-based `Content-Security-Policy` header. If you add new inline scripts, use the template nonce instead of falling back to `unsafe-inline`.
 - `Strict-Transport-Security` stays opt-in via `HSTS_ENABLED=true` and is only sent on HTTPS responses.
@@ -227,8 +222,9 @@ Every other setting ships a safe default; `.env.example` shows them all.
 
 ## Port Configuration
 
-- `4000`: Web interface (HTTP via reverse proxy)
-- `4001`: Danmu Fire client connection (WebSocket via reverse proxy)
+- External formal endpoint: `https://<host>` and `wss://<host>/ws` on port `443`
+- Desktop, viewer, admin, OBS overlay, and WebSocket all share that single HTTPS/WSS entrypoint
+- If the self-signed HTTPS profile must use a custom port, set one `HTTPS_PORT`; do not add a second WS port
 
 ## References
 

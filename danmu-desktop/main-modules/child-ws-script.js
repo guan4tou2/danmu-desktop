@@ -55,11 +55,11 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
   // wss://IP:PORT/ws + token query (same port as the web UI).
   return `
       const IP_ADDR=${ipJson};
-      const WS_PORT_NUM=${safePort};
+      const HTTPS_PORT_NUM=${safePort};
       const STARTUP_ANIM_SETTINGS = ${startupAnimSettingsJson};
       const WS_AUTH_TOKEN = ${wsAuthTokenJson};
-      console.log(IP_ADDR, WS_PORT_NUM, 'wss')
-      let url = \`wss://\${IP_ADDR}:\${WS_PORT_NUM}/ws\`
+      console.log(IP_ADDR, HTTPS_PORT_NUM, 'wss')
+      let url = \`wss://\${IP_ADDR}:\${HTTPS_PORT_NUM}/ws\`
       if (WS_AUTH_TOKEN) {
         url = \`\${url}?token=\${encodeURIComponent(WS_AUTH_TOKEN)}\`
       }

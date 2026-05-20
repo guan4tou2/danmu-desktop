@@ -110,7 +110,7 @@
             <div class="admin-soh-v4__cfgcard">
               <div class="admin-soh-v4__pane-label">CONFIG SUMMARY</div>
               <div class="admin-soh-v4__cfgrow"><span>PUBLIC URL</span><code id="sysoPublicUrl">${location.origin}</code></div>
-              <div class="admin-soh-v4__cfgrow"><span>WS</span><code>:<span id="sysoWsPort">—</span></code></div>
+              <div class="admin-soh-v4__cfgrow"><span>WS PATH</span><code id="sysoWsPath">—</code></div>
               <div class="admin-soh-v4__cfgrow"><span>PLUGINS</span><code data-cfg-plugins>—</code></div>
               <div class="admin-soh-v4__cfgrow"><span>WEBHOOKS</span><code data-cfg-webhooks>—</code></div>
               <div class="admin-soh-v4__cfgrow"><span>TOKENS</span><code data-cfg-tokens>—</code></div>
@@ -250,8 +250,8 @@
 
   function _wire() {
     const cfg = window.DANMU_CONFIG || {};
-    const wsPortEl = document.getElementById("sysoWsPort");
-    if (wsPortEl) wsPortEl.textContent = ((cfg && cfg.wsPort) || 4001);
+    const wsPathEl = document.getElementById("sysoWsPath");
+    if (wsPathEl) wsPathEl.textContent = ((cfg && cfg.wsPath) || "/ws");
 
     (async () => {
       try {

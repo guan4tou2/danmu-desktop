@@ -35,9 +35,8 @@ if not should_run_browser_module(__file__):
 
 @pytest.fixture()
 def server_ports():
-    """啟動 Flask HTTP + WS 伺服器（每個測試一個子行程，避免跨測試狀態汙染）"""
+    """啟動 Flask HTTP + /ws 伺服器（每個測試一個子行程，避免跨測試狀態汙染）"""
     http_port = find_free_port()
-    ws_port = find_free_port()
 
     fd, settings_path_str = tempfile.mkstemp(
         prefix="_test_overlay_render_settings_",
@@ -56,7 +55,7 @@ def server_ports():
     filter_rules_path = __import__("pathlib").Path(filter_rules_path_str)
 
     script = textwrap.dedent(f"""\
-        import sys, os, threading, logging
+        import sys, os
         sys.path.insert(0, ".")
         os.environ["SETTINGS_FILE"] = "{settings_path}"
         os.environ["FILTER_RULES_FILE"] = "{filter_rules_path}"
@@ -65,7 +64,6 @@ def server_ports():
         Config.WS_REQUIRE_TOKEN = False
         Config.WS_AUTH_TOKEN = ""
         Config.WS_ALLOWED_ORIGINS = []
-        Config.WS_PORT = {ws_port}
         Config.TESTING = True
         Config.SECRET_KEY = "test-secret"
         Config.ADMIN_PASSWORD = "test"
@@ -73,19 +71,13 @@ def server_ports():
         Config.FIRE_RATE_WINDOW = 1
 
         from server.app import create_app
-        from server.ws.server import run_ws_server
-
-        logger = logging.getLogger("ws_overlay_render")
-        logger.addHandler(logging.NullHandler())
-
-        ws_thread = threading.Thread(
-            target=run_ws_server, args=({ws_port}, logger), daemon=True
-        )
-        ws_thread.start()
+        from server.ws import start_ws_broadcast
+        from gevent.pywsgi import WSGIServer
 
         app = create_app(Config)
+        start_ws_broadcast()
         print("READY", flush=True)
-        app.run(host="127.0.0.1", port={http_port}, use_reloader=False)
+        WSGIServer(("127.0.0.1", {http_port}), app).serve_forever()
     """)
 
     proc = subprocess.Popen(
@@ -108,16 +100,15 @@ def server_ports():
 
     import socket
 
-    for port in (http_port, ws_port):
-        d = time.monotonic() + 5.0
-        while time.monotonic() < d:
-            try:
-                with socket.create_connection(("127.0.0.1", port), timeout=0.1):
-                    break
-            except OSError:
-                time.sleep(0.05)
+    d = time.monotonic() + 5.0
+    while time.monotonic() < d:
+        try:
+            with socket.create_connection(("127.0.0.1", http_port), timeout=0.1):
+                break
+        except OSError:
+            time.sleep(0.05)
 
-    yield http_port, ws_port
+    yield http_port, http_port
 
     proc.terminate()
     proc.wait(timeout=5)

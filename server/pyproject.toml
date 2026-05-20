@@ -38,7 +38,6 @@ redis = ["redis>=7.4.0"]
 
 [project.scripts]
 serve = "server.app:main"
-serve-ws = "server.ws_app:main"
 
 [dependency-groups]
 dev = [

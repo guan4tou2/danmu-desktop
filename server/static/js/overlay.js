@@ -11,7 +11,8 @@
   var params = new URL(location.href).searchParams;
   var cfg = window.OVERLAY_CONFIG || {};
 
-  var wsPort = parseInt(params.get("port") || cfg.wsPort, 10) || 4001;
+  var wsPath = params.get("path") || cfg.wsPath || "/ws";
+  if (wsPath.charAt(0) !== "/") wsPath = "/" + wsPath;
   var wsToken = params.get("token") || cfg.wsToken || "";
   var maxTracks = parseInt(params.get("maxTracks"), 10) || 10;
   var defaultFontSize = parseInt(params.get("fontSize"), 10) || 0; // 0 = use server value
@@ -76,7 +77,7 @@
       en: "UNREACHABLE · NO SERVER",
       label: "連線失敗",
       subtitle: function (host) { return "找不到 " + host + " · 檢查網路"; },
-      noteHtml: function () { return "確認 Server 啟動 · 或手動輸入 ws:// 位址"; },
+      noteHtml: function () { return "確認 Server 啟動 · 或手動輸入 /ws 位址"; },
       actionsHtml:
         '<button type="button" class="overlay-idle-btn overlay-idle-btn-primary" data-overlay-idle-action="retry">▶ 重試連線</button>' +
         '<button type="button" class="overlay-idle-btn overlay-idle-btn-secondary" data-overlay-idle-action="manual">手動輸入位址</button>',
@@ -142,7 +143,7 @@
   }
 
   function _hostName() {
-    try { return window.location.host; } catch (_) { return "danmu.local:4001"; }
+    try { return window.location.host; } catch (_) { return "danmu.local"; }
   }
 
   function _setIdleState(state) {
@@ -355,9 +356,10 @@
       try { ws.close(); } catch (_) { /* ignore */ }
     }
 
-    var url = "ws://" + location.hostname + ":" + wsPort;
+    var scheme = location.protocol === "https:" ? "wss" : "ws";
+    var url = scheme + "://" + location.host + wsPath;
     if (wsToken) {
-      url += "/?token=" + encodeURIComponent(wsToken);
+      url += (url.indexOf("?") === -1 ? "?" : "&") + "token=" + encodeURIComponent(wsToken);
     }
 
     console.log("[overlay] Connecting to", url);

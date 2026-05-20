@@ -2,7 +2,7 @@
 
 v5.3.0: merged WS onto Flask's port via flask-sock. The /ws route handles
 the same Electron overlay protocol (auth, heartbeat, ping/pong, message
-forwarding) that previously ran on a dedicated asyncio server on port 4001.
+forwarding) that previously ran on a dedicated asyncio server.
 
 Architecture:
   - Each WS connection spawns two gevent greenlets:
@@ -23,6 +23,7 @@ import time
 import gevent
 from gevent.queue import Queue
 from simple_websocket import ConnectionClosed
+from simple_websocket.ws import CloseReason
 
 from ..config import Config
 from ..managers import connection_manager
@@ -186,6 +187,12 @@ def init_ws(app):
                     break
                 if data is None:
                     continue
+                if len(data.encode("utf-8") if isinstance(data, str) else data) > int(
+                    Config.WS_MAX_SIZE
+                ):
+                    logger.warning("WS message exceeded max size for %s", client_ip)
+                    ws.close(reason=CloseReason.MESSAGE_TOO_BIG)
+                    break
                 if not _check_msg_rate(ws):
                     logger.warning(
                         "WS per-connection message rate limit exceeded for %s",

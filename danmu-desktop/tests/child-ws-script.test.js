@@ -131,7 +131,7 @@ describe("getChildWsScript", () => {
 
   test("port is coerced to a number", () => {
     const script = getChildWsScript("localhost", "9999");
-    expect(script).toContain("WS_PORT_NUM=9999");
+    expect(script).toContain("HTTPS_PORT_NUM=9999");
   });
 });
 

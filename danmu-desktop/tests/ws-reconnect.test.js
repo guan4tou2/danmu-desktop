@@ -82,7 +82,7 @@ function makeStatusTracker() {
 }
 
 const SCRIPT_IP = "127.0.0.1";
-const SCRIPT_PORT = "4001";
+const SCRIPT_PORT = "443";
 const ANIM = { enabled: false };
 
 function evalScript(MockWS) {

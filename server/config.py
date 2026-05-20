@@ -40,8 +40,7 @@ class Config:
     ADMIN_PASSWORD_HASHED = load_runtime_hash() or os.getenv("ADMIN_PASSWORD_HASHED", "")
     APP_NAME = "Danmu Fire"
     APP_VERSION = "5.2.0"
-    PORT = int(os.getenv("PORT", "4000"))
-    WS_PORT = int(os.getenv("WS_PORT", "4001"))
+    PORT = int(os.getenv("PORT", "8080"))
     ENV = os.getenv("ENV", "development").lower()
     MAX_CONTENT_LENGTH = 15 * 1024 * 1024  # 15 MB uploads
     WS = ""
@@ -113,8 +112,7 @@ class Config:
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
     CORS_SUPPORTS_CREDENTIALS = os.getenv("CORS_SUPPORTS_CREDENTIALS", "false").lower() == "true"
 
-    # Dedicated WS server access control
-    WS_HOST = os.getenv("WS_HOST", "0.0.0.0")
+    # WebSocket access control for /ws on the web server port
     WS_REQUIRE_TOKEN = os.getenv("WS_REQUIRE_TOKEN", "false").lower() == "true"
     WS_AUTH_TOKEN = os.getenv("WS_AUTH_TOKEN", "")
     WS_MAX_SIZE = int(os.getenv("WS_MAX_SIZE", str(1024 * 1024)))

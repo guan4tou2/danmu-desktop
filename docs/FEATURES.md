@@ -108,7 +108,7 @@ Viewers never log in. Admins never appear in the viewer UI. Desktop clients do n
 
 ## Server features
 
-Entry points live under `server/` (Flask app at port 4000 + dedicated WS server at port 4001).
+Entry points live under `server/` (Flask app at the web port, with WebSocket at `/ws` on the same port).
 
 ### 1. Danmu lifecycle
 
@@ -121,7 +121,7 @@ The primary flow. Everything else exists to shape or gate this.
 | Overlay connection count | `GET /overlay_status` | Shows streamer if at least one overlay is listening |
 | Generate avatar | `GET /avatar/<letter>/<color>` | Inline SVG placeholder for usernames |
 | Serve uploaded fonts | `GET /user_fonts/<filename>?token=…` | Signed token, 900s default TTL |
-| WS broadcast | `ws://host:4001/` | Separate server — pushes `danmu`, `widget_sync`, `poll_update`, `blacklist_update`, `metrics` messages to overlays |
+| WS broadcast | `ws://host:port/ws` or `wss://host/ws` | Same web origin — pushes `danmu`, `widget_sync`, `poll_update`, `blacklist_update`, `metrics` messages to overlays |
 
 **Rate limits:** `/fire` is 20/60s per IP by default. `/fire` returns 503 immediately if zero overlays are connected. Designs that show a "Fire" button must handle both states (throttled, no overlay).
 
@@ -307,7 +307,7 @@ Render-only. No user input. Spawned by the main window.
 
 - Frameless, transparent, click-through
 - Positioned to match selected display bounds (fullscreen)
-- Receives danmu over **`wss://${host}:${port}/ws`** (v5.0.0 unified — `--profile https` terminates TLS at nginx, port 4001 exposed)
+- Receives danmu over **`wss://${host}:${port}/ws`** (same HTTPS/web port as admin/viewer)
 - Self-signed cert auto-trusted via `trusted-wss-hosts` registry (scoped to current `host:port` only — never global)
 - Track manager assigns each danmu to a collision-aware lane
 - Applies admin-side display-area mask (top + height %) when configured server-side
