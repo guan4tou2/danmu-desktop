@@ -22,6 +22,11 @@ function readClientNav() {
   return fs.readFileSync(navPath, "utf8");
 }
 
+function readPreload() {
+  const preloadPath = path.join(__dirname, "..", "preload.js");
+  return fs.readFileSync(preloadPath, "utf8");
+}
+
 function readClientPackageVersion() {
   const pkgPath = path.join(__dirname, "..", "package.json");
   return JSON.parse(fs.readFileSync(pkgPath, "utf8")).version;
@@ -133,6 +138,13 @@ test("desktop client nav does not run retired connection live-status bridge", ()
   expect(nav).not.toContain("data-client-uptime");
   expect(nav).not.toContain("data-client-reconnect");
   expect(nav).not.toContain("tickUptime");
+});
+
+test("desktop preload does not emit debug console logs", () => {
+  const preload = readPreload();
+
+  expect(preload).not.toMatch(/\bconsole\.log\b/);
+  expect(preload).not.toContain(" V2");
 });
 
 test("overlay section owns display selection and has one visible runtime control model", () => {
