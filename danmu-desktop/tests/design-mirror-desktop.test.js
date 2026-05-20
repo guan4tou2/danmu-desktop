@@ -40,7 +40,8 @@ test("ConnSection AUTH panel labels the field as WebSocket Token, not admin pass
 });
 
 test("ConnSection does not show a persistent deployment-docs link", () => {
-  // The first-run gate may keep a docs hint; ConnSection itself must not.
+  // Desktop no longer ships a first-run gate; ConnSection itself must not
+  // grow a persistent deployment-docs link.
   const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
 
   expect(src).not.toContain("github.com/.../docs/server-setup");

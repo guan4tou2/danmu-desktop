@@ -12,6 +12,11 @@ function readMainProcess() {
   return fs.readFileSync(mainPath, "utf8");
 }
 
+function readRendererEntry() {
+  const rendererPath = path.join(__dirname, "..", "renderer.js");
+  return fs.readFileSync(rendererPath, "utf8");
+}
+
 function readClientPackageVersion() {
   const pkgPath = path.join(__dirname, "..", "package.json");
   return JSON.parse(fs.readFileSync(pkgPath, "utf8")).version;
@@ -102,6 +107,17 @@ test("connection section follows the configure-only design with three always-vis
   // unchanged. They must be `hidden` attribute.
   expect(conn).toMatch(/<input[^>]+id="host-input"[^>]+hidden/);
   expect(conn).toMatch(/<input[^>]+id="port-input"[^>]+hidden/);
+});
+
+test("desktop client does not ship or auto-init a first-run setup wizard", () => {
+  const html = readClientHtml();
+  const renderer = readRendererEntry();
+
+  expect(html).not.toContain('id="firstRunGate"');
+  expect(html).not.toContain("data-firstrun-action");
+  expect(html).not.toContain("client-firstrun-");
+  expect(renderer).not.toContain("first-run-gate");
+  expect(renderer).not.toContain("initFirstRunGate");
 });
 
 test("overlay section owns display selection and has one visible runtime control model", () => {

@@ -4,8 +4,8 @@
 //   3. LAST USED SERVER — single most-recent entry from localStorage
 //
 // The Server field is bidirectionally synced with the hidden host-input +
-// port-input compat fields so existing modules (ws-manager, first-run-gate)
-// continue to read the same IDs unchanged.
+// port-input compat fields so ws-manager continues to read the same IDs
+// unchanged.
 
 const { parseServerInput, buildCanonicalUrl, formatDisplayHost } = require("./conn-parser");
 const { createConnTest } = require("./conn-test");
@@ -89,10 +89,7 @@ function initConnSection({ api } = {}) {
   }
 
   function _renderPreview() {
-    if (!serverInput) {
-      // Fallback when only hidden inputs exist (e.g. first-run-only page).
-      return;
-    }
+    if (!serverInput) return;
     const parsed = _safeParse(serverInput.value);
     if (!parsed) {
       if (hostDisplay) hostDisplay.textContent = serverInput.value || "—";

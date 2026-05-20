@@ -39,8 +39,7 @@
       <!-- Label + status centered together as one unit, per design v3-r6.
            macOS native traffic lights overlap the left edge — handled by
            padding-left on body[data-os="mac"]. Title shows the product
-           identity (matches package.json productName); user-facing brand
-           "Danmu Fire" is used in the body (hero, first-run, tray items). -->
+           identity (matches package.json productName). -->
       <div class="client-titlebar-center">
         <span class="client-titlebar-label">Danmu Desktop</span>
         <span class="client-titlebar-status" role="status" aria-live="polite">
@@ -76,11 +75,8 @@
     <div class="client-shell" data-client-shell>
       <aside class="client-sidebar" role="navigation" aria-label="Client sections">
         <nav class="client-nav">
-          <!-- v5.0.0: 連線 sits at the top so first-run users land directly
-               on the setup tab without re-orienting. Runtime display controls
-               stay in Overlay; maintenance lives in About.
-               is-active starts on conn to avoid a flash before client-nav.js
-               bootstrap; activate() will rebalance based on actual state. -->
+          <!-- Server configuration is the default v3 desktop entry; runtime
+               display controls stay in Overlay; maintenance lives in About. -->
           <button type="button" class="client-nav-btn is-active" data-nav="conn">
             <span class="client-nav-icon">⇌</span>
             <span class="client-nav-label">
@@ -126,100 +122,8 @@
           </div>
         </div>
 
-        <!-- Section: Connection (prototype desktop.jsx ConnSection:250).
-             Default-visible (no `hidden`) — v5.0.0 promoted conn to first
-             nav so first-run users land here directly. -->
+        <!-- Section: Connection (prototype desktop.jsx ConnSection:250). -->
         <section class="client-section" data-section="conn">
-          <!-- First-run setup gate (v5.0.0: moved from fullscreen overlay
-               to inline conn-tab card so the sidebar stays clickable). -->
-          <div id="firstRunGate" class="client-firstrun-gate" hidden role="region" aria-label="First-run server setup">
-            <div class="client-firstrun-card">
-              <div class="client-firstrun-hero">
-                <h1 class="client-firstrun-title">Danmu Fire</h1>
-                <div class="client-firstrun-subtitle">Desktop · Electron app</div>
-              </div>
-
-              <div class="client-firstrun-lead" data-i18n="firstrunLead">連到你的彈幕伺服器</div>
-              <div class="client-firstrun-hint" data-i18n="firstrunHint">
-                首次啟動需要設定伺服器位址 · 設定後會記住，下次自動重連
-              </div>
-
-              <!-- Stepper -->
-              <div class="client-firstrun-stepper" data-firstrun-stepper>
-                <div class="client-firstrun-step is-active" data-step="server">
-                  <span class="client-firstrun-step-circle">1</span>
-                  <span class="client-firstrun-step-label" data-i18n="firstrunStepServer">SERVER</span>
-                </div>
-                <span class="client-firstrun-step-line"></span>
-                <div class="client-firstrun-step" data-step="test">
-                  <span class="client-firstrun-step-circle">2</span>
-                  <span class="client-firstrun-step-label" data-i18n="firstrunStepTest">TEST</span>
-                </div>
-                <span class="client-firstrun-step-line"></span>
-                <div class="client-firstrun-step" data-step="ready">
-                  <span class="client-firstrun-step-circle">3</span>
-                  <span class="client-firstrun-step-label" data-i18n="firstrunStepReady">READY</span>
-                </div>
-              </div>
-
-              <!-- URL field + test button -->
-              <div class="client-firstrun-field">
-                <div class="client-firstrun-field-label" data-i18n="firstrunFieldLabel">SERVER · IP / HOST</div>
-                <div class="client-firstrun-row">
-                  <input
-                    type="text"
-                    id="firstRunHost"
-                    class="client-firstrun-input"
-                    placeholder="e.g., 192.0.2.1"
-                    autocomplete="off"
-                    spellcheck="false"
-                  />
-                  <input
-                    type="text"
-                    id="firstRunPort"
-                    class="client-firstrun-input client-firstrun-input--port"
-                    placeholder="443"
-                    autocomplete="off"
-                    spellcheck="false"
-                    inputmode="numeric"
-                  />
-                  <button type="button" class="client-firstrun-test-btn" id="firstRunTestBtn">
-                    <span data-firstrun-test-label data-i18n="firstrunTestBtn">測試連線</span>
-                  </button>
-                </div>
-                <div class="client-firstrun-field-help" data-i18n="firstrunFieldHelp">
-                  使用 wss://HOST:PORT/ws · 與 Web 同 port（預設 443）
-                </div>
-                <div class="client-firstrun-test-result" id="firstRunTestResult" hidden></div>
-              </div>
-
-              <!-- Recent servers (hidden when empty) -->
-              <div class="client-firstrun-recent" id="firstRunRecent" hidden>
-                <div class="client-firstrun-field-label" data-i18n="firstrunRecentLabel">RECENT</div>
-                <div class="client-firstrun-recent-list" data-firstrun-recent></div>
-              </div>
-
-              <!-- Remember + path note -->
-              <label class="client-firstrun-remember">
-                <input type="checkbox" id="firstRunRemember" checked />
-                <span class="client-firstrun-remember-text" data-i18n="firstrunRemember">記住這個伺服器（下次自動連線）</span>
-              </label>
-              <div class="client-firstrun-remember-hint" data-i18n="firstrunRememberHint">
-                設定存於 localStorage · 可從 ⚙ 連線 → 重新設定 重置
-              </div>
-
-              <!-- Footer actions -->
-              <div class="client-firstrun-footer">
-                <span class="client-firstrun-footer-link" data-firstrun-action="docs" data-i18n="firstrunDocsLink">部署文件 →</span>
-                <span class="client-firstrun-footer-spacer"></span>
-                <button type="button" class="client-firstrun-skip-btn" data-firstrun-action="skip" data-i18n="firstrunSkip">稍後設定</button>
-                <button type="button" class="client-firstrun-confirm-btn" data-firstrun-action="confirm" disabled data-i18n="firstrunConfirm">
-                  連線並開始接收 →
-                </button>
-              </div>
-            </div>
-          </div>
-
           <div class="client-section-head">
             <div class="client-section-title" data-i18n="connSectionTitle">連線設定</div>
             <div class="client-section-kicker" data-i18n="connSectionKicker">SERVER · CONFIGURE</div>
@@ -317,8 +221,7 @@
           <input type="text" id="port-input" hidden aria-hidden="true" tabindex="-1" />
         </section>
 
-        <!-- Section: Overlay display & controls (prototype desktop.jsx OverlaySection:203).
-             Hidden by default — v5.0.0 demoted overlay to second nav. -->
+        <!-- Section: Overlay display & controls (prototype desktop.jsx OverlaySection:203). -->
         <section class="client-section" data-section="overlay" hidden>
           <div class="client-section-head">
             <div class="client-section-title" data-i18n="overlaySectionTitle">Overlay 控制</div>

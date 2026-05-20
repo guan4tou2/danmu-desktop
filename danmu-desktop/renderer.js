@@ -23,7 +23,6 @@ const {
 const { initGlobalEffects } = require("./renderer-modules/konami");
 const { initParticleBg } = require("./renderer-modules/particle-bg");
 const { initUpdateStatus } = require("./renderer-modules/update-status");
-const { init: initFirstRunGate } = require("./renderer-modules/first-run-gate");
 const { initConnSection } = require("./renderer-modules/conn-section-wire");
 const { initWindowPicker } = require("./renderer-modules/window-picker");
 const { initAppShellMeta } = require("./renderer-modules/app-shell-meta");
@@ -47,14 +46,10 @@ const initRenderer = async () => {
     // ── Synchronous module initialization (before any awaits) ────────────
     initTrackManager();
     initGlobalEffects();
-    // Inline connection setup card — auto-opens inside the Connection tab
-    // iff no saved server config exists, then hydrates host/port on confirm.
-    initFirstRunGate();
 
     // Conn section wire — unified Server field ↔ hidden host/port compat
-    // fields, canonical preview, and ⚐ 測試 button. Must run AFTER
-    // initFirstRunGate so the recent-server list has hydrated host-input,
-    // and BEFORE initOverlayControls hydrates from settings.
+    // fields, canonical preview, and ⚐ 測試 button. Must run BEFORE
+    // initOverlayControls hydrates from settings.
     initConnSection({});
 
     initOverlayControls({
