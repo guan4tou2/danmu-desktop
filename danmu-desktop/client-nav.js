@@ -1,5 +1,5 @@
 // client-nav.js — Sidebar router for the Electron main window.
-// Matches prototype desktop.jsx ControlWindow:141 useState('overlay').
+// Matches prototype desktop.jsx ControlWindow section switching.
 // CSP on index.html forbids inline <script>, so this lives as its own file.
 
 (function () {
@@ -55,86 +55,6 @@
     } catch (e) {
       // ignore
     }
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // Connection section — prototype ConnSection:250 live status.
-  //
-  // Derives the displayed WSS URL from the existing #host-input /
-  // #port-input fields (which still drive ws-manager).
-  // Tracks reconnect count & connected-at timestamp from the legacy
-  // #status-indicator color changes.
-  // ─────────────────────────────────────────────────────────────
-  function initConnCard() {
-    var host = document.getElementById("host-input");
-    var port = document.getElementById("port-input");
-    var token = document.getElementById("ws-token-input");
-    var urlEl = document.querySelector("[data-client-server-url]");
-    var uptimeEl = document.querySelector("[data-client-uptime]");
-    var reconnectEl = document.querySelector("[data-client-reconnect]");
-
-    function renderUrl() {
-      if (!urlEl) return;
-      var h = (host && host.value) || "—";
-      var p = (port && port.value) || "—";
-      var hasToken = token && token.value;
-      var scheme = "wss";
-      urlEl.textContent = scheme + "://" + h + ":" + p + "/ws" + (hasToken ? " · token" : "");
-    }
-
-    // Track reconnect count + uptime by watching the legacy status indicator.
-    var reconnectCount = 0;
-    var connectedAt = null;
-    var wasConnected = false;
-
-    function tickUptime() {
-      if (!uptimeEl) return;
-      if (!connectedAt) {
-        uptimeEl.textContent = "—";
-        return;
-      }
-      var s = Math.floor((Date.now() - connectedAt) / 1000);
-      var h = String(Math.floor(s / 3600)).padStart(2, "0");
-      var m = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
-      var sec = String(s % 60).padStart(2, "0");
-      uptimeEl.textContent = h + ":" + m + ":" + sec;
-    }
-
-    function onStatusChange() {
-      var dot = document.getElementById("status-indicator");
-      if (!dot) return;
-      var bg = (dot.style.backgroundColor || "").toLowerCase();
-      // connected state uses green (#10b981 → rgb(16, 185, 129))
-      var nowConnected = bg.indexOf("16, 185, 129") >= 0 || bg.indexOf("#10b981") >= 0;
-      if (nowConnected && !wasConnected) {
-        if (connectedAt) reconnectCount++;
-        connectedAt = Date.now();
-        if (reconnectEl) reconnectEl.textContent = String(reconnectCount);
-      } else if (!nowConnected && wasConnected) {
-        connectedAt = null;
-      }
-      wasConnected = nowConnected;
-    }
-
-    if (host) host.addEventListener("input", renderUrl);
-    if (port) port.addEventListener("input", renderUrl);
-    if (token) token.addEventListener("input", renderUrl);
-
-    // Watch the legacy status indicator via MutationObserver (style changes).
-    var dot = document.getElementById("status-indicator");
-    if (dot && typeof MutationObserver !== "undefined") {
-      var mo = new MutationObserver(onStatusChange);
-      mo.observe(dot, { attributes: true, attributeFilter: ["style"] });
-    }
-
-    setInterval(tickUptime, 1000);
-    renderUrl();
-    onStatusChange();
-
-    // Action buttons. `edit-conn` / `close-conn-edit` panel toggle was
-    // retired with the 2026-05-16 in-place edit refactor — those handlers
-    // live in renderer-modules/conn-section-wire.js now. No remaining
-    // actions need wiring here.
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -274,7 +194,6 @@
 
   function bootstrap() {
     init();
-    initConnCard();
     initOverlayCards();
   }
 

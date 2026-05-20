@@ -17,6 +17,11 @@ function readRendererEntry() {
   return fs.readFileSync(rendererPath, "utf8");
 }
 
+function readClientNav() {
+  const navPath = path.join(__dirname, "..", "client-nav.js");
+  return fs.readFileSync(navPath, "utf8");
+}
+
 function readClientPackageVersion() {
   const pkgPath = path.join(__dirname, "..", "package.json");
   return JSON.parse(fs.readFileSync(pkgPath, "utf8")).version;
@@ -118,6 +123,16 @@ test("desktop client does not ship or auto-init a first-run setup wizard", () =>
   expect(html).not.toContain("client-firstrun-");
   expect(renderer).not.toContain("first-run-gate");
   expect(renderer).not.toContain("initFirstRunGate");
+});
+
+test("desktop client nav does not run retired connection live-status bridge", () => {
+  const nav = readClientNav();
+
+  expect(nav).not.toContain("function initConnCard");
+  expect(nav).not.toContain("data-client-server-url");
+  expect(nav).not.toContain("data-client-uptime");
+  expect(nav).not.toContain("data-client-reconnect");
+  expect(nav).not.toContain("tickUptime");
 });
 
 test("overlay section owns display selection and has one visible runtime control model", () => {
