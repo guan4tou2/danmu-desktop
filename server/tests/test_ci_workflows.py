@@ -1,5 +1,5 @@
-import tomllib
 import json
+import tomllib
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -42,5 +42,16 @@ def test_release_workflow_does_not_upload_installer_artifacts():
     body = workflow.read_text(encoding="utf-8")
 
     assert "Danmu Desktop*-mac-arm64.dmg" not in body
-    assert "Danmu Desktop*-mac-arm64.zip" in body
-    assert "Danmu Desktop*-win-x64.exe" in body
+    assert "Danmu-Desktop*-mac-arm64.zip" in body
+    assert "Danmu-Desktop*-win-x64.exe" in body
+
+
+def test_desktop_artifact_names_match_updater_metadata_urls():
+    package = REPO_ROOT / "danmu-desktop" / "package.json"
+    workflow = REPO_ROOT / ".github" / "workflows" / "build.yml"
+    data = json.loads(package.read_text(encoding="utf-8"))
+    body = workflow.read_text(encoding="utf-8")
+
+    assert data["build"]["artifactName"] == "Danmu-Desktop-${version}-${os}-${arch}.${ext}"
+    assert "Danmu-Desktop*-mac-arm64.zip" in body
+    assert "Danmu-Desktop*-win-x64.exe" in body

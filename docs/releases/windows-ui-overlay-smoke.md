@@ -9,6 +9,8 @@ desktop/viewer contract.
 
 - Download the Windows x64 portable `.exe` from the latest release.
 - Confirm there is no NSIS installer artifact in the release.
+- Confirm whether `latest.yml` is present. For `v5.3.1` portable-only output it
+  is not expected, because the installer updater channel is not being published.
 - Launch the executable directly from a normal user directory.
 - Confirm no installer wizard, installation directory prompt, Start Menu setup,
   or uninstall flow appears.

@@ -53,7 +53,7 @@
   "build": {
     "appId": "com.danmufire.desktop",
     "productName": "Danmu Desktop",
-    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "artifactName": "Danmu-Desktop-${version}-${os}-${arch}.${ext}",
     "publish": {
       "provider": "github",
       "owner": "guan4tou2",
