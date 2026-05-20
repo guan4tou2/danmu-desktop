@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -22,10 +21,8 @@ def test_overlay_uses_same_origin_ws_path(client):
 
 
 def test_overlay_js_builds_same_origin_ws_url():
-    body = (REPO_ROOT / "server" / "static" / "js" / "overlay.js").read_text(
-        encoding="utf-8"
-    )
-    assert 'location.host + wsPath' in body
+    body = (REPO_ROOT / "server" / "static" / "js" / "overlay.js").read_text(encoding="utf-8")
+    assert "location.host + wsPath" in body
     assert 'location.hostname + ":" + wsPort' not in body
     assert 'params.get("port")' not in body
 

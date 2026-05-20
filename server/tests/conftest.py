@@ -213,6 +213,7 @@ def wait_for_ws_count(minimum: int = 1, timeout: float = 2.0) -> bool:
 def ws_server_port(tmp_path_factory):
     """啟動不需 token 的 Flask /ws 伺服器（整個 session 共用一個）."""
     from gevent.pywsgi import WSGIServer
+
     from server.services import ws_auth as ws_auth_mod
     from server.ws import start_ws_broadcast
 
