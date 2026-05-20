@@ -139,6 +139,5 @@ jobs:
             artifacts/Electron-App-ubuntu-latest/Danmu-Desktop*-*.deb
             artifacts/Electron-App-ubuntu-latest/latest-linux.yml
             artifacts/Electron-App-windows-latest/Danmu-Desktop*-win-x64.exe
-            artifacts/Electron-App-windows-latest/latest.yml
             artifacts/Electron-App-macos-latest/Danmu-Desktop*-mac-arm64.zip
             artifacts/Electron-App-macos-latest/latest-mac.yml

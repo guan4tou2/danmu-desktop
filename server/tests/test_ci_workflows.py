@@ -44,6 +44,7 @@ def test_release_workflow_does_not_upload_installer_artifacts():
     assert "Danmu Desktop*-mac-arm64.dmg" not in body
     assert "Danmu-Desktop*-mac-arm64.zip" in body
     assert "Danmu-Desktop*-win-x64.exe" in body
+    assert "artifacts/Electron-App-windows-latest/latest.yml" not in body
 
 
 def test_desktop_artifact_names_match_updater_metadata_urls():
