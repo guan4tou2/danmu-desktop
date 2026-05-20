@@ -15,8 +15,10 @@
 1. Danmu-Desktop
    - 客戶端應用程式，在您的電腦上運行以顯示彈幕
    - 支援 Windows、MacOS 和 Linux
-   - 提供安裝版和可攜式版本
-   - 從 GitHub Releases 自動更新
+   - 發布為可攜式桌面套件：Windows portable x64 `.exe`、macOS arm64
+     `.zip`，以及 Linux AppImage / `.deb`
+   - Windows 維持 portable-only 時不發布更新 metadata；macOS 更新 metadata
+     指向 ZIP package
 
 ![img](img/client.png)
 ![img](img/client%20start%20effect.png)
