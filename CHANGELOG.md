@@ -9,6 +9,36 @@
 
 (no items pending)
 
+## [5.3.0] - 2026-05-20
+
+**Desktop finalization + unified WebSocket runtime + admin cleanup.**
+Minor bump because the desktop display client behavior was finalized, the
+WebSocket runtime moved onto the Flask `/ws` route, and release regression
+now covers the Docker smoke path that exercises that route. Operators should
+use this release instead of the older `v5.2.0` desktop artifacts.
+
+### 變更 / Changed
+
+- Desktop shell aligned to the v3 design target: `Danmu Desktop` product
+  naming, current tray/about behavior, and removal of retired setup-wizard
+  and bridge/debug paths.
+- WebSocket delivery consolidated on the Flask `/ws` route for the Docker
+  smoke test and desktop/server flow; the retired dedicated `4001` assumption
+  was removed from CI.
+- Admin command palette debug logging fallback removed; sidebar IA and
+  regression guards now lock the cleaned-up behavior.
+- Release dependency floor raised to `idna>=3.15`; pip-audit keeps the
+  currently-unfixed `flask-cors` advisory ignored with a scoped workflow
+  note until an upstream fixed release exists.
+
+### 驗證 / Verified
+
+- Server pytest: `1262 passed, 4 skipped`
+- Desktop Jest: `454 passed`
+- Desktop Electron E2E: `25 passed`
+- Docker Build / Tests / CodeQL / OSV checks green on `main`
+- macOS DMG + ZIP produced and checksum/integrity verified locally
+
 ## [5.2.0] - 2026-05-19
 
 **Danmu Redesign v5 finish — full design coverage + new BE modules + IA hygiene.**
