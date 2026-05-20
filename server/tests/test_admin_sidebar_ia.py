@@ -291,21 +291,23 @@ def test_promoted_route_has_own_admin_routes_entry(admin_js: str, slug: str):
     key_pattern = rf'(?:"{re.escape(slug)}"|\b{re.escape(slug)}\b)'
     # Must be in ADMIN_ROUTES (has title/kicker/sections)
     route_pattern = re.compile(
-        rf'{key_pattern}\s*:\s*\{{\s*title:',
+        rf"{key_pattern}\s*:\s*\{{\s*title:",
         re.DOTALL,
     )
-    assert route_pattern.search(admin_js), (
-        f"ADMIN_ROUTES must have a first-class entry for '{slug}'."
-    )
+    assert route_pattern.search(
+        admin_js
+    ), f"ADMIN_ROUTES must have a first-class entry for '{slug}'."
     # Must NOT be in _routeAliases (would intercept before ADMIN_ROUTES)
     alias_block = re.search(
-        r'_routeAliases\s*\)\s*;?\s*\n\s*Object\.assign\(_routeAliases,\s*\{(.*?)\}\)',
-        admin_js, re.DOTALL,
+        r"_routeAliases\s*\)\s*;?\s*\n\s*Object\.assign\(_routeAliases,\s*\{(.*?)\}\)",
+        admin_js,
+        re.DOTALL,
     )
     if alias_block:
         alias_content = alias_block.group(1)
         alias_pattern = re.compile(
-            rf'^\s*{key_pattern}\s*:', re.MULTILINE,
+            rf"^\s*{key_pattern}\s*:",
+            re.MULTILINE,
         )
         assert not alias_pattern.search(alias_content), (
             f"'{slug}' must NOT be in _routeAliases — it has its own "

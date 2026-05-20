@@ -29,6 +29,34 @@ if not should_run_browser_module(__file__):
 # ─── Fixtures ────────────────────────────────────────────────────────────────
 
 
+def _wait_for_tcp_port(port: int, timeout: float = 5.0) -> bool:
+    import socket
+
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            with socket.create_connection(("127.0.0.1", port), timeout=0.1):
+                return True
+        except OSError:
+            time.sleep(0.05)
+    return False
+
+
+def _wait_for_http_health(port: int, timeout: float = 5.0) -> bool:
+    import urllib.request
+
+    deadline = time.monotonic() + timeout
+    url = f"http://127.0.0.1:{port}/health"
+    while time.monotonic() < deadline:
+        try:
+            with urllib.request.urlopen(url, timeout=0.5) as response:
+                if response.status == 200:
+                    return True
+        except OSError:
+            time.sleep(0.05)
+    return False
+
+
 @pytest.fixture(scope="module")
 def server_ports():
     """啟動 Flask HTTP + WS 伺服器於子行程（共享 ws_queue，避免 asyncio 衝突）"""
@@ -93,17 +121,8 @@ def server_ports():
                 break
     assert ready, "Server subprocess did not start"
 
-    # 等待兩個 port 都可連線
-    import socket
-
-    for port in (http_port, ws_port):
-        deadline = time.monotonic() + 5.0
-        while time.monotonic() < deadline:
-            try:
-                with socket.create_connection(("127.0.0.1", port), timeout=0.1):
-                    break
-            except OSError:
-                time.sleep(0.05)
+    assert _wait_for_http_health(http_port), "HTTP server did not become healthy"
+    assert _wait_for_tcp_port(ws_port), "WS server port did not become ready"
 
     yield http_port, ws_port
 
@@ -329,8 +348,7 @@ def test_browser_submit_danmu_appears_in_history(browser_session, server_ports):
 
         # Login UI is covered by test_browser_admin.py. This flow focuses on
         # the lifecycle contract: browser fire -> admin history data.
-        login_status = page.evaluate(
-            """async () => {
+        login_status = page.evaluate("""async () => {
                 const body = new URLSearchParams();
                 body.set("password", "test");
                 const res = await fetch("/login", {
@@ -340,27 +358,24 @@ def test_browser_submit_danmu_appears_in_history(browser_session, server_ports):
                     body: body.toString(),
                 });
                 return res.status;
-            }"""
-        )
+            }""")
         assert 200 <= login_status < 400, f"login request failed: {login_status}"
         deadline = time.monotonic() + 8
         records = []
         while time.monotonic() < deadline:
-            payload = page.evaluate(
-                """async () => {
+            payload = page.evaluate("""async () => {
                     const res = await fetch("/admin/history?hours=24&limit=300", {
                         credentials: "same-origin",
                     });
                     return await res.json();
-                }"""
-            )
+                }""")
             records = payload.get("messages") or payload.get("records") or []
             if any(r.get("text") == message for r in records):
                 break
             time.sleep(0.25)
-        assert any(r.get("text") == message for r in records), (
-            f"History should contain {message!r}, got: {records[:3]}"
-        )
+        assert any(
+            r.get("text") == message for r in records
+        ), f"History should contain {message!r}, got: {records[:3]}"
     finally:
         page.close()
         context.close()

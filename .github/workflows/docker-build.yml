@@ -129,6 +129,23 @@ jobs:
             exit 1
           fi
 
+          WS_READY=0
+          for i in {1..12}; do
+            if docker exec test-server python3 -c "import socket; s = socket.create_connection(('127.0.0.1', 4001), timeout=1); s.close()" >/dev/null 2>&1; then
+              echo "WebSocket port is up"
+              WS_READY=1
+              break
+            fi
+            echo "Waiting for WebSocket... ($i/12)"
+            sleep 1
+          done
+          if [ "$WS_READY" -ne 1 ]; then
+            echo "WebSocket port did not become ready in time"
+            docker logs test-server || true
+            docker rm -f test-server || true
+            exit 1
+          fi
+
           echo "=== Smoke test: verify core routes ==="
           curl -fsS http://localhost:4000/ > /dev/null
           echo "[PASS] GET / (main page)"
