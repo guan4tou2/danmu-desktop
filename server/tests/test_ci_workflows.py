@@ -125,6 +125,24 @@ def test_deployment_docs_present_scenario_based_setup_choices():
             assert text in body, f"{rel} should document setup scenario: {text}"
 
 
+def test_release_docs_do_not_advertise_installers_or_windows_updater_metadata():
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    readme_ch = (REPO_ROOT / "README-CH.md").read_text(encoding="utf-8")
+    changelog = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+
+    assert "Available as both installer and portable version" not in readme
+    assert "Auto-update from GitHub Releases" not in readme
+    assert "portable desktop package" in readme
+    assert "Windows updater metadata is not published" in readme
+
+    assert "可攜式桌面套件" in readme_ch
+    assert "不發布更新 metadata" in readme_ch
+
+    assert "## [Unreleased]\n\n(no items pending)" not in changelog
+    assert "portable-only desktop packaging policy" in changelog
+    assert "Windows updater metadata remains unpublished" in changelog
+
+
 def test_obsolete_desktop_compose_override_is_removed():
     assert not (REPO_ROOT / "docker-compose.desktop.yml").exists()
 

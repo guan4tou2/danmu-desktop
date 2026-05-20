@@ -7,7 +7,13 @@
 
 ## [Unreleased]
 
-(no items pending)
+### 變更 / Changed
+
+- Release docs now match the portable-only desktop packaging policy: Windows is
+  documented as a portable x64 `.exe`, macOS as an arm64 `.zip`, and Linux as
+  AppImage / `.deb`.
+- Windows updater metadata remains unpublished while the Windows release channel
+  stays portable-only; macOS update metadata continues to target the ZIP package.
 
 ## [5.3.1] - 2026-05-20
 

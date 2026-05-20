@@ -16,8 +16,10 @@ This project is divided into two parts:
 1. Danmu-Desktop
    - Client-side application that runs on your computer to display danmu
    - Supports Windows, MacOS, and Linux
-   - Available as both installer and portable version
-   - Auto-update from GitHub Releases
+   - Published as a portable desktop package: Windows portable x64 `.exe`,
+     macOS arm64 `.zip`, plus Linux AppImage / `.deb`
+   - Windows updater metadata is not published while the Windows channel stays
+     portable-only; macOS update metadata targets the ZIP package
 
 ![img](img/client.png)
 ![img](img/client%20start%20effect.png)
