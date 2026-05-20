@@ -55,7 +55,7 @@ COPY shared/ /app/shared/
 
 # Copy application code — exclude tests, dev configs, and build artifacts
 COPY server/app.py server/config.py server/logging_config.py \
-     server/startup_warnings.py server/state.py server/utils.py server/ws_app.py ./
+     server/startup_warnings.py server/state.py server/utils.py ./
 COPY server/effects/ effects/
 COPY server/managers/ managers/
 COPY server/routes/ routes/
@@ -76,9 +76,9 @@ RUN mkdir -p user_fonts static/vendor static/sounds static/emojis plugins \
 
 USER appuser
 
-EXPOSE 4000
+EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:4000/health').read()" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health').read()" || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]

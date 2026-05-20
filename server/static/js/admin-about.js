@@ -147,8 +147,8 @@
                 <span class="v" style="grid-column: span 2" data-about-env>production</span>
               </div>
               <div class="admin-about-oss-row" data-about-system-row>
-                <span class="n">WS PORT</span>
-                <span class="v" style="grid-column: span 2" data-about-ws-port>—</span>
+                <span class="n">WS PATH</span>
+                <span class="v" style="grid-column: span 2" data-about-ws-path>—</span>
               </div>
               <div class="admin-about-oss-row" data-about-system-row>
                 <span class="n">ADMIN URL</span>
@@ -218,7 +218,7 @@
     const updEl = document.querySelector("[data-about-update]");
     const checkedEl = document.querySelector("[data-about-checked]");
     const envEl = document.querySelector("[data-about-env]");
-    const wsPortEl = document.querySelector("[data-about-ws-port]");
+    const wsPathEl = document.querySelector("[data-about-ws-path]");
     if (tagEl) tagEl.textContent = `v${_state.appVersion}`;
     if (buildEl) {
       const channel = (window.DANMU_CONFIG && window.DANMU_CONFIG.session && window.DANMU_CONFIG.session.environment) || "production";
@@ -242,9 +242,9 @@
         ? _humanDelta(_state.lastCheckedAt) + "前"
         : "從未檢查";
     }
-    if (wsPortEl) {
+    if (wsPathEl) {
       const cfg = window.DANMU_CONFIG || {};
-      wsPortEl.textContent = cfg.wsPort ? `:${cfg.wsPort}` : "—";
+      wsPathEl.textContent = cfg.wsPath || "/ws";
     }
   }
 

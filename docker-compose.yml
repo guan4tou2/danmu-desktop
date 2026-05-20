@@ -10,13 +10,11 @@ services:
       dockerfile: server/Dockerfile
     container_name: danmu-fire
     expose:
-      - "4000"
+      - "8080"
     environment:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
       - ADMIN_PASSWORD_HASHED=${ADMIN_PASSWORD_HASHED:-}
       - SECRET_KEY=${SECRET_KEY:-}
-      - PORT=${PORT:-4000}
-      - WS_HOST=0.0.0.0
       - ENV=${ENV:-production}
       - FIRE_RATE_LIMIT=${FIRE_RATE_LIMIT:-20}
       - FIRE_RATE_WINDOW=${FIRE_RATE_WINDOW:-60}
@@ -57,9 +55,9 @@ services:
     # - `no-new-privileges` blocks setuid/setgid escalation inside the
     #   container (defence-in-depth: the image already runs as UID 1000
     #   non-root, this seals the escape hatch).
-    # - Drop ALL capabilities: Python Flask on port 4000 needs zero Linux
+    # - Drop ALL capabilities: Python Flask on the private app port needs zero Linux
     #   caps. `NET_BIND_SERVICE` only required for <1024 binds; nginx
-    #   sidecar handles 80/443, server itself never touches privileged ports.
+    #   sidecar handles 443, server itself never touches privileged ports.
     # - `pids_limit` caps fork/thread explosion (a Python runaway or
     #   plugin bug can't fork-bomb the host).
     security_opt:
@@ -73,22 +71,17 @@ services:
           cpus: "${SERVER_CPU_LIMIT:-1.0}"
           pids: 200
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health').read()"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health').read()"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
     labels:
       - traefik.enable=true
-      - traefik.http.middlewares.danmu-https-redirect.redirectscheme.scheme=https
-      - traefik.http.middlewares.danmu-https-redirect.redirectscheme.permanent=true
-      - traefik.http.routers.danmu-http.rule=Host(`${DOMAIN:-localhost}`)
-      - traefik.http.routers.danmu-http.entrypoints=web
-      - traefik.http.routers.danmu-http.middlewares=danmu-https-redirect
       - traefik.http.routers.danmu.rule=Host(`${DOMAIN:-localhost}`)
       - traefik.http.routers.danmu.entrypoints=websecure
       - traefik.http.routers.danmu.tls.certresolver=le
-      - traefik.http.services.danmu.loadbalancer.server.port=4000
+      - traefik.http.services.danmu.loadbalancer.server.port=8080
     depends_on:
       redis:
         condition: service_healthy
@@ -108,7 +101,7 @@ services:
       server:
         condition: service_healthy
     ports:
-      - "${PORT:-4000}:4000"
+      - "${HTTP_DEV_PORT:-8080}:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     restart: unless-stopped
@@ -131,7 +124,6 @@ services:
       server:
         condition: service_healthy
     ports:
-      - "${HTTP_PORT:-80}:80"
       - "${HTTPS_PORT:-443}:443"
     volumes:
       - ./nginx/nginx-https.conf:/etc/nginx/nginx.conf:ro
@@ -172,7 +164,7 @@ services:
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
-    # Default caps retained: nginx binds 80/443 + entrypoint runs
+    # Default caps retained: nginx binds 443 + entrypoint runs
     # `apk add openssl` to generate the self-signed cert; dropping caps
     # would break both.
     deploy:
@@ -188,8 +180,7 @@ services:
     image: traefik:v3.3
     container_name: danmu-traefik
     ports:
-      - "${HTTP_PORT:-80}:80"
-      - "${HTTPS_PORT:-443}:443"
+      - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       # Create before first run: touch traefik/acme.json && chmod 600 traefik/acme.json
@@ -197,11 +188,10 @@ services:
     command:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
-      - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
       - --certificatesresolvers.le.acme.email=${ACME_EMAIL:-admin@example.com}
       - --certificatesresolvers.le.acme.storage=/acme.json
-      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+      - --certificatesresolvers.le.acme.tlschallenge=true
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true

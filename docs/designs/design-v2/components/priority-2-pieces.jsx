@@ -180,10 +180,10 @@ function OverlayIdleQR({ theme = 'dark', state = 'idle' }) {
   const textDim = 'rgba(148,163,184,0.7)';
 
   const stateConfig = {
-    idle:     { chipColor: accent,  chipLabel: '等待配對',     en: 'STANDBY · WAITING FOR PAIR',  msg: '用手機掃描 QR 連入 danmu.local:4001',  note: '或輸入 6 碼連線碼: 84-29-17' },
+    idle:     { chipColor: accent,  chipLabel: '等待配對',     en: 'STANDBY · WAITING FOR PAIR',  msg: '用手機掃描 QR 連入 danmu.local',  note: '或輸入 6 碼連線碼: 84-29-17' },
     scanning: { chipColor: magenta, chipLabel: '掃描中',       en: 'PAIRING · HANDSHAKE',         msg: '偵測到裝置 · 正在握手',                 note: 'iPhone · Safari · 192.168.1.84' },
     paired:   { chipColor: '#86EFAC', chipLabel: '已連線',     en: 'PAIRED · CONNECTED',          msg: '247 位觀眾已進入 · Q&A 可開始',         note: 'Danmu Fire 已啟動 · 你可以講話了' },
-    failed:   { chipColor: red,     chipLabel: '連線失敗',     en: 'UNREACHABLE · NO SERVER',      msg: '找不到 danmu.local:4001 · 檢查網路',    note: '確認 Server 啟動 · 或手動輸入 ws:// 位址' },
+    failed:   { chipColor: red,     chipLabel: '連線失敗',     en: 'UNREACHABLE · NO SERVER',      msg: '找不到 danmu.local · 檢查網路',    note: '確認 Server 啟動 · 或手動輸入 HTTPS 位址' },
   };
   const cfg = stateConfig[state];
 
@@ -217,7 +217,7 @@ function OverlayIdleQR({ theme = 'dark', state = 'idle' }) {
       }}>
         <span style={{ color: accent }}>DANMU FIRE · OVERLAY</span>
         <span style={{ color: textDim }}>|</span>
-        <span style={{ color: textDim }}>v4.8.7 · ws://danmu.local:4001</span>
+        <span style={{ color: textDim }}>v5.3 · wss://danmu.local/ws</span>
         <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           <StatusDot color={cfg.chipColor} size={7} pulse={state === 'scanning'} />
           <span style={{ color: cfg.chipColor }}>{cfg.en}</span>

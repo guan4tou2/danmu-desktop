@@ -65,7 +65,7 @@
 
 ### OBS Browser Source
 
-使用 `http://your-server:4000/overlay` 作為 OBS Browser Source，無需 Electron 即可顯示彈幕。透明背景，透過 WebSocket 自動連接。
+使用 `https://your-server/overlay` 作為 OBS Browser Source，無需 Electron 即可顯示彈幕。透明背景，透過 WebSocket 自動連接。
 
 ### 插件 SDK
 
@@ -85,14 +85,15 @@
    sudo xattr -r -d com.apple.quarantine 'Danmu Desktop.app'
    ```
 3. 啟動應用程式
-4. 輸入伺服器的 IP 與 WebSocket port（預設：`4001`）
+4. 輸入伺服器 host 與設定精靈顯示的 HTTPS/web port
 
 ### 伺服器設置
 
 正規安裝路徑是 `./setup.sh init` — 一個互動式精靈，會根據你的
-環境挑合理預設、自動產生 secret、寫好 `.env`。這一套流程涵蓋
-HTTP 開發、HTTPS 自簽（LAN / VPS）、以及 Traefik + Let's Encrypt
-（公網 domain）三種部署模式。
+環境挑合理預設、自動產生 secret、寫好 `.env`。第一層會用部署情境呈現：
+IP/localhost + HTTP dev、IP + HTTPS 自簽、Domain + HTTPS 自簽、以及
+Domain + HTTPS Let's Encrypt。兩個自簽 HTTPS 情境共用同一個 compose
+profile，只是憑證 SAN 的提示不同。
 
 ```bash
 git clone https://github.com/guan4tou2/danmu-desktop.git
@@ -103,40 +104,32 @@ cd danmu-desktop
 ./setup.sh gen-secret                # 只產生並寫入 SECRET_KEY
 
 # 再啟動 stack。精靈會印出確切指令，常見路徑：
-docker compose --profile https up -d         # HTTPS 自簽（LAN / VPS）— 推薦
-docker compose --profile traefik up -d       # HTTPS + Let's Encrypt（公網 domain）
-docker compose --profile http up -d          # 本機 HTTP（僅 dev — 桌面客戶端不可用）
+docker compose --profile https up -d         # IP/Domain + HTTPS 自簽 — 推薦
+docker compose --profile traefik up -d       # Domain + HTTPS Let's Encrypt
+docker compose --profile http up -d          # IP/localhost + HTTP dev only
 ```
 
-> v5.0.0+：Electron 桌面客戶端固定走 `wss://`。`--profile http` 可
-> 跑後端 + web admin/viewer，但 desktop overlay 無法連線。
+> v5.0.0+：Electron 桌面客戶端固定走 `wss://`。正式對外入口是
+> `443` 上的 HTTPS/WSS，同一個 web origin 的 `/ws` 提供 WebSocket。
+> `--profile http` 可跑後端 + web admin/viewer，但 desktop overlay 無法連線。
 
-完整部署文件（HTTPS 模式、桌面客戶端 WS port、Redis、備份/還原、升級）：
+完整部署文件（HTTPS 模式、桌面客戶端連線、Redis、備份/還原、升級）：
 **[DEPLOYMENT.md](DEPLOYMENT.md)**。
 
 #### 捷徑：預編譯映像，無需 clone
 
 若你只要跑 server，不需要原始碼：
 
-```bash
-docker run -d --name danmu-server \
-  -p 4000:4000 -p 4001:4001 \
-  -e ADMIN_PASSWORD=your_secure_password \
-  -e SECRET_KEY=$(openssl rand -hex 32) \
-  -e ENV=production \
-  -v "$(pwd)/danmu-runtime:/app/server/runtime" \
-  -v "$(pwd)/danmu-user-plugins:/app/server/user_plugins" \
-  -v "$(pwd)/danmu-user-fonts:/app/server/user_fonts" \
-  --restart unless-stopped \
-  ghcr.io/guan4tou2/danmu-server:latest
-```
+可使用預建 `ghcr.io/guan4tou2/danmu-server:latest` image，但需放在 HTTPS
+反向代理後方。不要直接 publish app container；對外只開 `443` TLS 入口。
 
 `SECRET_KEY` 在 production 為必填 — 啟動時會拒絕 ephemeral key。
 `openssl rand -hex 32` 會即時產一把；記下來才能在 container 重建後保有
 相同的 session。
 
 多架構（`linux/amd64` + `linux/arm64/v8`）。Tags：`latest`、`main`、
-`<git-sha>`。此路徑要用 HTTPS 需自行在前面架反向代理。
+`<git-sha>`。若要給 desktop 使用，前面必須接 `443` HTTPS，並把 `/ws`
+轉到同一個私有 upstream。
 
 #### 手動（不使用 Docker）
 
@@ -146,18 +139,18 @@ cp .env.example .env
 # 編輯 .env：設定 ADMIN_PASSWORD
 
 cd server && uv venv && uv sync
-PYTHONPATH=.. uv run python -m server.app    # HTTP + WS 都從這邊起
+PYTHONPATH=.. uv run python -m server.app    # HTTP + /ws 都從這邊起
 ```
 
 ### 存取伺服器
 
-啟動後開啟：
+啟動後開啟精靈印出的 HTTPS endpoint：
 
-- 主介面：`http://<host>:<port>`
-- 管理面板：`http://<host>:<port>/admin`
-- OBS overlay：`http://<host>:<port>/overlay`
+- 主介面：`https://<host>`
+- 管理面板：`https://<host>/admin`
+- OBS overlay：`https://<host>/overlay`
 
-（`<host>` 與 `<port>` 請替換成精靈印出的值。）
+Desktop 與 viewer 都應只使用這個 HTTPS origin。
 
 ### 環境變數
 
@@ -168,11 +161,10 @@ PYTHONPATH=.. uv run python -m server.app    # HTTP + WS 都從這邊起
 | `ADMIN_PASSWORD` / `ADMIN_PASSWORD_HASHED` | 管理員登入（至少設一個） |
 | `SECRET_KEY` | Flask session 密鑰（精靈 / `gen-secret` 產生） |
 | `ENV` | `production` 啟用嚴格 session / HSTS 預設值 |
-| `PORT` / `WS_PORT` | HTTP 與 WebSocket port（預設 4000 / 4001） |
-| `HTTPS_PORT` | `--profile https` / `traefik` 對外的 HTTPS port |
+| `HTTPS_PORT` | 自簽 HTTPS profile 的覆寫值；預設 `443`，desktop 仍走同一個 port 的 `/ws` |
 | `TRUSTED_HOSTS` | Host header 白名單（逗號分隔） |
 | `SESSION_COOKIE_SECURE` | production 走 HTTPS 時設 `true` |
-| `WS_REQUIRE_TOKEN` / `WS_AUTH_TOKEN` | 選配：port 4001 的共用 token 驗證 |
+| `WS_REQUIRE_TOKEN` / `WS_AUTH_TOKEN` | 選配：`/ws` 的共用 token 驗證 |
 | `RATE_LIMIT_BACKEND` | `memory` 或 `redis`（透過 `--profile redis` 啟） |
 
 其他設定都有安全預設；`.env.example` 列齊了所有項目。
@@ -182,7 +174,7 @@ PYTHONPATH=.. uv run python -m server.app    # HTTP + WS 都從這邊起
 - 此 repo 已啟用 GitHub Advanced Security 與 Dependabot。
 - OSV 掃描會在 `push`、`pull_request` 與排程任務執行（見 `.github/workflows/osv-scanner.yml`）。
 - 前端 lockfile 透過 npm overrides 強制 `serialize-javascript@7.0.3`，對應 `GHSA-5c6j-r48x-rmvq`。
-- 專用 WebSocket 預設為 `WS_REQUIRE_TOKEN=false`。若 `4001` 對 localhost 或受信任 LAN 以外的網路可達，任何可到達該埠的客戶端都能連線；請改為啟用 token 驗證，或用反向代理 / 防火牆限制路徑。
+- WebSocket 預設為 `WS_REQUIRE_TOKEN=false`。若 web port 對 localhost 或受信任 LAN 以外的網路可達，任何可到達該入口的客戶端都能連到 `/ws`；請改為啟用 token 驗證，或用反向代理 / 防火牆限制路徑。
 - production 啟動現在會拒絕以下不安全設定：未明確設定 `SECRET_KEY`、`SESSION_COOKIE_SECURE=false`、或未設定 `TRUSTED_HOSTS`。部署前請先補齊。
 - 目前 app 會送出 nonce-based `Content-Security-Policy` header。之後若新增 inline script，請使用模板提供的 nonce，不要退回 `unsafe-inline`。
 - `Strict-Transport-Security` 目前是 opt-in，需明確設定 `HSTS_ENABLED=true`，且只會在 HTTPS 回應上送出。
@@ -215,8 +207,9 @@ PYTHONPATH=.. uv run python -m server.app    # HTTP + WS 都從這邊起
 
 ## 端口配置
 
-- `4000`：網頁介面（HTTP，可經反向代理）
-- `4001`：Danmu Fire 客戶端連接（WebSocket，可經反向代理）
+- 正式對外入口：`443` 上的 `https://<host>` 與 `wss://<host>/ws`
+- Desktop、viewer、admin、OBS overlay、WebSocket 都共用這個 HTTPS/WSS 入口
+- 若自簽 HTTPS profile 必須使用自訂 port，只設定單一 `HTTPS_PORT`；不要再開第二個 WS port
 
 ## 參考資料
 

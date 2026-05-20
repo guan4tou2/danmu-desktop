@@ -576,8 +576,8 @@ function AdminSystemPage({ theme = 'dark' }) {
               <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, color: hudTokens.lime, letterSpacing: 1 }}>UPTIME · 14d 02h</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-              <KV k="HTTP PORT" v=":4000" text={text} textDim={textDim} />
-              <KV k="WS PORT" v=":4001" text={text} textDim={textDim} />
+              <KV k="HTTPS PORT" v=":443" text={text} textDim={textDim} />
+              <KV k="WS PATH" v="/ws" text={text} textDim={textDim} />
               <KV k="BIND" v="0.0.0.0" text={text} textDim={textDim} />
               <KV k="CPU USAGE" v="12%" text={text} textDim={textDim} />
               <KV k="MEM RSS" v="218 MB / 2 GB" text={text} textDim={textDim} />
@@ -588,7 +588,7 @@ function AdminSystemPage({ theme = 'dark' }) {
             </div>
             <div style={{ marginTop: 18, padding: 12, background: raised, borderRadius: 4, fontFamily: hudTokens.fontMono, fontSize: 11, color: text }}>
               <div style={{ color: textDim, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>PUBLIC URL</div>
-              <div style={{ color: accent }}>https://192.0.2.1:4000/</div>
+              <div style={{ color: accent }}>https://192.0.2.1/</div>
               <div style={{ marginTop: 4, color: textDim, fontSize: 10 }}>QR · 觀眾掃碼即加入 · 可點擊複製</div>
             </div>
           </div>

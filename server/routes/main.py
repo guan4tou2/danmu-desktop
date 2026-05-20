@@ -41,9 +41,7 @@ def poll_media(rel_path: str):
 
 @main_bp.route("/")
 def index():
-    ws_port = current_app.config["WS_PORT"]
-    ws_url = f"ws://{request.host.split(':')[0]}:{ws_port}"
-    return render_template("index.html", options=get_options(), ws_url=ws_url)
+    return render_template("index.html", options=get_options())
 
 
 @main_bp.route("/overlay")
@@ -62,7 +60,7 @@ def overlay():
     join_label = join_url.split("://", 1)[-1]
     return render_template(
         "overlay.html",
-        ws_port=current_app.config["WS_PORT"],
+        ws_path="/ws",
         ws_token=ws_token,
         join_url=join_url,
         join_label=join_label,

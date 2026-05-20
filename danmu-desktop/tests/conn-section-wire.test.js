@@ -21,7 +21,7 @@ function buildDOM() {
   document.body.innerHTML = `
     <input id="conn-server-input" value="" />
     <input id="host-input" value="old.example.com" hidden />
-    <input id="port-input" value="4001" hidden />
+    <input id="port-input" value="443" hidden />
     <input id="ws-token-input" value="fresh-token" />
     <div data-client-server-host></div>
     <div data-conn-canonical-preview></div>
@@ -55,7 +55,7 @@ describe("initConnSection", () => {
 
     savedSettings = {
       host: "old.example.com",
-      port: "4001",
+      port: "443",
       displayIndex: 1,
       syncMultiDisplay: false,
       wsToken: "saved-token",
@@ -82,7 +82,7 @@ describe("initConnSection", () => {
     initConnSection();
 
     expect(document.querySelector("[data-conn-last-addr]").textContent).toBe(
-      "old.example.com:4001"
+      "old.example.com"
     );
     expect(
       document.querySelector("[data-conn-last-when]").hasAttribute("data-empty")
@@ -94,20 +94,20 @@ describe("initConnSection", () => {
     initConnSection();
 
     const serverInput = document.getElementById("conn-server-input");
-    serverInput.value = "127.0.0.1:14001";
+    serverInput.value = "127.0.0.1:14443";
     document.querySelector("[data-conn-edit-save]").click();
 
     expect(mockSaveSettings).toHaveBeenCalledWith(
       "127.0.0.1",
-      "14001",
+      "14443",
       2,
       true,
       "fresh-token"
     );
     expect(document.getElementById("host-input").value).toBe("127.0.0.1");
-    expect(document.getElementById("port-input").value).toBe("14001");
+    expect(document.getElementById("port-input").value).toBe("14443");
     expect(document.querySelector("[data-conn-last-addr]").textContent).toBe(
-      "127.0.0.1:14001"
+      "127.0.0.1:14443"
     );
   });
 });

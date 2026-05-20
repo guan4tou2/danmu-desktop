@@ -149,7 +149,7 @@
 
 ### Production fixes
 - admin-broadcast.js 不再噴 `refreshHistory is not defined`（移除呼叫；後端從未有 `/admin/broadcast/history`）
-- WebSocket URL 從 `wss://host/` 改成 `wss://host/ws`（nginx 只代理 `/ws` 到 4001 內部 port）
+- WebSocket URL 從 `wss://host/` 改成 `wss://host/ws`（nginx 將 `/ws` 轉到同一個 web upstream）
 - `ADMIN_RATE_LIMIT` env default 60 → 300（admin 同時跑多個 polling 很容易爆 60/min）
 - admin-scheduler 在 502 時不再 `SyntaxError: Unexpected token '<'`（先檢查 `resp.ok`）
 - `--color-warning` token 從 `#eab308` (yellow-500) 校到 `#fbbf24` (amber-400) 對齊 prototype `hudTokens.amber`
@@ -371,7 +371,7 @@ Design 提了三組未實作項：
 ---
 
 ## 部署環境
-- VPS: Oracle 192.0.2.1:4000（HTTPS via nginx）
+- VPS: Oracle 192.0.2.1（HTTPS via nginx）
 - 容器：`danmu-fire` + `danmu-reverse-proxy-https`
 - 當前 commit：`8f118fd` on `claude/design-v2-retrofit`
 - 未 merge main（main 仍 v4.8.x）

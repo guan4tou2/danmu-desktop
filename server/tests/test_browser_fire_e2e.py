@@ -1,8 +1,8 @@
 """瀏覽器 E2E：完整彈幕生命週期
-瀏覽器送出彈幕 → POST /fire → ws_queue → WS server → overlay client 收到
+瀏覽器送出彈幕 → POST /fire → ws_queue → Flask /ws → overlay client 收到
 
 架構：
-- 子行程啟動 Flask HTTP + WS 伺服器（共享 ws_queue）
+- 子行程啟動 Flask HTTP + /ws 伺服器（共享 ws_queue）
 - Playwright 瀏覽器送出彈幕
 - websockets.sync.client 作為 overlay 接收 WS 訊息
 """
@@ -29,19 +29,6 @@ if not should_run_browser_module(__file__):
 # ─── Fixtures ────────────────────────────────────────────────────────────────
 
 
-def _wait_for_tcp_port(port: int, timeout: float = 5.0) -> bool:
-    import socket
-
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        try:
-            with socket.create_connection(("127.0.0.1", port), timeout=0.1):
-                return True
-        except OSError:
-            time.sleep(0.05)
-    return False
-
-
 def _wait_for_http_health(port: int, timeout: float = 5.0) -> bool:
     import urllib.request
 
@@ -59,12 +46,11 @@ def _wait_for_http_health(port: int, timeout: float = 5.0) -> bool:
 
 @pytest.fixture(scope="module")
 def server_ports():
-    """啟動 Flask HTTP + WS 伺服器於子行程（共享 ws_queue，避免 asyncio 衝突）"""
+    """啟動 Flask HTTP + /ws 伺服器於子行程（共享 ws_queue，避免 asyncio 衝突）"""
     http_port = find_free_port()
-    ws_port = find_free_port()
 
     script = textwrap.dedent(f"""\
-        import sys, os, threading, logging
+        import sys, os
         sys.path.insert(0, ".")
         os.environ.setdefault("SETTINGS_FILE", "/tmp/_test_fire_e2e_settings.json")
         os.environ["ADMIN_PASSWORD"] = "test"
@@ -74,7 +60,6 @@ def server_ports():
         Config.WS_REQUIRE_TOKEN = False
         Config.WS_AUTH_TOKEN = ""
         Config.WS_ALLOWED_ORIGINS = []
-        Config.WS_PORT = {ws_port}
         Config.TESTING = True
         Config.SECRET_KEY = "test-secret"
         Config.ADMIN_PASSWORD = "test"
@@ -85,21 +70,14 @@ def server_ports():
         Config.LOGIN_RATE_WINDOW = 1
 
         from server.app import create_app
-        from server.ws.server import run_ws_server
+        from server.ws import start_ws_broadcast
+        from gevent.pywsgi import WSGIServer
 
-        logger = logging.getLogger("ws_fire_e2e")
-        logger.addHandler(logging.NullHandler())
-
-        # 啟動 WS 伺服器（daemon thread）
-        ws_thread = threading.Thread(
-            target=run_ws_server, args=({ws_port}, logger), daemon=True
-        )
-        ws_thread.start()
-
-        # 啟動 Flask HTTP 伺服器
+        # 啟動 Flask HTTP + /ws 伺服器
         app = create_app(Config)
+        start_ws_broadcast()
         print("READY", flush=True)
-        app.run(host="127.0.0.1", port={http_port}, use_reloader=False, threaded=True)
+        WSGIServer(("127.0.0.1", {http_port}), app).serve_forever()
     """)
 
     proc = subprocess.Popen(
@@ -122,9 +100,8 @@ def server_ports():
     assert ready, "Server subprocess did not start"
 
     assert _wait_for_http_health(http_port), "HTTP server did not become healthy"
-    assert _wait_for_tcp_port(ws_port), "WS server port did not become ready"
 
-    yield http_port, ws_port
+    yield http_port, http_port
 
     proc.terminate()
     proc.wait(timeout=5)
@@ -172,7 +149,7 @@ def test_browser_submit_danmu_reaches_overlay(browser_session, server_ports):
     context = browser_session.new_context()
     page = context.new_page()
     try:
-        with connect(f"ws://127.0.0.1:{ws_port}") as ws:
+        with connect(f"ws://127.0.0.1:{ws_port}/ws") as ws:
             # 等待 overlay 在 WS 伺服器註冊
             time.sleep(0.5)
 
@@ -333,7 +310,7 @@ def test_browser_submit_danmu_appears_in_history(browser_session, server_ports):
     page = context.new_page()
     try:
         # 需要有 overlay 連線才能 fire 成功（否則 503）
-        with connect(f"ws://127.0.0.1:{ws_port}"):
+        with connect(f"ws://127.0.0.1:{ws_port}/ws"):
             time.sleep(0.5)
 
             # 送出彈幕

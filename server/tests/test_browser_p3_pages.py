@@ -224,7 +224,7 @@ def test_setup_wizard_overlay_renders(admin_page):
     assert admin_page.is_visible("[data-setup-field='server-name']")
     assert admin_page.is_visible("[data-setup-field='public-url']")
     assert admin_page.is_visible("[data-setup-field='http-port']")
-    assert admin_page.is_visible("[data-setup-field='ws-port']")
+    assert admin_page.is_visible("[data-setup-field='ws-path']")
     # Footer action buttons (close / prev / next)
     assert admin_page.locator("[data-setup-action='close']").count() >= 1
     # Close drawer to clean up for next test

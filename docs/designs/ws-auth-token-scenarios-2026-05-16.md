@@ -3,7 +3,7 @@
 **狀態**：保留現有設計（v4.8+ 線上可 toggle 的 runtime token）。
 **重新評估觸發點**：部署形態變更（離開公網 VPS）或 nginx 層新增 mTLS / IP allowlist。
 **相關程式碼**：
-- 伺服器：[`server/services/ws_auth.py`](../../server/services/ws_auth.py) · [`server/ws/server.py`](../../server/ws/server.py)
+- 伺服器：[`server/services/ws_auth.py`](../../server/services/ws_auth.py) · [`server/ws/flask_ws.py`](../../server/ws/flask_ws.py)
 - Electron 主程序：[`danmu-desktop/main-modules/child-ws-script.js`](../../danmu-desktop/main-modules/child-ws-script.js)
 - Electron renderer UI：[`danmu-desktop/index.html`](../../danmu-desktop/index.html) (`#ws-token-input`)
 
@@ -21,16 +21,16 @@
 
 ## 2 · WS Auth Token 在保護什麼
 
-`wss://HOST:4001/ws` 是 overlay child window 接收 server → client 廣播的 channel。Token 保護
+`wss://HOST/ws` 是 overlay child window 接收 server → client 廣播的 channel。Token 保護
 兩個 surface：
 
-1. **未授權收聽** — 沒 token 的話，任何能連到 4001 port 的 client 都會即時收到所有 broadcast
+1. **未授權收聽** — 沒 token 的話，任何能連到 HTTPS/WSS 入口的 client 都會即時收到所有 broadcast
    payload（含 nickname / message / fingerprint / 內部 event tag）。
 2. **連線耗盡 DoS** — server 設了 `WS_MAX_CONNECTIONS` 全域上限和 `WS_MAX_CONNECTIONS_PER_IP`
    per-IP 上限；沒 token 的話誰都能 hold 連線把 slot 占滿，正常 overlay 連不進來。
 
 握手時 token 從 query string `?token=...` 帶入，server 端用 `secrets.compare_digest` 比對，失敗
-就 `close(1008, "Unauthorized")` — 見 [`ws/server.py:122-139`](../../server/ws/server.py)。
+就拒絕連線 — 見 [`flask_ws.py`](../../server/ws/flask_ws.py)。
 
 ---
 
@@ -47,9 +47,9 @@
 
 ### 3.2 情境 B · 公網 VPS 部署 (目前主要 deployment)
 
-**配置**：Oracle VPS 上 nginx 終結 TLS，4001 port 對公網開放，演講者 / 觀眾全部走公網連到 server。
+**配置**：Oracle VPS 上 nginx 終結 TLS，443 HTTPS/WSS 對公網開放，演講者 / 觀眾全部走公網連到 server。
 
-- **未授權收聽**風險：高 — port scanner 一律掃得到 4001，任何人都能 spawn fake overlay 收實況
+- **未授權收聽**風險：高 — 公網 HTTPS/WSS 入口可達，任何人都能 spawn fake overlay 收實況
 - **連線耗盡 DoS** 風險：高 — 攻擊者可以多 IP rotation 把 slot 占滿，正常 overlay 進不來
 - **建議**：**必留 token**。這是目前的主場景，所以整個保留決策以這個為基準。
 
@@ -63,7 +63,7 @@
 
 ### 3.4 情境 D · 內網跳板機之後 (未來假設)
 
-**配置**：service 搬到內網，4001 port 不對公網開，外部存取靠 VPN / 跳板機。
+**配置**：service 搬到內網，443 HTTPS/WSS 不對公網開，外部存取靠 VPN / 跳板機。
 
 - **未授權收聽**風險：低 — 網路層已經擋掉
 - **連線耗盡 DoS** 風險：低
@@ -72,7 +72,7 @@
 
 ### 3.5 情境 E · nginx 層加 mTLS 或 IP allowlist (未來假設)
 
-**配置**：reverse proxy 上要求 client 帶證書 / 從特定 IP 段來，才允許進到 4001。
+**配置**：reverse proxy 上要求 client 帶證書 / 從特定 IP 段來，才允許進到 `/ws`。
 
 - 認證上移到網路邊界後，application-layer token 就 redundant
 - **建議**：兩種方案先二擇一鋪滿，再考慮 application-layer token 退場。中間態（同時保留）也
@@ -84,11 +84,11 @@
 
 | 機制 | 在哪 | 為什麼不能取代 token |
 |---|---|---|
-| `allowed_origins` Origin filter | [`ws/server.py:123-129`](../../server/ws/server.py) | 只擋瀏覽器（瀏覽器才強制送 Origin）。Electron / curl / python-websockets client 可以任意 spoof |
+| `allowed_origins` Origin filter | [`flask_ws.py`](../../server/ws/flask_ws.py) | 只擋瀏覽器（瀏覽器才強制送 Origin）。Electron / curl / python-websockets client 可以任意 spoof |
 | WSS (TLS) | nginx https profile | 只保證傳輸層加密 + server 身分；對 client 不認證 |
 | `/fire` 反刷屏（rate limit / fingerprint / X-Fire-Token） | HTTP 端 | 完全不同 surface — 那是擋「送出彈幕」（HTTP POST），token 是擋「接收彈幕」（WSS 訂閱） |
 | nginx IP allowlist | `nginx.conf` | 可行，但 operator 要事先知道每個 overlay client IP，活動現場通常不知道 |
-| `WS_MAX_CONNECTIONS_PER_IP` | [`ws/server.py:158-164`](../../server/ws/server.py) | 限同 IP；攻擊者用 IP rotation 即可破 |
+| `WS_MAX_CONNECTIONS_PER_IP` | [`flask_ws.py`](../../server/ws/flask_ws.py) | 限同 IP；攻擊者用 IP rotation 即可破 |
 
 結論：上述每一條都解決部分問題，但沒有一條能同時擋「未授權收聽 + DoS」。Token 是
 **defense in depth** 的一層，不是唯一一層。

@@ -2,7 +2,7 @@
 
 v5.0.0 Phase 2.5: the flask-sock browser-WS path is gone, so the
 ConnectionManager only tracks dedicated overlay WebSocket clients
-(asyncio server on port 4001). The old register_web_connection /
+(legacy asyncio server). The old register_web_connection /
 get_web_connections / unregister_web_connection methods were removed
 along with the orphaned send_message broadcast path.
 """

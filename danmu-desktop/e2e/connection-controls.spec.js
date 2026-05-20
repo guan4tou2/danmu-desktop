@@ -57,7 +57,7 @@ test.describe("Connection Controls", () => {
   // ─── Input Validation ──────────────────────────────────────────────────
 
   test("start button with empty host shows error toast", async () => {
-    await setServer("", "4001");
+    await setServer("", "443");
 
     await page.evaluate(() => document.getElementById("start-button").click());
     await page.waitForTimeout(500);
@@ -68,7 +68,7 @@ test.describe("Connection Controls", () => {
   });
 
   test("start button with invalid IP shows error toast", async () => {
-    await setServer("not-valid-ip!!!", "4001");
+    await setServer("not-valid-ip!!!", "443");
 
     // Clear previous toasts
     await page.evaluate(() => {
@@ -137,13 +137,13 @@ test.describe("Connection Controls", () => {
 
   test("server input accepts domain name with port and splits via parser", async () => {
     const serverInput = page.locator("#conn-server-input");
-    await serverInput.fill("example.com:4001");
+    await serverInput.fill("example.com:443");
     const [host, port] = await page.evaluate(() => [
       document.getElementById("host-input").value,
       document.getElementById("port-input").value,
     ]);
     expect(host).toBe("example.com");
-    expect(port).toBe("4001");
+    expect(port).toBe("443");
   });
 
   test("server input strips wss:// scheme + /ws path", async () => {

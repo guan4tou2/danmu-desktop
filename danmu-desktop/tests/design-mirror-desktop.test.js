@@ -69,14 +69,14 @@ test("ConnSection is configure-only — no live-connection chrome, no overlay tr
 });
 
 test("ConnSection uses single host field + canonical URL preview + test button", () => {
-  // 2026-05-16: replaced `ws://danmu.local:4001` split-field model with a
+  // 2026-05-16: replaced the split-field raw WS model with a
   // single host input (port 443 default, hidden), auto-stripped of scheme
   // + /ws path. Live preview shows the canonical wss://HOST/ws derived URL.
   // ⚐ 測試 (silent one-shot handshake) replaces the destructive ↻ 重連.
   const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
 
   // No legacy ws:// (v5.0.0+ is WSS-only).
-  expect(src).not.toMatch(/ws:\/\/danmu\.local:4001/);
+  expect(src).not.toMatch(/ws:\/\/danmu\.local/);
   // Canonical URL builder + scheme/path auto-strip.
   expect(src).toMatch(/wss:\/\/\$\{parsed\}\/ws/);
   expect(src).toMatch(/\.replace\(\/\^wss\?:/);
@@ -89,7 +89,7 @@ test("ConnSection uses single host field + canonical URL preview + test button",
   // ⚐ 測試 button replaces ↻ 重連.
   expect(src).toContain("⚐ 測試");
   expect(src).toMatch(/one-shot WSS handshake/);
-  // Recent connections are host-only, no legacy ws://.../:4001 format.
+  // Recent connections are host-only, no legacy raw ws:// format.
   expect(src).not.toMatch(/addr="ws:\/\//);
   expect(src).toMatch(/addr="danmu\.local"/);
 });

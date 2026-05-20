@@ -1,4 +1,4 @@
-"""Admin routes for the dedicated WS token toggle (v4.8.0+).
+"""Admin routes for the /ws token toggle (v4.8.0+).
 
 Two endpoints:
 

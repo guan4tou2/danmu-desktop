@@ -29,7 +29,6 @@ from server.services.security import (  # ty: ignore[unresolved-import]
     reset_rate_limit_counters,
 )
 from server.services.ws_state import update_ws_client_count  # ty: ignore[unresolved-import]
-from server.ws.server import run_ws_server  # ty: ignore[unresolved-import]
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -207,20 +206,16 @@ def wait_for_ws_count(minimum: int = 1, timeout: float = 2.0) -> bool:
     return False
 
 
-# ─── 共用 WS 伺服器 Session Fixture ──────────────────────────────────────────
+# ─── 共用 Flask /ws 伺服器 Session Fixture ───────────────────────────────────
 
 
 @pytest.fixture(scope="session")
 def ws_server_port(tmp_path_factory):
-    """啟動不需 token 的真實 WS 伺服器（整個 session 共用一個）.
+    """啟動不需 token 的 Flask /ws 伺服器（整個 session 共用一個）."""
+    from gevent.pywsgi import WSGIServer
 
-    v4.8+: `run_ws_server()` primes `ws_auth.get_state()` at startup. This
-    fixture runs before any per-test `_isolate_ws_auth`, so we need to
-    redirect `_STATE_FILE` to a session-scoped tmp path here too — else the
-    first call to `ws_auth.get_state()` (at WS server start) would seed/
-    touch the real `server/runtime/ws_auth.json`.
-    """
     from server.services import ws_auth as ws_auth_mod
+    from server.ws import start_ws_broadcast
 
     original_require = Config.WS_REQUIRE_TOKEN
     original_token = Config.WS_AUTH_TOKEN
@@ -230,8 +225,8 @@ def ws_server_port(tmp_path_factory):
     Config.WS_REQUIRE_TOKEN = False
     Config.WS_AUTH_TOKEN = ""
     Config.WS_ALLOWED_ORIGINS = []
-    # Point to a session-tmp path + seed as disabled before run_ws_server()
-    # primes the cache. Per-test `_isolate_ws_auth` will redirect again to
+    # Point to a session-tmp path + seed as disabled before Flask /ws startup.
+    # Per-test `_isolate_ws_auth` will redirect again to
     # a per-test tmp and re-seed as disabled, which is fine — the cache is
     # reset with `_reset_for_tests()` before each test.
     ws_auth_mod._STATE_FILE = tmp_path_factory.mktemp("ws_auth_session") / "ws_auth.json"
@@ -239,9 +234,11 @@ def ws_server_port(tmp_path_factory):
     ws_auth_mod.set_state(require_token=False, token="")
 
     port = find_free_port()
+    ws_app = create_app(TestConfig)
+    start_ws_broadcast()
+    server = WSGIServer(("127.0.0.1", port), ws_app)
     thread = threading.Thread(
-        target=run_ws_server,
-        args=(port, _ws_logger),
+        target=server.serve_forever,
         daemon=True,
     )
     thread.start()
@@ -251,6 +248,8 @@ def ws_server_port(tmp_path_factory):
 
     yield port
 
+    server.stop(timeout=2)
+    thread.join(timeout=2)
     Config.WS_REQUIRE_TOKEN = original_require
     Config.WS_AUTH_TOKEN = original_token
     Config.WS_ALLOWED_ORIGINS = original_origins

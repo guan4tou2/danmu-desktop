@@ -1,14 +1,13 @@
 """WebSocket auth toggle — admin-controllable alternative to env vars.
 
-Before v4.8: WS_REQUIRE_TOKEN / WS_AUTH_TOKEN were read from env at startup
-and captured into closure variables in ws/server.py. Flipping them required
-editing .env and restarting the container — which also drops every live
-Electron connection.
+Before v4.8: WS_REQUIRE_TOKEN / WS_AUTH_TOKEN were read from env at startup.
+Flipping them required editing .env and restarting the container — which also
+drops every live Electron connection.
 
 v4.8+: a runtime file server/runtime/ws_auth.json holds the live toggle and
-token. The admin UI writes to it; ws/server.py reads it on every new
-connection via get_state(). Existing connections are grandfathered — we
-don't force-kick when the admin flips the switch, since:
+token. The admin UI writes to it; the `/ws` handler reads it on every new
+connection via get_state(). Existing connections are grandfathered — we don't
+force-kick when the admin flips the switch, since:
 
 1. The safe direction (enabling token) grandfathering lets legitimate
    operators finish their stream uninterrupted. New/reconnecting clients
@@ -58,7 +57,7 @@ def _write_state(state: Dict) -> None:
 
     Hardening:
       * 0o600 chmod on the tmp before rename — the file contains a token
-        that is effectively a bearer credential for 4001, so it should
+        that is effectively a bearer credential for /ws, so it should
         never be world-readable.
       * pid / tid suffix on the tmp name so multi-worker deploys (gunicorn
         with N workers) don't race on `_STATE_FILE.tmp` when two admins

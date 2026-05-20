@@ -80,7 +80,7 @@
 
   <script nonce="{{ csp_nonce }}">
     window.OVERLAY_CONFIG = {
-      wsPort: {{ ws_port }},
+      wsPath: {{ ws_path|tojson }},
       wsToken: {{ (ws_token or '')|tojson }},
       joinUrl: {{ join_url|tojson }},
       idleAfterMs: 30000

@@ -45,15 +45,17 @@ output + `./setup.sh check` is enough.
 ## Decision Tree
 
 ```
-Already have a reverse proxy (Caddy / nginx / Cloudflare Tunnel)?
-  └─ Yes → External reverse proxy mode (no --profile, server only)
+Need only local/IP HTTP for dev, without Electron desktop client?
+  └─ IP/localhost + HTTP dev only  (--profile http)
 
-Have a public domain (DNS + port 80 reachable)?
-  ├─ Yes → Traefik mode (Let's Encrypt)  (--profile traefik)
-  └─ No → HTTPS self-signed  (--profile https)        ← default
+Need Desktop on a LAN or VPS IP, no domain?
+  └─ IP + HTTPS self-signed  (--profile https)        ← default
 
-Dev/test on localhost only, no Electron desktop client?
-  └─ Optional: --profile http (TLS-free, faster boot)
+Have a domain but do not want Let's Encrypt?
+  └─ Domain + HTTPS self-signed  (--profile https)
+
+Have a public domain pointed at this host?
+  └─ Domain + HTTPS Let's Encrypt  (--profile traefik)
 
 High traffic or multi-instance?
   └─ Yes → Add Redis  (--profile redis)
@@ -67,7 +69,7 @@ existing reverse proxy.
 
 ## Modes
 
-### HTTPS with Self-Signed Certificate (default)
+### IP + HTTPS Self-Signed Certificate (default)
 
 Suitable for LAN access or a VPS without a domain. **Default since
 v5.0.0** — the desktop client requires a TLS-terminating profile. A self-signed certificate is
@@ -80,14 +82,14 @@ SERVER_IP=1.2.3.4        # Optional: your public IP (included in cert SAN)
 SERVER_DOMAIN=my.lan     # Optional: hostname (included in cert SAN)
 ```
 
-By default, nginx listens on **port 443** (HTTPS) and **port 80** (HTTP→HTTPS
-redirect). On a VPS where 443 is already taken or firewalled (e.g., Oracle Cloud
-with NetBird/Caddy occupying 443), remap to non-standard ports via `.env`:
+`./setup.sh init` exposes this as two scenarios:
+- `IP + HTTPS self-signed`: requires `SERVER_IP`, with an optional extra hostname.
+- `Domain + HTTPS self-signed`: requires `SERVER_DOMAIN`, with an optional extra IP.
 
-```
-HTTP_PORT=4080    # host port that maps to nginx's internal port 80
-HTTPS_PORT=4000   # host port that maps to nginx's internal port 443
-```
+By default, nginx listens on **port 443** (HTTPS/WSS). The formal
+desktop/viewer endpoint is `https://<host>` plus `wss://<host>/ws` on that
+same listener. If 443 is unavailable in the self-signed `https` profile, set a
+single custom `HTTPS_PORT`; desktop/viewer/admin still share that same port.
 
 ```bash
 docker compose --profile https up -d
@@ -98,19 +100,21 @@ Or: `make docker-up-https`
 Clients will see a browser warning about the self-signed cert. Add the cert to your
 browser's trust store to suppress it. The cert is at `nginx/certs/fullchain.pem`.
 
-**Ports exposed in https profile:**
-- `${HTTP_PORT:-80}` → nginx port 80 (HTTP → HTTPS redirect)
-- `${HTTPS_PORT:-443}` → nginx port 443 (web admin / viewer)
-- `${WS_PORT:-4001}` → nginx port 4001 (TLS, dedicated for Electron desktop)
+**Port exposed in https profile:**
+- `${HTTPS_PORT:-443}` → HTTPS/WSS (web admin / viewer / WebSocket `/ws`)
 
-The Electron desktop client connects via `wss://<IP>:4001/ws`. The
-self-signed cert is shared with port 443 and is auto-trusted in the
-client by `trusted-wss-hosts` (registered when user types host:port
-into the Conn panel). No manual cert pinning required.
+The Electron desktop client connects via `wss://<IP-or-host>/ws`, or
+`wss://<IP-or-host>:<HTTPS_PORT>/ws` when you intentionally use a custom
+self-signed HTTPS port.
+The self-signed cert is auto-trusted in the client by `trusted-wss-hosts`
+(registered when user types host:port into the Conn panel). No manual cert
+pinning required.
 
-### HTTPS with Let's Encrypt (Traefik)
+### Domain + HTTPS Let's Encrypt (Traefik)
 
-Requires a public domain with port 80 accessible from the internet.
+Requires a public domain pointed at this host. Traefik uses TLS-ALPN on port
+443 for certificate issuance, so this mode does not support custom
+`HTTPS_PORT`.
 
 Set in `.env`:
 
@@ -165,43 +169,43 @@ Or: `make docker-up-dev`
 
 ### Desktop Client (Electron — wss-only since v5.0.0)
 
-The Danmu Fire desktop client connects via `wss://<IP>:4001/ws`. With
-the `https` or `traefik` profile, port 4001 is already exposed and
-TLS-terminated by nginx; no override file is needed.
+The Danmu Fire desktop client connects via the same HTTPS/web entrypoint as
+admin/viewer: `wss://<host>/ws`, or `wss://<host>:<HTTPS_PORT>/ws` for a
+custom self-signed HTTPS port.
 
-1. Start the stack normally (port 4001 is included in `--profile https`):
+1. Start the stack normally:
 
    ```bash
    docker compose --profile https up -d
    ```
 
-2. Open the firewall on the host:
+2. Open the HTTPS/WSS port on the host:
 
    ```bash
-   sudo ufw allow 4001/tcp
+   sudo ufw allow 443/tcp
    ```
 
 3. Configure WS token auth (recommended for any public-facing deploy):
 
-   - **Preferred: Admin UI.** Log in at `https://<host>:<HTTPS_PORT>/admin`
+   - **Preferred: Admin UI.** Log in at `https://<host>/admin` or
+     `https://<host>:<HTTPS_PORT>/admin` when using a custom self-signed port
      → **WebSocket token auth** section → flip the toggle on, click
      **Regenerate**, click **Copy**. State persists to
      `server/runtime/ws_auth.json` (bind-mounted, survives image upgrade).
      Changes apply to the next WS connection — no container restart, and
      existing overlay connections stay up.
    - **Fresh installs** boot with `require_token=true` + a random token
-     already generated, so port 4001 is not publicly open-access by
+     already generated, so `/ws` is not publicly open-access by
      default. Go to the admin UI to copy it into the Electron client.
    - **Opting out** (token required only via env): set `WS_REQUIRE_TOKEN=false`
      in `.env` before first boot. Explicit env values are respected and
      never silently flipped on by the secure-by-default seeding.
 
-4. In the Danmu Fire app, enter the server IP, port `4001`, and paste
-   the admin-issued token into the **WS Token** field. The first
-   connection registers the host with `trusted-wss-hosts` so the
-   self-signed cert is auto-accepted for that exact `host:port` only
-   (no global `ignore-certificate-errors`). The admin panel is reached
-   separately at `https://<host>:<HTTPS_PORT>`.
+4. In the Danmu Fire app, enter the server host, then paste the admin-issued
+   token into the **WS Token** field. The first connection registers the host
+   with `trusted-wss-hosts` so the self-signed cert is auto-accepted for that
+   exact host only (no global `ignore-certificate-errors`). The admin panel
+   uses the same origin at `https://<host>/admin`.
 
 > **Why wss-only:** plain `ws://` over the public internet leaks danmu
 > content (text, nicknames, fingerprints) and exfiltrates the WS token
@@ -220,8 +224,9 @@ docker compose up -d server          # just the app, no nginx/traefik sidecar
 
 Or: `make docker-up-server`
 
-The server listens on HTTP `4000` (web) and `4001` (WebSocket). Your
-reverse proxy handles TLS and forwards to those ports.
+The public listener remains port `443`. Keep the app container private behind
+your reverse proxy; normal HTTP and WebSocket upgrade requests both forward to
+the same private upstream. Do not publish the app container as a public port.
 
 Set in `.env`:
 
@@ -231,50 +236,16 @@ TRUSTED_HOSTS=localhost,127.0.0.1,danmu.example.com   # include your public doma
 SESSION_COOKIE_SECURE=true
 ```
 
-**Caddy example** (add to your existing Caddyfile):
-
-```
-danmu.example.com {
-    handle /ws {
-        reverse_proxy danmu-fire:4001
-    }
-    handle {
-        reverse_proxy danmu-fire:4000
-    }
-}
-```
-
 If Caddy runs outside the danmu compose stack, connect it to the danmu
-network so it can reach `danmu-fire` by container name:
+network so it can reach the private app container:
 
 ```bash
 docker network connect danmu-desktop_default caddy
 ```
 
-**nginx example** (site config snippet):
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name danmu.example.com;
-
-    location /ws {
-        proxy_pass http://danmu-fire:4001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location / {
-        proxy_pass http://danmu-fire:4000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
+Use your proxy's Docker service-discovery target for the private app
+container. The public side still stays `https://<host>` and
+`wss://<host>/ws` on port `443`.
 
 ### Local Plain HTTP (dev only — no desktop client)
 
@@ -288,9 +259,9 @@ Or with make:
 make docker-up
 ```
 
-Plain HTTP / WS on ports 4000 + 4001. **The Electron desktop client
-will not connect — wss-only since v5.0.0.** Use this profile only for
-backend development against the web admin/viewer at `http://localhost:4000`.
+Plain HTTP mode is for backend development only. **The Electron desktop client
+will not connect — wss-only since v5.0.0.** Formal deployments should use the
+HTTPS/WSS entrypoint on port `443`.
 
 ---
 
@@ -386,7 +357,7 @@ Before exposing to the internet:
 - [ ] `SESSION_COOKIE_SECURE=true` — required when serving over HTTPS
 - [ ] `TRUSTED_HOSTS` — set to your domain/IP, not just `localhost`
 - [ ] `REDIS_PASSWORD` — change from default if using Redis
-- [ ] **WS token auth on port 4001** — admin UI → **WebSocket token auth**
+- [ ] **WS token auth on `/ws`** — admin UI → **WebSocket token auth**
   → toggle on + copy the generated token into the Electron client.
   Fresh installs are secure-by-default since v4.8.0; only worry about this
   if you're upgrading from ≤v4.7 with `WS_REQUIRE_TOKEN=false`.
@@ -407,14 +378,10 @@ Key variables:
 | `ADMIN_PASSWORD_HASHED` | — | Bcrypt hash (preferred for production) |
 | `SECRET_KEY` | auto | Flask secret key. Must be set explicitly in production |
 | `ENV` | `production` | `production` enables stricter security checks |
-| `PORT` | `4000` | HTTP server port |
-| `WS_PORT` | `4001` | WebSocket server port |
 | `DOMAIN` | — | Required for Traefik mode |
 | `ACME_EMAIL` | — | Required for Traefik mode |
 | `SERVER_IP` | — | VPS public IP for self-signed cert SAN |
 | `SERVER_DOMAIN` | — | Hostname for self-signed cert SAN |
-| `HTTP_PORT` | `80` | Host port for HTTP (nginx → redirect to HTTPS). Change when 80 is taken |
-| `HTTPS_PORT` | `443` | Host port for HTTPS (nginx → app). Change when 443 is taken |
 | `TRUSTED_HOSTS` | `localhost,127.0.0.1` | Comma-separated hostnames the server accepts. Add your public domain when behind a reverse proxy |
 | `TRUST_X_FORWARDED_FOR` | `false` | Set `true` ONLY when behind a trusted reverse proxy (Caddy/nginx/Traefik). Enables `ProxyFix` so rate limiting uses real client IPs. **Security risk if `true` without a proxy — clients can spoof IPs** |
 | `SESSION_COOKIE_SECURE` | — | Must be `true` in production (HTTPS). Server refuses to start in production without it |
@@ -435,7 +402,7 @@ docker compose down
 Add `nginx/certs/fullchain.pem` to your browser or OS trust store.
 
 **Traefik not issuing certificate**
-- Ensure port 80 is publicly accessible
+- Ensure port 443 is publicly accessible
 - Check `DOMAIN` and `ACME_EMAIL` are set correctly
 - Check `traefik/acme.json` has permissions `600`
 - Check Traefik logs: `docker logs danmu-traefik`
@@ -468,8 +435,7 @@ WARNING | ... | Cannot persist ... State will live in memory for this process on
 Fix (run on host, from the repo root):
 ```bash
 sudo chown -R 1000:1000 server/runtime server/user_plugins
-docker compose -f docker-compose.yml -f docker-compose.desktop.yml \
-  --profile https up -d --force-recreate server
+docker compose --profile https up -d --force-recreate server
 ```
 
 v4.8.2+ `setup.sh init` detects this at install time and prints the chown
@@ -512,23 +478,21 @@ docker compose --profile https up -d
 
 The entrypoint skips generation when `fullchain.pem` + `privkey.pem` already exist.
 
-**Cloud firewall blocking 4000 / 4001 (Oracle Cloud / AWS / GCP)**
+**Cloud firewall blocking the HTTPS/WSS port (Oracle Cloud / AWS / GCP)**
 
-Host-level `iptables` usually allows only 22/80/443 by default on cloud
+Host-level `iptables` usually allows only 22/443 by default on cloud
 images; docker publishing a port opens the host socket but NOT the cloud
 ingress. Both must allow inbound.
 
-- **Host iptables** (Ubuntu/Oracle images):
+- **Host iptables** (Ubuntu/Oracle images, default HTTPS profile):
   ```bash
-  sudo iptables -I INPUT 10 -p tcp --dport 4000 -j ACCEPT
-  sudo iptables -I INPUT 10 -p tcp --dport 4001 -j ACCEPT
+  sudo iptables -I INPUT 10 -p tcp --dport 443 -j ACCEPT
   sudo netfilter-persistent save
   ```
-- **Cloud security list / NSG**: add TCP ingress 4000 + 4001 from `0.0.0.0/0`
+- **Cloud security list / NSG**: add TCP ingress for the web/HTTPS port from `0.0.0.0/0`
   via your cloud provider's console, CLI, or terraform.
   - OCI example (one-shot, run in Cloud Shell):
     see wiki → Installation → "Oracle Cloud: open ports via CLI"
 
-Symptom: external `curl https://YOUR_IP:4000/health` times out (not refused).
-If iptables is the cause, `curl` from the same host via `127.0.0.1:4000`
-works. If cloud ingress is the cause, even a `dev laptop → VPS` test fails.
+Symptom: external `curl https://YOUR_IP/health` times out (not refused). If
+cloud ingress is the cause, even a `dev laptop → VPS` test fails.

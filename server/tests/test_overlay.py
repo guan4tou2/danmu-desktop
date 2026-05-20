@@ -1,5 +1,9 @@
 """Tests for the /overlay OBS Browser Source route."""
 
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
 
 def test_overlay_route_returns_200(client):
     rv = client.get("/overlay")
@@ -8,9 +12,19 @@ def test_overlay_route_returns_200(client):
     assert b"overlay.js" in rv.data
 
 
-def test_overlay_injects_ws_port(client):
+def test_overlay_uses_same_origin_ws_path(client):
     rv = client.get("/overlay")
-    assert b"wsPort:" in rv.data
+    body = rv.get_data(as_text=True)
+    assert "wsPort:" not in body
+    assert "wsPath:" in body
+    assert '"/ws"' in body
+
+
+def test_overlay_js_builds_same_origin_ws_url():
+    body = (REPO_ROOT / "server" / "static" / "js" / "overlay.js").read_text(encoding="utf-8")
+    assert "location.host + wsPath" in body
+    assert 'location.hostname + ":" + wsPort' not in body
+    assert 'params.get("port")' not in body
 
 
 def test_overlay_includes_css(client):

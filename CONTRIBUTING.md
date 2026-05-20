@@ -32,8 +32,7 @@
    npm install
    ```
 5. **啟動服務 / Run dev servers**
-   - HTTP: `PYTHONPATH=.. uv run python -m server.app`
-   - WebSocket: `PYTHONPATH=.. uv run python -m server.ws_app`
+   - HTTP + WebSocket `/ws`: `PYTHONPATH=.. uv run python -m server.app`
    - Frontend: `npm run start`
 
 ## 程式碼風格 / Code Style

@@ -25,10 +25,8 @@ coverage: ## 執行測試並產生覆蓋率報告
 	@echo "HTML 覆蓋率報告：server/htmlcov/index.html"
 
 run: ## 啟動伺服器（開發模式）
-	@echo "啟動 HTTP 伺服器..."
-	@cd server && PYTHONPATH=.. uv run python -m server.app &
-	@echo "啟動 WebSocket 伺服器..."
-	@cd server && PYTHONPATH=.. uv run python -m server.ws_app
+	@echo "啟動 HTTP + WebSocket(/ws) 伺服器..."
+	@cd server && PYTHONPATH=.. uv run python -m server.app
 
 docker-build: ## 建置 Docker image（從 source）
 	docker compose build
