@@ -92,11 +92,17 @@ img{
 }
 
 .overlay-idle-hero {
+  /* Reset global h1 styles (position:absolute, overflow:hidden, white-space:nowrap)
+     which are meant for flying danmu text, not the idle hero lockup. */
+  position: static;
+  overflow: visible;
+  white-space: normal;
+  padding: 0;
   margin: 0;
   font-family: "Bebas Neue", "Noto Sans TC", "Noto Sans CJK TC", sans-serif;
   font-size: clamp(3.2rem, 8vw, 6rem);
   font-weight: 400;
-  color: var(--color-primary-light);
+  color: var(--color-primary-light, #7dd3fc);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -108,7 +114,7 @@ img{
 .overlay-idle-subtitle {
   margin: 14px auto 0;
   max-width: 40rem;
-  color: var(--color-text-bright);
+  color: var(--color-text-bright, #e2e8f0);
   font-size: clamp(1rem, 2vw, 1.25rem);
   line-height: 1.6;
   font-weight: 400;
@@ -131,8 +137,8 @@ img{
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--color-primary);
-  box-shadow: 0 0 8px var(--color-primary), 0 0 16px rgba(56, 189, 248, 0.33);
+  background: var(--color-primary, #38bdf8);
+  box-shadow: 0 0 8px var(--color-primary, #38bdf8), 0 0 16px rgba(56, 189, 248, 0.33);
   animation: overlay-idle-pulse 2s ease-in-out infinite;
 }
 
@@ -140,7 +146,7 @@ img{
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 12px;
   letter-spacing: 2px;
-  color: var(--color-primary);
+  color: var(--color-primary, #38bdf8);
   text-transform: uppercase;
 }
 
@@ -148,7 +154,7 @@ img{
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
   letter-spacing: 1px;
-  color: var(--color-text-bright);
+  color: var(--color-text-bright, #e2e8f0);
 }
 
 .overlay-idle-qr {
@@ -175,7 +181,7 @@ img{
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
   letter-spacing: 2px;
-  color: var(--color-text-bright);
+  color: var(--color-text-bright, #e2e8f0);
   text-transform: uppercase;
 }
 

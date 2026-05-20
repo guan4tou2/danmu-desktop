@@ -43,13 +43,13 @@ function updateConnectionStatus(status, text, shouldShow = true) {
     // Update tray status label
     if (typeof window !== "undefined" && window.API && window.API.updateTrayStatus) {
       const trayLabels = {
-        idle: "⊘ Disconnected",
-        connecting: "◐ Connecting\u2026",
-        connected: "● Connected",
-        disconnected: "⊘ Disconnected",
-        "connection-failed": "⊘ Connection Failed",
+        idle: "⊘ 未連線",
+        connecting: "◐ 連線中…",
+        connected: "● 已連線",
+        disconnected: "⊘ 連線中斷",
+        "connection-failed": "⊘ 連線失敗",
       };
-      const label = shouldShow ? (trayLabels[status] || "⊘ Disconnected") : "⊘ Disconnected";
+      const label = shouldShow ? (trayLabels[status] || "⊘ 未連線") : "⊘ 未連線";
       let serverUrl = "";
       try {
         const host = localStorage.getItem("serverHost") || "";

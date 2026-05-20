@@ -132,16 +132,32 @@ function renderRecent() {
 }
 
 function shouldOpen() {
-  // Don't open if we've already saved at least one good config.
-  // Falls back to checking the legacy host-input value (filled by ws-manager
-  // from saveSettings/loadSettings) so existing users skip the gate entirely.
   try {
     if (localStorage.getItem(STORAGE_CONFIGURED) === "1") return false;
   } catch (_) {
-    return false; // fail safe — don't block users with no localStorage
+    return false;
   }
-  // Migration: if host-input has a saved value from prior versions, treat it
-  // as configured.
+  // Check persisted settings (conn-card / ws-manager flow saves here before
+  // the DOM input is populated, so this catches the race shouldOpen vs loadSettings).
+  try {
+    const saved = localStorage.getItem("danmu-settings");
+    if (saved) {
+      const s = JSON.parse(saved);
+      if (s && s.host) {
+        localStorage.setItem(STORAGE_CONFIGURED, "1");
+        return false;
+      }
+    }
+  } catch (_) { /* */ }
+  // Check recent servers list
+  try {
+    const recent = localStorage.getItem(STORAGE_RECENT);
+    if (recent && JSON.parse(recent).length > 0) {
+      localStorage.setItem(STORAGE_CONFIGURED, "1");
+      return false;
+    }
+  } catch (_) { /* */ }
+  // Legacy: host-input may be filled by ws-manager loadSettings
   const hostInput = document.getElementById("host-input");
   if (hostInput && hostInput.value && hostInput.value.trim().length > 0) {
     try { localStorage.setItem(STORAGE_CONFIGURED, "1"); } catch (_) { /* */ }

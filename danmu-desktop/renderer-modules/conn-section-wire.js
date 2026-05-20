@@ -9,7 +9,7 @@
 
 const { parseServerInput, buildCanonicalUrl, formatDisplayHost } = require("./conn-parser");
 const { createConnTest } = require("./conn-test");
-const { loadSettings } = require("./settings");
+const { loadSettings, saveSettings } = require("./settings");
 
 const _IDS = {
   serverInput: "conn-server-input",
@@ -182,8 +182,15 @@ function initConnSection({ api } = {}) {
     editSaveBtn.addEventListener("click", () => {
       const parsed = _safeParse(serverInput && serverInput.value);
       if (parsed) _setHidden(parsed);
+      const persisted = _persistServerSelection(parsed);
       _renderPreview();
+      if (persisted) _renderLastUsedServer(persisted);
       _closeEdit();
+      // Auto-test after saving so the user gets instant feedback.
+      if (parsed) {
+        const token = tokenInput && tokenInput.value ? tokenInput.value : "";
+        connTest.start({ host: parsed.host, port: parsed.port, token });
+      }
     });
   }
   if (editCancelBtn) {
@@ -194,10 +201,52 @@ function initConnSection({ api } = {}) {
     });
   }
 
+  function _persistServerSelection(parsed) {
+    if (!parsed) return null;
+
+    const saved = loadSettings() || {};
+    const screenSelect = document.getElementById("screen-select");
+    const syncMultiDisplayCheckbox = document.getElementById(
+      "sync-multi-display-checkbox"
+    );
+    const displayIndexFromDom = screenSelect
+      ? Number.parseInt(screenSelect.value, 10)
+      : NaN;
+    const displayIndex = Number.isInteger(displayIndexFromDom)
+      ? displayIndexFromDom
+      : Number.isInteger(saved.displayIndex)
+        ? saved.displayIndex
+        : 0;
+    const syncMultiDisplay = syncMultiDisplayCheckbox
+      ? !!syncMultiDisplayCheckbox.checked
+      : !!saved.syncMultiDisplay;
+    const wsToken = tokenInput && tokenInput.value
+      ? tokenInput.value.trim()
+      : typeof saved.wsToken === "string"
+        ? saved.wsToken
+        : "";
+
+    saveSettings(
+      parsed.host,
+      String(parsed.port),
+      displayIndex,
+      syncMultiDisplay,
+      wsToken
+    );
+
+    return {
+      host: parsed.host,
+      port: String(parsed.port),
+      displayIndex,
+      syncMultiDisplay,
+      wsToken,
+    };
+  }
+
   // ── LAST USED SERVER population ────────────────────────────────────────
-  function _renderLastUsedServer() {
+  function _renderLastUsedServer(savedOverride) {
     if (!lastAddrEl) return;
-    const saved = loadSettings();
+    const saved = savedOverride || loadSettings();
     if (saved && saved.host) {
       const port = Number(saved.port) || 443;
       lastAddrEl.textContent = formatDisplayHost({ host: saved.host, port });
@@ -228,7 +277,12 @@ function initConnSection({ api } = {}) {
   if (tokenInput) tokenInput.addEventListener("input", _renderAuthStatus);
   _renderAuthStatus();
 
-  return { connTest, renderPreview: _renderPreview, openEdit: _openEdit, closeEdit: _closeEdit };
+  return {
+    connTest,
+    renderPreview: _renderPreview,
+    openEdit: _openEdit,
+    closeEdit: _closeEdit,
+  };
 }
 
 module.exports = { initConnSection };

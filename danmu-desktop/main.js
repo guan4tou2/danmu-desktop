@@ -2,7 +2,7 @@
 const { app, Tray, Menu, nativeImage, ipcMain } = require("electron");
 const path = require("path");
 const { sanitizeLog } = require("./shared/utils");
-const { createWindow, createAboutWindow, createTrayPopover } = require("./main-modules/window-manager");
+const { createWindow, createAboutWindow } = require("./main-modules/window-manager");
 const { setupIpcHandlers } = require("./main-modules/ipc-handlers");
 const { setupAutoUpdater } = require("./main-modules/auto-updater");
 const trustedWssHosts = require("./main-modules/trusted-wss-hosts");
@@ -76,9 +76,8 @@ app.whenReady().then(() => {
       updateInfo.version = state.version || null;
       try {
         if (tray) rebuildTrayMenu();
-        pushPopoverState();
       } catch (_) {
-        // tray/popover may not yet be created (very early checks) — ignore
+        // tray may not yet be created (very early checks) — ignore
       }
     }
   );
@@ -116,7 +115,7 @@ app.whenReady().then(() => {
     }
   };
 
-  let trayStatusText = "⊘ Disconnected";
+  let trayStatusText = "⊘ 未連線";
   let trayServerUrl = "";
 
   // Broadcast an overlay-idle-toggle message to every live child window.
@@ -134,13 +133,21 @@ app.whenReady().then(() => {
     return delivered;
   }
 
-  // Keep tray actions narrow: status, optional idle-scene toggle,
-  // app/window maintenance. Display selection and connection edits belong in
-  // the main client window so tray does not become a second controller.
+  // Tray menu — v3 design: status-only native menu with overlay toggle.
+  // Display selection and connection edits belong in the main client window
+  // so tray does not become a second controller.
   function rebuildTrayMenu() {
     const hasOverlay = childWindows.some((cw) => cw && !cw.isDestroyed());
+    const overlayCount = childWindows.filter((cw) => cw && !cw.isDestroyed()).length;
     const version = app.getVersion();
-    const pkgName = "Danmu Fire";
+    const pkgName = "Danmu Desktop";
+
+    // Connection-state: derive status dot + server submenu hint.
+    // Connected = status text contains "Connected" or "連線" but NOT "中斷".
+    const isConnected = (trayStatusText.includes("Connected") || trayStatusText.includes("連線"))
+      && !trayStatusText.includes("中斷");
+    const statusDot = isConnected ? "●" : "●";
+    const serverHint = isConnected ? "已連線" : "中斷";
 
     // Update entry — shown only when an update is available/downloading/ready.
     const updateEntries = [];
@@ -171,39 +178,74 @@ app.whenReady().then(() => {
     }
 
     const template = [
-      { label: `● ${pkgName}    v${version}`, enabled: false },
+      // ── Header: dot + name + version + status ──
+      { label: `${statusDot} ${pkgName}    v${version}`, enabled: false },
       { label: trayServerUrl ? `${trayStatusText} · ${trayServerUrl}` : trayStatusText, enabled: false },
       { type: "separator" },
-      { label: `Overlay 視窗：${childWindows.filter((cw) => cw && !cw.isDestroyed()).length}`, enabled: false },
-      ...(updateInfo.phase && updateInfo.phase !== "idle"
-        ? [{ label: `更新狀態：${updateInfo.phase}`, enabled: false }]
-        : []),
-      { type: "separator" },
+      // ── Overlay controls ──
       ...updateEntries,
       {
-        label: "待機畫面",
+        label: "顯示 overlay",
         type: "checkbox",
-        checked: hasOverlay,
+        checked: hasOverlay && overlayVisible,
         accelerator: "CommandOrControl+Shift+D",
         enabled: hasOverlay,
-        click: () => broadcastIdleToggle("toggle"),
+        click: () => {
+          if (!hasOverlay) return;
+          if (overlayVisible) {
+            // Hide overlay windows — connection stays alive
+            childWindows.forEach((win) => {
+              if (win && !win.isDestroyed()) win.hide();
+            });
+            overlayVisible = false;
+            console.log("[Main] Overlay windows hidden via tray toggle (connection kept).");
+          } else {
+            // Show overlay windows again
+            childWindows.forEach((win) => {
+              if (win && !win.isDestroyed()) win.show();
+            });
+            overlayVisible = true;
+            console.log("[Main] Overlay windows shown via tray toggle.");
+          }
+          rebuildTrayMenu();
+        },
       },
+      { label: `Overlay 視窗：${overlayCount} 個`, enabled: false },
       {
-        label: "伺服器",
+        label: "  待機畫面",
+        type: "checkbox",
+        checked: idleActive && hasOverlay,
+        enabled: hasOverlay,
+        click: () => {
+          broadcastIdleToggle("toggle");
+          idleActive = !idleActive;
+          // Lower overlay z-level during idle so macOS menu bar stays reachable
+          const level = idleActive ? "floating" : "screen-saver";
+          childWindows.forEach((cw) => {
+            if (cw && !cw.isDestroyed()) {
+              cw.setAlwaysOnTop(true, level);
+            }
+          });
+          rebuildTrayMenu();
+        },
+      },
+      { type: "separator" },
+      // ── Server submenu — inline status in label (design v3) ──
+      {
+        label: `伺服器　　${serverHint}`,
         submenu: [
-          { label: trayStatusText, enabled: false },
+          { label: trayServerUrl || "—", enabled: false },
           { type: "separator" },
           { label: "更改連線…", click: showMainWindow },
         ],
       },
       { type: "separator" },
+      // ── System actions ──
       {
         label: "開啟控制視窗…",
-        accelerator: "CommandOrControl+Shift+C",
         click: showMainWindow,
       },
-      { label: "偏好設定…", click: showMainWindow },
-      { label: "關於 Danmu Fire", click: () => createAboutWindow(mainWindow) },
+      { label: `關於 ${pkgName}…`, click: () => createAboutWindow(mainWindow) },
       { type: "separator" },
       {
         label: "結束 Danmu",
@@ -221,76 +263,17 @@ app.whenReady().then(() => {
   }
 
   rebuildTrayMenu();
-  tray.setToolTip("Danmu Fire");
+  tray.setToolTip("Danmu Desktop");
 
-  // ── Tray popover ──────────────────────────────────────────────────
-  let trayPopover = null;
   let idleActive = false;
+  let overlayVisible = true; // tracks show/hide (not create/destroy)
 
-  function getTrayPopoverState() {
-    const connected = trayStatusText.includes("●") || trayStatusText.includes("Connected");
-    const connecting = trayStatusText.includes("Connecting") || trayStatusText.includes("連線中");
-    return {
-      connected,
-      connecting,
-      serverUrl: trayServerUrl,
-      overlayCount: childWindows.filter((cw) => cw && !cw.isDestroyed()).length,
-      idleActive,
-      updatePhase: updateInfo.phase,
-      updateVersion: updateInfo.version,
-    };
-  }
-
-  function pushPopoverState() {
-    if (trayPopover && !trayPopover.isDestroyed()) {
-      trayPopover.webContents.send("tray-popover-update", getTrayPopoverState());
-    }
-  }
-
-  function showTrayPopover() {
-    if (trayPopover && !trayPopover.isDestroyed()) {
-      trayPopover.focus();
-      return;
-    }
-    trayPopover = createTrayPopover(tray);
-    trayPopover.on("closed", () => { trayPopover = null; });
-  }
-
-  function hideTrayPopover() {
-    if (trayPopover && !trayPopover.isDestroyed()) {
-      trayPopover.close();
-      trayPopover = null;
-    }
-  }
-
-  function toggleTrayPopover() {
-    if (trayPopover && !trayPopover.isDestroyed()) {
-      hideTrayPopover();
-    } else {
-      showTrayPopover();
-    }
-  }
-
-  // Popover IPC
-  ipcMain.handle("get-tray-popover-state", () => getTrayPopoverState());
-
-  ipcMain.on("tray-popover-action", (event, action) => {
-    hideTrayPopover();
-    switch (action) {
-      case "open-main":
-        showMainWindow();
-        break;
-      case "about":
-        createAboutWindow(mainWindow);
-        break;
-      case "quit":
-        [...childWindows].forEach((win) => {
-          if (win && !win.isDestroyed()) win.destroy();
-        });
-        childWindows.length = 0;
-        app.quit();
-        break;
-    }
+  // Reset overlayVisible when overlay windows are created or destroyed
+  // externally (e.g. from renderer "Start" / "Stop" buttons via ipc-handlers).
+  ipcMain.on("overlay-connection-status", (_, data) => {
+    if (data && data.status === "started") overlayVisible = true;
+    if (data && data.status === "stopped") overlayVisible = true; // reset for next session
+    rebuildTrayMenu();
   });
 
   // Update tray status label from renderer — restricted to main window.
@@ -307,7 +290,6 @@ app.whenReady().then(() => {
     trayStatusText = String(text).slice(0, 50);
     if (typeof url === "string") trayServerUrl = url.slice(0, 80);
     rebuildTrayMenu();
-    pushPopoverState();
   });
 
   // Main window requests an overlay-idle toggle (button / shortcut)
@@ -318,12 +300,25 @@ app.whenReady().then(() => {
     if (mode === "toggle") idleActive = !idleActive;
     else if (mode === "show") idleActive = true;
     else idleActive = false;
-    pushPopoverState();
+
+    // Adjust overlay window level so macOS menu bar stays accessible.
+    // "screen-saver" covers the menu bar; "floating" stays above normal
+    // windows but below it — lets the user reach the tray during idle.
+    const level = idleActive ? "floating" : "screen-saver";
+    childWindows.forEach((cw) => {
+      if (cw && !cw.isDestroyed()) {
+        cw.setAlwaysOnTop(true, level);
+      }
+    });
+
+    rebuildTrayMenu();
   });
 
-  // Left-click tray → toggle popover; right-click → context menu (default)
-  tray.on("click", toggleTrayPopover);
+  // macOS: left-click shows context menu natively — no extra handler needed.
+  // Windows/Linux: left-click fires "click" but context menu is right-click,
+  // so we open the main window on click + double-click.
   if (process.platform !== "darwin") {
+    tray.on("click", showMainWindow);
     tray.on("double-click", showMainWindow);
   }
 

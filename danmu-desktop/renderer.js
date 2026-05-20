@@ -26,6 +26,7 @@ const { initUpdateStatus } = require("./renderer-modules/update-status");
 const { init: initFirstRunGate } = require("./renderer-modules/first-run-gate");
 const { initConnSection } = require("./renderer-modules/conn-section-wire");
 const { initWindowPicker } = require("./renderer-modules/window-picker");
+const { initAppShellMeta } = require("./renderer-modules/app-shell-meta");
 
 // Translation helper
 function t(key) {
@@ -83,6 +84,7 @@ const initRenderer = async () => {
     // Safe no-op if API.onUpdateStatus is missing (e.g. older preload).
     initUpdateStatus({ t, showToast });
     initWindowPicker(api);
+    initAppShellMeta({ api: window.API });
 
     // Canvas 2D particle network background (main window only)
     if (document.getElementById("vanta-bg")) {
@@ -139,13 +141,25 @@ const initRenderer = async () => {
 
         api.getDisplays().then((displays) => {
           screenSelect.innerHTML = "";
+          // Count primary vs secondary for labelling (主螢幕 / 副螢幕)
+          let secondaryIdx = 0;
           displays.forEach((display, index) => {
             const option = document.createElement("option");
             option.value = index;
             option.dataset.displayId = String(display.id);
-            option.textContent = `Display ${index + 1} (${display.size.width}x${
-              display.size.height
-            }) ${display.primary ? "[Primary]" : ""}`;
+
+            // Design v3 chip format: "主螢幕 · Built-in · 2560×1600"
+            // client-nav.js splits on " · " → name | meta
+            const res = `${display.size.width}×${display.size.height}`;
+            let chipName;
+            if (display.primary) {
+              chipName = "主螢幕";
+            } else {
+              secondaryIdx++;
+              chipName = displays.length <= 2 ? "副螢幕" : `副螢幕 ${secondaryIdx}`;
+            }
+            const connector = display.label || (display.primary ? "Built-in" : `Display ${index + 1}`);
+            option.textContent = `${chipName} · ${connector} · ${res}`;
             screenSelect.appendChild(option);
           });
 

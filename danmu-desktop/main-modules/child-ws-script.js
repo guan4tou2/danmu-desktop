@@ -1,4 +1,36 @@
 // WebSocket script injected into child (overlay) windows via executeJavaScript
+const QRCode = require("qrcode");
+
+/**
+ * Generate a minimal SVG QR code for the given text.
+ * Returns an SVG string suitable for innerHTML injection, or "" on error.
+ */
+function _generateQrSvg(text) {
+  try {
+    const qr = QRCode.create(text, { errorCorrectionLevel: "M" });
+    const size = qr.modules.size;
+    const data = qr.modules.data;
+    // Build a single <path> from module grid — smaller than N×N <rect>s
+    let d = "";
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        if (data[y * size + x]) {
+          d += `M${x},${y}h1v1h-1z`;
+        }
+      }
+    }
+    const margin = 1;
+    const vb = size + margin * 2;
+    return (
+      `<svg viewBox="0 0 ${vb} ${vb}" width="108" height="108" xmlns="http://www.w3.org/2000/svg">` +
+      `<rect width="${vb}" height="${vb}" fill="#fff"/>` +
+      `<path transform="translate(${margin},${margin})" d="${d}" fill="#000"/>` +
+      `</svg>`
+    );
+  } catch (_) {
+    return "";
+  }
+}
 
 /**
  * Returns the JavaScript string to be injected into the child overlay window.
@@ -11,6 +43,13 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
     startupAnimationSettings || { enabled: false }
   );
   const wsAuthTokenJson = JSON.stringify(wsAuthToken || "");
+
+  // Build viewer URL for idle screen display
+  const displayHost = safePort === 443 ? String(ip) : `${ip}:${safePort}`;
+  const viewerUrl = `https://${displayHost}`;
+  const qrSvgHtml = _generateQrSvg(viewerUrl);
+  const displayHostJson = JSON.stringify(displayHost);
+  const qrSvgJson = JSON.stringify(qrSvgHtml);
 
   // v5.3.0+: WS merged onto Flask's port. The overlay connects via
   // wss://IP:PORT/ws + token query (same port as the web UI).
@@ -764,6 +803,24 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
           });
         });
       }
+
+      // ── Hydrate idle screen with actual server URL + QR ──────────────
+      (function _hydrateIdleScreen() {
+        var host = ${displayHostJson};
+        var qrSvg = ${qrSvgJson};
+        var subtitleEl = document.querySelector('.overlay-idle-subtitle');
+        var urlEl = document.querySelector('.overlay-idle-url');
+        var qrContainer = document.querySelector('.overlay-idle-qr');
+        if (subtitleEl) {
+          subtitleEl.textContent = '掃描 QR code 或打開 ' + host + ' — 開始送彈幕';
+        }
+        if (urlEl) {
+          urlEl.textContent = host.toUpperCase();
+        }
+        if (qrSvg && qrContainer) {
+          qrContainer.innerHTML = qrSvg;
+        }
+      })();
 
       connect()
     `;

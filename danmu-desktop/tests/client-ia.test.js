@@ -12,6 +12,17 @@ function readMainProcess() {
   return fs.readFileSync(mainPath, "utf8");
 }
 
+function readClientPackageVersion() {
+  const pkgPath = path.join(__dirname, "..", "package.json");
+  return JSON.parse(fs.readFileSync(pkgPath, "utf8")).version;
+}
+
+function readClientElectronVersion() {
+  const pkgPath = path.join(__dirname, "..", "package.json");
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
+  return String(pkg.devDependencies.electron || "").replace(/^[^\d]*/, "");
+}
+
 function section(html, key) {
   const match = html.match(
     new RegExp(`<section class="client-section" data-section="${key}"[\\s\\S]*?</section>`)
@@ -108,13 +119,30 @@ test("overlay section owns display selection and has one visible runtime control
   expect(overlay).not.toContain('data-client-overlay-action="stop"');
 });
 
-test("tray menu does not expose dead secondary runtime controls", () => {
+test("client shell version fallbacks match the current desktop package version", () => {
+  const html = readClientHtml();
+  const version = readClientPackageVersion();
+  const electronVersion = readClientElectronVersion();
+
+  expect(html).toContain(`<span data-client-version>v${version}</span>`);
+  expect(html).toContain(`<span data-client-about-version>v${version}</span>`);
+  expect(html).toContain(
+    `<span data-client-about-electron-version>Electron ${electronVersion}</span>`
+  );
+});
+
+test("tray menu exposes v3 canonical schema: overlay toggle + idle + no dead controls", () => {
   const main = readMainProcess();
 
+  // v3 design: native tray menu, not a popover
   expect(main).not.toContain('require("./main-modules/tray-popover")');
   expect(main).not.toContain("buildTrayPopoverSections");
-  expect(main).toContain('label: "待機畫面"');
-  expect(main).not.toContain('label: "顯示 overlay"');
+
+  // v3 canonical items: "顯示 overlay" (⌘⇧D) + "待機畫面" (sub-item)
+  expect(main).toContain('"顯示 overlay"');
+  expect(main).toContain("待機畫面");
+
+  // No dead dispatcher-style runtime controls in tray
   expect(main).not.toContain('dispatchToRenderer("pause")');
   expect(main).not.toContain('dispatchToRenderer("clear")');
   expect(main).not.toContain('dispatchToRenderer("display:primary")');

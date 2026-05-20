@@ -303,76 +303,10 @@ function createAboutWindow(mainWindow) {
   return aboutWindow;
 }
 
-/**
- * Creates the tray popover window (frameless, positioned near tray).
- * @param {Electron.Tray} tray - The tray instance for positioning
- * @returns {BrowserWindow}
- */
-function createTrayPopover(tray) {
-  const POPOVER_WIDTH = 260;
-  const POPOVER_HEIGHT = 380;
-
-  // Position near tray icon
-  let x = 0, y = 0;
-  const trayBounds = tray.getBounds();
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width: screenW, height: screenH } = primaryDisplay.workAreaSize;
-
-  if (process.platform === "darwin") {
-    // macOS: below the menu bar, centered on tray icon
-    x = Math.round(trayBounds.x + trayBounds.width / 2 - POPOVER_WIDTH / 2);
-    y = trayBounds.y + trayBounds.height + 4;
-  } else {
-    // Windows/Linux: above the taskbar (taskbar usually at bottom)
-    x = Math.round(trayBounds.x + trayBounds.width / 2 - POPOVER_WIDTH / 2);
-    y = trayBounds.y - POPOVER_HEIGHT - 4;
-    if (y < 0) {
-      // Taskbar at top — show below
-      y = trayBounds.y + trayBounds.height + 4;
-    }
-  }
-
-  // Clamp to screen
-  x = Math.max(0, Math.min(x, screenW - POPOVER_WIDTH));
-  y = Math.max(0, Math.min(y, screenH - POPOVER_HEIGHT));
-
-  const win = new BrowserWindow({
-    width: POPOVER_WIDTH,
-    height: POPOVER_HEIGHT,
-    x,
-    y,
-    resizable: false,
-    movable: false,
-    frame: false,
-    transparent: true,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    show: false,
-    hasShadow: false,
-    webPreferences: {
-      preload: path.join(__dirname, "../dist/preload.bundle.js"),
-      nodeIntegration: false,
-      contextIsolation: true,
-      webSecurity: true,
-    },
-  });
-
-  win.loadFile(path.join(__dirname, "../tray-popover.html"));
-  hardenWebContents(win.webContents);
-
-  win.once("ready-to-show", () => win.show());
-  win.on("blur", () => {
-    if (!win.isDestroyed()) win.close();
-  });
-
-  return win;
-}
-
 module.exports = {
   createWindow,
   setupChildWindow,
   createAboutWindow,
-  createTrayPopover,
   pickOverlayDisplay,
   hardenWebContents,
 };

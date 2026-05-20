@@ -70,9 +70,6 @@
       "about.html",
       "about.css",
       "about-renderer.js",
-      "tray-popover.html",
-      "tray-popover.css",
-      "tray-popover-renderer.js",
       "overlay-idle.js",
       "tailwind.css",
       "styles.css",
@@ -117,7 +114,8 @@
   },
   "dependencies": {
     "electron-updater": "^6.8.3",
-    "i18next": "^26.2.0"
+    "i18next": "^26.2.0",
+    "qrcode": "^1.5.4"
   },
   "overrides": {
     "lodash": "^4.18.1",

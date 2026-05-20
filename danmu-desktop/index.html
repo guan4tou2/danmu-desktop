@@ -104,7 +104,7 @@
           </button>
         </nav>
         <div class="client-sidebar-foot">
-          <div class="ver" data-client-version>v5.0.0 · <span data-client-platform>macOS</span></div>
+          <div class="ver"><span data-client-version>v5.2.0</span> · <span data-client-platform>macOS</span></div>
           <div class="status"><span class="dot"></span> UP TO DATE</div>
         </div>
       </aside>
@@ -321,15 +321,15 @@
              Hidden by default — v5.0.0 demoted overlay to second nav. -->
         <section class="client-section" data-section="overlay" hidden>
           <div class="client-section-head">
-            <div class="client-section-title" data-i18n="overlaySectionTitle">Overlay</div>
-            <div class="client-section-kicker" data-i18n="overlaySectionKicker">DISPLAY</div>
+            <div class="client-section-title" data-i18n="overlaySectionTitle">Overlay 控制</div>
+            <div class="client-section-kicker" data-i18n="overlaySectionKicker">透明層 · 點擊穿透</div>
           </div>
 
           <!-- Primary button card: show/hide overlay window -->
           <div class="client-overlay-card">
             <div class="client-overlay-card-body">
-              <div class="title" data-i18n="overlayCardTitle">顯示彈幕 Overlay</div>
-              <div class="dim" data-i18n="overlayCardHint">快捷鍵: ⌘⇧D</div>
+              <div class="title" data-i18n="overlayCardTitle">彈幕 Overlay</div>
+              <div class="dim" data-i18n="overlayCardHint">任何時候可用 ⌘⇧D 快速切換</div>
             </div>
             <button type="button" class="client-overlay-button" data-client-overlay-button aria-pressed="false">
               <span data-client-overlay-state data-i18n="overlayButtonStart">▶ 開啟 Overlay</span>
@@ -346,7 +346,6 @@
               <!-- screen chips injected by client-nav.js from screen-select -->
             </div>
             <select id="screen-select" hidden aria-hidden="true" tabindex="-1"></select>
-            <button type="button" class="client-action-btn client-window-picker-btn" id="openWindowPicker" data-i18n="windowPickerBtn">🖥 視窗選擇器</button>
             <label class="client-overlay-sync">
               <input type="checkbox" id="sync-multi-display-checkbox" />
               <span data-i18n="syncMultiDisplay">Enable synchronous multi-display</span>
@@ -456,7 +455,7 @@
               <div class="title">Danmu Fire</div>
               <!-- Electron version is pinned to package.json's major; bump
                    together if you upgrade the Electron dep. -->
-              <div class="meta"><span data-client-about-version>v5.0.0</span> · Electron 41 · <span data-client-about-platform>macOS</span></div>
+              <div class="meta"><span data-client-about-version>v5.2.0</span> · <span data-client-about-electron-version>Electron 42.1.0</span> · <span data-client-about-platform>macOS</span></div>
               <div class="status"><span class="dot"></span> UP TO DATE</div>
             </div>
             <div class="client-about-actions">

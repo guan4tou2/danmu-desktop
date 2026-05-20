@@ -59,7 +59,7 @@ function validateDanmuParams(data) {
   return { opacity, size, speed, color: validatedColor, text: data.text };
 }
 
-function isValidIpAddress(ip) {
+function isValidHost(ip) {
   if (typeof ip !== "string") {
     return false;
   }
@@ -67,7 +67,11 @@ function isValidIpAddress(ip) {
   if (!trimmed) {
     return false;
   }
-  return trimmed === "localhost" || net.isIP(trimmed) !== 0;
+  if (trimmed === "localhost" || net.isIP(trimmed) !== 0) {
+    return true;
+  }
+  // Accept valid domain names (e.g. danmu.guan4tou2.com)
+  return /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(trimmed);
 }
 
 let _ipcRegistered = false;
@@ -562,7 +566,7 @@ function setupIpcHandlers(getMainWindow, childWindows) {
         console.warn("[Main] createChild: rejected IPC from untrusted sender");
         return;
       }
-      if (!isValidIpAddress(ip)) {
+      if (!isValidHost(ip)) {
         console.warn(
           `[Main] createChild: invalid IP address: ${sanitizeLog(ip)}`
         );
