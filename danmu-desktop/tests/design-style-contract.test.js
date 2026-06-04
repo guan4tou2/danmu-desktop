@@ -121,3 +121,17 @@ test("viewer font dropdown shows the configured default font name", () => {
   expect(mainJs).toMatch(/defaultOption\.textContent\s*=\s*getDefaultFontName\(\);/);
   expect(mainJs).not.toMatch(/defaultOption\.textContent\s*=\s*ServerI18n\.t\("defaultFont"\);/);
 });
+
+test("admin light inputs have a dark strong text token", () => {
+  const tokens = fs.readFileSync(path.join(REPO_ROOT, "shared/tokens.css"), "utf8");
+  const adminCss = fs.readFileSync(path.join(REPO_ROOT, "server/static/css/style.css"), "utf8");
+
+  expect(tokens).toMatch(/--admin-text:\s*#0f172a;/);
+  expect(tokens).toMatch(/--admin-text-strong:\s*#0f172a;/);
+  expect(tokens).toMatch(
+    /:root\[data-theme="dark"\]\s*\{[^}]*--admin-text:\s*#f1f5f9;[^}]*--admin-text-strong:\s*#f1f5f9;/s,
+  );
+  expect(adminCss).toMatch(
+    /\.admin-widget-input,\s*\.admin-widget-select,\s*\.admin-widget-textarea\s*\{[^}]*color:\s*var\(--admin-text-strong,\s*#f1f5f9\);/s,
+  );
+});

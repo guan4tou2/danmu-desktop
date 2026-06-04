@@ -181,6 +181,7 @@
   --admin-raised: #f1f5f9;                   /* lightBg2 — nested surfaces */
   --admin-line: rgba(15, 23, 42, 0.12);      /* lightLine */
   --admin-text: #0f172a;                     /* lightText — slate-900 */
+  --admin-text-strong: #0f172a;              /* input/content text — slate-900 */
   --admin-text-dim: #475569;                 /* lightTextDim — slate-600 */
 }
 
@@ -275,6 +276,7 @@
   --admin-raised:   #1e293b;
   --admin-line:     rgba(148, 163, 184, 0.18);
   --admin-text:     #f1f5f9;
+  --admin-text-strong: #f1f5f9;
   --admin-text-dim: #94a3b8;
 }
 
