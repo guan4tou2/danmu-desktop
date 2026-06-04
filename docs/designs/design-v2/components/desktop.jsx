@@ -141,7 +141,7 @@ function ControlWindow({ theme, defaultTestState, forceSection }) {
 
   const navItems = [
     { k: 'conn',    icon: '⇌', zh: '連線',     en: 'CONNECTION' },
-    { k: 'overlay', icon: '▢', zh: 'Overlay',  en: 'DISPLAY' },
+    { k: 'overlay', icon: '▢', zh: 'Desktop',  en: 'DISPLAY' },
     { k: 'about',   icon: '○', zh: '關於',     en: 'ABOUT' },
   ];
 
@@ -211,19 +211,19 @@ function OverlaySection({ panel, raised, line, text, textDim, accent }) {
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 600, letterSpacing: -0.2 }}>Overlay 控制</div>
+        <div style={{ fontSize: 18, fontWeight: 600, letterSpacing: -0.2 }}>Desktop 控制</div>
         <HudLabel color={textDim}>透明層 · 點擊穿透</HudLabel>
       </div>
 
       {/* Primary control — button, not Toggle. Button state text is the
-          source of truth ("▶ 開啟 Overlay" ↔ "◼ 關閉 Overlay"), matching
+          source of truth ("▶ 開啟 Desktop" ↔ "◼ 關閉 Desktop"), matching
           the Electron client's `data-client-overlay-button`. */}
       <div style={{
         padding: 14, borderRadius: 8, border: `1px solid ${line}`, background: panel,
         display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14,
       }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 600 }}>顯示彈幕 Overlay</div>
+          <div style={{ fontSize: 13, fontWeight: 600 }}>顯示彈幕 Desktop</div>
           <div style={{ fontSize: 11, color: textDim, marginTop: 2 }}>快捷鍵: ⌘⇧D</div>
         </div>
         <span
@@ -238,7 +238,7 @@ function OverlaySection({ panel, raised, line, text, textDim, accent }) {
             cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
           }}
         >
-          {open ? '◼ 關閉 Overlay' : '▶ 開啟 Overlay'}
+          {open ? '◼ 關閉 Desktop' : '▶ 開啟 Desktop'}
         </span>
       </div>
 
@@ -270,7 +270,7 @@ function OverlaySection({ panel, raised, line, text, textDim, accent }) {
           >{syncMulti ? '✓' : ''}</span>
           <span>Enable synchronous multi-display</span>
           <span style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, letterSpacing: 0.3, marginLeft: 'auto' }}>
-            所有螢幕同步顯示 overlay
+            所有螢幕同步顯示 Desktop
           </span>
         </label>
       </div>
@@ -287,7 +287,7 @@ function OverlaySection({ panel, raised, line, text, textDim, accent }) {
         <HudLabel color={accent}>NOTE</HudLabel>
         <div style={{ marginTop: 4 }}>
           彈幕的字體、顏色、大小、透明度、速度、排版與效果為<b style={{ color: text }}>觀眾每次發送時帶上的參數</b>，
-          不在此視窗控制。此視窗僅決定 overlay 是否顯示、顯示於哪個螢幕，以及與 server 的連線。
+          不在此視窗控制。此視窗僅決定 Desktop 是否顯示、顯示於哪個螢幕，以及與 server 的連線。
         </div>
       </div>
     </>
@@ -410,7 +410,7 @@ function ConnSection({ panel, raised, line, text, textDim, accent, bg, testState
         )}
 
         <div style={{ marginTop: 8, fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, letterSpacing: 0.3, lineHeight: 1.5 }}>
-          測試：one-shot WSS handshake 驗證，不觸發 overlay、不留 connection
+          測試：one-shot WSS handshake 驗證，不觸發 Desktop、不留 connection
         </div>
       </div>
 
@@ -491,7 +491,7 @@ function AboutSection({ panel, raised, line, text, textDim, accent }) {
         </div>
       </div>
       <div style={{ padding: 14, borderRadius: 8, border: `1px solid ${line}`, background: panel, fontSize: 12, color: text, lineHeight: 1.7 }}>
-        Danmu 是即時彈幕送字系統。觀眾用手機或桌機網頁輸入文字，送到主場大螢幕的 overlay。
+        Danmu 是即時彈幕送字系統。觀眾用手機或桌機網頁輸入文字，送到主場大螢幕的 Desktop。
         <br />
         <span style={{ color: textDim }}>© 2025 · Open source at github.com/…</span>
       </div>
@@ -599,7 +599,7 @@ function TrayMenu({ theme, disconnected }) {
         </div>
         {/* Single canonical schema — only status text + accent color change
             between Connected / Disconnected. Mirrors main.js rebuildTrayMenu. */}
-        <TrayRow label="Overlay 視窗" meta={disconnected ? '0 個' : '1 個'} isDark={isDark} />
+        <TrayRow label="Desktop 視窗" meta={disconnected ? '0 個' : '1 個'} isDark={isDark} />
         <TrayToggleRow label="待機畫面" sc="⌘⇧D" on={!disconnected} accent={accent} isDark={isDark} />
         <div style={{ height: 1, background: isDark ? hudTokens.line : hudTokens.lightLine, margin: '4px 0' }} />
         <TrayRow label="伺服器" meta={disconnected ? '中斷 ▸' : '已連線 ▸'} isDark={isDark} />

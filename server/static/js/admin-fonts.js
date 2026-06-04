@@ -139,7 +139,7 @@
         <div class="admin-proto-empty-title">尚未上傳自訂字型</div>
         <div class="admin-proto-empty-desc">
           預設使用 Noto Sans TC + IBM Plex Mono。<br/>
-          上傳 .woff2 / .ttf 可給觀眾選用,或設為 Overlay 預設字型。
+          上傳 .woff2 / .ttf 可給觀眾選用,或設為 Desktop 預設字型。
         </div>
         <div class="admin-proto-empty-actions">
           ${loggedIn ? '<button type="button" class="admin-proto-empty-primary" data-empty-cta="fonts-upload-first">⇪ 上傳字型</button>' : ''}

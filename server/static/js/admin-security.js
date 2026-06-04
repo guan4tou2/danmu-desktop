@@ -114,7 +114,7 @@
             <div class="admin-sec-card__body">
               <label class="admin-security-toggle">
                 <input id="sec2-wsa-toggle" type="checkbox" />
-                <span>啟用 token 驗證（overlay 連線需帶 token）</span>
+                <span>啟用 token 驗證（Desktop 連線需帶 token）</span>
               </label>
               <div class="admin-security-field">
                 <span class="admin-v2-monolabel">TOKEN · 12–128 字元</span>
@@ -225,7 +225,7 @@
             </div>
             <div class="admin-sec-card__body">
               <p class="admin-sec-card__note">
-                每筆 admin 動作（登入 / 密碼變更 / token 輪替 / plugin 上傳 / overlay clear / 等）
+                每筆 admin 動作（登入 / 密碼變更 / token 輪替 / plugin 上傳 / Desktop clear / 等）
                 都自動寫入 audit log，可在 <a href="#/audit">#/audit</a> 查詢與匯出。
               </p>
             </div>

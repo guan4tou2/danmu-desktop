@@ -227,7 +227,7 @@ function AdminPollsPage({ theme = 'dark' }) {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontFamily: hudTokens.fontMono, fontSize: 13, fontWeight: 700,
               }}>{activeIdx + 1}</span>
-              <CardHeader title={`編輯題目 ${activeIdx + 1}`} en="EDITING · LIVE SYNC TO OVERLAY" textDim={textDim} />
+              <CardHeader title={`編輯題目 ${activeIdx + 1}`} en="EDITING · LIVE SYNC TO DESKTOP" textDim={textDim} />
               <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 1, color: textDim }}>
                 Q{activeIdx + 1} / {questions.length}
               </span>

@@ -9,7 +9,7 @@ admin 設計。
 從 2026-05-14 起，desktop 設計只保留這 4 個場景：
 
 1. **Desktop · Control Window**
-2. **Desktop · Overlay on Desktop**
+2. **Desktop · Live Surface**
 3. **Desktop · Tray · Connected**
 4. **Desktop · Tray · Disconnected**
 
@@ -25,7 +25,7 @@ admin 設計。
 
 處理方式：
 
-- `Window Picker` 不再是獨立設計場景；如果有多螢幕選擇，視為 `Control Window > Overlay` 內部行為
+- `Window Picker` 不再是獨立設計場景；如果有多螢幕選擇，視為 `Control Window > Desktop` 內部行為
 - `Tray Popover` 不再是獨立設計場景；tray 只需要 `Connected` / `Disconnected` 兩種狀態
 - `First-run Gate` 不再是獨立設計場景；首次連線流程整合進 `Control Window > Connection`
 
@@ -34,7 +34,7 @@ admin 設計。
 `Desktop · Control Window` 只保留 3 個一級區塊，且順序固定：
 
 1. `Connection`
-2. `Overlay`
+2. `Desktop`
 3. `About`
 
 規則：
@@ -42,7 +42,7 @@ admin 設計。
 - 不保留 `Shortcuts` 作為獨立一級區塊
 - 不保留 `Update` 作為獨立一級區塊
 - `Connection` 內可以容納首次設定 / 測試連線 / recent servers / token 輸入
-- `Overlay` 只控制顯示、顯示在哪個螢幕、清空畫面、基本狀態
+- `Desktop` 只控制顯示、顯示在哪個螢幕、清空畫面、基本狀態
 - `About` 承接版本 / 更新 / 外部連結等維護性資訊
 
 ## Desktop Scope Rules
@@ -61,7 +61,7 @@ Desktop client 仍然是 **local display endpoint**，不是第二個 admin。
 Desktop 只負責：
 
 - connection
-- overlay visibility
+- Desktop visibility
 - display target
 - clear screen
 - lightweight status
@@ -95,9 +95,9 @@ Design 不再交 `First-run Gate` 獨立場景。
 
 也就是說，第一次啟動只是 `Connection` 區塊的一種狀態，不是另一個產品面。
 
-### 3. Keep Overlay Narrow
+### 3. Keep Desktop Narrow
 
-`Desktop · Overlay on Desktop` 只保留：
+`Desktop · Live Surface` 只保留：
 
 - connected / disconnected / reconnecting 狀態
 - server URL / minimal HUD
@@ -117,15 +117,15 @@ Design 不再交 `First-run Gate` 獨立場景。
 
 ### Must Be Treated As Final
 
-- `Control Window` 的一級順序固定為 `Connection → Overlay → About`
+- `Control Window` 的一級順序固定為 `Connection → Desktop → About`
 - `First-run` 被視為 `Connection` 的子狀態，不是獨立產品面
 - tray 不再被視為 `popover` 產品面，而只是 `Connected` / `Disconnected` 狀態
 - `Window Picker` 不再被視為獨立設計交付
 
 ### Remaining Desktop Work Worth Finishing Before Server Focus
 
-- overlay `reconnecting` 視覺狀態收齊
-- overlay idle scene 定稿
+- Desktop `reconnecting` 視覺狀態收齊
+- Desktop idle scene 定稿
 - tray `Connected` / `Disconnected` 視覺層級定稿
 - `About` / `Update` 呈現是否已符合最終 desktop 語言
 

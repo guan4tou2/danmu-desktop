@@ -57,7 +57,7 @@
     },
     messages: {
       icon: "≡", title: "等待第一則訊息…",
-      desc: "場次開始後，觀眾送出的訊息會即時出現在這裡。確認 Overlay 已開啟（Live → 開始顯示）。",
+      desc: "場次開始後，觀眾送出的訊息會即時出現在這裡。確認 Desktop 已開啟（Live → 開始顯示）。",
       accent: T.cyan,
     },
     blacklist: {

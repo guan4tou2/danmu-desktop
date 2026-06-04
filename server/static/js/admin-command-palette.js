@@ -23,7 +23,7 @@
     messages:       { title: "訊息紀錄",         kicker: "MESSAGES" },
     history:        { title: "歷史",             kicker: "HISTORY · 匯出 / 重播" },
     polls:          { title: "投票",             kicker: "POLLS" },
-    widgets:        { title: "Overlay Widgets",  kicker: "WIDGETS" },
+    widgets:        { title: "Desktop Widgets", kicker: "WIDGETS" },
     themes:         { title: "風格主題包",       kicker: "THEMES" },
     viewer:         { title: "觀眾頁",           kicker: "VIEWER · 頁面預設 · 欄位設定 · 文案 / 限制" },
     assets:         { title: "素材庫",           kicker: "ASSETS" },
@@ -111,14 +111,14 @@
     },
     {
       id: "overlay-off",
-      label: "停止 Overlay",
-      sub: "切到 OVERLAY OFF",
+      label: "停止 Desktop",
+      sub: "切到 DESKTOP OFF",
       action: () => _csrfFetch("/admin/broadcast/toggle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode: "overlay_off" }),
       })
-        .then((r) => _toast(r.ok ? "已切換為 OVERLAY OFF" : "切換失敗", r.ok))
+        .then((r) => _toast(r.ok ? "已切換為 DESKTOP OFF" : "切換失敗", r.ok))
         .catch(() => _toast("切換失敗", false)),
     },
     {

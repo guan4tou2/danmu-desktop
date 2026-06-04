@@ -99,7 +99,7 @@
             <div class="admin-soh-v4__quickcard">
               <div class="admin-soh-v4__pane-label">QUICK ACTIONS</div>
               <button type="button" class="admin-soh-v4__qa is-cyan" data-soh-action="reload-effects">⟳ 重新載入所有插件</button>
-              <a class="admin-soh-v4__qa" href="#/overlay">⊗ 清除 overlay 畫面</a>
+              <a class="admin-soh-v4__qa" href="#/overlay">⊗ 清除 Desktop 畫面</a>
               <a class="admin-soh-v4__qa" href="#/backup">↓ 下載系統診斷包</a>
               <button type="button" class="admin-soh-v4__qa is-disabled" data-soh-action="force-gc" disabled title="基於安全考量已停用">
                 <span>⚠ 強制 GC</span>

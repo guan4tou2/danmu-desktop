@@ -1457,6 +1457,12 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
   cursor: pointer;
 }
 
+.viewer-fire-btn[data-state="offline"] {
+  background: rgba(255, 77, 79, 0.08);
+  border: 1px solid rgba(255, 77, 79, 0.32);
+  color: #ff4d4f;
+}
+
 .viewer-fire-btn:not([disabled]):hover {
   transform: translateY(-1px);
 }

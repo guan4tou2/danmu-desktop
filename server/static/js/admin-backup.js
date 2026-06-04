@@ -168,7 +168,7 @@
           <div class="admin-backup-subcard">
             <div class="admin-v2-monolabel">END SESSION · 結束管理工作階段</div>
             <div class="admin-backup-row">
-              <div class="admin-backup-desc">登出目前管理員,不影響 overlay / viewer 連線。</div>
+              <div class="admin-backup-desc">登出目前管理員,不影響 Desktop / viewer 連線。</div>
               <button type="button" id="bk2-end-session" class="admin-poll-btn is-bad">END SESSION</button>
             </div>
           </div>

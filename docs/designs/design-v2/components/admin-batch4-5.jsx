@@ -9,7 +9,7 @@ function AdminExtensionsPage({ theme = 'dark' }) {
           {
             id: 'slido', name: 'Slido Bridge', version: 'v0.2.0',
             kind: 'browser-extension', status: 'active', recentMsgs: 47,
-            desc: '把 Slido 上的觀眾訊息即時轉發到 Danmu Fire,適合已經在用 Slido 卻想用本平台 overlay 的場景。',
+            desc: '把 Slido 上的觀眾訊息即時轉發到 Danmu Fire,適合已經在用 Slido 卻想用本平台 Desktop 的場景。',
             badge: 'OFFICIAL',
             steps: [
               { t: '下載 .crx',    s: 'Chrome / Edge · 1.2 MB' },
@@ -28,7 +28,7 @@ function AdminExtensionsPage({ theme = 'dark' }) {
           {
             id: 'obs', name: 'OBS Plugin', version: '即將支援',
             kind: 'native-plugin', status: 'planned', recentMsgs: 0,
-            desc: '在 OBS 內以 Source 形式直接接收 Overlay,免再開瀏覽器。',
+            desc: '在 OBS 內以 Source 形式直接接收 Desktop,免再開瀏覽器。',
             badge: 'COMING',
           },
           {

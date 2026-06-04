@@ -84,7 +84,7 @@
       const r = await window.csrfFetch("/admin/konami/trigger", { method: "POST" });
       if (!r.ok) throw new Error("HTTP " + r.status);
       if (window.showToast) {
-        window.showToast("🎮 KONAMI · 已觸發 overlay 爆炸動畫", true);
+        window.showToast("🎮 KONAMI · 已觸發 Desktop 爆炸動畫", true);
       }
     } catch (e) {
       console.warn("[konami] trigger failed:", e && e.message);

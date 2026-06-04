@@ -185,7 +185,7 @@ app.whenReady().then(() => {
       // ── Overlay controls ──
       ...updateEntries,
       {
-        label: "顯示 overlay",
+        label: "顯示 Desktop",
         type: "checkbox",
         checked: hasOverlay && overlayVisible,
         accelerator: "CommandOrControl+Shift+D",
@@ -210,7 +210,7 @@ app.whenReady().then(() => {
           rebuildTrayMenu();
         },
       },
-      { label: `Overlay 視窗：${overlayCount} 個`, enabled: false },
+      { label: `Desktop 視窗：${overlayCount} 個`, enabled: false },
       {
         label: "  待機畫面",
         type: "checkbox",

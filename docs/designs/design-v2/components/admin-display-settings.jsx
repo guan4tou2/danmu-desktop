@@ -334,7 +334,7 @@ function PreviewCard({ cfg, tokens }) {
       <div style={{ padding: '10px 14px', borderBottom: `1px solid ${line}`, display: 'flex', alignItems: 'center', gap: 8 }}>
         <HudLabel color={textDim}>LIVE PREVIEW</HudLabel>
         <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, color: accent, letterSpacing: 1 }}>
-          <StatusDot color={accent} size={5} /> 同步 Overlay
+          <StatusDot color={accent} size={5} /> 同步 Desktop
         </span>
       </div>
       <div style={{
@@ -375,7 +375,7 @@ function PreviewCard({ cfg, tokens }) {
 
 // ---------------------------------------------------------------
 // AutoSyncCard — 取代 DeployCard。Display Settings 採隱式 deploy:
-// 任何修改即時送到 overlay,無「套用」按鈕。這張卡只是說明目前同步狀態。
+// 任何修改即時送到 Desktop,無「套用」按鈕。這張卡只是說明目前同步狀態。
 function AutoSyncCard({ tokens }) {
   const { panel, raised, line, text, textDim, accent, radius } = tokens;
   return (
@@ -389,7 +389,7 @@ function AutoSyncCard({ tokens }) {
         <StatusDot color={accent} size={6} pulse />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: hudTokens.fontMono, fontSize: 11, color: accent, letterSpacing: 1, fontWeight: 700 }}>同步中 · LIVE</div>
-          <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, marginTop: 2, letterSpacing: 0.4 }}>更動即推送 · overlay 與下次刷新觀眾即生效</div>
+          <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, color: textDim, marginTop: 2, letterSpacing: 0.4 }}>更動即推送 · Desktop 與下次刷新觀眾即生效</div>
         </div>
       </div>
       <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>

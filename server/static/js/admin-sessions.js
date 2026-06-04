@@ -179,7 +179,7 @@
       + '<div class="admin-v2-head">'
       +   '<div class="admin-v2-kicker">SESSIONS · 資料切片 · TIME WINDOWS</div>'
       +   '<div class="admin-v2-title">場次</div>'
-      +   '<p class="admin-v2-note">場次 = 一段時間窗口（包含訊息 / 投票 / 統計）。Overlay 開啟為 trigger，但場次本身的角色是「資料切片」— 切完即歸檔到 history。點選查看詳細統計，或進入完整分析頁面。</p>'
+      +   '<p class="admin-v2-note">場次 = 一段時間窗口（包含訊息 / 投票 / 統計）。Desktop 開啟為 trigger，但場次本身的角色是「資料切片」— 切完即歸檔到 history。點選查看詳細統計，或進入完整分析頁面。</p>'
       + '</div>'
 
       // ── KPI strip (full width, 4 tiles)

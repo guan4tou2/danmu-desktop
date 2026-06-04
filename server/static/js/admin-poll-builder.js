@@ -430,7 +430,7 @@
               <div class="admin-polls-live-rail-card">
                 <div class="admin-poll-card-head">
                   <span class="title">即時推送</span>
-                  <span class="kicker">OVERLAY PUSH</span>
+                  <span class="kicker">DESKTOP PUSH</span>
                 </div>
                 <div class="admin-polls-live-toggles">
                   ${[

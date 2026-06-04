@@ -88,7 +88,7 @@
         overlayState.setAttribute("data-i18n", key);
         overlayState.textContent = (typeof i18n !== "undefined")
           ? i18n.t(key)
-          : (isRunning ? "■ 關閉 Overlay" : "▶ 開啟 Overlay");
+          : (isRunning ? "■ 關閉 Desktop" : "▶ 開啟 Desktop");
       }
     }
 

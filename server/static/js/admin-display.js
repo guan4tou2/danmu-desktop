@@ -118,7 +118,7 @@
         <div class="admin-v2-head">
           <div class="admin-v2-kicker">VIEWER DEFAULTS · 每列決定觀眾送出 danmu 時的預設值 + 是否開放自訂</div>
           <div class="admin-v2-title">${escapeHtml(t("viewerDefaultsTitle", "觀眾頁預設"))}</div>
-          <p class="admin-v2-note">Display 控制 overlay / client / 目標顯示器 / idle QR；<b>Viewer</b> 在此設定 <code>/fire</code> 的送出預設、欄位與文案。</p>
+          <p class="admin-v2-note">Display 控制 Desktop / client / 目標顯示器 / idle QR；<b>Viewer</b> 在此設定 <code>/fire</code> 的送出預設、欄位與文案。</p>
         </div>
 
         <div class="admin-dsp2-grid">
@@ -141,7 +141,7 @@
                 <span class="admin-v2-monolabel">LIVE PREVIEW</span>
                 <span class="admin-dsp2-preview-sync">
                   <span class="admin-dsp2-dot"></span>
-                  ${escapeHtml(t("displayPreviewSync", "同步 Overlay"))}
+                  ${escapeHtml(t("displayPreviewSync", "同步 Desktop"))}
                 </span>
               </div>
               <div class="admin-dsp2-preview-stage" data-preview-stage>
@@ -173,7 +173,7 @@
                 <span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;background:var(--color-primary);box-shadow:0 0 6px var(--color-primary);animation:hud-pulse 2s ease-in-out infinite"></span>
                 <div style="flex:1;min-width:0">
                   <div style="font-family:var(--font-mono);font-size:11px;color:var(--color-primary);letter-spacing:0.1em;font-weight:700">${escapeHtml(t("displayAutoSyncLive", "同步中 · LIVE"))}</div>
-                  <div style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);margin-top:2px;letter-spacing:0.04em">${escapeHtml(t("displayAutoSyncNote", "更動即推送 · overlay 與下次刷新觀眾即生效"))}</div>
+                  <div style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);margin-top:2px;letter-spacing:0.04em">${escapeHtml(t("displayAutoSyncNote", "更動即推送 · Desktop 與下次刷新觀眾即生效"))}</div>
                 </div>
               </div>
               <div style="display:flex;gap:8px">
@@ -1318,7 +1318,7 @@
         _vcLimitRow("Burst 容忍", "BURST WINDOW", '<span data-vc-rate-burst>—</span>', "則/3s", "連發偵測 · 超過觸發 cooldown") +
         _vcLimitRow("Cooldown 時間", "COOLDOWN", '<span data-vc-rate-cooldown>—</span>', "s", "被限速後等待時間") +
         '<div class="admin-vc-limit-card__foot">' +
-          '⚠ 修改後即時生效 · 不影響已在 overlay 上的彈幕' +
+          '⚠ 修改後即時生效 · 不影響已在 Desktop 上的彈幕' +
         '</div>' +
       '</div>' +
 

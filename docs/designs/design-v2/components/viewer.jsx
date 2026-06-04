@@ -178,7 +178,7 @@ function ViewerCore({ theme, form, inBrowser, pollEnabled }) {
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
             <ConnChip label="伺服器" state="online" accent={accent} textDim={textDim} mini={isMobile} bg={panel} />
-            <ConnChip label="Overlay" state="offline" textDim={textDim} line={line} mini={isMobile} bg={panel} />
+            <ConnChip label="Desktop" state="offline" textDim={textDim} line={line} mini={isMobile} bg={panel} />
           </div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4 }}>
             <LangSelect isDark={isDark} text={text} textDim={textDim} line={line} raised={raised} mini={isMobile} />

@@ -404,7 +404,7 @@ function RwdBroadcast480() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {[
               { l: 'queue',         v: '0',  s: '' },
-              { l: 'overlay',       v: '3',  s: 'main · proj · backup' },
+              { l: 'desktop',       v: '3',  s: 'main · proj · backup' },
               { l: 'throughput',    v: '24', s: '/ min' },
               { l: 'WS lag p95',    v: '38', s: 'ms' },
             ].map((m, i) => (

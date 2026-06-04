@@ -31,7 +31,7 @@
     "messages.block": "攔截 / 刪除訊息",
     "filters.add":    "新增過濾規則",
     "session.read":   "讀取工作階段資訊",
-    "overlay.write":  "控制 Overlay 顯示",
+    "overlay.write":  "控制 Desktop 顯示",
   };
 
   // Single-element backdrop reused across all 4 steps. Body content

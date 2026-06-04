@@ -370,7 +370,7 @@ function RwdBroadcast768() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {[
               { l: 'queue (standby)', v: '0',   sub: '' },
-              { l: 'overlay 連線',     v: '3',   sub: 'main · projector · backup' },
+              { l: 'Desktop 連線',     v: '3',   sub: 'main · projector · backup' },
               { l: '訊息 throughput',  v: '24', sub: '/ min · 過去 5 分鐘' },
               { l: 'WebSocket lag',   v: '38', sub: 'ms · p95' },
             ].map((m, i) => (
@@ -457,7 +457,7 @@ function RwdNotifications768() {
           <div style={{ background: hudTokens.bg1, border: `1px solid ${hudTokens.line}`, borderRadius: 4, overflow: 'auto' }}>
             {[
               { k: 'SECURITY', m: '3 次來自 fp_a3f2 的密集發送觸發速率限制',  t: '40s', tone: 'crimson', sel: true,  unread: true },
-              { k: 'SYSTEM',   m: 'Overlay #2 (projector) 自動重連成功',        t: '2m',  tone: 'amber',   unread: true },
+              { k: 'SYSTEM',   m: 'Desktop #2 (projector) 自動重連成功',        t: '2m',  tone: 'amber',   unread: true },
               { k: 'SYSTEM',   m: '插件 voting-pro 0.3.4 → 0.3.5 可更新',       t: '14m', tone: 'cyan',    unread: true },
               { k: 'SECURITY', m: '新管理員登入 · admin 從新裝置',              t: '1h',  tone: 'amber',   unread: false },
               { k: 'SYSTEM',   m: '備份完成 · 4.2 MB · /var/danmu/backups',     t: '2h',  tone: 'mute',    unread: false },

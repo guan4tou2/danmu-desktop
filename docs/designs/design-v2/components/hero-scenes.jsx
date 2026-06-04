@@ -119,7 +119,7 @@ function OverlayIdle({ theme = 'dark', state = 'ready' }) {
           ) : (
             <>
               <StatusDot color={accent} size={8} />
-              <span style={{ fontFamily: hudTokens.fontMono, fontSize: 12, letterSpacing: 2, color: accent }}>OVERLAY READY</span>
+              <span style={{ fontFamily: hudTokens.fontMono, fontSize: 12, letterSpacing: 2, color: accent }}>DESKTOP READY</span>
               <span style={{ fontFamily: hudTokens.fontMono, fontSize: 11, letterSpacing: 1, color: HERO_SLATE_300 }}>· 等待中</span>
             </>
           )}

@@ -1539,11 +1539,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const onCooldown = _cooldownEnd > Date.now();
     if (!_overlayOnline) {
       elements.btnSend.disabled = true;
+      elements.btnSend.dataset.state = "offline";
       if (elements.btnSendText) elements.btnSendText.textContent = ServerI18n.t("overlayOfflineFire");
       if (elements.btnSendIcon) elements.btnSendIcon.classList.add("hidden");
-      _setSendbarHint(ServerI18n.t("overlayOfflineHint"), "blocked");
+      _setSendbarHint("", "");
       return;
     }
+    if (elements.btnSend.dataset.state === "offline") delete elements.btnSend.dataset.state;
     elements.btnSend.disabled = !hasText || onCooldown;
     if (!onCooldown) {
       if (elements.btnSendText) elements.btnSendText.textContent = ServerI18n.t("fireDanmu");

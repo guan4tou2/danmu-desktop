@@ -92,7 +92,7 @@ function IASpecRouteMatrix() {
       { r: '#/broadcast',       n: '廣播控制',            own: 'live',      m: M('O', 'O', 'O') },
       { r: '#/notifications',   n: '通知中心',            own: 'live',      m: M('O', 'O', 'O') },
       { r: '#/audience',        n: '觀眾名單',            own: 'live',      m: M('O', 'O', 'O') },
-      { r: '#/widgets',         n: 'Overlay Widgets',     own: 'live',      m: M('O', 'O', 'O') },
+      { r: '#/widgets',         n: 'Desktop Widgets',     own: 'live',      m: M('O', 'O', 'O') },
     ]},
     { sec: 'Backstage · 設定 / 內容',    items: [
       { r: '#/viewer-config',   n: '觀眾頁設定 (PAGE/FIELDS)', own: 'backstage', m: M('○', 'O', 'O'), tabbed: true },
@@ -411,9 +411,9 @@ function IASpecLiveOperatorPath() {
       tone: _ia.cyan,
       steps: [
         { r: 'polls',        a: '建立 4 選項',        out: 'poll.id created' },
-        { r: 'polls',        a: '推到 overlay',       out: '觀眾端 Poll tab 出現' },
+        { r: 'polls',        a: '推到 Desktop',       out: '觀眾端 Poll tab 出現' },
         { r: 'polls/:id',    a: '監看實時 KPI',       out: '5-tile + 時間直方圖' },
-        { r: 'polls',        a: '結束投票',           out: 'celebration overlay' },
+        { r: 'polls',        a: '結束投票',           out: 'celebration Desktop' },
         { r: 'history',      a: '匯出結果 · CSV',     out: '檔案 + audit event' },
       ],
     },

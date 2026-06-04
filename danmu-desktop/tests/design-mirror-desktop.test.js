@@ -96,7 +96,7 @@ test("ConnSection uses single host field + canonical URL preview + test button",
 
 test("OverlaySection primary control is a button (with state text), not a Toggle switch", () => {
   // 2026-05-16: impl uses `<button data-client-overlay-button>` with copy
-  // that flips between "▶ 開啟 Overlay" / "◼ 關閉 Overlay" — a deliberate
+  // that flips between "▶ 開啟 Desktop" / "◼ 關閉 Desktop" — a deliberate
   // affordance for an action (spawn/destroy overlay window), not a status
   // sync. The design must match that pattern, not show a Toggle switch.
   const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
@@ -105,8 +105,8 @@ test("OverlaySection primary control is a button (with state text), not a Toggle
   // next `function ` declaration so we don't catch ConnSection's pattern.
   const slice = src.split(/function OverlaySection/)[1].split(/\nfunction /)[0];
 
-  expect(slice).toMatch(/▶ 開啟 Overlay/);
-  expect(slice).toMatch(/◼ 關閉 Overlay/);
+  expect(slice).toMatch(/▶ 開啟 Desktop/);
+  expect(slice).toMatch(/◼ 關閉 Desktop/);
   expect(slice).toMatch(/aria-pressed=\{open\}/);
   // No Toggle switch inside OverlaySection.
   expect(slice).not.toMatch(/<Toggle\b/);
@@ -132,7 +132,7 @@ test("OverlaySection exposes the sync multi-display checkbox", () => {
   const slice = src.split(/function OverlaySection/)[1].split(/\nfunction /)[0];
 
   expect(slice).toMatch(/Enable synchronous multi-display/);
-  expect(slice).toMatch(/所有螢幕同步顯示 overlay/);
+  expect(slice).toMatch(/所有螢幕同步顯示 Desktop/);
 });
 
 test("AboutSection changelog demo does not reference removed concepts", () => {
@@ -259,7 +259,7 @@ test("TrayMenu uses a single canonical schema, status-only state difference", ()
   const src = readRepoFile("docs", "designs", "design-v2", "components", "desktop.jsx");
 
   // Items shared across both states
-  expect(src).toMatch(/<TrayRow label="Overlay 視窗"/);
+  expect(src).toMatch(/<TrayRow label="Desktop 視窗"/);
   expect(src).toMatch(/<TrayToggleRow label="待機畫面" sc="⌘⇧D"/);
   expect(src).toMatch(/<TrayRow label="伺服器"/);
   expect(src).toMatch(/<TrayRow label="開啟控制視窗…" sc="⌘⇧C"/);
@@ -269,8 +269,8 @@ test("TrayMenu uses a single canonical schema, status-only state difference", ()
   // or Connected-only `Overlay 狀態 顯示中` etc.
   expect(src).not.toMatch(/label="Overlay 狀態" meta="顯示中"/);
   expect(src).not.toMatch(/label="連線設定…"/);
-  // Don't reintroduce a second overlay toggle alongside 待機畫面.
-  expect(src).not.toMatch(/label="顯示 overlay" sc="⌘⇧D"/);
+  // Don't reintroduce a second Desktop toggle alongside 待機畫面.
+  expect(src).not.toMatch(/label="顯示 Desktop" sc="⌘⇧D"/);
 });
 
 test("desktop HTML mirrors do not publish standalone first-run, tray popover, or window picker surfaces", () => {
@@ -279,10 +279,10 @@ test("desktop HTML mirrors do not publish standalone first-run, tray popover, or
 
   for (const html of [v2Html, legacyHtml]) {
     expect(html).toContain('label="Desktop · Control Window"');
-    expect(html).toContain('label="Desktop · Overlay Live"');
-    expect(html).toContain('label="Desktop · Overlay Disconnected"');
-    expect(html).toContain('label="Desktop · Overlay Idle"');
-    expect(html).toContain('label="Desktop · Overlay Reconnecting"');
+    expect(html).toContain('label="Desktop · Live"');
+    expect(html).toContain('label="Desktop · Disconnected"');
+    expect(html).toContain('label="Desktop · Idle"');
+    expect(html).toContain('label="Desktop · Reconnecting"');
     expect(html).toContain('label="Desktop · Tray · Connected"');
     expect(html).toContain('label="Desktop · Tray · Disconnected"');
     expect(html).not.toContain("Desktop · First-run Gate");

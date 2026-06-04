@@ -22,7 +22,7 @@ handoff, 2026-05-19) — referenced as `<filename.jsx>` below.
 |---|---|---|---|
 | `live`        | Live Feed / 控制台         | [admin-live-feed.js](../../server/static/js/admin-live-feed.js), [admin-dashboard.js](../../server/static/js/admin-dashboard.js) | `admin-pages.jsx` (LiveDashboard v4) |
 | `polls`       | Polls / 投票               | [admin-poll-builder.js](../../server/static/js/admin-poll-builder.js) | `admin-pages.jsx` (PollsPage) |
-| `widgets`     | Overlay Widgets            | [admin-widgets.js](../../server/static/js/admin-widgets.js) | `admin-batch1.jsx` (legacy — see 🟡 row) |
+| `widgets`     | Desktop Widgets            | [admin-widgets.js](../../server/static/js/admin-widgets.js) | `admin-batch1.jsx` (legacy — see 🟡 row) |
 | `themes`      | 風格主題包                 | [admin-themes.js](../../server/static/js/admin-themes.js) | `admin-pages.jsx` (ThemePacks) |
 | `assets`      | 素材庫                     | [admin-assets.js](../../server/static/js/admin-assets.js), [admin-emojis.js](../../server/static/js/admin-emojis.js), [admin-stickers.js](../../server/static/js/admin-stickers.js), [admin-sounds.js](../../server/static/js/admin-sounds.js) | `admin-pages.jsx` (AssetsLibrary) |
 | `viewer`      | 觀眾頁 (4-tab)             | [admin-display.js](../../server/static/js/admin-display.js), [admin-viewer-theme.js](../../server/static/js/admin-viewer-theme.js) | `batch11-viewer-4tab.jsx` |
@@ -41,7 +41,7 @@ handoff, 2026-05-19) — referenced as `<filename.jsx>` below.
 | `poll-deepdive` | 投票深度分析             | [admin-poll-deepdive.js](../../server/static/js/admin-poll-deepdive.js) | `batch10-poll-deepdive.jsx` |
 | `search`      | 跨場次搜尋                 | [admin-search.js](../../server/static/js/admin-search.js) | `batch10-search.jsx` |
 | `audience`    | 觀眾名單                   | [admin-audience.js](../../server/static/js/admin-audience.js) | `batch10-audience.jsx` |
-| `overlay`     | Overlay 控制               | [admin-broadcast.js](../../server/static/js/admin-broadcast.js) | `admin-polestar.jsx` (OverlayControlPage) |
+| `overlay`     | Desktop 控制               | [admin-broadcast.js](../../server/static/js/admin-broadcast.js) | `admin-polestar.jsx` (DesktopControlPage) |
 
 Also covered (deep-link only, no sidebar slug):
 
@@ -65,7 +65,7 @@ All 6 pages in this row got v5 chrome refreshes per batch12-*.jsx._
 | (system security accordion leaf) | Security | [admin-security.js](../../server/static/js/admin-security.js) | `batch12-system.jsx` SecurityPage |
 | `events` | 系統事件 | [admin-events-log.js](../../server/static/js/admin-events-log.js) | `batch12-system.jsx` SystemEventsPage |
 | `effects` | 效果庫 .dme | [admin-effects-mgmt.js](../../server/static/js/admin-effects-mgmt.js) | `batch12-effects.jsx` |
-| `widgets` | Overlay Widgets | [admin-widgets.js](../../server/static/js/admin-widgets.js) | `batch12-overlay-widgets.jsx` |
+| `widgets` | Desktop Widgets | [admin-widgets.js](../../server/static/js/admin-widgets.js) | `batch12-overlay-widgets.jsx` |
 | Desktop chrome (tray popover) | Tray popover | [danmu-desktop/tray-popover.html](../../danmu-desktop/tray-popover.html) | `batch12-desktop-chrome.jsx` TrayPopover. **Partial implementation**: tray popover refit landed; Window Picker + Disconnected-state UI deferred (would require new Electron BrowserWindows). |
 
 ### 🔴 no dedicated design (0 main + N helpers)

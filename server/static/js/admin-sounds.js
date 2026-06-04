@@ -400,7 +400,7 @@
           <div class="admin-v2-kicker">ASSETS · SOUNDS · EVENT-TRIGGERED</div>
           <div class="admin-v2-title">聲音庫</div>
           <p class="admin-v2-note">
-            關鍵字命中或事件觸發時在 overlay 播放 — 最長 10 秒,最大 500KB。
+            關鍵字命中或事件觸發時在 Desktop 播放 — 最長 10 秒,最大 500KB。
           </p>
         </div>
 

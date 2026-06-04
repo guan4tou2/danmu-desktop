@@ -287,7 +287,7 @@
     return _renderToggleStep(
       "STEP 02",
       "顯示規則",
-      "這一頁對應 v5 handoff 的 Display Rules。先選好輸出畫面的預設節奏，之後再到各個 viewer / overlay 頁面微調細節。",
+      "這一頁對應 v5 handoff 的 Display Rules。先選好輸出畫面的預設節奏，之後再到各個 viewer / Desktop 頁面微調細節。",
       _state.displayRules,
       "data-setup-display-toggle"
     );

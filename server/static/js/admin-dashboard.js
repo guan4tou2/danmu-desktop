@@ -425,7 +425,7 @@
           if (r.ok) {
             const data = await r.json();
             const mode = (data.mode || "").toLowerCase();
-            bcStatusEl.textContent = mode === "live" ? "● OVERLAY ON" : "○ OVERLAY OFF";
+            bcStatusEl.textContent = mode === "live" ? "● DESKTOP ON" : "○ DESKTOP OFF";
             bcStatusEl.style.color = mode === "live" ? "var(--hud-lime, #86efac)" : "var(--admin-text-dim)";
           }
         } catch (_) { /* silent */ }
@@ -823,7 +823,7 @@
             <input type="text" class="admin-session-name-input" placeholder="場次名稱（必填）…" maxlength="120" data-sess-name />
             <button type="button" class="admin-session-open-btn" data-sess-action="open">▶ 開啟場次</button>
           </div>
-          <div class="admin-session-banner-idle-hint">開啟後自動啟動 Overlay，訊息開始歸檔至本場次</div>
+          <div class="admin-session-banner-idle-hint">開啟後自動啟動 Desktop，訊息開始歸檔至本場次</div>
         </div>`;
     } else {
       // LIVE — show session info + controls
@@ -837,7 +837,7 @@
             <span class="admin-session-live-timer" data-sess-timer></span>
           </div>
           <div class="admin-session-live-actions">
-            <button type="button" class="admin-session-pause-btn" data-sess-action="pause-display" title="暂停 overlay 顯示，繼續收訊息">⏸ 暫停顯示</button>
+            <button type="button" class="admin-session-pause-btn" data-sess-action="pause-display" title="暫停 Desktop 顯示，繼續收訊息">⏸ 暫停顯示</button>
             <button type="button" class="admin-session-end-btn" data-sess-action="close">■ 結束場次</button>
           </div>
           <div class="admin-session-live-behavior">
@@ -902,7 +902,7 @@
         btn.disabled = false;
       }
     } else if (action === "close") {
-      if (!confirm("確定要結束這個場次？\n訊息將停止歸檔，Overlay 將切換為 OFF。")) return;
+      if (!confirm("確定要結束這個場次？\n訊息將停止歸檔，Desktop 將切換為 OFF。")) return;
       btn.disabled = true;
       try {
         const r = await window.csrfFetch("/admin/session/close", { method: "POST" });
@@ -934,7 +934,7 @@
           btn2.textContent = nextMode === "standby" ? "▶ 恢復顯示" : "⏸ 暫停顯示";
           btn2.classList.toggle("is-paused", nextMode === "standby");
         }
-        window.showToast && window.showToast(nextMode === "standby" ? "已暫停 overlay 顯示" : "已恢復 overlay 顯示", true);
+        window.showToast && window.showToast(nextMode === "standby" ? "已暫停 Desktop 顯示" : "已恢復 Desktop 顯示", true);
       } catch (err) {
         window.showToast && window.showToast("切換顯示失敗", false);
       }

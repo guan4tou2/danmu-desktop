@@ -31,7 +31,7 @@ function CommandPalette({ theme = 'dark' }) {
     {
       label: '快速動作', items: [
         { icon: '▶', label: '開始廣播',       sub: 'Server 切換到廣播中',                  shortcut: '⌘B', active: true },
-        { icon: '⏸', label: '暫停接收訊息',   sub: '保留連線 · 不推送到 overlay',          shortcut: '⌘.' },
+        { icon: '⏸', label: '暫停接收訊息',   sub: '保留連線 · 不推送到 Desktop',          shortcut: '⌘.' },
         { icon: '✚', label: '新增投票',       sub: '2–6 選項 · 可排序 · 可上傳圖片',        shortcut: '⌘⇧P' },
         { icon: '⤓', label: '匯出時間軸 CSV', sub: '最近 4 小時 · 從 Server 下載',         shortcut: '⌘⇧E' },
       ]
@@ -215,7 +215,7 @@ function OverlayIdleQR({ theme = 'dark', state = 'idle' }) {
         display: 'flex', alignItems: 'center', gap: 12,
         fontFamily: hudTokens.fontMono, fontSize: 11, letterSpacing: 1.5,
       }}>
-        <span style={{ color: accent }}>DANMU FIRE · OVERLAY</span>
+        <span style={{ color: accent }}>DANMU FIRE · DESKTOP</span>
         <span style={{ color: textDim }}>|</span>
         <span style={{ color: textDim }}>v5.3 · wss://danmu.local/ws</span>
         <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
@@ -402,9 +402,9 @@ function BroadcastToggle({ theme = 'dark' }) {
               <CardHeader title="狀態差異" en="LIVE vs STANDBY" textDim={textDim} />
               <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <StateCol label="LIVE" color={accent} raised={raised} line={line} text={text} textDim={textDim}
-                  items={['觀眾訊息推送到 Overlay', '投票可投票', 'OBS Widgets 更新', '時間軸紀錄寫入']} />
+                  items={['觀眾訊息推送到 Desktop', '投票可投票', 'OBS Widgets 更新', '時間軸紀錄寫入']} />
                 <StateCol label="STANDBY" color={hudTokens.magenta} raised={raised} line={line} text={text} textDim={textDim}
-                  items={['訊息進 queue · 不推送', '投票暫停（保留已投）', 'Overlay 顯示 Standby', '時間軸仍寫入（可匯出）']} />
+                  items={['訊息進 queue · 不推送', '投票暫停（保留已投）', 'Desktop 顯示 Standby', '時間軸仍寫入（可匯出）']} />
               </div>
             </div>
 
@@ -425,7 +425,7 @@ function BroadcastToggle({ theme = 'dark' }) {
             }}>
               <div style={{ fontSize: 15, fontWeight: 600, color: '#FB7185', marginBottom: 8 }}>⚠ 結束後將斷開所有 WebSocket 連線</div>
               <div style={{ fontSize: 12, color: textDim, lineHeight: 1.8 }}>
-                Standby 是暫停；結束廣播 = 時間軸封檔、觀眾頁顯示「已結束 · 感謝參加」、Overlay 關閉。
+                Standby 是暫停；結束廣播 = 時間軸封檔、觀眾頁顯示「已結束 · 感謝參加」、Desktop 關閉。
                 時間軸可在 <span style={{ color: '#FB7185' }}>訊息紀錄 → 匯出</span> 重新下載。
               </div>
               <div style={{
@@ -730,7 +730,7 @@ function PollBuilderSpec({ theme = 'dark' }) {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontFamily: hudTokens.fontMono, fontSize: 13, fontWeight: 700,
                 }}>1</span>
-                <CardHeader title="編輯題目 1" en="EDITING Q1 · LIVE SYNC TO OVERLAY" textDim={textDim} />
+                <CardHeader title="編輯題目 1" en="EDITING Q1 · LIVE SYNC TO DESKTOP" textDim={textDim} />
                 <span style={{ marginLeft: 'auto', fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 1, color: textDim }}>
                   Q1 / {questions.length}
                 </span>

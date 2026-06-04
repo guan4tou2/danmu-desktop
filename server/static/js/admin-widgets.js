@@ -41,8 +41,8 @@
       const obsBase = location.origin + "/overlay";
       section.innerHTML = `
         <div class="admin-v2-head">
-          <div class="admin-v2-kicker">OVERLAY WIDGETS · 分數板 · 跑馬燈 · 標籤</div>
-          <div class="admin-v2-title">${escapeHtml(i18n("widgetsTitle", "Overlay Widgets"))}</div>
+          <div class="admin-v2-kicker">DESKTOP WIDGETS · 分數板 · 跑馬燈 · 標籤</div>
+          <div class="admin-v2-title">${escapeHtml(i18n("widgetsTitle", "Desktop Widgets"))}</div>
           <p class="admin-v2-note">${escapeHtml(i18n("widgetsDesc", "在 OBS 覆蓋層上新增分數板、跑馬燈或文字標籤"))}</p>
         </div>
 
@@ -79,7 +79,7 @@
             <div class="admin-ow-card">
               <div class="admin-ow-card-label">OBS BROWSER SOURCE</div>
               <p class="admin-ow-card-note">
-                在 OBS 的 Browser Source 把 URL 設成以下值即可拉入 overlay。
+                在 OBS 的 Browser Source 把 URL 設成以下值即可拉入 Desktop。
                 透明背景、自動更新。
               </p>
               <div class="admin-ow-urlrow">
@@ -93,7 +93,7 @@
             <div class="admin-ow-card">
               <div class="admin-ow-card-label">16:9 預覽</div>
               <div class="admin-ow-preview">
-                <span>overlay preview</span>
+                <span>Desktop preview</span>
               </div>
             </div>
           </aside>

@@ -1,7 +1,7 @@
 // Batch 1 — 4 admin pages reachable from sidebar nav:
 //   1) Messages list  · route="messages"
 //   2) History Export · route="history"
-//   3) Overlay Widgets · route="widgets"
+//   3) Desktop Widgets · route="widgets"
 //   4) Audit Log      · route="audit"  (new sidebar item)
 
 /* =================================================================
@@ -397,12 +397,12 @@ function FormatCard({ ext, desc, size, selected, badge, accent, text, textDim, p
 
 
 /* =================================================================
-   3) Overlay Widgets — toggleable on-screen extras
+   3) Desktop Widgets — toggleable on-screen extras
    ================================================================= */
 
 function AdminWidgetsPage({ theme = 'dark' }) {
   return (
-    <AdminPageShell route="widgets" title="Overlay Widgets" en="OVERLAY · WIDGET LAYER" theme={theme}>
+    <AdminPageShell route="widgets" title="Desktop Widgets" en="DESKTOP · WIDGET LAYER" theme={theme}>
       {({ panel, raised, line, text, textDim, accent, radius }) => {
         const widgets = [
           {
@@ -663,7 +663,7 @@ function AdminAuditLogPage({ theme = 'dark' }) {
       {({ panel, raised, line, text, textDim, accent, radius }) => {
         const events = [
           { t: '14:02:48', who: 'admin', src: '🌐 web',     act: 'UPDATE', target: '速率限制 · FIRE',          before: '5 / 10s',     after: '3 / 10s',      kind: 'config' },
-          { t: '14:01:12', who: 'admin', src: '🖥 desktop', act: 'TOGGLE', target: 'Overlay · QR Carousel',     before: 'OFF',         after: 'ON',           kind: 'widget' },
+          { t: '14:01:12', who: 'admin', src: '🖥 desktop', act: 'TOGGLE', target: 'Desktop · QR Carousel',     before: 'OFF',         after: 'ON',           kind: 'widget' },
           { t: '13:58:33', who: 'admin', src: '🌐 web',     act: 'BLOCK',  target: 'IP · 100.64.9.47',         before: null,           after: '永久',         kind: 'mod' },
           { t: '13:55:09', who: 'kevin', src: '🌐 web',     act: 'PIN',    target: '訊息 #0042 · 「能錄下來嗎」', before: null,         after: null,           kind: 'msg' },
           { t: '13:42:01', who: 'admin', src: '🌐 web',     act: 'CREATE', target: '投票 · 哪個 demo 想看?',     before: null,         after: '4 個選項',      kind: 'poll' },

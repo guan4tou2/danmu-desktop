@@ -51,7 +51,7 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   expect(ratelimitSrc).toContain('admin-ratelimit-page');
   expect(displaySrc).toContain('route === "display"');
   expect(displaySrc).toContain('route === "viewer"');
-  expect(displaySrc).toContain("Display 控制 overlay / client / 目標顯示器");
+  expect(displaySrc).toContain("Display 控制 Desktop / client / 目標顯示器");
   expect(securitySrc).toContain('route === "system"');
   expect(securitySrc).toContain('leaf === "security"');
   // 2026-05-19 v5 Batch 12-3: security page title shortened from
@@ -63,7 +63,7 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   expect(viewerThemeSrc).toContain('SECTION_ID = "sec-viewer-theme"');
   expect(viewerThemeSrc).toContain('admin-vt-page');
   expect(viewerThemeSrc).toContain('data-vt-jump="display"');
-  expect(viewerThemeSrc).toContain("Overlay 排版 / 顯示器 / 連線狀態請到 <b>Display</b>");
+  expect(viewerThemeSrc).toContain("Desktop 排版 / 顯示器 / 連線狀態請到 <b>Display</b>");
 });
 
 test("admin Viewer field inventory matches the canonical viewer spec", () => {

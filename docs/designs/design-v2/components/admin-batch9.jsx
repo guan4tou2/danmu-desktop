@@ -186,7 +186,7 @@ function AdminAboutPage({ theme = 'dark' }) {
           },
           {
             v: '2.3.4', d: '2024-12-19', tag: '', notes: [
-              { t: 'fix', l: '修正 Overlay 在多螢幕配置下 mouse passthrough 失效' },
+              { t: 'fix', l: '修正 Desktop 在多螢幕配置下 mouse passthrough 失效' },
               { t: 'fix', l: 'WCAG checker 漏掉 disabled 狀態的對比度' },
             ]
           },
@@ -452,7 +452,7 @@ function DesktopTrayPopover({ theme = 'dark' }) {
         {/* Quick actions */}
         <div style={{ padding: '8px 0' }}>
           {[
-            { i: '⚡', l: '快速啟動 Overlay',     sub: 'Display 2 · 1920×1080', shortcut: '⌘⇧O' },
+            { i: '⚡', l: '快速啟動 Desktop',     sub: 'Display 2 · 1920×1080', shortcut: '⌘⇧O' },
             { i: '⏸',  l: '暫停接收訊息',         sub: '慢動作模式',             shortcut: '⌘⇧P' },
             { i: '✦',  l: '啟動 Poll',             sub: '3 個草稿',               shortcut: '⌘⇧V' },
             { i: '⌘K', l: '開啟命令面板',         sub: '搜尋訊息 / 跳到任何頁',  shortcut: '⌘K' },
@@ -520,12 +520,12 @@ function DesktopWindowPicker({ theme = 'dark' }) {
           <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#ffbd2e' }} />
           <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#27c93f' }} />
         </div>
-        <span style={{ flex: 1, textAlign: 'center', fontSize: 13, color: text, fontWeight: 500 }}>選擇 Overlay 來源視窗</span>
+        <span style={{ flex: 1, textAlign: 'center', fontSize: 13, color: text, fontWeight: 500 }}>選擇 Desktop 來源視窗</span>
       </div>
 
       <div style={{ flex: 1, padding: 24, overflow: 'auto' }}>
         <div style={{ marginBottom: 6 }}>
-          <span style={{ fontFamily: hudTokens.fontMono, fontSize: 11, color: accent, letterSpacing: 1.5 }}>OVERLAY · WINDOW PICKER</span>
+          <span style={{ fontFamily: hudTokens.fontMono, fontSize: 11, color: accent, letterSpacing: 1.5 }}>DESKTOP · WINDOW PICKER</span>
         </div>
         <div style={{ fontSize: 22, fontWeight: 600, color: text, letterSpacing: 0.3, marginBottom: 4 }}>選擇要顯示彈幕的螢幕或視窗</div>
         <div style={{ fontSize: 13, color: textDim, lineHeight: 1.6, marginBottom: 20 }}>
@@ -610,7 +610,7 @@ function DesktopWindowPicker({ theme = 'dark' }) {
         <span style={{ fontFamily: hudTokens.fontMono, fontSize: 11, color: textDim, letterSpacing: 0.4 }}>已選擇 · Keynote · 1920×1080</span>
         <div style={{ flex: 1 }} />
         <span style={{ padding: '8px 16px', color: text, border: `1px solid ${line}`, borderRadius: 3, fontFamily: hudTokens.fontMono, fontSize: 12, cursor: 'pointer' }}>取消</span>
-        <span style={{ padding: '8px 20px', background: accent, color: '#000', borderRadius: 3, fontFamily: hudTokens.fontMono, fontSize: 12, cursor: 'pointer', fontWeight: 600, letterSpacing: 0.5 }}>啟動 Overlay →</span>
+        <span style={{ padding: '8px 20px', background: accent, color: '#000', borderRadius: 3, fontFamily: hudTokens.fontMono, fontSize: 12, cursor: 'pointer', fontWeight: 600, letterSpacing: 0.5 }}>啟動 Desktop →</span>
       </div>
     </div>
   );

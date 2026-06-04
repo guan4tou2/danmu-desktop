@@ -53,7 +53,7 @@ function AdminPageShell({ route, title, en, children, theme = 'dark' }) {
 
           <AdminNavSection label="互動" textDim={textDim} top />
           <AdminNavItem icon="◈" label="投票" live active={route === 'polls'} text={text} textDim={textDim} accent={accent} line={line} />
-          <AdminNavItem icon="⬚" label="Overlay Widgets" badge="2" active={route === 'widgets'} text={text} textDim={textDim} accent={accent} line={line} />
+          <AdminNavItem icon="⬚" label="Desktop Widgets" badge="2" active={route === 'widgets'} text={text} textDim={textDim} accent={accent} line={line} />
           <AdminNavItem icon="❖" label="風格主題包" badge="6" active={route === 'themes'} text={text} textDim={textDim} accent={accent} line={line} />
           <AdminNavItem icon="◐" label="顯示設定" active={route === 'display'} text={text} textDim={textDim} accent={accent} line={line} />
           <AdminNavItem icon="▦" label="素材庫" active={route === 'assets'} text={text} textDim={textDim} accent={accent} line={line} />
@@ -334,8 +334,8 @@ function AdminPluginsPage({ theme = 'dark' }) {
   // Blacklist / rate-limit / fingerprint are first-class features (see 系統 & 指紋 頁).
   const plugins = [
     { name: 'autoreply.py',      desc: 'AI 自動回覆常見問題 · 用 Haiku',       running: false, uptime: '—',          mem: '0 MB',  calls: 0,    lang: 'py' },
-    { name: 'scoreboard.js',     desc: 'Overlay 分數板 · OBS browser source',  running: true,  uptime: '02:41:08', mem: '8 MB',  calls: 412,  lang: 'js' },
-    { name: 'ticker.js',         desc: 'Overlay 跑馬燈 · 推播訊息',            running: true,  uptime: '02:41:08', mem: '6 MB',  calls: 89,   lang: 'js' },
+    { name: 'scoreboard.js',     desc: 'Desktop 分數板 · OBS browser source',  running: true,  uptime: '02:41:08', mem: '8 MB',  calls: 412,  lang: 'js' },
+    { name: 'ticker.js',         desc: 'Desktop 跑馬燈 · 推播訊息',            running: true,  uptime: '02:41:08', mem: '6 MB',  calls: 89,   lang: 'js' },
     { name: 'whisper-stt.py',    desc: '語音轉字幕 · 送到彈幕 stream',         running: false, uptime: '—',          mem: '0 MB',  calls: 0,    lang: 'py' },
     { name: 'gift-effects.js',   desc: '抖內觸發大字效果 · 金額 → dme',        running: true,  uptime: '01:12:30', mem: '4 MB',  calls: 18,   lang: 'js' },
     { name: 'translate.py',      desc: '即時翻譯彈幕 · ZH ⇌ EN ⇌ JA',          running: false, uptime: '—',          mem: '0 MB',  calls: 0,    lang: 'py' },

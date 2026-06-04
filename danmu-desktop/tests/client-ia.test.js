@@ -178,15 +178,15 @@ test("client shell metadata fallbacks are release-neutral", () => {
   expect(html).not.toContain(`<span data-client-about-platform>macOS</span>`);
 });
 
-test("tray menu exposes v3 canonical schema: overlay toggle + idle + no dead controls", () => {
+test("tray menu exposes v3 canonical schema: Desktop toggle + idle + no dead controls", () => {
   const main = readMainProcess();
 
   // v3 design: native tray menu, not a popover
   expect(main).not.toContain('require("./main-modules/tray-popover")');
   expect(main).not.toContain("buildTrayPopoverSections");
 
-  // v3 canonical items: "顯示 overlay" (⌘⇧D) + "待機畫面" (sub-item)
-  expect(main).toContain('"顯示 overlay"');
+  // v3 canonical items: "顯示 Desktop" (⌘⇧D) + "待機畫面" (sub-item)
+  expect(main).toContain('"顯示 Desktop"');
   expect(main).toContain("待機畫面");
   expect(main).toContain('"偏好設定…"');
   expect(main).toMatch(/label:\s*"偏好設定…",\s*click:\s*showMainWindow/s);

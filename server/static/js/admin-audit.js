@@ -22,7 +22,7 @@
   const SOURCE_META = {
     auth:       { label: "Auth" },
     fire_token: { label: "Fire Token" },
-    broadcast:  { label: "Overlay" },
+    broadcast:  { label: "Desktop" },
     moderation: { label: "Moderation" },
     session:    { label: "Session" },
   };

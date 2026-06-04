@@ -156,7 +156,7 @@ function WizStepLogo({ text, textDim, accent, raised, line, panel }) {
       <div style={{ fontFamily: hudTokens.fontMono, fontSize: 10, letterSpacing: 1.5, color: accent, marginBottom: 8 }}>STEP 02</div>
       <h2 style={{ margin: 0, fontSize: 28, fontWeight: 600, color: text, lineHeight: 1.3 }}>上傳活動 Logo</h2>
       <p style={{ fontSize: 14, color: textDim, marginTop: 10, lineHeight: 1.7 }}>
-        會顯示在觀眾頁、Overlay 角落、登入頁。建議 PNG 透明背景,512×512 以上。可略過,日後再上傳。
+        會顯示在觀眾頁、Desktop 角落、登入頁。建議 PNG 透明背景,512×512 以上。可略過,日後再上傳。
       </p>
 
       <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: '1fr 280px', gap: 18 }}>
@@ -375,7 +375,7 @@ function EmptyStateMessages({ theme = 'dark' }) {
             <span style={{ marginLeft: 12, padding: '6px 12px', border: `1px solid ${accent}`, color: accent, borderRadius: 3, fontFamily: hudTokens.fontMono, fontSize: 11 }}>📋 複製</span>
           </div>
           <div style={{ marginTop: 20, fontFamily: hudTokens.fontMono, fontSize: 10, color: textDim, letterSpacing: 0.5 }}>
-            或在 Overlay 上開啟 QR Carousel widget
+            或在 Desktop 上開啟 QR Carousel widget
           </div>
         </div>
       )}
@@ -398,7 +398,7 @@ function EmptyStatePolls({ theme = 'dark' }) {
             還沒有任何投票
           </h2>
           <p style={{ fontSize: 13, color: textDim, lineHeight: 1.7, textAlign: 'center', maxWidth: 460, margin: '0 0 24px' }}>
-            建好的投票會排在這裡,可即時推到 Overlay,也可以用模板快速建立。
+            建好的投票會排在這裡,可即時推到 Desktop,也可以用模板快速建立。
           </p>
           <div style={{ display: 'flex', gap: 10 }}>
             <span style={{ padding: '10px 18px', background: accent, color: '#000', borderRadius: 4, fontFamily: hudTokens.fontMono, fontSize: 12, fontWeight: 700, letterSpacing: 1 }}>+ 新建投票</span>
@@ -439,7 +439,7 @@ function EmptyStateFonts({ theme = 'dark' }) {
           </h2>
           <p style={{ fontSize: 13, color: textDim, lineHeight: 1.7, textAlign: 'center', maxWidth: 460, margin: '0 0 18px' }}>
             預設使用 Noto Sans TC + IBM Plex Mono。<br/>
-            上傳 .woff2 / .ttf 可給觀眾選用,或設為 Overlay 預設字型。
+            上傳 .woff2 / .ttf 可給觀眾選用,或設為 Desktop 預設字型。
           </p>
           <div style={{ display: 'flex', gap: 10 }}>
             <span style={{ padding: '10px 18px', background: accent, color: '#000', borderRadius: 4, fontFamily: hudTokens.fontMono, fontSize: 12, fontWeight: 700, letterSpacing: 1 }}>⇪ 上傳字型</span>

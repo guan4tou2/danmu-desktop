@@ -77,11 +77,11 @@ function DecisionsLog2026May04() {
   // Q3 細化規則 — 動作分類
   const q3Rules = [
     { op: '加入黑名單',     tone: 'crimson', kind: 'reversible',   note: 'fp 從 deny list 移除,容易' },
-    { op: 'Mute 訊息',      tone: 'amber',   kind: 'reversible',   note: 'overlay 重新顯示' },
+    { op: 'Mute 訊息',      tone: 'amber',   kind: 'reversible',   note: 'Desktop 重新顯示' },
     { op: '封鎖單則訊息',   tone: 'amber',   kind: 'reversible',   note: '從審核佇列恢復' },
     { op: '隱藏訊息',       tone: 'amber',   kind: 'reversible',   note: '可在 audit log 還原' },
     { op: '啟動投票',       tone: 'magenta', kind: 'irreversible', note: '觀眾已看到,只能結束' },
-    { op: '觸發效果',       tone: 'violet',  kind: 'irreversible', note: '已在 overlay 播放完' },
+    { op: '觸發效果',       tone: 'violet',  kind: 'irreversible', note: '已在 Desktop 播放完' },
     { op: '推送廣播',       tone: 'cyan',    kind: 'irreversible', note: '訊息已送達 184 客戶端' },
     { op: '結束場次',       tone: 'crimson', kind: 'irreversible', note: 'state 已 commit, 無法 reopen' },
   ];

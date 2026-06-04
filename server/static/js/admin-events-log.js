@@ -121,7 +121,7 @@
             <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="rate">rate</button>
             <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="system">system</button>
             <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="filter">filter</button>
-            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="overlay">overlay</button>
+            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="overlay">desktop</button>
             <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="backup">backup</button>
           </div>
           <span class="admin-ev-v4__spacer"></span>

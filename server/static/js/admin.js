@@ -674,7 +674,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="widgets" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⬚</span>
-                                    <span data-i18n="adminNavWidgets">Overlay Widgets</span>
+                                    <span data-i18n="adminNavWidgets">Desktop Widgets</span>
                                     <span class="admin-dash-nav-badge" data-count-widgets hidden>—</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="themes" role="tab" aria-selected="false">
@@ -800,9 +800,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                       <option value="ko" ${ServerI18n.currentLang === "ko" ? "selected" : ""}>한국어</option>
                                     </select>
                                     <button class="admin-dash-broadcast" type="button" aria-live="polite"
-                                        title="切換 Overlay 狀態" data-route="overlay">
+                                        title="切換 Desktop 狀態" data-route="overlay">
                                         <span class="dot"></span>
-                                        ${broadcasting ? "OVERLAY · ON" : "OVERLAY · OFF"}
+                                        ${broadcasting ? "DESKTOP · ON" : "DESKTOP · OFF"}
                                     </button>
                                     <button id="logoutButton" class="admin-poll-btn is-ghost" style="color:var(--color-danger);border-color:var(--color-danger);display:flex;align-items:center;gap:6px">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -977,7 +977,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <span class="key">④ BROADCAST · F4</span>
                                         <span class="count" data-qa-broadcast-status>—</span>
                                       </div>
-                                      <a class="admin-dash-qa-link" href="#" data-route-link="overlay">Overlay 控制 →</a>
+                                      <a class="admin-dash-qa-link" href="#" data-route-link="overlay">Desktop 控制 →</a>
                                     </div>
                                   </div>
                                 </div>
@@ -1390,7 +1390,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // owns sec-history-tabs + history-v2-section + sec-history-list + sec-history.
     history:   { title: "歷史",             kicker: "HISTORY · 場次 / 搜尋 / 審計 / 重播 / 觀眾", sections: ["sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "history-v2-section", "sec-history-list", "sec-history", "sec-audience-overview"] },
     polls:     { title: "投票",             kicker: "POLLS · 2–6 選項",         sections: ["sec-polls"] },
-    widgets:   { title: "Overlay Widgets",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
+    widgets:   { title: "Desktop Widgets",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
     themes:    { title: "風格主題包",       kicker: "THEME PACKS · 彈幕樣式預設",       sections: ["sec-themes"] },
     // Viewer owns the page/fields/defaults/limits surface. Legacy
     // `#/viewer-config` deep-links still resolve here for backward compat.
@@ -1465,7 +1465,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 2026-05-18 P2-6 rename: route slug now matches the page title.
     // `broadcast` is alias-only (see _routeAliases above) — alias rewrites
     // the nav before this lookup so a standalone entry is dead code.
-    overlay:   { title: "Overlay 控制",        kicker: "OVERLAY · ON / OFF / PAUSED",       sections: [] },
+    overlay:   { title: "Desktop 控制",        kicker: "DESKTOP · ON / OFF / PAUSED",       sections: [] },
     // Missing prototype pages — implemented 2026-04-29
     sessions:     { title: "場次",            kicker: "SESSIONS · 場次列表 · 即時 / 歷史",  sections: ["sec-sessions-overview"] },
     "session-detail": { title: "場次詳情",    kicker: "SESSION DETAIL · 密度時間軸 · 訊息回顧", sections: ["sec-session-detail-overview"] },

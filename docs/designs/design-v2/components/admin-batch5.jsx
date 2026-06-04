@@ -24,7 +24,7 @@ function AdminDashboardEN({ theme = 'dark' }) {
           <div style={{ background: panel, border: `1px solid ${line}`, borderRadius: radius, padding: 14 }}>
             <div style={{ fontFamily: hudTokens.fontMono, fontSize: 9, letterSpacing: 1.5, color: textDim, marginBottom: 10 }}>QUICK ACTIONS</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {['+ Create Poll', 'Push QR to Overlay', '⊘ Pause Receiving', '↓ Export Session'].map(a => (
+              {['+ Create Poll', 'Push QR to Desktop', '⊘ Pause Receiving', '↓ Export Session'].map(a => (
                 <span key={a} style={{ padding: '8px 10px', border: `1px solid ${line}`, borderRadius: 3, fontFamily: hudTokens.fontMono, fontSize: 11, color: text, letterSpacing: 0.4 }}>{a}</span>
               ))}
             </div>
@@ -103,7 +103,7 @@ function AdminPageShellEN({ route, title, en, children, theme = 'dark' }) {
           { i: '⏱', l: 'Rate Limits', k: 'rate' },
           { i: '☰', l: 'Messages', k: 'messages' },
           { i: '↓', l: 'History Export', k: 'export' },
-          { i: '⊞', l: 'Overlay Widgets', k: 'widgets' },
+          { i: '⊞', l: 'Desktop Widgets', k: 'widgets' },
           { i: '◷', l: 'Audit Log', k: 'audit' },
         ].map(n => (
           <div key={n.k} style={{

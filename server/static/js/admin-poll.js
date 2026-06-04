@@ -79,7 +79,7 @@
     wrap.setAttribute("data-empty-kind", "poll");
     wrap.innerHTML = `
       <div class="admin-proto-empty-title">還沒有任何投票</div>
-      <div class="admin-proto-empty-desc">建好的投票會排在這裡,可即時推到 Overlay,也可以用模板快速建立。</div>
+      <div class="admin-proto-empty-desc">建好的投票會排在這裡,可即時推到 Desktop,也可以用模板快速建立。</div>
       <div class="admin-proto-empty-actions">
         <button type="button" class="admin-proto-empty-primary" data-empty-cta="poll-create">+ 新建投票</button>
         <span class="admin-be-placeholder-control admin-be-placeholder-inline" role="note">[PLACEHOLDER] 從模板（待 BE）</span>

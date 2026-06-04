@@ -20,9 +20,9 @@
 ## 產品定位
 
 Danmu Fire 是即時彈幕送字系統：
-- **觀眾（Viewer）** 用手機或桌機網頁輸入文字，送到主場大螢幕的 overlay
+- **觀眾（Viewer）** 用手機或桌機網頁輸入文字，送到主場大螢幕的 Desktop
 - **管理員（Admin）** 管理特效、主題、插件、黑名單、webhook、排程發送訊息等後台
-- **Desktop Client（Electron）** 在主場桌機負責呈現透明 overlay、連線控制
+- **Desktop Client（Electron）** 在主場桌機負責呈現透明 Desktop、連線控制
 
 **重要：本產品沒有「主持人」角色。只有 Viewer 與 Admin。所有 host / 主持人相關 UI 一律移除。**
 
@@ -82,8 +82,8 @@ Danmu Fire 是即時彈幕送字系統：
 
 ### Desktop Client Canonical Scenes
 
-1. **Desktop · Control Window** — 只保留 `Connection / Overlay / About`，且依序排列
-2. **Desktop · Overlay on Desktop** — 透明 overlay 疊在任何視窗上
+1. **Desktop · Control Window** — 只保留 `Connection / Desktop / About`，且依序排列
+2. **Desktop · Live Surface** — 彈幕顯示層疊在任何視窗上
 3. **Desktop · Tray · Connected**
 4. **Desktop · Tray · Disconnected**
 
@@ -166,7 +166,7 @@ Admin Themes 頁要顯示 Pack 詳情卡（palette 色塊、font 預覽、effect
 Dashboard / Metrics / Effects / Themes(含 Pack 詳情) / Fonts / Poll / Plugins / Filters(+Blacklist) / Emojis / Stickers / Sounds / Scheduler / Webhooks / History(+Replay) / Live Feed / Widgets / System / Fingerprint
 
 ### Desktop Client（4 張）
-Overlay / Control Window / Connect Dialog / Tray Menu
+Desktop / Control Window / Connect Dialog / Tray Menu
 
 ---
 
@@ -198,13 +198,13 @@ max-width: 40rem;
 2. **Admin Login** — 登入卡片頂部放小一號版（clamp 2rem → 3.5rem）
 3. **Admin Dashboard** — sidebar 頂端或 header 左側，縮為 inline 版（1.5rem 固定）
 4. **Desktop Client Connect Dialog** 第一步 — 大字視為歡迎標識（3rem）
-5. **Overlay** 測試畫面（空連線時）— 中置 hero 作 idle state
+5. **Desktop** 測試畫面（空連線時）— 中置 hero 作 idle state
 
 **延伸規則**：
 - 全站 hero 一律用 Bebas Neue `--font-display`，不要換字體
 - 顏色一律 sky-300，不要改色
 - 副標一律 slate-300，留白充足（max-width 40rem）
-- Hero 下方可接 status chip（connection、overlay state）作對比
+- Hero 下方可接 status chip（connection、Desktop state）作對比
 
 ---
 
@@ -234,7 +234,7 @@ max-width: 40rem;
 5. 控制視窗不要重複出現 viewer 的發送參數
 6. 回到 cyan/navy 深色調，neon 對比不要太強
 7. 沒有「主持人」這個角色 — 只有 Admin（後台管理員）與 Viewer（觀眾）
-8. 字型字級透明度速度是 **viewer 每次發送的參數**，不是 overlay 全域設定 → 所以在 viewer 端出現，不在 desktop control 出現
+8. 字型字級透明度速度是 **viewer 每次發送的參數**，不是 Desktop 全域設定 → 所以在 viewer 端出現，不在 desktop control 出現
 
 ---
 

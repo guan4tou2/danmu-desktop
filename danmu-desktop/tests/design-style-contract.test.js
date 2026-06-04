@@ -68,6 +68,10 @@ function collectFiles(dir, out = []) {
   return out;
 }
 
+function readJson(relPath) {
+  return JSON.parse(fs.readFileSync(path.join(REPO_ROOT, relPath), "utf8"));
+}
+
 test("implementation frontend files do not reintroduce design-v2 forbidden palette drift", () => {
   const failures = [];
   const files = SCAN_ROOTS.flatMap((root) => collectFiles(path.join(REPO_ROOT, root)));
@@ -134,4 +138,56 @@ test("admin light inputs have a dark strong text token", () => {
   expect(adminCss).toMatch(
     /\.admin-widget-input,\s*\.admin-widget-select,\s*\.admin-widget-textarea\s*\{[^}]*color:\s*var\(--admin-text-strong,\s*#f1f5f9\);/s,
   );
+});
+
+test("viewer offline send gate uses Desktop copy and red button state", () => {
+  const zh = readJson("server/static/locales/zh/translation.json");
+  const en = readJson("server/static/locales/en/translation.json");
+  const mainJs = fs.readFileSync(path.join(REPO_ROOT, "server/static/js/main.js"), "utf8");
+  const css = fs.readFileSync(path.join(REPO_ROOT, "server/static/css/viewer-v2.css"), "utf8");
+
+  expect(zh.overlayNone).toBe("Desktop · 未連線");
+  expect(zh.overlayConnected).toBe("Desktop · {n} 個");
+  expect(zh.overlayOfflineFire).toBe("Desktop 未連線 · 無法送出");
+  expect(zh.overlayOfflineHint).toBe("");
+  expect(en.overlayNone).toBe("Desktop · –");
+  expect(en.overlayConnected).toBe("Desktop · {n}");
+  expect(en.overlayOfflineFire).toBe("Desktop offline · cannot send");
+  expect(en.overlayOfflineHint).toBe("");
+  expect(JSON.stringify(zh)).not.toContain("請等候 overlay 連線後再發送");
+
+  expect(mainJs).toMatch(/elements\.btnSend\.dataset\.state\s*=\s*"offline";/);
+  expect(mainJs).toMatch(/_setSendbarHint\("",\s*""\);/);
+  expect(css).toMatch(
+    /\.viewer-fire-btn\[data-state="offline"\]\s*\{[^}]*color:\s*#ff4d4f;/s,
+  );
+});
+
+test("Desktop runtime shells do not expose old Overlay labels", () => {
+  const childHtml = fs.readFileSync(path.join(REPO_ROOT, "danmu-desktop/child.html"), "utf8");
+  const overlayJs = fs.readFileSync(path.join(REPO_ROOT, "server/static/js/overlay.js"), "utf8");
+
+  expect(childHtml).toContain("DESKTOP READY");
+  expect(childHtml).not.toContain("OVERLAY READY");
+  expect(overlayJs).toContain("DESKTOP · SILENT MODE");
+  expect(overlayJs).toContain("NO DANMU RENDERING · DESKTOP PAUSED");
+  expect(overlayJs).not.toContain("OVERLAY · SILENT MODE");
+  expect(overlayJs).not.toContain("OVERLAY PAUSED");
+});
+
+test("desktop-facing Overlay labels are renamed to Desktop", () => {
+  const langs = ["en", "zh", "ja", "ko"];
+
+  for (const lang of langs) {
+    const locale = readJson(`danmu-desktop/locales/${lang}/translation.json`);
+    expect(locale.overlaySectionTitle).toBe("Desktop");
+    expect(locale.clientNavOverlay).toBe("Desktop");
+    expect(locale.overlayButtonStart).toContain("Desktop");
+    expect(locale.overlayButtonStop).toContain("Desktop");
+    expect(locale.windowPickerHint).toContain("Desktop");
+    expect(locale.overlayCardTitle).not.toMatch(/Overlay|overlay|オーバーレイ|오버레이/);
+    expect(locale.overlayNoteBody).not.toMatch(/Overlay|overlay|オーバーレイ|오버레이/);
+    expect(locale.connTestHint).not.toMatch(/Overlay|overlay|オーバーレイ|오버레이/);
+    expect(locale.aboutDesc).not.toMatch(/Overlay|overlay|オーバーレイ|오버레이/);
+  }
 });

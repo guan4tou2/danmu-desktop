@@ -242,7 +242,7 @@ function ViewerEffectsParamPanel({ theme = 'dark', effect = 'bounce-cartoon' }) 
             background: t.accent, color: isDark ? hudTokens.bg0 : '#FFFFFF',
             fontFamily: hudTokens.fontMono, fontSize: 11, letterSpacing: 0.8, fontWeight: 600,
             cursor: 'pointer',
-          }}>套用到 overlay</span>
+          }}>套用到 Desktop</span>
         </div>
       </div>
 
@@ -358,7 +358,7 @@ function ViewerEffectsParamPanel({ theme = 'dark', effect = 'bounce-cartoon' }) 
             padding: '10px 14px', background: t.raised, border: `1px solid ${t.line}`, borderRadius: 3,
             fontSize: 10.5, color: t.textDim, lineHeight: 1.6,
           }}>
-            <span style={{ color: t.text, fontWeight: 600 }}>備註 ·</span> 預覽即時反映 slider 變動,儲存後熱重載到所有 overlay,不中斷進行中的場次。WCAG 失敗時「套用」按鈕鎖定。
+            <span style={{ color: t.text, fontWeight: 600 }}>備註 ·</span> 預覽即時反映 slider 變動,儲存後熱重載到所有 Desktop,不中斷進行中的場次。WCAG 失敗時「套用」按鈕鎖定。
           </div>
         </div>
       </div>

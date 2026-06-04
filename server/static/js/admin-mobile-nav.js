@@ -30,7 +30,7 @@
   ];
 
   const OVERFLOW = [
-    { route: "display", icon: "⊡", label: "Display", desc: "Overlay · OBS · 佈局" },
+    { route: "display", icon: "⊡", label: "Display", desc: "Desktop · OBS · 佈局" },
     { route: "effects", icon: "✦", label: "Effects", desc: ".dme 效果庫" },
     { route: "system",  icon: "⊙", label: "System",  desc: "系統 · 排程 · 備份" },
     { route: "viewer",  icon: "◐", label: "Viewer",  desc: "觀眾頁主題 / 欄位設定" },

@@ -116,8 +116,8 @@
     return `
       <div id="${PAGE_ID}" class="admin-broadcast-page admin-bc-v4 admin-bc-v5 hud-page-stack lg:col-span-2" data-bc-state="standby">
         <div class="admin-v2-head">
-          <div class="admin-v2-kicker" data-bc-en>OVERLAY · OFF</div>
-          <div class="admin-v2-title" data-bc-title>Overlay 控制</div>
+          <div class="admin-v2-kicker" data-bc-en>DESKTOP · OFF</div>
+          <div class="admin-v2-title" data-bc-title>Desktop 控制</div>
         </div>
 
         <!-- Body slot — content swaps by state (ended uses a centered card) -->
@@ -125,7 +125,7 @@
           <!-- Status indicator (centered, calm) -->
           <div class="admin-bc-v5__status-row">
             <span class="admin-bc-v4__statedot" data-bc-statedot></span>
-            <span class="admin-bc-v5__status-label" data-bc-statelabel>OVERLAY OFF</span>
+            <span class="admin-bc-v5__status-label" data-bc-statelabel>DESKTOP OFF</span>
           </div>
 
           <!-- Stats strip — 4 tiles (SESSION ACTIVITY framing) -->
@@ -143,7 +143,7 @@
 
           <!-- Confirm hint when ON -->
           <div class="admin-bc-v4__confirm-hint admin-bc-v5__confirm-hint" data-bc-confirm-hint hidden>
-            停止顯示前會彈出確認 · Overlay 停止後訊息繼續接收但不渲染
+            停止顯示前會彈出確認 · Desktop 停止後訊息繼續接收但不渲染
           </div>
 
           <!-- Secondary controls — only PAUSE + CLEAR (session lifecycle lives elsewhere) -->
@@ -217,15 +217,15 @@
   // + ended (rare, only when session is formally closed). Names softened
   // from "broadcast" framing.
   const _titleMap = {
-    standby: { zh: "Overlay 控制",      en: "OVERLAY · OFF" },
-    live:    { zh: "Overlay 控制",      en: "OVERLAY · ON" },
-    paused:  { zh: "Overlay 控制",      en: "OVERLAY · PAUSED" },
+    standby: { zh: "Desktop 控制",      en: "DESKTOP · OFF" },
+    live:    { zh: "Desktop 控制",      en: "DESKTOP · ON" },
+    paused:  { zh: "Desktop 控制",      en: "DESKTOP · PAUSED" },
     ended:   { zh: "場次已結束",         en: "SESSION ENDED" },
   };
   const _statusLabels = {
-    standby: "OVERLAY OFF",
-    live:    "OVERLAY ON",
-    paused:  "OVERLAY PAUSED",
+    standby: "DESKTOP OFF",
+    live:    "DESKTOP ON",
+    paused:  "DESKTOP PAUSED",
     ended:   "SESSION ENDED",
   };
 
@@ -244,7 +244,7 @@
       const elapsedSecs = (isLive && _serverState.started_at)
         ? Date.now() / 1000 - _serverState.started_at : 0;
       enEl.textContent = isLive
-        ? `OVERLAY · ON · ${fmtDuration(elapsedSecs * 1000)}`
+        ? `DESKTOP · ON · ${fmtDuration(elapsedSecs * 1000)}`
         : isEnded && _sessionState?.ended_at
           ? `SESSION ENDED · ${new Date(_sessionState.ended_at * 1000).toISOString().slice(0,10)}`
           : _titleMap[state].en;
@@ -399,11 +399,11 @@
         ? await window.HudConfirm.open({
             icon: "■",
             title: "停止顯示",
-            subtitle: "STOP OVERLAY · MESSAGES CONTINUE TO BE RECEIVED",
+            subtitle: "STOP DESKTOP · MESSAGES CONTINUE TO BE RECEIVED",
             severity: "warn",
             body: `
               <div style="font-size:13px;color:var(--hud-text, #f1f5f9);line-height:1.7;">
-                Overlay 將停止渲染彈幕。訊息仍會繼續接收並記錄到 session 中。
+                Desktop 將停止渲染彈幕。訊息仍會繼續接收並記錄到 session 中。
               </div>
               <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 12px;margin-top:12px;background:var(--hud-bg2, #182239);border-radius:6px;border:1px solid var(--hud-line, rgba(148,163,184,0.18));text-align:center;">
                 <div><div style="font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:9px;letter-spacing:1px;color:var(--hud-text-dim, #94a3b8);">MSGS</div><div style="font-size:14px;font-weight:600;margin-top:2px;">${msgs.toLocaleString()}</div></div>
@@ -417,11 +417,11 @@
             cancelLabel: "取消",
             width: 440,
           })
-        : confirm("確定要停止顯示嗎？訊息會繼續接收，但 overlay 不再渲染。");
+        : confirm("確定要停止顯示嗎？訊息會繼續接收，但 Desktop 不再渲染。");
       if (!ok) return;
       // Stop overlay rendering; session lifecycle stays separate.
       const success = await postToggle("standby");
-      if (success) window.showToast && showToast("已停止顯示 · OVERLAY OFF", true);
+      if (success) window.showToast && showToast("已停止顯示 · DESKTOP OFF", true);
     }
     renderTick();
   }
@@ -438,10 +438,10 @@
   }
 
   async function onClearClick() {
-    if (!confirm("清空 overlay 螢幕上目前顯示的所有彈幕？")) return;
+    if (!confirm("清空 Desktop 螢幕上目前顯示的所有彈幕？")) return;
     try {
       const r = await window.csrfFetch("/admin/overlay/clear", { method: "POST" });
-      if (r.ok) window.showToast && showToast("已清空 overlay", true);
+      if (r.ok) window.showToast && showToast("已清空 Desktop", true);
       else window.showToast && showToast("清空失敗 · 後端尚未實作此端點", false);
     } catch (_) {
       window.showToast && showToast("清空失敗", false);

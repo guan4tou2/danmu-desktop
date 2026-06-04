@@ -15,11 +15,11 @@
  *   │                                    │
  *   │ 鍵盤快捷鍵 · SHORTCUTS             │  ← global section
  *   │   ⌘ K     全域搜尋                 │
- *   │   ⌘ ⇧ O  Overlay 開關              │
+   *   │   ⌘ ⇧ O  Desktop 開關              │
  *   │   ...                              │
  *   │                                    │
  *   │ 術語 · GLOSSARY                    │  ← global section
- *   │   Overlay  Electron/OBS 上的彈幕… │
+   *   │   Desktop  Electron/OBS 上的彈幕… │
  *   │   ...                              │
  *   │                                    │
  *   │ 資源 · RESOURCES                   │  ← global section
@@ -56,7 +56,7 @@
       title: "控制台",
       tips: [
         "上方 KPI 條顯示即時 session 統計",
-        "右欄 Quick Actions：F1-F4 對應 Effects / Poll / Blacklist / Overlay",
+        "右欄 Quick Actions：F1-F4 對應 Effects / Poll / Blacklist / Desktop",
         "點任何 KPI 數字可跳轉到對應頁面",
       ],
     },
@@ -72,9 +72,9 @@
     },
 
     widgets: {
-      title: "Overlay Widgets",
+      title: "Desktop Widgets",
       tips: [
-        "啟用的 widget 顯示在 OBS / Electron overlay 上層",
+        "啟用的 widget 顯示在 OBS / Electron Desktop 上層",
         "計分板 / 跑馬燈 / 標籤可同時啟用，順序由 layer 決定",
         "OBS browser source URL 在頁面頂部可一鍵複製",
       ],
@@ -118,21 +118,21 @@
     },
 
     overlay: {
-      title: "Overlay 控制",
+      title: "Desktop 控制",
       tips: [
         "▶ 開始顯示 / ■ 停止顯示 切換渲染",
-        "◐ 暫停顯示：session 仍進行但 overlay 凍結，恢復後 drain queue",
-        "⊗ 清空螢幕：抹掉 overlay 上現存彈幕（會發 webhook on_overlay_clear）",
+        "◐ 暫停顯示：session 仍進行但 Desktop 凍結，恢復後 drain queue",
+        "⊗ 清空螢幕：抹掉 Desktop 上現存彈幕（會發 webhook on_overlay_clear）",
       ],
     },
 
     broadcast: {
       // Alias for overlay — same content
-      title: "Overlay 控制",
+      title: "Desktop 控制",
       tips: [
         "▶ 開始顯示 / ■ 停止顯示 切換渲染",
-        "◐ 暫停顯示：session 仍進行但 overlay 凍結，恢復後 drain queue",
-        "⊗ 清空螢幕：抹掉 overlay 上現存彈幕（會發 webhook on_overlay_clear）",
+        "◐ 暫停顯示：session 仍進行但 Desktop 凍結，恢復後 drain queue",
+        "⊗ 清空螢幕：抹掉 Desktop 上現存彈幕（會發 webhook on_overlay_clear）",
       ],
     },
 
@@ -149,7 +149,7 @@
       title: "審核佇列",
       tips: [
         "PENDING amber：等管理員 30 秒倒數",
-        "APPROVED lime：通過後推 overlay",
+        "APPROVED lime：通過後推 Desktop",
         "REJECTED crimson：丟棄；AUTO-REJECTED 表示倒數結束",
         "建 filter rule 設 action=review 命中的訊息自動進此頁",
       ],
@@ -159,7 +159,7 @@
       title: "場次",
       tips: [
         "場次 = 一段時間切片（含訊息 / 投票 / 統計），不是「直播」",
-        "Overlay 開啟自動開新 session；Overlay 關掉 ≠ session 結束",
+        "Desktop 開啟自動開新 session；Desktop 關掉 ≠ session 結束",
         "「結束並存檔」才把切片歸檔到 history（唯讀）",
       ],
     },
@@ -181,15 +181,15 @@
     { keys: ["F1"],            desc: "開啟 Help" },
     { keys: ["⌘", "/"],        desc: "開啟 Help（替代鍵）" },
     { keys: ["⌘", "⇧", "L"],  desc: "切到即時訊息流" },
-    { keys: ["⌘", "⇧", "S"],  desc: "Overlay 切換 OFF" },
-    { keys: ["⌘", "⇧", "C"],  desc: "清空 overlay 螢幕" },
+    { keys: ["⌘", "⇧", "S"],  desc: "Desktop 切換 OFF" },
+    { keys: ["⌘", "⇧", "C"],  desc: "清空 Desktop 螢幕" },
     { keys: ["Esc"],           desc: "關閉抽屜 / Modal" },
   ];
 
   // Terminology cheat-sheet — clarifies post-pivot vocabulary that
   // operators commonly confuse with adjacent web concepts.
   const GLOSSARY = [
-    { term: "Overlay",          def: "Electron / OBS 上的彈幕顯示層，不是 viewer 頁面" },
+    { term: "Desktop",          def: "Electron / OBS 上的彈幕顯示層，不是 viewer 頁面" },
     { term: "Session",          def: "一段時間切片的資料範圍，不是使用者 session" },
     { term: "Fire Token",       def: "Extension 共用的認證密鑰，和 API Token 是分開的" },
     { term: "Fingerprint (fp)", def: "基於瀏覽器特徵的匿名身份辨識，不需要登入" },

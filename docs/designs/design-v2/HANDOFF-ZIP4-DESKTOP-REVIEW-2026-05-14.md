@@ -12,7 +12,7 @@ This bundle materially improves the desktop scene inventory and ordering. It
 matches the intended three-surface desktop model at the artboard level:
 
 - `Desktop · Control Window`
-- `Desktop · Overlay Live / Disconnected / Idle / Reconnecting`
+- `Desktop · Live / Disconnected / Idle / Reconnecting`
 - `Desktop · Tray · Connected / Disconnected`
 
 However, the underlying desktop source bundle still encodes the older product
@@ -24,7 +24,7 @@ model, so the zip cannot yet be treated as canonical by itself.
 - standalone `Desktop · Window Picker` artboard is removed
 - standalone `Desktop · First-run Gate` artboard is removed
 - desktop scene order now starts with `Desktop · Control Window`
-- overlay states are broken out into `Live / Disconnected / Idle / Reconnecting`
+- Desktop states are broken out into `Live / Disconnected / Idle / Reconnecting`
 - tray is expressed as `Connected / Disconnected` state surfaces
 
 ## Blocking Mismatches In Source
@@ -32,8 +32,8 @@ model, so the zip cannot yet be treated as canonical by itself.
 The bundle still contains these desktop-source conflicts:
 
 1. `components/desktop.jsx` still models `ControlWindow` as:
-   `Overlay / Connection / Shortcuts / Update / About`
-2. the default control-window section is still `overlay`, not `conn`
+   `Desktop / Connection / Shortcuts / Update / About`
+2. the default control-window section is still `desktop`, not `conn`
 3. a standalone `FirstRunGate` scenario still exists in source
 4. older tray/controller concepts still exist in source even though the
    corresponding artboards were removed
@@ -42,7 +42,7 @@ The bundle still contains these desktop-source conflicts:
 
 Repo-canonical desktop rules remain:
 
-- `Control Window` primary order is `Connection → Overlay → About`
+- `Control Window` primary order is `Connection → Desktop → About`
 - `Shortcuts` and `Update` are not primary desktop pages
 - first-run is inline connection setup, not a standalone desktop surface
 - tray is status-only, not a popover product surface

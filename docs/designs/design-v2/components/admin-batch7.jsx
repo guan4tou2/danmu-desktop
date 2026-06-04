@@ -367,7 +367,7 @@ function AdminMessageDetailPage({ theme = 'dark' }) {
                   { i: '◐', l: '遮罩', c: textDim },
                   { i: '⊘', l: '隱藏', c: hudTokens.crimson },
                   { i: '⊗', l: '封禁指紋', c: hudTokens.crimson, danger: true },
-                  { i: '↗', l: '回覆 overlay', c: accent },
+                  { i: '↗', l: '回覆 Desktop', c: accent },
                 ].map(b => (
                   <span key={b.l} style={{
                     padding: '8px 4px', textAlign: 'center', fontSize: 11, color: b.c,
