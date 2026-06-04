@@ -161,6 +161,8 @@ test("viewer offline send gate uses Desktop copy and red button state", () => {
   expect(css).toMatch(
     /\.viewer-fire-btn\[data-state="offline"\]\s*\{[^}]*color:\s*#ff4d4f;/s,
   );
+  const offlineButtonBlock = css.match(/\.viewer-fire-btn\[data-state="offline"\]\s*\{(?<body>[^}]*)\}/);
+  expect(offlineButtonBlock?.groups?.body || "").not.toMatch(/\bborder\s*:/);
 });
 
 test("Desktop runtime shells do not expose old Overlay labels", () => {
