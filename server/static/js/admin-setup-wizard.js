@@ -42,7 +42,7 @@
       name: "neon",
       label: "霓虹",
       description: "高對比發光色，適合深色背景與舞台燈光。",
-      colors: ["#38bdf8", "#f472b6", "#facc15", "#22c55e"],
+      colors: ["#38bdf8", "#fbbf24", "#86efac", "#f87171"],
     },
     {
       name: "retro",

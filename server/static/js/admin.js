@@ -149,8 +149,8 @@ document.addEventListener("DOMContentLoaded", () => {
     replay:          { nav: "system", tab: "replay" },
 
     // === System accordion (Slice 6) — alias old C-tier routes to system/<slug> ===
-    // 2026-05-18 v5: api-tokens / backup promoted to first-class sidebar slugs.
-    integrations: { nav: "system", tab: "integrations" },
+    // 2026-05-18 v5: api-tokens / backup / integrations promoted to
+    // first-class sidebar slugs.
     extensions:   { nav: "integrations" },  // 2026-05-18 v5: sidebar "Extensions" → integrations route
     // Dedicated mobile-admin was removed; admin relies on the normal RWD shell.
     mobile:       { nav: "system", tab: "system" },
@@ -1847,10 +1847,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (_adminSectionObserver) {
       _adminSectionObserver.disconnect();
       _adminSectionObserver = null;
-    }
-    if (_replayPollTimer) {
-      clearInterval(_replayPollTimer);
-      _replayPollTimer = null;
     }
   });
 

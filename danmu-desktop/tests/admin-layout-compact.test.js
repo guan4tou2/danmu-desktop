@@ -158,3 +158,20 @@ test("Viewer entry points use the canonical viewer route instead of legacy viewe
 
   expect(adminSrc).toContain('appearance: { title: "外觀", kicker: "APPEARANCE · 主題 / Viewer / 字型", sections: ["sec-themes", "sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits", "sec-fonts"] }');
 });
+
+test("admin shell cleanup does not reach into replay-controls private timers", () => {
+  const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
+  const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
+  const replaySrc = fs.readFileSync(path.join(staticDir, "admin-replay-controls.js"), "utf8");
+
+  expect(replaySrc).toContain("let _replayPollTimer = null");
+  expect(adminSrc).not.toContain("_replayPollTimer");
+});
+
+test("admin About server-info values wrap long URLs inside their grid cells", () => {
+  const cssPath = path.join(__dirname, "..", "..", "server", "static", "css", "style.css");
+  const cssSrc = fs.readFileSync(cssPath, "utf8");
+
+  expect(cssSrc).toContain(".admin-about-oss-list { margin-top: 10px; font-family: var(--font-mono); font-size: 11px; line-height: 1.7; min-width: 0; }");
+  expect(cssSrc).toMatch(/\.admin-about-oss-row \.v,\s*\.admin-about-oss-row \.l \{[\s\S]*?overflow-wrap:\s*anywhere;/);
+});

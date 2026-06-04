@@ -24,7 +24,7 @@
   const PRESETS = [
     { id: "default",  name: "預設 · Midnight", bg: "#050910", primary: "#7DD3FC", hero: "#FCD34D", mode: "dark",  font: "Zen Kaku Gothic New" },
     { id: "daylight", name: "日光 · Daylight", bg: "#F8FAFC", primary: "#0284C7", hero: "#D97706", mode: "light", font: "Zen Kaku Gothic New" },
-    { id: "cinema",   name: "劇院 · Cinema",   bg: "#0A0A0F", primary: "#F472B6", hero: "#FCD34D", mode: "dark",  font: "Chakra Petch" },
+    { id: "cinema",   name: "劇院 · Cinema",   bg: "#0A0A0F", primary: "#FBBF24", hero: "#FCD34D", mode: "dark",  font: "Chakra Petch" },
     { id: "retro",    name: "復古 · Retro",    bg: "#1A1511", primary: "#FB923C", hero: "#FDE68A", mode: "dark",  font: "Bebas Neue" },
   ];
 

@@ -46,7 +46,7 @@
   // ── Overlay Idle / QR (4-state Hero Lockup) ──────────────────────────────
   // Prototype priority-2-pieces.jsx:174 OverlayIdleQR. States:
   //   idle      — STANDBY, cyan dot, hint text
-  //   scanning  — magenta pulse ring around QR, "PAIRING · HANDSHAKE"
+  //   scanning  — amber pulse ring around QR, "PAIRING · HANDSHAKE"
   //   paired    — green ✓ over QR, "PAIRED · CONNECTED" + 開始廣播 button
   //   failed    — red ⚠ over QR, "UNREACHABLE" + 重試 / 手動輸入 buttons
   // Manual control — admin / tray / desktop client invoke setState(state).
@@ -388,7 +388,7 @@
       var delay = getReconnectDelay(reconnectAttempts);
       var nextAttempt = reconnectAttempts + 1;
       console.log("[overlay] Reconnecting in " + (delay / 1000) + "s (attempt " + nextAttempt + ")");
-      // Flip idle to "scanning" (magenta pulse) — prototype OverlayIdleQR
+      // Flip idle to "scanning" (amber pulse) — prototype OverlayIdleQR
       // doesn't expose a separate "reconnecting" state, so we map both
       // first-pair handshake and reconnect attempts to the same visual.
       _setIdleState("scanning");

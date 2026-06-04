@@ -2679,7 +2679,7 @@
   position: absolute; top: -7px;
   width: 16px; height: 16px; border-radius: 50%;
   background: var(--color-primary);
-  border: 2px solid #0a0e1a;
+  border: 2px solid var(--color-bg-deep, #020617);
   box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.4);
   pointer-events: none;
 }
@@ -3037,8 +3037,8 @@
   gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(244, 63, 94, 0.12);
-  border: 1px solid rgba(244, 63, 94, 0.6);
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.6);
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 1.5px;
@@ -3258,13 +3258,13 @@
 .admin-polls-live-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .admin-polls-live-btn.is-danger {
   border-color: #f87171;
-  background: rgba(244, 63, 94, 0.12);
+  background: rgba(248, 113, 113, 0.12);
   color: #f87171;
   font-weight: 700;
   letter-spacing: 1.5px;
 }
 .admin-polls-live-btn.is-danger:hover {
-  background: rgba(244, 63, 94, 0.22);
+  background: rgba(248, 113, 113, 0.22);
 }
 
 /* RIGHT rail · queue mini + broadcast */

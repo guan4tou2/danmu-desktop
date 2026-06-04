@@ -172,6 +172,30 @@ def test_bare_redirects_consulted_before_alias_resolution(admin_js: str):
     )
 
 
+def test_extensions_lands_on_first_class_integrations_route(admin_js: str):
+    """The v5 grouped sidebar has an Integrations lane. The visible
+    `extensions` row may keep its product label, but it must resolve to the
+    first-class integrations page, not get folded back into System."""
+    alias_match = re.search(
+        r"const _routeAliases\s*=\s*Object\.create\(null\);\s*"
+        r"Object\.assign\(_routeAliases,\s*\{([\s\S]+?)\n\s*\}\);",
+        admin_js,
+    )
+    assert alias_match, "_routeAliases table not found"
+    alias_body = alias_match.group(1)
+
+    assert re.search(r'\bextensions:\s*\{\s*nav:\s*"integrations"', alias_body), (
+        "sidebar Extensions must resolve to the first-class integrations route"
+    )
+    assert not re.search(r'\bintegrations:\s*\{\s*nav:\s*"system"', alias_body), (
+        "integrations is a promoted sidebar route and must not be aliased back "
+        "to the System accordion"
+    )
+    assert re.search(r'\bintegrations:\s*\{\s*title:\s*"整合"', admin_js), (
+        "ADMIN_ROUTES must keep a first-class integrations page title"
+    )
+
+
 # ─── ADMIN_ROUTES table ──────────────────────────────────────────────────────
 
 

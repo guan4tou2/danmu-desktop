@@ -20,7 +20,7 @@
   "use strict";
 
   const ROOT_ID = "poll-overlay-root";
-  const COLORS = ["#22d3ee", "#a78bfa", "#fbbf24", "#86efac", "#fb7185", "#fde047"];
+  const COLORS = ["#38bdf8", "#fbbf24", "#86efac", "#f87171", "#94a3b8", "#f1f5f9"];
 
   let _autoDismissTimer = 0;
   let _countdownTimer = 0;
@@ -167,7 +167,7 @@
     const winnerColor = "#22d3ee";
 
     const confettiHtml = (function () {
-      const palette = ["#22d3ee", "#fbbf24", "#86efac", "#a78bfa", "#fb7185", "#fde047"];
+      const palette = ["#38bdf8", "#fbbf24", "#86efac", "#f87171", "#94a3b8", "#f1f5f9"];
       let out = "";
       for (let i = 0; i < 24; i++) {
         const c = palette[i % palette.length];

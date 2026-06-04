@@ -63,7 +63,7 @@
   /* Legacy aliases — map old names used in style.css to canonical tokens */
   --color-text-strong: var(--color-text-bright);
   --color-text-dim: var(--color-text-secondary);
-  --color-bg: #0a0e1a;
+  --color-bg: var(--color-bg-deep);
   --color-surface: #0c1424;
   --color-panel: var(--color-bg-base);
   --color-border-soft: var(--hud-line);
@@ -151,7 +151,7 @@
   --hud-cyan-line: rgba(56, 189, 248, 0.45);      /* sky-400 @ 0.45 — accent edges */
   --hud-cyan-soft: rgba(56, 189, 248, 0.12);      /* sky-400 @ 0.12 — active fill */
 
-  /* HUD accent palette — amber/lime/crimson replace magenta. */
+  /* HUD accent palette — amber/lime/crimson only. */
   --hud-cyan: #38bdf8;               /* sky-400 — primary signal */
   --hud-amber: #fbbf24;              /* amber-400 — live/recording/warn */
   --hud-lime: #86efac;               /* green-300 — healthy/ok */

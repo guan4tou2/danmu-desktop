@@ -246,7 +246,7 @@
         left:${tipLeft}px;top:${tipTop}px;
         width:${TIP_W}px;
         pointer-events:auto;
-        background:var(--bg-panel,#0f1421);
+        background:var(--color-bg-base,#0f172a);
         border:1px solid rgba(56,189,248,.45);
         border-radius:8px;
         padding:18px;
@@ -300,7 +300,7 @@
         .ob-tip-arrow-top::before {
           content:"";position:absolute;top:-7px;left:40px;
           width:12px;height:12px;
-          background:var(--bg-panel,#0f1421);
+          background:var(--color-bg-base,#0f172a);
           border-top:1px solid rgba(56,189,248,.45);
           border-left:1px solid rgba(56,189,248,.45);
           transform:rotate(45deg);
@@ -308,7 +308,7 @@
         .ob-tip-arrow-left::before {
           content:"";position:absolute;top:28px;left:-7px;
           width:12px;height:12px;
-          background:var(--bg-panel,#0f1421);
+          background:var(--color-bg-base,#0f172a);
           border-top:1px solid rgba(56,189,248,.45);
           border-left:1px solid rgba(56,189,248,.45);
           transform:rotate(-45deg);

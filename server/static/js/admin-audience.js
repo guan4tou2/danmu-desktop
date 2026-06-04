@@ -52,7 +52,7 @@
   };
 
   // Pseudo-random color per fingerprint (stable across reloads)
-  const AVATAR_COLORS = ["#7c3aed", "#06b6d4", "#84cc16", "#f97316", "#ef4444", "#fbbf24", "#22d3ee", "#a78bfa", "#fb7185"];
+  const AVATAR_COLORS = ["#38bdf8", "#fbbf24", "#86efac", "#f87171", "#94a3b8", "#64748b", "#334155", "#1e293b"];
 
   let _state = {
     records: [],

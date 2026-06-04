@@ -159,7 +159,7 @@
 
     async function createWidget(type) {
       // Default colors picked from the locked palette (cyan / amber).
-      // No more #f43f5e — STYLE-CONTRACT bans it for chrome; the user can
+      // Defaults stay in the locked palette; the user can
       // still pick any color they want via the per-team color input below.
       const defaults = {
         scoreboard: {

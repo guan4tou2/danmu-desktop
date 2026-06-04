@@ -47,7 +47,7 @@
   };
 
   const FONT_SIZE_PRESETS = [14, 20, 32, 44, 64];
-  const COLOR_PRESETS = ["#F8FAFC", "#7DD3FC", "#FCD34D", "#F472B6", "#86EFAC", "#C084FC", "#FB923C", "#FCA5A5"];
+  const COLOR_PRESETS = ["#F1F5F9", "#94A3B8", "#38BDF8", "#FBBF24", "#86EFAC", "#F87171", "#64748B", "#334155"];
   const LAYOUT_PRESETS = [
     { value: "scroll",       label: "SCROLL", icon: "→" },
     { value: "top_fixed",    label: "TOP",    icon: "▀" },
@@ -1213,7 +1213,7 @@
     const SWATCH_COLORS = ["#fde68a", "#a7f3d0", "#bae6fd", "#fbcfe8", "#c4b5fd", "#fff"];
     var swatchHtml = SWATCH_COLORS.map(function (c, i) {
       return '<span class="admin-vc-swatch-dot" style="background:' + c +
-        ";border:" + (i === 0 ? "2px solid var(--color-primary,#38bdf8)" : "1px solid var(--color-border,#1f2944)") +
+        ";border:" + (i === 0 ? "2px solid var(--color-primary,#38bdf8)" : "1px solid var(--color-border,var(--hud-line))") +
         '"></span>';
     }).join("");
 
