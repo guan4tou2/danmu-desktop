@@ -95,9 +95,15 @@ test("viewer light preview follows the black-on-white design followup", () => {
   expect(css).toMatch(
     /body\.viewer-body-v2:not\(\.is-dark\)\s+\.viewer-preview::before\s*\{[^}]*rgba\(15,\s*23,\s*42,\s*0\.035\)/s,
   );
-  expect(css).toMatch(
-    /body\.viewer-body-v2:not\(\.is-dark\)\s+\.viewer-preview-text\s*\{[^}]*color:\s*var\(--color-text-primary\)\s*!important;[^}]*text-shadow:\s*none\s*!important;/s,
+  const lightPreviewTextRule = css.match(
+    /body\.viewer-body-v2:not\(\.is-dark\)\s+\.viewer-preview-text\s*\{(?<body>[^}]*)\}/s,
   );
+  expect(lightPreviewTextRule).not.toBeNull();
+  expect(lightPreviewTextRule.groups.body).not.toMatch(/\bcolor\s*:/);
+  expect(lightPreviewTextRule.groups.body).toMatch(
+    /text-shadow:\s*0 1px 2px rgba\(15,\s*23,\s*42,\s*0\.35\),\s*0 0 1px rgba\(15,\s*23,\s*42,\s*0\.55\);/s,
+  );
+  expect(lightPreviewTextRule.groups.body).not.toMatch(/!important/);
   expect(css).toMatch(
     /body\.viewer-body-v2\.is-dark\s+\.viewer-preview\s*\{[^}]*linear-gradient\(135deg,\s*#000814/s,
   );

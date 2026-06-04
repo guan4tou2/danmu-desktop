@@ -840,8 +840,9 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-nick {
 }
 
 body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
-  color: var(--color-text-primary) !important;
-  text-shadow: none !important;
+  text-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.35),
+    0 0 1px rgba(15, 23, 42, 0.55);
 }
 
 /* 2026-05-17 preview-side effect keyframes (vp- prefix to avoid
