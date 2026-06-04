@@ -85,3 +85,33 @@ test("implementation frontend files do not reintroduce design-v2 forbidden palet
 
   expect(failures).toEqual([]);
 });
+
+test("viewer light preview follows the black-on-white design followup", () => {
+  const css = fs.readFileSync(path.join(REPO_ROOT, "server/static/css/viewer-v2.css"), "utf8");
+
+  expect(css).toMatch(
+    /body\.viewer-body-v2:not\(\.is-dark\)\s+\.viewer-preview\s*\{[^}]*background:\s*var\(--color-bg-base\);[^}]*color:\s*var\(--color-text-primary\);/s,
+  );
+  expect(css).toMatch(
+    /body\.viewer-body-v2:not\(\.is-dark\)\s+\.viewer-preview::before\s*\{[^}]*rgba\(15,\s*23,\s*42,\s*0\.035\)/s,
+  );
+  expect(css).toMatch(
+    /body\.viewer-body-v2:not\(\.is-dark\)\s+\.viewer-preview-text\s*\{[^}]*color:\s*var\(--color-text-primary\)\s*!important;[^}]*text-shadow:\s*none\s*!important;/s,
+  );
+  expect(css).toMatch(
+    /body\.viewer-body-v2\.is-dark\s+\.viewer-preview\s*\{[^}]*linear-gradient\(135deg,\s*#000814/s,
+  );
+});
+
+test("viewer font dropdown shows the configured default font name", () => {
+  const template = fs.readFileSync(path.join(REPO_ROOT, "server/templates/index.html"), "utf8");
+  const mainJs = fs.readFileSync(path.join(REPO_ROOT, "server/static/js/main.js"), "utf8");
+
+  expect(template).toMatch(
+    /<option\s+value="">\s*\{\{\s*options\.FontFamily\[3\]\s+or\s+"NotoSansTC"\s*\}\}\s*<\/option>/,
+  );
+  expect(template).not.toMatch(/data-i18n="defaultFont"[^>]*>\s*Default Font/);
+  expect(mainJs).toMatch(/function\s+getDefaultFontName\(\)\s*\{/);
+  expect(mainJs).toMatch(/defaultOption\.textContent\s*=\s*getDefaultFontName\(\);/);
+  expect(mainJs).not.toMatch(/defaultOption\.textContent\s*=\s*ServerI18n\.t\("defaultFont"\);/);
+});

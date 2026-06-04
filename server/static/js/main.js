@@ -153,6 +153,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const FONT_CACHE_STORAGE_KEY = "danmu-fonts-cache";
   const clientFingerprint = getOrCreateFingerprint();
 
+  function getDefaultFontName() {
+    const configured = currentSettings && currentSettings.FontFamily && currentSettings.FontFamily[3];
+    return configured ? String(configured) : "NotoSansTC";
+  }
+
   function getOrCreateFingerprint() {
     try {
       const storage = window.localStorage;
@@ -815,7 +820,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const defaultOption = document.createElement("option");
       defaultOption.value = "";
-      defaultOption.textContent = ServerI18n.t("defaultFont");
+      defaultOption.textContent = getDefaultFontName();
       elements.userFontSelect.appendChild(defaultOption);
 
       fonts.forEach((font) => {

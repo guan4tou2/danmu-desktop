@@ -683,32 +683,53 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   }
 }
 
-/* Live preview strip — 模擬「投到螢幕上」.
- * Per 2026-04-25 prototype viewer.jsx:118–143 (light branch):
- * gradient 135deg #0f172a → #1e293b, cyan glow border, soft inset shadow
- * with scanline texture pseudo-element. Stays dark even in light theme so
- * danmu colors (white/cyan/amber/etc.) remain legible. */
+/* Live preview strip.
+ * 2026-05-18 followup-2 clarified that light viewer preview should read as
+ * black text on a white stage. Dark keeps the older "screen" stage treatment.
+ */
 .viewer-preview {
   position: relative;
   overflow: hidden;
   min-height: 72px;
   padding: 18px 14px;
   margin-bottom: 1rem;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  border: 1px solid rgba(125, 211, 252, 0.25);
   border-radius: 8px;
-  color: #f1f5f9;
-  box-shadow:
-    0 4px 14px rgba(15, 23, 42, 0.18),
-    inset 0 0 40px rgba(125, 211, 252, 0.08);
 }
 
-/* Subtle scanline texture overlay — sells the "screen" feel. */
+body.viewer-body-v2:not(.is-dark) .viewer-preview {
+  background: var(--color-bg-base);
+  border: 1px solid var(--hud-line);
+  color: var(--color-text-primary);
+  box-shadow:
+    0 4px 14px rgba(15, 23, 42, 0.08),
+    inset 0 0 0 1px rgba(15, 23, 42, 0.03);
+}
+
+body.viewer-body-v2.is-dark .viewer-preview {
+  background: linear-gradient(135deg, #000814 0%, #001428 100%);
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  color: #f1f5f9;
+  box-shadow: inset 0 0 40px rgba(125, 211, 252, 0.06);
+}
+
 .viewer-preview::before {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
+}
+
+body.viewer-body-v2:not(.is-dark) .viewer-preview::before {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0,
+    transparent 3px,
+    rgba(15, 23, 42, 0.035) 3px,
+    rgba(15, 23, 42, 0.035) 4px
+  );
+}
+
+body.viewer-body-v2.is-dark .viewer-preview::before {
   background: repeating-linear-gradient(
     0deg,
     transparent 0,
@@ -733,6 +754,10 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   letter-spacing: 1.4px;
 }
 
+body.viewer-body-v2:not(.is-dark) .viewer-preview-kicker {
+  color: rgba(71, 85, 105, 0.74);
+}
+
 /* Speed badge inside the kicker — sits flush right, faint cyan so it
    reads as "current speed" without competing with the kicker label. */
 .viewer-preview-speed {
@@ -741,6 +766,10 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.5px;
+}
+
+body.viewer-body-v2:not(.is-dark) .viewer-preview-speed {
+  color: rgba(2, 132, 199, 0.70);
 }
 
 /* 2026-05-16 marquee preview (design v3-r8): preview text actually
@@ -795,6 +824,10 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   letter-spacing: 0.5px;
 }
 
+body.viewer-body-v2:not(.is-dark) .viewer-preview-nick {
+  color: var(--color-text-secondary);
+}
+
 /* Default preview shadow — prototype viewer.jsx:125 fallback when glow off:
  *   '0 2px 4px rgba(0,0,0,0.55)'. Glow-effect handler in main.js may add
  *   a coloured halo on top via inline style.
@@ -804,6 +837,11 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   display: inline-block;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.55);
   transition: font-size 0.2s, opacity 0.2s;
+}
+
+body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
+  color: var(--color-text-primary) !important;
+  text-shadow: none !important;
 }
 
 /* 2026-05-17 preview-side effect keyframes (vp- prefix to avoid
