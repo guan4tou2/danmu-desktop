@@ -25,6 +25,7 @@
   const STORAGE_KEY = "theme-mode";          // unified — same key viewer reads
   const LEGACY_KEY = "admin-theme-mode";     // migrated once
   const BTN_ID = "admin-theme-toggle";
+  const SHOW_TOPBAR_TOGGLE = false;
 
   // ── one-time migration from legacy key ────────────────────────────
   (function migrateLegacy() {
@@ -88,6 +89,10 @@
 
   function _mount() {
     if (!document.body.classList.contains("admin-body")) return;
+    if (!SHOW_TOPBAR_TOGGLE) {
+      document.getElementById(BTN_ID)?.remove();
+      return;
+    }
     if (!window.DANMU_CONFIG?.session?.logged_in) return;
     // Inject the toggle next to the existing broadcast / logout buttons
     // in the admin topbar. If the topbar isn't ready yet we fall back to

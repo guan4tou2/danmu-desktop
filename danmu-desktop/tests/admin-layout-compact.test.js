@@ -47,6 +47,7 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   const securitySrc    = fs.readFileSync(path.join(staticDir, "admin-security.js"), "utf8");
   const systemSrc      = fs.readFileSync(path.join(staticDir, "admin-system-accordion.js"), "utf8");
   const viewerThemeSrc = fs.readFileSync(path.join(staticDir, "admin-viewer-theme.js"), "utf8");
+  const themeSwitcherSrc = fs.readFileSync(path.join(staticDir, "admin-theme-switcher.js"), "utf8");
   expect(ratelimitSrc).toContain('SECTION_ID = "sec-ratelimit"');
   expect(ratelimitSrc).toContain('admin-ratelimit-page');
   expect(displaySrc).toContain('route === "display"');
@@ -64,6 +65,8 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   expect(viewerThemeSrc).toContain('admin-vt-page');
   expect(viewerThemeSrc).toContain('data-vt-jump="display"');
   expect(viewerThemeSrc).toContain("Desktop 排版 / 顯示器 / 連線狀態請到 <b>Display</b>");
+  expect(themeSwitcherSrc).toContain("SHOW_TOPBAR_TOGGLE = false");
+  expect(themeSwitcherSrc).toMatch(/document\.getElementById\(BTN_ID\)\?\.remove\(\);/);
 });
 
 test("admin Viewer field inventory matches the canonical viewer spec", () => {
