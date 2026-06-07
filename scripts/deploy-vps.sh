@@ -128,11 +128,11 @@ if [[ "$DO_VERIFY" -eq 1 ]]; then
   if [[ -n "$public_health_url" ]]; then
     public_health_url="${public_health_url%/}/health"
   fi
-  remote_health_cmd="cd ${PROJECT} && sleep 5 && (curl -sf http://127.0.0.1:4000/health 2>/dev/null || curl -skf https://127.0.0.1:4000/health 2>/dev/null"
+  remote_health_cmd="cd ${PROJECT} && for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do if curl -sf http://127.0.0.1:4000/health 2>/dev/null; then exit 0; fi; if curl -skf https://127.0.0.1:4000/health 2>/dev/null; then exit 0; fi"
   if [[ -n "$public_health_url" ]]; then
-    remote_health_cmd="${remote_health_cmd} || curl -skf $(printf "%q" "$public_health_url") 2>/dev/null"
+    remote_health_cmd="${remote_health_cmd}; if curl -skf $(printf "%q" "$public_health_url") 2>/dev/null; then exit 0; fi"
   fi
-  remote_health_cmd="${remote_health_cmd} || if [ \"\$(docker inspect --format '{{.State.Health.Status}}' danmu-fire 2>/dev/null)\" = healthy ]; then echo '{\"service\":\"danmu-server\",\"status\":\"healthy\",\"source\":\"docker\"}'; else echo FAIL; fi)"
+  remote_health_cmd="${remote_health_cmd}; if [ \"\$(docker inspect --format '{{.State.Health.Status}}' danmu-fire 2>/dev/null)\" = healthy ]; then echo '{\"service\":\"danmu-server\",\"status\":\"healthy\",\"source\":\"docker\"}'; exit 0; fi; sleep 5; done; echo FAIL"
 
   verify_cmd=(ssh)
   if [[ -n "$KEY" ]]; then

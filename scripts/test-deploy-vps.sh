@@ -28,7 +28,11 @@ case "$remote_cmd" in
     echo '{"service":"danmu-server","status":"healthy","source":"public"}'
     ;;
   *"docker inspect --format"*)
-    echo '{"service":"danmu-server","status":"healthy","source":"docker"}'
+    if [[ "$remote_cmd" == *"for attempt in"* ]]; then
+      echo '{"service":"danmu-server","status":"healthy","source":"docker"}'
+    else
+      echo "FAIL"
+    fi
     ;;
   *"127.0.0.1:4000/health"*)
     echo "FAIL"
