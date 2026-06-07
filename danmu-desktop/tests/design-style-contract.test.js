@@ -140,6 +140,25 @@ test("admin light inputs have a dark strong text token", () => {
   );
 });
 
+test("API Tokens admin page has production CSS for its generated surface", () => {
+  const apiTokensJs = fs.readFileSync(path.join(REPO_ROOT, "server/static/js/admin-api-tokens.js"), "utf8");
+  const adminCss = fs.readFileSync(path.join(REPO_ROOT, "server/static/css/style.css"), "utf8");
+
+  [
+    "admin-at-page",
+    "admin-at-grid",
+    "admin-at-main",
+    "admin-at-rail",
+    "admin-at-table",
+    "admin-at-scope-badge",
+    "admin-at-success-banner",
+    "admin-at-submit-btn",
+  ].forEach((className) => {
+    expect(apiTokensJs).toContain(className);
+    expect(adminCss).toContain(`.${className}`);
+  });
+});
+
 test("viewer offline send gate uses Desktop copy and red button state", () => {
   const zh = readJson("server/static/locales/zh/translation.json");
   const en = readJson("server/static/locales/en/translation.json");
