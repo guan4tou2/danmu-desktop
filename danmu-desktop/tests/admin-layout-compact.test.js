@@ -129,6 +129,27 @@ test("editable viewer defaults now live under Viewer > Defaults, not Display", (
   expect(displaySrc).toContain('document.body.dataset.viewerConfigTab = "defaults"');
 });
 
+test("viewer theme and language overrides respect admin force mode", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const mainSrc = fs.readFileSync(path.join(rootDir, "server", "static", "js", "main.js"), "utf8");
+  const templateSrc = fs.readFileSync(path.join(rootDir, "server", "templates", "index.html"), "utf8");
+
+  expect(mainSrc).toContain('const _isViewerThemeForced = () =>');
+  expect(mainSrc).toContain('if (adminMode === "force-dark") return "dark";');
+  expect(mainSrc).toContain('if (adminMode === "force-light") return "light";');
+  expect(mainSrc.indexOf('if (adminMode === "force-light") return "light";'))
+    .toBeLessThan(mainSrc.indexOf('const operator = _readUnifiedMode();'));
+  expect(mainSrc).toContain('chip.hidden = forced;');
+  expect(mainSrc).toContain('themeRow.hidden = themeForced;');
+  expect(mainSrc).toContain('langRow.hidden = langForced;');
+  expect(mainSrc).toContain('if (isLangForced()) return;');
+  expect(mainSrc).toContain('window.syncViewerOverrideControlVisibility = syncOverrideControlVisibility;');
+
+  expect(templateSrc).toContain('data-viewer-theme-control');
+  expect(templateSrc).toContain('data-viewer-mobile-theme-row');
+  expect(templateSrc).toContain('data-viewer-mobile-lang-row');
+});
+
 test("Viewer entry points use the canonical viewer route instead of legacy viewer-config", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const paletteSrc = fs.readFileSync(path.join(staticDir, "admin-command-palette.js"), "utf8");
@@ -142,7 +163,7 @@ test("Viewer entry points use the canonical viewer route instead of legacy viewe
   expect(paletteSrc).toContain('label: "表單欄位 Viewer fields"');
   expect(paletteSrc).toContain('route: "viewer", tab: "fields", section: "sec-viewer-config-fields"');
   expect(paletteSrc).toContain('label: "送出預設 Viewer defaults"');
-  expect(paletteSrc).toContain('route: "viewer", tab: "defaults", section: "admin-display-v2-page"');
+  expect(paletteSrc).toContain('route: "viewer", tab: "defaults", section: "sec-viewer-config-defaults"');
   expect(paletteSrc).toContain('label: "限制 / 文案 Viewer limits"');
   expect(paletteSrc).toContain('route: "viewer", tab: "limits", section: "sec-viewer-config-limits"');
   expect(paletteSrc).toContain('if (item.tab) document.body.dataset.viewerConfigTab = item.tab;');

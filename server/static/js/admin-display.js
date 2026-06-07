@@ -28,7 +28,10 @@
 (function () {
   "use strict";
 
-  const PAGE_ID = "admin-display-v2-page";
+  // This full compound-row surface is the canonical Viewer Defaults tab.
+  // Keep the ID aligned with admin.js/admin-tabs.js section registries so
+  // routing and tab visibility point at the same surface.
+  const PAGE_ID = "sec-viewer-config-defaults";
   const LEGACY_IDS = ["sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout"];
   const METRICS_INTERVAL_MS = 5000;
 
@@ -183,6 +186,22 @@
                 <button type="button" class="admin-dsp2-btn admin-dsp2-btn-ghost" id="dsp2-export" style="flex:1;padding:8px;border-radius:4px;border:1px solid var(--hud-line);background:transparent;color:var(--color-text-strong);cursor:pointer;font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em">
                   ↗ ${escapeHtml(t("displayExportJson", "匯出 JSON"))}
                 </button>
+              </div>
+            </div>
+
+            <div class="admin-dsp2-card admin-dsp2-admin-controlled" style="padding:14px;background:var(--admin-panel,var(--color-bg-base));border:1px solid var(--hud-line);border-radius:6px;display:flex;flex-direction:column;gap:10px">
+              <div class="admin-v2-monolabel admin-dsp2-card-head">
+                <span>${escapeHtml(t("displayAdminControlledTitle", "管理端控制"))}</span>
+                <span class="admin-dsp2-card-head-en">ADMIN CONTROLLED</span>
+              </div>
+              <div style="display:grid;grid-template-columns:auto 1fr;gap:7px 12px;align-items:start;font-size:11px;line-height:1.45">
+                <span style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.08em">UI language</span><span>Auto (follow browser)</span>
+                <span style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.08em">Placeholder</span><span>想對現場說點什麼？</span>
+                <span style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.08em">Submit button</span><span>FIRE</span>
+                <span style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.08em">Poll prompt</span><span>選擇你的答案</span>
+              </div>
+              <div style="padding-top:8px;border-top:1px solid var(--hud-line);font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);line-height:1.6">
+                觀眾端不提供語言切換。預設跟隨瀏覽器語言；admin 可在 Viewer Page Theme 強制指定。
               </div>
             </div>
 
@@ -1008,10 +1027,6 @@
     if (vf) {
       vf.style.display = (isViewerOwner && tab === "fields") ? "" : "none";
     }
-    const vd = document.getElementById("sec-viewer-config-defaults");
-    if (vd) {
-      vd.style.display = (isViewerOwner && tab === "defaults") ? "" : "none";
-    }
     const vl = document.getElementById("sec-viewer-config-limits");
     if (vl) {
       vl.style.display = (isViewerOwner && tab === "limits") ? "" : "none";
@@ -1244,38 +1259,6 @@
     fieldsPanel.appendChild(leftCol);
     fieldsPanel.appendChild(rightCol);
 
-    const defaultsPanel = document.createElement("div");
-    defaultsPanel.id = "sec-viewer-config-defaults";
-    defaultsPanel.className = "admin-vc-fields-grid lg:col-span-2";
-    defaultsPanel.innerHTML =
-      '<div class="admin-vc-col-panel">' +
-        '<div class="admin-vc-preview-label">DEFAULTS</div>' +
-        '<div class="admin-vc-preview-input">' +
-          '<div style="display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:start">' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Color</span><span>主題色票為預設，viewer 可改</span>' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Font</span><span>Zen Kaku / Noto Sans TC 為主</span>' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Size</span><span>regular</span>' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Opacity</span><span>1.0</span>' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Speed</span><span>1.0×</span>' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Layout</span><span>scroll</span>' +
-          "</div>" +
-        "</div>" +
-      "</div>" +
-      '<div class="admin-vc-col-panel">' +
-        '<div class="admin-vc-preview-label">ADMIN CONTROLLED</div>' +
-        '<div class="admin-vc-preview-input">' +
-          '<div style="display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:start">' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">UI language</span><span>Auto (follow browser)</span>' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Placeholder</span><span>想對現場說點什麼？</span>' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Submit button</span><span>FIRE</span>' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">Poll prompt</span><span>選擇你的答案</span>' +
-          "</div>" +
-          '<div style="margin-top:10px;font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);line-height:1.6">' +
-            '觀眾端不提供語言切換。預設跟隨瀏覽器語言；admin 可在 Viewer Page Theme 強制指定。' +
-          '</div>' +
-        '</div>' +
-      "</div>";
-
     // v5 IA (2026-05-19): Limits tab redesigned per Batch 11 viewer-4tab
     // canvas — two cards (RATE LIMITS amber dot · CONTENT LIMITS cyan dot)
     // each with 4 numeric rows + hint copy, plus a span-2 status strip
@@ -1374,12 +1357,10 @@
       grid.insertBefore(bar, vt);
       grid.insertBefore(infoBanner, vt);
       grid.insertBefore(limitsPanel, vt);
-      grid.insertBefore(defaultsPanel, vt);
       grid.insertBefore(fieldsPanel, vt);
     } else {
       grid.appendChild(bar);
       grid.appendChild(infoBanner);
-      grid.appendChild(defaultsPanel);
       grid.appendChild(limitsPanel);
       grid.appendChild(fieldsPanel);
     }

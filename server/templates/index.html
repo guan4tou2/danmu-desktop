@@ -83,13 +83,14 @@
             </span>
             <!-- Desktop theme chip — design v4 brief 0518-v3 #1 (2026-05-18).
                  3-segment toggle (淺色 / 自動 / 深色). Reuses `theme-mode`
-                 storage + applyViewerTheme(). Hidden on mobile (where the
-                 hamburger sheet at viewer-mobile-sheet does the same job). -->
+                 storage + applyViewerTheme(). Hidden on mobile, and hidden by
+                 JS when admin forces ViewerThemeMode. -->
             <div
               id="viewerThemeChip"
               class="viewer-theme-chip"
               role="radiogroup"
               aria-label="外觀主題"
+              data-viewer-theme-control
             >
               <button
                 type="button"
@@ -144,8 +145,8 @@
               <span class="viewer-mobile-sheet-title" data-i18n="settings">設定</span>
               <button type="button" class="viewer-mobile-sheet-close" data-mobile-sheet-close aria-label="關閉">✕</button>
             </div>
-            <!-- Theme tri-state -->
-            <div class="viewer-mobile-sheet-row">
+            <!-- Theme tri-state. Hidden by JS when admin forces ViewerThemeMode. -->
+            <div class="viewer-mobile-sheet-row" data-viewer-mobile-theme-row>
               <span class="viewer-mobile-sheet-label" data-i18n="themeAppearance">外觀主題</span>
               <div class="viewer-mobile-sheet-spacer"></div>
               <div class="viewer-mobile-sheet-segment" role="radiogroup" aria-label="外觀主題">
@@ -154,8 +155,8 @@
                 <button type="button" class="viewer-mobile-sheet-seg" data-theme-choice="auto" role="radio" aria-checked="true" data-i18n="themeAuto">系統</button>
               </div>
             </div>
-            <!-- Lang selector -->
-            <div class="viewer-mobile-sheet-row">
+            <!-- Lang selector. Hidden by JS when admin forces ViewerLangMode. -->
+            <div class="viewer-mobile-sheet-row" data-viewer-mobile-lang-row>
               <span class="viewer-mobile-sheet-label" data-i18n="language">語言</span>
               <div class="viewer-mobile-sheet-spacer"></div>
               <div class="viewer-mobile-sheet-segment" role="radiogroup" aria-label="語言">

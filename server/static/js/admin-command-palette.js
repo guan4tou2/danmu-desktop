@@ -48,7 +48,7 @@
   const SETTINGS = [
     { label: "觀眾頁主題",              route: "viewer", tab: "page", section: "sec-viewer-theme" },
     { label: "表單欄位 Viewer fields",  route: "viewer", tab: "fields", section: "sec-viewer-config-fields" },
-    { label: "送出預設 Viewer defaults", route: "viewer", tab: "defaults", section: "admin-display-v2-page" },
+    { label: "送出預設 Viewer defaults", route: "viewer", tab: "defaults", section: "sec-viewer-config-defaults" },
     { label: "限制 / 文案 Viewer limits", route: "viewer", tab: "limits", section: "sec-viewer-config-limits" },
     { label: "黑名單 Blacklist",    route: "moderation",section: "sec-blacklist" },
     { label: "敏感字過濾 Filters",  route: "moderation",section: "sec-filters" },

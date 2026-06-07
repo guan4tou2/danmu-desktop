@@ -979,18 +979,22 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ── Viewer theme · unified with admin (2026-05-18 polestar unification) ───
-  // Two source-of-truths feeding the SAME visual outcome:
+  // Two inputs feed the SAME visual outcome:
   //   1. `body[data-viewer-theme-mode]` — admin-supplied default rendered by
   //      the template ("auto" / "force-light" / "force-dark"). Read once at boot.
-  //   2. `localStorage['theme-mode']` — operator-chosen override, shared with
-  //      the admin theme switcher (admin-theme-switcher.js). When set, takes
-  //      precedence over the admin-supplied default.
+  //   2. `localStorage['theme-mode']` — audience preference, shared across
+  //      viewer tabs. It applies only when admin mode is "auto"; force-* wins.
   //
   // Both apply two attributes so old + new selectors keep working:
   //   - `<html data-theme="dark|light">` — drives shared/tokens.css overrides
   //     (same mechanism as admin). Lets viewer + admin pull from one token set.
   //   - `body.is-dark` — legacy class still referenced by viewer-v2.css.
   const _THEME_KEY = "theme-mode";
+  const _adminThemeMode = () => document.body.dataset.viewerThemeMode || "auto";
+  const _isViewerThemeForced = () => {
+    const mode = _adminThemeMode();
+    return mode === "force-dark" || mode === "force-light";
+  };
 
   const _readUnifiedMode = () => {
     try {
@@ -1000,14 +1004,14 @@ document.addEventListener("DOMContentLoaded", () => {
     return null;
   };
 
-  // Map admin-supplied force-* mode → unified mode for first-paint, allowing
-  // operator override to win if present.
+  // Map admin-supplied force-* mode → unified mode for first-paint. Admin
+  // force mode wins; audience localStorage is only a preference in auto mode.
   const _resolveMode = () => {
-    const operator = _readUnifiedMode();
-    if (operator) return operator;
-    const adminMode = document.body.dataset.viewerThemeMode || "auto";
+    const adminMode = _adminThemeMode();
     if (adminMode === "force-dark") return "dark";
     if (adminMode === "force-light") return "light";
+    const operator = _readUnifiedMode();
+    if (operator) return operator;
     return "auto";
   };
 
@@ -1059,9 +1063,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Expose for runtime override (e.g. settings refresh via SSE later).
   window.applyViewerTheme = (mode) => {
-    document.body.dataset.viewerThemeMode = mode || "auto";
-    _applyViewerTheme(mode);
+    if (mode === "force-dark" || mode === "force-light" || mode === "auto") {
+      document.body.dataset.viewerThemeMode = mode || "auto";
+    }
+    _applyViewerTheme(_resolveMode());
     _syncThemeChipState();
+    if (typeof window.syncViewerOverrideControlVisibility === "function") {
+      window.syncViewerOverrideControlVisibility();
+    }
   };
 
   // ── Desktop theme chip (design v4 brief 0518-v3 #1, 2026-05-18) ──
@@ -1071,6 +1080,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const _syncThemeChipState = () => {
     const chip = document.getElementById("viewerThemeChip");
     if (!chip) return;
+    const forced = _isViewerThemeForced();
+    chip.hidden = forced;
+    chip.setAttribute("aria-hidden", forced ? "true" : "false");
+    if (forced) return;
     const cur = _readUnifiedMode() || "auto";
     chip.querySelectorAll("[data-theme-choice]").forEach((b) => {
       const on = b.dataset.themeChoice === cur;
@@ -1083,6 +1096,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const chip = document.getElementById("viewerThemeChip");
     if (!chip) return;
     chip.addEventListener("click", (e) => {
+      if (_isViewerThemeForced()) return;
       const seg = e.target.closest("[data-theme-choice]");
       if (!seg) return;
       const mode = seg.dataset.themeChoice;
@@ -1093,11 +1107,11 @@ document.addEventListener("DOMContentLoaded", () => {
   })();
 
   // ── Mobile hamburger settings sheet (design v4 brief 0518-4a, 2026-05-18) ─
-  // Adds theme + lang user overrides on top of system / admin defaults.
+  // Adds theme + lang user overrides on top of system / admin auto defaults.
   // 2026-05-18 unification: theme uses the same `theme-mode` key as admin
   // (cross-tab + cross-surface sync). Legacy key `viewer.theme.override` is
-  // migrated once on boot. Lang stays viewer-only since admin's lang
-  // mirrors the host system, not the audience.
+  // migrated once on boot. Admin force-* mode always wins and hides the
+  // corresponding mobile controls.
   (function wireMobileSettingsSheet() {
     const hamb = document.getElementById("viewerHamburger");
     const sheet = document.getElementById("viewerMobileSheet");
@@ -1106,9 +1120,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const THEME_KEY = "theme-mode";              // unified — same as admin
     const THEME_LEGACY = "viewer.theme.override"; // migrated once
     const LANG_KEY = "viewer.lang.override";
+    const themeRow = sheet.querySelector("[data-viewer-mobile-theme-row]");
+    const langRow = sheet.querySelector("[data-viewer-mobile-lang-row]");
 
     const safeRead = (k) => { try { return localStorage.getItem(k); } catch (_) { return null; } };
     const safeWrite = (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} };
+    const getLangMode = () => document.body.dataset.viewerLangMode || "auto";
+    const isLangForced = () => /^force-(zh|en|ja|ko)$/.test(getLangMode());
+    const forcedLangValue = () => getLangMode().replace(/^force-/, "");
+    const syncOverrideControlVisibility = () => {
+      const themeForced = _isViewerThemeForced();
+      if (themeRow) {
+        themeRow.hidden = themeForced;
+        themeRow.setAttribute("aria-hidden", themeForced ? "true" : "false");
+      }
+      const langForced = isLangForced();
+      if (langRow) {
+        langRow.hidden = langForced;
+        langRow.setAttribute("aria-hidden", langForced ? "true" : "false");
+      }
+    };
+    window.syncViewerOverrideControlVisibility = syncOverrideControlVisibility;
 
     // One-time migration from legacy storage key (force-* → unified dark/light/auto).
     (function migrate() {
@@ -1151,6 +1183,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Theme segment buttons
     const themeBtns = sheet.querySelectorAll("[data-theme-choice]");
     const applyTheme = (mode) => {
+      if (_isViewerThemeForced()) {
+        window.applyViewerTheme(_adminThemeMode());
+        return;
+      }
       themeBtns.forEach((b) => {
         const on = b.dataset.themeChoice === mode;
         b.classList.toggle("is-active", on);
@@ -1160,6 +1196,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     themeBtns.forEach((b) => {
       b.addEventListener("click", () => {
+        if (_isViewerThemeForced()) return;
         const mode = b.dataset.themeChoice;
         applyTheme(mode);
         safeWrite(THEME_KEY, mode);
@@ -1180,6 +1217,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     langBtns.forEach((b) => {
       b.addEventListener("click", () => {
+        if (isLangForced()) return;
         const lang = b.dataset.langChoice;
         applyLang(lang);
         safeWrite(LANG_KEY, lang);
@@ -1187,8 +1225,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Boot — read saved overrides + sync visual state
+    syncOverrideControlVisibility();
     const savedTheme = safeRead(THEME_KEY);
-    if (savedTheme && ["dark", "light", "auto"].indexOf(savedTheme) !== -1) {
+    if (_isViewerThemeForced()) {
+      window.applyViewerTheme(_adminThemeMode());
+    } else if (savedTheme && ["dark", "light", "auto"].indexOf(savedTheme) !== -1) {
       applyTheme(savedTheme);
     } else {
       // Sync visual state to the current admin-supplied mode (default "auto").
@@ -1204,7 +1245,9 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
     const savedLang = safeRead(LANG_KEY);
-    if (savedLang) {
+    if (isLangForced()) {
+      applyLang(forcedLangValue());
+    } else if (savedLang) {
       applyLang(savedLang);
     } else {
       // Sync visual to current i18next lang.
@@ -1221,6 +1264,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // active segment + applies the theme.
     window.addEventListener("storage", (e) => {
       if (e.key !== THEME_KEY) return;
+      if (_isViewerThemeForced()) {
+        window.applyViewerTheme(_adminThemeMode());
+        syncOverrideControlVisibility();
+        return;
+      }
       const newMode = safeRead(THEME_KEY) || "auto";
       applyTheme(newMode);
     });

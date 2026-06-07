@@ -92,6 +92,8 @@ Helpers (component-level only, by design — not a gap):
 - **Main pages with v5 final design**: 28/28 (≈ 100%)
 - **Older prototype (functional, visually pre-v5)**: 0/28
 - **Truly missing a dedicated design**: 0 (Help Drawer shipped)
+- **Fusion rule**: keep v5 as canonical; selectively reuse older elements
+  only per [design-fusion-2026-06-07.md](design-fusion-2026-06-07.md).
 
 Original baseline (this doc's first version):
 - 22/28 final v5 (79%) → 28/28 (100%)
