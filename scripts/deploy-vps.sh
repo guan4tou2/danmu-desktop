@@ -121,14 +121,25 @@ echo "✓ Deploy finished."
 if [[ "$DO_VERIFY" -eq 1 ]]; then
   echo "→ Running healthcheck..."
   # Auto-detect: try HTTP first (server-only / external reverse proxy),
-  # fall back to HTTPS (nginx sidecar profile).
-  verify_ssh=()
-  if [[ -n "$KEY" ]]; then
-    verify_ssh+=(-i "$KEY")
+  # fall back to HTTPS (nginx sidecar profile), optional public URL, then
+  # Docker's container health for server-only deployments behind an external
+  # proxy such as Caddy.
+  public_health_url="${DANMU_PUBLIC_URL:-}"
+  if [[ -n "$public_health_url" ]]; then
+    public_health_url="${public_health_url%/}/health"
   fi
-  HEALTH=$(ssh "${verify_ssh[@]}" "$HOST" \
-    "sleep 5 && curl -sf http://127.0.0.1:4000/health 2>/dev/null || curl -skf https://127.0.0.1:4000/health 2>/dev/null || echo FAIL" \
-  )
+  remote_health_cmd="cd ${PROJECT} && sleep 5 && (curl -sf http://127.0.0.1:4000/health 2>/dev/null || curl -skf https://127.0.0.1:4000/health 2>/dev/null"
+  if [[ -n "$public_health_url" ]]; then
+    remote_health_cmd="${remote_health_cmd} || curl -skf $(printf "%q" "$public_health_url") 2>/dev/null"
+  fi
+  remote_health_cmd="${remote_health_cmd} || if [ \"\$(docker inspect --format '{{.State.Health.Status}}' danmu-fire 2>/dev/null)\" = healthy ]; then echo '{\"service\":\"danmu-server\",\"status\":\"healthy\",\"source\":\"docker\"}'; else echo FAIL; fi)"
+
+  verify_cmd=(ssh)
+  if [[ -n "$KEY" ]]; then
+    verify_cmd+=(-i "$KEY")
+  fi
+  verify_cmd+=("$HOST" "$remote_health_cmd")
+  HEALTH=$("${verify_cmd[@]}")
   if [[ "$HEALTH" == "FAIL" ]]; then
     echo "✗ Healthcheck failed — server may still be starting. Check with:"
     echo "  ssh${KEY:+ -i ${KEY}} ${HOST} 'docker compose -f ${PROJECT}/docker-compose.yml logs --tail 20 server'"
