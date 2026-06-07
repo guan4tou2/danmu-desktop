@@ -212,6 +212,31 @@ test("admin Webhooks uses the implemented toggle endpoint instead of BE placehol
   expect(webhooksSrc).not.toContain("BE 尚未支援此 event");
 });
 
+test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
+  const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
+  const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
+
+  expect(adminSrc).toContain("function syncRouteContainerVisibility()");
+  expect(adminSrc).toContain('shell.querySelectorAll(".admin-route-sections").forEach');
+  expect(adminSrc).toContain('container.id === "sec-advanced"');
+  expect(adminSrc).toContain('container.style.display = hasWanted ? "" : "none";');
+  expect(adminSrc).toContain("syncRouteContainerVisibility();");
+});
+
+test("admin Audit timeline selectors stay aligned with the v5 compact surface", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const auditSrc = fs.readFileSync(path.join(staticDir, "js", "admin-audit.js"), "utf8");
+  const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+
+  expect(auditSrc).toContain('class="admin-audit-timeline" data-audit-rows');
+  expect(auditSrc).toContain('class="admin-audit-timeline-row"');
+  expect(cssSrc).toContain(".admin-audit-timeline {");
+  expect(cssSrc).toContain("overflow-y: auto;");
+  expect(cssSrc).toContain(".admin-audit-timeline-row {");
+  expect(cssSrc).not.toContain(".admin-audit-row--timeline {");
+});
+
 test("admin Backup exposes implemented history export formats", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const backupSrc = fs.readFileSync(path.join(staticDir, "admin-backup.js"), "utf8");

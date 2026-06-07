@@ -1485,6 +1485,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let _activeTab = null;  // last-applied tab for currentRoute (Slice 3 + 6)
 
+    function routeSectionOwner(sectionId) {
+      if (ADMIN_SECTION_GROUPS.moderation.orderedIds.indexOf(sectionId) !== -1) return "moderation-grid";
+      if (ADMIN_SECTION_GROUPS.assets.orderedIds.indexOf(sectionId) !== -1) return "assets-grid";
+      if (sectionId === "sec-scheduler" || sectionId === "sec-webhooks") return "sec-advanced";
+      return "settings-grid";
+    }
+
+    function syncRouteContainerVisibility() {
+      const cfg = ADMIN_ROUTES[currentRoute];
+      const wantedOwners = new Set((cfg.sections || []).map(routeSectionOwner));
+      shell.querySelectorAll(".admin-route-sections").forEach((container) => {
+        if (container.id === "sec-advanced") {
+          const hasWanted = wantedOwners.has("sec-advanced");
+          container.style.display = hasWanted ? "" : "none";
+          return;
+        }
+        const hasWanted = wantedOwners.has(container.id);
+        container.style.display = hasWanted ? "" : "none";
+      });
+    }
+
     const applySectionVisibility = () => {
       const cfg = ADMIN_ROUTES[currentRoute];
       const wanted = new Set(cfg.sections);
@@ -1508,6 +1529,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (currentRoute === "system" && window.AdminSystemAccordion) {
         window.AdminSystemAccordion.applySectionVisibility(_activeTab, shell);
       }
+      syncRouteContainerVisibility();
     };
 
     const applyRoute = (name, requestedTab, rawName) => {
