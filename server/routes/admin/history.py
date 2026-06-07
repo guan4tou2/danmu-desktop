@@ -1,5 +1,7 @@
 """Danmu history, stats, and export routes."""
 
+import csv
+import io
 import json
 from datetime import datetime
 
@@ -28,6 +30,81 @@ def _gap_contract():
 def _clamp_hours(hours):
     """Clamp hours parameter to [1, 168] range."""
     return max(1, min(hours, 168))
+
+
+def _parse_ts(ts_str):
+    if ts_str.endswith("Z"):
+        ts_str = ts_str.replace("Z", "+00:00")
+    return datetime.fromisoformat(ts_str)
+
+
+def _history_timeline(records):
+    if not records:
+        return {"version": 1, "duration_ms": 0, "count": 0, "records": []}
+
+    # Records are sorted newest-first by get_records, reverse for timeline.
+    sorted_records = list(reversed(records))
+    first_ts = _parse_ts(sorted_records[0]["timestamp"])
+    last_ts = _parse_ts(sorted_records[-1]["timestamp"])
+
+    timeline = []
+    for r in sorted_records:
+        ts = _parse_ts(r["timestamp"])
+        offset_ms = int((ts - first_ts).total_seconds() * 1000)
+        timeline.append(
+            {
+                "offset_ms": offset_ms,
+                "text": r.get("text", ""),
+                "color": r.get("color", "#FFFFFF"),
+                "size": r.get("size", "50"),
+                "speed": r.get("speed", "5"),
+                "opacity": r.get("opacity", "100"),
+                "isImage": r.get("isImage", False),
+            }
+        )
+
+    return {
+        "version": 1,
+        "duration_ms": int((last_ts - first_ts).total_seconds() * 1000),
+        "count": len(timeline),
+        "records": timeline,
+    }
+
+
+def _download_response(body, content_type, filename):
+    response = make_response(body)
+    response.headers["Content-Type"] = content_type
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    return response
+
+
+def _timeline_to_csv(timeline):
+    out = io.StringIO()
+    fieldnames = ["offset_ms", "text", "color", "size", "speed", "opacity", "isImage"]
+    writer = csv.DictWriter(out, fieldnames=fieldnames, extrasaction="ignore")
+    writer.writeheader()
+    writer.writerows(timeline["records"])
+    return out.getvalue()
+
+
+def _srt_time(offset_ms):
+    total_ms = max(0, int(offset_ms))
+    hours, rem = divmod(total_ms, 3600000)
+    minutes, rem = divmod(rem, 60000)
+    seconds, millis = divmod(rem, 1000)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d},{millis:03d}"
+
+
+def _timeline_to_srt(timeline):
+    lines = []
+    records = timeline["records"]
+    for idx, rec in enumerate(records, start=1):
+        start = int(rec["offset_ms"])
+        next_start = int(records[idx]["offset_ms"]) if idx < len(records) else start + 3000
+        end = next_start if next_start > start else start + 3000
+        text = str(rec.get("text") or "[image]").replace("\r", " ").replace("\n", " ")
+        lines.extend([str(idx), f"{_srt_time(start)} --> {_srt_time(end)}", text, ""])
+    return "\n".join(lines)
 
 
 @admin_bp.route("/stats/hourly", methods=["GET"])
@@ -88,59 +165,37 @@ def get_danmu_history():
 @rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_login
 def export_history():
-    """Export danmu history as JSON timeline."""
+    """Export danmu history as JSON, CSV, or SRT timeline."""
     hours = request.args.get("hours", 24, type=int)
     hours = _clamp_hours(hours)
+    fmt = (request.args.get("format") or "json").strip().lower()
+    if fmt not in {"json", "csv", "srt"}:
+        return _json_response({"error": "Unsupported export format"}, 400)
 
-    if not history_service.danmu_history:
-        return _json_response({"version": 1, "duration_ms": 0, "records": []})
+    records = (
+        history_service.danmu_history.get_recent(hours=hours, limit=10000)
+        if history_service.danmu_history
+        else []
+    )
+    response_data = _history_timeline(records)
 
-    records = history_service.danmu_history.get_recent(hours=hours, limit=10000)
-
-    if not records:
-        return _json_response({"version": 1, "duration_ms": 0, "records": []})
-
-    # Calculate relative offsets from first record
-    def parse_ts(ts_str):
-        if ts_str.endswith("Z"):
-            ts_str = ts_str.replace("Z", "+00:00")
-        return datetime.fromisoformat(ts_str)
-
-    # Records are sorted newest-first by get_records, reverse for timeline
-    sorted_records = list(reversed(records))
-    first_ts = parse_ts(sorted_records[0]["timestamp"])
-    last_ts = parse_ts(sorted_records[-1]["timestamp"])
-
-    timeline = []
-    for r in sorted_records:
-        ts = parse_ts(r["timestamp"])
-        offset_ms = int((ts - first_ts).total_seconds() * 1000)
-        timeline.append(
-            {
-                "offset_ms": offset_ms,
-                "text": r.get("text", ""),
-                "color": r.get("color", "#FFFFFF"),
-                "size": r.get("size", "50"),
-                "speed": r.get("speed", "5"),
-                "opacity": r.get("opacity", "100"),
-                "isImage": r.get("isImage", False),
-            }
+    if fmt == "csv":
+        return _download_response(
+            _timeline_to_csv(response_data),
+            "text/csv; charset=utf-8",
+            f"danmu-timeline-{hours}h.csv",
         )
-
-    duration_ms = int((last_ts - first_ts).total_seconds() * 1000)
-
-    response_data = {
-        "version": 1,
-        "duration_ms": duration_ms,
-        "count": len(timeline),
-        "records": timeline,
-    }
-
-    # Return as downloadable JSON file
-    response = make_response(json.dumps(response_data, ensure_ascii=False, indent=2))
-    response.headers["Content-Type"] = "application/json"
-    response.headers["Content-Disposition"] = f"attachment; filename=danmu-timeline-{hours}h.json"
-    return response
+    if fmt == "srt":
+        return _download_response(
+            _timeline_to_srt(response_data),
+            "application/x-subrip; charset=utf-8",
+            f"danmu-timeline-{hours}h.srt",
+        )
+    return _download_response(
+        json.dumps(response_data, ensure_ascii=False, indent=2),
+        "application/json",
+        f"danmu-timeline-{hours}h.json",
+    )
 
 
 @admin_bp.route("/sessions", methods=["GET"])

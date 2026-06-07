@@ -291,6 +291,45 @@ def test_export_history_returns_json_timeline(client):
         assert "isImage" in rec
 
 
+def test_export_history_returns_csv(client):
+    login(client)
+    from server.services import history as history_service
+
+    history_service.danmu_history.clear()
+    history_service.danmu_history.add(
+        {"text": "hello,csv", "color": "ff0000", "size": "40", "speed": "5", "opacity": "100"}
+    )
+
+    res = client.get("/admin/history/export?hours=24&format=csv")
+    assert res.status_code == 200
+    assert res.headers["Content-Type"].startswith("text/csv")
+    assert "danmu-timeline-24h.csv" in res.headers.get("Content-Disposition", "")
+
+    body = res.data.decode("utf-8")
+    assert "offset_ms,text,color,size,speed,opacity,isImage" in body
+    assert '"hello,csv"' in body
+
+
+def test_export_history_returns_srt(client):
+    login(client)
+    from server.services import history as history_service
+
+    history_service.danmu_history.clear()
+    history_service.danmu_history.add(
+        {"text": "hello srt", "color": "ffffff", "size": "50", "speed": "5", "opacity": "100"}
+    )
+
+    res = client.get("/admin/history/export?hours=24&format=srt")
+    assert res.status_code == 200
+    assert res.headers["Content-Type"].startswith("application/x-subrip")
+    assert "danmu-timeline-24h.srt" in res.headers.get("Content-Disposition", "")
+
+    body = res.data.decode("utf-8")
+    assert "1\n" in body
+    assert "-->" in body
+    assert "hello srt" in body
+
+
 def test_export_history_requires_auth(client):
     res = client.get("/admin/history/export")
     assert res.status_code == 401

@@ -26,27 +26,18 @@
   const SECTION_ID = "sec-webhooks";
   const POLL_INTERVAL_MS = 12000;
 
-  // Match prototype event keys (legacy ones our BE supports).
-  // BE _VALID_EVENTS is currently { on_danmu, on_poll_create, on_poll_end },
-  // but the prototype proposes a wider set. We render the prototype keys
-  // and only persist subset that BE accepts.
-  const PROTOTYPE_EVENT_KEYS = [
-    "message.created",
-    "message.pinned",
-    "message.blocked",
-    "poll.opened",
-    "poll.closed",
-    "session.started",
-    "session.ended",
-    "fire-token.rate-near",
-    "fire-token.rotated",
-    "system.error",
+  const EVENT_CATALOG_FALLBACK = [
+    { slug: "on_danmu", zh: "彈幕送出", en: "Danmu accepted" },
+    { slug: "on_danmu_blocked", zh: "彈幕被擋", en: "Danmu blocked" },
+    { slug: "on_poll_create", zh: "投票建立", en: "Poll created" },
+    { slug: "on_poll_vote", zh: "投票一次", en: "Single vote" },
+    { slug: "on_poll_end", zh: "投票結束", en: "Poll ended" },
+    { slug: "on_session_start", zh: "場次開啟 / Desktop ON", en: "Session start" },
+    { slug: "on_session_end", zh: "場次結束 / Desktop OFF", en: "Session end" },
+    { slug: "on_overlay_clear", zh: "清空 Desktop", en: "Desktop cleared" },
+    { slug: "on_audit_alert", zh: "審計警示", en: "Audit alert >= warn" },
+    { slug: "on_plugin_change", zh: "插件變動", en: "Plugin install/uninstall" },
   ];
-
-  // Map prototype keys ↔ BE keys (best-effort; unknown stays as-is).
-  // The BE event vocabulary mismatch is captured in §C BE-pending — Design
-  // owns when to expand `_VALID_EVENTS`.
-  const BE_EVENT_KEYS = ["on_danmu", "on_poll_create", "on_poll_end"];
 
   function _truncate(str, max) {
     if (!str) return "";
@@ -80,6 +71,8 @@
     selectedHookId: null,
     deliveryFilter: "all",  // all | failed | 2xx | 5xx
     pollTimer: 0,
+    eventCatalog: EVENT_CATALOG_FALLBACK,
+    eventCatalogLoaded: false,
   };
 
   // ---- inject section ----
@@ -137,9 +130,7 @@
                 </div>
                 <fieldset class="admin-wh-form-events">
                   <legend class="admin-v2-monolabel">EVENTS</legend>
-                  <label><input type="checkbox" name="wh-event" value="on_danmu" checked /> on_danmu</label>
-                  <label><input type="checkbox" name="wh-event" value="on_poll_create" /> on_poll_create</label>
-                  <label><input type="checkbox" name="wh-event" value="on_poll_end" /> on_poll_end</label>
+                  <div data-wh-register-events></div>
                 </fieldset>
                 <div class="admin-wh-form-actions">
                   <button type="submit" class="admin-poll-btn is-primary">註冊</button>
@@ -218,10 +209,7 @@
           if (res.ok && data.status === "ok") {
             showToast(ServerI18n.t("webhookRegistered"));
             form.reset();
-            const defaultCb = form.querySelector(
-              'input[name="wh-event"][value="on_danmu"]'
-            );
-            if (defaultCb) defaultCb.checked = true;
+            _renderEventChoices();
             form.hidden = true;
             await loadAll();
           } else {
@@ -273,6 +261,14 @@
       }
       const detailPing = e.target.closest("[data-wh-action='detail-ping']");
       if (detailPing) { _testWebhook(detailPing.dataset.whHookId); return; }
+      const detailToggle = e.target.closest("[data-wh-action='detail-toggle']");
+      if (detailToggle) {
+        _toggleWebhook(
+          detailToggle.dataset.whHookId,
+          detailToggle.dataset.whNextEnabled === "1"
+        );
+        return;
+      }
       const detailDelete = e.target.closest("[data-wh-action='detail-delete']");
       if (detailDelete) { _deleteWebhook(detailDelete.dataset.whHookId); return; }
 
@@ -291,6 +287,7 @@
   // ---- data ----
 
   async function loadAll() {
+    await _ensureEventCatalog();
     await Promise.all([_loadHooks(), _loadDeliveries()]);
     _renderStats();
     _renderEndpoints();
@@ -316,6 +313,50 @@
       _state.deliveries = Array.isArray(data.deliveries) ? data.deliveries : [];
       _state.stats = data.stats || null;
     } catch (_) { /* silent */ }
+  }
+
+  async function _ensureEventCatalog() {
+    if (_state.eventCatalogLoaded) return;
+    try {
+      const res = await fetch("/admin/webhooks/events", { credentials: "same-origin" });
+      if (res.ok) {
+        const data = await res.json();
+        const events = Array.isArray(data.events) ? data.events : [];
+        if (events.length) _state.eventCatalog = events;
+      }
+    } catch (_) {
+      /* keep fallback catalog */
+    } finally {
+      _state.eventCatalogLoaded = true;
+      _renderEventChoices();
+    }
+  }
+
+  function _eventLabel(evt) {
+    const slug = evt && evt.slug ? String(evt.slug) : "";
+    const zh = evt && evt.zh ? String(evt.zh) : "";
+    const en = evt && evt.en ? String(evt.en) : "";
+    return {
+      slug,
+      label: zh ? zh + " · " + slug : slug,
+      title: en ? zh + " · " + en : zh,
+    };
+  }
+
+  function _renderEventChoices() {
+    const holder = document.querySelector("[data-wh-register-events]");
+    if (!holder) return;
+    holder.innerHTML = _state.eventCatalog.map(function (evt) {
+      const item = _eventLabel(evt);
+      if (!item.slug) return "";
+      const checked = item.slug === "on_danmu" ? " checked" : "";
+      return (
+        '<label title="' + _escHtml(item.title) + '">' +
+          '<input type="checkbox" name="wh-event" value="' + _escHtml(item.slug) + '"' + checked + ' /> ' +
+          _escHtml(item.label) +
+        '</label>'
+      );
+    }).join("");
   }
 
   // ---- render: 4-KPI stats strip ----
@@ -484,17 +525,16 @@
         : "var(--hud-lime)";
 
     const hookEvents = new Set(hook.events || []);
-    const eventsHtml = PROTOTYPE_EVENT_KEYS.map(function (e) {
-      const supported = BE_EVENT_KEYS.indexOf(e) >= 0;
-      const on = hookEvents.has(e);
-      const cls = (on ? "is-on" : "") + (supported ? "" : " is-unsupported");
+    const eventsHtml = _state.eventCatalog.map(function (evt) {
+      const item = _eventLabel(evt);
+      const on = hookEvents.has(item.slug);
+      const cls = on ? "is-on" : "";
       return (
         '<label class="admin-wh-detail-evt ' + cls + '" title="' +
-        (supported ? "" : "BE 尚未支援此 event（待 §C BE-pending）") +
+        _escHtml(item.title) +
         '">' +
           '<span class="check">' + (on ? "✓" : "") + '</span>' +
-          '<span>' + _escHtml(e) + '</span>' +
-          (supported ? '' : '<span class="tag">待 BE</span>') +
+          '<span>' + _escHtml(item.label) + '</span>' +
         '</label>'
       );
     }).join("");
@@ -525,7 +565,7 @@
       '<pre class="admin-wh-detail-payload">' + _escHtml(JSON.stringify(samplePayload, null, 2)) + '</pre>' +
       '<div class="admin-wh-detail-actions">' +
         '<button type="button" class="primary" data-wh-action="detail-ping" data-wh-hook-id="' + _escHtml(hook.id) + '">↻ 送測試 ping</button>' +
-        '<div class="admin-be-placeholder-control admin-be-placeholder-inline">[PLACEHOLDER] ' + (enabled ? "⏸ 暫停" : "▶ 啟用") + '（待 BE：/admin/webhooks/toggle）</div>' +
+        '<button type="button" class="warn" data-wh-action="detail-toggle" data-wh-hook-id="' + _escHtml(hook.id) + '" data-wh-next-enabled="' + (enabled ? "0" : "1") + '">' + (enabled ? "⏸ 暫停" : "▶ 啟用") + '</button>' +
         '<button type="button" class="danger" data-wh-action="detail-delete" data-wh-hook-id="' + _escHtml(hook.id) + '">⊘ 刪除</button>' +
       '</div>';
   }
@@ -548,6 +588,31 @@
     } catch (err) {
       console.error("Webhook test error:", err);
       showToast(ServerI18n.t("testFailed") || "測試失敗", false);
+    }
+  }
+
+  async function _toggleWebhook(hookId, nextEnabled) {
+    if (!hookId) return;
+    try {
+      const res = await csrfFetch("/admin/webhooks/toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hook_id: hookId, enabled: nextEnabled }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || "切換失敗", false);
+        return;
+      }
+      const hook = _state.hooks.find(function (h) { return h.id === hookId; });
+      if (hook) hook.enabled = data.enabled;
+      showToast(data.enabled ? "Webhook 已啟用" : "Webhook 已暫停");
+      _renderStats();
+      _renderEndpoints();
+      _renderDetail();
+    } catch (err) {
+      console.error("Webhook toggle error:", err);
+      showToast("切換失敗", false);
     }
   }
 

@@ -178,3 +178,27 @@ test("admin About server-info values wrap long URLs inside their grid cells", ()
   expect(cssSrc).toContain(".admin-about-oss-list { margin-top: 10px; font-family: var(--font-mono); font-size: 11px; line-height: 1.7; min-width: 0; }");
   expect(cssSrc).toMatch(/\.admin-about-oss-row \.v,\s*\.admin-about-oss-row \.l \{[\s\S]*?overflow-wrap:\s*anywhere;/);
 });
+
+test("admin Webhooks uses the implemented toggle endpoint instead of BE placeholder copy", () => {
+  const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
+  const webhooksSrc = fs.readFileSync(path.join(staticDir, "admin-webhooks.js"), "utf8");
+
+  expect(webhooksSrc).toContain('csrfFetch("/admin/webhooks/toggle"');
+  expect(webhooksSrc).toContain('fetch("/admin/webhooks/events"');
+  expect(webhooksSrc).not.toContain("[PLACEHOLDER]");
+  expect(webhooksSrc).not.toContain("待 BE：/admin/webhooks/toggle");
+  expect(webhooksSrc).not.toContain('const BE_EVENT_KEYS = ["on_danmu", "on_poll_create", "on_poll_end"]');
+  expect(webhooksSrc).not.toContain("BE 尚未支援此 event");
+});
+
+test("admin Backup exposes implemented history export formats", () => {
+  const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
+  const backupSrc = fs.readFileSync(path.join(staticDir, "admin-backup.js"), "utf8");
+
+  expect(backupSrc).toContain('format=" + encodeURIComponent(format)');
+  expect(backupSrc).toContain('<option value="csv">CSV');
+  expect(backupSrc).toContain('<option value="srt">SRT');
+  expect(backupSrc).not.toContain('value="csv" disabled');
+  expect(backupSrc).not.toContain('value="srt" disabled');
+  expect(backupSrc).not.toContain("CSV / SRT history export formats  (backend returns JSON only)");
+});

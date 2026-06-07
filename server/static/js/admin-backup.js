@@ -1,18 +1,17 @@
 /**
  * Admin Backup & Export (P1-10) — dedicated Soft Holo HUD page.
  *
- * Three zones: Export · Restore · Danger. Reuses existing endpoints; no
- * server code changes. Settings export is assembled client-side from
- * GET /get_settings (no dedicated export endpoint exists yet).
+ * Three zones: Export · Restore · Danger. Settings export is assembled
+ * client-side from GET /get_settings (no dedicated export endpoint exists yet).
  *
  * Endpoints used (existing, no backend changes):
- *   GET  /admin/history/export?hours=N   → JSON timeline download (server Content-Disposition)
+ *   GET  /admin/history/export?hours=N&format=json|csv|srt
+ *        → timeline download (server Content-Disposition)
  *   POST /admin/history/clear            → clear all danmu history
  *   GET  /get_settings                   → raw settings dump for client-side snapshot
  *   POST /logout                         → ends current admin session
  *
  * Deferred (即將支援, labelled in UI):
- *   - CSV / SRT history export formats  (backend returns JSON only)
  *   - Effects/Emojis/Stickers pack tarballs  (no pack endpoint yet)
  *   - Upload settings JSON → apply  (no backend apply route; dry-run preview only)
  *   - Upload effect/emoji/sticker pack  (no backend route yet)
@@ -65,8 +64,8 @@
                 <span class="admin-v2-monolabel">FORMAT</span>
                 <select id="bk2-hist-format" class="admin-v2-select">
                   <option value="json">JSON · 完整</option>
-                  <option value="csv" disabled>CSV · 即將支援</option>
-                  <option value="srt" disabled>SRT · 即將支援</option>
+                  <option value="csv">CSV · 試算表</option>
+                  <option value="srt">SRT · 字幕</option>
                 </select>
               </label>
               <button type="button" id="bk2-hist-download" class="admin-poll-btn is-primary">下載</button>
@@ -194,13 +193,9 @@
   function downloadHistory() {
     const hours = document.getElementById("bk2-hist-hours").value || "24";
     const format = document.getElementById("bk2-hist-format").value || "json";
-    if (format !== "json") {
-      window.showToast && showToast(format.toUpperCase() + " 格式尚未支援", false);
-      return;
-    }
     // Browser follows Content-Disposition from /admin/history/export.
     const a = document.createElement("a");
-    a.href = "/admin/history/export?hours=" + encodeURIComponent(hours);
+    a.href = "/admin/history/export?hours=" + encodeURIComponent(hours) + "&format=" + encodeURIComponent(format);
     a.rel = "noopener";
     document.body.appendChild(a);
     a.click();
