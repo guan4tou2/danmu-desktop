@@ -61,6 +61,7 @@ from . import (  # noqa: E402, F401
     ratelimit,
     replay,
     scheduler,
+    security_settings,
     session_mgmt,
     settings,
     sounds,

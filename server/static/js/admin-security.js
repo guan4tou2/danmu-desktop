@@ -26,10 +26,7 @@
 
   function pageTemplate() {
     // v5 Batch 12-3 (2026-05-19): 2-col SecCard grid with tinted left
-    // border per batch12-system.jsx SecurityPage. 7 cards total — 4
-    // working (password / session / WS / audit-link) + 3 informational
-    // 待-BE placeholders (IP allowlist / CORS / TLS) + DANGER ZONE
-    // (span-2 row at bottom). Working JS handlers untouched.
+    // border per batch12-system.jsx SecurityPage.
     return `
         <div id="${PAGE_ID}" class="admin-security-page hud-page-stack lg:col-span-2">
         <div class="admin-v2-head">
@@ -133,25 +130,35 @@
             </div>
           </div>
 
-          <!-- ④ IP allowlist — 待 BE -->
+          <!-- ④ IP allowlist -->
           <div class="admin-sec-card is-amber">
             <div class="admin-sec-card__head">
               <span class="admin-sec-card__zh">IP 存取限制</span>
               <span class="admin-sec-card__en">IP ALLOWLIST</span>
+              <span class="admin-sec-card__spacer"></span>
+              <span id="sec2-ip-status-chip" class="admin-v2-chip">載入中…</span>
             </div>
             <div class="admin-sec-card__body">
               <div class="admin-sec-row">
-                <span class="admin-sec-row__dot is-amber"></span>
+                <span id="sec2-ip-dot" class="admin-sec-row__dot is-amber"></span>
                 <div class="admin-sec-row__main">
                   <div class="admin-sec-row__label">狀態</div>
-                  <div class="admin-sec-row__value">未啟用 — 所有 IP 可存取 admin</div>
+                  <div id="sec2-ip-status-line" class="admin-sec-row__value">—</div>
                 </div>
               </div>
-              <p class="admin-sec-card__note">
-                啟用後僅允許列表內 IP 存取 <code>/admin</code>。viewer 端不受影響。
-              </p>
-              <div class="admin-sec-card__deferred">+ 新增允許 IP / CIDR</div>
-              <div class="admin-sec-card__be-hint">⚠ 待 BE</div>
+              <label class="admin-security-toggle">
+                <input id="sec2-ip-toggle" type="checkbox" />
+                <span>僅允許下方 IP / CIDR 存取 admin</span>
+              </label>
+              <label class="admin-security-field">
+                <span class="admin-v2-monolabel">ALLOWLIST · 每行一筆</span>
+                <textarea id="sec2-ip-entries" class="admin-v2-input" rows="4" spellcheck="false" placeholder="127.0.0.1/32"></textarea>
+              </label>
+              <div class="admin-security-tokenmeta">
+                <span class="admin-v2-monolabel">CURRENT IP</span>
+                <span id="sec2-ip-current" class="admin-security-timestamp">—</span>
+                <button type="button" id="sec2-ip-save" class="admin-poll-btn is-primary" style="margin-left:auto">儲存</button>
+              </div>
             </div>
           </div>
 
@@ -166,23 +173,37 @@
                 <span class="admin-sec-row__dot is-amber"></span>
                 <div class="admin-sec-row__main">
                   <div class="admin-sec-row__label">允許來源</div>
-                  <div class="admin-sec-row__value">* (全部)</div>
+                  <div id="sec2-cors-origins-line" class="admin-sec-row__value">—</div>
                 </div>
-                <span class="admin-sec-row__action">編輯</span>
               </div>
               <div class="admin-sec-row">
-                <span class="admin-sec-row__dot is-lime"></span>
+                <span id="sec2-cors-cred-dot" class="admin-sec-row__dot is-lime"></span>
                 <div class="admin-sec-row__main">
                   <div class="admin-sec-row__label">Credentials</div>
-                  <div class="admin-sec-row__value">false（與 wildcard origin 互斥）</div>
+                  <div id="sec2-cors-credentials-line" class="admin-sec-row__value">—</div>
                 </div>
               </div>
               <div class="admin-sec-row">
                 <span class="admin-sec-row__dot is-lime"></span>
                 <div class="admin-sec-row__main">
                   <div class="admin-sec-row__label">Methods</div>
-                  <div class="admin-sec-row__value">GET, POST, DELETE</div>
+                  <div id="sec2-cors-methods-line" class="admin-sec-row__value">—</div>
                 </div>
+              </div>
+              <label class="admin-security-field">
+                <span class="admin-v2-monolabel">ORIGINS · 每行一筆</span>
+                <textarea id="sec2-cors-origins" class="admin-v2-input" rows="3" spellcheck="false" placeholder="*"></textarea>
+              </label>
+              <label class="admin-security-toggle">
+                <input id="sec2-cors-credentials" type="checkbox" />
+                <span>允許 credentials（不可搭配 wildcard origin）</span>
+              </label>
+              <label class="admin-security-field">
+                <span class="admin-v2-monolabel">METHODS</span>
+                <input id="sec2-cors-methods" type="text" class="admin-v2-input" spellcheck="false" placeholder="GET, POST, DELETE, PATCH, OPTIONS" />
+              </label>
+              <div class="admin-security-tokenmeta">
+                <button type="button" id="sec2-cors-save" class="admin-poll-btn is-primary" style="margin-left:auto">儲存 CORS</button>
               </div>
             </div>
           </div>
@@ -208,9 +229,8 @@
                 <span class="admin-sec-row__dot is-amber"></span>
                 <div class="admin-sec-row__main">
                   <div class="admin-sec-row__label">HSTS Header</div>
-                  <div class="admin-sec-row__value">未設定</div>
+                  <div class="admin-sec-row__value" id="sec2-hsts-status">—</div>
                 </div>
-                <span class="admin-sec-row__hint">待 BE</span>
               </div>
             </div>
           </div>
@@ -346,6 +366,125 @@
     }
   }
 
+  function _listFromLines(value) {
+    return String(value || "")
+      .split(/\n+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  function _listFromCsv(value) {
+    return String(value || "")
+      .split(",")
+      .map((s) => s.trim().toUpperCase())
+      .filter(Boolean);
+  }
+
+  function _setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value == null || value === "" ? "—" : String(value);
+  }
+
+  async function loadSecuritySettings() {
+    try {
+      const res = await fetch("/admin/security/settings", { credentials: "same-origin" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || res.status);
+
+      const ip = data.ip_allowlist || {};
+      const cors = data.cors || {};
+      const tls = data.tls || {};
+
+      const ipEnabled = !!ip.enabled;
+      const ipEntries = Array.isArray(ip.entries) ? ip.entries : [];
+      const ipDot = document.getElementById("sec2-ip-dot");
+      const ipChip = document.getElementById("sec2-ip-status-chip");
+      const ipToggle = document.getElementById("sec2-ip-toggle");
+      const ipTextarea = document.getElementById("sec2-ip-entries");
+      if (ipDot) {
+        ipDot.classList.toggle("is-lime", ipEnabled);
+        ipDot.classList.toggle("is-amber", !ipEnabled);
+      }
+      if (ipChip) {
+        ipChip.textContent = ipEnabled ? "已限制" : "未啟用";
+        ipChip.className = "admin-v2-chip " + (ipEnabled ? "is-good" : "is-warn");
+      }
+      if (ipToggle) ipToggle.checked = ipEnabled;
+      if (ipTextarea) ipTextarea.value = ipEntries.join("\n");
+      _setText("sec2-ip-current", ip.current_ip || "—");
+      _setText(
+        "sec2-ip-status-line",
+        ipEnabled
+          ? `${ipEntries.length} 筆允許來源`
+          : "未啟用 — 所有 IP 可存取 admin"
+      );
+
+      const origins = Array.isArray(cors.origins) ? cors.origins : ["*"];
+      const methods = Array.isArray(cors.methods) ? cors.methods : [];
+      const corsOrigins = document.getElementById("sec2-cors-origins");
+      const corsCred = document.getElementById("sec2-cors-credentials");
+      const corsMethods = document.getElementById("sec2-cors-methods");
+      const corsCredDot = document.getElementById("sec2-cors-cred-dot");
+      if (corsOrigins) corsOrigins.value = origins.join("\n");
+      if (corsCred) corsCred.checked = !!cors.supports_credentials;
+      if (corsMethods) corsMethods.value = methods.join(", ");
+      if (corsCredDot) {
+        corsCredDot.classList.toggle("is-lime", !cors.supports_credentials);
+        corsCredDot.classList.toggle("is-amber", !!cors.supports_credentials);
+      }
+      _setText("sec2-cors-origins-line", origins.join(", "));
+      _setText("sec2-cors-credentials-line", cors.supports_credentials ? "true" : "false");
+      _setText("sec2-cors-methods-line", methods.join(", "));
+
+      const hsts = tls.hsts_enabled
+        ? `已設定 · ${tls.hsts_header || "Strict-Transport-Security"}`
+        : "未設定";
+      _setText("sec2-hsts-status", hsts);
+    } catch (err) {
+      console.error("Security settings load error:", err);
+      const chip = document.getElementById("sec2-ip-status-chip");
+      if (chip) {
+        chip.textContent = "載入失敗";
+        chip.className = "admin-v2-chip is-bad";
+      }
+    }
+  }
+
+  async function saveSecuritySettings(section) {
+    const payload = {};
+    if (section === "ip") {
+      payload.ip_allowlist = {
+        enabled: !!document.getElementById("sec2-ip-toggle")?.checked,
+        entries: _listFromLines(document.getElementById("sec2-ip-entries")?.value || ""),
+      };
+    } else if (section === "cors") {
+      const origins = _listFromLines(document.getElementById("sec2-cors-origins")?.value || "");
+      payload.cors = {
+        origins: origins.length ? origins : ["*"],
+        supports_credentials: !!document.getElementById("sec2-cors-credentials")?.checked,
+        methods: _listFromCsv(document.getElementById("sec2-cors-methods")?.value || ""),
+      };
+    }
+
+    try {
+      const res = await window.csrfFetch("/admin/security/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        window.showToast && showToast(data.error || "儲存失敗", false);
+        return;
+      }
+      window.showToast && showToast("安全性設定已儲存", true);
+      await loadSecuritySettings();
+    } catch (err) {
+      console.error("Security settings save error:", err);
+      window.showToast && showToast("網路錯誤", false);
+    }
+  }
+
   async function saveWsAuth() {
     const require_token = document.getElementById("sec2-wsa-toggle").checked;
     const token = document.getElementById("sec2-wsa-token").value.trim();
@@ -409,6 +548,43 @@
     input.type = input.type === "password" ? "text" : "password";
   }
 
+  async function runDangerAction(action) {
+    const config = {
+      "revoke-tokens": {
+        confirm: "撤銷所有 API Token？所有外部整合會立即失效。",
+        url: "/admin/security/revoke-api-tokens",
+        ok: (data) => `已撤銷 ${data.revoked || 0} 個 API Token`,
+      },
+      "revoke-firetoken": {
+        confirm: "撤銷 Fire Token？所有 extension 需重新設定。",
+        url: "/admin/integrations/fire-token/revoke",
+        ok: () => "Fire Token 已撤銷",
+      },
+      "reset-ws": {
+        confirm: "重設 WS Token？Desktop 重新連線時需使用新 token。",
+        url: "/admin/ws-auth/rotate",
+        ok: () => "WS Token 已重設",
+      },
+    }[action];
+    if (!config || !confirm(config.confirm)) return;
+    try {
+      const res = await window.csrfFetch(config.url, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        window.showToast && showToast(data.error || "操作失敗", false);
+        return;
+      }
+      window.showToast && showToast(config.ok(data), true);
+      if (action === "reset-ws") {
+        try { localStorage.setItem("ws-auth-last-rotation", String(Date.now())); } catch (_) {}
+        await loadWsAuth();
+      }
+    } catch (err) {
+      console.error("Security danger action error:", err);
+      window.showToast && showToast("網路錯誤", false);
+    }
+  }
+
   function fillSessionRow() {
     // v5 layout uses sec2-session-self-line — single line summary instead
     // of the old multi-column table. Old IDs (sec2-session-ip/-ua) no
@@ -441,9 +617,17 @@
     document.getElementById("sec2-wsa-rotate")?.addEventListener("click", rotateWsAuth);
     document.getElementById("sec2-wsa-copy")?.addEventListener("click", copyToken);
     document.getElementById("sec2-wsa-reveal")?.addEventListener("click", revealToken);
+    document.getElementById("sec2-ip-save")?.addEventListener("click", () => saveSecuritySettings("ip"));
+    document.getElementById("sec2-cors-save")?.addEventListener("click", () => saveSecuritySettings("cors"));
+    document.querySelectorAll("[data-sec-danger]").forEach((btn) => {
+      if (btn.dataset.secBound === "1") return;
+      btn.dataset.secBound = "1";
+      btn.addEventListener("click", () => runDangerAction(btn.dataset.secDanger));
+    });
 
     fillSessionRow();
     loadWsAuth();
+    loadSecuritySettings();
   }
 
   // Legacy cards (sec-security / sec-ws-auth) were removed from admin.js

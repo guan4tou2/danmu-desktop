@@ -130,8 +130,6 @@ def create_app(config_class=Config):
             "Set CORS_ORIGINS to specific origins when enabling CORS_SUPPORTS_CREDENTIALS."
         )
         cors_credentials = False
-    CORS(app, origins=cors_origins, supports_credentials=cors_credentials)
-
     init_security(app)
     init_history()
 
@@ -141,6 +139,12 @@ def create_app(config_class=Config):
         g.request_id = str(uuid.uuid4())
         g.csp_nonce = secrets.token_urlsafe(24)
         current_app.logger.debug(f"Request ID: {g.request_id} - {request.method} {request.path}")
+        if request.path.startswith("/admin"):
+            from .services import security_settings
+            from .services.ip import get_client_ip
+
+            if not security_settings.is_admin_ip_allowed(get_client_ip()):
+                return json_response({"error": "Admin IP not allowed"}, 403)
 
     @app.context_processor
     def inject_security_template_state():
@@ -175,7 +179,14 @@ def create_app(config_class=Config):
         if app.config.get("HSTS_ENABLED", False) and request.is_secure:
             response.headers["Strict-Transport-Security"] = _build_hsts_header(app.config)
 
+        from .services import security_settings
+
+        security_settings.apply_cors_headers(response, request.headers.get("Origin"))
         return response
+
+    # Register Flask-CORS after our after_request hook so runtime settings can
+    # make the final header decision for custom CORS policies.
+    CORS(app, origins=cors_origins, supports_credentials=cors_credentials)
 
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)

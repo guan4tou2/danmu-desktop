@@ -1,10 +1,12 @@
 """Admin metrics endpoint for performance monitoring."""
 
 import time
+from pathlib import Path
 
-from flask import current_app
+from flask import current_app, request
 
-from ...services import telemetry, ws_queue, ws_state
+from ...services import api_tokens, security_settings, telemetry, ws_queue, ws_state
+from ...services.plugin_manager import plugin_manager
 from ...services.poll import poll_service
 from ...services.security import (
     get_rate_limit_bucket_history,
@@ -12,6 +14,7 @@ from ...services.security import (
     get_rate_limit_suggestion,
     recent_violations,
 )
+from ...services.webhook import webhook_service
 from ...services.widgets import list_widgets
 from . import _json_response, admin_bp, rate_limit, require_login
 
@@ -29,6 +32,79 @@ _RATE_DEFAULTS = {
     "admin": ("ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW", 60, 60),
     "login": ("LOGIN_RATE_LIMIT", "LOGIN_RATE_WINDOW", 5, 300),
 }
+
+
+def _format_bytes(n: int) -> str:
+    units = ("B", "KB", "MB", "GB")
+    value = float(max(0, n))
+    for unit in units:
+        if value < 1024 or unit == units[-1]:
+            if unit == "B":
+                return f"{int(value)} {unit}"
+            return f"{value:.1f} {unit}"
+        value /= 1024
+    return f"{n} B"
+
+
+def _directory_bytes(paths) -> int:
+    total = 0
+    seen = set()
+    for raw in paths:
+        path = Path(raw)
+        try:
+            resolved = path.resolve()
+        except OSError:
+            continue
+        if resolved in seen or not resolved.exists():
+            continue
+        seen.add(resolved)
+        if resolved.is_file():
+            try:
+                total += resolved.stat().st_size
+            except OSError:
+                pass
+            continue
+        for fp in resolved.rglob("*"):
+            if not fp.is_file():
+                continue
+            if fp.name.startswith(".") or fp.name.endswith(".tmp"):
+                continue
+            try:
+                total += fp.stat().st_size
+            except OSError:
+                continue
+    return total
+
+
+def _system_counts() -> dict:
+    server_root = Path(current_app.root_path)
+    disk_bytes = _directory_bytes(
+        [
+            server_root / "runtime",
+            server_root / "effects",
+            current_app.config.get("PLUGINS_DIR", server_root / "plugins"),
+            server_root / "user_plugins",
+        ]
+    )
+    try:
+        plugins_loaded = len(plugin_manager.list_plugins())
+    except Exception:
+        plugins_loaded = 0
+    try:
+        webhooks_count = len(webhook_service.list_hooks())
+    except Exception:
+        webhooks_count = 0
+    try:
+        tokens_count = len(api_tokens.list_tokens())
+    except Exception:
+        tokens_count = 0
+    return {
+        "disk_usage_bytes": disk_bytes,
+        "disk_usage": _format_bytes(disk_bytes),
+        "plugins_loaded": plugins_loaded,
+        "webhooks_count": webhooks_count,
+        "tokens_count": tokens_count,
+    }
 
 
 def _attach_suggestions(rate_stats: dict) -> dict:
@@ -63,6 +139,7 @@ def get_metrics():
     state = ws_state.read_state()
     queue_len = len(ws_queue._queue)
     series = telemetry.get_series()
+    system_counts = _system_counts()
 
     # 2026-05-19 (PR review): expose live rate-limit *config* alongside
     # the counter snapshot so the viewer Limits tab + the ratelimit page
@@ -92,6 +169,8 @@ def get_metrics():
             "rate_limits": _attach_suggestions(get_rate_limit_stats()),
             "rate_limit_config": rl_config,
             "recent_violations": recent_violations(30),
+            "security": security_settings.summary(current_app.config, request),
+            **system_counts,
             **series,
         }
     )

@@ -113,6 +113,16 @@ def revoke_token(token_id: str) -> bool:
     return True
 
 
+def revoke_all_tokens() -> int:
+    """Delete every API token and return the number revoked."""
+    with _LOCK:
+        tokens = _load()
+        count = len(tokens)
+        if count:
+            _save([])
+        return count
+
+
 def update_token(token_id: str, updates: Dict) -> Optional[Dict]:
     allowed = {"label", "scopes", "enabled"}
     with _LOCK:
