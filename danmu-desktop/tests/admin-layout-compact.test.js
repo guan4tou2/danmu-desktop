@@ -212,6 +212,33 @@ test("admin Webhooks uses the implemented toggle endpoint instead of BE placehol
   expect(webhooksSrc).not.toContain("BE 尚未支援此 event");
 });
 
+test("admin Webhooks composes shared admin-ui controls instead of page-local chrome", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const webhooksSrc = fs.readFileSync(path.join(staticDir, "js", "admin-webhooks.js"), "utf8");
+  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+
+  expect(webhooksSrc).toContain('class="admin-ui-section-head admin-wh-section-head"');
+  expect(webhooksSrc).toContain('class="admin-ui-action is-primary admin-wh-add-btn"');
+  expect(webhooksSrc).toContain('class="admin-ui-chip-group admin-wh-log-filters"');
+  expect(webhooksSrc).toContain('class="admin-ui-chip admin-wh-log-filter is-active"');
+  expect(webhooksSrc).toContain('class="admin-ui-list-stack admin-wh-list"');
+  expect(webhooksSrc).toContain('class="admin-ui-list-stack is-tight admin-wh-log-list"');
+  expect(webhooksSrc).not.toContain('class="chip');
+
+  expect(hudSrc).toContain(".admin-ui-section-head {");
+  expect(hudSrc).toContain(".admin-ui-action.is-primary {");
+  expect(hudSrc).toContain(".admin-ui-list-stack {");
+  expect(hudSrc).toContain(".admin-ui-list-stack.is-tight {");
+
+  expect(cssSrc).not.toContain(".admin-wh-section-head {");
+  expect(cssSrc).not.toContain(".admin-wh-add-btn {");
+  expect(cssSrc).not.toContain(".admin-wh-log-filters .chip");
+  expect(cssSrc).not.toContain(".admin-wh-list {");
+  expect(cssSrc).not.toContain(".admin-wh-log-list {");
+});
+
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
@@ -221,6 +248,19 @@ test("admin router hides empty route containers so leaf pages do not keep vertic
   expect(adminSrc).toContain('container.id === "sec-advanced"');
   expect(adminSrc).toContain('container.style.display = hasWanted ? "" : "none";');
   expect(adminSrc).toContain("syncRouteContainerVisibility();");
+});
+
+test("admin router re-applies route visibility for late-injected sections without rAF only", () => {
+  const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
+  const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
+
+  expect(adminSrc).toContain("function scheduleRouteVisibilitySync()");
+  expect(adminSrc).toContain('typeof requestAnimationFrame === "function"');
+  expect(adminSrc).toContain('document.visibilityState !== "hidden"');
+  expect(adminSrc).toContain("setTimeout(run, 0);");
+  expect(adminSrc).toContain("scheduleRouteVisibilitySync();");
+  expect(adminSrc).toContain("mo.observe(main, { childList: true, subtree: true });\n      scheduleRouteVisibilitySync();");
+  expect(adminSrc).not.toContain("requestAnimationFrame(() => {\n          scheduled = false;\n          applySectionVisibility();\n        });");
 });
 
 test("admin Audit uses shared admin-ui primitives for the v5 compact surface", () => {

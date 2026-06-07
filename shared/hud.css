@@ -449,6 +449,15 @@
   border-radius: 6px;
 }
 
+.admin-ui-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+  margin-bottom: 10px;
+}
+
 .admin-ui-chip-group {
   display: flex;
   align-items: center;
@@ -521,10 +530,27 @@
   transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
 }
 
+.admin-ui-action.is-primary {
+  border-color: rgba(56, 189, 248, 0.45);
+  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.08));
+  color: var(--color-primary, var(--hud-cyan, #38bdf8));
+}
+
 .admin-ui-action:hover {
   border-color: rgba(56, 189, 248, 0.45);
   background: rgba(56, 189, 248, 0.06);
   color: var(--hud-cyan, #38bdf8);
+}
+
+.admin-ui-list-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.admin-ui-list-stack.is-tight {
+  gap: 0;
 }
 
 .admin-ui-scroll-list {

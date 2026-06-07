@@ -1739,21 +1739,31 @@ document.addEventListener("DOMContentLoaded", () => {
     // Expose for i18n: re-apply route title/kicker on language change
     window._adminNavigateTo = () => applyRoute(currentRoute, _activeTab);
 
+    let routeVisibilitySyncScheduled = false;
+    function scheduleRouteVisibilitySync() {
+      if (routeVisibilitySyncScheduled) return;
+      routeVisibilitySyncScheduled = true;
+      const run = () => {
+        routeVisibilitySyncScheduled = false;
+        applySectionVisibility();
+      };
+      if (typeof requestAnimationFrame === "function" && document.visibilityState !== "hidden") {
+        requestAnimationFrame(run);
+      } else {
+        setTimeout(run, 0);
+      }
+    }
+
     // Late-injected sections (admin-sounds.js, admin-emojis.js, etc. inject
     // after scheduleIdleTask). Watch the main area for new [id^="sec-"]
     // elements and re-apply visibility when they arrive.
     const main = shell.querySelector(".admin-dash-main");
     if (main && typeof MutationObserver === "function") {
-      let scheduled = false;
       const mo = new MutationObserver(() => {
-        if (scheduled) return;
-        scheduled = true;
-        requestAnimationFrame(() => {
-          scheduled = false;
-          applySectionVisibility();
-        });
+        scheduleRouteVisibilitySync();
       });
       mo.observe(main, { childList: true, subtree: true });
+      scheduleRouteVisibilitySync();
     }
   }
 

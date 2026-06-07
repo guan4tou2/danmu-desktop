@@ -11554,27 +11554,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   margin-top: 4px;
 }
 
-/* Section heads (endpoint card + log card) */
-.admin-wh-section-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-.admin-wh-section-head .admin-wh-add-btn,
-.admin-wh-section-head .admin-wh-log-filters { margin-left: auto; }
-.admin-wh-add-btn {
-  padding: 6px 12px;
-  background: var(--hud-cyan-soft);
-  color: var(--color-primary);
-  border: 1px solid rgba(56, 189, 248, 0.45);
-  border-radius: 3px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  cursor: pointer;
-}
-.admin-wh-add-btn:hover { background: rgba(56, 189, 248, 0.16); }
-
 /* Add form */
 .admin-wh-add-form {
   border: 1px dashed var(--hud-line);
@@ -11611,12 +11590,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   gap: 8px;
 }
 
-/* Endpoints list */
-.admin-wh-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
 .admin-wh-card {
   padding: 12px;
   background: var(--color-bg);
@@ -11758,25 +11731,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   border-color: rgba(56, 189, 248, 0.45);
 }
 
-/* Delivery log */
-.admin-wh-log-filters .chip {
-  padding: 4px 10px;
-  background: transparent;
-  border: 1px solid var(--hud-line);
-  border-radius: 2px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.4px;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  margin-left: 4px;
-}
-.admin-wh-log-filters .chip.is-active {
-  background: var(--hud-cyan-soft);
-  color: var(--color-primary);
-  border-color: rgba(56, 189, 248, 0.45);
-}
-.admin-wh-log-list { display: flex; flex-direction: column; }
 .admin-wh-log-row {
   display: grid;
   grid-template-columns: 70px 60px 70px 1.4fr 1.6fr 60px;

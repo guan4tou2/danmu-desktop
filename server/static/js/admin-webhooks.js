@@ -103,9 +103,10 @@
 
             <!-- Endpoints list -->
             <div class="admin-v2-card admin-wh-endpoints-card">
-              <div class="admin-wh-section-head">
+              <div class="admin-ui-section-head admin-wh-section-head">
                 <span class="admin-v2-monolabel">ENDPOINTS · <span data-wh-count>0</span> 個</span>
-                <button type="button" class="admin-wh-add-btn" data-wh-action="show-add">＋ 新增 endpoint</button>
+                <span class="admin-ui-spacer" aria-hidden="true"></span>
+                <button type="button" class="admin-ui-action is-primary admin-wh-add-btn" data-wh-action="show-add">＋ 新增 endpoint</button>
               </div>
 
               <!-- Inline add form (shown when "+ 新增 endpoint" pressed) -->
@@ -138,27 +139,28 @@
                 </div>
               </form>
 
-              <div id="wh-list" class="admin-wh-list">
+              <div id="wh-list" class="admin-ui-list-stack admin-wh-list">
                 <div class="admin-wh-empty">載入中…</div>
               </div>
             </div>
 
             <!-- Delivery log table -->
             <div class="admin-v2-card admin-wh-log-card">
-              <div class="admin-wh-section-head">
+              <div class="admin-ui-section-head admin-wh-section-head">
                 <span class="admin-v2-monolabel">DELIVERY LOG · 即時</span>
-                <span class="admin-wh-log-filters" data-wh-log-filters>
-                  <button type="button" class="chip is-active" data-wh-log-filter="all">全部</button>
-                  <button type="button" class="chip" data-wh-log-filter="failed">失敗</button>
-                  <button type="button" class="chip" data-wh-log-filter="2xx">2xx</button>
-                  <button type="button" class="chip" data-wh-log-filter="5xx">5xx</button>
+                <span class="admin-ui-spacer" aria-hidden="true"></span>
+                <span class="admin-ui-chip-group admin-wh-log-filters" data-wh-log-filters>
+                  <button type="button" class="admin-ui-chip admin-wh-log-filter is-active" data-wh-log-filter="all">全部</button>
+                  <button type="button" class="admin-ui-chip admin-wh-log-filter" data-wh-log-filter="failed">失敗</button>
+                  <button type="button" class="admin-ui-chip admin-wh-log-filter" data-wh-log-filter="2xx">2xx</button>
+                  <button type="button" class="admin-ui-chip admin-wh-log-filter" data-wh-log-filter="5xx">5xx</button>
                 </span>
               </div>
               <div class="admin-wh-log-row admin-wh-log-row--head">
                 <span>TIME</span><span>CODE</span><span>DUR</span>
                 <span>ENDPOINT</span><span>EVENT</span><span>RETRY</span>
               </div>
-              <div id="wh-log-list" class="admin-wh-log-list">
+              <div id="wh-log-list" class="admin-ui-list-stack is-tight admin-wh-log-list">
                 <div class="admin-wh-empty">載入中…</div>
               </div>
             </div>
