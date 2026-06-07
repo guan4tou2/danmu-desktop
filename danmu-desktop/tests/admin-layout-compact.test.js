@@ -288,6 +288,47 @@ test("admin Audit uses shared admin-ui primitives for the v5 compact surface", (
   expect(cssSrc).not.toContain(".admin-audit-timeline-row {");
 });
 
+test("admin API Tokens composes shared controls instead of page-local widgets", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const tokensSrc = fs.readFileSync(path.join(staticDir, "js", "admin-api-tokens.js"), "utf8");
+  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+
+  expect(tokensSrc).toContain('class="admin-v2-input admin-at-input"');
+  expect(tokensSrc).toContain('class="admin-v2-input admin-at-token-raw"');
+  expect(tokensSrc).toContain('class="admin-ui-action admin-at-copy-btn"');
+  expect(tokensSrc).toContain('class="admin-ui-action is-primary is-block admin-at-submit-btn"');
+  expect(tokensSrc).toContain('class="admin-ui-action admin-at-row-btn"');
+  expect(tokensSrc).toContain('class="admin-ui-action is-danger admin-at-row-btn"');
+  expect(tokensSrc).toContain('class="admin-ui-option-row admin-at-scope-row"');
+  expect(tokensSrc).toContain('class="admin-ui-checkbox admin-at-scope-cb"');
+  expect(tokensSrc).toContain('class="admin-ui-choice admin-at-expiry-btn"');
+  expect(tokensSrc).toContain('class="admin-ui-notice is-warn admin-at-once-note"');
+  expect(tokensSrc).toContain('class="admin-ui-notice is-danger admin-at-form-error"');
+  expect(tokensSrc).toContain("admin-ui-pill admin-at-scope-badge");
+  expect(tokensSrc).toContain("admin-ui-pill admin-at-badge");
+
+  expect(hudSrc).toContain(".admin-ui-action.is-danger {");
+  expect(hudSrc).toContain(".admin-ui-action.is-block {");
+  expect(hudSrc).toContain(".admin-ui-option-row {");
+  expect(hudSrc).toContain(".admin-ui-choice > span {");
+  expect(hudSrc).toContain(".admin-ui-notice {");
+  expect(hudSrc).toContain(".admin-ui-pill.is-success");
+  expect(hudSrc).toContain(".admin-ui-toolbar > .admin-ui-action");
+  expect(hudSrc).not.toContain("  .admin-ui-chip-group,\n  .admin-ui-action {\n    width: 100%;");
+
+  expect(cssSrc).not.toContain(".admin-at-row-btn {");
+  expect(cssSrc).not.toContain(".admin-at-copy-btn {");
+  expect(cssSrc).not.toContain(".admin-at-submit-btn {");
+  expect(cssSrc).not.toContain(".admin-at-input,");
+  expect(cssSrc).not.toContain(".admin-at-scope-badge,");
+  expect(cssSrc).not.toContain(".admin-at-scope-row {");
+  expect(cssSrc).not.toContain(".admin-at-scope-cb {");
+  expect(cssSrc).not.toContain(".admin-at-expiry-btn > span");
+  expect(cssSrc).not.toContain(".admin-at-once-note,");
+});
+
 test("admin Backup exposes implemented history export formats", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const backupSrc = fs.readFileSync(path.join(staticDir, "admin-backup.js"), "utf8");

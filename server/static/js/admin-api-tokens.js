@@ -99,23 +99,23 @@
   }
 
   function _scopeBadgeHtml(scopes) {
-    if (!scopes || !scopes.length) return '<span class="admin-at-scope-badge admin-at-scope-badge--dim">—</span>';
+    if (!scopes || !scopes.length) return '<span class="admin-ui-pill admin-at-scope-badge is-muted">—</span>';
     return scopes.map(function (s) {
-      let cls = "admin-at-scope-badge";
-      if (s === "admin:*") cls += " is-red";
-      else if (s.startsWith("fire:")) cls += " is-amber";
+      let cls = "admin-ui-pill admin-at-scope-badge";
+      if (s === "admin:*") cls += " is-danger";
+      else if (s.startsWith("fire:")) cls += " is-warn";
       else if (s.startsWith("read:stats")) cls += " is-cyan";
-      else cls += " is-lime";
+      else cls += " is-success";
       return `<span class="${cls}">${escapeHtml(s)}</span>`;
     }).join(" ");
   }
 
   function _statusDotHtml(status) {
-    let cls = "admin-at-dot";
-    if (status === "active") cls += " is-green";
-    else if (status === "expiring") cls += " is-amber";
-    else if (status === "expired") cls += " is-red";
-    else cls += " is-dim";
+    let cls = "admin-ui-dot admin-at-dot";
+    if (status === "active") cls += " is-success";
+    else if (status === "expiring") cls += " is-warn";
+    else if (status === "expired") cls += " is-danger";
+    else cls += " is-muted";
     return `<span class="${cls}" aria-hidden="true"></span>`;
   }
 
@@ -126,13 +126,17 @@
       const warnHtml = sc.id === "admin:*"
         ? `<span class="admin-at-scope-warn" id="adminAtAdminWarn" hidden>⚠ 高風險：擁有全部後台能力</span>`
         : "";
-      const badgeClass = `admin-at-scope-badge is-${sc.badge}`;
+      const badgeTone = sc.badge === "red" ? "danger"
+        : sc.badge === "amber" ? "warn"
+          : sc.badge === "green" ? "success"
+            : sc.badge;
+      const badgeClass = `admin-ui-pill admin-at-scope-badge is-${badgeTone}`;
       return `
-        <label class="admin-at-scope-row" for="adminAtScope_${sc.id.replace(/[^a-z0-9]/g, "_")}">
+        <label class="admin-ui-option-row admin-at-scope-row" for="adminAtScope_${sc.id.replace(/[^a-z0-9]/g, "_")}">
           <input
             type="checkbox"
             id="adminAtScope_${sc.id.replace(/[^a-z0-9]/g, "_")}"
-            class="admin-at-scope-cb"
+            class="admin-ui-checkbox admin-at-scope-cb"
             value="${escapeHtml(sc.id)}"
           >
           <span class="${badgeClass}">${escapeHtml(sc.badgeTxt)}</span>
@@ -146,7 +150,7 @@
       const checked = opt.default ? "checked" : "";
       const val = opt.days !== null ? String(opt.days) : "null";
       return `
-        <label class="admin-at-expiry-btn">
+        <label class="admin-ui-choice admin-at-expiry-btn">
           <input type="radio" name="adminAtExpiry" value="${val}" ${checked} class="sr-only">
           <span>${escapeHtml(opt.label)}</span>
         </label>
@@ -212,11 +216,11 @@
                   <input
                     type="text"
                     id="adminAtTokenDisplay"
-                    class="admin-at-token-raw"
+                    class="admin-v2-input admin-at-token-raw"
                     readonly
                     aria-label="產生的 Token"
                   >
-                  <button type="button" class="admin-at-copy-btn" id="adminAtCopyBtn" data-at-action="copy-token">
+                  <button type="button" class="admin-ui-action admin-at-copy-btn" id="adminAtCopyBtn" data-at-action="copy-token">
                     📋 複製
                   </button>
                 </div>
@@ -231,7 +235,7 @@
                     type="text"
                     id="adminAtLabel"
                     name="label"
-                    class="admin-at-input"
+                    class="admin-v2-input admin-at-input"
                     placeholder="e.g. OBS Widget · ci-bot · SlideSync"
                     maxlength="80"
                     required
@@ -256,15 +260,15 @@
                 </div>
 
                 <!-- Warning note -->
-                <p class="admin-at-once-note">
+                <p class="admin-ui-notice is-warn admin-at-once-note">
                   ⚠ Token 僅在產生後顯示一次，請立即複製保存。
                 </p>
 
                 <!-- Form error -->
-                <div class="admin-at-form-error" id="adminAtFormError" hidden></div>
+                <div class="admin-ui-notice is-danger admin-at-form-error" id="adminAtFormError" hidden></div>
 
                 <!-- Submit -->
-                <button type="submit" class="admin-at-submit-btn" id="adminAtSubmitBtn">
+                <button type="submit" class="admin-ui-action is-primary is-block admin-at-submit-btn" id="adminAtSubmitBtn">
                   ⚿ 產生 Token
                 </button>
               </form>
@@ -393,9 +397,9 @@
       const scopes = tok.scopes || tok.scope || [];
       const scopeArr = Array.isArray(scopes) ? scopes : String(scopes).split(",").map((s) => s.trim()).filter(Boolean);
       const daysSince = _daysSinceUsed(tok.last_used_at);
-      const unusedWarn = daysSince >= 90 ? '<span class="admin-at-badge admin-at-badge--amber">⚠ 90天未使用</span>' : "";
-      const expiredBadge = status === "expired" ? '<span class="admin-at-badge admin-at-badge--red">已過期</span>' : "";
-      const expiringBadge = status === "expiring" ? '<span class="admin-at-badge admin-at-badge--amber">即將過期</span>' : "";
+      const unusedWarn = daysSince >= 90 ? '<span class="admin-ui-pill admin-at-badge is-warn">⚠ 90天未使用</span>' : "";
+      const expiredBadge = status === "expired" ? '<span class="admin-ui-pill admin-at-badge is-danger">已過期</span>' : "";
+      const expiringBadge = status === "expiring" ? '<span class="admin-ui-pill admin-at-badge is-warn">即將過期</span>' : "";
       const lastUsedStr = tok.last_used_at
         ? `${_fmtDateTime(tok.last_used_at) || _fmtDate(tok.last_used_at)}<br><span class="admin-at-ip">${escapeHtml(tok.last_used_ip || "")}</span>`
         : "從未使用";
@@ -417,7 +421,7 @@
           <td class="admin-at-td-actions">
             <button
               type="button"
-              class="admin-at-row-btn"
+              class="admin-ui-action admin-at-row-btn"
               data-at-action="toggle"
               data-token-id="${escapeHtml(tok.id || tok.token_id || "")}"
               data-token-enabled="${tok.enabled === false ? "0" : "1"}"
@@ -425,7 +429,7 @@
             >${tok.enabled === false ? "啟用" : "停用"}</button>
             <button
               type="button"
-              class="admin-at-row-btn is-danger"
+              class="admin-ui-action is-danger admin-at-row-btn"
               data-at-action="revoke"
               data-token-id="${escapeHtml(tok.id || tok.token_id || "")}"
               data-token-label="${escapeHtml(tok.label || tok.name || "")}"

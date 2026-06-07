@@ -143,6 +143,7 @@ test("admin light inputs have a dark strong text token", () => {
 test("API Tokens admin page has production CSS for its generated surface", () => {
   const apiTokensJs = fs.readFileSync(path.join(REPO_ROOT, "server/static/js/admin-api-tokens.js"), "utf8");
   const adminCss = fs.readFileSync(path.join(REPO_ROOT, "server/static/css/style.css"), "utf8");
+  const hudCss = fs.readFileSync(path.join(REPO_ROOT, "shared/hud.css"), "utf8");
 
   [
     "admin-at-page",
@@ -150,13 +151,28 @@ test("API Tokens admin page has production CSS for its generated surface", () =>
     "admin-at-main",
     "admin-at-rail",
     "admin-at-table",
-    "admin-at-scope-badge",
     "admin-at-success-banner",
-    "admin-at-submit-btn",
   ].forEach((className) => {
     expect(apiTokensJs).toContain(className);
     expect(adminCss).toContain(`.${className}`);
   });
+
+  [
+    "admin-ui-pill admin-at-scope-badge",
+    "admin-ui-pill admin-at-badge",
+    "admin-v2-input admin-at-input",
+    "admin-ui-action is-primary is-block admin-at-submit-btn",
+    "admin-ui-notice is-warn admin-at-once-note",
+  ].forEach((className) => {
+    expect(apiTokensJs).toContain(className);
+  });
+
+  expect(hudCss).toContain(".admin-ui-action.is-block");
+  expect(hudCss).toContain(".admin-ui-option-row");
+  expect(hudCss).toContain(".admin-ui-choice > span");
+  expect(hudCss).toContain(".admin-ui-notice");
+  expect(adminCss).not.toContain(".admin-at-submit-btn {");
+  expect(adminCss).not.toContain(".admin-at-scope-badge,");
 });
 
 test("viewer offline send gate uses Desktop copy and red button state", () => {

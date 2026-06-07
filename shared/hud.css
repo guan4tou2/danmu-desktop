@@ -518,6 +518,8 @@
 }
 
 .admin-ui-action {
+  display: inline-flex;
+  align-items: center;
   padding: 6px 10px;
   background: transparent;
   border: 1px solid var(--admin-line);
@@ -536,10 +538,33 @@
   color: var(--color-primary, var(--hud-cyan, #38bdf8));
 }
 
+.admin-ui-action.is-danger {
+  border-color: rgba(248, 113, 113, 0.45);
+  background: rgba(248, 113, 113, 0.06);
+  color: var(--hud-crimson, #f87171);
+}
+
+.admin-ui-action.is-block {
+  width: 100%;
+  min-height: 40px;
+  justify-content: center;
+}
+
 .admin-ui-action:hover {
   border-color: rgba(56, 189, 248, 0.45);
   background: rgba(56, 189, 248, 0.06);
   color: var(--hud-cyan, #38bdf8);
+}
+
+.admin-ui-action.is-danger:hover {
+  border-color: rgba(248, 113, 113, 0.60);
+  background: rgba(248, 113, 113, 0.10);
+  color: var(--hud-crimson, #f87171);
+}
+
+.admin-ui-action:disabled {
+  opacity: 0.55;
+  cursor: progress;
 }
 
 .admin-ui-list-stack {
@@ -601,6 +626,26 @@
   border-radius: 50%;
 }
 
+.admin-ui-dot.is-success {
+  background: var(--hud-lime, #86efac);
+  box-shadow: 0 0 8px rgba(134, 239, 172, 0.45);
+}
+
+.admin-ui-dot.is-warn {
+  background: var(--hud-amber, #fbbf24);
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.45);
+}
+
+.admin-ui-dot.is-danger {
+  background: var(--hud-crimson, #f87171);
+  box-shadow: 0 0 8px rgba(248, 113, 113, 0.45);
+}
+
+.admin-ui-dot.is-muted {
+  background: var(--admin-text-dim);
+  opacity: 0.55;
+}
+
 .admin-ui-row-body {
   min-width: 0;
   display: flex;
@@ -644,6 +689,111 @@
   border-color: rgba(251, 191, 36, 0.35);
   background: rgba(251, 191, 36, 0.07);
   color: var(--hud-amber, #fbbf24);
+}
+
+.admin-ui-pill.is-success,
+.admin-ui-pill.is-lime,
+.admin-ui-pill.is-green {
+  border-color: rgba(134, 239, 172, 0.38);
+  background: rgba(134, 239, 172, 0.10);
+  color: var(--hud-lime, #86efac);
+}
+
+.admin-ui-pill.is-danger,
+.admin-ui-pill.is-red {
+  border-color: rgba(248, 113, 113, 0.42);
+  background: rgba(248, 113, 113, 0.10);
+  color: var(--hud-crimson, #f87171);
+}
+
+.admin-ui-pill.is-muted {
+  border-color: var(--admin-line);
+  background: var(--admin-raised);
+  color: var(--admin-text-dim);
+}
+
+.admin-ui-option-row {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 8px 9px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: var(--admin-raised);
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.admin-ui-option-row:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.06);
+}
+
+.admin-ui-checkbox {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--hud-cyan, var(--color-primary));
+}
+
+.admin-ui-checkbox:checked + .admin-ui-pill {
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.10);
+}
+
+.admin-ui-choice {
+  min-width: 0;
+}
+
+.admin-ui-choice > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--admin-line);
+  border-radius: 4px;
+  background: var(--admin-raised);
+  color: var(--admin-text-dim);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+  white-space: nowrap;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.admin-ui-choice:hover > span,
+.admin-ui-choice.is-active > span,
+.admin-ui-choice:has(input:checked) > span {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--hud-cyan, var(--color-primary));
+}
+
+.admin-ui-notice {
+  margin: 0;
+  padding: 9px 10px;
+  border-radius: 5px;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.admin-ui-notice.is-warn {
+  border: 1px solid rgba(251, 191, 36, 0.38);
+  background: rgba(251, 191, 36, 0.10);
+  color: var(--hud-amber, #fbbf24);
+}
+
+.admin-ui-notice.is-danger {
+  border: 1px solid rgba(248, 113, 113, 0.42);
+  background: rgba(248, 113, 113, 0.10);
+  color: var(--hud-crimson, #f87171);
+}
+
+.admin-ui-notice.is-success {
+  border: 1px solid rgba(134, 239, 172, 0.42);
+  background: rgba(134, 239, 172, 0.10);
+  color: var(--hud-lime, #86efac);
 }
 
 .admin-ui-row-action {
@@ -696,8 +846,8 @@
     align-items: stretch;
   }
 
-  .admin-ui-chip-group,
-  .admin-ui-action {
+  .admin-ui-toolbar > .admin-ui-chip-group,
+  .admin-ui-toolbar > .admin-ui-action {
     width: 100%;
   }
 
