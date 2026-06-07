@@ -43,33 +43,33 @@
           <p class="admin-v2-note">跨重啟保留的事件紀錄，存在 <code>server/runtime/audit.log</code>。v5 Yellow 以 timeline 呈現最近管理與系統動作。</p>
         </div>
 
-        <div class="admin-audit-toolbar-v5">
-          <div class="admin-audit-chip-group" data-audit-actor-group>
-            <button type="button" class="admin-audit-filter-chip is-active" data-audit-actor-filter="all">全部</button>
-            <button type="button" class="admin-audit-filter-chip" data-audit-actor-filter="admin">admin</button>
-            <button type="button" class="admin-audit-filter-chip" data-audit-actor-filter="system">system</button>
+        <div class="admin-ui-toolbar admin-audit-toolbar-v5">
+          <div class="admin-ui-chip-group admin-audit-chip-group" data-audit-actor-group>
+            <button type="button" class="admin-ui-chip admin-audit-filter-chip is-active" data-audit-actor-filter="all">全部</button>
+            <button type="button" class="admin-ui-chip admin-audit-filter-chip" data-audit-actor-filter="admin">admin</button>
+            <button type="button" class="admin-ui-chip admin-audit-filter-chip" data-audit-actor-filter="system">system</button>
           </div>
-          <div class="admin-audit-chip-group" data-audit-severity-group>
-            <button type="button" class="admin-audit-filter-chip" data-severity="info" data-audit-severity-filter="info">INFO</button>
-            <button type="button" class="admin-audit-filter-chip" data-severity="warn" data-audit-severity-filter="warn">WARN</button>
-            <button type="button" class="admin-audit-filter-chip" data-severity="danger" data-audit-severity-filter="danger">DANGER</button>
+          <div class="admin-ui-chip-group admin-audit-chip-group" data-audit-severity-group>
+            <button type="button" class="admin-ui-chip admin-audit-filter-chip" data-severity="info" data-audit-severity-filter="info">INFO</button>
+            <button type="button" class="admin-ui-chip admin-audit-filter-chip" data-severity="warn" data-audit-severity-filter="warn">WARN</button>
+            <button type="button" class="admin-ui-chip admin-audit-filter-chip" data-severity="danger" data-audit-severity-filter="danger">DANGER</button>
           </div>
-          <span class="admin-audit-toolbar-spacer"></span>
-          <span class="admin-audit-summary" data-audit-summary>讀取中…</span>
-          <button type="button" class="admin-audit-action" data-audit-export>↓ 匯出</button>
-          <button type="button" class="admin-audit-action" data-audit-refresh>↻ 重新整理</button>
+          <span class="admin-ui-spacer admin-audit-toolbar-spacer"></span>
+          <span class="admin-ui-summary admin-audit-summary" data-audit-summary>讀取中…</span>
+          <button type="button" class="admin-ui-action admin-audit-action" data-audit-export>↓ 匯出</button>
+          <button type="button" class="admin-ui-action admin-audit-action" data-audit-refresh>↻ 重新整理</button>
         </div>
 
-        <div class="admin-audit-timeline" data-audit-rows>
+        <div class="admin-ui-scroll-list admin-ui-timeline admin-audit-timeline" data-audit-rows>
           ${Array.from({ length: 5 }).map(function () {
             return `
-              <div class="admin-audit-timeline-row admin-audit-timeline-row--skeleton" aria-hidden="true">
-                <div class="admin-audit-cell-stamp">
+              <div class="admin-ui-timeline-row admin-audit-timeline-row admin-audit-timeline-row--skeleton is-skeleton" aria-hidden="true">
+                <div class="admin-ui-stamp admin-audit-cell-stamp">
                   <span class="admin-skel admin-skel-bar" style="width:42px;height:9px"></span>
                   <span class="admin-skel admin-skel-bar" style="width:7px;height:7px;border-radius:50%"></span>
                 </div>
-                <div class="admin-audit-cell-body">
-                  <div class="admin-audit-row-head">
+                <div class="admin-ui-row-body admin-audit-cell-body">
+                  <div class="admin-ui-row-head admin-audit-row-head">
                     <span class="admin-skel admin-skel-bar" style="width:46px;height:10px"></span>
                     <span class="admin-skel admin-skel-bar" style="width:120px;height:10px"></span>
                     <span class="admin-skel admin-skel-bar" style="width:90px;height:10px"></span>
@@ -153,7 +153,7 @@
     });
     const metaKeys = Object.keys(compactMeta);
     if (metaKeys.length) {
-      detailParts.push(`<code class="admin-audit-meta-extra">${escapeHtml(JSON.stringify(compactMeta))}</code>`);
+      detailParts.push(`<code class="admin-ui-code admin-audit-meta-extra">${escapeHtml(JSON.stringify(compactMeta))}</code>`);
     }
 
     if (!detailParts.length) {
@@ -164,9 +164,9 @@
   }
 
   function _actorPillClass(actor) {
-    return actor === "admin" ? "admin-audit-row-pill is-admin"
-      : actor === "system" ? "admin-audit-row-pill"
-        : "admin-audit-row-pill is-generic";
+    return actor === "admin" ? "admin-ui-pill admin-audit-row-pill is-admin"
+      : actor === "system" ? "admin-ui-pill admin-audit-row-pill"
+        : "admin-ui-pill admin-audit-row-pill is-generic";
   }
 
   function _renderRows() {
@@ -184,18 +184,18 @@
       const actor = String(event.actor || "system");
       const target = _targetOf(event);
       return `
-        <div class="admin-audit-timeline-row" data-severity="${severity}">
-          <div class="admin-audit-cell-stamp">
-            <span class="admin-audit-ts">${escapeHtml(_formatTs(event.ts))}</span>
-            <span class="admin-audit-sev-dot" style="background:${severityColor};box-shadow:0 0 6px ${severityColor}"></span>
+        <div class="admin-ui-timeline-row admin-audit-timeline-row" data-severity="${severity}">
+          <div class="admin-ui-stamp admin-audit-cell-stamp">
+            <span class="admin-ui-time admin-audit-ts">${escapeHtml(_formatTs(event.ts))}</span>
+            <span class="admin-ui-dot admin-audit-sev-dot" style="background:${severityColor};box-shadow:0 0 6px ${severityColor}"></span>
           </div>
-          <div class="admin-audit-cell-body">
-            <div class="admin-audit-row-head">
+          <div class="admin-ui-row-body admin-audit-cell-body">
+            <div class="admin-ui-row-head admin-audit-row-head">
               <span class="${_actorPillClass(actor)}">${escapeHtml(actor)}</span>
-              <span class="admin-audit-event-action">${escapeHtml(String(event.action || event.kind || "—"))}</span>
-              ${target ? `<span class="admin-audit-target">→ ${escapeHtml(String(target))}</span>` : ""}
+              <span class="admin-ui-row-action admin-audit-event-action">${escapeHtml(String(event.action || event.kind || "—"))}</span>
+              ${target ? `<span class="admin-ui-target admin-audit-target">→ ${escapeHtml(String(target))}</span>` : ""}
             </div>
-            <div class="admin-audit-row-detail">${_detailHtml(event)}</div>
+            <div class="admin-ui-row-detail admin-audit-row-detail">${_detailHtml(event)}</div>
           </div>
         </div>`;
     }).join("");

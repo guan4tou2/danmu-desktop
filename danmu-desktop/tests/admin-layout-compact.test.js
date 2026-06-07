@@ -223,18 +223,29 @@ test("admin router hides empty route containers so leaf pages do not keep vertic
   expect(adminSrc).toContain("syncRouteContainerVisibility();");
 });
 
-test("admin Audit timeline selectors stay aligned with the v5 compact surface", () => {
+test("admin Audit uses shared admin-ui primitives for the v5 compact surface", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
   const auditSrc = fs.readFileSync(path.join(staticDir, "js", "admin-audit.js"), "utf8");
+  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
   const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
-  expect(auditSrc).toContain('class="admin-audit-timeline" data-audit-rows');
-  expect(auditSrc).toContain('class="admin-audit-timeline-row"');
-  expect(cssSrc).toContain(".admin-audit-timeline {");
-  expect(cssSrc).toContain("overflow-y: auto;");
-  expect(cssSrc).toContain(".admin-audit-timeline-row {");
-  expect(cssSrc).not.toContain(".admin-audit-row--timeline {");
+  expect(auditSrc).toContain('class="admin-ui-toolbar admin-audit-toolbar-v5"');
+  expect(auditSrc).toContain('class="admin-ui-chip-group admin-audit-chip-group"');
+  expect(auditSrc).toContain('class="admin-ui-chip admin-audit-filter-chip');
+  expect(auditSrc).toContain('class="admin-ui-scroll-list admin-ui-timeline admin-audit-timeline"');
+  expect(auditSrc).toContain('class="admin-ui-timeline-row admin-audit-timeline-row');
+
+  expect(hudSrc).toContain(".admin-ui-toolbar {");
+  expect(hudSrc).toContain(".admin-ui-chip {");
+  expect(hudSrc).toContain(".admin-ui-scroll-list {");
+  expect(hudSrc).toContain(".admin-ui-timeline-row {");
+  expect(hudSrc).toContain("overflow-y: auto;");
+
+  expect(cssSrc).not.toContain(".admin-audit-toolbar-v5 {");
+  expect(cssSrc).not.toContain(".admin-audit-filter-chip {");
+  expect(cssSrc).not.toContain(".admin-audit-timeline {");
+  expect(cssSrc).not.toContain(".admin-audit-timeline-row {");
 });
 
 test("admin Backup exposes implemented history export formats", () => {

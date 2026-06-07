@@ -434,6 +434,258 @@
 .admin-v2-dot.is-bad  { background: #f87171; box-shadow: 0 0 6px rgba(248, 113, 113, 0.5); }
 
 /* ──────────────────────────────────────────────────────────────────────────
+ * Admin UI primitives — route pages compose these before adding page hooks.
+ * Keep repeated toolbar / chip / scroll-list treatments here instead of
+ * re-declaring them per page in style.css.
+ * ────────────────────────────────────────────────────────────────────────── */
+.admin-ui-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 12px;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+}
+
+.admin-ui-chip-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.admin-ui-chip {
+  padding: 5px 9px;
+  border-radius: 3px;
+  border: 1px solid var(--admin-line);
+  background: transparent;
+  color: var(--admin-text-dim);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+}
+
+.admin-ui-chip:hover {
+  border-color: var(--hud-line-strong, rgba(148, 163, 184, 0.35));
+  color: var(--admin-text);
+}
+
+.admin-ui-chip.is-active,
+.admin-ui-chip.is-cyan {
+  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.08);
+  color: var(--hud-cyan, #38bdf8);
+}
+
+.admin-ui-chip.is-warn,
+.admin-ui-chip[data-severity="warn"].is-active {
+  border-color: rgba(251, 191, 36, 0.45);
+  background: rgba(251, 191, 36, 0.08);
+  color: var(--hud-amber, #fbbf24);
+}
+
+.admin-ui-chip.is-danger,
+.admin-ui-chip[data-severity="danger"].is-active {
+  border-color: rgba(248, 113, 113, 0.45);
+  background: rgba(248, 113, 113, 0.08);
+  color: var(--hud-crimson, #f87171);
+}
+
+.admin-ui-spacer {
+  flex: 1 1 auto;
+  min-width: 12px;
+}
+
+.admin-ui-summary {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: var(--admin-text-dim);
+}
+
+.admin-ui-action {
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid var(--admin-line);
+  border-radius: 3px;
+  color: var(--admin-text-dim);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+}
+
+.admin-ui-action:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.06);
+  color: var(--hud-cyan, #38bdf8);
+}
+
+.admin-ui-scroll-list {
+  display: flex;
+  flex-direction: column;
+  max-height: min(62vh, 720px);
+  min-height: 260px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+}
+
+.admin-ui-timeline-row {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--admin-line);
+  transition: background 120ms ease;
+}
+
+.admin-ui-timeline-row:last-child { border-bottom: none; }
+.admin-ui-timeline-row:hover { background: var(--hover-tint-weak, rgba(56, 189, 248, 0.04)); }
+.admin-ui-timeline-row.is-skeleton { pointer-events: none; }
+
+.admin-ui-stamp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.admin-ui-time {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--admin-text-dim);
+  white-space: nowrap;
+}
+
+.admin-ui-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.admin-ui-row-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.admin-ui-row-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.admin-ui-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  border: 1px solid var(--admin-line);
+  background: var(--admin-raised);
+  color: var(--admin-text-dim);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.7px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.admin-ui-pill.is-admin,
+.admin-ui-pill.is-cyan {
+  border-color: rgba(56, 189, 248, 0.38);
+  background: rgba(56, 189, 248, 0.08);
+  color: var(--hud-cyan, #38bdf8);
+}
+
+.admin-ui-pill.is-generic,
+.admin-ui-pill.is-warn {
+  border-color: rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.07);
+  color: var(--hud-amber, #fbbf24);
+}
+
+.admin-ui-row-action {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--admin-text);
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.admin-ui-timeline-row[data-severity="danger"] .admin-ui-row-action {
+  color: var(--hud-crimson, #f87171);
+}
+
+.admin-ui-timeline-row[data-severity="warn"] .admin-ui-row-action {
+  color: var(--hud-amber, #fbbf24);
+}
+
+.admin-ui-target {
+  min-width: 0;
+  color: var(--admin-text-dim);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.admin-ui-row-detail {
+  color: var(--admin-text-dim);
+  font-size: 11px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.admin-ui-code {
+  display: inline-block;
+  max-width: 100%;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--admin-raised);
+  border: 1px solid var(--admin-line);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--admin-text-dim);
+  vertical-align: baseline;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .admin-ui-toolbar {
+    align-items: stretch;
+  }
+
+  .admin-ui-chip-group,
+  .admin-ui-action {
+    width: 100%;
+  }
+
+  .admin-ui-spacer {
+    display: none;
+  }
+
+  .admin-ui-timeline-row {
+    grid-template-columns: 58px minmax(0, 1fr);
+    padding: 11px 10px;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
  * Webhooks page (P1-1) — list with status dot, events badges, inline controls.
  * ────────────────────────────────────────────────────────────────────────── */
 .admin-webhooks-form {
