@@ -329,6 +329,32 @@ test("admin API Tokens composes shared controls instead of page-local widgets", 
   expect(cssSrc).not.toContain(".admin-at-once-note,");
 });
 
+test("admin Live session banner composes shared controls instead of page-local widgets", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const dashboardSrc = fs.readFileSync(path.join(staticDir, "js", "admin-dashboard.js"), "utf8");
+  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+
+  expect(dashboardSrc).toContain('class="admin-v2-input admin-ui-grow admin-session-name-input"');
+  expect(dashboardSrc).toContain('class="admin-ui-action is-primary admin-ui-nowrap admin-session-open-btn"');
+  expect(dashboardSrc).toContain('class="admin-ui-dot is-success admin-session-live-dot"');
+  expect(dashboardSrc).toContain('class="admin-ui-action admin-session-pause-btn"');
+  expect(dashboardSrc).toContain('class="admin-ui-action is-danger admin-session-end-btn"');
+  expect(dashboardSrc).toContain('class="admin-v2-select admin-session-behavior-select"');
+
+  expect(hudSrc).toContain(".admin-ui-grow {");
+  expect(hudSrc).toContain(".admin-ui-nowrap {");
+
+  expect(cssSrc).not.toContain(".admin-session-name-input {");
+  expect(cssSrc).not.toContain(".admin-session-name-input:focus");
+  expect(cssSrc).not.toContain(".admin-session-open-btn {");
+  expect(cssSrc).not.toContain(".admin-session-pause-btn,");
+  expect(cssSrc).not.toContain(".admin-session-pause-btn {");
+  expect(cssSrc).not.toContain(".admin-session-end-btn {");
+  expect(cssSrc).not.toContain(".admin-session-behavior-select {");
+});
+
 test("admin Backup exposes implemented history export formats", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const backupSrc = fs.readFileSync(path.join(staticDir, "admin-backup.js"), "utf8");

@@ -820,8 +820,8 @@
         <div class="admin-session-banner-idle">
           <span class="admin-session-banner-idle-label">目前沒有進行中的場次</span>
           <div class="admin-session-open-row">
-            <input type="text" class="admin-session-name-input" placeholder="場次名稱（必填）…" maxlength="120" data-sess-name />
-            <button type="button" class="admin-session-open-btn" data-sess-action="open">▶ 開啟場次</button>
+            <input type="text" class="admin-v2-input admin-ui-grow admin-session-name-input" placeholder="場次名稱（必填）…" maxlength="120" data-sess-name />
+            <button type="button" class="admin-ui-action is-primary admin-ui-nowrap admin-session-open-btn" data-sess-action="open">▶ 開啟場次</button>
           </div>
           <div class="admin-session-banner-idle-hint">開啟後自動啟動 Desktop，訊息開始歸檔至本場次</div>
         </div>`;
@@ -831,18 +831,18 @@
       banner.hidden = false;
       banner.innerHTML = `
         <div class="admin-session-banner-live">
-          <div class="admin-session-live-dot"></div>
+          <div class="admin-ui-dot is-success admin-session-live-dot"></div>
           <div class="admin-session-live-info">
             <span class="admin-session-live-name">${_escapeHtml(state.name || "場次")}</span>
             <span class="admin-session-live-timer" data-sess-timer></span>
           </div>
           <div class="admin-session-live-actions">
-            <button type="button" class="admin-session-pause-btn" data-sess-action="pause-display" title="暫停 Desktop 顯示，繼續收訊息">⏸ 暫停顯示</button>
-            <button type="button" class="admin-session-end-btn" data-sess-action="close">■ 結束場次</button>
+            <button type="button" class="admin-ui-action admin-session-pause-btn" data-sess-action="pause-display" title="暫停 Desktop 顯示，繼續收訊息">⏸ 暫停顯示</button>
+            <button type="button" class="admin-ui-action is-danger admin-session-end-btn" data-sess-action="close">■ 結束場次</button>
           </div>
           <div class="admin-session-live-behavior">
             <span class="admin-session-live-behavior-label">結束後 viewer：</span>
-            <select class="admin-session-behavior-select" data-sess-behavior>
+            <select class="admin-v2-select admin-session-behavior-select" data-sess-behavior>
               <option value="continue" ${state.viewer_end_behavior === "continue" ? "selected" : ""}>繼續運作</option>
               <option value="ended_screen" ${state.viewer_end_behavior === "ended_screen" ? "selected" : ""}>顯示結束畫面</option>
               <option value="reload" ${state.viewer_end_behavior === "reload" ? "selected" : ""}>自動重新載入</option>

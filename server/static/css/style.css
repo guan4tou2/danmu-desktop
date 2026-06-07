@@ -11954,37 +11954,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   gap: 8px;
   align-items: center;
 }
-.admin-session-name-input {
-  flex: 1;
-  padding: 8px 12px;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border, var(--hud-line));
-  border-radius: 4px;
-  color: var(--color-text-strong);
-  font-family: inherit;
-  font-size: 13px;
-  transition: border-color 120ms ease;
-}
-.admin-session-name-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-.admin-session-open-btn {
-  padding: 8px 16px;
-  background: var(--color-primary);
-  border: none;
-  border-radius: 4px;
-  color: #000;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 120ms ease;
-}
-.admin-session-open-btn:hover:not(:disabled) { background: #5fc8ff; }
-.admin-session-open-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .admin-session-banner-idle-hint {
   font-size: 10px;
   color: var(--color-text-muted);
@@ -12003,10 +11972,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   flex-wrap: wrap;
 }
 .admin-session-live-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-success, #86efac);
   flex-shrink: 0;
   animation: admin-sess-pulse 2s ease-in-out infinite;
 }
@@ -12040,33 +12005,10 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   gap: 6px;
   flex-shrink: 0;
 }
-.admin-session-pause-btn,
-.admin-session-end-btn {
-  padding: 6px 12px;
-  border-radius: 3px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.4px;
-  cursor: pointer;
-  transition: all 120ms ease;
-}
-.admin-session-pause-btn {
-  background: transparent;
-  border: 1px solid rgba(56, 189, 248, 0.40);
-  color: var(--color-primary);
-}
-.admin-session-pause-btn:hover { background: rgba(56, 189, 248, 0.08); }
 .admin-session-pause-btn.is-paused {
   background: rgba(56, 189, 248, 0.12);
   border-color: var(--color-primary);
 }
-.admin-session-end-btn {
-  background: transparent;
-  border: 1px solid rgba(248, 113, 113, 0.45);
-  color: #f87171;
-}
-.admin-session-end-btn:hover { background: rgba(248, 113, 113, 0.08); }
 .admin-session-live-behavior {
   display: flex;
   align-items: center;
@@ -12079,16 +12021,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   color: var(--color-text-muted);
   letter-spacing: 0.3px;
   white-space: nowrap;
-}
-.admin-session-behavior-select {
-  padding: 4px 8px;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border, var(--hud-line));
-  border-radius: 3px;
-  color: var(--color-text-strong);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  cursor: pointer;
 }
 
 /* Slice 8: Backstage panel CSS removed — Slice 4 collapsed the sidebar to
