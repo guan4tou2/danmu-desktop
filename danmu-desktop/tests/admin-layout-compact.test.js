@@ -429,6 +429,53 @@ test("admin Rate Limits actions compose shared admin-ui controls", () => {
   expect(hudSrc).toContain(".admin-ui-action.is-primary {");
 });
 
+test("admin Backup actions compose shared admin-ui controls", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const backupSrc = fs.readFileSync(path.join(staticDir, "js", "admin-backup.js"), "utf8");
+  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+
+  expect(backupSrc).toContain('id="bk2-hist-download" class="admin-ui-action is-primary admin-bk-action"');
+  expect(backupSrc).toContain('id="bk2-settings-download" class="admin-ui-action is-primary admin-bk-action"');
+  expect(backupSrc).toContain('id="bk2-pack-export" class="admin-ui-action is-primary admin-bk-action"');
+  expect(backupSrc).toContain('id="bk2-settings-dryrun" class="admin-ui-action admin-bk-action"');
+  expect(backupSrc).toContain('class="admin-ui-action admin-bk-action" disabled title="即將支援 (需後端 endpoint)"');
+  expect(backupSrc).toContain('id="bk2-pack-dryrun" class="admin-ui-action admin-bk-action"');
+  expect(backupSrc).toContain('id="bk2-pack-apply" class="admin-ui-action is-danger admin-bk-action" disabled');
+  expect(backupSrc).toContain('id="bk2-clear-history" class="admin-ui-action is-danger admin-bk-action"');
+  expect(backupSrc).toContain('id="bk2-end-session" class="admin-ui-action is-danger admin-bk-action"');
+  expect(backupSrc).toContain('id="bk2-factory-reset" class="admin-ui-action is-danger admin-bk-action" disabled');
+  expect(backupSrc).not.toContain('class="admin-poll-btn');
+
+  expect(hudSrc).toContain(".admin-ui-action {");
+  expect(hudSrc).toContain(".admin-ui-action.is-primary {");
+  expect(hudSrc).toContain(".admin-ui-action.is-danger {");
+});
+
+test("admin Viewer Theme actions compose shared admin-ui controls", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const viewerThemeSrc = fs.readFileSync(path.join(staticDir, "js", "admin-viewer-theme.js"), "utf8");
+
+  expect(viewerThemeSrc).toContain('class="admin-ui-action admin-vt-reset" data-vt-action="reset"');
+  expect(viewerThemeSrc).not.toContain('class="admin-poll-btn');
+});
+
+test("admin Effects modal actions compose shared admin-ui controls", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const effectsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-effects-mgmt.js"), "utf8");
+  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+
+  expect(effectsSrc).toContain('id="effectPreviewRefreshBtn" class="admin-ui-action admin-fx-preview-refresh"');
+  expect(effectsSrc).toContain('id="effectEditModalCancel" class="admin-ui-action admin-fx-modal-action"');
+  expect(effectsSrc).toContain('id="effectEditModalSave" class="admin-ui-action is-primary admin-fx-modal-action"');
+  expect(effectsSrc).not.toContain('class="admin-poll-btn');
+
+  expect(hudSrc).toContain(".admin-ui-action {");
+  expect(hudSrc).toContain(".admin-ui-action.is-primary {");
+});
+
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");

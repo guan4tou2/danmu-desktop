@@ -407,7 +407,7 @@
               <div id="effectPreviewPane" class="w-[360px] shrink-0 px-4 py-4 flex flex-col gap-3 overflow-y-auto" style="border-left:1px solid var(--admin-line)">
                 <div class="flex items-center justify-between">
                   <p class="text-xs font-semibold m-0" style="color:var(--color-text-muted)">${ServerI18n.t("livePreviewLabel")}</p>
-                  <button id="effectPreviewRefreshBtn" class="px-2 py-0.5 font-medium rounded bg-transparent cursor-pointer transition-colors" style="font-size:0.65rem;color:var(--color-text-muted);border:1px solid var(--admin-line)">${ServerI18n.t("refresh")}</button>
+                  <button id="effectPreviewRefreshBtn" class="admin-ui-action admin-fx-preview-refresh">${ServerI18n.t("refresh")}</button>
                 </div>
                 <div id="effectPreviewBox" style="background:var(--color-bg-elevated);padding:20px;border-radius:8px;display:flex;align-items:center;justify-content:center;min-height:80px;">
                   <span id="effectPreviewText" style="font-size:32px;color:var(--color-text-strong);display:inline-block;">${ServerI18n.t("previewText")}</span>
@@ -418,8 +418,8 @@
               </div>
             </div>
             <div class="flex justify-end gap-2 px-5 py-3 shrink-0" style="border-top:1px solid var(--admin-line)">
-              <button id="effectEditModalCancel" class="admin-poll-btn is-ghost">${ServerI18n.t("cancel")}</button>
-              <button id="effectEditModalSave" class="admin-poll-btn is-primary">${ServerI18n.t("saveChanges")}</button>
+              <button id="effectEditModalCancel" class="admin-ui-action admin-fx-modal-action">${ServerI18n.t("cancel")}</button>
+              <button id="effectEditModalSave" class="admin-ui-action is-primary admin-fx-modal-action">${ServerI18n.t("saveChanges")}</button>
             </div>
           </div>
         </div>

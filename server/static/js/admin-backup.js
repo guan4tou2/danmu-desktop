@@ -68,7 +68,7 @@
                   <option value="srt">SRT · 字幕</option>
                 </select>
               </label>
-              <button type="button" id="bk2-hist-download" class="admin-poll-btn is-primary">下載</button>
+              <button type="button" id="bk2-hist-download" class="admin-ui-action is-primary admin-bk-action">下載</button>
             </div>
           </div>
 
@@ -79,7 +79,7 @@
               <div class="admin-backup-desc">
                 一鍵 JSON 快照(client-side 組合)。不含密碼雜湊與 token,已自動剝除。
               </div>
-              <button type="button" id="bk2-settings-download" class="admin-poll-btn is-primary">下載</button>
+              <button type="button" id="bk2-settings-download" class="admin-ui-action is-primary admin-bk-action">下載</button>
             </div>
           </div>
 
@@ -90,7 +90,7 @@
               <div class="admin-backup-desc" id="bk2-pack-summary">
                 計算備份大小中…
               </div>
-              <button type="button" id="bk2-pack-export" class="admin-poll-btn is-primary">下載快照</button>
+              <button type="button" id="bk2-pack-export" class="admin-ui-action is-primary admin-bk-action">下載快照</button>
             </div>
             <p class="admin-backup-deferred-note" id="bk2-pack-detail">
               內容：runtime/*.json · effects/*.dme · plugins/* · user_plugins/*
@@ -114,8 +114,8 @@
                 <span class="admin-v2-monolabel">JSON FILE</span>
                 <input id="bk2-settings-upload" type="file" accept="application/json,.json" class="admin-v2-input" />
               </label>
-              <button type="button" id="bk2-settings-dryrun" class="admin-poll-btn">Dry-run 預覽</button>
-              <button type="button" class="admin-poll-btn is-ghost" disabled title="即將支援 (需後端 endpoint)">套用</button>
+              <button type="button" id="bk2-settings-dryrun" class="admin-ui-action admin-bk-action">Dry-run 預覽</button>
+              <button type="button" class="admin-ui-action admin-bk-action" disabled title="即將支援 (需後端 endpoint)">套用</button>
             </div>
             <pre id="bk2-settings-diff" class="admin-backup-diff" hidden></pre>
             <p class="admin-backup-deferred-note">套用階段 — 即將支援 (需後端 endpoint)。目前僅可 client-side 解析預覽。</p>
@@ -129,8 +129,8 @@
                 <span class="admin-v2-monolabel">TARBALL · ≤ 16 MB</span>
                 <input id="bk2-pack-upload" type="file" accept=".tar.gz,application/gzip,application/x-gzip" class="admin-v2-input" />
               </label>
-              <button type="button" id="bk2-pack-dryrun" class="admin-poll-btn">Dry-run 預覽</button>
-              <button type="button" id="bk2-pack-apply" class="admin-poll-btn is-bad" disabled title="先 dry-run 預覽後才能套用">套用</button>
+              <button type="button" id="bk2-pack-dryrun" class="admin-ui-action admin-bk-action">Dry-run 預覽</button>
+              <button type="button" id="bk2-pack-apply" class="admin-ui-action is-danger admin-bk-action" disabled title="先 dry-run 預覽後才能套用">套用</button>
             </div>
             <pre id="bk2-pack-diff" class="admin-backup-diff" hidden></pre>
             <p class="admin-backup-deferred-note">
@@ -159,7 +159,7 @@
                 </select>
               </label>
               <div class="admin-backup-desc">清除所有彈幕歷史。此動作無法復原。</div>
-              <button type="button" id="bk2-clear-history" class="admin-poll-btn is-bad">清除</button>
+              <button type="button" id="bk2-clear-history" class="admin-ui-action is-danger admin-bk-action">清除</button>
             </div>
           </div>
 
@@ -168,7 +168,7 @@
             <div class="admin-v2-monolabel">END SESSION · 結束管理工作階段</div>
             <div class="admin-backup-row">
               <div class="admin-backup-desc">登出目前管理員,不影響 Desktop / viewer 連線。</div>
-              <button type="button" id="bk2-end-session" class="admin-poll-btn is-bad">END SESSION</button>
+              <button type="button" id="bk2-end-session" class="admin-ui-action is-danger admin-bk-action">END SESSION</button>
             </div>
           </div>
 
@@ -181,7 +181,7 @@
                 <input id="bk2-factory-confirm" type="text" class="admin-v2-input" placeholder="reset" autocomplete="off" spellcheck="false" />
               </label>
               <div class="admin-backup-desc">即將支援 — 目前請手動刪除 <code>server/runtime/</code> 後重啟。</div>
-              <button type="button" id="bk2-factory-reset" class="admin-poll-btn is-bad" disabled>FACTORY RESET</button>
+              <button type="button" id="bk2-factory-reset" class="admin-ui-action is-danger admin-bk-action" disabled>FACTORY RESET</button>
             </div>
           </div>
         </div>
