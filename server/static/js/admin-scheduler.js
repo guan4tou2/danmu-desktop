@@ -386,12 +386,13 @@
         <!-- v4 P1-4 view toggle (2026-05-19) — 24H TIMELINE / 7-DAY CALENDAR.
              Visualizes active jobs against time so conflicts and load
              spread are obvious at a glance. Falls back to job list below. -->
-        <div class="admin-sch-toolbar">
-          <div class="admin-sch-view-toggle" role="tablist">
-            <button type="button" class="admin-sch-view-btn is-active" data-sch-view="timeline" role="tab" aria-selected="true">24H TIMELINE</button>
-            <button type="button" class="admin-sch-view-btn" data-sch-view="calendar" role="tab" aria-selected="false">7-DAY CALENDAR</button>
+        <div class="admin-ui-toolbar admin-sch-toolbar">
+          <div class="admin-ui-chip-group admin-sch-view-toggle" role="tablist">
+            <button type="button" class="admin-ui-chip admin-sch-view-btn is-active" data-sch-view="timeline" role="tab" aria-selected="true">24H TIMELINE</button>
+            <button type="button" class="admin-ui-chip admin-sch-view-btn" data-sch-view="calendar" role="tab" aria-selected="false">7-DAY CALENDAR</button>
           </div>
-          <span class="admin-sch-meta" data-sch-meta>—</span>
+          <span class="admin-ui-spacer"></span>
+          <span class="admin-ui-summary admin-sch-meta" data-sch-meta>—</span>
         </div>
 
         <!-- 24H TIMELINE view (rendered by renderTimeline()) -->
@@ -403,11 +404,11 @@
         <!-- Create job form -->
         <div class="admin-v2-card">
           <div class="admin-v2-monolabel" style="margin-bottom:10px">+ 新增排程</div>
-          <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="admin-scheduler-form-stack">
             <div>
               <div class="admin-v2-monolabel" style="margin-bottom:6px">MESSAGES</div>
-              <div id="schedulerMessages" style="display:flex;flex-direction:column;gap:6px"></div>
-              <button type="button" id="schedulerAddMsg" class="admin-v2-chip" style="margin-top:8px;cursor:pointer">+ ${escapeHTML(ServerI18n.t("addMessageBtn"))}</button>
+              <div id="schedulerMessages" class="admin-scheduler-message-stack"></div>
+              <button type="button" id="schedulerAddMsg" class="admin-ui-action admin-sch-add-msg">+ ${escapeHTML(ServerI18n.t("addMessageBtn"))}</button>
             </div>
             <div class="admin-scheduler-config">
               <label>
@@ -418,8 +419,8 @@
                 <span class="admin-v2-monolabel">REPEAT · -1=∞</span>
                 <input id="schedulerRepeat" type="number" value="-1" min="-1" max="10000" class="admin-v2-input" />
               </label>
-              <div style="margin-left:auto;align-self:end">
-                <button type="button" id="schedulerCreateBtn" class="admin-poll-btn is-primary">${escapeHTML(ServerI18n.t("createBtn"))}</button>
+              <div class="admin-scheduler-create-cell">
+                <button type="button" id="schedulerCreateBtn" class="admin-ui-action is-primary admin-sch-create-btn">${escapeHTML(ServerI18n.t("createBtn"))}</button>
               </div>
             </div>
           </div>

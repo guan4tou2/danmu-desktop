@@ -355,6 +355,34 @@ test("admin Live session banner composes shared controls instead of page-local w
   expect(cssSrc).not.toContain(".admin-session-behavior-select {");
 });
 
+test("admin Scheduler toolbar and actions compose shared controls", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const schedulerSrc = fs.readFileSync(path.join(staticDir, "js", "admin-scheduler.js"), "utf8");
+  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+
+  expect(schedulerSrc).toContain('class="admin-ui-toolbar admin-sch-toolbar"');
+  expect(schedulerSrc).toContain('class="admin-ui-chip-group admin-sch-view-toggle"');
+  expect(schedulerSrc).toContain('class="admin-ui-chip admin-sch-view-btn is-active"');
+  expect(schedulerSrc).toContain('class="admin-ui-chip admin-sch-view-btn"');
+  expect(schedulerSrc).toContain('class="admin-ui-action admin-sch-add-msg"');
+  expect(schedulerSrc).toContain('class="admin-ui-action is-primary admin-sch-create-btn"');
+  expect(schedulerSrc).not.toContain('style="margin-top:8px;cursor:pointer"');
+  expect(schedulerSrc).not.toContain('class="admin-poll-btn is-primary">${escapeHTML(ServerI18n.t("createBtn"))}</button>');
+
+  expect(hudSrc).toContain(".admin-ui-toolbar {");
+  expect(hudSrc).toContain(".admin-ui-chip-group {");
+  expect(hudSrc).toContain(".admin-ui-action.is-primary {");
+
+  expect(cssSrc).not.toContain(".admin-sch-toolbar {");
+  expect(cssSrc).not.toContain(".admin-sch-view-toggle {");
+  expect(cssSrc).not.toContain(".admin-sch-view-btn {");
+  expect(cssSrc).not.toContain(".admin-sch-view-btn:hover");
+  expect(cssSrc).not.toContain(".admin-sch-view-btn.is-active");
+  expect(cssSrc).not.toContain(".admin-sch-add-btn {");
+});
+
 test("admin Backup exposes implemented history export formats", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const backupSrc = fs.readFileSync(path.join(staticDir, "admin-backup.js"), "utf8");
