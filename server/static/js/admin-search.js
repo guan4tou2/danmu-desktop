@@ -138,7 +138,7 @@
       +        ' style="display:flex;align-items:center;justify-content:space-between;min-height:22px">'
       +     '<span id="admin-search-count" style="font-family:var(--font-mono);font-size:11px;color:var(--admin-text-dim)"></span>'
       +     '<button type="button" id="admin-search-export-btn"'
-      +             ' class="admin-v2-chip" hidden'
+      +             ' class="admin-ui-action admin-search-export-btn" hidden'
       +             ' style="cursor:pointer">↓ 匯出 CSV</button>'
       +   '</div>'
 

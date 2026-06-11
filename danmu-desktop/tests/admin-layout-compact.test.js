@@ -688,6 +688,22 @@ test("admin Scheduler, Replay, and Sessions chips compose shared controls", () =
   expect(sessionsSrc).not.toContain("admin-v2-chip");
 });
 
+test("admin Security and Search status controls compose shared primitives", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static", "js");
+  const securitySrc = fs.readFileSync(path.join(staticDir, "admin-security.js"), "utf8");
+  const searchSrc = fs.readFileSync(path.join(staticDir, "admin-search.js"), "utf8");
+
+  expect(securitySrc).toContain('id="sec2-wsa-status" class="admin-ui-chip admin-sec-status-chip"');
+  expect(securitySrc).toContain('id="sec2-ip-status-chip" class="admin-ui-chip admin-sec-status-chip"');
+  expect(securitySrc).toContain('statusEl.className = "admin-ui-chip admin-sec-status-chip " + (data.require_token ? "is-active" : "");');
+  expect(securitySrc).toContain('statusEl.className = "admin-ui-chip is-danger admin-sec-status-chip";');
+  expect(securitySrc).toContain('ipChip.className = "admin-ui-chip admin-sec-status-chip " + (ipEnabled ? "is-active" : "is-warn");');
+  expect(searchSrc).toContain('class="admin-ui-action admin-search-export-btn" hidden');
+  expect(securitySrc).not.toContain("admin-v2-chip");
+  expect(searchSrc).not.toContain("admin-v2-chip");
+});
+
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");

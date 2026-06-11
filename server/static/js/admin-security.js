@@ -106,7 +106,7 @@
               <span class="admin-sec-card__zh">WebSocket 令牌</span>
               <span class="admin-sec-card__en">WS TOKEN · VIEWER AUTH</span>
               <span class="admin-sec-card__spacer"></span>
-              <span id="sec2-wsa-status" class="admin-v2-chip">載入中…</span>
+              <span id="sec2-wsa-status" class="admin-ui-chip admin-sec-status-chip">載入中…</span>
             </div>
             <div class="admin-sec-card__body">
               <label class="admin-security-toggle">
@@ -136,7 +136,7 @@
               <span class="admin-sec-card__zh">IP 存取限制</span>
               <span class="admin-sec-card__en">IP ALLOWLIST</span>
               <span class="admin-sec-card__spacer"></span>
-              <span id="sec2-ip-status-chip" class="admin-v2-chip">載入中…</span>
+              <span id="sec2-ip-status-chip" class="admin-ui-chip admin-sec-status-chip">載入中…</span>
             </div>
             <div class="admin-sec-card__body">
               <div class="admin-sec-row">
@@ -354,7 +354,7 @@
       document.getElementById("sec2-wsa-toggle").checked = !!data.require_token;
       document.getElementById("sec2-wsa-token").value = data.token || "";
       statusEl.textContent = data.require_token ? "已啟用" : "未啟用";
-      statusEl.className = "admin-v2-chip " + (data.require_token ? "is-good" : "");
+      statusEl.className = "admin-ui-chip admin-sec-status-chip " + (data.require_token ? "is-active" : "");
       // Last-rotation persisted client-side (no backend field yet)
       const lr = localStorage.getItem("ws-auth-last-rotation");
       document.getElementById("sec2-wsa-lastrot").textContent = lr
@@ -362,7 +362,7 @@
         : "—";
     } catch (e) {
       statusEl.textContent = "載入失敗";
-      statusEl.className = "admin-v2-chip is-bad";
+      statusEl.className = "admin-ui-chip is-danger admin-sec-status-chip";
     }
   }
 
@@ -407,7 +407,7 @@
       }
       if (ipChip) {
         ipChip.textContent = ipEnabled ? "已限制" : "未啟用";
-        ipChip.className = "admin-v2-chip " + (ipEnabled ? "is-good" : "is-warn");
+        ipChip.className = "admin-ui-chip admin-sec-status-chip " + (ipEnabled ? "is-active" : "is-warn");
       }
       if (ipToggle) ipToggle.checked = ipEnabled;
       if (ipTextarea) ipTextarea.value = ipEntries.join("\n");
@@ -445,7 +445,7 @@
       const chip = document.getElementById("sec2-ip-status-chip");
       if (chip) {
         chip.textContent = "載入失敗";
-        chip.className = "admin-v2-chip is-bad";
+        chip.className = "admin-ui-chip is-danger admin-sec-status-chip";
       }
     }
   }
