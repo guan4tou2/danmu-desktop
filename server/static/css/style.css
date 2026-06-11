@@ -14107,34 +14107,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
  * Replaces legacy Tailwind/hud-table layout with admin-v2-head + KPI
  * panel grid + plugin-row table + console with 4-level filter.
  * ────────────────────────────────────────────────────────────────────── */
-.admin-plugins-toolbar {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-.admin-plugins-toolbar-btn {
-  padding: 6px 14px;
-  border-radius: 6px;
-  border: 1px solid var(--admin-line);
-  background: transparent;
-  color: var(--admin-text-dim);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: border-color 120ms ease, color 120ms ease;
-}
-
-.admin-plugins-toolbar-btn:hover { border-color: var(--hud-line-strong, rgba(148, 163, 184, 0.35)); }
-
-.admin-plugins-toolbar-btn.is-primary {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
-  font-weight: 600;
-}
-
 .admin-plugins-card {
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
@@ -14233,52 +14205,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   color: var(--admin-text-dim);
 }
 
-.admin-plugins-pill {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.8px;
-  font-weight: 500;
-  width: fit-content;
-  border: 1px solid var(--admin-line);
-  color: var(--admin-text-dim);
-  background: transparent;
-}
-
-.admin-plugins-pill.is-crimson {
-  border-color: rgba(248, 113, 113, 0.45);
-  color: var(--hud-crimson, #f87171);
-  background: rgba(248, 113, 113, 0.06);
-}
-
-.admin-plugins-pill.is-amber {
-  border-color: rgba(251, 191, 36, 0.45);
-  color: var(--hud-amber, #fbbf24);
-  background: rgba(251, 191, 36, 0.06);
-}
-
-.admin-plugins-pill.is-cyan {
-  border-color: rgba(56, 189, 248, 0.45);
-  color: var(--hud-cyan, #38bdf8);
-  background: rgba(56, 189, 248, 0.06);
-}
-
-.admin-plugins-pill.is-lang {
-  letter-spacing: 1px;
-}
-
-.admin-plugins-pill.is-lang.is-py {
-  border-color: rgba(251, 191, 36, 0.35);
-  color: var(--hud-amber, #fbbf24);
-}
-
-.admin-plugins-pill.is-lang.is-js {
-  border-color: rgba(56, 189, 248, 0.35);
-  color: var(--hud-cyan, #38bdf8);
-}
-
 .admin-plugins-toggle-cell {
   display: flex;
   justify-content: flex-end;
@@ -14353,33 +14279,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   font-size: 13px;
   font-weight: 600;
   color: var(--admin-text);
-}
-
-.admin-plugins-console-filters {
-  margin-left: auto;
-  display: flex;
-  gap: 4px;
-}
-
-.admin-plugins-console-chip {
-  padding: 2px 8px;
-  border-radius: 3px;
-  border: 1px solid var(--admin-line);
-  background: transparent;
-  color: var(--admin-text-dim);
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
-}
-
-.admin-plugins-console-chip:hover { border-color: var(--hud-line-strong, rgba(148, 163, 184, 0.35)); }
-
-.admin-plugins-console-chip.is-active {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
 }
 
 .admin-plugins-console-body {

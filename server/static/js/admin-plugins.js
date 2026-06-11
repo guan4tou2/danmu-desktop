@@ -47,9 +47,10 @@
             <div class="admin-v2-title">${ServerI18n.t("pluginsTitle")}</div>
           </div>
 
-          <div class="admin-plugins-toolbar">
-            <button id="pluginsUploadBtn" class="admin-plugins-toolbar-btn is-primary" type="button">\uff0b \u4e0a\u50b3 .py/.js</button>
-            <button id="pluginsReloadBtn" class="admin-plugins-toolbar-btn" type="button">\u21bb ${ServerI18n.t("reloadBtn")}</button>
+          <div class="admin-ui-toolbar admin-plugins-toolbar">
+            <span class="admin-ui-spacer"></span>
+            <button id="pluginsUploadBtn" class="admin-ui-action is-primary admin-plugins-toolbar-btn" type="button">\uff0b \u4e0a\u50b3 .py/.js</button>
+            <button id="pluginsReloadBtn" class="admin-ui-action admin-plugins-toolbar-btn" type="button">\u21bb ${ServerI18n.t("reloadBtn")}</button>
           </div>
 
           <section class="admin-kpi-strip is-4col">
@@ -111,11 +112,12 @@
               <span class="admin-plugins-console-dot"></span>
               <span class="admin-plugins-console-title">LIVE CONSOLE</span>
               <span class="admin-v2-monolabel" style="margin:0">stdout + stderr</span>
-              <span class="admin-plugins-console-filters" data-console-filters>
-                <button type="button" class="admin-plugins-console-chip is-active" data-console-filter="all">ALL</button>
-                <button type="button" class="admin-plugins-console-chip" data-console-filter="INFO">INFO</button>
-                <button type="button" class="admin-plugins-console-chip" data-console-filter="WARN">WARN</button>
-                <button type="button" class="admin-plugins-console-chip" data-console-filter="ERROR">ERROR</button>
+              <span class="admin-ui-spacer"></span>
+              <span class="admin-ui-chip-group admin-plugins-console-filters" data-console-filters>
+                <button type="button" class="admin-ui-chip admin-plugins-console-chip is-active" data-console-filter="all">ALL</button>
+                <button type="button" class="admin-ui-chip admin-plugins-console-chip" data-console-filter="INFO">INFO</button>
+                <button type="button" class="admin-ui-chip admin-plugins-console-chip" data-console-filter="WARN">WARN</button>
+                <button type="button" class="admin-ui-chip admin-plugins-console-chip" data-console-filter="ERROR">ERROR</button>
               </span>
               <span class="admin-v2-monolabel" style="margin-left:8px">TAIL \u00b7 LIVE</span>
             </div>
@@ -321,8 +323,8 @@
             ${description ? `<div class="desc">${escapeHtml(description)}</div>` : ""}
           </div>
           <span class="admin-plugins-ver">${version ? "v" + escapeHtml(version) : "—"}</span>
-          <span class="admin-plugins-pill ${priorityCls}">${priority != null ? priority : "—"}${priorityLabel ? " · " + priorityLabel : ""}</span>
-          <span class="admin-plugins-pill is-lang is-${lang.toLowerCase()}">${lang}</span>
+          <span class="admin-ui-pill admin-plugins-pill ${priorityCls}">${priority != null ? priority : "—"}${priorityLabel ? " · " + priorityLabel : ""}</span>
+          <span class="admin-ui-pill admin-plugins-pill is-lang ${langPillClass(lang)}">${lang}</span>
           <div class="admin-plugins-toggle-cell">
             ${uninstallBtn}
             <label class="admin-plugins-switch" for="${toggleId}">
@@ -370,10 +372,16 @@
     }
 
     function priorityPillClass(priority) {
-      if (priority == null) return "is-default";
-      if (priority <= 10) return "is-crimson";
-      if (priority <= 50) return "is-amber";
+      if (priority == null) return "is-muted";
+      if (priority <= 10) return "is-danger";
+      if (priority <= 50) return "is-warn";
       return "is-cyan";
+    }
+
+    function langPillClass(lang) {
+      if (lang === "JS") return "is-cyan";
+      if (lang === "PY") return "is-warn";
+      return "is-muted";
     }
 
     function priorityLabelFor(priority) {

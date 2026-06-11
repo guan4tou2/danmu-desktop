@@ -383,6 +383,41 @@ test("admin Scheduler toolbar and actions compose shared controls", () => {
   expect(cssSrc).not.toContain(".admin-sch-add-btn {");
 });
 
+test("admin Plugins composes shared toolbar, chips, and pills", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const pluginsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-plugins.js"), "utf8");
+  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+
+  expect(pluginsSrc).toContain('class="admin-ui-toolbar admin-plugins-toolbar"');
+  expect(pluginsSrc).toContain('class="admin-ui-action is-primary admin-plugins-toolbar-btn"');
+  expect(pluginsSrc).toContain('class="admin-ui-action admin-plugins-toolbar-btn"');
+  expect(pluginsSrc).toContain('class="admin-ui-chip-group admin-plugins-console-filters"');
+  expect(pluginsSrc).toContain('class="admin-ui-chip admin-plugins-console-chip is-active"');
+  expect(pluginsSrc).toContain('class="admin-ui-pill admin-plugins-pill ${priorityCls}"');
+  expect(pluginsSrc).toContain('class="admin-ui-pill admin-plugins-pill is-lang ${langPillClass(lang)}"');
+
+  expect(hudSrc).toContain(".admin-ui-toolbar {");
+  expect(hudSrc).toContain(".admin-ui-action {");
+  expect(hudSrc).toContain(".admin-ui-chip {");
+  expect(hudSrc).toContain(".admin-ui-pill {");
+
+  expect(cssSrc).not.toContain(".admin-plugins-toolbar {");
+  expect(cssSrc).not.toContain(".admin-plugins-toolbar-btn {");
+  expect(cssSrc).not.toContain(".admin-plugins-toolbar-btn:hover");
+  expect(cssSrc).not.toContain(".admin-plugins-toolbar-btn.is-primary");
+  expect(cssSrc).not.toContain(".admin-plugins-pill {");
+  expect(cssSrc).not.toContain(".admin-plugins-pill.is-crimson");
+  expect(cssSrc).not.toContain(".admin-plugins-pill.is-amber");
+  expect(cssSrc).not.toContain(".admin-plugins-pill.is-cyan");
+  expect(cssSrc).not.toContain(".admin-plugins-pill.is-lang");
+  expect(cssSrc).not.toContain(".admin-plugins-console-filters {");
+  expect(cssSrc).not.toContain(".admin-plugins-console-chip {");
+  expect(cssSrc).not.toContain(".admin-plugins-console-chip:hover");
+  expect(cssSrc).not.toContain(".admin-plugins-console-chip.is-active");
+});
+
 test("admin Backup exposes implemented history export formats", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const backupSrc = fs.readFileSync(path.join(staticDir, "admin-backup.js"), "utf8");
