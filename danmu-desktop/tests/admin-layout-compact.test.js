@@ -543,6 +543,31 @@ test("admin Sessions detail links compose shared actions", () => {
   expect(cssSrc).not.toContain(".admin-sessions-detail-btn");
 });
 
+test("admin Setup Wizard footer composes shared actions", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const setupSrc = fs.readFileSync(path.join(staticDir, "js", "admin-setup-wizard.js"), "utf8");
+  const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+
+  expect(setupSrc).toContain('class="admin-ui-action admin-setup-foot-action" data-setup-action="close"');
+  expect(setupSrc).toContain('class="admin-ui-action admin-setup-foot-action" data-setup-action="prev"');
+  expect(setupSrc).toContain('class="admin-ui-action is-primary admin-setup-foot-action" data-setup-action="next"');
+  expect(setupSrc).not.toContain("admin-setup-foot-btn");
+  expect(cssSrc).not.toContain(".admin-setup-foot-btn");
+});
+
+test("admin Theme pack actions compose shared controls", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const themesSrc = fs.readFileSync(path.join(staticDir, "js", "admin-themes.js"), "utf8");
+  const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+
+  expect(themesSrc).toContain('class="admin-ui-chip admin-theme-pack-status is-active"');
+  expect(themesSrc).toContain('class="admin-ui-action is-primary admin-theme-pack-action theme-activate-btn"');
+  expect(themesSrc).not.toContain("theme-pack-btn");
+  expect(cssSrc).not.toContain(".theme-pack-btn");
+});
+
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");

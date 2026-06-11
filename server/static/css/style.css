@@ -1326,29 +1326,6 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 
 .theme-pack-actions { margin-left: auto; display: flex; gap: 8px; }
 
-.theme-pack-btn {
-  padding: 5px 12px;
-  border-radius: 4px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  cursor: pointer;
-  border: 1px solid var(--color-primary);
-  background: var(--color-primary);
-  color: #000;
-}
-
-.theme-pack-btn.is-primary:hover { background: var(--color-primary-hover); border-color: var(--color-primary-hover); }
-
-.theme-pack-btn.is-disabled {
-  background: transparent;
-  color: var(--admin-text-dim);
-  border-color: var(--admin-line);
-  cursor: default;
-}
-
 /* ──────────────────────────────────────────────────────────────────────────
  * Viewer Theme page (v5 handoff admin-viewer-theme.jsx)
  * Left controls (380px) + right live iframe-style preview. Entirely separate
@@ -7215,32 +7192,6 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   margin-left: 8px;
 }
 .admin-setup-foot-spacer { flex: 1; }
-.admin-setup-foot-btn {
-  padding: 9px 16px;
-  border-radius: 4px;
-  font-family: var(--font-mono); font-size: 11px;
-  letter-spacing: 0.4px; font-weight: 600;
-  cursor: pointer;
-  transition: all 140ms ease;
-}
-.admin-setup-foot-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.admin-setup-foot-btn--ghost {
-  background: transparent;
-  border: 1px solid var(--color-border, var(--hud-line));
-  color: var(--color-text-muted);
-}
-.admin-setup-foot-btn--ghost:hover:not(:disabled) {
-  color: var(--color-text-strong);
-  border-color: var(--color-primary);
-}
-.admin-setup-foot-btn--primary {
-  background: var(--color-primary);
-  border: 1px solid var(--color-primary);
-  color: #000;
-}
-.admin-setup-foot-btn--primary:hover:not(:disabled) {
-  background: #5fc8ff;
-}
 
 
 /* v5 Yellow wizard refit (2026-05-19) */

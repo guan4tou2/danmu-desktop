@@ -96,8 +96,8 @@
           <span class="theme-pack-badge${builtin ? " is-builtin" : ""}">${builtin ? "BUILT-IN" : "CUSTOM"}</span>
           <div class="theme-pack-actions">
             ${isActive
-              ? '<span class="theme-pack-btn is-disabled">已啟用</span>'
-              : `<button class="theme-pack-btn is-primary theme-activate-btn" data-theme="${escapeHtml(theme.name)}">啟用 ▶</button>`
+              ? '<span class="admin-ui-chip admin-theme-pack-status is-active">已啟用</span>'
+              : `<button class="admin-ui-action is-primary admin-theme-pack-action theme-activate-btn" data-theme="${escapeHtml(theme.name)}">啟用 ▶</button>`
             }
           </div>
         </div>

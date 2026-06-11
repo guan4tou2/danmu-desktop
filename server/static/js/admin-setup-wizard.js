@@ -177,11 +177,11 @@
           <div class="admin-setup-content" data-setup-content></div>
 
           <footer class="admin-setup-foot" data-setup-foot>
-            <button type="button" class="admin-setup-foot-btn admin-setup-foot-btn--ghost" data-setup-action="close">跳過</button>
+            <button type="button" class="admin-ui-action admin-setup-foot-action" data-setup-action="close">跳過</button>
             <span class="admin-setup-foot-meta" data-setup-meta>步驟 1 / ${STEPS.length}</span>
             <span class="admin-setup-foot-spacer"></span>
-            <button type="button" class="admin-setup-foot-btn admin-setup-foot-btn--ghost" data-setup-action="prev" disabled>← 上一步</button>
-            <button type="button" class="admin-setup-foot-btn admin-setup-foot-btn--primary" data-setup-action="next">下一步 →</button>
+            <button type="button" class="admin-ui-action admin-setup-foot-action" data-setup-action="prev" disabled>← 上一步</button>
+            <button type="button" class="admin-ui-action is-primary admin-setup-foot-action" data-setup-action="next">下一步 →</button>
           </footer>
         </div>
       </div>`;
