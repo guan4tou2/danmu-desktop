@@ -393,32 +393,6 @@
   flex-wrap: wrap;
 }
 
-.admin-v2-chip {
-  padding: 4px 10px;
-  border-radius: 3px;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  border: 1px solid var(--admin-line);
-  color: var(--admin-text-dim);
-  background: transparent;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  cursor: default;
-}
-
-.admin-v2-chip.is-on {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.08);
-}
-
-.admin-v2-chip.is-good { border-color: #86efac; color: #86efac; }
-.admin-v2-chip.is-warn { border-color: #fbbf24; color: #fbbf24; }
-.admin-v2-chip.is-bad  { border-color: #f87171; color: #f87171; }
-
 /* Status dot — reused via .admin-v2-dot, uses --color-success / warning / error tokens. */
 .admin-v2-dot {
   display: inline-block;
@@ -2788,26 +2762,10 @@
   letter-spacing: 0.05em;
 }
 
-.admin-poll-btn.is-bad {
-  border-color: #f87171;
-  color: #f87171;
-  background: transparent;
-}
-.admin-poll-btn.is-bad:hover:not(:disabled) {
-  background: rgba(248, 113, 113, 0.08);
-}
-.admin-poll-btn.is-bad.is-ready {
-  background: rgba(248, 113, 113, 0.16);
-}
-.admin-poll-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* ──────────────────────────────────────────────────────────────────────────
  * Command palette ⌘K (P3-4) — admin-only overlay. Slides from top, scope
- * chips, fuzzy result list with mono prefix per row. Reuses .admin-v2-chip
- * idiom on the scope row but with cmdk-specific tokens for spacing.
+ * chips, fuzzy result list with mono prefix per row. Uses cmdk-specific
+ * tokens for spacing.
  * ────────────────────────────────────────────────────────────────────────── */
 .admin-cmdk[hidden] { display: none; }
 .admin-cmdk {

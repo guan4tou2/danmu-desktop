@@ -1029,40 +1029,6 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   flex-wrap: wrap;
 }
 
-.admin-poll-btn {
-  padding: 8px 18px;
-  border-radius: 6px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-
-.admin-poll-btn.is-primary {
-  background: var(--color-primary);
-  border: 1px solid var(--color-primary);
-  color: #000;
-}
-
-.admin-poll-btn.is-primary:hover {
-  background: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
-}
-
-.admin-poll-btn.is-ghost {
-  background: transparent;
-  border: 1px solid var(--admin-line);
-  color: var(--admin-text);
-}
-
-.admin-poll-btn.is-ghost:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
 .admin-poll-options-actions {
   margin-top: 8px;
   display: flex;
@@ -3427,32 +3393,6 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   border-color: var(--color-primary);
   color: var(--color-primary);
   background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.14));
-}
-
-.hud-toolbar-action {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  color: var(--color-primary);
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid transparent;
-  padding: 6px 10px;
-  border-radius: 4px;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-.hud-toolbar-action:hover {
-  border-color: var(--admin-line);
-  background: color-mix(in srgb, var(--color-bg-elevated) 60%, transparent);
-}
-.hud-toolbar-action.is-primary {
-  border-color: var(--color-primary);
-  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.14));
-  font-weight: 700;
-}
-.hud-toolbar-action:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* Effects grid + YAML inspector */

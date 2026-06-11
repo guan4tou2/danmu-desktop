@@ -742,6 +742,21 @@ test("admin shell and Viewer Theme residual controls compose shared primitives",
   expect(viewerThemeSrc).not.toContain('class="chip"');
 });
 
+test("admin CSS does not retain legacy private control primitives", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const serverCssDir = path.join(rootDir, "server", "static", "css");
+  const sharedCss = fs.readFileSync(path.join(rootDir, "shared", "hud.css"), "utf8");
+  const hudCss = fs.readFileSync(path.join(serverCssDir, "hud.css"), "utf8");
+  const styleCss = fs.readFileSync(path.join(serverCssDir, "style.css"), "utf8");
+  const cssBundle = [sharedCss, hudCss, styleCss].join("\n");
+
+  expect(cssBundle).toContain(".admin-ui-chip {");
+  expect(cssBundle).toContain(".admin-ui-action {");
+  expect(cssBundle).not.toContain("admin-v2-chip");
+  expect(cssBundle).not.toContain("admin-poll-btn");
+  expect(cssBundle).not.toContain("hud-toolbar-action");
+});
+
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
