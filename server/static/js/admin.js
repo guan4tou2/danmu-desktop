@@ -804,7 +804,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <span class="dot"></span>
                                         ${broadcasting ? "DESKTOP · ON" : "DESKTOP · OFF"}
                                     </button>
-                                    <button id="logoutButton" class="admin-poll-btn is-ghost" style="color:var(--color-danger);border-color:var(--color-danger);display:flex;align-items:center;gap:6px">
+                                    <button id="logoutButton" class="admin-ui-action is-danger admin-logout-action">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                                         <span data-i18n="logout">${ServerI18n.t("logout")}</span>
                                     </button>
@@ -1056,7 +1056,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="flex items-center justify-between" style="gap:8px">
               <p class="text-xs m-0" style="color:var(--admin-text-dim)">${ServerI18n.t("effectsManagementDesc")}</p>
               <div class="flex items-center" style="gap:6px">
-                <button id="effectReloadBtn" class="hud-toolbar-action" type="button">
+                <button id="effectReloadBtn" class="admin-ui-action admin-effects-action" type="button">
                   \u21bb ${ServerI18n.t("reload")}
                 </button>
               </div>
@@ -1075,8 +1075,8 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
               <pre class="hud-inspector-body" id="effectsInspectorBody"># \u9ede\u9078\u4e00\u500b\u6548\u679c\u4ee5\u986f\u793a YAML \u5167\u5bb9</pre>
               <div class="hud-inspector-foot">
-                <button type="button" class="hud-toolbar-action" id="effectsInspectorReload" style="flex:1">\u21bb RELOAD</button>
-                <button type="button" class="hud-toolbar-action is-primary" id="effectsInspectorEdit" style="flex:1">EDIT</button>
+                <button type="button" class="admin-ui-action admin-effects-inspector-action" id="effectsInspectorReload" style="flex:1">\u21bb RELOAD</button>
+                <button type="button" class="admin-ui-action is-primary admin-effects-inspector-action" id="effectsInspectorEdit" style="flex:1">EDIT</button>
               </div>
             </div>
 
@@ -1116,7 +1116,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="admin-v2-card" style="padding:14px;margin-top:12px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-            <button id="themeReloadBtn" class="admin-poll-btn is-ghost">
+            <button id="themeReloadBtn" class="admin-ui-action admin-theme-reload-action">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
               Reload
             </button>
@@ -1174,7 +1174,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div style="padding:14px;display:grid;grid-template-columns:1fr auto;gap:8px;border-bottom:1px solid var(--hud-line-strong)">
             <input type="text" id="newKeywordInput" placeholder="${ServerI18n.t("enterKeyword")}"
               class="admin-v2-input w-full">
-            <button id="addKeywordBtn" type="button" class="hud-toolbar-action is-primary">+ ${ServerI18n.t("addKeyword")}</button>
+            <button id="addKeywordBtn" type="button" class="admin-ui-action is-primary admin-mod-keyword-action">+ ${ServerI18n.t("addKeyword")}</button>
           </div>
           <div id="blacklistKeywords" class="max-h-72 overflow-y-auto" style="padding:8px 14px">
             <!-- Keywords will be listed here -->
@@ -1202,9 +1202,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <option value="72">${ServerI18n.t("last3Days")}</option>
                                         <option value="168">${ServerI18n.t("last7Days")}</option>
                                     </select>
-                                    <button id="refreshHistoryBtn" class="admin-poll-btn is-primary">${ServerI18n.t("refreshBtn")}</button>
-                                    <button id="exportHistoryBtn" class="admin-poll-btn is-ghost">${ServerI18n.t("exportCSV")}</button>
-                                    <button id="clearHistoryBtn" class="admin-poll-btn is-ghost" style="color:var(--color-danger);border-color:var(--color-danger)">${ServerI18n.t("clearAll")}</button>
+                                    <button id="refreshHistoryBtn" class="admin-ui-action is-primary admin-history-action">${ServerI18n.t("refreshBtn")}</button>
+                                    <button id="exportHistoryBtn" class="admin-ui-action admin-history-action">${ServerI18n.t("exportCSV")}</button>
+                                    <button id="clearHistoryBtn" class="admin-ui-action is-danger admin-history-action">${ServerI18n.t("clearAll")}</button>
                                     <label class="flex items-center gap-2 text-xs cursor-pointer select-none ml-auto" style="color:var(--admin-text-dim)">
                                         <input type="checkbox" id="historyAutoRefresh" style="accent-color:var(--color-primary)">
                                         ${ServerI18n.t("autoRefresh")}
@@ -1213,19 +1213,19 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <input id="historySearch" type="search" placeholder="${ServerI18n.t("searchHistory")}"
                                     class="admin-v2-input w-full">
                                 <div id="replayToolbar" class="history-replay-toolbar">
-                                    <button id="replayStartBtn" class="admin-poll-btn is-primary" style="--btn-bg:var(--color-success)">▶ ${ServerI18n.t("replaySelected")}</button>
-                                    <button id="replayPauseBtn" class="admin-poll-btn is-ghost hidden">⏸ ${ServerI18n.t("pause")}</button>
-                                    <button id="replayResumeBtn" class="admin-poll-btn is-primary hidden" style="--btn-bg:var(--color-success)">▶ ${ServerI18n.t("resume")}</button>
-                                    <button id="replayStopBtn" class="admin-poll-btn is-ghost hidden" style="color:var(--color-danger);border-color:var(--color-danger)">⏹ ${ServerI18n.t("stop")}</button>
+                                    <button id="replayStartBtn" class="admin-ui-action is-primary admin-replay-control-action">▶ ${ServerI18n.t("replaySelected")}</button>
+                                    <button id="replayPauseBtn" class="admin-ui-action admin-replay-control-action hidden">⏸ ${ServerI18n.t("pause")}</button>
+                                    <button id="replayResumeBtn" class="admin-ui-action is-primary admin-replay-control-action hidden">▶ ${ServerI18n.t("resume")}</button>
+                                    <button id="replayStopBtn" class="admin-ui-action is-danger admin-replay-control-action hidden">⏹ ${ServerI18n.t("stop")}</button>
                                     <select id="replaySpeed" class="admin-v2-select">
                                         <option value="1">1x</option>
                                         <option value="2">2x</option>
                                         <option value="5">5x</option>
                                         <option value="10">10x</option>
                                     </select>
-                                    <button id="replayRecordBtn" class="admin-poll-btn is-ghost" style="color:var(--color-danger);border-color:var(--color-danger)">⏺ ${ServerI18n.t("recordReplay") || "Record Replay"}</button>
+                                    <button id="replayRecordBtn" class="admin-ui-action is-danger admin-replay-control-action">⏺ ${ServerI18n.t("recordReplay") || "Record Replay"}</button>
                                     <span id="replayRecordingIndicator" class="text-sm hidden" style="color:var(--color-danger)">⏺ <span id="replayRecordingTimer">00:00</span></span>
-                                    <button id="exportJsonBtn" class="admin-poll-btn is-ghost">${ServerI18n.t("exportJSON") || "Export JSON"}</button>
+                                    <button id="exportJsonBtn" class="admin-ui-action admin-replay-control-action">${ServerI18n.t("exportJSON") || "Export JSON"}</button>
                                     <span id="replayProgress" class="text-sm hidden" style="color:var(--admin-text-dim)"></span>
                                 </div>
                                 <div id="historyStats" class="history-stats-strip text-sm" style="color:var(--admin-text-dim)"></div>

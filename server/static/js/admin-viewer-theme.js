@@ -146,7 +146,7 @@
                 <div class="hero">
                   <div class="logo" data-vt-preview-logo>DANMU FIRE</div>
                   <p class="subtitle">把你的訊息送上螢幕！</p>
-                  <span class="chip"><span class="dot"></span>CONNECTED · LIVE</span>
+                  <span class="admin-ui-chip admin-vt-preview-status"><span class="dot"></span>CONNECTED · LIVE</span>
                 </div>
                 <div class="stream">
                   <span class="row"><b>@guest</b><span>大家好 👋</span></span>

@@ -1763,7 +1763,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   opacity: 0.75;
 }
 
-.admin-vt-preview-stage .hero .chip {
+.admin-vt-preview-stage .hero .admin-vt-preview-status {
   margin-top: 10px;
   display: inline-flex;
   align-items: center;
@@ -1779,7 +1779,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   text-transform: uppercase;
 }
 
-.admin-vt-preview-stage .hero .chip .dot {
+.admin-vt-preview-stage .hero .admin-vt-preview-status .dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;

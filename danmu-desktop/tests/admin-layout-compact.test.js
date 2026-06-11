@@ -720,6 +720,28 @@ test("admin Poll Builder session and editor actions compose shared controls", ()
   expect(pollBuilderSrc).not.toContain('class="chip"');
 });
 
+test("admin shell and Viewer Theme residual controls compose shared primitives", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static", "js");
+  const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
+  const viewerThemeSrc = fs.readFileSync(path.join(staticDir, "admin-viewer-theme.js"), "utf8");
+
+  expect(adminSrc).toContain('id="logoutButton" class="admin-ui-action is-danger admin-logout-action"');
+  expect(adminSrc).toContain('id="effectReloadBtn" class="admin-ui-action admin-effects-action"');
+  expect(adminSrc).toContain('class="admin-ui-action admin-effects-inspector-action" id="effectsInspectorReload"');
+  expect(adminSrc).toContain('class="admin-ui-action is-primary admin-effects-inspector-action" id="effectsInspectorEdit"');
+  expect(adminSrc).toContain('id="themeReloadBtn" class="admin-ui-action admin-theme-reload-action"');
+  expect(adminSrc).toContain('id="addKeywordBtn" type="button" class="admin-ui-action is-primary admin-mod-keyword-action"');
+  expect(adminSrc).toContain('id="refreshHistoryBtn" class="admin-ui-action is-primary admin-history-action"');
+  expect(adminSrc).toContain('id="clearHistoryBtn" class="admin-ui-action is-danger admin-history-action"');
+  expect(adminSrc).toContain('id="replayStopBtn" class="admin-ui-action is-danger admin-replay-control-action hidden"');
+  expect(adminSrc).toContain('id="exportJsonBtn" class="admin-ui-action admin-replay-control-action"');
+  expect(viewerThemeSrc).toContain('class="admin-ui-chip admin-vt-preview-status"');
+  expect(adminSrc).not.toContain("admin-poll-btn");
+  expect(adminSrc).not.toContain("hud-toolbar-action");
+  expect(viewerThemeSrc).not.toContain('class="chip"');
+});
+
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
