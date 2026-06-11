@@ -209,7 +209,7 @@
                   <input type="number" id="filterPriority" value="0" min="-9999" max="9999"
                     class="admin-v2-input" />
                 </div>
-                <button id="filterAddBtn" type="button" class="hud-toolbar-action is-primary" style="margin-top:4px">
+                <button id="filterAddBtn" type="button" class="admin-ui-action is-primary admin-filter-action" style="margin-top:4px">
                   + ${t("addRule", "Add Rule")}
                 </button>
               </div>
@@ -222,7 +222,7 @@
               <div style="padding:14px;display:flex;flex-direction:column;gap:8px">
                 <input id="filterTestText" type="text" placeholder="${t("sampleText", "Sample text...")}"
                   class="admin-v2-input" />
-                <button id="filterTestBtn" type="button" class="hud-toolbar-action" style="align-self:flex-start">${t("testBtn", "Test")}</button>
+                <button id="filterTestBtn" type="button" class="admin-ui-action admin-filter-action" style="align-self:flex-start">${t("testBtn", "Test")}</button>
                 <div id="filterTestResult" style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-strong);letter-spacing:0.02em"></div>
               </div>
             </div>

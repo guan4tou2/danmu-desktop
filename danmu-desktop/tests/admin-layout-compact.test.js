@@ -643,6 +643,19 @@ test("admin Stickers page actions compose shared controls", () => {
   expect(stickersSrc).not.toContain("admin-v2-chip");
 });
 
+test("admin Filters and Fonts toolbar actions compose shared controls", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const filtersSrc = fs.readFileSync(path.join(staticDir, "js", "admin-filters.js"), "utf8");
+  const fontsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-fonts.js"), "utf8");
+
+  expect(filtersSrc).toContain('id="filterAddBtn" type="button" class="admin-ui-action is-primary admin-filter-action"');
+  expect(filtersSrc).toContain('id="filterTestBtn" type="button" class="admin-ui-action admin-filter-action"');
+  expect(fontsSrc).toContain('for="adminFontFileInput" class="admin-ui-action admin-font-upload-action"');
+  expect(filtersSrc).not.toContain("hud-toolbar-action");
+  expect(fontsSrc).not.toContain("hud-toolbar-action");
+});
+
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");

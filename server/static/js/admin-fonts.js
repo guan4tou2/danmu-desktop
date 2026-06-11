@@ -48,7 +48,7 @@
                 </div>
               </div>
               <div class="hud-table-foot" style="padding:14px 16px;display:flex;align-items:center;gap:10px;">
-                ${loggedIn ? `<label for="adminFontFileInput" class="hud-toolbar-action" style="cursor:pointer" title="${escapeHtml(ServerI18n.t("uploadFont"))}">+ ${ServerI18n.t("uploadFont")} · WOFF2 / OTF / TTF</label>${uploadHiddenInput}` : ""}
+                ${loggedIn ? `<label for="adminFontFileInput" class="admin-ui-action admin-font-upload-action" style="cursor:pointer" title="${escapeHtml(ServerI18n.t("uploadFont"))}">+ ${ServerI18n.t("uploadFont")} · WOFF2 / OTF / TTF</label>${uploadHiddenInput}` : ""}
                 <span id="fontsTotalSize" style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.12em">總計 —</span>
               </div>
             </div>
