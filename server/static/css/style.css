@@ -967,28 +967,6 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   gap: 4px;
 }
 
-.admin-dash-widget-tile .actions .chip {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 1px;
-  padding: 2px 6px;
-  border-radius: 3px;
-  border: 1px solid var(--admin-line);
-  background: transparent;
-  color: var(--admin-text);
-  cursor: pointer;
-  transition: border-color 0.12s, color 0.12s;
-}
-
-.admin-dash-widget-tile .actions .chip.is-muted {
-  color: var(--admin-text-dim);
-}
-
-.admin-dash-widget-tile .actions .chip:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
 .admin-dash-poll-opt {
   display: flex;
   flex-direction: column;

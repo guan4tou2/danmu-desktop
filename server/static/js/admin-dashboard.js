@@ -720,8 +720,8 @@
         <div class="title">${_escapeHtml(title)}</div>
         <div class="uptime">${uptimeLabel}</div>
         <div class="actions">
-          <button type="button" class="chip" data-widget-action="toggle" data-running="${running ? "1" : "0"}">${running ? "PAUSE" : "RUN"}</button>
-          <button type="button" class="chip is-muted" data-widget-action="config">CONFIG</button>
+          <button type="button" class="admin-ui-chip admin-dash-widget-action${running ? " is-active" : ""}" data-widget-action="toggle" data-running="${running ? "1" : "0"}">${running ? "PAUSE" : "RUN"}</button>
+          <button type="button" class="admin-ui-chip admin-dash-widget-action" data-widget-action="config">CONFIG</button>
         </div>
       </div>`;
   }

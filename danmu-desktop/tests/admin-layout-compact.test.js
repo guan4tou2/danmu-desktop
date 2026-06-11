@@ -586,6 +586,19 @@ test("admin Session Detail controls compose shared primitives", () => {
   expect(detailSrc).not.toContain("admin-sd-action-btn");
 });
 
+test("admin Dashboard widget actions compose shared chips", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const dashboardSrc = fs.readFileSync(path.join(staticDir, "js", "admin-dashboard.js"), "utf8");
+  const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+
+  expect(dashboardSrc).toContain('class="admin-ui-chip admin-dash-widget-action${running ? " is-active" : ""}" data-widget-action="toggle"');
+  expect(dashboardSrc).toContain('class="admin-ui-chip admin-dash-widget-action" data-widget-action="config"');
+  expect(dashboardSrc).not.toContain('class="chip" data-widget-action');
+  expect(dashboardSrc).not.toContain('class="chip is-muted"');
+  expect(cssSrc).not.toContain(".admin-dash-widget-tile .actions .chip");
+});
+
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
