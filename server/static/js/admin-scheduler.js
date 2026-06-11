@@ -25,7 +25,7 @@
         <input type="number" min="12" max="200" placeholder="Size"
           class="scheduler-msg-size admin-v2-input"
           value="${size || 48}" />
-        <button type="button" class="scheduler-remove-msg admin-v2-chip is-bad" title="Remove" aria-label="Remove message">×</button>
+        <button type="button" class="admin-ui-chip is-danger scheduler-remove-msg" title="Remove" aria-label="Remove message">×</button>
       </div>`;
   }
 
@@ -53,11 +53,11 @@
         <span class="admin-scheduler-job-val">${job.sent_count ?? 0}</span>
         <span class="admin-scheduler-job-val">${escapeHTML(repeat)}</span>
         <div class="admin-scheduler-job-actions">
-          <button type="button" class="scheduler-job-toggle admin-v2-chip ${isPaused ? "is-good" : "is-warn"}"
+          <button type="button" class="admin-ui-chip scheduler-job-toggle ${isPaused ? "is-active" : "is-warn"}"
             data-job-id="${escapeAttr(job.id)}" data-action="${isPaused ? "resume" : "pause"}">
             ${isPaused ? "▶" : "⏸"}
           </button>
-          <button type="button" class="scheduler-job-cancel admin-v2-chip is-bad"
+          <button type="button" class="admin-ui-chip is-danger scheduler-job-cancel"
             data-job-id="${escapeAttr(job.id)}">×</button>
         </div>
       </div>`;

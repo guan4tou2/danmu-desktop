@@ -388,7 +388,7 @@
       + '<div style="font-family:var(--font-mono);font-size:10px;color:var(--admin-text-dim);word-break:break-all">'
       +   idFull
       + '</div>'
-      + (live ? '<span class="admin-v2-chip is-on" style="align-self:flex-start">● LIVE</span>' : '')
+      + (live ? '<span class="admin-ui-chip is-active admin-sessions-live-badge" style="align-self:flex-start">● LIVE</span>' : '')
       + _previewKv("開始時間", ts)
       + _previewKv("時長", dur)
       + _previewKv("訊息數", msgs.toLocaleString())

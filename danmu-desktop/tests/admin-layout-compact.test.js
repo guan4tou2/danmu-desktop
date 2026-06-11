@@ -669,6 +669,25 @@ test("admin Live Feed row and bulk actions compose shared controls", () => {
   expect(liveFeedSrc).not.toContain("admin-poll-btn");
 });
 
+test("admin Scheduler, Replay, and Sessions chips compose shared controls", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static", "js");
+  const schedulerSrc = fs.readFileSync(path.join(staticDir, "admin-scheduler.js"), "utf8");
+  const replaySrc = fs.readFileSync(path.join(staticDir, "admin-replay.js"), "utf8");
+  const sessionsSrc = fs.readFileSync(path.join(staticDir, "admin-sessions.js"), "utf8");
+
+  expect(schedulerSrc).toContain('class="admin-ui-chip is-danger scheduler-remove-msg"');
+  expect(schedulerSrc).toContain('class="admin-ui-chip scheduler-job-toggle ${isPaused ? "is-active" : "is-warn"}"');
+  expect(schedulerSrc).toContain('class="admin-ui-chip is-danger scheduler-job-cancel"');
+  expect(replaySrc).toContain('id="replayV2Refresh" class="admin-ui-action admin-replay-toolbar-action"');
+  expect(replaySrc).toContain('id="replayV2ExportJson" class="admin-ui-action admin-replay-toolbar-action"');
+  expect(replaySrc).toContain('class="admin-ui-chip is-active admin-replay-refire-action"');
+  expect(sessionsSrc).toContain('class="admin-ui-chip is-active admin-sessions-live-badge"');
+  expect(schedulerSrc).not.toContain("admin-v2-chip");
+  expect(replaySrc).not.toContain("admin-v2-chip");
+  expect(sessionsSrc).not.toContain("admin-v2-chip");
+});
+
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");

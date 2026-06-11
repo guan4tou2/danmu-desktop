@@ -103,8 +103,8 @@
               '<option value="2">2×</option>' +
               '<option value="4">4×</option>' +
             '</select>' +
-            '<button type="button" id="replayV2Refresh" class="admin-v2-chip">↻ ' + esc(t("refreshBtn", "Refresh")) + '</button>' +
-            '<button type="button" id="replayV2ExportJson" class="admin-v2-chip" style="margin-left:auto">⇩ JSON</button>' +
+            '<button type="button" id="replayV2Refresh" class="admin-ui-action admin-replay-toolbar-action">↻ ' + esc(t("refreshBtn", "Refresh")) + '</button>' +
+            '<button type="button" id="replayV2ExportJson" class="admin-ui-action admin-replay-toolbar-action" style="margin-left:auto">⇩ JSON</button>' +
           '</div>' +
           '<div class="admin-replay-meta" id="replayV2Meta">—</div>' +
         '</div>' +
@@ -384,7 +384,7 @@
           '<span class="admin-replay-time">' + esc(ts) + '</span>' +
           colorDot +
           '<span class="admin-replay-text">' + esc(preview) + '</span>' +
-          '<button type="button" class="admin-v2-chip is-on" data-replay-refire="' + absIdx + '" title="' + esc(t("refireNow", "Re-fire now")) + '">▶ ' + esc(t("refireNow", "Re-fire")) + '</button>' +
+          '<button type="button" class="admin-ui-chip is-active admin-replay-refire-action" data-replay-refire="' + absIdx + '" title="' + esc(t("refireNow", "Re-fire now")) + '">▶ ' + esc(t("refireNow", "Re-fire")) + '</button>' +
         '</div>'
       );
     }).join("");
