@@ -2666,7 +2666,6 @@
   gap: 6px;
 }
 .admin-security-tokenrow .admin-v2-input { flex: 1; }
-.admin-security-tokenrow .admin-v2-chip { cursor: pointer; padding: 6px 10px; }
 
 .admin-security-tokenmeta {
   margin-top: 10px;

@@ -14587,13 +14587,9 @@ body.admin-pu-open { overflow: hidden; }
   color: var(--hud-textDim);
 }
 .admin-sec-card__spacer { flex: 1; }
-.admin-sec-card__link {
-  font-family: var(--hud-font-mono);
-  font-size: 10px; letter-spacing: 0.5px;
-  color: var(--hud-cyan);
+.admin-sec-card__head > a.admin-ui-action {
   text-decoration: none;
 }
-.admin-sec-card__link:hover { text-decoration: underline; }
 .admin-sec-card__body {
   padding: 16px;
   display: flex; flex-direction: column; gap: 12px;
@@ -14694,10 +14690,14 @@ body.admin-pu-open { overflow: hidden; }
 .admin-security-tokenrow .admin-v2-input {
   flex: 1; min-width: 0;
 }
+.admin-security-tokenrow > .admin-ui-action {
+  flex: 0 0 auto;
+}
 .admin-security-tokenmeta {
   display: flex; align-items: center; gap: 8px;
   font-size: 10px;
 }
+.admin-sec-action--end { margin-left: auto; }
 .admin-security-timestamp {
   font-family: var(--hud-font-mono);
   color: var(--hud-textDim);
@@ -14710,22 +14710,14 @@ body.admin-pu-open { overflow: hidden; }
 @media (max-width: 760px) {
   .admin-sec-dangerzone { grid-template-columns: 1fr; }
 }
-.admin-sec-danger {
-  padding: 12px;
-  border-radius: 6px;
-  border: 1px solid rgba(248, 113, 113, 0.30);
-  background: rgba(248, 113, 113, 0.05);
-  color: var(--hud-crimson, #f87171);
+.admin-sec-dangerzone > .admin-ui-action {
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 58px;
   text-align: left;
-  display: flex; flex-direction: column; gap: 4px;
-  cursor: pointer;
+  flex-direction: column;
+  gap: 4px;
 }
-.admin-sec-danger.is-amber {
-  border-color: rgba(251, 191, 36, 0.30);
-  background: rgba(251, 191, 36, 0.05);
-  color: var(--hud-amber, #fbbf24);
-}
-.admin-sec-danger:hover { filter: brightness(1.1); }
 .admin-sec-danger__title {
   font-family: var(--hud-font-mono);
   font-size: 11px; font-weight: 600;

@@ -63,7 +63,7 @@
                   <span class="admin-v2-monolabel">CONFIRM</span>
                   <input id="sec2-pw-confirm" type="password" required autocomplete="new-password" class="admin-v2-input" />
                 </label>
-                <button type="submit" class="admin-poll-btn is-primary">變更密碼</button>
+                <button type="submit" class="admin-ui-action is-primary admin-sec-action">變更密碼</button>
               </form>
             </div>
           </div>
@@ -117,15 +117,15 @@
                 <span class="admin-v2-monolabel">TOKEN · 12–128 字元</span>
                 <div class="admin-security-tokenrow">
                   <input id="sec2-wsa-token" type="password" class="admin-v2-input" placeholder="未設定" autocomplete="off" spellcheck="false" />
-                  <button type="button" id="sec2-wsa-reveal" class="admin-v2-chip">👁</button>
-                  <button type="button" id="sec2-wsa-copy" class="admin-v2-chip">複製</button>
-                  <button type="button" id="sec2-wsa-rotate" class="admin-v2-chip is-warn">重新產生</button>
+                  <button type="button" id="sec2-wsa-reveal" class="admin-ui-action admin-sec-token-action">👁</button>
+                  <button type="button" id="sec2-wsa-copy" class="admin-ui-action admin-sec-token-action">複製</button>
+                  <button type="button" id="sec2-wsa-rotate" class="admin-ui-action is-warn admin-sec-token-action">重新產生</button>
                 </div>
               </div>
               <div class="admin-security-tokenmeta">
                 <span class="admin-v2-monolabel">LAST ROTATION</span>
                 <span id="sec2-wsa-lastrot" class="admin-security-timestamp">—</span>
-                <button type="button" id="sec2-wsa-save" class="admin-poll-btn is-primary" style="margin-left:auto">儲存</button>
+                <button type="button" id="sec2-wsa-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end">儲存</button>
               </div>
             </div>
           </div>
@@ -157,7 +157,7 @@
               <div class="admin-security-tokenmeta">
                 <span class="admin-v2-monolabel">CURRENT IP</span>
                 <span id="sec2-ip-current" class="admin-security-timestamp">—</span>
-                <button type="button" id="sec2-ip-save" class="admin-poll-btn is-primary" style="margin-left:auto">儲存</button>
+                <button type="button" id="sec2-ip-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end">儲存</button>
               </div>
             </div>
           </div>
@@ -203,7 +203,7 @@
                 <input id="sec2-cors-methods" type="text" class="admin-v2-input" spellcheck="false" placeholder="GET, POST, DELETE, PATCH, OPTIONS" />
               </label>
               <div class="admin-security-tokenmeta">
-                <button type="button" id="sec2-cors-save" class="admin-poll-btn is-primary" style="margin-left:auto">儲存 CORS</button>
+                <button type="button" id="sec2-cors-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end">儲存 CORS</button>
               </div>
             </div>
           </div>
@@ -241,7 +241,7 @@
               <span class="admin-sec-card__zh">操作審計</span>
               <span class="admin-sec-card__en">AUDIT LOG</span>
               <span class="admin-sec-card__spacer"></span>
-              <a href="#/audit" class="admin-sec-card__link">查看完整日誌 →</a>
+              <a href="#/audit" class="admin-ui-action admin-sec-card__link">查看完整日誌 →</a>
             </div>
             <div class="admin-sec-card__body">
               <p class="admin-sec-card__note">
@@ -259,15 +259,15 @@
             </div>
             <div class="admin-sec-card__body">
               <div class="admin-sec-dangerzone">
-                <button type="button" class="admin-sec-danger" data-sec-danger="revoke-tokens">
+                <button type="button" class="admin-ui-action is-danger admin-sec-danger" data-sec-danger="revoke-tokens">
                   <span class="admin-sec-danger__title">撤銷所有 API Token</span>
                   <span class="admin-sec-danger__desc">立即停用所有整合</span>
                 </button>
-                <button type="button" class="admin-sec-danger" data-sec-danger="revoke-firetoken">
+                <button type="button" class="admin-ui-action is-danger admin-sec-danger" data-sec-danger="revoke-firetoken">
                   <span class="admin-sec-danger__title">撤銷 Fire Token</span>
                   <span class="admin-sec-danger__desc">所有 extension 斷線</span>
                 </button>
-                <button type="button" class="admin-sec-danger is-amber" data-sec-danger="reset-ws">
+                <button type="button" class="admin-ui-action is-warn admin-sec-danger" data-sec-danger="reset-ws">
                   <span class="admin-sec-danger__title">重設 WS Token</span>
                   <span class="admin-sec-danger__desc">所有 viewer 需重連</span>
                 </button>

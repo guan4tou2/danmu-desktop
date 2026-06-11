@@ -376,6 +376,43 @@ test("admin Webhooks composes shared admin-ui controls instead of page-local chr
   expect(cssSrc).not.toContain(".admin-wh-detail-actions button.danger");
 });
 
+test("admin Security actions compose shared admin-ui controls instead of page-local chrome", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const securitySrc = fs.readFileSync(path.join(staticDir, "js", "admin-security.js"), "utf8");
+  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+
+  expect(securitySrc).toContain('class="admin-ui-action is-primary admin-sec-action"');
+  expect(securitySrc).toContain('id="sec2-wsa-reveal" class="admin-ui-action admin-sec-token-action"');
+  expect(securitySrc).toContain('id="sec2-wsa-copy" class="admin-ui-action admin-sec-token-action"');
+  expect(securitySrc).toContain('id="sec2-wsa-rotate" class="admin-ui-action is-warn admin-sec-token-action"');
+  expect(securitySrc).toContain('id="sec2-wsa-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end"');
+  expect(securitySrc).toContain('id="sec2-ip-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end"');
+  expect(securitySrc).toContain('id="sec2-cors-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end"');
+  expect(securitySrc).toContain('href="#/audit" class="admin-ui-action admin-sec-card__link"');
+  expect(securitySrc).toContain('class="admin-ui-action is-danger admin-sec-danger" data-sec-danger="revoke-tokens"');
+  expect(securitySrc).toContain('class="admin-ui-action is-danger admin-sec-danger" data-sec-danger="revoke-firetoken"');
+  expect(securitySrc).toContain('class="admin-ui-action is-warn admin-sec-danger" data-sec-danger="reset-ws"');
+  expect(securitySrc).not.toContain('class="admin-poll-btn');
+  expect(securitySrc).not.toContain('id="sec2-wsa-reveal" class="admin-v2-chip"');
+  expect(securitySrc).not.toContain('id="sec2-wsa-copy" class="admin-v2-chip"');
+  expect(securitySrc).not.toContain('id="sec2-wsa-rotate" class="admin-v2-chip is-warn"');
+  expect(securitySrc).not.toContain('class="admin-sec-danger is-amber"');
+
+  expect(hudSrc).toContain(".admin-ui-action {");
+  expect(hudSrc).toContain(".admin-ui-action.is-primary {");
+  expect(hudSrc).toContain(".admin-ui-action.is-warn {");
+  expect(hudSrc).toContain(".admin-ui-action.is-danger {");
+
+  expect(cssSrc).toContain(".admin-sec-action--end {");
+  expect(cssSrc).not.toContain(".admin-sec-card__link {");
+  expect(cssSrc).not.toContain(".admin-sec-card__link:hover");
+  expect(cssSrc).not.toContain(".admin-sec-danger {");
+  expect(cssSrc).not.toContain(".admin-sec-danger.is-amber");
+  expect(cssSrc).not.toContain(".admin-sec-danger:hover");
+});
+
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
