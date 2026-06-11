@@ -132,12 +132,12 @@
         <div class="admin-modbans-modal-target">
           <span class="admin-modbans-modal-target-icon">${escapeHtml(KIND_ICONS[target_kind] || "?")}</span>
           <div>
-            <div class="admin-v2-monolabel">${escapeHtml(KIND_LABELS[target_kind] || "?")} ${escapeHtml((kind || "ban").toUpperCase())}</div>
+            <div class="admin-ui-monolabel">${escapeHtml(KIND_LABELS[target_kind] || "?")} ${escapeHtml((kind || "ban").toUpperCase())}</div>
             <div class="admin-modbans-modal-target-val">${escapeHtml(_fmtTarget({ target_kind: target_kind, target: target }))}</div>
           </div>
         </div>
         <div class="admin-modbans-modal-row">
-          <div class="admin-v2-monolabel">BAN DURATION</div>
+          <div class="admin-ui-monolabel">BAN DURATION</div>
           <div class="admin-modbans-modal-presets" data-modbans-presets>
             ${PRESETS.map(function (p) {
               const cls = "admin-modbans-modal-preset"
@@ -163,7 +163,7 @@
           <div class="admin-modbans-modal-when" data-modbans-when></div>
         </div>
         <div class="admin-modbans-modal-row">
-          <div class="admin-v2-monolabel">REASON（選填 · 記錄到 audit log）</div>
+          <div class="admin-ui-monolabel">REASON（選填 · 記錄到 audit log）</div>
           <input type="text" class="admin-modbans-modal-reason" data-modbans-reason
             placeholder="e.g. 持續發送垃圾訊息" maxlength="200" />
         </div>
@@ -350,10 +350,10 @@
         </div>
         <div class="admin-v2-card admin-modbans-card">
           <div class="admin-modbans-header">
-            <span class="admin-v2-monolabel">TARGET</span>
-            <span class="admin-v2-monolabel">KIND</span>
-            <span class="admin-v2-monolabel">REASON</span>
-            <span class="admin-v2-monolabel">STATUS</span>
+            <span class="admin-ui-monolabel">TARGET</span>
+            <span class="admin-ui-monolabel">KIND</span>
+            <span class="admin-ui-monolabel">REASON</span>
+            <span class="admin-ui-monolabel">STATUS</span>
             <span></span>
           </div>
           <div class="admin-modbans-list" data-modbans-list>

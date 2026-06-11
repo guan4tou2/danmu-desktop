@@ -169,7 +169,7 @@
         <div class="admin-at-grid">
           <!-- ── LEFT: token list ──────────────────────────────────── -->
           <div class="admin-at-main">
-            <div class="admin-v2-monolabel" style="margin-bottom:10px">已核發 API Tokens</div>
+            <div class="admin-ui-monolabel" style="margin-bottom:10px">已核發 API Tokens</div>
 
             <!-- list loading state -->
             <div class="admin-at-list-loading" data-at-list-loading hidden>載入中…</div>
@@ -205,7 +205,7 @@
           <aside class="admin-at-rail">
             <div class="admin-at-form-card" id="adminAtFormCard">
               <div class="admin-at-form-head">
-                <span class="admin-v2-monolabel">產生新 Token</span>
+                <span class="admin-ui-monolabel">產生新 Token</span>
               </div>
 
               <!-- Success banner (shown after create) -->
@@ -230,7 +230,7 @@
               <form id="adminAtCreateForm" class="admin-at-form" novalidate>
                 <!-- Label -->
                 <div class="admin-at-field">
-                  <label class="admin-v2-monolabel" for="adminAtLabel">LABEL</label>
+                  <label class="admin-ui-monolabel" for="adminAtLabel">LABEL</label>
                   <input
                     type="text"
                     id="adminAtLabel"
@@ -245,7 +245,7 @@
 
                 <!-- Scopes -->
                 <div class="admin-at-field">
-                  <div class="admin-v2-monolabel" style="margin-bottom:8px">SCOPES · 權限範圍</div>
+                  <div class="admin-ui-monolabel" style="margin-bottom:8px">SCOPES · 權限範圍</div>
                   <div class="admin-at-scopes" id="adminAtScopes">
                     ${scopeCheckboxes}
                   </div>
@@ -253,7 +253,7 @@
 
                 <!-- Expiry -->
                 <div class="admin-at-field">
-                  <div class="admin-v2-monolabel" style="margin-bottom:8px">EXPIRY · 有效期限</div>
+                  <div class="admin-ui-monolabel" style="margin-bottom:8px">EXPIRY · 有效期限</div>
                   <div class="admin-at-expiry-row" id="adminAtExpiryRow">
                     ${expiryBtns}
                   </div>

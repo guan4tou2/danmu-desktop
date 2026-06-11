@@ -105,7 +105,7 @@
       : `<span class="admin-ext-flag is-soon">即將支援</span>`;
     const installSection = isReady && ext.install
       ? `<div class="admin-ext-install">
-          <div class="admin-v2-monolabel">INSTALL · 安裝步驟</div>
+          <div class="admin-ui-monolabel">INSTALL · 安裝步驟</div>
           <ol class="admin-ext-install-steps">
             ${ext.install.steps.map((s) => {
               if (s.kind === "download") {
@@ -118,7 +118,7 @@
       : "";
     const tokenSection = ext.hasFireTokenUI
       ? `<div class="admin-ext-token" data-ext-token>
-          <div class="admin-v2-monolabel">
+          <div class="admin-ui-monolabel">
             FIRE TOKEN · 共享機密
             <a href="#/firetoken" class="admin-ext-token-deeplink">詳細統計 →</a>
           </div>

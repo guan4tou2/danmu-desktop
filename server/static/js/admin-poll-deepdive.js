@@ -175,7 +175,7 @@
         </article>
 
         <article class="admin-pdd-card">
-          <div class="admin-v2-monolabel">選項分佈 · DISTRIBUTION</div>
+          <div class="admin-ui-monolabel">選項分佈 · DISTRIBUTION</div>
           <div class="admin-pdd-rows">
             ${options.length ? optionRows : '<div class="admin-pdd-empty-rows">這個 poll 還沒有選項。</div>'}
           </div>
@@ -195,7 +195,7 @@
         </article>
 
         <article class="admin-pdd-card admin-pdd-placeholder">
-          <div class="admin-v2-monolabel">投票時間分佈 · TIMELINE</div>
+          <div class="admin-ui-monolabel">投票時間分佈 · TIMELINE</div>
           <div class="admin-pdd-placeholder-body">
             <div class="admin-pdd-placeholder-icon">⌖</div>
             <div class="admin-pdd-placeholder-text">
@@ -210,7 +210,7 @@
 
       <aside class="admin-pdd-aside">
         <article class="admin-pdd-card admin-pdd-placeholder">
-          <div class="admin-v2-monolabel">地理分佈 · GEO</div>
+          <div class="admin-ui-monolabel">地理分佈 · GEO</div>
           <div class="admin-pdd-placeholder-body">
             <div class="admin-pdd-placeholder-icon">⊕</div>
             <div class="admin-pdd-placeholder-text">
@@ -222,7 +222,7 @@
         </article>
 
         <article class="admin-pdd-card">
-          <div class="admin-v2-monolabel">誠信檢查 · INTEGRITY</div>
+          <div class="admin-ui-monolabel">誠信檢查 · INTEGRITY</div>
           <div class="admin-pdd-integrity">
             <div class="row"><span class="dot is-good"></span><div class="meta"><div class="t">指紋去重</div><div class="s">同一指紋 1 票</div></div><span class="v is-good">啟用</span></div>
             <div class="row"><span class="dot is-good"></span><div class="meta"><div class="t">Rate limit</div><div class="s">/fire scope 限速</div></div><span class="v is-good">20/min</span></div>

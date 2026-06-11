@@ -94,9 +94,9 @@
         '</div>' +
         '<div class="admin-v2-card admin-replay-picker">' +
           '<div class="admin-v2-toolbar">' +
-            '<span class="admin-v2-monolabel">SESSION</span>' +
+            '<span class="admin-ui-monolabel">SESSION</span>' +
             '<select id="replayV2Session" class="admin-ui-select" style="max-width:280px"></select>' +
-            '<span class="admin-v2-monolabel">SPEED</span>' +
+            '<span class="admin-ui-monolabel">SPEED</span>' +
             '<select id="replayV2Speed" class="admin-ui-select" style="max-width:110px">' +
               '<option value="0.5">0.5×</option>' +
               '<option value="1" selected>1×</option>' +
@@ -130,8 +130,8 @@
         '</div>' +
         '<div class="admin-v2-card admin-replay-list-card">' +
           '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">' +
-            '<span class="admin-v2-monolabel">MESSAGES</span>' +
-            '<span class="admin-v2-monolabel" id="replayV2Count" style="margin-left:auto">—</span>' +
+            '<span class="admin-ui-monolabel">MESSAGES</span>' +
+            '<span class="admin-ui-monolabel" id="replayV2Count" style="margin-left:auto">—</span>' +
           '</div>' +
           '<div id="replayV2List" class="admin-replay-list">' +
             '<div class="admin-replay-empty">' + esc(t("loading", "Loading…")) + '</div>' +

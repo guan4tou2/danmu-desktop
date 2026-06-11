@@ -128,7 +128,7 @@
           </article>
 
           <article class="admin-about-oss" data-about-system>
-            <div class="admin-v2-monolabel">SYSTEM · SERVER INFO</div>
+            <div class="admin-ui-monolabel">SYSTEM · SERVER INFO</div>
             <div class="admin-about-oss-list" style="margin-top:12px">
               <div class="admin-about-oss-row" data-about-system-row>
                 <span class="n">VERSION STATUS</span>
@@ -159,7 +159,7 @@
 
           <article class="admin-about-changelog">
             <div class="admin-about-changelog-head">
-              <span class="admin-v2-monolabel">CHANGELOG · RECENT RELEASES</span>
+              <span class="admin-ui-monolabel">CHANGELOG · RECENT RELEASES</span>
               <a class="admin-about-changelog-more" href="${REPO_URL}/releases" target="_blank" rel="noopener noreferrer">完整紀錄 →</a>
             </div>
             ${CHANGELOG.slice(0, 4).map((cl) => `
@@ -182,7 +182,7 @@
           </article>
 
           <article class="admin-about-oss" data-about-license style="grid-column:1 / -1">
-            <div class="admin-v2-monolabel">LICENSE · OPEN SOURCE</div>
+            <div class="admin-ui-monolabel">LICENSE · OPEN SOURCE</div>
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px">
               <span style="font-size:12px;color:var(--color-text-strong)">MIT License · © 2026 Danmu Fire Contributors</span>
               <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-primary)">GitHub →</span>

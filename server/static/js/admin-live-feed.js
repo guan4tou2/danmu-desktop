@@ -470,7 +470,7 @@
 
           <!-- Bulk-select bar (kept for batch fingerprint block flow) -->
           <div id="liveFeedBulk" class="admin-lf-v4__bulk" hidden>
-            <span class="admin-v2-monolabel">BULK ·
+            <span class="admin-ui-monolabel">BULK ·
               <span class="admin-live-feed-bulk-count">0</span> 已選
             </span>
             <span class="admin-lf-v4__spacer"></span>
@@ -494,7 +494,7 @@
             <span class="admin-lf-v4__statelabel" data-lf-statelabel>自動滾動 · ON</span>
             <span class="admin-lf-v4__spacer"></span>
             <span class="admin-lf-v4__counts">
-              <span class="admin-v2-monolabel admin-live-feed-count" id="liveFeedCount">0 TOTAL</span>
+              <span class="admin-ui-monolabel admin-live-feed-count" id="liveFeedCount">0 TOTAL</span>
               · <span data-lf-rate>0.0 MSG/S</span>
             </span>
           </div>

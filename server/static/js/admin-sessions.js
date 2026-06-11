@@ -213,7 +213,7 @@
 
       // RIGHT: quick preview panel
       + '<aside class="admin-v2-card hud-page-stack" style="gap:12px;position:sticky;top:16px">'
-      +   '<div class="admin-v2-monolabel">快速預覽</div>'
+      +   '<div class="admin-ui-monolabel">快速預覽</div>'
       +   '<div id="admin-sessions-preview">'
       +     '<p style="font-size:13px;color:var(--admin-text-dim);margin:0">點選場次查看預覽</p>'
       +   '</div>'

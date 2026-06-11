@@ -80,7 +80,7 @@
 
           <aside class="admin-assets-rail">
             <div class="admin-assets-rail-card">
-              <div class="admin-v2-monolabel">SOURCE PAGES · 來源頁面</div>
+              <div class="admin-ui-monolabel">SOURCE PAGES · 來源頁面</div>
               <div class="admin-assets-source-list">
                 ${Object.entries(KIND_META)
                   .filter(([k]) => k !== "sound")

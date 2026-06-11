@@ -593,7 +593,7 @@
     }).join("");
     container.innerHTML =
       '<div class="admin-history-list-head">' +
-        '<span class="admin-v2-monolabel">訊息清單 · 近 24 小時</span>' +
+        '<span class="admin-ui-monolabel">訊息清單 · 近 24 小時</span>' +
         '<span class="admin-history-list-count">● ' + records.length + ' 筆</span>' +
       '</div>' +
       '<div class="admin-history-list-header"><span class="t">TIME</span><span class="n">NICK</span><span class="m">MESSAGE</span><span class="s">STATE</span></div>' +

@@ -34,10 +34,10 @@
       window.DANMU_CONFIG && window.DANMU_CONFIG.session && window.DANMU_CONFIG.session.logged_in;
     var uploadBlock = loggedIn
       ? `
-          <div class="admin-v2-monolabel" style="margin-bottom:10px">+ 新增貼圖</div>
+          <div class="admin-ui-monolabel" style="margin-bottom:10px">+ 新增貼圖</div>
           <div class="admin-stickers-upload">
             <label class="admin-stickers-field">
-              <span class="admin-v2-monolabel">FILE · GIF/PNG/WEBP · ≤300KB</span>
+              <span class="admin-ui-monolabel">FILE · GIF/PNG/WEBP · ≤300KB</span>
               <input
                 type="file"
                 id="stickerFileInput"
@@ -63,7 +63,7 @@
           <!-- Left sidebar: pack list -->
           <aside class="admin-v2-card admin-stickers-sidebar">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-              <span class="admin-v2-monolabel">PACKS</span>
+              <span class="admin-ui-monolabel">PACKS</span>
               <button
                 id="stickerPackAddBtn"
                 type="button"
@@ -81,7 +81,7 @@
 
             <div class="admin-v2-card">
               <div class="admin-stickers-toolbar">
-                <span class="admin-v2-monolabel">SEARCH</span>
+                <span class="admin-ui-monolabel">SEARCH</span>
                 <input
                   id="stickerSearchInput"
                   type="search"
@@ -89,7 +89,7 @@
                   class="admin-ui-input"
                   style="flex:1;max-width:280px"
                 />
-                <span class="admin-v2-monolabel" style="margin-left:auto" id="stickerCount">—</span>
+                <span class="admin-ui-monolabel" style="margin-left:auto" id="stickerCount">—</span>
               </div>
             </div>
 

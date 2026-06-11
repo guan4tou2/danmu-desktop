@@ -48,7 +48,7 @@
     _root.innerHTML = `
       <div class="admin-pu-modal" role="dialog" aria-label="上傳插件">
         <header class="admin-pu-head">
-          <span class="admin-v2-monolabel" style="color:var(--color-primary)">上傳插件</span>
+          <span class="admin-ui-monolabel" style="color:var(--color-primary)">上傳插件</span>
           <button type="button" class="admin-pu-close" aria-label="關閉" data-pu-close>✕</button>
         </header>
         <nav class="admin-pu-steps" data-pu-steps aria-label="安裝進度"></nav>
@@ -299,7 +299,7 @@
 
     const depsBlock = deps.length === 0 ? "" : `
       <section class="admin-pu-section">
-        <span class="admin-v2-monolabel">DEPENDENCIES</span>
+        <span class="admin-ui-monolabel">DEPENDENCIES</span>
         <div class="admin-pu-dep-list">${depRows}</div>
       </section>`;
 
@@ -314,11 +314,11 @@
         </div>
         <div class="admin-pu-manifest-desc">${escapeHtml(desc)}</div>
         <section class="admin-pu-section">
-          <span class="admin-v2-monolabel">PRIORITY</span>
+          <span class="admin-ui-monolabel">PRIORITY</span>
           ${_priorityPill(m.priority)}
         </section>
         <section class="admin-pu-section">
-          <span class="admin-v2-monolabel">PERMISSIONS</span>
+          <span class="admin-ui-monolabel">PERMISSIONS</span>
           <div class="admin-pu-perm-list">${permRows}</div>
         </section>
         ${depsBlock}
@@ -372,11 +372,11 @@
           <span class="admin-ui-pill admin-pu-pill is-cyan">${ver}</span>
         </div>
         <section class="admin-pu-section">
-          <span class="admin-v2-monolabel">將存取</span>
+          <span class="admin-ui-monolabel">將存取</span>
           <div class="admin-pu-confirm-perms">${permsHtml}</div>
         </section>
         <section class="admin-pu-section">
-          <span class="admin-v2-monolabel">安裝步驟</span>
+          <span class="admin-ui-monolabel">安裝步驟</span>
           <ol class="admin-pu-confirm-steps">
             <li>寫入 server/user_plugins/${escapeHtml(_state.filename || "")}</li>
             <li>Hot-reload 插件系統（無需重啟）</li>

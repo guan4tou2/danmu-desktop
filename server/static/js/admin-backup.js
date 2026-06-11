@@ -43,15 +43,15 @@
         <div class="admin-v2-card admin-backup-zone" data-zone="export">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
             <span class="admin-v2-dot is-good"></span>
-            <span class="admin-v2-monolabel">ZONE 1 · EXPORT</span>
+            <span class="admin-ui-monolabel">ZONE 1 · EXPORT</span>
           </div>
 
           <!-- History export -->
           <div class="admin-backup-subcard">
-            <div class="admin-v2-monolabel">HISTORY · 彈幕歷史</div>
+            <div class="admin-ui-monolabel">HISTORY · 彈幕歷史</div>
             <div class="admin-backup-row">
               <label class="admin-backup-field">
-                <span class="admin-v2-monolabel">RANGE</span>
+                <span class="admin-ui-monolabel">RANGE</span>
                 <select id="bk2-hist-hours" class="admin-ui-select">
                   <option value="1">最近 1 小時</option>
                   <option value="6">最近 6 小時</option>
@@ -61,7 +61,7 @@
                 </select>
               </label>
               <label class="admin-backup-field">
-                <span class="admin-v2-monolabel">FORMAT</span>
+                <span class="admin-ui-monolabel">FORMAT</span>
                 <select id="bk2-hist-format" class="admin-ui-select">
                   <option value="json">JSON · 完整</option>
                   <option value="csv">CSV · 試算表</option>
@@ -74,7 +74,7 @@
 
           <!-- Settings export -->
           <div class="admin-backup-subcard">
-            <div class="admin-v2-monolabel">SETTINGS · 設定快照</div>
+            <div class="admin-ui-monolabel">SETTINGS · 設定快照</div>
             <div class="admin-backup-row">
               <div class="admin-backup-desc">
                 一鍵 JSON 快照(client-side 組合)。不含密碼雜湊與 token,已自動剝除。
@@ -85,7 +85,7 @@
 
           <!-- Full pack (2026-05-19 — wired to /admin/backup/export) -->
           <div class="admin-backup-subcard">
-            <div class="admin-v2-monolabel">FULL BACKUP · 全狀態 .tar.gz</div>
+            <div class="admin-ui-monolabel">FULL BACKUP · 全狀態 .tar.gz</div>
             <div class="admin-backup-row">
               <div class="admin-backup-desc" id="bk2-pack-summary">
                 計算備份大小中…
@@ -103,15 +103,15 @@
         <div class="admin-v2-card admin-backup-zone" data-zone="restore">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
             <span class="admin-v2-dot is-warn"></span>
-            <span class="admin-v2-monolabel">ZONE 2 · RESTORE</span>
+            <span class="admin-ui-monolabel">ZONE 2 · RESTORE</span>
           </div>
 
           <!-- Settings restore -->
           <div class="admin-backup-subcard">
-            <div class="admin-v2-monolabel">SETTINGS · 還原設定</div>
+            <div class="admin-ui-monolabel">SETTINGS · 還原設定</div>
             <div class="admin-backup-row">
               <label class="admin-backup-field">
-                <span class="admin-v2-monolabel">JSON FILE</span>
+                <span class="admin-ui-monolabel">JSON FILE</span>
                 <input id="bk2-settings-upload" type="file" accept="application/json,.json" class="admin-ui-input" />
               </label>
               <button type="button" id="bk2-settings-dryrun" class="admin-ui-action admin-bk-action">Dry-run 預覽</button>
@@ -123,10 +123,10 @@
 
           <!-- Full pack restore (2026-05-19 — wired to /admin/backup/import) -->
           <div class="admin-backup-subcard">
-            <div class="admin-v2-monolabel">FULL BACKUP · 還原 .tar.gz</div>
+            <div class="admin-ui-monolabel">FULL BACKUP · 還原 .tar.gz</div>
             <div class="admin-backup-row">
               <label class="admin-backup-field">
-                <span class="admin-v2-monolabel">TARBALL · ≤ 16 MB</span>
+                <span class="admin-ui-monolabel">TARBALL · ≤ 16 MB</span>
                 <input id="bk2-pack-upload" type="file" accept=".tar.gz,application/gzip,application/x-gzip" class="admin-ui-input" />
               </label>
               <button type="button" id="bk2-pack-dryrun" class="admin-ui-action admin-bk-action">Dry-run 預覽</button>
@@ -145,15 +145,15 @@
         <div class="admin-v2-card admin-backup-zone is-danger" data-zone="danger">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
             <span class="admin-v2-dot is-bad"></span>
-            <span class="admin-v2-monolabel" style="color:var(--hud-crimson)">ZONE 3 · DANGER</span>
+            <span class="admin-ui-monolabel" style="color:var(--hud-crimson)">ZONE 3 · DANGER</span>
           </div>
 
           <!-- Clear history -->
           <div class="admin-backup-subcard">
-            <div class="admin-v2-monolabel">CLEAR HISTORY · 清除彈幕歷史</div>
+            <div class="admin-ui-monolabel">CLEAR HISTORY · 清除彈幕歷史</div>
             <div class="admin-backup-row">
               <label class="admin-backup-field">
-                <span class="admin-v2-monolabel">RANGE</span>
+                <span class="admin-ui-monolabel">RANGE</span>
                 <select id="bk2-clear-scope" class="admin-ui-select">
                   <option value="all" selected>全部</option>
                 </select>
@@ -165,7 +165,7 @@
 
           <!-- End session -->
           <div class="admin-backup-subcard">
-            <div class="admin-v2-monolabel">END SESSION · 結束管理工作階段</div>
+            <div class="admin-ui-monolabel">END SESSION · 結束管理工作階段</div>
             <div class="admin-backup-row">
               <div class="admin-backup-desc">登出目前管理員,不影響 Desktop / viewer 連線。</div>
               <button type="button" id="bk2-end-session" class="admin-ui-action is-danger admin-bk-action">END SESSION</button>
@@ -174,10 +174,10 @@
 
           <!-- Factory reset (deferred) -->
           <div class="admin-backup-subcard is-deferred">
-            <div class="admin-v2-monolabel">FACTORY RESET · 回復原廠 (即將支援)</div>
+            <div class="admin-ui-monolabel">FACTORY RESET · 回復原廠 (即將支援)</div>
             <div class="admin-backup-row">
               <label class="admin-backup-field">
-                <span class="admin-v2-monolabel">輸入 <code>reset</code> 以確認</span>
+                <span class="admin-ui-monolabel">輸入 <code>reset</code> 以確認</span>
                 <input id="bk2-factory-confirm" type="text" class="admin-ui-input" placeholder="reset" autocomplete="off" spellcheck="false" />
               </label>
               <div class="admin-backup-desc">即將支援 — 目前請手動刪除 <code>server/runtime/</code> 後重啟。</div>

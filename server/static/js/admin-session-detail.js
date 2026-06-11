@@ -148,7 +148,7 @@
 
             <!-- playback controls bar -->
             <div class="admin-sd-playback" data-sd-playback hidden>
-              <div class="admin-v2-monolabel" style="margin-bottom:8px">PLAYBACK · 回放控制 (VISUAL ONLY)</div>
+              <div class="admin-ui-monolabel" style="margin-bottom:8px">PLAYBACK · 回放控制 (VISUAL ONLY)</div>
               <div class="admin-sd-pb-row">
                 <div class="admin-ui-chip-group admin-sd-speed-group" role="group" aria-label="播放速度">
                   <button type="button" class="admin-ui-chip admin-sd-speed-chip" data-speed="0.5">0.5×</button>
@@ -163,7 +163,7 @@
 
             <!-- density timeline + annotation overlay -->
             <div class="admin-sd-timeline-wrap" data-sd-timeline-wrap hidden>
-              <div class="admin-v2-monolabel admin-sd-timeline-head" style="margin-bottom:10px">
+              <div class="admin-ui-monolabel admin-sd-timeline-head" style="margin-bottom:10px">
                 <span>DENSITY TIMELINE · 每分鐘訊息密度</span>
                 <span class="admin-sd-peak-marker" data-sd-peak-label></span>
                 <span class="admin-sd-timeline-spacer"></span>
@@ -181,7 +181,7 @@
 
             <!-- messages list -->
             <div class="admin-sd-msgs-wrap" data-sd-msgs-wrap hidden>
-              <div class="admin-v2-monolabel" style="margin-bottom:8px">訊息 (最多顯示 200 則)</div>
+              <div class="admin-ui-monolabel" style="margin-bottom:8px">訊息 (最多顯示 200 則)</div>
               <div class="admin-sd-msgs-list" data-sd-msgs-list></div>
             </div>
           </div>
@@ -191,7 +191,7 @@
             <!-- stats panel -->
             <section class="admin-sd-card" data-sd-stats-card>
               <div class="admin-sd-card-head">
-                <span class="admin-v2-monolabel">統計</span>
+                <span class="admin-ui-monolabel">統計</span>
               </div>
               <div class="admin-sd-kv-list">
                 <div class="admin-sd-kv"><span class="k">訊息數</span><span class="v" data-sd-stat="msg_count">—</span></div>
@@ -205,7 +205,7 @@
             <!-- actions -->
             <section class="admin-sd-card">
               <div class="admin-sd-card-head">
-                <span class="admin-v2-monolabel">操作</span>
+                <span class="admin-ui-monolabel">操作</span>
               </div>
               <div class="admin-sd-actions">
                 <button type="button" class="admin-ui-action is-primary admin-sd-action" data-sd-action="export-json">
@@ -220,7 +220,7 @@
             <!-- top keywords -->
             <section class="admin-sd-card">
               <div class="admin-sd-card-head">
-                <span class="admin-v2-monolabel">TOP 關鍵字</span>
+                <span class="admin-ui-monolabel">TOP 關鍵字</span>
               </div>
               <div class="admin-sd-keywords" data-sd-keywords>
                 <span class="admin-sd-empty-note">無資料</span>
@@ -230,7 +230,7 @@
             <!-- annotations panel (design v4 brief 0518-1, 2026-05-18) -->
             <section class="admin-sd-card admin-sd-ann-card">
               <div class="admin-sd-card-head">
-                <span class="admin-v2-monolabel" data-sd-ann-head>ANNOTATIONS</span>
+                <span class="admin-ui-monolabel" data-sd-ann-head>ANNOTATIONS</span>
                 <span class="admin-sd-card-head-spacer"></span>
                 <button type="button" class="admin-sd-ann-card-add" data-sd-action="add-annotation">+ 新增</button>
               </div>
@@ -626,12 +626,12 @@
     body.className = "admin-sd-ann-modal-body";
     body.innerHTML = `
       <div class="admin-sd-ann-modal-row">
-        <div class="admin-v2-monolabel">TIME</div>
+        <div class="admin-ui-monolabel">TIME</div>
         <div class="admin-sd-ann-modal-time">${_fmtTsMs(tsMs)}</div>
         <div class="admin-sd-ann-modal-hint">PRE-FILLED FROM TIMELINE HOVER POSITION</div>
       </div>
       <div class="admin-sd-ann-modal-row">
-        <div class="admin-v2-monolabel">LABEL</div>
+        <div class="admin-ui-monolabel">LABEL</div>
         <div class="admin-sd-ann-modal-labels" data-ann-modal-labels>
           ${Object.keys(ANN_LABEL_SPEC).map(function (key) {
             const spec = ANN_LABEL_SPEC[key];
@@ -645,7 +645,7 @@
         </div>
       </div>
       <div class="admin-sd-ann-modal-row">
-        <div class="admin-v2-monolabel">NOTE · ≤ 280 字</div>
+        <div class="admin-ui-monolabel">NOTE · ≤ 280 字</div>
         <textarea class="admin-sd-ann-modal-note" data-ann-modal-note
           placeholder="觀眾爆笑點、投票揭曉時刻、重要問答…" maxlength="280"></textarea>
         <div class="admin-sd-ann-modal-counter" data-ann-modal-counter>0 / 280</div>

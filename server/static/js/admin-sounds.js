@@ -103,11 +103,11 @@
           '<div class="admin-sounds-tile" data-sound-name="' + escapeHtml(sound.name) + '">' +
           '<div class="name" title="' + safeName + '">' + safeName + "</div>" +
           '<div class="admin-sounds-tile-volume" style="display:flex;align-items:center;gap:6px;margin-top:6px">' +
-            '<span class="admin-v2-monolabel" style="font-size:9px">VOL</span>' +
+            '<span class="admin-ui-monolabel" style="font-size:9px">VOL</span>' +
             '<input type="range" class="sound-volume-slider" data-name="' + escapeHtml(sound.name) + '" ' +
               'min="0" max="100" step="1" value="' + volPct + '" ' +
               'style="flex:1;min-width:80px;max-width:120px;accent-color:var(--color-primary)" />' +
-            '<span class="admin-v2-monolabel sound-volume-label" data-name="' + escapeHtml(sound.name) + '" style="min-width:32px;text-align:right">' + volPct + "%</span>" +
+            '<span class="admin-ui-monolabel sound-volume-label" data-name="' + escapeHtml(sound.name) + '" style="min-width:32px;text-align:right">' + volPct + "%</span>" +
           "</div>" +
           '<div class="actions" style="margin-top:6px">' +
           '<button type="button" class="admin-ui-chip is-active sound-play-btn" data-name="' + escapeHtml(sound.name) + '">▶ ' + escapeHtml(ServerI18n.t("previewBtn")) + "</button>" +
@@ -411,20 +411,20 @@
           <!-- LEFT: Sound library (upload + list) -->
           <div class="admin-v2-card admin-sounds-col">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-              <span class="admin-v2-monolabel">SOUND LIBRARY · 庫存</span>
+              <span class="admin-ui-monolabel">SOUND LIBRARY · 庫存</span>
             </div>
             <div id="soundsList" class="admin-sounds-grid"></div>
 
             <!-- Upload form (collapsed into library card per v4 spec) -->
             <div class="admin-sounds-upload-foot">
-              <div class="admin-v2-monolabel" style="margin-bottom:8px">+ 上傳音效</div>
+              <div class="admin-ui-monolabel" style="margin-bottom:8px">+ 上傳音效</div>
               <div class="admin-sounds-form">
                 <label class="admin-webhooks-field">
-                  <span class="admin-v2-monolabel">FILE · MP3/OGG/WAV</span>
+                  <span class="admin-ui-monolabel">FILE · MP3/OGG/WAV</span>
                   <input type="file" id="soundFileInput" accept=".mp3,.ogg,.wav,audio/mpeg,audio/ogg,audio/wav" class="admin-ui-input" />
                 </label>
                 <label class="admin-webhooks-field">
-                  <span class="admin-v2-monolabel">NAME</span>
+                  <span class="admin-ui-monolabel">NAME</span>
                   <input type="text" id="soundNameInput" placeholder="${escapeHtml(ServerI18n.t("soundNamePlaceholder"))}" maxlength="100" class="admin-ui-input" />
                 </label>
                 <div class="admin-sounds-form-full" style="display:flex;justify-content:flex-end">
@@ -437,16 +437,16 @@
           <!-- RIGHT: Trigger rules (form + list) -->
           <div class="admin-v2-card admin-sounds-col">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-              <span class="admin-v2-monolabel">TRIGGER RULES · EVENT → SOUND</span>
+              <span class="admin-ui-monolabel">TRIGGER RULES · EVENT → SOUND</span>
             </div>
             <div id="rulesList" class="admin-sounds-rules"></div>
 
             <!-- New rule form (collapsed into rules card per v4 spec) -->
             <div class="admin-sounds-rule-foot">
-              <div class="admin-v2-monolabel" style="margin-bottom:8px">+ 新增觸發規則</div>
+              <div class="admin-ui-monolabel" style="margin-bottom:8px">+ 新增觸發規則</div>
               <div class="admin-sounds-form">
                 <label class="admin-webhooks-field">
-                  <span class="admin-v2-monolabel">TRIGGER TYPE</span>
+                  <span class="admin-ui-monolabel">TRIGGER TYPE</span>
                   <select id="ruleTriggerType" class="admin-ui-select">
                     <option value="keyword">${escapeHtml(ServerI18n.t("triggerTypeKeyword"))}</option>
                     <option value="effect">${escapeHtml(ServerI18n.t("triggerTypeEffect"))}</option>
@@ -454,21 +454,21 @@
                   </select>
                 </label>
                 <label class="admin-webhooks-field">
-                  <span class="admin-v2-monolabel">TRIGGER VALUE</span>
+                  <span class="admin-ui-monolabel">TRIGGER VALUE</span>
                   <input type="text" id="ruleTriggerValue" placeholder="${escapeHtml(ServerI18n.t("triggerValueKeywordPlaceholder"))}" class="admin-ui-input" />
                 </label>
                 <label class="admin-webhooks-field admin-sounds-form-full">
-                  <span class="admin-v2-monolabel">SOUND</span>
+                  <span class="admin-ui-monolabel">SOUND</span>
                   <select id="ruleSoundName" class="admin-ui-select">
                     <option value="" disabled>${escapeHtml(ServerI18n.t("soundLoading"))}</option>
                   </select>
                 </label>
                 <label class="admin-webhooks-field">
-                  <span class="admin-v2-monolabel">VOLUME · <span id="ruleVolumeLabel">80%</span></span>
+                  <span class="admin-ui-monolabel">VOLUME · <span id="ruleVolumeLabel">80%</span></span>
                   <input type="range" id="ruleVolume" min="0" max="100" value="80" class="admin-ui-input" />
                 </label>
                 <label class="admin-webhooks-field">
-                  <span class="admin-v2-monolabel">COOLDOWN · MS</span>
+                  <span class="admin-ui-monolabel">COOLDOWN · MS</span>
                   <input type="number" id="ruleCooldown" min="0" step="100" value="1000" class="admin-ui-input" />
                 </label>
                 <div class="admin-sounds-form-full" style="display:flex;justify-content:flex-end">

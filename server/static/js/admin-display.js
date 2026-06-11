@@ -141,7 +141,7 @@
           <div class="admin-dsp2-rail">
             <div class="admin-dsp2-card admin-dsp2-preview" id="dsp2-preview">
               <div class="admin-dsp2-preview-head">
-                <span class="admin-v2-monolabel">LIVE PREVIEW</span>
+                <span class="admin-ui-monolabel">LIVE PREVIEW</span>
                 <span class="admin-dsp2-preview-sync">
                   <span class="admin-dsp2-dot"></span>
                   ${escapeHtml(t("displayPreviewSync", "同步 Desktop"))}
@@ -168,7 +168,7 @@
                  every postUpdate() ships immediately, no apply button. This
                  card is just the status indicator + revert + export JSON. -->
             <div class="admin-dsp2-card admin-dsp2-autosync" style="padding:14px;background:var(--admin-panel,var(--color-bg-base));border:1px solid var(--hud-line);border-radius:6px;display:flex;flex-direction:column;gap:10px">
-              <div class="admin-v2-monolabel admin-dsp2-card-head">
+              <div class="admin-ui-monolabel admin-dsp2-card-head">
                 <span>${escapeHtml(t("displayAutoSyncTitle", "自動同步"))}</span>
                 <span class="admin-dsp2-card-head-en">AUTO-SYNC · IMPLICIT DEPLOY</span>
               </div>
@@ -190,7 +190,7 @@
             </div>
 
             <div class="admin-dsp2-card admin-dsp2-admin-controlled" style="padding:14px;background:var(--admin-panel,var(--color-bg-base));border:1px solid var(--hud-line);border-radius:6px;display:flex;flex-direction:column;gap:10px">
-              <div class="admin-v2-monolabel admin-dsp2-card-head">
+              <div class="admin-ui-monolabel admin-dsp2-card-head">
                 <span>${escapeHtml(t("displayAdminControlledTitle", "管理端控制"))}</span>
                 <span class="admin-dsp2-card-head-en">ADMIN CONTROLLED</span>
               </div>
@@ -206,7 +206,7 @@
             </div>
 
             <div class="admin-dsp2-card admin-dsp2-summary" id="dsp2-summary">
-              <div class="admin-v2-monolabel admin-dsp2-card-head">
+              <div class="admin-ui-monolabel admin-dsp2-card-head">
                 <span>${escapeHtml(t("displaySummaryTitle", "觀眾端摘要"))}</span>
                 <span class="admin-dsp2-card-head-en" data-summary-count>AUDIENCE · 0/6 OPEN</span>
               </div>
@@ -419,7 +419,7 @@
     return `
       <div class="admin-dsp2-band">
         <div class="admin-dsp2-band-cell">
-          <span class="admin-v2-monolabel">${escapeHtml(t("displayMinAudience", "觀眾 MIN"))}</span>
+          <span class="admin-ui-monolabel">${escapeHtml(t("displayMinAudience", "觀眾 MIN"))}</span>
           <div class="admin-dsp2-band-input">
             <input type="number" data-num-key="${row.key}" data-num-index="1"
               min="${r.min}" max="${r.max}" step="${step}" value="${escapeHtml(String(lo))}" />
@@ -427,7 +427,7 @@
           </div>
         </div>
         <div class="admin-dsp2-band-cell">
-          <span class="admin-v2-monolabel">${escapeHtml(t("displayMaxAudience", "觀眾 MAX"))}</span>
+          <span class="admin-ui-monolabel">${escapeHtml(t("displayMaxAudience", "觀眾 MAX"))}</span>
           <div class="admin-dsp2-band-input">
             <input type="number" data-num-key="${row.key}" data-num-index="2"
               min="${r.min}" max="${r.max}" step="${step}" value="${escapeHtml(String(hi))}" />
@@ -435,7 +435,7 @@
           </div>
         </div>
         <div class="admin-dsp2-band-cell">
-          <span class="admin-v2-monolabel">STEP</span>
+          <span class="admin-ui-monolabel">STEP</span>
           <div class="admin-dsp2-band-input">
             <input type="number" data-num-key="${row.key}" data-num-index="step"
               min="0.1" step="0.1" value="${escapeHtml(String(step))}" />

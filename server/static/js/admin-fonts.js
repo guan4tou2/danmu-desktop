@@ -55,7 +55,7 @@
             <div id="adminFontEmptyStateHost"></div>
             ${loggedIn ? `
             <div class="admin-v2-card admin-fonts-upload-card" id="adminFontDropWrap" style="margin-top:12px">
-              <div class="admin-v2-monolabel" style="margin-bottom:8px">+ 上傳自訂字型</div>
+              <div class="admin-ui-monolabel" style="margin-bottom:8px">+ 上傳自訂字型</div>
               <div
                 id="adminFontDrop"
                 class="admin-fonts-drop"
@@ -281,16 +281,16 @@
         <div class="admin-font-subset-target">
           <span class="admin-font-subset-target-glyph">永</span>
           <div>
-            <div class="admin-v2-monolabel">FONT</div>
+            <div class="admin-ui-monolabel">FONT</div>
             <div class="admin-font-subset-target-name">${escapeHtml(fontName)}</div>
           </div>
         </div>
         <div class="admin-font-subset-section">
-          <div class="admin-v2-monolabel">SUBSET PRESETS · 多選</div>
+          <div class="admin-ui-monolabel">SUBSET PRESETS · 多選</div>
           <div class="admin-font-subset-chips">${chips}</div>
         </div>
         <div class="admin-font-subset-section">
-          <div class="admin-v2-monolabel">CUSTOM UNICODE RANGE（選填）</div>
+          <div class="admin-ui-monolabel">CUSTOM UNICODE RANGE（選填）</div>
           <textarea class="admin-font-subset-custom" data-subset-custom
             placeholder="U+4E00-9FFF, U+FF00-FFEF">${escapeHtml(customRange)}</textarea>
           <div class="admin-font-subset-hint">逗號分隔 · 支援 U+XXXX / U+XXXX-XXXX</div>

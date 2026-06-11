@@ -359,9 +359,9 @@
         '<div class="hd">⚠ FLAG · 觸發 ' + risk.rules.length + ' 條規則</div>' +
         '<ul>' + rulesHtml + '</ul>' +
       '</div>' +
-      '<div class="admin-v2-monolabel admin-aud-detail-label">近 5 分鐘訊息</div>' +
+      '<div class="admin-ui-monolabel admin-aud-detail-label">近 5 分鐘訊息</div>' +
       '<div class="admin-aud-detail-messages">' + messagesHtml + '</div>' +
-      '<div class="admin-v2-monolabel admin-aud-detail-label">建議動作</div>' +
+      '<div class="admin-ui-monolabel admin-aud-detail-label">建議動作</div>' +
       '<div class="admin-aud-detail-actions">' +
         // Primary ban (long-term moderation_bans entry) — still useful
         // even alongside kick because it scopes to all bans, not just

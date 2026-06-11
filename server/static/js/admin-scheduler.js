@@ -403,20 +403,20 @@
 
         <!-- Create job form -->
         <div class="admin-v2-card">
-          <div class="admin-v2-monolabel" style="margin-bottom:10px">+ 新增排程</div>
+          <div class="admin-ui-monolabel" style="margin-bottom:10px">+ 新增排程</div>
           <div class="admin-scheduler-form-stack">
             <div>
-              <div class="admin-v2-monolabel" style="margin-bottom:6px">MESSAGES</div>
+              <div class="admin-ui-monolabel" style="margin-bottom:6px">MESSAGES</div>
               <div id="schedulerMessages" class="admin-scheduler-message-stack"></div>
               <button type="button" id="schedulerAddMsg" class="admin-ui-action admin-sch-add-msg">+ ${escapeHTML(ServerI18n.t("addMessageBtn"))}</button>
             </div>
             <div class="admin-scheduler-config">
               <label>
-                <span class="admin-v2-monolabel">INTERVAL · 秒</span>
+                <span class="admin-ui-monolabel">INTERVAL · 秒</span>
                 <input id="schedulerInterval" type="number" value="10" min="1" max="3600" class="admin-ui-input" />
               </label>
               <label>
-                <span class="admin-v2-monolabel">REPEAT · -1=∞</span>
+                <span class="admin-ui-monolabel">REPEAT · -1=∞</span>
                 <input id="schedulerRepeat" type="number" value="-1" min="-1" max="10000" class="admin-ui-input" />
               </label>
               <div class="admin-scheduler-create-cell">
@@ -429,8 +429,8 @@
         <!-- Active jobs list -->
         <div class="admin-v2-card">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-            <span class="admin-v2-monolabel">JOBS · 進行中</span>
-            <span class="admin-v2-monolabel" style="margin-left:auto" id="schedulerJobsCount">—</span>
+            <span class="admin-ui-monolabel">JOBS · 進行中</span>
+            <span class="admin-ui-monolabel" style="margin-left:auto" id="schedulerJobsCount">—</span>
           </div>
           <div id="schedulerJobsList" class="admin-scheduler-jobs">
             <div class="admin-emojis-empty">${escapeHTML(ServerI18n.t("loadingJobs"))}</div>

@@ -48,19 +48,19 @@
             <div class="admin-sec-card__body">
               <form id="sec2-pw-form" class="admin-security-form" autocomplete="off">
                 <label class="admin-security-field">
-                  <span class="admin-v2-monolabel">CURRENT</span>
+                  <span class="admin-ui-monolabel">CURRENT</span>
                   <input id="sec2-pw-current" type="password" required autocomplete="current-password" class="admin-ui-input" />
                 </label>
                 <label class="admin-security-field">
-                  <span class="admin-v2-monolabel">NEW · ≥8</span>
+                  <span class="admin-ui-monolabel">NEW · ≥8</span>
                   <input id="sec2-pw-new" type="password" required minlength="8" autocomplete="new-password" class="admin-ui-input" />
                   <div class="admin-security-strength">
                     <div class="admin-security-strength-bar"><span id="sec2-pw-meter" style="width:0%"></span></div>
-                    <span id="sec2-pw-label" class="admin-v2-monolabel">—</span>
+                    <span id="sec2-pw-label" class="admin-ui-monolabel">—</span>
                   </div>
                 </label>
                 <label class="admin-security-field">
-                  <span class="admin-v2-monolabel">CONFIRM</span>
+                  <span class="admin-ui-monolabel">CONFIRM</span>
                   <input id="sec2-pw-confirm" type="password" required autocomplete="new-password" class="admin-ui-input" />
                 </label>
                 <button type="submit" class="admin-ui-action is-primary admin-sec-action">變更密碼</button>
@@ -114,7 +114,7 @@
                 <span>啟用 token 驗證（Desktop 連線需帶 token）</span>
               </label>
               <div class="admin-security-field">
-                <span class="admin-v2-monolabel">TOKEN · 12–128 字元</span>
+                <span class="admin-ui-monolabel">TOKEN · 12–128 字元</span>
                 <div class="admin-security-tokenrow">
                   <input id="sec2-wsa-token" type="password" class="admin-ui-input" placeholder="未設定" autocomplete="off" spellcheck="false" />
                   <button type="button" id="sec2-wsa-reveal" class="admin-ui-action admin-sec-token-action">👁</button>
@@ -123,7 +123,7 @@
                 </div>
               </div>
               <div class="admin-security-tokenmeta">
-                <span class="admin-v2-monolabel">LAST ROTATION</span>
+                <span class="admin-ui-monolabel">LAST ROTATION</span>
                 <span id="sec2-wsa-lastrot" class="admin-security-timestamp">—</span>
                 <button type="button" id="sec2-wsa-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end">儲存</button>
               </div>
@@ -151,11 +151,11 @@
                 <span>僅允許下方 IP / CIDR 存取 admin</span>
               </label>
               <label class="admin-security-field">
-                <span class="admin-v2-monolabel">ALLOWLIST · 每行一筆</span>
+                <span class="admin-ui-monolabel">ALLOWLIST · 每行一筆</span>
                 <textarea id="sec2-ip-entries" class="admin-ui-input" rows="4" spellcheck="false" placeholder="127.0.0.1/32"></textarea>
               </label>
               <div class="admin-security-tokenmeta">
-                <span class="admin-v2-monolabel">CURRENT IP</span>
+                <span class="admin-ui-monolabel">CURRENT IP</span>
                 <span id="sec2-ip-current" class="admin-security-timestamp">—</span>
                 <button type="button" id="sec2-ip-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end">儲存</button>
               </div>
@@ -191,7 +191,7 @@
                 </div>
               </div>
               <label class="admin-security-field">
-                <span class="admin-v2-monolabel">ORIGINS · 每行一筆</span>
+                <span class="admin-ui-monolabel">ORIGINS · 每行一筆</span>
                 <textarea id="sec2-cors-origins" class="admin-ui-input" rows="3" spellcheck="false" placeholder="*"></textarea>
               </label>
               <label class="admin-security-toggle">
@@ -199,7 +199,7 @@
                 <span>允許 credentials（不可搭配 wildcard origin）</span>
               </label>
               <label class="admin-security-field">
-                <span class="admin-v2-monolabel">METHODS</span>
+                <span class="admin-ui-monolabel">METHODS</span>
                 <input id="sec2-cors-methods" type="text" class="admin-ui-input" spellcheck="false" placeholder="GET, POST, DELETE, PATCH, OPTIONS" />
               </label>
               <div class="admin-security-tokenmeta">

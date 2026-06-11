@@ -76,11 +76,11 @@
 
       // LEFT: filter panel
       + '<div class="admin-v2-card hud-page-stack" style="gap:14px">'
-      +   '<div class="admin-v2-monolabel">篩選條件</div>'
+      +   '<div class="admin-ui-monolabel">篩選條件</div>'
 
       // Time range
       +   '<div>'
-      +     '<div class="admin-v2-monolabel" style="margin-bottom:6px">時間範圍</div>'
+      +     '<div class="admin-ui-monolabel" style="margin-bottom:6px">時間範圍</div>'
       +     '<div class="admin-search-range-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px">'
       +       rangeButtons
       +     '</div>'
@@ -88,13 +88,13 @@
 
       // Session note
       +   '<div>'
-      +     '<div class="admin-v2-monolabel" style="margin-bottom:4px">場次</div>'
+      +     '<div class="admin-ui-monolabel" style="margin-bottom:4px">場次</div>'
       +     '<p style="font-size:11px;color:var(--admin-text-dim);margin:0">（根據歷史紀錄自動分組）</p>'
       +   '</div>'
 
       // Status checkboxes
       +   '<div>'
-      +     '<div class="admin-v2-monolabel" style="margin-bottom:6px">狀態</div>'
+      +     '<div class="admin-ui-monolabel" style="margin-bottom:6px">狀態</div>'
       +     '<div class="admin-search-status-checks" style="display:flex;flex-direction:column;gap:6px">'
       +       '<label class="admin-search-check-label" style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--admin-text)">'
       +         '<input type="checkbox" class="admin-search-status-cb" value="shown" checked /> 顯示</label>'
@@ -109,7 +109,7 @@
 
       // Advanced syntax
       +   '<div>'
-      +     '<div class="admin-v2-monolabel" style="margin-bottom:6px">進階語法</div>'
+      +     '<div class="admin-ui-monolabel" style="margin-bottom:6px">進階語法</div>'
       +     '<pre class="admin-search-syntax-block" style="'
       +         'background:var(--admin-raised);border:1px solid var(--admin-line);'
       +         'border-radius:4px;padding:8px 10px;margin:0;'

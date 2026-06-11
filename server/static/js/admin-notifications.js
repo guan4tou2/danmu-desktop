@@ -240,7 +240,7 @@
 
         <div class="admin-notif-grid admin-notif-grid--3col" data-notif-outer>
           <aside class="admin-notif-filters">
-            <div class="admin-v2-monolabel">分組 · GROUP</div>
+            <div class="admin-ui-monolabel">分組 · GROUP</div>
             <div class="admin-ui-chip-group admin-notif-tabs" data-notif-tabs>
               <button type="button" class="admin-ui-chip admin-notif-tab is-active" data-notif-tab="unread">未讀<span class="admin-notif-count cnt" data-cnt-unread>—</span></button>
               <button type="button" class="admin-ui-chip admin-notif-tab" data-notif-tab="all">全部<span class="admin-notif-count cnt" data-cnt-all>—</span></button>
@@ -248,7 +248,7 @@
               <button type="button" class="admin-ui-chip admin-notif-tab" data-notif-tab="archived">已封存<span class="admin-notif-count cnt" data-cnt-archived>—</span></button>
             </div>
 
-            <div class="admin-v2-monolabel admin-notif-label-top">來源 · SOURCE</div>
+            <div class="admin-ui-monolabel admin-notif-label-top">來源 · SOURCE</div>
             <div class="admin-ui-chip-group admin-notif-sources" data-notif-sources>
               <button type="button" class="admin-ui-chip admin-notif-src is-active" data-notif-src="all">全部<span class="admin-notif-count cnt" data-cnt-src-all>—</span></button>
               <button type="button" class="admin-ui-chip admin-notif-src" data-notif-src="Fire Token">Fire Token<span class="admin-notif-count cnt" data-cnt-src-ft>—</span></button>
@@ -258,7 +258,7 @@
               <button type="button" class="admin-ui-chip admin-notif-src" data-notif-src="Moderation">Moderation<span class="admin-notif-count cnt" data-cnt-src-mod>—</span></button>
             </div>
 
-            <div class="admin-v2-monolabel admin-notif-label-top">嚴重度 · SEVERITY</div>
+            <div class="admin-ui-monolabel admin-notif-label-top">嚴重度 · SEVERITY</div>
             <div class="admin-ui-chip-group admin-notif-sources" data-notif-severity>
               <button type="button" class="admin-ui-chip admin-notif-src is-active" data-notif-sev="all">全部<span class="admin-notif-count cnt" data-cnt-sev-all>—</span></button>
               <button type="button" class="admin-ui-chip admin-notif-src" data-notif-sev="crit">CRIT<span class="admin-notif-count cnt" data-cnt-sev-crit>—</span></button>
@@ -412,7 +412,7 @@
     const raw = it.raw ? JSON.stringify(it.raw, null, 2) : "—";
     inner.innerHTML = `
       <div class="admin-notif-detail-head">
-        <span class="admin-v2-monolabel">DETAIL</span>
+        <span class="admin-ui-monolabel">DETAIL</span>
         <span class="admin-ui-spacer"></span>
         <button type="button" class="admin-ui-action admin-notif-detail-close" data-notif-action="close-detail" aria-label="關閉">✕</button>
       </div>

@@ -110,7 +110,7 @@
             <!-- Endpoints list -->
             <div class="admin-v2-card admin-wh-endpoints-card">
               <div class="admin-ui-section-head admin-wh-section-head">
-                <span class="admin-v2-monolabel">ENDPOINTS · <span data-wh-count>0</span> 個</span>
+                <span class="admin-ui-monolabel">ENDPOINTS · <span data-wh-count>0</span> 個</span>
                 <span class="admin-ui-spacer" aria-hidden="true"></span>
                 <button type="button" class="admin-ui-action is-primary admin-wh-add-btn" data-wh-action="show-add">＋ 新增 endpoint</button>
               </div>
@@ -119,11 +119,11 @@
               <form id="wh-register-form" class="admin-wh-add-form" hidden autocomplete="off">
                 <div class="admin-wh-form-grid">
                   <label class="admin-wh-form-field">
-                    <span class="admin-v2-monolabel">URL</span>
+                    <span class="admin-ui-monolabel">URL</span>
                     <input id="wh-url" type="url" required placeholder="https://example.com/hook" class="admin-ui-input" />
                   </label>
                   <label class="admin-wh-form-field">
-                    <span class="admin-v2-monolabel">FORMAT</span>
+                    <span class="admin-ui-monolabel">FORMAT</span>
                     <select id="wh-format" class="admin-ui-select">
                       <option value="json">JSON</option>
                       <option value="discord">Discord</option>
@@ -131,12 +131,12 @@
                     </select>
                   </label>
                   <label class="admin-wh-form-field">
-                    <span class="admin-v2-monolabel">SECRET · HMAC</span>
+                    <span class="admin-ui-monolabel">SECRET · HMAC</span>
                     <input id="wh-secret" type="text" placeholder="optional" class="admin-ui-input" />
                   </label>
                 </div>
                 <fieldset class="admin-wh-form-events">
-                  <legend class="admin-v2-monolabel">EVENTS</legend>
+                  <legend class="admin-ui-monolabel">EVENTS</legend>
                   <div data-wh-register-events></div>
                 </fieldset>
                 <div class="admin-wh-form-actions">
@@ -153,7 +153,7 @@
             <!-- Delivery log table -->
             <div class="admin-v2-card admin-wh-log-card">
               <div class="admin-ui-section-head admin-wh-section-head">
-                <span class="admin-v2-monolabel">DELIVERY LOG · 即時</span>
+                <span class="admin-ui-monolabel">DELIVERY LOG · 即時</span>
                 <span class="admin-ui-spacer" aria-hidden="true"></span>
                 <span class="admin-ui-chip-group admin-wh-log-filters" data-wh-log-filters>
                   <button type="button" class="admin-ui-chip admin-wh-log-filter is-active" data-wh-log-filter="all">全部</button>
@@ -562,16 +562,16 @@
         '<span class="admin-ui-spacer" aria-hidden="true"></span>' +
         '<button type="button" class="admin-ui-action admin-wh-detail-close" data-wh-action="close-detail" aria-label="關閉">✕</button>' +
       '</div>' +
-      '<div class="admin-v2-monolabel admin-wh-detail-label">事件訂閱</div>' +
+      '<div class="admin-ui-monolabel admin-wh-detail-label">事件訂閱</div>' +
       '<div class="admin-wh-detail-events">' + eventsHtml + '</div>' +
-      '<div class="admin-v2-monolabel admin-wh-detail-label">RETRY POLICY</div>' +
+      '<div class="admin-ui-monolabel admin-wh-detail-label">RETRY POLICY</div>' +
       '<div class="admin-wh-detail-policy">' +
         '<div><span class="k">Max retries</span><span class="v">' + (hook.retry_count != null ? hook.retry_count : 3) + '</span></div>' +
         '<div><span class="k">Backoff</span><span class="v">exponential · 1s → 2s → 4s</span></div>' +
         '<div><span class="k">Timeout</span><span class="v">5,000 ms</span></div>' +
         '<div><span class="k">HMAC sign</span><span class="v" style="color:var(--hud-lime)">' + (hook.secret ? "SHA-256 · X-Webhook-Signature" : "—（未設 secret）") + '</span></div>' +
       '</div>' +
-      '<div class="admin-v2-monolabel admin-wh-detail-label">PAYLOAD SAMPLE</div>' +
+      '<div class="admin-ui-monolabel admin-wh-detail-label">PAYLOAD SAMPLE</div>' +
       '<pre class="admin-wh-detail-payload">' + _escHtml(JSON.stringify(samplePayload, null, 2)) + '</pre>' +
       '<div class="admin-wh-detail-actions">' +
         '<button type="button" class="admin-ui-action is-primary admin-wh-detail-action" data-wh-action="detail-ping" data-wh-hook-id="' + _escHtml(hook.id) + '">↻ 送測試 ping</button>' +

@@ -111,7 +111,7 @@
             <div class="admin-plugins-console-head">
               <span class="admin-plugins-console-dot"></span>
               <span class="admin-plugins-console-title">LIVE CONSOLE</span>
-              <span class="admin-v2-monolabel" style="margin:0">stdout + stderr</span>
+              <span class="admin-ui-monolabel" style="margin:0">stdout + stderr</span>
               <span class="admin-ui-spacer"></span>
               <span class="admin-ui-chip-group admin-plugins-console-filters" data-console-filters>
                 <button type="button" class="admin-ui-chip admin-plugins-console-chip is-active" data-console-filter="all">ALL</button>
@@ -119,7 +119,7 @@
                 <button type="button" class="admin-ui-chip admin-plugins-console-chip" data-console-filter="WARN">WARN</button>
                 <button type="button" class="admin-ui-chip admin-plugins-console-chip" data-console-filter="ERROR">ERROR</button>
               </span>
-              <span class="admin-v2-monolabel" style="margin-left:8px">TAIL \u00b7 LIVE</span>
+              <span class="admin-ui-monolabel" style="margin-left:8px">TAIL \u00b7 LIVE</span>
             </div>
             <div class="admin-plugins-console-body" id="pluginsConsoleBody">
               <div class="admin-plugins-console-line">

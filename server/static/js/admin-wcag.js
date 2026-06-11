@@ -107,7 +107,7 @@
           <!-- Left: pairs table -->
           <div class="admin-wcag-table-panel">
             <div class="admin-wcag-table-header">
-              <span class="admin-v2-monolabel">當前主題顏色</span>
+              <span class="admin-ui-monolabel">當前主題顏色</span>
               <span class="admin-wcag-stat pass">${passCount} 過 AA+</span>
               <span class="admin-wcag-stat fail">${failCount} 未過</span>
               <span class="admin-wcag-theme-label">${PAIRS.length} 對顏色</span>
@@ -160,7 +160,7 @@
     const lvl   = _level(ratio);
     const sugg  = _suggestions(_tester.fg, _tester.bg);
     return `
-      <div class="admin-v2-monolabel">單對測試器</div>
+      <div class="admin-ui-monolabel">單對測試器</div>
       <div class="admin-wcag-tester-inputs">
         <div class="admin-wcag-tester-field">
           <div class="admin-wcag-tester-label">FOREGROUND</div>
