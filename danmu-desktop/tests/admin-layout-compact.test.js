@@ -704,6 +704,22 @@ test("admin Security and Search status controls compose shared primitives", () =
   expect(searchSrc).not.toContain("admin-v2-chip");
 });
 
+test("admin Poll Builder session and editor actions compose shared controls", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const pollBuilderSrc = fs.readFileSync(path.join(rootDir, "server", "static", "js", "admin-poll-builder.js"), "utf8");
+
+  expect(pollBuilderSrc).toContain('class="admin-ui-action is-primary admin-poll-session-action" data-poll-session-action="start"');
+  expect(pollBuilderSrc).toContain('class="admin-ui-action admin-poll-session-action" data-poll-session-action="advance"');
+  expect(pollBuilderSrc).toContain('class="admin-ui-action is-danger admin-poll-session-action" data-poll-session-action="end"');
+  expect(pollBuilderSrc).toContain('class="admin-ui-action is-danger admin-poll-editor-action" data-ed-action="remove-q-image"');
+  expect(pollBuilderSrc).toContain('class="admin-ui-action admin-poll-editor-action" data-ed-action="upload-q-image"');
+  expect(pollBuilderSrc).toContain('class="admin-ui-action is-danger admin-poll-editor-action" data-ed-action="remove-q"');
+  expect(pollBuilderSrc).toContain('class="admin-ui-action is-primary admin-poll-editor-action" data-ed-action="start-this"');
+  expect(pollBuilderSrc).toContain('class="admin-ui-chip admin-poll-result-state"');
+  expect(pollBuilderSrc).not.toContain("admin-poll-btn");
+  expect(pollBuilderSrc).not.toContain('class="chip"');
+});
+
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");

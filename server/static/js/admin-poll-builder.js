@@ -69,9 +69,9 @@
                 <span class="kicker">SESSION · 尚未開始</span>
               </div>
               <div class="session-actions">
-                <button type="button" class="admin-poll-btn is-primary" data-poll-session-action="start">START SESSION ▶</button>
-                <button type="button" class="admin-poll-btn" data-poll-session-action="advance" hidden>下一題 ▶</button>
-                <button type="button" class="admin-poll-btn is-ghost" data-poll-session-action="end" hidden>結束 ✕</button>
+                <button type="button" class="admin-ui-action is-primary admin-poll-session-action" data-poll-session-action="start">START SESSION ▶</button>
+                <button type="button" class="admin-ui-action admin-poll-session-action" data-poll-session-action="advance" hidden>下一題 ▶</button>
+                <button type="button" class="admin-ui-action is-danger admin-poll-session-action" data-poll-session-action="end" hidden>結束 ✕</button>
               </div>
             </div>
           </aside>
@@ -220,9 +220,9 @@
           <div class="admin-poll-q-image">
             ${q.image_url ? `
               <img class="admin-poll-q-image-thumb" src="${escapeHtml(q.image_url)}" alt="" />
-              <button type="button" class="admin-poll-btn is-ghost" data-ed-action="remove-q-image">移除圖片</button>
+              <button type="button" class="admin-ui-action is-danger admin-poll-editor-action" data-ed-action="remove-q-image">移除圖片</button>
             ` : `
-              <button type="button" class="admin-poll-btn" data-ed-action="upload-q-image">＋ 上傳圖片 (JPG/PNG/WebP, ≤2 MB)</button>
+              <button type="button" class="admin-ui-action admin-poll-editor-action" data-ed-action="upload-q-image">＋ 上傳圖片 (JPG/PNG/WebP, ≤2 MB)</button>
               <input type="file" data-ed-q-image-input accept="image/jpeg,image/png,image/webp" hidden />
             `}
           </div>
@@ -267,8 +267,8 @@
               <span>允許複選</span>
             </label>
             <div class="foot-spacer"></div>
-            <button type="button" class="admin-poll-btn is-ghost" data-ed-action="remove-q">刪除此題</button>
-            <button type="button" class="admin-poll-btn is-primary" data-ed-action="start-this">START Q${idx + 1} ▶</button>
+            <button type="button" class="admin-ui-action is-danger admin-poll-editor-action" data-ed-action="remove-q">刪除此題</button>
+            <button type="button" class="admin-ui-action is-primary admin-poll-editor-action" data-ed-action="start-this">START Q${idx + 1} ▶</button>
           </div>
         `;
       }
@@ -518,7 +518,7 @@
 
               <div class="admin-polls-results-head">
                 <div class="meta">
-                  <span class="chip">ENDED</span>
+                  <span class="admin-ui-chip admin-poll-result-state">ENDED</span>
                   <span>Q${safeIdx + 1}/${total} · 進行 ${fmtMmSs(durSec)} · 共 ${totalVotes} 票</span>
                 </div>
                 <div class="text">${escapeHtml(q.text || "")}</div>
