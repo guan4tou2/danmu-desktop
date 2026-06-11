@@ -614,6 +614,35 @@ test("admin Widgets page actions compose shared controls", () => {
   expect(widgetsSrc).not.toContain("admin-poll-btn");
 });
 
+test("admin Sounds page actions compose shared controls", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const soundsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-sounds.js"), "utf8");
+
+  expect(soundsSrc).toContain('class="admin-ui-chip is-active sound-play-btn"');
+  expect(soundsSrc).toContain('class="admin-ui-chip is-danger sound-delete-btn"');
+  expect(soundsSrc).toContain('class="admin-ui-chip is-danger sound-rule-del-btn"');
+  expect(soundsSrc).toContain('id="soundUploadBtn" type="button" class="admin-ui-action is-primary admin-sound-action"');
+  expect(soundsSrc).toContain('id="addRuleBtn" type="button" class="admin-ui-action is-primary admin-sound-action"');
+  expect(soundsSrc).not.toContain("admin-poll-btn");
+  expect(soundsSrc).not.toContain("admin-v2-chip");
+});
+
+test("admin Stickers page actions compose shared controls", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const stickersSrc = fs.readFileSync(path.join(staticDir, "js", "admin-stickers.js"), "utf8");
+
+  expect(stickersSrc).toContain('id="stickerUploadBtn" type="button" class="admin-ui-action is-primary admin-sticker-action"');
+  expect(stickersSrc).toContain('class="admin-ui-action is-primary admin-sticker-pack-add"');
+  expect(stickersSrc).toContain('class="admin-ui-chip admin-sticker-pack-action" data-pack-action="rename"');
+  expect(stickersSrc).toContain('class="admin-ui-chip is-danger admin-sticker-pack-action" data-pack-action="delete"');
+  expect(stickersSrc).toContain('class="admin-ui-chip sticker-copy-btn"');
+  expect(stickersSrc).toContain('class="admin-ui-chip is-danger sticker-delete-btn"');
+  expect(stickersSrc).not.toContain("admin-poll-btn");
+  expect(stickersSrc).not.toContain("admin-v2-chip");
+});
+
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");

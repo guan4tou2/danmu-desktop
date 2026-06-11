@@ -110,8 +110,8 @@
             '<span class="admin-v2-monolabel sound-volume-label" data-name="' + escapeHtml(sound.name) + '" style="min-width:32px;text-align:right">' + volPct + "%</span>" +
           "</div>" +
           '<div class="actions" style="margin-top:6px">' +
-          '<button type="button" class="sound-play-btn admin-v2-chip is-on" data-name="' + escapeHtml(sound.name) + '">▶ ' + escapeHtml(ServerI18n.t("previewBtn")) + "</button>" +
-          '<button type="button" class="sound-delete-btn admin-v2-chip is-bad" data-name="' + escapeHtml(sound.name) + '">×</button>' +
+          '<button type="button" class="admin-ui-chip is-active sound-play-btn" data-name="' + escapeHtml(sound.name) + '">▶ ' + escapeHtml(ServerI18n.t("previewBtn")) + "</button>" +
+          '<button type="button" class="admin-ui-chip is-danger sound-delete-btn" data-name="' + escapeHtml(sound.name) + '">×</button>' +
           "</div>" +
           "</div>"
         );
@@ -252,7 +252,7 @@
           '<div class="admin-sounds-rule-trigger">' + escapeHtml(triggerLabel) + "</div>" +
           '<div class="admin-sounds-rule-detail">' + escapeHtml(detail) + "</div>" +
           "</div>" +
-          '<button type="button" class="sound-rule-del-btn admin-v2-chip is-bad" data-rule-id="' + escapeHtml(String(rule.id)) + '">×</button>' +
+          '<button type="button" class="admin-ui-chip is-danger sound-rule-del-btn" data-rule-id="' + escapeHtml(String(rule.id)) + '">×</button>' +
           "</div>"
         );
       })
@@ -428,7 +428,7 @@
                   <input type="text" id="soundNameInput" placeholder="${escapeHtml(ServerI18n.t("soundNamePlaceholder"))}" maxlength="100" class="admin-v2-input" />
                 </label>
                 <div class="admin-sounds-form-full" style="display:flex;justify-content:flex-end">
-                  <button id="soundUploadBtn" type="button" class="admin-poll-btn is-primary">上傳</button>
+                  <button id="soundUploadBtn" type="button" class="admin-ui-action is-primary admin-sound-action">上傳</button>
                 </div>
               </div>
             </div>
@@ -472,7 +472,7 @@
                   <input type="number" id="ruleCooldown" min="0" step="100" value="1000" class="admin-v2-input" />
                 </label>
                 <div class="admin-sounds-form-full" style="display:flex;justify-content:flex-end">
-                  <button id="addRuleBtn" type="button" class="admin-poll-btn is-primary">新增規則</button>
+                  <button id="addRuleBtn" type="button" class="admin-ui-action is-primary admin-sound-action">新增規則</button>
                 </div>
               </div>
             </div>

@@ -45,7 +45,7 @@
                 class="admin-v2-input"
               />
             </label>
-            <button id="stickerUploadBtn" type="button" class="admin-poll-btn is-primary">上傳</button>
+            <button id="stickerUploadBtn" type="button" class="admin-ui-action is-primary admin-sticker-action">上傳</button>
           </div>`
       : "";
 
@@ -67,7 +67,7 @@
               <button
                 id="stickerPackAddBtn"
                 type="button"
-                class="admin-v2-chip is-on"
+                class="admin-ui-action is-primary admin-sticker-pack-add"
                 style="margin-left:auto"
                 title="新增貼圖包"
               >+ 新增</button>
@@ -128,11 +128,11 @@
       var actions = isDefault
         ? ""
         : '<div class="admin-stickers-pack-actions" style="display:flex;gap:4px;flex-wrap:wrap;padding-left:14px">' +
-            '<button type="button" class="admin-v2-chip" data-pack-action="rename" data-pack-id="' + escapeAttr(pack.id) + '" title="重新命名">✎</button>' +
-            '<button type="button" class="admin-v2-chip" data-pack-action="up" data-pack-id="' + escapeAttr(pack.id) + '" title="上移">↑</button>' +
-            '<button type="button" class="admin-v2-chip" data-pack-action="down" data-pack-id="' + escapeAttr(pack.id) + '" title="下移">↓</button>' +
-            '<button type="button" class="admin-v2-chip" data-pack-action="toggle" data-pack-id="' + escapeAttr(pack.id) + '" title="' + (pack.enabled ? "停用" : "啟用") + '">' + (pack.enabled ? "ON" : "OFF") + '</button>' +
-            '<button type="button" class="admin-v2-chip is-bad" data-pack-action="delete" data-pack-id="' + escapeAttr(pack.id) + '" title="刪除貼圖包">×</button>' +
+            '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="rename" data-pack-id="' + escapeAttr(pack.id) + '" title="重新命名">✎</button>' +
+            '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="up" data-pack-id="' + escapeAttr(pack.id) + '" title="上移">↑</button>' +
+            '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="down" data-pack-id="' + escapeAttr(pack.id) + '" title="下移">↓</button>' +
+            '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="toggle" data-pack-id="' + escapeAttr(pack.id) + '" title="' + (pack.enabled ? "停用" : "啟用") + '">' + (pack.enabled ? "ON" : "OFF") + '</button>' +
+            '<button type="button" class="admin-ui-chip is-danger admin-sticker-pack-action" data-pack-action="delete" data-pack-id="' + escapeAttr(pack.id) + '" title="刪除貼圖包">×</button>' +
           '</div>';
       html +=
         '<div class="' + rowCls + '" data-pack="' + escapeAttr(pack.id) + '" style="display:flex;flex-direction:column;gap:4px">' +
@@ -157,10 +157,10 @@
       'width="56" height="56" loading="lazy" />' +
       '<span class="label" title="' + escapeAttr(label) + '">' + escapeHtml(label) + "</span>" +
       '<div class="actions">' +
-      '<button type="button" class="sticker-copy-btn admin-v2-chip" data-label="' +
+      '<button type="button" class="admin-ui-chip sticker-copy-btn" data-label="' +
       escapeAttr(label) + '" title="' + escapeAttr(ServerI18n.t("copyToClipboard")) + '">' +
       escapeHtml(ServerI18n.t("copyBtn")) + "</button>" +
-      '<button type="button" class="sticker-delete-btn admin-v2-chip is-bad" data-name="' +
+      '<button type="button" class="admin-ui-chip is-danger sticker-delete-btn" data-name="' +
       escapeAttr(sticker.name) + '" title="' + escapeAttr(ServerI18n.t("deleteSticker")) + '">×</button>' +
       "</div>" +
       "</div>"
