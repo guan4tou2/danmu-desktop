@@ -269,7 +269,7 @@
 
       if (type === "select" && Array.isArray(def.options)) {
         const sel = document.createElement("select");
-        sel.className = "admin-v2-select";
+        sel.className = "admin-ui-select";
         sel.style.cssText = "font-size:12px;padding:4px 8px";
         sel.dataset.paramKey = key;
         for (const opt of def.options) {

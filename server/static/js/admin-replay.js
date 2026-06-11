@@ -95,9 +95,9 @@
         '<div class="admin-v2-card admin-replay-picker">' +
           '<div class="admin-v2-toolbar">' +
             '<span class="admin-v2-monolabel">SESSION</span>' +
-            '<select id="replayV2Session" class="admin-v2-select" style="max-width:280px"></select>' +
+            '<select id="replayV2Session" class="admin-ui-select" style="max-width:280px"></select>' +
             '<span class="admin-v2-monolabel">SPEED</span>' +
-            '<select id="replayV2Speed" class="admin-v2-select" style="max-width:110px">' +
+            '<select id="replayV2Speed" class="admin-ui-select" style="max-width:110px">' +
               '<option value="0.5">0.5×</option>' +
               '<option value="1" selected>1×</option>' +
               '<option value="2">2×</option>' +

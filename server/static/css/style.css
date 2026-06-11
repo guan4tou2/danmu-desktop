@@ -14477,7 +14477,7 @@ body.admin-pu-open { overflow: hidden; }
 .admin-security-tokenrow {
   display: flex; gap: 6px; align-items: center;
 }
-.admin-security-tokenrow .admin-v2-input {
+.admin-security-tokenrow .admin-ui-input {
   flex: 1; min-width: 0;
 }
 .admin-security-tokenrow > .admin-ui-action {

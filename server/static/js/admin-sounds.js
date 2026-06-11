@@ -421,11 +421,11 @@
               <div class="admin-sounds-form">
                 <label class="admin-webhooks-field">
                   <span class="admin-v2-monolabel">FILE · MP3/OGG/WAV</span>
-                  <input type="file" id="soundFileInput" accept=".mp3,.ogg,.wav,audio/mpeg,audio/ogg,audio/wav" class="admin-v2-input" />
+                  <input type="file" id="soundFileInput" accept=".mp3,.ogg,.wav,audio/mpeg,audio/ogg,audio/wav" class="admin-ui-input" />
                 </label>
                 <label class="admin-webhooks-field">
                   <span class="admin-v2-monolabel">NAME</span>
-                  <input type="text" id="soundNameInput" placeholder="${escapeHtml(ServerI18n.t("soundNamePlaceholder"))}" maxlength="100" class="admin-v2-input" />
+                  <input type="text" id="soundNameInput" placeholder="${escapeHtml(ServerI18n.t("soundNamePlaceholder"))}" maxlength="100" class="admin-ui-input" />
                 </label>
                 <div class="admin-sounds-form-full" style="display:flex;justify-content:flex-end">
                   <button id="soundUploadBtn" type="button" class="admin-ui-action is-primary admin-sound-action">上傳</button>
@@ -447,7 +447,7 @@
               <div class="admin-sounds-form">
                 <label class="admin-webhooks-field">
                   <span class="admin-v2-monolabel">TRIGGER TYPE</span>
-                  <select id="ruleTriggerType" class="admin-v2-select">
+                  <select id="ruleTriggerType" class="admin-ui-select">
                     <option value="keyword">${escapeHtml(ServerI18n.t("triggerTypeKeyword"))}</option>
                     <option value="effect">${escapeHtml(ServerI18n.t("triggerTypeEffect"))}</option>
                     <option value="all">${escapeHtml(ServerI18n.t("triggerTypeAll"))}</option>
@@ -455,21 +455,21 @@
                 </label>
                 <label class="admin-webhooks-field">
                   <span class="admin-v2-monolabel">TRIGGER VALUE</span>
-                  <input type="text" id="ruleTriggerValue" placeholder="${escapeHtml(ServerI18n.t("triggerValueKeywordPlaceholder"))}" class="admin-v2-input" />
+                  <input type="text" id="ruleTriggerValue" placeholder="${escapeHtml(ServerI18n.t("triggerValueKeywordPlaceholder"))}" class="admin-ui-input" />
                 </label>
                 <label class="admin-webhooks-field admin-sounds-form-full">
                   <span class="admin-v2-monolabel">SOUND</span>
-                  <select id="ruleSoundName" class="admin-v2-select">
+                  <select id="ruleSoundName" class="admin-ui-select">
                     <option value="" disabled>${escapeHtml(ServerI18n.t("soundLoading"))}</option>
                   </select>
                 </label>
                 <label class="admin-webhooks-field">
                   <span class="admin-v2-monolabel">VOLUME · <span id="ruleVolumeLabel">80%</span></span>
-                  <input type="range" id="ruleVolume" min="0" max="100" value="80" class="admin-v2-input" />
+                  <input type="range" id="ruleVolume" min="0" max="100" value="80" class="admin-ui-input" />
                 </label>
                 <label class="admin-webhooks-field">
                   <span class="admin-v2-monolabel">COOLDOWN · MS</span>
-                  <input type="number" id="ruleCooldown" min="0" step="100" value="1000" class="admin-v2-input" />
+                  <input type="number" id="ruleCooldown" min="0" step="100" value="1000" class="admin-ui-input" />
                 </label>
                 <div class="admin-sounds-form-full" style="display:flex;justify-content:flex-end">
                   <button id="addRuleBtn" type="button" class="admin-ui-action is-primary admin-sound-action">新增規則</button>

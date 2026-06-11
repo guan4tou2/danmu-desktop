@@ -196,7 +196,7 @@
         if (count >= 6) { window.showToast(ServerI18n.t("maxPollOptions"), false); return; }
         var input = document.createElement("input");
         input.type = "text";
-        input.className = "poll-option-input admin-v2-input";
+        input.className = "poll-option-input admin-ui-input";
         input.placeholder = String.fromCharCode(65 + count) + ". Option " + (count + 1);
         input.maxLength = 100;
         container.appendChild(input);

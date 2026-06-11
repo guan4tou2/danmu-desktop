@@ -793,7 +793,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <span class="sep">⌘K</span>
                                     </div>
                                     <select id="server-lang-select" aria-label="Language"
-                                      class="admin-v2-select" style="font-size:var(--text-xs);padding:8px">
+                                      class="admin-ui-select" style="font-size:var(--text-xs);padding:8px">
                                       <option value="en" ${ServerI18n.currentLang === "en" ? "selected" : ""}>English</option>
                                       <option value="zh" ${ServerI18n.currentLang === "zh" ? "selected" : ""}>中文</option>
                                       <option value="ja" ${ServerI18n.currentLang === "ja" ? "selected" : ""}>日本語</option>
@@ -1173,7 +1173,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <div style="padding:14px;display:grid;grid-template-columns:1fr auto;gap:8px;border-bottom:1px solid var(--hud-line-strong)">
             <input type="text" id="newKeywordInput" placeholder="${ServerI18n.t("enterKeyword")}"
-              class="admin-v2-input w-full">
+              class="admin-ui-input w-full">
             <button id="addKeywordBtn" type="button" class="admin-ui-action is-primary admin-mod-keyword-action">+ ${ServerI18n.t("addKeyword")}</button>
           </div>
           <div id="blacklistKeywords" class="max-h-72 overflow-y-auto" style="padding:8px 14px">
@@ -1195,7 +1195,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="space-y-3">
                                 <div class="history-command-bar">
                                     <label class="text-sm font-medium" style="color:var(--admin-text-dim)">${ServerI18n.t("timeRange")}</label>
-                                    <select id="historyHours" class="admin-v2-select">
+                                    <select id="historyHours" class="admin-ui-select">
                                         <option value="1">${ServerI18n.t("last1Hour")}</option>
                                         <option value="6">${ServerI18n.t("last6Hours")}</option>
                                         <option value="24" selected>${ServerI18n.t("last24Hours")}</option>
@@ -1211,13 +1211,13 @@ document.addEventListener("DOMContentLoaded", () => {
                                     </label>
                                 </div>
                                 <input id="historySearch" type="search" placeholder="${ServerI18n.t("searchHistory")}"
-                                    class="admin-v2-input w-full">
+                                    class="admin-ui-input w-full">
                                 <div id="replayToolbar" class="history-replay-toolbar">
                                     <button id="replayStartBtn" class="admin-ui-action is-primary admin-replay-control-action">▶ ${ServerI18n.t("replaySelected")}</button>
                                     <button id="replayPauseBtn" class="admin-ui-action admin-replay-control-action hidden">⏸ ${ServerI18n.t("pause")}</button>
                                     <button id="replayResumeBtn" class="admin-ui-action is-primary admin-replay-control-action hidden">▶ ${ServerI18n.t("resume")}</button>
                                     <button id="replayStopBtn" class="admin-ui-action is-danger admin-replay-control-action hidden">⏹ ${ServerI18n.t("stop")}</button>
-                                    <select id="replaySpeed" class="admin-v2-select">
+                                    <select id="replaySpeed" class="admin-ui-select">
                                         <option value="1">1x</option>
                                         <option value="2">2x</option>
                                         <option value="5">5x</option>

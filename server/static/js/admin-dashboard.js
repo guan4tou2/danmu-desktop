@@ -820,7 +820,7 @@
         <div class="admin-session-banner-idle">
           <span class="admin-session-banner-idle-label">目前沒有進行中的場次</span>
           <div class="admin-session-open-row">
-            <input type="text" class="admin-v2-input admin-ui-grow admin-session-name-input" placeholder="場次名稱（必填）…" maxlength="120" data-sess-name />
+            <input type="text" class="admin-ui-input admin-ui-grow admin-session-name-input" placeholder="場次名稱（必填）…" maxlength="120" data-sess-name />
             <button type="button" class="admin-ui-action is-primary admin-ui-nowrap admin-session-open-btn" data-sess-action="open">▶ 開啟場次</button>
           </div>
           <div class="admin-session-banner-idle-hint">開啟後自動啟動 Desktop，訊息開始歸檔至本場次</div>
@@ -842,7 +842,7 @@
           </div>
           <div class="admin-session-live-behavior">
             <span class="admin-session-live-behavior-label">結束後 viewer：</span>
-            <select class="admin-v2-select admin-session-behavior-select" data-sess-behavior>
+            <select class="admin-ui-select admin-session-behavior-select" data-sess-behavior>
               <option value="continue" ${state.viewer_end_behavior === "continue" ? "selected" : ""}>繼續運作</option>
               <option value="ended_screen" ${state.viewer_end_behavior === "ended_screen" ? "selected" : ""}>顯示結束畫面</option>
               <option value="reload" ${state.viewer_end_behavior === "reload" ? "selected" : ""}>自動重新載入</option>

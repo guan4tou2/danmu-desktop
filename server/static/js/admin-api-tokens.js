@@ -216,7 +216,7 @@
                   <input
                     type="text"
                     id="adminAtTokenDisplay"
-                    class="admin-v2-input admin-at-token-raw"
+                    class="admin-ui-input admin-at-token-raw"
                     readonly
                     aria-label="產生的 Token"
                   >
@@ -235,7 +235,7 @@
                     type="text"
                     id="adminAtLabel"
                     name="label"
-                    class="admin-v2-input admin-at-input"
+                    class="admin-ui-input admin-at-input"
                     placeholder="e.g. OBS Widget · ci-bot · SlideSync"
                     maxlength="80"
                     required

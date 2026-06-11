@@ -166,7 +166,7 @@
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                   <div>
                     <label for="filterType" class="admin-v3-card-kicker" style="margin:0">TYPE</label>
-                    <select id="filterType" class="admin-v2-select">
+                    <select id="filterType" class="admin-ui-select">
                       <option value="keyword">keyword</option>
                       <option value="regex">regex</option>
                       <option value="replace">replace</option>
@@ -175,7 +175,7 @@
                   </div>
                   <div>
                     <label for="filterAction" class="admin-v3-card-kicker" style="margin:0">ACTION</label>
-                    <select id="filterAction" class="admin-v2-select">
+                    <select id="filterAction" class="admin-ui-select">
                       <option value="block">block</option>
                       <option value="replace">replace</option>
                       <option value="allow">allow</option>
@@ -185,29 +185,29 @@
                 <div>
                   <label for="filterPattern" class="admin-v3-card-kicker" style="margin:0">PATTERN</label>
                   <input type="text" id="filterPattern" placeholder="${t("filterPatternPlaceholder", "Enter pattern...")}"
-                    class="admin-v2-input" />
+                    class="admin-ui-input" />
                 </div>
                 <div id="filterReplacementRow" class="hidden">
                   <label for="filterReplacement" class="admin-v3-card-kicker" style="margin:0">REPLACEMENT</label>
                   <input type="text" id="filterReplacement" placeholder="${t("filterReplacementPlaceholder", "Replacement text...")}"
-                    class="admin-v2-input" />
+                    class="admin-ui-input" />
                 </div>
                 <div id="filterRateLimitRow" class="hidden" style="display:none;grid-template-columns:1fr 1fr;gap:8px">
                   <div>
                     <label for="filterMaxCount" class="admin-v3-card-kicker" style="margin:0">MAX COUNT</label>
                     <input type="number" id="filterMaxCount" value="5" min="1" max="1000"
-                      class="admin-v2-input" />
+                      class="admin-ui-input" />
                   </div>
                   <div>
                     <label for="filterWindowSec" class="admin-v3-card-kicker" style="margin:0">WINDOW (SEC)</label>
                     <input type="number" id="filterWindowSec" value="60" min="1" max="86400"
-                      class="admin-v2-input" />
+                      class="admin-ui-input" />
                   </div>
                 </div>
                 <div>
                   <label for="filterPriority" class="admin-v3-card-kicker" style="margin:0">PRIORITY \u00b7 \u5c0f\u7684\u5148\u884c</label>
                   <input type="number" id="filterPriority" value="0" min="-9999" max="9999"
-                    class="admin-v2-input" />
+                    class="admin-ui-input" />
                 </div>
                 <button id="filterAddBtn" type="button" class="admin-ui-action is-primary admin-filter-action" style="margin-top:4px">
                   + ${t("addRule", "Add Rule")}
@@ -221,7 +221,7 @@
               </div>
               <div style="padding:14px;display:flex;flex-direction:column;gap:8px">
                 <input id="filterTestText" type="text" placeholder="${t("sampleText", "Sample text...")}"
-                  class="admin-v2-input" />
+                  class="admin-ui-input" />
                 <button id="filterTestBtn" type="button" class="admin-ui-action admin-filter-action" style="align-self:flex-start">${t("testBtn", "Test")}</button>
                 <div id="filterTestResult" style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-strong);letter-spacing:0.02em"></div>
               </div>

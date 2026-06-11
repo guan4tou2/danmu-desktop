@@ -49,11 +49,11 @@
               <form id="sec2-pw-form" class="admin-security-form" autocomplete="off">
                 <label class="admin-security-field">
                   <span class="admin-v2-monolabel">CURRENT</span>
-                  <input id="sec2-pw-current" type="password" required autocomplete="current-password" class="admin-v2-input" />
+                  <input id="sec2-pw-current" type="password" required autocomplete="current-password" class="admin-ui-input" />
                 </label>
                 <label class="admin-security-field">
                   <span class="admin-v2-monolabel">NEW · ≥8</span>
-                  <input id="sec2-pw-new" type="password" required minlength="8" autocomplete="new-password" class="admin-v2-input" />
+                  <input id="sec2-pw-new" type="password" required minlength="8" autocomplete="new-password" class="admin-ui-input" />
                   <div class="admin-security-strength">
                     <div class="admin-security-strength-bar"><span id="sec2-pw-meter" style="width:0%"></span></div>
                     <span id="sec2-pw-label" class="admin-v2-monolabel">—</span>
@@ -61,7 +61,7 @@
                 </label>
                 <label class="admin-security-field">
                   <span class="admin-v2-monolabel">CONFIRM</span>
-                  <input id="sec2-pw-confirm" type="password" required autocomplete="new-password" class="admin-v2-input" />
+                  <input id="sec2-pw-confirm" type="password" required autocomplete="new-password" class="admin-ui-input" />
                 </label>
                 <button type="submit" class="admin-ui-action is-primary admin-sec-action">變更密碼</button>
               </form>
@@ -116,7 +116,7 @@
               <div class="admin-security-field">
                 <span class="admin-v2-monolabel">TOKEN · 12–128 字元</span>
                 <div class="admin-security-tokenrow">
-                  <input id="sec2-wsa-token" type="password" class="admin-v2-input" placeholder="未設定" autocomplete="off" spellcheck="false" />
+                  <input id="sec2-wsa-token" type="password" class="admin-ui-input" placeholder="未設定" autocomplete="off" spellcheck="false" />
                   <button type="button" id="sec2-wsa-reveal" class="admin-ui-action admin-sec-token-action">👁</button>
                   <button type="button" id="sec2-wsa-copy" class="admin-ui-action admin-sec-token-action">複製</button>
                   <button type="button" id="sec2-wsa-rotate" class="admin-ui-action is-warn admin-sec-token-action">重新產生</button>
@@ -152,7 +152,7 @@
               </label>
               <label class="admin-security-field">
                 <span class="admin-v2-monolabel">ALLOWLIST · 每行一筆</span>
-                <textarea id="sec2-ip-entries" class="admin-v2-input" rows="4" spellcheck="false" placeholder="127.0.0.1/32"></textarea>
+                <textarea id="sec2-ip-entries" class="admin-ui-input" rows="4" spellcheck="false" placeholder="127.0.0.1/32"></textarea>
               </label>
               <div class="admin-security-tokenmeta">
                 <span class="admin-v2-monolabel">CURRENT IP</span>
@@ -192,7 +192,7 @@
               </div>
               <label class="admin-security-field">
                 <span class="admin-v2-monolabel">ORIGINS · 每行一筆</span>
-                <textarea id="sec2-cors-origins" class="admin-v2-input" rows="3" spellcheck="false" placeholder="*"></textarea>
+                <textarea id="sec2-cors-origins" class="admin-ui-input" rows="3" spellcheck="false" placeholder="*"></textarea>
               </label>
               <label class="admin-security-toggle">
                 <input id="sec2-cors-credentials" type="checkbox" />
@@ -200,7 +200,7 @@
               </label>
               <label class="admin-security-field">
                 <span class="admin-v2-monolabel">METHODS</span>
-                <input id="sec2-cors-methods" type="text" class="admin-v2-input" spellcheck="false" placeholder="GET, POST, DELETE, PATCH, OPTIONS" />
+                <input id="sec2-cors-methods" type="text" class="admin-ui-input" spellcheck="false" placeholder="GET, POST, DELETE, PATCH, OPTIONS" />
               </label>
               <div class="admin-security-tokenmeta">
                 <button type="button" id="sec2-cors-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end">儲存 CORS</button>

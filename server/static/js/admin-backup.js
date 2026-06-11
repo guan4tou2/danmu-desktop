@@ -52,7 +52,7 @@
             <div class="admin-backup-row">
               <label class="admin-backup-field">
                 <span class="admin-v2-monolabel">RANGE</span>
-                <select id="bk2-hist-hours" class="admin-v2-select">
+                <select id="bk2-hist-hours" class="admin-ui-select">
                   <option value="1">最近 1 小時</option>
                   <option value="6">最近 6 小時</option>
                   <option value="24" selected>最近 24 小時</option>
@@ -62,7 +62,7 @@
               </label>
               <label class="admin-backup-field">
                 <span class="admin-v2-monolabel">FORMAT</span>
-                <select id="bk2-hist-format" class="admin-v2-select">
+                <select id="bk2-hist-format" class="admin-ui-select">
                   <option value="json">JSON · 完整</option>
                   <option value="csv">CSV · 試算表</option>
                   <option value="srt">SRT · 字幕</option>
@@ -112,7 +112,7 @@
             <div class="admin-backup-row">
               <label class="admin-backup-field">
                 <span class="admin-v2-monolabel">JSON FILE</span>
-                <input id="bk2-settings-upload" type="file" accept="application/json,.json" class="admin-v2-input" />
+                <input id="bk2-settings-upload" type="file" accept="application/json,.json" class="admin-ui-input" />
               </label>
               <button type="button" id="bk2-settings-dryrun" class="admin-ui-action admin-bk-action">Dry-run 預覽</button>
               <button type="button" class="admin-ui-action admin-bk-action" disabled title="即將支援 (需後端 endpoint)">套用</button>
@@ -127,7 +127,7 @@
             <div class="admin-backup-row">
               <label class="admin-backup-field">
                 <span class="admin-v2-monolabel">TARBALL · ≤ 16 MB</span>
-                <input id="bk2-pack-upload" type="file" accept=".tar.gz,application/gzip,application/x-gzip" class="admin-v2-input" />
+                <input id="bk2-pack-upload" type="file" accept=".tar.gz,application/gzip,application/x-gzip" class="admin-ui-input" />
               </label>
               <button type="button" id="bk2-pack-dryrun" class="admin-ui-action admin-bk-action">Dry-run 預覽</button>
               <button type="button" id="bk2-pack-apply" class="admin-ui-action is-danger admin-bk-action" disabled title="先 dry-run 預覽後才能套用">套用</button>
@@ -154,7 +154,7 @@
             <div class="admin-backup-row">
               <label class="admin-backup-field">
                 <span class="admin-v2-monolabel">RANGE</span>
-                <select id="bk2-clear-scope" class="admin-v2-select">
+                <select id="bk2-clear-scope" class="admin-ui-select">
                   <option value="all" selected>全部</option>
                 </select>
               </label>
@@ -178,7 +178,7 @@
             <div class="admin-backup-row">
               <label class="admin-backup-field">
                 <span class="admin-v2-monolabel">輸入 <code>reset</code> 以確認</span>
-                <input id="bk2-factory-confirm" type="text" class="admin-v2-input" placeholder="reset" autocomplete="off" spellcheck="false" />
+                <input id="bk2-factory-confirm" type="text" class="admin-ui-input" placeholder="reset" autocomplete="off" spellcheck="false" />
               </label>
               <div class="admin-backup-desc">即將支援 — 目前請手動刪除 <code>server/runtime/</code> 後重啟。</div>
               <button type="button" id="bk2-factory-reset" class="admin-ui-action is-danger admin-bk-action" disabled>FACTORY RESET</button>

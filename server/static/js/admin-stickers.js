@@ -42,7 +42,7 @@
                 type="file"
                 id="stickerFileInput"
                 accept="${ACCEPTED_TYPES}"
-                class="admin-v2-input"
+                class="admin-ui-input"
               />
             </label>
             <button id="stickerUploadBtn" type="button" class="admin-ui-action is-primary admin-sticker-action">上傳</button>
@@ -86,7 +86,7 @@
                   id="stickerSearchInput"
                   type="search"
                   placeholder=":name 過濾"
-                  class="admin-v2-input"
+                  class="admin-ui-input"
                   style="flex:1;max-width:280px"
                 />
                 <span class="admin-v2-monolabel" style="margin-left:auto" id="stickerCount">—</span>

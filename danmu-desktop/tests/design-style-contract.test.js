@@ -160,7 +160,7 @@ test("API Tokens admin page has production CSS for its generated surface", () =>
   [
     "admin-ui-pill admin-at-scope-badge",
     "admin-ui-pill admin-at-badge",
-    "admin-v2-input admin-at-input",
+    "admin-ui-input admin-at-input",
     "admin-ui-action is-primary is-block admin-at-submit-btn",
     "admin-ui-notice is-warn admin-at-once-note",
   ].forEach((className) => {

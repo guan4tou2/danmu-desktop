@@ -16,14 +16,14 @@
     return `
       <div class="admin-scheduler-msg-row" data-msg-index="${index}">
         <input type="text" placeholder="${escapeAttr(ServerI18n.t("messageTextPlaceholder"))}"
-          class="scheduler-msg-text admin-v2-input"
+          class="scheduler-msg-text admin-ui-input"
           value="${escapeAttr(text)}" />
         <input type="color"
-          class="scheduler-msg-color admin-v2-input"
+          class="scheduler-msg-color admin-ui-input"
           style="padding:2px;height:36px;cursor:pointer"
           value="${escapeAttr(color || "#ffffff")}" title="Color" />
         <input type="number" min="12" max="200" placeholder="Size"
-          class="scheduler-msg-size admin-v2-input"
+          class="scheduler-msg-size admin-ui-input"
           value="${size || 48}" />
         <button type="button" class="admin-ui-chip is-danger scheduler-remove-msg" title="Remove" aria-label="Remove message">×</button>
       </div>`;
@@ -413,11 +413,11 @@
             <div class="admin-scheduler-config">
               <label>
                 <span class="admin-v2-monolabel">INTERVAL · 秒</span>
-                <input id="schedulerInterval" type="number" value="10" min="1" max="3600" class="admin-v2-input" />
+                <input id="schedulerInterval" type="number" value="10" min="1" max="3600" class="admin-ui-input" />
               </label>
               <label>
                 <span class="admin-v2-monolabel">REPEAT · -1=∞</span>
-                <input id="schedulerRepeat" type="number" value="-1" min="-1" max="10000" class="admin-v2-input" />
+                <input id="schedulerRepeat" type="number" value="-1" min="-1" max="10000" class="admin-ui-input" />
               </label>
               <div class="admin-scheduler-create-cell">
                 <button type="button" id="schedulerCreateBtn" class="admin-ui-action is-primary admin-sch-create-btn">${escapeHTML(ServerI18n.t("createBtn"))}</button>

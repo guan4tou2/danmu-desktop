@@ -127,7 +127,7 @@
       +   '<div style="position:relative">'
       +     '<span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);'
       +           'font-size:14px;color:var(--admin-text-dim);pointer-events:none;user-select:none">⌕</span>'
-      +     '<input id="admin-search-input" type="search" class="admin-v2-input"'
+      +     '<input id="admin-search-input" type="search" class="admin-ui-input"'
       +           ' placeholder="搜尋彈幕內容…"'
       +           ' autocomplete="off" spellcheck="false"'
       +           ' style="padding-left:30px;font-family:inherit;font-size:13px" />'

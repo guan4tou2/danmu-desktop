@@ -890,6 +890,31 @@ test("admin Events toolbar composes shared chips, status, and actions", () => {
   expect(cssSrc).not.toContain(".admin-ev-v4__live-label {");
 });
 
+test("admin form primitives use admin-ui input/select naming", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const hudCss = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const sharedHudCss = fs.readFileSync(path.join(rootDir, "shared", "hud.css"), "utf8");
+  const styleCss = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+  const jsFiles = fs
+    .readdirSync(path.join(staticDir, "js"))
+    .filter((name) => name.endsWith(".js"))
+    .map((name) => fs.readFileSync(path.join(staticDir, "js", name), "utf8"))
+    .join("\n");
+  const cssBundle = [hudCss, sharedHudCss, styleCss].join("\n");
+
+  expect(cssBundle).toContain(".admin-ui-input,");
+  expect(cssBundle).toContain(".admin-ui-select {");
+  expect(cssBundle).toContain(".admin-ui-input:focus,");
+  expect(cssBundle).toContain(".admin-ui-select:focus {");
+  expect(jsFiles).toContain("admin-ui-input");
+  expect(jsFiles).toContain("admin-ui-select");
+  expect(jsFiles).not.toContain("admin-v2-input");
+  expect(jsFiles).not.toContain("admin-v2-select");
+  expect(cssBundle).not.toContain("admin-v2-input");
+  expect(cssBundle).not.toContain("admin-v2-select");
+});
+
 test("admin API Tokens composes shared controls instead of page-local widgets", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
@@ -897,8 +922,8 @@ test("admin API Tokens composes shared controls instead of page-local widgets", 
   const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
   const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
-  expect(tokensSrc).toContain('class="admin-v2-input admin-at-input"');
-  expect(tokensSrc).toContain('class="admin-v2-input admin-at-token-raw"');
+  expect(tokensSrc).toContain('class="admin-ui-input admin-at-input"');
+  expect(tokensSrc).toContain('class="admin-ui-input admin-at-token-raw"');
   expect(tokensSrc).toContain('class="admin-ui-action admin-at-copy-btn"');
   expect(tokensSrc).toContain('class="admin-ui-action is-primary is-block admin-at-submit-btn"');
   expect(tokensSrc).toContain('class="admin-ui-action admin-at-row-btn"');
@@ -938,12 +963,12 @@ test("admin Live session banner composes shared controls instead of page-local w
   const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
   const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
-  expect(dashboardSrc).toContain('class="admin-v2-input admin-ui-grow admin-session-name-input"');
+  expect(dashboardSrc).toContain('class="admin-ui-input admin-ui-grow admin-session-name-input"');
   expect(dashboardSrc).toContain('class="admin-ui-action is-primary admin-ui-nowrap admin-session-open-btn"');
   expect(dashboardSrc).toContain('class="admin-ui-dot is-success admin-session-live-dot"');
   expect(dashboardSrc).toContain('class="admin-ui-action admin-session-pause-btn"');
   expect(dashboardSrc).toContain('class="admin-ui-action is-danger admin-session-end-btn"');
-  expect(dashboardSrc).toContain('class="admin-v2-select admin-session-behavior-select"');
+  expect(dashboardSrc).toContain('class="admin-ui-select admin-session-behavior-select"');
 
   expect(hudSrc).toContain(".admin-ui-grow {");
   expect(hudSrc).toContain(".admin-ui-nowrap {");

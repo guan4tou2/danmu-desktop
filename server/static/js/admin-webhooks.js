@@ -120,11 +120,11 @@
                 <div class="admin-wh-form-grid">
                   <label class="admin-wh-form-field">
                     <span class="admin-v2-monolabel">URL</span>
-                    <input id="wh-url" type="url" required placeholder="https://example.com/hook" class="admin-v2-input" />
+                    <input id="wh-url" type="url" required placeholder="https://example.com/hook" class="admin-ui-input" />
                   </label>
                   <label class="admin-wh-form-field">
                     <span class="admin-v2-monolabel">FORMAT</span>
-                    <select id="wh-format" class="admin-v2-select">
+                    <select id="wh-format" class="admin-ui-select">
                       <option value="json">JSON</option>
                       <option value="discord">Discord</option>
                       <option value="slack">Slack</option>
@@ -132,7 +132,7 @@
                   </label>
                   <label class="admin-wh-form-field">
                     <span class="admin-v2-monolabel">SECRET · HMAC</span>
-                    <input id="wh-secret" type="text" placeholder="optional" class="admin-v2-input" />
+                    <input id="wh-secret" type="text" placeholder="optional" class="admin-ui-input" />
                   </label>
                 </div>
                 <fieldset class="admin-wh-form-events">

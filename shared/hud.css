@@ -366,8 +366,8 @@
   text-transform: uppercase;
 }
 
-.admin-v2-input,
-.admin-v2-select {
+.admin-ui-input,
+.admin-ui-select {
   width: 100%;
   padding: 8px 10px;
   border-radius: 6px;
@@ -380,8 +380,8 @@
   box-sizing: border-box;
 }
 
-.admin-v2-input:focus,
-.admin-v2-select:focus {
+.admin-ui-input:focus,
+.admin-ui-select:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
 }
@@ -2639,7 +2639,7 @@
   align-items: stretch;
   gap: 6px;
 }
-.admin-security-tokenrow .admin-v2-input { flex: 1; }
+.admin-security-tokenrow .admin-ui-input { flex: 1; }
 
 .admin-security-tokenmeta {
   margin-top: 10px;
