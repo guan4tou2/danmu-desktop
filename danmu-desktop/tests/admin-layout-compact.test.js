@@ -412,17 +412,54 @@ test("admin Audit uses shared admin-ui primitives for the v5 compact surface", (
   expect(auditSrc).toContain('class="admin-ui-chip admin-audit-filter-chip');
   expect(auditSrc).toContain('class="admin-ui-scroll-list admin-ui-timeline admin-audit-timeline"');
   expect(auditSrc).toContain('class="admin-ui-timeline-row admin-audit-timeline-row');
+  expect(auditSrc).toContain('class="admin-ui-action admin-audit-action"');
+  expect(auditSrc).toContain('class="admin-ui-summary admin-audit-summary"');
+  expect(auditSrc).toContain('"admin-ui-pill admin-audit-row-pill is-admin"');
+  expect(auditSrc).toContain('"admin-ui-pill admin-audit-row-pill"');
+  expect(auditSrc).toContain('class="admin-ui-code admin-audit-meta-extra"');
+  expect(auditSrc).not.toContain("admin-audit-src");
+  expect(auditSrc).not.toContain("admin-audit-table");
+  expect(auditSrc).not.toContain("admin-audit-src-chip");
+  expect(auditSrc).not.toContain("admin-audit-hash-chip");
+  expect(auditSrc).not.toContain("admin-audit-actor-chip");
 
   expect(hudSrc).toContain(".admin-ui-toolbar {");
   expect(hudSrc).toContain(".admin-ui-chip {");
+  expect(hudSrc).toContain(".admin-ui-summary {");
+  expect(hudSrc).toContain(".admin-ui-action {");
+  expect(hudSrc).toContain(".admin-ui-pill {");
+  expect(hudSrc).toContain(".admin-ui-code {");
   expect(hudSrc).toContain(".admin-ui-scroll-list {");
   expect(hudSrc).toContain(".admin-ui-timeline-row {");
   expect(hudSrc).toContain("overflow-y: auto;");
 
+  expect(cssSrc).not.toContain(".admin-audit-grid {");
+  expect(cssSrc).not.toContain(".admin-audit-filters {");
+  expect(cssSrc).not.toContain(".admin-audit-source-list {");
+  expect(cssSrc).not.toContain(".admin-audit-src {");
+  expect(cssSrc).not.toContain(".admin-audit-src .cnt");
+  expect(cssSrc).not.toContain(".admin-audit-src:hover");
+  expect(cssSrc).not.toContain(".admin-audit-src.is-active");
+  expect(cssSrc).not.toContain(".admin-audit-tip {");
+  expect(cssSrc).not.toContain(".admin-audit-main {");
+  expect(cssSrc).not.toContain(".admin-audit-toolbar {");
   expect(cssSrc).not.toContain(".admin-audit-toolbar-v5 {");
+  expect(cssSrc).not.toContain(".admin-audit-summary {");
+  expect(cssSrc).not.toContain(".admin-audit-actions {");
+  expect(cssSrc).not.toContain(".admin-audit-action {");
+  expect(cssSrc).not.toContain(".admin-audit-action:hover");
   expect(cssSrc).not.toContain(".admin-audit-filter-chip {");
   expect(cssSrc).not.toContain(".admin-audit-timeline {");
   expect(cssSrc).not.toContain(".admin-audit-timeline-row {");
+  expect(cssSrc).not.toContain(".admin-audit-table-wrap {");
+  expect(cssSrc).not.toContain(".admin-audit-table {");
+  expect(cssSrc).not.toContain(".admin-audit-row:hover");
+  expect(cssSrc).not.toContain(".admin-audit-src-chip {");
+  expect(cssSrc).not.toContain(".admin-audit-loading,");
+  expect(cssSrc).not.toContain(".admin-audit-hash-chip {");
+  expect(cssSrc).not.toContain(".admin-audit-retain {");
+  expect(cssSrc).not.toContain(".admin-audit-actor-chip {");
+  expect(cssSrc).not.toContain(".admin-audit-actor-av {");
 });
 
 test("admin API Tokens composes shared controls instead of page-local widgets", () => {
