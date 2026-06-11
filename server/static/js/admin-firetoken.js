@@ -55,9 +55,9 @@
 
               <div class="admin-ft-token-display">
                 <code class="admin-ft-token-code" data-ft-token-display>未設定</code>
-                <button type="button" class="admin-ft-action-btn" data-ft-action="copy" disabled>📋 複製</button>
-                <button type="button" class="admin-ft-action-btn admin-ft-action-btn--warn" data-ft-action="regen">↻ 重新產生</button>
-                <button type="button" class="admin-ft-action-btn admin-ft-action-btn--danger" data-ft-action="revoke" disabled>撤銷</button>
+                <button type="button" class="admin-ui-action admin-ft-action" data-ft-action="copy" disabled>📋 複製</button>
+                <button type="button" class="admin-ui-action is-warn admin-ft-action" data-ft-action="regen">↻ 重新產生</button>
+                <button type="button" class="admin-ui-action is-danger admin-ft-action" data-ft-action="revoke" disabled>撤銷</button>
               </div>
 
               <div class="admin-ft-token-stats">

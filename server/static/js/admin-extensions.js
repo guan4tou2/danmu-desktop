@@ -124,9 +124,9 @@
           </div>
           <div class="admin-ext-token-row">
             <code class="admin-ext-token-code" data-fire-token-display>未設定</code>
-            <button type="button" class="admin-ext-token-btn" data-fire-token-action="copy" disabled>複製</button>
-            <button type="button" class="admin-ext-token-btn" data-fire-token-action="regen">產生</button>
-            <button type="button" class="admin-ext-token-btn admin-ext-token-btn--danger" data-fire-token-action="revoke" disabled>撤銷</button>
+            <button type="button" class="admin-ui-action admin-ext-token-action" data-fire-token-action="copy" disabled>複製</button>
+            <button type="button" class="admin-ui-action admin-ext-token-action" data-fire-token-action="regen">產生</button>
+            <button type="button" class="admin-ui-action is-danger admin-ext-token-action" data-fire-token-action="revoke" disabled>撤銷</button>
           </div>
           <div class="admin-ext-token-hint">
             擴充功能在 popup 設定中貼入 token。撤銷會立即停用所有 extension（重 regen 後重新貼即可）。

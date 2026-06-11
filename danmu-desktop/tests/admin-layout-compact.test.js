@@ -476,6 +476,36 @@ test("admin Effects modal actions compose shared admin-ui controls", () => {
   expect(hudSrc).toContain(".admin-ui-action.is-primary {");
 });
 
+test("admin Fire Token and Extensions token actions compose shared controls", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const firetokenSrc = fs.readFileSync(path.join(staticDir, "js", "admin-firetoken.js"), "utf8");
+  const extensionsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-extensions.js"), "utf8");
+  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+
+  expect(firetokenSrc).toContain('class="admin-ui-action admin-ft-action" data-ft-action="copy" disabled');
+  expect(firetokenSrc).toContain('class="admin-ui-action is-warn admin-ft-action" data-ft-action="regen"');
+  expect(firetokenSrc).toContain('class="admin-ui-action is-danger admin-ft-action" data-ft-action="revoke" disabled');
+  expect(firetokenSrc).not.toContain("admin-ft-action-btn");
+
+  expect(extensionsSrc).toContain('class="admin-ui-action admin-ext-token-action" data-fire-token-action="copy" disabled');
+  expect(extensionsSrc).toContain('class="admin-ui-action admin-ext-token-action" data-fire-token-action="regen"');
+  expect(extensionsSrc).toContain('class="admin-ui-action is-danger admin-ext-token-action" data-fire-token-action="revoke" disabled');
+  expect(extensionsSrc).not.toContain("admin-ext-token-btn");
+
+  expect(hudSrc).toContain(".admin-ui-action.is-warn {");
+  expect(hudSrc).toContain(".admin-ui-action.is-danger {");
+  expect(cssSrc).toContain(".admin-ft-token-display > .admin-ui-action,");
+  expect(cssSrc).not.toContain(".admin-ft-action-btn {");
+  expect(cssSrc).not.toContain(".admin-ft-action-btn:hover");
+  expect(cssSrc).not.toContain(".admin-ft-action-btn--warn");
+  expect(cssSrc).not.toContain(".admin-ft-action-btn--danger");
+  expect(cssSrc).not.toContain(".admin-ext-token-btn {");
+  expect(cssSrc).not.toContain(".admin-ext-token-btn:hover");
+  expect(cssSrc).not.toContain(".admin-ext-token-btn--danger");
+});
+
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");

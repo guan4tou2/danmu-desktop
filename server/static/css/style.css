@@ -5930,27 +5930,6 @@ body.stream-mode .admin-hero .admin-summary-grid {
   border-color: var(--color-primary);
   user-select: all;
 }
-.admin-ext-token-btn {
-  padding: 8px 12px; border-radius: 3px;
-  border: 1px solid var(--hud-line);
-  background: transparent; color: var(--color-text-muted);
-  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em;
-  cursor: pointer;
-  transition: border-color 120ms, color 120ms, background 120ms;
-}
-.admin-ext-token-btn:hover:not(:disabled) {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: var(--hud-cyan-soft);
-}
-.admin-ext-token-btn:disabled {
-  opacity: 0.4; cursor: default;
-}
-.admin-ext-token-btn--danger:hover:not(:disabled) {
-  border-color: var(--hud-crimson, #f87171);
-  color: var(--hud-crimson, #f87171);
-  background: rgba(248,113,113,0.08);
-}
 .admin-ext-token-hint {
   margin-top: 8px;
   font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.04em;
@@ -6050,33 +6029,11 @@ body.stream-mode .admin-hero .admin-summary-grid {
   color: var(--hud-lime, #86efac);
   user-select: all;
 }
-.admin-ft-action-btn {
-  padding: 6px 12px; border-radius: 3px;
-  font-family: var(--font-mono); font-size: 11px;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  border: 1px solid var(--hud-cyan-line);
-  background: var(--hud-cyan-soft);
-  color: var(--color-primary);
+.admin-ft-token-display > .admin-ui-action,
+.admin-ext-token-row > .admin-ui-action {
+  flex: 0 0 auto;
   white-space: nowrap;
-  transition: background 120ms, border-color 120ms;
 }
-.admin-ft-action-btn:hover:not(:disabled) {
-  background: rgba(56, 189, 248, 0.22);
-}
-.admin-ft-action-btn:disabled { opacity: 0.4; cursor: default; }
-.admin-ft-action-btn--warn {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.5);
-  color: var(--color-warning);
-}
-.admin-ft-action-btn--warn:hover:not(:disabled) { background: rgba(245, 158, 11, 0.22); }
-.admin-ft-action-btn--danger {
-  background: rgba(248, 113, 113, 0.10);
-  border-color: rgba(248, 113, 113, 0.45);
-  color: var(--hud-crimson, #f87171);
-}
-.admin-ft-action-btn--danger:hover:not(:disabled) { background: rgba(248, 113, 113, 0.22); }
 
 .admin-ft-token-stats {
   margin-top: 12px;
