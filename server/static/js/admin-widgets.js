@@ -40,10 +40,10 @@
       // existing edit-modal flow — only the page chrome lifts to v5.
       const obsBase = location.origin + "/overlay";
       section.innerHTML = `
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">DESKTOP WIDGETS · 分數板 · 跑馬燈 · 標籤</div>
-          <div class="admin-v2-title">${escapeHtml(i18n("widgetsTitle", "Desktop Widgets"))}</div>
-          <p class="admin-v2-note">${escapeHtml(i18n("widgetsDesc", "在 OBS 覆蓋層上新增分數板、跑馬燈或文字標籤"))}</p>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">DESKTOP WIDGETS · 分數板 · 跑馬燈 · 標籤</div>
+          <div class="admin-ui-page-title">${escapeHtml(i18n("widgetsTitle", "Desktop Widgets"))}</div>
+          <p class="admin-ui-page-note">${escapeHtml(i18n("widgetsDesc", "在 OBS 覆蓋層上新增分數板、跑馬燈或文字標籤"))}</p>
         </div>
 
         <!-- KPI strip -->

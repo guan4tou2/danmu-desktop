@@ -22,13 +22,13 @@
   function buildSection() {
     // v5 batch10-audience.jsx FingerprintsPage retrofit (2026-05-19).
     // Was a legacy <details> collapse card; now a full v4 page with
-    // admin-v2-head, toolbar (count + refresh + reset), and 8-col table.
+    // admin-ui-page-head, toolbar (count + refresh + reset), and 8-col table.
     return `
       <div id="sec-fingerprints" class="admin-fp-page hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">FINGERPRINTS · 觀測 · 技術檢視</div>
-          <div class="admin-v2-title">${escapeHtml(ServerI18n.t("fingerprintsTitle"))}</div>
-          <p class="admin-v2-note">${escapeHtml(ServerI18n.t("fingerprintsDesc"))}</p>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">FINGERPRINTS · 觀測 · 技術檢視</div>
+          <div class="admin-ui-page-title">${escapeHtml(ServerI18n.t("fingerprintsTitle"))}</div>
+          <p class="admin-ui-page-note">${escapeHtml(ServerI18n.t("fingerprintsDesc"))}</p>
         </div>
 
         <div class="admin-fp-toolbar">

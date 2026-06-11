@@ -112,10 +112,10 @@
     return `
       <div id="${PAGE_ID}" class="admin-sd-page hud-page-stack lg:col-span-2">
         <!-- Page header -->
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">SESSION DETAIL · 切片明細 · DENSITY TIMELINE</div>
-          <div class="admin-v2-title" data-sd-title>場次詳情</div>
-          <p class="admin-v2-note">展開單一資料切片：密度時間軸、訊息逐則、投票統計。內容唯讀（場次結束即定型）。</p>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">SESSION DETAIL · 切片明細 · DENSITY TIMELINE</div>
+          <div class="admin-ui-page-title" data-sd-title>場次詳情</div>
+          <p class="admin-ui-page-note">展開單一資料切片：密度時間軸、訊息逐則、投票統計。內容唯讀（場次結束即定型）。</p>
         </div>
 
         <div class="admin-sd-grid">

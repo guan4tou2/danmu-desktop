@@ -51,17 +51,17 @@
 
     return `
       <div id="${SECTION_ID}" class="admin-stickers-page hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">ASSETS · STICKERS · QUICK-SEND FOR AUDIENCE</div>
-          <div class="admin-v2-title">Sticker 包管理</div>
-          <p class="admin-v2-note">
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">ASSETS · STICKERS · QUICK-SEND FOR AUDIENCE</div>
+          <div class="admin-ui-page-title">Sticker 包管理</div>
+          <p class="admin-ui-page-note">
             比 emoji 大的浮動圖像 — 最大 300KB,按權重隨機。
           </p>
         </div>
 
         <div class="admin-stickers-layout">
           <!-- Left sidebar: pack list -->
-          <aside class="admin-v2-card admin-stickers-sidebar">
+          <aside class="admin-ui-card admin-stickers-sidebar">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
               <span class="admin-ui-monolabel">PACKS</span>
               <button
@@ -77,9 +77,9 @@
 
           <!-- Main: upload + grid -->
           <div class="admin-stickers-main">
-            ${loggedIn ? `<div class="admin-v2-card">${uploadBlock}</div>` : ""}
+            ${loggedIn ? `<div class="admin-ui-card">${uploadBlock}</div>` : ""}
 
-            <div class="admin-v2-card">
+            <div class="admin-ui-card">
               <div class="admin-stickers-toolbar">
                 <span class="admin-ui-monolabel">SEARCH</span>
                 <input
@@ -93,7 +93,7 @@
               </div>
             </div>
 
-            <div class="admin-v2-card">
+            <div class="admin-ui-card">
               <div id="stickerGrid" class="admin-stickers-grid">
                 <div class="admin-stickers-empty">${escapeHtml(ServerI18n.t("loadingStickers"))}</div>
               </div>

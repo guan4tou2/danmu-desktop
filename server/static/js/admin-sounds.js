@@ -396,10 +396,10 @@
   function buildSectionHTML() {
     return `
       <div id="${SECTION_ID}" class="admin-sounds-page hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">ASSETS · SOUNDS · EVENT-TRIGGERED</div>
-          <div class="admin-v2-title">聲音庫</div>
-          <p class="admin-v2-note">
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">ASSETS · SOUNDS · EVENT-TRIGGERED</div>
+          <div class="admin-ui-page-title">聲音庫</div>
+          <p class="admin-ui-page-note">
             關鍵字命中或事件觸發時在 Desktop 播放 — 最長 10 秒,最大 500KB。
           </p>
         </div>
@@ -409,7 +409,7 @@
              AdminSoundsPage spec. Falls back to single column at <960px. -->
         <div class="admin-sounds-layout">
           <!-- LEFT: Sound library (upload + list) -->
-          <div class="admin-v2-card admin-sounds-col">
+          <div class="admin-ui-card admin-sounds-col">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
               <span class="admin-ui-monolabel">SOUND LIBRARY · 庫存</span>
             </div>
@@ -435,7 +435,7 @@
           </div>
 
           <!-- RIGHT: Trigger rules (form + list) -->
-          <div class="admin-v2-card admin-sounds-col">
+          <div class="admin-ui-card admin-sounds-col">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
               <span class="admin-ui-monolabel">TRIGGER RULES · EVENT → SOUND</span>
             </div>

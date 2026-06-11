@@ -87,12 +87,12 @@
   function _renderShell() {
     return (
       '<div id="' + SECTION_ID + '" class="admin-replay-page hud-page-stack lg:col-span-2" style="display:none">' +
-        '<div class="admin-v2-head">' +
-          '<div class="admin-v2-kicker">REPLAY · ' + esc(t("replayKicker", "歷史彈幕重播")) + '</div>' +
-          '<div class="admin-v2-title">' + esc(t("replayTitle", "Replay")) + '</div>' +
-          '<p class="admin-v2-note">' + esc(t("replayNote", "Re-fire historical messages. Pick a day, scrub the timeline, fire single or batch.")) + '</p>' +
+        '<div class="admin-ui-page-head">' +
+          '<div class="admin-ui-page-kicker">REPLAY · ' + esc(t("replayKicker", "歷史彈幕重播")) + '</div>' +
+          '<div class="admin-ui-page-title">' + esc(t("replayTitle", "Replay")) + '</div>' +
+          '<p class="admin-ui-page-note">' + esc(t("replayNote", "Re-fire historical messages. Pick a day, scrub the timeline, fire single or batch.")) + '</p>' +
         '</div>' +
-        '<div class="admin-v2-card admin-replay-picker">' +
+        '<div class="admin-ui-card admin-replay-picker">' +
           '<div class="admin-v2-toolbar">' +
             '<span class="admin-ui-monolabel">SESSION</span>' +
             '<select id="replayV2Session" class="admin-ui-select" style="max-width:280px"></select>' +
@@ -110,7 +110,7 @@
         '</div>' +
         // v4 P3-2 waveform + transport (2026-05-19) — replaces flat
         // histogram. Bars: pre-now muted, played bright, current amber.
-        '<div class="admin-v2-card">' +
+        '<div class="admin-ui-card">' +
           '<div class="admin-replay-waveform">' +
             '<div class="admin-replay-waveform-head">' +
               '<span class="lbl">MESSAGE DENSITY · WAVEFORM</span>' +
@@ -128,7 +128,7 @@
             '<span class="admin-replay-transport-speed">SPEED · <span id="replayV2TransSpeed">1×</span></span>' +
           '</div>' +
         '</div>' +
-        '<div class="admin-v2-card admin-replay-list-card">' +
+        '<div class="admin-ui-card admin-replay-list-card">' +
           '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">' +
             '<span class="admin-ui-monolabel">MESSAGES</span>' +
             '<span class="admin-ui-monolabel" id="replayV2Count" style="margin-left:auto">—</span>' +

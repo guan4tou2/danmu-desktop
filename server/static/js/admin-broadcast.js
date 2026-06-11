@@ -115,9 +115,9 @@
   function pageTemplate() {
     return `
       <div id="${PAGE_ID}" class="admin-broadcast-page admin-bc-v4 admin-bc-v5 hud-page-stack lg:col-span-2" data-bc-state="standby">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker" data-bc-en>DESKTOP · OFF</div>
-          <div class="admin-v2-title" data-bc-title>Desktop 控制</div>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker" data-bc-en>DESKTOP · OFF</div>
+          <div class="admin-ui-page-title" data-bc-title>Desktop 控制</div>
         </div>
 
         <!-- Body slot — content swaps by state (ended uses a centered card) -->

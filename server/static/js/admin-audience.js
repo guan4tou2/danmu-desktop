@@ -98,10 +98,10 @@
   function buildSection() {
     return `
       <div id="${PAGE_ID}" class="admin-audience-page hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">AUDIENCE · 觀眾列表</div>
-          <div class="admin-v2-title">觀眾</div>
-          <p class="admin-v2-note">即時連線觀眾的指紋聚合，按 message_count 排序。資料來源：fingerprint_tracker（in-memory）。</p>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">AUDIENCE · 觀眾列表</div>
+          <div class="admin-ui-page-title">觀眾</div>
+          <p class="admin-ui-page-note">即時連線觀眾的指紋聚合，按 message_count 排序。資料來源：fingerprint_tracker（in-memory）。</p>
         </div>
 
         <div class="admin-aud-grid">

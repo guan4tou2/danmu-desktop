@@ -1109,12 +1109,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // Theme Management Card
     settingsGrid.insertAdjacentHTML("beforeend", `
       <div id="sec-themes" class="hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">THEME PACKS \u00b7 \u5f48\u5e55\u6a23\u5f0f\u9810\u8a2d</div>
-          <div class="admin-v2-title" data-i18n="styleThemePacks">${ServerI18n.t("styleThemePacks")}</div>
-          <p class="admin-v2-note" data-i18n="themesSectionDesc">${ServerI18n.t("themesSectionDesc")}</p>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">THEME PACKS \u00b7 \u5f48\u5e55\u6a23\u5f0f\u9810\u8a2d</div>
+          <div class="admin-ui-page-title" data-i18n="styleThemePacks">${ServerI18n.t("styleThemePacks")}</div>
+          <p class="admin-ui-page-note" data-i18n="themesSectionDesc">${ServerI18n.t("themesSectionDesc")}</p>
         </div>
-        <div class="admin-v2-card" style="padding:14px;margin-top:12px">
+        <div class="admin-ui-card" style="padding:14px;margin-top:12px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
             <button id="themeReloadBtn" class="admin-ui-action admin-theme-reload-action">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>

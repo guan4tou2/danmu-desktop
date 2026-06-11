@@ -65,17 +65,17 @@
     return '<div id="' + PAGE_ID + '" class="admin-search-page hud-page-stack lg:col-span-2">'
 
       // ── page header
-      + '<div class="admin-v2-head">'
-      +   '<div class="admin-v2-kicker">SEARCH · 彈幕全文搜尋</div>'
-      +   '<div class="admin-v2-title">搜尋彈幕</div>'
-      +   '<p class="admin-v2-note">全文搜尋歷史彈幕。支援進階語法：fp: / nick: / session: / after:。</p>'
+      + '<div class="admin-ui-page-head">'
+      +   '<div class="admin-ui-page-kicker">SEARCH · 彈幕全文搜尋</div>'
+      +   '<div class="admin-ui-page-title">搜尋彈幕</div>'
+      +   '<p class="admin-ui-page-note">全文搜尋歷史彈幕。支援進階語法：fp: / nick: / session: / after:。</p>'
       + '</div>'
 
       // ── two-column layout
       + '<div class="admin-search-layout" style="display:grid;grid-template-columns:260px 1fr;gap:16px;align-items:start">'
 
       // LEFT: filter panel
-      + '<div class="admin-v2-card hud-page-stack" style="gap:14px">'
+      + '<div class="admin-ui-card hud-page-stack" style="gap:14px">'
       +   '<div class="admin-ui-monolabel">篩選條件</div>'
 
       // Time range

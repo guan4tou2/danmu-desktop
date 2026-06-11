@@ -933,6 +933,47 @@ test("admin mono label primitive uses admin-ui naming", () => {
   expect(cssBundle).not.toContain("admin-v2-monolabel");
 });
 
+test("admin page shell primitives use admin-ui naming", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const hudCss = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const sharedHudCss = fs.readFileSync(path.join(rootDir, "shared", "hud.css"), "utf8");
+  const styleCss = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+  const jsFiles = fs
+    .readdirSync(path.join(staticDir, "js"))
+    .filter((name) => name.endsWith(".js"))
+    .map((name) => fs.readFileSync(path.join(staticDir, "js", name), "utf8"))
+    .join("\n");
+  const cssBundle = [hudCss, sharedHudCss, styleCss].join("\n");
+
+  [
+    ".admin-ui-page-head {",
+    ".admin-ui-page-kicker {",
+    ".admin-ui-page-title {",
+    ".admin-ui-page-note {",
+    ".admin-ui-card {",
+  ].forEach((selector) => expect(cssBundle).toContain(selector));
+
+  [
+    "admin-ui-page-head",
+    "admin-ui-page-kicker",
+    "admin-ui-page-title",
+    "admin-ui-page-note",
+    "admin-ui-card",
+  ].forEach((className) => expect(jsFiles).toContain(className));
+
+  [
+    "admin-v2-head",
+    "admin-v2-kicker",
+    "admin-v2-title",
+    "admin-v2-note",
+    "admin-v2-card",
+  ].forEach((className) => {
+    expect(jsFiles).not.toContain(className);
+    expect(cssBundle).not.toContain(className);
+  });
+});
+
 test("admin API Tokens composes shared controls instead of page-local widgets", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");

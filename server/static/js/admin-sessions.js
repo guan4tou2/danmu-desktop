@@ -176,10 +176,10 @@
       // ── page header (polestar 2026-05-18 reframe: session = data slice /
       //    time window, not "broadcast show". 內容仍是訊息 / 投票 / 統計 的
       //    時間切片 — overlay 的開關只是切片的起點 trigger，不是切片本身。)
-      + '<div class="admin-v2-head">'
-      +   '<div class="admin-v2-kicker">SESSIONS · 資料切片 · TIME WINDOWS</div>'
-      +   '<div class="admin-v2-title">場次</div>'
-      +   '<p class="admin-v2-note">場次 = 一段時間窗口（包含訊息 / 投票 / 統計）。Desktop 開啟為 trigger，但場次本身的角色是「資料切片」— 切完即歸檔到 history。點選查看詳細統計，或進入完整分析頁面。</p>'
+      + '<div class="admin-ui-page-head">'
+      +   '<div class="admin-ui-page-kicker">SESSIONS · 資料切片 · TIME WINDOWS</div>'
+      +   '<div class="admin-ui-page-title">場次</div>'
+      +   '<p class="admin-ui-page-note">場次 = 一段時間窗口（包含訊息 / 投票 / 統計）。Desktop 開啟為 trigger，但場次本身的角色是「資料切片」— 切完即歸檔到 history。點選查看詳細統計，或進入完整分析頁面。</p>'
       + '</div>'
 
       // ── KPI strip (full width, 4 tiles)
@@ -212,7 +212,7 @@
       + '</div>'
 
       // RIGHT: quick preview panel
-      + '<aside class="admin-v2-card hud-page-stack" style="gap:12px;position:sticky;top:16px">'
+      + '<aside class="admin-ui-card hud-page-stack" style="gap:12px;position:sticky;top:16px">'
       +   '<div class="admin-ui-monolabel">快速預覽</div>'
       +   '<div id="admin-sessions-preview">'
       +     '<p style="font-size:13px;color:var(--admin-text-dim);margin:0">點選場次查看預覽</p>'

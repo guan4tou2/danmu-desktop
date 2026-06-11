@@ -97,10 +97,10 @@
 
     return `
       <div id="${PAGE_ID}" class="admin-wcag-page hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">A11Y · WCAG 2.1 CONTRAST CHECKER</div>
-          <div class="admin-v2-title">無障礙對比度檢查</div>
-          <p class="admin-v2-note">驗證彈幕顏色在各種背景下符合 WCAG AA / AAA 標準。觀眾自選顏色時系統會自動拒絕未過 AA 的組合。</p>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">A11Y · WCAG 2.1 CONTRAST CHECKER</div>
+          <div class="admin-ui-page-title">無障礙對比度檢查</div>
+          <p class="admin-ui-page-note">驗證彈幕顏色在各種背景下符合 WCAG AA / AAA 標準。觀眾自選顏色時系統會自動拒絕未過 AA 的組合。</p>
         </div>
 
         <div class="admin-wcag-grid">

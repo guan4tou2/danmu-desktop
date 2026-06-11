@@ -81,10 +81,10 @@
   function buildSection() {
     return `
       <div id="${PAGE_ID}" class="admin-ext-page hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">INTEGRATIONS · 整合 · 第三方接入</div>
-          <div class="admin-v2-title">整合</div>
-          <p class="admin-v2-note">
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">INTEGRATIONS · 整合 · 第三方接入</div>
+          <div class="admin-ui-page-title">整合</div>
+          <p class="admin-ui-page-note">
             集中管理擴充功能與機器人接入。
             Slido extension / Discord bridge / OBS plugin / bookmarklet 等共用同一組 <b>Fire Token</b>，
             和 admin 的 API Tokens（per-integration ACL）是分開的兩條 lane。

@@ -13369,7 +13369,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 
 /* ──────────────────────────────────────────────────────────────────────
  * Plugins page (v5 batch10-plugins.jsx, 2026-05-19) — full v4 chrome.
- * Replaces legacy Tailwind/hud-table layout with admin-v2-head + KPI
+ * Replaces legacy Tailwind/hud-table layout with admin-ui-page-head + KPI
  * panel grid + plugin-row table + console with 4-level filter.
  * ────────────────────────────────────────────────────────────────────── */
 .admin-plugins-card {

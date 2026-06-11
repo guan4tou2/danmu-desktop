@@ -93,10 +93,10 @@
       "beforeend",
       `
       <div id="${SECTION_ID}" class="admin-webhooks-page hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">WEBHOOKS · 外部通知 · HMAC</div>
-          <div class="admin-v2-title">Webhooks</div>
-          <p class="admin-v2-note">
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">WEBHOOKS · 外部通知 · HMAC</div>
+          <div class="admin-ui-page-title">Webhooks</div>
+          <p class="admin-ui-page-note">
             集中管理外部通知 endpoints。簽名使用 HMAC-SHA256（X-Webhook-Signature）。
             事件觸發時 fire-and-forget 並重試最多 N 次（指數退避 1s/2s/4s）。
           </p>
@@ -108,7 +108,7 @@
             <div class="admin-wh-stats" data-wh-stats></div>
 
             <!-- Endpoints list -->
-            <div class="admin-v2-card admin-wh-endpoints-card">
+            <div class="admin-ui-card admin-wh-endpoints-card">
               <div class="admin-ui-section-head admin-wh-section-head">
                 <span class="admin-ui-monolabel">ENDPOINTS · <span data-wh-count>0</span> 個</span>
                 <span class="admin-ui-spacer" aria-hidden="true"></span>
@@ -151,7 +151,7 @@
             </div>
 
             <!-- Delivery log table -->
-            <div class="admin-v2-card admin-wh-log-card">
+            <div class="admin-ui-card admin-wh-log-card">
               <div class="admin-ui-section-head admin-wh-section-head">
                 <span class="admin-ui-monolabel">DELIVERY LOG · 即時</span>
                 <span class="admin-ui-spacer" aria-hidden="true"></span>

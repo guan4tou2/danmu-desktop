@@ -435,9 +435,9 @@
     // bar is kept for batch-block flow (design v4 has Ban/Mask in drawer).
     const html = `
       <div id="${SECTION_ID}" class="admin-live-feed-page admin-lf-v4 hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">LIVE FEED · AUTO-SCROLL · REAL-TIME</div>
-          <div class="admin-v2-title">即時訊息流</div>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">LIVE FEED · AUTO-SCROLL · REAL-TIME</div>
+          <div class="admin-ui-page-title">即時訊息流</div>
         </div>
 
         <div class="admin-lf-v4__card">

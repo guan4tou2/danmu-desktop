@@ -92,9 +92,9 @@
   function buildSection() {
     return `
       <div id="${SECTION_ID}" class="admin-ev-v4 hud-page-stack lg:col-span-2" style="display:none">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">SYSTEM · EVENTS · AUTO-EMITTED</div>
-          <div class="admin-v2-title">系統事件</div>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">SYSTEM · EVENTS · AUTO-EMITTED</div>
+          <div class="admin-ui-page-title">系統事件</div>
         </div>
 
         <!-- vs audit explainer -->

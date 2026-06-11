@@ -31,16 +31,16 @@
   function pageTemplate() {
     return `
       <div id="${PAGE_ID}" class="admin-backup-page hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">BACKUP · EXPORT · DANGER</div>
-          <div class="admin-v2-title">備份 &amp; 匯出</div>
-          <p class="admin-v2-note">
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">BACKUP · EXPORT · DANGER</div>
+          <div class="admin-ui-page-title">備份 &amp; 匯出</div>
+          <p class="admin-ui-page-note">
             匯出歷史/設定、還原備份、危險操作分區 — 系統性重置請手動刪除 <code>server/runtime/</code>。
           </p>
         </div>
 
         <!-- Zone 1 · Export -->
-        <div class="admin-v2-card admin-backup-zone" data-zone="export">
+        <div class="admin-ui-card admin-backup-zone" data-zone="export">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
             <span class="admin-v2-dot is-good"></span>
             <span class="admin-ui-monolabel">ZONE 1 · EXPORT</span>
@@ -100,7 +100,7 @@
         </div>
 
         <!-- Zone 2 · Restore -->
-        <div class="admin-v2-card admin-backup-zone" data-zone="restore">
+        <div class="admin-ui-card admin-backup-zone" data-zone="restore">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
             <span class="admin-v2-dot is-warn"></span>
             <span class="admin-ui-monolabel">ZONE 2 · RESTORE</span>
@@ -142,7 +142,7 @@
         </div>
 
         <!-- Zone 3 · Danger -->
-        <div class="admin-v2-card admin-backup-zone is-danger" data-zone="danger">
+        <div class="admin-ui-card admin-backup-zone is-danger" data-zone="danger">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
             <span class="admin-v2-dot is-bad"></span>
             <span class="admin-ui-monolabel" style="color:var(--hud-crimson)">ZONE 3 · DANGER</span>

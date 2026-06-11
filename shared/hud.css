@@ -322,14 +322,14 @@
  * collapsed <details> accordions. Mirrors admin-ratelimit-head/kicker/title/
  * note but generic so new pages can drop in without per-page CSS.
  * ────────────────────────────────────────────────────────────────────────── */
-.admin-v2-head {
+.admin-ui-page-head {
   padding: 16px 18px;
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
   border-radius: 6px;
 }
 
-.admin-v2-kicker {
+.admin-ui-page-kicker {
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 2px;
@@ -337,21 +337,21 @@
   text-transform: uppercase;
 }
 
-.admin-v2-title {
+.admin-ui-page-title {
   font-size: 16px;
   font-weight: 600;
   color: var(--admin-text);
   margin-top: 4px;
 }
 
-.admin-v2-note {
+.admin-ui-page-note {
   margin: 8px 0 0;
   font-size: 12px;
   line-height: 1.6;
   color: var(--admin-text-dim);
 }
 
-.admin-v2-card {
+.admin-ui-card {
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
   border-radius: 6px;

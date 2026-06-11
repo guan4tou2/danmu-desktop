@@ -34,10 +34,10 @@
   function buildSection() {
     return `
       <div id="${PAGE_ID}" class="admin-assets-page hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">ASSETS LIBRARY · UNIFIED OVERVIEW · 點卡片跳轉源頁編輯</div>
-          <div class="admin-v2-title">素材庫</div>
-          <p class="admin-v2-note">
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">ASSETS LIBRARY · UNIFIED OVERVIEW · 點卡片跳轉源頁編輯</div>
+          <div class="admin-ui-page-title">素材庫</div>
+          <p class="admin-ui-page-note">
             集中查看 .dme 效果 · 字型 · 主題包 · 觀眾頁圖片 · 音效。
             上傳與編輯仍在各自頁面（效果庫 / 字型管理 / 風格主題包 / 觀眾頁主題）。
           </p>

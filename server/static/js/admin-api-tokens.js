@@ -160,10 +160,10 @@
     return `
       <div id="${PAGE_ID}" class="admin-at-page hud-page-stack lg:col-span-2">
         <!-- Page header -->
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">API TOKENS · DEVELOPER ACCESS · 整合 / CI / EXTENSION</div>
-          <div class="admin-v2-title">API Tokens</div>
-          <p class="admin-v2-note">為外部整合、CI/CD 或 extension 核發具有限定 scope 的 token。Token 僅在產生後顯示一次。</p>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">API TOKENS · DEVELOPER ACCESS · 整合 / CI / EXTENSION</div>
+          <div class="admin-ui-page-title">API Tokens</div>
+          <p class="admin-ui-page-note">為外部整合、CI/CD 或 extension 核發具有限定 scope 的 token。Token 僅在產生後顯示一次。</p>
         </div>
 
         <div class="admin-at-grid">

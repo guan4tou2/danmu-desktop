@@ -102,10 +102,10 @@
   function buildSection() {
     return `
       <div id="${PAGE_ID}" class="admin-about-page hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">ABOUT · 版本 / 授權 / CHANGELOG</div>
-          <div class="admin-v2-title">關於 Danmu Fire</div>
-          <p class="admin-v2-note">開源彈幕互動系統，server (Flask) + desktop (Electron) + viewer (web)。</p>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">ABOUT · 版本 / 授權 / CHANGELOG</div>
+          <div class="admin-ui-page-title">關於 Danmu Fire</div>
+          <p class="admin-ui-page-note">開源彈幕互動系統，server (Flask) + desktop (Electron) + viewer (web)。</p>
         </div>
 
         <div class="admin-about-grid">

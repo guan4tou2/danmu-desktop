@@ -227,10 +227,10 @@
   function buildSection() {
     return `
       <div id="${PAGE_ID}" class="admin-notif-page hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">NOTIFICATIONS · 通知中心</div>
-          <div class="admin-v2-title">通知</div>
-          <p class="admin-v2-note">集中所有警示來源（速率限制 / Fire Token 事件 / 敏感字觸發）。讀取 / 封存狀態存在瀏覽器 localStorage。</p>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">NOTIFICATIONS · 通知中心</div>
+          <div class="admin-ui-page-title">通知</div>
+          <p class="admin-ui-page-note">集中所有警示來源（速率限制 / Fire Token 事件 / 敏感字觸發）。讀取 / 封存狀態存在瀏覽器 localStorage。</p>
         </div>
 
         <!-- vs events explainer — pairs with admin-events-log.js explainer. -->

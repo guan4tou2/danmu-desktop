@@ -38,13 +38,13 @@
     function injectPluginsSection(settingsGrid) {
       // v5 batch10-plugins.jsx retrofit (2026-05-19) \u2014 full v4 chrome
       // rewrite from legacy Tailwind/hud-table. KPI panel grid,
-      // admin-v2-head, kpi-strip is-4col, plugin-row table with v4
+      // admin-ui-page-head, kpi-strip is-4col, plugin-row table with v4
       // pills, console with 4-level filter chips.
       const html = `
         <div id="sec-plugins" class="hud-page-stack lg:col-span-2">
-          <div class="admin-v2-head">
-            <div class="admin-v2-kicker">PLUGIN SDK \u00b7 ${ServerI18n.t("pluginsDesc")} \u00b7 HOT-RELOAD</div>
-            <div class="admin-v2-title">${ServerI18n.t("pluginsTitle")}</div>
+          <div class="admin-ui-page-head">
+            <div class="admin-ui-page-kicker">PLUGIN SDK \u00b7 ${ServerI18n.t("pluginsDesc")} \u00b7 HOT-RELOAD</div>
+            <div class="admin-ui-page-title">${ServerI18n.t("pluginsTitle")}</div>
           </div>
 
           <div class="admin-ui-toolbar admin-plugins-toolbar">

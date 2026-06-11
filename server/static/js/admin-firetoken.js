@@ -30,10 +30,10 @@
   function buildSection() {
     return `
       <div id="${PAGE_ID}" class="admin-ft-page hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">FIRE TOKEN · 共享密鑰 · 用量 / 來源 / 旋轉</div>
-          <div class="admin-v2-title">Fire Token 詳情</div>
-          <p class="admin-v2-note">
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">FIRE TOKEN · 共享密鑰 · 用量 / 來源 / 旋轉</div>
+          <div class="admin-ui-page-title">Fire Token 詳情</div>
+          <p class="admin-ui-page-note">
             Extension 走 /fire 通道用的共享機密。本頁顯示用量趨勢、近期來源 IP、token 生命週期事件。
             單一 token、operator-managed；per-integration ACL 走 <a href="#/integrations">API Tokens</a>。
           </p>

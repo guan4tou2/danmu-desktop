@@ -54,10 +54,10 @@
         <!-- v4 P2-1 chrome (added 2026-05-19) — was missing kicker/title.
              Page used to render straight into hud-stats-strip without a
              section header. -->
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">MODERATION · LIVE FILTERS · 規則 / 命中 / 即時</div>
-          <div class="admin-v2-title">敏感字 &amp; 過濾規則</div>
-          <p class="admin-v2-note">
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">MODERATION · LIVE FILTERS · 規則 / 命中 / 即時</div>
+          <div class="admin-ui-page-title">敏感字 &amp; 過濾規則</div>
+          <p class="admin-ui-page-note">
             關鍵字 / regex / 替換 / 速率規則。命中後動作支援 block / replace / allow，
             每條規則可即時開關，命中次數即時累計。
           </p>

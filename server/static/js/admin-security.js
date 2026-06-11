@@ -29,10 +29,10 @@
     // border per batch12-system.jsx SecurityPage.
     return `
         <div id="${PAGE_ID}" class="admin-security-page hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">SECURITY · AUTH · ACCESS · TOKENS</div>
-          <div class="admin-v2-title">安全性</div>
-          <p class="admin-v2-note">
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">SECURITY · AUTH · ACCESS · TOKENS</div>
+          <div class="admin-ui-page-title">安全性</div>
+          <p class="admin-ui-page-note">
             單一管理員模式、無角色分離。下方卡片左側色條代表狀態：lime = 已就緒、cyan = 進行中、amber = 警告、crimson = 危險。
           </p>
         </div>

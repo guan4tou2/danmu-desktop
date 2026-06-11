@@ -39,9 +39,9 @@
     // card per batch12-system.jsx SystemOverviewPage.
     return `
       <div id="${SECTION_ID}" class="admin-soh-v4 hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">SYSTEM OVERVIEW · HEALTH · SERVICES · METRICS</div>
-          <div class="admin-v2-title">系統總覽</div>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">SYSTEM OVERVIEW · HEALTH · SERVICES · METRICS</div>
+          <div class="admin-ui-page-title">系統總覽</div>
         </div>
 
         <!-- Status banner -->

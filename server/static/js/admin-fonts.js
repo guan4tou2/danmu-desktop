@@ -54,7 +54,7 @@
             </div>
             <div id="adminFontEmptyStateHost"></div>
             ${loggedIn ? `
-            <div class="admin-v2-card admin-fonts-upload-card" id="adminFontDropWrap" style="margin-top:12px">
+            <div class="admin-ui-card admin-fonts-upload-card" id="adminFontDropWrap" style="margin-top:12px">
               <div class="admin-ui-monolabel" style="margin-bottom:8px">+ 上傳自訂字型</div>
               <div
                 id="adminFontDrop"

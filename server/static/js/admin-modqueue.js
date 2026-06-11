@@ -230,9 +230,9 @@
   function _template() {
     return `
       <div id="${SECTION_ID}" class="admin-mq hud-page-stack lg:col-span-2" style="display:none">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">MODERATION · QUEUE · SWIMLANE · REAL-TIME</div>
-          <div class="admin-v2-title">審核佇列</div>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">MODERATION · QUEUE · SWIMLANE · REAL-TIME</div>
+          <div class="admin-ui-page-title">審核佇列</div>
         </div>
 
         <!-- Toolbar: stats chips + bulk + auto-reject config -->

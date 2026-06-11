@@ -43,10 +43,10 @@
   function buildSection() {
     return `
       <div id="${PAGE_ID}" class="admin-pdd-page hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker" data-pdd-kicker>POLL ANALYTICS · 深度分析</div>
-          <div class="admin-v2-title" data-pdd-title>投票深度分析</div>
-          <p class="admin-v2-note" data-pdd-note>選項分佈、票數佔比、誠信檢查。<a href="#/polls" class="admin-pdd-back">← 回投票列表</a></p>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker" data-pdd-kicker>POLL ANALYTICS · 深度分析</div>
+          <div class="admin-ui-page-title" data-pdd-title>投票深度分析</div>
+          <p class="admin-ui-page-note" data-pdd-note>選項分佈、票數佔比、誠信檢查。<a href="#/polls" class="admin-pdd-back">← 回投票列表</a></p>
         </div>
 
         <div class="admin-pdd-grid" data-pdd-grid>

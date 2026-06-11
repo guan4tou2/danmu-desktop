@@ -28,9 +28,9 @@
   function buildSection() {
     return `
       <div id="${SECTION_ID}" class="admin-emojis-page admin-em-v4 hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">ASSETS · EMOJIS · CUSTOM :NAME: SYNTAX</div>
-          <div class="admin-v2-title">Emoji 庫</div>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">ASSETS · EMOJIS · CUSTOM :NAME: SYNTAX</div>
+          <div class="admin-ui-page-title">Emoji 庫</div>
         </div>
 
         <!-- Upload zone (dashed dropzone) -->

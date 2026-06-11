@@ -118,10 +118,10 @@
   function pageTemplate() {
     return `
       <div id="${PAGE_ID}" class="admin-dsp2-page hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">VIEWER DEFAULTS · 每列決定觀眾送出 danmu 時的預設值 + 是否開放自訂</div>
-          <div class="admin-v2-title">${escapeHtml(t("viewerDefaultsTitle", "觀眾頁預設"))}</div>
-          <p class="admin-v2-note">Display 控制 Desktop / client / 目標顯示器 / idle QR；<b>Viewer</b> 在此設定 <code>/fire</code> 的送出預設、欄位與文案。</p>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">VIEWER DEFAULTS · 每列決定觀眾送出 danmu 時的預設值 + 是否開放自訂</div>
+          <div class="admin-ui-page-title">${escapeHtml(t("viewerDefaultsTitle", "觀眾頁預設"))}</div>
+          <p class="admin-ui-page-note">Display 控制 Desktop / client / 目標顯示器 / idle QR；<b>Viewer</b> 在此設定 <code>/fire</code> 的送出預設、欄位與文案。</p>
         </div>
 
         <div class="admin-dsp2-grid">

@@ -37,10 +37,10 @@
   function buildSection() {
     return `
       <div id="${PAGE_ID}" class="admin-audit-page hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">AUDIT LOG · 管理員 + 系統事件</div>
-          <div class="admin-v2-title">操作日誌</div>
-          <p class="admin-v2-note">跨重啟保留的事件紀錄，存在 <code>server/runtime/audit.log</code>。v5 Yellow 以 timeline 呈現最近管理與系統動作。</p>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">AUDIT LOG · 管理員 + 系統事件</div>
+          <div class="admin-ui-page-title">操作日誌</div>
+          <p class="admin-ui-page-note">跨重啟保留的事件紀錄，存在 <code>server/runtime/audit.log</code>。v5 Yellow 以 timeline 呈現最近管理與系統動作。</p>
         </div>
 
         <div class="admin-ui-toolbar admin-audit-toolbar-v5">

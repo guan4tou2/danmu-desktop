@@ -343,12 +343,12 @@
   function buildSection() {
     return `
       <div id="${PAGE_ID}" class="admin-modbans-page hud-page-stack lg:col-span-2">
-        <div class="admin-v2-head">
-          <div class="admin-v2-kicker">MODERATION · BANS · TIME-BOUND</div>
-          <div class="admin-v2-title">封禁管理</div>
-          <p class="admin-v2-note">時限封禁 / 永久封禁的統一管理。Source of truth = audit log；列表狀態 = 各 target 最後一筆事件。倒數到期由 client lazy-check（不跑 reaper thread）。</p>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">MODERATION · BANS · TIME-BOUND</div>
+          <div class="admin-ui-page-title">封禁管理</div>
+          <p class="admin-ui-page-note">時限封禁 / 永久封禁的統一管理。Source of truth = audit log；列表狀態 = 各 target 最後一筆事件。倒數到期由 client lazy-check（不跑 reaper thread）。</p>
         </div>
-        <div class="admin-v2-card admin-modbans-card">
+        <div class="admin-ui-card admin-modbans-card">
           <div class="admin-modbans-header">
             <span class="admin-ui-monolabel">TARGET</span>
             <span class="admin-ui-monolabel">KIND</span>
