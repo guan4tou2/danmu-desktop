@@ -57,17 +57,17 @@
         <div class="admin-ow-grid">
           <div class="admin-ow-main">
             <div class="admin-widgets-actions">
-              <button id="widget-add-scoreboard" type="button" class="admin-poll-btn is-primary">
+              <button id="widget-add-scoreboard" type="button" class="admin-ui-action is-primary admin-widget-toolbar-action">
                 + ${escapeHtml(i18n("widgetScoreboard", "分數板"))}
               </button>
-              <button id="widget-add-ticker" type="button" class="admin-poll-btn is-primary">
+              <button id="widget-add-ticker" type="button" class="admin-ui-action is-primary admin-widget-toolbar-action">
                 + ${escapeHtml(i18n("widgetTicker", "跑馬燈"))}
               </button>
-              <button id="widget-add-label" type="button" class="admin-poll-btn is-primary">
+              <button id="widget-add-label" type="button" class="admin-ui-action is-primary admin-widget-toolbar-action">
                 + ${escapeHtml(i18n("widgetLabel", "標籤"))}
               </button>
               <span class="spacer"></span>
-              <button id="widget-clear-all" type="button" class="admin-poll-btn is-ghost">
+              <button id="widget-clear-all" type="button" class="admin-ui-action is-danger admin-widget-toolbar-action">
                 ${escapeHtml(i18n("clearAll", "全部清除"))}
               </button>
             </div>
@@ -84,7 +84,7 @@
               </p>
               <div class="admin-ow-urlrow">
                 <code class="admin-ow-url" data-ow-obs-url>${escapeHtml(obsBase)}</code>
-                <button type="button" class="admin-poll-btn is-ghost" data-ow-copy>複製</button>
+                <button type="button" class="admin-ui-action admin-widget-toolbar-action" data-ow-copy>複製</button>
               </div>
               <div class="admin-ow-card-meta">
                 <span>建議解析度</span><code>1920 × 1080</code>
@@ -292,7 +292,7 @@
 
       const toggleBtn = document.createElement("button");
       toggleBtn.type = "button";
-      toggleBtn.className = "admin-poll-btn is-ghost";
+      toggleBtn.className = "admin-ui-action admin-widget-card-action";
       toggleBtn.textContent = w.visible
         ? (window.ServerI18n?.t?.("widgetHide") || "隱藏")
         : (window.ServerI18n?.t?.("widgetShow") || "顯示");
@@ -301,7 +301,7 @@
 
       const delBtn = document.createElement("button");
       delBtn.type = "button";
-      delBtn.className = "admin-poll-btn is-ghost";
+      delBtn.className = "admin-ui-action is-danger admin-widget-card-action";
       delBtn.textContent = window.ServerI18n?.t?.("remove") || "移除";
       delBtn.addEventListener("click", () => deleteWidget(w.id));
       actions.appendChild(delBtn);

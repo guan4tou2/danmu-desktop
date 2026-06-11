@@ -599,6 +599,21 @@ test("admin Dashboard widget actions compose shared chips", () => {
   expect(cssSrc).not.toContain(".admin-dash-widget-tile .actions .chip");
 });
 
+test("admin Widgets page actions compose shared controls", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const widgetsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-widgets.js"), "utf8");
+
+  expect(widgetsSrc).toContain('id="widget-add-scoreboard" type="button" class="admin-ui-action is-primary admin-widget-toolbar-action"');
+  expect(widgetsSrc).toContain('id="widget-add-ticker" type="button" class="admin-ui-action is-primary admin-widget-toolbar-action"');
+  expect(widgetsSrc).toContain('id="widget-add-label" type="button" class="admin-ui-action is-primary admin-widget-toolbar-action"');
+  expect(widgetsSrc).toContain('id="widget-clear-all" type="button" class="admin-ui-action is-danger admin-widget-toolbar-action"');
+  expect(widgetsSrc).toContain('class="admin-ui-action admin-widget-toolbar-action" data-ow-copy');
+  expect(widgetsSrc).toContain('toggleBtn.className = "admin-ui-action admin-widget-card-action";');
+  expect(widgetsSrc).toContain('delBtn.className = "admin-ui-action is-danger admin-widget-card-action";');
+  expect(widgetsSrc).not.toContain("admin-poll-btn");
+});
+
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
