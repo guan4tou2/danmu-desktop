@@ -462,6 +462,53 @@ test("admin Audit uses shared admin-ui primitives for the v5 compact surface", (
   expect(cssSrc).not.toContain(".admin-audit-actor-av {");
 });
 
+test("admin Events toolbar composes shared chips, status, and actions", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const eventsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-events-log.js"), "utf8");
+  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+
+  expect(eventsSrc).toContain('class="admin-ui-toolbar admin-ev-v4__filterbar"');
+  expect(eventsSrc).toContain('class="admin-ui-chip-group admin-ev-v4__sev-chips"');
+  expect(eventsSrc).toContain('class="admin-ui-chip admin-ev-v4__sev-chip is-active"');
+  expect(eventsSrc).toContain('class="admin-ui-chip admin-ev-v4__sev-chip" data-severity="warn"');
+  expect(eventsSrc).toContain('class="admin-ui-chip admin-ev-v4__sev-chip" data-severity="danger"');
+  expect(eventsSrc).toContain('class="admin-ui-chip-group admin-ev-v4__cat-chips"');
+  expect(eventsSrc).toContain('class="admin-ui-chip admin-ev-v4__cat-chip is-active"');
+  expect(eventsSrc).toContain('class="admin-ui-spacer admin-ev-v4__spacer"');
+  expect(eventsSrc).toContain('class="admin-ui-dot is-success admin-ev-v4__live-dot"');
+  expect(eventsSrc).toContain('class="admin-ui-summary admin-ev-v4__live-label"');
+  expect(eventsSrc).toContain('class="admin-ui-summary admin-ev-v4__count"');
+  expect(eventsSrc).toContain('class="admin-ui-action admin-ev-v4__refresh"');
+
+  expect(hudSrc).toContain(".admin-ui-toolbar {");
+  expect(hudSrc).toContain(".admin-ui-chip-group {");
+  expect(hudSrc).toContain(".admin-ui-chip {");
+  expect(hudSrc).toContain(".admin-ui-spacer {");
+  expect(hudSrc).toContain(".admin-ui-dot.is-success {");
+  expect(hudSrc).toContain(".admin-ui-summary {");
+  expect(hudSrc).toContain(".admin-ui-action {");
+
+  expect(cssSrc).not.toContain(".admin-ev-v4__filterbar {");
+  expect(cssSrc).not.toContain(".admin-ev-v4__sev-chips {");
+  expect(cssSrc).not.toContain(".admin-ev-v4__sev-chip {");
+  expect(cssSrc).not.toContain(".admin-ev-v4__sev-chip.is-active");
+  expect(cssSrc).not.toContain(".admin-ev-v4__sev-chip.is-info");
+  expect(cssSrc).not.toContain(".admin-ev-v4__sev-chip.is-warn");
+  expect(cssSrc).not.toContain(".admin-ev-v4__sev-chip.is-error");
+  expect(cssSrc).not.toContain(".admin-ev-v4__spacer {");
+  expect(cssSrc).not.toContain(".admin-ev-v4__count {");
+  expect(cssSrc).not.toContain(".admin-ev-v4__refresh {");
+  expect(cssSrc).not.toContain(".admin-ev-v4__refresh:hover");
+  expect(cssSrc).not.toContain(".admin-ev-v4__cat-chips {");
+  expect(cssSrc).not.toContain(".admin-ev-v4__cat-chip {");
+  expect(cssSrc).not.toContain(".admin-ev-v4__cat-chip.is-active");
+  expect(cssSrc).not.toContain(".admin-ev-v4__cat-chip:hover");
+  expect(cssSrc).not.toContain(".admin-ev-v4__live-dot {");
+  expect(cssSrc).not.toContain(".admin-ev-v4__live-label {");
+});
+
 test("admin API Tokens composes shared controls instead of page-local widgets", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");

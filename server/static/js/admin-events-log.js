@@ -105,31 +105,31 @@
 
         <!-- v5 Batch 12-4 (2026-05-19): added category chip row + LIVE
              pulse indicator per batch12-system.jsx SystemEventsPage. -->
-        <div class="admin-ev-v4__filterbar">
-          <div class="admin-ev-v4__sev-chips" role="tablist">
-            <button type="button" class="admin-ev-v4__sev-chip is-active" data-ev-sev="all">全部 <span class="admin-ev-v4__sev-count" data-ev-cnt="all">0</span></button>
-            <button type="button" class="admin-ev-v4__sev-chip is-info"  data-ev-sev="info">INFO <span class="admin-ev-v4__sev-count" data-ev-cnt="info">0</span></button>
-            <button type="button" class="admin-ev-v4__sev-chip is-warn"  data-ev-sev="warn">WARN <span class="admin-ev-v4__sev-count" data-ev-cnt="warn">0</span></button>
-            <button type="button" class="admin-ev-v4__sev-chip is-error" data-ev-sev="error">ERROR <span class="admin-ev-v4__sev-count" data-ev-cnt="error">0</span></button>
+        <div class="admin-ui-toolbar admin-ev-v4__filterbar">
+          <div class="admin-ui-chip-group admin-ev-v4__sev-chips" role="tablist">
+            <button type="button" class="admin-ui-chip admin-ev-v4__sev-chip is-active" data-ev-sev="all">全部 <span class="admin-ev-v4__sev-count" data-ev-cnt="all">0</span></button>
+            <button type="button" class="admin-ui-chip admin-ev-v4__sev-chip" data-ev-sev="info">INFO <span class="admin-ev-v4__sev-count" data-ev-cnt="info">0</span></button>
+            <button type="button" class="admin-ui-chip admin-ev-v4__sev-chip" data-severity="warn" data-ev-sev="warn">WARN <span class="admin-ev-v4__sev-count" data-ev-cnt="warn">0</span></button>
+            <button type="button" class="admin-ui-chip admin-ev-v4__sev-chip" data-severity="danger" data-ev-sev="error">ERROR <span class="admin-ev-v4__sev-count" data-ev-cnt="error">0</span></button>
           </div>
-          <div class="admin-ev-v4__cat-chips" role="tablist" aria-label="Category filter">
-            <button type="button" class="admin-ev-v4__cat-chip is-active" data-ev-cat="all">全部</button>
-            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="ws">ws</button>
-            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="msg">msg</button>
-            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="plugin">plugin</button>
-            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="webhook">webhook</button>
-            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="rate">rate</button>
-            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="system">system</button>
-            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="filter">filter</button>
-            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="overlay">desktop</button>
-            <button type="button" class="admin-ev-v4__cat-chip" data-ev-cat="backup">backup</button>
+          <div class="admin-ui-chip-group admin-ev-v4__cat-chips" role="tablist" aria-label="Category filter">
+            <button type="button" class="admin-ui-chip admin-ev-v4__cat-chip is-active" data-ev-cat="all">全部</button>
+            <button type="button" class="admin-ui-chip admin-ev-v4__cat-chip" data-ev-cat="ws">ws</button>
+            <button type="button" class="admin-ui-chip admin-ev-v4__cat-chip" data-ev-cat="msg">msg</button>
+            <button type="button" class="admin-ui-chip admin-ev-v4__cat-chip" data-ev-cat="plugin">plugin</button>
+            <button type="button" class="admin-ui-chip admin-ev-v4__cat-chip" data-ev-cat="webhook">webhook</button>
+            <button type="button" class="admin-ui-chip admin-ev-v4__cat-chip" data-ev-cat="rate">rate</button>
+            <button type="button" class="admin-ui-chip admin-ev-v4__cat-chip" data-ev-cat="system">system</button>
+            <button type="button" class="admin-ui-chip admin-ev-v4__cat-chip" data-ev-cat="filter">filter</button>
+            <button type="button" class="admin-ui-chip admin-ev-v4__cat-chip" data-ev-cat="overlay">desktop</button>
+            <button type="button" class="admin-ui-chip admin-ev-v4__cat-chip" data-ev-cat="backup">backup</button>
           </div>
-          <span class="admin-ev-v4__spacer"></span>
-          <span class="admin-ev-v4__live-dot"></span>
-          <span class="admin-ev-v4__live-label">LIVE</span>
-          <span class="admin-ev-v4__count" data-ev-total>0</span>
-          <button type="button" class="admin-ev-v4__refresh" data-ev-action="refresh">↻ 重新整理</button>
-          <button type="button" class="admin-ev-v4__refresh" data-ev-action="export">↓ 匯出</button>
+          <span class="admin-ui-spacer admin-ev-v4__spacer"></span>
+          <span class="admin-ui-dot is-success admin-ev-v4__live-dot"></span>
+          <span class="admin-ui-summary admin-ev-v4__live-label">LIVE</span>
+          <span class="admin-ui-summary admin-ev-v4__count" data-ev-total>0</span>
+          <button type="button" class="admin-ui-action admin-ev-v4__refresh" data-ev-action="refresh">↻ 重新整理</button>
+          <button type="button" class="admin-ui-action admin-ev-v4__refresh" data-ev-action="export">↓ 匯出</button>
         </div>
 
         <!-- Events table -->

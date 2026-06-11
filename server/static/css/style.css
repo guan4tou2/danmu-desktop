@@ -9282,49 +9282,8 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   text-decoration: underline;
 }
 
-.admin-ev-v4__filterbar {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-}
-.admin-ev-v4__sev-chips { display: flex; gap: 6px; flex-wrap: wrap; }
-.admin-ev-v4__sev-chip {
-  padding: 5px 12px; border-radius: 4px;
-  background: transparent;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: 10px; letter-spacing: 0.8px; font-weight: 600;
-  cursor: pointer;
-  display: inline-flex; align-items: center; gap: 6px;
-}
-.admin-ev-v4__sev-chip.is-active {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.10);
-}
-.admin-ev-v4__sev-chip.is-info.is-active  { border-color: #38bdf8;  color: #38bdf8;  background: rgba(56, 189, 248, 0.10); }
-.admin-ev-v4__sev-chip.is-warn.is-active  { border-color: #fbbf24;  color: #fbbf24;  background: rgba(251, 191, 36, 0.10); }
-.admin-ev-v4__sev-chip.is-error.is-active { border-color: #ff4d4f;  color: #ff4d4f;  background: rgba(255, 77, 79, 0.10); }
 .admin-ev-v4__sev-count {
   font-size: 9px; font-weight: 700; opacity: 0.7;
-}
-
-.admin-ev-v4__spacer { flex: 1; }
-.admin-ev-v4__count {
-  font-family: var(--font-mono);
-  font-size: 10px; letter-spacing: 0.5px;
-  color: var(--color-text-muted);
-}
-.admin-ev-v4__refresh {
-  padding: 5px 12px; border-radius: 4px;
-  background: transparent;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: 10px; letter-spacing: 0.5px; cursor: pointer;
-}
-.admin-ev-v4__refresh:hover {
-  color: var(--color-primary);
-  border-color: var(--color-primary);
 }
 
 .admin-ev-v4__card {
@@ -14774,44 +14733,6 @@ body.admin-pu-open { overflow: hidden; }
 .admin-sec-danger__desc {
   font-size: 10px;
   color: var(--hud-textDim);
-}
-
-/* ─── v5 Batch 12-4: System Events filter additions ─────────────────────
-   Category chips below severity chips + LIVE pulse dot per
-   batch12-system.jsx SystemEventsPage. */
-.admin-ev-v4__cat-chips {
-  display: flex; gap: 3px; flex-wrap: wrap;
-  margin-left: 12px;
-}
-.admin-ev-v4__cat-chip {
-  padding: 3px 8px;
-  border-radius: 3px;
-  border: 1px solid var(--hud-line);
-  background: transparent;
-  font-family: var(--hud-font-mono);
-  font-size: 8px; letter-spacing: 0.5px;
-  color: var(--hud-textDim);
-  cursor: pointer;
-}
-.admin-ev-v4__cat-chip.is-active {
-  border-color: var(--hud-cyan, #38bdf8);
-  color: var(--hud-cyan, #38bdf8);
-  background: rgba(56, 189, 248, 0.06);
-}
-.admin-ev-v4__cat-chip:hover:not(.is-active) {
-  border-color: var(--hud-textDim);
-  color: var(--color-text-strong);
-}
-.admin-ev-v4__live-dot {
-  width: 5px; height: 5px; border-radius: 50%;
-  background: var(--hud-lime, #86efac);
-  box-shadow: 0 0 6px var(--hud-lime, #86efac);
-  animation: hud-pulse 2s ease-in-out infinite;
-}
-.admin-ev-v4__live-label {
-  font-family: var(--hud-font-mono);
-  font-size: 9px; letter-spacing: 0.5px;
-  color: var(--hud-lime, #86efac);
 }
 
 /* ─── v5 Batch 12-5: Effects library right-rail cards ──────────────────
