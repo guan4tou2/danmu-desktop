@@ -985,7 +985,7 @@
   function hideLegacy() {
     LEGACY_IDS.forEach((id) => {
       const el = document.getElementById(id);
-      if (el) el.setAttribute("data-admin-v2-replaced", "1");
+      if (el) el.setAttribute("data-admin-ui-replaced", "1");
     });
   }
 

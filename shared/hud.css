@@ -2572,9 +2572,9 @@
 /* ──────────────────────────────────────────────────────────────────────────
  * Security page (P1-9) — change password + WS token + session/audit skeletons.
  * Renders under the `system` route; legacy sec-security / sec-ws-auth cards
- * are hidden by admin-security.js (data-admin-v2-replaced).
+ * are hidden by admin-security.js (data-admin-ui-replaced).
  * ────────────────────────────────────────────────────────────────────────── */
-[data-admin-v2-replaced="1"] { display: none !important; }
+[data-admin-ui-replaced="1"] { display: none !important; }
 
 .admin-security-page { display: flex; flex-direction: column; gap: 12px; }
 
@@ -2939,7 +2939,7 @@
  *   [150px label-block] [1fr center-pickers] [160px audience-pill]
  *
  * Replaces legacy sec-color / sec-opacity / sec-fontsize / sec-speed /
- * sec-fontfamily / sec-layout cards (hidden via [data-admin-v2-replaced]).
+ * sec-fontfamily / sec-layout cards (hidden via [data-admin-ui-replaced]).
  * ──────────────────────────────────────────────────────────────────────── */
 .admin-dsp2-page { display: flex; flex-direction: column; gap: 14px; }
 
@@ -3389,7 +3389,7 @@
 .admin-dsp2-srow.is-on .admin-dsp2-srow-tag { color: var(--color-primary); }
 
 /* Hide legacy <details> sections that this page replaces */
-[data-admin-v2-replaced="1"] { display: none !important; }
+[data-admin-ui-replaced="1"] { display: none !important; }
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Polls · Live HUD (admin-polls.jsx lines 480–661)

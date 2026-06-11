@@ -182,8 +182,8 @@
             </div>
 
             <!-- table -->
-            <div class="admin-v2-table-wrap" data-at-table-wrap hidden>
-              <table class="admin-v2-table admin-at-table">
+            <div class="admin-ui-table-wrap" data-at-table-wrap hidden>
+              <table class="admin-ui-table admin-at-table">
                 <thead>
                   <tr>
                     <th>LABEL</th>

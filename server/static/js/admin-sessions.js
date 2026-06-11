@@ -196,10 +196,10 @@
       // LEFT: filter tabs + table
       + '<div class="hud-page-stack" style="gap:12px">'
 
-      +   '<div class="admin-v2-tabbar" style="display:flex;gap:0">'
-      +     '<button type="button" class="admin-v2-tab is-active" data-sessions-filter="all">全部</button>'
-      +     '<button type="button" class="admin-v2-tab" data-sessions-filter="live">進行中</button>'
-      +     '<button type="button" class="admin-v2-tab" data-sessions-filter="ended">已結束</button>'
+      +   '<div class="admin-ui-tabbar" style="display:flex;gap:0">'
+      +     '<button type="button" class="admin-ui-tab is-active" data-sessions-filter="all">全部</button>'
+      +     '<button type="button" class="admin-ui-tab" data-sessions-filter="live">進行中</button>'
+      +     '<button type="button" class="admin-ui-tab" data-sessions-filter="ended">已結束</button>'
       +   '</div>'
 
       // Bucket list container — replaces the legacy 8-col table

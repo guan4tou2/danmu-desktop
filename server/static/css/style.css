@@ -6079,7 +6079,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
 
 /* ─── v5.2 sidebar consolidation (2026-04-27) ────────────────────────── */
 /* Tab strip at the top of consolidated routes (history, viewer-config). */
-.admin-v2-tabbar {
+.admin-ui-tabbar {
   display: flex; gap: 6px;
   margin-bottom: 8px;
   padding: 4px;
@@ -6087,7 +6087,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   border: 1px solid var(--color-border, #1f2937);
   border-radius: 8px;
 }
-.admin-v2-tab {
+.admin-ui-tab {
   flex: 1;
   padding: 9px 14px;
   font-family: var(--font-mono); font-size: 11px; font-weight: 600;
@@ -6099,8 +6099,8 @@ body.stream-mode .admin-hero .admin-summary-grid {
   cursor: pointer;
   transition: all 120ms ease;
 }
-.admin-v2-tab:hover { color: var(--color-text-strong); }
-.admin-v2-tab.is-active {
+.admin-ui-tab:hover { color: var(--color-text-strong); }
+.admin-ui-tab.is-active {
   color: var(--color-primary);
   background: rgba(56, 189, 248, 0.08);
   border-color: rgba(56, 189, 248, 0.35);
@@ -11566,7 +11566,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   min-width: 900px;
 }
 
-.admin-at-main .admin-v2-table-wrap {
+.admin-at-main .admin-ui-table-wrap {
   overflow-x: auto;
   overflow-y: hidden;
 }

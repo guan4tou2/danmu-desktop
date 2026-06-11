@@ -999,6 +999,44 @@ test("admin status dot and inline toolbar primitives use admin-ui naming", () =>
   expect(jsFiles).not.toContain("admin-ui-dot is-mute");
 });
 
+test("admin tab and table primitives use admin-ui naming", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const styleCss = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+  const sessionsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-sessions.js"), "utf8");
+  const tokensSrc = fs.readFileSync(path.join(staticDir, "js", "admin-api-tokens.js"), "utf8");
+
+  expect(styleCss).toContain(".admin-ui-tabbar {");
+  expect(styleCss).toContain(".admin-ui-tab {");
+  expect(styleCss).toContain(".admin-at-main .admin-ui-table-wrap {");
+  expect(sessionsSrc).toContain("admin-ui-tabbar");
+  expect(sessionsSrc).toContain("admin-ui-tab");
+  expect(tokensSrc).toContain("admin-ui-table-wrap");
+  expect(tokensSrc).toContain("admin-ui-table");
+  [
+    "admin-v2-tabbar",
+    "admin-v2-tab",
+    "admin-v2-table-wrap",
+    "admin-v2-table",
+  ].forEach((className) => {
+    expect(styleCss).not.toContain(className);
+    expect(sessionsSrc).not.toContain(className);
+    expect(tokensSrc).not.toContain(className);
+  });
+});
+
+test("admin replacement marker uses admin-ui naming", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const sharedHudCss = fs.readFileSync(path.join(rootDir, "shared", "hud.css"), "utf8");
+  const displaySrc = fs.readFileSync(path.join(staticDir, "js", "admin-display.js"), "utf8");
+
+  expect(sharedHudCss).toContain('[data-admin-ui-replaced="1"]');
+  expect(displaySrc).toContain('setAttribute("data-admin-ui-replaced", "1")');
+  expect(sharedHudCss).not.toContain("data-admin-v2-replaced");
+  expect(displaySrc).not.toContain("data-admin-v2-replaced");
+});
+
 test("admin API Tokens composes shared controls instead of page-local widgets", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
