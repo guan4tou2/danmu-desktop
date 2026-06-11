@@ -219,6 +219,51 @@ test("admin About actions compose shared action controls", () => {
   expect(cssSrc).not.toContain(".admin-about-btn--accent");
 });
 
+test("admin Audience composes shared toolbar, chips, pills, and actions", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const audienceSrc = fs.readFileSync(path.join(staticDir, "js", "admin-audience.js"), "utf8");
+  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+
+  expect(audienceSrc).toContain('class="admin-ui-toolbar admin-aud-toolbar"');
+  expect(audienceSrc).toContain('class="admin-ui-summary admin-aud-summary"');
+  expect(audienceSrc).toContain('class="admin-ui-chip-group admin-aud-filters"');
+  expect(audienceSrc).toContain('class="admin-ui-action admin-aud-refresh"');
+  expect(audienceSrc).toContain('class="admin-ui-chip admin-aud-filter ${_state.filter === "all" ? "is-active" : ""}"');
+  expect(audienceSrc).toContain('class="admin-ui-chip admin-aud-filter ${_state.filter === "flagged" ? "is-active" : ""}"');
+  expect(audienceSrc).toContain('class="admin-ui-pill admin-aud-state-pill ${_stateClassFor(stateKey)}"');
+  expect(audienceSrc).toContain('class="admin-ui-action is-danger admin-aud-action"');
+  expect(audienceSrc).toContain("admin-ui-pill admin-aud-risk-pill ' + _riskClassFor(risk.level) + '");
+  expect(audienceSrc).toContain('class="admin-ui-action admin-aud-detail-close"');
+  expect(audienceSrc).toContain('class="admin-ui-action is-danger is-block admin-aud-detail-action"');
+  expect(audienceSrc).toContain('class="admin-ui-action is-warn is-block admin-aud-detail-action"');
+  expect(audienceSrc).toContain('class="admin-ui-action is-block admin-aud-detail-action"');
+  expect(audienceSrc).not.toContain('class="chip');
+  expect(audienceSrc).not.toContain('class="primary"');
+  expect(audienceSrc).not.toContain('class="warn"');
+  expect(audienceSrc).not.toContain('class="close"');
+
+  expect(hudSrc).toContain(".admin-ui-toolbar {");
+  expect(hudSrc).toContain(".admin-ui-chip {");
+  expect(hudSrc).toContain(".admin-ui-pill {");
+  expect(hudSrc).toContain(".admin-ui-action.is-danger {");
+  expect(hudSrc).toContain(".admin-ui-action.is-warn {");
+  expect(hudSrc).toContain(".admin-ui-action.is-block {");
+
+  expect(cssSrc).not.toContain(".admin-aud-filters .chip");
+  expect(cssSrc).not.toContain(".admin-aud-refresh {");
+  expect(cssSrc).not.toContain(".admin-aud-refresh:hover");
+  expect(cssSrc).not.toContain(".admin-aud-row .col-status .chip");
+  expect(cssSrc).not.toContain(".admin-aud-action {");
+  expect(cssSrc).not.toContain(".admin-aud-action:hover");
+  expect(cssSrc).not.toContain(".admin-aud-detail-head .risk");
+  expect(cssSrc).not.toContain(".admin-aud-detail-head .close");
+  expect(cssSrc).not.toContain(".admin-aud-detail-actions button {");
+  expect(cssSrc).not.toContain(".admin-aud-detail-actions button.primary");
+  expect(cssSrc).not.toContain(".admin-aud-detail-actions button.warn");
+});
+
 test("admin Webhooks uses the implemented toggle endpoint instead of BE placeholder copy", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const webhooksSrc = fs.readFileSync(path.join(staticDir, "admin-webhooks.js"), "utf8");

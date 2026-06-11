@@ -81,6 +81,20 @@
     return Math.floor(sec / 86400) + "d";
   }
 
+  function _stateClassFor(stateKey) {
+    if (stateKey === "blocked") return "is-danger";
+    if (stateKey === "flagged" || stateKey === "duplicate") return "is-warn";
+    if (stateKey === "extension") return "is-cyan";
+    if (stateKey === "idle") return "is-muted";
+    return "is-success";
+  }
+
+  function _riskClassFor(level) {
+    if (level === "blocked" || level === "high") return "is-danger";
+    if (level === "mid") return "is-warn";
+    return "is-success";
+  }
+
   function buildSection() {
     return `
       <div id="${PAGE_ID}" class="admin-audience-page hud-page-stack lg:col-span-2">
@@ -95,10 +109,11 @@
 
           <div class="admin-aud-main-row">
             <div class="admin-aud-table-wrap">
-              <div class="admin-aud-toolbar">
-                <span class="admin-aud-summary" data-aud-summary>讀取中…</span>
-                <span class="admin-aud-filters" data-aud-filters></span>
-                <button type="button" class="admin-aud-refresh" data-aud-action="refresh">↻</button>
+              <div class="admin-ui-toolbar admin-aud-toolbar">
+                <span class="admin-ui-summary admin-aud-summary" data-aud-summary>讀取中…</span>
+                <span class="admin-ui-spacer"></span>
+                <span class="admin-ui-chip-group admin-aud-filters" data-aud-filters></span>
+                <button type="button" class="admin-ui-action admin-aud-refresh" data-aud-action="refresh" aria-label="重新整理觀眾">↻</button>
               </div>
               <div class="admin-aud-list" data-aud-list>
                 <div class="admin-aud-loading">載入觀眾列表中…</div>
@@ -152,8 +167,8 @@
     const total = _state.records.length;
     const flagCount = _state.records.filter(function (r) { return r.state === "flagged" || r.state === "blocked"; }).length;
     filters.innerHTML = `
-      <button type="button" class="chip ${_state.filter === "all" ? "is-active" : ""}" data-aud-filter="all">全部 ${total}</button>
-      <button type="button" class="chip ${_state.filter === "flagged" ? "is-active" : ""}" data-aud-filter="flagged">標記 ${flagCount}</button>`;
+      <button type="button" class="admin-ui-chip admin-aud-filter ${_state.filter === "all" ? "is-active" : ""}" data-aud-filter="all">全部 ${total}</button>
+      <button type="button" class="admin-ui-chip admin-aud-filter ${_state.filter === "flagged" ? "is-active" : ""}" data-aud-filter="flagged">標記 ${flagCount}</button>`;
   }
 
   function _renderList() {
@@ -209,10 +224,10 @@
           <span class="col col-joined">${escapeHtml(joined)}</span>
           <span class="col col-msgs">${msgs}</span>
           <span class="col col-status">
-            <span class="chip" style="color:${stateMeta.color};border-color:${stateMeta.color}55;background:${stateMeta.color}1c;">${escapeHtml(stateMeta.label)}</span>
+            <span class="admin-ui-pill admin-aud-state-pill ${_stateClassFor(stateKey)}">${escapeHtml(stateMeta.label)}</span>
           </span>
           <span class="col col-actions">
-            <button type="button" class="admin-aud-action" data-aud-action="ban" data-aud-fp="${escapeHtml(fp)}">ban</button>
+            <button type="button" class="admin-ui-action is-danger admin-aud-action" data-aud-action="ban" data-aud-fp="${escapeHtml(fp)}">ban</button>
           </span>
         </div>`;
     }).join("");
@@ -330,8 +345,8 @@
 
     detail.innerHTML =
       '<div class="admin-aud-detail-head">' +
-        '<span class="risk" style="color:' + risk.color + ';border-color:' + risk.color + '55;background:' + risk.color + '1c;">' + escapeHtml(risk.label) + '</span>' +
-        '<button type="button" class="close" data-aud-action="close-detail" aria-label="關閉">✕</button>' +
+        '<span class="admin-ui-pill admin-aud-risk-pill ' + _riskClassFor(risk.level) + '">' + escapeHtml(risk.label) + '</span>' +
+        '<button type="button" class="admin-ui-action admin-aud-detail-close" data-aud-action="close-detail" aria-label="關閉">✕</button>' +
       '</div>' +
       '<div class="admin-aud-detail-id">' +
         '<span class="avatar" style="background:' + color + '">' + escapeHtml(initial) + '</span>' +
@@ -351,19 +366,19 @@
         // Primary ban (long-term moderation_bans entry) — still useful
         // even alongside kick because it scopes to all bans, not just
         // audience-overlay state.
-        '<button type="button" class="primary" data-aud-action="detail-ban" data-aud-fp="' + escapeHtml(fp) + '">⊗ 立即封禁指紋 · 7 天</button>' +
-        '<button type="button" class="warn" data-aud-action="detail-mask" data-aud-fp="' + escapeHtml(fp) + '">◐ 改為遮罩模式</button>' +
+        '<button type="button" class="admin-ui-action is-danger is-block admin-aud-detail-action" data-aud-action="detail-ban" data-aud-fp="' + escapeHtml(fp) + '">⊗ 立即封禁指紋 · 7 天</button>' +
+        '<button type="button" class="admin-ui-action is-warn is-block admin-aud-detail-action" data-aud-action="detail-mask" data-aud-fp="' + escapeHtml(fp) + '">◐ 改為遮罩模式</button>' +
         // Kick (= audience kick endpoint, also adds permanent fp ban).
         // Toggle to unkick when the row is already kicked.
         (rec.is_kicked
-          ? '<button type="button" class="warn" data-aud-action="unkick" data-aud-fp="' + escapeHtml(fp) + '">↺ 撤銷踢出</button>'
-          : '<button type="button" data-aud-action="kick" data-aud-fp="' + escapeHtml(fp) + '">👢 踢出此場</button>'
+          ? '<button type="button" class="admin-ui-action is-warn is-block admin-aud-detail-action" data-aud-action="unkick" data-aud-fp="' + escapeHtml(fp) + '">↺ 撤銷踢出</button>'
+          : '<button type="button" class="admin-ui-action is-block admin-aud-detail-action" data-aud-action="kick" data-aud-fp="' + escapeHtml(fp) + '">👢 踢出此場</button>'
         ) +
         // Flag toggle — admin-set, overlays risk score.
-        '<button type="button" data-aud-action="flag" data-aud-fp="' + escapeHtml(fp) + '" data-aud-flagged="' + (rec.is_flagged ? "true" : "false") + '">' +
+        '<button type="button" class="admin-ui-action is-block admin-aud-detail-action" data-aud-action="flag" data-aud-fp="' + escapeHtml(fp) + '" data-aud-flagged="' + (rec.is_flagged ? "true" : "false") + '">' +
           (rec.is_flagged ? "★ 取消標記" : "☆ 標記為可疑") +
         '</button>' +
-        '<button type="button" data-aud-action="detail-safe" data-aud-fp="' + escapeHtml(fp) + '">✓ 標記安全 · 解除 filter rules</button>' +
+        '<button type="button" class="admin-ui-action is-block admin-aud-detail-action" data-aud-action="detail-safe" data-aud-fp="' + escapeHtml(fp) + '">✓ 標記安全 · 解除 filter rules</button>' +
       '</div>';
   }
 
