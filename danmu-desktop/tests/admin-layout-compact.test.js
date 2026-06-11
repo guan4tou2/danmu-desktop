@@ -506,6 +506,43 @@ test("admin Fire Token and Extensions token actions compose shared controls", ()
   expect(cssSrc).not.toContain(".admin-ext-token-btn--danger");
 });
 
+test("admin Fingerprints toolbar composes shared actions", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const fingerprintsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-fingerprints.js"), "utf8");
+  const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+
+  expect(fingerprintsSrc).toContain('id="adminFingerprintRefreshBtn" class="admin-ui-action admin-fp-toolbar-action"');
+  expect(fingerprintsSrc).toContain('id="adminFingerprintResetBtn" class="admin-ui-action is-danger admin-fp-toolbar-action"');
+  expect(fingerprintsSrc).not.toContain("admin-fp-toolbar-btn");
+  expect(cssSrc).not.toContain(".admin-fp-toolbar-btn");
+});
+
+test("admin Search range selector composes shared chips", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const searchSrc = fs.readFileSync(path.join(staticDir, "js", "admin-search.js"), "utf8");
+  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+
+  expect(searchSrc).toContain('class="admin-ui-chip admin-search-range-chip');
+  expect(searchSrc).toContain('btn.classList.contains("admin-search-range-chip")');
+  expect(searchSrc).toContain('page.querySelectorAll(".admin-search-range-chip")');
+  expect(searchSrc).not.toContain("admin-search-range-btn");
+  expect(hudSrc).toContain(".admin-ui-chip {");
+});
+
+test("admin Sessions detail links compose shared actions", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const sessionsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-sessions.js"), "utf8");
+  const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+
+  expect(sessionsSrc).toContain('class="admin-ui-action admin-sessions-detail-action" data-session-id="');
+  expect(sessionsSrc).toContain('e.target.closest(".admin-sessions-detail-action")');
+  expect(sessionsSrc).not.toContain("admin-sessions-detail-btn");
+  expect(cssSrc).not.toContain(".admin-sessions-detail-btn");
+});
+
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");

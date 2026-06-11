@@ -58,7 +58,7 @@
   function buildSection() {
     var rangeButtons = RANGES.map(function (r) {
       var active = r.hours === _state.hours ? " is-active" : "";
-      return '<button type="button" class="admin-search-range-btn' + active + '" data-hours="' + r.hours + '">'
+      return '<button type="button" class="admin-ui-chip admin-search-range-chip' + active + '" data-hours="' + r.hours + '">'
         + _escHtml(r.label) + '</button>';
     }).join("");
 
@@ -403,12 +403,12 @@
     // Range buttons
     page.addEventListener("click", function (e) {
       var btn = e.target.closest("[data-hours]");
-      if (btn && btn.classList.contains("admin-search-range-btn")) {
+      if (btn && btn.classList.contains("admin-search-range-chip")) {
         var hours = parseInt(btn.dataset.hours, 10);
         if (hours === -1) return; // "自訂" – not yet wired
         _state.hours = hours;
         // Update active state
-        page.querySelectorAll(".admin-search-range-btn").forEach(function (b) {
+        page.querySelectorAll(".admin-search-range-chip").forEach(function (b) {
           b.classList.toggle("is-active", b === btn);
         });
         if (_state.query.trim()) _scheduleSearch();

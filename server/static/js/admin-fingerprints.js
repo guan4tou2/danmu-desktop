@@ -34,8 +34,8 @@
         <div class="admin-fp-toolbar">
           <span id="adminFingerprintCount" class="admin-fp-count">—</span>
           <span style="flex:1"></span>
-          <button id="adminFingerprintRefreshBtn" class="admin-fp-toolbar-btn" type="button">↻ ${escapeHtml(ServerI18n.t("refreshBtn"))}</button>
-          <button id="adminFingerprintResetBtn" class="admin-fp-toolbar-btn is-danger" type="button">${escapeHtml(ServerI18n.t("fingerprintResetBtn"))}</button>
+          <button id="adminFingerprintRefreshBtn" class="admin-ui-action admin-fp-toolbar-action" type="button">↻ ${escapeHtml(ServerI18n.t("refreshBtn"))}</button>
+          <button id="adminFingerprintResetBtn" class="admin-ui-action is-danger admin-fp-toolbar-action" type="button">${escapeHtml(ServerI18n.t("fingerprintResetBtn"))}</button>
         </div>
 
         <div class="admin-fp-card" id="adminFingerprintTableWrap">

@@ -352,7 +352,7 @@
             +     '</div>'
             +     '<span class="admin-sessions-bucket-row-spark">' + spark + '</span>'
             +   '</div>'
-            +   '<button type="button" class="admin-sessions-detail-btn" data-session-id="' + sid + '">→</button>'
+            +   '<button type="button" class="admin-ui-action admin-sessions-detail-action" data-session-id="' + sid + '">→</button>'
             + '</div>';
         }).join("");
       } else if (!collapsed && !hasSessions) {
@@ -535,7 +535,7 @@
       }
 
       // "詳細 →" button inside table row
-      var detailRowBtn = e.target.closest(".admin-sessions-detail-btn");
+      var detailRowBtn = e.target.closest(".admin-sessions-detail-action");
       if (detailRowBtn) {
         e.stopPropagation();
         _goToDetail(detailRowBtn.dataset.sessionId);
