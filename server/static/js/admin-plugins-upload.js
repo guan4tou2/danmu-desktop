@@ -106,8 +106,8 @@
           <input type="file" accept=".py,.js" data-pu-file hidden />
         </div>
         <footer class="admin-pu-foot">
-          <button type="button" class="admin-pu-btn" data-pu-close>取消</button>
-          <button type="button" class="admin-pu-btn is-primary" data-pu-browse>瀏覽檔案…</button>
+          <button type="button" class="admin-ui-action admin-pu-btn" data-pu-close>取消</button>
+          <button type="button" class="admin-ui-action is-primary admin-pu-btn" data-pu-browse>瀏覽檔案…</button>
         </footer>
       </div>`;
   }
@@ -201,7 +201,6 @@
       bodyHtml = _renderNoManifest(state);
     } else {
       const depsBad = (v.deps || []).some((d) => d.status === "missing");
-      const depsAmber = (v.deps || []).some((d) => d.status === "warn");
       bodyHtml = _renderManifestCard(m, v, state, depsBad);
     }
     _setStep(2, `<div class="admin-pu-step2">${bodyHtml}</div>`);
@@ -220,8 +219,8 @@
         <pre class="admin-pu-syntax-body">${escapeHtml(`>>> ${state.filename}\n${msg}`)}</pre>
       </div>
       <footer class="admin-pu-foot">
-        <button type="button" class="admin-pu-btn" data-pu-back>← 重新選擇</button>
-        <button type="button" class="admin-pu-btn is-disabled" disabled>無法繼續</button>
+        <button type="button" class="admin-ui-action admin-pu-btn" data-pu-back>← 重新選擇</button>
+        <button type="button" class="admin-ui-action admin-pu-btn" disabled>無法繼續</button>
       </footer>`;
   }
 
@@ -241,16 +240,23 @@
         </label>
       </div>
       <footer class="admin-pu-foot">
-        <button type="button" class="admin-pu-btn" data-pu-back>← 重新選擇</button>
-        <button type="button" class="admin-pu-btn is-warn is-disabled" disabled data-pu-confirm>無 manifest 繼續 →</button>
+        <button type="button" class="admin-ui-action admin-pu-btn" data-pu-back>← 重新選擇</button>
+        <button type="button" class="admin-ui-action is-warn admin-pu-btn" disabled data-pu-confirm>無 manifest 繼續 →</button>
       </footer>`;
   }
 
+  function _priorityPillClass(priority) {
+    if (priority == null) return "is-muted";
+    if (priority <= 10) return "is-danger";
+    if (priority <= 50) return "is-warn";
+    return "is-cyan";
+  }
+
   function _priorityPill(priority) {
-    if (priority == null) return `<span class="admin-pu-pill">—</span>`;
-    const cls = priority <= 10 ? "is-crimson" : priority <= 50 ? "is-amber" : "is-cyan";
+    if (priority == null) return `<span class="admin-ui-pill admin-pu-pill is-muted">—</span>`;
+    const cls = _priorityPillClass(priority);
     const lbl = priority <= 10 ? "CRITICAL" : priority <= 50 ? "HIGH" : "NORMAL";
-    return `<span class="admin-pu-pill ${cls}">${priority} · ${lbl}</span>`;
+    return `<span class="admin-ui-pill admin-pu-pill ${cls}">${priority} · ${lbl}</span>`;
   }
 
   function _renderManifestCard(m, v, state, depsBad) {
@@ -259,7 +265,7 @@
     const author = m.author ? `@${escapeHtml(m.author.replace(/^@/, ""))}` : "—";
     const desc = m.description || "未提供描述";
     const lang = state.filename.endsWith(".js") ? "JS" : "PY";
-    const langCls = lang === "PY" ? "is-amber" : "is-cyan";
+    const langCls = lang === "PY" ? "is-warn" : "is-cyan";
 
     const declaredPerms = Array.isArray(m.permissions) ? m.permissions : [];
     const permRows = Object.keys(PERM_LABELS).map((key) => {
@@ -302,9 +308,9 @@
       <div class="admin-pu-manifest-card">
         <div class="admin-pu-manifest-head">
           <span class="name">${escapeHtml(name)}</span>
-          <span class="admin-pu-pill is-cyan">${ver}</span>
+          <span class="admin-ui-pill admin-pu-pill is-cyan">${ver}</span>
           <span class="author">${author}</span>
-          <span class="admin-pu-pill ${langCls}" style="margin-left:auto">${lang}</span>
+          <span class="admin-ui-pill admin-pu-pill ${langCls}" style="margin-left:auto">${lang}</span>
         </div>
         <div class="admin-pu-manifest-desc">${escapeHtml(desc)}</div>
         <section class="admin-pu-section">
@@ -318,8 +324,8 @@
         ${depsBlock}
       </div>
       <footer class="admin-pu-foot">
-        <button type="button" class="admin-pu-btn" data-pu-back>← 重新選擇</button>
-        <button type="button" class="admin-pu-btn ${depsBad ? "is-disabled" : "is-warn"}" ${depsBad ? "disabled" : ""} data-pu-confirm>${depsBad ? "解決依賴後重試" : "繼續安裝 →"}</button>
+        <button type="button" class="admin-ui-action admin-pu-btn" data-pu-back>← 重新選擇</button>
+        <button type="button" class="${depsBad ? "admin-ui-action admin-pu-btn" : "admin-ui-action is-warn admin-pu-btn"}" ${depsBad ? "disabled" : ""} data-pu-confirm>${depsBad ? "解決依賴後重試" : "繼續安裝 →"}</button>
       </footer>`;
   }
 
@@ -337,7 +343,6 @@
     // "No manifest" ack checkbox toggles the confirm button.
     const ack = _root.querySelector("[data-pu-no-manifest-ack]");
     if (ack && confirmBtn) ack.addEventListener("change", () => {
-      confirmBtn.classList.toggle("is-disabled", !ack.checked);
       confirmBtn.disabled = !ack.checked;
     });
   }
@@ -364,7 +369,7 @@
         <div class="admin-pu-confirm-hint">插件是伺服器端程式碼，安裝後將自動啟用</div>
         <div class="admin-pu-confirm-target">
           <span class="name">${escapeHtml(name)}</span>
-          <span class="admin-pu-pill is-cyan">${ver}</span>
+          <span class="admin-ui-pill admin-pu-pill is-cyan">${ver}</span>
         </div>
         <section class="admin-pu-section">
           <span class="admin-v2-monolabel">將存取</span>
@@ -379,8 +384,8 @@
           </ol>
         </section>
         <footer class="admin-pu-foot">
-          <button type="button" class="admin-pu-btn" data-pu-back>取消</button>
-          <button type="button" class="admin-pu-btn is-warn" data-pu-install>確認安裝</button>
+          <button type="button" class="admin-ui-action admin-pu-btn" data-pu-back>取消</button>
+          <button type="button" class="admin-ui-action is-warn admin-pu-btn" data-pu-install>確認安裝</button>
         </footer>
       </div>`);
     const installBtn = _root.querySelector("[data-pu-install]");

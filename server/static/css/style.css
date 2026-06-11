@@ -14634,44 +14634,6 @@ body.admin-pu-open { overflow: hidden; }
   justify-content: flex-end;
 }
 
-.admin-pu-btn {
-  padding: 8px 20px;
-  border-radius: 6px;
-  border: 1px solid var(--admin-line);
-  background: transparent;
-  color: var(--admin-text-dim);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
-}
-
-.admin-pu-btn:hover:not(.is-disabled):not(:disabled) {
-  border-color: var(--hud-line-strong, rgba(148, 163, 184, 0.35));
-  color: var(--admin-text);
-}
-
-.admin-pu-btn.is-primary {
-  border-color: var(--color-primary);
-  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.admin-pu-btn.is-warn {
-  border-color: var(--hud-amber, #fbbf24);
-  background: var(--hud-amber, #fbbf24);
-  color: var(--admin-bg);
-  font-weight: 700;
-}
-
-.admin-pu-btn.is-disabled,
-.admin-pu-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
 /* Step 1 · Dropzone */
 .admin-pu-step1 {
   padding: 24px;
@@ -14803,37 +14765,6 @@ body.admin-pu-open { overflow: hidden; }
   font-family: var(--font-mono);
   font-size: 10px;
   color: var(--admin-text-dim);
-}
-
-.admin-pu-pill {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 3px;
-  border: 1px solid var(--admin-line);
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 1px;
-  font-weight: 500;
-  color: var(--admin-text-dim);
-  background: transparent;
-}
-
-.admin-pu-pill.is-cyan {
-  border-color: rgba(56, 189, 248, 0.45);
-  color: var(--hud-cyan, #38bdf8);
-  background: rgba(56, 189, 248, 0.06);
-}
-
-.admin-pu-pill.is-amber {
-  border-color: rgba(251, 191, 36, 0.45);
-  color: var(--hud-amber, #fbbf24);
-  background: rgba(251, 191, 36, 0.06);
-}
-
-.admin-pu-pill.is-crimson {
-  border-color: rgba(248, 113, 113, 0.45);
-  color: var(--hud-crimson, #f87171);
-  background: rgba(248, 113, 113, 0.06);
 }
 
 .admin-pu-manifest-desc {
@@ -15102,7 +15033,7 @@ body.admin-pu-open { overflow: hidden; }
   padding: 0;
 }
 
-.admin-pu-confirm .admin-pu-foot .admin-pu-btn { flex: 1; }
+.admin-pu-confirm .admin-pu-foot .admin-ui-action { flex: 1; }
 
 /* Step 4 · Installing */
 .admin-pu-installing {

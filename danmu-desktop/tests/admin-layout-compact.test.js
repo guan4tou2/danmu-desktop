@@ -418,6 +418,38 @@ test("admin Plugins composes shared toolbar, chips, and pills", () => {
   expect(cssSrc).not.toContain(".admin-plugins-console-chip.is-active");
 });
 
+test("admin Plugins upload modal composes shared action and pill primitives", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const uploadSrc = fs.readFileSync(path.join(staticDir, "js", "admin-plugins-upload.js"), "utf8");
+  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+
+  expect(uploadSrc).toContain('class="admin-ui-action admin-pu-btn"');
+  expect(uploadSrc).toContain('class="admin-ui-action is-primary admin-pu-btn"');
+  expect(uploadSrc).toContain('class="admin-ui-action is-warn admin-pu-btn"');
+  expect(uploadSrc).toContain("admin-ui-pill admin-pu-pill");
+  expect(uploadSrc).toContain('return "is-danger";');
+  expect(uploadSrc).toContain('return "is-warn";');
+  expect(uploadSrc).not.toContain("is-crimson");
+  expect(uploadSrc).not.toContain("is-amber");
+  expect(uploadSrc).not.toContain("is-disabled");
+
+  expect(hudSrc).toContain(".admin-ui-action.is-warn {");
+  expect(hudSrc).toContain(".admin-ui-pill.is-warn");
+  expect(hudSrc).toContain(".admin-ui-pill.is-danger");
+
+  expect(cssSrc).not.toContain(".admin-pu-btn {");
+  expect(cssSrc).not.toContain(".admin-pu-btn:hover");
+  expect(cssSrc).not.toContain(".admin-pu-btn.is-primary");
+  expect(cssSrc).not.toContain(".admin-pu-btn.is-warn");
+  expect(cssSrc).not.toContain(".admin-pu-btn.is-disabled");
+  expect(cssSrc).not.toContain(".admin-pu-pill {");
+  expect(cssSrc).not.toContain(".admin-pu-pill.is-cyan");
+  expect(cssSrc).not.toContain(".admin-pu-pill.is-amber");
+  expect(cssSrc).not.toContain(".admin-pu-pill.is-crimson");
+});
+
 test("admin Backup exposes implemented history export formats", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const backupSrc = fs.readFileSync(path.join(staticDir, "admin-backup.js"), "utf8");
