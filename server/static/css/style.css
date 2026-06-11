@@ -6674,34 +6674,14 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
 
 .admin-about-actions {
   margin-top: 14px;
-  display: flex; gap: 6px;
+  display: flex; gap: 6px; flex-wrap: wrap;
   position: relative; z-index: 1;
 }
-.admin-about-btn {
-  flex: 1;
-  padding: 9px 10px;
+.admin-about-actions > .admin-ui-action {
+  flex: 1 1 180px;
+  justify-content: center;
+  min-height: 36px;
   text-align: center;
-  border: 1px solid var(--color-border, var(--hud-line));
-  background: transparent;
-  border-radius: 4px;
-  cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 11px; letter-spacing: 0.4px;
-  color: var(--color-text-strong);
-  text-decoration: none;
-  transition: all 120ms ease;
-}
-.admin-about-btn:hover {
-  background: var(--hover-tint);
-  color: var(--color-primary);
-}
-.admin-about-btn--accent {
-  background: rgba(56, 189, 248, 0.10);
-  border-color: rgba(56, 189, 248, 0.45);
-  color: var(--color-primary);
-}
-.admin-about-btn--accent:hover {
-  background: rgba(56, 189, 248, 0.18);
 }
 
 .admin-about-oss {

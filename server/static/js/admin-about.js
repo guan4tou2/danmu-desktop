@@ -120,10 +120,10 @@
               </div>
             </div>
             <div class="admin-about-actions">
-              <button type="button" class="admin-about-btn admin-about-btn--accent" data-about-action="check-update">↻ 檢查更新</button>
-              <button type="button" class="admin-about-btn" data-about-action="copy">📋 複製版本資訊</button>
-              <button type="button" class="admin-about-btn" data-about-action="setup-wizard">⚙ 重新開啟設定精靈</button>
-              <button type="button" class="admin-about-btn" data-about-action="onboarding">▶ 重新顯示提示</button>
+              <button type="button" class="admin-ui-action is-primary admin-about-btn" data-about-action="check-update">↻ 檢查更新</button>
+              <button type="button" class="admin-ui-action admin-about-btn" data-about-action="copy">📋 複製版本資訊</button>
+              <button type="button" class="admin-ui-action admin-about-btn" data-about-action="setup-wizard">⚙ 重新開啟設定精靈</button>
+              <button type="button" class="admin-ui-action admin-about-btn" data-about-action="onboarding">▶ 重新顯示提示</button>
             </div>
           </article>
 

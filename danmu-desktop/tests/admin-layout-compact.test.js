@@ -200,6 +200,25 @@ test("admin About server-info values wrap long URLs inside their grid cells", ()
   expect(cssSrc).toMatch(/\.admin-about-oss-row \.v,\s*\.admin-about-oss-row \.l \{[\s\S]*?overflow-wrap:\s*anywhere;/);
 });
 
+test("admin About actions compose shared action controls", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const aboutSrc = fs.readFileSync(path.join(staticDir, "js", "admin-about.js"), "utf8");
+  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+
+  expect(aboutSrc).toContain('class="admin-ui-action is-primary admin-about-btn"');
+  expect(aboutSrc).toContain('class="admin-ui-action admin-about-btn"');
+  expect(aboutSrc).not.toContain("admin-about-btn--accent");
+
+  expect(hudSrc).toContain(".admin-ui-action {");
+  expect(hudSrc).toContain(".admin-ui-action.is-primary {");
+  expect(cssSrc).toContain(".admin-about-actions > .admin-ui-action {");
+  expect(cssSrc).not.toContain(".admin-about-btn {");
+  expect(cssSrc).not.toContain(".admin-about-btn:hover");
+  expect(cssSrc).not.toContain(".admin-about-btn--accent");
+});
+
 test("admin Webhooks uses the implemented toggle endpoint instead of BE placeholder copy", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const webhooksSrc = fs.readFileSync(path.join(staticDir, "admin-webhooks.js"), "utf8");
