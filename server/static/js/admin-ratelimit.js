@@ -96,7 +96,7 @@
                   <span class="admin-ratelimit-bar-text" data-rl-current="${r.key}">—</span>
                 </div>
                 <div class="admin-ratelimit-field admin-ratelimit-save-field">
-                  <button type="button" class="admin-poll-btn is-primary" data-rl-action="save" data-rl-save="${r.key}" title="即時套用至執行中的伺服器(重啟後恢復 env 預設)">即時套用</button>
+                  <button type="button" class="admin-ui-action is-primary admin-rl-action" data-rl-action="save" data-rl-save="${r.key}" title="即時套用至執行中的伺服器(重啟後恢復 env 預設)">即時套用</button>
                 </div>
               </div>
               <div class="admin-ratelimit-row-foot">
@@ -113,7 +113,7 @@
                   <span class="admin-ratelimit-suggest-title">建議調整</span>
                   <span class="admin-ratelimit-suggest-detail" data-rl-suggest-detail>—</span>
                 </span>
-                <button type="button" class="admin-poll-btn is-primary" data-rl-action="apply-suggest" data-rl-apply="${r.key}">套用建議</button>
+                <button type="button" class="admin-ui-action is-primary admin-rl-action" data-rl-action="apply-suggest" data-rl-apply="${r.key}">套用建議</button>
               </div>
             </div>
           `).join("")}
@@ -149,8 +149,8 @@
         </div>
 
         <div class="admin-ratelimit-footer">
-          <button type="button" class="admin-poll-btn is-ghost" data-rl-action="reset">重設預設</button>
-          <button type="button" class="admin-poll-btn is-primary" data-rl-action="export">匯出 .env 片段</button>
+          <button type="button" class="admin-ui-action admin-rl-footer-action" data-rl-action="reset">重設預設</button>
+          <button type="button" class="admin-ui-action is-primary admin-rl-footer-action" data-rl-action="export">匯出 .env 片段</button>
         </div>
 
         <pre id="rlEnvExport" class="admin-ratelimit-export" hidden></pre>

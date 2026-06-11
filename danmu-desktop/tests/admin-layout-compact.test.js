@@ -413,6 +413,22 @@ test("admin Security actions compose shared admin-ui controls instead of page-lo
   expect(cssSrc).not.toContain(".admin-sec-danger:hover");
 });
 
+test("admin Rate Limits actions compose shared admin-ui controls", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const ratelimitSrc = fs.readFileSync(path.join(staticDir, "js", "admin-ratelimit.js"), "utf8");
+  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+
+  expect(ratelimitSrc).toContain('class="admin-ui-action is-primary admin-rl-action" data-rl-action="save"');
+  expect(ratelimitSrc).toContain('class="admin-ui-action is-primary admin-rl-action" data-rl-action="apply-suggest"');
+  expect(ratelimitSrc).toContain('class="admin-ui-action admin-rl-footer-action" data-rl-action="reset"');
+  expect(ratelimitSrc).toContain('class="admin-ui-action is-primary admin-rl-footer-action" data-rl-action="export"');
+  expect(ratelimitSrc).not.toContain('class="admin-poll-btn');
+
+  expect(hudSrc).toContain(".admin-ui-action {");
+  expect(hudSrc).toContain(".admin-ui-action.is-primary {");
+});
+
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
