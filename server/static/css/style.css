@@ -10223,36 +10223,23 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   border-radius: 8px;
   padding: 14px;
 }
-.admin-notif-tabs, .admin-notif-sources {
-  display: flex; flex-direction: column; gap: 4px;
+.admin-notif-tabs,
+.admin-notif-sources {
+  flex-direction: column;
+  align-items: stretch;
   margin-top: 10px;
 }
-.admin-notif-tab, .admin-notif-src {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 10px;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 3px;
-  cursor: pointer;
+.admin-notif-tab,
+.admin-notif-src {
+  justify-content: flex-start;
   text-align: left;
-  font-size: 12px;
-  color: var(--color-text-muted);
-  font-family: inherit;
-  transition: all 120ms ease;
+  text-transform: none;
 }
-.admin-notif-tab .cnt, .admin-notif-src .cnt {
+.admin-notif-count {
   margin-left: auto;
   font-family: var(--font-mono); font-size: 10px;
   color: var(--color-text-muted);
   letter-spacing: 0.4px;
-}
-.admin-notif-tab:hover, .admin-notif-src:hover {
-  color: var(--color-text-strong);
-}
-.admin-notif-tab.is-active, .admin-notif-src.is-active {
-  background: rgba(56, 189, 248, 0.10);
-  border-color: rgba(56, 189, 248, 0.40);
-  color: var(--color-text-strong);
 }
 .admin-notif-src.is-disabled {
   opacity: 0.6;
@@ -10260,7 +10247,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   pointer-events: none;
   cursor: default;
 }
-.admin-notif-tab.is-active .cnt, .admin-notif-src.is-active .cnt {
+.admin-ui-chip.is-active .admin-notif-count {
   color: var(--color-primary);
 }
 .admin-notif-src.admin-notif-src-placeholder {
@@ -10291,35 +10278,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   min-width: 0;
 }
 .admin-notif-toolbar {
-  display: flex; align-items: center; gap: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--color-border, var(--hud-line));
   margin-bottom: 12px;
-}
-.admin-notif-summary {
-  font-family: var(--font-mono); font-size: 11px;
-  letter-spacing: 0.3px;
-  color: var(--color-text-strong);
-}
-.admin-notif-actions {
-  margin-left: auto;
-  display: flex; gap: 4px;
-  flex-wrap: wrap;
-}
-.admin-notif-action {
-  padding: 6px 10px;
-  background: transparent;
-  border: 1px solid var(--color-border, var(--hud-line));
-  border-radius: 3px;
-  font-family: var(--font-mono); font-size: 10px;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  letter-spacing: 0.3px;
-  transition: all 120ms ease;
-}
-.admin-notif-action:hover {
-  color: var(--color-primary);
-  border-color: rgba(56, 189, 248, 0.40);
 }
 
 .admin-notif-list {
@@ -10371,13 +10330,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   border-radius: 50%;
   flex-shrink: 0;
 }
-.admin-notif-item .sev {
-  font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.2px;
-  padding: 2px 6px;
-  border: 1px solid;
-  border-radius: 2px;
-  font-weight: 600;
-}
+.admin-notif-sev-pill { flex-shrink: 0; }
 .admin-notif-item .src {
   font-family: var(--font-mono); font-size: 10px;
   color: var(--color-text-muted);
@@ -10407,20 +10360,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   margin-top: 8px;
   flex-wrap: wrap;
 }
-.admin-notif-item .actions button {
-  padding: 4px 10px;
-  background: transparent;
-  border: 1px solid var(--color-border, var(--hud-line));
-  border-radius: 2px;
-  font-family: var(--font-mono); font-size: 10px;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  letter-spacing: 0.3px;
-}
-.admin-notif-item .actions button:hover {
-  color: var(--color-primary);
-  border-color: rgba(56, 189, 248, 0.40);
-}
 
 /* Starred state — prototype admin-batch7.jsx:169.
    ★ icon next to severity chip (amber) + amber tint when star button is on. */
@@ -10434,15 +10373,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   border-color: rgba(251, 191, 36, 0.25);
 }
 .admin-notif-item.is-archived.is-starred .star { opacity: 0.5; }
-.admin-notif-item .actions button.is-on {
-  color: var(--color-warning);
-  border-color: rgba(251, 191, 36, 0.45);
-  background: rgba(251, 191, 36, 0.08);
-}
-.admin-notif-item .actions button.is-on:hover {
-  color: var(--color-warning);
-  border-color: rgba(251, 191, 36, 0.65);
-}
 
 .admin-notif-empty {
   padding: 40px 20px;
@@ -10488,21 +10418,9 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   padding: 12px 14px;
   border-bottom: 1px solid var(--color-border, var(--hud-line));
 }
-.admin-notif-detail-close {
-  margin-left: auto;
-  background: transparent; border: none;
-  color: var(--color-text-muted);
-  cursor: pointer; font-size: 16px; line-height: 1;
-  padding: 0 4px;
-  transition: color 120ms ease;
-}
-.admin-notif-detail-close:hover { color: var(--color-text-strong); }
 .admin-notif-detail-sev {
-  font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.2px;
-  padding: 2px 6px;
-  border: 1px solid;
-  border-radius: 2px;
-  font-weight: 600;
+  align-self: flex-start;
+  gap: 6px;
 }
 .admin-notif-detail-body {
   padding: 14px;
@@ -10550,21 +10468,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   display: flex; gap: 6px; flex-wrap: wrap;
   padding-top: 8px;
   border-top: 1px solid var(--color-border, var(--hud-line));
-}
-.admin-notif-detail-actions button {
-  padding: 6px 12px;
-  background: transparent;
-  border: 1px solid var(--color-border, var(--hud-line));
-  border-radius: 3px;
-  font-family: var(--font-mono); font-size: 10px;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  letter-spacing: 0.3px;
-  transition: all 120ms ease;
-}
-.admin-notif-detail-actions button:hover {
-  color: var(--color-primary);
-  border-color: rgba(56, 189, 248, 0.40);
 }
 
 /* ─── Audit Log (P1, 2026-04-27) ───────────────────────────────────── */

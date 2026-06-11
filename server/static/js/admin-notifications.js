@@ -89,6 +89,13 @@
     _writeSet(STAR_KEY, s);
   }
 
+  function _sevClassFor(sev) {
+    if (sev === "crit" || sev === "error") return "is-danger";
+    if (sev === "warn") return "is-warn";
+    if (sev === "good") return "is-success";
+    return "is-cyan";
+  }
+
   // ── data aggregation ─────────────────────────────────────────────
 
   async function _fetchAll() {
@@ -234,30 +241,30 @@
         <div class="admin-notif-grid admin-notif-grid--3col" data-notif-outer>
           <aside class="admin-notif-filters">
             <div class="admin-v2-monolabel">分組 · GROUP</div>
-            <div class="admin-notif-tabs" data-notif-tabs>
-              <button type="button" class="admin-notif-tab is-active" data-notif-tab="unread">未讀<span class="cnt" data-cnt-unread>—</span></button>
-              <button type="button" class="admin-notif-tab" data-notif-tab="all">全部<span class="cnt" data-cnt-all>—</span></button>
-              <button type="button" class="admin-notif-tab" data-notif-tab="starred">已標記<span class="cnt" data-cnt-starred>—</span></button>
-              <button type="button" class="admin-notif-tab" data-notif-tab="archived">已封存<span class="cnt" data-cnt-archived>—</span></button>
+            <div class="admin-ui-chip-group admin-notif-tabs" data-notif-tabs>
+              <button type="button" class="admin-ui-chip admin-notif-tab is-active" data-notif-tab="unread">未讀<span class="admin-notif-count cnt" data-cnt-unread>—</span></button>
+              <button type="button" class="admin-ui-chip admin-notif-tab" data-notif-tab="all">全部<span class="admin-notif-count cnt" data-cnt-all>—</span></button>
+              <button type="button" class="admin-ui-chip admin-notif-tab" data-notif-tab="starred">已標記<span class="admin-notif-count cnt" data-cnt-starred>—</span></button>
+              <button type="button" class="admin-ui-chip admin-notif-tab" data-notif-tab="archived">已封存<span class="admin-notif-count cnt" data-cnt-archived>—</span></button>
             </div>
 
             <div class="admin-v2-monolabel admin-notif-label-top">來源 · SOURCE</div>
-            <div class="admin-notif-sources" data-notif-sources>
-              <button type="button" class="admin-notif-src is-active" data-notif-src="all">全部<span class="cnt" data-cnt-src-all>—</span></button>
-              <button type="button" class="admin-notif-src" data-notif-src="Fire Token">Fire Token<span class="cnt" data-cnt-src-ft>—</span></button>
-              <button type="button" class="admin-notif-src" data-notif-src="Webhooks">Webhooks<span class="cnt" data-cnt-src-wh>—</span></button>
-              <button type="button" class="admin-notif-src" data-notif-src="System">System<span class="cnt" data-cnt-src-sys>—</span></button>
-              <div class="admin-notif-src admin-notif-src-placeholder admin-be-placeholder-control" data-notif-src="Backup" data-notif-disabled="1" role="note">[PLACEHOLDER] Backup（待 BE）<span class="cnt" data-cnt-src-bk>—</span></div>
-              <button type="button" class="admin-notif-src" data-notif-src="Moderation">Moderation<span class="cnt" data-cnt-src-mod>—</span></button>
+            <div class="admin-ui-chip-group admin-notif-sources" data-notif-sources>
+              <button type="button" class="admin-ui-chip admin-notif-src is-active" data-notif-src="all">全部<span class="admin-notif-count cnt" data-cnt-src-all>—</span></button>
+              <button type="button" class="admin-ui-chip admin-notif-src" data-notif-src="Fire Token">Fire Token<span class="admin-notif-count cnt" data-cnt-src-ft>—</span></button>
+              <button type="button" class="admin-ui-chip admin-notif-src" data-notif-src="Webhooks">Webhooks<span class="admin-notif-count cnt" data-cnt-src-wh>—</span></button>
+              <button type="button" class="admin-ui-chip admin-notif-src" data-notif-src="System">System<span class="admin-notif-count cnt" data-cnt-src-sys>—</span></button>
+              <div class="admin-ui-chip admin-notif-src admin-notif-src-placeholder admin-be-placeholder-control" data-notif-src="Backup" data-notif-disabled="1" role="note">[PLACEHOLDER] Backup（待 BE）<span class="admin-notif-count cnt" data-cnt-src-bk>—</span></div>
+              <button type="button" class="admin-ui-chip admin-notif-src" data-notif-src="Moderation">Moderation<span class="admin-notif-count cnt" data-cnt-src-mod>—</span></button>
             </div>
 
             <div class="admin-v2-monolabel admin-notif-label-top">嚴重度 · SEVERITY</div>
-            <div class="admin-notif-sources" data-notif-severity>
-              <button type="button" class="admin-notif-src is-active" data-notif-sev="all">全部<span class="cnt" data-cnt-sev-all>—</span></button>
-              <button type="button" class="admin-notif-src" data-notif-sev="crit">CRIT<span class="cnt" data-cnt-sev-crit>—</span></button>
-              <button type="button" class="admin-notif-src" data-notif-sev="warn">WARN<span class="cnt" data-cnt-sev-warn>—</span></button>
-              <button type="button" class="admin-notif-src" data-notif-sev="info">INFO<span class="cnt" data-cnt-sev-info>—</span></button>
-              <button type="button" class="admin-notif-src" data-notif-sev="good">OK<span class="cnt" data-cnt-sev-good>—</span></button>
+            <div class="admin-ui-chip-group admin-notif-sources" data-notif-severity>
+              <button type="button" class="admin-ui-chip admin-notif-src is-active" data-notif-sev="all">全部<span class="admin-notif-count cnt" data-cnt-sev-all>—</span></button>
+              <button type="button" class="admin-ui-chip admin-notif-src" data-notif-sev="crit">CRIT<span class="admin-notif-count cnt" data-cnt-sev-crit>—</span></button>
+              <button type="button" class="admin-ui-chip admin-notif-src" data-notif-sev="warn">WARN<span class="admin-notif-count cnt" data-cnt-sev-warn>—</span></button>
+              <button type="button" class="admin-ui-chip admin-notif-src" data-notif-sev="info">INFO<span class="admin-notif-count cnt" data-cnt-sev-info>—</span></button>
+              <button type="button" class="admin-ui-chip admin-notif-src" data-notif-sev="good">OK<span class="admin-notif-count cnt" data-cnt-sev-good>—</span></button>
             </div>
 
             <div class="admin-notif-tip">
@@ -267,11 +274,12 @@
           </aside>
 
           <main class="admin-notif-main">
-            <div class="admin-notif-toolbar">
-              <span class="admin-notif-summary" data-notif-summary>讀取中…</span>
-              <span class="admin-notif-actions">
-                <button type="button" class="admin-notif-action" data-notif-action="mark-all-read">✓ 全部已讀</button>
-                <button type="button" class="admin-notif-action" data-notif-action="archive-all">↓ 封存全部</button>
+            <div class="admin-ui-toolbar admin-notif-toolbar">
+              <span class="admin-ui-summary admin-notif-summary" data-notif-summary>讀取中…</span>
+              <span class="admin-ui-spacer"></span>
+              <span class="admin-ui-chip-group admin-notif-actions">
+                <button type="button" class="admin-ui-action admin-notif-action" data-notif-action="mark-all-read">✓ 全部已讀</button>
+                <button type="button" class="admin-ui-action admin-notif-action" data-notif-action="archive-all">↓ 封存全部</button>
                 <span class="admin-be-placeholder-control admin-be-placeholder-inline">[PLACEHOLDER] 通知偏好（待 Design）</span>
               </span>
             </div>
@@ -326,20 +334,20 @@
           <div class="head">
             ${!read && !archived ? `<span class="dot" style="background:${sev.color};box-shadow:0 0 6px ${sev.color}"></span>` : ''}
             ${starred ? `<span class="star" aria-label="starred" title="已標記">★</span>` : ''}
-            <span class="sev" style="color:${sev.color};background:${sev.bg};border-color:${sev.border};">${sev.label}</span>
+            <span class="admin-ui-pill admin-notif-sev-pill ${_sevClassFor(it.sev)}">${sev.label}</span>
             <span class="src">${escapeHtml(it.src)}</span>
             <span class="ts">${escapeHtml(tsLabel)}</span>
           </div>
           <div class="title">${escapeHtml(it.title)}</div>
           <div class="desc">${escapeHtml(it.desc)}</div>
           <div class="actions">
-            <button type="button" class="${starred ? "is-on" : ""}" data-notif-row-action="star" data-notif-id="${escapeHtml(it.id)}" title="${starred ? "取消標記" : "標記重要"}">${starred ? "★ 已標記" : "☆ 標記"}</button>
+            <button type="button" class="admin-ui-action admin-notif-row-action ${starred ? "is-warn is-on" : ""}" data-notif-row-action="star" data-notif-id="${escapeHtml(it.id)}" title="${starred ? "取消標記" : "標記重要"}">${starred ? "★ 已標記" : "☆ 標記"}</button>
             ${archived
-              ? `<button type="button" data-notif-row-action="unarchive" data-notif-id="${escapeHtml(it.id)}">↺ 取消封存</button>`
+              ? `<button type="button" class="admin-ui-action admin-notif-row-action" data-notif-row-action="unarchive" data-notif-id="${escapeHtml(it.id)}">↺ 取消封存</button>`
               : `${read
-                  ? `<button type="button" data-notif-row-action="unread" data-notif-id="${escapeHtml(it.id)}">○ 標記未讀</button>`
-                  : `<button type="button" data-notif-row-action="read" data-notif-id="${escapeHtml(it.id)}">✓ 標記已讀</button>`}
-                  <button type="button" data-notif-row-action="archive" data-notif-id="${escapeHtml(it.id)}">↓ 封存</button>`}
+                  ? `<button type="button" class="admin-ui-action admin-notif-row-action" data-notif-row-action="unread" data-notif-id="${escapeHtml(it.id)}">○ 標記未讀</button>`
+                  : `<button type="button" class="admin-ui-action admin-notif-row-action" data-notif-row-action="read" data-notif-id="${escapeHtml(it.id)}">✓ 標記已讀</button>`}
+                  <button type="button" class="admin-ui-action admin-notif-row-action" data-notif-row-action="archive" data-notif-id="${escapeHtml(it.id)}">↓ 封存</button>`}
           </div>
         </article>`;
     }).join("");
@@ -405,9 +413,10 @@
     inner.innerHTML = `
       <div class="admin-notif-detail-head">
         <span class="admin-v2-monolabel">DETAIL</span>
-        <button type="button" class="admin-notif-detail-close" data-notif-action="close-detail" aria-label="關閉">✕</button>
+        <span class="admin-ui-spacer"></span>
+        <button type="button" class="admin-ui-action admin-notif-detail-close" data-notif-action="close-detail" aria-label="關閉">✕</button>
       </div>
-      <div class="admin-notif-detail-sev" style="color:${escapeHtml(sev.color)};border-color:${escapeHtml(sev.border)};background:${escapeHtml(sev.bg)}">
+      <div class="admin-ui-pill admin-notif-detail-sev ${_sevClassFor(it.sev)}">
         <span class="badge">${escapeHtml(sev.label)}</span>
         <span class="src">${escapeHtml(it.src)}</span>
       </div>
@@ -418,11 +427,11 @@
       <pre class="admin-notif-detail-raw">${escapeHtml(raw)}</pre>
       <div class="admin-notif-detail-actions">
         ${!_isRead(it.id) && !_isArchived(it.id)
-          ? `<button type="button" class="admin-notif-action" data-notif-row-action="read" data-notif-id="${escapeHtml(it.id)}">✓ 標記已讀</button>`
+          ? `<button type="button" class="admin-ui-action admin-notif-detail-action" data-notif-row-action="read" data-notif-id="${escapeHtml(it.id)}">✓ 標記已讀</button>`
           : ""}
         ${!_isArchived(it.id)
-          ? `<button type="button" class="admin-notif-action" data-notif-row-action="archive" data-notif-id="${escapeHtml(it.id)}">↓ 封存</button>`
-          : `<button type="button" class="admin-notif-action" data-notif-row-action="unarchive" data-notif-id="${escapeHtml(it.id)}">↺ 取消封存</button>`}
+          ? `<button type="button" class="admin-ui-action admin-notif-detail-action" data-notif-row-action="archive" data-notif-id="${escapeHtml(it.id)}">↓ 封存</button>`
+          : `<button type="button" class="admin-ui-action admin-notif-detail-action" data-notif-row-action="unarchive" data-notif-id="${escapeHtml(it.id)}">↺ 取消封存</button>`}
       </div>`;
   }
 

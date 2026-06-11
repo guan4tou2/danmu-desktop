@@ -264,6 +264,51 @@ test("admin Audience composes shared toolbar, chips, pills, and actions", () => 
   expect(cssSrc).not.toContain(".admin-aud-detail-actions button.warn");
 });
 
+test("admin Notifications composes shared filters, toolbar, pills, and actions", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const notificationsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-notifications.js"), "utf8");
+  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
+
+  expect(notificationsSrc).toContain('class="admin-ui-chip-group admin-notif-tabs"');
+  expect(notificationsSrc).toContain('class="admin-ui-chip admin-notif-tab is-active"');
+  expect(notificationsSrc).toContain('class="admin-ui-chip-group admin-notif-sources"');
+  expect(notificationsSrc).toContain('class="admin-ui-chip admin-notif-src is-active"');
+  expect(notificationsSrc).toContain('class="admin-ui-chip admin-notif-src admin-notif-src-placeholder admin-be-placeholder-control"');
+  expect(notificationsSrc).toContain('class="admin-ui-toolbar admin-notif-toolbar"');
+  expect(notificationsSrc).toContain('class="admin-ui-summary admin-notif-summary"');
+  expect(notificationsSrc).toContain('class="admin-ui-chip-group admin-notif-actions"');
+  expect(notificationsSrc).toContain('class="admin-ui-action admin-notif-action"');
+  expect(notificationsSrc).toContain('class="admin-ui-pill admin-notif-sev-pill ${_sevClassFor(it.sev)}"');
+  expect(notificationsSrc).toContain('class="admin-ui-action admin-notif-row-action ${starred ? "is-warn is-on" : ""}"');
+  expect(notificationsSrc).toContain('class="admin-ui-action admin-notif-row-action"');
+  expect(notificationsSrc).toContain('class="admin-ui-action admin-notif-detail-close"');
+  expect(notificationsSrc).toContain('class="admin-ui-pill admin-notif-detail-sev ${_sevClassFor(it.sev)}"');
+  expect(notificationsSrc).toContain('class="admin-ui-action admin-notif-detail-action"');
+
+  expect(hudSrc).toContain(".admin-ui-toolbar {");
+  expect(hudSrc).toContain(".admin-ui-chip-group {");
+  expect(hudSrc).toContain(".admin-ui-chip {");
+  expect(hudSrc).toContain(".admin-ui-pill {");
+  expect(hudSrc).toContain(".admin-ui-action {");
+  expect(hudSrc).toContain(".admin-ui-action.is-warn {");
+
+  expect(cssSrc).not.toContain(".admin-notif-tab, .admin-notif-src {");
+  expect(cssSrc).not.toContain(".admin-notif-tab .cnt, .admin-notif-src .cnt");
+  expect(cssSrc).not.toContain(".admin-notif-tab:hover, .admin-notif-src:hover");
+  expect(cssSrc).not.toContain(".admin-notif-tab.is-active, .admin-notif-src.is-active");
+  expect(cssSrc).not.toContain(".admin-notif-action {");
+  expect(cssSrc).not.toContain(".admin-notif-action:hover");
+  expect(cssSrc).not.toContain(".admin-notif-item .sev {");
+  expect(cssSrc).not.toContain(".admin-notif-item .actions button {");
+  expect(cssSrc).not.toContain(".admin-notif-item .actions button:hover");
+  expect(cssSrc).not.toContain(".admin-notif-detail-close {");
+  expect(cssSrc).not.toContain(".admin-notif-detail-close:hover");
+  expect(cssSrc).not.toContain(".admin-notif-detail-actions button {");
+  expect(cssSrc).not.toContain(".admin-notif-detail-actions button:hover");
+});
+
 test("admin Webhooks uses the implemented toggle endpoint instead of BE placeholder copy", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const webhooksSrc = fs.readFileSync(path.join(staticDir, "admin-webhooks.js"), "utf8");
