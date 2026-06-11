@@ -116,13 +116,13 @@
     if (!container) return;
     var html = '<button type="button" class="admin-stickers-pack' +
       (_activePackId === ALL_PACK_KEY ? " is-active" : "") + '" data-pack="' + ALL_PACK_KEY + '">' +
-      '<span class="admin-v2-dot is-good"></span>' +
+      '<span class="admin-ui-dot is-success"></span>' +
       '<span class="admin-stickers-pack-name">全部貼圖</span>' +
       '<span class="admin-stickers-pack-count">' + _packCount(ALL_PACK_KEY) + '</span>' +
       '</button>';
 
     _packs.forEach(function (pack) {
-      var dotCls = pack.enabled ? "is-good" : "is-mute";
+      var dotCls = pack.enabled ? "is-success" : "is-muted";
       var rowCls = "admin-stickers-pack" + (pack.id === _activePackId ? " is-active" : "");
       var isDefault = pack.id === "default";
       var actions = isDefault
@@ -137,7 +137,7 @@
       html +=
         '<div class="' + rowCls + '" data-pack="' + escapeAttr(pack.id) + '" style="display:flex;flex-direction:column;gap:4px">' +
           '<button type="button" class="admin-stickers-pack-row" data-pack-action="select" data-pack-id="' + escapeAttr(pack.id) + '" style="display:flex;align-items:center;gap:8px;background:transparent;border:none;color:inherit;text-align:left;padding:0;cursor:pointer;width:100%">' +
-            '<span class="admin-v2-dot ' + dotCls + '"></span>' +
+            '<span class="admin-ui-dot ' + dotCls + '"></span>' +
             '<span class="admin-stickers-pack-name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(pack.name) + '</span>' +
             '<span class="admin-stickers-pack-count">' + _packCount(pack.id) + '</span>' +
           '</button>' +

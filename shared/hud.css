@@ -386,26 +386,12 @@
   box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
 }
 
-.admin-v2-toolbar {
+.admin-ui-inline-toolbar {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
-
-/* Status dot — reused via .admin-v2-dot, uses --color-success / warning / error tokens. */
-.admin-v2-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--admin-text-dim);
-  flex-shrink: 0;
-}
-
-.admin-v2-dot.is-good { background: #86efac; box-shadow: 0 0 6px rgba(134, 239, 172, 0.5); }
-.admin-v2-dot.is-warn { background: #fbbf24; box-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
-.admin-v2-dot.is-bad  { background: #f87171; box-shadow: 0 0 6px rgba(248, 113, 113, 0.5); }
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Admin UI primitives — route pages compose these before adding page hooks.
@@ -619,6 +605,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .admin-ui-dot.is-success {
@@ -2464,7 +2451,7 @@
   gap: 12px;
 }
 
-.admin-replay-picker .admin-v2-toolbar {
+.admin-replay-picker .admin-ui-inline-toolbar {
   margin-bottom: 10px;
 }
 

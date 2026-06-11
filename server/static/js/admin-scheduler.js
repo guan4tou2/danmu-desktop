@@ -30,8 +30,8 @@
   }
 
   function stateDot(state) {
-    var cls = state === "active" ? "is-good" : state === "paused" ? "is-warn" : "";
-    return '<span class="admin-v2-dot ' + cls + '" title="' + escapeAttr(state) + '"></span>';
+    var cls = state === "active" ? "is-success" : state === "paused" ? "is-warn" : "is-muted";
+    return '<span class="admin-ui-dot ' + cls + '" title="' + escapeAttr(state) + '"></span>';
   }
 
   function jobRowHTML(job) {

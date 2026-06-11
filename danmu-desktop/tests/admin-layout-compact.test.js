@@ -974,6 +974,31 @@ test("admin page shell primitives use admin-ui naming", () => {
   });
 });
 
+test("admin status dot and inline toolbar primitives use admin-ui naming", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const hudCss = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const sharedHudCss = fs.readFileSync(path.join(rootDir, "shared", "hud.css"), "utf8");
+  const jsFiles = fs
+    .readdirSync(path.join(staticDir, "js"))
+    .filter((name) => name.endsWith(".js"))
+    .map((name) => fs.readFileSync(path.join(staticDir, "js", name), "utf8"))
+    .join("\n");
+  const cssBundle = [hudCss, sharedHudCss].join("\n");
+
+  expect(cssBundle).toContain(".admin-ui-inline-toolbar {");
+  expect(cssBundle).toContain(".admin-ui-dot.is-muted {");
+  expect(jsFiles).toContain("admin-ui-inline-toolbar");
+  expect(jsFiles).toContain("admin-ui-dot");
+  expect(jsFiles).not.toContain("admin-v2-toolbar");
+  expect(jsFiles).not.toContain("admin-v2-dot");
+  expect(cssBundle).not.toContain("admin-v2-toolbar");
+  expect(cssBundle).not.toContain("admin-v2-dot");
+  expect(jsFiles).not.toContain("admin-ui-dot is-good");
+  expect(jsFiles).not.toContain("admin-ui-dot is-bad");
+  expect(jsFiles).not.toContain("admin-ui-dot is-mute");
+});
+
 test("admin API Tokens composes shared controls instead of page-local widgets", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");

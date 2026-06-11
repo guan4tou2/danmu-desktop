@@ -93,7 +93,7 @@
           '<p class="admin-ui-page-note">' + esc(t("replayNote", "Re-fire historical messages. Pick a day, scrub the timeline, fire single or batch.")) + '</p>' +
         '</div>' +
         '<div class="admin-ui-card admin-replay-picker">' +
-          '<div class="admin-v2-toolbar">' +
+          '<div class="admin-ui-inline-toolbar">' +
             '<span class="admin-ui-monolabel">SESSION</span>' +
             '<select id="replayV2Session" class="admin-ui-select" style="max-width:280px"></select>' +
             '<span class="admin-ui-monolabel">SPEED</span>' +

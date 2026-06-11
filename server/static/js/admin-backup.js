@@ -42,7 +42,7 @@
         <!-- Zone 1 · Export -->
         <div class="admin-ui-card admin-backup-zone" data-zone="export">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-            <span class="admin-v2-dot is-good"></span>
+            <span class="admin-ui-dot is-success"></span>
             <span class="admin-ui-monolabel">ZONE 1 · EXPORT</span>
           </div>
 
@@ -102,7 +102,7 @@
         <!-- Zone 2 · Restore -->
         <div class="admin-ui-card admin-backup-zone" data-zone="restore">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-            <span class="admin-v2-dot is-warn"></span>
+            <span class="admin-ui-dot is-warn"></span>
             <span class="admin-ui-monolabel">ZONE 2 · RESTORE</span>
           </div>
 
@@ -144,7 +144,7 @@
         <!-- Zone 3 · Danger -->
         <div class="admin-ui-card admin-backup-zone is-danger" data-zone="danger">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-            <span class="admin-v2-dot is-bad"></span>
+            <span class="admin-ui-dot is-danger"></span>
             <span class="admin-ui-monolabel" style="color:var(--hud-crimson)">ZONE 3 · DANGER</span>
           </div>
 
