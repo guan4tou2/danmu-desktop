@@ -568,6 +568,24 @@ test("admin Theme pack actions compose shared controls", () => {
   expect(cssSrc).not.toContain(".theme-pack-btn");
 });
 
+test("admin Session Detail controls compose shared primitives", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const staticDir = path.join(rootDir, "server", "static");
+  const detailSrc = fs.readFileSync(path.join(staticDir, "js", "admin-session-detail.js"), "utf8");
+
+  expect(detailSrc).toContain('class="admin-ui-action admin-sd-retry-action" data-sd-action="retry"');
+  expect(detailSrc).toContain('class="admin-ui-chip-group admin-sd-speed-group"');
+  expect(detailSrc).toContain('class="admin-ui-chip admin-sd-speed-chip" data-speed="0.5"');
+  expect(detailSrc).toContain('class="admin-ui-chip admin-sd-speed-chip is-active" data-speed="1"');
+  expect(detailSrc).toContain('class="admin-ui-action is-primary admin-sd-action" data-sd-action="export-json"');
+  expect(detailSrc).toContain('class="admin-ui-action admin-sd-action" data-sd-action="go-history"');
+  expect(detailSrc).toContain('document.querySelectorAll(".admin-sd-speed-chip")');
+  expect(detailSrc).toContain('e.target.closest(".admin-sd-speed-chip")');
+  expect(detailSrc).not.toContain("admin-sd-btn");
+  expect(detailSrc).not.toContain("admin-sd-speed-btn");
+  expect(detailSrc).not.toContain("admin-sd-action-btn");
+});
+
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");

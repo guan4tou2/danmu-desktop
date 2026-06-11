@@ -133,7 +133,7 @@
             </div>
             <div class="admin-sd-error" data-sd-error hidden>
               <span data-sd-error-msg></span>
-              <button type="button" class="admin-sd-btn" data-sd-action="retry" style="margin-left:12px">↻ 重試</button>
+              <button type="button" class="admin-ui-action admin-sd-retry-action" data-sd-action="retry" style="margin-left:12px">↻ 重試</button>
             </div>
 
             <!-- session header (hidden until loaded) -->
@@ -150,11 +150,11 @@
             <div class="admin-sd-playback" data-sd-playback hidden>
               <div class="admin-v2-monolabel" style="margin-bottom:8px">PLAYBACK · 回放控制 (VISUAL ONLY)</div>
               <div class="admin-sd-pb-row">
-                <div class="admin-sd-speed-group" role="group" aria-label="播放速度">
-                  <button type="button" class="admin-sd-speed-btn" data-speed="0.5">0.5×</button>
-                  <button type="button" class="admin-sd-speed-btn is-active" data-speed="1">1×</button>
-                  <button type="button" class="admin-sd-speed-btn" data-speed="2">2×</button>
-                  <button type="button" class="admin-sd-speed-btn" data-speed="4">4×</button>
+                <div class="admin-ui-chip-group admin-sd-speed-group" role="group" aria-label="播放速度">
+                  <button type="button" class="admin-ui-chip admin-sd-speed-chip" data-speed="0.5">0.5×</button>
+                  <button type="button" class="admin-ui-chip admin-sd-speed-chip is-active" data-speed="1">1×</button>
+                  <button type="button" class="admin-ui-chip admin-sd-speed-chip" data-speed="2">2×</button>
+                  <button type="button" class="admin-ui-chip admin-sd-speed-chip" data-speed="4">4×</button>
                 </div>
                 <div class="admin-sd-pb-time" data-sd-pb-time>—</div>
                 <div class="admin-sd-pb-note">← 在歷史頁面可進行實際回放</div>
@@ -208,10 +208,10 @@
                 <span class="admin-v2-monolabel">操作</span>
               </div>
               <div class="admin-sd-actions">
-                <button type="button" class="admin-sd-action-btn admin-sd-action-btn--accent" data-sd-action="export-json">
+                <button type="button" class="admin-ui-action is-primary admin-sd-action" data-sd-action="export-json">
                   ↓ 匯出 JSON
                 </button>
-                <button type="button" class="admin-sd-action-btn" data-sd-action="go-history">
+                <button type="button" class="admin-ui-action admin-sd-action" data-sd-action="go-history">
                   → 在歷史頁查看
                 </button>
               </div>
@@ -786,7 +786,7 @@
 
   function _handleSpeedClick(speedVal) {
     _state.playbackSpeed = speedVal;
-    const btns = document.querySelectorAll(".admin-sd-speed-btn");
+    const btns = document.querySelectorAll(".admin-sd-speed-chip");
     btns.forEach(function (btn) {
       const v = parseFloat(btn.dataset.speed);
       btn.classList.toggle("is-active", v === speedVal);
@@ -863,7 +863,7 @@
           return;
         }
         // Speed buttons
-        const speedBtn = e.target.closest(".admin-sd-speed-btn");
+        const speedBtn = e.target.closest(".admin-sd-speed-chip");
         if (speedBtn) {
           const v = parseFloat(speedBtn.dataset.speed);
           if (!isNaN(v)) _handleSpeedClick(v);
