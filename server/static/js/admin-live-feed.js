@@ -162,7 +162,7 @@
 
     // Layout tag
     const badge = document.createElement("span");
-    badge.className = "admin-v2-chip admin-live-feed-tag";
+    badge.className = "admin-ui-chip admin-live-feed-tag";
     badge.textContent = d.layout || "scroll";
     row.appendChild(badge);
 
@@ -199,7 +199,7 @@
 
     const blockKwBtn = document.createElement("button");
     blockKwBtn.type = "button";
-    blockKwBtn.className = "admin-v2-chip is-bad";
+    blockKwBtn.className = "admin-ui-chip is-danger admin-live-feed-action";
     blockKwBtn.textContent = ServerI18n.t("blockKeywordBtn");
     blockKwBtn.title = ServerI18n.t("blockKeywordTitle");
     blockKwBtn.addEventListener("click", (e) => {
@@ -211,7 +211,7 @@
     if (d.fingerprint) {
       const blockFpBtn = document.createElement("button");
       blockFpBtn.type = "button";
-      blockFpBtn.className = "admin-v2-chip is-warn";
+      blockFpBtn.className = "admin-ui-chip is-warn admin-live-feed-action";
       blockFpBtn.textContent = ServerI18n.t("blockFpBtn");
       blockFpBtn.title = ServerI18n.t("blockFpTitle").replace("{fp}", d.fingerprint);
       blockFpBtn.addEventListener("click", (e) => {
@@ -474,8 +474,8 @@
               <span class="admin-live-feed-bulk-count">0</span> 已選
             </span>
             <span class="admin-lf-v4__spacer"></span>
-            <button type="button" id="liveFeedBulkBlock" class="admin-poll-btn is-primary">批次遮罩指紋</button>
-            <button type="button" id="liveFeedBulkClear" class="admin-poll-btn is-ghost">清除選取</button>
+            <button type="button" id="liveFeedBulkBlock" class="admin-ui-action is-primary admin-live-feed-bulk-action">批次遮罩指紋</button>
+            <button type="button" id="liveFeedBulkClear" class="admin-ui-action admin-live-feed-bulk-action">清除選取</button>
           </div>
 
           <!-- Message list (relative for sticky jump pill) -->
@@ -640,7 +640,7 @@
     renderList();
 
     // 2026-04-27 P1: row click → open Message Detail Drawer.
-    // Ignore clicks on existing inline action buttons (.admin-v2-chip)
+    // Ignore clicks on existing inline action buttons
     // and on the bulk-select checkbox to keep their behavior.
     if (listEl) {
       listEl.addEventListener("click", function (e) {

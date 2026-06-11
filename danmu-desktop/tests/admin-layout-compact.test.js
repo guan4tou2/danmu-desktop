@@ -656,6 +656,19 @@ test("admin Filters and Fonts toolbar actions compose shared controls", () => {
   expect(fontsSrc).not.toContain("hud-toolbar-action");
 });
 
+test("admin Live Feed row and bulk actions compose shared controls", () => {
+  const rootDir = path.join(__dirname, "..", "..");
+  const liveFeedSrc = fs.readFileSync(path.join(rootDir, "server", "static", "js", "admin-live-feed.js"), "utf8");
+
+  expect(liveFeedSrc).toContain('badge.className = "admin-ui-chip admin-live-feed-tag";');
+  expect(liveFeedSrc).toContain('blockKwBtn.className = "admin-ui-chip is-danger admin-live-feed-action";');
+  expect(liveFeedSrc).toContain('blockFpBtn.className = "admin-ui-chip is-warn admin-live-feed-action";');
+  expect(liveFeedSrc).toContain('id="liveFeedBulkBlock" class="admin-ui-action is-primary admin-live-feed-bulk-action"');
+  expect(liveFeedSrc).toContain('id="liveFeedBulkClear" class="admin-ui-action admin-live-feed-bulk-action"');
+  expect(liveFeedSrc).not.toContain("admin-v2-chip");
+  expect(liveFeedSrc).not.toContain("admin-poll-btn");
+});
+
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
