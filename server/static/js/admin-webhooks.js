@@ -64,6 +64,12 @@
     catch (_) { return _truncate(url, 30); }
   }
 
+  function _statusClassFor(state) {
+    if (state === "active") return "is-success";
+    if (state === "degraded") return "is-warn";
+    return "is-muted";
+  }
+
   let _state = {
     hooks: [],
     deliveries: [],
@@ -134,8 +140,8 @@
                   <div data-wh-register-events></div>
                 </fieldset>
                 <div class="admin-wh-form-actions">
-                  <button type="submit" class="admin-poll-btn is-primary">註冊</button>
-                  <button type="button" class="admin-poll-btn is-ghost" data-wh-action="hide-add">取消</button>
+                  <button type="submit" class="admin-ui-action is-primary admin-wh-form-action">註冊</button>
+                  <button type="button" class="admin-ui-action admin-wh-form-action" data-wh-action="hide-add">取消</button>
                 </div>
               </form>
 
@@ -426,9 +432,10 @@
     const statusColor = isError === "active" ? "var(--hud-lime)" : isError === "degraded" ? "var(--hud-amber)" : "var(--color-text-secondary)";
     const statusLabel = isError === "active" ? "ACTIVE" : isError === "degraded" ? "DEGRADED" : "PAUSED";
     const selectedCls = _state.selectedHookId === hook.id ? " is-selected" : "";
+    const statusClass = _statusClassFor(isError);
 
     const eventsHtml = (hook.events || []).map(function (e) {
-      return '<span class="admin-wh-evt-chip">' + _escHtml(e) + '</span>';
+      return '<span class="admin-ui-pill admin-wh-evt-chip">' + _escHtml(e) + '</span>';
     }).join("");
 
     const warnHtml = hook.last_error
@@ -440,7 +447,7 @@
         <div class="admin-wh-card-head">
           <span class="dot" style="background:${statusColor};box-shadow:${enabled ? '0 0 6px ' + statusColor : 'none'}"></span>
           <span class="name">${_escHtml(_formatHostname(hook.url))}</span>
-          <span class="status" style="color:${statusColor};border-color:${statusColor}55;background:${statusColor}1c;">${statusLabel}</span>
+          <span class="admin-ui-pill admin-wh-status-pill ${statusClass}">${statusLabel}</span>
           <span class="last">last · ${_escHtml(_formatRelTime(hook.last_delivery_at))}</span>
         </div>
         <div class="admin-wh-card-url">${_escHtml(hook.url)}</div>
@@ -454,8 +461,8 @@
           </div>
           <span class="counter ok">✓ ${success.toLocaleString()}</span>
           <span class="counter ${fail > 0 ? 'fail' : 'fail-zero'}">✗ ${fail}</span>
-          <button type="button" class="admin-wh-card-btn" data-wh-action="test" data-wh-hook-id="${hookId}">↻ 測試</button>
-          <button type="button" class="admin-wh-card-btn is-primary" data-wh-action="settings" data-wh-hook-id="${hookId}">⚙ 設定</button>
+          <button type="button" class="admin-ui-action admin-wh-card-btn" data-wh-action="test" data-wh-hook-id="${hookId}">↻ 測試</button>
+          <button type="button" class="admin-ui-action is-primary admin-wh-card-btn" data-wh-action="settings" data-wh-hook-id="${hookId}">⚙ 設定</button>
         </div>
       </article>`;
   }
@@ -530,12 +537,12 @@
     const eventsHtml = _state.eventCatalog.map(function (evt) {
       const item = _eventLabel(evt);
       const on = hookEvents.has(item.slug);
-      const cls = on ? "is-on" : "";
+      const cls = on ? "is-active is-on" : "";
       return (
-        '<label class="admin-wh-detail-evt ' + cls + '" title="' +
+        '<label class="admin-ui-chip admin-wh-detail-evt ' + cls + '" title="' +
         _escHtml(item.title) +
         '">' +
-          '<span class="check">' + (on ? "✓" : "") + '</span>' +
+          '<span aria-hidden="true">' + (on ? "✓" : "○") + '</span>' +
           '<span>' + _escHtml(item.label) + '</span>' +
         '</label>'
       );
@@ -552,7 +559,8 @@
       '<div class="admin-wh-detail-head">' +
         '<span class="dot" style="background:' + dotColor + ';box-shadow:0 0 6px ' + dotColor + '"></span>' +
         '<span class="name">' + _escHtml(_formatHostname(hook.url)) + '</span>' +
-        '<button type="button" class="close" data-wh-action="close-detail" aria-label="關閉">✕</button>' +
+        '<span class="admin-ui-spacer" aria-hidden="true"></span>' +
+        '<button type="button" class="admin-ui-action admin-wh-detail-close" data-wh-action="close-detail" aria-label="關閉">✕</button>' +
       '</div>' +
       '<div class="admin-v2-monolabel admin-wh-detail-label">事件訂閱</div>' +
       '<div class="admin-wh-detail-events">' + eventsHtml + '</div>' +
@@ -566,9 +574,9 @@
       '<div class="admin-v2-monolabel admin-wh-detail-label">PAYLOAD SAMPLE</div>' +
       '<pre class="admin-wh-detail-payload">' + _escHtml(JSON.stringify(samplePayload, null, 2)) + '</pre>' +
       '<div class="admin-wh-detail-actions">' +
-        '<button type="button" class="primary" data-wh-action="detail-ping" data-wh-hook-id="' + _escHtml(hook.id) + '">↻ 送測試 ping</button>' +
-        '<button type="button" class="warn" data-wh-action="detail-toggle" data-wh-hook-id="' + _escHtml(hook.id) + '" data-wh-next-enabled="' + (enabled ? "0" : "1") + '">' + (enabled ? "⏸ 暫停" : "▶ 啟用") + '</button>' +
-        '<button type="button" class="danger" data-wh-action="detail-delete" data-wh-hook-id="' + _escHtml(hook.id) + '">⊘ 刪除</button>' +
+        '<button type="button" class="admin-ui-action is-primary admin-wh-detail-action" data-wh-action="detail-ping" data-wh-hook-id="' + _escHtml(hook.id) + '">↻ 送測試 ping</button>' +
+        '<button type="button" class="admin-ui-action is-warn admin-wh-detail-action" data-wh-action="detail-toggle" data-wh-hook-id="' + _escHtml(hook.id) + '" data-wh-next-enabled="' + (enabled ? "0" : "1") + '">' + (enabled ? "⏸ 暫停" : "▶ 啟用") + '</button>' +
+        '<button type="button" class="admin-ui-action is-danger admin-wh-detail-action" data-wh-action="detail-delete" data-wh-hook-id="' + _escHtml(hook.id) + '">⊘ 刪除</button>' +
       '</div>';
   }
 

@@ -330,14 +330,30 @@ test("admin Webhooks composes shared admin-ui controls instead of page-local chr
 
   expect(webhooksSrc).toContain('class="admin-ui-section-head admin-wh-section-head"');
   expect(webhooksSrc).toContain('class="admin-ui-action is-primary admin-wh-add-btn"');
+  expect(webhooksSrc).toContain('class="admin-ui-action is-primary admin-wh-form-action"');
+  expect(webhooksSrc).toContain('class="admin-ui-action admin-wh-form-action"');
   expect(webhooksSrc).toContain('class="admin-ui-chip-group admin-wh-log-filters"');
   expect(webhooksSrc).toContain('class="admin-ui-chip admin-wh-log-filter is-active"');
   expect(webhooksSrc).toContain('class="admin-ui-list-stack admin-wh-list"');
   expect(webhooksSrc).toContain('class="admin-ui-list-stack is-tight admin-wh-log-list"');
+  expect(webhooksSrc).toContain('class="admin-ui-pill admin-wh-evt-chip"');
+  expect(webhooksSrc).toContain('class="admin-ui-pill admin-wh-status-pill ${statusClass}"');
+  expect(webhooksSrc).toContain('class="admin-ui-action admin-wh-card-btn"');
+  expect(webhooksSrc).toContain('class="admin-ui-action is-primary admin-wh-card-btn"');
+  expect(webhooksSrc).toContain('class="admin-ui-action admin-wh-detail-close"');
+  expect(webhooksSrc).toContain('class="admin-ui-chip admin-wh-detail-evt ');
+  expect(webhooksSrc).toContain('class="admin-ui-action is-primary admin-wh-detail-action"');
+  expect(webhooksSrc).toContain('class="admin-ui-action is-warn admin-wh-detail-action"');
+  expect(webhooksSrc).toContain('class="admin-ui-action is-danger admin-wh-detail-action"');
   expect(webhooksSrc).not.toContain('class="chip');
+  expect(webhooksSrc).not.toContain('class="admin-poll-btn');
 
   expect(hudSrc).toContain(".admin-ui-section-head {");
   expect(hudSrc).toContain(".admin-ui-action.is-primary {");
+  expect(hudSrc).toContain(".admin-ui-action.is-warn {");
+  expect(hudSrc).toContain(".admin-ui-action.is-danger {");
+  expect(hudSrc).toContain(".admin-ui-chip {");
+  expect(hudSrc).toContain(".admin-ui-pill {");
   expect(hudSrc).toContain(".admin-ui-list-stack {");
   expect(hudSrc).toContain(".admin-ui-list-stack.is-tight {");
 
@@ -346,6 +362,18 @@ test("admin Webhooks composes shared admin-ui controls instead of page-local chr
   expect(cssSrc).not.toContain(".admin-wh-log-filters .chip");
   expect(cssSrc).not.toContain(".admin-wh-list {");
   expect(cssSrc).not.toContain(".admin-wh-log-list {");
+  expect(cssSrc).not.toContain(".admin-wh-card-head .status");
+  expect(cssSrc).not.toContain(".admin-wh-evt-chip {");
+  expect(cssSrc).not.toContain(".admin-wh-card-btn {");
+  expect(cssSrc).not.toContain(".admin-wh-card-btn:hover");
+  expect(cssSrc).not.toContain(".admin-wh-card-btn.is-primary");
+  expect(cssSrc).not.toContain(".admin-wh-detail-head .close");
+  expect(cssSrc).not.toContain(".admin-wh-detail-evt {");
+  expect(cssSrc).not.toContain(".admin-wh-detail-evt.is-on {");
+  expect(cssSrc).not.toContain(".admin-wh-detail-actions button");
+  expect(cssSrc).not.toContain(".admin-wh-detail-actions button.primary");
+  expect(cssSrc).not.toContain(".admin-wh-detail-actions button.warn");
+  expect(cssSrc).not.toContain(".admin-wh-detail-actions button.danger");
 });
 
 test("admin router hides empty route containers so leaf pages do not keep vertical gaps", () => {

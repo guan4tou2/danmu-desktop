@@ -11403,14 +11403,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   font-weight: 600;
   color: var(--color-text-strong);
 }
-.admin-wh-card-head .status {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  padding: 2px 8px;
-  border: 1px solid;
-  border-radius: 2px;
-  letter-spacing: 0.8px;
-}
+.admin-wh-status-pill { flex-shrink: 0; }
 .admin-wh-card-head .last {
   margin-left: auto;
   font-family: var(--font-mono);
@@ -11431,16 +11424,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   gap: 6px;
   flex-wrap: wrap;
   margin-bottom: 8px;
-}
-.admin-wh-evt-chip {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--color-text-strong);
-  padding: 3px 8px;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--hud-line);
-  border-radius: 2px;
-  letter-spacing: 0.3px;
 }
 .admin-wh-card-warn {
   font-size: 11px;
@@ -11494,24 +11477,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-wh-card-foot .counter.ok { color: #86efac; }
 .admin-wh-card-foot .counter.fail { color: var(--color-warning); }
 .admin-wh-card-foot .counter.fail-zero { color: var(--color-text-muted); }
-.admin-wh-card-btn {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  padding: 4px 8px;
-  background: transparent;
-  border: 1px solid var(--hud-line);
-  border-radius: 2px;
-  color: var(--color-text-muted);
-  cursor: pointer;
-}
-.admin-wh-card-btn:hover {
-  color: var(--color-primary);
-  border-color: rgba(56, 189, 248, 0.40);
-}
-.admin-wh-card-btn.is-primary {
-  color: var(--color-primary);
-  border-color: rgba(56, 189, 248, 0.45);
-}
 
 .admin-wh-log-row {
   display: grid;
@@ -11573,65 +11538,11 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   font-weight: 600;
   color: var(--color-text-strong);
 }
-.admin-wh-detail-head .close {
-  margin-left: auto;
-  background: transparent;
-  border: 1px solid var(--hud-line);
-  border-radius: 2px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--color-text-muted);
-  width: 24px; height: 22px;
-  cursor: pointer;
-}
 .admin-wh-detail-label { margin-top: 4px; }
 .admin-wh-detail-events {
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-.admin-wh-detail-evt {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  background: var(--color-bg);
-  border: 1px solid var(--hud-line);
-  border-radius: 3px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--color-text-muted);
-  cursor: default;
-}
-.admin-wh-detail-evt.is-on {
-  background: var(--hud-cyan-soft);
-  border-color: rgba(56, 189, 248, 0.45);
-  color: var(--color-text-strong);
-}
-.admin-wh-detail-evt .check {
-  width: 12px;
-  height: 12px;
-  border: 1px solid var(--hud-line);
-  border-radius: 2px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  font-weight: 700;
-}
-.admin-wh-detail-evt.is-on .check {
-  background: var(--color-primary);
-  color: #000;
-  border-color: var(--color-primary);
-}
-.admin-wh-detail-evt.is-unsupported {
-  opacity: 0.55;
-}
-.admin-wh-detail-evt .tag {
-  margin-left: auto;
-  font-size: 9px;
-  color: var(--color-warning);
-  letter-spacing: 0.5px;
 }
 
 .admin-wh-detail-policy {
@@ -11671,29 +11582,11 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   margin-top: auto;
   padding-top: 6px;
 }
-.admin-wh-detail-actions button {
-  padding: 8px 12px;
-  border-radius: 3px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid var(--hud-line);
-  color: var(--color-text-strong);
+.admin-wh-detail-actions > .admin-wh-detail-action {
+  justify-content: center;
 }
-.admin-wh-detail-actions button.primary {
+.admin-wh-detail-actions > .admin-wh-detail-action.is-primary {
   flex: 1;
-  background: var(--hud-cyan-soft);
-  color: var(--color-primary);
-  border-color: rgba(56, 189, 248, 0.45);
-}
-.admin-wh-detail-actions button.warn {
-  color: var(--color-warning);
-  border-color: rgba(251, 191, 36, 0.45);
-}
-.admin-wh-detail-actions button.danger {
-  color: #f87171;
-  border-color: rgba(248, 113, 113, 0.40);
 }
 .admin-wh-detail-actions .admin-be-placeholder-control {
   flex: 1;
