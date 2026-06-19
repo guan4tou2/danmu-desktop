@@ -1,5 +1,5 @@
 /**
- * Admin Overlay 控制 (P2, polestar 2026-05-18) — dedicated Soft Holo HUD page.
+ * Admin Desktop 控制 (P2, polestar 2026-05-18) — dedicated Soft Holo HUD page.
  *
  * One state card: big circular dot, OVERLAY ON / OFF title, runtime meta
  * (uptime · ws clients · message count), toggle button disabled when no
@@ -12,7 +12,7 @@
  *
  * 2026-05-18 P2-6 rename: module file still named `admin-broadcast.js` for
  * historical reasons but the user-facing slug is `#/overlay` and the
- * vocabulary is "Overlay" (legacy `#/broadcast` deep links alias-redirect
+ * vocabulary is "Desktop" (legacy `#/broadcast` deep links alias-redirect
  * via _routeAliases in admin.js). Backend storage keeps `live`/`standby`
  * for runtime/broadcast.json compatibility; backend service accepts the
  * polestar aliases `overlay_on`/`overlay_off` (see services/broadcast.py).

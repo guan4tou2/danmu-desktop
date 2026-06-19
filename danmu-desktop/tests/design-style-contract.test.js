@@ -203,6 +203,7 @@ test("viewer offline send gate uses Desktop copy and red button state", () => {
 test("Desktop runtime shells do not expose old Overlay labels", () => {
   const childHtml = fs.readFileSync(path.join(REPO_ROOT, "danmu-desktop/child.html"), "utf8");
   const overlayJs = fs.readFileSync(path.join(REPO_ROOT, "server/static/js/overlay.js"), "utf8");
+  const overlayTemplate = fs.readFileSync(path.join(REPO_ROOT, "server/templates/overlay.html"), "utf8");
 
   expect(childHtml).toContain("DESKTOP READY");
   expect(childHtml).not.toContain("OVERLAY READY");
@@ -210,6 +211,10 @@ test("Desktop runtime shells do not expose old Overlay labels", () => {
   expect(overlayJs).toContain("NO DANMU RENDERING · DESKTOP PAUSED");
   expect(overlayJs).not.toContain("OVERLAY · SILENT MODE");
   expect(overlayJs).not.toContain("OVERLAY PAUSED");
+  expect(overlayTemplate).toContain("<title>Danmu Fire Desktop</title>");
+  expect(overlayTemplate).toContain("DANMU FIRE · DESKTOP");
+  expect(overlayTemplate).not.toContain("<title>Danmu Fire Overlay</title>");
+  expect(overlayTemplate).not.toContain("DANMU FIRE · OVERLAY");
 });
 
 test("desktop-facing Overlay labels are renamed to Desktop", () => {

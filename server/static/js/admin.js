@@ -123,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
     modqueue:     { nav: "moderation", tab: "queue" },
     modbans:      { nav: "moderation", tab: "bans" },
     // 2026-05-18 P2-6 polestar rename: `broadcast` slug aligned with the
-    // user-facing "Overlay 控制" title. Old #/broadcast bookmarks resolve
+    // user-facing "Desktop 控制" title. Old #/broadcast bookmarks resolve
     // to the same route via this alias.
     broadcast:    { nav: "overlay" },
     // (note: `moderation` is its own nav, blacklist+filters are tabs there)
