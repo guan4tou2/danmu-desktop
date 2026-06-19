@@ -5,7 +5,7 @@ Display bullet screen directly on the desktop
 
 [中文說明](https://github.com/guan4tou2/danmu-desktop/blob/main/README-CH.md)
 
-For a complete capability inventory (server routes, admin pages, persistence map, scope guardrails), see [docs/FEATURES.md](docs/FEATURES.md).
+For a complete capability inventory (server routes, admin pages, persistence map, scope guardrails), see [docs/FEATURES.md](docs/FEATURES.md). For the full documentation map, see [docs/README.md](docs/README.md).
 
 ![img](img/danmu%20display.png)
 

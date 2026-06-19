@@ -1,8 +1,10 @@
-# Danmu Fire — Design System
+# Danmu Fire — Design System Notes
 
-**Status:** DRAFT (F-010 exploration, 2026-04-20)
+**Status:** High-level reference. Runtime tokens and tests are authoritative.
 **Owner:** project maintainer
-**Source of truth for:** color, typography, spacing, motion, voice
+**Current source of truth:** `shared/tokens.css`, `shared/hud.css`, `server/static/css/viewer-v2.css`, `server/static/css/style.css`, and the UI contract tests under `danmu-desktop/tests/`.
+
+> Some sections below are dated design exploration from 2026-04. If this file conflicts with runtime CSS or contract tests, update this note or the implementation intentionally instead of copying old values literally.
 
 ---
 
