@@ -458,7 +458,7 @@ tailwind cards. Each needs a Claude Design pass to match the v2 aesthetic
 ### P1-1 · Admin · Webhooks
 
 **Context.** Admin can register outgoing webhooks that POST to external
-URLs when danmu events fire (new message / poll ended / overlay toggled).
+URLs when danmu events fire (new message / poll ended / Desktop display toggled).
 Used for Discord notifications, custom automations.
 
 **Current state.**
