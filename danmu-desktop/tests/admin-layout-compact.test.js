@@ -447,6 +447,9 @@ test("admin Backup actions compose shared admin-ui controls", () => {
   expect(backupSrc).toContain('id="bk2-clear-history" class="admin-ui-action is-danger admin-bk-action"');
   expect(backupSrc).toContain('id="bk2-end-session" class="admin-ui-action is-danger admin-bk-action"');
   expect(backupSrc).toContain('id="bk2-factory-reset" class="admin-ui-action is-danger admin-bk-action" disabled');
+  expect(backupSrc).toContain('"/admin/backup/factory-reset"');
+  expect(backupSrc).not.toContain("Factory reset 即將支援");
+  expect(backupSrc).not.toContain("FACTORY RESET · 回復原廠 (即將支援)");
   expect(backupSrc).not.toContain('class="admin-poll-btn');
 
   expect(hudSrc).toContain(".admin-ui-action {");

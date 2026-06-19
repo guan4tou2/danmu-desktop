@@ -12,11 +12,11 @@
  *   POST /admin/settings/restore         → apply settings JSON snapshot
  *   GET  /admin/backup/export            → full runtime/effects/plugins pack
  *   POST /admin/backup/import            → dry-run/apply full pack
+ *   POST /admin/backup/factory-reset     → reset runtime state files
  *   POST /logout                         → ends current admin session
  *
  * Deferred (即將支援, labelled in UI):
  *   - Upload effect/emoji/sticker pack  (no backend route yet)
- *   - Factory reset  (no backend route — confirm UI skeleton only)
  *
  * Nav slug `backup` does NOT exist in admin.js ADMIN_ROUTES. Per instruction,
  * this page renders under the `system` route alongside Security (P1-9).
@@ -173,15 +173,15 @@
             </div>
           </div>
 
-          <!-- Factory reset (deferred) -->
-          <div class="admin-backup-subcard is-deferred">
-            <div class="admin-ui-monolabel">FACTORY RESET · 回復原廠 (即將支援)</div>
+          <!-- Factory reset -->
+          <div class="admin-backup-subcard">
+            <div class="admin-ui-monolabel">FACTORY RESET · 回復原廠</div>
             <div class="admin-backup-row">
               <label class="admin-backup-field">
                 <span class="admin-ui-monolabel">輸入 <code>reset</code> 以確認</span>
                 <input id="bk2-factory-confirm" type="text" class="admin-ui-input" placeholder="reset" autocomplete="off" spellcheck="false" />
               </label>
-              <div class="admin-backup-desc">即將支援 — 目前請手動刪除 <code>server/runtime/</code> 後重啟。</div>
+              <div class="admin-backup-desc">重置 runtime 狀態檔與記憶體佇列；不會移除登入密碼、效果檔、plugins 或上傳素材。</div>
               <button type="button" id="bk2-factory-reset" class="admin-ui-action is-danger admin-bk-action" disabled>FACTORY RESET</button>
             </div>
           </div>
@@ -371,14 +371,45 @@
     const btn = document.getElementById("bk2-factory-reset");
     if (!input || !btn) return;
     input.addEventListener("input", () => {
-      // Even when typed correctly, button stays disabled — feature deferred.
-      // We still visually acknowledge the confirmation state.
       const typed = input.value.trim() === "reset";
       btn.classList.toggle("is-ready", typed);
+      btn.disabled = !typed;
     });
-    btn.addEventListener("click", () => {
-      window.showToast && showToast("Factory reset 即將支援", false);
-    });
+    btn.addEventListener("click", factoryReset);
+  }
+
+  async function factoryReset() {
+    const input = document.getElementById("bk2-factory-confirm");
+    const btn = document.getElementById("bk2-factory-reset");
+    if ((input?.value || "").trim() !== "reset") {
+      window.showToast && showToast("請輸入 reset 以確認", false);
+      return;
+    }
+    if (!confirm("Factory reset 會清除 runtime 狀態檔與目前佇列。請先下載完整快照。確定執行?")) return;
+    try {
+      if (btn) btn.disabled = true;
+      const res = await window.csrfFetch("/admin/backup/factory-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: "reset" }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok || !result.ok) {
+        window.showToast && showToast("Factory reset 失敗", false);
+        if (btn) btn.disabled = false;
+        return;
+      }
+      if (input) input.value = "";
+      if (btn) {
+        btn.classList.remove("is-ready");
+        btn.disabled = true;
+      }
+      window.showToast && showToast("Factory reset 已完成", true);
+      fetchPackSummary();
+    } catch (e) {
+      if (btn) btn.disabled = false;
+      window.showToast && showToast("Factory reset 網路錯誤", false);
+    }
   }
 
   function bind() {

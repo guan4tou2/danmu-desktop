@@ -15,6 +15,7 @@ from flask import Response, request
 
 from ...services import audit_log
 from ...services import backup as backup_svc
+from ...services import factory_reset as factory_reset_svc
 from ...services.security import rate_limit
 from . import _json_response, admin_bp, require_csrf, require_login
 
@@ -84,6 +85,29 @@ def backup_import():
                 "manifest_version": (result.get("manifest") or {}).get("version"),
             },
         )
+    return _json_response(result)
+
+
+@admin_bp.route("/backup/factory-reset", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+@require_login
+def backup_factory_reset():
+    payload = request.get_json(silent=True) or {}
+    try:
+        result = factory_reset_svc.reset_runtime_state(confirm=str(payload.get("confirm", "")))
+    except ValueError as exc:
+        return _json_response({"error": str(exc)}, 400)
+
+    audit_log.append(
+        "backup",
+        "factory_reset",
+        actor="admin",
+        meta={
+            "removed": len(result.get("removed") or []),
+            "services_reset": result.get("services_reset") or [],
+        },
+    )
     return _json_response(result)
 
 

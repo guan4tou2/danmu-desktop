@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from server.services import backup as backup_svc
+from server.services import factory_reset as factory_reset_svc
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -279,3 +280,70 @@ def test_manifest_endpoint_lists_state(client, isolated_backup_dirs):
     assert body["total_bytes"] > 0
     paths = {f["path"] for f in body["files"]}
     assert "runtime/settings.json" in paths
+
+
+def test_factory_reset_service_removes_only_runtime_state_files(tmp_path, monkeypatch):
+    runtime = tmp_path / "runtime"
+    nested = runtime / "stickers"
+    nested.mkdir(parents=True)
+    for rel in (
+        "settings.json",
+        "webhooks.json",
+        "sessions_archive.jsonl",
+        "audit.log",
+        "broadcast.json.tmp",
+        "stickers/packs.json",
+    ):
+        path = runtime / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("{}", encoding="utf-8")
+    (runtime / "keep.png").write_bytes(b"png")
+    (runtime / ".gitignore").write_text("*\n", encoding="utf-8")
+
+    monkeypatch.setattr(factory_reset_svc, "_RUNTIME_DIR", runtime)
+
+    result = factory_reset_svc.reset_runtime_state(confirm="reset")
+
+    assert result["ok"] is True
+    assert set(result["removed"]) == {
+        "audit.log",
+        "broadcast.json.tmp",
+        "sessions_archive.jsonl",
+        "settings.json",
+        "stickers/packs.json",
+        "webhooks.json",
+    }
+    assert (runtime / "keep.png").exists()
+    assert (runtime / ".gitignore").exists()
+
+
+def test_factory_reset_endpoint_requires_reset_confirmation(client):
+    token = csrf_token(client)
+    resp = client.post(
+        "/admin/backup/factory-reset",
+        json={"confirm": "wrong"},
+        headers={"X-CSRF-Token": token},
+    )
+    assert resp.status_code == 400
+
+
+def test_factory_reset_endpoint_applies_runtime_reset(client, tmp_path, monkeypatch):
+    runtime = tmp_path / "runtime"
+    runtime.mkdir()
+    (runtime / "webhooks.json").write_text("[]", encoding="utf-8")
+    (runtime / "keep.png").write_bytes(b"png")
+    monkeypatch.setattr(factory_reset_svc, "_RUNTIME_DIR", runtime)
+    token = csrf_token(client)
+
+    resp = client.post(
+        "/admin/backup/factory-reset",
+        json={"confirm": "reset"},
+        headers={"X-CSRF-Token": token},
+    )
+
+    assert resp.status_code == 200, resp.data
+    body = resp.get_json()
+    assert body["ok"] is True
+    assert "webhooks.json" in body["removed"]
+    assert not (runtime / "webhooks.json").exists()
+    assert (runtime / "keep.png").exists()
