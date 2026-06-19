@@ -7,6 +7,7 @@ from ...services.security import rate_limit
 from ...services.settings import (
     PICK_SET_KEYS,
     get_options,
+    restore_options,
     set_allowlist,
     set_toggle,
     update_setting,
@@ -75,6 +76,47 @@ def update():
     except Exception as exc:
         current_app.logger.error("Error updating settings: %s", sanitize_log_string(str(exc)))
         return make_response("An error occurred while updating settings.", 400)
+
+
+@admin_bp.route("/settings/restore", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+@require_login
+def restore_settings():
+    raw_data = request.get_json(silent=True)
+    if not isinstance(raw_data, dict):
+        return _json_response({"error": "Invalid JSON"}, 400)
+
+    settings_payload = (
+        raw_data.get("settings") if isinstance(raw_data.get("settings"), dict) else raw_data
+    )
+    try:
+        result = restore_options(settings_payload)
+    except ValueError as exc:
+        current_app.logger.warning(
+            "Invalid settings restore payload: %s", sanitize_log_string(str(exc))
+        )
+        return _json_response(
+            {"error": "Invalid settings payload", "details": sanitize_log_string(str(exc))},
+            400,
+        )
+
+    try:
+        notification = {"type": "settings_changed", "settings": result["settings"]}
+        messaging.forward_to_ws_server(notification)
+        current_app.logger.info("Settings restored: %d keys", len(result["applied"]))
+    except Exception as exc:
+        current_app.logger.error(
+            "Settings restore broadcast failed: %s", sanitize_log_string(str(exc))
+        )
+
+    return _json_response(
+        {
+            "message": "OK",
+            "applied": result["applied"],
+            "settings": result["settings"],
+        }
+    )
 
 
 @admin_bp.route("/options/<key>/allowlist", methods=["POST"])

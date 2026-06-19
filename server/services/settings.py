@@ -17,6 +17,10 @@ def update_setting(key, index, value):
     return settings_store.update_value(key, index, value)
 
 
+def restore_options(options):
+    return settings_store.restore_options(options)
+
+
 def set_toggle(key, enabled):
     settings_store.set_toggle(key, enabled)
 

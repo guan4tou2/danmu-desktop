@@ -104,6 +104,24 @@ def test_migration_from_legacy_scalar_slot1(tmp_path, monkeypatch):
     assert s2.get_options()["Color"][1] == ["#FF0000"]
 
 
+def test_load_from_disk_preserves_two_slot_viewer_settings(tmp_path, monkeypatch):
+    stored = {
+        "ViewerThemeMode": [True, "force-dark"],
+        "ViewerLangMode": [True, "force-en"],
+        "ViewerFireCooldownSec": [True, 4.5],
+    }
+    settings_file = tmp_path / "viewer_settings.json"
+    settings_file.write_text(json.dumps(stored))
+    monkeypatch.setenv("SETTINGS_FILE", str(settings_file))
+
+    s = SettingsStore()
+    opts = s.get_options()
+
+    assert opts["ViewerThemeMode"] == [True, "force-dark"]
+    assert opts["ViewerLangMode"] == [True, "force-en"]
+    assert opts["ViewerFireCooldownSec"] == [True, 4.5]
+
+
 # ─── Endpoint: POST /admin/options/<key>/allowlist ─────────────────────────
 
 
@@ -236,3 +254,50 @@ def test_get_settings_returns_allowlist(client):
     assert res.status_code == 200
     body = json.loads(res.data)
     assert body["Color"][1] == ["#FFFFFF", "#7DD3FC"]
+
+
+# ─── Settings snapshot restore ─────────────────────────────────────────────
+
+
+def test_settings_restore_endpoint_applies_exported_settings(client):
+    token = _login_csrf(client)
+    payload = {
+        "settings": {
+            "Color": [True, ["#FFFFFF", "#7DD3FC"], 0, "#7DD3FC"],
+            "FontSize": [True, 16, 64, 40],
+            "ViewerThemeMode": [True, "force-light"],
+        }
+    }
+
+    res = client.post(
+        "/admin/settings/restore",
+        json=payload,
+        headers={"X-CSRF-Token": token},
+    )
+
+    assert res.status_code == 200, res.data
+    body = json.loads(res.data)
+    assert body["applied"] == ["Color", "FontSize", "ViewerThemeMode"]
+    assert body["settings"]["Color"][1] == ["#FFFFFF", "#7DD3FC"]
+    assert get_options()["FontSize"][3] == 40
+    assert get_options()["ViewerThemeMode"][1] == "force-light"
+
+
+def test_settings_restore_endpoint_rejects_invalid_snapshot_without_partial_apply(client):
+    token = _login_csrf(client)
+    original = get_options()
+
+    res = client.post(
+        "/admin/settings/restore",
+        json={
+            "settings": {
+                "FontSize": [True, 16, 64, 40],
+                "ViewerThemeMode": [True, "not-a-mode"],
+            }
+        },
+        headers={"X-CSRF-Token": token},
+    )
+
+    assert res.status_code == 400
+    assert get_options()["FontSize"] == original["FontSize"]
+    assert get_options()["ViewerThemeMode"] == original["ViewerThemeMode"]

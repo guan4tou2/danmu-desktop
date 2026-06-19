@@ -439,7 +439,9 @@ test("admin Backup actions compose shared admin-ui controls", () => {
   expect(backupSrc).toContain('id="bk2-settings-download" class="admin-ui-action is-primary admin-bk-action"');
   expect(backupSrc).toContain('id="bk2-pack-export" class="admin-ui-action is-primary admin-bk-action"');
   expect(backupSrc).toContain('id="bk2-settings-dryrun" class="admin-ui-action admin-bk-action"');
-  expect(backupSrc).toContain('class="admin-ui-action admin-bk-action" disabled title="即將支援 (需後端 endpoint)"');
+  expect(backupSrc).toContain('id="bk2-settings-apply" class="admin-ui-action is-danger admin-bk-action" disabled title="先 dry-run 預覽後才能套用"');
+  expect(backupSrc).toContain('"/admin/settings/restore"');
+  expect(backupSrc).not.toContain('即將支援 (需後端 endpoint)');
   expect(backupSrc).toContain('id="bk2-pack-dryrun" class="admin-ui-action admin-bk-action"');
   expect(backupSrc).toContain('id="bk2-pack-apply" class="admin-ui-action is-danger admin-bk-action" disabled');
   expect(backupSrc).toContain('id="bk2-clear-history" class="admin-ui-action is-danger admin-bk-action"');

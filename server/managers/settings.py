@@ -98,14 +98,12 @@ class SettingsStore:
             if not isinstance(data, dict):
                 return
             for key, value in data.items():
-                if key in self._options and isinstance(value, list) and len(value) == 4:
-                    if key in _PICK_SET_KEYS and not isinstance(value[1], list):
-                        # Legacy scalar at slot 1 → migrate to empty allowlist.
-                        value = [value[0], [], value[2], value[3]]
-                    elif key in _PICK_SET_KEYS:
-                        # Sanitise existing list (drop bad entries, dedupe).
-                        value = [value[0], _coerce_allowlist(value[1]), value[2], value[3]]
-                    self._options[key] = value
+                if key not in self._options:
+                    continue
+                try:
+                    self._options[key] = self._normalise_option_row(key, value)
+                except ValueError:
+                    continue
         except Exception:
             return
 
@@ -115,6 +113,50 @@ class SettingsStore:
         payload = json.dumps(self._options, ensure_ascii=True)
         tmp_file.write_text(payload)
         os.replace(tmp_file, self._settings_file)
+
+    def _normalise_option_row(self, key, row):
+        if key not in self._options:
+            raise ValueError(f"Unknown setting key: {key}")
+        if not isinstance(row, list):
+            raise ValueError(f"{key} must be a list")
+
+        expected_len = len(_DEFAULT_OPTIONS[key])
+        if len(row) != expected_len:
+            raise ValueError(f"{key} must have {expected_len} entries")
+
+        value = copy.deepcopy(row)
+        value[0] = bool(value[0])
+
+        if key in _PICK_SET_KEYS:
+            value[1] = _coerce_allowlist(value[1])
+            if len(value) > 3 and value[3] is not None:
+                value[3] = str(value[3])
+            return value
+
+        if key in _ENUM_VALUE_KEYS:
+            allowed = _ENUM_VALUE_KEYS[key]
+            if value[1] not in allowed:
+                raise ValueError(f"{key} value must be one of {allowed}, got {value[1]!r}")
+            return value
+
+        if key in self._ranges:
+            limits = self._ranges[key]
+            for index in range(1, len(value)):
+                if key in ("Speed", "ViewerFireCooldownSec"):
+                    item = round(float(value[index]), 1)
+                else:
+                    item = int(value[index])
+                if not (limits["min"] <= item <= limits["max"]):
+                    raise ValueError(
+                        f"{key} value must be between {limits['min']} and {limits['max']}"
+                    )
+                value[index] = item
+            return value
+
+        for index in range(1, len(value)):
+            if not isinstance(value[index], (bool, int, float, str)):
+                raise ValueError(f"Invalid value type for {key}[{index}]")
+        return value
 
     def get_options(self):
         with self._lock:
@@ -198,6 +240,27 @@ class SettingsStore:
             self._options[key][1] = _coerce_allowlist(allowlist)
             self._persist()
             return copy.deepcopy(self._options[key])
+
+    def restore_options(self, options):
+        """Replace known option rows from a settings snapshot atomically."""
+        if not isinstance(options, dict):
+            raise ValueError("settings snapshot must be an object")
+
+        with self._lock:
+            next_options = copy.deepcopy(self._options)
+            applied = []
+            for key, row in options.items():
+                if key not in self._options:
+                    raise ValueError(f"Unknown setting key: {key}")
+                next_options[key] = self._normalise_option_row(key, row)
+                applied.append(key)
+
+            self._options = next_options
+            self._persist()
+            return {
+                "applied": applied,
+                "settings": copy.deepcopy(self._options),
+            }
 
     def get_allowlist(self, key):
         """Return the allowlist for a pick-set key (empty list = all allowed)."""

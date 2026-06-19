@@ -4,16 +4,17 @@
  * Three zones: Export · Restore · Danger. Settings export is assembled
  * client-side from GET /get_settings (no dedicated export endpoint exists yet).
  *
- * Endpoints used (existing, no backend changes):
+ * Endpoints used:
  *   GET  /admin/history/export?hours=N&format=json|csv|srt
  *        → timeline download (server Content-Disposition)
  *   POST /admin/history/clear            → clear all danmu history
  *   GET  /get_settings                   → raw settings dump for client-side snapshot
+ *   POST /admin/settings/restore         → apply settings JSON snapshot
+ *   GET  /admin/backup/export            → full runtime/effects/plugins pack
+ *   POST /admin/backup/import            → dry-run/apply full pack
  *   POST /logout                         → ends current admin session
  *
  * Deferred (即將支援, labelled in UI):
- *   - Effects/Emojis/Stickers pack tarballs  (no pack endpoint yet)
- *   - Upload settings JSON → apply  (no backend apply route; dry-run preview only)
  *   - Upload effect/emoji/sticker pack  (no backend route yet)
  *   - Factory reset  (no backend route — confirm UI skeleton only)
  *
@@ -115,10 +116,10 @@
                 <input id="bk2-settings-upload" type="file" accept="application/json,.json" class="admin-ui-input" />
               </label>
               <button type="button" id="bk2-settings-dryrun" class="admin-ui-action admin-bk-action">Dry-run 預覽</button>
-              <button type="button" class="admin-ui-action admin-bk-action" disabled title="即將支援 (需後端 endpoint)">套用</button>
+              <button type="button" id="bk2-settings-apply" class="admin-ui-action is-danger admin-bk-action" disabled title="先 dry-run 預覽後才能套用">套用</button>
             </div>
             <pre id="bk2-settings-diff" class="admin-backup-diff" hidden></pre>
-            <p class="admin-backup-deferred-note">套用階段 — 即將支援 (需後端 endpoint)。目前僅可 client-side 解析預覽。</p>
+            <p class="admin-backup-deferred-note">先 Dry-run 檢查與目前設定的差異；套用會覆蓋同名設定 row 並即時同步 Desktop / viewer。</p>
           </div>
 
           <!-- Full pack restore (2026-05-19 — wired to /admin/backup/import) -->
@@ -234,13 +235,25 @@
     }
   }
 
-  // ---- Zone 2 · Restore (dry-run only; apply deferred) ----
+  // ---- Zone 2 · Restore ----
+
+  let _pendingSettingsPayload = null;
+
+  function resetSettingsApplyButton() {
+    _pendingSettingsPayload = null;
+    const applyBtn = document.getElementById("bk2-settings-apply");
+    if (!applyBtn) return;
+    applyBtn.disabled = true;
+    applyBtn.title = "先 dry-run 預覽後才能套用";
+  }
 
   async function dryRunSettings() {
     const fileInput = document.getElementById("bk2-settings-upload");
     const diffEl = document.getElementById("bk2-settings-diff");
+    const applyBtn = document.getElementById("bk2-settings-apply");
     const file = fileInput && fileInput.files && fileInput.files[0];
     if (!file) {
+      resetSettingsApplyButton();
       window.showToast && showToast("請先選擇 JSON 檔", false);
       return;
     }
@@ -248,6 +261,9 @@
       const text = await file.text();
       const parsed = JSON.parse(text);
       const uploaded = parsed.settings || parsed;
+      if (!uploaded || typeof uploaded !== "object" || Array.isArray(uploaded)) {
+        throw new Error("settings 必須是 JSON object");
+      }
       const res = await fetch("/get_settings", { credentials: "same-origin" });
       const current = res.ok ? await res.json() : {};
       const diff = [];
@@ -264,12 +280,62 @@
         ? diff.join("\n")
         : "(設定內容相同 · 無差異)";
       diffEl.hidden = false;
+      _pendingSettingsPayload = uploaded;
+      if (applyBtn) {
+        applyBtn.disabled = false;
+        applyBtn.title = "已通過 dry-run，可套用";
+      }
       window.showToast && showToast(diff.length + " 項差異", true);
     } catch (e) {
       console.error("Dry-run error:", e);
+      resetSettingsApplyButton();
       diffEl.textContent = "解析失敗: " + (e && e.message ? e.message : String(e));
       diffEl.hidden = false;
       window.showToast && showToast("解析失敗", false);
+    }
+  }
+
+  async function applySettings() {
+    const diffEl = document.getElementById("bk2-settings-diff");
+    const applyBtn = document.getElementById("bk2-settings-apply");
+    if (!_pendingSettingsPayload) {
+      window.showToast && showToast("請先 Dry-run 通過後再套用", false);
+      return;
+    }
+    if (!confirm("套用設定快照會覆蓋目前同名設定。確定套用?")) return;
+
+    try {
+      const res = await window.csrfFetch("/admin/settings/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settings: _pendingSettingsPayload }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (diffEl) {
+          diffEl.hidden = false;
+          diffEl.textContent = "套用失敗\n" + JSON.stringify(result.details || result, null, 2);
+        }
+        window.showToast && showToast("設定套用失敗", false);
+        return;
+      }
+
+      if (diffEl) {
+        diffEl.hidden = false;
+        diffEl.textContent = "套用完成\nApplied " + (result.applied || []).length + " settings";
+      }
+      _pendingSettingsPayload = null;
+      if (applyBtn) {
+        applyBtn.disabled = true;
+        applyBtn.title = "先 dry-run 預覽後才能套用";
+      }
+      window.showToast && showToast("設定已套用", true);
+    } catch (e) {
+      if (diffEl) {
+        diffEl.hidden = false;
+        diffEl.textContent = "套用錯誤: " + (e && e.message ? e.message : String(e));
+      }
+      window.showToast && showToast("網路錯誤", false);
     }
   }
 
@@ -319,6 +385,7 @@
     document.getElementById("bk2-hist-download")?.addEventListener("click", downloadHistory);
     document.getElementById("bk2-settings-download")?.addEventListener("click", downloadSettingsSnapshot);
     document.getElementById("bk2-settings-dryrun")?.addEventListener("click", dryRunSettings);
+    document.getElementById("bk2-settings-apply")?.addEventListener("click", applySettings);
     document.getElementById("bk2-clear-history")?.addEventListener("click", clearHistory);
     document.getElementById("bk2-end-session")?.addEventListener("click", endSession);
     // v5 (2026-05-19): full-state pack export/import wired to backup.py
