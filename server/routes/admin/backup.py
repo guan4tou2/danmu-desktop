@@ -14,6 +14,7 @@ Three endpoints:
 from flask import Response, request
 
 from ...services import audit_log
+from ...services import asset_backup as asset_backup_svc
 from ...services import backup as backup_svc
 from ...services import factory_reset as factory_reset_svc
 from ...services.security import rate_limit
@@ -88,6 +89,62 @@ def backup_import():
     return _json_response(result)
 
 
+@admin_bp.route("/backup/assets/export", methods=["GET"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_login
+def backup_assets_export():
+    """Stream uploaded media assets as a separate tarball."""
+    raw = asset_backup_svc.pack()
+    audit_log.append(
+        "backup",
+        "assets_export",
+        actor="admin",
+        meta={"bytes": len(raw)},
+    )
+    import time
+
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    headers = {
+        "Content-Type": "application/gzip",
+        "Content-Disposition": f'attachment; filename="danmu-assets-{stamp}.tar.gz"',
+        "Content-Length": str(len(raw)),
+        "Cache-Control": "no-store",
+    }
+    return Response(raw, headers=headers)
+
+
+@admin_bp.route("/backup/assets/import", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+@require_login
+def backup_assets_import():
+    """Dry-run or apply an uploaded static asset pack."""
+    f = request.files.get("file")
+    if f is None or not (f.filename or "").strip():
+        return _json_response({"error": "No file provided"}, 400)
+
+    raw = f.read()
+    if not raw:
+        return _json_response({"error": "Empty file"}, 400)
+
+    dry_run = (request.args.get("dry_run", "") or "").lower() in ("1", "true", "yes")
+    result = asset_backup_svc.unpack(raw, dry_run=dry_run)
+
+    if not dry_run and result.get("ok"):
+        asset_backup_svc.refresh_asset_services()
+        audit_log.append(
+            "backup",
+            "assets_import",
+            actor="admin",
+            meta={
+                "applied": result.get("applied", 0),
+                "skipped": len(result.get("skipped") or []),
+                "manifest_version": (result.get("manifest") or {}).get("version"),
+            },
+        )
+    return _json_response(result)
+
+
 @admin_bp.route("/backup/factory-reset", methods=["POST"])
 @rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
@@ -151,3 +208,10 @@ def backup_manifest():
             "files": included,
         }
     )
+
+
+@admin_bp.route("/backup/assets/manifest", methods=["GET"])
+@require_login
+def backup_assets_manifest():
+    """Preview the uploaded media asset pack inventory."""
+    return _json_response(asset_backup_svc.manifest())

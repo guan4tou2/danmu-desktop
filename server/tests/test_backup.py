@@ -59,6 +59,53 @@ def isolated_backup_dirs(tmp_path, monkeypatch):
     }
 
 
+@pytest.fixture()
+def isolated_asset_dirs(tmp_path, monkeypatch):
+    """Point asset pack sources at temp dirs so import/export tests do not
+    mutate real uploaded emojis/stickers/sounds."""
+    from server.services import asset_backup as asset_backup_svc
+
+    emojis = tmp_path / "emojis"
+    stickers = tmp_path / "stickers"
+    sounds = tmp_path / "sounds"
+    sticker_runtime = tmp_path / "runtime" / "stickers"
+    for d in (emojis, stickers, sounds, sticker_runtime):
+        d.mkdir(parents=True)
+
+    (emojis / "cat.png").write_bytes(b"\x89PNG\r\n")
+    (stickers / "wave.webp").write_bytes(b"RIFFWEBP")
+    (sounds / "ding.mp3").write_bytes(b"ID3")
+    (sounds / "sound_rules.json").write_text("[]", encoding="utf-8")
+    (sounds / "sound_volumes.json").write_text('{"ding.mp3": 0.75}', encoding="utf-8")
+    (sticker_runtime / "packs.json").write_text(
+        json.dumps(
+            {
+                "packs": [{"id": "default", "name": "Default", "enabled": True}],
+                "stickers": [{"name": "wave", "pack_id": "default", "weight": 1}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        asset_backup_svc,
+        "_INCLUDE_DIRS",
+        [
+            ("emojis", emojis, "emojis", "*"),
+            ("stickers", stickers, "stickers", "*"),
+            ("sounds", sounds, "sounds", "*"),
+            ("sticker_runtime", sticker_runtime, "runtime/stickers", "*.json"),
+        ],
+    )
+    return {
+        "svc": asset_backup_svc,
+        "emojis": emojis,
+        "stickers": stickers,
+        "sounds": sounds,
+        "sticker_runtime": sticker_runtime,
+    }
+
+
 # ── Service-level pack ────────────────────────────────────────────────────
 
 
@@ -111,6 +158,70 @@ def test_pack_writes_to_target_path(isolated_backup_dirs, tmp_path):
     assert result == b""
     assert target.exists()
     assert target.read_bytes()[:2] == b"\x1f\x8b"
+
+
+def test_asset_pack_manifest_lists_static_assets(isolated_asset_dirs):
+    raw = isolated_asset_dirs["svc"].pack()
+    tar = tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz")
+    names = tar.getnames()
+    manifest = json.loads(tar.extractfile("manifest.json").read().decode("utf-8"))
+    tar.close()
+
+    assert names == [
+        "emojis/cat.png",
+        "stickers/wave.webp",
+        "sounds/ding.mp3",
+        "sounds/sound_rules.json",
+        "sounds/sound_volumes.json",
+        "runtime/stickers/packs.json",
+        "manifest.json",
+    ]
+    assert manifest["version"] == "assets-v1"
+    assert manifest["file_count"] == 6
+    assert {f["label"] for f in manifest["files"]} == {
+        "emojis",
+        "stickers",
+        "sounds",
+        "sticker_runtime",
+    }
+
+
+def test_asset_unpack_apply_writes_assets(isolated_asset_dirs):
+    raw = isolated_asset_dirs["svc"].pack()
+    for d in (
+        isolated_asset_dirs["emojis"],
+        isolated_asset_dirs["stickers"],
+        isolated_asset_dirs["sounds"],
+        isolated_asset_dirs["sticker_runtime"],
+    ):
+        for f in d.iterdir():
+            if f.is_file():
+                f.unlink()
+
+    result = isolated_asset_dirs["svc"].unpack(raw, dry_run=False)
+
+    assert result["ok"] is True
+    assert result["applied"] == 6
+    assert (isolated_asset_dirs["emojis"] / "cat.png").exists()
+    assert (isolated_asset_dirs["stickers"] / "wave.webp").exists()
+    assert (isolated_asset_dirs["sounds"] / "ding.mp3").exists()
+    assert (isolated_asset_dirs["sounds"] / "sound_rules.json").exists()
+    assert (isolated_asset_dirs["sticker_runtime"] / "packs.json").exists()
+
+
+def test_asset_unpack_skips_disallowed_extension(isolated_asset_dirs):
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w:gz") as tar:
+        bad = b"<svg></svg>"
+        info = tarfile.TarInfo(name="emojis/bad.svg")
+        info.size = len(bad)
+        tar.addfile(info, io.BytesIO(bad))
+
+    result = isolated_asset_dirs["svc"].unpack(buf.getvalue(), dry_run=True)
+
+    assert result["ok"] is True
+    assert result["members"] == []
+    assert any(s["reason"] == "extension rejected" for s in result["skipped"])
 
 
 # ── Service-level unpack (dry-run) ────────────────────────────────────────
@@ -280,6 +391,46 @@ def test_manifest_endpoint_lists_state(client, isolated_backup_dirs):
     assert body["total_bytes"] > 0
     paths = {f["path"] for f in body["files"]}
     assert "runtime/settings.json" in paths
+
+
+def test_asset_manifest_endpoint_lists_assets(client, isolated_asset_dirs):
+    login(client)
+    resp = client.get("/admin/backup/assets/manifest")
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["file_count"] == 6
+    assert body["total_bytes"] > 0
+    assert {f["path"] for f in body["files"]} == {
+        "emojis/cat.png",
+        "stickers/wave.webp",
+        "sounds/ding.mp3",
+        "sounds/sound_rules.json",
+        "sounds/sound_volumes.json",
+        "runtime/stickers/packs.json",
+    }
+
+
+def test_asset_import_dry_run_returns_members(client, isolated_asset_dirs):
+    token = csrf_token(client)
+    raw = isolated_asset_dirs["svc"].pack()
+    resp = client.post(
+        "/admin/backup/assets/import?dry_run=true",
+        data={"file": (io.BytesIO(raw), "assets.tar.gz")},
+        content_type="multipart/form-data",
+        headers={"X-CSRF-Token": token},
+    )
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["ok"] is True
+    assert body["applied"] == 0
+    assert {m["path"] for m in body["members"]} == {
+        "emojis/cat.png",
+        "stickers/wave.webp",
+        "sounds/ding.mp3",
+        "sounds/sound_rules.json",
+        "sounds/sound_volumes.json",
+        "runtime/stickers/packs.json",
+    }
 
 
 def test_factory_reset_service_removes_only_runtime_state_files(tmp_path, monkeypatch):

@@ -12,11 +12,10 @@
  *   POST /admin/settings/restore         → apply settings JSON snapshot
  *   GET  /admin/backup/export            → full runtime/effects/plugins pack
  *   POST /admin/backup/import            → dry-run/apply full pack
+ *   GET  /admin/backup/assets/export     → uploaded media asset pack
+ *   POST /admin/backup/assets/import     → dry-run/apply asset pack
  *   POST /admin/backup/factory-reset     → reset runtime state files
  *   POST /logout                         → ends current admin session
- *
- * Deferred (即將支援, labelled in UI):
- *   - Upload effect/emoji/sticker pack  (no backend route yet)
  *
  * Nav slug `backup` does NOT exist in admin.js ADMIN_ROUTES. Per instruction,
  * this page renders under the `system` route alongside Security (P1-9).
@@ -95,7 +94,21 @@
             </div>
             <p class="admin-backup-deferred-note" id="bk2-pack-detail">
               內容：runtime/*.json · effects/*.dme · plugins/* · user_plugins/*
-              <br>不含：圖片素材（emojis / stickers / sounds）— 仍走 client-side 包。
+              <br>上傳素材請使用下方 <b>ASSET PACK</b>，避免大型媒體拖慢一般設定快照。
+            </p>
+          </div>
+
+          <!-- Asset pack export (uploaded media) -->
+          <div class="admin-backup-subcard">
+            <div class="admin-ui-monolabel">ASSET PACK · 素材 .tar.gz</div>
+            <div class="admin-backup-row">
+              <div class="admin-backup-desc" id="bk2-assets-summary">
+                計算素材大小中…
+              </div>
+              <button type="button" id="bk2-assets-export" class="admin-ui-action is-primary admin-bk-action">下載素材包</button>
+            </div>
+            <p class="admin-backup-deferred-note" id="bk2-assets-detail">
+              內容：emojis/ · stickers/ · sounds/ · runtime/stickers/packs.json
             </p>
           </div>
         </div>
@@ -138,6 +151,24 @@
               先 Dry-run 確認 manifest + 將被覆蓋的檔案；套用會原子化逐檔覆蓋
               <code>runtime/ · effects/ · plugins/ · user_plugins/</code>。<br>
               <b>建議套用前先下載目前快照</b>，作為復原備案。
+            </p>
+          </div>
+
+          <!-- Asset pack restore -->
+          <div class="admin-backup-subcard">
+            <div class="admin-ui-monolabel">ASSET PACK · 還原素材 .tar.gz</div>
+            <div class="admin-backup-row">
+              <label class="admin-backup-field">
+                <span class="admin-ui-monolabel">TARBALL · ≤ 64 MB</span>
+                <input id="bk2-assets-upload" type="file" accept=".tar.gz,application/gzip,application/x-gzip" class="admin-ui-input" />
+              </label>
+              <button type="button" id="bk2-assets-dryrun" class="admin-ui-action admin-bk-action">Dry-run 預覽</button>
+              <button type="button" id="bk2-assets-apply" class="admin-ui-action is-danger admin-bk-action" disabled title="先 dry-run 預覽後才能套用">套用</button>
+            </div>
+            <pre id="bk2-assets-diff" class="admin-backup-diff" hidden></pre>
+            <p class="admin-backup-deferred-note">
+              只會寫入 <code>emojis/ · stickers/ · sounds/ · runtime/stickers/packs.json</code>；
+              套用成功後會刷新 Desktop / viewer 使用的素材快取。
             </p>
           </div>
         </div>
@@ -423,9 +454,13 @@
     document.getElementById("bk2-pack-export")?.addEventListener("click", exportFullPack);
     document.getElementById("bk2-pack-dryrun")?.addEventListener("click", dryRunFullPack);
     document.getElementById("bk2-pack-apply")?.addEventListener("click", applyFullPack);
+    document.getElementById("bk2-assets-export")?.addEventListener("click", exportAssetPack);
+    document.getElementById("bk2-assets-dryrun")?.addEventListener("click", dryRunAssetPack);
+    document.getElementById("bk2-assets-apply")?.addEventListener("click", applyAssetPack);
     bindFactoryConfirm();
     // Hydrate the "計算備份大小中…" line via manifest preview.
     fetchPackSummary();
+    fetchAssetPackSummary();
   }
 
   // ── Full-pack helpers ─────────────────────────────────────────────
@@ -433,6 +468,7 @@
   // The decoded dry-run result, stashed so the Apply button knows what
   // file to actually POST (it's a Blob from the picker, can't be re-read).
   let _pendingPackFile = null;
+  let _pendingAssetPackFile = null;
 
   async function fetchPackSummary() {
     const el = document.getElementById("bk2-pack-summary");
@@ -457,6 +493,29 @@
     // headers (Content-Disposition: attachment; filename=...).
     window.location.href = "/admin/backup/export";
     window.showToast?.("正在下載完整快照…", true);
+  }
+
+  async function fetchAssetPackSummary() {
+    const el = document.getElementById("bk2-assets-summary");
+    if (!el) return;
+    try {
+      const r = await fetch("/admin/backup/assets/manifest", { credentials: "same-origin" });
+      if (!r.ok) {
+        el.textContent = "素材預覽不可用";
+        return;
+      }
+      const j = await r.json();
+      const mb = (j.total_bytes / (1024 * 1024)).toFixed(2);
+      el.innerHTML =
+        '<b>' + (j.file_count || 0) + '</b> 檔案 · 約 <b>' + mb + '</b> MB（壓縮前）';
+    } catch (_) {
+      el.textContent = "素材預覽失敗 · 網路錯誤";
+    }
+  }
+
+  function exportAssetPack() {
+    window.location.href = "/admin/backup/assets/export";
+    window.showToast?.("正在下載素材包…", true);
   }
 
   async function dryRunFullPack() {
@@ -565,6 +624,113 @@
       }
     } catch (e) {
       window.showToast?.("套用錯誤：" + (e.message || ""), false);
+    }
+  }
+
+  async function dryRunAssetPack() {
+    const input = document.getElementById("bk2-assets-upload");
+    const file = input?.files?.[0];
+    if (!file) {
+      window.showToast?.("請先選擇素材 .tar.gz 檔案", false);
+      return;
+    }
+    if (file.size > 64 * 1024 * 1024) {
+      window.showToast?.("素材包超過 64 MB", false);
+      return;
+    }
+    const fd = new FormData();
+    fd.append("file", file);
+    const out = document.getElementById("bk2-assets-diff");
+    const applyBtn = document.getElementById("bk2-assets-apply");
+    try {
+      const r = await window.csrfFetch("/admin/backup/assets/import?dry_run=true", {
+        method: "POST",
+        body: fd,
+      });
+      const result = await r.json().catch(() => ({}));
+      if (!r.ok || !result.ok) {
+        if (out) {
+          out.hidden = false;
+          out.textContent = "素材驗證失敗\n" + JSON.stringify(result.errors || result, null, 2);
+        }
+        window.showToast?.("素材 Dry-run 失敗", false);
+        if (applyBtn) applyBtn.disabled = true;
+        _pendingAssetPackFile = null;
+        return;
+      }
+      if (out) {
+        out.hidden = false;
+        const lines = [];
+        const m = result.manifest || {};
+        lines.push("manifest version: " + (m.version || "?"));
+        lines.push("generated_at: " + (m.generated_at ? new Date(m.generated_at * 1000).toISOString() : "—"));
+        lines.push("");
+        lines.push("Will write " + (result.members?.length || 0) + " asset files:");
+        (result.members || []).forEach((m) => {
+          lines.push("  " + m.path + " (" + (m.size || 0) + " B)");
+        });
+        if (result.skipped?.length) {
+          lines.push("");
+          lines.push("Skipped " + result.skipped.length + " entries:");
+          result.skipped.forEach((s) => lines.push("  " + s.path + " — " + s.reason));
+        }
+        out.textContent = lines.join("\n");
+      }
+      _pendingAssetPackFile = file;
+      if (applyBtn) {
+        applyBtn.disabled = false;
+        applyBtn.title = "已通過 dry-run，可套用";
+      }
+      window.showToast?.("素材 Dry-run 通過 · " + (result.members?.length || 0) + " 檔案待寫入", true);
+    } catch (e) {
+      window.showToast?.("素材 Dry-run 錯誤：" + (e.message || ""), false);
+    }
+  }
+
+  async function applyAssetPack() {
+    if (!_pendingAssetPackFile) {
+      window.showToast?.("請先 Dry-run 通過後再套用", false);
+      return;
+    }
+    if (!confirm(
+      "套用素材包會覆蓋同名 emojis/, stickers/, sounds/ 檔案與 sticker pack metadata。確定套用?"
+    )) return;
+    const fd = new FormData();
+    fd.append("file", _pendingAssetPackFile);
+    try {
+      const r = await window.csrfFetch("/admin/backup/assets/import", {
+        method: "POST",
+        body: fd,
+      });
+      const result = await r.json().catch(() => ({}));
+      const out = document.getElementById("bk2-assets-diff");
+      if (out) {
+        out.hidden = false;
+        const lines = [];
+        if (result.ok) {
+          lines.push("✓ 素材套用完成");
+          lines.push("");
+          lines.push("Applied " + (result.applied || 0) + " files");
+          if (result.skipped?.length) {
+            lines.push("Skipped " + result.skipped.length + " (see above)");
+          }
+        } else {
+          lines.push("✗ 素材套用失敗");
+          lines.push(JSON.stringify(result.errors || result, null, 2));
+        }
+        out.textContent = lines.join("\n");
+      }
+      if (result.ok) {
+        window.showToast?.("已套用 " + result.applied + " 個素材檔案", true);
+        _pendingAssetPackFile = null;
+        const applyBtn = document.getElementById("bk2-assets-apply");
+        if (applyBtn) applyBtn.disabled = true;
+        fetchAssetPackSummary();
+      } else {
+        window.showToast?.("素材套用失敗", false);
+      }
+    } catch (e) {
+      window.showToast?.("素材套用錯誤：" + (e.message || ""), false);
     }
   }
 
