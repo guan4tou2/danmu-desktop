@@ -299,11 +299,15 @@ function initConnSection({ api } = {}) {
   function _renderAuthStatus() {
     if (!authStatusEl || !tokenInput) return;
     if (tokenInput.value && tokenInput.value.trim()) {
-      authStatusEl.textContent = "已設定";
+      // ✓ 已設定 badge — stays visible even when the panel is open so the
+      // "token is configured" signal is always present (A5).
+      authStatusEl.textContent = "✓ 已設定";
+      authStatusEl.classList.add("is-set");
       authStatusEl.removeAttribute("data-i18n");
     } else {
       // Restore default (re-pickable by i18n updateUI on next pass)
       authStatusEl.textContent = "未設定 · 點此設定";
+      authStatusEl.classList.remove("is-set");
       authStatusEl.setAttribute("data-i18n", "connAuthStatusUnset");
     }
   }

@@ -1289,6 +1289,10 @@ body[data-os="mac"] .client-titlebar {
    from the shared card class; nothing extra needed for the container. */
 .client-conn-auth-panel { padding: 14px; }
 .client-conn-auth-panel[open] .client-conn-auth-status { display: none; }
+/* The "✓ 已設定" confirmation badge stays visible even when the panel is
+   expanded, so the configured-token signal is always present (A5). */
+.client-conn-auth-panel[open] .client-conn-auth-status.is-set { display: inline; }
+.client-conn-auth-status.is-set { color: var(--color-success); }
 
 .client-conn-auth-summary {
   display: flex;
