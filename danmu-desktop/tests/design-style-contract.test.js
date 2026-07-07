@@ -181,13 +181,13 @@ test("viewer offline send gate uses Desktop copy and red button state", () => {
   const mainJs = fs.readFileSync(path.join(REPO_ROOT, "server/static/js/main.js"), "utf8");
   const css = fs.readFileSync(path.join(REPO_ROOT, "server/static/css/viewer-v2.css"), "utf8");
 
-  expect(zh.overlayNone).toBe("Desktop · 未連線");
-  expect(zh.overlayConnected).toBe("Desktop · {n} 個");
-  expect(zh.overlayOfflineFire).toBe("Desktop 未連線 · 無法送出");
+  expect(zh.overlayNone).toBe("主持端 · 未開啟");
+  expect(zh.overlayConnected).toBe("主持端 · {n} 個");
+  expect(zh.overlayOfflineFire).toBe("主持端尚未開啟 · 訊息暫時無法送出");
   expect(zh.overlayOfflineHint).toBe("");
-  expect(en.overlayNone).toBe("Desktop · –");
-  expect(en.overlayConnected).toBe("Desktop · {n}");
-  expect(en.overlayOfflineFire).toBe("Desktop offline · cannot send");
+  expect(en.overlayNone).toBe("Host · –");
+  expect(en.overlayConnected).toBe("Host · {n}");
+  expect(en.overlayOfflineFire).toBe("Host is not running yet · messages cannot be sent right now");
   expect(en.overlayOfflineHint).toBe("");
   expect(JSON.stringify(zh)).not.toContain("請等候 overlay 連線後再發送");
 
