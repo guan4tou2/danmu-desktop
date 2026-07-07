@@ -739,5 +739,14 @@
   "adminNavGroupInteract": "상호작용",
   "adminNavGroupModeration": "모더레이션",
   "adminNavGroupSettings": "설정",
-  "adminNavGroupIntegrations": "연동"
+  "adminNavGroupIntegrations": "연동",
+  "settingRangeError": "{key} 은(는) {min} 에서 {max} 사이여야 합니다",
+  "viewerReconnected": "다시 연결되었습니다",
+  "pollOptionVoted": "투표 완료",
+  "swatchWhite": "흰색",
+  "swatchSky": "하늘색",
+  "swatchAmber": "앰버",
+  "swatchGreen": "초록",
+  "swatchRed": "빨강",
+  "swatchYellow": "노랑"
 }

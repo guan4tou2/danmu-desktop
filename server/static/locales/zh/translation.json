@@ -742,5 +742,13 @@
   "adminNavGroupInteract": "互動",
   "adminNavGroupModeration": "審核",
   "adminNavGroupSettings": "設定",
-  "adminNavGroupIntegrations": "整合"
+  "adminNavGroupIntegrations": "整合",
+  "viewerReconnected": "已重新連線",
+  "pollOptionVoted": "已投出",
+  "swatchWhite": "白",
+  "swatchSky": "天藍",
+  "swatchAmber": "琥珀",
+  "swatchGreen": "綠",
+  "swatchRed": "紅",
+  "swatchYellow": "黃"
 }

@@ -10,6 +10,13 @@
 const { parseServerInput, buildCanonicalUrl, formatDisplayHost } = require("./conn-parser");
 const { createConnTest } = require("./conn-test");
 const { loadSettings, saveSettings } = require("./settings");
+const i18n = require("../i18n");
+
+// Translate at call time so values follow the current language even after a
+// live language switch (avoids caching stale strings).
+function _t(key) {
+  return i18n && typeof i18n.t === "function" ? i18n.t(key) : key;
+}
 
 const _IDS = {
   serverInput: "conn-server-input",
@@ -19,8 +26,11 @@ const _IDS = {
 };
 
 // Empty-state guidance shown in the host slot before any server is configured,
-// replacing the bare "—" placeholder (A4).
-const _HOST_EMPTY_HINT = "未設定 · 請輸入 server 位址";
+// replacing the bare "—" placeholder (A4). Read from i18n at call time so it
+// follows the current language.
+function _hostEmptyHint() {
+  return _t("connHostEmptyHint");
+}
 
 function _safeParse(raw) {
   try {
@@ -96,7 +106,7 @@ function initConnSection({ api } = {}) {
     if (!serverInput) return;
     const parsed = _safeParse(serverInput.value);
     if (!parsed) {
-      if (hostDisplay) hostDisplay.textContent = serverInput.value || _HOST_EMPTY_HINT;
+      if (hostDisplay) hostDisplay.textContent = serverInput.value || _hostEmptyHint();
       if (previewDisplay) previewDisplay.textContent = "wss://—/ws";
       return;
     }
@@ -149,9 +159,10 @@ function initConnSection({ api } = {}) {
   // ── ⚐ 測試 button + 4-state TestChip ────────────────────────────────────
   const connTest = createConnTest({ api: api || (typeof window !== "undefined" ? window.API : null) });
 
-  // Remember the button's resting label so we can restore it after a test.
+  // The button's resting label is the connTestBtn i18n string — restore it by
+  // re-reading i18n at settle time (NOT a value cached at init) so a live
+  // language switch doesn't leave the button showing the old language.
   const testBtnLabel = testBtn ? testBtn.querySelector("[data-i18n='connTestBtn']") : null;
-  const _testBtnRestingText = testBtnLabel ? testBtnLabel.textContent : "";
 
   function _renderChip() {
     const state = connTest.getState();
@@ -166,7 +177,7 @@ function initConnSection({ api } = {}) {
       testBtn.disabled = testing;
       testBtn.setAttribute("aria-busy", testing ? "true" : "false");
       if (testBtnLabel) {
-        testBtnLabel.textContent = testing ? "⟳ 測試中…" : _testBtnRestingText;
+        testBtnLabel.textContent = testing ? "⟳ " + _t("connTesting") : _t("connTestBtn");
       }
     }
   }
@@ -311,9 +322,9 @@ function initConnSection({ api } = {}) {
   function _renderAuthStatus() {
     if (!authStatusEl || !tokenInput) return;
     if (tokenInput.value && tokenInput.value.trim()) {
-      // ✓ 已設定 badge — stays visible even when the panel is open so the
+      // ✓ Set badge — stays visible even when the panel is open so the
       // "token is configured" signal is always present (A5).
-      authStatusEl.textContent = "✓ 已設定";
+      authStatusEl.textContent = "✓ " + _t("connAuthStatusSet");
       authStatusEl.classList.add("is-set");
       authStatusEl.removeAttribute("data-i18n");
     } else {

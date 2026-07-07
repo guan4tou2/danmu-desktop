@@ -146,4 +146,60 @@ describe("initConnSection", () => {
       "127.0.0.1:14443"
     );
   });
+
+  test("ESC in edit mode reverts the unsaved value and closes the editor (F10a)", () => {
+    const { initConnSection } = require("../renderer-modules/conn-section-wire");
+    const api = initConnSection();
+
+    // Enter edit mode, then type an unsaved value.
+    api.openEdit();
+    const editBlock = document.querySelector("[data-conn-edit]");
+    expect(editBlock.hasAttribute("hidden")).toBe(false);
+
+    const serverInput = document.getElementById("conn-server-input");
+    serverInput.value = "typed-but-unsaved.example.com:9999";
+
+    // Press ESC inside the edit block — same path as ✕ cancel.
+    editBlock.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true })
+    );
+
+    // Value reverts to the persisted host (port 443 hidden in display form)
+    // and the editor closes.
+    expect(serverInput.value).toBe("old.example.com");
+    expect(editBlock.hasAttribute("hidden")).toBe(true);
+  });
+
+  test("connTest 'testing' state disables the button and shows a 測試中 label (F10b)", () => {
+    jest.isolateModules(() => {
+      // Override the conn-test mock so it reports the in-flight state and
+      // synchronously invokes the onChange render callback.
+      jest.doMock("../renderer-modules/conn-test", () => ({
+        createConnTest: () => ({
+          getChipLabel: () => "TESTING",
+          getState: () => "testing",
+          onChange: (cb) => cb(),
+          start: jest.fn(),
+        }),
+      }));
+      jest.doMock("../renderer-modules/settings", () => ({
+        loadSettings: mockLoadSettings,
+        saveSettings: mockSaveSettings,
+      }));
+
+      // The button carries the connTestBtn i18n label span that the wire swaps.
+      const testBtn = document.querySelector("[data-conn-test-btn]");
+      testBtn.innerHTML = `<span data-i18n="connTestBtn">⚐ 測試</span>`;
+
+      const i18n = require("../i18n");
+      i18n.currentLang = "zh";
+
+      const { initConnSection } = require("../renderer-modules/conn-section-wire");
+      initConnSection();
+
+      expect(testBtn.disabled).toBe(true);
+      expect(testBtn.getAttribute("aria-busy")).toBe("true");
+      expect(testBtn.textContent).toContain("測試中");
+    });
+  });
 });

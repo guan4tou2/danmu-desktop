@@ -753,7 +753,15 @@
       "adminNavGroupInteract": "Interact",
       "adminNavGroupModeration": "Moderation",
       "adminNavGroupSettings": "Settings",
-      "adminNavGroupIntegrations": "Integrations"
+      "adminNavGroupIntegrations": "Integrations",
+      "viewerReconnected": "Reconnected",
+      "pollOptionVoted": "Voted",
+      "swatchWhite": "White",
+      "swatchSky": "Sky",
+      "swatchAmber": "Amber",
+      "swatchGreen": "Green",
+      "swatchRed": "Red",
+      "swatchYellow": "Yellow"
     },
     "zh": {
       "mainTitle": "Danmu Fire",
@@ -1499,7 +1507,15 @@
       "adminNavGroupInteract": "互動",
       "adminNavGroupModeration": "審核",
       "adminNavGroupSettings": "設定",
-      "adminNavGroupIntegrations": "整合"
+      "adminNavGroupIntegrations": "整合",
+      "viewerReconnected": "已重新連線",
+      "pollOptionVoted": "已投出",
+      "swatchWhite": "白",
+      "swatchSky": "天藍",
+      "swatchAmber": "琥珀",
+      "swatchGreen": "綠",
+      "swatchRed": "紅",
+      "swatchYellow": "黃"
     },
     "ja": {
       "mainTitle": "Danmu Fire",
@@ -2242,7 +2258,16 @@
       "adminNavGroupInteract": "インタラクション",
       "adminNavGroupModeration": "モデレーション",
       "adminNavGroupSettings": "設定",
-      "adminNavGroupIntegrations": "連携"
+      "adminNavGroupIntegrations": "連携",
+      "settingRangeError": "{key} は {min} から {max} の間で指定してください",
+      "viewerReconnected": "再接続しました",
+      "pollOptionVoted": "投票済み",
+      "swatchWhite": "白",
+      "swatchSky": "スカイ",
+      "swatchAmber": "アンバー",
+      "swatchGreen": "グリーン",
+      "swatchRed": "レッド",
+      "swatchYellow": "イエロー"
     },
     "ko": {
       "mainTitle": "Danmu Fire",
@@ -2985,7 +3010,16 @@
       "adminNavGroupInteract": "상호작용",
       "adminNavGroupModeration": "모더레이션",
       "adminNavGroupSettings": "설정",
-      "adminNavGroupIntegrations": "연동"
+      "adminNavGroupIntegrations": "연동",
+      "settingRangeError": "{key} 은(는) {min} 에서 {max} 사이여야 합니다",
+      "viewerReconnected": "다시 연결되었습니다",
+      "pollOptionVoted": "투표 완료",
+      "swatchWhite": "흰색",
+      "swatchSky": "하늘색",
+      "swatchAmber": "앰버",
+      "swatchGreen": "초록",
+      "swatchRed": "빨강",
+      "swatchYellow": "노랑"
     }
   };
 
@@ -3072,6 +3106,11 @@
         var key = el.getAttribute("data-i18n-title");
         var text = i18next.t(key);
         if (text !== key) el.title = text;
+      });
+      document.querySelectorAll("[data-i18n-aria]").forEach(function (el) {
+        var key = el.getAttribute("data-i18n-aria");
+        var text = i18next.t(key);
+        if (text !== key) el.setAttribute("aria-label", text);
       });
       this.bindLanguageSelector();
       if (window._adminNavigateTo) window._adminNavigateTo();

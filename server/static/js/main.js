@@ -767,7 +767,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (row && !row.querySelector(".viewer-poll-option-voted-mark")) {
       const mark = document.createElement("span");
       mark.className = "viewer-poll-option-voted-mark";
-      mark.textContent = "✓ 已投出";
+      mark.textContent = "✓ " + ServerI18n.t("pollOptionVoted");
       row.appendChild(mark);
     }
   }
@@ -885,9 +885,13 @@ document.addEventListener("DOMContentLoaded", () => {
     updateCharCount();
     updatePreview();
     updateSendEnabled();
-    // B4: clear the "message dropped" status row once the viewer starts
-    // typing a new attempt — it shouldn't linger past the next input.
-    _setSendbarStatusRow("");
+    // B4: clear the transient "message dropped/queued" status row once the
+    // viewer starts typing a new attempt — it shouldn't linger past the next
+    // input. But only when the overlay is online: while offline,
+    // _refreshSendButtonGate() (called above) parks the persistent
+    // "overlay offline" explanation in this same row, and blindly clearing it
+    // would leave the FIRE button greyed out with no reason shown (F12).
+    if (_overlayOnline) _setSendbarStatusRow("");
   });
   updateSendEnabled();
 
@@ -2070,7 +2074,7 @@ document.addEventListener("DOMContentLoaded", () => {
       el.className = "viewer-reconnected-toast";
       el.setAttribute("role", "status");
       el.setAttribute("aria-live", "polite");
-      el.textContent = "已重新連線";
+      el.textContent = ServerI18n.t("viewerReconnected");
       document.body.appendChild(el);
       _reconnectedToastEl = el;
     }
@@ -2460,19 +2464,33 @@ document.addEventListener("DOMContentLoaded", () => {
   // `visualViewport` keep the existing flex-bottom behavior untouched.
   if (window.visualViewport && elements.sendbar) {
     const vv = window.visualViewport;
-    const _repositionSendbar = () => {
+    // visualViewport resize/scroll fire in bursts (esp. while the keyboard
+    // animates in/out) — batch into a single rAF and early-return when the
+    // computed offset hasn't changed, so we never write identical inline
+    // styles on every event. Mirrors the _pollTimerAnimRAF batching pattern.
+    let _sendbarRAF = 0;
+    let _lastKeyboardOffset = null;
+    const _applySendbarOffset = () => {
+      _sendbarRAF = 0;
       const keyboardOffset = window.innerHeight - vv.height - vv.offsetTop;
-      if (keyboardOffset > 0) {
+      const next = keyboardOffset > 0 ? keyboardOffset : 0;
+      if (next === _lastKeyboardOffset) return; // no change → skip style writes
+      _lastKeyboardOffset = next;
+      if (next > 0) {
         elements.sendbar.style.position = "fixed";
         elements.sendbar.style.left = "0";
         elements.sendbar.style.right = "0";
-        elements.sendbar.style.bottom = `${keyboardOffset}px`;
+        elements.sendbar.style.bottom = `${next}px`;
       } else {
         elements.sendbar.style.position = "";
         elements.sendbar.style.left = "";
         elements.sendbar.style.right = "";
         elements.sendbar.style.bottom = "";
       }
+    };
+    const _repositionSendbar = () => {
+      if (_sendbarRAF) return; // already scheduled for this frame
+      _sendbarRAF = requestAnimationFrame(_applySendbarOffset);
     };
     vv.addEventListener("resize", _repositionSendbar);
     vv.addEventListener("scroll", _repositionSendbar);

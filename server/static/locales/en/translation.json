@@ -742,5 +742,13 @@
   "adminNavGroupInteract": "Interact",
   "adminNavGroupModeration": "Moderation",
   "adminNavGroupSettings": "Settings",
-  "adminNavGroupIntegrations": "Integrations"
+  "adminNavGroupIntegrations": "Integrations",
+  "viewerReconnected": "Reconnected",
+  "pollOptionVoted": "Voted",
+  "swatchWhite": "White",
+  "swatchSky": "Sky",
+  "swatchAmber": "Amber",
+  "swatchGreen": "Green",
+  "swatchRed": "Red",
+  "swatchYellow": "Yellow"
 }

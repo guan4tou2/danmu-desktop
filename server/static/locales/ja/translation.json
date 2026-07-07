@@ -739,5 +739,14 @@
   "adminNavGroupInteract": "インタラクション",
   "adminNavGroupModeration": "モデレーション",
   "adminNavGroupSettings": "設定",
-  "adminNavGroupIntegrations": "連携"
+  "adminNavGroupIntegrations": "連携",
+  "settingRangeError": "{key} は {min} から {max} の間で指定してください",
+  "viewerReconnected": "再接続しました",
+  "pollOptionVoted": "投票済み",
+  "swatchWhite": "白",
+  "swatchSky": "スカイ",
+  "swatchAmber": "アンバー",
+  "swatchGreen": "グリーン",
+  "swatchRed": "レッド",
+  "swatchYellow": "イエロー"
 }
