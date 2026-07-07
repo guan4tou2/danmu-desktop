@@ -734,5 +734,13 @@
   "lockoutTitle": "鎖定 5 分鐘",
   "lockoutRemaining": "剩餘時間",
   "lockoutReason": "登入失敗次數過多。",
-  "lockoutContactAdmin": "聯繫管理員"
+  "lockoutContactAdmin": "聯繫管理員",
+  "settingRangeError": "{key} 必須介於 {min} 到 {max} 之間",
+  "displayAdminControlledTitle": "管理端控制",
+  "displayAdminControlledNote": "觀眾端不提供語言切換。預設跟隨瀏覽器語言；admin 可在 Viewer Page Theme 強制指定。",
+  "adminNavGroupOverview": "總覽",
+  "adminNavGroupInteract": "互動",
+  "adminNavGroupModeration": "審核",
+  "adminNavGroupSettings": "設定",
+  "adminNavGroupIntegrations": "整合"
 }

@@ -734,5 +734,10 @@
   "navTopPolls": "투표",
   "navTopSecurity": "보안",
   "navTopSystem": "시스템",
-  "navTopWidgets": "위젯"
+  "navTopWidgets": "위젯",
+  "adminNavGroupOverview": "개요",
+  "adminNavGroupInteract": "상호작용",
+  "adminNavGroupModeration": "모더레이션",
+  "adminNavGroupSettings": "설정",
+  "adminNavGroupIntegrations": "연동"
 }

@@ -294,7 +294,11 @@ document.addEventListener("DOMContentLoaded", () => {
         numValue > settingRanges[key].max
       ) {
         showToast(
-          `${key} must be between ${settingRanges[key].min} and ${settingRanges[key].max}`,
+          ServerI18n.t("settingRangeError", {
+            key: key,
+            min: settingRanges[key].min,
+            max: settingRanges[key].max,
+          }),
           false
         );
         return false;
@@ -651,7 +655,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                      button matches the URL's raw slug so the clicked item
                                      stays highlighted even after alias redirect. -->
 
-                                <div class="admin-dash-nav-label">總覽</div>
+                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupOverview">總覽</div>
                                 <button type="button" class="admin-dash-nav-row is-active" data-route="live" role="tab" aria-selected="true">
                                     <span class="admin-dash-nav-icon">◉</span>
                                     <span data-i18n="adminNavLive">控制台</span>
@@ -666,7 +670,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span data-i18n="adminNavHistory">時間軸匯出</span>
                                 </button>
 
-                                <div class="admin-dash-nav-label">互動</div>
+                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupInteract">互動</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="polls" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◈</span>
                                     <span data-i18n="adminNavPolls">投票</span>
@@ -698,7 +702,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span data-i18n="adminNavViewer">觀眾頁</span>
                                 </button>
 
-                                <div class="admin-dash-nav-label">審核</div>
+                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupModeration">審核</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="moderation" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⊘</span>
                                     <span data-i18n="adminNavModeration">敏感字 &amp; 黑名單</span>
@@ -709,7 +713,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span data-i18n="adminNavRatelimit">速率限制</span>
                                 </button>
 
-                                <div class="admin-dash-nav-label">設定</div>
+                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupSettings">設定</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="effects" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">✦</span>
                                     <span data-i18n="adminNavEffects">效果庫 .dme</span>
@@ -732,7 +736,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span data-i18n="adminNavAudit">操作日誌</span>
                                 </button>
 
-                                <div class="admin-dash-nav-label">整合</div>
+                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupIntegrations">整合</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="extensions" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⌬</span>
                                     <span data-i18n="adminNavExtensions">Extensions</span>

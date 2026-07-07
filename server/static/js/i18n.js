@@ -745,7 +745,15 @@
       "lockoutTitle": "LOCKED 5 MIN",
       "lockoutRemaining": "time remaining",
       "lockoutReason": "Too many failed sign-in attempts.",
-      "lockoutContactAdmin": "Contact administrator"
+      "lockoutContactAdmin": "Contact administrator",
+      "settingRangeError": "{key} must be between {min} and {max}",
+      "displayAdminControlledTitle": "Admin controlled",
+      "displayAdminControlledNote": "Viewers cannot switch languages. The page follows the browser language by default; admins can force a language in Viewer Page Theme.",
+      "adminNavGroupOverview": "Overview",
+      "adminNavGroupInteract": "Interact",
+      "adminNavGroupModeration": "Moderation",
+      "adminNavGroupSettings": "Settings",
+      "adminNavGroupIntegrations": "Integrations"
     },
     "zh": {
       "mainTitle": "Danmu Fire",
@@ -1483,7 +1491,15 @@
       "lockoutTitle": "鎖定 5 分鐘",
       "lockoutRemaining": "剩餘時間",
       "lockoutReason": "登入失敗次數過多。",
-      "lockoutContactAdmin": "聯繫管理員"
+      "lockoutContactAdmin": "聯繫管理員",
+      "settingRangeError": "{key} 必須介於 {min} 到 {max} 之間",
+      "displayAdminControlledTitle": "管理端控制",
+      "displayAdminControlledNote": "觀眾端不提供語言切換。預設跟隨瀏覽器語言；admin 可在 Viewer Page Theme 強制指定。",
+      "adminNavGroupOverview": "總覽",
+      "adminNavGroupInteract": "互動",
+      "adminNavGroupModeration": "審核",
+      "adminNavGroupSettings": "設定",
+      "adminNavGroupIntegrations": "整合"
     },
     "ja": {
       "mainTitle": "Danmu Fire",
@@ -2221,7 +2237,12 @@
       "navTopPolls": "投票",
       "navTopSecurity": "セキュリティ",
       "navTopSystem": "システム",
-      "navTopWidgets": "ウィジェット"
+      "navTopWidgets": "ウィジェット",
+      "adminNavGroupOverview": "概要",
+      "adminNavGroupInteract": "インタラクション",
+      "adminNavGroupModeration": "モデレーション",
+      "adminNavGroupSettings": "設定",
+      "adminNavGroupIntegrations": "連携"
     },
     "ko": {
       "mainTitle": "Danmu Fire",
@@ -2959,7 +2980,12 @@
       "navTopPolls": "투표",
       "navTopSecurity": "보안",
       "navTopSystem": "시스템",
-      "navTopWidgets": "위젯"
+      "navTopWidgets": "위젯",
+      "adminNavGroupOverview": "개요",
+      "adminNavGroupInteract": "상호작용",
+      "adminNavGroupModeration": "모더레이션",
+      "adminNavGroupSettings": "설정",
+      "adminNavGroupIntegrations": "연동"
     }
   };
 

@@ -734,5 +734,13 @@
   "lockoutTitle": "LOCKED 5 MIN",
   "lockoutRemaining": "time remaining",
   "lockoutReason": "Too many failed sign-in attempts.",
-  "lockoutContactAdmin": "Contact administrator"
+  "lockoutContactAdmin": "Contact administrator",
+  "settingRangeError": "{key} must be between {min} and {max}",
+  "displayAdminControlledTitle": "Admin controlled",
+  "displayAdminControlledNote": "Viewers cannot switch languages. The page follows the browser language by default; admins can force a language in Viewer Page Theme.",
+  "adminNavGroupOverview": "Overview",
+  "adminNavGroupInteract": "Interact",
+  "adminNavGroupModeration": "Moderation",
+  "adminNavGroupSettings": "Settings",
+  "adminNavGroupIntegrations": "Integrations"
 }
