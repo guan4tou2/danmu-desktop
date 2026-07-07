@@ -18,6 +18,10 @@ const _IDS = {
   tokenInput: "ws-token-input",
 };
 
+// Empty-state guidance shown in the host slot before any server is configured,
+// replacing the bare "—" placeholder (A4).
+const _HOST_EMPTY_HINT = "未設定 · 請輸入 server 位址";
+
 function _safeParse(raw) {
   try {
     return parseServerInput(raw);
@@ -92,7 +96,7 @@ function initConnSection({ api } = {}) {
     if (!serverInput) return;
     const parsed = _safeParse(serverInput.value);
     if (!parsed) {
-      if (hostDisplay) hostDisplay.textContent = serverInput.value || "—";
+      if (hostDisplay) hostDisplay.textContent = serverInput.value || _HOST_EMPTY_HINT;
       if (previewDisplay) previewDisplay.textContent = "wss://—/ws";
       return;
     }

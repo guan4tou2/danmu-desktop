@@ -151,7 +151,7 @@
                    localStorage (host/port/wsToken). -->
               <div data-conn-display>
                 <div class="client-conn-host-row" data-client-action="edit-conn" role="button" tabindex="0" aria-label="Edit server">
-                  <span class="client-conn-host" data-client-server-host>—</span>
+                  <span class="client-conn-host" data-client-server-host>未設定 · 請輸入 server 位址</span>
                   <span class="client-conn-edit-pencil" aria-hidden="true">✎</span>
                 </div>
                 <div class="client-conn-preview-row">
@@ -180,7 +180,7 @@
                 <div class="client-conn-edit-help" data-i18n="connServerHelp">輸入 hostname 或 host:port · 自動 strip wss:// / https:// / /ws · port 預設 443（隱藏）</div>
               </div>
 
-              <div class="client-conn-hint" data-i18n="connTestHint">測試：one-shot WSS handshake 驗證，不觸發 Desktop、不留 connection</div>
+              <div class="client-conn-hint" data-i18n="connTestHint">驗證伺服器連線，不會啟動 Desktop</div>
             </div>
 
             <!-- AUTH · WebSocket Token (always visible, collapsed by default) -->
