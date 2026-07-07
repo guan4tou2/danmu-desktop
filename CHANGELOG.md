@@ -39,9 +39,11 @@
   `shared/tokens.css`，desktop 與 web 視覺語言統一。
 - 管理後台 topbar 收斂為單列；「DESKTOP · ON」改為狀態章視覺並補
   hover/focus 回饋。
-- Release 文件同步 portable-only 打包政策的措辭（Windows portable x64
-  `.exe`、macOS arm64 `.zip`、Linux AppImage / `.deb`；Windows 更新
-  metadata 維持不發佈）。
+- Release docs now match the portable-only desktop packaging policy: Windows is
+  documented as a portable x64 `.exe`, macOS as an arm64 `.zip`, and Linux as
+  AppImage / `.deb`.
+- Windows updater metadata remains unpublished while the Windows release channel
+  stays portable-only; macOS update metadata continues to target the ZIP package.
 
 ### 修正 / Fixed
 
