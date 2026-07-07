@@ -63,6 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Send bar pill — border turns cyan when text is present
     sendbarPill: document.getElementById("sendbarPill"),
     sendbar: document.querySelector(".viewer-sendbar"),
+    sendbarStatusRow: document.getElementById("sendbarStatusRow"),
 
     // Viewer tabs + poll pane
     viewerTabButtons: Array.from(document.querySelectorAll("[data-viewer-tab]")),
@@ -1589,9 +1590,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!_overlayOnline) {
       elements.btnSend.disabled = true;
       elements.btnSend.dataset.state = "offline";
-      if (elements.btnSendText) elements.btnSendText.textContent = ServerI18n.t("overlayOfflineFire");
+      // Keep the button label short ("FIRE") — the full offline copy goes
+      // in the persistent status row above the pill so it never squeezes
+      // the input (flex:1) down and hides its placeholder (B2 fix).
+      if (elements.btnSendText) elements.btnSendText.textContent = ServerI18n.t("fireDanmu");
       if (elements.btnSendIcon) elements.btnSendIcon.classList.add("hidden");
       _setSendbarHint("", "");
+      _setSendbarStatusRow(ServerI18n.t("overlayOfflineFire"));
       return;
     }
     if (elements.btnSend.dataset.state === "offline") delete elements.btnSend.dataset.state;
@@ -1600,6 +1605,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (elements.btnSendText) elements.btnSendText.textContent = ServerI18n.t("fireDanmu");
       if (elements.btnSendIcon) elements.btnSendIcon.classList.remove("hidden");
       _setSendbarHint(ServerI18n.t("sendbarHint"), "");
+      _setSendbarStatusRow("");
     }
   }
 
@@ -1622,6 +1628,22 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!hint) return;
     hint.textContent = text;
     hint.dataset.state = state || "";
+  }
+
+  // Persistent status row above the sendbar pill (2026-07-07 uiux polish
+  // B2/B4). Unlike _showBanner (auto-clears) or the FIRE button label
+  // (limited width — long copy squeezes the input), this row exists so
+  // status copy never crowds out the input's placeholder and stays
+  // visible until the caller explicitly clears it.
+  function _setSendbarStatusRow(text) {
+    if (!elements.sendbarStatusRow) return;
+    if (!text) {
+      elements.sendbarStatusRow.hidden = true;
+      elements.sendbarStatusRow.textContent = "";
+      return;
+    }
+    elements.sendbarStatusRow.hidden = false;
+    elements.sendbarStatusRow.textContent = text;
   }
 
   function _clearBanner() {

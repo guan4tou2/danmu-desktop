@@ -508,6 +508,17 @@
             aria-live="polite"
             hidden
           ></div>
+          <!-- 2026-07-07 uiux polish B2: persistent status row ABOVE the
+               pill (not inside the FIRE button) so long copy — "Desktop
+               offline · cannot send", "message dropped" — never squeezes
+               the input's flex:1 width down and hides its placeholder. -->
+          <div
+            id="sendbarStatusRow"
+            class="viewer-sendbar-status-row"
+            role="status"
+            aria-live="polite"
+            hidden
+          ></div>
           <div id="emojiPopover" class="viewer-emoji-popover" aria-hidden="true">
             <div id="emojiPicker" class="viewer-emoji-popover-grid"></div>
           </div>

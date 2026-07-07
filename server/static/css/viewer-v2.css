@@ -1395,6 +1395,23 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
 .viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="blocked"]  { color: #ff4d4f; }
 .viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="cooldown"] { color: #fbbf24; }
 
+/* 2026-07-07 uiux polish B2/B4: persistent status row ABOVE the pill (not
+ * squeezed into the FIRE button or a badge over the input) so the input
+ * placeholder stays fully visible while an offline / dropped-message
+ * notice is shown. Block-level, full width, wraps if needed. */
+.viewer-sendbar-status-row {
+  margin: 0 4px 6px;
+  padding: 6px 10px;
+  border-radius: var(--radius-md, 6px);
+  background: rgba(255, 77, 79, 0.08);
+  color: #ff4d4f;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  line-height: 1.4;
+}
+.viewer-sendbar-status-row[hidden] { display: none; }
+
 .viewer-sendbar-pill.is-active {
   border-color: var(--color-primary);
 }
