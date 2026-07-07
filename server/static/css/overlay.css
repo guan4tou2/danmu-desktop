@@ -236,6 +236,15 @@ body {
   width: 100%;
   height: 100%;
 }
+/* QR zoom modal: the cloned SVG has no intrinsic width/height (the renderer
+   strips them), and the .overlay-idle-qr svg rule above is out of scope inside
+   the zoom card — so without this it renders at its tiny default viewport.
+   Size it to fill the enlarged card (F13). */
+#overlayQrZoomCard svg {
+  display: block;
+  width: min(80vw, 80vh);
+  height: auto;
+}
 /* Dim QR while interacting / connected / failed (prototype dim=true). */
 #overlay-idle[data-state="scanning"] .overlay-idle-qr,
 #overlay-idle[data-state="paired"]   .overlay-idle-qr,

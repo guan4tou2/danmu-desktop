@@ -127,14 +127,36 @@
         var zoomCard = document.getElementById("overlayQrZoomCard");
         if (!qr || !zoom || !zoomCard) return;
 
+        // Bound key handler, attached to document only while the zoom dialog
+        // is open (mirrors window-picker's _escHandler pattern). Handles ESC
+        // to close and traps Tab so the aria-modal claim is real — the dialog
+        // is the only focusable element, so preventing default keeps focus in.
+        var _keyHandler = null;
+
         function openZoom() {
           zoomCard.innerHTML = qr.innerHTML;
           zoom.style.display = "flex";
           zoom.focus();
+          if (!_keyHandler) {
+            _keyHandler = function (e) {
+              if (e.key === "Escape") {
+                closeZoom();
+              } else if (e.key === "Tab") {
+                // Dialog is the sole focusable node — keep focus trapped.
+                e.preventDefault();
+                zoom.focus();
+              }
+            };
+            document.addEventListener("keydown", _keyHandler);
+          }
         }
         function closeZoom() {
           zoom.style.display = "none";
           zoomCard.innerHTML = "";
+          if (_keyHandler) {
+            document.removeEventListener("keydown", _keyHandler);
+            _keyHandler = null;
+          }
           qr.focus();
         }
 
@@ -146,12 +168,6 @@
           }
         });
         zoom.addEventListener("click", closeZoom);
-        document.addEventListener("keydown", function (e) {
-          if (e.key === "Escape" && zoom.style.display === "flex") {
-            e.stopPropagation();
-            closeZoom();
-          }
-        });
       });
     })();
   </script>

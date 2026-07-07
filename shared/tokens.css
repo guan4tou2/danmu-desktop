@@ -15,6 +15,10 @@
   /* Semantic */
   --color-success: #22c55e;
   --color-success-light: #86efac;      /* emerald-300 — used for success dots / pulse rings */
+  --color-success-dim: #4d7c0f;        /* lime-700 — success copy on light surfaces (viewer reconnected toast) */
+  --color-success-bright: #84e100;     /* lime — success copy/accent on dark surfaces */
+  --color-success-surface: rgba(132, 225, 0, 0.1);   /* faint lime tint for success banner backgrounds */
+  --color-success-border: rgba(132, 225, 0, 0.35);   /* lime border for success banners */
   --color-warning: #fbbf24;            /* amber-400 — prototype hudTokens.amber */
   --color-error: #ef4444;              /* form-level red (validation errors) */
   --color-error-hover: #dc2626;
@@ -27,6 +31,10 @@
    * E3) — this only unifies the reference point so a future contrast pass
    * can flip it in one place instead of grepping every #000. */
   --btn-text-on-primary: #000;
+
+  /* Ink for QR modules rendered on a white plate (the QR data squares). Not a
+   * button-text token — kept separate so the two can diverge (2026-07-07 F7). */
+  --qr-ink: #000;
 
   /* HUD alias set lives further down in this file alongside the legacy
    * --hud-cut / --hud-corner-* atoms (line ~135). --color-danger is the

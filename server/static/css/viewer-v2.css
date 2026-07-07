@@ -1458,9 +1458,9 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
   bottom: 0;
   z-index: 9050;
   padding: 10px 16px;
-  background: rgba(132, 225, 0, 0.1);
-  border-top: 1px solid rgba(132, 225, 0, 0.35);
-  color: #4d7c0f;
+  background: var(--color-success-surface);
+  border-top: 1px solid var(--color-success-border);
+  color: var(--color-success-dim);
   font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 600;
@@ -1468,7 +1468,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
   animation: viewer-banner-in 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 body.viewer-body-v2.is-dark .viewer-reconnected-toast {
-  color: #84e100;
+  color: var(--color-success-bright);
 }
 @media (prefers-reduced-motion: reduce) {
   .viewer-reconnected-toast { animation: none; }
@@ -2150,7 +2150,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
   opacity: 0;
-  transition: opacity var(--motion-normal, var(--motion-normal)) var(--ease-in-out, ease);
+  transition: opacity var(--motion-normal, 180ms) var(--ease-in-out, ease);
   pointer-events: auto;
 }
 .viewer-mobile-sheet.is-open .viewer-mobile-sheet-backdrop {
@@ -2166,7 +2166,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.6);
   transform: translateY(100%);
-  transition: transform var(--motion-normal, var(--motion-normal)) var(--ease-out, ease);
+  transition: transform var(--motion-normal, 180ms) var(--ease-out, ease);
   pointer-events: auto;
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
@@ -2274,7 +2274,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
      (slight overshoot when going active). 2026-05-18 motion language. */
   transition: background var(--motion-fast) var(--ease-out, ease),
               color var(--motion-fast) var(--ease-out, ease),
-              transform var(--motion-normal, var(--motion-normal)) var(--ease-spring, ease);
+              transform var(--motion-normal, 180ms) var(--ease-spring, ease);
   min-width: 32px;
   text-align: center;
   transform: scale(1);
@@ -2349,7 +2349,7 @@ body.viewer-body-v2.is-dark .viewer-theme-chip-seg {
   height: 8px;
   border-radius: var(--radius-sm);
   background: var(--color-bg-elevated);
-  transition: width var(--motion-normal, var(--motion-normal)) var(--ease-out, ease),
+  transition: width var(--motion-normal, 180ms) var(--ease-out, ease),
               background var(--motion-fast) var(--ease-out, ease);
 }
 .viewer-poll-dot.is-past {

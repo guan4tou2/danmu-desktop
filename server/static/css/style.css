@@ -3127,6 +3127,17 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   align-items: center;
   gap: 8px;
   cursor: pointer;
+  transition: border-color var(--motion-fast), color var(--motion-fast);
+}
+
+/* Interactive affordance — this pill is clickable and navigates (F8). */
+.admin-dash-broadcast:hover {
+  border-color: var(--hud-line-strong);
+}
+.admin-dash-broadcast:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 35%, transparent);
 }
 
 .admin-dash-broadcast .dot {
@@ -9589,7 +9600,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   height: 48px;
   border-radius: var(--radius-sm);
   background: #ffffff;
-  color: var(--btn-text-on-primary);
+  color: var(--qr-ink);
   display: inline-flex;
   align-items: center;
   justify-content: center;

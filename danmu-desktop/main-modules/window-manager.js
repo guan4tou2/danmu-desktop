@@ -179,6 +179,7 @@ function createWindow(childWindows, onKonamiTrigger) {
 
   const mainWindow = new BrowserWindow({
     ...initialBounds,
+    minWidth: 400,
     minHeight: 700,
     resizable: true,
     autoHideMenuBar: true,
@@ -211,9 +212,20 @@ function createWindow(childWindows, onKonamiTrigger) {
   mainWindow.on("close", (e) => {
     console.log("[Main] Window close event triggered");
     // Persist the final geometry so the next launch restores it (A8).
+    // When minimized or fullscreen, getBounds() reports the transient
+    // (minimized/fullscreen) rect rather than the restorable window rect —
+    // use getNormalBounds() in those states so we never persist a degenerate
+    // geometry that can't be restored (F9).
     try {
       if (!mainWindow.isDestroyed()) {
-        saveWindowState(mainWindow.getBounds());
+        const useNormal =
+          (typeof mainWindow.isMinimized === "function" && mainWindow.isMinimized()) ||
+          (typeof mainWindow.isFullScreen === "function" && mainWindow.isFullScreen());
+        const bounds =
+          useNormal && typeof mainWindow.getNormalBounds === "function"
+            ? mainWindow.getNormalBounds()
+            : mainWindow.getBounds();
+        saveWindowState(bounds);
       }
     } catch (err) {
       console.error("[Main] Error saving window state:", sanitizeLog(err.message));

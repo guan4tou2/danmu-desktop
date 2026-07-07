@@ -95,4 +95,20 @@ describe("window-state persistence", () => {
       isBoundsOnScreen({ x: 0, y: 0, width: 800, height: 900 }, [])
     ).toBe(false);
   });
+
+  test("isBoundsOnScreen prefers workArea over bounds when both exist (F9)", () => {
+    // Display's usable workArea starts at y=1000 (e.g. a menu bar / dock
+    // reserved region), while the full physical bounds start at y=0. Saved
+    // bounds overlap the physical bounds but sit entirely above the workArea,
+    // so the window would open under a reserved region — must be rejected.
+    const displays = [
+      {
+        bounds: { x: 0, y: 0, width: 1920, height: 1080 },
+        workArea: { x: 0, y: 1000, width: 1920, height: 80 },
+      },
+    ];
+    expect(
+      isBoundsOnScreen({ x: 100, y: 0, width: 800, height: 900 }, displays)
+    ).toBe(false);
+  });
 });
