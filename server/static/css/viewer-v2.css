@@ -1204,9 +1204,11 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
   transform: scale(1.15);
 }
 
-/* 2026-05-16 RWD per design v3-r8:
-   Desktop: size / opacity / speed in a single 3-col row.
-   Mobile (≤599px): drops to 2-col so size + opacity stay together
+/* 2026-05-16 RWD per design v3-r8, breakpoint raised 599px→768px on
+   2026-07-07 (uiux polish B6): the 3-col row was cramping the size/opacity/
+   speed sliders on tablet widths (600-767px) too, not just phones.
+   Desktop (≥768px): size / opacity / speed in a single 3-col row.
+   ≤767px: drops to 2-col so size + opacity stay together
    and speed wraps below as a full-width row (grid auto-wrap). */
 .viewer-grid-fields {
   display: grid;
@@ -1215,7 +1217,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
   margin-bottom: 0.875rem;
 }
 
-@media (max-width: 599px) {
+@media (max-width: 767px) {
   .viewer-grid-fields {
     grid-template-columns: 1fr 1fr;
   }
