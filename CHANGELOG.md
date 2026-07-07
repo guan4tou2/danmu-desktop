@@ -7,16 +7,58 @@
 
 ## [Unreleased]
 
+## [5.4.0] - 2026-07-07
+
+**全面 UIUX 打磨：桌面端、觀眾端、管理後台與設計系統。**
+依 2026-07-07 UIUX 稽核執行的三批改善（40 項計畫任務），聚焦互動回饋、
+行動裝置體驗、主題一致性與可及性。
+
+### 新增 / Added
+
+- 桌面端會記住視窗位置與大小，重開自動還原（含多螢幕失效防護）。
+- 觀眾端斷線時顯示「連線中斷」橫幅，恢復後提示「已重新連線」。
+- 投票後選項立即顯示「✓ 已投出」確認，不需等待感謝畫面。
+- Overlay 配對 QR code 可點擊全螢幕放大，方便遠距掃描（ESC 或點擊關閉）。
+- 管理後台 topbar 新增麵包屑（分區 › 頁面 › 分頁），深層頁面不再迷路。
+- Themes / Sounds 清單載入骨架畫面；Filters 空狀態改為具名引導。
+- CSS 設計 token 防回歸 lint（`scripts/check-css-tokens.mjs`，接入 CI 與
+  `make lint-css`）：新增裸 hex 色碼會使 CI 失敗。
+
 ### 變更 / Changed
 
-- Release docs now match the portable-only desktop packaging policy: Windows is
-  documented as a portable x64 `.exe`, macOS as an arm64 `.zip`, and Linux as
-  AppImage / `.deb`.
-- Windows updater metadata remains unpublished while the Windows release channel
-  stays portable-only; macOS update metadata continues to target the ZIP package.
-- Release workflow and feature inventory docs now use the same policy wording,
-  including macOS ZIP updater metadata, Windows portable-only output, and no
-  desktop first-run gate.
+- 管理後台主題改為深色預設，亮色為明確選項（`--admin-*` token 併入
+  light/dark 雙軌）；登入頁與後台走同一主題機制，不再亮暗跳動。
+- 觀眾端文案改為觀眾視角：「Desktop 未連線」→「主持端尚未開啟 · 訊息暫時
+  無法送出」（中英日韓四語同步）；未連線與訊息滿載提示移至輸入框上方的
+  獨立狀態列，不再遮擋輸入框。
+- 手機上輸入框跟隨軟鍵盤定位（visualViewport），送出後自動收起鍵盤；
+  平板斷點由 599px 放寬到 768px。
+- 本次新增的介面文案全面接入 i18n（四語）：重連提示、投票確認、色票名稱、
+  桌面端連線區的空狀態／測試中／已設定等字樣。
+- 動效時長、圓角與顏色全面 token 化；桌面端（Electron）正式接上
+  `shared/tokens.css`，desktop 與 web 視覺語言統一。
+- 管理後台 topbar 收斂為單列；「DESKTOP · ON」改為狀態章視覺並補
+  hover/focus 回饋。
+- Release 文件同步 portable-only 打包政策的措辭（Windows portable x64
+  `.exe`、macOS arm64 `.zip`、Linux AppImage / `.deb`；Windows 更新
+  metadata 維持不發佈）。
+
+### 修正 / Fixed
+
+- 亮色主題下多處管理後台元件殘留深色底（場次卡、輸入框等）的洩漏。
+- Onboarding 導覽卡標題對比不足；HUD modal 補上 focus trap 與關閉後
+  焦點歸還；鍵盤焦點環（focus-visible）補齊。
+- 連線測試進行中按鈕未禁用、失敗色語義混用 amber 的問題；連線失敗訊息
+  人話化。
+- 離線時開始打字會讓「無法送出」說明消失的問題。
+- Overlay 彈幕計數器對比不足；QR 放大後尺寸規則遺失的問題。
+- `prefers-reduced-motion` 覆蓋補全（child/about/overlay/hud 樣式）。
+- 手機視窗下 KPI 中文標籤一字一行直排的破版。
+
+### 移除 / Removed
+
+- 407 行無任何引用的舊版 admin hero 孤兒 CSS（pre-#82 遺留）。
+- 最後殘留的 violet 色票與模板內嵌色（全部改 token）。
 
 ## [5.3.1] - 2026-05-20
 
