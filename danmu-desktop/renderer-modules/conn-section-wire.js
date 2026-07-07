@@ -200,6 +200,18 @@ function initConnSection({ api } = {}) {
     if (editBlock) editBlock.setAttribute("hidden", "");
     if (displayBlock) displayBlock.removeAttribute("hidden");
   }
+  // ESC while editing the server reverts to the persisted value and closes
+  // edit mode — same path as the ✕ 取消 button. Scoped to the edit block so
+  // no global keydown listener is added (A7).
+  if (editBlock) {
+    editBlock.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        _setServerFromHidden();
+        _closeEdit();
+      }
+    });
+  }
   if (editPencil) {
     editPencil.addEventListener("click", _openEdit);
     // editPencil is the whole host-row with role="button" tabindex="0";
