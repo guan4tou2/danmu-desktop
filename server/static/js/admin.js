@@ -510,7 +510,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }).join("");
 
       let topTextRows = topTexts.map((t, i) =>
-        `<tr style="border-top:1px solid var(--admin-line)"><td class="py-1 pr-3" style="color:var(--admin-text-dim)">${i + 1}</td><td class="py-1 pr-3 text-sm" style="color:var(--admin-text)">${escapeHtml(t.text)}</td><td class="py-1 font-mono text-sm" style="color:var(--color-primary)">${t.count}</td></tr>`
+        `<tr class="history-toptext-row"><td class="py-1 pr-3 history-toptext-rank">${i + 1}</td><td class="py-1 pr-3 text-sm history-toptext-text">${escapeHtml(t.text)}</td><td class="py-1 font-mono text-sm history-toptext-count">${t.count}</td></tr>`
       ).join("");
 
       dashDiv.innerHTML = `
@@ -530,14 +530,14 @@ document.addEventListener("DOMContentLoaded", () => {
               <h4 class="history-dashboard-title">${ServerI18n.t("hourlyDistribution")}</h4>
               <span class="history-dashboard-caption">${hours}h window</span>
             </div>
-            <div class="stats-chart">${chartBars || `<span class="text-xs" style="color:var(--admin-text-dim)">${ServerI18n.t("noData")}</span>`}</div>
+            <div class="stats-chart">${chartBars || `<span class="text-xs history-nodata">${ServerI18n.t("noData")}</span>`}</div>
           </div>
           <div class="history-dashboard-card history-dashboard-card--table">
             <div class="history-dashboard-title-row">
               <h4 class="history-dashboard-title">${ServerI18n.t("topTexts")}</h4>
               <span class="history-dashboard-caption">Top 10</span>
             </div>
-            ${topTexts.length ? `<table class="w-full text-xs"><tbody>${topTextRows}</tbody></table>` : `<span class="text-xs" style="color:var(--admin-text-dim)">${ServerI18n.t("noData")}</span>`}
+            ${topTexts.length ? `<table class="w-full text-xs"><tbody>${topTextRows}</tbody></table>` : `<span class="text-xs history-nodata">${ServerI18n.t("noData")}</span>`}
           </div>
         </div>`;
     } catch (err) {

@@ -3488,7 +3488,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   color: var(--color-text-strong);
 }
 .hud-effect-card-preview.is-glow { color: var(--color-primary); text-shadow: 0 0 12px var(--color-primary); }
-.hud-effect-card-preview.is-color { color: #ec4899; }
+.hud-effect-card-preview.is-color { color: var(--color-primary); }
 .hud-effect-card-preview.is-text { letter-spacing: 2px; }
 .hud-effect-card-name {
   font-family: var(--font-mono);
@@ -5356,6 +5356,28 @@ body.stream-mode .admin-hero .admin-summary-grid {
 .history-dashboard-caption {
   color: var(--color-slate-500);
   font-size: 0.75rem;
+}
+
+/* Top-texts table + no-data span — replaces per-cell inline color styles
+   that were hardcoded in admin.js _loadStats() (C9). */
+.history-toptext-row {
+  border-top: 1px solid var(--admin-line);
+}
+
+.history-toptext-rank {
+  color: var(--admin-text-dim);
+}
+
+.history-toptext-text {
+  color: var(--admin-text);
+}
+
+.history-toptext-count {
+  color: var(--color-primary);
+}
+
+.history-nodata {
+  color: var(--admin-text-dim);
 }
 
 .stats-chart {
