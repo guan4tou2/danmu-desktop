@@ -863,6 +863,9 @@ document.addEventListener("DOMContentLoaded", () => {
     updateCharCount();
     updatePreview();
     updateSendEnabled();
+    // B4: clear the "message dropped" status row once the viewer starts
+    // typing a new attempt — it shouldn't linger past the next input.
+    _setSendbarStatusRow("");
   });
   updateSendEnabled();
 
@@ -1859,8 +1862,15 @@ document.addEventListener("DOMContentLoaded", () => {
           const data = responseData || {};
           if (data.status === "dropped" && data.reason === "full") {
             message = ServerI18n.t("onscreenFullDropped");
+            // 2026-07-07 uiux polish B4: persistent sendbar status row
+            // instead of a one-shot toast — stays until next input attempt
+            // so the viewer doesn't miss why the message never appeared.
+            _setSendbarStatusRow(message);
+            return;
           } else if (data.status === "rejected" && data.reason === "queue_full") {
             message = ServerI18n.t("queueFullTryLater");
+            _setSendbarStatusRow(message);
+            return;
           } else {
             message = (typeof data.error === "string" ? data.error : data.error?.message) || message;
           }
