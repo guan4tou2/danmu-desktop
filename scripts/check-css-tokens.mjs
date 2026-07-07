@@ -44,6 +44,7 @@ const EXCLUDE_DIR_NAMES = new Set([
   "dist",
   "pack",
   ".git",
+  ".claude", // session worktrees under .claude/worktrees/ duplicate every CSS file
   ".venv",
   "__pycache__",
   "htmlcov",
