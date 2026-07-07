@@ -4886,12 +4886,18 @@ body.stream-mode .admin-hero .admin-summary-grid {
   max-width: 980px;
 }
 
+/* D2 mustFix: grep confirms .server-main-shell / .server-hero-* / .composer-*
+ * (below) / .settings-card are NOT rendered by any current admin or viewer
+ * markup — they are orphaned CSS from the pre-#82 admin hero (superseded by
+ * .hud-hero-title, see admin.js). Left theme-aware (not deleted) since
+ * removal is out of scope for this review pass; see docs/agent-ops review
+ * notes 2026-07 D2 for the audit trail. */
 .server-main-shell {
   --server-shell-radius: 1.9rem;
   position: relative;
   overflow: visible;
   border-radius: var(--server-shell-radius);
-  background: rgba(2, 6, 23, 0.72);
+  background: var(--admin-raised);
 }
 
 .server-hero-band {
@@ -4949,7 +4955,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   padding: 0.65rem 0.85rem;
   border: 1px solid rgba(51, 65, 85, 0.72);
   border-radius: var(--radius-pill);
-  background: rgba(15, 23, 42, 0.62);
+  background: var(--admin-raised);
   box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.04);
 }
 
@@ -5046,7 +5052,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   overflow: hidden;
   border: 1px solid rgba(71, 85, 105, 0.42);
   border-radius: 1.15rem;
-  background: rgba(15, 23, 42, 0.58);
+  background: var(--admin-raised);
   padding: 0.8rem;
   box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.05);
 }
@@ -5058,7 +5064,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   min-height: 132px;
   border: 1px solid rgba(71, 85, 105, 0.46);
   border-radius: 0.95rem;
-  background: rgba(15, 23, 42, 0.54);
+  background: var(--admin-raised);
   padding: 0.8rem 0.9rem;
   box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.04);
 }
@@ -5183,7 +5189,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
 .settings-card {
   border: 1px solid rgba(51, 65, 85, 0.7);
   border-radius: var(--radius-xl);
-  background: rgba(15, 23, 42, 0.62);
+  background: var(--admin-raised);
   padding: 0.95rem 1rem;
   box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.04);
 }
@@ -5432,7 +5438,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
 .history-stats-strip {
   border: 1px solid rgba(51, 65, 85, 0.66);
   border-radius: 0.9rem;
-  background: rgba(15, 23, 42, 0.5);
+  background: var(--admin-raised);
   padding: 0.7rem 0.9rem;
 }
 

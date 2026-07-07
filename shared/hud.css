@@ -288,17 +288,26 @@
 }
 
 /* D4 — the brand lockup's drop-shadow is tuned for the dark viewer / overlay
- * / Electron surfaces. On the admin login (and any admin chrome) the light
- * theme is the default, and that heavy black shadow reads as a dirty smudge
- * on white; swap it for a soft sky-tinted glow. .admin-body is light by
- * default (auto mode), so scope the soft glow to it and only restore the dark
- * shadow when the operator explicitly toggles the admin to dark. Also covers
- * a page-level [data-theme="light"] on non-admin surfaces. */
-.admin-body .hud-hero-title,
-:root[data-theme="light"] .hud-hero-title {
+ * / Electron surfaces. Admin chrome is dark BY DEFAULT (shared/tokens.css
+ * :root is dark; light is an explicit opt-in via [data-theme="light"] or an
+ * OS-level light preference with no explicit override). That heavy black
+ * shadow only reads as a dirty smudge when the admin surface is actually
+ * light, so the soft sky-tinted glow must be scoped to real light contexts
+ * only — never fire it just because .admin-body exists, or "auto mode + dark
+ * OS" would incorrectly get the light-mode glow. Two explicit-light triggers:
+ * 1) manual [data-theme="light"] override, 2) auto mode (no data-theme at
+ * all) combined with an OS light preference. */
+[data-theme="light"] .admin-body .hud-hero-title {
   filter:
     drop-shadow(0 6px 14px rgba(56, 189, 248, 0.28))
     drop-shadow(0 2px 4px rgba(56, 189, 248, 0.18));
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .admin-body .hud-hero-title {
+    filter:
+      drop-shadow(0 6px 14px rgba(56, 189, 248, 0.28))
+      drop-shadow(0 2px 4px rgba(56, 189, 248, 0.18));
+  }
 }
 html[data-theme="dark"] .admin-body .hud-hero-title {
   filter:
