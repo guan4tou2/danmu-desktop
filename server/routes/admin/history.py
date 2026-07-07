@@ -32,7 +32,7 @@ def _clamp_hours(hours):
     return max(1, min(hours, 168))
 
 
-def _parse_ts(ts_str):
+def _parse_ts(ts_str: str):
     if ts_str.endswith("Z"):
         ts_str = ts_str.replace("Z", "+00:00")
     return datetime.fromisoformat(ts_str)
@@ -400,12 +400,6 @@ def search_history():
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
-
-
-def _parse_ts(ts_str: str):
-    if ts_str.endswith("Z"):
-        ts_str = ts_str.replace("Z", "+00:00")
-    return datetime.fromisoformat(ts_str)
 
 
 def _derive_sessions(records, gap_minutes=30):

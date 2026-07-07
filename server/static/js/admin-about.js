@@ -28,7 +28,21 @@
 
   const CHANGELOG = [
     {
-      v: "5.2.0", d: "2026-05-19", tag: "current", notes: [
+      v: "5.3.1", d: "2026-05-20", tag: "current", notes: [
+        { t: "fix",  l: "Portable-only 發佈打包 · Windows 只出 portable x64 · macOS 只出 arm64 ZIP · 停用 NSIS/DMG" },
+        { t: "fix",  l: "Release notes 註明 portable-only 政策與 macOS ad-hoc 簽章 / 未公證限制" },
+      ],
+    },
+    {
+      v: "5.3.0", d: "2026-05-20", tag: "", notes: [
+        { t: "feat", l: "Desktop 顯示客戶端定案 · 對齊 v3 設計 · 移除退役 setup-wizard / bridge / debug 路徑" },
+        { t: "feat", l: "WebSocket runtime 統一至 Flask /ws 路由 · CI 移除舊 4001 假設 · Docker smoke 覆蓋" },
+        { t: "fix",  l: "移除 admin 命令面板 debug log fallback · sidebar IA + regression guard 鎖定" },
+        { t: "fix",  l: "相依下限提升 idna>=3.15 · pip-audit 保留 scoped flask-cors 忽略註記" },
+      ],
+    },
+    {
+      v: "5.2.0", d: "2026-05-19", tag: "", notes: [
         { t: "feat", l: "Danmu Redesign v5 finish · Batch 12 closes design coverage 22/28 → 28/28" },
         { t: "feat", l: "BE audience module · risk score · flag / kick / unkick · /admin/audience/*" },
         { t: "feat", l: "BE backup pack · .tar.gz export / dry-run / atomic apply · /admin/backup/*" },
