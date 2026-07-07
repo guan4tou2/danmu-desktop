@@ -211,7 +211,7 @@ Every other setting ships a safe default; `.env.example` shows them all.
 ## CI/CD & Docker Hub
 
 - Workflow `.github/workflows/docker-build.yml` builds and tests the server image on each PR/push.
-- Workflow `.github/workflows/test.yml` runs Python tests with coverage reporting and `pip-audit` for CVE scanning.
+- Workflow `.github/workflows/test.yml` runs Python tests with coverage reporting, `pip-audit` for CVE scanning, and a CSS token-discipline lint (`scripts/check-css-tokens.mjs`) that fails on new hardcoded hex colors.
 - Workflow `.github/workflows/build.yml` builds Electron app for Windows,
   macOS, and Linux on version bump, then publishes GitHub Releases with
   portable desktop artifacts. macOS ZIP updater metadata is published; Windows
