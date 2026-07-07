@@ -800,7 +800,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                       <option value="ja" ${ServerI18n.currentLang === "ja" ? "selected" : ""}>日本語</option>
                                       <option value="ko" ${ServerI18n.currentLang === "ko" ? "selected" : ""}>한국어</option>
                                     </select>
-                                    <button class="admin-dash-broadcast" type="button" aria-live="polite"
+                                    <button class="admin-dash-broadcast ${broadcasting ? "is-on" : "is-off"}" type="button" aria-live="polite"
                                         title="切換 Desktop 狀態" data-route="overlay">
                                         <span class="dot"></span>
                                         ${broadcasting ? "DESKTOP · ON" : "DESKTOP · OFF"}
