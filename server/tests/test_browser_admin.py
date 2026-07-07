@@ -160,9 +160,14 @@ def _open_section(page, section_id: str):
         sec-security / sec-widgets ...），需額外點 summary 展開內容。
 
     v5 (2026-04-26): per-setting sections (sec-color / sec-opacity / sec-speed /
-    sec-fontsize / sec-fontfamily / sec-layout) collapsed into one
-    #admin-display-v2-page rendered by admin-display.js. Legacy IDs no
-    longer exist; fall back to waiting for the page container instead.
+    sec-fontsize / sec-fontfamily / sec-layout) collapsed into one display page
+    rendered by admin-display.js. Legacy IDs no longer exist; fall back to
+    waiting for the page container instead.
+
+    IA v5 5-section (2026-05-18): the display-defaults page container is
+    #sec-viewer-config-defaults (renamed from admin-display-v2-page). It mounts
+    under the #/viewer route on the default "defaults" tab, which is where the
+    Speed/Color controls (data-num-key / data-toggle-key) still live.
     """
     route = SECTION_TO_ROUTE.get(section_id)
     if route:
@@ -188,7 +193,9 @@ def _open_section(page, section_id: str):
         "sec-layout",
     }
     if section_id in DISPLAY_LEGACY_IDS:
-        page.wait_for_selector("#admin-display-v2-page", state="visible", timeout=5000)
+        page.wait_for_selector(
+            "#sec-viewer-config-defaults", state="visible", timeout=5000
+        )
         return
 
     page.wait_for_selector(f"#{section_id}", state="visible", timeout=5000)
@@ -423,9 +430,14 @@ def test_blacklist_empty_keyword_not_submitted(admin_page):
 def test_change_password_section_exists(admin_page):
     """安全性區塊應有密碼修改欄位（v5.0 retrofit: sec2-pw-* IDs in
     admin-security-v2-page replaced legacy pwCurrent/pwNew/pwConfirm)."""
-    # Navigate to security route — v2 page handles its own visibility on
-    # data-active-route, doesn't go through _open_section's sec-* gate.
-    admin_page.evaluate('() => { window.location.hash = "#/security"; }')
+    # Navigate to security page — v2 page handles its own visibility on
+    # data-active-route/data-active-leaf, doesn't go through _open_section's
+    # sec-* gate. IA v5 5-section (2026-05-18): Security lives under the System
+    # route as the `security` leaf (#/system/security). The standalone
+    # #/security alias route has empty sections and hides #settings-grid, which
+    # keeps the whole password card off-screen — so use the canonical
+    # #/system/security path the sidebar actually navigates to.
+    admin_page.evaluate('() => { window.location.hash = "#/system/security"; }')
     admin_page.wait_for_selector("#sec2-pw-current", state="visible", timeout=5000)
     assert admin_page.is_visible("#sec2-pw-current")
     assert admin_page.is_visible("#sec2-pw-new")
@@ -435,7 +447,8 @@ def test_change_password_section_exists(admin_page):
 def test_change_password_wrong_current_calls_api(admin_page):
     """輸入錯誤舊密碼後，API 應回傳 403（v5.0 retrofit: sec2-pw-form submit
     flow replaced standalone changePasswordBtn click)."""
-    admin_page.evaluate('() => { window.location.hash = "#/security"; }')
+    # IA v5 5-section: Security is the `security` leaf under the System route.
+    admin_page.evaluate('() => { window.location.hash = "#/system/security"; }')
     admin_page.wait_for_selector("#sec2-pw-current", state="visible", timeout=5000)
 
     responses = []
