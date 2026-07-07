@@ -1,0 +1,11 @@
+{
+  "danmu-desktop/about.css": 2,
+  "danmu-desktop/child.css": 13,
+  "danmu-desktop/styles.css": 19,
+  "danmu-desktop/tailwind-input.css": 0,
+  "server/static/css/overlay.css": 71,
+  "server/static/css/style.css": 326,
+  "server/static/css/viewer-v2.css": 76,
+  "server/tailwind.input.css": 0,
+  "shared/hud.css": 126
+}

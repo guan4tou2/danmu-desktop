@@ -127,6 +127,9 @@ jobs:
           npm run build:css
           git diff --exit-code static/css/tailwind.css || { echo "❌ tailwind.css is stale — run 'npm run build:css' in server/ and commit"; exit 1; }
 
+      - name: Check CSS token discipline (no new hardcoded hex colors)
+        run: node scripts/check-css-tokens.mjs
+
       - name: Run Jest tests
         working-directory: danmu-desktop
         run: npx jest --testPathPatterns=tests/
