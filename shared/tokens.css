@@ -19,7 +19,14 @@
   --color-error: #ef4444;              /* form-level red (validation errors) */
   --color-error-hover: #dc2626;
   --color-error-light: #f87171;
+  --color-error-lighter: #fca5a5;      /* red-300 — even lighter, for error copy on dark surfaces (2026-07-07 E3) */
   --color-danger: #ff4d4f;             /* destructive-action red (Ban / Delete) — slightly brighter than --color-error */
+
+  /* Button text on filled/bright backgrounds (primary/warning/success buttons,
+   * badges, pills). Value intentionally still #000 (2026-07-07 UIUX polish
+   * E3) — this only unifies the reference point so a future contrast pass
+   * can flip it in one place instead of grepping every #000. */
+  --btn-text-on-primary: #000;
 
   /* HUD alias set lives further down in this file alongside the legacy
    * --hud-cut / --hud-corner-* atoms (line ~135). --color-danger is the
@@ -71,6 +78,7 @@
   /* State colours */
   --color-connected: #14b8a6;
   --color-connected-dark: #0d9488;
+  --color-connected-bright: #10b981;   /* emerald-500 — brighter "connected" dot variant (desktop tray/titlebar) */
   --color-surface-muted: #475569;
   --color-active-btn: #0369a1;
 
@@ -86,9 +94,12 @@
   --glow-primary-lg: rgba(56, 189, 248, 0.6);
   --glow-accent: rgba(6, 182, 212, 0.6);
   --glow-connected: rgba(20, 184, 166, 0.4);
+  --glow-connected-bright: rgba(16, 185, 129, 0.6);  /* emerald-500 glow paired with --color-connected-bright */
   --glow-success: rgba(34, 197, 94, 0.6);
+  --glow-error-hover: rgba(220, 38, 38, 0.7);         /* red-600 glow paired with --color-error-hover */
   --ring-success: rgba(16, 185, 129, 0.2);
   --ring-error: rgba(239, 68, 68, 0.2);
+  --ring-error-strong: rgba(239, 68, 68, 0.6);        /* red-500 glow, brighter than --ring-error */
 
   /* Typography (see DESIGN.md § Typography)
    * Default stack: Latin → TC (primary market) → JP → KR → system fallback.
@@ -123,11 +134,19 @@
   --space-6: 1.5rem;    /* 24px */
   --space-8: 2rem;      /* 32px */
 
-  /* Radius */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
+  /* Radius — 2026-07-07 UIUX polish E2: --radius-sm/md/lg/xl (4/8/12/16px)
+   * predate this pass and already have live consumers at those exact px
+   * values (see style.css card/button usages) — do not renumber them.
+   * --radius-2xs/xs/md-sm fill the gaps below 4px so the ~360 hardcoded
+   * 2px/3px/6px declarations across style.css/hud.css/viewer-v2.css can
+   * point at a token without shifting any existing var(--radius-*) call site. */
+  --radius-2xs: 0.125rem;  /* 2px — thin bars/dots */
+  --radius-xs: 0.1875rem;  /* 3px — chips/small pills */
+  --radius-sm: 0.25rem;    /* 4px */
+  --radius-md-sm: 0.375rem; /* 6px — between sm and md */
+  --radius-md: 0.5rem;     /* 8px */
+  --radius-lg: 0.75rem;    /* 12px */
+  --radius-xl: 1rem;       /* 16px */
   --radius-pill: 999px;
 
   /* Motion (design v4 2026-05-18 — page transitions, micro-interactions).

@@ -378,7 +378,7 @@ body[data-os="mac"] .client-titlebar {
   align-items: center;
   gap: 5px;
   padding: 3px 9px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid rgba(56, 189, 248, 0.45);
   background: rgba(56, 189, 248, 0.12);
   color: var(--color-primary);
@@ -411,7 +411,7 @@ body[data-os="mac"] .client-titlebar {
 .client-update-card {
   margin-top: 14px;
   padding: 14px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(56, 189, 248, 0.35);
   background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(8px);
@@ -459,7 +459,7 @@ body[data-os="mac"] .client-titlebar {
 .client-update-card .notes {
   margin-top: 10px;
   padding: 10px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   background: rgba(15, 23, 42, 0.55);
   border: 1px solid rgba(148, 163, 184, 0.18);
   font-size: 12px;
@@ -484,7 +484,7 @@ body[data-os="mac"] .client-titlebar {
 .client-update-card .progress-track {
   flex: 1 1 auto;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(148, 163, 184, 0.18);
   overflow: hidden;
 }
@@ -493,7 +493,7 @@ body[data-os="mac"] .client-titlebar {
   height: 100%;
   background: linear-gradient(to right, var(--color-primary), var(--color-primary-hover));
   transition: width var(--motion-normal) ease;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .client-update-card .progress-label {
@@ -509,7 +509,7 @@ body[data-os="mac"] .client-titlebar {
 .client-update-card .error {
   margin-top: 8px;
   font-size: 12px;
-  color: #fca5a5;
+  color: var(--color-error-lighter);
 }
 
 .client-update-card .error[hidden] { display: none !important; }
@@ -526,14 +526,14 @@ body[data-os="mac"] .client-titlebar {
 .client-update-card .actions .client-action-btn.is-primary {
   border-color: var(--color-primary);
   background: var(--color-primary);
-  color: #000;
+  color: var(--btn-text-on-primary);
   font-weight: 600;
 }
 
 .client-update-card .actions .client-action-btn.is-primary:hover {
   background: var(--color-primary-light);
   border-color: var(--color-primary-light);
-  color: #000;
+  color: var(--btn-text-on-primary);
 }
 
 /* ───────────── Client Shell (prototype desktop.jsx ControlWindow:151) ─────────────
@@ -569,7 +569,7 @@ body[data-os="mac"] .client-titlebar {
   all: unset;
   box-sizing: border-box;
   padding: 9px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -704,7 +704,7 @@ body[data-os="mac"] .client-titlebar {
 .client-keys-card {
   background: rgba(15, 23, 42, 0.55);
   border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 14px;
   backdrop-filter: blur(8px);
 }
@@ -727,7 +727,7 @@ body[data-os="mac"] .client-titlebar {
 .client-keys-row .kbd {
   padding: 4px 10px;
   border: 1px solid rgba(56, 189, 248, 0.45);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: rgba(56, 189, 248, 0.12);
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 12px;
@@ -750,14 +750,14 @@ body[data-os="mac"] .client-titlebar {
   gap: 14px;
   padding: 16px;
   border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: rgba(15, 23, 42, 0.5);
   margin-bottom: 14px;
 }
 .client-update-status-icon {
   width: 44px;
   height: 44px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -790,7 +790,7 @@ body[data-os="mac"] .client-titlebar {
   padding: 8px 16px;
   background: transparent;
   border: 1px solid rgba(56, 189, 248, 0.45);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   color: var(--color-primary);
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 11px;
@@ -806,7 +806,7 @@ body[data-os="mac"] .client-titlebar {
 .client-update-prefs {
   padding: 14px 16px;
   border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: rgba(15, 23, 42, 0.5);
   margin-bottom: 14px;
 }
@@ -842,7 +842,7 @@ body[data-os="mac"] .client-titlebar {
 .client-update-changelog {
   padding: 14px 16px;
   border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: rgba(15, 23, 42, 0.5);
 }
 .client-update-changelog-head {
@@ -878,7 +878,7 @@ body[data-os="mac"] .client-titlebar {
 .client-about-card {
   background: rgba(15, 23, 42, 0.55);
   border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 20px;
   display: flex;
   gap: 16px;
@@ -934,7 +934,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-action-btn {
   padding: 9px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   cursor: pointer;
   border: 1px solid rgba(148, 163, 184, 0.25);
   background: transparent;
@@ -952,7 +952,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-about-desc {
   padding: 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(148, 163, 184, 0.18);
   background: rgba(15, 23, 42, 0.45);
   font-size: 12px;
@@ -985,7 +985,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-conn-card {
   padding: 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(148, 163, 184, 0.18);
   background: rgba(15, 23, 42, 0.55);
   backdrop-filter: blur(8px);
@@ -1062,7 +1062,7 @@ body[data-os="mac"] .client-titlebar {
   gap: 8px;
   padding: 10px 12px;
   background: rgba(15, 23, 42, 0.4);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   border: 1px solid rgba(148, 163, 184, 0.18);
   cursor: text;
   transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease;
@@ -1118,7 +1118,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-preview {
   flex: 1;
   padding: 6px 12px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: rgba(56, 189, 248, 0.06);
   border: 1px solid rgba(56, 189, 248, 0.18);
   font-family: "JetBrains Mono", ui-monospace, monospace;
@@ -1134,7 +1134,7 @@ body[data-os="mac"] .client-titlebar {
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 10px;
   letter-spacing: 0.5px;
@@ -1164,7 +1164,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-test-btn {
   flex: none;
   padding: 5px 14px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--color-primary);
   background: rgba(56, 189, 248, 0.12);
   color: var(--color-primary);
@@ -1203,7 +1203,7 @@ body[data-os="mac"] .client-titlebar {
   padding: 10px 12px;
   background: rgba(15, 23, 42, 0.55);
   border: 1px solid var(--color-primary);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   color: rgba(241, 245, 249, 0.95);
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 13px;
@@ -1214,7 +1214,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-conn-edit-save {
   padding: 8px 14px;
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   border: none;
   background: var(--color-primary);
   color: var(--color-bg-base, #0f172a);
@@ -1225,11 +1225,11 @@ body[data-os="mac"] .client-titlebar {
   cursor: pointer;
 }
 
-.client-conn-edit-save:hover { background: #22c1f5; }
+.client-conn-edit-save:hover { background: var(--color-primary-light); }
 
 .client-conn-edit-cancel {
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   border: 1px solid rgba(148, 163, 184, 0.25);
   background: transparent;
   color: rgba(148, 163, 184, 0.8);
@@ -1248,7 +1248,7 @@ body[data-os="mac"] .client-titlebar {
   gap: 8px;
   padding: 8px 12px;
   background: rgba(15, 23, 42, 0.4);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   border: 1px solid rgba(148, 163, 184, 0.18);
 }
 
@@ -1342,7 +1342,7 @@ body[data-os="mac"] .client-titlebar {
   padding: 10px 12px;
   background: rgba(15, 23, 42, 0.55);
   border: 1px solid rgba(148, 163, 184, 0.25);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   color: rgba(241, 245, 249, 0.95);
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 13px;
@@ -1357,7 +1357,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-mini-btn {
   padding: 5px 10px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(148, 163, 184, 0.25);
   background: rgba(15, 23, 42, 0.35);
   color: rgba(241, 245, 249, 0.9);
@@ -1408,7 +1408,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-edit {
   margin-top: 14px;
   padding: 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(56, 189, 248, 0.35);
   background: rgba(15, 23, 42, 0.55);
   backdrop-filter: blur(8px);
@@ -1454,7 +1454,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-edit-field input,
 .client-conn-edit-field select {
   padding: 8px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   border: 1px solid rgba(148, 163, 184, 0.2);
   background: rgba(15, 23, 42, 0.6);
   color: rgba(241, 245, 249, 0.95);
@@ -1492,7 +1492,7 @@ body[data-os="mac"] .client-titlebar {
  * Legacy Preview & Settings accordion is tucked away in client-overlay-advanced. */
 .client-overlay-card {
   padding: 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(148, 163, 184, 0.18);
   background: rgba(15, 23, 42, 0.55);
   backdrop-filter: blur(8px);
@@ -1585,7 +1585,7 @@ body[data-os="mac"] .client-titlebar {
 .client-screen-chip {
   flex: 1 1 200px;
   padding: 10px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   border: 1px solid rgba(148, 163, 184, 0.2);
   background: transparent;
   cursor: pointer;
@@ -1605,7 +1605,7 @@ body[data-os="mac"] .client-titlebar {
 .client-screen-chip .box {
   width: 26px;
   height: 18px;
-  border-radius: 2px;
+  border-radius: var(--radius-2xs);
   border: 1px solid rgba(148, 163, 184, 0.4);
   background: transparent;
   flex-shrink: 0;
@@ -1668,7 +1668,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-overlay-actions .client-action-btn {
   padding: 9px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   border: 1px solid rgba(148, 163, 184, 0.2);
   background: transparent;
   color: rgba(241, 245, 249, 0.9);
@@ -1690,21 +1690,21 @@ body[data-os="mac"] .client-titlebar {
 .client-overlay-actions .client-action-btn.is-primary {
   border-color: var(--color-primary);
   background: var(--color-primary);
-  color: #000;
+  color: var(--btn-text-on-primary);
   font-weight: 600;
 }
 
 .client-overlay-actions .client-action-btn.is-primary:hover {
   background: var(--color-primary-light);
   border-color: var(--color-primary-light);
-  color: #000;
+  color: var(--btn-text-on-primary);
 }
 
 /* NOTE panel (prototype OverlaySection:239) */
 .client-overlay-note {
   padding: 12px;
   background: rgba(30, 41, 59, 0.5);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   font-size: 11px;
   line-height: 1.6;
   color: rgba(148, 163, 184, 0.85);
@@ -1750,7 +1750,7 @@ body[data-os="mac"] .client-titlebar {
   max-height: 80vh;
   background: var(--color-bg-base, #0f172a);
   border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1779,7 +1779,7 @@ body[data-os="mac"] .client-titlebar {
   font-size: 22px;
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   line-height: 1;
 }
 .wp-close:hover { color: var(--color-text-bright); background: var(--hover-tint-strong); }
@@ -1794,7 +1794,7 @@ body[data-os="mac"] .client-titlebar {
   flex: 1;
   padding: 8px;
   border: none;
-  border-radius: 8px 8px 0 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
   background: transparent;
   color: var(--color-text-muted, #64748b);
   font-family: inherit;
@@ -1830,7 +1830,7 @@ body[data-os="mac"] .client-titlebar {
 .wp-card {
   background: var(--color-bg-elevated, #1e293b);
   border: 2px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   overflow: hidden;
   display: flex;
@@ -1867,7 +1867,7 @@ body[data-os="mac"] .client-titlebar {
 
 .wp-card-icon {
   flex-shrink: 0;
-  border-radius: 2px;
+  border-radius: var(--radius-2xs);
 }
 
 .wp-card-name {

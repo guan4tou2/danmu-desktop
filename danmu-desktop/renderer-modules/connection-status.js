@@ -4,6 +4,39 @@ let currentConnectionStatus = null;
 let statusUpdateTimeout = null;
 let statusHideTimeout = null;
 
+// Status indicator colours — read from shared/tokens.css custom properties
+// (2026-07-07 UIUX polish E3) with a hex fallback so behaviour is identical
+// if tokens.css hasn't loaded yet (or in the jsdom test environment, which
+// doesn't fetch external stylesheets). Read once at module load — these are
+// static design tokens, not values that change at runtime.
+function readToken(name, fallback) {
+  if (typeof document === "undefined" || typeof getComputedStyle !== "function") {
+    return fallback;
+  }
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return value || fallback;
+}
+
+const STATUS_COLORS = {
+  idle: { bg: readToken("--color-surface-muted", "#475569"), shadow: "none" },
+  connecting: {
+    bg: readToken("--color-accent", "#06b6d4"),
+    shadow: `0 0 10px ${readToken("--glow-accent", "rgba(6, 182, 212, 0.6)")}`,
+  },
+  connected: {
+    bg: readToken("--color-connected-bright", "#10b981"),
+    shadow: `0 0 10px ${readToken("--glow-connected-bright", "rgba(16, 185, 129, 0.6)")}`,
+  },
+  disconnected: {
+    bg: readToken("--color-error", "#ef4444"),
+    shadow: `0 0 10px ${readToken("--ring-error-strong", "rgba(239, 68, 68, 0.6)")}`,
+  },
+  "connection-failed": {
+    bg: readToken("--color-error-hover", "#dc2626"),
+    shadow: `0 0 12px ${readToken("--glow-error-hover", "rgba(220, 38, 38, 0.7)")}`,
+  },
+};
+
 function getLocalizedText(key, fallbackEn = "", fallbackZh = "") {
   const localized = typeof i18n !== "undefined" ? i18n.t(key) : key;
   if (localized && localized !== key) {
@@ -63,15 +96,7 @@ function updateConnectionStatus(status, text, shouldShow = true) {
       statusContainer.classList.remove("hidden");
       statusText.textContent = text;
 
-      const statusColors = {
-        idle: { bg: "#475569", shadow: "none" },
-        connecting: { bg: "#06b6d4", shadow: "0 0 10px rgba(6, 182, 212, 0.6)" },
-        connected: { bg: "#10b981", shadow: "0 0 10px rgba(16, 185, 129, 0.6)" },
-        disconnected: { bg: "#ef4444", shadow: "0 0 10px rgba(239, 68, 68, 0.6)" },
-        "connection-failed": { bg: "#dc2626", shadow: "0 0 12px rgba(220, 38, 38, 0.7)" },
-      };
-
-      const color = statusColors[status] || statusColors.idle;
+      const color = STATUS_COLORS[status] || STATUS_COLORS.idle;
       statusIndicator.style.backgroundColor = color.bg;
       statusIndicator.style.boxShadow = color.shadow;
     } else {
