@@ -639,6 +639,27 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   font-weight: 600;
 }
 
+/* 2026-07-07 uiux polish B8: immediate "voted" confirmation state — border
+ * + inline "已投出" label. Deliberately NO count/percentage anywhere here
+ * (product rule: viewer poll never shows vote counts/percentages). */
+.viewer-poll-option.is-voted {
+  border-color: var(--color-primary);
+  background: rgba(56, 189, 248, 0.1);
+  cursor: default;
+}
+
+.viewer-poll-option-voted-mark {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.6px;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
 @media (max-width: 599px) {
   .viewer-tabbar {
     padding: 0 10px;
@@ -1204,9 +1225,11 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
   transform: scale(1.15);
 }
 
-/* 2026-05-16 RWD per design v3-r8:
-   Desktop: size / opacity / speed in a single 3-col row.
-   Mobile (≤599px): drops to 2-col so size + opacity stay together
+/* 2026-05-16 RWD per design v3-r8, breakpoint raised 599px→768px on
+   2026-07-07 (uiux polish B6): the 3-col row was cramping the size/opacity/
+   speed sliders on tablet widths (600-767px) too, not just phones.
+   Desktop (≥768px): size / opacity / speed in a single 3-col row.
+   ≤767px: drops to 2-col so size + opacity stay together
    and speed wraps below as a full-width row (grid auto-wrap). */
 .viewer-grid-fields {
   display: grid;
@@ -1215,7 +1238,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
   margin-bottom: 0.875rem;
 }
 
-@media (max-width: 599px) {
+@media (max-width: 767px) {
   .viewer-grid-fields {
     grid-template-columns: 1fr 1fr;
   }
@@ -1394,6 +1417,50 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
 .viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="sent"]     { color: #84e100; }
 .viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="blocked"]  { color: #ff4d4f; }
 .viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="cooldown"] { color: #fbbf24; }
+
+/* 2026-07-07 uiux polish B2/B4: persistent status row ABOVE the pill (not
+ * squeezed into the FIRE button or a badge over the input) so the input
+ * placeholder stays fully visible while an offline / dropped-message
+ * notice is shown. Block-level, full width, wraps if needed. */
+.viewer-sendbar-status-row {
+  margin: 0 4px 6px;
+  padding: 6px 10px;
+  border-radius: var(--radius-md, 6px);
+  background: rgba(255, 77, 79, 0.08);
+  color: #ff4d4f;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  line-height: 1.4;
+}
+.viewer-sendbar-status-row[hidden] { display: none; }
+
+/* 2026-07-07 uiux polish B3: brief "reconnected" confirmation toast,
+ * mirrors the existing .admin-offline-banner bottom placement (style.css)
+ * so it doesn't feel like a new, disconnected component — just the
+ * positive counterpart shown for ~2s after recovery. */
+.viewer-reconnected-toast {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9050;
+  padding: 10px 16px;
+  background: rgba(132, 225, 0, 0.1);
+  border-top: 1px solid rgba(132, 225, 0, 0.35);
+  color: #4d7c0f;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  animation: viewer-banner-in 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+body.viewer-body-v2.is-dark .viewer-reconnected-toast {
+  color: #84e100;
+}
+@media (prefers-reduced-motion: reduce) {
+  .viewer-reconnected-toast { animation: none; }
+}
 
 .viewer-sendbar-pill.is-active {
   border-color: var(--color-primary);

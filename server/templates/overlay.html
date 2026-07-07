@@ -58,8 +58,19 @@
 
       <div class="overlay-idle-qr-wrap">
         <!-- Server-rendered scannable QR svg (v4.10/main feature). overlay.js
-             leaves this alone unless dataset.rendered is unset. -->
-        <div class="overlay-idle-qr" id="overlayIdleQr" data-rendered="1" aria-hidden="true">
+             leaves this alone unless dataset.rendered is unset.
+             2026-07-07 uiux polish B9: made clickable to open a full-screen
+             zoom overlay (#overlayQrZoom below) — the 180px card is hard to
+             scan from a projector/TV distance. -->
+        <div
+          class="overlay-idle-qr"
+          id="overlayIdleQr"
+          data-rendered="1"
+          role="button"
+          tabindex="0"
+          aria-label="放大配對 QR code"
+          style="cursor: zoom-in;"
+        >
           {{ qr_svg|safe }}
         </div>
         <div class="overlay-idle-qr-overlay" id="overlayIdleQrOverlay" aria-hidden="true">
@@ -68,7 +79,7 @@
       </div>
 
       <div class="overlay-idle-note" id="overlayIdleNote">
-        或輸入 6 碼連線碼: <span class="overlay-idle-pair-code" id="overlayIdlePairCode">··-··-··</span>
+        或輸入 6 碼連線碼: <span class="overlay-idle-pair-code" id="overlayIdlePairCode" style="font-family: var(--font-mono, ui-monospace, monospace);">··-··-··</span>
       </div>
 
       <div class="overlay-idle-actions" id="overlayIdleActions">
@@ -77,6 +88,23 @@
     </div>
   </div>
 
+  <!-- 2026-07-07 uiux polish B9: full-screen QR zoom overlay. Click #overlayIdleQr
+       (or Enter/Space on it) to open; click here or press ESC to close.
+       Styled entirely via inline style="" attributes (not a <style> block) —
+       CSP's style-src-elem has no 'unsafe-inline', only style-src-attr does. -->
+  <div
+    id="overlayQrZoom"
+    role="dialog"
+    aria-modal="true"
+    aria-label="配對 QR code 放大檢視"
+    tabindex="-1"
+    style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.88); cursor:zoom-out; align-items:center; justify-content:center;"
+  >
+    <div
+      id="overlayQrZoomCard"
+      style="background:#fff; padding:24px; border-radius:12px; width:min(70vh, 70vw); max-width:560px; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center;"
+    ></div>
+  </div>
 
   <script nonce="{{ csp_nonce }}">
     window.OVERLAY_CONFIG = {
@@ -85,6 +113,47 @@
       joinUrl: {{ join_url|tojson }},
       idleAfterMs: 30000
     };
+  </script>
+  <script nonce="{{ csp_nonce }}">
+    // 2026-07-07 uiux polish B9: QR zoom modal. Self-contained inline script
+    // (overlay.js isn't wired for this yet and lives outside this task's
+    // file boundary) — clones the already-rendered QR markup into the
+    // zoom card so it works whether the SVG is server-rendered or the
+    // overlay.js fake-QR fallback path filled it in later.
+    (function () {
+      document.addEventListener("DOMContentLoaded", function () {
+        var qr = document.getElementById("overlayIdleQr");
+        var zoom = document.getElementById("overlayQrZoom");
+        var zoomCard = document.getElementById("overlayQrZoomCard");
+        if (!qr || !zoom || !zoomCard) return;
+
+        function openZoom() {
+          zoomCard.innerHTML = qr.innerHTML;
+          zoom.style.display = "flex";
+          zoom.focus();
+        }
+        function closeZoom() {
+          zoom.style.display = "none";
+          zoomCard.innerHTML = "";
+          qr.focus();
+        }
+
+        qr.addEventListener("click", openZoom);
+        qr.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openZoom();
+          }
+        });
+        zoom.addEventListener("click", closeZoom);
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && zoom.style.display === "flex") {
+            e.stopPropagation();
+            closeZoom();
+          }
+        });
+      });
+    })();
   </script>
   <script src="{{ url_for('static', filename='js/overlay-poll.js') }}"></script>
   <script src="{{ url_for('static', filename='js/overlay.js') }}"></script>
