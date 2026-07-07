@@ -8,6 +8,7 @@
 - subagent 的回覆只回到你，使用者看不到 → 收到後把關鍵結論寫進你自己的回覆。
 - 要它**只回結論 + `檔案:行號`**，長產物落檔回路徑。
 - 要它**標註信心與缺口**，不要用「應該」假裝確定。
+- **改 `server/` 下的 Python → 派工時要求它跑過 formatters/linter 再回報**：`cd server && PYTHONPATH=.. uv run black --line-length 100 <檔> && uv run isort --profile black --line-length 100 <檔> && uv run python -m flake8 --max-line-length=100 --extend-ignore=E203,W503 <檔>`，三者都乾淨才算完成。（實戰教訓 2026-07-06：漏了這步，子代理的測試修正沒過 pre-commit 的 black，白費一輪 CI。pre-commit 只掃 `^server/`。）
 
 ---
 
