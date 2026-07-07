@@ -1799,6 +1799,13 @@ document.addEventListener("DOMContentLoaded", () => {
           elements.danmuText.value = "";
           updateCharCount();
           updatePreview();
+          // 2026-07-07 uiux polish B5: on touch devices, blur after a
+          // successful send so the soft keyboard collapses (it was blocking
+          // the view of the just-fired danmu). Desktop keeps focus so
+          // keyboard users can fire again immediately without re-clicking.
+          if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) {
+            elements.danmuText.blur();
+          }
           // Design v3-r10: inline banner + admin-configurable cooldown
           // (ViewerFireCooldownSec, default 3s) after successful fire.
           _showBanner("sent", ServerI18n.t("bannerSent"));
