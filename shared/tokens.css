@@ -172,17 +172,22 @@
   --hud-font-sans:   var(--font-ui);
   --hud-font-display: var(--font-display);
 
-  /* AdminPageShell (admin-pages.jsx) — LIGHT theme.
-   * The prototype canvas mounts admin with theme='light' (TWEAK_DEFAULTS).
-   * These are the hudTokens.light* values exactly. Admin chrome uses
-   * these; the rest of the app keeps the dark slate tokens above. */
-  --admin-bg: #f8fafc;                       /* lightBg0 — viewport */
-  --admin-panel: #ffffff;                    /* sidebar / topbar / cards */
-  --admin-raised: #f1f5f9;                   /* lightBg2 — nested surfaces */
-  --admin-line: rgba(15, 23, 42, 0.12);      /* lightLine */
-  --admin-text: #0f172a;                     /* lightText — slate-900 */
-  --admin-text-strong: #0f172a;              /* input/content text — slate-900 */
-  --admin-text-dim: #475569;                 /* lightTextDim — slate-600 */
+  /* AdminPageShell (admin-pages.jsx) — DARK-default two-track (2026-07-07
+   * UIUX polish D1). Previously these were static light hex in :root with a
+   * `[data-theme="dark"]` after-the-fact remedy, which meant that in *auto*
+   * mode on a dark OS the admin chrome painted light (static light admin-*)
+   * while surfaces reading --color-* painted dark — a dark card leaking into
+   * a light shell. Now --admin-* follow the SAME light/dark two-track as the
+   * --color-* base tokens: dark is the :root default, light is applied by
+   * [data-theme="light"] and the prefers-color-scheme:light media query
+   * below. They can no longer diverge from the --color-* palette. */
+  --admin-bg:          #020617;                       /* slate-950 — viewport */
+  --admin-panel:       #0f172a;                       /* slate-900 — sidebar / topbar / cards */
+  --admin-raised:      #1e293b;                       /* slate-800 — nested surfaces */
+  --admin-line:        rgba(148, 163, 184, 0.18);     /* slate-400 @ 0.18 — hairlines */
+  --admin-text:        #f1f5f9;                        /* slate-100 */
+  --admin-text-strong: #f1f5f9;                        /* input/content text */
+  --admin-text-dim:    #94a3b8;                        /* slate-400 */
 }
 
 /* ──────────────────────────────────────────────────────────────────────
@@ -263,21 +268,17 @@
   --hud-amber:       var(--color-warning);
   --hud-lime:        var(--color-success);
   --hud-crimson:     var(--color-danger);
-}
 
-/* Explicit dark override — resets --admin-* tokens so .admin-body
-   (which reads these) correctly flips back to the dark palette when the
-   operator manually toggles to dark via the theme switcher. Without
-   this, .admin-body always renders light because --admin-* are defined
-   as static light hex values in :root. */
-:root[data-theme="dark"] {
-  --admin-bg:       #020617;
-  --admin-panel:    #0f172a;
-  --admin-raised:   #1e293b;
-  --admin-line:     rgba(148, 163, 184, 0.18);
-  --admin-text:     #f1f5f9;
-  --admin-text-strong: #f1f5f9;
-  --admin-text-dim: #94a3b8;
+  /* AdminPageShell — LIGHT track (hudTokens.light* values). Paired with the
+   * dark defaults in :root above so admin chrome follows the same explicit
+   * light/dark switch as --color-*. (2026-07-07 UIUX polish D1.) */
+  --admin-bg:          #f8fafc;                   /* lightBg0 — viewport */
+  --admin-panel:       #ffffff;                   /* sidebar / topbar / cards */
+  --admin-raised:      #f1f5f9;                   /* lightBg2 — nested surfaces */
+  --admin-line:        rgba(15, 23, 42, 0.12);    /* lightLine */
+  --admin-text:        #0f172a;                   /* lightText — slate-900 */
+  --admin-text-strong: #0f172a;                   /* input/content text — slate-900 */
+  --admin-text-dim:    #475569;                   /* lightTextDim — slate-600 */
 }
 
 /* System preference fallback — only applies when no explicit data-theme
@@ -326,5 +327,15 @@
     --color-surface: var(--color-bg-elevated);
     --color-panel: var(--color-bg-base);
     --color-border-soft: var(--hud-line);
+
+    /* AdminPageShell — LIGHT track for auto mode on a light OS (mirrors the
+     * [data-theme="light"] block; see D1). */
+    --admin-bg:          #f8fafc;
+    --admin-panel:       #ffffff;
+    --admin-raised:      #f1f5f9;
+    --admin-line:        rgba(15, 23, 42, 0.12);
+    --admin-text:        #0f172a;
+    --admin-text-strong: #0f172a;
+    --admin-text-dim:    #475569;
   }
 }
