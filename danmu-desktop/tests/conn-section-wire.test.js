@@ -89,6 +89,42 @@ describe("initConnSection", () => {
     ).toBe(false);
   });
 
+  test("blur validation marks a valid server input with .input-valid", () => {
+    const { initConnSection } = require("../renderer-modules/conn-section-wire");
+    const api = initConnSection();
+
+    const serverInput = document.getElementById("conn-server-input");
+    serverInput.value = "danmu.example.com:8443";
+    api.applyServerValidity();
+
+    expect(serverInput.classList.contains("input-valid")).toBe(true);
+    expect(serverInput.classList.contains("input-invalid")).toBe(false);
+  });
+
+  test("blur validation marks an invalid host:port with .input-invalid", () => {
+    const { initConnSection } = require("../renderer-modules/conn-section-wire");
+    const api = initConnSection();
+
+    const serverInput = document.getElementById("conn-server-input");
+    serverInput.value = "danmu.example.com:99999"; // port out of range
+    api.applyServerValidity();
+
+    expect(serverInput.classList.contains("input-invalid")).toBe(true);
+    expect(serverInput.classList.contains("input-valid")).toBe(false);
+  });
+
+  test("blur validation leaves an empty server input neutral (no class)", () => {
+    const { initConnSection } = require("../renderer-modules/conn-section-wire");
+    const api = initConnSection();
+
+    const serverInput = document.getElementById("conn-server-input");
+    serverInput.value = "   ";
+    api.applyServerValidity();
+
+    expect(serverInput.classList.contains("input-valid")).toBe(false);
+    expect(serverInput.classList.contains("input-invalid")).toBe(false);
+  });
+
   test("saving a new server persists it and refreshes the last-used card immediately", () => {
     const { initConnSection } = require("../renderer-modules/conn-section-wire");
     initConnSection();

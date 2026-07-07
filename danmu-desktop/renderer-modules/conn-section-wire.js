@@ -100,6 +100,21 @@ function initConnSection({ api } = {}) {
     if (previewDisplay) previewDisplay.textContent = buildCanonicalUrl(parsed);
   }
 
+  // Toggle the shared .input-valid / .input-invalid affordance on the visible
+  // Server field. Empty input is neutral (no class). Called on blur so the
+  // user isn't nagged mid-typing.
+  function _applyServerValidity() {
+    if (!serverInput) return;
+    serverInput.classList.remove("input-valid", "input-invalid");
+    const raw = serverInput.value ? serverInput.value.trim() : "";
+    if (!raw) return;
+    if (_safeParse(raw)) {
+      serverInput.classList.add("input-valid");
+    } else {
+      serverInput.classList.add("input-invalid");
+    }
+  }
+
   if (serverInput) {
     serverInput.addEventListener("input", () => {
       if (_suppressEcho) return;
@@ -107,6 +122,7 @@ function initConnSection({ api } = {}) {
       if (parsed) _setHidden(parsed);
       _renderPreview();
     });
+    serverInput.addEventListener("blur", _applyServerValidity);
   }
 
   if (hostInput) {
@@ -279,6 +295,7 @@ function initConnSection({ api } = {}) {
     renderPreview: _renderPreview,
     openEdit: _openEdit,
     closeEdit: _closeEdit,
+    applyServerValidity: _applyServerValidity,
   };
 }
 
