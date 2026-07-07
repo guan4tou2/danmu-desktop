@@ -1412,6 +1412,33 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
 }
 .viewer-sendbar-status-row[hidden] { display: none; }
 
+/* 2026-07-07 uiux polish B3: brief "reconnected" confirmation toast,
+ * mirrors the existing .admin-offline-banner bottom placement (style.css)
+ * so it doesn't feel like a new, disconnected component — just the
+ * positive counterpart shown for ~2s after recovery. */
+.viewer-reconnected-toast {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9050;
+  padding: 10px 16px;
+  background: rgba(132, 225, 0, 0.1);
+  border-top: 1px solid rgba(132, 225, 0, 0.35);
+  color: #4d7c0f;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  animation: viewer-banner-in 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+body.viewer-body-v2.is-dark .viewer-reconnected-toast {
+  color: #84e100;
+}
+@media (prefers-reduced-motion: reduce) {
+  .viewer-reconnected-toast { animation: none; }
+}
+
 .viewer-sendbar-pill.is-active {
   border-color: var(--color-primary);
 }

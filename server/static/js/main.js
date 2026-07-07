@@ -2011,10 +2011,38 @@ document.addEventListener("DOMContentLoaded", () => {
     return el;
   }
 
+  // 2026-07-07 uiux polish B3: brief "reconnected" confirmation once the
+  // offline banner clears. Only fires when we were actually showing the
+  // offline banner (i.e. a real disconnect happened, not on first load).
+  let _reconnectedToastEl = null;
+  let _reconnectedToastTimer = null;
+
+  function _showReconnectedToast() {
+    if (_reconnectedToastTimer) { clearTimeout(_reconnectedToastTimer); _reconnectedToastTimer = null; }
+    if (!_reconnectedToastEl || !document.body.contains(_reconnectedToastEl)) {
+      const el = document.createElement("div");
+      el.className = "viewer-reconnected-toast";
+      el.setAttribute("role", "status");
+      el.setAttribute("aria-live", "polite");
+      el.textContent = "已重新連線";
+      document.body.appendChild(el);
+      _reconnectedToastEl = el;
+    }
+    _reconnectedToastTimer = setTimeout(() => {
+      if (_reconnectedToastEl && _reconnectedToastEl.parentNode) {
+        _reconnectedToastEl.parentNode.removeChild(_reconnectedToastEl);
+      }
+      _reconnectedToastEl = null;
+      _reconnectedToastTimer = null;
+    }, 2000);
+  }
+
   function _syncOfflineBanner(state) {
     if (state === "connected") {
+      const wasOffline = !!(_offlineBannerEl && document.body.contains(_offlineBannerEl));
       _removeOfflineBanner();
       _offlineBackoff = 5;
+      if (wasOffline) _showReconnectedToast();
       return;
     }
     if (state !== "disconnected") return;
