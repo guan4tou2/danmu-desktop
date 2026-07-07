@@ -582,6 +582,13 @@ body[data-os="mac"] .client-titlebar {
   background: rgba(148, 163, 184, 0.08);
 }
 
+/* Keyboard focus ring for the sidebar nav buttons. `all: unset` above wipes
+   the UA outline, so restore a visible focus affordance for Tab navigation. */
+.client-nav-btn:focus-visible {
+  box-shadow: 0 0 0 3px var(--glow-primary, rgba(56, 189, 248, 0.4));
+  border-radius: inherit;
+}
+
 .client-nav-btn.is-active {
   background: rgba(56, 189, 248, 0.12);
   color: var(--color-primary);
@@ -1070,6 +1077,14 @@ body[data-os="mac"] .client-titlebar {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+/* Stronger keyboard focus ring for the role="button" host row — the plain
+   :focus above stays subtle for mouse/text focus, :focus-visible is the
+   visible Tab affordance. */
+.client-conn-host-row:focus-visible {
+  box-shadow: 0 0 0 3px var(--glow-primary, rgba(56, 189, 248, 0.4));
+  border-radius: inherit;
 }
 
 .client-conn-host-row:hover .client-conn-edit-pencil {
