@@ -32,7 +32,7 @@ body {
   background-size: auto, 40px 40px, 40px 40px;
   overflow: hidden;
   pointer-events: none;
-  transition: opacity 500ms ease, background-image 250ms;
+  transition: opacity 500ms ease, background-image var(--motion-normal);
   font-family: "Zen Kaku Gothic New", "Noto Sans TC", -apple-system, system-ui, sans-serif;
 }
 
@@ -142,7 +142,7 @@ body {
   font-size: 11px;
   letter-spacing: 1.5px;
   color: #38bdf8;
-  transition: background 200ms, border-color 200ms, color 200ms;
+  transition: background var(--motion-normal), border-color var(--motion-normal), color var(--motion-normal);
 }
 .overlay-idle-chip-dot {
   display: inline-block;
@@ -215,7 +215,7 @@ body {
   padding: 6px;
   border-radius: 6px;
   box-shadow: 0 0 40px rgba(125, 211, 252, 0.3);
-  transition: opacity 0.3s;
+  transition: opacity var(--motion-slow);
 }
 .overlay-idle-qr svg {
   display: block;

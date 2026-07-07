@@ -50,7 +50,7 @@ button:disabled,
   border-radius: var(--radius-md);
   font-weight: 600;
   transform: translateY(-200%);
-  transition: transform 0.2s ease;
+  transition: transform var(--motion-normal) ease;
 }
 
 .skip-link:focus-visible {
@@ -89,7 +89,7 @@ button:disabled,
   background-color: var(--color-bg-input);
   border: 1px solid var(--color-border-strong);
   color: var(--color-text-primary);
-  transition: all 0.3s ease;
+  transition: all var(--motion-slow) ease;
 }
 .form-input:focus {
   background-color: var(--color-bg-input-solid);
@@ -211,7 +211,7 @@ input[type="range"]::-webkit-slider-thumb {
   background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   cursor: pointer;
   box-shadow: 0 2px 8px var(--glow-primary);
-  transition: all 0.2s ease;
+  transition: all var(--motion-normal) ease;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
@@ -227,7 +227,7 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
   border: none;
   box-shadow: 0 2px 8px var(--glow-primary);
-  transition: all 0.2s ease;
+  transition: all var(--motion-normal) ease;
 }
 
 input[type="range"]::-moz-range-thumb:hover {
@@ -249,13 +249,13 @@ details[open] summary svg {
 }
 
 details summary svg {
-  transition: transform 0.3s ease;
+  transition: transform var(--motion-slow) ease;
 }
 
 /* Main content fade-in on load */
 .main-content {
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--motion-normal) ease;
 }
 
 .main-content.loaded {
@@ -387,7 +387,7 @@ body[data-os="mac"] .client-titlebar {
   letter-spacing: 1.2px;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: background var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 
 .client-titlebar-update[hidden] { display: none !important; }
@@ -492,7 +492,7 @@ body[data-os="mac"] .client-titlebar {
 .client-update-card .progress-fill {
   height: 100%;
   background: linear-gradient(to right, var(--color-primary), var(--color-primary-hover));
-  transition: width 0.2s ease;
+  transition: width var(--motion-normal) ease;
   border-radius: 999px;
 }
 
@@ -575,7 +575,7 @@ body[data-os="mac"] .client-titlebar {
   align-items: center;
   gap: 10px;
   color: rgba(241, 245, 249, 0.9);
-  transition: background 0.12s ease, color 0.12s ease;
+  transition: background var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 
 .client-nav-btn:hover {
@@ -796,7 +796,7 @@ body[data-os="mac"] .client-titlebar {
   font-size: 11px;
   letter-spacing: 1px;
   cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease;
+  transition: background var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 .client-update-check-btn:hover {
   background: rgba(56, 189, 248, 0.12);
@@ -941,7 +941,7 @@ body[data-os="mac"] .client-titlebar {
   color: rgba(241, 245, 249, 0.9);
   font-size: 12px;
   font-weight: 500;
-  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+  transition: border-color var(--motion-fast) ease, color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 
 .client-action-btn:hover {
@@ -1065,7 +1065,7 @@ body[data-os="mac"] .client-titlebar {
   border-radius: 6px;
   border: 1px solid rgba(148, 163, 184, 0.18);
   cursor: text;
-  transition: border-color 0.12s ease, background 0.12s ease;
+  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 
 .client-conn-host-row:hover {
@@ -1105,7 +1105,7 @@ body[data-os="mac"] .client-titlebar {
   font-size: 11px;
   color: rgba(148, 163, 184, 0.7);
   pointer-events: none;
-  transition: color 0.12s ease;
+  transition: color var(--motion-fast) ease;
 }
 
 .client-conn-preview-row {
@@ -1171,7 +1171,7 @@ body[data-os="mac"] .client-titlebar {
   font-family: ui-sans-serif, system-ui, "PingFang TC", sans-serif;
   font-size: 11px;
   cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease;
+  transition: background var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 
 .client-conn-test-btn:hover {
@@ -1321,7 +1321,7 @@ body[data-os="mac"] .client-titlebar {
   content: "▸";
   font-size: 12px;
   color: rgba(148, 163, 184, 0.8);
-  transition: transform 0.12s ease;
+  transition: transform var(--motion-fast) ease;
 }
 
 .client-conn-auth-panel[open] .client-conn-auth-summary::before {
@@ -1365,7 +1365,7 @@ body[data-os="mac"] .client-titlebar {
   font-size: 10px;
   letter-spacing: 1px;
   cursor: pointer;
-  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 
 .client-mini-btn:hover {
@@ -1460,7 +1460,7 @@ body[data-os="mac"] .client-titlebar {
   color: rgba(241, 245, 249, 0.95);
   font-size: 12px;
   outline: none;
-  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
 }
 
 .client-conn-edit-field input:focus,
@@ -1527,7 +1527,7 @@ body[data-os="mac"] .client-titlebar {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.2px;
-  transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+  transition: background var(--motion-fast) ease, border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease;
   flex-shrink: 0;
 }
 
@@ -1589,7 +1589,7 @@ body[data-os="mac"] .client-titlebar {
   border: 1px solid rgba(148, 163, 184, 0.2);
   background: transparent;
   cursor: pointer;
-  transition: border-color 0.12s ease, background 0.12s ease;
+  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease;
   text-align: left;
   color: rgba(241, 245, 249, 0.9);
   font: inherit;
@@ -1675,7 +1675,7 @@ body[data-os="mac"] .client-titlebar {
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
-  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease, color var(--motion-fast) ease;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1801,7 +1801,7 @@ body[data-os="mac"] .client-titlebar {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.1s, color 0.1s;
+  transition: background var(--motion-fast), color var(--motion-fast);
 }
 .wp-tab:hover { color: var(--color-text-secondary); }
 .wp-tab.active {
@@ -1835,7 +1835,7 @@ body[data-os="mac"] .client-titlebar {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: border-color 0.15s, transform 0.1s;
+  transition: border-color var(--motion-fast), transform var(--motion-fast);
   padding: 0;
   text-align: left;
   font-family: inherit;
@@ -1887,7 +1887,7 @@ body[data-os="mac"] .client-titlebar {
 .wp-hint {
   font-size: 12px;
   color: var(--color-text-muted, #64748b);
-  transition: color 0.2s;
+  transition: color var(--motion-normal);
 }
 .wp-hint-selected {
   color: var(--color-success, #22c55e);

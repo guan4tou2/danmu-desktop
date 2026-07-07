@@ -41,7 +41,7 @@ img{
   pointer-events: none;
   user-select: none;
   letter-spacing: 0.5px;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--motion-slow) ease;
 }
 
 #danmu-counter:empty {

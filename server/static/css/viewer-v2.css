@@ -90,7 +90,7 @@ body.viewer-body-v2.is-dark {
   padding: 0;
   border: 1px solid var(--hud-line);
   background-clip: padding-box;
-  transition: transform 0.12s, border-color 0.12s;
+  transition: transform var(--motion-fast), border-color var(--motion-fast);
 }
 
 .viewer-swatch-preset:hover {
@@ -511,7 +511,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   gap: 8px;
   cursor: pointer;
   margin-bottom: -1px;
-  transition: border-color 0.15s, color 0.15s;
+  transition: border-color var(--motion-fast), color var(--motion-fast);
 }
 
 .viewer-tab-label {
@@ -612,7 +612,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   padding: 10px 12px;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s, transform 0.15s;
+  transition: border-color var(--motion-fast), transform var(--motion-fast);
 }
 
 .viewer-poll-option:hover {
@@ -860,7 +860,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-nick {
 .viewer-preview-text {
   display: inline-block;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.55);
-  transition: font-size 0.2s, opacity 0.2s;
+  transition: font-size var(--motion-normal), opacity var(--motion-normal);
 }
 
 body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
@@ -995,7 +995,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
   background: var(--color-bg-elevated);
   border: 1px solid var(--hud-line);
   cursor: text;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color var(--motion-fast), background var(--motion-fast);
   min-height: 40px;
   box-sizing: border-box;
 }
@@ -1021,7 +1021,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
   font-size: 11px;
   letter-spacing: 0.05em;
   color: var(--color-text-secondary);
-  transition: opacity 0.15s;
+  transition: opacity var(--motion-fast);
   margin-left: auto;
 }
 
@@ -1183,7 +1183,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
     linear-gradient(var(--color-primary), var(--color-primary)) no-repeat,
     var(--hud-line);
   background-size: var(--progress, 50%) 100%;
-  transition: background-size 0.12s;
+  transition: background-size var(--motion-fast);
 }
 
 .viewer-range::-webkit-slider-thumb {
@@ -1197,7 +1197,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
   cursor: pointer;
   margin-top: -5px;            /* center 16px thumb on 6px track */
-  transition: transform 0.12s;
+  transition: transform var(--motion-fast);
 }
 
 /* Firefox */
@@ -1285,7 +1285,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
   cursor: pointer;
   font-size: 12px;
   font-weight: 400;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition: background var(--motion-fast), border-color var(--motion-fast), color var(--motion-fast);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1324,7 +1324,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
   align-items: center;
   justify-content: center;
   gap: 0.1875rem;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition: background var(--motion-fast), border-color var(--motion-fast), color var(--motion-fast);
 }
 
 .viewer-layout-btn:hover {
@@ -1373,7 +1373,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
   border-radius: var(--radius-pill);
   border: 1px solid var(--hud-line);
   background: var(--color-bg-elevated); /* lightBg2 in light theme */
-  transition: border-color 0.15s;
+  transition: border-color var(--motion-fast);
 }
 
 /* 2026-05-17 design v3-r10: inline send-status banner anchored above the
@@ -1478,7 +1478,7 @@ body.viewer-body-v2.is-dark .viewer-reconnected-toast {
   color: var(--color-text-secondary);
   cursor: pointer;
   font-size: 16px;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--motion-fast), color var(--motion-fast);
   flex-shrink: 0;
 }
 
@@ -1517,7 +1517,7 @@ body.viewer-body-v2.is-dark .viewer-reconnected-toast {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: background 0.15s, color 0.15s, transform 0.15s;
+  transition: background var(--motion-fast), color var(--motion-fast), transform var(--motion-fast);
   flex-shrink: 0;
 }
 
@@ -1605,7 +1605,7 @@ body.viewer-body-v2.is-dark .viewer-reconnected-toast {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background var(--motion-fast), border-color var(--motion-fast);
 }
 
 .viewer-emoji-tile:hover {
@@ -1981,7 +1981,7 @@ body[data-viewer-state] {
   letter-spacing: 0.4px;
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35);
-  transition: transform 140ms ease;
+  transition: transform var(--motion-fast) ease;
 }
 .viewer-state-action:hover { transform: translateY(-1px); }
 .viewer-state-trace {
@@ -2141,7 +2141,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
   opacity: 0;
-  transition: opacity var(--motion-normal, 180ms) var(--ease-in-out, ease);
+  transition: opacity var(--motion-normal, var(--motion-normal)) var(--ease-in-out, ease);
   pointer-events: auto;
 }
 .viewer-mobile-sheet.is-open .viewer-mobile-sheet-backdrop {
@@ -2157,7 +2157,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
   border-radius: 16px 16px 0 0;
   box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.6);
   transform: translateY(100%);
-  transition: transform var(--motion-normal, 180ms) var(--ease-out, ease);
+  transition: transform var(--motion-normal, var(--motion-normal)) var(--ease-out, ease);
   pointer-events: auto;
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
@@ -2265,7 +2265,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
      (slight overshoot when going active). 2026-05-18 motion language. */
   transition: background var(--motion-fast) var(--ease-out, ease),
               color var(--motion-fast) var(--ease-out, ease),
-              transform var(--motion-normal, 180ms) var(--ease-spring, ease);
+              transform var(--motion-normal, var(--motion-normal)) var(--ease-spring, ease);
   min-width: 32px;
   text-align: center;
   transform: scale(1);
@@ -2340,7 +2340,7 @@ body.viewer-body-v2.is-dark .viewer-theme-chip-seg {
   height: 8px;
   border-radius: 4px;
   background: var(--color-bg-elevated);
-  transition: width var(--motion-normal, 180ms) var(--ease-out, ease),
+  transition: width var(--motion-normal, var(--motion-normal)) var(--ease-out, ease),
               background var(--motion-fast) var(--ease-out, ease);
 }
 .viewer-poll-dot.is-past {

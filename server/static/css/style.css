@@ -90,7 +90,7 @@ button:disabled,
   border-radius: var(--radius-md);
   font-weight: 600;
   transform: translateY(-200%);
-  transition: transform 0.2s ease;
+  transition: transform var(--motion-normal) ease;
 }
 
 .skip-link:focus-visible {
@@ -220,7 +220,7 @@ html[data-theme="dark"] .admin-body {
   font-size: 13px;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
 }
 
 .admin-login-input:focus {
@@ -242,7 +242,7 @@ html[data-theme="dark"] .admin-body {
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
-  transition: background-color 0.15s ease, transform 0.15s ease;
+  transition: background-color var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 
 .admin-login-submit:hover {
@@ -383,7 +383,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   font-size: 10px;
   letter-spacing: 1px;
   cursor: pointer;
-  transition: border-color 0.12s, color 0.12s;
+  transition: border-color var(--motion-fast), color var(--motion-fast);
 }
 
 .admin-dash-msg-filter:hover {
@@ -446,7 +446,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   gap: 10px;
   align-items: baseline;
   border-bottom: 1px solid var(--admin-line);
-  transition: background 120ms ease;
+  transition: background var(--motion-fast) ease;
 }
 
 .admin-dash-msg-row:last-child { border-bottom: none; }
@@ -492,7 +492,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   display: flex;
   gap: 3px;
   opacity: 0.35;
-  transition: opacity 120ms ease;
+  transition: opacity var(--motion-fast) ease;
   flex-shrink: 0;
 }
 
@@ -508,7 +508,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   font-size: 9px;
   letter-spacing: 0.3px;
   cursor: pointer;
-  transition: border-color 120ms ease, color 120ms ease;
+  transition: border-color var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 
 .admin-dash-msg-row .msg-action:hover {
@@ -646,7 +646,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   font-weight: 700;
   font-family: var(--font-mono);
   letter-spacing: 1px;
-  transition: transform 0.12s;
+  transition: transform var(--motion-fast);
 }
 
 .admin-dash-qp-start:hover { transform: translateY(-1px); }
@@ -746,7 +746,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   letter-spacing: 0.8px;
   cursor: pointer;
   color: var(--admin-bg);
-  transition: opacity 0.12s, transform 0.12s;
+  transition: opacity var(--motion-fast), transform var(--motion-fast);
 }
 
 .admin-dash-qa-cta:hover { transform: translateY(-1px); }
@@ -1016,7 +1016,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   height: 100%;
   background: rgba(56, 189, 248, 0.45);
   border-radius: 3px;
-  transition: width 0.3s ease;
+  transition: width var(--motion-slow) ease;
 }
 
 .admin-dash-poll-opt.is-winner .bar > span { background: var(--color-primary); }
@@ -1089,7 +1089,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   height: 100%;
   border-radius: var(--radius-sm);
   background: var(--color-primary);
-  transition: width 300ms var(--ease-out);
+  transition: width var(--motion-slow) var(--ease-out);
 }
 .admin-poll-status-footer {
   font-size: var(--text-xs);
@@ -1136,7 +1136,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   flex-shrink: 0;
   background: color-mix(in srgb, var(--hud-crimson) 25%, transparent);
   color: var(--color-text-secondary);
-  transition: background 150ms var(--ease-out);
+  transition: background var(--motion-fast) var(--ease-out);
 }
 .admin-history-block-btn:hover { background: var(--hud-crimson); color: #000; }
 .admin-history-text { color: var(--color-text-primary); font-size: var(--text-sm); word-break: break-words; }
@@ -1165,7 +1165,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   display: flex;
   flex-direction: column;
   gap: 10px;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 
 .theme-pack-card.is-active {
@@ -1710,7 +1710,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   display: flex;
   flex-direction: column;
   gap: 14px;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 
 .admin-vt-preview-stage .hero { text-align: center; }
@@ -1996,7 +1996,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   height: 100%;
   background: var(--color-primary);
   opacity: 0.6;
-  transition: width 0.3s ease;
+  transition: width var(--motion-slow) ease;
 }
 
 .admin-ratelimit-bar-text {
@@ -2091,7 +2091,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   border: 1px solid var(--admin-line);
   background: var(--admin-raised);
   cursor: pointer;
-  transition: opacity 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+  transition: opacity var(--motion-fast) ease, border-color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 
 .admin-poll-qrow.is-active {
@@ -2367,7 +2367,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   border: 1px solid var(--admin-line);
   background: var(--admin-raised);
   cursor: grab;
-  transition: opacity 0.12s ease;
+  transition: opacity var(--motion-fast) ease;
 }
 
 .admin-poll-opt.is-dragging { opacity: 0.4; }
@@ -2548,7 +2548,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   border: 1px solid var(--admin-line);
   border-radius: 6px;
   overflow: hidden;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
 }
 
 .admin-poll-q.is-running {
@@ -2676,7 +2676,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   cursor: pointer;
   color: var(--admin-text-dim);
   font-size: 12px;
-  transition: border-color 0.12s ease, color 0.12s ease;
+  transition: border-color var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 
 .admin-poll-q-image-drop:hover {
@@ -2913,7 +2913,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   color: var(--color-text-bright);
   text-decoration: none;
   font-size: 13px;
-  transition: background 120ms ease;
+  transition: background var(--motion-fast) ease;
   /* Reset for <button> elements used as nav rows */
   width: 100%;
   background: transparent;
@@ -3276,7 +3276,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   border: 1px solid var(--admin-line);
   border-radius: 6px;
   padding: var(--space-5);
-  transition: border-color 180ms ease, background 180ms ease;
+  transition: border-color var(--motion-normal) ease, background var(--motion-normal) ease;
   scroll-margin-top: var(--space-6);
 }
 
@@ -3466,7 +3466,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   flex-direction: column;
   gap: 8px;
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 .hud-effect-card:hover {
   border-color: var(--color-primary);
@@ -4227,7 +4227,7 @@ input[type="range"] {
   background: var(--color-border-strong, rgba(255, 255, 255, 0.2));
   border-radius: var(--radius-pill);
   outline: none;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  transition: background-color var(--motion-normal) ease, box-shadow var(--motion-normal) ease;
 }
 
 input[type="range"]::-webkit-slider-thumb {
@@ -4239,7 +4239,7 @@ input[type="range"]::-webkit-slider-thumb {
   cursor: pointer;
   border-radius: 50%;
   border: 2px solid var(--color-bg-base);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  transition: transform var(--motion-normal) ease, box-shadow var(--motion-normal) ease, background-color var(--motion-normal) ease;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
@@ -4405,7 +4405,7 @@ summary:focus-visible {
   background: rgba(41, 37, 36, 0.78);
   color: var(--color-stone-200, #e7e5e4);
   font-size: 0.75rem;
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  transition: background-color var(--motion-normal), border-color var(--motion-normal), color var(--motion-normal);
 }
 
 .admin-chip:hover {
@@ -4436,7 +4436,7 @@ summary:focus-visible {
   border: 1px solid rgba(120, 53, 15, 0.55);
   background: linear-gradient(180deg, rgba(41, 37, 36, 0.86), rgba(24, 24, 27, 0.92));
   color: #fafaf9;
-  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+  transition: transform var(--motion-normal) ease, border-color var(--motion-normal) ease, background-color var(--motion-normal) ease;
 }
 
 .workspace-pill:hover {
@@ -4544,7 +4544,7 @@ summary:focus-visible {
   border: 1px solid rgba(51, 65, 85, 0.72);
   border-radius: var(--radius-pill);
   background: rgba(15, 23, 42, 0.62);
-  transition: border-color 0.2s, background-color 0.2s, color 0.2s;
+  transition: border-color var(--motion-normal), background-color var(--motion-normal), color var(--motion-normal);
 }
 .stream-mode-toggle:hover {
   border-color: rgba(56, 189, 248, 0.45);
@@ -4562,7 +4562,7 @@ summary:focus-visible {
   height: 18px;
   background: rgba(71, 85, 105, 0.8);
   border-radius: var(--radius-pill);
-  transition: background-color 0.2s;
+  transition: background-color var(--motion-normal);
 }
 .stream-mode-track::after {
   content: "";
@@ -4573,7 +4573,7 @@ summary:focus-visible {
   height: 14px;
   background: var(--color-white);
   border-radius: 50%;
-  transition: transform 0.2s;
+  transition: transform var(--motion-normal);
 }
 .stream-mode-toggle input:checked + .stream-mode-track {
   background: var(--color-primary);
@@ -4640,7 +4640,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   justify-content: center;
   z-index: 1050;
   opacity: 0;
-  transition: opacity 0.3s ease-in-out;
+  transition: opacity var(--motion-slow) ease-in-out;
   pointer-events: none;
 }
 
@@ -4657,7 +4657,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   border: 2px solid var(--color-error);
   box-shadow: 0 10px 25px var(--shadow-base);
   transform: scale(0.95);
-  transition: transform 0.3s ease-in-out;
+  transition: transform var(--motion-slow) ease-in-out;
 }
 
 #blacklistWarningModal.visible .modal-content {
@@ -4686,7 +4686,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color var(--motion-normal);
 }
 
 #blacklistWarningModal .ok-button:hover {
@@ -4869,7 +4869,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   cursor: pointer;
   padding: var(--space-1);
   line-height: 1;
-  transition: color 0.2s;
+  transition: color var(--motion-normal);
 }
 
 .password-toggle:hover {
@@ -4984,10 +4984,10 @@ body.stream-mode .admin-hero .admin-summary-grid {
   isolation: isolate;
   background: rgb(2 6 23);
   transition:
-    padding 0.25s ease,
-    background-color 0.25s ease,
-    border-color 0.25s ease,
-    box-shadow 0.25s ease;
+    padding var(--motion-normal) ease,
+    background-color var(--motion-normal) ease,
+    border-color var(--motion-normal) ease,
+    box-shadow var(--motion-normal) ease;
 }
 
 .composer-card {
@@ -5036,7 +5036,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
 .composer-label {
   min-height: 1rem;
   margin-bottom: 0.65rem;
-  transition: opacity 0.2s ease, height 0.2s ease, margin 0.2s ease;
+  transition: opacity var(--motion-normal) ease, height var(--motion-normal) ease, margin var(--motion-normal) ease;
 }
 
 .composer-panel {
@@ -5079,7 +5079,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
 
 .composer-preview-box {
   min-height: 132px;
-  transition: min-height 0.25s ease;
+  transition: min-height var(--motion-normal) ease;
 }
 
 .composer-counter {
@@ -5109,11 +5109,11 @@ body.stream-mode .admin-hero .admin-summary-grid {
    * corner was visually "covered" by the card frame. */
   box-shadow: 0 3px 10px rgba(14, 165, 233, 0.34);
   transition:
-    padding 0.2s ease,
-    font-size 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease,
-    background-color 0.2s ease;
+    padding var(--motion-normal) ease,
+    font-size var(--motion-normal) ease,
+    box-shadow var(--motion-normal) ease,
+    transform var(--motion-normal) ease,
+    background-color var(--motion-normal) ease;
 }
 
 .composer-send:hover {
@@ -5251,7 +5251,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   align-items: center;
   gap: 0.4rem;
   color: var(--color-slate-500);
-  transition: color 0.2s ease;
+  transition: color var(--motion-normal) ease;
 }
 
 .site-footer-link:hover {
@@ -5405,7 +5405,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   min-width: 4px;
   border-radius: 2px 2px 0 0;
   position: relative;
-  transition: height 0.3s ease, background-color 0.2s ease;
+  transition: height var(--motion-slow) ease, background-color var(--motion-normal) ease;
 }
 
 .chart-bar:hover {
@@ -5613,7 +5613,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   border: 1px solid var(--hud-line);
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em;
   color: var(--color-text-muted);
-  transition: border-color 120ms, background 120ms, color 120ms;
+  transition: border-color var(--motion-fast), background var(--motion-fast), color var(--motion-fast);
 }
 .admin-assets-chip:hover { border-color: var(--hud-line-strong); }
 .admin-assets-chip.is-active {
@@ -5651,7 +5651,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   background: var(--admin-panel, var(--color-bg-base));
   border: 1px solid var(--hud-line);
   text-decoration: none; color: inherit;
-  transition: border-color 120ms, transform 120ms;
+  transition: border-color var(--motion-fast), transform var(--motion-fast);
 }
 .admin-assets-card:hover {
   border-color: var(--color-primary);
@@ -5697,7 +5697,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   padding: 8px 10px; border-radius: 4px;
   text-decoration: none; color: inherit;
   border: 1px solid transparent;
-  transition: background 120ms, border-color 120ms;
+  transition: background var(--motion-fast), border-color var(--motion-fast);
 }
 .admin-assets-source:hover {
   background: var(--hud-cyan-soft);
@@ -5744,7 +5744,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   pointer-events: none;
   opacity: 0;
   transform: translateY(8px);
-  transition: opacity 150ms, transform 150ms;
+  transition: opacity var(--motion-fast), transform var(--motion-fast);
 }
 .admin-konami-hud.is-on {
   opacity: 1;
@@ -5773,7 +5773,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   font-size: 11px;
   color: rgba(148, 163, 184, 0.7);
   background: rgba(15, 23, 42, 0.6);
-  transition: border-color 100ms, color 100ms, background 100ms;
+  transition: border-color var(--motion-fast), color var(--motion-fast), background var(--motion-fast);
 }
 .admin-konami-hud-key.is-filled {
   border-color: var(--color-primary);
@@ -5787,7 +5787,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   width: 0;
   background: var(--color-primary);
   border-radius: 1px;
-  transition: width 120ms;
+  transition: width var(--motion-fast);
 }
 @media (prefers-reduced-motion: reduce) {
   .admin-konami-hud { transition: none; }
@@ -5822,7 +5822,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   width: 8px; height: 8px; border-radius: 50%;
   background: rgba(148, 163, 184, 0.4);
   flex-shrink: 0;
-  transition: background 200ms, box-shadow 200ms;
+  transition: background var(--motion-normal), box-shadow var(--motion-normal);
 }
 .admin-ext-status-dot.is-live {
   background: #86efac;
@@ -6181,7 +6181,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   border: 1px solid transparent;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 120ms ease;
+  transition: all var(--motion-fast) ease;
 }
 .admin-ui-tab:hover { color: var(--color-text-strong); }
 .admin-ui-tab.is-active {
@@ -6804,7 +6804,7 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   font-family: var(--font-mono);
   font-size: 11px; font-weight: 700;
   color: var(--color-text-muted);
-  transition: all 160ms ease;
+  transition: all var(--motion-normal) ease;
 }
 .admin-setup-step .lbl {
   font-size: 12px;
@@ -6833,7 +6833,7 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   margin: 0 14px;
   background: var(--color-border, var(--hud-line));
   min-width: 24px;
-  transition: background 160ms ease;
+  transition: background var(--motion-normal) ease;
 }
 .admin-setup-step-sep.is-done {
   background: var(--color-primary);
@@ -6898,7 +6898,7 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   border-radius: 6px;
   background: var(--color-bg);
   cursor: pointer;
-  transition: all 140ms ease;
+  transition: all var(--motion-fast) ease;
 }
 .admin-setup-theme-card:hover {
   border-color: rgba(56, 189, 248, 0.55);
@@ -6966,7 +6966,7 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   border-radius: 6px;
   background: var(--color-bg);
   cursor: pointer;
-  transition: all 140ms ease;
+  transition: all var(--motion-fast) ease;
 }
 .admin-setup-lang-card:hover { border-color: rgba(56, 189, 248, 0.45); }
 .admin-setup-lang-card.is-selected {
@@ -7060,7 +7060,7 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   border-radius: 4px;
   color: var(--color-text-strong);
   font-family: inherit; font-size: 13px;
-  transition: border-color 120ms ease;
+  transition: border-color var(--motion-fast) ease;
   box-sizing: border-box;
 }
 .admin-setup-input:focus {
@@ -7085,7 +7085,7 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
 .admin-setup-pw-strength-bar {
   height: 100%;
   border-radius: 2px;
-  transition: width 200ms ease, background 200ms ease;
+  transition: width var(--motion-normal) ease, background var(--motion-normal) ease;
 }
 .admin-setup-note {
   font-size: 11px; line-height: 1.6;
@@ -7115,7 +7115,7 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   border-radius: 6px;
   background: var(--color-bg);
   cursor: pointer;
-  transition: border-color 140ms ease, background 140ms ease;
+  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease;
   text-align: center;
   min-height: 120px;
 }
@@ -7143,7 +7143,7 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   color: var(--color-text-muted);
   cursor: pointer;
   letter-spacing: 0.3px;
-  transition: all 120ms ease;
+  transition: all var(--motion-fast) ease;
 }
 .admin-setup-file-btn:hover {
   color: var(--color-primary);
@@ -7173,7 +7173,7 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   color: var(--color-danger, #f87171);
   cursor: pointer;
   letter-spacing: 0.3px;
-  transition: all 120ms ease;
+  transition: all var(--motion-fast) ease;
 }
 .admin-setup-logo-remove:hover {
   border-color: var(--color-danger, #f87171);
@@ -7230,7 +7230,7 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   cursor: pointer;
   text-align: left;
   font-family: inherit;
-  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 
 .admin-setup-toggle-row:hover {
@@ -7273,7 +7273,7 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   align-items: center;
   justify-content: flex-start;
   flex-shrink: 0;
-  transition: background 120ms ease, border-color 120ms ease, justify-content 120ms ease;
+  transition: background var(--motion-fast) ease, border-color var(--motion-fast) ease, justify-content var(--motion-fast) ease;
 }
 
 .admin-setup-toggle-switch .thumb {
@@ -7302,7 +7302,7 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   letter-spacing: 1.4px;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 120ms ease, filter 120ms ease;
+  transition: transform var(--motion-fast) ease, filter var(--motion-fast) ease;
 }
 
 .admin-setup-done-cta:hover {
@@ -7449,7 +7449,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   border-radius: 2px;
   overflow: hidden;
 }
-.admin-pdd-row-fill { height: 100%; transition: width 240ms ease; }
+.admin-pdd-row-fill { height: 100%; transition: width var(--motion-normal) ease; }
 .admin-pdd-empty-rows {
   padding: 20px;
   text-align: center;
@@ -7560,7 +7560,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   text-align: center;
   cursor: pointer;
   text-decoration: none;
-  transition: all 140ms ease;
+  transition: all var(--motion-fast) ease;
 }
 .admin-pdd-action:hover {
   border-color: var(--color-primary);
@@ -7808,7 +7808,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   height: 100%;
   background: currentColor;
   border-radius: 2px;
-  transition: width 0.25s linear;
+  transition: width var(--motion-normal) linear;
 }
 .admin-rcb__spacer { flex: 1; }
 .admin-rcb__btn {
@@ -7833,7 +7833,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 }
 .admin-rcb__close:hover { color: var(--color-text-primary); }
 
-body.admin-rcb-active .admin-app-shell { opacity: 0.7; transition: opacity 0.3s; }
+body.admin-rcb-active .admin-app-shell { opacity: 0.7; transition: opacity var(--motion-slow); }
 body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -8058,7 +8058,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
    Hover  : 2px dashed cyan + cyan@0c + ↓ cyan + glow 22 + scale
    Drop   : 2px solid cyan + cyan@08 + ⟳ pulse + glow 30 + spinner */
 .admin-em-v4__upzone {
-  transition: border-color 200ms, background-color 200ms, box-shadow 200ms;
+  transition: border-color var(--motion-normal), background-color var(--motion-normal), box-shadow var(--motion-normal);
 }
 .admin-em-v4__upzone.is-dragover {
   border-style: dashed;
@@ -8288,7 +8288,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   height: 100%; width: 0%;
   background: var(--color-warning);
   border-radius: 2px;
-  transition: width 0.1s linear;
+  transition: width var(--motion-fast) linear;
 }
 .admin-err__progress-labels {
   display: flex; justify-content: space-between; margin-top: 4px;
@@ -8353,7 +8353,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   height: 100%; width: 0%;
   background: var(--color-warning);
   border-radius: 2px;
-  transition: width 0.25s linear;
+  transition: width var(--motion-normal) linear;
 }
 @media (prefers-reduced-motion: reduce) {
   .admin-offline-banner__dot { animation: none; }
@@ -8370,7 +8370,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   font-size: 14px; line-height: 1;
   display: inline-flex; align-items: center; justify-content: center;
   padding: 0; margin-right: 6px;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--motion-fast), color var(--motion-fast);
 }
 .admin-theme-toggle:hover {
   border-color: var(--color-primary);
@@ -8507,7 +8507,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   body:has(input:focus, textarea:focus, [contenteditable=true]:focus) .admin-mobile-nav,
   body.admin-mobile-nav--hidden .admin-mobile-nav {
     transform: translateY(100%);
-    transition: transform 180ms ease-out;
+    transition: transform var(--motion-normal) ease-out;
   }
   .admin-mobile-nav { display: block; }
   /* Pad page body so content isn't hidden behind the 56px nav. */
@@ -8575,7 +8575,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 }
 .admin-live-feed-row.is-swiped {
   transform: translateX(-180px);
-  transition: transform 220ms cubic-bezier(0.32, 1.4, 0.34, 1);
+  transition: transform var(--motion-normal) cubic-bezier(0.32, 1.4, 0.34, 1);
   background: var(--color-surface);
 }
 .admin-live-feed-row__swipe-actions {
@@ -9150,7 +9150,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 .admin-flt-v4__qchip-knob {
   width: 12px; height: 12px; border-radius: 50%;
   background: var(--color-text-muted);
-  margin-left: 0; transition: margin-left 0.2s, background 0.2s;
+  margin-left: 0; transition: margin-left var(--motion-normal), background var(--motion-normal);
 }
 .admin-flt-v4__qchip.is-active .admin-flt-v4__qchip-knob {
   margin-left: 12px;
@@ -9610,7 +9610,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 10px; letter-spacing: 0.4px;
-  transition: all 120ms ease;
+  transition: all var(--motion-fast) ease;
 }
 .admin-msgd-nav .arrow { font-size: 11px; }
 .admin-msgd-nav + .admin-msgd-nav { margin-left: 0; }
@@ -9627,7 +9627,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   border-radius: 3px;
   cursor: pointer;
   font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.4px;
-  transition: all 120ms ease;
+  transition: all var(--motion-fast) ease;
 }
 .admin-msgd-close .arrow { font-size: 11px; }
 .admin-msgd-close:hover { color: var(--color-text-strong); border-color: var(--color-primary); }
@@ -9720,7 +9720,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   text-align: center;
   font-family: inherit;
   color: var(--color-text-strong);
-  transition: all 120ms ease;
+  transition: all var(--motion-fast) ease;
 }
 .admin-msgd-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
 .admin-msgd-actions button:hover:not(:disabled) {
@@ -10168,7 +10168,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   border-left: 3px solid;
   border-radius: 4px;
   cursor: pointer;
-  transition: all 140ms ease;
+  transition: all var(--motion-fast) ease;
 }
 .admin-notif-item:hover {
   background: var(--hover-tint-weak);
@@ -10374,13 +10374,13 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   font-family: var(--font-sans); font-size: 13px;
   font-weight: 500; letter-spacing: 0.3px;
   display: inline-flex; align-items: center; gap: 8px;
-  transition: color 120ms ease;
+  transition: color var(--motion-fast) ease;
 }
 .admin-tabstrip-tab.is-active { color: var(--color-primary); font-weight: 600; }
 .admin-tabstrip-tab:hover:not(.is-active) { color: var(--color-text-strong); }
 .admin-tabstrip-tab__indicator {
   position: absolute; left: 8px; right: 8px; bottom: -1px; height: 2px;
-  background: transparent; transition: background 120ms ease, box-shadow 120ms ease;
+  background: transparent; transition: background var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
 }
 .admin-tabstrip-tab.is-active .admin-tabstrip-tab__indicator {
   background: var(--color-primary);
@@ -10484,7 +10484,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-vc-toggle {
   font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px;
   padding: 4px 10px; border-radius: 3px; cursor: pointer; border: 1px solid;
-  transition: all 120ms ease;
+  transition: all var(--motion-fast) ease;
 }
 .admin-vc-toggle.is-on {
   color: var(--color-primary);
@@ -11063,7 +11063,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   border: 1px solid var(--hud-line);
   border-radius: 4px;
   cursor: pointer;
-  transition: border-color 140ms, background 140ms;
+  transition: border-color var(--motion-fast), background var(--motion-fast);
 }
 .admin-wh-card:hover { background: rgba(56, 189, 248, 0.04); }
 .admin-wh-card.is-selected {
@@ -11425,7 +11425,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   padding: 0 14px;
   font-family: inherit;
   text-align: left;
-  transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+  transition: color var(--motion-fast) ease, border-color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 
 .admin-tabs-btn:hover {
@@ -11518,7 +11518,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   cursor: pointer;
   font-family: inherit;
   text-align: left;
-  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  transition: background var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 
 .admin-system-accordion-row:hover {
@@ -11547,7 +11547,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-system-accordion-chev {
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 12px;
-  transition: transform 0.12s ease;
+  transition: transform var(--motion-fast) ease;
   opacity: 0.6;
 }
 
@@ -11664,7 +11664,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 }
 
 .admin-at-row {
-  transition: background 120ms ease;
+  transition: background var(--motion-fast) ease;
 }
 
 .admin-at-row:hover {
@@ -11865,7 +11865,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   pointer-events: auto;
   opacity: 0;
   transform: translateY(-4px);
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition: opacity var(--motion-normal) ease, transform var(--motion-normal) ease;
 }
 
 .admin-quick-action-bar.is-entering {
@@ -11893,7 +11893,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   font-size: 11px;
   padding: 3px 9px;
   letter-spacing: 0.4px;
-  transition: background 0.12s ease, color 0.12s ease;
+  transition: background var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 
 .admin-quick-action-bar-undo:hover {
@@ -12060,7 +12060,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   font-weight: 700;
   color: var(--admin-text-strong, #f1f5f9);
   cursor: pointer;
-  transition: border-color 0.12s ease, background 0.12s ease;
+  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 .admin-widget-step:hover {
   border-color: var(--color-primary);
@@ -13372,7 +13372,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   background: var(--color-primary);
   opacity: 0.45;
   border-radius: 1px 1px 0 0;
-  transition: opacity 120ms ease;
+  transition: opacity var(--motion-fast) ease;
 }
 
 .admin-replay-waveform-bars > span.is-played {
@@ -13414,7 +13414,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   font-family: var(--font-mono);
   font-size: 14px;
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease;
+  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 
 .admin-replay-transport-btn:hover { border-color: var(--color-primary); }
@@ -13583,7 +13583,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   border-radius: 10px;
   padding: 2px;
   background: var(--color-bg-elevated, #1e293b);
-  transition: background 150ms ease;
+  transition: background var(--motion-fast) ease;
   justify-content: flex-start;
 }
 
@@ -13593,7 +13593,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  transition: transform 150ms ease;
+  transition: transform var(--motion-fast) ease;
 }
 
 .admin-plugins-switch-input:checked + .admin-plugins-switch-track {
@@ -13727,7 +13727,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-fp-row--head .num { text-align: right; }
 
 .admin-fp-data {
-  transition: background 120ms ease;
+  transition: background var(--motion-fast) ease;
 }
 
 .admin-fp-data:hover {
@@ -13870,7 +13870,7 @@ body.admin-pu-open { overflow: hidden; }
   font-family: var(--font-mono);
   font-size: 12px;
   cursor: pointer;
-  transition: background 120ms ease;
+  transition: background var(--motion-fast) ease;
 }
 
 .admin-pu-close:hover {
@@ -13972,7 +13972,7 @@ body.admin-pu-open { overflow: hidden; }
   border: 2px dashed var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
   background: transparent;
   text-align: center;
-  transition: all 150ms ease;
+  transition: all var(--motion-fast) ease;
   cursor: pointer;
 }
 
@@ -14407,7 +14407,7 @@ body.admin-pu-open { overflow: hidden; }
   font-size: 13px;
   line-height: 1;
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease, color var(--motion-fast) ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -14549,7 +14549,7 @@ body.admin-pu-open { overflow: hidden; }
 .admin-security-strength-bar > span {
   display: block; height: 100%;
   background: var(--hud-cyan, #38bdf8);
-  transition: width 160ms;
+  transition: width var(--motion-normal);
 }
 .admin-security-strength-bar > span.is-bad   { background: var(--hud-crimson, #f87171); }
 .admin-security-strength-bar > span.is-warn  { background: var(--hud-amber, #fbbf24); }
@@ -14744,7 +14744,7 @@ body.admin-pu-open { overflow: hidden; }
   border: 1.5px dashed rgba(56, 189, 248, 0.45);
   background: rgba(56, 189, 248, 0.05);
   cursor: pointer;
-  transition: background 120ms, border-color 120ms;
+  transition: background var(--motion-fast), border-color var(--motion-fast);
 }
 .admin-effects-dropzone:hover,
 .admin-effects-dropzone.is-drag {

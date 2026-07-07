@@ -70,7 +70,7 @@ body {
   font-family: inherit;
   font-size: 0.875rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--motion-normal);
 }
 
 .close-btn:hover {
