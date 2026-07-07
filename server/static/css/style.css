@@ -3715,6 +3715,10 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   min-height: 68px;
   overflow: hidden;
 }
+/* D2 exception: these three swatches simulate the overlay/OBS canvas
+ * (dark / light / photo background) an effect will render on. They are
+ * fixed reference backgrounds by design and must NOT follow the admin
+ * theme — the "dark" swatch stays dark in light admin theme on purpose. */
 .fx-preview-cell.is-dark  { background: #0B0E18; }
 .fx-preview-cell.is-light { background: #F8FAFC; }
 .fx-preview-cell.is-photo {
@@ -5725,6 +5729,8 @@ body.stream-mode .admin-hero .admin-summary-grid {
  * driven by overlay.js on receiving the WS broadcast.
  */
 .admin-konami-hud {
+  /* D2 exception: floating easter-egg HUD chip that overlays the page like
+   * an OBS overlay widget — intentionally dark-glass in both admin themes. */
   position: fixed;
   bottom: 20px;
   right: 20px;
@@ -6239,7 +6245,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   padding: 8px 10px;
   border-radius: 4px;
   border: 1px dashed var(--color-border, #334155);
-  background: rgba(15, 23, 42, 0.55);
+  background: var(--admin-raised);
   color: var(--color-text-muted);
   font-family: var(--font-mono);
   font-size: 10px;
@@ -7201,7 +7207,7 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
 .admin-setup-input[readonly] {
   font-family: var(--font-mono);
   cursor: default;
-  background: rgba(15, 23, 42, 0.45);
+  background: var(--admin-raised);
 }
 
 .admin-setup-server-fields,
@@ -12000,7 +12006,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-widget-select,
 .admin-widget-textarea {
   flex: 1;
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--admin-raised);
   color: var(--admin-text-strong, #f1f5f9);
   border: 1px solid var(--admin-line, var(--hud-line));
   border-radius: 4px;
@@ -12013,7 +12019,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-widget-textarea:focus {
   outline: none;
   border-color: var(--color-primary);
-  background: rgba(15, 23, 42, 0.85);
+  background: var(--admin-raised);
 }
 
 .admin-widget-textarea { resize: vertical; min-height: 60px; }
