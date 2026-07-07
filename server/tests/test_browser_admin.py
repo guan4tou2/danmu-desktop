@@ -193,9 +193,7 @@ def _open_section(page, section_id: str):
         "sec-layout",
     }
     if section_id in DISPLAY_LEGACY_IDS:
-        page.wait_for_selector(
-            "#sec-viewer-config-defaults", state="visible", timeout=5000
-        )
+        page.wait_for_selector("#sec-viewer-config-defaults", state="visible", timeout=5000)
         return
 
     page.wait_for_selector(f"#{section_id}", state="visible", timeout=5000)
