@@ -53,6 +53,17 @@ function shouldSkip(fullPath) {
   return parts.some((part) => SKIP_PARTS.has(part));
 }
 
+// Strip CSS block comments before scanning for the "bare word" forbidden
+// patterns (magenta/violet/purple). Those patterns exist to catch a color
+// name creeping back into live styles/copy, not prose in a code comment that
+// explains a past color was *removed* (e.g. "the former violet #c4b5fd
+// swapped to accent-light cyan to keep the no-violet rule"). Hex-code
+// patterns still scan the raw source, since a literal hex value is
+// unambiguous regardless of comment context.
+function stripCssComments(src) {
+  return src.replace(/\/\*[\s\S]*?\*\//g, (match) => match.replace(/[^\n]/g, " "));
+}
+
 function collectFiles(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const fullPath = path.join(dir, entry.name);
@@ -78,7 +89,8 @@ test("implementation frontend files do not reintroduce design-v2 forbidden palet
 
   for (const file of files) {
     const rel = path.relative(REPO_ROOT, file);
-    const src = fs.readFileSync(file, "utf8");
+    const rawSrc = fs.readFileSync(file, "utf8");
+    const src = path.extname(file) === ".css" ? stripCssComments(rawSrc) : rawSrc;
     const lines = src.split(/\r?\n/);
     lines.forEach((line, i) => {
       FORBIDDEN_PATTERNS.forEach(({ label, pattern }) => {
@@ -130,10 +142,16 @@ test("admin light inputs have a dark strong text token", () => {
   const tokens = fs.readFileSync(path.join(REPO_ROOT, "shared/tokens.css"), "utf8");
   const adminCss = fs.readFileSync(path.join(REPO_ROOT, "server/static/css/style.css"), "utf8");
 
-  expect(tokens).toMatch(/--admin-text:\s*#0f172a;/);
-  expect(tokens).toMatch(/--admin-text-strong:\s*#0f172a;/);
+  // shared/tokens.css is dark-default: the base :root block carries the
+  // dark-theme values directly, and :root[data-theme="light"] overrides them
+  // for light mode. Guard both halves of the same intent (admin text resolves
+  // to a bright color on dark, a dark color on light) against the new shape.
+  const rootBlock = tokens.match(/:root\s*\{(?<body>[^}]*)\}/s);
+  expect(rootBlock).not.toBeNull();
+  expect(rootBlock.groups.body).toMatch(/--admin-text:\s*#f1f5f9;/);
+  expect(rootBlock.groups.body).toMatch(/--admin-text-strong:\s*#f1f5f9;/);
   expect(tokens).toMatch(
-    /:root\[data-theme="dark"\]\s*\{[^}]*--admin-text:\s*#f1f5f9;[^}]*--admin-text-strong:\s*#f1f5f9;/s,
+    /:root\[data-theme="light"\]\s*\{[^}]*--admin-text:\s*#0f172a;[^}]*--admin-text-strong:\s*#0f172a;/s,
   );
   expect(adminCss).toMatch(
     /\.admin-widget-input,\s*\.admin-widget-select,\s*\.admin-widget-textarea\s*\{[^}]*color:\s*var\(--admin-text-strong,\s*#f1f5f9\);/s,
