@@ -1,8 +1,81 @@
 // Window creation and lifecycle management
 const { app, BrowserWindow, screen, shell } = require("electron");
 const path = require("path");
+const fs = require("fs");
 const { sanitizeLog } = require("../shared/utils");
 const { getChildWsScript } = require("./child-ws-script");
+
+// Main-window default size — used on first run and as a fallback when the
+// persisted bounds land off-screen (e.g. a monitor was unplugged).
+const DEFAULT_MAIN_BOUNDS = { width: 800, height: 900 };
+
+function getWindowStatePath() {
+  return path.join(app.getPath("userData"), "window-state.json");
+}
+
+/**
+ * Read the persisted main-window bounds. Returns null if the file is missing,
+ * unreadable, malformed, or doesn't carry a valid width/height.
+ */
+function loadWindowState() {
+  try {
+    const raw = fs.readFileSync(getWindowStatePath(), "utf8");
+    const parsed = JSON.parse(raw);
+    if (
+      !parsed ||
+      typeof parsed.width !== "number" ||
+      typeof parsed.height !== "number" ||
+      parsed.width <= 0 ||
+      parsed.height <= 0
+    ) {
+      return null;
+    }
+    return parsed;
+  } catch (_) {
+    return null;
+  }
+}
+
+function saveWindowState(bounds) {
+  if (
+    !bounds ||
+    typeof bounds.width !== "number" ||
+    typeof bounds.height !== "number"
+  ) {
+    return;
+  }
+  try {
+    fs.writeFileSync(getWindowStatePath(), JSON.stringify(bounds), "utf8");
+  } catch (err) {
+    console.error(
+      "[Main] Failed to persist window state:",
+      sanitizeLog(err.message)
+    );
+  }
+}
+
+/**
+ * True if the saved bounds overlap at least one currently-connected display.
+ * Guards against restoring a window onto a monitor that's no longer present.
+ */
+function isBoundsOnScreen(bounds, displays) {
+  if (
+    !bounds ||
+    !Array.isArray(displays) ||
+    displays.length === 0 ||
+    typeof bounds.x !== "number" ||
+    typeof bounds.y !== "number"
+  ) {
+    return false;
+  }
+  return displays.some((d) => {
+    const wa = d && (d.workArea || d.bounds);
+    if (!wa) return false;
+    const overlapX = bounds.x < wa.x + wa.width && bounds.x + bounds.width > wa.x;
+    const overlapY = bounds.y < wa.y + wa.height && bounds.y + bounds.height > wa.y;
+    return overlapX && overlapY;
+  });
+}
 
 /**
  * Pick a display with a stable fallback chain:
@@ -84,9 +157,28 @@ function createWindow(childWindows, onKonamiTrigger) {
   const isMac = process.platform === "darwin";
   const titleBarOpts = isMac ? { titleBarStyle: "hidden" } : {};
 
+  // Restore the last window geometry when it still lands on a live display;
+  // otherwise fall back to the default centered size (A8).
+  const savedState = loadWindowState();
+  let displays = [];
+  try {
+    displays = screen.getAllDisplays();
+  } catch (_) {
+    displays = [];
+  }
+  const restoreBounds =
+    savedState && isBoundsOnScreen(savedState, displays) ? savedState : null;
+  const initialBounds = {
+    width: restoreBounds ? restoreBounds.width : DEFAULT_MAIN_BOUNDS.width,
+    height: restoreBounds ? restoreBounds.height : DEFAULT_MAIN_BOUNDS.height,
+  };
+  if (restoreBounds) {
+    initialBounds.x = restoreBounds.x;
+    initialBounds.y = restoreBounds.y;
+  }
+
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 900,
+    ...initialBounds,
     minHeight: 700,
     resizable: true,
     autoHideMenuBar: true,
@@ -118,6 +210,14 @@ function createWindow(childWindows, onKonamiTrigger) {
 
   mainWindow.on("close", (e) => {
     console.log("[Main] Window close event triggered");
+    // Persist the final geometry so the next launch restores it (A8).
+    try {
+      if (!mainWindow.isDestroyed()) {
+        saveWindowState(mainWindow.getBounds());
+      }
+    } catch (err) {
+      console.error("[Main] Error saving window state:", sanitizeLog(err.message));
+    }
     // 使用 spread 複製陣列，避免 destroy() 觸發 "closed" 事件
     // 導致 splice 修改正在迭代的陣列（index 跑掉，第二個視窗被略過）
     [...childWindows].forEach((win) => {
@@ -309,4 +409,8 @@ module.exports = {
   createAboutWindow,
   pickOverlayDisplay,
   hardenWebContents,
+  loadWindowState,
+  saveWindowState,
+  isBoundsOnScreen,
+  getWindowStatePath,
 };

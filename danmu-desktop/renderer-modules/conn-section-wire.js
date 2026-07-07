@@ -18,6 +18,10 @@ const _IDS = {
   tokenInput: "ws-token-input",
 };
 
+// Empty-state guidance shown in the host slot before any server is configured,
+// replacing the bare "—" placeholder (A4).
+const _HOST_EMPTY_HINT = "未設定 · 請輸入 server 位址";
+
 function _safeParse(raw) {
   try {
     return parseServerInput(raw);
@@ -92,12 +96,27 @@ function initConnSection({ api } = {}) {
     if (!serverInput) return;
     const parsed = _safeParse(serverInput.value);
     if (!parsed) {
-      if (hostDisplay) hostDisplay.textContent = serverInput.value || "—";
+      if (hostDisplay) hostDisplay.textContent = serverInput.value || _HOST_EMPTY_HINT;
       if (previewDisplay) previewDisplay.textContent = "wss://—/ws";
       return;
     }
     if (hostDisplay) hostDisplay.textContent = formatDisplayHost(parsed);
     if (previewDisplay) previewDisplay.textContent = buildCanonicalUrl(parsed);
+  }
+
+  // Toggle the shared .input-valid / .input-invalid affordance on the visible
+  // Server field. Empty input is neutral (no class). Called on blur so the
+  // user isn't nagged mid-typing.
+  function _applyServerValidity() {
+    if (!serverInput) return;
+    serverInput.classList.remove("input-valid", "input-invalid");
+    const raw = serverInput.value ? serverInput.value.trim() : "";
+    if (!raw) return;
+    if (_safeParse(raw)) {
+      serverInput.classList.add("input-valid");
+    } else {
+      serverInput.classList.add("input-invalid");
+    }
   }
 
   if (serverInput) {
@@ -107,6 +126,7 @@ function initConnSection({ api } = {}) {
       if (parsed) _setHidden(parsed);
       _renderPreview();
     });
+    serverInput.addEventListener("blur", _applyServerValidity);
   }
 
   if (hostInput) {
@@ -129,10 +149,26 @@ function initConnSection({ api } = {}) {
   // ── ⚐ 測試 button + 4-state TestChip ────────────────────────────────────
   const connTest = createConnTest({ api: api || (typeof window !== "undefined" ? window.API : null) });
 
+  // Remember the button's resting label so we can restore it after a test.
+  const testBtnLabel = testBtn ? testBtn.querySelector("[data-i18n='connTestBtn']") : null;
+  const _testBtnRestingText = testBtnLabel ? testBtnLabel.textContent : "";
+
   function _renderChip() {
-    if (!testChip) return;
-    testChip.textContent = connTest.getChipLabel();
-    testChip.setAttribute("data-state", connTest.getState());
+    const state = connTest.getState();
+    if (testChip) {
+      testChip.textContent = connTest.getChipLabel();
+      testChip.setAttribute("data-state", state);
+    }
+    // Disable the ⚐ 測試 button while a handshake is in flight and swap the
+    // label for the existing ⟳ spinner glyph; restore on settle.
+    if (testBtn) {
+      const testing = state === "testing";
+      testBtn.disabled = testing;
+      testBtn.setAttribute("aria-busy", testing ? "true" : "false");
+      if (testBtnLabel) {
+        testBtnLabel.textContent = testing ? "⟳ 測試中…" : _testBtnRestingText;
+      }
+    }
   }
 
   connTest.onChange(_renderChip);
@@ -163,6 +199,18 @@ function initConnSection({ api } = {}) {
   function _closeEdit() {
     if (editBlock) editBlock.setAttribute("hidden", "");
     if (displayBlock) displayBlock.removeAttribute("hidden");
+  }
+  // ESC while editing the server reverts to the persisted value and closes
+  // edit mode — same path as the ✕ 取消 button. Scoped to the edit block so
+  // no global keydown listener is added (A7).
+  if (editBlock) {
+    editBlock.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        _setServerFromHidden();
+        _closeEdit();
+      }
+    });
   }
   if (editPencil) {
     editPencil.addEventListener("click", _openEdit);
@@ -263,11 +311,15 @@ function initConnSection({ api } = {}) {
   function _renderAuthStatus() {
     if (!authStatusEl || !tokenInput) return;
     if (tokenInput.value && tokenInput.value.trim()) {
-      authStatusEl.textContent = "已設定";
+      // ✓ 已設定 badge — stays visible even when the panel is open so the
+      // "token is configured" signal is always present (A5).
+      authStatusEl.textContent = "✓ 已設定";
+      authStatusEl.classList.add("is-set");
       authStatusEl.removeAttribute("data-i18n");
     } else {
       // Restore default (re-pickable by i18n updateUI on next pass)
       authStatusEl.textContent = "未設定 · 點此設定";
+      authStatusEl.classList.remove("is-set");
       authStatusEl.setAttribute("data-i18n", "connAuthStatusUnset");
     }
   }
@@ -279,6 +331,7 @@ function initConnSection({ api } = {}) {
     renderPreview: _renderPreview,
     openEdit: _openEdit,
     closeEdit: _closeEdit,
+    applyServerValidity: _applyServerValidity,
   };
 }
 

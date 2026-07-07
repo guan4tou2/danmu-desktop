@@ -582,6 +582,13 @@ body[data-os="mac"] .client-titlebar {
   background: rgba(148, 163, 184, 0.08);
 }
 
+/* Keyboard focus ring for the sidebar nav buttons. `all: unset` above wipes
+   the UA outline, so restore a visible focus affordance for Tab navigation. */
+.client-nav-btn:focus-visible {
+  box-shadow: 0 0 0 3px var(--glow-primary, rgba(56, 189, 248, 0.4));
+  border-radius: inherit;
+}
+
 .client-nav-btn.is-active {
   background: rgba(56, 189, 248, 0.12);
   color: var(--color-primary);
@@ -1072,6 +1079,14 @@ body[data-os="mac"] .client-titlebar {
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
 }
 
+/* Stronger keyboard focus ring for the role="button" host row — the plain
+   :focus above stays subtle for mouse/text focus, :focus-visible is the
+   visible Tab affordance. */
+.client-conn-host-row:focus-visible {
+  box-shadow: 0 0 0 3px var(--glow-primary, rgba(56, 189, 248, 0.4));
+  border-radius: inherit;
+}
+
 .client-conn-host-row:hover .client-conn-edit-pencil {
   color: var(--color-primary);
 }
@@ -1141,9 +1156,9 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-conn-test-chip[data-state="fail"] {
-  border-color: rgba(251, 191, 36, 0.4);
-  background: rgba(251, 191, 36, 0.08);
-  color: var(--color-warning);
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--color-error);
 }
 
 .client-conn-test-btn {
@@ -1274,6 +1289,10 @@ body[data-os="mac"] .client-titlebar {
    from the shared card class; nothing extra needed for the container. */
 .client-conn-auth-panel { padding: 14px; }
 .client-conn-auth-panel[open] .client-conn-auth-status { display: none; }
+/* The "✓ 已設定" confirmation badge stays visible even when the panel is
+   expanded, so the configured-token signal is always present (A5). */
+.client-conn-auth-panel[open] .client-conn-auth-status.is-set { display: inline; }
+.client-conn-auth-status.is-set { color: var(--color-success); }
 
 .client-conn-auth-summary {
   display: flex;
