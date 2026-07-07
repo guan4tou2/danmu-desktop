@@ -260,7 +260,9 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
             target_resolved = target.resolve()
             src_resolved = src_dir.resolve()
             if not str(target_resolved).startswith(str(src_resolved)):
-                out["skipped"].append({"path": member.name, "reason": "resolves outside source dir"})
+                out["skipped"].append(
+                    {"path": member.name, "reason": "resolves outside source dir"}
+                )
                 continue
         except OSError as exc:
             out["skipped"].append({"path": member.name, "reason": f"resolve failed: {exc}"})

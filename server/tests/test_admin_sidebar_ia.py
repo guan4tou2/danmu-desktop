@@ -184,16 +184,16 @@ def test_extensions_lands_on_first_class_integrations_route(admin_js: str):
     assert alias_match, "_routeAliases table not found"
     alias_body = alias_match.group(1)
 
-    assert re.search(r'\bextensions:\s*\{\s*nav:\s*"integrations"', alias_body), (
-        "sidebar Extensions must resolve to the first-class integrations route"
-    )
+    assert re.search(
+        r'\bextensions:\s*\{\s*nav:\s*"integrations"', alias_body
+    ), "sidebar Extensions must resolve to the first-class integrations route"
     assert not re.search(r'\bintegrations:\s*\{\s*nav:\s*"system"', alias_body), (
         "integrations is a promoted sidebar route and must not be aliased back "
         "to the System accordion"
     )
-    assert re.search(r'\bintegrations:\s*\{\s*title:\s*"整合"', admin_js), (
-        "ADMIN_ROUTES must keep a first-class integrations page title"
-    )
+    assert re.search(
+        r'\bintegrations:\s*\{\s*title:\s*"整合"', admin_js
+    ), "ADMIN_ROUTES must keep a first-class integrations page title"
 
 
 # ─── ADMIN_ROUTES table ──────────────────────────────────────────────────────
