@@ -3177,11 +3177,16 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   display: flex;
   align-items: baseline;
   gap: 8px;
+  /* C10: let the EN caption drop to a second line in a narrow tile instead
+     of squeezing the CJK label into one-character-per-line. */
+  flex-wrap: wrap;
 }
 
 .admin-kpi-tile-head .label {
   font-size: 12px;
   color: var(--color-text-muted);
+  /* Keep the CJK label on a single line — never break char-by-char. */
+  white-space: nowrap;
 }
 
 .admin-kpi-tile-head .en {
@@ -3190,6 +3195,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-text-muted);
+  white-space: nowrap;
 }
 
 .admin-kpi-tile-value {
