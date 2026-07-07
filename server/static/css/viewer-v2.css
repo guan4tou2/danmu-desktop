@@ -213,21 +213,24 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-marquee {
   }
 }
 
-/* Per-chip stagger: y / delay / duration / opacity. Matches prototype
- * viewer.jsx:526 items array. Mobile clamps y to ≤38 so chips don't fall
- * outside the shorter mobile hero. */
-.viewer-mq-i0  { top: 16px; opacity: 0.32; animation-delay: 0s;     animation-duration: 14s; }
-.viewer-mq-i1  { top: 44px; opacity: 0.28; animation-delay: 1.8s;   animation-duration: 17s; }
-.viewer-mq-i2  { top: 6px;  opacity: 0.36; animation-delay: 3.4s;   animation-duration: 16s; }
-.viewer-mq-i3  { top: 56px; opacity: 0.32; animation-delay: 5.0s;   animation-duration: 13s; }
-.viewer-mq-i4  { top: 28px; opacity: 0.26; animation-delay: 6.4s;   animation-duration: 19s; }
-.viewer-mq-i5  { top: 4px;  opacity: 0.30; animation-delay: 7.8s;   animation-duration: 15s; }
-.viewer-mq-i6  { top: 50px; opacity: 0.26; animation-delay: 9.0s;   animation-duration: 16s; }
-.viewer-mq-i7  { top: 22px; opacity: 0.36; animation-delay: 10.4s;  animation-duration: 13s; }
-.viewer-mq-i8  { top: 38px; opacity: 0.28; animation-delay: 11.6s;  animation-duration: 17s; }
-.viewer-mq-i9  { top: 12px; opacity: 0.32; animation-delay: 13.0s;  animation-duration: 14s; }
-.viewer-mq-i10 { top: 60px; opacity: 0.30; animation-delay: 14.2s;  animation-duration: 18s; }
-.viewer-mq-i11 { top: 32px; opacity: 0.26; animation-delay: 15.6s;  animation-duration: 16s; }
+/* Per-chip stagger: y / delay / duration / opacity + decorative color.
+ * Matches prototype viewer.jsx:526 items array. Mobile clamps y to ≤38 so
+ * chips don't fall outside the shorter mobile hero. Colors were inline
+ * style="color:#…" on each <span> in index.html; moved here (D3) and mapped
+ * to palette tokens (the former violet #c4b5fd swapped to accent-light cyan
+ * to keep the no-violet rule). These are decorative sample danmu, not UI. */
+.viewer-mq-i0  { top: 16px; opacity: 0.32; animation-delay: 0s;     animation-duration: 14s; color: var(--color-error-light); }
+.viewer-mq-i1  { top: 44px; opacity: 0.28; animation-delay: 1.8s;   animation-duration: 17s; color: var(--color-primary-light); }
+.viewer-mq-i2  { top: 6px;  opacity: 0.36; animation-delay: 3.4s;   animation-duration: 16s; color: var(--color-warning); }
+.viewer-mq-i3  { top: 56px; opacity: 0.32; animation-delay: 5.0s;   animation-duration: 13s; color: var(--color-primary); }
+.viewer-mq-i4  { top: 28px; opacity: 0.26; animation-delay: 6.4s;   animation-duration: 19s; color: var(--color-success-light); }
+.viewer-mq-i5  { top: 4px;  opacity: 0.30; animation-delay: 7.8s;   animation-duration: 15s; color: var(--color-accent-light); }
+.viewer-mq-i6  { top: 50px; opacity: 0.26; animation-delay: 9.0s;   animation-duration: 16s; color: var(--color-primary-light); }
+.viewer-mq-i7  { top: 22px; opacity: 0.36; animation-delay: 10.4s;  animation-duration: 13s; color: var(--color-warning); }
+.viewer-mq-i8  { top: 38px; opacity: 0.28; animation-delay: 11.6s;  animation-duration: 17s; color: var(--color-success-light); }
+.viewer-mq-i9  { top: 12px; opacity: 0.32; animation-delay: 13.0s;  animation-duration: 14s; color: var(--color-error-light); }
+.viewer-mq-i10 { top: 60px; opacity: 0.30; animation-delay: 14.2s;  animation-duration: 18s; color: var(--color-primary); }
+.viewer-mq-i11 { top: 32px; opacity: 0.26; animation-delay: 15.6s;  animation-duration: 16s; color: var(--color-accent-light); }
 
 @media (max-width: 599px) {
   .viewer-mq-i3  { top: 38px; }
