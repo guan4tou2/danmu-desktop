@@ -639,6 +639,27 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   font-weight: 600;
 }
 
+/* 2026-07-07 uiux polish B8: immediate "voted" confirmation state — border
+ * + inline "已投出" label. Deliberately NO count/percentage anywhere here
+ * (product rule: viewer poll never shows vote counts/percentages). */
+.viewer-poll-option.is-voted {
+  border-color: var(--color-primary);
+  background: rgba(56, 189, 248, 0.1);
+  cursor: default;
+}
+
+.viewer-poll-option-voted-mark {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.6px;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
 @media (max-width: 599px) {
   .viewer-tabbar {
     padding: 0 10px;

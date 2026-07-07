@@ -750,6 +750,28 @@ document.addEventListener("DOMContentLoaded", () => {
     _refreshPollTimerBar();
   }
 
+  // 2026-07-07 uiux polish B8: mark the voted poll option immediately once
+  // the server confirms accepted=true, instead of only reacting via the
+  // (separately timed) thank-you card. Never renders a count/percentage —
+  // just a border + "已投出" confirmation, per product rule.
+  function _markPollOptionVoted(key) {
+    if (!elements.pollOptions || !key) return;
+    const btn = elements.pollOptions.querySelector(`[data-vpoll-key="${CSS.escape(String(key))}"]`);
+    if (!btn) return;
+    elements.pollOptions.querySelectorAll(".viewer-poll-option.is-voted").forEach((el) => {
+      el.classList.remove("is-voted");
+      el.querySelector(".viewer-poll-option-voted-mark")?.remove();
+    });
+    btn.classList.add("is-voted");
+    const row = btn.querySelector(".viewer-poll-option-row");
+    if (row && !row.querySelector(".viewer-poll-option-voted-mark")) {
+      const mark = document.createElement("span");
+      mark.className = "viewer-poll-option-voted-mark";
+      mark.textContent = "✓ 已投出";
+      row.appendChild(mark);
+    }
+  }
+
   // ── Per-question timer bar (multi-Q auto mode) ───────────────────────────
   let _pollTimerAnimEnd = 0;
   let _pollTimerAnimRAF = 0;
@@ -1839,12 +1861,19 @@ document.addEventListener("DOMContentLoaded", () => {
         // this message was accepted as a poll vote.
         try {
           const vote = responseData && responseData.poll_vote;
-          if (window.ViewerStates && vote && vote.accepted === true) {
-            window.ViewerStates.showThankYou({
-              question: vote.question || window._lastPollQuestion || "進行中的投票",
-              choice: vote.key || "",
-              fp: clientFingerprint,
-            });
+          if (vote && vote.accepted === true) {
+            // 2026-07-07 uiux polish B8: immediate selected-state feedback
+            // on the option itself (border + ✓ + "已投出"), instead of
+            // waiting for the thank-you card. Product rule stays intact —
+            // never render vote counts/percentages here, just confirmation.
+            _markPollOptionVoted(vote.key);
+            if (window.ViewerStates) {
+              window.ViewerStates.showThankYou({
+                question: vote.question || window._lastPollQuestion || "進行中的投票",
+                choice: vote.key || "",
+                fp: clientFingerprint,
+              });
+            }
           }
         } catch (_) { }
       } else {
