@@ -783,6 +783,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="admin-dash-main">
                             <header class="admin-dash-topbar">
                                 <div class="admin-dash-topbar-title">
+                                    <nav class="admin-dash-breadcrumb" data-route-breadcrumb aria-label="breadcrumb"></nav>
                                     <span class="hud-label is-accent" data-route-kicker>DASHBOARD · 活動進行中</span>
                                     <h1 data-route-title>控制台</h1>
                                 </div>
@@ -1661,9 +1662,65 @@ document.addEventListener("DOMContentLoaded", () => {
       }));
 
       _renderTabStripFor(currentRoute, activeTab);
+      _renderBreadcrumb(rawName, currentRoute, activeTab);
 
       try { history.replaceState(null, "", wantedHash); } catch (e) { /* ignore */ }
     };
+
+    // Renders "分區 › 頁面（› 分頁）" into the topbar breadcrumb slot. Data
+    // comes from the grouped sidebar DOM: the active nav button's page label
+    // + its preceding `.admin-dash-nav-label` section header. The active tab
+    // label (if any) is read from the mounted tab strip. Display-only — no
+    // clickable links in this first pass.
+    function _renderBreadcrumb(rawName, route, activeTab) {
+      const host = shell.querySelector("[data-route-breadcrumb]");
+      if (!host) return;
+      // Prefer the alias/raw button (what the user clicked) so the crumb
+      // matches the highlighted sidebar item; fall back to resolved route.
+      const btns = Array.from(shell.querySelectorAll(".admin-dash-nav-row[data-route]"));
+      let btn = btns.find((b) => b.dataset.route === rawName);
+      if (!btn) btn = btns.find((b) => b.dataset.route === route);
+      if (!btn) { host.textContent = ""; host.hidden = true; return; }
+
+      // Section = nearest preceding `.admin-dash-nav-label` sibling.
+      let section = "";
+      let prev = btn.previousElementSibling;
+      while (prev) {
+        if (prev.classList && prev.classList.contains("admin-dash-nav-label")) {
+          section = (prev.textContent || "").trim();
+          break;
+        }
+        prev = prev.previousElementSibling;
+      }
+      // Page = the button's label span text (drops badges/icons).
+      const labelEl = btn.querySelector("[data-i18n]") || btn.querySelector("span:nth-child(2)");
+      const page = (labelEl ? labelEl.textContent : btn.textContent || "").trim();
+
+      // Tab = active tab label from the mounted strip, if present.
+      let tab = "";
+      if (activeTab) {
+        const tabHost = shell.querySelector("[data-admin-tabs-host]");
+        const activeTabEl = tabHost
+          ? tabHost.querySelector(".is-active, [aria-selected='true']")
+          : null;
+        if (activeTabEl) tab = (activeTabEl.textContent || "").trim();
+      }
+
+      const crumbs = [section, page].filter(Boolean);
+      if (tab) crumbs.push(tab);
+      host.hidden = crumbs.length === 0;
+      host.innerHTML = crumbs
+        .map((c, i) => {
+          const sep = i > 0
+            ? '<span class="admin-dash-breadcrumb-sep" aria-hidden="true">›</span>'
+            : "";
+          const cls = i === crumbs.length - 1
+            ? "admin-dash-breadcrumb-item is-current"
+            : "admin-dash-breadcrumb-item";
+          return sep + '<span class="' + cls + '">' + escapeHtml(c) + "</span>";
+        })
+        .join("");
+    }
 
     // Mounts (or removes) the tab strip / system accordion in the topbar host.
     // Strip lives between `.admin-dash-topbar` and the route-view sections.

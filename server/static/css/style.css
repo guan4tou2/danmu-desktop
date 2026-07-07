@@ -3051,6 +3051,33 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   color: var(--color-primary);
 }
 
+.admin-dash-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  font-size: var(--text-2xs);
+  line-height: 1.3;
+  color: var(--admin-text-dim);
+}
+
+.admin-dash-breadcrumb[hidden] {
+  display: none;
+}
+
+.admin-dash-breadcrumb-item {
+  color: var(--admin-text-dim);
+}
+
+.admin-dash-breadcrumb-item.is-current {
+  color: var(--admin-text);
+}
+
+.admin-dash-breadcrumb-sep {
+  color: var(--admin-text-dim);
+  opacity: 0.6;
+}
+
 .admin-dash-topbar-actions {
   margin-left: auto;
   display: flex;
