@@ -3051,12 +3051,45 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   color: var(--color-primary);
 }
 
+.admin-dash-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  font-size: var(--text-2xs);
+  line-height: 1.3;
+  color: var(--admin-text-dim);
+}
+
+.admin-dash-breadcrumb[hidden] {
+  display: none;
+}
+
+.admin-dash-breadcrumb-item {
+  color: var(--admin-text-dim);
+}
+
+.admin-dash-breadcrumb-item.is-current {
+  color: var(--admin-text);
+}
+
+.admin-dash-breadcrumb-sep {
+  color: var(--admin-text-dim);
+  opacity: 0.6;
+}
+
 .admin-dash-topbar-actions {
   margin-left: auto;
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: center;
   flex-wrap: wrap;
+}
+
+/* Language menu collapses to its content width instead of stretching. */
+.admin-dash-topbar-actions .admin-ui-select {
+  width: auto;
+  min-width: 0;
 }
 
 .admin-dash-search {
@@ -3078,16 +3111,19 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   margin: 0 2px;
 }
 
+/* Status chip — mirrors the viewer connection-chip vocabulary (dot + text)
+   rather than a solid CTA button. Still navigates to the overlay route on
+   click, so cursor:pointer is kept intentionally (see C4 note). */
 .admin-dash-broadcast {
-  padding: 7px 14px;
-  border-radius: 6px;
-  border: 1px solid var(--color-primary);
-  background: var(--color-primary);
-  color: #000;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--admin-line);
+  background: transparent;
+  color: var(--admin-text);
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.12em;
-  font-weight: 700;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -3095,10 +3131,24 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 }
 
 .admin-dash-broadcast .dot {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: #000;
+  background: var(--admin-text-dim);
+}
+
+.admin-dash-broadcast.is-on {
+  border-color: color-mix(in srgb, var(--color-success) 45%, transparent);
+  color: var(--color-success);
+}
+
+.admin-dash-broadcast.is-on .dot {
+  background: var(--color-success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-success) 22%, transparent);
+}
+
+.admin-dash-broadcast.is-off .dot {
+  background: var(--admin-text-dim);
 }
 
 .admin-kpi-strip {
@@ -3127,11 +3177,16 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   display: flex;
   align-items: baseline;
   gap: 8px;
+  /* C10: let the EN caption drop to a second line in a narrow tile instead
+     of squeezing the CJK label into one-character-per-line. */
+  flex-wrap: wrap;
 }
 
 .admin-kpi-tile-head .label {
   font-size: 12px;
   color: var(--color-text-muted);
+  /* Keep the CJK label on a single line — never break char-by-char. */
+  white-space: nowrap;
 }
 
 .admin-kpi-tile-head .en {
@@ -3140,6 +3195,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-text-muted);
+  white-space: nowrap;
 }
 
 .admin-kpi-tile-value {
@@ -3438,7 +3494,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   color: var(--color-text-strong);
 }
 .hud-effect-card-preview.is-glow { color: var(--color-primary); text-shadow: 0 0 12px var(--color-primary); }
-.hud-effect-card-preview.is-color { color: #ec4899; }
+.hud-effect-card-preview.is-color { color: var(--color-primary); }
 .hud-effect-card-preview.is-text { letter-spacing: 2px; }
 .hud-effect-card-name {
   font-family: var(--font-mono);
@@ -5306,6 +5362,28 @@ body.stream-mode .admin-hero .admin-summary-grid {
 .history-dashboard-caption {
   color: var(--color-slate-500);
   font-size: 0.75rem;
+}
+
+/* Top-texts table + no-data span — replaces per-cell inline color styles
+   that were hardcoded in admin.js _loadStats() (C9). */
+.history-toptext-row {
+  border-top: 1px solid var(--admin-line);
+}
+
+.history-toptext-rank {
+  color: var(--admin-text-dim);
+}
+
+.history-toptext-text {
+  color: var(--admin-text);
+}
+
+.history-toptext-count {
+  color: var(--color-primary);
+}
+
+.history-nodata {
+  color: var(--admin-text-dim);
 }
 
 .stats-chart {

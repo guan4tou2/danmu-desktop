@@ -201,7 +201,7 @@
                 <span style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.08em">Poll prompt</span><span>選擇你的答案</span>
               </div>
               <div style="padding-top:8px;border-top:1px solid var(--hud-line);font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);line-height:1.6">
-                觀眾端不提供語言切換。預設跟隨瀏覽器語言；admin 可在 Viewer Page Theme 強制指定。
+                ${escapeHtml(t("displayAdminControlledNote", "觀眾端不提供語言切換。預設跟隨瀏覽器語言；admin 可在 Viewer Page Theme 強制指定。"))}
               </div>
             </div>
 

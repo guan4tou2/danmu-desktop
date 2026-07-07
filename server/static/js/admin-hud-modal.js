@@ -25,6 +25,21 @@
 
   const ROOT_ID = "admin-hud-modal-root";
   let _activeResolve = null;
+  // Element that had focus before the modal opened — focus is returned here
+  // on close so keyboard users land back where they were.
+  let _prevFocus = null;
+
+  const FOCUSABLE_SEL =
+    'a[href], button:not([disabled]), textarea:not([disabled]), ' +
+    'input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  function _focusable() {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return [];
+    return Array.prototype.slice
+      .call(root.querySelectorAll(FOCUSABLE_SEL))
+      .filter((el) => el.offsetParent !== null || el === document.activeElement);
+  }
 
   function _close(result) {
     const root = document.getElementById(ROOT_ID);
@@ -34,11 +49,33 @@
       _activeResolve = null;
     }
     document.removeEventListener("keydown", _onKey);
+    // Return focus to the element that opened the modal.
+    if (_prevFocus && typeof _prevFocus.focus === "function") {
+      try { _prevFocus.focus(); } catch (_) {}
+    }
+    _prevFocus = null;
   }
 
   function _onKey(e) {
-    if (e.key === "Escape") { e.preventDefault(); _close(false); }
-    if (e.key === "Enter")  { e.preventDefault(); _close(true);  }
+    if (e.key === "Escape") { e.preventDefault(); _close(false); return; }
+    if (e.key === "Enter")  { e.preventDefault(); _close(true);  return; }
+    if (e.key === "Tab") {
+      // Trap focus inside the modal so keyboard nav can't escape behind it.
+      const items = _focusable();
+      if (!items.length) { e.preventDefault(); return; }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey) {
+        if (active === first || !items.includes(active)) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else if (active === last || !items.includes(active)) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
   }
 
   function open(opts) {
@@ -46,6 +83,8 @@
       // Stack guard — close any existing modal first so resolves don't leak.
       if (_activeResolve) _close(false);
       _activeResolve = resolve;
+      // Remember what had focus so we can restore it when the modal closes.
+      _prevFocus = document.activeElement;
 
       const {
         icon = "⚠",

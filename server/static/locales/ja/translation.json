@@ -734,5 +734,10 @@
   "navTopPolls": "投票",
   "navTopSecurity": "セキュリティ",
   "navTopSystem": "システム",
-  "navTopWidgets": "ウィジェット"
+  "navTopWidgets": "ウィジェット",
+  "adminNavGroupOverview": "概要",
+  "adminNavGroupInteract": "インタラクション",
+  "adminNavGroupModeration": "モデレーション",
+  "adminNavGroupSettings": "設定",
+  "adminNavGroupIntegrations": "連携"
 }

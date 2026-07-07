@@ -314,7 +314,17 @@
     applyFilterChips(rules);
     refreshBlacklistStat();
     if (rules.length === 0) {
-      list.innerHTML = `<div style="padding:18px 14px;text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.05em">${t("noFilterRules", "No filter rules configured.")}</div>`;
+      // 2026-07-07 (C7): named empty state (icon + copy + primary action)
+      // instead of a bare text line. Falls back to the original text when
+      // AdminEmpty hasn't loaded.
+      if (window.AdminEmpty) {
+        const el = window.AdminEmpty.render("filters");
+        el.setAttribute("data-empty-kind", "filters");
+        list.innerHTML = "";
+        list.appendChild(el);
+      } else {
+        list.innerHTML = `<div data-empty-kind="filters" style="padding:18px 14px;text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.05em">${t("noFilterRules", "No filter rules configured.")}</div>`;
+      }
       return;
     }
     const visible = _currentFilter === "all" ? rules : rules.filter((r) => r.type === _currentFilter);

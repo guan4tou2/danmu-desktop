@@ -266,10 +266,10 @@
           <div style="flex:1;display:flex;gap:3px">${progressDots}</div>
         </div>
 
-        <div style="font-size:16px;font-weight:600;color:var(--color-text,#e6e8ee);margin-bottom:6px;letter-spacing:.2px">
+        <div style="font-size:16px;font-weight:600;color:var(--admin-text,#0f172a);margin-bottom:6px;letter-spacing:.2px">
           ${cur.title}
         </div>
-        <div style="font-size:13px;color:var(--color-text-dim,#9aa4b2);line-height:1.6;letter-spacing:.2px">
+        <div style="font-size:13px;color:var(--admin-text-dim,#475569);line-height:1.6;letter-spacing:.2px">
           ${cur.body}
         </div>
 

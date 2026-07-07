@@ -294,7 +294,11 @@ document.addEventListener("DOMContentLoaded", () => {
         numValue > settingRanges[key].max
       ) {
         showToast(
-          `${key} must be between ${settingRanges[key].min} and ${settingRanges[key].max}`,
+          ServerI18n.t("settingRangeError", {
+            key: key,
+            min: settingRanges[key].min,
+            max: settingRanges[key].max,
+          }),
           false
         );
         return false;
@@ -506,7 +510,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }).join("");
 
       let topTextRows = topTexts.map((t, i) =>
-        `<tr style="border-top:1px solid var(--admin-line)"><td class="py-1 pr-3" style="color:var(--admin-text-dim)">${i + 1}</td><td class="py-1 pr-3 text-sm" style="color:var(--admin-text)">${escapeHtml(t.text)}</td><td class="py-1 font-mono text-sm" style="color:var(--color-primary)">${t.count}</td></tr>`
+        `<tr class="history-toptext-row"><td class="py-1 pr-3 history-toptext-rank">${i + 1}</td><td class="py-1 pr-3 text-sm history-toptext-text">${escapeHtml(t.text)}</td><td class="py-1 font-mono text-sm history-toptext-count">${t.count}</td></tr>`
       ).join("");
 
       dashDiv.innerHTML = `
@@ -526,14 +530,14 @@ document.addEventListener("DOMContentLoaded", () => {
               <h4 class="history-dashboard-title">${ServerI18n.t("hourlyDistribution")}</h4>
               <span class="history-dashboard-caption">${hours}h window</span>
             </div>
-            <div class="stats-chart">${chartBars || `<span class="text-xs" style="color:var(--admin-text-dim)">${ServerI18n.t("noData")}</span>`}</div>
+            <div class="stats-chart">${chartBars || `<span class="text-xs history-nodata">${ServerI18n.t("noData")}</span>`}</div>
           </div>
           <div class="history-dashboard-card history-dashboard-card--table">
             <div class="history-dashboard-title-row">
               <h4 class="history-dashboard-title">${ServerI18n.t("topTexts")}</h4>
               <span class="history-dashboard-caption">Top 10</span>
             </div>
-            ${topTexts.length ? `<table class="w-full text-xs"><tbody>${topTextRows}</tbody></table>` : `<span class="text-xs" style="color:var(--admin-text-dim)">${ServerI18n.t("noData")}</span>`}
+            ${topTexts.length ? `<table class="w-full text-xs"><tbody>${topTextRows}</tbody></table>` : `<span class="text-xs history-nodata">${ServerI18n.t("noData")}</span>`}
           </div>
         </div>`;
     } catch (err) {
@@ -651,7 +655,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                      button matches the URL's raw slug so the clicked item
                                      stays highlighted even after alias redirect. -->
 
-                                <div class="admin-dash-nav-label">總覽</div>
+                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupOverview">總覽</div>
                                 <button type="button" class="admin-dash-nav-row is-active" data-route="live" role="tab" aria-selected="true">
                                     <span class="admin-dash-nav-icon">◉</span>
                                     <span data-i18n="adminNavLive">控制台</span>
@@ -666,7 +670,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span data-i18n="adminNavHistory">時間軸匯出</span>
                                 </button>
 
-                                <div class="admin-dash-nav-label">互動</div>
+                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupInteract">互動</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="polls" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◈</span>
                                     <span data-i18n="adminNavPolls">投票</span>
@@ -698,7 +702,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span data-i18n="adminNavViewer">觀眾頁</span>
                                 </button>
 
-                                <div class="admin-dash-nav-label">審核</div>
+                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupModeration">審核</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="moderation" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⊘</span>
                                     <span data-i18n="adminNavModeration">敏感字 &amp; 黑名單</span>
@@ -709,7 +713,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span data-i18n="adminNavRatelimit">速率限制</span>
                                 </button>
 
-                                <div class="admin-dash-nav-label">設定</div>
+                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupSettings">設定</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="effects" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">✦</span>
                                     <span data-i18n="adminNavEffects">效果庫 .dme</span>
@@ -732,7 +736,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span data-i18n="adminNavAudit">操作日誌</span>
                                 </button>
 
-                                <div class="admin-dash-nav-label">整合</div>
+                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupIntegrations">整合</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="extensions" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⌬</span>
                                     <span data-i18n="adminNavExtensions">Extensions</span>
@@ -783,6 +787,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="admin-dash-main">
                             <header class="admin-dash-topbar">
                                 <div class="admin-dash-topbar-title">
+                                    <nav class="admin-dash-breadcrumb" data-route-breadcrumb aria-label="breadcrumb"></nav>
                                     <span class="hud-label is-accent" data-route-kicker>DASHBOARD · 活動進行中</span>
                                     <h1 data-route-title>控制台</h1>
                                 </div>
@@ -799,7 +804,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                       <option value="ja" ${ServerI18n.currentLang === "ja" ? "selected" : ""}>日本語</option>
                                       <option value="ko" ${ServerI18n.currentLang === "ko" ? "selected" : ""}>한국어</option>
                                     </select>
-                                    <button class="admin-dash-broadcast" type="button" aria-live="polite"
+                                    <button class="admin-dash-broadcast ${broadcasting ? "is-on" : "is-off"}" type="button" aria-live="polite"
                                         title="切換 Desktop 狀態" data-route="overlay">
                                         <span class="dot"></span>
                                         ${broadcasting ? "DESKTOP · ON" : "DESKTOP · OFF"}
@@ -1661,9 +1666,65 @@ document.addEventListener("DOMContentLoaded", () => {
       }));
 
       _renderTabStripFor(currentRoute, activeTab);
+      _renderBreadcrumb(rawName, currentRoute, activeTab);
 
       try { history.replaceState(null, "", wantedHash); } catch (e) { /* ignore */ }
     };
+
+    // Renders "分區 › 頁面（› 分頁）" into the topbar breadcrumb slot. Data
+    // comes from the grouped sidebar DOM: the active nav button's page label
+    // + its preceding `.admin-dash-nav-label` section header. The active tab
+    // label (if any) is read from the mounted tab strip. Display-only — no
+    // clickable links in this first pass.
+    function _renderBreadcrumb(rawName, route, activeTab) {
+      const host = shell.querySelector("[data-route-breadcrumb]");
+      if (!host) return;
+      // Prefer the alias/raw button (what the user clicked) so the crumb
+      // matches the highlighted sidebar item; fall back to resolved route.
+      const btns = Array.from(shell.querySelectorAll(".admin-dash-nav-row[data-route]"));
+      let btn = btns.find((b) => b.dataset.route === rawName);
+      if (!btn) btn = btns.find((b) => b.dataset.route === route);
+      if (!btn) { host.textContent = ""; host.hidden = true; return; }
+
+      // Section = nearest preceding `.admin-dash-nav-label` sibling.
+      let section = "";
+      let prev = btn.previousElementSibling;
+      while (prev) {
+        if (prev.classList && prev.classList.contains("admin-dash-nav-label")) {
+          section = (prev.textContent || "").trim();
+          break;
+        }
+        prev = prev.previousElementSibling;
+      }
+      // Page = the button's label span text (drops badges/icons).
+      const labelEl = btn.querySelector("[data-i18n]") || btn.querySelector("span:nth-child(2)");
+      const page = (labelEl ? labelEl.textContent : btn.textContent || "").trim();
+
+      // Tab = active tab label from the mounted strip, if present.
+      let tab = "";
+      if (activeTab) {
+        const tabHost = shell.querySelector("[data-admin-tabs-host]");
+        const activeTabEl = tabHost
+          ? tabHost.querySelector(".is-active, [aria-selected='true']")
+          : null;
+        if (activeTabEl) tab = (activeTabEl.textContent || "").trim();
+      }
+
+      const crumbs = [section, page].filter(Boolean);
+      if (tab) crumbs.push(tab);
+      host.hidden = crumbs.length === 0;
+      host.innerHTML = crumbs
+        .map((c, i) => {
+          const sep = i > 0
+            ? '<span class="admin-dash-breadcrumb-sep" aria-hidden="true">›</span>'
+            : "";
+          const cls = i === crumbs.length - 1
+            ? "admin-dash-breadcrumb-item is-current"
+            : "admin-dash-breadcrumb-item";
+          return sep + '<span class="' + cls + '">' + escapeHtml(c) + "</span>";
+        })
+        .join("");
+    }
 
     // Mounts (or removes) the tab strip / system accordion in the topbar host.
     // Strip lives between `.admin-dash-topbar` and the route-view sections.
