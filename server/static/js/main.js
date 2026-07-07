@@ -62,6 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Send bar pill — border turns cyan when text is present
     sendbarPill: document.getElementById("sendbarPill"),
+    sendbar: document.querySelector(".viewer-sendbar"),
 
     // Viewer tabs + poll pane
     viewerTabButtons: Array.from(document.querySelectorAll("[data-viewer-tab]")),
@@ -2354,6 +2355,32 @@ document.addEventListener("DOMContentLoaded", () => {
       _pollTimer = null;
     }
   });
+
+  // --- Mobile soft-keyboard: keep sendbar above the visual viewport ---
+  // On iOS Safari (and some Android browsers) `100dvh` does not shrink when
+  // the on-screen keyboard opens, so the flex-pinned sendbar ends up hidden
+  // behind the keyboard. `visualViewport` reports the actually-visible area,
+  // so we pin the sendbar there directly. Feature-detected — browsers without
+  // `visualViewport` keep the existing flex-bottom behavior untouched.
+  if (window.visualViewport && elements.sendbar) {
+    const vv = window.visualViewport;
+    const _repositionSendbar = () => {
+      const keyboardOffset = window.innerHeight - vv.height - vv.offsetTop;
+      if (keyboardOffset > 0) {
+        elements.sendbar.style.position = "fixed";
+        elements.sendbar.style.left = "0";
+        elements.sendbar.style.right = "0";
+        elements.sendbar.style.bottom = `${keyboardOffset}px`;
+      } else {
+        elements.sendbar.style.position = "";
+        elements.sendbar.style.left = "";
+        elements.sendbar.style.right = "";
+        elements.sendbar.style.bottom = "";
+      }
+    };
+    vv.addEventListener("resize", _repositionSendbar);
+    vv.addEventListener("scroll", _repositionSendbar);
+  }
 
   // --- Helper: Apply Effects section visibility based on settings ---
   function applyEffectsVisibility(settings) {
