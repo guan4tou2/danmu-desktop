@@ -62,6 +62,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Send bar pill — border turns cyan when text is present
     sendbarPill: document.getElementById("sendbarPill"),
+    sendbar: document.querySelector(".viewer-sendbar"),
+    sendbarStatusRow: document.getElementById("sendbarStatusRow"),
 
     // Viewer tabs + poll pane
     viewerTabButtons: Array.from(document.querySelectorAll("[data-viewer-tab]")),
@@ -748,6 +750,28 @@ document.addEventListener("DOMContentLoaded", () => {
     _refreshPollTimerBar();
   }
 
+  // 2026-07-07 uiux polish B8: mark the voted poll option immediately once
+  // the server confirms accepted=true, instead of only reacting via the
+  // (separately timed) thank-you card. Never renders a count/percentage —
+  // just a border + "已投出" confirmation, per product rule.
+  function _markPollOptionVoted(key) {
+    if (!elements.pollOptions || !key) return;
+    const btn = elements.pollOptions.querySelector(`[data-vpoll-key="${CSS.escape(String(key))}"]`);
+    if (!btn) return;
+    elements.pollOptions.querySelectorAll(".viewer-poll-option.is-voted").forEach((el) => {
+      el.classList.remove("is-voted");
+      el.querySelector(".viewer-poll-option-voted-mark")?.remove();
+    });
+    btn.classList.add("is-voted");
+    const row = btn.querySelector(".viewer-poll-option-row");
+    if (row && !row.querySelector(".viewer-poll-option-voted-mark")) {
+      const mark = document.createElement("span");
+      mark.className = "viewer-poll-option-voted-mark";
+      mark.textContent = "✓ " + ServerI18n.t("pollOptionVoted");
+      row.appendChild(mark);
+    }
+  }
+
   // ── Per-question timer bar (multi-Q auto mode) ───────────────────────────
   let _pollTimerAnimEnd = 0;
   let _pollTimerAnimRAF = 0;
@@ -861,6 +885,13 @@ document.addEventListener("DOMContentLoaded", () => {
     updateCharCount();
     updatePreview();
     updateSendEnabled();
+    // B4: clear the transient "message dropped/queued" status row once the
+    // viewer starts typing a new attempt — it shouldn't linger past the next
+    // input. But only when the overlay is online: while offline,
+    // _refreshSendButtonGate() (called above) parks the persistent
+    // "overlay offline" explanation in this same row, and blindly clearing it
+    // would leave the FIRE button greyed out with no reason shown (F12).
+    if (_overlayOnline) _setSendbarStatusRow("");
   });
   updateSendEnabled();
 
@@ -1588,9 +1619,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!_overlayOnline) {
       elements.btnSend.disabled = true;
       elements.btnSend.dataset.state = "offline";
-      if (elements.btnSendText) elements.btnSendText.textContent = ServerI18n.t("overlayOfflineFire");
+      // Keep the button label short ("FIRE") — the full offline copy goes
+      // in the persistent status row above the pill so it never squeezes
+      // the input (flex:1) down and hides its placeholder (B2 fix).
+      if (elements.btnSendText) elements.btnSendText.textContent = ServerI18n.t("fireDanmu");
       if (elements.btnSendIcon) elements.btnSendIcon.classList.add("hidden");
       _setSendbarHint("", "");
+      _setSendbarStatusRow(ServerI18n.t("overlayOfflineFire"));
       return;
     }
     if (elements.btnSend.dataset.state === "offline") delete elements.btnSend.dataset.state;
@@ -1599,6 +1634,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (elements.btnSendText) elements.btnSendText.textContent = ServerI18n.t("fireDanmu");
       if (elements.btnSendIcon) elements.btnSendIcon.classList.remove("hidden");
       _setSendbarHint(ServerI18n.t("sendbarHint"), "");
+      _setSendbarStatusRow("");
     }
   }
 
@@ -1621,6 +1657,22 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!hint) return;
     hint.textContent = text;
     hint.dataset.state = state || "";
+  }
+
+  // Persistent status row above the sendbar pill (2026-07-07 uiux polish
+  // B2/B4). Unlike _showBanner (auto-clears) or the FIRE button label
+  // (limited width — long copy squeezes the input), this row exists so
+  // status copy never crowds out the input's placeholder and stays
+  // visible until the caller explicitly clears it.
+  function _setSendbarStatusRow(text) {
+    if (!elements.sendbarStatusRow) return;
+    if (!text) {
+      elements.sendbarStatusRow.hidden = true;
+      elements.sendbarStatusRow.textContent = "";
+      return;
+    }
+    elements.sendbarStatusRow.hidden = false;
+    elements.sendbarStatusRow.textContent = text;
   }
 
   function _clearBanner() {
@@ -1773,6 +1825,13 @@ document.addEventListener("DOMContentLoaded", () => {
           elements.danmuText.value = "";
           updateCharCount();
           updatePreview();
+          // 2026-07-07 uiux polish B5: on touch devices, blur after a
+          // successful send so the soft keyboard collapses (it was blocking
+          // the view of the just-fired danmu). Desktop keeps focus so
+          // keyboard users can fire again immediately without re-clicking.
+          if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) {
+            elements.danmuText.blur();
+          }
           // Design v3-r10: inline banner + admin-configurable cooldown
           // (ViewerFireCooldownSec, default 3s) after successful fire.
           _showBanner("sent", ServerI18n.t("bannerSent"));
@@ -1806,12 +1865,19 @@ document.addEventListener("DOMContentLoaded", () => {
         // this message was accepted as a poll vote.
         try {
           const vote = responseData && responseData.poll_vote;
-          if (window.ViewerStates && vote && vote.accepted === true) {
-            window.ViewerStates.showThankYou({
-              question: vote.question || window._lastPollQuestion || "進行中的投票",
-              choice: vote.key || "",
-              fp: clientFingerprint,
-            });
+          if (vote && vote.accepted === true) {
+            // 2026-07-07 uiux polish B8: immediate selected-state feedback
+            // on the option itself (border + ✓ + "已投出"), instead of
+            // waiting for the thank-you card. Product rule stays intact —
+            // never render vote counts/percentages here, just confirmation.
+            _markPollOptionVoted(vote.key);
+            if (window.ViewerStates) {
+              window.ViewerStates.showThankYou({
+                question: vote.question || window._lastPollQuestion || "進行中的投票",
+                choice: vote.key || "",
+                fp: clientFingerprint,
+              });
+            }
           }
         } catch (_) { }
       } else {
@@ -1836,8 +1902,15 @@ document.addEventListener("DOMContentLoaded", () => {
           const data = responseData || {};
           if (data.status === "dropped" && data.reason === "full") {
             message = ServerI18n.t("onscreenFullDropped");
+            // 2026-07-07 uiux polish B4: persistent sendbar status row
+            // instead of a one-shot toast — stays until next input attempt
+            // so the viewer doesn't miss why the message never appeared.
+            _setSendbarStatusRow(message);
+            return;
           } else if (data.status === "rejected" && data.reason === "queue_full") {
             message = ServerI18n.t("queueFullTryLater");
+            _setSendbarStatusRow(message);
+            return;
           } else {
             message = (typeof data.error === "string" ? data.error : data.error?.message) || message;
           }
@@ -1988,10 +2061,38 @@ document.addEventListener("DOMContentLoaded", () => {
     return el;
   }
 
+  // 2026-07-07 uiux polish B3: brief "reconnected" confirmation once the
+  // offline banner clears. Only fires when we were actually showing the
+  // offline banner (i.e. a real disconnect happened, not on first load).
+  let _reconnectedToastEl = null;
+  let _reconnectedToastTimer = null;
+
+  function _showReconnectedToast() {
+    if (_reconnectedToastTimer) { clearTimeout(_reconnectedToastTimer); _reconnectedToastTimer = null; }
+    if (!_reconnectedToastEl || !document.body.contains(_reconnectedToastEl)) {
+      const el = document.createElement("div");
+      el.className = "viewer-reconnected-toast";
+      el.setAttribute("role", "status");
+      el.setAttribute("aria-live", "polite");
+      el.textContent = ServerI18n.t("viewerReconnected");
+      document.body.appendChild(el);
+      _reconnectedToastEl = el;
+    }
+    _reconnectedToastTimer = setTimeout(() => {
+      if (_reconnectedToastEl && _reconnectedToastEl.parentNode) {
+        _reconnectedToastEl.parentNode.removeChild(_reconnectedToastEl);
+      }
+      _reconnectedToastEl = null;
+      _reconnectedToastTimer = null;
+    }, 2000);
+  }
+
   function _syncOfflineBanner(state) {
     if (state === "connected") {
+      const wasOffline = !!(_offlineBannerEl && document.body.contains(_offlineBannerEl));
       _removeOfflineBanner();
       _offlineBackoff = 5;
+      if (wasOffline) _showReconnectedToast();
       return;
     }
     if (state !== "disconnected") return;
@@ -2354,6 +2455,46 @@ document.addEventListener("DOMContentLoaded", () => {
       _pollTimer = null;
     }
   });
+
+  // --- Mobile soft-keyboard: keep sendbar above the visual viewport ---
+  // On iOS Safari (and some Android browsers) `100dvh` does not shrink when
+  // the on-screen keyboard opens, so the flex-pinned sendbar ends up hidden
+  // behind the keyboard. `visualViewport` reports the actually-visible area,
+  // so we pin the sendbar there directly. Feature-detected — browsers without
+  // `visualViewport` keep the existing flex-bottom behavior untouched.
+  if (window.visualViewport && elements.sendbar) {
+    const vv = window.visualViewport;
+    // visualViewport resize/scroll fire in bursts (esp. while the keyboard
+    // animates in/out) — batch into a single rAF and early-return when the
+    // computed offset hasn't changed, so we never write identical inline
+    // styles on every event. Mirrors the _pollTimerAnimRAF batching pattern.
+    let _sendbarRAF = 0;
+    let _lastKeyboardOffset = null;
+    const _applySendbarOffset = () => {
+      _sendbarRAF = 0;
+      const keyboardOffset = window.innerHeight - vv.height - vv.offsetTop;
+      const next = keyboardOffset > 0 ? keyboardOffset : 0;
+      if (next === _lastKeyboardOffset) return; // no change → skip style writes
+      _lastKeyboardOffset = next;
+      if (next > 0) {
+        elements.sendbar.style.position = "fixed";
+        elements.sendbar.style.left = "0";
+        elements.sendbar.style.right = "0";
+        elements.sendbar.style.bottom = `${next}px`;
+      } else {
+        elements.sendbar.style.position = "";
+        elements.sendbar.style.left = "";
+        elements.sendbar.style.right = "";
+        elements.sendbar.style.bottom = "";
+      }
+    };
+    const _repositionSendbar = () => {
+      if (_sendbarRAF) return; // already scheduled for this frame
+      _sendbarRAF = requestAnimationFrame(_applySendbarOffset);
+    };
+    vv.addEventListener("resize", _repositionSendbar);
+    vv.addEventListener("scroll", _repositionSendbar);
+  }
 
   // --- Helper: Apply Effects section visibility based on settings ---
   function applyEffectsVisibility(settings) {

@@ -196,7 +196,7 @@ Desktop 與 viewer 都應只使用這個 HTTPS origin。
 ## CI/CD 與 Docker Hub
 
 - `.github/workflows/docker-build.yml` 會在每次 PR / push 時建置與測試伺服器映像。
-- `.github/workflows/test.yml` 執行 Python 測試（含覆蓋率報告與 `pip-audit` CVE 掃描）。
+- `.github/workflows/test.yml` 執行 Python 測試（含覆蓋率報告、`pip-audit` CVE 掃描，以及 CSS 設計 token 防回歸 lint `scripts/check-css-tokens.mjs`——新增裸 hex 色碼會使此步驟失敗）。
 - `.github/workflows/build.yml` 在版本更新時為 Windows、macOS、Linux 建置 Electron 應用程式，並建立含自動更新中繼資料的 GitHub Releases。
 - 於 GitHub Secrets 設定 `DOCKERHUB_USERNAME` 與 `DOCKERHUB_TOKEN`（Docker Hub Access Token），即可在 main 更新時自動推送 `DOCKERHUB_USERNAME/danmu-server:latest` 與對應 commit SHA tag。
 

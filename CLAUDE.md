@@ -65,3 +65,4 @@
 - 跑 server：`cd server && PYTHONPATH=.. uv run python -m server.app`
 - Tailwind：`cd server && npm run build:css`（首次先 `npm install`）
 - 完整 build：`cd server && npm run build`
+- CSS token 防回歸檢查：`make lint-css`（= `node scripts/check-css-tokens.mjs`，對照 `scripts/css-token-baseline.json`；CI（`.github/workflows/test.yml`）已接入，新增裸 hex 色碼會讓 CI 失敗）

@@ -32,7 +32,7 @@ body {
   background-size: auto, 40px 40px, 40px 40px;
   overflow: hidden;
   pointer-events: none;
-  transition: opacity 500ms ease, background-image 250ms;
+  transition: opacity 500ms ease, background-image var(--motion-normal);
   font-family: "Zen Kaku Gothic New", "Noto Sans TC", -apple-system, system-ui, sans-serif;
 }
 
@@ -135,14 +135,14 @@ body {
   align-items: center;
   gap: 8px;
   padding: 6px 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid rgba(56, 189, 248, 0.45);
   background: rgba(56, 189, 248, 0.12);
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
   letter-spacing: 1.5px;
   color: #38bdf8;
-  transition: background 200ms, border-color 200ms, color 200ms;
+  transition: background var(--motion-normal), border-color var(--motion-normal), color var(--motion-normal);
 }
 .overlay-idle-chip-dot {
   display: inline-block;
@@ -199,6 +199,20 @@ body {
   .overlay-idle-chip-dot,
   .overlay-idle-topbar-dot,
   .overlay-idle-qr-scan-ring { animation: none !important; }
+
+  /* 2026-07-07 UIUX polish E4: the block above only ever covered the idle
+   * lockup's own spinner/pulse/dot classes. It missed .overlay-idle-qr-overlay
+   * (overlay-idle-scan-pulse) and every poll-overlay animation
+   * (pollovr-fall/pop/pulse/sweep) added since. Blanket rule closes the gap
+   * without hand-enumerating every current and future keyframe user. */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* QR — prototype size 180×180 white card, 29×29 cells. */
@@ -213,14 +227,23 @@ body {
   height: 180px;
   background: #fff;
   padding: 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   box-shadow: 0 0 40px rgba(125, 211, 252, 0.3);
-  transition: opacity 0.3s;
+  transition: opacity var(--motion-slow);
 }
 .overlay-idle-qr svg {
   display: block;
   width: 100%;
   height: 100%;
+}
+/* QR zoom modal: the cloned SVG has no intrinsic width/height (the renderer
+   strips them), and the .overlay-idle-qr svg rule above is out of scope inside
+   the zoom card — so without this it renders at its tiny default viewport.
+   Size it to fill the enlarged card (F13). */
+#overlayQrZoomCard svg {
+  display: block;
+  width: min(80vw, 80vh);
+  height: auto;
 }
 /* Dim QR while interacting / connected / failed (prototype dim=true). */
 #overlay-idle[data-state="scanning"] .overlay-idle-qr,
@@ -234,7 +257,7 @@ body {
   display: none;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
 }
 #overlay-idle[data-state="scanning"] .overlay-idle-qr-overlay {
   display: flex;
@@ -303,7 +326,7 @@ body {
 }
 .overlay-idle-btn {
   padding: 9px 18px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
   letter-spacing: 1.5px;
@@ -376,7 +399,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   background: rgba(8, 14, 26, 0.86);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(56, 189, 248, 0.40);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 0 40px rgba(56, 189, 248, 0.15), inset 0 0 30px rgba(56, 189, 248, 0.06);
 }
 .poll-overlay-meta {
@@ -420,7 +443,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   letter-spacing: 1px;
   padding: 2px 8px;
   border: 1px solid;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 .poll-overlay-row-head .pct {
   font-family: var(--font-display, sans-serif);
@@ -460,13 +483,13 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   flex: 1;
   height: 6px;
   background: rgba(255, 255, 255, 0.08);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
 }
 .poll-overlay-foot .time-bar .fill {
   height: 100%;
   background: linear-gradient(90deg, #f87171, #fbbf24);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   transition: width 500ms linear;
 }
 .poll-overlay-foot .qr {
@@ -475,7 +498,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 .poll-overlay-foot .qr .badge {
   width: 32px; height: 32px;
   background: #fff; color: #000;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-mono, monospace); font-size: 9px; font-weight: 700;
 }
@@ -495,7 +518,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   padding: 6px 12px;
   background: rgba(0, 0, 0, 0.65);
   border: 1px solid rgba(56, 189, 248, 0.35);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-family: var(--font-mono, monospace); font-size: 10px;
   color: rgba(255, 255, 255, 0.7);
   letter-spacing: 0.5px;

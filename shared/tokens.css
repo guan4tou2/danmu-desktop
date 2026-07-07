@@ -15,11 +15,26 @@
   /* Semantic */
   --color-success: #22c55e;
   --color-success-light: #86efac;      /* emerald-300 — used for success dots / pulse rings */
+  --color-success-dim: #4d7c0f;        /* lime-700 — success copy on light surfaces (viewer reconnected toast) */
+  --color-success-bright: #84e100;     /* lime — success copy/accent on dark surfaces */
+  --color-success-surface: rgba(132, 225, 0, 0.1);   /* faint lime tint for success banner backgrounds */
+  --color-success-border: rgba(132, 225, 0, 0.35);   /* lime border for success banners */
   --color-warning: #fbbf24;            /* amber-400 — prototype hudTokens.amber */
   --color-error: #ef4444;              /* form-level red (validation errors) */
   --color-error-hover: #dc2626;
   --color-error-light: #f87171;
+  --color-error-lighter: #fca5a5;      /* red-300 — even lighter, for error copy on dark surfaces (2026-07-07 E3) */
   --color-danger: #ff4d4f;             /* destructive-action red (Ban / Delete) — slightly brighter than --color-error */
+
+  /* Button text on filled/bright backgrounds (primary/warning/success buttons,
+   * badges, pills). Value intentionally still #000 (2026-07-07 UIUX polish
+   * E3) — this only unifies the reference point so a future contrast pass
+   * can flip it in one place instead of grepping every #000. */
+  --btn-text-on-primary: #000;
+
+  /* Ink for QR modules rendered on a white plate (the QR data squares). Not a
+   * button-text token — kept separate so the two can diverge (2026-07-07 F7). */
+  --qr-ink: #000;
 
   /* HUD alias set lives further down in this file alongside the legacy
    * --hud-cut / --hud-corner-* atoms (line ~135). --color-danger is the
@@ -71,6 +86,7 @@
   /* State colours */
   --color-connected: #14b8a6;
   --color-connected-dark: #0d9488;
+  --color-connected-bright: #10b981;   /* emerald-500 — brighter "connected" dot variant (desktop tray/titlebar) */
   --color-surface-muted: #475569;
   --color-active-btn: #0369a1;
 
@@ -86,9 +102,12 @@
   --glow-primary-lg: rgba(56, 189, 248, 0.6);
   --glow-accent: rgba(6, 182, 212, 0.6);
   --glow-connected: rgba(20, 184, 166, 0.4);
+  --glow-connected-bright: rgba(16, 185, 129, 0.6);  /* emerald-500 glow paired with --color-connected-bright */
   --glow-success: rgba(34, 197, 94, 0.6);
+  --glow-error-hover: rgba(220, 38, 38, 0.7);         /* red-600 glow paired with --color-error-hover */
   --ring-success: rgba(16, 185, 129, 0.2);
   --ring-error: rgba(239, 68, 68, 0.2);
+  --ring-error-strong: rgba(239, 68, 68, 0.6);        /* red-500 glow, brighter than --ring-error */
 
   /* Typography (see DESIGN.md § Typography)
    * Default stack: Latin → TC (primary market) → JP → KR → system fallback.
@@ -123,11 +142,19 @@
   --space-6: 1.5rem;    /* 24px */
   --space-8: 2rem;      /* 32px */
 
-  /* Radius */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
+  /* Radius — 2026-07-07 UIUX polish E2: --radius-sm/md/lg/xl (4/8/12/16px)
+   * predate this pass and already have live consumers at those exact px
+   * values (see style.css card/button usages) — do not renumber them.
+   * --radius-2xs/xs/md-sm fill the gaps below 4px so the ~360 hardcoded
+   * 2px/3px/6px declarations across style.css/hud.css/viewer-v2.css can
+   * point at a token without shifting any existing var(--radius-*) call site. */
+  --radius-2xs: 0.125rem;  /* 2px — thin bars/dots */
+  --radius-xs: 0.1875rem;  /* 3px — chips/small pills */
+  --radius-sm: 0.25rem;    /* 4px */
+  --radius-md-sm: 0.375rem; /* 6px — between sm and md */
+  --radius-md: 0.5rem;     /* 8px */
+  --radius-lg: 0.75rem;    /* 12px */
+  --radius-xl: 1rem;       /* 16px */
   --radius-pill: 999px;
 
   /* Motion (design v4 2026-05-18 — page transitions, micro-interactions).
@@ -172,17 +199,22 @@
   --hud-font-sans:   var(--font-ui);
   --hud-font-display: var(--font-display);
 
-  /* AdminPageShell (admin-pages.jsx) — LIGHT theme.
-   * The prototype canvas mounts admin with theme='light' (TWEAK_DEFAULTS).
-   * These are the hudTokens.light* values exactly. Admin chrome uses
-   * these; the rest of the app keeps the dark slate tokens above. */
-  --admin-bg: #f8fafc;                       /* lightBg0 — viewport */
-  --admin-panel: #ffffff;                    /* sidebar / topbar / cards */
-  --admin-raised: #f1f5f9;                   /* lightBg2 — nested surfaces */
-  --admin-line: rgba(15, 23, 42, 0.12);      /* lightLine */
-  --admin-text: #0f172a;                     /* lightText — slate-900 */
-  --admin-text-strong: #0f172a;              /* input/content text — slate-900 */
-  --admin-text-dim: #475569;                 /* lightTextDim — slate-600 */
+  /* AdminPageShell (admin-pages.jsx) — DARK-default two-track (2026-07-07
+   * UIUX polish D1). Previously these were static light hex in :root with a
+   * `[data-theme="dark"]` after-the-fact remedy, which meant that in *auto*
+   * mode on a dark OS the admin chrome painted light (static light admin-*)
+   * while surfaces reading --color-* painted dark — a dark card leaking into
+   * a light shell. Now --admin-* follow the SAME light/dark two-track as the
+   * --color-* base tokens: dark is the :root default, light is applied by
+   * [data-theme="light"] and the prefers-color-scheme:light media query
+   * below. They can no longer diverge from the --color-* palette. */
+  --admin-bg:          #020617;                       /* slate-950 — viewport */
+  --admin-panel:       #0f172a;                       /* slate-900 — sidebar / topbar / cards */
+  --admin-raised:      #1e293b;                       /* slate-800 — nested surfaces */
+  --admin-line:        rgba(148, 163, 184, 0.18);     /* slate-400 @ 0.18 — hairlines */
+  --admin-text:        #f1f5f9;                        /* slate-100 */
+  --admin-text-strong: #f1f5f9;                        /* input/content text */
+  --admin-text-dim:    #94a3b8;                        /* slate-400 */
 }
 
 /* ──────────────────────────────────────────────────────────────────────
@@ -263,21 +295,17 @@
   --hud-amber:       var(--color-warning);
   --hud-lime:        var(--color-success);
   --hud-crimson:     var(--color-danger);
-}
 
-/* Explicit dark override — resets --admin-* tokens so .admin-body
-   (which reads these) correctly flips back to the dark palette when the
-   operator manually toggles to dark via the theme switcher. Without
-   this, .admin-body always renders light because --admin-* are defined
-   as static light hex values in :root. */
-:root[data-theme="dark"] {
-  --admin-bg:       #020617;
-  --admin-panel:    #0f172a;
-  --admin-raised:   #1e293b;
-  --admin-line:     rgba(148, 163, 184, 0.18);
-  --admin-text:     #f1f5f9;
-  --admin-text-strong: #f1f5f9;
-  --admin-text-dim: #94a3b8;
+  /* AdminPageShell — LIGHT track (hudTokens.light* values). Paired with the
+   * dark defaults in :root above so admin chrome follows the same explicit
+   * light/dark switch as --color-*. (2026-07-07 UIUX polish D1.) */
+  --admin-bg:          #f8fafc;                   /* lightBg0 — viewport */
+  --admin-panel:       #ffffff;                   /* sidebar / topbar / cards */
+  --admin-raised:      #f1f5f9;                   /* lightBg2 — nested surfaces */
+  --admin-line:        rgba(15, 23, 42, 0.12);    /* lightLine */
+  --admin-text:        #0f172a;                   /* lightText — slate-900 */
+  --admin-text-strong: #0f172a;                   /* input/content text — slate-900 */
+  --admin-text-dim:    #475569;                   /* lightTextDim — slate-600 */
 }
 
 /* System preference fallback — only applies when no explicit data-theme
@@ -326,5 +354,15 @@
     --color-surface: var(--color-bg-elevated);
     --color-panel: var(--color-bg-base);
     --color-border-soft: var(--hud-line);
+
+    /* AdminPageShell — LIGHT track for auto mode on a light OS (mirrors the
+     * [data-theme="light"] block; see D1). */
+    --admin-bg:          #f8fafc;
+    --admin-panel:       #ffffff;
+    --admin-raised:      #f1f5f9;
+    --admin-line:        rgba(15, 23, 42, 0.12);
+    --admin-text:        #0f172a;
+    --admin-text-strong: #0f172a;
+    --admin-text-dim:    #475569;
   }
 }

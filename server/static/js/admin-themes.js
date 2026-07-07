@@ -14,7 +14,19 @@
 
   let _adminActiveTheme = "default";
 
+  // 2026-07-07 (C6): show a skeleton list while the fetch is in flight so the
+  // themes page matches Effects' loading affordance instead of a blank pane.
+  function _renderLoadingSkeleton() {
+    const container = document.getElementById("themesList");
+    if (!container) return;
+    if (window.AdminSkeletons) {
+      container.innerHTML = "";
+      container.appendChild(window.AdminSkeletons.listRows({ rows: 4 }));
+    }
+  }
+
   async function fetchThemes() {
+    _renderLoadingSkeleton();
     try {
       const res = await csrfFetch("/admin/themes");
       if (!res.ok) return;

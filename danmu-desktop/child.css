@@ -1,3 +1,4 @@
+@import "./tokens.css";
 @font-face {
   font-family:NotoSansTC;
   src: url(assets/NotoSansTC-Regular.otf);
@@ -34,14 +35,14 @@ img{
   right: 12px;
   font-family: monospace;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.75);
   background: rgba(0, 0, 0, 0.25);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   pointer-events: none;
   user-select: none;
   letter-spacing: 0.5px;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--motion-slow) ease;
 }
 
 #danmu-counter:empty {
@@ -127,7 +128,7 @@ img{
   align-items: center;
   gap: 16px;
   padding: 10px 20px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid rgba(56, 189, 248, 0.45);
   background: rgba(56, 189, 248, 0.12);
 }
@@ -188,4 +189,18 @@ img{
 @keyframes overlay-idle-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%      { opacity: 0.6; transform: scale(0.9); }
+}
+
+/* Respect user's motion preference — same convention as styles.css.
+ * Danmu bullet scroll itself is driven by JS transform in renderer, not a
+ * CSS animation/transition here, so it's unaffected (2026-07-07 E4). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

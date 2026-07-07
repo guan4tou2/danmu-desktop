@@ -44,6 +44,8 @@
 - 設計 tokens 於 `shared/tokens.css`（server 與 Electron 兩邊共用，build 時自動同步）
 - 字型：Bebas Neue（hero display only）+ Noto Sans 家族（Latin/TC/JP/KR）+ JetBrains Mono
 - 新色、新間距、新字級 **先加 token**，不要硬寫 hex / rem
+- CSS token 防回歸有 CI lint 把關：`make lint-css`（= `node scripts/check-css-tokens.mjs`，對照
+  `scripts/css-token-baseline.json`）。CSS 檔新增裸 hex 色碼會讓 `.github/workflows/test.yml` 失敗。
 - 對比率：所有 user-facing 文字需達 WCAG AA (body 4.5:1, large 3:1)
 - 參考效能 baseline: [`docs/perf/baseline-v4.6.1.md`](./docs/perf/baseline-v4.6.1.md)
 
@@ -56,6 +58,7 @@ uv run isort .
 Lint / 檢查:
 ```bash
 uv run flake8 . --max-line-length=100 --extend-ignore=E203,W503
+make lint-css   # CSS 設計 token 防回歸
 ```
 
 ## Pre-commit Hooks / 預先提交檢查
@@ -83,8 +86,8 @@ Place tests in `server/tests/` (use pytest fixtures)。
 
 | 目錄 | 用途 |
 |---|---|
-| `server/static/locales/{lang}/translation.json` | 伺服器 Web UI（474 keys） |
-| `danmu-desktop/locales/{lang}/translation.json` | Electron client UI（68 keys） |
+| `server/static/locales/{lang}/translation.json` | 伺服器 Web UI（752 keys） |
+| `danmu-desktop/locales/{lang}/translation.json` | Electron client UI（113 keys） |
 
 支援語言：`en`、`zh`、`ja`、`ko`
 
@@ -103,6 +106,10 @@ git add danmu-desktop/locales/ danmu-desktop/i18n.js
 ```
 
 > CI 會自動驗證 `i18n.js` 與 JSON 是否同步。若忘記執行 `build:i18n`，CI 會失敗並提示。
+
+## 已知待辦 / Known Deferred Work
+
+已確認但尚未著手的項目記錄於 [`TODOS.md`](./TODOS.md)（依元件分組，標優先級）。開始新工作前可先掃一眼，避免重工。
 
 ## 提交規範 / Commit & PR
 - 使用 [Conventional Commits](https://www.conventionalcommits.org/)。

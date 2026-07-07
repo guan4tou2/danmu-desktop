@@ -490,6 +490,21 @@
 
     settingsGrid.insertAdjacentHTML("beforeend", buildSectionHTML());
 
+    // 2026-07-07 (C6): skeleton placeholders while the sounds/rules fetch is
+    // in flight, matching the Effects page loading affordance.
+    if (window.AdminSkeletons) {
+      const soundsList = document.getElementById("soundsList");
+      if (soundsList) {
+        soundsList.innerHTML = "";
+        soundsList.appendChild(window.AdminSkeletons.listRows({ rows: 3 }));
+      }
+      const rulesList = document.getElementById("rulesList");
+      if (rulesList) {
+        rulesList.innerHTML = "";
+        rulesList.appendChild(window.AdminSkeletons.listRows({ rows: 3 }));
+      }
+    }
+
     await Promise.all([fetchSounds(), fetchRules()]);
 
     renderSoundsList();

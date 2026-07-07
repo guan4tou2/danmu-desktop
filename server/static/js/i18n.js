@@ -15,8 +15,8 @@
       "connecting": "Server · Connecting…",
       "connected": "Server · Connected",
       "disconnected": "Server · Disconnected",
-      "overlayNone": "Desktop · –",
-      "overlayConnected": "Desktop · {n}",
+      "overlayNone": "Host · –",
+      "overlayConnected": "Host · {n}",
       "yourMessage": "Your Message",
       "placeholder": "Type something awesome...",
       "livePreview": "Live Preview",
@@ -53,7 +53,7 @@
       "hintBlocked": "⚠ Contains blocked word · masked by admin",
       "hintCooldown": "⏱ Cooldown · rate-limited 10 / 60s",
       "placeholderCooldown": "Cooldown · ready in {n}s",
-      "overlayOfflineFire": "Desktop offline · cannot send",
+      "overlayOfflineFire": "Host is not running yet · messages cannot be sent right now",
       "overlayOfflineHint": "",
       "failedToLoadFonts": "Failed to load fonts",
       "ok": "OK",
@@ -745,7 +745,23 @@
       "lockoutTitle": "LOCKED 5 MIN",
       "lockoutRemaining": "time remaining",
       "lockoutReason": "Too many failed sign-in attempts.",
-      "lockoutContactAdmin": "Contact administrator"
+      "lockoutContactAdmin": "Contact administrator",
+      "settingRangeError": "{key} must be between {min} and {max}",
+      "displayAdminControlledTitle": "Admin controlled",
+      "displayAdminControlledNote": "Viewers cannot switch languages. The page follows the browser language by default; admins can force a language in Viewer Page Theme.",
+      "adminNavGroupOverview": "Overview",
+      "adminNavGroupInteract": "Interact",
+      "adminNavGroupModeration": "Moderation",
+      "adminNavGroupSettings": "Settings",
+      "adminNavGroupIntegrations": "Integrations",
+      "viewerReconnected": "Reconnected",
+      "pollOptionVoted": "Voted",
+      "swatchWhite": "White",
+      "swatchSky": "Sky",
+      "swatchAmber": "Amber",
+      "swatchGreen": "Green",
+      "swatchRed": "Red",
+      "swatchYellow": "Yellow"
     },
     "zh": {
       "mainTitle": "Danmu Fire",
@@ -753,8 +769,8 @@
       "connecting": "伺服器 · 連線中…",
       "connected": "伺服器 · 已連線",
       "disconnected": "伺服器 · 已斷線",
-      "overlayNone": "Desktop · 未連線",
-      "overlayConnected": "Desktop · {n} 個",
+      "overlayNone": "主持端 · 未開啟",
+      "overlayConnected": "主持端 · {n} 個",
       "yourMessage": "你的訊息",
       "placeholder": "想對現場說點什麼？",
       "livePreview": "即時預覽",
@@ -791,7 +807,7 @@
       "hintBlocked": "⚠ 含敏感字 · 管理者已設為遮罩",
       "hintCooldown": "⏱ 冷卻中 · 速率限制 10/60s",
       "placeholderCooldown": "冷卻中 · {n}s 後可再送",
-      "overlayOfflineFire": "Desktop 未連線 · 無法送出",
+      "overlayOfflineFire": "主持端尚未開啟 · 訊息暫時無法送出",
       "overlayOfflineHint": "",
       "failedToLoadFonts": "字型載入失敗",
       "ok": "確定",
@@ -1483,7 +1499,23 @@
       "lockoutTitle": "鎖定 5 分鐘",
       "lockoutRemaining": "剩餘時間",
       "lockoutReason": "登入失敗次數過多。",
-      "lockoutContactAdmin": "聯繫管理員"
+      "lockoutContactAdmin": "聯繫管理員",
+      "settingRangeError": "{key} 必須介於 {min} 到 {max} 之間",
+      "displayAdminControlledTitle": "管理端控制",
+      "displayAdminControlledNote": "觀眾端不提供語言切換。預設跟隨瀏覽器語言；admin 可在 Viewer Page Theme 強制指定。",
+      "adminNavGroupOverview": "總覽",
+      "adminNavGroupInteract": "互動",
+      "adminNavGroupModeration": "審核",
+      "adminNavGroupSettings": "設定",
+      "adminNavGroupIntegrations": "整合",
+      "viewerReconnected": "已重新連線",
+      "pollOptionVoted": "已投出",
+      "swatchWhite": "白",
+      "swatchSky": "天藍",
+      "swatchAmber": "琥珀",
+      "swatchGreen": "綠",
+      "swatchRed": "紅",
+      "swatchYellow": "黃"
     },
     "ja": {
       "mainTitle": "Danmu Fire",
@@ -1491,8 +1523,8 @@
       "connecting": "サーバー · 接続中…",
       "connected": "サーバー · 接続済み",
       "disconnected": "サーバー · 切断",
-      "overlayNone": "Desktop · 未接続",
-      "overlayConnected": "Desktop · {n}",
+      "overlayNone": "配信側 · 未起動",
+      "overlayConnected": "配信側 · {n}",
       "yourMessage": "メッセージ",
       "placeholder": "メッセージを入力...",
       "livePreview": "ライブプレビュー",
@@ -1529,7 +1561,7 @@
       "hintBlocked": "⚠ 禁止語を含みます · 管理者により非表示",
       "hintCooldown": "⏱ クールダウン中 · 制限 10 / 60s",
       "placeholderCooldown": "クールダウン中 · あと {n}s",
-      "overlayOfflineFire": "Desktop 未接続 · 送信できません",
+      "overlayOfflineFire": "配信側がまだ起動していません · メッセージは今は送信できません",
       "overlayOfflineHint": "",
       "failedToLoadFonts": "フォントの読み込みに失敗しました",
       "ok": "OK",
@@ -2221,7 +2253,21 @@
       "navTopPolls": "投票",
       "navTopSecurity": "セキュリティ",
       "navTopSystem": "システム",
-      "navTopWidgets": "ウィジェット"
+      "navTopWidgets": "ウィジェット",
+      "adminNavGroupOverview": "概要",
+      "adminNavGroupInteract": "インタラクション",
+      "adminNavGroupModeration": "モデレーション",
+      "adminNavGroupSettings": "設定",
+      "adminNavGroupIntegrations": "連携",
+      "settingRangeError": "{key} は {min} から {max} の間で指定してください",
+      "viewerReconnected": "再接続しました",
+      "pollOptionVoted": "投票済み",
+      "swatchWhite": "白",
+      "swatchSky": "スカイ",
+      "swatchAmber": "アンバー",
+      "swatchGreen": "グリーン",
+      "swatchRed": "レッド",
+      "swatchYellow": "イエロー"
     },
     "ko": {
       "mainTitle": "Danmu Fire",
@@ -2229,8 +2275,8 @@
       "connecting": "서버 · 연결 중…",
       "connected": "서버 · 연결됨",
       "disconnected": "서버 · 연결 끊김",
-      "overlayNone": "Desktop · 연결 안 됨",
-      "overlayConnected": "Desktop · {n}개",
+      "overlayNone": "호스트 · 시작 안 됨",
+      "overlayConnected": "호스트 · {n}개",
       "yourMessage": "메시지",
       "placeholder": "멋진 메시지를 입력하세요...",
       "livePreview": "실시간 미리보기",
@@ -2267,7 +2313,7 @@
       "hintBlocked": "⚠ 차단어 포함 · 관리자가 가렸습니다",
       "hintCooldown": "⏱ 쿨다운 중 · 제한 10 / 60s",
       "placeholderCooldown": "쿨다운 중 · {n}초 후 가능",
-      "overlayOfflineFire": "Desktop 미연결 · 전송 불가",
+      "overlayOfflineFire": "호스트가 아직 시작되지 않았습니다 · 지금은 메시지를 보낼 수 없습니다",
       "overlayOfflineHint": "",
       "failedToLoadFonts": "글꼴 로드 실패",
       "ok": "확인",
@@ -2959,7 +3005,21 @@
       "navTopPolls": "투표",
       "navTopSecurity": "보안",
       "navTopSystem": "시스템",
-      "navTopWidgets": "위젯"
+      "navTopWidgets": "위젯",
+      "adminNavGroupOverview": "개요",
+      "adminNavGroupInteract": "상호작용",
+      "adminNavGroupModeration": "모더레이션",
+      "adminNavGroupSettings": "설정",
+      "adminNavGroupIntegrations": "연동",
+      "settingRangeError": "{key} 은(는) {min} 에서 {max} 사이여야 합니다",
+      "viewerReconnected": "다시 연결되었습니다",
+      "pollOptionVoted": "투표 완료",
+      "swatchWhite": "흰색",
+      "swatchSky": "하늘색",
+      "swatchAmber": "앰버",
+      "swatchGreen": "초록",
+      "swatchRed": "빨강",
+      "swatchYellow": "노랑"
     }
   };
 
@@ -3046,6 +3106,11 @@
         var key = el.getAttribute("data-i18n-title");
         var text = i18next.t(key);
         if (text !== key) el.title = text;
+      });
+      document.querySelectorAll("[data-i18n-aria]").forEach(function (el) {
+        var key = el.getAttribute("data-i18n-aria");
+        var text = i18next.t(key);
+        if (text !== key) el.setAttribute("aria-label", text);
       });
       this.bindLanguageSelector();
       if (window._adminNavigateTo) window._adminNavigateTo();

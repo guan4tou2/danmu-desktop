@@ -2,6 +2,9 @@
 
 let _sources = [];
 let _activeTab = "screen";
+// Bound ESC handler, attached to document only while the picker is open so we
+// don't leave a global listener running (A7).
+let _escHandler = null;
 
 function initWindowPicker(api) {
   const btn = document.getElementById("openWindowPicker");
@@ -32,6 +35,14 @@ async function openPicker(api, backdrop, grid) {
   backdrop.hidden = false;
   grid.innerHTML = '<div class="wp-loading">載入中…</div>';
 
+  // Attach an ESC-to-close handler for the duration the modal is open.
+  if (!_escHandler) {
+    _escHandler = (e) => {
+      if (e.key === "Escape") closePicker(backdrop);
+    };
+    document.addEventListener("keydown", _escHandler);
+  }
+
   try {
     _sources = await api.getCapturerSources();
   } catch (_) {
@@ -48,6 +59,10 @@ async function openPicker(api, backdrop, grid) {
 
 function closePicker(backdrop) {
   backdrop.hidden = true;
+  if (_escHandler) {
+    document.removeEventListener("keydown", _escHandler);
+    _escHandler = null;
+  }
 }
 
 function renderGrid(grid, api) {

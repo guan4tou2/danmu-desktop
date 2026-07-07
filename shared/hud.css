@@ -287,6 +287,34 @@
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
 }
 
+/* D4 — the brand lockup's drop-shadow is tuned for the dark viewer / overlay
+ * / Electron surfaces. Admin chrome is dark BY DEFAULT (shared/tokens.css
+ * :root is dark; light is an explicit opt-in via [data-theme="light"] or an
+ * OS-level light preference with no explicit override). That heavy black
+ * shadow only reads as a dirty smudge when the admin surface is actually
+ * light, so the soft sky-tinted glow must be scoped to real light contexts
+ * only — never fire it just because .admin-body exists, or "auto mode + dark
+ * OS" would incorrectly get the light-mode glow. Two explicit-light triggers:
+ * 1) manual [data-theme="light"] override, 2) auto mode (no data-theme at
+ * all) combined with an OS light preference. */
+[data-theme="light"] .admin-body .hud-hero-title {
+  filter:
+    drop-shadow(0 6px 14px rgba(56, 189, 248, 0.28))
+    drop-shadow(0 2px 4px rgba(56, 189, 248, 0.18));
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .admin-body .hud-hero-title {
+    filter:
+      drop-shadow(0 6px 14px rgba(56, 189, 248, 0.28))
+      drop-shadow(0 2px 4px rgba(56, 189, 248, 0.18));
+  }
+}
+html[data-theme="dark"] .admin-body .hud-hero-title {
+  filter:
+    drop-shadow(0 10px 15px rgba(0, 0, 0, 0.45))
+    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+}
+
 /* HeroInline — compact sidebar / header variant. Bebas Neue at 1.5rem. */
 .hud-hero-inline {
   display: inline-flex;
@@ -326,7 +354,7 @@
   padding: 16px 18px;
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
 }
 
 .admin-ui-page-kicker {
@@ -354,7 +382,7 @@
 .admin-ui-card {
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   padding: 14px 16px;
 }
 
@@ -370,7 +398,7 @@
 .admin-ui-select {
   width: 100%;
   padding: 8px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   border: 1px solid var(--admin-line);
   background: var(--admin-raised);
   color: var(--admin-text);
@@ -406,7 +434,7 @@
   padding: 12px;
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
 }
 
 .admin-ui-section-head {
@@ -427,7 +455,7 @@
 
 .admin-ui-chip {
   padding: 5px 9px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   border: 1px solid var(--admin-line);
   background: transparent;
   color: var(--admin-text-dim);
@@ -436,7 +464,7 @@
   letter-spacing: 0.8px;
   font-weight: 700;
   text-transform: uppercase;
-  transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+  transition: border-color var(--motion-fast) ease, color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 
 .admin-ui-chip:hover {
@@ -492,13 +520,13 @@
   padding: 6px 10px;
   background: transparent;
   border: 1px solid var(--admin-line);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   color: var(--admin-text-dim);
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.5px;
   cursor: pointer;
-  transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+  transition: border-color var(--motion-fast) ease, color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 
 .admin-ui-action.is-primary {
@@ -568,7 +596,7 @@
   overflow-x: hidden;
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
 }
 
 .admin-ui-timeline-row {
@@ -578,7 +606,7 @@
   gap: 12px;
   padding: 12px 14px;
   border-bottom: 1px solid var(--admin-line);
-  transition: background 120ms ease;
+  transition: background var(--motion-fast) ease;
 }
 
 .admin-ui-timeline-row:last-child { border-bottom: none; }
@@ -648,7 +676,7 @@
   align-items: center;
   min-height: 20px;
   padding: 2px 7px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   border: 1px solid var(--admin-line);
   background: var(--admin-raised);
   color: var(--admin-text-dim);
@@ -703,7 +731,7 @@
   border: 1px solid transparent;
   border-radius: 5px;
   background: var(--admin-raised);
-  transition: background 120ms ease, border-color 120ms ease;
+  transition: background var(--motion-fast) ease, border-color var(--motion-fast) ease;
 }
 
 .admin-ui-option-row:hover {
@@ -733,7 +761,7 @@
   min-height: 32px;
   padding: 0 8px;
   border: 1px solid var(--admin-line);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--admin-raised);
   color: var(--admin-text-dim);
   font-family: var(--font-mono);
@@ -741,7 +769,7 @@
   font-weight: 700;
   letter-spacing: 0.035em;
   white-space: nowrap;
-  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+  transition: background var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 
 .admin-ui-choice:hover > span,
@@ -817,7 +845,7 @@
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   color: var(--admin-text-dim);
   vertical-align: baseline;
   overflow-wrap: anywhere;
@@ -894,7 +922,7 @@
   padding: 12px 14px;
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
 }
 
 .admin-webhooks-row-body {
@@ -963,18 +991,18 @@
 .admin-em-v4 { display: flex; flex-direction: column; gap: 14px; }
 
 .admin-em-v4__upzone {
-  padding: 14px 16px; border-radius: 6px;
+  padding: 14px 16px; border-radius: var(--radius-md-sm);
   border: 1.5px dashed var(--hud-line, rgba(148, 163, 184, 0.30));
   background: var(--hud-bg2);
   display: flex; align-items: flex-start; gap: 14px;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color var(--motion-fast), background var(--motion-fast);
 }
 .admin-em-v4__upzone.is-dragover {
   border-color: var(--hud-cyan);
   background: rgba(56, 189, 248, 0.07);
 }
 .admin-em-v4__upicon {
-  width: 40px; height: 40px; border-radius: 4px;
+  width: 40px; height: 40px; border-radius: var(--radius-sm);
   border: 1px solid var(--hud-line);
   background: var(--hud-bg1);
   display: flex; align-items: center; justify-content: center;
@@ -997,7 +1025,7 @@
   flex-wrap: wrap;
 }
 .admin-em-v4__upform input[type="text"] {
-  flex: 0 1 180px; padding: 6px 10px; border-radius: 4px;
+  flex: 0 1 180px; padding: 6px 10px; border-radius: var(--radius-sm);
   background: var(--hud-bg0);
   border: 1px solid var(--hud-line);
   color: var(--hud-text);
@@ -1010,7 +1038,7 @@
   font-size: 11px; color: var(--hud-textDim);
 }
 .admin-em-v4__upform button {
-  padding: 6px 14px; border-radius: 4px;
+  padding: 6px 14px; border-radius: var(--radius-sm);
   border: 1px solid var(--hud-cyan);
   background: rgba(56, 189, 248, 0.10);
   color: var(--hud-cyan);
@@ -1028,16 +1056,16 @@
   color: var(--hud-textDim);
 }
 .admin-em-v4__quota-bar {
-  width: 80px; height: 4px; border-radius: 2px;
+  width: 80px; height: 4px; border-radius: var(--radius-2xs);
   background: var(--hud-bg2); overflow: hidden;
 }
 .admin-em-v4__quota-fill {
   height: 100%; background: var(--hud-cyan);
-  transition: width 0.25s;
+  transition: width var(--motion-normal);
 }
 .admin-em-v4__spacer { flex: 1; }
 .admin-em-v4__search {
-  width: 200px; padding: 5px 10px; border-radius: 4px;
+  width: 200px; padding: 5px 10px; border-radius: var(--radius-sm);
   background: var(--hud-bg2);
   border: 1px solid var(--hud-line);
   color: var(--hud-text);
@@ -1061,10 +1089,10 @@
   position: relative;
   background: var(--hud-bg1);
   border: 1px solid var(--hud-line);
-  border-radius: 6px; padding: 10px; text-align: center;
+  border-radius: var(--radius-md-sm); padding: 10px; text-align: center;
 }
 .admin-em-v4__tile-thumb {
-  width: 100%; aspect-ratio: 1; border-radius: 4px;
+  width: 100%; aspect-ratio: 1; border-radius: var(--radius-sm);
   background: var(--hud-bg2);
   border: 1px solid var(--hud-line);
   display: flex; align-items: center; justify-content: center;
@@ -1092,11 +1120,11 @@
   background: rgba(0, 0, 0, 0.65);
   display: flex; gap: 4px; justify-content: center;
   padding: 4px;
-  opacity: 0; transition: opacity 0.15s;
+  opacity: 0; transition: opacity var(--motion-fast);
 }
 .admin-em-v4__tile:hover .admin-em-v4__tile-actions { opacity: 1; }
 .admin-em-v4__tile-actions button {
-  padding: 3px 8px; border-radius: 3px; cursor: pointer;
+  padding: 3px 8px; border-radius: var(--radius-xs); cursor: pointer;
   font-family: var(--hud-font-mono);
   font-size: 9px; letter-spacing: 0.5px;
 }
@@ -1113,7 +1141,7 @@
 }
 
 .admin-em-v4__preview {
-  padding: 12px 16px; border-radius: 6px;
+  padding: 12px 16px; border-radius: var(--radius-md-sm);
   background: var(--hud-bg1);
   border: 1px solid var(--hud-line);
 }
@@ -1135,7 +1163,7 @@
 .admin-em-v4__preview-pair img {
   width: 20px; height: 20px; vertical-align: middle;
   background: var(--hud-bg2);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   border: 1px solid var(--hud-line);
 }
 .admin-em-v4__preview-empty {
@@ -1146,13 +1174,13 @@
   position: relative;
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   padding: 12px 10px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  transition: border-color 0.15s ease;
+  transition: border-color var(--motion-fast) ease;
 }
 
 .admin-emojis-tile:hover {
@@ -1163,7 +1191,7 @@
   width: 48px;
   height: 48px;
   object-fit: contain;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .admin-emojis-tile .label {
@@ -1203,7 +1231,7 @@
 .admin-sounds-tile {
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   padding: 12px 14px;
   display: flex;
   flex-direction: column;
@@ -1239,7 +1267,7 @@
   padding: 10px 12px;
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
 }
 
 .admin-sounds-rule-body {
@@ -1306,7 +1334,7 @@
   padding: 10px 12px;
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
 }
 
 .admin-scheduler-job-title {
@@ -1403,7 +1431,7 @@
   align-items: center;
   justify-content: center;
   background: #0f172a; /* slate-900 inset */
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   overflow: hidden;
 }
 
@@ -1489,7 +1517,7 @@
   padding: 32px 24px;
   background: #0f172a;
   border: 1px solid var(--hud-line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   color: var(--color-text-primary);
 }
 
@@ -1572,14 +1600,14 @@
   background: var(--color-primary);
   color: #000;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  transition: background-color 0.15s ease, transform 0.1s ease;
+  transition: background-color var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 .viewer-offline-btn:hover { background: var(--color-primary-hover); }
 .viewer-offline-btn:active { transform: translateY(1px); }
@@ -1686,7 +1714,7 @@
   align-items: baseline;
   gap: 8px;
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: rgba(239, 68, 68, 0.08);
   border: 1px solid rgba(239, 68, 68, 0.35);
   color: var(--color-error);
@@ -1782,13 +1810,13 @@
   padding: 8px 10px;
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--admin-text);
   text-align: left;
-  transition: border-color 0.15s ease;
+  transition: border-color var(--motion-fast) ease;
 }
 
 .admin-stickers-pack:hover {
@@ -1858,13 +1886,13 @@
   position: relative;
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   padding: 12px 10px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  transition: border-color 0.15s ease;
+  transition: border-color var(--motion-fast) ease;
 }
 
 .admin-stickers-tile:hover {
@@ -1875,7 +1903,7 @@
   width: 56px;
   height: 56px;
   object-fit: contain;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .admin-stickers-tile .label {
@@ -1920,12 +1948,12 @@
   padding: 2px;
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .admin-live-feed-tab {
   padding: 4px 12px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 1.5px;
@@ -1934,7 +1962,7 @@
   border: none;
   color: var(--admin-text-dim);
   cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease;
+  transition: color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 
 .admin-live-feed-tab:hover {
@@ -1996,7 +2024,7 @@
 .admin-lf-v4__card {
   background: var(--hud-bg1);
   border: 1px solid var(--hud-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   overflow: hidden;
 }
 
@@ -2007,7 +2035,7 @@
 }
 .admin-lf-v4__chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .admin-lf-v4__chip {
-  padding: 5px 12px; border-radius: 4px;
+  padding: 5px 12px; border-radius: var(--radius-sm);
   background: transparent;
   border: 1px solid var(--hud-line);
   color: var(--hud-textDim);
@@ -2029,7 +2057,7 @@
 
 .admin-lf-v4__search {
   width: 180px;
-  padding: 4px 10px; border-radius: 4px;
+  padding: 4px 10px; border-radius: var(--radius-sm);
   background: var(--hud-bg2);
   border: 1px solid var(--hud-line);
   color: var(--hud-text);
@@ -2046,7 +2074,7 @@
   margin-left: 4px;
 }
 .admin-lf-v4__dchip {
-  padding: 3px 8px; border-radius: 3px;
+  padding: 3px 8px; border-radius: var(--radius-xs);
   background: transparent;
   border: 1px solid var(--hud-line);
   color: var(--hud-textDim);
@@ -2059,7 +2087,7 @@
 }
 
 .admin-lf-v4__pausebtn {
-  padding: 4px 12px; border-radius: 4px;
+  padding: 4px 12px; border-radius: var(--radius-sm);
   background: var(--hud-bg2);
   border: 1px solid var(--hud-line);
   color: var(--hud-text);
@@ -2092,7 +2120,7 @@
 .admin-lf-v4__jump[hidden] { display: none; }
 .admin-lf-v4__jump > button {
   pointer-events: auto;
-  padding: 6px 16px; border-radius: 999px;
+  padding: 6px 16px; border-radius: var(--radius-pill);
   background: rgba(0, 0, 0, 0.85);
   border: 1px solid var(--hud-cyan);
   color: var(--hud-cyan);
@@ -2142,7 +2170,7 @@
   padding: 8px 10px;
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-family: var(--font-mono);
   font-size: 12px;
 }
@@ -2377,10 +2405,10 @@
   gap: 6px;
   padding: 22px 16px;
   border: 1px dashed var(--admin-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   background: var(--admin-raised);
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease;
   outline: none;
   position: relative;
 }
@@ -2420,7 +2448,7 @@
 .admin-fonts-drop-status {
   margin-top: 6px;
   padding: 4px 10px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.5px;
@@ -2463,7 +2491,7 @@
   padding: 6px 2px;
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
@@ -2472,7 +2500,7 @@
   min-width: 3px;
   background: linear-gradient(to top, rgba(56, 189, 248, 0.85), rgba(56, 189, 248, 0.35));
   border-radius: 1px;
-  transition: height 0.18s ease-out;
+  transition: height var(--motion-normal) ease-out;
 }
 
 .admin-replay-meta {
@@ -2508,7 +2536,7 @@
   padding: 8px 10px;
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .admin-replay-row:hover {
@@ -2598,14 +2626,14 @@
   flex: 1;
   height: 4px;
   background: var(--admin-raised);
-  border-radius: 2px;
+  border-radius: var(--radius-2xs);
   overflow: hidden;
 }
 .admin-security-strength-bar > span {
   display: block;
   height: 100%;
   background: var(--admin-text-dim);
-  transition: width 0.15s ease, background 0.15s ease;
+  transition: width var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 .admin-security-strength-bar > span.is-bad { background: #f87171; }
 .admin-security-strength-bar > span.is-warn { background: #fbbf24; }
@@ -2651,7 +2679,7 @@
   grid-template-columns: 120px 1fr 120px 120px;
   gap: 10px;
   padding: 8px 10px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--admin-raised);
   font-family: var(--font-mono);
   font-size: 11px;
@@ -2683,7 +2711,7 @@
   padding: 24px;
   text-align: center;
   border: 1px dashed var(--admin-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -2698,7 +2726,7 @@
 
 .admin-backup-subcard {
   padding: 12px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
   margin-top: 10px;
@@ -2734,7 +2762,7 @@
   overflow: auto;
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--admin-text);
@@ -2798,7 +2826,7 @@
 }
 .admin-cmdk-chip {
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.5px;
@@ -2806,7 +2834,7 @@
   background: transparent;
   color: var(--admin-text-dim, #94a3b8);
   cursor: pointer;
-  transition: all 120ms ease;
+  transition: all var(--motion-fast) ease;
 }
 .admin-cmdk-chip:hover { color: var(--admin-text, #e2e8f0); }
 .admin-cmdk-chip.is-on {
@@ -2834,7 +2862,7 @@
   font-size: 11px;
   color: var(--color-primary);
   border: 1px solid rgba(56, 189, 248, 0.4);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: 2px 8px;
   letter-spacing: 1px;
 }
@@ -2879,7 +2907,7 @@
   background: rgba(56, 189, 248, 0.08);
   border: 1px solid rgba(56, 189, 248, 0.18);
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   white-space: nowrap;
   text-transform: uppercase;
 }
@@ -2913,7 +2941,7 @@
   display: inline-block;
   padding: 1px 5px;
   border: 1px solid var(--admin-line, #1e293b);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   background: rgba(56, 189, 248, 0.04);
   color: var(--admin-text, #e2e8f0);
   font-family: inherit;
@@ -2955,7 +2983,7 @@
 .admin-dsp2-list {
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 .admin-dsp2-list-head {
@@ -3015,7 +3043,7 @@
   margin-top: 8px;
   display: inline-block;
   padding: 3px 8px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
   color: var(--admin-text-dim);
@@ -3048,7 +3076,7 @@
 .admin-dsp2-num {
   width: 100%; padding: 6px 8px;
   background: var(--admin-raised);
-  border: 1px solid var(--admin-line); border-radius: 4px;
+  border: 1px solid var(--admin-line); border-radius: var(--radius-sm);
   color: var(--admin-text);
   font-family: var(--font-mono); font-size: 12px;
   outline: none;
@@ -3060,12 +3088,12 @@
   position: relative; height: 4px;
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
-  border-radius: 2px;
+  border-radius: var(--radius-2xs);
 }
 .admin-dsp2-slider-fill {
   position: absolute; left: 0; top: -1px; height: 4px;
   background: var(--color-primary);
-  border-radius: 2px;
+  border-radius: var(--radius-2xs);
   pointer-events: none;
 }
 .admin-dsp2-slider-thumb {
@@ -3093,11 +3121,11 @@
 .admin-dsp2-chiprow-wrap { flex-wrap: wrap; }
 .admin-dsp2-fchip {
   flex: 1; padding: 6px 0; min-width: 36px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--admin-line);
   background: transparent; color: var(--admin-text);
   font-family: var(--font-mono); font-size: 11px; cursor: pointer;
-  transition: border-color .15s ease, background .15s ease, color .15s ease;
+  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 .admin-dsp2-fchip:hover { border-color: rgba(56, 189, 248, 0.55); }
 .admin-dsp2-fchip.is-active {
@@ -3109,11 +3137,11 @@
 /* Color swatches */
 .admin-dsp2-swatches { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .admin-dsp2-swatch {
-  width: 28px; height: 28px; border-radius: 6px;
+  width: 28px; height: 28px; border-radius: var(--radius-md-sm);
   border: 1px solid var(--admin-line);
   cursor: pointer;
   padding: 0;
-  transition: box-shadow .15s ease, border-color .15s ease;
+  transition: box-shadow var(--motion-fast) ease, border-color var(--motion-fast) ease;
 }
 .admin-dsp2-swatch:hover { border-color: rgba(56, 189, 248, 0.55); }
 .admin-dsp2-swatch.is-active {
@@ -3121,7 +3149,7 @@
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
 }
 .admin-dsp2-swatch-custom {
-  width: 28px; height: 28px; border-radius: 6px;
+  width: 28px; height: 28px; border-radius: var(--radius-md-sm);
   border: 1px dashed var(--admin-line);
   display: inline-flex; align-items: center; justify-content: center;
   cursor: pointer; padding: 0;
@@ -3133,12 +3161,12 @@
 
 /* FontFamily chip */
 .admin-dsp2-tchip {
-  padding: 6px 10px; border-radius: 4px;
+  padding: 6px 10px; border-radius: var(--radius-sm);
   background: transparent; color: var(--admin-text-dim);
   border: 1px solid var(--admin-line);
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.5px;
   cursor: pointer; min-height: 30px;
-  transition: border-color .15s ease, color .15s ease, background .15s ease;
+  transition: border-color var(--motion-fast) ease, color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 .admin-dsp2-tchip:hover { border-color: rgba(56, 189, 248, 0.55); color: var(--admin-text); }
 .admin-dsp2-tchip.is-active {
@@ -3152,11 +3180,11 @@
   display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
 }
 .admin-dsp2-tile {
-  padding: 8px 4px; border-radius: 4px; text-align: center; cursor: pointer;
+  padding: 8px 4px; border-radius: var(--radius-sm); text-align: center; cursor: pointer;
   border: 1px solid var(--admin-line);
   background: transparent; color: var(--admin-text);
   display: flex; flex-direction: column; align-items: center; gap: 3px;
-  transition: border-color .15s ease, background .15s ease, color .15s ease;
+  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 .admin-dsp2-tile:hover { border-color: rgba(56, 189, 248, 0.55); }
 .admin-dsp2-tile.is-active {
@@ -3177,13 +3205,13 @@
   padding: 10px 12px;
   background: var(--admin-raised);
   border: 1px dashed var(--color-primary);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: end;
 }
 .admin-dsp2-band-cell { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .admin-dsp2-band-input {
   display: flex; align-items: center; gap: 4px;
-  padding: 4px 8px; border-radius: 3px;
+  padding: 4px 8px; border-radius: var(--radius-xs);
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid var(--admin-line);
 }
@@ -3206,13 +3234,13 @@
 .admin-dsp2-pill {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 5px 10px 5px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   border: 1px solid var(--admin-line);
   color: var(--admin-text-dim);
   font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px; font-weight: 700;
   cursor: pointer;
-  transition: border-color .15s ease, background .15s ease, color .15s ease;
+  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 .admin-dsp2-pill.is-on {
   background: rgba(56, 189, 248, 0.08);
@@ -3220,17 +3248,17 @@
   color: var(--color-primary);
 }
 .admin-dsp2-pill-track {
-  width: 26px; height: 14px; border-radius: 8px;
+  width: 26px; height: 14px; border-radius: var(--radius-md);
   position: relative; flex-shrink: 0;
   background: var(--admin-line);
-  transition: background .15s ease;
+  transition: background var(--motion-fast) ease;
 }
 .admin-dsp2-pill.is-on .admin-dsp2-pill-track { background: var(--color-primary); }
 .admin-dsp2-pill-thumb {
   position: absolute; top: 1px; left: 1px;
   width: 12px; height: 12px; border-radius: 50%;
   background: #fff;
-  transition: left .15s ease, background .15s ease;
+  transition: left var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 .admin-dsp2-pill.is-on .admin-dsp2-pill-thumb {
   left: 13px; background: #000;
@@ -3248,7 +3276,7 @@
 .admin-dsp2-card {
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 .admin-dsp2-card-head {
@@ -3324,9 +3352,9 @@
 .admin-dsp2-deploy { padding: 14px; }
 .admin-dsp2-deploy-row { margin-top: 10px; display: flex; gap: 8px; }
 .admin-dsp2-btn {
-  padding: 10px 14px; border-radius: 4px; cursor: pointer;
+  padding: 10px 14px; border-radius: var(--radius-sm); cursor: pointer;
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 1.5px; font-weight: 700;
-  transition: opacity .15s ease, background .15s ease, border-color .15s ease;
+  transition: opacity var(--motion-fast) ease, background var(--motion-fast) ease, border-color var(--motion-fast) ease;
 }
 .admin-dsp2-btn-primary {
   flex: 1;
@@ -3358,7 +3386,7 @@
 .admin-dsp2-srow {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 10px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
 }
@@ -3408,7 +3436,7 @@
 .admin-polls-live-card {
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -3429,7 +3457,7 @@
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(248, 113, 113, 0.12);
   border: 1px solid rgba(248, 113, 113, 0.6);
   font-family: var(--font-mono);
@@ -3523,7 +3551,7 @@
 .admin-polls-live-bar .tag {
   width: 24px;
   height: 24px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--admin-line);
   background: transparent;
   color: var(--admin-text);
@@ -3552,7 +3580,7 @@
 .admin-polls-live-bar.is-leader .lbl { color: var(--color-primary); }
 .admin-polls-live-bar .lead {
   padding: 1px 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--hud-cyan-soft, rgba(56,189,248,0.12));
   border: 1px solid var(--color-primary);
   font-family: var(--font-mono);
@@ -3583,14 +3611,14 @@
   height: 10px;
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
-  border-radius: 2px;
+  border-radius: var(--radius-2xs);
   overflow: hidden;
 }
 .admin-polls-live-bar .fill {
   height: 100%;
   width: 0;
   background: rgba(56, 189, 248, 0.35);
-  transition: width 0.3s ease-out;
+  transition: width var(--motion-slow) ease-out;
 }
 .admin-polls-live-bar.is-leader .fill {
   background: linear-gradient(90deg, var(--color-primary), rgba(56, 189, 248, 0.55));
@@ -3635,7 +3663,7 @@
 
 .admin-polls-live-btn {
   padding: 9px 14px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--admin-line);
   background: transparent;
   color: var(--admin-text);
@@ -3669,7 +3697,7 @@
 .admin-polls-live-rail-card {
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   padding: 14px;
 }
 .admin-polls-live-queue {
@@ -3683,7 +3711,7 @@
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
 }
@@ -3695,7 +3723,7 @@
 .admin-polls-live-qmini .idx {
   width: 20px;
   height: 20px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3747,7 +3775,7 @@
   padding: 8px 10px;
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
 }
 .admin-polls-live-toggle .lbl {
@@ -3759,10 +3787,10 @@
 .admin-polls-live-toggle .sw {
   width: 28px;
   height: 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   position: relative;
   background: var(--admin-line);
-  transition: background 0.15s ease;
+  transition: background var(--motion-fast) ease;
   flex-shrink: 0;
 }
 .admin-polls-live-toggle.is-on .sw { background: var(--color-primary); }
@@ -3774,7 +3802,7 @@
   height: 12px;
   border-radius: 50%;
   background: #fff;
-  transition: left 0.15s ease, background 0.15s ease;
+  transition: left var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 .admin-polls-live-toggle.is-on .knob {
   left: 15px;
@@ -3808,7 +3836,7 @@
 }
 .admin-polls-results-tabs button {
   padding: 6px 12px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--admin-line);
   background: var(--admin-panel);
   color: var(--admin-text-dim);
@@ -3848,7 +3876,7 @@
 .admin-polls-results-head {
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   padding: 18px 22px;
 }
 .admin-polls-results-head .meta {
@@ -3863,7 +3891,7 @@
 }
 .admin-polls-results-head .chip {
   padding: 3px 8px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
   font-size: 9px;
@@ -3880,7 +3908,7 @@
 .admin-polls-results-winner {
   background: linear-gradient(135deg, rgba(56,189,248,0.14), rgba(56,189,248,0.03));
   border: 1px solid var(--color-primary);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   padding: 18px 22px;
   display: flex;
   align-items: center;
@@ -3889,7 +3917,7 @@
 .admin-polls-results-winner .badge {
   width: 72px;
   height: 72px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--color-primary);
   color: #000;
   display: flex;
@@ -3934,7 +3962,7 @@
 .admin-polls-results-list {
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   padding: 18px 22px;
   display: flex;
   flex-direction: column;
@@ -3958,7 +3986,7 @@
 .admin-polls-results-bar .tag {
   width: 22px;
   height: 22px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   border: 1px solid var(--admin-line);
   display: flex;
   align-items: center;
@@ -4003,7 +4031,7 @@
   height: 8px;
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
-  border-radius: 2px;
+  border-radius: var(--radius-2xs);
   overflow: hidden;
 }
 .admin-polls-results-bar .fill {
@@ -4025,7 +4053,7 @@
 .admin-polls-results-rail-card {
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   padding: 14px;
 }
 .admin-polls-results-stat {
@@ -4054,7 +4082,7 @@
   margin-top: 10px;
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
 }
 .admin-polls-results-meter .fill {
@@ -4099,7 +4127,7 @@
   height: 48px;
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: flex-end;
   padding: 4px;
@@ -4123,7 +4151,7 @@
 }
 .admin-polls-results-btn {
   padding: 9px 12px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--admin-line);
   background: transparent;
   color: var(--admin-text);
@@ -4190,7 +4218,7 @@
 .admin-bc-v4__spacer { flex: 1; }
 
 .admin-bc-v4__sched {
-  padding: 5px 14px; border-radius: 999px;
+  padding: 5px 14px; border-radius: var(--radius-pill);
   background: rgba(56, 189, 248, 0.10);
   border: 1px solid rgba(56, 189, 248, 0.40);
   font-family: var(--hud-font-mono);
@@ -4210,7 +4238,7 @@
 .admin-bc-v4__stat {
   background: var(--hud-bg1);
   border: 1px solid var(--hud-line);
-  border-radius: 6px; padding: 16px; text-align: center;
+  border-radius: var(--radius-md-sm); padding: 16px; text-align: center;
 }
 .admin-bc-v4__stat-en {
   font-family: var(--hud-font-mono);
@@ -4228,11 +4256,11 @@
 
 .admin-bc-v4__big-wrap { margin: 8px 0; }
 .admin-bc-v4__big {
-  width: 320px; height: 76px; border-radius: 8px; border: none; cursor: pointer;
+  width: 320px; height: 76px; border-radius: var(--radius-md); border: none; cursor: pointer;
   font-family: var(--hud-font-mono);
   font-size: 24px; font-weight: 700; letter-spacing: 4px;
   display: flex; align-items: center; justify-content: center; gap: 12px;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: transform var(--motion-fast), box-shadow var(--motion-fast);
 }
 .admin-bc-v4__big:hover { transform: translateY(-1px); }
 .admin-bc-v4__big.is-golive {
@@ -4251,7 +4279,7 @@
 }
 
 .admin-bc-v4__confirm-hint {
-  padding: 8px 16px; border-radius: 6px;
+  padding: 8px 16px; border-radius: var(--radius-md-sm);
   background: rgba(255, 77, 79, 0.07);
   border: 1px solid rgba(255, 77, 79, 0.21);
   font-family: var(--hud-font-mono);
@@ -4264,7 +4292,7 @@
   padding-top: 8px; border-top: 1px solid var(--hud-line);
 }
 .admin-bc-v4__sec {
-  flex: 1; padding: 14px 16px; border-radius: 6px;
+  flex: 1; padding: 14px 16px; border-radius: var(--radius-md-sm);
   background: transparent;
   border: 1px solid rgba(148, 163, 184, 0.30);
   color: var(--hud-text);
@@ -4295,7 +4323,7 @@
   margin: 48px auto; padding: 48px 40px; text-align: center;
   background: var(--hud-bg1);
   border: 1px solid var(--hud-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
 }
 .admin-bc-v4__ended-icon {
   width: 56px; height: 56px; margin: 0 auto; border-radius: 50%;
@@ -4325,7 +4353,7 @@
 }
 .admin-bc-v4__ended-link {
   display: inline-flex; align-items: center; gap: 6px;
-  margin-top: 22px; padding: 10px 22px; border-radius: 6px;
+  margin-top: 22px; padding: 10px 22px; border-radius: var(--radius-md-sm);
   border: 1px solid var(--hud-cyan);
   background: rgba(56, 189, 248, 0.10);
   color: var(--hud-cyan);
@@ -4412,7 +4440,7 @@
 
 .admin-bc-v5__session-ctx {
   width: 100%; max-width: 800px;
-  padding: 12px 16px; border-radius: 6px;
+  padding: 12px 16px; border-radius: var(--radius-md-sm);
   background: var(--hud-bg1);
   border: 1px solid var(--hud-line);
 }
@@ -4462,7 +4490,7 @@
   align-items: center;
   gap: 16px;
   padding: 16px 18px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(125, 211, 252, 0.45);
   background: rgba(125, 211, 252, 0.10);
 }
@@ -4532,7 +4560,7 @@
 .admin-broadcast-toggle {
   margin-left: auto;
   padding: 10px 18px;
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   border: 1px solid rgba(244, 114, 182, 0.7);
   background: transparent;
   color: rgba(244, 114, 182, 1);
@@ -4541,7 +4569,7 @@
   font-size: 11px;
   letter-spacing: 1.5px;
   font-weight: 700;
-  transition: background-color 0.15s ease, transform 0.1s ease;
+  transition: background-color var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 .admin-broadcast-toggle:hover { background: rgba(244, 114, 182, 0.12); }
 .admin-broadcast-toggle:active { transform: translateY(1px); }
@@ -4560,7 +4588,7 @@
 }
 .admin-broadcast-cmp-col {
   padding: 12px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--admin-line);
   background: var(--admin-raised);
 }
@@ -4586,7 +4614,7 @@
 .admin-broadcast-hint {
   margin-top: 16px;
   padding: 12px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--admin-raised);
   font-family: var(--font-mono);
   font-size: 10px;
@@ -4597,7 +4625,7 @@
 
 .admin-broadcast-end .admin-broadcast-warn {
   padding: 14px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   background: rgba(251, 113, 133, 0.08);
   border: 1px solid rgba(251, 113, 133, 0.45);
   color: var(--admin-text);
@@ -4615,7 +4643,7 @@
   color: rgba(125, 211, 252, 1);
   background: rgba(125, 211, 252, 0.10);
   padding: 1px 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   letter-spacing: 1px;
 }
 
@@ -4627,7 +4655,7 @@
 .admin-broadcast-end-btn {
   flex: 1;
   padding: 10px 14px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(251, 113, 133, 0.6);
   background: rgba(251, 113, 133, 0.15);
   color: rgba(248, 113, 113, 1);
@@ -4636,7 +4664,7 @@
   font-size: 11px;
   letter-spacing: 1.5px;
   font-weight: 700;
-  transition: opacity 0.15s ease, background-color 0.15s ease;
+  transition: opacity var(--motion-fast) ease, background-color var(--motion-fast) ease;
 }
 .admin-broadcast-end-btn:disabled {
   opacity: 0.4;
@@ -4658,7 +4686,7 @@
   gap: 8px;
   padding: 8px 12px;
   border: 1px solid var(--admin-line);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 1px;
@@ -4715,7 +4743,7 @@
 .admin-ratelimit-ip-policy {
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
 }
@@ -4766,7 +4794,7 @@
   font-size: 11px;
   background: var(--admin-raised);
   padding: 1px 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   color: var(--color-primary);
 }
 @media (max-width: 760px) {
@@ -4805,7 +4833,7 @@
   align-items: center;
   padding: 8px 10px;
   border: 1px solid var(--admin-line);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--admin-raised);
 }
 .admin-ratelimit-ip-row .kind {
@@ -4815,7 +4843,7 @@
   font-weight: 700;
   text-align: center;
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 .admin-ratelimit-ip-row .kind.is-deny  { color: #f87171; border: 1px solid rgba(248, 113, 113, 0.6); }
 .admin-ratelimit-ip-row .kind.is-allow { color: #86efac; border: 1px solid rgba(134, 239, 172, 0.6); }
@@ -4840,7 +4868,7 @@
   margin-top: 14px;
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 14px;
 }
 .admin-viewer-theme-legend-head {
@@ -4874,10 +4902,10 @@
   padding: 8px 10px;
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   text-align: left;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease;
   font: inherit;
   color: inherit;
 }
@@ -4929,7 +4957,7 @@
   position: relative;
   display: block;
   height: 4px;
-  border-radius: 2px;
+  border-radius: var(--radius-2xs);
   background: rgba(56, 189, 248, 0.08);
   overflow: hidden;
 }
@@ -4937,7 +4965,7 @@
   display: block;
   height: 100%;
   background: var(--color-primary);
-  border-radius: 2px;
+  border-radius: var(--radius-2xs);
   transition: width 320ms ease;
   box-shadow: 0 0 6px rgba(56, 189, 248, 0.35);
 }
@@ -5030,7 +5058,7 @@
   letter-spacing: 1px;
   color: var(--admin-text-dim, #94a3b8);
   border: 1px solid var(--admin-line, #1e293b);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   padding: 2px 7px;
   min-width: 36px;
   text-align: center;
@@ -5065,7 +5093,7 @@
   padding: 8px 12px;
   background: rgba(251, 191, 36, 0.06);
   border: 1px solid rgba(251, 191, 36, 0.28);
-  border-radius: 6px;
+  border-radius: var(--radius-md-sm);
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.3px;
@@ -5095,4 +5123,25 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 2026-07-07 UIUX polish E4 — consolidated prefers-reduced-motion fallback.
+ * The targeted per-selector blocks scattered through this file (hud-dot,
+ * effect-demo-text, konami HUD, etc.) predate several newer additions
+ * (admin-cmdk-slide, adminBroadcastPulse, adminPollsLivePulse, bc-v4-pulse,
+ * lf-v4-pulse, hud-pulse users, …) that were never added to any of them.
+ * A blanket rule — same convention already proven in style.css/styles.css —
+ * closes every current and future gap in one place instead of hand-
+ * enumerating each keyframe consumer as it's added.
+ * ────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

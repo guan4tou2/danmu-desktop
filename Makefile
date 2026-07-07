@@ -3,7 +3,7 @@
         docker-up-server docker-up-https docker-up-https-redis \
         docker-up-traefik docker-up-traefik-redis \
         docker-down docker-logs docker-restart docker-clean docker-pull \
-        gen-certs setup-env clean lint format copy-tokens
+        gen-certs setup-env clean lint lint-css format copy-tokens
 
 help: ## 顯示此幫助訊息
 	@echo "可用指令："
@@ -95,6 +95,9 @@ clean: ## 清理暫存檔案
 
 lint: ## 執行程式碼檢查
 	cd server && uv run flake8 . --exclude=.venv,__pycache__,*.pyc
+
+lint-css: ## 檢查 CSS 是否新增裸 hex 色碼（對照 scripts/css-token-baseline.json）
+	node scripts/check-css-tokens.mjs
 
 format: ## 格式化程式碼
 	cd server && uv run black . --exclude="/(\.venv|__pycache__)/"

@@ -1,3 +1,4 @@
+@import "./tokens.css";
 * {
   margin: 0;
   padding: 0;
@@ -70,9 +71,21 @@ body {
   font-family: inherit;
   font-size: 0.875rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--motion-normal);
 }
 
 .close-btn:hover {
   background: rgba(51, 65, 85, 0.9);
+}
+
+/* Respect user's motion preference — same convention as styles.css (2026-07-07 E4). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
