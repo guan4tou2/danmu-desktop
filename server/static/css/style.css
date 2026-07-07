@@ -4880,51 +4880,6 @@ body.stream-mode .admin-hero .admin-summary-grid {
   height: 18px;
 }
 
-/* --- Home composer shell --- */
-.server-home-shell {
-  max-width: 980px;
-}
-
-.settings-more-controls {
-  border: 1px solid rgba(51, 65, 85, 0.68);
-  border-radius: var(--radius-xl);
-  background: rgba(2, 6, 23, 0.34);
-  overflow: hidden;
-}
-
-.settings-more-summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  cursor: pointer;
-  list-style: none;
-  padding: 0.9rem 1rem;
-  background: rgba(15, 23, 42, 0.56);
-}
-
-.settings-more-kicker {
-  display: block;
-  color: var(--color-sky-400);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.settings-more-title {
-  display: block;
-  margin-top: 0.18rem;
-  color: var(--color-slate-200);
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.settings-more-body {
-  display: grid;
-  gap: 0.9rem;
-  padding: 0.95rem;
-}
-
 .site-footer {
   display: flex;
   justify-content: center;
