@@ -145,10 +145,26 @@ function initConnSection({ api } = {}) {
   // ── ⚐ 測試 button + 4-state TestChip ────────────────────────────────────
   const connTest = createConnTest({ api: api || (typeof window !== "undefined" ? window.API : null) });
 
+  // Remember the button's resting label so we can restore it after a test.
+  const testBtnLabel = testBtn ? testBtn.querySelector("[data-i18n='connTestBtn']") : null;
+  const _testBtnRestingText = testBtnLabel ? testBtnLabel.textContent : "";
+
   function _renderChip() {
-    if (!testChip) return;
-    testChip.textContent = connTest.getChipLabel();
-    testChip.setAttribute("data-state", connTest.getState());
+    const state = connTest.getState();
+    if (testChip) {
+      testChip.textContent = connTest.getChipLabel();
+      testChip.setAttribute("data-state", state);
+    }
+    // Disable the ⚐ 測試 button while a handshake is in flight and swap the
+    // label for the existing ⟳ spinner glyph; restore on settle.
+    if (testBtn) {
+      const testing = state === "testing";
+      testBtn.disabled = testing;
+      testBtn.setAttribute("aria-busy", testing ? "true" : "false");
+      if (testBtnLabel) {
+        testBtnLabel.textContent = testing ? "⟳ 測試中…" : _testBtnRestingText;
+      }
+    }
   }
 
   connTest.onChange(_renderChip);

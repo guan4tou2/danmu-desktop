@@ -1156,9 +1156,9 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-conn-test-chip[data-state="fail"] {
-  border-color: rgba(251, 191, 36, 0.4);
-  background: rgba(251, 191, 36, 0.08);
-  color: var(--color-warning);
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--color-error);
 }
 
 .client-conn-test-btn {
