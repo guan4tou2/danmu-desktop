@@ -28,7 +28,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -39,7 +39,7 @@ jobs:
         run: pip install uv
 
       - name: Cache uv dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: server/.venv
           key: uv-${{ runner.os }}-py3.11-${{ hashFiles('server/uv.lock') }}
@@ -76,10 +76,10 @@ jobs:
   js-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: "20"
           cache: "npm"
@@ -137,10 +137,10 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: "20"
           cache: "npm"
@@ -155,7 +155,7 @@ jobs:
         run: pip install uv
 
       - name: Cache uv dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: server/.venv
           key: uv-${{ runner.os }}-py3.11-${{ hashFiles('server/uv.lock') }}
@@ -200,7 +200,7 @@ jobs:
   pip-audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -229,7 +229,7 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v6
