@@ -569,7 +569,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 
 .admin-dash-qp-row {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
 }
 
@@ -595,7 +595,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   background: transparent;
   border: 1px solid var(--admin-line);
   color: var(--admin-text);
-  font-size: 12px;
+  font-size: var(--text-xs);
   outline: none;
   min-width: 0;
 }
@@ -609,7 +609,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   border: none;
   color: var(--admin-text-dim);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--text-sm);
   padding: 4px 6px;
 }
 
@@ -630,7 +630,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   margin-top: auto;
   padding-top: 14px;
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .admin-dash-qp-start {
@@ -641,7 +641,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   background: var(--color-primary);
   color: var(--btn-text-on-primary);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 700;
   font-family: var(--font-mono);
   letter-spacing: 1px;
@@ -816,14 +816,14 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 
 /* Compact poll options inside ② POLL panel — overrides for the regular
  * .admin-dash-qp-options that was originally designed for a span-5 card. */
-.admin-dash-qa-options { padding: 4px 0; }
+.admin-dash-qa-options { padding: var(--space-1) 0; }
 .admin-dash-qa-options .admin-dash-qp-row { gap: 6px; }
 .admin-dash-qa-options .admin-dash-qp-row .key {
   width: 22px; height: 22px; font-size: 10px;
 }
 .admin-dash-qa-options .admin-dash-qp-row input { padding: 6px 8px; font-size: 11px; }
 
-.admin-dash-qa-panel .admin-dash-qp-foot { padding: 4px 0; }
+.admin-dash-qa-panel .admin-dash-qp-foot { padding: var(--space-1) 0; }
 .admin-dash-qa-panel .admin-dash-qp-foot[hidden] { display: none; }
 .admin-dash-qa-panel .admin-dash-qp-start { padding: 7px 12px; font-size: 11px; letter-spacing: 1px; }
 
@@ -1024,20 +1024,20 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 .admin-poll-actions {
   margin-top: 14px;
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
 .admin-poll-options-actions {
-  margin-top: 8px;
+  margin-top: var(--space-2);
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 /* Poll status card (replaces inline Tailwind in admin-poll.js) */
 .admin-poll-status-card {
-  margin-top: 8px;
-  padding: 12px;
+  margin-top: var(--space-2);
+  padding: var(--space-3);
   background: var(--color-bg-elevated);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
@@ -1045,8 +1045,8 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 .admin-poll-status-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
 }
 .admin-poll-status-dot {
   display: inline-block;
@@ -1093,13 +1093,13 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 .admin-poll-status-footer {
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 .admin-poll-link {
   background: transparent;
   border: none;
-  padding: 4px 0;
+  padding: var(--space-1) 0;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 1px;
@@ -2035,7 +2035,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   /* Prototype-like 12-col balance (builder 5 + active editor 7) while
    * preserving current master-detail interaction model. */
   grid-template-columns: minmax(300px, 5fr) minmax(420px, 7fr);
-  gap: 20px;
+  gap: var(--space-5);
 }
 
 @media (max-width: 1280px) and (min-width: 1024px) {
@@ -2062,14 +2062,14 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   height: fit-content;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .admin-poll-card-head {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 
 .admin-poll-card-head .title { font-size: 13px; font-weight: 600; color: var(--admin-text); }
@@ -2192,7 +2192,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 }
 
 .admin-poll-mode {
-  margin-top: 16px;
+  margin-top: var(--space-4);
   padding-top: 14px;
   border-top: 1px solid var(--admin-line);
 }
@@ -2202,13 +2202,13 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   font-size: 10px;
   letter-spacing: 1px;
   color: var(--admin-text-dim);
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .admin-poll-mode .mode-row { display: flex; gap: 6px; }
 .admin-poll-mode button {
   flex: 1;
-  padding: 8px;
+  padding: var(--space-2);
   border-radius: var(--radius-sm);
   border: 1px solid var(--admin-line);
   background: transparent;
@@ -2223,7 +2223,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   color: var(--color-primary);
 }
 
-.admin-poll-mode .lbl { display: block; font-size: 12px; font-weight: 500; }
+.admin-poll-mode .lbl { display: block; font-size: var(--text-xs); font-weight: 500; }
 .admin-poll-mode .sub {
   display: block;
   font-family: var(--font-mono);
@@ -2245,7 +2245,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 .admin-poll-edit-head {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   margin-bottom: 18px;
 }
 
@@ -2264,7 +2264,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 }
 
 .admin-poll-edit-head .head-info { display: flex; flex-direction: column; gap: 2px; }
-.admin-poll-edit-head .title { font-size: 14px; font-weight: 600; color: var(--admin-text); }
+.admin-poll-edit-head .title { font-size: var(--text-sm); font-weight: 600; color: var(--admin-text); }
 .admin-poll-edit-head .kicker {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -2307,7 +2307,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 }
 
 .admin-poll-crop {
-  margin-top: 12px;
+  margin-top: var(--space-3);
   padding: 10px 12px;
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
@@ -2361,7 +2361,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px;
+  padding: var(--space-2);
   border-radius: var(--radius-sm);
   border: 1px solid var(--admin-line);
   background: var(--admin-raised);
@@ -2389,7 +2389,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   align-items: center;
   justify-content: center;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -2419,7 +2419,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   border: 1px solid var(--admin-line);
   background: transparent;
   color: var(--admin-text);
-  font-size: 12px;
+  font-size: var(--text-xs);
   outline: none;
   cursor: text;
 }
@@ -2446,7 +2446,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 }
 
 .admin-poll-opt-add {
-  margin-top: 8px;
+  margin-top: var(--space-2);
   padding: 8px 14px;
   border-radius: var(--radius-sm);
   border: 1px dashed var(--admin-line);
@@ -2464,14 +2464,14 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   border-top: 1px solid var(--admin-line);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 
 .admin-poll-edit-foot .foot-field {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .admin-poll-edit-foot .foot-field > span {
@@ -2523,15 +2523,15 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 }
 
 .admin-poll-title {
-  font-size: 16px;
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--admin-text);
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 .admin-poll-subnote {
   margin: 8px 0 0;
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--admin-text-dim);
   line-height: 1.6;
 }
@@ -2567,7 +2567,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 .admin-poll-q-handle {
   cursor: grab;
   color: var(--admin-text-dim);
-  font-size: 14px;
+  font-size: var(--text-sm);
   user-select: none;
 }
 
@@ -2605,7 +2605,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 .admin-poll-q-actions {
   margin-left: auto;
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .admin-poll-q-btn {
@@ -2646,7 +2646,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   border: 1px solid var(--admin-line);
   background: var(--admin-raised);
   color: var(--admin-text);
-  font-size: 14px;
+  font-size: var(--text-sm);
   outline: none;
 }
 
@@ -2674,7 +2674,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   padding: 10px;
   cursor: pointer;
   color: var(--admin-text-dim);
-  font-size: 12px;
+  font-size: var(--text-xs);
   transition: border-color var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 
@@ -2705,7 +2705,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 .admin-poll-q-opt {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .admin-poll-q-opt-tag {
@@ -2730,7 +2730,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   border: 1px solid var(--admin-line);
   background: transparent;
   color: var(--admin-text);
-  font-size: 12px;
+  font-size: var(--text-xs);
   outline: none;
 }
 
@@ -2767,8 +2767,8 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 .admin-poll-runbar-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
 }
 
 .admin-poll-runbar-field > span {
@@ -2786,14 +2786,14 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   background: var(--admin-raised);
   color: var(--admin-text);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--text-xs);
   outline: none;
 }
 
 .admin-poll-runbar-spacer { flex: 1; }
 
 .admin-poll-status {
-  margin-top: 4px;
+  margin-top: var(--space-1);
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--admin-text-dim);
@@ -6925,7 +6925,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 
 /* ─── Poll Deep-Dive (Phase 2 P0-3, 2026-04-27) ────────────────────── */
 .admin-poll-deeplink {
-  margin-left: 12px;
+  margin-left: var(--space-3);
   font-family: var(--font-mono);
   font-size: 11px; letter-spacing: 0.4px;
   color: var(--color-primary);
@@ -6946,7 +6946,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 }
 
 .admin-pdd-main, .admin-pdd-aside {
-  display: flex; flex-direction: column; gap: 12px;
+  display: flex; flex-direction: column; gap: var(--space-3);
   min-width: 0;
 }
 
@@ -6954,11 +6954,11 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   background: var(--color-surface);
   border: 1px solid var(--color-border, var(--hud-line));
   border-radius: var(--radius-md);
-  padding: 16px;
+  padding: var(--space-4);
 }
 
 .admin-pdd-back {
-  margin-left: 8px;
+  margin-left: var(--space-2);
   color: var(--color-primary);
   text-decoration: none;
   font-family: var(--font-mono); font-size: 11px;
@@ -6969,7 +6969,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   grid-column: 1 / -1;
   padding: 40px 20px;
   text-align: center;
-  font-family: var(--font-mono); font-size: 12px;
+  font-family: var(--font-mono); font-size: var(--text-xs);
   color: var(--color-text-muted);
 }
 
@@ -6982,8 +6982,8 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   border-radius: var(--radius-md);
 }
 .admin-pdd-empty-icon { font-size: 48px; color: var(--color-text-muted); margin-bottom: 14px; }
-.admin-pdd-empty-title { font-size: 16px; font-weight: 600; color: var(--color-text-strong); }
-.admin-pdd-empty-desc { margin: 8px auto 16px; font-size: 12px; color: var(--color-text-muted); max-width: 380px; line-height: 1.6; }
+.admin-pdd-empty-title { font-size: var(--text-base); font-weight: 600; color: var(--color-text-strong); }
+.admin-pdd-empty-desc { margin: 8px auto 16px; font-size: var(--text-xs); color: var(--color-text-muted); max-width: 380px; line-height: 1.6; }
 .admin-pdd-empty-action {
   display: inline-block;
   padding: 9px 18px;
@@ -6998,7 +6998,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 
 /* Header card */
 .admin-pdd-header-meta {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 10px; margin-bottom: var(--space-2);
 }
 .admin-pdd-chip {
   font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.2px;
@@ -7014,15 +7014,15 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   letter-spacing: 0.3px;
 }
 .admin-pdd-question {
-  font-size: 18px; font-weight: 600;
+  font-size: var(--text-lg); font-weight: 600;
   color: var(--color-text-strong);
   letter-spacing: 0.2px;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
   line-height: 1.4;
 }
 .admin-pdd-kpis {
   display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: var(--space-3);
   padding-top: 10px;
   border-top: 1px dashed var(--color-border, var(--hud-line));
 }
@@ -7035,7 +7035,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 }
 .admin-pdd-kpi .v {
   margin-top: 2px;
-  font-size: 20px; font-weight: 600;
+  font-size: var(--text-xl); font-weight: 600;
   color: var(--color-text-strong);
 }
 .admin-pdd-kpi .sub {
@@ -7045,14 +7045,14 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 }
 
 /* Distribution rows */
-.admin-pdd-rows { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+.admin-pdd-rows { display: flex; flex-direction: column; gap: var(--space-3); margin-top: 10px; }
 .admin-pdd-row-head {
   display: flex; align-items: baseline;
-  gap: 8px; margin-bottom: 4px;
+  gap: var(--space-2); margin-bottom: var(--space-1);
 }
 .admin-pdd-row-head .lbl { font-size: 13px; font-weight: 600; color: var(--color-text-strong); }
 .admin-pdd-row-head .votes { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--color-text-muted); letter-spacing: 0.3px; }
-.admin-pdd-row-head .pct { margin-left: 12px; font-family: var(--font-mono); font-size: 15px; font-weight: 600; }
+.admin-pdd-row-head .pct { margin-left: var(--space-3); font-family: var(--font-mono); font-size: 15px; font-weight: 600; }
 .admin-pdd-row-bar {
   height: 8px;
   background: var(--color-bg);
@@ -7061,7 +7061,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 }
 .admin-pdd-row-fill { height: 100%; transition: width var(--motion-normal) ease; }
 .admin-pdd-empty-rows {
-  padding: 20px;
+  padding: var(--space-5);
   text-align: center;
   font-family: var(--font-mono); font-size: 11px;
   color: var(--color-text-muted);
@@ -7074,7 +7074,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   gap: 10px;
 }
 .admin-pdd-sentiment-tile {
-  padding: 12px;
+  padding: var(--space-3);
   background: var(--color-bg);
   border: 1px solid var(--color-border, var(--hud-line));
   border-radius: var(--radius-sm);
@@ -7085,13 +7085,13 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   color: var(--color-text-muted);
 }
 .admin-pdd-sentiment-tile .v {
-  margin-top: 4px;
+  margin-top: var(--space-1);
   font-size: 28px; font-weight: 600;
   color: var(--color-text-strong);
   letter-spacing: 0.3px;
 }
 .admin-pdd-sentiment-tile .sub {
-  margin-top: 4px;
+  margin-top: var(--space-1);
   font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.4px;
   color: var(--color-text-muted);
 }
@@ -7099,7 +7099,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 /* Placeholder card (geo / timeline) */
 .admin-pdd-placeholder { opacity: 0.85; }
 .admin-pdd-placeholder-body {
-  display: flex; gap: 12px; align-items: flex-start;
+  display: flex; gap: var(--space-3); align-items: flex-start;
   margin-top: 10px;
   padding: 14px;
   background: var(--color-bg);
@@ -7107,15 +7107,15 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   border-radius: var(--radius-sm);
 }
 .admin-pdd-placeholder-icon {
-  font-size: 24px; color: var(--color-text-muted);
+  font-size: var(--text-2xl); color: var(--color-text-muted);
   flex-shrink: 0;
 }
 .admin-pdd-placeholder-text .t {
-  font-size: 12px; font-weight: 600;
+  font-size: var(--text-xs); font-weight: 600;
   color: var(--color-text-strong);
 }
 .admin-pdd-placeholder-text .s {
-  margin-top: 4px;
+  margin-top: var(--space-1);
   font-size: 11px; line-height: 1.6;
   color: var(--color-text-muted);
 }
@@ -7129,7 +7129,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 .admin-pdd-integrity { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 .admin-pdd-integrity .row {
   display: grid; grid-template-columns: 12px 1fr auto;
-  gap: 8px; align-items: center;
+  gap: var(--space-2); align-items: center;
   padding: 8px 10px;
   background: var(--color-bg);
   border: 1px solid var(--color-border, var(--hud-line));
