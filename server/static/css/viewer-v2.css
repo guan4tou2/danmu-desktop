@@ -2228,7 +2228,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
   background: transparent;
   color: var(--color-text-muted);
   cursor: pointer;
-  transition: all var(--motion-fast) var(--ease-out, ease);
+  transition: background-color var(--motion-fast) var(--ease-out, ease), border-color var(--motion-fast) var(--ease-out, ease), color var(--motion-fast) var(--ease-out, ease), box-shadow var(--motion-fast) var(--ease-out, ease), transform var(--motion-fast) var(--ease-out, ease);
 }
 .viewer-mobile-sheet-seg.is-active {
   border-color: var(--color-primary);

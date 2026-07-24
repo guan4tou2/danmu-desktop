@@ -2834,7 +2834,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: transparent;
   color: var(--admin-text-dim, #94a3b8);
   cursor: pointer;
-  transition: all var(--motion-fast) ease;
+  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 .admin-cmdk-chip:hover { color: var(--admin-text, #e2e8f0); }
 .admin-cmdk-chip.is-on {
