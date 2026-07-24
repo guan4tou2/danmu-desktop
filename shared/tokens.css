@@ -1,4 +1,67 @@
 :root {
+  /* ══════════════════════════════════════════════════════════════════
+   * Layer 0 — Primitive palette (色彩系統 v2 · Issue #120 · Phase 1)
+   *
+   * Raw, theme-INDEPENDENT color scale. Every value is the EXACT oklch
+   * conversion of a Tailwind-v3 hex already used elsewhere in this file —
+   * round-trip verified byte-identical (the oklch string renders back to
+   * the source hex on sRGB, listed after each). This layer is purely
+   * ADDITIVE: no token consumes it yet. Phase 2 repoints the semantic
+   * tokens below to `light-dark(var(--<hue>-<lightStep>),
+   * var(--<hue>-<darkStep>))`, at which point the duplicated
+   * :root[data-theme="light"] + @media(prefers light) override blocks
+   * collapse to nothing.
+   *
+   * Only the scale steps the current system actually references are
+   * present; gaps (e.g. --slate-300) fill in when a consumer appears.
+   * Non-scale one-offs stay as direct values — they are not palette steps:
+   *   --color-danger #ff4d4f, --color-success-bright #84e100,
+   *   HUD bg #050912 / #0c1424 / #182239, --color-white #ffffff.
+   * ══════════════════════════════════════════════════════════════════ */
+  /* slate — neutral, blue-biased */
+  --slate-50:  oklch(98.42% 0.003 247.86);  /* #f8fafc */
+  --slate-100: oklch(96.83% 0.007 247.9);   /* #f1f5f9 */
+  --slate-200: oklch(92.88% 0.013 255.51);  /* #e2e8f0 */
+  --slate-400: oklch(71.07% 0.035 256.79);  /* #94a3b8 */
+  --slate-500: oklch(55.44% 0.041 257.42);  /* #64748b */
+  --slate-600: oklch(44.55% 0.037 257.28);  /* #475569 */
+  --slate-700: oklch(37.17% 0.039 257.29);  /* #334155 */
+  --slate-800: oklch(27.95% 0.037 260.03);  /* #1e293b */
+  --slate-900: oklch(20.77% 0.04 265.75);   /* #0f172a */
+  --slate-950: oklch(12.88% 0.041 264.7);   /* #020617 */
+  /* sky — primary / accent */
+  --sky-300: oklch(82.76% 0.101 230.32);    /* #7dd3fc */
+  --sky-400: oklch(75.35% 0.139 232.66);    /* #38bdf8 */
+  --sky-500: oklch(68.469% 0.1479 237.323); /* #0ea5e9 */
+  --sky-600: oklch(58.762% 0.1389 241.966); /* #0284c7 */
+  --sky-700: oklch(49.998% 0.1193 242.749); /* #0369a1 */
+  /* amber — warning */
+  --amber-400: oklch(83.686% 0.1644 84.429); /* #fbbf24 */
+  --amber-600: oklch(66.584% 0.1574 58.318); /* #d97706 */
+  /* red — error */
+  --red-300: oklch(80.77% 0.103 19.57);     /* #fca5a5 */
+  --red-400: oklch(71.06% 0.166 22.22);     /* #f87171 */
+  --red-500: oklch(63.68% 0.208 25.33);     /* #ef4444 */
+  --red-600: oklch(57.71% 0.215 27.33);     /* #dc2626 */
+  --red-700: oklch(50.542% 0.1905 27.518);  /* #b91c1c */
+  /* green — success */
+  --green-300: oklch(87.12% 0.136 154.45);  /* #86efac */
+  --green-500: oklch(72.27% 0.192 149.58);  /* #22c55e */
+  --green-600: oklch(62.71% 0.17 149.21);   /* #16a34a */
+  /* cyan — data / accent-alt */
+  --cyan-400: oklch(79.71% 0.134 211.53);   /* #22d3ee */
+  --cyan-500: oklch(71.484% 0.1257 215.221);/* #06b6d4 */
+  --cyan-600: oklch(60.89% 0.111 221.72);   /* #0891b2 */
+  /* teal — connected */
+  --teal-500: oklch(70.38% 0.123 182.5);    /* #14b8a6 */
+  --teal-600: oklch(60.022% 0.1038 184.704);/* #0d9488 */
+  /* emerald — connected-bright */
+  --emerald-500: oklch(69.59% 0.149 162.48);/* #10b981 */
+  /* blue — secondary */
+  --blue-500: oklch(62.31% 0.188 259.81);   /* #3b82f6 */
+  /* lime — success-dim */
+  --lime-700: oklch(53.222% 0.1405 131.589);/* #4d7c0f */
+
   /* Brand */
   --color-primary: #38bdf8;
   --color-primary-hover: #0ea5e9;
