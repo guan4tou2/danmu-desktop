@@ -159,7 +159,7 @@
               <div class="admin-setup-brand-name">Danmu Fire</div>
               <div class="admin-setup-brand-sub">SETUP WIZARD · v5 YELLOW</div>
             </div>
-            <button type="button" class="admin-setup-close" data-setup-action="close" aria-label="Close wizard">✕</button>
+            <button type="button" class="admin-setup-close" data-setup-action="close" aria-label="Close wizard">${window.AdminUtils.closeIcon}</button>
           </header>
 
           <div class="admin-setup-stepbar" data-setup-stepbar>

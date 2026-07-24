@@ -132,7 +132,7 @@
             '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="up" data-pack-id="' + escapeAttr(pack.id) + '" title="上移">↑</button>' +
             '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="down" data-pack-id="' + escapeAttr(pack.id) + '" title="下移">↓</button>' +
             '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="toggle" data-pack-id="' + escapeAttr(pack.id) + '" title="' + (pack.enabled ? "停用" : "啟用") + '">' + (pack.enabled ? "ON" : "OFF") + '</button>' +
-            '<button type="button" class="admin-ui-chip is-danger admin-sticker-pack-action" data-pack-action="delete" data-pack-id="' + escapeAttr(pack.id) + '" title="刪除貼圖包">×</button>' +
+            '<button type="button" class="admin-ui-chip is-danger admin-sticker-pack-action" data-pack-action="delete" data-pack-id="' + escapeAttr(pack.id) + '" title="刪除貼圖包">' + window.AdminUtils.closeIcon + '</button>' +
           '</div>';
       html +=
         '<div class="' + rowCls + '" data-pack="' + escapeAttr(pack.id) + '" style="display:flex;flex-direction:column;gap:4px">' +
@@ -161,7 +161,7 @@
       escapeAttr(label) + '" title="' + escapeAttr(ServerI18n.t("copyToClipboard")) + '">' +
       escapeHtml(ServerI18n.t("copyBtn")) + "</button>" +
       '<button type="button" class="admin-ui-chip is-danger sticker-delete-btn" data-name="' +
-      escapeAttr(sticker.name) + '" title="' + escapeAttr(ServerI18n.t("deleteSticker")) + '">×</button>' +
+      escapeAttr(sticker.name) + '" title="' + escapeAttr(ServerI18n.t("deleteSticker")) + '">' + window.AdminUtils.closeIcon + '</button>' +
       "</div>" +
       "</div>"
     );

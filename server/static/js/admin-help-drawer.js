@@ -261,7 +261,7 @@
         <span class="admin-help__title" id="admin-help-title">Help</span>
         <kbd class="admin-help__kbd admin-help__head-kbd">⌘ /</kbd>
         <span class="admin-help__spacer"></span>
-        <button type="button" class="admin-help__close" data-help-close aria-label="Close">✕</button>
+        <button type="button" class="admin-help__close" data-help-close aria-label="Close">${window.AdminUtils.closeIcon}</button>
       </header>
       <div class="admin-help__body">
 

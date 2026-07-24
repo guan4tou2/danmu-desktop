@@ -25,7 +25,7 @@
         <input type="number" min="12" max="200" placeholder="Size"
           class="scheduler-msg-size admin-ui-input"
           value="${size || 48}" />
-        <button type="button" class="admin-ui-chip is-danger scheduler-remove-msg" title="Remove" aria-label="Remove message">×</button>
+        <button type="button" class="admin-ui-chip is-danger scheduler-remove-msg" title="Remove" aria-label="Remove message">${window.AdminUtils.closeIcon}</button>
       </div>`;
   }
 
@@ -58,7 +58,7 @@
             ${isPaused ? "▶" : "⏸"}
           </button>
           <button type="button" class="admin-ui-chip is-danger scheduler-job-cancel"
-            data-job-id="${escapeAttr(job.id)}">×</button>
+            data-job-id="${escapeAttr(job.id)}">${window.AdminUtils.closeIcon}</button>
         </div>
       </div>`;
   }
