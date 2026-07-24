@@ -4439,7 +4439,13 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   grid-template-columns: 1fr 1fr;
 }
 @media (max-width: 720px) {
-  .admin-bc-v5__secondary { grid-template-columns: 1fr !important; }
+  /* !important removed (chained consequence of the sibling desktop removal in
+   * PR 151): the desktop rule above dropped its !important, so this
+   * later-in-source, equal-specificity mobile rule now wins by source order
+   * alone. hud.css owns both rules and is the only grid-template-columns
+   * source for this selector (no style.css/tailwind competitor), so 1fr
+   * applies at max-width 720px without !important. */
+  .admin-bc-v5__secondary { grid-template-columns: 1fr; }
 }
 
 .admin-bc-v5__session-ctx {
