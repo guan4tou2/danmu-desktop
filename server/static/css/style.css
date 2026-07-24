@@ -56,10 +56,22 @@ body {
   --font-ui: "Noto Sans", "Noto Sans KR", system-ui, sans-serif;
 }
 
-/* Tabular figures — numbers align column-to-column in data displays */
+/* Tabular figures — numbers align column-to-column in data displays.
+   The [data-tabular] hook opts elements in explicitly; the [class*=…]
+   selectors below cover the recurring number-carrier naming across admin
+   modules (stat values, counts, metrics, percentages) so digits line up
+   without touching each module. tabular-nums is a no-op on non-numeric
+   text, so the broad class match is safe. */
 [data-tabular],
 .history-dashboard-value,
-.chart-label {
+.chart-label,
+[class*="-value"],
+[class*="-count"],
+[class*="-num"],
+[class*="-metric"],
+[class*="-pct"],
+[class*="-percent"],
+[class*="-stat-v"] {
   font-variant-numeric: tabular-nums;
 }
 
