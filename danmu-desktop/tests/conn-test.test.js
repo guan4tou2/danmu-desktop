@@ -3,7 +3,7 @@
 // (idle → testing → ok | fail) with debounce, subscribe pattern, and
 // human-readable chip labels keyed by IPC error codes.
 
-const { test, expect, describe, jest } = require("@jest/globals");
+const { test, expect, describe } = require("@jest/globals");
 const { createConnTest } = require("../renderer-modules/conn-test");
 
 function makeApiMock(result) {
