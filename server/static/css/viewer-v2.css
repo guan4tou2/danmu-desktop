@@ -1775,8 +1775,8 @@ body.viewer-has-topstrip .viewer-topstrip {
   background: rgba(248, 113, 113, 0.2);
 }
 .viewer-offline-btn.is-secondary {
-  border-color: rgba(56, 189, 248, 0.45);
-  background: rgba(56, 189, 248, 0.12);
+  border-color: var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
+  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
   color: #7dd3fc;
 }
 
@@ -2035,7 +2035,7 @@ body[data-viewer-state] {
   padding: 6px 14px;
   border-radius: var(--radius-pill);
   background: rgba(56, 189, 248, 0.10);
-  border: 1px solid rgba(56, 189, 248, 0.45);
+  border: 1px solid var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
   font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
   font-size: 13px;
   font-weight: 600;
