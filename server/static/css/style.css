@@ -56,10 +56,22 @@ body {
   --font-ui: "Noto Sans", "Noto Sans KR", system-ui, sans-serif;
 }
 
-/* Tabular figures — numbers align column-to-column in data displays */
+/* Tabular figures — numbers align column-to-column in data displays.
+   The [data-tabular] hook opts elements in explicitly; the [class*=…]
+   selectors below cover the recurring number-carrier naming across admin
+   modules (stat values, counts, metrics, percentages) so digits line up
+   without touching each module. tabular-nums is a no-op on non-numeric
+   text, so the broad class match is safe. */
 [data-tabular],
 .history-dashboard-value,
-.chart-label {
+.chart-label,
+[class*="-value"],
+[class*="-count"],
+[class*="-num"],
+[class*="-metric"],
+[class*="-pct"],
+[class*="-percent"],
+[class*="-stat-v"] {
   font-variant-numeric: tabular-nums;
 }
 
@@ -5791,7 +5803,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   border: 1px solid transparent;
   border-radius: var(--radius-md-sm);
   cursor: pointer;
-  transition: all var(--motion-fast) ease;
+  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 .admin-ui-tab:hover { color: var(--color-text-strong); }
 .admin-ui-tab.is-active {
@@ -6414,7 +6426,7 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   font-family: var(--font-mono);
   font-size: 11px; font-weight: 700;
   color: var(--color-text-muted);
-  transition: all var(--motion-normal) ease;
+  transition: background-color var(--motion-normal) ease, border-color var(--motion-normal) ease, color var(--motion-normal) ease, box-shadow var(--motion-normal) ease, transform var(--motion-normal) ease;
 }
 .admin-setup-step .lbl {
   font-size: 12px;
@@ -6508,7 +6520,7 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   border-radius: var(--radius-md-sm);
   background: var(--color-bg);
   cursor: pointer;
-  transition: all var(--motion-fast) ease;
+  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 .admin-setup-theme-card:hover {
   border-color: rgba(56, 189, 248, 0.55);
@@ -6576,7 +6588,7 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   border-radius: var(--radius-md-sm);
   background: var(--color-bg);
   cursor: pointer;
-  transition: all var(--motion-fast) ease;
+  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 .admin-setup-lang-card:hover { border-color: rgba(56, 189, 248, 0.45); }
 .admin-setup-lang-card.is-selected {
@@ -6753,7 +6765,7 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   color: var(--color-text-muted);
   cursor: pointer;
   letter-spacing: 0.3px;
-  transition: all var(--motion-fast) ease;
+  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 .admin-setup-file-btn:hover {
   color: var(--color-primary);
@@ -6783,7 +6795,7 @@ body[data-history-tab="replay"] #history-v2-section { display: none !important; 
   color: var(--color-danger, #f87171);
   cursor: pointer;
   letter-spacing: 0.3px;
-  transition: all var(--motion-fast) ease;
+  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 .admin-setup-logo-remove:hover {
   border-color: var(--color-danger, #f87171);
@@ -7170,7 +7182,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   text-align: center;
   cursor: pointer;
   text-decoration: none;
-  transition: all var(--motion-fast) ease;
+  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 .admin-pdd-action:hover {
   border-color: var(--color-primary);
@@ -9220,7 +9232,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 10px; letter-spacing: 0.4px;
-  transition: all var(--motion-fast) ease;
+  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 .admin-msgd-nav .arrow { font-size: 11px; }
 .admin-msgd-nav + .admin-msgd-nav { margin-left: 0; }
@@ -9237,7 +9249,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   border-radius: var(--radius-xs);
   cursor: pointer;
   font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.4px;
-  transition: all var(--motion-fast) ease;
+  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 .admin-msgd-close .arrow { font-size: 11px; }
 .admin-msgd-close:hover { color: var(--color-text-strong); border-color: var(--color-primary); }
@@ -9330,7 +9342,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   text-align: center;
   font-family: inherit;
   color: var(--color-text-strong);
-  transition: all var(--motion-fast) ease;
+  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 .admin-msgd-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
 .admin-msgd-actions button:hover:not(:disabled) {
@@ -9778,7 +9790,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   border-left: 3px solid;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all var(--motion-fast) ease;
+  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 .admin-notif-item:hover {
   background: var(--hover-tint-weak);
@@ -10094,7 +10106,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-vc-toggle {
   font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px;
   padding: 4px 10px; border-radius: var(--radius-xs); cursor: pointer; border: 1px solid;
-  transition: all var(--motion-fast) ease;
+  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 .admin-vc-toggle.is-on {
   color: var(--color-primary);
@@ -11953,7 +11965,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   background: transparent;
   border: 1.5px solid var(--color-border);
   color: var(--color-text-muted);
-  transition: all var(--motion-fast) var(--ease-out, ease);
+  transition: background-color var(--motion-fast) var(--ease-out, ease), border-color var(--motion-fast) var(--ease-out, ease), color var(--motion-fast) var(--ease-out, ease), box-shadow var(--motion-fast) var(--ease-out, ease), transform var(--motion-fast) var(--ease-out, ease);
 }
 .admin-sd-ann-modal-lbl.is-active {
   border-color: var(--ann-color, #38bdf8);
@@ -12278,7 +12290,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   border: 1px solid var(--color-border, rgba(255,255,255,0.18));
   color: var(--color-text-muted);
   cursor: pointer;
-  transition: all var(--motion-fast) var(--ease-out, ease);
+  transition: background-color var(--motion-fast) var(--ease-out, ease), border-color var(--motion-fast) var(--ease-out, ease), color var(--motion-fast) var(--ease-out, ease), box-shadow var(--motion-fast) var(--ease-out, ease), transform var(--motion-fast) var(--ease-out, ease);
 }
 .admin-modbans-unban:not(:disabled):hover {
   border-color: var(--hud-crimson);
@@ -12489,7 +12501,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   background: transparent;
   color: var(--color-text-muted);
   cursor: pointer;
-  transition: all var(--motion-fast) var(--ease-out, ease);
+  transition: background-color var(--motion-fast) var(--ease-out, ease), border-color var(--motion-fast) var(--ease-out, ease), color var(--motion-fast) var(--ease-out, ease), box-shadow var(--motion-fast) var(--ease-out, ease), transform var(--motion-fast) var(--ease-out, ease);
 }
 .admin-modbans-modal-custom-unit.is-active {
   border-color: var(--color-primary);
@@ -12579,7 +12591,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   border: 1.5px solid var(--color-border);
   background: transparent;
   cursor: pointer;
-  transition: all var(--motion-fast) var(--ease-out, ease);
+  transition: background-color var(--motion-fast) var(--ease-out, ease), border-color var(--motion-fast) var(--ease-out, ease), color var(--motion-fast) var(--ease-out, ease), box-shadow var(--motion-fast) var(--ease-out, ease), transform var(--motion-fast) var(--ease-out, ease);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -13582,7 +13594,7 @@ body.admin-pu-open { overflow: hidden; }
   border: 2px dashed var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
   background: transparent;
   text-align: center;
-  transition: all var(--motion-fast) ease;
+  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease;
   cursor: pointer;
 }
 
