@@ -111,7 +111,7 @@
           "</div>" +
           '<div class="actions" style="margin-top:6px">' +
           '<button type="button" class="admin-ui-chip is-active sound-play-btn" data-name="' + escapeHtml(sound.name) + '">▶ ' + escapeHtml(ServerI18n.t("previewBtn")) + "</button>" +
-          '<button type="button" class="admin-ui-chip is-danger sound-delete-btn" data-name="' + escapeHtml(sound.name) + '">×</button>' +
+          '<button type="button" class="admin-ui-chip is-danger sound-delete-btn" data-name="' + escapeHtml(sound.name) + '">' + window.AdminUtils.closeIcon + '</button>' +
           "</div>" +
           "</div>"
         );
@@ -252,7 +252,7 @@
           '<div class="admin-sounds-rule-trigger">' + escapeHtml(triggerLabel) + "</div>" +
           '<div class="admin-sounds-rule-detail">' + escapeHtml(detail) + "</div>" +
           "</div>" +
-          '<button type="button" class="admin-ui-chip is-danger sound-rule-del-btn" data-rule-id="' + escapeHtml(String(rule.id)) + '">×</button>' +
+          '<button type="button" class="admin-ui-chip is-danger sound-rule-del-btn" data-rule-id="' + escapeHtml(String(rule.id)) + '">' + window.AdminUtils.closeIcon + '</button>' +
           "</div>"
         );
       })

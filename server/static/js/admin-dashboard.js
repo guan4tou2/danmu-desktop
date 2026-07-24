@@ -190,7 +190,7 @@
       `<div class="admin-dash-qp-row">` +
         `<span class="key">${letter}</span>` +
         `<input type="text" placeholder="選項 ${letter}" maxlength="60" />` +
-        `<button type="button" class="rm" data-qp-rm ${removable ? "" : "hidden"}>✕</button>` +
+        `<button type="button" class="rm" data-qp-rm ${removable ? "" : "hidden"}>${window.AdminUtils.closeIcon}</button>` +
       `</div>`
     );
   }

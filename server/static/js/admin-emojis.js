@@ -95,7 +95,7 @@
       '<span class="admin-em-v4__tile-dot" aria-label="enabled"></span>' +
       '<div class="admin-em-v4__tile-actions">' +
       '<button type="button" class="emoji-copy-btn" data-label="' + escapeAttr(label) + '" title="' + escapeAttr(ServerI18n.t("copyToClipboard")) + '">複製</button>' +
-      '<button type="button" class="emoji-delete-btn" data-name="' + escapeAttr(emoji.name) + '" title="' + escapeAttr(ServerI18n.t("deleteEmoji")) + '">×</button>' +
+      '<button type="button" class="emoji-delete-btn" data-name="' + escapeAttr(emoji.name) + '" title="' + escapeAttr(ServerI18n.t("deleteEmoji")) + '">' + window.AdminUtils.closeIcon + '</button>' +
       '</div>' +
       '</div>'
     );

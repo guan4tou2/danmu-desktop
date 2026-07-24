@@ -346,7 +346,7 @@
     detail.innerHTML =
       '<div class="admin-aud-detail-head">' +
         '<span class="admin-ui-pill admin-aud-risk-pill ' + _riskClassFor(risk.level) + '">' + escapeHtml(risk.label) + '</span>' +
-        '<button type="button" class="admin-ui-action admin-aud-detail-close" data-aud-action="close-detail" aria-label="關閉">✕</button>' +
+        '<button type="button" class="admin-ui-action admin-aud-detail-close" data-aud-action="close-detail" aria-label="關閉">' + window.AdminUtils.closeIcon + '</button>' +
       '</div>' +
       '<div class="admin-aud-detail-id">' +
         '<span class="avatar" style="background:' + color + '">' + escapeHtml(initial) + '</span>' +

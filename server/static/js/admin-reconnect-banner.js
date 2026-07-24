@@ -91,7 +91,7 @@
       <div class="admin-rcb__progress"><div class="admin-rcb__progress-fill" style="width:${pct}%"></div></div>
       <span class="admin-rcb__spacer"></span>
       <button type="button" class="admin-rcb__btn admin-rcb__btn--ghost" data-rcb-action="dismiss">離線繼續工作</button>
-      <button type="button" class="admin-rcb__close" data-rcb-action="dismiss" aria-label="Dismiss">✕</button>`;
+      <button type="button" class="admin-rcb__close" data-rcb-action="dismiss" aria-label="Dismiss">${window.AdminUtils.closeIcon}</button>`;
   }
 
   function _exhaustedHtml() {
@@ -104,7 +104,7 @@
       <span class="admin-rcb__hint">check network or restart server</span>
       <span class="admin-rcb__spacer"></span>
       <button type="button" class="admin-rcb__btn admin-rcb__btn--retry" data-rcb-action="retry">立即重試</button>
-      <button type="button" class="admin-rcb__close" data-rcb-action="dismiss" aria-label="Dismiss">✕</button>`;
+      <button type="button" class="admin-rcb__close" data-rcb-action="dismiss" aria-label="Dismiss">${window.AdminUtils.closeIcon}</button>`;
   }
 
   function _tick() {
