@@ -1,4 +1,12 @@
 :root {
+  /* App-wide default theme for light-dark() resolution (色彩系統 v2 Phase 2).
+   * Dark is the product's base palette; every surface that loads tokens.css
+   * — including the OBS overlay and the Electron overlay, which do NOT load
+   * style.css — resolves light-dark() to its dark arm from here. Admin (via
+   * style.css) and viewer (via viewer-v2.css) override color-scheme to light
+   * with higher-specificity selectors when their light theme is active. */
+  color-scheme: dark;
+
   /* ══════════════════════════════════════════════════════════════════
    * Layer 0 — Primitive palette (色彩系統 v2 · Issue #120 · Phase 1)
    *
@@ -63,9 +71,9 @@
   --lime-700: oklch(53.222% 0.1405 131.589);/* #4d7c0f */
 
   /* Brand */
-  --color-primary: #38bdf8;
-  --color-primary-hover: #0ea5e9;
-  --color-primary-light: #7dd3fc;  /* cyan-300 — lighter cyan for hero / hover-up state */
+  --color-primary: light-dark(var(--sky-600), var(--sky-400));
+  --color-primary-hover: light-dark(var(--sky-700), var(--sky-500));
+  --color-primary-light: light-dark(var(--sky-400), var(--sky-300));  /* cyan-300 — lighter cyan for hero / hover-up state */
   --color-secondary: #3b82f6;
   --color-accent: #06b6d4;
   --color-accent-light: #22d3ee;   /* cyan-400 — brighter accent for stats/data viz */
@@ -76,18 +84,18 @@
   --color-white: #ffffff;
 
   /* Semantic */
-  --color-success: #22c55e;
-  --color-success-light: #86efac;      /* emerald-300 — used for success dots / pulse rings */
+  --color-success: light-dark(var(--green-600), var(--green-500));
+  --color-success-light: light-dark(var(--green-500), var(--green-300));      /* emerald-300 — used for success dots / pulse rings */
   --color-success-dim: #4d7c0f;        /* lime-700 — success copy on light surfaces (viewer reconnected toast) */
   --color-success-bright: #84e100;     /* lime — success copy/accent on dark surfaces */
   --color-success-surface: rgba(132, 225, 0, 0.1);   /* faint lime tint for success banner backgrounds */
   --color-success-border: rgba(132, 225, 0, 0.35);   /* lime border for success banners */
-  --color-warning: #fbbf24;            /* amber-400 — prototype hudTokens.amber */
-  --color-error: #ef4444;              /* form-level red (validation errors) */
-  --color-error-hover: #dc2626;
-  --color-error-light: #f87171;
+  --color-warning: light-dark(var(--amber-600), var(--amber-400));            /* amber-400 — prototype hudTokens.amber */
+  --color-error: light-dark(var(--red-600), var(--red-500));              /* form-level red (validation errors) */
+  --color-error-hover: light-dark(var(--red-700), var(--red-600));
+  --color-error-light: var(--red-400);
   --color-error-lighter: #fca5a5;      /* red-300 — even lighter, for error copy on dark surfaces (2026-07-07 E3) */
-  --color-danger: #ff4d4f;             /* destructive-action red (Ban / Delete) — slightly brighter than --color-error */
+  --color-danger: light-dark(var(--red-600), #ff4d4f);             /* destructive-action red (Ban / Delete) — slightly brighter than --color-error */
 
   /* Button text on filled/bright backgrounds (primary/warning/success buttons,
    * badges, pills). Value intentionally still #000 (2026-07-07 UIUX polish
@@ -105,10 +113,10 @@
    * in style.css that already call var(--color-danger, #ff4d4f). */
 
   /* Surface / Background — aligned to HUD prototype (tokens.jsx) */
-  --color-bg-deep: #020617;          /* slate-950 — viewport */
-  --color-bg-base: #0f172a;          /* slate-900 — panels */
-  --color-bg-elevated: #1e293b;      /* slate-800 — raised */
-  --color-bg-row-hover: #334155;     /* slate-700 — list row hover */
+  --color-bg-deep: light-dark(var(--slate-50), var(--slate-950));          /* slate-950 — viewport */
+  --color-bg-base: light-dark(#ffffff, var(--slate-900));          /* slate-900 — panels */
+  --color-bg-elevated: light-dark(var(--slate-100), var(--slate-800));      /* slate-800 — raised */
+  --color-bg-row-hover: light-dark(var(--slate-200), var(--slate-700));     /* slate-700 — list row hover */
   --color-bg-card: rgba(15, 23, 42, 0.75);
   --color-bg-input: rgba(30, 41, 59, 0.8);
   --color-bg-input-solid: rgba(30, 41, 59, 1);
@@ -119,30 +127,30 @@
    * row/button hover so they correctly invert on light theme. Dark
    * mode = subtle white lift; light mode override below = subtle slate
    * darken. (2026-05-18 polestar light audit pass 2.) */
-  --hover-tint-weak:   rgba(255, 255, 255, 0.02);
-  --hover-tint:        rgba(255, 255, 255, 0.04);
-  --hover-tint-strong: rgba(255, 255, 255, 0.08);
+  --hover-tint-weak: light-dark(rgba(15, 23, 42, 0.03), rgba(255, 255, 255, 0.02));
+  --hover-tint: light-dark(rgba(15, 23, 42, 0.05), rgba(255, 255, 255, 0.04));
+  --hover-tint-strong: light-dark(rgba(15, 23, 42, 0.09), rgba(255, 255, 255, 0.08));
 
   /* Border */
-  --color-border: rgba(255, 255, 255, 0.1);
+  --color-border: light-dark(rgba(15, 23, 42, 0.10), rgba(255, 255, 255, 0.1));
   --color-border-focus: #38bdf8;
-  --color-border-strong: #334155;
+  --color-border-strong: light-dark(rgba(15, 23, 42, 0.18), var(--slate-700));
 
   /* Text (all meet WCAG AA on --color-bg-base #0f172a unless marked)
    * primary   16.30:1 ✓ AAA
    * secondary  6.96:1 ✓ AA body, AAA large
    * bright    14.48:1 ✓ AAA
    * muted      2.36:1 ✗ — for disabled/decorative ONLY, not user-facing copy */
-  --color-text-primary: #f1f5f9;     /* slate-100 */
-  --color-text-secondary: #94a3b8;   /* slate-400 */
-  --color-text-muted: #64748b;       /* slate-500 — HUD textMute */
-  --color-text-bright: #e2e8f0;
+  --color-text-primary: light-dark(var(--slate-900), var(--slate-100));     /* slate-100 */
+  --color-text-secondary: light-dark(var(--slate-600), var(--slate-400));   /* slate-400 */
+  --color-text-muted: light-dark(var(--slate-400), var(--slate-500));       /* slate-500 — HUD textMute */
+  --color-text-bright: light-dark(var(--slate-950), var(--slate-200));
 
   /* Legacy aliases — map old names used in style.css to canonical tokens */
   --color-text-strong: var(--color-text-bright);
   --color-text-dim: var(--color-text-secondary);
   --color-bg: var(--color-bg-deep);
-  --color-surface: #0c1424;
+  --color-surface: light-dark(var(--color-bg-elevated), #0c1424);
   --color-panel: var(--color-bg-base);
   --color-border-soft: var(--hud-line);
 
@@ -236,28 +244,28 @@
   --hud-cut: 14px;                                /* diagonal notch size on .hud-panel */
   --hud-corner-size: 10px;                        /* L-bracket arm length */
   --hud-corner-thickness: 1px;                    /* L-bracket stroke */
-  --hud-line: rgba(148, 163, 184, 0.18);          /* slate-400 @ 0.18 — hairlines */
-  --hud-line-strong: rgba(148, 163, 184, 0.35);   /* slate-400 @ 0.35 — emphasized */
-  --hud-cyan-line: rgba(56, 189, 248, 0.45);      /* sky-400 @ 0.45 — accent edges */
-  --hud-cyan-soft: rgba(56, 189, 248, 0.12);      /* sky-400 @ 0.12 — active fill */
+  --hud-line: light-dark(rgba(15, 23, 42, 0.10), rgba(148, 163, 184, 0.18));          /* slate-400 @ 0.18 — hairlines */
+  --hud-line-strong: light-dark(rgba(15, 23, 42, 0.18), rgba(148, 163, 184, 0.35));   /* slate-400 @ 0.35 — emphasized */
+  --hud-cyan-line: light-dark(rgba(2, 132, 199, 0.30), rgba(56, 189, 248, 0.45));      /* sky-400 @ 0.45 — accent edges */
+  --hud-cyan-soft: light-dark(rgba(2, 132, 199, 0.08), rgba(56, 189, 248, 0.12));      /* sky-400 @ 0.12 — active fill */
 
   /* HUD accent palette — amber/lime/crimson only. */
-  --hud-cyan: #38bdf8;               /* sky-400 — primary signal */
-  --hud-amber: #fbbf24;              /* amber-400 — live/recording/warn */
-  --hud-lime: #86efac;               /* green-300 — healthy/ok */
-  --hud-crimson: #f87171;            /* red-400 — danger/drop (form-level) */
+  --hud-cyan: light-dark(var(--color-primary), var(--sky-400));               /* sky-400 — primary signal */
+  --hud-amber: light-dark(var(--color-warning), var(--amber-400));              /* amber-400 — live/recording/warn */
+  --hud-lime: light-dark(var(--color-success), var(--green-300));               /* green-300 — healthy/ok */
+  --hud-crimson: light-dark(var(--color-danger), var(--red-400));            /* red-400 — danger/drop (form-level) */
 
   /* 2026-05-18 design v4 aliases — naming used by the prototype
    * (hudTokens.text / bg0 / bg1 / bg2 / fontMono …). Existing v4 CSS
    * calls var(--hud-…) with a hex fallback; these resolve the token
    * to the underlying semantic --color-… so a change in one place
    * propagates. Values match shared/hud.css's :root @ line ~14. */
-  --hud-text:        var(--color-text-primary);
-  --hud-text-dim:    var(--color-text-secondary);
-  --hud-textDim:     var(--color-text-secondary);     /* camelCase shim some prototypes use */
-  --hud-bg0:         #050912;                          /* deepest panel */
-  --hud-bg1:         #0c1424;                          /* card panel */
-  --hud-bg2:         #182239;                          /* elevated raised */
+  --hud-text: var(--color-text-primary);
+  --hud-text-dim: var(--color-text-secondary);
+  --hud-textDim: var(--color-text-secondary);     /* camelCase shim some prototypes use */
+  --hud-bg0: light-dark(var(--slate-50), #050912);                          /* deepest panel */
+  --hud-bg1: light-dark(#ffffff, #0c1424);                          /* card panel */
+  --hud-bg2: light-dark(var(--slate-100), #182239);                          /* elevated raised */
   --hud-font-mono:   var(--font-mono);
   --hud-font-sans:   var(--font-ui);
   --hud-font-display: var(--font-display);
@@ -271,161 +279,11 @@
    * --color-* base tokens: dark is the :root default, light is applied by
    * [data-theme="light"] and the prefers-color-scheme:light media query
    * below. They can no longer diverge from the --color-* palette. */
-  --admin-bg:          #020617;                       /* slate-950 — viewport */
-  --admin-panel:       #0f172a;                       /* slate-900 — sidebar / topbar / cards */
-  --admin-raised:      #1e293b;                       /* slate-800 — nested surfaces */
-  --admin-line:        rgba(148, 163, 184, 0.18);     /* slate-400 @ 0.18 — hairlines */
-  --admin-text:        #f1f5f9;                        /* slate-100 */
-  --admin-text-strong: #f1f5f9;                        /* input/content text */
-  --admin-text-dim:    #94a3b8;                        /* slate-400 */
-}
-
-/* ──────────────────────────────────────────────────────────────────────
- * 2026-05-18 design v4-r7 polestar pivot — full light theme.
- * Activated by either:
- *   1. <html data-theme="light"> attribute (manual override)
- *   2. @media (prefers-color-scheme: light) wrapping the same rules
- *      (system-driven; bottom of file)
- *
- * Token strategy: swap the --hud-* alias values + a few --color-* base
- * tokens so existing rules that call var(--hud-bg1, ...) automatically
- * resolve to the light counterpart. Accent shades shift -2 steps darker
- * (e.g. sky-400 → sky-600) to keep WCAG AA contrast on white.
- *
- * Contrast verified per design v4-r7 admin-polestar.jsx TokenSwapTable:
- *   text          slate-900 on white   = 15.4:1 ✓ AAA
- *   text-dim      slate-600 on white   =  5.9:1 ✓ AA body
- *   cyan          sky-600   on white   =  4.6:1 ✓ AA
- *   amber         amber-600 on white   =  4.5:1 ✓ AA
- *   lime          green-600 on white   =  4.6:1 ✓ AA
- *   crimson       red-600   on white   =  4.6:1 ✓ AA
- * ────────────────────────────────────────────────────────────────────── */
-:root[data-theme="light"] {
-  /* Surface */
-  --color-bg-base:     #ffffff;
-  --color-bg-deep:     #f8fafc;
-  --color-bg-elevated: #f1f5f9;
-  --color-bg-row-hover: #e2e8f0;
-
-  /* Text */
-  --color-text-primary:   #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-muted:     #94a3b8;
-  --color-text-bright:    #020617;
-
-  /* Brand / accent — shift -2 steps for WCAG AA on white */
-  --color-primary:       #0284c7;   /* sky-600 */
-  --color-primary-hover: #0369a1;   /* sky-700 */
-  --color-primary-light: #38bdf8;   /* sky-400 — used for hovers only */
-  --color-warning:       #d97706;   /* amber-600 */
-  --color-error:         #dc2626;   /* red-600 */
-  --color-error-hover:   #b91c1c;   /* red-700 */
-  --color-error-light:   #f87171;
-  --color-danger:        #dc2626;   /* same as error in light */
-  --color-success:       #16a34a;   /* green-600 */
-  --color-success-light: #22c55e;   /* green-500 */
-
-  /* Border */
-  --color-border:        rgba(15, 23, 42, 0.10);
-  --color-border-strong: rgba(15, 23, 42, 0.18);
-
-  /* Hover tints — invert direction on light (subtle slate darken
-   * instead of subtle white lift). */
-  --hover-tint-weak:     rgba(15, 23, 42, 0.03);
-  --hover-tint:          rgba(15, 23, 42, 0.05);
-  --hover-tint-strong:   rgba(15, 23, 42, 0.09);
-
-  /* Legacy alias overrides */
-  --color-text-strong: var(--color-text-bright);
-  --color-text-dim: var(--color-text-secondary);
-  --color-bg: var(--color-bg-deep);
-  --color-surface: var(--color-bg-elevated);
-  --color-panel: var(--color-bg-base);
-  --color-border-soft: var(--hud-line);
-
-  /* HUD alias overrides */
-  --hud-bg0:         #f8fafc;
-  --hud-bg1:         #ffffff;
-  --hud-bg2:         #f1f5f9;
-  --hud-text:        var(--color-text-primary);
-  --hud-text-dim:    var(--color-text-secondary);
-  --hud-textDim:     var(--color-text-secondary);
-  --hud-line:        rgba(15, 23, 42, 0.10);
-  --hud-line-strong: rgba(15, 23, 42, 0.18);
-  --hud-cyan:        var(--color-primary);
-  --hud-cyan-soft:   rgba(2, 132, 199, 0.08);
-  --hud-cyan-line:   rgba(2, 132, 199, 0.30);
-  --hud-amber:       var(--color-warning);
-  --hud-lime:        var(--color-success);
-  --hud-crimson:     var(--color-danger);
-
-  /* AdminPageShell — LIGHT track (hudTokens.light* values). Paired with the
-   * dark defaults in :root above so admin chrome follows the same explicit
-   * light/dark switch as --color-*. (2026-07-07 UIUX polish D1.) */
-  --admin-bg:          #f8fafc;                   /* lightBg0 — viewport */
-  --admin-panel:       #ffffff;                   /* sidebar / topbar / cards */
-  --admin-raised:      #f1f5f9;                   /* lightBg2 — nested surfaces */
-  --admin-line:        rgba(15, 23, 42, 0.12);    /* lightLine */
-  --admin-text:        #0f172a;                   /* lightText — slate-900 */
-  --admin-text-strong: #0f172a;                   /* input/content text — slate-900 */
-  --admin-text-dim:    #475569;                   /* lightTextDim — slate-600 */
-}
-
-/* System preference fallback — only applies when no explicit data-theme
-   is set on <html>. Lets users who haven't manually toggled still get
-   the light variant automatically. */
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]):not([data-theme="light"]) {
-    --color-bg-base:     #ffffff;
-    --color-bg-deep:     #f8fafc;
-    --color-bg-elevated: #f1f5f9;
-    --color-bg-row-hover: #e2e8f0;
-    --color-text-primary:   #0f172a;
-    --color-text-secondary: #475569;
-    --color-text-muted:     #94a3b8;
-    --color-text-bright:    #020617;
-    --color-primary:       #0284c7;
-    --color-primary-hover: #0369a1;
-    --color-warning:       #d97706;
-    --color-error:         #dc2626;
-    --color-error-hover:   #b91c1c;
-    --color-danger:        #dc2626;
-    --color-success:       #16a34a;
-    --color-success-light: #22c55e;
-    --color-border:        rgba(15, 23, 42, 0.10);
-    --color-border-strong: rgba(15, 23, 42, 0.18);
-    --hover-tint-weak:     rgba(15, 23, 42, 0.03);
-    --hover-tint:          rgba(15, 23, 42, 0.05);
-    --hover-tint-strong:   rgba(15, 23, 42, 0.09);
-    --hud-bg0:         #f8fafc;
-    --hud-bg1:         #ffffff;
-    --hud-bg2:         #f1f5f9;
-    --hud-text:        var(--color-text-primary);
-    --hud-text-dim:    var(--color-text-secondary);
-    --hud-textDim:     var(--color-text-secondary);
-    --hud-line:        rgba(15, 23, 42, 0.10);
-    --hud-line-strong: rgba(15, 23, 42, 0.18);
-    --hud-cyan:        var(--color-primary);
-    --hud-cyan-soft:   rgba(2, 132, 199, 0.08);
-    --hud-cyan-line:   rgba(2, 132, 199, 0.30);
-    --hud-amber:       var(--color-warning);
-    --hud-lime:        var(--color-success);
-    --hud-crimson:     var(--color-danger);
-    --color-text-strong: var(--color-text-bright);
-    --color-text-dim: var(--color-text-secondary);
-    --color-bg: var(--color-bg-deep);
-    --color-surface: var(--color-bg-elevated);
-    --color-panel: var(--color-bg-base);
-    --color-border-soft: var(--hud-line);
-
-    /* AdminPageShell — LIGHT track for auto mode on a light OS (mirrors the
-     * [data-theme="light"] block; see D1). */
-    --admin-bg:          #f8fafc;
-    --admin-panel:       #ffffff;
-    --admin-raised:      #f1f5f9;
-    --admin-line:        rgba(15, 23, 42, 0.12);
-    --admin-text:        #0f172a;
-    --admin-text-strong: #0f172a;
-    --admin-text-dim:    #475569;
-  }
+  --admin-bg: light-dark(var(--slate-50), var(--slate-950));                       /* slate-950 — viewport */
+  --admin-panel: light-dark(#ffffff, var(--slate-900));                       /* slate-900 — sidebar / topbar / cards */
+  --admin-raised: light-dark(var(--slate-100), var(--slate-800));                       /* slate-800 — nested surfaces */
+  --admin-line: light-dark(rgba(15, 23, 42, 0.12), rgba(148, 163, 184, 0.18));     /* slate-400 @ 0.18 — hairlines */
+  --admin-text: light-dark(var(--slate-900), var(--slate-100));                        /* slate-100 */
+  --admin-text-strong: light-dark(var(--slate-900), var(--slate-100));                        /* input/content text */
+  --admin-text-dim: light-dark(var(--slate-600), var(--slate-400));                        /* slate-400 */
 }
