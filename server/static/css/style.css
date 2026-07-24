@@ -9,11 +9,19 @@ html {
   color-scheme: dark;
 }
 
-html:has(body.admin-body) {
+/* Admin native controls + light-dark() token resolution follow the SAME
+ * dark-default / light-on-request track as the --admin-* tokens (色彩系統 v2
+ * Phase 2, Issue 120). Dark is the inherited default (html { color-scheme: dark }
+ * above); light applies only when explicitly requested or auto on a light OS.
+ * color-scheme inherits down to body.admin-body and its descendants, so
+ * light-dark() in tokens.css resolves to the theme actually painted. */
+html[data-theme="light"]:has(body.admin-body) {
   color-scheme: light;
 }
-html[data-theme="dark"]:has(body.admin-body) {
-  color-scheme: dark;
+@media (prefers-color-scheme: light) {
+  html:not([data-theme="dark"]):not([data-theme="light"]):has(body.admin-body) {
+    color-scheme: light;
+  }
 }
 
 /* Respect user's motion preference — disable animation for vestibular safety */
@@ -125,16 +133,14 @@ button:disabled,
   --hud-line: var(--admin-line);
   --hud-line-strong: rgba(15, 23, 42, 0.18);
   --hud-cyan-soft: rgba(56, 189, 248, 0.12);
-  color-scheme: light;
+  /* color-scheme is inherited from the html[...]:has(body.admin-body) rules
+   * near the top of this file — dark by default, light on request — so
+   * light-dark() tokens resolve to the painted theme. (色彩系統 v2 Phase 2.) */
 
   background: var(--admin-bg);
   min-height: 100vh;
   color: var(--admin-text);
   font-family: var(--font-ui);
-}
-
-html[data-theme="dark"] .admin-body {
-  color-scheme: dark;
 }
 
 .admin-app-shell {
