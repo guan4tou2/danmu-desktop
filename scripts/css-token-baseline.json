@@ -1,11 +1,38 @@
 {
-  "danmu-desktop/about.css": 2,
-  "danmu-desktop/child.css": 13,
-  "danmu-desktop/styles.css": 19,
-  "danmu-desktop/tailwind-input.css": 0,
-  "server/static/css/overlay.css": 71,
-  "server/static/css/style.css": 326,
-  "server/static/css/viewer-v2.css": 76,
-  "server/tailwind.input.css": 0,
-  "shared/hud.css": 126
+  "danmu-desktop/about.css": {
+    "hex": 2,
+    "gridPx": 0
+  },
+  "danmu-desktop/child.css": {
+    "hex": 13,
+    "gridPx": 4
+  },
+  "danmu-desktop/styles.css": {
+    "hex": 19,
+    "gridPx": 103
+  },
+  "danmu-desktop/tailwind-input.css": {
+    "hex": 0,
+    "gridPx": 0
+  },
+  "server/static/css/overlay.css": {
+    "hex": 71,
+    "gridPx": 21
+  },
+  "server/static/css/style.css": {
+    "hex": 326,
+    "gridPx": 831
+  },
+  "server/static/css/viewer-v2.css": {
+    "hex": 74,
+    "gridPx": 102
+  },
+  "server/tailwind.input.css": {
+    "hex": 0,
+    "gridPx": 0
+  },
+  "shared/hud.css": {
+    "hex": 126,
+    "gridPx": 295
+  }
 }
