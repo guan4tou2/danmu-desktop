@@ -142,17 +142,23 @@ test("admin light inputs have a dark strong text token", () => {
   const tokens = fs.readFileSync(path.join(REPO_ROOT, "shared/tokens.css"), "utf8");
   const adminCss = fs.readFileSync(path.join(REPO_ROOT, "server/static/css/style.css"), "utf8");
 
-  // shared/tokens.css is dark-default: the base :root block carries the
-  // dark-theme values directly, and :root[data-theme="light"] overrides them
-  // for light mode. Guard both halves of the same intent (admin text resolves
-  // to a bright color on dark, a dark color on light) against the new shape.
+  // shared/tokens.css migrated to light-dark() (color system v2 Phase 2): the
+  // two-track intent — admin text resolves to a bright color on dark, a dark
+  // color on light — is now carried by a single light-dark() declaration
+  // (light arm = --slate-900 dark ink, dark arm = --slate-100 bright) instead
+  // of a static :root value plus a :root[data-theme="light"] override block.
   const rootBlock = tokens.match(/:root\s*\{(?<body>[^}]*)\}/s);
   expect(rootBlock).not.toBeNull();
-  expect(rootBlock.groups.body).toMatch(/--admin-text:\s*#f1f5f9;/);
-  expect(rootBlock.groups.body).toMatch(/--admin-text-strong:\s*#f1f5f9;/);
-  expect(tokens).toMatch(
-    /:root\[data-theme="light"\]\s*\{[^}]*--admin-text:\s*#0f172a;[^}]*--admin-text-strong:\s*#0f172a;/s,
+  expect(rootBlock.groups.body).toMatch(
+    /--admin-text:\s*light-dark\(var\(--slate-900\),\s*var\(--slate-100\)\);/,
   );
+  expect(rootBlock.groups.body).toMatch(
+    /--admin-text-strong:\s*light-dark\(var\(--slate-900\),\s*var\(--slate-100\)\);/,
+  );
+  // The two arms keep their intended hex identity: slate-100 = #f1f5f9 (bright
+  // on dark), slate-900 = #0f172a (dark ink on light).
+  expect(tokens).toMatch(/--slate-100:\s*oklch\([^)]*\);\s*\/\*\s*#f1f5f9/);
+  expect(tokens).toMatch(/--slate-900:\s*oklch\([^)]*\);\s*\/\*\s*#0f172a/);
   expect(adminCss).toMatch(
     /\.admin-widget-input,\s*\.admin-widget-select,\s*\.admin-widget-textarea\s*\{[^}]*color:\s*var\(--admin-text-strong,\s*#f1f5f9\);/s,
   );
