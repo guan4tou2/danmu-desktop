@@ -414,7 +414,7 @@
       <div class="admin-notif-detail-head">
         <span class="admin-ui-monolabel">DETAIL</span>
         <span class="admin-ui-spacer"></span>
-        <button type="button" class="admin-ui-action admin-notif-detail-close" data-notif-action="close-detail" aria-label="關閉">✕</button>
+        <button type="button" class="admin-ui-action admin-notif-detail-close" data-notif-action="close-detail" aria-label="關閉">${window.AdminUtils.closeIcon}</button>
       </div>
       <div class="admin-ui-pill admin-notif-detail-sev ${_sevClassFor(it.sev)}">
         <span class="badge">${escapeHtml(sev.label)}</span>

@@ -19,6 +19,15 @@
  *               are NOT counted — they have no exact token, so flagging them
  *               would be noise. Element sizing (width/height/…) is excluded
  *               too — --space-* is a spacing semantic, not a dimension.
+ *   3. rgba   — bare rgb()/rgba() color literals that are NOT already the
+ *               fallback of a var(--token, rgba(...)) declaration. The folded
+ *               idiom var(--token, rgba(...)) is the *desired* end state (Batch
+ *               2a/2b, #120), so an rgba serving as a var() fallback does NOT
+ *               count — that means folding a bare literal into a token always
+ *               LOWERS this count (rewarding the retrofit), while a freshly
+ *               hardcoded rgba raises it (a regression). Like hex/gridPx this
+ *               does not force existing literals to zero; it locks in today's
+ *               count and only fails when a file grows.
  *
  * Design: this does NOT try to force the pre-existing values to zero in one
  * pass — a full sweep is out of scope for a lint gate (Issue #120 tracks the
@@ -126,17 +135,47 @@ function countGridPx(content) {
   return n;
 }
 
-function countFile(content) {
-  return { hex: countHexColors(content), gridPx: countGridPx(content) };
+// A bare rgb()/rgba() is a hardcoded color. One that appears as the fallback of
+// var(--token, rgba(...)) is already tokenized (the repo idiom) and must NOT
+// count — otherwise folding a literal into a token wouldn't lower the metric.
+// rgb()/rgba() args are plain numbers/percentages (no nested parens), so the
+// simple [^)]* body match is safe. Strip the folded idiom first, then tally what
+// remains. var(--a, var(--b, rgba(...))) nests the rgba one level deeper, so we
+// peel var(...) fallbacks repeatedly until the pass stops removing any.
+const VAR_FALLBACK_RGBA_RE = /var\(\s*--[\w-]+\s*,\s*rgba?\([^)]*\)\s*\)/gi;
+const BARE_RGBA_RE = /\brgba?\(/gi;
+
+function countBareRgba(content) {
+  let prev;
+  let src = content;
+  do {
+    prev = src;
+    src = src.replace(VAR_FALLBACK_RGBA_RE, "var(--tokenized)");
+  } while (src !== prev);
+  const matches = src.match(BARE_RGBA_RE);
+  return matches ? matches.length : 0;
 }
 
-// Baseline entries may be a legacy bare number (hex-only) or { hex, gridPx }.
-// Normalize to the object form; a legacy number grandfathers gridPx to
-// Infinity so the very first run before a --update migration can't fail on the
-// new metric.
+function countFile(content) {
+  return {
+    hex: countHexColors(content),
+    gridPx: countGridPx(content),
+    rgba: countBareRgba(content),
+  };
+}
+
+// Baseline entries may be a legacy bare number (hex-only) or
+// { hex, gridPx[, rgba] }. Normalize to the object form; any metric absent from
+// an older baseline is grandfathered to Infinity so the first run before an
+// --update migration can't fail on a newly-added metric.
 function normalizeBaselineEntry(entry) {
-  if (typeof entry === "number") return { hex: entry, gridPx: Infinity };
-  return { hex: entry?.hex ?? 0, gridPx: entry?.gridPx ?? Infinity };
+  if (typeof entry === "number")
+    return { hex: entry, gridPx: Infinity, rgba: Infinity };
+  return {
+    hex: entry?.hex ?? 0,
+    gridPx: entry?.gridPx ?? Infinity,
+    rgba: entry?.rgba ?? Infinity,
+  };
 }
 
 function relPath(p) {
@@ -189,7 +228,7 @@ function main() {
 
   for (const [file, count] of Object.entries(current)) {
     const before = normalizeBaselineEntry(baseline[file] ?? 0);
-    for (const metric of ["hex", "gridPx"]) {
+    for (const metric of ["hex", "gridPx", "rgba"]) {
       if (count[metric] > before[metric]) {
         regressions.push({
           file,
@@ -206,12 +245,14 @@ function main() {
   // actually contain something to flag — a brand-new file with zero of both
   // metrics is fine.
   const newFilesWithValues = Object.keys(current).filter(
-    (f) => !(f in baseline) && (current[f].hex > 0 || current[f].gridPx > 0),
+    (f) =>
+      !(f in baseline) &&
+      (current[f].hex > 0 || current[f].gridPx > 0 || current[f].rgba > 0),
   );
 
   if (regressions.length === 0 && newFilesWithValues.length === 0) {
     console.log(
-      `✓ check-css-tokens: no new hardcoded hex colors or token-able px (${Object.keys(current).length} CSS files checked against baseline)`,
+      `✓ check-css-tokens: no new hardcoded hex colors, token-able px, or bare rgba (${Object.keys(current).length} CSS files checked against baseline)`,
     );
     return;
   }
@@ -222,6 +263,7 @@ function main() {
   const label = {
     hex: "hex colors → use var(--color-...)",
     gridPx: "token-able px (font-size/spacing) → use var(--text-*/--space-*)",
+    rgba: "bare rgb()/rgba() → fold into var(--token, rgba(...))",
   };
   for (const r of regressions) {
     console.error(
@@ -230,7 +272,7 @@ function main() {
   }
   for (const f of newFilesWithValues) {
     console.error(
-      `  ${f}: new file with ${current[f].hex} hex / ${current[f].gridPx} token-able px not yet in baseline. Use tokens where possible, then run 'node scripts/check-css-tokens.mjs --update' to record the intentional baseline.`,
+      `  ${f}: new file with ${current[f].hex} hex / ${current[f].gridPx} token-able px / ${current[f].rgba} bare rgba not yet in baseline. Use tokens where possible, then run 'node scripts/check-css-tokens.mjs --update' to record the intentional baseline.`,
     );
   }
   console.error(

@@ -202,7 +202,7 @@
       <header class="admin-msgd-v4__topbar">
         <span class="admin-msgd-v4__kicker">MESSAGE DETAIL</span>
         <span class="admin-msgd-v4__spacer"></span>
-        <button type="button" class="admin-msgd-v4__close" data-msgd-action="close" title="關閉 · Esc">✕</button>
+        <button type="button" class="admin-msgd-v4__close" data-msgd-action="close" title="關閉 · Esc">${window.AdminUtils.closeIcon}</button>
       </header>
 
       <div class="admin-msgd-v4__header">

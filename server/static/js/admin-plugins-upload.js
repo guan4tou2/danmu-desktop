@@ -49,7 +49,7 @@
       <div class="admin-pu-modal" role="dialog" aria-label="上傳插件">
         <header class="admin-pu-head">
           <span class="admin-ui-monolabel" style="color:var(--color-primary)">上傳插件</span>
-          <button type="button" class="admin-pu-close" aria-label="關閉" data-pu-close>✕</button>
+          <button type="button" class="admin-pu-close" aria-label="關閉" data-pu-close>${window.AdminUtils.closeIcon}</button>
         </header>
         <nav class="admin-pu-steps" data-pu-steps aria-label="安裝進度"></nav>
         <div class="admin-pu-body" data-pu-body></div>

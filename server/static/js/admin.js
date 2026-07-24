@@ -946,8 +946,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <button type="button" class="admin-dash-qa-cta is-amber" data-qa-poll-expand>新建 ▶</button>
                                       </div>
                                       <div class="admin-dash-qp-options admin-dash-qa-options" data-qp="options" hidden>
-                                        <div class="admin-dash-qp-row"><span class="key">A</span><input type="text" placeholder="選項 A" maxlength="60" /><button type="button" class="rm" data-qp-rm hidden>✕</button></div>
-                                        <div class="admin-dash-qp-row"><span class="key">B</span><input type="text" placeholder="選項 B" maxlength="60" /><button type="button" class="rm" data-qp-rm hidden>✕</button></div>
+                                        <div class="admin-dash-qp-row"><span class="key">A</span><input type="text" placeholder="選項 A" maxlength="60" /><button type="button" class="rm" data-qp-rm hidden>${window.AdminUtils.closeIcon}</button></div>
+                                        <div class="admin-dash-qp-row"><span class="key">B</span><input type="text" placeholder="選項 B" maxlength="60" /><button type="button" class="rm" data-qp-rm hidden>${window.AdminUtils.closeIcon}</button></div>
                                       </div>
                                       <div class="admin-dash-qp-foot" data-qa-poll-foot hidden>
                                         <a href="#" class="admin-dash-qp-add" data-qp-add>+ 新增選項</a>

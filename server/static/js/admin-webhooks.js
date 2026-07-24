@@ -560,7 +560,7 @@
         '<span class="dot" style="background:' + dotColor + ';box-shadow:0 0 6px ' + dotColor + '"></span>' +
         '<span class="name">' + _escHtml(_formatHostname(hook.url)) + '</span>' +
         '<span class="admin-ui-spacer" aria-hidden="true"></span>' +
-        '<button type="button" class="admin-ui-action admin-wh-detail-close" data-wh-action="close-detail" aria-label="關閉">✕</button>' +
+        '<button type="button" class="admin-ui-action admin-wh-detail-close" data-wh-action="close-detail" aria-label="關閉">' + window.AdminUtils.closeIcon + '</button>' +
       '</div>' +
       '<div class="admin-ui-monolabel admin-wh-detail-label">事件訂閱</div>' +
       '<div class="admin-wh-detail-events">' + eventsHtml + '</div>' +
