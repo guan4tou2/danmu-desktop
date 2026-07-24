@@ -1,38 +1,47 @@
 {
   "danmu-desktop/about.css": {
     "hex": 2,
-    "gridPx": 0
+    "gridPx": 0,
+    "rgba": 4
   },
   "danmu-desktop/child.css": {
     "hex": 13,
-    "gridPx": 4
+    "gridPx": 4,
+    "rgba": 10
   },
   "danmu-desktop/styles.css": {
     "hex": 19,
-    "gridPx": 103
+    "gridPx": 103,
+    "rgba": 161
   },
   "danmu-desktop/tailwind-input.css": {
     "hex": 0,
-    "gridPx": 0
+    "gridPx": 0,
+    "rgba": 0
   },
   "server/static/css/overlay.css": {
     "hex": 71,
-    "gridPx": 21
+    "gridPx": 21,
+    "rgba": 41
   },
   "server/static/css/style.css": {
     "hex": 326,
-    "gridPx": 831
+    "gridPx": 831,
+    "rgba": 441
   },
   "server/static/css/viewer-v2.css": {
     "hex": 74,
-    "gridPx": 102
+    "gridPx": 102,
+    "rgba": 77
   },
   "server/tailwind.input.css": {
     "hex": 0,
-    "gridPx": 0
+    "gridPx": 0,
+    "rgba": 0
   },
   "shared/hud.css": {
     "hex": 126,
-    "gridPx": 295
+    "gridPx": 295,
+    "rgba": 180
   }
 }
