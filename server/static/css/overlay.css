@@ -115,7 +115,7 @@ body {
   line-height: 1;
   filter:
     drop-shadow(0 10px 15px rgba(0, 0, 0, 0.45))
-    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+    drop-shadow(0 4px 6px var(--shadow-base, rgba(0, 0, 0, 0.3)));
 }
 
 .overlay-idle-subtitle {

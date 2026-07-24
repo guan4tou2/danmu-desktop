@@ -270,7 +270,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-marquee {
   line-height: 1;
   filter:
     drop-shadow(0 10px 15px rgba(0, 0, 0, 0.45))
-    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+    drop-shadow(0 4px 6px var(--shadow-base, rgba(0, 0, 0, 0.3)));
 }
 
 /* Light theme — design v4 brief 0518-v3 #3 fix (2026-05-18).
@@ -1701,7 +1701,7 @@ body.viewer-has-topstrip .viewer-topstrip {
   background: linear-gradient(
     180deg,
     rgba(248, 113, 113, 0.08) 0%,
-    rgba(15, 23, 42, 0.75) 100%
+    var(--color-bg-card, rgba(15, 23, 42, 0.75)) 100%
   );
 }
 .viewer-offline-lockup {
@@ -2047,7 +2047,7 @@ body[data-viewer-state] {
 .viewer-nickname-chip:hover,
 .viewer-nickname-chip[aria-expanded="true"] {
   background: rgba(56, 189, 248, 0.18);
-  border-color: rgba(56, 189, 248, 0.6);
+  border-color: var(--glow-primary-lg, rgba(56, 189, 248, 0.6));
 }
 
 /* Light theme — design v4 brief 0518-v3 #3 fix (2026-05-18).
@@ -2164,7 +2164,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
   background: var(--hud-bg1);
   border-top: 2px solid var(--color-primary);
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 -12px 48px var(--color-overlay, rgba(0, 0, 0, 0.6));
   transform: translateY(100%);
   transition: transform var(--motion-normal, 180ms) var(--ease-out, ease);
   pointer-events: auto;
@@ -2358,7 +2358,7 @@ body.viewer-body-v2.is-dark .viewer-theme-chip-seg {
 .viewer-poll-dot.is-current {
   background: var(--color-primary);
   width: 20px;
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 8px var(--glow-primary-ring, rgba(56, 189, 248, 0.5));
 }
 
 /* Auto-mode timer bar — sits between options and dots. */

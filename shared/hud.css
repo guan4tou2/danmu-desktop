@@ -271,7 +271,7 @@
   line-height: 1;
   filter:
     drop-shadow(0 10px 15px rgba(0, 0, 0, 0.45))
-    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+    drop-shadow(0 4px 6px var(--shadow-base, rgba(0, 0, 0, 0.3)));
 }
 
 .hud-hero-title.is-hero {
@@ -284,7 +284,7 @@
 
 .hud-hero-title.is-medium {
   font-size: 2rem;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 4px 6px var(--shadow-base, rgba(0, 0, 0, 0.3)));
 }
 
 /* D4 — the brand lockup's drop-shadow is tuned for the dark viewer / overlay
@@ -312,7 +312,7 @@
 html[data-theme="dark"] .admin-body .hud-hero-title {
   filter:
     drop-shadow(0 10px 15px rgba(0, 0, 0, 0.45))
-    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+    drop-shadow(0 4px 6px var(--shadow-base, rgba(0, 0, 0, 0.3)));
 }
 
 /* HeroInline — compact sidebar / header variant. Bebas Neue at 1.5rem. */
@@ -2807,7 +2807,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: var(--admin-panel, #0b1220);
   border: 1px solid var(--admin-line, #1e293b);
   border-radius: 10px;
-  box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.6),
+  box-shadow: 0 20px 60px -10px var(--color-overlay, rgba(0, 0, 0, 0.6)),
               0 0 0 1px rgba(56, 189, 248, 0.18);
   overflow: hidden;
   animation: admin-cmdk-slide 160ms ease-out;
@@ -2861,7 +2861,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--color-primary);
-  border: 1px solid rgba(56, 189, 248, 0.4);
+  border: 1px solid var(--glow-primary, rgba(56, 189, 248, 0.4));
   border-radius: var(--radius-sm);
   padding: 2px 8px;
   letter-spacing: 1px;
@@ -3927,7 +3927,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   font-size: 42px;
   font-weight: 700;
   flex-shrink: 0;
-  box-shadow: 0 0 24px rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 24px var(--glow-primary, rgba(56, 189, 248, 0.4));
 }
 .admin-polls-results-winner .info { flex: 1; min-width: 0; }
 .admin-polls-results-winner .kicker {
@@ -4506,7 +4506,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-broadcast-bigdot {
   width: 56px; height: 56px; flex-shrink: 0;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--color-overlay, rgba(0, 0, 0, 0.6));
   border: 2px solid rgba(125, 211, 252, 0.85);
   box-shadow: 0 0 24px rgba(125, 211, 252, 0.55);
   display: flex; align-items: center; justify-content: center;
