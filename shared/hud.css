@@ -3323,7 +3323,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-dsp2-preview-pill-2 {
   top: 96px; left: 40px;
-  color: #FCD34D !important;
+  color: #FCD34D;
   text-shadow: 0 0 14px rgba(252, 211, 77, 0.5);
 }
 .admin-dsp2-preview-tag {
@@ -4423,16 +4423,20 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 
 .admin-bc-v5__confirm-hint {
-  /* Same shape as v4 but neutral (not crimson) — pivot tones it down. */
-  background: rgba(148, 163, 184, 0.05) !important;
+  /* Same shape as v4 but neutral (not crimson) — pivot tones it down.
+   * border keeps !important: it overrides a competing border-color rule
+   * (verified — removing it flips the color). bg/color do not compete. */
+  background: rgba(148, 163, 184, 0.05);
   border: 1px solid var(--hud-line) !important;
-  color: var(--hud-text-dim, #94a3b8) !important;
+  color: var(--hud-text-dim, #94a3b8);
 }
 
 .admin-bc-v5__secondary {
-  /* Override v4 grid-cols-3 with grid-cols-2 (archive button removed) */
-  display: grid !important;
-  grid-template-columns: 1fr 1fr !important;
+  /* Override v4 grid-cols-3 with grid-cols-2 (archive button removed).
+   * hud.css loads after tailwind so equal-specificity source order already
+   * wins — !important was vestigial here (verified). */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
 }
 @media (max-width: 720px) {
   .admin-bc-v5__secondary { grid-template-columns: 1fr !important; }
