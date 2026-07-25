@@ -126,7 +126,7 @@ img{
   margin-top: 26px;
   display: inline-flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-4);
   padding: 10px 20px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
@@ -145,7 +145,7 @@ img{
 
 .overlay-idle-chip-label {
   font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 12px;
+  font-size: var(--text-xs);
   letter-spacing: 2px;
   color: var(--color-primary, #38bdf8);
   text-transform: uppercase;
@@ -178,7 +178,7 @@ img{
 }
 
 .overlay-idle-url {
-  margin-top: 12px;
+  margin-top: var(--space-3);
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
   letter-spacing: 2px;
