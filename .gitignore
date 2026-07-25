@@ -170,3 +170,8 @@ server/webhooks.json
 
 # Retro snapshots (local history, not shipped)
 .context/
+
+# Local pre-edit backups（維護協議 docs/agent-ops/40 要求改檔前 cp X X.bak；那是本機安全網，不是 source）
+*.bak
+*.bak[0-9]
+*.bak-*
