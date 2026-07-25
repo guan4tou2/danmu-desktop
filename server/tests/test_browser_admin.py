@@ -640,6 +640,36 @@ def test_widgets_create_label(admin_page):
         assert widget_cards.count() >= 1, "Should have at least one widget after creation"
 
 
+# ─── Moderation queue polling ─────────────────────────────────────────────────
+
+
+def test_modqueue_does_not_storm_the_list_endpoint(admin_page):
+    """`#/moderation` 只能按 REFRESH_MS(4s) 的節奏輪詢 /admin/modqueue/list。
+
+    回歸守門（2026-07-26）：admin-modqueue.js 的 `_syncVisibility()` 由一個監看
+    整個 body 的 MutationObserver 呼叫，而它原本無條件 `_fetch()` —— fetch 回來
+    後 render 改 DOM，DOM 變動又觸發 observer，形成自我餵食的迴圈。實測在
+    #/moderation 上 1.2 秒內打了 286 次 /admin/modqueue/list（伺服器以 429 擋
+    下）。修法是只在「不可見→可見」的轉換時 fetch 一次，之後交給輪詢 timer。
+
+    2.5 秒的觀察窗小於一個 REFRESH_MS 週期，所以正常情況是 1 次（進場那次），
+    容忍到 3 次以吸收導航過程中的重複觸發；風暴會是數十到數百次，兩者差距夠大，
+    這個門檻不會因為時序抖動而誤判。
+    """
+    calls = []
+    admin_page.on(
+        "request",
+        lambda r: calls.append(r.url) if "/admin/modqueue/list" in r.url else None,
+    )
+    admin_page.evaluate('() => { window.location.hash = "#/moderation"; }')
+    admin_page.wait_for_timeout(2500)
+
+    assert len(calls) <= 3, (
+        f"/admin/modqueue/list 在 2.5s 內被呼叫 {len(calls)} 次 —— "
+        f"_syncVisibility 又在每次 MutationObserver 觸發時 fetch 了"
+    )
+
+
 # ─── Metrics API ───────────────────────────────────────────────────────────────
 
 
