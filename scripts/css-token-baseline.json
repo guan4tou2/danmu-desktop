@@ -6,12 +6,12 @@
   },
   "danmu-desktop/child.css": {
     "hex": 13,
-    "gridPx": 4,
+    "gridPx": 1,
     "rgba": 7
   },
   "danmu-desktop/styles.css": {
     "hex": 19,
-    "gridPx": 103,
+    "gridPx": 22,
     "rgba": 137
   },
   "danmu-desktop/tailwind-input.css": {
