@@ -117,6 +117,13 @@ app.whenReady().then(() => {
 
   let trayStatusText = "⊘ 未連線";
   let trayServerUrl = "";
+  // Overlay state read by rebuildTrayMenu() below. Declared here — BEFORE the
+  // first rebuildTrayMenu() call — because `let` is in its temporal dead zone
+  // until its declaration executes; the first call used to run before these
+  // and threw "Cannot access '…' before initialization" as an unhandled
+  // rejection at startup.
+  let idleActive = false;
+  let overlayVisible = true; // tracks show/hide (not create/destroy)
 
   // Broadcast an overlay-idle-toggle message to every live child window.
   // mode: 'show' | 'hide' | 'toggle'
@@ -268,9 +275,6 @@ app.whenReady().then(() => {
 
   rebuildTrayMenu();
   tray.setToolTip("Danmu Desktop");
-
-  let idleActive = false;
-  let overlayVisible = true; // tracks show/hide (not create/destroy)
 
   // Reset overlayVisible when overlay windows are created or destroyed
   // externally (e.g. from renderer "Start" / "Stop" buttons via ipc-handlers).
