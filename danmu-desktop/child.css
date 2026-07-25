@@ -109,7 +109,7 @@ img{
   line-height: 1;
   filter:
     drop-shadow(0 10px 15px rgba(0, 0, 0, 0.45))
-    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+    drop-shadow(0 4px 6px var(--shadow-base, rgba(0, 0, 0, 0.3)));
 }
 
 .overlay-idle-subtitle {
@@ -129,8 +129,8 @@ img{
   gap: 16px;
   padding: 10px 20px;
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(56, 189, 248, 0.45);
-  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
+  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
 }
 
 .overlay-idle-chip-dot {

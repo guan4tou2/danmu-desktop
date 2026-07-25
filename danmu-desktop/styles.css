@@ -292,7 +292,7 @@ details summary svg {
   padding: 0 12px;
   height: 36px;
   background: rgba(15, 23, 42, 0.92);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  border-bottom: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   font-family: "JetBrains Mono", ui-monospace, monospace;
@@ -379,8 +379,8 @@ body[data-os="mac"] .client-titlebar {
   gap: 5px;
   padding: 3px 9px;
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(56, 189, 248, 0.45);
-  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
+  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
   color: var(--color-primary);
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 9px;
@@ -461,7 +461,7 @@ body[data-os="mac"] .client-titlebar {
   padding: 10px 12px;
   border-radius: var(--radius-md-sm);
   background: rgba(15, 23, 42, 0.55);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   font-size: 12px;
   line-height: 1.6;
   color: rgba(241, 245, 249, 0.85);
@@ -485,7 +485,7 @@ body[data-os="mac"] .client-titlebar {
   flex: 1 1 auto;
   height: 6px;
   border-radius: var(--radius-pill);
-  background: rgba(148, 163, 184, 0.18);
+  background: var(--hud-line, rgba(148, 163, 184, 0.18));
   overflow: hidden;
 }
 
@@ -550,7 +550,7 @@ body[data-os="mac"] .client-titlebar {
 .client-sidebar {
   flex: 0 0 168px;
   background: rgba(15, 23, 42, 0.85);
-  border-right: 1px solid rgba(148, 163, 184, 0.18);
+  border-right: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   padding: 10px;
@@ -590,7 +590,7 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-nav-btn.is-active {
-  background: rgba(56, 189, 248, 0.12);
+  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
   color: var(--color-primary);
 }
 
@@ -703,7 +703,7 @@ body[data-os="mac"] .client-titlebar {
 /* Shortcuts list */
 .client-keys-card {
   background: rgba(15, 23, 42, 0.55);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   border-radius: var(--radius-md);
   padding: 14px;
   backdrop-filter: blur(8px);
@@ -726,9 +726,9 @@ body[data-os="mac"] .client-titlebar {
 
 .client-keys-row .kbd {
   padding: 4px 10px;
-  border: 1px solid rgba(56, 189, 248, 0.45);
+  border: 1px solid var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
   border-radius: var(--radius-sm);
-  background: rgba(56, 189, 248, 0.12);
+  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 12px;
   letter-spacing: 1px;
@@ -749,7 +749,7 @@ body[data-os="mac"] .client-titlebar {
   align-items: center;
   gap: 14px;
   padding: 16px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   border-radius: var(--radius-md);
   background: rgba(15, 23, 42, 0.5);
   margin-bottom: 14px;
@@ -789,7 +789,7 @@ body[data-os="mac"] .client-titlebar {
 .client-update-check-btn {
   padding: 8px 16px;
   background: transparent;
-  border: 1px solid rgba(56, 189, 248, 0.45);
+  border: 1px solid var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
   border-radius: var(--radius-md-sm);
   color: var(--color-primary);
   font-family: "JetBrains Mono", ui-monospace, monospace;
@@ -799,13 +799,13 @@ body[data-os="mac"] .client-titlebar {
   transition: background var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 .client-update-check-btn:hover {
-  background: rgba(56, 189, 248, 0.12);
+  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
   color: var(--color-text-primary);
 }
 
 .client-update-prefs {
   padding: 14px 16px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   border-radius: var(--radius-md);
   background: rgba(15, 23, 42, 0.5);
   margin-bottom: 14px;
@@ -841,7 +841,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-update-changelog {
   padding: 14px 16px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   border-radius: var(--radius-md);
   background: rgba(15, 23, 42, 0.5);
 }
@@ -877,7 +877,7 @@ body[data-os="mac"] .client-titlebar {
 /* About card */
 .client-about-card {
   background: rgba(15, 23, 42, 0.55);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   border-radius: var(--radius-md);
   padding: 20px;
   display: flex;
@@ -953,7 +953,7 @@ body[data-os="mac"] .client-titlebar {
 .client-about-desc {
   padding: 14px;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   background: rgba(15, 23, 42, 0.45);
   font-size: 12px;
   line-height: 1.7;
@@ -986,7 +986,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-card {
   padding: 14px;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   background: rgba(15, 23, 42, 0.55);
   backdrop-filter: blur(8px);
 }
@@ -1063,7 +1063,7 @@ body[data-os="mac"] .client-titlebar {
   padding: 10px 12px;
   background: rgba(15, 23, 42, 0.4);
   border-radius: var(--radius-md-sm);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   cursor: text;
   transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
@@ -1166,7 +1166,7 @@ body[data-os="mac"] .client-titlebar {
   padding: 5px 14px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-primary);
-  background: rgba(56, 189, 248, 0.12);
+  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
   color: var(--color-primary);
   font-family: ui-sans-serif, system-ui, "PingFang TC", sans-serif;
   font-size: 11px;
@@ -1249,7 +1249,7 @@ body[data-os="mac"] .client-titlebar {
   padding: 8px 12px;
   background: rgba(15, 23, 42, 0.4);
   border-radius: var(--radius-md-sm);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
 }
 
 .client-conn-last-addr {
@@ -1493,7 +1493,7 @@ body[data-os="mac"] .client-titlebar {
 .client-overlay-card {
   padding: 14px;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   background: rgba(15, 23, 42, 0.55);
   backdrop-filter: blur(8px);
   display: flex;
@@ -1634,7 +1634,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-screen-chip.is-active {
   border-color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.12);
+  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
 }
 
 .client-screen-chip.is-active .box {
@@ -1737,7 +1737,7 @@ body[data-os="mac"] .client-titlebar {
   position: fixed;
   inset: 0;
   z-index: 9000;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--color-overlay, rgba(0, 0, 0, 0.6));
   display: flex;
   align-items: center;
   justify-content: center;

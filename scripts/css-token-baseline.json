@@ -2,17 +2,17 @@
   "danmu-desktop/about.css": {
     "hex": 2,
     "gridPx": 0,
-    "rgba": 4
+    "rgba": 3
   },
   "danmu-desktop/child.css": {
     "hex": 13,
     "gridPx": 4,
-    "rgba": 10
+    "rgba": 7
   },
   "danmu-desktop/styles.css": {
     "hex": 19,
     "gridPx": 103,
-    "rgba": 161
+    "rgba": 137
   },
   "danmu-desktop/tailwind-input.css": {
     "hex": 0,
