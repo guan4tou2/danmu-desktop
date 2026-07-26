@@ -334,13 +334,7 @@
       </div>
       <div class="admin-bancfm-warn">⚠ 該指紋下所有訊息將被遮罩，該指紋將被加入黑名單。</div>`;
 
-    if (!window.HudConfirm) {
-      // Fallback to native confirm if helper hasn't loaded yet.
-      if (confirm("確定封禁此指紋？該指紋之後在本場發出的訊息會自動遮罩。")) {
-        return _banFingerprint("");
-      }
-      return;
-    }
+    if (!window.HudConfirm) return;
     const ok = await window.HudConfirm.open({
       icon: "⊘",
       title: "封禁確認",
@@ -370,7 +364,15 @@
     // /admin/live/block with type=keyword on the message text).
     const text = _state.entry && _state.entry.data && _state.entry.data.text;
     if (!text) return;
-    if (!confirm("把此訊息加入黑名單關鍵字？")) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⊘",
+      title: "加入黑名單關鍵字",
+      subtitle: "BLACKLIST KEYWORD · FUTURE MATCHES BLOCKED",
+      severity: "danger",
+      body: "之後包含這段文字的訊息都會被擋下。",
+      confirmLabel: "加入黑名單",
+    });
+    if (!ok) return;
     try {
       const r = await window.csrfFetch("/admin/live/block", {
         method: "POST",

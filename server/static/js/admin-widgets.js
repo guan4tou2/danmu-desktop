@@ -192,7 +192,15 @@
 
     async function deleteWidget(id) {
       const t = window.ServerI18n?.t?.("widgetDeleteConfirm") || "刪除這個小工具?";
-      if (!confirm(t)) return;
+      const ok = await window.HudConfirm?.open({
+        icon: "⊘",
+        title: "刪除小工具",
+        subtitle: "DELETE WIDGET",
+        severity: "danger",
+        body: t,
+        confirmLabel: "刪除",
+      });
+      if (!ok) return;
       try {
         await api("delete", "POST", { id });
         loadWidgets();
@@ -221,7 +229,15 @@
 
     async function clearAllWidgets() {
       const t = window.ServerI18n?.t?.("widgetClearConfirm") || "清除所有小工具?";
-      if (!confirm(t)) return;
+      const ok = await window.HudConfirm?.open({
+        icon: "⊘",
+        title: "清除所有小工具",
+        subtitle: "CLEAR ALL WIDGETS · THIS ACTION CANNOT BE UNDONE",
+        severity: "danger",
+        body: t,
+        confirmLabel: "全部清除",
+      });
+      if (!ok) return;
       try {
         await api("clear", "POST", {});
         loadWidgets();

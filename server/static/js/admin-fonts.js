@@ -647,7 +647,15 @@
   }
 
   async function handleDelete(name) {
-    if (!confirm(ServerI18n.t("deleteFontConfirm").replace("{name}", name))) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⊘",
+      title: "刪除字型",
+      subtitle: "DELETE FONT",
+      severity: "danger",
+      body: ServerI18n.t("deleteFontConfirm").replace("{name}", name),
+      confirmLabel: "刪除",
+    });
+    if (!ok) return;
     try {
       var resp = await window.csrfFetch("/admin/fonts/" + encodeURIComponent(name), { method: "DELETE" });
       var data = await resp.json();

@@ -758,7 +758,7 @@
         if (e.target.matches("[data-ed-timer]")) { q.timer = +e.target.value; persist(); renderQueue(); }
         else if (e.target.matches("[data-ed-multi]")) { q.multi = e.target.checked; persist(); }
       });
-      editorEl.addEventListener("click", (e) => {
+      editorEl.addEventListener("click", async (e) => {
         const q = findQ(activeId);
         if (!q) return;
         const cropBtn = e.target.closest("[data-ed-crop]");
@@ -782,11 +782,21 @@
         const act = e.target.closest("[data-ed-action]");
         if (act) {
           if (act.dataset.edAction === "remove-q") {
-            if (queue.length > 1 && confirm("刪除此題目?")) {
-              const idx = queue.findIndex(q2 => q2.id === activeId);
-              queue = queue.filter(q2 => q2.id !== activeId);
-              activeId = queue[Math.min(idx, queue.length - 1)].id;
-              persist(); render();
+            if (queue.length > 1) {
+              const ok = await window.HudConfirm?.open({
+                icon: "⊘",
+                title: "刪除題目",
+                subtitle: "REMOVE QUESTION · DRAFT ONLY",
+                severity: "warn",
+                body: "從這份草稿中移除目前這一題。尚未開始的投票不受影響。",
+                confirmLabel: "刪除題目",
+              });
+              if (ok) {
+                const idx = queue.findIndex(q2 => q2.id === activeId);
+                queue = queue.filter(q2 => q2.id !== activeId);
+                activeId = queue[Math.min(idx, queue.length - 1)].id;
+                persist(); render();
+              }
             }
           } else if (act.dataset.edAction === "start-this") {
             startAt(queue.findIndex(q2 => q2.id === activeId));

@@ -233,7 +233,15 @@
     const display =
       type === "keyword" ? truncate(value, 30) : value.slice(0, FP_DISPLAY_LEN);
 
-    if (!confirm(ServerI18n.t("blockConfirm").replace("{label}", label).replace("{display}", display))) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⊘",
+      title: "封鎖",
+      subtitle: "BLOCK · FUTURE MESSAGES ARE FILTERED",
+      severity: "danger",
+      body: ServerI18n.t("blockConfirm").replace("{label}", label).replace("{display}", display),
+      confirmLabel: "封鎖",
+    });
+    if (!ok) return;
 
     try {
       const resp = await window.csrfFetch("/admin/live/block", {
@@ -271,7 +279,15 @@
       .map((id) => entries.find((e) => e.id === id))
       .filter(Boolean);
     if (targets.length === 0) return;
-    if (!confirm(`批次遮罩 ${targets.length} 則訊息 (依指紋)?`)) return;
+    const confirmed = await window.HudConfirm?.open({
+      icon: "⊘",
+      title: "批次遮罩訊息",
+      subtitle: "BULK MASK · BY FINGERPRINT",
+      severity: "danger",
+      body: `將依指紋遮罩 <b>${targets.length}</b> 則訊息。`,
+      confirmLabel: "批次遮罩",
+    });
+    if (!confirmed) return;
 
     let ok = 0;
     for (const t of targets) {

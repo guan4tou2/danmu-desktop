@@ -261,7 +261,15 @@
       return;
     }
     if (action === "delete") {
-      if (!confirm("確定刪除此貼圖包?所有貼圖都會一起刪除。")) return;
+      const ok = await window.HudConfirm?.open({
+        icon: "⊘",
+        title: "刪除貼圖包",
+        subtitle: "DELETE PACK · ALL STICKERS INSIDE ARE REMOVED",
+        severity: "danger",
+        body: "這個貼圖包內的所有貼圖都會一起刪除，無法復原。",
+        confirmLabel: "刪除貼圖包",
+      });
+      if (!ok) return;
       try {
         var dr = await window.csrfFetch("/admin/stickers/packs/" + encodeURIComponent(packId), {
           method: "DELETE",
@@ -384,7 +392,15 @@
   // ─── Delete ────────────────────────────────────────────────────────
 
   async function handleDelete(name) {
-    if (!confirm(ServerI18n.t("deleteStickerConfirm").replace("{name}", name))) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⊘",
+      title: "刪除貼圖",
+      subtitle: "DELETE STICKER",
+      severity: "danger",
+      body: ServerI18n.t("deleteStickerConfirm").replace("{name}", name),
+      confirmLabel: "刪除",
+    });
+    if (!ok) return;
     try {
       var resp = await window.csrfFetch("/admin/stickers/" + encodeURIComponent(name), {
         method: "DELETE",

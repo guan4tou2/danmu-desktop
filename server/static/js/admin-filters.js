@@ -386,7 +386,15 @@
   }
 
   async function deleteRule(ruleId) {
-    if (!confirm(t("confirmDeleteRule", "Delete this filter rule?"))) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⊘",
+      title: "刪除過濾規則",
+      subtitle: "DELETE FILTER RULE",
+      severity: "danger",
+      body: t("confirmDeleteRule", "Delete this filter rule?"),
+      confirmLabel: "刪除",
+    });
+    if (!ok) return;
     try {
       const resp = await csrfFetch("/admin/filters/remove", {
         method: "POST",

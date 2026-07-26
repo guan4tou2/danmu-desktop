@@ -172,7 +172,15 @@
   }
 
   async function _regenerateToken() {
-    if (!confirm("產生新的 Fire Token 會讓現有 extension 立即失效，要繼續嗎？")) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⟳",
+      title: "重新產生 Fire Token",
+      subtitle: "ROTATE · EXISTING EXTENSIONS STOP WORKING IMMEDIATELY",
+      severity: "warn",
+      body: "目前所有使用舊 Token 的 extension 會立刻失去存取權，需要重新設定新的 Token。",
+      confirmLabel: "產生新 Token",
+    });
+    if (!ok) return;
     try {
       const r = await window.csrfFetch("/admin/integrations/fire-token/regenerate", { method: "POST" });
       if (!r.ok) throw new Error("HTTP " + r.status);
@@ -194,7 +202,15 @@
   }
 
   async function _revokeToken() {
-    if (!confirm("撤銷 Fire Token 會立刻停用所有 extension，要繼續嗎？")) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⊘",
+      title: "撤銷 Fire Token",
+      subtitle: "REVOKE · ALL EXTENSIONS STOP WORKING",
+      severity: "danger",
+      body: "所有 extension 會立即停止運作，直到你產生新的 Token 並重新設定它們。",
+      confirmLabel: "撤銷",
+    });
+    if (!ok) return;
     try {
       const r = await window.csrfFetch("/admin/integrations/fire-token/revoke", { method: "POST" });
       if (!r.ok) throw new Error("HTTP " + r.status);

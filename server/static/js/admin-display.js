@@ -797,7 +797,14 @@
       FontFamily: [false, "", "", "NotoSansTC"],
       Layout:     [true, "", "", "scroll"],
     };
-    const ok = window.confirm(t("displayRevertConfirm", "還原預設將覆寫目前設定，確定？"));
+    const ok = await window.HudConfirm?.open({
+      icon: "↩",
+      title: "還原預設值",
+      subtitle: "REVERT TO DEFAULTS · OVERWRITES CURRENT SETTINGS",
+      severity: "warn",
+      body: t("displayRevertConfirm", "還原預設將覆寫目前設定，確定？"),
+      confirmLabel: "還原預設",
+    });
     if (!ok) return;
     try {
       for (const [k, target] of Object.entries(presets)) {

@@ -395,8 +395,7 @@
       const elapsedStr = fmtDuration(elapsedMs);
       const msgs = _serverState.total_messages || 0;
       const fp = _uniqueFp.toLocaleString();
-      const ok = window.HudConfirm
-        ? await window.HudConfirm.open({
+      const ok = await window.HudConfirm?.open({
             icon: "■",
             title: "停止顯示",
             subtitle: "STOP DESKTOP · MESSAGES CONTINUE TO BE RECEIVED",
@@ -416,8 +415,7 @@
             confirmLabel: "停止顯示",
             cancelLabel: "取消",
             width: 440,
-          })
-        : confirm("確定要停止顯示嗎？訊息會繼續接收，但 Desktop 不再渲染。");
+          });
       if (!ok) return;
       // Stop overlay rendering; session lifecycle stays separate.
       const success = await postToggle("standby");
@@ -438,7 +436,15 @@
   }
 
   async function onClearClick() {
-    if (!confirm("清空 Desktop 螢幕上目前顯示的所有彈幕？")) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⌫",
+      title: "清空 Desktop 畫面",
+      subtitle: "CLEAR SCREEN · MESSAGES STAY ARCHIVED",
+      severity: "warn",
+      body: "只清掉目前顯示在 Desktop 上的彈幕，已歸檔的訊息記錄不受影響。",
+      confirmLabel: "清空畫面",
+    });
+    if (!ok) return;
     try {
       const r = await window.csrfFetch("/admin/overlay/clear", { method: "POST" });
       if (r.ok) window.showToast && showToast("已清空 Desktop", true);
@@ -449,7 +455,15 @@
   }
 
   async function onArchiveClick() {
-    if (!confirm("結束並存檔此場次？此操作無法復原。")) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "■",
+      title: "結束並存檔場次",
+      subtitle: "ARCHIVE SESSION · THIS ACTION CANNOT BE UNDONE",
+      severity: "danger",
+      body: "場次會被結束並歸檔，之後不能再往這個場次寫入訊息。",
+      confirmLabel: "結束場次",
+    });
+    if (!ok) return;
     try {
       const r = await window.csrfFetch("/admin/session/close", { method: "POST" });
       if (r.ok) {

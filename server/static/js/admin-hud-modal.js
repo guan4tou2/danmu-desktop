@@ -150,5 +150,11 @@
     });
   }
 
+  // Call sites use `await window.HudConfirm?.open({…})`. The optional chaining
+  // matters: if this script somehow didn't load, the expression is `undefined`
+  // — falsy — so a destructive action is treated as cancelled. Falling back to
+  // native `confirm()` (which several modules used to do) both reintroduces
+  // the dialog this module replaces and answers "delete everything?" with a
+  // prompt instead of a no.
   window.HudConfirm = { open };
 })();

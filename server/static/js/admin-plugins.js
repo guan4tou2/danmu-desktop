@@ -343,7 +343,15 @@
     }
 
     async function uninstallPlugin(name, filename) {
-      if (!confirm(`確定移除插件「${name}」？\n\n檔案 server/user_plugins/${filename} 會被刪除，無法復原。`)) return;
+      const ok = await window.HudConfirm?.open({
+        icon: "⊘",
+        title: `移除插件「${name}」`,
+        subtitle: "UNINSTALL PLUGIN · FILE IS DELETED",
+        severity: "danger",
+        body: `檔案 <code>server/user_plugins/${filename}</code> 會被刪除，無法復原。`,
+        confirmLabel: "移除插件",
+      });
+      if (!ok) return;
       try {
         const res = await csrfFetch("/admin/plugins/uninstall", {
           method: "POST",

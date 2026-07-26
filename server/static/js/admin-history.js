@@ -116,7 +116,15 @@
   }
 
   async function removeKeyword(keyword) {
-    if (!confirm(ServerI18n.t("confirmRemoveKeyword").replace("{keyword}", keyword))) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⊘",
+      title: "移除黑名單關鍵字",
+      subtitle: "REMOVE KEYWORD",
+      severity: "warn",
+      body: ServerI18n.t("confirmRemoveKeyword").replace("{keyword}", keyword),
+      confirmLabel: "移除",
+    });
+    if (!ok) return;
     try {
       const response = await window.csrfFetch("/admin/blacklist/remove", {
         method: "POST",
@@ -320,9 +328,15 @@
   }
 
   async function clearDanmuHistory() {
-    if (
-      !confirm(ServerI18n.t("confirmClearHistory"))
-    ) {
+    const ok = await window.HudConfirm?.open({
+      icon: "⊘",
+      title: "清除彈幕歷史",
+      subtitle: "CLEAR HISTORY · THIS ACTION CANNOT BE UNDONE",
+      severity: "danger",
+      body: ServerI18n.t("confirmClearHistory"),
+      confirmLabel: "清除",
+    });
+    if (!ok) {
       return;
     }
 

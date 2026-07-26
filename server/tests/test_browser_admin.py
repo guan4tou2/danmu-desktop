@@ -391,14 +391,16 @@ def test_blacklist_remove_keyword_disappears(admin_page):
     admin_page.click("#addKeywordBtn")
     admin_page.wait_for_selector('[data-keyword="remove_via_browser"]', timeout=3000)
 
-    # 再移除（移除時有 confirm() 對話框，需自動接受）
+    # 再移除。移除確認以前是原生 confirm()（靠 page.on("dialog") 自動接受），
+    # 現在走 HUD modal —— 要實際按下面板上的確認鍵。
     responses = []
     admin_page.on(
         "response",
         lambda r: responses.append(r) if "/admin/blacklist/remove" in r.url else None,
     )
-    admin_page.on("dialog", lambda d: d.accept())
     admin_page.locator('[data-keyword="remove_via_browser"]').click()
+    admin_page.wait_for_selector(".admin-hud-modal__btn--confirm", state="visible", timeout=5000)
+    admin_page.locator(".admin-hud-modal__btn--confirm").click()
     admin_page.wait_for_timeout(800)
 
     remove_resp = [r for r in responses if "/admin/blacklist/remove" in r.url]
