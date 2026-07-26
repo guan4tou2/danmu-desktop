@@ -13,6 +13,14 @@
   function showToast(msg, ok) { return window.showToast(msg, ok); }
   var ServerI18n = window.ServerI18n;
 
+  // Both style tags this module injects must carry the CSP nonce, or
+  // `style-src-elem` drops them. Resolved per call because the nonce lives in
+  // the served document, not in this file. admin-utils.js is loaded first
+  // (admin.html:85), same as for every other module that uses AdminUtils.
+  function styleTag(id, css) {
+    return window.AdminUtils.styleTag(id, css);
+  }
+
   let _effectModalRestoreFocusEl = null;
 
   function getEffectModalFocusableElements() {
@@ -412,7 +420,7 @@
                 <div id="effectPreviewBox" style="background:var(--color-bg-elevated);padding:20px;border-radius:8px;display:flex;align-items:center;justify-content:center;min-height:80px;">
                   <span id="effectPreviewText" style="font-size:32px;color:var(--color-text-strong);display:inline-block;">${ServerI18n.t("previewText")}</span>
                 </div>
-                <style id="effectPreviewStyle"></style>
+                ${styleTag("effectPreviewStyle", "")}
                 <div id="effectPreviewParams" class="flex flex-col gap-2"></div>
                 <p id="effectPreviewError" class="text-xs m-0 hidden" style="color:var(--hud-crimson)"></p>
               </div>
@@ -941,7 +949,7 @@
     // Inline animation CSS for preview cells
     const animId  = "fx-anim-" + eff.name.replace(/[^a-z0-9]/gi, "-");
     const previewCSS = (keyframes && animation)
-      ? `<style id="${escapeHtml(animId)}">${keyframes}</style>`
+      ? styleTag(animId, keyframes)
       : "";
     const animAttr = animation ? `animation:${animation};animation-play-state:running;` : "";
 

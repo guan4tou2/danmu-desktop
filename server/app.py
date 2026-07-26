@@ -25,7 +25,12 @@ from .ws import init_ws, start_ws_broadcast
 def _build_content_security_policy(nonce: str) -> str:
     # `style-src-elem` forbids `'unsafe-inline'` so a successful HTML injection
     # cannot smuggle in an attacker-controlled `<style>` block (the main
-    # CSS-exfiltration vector via `@import` or attribute selectors).
+    # CSS-exfiltration vector via `@import` or attribute selectors). It does
+    # allow `'nonce-…'`, which is what lets our own modules inject a `<style>`
+    # (see AdminUtils.styleTag): the nonce is per-response and unguessable, so
+    # injected markup still cannot bring styles with it. Without the nonce
+    # source here there is no legitimate way for JS to add a stylesheet at all
+    # — which is exactly how the effects preview silently lost its keyframes.
     # `style-src-attr` stays permissive so template `style=""` attributes and
     # JS-driven `.style.foo = …` assignments continue to work. `style-src`
     # is kept as a fallback for user agents that don't support the split.
@@ -38,7 +43,7 @@ def _build_content_security_policy(nonce: str) -> str:
         "img-src 'self' https: data:",
         "font-src 'self' https://fonts.gstatic.com data:",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-        "style-src-elem 'self' https://fonts.googleapis.com",
+        f"style-src-elem 'self' 'nonce-{nonce}' https://fonts.googleapis.com",
         "style-src-attr 'unsafe-inline'",
         "connect-src 'self' ws: wss:",
         f"script-src 'self' 'nonce-{nonce}'",
