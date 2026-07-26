@@ -8,8 +8,7 @@ system / security）的個別互動，IA 一改就可能靜默弄壞其他隱藏
   1. sidebar 該 slug 的按鈕亮起（`is-active` + `aria-selected="true"`），且唯一
   2. topbar `[data-route-title]` 有非空標題
   3. 主內容區（`.admin-dash-main` 扣掉 topbar）渲染出實質內容，不是白頁
-  4. 導航期間沒有 console error / pageerror（已知缺陷須登記在
-     `KNOWN_CONSOLE_ERROR_PATTERNS`，且另有一條測試確保那張表不會過期）
+  4. 導航期間沒有 console error / pageerror（零豁免）
   5. 可見的 `[PLACEHOLDER]` 數量等於 baseline —— 已知待 BE 的頁面有明確配額，
      其餘路由必須是 0。新增 placeholder 或修掉舊的都會讓這裡紅，逼你更新
      `DEFERRED_PLACEHOLDER_BUDGET` 這張表。
@@ -73,19 +72,6 @@ DEFERRED_PLACEHOLDER_BUDGET = {
     "ratelimit": 2,
     "fonts": 1,
 }
-
-# 允許存在的 console error（子字串比對）。除了這裡列的，任何路由都必須是 0。
-# 每一條都必須寫清楚根因與為什麼還沒修 —— 這張表不是用來讓測試變綠的，
-# 是用來讓「已知壞掉的東西」有名有姓。
-#
-#   style-src-elem — admin-effects-mgmt.js:415 / :944 用 insertAdjacentHTML
-#     注入 `<style>` 但沒帶 CSP nonce，被 app.py 的 `style-src-elem 'self'`
-#     擋下（該指令刻意不給 'unsafe-inline'，見 app.py:26 的註解）。實際影響是
-#     effects 預覽的 keyframes 樣式不會生效。屬於獨立的功能缺陷，不在
-#     section 可見性這條線上，另案處理。
-KNOWN_CONSOLE_ERROR_PATTERNS = [
-    "style-src-elem",
-]
 
 # 路由套用是可以明確等待的：applyRoute() 會把目標 slug 的 sidebar 按鈕設成
 # is-active + aria-selected。先等這個確定性訊號，不要用固定秒數去猜。
@@ -309,41 +295,52 @@ def test_route_renders_real_content(route_snapshots, slug):
     )
 
 
-def _unknown_errors(errors):
-    """濾掉 KNOWN_CONSOLE_ERROR_PATTERNS 列名的已知違規。"""
-    return [e for e in errors if not any(p in e for p in KNOWN_CONSOLE_ERROR_PATTERNS)]
-
-
 @pytest.mark.parametrize("slug", EXPECTED_NAV_ORDER)
 def test_route_has_no_console_errors(route_snapshots, slug):
     """導航到該路由期間不得有 console error 或未捕捉例外。
 
-    只有 KNOWN_CONSOLE_ERROR_PATTERNS 明確列名的已知缺陷可以通過；那張表的
-    每一條都附了根因。任何沒登記的 error 都會讓這條紅。
+    這裡沒有豁免名單。曾經有一條給 `style-src-elem` 的（effects 預覽注入
+    `<style>` 卻沒有可用的 nonce 來源），連同根因一起修掉了 —— 見
+    `test_admin_js_never_injects_a_nonce_less_style` 與 app.py 的 CSP 建構。
     """
-    unknown = _unknown_errors(route_snapshots[slug]["consoleErrors"])
-    assert unknown == [], f"#/{slug} 產生了未登記的 console error:\n" + "\n".join(unknown)
+    errors = route_snapshots[slug]["consoleErrors"]
+    assert errors == [], f"#/{slug} 產生了 console error:\n" + "\n".join(errors)
 
 
-def test_style_src_elem_exemption_still_has_a_cause():
-    """`style-src-elem` 這條豁免的反向閘 —— 直接驗原始碼，不靠瀏覽器碰運氣。
+def _strip_js_comments(src: str) -> str:
+    """粗略剝掉 JS 註解，免得註解裡提到 `<style>` 也被當成違規。
 
-    豁免名單最怕的是過期後繼續遮蔽新的同類錯誤，所以每條豁免都該有個會在
-    「問題修好時變紅」的守門測試。這裡不用 console 輸出當守門條件：那個 CSP
-    違規要不要出現，取決於 effects modal 在哪一次 DOM 變動被注入，落在導航
-    前就會被 fixture 的 errors.clear() 清掉 —— 拿它當斷言本身就是 flaky 的。
-
-    改成確定性的來源檢查：只要 admin-effects-mgmt.js 還在注入沒帶 nonce 的
-    `<style>`，豁免就還有存在理由。補上 nonce 之後這條會紅，提醒把
-    KNOWN_CONSOLE_ERROR_PATTERNS 裡的 style-src-elem 一起拿掉。
+    不需要真正的 parser：這裡只在乎 `<style…>` 這個字面樣式，而它出現在
+    字串字面量裡的機率遠高於出現在被誤刪的行內。
     """
-    src = (
-        Path(__file__).resolve().parent.parent / "static" / "js" / "admin-effects-mgmt.js"
-    ).read_text(encoding="utf-8")
-    nonce_less = re.findall(r"<style(?![^>]*\bnonce=)[^>]*>", src)
-    assert nonce_less, (
-        "admin-effects-mgmt.js 已經不再注入無 nonce 的 <style> —— "
-        "請把 KNOWN_CONSOLE_ERROR_PATTERNS 的 'style-src-elem' 移除"
+    src = re.sub(r"/\*.*?\*/", "", src, flags=re.S)
+    return re.sub(r"^\s*//.*$", "", src, flags=re.M)
+
+
+def test_admin_js_never_injects_a_nonce_less_style():
+    """任何 admin 模組都不得把不帶 nonce 的 `<style>` 寫進 HTML 字串。
+
+    `style-src-elem` 只接受 'self' 與當次請求的 nonce，所以少了 nonce 的
+    `<style>` 會被瀏覽器靜靜丟掉 —— 只有一行 console 警告，樣式無聲失效。
+    effects 預覽就是這樣壞掉的：keyframes 寫進去了，但那個 <style> 從頭到尾
+    沒有 sheet，畫面上跑的是別處同名的舊動畫。
+
+    用 `AdminUtils.styleTag()` 產生就會自動帶上 nonce。這條測試掃全部
+    admin-*.js，讓下一個手寫 `<style>` 的人在 CI 就被擋下來，而不是等到某天
+    有人發現預覽沒反應。
+    """
+    js_dir = Path(__file__).resolve().parent.parent / "static" / "js"
+    offenders = {}
+    for path in sorted(js_dir.glob("admin*.js")):
+        src = _strip_js_comments(path.read_text(encoding="utf-8"))
+        # 找字面上寫死的完整開標籤。styleTag() 是用字串拼接組出來的
+        # （`"<style" + …`），沒有字面上的 `>`，所以不會被自己抓到。
+        hits = re.findall(r"<style(?![^>]*\bnonce=)[^>]*>", src)
+        if hits:
+            offenders[path.name] = hits
+    assert not offenders, (
+        "以下模組把不帶 nonce 的 <style> 寫進 HTML 字串，會被 CSP 丟掉；"
+        f"請改用 AdminUtils.styleTag()：\n{offenders}"
     )
 
 

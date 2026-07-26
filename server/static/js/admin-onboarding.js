@@ -19,6 +19,14 @@
   const DONE_KEY  = "danmu.onboarding.done";
   const ROOT_ID   = "admin-onboarding-root";
 
+  // The tour's spotlight ring animates via @keyframes, which has to live in a
+  // real style element — and `style-src-elem` only accepts the per-response
+  // nonce, so injecting one without it means the whole block is dropped and
+  // the ring just sits there. AdminUtils.styleTag() attaches the nonce.
+  function styleTag(css) {
+    return window.AdminUtils.styleTag("", css);
+  }
+
   const STEPS = [
     {
       n: 1,
@@ -292,7 +300,7 @@
         </div>
       </div>
 
-      <style>
+      ${styleTag(`
         @keyframes ob-pulse {
           0%,100% { box-shadow:0 0 0 2px rgba(56,189,248,.25),0 0 20px rgba(56,189,248,.45); }
           50%      { box-shadow:0 0 0 4px rgba(56,189,248,.4),0 0 32px rgba(56,189,248,.7); }
@@ -318,7 +326,7 @@
           background:rgba(56,189,248,.25);flex:1;
         }
         .ob-prog-dot--done { background:var(--color-primary,#38bdf8); }
-      </style>`;
+      `)}`;
   }
 
   function _findRect(selector) {

@@ -120,6 +120,33 @@ def test_index_uses_csp_nonce_and_no_inline_event_handlers(client):
     assert "onchange=" not in body
 
 
+def test_csp_style_src_elem_accepts_the_response_nonce(client):
+    """`style-src-elem` 必須同時做到兩件事：擋掉 'unsafe-inline'，以及接受
+    當次回應的 nonce。
+
+    只做前者的話，JS 就完全沒有合法途徑加上 stylesheet —— effects 預覽的
+    keyframes 曾經就是這樣被靜靜丟掉的（`AdminUtils.styleTag()` 產生的
+    `<style nonce=…>` 也一樣被擋，因為政策裡根本沒有 nonce 來源）。兩個條件
+    要一起成立才有意義，所以綁在同一條測試。
+    """
+    res = client.get("/admin/")
+    csp = res.headers["Content-Security-Policy"]
+
+    nonce_match = re.search(r"script-src 'self' 'nonce-([^']+)'", csp)
+    assert nonce_match is not None
+    nonce = nonce_match.group(1)
+
+    directive = next(d.strip() for d in csp.split(";") if d.strip().startswith("style-src-elem"))
+    assert f"'nonce-{nonce}'" in directive, (
+        f"style-src-elem 必須接受當次回應的 nonce，否則 JS 無法合法注入 "
+        f"<style>；目前是 {directive!r}"
+    )
+    assert "'unsafe-inline'" not in directive, (
+        f"style-src-elem 不得放行 'unsafe-inline' —— 那會讓注入的 HTML "
+        f"也能帶樣式進來；目前是 {directive!r}"
+    )
+
+
 def test_admin_and_overlay_use_response_csp_nonce(client):
     admin_res = client.get("/admin/")
     admin_csp = admin_res.headers["Content-Security-Policy"]
