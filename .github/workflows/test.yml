@@ -1,6 +1,19 @@
 name: Tests
 
 on:
+  # Manual trigger — pick any branch from the Actions tab (or `gh workflow run
+  # test.yml --ref <branch>`). Needed because the PR trigger below only fires
+  # for PRs whose base is `main`: a stacked PR (base = another feature branch)
+  # runs none of these jobs, and `gh pr checks` shows only the few checks that
+  # did run, which is indistinguishable from everything passing. Retargeting
+  # such a PR to `main` afterwards does not help either — that is an `edited`
+  # event, and the default pull_request activity types are opened /
+  # synchronize / reopened. Without this, the only ways to get a run were to
+  # close-and-reopen the PR or to push a throwaway commit.
+  #
+  # Note: `paths` filters do not apply to manual runs, so this always runs the
+  # full suite regardless of what changed.
+  workflow_dispatch:
   push:
     branches:
       - main
