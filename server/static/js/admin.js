@@ -1807,6 +1807,19 @@ document.addEventListener("DOMContentLoaded", () => {
       const run = () => {
         routeVisibilitySyncScheduled = false;
         applySectionVisibility();
+        // Same contract as applyRoute(): the route-level pass above writes
+        // inline display="" on every wanted sec-*, clobbering the per-tab
+        // display:"none" that tab-aware modules (admin-display.js viewer
+        // tabs) set. applyRoute re-dispatches so they can re-apply; this
+        // path must too. Without it the two MutationObservers fight — every
+        // late DOM mutation flips sec-viewer-theme / -fields / -limits back
+        // to visible, admin-display.js hides them again, and the viewer page
+        // visibly flickers for as long as anything keeps mutating the DOM.
+        // Dispatching synchronously here means both passes land in the same
+        // task, so no intermediate state is ever painted.
+        document.dispatchEvent(new CustomEvent("admin-route-applied", {
+          detail: { route: currentRoute, leaf: _activeTab },
+        }));
       };
       if (typeof requestAnimationFrame === "function" && document.visibilityState !== "hidden") {
         requestAnimationFrame(run);
