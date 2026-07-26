@@ -24,11 +24,12 @@ import threading
 from pathlib import Path
 
 import pytest
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import sync_playwright
 
 from server.app import create_app
 from server.tests._browser_isolation import should_run_browser_module
-from server.tests.conftest import TestConfig, find_free_port
+from server.tests.conftest import TestConfig, find_free_port, wait_for_port
 from server.tests.test_admin_sidebar_ia import EXPECTED_NAV_ORDER
 
 if not should_run_browser_module(__file__):
@@ -86,10 +87,15 @@ KNOWN_CONSOLE_ERROR_PATTERNS = [
     "style-src-elem",
 ]
 
-# 導航後等待 JS 渲染的時間。既有 `_open_section` 用 250ms 是因為它接著會
-# wait_for_selector；這裡沒有可等的固定 selector（每頁容器不同），所以直接等
-# 到模組自己的 MutationObserver / hashchange 跑完。
-_ROUTE_SETTLE_MS = 900
+# 路由套用是可以明確等待的：applyRoute() 會把目標 slug 的 sidebar 按鈕設成
+# is-active + aria-selected。先等這個確定性訊號，不要用固定秒數去猜。
+_ROUTE_APPLIED_TIMEOUT_MS = 5000
+
+# 等到路由套用之後，還要留一小段給各模組的非同步渲染（fetch → render）。這段
+# 沒有通用的可等訊號 —— 每頁的容器與資料來源都不同，而「等到內容出現」會讓
+# test_route_renders_real_content 變成同義反覆（等到它成立才快照，就永遠不會
+# 失敗，只會 timeout）。所以這裡刻意保留固定等待，但只涵蓋渲染，不涵蓋路由。
+_RENDER_SETTLE_MS = 700
 
 
 # ─── Fixtures ────────────────────────────────────────────────────────────────
@@ -105,6 +111,11 @@ def live_url():
     server = WSGIServer(("127.0.0.1", port), app, log=None, error_log=None)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
+    # serve_forever() is what starts accepting, and it runs on that thread —
+    # yielding immediately races the first page.goto() against a socket that
+    # may not be listening yet. conftest's ws_server_port fixture already
+    # gates on this helper; browser fixtures should too.
+    assert wait_for_port(port, timeout=5.0), f"HTTP server never came up on port {port}"
     yield f"http://127.0.0.1:{port}"
     server.stop()
 
@@ -208,7 +219,25 @@ def route_snapshots(browser_session, live_url):
             }""",
             f"#/{slug}",
         )
-        page.wait_for_timeout(_ROUTE_SETTLE_MS)
+        # 等 applyRoute 真的把這條 slug 點亮，而不是等一個猜出來的秒數。失敗時
+        # 直接指出是哪條路由沒套用，比事後看快照裡的 activeButtons 好懂。
+        try:
+            page.wait_for_function(
+                """(slug) => {
+                    const active = Array.from(
+                        document.querySelectorAll('[data-route].is-active')
+                    ).map((b) => b.dataset.route);
+                    return active.length === 1 && active[0] === slug;
+                }""",
+                arg=slug,
+                timeout=_ROUTE_APPLIED_TIMEOUT_MS,
+            )
+        except PlaywrightTimeoutError:
+            # 不在這裡 fail：讓快照照樣拍下來，由
+            # test_route_lights_exactly_its_own_sidebar_button report 實際狀態，
+            # 錯誤訊息會比 fixture 掛掉有用得多。
+            pass
+        page.wait_for_timeout(_RENDER_SETTLE_MS)
         snapshot = page.evaluate(_SNAPSHOT_JS)
         snapshot["consoleErrors"] = list(errors)
         snapshots[slug] = snapshot

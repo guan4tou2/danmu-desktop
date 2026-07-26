@@ -14,7 +14,7 @@ from playwright.sync_api import sync_playwright
 
 from server.app import create_app
 from server.tests._browser_isolation import should_run_browser_module
-from server.tests.conftest import TestConfig, find_free_port
+from server.tests.conftest import TestConfig, find_free_port, wait_for_port
 
 if not should_run_browser_module(__file__):
     pytest.skip(
@@ -51,6 +51,10 @@ def live_url():
     server = WSGIServer(("127.0.0.1", port), app, log=None, error_log=None)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
+    # serve_forever() runs on that thread and is what starts accepting;
+    # yielding straight away races the first goto() against a socket that
+    # isn't listening yet.
+    assert wait_for_port(port, timeout=5.0), f"HTTP server never came up on port {port}"
     yield f"http://127.0.0.1:{port}"
     server.stop()
 
@@ -655,6 +659,9 @@ def test_modqueue_does_not_storm_the_list_endpoint(admin_page):
     2.5 秒的觀察窗小於一個 REFRESH_MS 週期，所以正常情況是 1 次（進場那次），
     容忍到 3 次以吸收導航過程中的重複觸發；風暴會是數十到數百次，兩者差距夠大，
     這個門檻不會因為時序抖動而誤判。
+
+    上下限都要斷言：只擋上限的話，「進場那次 fetch 根本沒發生」——例如有人把
+    `_fetch()` 一起搬進 timer 裡——會讓佇列一開始是空的，而測試依然全綠。
     """
     calls = []
     admin_page.on(
@@ -664,6 +671,10 @@ def test_modqueue_does_not_storm_the_list_endpoint(admin_page):
     admin_page.evaluate('() => { window.location.hash = "#/moderation"; }')
     admin_page.wait_for_timeout(2500)
 
+    assert len(calls) >= 1, (
+        "/admin/modqueue/list 一次都沒被呼叫 —— 進入 #/moderation 時應該要立刻"
+        "載入一次佇列，否則畫面會停在空狀態直到第一個輪詢週期"
+    )
     assert len(calls) <= 3, (
         f"/admin/modqueue/list 在 2.5s 內被呼叫 {len(calls)} 次 —— "
         f"_syncVisibility 又在每次 MutationObserver 觸發時 fetch 了"
