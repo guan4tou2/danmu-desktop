@@ -383,7 +383,13 @@ def test_poll_vote_marks_option_voted_without_counts(viewer_page, admin_http):
 
 
 def test_poll_pane_never_shows_percentage_text(viewer_page, admin_http):
-    """即使投票有多筆，viewer 的 poll pane 文字內容也不應含百分比符號"""
+    """viewer 的 poll pane 文字不得含百分比符號。
+
+    這裡是零票狀態下的檢查（沒有投任何票就直接看畫面）。「已經有票的時候會不會
+    洩漏」是在 wire 層擋掉的 —— `_sanitize_poll_for_viewer()` 根本不把 count /
+    percentage / total_votes 放進 /poll/public-status 的回應，那條由
+    test_public_polling_endpoints.py 覆蓋。
+    """
     page, live_url = viewer_page
     _create_and_start_poll(admin_http, "Best season?", ["Spring", "Summer", "Fall"])
 
@@ -394,6 +400,45 @@ def test_poll_pane_never_shows_percentage_text(viewer_page, admin_http):
 
     pane_text = page.locator("[data-vpoll-options]").inner_text()
     assert "%" not in pane_text, f"Poll pane leaked percentage text: {pane_text}"
+
+
+def test_voted_marker_does_not_leak_into_the_next_poll(viewer_page, admin_http):
+    """投完一場之後，admin 重開的新投票不該出現「已投出」標記。
+
+    回歸保護：voted 狀態原本只用 currentIndex 判斷是否要在重繪後重新套用，
+    但 reset 之後開的新投票同樣落在 index 0，於是上一場投過票的觀眾會在一個
+    自己從沒點過的選項上看到「已投出」。改用 server 的 question id 之後才
+    分得開。
+    """
+    page, live_url = viewer_page
+    body = _create_and_start_poll(admin_http, "Round one?", ["Red", "Blue"])
+    options = body.get("options") or []
+    option_key = options[0]["key"] if isinstance(options[0], dict) else options[0]
+
+    _go_online(page)
+    _fire_accepts_vote(page, option_key, "Round one?")
+    page.goto(f"{live_url}/?poll=1")
+    page.wait_for_timeout(2500)
+
+    poll_tab = page.locator('[data-viewer-tab="poll"]')
+    poll_tab.click()
+    page.wait_for_selector("[data-vpoll-options]", state="visible", timeout=5000)
+    page.locator(f'[data-vpoll-key="{option_key}"]').click()
+    page.locator("#btnSend").click()
+    page.wait_for_timeout(1000)
+    page.evaluate("() => { window.ViewerStates && window.ViewerStates.hide(); }")
+    poll_tab.click()
+    page.wait_for_selector(f'[data-vpoll-key="{option_key}"].is-voted', timeout=5000)
+
+    # 換一場新的投票（reset + create），選項 key 相同、index 同樣是 0。
+    admin_http.post_json("/admin/poll/reset", {})
+    _create_and_start_poll(admin_http, "Round two?", ["Red", "Blue"])
+    page.wait_for_timeout(3000)  # 讓 2s 輪詢至少跑到新的一場
+
+    assert (
+        page.locator(".viewer-poll-option.is-voted").count() == 0
+    ), "新的一場投票殘留了上一場的「已投出」標記"
+    assert page.locator(".viewer-poll-option-voted-mark").count() == 0
 
 
 # ─── 3. 重連 toast ────────────────────────────────────────────────────────────
