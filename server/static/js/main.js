@@ -140,6 +140,23 @@ document.addEventListener("DOMContentLoaded", () => {
   let fontsCache = [];
   let emojiCache = []; // [{name, url, filename}] — populated by /emojis fetch
   let _viewerMode = "fire";
+  // Which option this viewer voted for, and on which question. Survives the
+  // 2s poll re-render; cleared implicitly when the poll advances (the index
+  // no longer matches) — see the re-apply block in the poll pane renderer.
+  let _viewerVotedKey = "";
+  let _viewerVotedQuestionRef = "";
+
+  // Identity of the question a vote belongs to. Prefers the server's
+  // per-question id (`q_xxxxxxxx`, regenerated on every poll create) because
+  // an index alone cannot tell two polls apart — reset and start a new one
+  // and it is `currentIndex === 0` again, which would resurrect the previous
+  // poll's marker on an option this viewer never picked. Legacy payloads
+  // without an id fall back to index + question text.
+  function _pollQuestionRef(poll) {
+    if (!poll) return "";
+    if (poll.questionId) return "id:" + poll.questionId;
+    return "idx:" + poll.currentIndex + "|" + poll.question;
+  }
   let _viewerPollState = {
     state: "idle",
     question: "",
@@ -638,6 +655,11 @@ document.addEventListener("DOMContentLoaded", () => {
     return {
       state,
       question,
+      // Per-question id from the server (`q_xxxxxxxx`, regenerated on every
+      // poll create). Used to scope the voted marker to the exact question
+      // it belongs to — `currentIndex` alone can't do that, since a fresh
+      // poll after a reset also starts at index 0.
+      questionId: String(currentQuestion?.id || ""),
       options: normalizedOptions,
       totalVotes: totalVotesNum,
       questionImage,
@@ -710,6 +732,22 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
+    // The options list above is rebuilt from scratch on every 2s poll tick, so
+    // the voted marker set by _markPollOptionVoted() would vanish about a
+    // second after it appeared — the "immediate confirmation" it exists to
+    // provide never survived long enough to be read. Re-apply it here.
+    //
+    // Scoped by question identity, not just index: advancing a multi-Q poll
+    // starts clean, and so does a brand-new poll created after a reset (which
+    // would otherwise reuse index 0 and show this viewer a vote they never
+    // cast). Anything other than an active poll drops the state entirely.
+    if (poll.state !== "active") {
+      _viewerVotedKey = "";
+      _viewerVotedQuestionRef = "";
+    } else if (_viewerVotedKey && _viewerVotedQuestionRef === _pollQuestionRef(poll)) {
+      _markPollOptionVoted(_viewerVotedKey);
+    }
+
     // Multi-Q hero image (design v4 brief P1 #1, 2026-05-18).
     const imgWrap = document.querySelector("[data-vpoll-image]");
     const imgEl = document.querySelector("[data-vpoll-image-img]");
@@ -758,6 +796,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!elements.pollOptions || !key) return;
     const btn = elements.pollOptions.querySelector(`[data-vpoll-key="${CSS.escape(String(key))}"]`);
     if (!btn) return;
+    // Remember it so the re-render at the end of the poll pane update can put
+    // the marker back — the options list is rebuilt on every 2s tick.
+    _viewerVotedKey = String(key);
+    _viewerVotedQuestionRef = _pollQuestionRef(_viewerPollState);
     elements.pollOptions.querySelectorAll(".viewer-poll-option.is-voted").forEach((el) => {
       el.classList.remove("is-voted");
       el.querySelector(".viewer-poll-option-voted-mark")?.remove();
