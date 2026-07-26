@@ -182,7 +182,11 @@
   function _hide() {
     const root = document.getElementById(ROOT_ID);
     if (root) root.innerHTML = "";
-    document.body.dataset.viewerState = "";
+    // Remove the attribute rather than blanking it. The stylesheet keys off
+    // `body[data-viewer-state]` — attribute *presence*, not its value — so
+    // setting "" left `.viewer-page-shell { display: none }` in force and the
+    // viewer never came back from a thank-you / banned / rate-limit card.
+    delete document.body.dataset.viewerState;
   }
 
   window.ViewerStates = {

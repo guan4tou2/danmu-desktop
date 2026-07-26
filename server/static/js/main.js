@@ -140,6 +140,11 @@ document.addEventListener("DOMContentLoaded", () => {
   let fontsCache = [];
   let emojiCache = []; // [{name, url, filename}] — populated by /emojis fetch
   let _viewerMode = "fire";
+  // Which option this viewer voted for, and on which question. Survives the
+  // 2s poll re-render; cleared implicitly when the poll advances (the index
+  // no longer matches) — see the re-apply block in the poll pane renderer.
+  let _viewerVotedKey = "";
+  let _viewerVotedQuestionIndex = -1;
   let _viewerPollState = {
     state: "idle",
     question: "",
@@ -710,6 +715,20 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
+    // The options list above is rebuilt from scratch on every 2s poll tick, so
+    // the voted marker set by _markPollOptionVoted() would vanish about a
+    // second after it appeared — the "immediate confirmation" it exists to
+    // provide never survived long enough to be read. Re-apply it here.
+    // Scoped to the question that was actually voted on, so advancing to the
+    // next question in a multi-Q poll starts clean.
+    if (
+      poll.state === "active" &&
+      _viewerVotedKey &&
+      _viewerVotedQuestionIndex === poll.currentIndex
+    ) {
+      _markPollOptionVoted(_viewerVotedKey);
+    }
+
     // Multi-Q hero image (design v4 brief P1 #1, 2026-05-18).
     const imgWrap = document.querySelector("[data-vpoll-image]");
     const imgEl = document.querySelector("[data-vpoll-image-img]");
@@ -758,6 +777,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!elements.pollOptions || !key) return;
     const btn = elements.pollOptions.querySelector(`[data-vpoll-key="${CSS.escape(String(key))}"]`);
     if (!btn) return;
+    // Remember it so the re-render at the end of the poll pane update can put
+    // the marker back — the options list is rebuilt on every 2s tick.
+    _viewerVotedKey = String(key);
+    _viewerVotedQuestionIndex = _viewerPollState.currentIndex;
     elements.pollOptions.querySelectorAll(".viewer-poll-option.is-voted").forEach((el) => {
       el.classList.remove("is-voted");
       el.querySelector(".viewer-poll-option-voted-mark")?.remove();
