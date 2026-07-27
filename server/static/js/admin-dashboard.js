@@ -660,7 +660,7 @@
           body:
             `此 fingerprint 之後送出的訊息都會被擋下。` +
             `<div style="margin-top:10px;font-family:var(--font-mono);font-size:12px;` +
-            `color:var(--color-text-muted)">fp:${fp}</div>`,
+            `color:var(--color-text-muted)">fp:${_escapeHtml(fp)}</div>`,
           confirmLabel: "加入黑名單",
         });
         if (!ok) return;

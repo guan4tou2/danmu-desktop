@@ -238,7 +238,7 @@
       title: "封鎖",
       subtitle: "BLOCK · FUTURE MESSAGES ARE FILTERED",
       severity: "danger",
-      body: ServerI18n.t("blockConfirm").replace("{label}", label).replace("{display}", display),
+      bodyText: ServerI18n.t("blockConfirm").replace("{label}", label).replace("{display}", display),
       confirmLabel: "封鎖",
     });
     if (!ok) return;

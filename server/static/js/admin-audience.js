@@ -464,7 +464,7 @@
       title: "撤銷踢出",
       subtitle: "UNKICK · FINGERPRINT CAN SEND AGAIN",
       severity: "warn",
-      body: "該指紋之後又可以送出彈幕。<div style=\"margin-top:10px;font-family:var(--font-mono);font-size:12px;color:var(--color-text-muted)\">fp:" + fp.slice(0, 8) + "</div>",
+      body: "該指紋之後又可以送出彈幕。<div style=\"margin-top:10px;font-family:var(--font-mono);font-size:12px;color:var(--color-text-muted)\">fp:" + escapeHtml(fp.slice(0, 8)) + "</div>",
       confirmLabel: "撤銷踢出",
     });
     if (!ok) return;
@@ -544,7 +544,7 @@
       title: "封禁指紋",
       subtitle: "BAN FINGERPRINT · FUTURE MESSAGES AUTO-MASKED",
       severity: "danger",
-      body: "該指紋之後在本場發出的訊息會自動遮罩。<div style=\"margin-top:10px;font-family:var(--font-mono);font-size:12px;color:var(--color-text-muted)\">fp:" + fp.slice(0, 8) + "</div>",
+      body: "該指紋之後在本場發出的訊息會自動遮罩。<div style=\"margin-top:10px;font-family:var(--font-mono);font-size:12px;color:var(--color-text-muted)\">fp:" + escapeHtml(fp.slice(0, 8)) + "</div>",
       confirmLabel: "封禁",
     });
     if (!ok) return;

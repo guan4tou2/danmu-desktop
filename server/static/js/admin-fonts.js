@@ -652,7 +652,7 @@
       title: "刪除字型",
       subtitle: "DELETE FONT",
       severity: "danger",
-      body: ServerI18n.t("deleteFontConfirm").replace("{name}", name),
+      bodyText: ServerI18n.t("deleteFontConfirm").replace("{name}", name),
       confirmLabel: "刪除",
     });
     if (!ok) return;

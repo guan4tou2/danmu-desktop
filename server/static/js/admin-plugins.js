@@ -345,10 +345,10 @@
     async function uninstallPlugin(name, filename) {
       const ok = await window.HudConfirm?.open({
         icon: "⊘",
-        title: `移除插件「${name}」`,
+        titleText: `移除插件「${name}」`,
         subtitle: "UNINSTALL PLUGIN · FILE IS DELETED",
         severity: "danger",
-        body: `檔案 <code>server/user_plugins/${filename}</code> 會被刪除，無法復原。`,
+        bodyText: `檔案 server/user_plugins/${filename} 會被刪除，無法復原。`,
         confirmLabel: "移除插件",
       });
       if (!ok) return;

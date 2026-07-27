@@ -305,7 +305,7 @@
       title: "刪除表情",
       subtitle: "DELETE EMOJI",
       severity: "danger",
-      body: ServerI18n.t("deleteEmojiConfirm").replace("{name}", name),
+      bodyText: ServerI18n.t("deleteEmojiConfirm").replace("{name}", name),
       confirmLabel: "刪除",
     });
     if (!ok) return;

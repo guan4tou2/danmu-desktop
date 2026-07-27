@@ -141,7 +141,7 @@
           title: "刪除音效",
           subtitle: "DELETE SOUND",
           severity: "danger",
-          body: ServerI18n.t("deleteSoundConfirm").replace("{name}", name),
+          bodyText: ServerI18n.t("deleteSoundConfirm").replace("{name}", name),
           confirmLabel: "刪除",
         });
         if (!ok) return;

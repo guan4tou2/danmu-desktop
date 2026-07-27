@@ -813,10 +813,85 @@ def test_revoke_fire_token_shows_hud_panel_and_cancel_sends_nothing(admin_page, 
     assert "撤銷 Fire Token" in panel.inner_text()
     assert "ALL EXTENSIONS STOP WORKING" in panel.inner_text()
 
-    admin_page.locator(".admin-hud-modal__btn--cancel").click()
-    admin_page.wait_for_timeout(600)
-    assert calls == [], f"取消撤銷之後仍然送出了請求：{calls}"
-    assert dialogs == [], f"仍然跳出了原生對話框：{dialogs}"
+    try:
+        admin_page.locator(".admin-hud-modal__btn--cancel").click()
+        admin_page.wait_for_timeout(600)
+        assert calls == [], f"取消撤銷之後仍然送出了請求：{calls}"
+        assert dialogs == [], f"仍然跳出了原生對話框：{dialogs}"
+    finally:
+        # 這個測試真的產生了一個會寫進 runtime/fire_token.json 的 token，而
+        # live_url 是 session-scoped —— 不收掉的話，同模組後面的測試會繼承一個
+        # has_token=true 的狀態。收在 finally，斷言失敗時也照樣清乾淨。
+        admin_page.evaluate("""async () => {
+                const token = document.querySelector('meta[name="csrf-token"]')?.content || "";
+                await fetch("/admin/integrations/fire-token/revoke", {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "X-CSRF-Token": token },
+                }).catch(() => {});
+            }""")
+
+
+def test_hud_confirm_never_executes_markup_from_dynamic_text(admin_page):
+    """HudConfirm 的 `bodyText` / `titleText` 必須以純文字呈現，不能執行標記。
+
+    改寫時把原本 confirm() 的純文字訊息搬進了 modal，而 modal 的 `title` /
+    `body` 是走 innerHTML 的 —— 帶使用者內容的呼叫點（觀眾訊息、上傳檔名、
+    關鍵字）因此一度可以被注入標記。安全路徑是 textContent 版的欄位，這條測
+    的就是它真的沒有解析 HTML。
+    """
+    payload = '<img src=x onerror="window.__xss=1">刪除這個？'
+    result = admin_page.evaluate(
+        """async (payload) => {
+            window.__xss = 0;
+            const p = window.HudConfirm.open({ title: "測試", bodyText: payload });
+            await new Promise((r) => requestAnimationFrame(r));
+            const body = document.querySelector("[data-modal-body]");
+            const out = {
+                text: body ? body.textContent : null,
+                injectedNodes: body ? body.querySelectorAll("img").length : -1,
+                xssFlag: window.__xss,
+            };
+            document.querySelector(".admin-hud-modal__btn--cancel")?.click();
+            await p;
+            return out;
+        }""",
+        payload,
+    )
+
+    assert result["text"] == payload, "bodyText 應該原樣顯示成文字"
+    assert result["injectedNodes"] == 0, "bodyText 不該被解析成 DOM 元素"
+    assert result["xssFlag"] == 0, "注入的 onerror 被執行了"
+
+
+def test_block_confirm_shows_message_text_verbatim(admin_page, live_url):
+    """live feed 的封鎖確認帶的是觀眾訊息內容 —— 必須原樣顯示，不能被解析。
+
+    這是整批改寫裡最危險的一個呼叫點：`display` 直接來自觀眾送出的文字。
+    """
+    payload = '<img src=x onerror="window.__xss=1">'
+    admin_page.evaluate("() => { window.__xss = 0; }")
+    shown = admin_page.evaluate(
+        """async (payload) => {
+            const p = window.HudConfirm.open({
+                title: "封鎖",
+                bodyText: (window.ServerI18n?.t?.("blockConfirm") || "{display}")
+                    .replace("{label}", "訊息")
+                    .replace("{display}", payload),
+            });
+            await new Promise((r) => requestAnimationFrame(r));
+            const body = document.querySelector("[data-modal-body]");
+            const out = { html: body.innerHTML, imgs: body.querySelectorAll("img").length };
+            document.querySelector(".admin-hud-modal__btn--cancel")?.click();
+            await p;
+            return out;
+        }""",
+        payload,
+    )
+
+    assert shown["imgs"] == 0, "觀眾訊息裡的標記被解析成元素了"
+    assert "&lt;img" in shown["html"], f"訊息應該被轉義後顯示，實際 HTML: {shown['html']}"
+    assert admin_page.evaluate("() => window.__xss") == 0
 
 
 # ─── Metrics API ───────────────────────────────────────────────────────────────

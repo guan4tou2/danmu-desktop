@@ -397,7 +397,7 @@
       title: "刪除貼圖",
       subtitle: "DELETE STICKER",
       severity: "danger",
-      body: ServerI18n.t("deleteStickerConfirm").replace("{name}", name),
+      bodyText: ServerI18n.t("deleteStickerConfirm").replace("{name}", name),
       confirmLabel: "刪除",
     });
     if (!ok) return;

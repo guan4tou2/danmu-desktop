@@ -121,7 +121,7 @@
       title: "移除黑名單關鍵字",
       subtitle: "REMOVE KEYWORD",
       severity: "warn",
-      body: ServerI18n.t("confirmRemoveKeyword").replace("{keyword}", keyword),
+      bodyText: ServerI18n.t("confirmRemoveKeyword").replace("{keyword}", keyword),
       confirmLabel: "移除",
     });
     if (!ok) return;
