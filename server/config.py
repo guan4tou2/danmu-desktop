@@ -130,6 +130,15 @@ class Config:
     # Danmu history configuration
     DANMU_HISTORY_MAX_RECORDS = int(os.getenv("DANMU_HISTORY_MAX_RECORDS", "10000"))
     DANMU_HISTORY_CLEANUP_HOURS = int(os.getenv("DANMU_HISTORY_CLEANUP_HOURS", "24"))
+    # 落地到 runtime/danmu_history.jsonl，讓記錄撐得過重啟。
+    DANMU_HISTORY_PERSIST = os.getenv("DANMU_HISTORY_PERSIST", "true").lower() == "true"
+    # 落地時是否含 clientIp。預設否 —— 把來訪者 IP 永久寫進磁碟，跟留在一個
+    # 重啟就清掉的 ring buffer 裡，是兩件不同性質的事。admin 介面看到的記憶體
+    # 記錄不受影響。
+    DANMU_HISTORY_PERSIST_IP = os.getenv("DANMU_HISTORY_PERSIST_IP", "false").lower() == "true"
+    DANMU_HISTORY_MAX_FILE_BYTES = int(
+        os.getenv("DANMU_HISTORY_MAX_FILE_BYTES", str(8 * 1024 * 1024))
+    )
     # Default settings file lives alongside other runtime state under
     # server/runtime/. Previously used /tmp which is wiped on reboot on
     # many systems (macOS default, some Linux), silently losing user settings.
