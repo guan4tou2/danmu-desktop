@@ -4203,13 +4203,20 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 
 /* Tablet (641-1023px) — 2-col KPI tile to avoid the tall stack of 4
    tiles you get going straight to single column. design v4 2026-05-18. */
+/* Both breakpoints match `.is-4col`'s specificity instead of reaching for
+   !important. The single-class form used to lose to `.admin-kpi-strip.is-4col`
+   (two classes) no matter the source order — tablet papered over it with
+   !important, mobile didn't, so phones rendered four KPI columns instead of
+   one. Same specificity + later in the file now wins on order alone. */
 @media (min-width: 641px) and (max-width: 1023px) {
-  .admin-kpi-strip {
-    grid-template-columns: repeat(2, 1fr) !important;
+  .admin-kpi-strip,
+  .admin-kpi-strip.is-4col {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 @media (max-width: 640px) {
-  .admin-kpi-strip {
+  .admin-kpi-strip,
+  .admin-kpi-strip.is-4col {
     grid-template-columns: 1fr;
   }
 }
@@ -5776,9 +5783,9 @@ body.stream-mode .admin-hero .admin-summary-grid {
 
 /* sidebar sub-row indent */
 .admin-dash-nav-row--sub {
-  padding-left: 26px !important;
+  padding-left: 26px;
   opacity: 0.85;
-  font-size: 12px !important;
+  font-size: 12px;
 }
 
 .admin-ext-token-deeplink {
@@ -9970,7 +9977,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 /* ─── Audit Log (P1, 2026-04-27) ───────────────────────────────────── */
 .admin-audit-page { padding: 0; }
 .admin-audit-empty {
-  padding: 24px !important;
+  padding: 24px;
   text-align: center;
   color: var(--color-text-muted);
   font-size: 11px;
@@ -12014,14 +12021,21 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 /* Mobile bottom-sheet variant — design v4 brief 0518-1 mobile mockup */
 @media (max-width: 600px) {
   .admin-hud-modal__panel {
+    /* width / max-width keep !important: the panel carries an inline
+       `style="width:…px;max-width:calc(100% - 32px)"` from admin-hud-modal.js,
+       and nothing but !important outranks an inline declaration.
+       The rest do not — this block is the last `.admin-hud-modal__panel` rule
+       in the file, so it already wins on order against the base rule and the
+       earlier 600px block. Verified with a computed-style probe across
+       desktop / tablet / mobile. */
     width: 100% !important;
     max-width: 100% !important;
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important;
-    position: absolute !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    margin: 0 !important;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
   }
   .admin-sd-ann-row {
     grid-template-columns: 44px 80px 1fr 18px;

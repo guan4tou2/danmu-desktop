@@ -894,6 +894,45 @@ def test_block_confirm_shows_message_text_verbatim(admin_page, live_url):
     assert admin_page.evaluate("() => window.__xss") == 0
 
 
+# ─── KPI strip 響應式欄數 ─────────────────────────────────────────────────────
+
+
+def test_kpi_strip_column_count_per_breakpoint(browser_session, live_url):
+    """KPI strip 在三個斷點分別是 4 / 2 / 1 欄。
+
+    回歸保護：`.admin-kpi-strip.is-4col` 是兩個類別，會蓋過 media query 裡的
+    單類別規則，跟原始碼順序無關。tablet 那條當初用 !important 繞過去了，
+    mobile 那條沒有 —— 於是手機上四個 KPI 擠成四欄。現在兩個斷點都用對等特異性
+    (`.admin-kpi-strip, .admin-kpi-strip.is-4col`)，不再依賴 !important。
+    """
+    expected = {1440: 4, 800: 2, 375: 1}
+    actual = {}
+    for width, _ in expected.items():
+        context = browser_session.new_context(viewport={"width": width, "height": 900})
+        page = context.new_page()
+        try:
+            page.goto(f"{live_url}/admin/")
+            page.wait_for_selector("#loginForm", timeout=8000)
+            page.fill("#password", "test")
+            page.locator("#loginForm button[type=submit]").click()
+            page.wait_for_selector("#logoutButton", timeout=15000)
+            page.evaluate(
+                '() => { try { localStorage.setItem("danmu.onboarding.done", "1"); }'
+                " catch (_) {} }"
+            )
+            page.evaluate('() => { window.location.hash = "#/live"; }')
+            page.wait_for_selector(".admin-kpi-strip", state="visible", timeout=8000)
+            actual[width] = page.evaluate("""() => {
+                    const el = document.querySelector(".admin-kpi-strip");
+                    return getComputedStyle(el).gridTemplateColumns.split(" ").length;
+                }""")
+        finally:
+            page.close()
+            context.close()
+
+    assert actual == expected, f"KPI 欄數不符：{actual}（預期 {expected}）"
+
+
 # ─── Metrics API ───────────────────────────────────────────────────────────────
 
 
