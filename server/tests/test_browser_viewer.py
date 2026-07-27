@@ -482,16 +482,34 @@ def test_reconnected_toast_appears_and_disappears(viewer_page):
     was_offline = page.evaluate("() => !!document.querySelector('.admin-offline-banner')")
     assert was_offline, "Expected offline banner to appear after 3 consecutive poll failures"
 
+    # 重連 toast 只活大約 2 秒，所以不能「先等固定秒數、再去抓它」—— 那是在賭
+    # 取樣點正好落在它的存活窗口內，CI 稍慢或稍快都會落空（實測就是這樣紅的）。
+    # 改成在恢復連線「之前」先掛觀察器記下它曾經出現，再等它自己消失。
+    page.evaluate("""() => {
+            window.__toastSeen = 0;
+            window.__toastText = "";
+            const check = () => {
+                const el = document.querySelector(".viewer-reconnected-toast");
+                if (el) {
+                    window.__toastSeen++;
+                    window.__toastText = (el.textContent || "").trim();
+                }
+            };
+            new MutationObserver(check).observe(document.body, {
+                childList: true,
+                subtree: true,
+            });
+            check();
+        }""")
+
     state["fail"] = False
-    page.wait_for_timeout(2500)  # next successful tick flips to 'connected'
+    page.wait_for_function("() => window.__toastSeen > 0", timeout=15000)
+    assert page.evaluate("() => window.__toastText") in ("已重新連線", "Reconnected")
 
-    toast = page.locator(".viewer-reconnected-toast")
-    toast.wait_for(state="visible", timeout=5000)
-    assert toast.is_visible()
-    assert toast.text_content().strip() in ("已重新連線", "Reconnected")
-
-    # Should auto-clear ~2s later.
-    toast.wait_for(state="detached", timeout=5000)
+    # 出現之後應該會自己收掉。
+    page.wait_for_function(
+        "() => !document.querySelector('.viewer-reconnected-toast')", timeout=15000
+    )
     assert page.locator(".viewer-reconnected-toast").count() == 0
 
 
