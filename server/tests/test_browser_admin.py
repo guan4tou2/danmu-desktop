@@ -391,14 +391,16 @@ def test_blacklist_remove_keyword_disappears(admin_page):
     admin_page.click("#addKeywordBtn")
     admin_page.wait_for_selector('[data-keyword="remove_via_browser"]', timeout=3000)
 
-    # 再移除（移除時有 confirm() 對話框，需自動接受）
+    # 再移除。移除確認以前是原生 confirm()（靠 page.on("dialog") 自動接受），
+    # 現在走 HUD modal —— 要實際按下面板上的確認鍵。
     responses = []
     admin_page.on(
         "response",
         lambda r: responses.append(r) if "/admin/blacklist/remove" in r.url else None,
     )
-    admin_page.on("dialog", lambda d: d.accept())
     admin_page.locator('[data-keyword="remove_via_browser"]').click()
+    admin_page.wait_for_selector(".admin-hud-modal__btn--confirm", state="visible", timeout=5000)
+    admin_page.locator(".admin-hud-modal__btn--confirm").click()
     admin_page.wait_for_timeout(800)
 
     remove_resp = [r for r in responses if "/admin/blacklist/remove" in r.url]
@@ -679,6 +681,217 @@ def test_modqueue_does_not_storm_the_list_endpoint(admin_page):
         f"/admin/modqueue/list 在 2.5s 內被呼叫 {len(calls)} 次 —— "
         f"_syncVisibility 又在每次 MutationObserver 觸發時 fetch 了"
     )
+
+
+# ─── 破壞性動作的 HUD 確認面板 ────────────────────────────────────────────────
+#
+# 2026-07-26：admin 的 43 處原生 confirm() 全部改走 HudConfirm modal。改動面很
+# 廣（25 個模組），但絕大多數只有「語法能過 + 載入沒有 console error」這層保護。
+# 這裡替最不能出錯的幾條路徑補上真正的點擊驗證。
+#
+# 每條測的是同一組不變式：
+#   1. 按下去會出現 HUD 面板（而不是原生對話框，也不是什麼都沒發生）
+#   2. 按取消 → 不送出任何 API 請求 —— 這正是改寫時每處都寫的 `if (!ok) return;`
+#   3. 面板上寫著這個動作的後果（title / subtitle 有掛對）
+#
+# 「確認會不會真的送出」只在清除歷史那條驗證：live_url 是 session-scoped，真的
+# 執行 factory reset 或撤銷 token 會污染同模組後面的測試。
+
+
+def _dialog_recorder(page):
+    """記錄原生對話框。改寫之後這個清單必須永遠是空的。"""
+    seen = []
+
+    def _on_dialog(dialog):
+        seen.append(dialog.message)
+        dialog.dismiss()
+
+    page.on("dialog", _on_dialog)
+    return seen
+
+
+def _open_backup_page(page):
+    page.evaluate('() => { window.location.hash = "#/backup"; }')
+    page.wait_for_selector("#bk2-clear-history", state="visible", timeout=8000)
+
+
+def test_clear_history_shows_hud_panel_and_cancel_sends_nothing(admin_page):
+    """清除彈幕歷史：出現 HUD 面板；取消不送請求；確認才送。"""
+    dialogs = _dialog_recorder(admin_page)
+    calls = []
+    admin_page.on(
+        "request",
+        lambda r: calls.append(r.url) if "/admin/history/clear" in r.url else None,
+    )
+    _open_backup_page(admin_page)
+
+    admin_page.locator("#bk2-clear-history").click()
+    panel = admin_page.locator(".admin-hud-modal__panel")
+    panel.wait_for(state="visible", timeout=5000)
+    assert "清除所有彈幕歷史" in panel.inner_text()
+    assert "CANNOT BE UNDONE" in panel.inner_text()
+
+    admin_page.locator(".admin-hud-modal__btn--cancel").click()
+    admin_page.wait_for_timeout(600)
+    assert calls == [], f"取消之後仍然送出了請求：{calls}"
+
+    # 確認路徑：這次真的讓它跑完（清空測試 server 的歷史，無副作用）。
+    admin_page.locator("#bk2-clear-history").click()
+    panel.wait_for(state="visible", timeout=5000)
+    admin_page.locator(".admin-hud-modal__btn--confirm").click()
+    admin_page.wait_for_timeout(1000)
+    assert len(calls) == 1, f"確認之後應該剛好送出一次請求，實際 {len(calls)} 次"
+
+    assert dialogs == [], f"仍然跳出了原生對話框：{dialogs}"
+
+
+def test_factory_reset_shows_hud_panel_and_cancel_sends_nothing(admin_page):
+    """Factory reset：最危險的一顆按鈕，取消必須什麼都不做。"""
+    dialogs = _dialog_recorder(admin_page)
+    calls = []
+    admin_page.on(
+        "request",
+        lambda r: calls.append(r.url) if "/admin/backup/factory-reset" in r.url else None,
+    )
+    _open_backup_page(admin_page)
+
+    # 按鈕預設 disabled，要在確認框輸入 reset 才會啟用。
+    admin_page.fill("#bk2-factory-confirm", "reset")
+    admin_page.dispatch_event("#bk2-factory-confirm", "input")
+    admin_page.locator("#bk2-factory-reset").click()
+
+    panel = admin_page.locator(".admin-hud-modal__panel")
+    panel.wait_for(state="visible", timeout=5000)
+    assert "Factory reset" in panel.inner_text()
+    assert "WIPES RUNTIME STATE" in panel.inner_text()
+
+    admin_page.locator(".admin-hud-modal__btn--cancel").click()
+    admin_page.wait_for_timeout(600)
+    assert calls == [], f"取消 factory reset 之後仍然送出了請求：{calls}"
+    assert dialogs == [], f"仍然跳出了原生對話框：{dialogs}"
+
+
+def test_revoke_fire_token_shows_hud_panel_and_cancel_sends_nothing(admin_page, live_url):
+    """撤銷 Fire Token：撤銷鍵要先有 token 才會啟用，取消必須什麼都不做。"""
+    dialogs = _dialog_recorder(admin_page)
+    calls = []
+    admin_page.on(
+        "request",
+        lambda r: calls.append(r.url) if "fire-token/revoke" in r.url else None,
+    )
+
+    # 先產生一個 token，撤銷鍵才會從 disabled 解開。
+    admin_page.evaluate("""async () => {
+            const token = document.querySelector('meta[name="csrf-token"]')?.content || "";
+            await fetch("/admin/integrations/fire-token/regenerate", {
+                method: "POST",
+                credentials: "include",
+                headers: { "X-CSRF-Token": token },
+            });
+        }""")
+    # extensions 模組只在 init() 時讀一次 token 狀態，所以剛才那個 regenerate
+    # 之後必須讓整頁重新載入，它手上才會是新的快照 —— 否則撤銷鍵一直 disabled。
+    #
+    # 這裡一定要用 reload()：goto() 到只有 hash 不同的網址並不會重新載入頁面，
+    # init() 不會再跑，看起來像修好了其實沒有。本機因為 runtime/fire_token.json
+    # 留著，第一次載入就抓到 has_token，反而掩蓋這個差別；CI 的乾淨環境會炸。
+    admin_page.evaluate('() => { window.location.hash = "#/extensions"; }')
+    admin_page.reload()
+    revoke = admin_page.locator('[data-fire-token-action="revoke"]')
+    revoke.wait_for(state="visible", timeout=8000)
+    admin_page.wait_for_function(
+        """() => {
+            const b = document.querySelector('[data-fire-token-action="revoke"]');
+            return b && !b.disabled;
+        }""",
+        timeout=8000,
+    )
+
+    revoke.click()
+    panel = admin_page.locator(".admin-hud-modal__panel")
+    panel.wait_for(state="visible", timeout=5000)
+    assert "撤銷 Fire Token" in panel.inner_text()
+    assert "ALL EXTENSIONS STOP WORKING" in panel.inner_text()
+
+    try:
+        admin_page.locator(".admin-hud-modal__btn--cancel").click()
+        admin_page.wait_for_timeout(600)
+        assert calls == [], f"取消撤銷之後仍然送出了請求：{calls}"
+        assert dialogs == [], f"仍然跳出了原生對話框：{dialogs}"
+    finally:
+        # 這個測試真的產生了一個會寫進 runtime/fire_token.json 的 token，而
+        # live_url 是 session-scoped —— 不收掉的話，同模組後面的測試會繼承一個
+        # has_token=true 的狀態。收在 finally，斷言失敗時也照樣清乾淨。
+        admin_page.evaluate("""async () => {
+                const token = document.querySelector('meta[name="csrf-token"]')?.content || "";
+                await fetch("/admin/integrations/fire-token/revoke", {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "X-CSRF-Token": token },
+                }).catch(() => {});
+            }""")
+
+
+def test_hud_confirm_never_executes_markup_from_dynamic_text(admin_page):
+    """HudConfirm 的 `bodyText` / `titleText` 必須以純文字呈現，不能執行標記。
+
+    改寫時把原本 confirm() 的純文字訊息搬進了 modal，而 modal 的 `title` /
+    `body` 是走 innerHTML 的 —— 帶使用者內容的呼叫點（觀眾訊息、上傳檔名、
+    關鍵字）因此一度可以被注入標記。安全路徑是 textContent 版的欄位，這條測
+    的就是它真的沒有解析 HTML。
+    """
+    payload = '<img src=x onerror="window.__xss=1">刪除這個？'
+    result = admin_page.evaluate(
+        """async (payload) => {
+            window.__xss = 0;
+            const p = window.HudConfirm.open({ title: "測試", bodyText: payload });
+            await new Promise((r) => requestAnimationFrame(r));
+            const body = document.querySelector("[data-modal-body]");
+            const out = {
+                text: body ? body.textContent : null,
+                injectedNodes: body ? body.querySelectorAll("img").length : -1,
+                xssFlag: window.__xss,
+            };
+            document.querySelector(".admin-hud-modal__btn--cancel")?.click();
+            await p;
+            return out;
+        }""",
+        payload,
+    )
+
+    assert result["text"] == payload, "bodyText 應該原樣顯示成文字"
+    assert result["injectedNodes"] == 0, "bodyText 不該被解析成 DOM 元素"
+    assert result["xssFlag"] == 0, "注入的 onerror 被執行了"
+
+
+def test_block_confirm_shows_message_text_verbatim(admin_page, live_url):
+    """live feed 的封鎖確認帶的是觀眾訊息內容 —— 必須原樣顯示，不能被解析。
+
+    這是整批改寫裡最危險的一個呼叫點：`display` 直接來自觀眾送出的文字。
+    """
+    payload = '<img src=x onerror="window.__xss=1">'
+    admin_page.evaluate("() => { window.__xss = 0; }")
+    shown = admin_page.evaluate(
+        """async (payload) => {
+            const p = window.HudConfirm.open({
+                title: "封鎖",
+                bodyText: (window.ServerI18n?.t?.("blockConfirm") || "{display}")
+                    .replace("{label}", "訊息")
+                    .replace("{display}", payload),
+            });
+            await new Promise((r) => requestAnimationFrame(r));
+            const body = document.querySelector("[data-modal-body]");
+            const out = { html: body.innerHTML, imgs: body.querySelectorAll("img").length };
+            document.querySelector(".admin-hud-modal__btn--cancel")?.click();
+            await p;
+            return out;
+        }""",
+        payload,
+    )
+
+    assert shown["imgs"] == 0, "觀眾訊息裡的標記被解析成元素了"
+    assert "&lt;img" in shown["html"], f"訊息應該被轉義後顯示，實際 HTML: {shown['html']}"
+    assert admin_page.evaluate("() => window.__xss") == 0
 
 
 # ─── Metrics API ───────────────────────────────────────────────────────────────

@@ -307,7 +307,7 @@
   function _bind() {
     const root = document.getElementById(SECTION_ID);
     if (!root) return;
-    root.addEventListener("click", (e) => {
+    root.addEventListener("click", async (e) => {
       const a = e.target.closest("[data-mq-action]");
       if (a) {
         const id = a.dataset.mqId;
@@ -318,7 +318,17 @@
       const b = e.target.closest("[data-mq-bulk]");
       if (b) {
         const kind = b.dataset.mqBulk;
-        const ok = confirm(kind === "approve-low" ? "通過所有 LOW 嚴重度的訊息？" : "拒絕所有 HIGH 嚴重度的訊息？");
+        const approving = kind === "approve-low";
+        const ok = await window.HudConfirm?.open({
+          icon: approving ? "✓" : "⊘",
+          title: approving ? "通過所有 LOW 訊息" : "拒絕所有 HIGH 訊息",
+          subtitle: "BULK MODERATION · APPLIES TO THE WHOLE QUEUE",
+          severity: approving ? "warn" : "danger",
+          body: approving
+            ? "佇列中所有 LOW 嚴重度的待審訊息都會被放行。"
+            : "佇列中所有 HIGH 嚴重度的待審訊息都會被拒絕。",
+          confirmLabel: approving ? "全部通過" : "全部拒絕",
+        });
         if (!ok) return;
         const action = kind.startsWith("approve") ? "approve" : "reject";
         const severity = kind.endsWith("low") ? "low" : "high";

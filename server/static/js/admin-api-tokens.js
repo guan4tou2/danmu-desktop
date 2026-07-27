@@ -327,7 +327,18 @@
   }
 
   async function _revokeToken(tokenId, label) {
-    if (!confirm(`確定撤銷此 Token？此操作無法復原。\n\n${label || tokenId}`)) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⊘",
+      title: "撤銷 API Token",
+      subtitle: "REVOKE · THIS ACTION CANNOT BE UNDONE",
+      severity: "danger",
+      body:
+        `<div style="line-height:1.7">使用此 Token 的整合會立即失去存取權。</div>` +
+        `<div style="margin-top:10px;font-family:var(--font-mono);font-size:12px;` +
+        `color:var(--color-text-muted)">${escapeHtml(label || tokenId)}</div>`,
+      confirmLabel: "撤銷",
+    });
+    if (!ok) return;
     try {
       const r = await csrfFetch(`/admin/api-tokens/${encodeURIComponent(tokenId)}`, {
         method: "DELETE",

@@ -652,7 +652,18 @@
       const msgId = row.dataset.msgId;
       if (action === "blacklist") {
         if (!fp) { window.showToast && window.showToast("此訊息無 fingerprint，無法加入", false); return; }
-        if (!confirm(`加入黑名單 fp:${fp}？此 fingerprint 的後續訊息將被擋。`)) return;
+        const ok = await window.HudConfirm?.open({
+          icon: "⊘",
+          title: "加入黑名單",
+          subtitle: "BLACKLIST FINGERPRINT · BLOCKS FUTURE MESSAGES",
+          severity: "danger",
+          body:
+            `此 fingerprint 之後送出的訊息都會被擋下。` +
+            `<div style="margin-top:10px;font-family:var(--font-mono);font-size:12px;` +
+            `color:var(--color-text-muted)">fp:${_escapeHtml(fp)}</div>`,
+          confirmLabel: "加入黑名單",
+        });
+        if (!ok) return;
         try {
           const r = await window.csrfFetch("/admin/blacklist/add", {
             method: "POST",
@@ -902,7 +913,15 @@
         btn.disabled = false;
       }
     } else if (action === "close") {
-      if (!confirm("確定要結束這個場次？\n訊息將停止歸檔，Desktop 將切換為 OFF。")) return;
+      const ok = await window.HudConfirm?.open({
+        icon: "■",
+        title: "結束場次",
+        subtitle: "CLOSE SESSION · DESKTOP SWITCHES OFF",
+        severity: "danger",
+        body: "訊息會停止歸檔，Desktop 顯示切換為 OFF。",
+        confirmLabel: "結束場次",
+      });
+      if (!ok) return;
       btn.disabled = true;
       try {
         const r = await window.csrfFetch("/admin/session/close", { method: "POST" });

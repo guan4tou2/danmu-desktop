@@ -511,7 +511,15 @@
   }
 
   async function rotateWsAuth() {
-    if (!confirm("將產生全新 token,舊 token 立即失效。繼續?")) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⟳",
+      title: "重設 WS Token",
+      subtitle: "ROTATE WS TOKEN · DESKTOP MUST RECONNECT",
+      severity: "warn",
+      body: "舊 token 立即失效，Desktop 需要用新 token 重新連線。",
+      confirmLabel: "產生新 token",
+    });
+    if (!ok) return;
     try {
       const res = await window.csrfFetch("/admin/ws-auth/rotate", { method: "POST" });
       const data = await res.json().catch(() => ({}));
@@ -566,7 +574,16 @@
         ok: () => "WS Token 已重設",
       },
     }[action];
-    if (!config || !confirm(config.confirm)) return;
+    if (!config) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⚠",
+      title: config.title || "確認操作",
+      subtitle: config.subtitle || "SECURITY ACTION",
+      severity: config.severity || "warn",
+      body: config.confirm,
+      confirmLabel: config.confirmLabel || "確認",
+    });
+    if (!ok) return;
     try {
       const res = await window.csrfFetch(config.url, { method: "POST" });
       const data = await res.json().catch(() => ({}));

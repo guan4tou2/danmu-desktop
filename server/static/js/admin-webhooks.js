@@ -628,7 +628,15 @@
 
   async function _deleteWebhook(hookId) {
     if (!hookId) return;
-    if (!confirm(ServerI18n.t("deleteWebhookConfirm") || "確定刪除這個 webhook？")) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⊘",
+      title: "刪除 webhook",
+      subtitle: "DELETE WEBHOOK",
+      severity: "danger",
+      body: ServerI18n.t("deleteWebhookConfirm") || "確定刪除這個 webhook？",
+      confirmLabel: "刪除",
+    });
+    if (!ok) return;
     try {
       const res = await csrfFetch("/admin/webhooks/unregister", {
         method: "POST",

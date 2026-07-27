@@ -136,7 +136,15 @@
     container.querySelectorAll(".sound-delete-btn").forEach(function (btn) {
       btn.addEventListener("click", async function () {
         var name = btn.dataset.name;
-        if (!confirm(ServerI18n.t("deleteSoundConfirm").replace("{name}", name))) return;
+        const ok = await window.HudConfirm?.open({
+          icon: "⊘",
+          title: "刪除音效",
+          subtitle: "DELETE SOUND",
+          severity: "danger",
+          bodyText: ServerI18n.t("deleteSoundConfirm").replace("{name}", name),
+          confirmLabel: "刪除",
+        });
+        if (!ok) return;
         try {
           await deleteSound(name);
           window.showToast(ServerI18n.t("soundDeleted").replace("{name}", name), true);

@@ -149,7 +149,15 @@
   }
 
   async function handleReset() {
-    if (!confirm(ServerI18n.t("fingerprintResetConfirm"))) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⟳",
+      title: "重設指紋統計",
+      subtitle: "RESET FINGERPRINTS · OBSERVED DATA IS CLEARED",
+      severity: "danger",
+      body: ServerI18n.t("fingerprintResetConfirm"),
+      confirmLabel: "重設",
+    });
+    if (!ok) return;
     try {
       var resp = await window.csrfFetch("/admin/fingerprints/reset", {
         method: "POST",

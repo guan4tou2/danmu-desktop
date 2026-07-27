@@ -133,8 +133,16 @@
       id: "clear-history",
       label: "清空訊息歷史",
       sub: "POST /admin/history/clear · 危險",
-      action: () => {
-        if (!confirm("確定清空所有訊息歷史？此操作無法復原。")) return;
+      action: async () => {
+        const ok = await window.HudConfirm?.open({
+          icon: "⊘",
+          title: "清空訊息歷史",
+          subtitle: "CLEAR HISTORY · THIS ACTION CANNOT BE UNDONE",
+          severity: "danger",
+          body: "所有已歸檔的訊息記錄都會被刪除，無法復原。",
+          confirmLabel: "清空",
+        });
+        if (!ok) return;
         return _csrfFetch("/admin/history/clear", { method: "POST" })
           .then((r) => _toast(r.ok ? "訊息歷史已清空" : "清空失敗", r.ok))
           .catch(() => _toast("清空失敗", false));

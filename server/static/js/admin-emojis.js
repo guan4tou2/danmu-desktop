@@ -300,7 +300,15 @@
   // ─── Delete ────────────────────────────────────────────────────────
 
   async function handleDelete(name) {
-    if (!confirm(ServerI18n.t("deleteEmojiConfirm").replace("{name}", name))) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⊘",
+      title: "刪除表情",
+      subtitle: "DELETE EMOJI",
+      severity: "danger",
+      bodyText: ServerI18n.t("deleteEmojiConfirm").replace("{name}", name),
+      confirmLabel: "刪除",
+    });
+    if (!ok) return;
 
     try {
       var resp = await csrfFetch("/admin/emojis/delete", {

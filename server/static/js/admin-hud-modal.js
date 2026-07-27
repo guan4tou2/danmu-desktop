@@ -92,6 +92,12 @@
         subtitle = "",
         severity = "warn",
         body = "",
+        // Safe text variants. `title` / `body` go through innerHTML so callers
+        // can pass rich markup; anything user-controlled (message text, an
+        // uploaded filename, a keyword) must come in through these instead —
+        // they are written with textContent and can never execute.
+        titleText,
+        bodyText,
         confirmLabel = "確認",
         cancelLabel = "取消",
         width = 480,
@@ -128,6 +134,15 @@
           </div>
         </div>`;
 
+      if (titleText != null) {
+        const titleEl = root.querySelector(".admin-hud-modal__title");
+        if (titleEl) titleEl.textContent = String(titleText);
+      }
+      if (bodyText != null) {
+        const bodyEl = root.querySelector("[data-modal-body]");
+        if (bodyEl) bodyEl.textContent = String(bodyText);
+      }
+
       if (wantsBodyNode) {
         const bodyEl = root.querySelector("[data-modal-body]");
         bodyEl.innerHTML = "";
@@ -150,5 +165,11 @@
     });
   }
 
+  // Call sites use `await window.HudConfirm?.open({…})`. The optional chaining
+  // matters: if this script somehow didn't load, the expression is `undefined`
+  // — falsy — so a destructive action is treated as cancelled. Falling back to
+  // native `confirm()` (which several modules used to do) both reintroduces
+  // the dialog this module replaces and answers "delete everything?" with a
+  // prompt instead of a no.
   window.HudConfirm = { open };
 })();

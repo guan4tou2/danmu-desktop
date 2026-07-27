@@ -775,10 +775,8 @@
       // ── Delete handler
       delBtn.addEventListener("click", async () => {
         // 2026-05-18 design v4-r2 DeleteConfirm: use HudConfirm modal if
-        // helper has loaded, fall back to native confirm() otherwise.
         const effName = eff.label || eff.name;
-        const ok = window.HudConfirm
-          ? await window.HudConfirm.open({
+        const ok = await window.HudConfirm?.open({
               icon: "⊗",
               title: "刪除確認",
               subtitle: "DELETE · THIS ACTION CANNOT BE UNDONE",
@@ -793,8 +791,7 @@
               confirmLabel: "確認刪除",
               cancelLabel: "取消",
               width: 400,
-            })
-          : confirm(ServerI18n.t("deleteEffectConfirm").replace("{name}", effName));
+            });
         if (!ok) return;
         try {
           const res = await csrfFetch("/admin/effects/delete", {

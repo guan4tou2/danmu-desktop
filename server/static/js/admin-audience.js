@@ -459,7 +459,15 @@
 
   async function _unkick(fp) {
     if (!fp) return;
-    if (!confirm("撤銷對 fp:" + fp.slice(0, 8) + " 的踢出？該指紋之後又可送出彈幕。")) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "↩",
+      title: "撤銷踢出",
+      subtitle: "UNKICK · FINGERPRINT CAN SEND AGAIN",
+      severity: "warn",
+      body: "該指紋之後又可以送出彈幕。<div style=\"margin-top:10px;font-family:var(--font-mono);font-size:12px;color:var(--color-text-muted)\">fp:" + escapeHtml(fp.slice(0, 8)) + "</div>",
+      confirmLabel: "撤銷踢出",
+    });
+    if (!ok) return;
     try {
       const r = await window.csrfFetch("/admin/audience/unkick", {
         method: "POST",
@@ -531,7 +539,15 @@
 
   async function _ban(fp) {
     if (!fp || fp === "—") return;
-    if (!confirm("確定封禁指紋 fp:" + fp.slice(0, 8) + "？該指紋之後在本場發出的訊息會自動遮罩。")) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⊘",
+      title: "封禁指紋",
+      subtitle: "BAN FINGERPRINT · FUTURE MESSAGES AUTO-MASKED",
+      severity: "danger",
+      body: "該指紋之後在本場發出的訊息會自動遮罩。<div style=\"margin-top:10px;font-family:var(--font-mono);font-size:12px;color:var(--color-text-muted)\">fp:" + escapeHtml(fp.slice(0, 8)) + "</div>",
+      confirmLabel: "封禁",
+    });
+    if (!ok) return;
     try {
       const r = await window.csrfFetch("/admin/live/block", {
         method: "POST",

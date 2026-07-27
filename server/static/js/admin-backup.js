@@ -333,7 +333,15 @@
       window.showToast && showToast("請先 Dry-run 通過後再套用", false);
       return;
     }
-    if (!confirm("套用設定快照會覆蓋目前同名設定。確定套用?")) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⚠",
+      title: "套用設定快照",
+      subtitle: "RESTORE SETTINGS · OVERWRITES MATCHING KEYS",
+      severity: "warn",
+      body: "快照中同名的設定會覆蓋目前的值，未包含在快照裡的設定維持不變。",
+      confirmLabel: "套用",
+    });
+    if (!ok) return;
 
     try {
       const res = await window.csrfFetch("/admin/settings/restore", {
@@ -373,7 +381,15 @@
   // ---- Zone 3 · Danger ----
 
   async function clearHistory() {
-    if (!confirm("確定清除所有彈幕歷史?此動作無法復原。")) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⊘",
+      title: "清除所有彈幕歷史",
+      subtitle: "CLEAR HISTORY · THIS ACTION CANNOT BE UNDONE",
+      severity: "danger",
+      body: "所有已歸檔的彈幕記錄會被刪除，無法復原。建議先下載完整快照。",
+      confirmLabel: "清除歷史",
+    });
+    if (!ok) return;
     try {
       const res = await window.csrfFetch("/admin/history/clear", { method: "POST" });
       if (res.ok) {
@@ -387,7 +403,15 @@
   }
 
   async function endSession() {
-    if (!confirm("確定登出目前管理員?")) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "→",
+      title: "登出管理員",
+      subtitle: "SIGN OUT · CURRENT SESSION ONLY",
+      severity: "info",
+      body: "只會結束你目前的管理員登入，不影響進行中的場次或 Desktop 顯示。",
+      confirmLabel: "登出",
+    });
+    if (!ok) return;
     try {
       const res = await window.csrfFetch("/logout", { method: "POST" });
       if (res.redirected) window.location.href = res.url;
@@ -416,7 +440,17 @@
       window.showToast && showToast("請輸入 reset 以確認", false);
       return;
     }
-    if (!confirm("Factory reset 會清除 runtime 狀態檔與目前佇列。請先下載完整快照。確定執行?")) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⊘",
+      title: "Factory reset",
+      subtitle: "FACTORY RESET · WIPES RUNTIME STATE AND QUEUE",
+      severity: "danger",
+      body:
+        "runtime 狀態檔與目前佇列都會被清除，無法復原。" +
+        "如果還沒下載完整快照，現在取消還來得及。",
+      confirmLabel: "執行 reset",
+    });
+    if (!ok) return;
     try {
       if (btn) btn.disabled = true;
       const res = await window.csrfFetch("/admin/backup/factory-reset", {
@@ -585,10 +619,18 @@
       window.showToast?.("請先 Dry-run 通過後再套用", false);
       return;
     }
-    if (!confirm(
-      "套用備份會覆蓋目前的 runtime/, effects/, plugins/, user_plugins/ — " +
-      "套用前已下載目前快照作為復原備案了嗎？"
-    )) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⚠",
+      title: "套用完整備份",
+      subtitle: "RESTORE PACK · OVERWRITES RUNTIME AND ASSETS",
+      severity: "danger",
+      body:
+        "會覆蓋目前的 <code>runtime/</code>、<code>effects/</code>、" +
+        "<code>plugins/</code>、<code>user_plugins/</code>。" +
+        "套用前已經下載目前的快照作為復原備案了嗎？",
+      confirmLabel: "套用備份",
+    });
+    if (!ok) return;
     const fd = new FormData();
     fd.append("file", _pendingPackFile);
     try {
@@ -692,9 +734,17 @@
       window.showToast?.("請先 Dry-run 通過後再套用", false);
       return;
     }
-    if (!confirm(
-      "套用素材包會覆蓋同名 emojis/, stickers/, sounds/ 檔案與 sticker pack metadata。確定套用?"
-    )) return;
+    const ok = await window.HudConfirm?.open({
+      icon: "⚠",
+      title: "套用素材包",
+      subtitle: "RESTORE ASSETS · OVERWRITES MATCHING FILES",
+      severity: "warn",
+      body:
+        "同名的 <code>emojis/</code>、<code>stickers/</code>、<code>sounds/</code> " +
+        "檔案與 sticker pack metadata 會被覆蓋。",
+      confirmLabel: "套用素材包",
+    });
+    if (!ok) return;
     const fd = new FormData();
     fd.append("file", _pendingAssetPackFile);
     try {
