@@ -101,7 +101,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // audit / webhooks / api-tokens / backup / ratelimit / extensions promoted
     // to first-class sidebar slugs via _routeAliases entries below — no
     // bare redirect needed; applyRoute() resolves them at click time.
-    automation: { nav: "system", tab: "scheduler" },
     // 2026-05-19 v5 IA: ◐ 顯示設定 sidebar item retired; its content
     // (overlay/viewer defaults) was already absorbed by viewer's 4-tab
     // layout. Bare redirect (not alias) so #/display bookmarks resolve
@@ -146,6 +145,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // === Automation tabs (Phase B 2026-05-06: now under system accordion) ===
     // 2026-05-18 v5: plugins promoted to first-class sidebar slug.
+    // v7 S4 (2026-07-28): `automation` moved from _bareLegacyRedirects to an
+    // alias so explicit-tab deep links (#/automation/webhooks) also translate
+    // into the system accordion; its dead ADMIN_ROUTES entry is gone.
+    automation: { nav: "system", tab: "scheduler" },
+    // v7 S4: `appearance` retired — themes/fonts/viewer-config all have
+    // first-class homes; old bookmarks land on the themes page. Alias (not
+    // bare) so #/appearance/<anything> still resolves.
+    appearance: { nav: "themes" },
     scheduler: { nav: "system", tab: "scheduler" },
     // 2026-05-19: webhooks/search/audience/about/security promoted to
     // first-class routes with their own ADMIN_ROUTES entries. Aliases
@@ -213,6 +220,21 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (alias && typeof alias === "object") {
       nav = alias.nav || rawNav;
       aliasTab = alias.tab || null;
+    }
+    // v7 S4: surface legacy-slug hits (once per slug per session) so stale
+    // bookmarks/docs get noticed before the redirect tables are removed.
+    if (m[1] !== nav) {
+      if (!_parseHashRoute._warned) _parseHashRoute._warned = new Set();
+      if (!_parseHashRoute._warned.has(m[1])) {
+        _parseHashRoute._warned.add(m[1]);
+        try {
+          console.info(
+            "[admin] legacy route #/" + m[1] + " → #/" + nav +
+            (explicitTab || aliasTab || bareTab ? "/" + (explicitTab || aliasTab || bareTab) : "") +
+            " — update your bookmark; redirects are scheduled for removal."
+          );
+        } catch (_) {}
+      }
     }
     return { nav, tab: explicitTab || aliasTab || bareTab, raw: rawNav };
   }
@@ -1411,17 +1433,12 @@ document.addEventListener("DOMContentLoaded", () => {
     themes:    { title: "風格主題包",       kicker: "THEME PACKS · 彈幕樣式預設",       sections: ["sec-themes"] },
     // Viewer owns the page/fields/defaults/limits surface. Legacy
     // `#/viewer-config` deep-links still resolve here for backward compat.
-    "viewer-config": { title: "Viewer 設定", kicker: "VIEWER CONFIG · 整頁主題 / 表單欄位 / 文案 / 限制", sections: ["sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits"] },
+    // v7 S4: `viewer-config` entry removed — the alias (→ viewer) always
+    // intercepted it, so the config object was dead code.
 
-    // Hidden legacy shell retained for bookmarks / compat. The viewer tab here
-    // mirrors the canonical Viewer surface instead of the retired sec-color/*
-    // cards so alias routes don't regress to the old model.
-    appearance: { title: "外觀", kicker: "APPEARANCE · 主題 / Viewer / 字型", sections: ["sec-themes", "sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits", "sec-fonts"] },
-
-    // Slice 4: automation is the tabbed nav for scheduler + webhooks + plugins.
-    // sec-scheduler + sec-webhooks currently live inside the system route's
-    // sections; they get pulled into automation here so the route owns visibility.
-    automation: { title: "自動化", kicker: "AUTOMATION · 排程 / Webhook / 插件", sections: ["sec-scheduler", "sec-webhooks", "sec-plugins"] },
+    // v7 S4 (2026-07-28): legacy `appearance` and `automation` shells
+    // removed — both are pure aliases now (appearance → themes,
+    // automation → system/scheduler with explicit tabs passing through).
     // v5.1 (2026-04-27 redesign): unified Assets Library overview on top
     // (sec-assets-overview from admin-assets.js) → existing emoji / stickers
     // / sounds sub-sections kept below for editing per-type.

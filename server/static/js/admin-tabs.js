@@ -41,14 +41,8 @@
         { slug: "fingerprints", label: "指紋",  en: "FINGERPRINTS", section: "sec-fingerprints" },
       ],
     },
-    appearance: {
-      defaultTab: "themes",
-      tabs: [
-        { slug: "themes",        label: "主題包",    en: "THEMES",       section: "sec-themes" },
-        { slug: "viewer-config", label: "Viewer 設定", en: "VIEWER",     sections: ["sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits"] },
-        { slug: "fonts",         label: "字型",      en: "FONTS",        section: "sec-fonts" },
-      ],
-    },
+    // v7 S4 (2026-07-28): dead `appearance` group removed — the route is a
+    // pure alias (→ themes) now, so this strip could never mount.
     // v7 IA (2026-07-28): assets absorbed fonts as its fifth tab — fonts
     // are the fourth uploadable asset type. Overview stays the landing tab.
     assets: {
@@ -61,14 +55,8 @@
         { slug: "fonts",    label: "字型",   en: "FONTS",    section: "sec-fonts"    },
       ],
     },
-    automation: {
-      defaultTab: "scheduler",
-      tabs: [
-        { slug: "scheduler", label: "排程",   en: "SCHEDULER", section: "sec-scheduler" },
-        { slug: "webhooks",  label: "Webhook", en: "WEBHOOKS", section: "sec-webhooks"  },
-        { slug: "plugins",   label: "插件",   en: "PLUGINS",   section: "sec-plugins"   },
-      ],
-    },
+    // v7 S4 (2026-07-28): dead `automation` group removed — the route
+    // aliases into the system accordion (scheduler/webhooks/plugins leaves).
     history: {
       defaultTab: "sessions",
       tabs: [

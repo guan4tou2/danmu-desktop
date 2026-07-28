@@ -175,7 +175,9 @@ PHASE_A_STRING_REDIRECTS = {
 }
 
 PHASE_B_OBJECT_REDIRECTS = {
-    "automation": ("system", "scheduler"),
+    # v7 S4 (2026-07-28): `automation` moved to _routeAliases so explicit-tab
+    # deep links (#/automation/webhooks) also translate — bare redirects only
+    # fire on tab-less hashes.
     # v7 IA (2026-07-28): one-feature-one-door demotions land on the tab
     # that already owned the section.
     "ratelimit": ("moderation", "ratelimit"),
@@ -317,9 +319,10 @@ def test_admin_routes_keeps_legacy_aliases_alive(admin_js: str):
     audit, search, history, replay, audience, security, backup,
     notifications, display, history-v2, poll-deepdive, onboarding)
     keep resolving to a valid route. Phase B/D collapses these."""
-    # v7 IA (2026-07-28): `messages` dropped from this list — its
-    # ADMIN_ROUTES entry was removed with the bare redirect to live.
-    for legacy_slug in ("dashboard", "widgets", "appearance", "automation", "history"):
+    # v7 IA (2026-07-28): `messages` dropped — entry removed with the bare
+    # redirect to live. v7 S4: `appearance` / `automation` dropped — their
+    # dead shells were removed and both are pure aliases now.
+    for legacy_slug in ("dashboard", "widgets", "history"):
         # Each must appear as a top-level key with a config object.
         pattern = re.compile(rf"\n\s*{legacy_slug}:\s*\{{")
         assert pattern.search(admin_js), (
@@ -346,6 +349,9 @@ DEEP_LINK_ALIASES = {
     # promoted to first-class routes. Only replay / scheduler remain aliased.
     "replay": ("system", "replay"),
     "scheduler": ("system", "scheduler"),
+    # v7 S4 (2026-07-28): automation is an alias (not bare) so explicit-tab
+    # deep links pass their tab straight into the system accordion.
+    "automation": ("system", "scheduler"),
 }
 
 # Routes promoted from system accordion aliases to first-class ADMIN_ROUTES
@@ -403,6 +409,19 @@ def test_promoted_route_has_own_admin_routes_entry(admin_js: str, slug: str):
             f"'{slug}' must NOT be in _routeAliases — it has its own "
             f"ADMIN_ROUTES entry and the alias would intercept it."
         )
+
+
+def test_appearance_alias_targets_themes_parent(admin_js: str):
+    """v7 S4 (2026-07-28): `appearance` is a parent-only alias to themes —
+    its legacy shell (ADMIN_ROUTES entry + TabConfig group) was removed.
+    Alias (not bare) so #/appearance/<tab> hashes still resolve."""
+    pattern = re.compile(r'\bappearance:\s*\{\s*nav:\s*"themes"\s*\}')
+    assert pattern.search(admin_js), (
+        "_routeAliases.appearance must equal { nav: 'themes' } — parent-only"
+    )
+    assert not re.search(r"\n\s*appearance:\s*\{\s*title:", admin_js), (
+        "ADMIN_ROUTES.appearance must stay removed (the alias would be dead)"
+    )
 
 
 def test_viewer_config_alias_targets_viewer_parent(admin_js: str):

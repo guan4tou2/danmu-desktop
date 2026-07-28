@@ -240,7 +240,9 @@ def test_smoke_covers_every_locked_sidebar_slug(route_snapshots):
     """快照必須涵蓋 EXPECTED_NAV_ORDER 的每一條 slug —— 這是本模組存在的理由，
     也保證日後 IA 新增 sidebar 項目時 smoke 會自動跟上。"""
     assert list(route_snapshots) == EXPECTED_NAV_ORDER
-    assert len(route_snapshots) == 19, "v5 grouped sidebar 是 19 項；數量變了請一併更新 IA 測試"
+    # v7 IA (2026-07-28) 收斂為 15 項（可見 11＋開發擴充 4 項收合）；
+    # 跟著 EXPECTED_NAV_ORDER 走，數量再變時只需改 IA 測試那份清單。
+    assert len(route_snapshots) == len(EXPECTED_NAV_ORDER) == 15
 
 
 def test_placeholder_budget_keys_are_real_routes():
