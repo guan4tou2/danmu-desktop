@@ -49,6 +49,18 @@
         { slug: "fonts",         label: "字型",      en: "FONTS",        section: "sec-fonts" },
       ],
     },
+    // v7 IA (2026-07-28): assets absorbed fonts as its fifth tab — fonts
+    // are the fourth uploadable asset type. Overview stays the landing tab.
+    assets: {
+      defaultTab: "overview",
+      tabs: [
+        { slug: "overview", label: "總覽",   en: "OVERVIEW", section: "sec-assets-overview" },
+        { slug: "emojis",   label: "表情",   en: "EMOJIS",   section: "sec-emojis"   },
+        { slug: "stickers", label: "貼圖",   en: "STICKERS", section: "sec-stickers" },
+        { slug: "sounds",   label: "音效",   en: "SOUNDS",   section: "sec-sounds"   },
+        { slug: "fonts",    label: "字型",   en: "FONTS",    section: "sec-fonts"    },
+      ],
+    },
     automation: {
       defaultTab: "scheduler",
       tabs: [

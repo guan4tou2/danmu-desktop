@@ -49,7 +49,7 @@
     { label: "限制 / 文案 Viewer limits", route: "viewer", tab: "limits", section: "sec-viewer-config-limits" },
     { label: "黑名單 Blacklist",    route: "moderation",section: "sec-blacklist" },
     { label: "敏感字過濾 Filters",  route: "moderation",section: "sec-filters" },
-    { label: "速率限制 Rate limit", route: "ratelimit", section: "sec-ratelimit" },
+    { label: "速率限制 Rate limit", route: "moderation", tab: "ratelimit", section: "sec-ratelimit" },
     { label: "效果庫 Effects",      route: "effects",   section: "sec-effects" },
     { label: "效果管理 Effects mgmt", route: "effects", section: "sec-effects-mgmt" },
     { label: "Emoji",               route: "assets",    section: "sec-emojis" },

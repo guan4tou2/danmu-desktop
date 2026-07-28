@@ -108,6 +108,13 @@ document.addEventListener("DOMContentLoaded", () => {
     // BEFORE ADMIN_ROUTES lookup — otherwise the legacy display entry
     // would intercept.
     display:    { nav: "viewer", tab: "defaults" },
+    // 2026-07-28 v7 IA: ratelimit demoted from first-class sidebar row back
+    // to its moderation tab — one feature had two doors. audit folds into
+    // the history tabbed nav (retitled 紀錄 & 匯出); fonts folds into the
+    // assets tabbed nav. Bookmarks land on the right tab via object form.
+    ratelimit:  { nav: "moderation", tab: "ratelimit" },
+    audit:      { nav: "history", tab: "audit" },
+    fonts:      { nav: "assets", tab: "fonts" },
   });
 
   // Maps deprecated single-segment routes → P0-0 nav homes.
@@ -715,10 +722,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="admin-dash-nav-icon">▦</span>
                                     <span data-i18n="adminNavAssets">素材庫</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="fonts" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⌂</span>
-                                    <span data-i18n="adminNavFonts">字型管理</span>
-                                </button>
 
                                 <!-- 系統維運: config → guards → logs/exports → backup. -->
                                 <div class="admin-dash-nav-label" data-i18n="adminNavGroupOperations">系統維運</div>
@@ -726,17 +729,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="admin-dash-nav-icon">⚙</span>
                                     <span data-i18n="adminNavSystem">系統 &amp; 指紋</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="ratelimit" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◔</span>
-                                    <span data-i18n="adminNavRatelimit">速率限制</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="audit" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◷</span>
-                                    <span data-i18n="adminNavAudit">操作日誌</span>
-                                </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="history" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">↳</span>
-                                    <span data-i18n="adminNavHistory">時間軸匯出</span>
+                                    <span class="admin-dash-nav-icon">◷</span>
+                                    <span data-i18n="adminNavHistory">紀錄 &amp; 匯出</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="backup" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⇪</span>
@@ -1405,7 +1400,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // search / audit / replay / audience). Each tab's section is hidden
     // when not active by AdminTabs.applyTabSectionVisibility. Replay tab
     // owns sec-history-tabs + history-v2-section + sec-history-list + sec-history.
-    history:   { title: "歷史",             kicker: "HISTORY · 場次 / 搜尋 / 審計 / 重播 / 觀眾", sections: ["sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "history-v2-section", "sec-history-list", "sec-history", "sec-audience-overview"] },
+    history:   { title: "紀錄 & 匯出",       kicker: "RECORDS · 場次 / 搜尋 / 審計 / 重播 / 觀眾", sections: ["sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "history-v2-section", "sec-history-list", "sec-history", "sec-audience-overview"] },
     polls:     { title: "投票",             kicker: "POLLS · 2–6 選項",         sections: ["sec-polls"] },
     widgets:   { title: "Desktop Widgets",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
     themes:    { title: "風格主題包",       kicker: "THEME PACKS · 彈幕樣式預設",       sections: ["sec-themes"] },
@@ -1425,7 +1420,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // v5.1 (2026-04-27 redesign): unified Assets Library overview on top
     // (sec-assets-overview from admin-assets.js) → existing emoji / stickers
     // / sounds sub-sections kept below for editing per-type.
-    assets:    { title: "素材庫",           kicker: "ASSETS LIBRARY · 統一上傳入口 + 細部編輯", sections: ["sec-assets-overview", "sec-emojis", "sec-stickers", "sec-sounds"] },
+    // v7 IA (2026-07-28): assets gains the fonts tab (sec-fonts) — fonts are
+    // the fourth uploadable asset type; tab strip defined in admin-tabs.js.
+    assets:    { title: "素材庫",           kicker: "ASSETS LIBRARY · 素材 + 字型 · 統一入口", sections: ["sec-assets-overview", "sec-emojis", "sec-stickers", "sec-sounds", "sec-fonts"] },
     // v5.2 Sprint 1 (2026-04-27): Extensions catalog page — Slido / Discord
     // / OBS / Bookmarklet cards + shared Fire Token UI inline.
     integrations: { title: "整合",          kicker: "INTEGRATIONS · 第三方接入 · 共用 FIRE TOKEN", sections: ["sec-extensions-overview"] },
@@ -1437,11 +1434,13 @@ document.addEventListener("DOMContentLoaded", () => {
     // AdminTabs.applyTabSectionVisibility when not active.
     // brief 0518-v3 #2: moderation gained queue + bans tabs (was deep-link only).
     moderation:{ title: "審核",  kicker: "MODERATION · 佇列 / 封禁 / 黑名單 / 敏感字 / 速率 / 指紋", sections: ["sec-modqueue", "sec-modbans-overview", "sec-blacklist", "sec-filters", "sec-ratelimit", "sec-fingerprints"] },
-    ratelimit: { title: "速率限制",         kicker: "RATE LIMITS · 反刷屏",          sections: ["sec-ratelimit"] },
+    // v7 IA (2026-07-28): `ratelimit` demoted to _bareLegacyRedirects →
+    // moderation/ratelimit (the tab owns sec-ratelimit).
     effects:   { title: "效果庫 .dme",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },
     plugins:   { title: "伺服器插件",       kicker: "PLUGIN SDK · 熱重載 · SANDBOX", sections: ["sec-plugins"] },
     webhooks:  { title: "Webhooks",          kicker: "WEBHOOKS · 端點 · 投遞紀錄 · 重送", sections: ["sec-webhooks"] },
-    fonts:     { title: "字型管理",         kicker: "FONT LIBRARY · 觀眾可選",   sections: ["sec-fonts"] },
+    // v7 IA (2026-07-28): `fonts` demoted to _bareLegacyRedirects →
+    // assets/fonts (fonts joined the assets tab strip).
     // Slice 6: system hosts the C-tier accordion. scheduler /
     // webhooks moved to automation; fingerprints moved to moderation. The
     // accordion shell is rendered by admin-system-accordion.js.
@@ -1461,8 +1460,8 @@ document.addEventListener("DOMContentLoaded", () => {
     notifications: { title: "通知",          kicker: "NOTIFICATIONS · 警示中心 · 多來源",  sections: ["sec-notifications-overview"] },
     // P3 Group B (2026-04-27 V1Z4 batch7): fingerprint aggregation list.
     audience:  { title: "觀眾",               kicker: "AUDIENCE · 即時指紋聚合",           sections: ["sec-audience-overview"] },
-    // P1 (2026-04-27 batch1): persistent audit trail (read-only history).
-    audit:     { title: "審計日誌",           kicker: "AUDIT LOG · 持久事件紀錄 · DISK-BACKED", sections: ["sec-audit-overview"] },
+    // v7 IA (2026-07-28): `audit` demoted to _bareLegacyRedirects →
+    // history/audit (the history tabbed nav already owned sec-audit-overview).
     // P2-3 (2026-05-17 design v4): system event stream — aliases /admin/audit
     // backend with a v4 visual treatment (severity dot/chip + simpler row).
     events:    { title: "系統事件",           kicker: "SYSTEM · EVENTS · AUTO-EMITTED",    sections: ["sec-events"] },

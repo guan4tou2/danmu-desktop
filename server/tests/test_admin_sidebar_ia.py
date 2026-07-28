@@ -58,16 +58,16 @@ EXPECTED_NAV_ORDER = [
     "moderation",
     # 場前佈置 — surfaces first, then uploadable libraries
     # (2026-05-19 v5 IA: `display` retired — content merged into viewer's 4 tabs)
+    # (2026-07-28 v7 IA: `fonts` folded into assets as its fifth tab)
     "viewer",
     "widgets",
     "effects",
     "themes",
     "assets",
-    "fonts",
-    # 系統維運 — config → guards → logs/exports → backup
+    # 系統維運 — config → records → backup
+    # (2026-07-28 v7 IA: `ratelimit` demoted back to its moderation tab;
+    # `audit` folded into the history tabbed nav, retitled 紀錄 & 匯出)
     "system",
-    "ratelimit",
-    "audit",
     "history",
     "backup",
     # 開發擴充 — browser-side and server-side plug-ins adjacent, then wire protocols
@@ -131,7 +131,11 @@ def test_truly_retired_slugs_have_no_sidebar_button(admin_js: str):
     pattern = re.compile(r'<button[^>]*\bdata-route="([\w-]+)"[^>]*role="tab"', re.DOTALL)
     found = pattern.findall(admin_js)
     sidebar_slugs = set(found[: len(EXPECTED_NAV_ORDER)])
-    for retired in ("dashboard", "appearance", "automation", "security", "messages"):
+    for retired in (
+        "dashboard", "appearance", "automation", "security",
+        # v7 IA (2026-07-28)
+        "messages", "ratelimit", "audit", "fonts",
+    ):
         assert retired not in sidebar_slugs, (
             f"retired slug '{retired}' has a sidebar button — should live "
             f"in _bareLegacyRedirects / _routeAliases only"
@@ -151,6 +155,11 @@ PHASE_A_STRING_REDIRECTS = {
 
 PHASE_B_OBJECT_REDIRECTS = {
     "automation": ("system", "scheduler"),
+    # v7 IA (2026-07-28): one-feature-one-door demotions land on the tab
+    # that already owned the section.
+    "ratelimit": ("moderation", "ratelimit"),
+    "audit": ("history", "audit"),
+    "fonts": ("assets", "fonts"),
 }
 
 
