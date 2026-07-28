@@ -1,14 +1,28 @@
-"""Sidebar IA contract tests (2026-05-19 v5 IA: Danmu Redesign v5 grouped nav).
+"""Sidebar IA contract tests (2026-07-28 v6 IA: frequency + object axis).
 
-Locks the admin sidebar order and structure. The 2026-05-19 sweep
-(commit 12e4c90) removed the `◐ 顯示設定` item — its overlay/viewer
-defaults content was already absorbed by the viewer route's 4-tab
-layout (page/fields/defaults/limits). Current grouped nav (~19 items):
-  · 總覽: live / messages / history
-  · 互動: polls / widgets / themes / assets / viewer
-  · 審核: moderation / ratelimit
-  · 設定: effects / plugins / fonts / system / audit
-  · 整合: extensions / webhooks / api-tokens / backup
+Locks the admin sidebar order and structure. v6 regrouped the same 19
+items from five abstract sections (總覽/互動/審核/設定/整合) into four
+sections chosen on a frequency + object axis — "when would you come to
+this section" rather than "what category is this feature". The v5 設定
+had become a grab bag (effects/plugins/fonts/system/audit share nothing
+but being settings-ish) and 整合 held backup, which is upkeep rather
+than integration.
+
+  · 場中操作: live / messages / polls / moderation
+      what you touch while a session is running
+  · 場前佈置: viewer / widgets / effects / themes / assets / fonts
+      the one sit-down before a session — surfaces first, then the
+      uploadable libraries
+  · 系統維運: system / ratelimit / audit / history / backup
+      non-realtime upkeep — config → guards → logs/exports → backup
+  · 開發擴充: extensions / plugins / webhooks / api-tokens
+      extensibility surfaces; the two plug-in mechanisms sit adjacent
+      (Extensions = browser-side, 伺服器插件 = server-side)
+
+No route slugs changed in v6 — grouping and group labels only. The
+2026-05-19 v5 sweep (commit 12e4c90) had removed the `◐ 顯示設定` item;
+its overlay/viewer defaults content lives in the viewer route's 4-tab
+layout (page/fields/defaults/limits).
 
 Items that resolve via _routeAliases (themes/widgets/plugins/fonts/audit/
 extensions/webhooks/api-tokens/backup/ratelimit) navigate correctly through
@@ -36,36 +50,54 @@ def admin_js() -> str:
 # ─── Sidebar order ────────────────────────────────────────────────────────────
 
 EXPECTED_NAV_ORDER = [
-    # 總覽
+    # 場中操作 — dashboard → content streams → moderation
     "live",
     "messages",
-    "history",
-    # 互動 (2026-05-19 v5 IA: `display` retired — content merged into viewer's 4 tabs)
     "polls",
+    "moderation",
+    # 場前佈置 — surfaces first, then uploadable libraries
+    # (2026-05-19 v5 IA: `display` retired — content merged into viewer's 4 tabs)
+    "viewer",
     "widgets",
+    "effects",
     "themes",
     "assets",
-    "viewer",
-    # 審核
-    "moderation",
-    "ratelimit",
-    # 設定
-    "effects",
-    "plugins",
     "fonts",
+    # 系統維運 — config → guards → logs/exports → backup
     "system",
+    "ratelimit",
     "audit",
-    # 整合
+    "history",
+    "backup",
+    # 開發擴充 — browser-side and server-side plug-ins adjacent, then wire protocols
     "extensions",
+    "plugins",
     "webhooks",
     "api-tokens",
-    "backup",
+]
+
+# Group label i18n keys in sidebar order. v6 replaced the v5 keys
+# (adminNavGroup{Overview,Interact,Moderation,Settings,Integrations}) —
+# key names track the displayed meaning so they don't drift apart.
+EXPECTED_GROUP_KEYS = [
+    "adminNavGroupInSession",
+    "adminNavGroupSetup",
+    "adminNavGroupOperations",
+    "adminNavGroupExtensibility",
+]
+
+RETIRED_GROUP_KEYS = [
+    "adminNavGroupOverview",
+    "adminNavGroupInteract",
+    "adminNavGroupModeration",
+    "adminNavGroupSettings",
+    "adminNavGroupIntegrations",
 ]
 
 
 def test_sidebar_renders_nav_rows_in_locked_order(admin_js: str):
-    """Sidebar HTML must declare data-route in the v5 5-section order
-    (2026-05-18 Danmu Redesign v4 grouped nav)."""
+    """Sidebar HTML must declare data-route in the v6 4-section order
+    (2026-07-28 frequency + object axis regroup)."""
     pattern = re.compile(r'<button[^>]*\bdata-route="([\w-]+)"[^>]*role="tab"', re.DOTALL)
     found = pattern.findall(admin_js)
     actual = found[: len(EXPECTED_NAV_ORDER)]
@@ -650,3 +682,59 @@ def test_nav_i18n_keys_present_in_all_locales(locale: str):
     for slug in EXPECTED_NAV_ORDER:
         key = f'"{_slug_to_i18n_key(slug)}"'
         assert key in body, f"{locale}/translation.json missing {key}"
+
+
+# ─── Group labels (added 2026-07-28) ─────────────────────────────────────────
+#
+# The v5 suite locked per-item order and per-item i18n keys but left the
+# section headers uncovered — a half-finished regroup (markup renamed,
+# locales not) would have shipped green. These three tests close that gap.
+
+
+def test_sidebar_declares_group_labels_in_order(admin_js: str):
+    """The four `.admin-dash-nav-label` headers must appear in v6 order."""
+    pattern = re.compile(r'<div class="admin-dash-nav-label" data-i18n="([\w]+)"')
+    found = pattern.findall(admin_js)
+    assert found == EXPECTED_GROUP_KEYS, (
+        f"sidebar group labels drifted from the v6 IA baseline.\n"
+        f"expected: {EXPECTED_GROUP_KEYS}\n"
+        f"actual:   {found}"
+    )
+
+
+@pytest.mark.parametrize("locale", ["zh", "en", "ja", "ko"])
+def test_group_i18n_keys_present_in_all_locales(locale: str):
+    """All 4 locales must define every group key, and must no longer carry
+    the retired v5 keys (stale entries mean a half-done rename)."""
+    locale_path = (
+        Path(__file__).resolve().parent.parent / "static" / "locales" / locale / "translation.json"
+    )
+    body = locale_path.read_text(encoding="utf-8")
+
+    for key in EXPECTED_GROUP_KEYS:
+        assert f'"{key}"' in body, f"{locale}/translation.json missing {key!r}"
+    for retired in RETIRED_GROUP_KEYS:
+        assert f'"{retired}"' not in body, (
+            f"{locale}/translation.json still defines retired group key "
+            f"{retired!r} — remove it so the v5 IA doesn't linger."
+        )
+
+
+def test_generated_i18n_bundle_matches_locale_sources():
+    """`static/js/i18n.js` is generated by `npm run build:i18n`. If it still
+    carries the retired group keys, someone edited the locale JSON without
+    regenerating the bundle — the admin UI loads the bundle, not the JSON,
+    so the sidebar would render stale labels."""
+    bundle = (
+        Path(__file__).resolve().parent.parent / "static" / "js" / "i18n.js"
+    ).read_text(encoding="utf-8")
+
+    for key in EXPECTED_GROUP_KEYS:
+        assert f'"{key}"' in bundle, (
+            f"i18n.js missing {key!r} — run `npm run build:i18n` in server/."
+        )
+    for retired in RETIRED_GROUP_KEYS:
+        assert f'"{retired}"' not in bundle, (
+            f"i18n.js still carries retired key {retired!r} — run "
+            f"`npm run build:i18n` in server/ to regenerate from the locale JSON."
+        )
