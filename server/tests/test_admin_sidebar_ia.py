@@ -347,7 +347,9 @@ DEEP_LINK_ALIASES = {
     # were removed so #/themes etc. resolve directly.
     # 2026-05-19 v5.2: sessions / search / audience / webhooks / security
     # promoted to first-class routes. Only replay / scheduler remain aliased.
-    "replay": ("system", "replay"),
+    # v7 S3 (2026-07-28): accordion retired — replay lives in the history
+    # tabbed nav (紀錄 & 匯出) alongside audit.
+    "replay": ("history", "replay"),
     "scheduler": ("system", "scheduler"),
     # v7 S4 (2026-07-28): automation is an alias (not bare) so explicit-tab
     # deep links pass their tab straight into the system accordion.
@@ -474,83 +476,76 @@ def test_appearance_parent_nav_not_bare_redirected(admin_js: str):
 # slug list + group structure so a future edit doesn't quietly drop a
 # slug or scramble the grouping that the IA-REORG-DRAFT calls for.
 
-ACCORDION_GROUPS_EXPECTED = ["settings", "access", "automation", "history"]
+# v7 S3 (2026-07-28): the system accordion retired. System is a normal
+# AdminTabs route now; only what has no other home stays as a tab.
+SYSTEM_TABS_EXPECTED = ["overview", "scheduler", "security", "firetoken", "wcag", "about"]
 
-# 2026-05-13 engineering update: security is the first leaf of the
-# `access` group (which replaces the older `tokens` group). The
-# remaining settings / automation / history slugs are unchanged.
-ACCORDION_SLUGS_BY_GROUP = {
-    "settings": ["system", "backup", "integrations", "wcag", "about"],
-    "access": ["security", "firetoken", "api-tokens"],
-    "automation": ["scheduler", "webhooks", "plugins"],
-    "history": ["sessions", "search", "audit", "replay", "audience"],
+# Old #/system/<leaf> deep links for rehomed leaves must translate via the
+# legacy leaf map in admin.js applyRoute.
+SYSTEM_LEGACY_LEAF_HOMES_EXPECTED = {
+    "backup": ("backup", None),
+    "integrations": ("integrations", None),
+    "api-tokens": ("api-tokens", None),
+    "webhooks": ("webhooks", None),
+    "plugins": ("plugins", None),
+    "sessions": ("history", "sessions"),
+    "search": ("history", "search"),
+    "audit": ("history", "audit"),
+    "replay": ("history", "replay"),
+    "audience": ("history", "audience"),
 }
 
 
 @pytest.fixture(scope="module")
-def accordion_js() -> str:
-    path = Path(__file__).resolve().parent.parent / "static" / "js" / "admin-system-accordion.js"
+def tabs_js() -> str:
+    path = Path(__file__).resolve().parent.parent / "static" / "js" / "admin-tabs.js"
     return path.read_text(encoding="utf-8")
 
 
-def test_accordion_declares_four_groups(accordion_js: str):
-    """The accordion's GROUPS array must declare exactly 4 groups in the
-    canonical order: settings → tokens → automation → history."""
-    groups_match = re.search(
-        r"const GROUPS\s*=\s*\[([\s\S]+?)\];",
-        accordion_js,
+def test_accordion_module_is_gone():
+    """v7 S3: admin-system-accordion.js is deleted — resurrecting it (or its
+    script tag) reintroduces a second navigation pattern for one route."""
+    static_js = Path(__file__).resolve().parent.parent / "static" / "js"
+    assert not (static_js / "admin-system-accordion.js").exists(), (
+        "admin-system-accordion.js must stay deleted (system uses AdminTabs)"
     )
-    assert groups_match, "GROUPS array not found in admin-system-accordion.js"
-    body = groups_match.group(1)
-    found = re.findall(r'\{\s*key:\s*"([\w-]+)"', body)
-    assert found == ACCORDION_GROUPS_EXPECTED, (
-        f"accordion GROUPS order drifted.\n"
-        f"expected: {ACCORDION_GROUPS_EXPECTED}\n"
-        f"actual:   {found}"
+    admin_html = (
+        Path(__file__).resolve().parent.parent / "templates" / "admin.html"
+    ).read_text(encoding="utf-8")
+    assert "admin-system-accordion" not in admin_html
+
+
+def test_system_tab_group_declares_expected_tabs(tabs_js: str):
+    """TabConfig.system must declare the 6 tabs in canonical order with
+    overview as the landing tab."""
+    block = re.search(r"system:\s*\{\s*defaultTab:\s*\"(\w+)\",\s*tabs:\s*\[([\s\S]+?)\n\s*\]", tabs_js)
+    assert block, "TabConfig.system not found in admin-tabs.js"
+    assert block.group(1) == "overview", "system defaultTab must be overview"
+    found = re.findall(r'slug:\s*"([\w-]+)"', block.group(2))
+    assert found == SYSTEM_TABS_EXPECTED, (
+        f"system tab order drifted.\nexpected: {SYSTEM_TABS_EXPECTED}\nactual:   {found}"
     )
 
 
-@pytest.mark.parametrize("group, expected_slugs", list(ACCORDION_SLUGS_BY_GROUP.items()))
-def test_accordion_section_slugs_per_group(accordion_js: str, group: str, expected_slugs: list):
-    """Each group's slugs must appear in the SECTIONS array tagged with
-    the right `group` field. Phase B added automation + history; settings
-    + tokens are unchanged from Phase A."""
-    sections_match = re.search(
-        r"const SECTIONS\s*=\s*\[([\s\S]+?)\n\s*\];",
-        accordion_js,
+def test_system_legacy_leaf_homes_cover_rehomed_leaves(admin_js: str):
+    """Every rehomed accordion leaf must appear in SYSTEM_LEGACY_LEAF_HOMES
+    so old #/system/<leaf> bookmarks land on the new home (not silently on
+    the overview tab)."""
+    block = re.search(
+        r"const SYSTEM_LEGACY_LEAF_HOMES\s*=\s*\{([\s\S]+?)\n\s*\};", admin_js
     )
-    assert sections_match, "SECTIONS array not found"
-    body = sections_match.group(1)
-    # Find slugs tagged with the requested group.
-    pattern = re.compile(
-        rf'slug:\s*"([\w-]+)"[^}}]*?group:\s*"{group}"',
-    )
-    found = pattern.findall(body)
-    assert found == expected_slugs, (
-        f"accordion SECTIONS for group={group!r} drifted.\n"
-        f"expected: {expected_slugs}\n"
-        f"actual:   {found}"
-    )
-
-
-def test_accordion_replay_uses_multi_section_bundle(accordion_js: str):
-    """The history/replay leaf renders the history tab bundle together
-    (sec-history-tabs + history-v2-section + sec-history-list + sec-history).
-    The accordion config must keep the `sectionIds` array form for replay so all
-    show together when the leaf is open."""
-    pattern = re.compile(
-        r'slug:\s*"replay"[^}]*sectionIds:\s*\[\s*'
-        r'"sec-history-tabs"\s*,\s*'
-        r'"history-v2-section"\s*,\s*'
-        r'"sec-history-list"\s*,\s*'
-        r'"sec-history"\s*\]',
-        re.DOTALL,
-    )
-    assert pattern.search(accordion_js), (
-        "history/replay must keep sectionIds: ['sec-history-tabs', "
-        "'history-v2-section', 'sec-history-list', 'sec-history']; "
-        "otherwise the replay view loses its tab strip + body when opened."
-    )
+    assert block, "SYSTEM_LEGACY_LEAF_HOMES not found in admin.js"
+    body = block.group(1)
+    for slug, (nav, tab) in SYSTEM_LEGACY_LEAF_HOMES_EXPECTED.items():
+        key = rf'(?:"{re.escape(slug)}"|\b{re.escape(slug)}\b)'
+        if tab:
+            pat = rf'{key}:\s*\{{\s*nav:\s*"{nav}",\s*tab:\s*"{tab}"'
+        else:
+            pat = rf'{key}:\s*\{{\s*nav:\s*"{nav}"\s*\}}'
+        assert re.search(pat, body), (
+            f"SYSTEM_LEGACY_LEAF_HOMES missing/wrong for {slug!r} "
+            f"(expected nav={nav!r}, tab={tab!r})"
+        )
 
 
 # ─── Section IDs must actually be creatable (added 2026-07-28) ──────────────
@@ -630,22 +625,20 @@ def test_admin_routes_sections_reference_creatable_ids(admin_js: str):
     )
 
 
-def test_accordion_section_ids_are_creatable(accordion_js: str):
-    """Same contract for the System accordion's leaf → section mapping.
+def test_tab_config_section_ids_are_creatable(tabs_js: str):
+    """Same contract for every AdminTabs group's tab → section mapping
+    (v7 S3: replaces the accordion variant — system is a tab group now).
 
-    A phantom ID here means the accordion silently stops managing that
-    leaf's visibility — it happens to work only while the page also
-    self-hides from `dataset.activeLeaf`, which is luck, not design.
+    A phantom ID here means the tab silently stops managing its section's
+    visibility — it happens to work only while the page also self-hides
+    from `dataset.activeLeaf`, which is luck, not design.
     """
     creatable = _creatable_element_ids()
-    sections = re.search(r"const SECTIONS\s*=\s*\[([\s\S]+?)\n\s*\];", accordion_js)
-    assert sections, "SECTIONS array not found"
-    body = sections.group(1)
-    referenced = set(re.findall(r'sectionId:\s*"([\w-]+)"', body))
-    for group in re.findall(r"sectionIds:\s*\[([^\]]+)\]", body):
+    referenced = set(re.findall(r'section:\s*"([\w-]+)"', tabs_js))
+    for group in re.findall(r"sections:\s*\[([^\]]+)\]", tabs_js):
         referenced |= set(re.findall(r'"([\w-]+)"', group))
     phantom = sorted(sid for sid in referenced if sid not in creatable)
-    assert not phantom, f"accordion SECTIONS reference IDs that no module creates: {phantom}."
+    assert not phantom, f"TabConfig references IDs that no module creates: {phantom}."
 
 
 def test_routes_owning_a_v2_page_do_not_declare_empty_sections(admin_js: str):
@@ -666,35 +659,24 @@ def test_routes_owning_a_v2_page_do_not_declare_empty_sections(admin_js: str):
         )
 
 
-def test_admin_routes_system_owns_absorbed_sections(admin_js: str):
-    """ADMIN_ROUTES.system must list every section the accordion can open.
-    Without this, the route-level visibility pass would hide the absorbed
-    sections regardless of which accordion leaf is active."""
+def test_admin_routes_system_owns_exactly_its_tab_sections(admin_js: str):
+    """v7 S3: system owns only its 6 tab sections — the accordion-era
+    absorption (webhooks/plugins/history bundle…) is gone; those sections
+    belong to their first-class routes and would double-show here."""
     system_match = re.search(
         r"\bsystem:\s*\{\s*title:[^}]*?sections:\s*\[([^\]]+)\]",
         admin_js,
     )
     assert system_match, "ADMIN_ROUTES.system entry not found"
-    sections = system_match.group(1)
-    must_contain = [
-        # Phase B additions
+    sections = re.findall(r'"([\w-]+)"', system_match.group(1))
+    assert sections == [
+        "sec-system-overview",
         "sec-scheduler",
-        "sec-webhooks",
-        "sec-plugins",
-        "sec-sessions-overview",
-        "sec-search-overview",
-        "sec-audit-overview",
-        "sec-history-tabs",
-        "history-v2-section",
-        "sec-history-list",
-        "sec-history",
-        "sec-audience-overview",
-    ]
-    for sec in must_contain:
-        assert f'"{sec}"' in sections, (
-            f"ADMIN_ROUTES.system missing absorbed section {sec!r}; "
-            f"the route-level visibility pass would hide it on #/system."
-        )
+        "admin-security-v2-page",
+        "sec-firetoken-overview",
+        "sec-wcag-overview",
+        "sec-about-overview",
+    ], f"ADMIN_ROUTES.system.sections drifted: {sections}"
 
 
 # ─── admin-display.js viewer-config visibility gate ─────────────────────────

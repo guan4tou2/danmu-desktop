@@ -189,7 +189,9 @@ def test_mobile_admin_dedicated_page_removed(admin_page):
     verify the canonical state via shell.dataset, not via location.hash.
     """
     _go_to_route(admin_page, "mobile")
-    admin_page.wait_for_selector(".admin-system-accordion", state="visible", timeout=5000)
+    # v7 S3: system is an AdminTabs route; the legacy `system` leaf slug
+    # translates to the overview tab.
+    admin_page.wait_for_selector("#sec-system-overview", state="visible", timeout=5000)
     shell_route = admin_page.evaluate(
         '() => document.querySelector(".admin-dash-grid").dataset.activeRoute'
     )
@@ -197,11 +199,13 @@ def test_mobile_admin_dedicated_page_removed(admin_page):
         '() => document.querySelector(".admin-dash-grid").dataset.activeLeaf'
     )
     assert shell_route == "system", f"alias should resolve to system, got {shell_route}"
-    assert shell_leaf == "system", f"alias should default leaf to system, got {shell_leaf}"
+    assert shell_leaf == "overview", f"alias should land on overview tab, got {shell_leaf}"
     # Dedicated mobile-admin UI is gone — these are the real removal asserts
     assert admin_page.locator("#sec-mobile-admin-overview").count() == 0
     assert admin_page.locator("[data-mobile-frame]").count() == 0
-    labels = admin_page.locator(".admin-system-accordion-label").all_text_contents()
+    labels = admin_page.locator(
+        "[data-admin-tabs-host] .admin-tabs-btn-label"
+    ).all_text_contents()
     assert "手機後台" not in labels
 
 
@@ -394,23 +398,45 @@ def test_ia_tab_strip_renders_for_moderation(admin_page):
     assert active == "queue"
 
 
-def test_ia_system_accordion_renders(admin_page):
-    """Slice 6: system route shows the current system accordion leaves."""
+def test_ia_system_tab_strip_renders(admin_page):
+    """v7 S3 (2026-07-28): the system accordion retired — #/system mounts a
+    normal AdminTabs strip with 6 tabs, overview as the landing tab, and
+    security surviving as a tab (its first-class deeplink route remains)."""
     _go_to_route(admin_page, "system")
-    admin_page.wait_for_selector(".admin-system-accordion", state="attached", timeout=5000)
-    rows = admin_page.locator(".admin-system-accordion-row")
-    # 16 rows after v3 IA canonical added `access` leaf under Security (2026-05-16)
-    assert rows.count() == 16
-    groups = admin_page.locator(".admin-system-accordion-group")
-    assert groups.count() == 4
-    labels = admin_page.locator(".admin-system-accordion-label").all_text_contents()
-    assert "手機後台" not in labels
-    # Single-open default — first row (system overview) is open
-    open_rows = admin_page.locator(".admin-system-accordion-row.is-open")
-    assert open_rows.count() == 1
-    # v3 IA canonical (2026-05-16): Security collapsed into System accordion
-    # under the `access` group — no standalone `security` route in the sidebar.
-    assert admin_page.locator('.admin-system-accordion-row[data-slug="security"]').count() == 1
+    admin_page.wait_for_selector("[data-admin-tabs-host] .admin-tabs-btn", state="attached", timeout=5000)
+    assert admin_page.locator(".admin-system-accordion").count() == 0
+    tabs = admin_page.locator("[data-admin-tabs-host] .admin-tabs-btn")
+    assert tabs.count() == 6
+    active = admin_page.locator(".admin-tabs-btn.is-active").get_attribute("data-tab")
+    assert active == "overview"
+    assert admin_page.locator('.admin-tabs-btn[data-tab="security"]').count() == 1
+    # Overview body visible; a sibling tab's section hidden
+    admin_page.wait_for_selector("#sec-system-overview", state="visible", timeout=5000)
+    sched_display = admin_page.evaluate(
+        '() => document.getElementById("sec-scheduler").style.display'
+    )
+    assert sched_display == "none"
+
+
+def test_ia_system_legacy_leaf_deeplinks_rehome(admin_page):
+    """v7 S3: old #/system/<leaf> deep links for rehomed leaves translate to
+    the leaf's new home instead of dumping on the overview tab."""
+    cases = {
+        "backup": ("backup", "backup"),
+        "webhooks": ("webhooks", "webhooks"),
+        "audit": ("history", "audit"),
+    }
+    for leaf, (want_route, want_leaf) in cases.items():
+        admin_page.evaluate(f'() => {{ window.location.hash = "#/system/{leaf}"; }}')
+        admin_page.wait_for_timeout(400)
+        got_route = admin_page.evaluate(
+            '() => document.querySelector(".admin-dash-grid").dataset.activeRoute'
+        )
+        got_leaf = admin_page.evaluate(
+            '() => document.querySelector(".admin-dash-grid").dataset.activeLeaf'
+        )
+        assert got_route == want_route, f"#/system/{leaf} → route {got_route}, want {want_route}"
+        assert got_leaf == want_leaf, f"#/system/{leaf} → leaf {got_leaf}, want {want_leaf}"
 
 
 def test_ia_deep_link_preserves_tab(admin_page):

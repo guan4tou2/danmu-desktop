@@ -163,7 +163,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Note: session-detail is intentionally NOT aliased — its hash carries
     // a `?id=xxx` query that the parser would strip. session-detail keeps
     // its own route; admin-session-detail.js owns navigation back via UI.
-    replay:          { nav: "system", tab: "replay" },
+    // v7 S3 (2026-07-28): accordion retired — replay's home is the history
+    // tabbed nav (紀錄 & 匯出), same as audit.
+    replay:          { nav: "history", tab: "replay" },
 
     // === System accordion (Slice 6) — alias old C-tier routes to system/<slug> ===
     // 2026-05-18 v5: api-tokens / backup / integrations promoted to
@@ -749,7 +751,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <div class="admin-dash-nav-label" data-i18n="adminNavGroupOperations">系統維運</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="system" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⚙</span>
-                                    <span data-i18n="adminNavSystem">系統 &amp; 指紋</span>
+                                    <span data-i18n="adminNavSystem">系統</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="history" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◷</span>
@@ -1463,17 +1465,12 @@ document.addEventListener("DOMContentLoaded", () => {
     webhooks:  { title: "Webhooks",          kicker: "WEBHOOKS · 端點 · 投遞紀錄 · 重送", sections: ["sec-webhooks"] },
     // v7 IA (2026-07-28): `fonts` demoted to _bareLegacyRedirects →
     // assets/fonts (fonts joined the assets tab strip).
-    // Slice 6: system hosts the C-tier accordion. scheduler /
-    // webhooks moved to automation; fingerprints moved to moderation. The
-    // accordion shell is rendered by admin-system-accordion.js.
-    // Phase B (2026-05-06): system absorbs automation + history. The
-    // accordion now hosts the back-office leaves (settings / access / automation /
-    // history). Sections list includes every leaf the accordion can open:
-    // settings + access (existing) + automation (sec-scheduler/webhooks/
-    // plugins) + history (sec-sessions-overview/search-overview/audit-
-    // overview/history-tabs/history-v2-section/sec-history-list/sec-history/audience-
-    // overview). admin-system-accordion.js drives per-leaf visibility.
-    system:    { title: "系統",  kicker: "SYSTEM · 設定 / 金鑰 / 自動化 / 歷史", sections: ["sec-system-overview", "sec-firetoken-overview", "sec-api-tokens-overview", "admin-backup-v2-page", "sec-extensions-overview", "sec-wcag-overview", "sec-about-overview", "sec-scheduler", "sec-webhooks", "sec-plugins", "sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "history-v2-section", "sec-history-list", "sec-history", "sec-audience-overview"] },
+    // v7 S3 (2026-07-28): the system accordion retired. System owns only
+    // what has no other home: overview / scheduler / security / fire token
+    // / wcag / about, as an AdminTabs strip (TabConfig.system). Old
+    // #/system/<leaf> deep links to rehomed leaves translate via the
+    // legacy leaf map in applyRoute.
+    system:    { title: "系統",  kicker: "SYSTEM · 概覽 / 排程 / 安全 / 金鑰 / 關於", sections: ["sec-system-overview", "sec-scheduler", "admin-security-v2-page", "sec-firetoken-overview", "sec-wcag-overview", "sec-about-overview"] },
     // Legacy alias target only. Security now resolves under system/security;
     // the v2 page handles its own visibility from activeRoute + activeLeaf.
     security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: ["admin-security-v2-page"] },
@@ -1566,12 +1563,25 @@ document.addEventListener("DOMContentLoaded", () => {
       if (_activeTab && window.AdminTabs?.hasTabsFor?.(currentRoute)) {
         window.AdminTabs.applyTabSectionVisibility(currentRoute, _activeTab, shell);
       }
-      // Slice 6: system accordion treats `_activeTab` as the open accordion
-      // slug. Hides all other system sections so only one shows at a time.
-      if (currentRoute === "system" && window.AdminSystemAccordion) {
-        window.AdminSystemAccordion.applySectionVisibility(_activeTab, shell);
-      }
       syncRouteContainerVisibility();
+    };
+
+    // v7 S3 (2026-07-28): the retired system accordion carried leaves that
+    // now live elsewhere — old #/system/<leaf> deep links translate here.
+    // (security/firetoken/scheduler/wcag/about survive as system tabs and
+    // need no entry; `system` was the overview leaf's own slug.)
+    const SYSTEM_LEGACY_LEAF_HOMES = {
+      system: { nav: "system", tab: "overview" },
+      backup: { nav: "backup" },
+      integrations: { nav: "integrations" },
+      "api-tokens": { nav: "api-tokens" },
+      webhooks: { nav: "webhooks" },
+      plugins: { nav: "plugins" },
+      sessions: { nav: "history", tab: "sessions" },
+      search: { nav: "history", tab: "search" },
+      audit: { nav: "history", tab: "audit" },
+      replay: { nav: "history", tab: "replay" },
+      audience: { nav: "history", tab: "audience" },
     };
 
     const applyRoute = (name, requestedTab, rawName) => {
@@ -1599,6 +1609,13 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }
       }
+      // Translate retired system-accordion leaves to their new homes.
+      if (name === "system" && requestedTab && SYSTEM_LEGACY_LEAF_HOMES[requestedTab]) {
+        const home = SYSTEM_LEGACY_LEAF_HOMES[requestedTab];
+        name = home.nav;
+        requestedTab = home.tab || null;
+        rawName = name;
+      }
       currentRoute = ADMIN_ROUTES[name] ? name : "live";
       shell.dataset.activeRoute = currentRoute;
       // Slice 8: legacy modules (admin-backup / admin-audit / admin-audience /
@@ -1611,14 +1628,11 @@ document.addEventListener("DOMContentLoaded", () => {
       // Legacy modules read this instead so they keep working under aliases.
 
       // Resolve tab (Slice 3): hint > sessionStorage > default. Returns null
-      // for nav routes that don't opt into tabs.
-      // Slice 6: system route uses AdminSystemAccordion — same shape but
-      // resolves to a system accordion slug instead of a tab slug.
+      // for nav routes that don't opt into tabs. (v7 S3: system is a normal
+      // AdminTabs route now — the accordion special case is gone.)
       let activeTab;
       if (window.AdminTabs?.hasTabsFor?.(currentRoute)) {
         activeTab = window.AdminTabs.resolveActiveTab(currentRoute, requestedTab);
-      } else if (currentRoute === "system" && window.AdminSystemAccordion) {
-        activeTab = window.AdminSystemAccordion.resolveActiveSlug(requestedTab);
       } else {
         activeTab = null;
       }
@@ -1692,11 +1706,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // for non-tabbed/non-accordion routes.
       _activeTab = activeTab;
       if (activeTab) {
-        if (currentRoute === "system" && window.AdminSystemAccordion) {
-          window.AdminSystemAccordion._setMem(activeTab);
-        } else {
-          window.AdminRouter?.tabMemory?.set?.(currentRoute, activeTab);
-        }
+        window.AdminRouter?.tabMemory?.set?.(currentRoute, activeTab);
       }
       // Slice 8: expose canonical leaf slug for legacy modules.
       shell.dataset.activeLeaf = activeTab || currentRoute;
@@ -1804,17 +1814,8 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Slice 6: system accordion (vertical accordion replaces horizontal strip)
-      if (nav === "system" && window.AdminSystemAccordion && activeTab) {
-        host.hidden = false;
-        host.classList.add("admin-tabs-host--accordion");
-        const acc = window.AdminSystemAccordion.renderAccordion(activeTab, {
-          onSelect: (slug) => applyRoute("system", slug),
-        });
-        if (acc) host.appendChild(acc);
-        return;
-      }
-
+      // v7 S3 (2026-07-28): the system accordion branch is gone — system
+      // mounts a normal AdminTabs strip like every other tabbed route.
       host.classList.remove("admin-tabs-host--accordion");
       host.hidden = true;
     }

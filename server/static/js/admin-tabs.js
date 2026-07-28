@@ -55,8 +55,21 @@
         { slug: "fonts",    label: "字型",   en: "FONTS",    section: "sec-fonts"    },
       ],
     },
-    // v7 S4 (2026-07-28): dead `automation` group removed — the route
-    // aliases into the system accordion (scheduler/webhooks/plugins leaves).
+    // v7 S3 (2026-07-28): the system accordion retired — 16 leaves were
+    // mostly duplicate doors to first-class routes. What genuinely lives
+    // here is now a 6-tab strip; everything else rehomed (see the legacy
+    // leaf map in admin.js applyRoute).
+    system: {
+      defaultTab: "overview",
+      tabs: [
+        { slug: "overview",  label: "概覽",       en: "OVERVIEW",  section: "sec-system-overview" },
+        { slug: "scheduler", label: "排程",       en: "SCHEDULER", section: "sec-scheduler" },
+        { slug: "security",  label: "安全",       en: "SECURITY",  section: "admin-security-v2-page" },
+        { slug: "firetoken", label: "Fire Token", en: "FIRETOKEN", section: "sec-firetoken-overview" },
+        { slug: "wcag",      label: "無障礙",     en: "WCAG",      section: "sec-wcag-overview" },
+        { slug: "about",     label: "關於",       en: "ABOUT",     section: "sec-about-overview" },
+      ],
+    },
     history: {
       defaultTab: "sessions",
       tabs: [
