@@ -34,8 +34,8 @@
           <div class="admin-ratelimit-kicker">RATE LIMITS · 4 SCOPES · .env</div>
           <div class="admin-ratelimit-title">請求速率上限</div>
           <p class="admin-ratelimit-note">
-            每個來源 IP(或 fingerprint)在時間窗內可發送的請求數上限。
-            變更後請 export .env 並 restart server 生效。
+            每個來源 IP（或 fingerprint）在時間窗內可發送的請求數上限。
+            按「即時套用」立即生效、毋須重啟；要跨重啟保留，用下方「匯出 .env 片段」寫回設定檔。
           </p>
         </div>
 
