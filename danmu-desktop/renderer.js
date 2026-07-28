@@ -42,6 +42,10 @@ const state = {
 // Main initialization — runs after DOM is ready.
 // Uses try/finally so .main-content.loaded is always added even if init throws.
 const initRenderer = async () => {
+  // Preload bridge — declared before any use; a late declaration inside the
+  // same block once TDZ-crashed init halfway (issue: initWindowPicker at the
+  // top referenced it before the old `const api` further down).
+  const api = window.API;
   try {
     // ── Synchronous module initialization (before any awaits) ────────────
     initTrackManager();
@@ -79,7 +83,7 @@ const initRenderer = async () => {
     // Safe no-op if API.onUpdateStatus is missing (e.g. older preload).
     initUpdateStatus({ t, showToast });
     initWindowPicker(api);
-    initAppShellMeta({ api: window.API });
+    initAppShellMeta({ api });
 
     // Canvas 2D particle network background (main window only)
     if (document.getElementById("vanta-bg")) {
@@ -120,7 +124,6 @@ const initRenderer = async () => {
     }
 
     // ── Screen select population ─────────────────────────────────────────
-    const api = window.API;
     if (api) {
       const screenSelect = document.getElementById("screen-select");
       if (screenSelect) {
