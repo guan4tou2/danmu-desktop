@@ -15,7 +15,6 @@ import pytest
 
 from server.services.json_state import JsonState
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -26,7 +25,8 @@ def _make(tmp_path: Path, *, secure: bool = False, default=None, normalize=None)
     js = JsonState(
         "test.json",
         default=default or (lambda: {"count": 0, "items": []}),
-        normalize=normalize or (lambda raw: raw if isinstance(raw, dict) else {"count": 0, "items": []}),
+        normalize=normalize
+        or (lambda raw: raw if isinstance(raw, dict) else {"count": 0, "items": []}),
         secure=secure,
     )
     js.reset_for_tests(tmp_path / "test.json")

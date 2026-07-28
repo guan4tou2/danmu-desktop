@@ -23,7 +23,9 @@ Usage:
         # raise ValueError on bad shape; return canonical dict
         ...
 
-    _state = JsonState("ratelimit_ip_rules.json", default=lambda: dict(_DEFAULT), normalize=_normalize)
+    _state = JsonState(
+        "ratelimit_ip_rules.json", default=lambda: dict(_DEFAULT), normalize=_normalize
+    )
 
     get_state = _state.get
 

@@ -18,7 +18,6 @@ from flask import Flask, jsonify
 from server.services import ratelimit_ip
 from server.services.security import rate_limiter
 
-
 # ---------------------------------------------------------------------------
 # Helpers (mirror test_admin_routes.py)
 # ---------------------------------------------------------------------------
@@ -100,10 +99,12 @@ def test_check_ip_returns_deny_for_denylisted_ip():
 
 
 def test_check_ip_allow_wins_over_deny():
-    ratelimit_ip.set_state({
-        "allowlist": ["10.0.0.1"],
-        "denylist": ["10.0.0.0/24"],
-    })
+    ratelimit_ip.set_state(
+        {
+            "allowlist": ["10.0.0.1"],
+            "denylist": ["10.0.0.0/24"],
+        }
+    )
     assert ratelimit_ip.check_ip("10.0.0.1") == "allow"
     assert ratelimit_ip.check_ip("10.0.0.2") == "deny"
 
@@ -264,10 +265,12 @@ def test_rate_limit_no_rule_uses_normal_limiter(rl_app):
 
 
 def test_rate_limit_allow_wins_over_deny(rl_app):
-    ratelimit_ip.set_state({
-        "allowlist": ["10.0.0.1"],
-        "denylist": ["10.0.0.0/24"],
-    })
+    ratelimit_ip.set_state(
+        {
+            "allowlist": ["10.0.0.1"],
+            "denylist": ["10.0.0.0/24"],
+        }
+    )
     with rl_app.test_client() as c:
         r_allow = c.get("/probe", environ_base={"REMOTE_ADDR": "10.0.0.1"})
         assert r_allow.status_code == 200

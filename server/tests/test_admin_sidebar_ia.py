@@ -592,9 +592,7 @@ def test_accordion_section_ids_are_creatable(accordion_js: str):
     for group in re.findall(r"sectionIds:\s*\[([^\]]+)\]", body):
         referenced |= set(re.findall(r'"([\w-]+)"', group))
     phantom = sorted(sid for sid in referenced if sid not in creatable)
-    assert not phantom, (
-        f"accordion SECTIONS reference IDs that no module creates: {phantom}."
-    )
+    assert not phantom, f"accordion SECTIONS reference IDs that no module creates: {phantom}."
 
 
 def test_routes_owning_a_v2_page_do_not_declare_empty_sections(admin_js: str):
@@ -840,14 +838,14 @@ def test_generated_i18n_bundle_matches_locale_sources():
     carries the retired group keys, someone edited the locale JSON without
     regenerating the bundle — the admin UI loads the bundle, not the JSON,
     so the sidebar would render stale labels."""
-    bundle = (
-        Path(__file__).resolve().parent.parent / "static" / "js" / "i18n.js"
-    ).read_text(encoding="utf-8")
+    bundle = (Path(__file__).resolve().parent.parent / "static" / "js" / "i18n.js").read_text(
+        encoding="utf-8"
+    )
 
     for key in EXPECTED_GROUP_KEYS:
-        assert f'"{key}"' in bundle, (
-            f"i18n.js missing {key!r} — run `npm run build:i18n` in server/."
-        )
+        assert (
+            f'"{key}"' in bundle
+        ), f"i18n.js missing {key!r} — run `npm run build:i18n` in server/."
     for retired in RETIRED_GROUP_KEYS:
         assert f'"{retired}"' not in bundle, (
             f"i18n.js still carries retired key {retired!r} — run "
