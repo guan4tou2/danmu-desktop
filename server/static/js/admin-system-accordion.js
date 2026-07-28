@@ -29,7 +29,7 @@
   const SECTIONS = [
     // ── settings group ────────────────────────────────────────────────────
     { slug: "system",       group: "settings",   zh: "系統概覽",   en: "OVERVIEW",     sectionId: "sec-system-overview" },
-    { slug: "backup",       group: "settings",   zh: "備份 & 匯出", en: "BACKUP",       sectionId: "sec-backup" },
+    { slug: "backup",       group: "settings",   zh: "備份 & 匯出", en: "BACKUP",       sectionId: "admin-backup-v2-page" },
     { slug: "integrations", group: "settings",   zh: "整合",       en: "INTEGRATIONS", sectionId: "sec-extensions-overview" },
     { slug: "wcag",         group: "settings",   zh: "無障礙",     en: "WCAG",         sectionId: "sec-wcag-overview" },
     { slug: "about",        group: "settings",   zh: "關於",       en: "ABOUT",        sectionId: "sec-about-overview" },
