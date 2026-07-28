@@ -16,24 +16,86 @@ audit_log entry with shape:
       "reason":      "<short>"
     }
 
-`list_active(now=None)` reads the audit ring + walks targets in
-reverse-chrono order; the most recent event per (target_kind, target)
-determines current state. No background reaper thread — clients call
-`list_active()` lazily; expired entries are surfaced with state="expired"
-so the UI can show "已過期 · auto-unban" and the next admin action will
-auto-emit a `ban_expired` audit event for the notification feed.
+State lives in ``runtime/moderation_bans.json`` (one row per target),
+mirrored by an in-memory dict. audit_log still records every action for the
+audit trail, but it can no longer be the source of truth: its ring holds the
+newest 500 events *across all sources*, so a few hundred logins were enough to
+push a ban out of the window and silently un-ban someone. Measured before this
+change — issue a ban, append 520 unrelated events, and ``is_banned()`` flips
+back to False. A ban's lifetime has to depend on the duration the admin chose,
+not on how much else happened to be logged afterwards.
+
+No background reaper thread — expiry is evaluated on read, and expired rows are
+surfaced with status="expired" so the UI can show "已過期 · auto-unban".
 """
 
 from __future__ import annotations
 
+import json
+import logging
+import threading
 import time as _time
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from . import audit_log
 
+logger = logging.getLogger(__name__)
+
+_STATE_FILE = Path(__file__).parent.parent / "runtime" / "moderation_bans.json"
+_lock = threading.RLock()
+_state: Optional[Dict[str, Dict[str, Any]]] = None  # "kind\x00target" -> row
+
 _VALID_KINDS = {"fingerprint", "ip", "nick"}
 _VALID_LABELS = {"ban", "mute"}
 _MAX_REASON = 200
+
+
+def _key(target_kind: str, target: str) -> str:
+    return f"{target_kind}\x00{target}"
+
+
+def _load_state() -> Dict[str, Dict[str, Any]]:
+    """Read the ban rows from disk once, then keep them in memory."""
+    global _state
+    if _state is not None:
+        return _state
+    with _lock:
+        if _state is not None:
+            return _state
+        loaded: Dict[str, Dict[str, Any]] = {}
+        try:
+            if _STATE_FILE.exists():
+                raw = json.loads(_STATE_FILE.read_text(encoding="utf-8"))
+                if isinstance(raw, dict):
+                    for k, row in raw.items():
+                        # 只收形狀對的列 —— 壞掉一行不該讓封禁狀態整個讀不出來。
+                        if isinstance(row, dict) and row.get("target_kind") and row.get("target"):
+                            loaded[k] = row
+        except (OSError, json.JSONDecodeError, ValueError) as exc:
+            logger.warning("moderation_bans: cannot read %s: %s", _STATE_FILE, exc)
+        _state = loaded
+        return _state
+
+
+def _save_state() -> None:
+    """Best-effort persist. Failures keep the in-memory view authoritative."""
+    if _state is None:
+        return
+    try:
+        _STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        tmp = _STATE_FILE.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(_state, ensure_ascii=False, indent=1), encoding="utf-8")
+        tmp.replace(_STATE_FILE)
+    except OSError as exc:
+        logger.warning("moderation_bans: cannot persist %s: %s", _STATE_FILE, exc)
+
+
+def reset_for_tests() -> None:
+    """Drop the cached state so a test can start from a clean slate."""
+    global _state
+    with _lock:
+        _state = None
 
 
 def _validate_target_kind(target_kind: str) -> None:
@@ -71,6 +133,15 @@ def add_ban(
         "reason": (reason or "").strip()[:_MAX_REASON],
     }
     audit_log.append("moderation", kind, actor=actor, meta=meta)
+    with _lock:
+        state = _load_state()
+        state[_key(target_kind, meta["target"])] = {
+            **meta,
+            "kind": kind,
+            "actor": actor,
+            "created_at": now,
+        }
+        _save_state()
     return meta
 
 
@@ -94,6 +165,10 @@ def remove_ban(
         "reason": (reason or "").strip()[:_MAX_REASON],
     }
     audit_log.append("moderation", "unban", actor=actor, meta=meta)
+    with _lock:
+        state = _load_state()
+        state.pop(_key(target_kind, meta["target"]), None)
+        _save_state()
     return meta
 
 
@@ -139,17 +214,15 @@ def list_active(now: Optional[float] = None) -> List[Dict[str, Any]]:
     """
     if now is None:
         now = _time.time()
-    # Pull all moderation events from the audit ring.
-    events = audit_log.recent(limit=500, source="moderation")
-    latest = _latest_per_target(events)
+    with _lock:
+        rows_in = list(_load_state().values())
     rows: List[Dict[str, Any]] = []
-    for (kind_, target), ev in latest.items():
-        action = ev.get("kind") or ""
-        meta = ev.get("meta") or {}
-        if action == "unban":
-            continue
+    for meta in rows_in:
+        action = meta.get("kind") or "ban"
         if action not in ("ban", "mute"):
             continue
+        kind_ = meta.get("target_kind")
+        target = meta.get("target")
         expires_at = meta.get("expires_at")
         duration_s = int(meta.get("duration_s") or 0)
         if not expires_at or duration_s <= 0:
@@ -171,8 +244,8 @@ def list_active(now: Optional[float] = None) -> List[Dict[str, Any]]:
                 "duration_s": duration_s,
                 "expires_at": expires_at,
                 "remaining_s": remaining,
-                "actor": ev.get("actor") or "admin",
-                "created_at": ev.get("ts"),
+                "actor": meta.get("actor") or "admin",
+                "created_at": meta.get("created_at"),
             }
         )
 
@@ -188,21 +261,22 @@ def list_active(now: Optional[float] = None) -> List[Dict[str, Any]]:
 
 
 def is_banned(target_kind: str, target: str, now: Optional[float] = None) -> bool:
-    """Lazy check used by the filter pipeline.
+    """Hot-path check — called for every incoming danmu.
 
-    Returns True iff the most recent moderation event for (target_kind, target)
-    is `ban`/`mute` AND its expires_at is None or in the future.
+    Reads the in-memory ban map, so cost is a dict lookup rather than a walk
+    over the audit ring (which also could not answer correctly once the ban
+    aged out of the 500-event window).
     """
+    if not target:
+        return False
     if now is None:
         now = _time.time()
-    events = audit_log.recent(limit=500, source="moderation")
-    latest = _latest_per_target(events)
-    ev = latest.get((target_kind, target))
-    if not ev or ev.get("kind") not in ("ban", "mute"):
+    with _lock:
+        row = _load_state().get(_key(target_kind, target))
+    if not row or row.get("kind") not in ("ban", "mute"):
         return False
-    meta = ev.get("meta") or {}
-    expires_at = meta.get("expires_at")
-    duration_s = int(meta.get("duration_s") or 0)
+    expires_at = row.get("expires_at")
+    duration_s = int(row.get("duration_s") or 0)
     if not expires_at or duration_s <= 0:
         return True  # permanent
     return expires_at > now
