@@ -2045,7 +2045,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 
 .admin-ratelimit-violations,
 .admin-ratelimit-ip-policy {
-  padding: 14px 16px;
+  padding: 14px var(--space-4);
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
   border-radius: var(--radius-md-sm);
@@ -2076,29 +2076,29 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 }
 
 .admin-ratelimit-vfeed-empty {
-  padding: 12px;
+  padding: var(--space-3);
   text-align: center;
   color: var(--admin-text-dim);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-family: var(--font-mono);
 }
 
 .admin-ratelimit-ip-form {
   display: grid;
   grid-template-columns: 1fr auto auto;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
 }
 
 .admin-ratelimit-ip-form input[data-rl-ip-input],
 .admin-ratelimit-ip-form select[data-rl-ip-select] {
-  padding: 8px 10px;
+  padding: var(--space-2) 10px;
   background: var(--admin-panel-2, var(--admin-panel));
   border: 1px solid var(--admin-line);
   border-radius: var(--radius-sm);
   color: var(--admin-text);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--text-xs);
   min-height: 36px;
 }
 
@@ -2116,11 +2116,11 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 }
 
 .admin-ratelimit-ip-error {
-  padding: 8px 10px;
-  background: color-mix(in srgb, var(--hud-crimson, #f87171) 12%, transparent);
-  border: 1px solid var(--hud-crimson, #f87171);
+  padding: var(--space-2) 10px;
+  background: color-mix(in srgb, var(--hud-crimson) 12%, transparent);
+  border: 1px solid var(--hud-crimson);
   border-radius: var(--radius-sm);
-  color: var(--hud-crimson, #f87171);
+  color: var(--hud-crimson);
   font-family: var(--font-mono);
   font-size: 11px;
 }
@@ -2140,7 +2140,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 8px;
+  padding: var(--space-2);
   background: var(--admin-panel-2, color-mix(in srgb, var(--admin-panel) 60%, transparent));
   border: 1px solid var(--admin-line);
   border-radius: var(--radius-sm);
@@ -2151,7 +2151,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 2px 4px;
+  padding: 2px var(--space-1);
 }
 
 .admin-ratelimit-ip-col-head .lbl {
@@ -2168,7 +2168,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   font-size: 11px;
   color: var(--admin-text);
   padding: 1px 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--admin-line) 60%, transparent);
 }
 
@@ -2176,17 +2176,17 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 4px;
+  padding: var(--space-1);
 }
 
 .admin-ratelimit-ip-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 4px 4px 8px;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-2);
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--admin-text);
@@ -2207,20 +2207,20 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   background: transparent;
   color: var(--admin-text-dim);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--text-sm);
   line-height: 1;
   padding: 0;
 }
 
 .admin-ratelimit-ip-chip-remove:hover {
-  background: color-mix(in srgb, var(--hud-crimson, #f87171) 20%, transparent);
-  color: var(--hud-crimson, #f87171);
+  background: color-mix(in srgb, var(--hud-crimson) 20%, transparent);
+  color: var(--hud-crimson);
 }
 
 .admin-ratelimit-vfeed-table {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   font-family: var(--font-mono);
   font-size: 11px;
 }
@@ -2228,8 +2228,8 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 .admin-ratelimit-vfeed-row {
   display: grid;
   grid-template-columns: 60px 60px 1fr;
-  gap: 8px;
-  padding: 4px 6px;
+  gap: var(--space-2);
+  padding: var(--space-1) 6px;
   border-radius: var(--radius-sm);
 }
 
