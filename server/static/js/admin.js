@@ -647,15 +647,24 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <span class="admin-dash-brand-suffix">ADMIN · v${config.appVersion || config.app_version || (window.APP_VERSION || "")}</span>
                             </div>
                             <nav class="admin-dash-nav" role="tablist" aria-label="Admin pages">
-                                <!-- Design v4 grouped nav (2026-05-18): 5-section structure
-                                     per Danmu Redesign v4 admin-pages.jsx. Items that resolve
-                                     to alias targets (themes/widgets/plugins/fonts/audit/
-                                     extensions/webhooks/api-tokens/backup/ratelimit) navigate
-                                     via _routeAliases; applyRoute() resolves them. The active
-                                     button matches the URL's raw slug so the clicked item
-                                     stays highlighted even after alias redirect. -->
+                                <!-- IA v6 grouped nav (2026-07-28): 4-section structure
+                                     organised on a frequency + object axis — 場中 (what you
+                                     touch while a session runs) / 場前 (the one sit-down
+                                     before it) / 維運 (non-realtime upkeep) / 擴充
+                                     (extensibility surfaces). Supersedes the v4 5-section
+                                     abstract grouping (總覽/互動/審核/設定/整合), whose
+                                     "設定" had become a grab bag and whose "整合" held
+                                     backup. No route slugs changed — this is grouping and
+                                     labels only.
 
-                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupOverview">總覽</div>
+                                     Items that resolve to alias targets (themes/widgets/
+                                     plugins/fonts/audit/extensions/webhooks/api-tokens/
+                                     backup/ratelimit) navigate via _routeAliases;
+                                     applyRoute() resolves them. The active button matches
+                                     the URL's raw slug so the clicked item stays
+                                     highlighted even after alias redirect. -->
+
+                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupInSession">場中操作</div>
                                 <button type="button" class="admin-dash-nav-row is-active" data-route="live" role="tab" aria-selected="true">
                                     <span class="admin-dash-nav-icon">◉</span>
                                     <span data-i18n="adminNavLive">控制台</span>
@@ -665,81 +674,87 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span data-i18n="adminNavMessages">訊息紀錄</span>
                                     <span class="admin-dash-nav-badge" data-count-messages hidden>—</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="history" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">↳</span>
-                                    <span data-i18n="adminNavHistory">時間軸匯出</span>
-                                </button>
-
-                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupInteract">互動</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="polls" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◈</span>
                                     <span data-i18n="adminNavPolls">投票</span>
                                     <span class="admin-dash-nav-live"></span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="moderation" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⊘</span>
+                                    <span data-i18n="adminNavModeration">敏感字 &amp; 黑名單</span>
+                                    <span class="admin-dash-nav-badge" data-count-blacklist hidden>—</span>
+                                </button>
+
+                                <!-- 場前佈置: surfaces first (viewer/widgets), then the
+                                     uploadable libraries (effects/themes/assets/fonts).
+                                     v5 IA (2026-05-19) removed the ◐ 顯示設定 item; its
+                                     content lives in the viewer route's 4-tab layout
+                                     (page/fields/defaults/limits). Legacy #/display
+                                     bookmarks redirect to #/viewer/defaults via
+                                     _bareLegacyRedirects. -->
+                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupSetup">場前佈置</div>
+                                <button type="button" class="admin-dash-nav-row" data-route="viewer" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◑</span>
+                                    <span data-i18n="adminNavViewer">觀眾頁</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="widgets" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⬚</span>
                                     <span data-i18n="adminNavWidgets">Desktop Widgets</span>
                                     <span class="admin-dash-nav-badge" data-count-widgets hidden>—</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="themes" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">❖</span>
-                                    <span data-i18n="adminNavThemes">風格主題包</span>
-                                    <span class="admin-dash-nav-badge" data-count-themes hidden>—</span>
-                                </button>
-                                <!-- v5 IA (2026-05-19): the ◐ 顯示設定 sidebar
-                                     item was removed; its content (overlay /
-                                     viewer defaults) was already absorbed by
-                                     the viewer route's 4-tab layout
-                                     (page/fields/defaults/limits). Legacy
-                                     #/display bookmarks redirect to
-                                     #/viewer/defaults via _bareLegacyRedirects. -->
-                                <button type="button" class="admin-dash-nav-row" data-route="assets" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">▦</span>
-                                    <span data-i18n="adminNavAssets">素材庫</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="viewer" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◑</span>
-                                    <span data-i18n="adminNavViewer">觀眾頁</span>
-                                </button>
-
-                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupModeration">審核</div>
-                                <button type="button" class="admin-dash-nav-row" data-route="moderation" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⊘</span>
-                                    <span data-i18n="adminNavModeration">敏感字 &amp; 黑名單</span>
-                                    <span class="admin-dash-nav-badge" data-count-blacklist hidden>—</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="ratelimit" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◔</span>
-                                    <span data-i18n="adminNavRatelimit">速率限制</span>
-                                </button>
-
-                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupSettings">設定</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="effects" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">✦</span>
                                     <span data-i18n="adminNavEffects">效果庫 .dme</span>
                                     <span class="admin-dash-nav-badge" data-count-effects>—</span>
                                 </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="plugins" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⬢</span>
-                                    <span data-i18n="adminNavPlugins">伺服器插件</span>
+                                <button type="button" class="admin-dash-nav-row" data-route="themes" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">❖</span>
+                                    <span data-i18n="adminNavThemes">風格主題包</span>
+                                    <span class="admin-dash-nav-badge" data-count-themes hidden>—</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="assets" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">▦</span>
+                                    <span data-i18n="adminNavAssets">素材庫</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="fonts" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⌂</span>
                                     <span data-i18n="adminNavFonts">字型管理</span>
                                 </button>
+
+                                <!-- 系統維運: config → guards → logs/exports → backup. -->
+                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupOperations">系統維運</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="system" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⚙</span>
                                     <span data-i18n="adminNavSystem">系統 &amp; 指紋</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="ratelimit" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◔</span>
+                                    <span data-i18n="adminNavRatelimit">速率限制</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="audit" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◷</span>
                                     <span data-i18n="adminNavAudit">操作日誌</span>
                                 </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="history" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">↳</span>
+                                    <span data-i18n="adminNavHistory">時間軸匯出</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="backup" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⇪</span>
+                                    <span data-i18n="adminNavBackup">備份 &amp; 還原</span>
+                                </button>
 
-                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupIntegrations">整合</div>
+                                <!-- 開發擴充: the two plug-in mechanisms sit adjacent
+                                     (Extensions = browser-side, 伺服器插件 = server-side)
+                                     so the distinction reads off the list itself. -->
+                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupExtensibility">開發擴充</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="extensions" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⌬</span>
                                     <span data-i18n="adminNavExtensions">Extensions</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="plugins" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⬢</span>
+                                    <span data-i18n="adminNavPlugins">伺服器插件</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="webhooks" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⇌</span>
@@ -748,10 +763,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <button type="button" class="admin-dash-nav-row" data-route="api-tokens" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⚿</span>
                                     <span data-i18n="adminNavApiTokens">API Tokens</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="backup" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⇪</span>
-                                    <span data-i18n="adminNavBackup">備份 &amp; 還原</span>
                                 </button>
                             </nav>
                             <div class="admin-dash-telem">
