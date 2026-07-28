@@ -29,11 +29,22 @@
     { id: "more",       route: null,         icon: "⋯", label: "更多" },
   ];
 
+  // v7 IA (2026-07-28): overflow covers every sidebar item the four primary
+  // tabs (live / moderation / polls / assets) don't. The old list had a
+  // Display/Viewer duplicate (both landed on #/viewer) and reached only
+  // 9 of the sidebar's items.
   const OVERFLOW = [
-    { route: "display", icon: "⊡", label: "Display", desc: "Desktop · OBS · 佈局" },
-    { route: "effects", icon: "✦", label: "Effects", desc: ".dme 效果庫" },
-    { route: "system",  icon: "⊙", label: "System",  desc: "系統 · 排程 · 備份" },
-    { route: "viewer",  icon: "◐", label: "Viewer",  desc: "觀眾頁主題 / 欄位設定" },
+    { route: "viewer",     icon: "◑", label: "觀眾頁",      desc: "整頁主題 · 欄位 · 預設 · 限制" },
+    { route: "widgets",    icon: "⬚", label: "Widgets",     desc: "OBS 分數板 · 跑馬燈" },
+    { route: "effects",    icon: "✦", label: "效果庫",      desc: ".dme 熱重載" },
+    { route: "themes",     icon: "❖", label: "主題包",      desc: "彈幕樣式預設" },
+    { route: "system",     icon: "⚙", label: "系統",        desc: "概覽 · 金鑰 · 排程" },
+    { route: "history",    icon: "◷", label: "紀錄 & 匯出", desc: "場次 · 審計 · 重播 · 匯出" },
+    { route: "backup",     icon: "⇪", label: "備份",        desc: "匯出 · 還原 · 危險區" },
+    { route: "extensions", icon: "⌬", label: "Extensions",  desc: "Slido · Discord · OBS" },
+    { route: "plugins",    icon: "⬢", label: "插件",        desc: "Plugin SDK · 熱重載" },
+    { route: "webhooks",   icon: "⇌", label: "Webhooks",    desc: "端點 · 投遞紀錄" },
+    { route: "api-tokens", icon: "⚿", label: "API Tokens",  desc: "開發者存取 · 權限" },
   ];
 
   let _overflowOpen = false;
