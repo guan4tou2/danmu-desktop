@@ -77,7 +77,7 @@
             <div class="admin-ui-monolabel">SETTINGS · 設定快照</div>
             <div class="admin-backup-row">
               <div class="admin-backup-desc">
-                一鍵 JSON 快照(client-side 組合)。不含密碼雜湊與 token,已自動剝除。
+                一鍵 JSON 快照（client-side 組合）。不含密碼雜湊與 token，已自動剝除。
               </div>
               <button type="button" id="bk2-settings-download" class="admin-ui-action is-primary admin-bk-action">下載</button>
             </div>
@@ -199,7 +199,7 @@
           <div class="admin-backup-subcard">
             <div class="admin-ui-monolabel">END SESSION · 結束管理工作階段</div>
             <div class="admin-backup-row">
-              <div class="admin-backup-desc">登出目前管理員,不影響 Desktop / viewer 連線。</div>
+              <div class="admin-backup-desc">登出目前管理員，不影響 Desktop / viewer 連線。</div>
               <button type="button" id="bk2-end-session" class="admin-ui-action is-danger admin-bk-action">END SESSION</button>
             </div>
           </div>
