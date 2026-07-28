@@ -47,11 +47,13 @@ bottom 應加上 keyboardOffset）。
 （158 處）vs slate-500（246 處）、面板底 #0f172a vs #0c1424。收斂成單一語意層，
 跨頁灰階不再跳階。
 
-### 頁首 shell 與按鈕階層收回原語（D-5/D-7）
+### 頁首 shell 與按鈕階層收回原語（D-5/D-7，部分已修）
 **Priority:** P2
-頁首三種形態（標準 26 檔／缺 note 9 檔／fonts·viewer-theme·ratelimit 自成一格；
-ratelimit 的 head CSS 是 hud.css 353-380 的逐條複製品）。按鈕在官方
-`.admin-ui-action is-*` 外另有三套私有階層，且所有刪除按鈕都沒用 `is-danger`。
+剩餘：頁首缺 note 的 9 檔補齊、viewer-theme 自成一格的頁首收回、
+onboarding `.ob-btn` 與 `admin-dsp2-btn-ghost` 兩套私有按鈕階層、
+`admin-empty__btn` 與 `.admin-ui-action` 的 padding 量級差。
+（已修 2026-07-28：ratelimit 頁首 clone 收回原語、fonts 補頁首、filters/fonts
+刪除鈕進 danger 階層——其餘三個刪除鈕實查本來就有危險視覺。）
 
 ### 空狀態/載入態歸一（D-6）
 **Priority:** P3
