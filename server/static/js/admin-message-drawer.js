@@ -277,14 +277,7 @@
 
   // ── ban via existing /admin/live/block ──────────────────────────
 
-  function _durationLabel(seconds) {
-    if (seconds >= 604800) return `${Math.round(seconds / 604800)} 天`;
-    if (seconds >= 86400) return `${Math.round(seconds / 86400)} 天`;
-    if (seconds >= 3600) return `${Math.round(seconds / 3600)} 小時`;
-    return `${seconds} 秒`;
-  }
-
-  async function _banFingerprint(reason, durationS) {
+  async function _banFingerprint(reason, durationS, durationLabel) {
     const fp = _state.entry && _state.entry.data && _state.entry.data.fingerprint;
     if (!fp) return;
     const seconds = parseInt(durationS || 0, 10) || 0;
@@ -310,7 +303,7 @@
             body: JSON.stringify({ type: "fingerprint", value: fp, reason: reason || "" }),
           });
       if (!r.ok) throw new Error("HTTP " + r.status);
-      const label = seconds > 0 ? _durationLabel(seconds) : "永久";
+      const label = durationLabel || (seconds > 0 ? `${seconds} 秒` : "永久");
       window.showToast && window.showToast(`已封禁 fp:${fp.slice(0, 8)} · ${label}`, true);
       _closeBanConfirm();
       _close();
@@ -391,7 +384,10 @@
     const reason = (body.querySelector("[data-ban-reason]") || {}).value || "";
     const active = body.querySelector(".admin-bancfm-dchip.is-active");
     const durationS = active ? parseInt(active.dataset.banDuration || "0", 10) || 0 : 0;
-    return _banFingerprint(reason.trim(), durationS);
+    // 標籤直接用 chip 上的文字，不另外從秒數推算 —— 推算過一次，7 天被算成
+    // 「1 天」（除數誤用 604800），跟 24 小時的提示變得一模一樣。
+    const durationLabel = active ? active.textContent.trim() : "永久";
+    return _banFingerprint(reason.trim(), durationS, durationLabel);
   }
   // Stub kept for any straggler call sites that referenced the old close
   // function; HudConfirm now manages its own close lifecycle.
