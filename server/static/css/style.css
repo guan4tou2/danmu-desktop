@@ -2638,6 +2638,23 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
 }
 
+/* Destructive row action — was an inline-styled "⋯" glyph that read as a
+   more-menu; now a close icon with the shared danger hover treatment. */
+.filter-delete-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  text-align: right;
+  padding: 0;
+  line-height: 1;
+}
+
+.filter-delete-btn:hover,
+.filter-delete-btn:focus-visible {
+  color: var(--hud-crimson);
+}
+
 .admin-poll-opt .opt-remove {
   flex-shrink: 0;
   width: 24px;

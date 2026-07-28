@@ -262,7 +262,7 @@
           <input type="checkbox" class="sr-only filter-toggle-cb" data-rule-id="${escapeHtml(rule.id)}" ${rule.enabled ? "checked" : ""} />
           <span class="hud-status-dot ${rule.enabled ? "is-live" : "is-paused"}" style="display:inline-block;cursor:pointer"></span>
         </label>
-        <button class="filter-delete-btn" type="button" data-rule-id="${escapeHtml(rule.id)}" title="${t("deleteRule", "Delete")}" style="background:transparent;border:none;color:var(--color-text-muted);cursor:pointer;font-size:16px;text-align:right;padding:0">\u22ef</button>
+        <button class="filter-delete-btn" type="button" data-rule-id="${escapeHtml(rule.id)}" title="${t("deleteRule", "Delete")}" aria-label="${t("deleteRule", "Delete")}">${window.AdminUtils.closeIcon}</button>
       </div>`;
   }
 

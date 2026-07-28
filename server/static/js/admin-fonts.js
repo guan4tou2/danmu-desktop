@@ -199,7 +199,7 @@
           `<button class="admin-font-subset-btn hud-effect-chip" data-name="${escapeHtml(font.name)}" title="縮減字型大小 · 只保留指定字元範圍">⊗ 子集化</button>`
         );
         actionBtns.push(
-          `<button class="admin-font-delete-btn hud-effect-chip" data-name="${escapeHtml(font.name)}">${escapeHtml(ServerI18n.t("deleteBtn"))}</button>`
+          `<button class="admin-font-delete-btn admin-ui-action is-danger" data-name="${escapeHtml(font.name)}">${escapeHtml(ServerI18n.t("deleteBtn"))}</button>`
         );
       }
     }

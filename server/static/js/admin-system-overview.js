@@ -143,7 +143,7 @@
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     });
     polyline.setAttribute("points", pts.join(" "));
-    polyline.style.color = ok ? "var(--hud-lime, #84e100)" : "var(--hud-cyan, #38bdf8)";
+    polyline.style.color = ok ? "var(--hud-lime, #86efac)" : "var(--hud-cyan, #38bdf8)";
   }
 
   function _setMetric(id, value, series, ok) {
@@ -152,7 +152,7 @@
     const v = tile.querySelector("[data-m-v]");
     if (v) v.textContent = value;
     if (typeof ok === "boolean") {
-      v.style.color = ok ? "var(--hud-lime, #84e100)" : "var(--hud-cyan, #38bdf8)";
+      v.style.color = ok ? "var(--hud-lime, #86efac)" : "var(--hud-cyan, #38bdf8)";
     }
     const spark = tile.querySelector("[data-m-spark]");
     _renderSpark(spark, series, ok);
@@ -217,7 +217,7 @@
       { name: "Webhook Delivery", status: webhookOK ? "healthy" : "degraded",   uptime: "—",   ver: "—",
         note: webhookOK ? null : "近期投遞失敗 · 自動重試中" },
     ];
-    const statusCols = { healthy: "var(--hud-lime, #84e100)", degraded: "var(--hud-amber, #fbbf24)", error: "var(--hud-crimson, #ff4d4f)" };
+    const statusCols = { healthy: "var(--hud-lime, #86efac)", degraded: "var(--hud-amber, #fbbf24)", error: "var(--hud-crimson, #ff4d4f)" };
     host.innerHTML = services.map((s) => `
       <div class="admin-soh-v4__svc">
         <span class="admin-soh-v4__svc-dot" style="background:${statusCols[s.status]}"></span>
