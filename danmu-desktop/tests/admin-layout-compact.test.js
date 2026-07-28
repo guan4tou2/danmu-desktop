@@ -275,7 +275,12 @@ test("admin Notifications composes shared filters, toolbar, pills, and actions",
   expect(notificationsSrc).toContain('class="admin-ui-chip admin-notif-tab is-active"');
   expect(notificationsSrc).toContain('class="admin-ui-chip-group admin-notif-sources"');
   expect(notificationsSrc).toContain('class="admin-ui-chip admin-notif-src is-active"');
-  expect(notificationsSrc).toContain('class="admin-ui-chip admin-notif-src admin-notif-src-placeholder admin-be-placeholder-control"');
+  // The Backup source chip was a dead placeholder — no backend ever emitted a
+  // Backup notification (integrations catalog hardcoded implemented:false) —
+  // and it was removed along with its sourceCatalog plumbing. Assert it stays
+  // gone rather than asserting the placeholder markup that used to be here.
+  expect(notificationsSrc).not.toContain("admin-notif-src-placeholder");
+  expect(notificationsSrc).not.toContain('data-notif-src="Backup"');
   expect(notificationsSrc).toContain('class="admin-ui-toolbar admin-notif-toolbar"');
   expect(notificationsSrc).toContain('class="admin-ui-summary admin-notif-summary"');
   expect(notificationsSrc).toContain('class="admin-ui-chip-group admin-notif-actions"');
