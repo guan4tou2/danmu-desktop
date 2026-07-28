@@ -448,7 +448,9 @@
     try {
       const r = await window.csrfFetch("/admin/overlay/clear", { method: "POST" });
       if (r.ok) window.showToast && showToast("已清空 Desktop", true);
-      else window.showToast && showToast("清空失敗 · 後端尚未實作此端點", false);
+      // 這個端點是有的（routes/admin/overlay.py），訊息以前寫「後端尚未實作」
+      // 是留下來沒更新的舊文案 —— 真的失敗時那會把人指向錯的方向。
+      else window.showToast && showToast(`清空失敗（HTTP ${r.status}）`, false);
     } catch (_) {
       window.showToast && showToast("清空失敗", false);
     }
