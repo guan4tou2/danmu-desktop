@@ -5,6 +5,7 @@
 """
 
 import json
+import pathlib
 
 import pytest
 
@@ -113,26 +114,88 @@ def test_unreadable_lines_are_skipped_not_fatal(store):
     assert sorted(texts) == ["good-1", "good-2"]
 
 
-def test_persist_disabled_writes_nothing(store):
+@pytest.mark.parametrize(
+    "bad_line",
+    [
+        '"just a string"',  # 合法 JSON，但不是 dict
+        "[1, 2, 3]",  # 合法 JSON，但不是 dict
+        "null",
+        '{"text": "no timestamp at all"}',  # dict 但缺 timestamp
+        '{"text": "bad ts type", "timestamp": 12345}',  # timestamp 不是字串
+        '{"text": "unparseable ts", "timestamp": "not-a-date"}',
+    ],
+)
+def test_structurally_invalid_records_are_rejected(store, bad_line):
+    """語法合法但結構不對的行也要擋掉，不能只擋 JSON 語法錯誤。
+
+    每一條讀取路徑都無條件用 record["timestamp"]：get_records() 拿它排序、
+    get_stats() 取 _records[0]["timestamp"]、_maybe_cleanup() 也解析它。放一筆
+    形狀不對的進 deque，等於讓歷史的讀取 / 統計 / 清理全部拋例外，直到重啟。
+    """
     make, hist_file, _ = store
-    h = make(persist=False)
-    h.add(_danmu("nope"))
-    assert not hist_file.exists()
-    assert len(h.get_records(limit=10)) == 1, "關閉落地不影響記憶體行為"
+    hist_file.write_text(
+        f'{{"text": "good", "timestamp": "2026-07-28T00:00:00+00:00"}}\n{bad_line}\n',
+        encoding="utf-8",
+    )
+    h = make()
+
+    # 壞的那筆不該進來，而且三條讀取路徑都要還能跑。
+    assert [r["text"] for r in h.get_records(limit=10)] == ["good"]
+    assert h.get_stats()["total"] == 1
+    h.last_cleanup = 0  # 強制觸發清理路徑
+    h._maybe_cleanup()
 
 
-def test_write_failure_degrades_to_memory_only(store, monkeypatch, caplog):
-    """磁碟寫不進去時，/fire 不能因此失敗。"""
+def test_clear_waits_for_an_in_flight_append(store, monkeypatch):
+    """clear() 必須等進行中的落地寫完，否則被清掉的記錄會重新出現在檔案裡。
+
+    落地刻意在 self._lock 之外做（不讓磁碟 I/O 擋住其他送出中的彈幕），所以
+    add() 有一段「記憶體已寫入、檔案還沒寫」的空窗。clear() 若在這段空窗中執行，
+    刪完檔之後那個 in-flight 的 append 會把檔案重建起來 —— 記憶體是空的、磁碟卻
+    有一筆，下次重啟它就復活了，UI 承諾的「此動作無法復原」隨之破功。
+
+    這裡用一個閘門把 append 卡在開檔之前，藉此把那段空窗撐開到可以觀測：
+    有磁碟鎖時 clear() 會被擋住直到 append 完成；沒有的話它會直接穿過去。
+    """
+    import threading
+
     make, hist_file, _ = store
     h = make()
 
-    def _boom(*args, **kwargs):
-        raise OSError("disk full")
+    append_at_gate = threading.Event()
+    release_append = threading.Event()
+    real_open = pathlib.Path.open
 
-    monkeypatch.setattr("pathlib.Path.open", _boom)
-    h.add(_danmu("still-works"))  # 不應該拋出
+    def gated_open(self, mode="r", *args, **kwargs):
+        if self == hist_file and "a" in mode:
+            append_at_gate.set()
+            release_append.wait(timeout=5)
+        return real_open(self, mode, *args, **kwargs)
 
-    assert len(h.get_records(limit=10)) == 1
+    monkeypatch.setattr(pathlib.Path, "open", gated_open)
+
+    adder = threading.Thread(target=lambda: h.add(_danmu("in-flight")))
+    adder.start()
+    assert append_at_gate.wait(timeout=5), "append 沒有走到開檔這一步"
+
+    clear_returned = threading.Event()
+
+    def do_clear():
+        h.clear()
+        clear_returned.set()
+
+    clearer = threading.Thread(target=do_clear)
+    clearer.start()
+    # 給 clear() 足夠時間走到磁碟鎖；有鎖的話它會停在這裡。
+    blocked_by_lock = not clear_returned.wait(timeout=0.5)
+
+    release_append.set()
+    adder.join(timeout=5)
+    clearer.join(timeout=5)
+
+    assert blocked_by_lock, "clear() 沒有等待進行中的 append —— 磁碟操作沒有互斥"
+    leftover = hist_file.read_text(encoding="utf-8").strip() if hist_file.exists() else ""
+    assert leftover == "", f"clear() 之後檔案仍有內容：{leftover!r}"
 
 
 # ─── 端對端：真的走 HTTP /fire ────────────────────────────────────────────────
@@ -151,6 +214,15 @@ def test_fire_endpoint_persists_to_disk(client, tmp_path, monkeypatch):
     monkeypatch.setattr(history_service, "HISTORY_FILE", hist_file)
     monkeypatch.setattr(history_service, "HISTORY_BACKUP_FILE", tmp_path / "e2e_history.jsonl.1")
 
+    # TestConfig 預設關閉落地（見 conftest），這條測試就是要驗落地，所以明確
+    # 打開全域 instance 的開關。
+    monkeypatch.setattr(history_service.danmu_history, "persist", True)
+
+    # 全域 danmu_history 是 app 啟動時就建好的，此刻 _records 可能已經有同
+    # session 其他測試留下的內容。換完路徑後先清一次，讓這條測試從空狀態開始 ——
+    # 否則斷言到的可能是別人寫的資料。
+    history_service.danmu_history.clear()
+
     # 沒有 overlay 連線時 /fire 會回 503，訊息也就不會被記錄 —— 記錄只發生在
     # forward 成功（sent / queued）之後。
     update_ws_client_count(1)
@@ -159,6 +231,8 @@ def test_fire_endpoint_persists_to_disk(client, tmp_path, monkeypatch):
     assert resp.status_code == 200
 
     assert hist_file.exists(), "/fire 成功之後應該要有落地檔"
-    record = json.loads(hist_file.read_text(encoding="utf-8").strip().split("\n")[-1])
+    lines = hist_file.read_text(encoding="utf-8").strip().split("\n")
+    assert len(lines) == 1, f"檔案應該只有這條測試寫的那一筆，實際 {len(lines)} 筆"
+    record = json.loads(lines[-1])
     assert record["text"] == "persisted through http"
     assert "clientIp" not in record, "預設不落地 IP"

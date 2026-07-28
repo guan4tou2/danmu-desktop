@@ -301,6 +301,11 @@ def ws_server_port(tmp_path_factory):
 
 class TestConfig(Config):
     TESTING = True
+    # 測試預設不落地彈幕歷史。conftest 的 _isolate_danmu_history 只換得掉本行程
+    # 的模組路徑；browser e2e 會在子行程另起一台 server，那裡的 init_history()
+    # 讀的是真實路徑，monkeypatch 穿不過去 —— 實際上 runtime/danmu_history.jsonl
+    # 就這樣被 browser 測試寫進 18 筆。專門驗落地的測試自己開啟。
+    DANMU_HISTORY_PERSIST = False
     SECRET_KEY = "test-secret"
     ADMIN_PASSWORD = "test"
     FIRE_RATE_LIMIT = 2

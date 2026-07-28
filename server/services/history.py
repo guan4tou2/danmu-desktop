@@ -55,6 +55,11 @@ class DanmuHistory:
         """
         self._records: deque = deque(maxlen=max_records)
         self._lock = threading.Lock()
+        # 磁碟操作獨立一把鎖。落地刻意放在 self._lock 之外（不讓 I/O 擋住其他
+        # 送出中的彈幕），但 append / rotate / clear 動的是同一組檔案：沒有這把
+        # 鎖的話，clear() 可能夾在「記憶體已寫入」與「落地尚未完成」之間執行，
+        # 於是剛被清掉的記錄又被寫回檔案 —— UI 承諾的「無法復原」就破了。
+        self._disk_lock = threading.Lock()
         self.auto_cleanup_hours = auto_cleanup_hours
         self.persist = persist
         self.persist_ip = persist_ip
@@ -82,10 +87,15 @@ class DanmuHistory:
                     if not line:
                         continue
                     try:
-                        self._records.append(json.loads(line))
-                        loaded += 1
+                        record = json.loads(line)
                     except (json.JSONDecodeError, ValueError):
                         skipped += 1
+                        continue
+                    if not self._is_readable_record(record):
+                        skipped += 1
+                        continue
+                    self._records.append(record)
+                    loaded += 1
         except OSError as exc:
             logger.warning("danmu history: cannot read %s: %s", HISTORY_FILE, exc)
             return
@@ -94,6 +104,27 @@ class DanmuHistory:
             loaded,
             f" ({skipped} unreadable lines skipped)" if skipped else "",
         )
+
+    @staticmethod
+    def _is_readable_record(record) -> bool:
+        """每一條讀取路徑都無條件用 record["timestamp"]，所以載入時就要擋掉不符
+        這個形狀的東西。
+
+        語法合法但結構不對的行（手動編輯過、寫到一半被砍掉、未來 schema 變動）
+        以前會被原封不動放進 deque，接著讓 get_records() 的排序、get_stats()
+        和 _maybe_cleanup() 全部拋例外 —— 一行壞資料就能讓整個歷史功能癱瘓到
+        下次重啟。
+        """
+        if not isinstance(record, dict):
+            return False
+        ts = record.get("timestamp")
+        if not isinstance(ts, str) or not ts:
+            return False
+        try:
+            datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            return False
+        return True
 
     def _try_rotate(self) -> None:
         """超過上限就轉存成 .1（只留一份備份，跟 audit.log 一致）。"""
@@ -114,11 +145,12 @@ class DanmuHistory:
             record if self.persist_ip else {k: v for k, v in record.items() if k != "clientIp"}
         )
         try:
-            HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
-            if HISTORY_FILE.exists():
-                self._try_rotate()
-            with HISTORY_FILE.open("a", encoding="utf-8") as f:
-                f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+            with self._disk_lock:
+                HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+                if HISTORY_FILE.exists():
+                    self._try_rotate()
+                with HISTORY_FILE.open("a", encoding="utf-8") as f:
+                    f.write(json.dumps(payload, ensure_ascii=False) + "\n")
         except OSError as exc:
             if not self._write_failure_logged:
                 logger.warning(
@@ -270,11 +302,12 @@ class DanmuHistory:
             self._records.clear()
         if not self.persist:
             return
-        for path in (HISTORY_FILE, HISTORY_BACKUP_FILE):
-            try:
-                path.unlink(missing_ok=True)
-            except OSError as exc:
-                logger.warning("danmu history: cannot remove %s: %s", path, exc)
+        with self._disk_lock:
+            for path in (HISTORY_FILE, HISTORY_BACKUP_FILE):
+                try:
+                    path.unlink(missing_ok=True)
+                except OSError as exc:
+                    logger.warning("danmu history: cannot remove %s: %s", path, exc)
 
     def _maybe_cleanup(self):
         """定期清理舊記錄（時間檢查在鎖內防止 TOCTOU race）"""
@@ -354,13 +387,27 @@ def _parse_iso(ts: str) -> datetime:
 danmu_history = None
 
 
-def init_history():
-    """初始化彈幕記錄管理器"""
+def init_history(config=None):
+    """初始化彈幕記錄管理器
+
+    優先讀傳進來的 app 設定，沒有才退回模組層的 Config。原本只讀 Config，
+    等於測試用的 TestConfig 覆蓋不到它 —— browser e2e 的子行程照樣把記錄寫進
+    真正的 runtime/danmu_history.jsonl。
+    """
     global danmu_history
+
+    def _get(key):
+        if config is not None:
+            try:
+                return config[key]
+            except (KeyError, TypeError):
+                pass
+        return getattr(Config, key)
+
     danmu_history = DanmuHistory(
-        max_records=Config.DANMU_HISTORY_MAX_RECORDS,
-        auto_cleanup_hours=Config.DANMU_HISTORY_CLEANUP_HOURS,
-        persist=Config.DANMU_HISTORY_PERSIST,
-        persist_ip=Config.DANMU_HISTORY_PERSIST_IP,
-        max_file_bytes=Config.DANMU_HISTORY_MAX_FILE_BYTES,
+        max_records=_get("DANMU_HISTORY_MAX_RECORDS"),
+        auto_cleanup_hours=_get("DANMU_HISTORY_CLEANUP_HOURS"),
+        persist=_get("DANMU_HISTORY_PERSIST"),
+        persist_ip=_get("DANMU_HISTORY_PERSIST_IP"),
+        max_file_bytes=_get("DANMU_HISTORY_MAX_FILE_BYTES"),
     )
