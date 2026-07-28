@@ -136,6 +136,25 @@ def _isolate_onscreen_limits(tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def _isolate_moderation_bans(tmp_path):
+    """把封禁狀態檔導到 tmp_path 並清掉記憶體快取。
+
+    moderation_bans 現在有自己的 runtime/moderation_bans.json —— 少了這層隔離，
+    任何發出封禁的測試都會寫進正式檔，就跟 api_tokens / danmu_history 之前一樣。
+    """
+    from server.services import moderation_bans
+
+    original = moderation_bans._STATE_FILE
+    moderation_bans._STATE_FILE = tmp_path / "moderation_bans.json"
+    moderation_bans.reset_for_tests()
+    try:
+        yield
+    finally:
+        moderation_bans._STATE_FILE = original
+        moderation_bans.reset_for_tests()
+
+
+@pytest.fixture(autouse=True)
 def _isolate_api_tokens(tmp_path):
     """把 API token 儲存導到 tmp_path。
 

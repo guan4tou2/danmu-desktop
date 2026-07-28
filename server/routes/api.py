@@ -7,7 +7,7 @@ from werkzeug.exceptions import HTTPException
 from .. import state
 from ..services import fingerprint_tracker
 from ..services import history as history_service
-from ..services import messaging
+from ..services import messaging, moderation_bans
 from ..services import themes as theme_svc
 from ..services.blacklist import contains_keyword
 from ..services.effects import load_all as load_all_effects
@@ -261,6 +261,17 @@ def fire():
 
         # Rate-limit chain. Aborts 429 internally; flask converts to response.
         enforce_fire_rate_limits(fingerprint, admin_client)
+
+        # Moderation bans — admin-issued, optionally time-bound. Checked before
+        # the filter engine because a banned sender's message should never reach
+        # the overlay regardless of content. moderation_bans keeps its own state
+        # map, so this is a dict lookup rather than a scan.
+        if fingerprint and moderation_bans.is_banned("fingerprint", fingerprint):
+            fingerprint_tracker.record(fingerprint, client_ip, user_agent, blocked=True)
+            return _json_response({"error": "You are currently banned"}, 403)
+        if client_ip and moderation_bans.is_banned("ip", client_ip):
+            fingerprint_tracker.record(fingerprint, client_ip, user_agent, blocked=True)
+            return _json_response({"error": "You are currently banned"}, 403)
 
         # Filter engine check (replaces simple blacklist check)
         filter_result = filter_engine.check(text_content, fingerprint)

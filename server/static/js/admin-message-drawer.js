@@ -277,17 +277,34 @@
 
   // ── ban via existing /admin/live/block ──────────────────────────
 
-  async function _banFingerprint(reason) {
+  async function _banFingerprint(reason, durationS, durationLabel) {
     const fp = _state.entry && _state.entry.data && _state.entry.data.fingerprint;
     if (!fp) return;
+    const seconds = parseInt(durationS || 0, 10) || 0;
     try {
-      const r = await window.csrfFetch("/admin/live/block", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "fingerprint", value: fp, reason: reason || "" }),
-      });
+      // 永久封禁沿用 /admin/live/block（黑名單，訊息會被遮罩）；有時限的走
+      // /admin/modbans，那裡才有 duration_s 與到期判定。兩者都會讓 /fire 擋下
+      // 後續訊息，差別在於前者不會自己失效。
+      const r = seconds > 0
+        ? await window.csrfFetch("/admin/modbans", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              target_kind: "fingerprint",
+              target: fp,
+              duration_s: seconds,
+              reason: reason || "",
+              kind: "ban",
+            }),
+          })
+        : await window.csrfFetch("/admin/live/block", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: "fingerprint", value: fp, reason: reason || "" }),
+          });
       if (!r.ok) throw new Error("HTTP " + r.status);
-      window.showToast && window.showToast("已封禁 fp:" + fp.slice(0, 8), true);
+      const label = durationLabel || (seconds > 0 ? `${seconds} 秒` : "永久");
+      window.showToast && window.showToast(`已封禁 fp:${fp.slice(0, 8)} · ${label}`, true);
       _closeBanConfirm();
       _close();
     } catch (e) {
@@ -322,10 +339,10 @@
       <div class="admin-bancfm-section">
         <div class="admin-bancfm-sec-label">封禁時長</div>
         <div class="admin-bancfm-duration">
-          <span class="admin-bancfm-dchip is-disabled" title="後端尚未支援時限 ban">1 小時</span>
-          <span class="admin-bancfm-dchip is-disabled" title="後端尚未支援時限 ban">24 小時</span>
-          <span class="admin-bancfm-dchip is-disabled" title="後端尚未支援時限 ban">7 天</span>
-          <span class="admin-bancfm-dchip is-active">永久</span>
+          <span class="admin-bancfm-dchip" role="button" tabindex="0" data-ban-duration="3600">1 小時</span>
+          <span class="admin-bancfm-dchip" role="button" tabindex="0" data-ban-duration="86400">24 小時</span>
+          <span class="admin-bancfm-dchip" role="button" tabindex="0" data-ban-duration="604800">7 天</span>
+          <span class="admin-bancfm-dchip is-active" role="button" tabindex="0" data-ban-duration="0">永久</span>
         </div>
       </div>
       <div class="admin-bancfm-section">
@@ -333,6 +350,24 @@
         <input type="text" class="admin-bancfm-reason" data-ban-reason placeholder="e.g. 持續發送垃圾訊息" maxlength="200" />
       </div>
       <div class="admin-bancfm-warn">⚠ 該指紋下所有訊息將被遮罩，該指紋將被加入黑名單。</div>`;
+
+    // 時長為單選：點一下就把 is-active 移到那顆。鍵盤也要能操作 —— chip 不是
+    // <button>，所以 Enter / Space 要自己接。
+    const _pickDuration = (el) => {
+      body.querySelectorAll(".admin-bancfm-dchip").forEach((c) => c.classList.remove("is-active"));
+      el.classList.add("is-active");
+    };
+    body.addEventListener("click", (e) => {
+      const chip = e.target.closest("[data-ban-duration]");
+      if (chip) _pickDuration(chip);
+    });
+    body.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const chip = e.target.closest("[data-ban-duration]");
+      if (!chip) return;
+      e.preventDefault();
+      _pickDuration(chip);
+    });
 
     if (!window.HudConfirm) return;
     const ok = await window.HudConfirm.open({
@@ -347,7 +382,12 @@
     });
     if (!ok) return;
     const reason = (body.querySelector("[data-ban-reason]") || {}).value || "";
-    return _banFingerprint(reason.trim());
+    const active = body.querySelector(".admin-bancfm-dchip.is-active");
+    const durationS = active ? parseInt(active.dataset.banDuration || "0", 10) || 0 : 0;
+    // 標籤直接用 chip 上的文字，不另外從秒數推算 —— 推算過一次，7 天被算成
+    // 「1 天」（除數誤用 604800），跟 24 小時的提示變得一模一樣。
+    const durationLabel = active ? active.textContent.trim() : "永久";
+    return _banFingerprint(reason.trim(), durationS, durationLabel);
   }
   // Stub kept for any straggler call sites that referenced the old close
   // function; HudConfirm now manages its own close lifecycle.

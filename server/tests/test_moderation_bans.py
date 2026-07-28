@@ -71,20 +71,10 @@ def test_list_active_includes_permanent_and_active():
 def test_list_active_marks_expired():
     """Past expires_at → status='expired' surface for UI."""
     now = time.time()
-    # Manually inject an expired ban event (bypassing add_ban's now+duration_s).
-    audit_log.append(
-        "moderation",
-        "ban",
-        actor="admin",
-        meta={
-            "target_kind": "fingerprint",
-            "target": "expired1",
-            "duration_s": 60,
-            "expires_at": now - 10,
-            "reason": "test",
-        },
-    )
-    rows = moderation_bans.list_active(now=now)
+    # 用真的 add_ban 發一個 60 秒的封禁，再把查詢時間往後推到它之後 —— 比手動
+    # 往 audit_log 塞一筆繞過 add_ban 更貼近真實，也不依賴狀態存在哪裡。
+    moderation_bans.add_ban("fingerprint", "expired1", duration_s=60, reason="test")
+    rows = moderation_bans.list_active(now=now + 120)
     expired_rows = [r for r in rows if r["status"] == "expired"]
     assert any(r["target"] == "expired1" for r in expired_rows)
 
