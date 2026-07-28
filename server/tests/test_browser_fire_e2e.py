@@ -57,6 +57,9 @@ def server_ports():
         os.environ["ADMIN_PASSWORD_HASHED"] = ""
 
         from server.config import Config
+        # 子行程用的是正式 Config，不是 TestConfig —— 不在這裡關掉的話，
+        # 這些測試送出的彈幕會寫進真正的 runtime/danmu_history.jsonl。
+        Config.DANMU_HISTORY_PERSIST = False
         Config.WS_REQUIRE_TOKEN = False
         Config.WS_AUTH_TOKEN = ""
         Config.WS_ALLOWED_ORIGINS = []

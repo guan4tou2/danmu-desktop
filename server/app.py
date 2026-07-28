@@ -136,7 +136,7 @@ def create_app(config_class=Config):
         )
         cors_credentials = False
     init_security(app)
-    init_history()
+    init_history(app.config)
 
     # Request ID tracking
     @app.before_request
