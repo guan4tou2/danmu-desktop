@@ -1719,7 +1719,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const activeTabEl = tabHost
           ? tabHost.querySelector(".is-active, [aria-selected='true']")
           : null;
-        if (activeTabEl) tab = (activeTabEl.textContent || "").trim();
+        if (activeTabEl) {
+          // Tab buttons carry a zh label span + an EN sub-label span;
+          // textContent would glue them ("審核佇列QUEUE"), so prefer the label.
+          const labelChild = activeTabEl.querySelector(".admin-tabs-btn-label");
+          tab = ((labelChild || activeTabEl).textContent || "").trim();
+        }
       }
 
       const crumbs = [section, page].filter(Boolean);
