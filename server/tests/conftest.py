@@ -222,14 +222,12 @@ def _isolate_ratelimit_ip(tmp_path):
     """
     from server.services import ratelimit_ip
 
-    original = ratelimit_ip._STATE_FILE
-    ratelimit_ip._STATE_FILE = tmp_path / "ratelimit_ip_rules.json"
-    ratelimit_ip._reset_for_tests()
+    original = ratelimit_ip._state.path
+    ratelimit_ip._state.reset_for_tests(tmp_path / "ratelimit_ip_rules.json")
     try:
         yield
     finally:
-        ratelimit_ip._STATE_FILE = original
-        ratelimit_ip._reset_for_tests()
+        ratelimit_ip._state.reset_for_tests(original)
 
 
 @pytest.fixture(autouse=True)

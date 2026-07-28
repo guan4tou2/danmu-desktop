@@ -9,13 +9,8 @@ source equally, which is fine 95% of the time but fails two real cases:
    or a scraper keeps hitting /api. Fix: denylist entries 429 immediately,
    never consuming limiter budget or reaching handler code.
 
-Data lives at ``server/runtime/ratelimit_ip_rules.json`` — same persistence
-pattern as ``ws_auth.py`` and ``security_settings.py``:
-
-- atomic tmp-then-rename write
-- one-shot log on unwritable disk, then degrade to in-memory-only
-- RLock around cache + disk
-- get_state() called per-request, so first call primes the cache
+Storage mechanics (atomic write, RLock, one-shot warn on unwritable disk)
+live in JsonState — see services/json_state.py.
 
 Precedence rule when an IP matches both lists: **allow wins over deny**.
 Rationale: the typical UX is "block a whole subnet then punch a hole for
@@ -30,20 +25,13 @@ both IPv4 and IPv6.
 from __future__ import annotations
 
 import copy
-import json
 import logging
-import os
-import threading
 from ipaddress import ip_address, ip_network
-from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
-logger = logging.getLogger(__name__)
+from .json_state import JsonState
 
-_STATE_FILE = Path(__file__).resolve().parent.parent / "runtime" / "ratelimit_ip_rules.json"
-_LOCK = threading.RLock()
-_STATE: Optional[Dict[str, Any]] = None
-_write_failure_logged: bool = False
+logger = logging.getLogger(__name__)
 
 _MAX_ENTRIES = 256  # per list — sane ceiling so admins can't paste MB of CIDRs
 
@@ -52,31 +40,6 @@ _DEFAULT_STATE: Dict[str, Any] = {"allowlist": [], "denylist": []}
 
 def _default_state() -> Dict[str, Any]:
     return copy.deepcopy(_DEFAULT_STATE)
-
-
-def _atomic_write(path: Path, state: Dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(f".tmp.{os.getpid()}.{threading.get_ident()}")
-    with tmp.open("w", encoding="utf-8") as f:
-        json.dump(state, f, ensure_ascii=False, indent=2)
-    tmp.replace(path)
-
-
-def _log_write_failure_once(exc: Exception) -> None:
-    global _write_failure_logged
-    if _write_failure_logged:
-        logger.debug("ratelimit_ip persist still failing: %s", exc)
-        return
-    _write_failure_logged = True
-    logger.warning(
-        "Cannot persist %s (%s: %s). IP rules will live in memory for this "
-        "process only — admin changes won't survive a restart. Common cause: "
-        "host bind-mount owned by wrong UID. Fix: `sudo chown -R 1000:1000 "
-        "server/runtime` on the host, then recreate the container.",
-        _STATE_FILE,
-        type(exc).__name__,
-        exc,
-    )
 
 
 def _normalize_entries(entries: Any, *, field: str) -> List[str]:
@@ -110,28 +73,16 @@ def _normalize_state(data: Any) -> Dict[str, Any]:
     }
 
 
-def _load_from_disk() -> Dict[str, Any]:
-    if not _STATE_FILE.exists():
-        return _default_state()
-    try:
-        data = json.loads(_STATE_FILE.read_text(encoding="utf-8"))
-    except Exception as exc:
-        logger.warning("ratelimit_ip: failed to read %s: %s", _STATE_FILE, exc)
-        return _default_state()
-    try:
-        return _normalize_state(data)
-    except ValueError as exc:
-        logger.warning("ratelimit_ip: ignoring invalid state file %s: %s", _STATE_FILE, exc)
-        return _default_state()
+_state = JsonState(
+    "ratelimit_ip_rules.json",
+    default=_default_state,
+    normalize=_normalize_state,
+)
 
 
 def get_state() -> Dict[str, Any]:
     """Return the current {allowlist, denylist}. Hot-path cheap after warm-up."""
-    global _STATE
-    with _LOCK:
-        if _STATE is None:
-            _STATE = _load_from_disk()
-        return copy.deepcopy(_STATE)
+    return _state.get()
 
 
 def set_state(patch: Dict[str, Any]) -> Dict[str, Any]:
@@ -141,26 +92,12 @@ def set_state(patch: Dict[str, Any]) -> Dict[str, Any]:
     Entries are validated + de-duplicated + normalised (``1.2.3.4`` →
     ``1.2.3.4/32``). Raises ``ValueError`` on invalid input.
 
-    Disk failures are logged once and swallowed; the in-memory cache always
-    takes the change so admin UI stays responsive.
+    Disk failures are logged once and swallowed by JsonState; the in-memory
+    cache always takes the change so admin UI stays responsive.
     """
     if not isinstance(patch, dict):
         raise ValueError("payload must be an object")
-
-    global _STATE
-    with _LOCK:
-        current = get_state()
-        merged = copy.deepcopy(current)
-        if "allowlist" in patch:
-            merged["allowlist"] = _normalize_entries(patch.get("allowlist"), field="allowlist")
-        if "denylist" in patch:
-            merged["denylist"] = _normalize_entries(patch.get("denylist"), field="denylist")
-        _STATE = merged
-        try:
-            _atomic_write(_STATE_FILE, merged)
-        except OSError as exc:
-            _log_write_failure_once(exc)
-        return copy.deepcopy(_STATE)
+    return _state.update(patch)
 
 
 def _matches(client_ip: str, entries: Iterable[str]) -> bool:
@@ -199,8 +136,18 @@ def check_ip(client_ip: str) -> Optional[str]:
 
 
 def _reset_for_tests() -> None:
-    """Drop in-memory cache. Tests should monkeypatch _STATE_FILE first."""
-    global _STATE, _write_failure_logged
-    with _LOCK:
-        _STATE = None
-        _write_failure_logged = False
+    """Drop the in-memory cache. Conftest fixtures should call
+    ``_state.reset_for_tests(path)`` directly to redirect the storage
+    location per test rather than reassigning module attributes.
+    """
+    _state.reset_for_tests()
+
+
+def __getattr__(name: str):
+    """Back-compat shim: expose ``_STATE_FILE`` for legacy test callsites.
+
+    See services/ws_auth.py for the same pattern's rationale.
+    """
+    if name == "_STATE_FILE":
+        return _state.path
+    raise AttributeError(f"module 'server.services.ratelimit_ip' has no attribute {name!r}")
