@@ -500,6 +500,121 @@ def test_accordion_replay_uses_multi_section_bundle(accordion_js: str):
     )
 
 
+# ─── Section IDs must actually be creatable (added 2026-07-28) ──────────────
+#
+# Both ADMIN_ROUTES[route].sections and the accordion's sectionId/sectionIds
+# name DOM element IDs. Nothing checked that those elements are ever created,
+# so a page migrated to a v2 shell could leave its old `sec-*` ID behind in
+# the route table and no test would notice. That drift is not cosmetic:
+# `syncRouteContainerVisibility()` derives which `.admin-route-sections`
+# container to show from these IDs, so an empty or phantom-only list hides
+# the container the page actually lives in — which is exactly how #/security
+# rendered blank (sections: [] while admin-security-v2-page sat inside
+# settings-grid).
+
+
+def _creatable_element_ids() -> set:
+    """IDs any admin module can actually put in the DOM.
+
+    The admin modules mount markup four different ways, so all four count
+    as creation — an earlier draft of this helper only knew the first two
+    and produced false positives against perfectly live pages:
+
+      · a literal attribute        id="some-id"
+      · a DOM property assignment  el.id = "some-id"
+      · a constant interpolated    id="${PAGE_ID}"
+      · a constant concatenated    '<div id="' + PAGE_ID + '"'
+        (and el.id = SECTION_ID)
+      · the settingCard() factory, which computes
+        id="sec-${id.toLowerCase()}" from its first argument — the only
+        runtime-derived ID in the admin bundle, so it is resolved here
+        rather than left to produce a false positive.
+
+    Constant-based forms are matched by pairing each string constant with
+    any `id` token that mentions it within the same expression.
+    """
+    static_js = Path(__file__).resolve().parent.parent / "static" / "js"
+    templates = Path(__file__).resolve().parent.parent / "templates"
+    found = set()
+    for path in list(static_js.glob("*.js")) + list(templates.glob("*.html")):
+        text = path.read_text(encoding="utf-8")
+        found |= set(re.findall(r"""id=["']([\w-]+)["']""", text))
+        found |= set(re.findall(r"""\.id\s*=\s*["']([\w-]+)["']""", text))
+        for name, value in re.findall(
+            r"""(?:const|var|let)\s+(\w+)\s*=\s*["']([\w-]+)["']""", text
+        ):
+            if re.search(r"\bid\b[^;\n]{0,20}\b" + re.escape(name) + r"\b", text):
+                found.add(value)
+        for card_id in re.findall(r"""settingCard\(\s*["'](\w+)["']""", text):
+            found.add("sec-" + card_id.lower())
+    return found
+
+
+def _admin_routes_sections(admin_js: str) -> dict:
+    """Parse ADMIN_ROUTES into {slug: [section ids]}."""
+    block = re.search(r"const ADMIN_ROUTES\s*=\s*\{(.+?)\n  \};", admin_js, re.DOTALL)
+    assert block, "ADMIN_ROUTES table not found in admin.js"
+    entries = re.findall(
+        r'(?m)^\s*"?([\w-]+)"?:\s*\{[^\n]*?sections:\s*\[([^\]]*)\]', block.group(1)
+    )
+    assert entries, "no ADMIN_ROUTES entries parsed — did the table format change?"
+    return {slug: re.findall(r'"([\w-]+)"', secs) for slug, secs in entries}
+
+
+def test_admin_routes_sections_reference_creatable_ids(admin_js: str):
+    """Every ID in ADMIN_ROUTES.sections must be an element some module creates."""
+    creatable = _creatable_element_ids()
+    phantom = {
+        slug: [sid for sid in ids if sid not in creatable]
+        for slug, ids in _admin_routes_sections(admin_js).items()
+    }
+    phantom = {slug: ids for slug, ids in phantom.items() if ids}
+    assert not phantom, (
+        f"ADMIN_ROUTES lists section IDs that no module ever creates: {phantom}.\n"
+        f"A phantom ID makes the route table lie about what it renders, and "
+        f"leaves the route-level visibility pass steering on a non-existent "
+        f"element. Point the entry at the ID the page actually mounts."
+    )
+
+
+def test_accordion_section_ids_are_creatable(accordion_js: str):
+    """Same contract for the System accordion's leaf → section mapping.
+
+    A phantom ID here means the accordion silently stops managing that
+    leaf's visibility — it happens to work only while the page also
+    self-hides from `dataset.activeLeaf`, which is luck, not design.
+    """
+    creatable = _creatable_element_ids()
+    sections = re.search(r"const SECTIONS\s*=\s*\[([\s\S]+?)\n\s*\];", accordion_js)
+    assert sections, "SECTIONS array not found"
+    body = sections.group(1)
+    referenced = set(re.findall(r'sectionId:\s*"([\w-]+)"', body))
+    for group in re.findall(r"sectionIds:\s*\[([^\]]+)\]", body):
+        referenced |= set(re.findall(r'"([\w-]+)"', group))
+    phantom = sorted(sid for sid in referenced if sid not in creatable)
+    assert not phantom, (
+        f"accordion SECTIONS reference IDs that no module creates: {phantom}."
+    )
+
+
+def test_routes_owning_a_v2_page_do_not_declare_empty_sections(admin_js: str):
+    """A route whose page mounts inside a `.admin-route-sections` container
+    must name that page in `sections`.
+
+    With `sections: []`, `syncRouteContainerVisibility()` computes an empty
+    owner set and hides every container — including the one holding the
+    page — so the route renders blank however hard the module tries to
+    show itself. This pinned #/security after it regressed that way.
+    """
+    sections_by_slug = _admin_routes_sections(admin_js)
+    for slug in ("security", "backup"):
+        assert sections_by_slug.get(slug), (
+            f"ADMIN_ROUTES.{slug}.sections is empty — the route's v2 page "
+            f"lives inside settings-grid, which the container-visibility "
+            f"pass will hide when no section maps to it."
+        )
+
+
 def test_admin_routes_system_owns_absorbed_sections(admin_js: str):
     """ADMIN_ROUTES.system must list every section the accordion can open.
     Without this, the route-level visibility pass would hide the absorbed
