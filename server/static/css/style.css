@@ -3338,6 +3338,13 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  cursor: pointer;
+}
+
+.admin-dash-search:hover,
+.admin-dash-search:focus-visible {
+  border-color: var(--hud-cyan-line);
+  color: var(--color-text-primary);
 }
 
 .admin-dash-search .sep {

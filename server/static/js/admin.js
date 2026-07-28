@@ -803,10 +803,11 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <h1 data-route-title>控制台</h1>
                                 </div>
                                 <div class="admin-dash-topbar-actions">
-                                    <div class="admin-dash-search" aria-hidden="true">
-                                        <span>⌕</span>
+                                    <div class="admin-dash-search" role="button" tabindex="0" data-open-palette
+                                         aria-label="${escapeHtml(ServerI18n.t("adminSearchHint") || "搜尋")}">
+                                        <span aria-hidden="true">⌕</span>
                                         <span data-i18n="adminSearchHint">${ServerI18n.t("adminSearchHint") || "搜尋"}</span>
-                                        <span class="sep">⌘K</span>
+                                        <span class="sep" aria-hidden="true">⌘K</span>
                                     </div>
                                     <select id="server-lang-select" aria-label="Language"
                                       class="admin-ui-select" style="font-size:var(--text-xs);padding:8px">
@@ -1856,6 +1857,22 @@ document.addEventListener("DOMContentLoaded", () => {
   function addEventListeners() {
     if (window.ServerI18n && typeof window.ServerI18n.bindLanguageSelector === "function") {
       window.ServerI18n.bindLanguageSelector();
+    }
+
+    // Topbar search chip opens the ⌘K palette — it must behave like the
+    // shortcut it advertises, or it reads as a dead control.
+    const searchChip = document.querySelector("[data-open-palette]");
+    if (searchChip) {
+      const openPalette = () => {
+        if (window.AdminCommandPalette) window.AdminCommandPalette.open();
+      };
+      searchChip.addEventListener("click", openPalette);
+      searchChip.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openPalette();
+        }
+      });
     }
 
     // Logout Button
