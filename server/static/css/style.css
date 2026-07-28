@@ -122,9 +122,9 @@ button:disabled,
   /* Scoped light-theme overrides — the rest of the app (viewer, overlay,
    * Electron window) keeps the dark slate tokens; admin alone flips to
    * the prototype's light palette (hudTokens.light*). */
-  --color-text-primary: var(--admin-text);
-  --color-text-secondary: var(--admin-text-dim);
-  --color-text-muted: var(--admin-text-dim);
+  /* D-2 (2026-07-28): primary/secondary/muted 的反向 remap 移除——tokens.css
+   * 已把 --admin-text* alias 到 color 層，再映回去只會形成自我指涉。
+   * bright/strong 仍映到 admin-text（≠ tokens 的 bright 值），是刻意保留。 */
   --color-text-bright: var(--admin-text);
   --color-text-strong: var(--admin-text);
   --color-bg-deep: var(--admin-raised);

@@ -143,7 +143,10 @@
    * muted      2.36:1 ✗ — for disabled/decorative ONLY, not user-facing copy */
   --color-text-primary: light-dark(var(--slate-900), var(--slate-100));     /* slate-100 */
   --color-text-secondary: light-dark(var(--slate-600), var(--slate-400));   /* slate-400 */
-  --color-text-muted: light-dark(var(--slate-400), var(--slate-500));       /* slate-500 — HUD textMute */
+  /* D-2 (2026-07-28 拍板): muted 曾是 slate-500（僅供 disabled/decorative），
+     但 style.css 已有 246 處拿它當次要正文——統一到 secondary（slate-400），
+     跨頁不再跳一階、對比也回到 AA。真正的 disabled 視覺請另用 opacity。 */
+  --color-text-muted: var(--color-text-secondary);
   --color-text-bright: light-dark(var(--slate-950), var(--slate-200));
 
   /* Legacy aliases — map old names used in style.css to canonical tokens */
@@ -279,11 +282,16 @@
    * --color-* base tokens: dark is the :root default, light is applied by
    * [data-theme="light"] and the prefers-color-scheme:light media query
    * below. They can no longer diverge from the --color-* palette. */
+  /* D-2 (2026-07-28): --admin-* 降為語意 alias，值收斂到 color/hud 層——
+     同語意不再有兩個值。panel 拍板統一 #0c1424（原 slate-900 #0f172a）。
+     尚未收斂（值仍分歧、待另拍板）：--admin-bg（#020617 vs --hud-bg0 #050912）、
+     --admin-raised（#1e293b vs --hud-bg2 #182239）、--admin-line（light 側
+     alpha .12 vs --hud-line .10）。 */
   --admin-bg: light-dark(var(--slate-50), var(--slate-950));                       /* slate-950 — viewport */
-  --admin-panel: light-dark(#ffffff, var(--slate-900));                       /* slate-900 — sidebar / topbar / cards */
+  --admin-panel: var(--hud-bg1);                       /* #0c1424 — sidebar / topbar / cards */
   --admin-raised: light-dark(var(--slate-100), var(--slate-800));                       /* slate-800 — nested surfaces */
   --admin-line: light-dark(rgba(15, 23, 42, 0.12), rgba(148, 163, 184, 0.18));     /* slate-400 @ 0.18 — hairlines */
-  --admin-text: light-dark(var(--slate-900), var(--slate-100));                        /* slate-100 */
-  --admin-text-strong: light-dark(var(--slate-900), var(--slate-100));                        /* input/content text */
-  --admin-text-dim: light-dark(var(--slate-600), var(--slate-400));                        /* slate-400 */
+  --admin-text: var(--color-text-primary);
+  --admin-text-strong: var(--color-text-primary);      /* input/content text */
+  --admin-text-dim: var(--color-text-secondary);       /* slate-400 */
 }

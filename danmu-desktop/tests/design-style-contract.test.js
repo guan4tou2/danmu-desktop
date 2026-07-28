@@ -149,11 +149,17 @@ test("admin light inputs have a dark strong text token", () => {
   // of a static :root value plus a :root[data-theme="light"] override block.
   const rootBlock = tokens.match(/:root\s*\{(?<body>[^}]*)\}/s);
   expect(rootBlock).not.toBeNull();
+  // D-2 (2026-07-28): --admin-text* 收斂為 color 層 alias；兩臂值不變
+  // （--color-text-primary = light-dark(slate-900, slate-100)），下方一併
+  // 釘住 alias 目標的字面定義，確保鏈條終點仍是同一組值。
   expect(rootBlock.groups.body).toMatch(
-    /--admin-text:\s*light-dark\(var\(--slate-900\),\s*var\(--slate-100\)\);/,
+    /--admin-text:\s*var\(--color-text-primary\);/,
   );
   expect(rootBlock.groups.body).toMatch(
-    /--admin-text-strong:\s*light-dark\(var\(--slate-900\),\s*var\(--slate-100\)\);/,
+    /--admin-text-strong:\s*var\(--color-text-primary\);/,
+  );
+  expect(rootBlock.groups.body).toMatch(
+    /--color-text-primary:\s*light-dark\(var\(--slate-900\),\s*var\(--slate-100\)\);/,
   );
   // The two arms keep their intended hex identity: slate-100 = #f1f5f9 (bright
   // on dark), slate-900 = #0f172a (dark ink on light).
