@@ -3416,9 +3416,6 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-dsp2-srow.is-on .admin-dsp2-srow-tag { color: var(--color-primary); }
 
-/* Hide legacy <details> sections that this page replaces */
-[data-admin-ui-replaced="1"] { display: none !important; }
-
 /* ──────────────────────────────────────────────────────────────────────────
  * Polls · Live HUD (admin-polls.jsx lines 480–661)
  * Activated when sec-polls[data-poll-view="live"]; replaces Builder grid.

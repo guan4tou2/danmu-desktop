@@ -126,7 +126,6 @@
             </div>
 
             <div class="admin-vt-persist">
-              <span class="admin-be-placeholder-control admin-be-placeholder-inline" role="note">[PLACEHOLDER] 立即套用（待 BE 推送）</span>
               <button type="button" class="admin-ui-action admin-vt-reset" data-vt-action="reset">恢復預設</button>
             </div>
           </div>

@@ -50,7 +50,6 @@
 
   let _state = {
     items: [],         // aggregated [{id, sev, src, ts, title, desc}]
-    sourceCatalog: [],
     filterTab: "unread", // all / unread / starred / archived
     filterSrc: "all",
     filterSev: "all",
@@ -100,27 +99,18 @@
 
   async function _fetchAll() {
     const tasks = [
-      _fetchSourceCatalog().catch(function () { return []; }),
       _fetchTokenAudit().catch(function () { return []; }),
       _fetchFilterEvents().catch(function () { return []; }),
       _fetchWebhookAudit().catch(function () { return []; }),
       _fetchSystemAudit().catch(function () { return []; }),
     ];
     const results = await Promise.all(tasks);
-    _state.sourceCatalog = Array.isArray(results[0]) ? results[0] : [];
-    const merged = results.slice(1).flat();
+    const merged = results.flat();
     merged.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
     _state.items = merged;
     _renderList();
     _renderSummary();
     _renderDetail();
-  }
-
-  async function _fetchSourceCatalog() {
-    const r = await fetch("/admin/integrations/sources/recent", { credentials: "same-origin" });
-    if (!r.ok) return [];
-    const data = await r.json();
-    return Array.isArray(data.source_catalog) ? data.source_catalog : [];
   }
 
   async function _fetchTokenAudit() {
@@ -254,7 +244,6 @@
               <button type="button" class="admin-ui-chip admin-notif-src" data-notif-src="Fire Token">Fire Token<span class="admin-notif-count cnt" data-cnt-src-ft>—</span></button>
               <button type="button" class="admin-ui-chip admin-notif-src" data-notif-src="Webhooks">Webhooks<span class="admin-notif-count cnt" data-cnt-src-wh>—</span></button>
               <button type="button" class="admin-ui-chip admin-notif-src" data-notif-src="System">System<span class="admin-notif-count cnt" data-cnt-src-sys>—</span></button>
-              <div class="admin-ui-chip admin-notif-src admin-notif-src-placeholder admin-be-placeholder-control" data-notif-src="Backup" data-notif-disabled="1" role="note">[PLACEHOLDER] Backup（待 BE）<span class="admin-notif-count cnt" data-cnt-src-bk>—</span></div>
               <button type="button" class="admin-ui-chip admin-notif-src" data-notif-src="Moderation">Moderation<span class="admin-notif-count cnt" data-cnt-src-mod>—</span></button>
             </div>
 
@@ -373,24 +362,11 @@
     set("[data-cnt-src-mod]", items.filter(function (i) { return i.src === "Moderation"; }).length);
     set("[data-cnt-src-wh]", items.filter(function (i) { return i.src === "Webhooks"; }).length);
     set("[data-cnt-src-sys]", items.filter(function (i) { return i.src === "System"; }).length);
-    set("[data-cnt-src-bk]", items.filter(function (i) { return i.src === "Backup"; }).length);
     set("[data-cnt-sev-all]", items.length);
     set("[data-cnt-sev-crit]", items.filter(function (i) { return i.sev === "crit"; }).length);
     set("[data-cnt-sev-warn]", items.filter(function (i) { return i.sev === "warn"; }).length);
     set("[data-cnt-sev-info]", items.filter(function (i) { return i.sev === "info"; }).length);
     set("[data-cnt-sev-good]", items.filter(function (i) { return i.sev === "good"; }).length);
-
-    const backupImplemented = (_state.sourceCatalog || []).some(function (row) {
-      return row && row.id === "backup" && row.implemented === true;
-    });
-    const backupBtn = document.querySelector("[data-notif-src='Backup']");
-    if (backupBtn) {
-      backupBtn.classList.toggle("is-disabled", true);
-      backupBtn.setAttribute("data-notif-disabled", backupImplemented ? "0" : "1");
-      backupBtn.title = backupImplemented
-        ? "Backup 來源已啟用（待 UI 切換）"
-        : "Backup 來源尚未實作（等待後端）";
-    }
 
     const summary = document.querySelector("[data-notif-summary]");
     if (summary) {
