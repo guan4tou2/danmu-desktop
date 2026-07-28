@@ -203,9 +203,7 @@ def test_mobile_admin_dedicated_page_removed(admin_page):
     # Dedicated mobile-admin UI is gone — these are the real removal asserts
     assert admin_page.locator("#sec-mobile-admin-overview").count() == 0
     assert admin_page.locator("[data-mobile-frame]").count() == 0
-    labels = admin_page.locator(
-        "[data-admin-tabs-host] .admin-tabs-btn-label"
-    ).all_text_contents()
+    labels = admin_page.locator("[data-admin-tabs-host] .admin-tabs-btn-label").all_text_contents()
     assert "手機後台" not in labels
 
 
@@ -403,7 +401,9 @@ def test_ia_system_tab_strip_renders(admin_page):
     normal AdminTabs strip with 6 tabs, overview as the landing tab, and
     security surviving as a tab (its first-class deeplink route remains)."""
     _go_to_route(admin_page, "system")
-    admin_page.wait_for_selector("[data-admin-tabs-host] .admin-tabs-btn", state="attached", timeout=5000)
+    admin_page.wait_for_selector(
+        "[data-admin-tabs-host] .admin-tabs-btn", state="attached", timeout=5000
+    )
     assert admin_page.locator(".admin-system-accordion").count() == 0
     tabs = admin_page.locator("[data-admin-tabs-host] .admin-tabs-btn")
     assert tabs.count() == 6

@@ -87,6 +87,7 @@ EXPECTED_GROUP_KEYS = [
     "adminNavGroupExtensibility",
 ]
 
+
 def test_dev_group_is_collapsible_and_defaults_collapsed():
     """v7 IA (2026-07-28): the 開發擴充 group ships collapsed — its four
     rows are permanent noise for non-developer operators. Contract:
@@ -100,12 +101,12 @@ def test_dev_group_is_collapsible_and_defaults_collapsed():
     )
     assert group, "sidebar must wrap 開發擴充 in [data-nav-group='dev'][data-collapsed]"
     body = group.group(1)
-    assert 'data-nav-group-toggle' in body, "dev group needs its toggle button"
+    assert "data-nav-group-toggle" in body, "dev group needs its toggle button"
     for slug in ("extensions", "plugins", "webhooks", "api-tokens"):
         assert f'data-route="{slug}"' in body, f"dev group must contain the {slug} row"
-    assert "admin:navgroup:dev" in admin_js, (
-        "expanded state must persist under localStorage key admin:navgroup:dev"
-    )
+    assert (
+        "admin:navgroup:dev" in admin_js
+    ), "expanded state must persist under localStorage key admin:navgroup:dev"
 
 
 RETIRED_GROUP_KEYS = [
@@ -153,9 +154,15 @@ def test_truly_retired_slugs_have_no_sidebar_button(admin_js: str):
     found = pattern.findall(admin_js)
     sidebar_slugs = set(found[: len(EXPECTED_NAV_ORDER)])
     for retired in (
-        "dashboard", "appearance", "automation", "security",
+        "dashboard",
+        "appearance",
+        "automation",
+        "security",
         # v7 IA (2026-07-28)
-        "messages", "ratelimit", "audit", "fonts",
+        "messages",
+        "ratelimit",
+        "audit",
+        "fonts",
     ):
         assert retired not in sidebar_slugs, (
             f"retired slug '{retired}' has a sidebar button — should live "
@@ -171,7 +178,7 @@ def test_truly_retired_slugs_have_no_sidebar_button(admin_js: str):
 
 PHASE_A_STRING_REDIRECTS = {
     "dashboard": "live",  # both render KPI strip via data-route-view alias
-    "messages": "live",   # v7 IA: same sec-live-feed, second name retired
+    "messages": "live",  # v7 IA: same sec-live-feed, second name retired
 }
 
 PHASE_B_OBJECT_REDIRECTS = {
@@ -418,12 +425,12 @@ def test_appearance_alias_targets_themes_parent(admin_js: str):
     its legacy shell (ADMIN_ROUTES entry + TabConfig group) was removed.
     Alias (not bare) so #/appearance/<tab> hashes still resolve."""
     pattern = re.compile(r'\bappearance:\s*\{\s*nav:\s*"themes"\s*\}')
-    assert pattern.search(admin_js), (
-        "_routeAliases.appearance must equal { nav: 'themes' } — parent-only"
-    )
-    assert not re.search(r"\n\s*appearance:\s*\{\s*title:", admin_js), (
-        "ADMIN_ROUTES.appearance must stay removed (the alias would be dead)"
-    )
+    assert pattern.search(
+        admin_js
+    ), "_routeAliases.appearance must equal { nav: 'themes' } — parent-only"
+    assert not re.search(
+        r"\n\s*appearance:\s*\{\s*title:", admin_js
+    ), "ADMIN_ROUTES.appearance must stay removed (the alias would be dead)"
 
 
 def test_viewer_config_alias_targets_viewer_parent(admin_js: str):
@@ -506,34 +513,34 @@ def test_accordion_module_is_gone():
     """v7 S3: admin-system-accordion.js is deleted — resurrecting it (or its
     script tag) reintroduces a second navigation pattern for one route."""
     static_js = Path(__file__).resolve().parent.parent / "static" / "js"
-    assert not (static_js / "admin-system-accordion.js").exists(), (
-        "admin-system-accordion.js must stay deleted (system uses AdminTabs)"
+    assert not (
+        static_js / "admin-system-accordion.js"
+    ).exists(), "admin-system-accordion.js must stay deleted (system uses AdminTabs)"
+    admin_html = (Path(__file__).resolve().parent.parent / "templates" / "admin.html").read_text(
+        encoding="utf-8"
     )
-    admin_html = (
-        Path(__file__).resolve().parent.parent / "templates" / "admin.html"
-    ).read_text(encoding="utf-8")
     assert "admin-system-accordion" not in admin_html
 
 
 def test_system_tab_group_declares_expected_tabs(tabs_js: str):
     """TabConfig.system must declare the 6 tabs in canonical order with
     overview as the landing tab."""
-    block = re.search(r"system:\s*\{\s*defaultTab:\s*\"(\w+)\",\s*tabs:\s*\[([\s\S]+?)\n\s*\]", tabs_js)
+    block = re.search(
+        r"system:\s*\{\s*defaultTab:\s*\"(\w+)\",\s*tabs:\s*\[([\s\S]+?)\n\s*\]", tabs_js
+    )
     assert block, "TabConfig.system not found in admin-tabs.js"
     assert block.group(1) == "overview", "system defaultTab must be overview"
     found = re.findall(r'slug:\s*"([\w-]+)"', block.group(2))
-    assert found == SYSTEM_TABS_EXPECTED, (
-        f"system tab order drifted.\nexpected: {SYSTEM_TABS_EXPECTED}\nactual:   {found}"
-    )
+    assert (
+        found == SYSTEM_TABS_EXPECTED
+    ), f"system tab order drifted.\nexpected: {SYSTEM_TABS_EXPECTED}\nactual:   {found}"
 
 
 def test_system_legacy_leaf_homes_cover_rehomed_leaves(admin_js: str):
     """Every rehomed accordion leaf must appear in SYSTEM_LEGACY_LEAF_HOMES
     so old #/system/<leaf> bookmarks land on the new home (not silently on
     the overview tab)."""
-    block = re.search(
-        r"const SYSTEM_LEGACY_LEAF_HOMES\s*=\s*\{([\s\S]+?)\n\s*\};", admin_js
-    )
+    block = re.search(r"const SYSTEM_LEGACY_LEAF_HOMES\s*=\s*\{([\s\S]+?)\n\s*\};", admin_js)
     assert block, "SYSTEM_LEGACY_LEAF_HOMES not found in admin.js"
     body = block.group(1)
     for slug, (nav, tab) in SYSTEM_LEGACY_LEAF_HOMES_EXPECTED.items():

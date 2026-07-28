@@ -20,8 +20,10 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   expect(adminSrc).toMatch(/display:\s*\{\s*nav:\s*"viewer",\s*tab:\s*"defaults"/);
   expect(adminSrc).toContain('data-route="viewer"');
   expect(adminSrc).not.toContain('data-route="dashboard"');
-  // 2026-05-18 v5: messages + widgets promoted to first-class sidebar slugs.
-  expect(adminSrc).toContain('data-route="messages"');
+  // 2026-07-28 v7 IA: messages retired (same sec-live-feed as the console);
+  // #/messages bare-redirects to live. widgets stays first-class.
+  expect(adminSrc).not.toContain('data-route="messages"');
+  expect(adminSrc).toMatch(/messages:\s*"live"/);
   expect(adminSrc).toContain('data-route="widgets"');
   // security is not a standalone nav button.
   expect(adminSrc).not.toContain('data-route="security"');
@@ -45,7 +47,8 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   const ratelimitSrc   = fs.readFileSync(path.join(staticDir, "admin-ratelimit.js"), "utf8");
   const displaySrc     = fs.readFileSync(path.join(staticDir, "admin-display.js"), "utf8");
   const securitySrc    = fs.readFileSync(path.join(staticDir, "admin-security.js"), "utf8");
-  const systemSrc      = fs.readFileSync(path.join(staticDir, "admin-system-accordion.js"), "utf8");
+  // v7 S3 (2026-07-28): system 手風琴退役，security 成為 system 的 AdminTabs tab。
+  const systemTabsSrc  = fs.readFileSync(path.join(staticDir, "admin-tabs.js"), "utf8");
   const viewerThemeSrc = fs.readFileSync(path.join(staticDir, "admin-viewer-theme.js"), "utf8");
   const themeSwitcherSrc = fs.readFileSync(path.join(staticDir, "admin-theme-switcher.js"), "utf8");
   expect(ratelimitSrc).toContain('SECTION_ID = "sec-ratelimit"');
@@ -59,8 +62,8 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   // "System › Security" to just "安全性" per batch12-system.jsx.
   expect(securitySrc).toContain("安全性");
   expect(securitySrc).toContain("SECURITY · AUTH · ACCESS · TOKENS");
-  expect(systemSrc).toContain("slug: \"security\"");
-  expect(systemSrc).toContain("sectionId: \"admin-security-v2-page\"");
+  expect(systemTabsSrc).toContain("slug: \"security\"");
+  expect(systemTabsSrc).toContain("section: \"admin-security-v2-page\"");
   expect(viewerThemeSrc).toContain('SECTION_ID = "sec-viewer-theme"');
   expect(viewerThemeSrc).toContain('admin-vt-page');
   expect(viewerThemeSrc).toContain('data-vt-jump="display"');
@@ -157,7 +160,9 @@ test("Viewer entry points use the canonical viewer route instead of legacy viewe
   const tabsSrc = fs.readFileSync(path.join(staticDir, "admin-tabs.js"), "utf8");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
 
-  expect(paletteSrc).toContain('viewer:         { title: "觀眾頁"');
+  // v7 S1 (2026-07-28): palette 不再有 ROUTES 複本，開啟時讀 window.ADMIN_ROUTES。
+  expect(paletteSrc).toContain('window.ADMIN_ROUTES');
+  expect(paletteSrc).toContain('"viewer"');
   expect(paletteSrc).toContain('label: "觀眾頁主題"');
   expect(paletteSrc).toContain('route: "viewer", tab: "page", section: "sec-viewer-theme"');
   expect(paletteSrc).toContain('label: "表單欄位 Viewer fields"');
@@ -172,7 +177,9 @@ test("Viewer entry points use the canonical viewer route instead of legacy viewe
   expect(assetsSrc).toContain('route: "viewer"');
   expect(assetsSrc).not.toContain('route: "viewer-config"');
 
-  expect(tabsSrc).toContain('{ slug: "viewer-config", label: "Viewer 設定", en: "VIEWER",     sections: ["sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits"] }');
+  // v7 S4 (2026-07-28): appearance 分頁組（含 viewer-config tab）已隨殭屍
+  // shell 移除；canonical 的 viewer 分頁面由 viewer route 自己的 4-tab 承擔。
+  expect(tabsSrc).not.toContain('slug: "viewer-config"');
   expect(tabsSrc).not.toContain('sec-color');
   expect(tabsSrc).not.toContain('sec-opacity');
   expect(tabsSrc).not.toContain('sec-fontsize');
@@ -180,7 +187,9 @@ test("Viewer entry points use the canonical viewer route instead of legacy viewe
   expect(tabsSrc).not.toContain('sec-fontfamily');
   expect(tabsSrc).not.toContain('sec-layout');
 
-  expect(adminSrc).toContain('appearance: { title: "外觀", kicker: "APPEARANCE · 主題 / Viewer / 字型", sections: ["sec-themes", "sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits", "sec-fonts"] }');
+  // v7 S4 (2026-07-28): appearance 殭屍 shell 移除，改為純別名 → themes。
+  expect(adminSrc).toMatch(/appearance:\s*\{\s*nav:\s*"themes"\s*\}/);
+  expect(adminSrc).not.toMatch(/appearance:\s*\{\s*title:/);
 });
 
 test("admin shell cleanup does not reach into replay-controls private timers", () => {
