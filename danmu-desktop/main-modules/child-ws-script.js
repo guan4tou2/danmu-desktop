@@ -452,8 +452,8 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
               animationText = STARTUP_ANIM_SETTINGS.customText;
             }
 
-            // The Python websockets server accepts the handshake first then
-            // closes with 1008 if WS_REQUIRE_TOKEN is enabled and the token is
+            // The flask-sock server accepts the handshake first then closes
+            // with 1008 if WS_REQUIRE_TOKEN is enabled and the token is
             // missing/invalid. ws.onopen still fires in that case, so we wait
             // briefly and only play the intro if the socket is still alive.
             setTimeout(() => {
@@ -473,9 +473,10 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
             connectionTimeout = null
           }
 
-          // 1008 = Policy Violation. The server uses this for token auth failure
-          // and connection-limit rejection. Reconnecting won't help — stop and
-          // surface the failure to the user.
+          // 1008 = Policy Violation. The server uses this for token auth and
+          // Origin-allowlist rejection. Reconnecting won't help — stop and
+          // surface the failure to the user. (Capacity limits close with 1013
+          // Try Again Later instead, which falls through to normal backoff.)
           if (event.code === 1008) {
             console.error('WebSocket rejected by server (1008):', event.reason)
             sendConnectionStatus('connection-failed')

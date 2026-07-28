@@ -272,6 +272,70 @@ def test_ws_server_rejects_oversized_message(ws_server_port):
         pytest.fail("oversized message did not close the connection")
 
 
+# ─── Token 驗證：真實 Flask /ws 伺服器 close code ───────────────────────────
+# 下面三個測試打的是 conftest 啟動的「真」flask_ws 伺服器（handler 每次連線
+# 即時讀 ws_auth.get_state()，所以行程內 set_state 即可切換）。1008 是
+# Electron 端「停止重連、顯示 Unauthorized」的分流依據，不能退化成裸 close
+# 的 1000。
+
+
+def _connect_expecting_close(port):
+    from websockets.exceptions import ConnectionClosedError
+    from websockets.sync.client import connect
+
+    def run(query=""):
+        with connect(f"ws://127.0.0.1:{port}/ws{query}") as ws:
+            ws.socket.settimeout(3.0)
+            with pytest.raises(ConnectionClosedError) as exc_info:
+                # 伺服器在 handshake 後立刻關閉；重複 recv 直到吃到 close
+                for _ in range(5):
+                    ws.recv()
+            assert exc_info.value.rcvd is not None
+            return exc_info.value.rcvd.code
+
+    return run
+
+
+def test_flask_ws_rejects_missing_token_with_1008(ws_server_port):
+    """真實 flask_ws：需要 token 而未帶時，應以 1008 Policy Violation 關閉"""
+    from server.services import ws_auth
+
+    ws_auth.set_state(require_token=True, token="real-secret")
+    try:
+        code = _connect_expecting_close(ws_server_port)()
+        assert code == 1008
+    finally:
+        ws_auth.set_state(require_token=False, token="")
+
+
+def test_flask_ws_rejects_wrong_token_with_1008(ws_server_port):
+    """真實 flask_ws：token 錯誤時，應以 1008 Policy Violation 關閉"""
+    from server.services import ws_auth
+
+    ws_auth.set_state(require_token=True, token="real-secret")
+    try:
+        code = _connect_expecting_close(ws_server_port)("?token=wrong")
+        assert code == 1008
+    finally:
+        ws_auth.set_state(require_token=False, token="")
+
+
+def test_flask_ws_accepts_correct_token(ws_server_port):
+    """真實 flask_ws：token 正確時應正常收到 ping 心跳"""
+    from websockets.sync.client import connect
+
+    from server.services import ws_auth
+
+    ws_auth.set_state(require_token=True, token="real-secret")
+    try:
+        with connect(f"ws://127.0.0.1:{ws_server_port}/ws?token=real-secret") as ws:
+            ws.socket.settimeout(3.0)
+            data = json.loads(ws.recv())
+            assert data.get("type") == "ping"
+    finally:
+        ws_auth.set_state(require_token=False, token="")
+
+
 # ─── Token 驗證：真實 TCP 連線測試 ──────────────────────────────────────────
 
 

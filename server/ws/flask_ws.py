@@ -139,7 +139,10 @@ def init_ws(app):
                     "Rejecting WS client with disallowed Origin: %s",
                     sanitize_log_string(origin),
                 )
-                ws.close()
+                # 1008 tells clients this rejection is a policy decision, not a
+                # transient failure — the Electron overlay stops reconnecting on
+                # 1008 instead of burning its retry budget.
+                ws.close(reason=CloseReason.POLICY_VIOLATION, message="origin not allowed")
                 return
 
         auth = ws_auth.get_state()
@@ -147,10 +150,10 @@ def init_ws(app):
             configured_token = auth["token"]
             token = request.args.get("token", "")
             if not token or not configured_token:
-                ws.close()
+                ws.close(reason=CloseReason.POLICY_VIOLATION, message="unauthorized")
                 return
             if not secrets.compare_digest(token, configured_token):
-                ws.close()
+                ws.close(reason=CloseReason.POLICY_VIOLATION, message="unauthorized")
                 return
 
         client_ip = request.remote_addr or "unknown"
@@ -158,7 +161,9 @@ def init_ws(app):
 
         if total_clients >= ws_max_connections:
             logger.warning("WS global connection limit reached (%s)", ws_max_connections)
-            ws.close()
+            # 1013 (not 1008): capacity limits are transient — retrying later is
+            # legitimate, so clients should keep their reconnect loop.
+            ws.close(reason=CloseReason.TRY_AGAIN_LATER, message="connection limit reached")
             return
 
         ip_conns = _connections_by_ip.get(client_ip, set())
@@ -168,7 +173,7 @@ def init_ws(app):
                 client_ip,
                 ws_max_connections_per_ip,
             )
-            ws.close()
+            ws.close(reason=CloseReason.TRY_AGAIN_LATER, message="connection limit reached")
             return
 
         _connections_by_ip.setdefault(client_ip, set()).add(ws)
