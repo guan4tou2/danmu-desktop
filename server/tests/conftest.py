@@ -136,6 +136,24 @@ def _isolate_onscreen_limits(tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def _isolate_api_tokens(tmp_path):
+    """把 API token 儲存導到 tmp_path。
+
+    沒有這層隔離，任何建立 / 撤銷 token 的測試都會寫進正式的
+    server/runtime/api_tokens.json —— 那個檔現在有 176 筆、78KB，裡面躺著
+    label="contract-test" 之類的紀錄，就是這樣累積出來的。
+    """
+    from server.services import api_tokens
+
+    original = api_tokens._TOKENS_FILE
+    api_tokens._TOKENS_FILE = str(tmp_path / "api_tokens.json")
+    try:
+        yield
+    finally:
+        api_tokens._TOKENS_FILE = original
+
+
+@pytest.fixture(autouse=True)
 def _isolate_danmu_history(tmp_path):
     """把彈幕歷史的落地檔導到 tmp_path。
 
