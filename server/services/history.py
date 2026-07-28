@@ -1,32 +1,133 @@
-"""彈幕記錄服務"""
+"""彈幕記錄服務
 
+記錄同時存在兩個地方：
+
+  * 記憶體 deque —— 所有讀取路徑（列表 / 統計 / 匯出）都走這裡，行為與
+    落地前完全相同。
+  * ``runtime/danmu_history.jsonl`` —— append-only，讓記錄能撐過重啟。
+    寫入策略沿用 audit_log.py：一行一筆 JSON、超過上限就 rotate 成 ``.1``、
+    寫入失敗只降級成記憶體模式而不讓 /fire 失敗。
+
+隱私：記憶體裡的記錄含 ``clientIp``，那是 admin 介面在用的。落地時預設**不寫
+入 IP**（``DANMU_HISTORY_PERSIST_IP=true`` 可改變），因為把來訪者 IP 永久寫進
+磁碟跟留在一個會被重啟清掉的 ring buffer 裡，是兩件不同性質的事。fingerprint
+留著 —— 它本來就是雜湊值，而且黑名單與觀眾追蹤都靠它。
+"""
+
+import json
 import logging
 import threading
 import time
 from collections import deque
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Dict, List, Optional
 
 from ..config import Config
 
 logger = logging.getLogger(__name__)
 
+_RUNTIME = Path(__file__).parent.parent / "runtime"
+HISTORY_FILE = _RUNTIME / "danmu_history.jsonl"
+HISTORY_BACKUP_FILE = _RUNTIME / "danmu_history.jsonl.1"
+
 
 class DanmuHistory:
     """彈幕記錄管理器"""
 
-    def __init__(self, max_records: int = 10000, auto_cleanup_hours: int = 24):
+    def __init__(
+        self,
+        max_records: int = 10000,
+        auto_cleanup_hours: int = 24,
+        persist: bool = True,
+        persist_ip: bool = False,
+        max_file_bytes: int = 8 * 1024 * 1024,
+    ):
         """
         初始化彈幕記錄管理器
 
         Args:
             max_records: 最大記錄數（防止內存溢出）
             auto_cleanup_hours: 自動清理超過此小時數的記錄
+            persist: 是否把記錄 append 到 danmu_history.jsonl
+            persist_ip: 落地時是否包含 clientIp（預設不含，見模組 docstring）
+            max_file_bytes: 檔案超過此大小就 rotate 成 .jsonl.1
         """
         self._records: deque = deque(maxlen=max_records)
         self._lock = threading.Lock()
         self.auto_cleanup_hours = auto_cleanup_hours
+        self.persist = persist
+        self.persist_ip = persist_ip
+        self.max_file_bytes = max_file_bytes
+        self._write_failure_logged = False
         self.last_cleanup = time.time()
+        if self.persist:
+            self._load_from_disk()
+
+    # ── 落地 ────────────────────────────────────────────────────────────
+
+    def _load_from_disk(self) -> None:
+        """啟動時把檔案內容讀回 deque。
+
+        deque 的 maxlen 會自動只保留最後 max_records 筆，所以即使檔案比記憶體
+        上限大也不會爆。壞掉的行直接跳過 —— 一筆讀不出來不該讓整個服務起不來。
+        """
+        if not HISTORY_FILE.exists():
+            return
+        loaded = skipped = 0
+        try:
+            with HISTORY_FILE.open("r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        self._records.append(json.loads(line))
+                        loaded += 1
+                    except (json.JSONDecodeError, ValueError):
+                        skipped += 1
+        except OSError as exc:
+            logger.warning("danmu history: cannot read %s: %s", HISTORY_FILE, exc)
+            return
+        logger.info(
+            "danmu history: restored %d records from disk%s",
+            loaded,
+            f" ({skipped} unreadable lines skipped)" if skipped else "",
+        )
+
+    def _try_rotate(self) -> None:
+        """超過上限就轉存成 .1（只留一份備份，跟 audit.log 一致）。"""
+        try:
+            if HISTORY_FILE.stat().st_size < self.max_file_bytes:
+                return
+            if HISTORY_BACKUP_FILE.exists():
+                HISTORY_BACKUP_FILE.unlink()
+            HISTORY_FILE.rename(HISTORY_BACKUP_FILE)
+        except OSError as exc:
+            logger.warning("danmu history: rotate failed: %s", exc)
+
+    def _append_to_disk(self, record: Dict) -> None:
+        """Best-effort append。寫不進去就降級成純記憶體，不讓 /fire 失敗。"""
+        if not self.persist:
+            return
+        payload = (
+            record if self.persist_ip else {k: v for k, v in record.items() if k != "clientIp"}
+        )
+        try:
+            HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+            if HISTORY_FILE.exists():
+                self._try_rotate()
+            with HISTORY_FILE.open("a", encoding="utf-8") as f:
+                f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+        except OSError as exc:
+            if not self._write_failure_logged:
+                logger.warning(
+                    "danmu history: cannot persist to %s (%s) — "
+                    "continuing in memory only; records will not survive a restart",
+                    HISTORY_FILE,
+                    exc,
+                )
+                self._write_failure_logged = True
 
     def add(self, danmu_data: Dict):
         """
@@ -51,6 +152,8 @@ class DanmuHistory:
 
         with self._lock:
             self._records.append(record)
+        # 落地在鎖外做：磁碟 I/O 不該擋住其他送出中的彈幕。
+        self._append_to_disk(record)
         # 定期清理舊記錄（在鎖外呼叫，避免 deadlock）
         self._maybe_cleanup()
 
@@ -157,9 +260,21 @@ class DanmuHistory:
         }
 
     def clear(self):
-        """清空所有記錄"""
+        """清空所有記錄（記憶體與磁碟）
+
+        Admin UI 的文案是「清除所有彈幕歷史，此動作無法復原」，所以落地檔案也
+        要一起清掉 —— 只清記憶體的話，重啟後記錄又會冒回來，跟使用者被告知的
+        結果不符。
+        """
         with self._lock:
             self._records.clear()
+        if not self.persist:
+            return
+        for path in (HISTORY_FILE, HISTORY_BACKUP_FILE):
+            try:
+                path.unlink(missing_ok=True)
+            except OSError as exc:
+                logger.warning("danmu history: cannot remove %s: %s", path, exc)
 
     def _maybe_cleanup(self):
         """定期清理舊記錄（時間檢查在鎖內防止 TOCTOU race）"""
@@ -245,4 +360,7 @@ def init_history():
     danmu_history = DanmuHistory(
         max_records=Config.DANMU_HISTORY_MAX_RECORDS,
         auto_cleanup_hours=Config.DANMU_HISTORY_CLEANUP_HOURS,
+        persist=Config.DANMU_HISTORY_PERSIST,
+        persist_ip=Config.DANMU_HISTORY_PERSIST_IP,
+        max_file_bytes=Config.DANMU_HISTORY_MAX_FILE_BYTES,
     )

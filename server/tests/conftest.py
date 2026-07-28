@@ -136,6 +136,45 @@ def _isolate_onscreen_limits(tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def _isolate_api_tokens(tmp_path):
+    """把 API token 儲存導到 tmp_path。
+
+    沒有這層隔離，任何建立 / 撤銷 token 的測試都會寫進正式的
+    server/runtime/api_tokens.json —— 那個檔現在有 176 筆、78KB，裡面躺著
+    label="contract-test" 之類的紀錄，就是這樣累積出來的。
+    """
+    from server.services import api_tokens
+
+    original = api_tokens._TOKENS_FILE
+    api_tokens._TOKENS_FILE = str(tmp_path / "api_tokens.json")
+    try:
+        yield
+    finally:
+        api_tokens._TOKENS_FILE = original
+
+
+@pytest.fixture(autouse=True)
+def _isolate_danmu_history(tmp_path):
+    """把彈幕歷史的落地檔導到 tmp_path。
+
+    沒有這層隔離的話，任何送出彈幕的測試都會 append 進真正的
+    server/runtime/danmu_history.jsonl。runtime/api_tokens.json 就是這樣被
+    測試資料污染的（裡面躺著 label="contract-test" 的紀錄），這裡不重蹈覆轍。
+    """
+    from server.services import history as history_service
+
+    original_file = history_service.HISTORY_FILE
+    original_backup = history_service.HISTORY_BACKUP_FILE
+    history_service.HISTORY_FILE = tmp_path / "danmu_history.jsonl"
+    history_service.HISTORY_BACKUP_FILE = tmp_path / "danmu_history.jsonl.1"
+    try:
+        yield
+    finally:
+        history_service.HISTORY_FILE = original_file
+        history_service.HISTORY_BACKUP_FILE = original_backup
+
+
+@pytest.fixture(autouse=True)
 def _isolate_ws_auth(tmp_path, request):
     """Isolate ws_auth runtime file per test to avoid cross-test pollution.
 
