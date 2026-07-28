@@ -346,7 +346,7 @@ body[data-os="mac"] .client-titlebar {
 .client-titlebar-status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-size: 10px;
   letter-spacing: 1px;
   color: rgba(148, 163, 184, 0.9);
@@ -387,8 +387,8 @@ body[data-os="mac"] .client-titlebar {
 .client-titlebar-update {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 9px;
+  gap: 4px;
+  padding: 4px 8px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
   background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
@@ -420,8 +420,8 @@ body[data-os="mac"] .client-titlebar {
 /* ───────────── Update card (P2-3) — about section ─────────────
  * Inline release-notes + progress bar + Restart/Skip/Later buttons. */
 .client-update-card {
-  margin-top: 14px;
-  padding: 14px 16px;
+  margin-top: 12px;
+  padding: 12px 16px;
   border-radius: var(--radius-md);
   border: 1px solid rgba(56, 189, 248, 0.35);
   background: rgba(15, 23, 42, 0.6);
@@ -468,8 +468,8 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-update-card .notes {
-  margin-top: 10px;
-  padding: 10px 12px;
+  margin-top: 8px;
+  padding: 8px 12px;
   border-radius: var(--radius-md-sm);
   background: rgba(15, 23, 42, 0.55);
   border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
@@ -484,10 +484,10 @@ body[data-os="mac"] .client-titlebar {
 .client-update-card .notes[hidden] { display: none; }
 
 .client-update-card .progress {
-  margin-top: 10px;
+  margin-top: 8px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .client-update-card .progress[hidden] { display: none; }
@@ -564,7 +564,7 @@ body[data-os="mac"] .client-titlebar {
   border-right: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  padding: 10px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
   align-self: stretch;
@@ -579,12 +579,12 @@ body[data-os="mac"] .client-titlebar {
 .client-nav-btn {
   all: unset;
   box-sizing: border-box;
-  padding: 9px 12px;
+  padding: 8px 12px;
   border-radius: var(--radius-md-sm);
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   color: rgba(241, 245, 249, 0.9);
   transition: background var(--motion-fast) ease, color var(--motion-fast) ease;
 }
@@ -638,7 +638,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-sidebar-foot {
   margin-top: auto;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-top: 1px solid rgba(148, 163, 184, 0.14);
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 9px;
@@ -669,7 +669,7 @@ body[data-os="mac"] .client-titlebar {
 .client-main {
   flex: 1 1 0;
   min-width: 0;
-  padding: 22px;
+  padding: 20px;
   overflow: auto;
 }
 
@@ -678,7 +678,7 @@ body[data-os="mac"] .client-titlebar {
   justify-content: flex-end;
   align-items: center;
   gap: var(--space-3);
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .client-section {
@@ -690,10 +690,10 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-section-head {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 8px;
 }
 
 .client-section-title {
@@ -716,14 +716,14 @@ body[data-os="mac"] .client-titlebar {
   background: rgba(15, 23, 42, 0.55);
   border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   border-radius: var(--radius-md);
-  padding: 14px;
+  padding: 12px;
   backdrop-filter: blur(8px);
 }
 
 .client-keys-row {
   display: flex;
   align-items: center;
-  padding: 10px 6px;
+  padding: 8px 4px;
   border-bottom: 1px solid rgba(148, 163, 184, 0.14);
 }
 
@@ -736,7 +736,7 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-keys-row .kbd {
-  padding: 4px 10px;
+  padding: 4px 8px;
   border: 1px solid var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
   border-radius: var(--radius-sm);
   background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
@@ -747,7 +747,7 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-keys-hint {
-  margin-top: 14px;
+  margin-top: 12px;
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 10px;
   letter-spacing: 0.5px;
@@ -758,12 +758,12 @@ body[data-os="mac"] .client-titlebar {
 .client-update-status {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   padding: var(--space-4);
   border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   border-radius: var(--radius-md);
   background: rgba(15, 23, 42, 0.5);
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .client-update-status-icon {
   width: 44px;
@@ -790,13 +790,13 @@ body[data-os="mac"] .client-titlebar {
   color: rgba(241, 245, 249, 0.95);
 }
 .client-update-status-meta {
-  margin-top: 3px;
+  margin-top: 4px;
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 10px;
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.85);
 }
-.client-update-status-meta .sep { margin: 0 6px; opacity: 0.5; }
+.client-update-status-meta .sep { margin: 0 4px; opacity: 0.5; }
 .client-update-check-btn {
   padding: var(--space-2) var(--space-4);
   background: transparent;
@@ -815,11 +815,11 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-update-prefs {
-  padding: 14px 16px;
+  padding: 12px 16px;
   border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   border-radius: var(--radius-md);
   background: rgba(15, 23, 42, 0.5);
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .client-update-prefs-kicker {
   font-family: "JetBrains Mono", ui-monospace, monospace;
@@ -827,17 +827,17 @@ body[data-os="mac"] .client-titlebar {
   letter-spacing: 1.5px;
   color: rgba(148, 163, 184, 0.85);
   text-transform: uppercase;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .client-update-pref {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
   padding: var(--space-2) 0;
   cursor: pointer;
 }
 .client-update-pref input[type="checkbox"] {
-  margin-top: 3px;
+  margin-top: 4px;
   flex-shrink: 0;
 }
 .client-update-pref-body { display: flex; flex-direction: column; gap: 2px; }
@@ -851,7 +851,7 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-update-changelog {
-  padding: 14px 16px;
+  padding: 12px 16px;
   border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   border-radius: var(--radius-md);
   background: rgba(15, 23, 42, 0.5);
@@ -860,7 +860,7 @@ body[data-os="mac"] .client-titlebar {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .client-update-changelog-kicker {
   font-family: "JetBrains Mono", ui-monospace, monospace;
@@ -894,7 +894,7 @@ body[data-os="mac"] .client-titlebar {
   display: flex;
   gap: var(--space-4);
   align-items: center;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   backdrop-filter: blur(8px);
 }
 
@@ -944,7 +944,7 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-action-btn {
-  padding: 9px 16px;
+  padding: 8px 16px;
   border-radius: var(--radius-md-sm);
   cursor: pointer;
   border: 1px solid rgba(148, 163, 184, 0.25);
@@ -962,7 +962,7 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-about-desc {
-  padding: 14px;
+  padding: 12px;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   background: rgba(15, 23, 42, 0.45);
@@ -986,8 +986,8 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
-  margin-bottom: 14px;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 @media (max-width: 780px) {
@@ -995,7 +995,7 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-conn-card {
-  padding: 14px;
+  padding: 12px;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   background: rgba(15, 23, 42, 0.55);
@@ -1011,7 +1011,7 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-conn-url {
-  margin-top: 6px;
+  margin-top: 4px;
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 13px;
   font-weight: 600;
@@ -1027,7 +1027,7 @@ body[data-os="mac"] .client-titlebar {
   color: rgba(148, 163, 184, 0.8);
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
   align-items: baseline;
 }
 
@@ -1042,9 +1042,9 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-conn-actions {
-  margin-top: 10px;
+  margin-top: 8px;
   display: flex;
-  gap: 6px;
+  gap: 4px;
 }
 
 /* 2026-05-16 conn-section impl alignment — configure-only model.
@@ -1071,7 +1071,7 @@ body[data-os="mac"] .client-titlebar {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 10px 12px;
+  padding: 8px 12px;
   background: rgba(15, 23, 42, 0.4);
   border-radius: var(--radius-md-sm);
   border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
@@ -1128,7 +1128,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-conn-preview {
   flex: 1;
-  padding: 6px 12px;
+  padding: 4px 12px;
   border-radius: var(--radius-sm);
   background: rgba(56, 189, 248, 0.06);
   border: 1px solid rgba(56, 189, 248, 0.18);
@@ -1143,8 +1143,8 @@ body[data-os="mac"] .client-titlebar {
   margin-top: 0;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 4px;
+  padding: 4px 8px;
   border-radius: var(--radius-sm);
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 10px;
@@ -1174,7 +1174,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-conn-test-btn {
   flex: none;
-  padding: 5px 14px;
+  padding: 4px 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-primary);
   background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
@@ -1203,15 +1203,15 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-conn-edit-row {
-  margin-top: 6px;
+  margin-top: 4px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .client-conn-edit-row input {
   flex: 1;
-  padding: 10px 12px;
+  padding: 8px 12px;
   background: rgba(15, 23, 42, 0.55);
   border: 1px solid var(--color-primary);
   border-radius: var(--radius-md-sm);
@@ -1224,7 +1224,7 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-conn-edit-save {
-  padding: 8px 14px;
+  padding: 8px 12px;
   border-radius: var(--radius-md-sm);
   border: none;
   background: var(--color-primary);
@@ -1253,7 +1253,7 @@ body[data-os="mac"] .client-titlebar {
 
 /* LAST USED SERVER row */
 .client-conn-last-row {
-  margin-top: 10px;
+  margin-top: 8px;
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -1288,7 +1288,7 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-conn-edit-help {
-  margin-top: 6px;
+  margin-top: 4px;
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 9px;
   letter-spacing: 0.3px;
@@ -1298,7 +1298,7 @@ body[data-os="mac"] .client-titlebar {
 
 /* AUTH card uses <details>. Inherits .client-conn-card padding/border
    from the shared card class; nothing extra needed for the container. */
-.client-conn-auth-panel { padding: 14px; }
+.client-conn-auth-panel { padding: 12px; }
 .client-conn-auth-panel[open] .client-conn-auth-status { display: none; }
 /* The "✓ 已設定" confirmation badge stays visible even when the panel is
    expanded, so the configured-token signal is always present (A5). */
@@ -1349,8 +1349,8 @@ body[data-os="mac"] .client-titlebar {
 
 .client-conn-auth-panel input[type="password"] {
   width: 100%;
-  margin-top: 10px;
-  padding: 10px 12px;
+  margin-top: 8px;
+  padding: 8px 12px;
   background: rgba(15, 23, 42, 0.55);
   border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: var(--radius-md-sm);
@@ -1367,7 +1367,7 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-mini-btn {
-  padding: 5px 10px;
+  padding: 4px 8px;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(148, 163, 184, 0.25);
   background: rgba(15, 23, 42, 0.35);
@@ -1390,7 +1390,7 @@ body[data-os="mac"] .client-titlebar {
   display: block;
   width: 100%;
   height: 56px;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .client-conn-sparkline .fill { fill: var(--color-primary); opacity: 0.12; }
@@ -1417,8 +1417,8 @@ body[data-os="mac"] .client-titlebar {
 
 /* Connection edit form — expanded via ⚙ 更改 */
 .client-conn-edit {
-  margin-top: 14px;
-  padding: 14px;
+  margin-top: 12px;
+  padding: 12px;
   border-radius: var(--radius-md);
   border: 1px solid rgba(56, 189, 248, 0.35);
   background: rgba(15, 23, 42, 0.55);
@@ -1430,7 +1430,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-edit-head {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: var(--space-3);
 }
 
@@ -1449,7 +1449,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-edit-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   font-size: var(--text-xs);
   color: rgba(241, 245, 249, 0.9);
 }
@@ -1464,7 +1464,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-conn-edit-field input,
 .client-conn-edit-field select {
-  padding: 8px 10px;
+  padding: 8px 8px;
   border-radius: var(--radius-md-sm);
   border: 1px solid rgba(148, 163, 184, 0.2);
   background: rgba(15, 23, 42, 0.6);
@@ -1502,15 +1502,15 @@ body[data-os="mac"] .client-titlebar {
  * Show/hide primary button + display picker + action buttons + NOTE.
  * Legacy Preview & Settings accordion is tucked away in client-overlay-advanced. */
 .client-overlay-card {
-  padding: 14px;
+  padding: 12px;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
   background: rgba(15, 23, 42, 0.55);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 14px;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .client-overlay-card .client-overlay-card-body { flex: 1; }
@@ -1529,7 +1529,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-overlay-button {
   min-width: 132px;
-  padding: 10px 16px;
+  padding: 8px 16px;
   border-radius: 7px;
   border: 1px solid var(--color-primary);
   background: var(--color-primary);
@@ -1569,8 +1569,8 @@ body[data-os="mac"] .client-titlebar {
 .client-overlay-screens .head {
   display: flex;
   align-items: baseline;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .client-overlay-screens .head .label {
@@ -1589,13 +1589,13 @@ body[data-os="mac"] .client-titlebar {
 
 .client-screen-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .client-screen-chip {
   flex: 1 1 200px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-radius: var(--radius-md-sm);
   border: 1px solid rgba(148, 163, 184, 0.2);
   background: transparent;
@@ -1674,11 +1674,11 @@ body[data-os="mac"] .client-titlebar {
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .client-overlay-actions .client-action-btn {
-  padding: 9px 16px;
+  padding: 8px 16px;
   border-radius: var(--radius-md-sm);
   border: 1px solid rgba(148, 163, 184, 0.2);
   background: transparent;
@@ -1689,7 +1689,7 @@ body[data-os="mac"] .client-titlebar {
   transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease, color var(--motion-fast) ease;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .client-overlay-actions .client-action-btn:hover {
@@ -1719,7 +1719,7 @@ body[data-os="mac"] .client-titlebar {
   font-size: 11px;
   line-height: 1.6;
   color: rgba(148, 163, 184, 0.85);
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .client-overlay-note .kicker {
@@ -1772,7 +1772,7 @@ body[data-os="mac"] .client-titlebar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -1826,7 +1826,7 @@ body[data-os="mac"] .client-titlebar {
   padding: var(--space-3) var(--space-4);
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 10px;
+  gap: 8px;
   align-content: start;
 }
 
@@ -1871,8 +1871,8 @@ body[data-os="mac"] .client-titlebar {
 .wp-card-label {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
+  gap: 4px;
+  padding: 4px 8px;
   min-height: 30px;
 }
 
@@ -1890,7 +1890,7 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .wp-footer {
-  padding: 10px 16px;
+  padding: 8px 16px;
   border-top: 1px solid var(--color-border);
   text-align: center;
 }

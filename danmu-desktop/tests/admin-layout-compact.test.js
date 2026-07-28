@@ -205,7 +205,8 @@ test("admin About server-info values wrap long URLs inside their grid cells", ()
   const cssPath = path.join(__dirname, "..", "..", "server", "static", "css", "style.css");
   const cssSrc = fs.readFileSync(cssPath, "utf8");
 
-  expect(cssSrc).toContain(".admin-about-oss-list { margin-top: 10px; font-family: var(--font-mono); font-size: 11px; line-height: 1.7; min-width: 0; }");
+  // D-1 (2026-07-28): 間距全面 snap 到 4px 格，margin-top 10→8。
+  expect(cssSrc).toContain(".admin-about-oss-list { margin-top: 8px; font-family: var(--font-mono); font-size: 11px; line-height: 1.7; min-width: 0; }");
   expect(cssSrc).toMatch(/\.admin-about-oss-row \.v,\s*\.admin-about-oss-row \.l \{[\s\S]*?overflow-wrap:\s*anywhere;/);
 });
 

@@ -156,11 +156,33 @@ function countBareRgba(content) {
   return matches ? matches.length : 0;
 }
 
+// D-1 (2026-07-28 拍板「全面遷移 4px 格」): spacing px values must sit on the
+// 4px grid. Allowed: multiples of 4, plus 0/1/2 (hairlines and micro-gaps —
+// the documented sub-grid exceptions). calc() values are skipped, matching
+// the migration codemod. After the sweep this count is 0 for the two big
+// files; the ratchet keeps any new off-grid value out.
+function countOffGridSpacing(content) {
+  const src = content.replace(COMMENT_RE, "");
+  let n = 0;
+  for (const m of src.matchAll(SPACE_PROP_RE)) {
+    const value = m[1];
+    if (value.includes("calc(")) continue;
+    for (const px of value.matchAll(/(\d+(?:\.\d+)?)px/g)) {
+      const v = Number(px[1]);
+      if (!Number.isInteger(v)) continue; // fractional = intentional hairline
+      if (v <= 2) continue;
+      if (v % 4 !== 0) n += 1;
+    }
+  }
+  return n;
+}
+
 function countFile(content) {
   return {
     hex: countHexColors(content),
     gridPx: countGridPx(content),
     rgba: countBareRgba(content),
+    offGrid: countOffGridSpacing(content),
   };
 }
 
@@ -175,6 +197,7 @@ function normalizeBaselineEntry(entry) {
     hex: entry?.hex ?? 0,
     gridPx: entry?.gridPx ?? Infinity,
     rgba: entry?.rgba ?? Infinity,
+    offGrid: entry?.offGrid ?? Infinity,
   };
 }
 
@@ -228,7 +251,7 @@ function main() {
 
   for (const [file, count] of Object.entries(current)) {
     const before = normalizeBaselineEntry(baseline[file] ?? 0);
-    for (const metric of ["hex", "gridPx", "rgba"]) {
+    for (const metric of ["hex", "gridPx", "rgba", "offGrid"]) {
       if (count[metric] > before[metric]) {
         regressions.push({
           file,
@@ -247,7 +270,10 @@ function main() {
   const newFilesWithValues = Object.keys(current).filter(
     (f) =>
       !(f in baseline) &&
-      (current[f].hex > 0 || current[f].gridPx > 0 || current[f].rgba > 0),
+      (current[f].hex > 0 ||
+        current[f].gridPx > 0 ||
+        current[f].rgba > 0 ||
+        current[f].offGrid > 0),
   );
 
   if (regressions.length === 0 && newFilesWithValues.length === 0) {
@@ -264,6 +290,7 @@ function main() {
     hex: "hex colors → use var(--color-...)",
     gridPx: "token-able px (font-size/spacing) → use var(--text-*/--space-*)",
     rgba: "bare rgb()/rgba() → fold into var(--token, rgba(...))",
+    offGrid: "off-grid spacing px → use the 4px grid (0/1/2 hairlines exempt)",
   };
   for (const r of regressions) {
     console.error(

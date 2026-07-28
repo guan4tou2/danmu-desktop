@@ -207,7 +207,10 @@
   --text-2xl: 1.5rem;    /* 24px — section heading */
   --text-3xl: 1.875rem;  /* 30px — page heading */
 
-  /* Spacing scale — 4px grid */
+  /* Spacing scale — 4px grid。D-1（2026-07-28 拍板）：4px 格是唯一正式刻度，
+   * 全部 margin/padding/gap 已 snap 到 4n；僅 0/1/2px 保留為髮絲線與微間隙
+   * 例外。check-css-tokens.mjs 的 offGrid ratchet 擋任何新的離格值。 */
+  --space-05: 0.125rem; /* 2px — micro gap（例外步進，僅限髮絲級間隙） */
   --space-1: 0.25rem;   /* 4px */
   --space-2: 0.5rem;    /* 8px */
   --space-3: 0.75rem;   /* 12px */
