@@ -194,6 +194,26 @@ def _isolate_danmu_history(tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def _isolate_ratelimit_ip(tmp_path):
+    """Redirect ratelimit_ip runtime file to per-test tmp.
+
+    Same pattern as _isolate_ws_auth: without this, any test that hits
+    /admin/ratelimit/ip-rules would write to the real
+    runtime/ratelimit_ip_rules.json and pollute across tests + repo.
+    """
+    from server.services import ratelimit_ip
+
+    original = ratelimit_ip._STATE_FILE
+    ratelimit_ip._STATE_FILE = tmp_path / "ratelimit_ip_rules.json"
+    ratelimit_ip._reset_for_tests()
+    try:
+        yield
+    finally:
+        ratelimit_ip._STATE_FILE = original
+        ratelimit_ip._reset_for_tests()
+
+
+@pytest.fixture(autouse=True)
 def _isolate_ws_auth(tmp_path, request):
     """Isolate ws_auth runtime file per test to avoid cross-test pollution.
 

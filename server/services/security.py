@@ -16,6 +16,7 @@ from flask import abort, current_app, make_response, request, session
 from itsdangerous import BadSignature, BadTimeSignature, URLSafeTimedSerializer
 
 from .ip import get_client_ip as _get_client_ip
+from .ratelimit_ip import check_ip as _check_ip_rules
 
 try:
     import redis  # type: ignore
@@ -457,6 +458,13 @@ def rate_limit(
         @wraps(func)
         def wrapper(*args, **kwargs):
             client_ip = _get_client_ip()
+            verdict = _check_ip_rules(client_ip)
+            if verdict == "deny":
+                _record_rate_event(key_prefix, client_ip, False)
+                abort(429, description="Too Many Requests")
+            if verdict == "allow":
+                _record_rate_event(key_prefix, client_ip, True)
+                return func(*args, **kwargs)
             limit = current_app.config.get(limit_key, 20)
             window = current_app.config.get(window_key, 60)
             key = f"{key_prefix}:{client_ip}"
@@ -502,6 +510,12 @@ def enforce_fire_rate_limits(fingerprint: str | None, is_admin: bool) -> None:
     """
     cfg = current_app.config
     client_ip = _get_client_ip()
+
+    verdict = _check_ip_rules(client_ip)
+    if verdict == "deny":
+        abort(429, description="Too Many Requests")
+    if verdict == "allow":
+        return
 
     if is_admin:
         limit = int(cfg.get("FIRE_ADMIN_RATE_LIMIT", 200))

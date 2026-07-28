@@ -19,6 +19,7 @@ still the way to make a change survive a restart.
 
 from flask import current_app, request
 
+from ...services import ratelimit_ip
 from ...services.security import rate_limit
 from . import _json_response, admin_bp, require_csrf, require_login, sanitize_log_string
 
@@ -82,3 +83,39 @@ def ratelimit_apply():
         window,
     )
     return _json_response({"scope": scope, "limit": limit, "window": window})
+
+
+@admin_bp.route("/ratelimit/ip-rules", methods=["GET"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_login
+def ratelimit_ip_rules_get():
+    """Return current IP allow/deny rules for the ratelimit admin page."""
+    return _json_response(ratelimit_ip.get_state())
+
+
+@admin_bp.route("/ratelimit/ip-rules", methods=["PUT"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+@require_login
+def ratelimit_ip_rules_put():
+    """Replace allowlist/denylist. Body: {allowlist?: [...], denylist?: [...]}.
+
+    Entries are CIDR strings (bare IPs normalise to /32 or /128). Missing
+    keys leave that list untouched. Persists to
+    ``runtime/ratelimit_ip_rules.json``.
+    """
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return _json_response({"error": "Body must be a JSON object"}, 400)
+    if "allowlist" not in payload and "denylist" not in payload:
+        return _json_response({"error": "provide allowlist and/or denylist"}, 400)
+    try:
+        new_state = ratelimit_ip.set_state(payload)
+    except ValueError as exc:
+        return _json_response({"error": str(exc)}, 400)
+    current_app.logger.info(
+        "Rate-limit IP rules updated: allow=%d deny=%d",
+        len(new_state["allowlist"]),
+        len(new_state["denylist"]),
+    )
+    return _json_response(new_state)

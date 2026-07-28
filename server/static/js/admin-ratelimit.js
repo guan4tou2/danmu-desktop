@@ -137,13 +137,37 @@
           <div class="admin-ratelimit-ip-policy">
             <div class="admin-ratelimit-vfeed-head">
               <span class="title">IP 黑/白名單</span>
-              <span class="kicker">IP POLICY · BACKEND PENDING</span>
+              <span class="kicker" data-rl-ip-summary>IP POLICY · 讀取中…</span>
             </div>
-            <div class="admin-ratelimit-ip-input">
-              <span class="admin-be-placeholder-control" role="note">[PLACEHOLDER] IP/CIDR 編輯（待 BE endpoint）</span>
+            <div class="admin-ratelimit-ip-form">
+              <input type="text" data-rl-ip-input placeholder="1.2.3.4 或 10.0.0.0/8" maxlength="43" autocomplete="off" spellcheck="false" />
+              <select data-rl-ip-select aria-label="加入到哪個名單">
+                <option value="allowlist">白名單 · 跳過限制</option>
+                <option value="denylist">黑名單 · 直接 429</option>
+              </select>
+              <button type="button" class="admin-ui-action is-primary" data-rl-ip-add>加入</button>
             </div>
-            <div class="admin-ratelimit-ip-list" id="rlIpList">
-              <div class="admin-ratelimit-vfeed-empty">[PLACEHOLDER] 待後端提供可編輯清單</div>
+            <p class="admin-ratelimit-ip-help">白名單優先於黑名單 · 支援 IPv4/IPv6 · 單一 IP 自動轉 /32 或 /128</p>
+            <div class="admin-ratelimit-ip-error" data-rl-ip-error hidden></div>
+            <div class="admin-ratelimit-ip-lists">
+              <div class="admin-ratelimit-ip-col" data-rl-ip-col="allowlist">
+                <div class="admin-ratelimit-ip-col-head">
+                  <span class="lbl">ALLOWLIST</span>
+                  <span class="cnt" data-rl-ip-allow-count>0</span>
+                </div>
+                <div class="admin-ratelimit-ip-col-body" data-rl-ip-body="allowlist">
+                  <div class="admin-ratelimit-vfeed-empty">尚無白名單條目</div>
+                </div>
+              </div>
+              <div class="admin-ratelimit-ip-col" data-rl-ip-col="denylist">
+                <div class="admin-ratelimit-ip-col-head">
+                  <span class="lbl">DENYLIST</span>
+                  <span class="cnt" data-rl-ip-deny-count>0</span>
+                </div>
+                <div class="admin-ratelimit-ip-col-body" data-rl-ip-body="denylist">
+                  <div class="admin-ratelimit-vfeed-empty">尚無黑名單條目</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -461,6 +485,146 @@
       const svg = section.querySelector(`[data-rl-spark="${key}"]`);
       if (svg) renderSparkline(svg, new Array(24).fill(0));
     });
+
+    // ── IP allow/deny editor ────────────────────────────────────────────
+    // Loose client-side check — server does the authoritative validation
+    // via ipaddress.ip_network(). Reject only clearly-broken input so we
+    // don't round-trip on typos like "abc".
+    const IP_HINT_RE = /^([0-9a-f:.]+)(\/\d{1,3})?$/i;
+    let ipState = { allowlist: [], denylist: [] };
+
+    const ipEls = {
+      input: section.querySelector("[data-rl-ip-input]"),
+      select: section.querySelector("[data-rl-ip-select]"),
+      addBtn: section.querySelector("[data-rl-ip-add]"),
+      summary: section.querySelector("[data-rl-ip-summary]"),
+      error: section.querySelector("[data-rl-ip-error]"),
+      allowCount: section.querySelector("[data-rl-ip-allow-count]"),
+      denyCount: section.querySelector("[data-rl-ip-deny-count]"),
+      allowBody: section.querySelector('[data-rl-ip-body="allowlist"]'),
+      denyBody: section.querySelector('[data-rl-ip-body="denylist"]'),
+    };
+
+    function showIpError(msg) {
+      if (!ipEls.error) return;
+      if (!msg) { ipEls.error.hidden = true; ipEls.error.textContent = ""; return; }
+      ipEls.error.hidden = false;
+      ipEls.error.textContent = msg;
+    }
+
+    function renderIpList(kind) {
+      const body = kind === "allowlist" ? ipEls.allowBody : ipEls.denyBody;
+      const count = kind === "allowlist" ? ipEls.allowCount : ipEls.denyCount;
+      if (!body || !count) return;
+      const arr = Array.isArray(ipState[kind]) ? ipState[kind] : [];
+      count.textContent = String(arr.length);
+      if (arr.length === 0) {
+        body.innerHTML = `<div class="admin-ratelimit-vfeed-empty">尚無${kind === "allowlist" ? "白" : "黑"}名單條目</div>`;
+        return;
+      }
+      body.innerHTML = arr.map((entry) => `
+        <div class="admin-ratelimit-ip-chip" data-rl-ip-entry="${escapeHtml(entry)}">
+          <span class="admin-ratelimit-ip-chip-cidr">${escapeHtml(entry)}</span>
+          <button type="button" class="admin-ratelimit-ip-chip-remove" data-rl-ip-remove="${escapeHtml(entry)}" data-rl-ip-remove-kind="${kind}" title="移除 ${escapeHtml(entry)}" aria-label="移除 ${escapeHtml(entry)}">×</button>
+        </div>
+      `).join("");
+    }
+
+    function renderIpAll() {
+      renderIpList("allowlist");
+      renderIpList("denylist");
+      if (ipEls.summary) {
+        const a = (ipState.allowlist || []).length;
+        const d = (ipState.denylist || []).length;
+        ipEls.summary.textContent = `IP POLICY · 白 ${a} · 黑 ${d}`;
+      }
+    }
+
+    async function loadIpRules() {
+      try {
+        const r = await fetch("/admin/ratelimit/ip-rules", { credentials: "same-origin" });
+        if (!r.ok) {
+          if (ipEls.summary) ipEls.summary.textContent = `IP POLICY · 載入失敗 (${r.status})`;
+          return;
+        }
+        const data = await r.json();
+        if (data && typeof data === "object") {
+          ipState = {
+            allowlist: Array.isArray(data.allowlist) ? data.allowlist : [],
+            denylist: Array.isArray(data.denylist) ? data.denylist : [],
+          };
+          renderIpAll();
+        }
+      } catch (_) {
+        if (ipEls.summary) ipEls.summary.textContent = "IP POLICY · 網路錯誤";
+      }
+    }
+
+    async function saveIpRules(patch, { toastLabel } = {}) {
+      try {
+        const r = await window.csrfFetch("/admin/ratelimit/ip-rules", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patch),
+        });
+        if (r.ok) {
+          const data = await r.json();
+          ipState = {
+            allowlist: Array.isArray(data.allowlist) ? data.allowlist : [],
+            denylist: Array.isArray(data.denylist) ? data.denylist : [],
+          };
+          renderIpAll();
+          showIpError("");
+          if (toastLabel && typeof showToast === "function") showToast(toastLabel, true);
+          return true;
+        }
+        const body = await r.json().catch(() => ({}));
+        const msg = (body && body.error) || `HTTP ${r.status}`;
+        showIpError(msg);
+        return false;
+      } catch (_) {
+        showIpError("網路錯誤");
+        return false;
+      }
+    }
+
+    if (ipEls.addBtn) {
+      ipEls.addBtn.addEventListener("click", async () => {
+        if (!ipEls.input || !ipEls.select) return;
+        const raw = (ipEls.input.value || "").trim();
+        if (!raw) { showIpError("請輸入 IP 或 CIDR"); return; }
+        if (!IP_HINT_RE.test(raw)) { showIpError("格式看起來不像 IP/CIDR"); return; }
+        const kind = ipEls.select.value === "denylist" ? "denylist" : "allowlist";
+        const next = Array.from(new Set([...(ipState[kind] || []), raw]));
+        const ok = await saveIpRules({ [kind]: next }, {
+          toastLabel: `已加入 ${kind === "allowlist" ? "白" : "黑"}名單:${raw}`,
+        });
+        if (ok) ipEls.input.value = "";
+      });
+    }
+
+    if (ipEls.input) {
+      ipEls.input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          if (ipEls.addBtn) ipEls.addBtn.click();
+        }
+      });
+      ipEls.input.addEventListener("input", () => { if (ipEls.error && !ipEls.error.hidden) showIpError(""); });
+    }
+
+    section.addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-rl-ip-remove]");
+      if (!btn) return;
+      const entry = btn.dataset.rlIpRemove;
+      const kind = btn.dataset.rlIpRemoveKind === "denylist" ? "denylist" : "allowlist";
+      const next = (ipState[kind] || []).filter((x) => x !== entry);
+      await saveIpRules({ [kind]: next }, {
+        toastLabel: `已移除 ${kind === "allowlist" ? "白" : "黑"}名單:${entry}`,
+      });
+    });
+
+    loadIpRules();
     setTimeout(async () => {
       try {
         const r = await fetch("/admin/metrics", { credentials: "same-origin" });

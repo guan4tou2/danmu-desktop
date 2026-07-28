@@ -2031,6 +2031,223 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   padding-top: 4px;
 }
 
+/* IP allow/deny editor — lives inside .admin-ratelimit-bottom next to
+ * violations feed. Two-column list of chips + shared add form on top. */
+.admin-ratelimit-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 960px) {
+  .admin-ratelimit-bottom { grid-template-columns: 1fr; }
+}
+
+.admin-ratelimit-violations,
+.admin-ratelimit-ip-policy {
+  padding: 14px 16px;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: var(--radius-md-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-ratelimit-vfeed-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.admin-ratelimit-vfeed-head .title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--admin-text);
+}
+
+.admin-ratelimit-vfeed-head .kicker {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--admin-text-dim);
+  text-transform: uppercase;
+}
+
+.admin-ratelimit-vfeed-empty {
+  padding: 12px;
+  text-align: center;
+  color: var(--admin-text-dim);
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+
+.admin-ratelimit-ip-form {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-ratelimit-ip-form input[data-rl-ip-input],
+.admin-ratelimit-ip-form select[data-rl-ip-select] {
+  padding: 8px 10px;
+  background: var(--admin-panel-2, var(--admin-panel));
+  border: 1px solid var(--admin-line);
+  border-radius: var(--radius-sm);
+  color: var(--admin-text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  min-height: 36px;
+}
+
+.admin-ratelimit-ip-form input[data-rl-ip-input]:focus,
+.admin-ratelimit-ip-form select[data-rl-ip-select]:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.admin-ratelimit-ip-help {
+  margin: 0;
+  font-size: 11px;
+  color: var(--admin-text-dim);
+  line-height: 1.5;
+}
+
+.admin-ratelimit-ip-error {
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--hud-crimson, #f87171) 12%, transparent);
+  border: 1px solid var(--hud-crimson, #f87171);
+  border-radius: var(--radius-sm);
+  color: var(--hud-crimson, #f87171);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.admin-ratelimit-ip-lists {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .admin-ratelimit-ip-form { grid-template-columns: 1fr; }
+  .admin-ratelimit-ip-lists { grid-template-columns: 1fr; }
+}
+
+.admin-ratelimit-ip-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: var(--admin-panel-2, color-mix(in srgb, var(--admin-panel) 60%, transparent));
+  border: 1px solid var(--admin-line);
+  border-radius: var(--radius-sm);
+  min-height: 90px;
+}
+
+.admin-ratelimit-ip-col-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+}
+
+.admin-ratelimit-ip-col-head .lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--admin-text-dim);
+  text-transform: uppercase;
+}
+
+.admin-ratelimit-ip-col-head .cnt {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--admin-text);
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--admin-line) 60%, transparent);
+}
+
+.admin-ratelimit-ip-col-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px;
+}
+
+.admin-ratelimit-ip-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 4px 4px 8px;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--admin-text);
+}
+
+.admin-ratelimit-ip-chip-cidr {
+  line-height: 1.2;
+}
+
+.admin-ratelimit-ip-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  color: var(--admin-text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+}
+
+.admin-ratelimit-ip-chip-remove:hover {
+  background: color-mix(in srgb, var(--hud-crimson, #f87171) 20%, transparent);
+  color: var(--hud-crimson, #f87171);
+}
+
+.admin-ratelimit-vfeed-table {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.admin-ratelimit-vfeed-row {
+  display: grid;
+  grid-template-columns: 60px 60px 1fr;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.admin-ratelimit-vfeed-row.is-head {
+  color: var(--admin-text-dim);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  border-bottom: 1px dashed var(--admin-line);
+  padding-bottom: 6px;
+}
+
+.admin-ratelimit-vfeed-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 /* ──────────────────────────────────────────────────────────────────────────
  * Polls Builder · v5 master-detail (admin-polls.jsx)
  * Left 380px queue with HTML5 drag-reorder · right active question editor.
