@@ -56,7 +56,7 @@
   "adminNavDisplay": "顯示設定",
   "adminNavAssets": "素材庫",
   "adminNavViewer": "觀眾頁",
-  "adminNavModeration": "敏感字 & 黑名單",
+  "adminNavModeration": "審核",
   "adminNavRatelimit": "速率限制",
   "adminNavEffects": "效果庫 .dme",
   "adminNavPlugins": "伺服器插件",

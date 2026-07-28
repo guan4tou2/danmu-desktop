@@ -684,9 +684,9 @@
         row.classList.add("is-masked-row");
         window.showToast && window.showToast(action === "mask" ? "已遮罩此訊息" : "已隱藏此訊息", true);
       } else if (action === "more") {
-        // Future: open message drawer (v4 P0-3 design). For now jump to
-        // the messages history page filtered to this fp.
-        const nav = document.querySelector('[data-route="messages"]');
+        // Future: open message drawer (v4 P0-3 design). v7 IA: messages
+        // merged into the live console, so jump there.
+        const nav = document.querySelector('[data-route="live"]');
         if (nav) nav.click();
       }
     });

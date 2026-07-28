@@ -94,6 +94,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const _bareLegacyRedirects = Object.create(null);
   Object.assign(_bareLegacyRedirects, {
     dashboard: "live",   // dashboard.sections=[]; live owns sec-live-feed → both render KPI strip via data-route-view="dashboard" alias
+    // 2026-07-28 v7 IA: 訊息紀錄 was the same sec-live-feed with a different
+    // title — the sidebar row is gone, old bookmarks land on the console.
+    messages:  "live",
     // 2026-05-18 v5: widgets / messages / history / themes / fonts / plugins /
     // audit / webhooks / api-tokens / backup / ratelimit / extensions promoted
     // to first-class sidebar slugs via _routeAliases entries below — no
@@ -668,10 +671,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <button type="button" class="admin-dash-nav-row is-active" data-route="live" role="tab" aria-selected="true">
                                     <span class="admin-dash-nav-icon">◉</span>
                                     <span data-i18n="adminNavLive">控制台</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="messages" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">≡</span>
-                                    <span data-i18n="adminNavMessages">訊息紀錄</span>
                                     <span class="admin-dash-nav-badge" data-count-messages hidden>—</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="polls" role="tab" aria-selected="false">
@@ -681,7 +680,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="moderation" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⊘</span>
-                                    <span data-i18n="adminNavModeration">敏感字 &amp; 黑名單</span>
+                                    <span data-i18n="adminNavModeration">審核</span>
                                     <span class="admin-dash-nav-badge" data-count-blacklist hidden>—</span>
                                 </button>
 
@@ -1390,7 +1389,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // router rewrites them to the new canonical hash on landing.
     // Phase B/D will move sec-* DOM under the new owners and then we can
     // strip aliases. Until then this is pure routing — no HTML moves.
-    live:      { title: "即時", kicker: "LIVE · 操作艙 · 即時狀態", sections: ["sec-live-feed"], showKpi: true },
+    live:      { title: "控制台", kicker: "LIVE · 操作艙 · 即時狀態", sections: ["sec-live-feed"], showKpi: true },
     // 2026-05-19 v5 IA: `display` route retired. The bare-legacy
     // redirect (`#/display` → `#/viewer/defaults`) intercepts before
     // this lookup, so dropping the ADMIN_ROUTES entry is safe and
@@ -1400,7 +1399,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // existing `=== "dashboard"` checks + URL bookmarks keep working
     // until Phase B/D collapses them.
     dashboard: { title: "控制台", kicker: "DASHBOARD · 活動進行中", sections: [], showKpi: true },
-    messages:  { title: "訊息紀錄",         kicker: "MESSAGES · 即時訊息串",    sections: ["sec-live-feed"] },
+    // v7 IA (2026-07-28): `messages` demoted to _bareLegacyRedirects → live
+    // (it was the same sec-live-feed under a second name).
     // Slice 4 (P0-0): history is now the merged tabbed nav (sessions /
     // search / audit / replay / audience). Each tab's section is hidden
     // when not active by AdminTabs.applyTabSectionVisibility. Replay tab
@@ -1493,6 +1493,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Onboarding route — overlay only, no section
     "onboarding-tour": { title: "新手導覽",    kicker: "ONBOARDING · 5 步驟快速上手",          sections: [] },
   };
+
+  // Single source of truth for route titles/kickers — the ⌘K palette reads
+  // this at open time instead of keeping its own drift-prone copy.
+  window.ADMIN_ROUTES = ADMIN_ROUTES;
 
   function initAdminRouter() {
     const shell = document.querySelector(".admin-dash-grid");

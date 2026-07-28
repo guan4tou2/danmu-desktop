@@ -56,7 +56,7 @@
   "adminNavDisplay": "Display",
   "adminNavAssets": "Assets",
   "adminNavViewer": "Viewer",
-  "adminNavModeration": "Blacklist & Filters",
+  "adminNavModeration": "Moderation",
   "adminNavRatelimit": "Rate Limits",
   "adminNavEffects": "Effects (.dme)",
   "adminNavPlugins": "Server Plugins",

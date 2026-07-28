@@ -17,31 +17,28 @@
   // Guard: admin pages only (per docs/design-v2-backlog.md P3-4).
   if (!document.body || !document.body.classList.contains("admin-body")) return;
 
-  // Routes mirror admin.js ADMIN_ROUTES — duplicated to avoid coupling.
-  const ROUTES = {
-    dashboard:      { title: "控制台",           kicker: "DASHBOARD" },
-    messages:       { title: "訊息紀錄",         kicker: "MESSAGES" },
-    history:        { title: "歷史",             kicker: "HISTORY · 匯出 / 重播" },
-    polls:          { title: "投票",             kicker: "POLLS" },
-    widgets:        { title: "Desktop Widgets", kicker: "WIDGETS" },
-    themes:         { title: "風格主題包",       kicker: "THEMES" },
-    viewer:         { title: "觀眾頁",           kicker: "VIEWER · 頁面預設 · 欄位設定 · 文案 / 限制" },
-    assets:         { title: "素材庫",           kicker: "ASSETS" },
-    integrations:   { title: "整合",              kicker: "INTEGRATIONS" },
-    firetoken:      { title: "Fire Token",        kicker: "FIRE TOKEN" },
-    moderation:     { title: "敏感字 & 黑名單",  kicker: "MODERATION" },
-    ratelimit:      { title: "速率限制",         kicker: "RATELIMIT" },
-    effects:        { title: "效果庫 .dme",      kicker: "EFFECTS" },
-    plugins:        { title: "伺服器插件",       kicker: "PLUGINS" },
-    fonts:          { title: "字型管理",         kicker: "FONTS" },
-    system:         { title: "系統 & 指紋",      kicker: "SYSTEM" },
-    security:       { title: "安全",             kicker: "SECURITY" },
-    backup:         { title: "備份 & 匯出",      kicker: "BACKUP" },
-    notifications:  { title: "通知",              kicker: "NOTIFICATIONS · 警示中心" },
-    audience:       { title: "觀眾",              kicker: "AUDIENCE · 指紋聚合" },
-    audit:          { title: "審計日誌",           kicker: "AUDIT LOG · 持久事件紀錄" },
-    about:          { title: "關於",              kicker: "ABOUT · 版本 · CHANGELOG" },
-  };
+  // Palette-visible route slugs. Titles/kickers resolve from
+  // window.ADMIN_ROUTES (exposed by admin.js) at query time — single
+  // source with the sidebar/breadcrumb, so names can never drift again.
+  // v7 IA (2026-07-28): messages / ratelimit / audit / fonts dropped —
+  // their bare-legacy redirects land on live / moderation / history / assets.
+  const ROUTE_SLUGS = [
+    "live", "polls", "moderation",
+    "viewer", "widgets", "effects", "themes", "assets",
+    "system", "history", "backup",
+    "integrations", "plugins", "webhooks", "api-tokens",
+    "security", "notifications", "audience", "firetoken", "overlay", "about",
+  ];
+
+  function _routes() {
+    const src = window.ADMIN_ROUTES || {};
+    const out = {};
+    ROUTE_SLUGS.forEach((slug) => {
+      const r = src[slug];
+      if (r && r.title) out[slug] = { title: r.title, kicker: r.kicker || slug.toUpperCase() };
+    });
+    return out;
+  }
 
   // Setting → {route, sectionId} map. Selecting jumps to the route then
   // scrolls to the section id.
@@ -351,7 +348,7 @@
   }
 
   function _scoreRoutes(q) {
-    return Object.entries(ROUTES).map(([id, r]) => {
+    return Object.entries(_routes()).map(([id, r]) => {
       const score = Math.max(_fuzzyScore(r.title, q), _fuzzyScore(id, q), _fuzzyScore(r.kicker, q));
       return {
         type: "route",

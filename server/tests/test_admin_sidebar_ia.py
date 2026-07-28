@@ -51,8 +51,9 @@ def admin_js() -> str:
 
 EXPECTED_NAV_ORDER = [
     # 場中操作 — dashboard → content streams → moderation
+    # (2026-07-28 v7 IA: `messages` retired — it was sec-live-feed under a
+    # second name; #/messages bare-redirects to live)
     "live",
-    "messages",
     "polls",
     "moderation",
     # 場前佈置 — surfaces first, then uploadable libraries
@@ -130,7 +131,7 @@ def test_truly_retired_slugs_have_no_sidebar_button(admin_js: str):
     pattern = re.compile(r'<button[^>]*\bdata-route="([\w-]+)"[^>]*role="tab"', re.DOTALL)
     found = pattern.findall(admin_js)
     sidebar_slugs = set(found[: len(EXPECTED_NAV_ORDER)])
-    for retired in ("dashboard", "appearance", "automation", "security"):
+    for retired in ("dashboard", "appearance", "automation", "security", "messages"):
         assert retired not in sidebar_slugs, (
             f"retired slug '{retired}' has a sidebar button — should live "
             f"in _bareLegacyRedirects / _routeAliases only"
@@ -145,6 +146,7 @@ def test_truly_retired_slugs_have_no_sidebar_button(admin_js: str):
 
 PHASE_A_STRING_REDIRECTS = {
     "dashboard": "live",  # both render KPI strip via data-route-view alias
+    "messages": "live",   # v7 IA: same sec-live-feed, second name retired
 }
 
 PHASE_B_OBJECT_REDIRECTS = {
@@ -285,7 +287,9 @@ def test_admin_routes_keeps_legacy_aliases_alive(admin_js: str):
     audit, search, history, replay, audience, security, backup,
     notifications, display, history-v2, poll-deepdive, onboarding)
     keep resolving to a valid route. Phase B/D collapses these."""
-    for legacy_slug in ("dashboard", "messages", "widgets", "appearance", "automation", "history"):
+    # v7 IA (2026-07-28): `messages` dropped from this list — its
+    # ADMIN_ROUTES entry was removed with the bare redirect to live.
+    for legacy_slug in ("dashboard", "widgets", "appearance", "automation", "history"):
         # Each must appear as a top-level key with a config object.
         pattern = re.compile(rf"\n\s*{legacy_slug}:\s*\{{")
         assert pattern.search(admin_js), (

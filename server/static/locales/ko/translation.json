@@ -56,7 +56,7 @@
   "adminNavDisplay": "디스플레이 설정",
   "adminNavAssets": "에셋 라이브러리",
   "adminNavViewer": "뷰어",
-  "adminNavModeration": "필터 & 블랙리스트",
+  "adminNavModeration": "모더레이션",
   "adminNavRatelimit": "속도 제한",
   "adminNavEffects": "이펙트 .dme",
   "adminNavPlugins": "서버 플러그인",
