@@ -87,6 +87,27 @@ EXPECTED_GROUP_KEYS = [
     "adminNavGroupExtensibility",
 ]
 
+def test_dev_group_is_collapsible_and_defaults_collapsed():
+    """v7 IA (2026-07-28): the 開發擴充 group ships collapsed — its four
+    rows are permanent noise for non-developer operators. Contract:
+    a [data-nav-group="dev"] container carries data-collapsed in the
+    template, wraps a toggle + the four dev rows, and admin.js persists
+    the expanded state under admin:navgroup:dev."""
+    admin_js = ADMIN_JS.read_text(encoding="utf-8")
+    group = re.search(
+        r'<div class="admin-dash-nav-group" data-nav-group="dev" data-collapsed>([\s\S]+?)</div>',
+        admin_js,
+    )
+    assert group, "sidebar must wrap 開發擴充 in [data-nav-group='dev'][data-collapsed]"
+    body = group.group(1)
+    assert 'data-nav-group-toggle' in body, "dev group needs its toggle button"
+    for slug in ("extensions", "plugins", "webhooks", "api-tokens"):
+        assert f'data-route="{slug}"' in body, f"dev group must contain the {slug} row"
+    assert "admin:navgroup:dev" in admin_js, (
+        "expanded state must persist under localStorage key admin:navgroup:dev"
+    )
+
+
 RETIRED_GROUP_KEYS = [
     "adminNavGroupOverview",
     "adminNavGroupInteract",
@@ -818,8 +839,12 @@ def test_nav_i18n_keys_present_in_all_locales(locale: str):
 
 
 def test_sidebar_declares_group_labels_in_order(admin_js: str):
-    """The four `.admin-dash-nav-label` headers must appear in v6 order."""
-    pattern = re.compile(r'<div class="admin-dash-nav-label" data-i18n="([\w]+)"')
+    """The four group headers must appear in v6 order. Three are plain
+    `.admin-dash-nav-label` divs; 開發擴充 is a collapsible-group toggle
+    (v7 IA 2026-07-28) whose label span carries the data-i18n key."""
+    pattern = re.compile(
+        r'<(?:div class="admin-dash-nav-label"|span) data-i18n="(adminNavGroup[\w]+)"'
+    )
     found = pattern.findall(admin_js)
     assert found == EXPECTED_GROUP_KEYS, (
         f"sidebar group labels drifted from the v6 IA baseline.\n"

@@ -741,7 +741,11 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <!-- 開發擴充: the two plug-in mechanisms sit adjacent
                                      (Extensions = browser-side, 伺服器插件 = server-side)
                                      so the distinction reads off the list itself. -->
-                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupExtensibility">開發擴充</div>
+                                <div class="admin-dash-nav-group" data-nav-group="dev" data-collapsed>
+                                <button type="button" class="admin-dash-nav-label admin-dash-nav-group-toggle" data-nav-group-toggle aria-expanded="false">
+                                    <span data-i18n="adminNavGroupExtensibility">開發擴充</span>
+                                    <span class="admin-dash-nav-group-caret" aria-hidden="true">▸</span>
+                                </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="extensions" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⌬</span>
                                     <span data-i18n="adminNavExtensions">Extensions</span>
@@ -758,6 +762,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="admin-dash-nav-icon">⚿</span>
                                     <span data-i18n="adminNavApiTokens">API Tokens</span>
                                 </button>
+                                </div>
                             </nav>
                             <div class="admin-dash-telem">
                                 <div class="admin-dash-telem-head">
@@ -1629,6 +1634,16 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.setAttribute("aria-selected", on ? "true" : "false");
       });
 
+      // Keep the lit row visible: if the active route lives inside the
+      // collapsed 開發擴充 group, expand it (without persisting).
+      const _devGroup = shell.querySelector('[data-nav-group="dev"]');
+      if (_devGroup && _devGroup.hasAttribute("data-collapsed")) {
+        const _activeInside = _allBtns.some(
+          (b) => b.classList.contains("is-active") && _devGroup.contains(b)
+        );
+        if (_activeInside) _setDevGroupCollapsed(_devGroup, false, false);
+      }
+
       const kicker = shell.querySelector("[data-route-kicker]");
       const title = shell.querySelector("[data-route-title]");
       var _t = window.ServerI18n ? window.ServerI18n.t.bind(window.ServerI18n) : function (k) { return k; };
@@ -1706,7 +1721,9 @@ document.addEventListener("DOMContentLoaded", () => {
       let prev = btn.previousElementSibling;
       while (prev) {
         if (prev.classList && prev.classList.contains("admin-dash-nav-label")) {
-          section = (prev.textContent || "").trim();
+          // Group toggles carry a caret span — read the label span only.
+          const labelEl = prev.querySelector("[data-i18n]") || prev;
+          section = (labelEl.textContent || "").trim();
           break;
         }
         prev = prev.previousElementSibling;
@@ -1862,9 +1879,35 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Attach Event Listeners
+  // v7 IA (2026-07-28): 開發擴充 sidebar group is collapsible and starts
+  // collapsed — it's permanent noise for non-developer operators. Expanded
+  // state persists; applyRoute force-expands when the active route is inside.
+  const _DEV_GROUP_LS_KEY = "admin:navgroup:dev";
+  function _setDevGroupCollapsed(group, collapsed, persist) {
+    group.toggleAttribute("data-collapsed", collapsed);
+    const toggle = group.querySelector("[data-nav-group-toggle]");
+    if (toggle) toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    if (persist) {
+      try { localStorage.setItem(_DEV_GROUP_LS_KEY, collapsed ? "closed" : "open"); } catch (_) {}
+    }
+  }
+
   function addEventListeners() {
     if (window.ServerI18n && typeof window.ServerI18n.bindLanguageSelector === "function") {
       window.ServerI18n.bindLanguageSelector();
+    }
+
+    const devGroup = document.querySelector('[data-nav-group="dev"]');
+    if (devGroup) {
+      let saved = null;
+      try { saved = localStorage.getItem(_DEV_GROUP_LS_KEY); } catch (_) {}
+      _setDevGroupCollapsed(devGroup, saved !== "open", false);
+      const devToggle = devGroup.querySelector("[data-nav-group-toggle]");
+      if (devToggle) {
+        devToggle.addEventListener("click", () => {
+          _setDevGroupCollapsed(devGroup, !devGroup.hasAttribute("data-collapsed"), true);
+        });
+      }
     }
 
     // Topbar search chip opens the ⌘K palette — it must behave like the

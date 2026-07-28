@@ -3136,6 +3136,41 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   color: var(--color-text-muted);
 }
 
+/* v7 IA: collapsible sidebar group (開發擴充). The toggle reuses the
+   nav-label look; the caret rotates when expanded; collapsed hides rows. */
+.admin-dash-nav-group {
+  display: flex;
+  flex-direction: column;
+}
+
+button.admin-dash-nav-group-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+button.admin-dash-nav-group-toggle:hover,
+button.admin-dash-nav-group-toggle:focus-visible {
+  color: var(--color-text-primary);
+}
+
+.admin-dash-nav-group-caret {
+  transition: transform var(--motion-fast) var(--ease-out);
+}
+
+.admin-dash-nav-group:not([data-collapsed]) .admin-dash-nav-group-caret {
+  transform: rotate(90deg);
+}
+
+.admin-dash-nav-group[data-collapsed] .admin-dash-nav-row {
+  display: none;
+}
+
 .admin-dash-nav-row {
   display: flex;
   align-items: center;
