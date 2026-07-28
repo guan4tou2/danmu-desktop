@@ -24,75 +24,23 @@ Priority / migration:
 
 Call `get_state()` from hot paths — it's cheap (dict lookup after first
 load). Call `set_state()` from the admin route after validating input.
+
+Storage mechanics (atomic write, RLock, one-shot warn on unwritable disk,
+0o600 chmod, eager seed persist) live in JsonState — see services/json_state.py.
 """
 
-import errno
-import json
 import logging
 import os
 import secrets
-import threading
-from pathlib import Path
-from typing import Dict, Optional
+from typing import Any, Dict
 
 from ..config import Config
+from .json_state import JsonState
 
 logger = logging.getLogger(__name__)
 
-# Persist alongside other user state. Bind-mounted by docker compose and
-# backed up by scripts/backup.sh — no special-case needed.
-_STATE_FILE = Path(__file__).parent.parent / "runtime" / "ws_auth.json"
-_lock = threading.RLock()
-_state: Optional[Dict] = None  # cached in-memory snapshot; load on first read
-# When the bind-mounted runtime/ dir is owned by the wrong UID (e.g. Oracle
-# Cloud images where `ubuntu` is UID 1001 but the container's `appuser` is
-# 1000), every write fails. Log the actionable remediation ONCE so we don't
-# spam ERROR on every connection — the service continues with in-memory
-# state, admin UI still works, changes just don't survive restart.
-_write_failure_logged: bool = False
 
-
-def _write_state(state: Dict) -> None:
-    """Atomic write via tmp + replace. Caller must hold _lock.
-
-    Hardening:
-      * 0o600 chmod on the tmp before rename — the file contains a token
-        that is effectively a bearer credential for /ws, so it should
-        never be world-readable.
-      * pid / tid suffix on the tmp name so multi-worker deploys (gunicorn
-        with N workers) don't race on `_STATE_FILE.tmp` when two admins
-        save simultaneously. `_lock` only covers threads within a single
-        process.
-    """
-    _STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    tmp = _STATE_FILE.with_suffix(f".tmp.{os.getpid()}.{threading.get_ident()}")
-    # Open with restricted mode directly so no window exists where the file
-    # is readable by others between creation and chmod.
-    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
-    fd = os.open(tmp, flags, 0o600)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(state, f, indent=2)
-        # On systems where umask masked the open mode, fix it explicitly.
-        try:
-            os.chmod(tmp, 0o600)
-        except OSError as exc:
-            # Windows / unusual filesystems — best-effort, don't fail the
-            # write. Log once; the data landed on disk correctly.
-            if exc.errno not in (errno.ENOSYS, errno.EPERM):
-                raise
-            logger.warning("chmod 0o600 not supported on %s: %s", tmp, exc)
-        tmp.replace(_STATE_FILE)
-    except Exception:
-        # Best-effort cleanup on partial write failure.
-        try:
-            tmp.unlink()
-        except OSError:
-            pass
-        raise
-
-
-def _seed_from_env() -> Dict:
+def _seed_from_env() -> Dict[str, Any]:
     """Initial state when runtime file doesn't exist yet.
 
     v4.8 policy: for truly fresh installs (no WS_REQUIRE_TOKEN env var set
@@ -110,125 +58,74 @@ def _seed_from_env() -> Dict:
     require = bool(Config.WS_REQUIRE_TOKEN)
     token = str(Config.WS_AUTH_TOKEN or "")
 
-    # Fresh install: no env vars set at all → secure-by-default.
     if raw_require is None and not raw_token:
         require = True
         token = secrets.token_urlsafe(24)
     elif require and not token:
-        # User set WS_REQUIRE_TOKEN=true but forgot the token. Generate one.
         token = secrets.token_urlsafe(24)
         logger.warning(
             "WS_REQUIRE_TOKEN=true but WS_AUTH_TOKEN empty; generated a "
-            "random token and persisted to %s",
-            _STATE_FILE,
+            "random token and persisted to runtime/ws_auth.json"
         )
     return {"require_token": require, "token": token}
 
 
-def _log_write_failure_once(exc: Exception) -> None:
-    """Emit a single actionable warning when the runtime file is unwritable.
+def _normalize(raw: Any) -> Dict[str, Any]:
+    """Validate a set_state payload or on-disk state.
 
-    Repeat failures go to DEBUG to avoid log spam — the service is
-    explicitly degrading to in-memory-only mode, not crashing.
+    Enforces the invariant require_token=True → non-empty token both on
+    load (self-heal a manually-edited-broken file) and on update (reject
+    admin API writes that would land bad state on disk).
     """
-    global _write_failure_logged
-    if _write_failure_logged:
-        logger.debug("ws_auth persist still failing: %s", exc)
-        return
-    _write_failure_logged = True
-    logger.warning(
-        "Cannot persist %s (%s: %s). State will live in memory for this "
-        "process only — admin changes won't survive a container restart. "
-        "Common cause: host bind-mount owned by a different UID than the "
-        "container's `appuser` (1000). Fix: `sudo chown -R 1000:1000 "
-        "server/runtime server/user_plugins` on the host, then recreate "
-        "the container.",
-        _STATE_FILE,
-        type(exc).__name__,
-        exc,
-    )
+    if not isinstance(raw, dict):
+        raise ValueError("ws_auth state must be a dict")
+    if "require_token" not in raw or "token" not in raw:
+        raise ValueError("ws_auth state must include require_token and token")
+    require = bool(raw.get("require_token", False))
+    token = str(raw.get("token") or "")
+    if require and not token:
+        raise ValueError("token required when require_token=True")
+    return {"require_token": require, "token": token}
 
 
-def _load() -> Dict:
-    """Read runtime file, or seed + write if missing. Caller must hold _lock."""
-    if _STATE_FILE.exists():
-        try:
-            with open(_STATE_FILE, encoding="utf-8") as f:
-                data = json.load(f)
-            if isinstance(data, dict) and "require_token" in data and "token" in data:
-                return {
-                    "require_token": bool(data.get("require_token", False)),
-                    "token": str(data.get("token") or ""),
-                }
-            logger.warning("Malformed %s, re-seeding from env", _STATE_FILE)
-        except Exception as exc:
-            logger.warning("Failed to read %s: %s; re-seeding from env", _STATE_FILE, exc)
-
-    seeded = _seed_from_env()
-    # Seeding write is "nice to have" — if the host bind mount is unwritable,
-    # we log once and keep going with in-memory state. `PermissionError` is
-    # a subclass of `OSError`, so one handler covers both.
-    try:
-        _write_state(seeded)
-        logger.info("Seeded ws_auth.json (require_token=%s)", seeded["require_token"])
-    except OSError as exc:
-        _log_write_failure_once(exc)
-    return seeded
+_state = JsonState(
+    "ws_auth.json",
+    default=_seed_from_env,
+    normalize=_normalize,
+    secure=True,
+    eager_persist_default=True,
+)
 
 
-def get_state() -> Dict:
+def get_state() -> Dict[str, Any]:
     """Return current {require_token: bool, token: str}.
 
     Called per-connection in ws/server.py, so the load-from-disk path only
     runs once per process lifetime after first call.
     """
-    global _state
-    with _lock:
-        if _state is None:
-            _state = _load()
-        # Return a copy to prevent caller mutation leaking back into cache.
-        return dict(_state)
+    return _state.get()
 
 
-def set_state(*, require_token: bool, token: str) -> Dict:
+def set_state(*, require_token: bool, token: str) -> Dict[str, Any]:
     """Update and persist. Returns the new state.
 
     Raises ValueError if require_token=True but token is empty — the admin
     schema should catch this, but we double-check at the persistence
     boundary so no bad state ever lands on disk.
-
-    Disk write failures (PermissionError / OSError on a misconfigured host
-    bind mount) are logged once and swallowed — the in-memory cache is
-    always updated so admin UI changes take effect immediately for this
-    process lifetime. They just won't survive a restart until the host dir
-    ownership is fixed.
     """
-    require_token = bool(require_token)
-    token = str(token or "")
-    if require_token and not token:
-        raise ValueError("token required when require_token=True")
-    global _state
-    with _lock:
-        new_state = {"require_token": require_token, "token": token}
-        # Update memory first so the change takes effect even if disk fails.
-        _state = dict(new_state)
-        try:
-            _write_state(new_state)
-        except OSError as exc:
-            # PermissionError subclasses OSError — one handler covers both.
-            _log_write_failure_once(exc)
-        return dict(_state)
+    return _state.update({"require_token": bool(require_token), "token": str(token or "")})
 
 
-def rotate_token() -> Dict:
+def rotate_token() -> Dict[str, Any]:
     """Generate a fresh token, preserving the require_token toggle.
 
-    Convenience for the admin UI's "regenerate" button — atomic so admins
-    can't accidentally land in a state where require_token=True but the
-    token is a known-leaked value.
+    Convenience for the admin UI's "regenerate" button — atomic under
+    _state.lock so admins can't accidentally land in a state where
+    require_token=True but the token is a known-leaked value, even under
+    concurrent writes.
     """
-    with _lock:
-        current = get_state()
+    with _state.lock:
+        current = _state.get()
         return set_state(
             require_token=current["require_token"],
             token=secrets.token_urlsafe(24),
@@ -236,10 +133,22 @@ def rotate_token() -> Dict:
 
 
 def _reset_for_tests() -> None:
-    """Drop the in-memory cache. Tests should monkeypatch _STATE_FILE before
-    calling get_state() so they don't pollute the real runtime file.
+    """Drop the in-memory cache. Tests should redirect via
+    ``_state.reset_for_tests(path)`` in a conftest fixture rather than
+    reassigning module attributes.
     """
-    global _state, _write_failure_logged
-    with _lock:
-        _state = None
-        _write_failure_logged = False
+    _state.reset_for_tests()
+
+
+def __getattr__(name: str):
+    """Back-compat shim: expose ``_STATE_FILE`` for tests that read it.
+
+    Some existing tests (test_ws_auth.py) reach into the module to write
+    raw bytes to the on-disk file or check its permissions. Preserve
+    that surface as a read-only proxy to the state object's current
+    path — after conftest calls ``_state.reset_for_tests(tmp_path/...)``,
+    reads of ``ws_auth._STATE_FILE`` return the redirected path.
+    """
+    if name == "_STATE_FILE":
+        return _state.path
+    raise AttributeError(f"module 'server.services.ws_auth' has no attribute {name!r}")

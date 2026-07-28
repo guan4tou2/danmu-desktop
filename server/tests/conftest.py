@@ -226,9 +226,8 @@ def _isolate_ws_auth(tmp_path, request):
     """
     from server.services import ws_auth as ws_auth_mod
 
-    original_file = ws_auth_mod._STATE_FILE
-    ws_auth_mod._STATE_FILE = tmp_path / "ws_auth.json"
-    ws_auth_mod._reset_for_tests()
+    original_file = ws_auth_mod._state.path
+    ws_auth_mod._state.reset_for_tests(tmp_path / "ws_auth.json")
 
     if "ws_auth_raw_seed" not in request.keywords:
         # Pre-populate as disabled so the next get_state() returns that
@@ -238,8 +237,7 @@ def _isolate_ws_auth(tmp_path, request):
     try:
         yield
     finally:
-        ws_auth_mod._STATE_FILE = original_file
-        ws_auth_mod._reset_for_tests()
+        ws_auth_mod._state.reset_for_tests(original_file)
 
 
 _ws_logger = logging.getLogger("conftest.ws")
@@ -298,7 +296,7 @@ def ws_server_port(tmp_path_factory):
     original_require = Config.WS_REQUIRE_TOKEN
     original_token = Config.WS_AUTH_TOKEN
     original_origins = Config.WS_ALLOWED_ORIGINS
-    original_ws_auth_file = ws_auth_mod._STATE_FILE
+    original_ws_auth_file = ws_auth_mod._state.path
 
     Config.WS_REQUIRE_TOKEN = False
     Config.WS_AUTH_TOKEN = ""
@@ -306,9 +304,10 @@ def ws_server_port(tmp_path_factory):
     # Point to a session-tmp path + seed as disabled before Flask /ws startup.
     # Per-test `_isolate_ws_auth` will redirect again to
     # a per-test tmp and re-seed as disabled, which is fine — the cache is
-    # reset with `_reset_for_tests()` before each test.
-    ws_auth_mod._STATE_FILE = tmp_path_factory.mktemp("ws_auth_session") / "ws_auth.json"
-    ws_auth_mod._reset_for_tests()
+    # reset with `_state.reset_for_tests()` before each test.
+    ws_auth_mod._state.reset_for_tests(
+        tmp_path_factory.mktemp("ws_auth_session") / "ws_auth.json"
+    )
     ws_auth_mod.set_state(require_token=False, token="")
 
     port = find_free_port()
@@ -331,8 +330,7 @@ def ws_server_port(tmp_path_factory):
     Config.WS_REQUIRE_TOKEN = original_require
     Config.WS_AUTH_TOKEN = original_token
     Config.WS_ALLOWED_ORIGINS = original_origins
-    ws_auth_mod._STATE_FILE = original_ws_auth_file
-    ws_auth_mod._reset_for_tests()
+    ws_auth_mod._state.reset_for_tests(original_ws_auth_file)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

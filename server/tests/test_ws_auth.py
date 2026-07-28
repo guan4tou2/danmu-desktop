@@ -376,7 +376,9 @@ def test_write_failure_logged_once(monkeypatch, caplog):
 
     _force_permission_error(monkeypatch)
     ws_auth._reset_for_tests()
-    with caplog.at_level(logging.DEBUG, logger="server.services.ws_auth"):
+    # Persistence logging moved to services.json_state after migration —
+    # capture DEBUG there instead of on ws_auth's logger.
+    with caplog.at_level(logging.DEBUG, logger="server.services.json_state"):
         ws_auth.get_state()
         for _ in range(4):
             ws_auth.set_state(require_token=False, token="")
