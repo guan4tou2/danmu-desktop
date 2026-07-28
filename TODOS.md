@@ -32,4 +32,30 @@ bottom 應加上 keyboardOffset）。
 建一個輕量 jest 環境（或決議維持 browser-test-only 並記錄為刻意取捨）。
 （出處：v5.4.0 /ship testing specialist。）
 
+## Server — Admin 設計一致性（/design-review 2026-07-28 deferred）
+
+### 間距刻度二選一並寫進 lint（D-1）
+**Priority:** P2
+`--space-*`（4px 格）在 style.css 採用率僅 5.4%；px 值 51% 落在無文件的 4n+2 格
+（2/6/10/14/18/22）。決定唯一刻度、把另一套 snap 過去、`check-css-tokens` 擋新增
+盤外值。（出處：/design-review 2026-07-28，完整報告在
+`~/.gstack/projects/guan4tou2-danmu-desktop/designs/design-audit-20260728/`。）
+
+### 合併三套色彩 token 命名空間（D-2）
+**Priority:** P2
+`--admin-*`／`--color-*`／`--hud-*` 同語意解析出不同值：次要文字 slate-400
+（158 處）vs slate-500（246 處）、面板底 #0f172a vs #0c1424。收斂成單一語意層，
+跨頁灰階不再跳階。
+
+### 頁首 shell 與按鈕階層收回原語（D-5/D-7）
+**Priority:** P2
+頁首三種形態（標準 26 檔／缺 note 9 檔／fonts·viewer-theme·ratelimit 自成一格；
+ratelimit 的 head CSS 是 hud.css 353-380 的逐條複製品）。按鈕在官方
+`.admin-ui-action is-*` 外另有三套私有階層，且所有刪除按鈕都沒用 `is-danger`。
+
+### 空狀態/載入態歸一（D-6）
+**Priority:** P3
+AdminEmpty 僅 5 頁採用、31 個模組自造 `*-empty`（72 條規則）；載入文案三派
+（載入中…／讀取中…／Loading…），admin-sessions 同頁兩種載入視覺。
+
 ## Completed
