@@ -122,24 +122,28 @@ button:disabled,
   box-shadow: 0 2px 4px var(--shadow-base);
 }
 
-/* Button states */
+/* Button states.
+   No !important needed: ws-manager.js removes .btn-primary before adding a
+   state class and re-adds it when clearing one, so they never coexist — and
+   even if they did, these rules sit after .btn-primary at equal specificity,
+   so source order already wins. */
 .btn-connecting {
-  background-image: linear-gradient(to right, var(--color-accent), var(--color-accent-dark)) !important;
+  background-image: linear-gradient(to right, var(--color-accent), var(--color-accent-dark));
   animation: pulse-connecting 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .btn-connected {
-  background-image: linear-gradient(to right, var(--color-connected), var(--color-connected-dark)) !important;
+  background-image: linear-gradient(to right, var(--color-connected), var(--color-connected-dark));
   box-shadow: 0 0 20px var(--glow-connected);
 }
 
 .btn-active {
-  background-image: linear-gradient(to right, var(--color-primary), var(--color-secondary)) !important;
+  background-image: linear-gradient(to right, var(--color-primary), var(--color-secondary));
   box-shadow: 0 0 20px var(--glow-primary);
 }
 
 .btn-stopped {
-  background-image: linear-gradient(to right, var(--color-surface-muted), var(--color-border-strong)) !important;
+  background-image: linear-gradient(to right, var(--color-surface-muted), var(--color-border-strong));
   box-shadow: 0 0 10px rgba(71, 85, 105, 0.2);
 }
 
@@ -174,7 +178,14 @@ button:disabled,
   -webkit-backdrop-filter: blur(16px);
 }
 
-/* Input validation styles */
+/* Input validation styles.
+   These four !important ARE load-bearing — verified, do not strip them in a
+   future sweep. The only element that shows them is #conn-server-input, which
+   is styled by `.client-conn-edit-row input` (0,1,1) setting both border and
+   box-shadow. That beats a bare `.input-valid` (0,1,0) on specificity, so
+   without !important the validation ring never renders. Removing it would
+   need the rule scoped to `.client-conn-edit-row input.input-valid`, which
+   trades away the "shared affordance" intent (conn-section-wire.js:117). */
 .input-valid {
   border-color: var(--color-success) !important;
   box-shadow: 0 0 0 2px var(--ring-success) !important;
@@ -390,7 +401,7 @@ body[data-os="mac"] .client-titlebar {
   transition: background var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 
-.client-titlebar-update[hidden] { display: none !important; }
+.client-titlebar-update[hidden] { display: none; }
 
 .client-titlebar-update:hover {
   background: rgba(56, 189, 248, 0.22);
@@ -418,7 +429,7 @@ body[data-os="mac"] .client-titlebar {
   -webkit-backdrop-filter: blur(8px);
 }
 
-.client-update-card[hidden] { display: none !important; }
+.client-update-card[hidden] { display: none; }
 
 .client-update-card .head {
   display: flex;
@@ -470,7 +481,7 @@ body[data-os="mac"] .client-titlebar {
   overflow-y: auto;
 }
 
-.client-update-card .notes[hidden] { display: none !important; }
+.client-update-card .notes[hidden] { display: none; }
 
 .client-update-card .progress {
   margin-top: 10px;
@@ -479,7 +490,7 @@ body[data-os="mac"] .client-titlebar {
   gap: 10px;
 }
 
-.client-update-card .progress[hidden] { display: none !important; }
+.client-update-card .progress[hidden] { display: none; }
 
 .client-update-card .progress-track {
   flex: 1 1 auto;
@@ -512,7 +523,7 @@ body[data-os="mac"] .client-titlebar {
   color: var(--color-error-lighter);
 }
 
-.client-update-card .error[hidden] { display: none !important; }
+.client-update-card .error[hidden] { display: none; }
 
 .client-update-card .actions {
   margin-top: var(--space-3);
@@ -521,7 +532,7 @@ body[data-os="mac"] .client-titlebar {
   flex-wrap: wrap;
 }
 
-.client-update-card .actions .client-action-btn[hidden] { display: none !important; }
+.client-update-card .actions .client-action-btn[hidden] { display: none; }
 
 .client-update-card .actions .client-action-btn.is-primary {
   border-color: var(--color-primary);
@@ -675,7 +686,7 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .client-section[hidden] {
-  display: none !important;
+  display: none;
 }
 
 .client-section-head {
