@@ -194,6 +194,25 @@ def _isolate_danmu_history(tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def _isolate_security_settings(tmp_path):
+    """Redirect security_settings runtime file to per-test tmp.
+
+    Latent bug fix: before this fixture existed, tests that hit
+    /admin/security-settings or called set_state_patch() would write to
+    the real runtime/security_settings.json and leak across tests + into
+    the repo. Now every test gets a fresh tmp path.
+    """
+    from server.services import security_settings
+
+    original = security_settings._state.path
+    security_settings._state.reset_for_tests(tmp_path / "security_settings.json")
+    try:
+        yield
+    finally:
+        security_settings._state.reset_for_tests(original)
+
+
+@pytest.fixture(autouse=True)
 def _isolate_ratelimit_ip(tmp_path):
     """Redirect ratelimit_ip runtime file to per-test tmp.
 

@@ -6,28 +6,22 @@ This module owns the mutable settings behind the admin Security page:
 - runtime CORS policy summary/headers
 - TLS/HSTS status summary
 
-The file is intentionally small and JSON-backed, matching ws_auth/api_tokens
-runtime persistence patterns.
+Storage mechanics (atomic write, RLock, one-shot warn on unwritable disk)
+live in JsonState — see services/json_state.py.
 """
 
 from __future__ import annotations
 
 import copy
-import json
 import logging
-import os
-import threading
 from ipaddress import ip_address, ip_network
-from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 from flask import Request
 
-logger = logging.getLogger(__name__)
+from .json_state import JsonState
 
-_STATE_FILE = Path(__file__).resolve().parent.parent / "runtime" / "security_settings.json"
-_LOCK = threading.RLock()
-_STATE: Optional[Dict[str, Any]] = None
+logger = logging.getLogger(__name__)
 
 _DEFAULT_METHODS = ["GET", "POST", "DELETE", "PATCH", "OPTIONS"]
 _DEFAULT_STATE: Dict[str, Any] = {
@@ -45,31 +39,6 @@ _DEFAULT_STATE: Dict[str, Any] = {
 
 def _default_state() -> Dict[str, Any]:
     return copy.deepcopy(_DEFAULT_STATE)
-
-
-def _atomic_write(path: Path, state: Dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(f".tmp.{os.getpid()}.{threading.get_ident()}")
-    with tmp.open("w", encoding="utf-8") as f:
-        json.dump(state, f, ensure_ascii=False, indent=2)
-    tmp.replace(path)
-
-
-def _load_from_disk() -> Dict[str, Any]:
-    if not _STATE_FILE.exists():
-        return _default_state()
-    try:
-        data = json.loads(_STATE_FILE.read_text(encoding="utf-8"))
-    except Exception as exc:
-        logger.warning("security_settings: failed to read %s: %s", _STATE_FILE, exc)
-        return _default_state()
-    if not isinstance(data, dict):
-        return _default_state()
-    try:
-        return _normalize_state(data)
-    except ValueError as exc:
-        logger.warning("security_settings: ignoring invalid state file %s: %s", _STATE_FILE, exc)
-        return _default_state()
 
 
 def _normalize_methods(methods: Any) -> List[str]:
@@ -126,7 +95,9 @@ def _normalize_allowlist_entries(entries: Any) -> List[str]:
     return out
 
 
-def _normalize_state(data: Dict[str, Any]) -> Dict[str, Any]:
+def _normalize_state(data: Any) -> Dict[str, Any]:
+    if not isinstance(data, dict):
+        return _default_state()
     base = _default_state()
     ip_cfg = dict(base["ip_allowlist"])
     ip_cfg.update(data.get("ip_allowlist") or {})
@@ -149,12 +120,15 @@ def _normalize_state(data: Dict[str, Any]) -> Dict[str, Any]:
     return {"ip_allowlist": ip_cfg, "cors": cors_cfg}
 
 
+_state = JsonState(
+    "security_settings.json",
+    default=_default_state,
+    normalize=_normalize_state,
+)
+
+
 def get_state() -> Dict[str, Any]:
-    global _STATE
-    with _LOCK:
-        if _STATE is None:
-            _STATE = _load_from_disk()
-        return copy.deepcopy(_STATE)
+    return _state.get()
 
 
 def set_state_patch(patch: Dict[str, Any], *, current_ip: str = "") -> Dict[str, Any]:
@@ -163,13 +137,12 @@ def set_state_patch(patch: Dict[str, Any], *, current_ip: str = "") -> Dict[str,
     When enabling the admin IP allowlist, require the current admin IP to
     remain allowed. This prevents self-lockout from the UI.
     """
-
     if not isinstance(patch, dict):
         raise ValueError("security settings payload must be an object")
 
-    with _LOCK:
-        state = get_state()
-        merged = copy.deepcopy(state)
+    with _state.lock:
+        current = _state.get()
+        merged = copy.deepcopy(current)
         if "ip_allowlist" in patch:
             ip_patch = patch.get("ip_allowlist") or {}
             if not isinstance(ip_patch, dict):
@@ -181,17 +154,17 @@ def set_state_patch(patch: Dict[str, Any], *, current_ip: str = "") -> Dict[str,
                 raise ValueError("CORS payload must be an object")
             merged["cors"].update(cors_patch)
 
-        normalized = _normalize_state(merged)
-        if normalized["ip_allowlist"]["enabled"]:
-            if not normalized["ip_allowlist"]["entries"]:
+        # Pre-persist safety check — reject self-lockout before writing.
+        # We normalize once here to get the canonical shape for the check;
+        # _state.update() will normalize again but that's idempotent.
+        preview = _normalize_state(merged)
+        if preview["ip_allowlist"]["enabled"]:
+            if not preview["ip_allowlist"]["entries"]:
                 raise ValueError("IP allowlist cannot be enabled without entries")
-            if current_ip and not _ip_matches(current_ip, normalized["ip_allowlist"]["entries"]):
+            if current_ip and not _ip_matches(current_ip, preview["ip_allowlist"]["entries"]):
                 raise ValueError("IP allowlist would block the current admin IP")
 
-        global _STATE
-        _STATE = normalized
-        _atomic_write(_STATE_FILE, normalized)
-        return copy.deepcopy(normalized)
+        return _state.update(merged)
 
 
 def _ip_matches(client_ip: str, entries: Iterable[str]) -> bool:
@@ -295,6 +268,14 @@ def apply_cors_headers(response, origin: str | None):
 
 
 def reset_for_tests() -> None:
-    global _STATE
-    with _LOCK:
-        _STATE = None
+    _state.reset_for_tests()
+
+
+def __getattr__(name: str):
+    """Back-compat shim: expose ``_STATE_FILE`` for legacy test callsites.
+
+    See services/ws_auth.py for the same pattern's rationale.
+    """
+    if name == "_STATE_FILE":
+        return _state.path
+    raise AttributeError(f"module 'server.services.security_settings' has no attribute {name!r}")

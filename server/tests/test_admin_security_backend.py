@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 
 from server.services import api_tokens as api_token_svc
-from server.services import security_settings as security_settings_svc
 
 
 def _login(client):
@@ -33,20 +32,6 @@ def _authed_patch(client, url, payload, **kwargs):
 def _authed_post(client, url, payload=None, **kwargs):
     token = _csrf_token(client)
     return client.post(url, json=(payload or {}), headers={"X-CSRF-Token": token}, **kwargs)
-
-
-@pytest.fixture()
-def isolated_security_settings(tmp_path, monkeypatch):
-    state_file = tmp_path / "security_settings.json"
-    monkeypatch.setattr(security_settings_svc, "_STATE_FILE", state_file)
-    security_settings_svc.reset_for_tests()
-    yield state_file
-    security_settings_svc.reset_for_tests()
-
-
-@pytest.fixture(autouse=True)
-def _isolate_security_settings(isolated_security_settings):
-    yield
 
 
 @pytest.fixture()
