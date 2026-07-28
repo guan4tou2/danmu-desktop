@@ -369,26 +369,16 @@ def test_viewer_pollthankyou_state_url_preview(browser_session, live_url):
 # ─── v5.0.0 P0-0 IA migration coverage ─────────────────────────────────────
 
 
-def test_ia_alias_redirect_audit_to_system(admin_page):
-    """v5 IA (2026-05-19): audit was promoted from system accordion
-    leaf to a first-class top-level route (b172eec). #/audit now
-    resolves directly to its own ADMIN_ROUTES entry — no redirect.
-    The sec-audit-overview section is still the canonical body, just
-    rendered outside the system accordion now.
-
-    Original Phase B redirect (#/audit → #/system/audit) is preserved
-    via the system accordion config (admin-system-accordion.js SECTIONS
-    still lists `audit`), so deep-link bookmarks like #/system/audit
-    still work — covered separately.
-    """
+def test_ia_alias_redirect_audit_to_history_tab(admin_page):
+    """v7 IA (2026-07-28): audit folded back into the history tabbed nav
+    （側欄「紀錄 & 匯出」）— #/audit bare-redirects to history with the
+    audit tab active, and sec-audit-overview stays the visible body."""
     _go_to_route(admin_page, "audit")
-    final_hash = admin_page.evaluate("() => window.location.hash")
-    assert final_hash == "#/audit", f"audit is first-class, got {final_hash}"
     shell_route = admin_page.evaluate(
         '() => document.querySelector(".admin-dash-grid").dataset.activeRoute'
     )
-    assert shell_route == "audit", f"expected first-class audit route, got {shell_route}"
-    # Section is visible at the top level (not inside the system accordion)
+    assert shell_route == "history", f"expected history (audit tab), got {shell_route}"
+    # The audit tab's section is the visible body after the redirect.
     admin_page.wait_for_selector("#sec-audit-overview", state="visible", timeout=5000)
 
 
