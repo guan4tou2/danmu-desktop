@@ -148,7 +148,11 @@ def test_notifications_page_renders(admin_page):
     # Filter sidebar tabs + sources (未讀 / 全部 / 已標記 / 已封存)
     assert admin_page.locator("[data-notif-tab]").count() == 4
     sources = admin_page.locator("[data-notif-src]").count()
-    assert sources >= 6  # 全部 + Fire Token + Webhooks + System + Backup + Moderation
+    # 全部 + Fire Token + Webhooks + System + Moderation。Backup 那顆在
+    # 2026-07-28 刪掉了 —— 它是死 placeholder（integrations catalog 寫死
+    # implemented=false，services/backup.py 也沒有任何 notif emit）。
+    assert sources == 5
+    assert admin_page.locator('[data-notif-src="Backup"]').count() == 0
     # List + summary present
     assert admin_page.is_visible("[data-notif-list]")
     assert admin_page.is_visible("[data-notif-summary]")

@@ -60,17 +60,17 @@ MIN_CONTENT_CHARS = 120
 # 刻意保留的 `[PLACEHOLDER]` 控制項配額（待 BE / 待 Design，見 admin-follow-up
 # plan Task 8 的 deferred 清單）。key 沒列到的路由一律必須是 0。
 #   polls     — 「從模板」建立投票          (admin-poll.js)
-#   ratelimit — IP/CIDR 編輯器 + 可編輯清單  (admin-ratelimit.js)
-#   fonts     — 從 Google Fonts 匯入        (admin-fonts.js)
 #
-# viewer 曾經是 1（admin-viewer-theme.js 的「立即套用」）。那個 placeholder 屬於
-# `page` 分頁，而 viewer 預設落在 `defaults` 分頁 —— 它會被看見純粹是因為
-# section 可見性震盪把它翻出來了。震盪修掉後（見下方說明）它正確地隱藏，
-# 配額回到 0。要看到它請切到 #/viewer/page。
+# 2026-07-28 三筆歸零：
+#   ratelimit — 曾是 2（IP/CIDR 編輯器 + 可編輯清單的 <span> 佔位）。後端補上
+#               GET/PUT /admin/ratelimit/ip-rules 後換成真的雙欄 chip 編輯器。
+#   fonts     — 曾是 1（從 Google Fonts 匯入）。services/fonts.py 只有一段註解、
+#               沒有任何匯入路徑，補完成本遠高於價值，直接刪掉 UI。
+#   viewer    — 曾是 1（admin-viewer-theme.js 的「立即套用」）。viewer 主題靠
+#               settings 儲存生效，沒有主動推送通道，那顆按鈕永遠不會存在。
+#               （它本來就因為 tab 可見性而量不到，這次是連 markup 一起刪。）
 DEFERRED_PLACEHOLDER_BUDGET = {
     "polls": 1,
-    "ratelimit": 2,
-    "fonts": 1,
 }
 
 # 路由套用是可以明確等待的：applyRoute() 會把目標 slug 的 sidebar 按鈕設成
