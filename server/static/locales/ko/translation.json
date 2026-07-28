@@ -555,7 +555,7 @@
   "sampleText": "샘플 텍스트...",
   "testFilterBtn": "테스트",
   "activeRules": "활성 규칙",
-  "loading": "로딩 중...",
+  "loading": "로딩 중…",
   "noFilterRules": "설정된 필터 규칙이 없습니다.",
   "fetchFiltersFailed": "필터 규칙 로드 실패",
   "patternRequired": "패턴은 필수입니다",

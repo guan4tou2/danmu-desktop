@@ -55,7 +55,7 @@
             <button type="button" class="admin-ui-chip admin-audit-filter-chip" data-severity="danger" data-audit-severity-filter="danger">DANGER</button>
           </div>
           <span class="admin-ui-spacer admin-audit-toolbar-spacer"></span>
-          <span class="admin-ui-summary admin-audit-summary" data-audit-summary>讀取中…</span>
+          <span class="admin-ui-summary admin-audit-summary" data-audit-summary>載入中…</span>
           <button type="button" class="admin-ui-action admin-audit-action" data-audit-export>↓ 匯出</button>
           <button type="button" class="admin-ui-action admin-audit-action" data-audit-refresh>↻ 重新整理</button>
         </div>

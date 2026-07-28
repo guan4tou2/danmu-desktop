@@ -110,7 +110,7 @@
           <div class="admin-aud-main-row">
             <div class="admin-aud-table-wrap">
               <div class="admin-ui-toolbar admin-aud-toolbar">
-                <span class="admin-ui-summary admin-aud-summary" data-aud-summary>讀取中…</span>
+                <span class="admin-ui-summary admin-aud-summary" data-aud-summary>載入中…</span>
                 <span class="admin-ui-spacer"></span>
                 <span class="admin-ui-chip-group admin-aud-filters" data-aud-filters></span>
                 <button type="button" class="admin-ui-action admin-aud-refresh" data-aud-action="refresh" aria-label="重新整理觀眾">↻</button>

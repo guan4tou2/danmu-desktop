@@ -30,10 +30,10 @@
   function _renderHtml() {
     return `
       <div id="${SECTION_ID}" class="admin-ratelimit-page hud-page-stack lg:col-span-2">
-        <div class="admin-ratelimit-head">
-          <div class="admin-ratelimit-kicker">RATE LIMITS · 4 SCOPES · .env</div>
-          <div class="admin-ratelimit-title">請求速率上限</div>
-          <p class="admin-ratelimit-note">
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">RATE LIMITS · 4 SCOPES · .env</div>
+          <div class="admin-ui-page-title">請求速率上限</div>
+          <p class="admin-ui-page-note">
             每個來源 IP（或 fingerprint）在時間窗內可發送的請求數上限。
             按「即時套用」立即生效、毋須重啟；要跨重啟保留，用下方「匯出 .env 片段」寫回設定檔。
           </p>
@@ -137,7 +137,7 @@
           <div class="admin-ratelimit-ip-policy">
             <div class="admin-ratelimit-vfeed-head">
               <span class="title">IP 黑/白名單</span>
-              <span class="kicker" data-rl-ip-summary>IP POLICY · 讀取中…</span>
+              <span class="kicker" data-rl-ip-summary>IP POLICY · 載入中…</span>
             </div>
             <div class="admin-ratelimit-ip-form">
               <input type="text" data-rl-ip-input placeholder="1.2.3.4 或 10.0.0.0/8" maxlength="43" autocomplete="off" spellcheck="false" />

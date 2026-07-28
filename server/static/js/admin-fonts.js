@@ -30,6 +30,14 @@
 
     return `
       <div id="sec-fonts" class="hud-page-stack lg:col-span-2">
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">FONT LIBRARY · 觀眾可選 · SUBSET</div>
+          <div class="admin-ui-page-title">字型</div>
+          <p class="admin-ui-page-note">
+            上傳給觀眾選用的字型（WOFF2 / OTF / TTF）；用 subset 把大字型檔
+            瘦身到需要的字元範圍。
+          </p>
+        </div>
         <div class="hud-page-grid-2-wide">
           <!-- Left: font table -->
           <div class="hud-page-stack" style="gap:0">

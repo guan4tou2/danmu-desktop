@@ -1888,34 +1888,8 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 .admin-ratelimit-summary .delta.is-danger { color: var(--hud-crimson, #f87171); }
 .admin-ratelimit-summary .delta.is-muted  { color: var(--admin-text-dim); }
 
-.admin-ratelimit-head {
-  padding: 16px 18px;
-  background: var(--admin-panel);
-  border: 1px solid var(--admin-line);
-  border-radius: var(--radius-md-sm);
-}
-
-.admin-ratelimit-kicker {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 2px;
-  color: var(--admin-text-dim);
-  text-transform: uppercase;
-}
-
-.admin-ratelimit-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--admin-text);
-  margin-top: 4px;
-}
-
-.admin-ratelimit-note {
-  margin: 8px 0 0;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--admin-text-dim);
-}
+/* (page head now uses the generic .admin-ui-page-* primitives in hud.css —
+   the per-page clone that hud.css was "mirroring" is gone.) */
 
 .admin-ratelimit-rows {
   display: flex;

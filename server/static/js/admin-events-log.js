@@ -143,7 +143,7 @@
             <span></span>
           </div>
           <div class="admin-ev-v4__rows" data-ev-rows>
-            <div class="admin-ev-v4__empty">讀取中…</div>
+            <div class="admin-ev-v4__empty">載入中…</div>
           </div>
         </div>
       </div>`;

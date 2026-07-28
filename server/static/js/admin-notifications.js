@@ -264,7 +264,7 @@
 
           <main class="admin-notif-main">
             <div class="admin-ui-toolbar admin-notif-toolbar">
-              <span class="admin-ui-summary admin-notif-summary" data-notif-summary>讀取中…</span>
+              <span class="admin-ui-summary admin-notif-summary" data-notif-summary>載入中…</span>
               <span class="admin-ui-spacer"></span>
               <span class="admin-ui-chip-group admin-notif-actions">
                 <button type="button" class="admin-ui-action admin-notif-action" data-notif-action="mark-all-read">✓ 全部已讀</button>

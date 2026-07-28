@@ -589,7 +589,7 @@
   "sampleText": "範例文字...",
   "testFilterBtn": "測試",
   "activeRules": "使用中的規則",
-  "loading": "載入中...",
+  "loading": "載入中…",
   "noFilterRules": "尚未設定過濾規則。",
   "fetchFiltersFailed": "載入過濾規則失敗",
   "patternRequired": "必須輸入模式",

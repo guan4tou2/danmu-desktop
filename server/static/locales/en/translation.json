@@ -589,7 +589,7 @@
   "sampleText": "Sample text...",
   "testFilterBtn": "Test",
   "activeRules": "Active Rules",
-  "loading": "Loading...",
+  "loading": "Loading…",
   "noFilterRules": "No filter rules configured.",
   "fetchFiltersFailed": "Failed to load filter rules",
   "patternRequired": "Pattern is required",
