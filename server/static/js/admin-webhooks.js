@@ -214,7 +214,10 @@
             body: JSON.stringify(payload),
           });
           const data = await res.json();
-          if (res.ok && data.status === "ok") {
+          // /webhooks/register answers {hook_id}. The old `data.status === "ok"`
+          // check never matched, so a successful registration showed the
+          // failure toast and the card only appeared on the next 12s poll.
+          if (res.ok && data.hook_id) {
             showToast(ServerI18n.t("webhookRegistered"));
             form.reset();
             _renderEventChoices();

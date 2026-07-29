@@ -139,20 +139,12 @@ def list_webhook_events():
     up-to-date subscription checklist without hard-coding the list.
 
     Each entry carries ``slug`` (the constant used in /register `events`
-    arrays) and a short bilingual ``desc`` for the admin UI."""
-    catalog = [
-        {"slug": "on_danmu", "zh": "彈幕送出", "en": "Danmu accepted"},
-        {"slug": "on_danmu_blocked", "zh": "彈幕被擋", "en": "Danmu blocked"},
-        {"slug": "on_poll_create", "zh": "投票建立", "en": "Poll created"},
-        {"slug": "on_poll_vote", "zh": "投票一次", "en": "Single vote"},
-        {"slug": "on_poll_end", "zh": "投票結束", "en": "Poll ended"},
-        {"slug": "on_session_start", "zh": "場次開啟 / Overlay ON", "en": "Session start"},
-        {"slug": "on_session_end", "zh": "場次結束 / Overlay OFF", "en": "Session end"},
-        {"slug": "on_overlay_clear", "zh": "清空 Overlay", "en": "Overlay cleared"},
-        {"slug": "on_audit_alert", "zh": "審計警示", "en": "Audit alert ≥ warn"},
-        {"slug": "on_plugin_change", "zh": "插件變動", "en": "Plugin install/uninstall"},
-    ]
-    return _json_response({"events": catalog})
+    arrays) and short bilingual labels for the admin UI. The catalog lives
+    in services.webhook so this route, the runtime filter and
+    WebhookSchema's whitelist can never drift apart again."""
+    from ...services.webhook import EVENT_CATALOG
+
+    return _json_response({"events": [dict(e) for e in EVENT_CATALOG]})
 
 
 @admin_bp.route("/webhooks/test", methods=["POST"])
@@ -160,12 +152,16 @@ def list_webhook_events():
 @require_csrf
 @require_login
 def test_webhook():
-    """Test webhook (send test payload)."""
+    """Test webhook (send test payload to one hook)."""
     data = request.get_json(silent=True) or {}
-    hook_id = data.get("hook_id", "")
+    hook_id = (data.get("hook_id") or "").strip()
     from ...services.webhook import webhook_service
 
-    webhook_service.emit("test", {"text": "Test from danmu admin", "hook_id": hook_id})
+    # send_test targets the hook directly instead of emit()-ing a "test"
+    # event: "test" is not subscribable, so the old fan-out always matched
+    # zero hooks and nothing reached the endpoint or the delivery log.
+    if not webhook_service.send_test(hook_id):
+        return _json_response({"error": "Webhook not found"}, 404)
     audit_log.append(
         "webhooks",
         "test",

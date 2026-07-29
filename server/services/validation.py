@@ -13,7 +13,9 @@ from marshmallow import (
 )
 
 from ..config import Config
+from .webhook import EVENT_CATALOG as _WEBHOOK_EVENT_CATALOG
 
+_WEBHOOK_EVENT_SLUGS = [e["slug"] for e in _WEBHOOK_EVENT_CATALOG]
 _VALID_SETTING_TYPES = Config.SETTABLE_OPTION_KEYS
 _NO_CTRL_CHARS_RE = r"^[^\r\n\t\x00-\x08\x0b\x0c\x0e-\x1f]+$"
 
@@ -340,14 +342,15 @@ class WebhookSchema(Schema):
     """Webhook 註冊請求驗證"""
 
     url = fields.Url(required=True)
+    # Whitelist derives from services.webhook.EVENT_CATALOG — the same list
+    # /admin/webhooks/events serves the picker and WebhookConfig filters
+    # against. Hard-coding it here let the two drift: the FE offered 10
+    # slugs while this schema took 5 (plus two, on_connect/on_disconnect,
+    # that the service silently dropped).
     events = fields.List(
-        fields.Str(
-            validate=validate.OneOf(
-                ["on_danmu", "on_poll_create", "on_poll_end", "on_connect", "on_disconnect"],
-            )
-        ),
+        fields.Str(validate=validate.OneOf(_WEBHOOK_EVENT_SLUGS)),
         required=True,
-        validate=validate.Length(min=1, max=5),
+        validate=validate.Length(min=1, max=len(_WEBHOOK_EVENT_SLUGS)),
     )
     format = fields.Str(
         load_default="json",

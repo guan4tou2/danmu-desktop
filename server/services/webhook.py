@@ -34,23 +34,30 @@ _VALID_FORMATS = {"json", "discord", "slack"}
 # land in this batch; the danmu_blocked / poll_vote / audit_alert /
 # config_change subscribers are accepted now so operators can pre-register
 # webhooks, but the emit sites for those land in follow-up batches.
-_VALID_EVENTS = {
+#
+# EVENT_CATALOG is the single source of truth for the vocabulary: the
+# runtime filter (_VALID_EVENTS), the FE picker (/admin/webhooks/events)
+# and the request whitelist (validation.WebhookSchema) all derive from it.
+# Adding an event = one entry here, nothing else. The zh/en labels live
+# here rather than in the route because the route is only a projection.
+EVENT_CATALOG: List[Dict[str, str]] = [
     # Core danmu lifecycle
-    "on_danmu",  # danmu accepted into the queue
-    "on_danmu_blocked",  # danmu rejected (blacklist / filter / rate limit)
+    {"slug": "on_danmu", "zh": "彈幕送出", "en": "Danmu accepted"},
+    {"slug": "on_danmu_blocked", "zh": "彈幕被擋", "en": "Danmu blocked"},
     # Poll lifecycle
-    "on_poll_create",
-    "on_poll_vote",  # single vote cast
-    "on_poll_end",
+    {"slug": "on_poll_create", "zh": "投票建立", "en": "Poll created"},
+    {"slug": "on_poll_vote", "zh": "投票一次", "en": "Single vote"},
+    {"slug": "on_poll_end", "zh": "投票結束", "en": "Poll ended"},
     # Broadcast / session lifecycle
-    "on_session_start",  # operator flipped overlay to LIVE / session opened
-    "on_session_end",  # operator flipped to STANDBY / session closed
+    {"slug": "on_session_start", "zh": "場次開啟 / Overlay ON", "en": "Session start"},
+    {"slug": "on_session_end", "zh": "場次結束 / Overlay OFF", "en": "Session end"},
     # Overlay control
-    "on_overlay_clear",  # admin cleared the on-screen danmu stack
+    {"slug": "on_overlay_clear", "zh": "清空 Overlay", "en": "Overlay cleared"},
     # Operator surfaces
-    "on_audit_alert",  # audit_log entry with severity >= warn
-    "on_plugin_change",  # plugin uploaded or uninstalled
-}
+    {"slug": "on_audit_alert", "zh": "審計警示", "en": "Audit alert ≥ warn"},
+    {"slug": "on_plugin_change", "zh": "插件變動", "en": "Plugin install/uninstall"},
+]
+_VALID_EVENTS = {e["slug"] for e in EVENT_CATALOG}
 
 
 class WebhookConfig:
@@ -380,9 +387,40 @@ class WebhookService:
             )
             t.start()
 
+    def send_test(self, hook_id: str) -> bool:
+        """Deliver a one-off test payload to a single hook. False if unknown.
+
+        Deliberately does not go through `emit`: "test" is not part of the
+        subscribable vocabulary, so an event fan-out would always match zero
+        hooks and the delivery log would stay empty. The `enabled` flag is
+        ignored too — pressing 測試 on a paused endpoint is an explicit probe.
+        Single attempt, because the operator is waiting for the answer; the
+        retry ladder (up to 1+2+4s of backoff) belongs to real events.
+        """
+        with self._lock:
+            hook = self._hooks.get(hook_id)
+        if hook is None:
+            return False
+
+        t = threading.Thread(
+            target=self._send_webhook,
+            args=(hook, "test", {"text": "Test from danmu admin", "hook_id": hook_id}),
+            kwargs={"max_attempts": 1},
+            daemon=True,
+        )
+        t.start()
+        return True
+
     # ── Send (runs in worker thread) ─────────────────────────────────────
 
-    def _send_webhook(self, hook: WebhookConfig, event: str, data: Any) -> None:
+    def _send_webhook(
+        self,
+        hook: WebhookConfig,
+        event: str,
+        data: Any,
+        *,
+        max_attempts: Optional[int] = None,
+    ) -> None:
         """Format, sign, and POST the webhook payload with retries."""
         payload_bytes = self._format_payload(hook, event, data)
         signature = ""
@@ -395,7 +433,8 @@ class WebhookService:
 
         last_exc: Optional[Exception] = None
         last_status: Optional[int] = None
-        attempts = hook.retry_count + 1  # first try + retries
+        # first try + retries, unless the caller pinned an attempt budget
+        attempts = hook.retry_count + 1 if max_attempts is None else max(1, max_attempts)
         started = time.time()
 
         for attempt in range(attempts):

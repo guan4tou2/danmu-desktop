@@ -406,11 +406,14 @@ test.describe("後台互動與自動化（投票 / 排程 / Webhooks）", () => 
     await expect(admin.locator("#wh-register-form")).toBeVisible();
     await admin.locator("#wh-url").fill(url);
     await admin.locator("#wh-format").selectOption("json");
-    // EVENTS 預設就勾了 on_danmu（WebhookSchema 只收 on_danmu /
-    // on_poll_create / on_poll_end / on_connect / on_disconnect 這五個，
-    // 目錄裡其他 slug 送出去會 400 —— 所以維持預設）。
+    // EVENTS 預設勾了 on_danmu；再勾一個「目錄有、舊 WebhookSchema 沒有」的
+    // slug，確認事件目錄與註冊白名單同源（過去這種 slug 送出去會 400）。
     await expect(admin.locator('input[name="wh-event"][value="on_danmu"]')).toBeChecked();
+    await admin.locator('input[name="wh-event"][value="on_plugin_change"]').check();
     await admin.locator("#wh-register-form button[type=submit]").click();
+
+    // UI 回饋：成功 toast（不是「註冊失敗」）
+    await expect.poll(toastText, { timeout: 10000 }).toMatch(/Webhook 已註冊|Webhook registered/);
 
     let hookId = "";
     try {
@@ -425,13 +428,13 @@ test.describe("後台互動與自動化（投票 / 排程 / Webhooks）", () => 
           },
           { timeout: 10000 },
         )
-        .toEqual({ url, format: "json", events: ["on_danmu"] });
+        .toEqual({ url, format: "json", events: ["on_danmu", "on_plugin_change"] });
 
-      // UI 也要畫出這張卡。註冊成功後 admin-webhooks.js 並沒有立刻重抓
-      // （它比對的是 data.status === "ok"，但 /webhooks/register 回的是
-      // {hook_id}），所以這裡等 12s 的輪詢把卡片補上 —— 見回報的疑似產品問題。
+      // UI 也要立刻畫出這張卡：註冊成功後 admin-webhooks.js 會直接重抓清單，
+      // 不必等 12s 輪詢（表單同時收起）。
+      await expect(admin.locator("#wh-register-form")).toBeHidden();
       await expect(admin.locator(`.admin-wh-card[data-wh-hook-id="${hookId}"]`)).toBeVisible({
-        timeout: 25000,
+        timeout: 5000,
       });
       await expect(admin.locator(`.admin-wh-card[data-wh-hook-id="${hookId}"]`)).toContainText(url);
     } finally {
@@ -444,7 +447,7 @@ test.describe("後台互動與自動化（投票 / 排程 / Webhooks）", () => 
     }
   });
 
-  test("Webhooks：UI「測試」鈕會真的觸發一次投遞嘗試（審計留痕）", async () => {
+  test("Webhooks：UI「測試」鈕會真的觸發一次投遞嘗試（審計＋delivery log）", async () => {
     test.setTimeout(90000);
     const stamp = Date.now();
     const url = `https://example.com/e2e-hook-${stamp}`;
@@ -463,10 +466,7 @@ test.describe("後台互動與自動化（投票 / 排程 / Webhooks）", () => 
       await card.locator("[data-wh-action='test']").click();
       // UI 回饋
       await expect.poll(toastText, { timeout: 10000 }).toMatch(/Test payload sent|測試/);
-      // 真實效果：審計軌跡留下一筆 webhooks/test。
-      // （投遞本身不會成功 —— example.com 對 POST 回 405，而且 /webhooks/test
-      //   emit 的事件名是 "test"，沒有任何 hook 訂閱得到它，所以 delivery log
-      //   不見得會多一筆；審計才是這顆鈕唯一可靠的落點。）
+      // 真實效果 1：審計軌跡留下一筆 webhooks/test。
       await expect
         .poll(
           async () => {
@@ -476,6 +476,20 @@ test.describe("後台互動與自動化（投票 / 排程 / Webhooks）", () => 
             );
           },
           { timeout: 15000 },
+        )
+        .toBe(true);
+      // 真實效果 2：delivery log 真的多一筆（測試投遞直接打這顆 hook，不再
+      // 走 emit 的事件篩選）。投遞本身會失敗 —— example.com 對 POST 回 405
+      // —— 但單次嘗試不重試，所以幾秒內就會落到 log。
+      await expect
+        .poll(
+          async () => {
+            const r = await adminApi("/admin/webhooks/deliveries?limit=100");
+            return ((r.body && r.body.deliveries) || []).some(
+              (d) => d.hook_id === hookId && d.event === "test",
+            );
+          },
+          { timeout: 20000 },
         )
         .toBe(true);
     } finally {
