@@ -219,7 +219,7 @@ def test_sendbar_status_row_shows_offline_copy(viewer_page):
 
     status_row = page.locator("#sendbarStatusRow")
     assert status_row.is_visible()
-    assert "主持端尚未開啟" in status_row.text_content()
+    assert "彈幕牆尚未開啟" in status_row.text_content()
     assert "訊息暫時無法送出" in status_row.text_content()
 
 
@@ -259,7 +259,7 @@ def test_sendbar_offline_status_row_does_not_disappear(viewer_page):
     page.fill("#danmuText", "test message while offline")
     page.wait_for_timeout(300)
     assert status_row.is_visible()
-    assert "主持端尚未開啟" in status_row.text_content()
+    assert "彈幕牆尚未開啟" in status_row.text_content()
 
 
 def test_sendbar_status_row_clears_when_overlay_online(viewer_page):
