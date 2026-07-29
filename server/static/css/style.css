@@ -14157,3 +14157,287 @@ body.admin-pu-open { overflow: hidden; }
 .ob-btn--ghost:focus-visible {
   color: var(--color-text-primary);
 }
+
+/* ══════════════════════════════════════════════════════════════════
+ * #/system/wcag — 無障礙對比度檢查（2026-07-29 淺色模式修復）
+ *
+ * 修復前：admin-wcag.js 渲染 20+ 個 admin-wcag-* class，全 repo 卻沒有
+ * 任何一條對應規則——深淺色都是裸 HTML（滿版色塊躺在頁底、零面板）。
+ * 修法選 (a)「改用既有原語重寫 markup」：版面／面板／表格／統計／輸入框
+ * 全部交給 admin-ui-page-head · hud-page-grid-2-wide · hud-stats-strip ·
+ * hud-table · hud-pill · admin-ui-card · admin-ui-input，雙主題因此由
+ * token 自動處理。下面只留「這頁才有、沒有原語可用」的四件事：
+ * 通過率量表、色彩樣本盤、預覽盤、等級清單。
+ *
+ * 色彩紀律（本頁刻意與 hud-pill.is-lime 之類的「文字上色」寫法不同）：
+ *   chrome 文字一律 --color-text-primary / -secondary（雙主題都 ≥6:1），
+ *   語意色只出現在邊框、量表填色這類圖形元素（WCAG 1.4.11 門檻 3.0）。
+ *   原因：--hud-lime 的淺色臂是 green-600，對白面板只有 3.30:1——拿它當
+ *   9~11px 的等級文字色就是 AA 不合格，而這頁正是對比度檢查工具本身。
+ *
+ * [data-wcag-specimen] = 受測色本身（顏色對樣本／預覽盤／建議色片）。
+ * 那裡的低對比是工具要呈現的「結果」，不是設計缺陷；自動量測要排除。
+ * ══════════════════════════════════════════════════════════════════ */
+
+/* 通過率量表 — 橫跨整條 hud-stats-strip 的底部橫槓。填色用 cyan 而非
+   lime：green-600 對淺色 raised 面板只有 3.01:1，貼著 1.4.11 的門檻走
+   太險；sky-600 是 3.74:1，且與 telemetry 量表同語彙。 */
+.admin-wcag-meter {
+  grid-column: 1 / -1;
+  height: 8px;
+  border: 1px solid var(--admin-line);
+  border-radius: var(--radius-pill);
+  background: var(--admin-raised);
+  overflow: hidden;
+}
+
+.admin-wcag-meter-fill {
+  height: 100%;
+  background: var(--hud-cyan);
+}
+
+/* ── 顏色對表格（hud-table / hud-table-row 之上的頁面 hook） ── */
+.admin-wcag-pair-row {
+  cursor: pointer;
+}
+
+.admin-wcag-pair-row:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: -2px;
+}
+
+.admin-wcag-col-num {
+  text-align: right;
+}
+
+.admin-wcag-pair-name {
+  min-width: 0;
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.admin-wcag-ratio {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: right;
+  color: var(--color-text-primary);
+}
+
+.admin-wcag-ratio .unit {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+/* 等級徽章：語意色只在邊框，文字留在中性 token（見檔頭色彩紀律）。 */
+.admin-wcag-pill {
+  justify-self: start;
+  color: var(--color-text-primary);
+}
+.admin-wcag-pill.is-pass  { border-color: var(--hud-lime); }
+.admin-wcag-pill.is-large { border-color: var(--hud-amber); }
+.admin-wcag-pill.is-fail  { border-color: var(--hud-crimson); }
+
+/* 未過 AA 的說明列——不用 admin-ui-notice.is-warn：那個原語把文字染成
+   --hud-amber，淺色臂 amber-600 落在自己的淡黃底上只有 2.96:1。 */
+.admin-wcag-warn {
+  grid-column: 1 / -1;
+  margin-top: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-left: 2px solid var(--hud-amber);
+  border-radius: var(--radius-2xs);
+  background: var(--admin-raised);
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+.admin-wcag-guardrail {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--admin-line);
+  border-left: 2px solid var(--hud-cyan);
+  border-radius: var(--radius-md-sm);
+  background: var(--admin-panel);
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.admin-wcag-guardrail .admin-ui-monolabel {
+  display: block;
+  margin-bottom: var(--space-1);
+}
+
+/* ── 受測色樣本盤（[data-wcag-specimen]，顏色一律 inline） ── */
+.admin-wcag-swatch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--admin-line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.admin-wcag-swatch-aa {
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-wcag-swatch-hex {
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.85;
+}
+
+/* ── 單對測試器 ── */
+.admin-wcag-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.admin-wcag-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.admin-wcag-field-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.admin-wcag-dot {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--admin-line);
+  border-radius: var(--radius-sm);
+}
+
+.admin-wcag-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--admin-line);
+  border-radius: var(--radius-md-sm);
+}
+
+.admin-wcag-preview-lg { font-size: 21px; font-weight: 700; line-height: 1.25; }
+.admin-wcag-preview-md { font-size: 15px; }
+.admin-wcag-preview-sm { font-size: 9px; }
+
+.admin-wcag-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--admin-line);
+  border-radius: var(--radius-md-sm);
+  background: var(--admin-raised);
+}
+
+.admin-wcag-unit {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.admin-wcag-levels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.admin-wcag-level {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--admin-line);
+  border-left-width: 2px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: var(--color-text-primary);
+}
+
+.admin-wcag-level-icon {
+  flex: 0 0 auto;
+  font-weight: 700;
+}
+
+.admin-wcag-level.is-pass { border-left-color: var(--hud-lime); }
+.admin-wcag-level.is-fail { border-left-color: var(--hud-crimson); }
+
+.admin-wcag-sugg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.admin-wcag-sugg-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.admin-wcag-sugg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--admin-line);
+  border-radius: var(--radius-sm);
+  background: var(--admin-raised);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.admin-wcag-sugg-chip:hover {
+  border-color: var(--hud-cyan-line);
+  background: var(--hud-cyan-soft);
+}
+
+.admin-wcag-sugg-chip:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 1px;
+}
+
+/* 建議色本身畫在實際背景上（受測色），比例數字留在 chrome 面板上。
+   修復前這個數字沒有任何規則，直接繼承深色字落在 inline 黑底 → 1.18:1。 */
+.admin-wcag-sugg-plate {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-2xs);
+  font-weight: 700;
+}
+
+.admin-wcag-sugg-ratio {
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 1100px) {
+  .admin-wcag-fields,
+  .admin-wcag-levels {
+    grid-template-columns: 1fr;
+  }
+}
