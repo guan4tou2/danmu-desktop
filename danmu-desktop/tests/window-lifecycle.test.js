@@ -111,31 +111,33 @@ describe("window-lifecycle: setupChildWindow", () => {
     logSpy.mockRestore();
   });
 
-  test("setupChildWindow injects WS script after did-finish-load", () => {
+  test("setupChildWindow stamps overlayConfig and never injects a WS script", () => {
+    // L2 de-injection: the WS client lives in the child bundle
+    // (renderer-modules/overlay-ws.js); main only stamps the per-session
+    // config on the window instance (before loadFile) for the
+    // overlay:get-config invoke. executeJavaScript must stay untouched.
     const logSpy = jest.spyOn(console, "log").mockImplementation();
 
     setupChildWindow(
-      targetWindow, display, "127.0.0.1", 9487, "", null, childWindows
+      targetWindow, display, "127.0.0.1", 9487, "tok", null, childWindows
     );
 
-    // webContents.once should have been called with "did-finish-load"
-    expect(targetWindow.webContents.once).toHaveBeenCalledWith(
-      "did-finish-load",
-      expect.any(Function)
-    );
+    expect(targetWindow.overlayConfig).toEqual({
+      ip: "127.0.0.1",
+      port: 9487,
+      startupAnimationSettings: { enabled: false },
+      wsAuthToken: "tok",
+      displayHost: "127.0.0.1:9487",
+      qrSvg: expect.any(String),
+    });
+    expect(mockLoadFile).toHaveBeenCalledTimes(1);
 
-    // Simulate did-finish-load
+    // No did-finish-load injection anymore — even after the load completes.
     const didFinishLoadCall = targetWindow.webContents.once.mock.calls.find(
       (c) => c[0] === "did-finish-load"
     );
-    const didFinishLoadHandler = didFinishLoadCall[1];
-    didFinishLoadHandler();
-
-    // executeJavaScript should have been called with the WS script
-    expect(mockExecuteJavaScript).toHaveBeenCalledTimes(1);
-    const injectedScript = mockExecuteJavaScript.mock.calls[0][0];
-    expect(injectedScript).toContain("127.0.0.1");
-    expect(injectedScript).toContain("9487");
+    if (didFinishLoadCall) didFinishLoadCall[1]();
+    expect(mockExecuteJavaScript).not.toHaveBeenCalled();
 
     logSpy.mockRestore();
   });

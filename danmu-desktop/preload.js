@@ -52,6 +52,9 @@ try {
       _handlers.overlayClear = () => callback();
       ipcRenderer.on("overlay-clear", _handlers.overlayClear);
     },
+    // Overlay bootstrap config (child window only) — main stamps it on the
+    // BrowserWindow before loadFile; resolves null for non-child senders.
+    getOverlayConfig: () => ipcRenderer.invoke("overlay:get-config"),
     sendConnectionStatus: (status, attempt, maxAttempts) => {
       ipcRenderer.send("overlay-connection-status", { status, attempt, maxAttempts });
     },

@@ -167,6 +167,24 @@ function setupIpcHandlers(getMainWindow, childWindows) {
     console.log(`[Main] Preferred overlay display set to ID ${sanitizeLog(normalized)}`);
   });
 
+  // Overlay bootstrap config — the child bundle fetches this at DOM-ready
+  // (overlay-entry.js) instead of the old executeJavaScript injection.
+  // Sender-guarded like overlay-connection-status: only a live child window
+  // gets its own config back (setupChildWindow stamps it on the
+  // BrowserWindow instance before loadFile). Returns null for unknown
+  // senders and for windows already destroyed by a newer createChild —
+  // the child treats null as "don't connect".
+  ipcMain.handle("overlay:get-config", (event) => {
+    const win = childWindows.find(
+      (w) => w && !w.isDestroyed() && w.webContents === event.sender
+    );
+    if (!win) {
+      console.warn("[Main] overlay:get-config: rejected IPC from untrusted sender");
+      return null;
+    }
+    return win.overlayConfig || null;
+  });
+
   // Forward connection status from child windows to main window
   ipcMain.on("overlay-connection-status", (event, data) => {
     if (!isFromChildWindow(event, childWindows)) {

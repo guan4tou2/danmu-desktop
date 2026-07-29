@@ -1,11 +1,13 @@
 /**
- * Integration tests for the WebSocket reconnection logic in child-ws-script.js.
+ * Integration tests for the WebSocket reconnection logic in
+ * renderer-modules/overlay-ws.js (formerly the child-ws-script.js template
+ * string — L2 de-injection turned it into a real module).
  *
- * Strategy: execute the script string returned by getChildWsScript() in a
- * jsdom environment, replacing the global WebSocket with a mock that we control.
+ * Strategy: call initOverlayWs() in the jsdom environment, replacing the
+ * global WebSocket with a mock that we control.
  */
 
-const { getChildWsScript } = require("../main-modules/child-ws-script");
+const { initOverlayWs } = require("../renderer-modules/overlay-ws");
 
 // ---------------------------------------------------------------------------
 // Mock WebSocket factory
@@ -85,14 +87,18 @@ const SCRIPT_IP = "127.0.0.1";
 const SCRIPT_PORT = "443";
 const ANIM = { enabled: false };
 
-function evalScript(MockWS) {
-  // Install the mock WebSocket class globally before executing the script
+function startClient(MockWS) {
+  // Install the mock WebSocket class globally before booting the client.
+  // No jest.resetModules needed: overlay-ws keeps all connection state in
+  // the initOverlayWs closure, not at module top level.
   global.WebSocket = MockWS;
 
-  // Execute the reconnection script in the current jsdom context
-  const script = getChildWsScript(SCRIPT_IP, SCRIPT_PORT, ANIM);
-  // eslint-disable-next-line no-eval
-  eval(script);
+  initOverlayWs({
+    ip: SCRIPT_IP,
+    port: SCRIPT_PORT,
+    startupAnimationSettings: ANIM,
+    wsAuthToken: "",
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -118,22 +124,11 @@ describe("WebSocket reconnection logic", () => {
     delete global.WebSocket;
   });
 
-  test("escapes IP string to prevent script injection", () => {
-    const MockWSLocal = createMockWebSocketClass();
-    global.WebSocket = MockWSLocal;
-
-    const script = getChildWsScript("';window.__pwned=1;//", SCRIPT_PORT, ANIM);
-    // eslint-disable-next-line no-eval
-    eval(script);
-
-    expect(window.__pwned).toBeUndefined();
-  });
-
   // -------------------------------------------------------------------------
   // 1. Initial connection
   // -------------------------------------------------------------------------
   test("creates a WebSocket to the correct URL on first call", () => {
-    evalScript(MockWS);
+    startClient(MockWS);
     expect(MockWS.instances).toHaveLength(1);
     // v5.0.0+: WSS-only — always wss:// with /ws path.
     expect(MockWS.instances[0].url).toBe(`wss://${SCRIPT_IP}:${SCRIPT_PORT}/ws`);
@@ -141,7 +136,7 @@ describe("WebSocket reconnection logic", () => {
 
   test("sends 'connected' status when connection opens", () => {
     const statusCalls = makeStatusTracker();
-    evalScript(MockWS);
+    startClient(MockWS);
     MockWS.instances[0].simulateOpen();
 
     // Allow debounce to settle
@@ -155,7 +150,7 @@ describe("WebSocket reconnection logic", () => {
   // -------------------------------------------------------------------------
   test("sends connection-failed when initial connection times out", () => {
     const statusCalls = makeStatusTracker();
-    evalScript(MockWS);
+    startClient(MockWS);
 
     // Trigger the 10-second connection timeout without the WS opening
     jest.advanceTimersByTime(10500);
@@ -173,7 +168,7 @@ describe("WebSocket reconnection logic", () => {
   // -------------------------------------------------------------------------
   test("sends disconnected and schedules reconnect after server drops", () => {
     const statusCalls = makeStatusTracker();
-    evalScript(MockWS);
+    startClient(MockWS);
 
     // First connection succeeds
     MockWS.instances[0].simulateOpen();
@@ -200,7 +195,7 @@ describe("WebSocket reconnection logic", () => {
   // -------------------------------------------------------------------------
   test("resets reconnect counter after a successful reconnection", () => {
     const statusCalls = makeStatusTracker();
-    evalScript(MockWS);
+    startClient(MockWS);
 
     // First connection succeeds, then drops
     MockWS.instances[0].simulateOpen();
@@ -223,7 +218,7 @@ describe("WebSocket reconnection logic", () => {
   // 5. Heartbeat messages
   // -------------------------------------------------------------------------
   test("sends a heartbeat JSON message after opening", () => {
-    evalScript(MockWS);
+    startClient(MockWS);
     MockWS.instances[0].simulateOpen();
 
     // Advance past 15-second heartbeat interval
@@ -244,7 +239,7 @@ describe("WebSocket reconnection logic", () => {
   // 6. Message handling — ping/pong
   // -------------------------------------------------------------------------
   test("responds to ping with pong", () => {
-    evalScript(MockWS);
+    startClient(MockWS);
     MockWS.instances[0].simulateOpen();
     MockWS.instances[0].simulateMessage({ type: "ping" });
 
@@ -255,7 +250,7 @@ describe("WebSocket reconnection logic", () => {
   });
 
   test("ignores heartbeat_ack without crashing", () => {
-    evalScript(MockWS);
+    startClient(MockWS);
     MockWS.instances[0].simulateOpen();
     expect(() => {
       MockWS.instances[0].simulateMessage({ type: "heartbeat_ack" });
@@ -266,7 +261,7 @@ describe("WebSocket reconnection logic", () => {
   // 7. Exponential backoff — delays grow with each attempt
   // -------------------------------------------------------------------------
   test("exponential backoff: reconnect delay grows with each attempt", () => {
-    evalScript(MockWS);
+    startClient(MockWS);
     MockWS.instances[0].simulateOpen();
 
     const reconnectTimes = [];

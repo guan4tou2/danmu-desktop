@@ -3,7 +3,7 @@ const { app, BrowserWindow, screen, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { sanitizeLog } = require("../shared/utils");
-const { getChildWsScript } = require("./child-ws-script");
+const { buildOverlayConfig } = require("./child-ws-script");
 const { buildDisplayOptions } = require("./display-watcher");
 
 // Main-window default size — used on first run and as a fallback when the
@@ -336,7 +336,9 @@ function buildChildWindowOptions() {
 }
 
 /**
- * Configures a child overlay window: loads child.html, sets bounds, and injects WebSocket script.
+ * Configures a child overlay window: stamps the overlay config, loads
+ * child.html, and sets bounds. The WS client boots inside the child bundle
+ * (overlay-entry.js) by fetching the config via overlay:get-config.
  */
 function setupChildWindow(
   targetWindow,
@@ -359,6 +361,19 @@ function setupChildWindow(
   // Child→display mapping display-watcher reconciles on (E2/E3). Stamped
   // before loadFile so a reconcile firing mid-setup still sees it.
   targetWindow.overlayDisplayId = display.id;
+
+  // Per-session WS/idle-screen config, served to the child bundle by the
+  // overlay:get-config invoke (ipc-handlers matches event.sender against
+  // childWindows). Stamped on the window instance before loadFile — same
+  // pattern as startupAnimationSettings — so the renderer's DOM-ready fetch
+  // always finds it. Replaces the former did-finish-load executeJavaScript
+  // injection of the whole WS client script.
+  targetWindow.overlayConfig = buildOverlayConfig(
+    ip,
+    port,
+    startupAnimationSettings,
+    wsAuthToken
+  );
 
   targetWindow.loadFile(path.join(__dirname, "../child.html"));
   hardenWebContents(targetWindow.webContents);
@@ -406,16 +421,6 @@ function setupChildWindow(
     );
   });
 
-  // Inject WebSocket connection script after page (including synchronous scripts) finishes loading
-  targetWindow.webContents.once("did-finish-load", () => {
-    const script = getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken);
-    targetWindow.webContents.executeJavaScript(script).catch((err) => {
-      console.error(
-        "[Main] Error injecting WebSocket script:",
-        sanitizeLog(err.message)
-      );
-    });
-  });
 }
 
 module.exports = {
