@@ -13,7 +13,7 @@
     "build": "npm run build:i18n && npm run build:webpack",
     "test": "jest --testPathPatterns=tests/",
     "test:e2e": "npx playwright test",
-    "test:system": "DANMU_E2E_SERVER=${DANMU_E2E_SERVER:-http://127.0.0.1:4000} npx playwright test e2e/system-interaction.spec.js e2e/system-admin.spec.js"
+    "test:system": "DANMU_E2E_SERVER=${DANMU_E2E_SERVER:-http://127.0.0.1:4000} npx playwright test e2e/system-*.spec.js"
   },
   "repository": "https://github.com/guan4tou2/danmu-desktop",
   "keywords": [
