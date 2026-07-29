@@ -1,14 +1,24 @@
-// WebSocket overlay connection management and UI handlers
+// WebSocket overlay connection management and UI handlers.
+//
+// L3 (2026-07-29): the hidden #start-button/#stop-button proxy chain was
+// removed. The runtime control surface is a direct-call API exposed as
+// window.OverlayControl { start, stop, isRunning, subscribe } — consumed by
+// the non-bundled client-nav.js for the visible
+// [data-client-overlay-button]. State changes are published on the events
+// bus ("overlay:state") instead of being observed off button.disabled
+// mutations.
 const { sanitizeLog } = require("../shared/utils");
+const events = require("./events");
 
 // Shared UI element references — queried once, reused by both init functions
 let _els = null;
+// Dependencies captured by initOverlayControls — startOverlay/stopOverlay
+// need them when invoked later through window.OverlayControl.
+let _deps = null;
 
 function getOverlayElements() {
   if (_els) return _els;
   _els = {
-    startButton: document.getElementById("start-button"),
-    stopButton: document.getElementById("stop-button"),
     ipInput: document.getElementById("host-input"),
     portInput: document.getElementById("port-input"),
     wsTokenInput: document.getElementById("ws-token-input"),
@@ -18,159 +28,184 @@ function getOverlayElements() {
   return _els;
 }
 
-function initOverlayControls({
-  state,
-  showToast,
-  t,
-  validateIP,
-  validatePort,
-  saveSettings,
-  loadSettings,
-  loadStartupAnimationSettings,
-  updateConnectionStatus,
-  hideConnectionStatus,
-}) {
+function isOverlayRunning() {
+  return !!(_deps && _deps.state.overlayActive);
+}
+
+/** Subscribe to overlay state changes; returns an unsubscribe function. */
+function subscribeOverlayState(fn) {
+  events.on("overlay:state", fn);
+  return () => events.off("overlay:state", fn);
+}
+
+/**
+ * Single UI transition point — every connection-state branch must route
+ * through here, or the subscribed visible button (client-nav.js) freezes on
+ * a stale label. mode: "idle" | "connecting" | "connected" | "reconnecting"
+ * | "failed". Inputs are locked while the overlay session is live.
+ */
+function setUiState(mode) {
+  const { ipInput, portInput, wsTokenInput, screenSelect, syncMultiDisplayCheckbox } =
+    getOverlayElements();
+  const running = mode === "connecting" || mode === "connected" || mode === "reconnecting";
+
+  if (ipInput) ipInput.disabled = running;
+  if (portInput) portInput.disabled = running;
+  if (wsTokenInput) wsTokenInput.disabled = running;
+  if (syncMultiDisplayCheckbox) syncMultiDisplayCheckbox.disabled = running;
+  if (screenSelect) {
+    screenSelect.disabled =
+      running || !!(syncMultiDisplayCheckbox && syncMultiDisplayCheckbox.checked);
+  }
+
+  events.emit("overlay:state", { running, status: mode });
+}
+
+/**
+ * Starts the overlay session: validates host/port, persists settings, and
+ * asks main to create the child window(s). No-op with an error toast when
+ * validation fails (same semantics as the old start-button click handler).
+ */
+function startOverlay() {
+  if (!_deps) return;
   const {
-    startButton,
-    stopButton,
-    ipInput,
-    portInput,
-    wsTokenInput,
-    screenSelect,
-    syncMultiDisplayCheckbox,
-  } = getOverlayElements();
+    state,
+    showToast,
+    t,
+    validateIP,
+    validatePort,
+    saveSettings,
+    loadStartupAnimationSettings,
+    updateConnectionStatus,
+  } = _deps;
+  const { ipInput, portInput, wsTokenInput, screenSelect, syncMultiDisplayCheckbox } =
+    getOverlayElements();
+  if (!ipInput || !portInput) return;
 
-  if (!startButton || !stopButton || !ipInput || !portInput) return;
+  const hostValue = ipInput.value.trim();
+  const portValue = portInput.value.trim();
 
-  // Start button handler
-  startButton.addEventListener("click", () => {
-    const hostValue = ipInput.value.trim();
-    const portValue = portInput.value.trim();
+  if (!hostValue) {
+    showToast(t("errorEmptyHost"), "error");
+    ipInput.classList.add("input-invalid");
+    return;
+  }
 
-    if (!hostValue) {
-      showToast(t("errorEmptyHost"), "error");
-      ipInput.classList.add("input-invalid");
-      return;
-    }
+  if (!validateIP(hostValue)) {
+    showToast(t("errorInvalidHost"), "error");
+    ipInput.classList.add("input-invalid");
+    return;
+  }
 
-    if (!validateIP(hostValue)) {
-      showToast(t("errorInvalidHost"), "error");
-      ipInput.classList.add("input-invalid");
-      return;
-    }
+  if (!portValue) {
+    showToast(t("errorEmptyPort"), "error");
+    portInput.classList.add("input-invalid");
+    return;
+  }
 
-    if (!portValue) {
-      showToast(t("errorEmptyPort"), "error");
-      portInput.classList.add("input-invalid");
-      return;
-    }
+  if (!validatePort(portValue)) {
+    showToast(t("errorInvalidPort"), "error");
+    portInput.classList.add("input-invalid");
+    return;
+  }
 
-    if (!validatePort(portValue)) {
-      showToast(t("errorInvalidPort"), "error");
-      portInput.classList.add("input-invalid");
-      return;
-    }
+  const IP = hostValue;
+  const PORT = portValue;
+  const wsToken = wsTokenInput ? wsTokenInput.value.trim() : "";
+  const displayIndex = parseInt(screenSelect.value);
+  const enableSyncMultiDisplay = syncMultiDisplayCheckbox.checked;
+  // v5.3.0+: WSS-only deployment uses the same HTTPS/web port with /ws.
+  // The legacy split desktop transport was removed.
 
-    const IP = hostValue;
-    const PORT = portValue;
-    const wsToken = wsTokenInput ? wsTokenInput.value.trim() : "";
-    const displayIndex = parseInt(screenSelect.value);
-    const enableSyncMultiDisplay = syncMultiDisplayCheckbox.checked;
-    // v5.3.0+: WSS-only deployment uses the same HTTPS/web port with /ws.
-    // The legacy split desktop transport was removed.
+  // Startup animation settings come from persisted prefs (the legacy form
+  // controls were removed in P5-2). Settings still ship to child windows so
+  // overlays can show LINK START / 領域展開 on first connect.
+  const persistedAnim = loadStartupAnimationSettings();
+  const startupAnimationSettings = {
+    enabled: persistedAnim.enabled,
+    type: persistedAnim.type,
+    customText: persistedAnim.customText,
+  };
 
-    // Startup animation settings come from persisted prefs (the legacy form
-    // controls were removed in P5-2). Settings still ship to child windows so
-    // overlays can show LINK START / 領域展開 on first connect.
-    const persistedAnim = loadStartupAnimationSettings();
-    const startupAnimationSettings = {
-      enabled: persistedAnim.enabled,
-      type: persistedAnim.type,
-      customText: persistedAnim.customText,
-    };
+  saveSettings(IP, PORT, displayIndex, enableSyncMultiDisplay, wsToken);
 
-    saveSettings(IP, PORT, displayIndex, enableSyncMultiDisplay, wsToken);
+  console.log(
+    `[Renderer] Starting overlay with: IP=${sanitizeLog(IP)}, PORT=${sanitizeLog(
+      PORT
+    )}, DisplayIndex=${displayIndex}, SyncMultiDisplay=${enableSyncMultiDisplay}`
+  );
 
-    console.log(
-      `[Renderer] Starting overlay with: IP=${sanitizeLog(IP)}, PORT=${sanitizeLog(
-        PORT
-      )}, DisplayIndex=${displayIndex}, SyncMultiDisplay=${enableSyncMultiDisplay}`
-    );
+  const api = window.API;
+  if (!api) {
+    console.error("[Renderer] window.API not available");
+    return;
+  }
+  api.create(IP, PORT, displayIndex, enableSyncMultiDisplay, startupAnimationSettings, wsToken);
 
-    const api = window.API;
-    if (!api) {
-      console.error("[Renderer] window.API not available");
-      return;
-    }
-    api.create(IP, PORT, displayIndex, enableSyncMultiDisplay, startupAnimationSettings, wsToken);
+  state.overlayActive = true;
+  state.connectionFailureNotified = false;
+  state.connectionSuccessNotified = false;
 
-    state.overlayActive = true;
-    state.connectionFailureNotified = false;
-    state.connectionSuccessNotified = false;
+  setUiState("connecting");
+  updateConnectionStatus("connecting", t("statusConnecting"));
+  showToast(t("toastStarting"), "info");
+}
 
-    startButton.disabled = true;
-    startButton.setAttribute("aria-busy", "true");
-    startButton.setAttribute("aria-disabled", "true");
-    stopButton.disabled = false;
-    stopButton.setAttribute("aria-disabled", "false");
-    ipInput.disabled = true;
-    portInput.disabled = true;
-    if (wsTokenInput) wsTokenInput.disabled = true;
-    screenSelect.disabled = true;
-    syncMultiDisplayCheckbox.disabled = true;
+/** Stops the overlay session and resets the UI to idle. */
+function stopOverlay() {
+  if (!_deps) return;
+  const { state, showToast, t, updateConnectionStatus, hideConnectionStatus } = _deps;
 
-    startButton.classList.remove("btn-primary", "btn-connected");
-    startButton.classList.add("btn-connecting");
-    stopButton.classList.remove("btn-stopped");
-    stopButton.classList.add("btn-active");
+  state.overlayActive = false;
+  state.connectionFailureNotified = false;
+  state.connectionSuccessNotified = false;
 
-    updateConnectionStatus("connecting", t("statusConnecting"));
-    showToast(t("toastStarting"), "info");
-  });
+  setUiState("idle");
+  updateConnectionStatus("idle", t("statusIdle"));
+  showToast(t("toastStopped"), "info");
+  hideConnectionStatus(2000);
 
-  // Stop button handler
-  stopButton.addEventListener("click", () => {
-    startButton.disabled = false;
-    startButton.setAttribute("aria-busy", "false");
-    startButton.setAttribute("aria-disabled", "false");
-    stopButton.disabled = true;
-    stopButton.setAttribute("aria-disabled", "true");
-    ipInput.disabled = false;
-    portInput.disabled = false;
-    if (wsTokenInput) wsTokenInput.disabled = false;
-    syncMultiDisplayCheckbox.disabled = false;
-    syncMultiDisplayCheckbox.dispatchEvent(new Event("change"));
+  const api = window.API;
+  if (!api) {
+    console.error("[Renderer] window.API not available");
+    return;
+  }
+  api.close();
+}
 
-    state.overlayActive = false;
-    state.connectionFailureNotified = false;
-    state.connectionSuccessNotified = false;
+function initOverlayControls(deps) {
+  _deps = deps;
+  const {
+    showToast,
+    t,
+    validateIP,
+    validatePort,
+    loadSettings,
+    loadStartupAnimationSettings,
+  } = deps;
+  const { ipInput, portInput, wsTokenInput, screenSelect, syncMultiDisplayCheckbox } =
+    getOverlayElements();
 
-    startButton.classList.remove("btn-connecting", "btn-connected");
-    startButton.classList.add("btn-primary");
-    stopButton.classList.remove("btn-active");
-    stopButton.classList.add("btn-stopped");
+  if (!ipInput || !portInput) return;
 
-    updateConnectionStatus("idle", t("statusIdle"));
-    showToast(t("toastStopped"), "info");
-    hideConnectionStatus(2000);
-
-    const api = window.API;
-    if (!api) {
-      console.error("[Renderer] window.API not available");
-      return;
-    }
-    api.close();
-  });
+  // Direct-call control surface for the non-bundled client-nav.js (loaded
+  // after the renderer bundle in index.html, so this is always defined
+  // before its bootstrap runs). Main window only — the overlay bundle
+  // doesn't include this module.
+  window.OverlayControl = {
+    start: startOverlay,
+    stop: stopOverlay,
+    isRunning: isOverlayRunning,
+    subscribe: subscribeOverlayState,
+  };
 
   // Sync multi-display checkbox
   if (syncMultiDisplayCheckbox) {
     syncMultiDisplayCheckbox.addEventListener("change", () => {
       if (syncMultiDisplayCheckbox.checked) {
         screenSelect.disabled = true;
-      } else {
-        if (!startButton.disabled) {
-          screenSelect.disabled = false;
-        }
+      } else if (!isOverlayRunning()) {
+        screenSelect.disabled = false;
       }
     });
   }
@@ -235,10 +270,6 @@ function initConnectionStatusHandler({
 }) {
   if (!window.API || typeof window.API.onConnectionStatus !== "function") return;
 
-  // Reuse cached elements — no second getElementById
-  const { startButton, stopButton, ipInput, portInput, screenSelect, syncMultiDisplayCheckbox } =
-    getOverlayElements();
-
   window.API.onConnectionStatus((data) => {
     console.log("[Renderer] Connection status update:", data);
 
@@ -246,13 +277,7 @@ function initConnectionStatusHandler({
       if (getCurrentStatus() !== "connected") {
         state.overlayActive = true;
         state.connectionFailureNotified = false;
-        if (startButton) {
-          startButton.disabled = true;
-          startButton.setAttribute("aria-disabled", "true");
-          startButton.setAttribute("aria-busy", "false");
-          startButton.classList.remove("btn-connecting");
-          startButton.classList.add("btn-connected");
-        }
+        setUiState("connected");
         updateConnectionStatus("connected", t("statusConnected"));
       }
       if (!state.connectionSuccessNotified) {
@@ -263,12 +288,7 @@ function initConnectionStatusHandler({
       if (!state.overlayActive) return;
       const wasConnected = getCurrentStatus() === "connected";
       if (getCurrentStatus() !== "disconnected") {
-        if (startButton) {
-          startButton.disabled = true;
-          startButton.setAttribute("aria-disabled", "true");
-          startButton.classList.remove("btn-connected");
-          startButton.classList.add("btn-connecting");
-        }
+        setUiState("reconnecting");
         const attempt = data.attempt;
         const max = data.maxAttempts;
         const attemptLabel =
@@ -280,28 +300,15 @@ function initConnectionStatusHandler({
       }
       state.connectionSuccessNotified = false;
     } else if (data.status === "connection-failed") {
+      // Dedupe guard: repeated connection-failed events after the first are
+      // dropped whole — the UI was already reset to "failed" by the first
+      // one, so skipping setUiState here can't strand the visible button.
       if (state.connectionFailureNotified) return;
       state.connectionFailureNotified = true;
       state.overlayActive = false;
       state.connectionSuccessNotified = false;
 
-      if (startButton) {
-        startButton.disabled = false;
-        startButton.setAttribute("aria-busy", "false");
-        startButton.setAttribute("aria-disabled", "false");
-        startButton.classList.remove("btn-connecting", "btn-connected");
-        startButton.classList.add("btn-primary");
-      }
-      if (stopButton) {
-        stopButton.disabled = true;
-        stopButton.setAttribute("aria-disabled", "true");
-        stopButton.classList.remove("btn-active");
-        stopButton.classList.add("btn-stopped");
-      }
-      if (ipInput) ipInput.disabled = false;
-      if (portInput) portInput.disabled = false;
-      if (screenSelect) screenSelect.disabled = false;
-      if (syncMultiDisplayCheckbox) syncMultiDisplayCheckbox.disabled = false;
+      setUiState("failed");
 
       const failureStatusText = getLocalizedText(
         "statusConnectionFailed",
@@ -320,29 +327,13 @@ function initConnectionStatusHandler({
       state.overlayActive = false;
       state.connectionFailureNotified = false;
 
-      if (startButton) {
-        startButton.disabled = false;
-        startButton.setAttribute("aria-busy", "false");
-        startButton.setAttribute("aria-disabled", "false");
-        startButton.classList.remove("btn-connecting", "btn-connected");
-        startButton.classList.add("btn-primary");
-      }
-      if (stopButton) {
-        stopButton.disabled = true;
-        stopButton.setAttribute("aria-disabled", "true");
-        stopButton.classList.remove("btn-active");
-        stopButton.classList.add("btn-stopped");
-      }
-      if (ipInput) ipInput.disabled = false;
-      if (portInput) portInput.disabled = false;
-      if (screenSelect) screenSelect.disabled = false;
-      if (syncMultiDisplayCheckbox) syncMultiDisplayCheckbox.disabled = false;
-
+      setUiState("idle");
       updateConnectionStatus("idle", t("statusStopped"));
     } else if (data.status === "display-migrated") {
       // Display unplugged → main migrated/destroyed overlay windows.
       // Bounds-only change: the WS connection is unaffected, so leave
-      // buttons, state.overlayActive and the status line untouched.
+      // inputs, state.overlayActive and the status line untouched (no
+      // setUiState — subscribers would only re-render the same state).
       showToast(
         getLocalizedText(
           "toastDisplayMigrated",
@@ -353,7 +344,7 @@ function initConnectionStatusHandler({
       );
     } else if (data.status === "validation-error") {
       // Main-side validation rejected a payload (e.g. test danmu). Toast
-      // only — the connection is untouched, so no state or button changes.
+      // only — the connection is untouched, so no state or UI changes.
       showToast(
         getLocalizedText(
           "toastValidationFailed",
@@ -366,4 +357,11 @@ function initConnectionStatusHandler({
   });
 }
 
-module.exports = { initOverlayControls, initConnectionStatusHandler };
+module.exports = {
+  initOverlayControls,
+  initConnectionStatusHandler,
+  startOverlay,
+  stopOverlay,
+  isOverlayRunning,
+  subscribeOverlayState,
+};

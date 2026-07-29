@@ -65,13 +65,15 @@
   // ─────────────────────────────────────────────────────────────
   // Overlay section — prototype OverlaySection:203.
   //
-  // Proxies to the legacy Start/Stop buttons + screen-select dropdown so
-  // the new cards stay in sync with whatever ws-manager / track-manager
-  // already do. No new IPC plumbing — just DOM re-wiring.
+  // Drives the overlay session through window.OverlayControl, the direct
+  // API exposed by renderer-modules/ws-manager.js (the bundle loads before
+  // this file in index.html, so it's defined by bootstrap time; the guard
+  // covers an old bundle). State updates arrive via OverlayControl.subscribe
+  // — the retired proxy path clicked hidden legacy buttons and mirrored
+  // their disabled attribute through a MutationObserver.
   // ─────────────────────────────────────────────────────────────
   function initOverlayCards() {
-    var startBtn = document.getElementById("start-button");
-    var stopBtn = document.getElementById("stop-button");
+    var control = window.OverlayControl || null;
     var screenSelect = document.getElementById("screen-select");
     var overlayButton = document.querySelector("[data-client-overlay-button]");
     var overlayState = document.querySelector("[data-client-overlay-state]");
@@ -79,7 +81,7 @@
     var screenCount = document.querySelector("[data-client-screen-count]");
 
     function running() {
-      return startBtn && startBtn.disabled; // start disabled ⇒ overlay running
+      return !!(control && control.isRunning());
     }
 
     function renderOverlayButton() {
@@ -96,25 +98,25 @@
           : (isRunning ? "■ 關閉 Desktop" : "▶ 開啟 Desktop");
       }
       // Pre-show test-danmu button follows the same running() heuristic; the
-      // MutationObserver on #start-button below re-runs this on state change.
+      // OverlayControl subscription below re-runs this on state change.
       var testBtn = document.querySelector('[data-client-overlay-action="test-danmu"]');
       if (testBtn) testBtn.disabled = !isRunning;
     }
 
     if (overlayButton) {
       overlayButton.addEventListener("click", function () {
-        if (!running()) {
-          if (startBtn && !startBtn.disabled) startBtn.click();
+        if (!control) return;
+        if (control.isRunning()) {
+          control.stop();
         } else {
-          if (stopBtn && !stopBtn.disabled) stopBtn.click();
+          control.start();
         }
       });
     }
 
-    // Watch Start/Stop disabled state to keep the visible button in sync.
-    if (startBtn && typeof MutationObserver !== "undefined") {
-      var mo = new MutationObserver(renderOverlayButton);
-      mo.observe(startBtn, { attributes: true, attributeFilter: ["disabled"] });
+    // Re-render on every published overlay state change.
+    if (control && typeof control.subscribe === "function") {
+      control.subscribe(renderOverlayButton);
     }
 
     // Render screen chips from #screen-select options.

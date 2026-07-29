@@ -29,9 +29,10 @@ test.describe("Connection Controls", () => {
   });
 
   // Helper: populate the conn-server-input AND the hidden compat fields
-  // directly so ws-manager's start-button validation reads consistent
-  // values. The wire module dispatches the same sync via input events but
-  // tests benefit from deterministic state.
+  // directly so ws-manager's startOverlay validation (invoked through
+  // window.OverlayControl.start) reads consistent values. The wire module
+  // dispatches the same sync via input events but tests benefit from
+  // deterministic state.
   async function setServer(host, port) {
     await page.evaluate(({ h, p }) => {
       const sv = document.getElementById("conn-server-input");
@@ -59,7 +60,7 @@ test.describe("Connection Controls", () => {
   test("start button with empty host shows error toast", async () => {
     await setServer("", "443");
 
-    await page.evaluate(() => document.getElementById("start-button").click());
+    await page.evaluate(() => window.OverlayControl.start());
     await page.waitForTimeout(500);
 
     const toastContainer = page.locator("#toast-container");
@@ -75,7 +76,7 @@ test.describe("Connection Controls", () => {
       document.getElementById("toast-container").innerHTML = "";
     });
 
-    await page.evaluate(() => document.getElementById("start-button").click());
+    await page.evaluate(() => window.OverlayControl.start());
     await page.waitForTimeout(500);
 
     const toastContainer = page.locator("#toast-container");
@@ -90,7 +91,7 @@ test.describe("Connection Controls", () => {
       document.getElementById("toast-container").innerHTML = "";
     });
 
-    await page.evaluate(() => document.getElementById("start-button").click());
+    await page.evaluate(() => window.OverlayControl.start());
     await page.waitForTimeout(500);
 
     const toastContainer = page.locator("#toast-container");
@@ -105,7 +106,7 @@ test.describe("Connection Controls", () => {
       document.getElementById("toast-container").innerHTML = "";
     });
 
-    await page.evaluate(() => document.getElementById("start-button").click());
+    await page.evaluate(() => window.OverlayControl.start());
     await page.waitForTimeout(500);
 
     const toastContainer = page.locator("#toast-container");
@@ -113,16 +114,19 @@ test.describe("Connection Controls", () => {
     expect(toastCount).toBeGreaterThanOrEqual(1);
   });
 
-  // ─── Button State ──────────────────────────────────────────────────────
+  // ─── Overlay Control State ─────────────────────────────────────────────
+  // L3: the hidden #start-button/#stop-button proxies are gone — the visible
+  // [data-client-overlay-button] reflects OverlayControl state directly.
 
-  test("stop button is disabled initially", async () => {
-    const stopBtn = page.locator("#stop-button");
-    await expect(stopBtn).toBeDisabled();
+  test("overlay button reports stopped state initially", async () => {
+    const overlayBtn = page.locator("[data-client-overlay-button]");
+    await expect(overlayBtn).toHaveAttribute("data-state", "stopped");
+    await expect(overlayBtn).toHaveAttribute("aria-pressed", "false");
   });
 
-  test("start button is enabled initially", async () => {
-    const startBtn = page.locator("#start-button");
-    await expect(startBtn).toBeEnabled();
+  test("OverlayControl reports not running initially", async () => {
+    const running = await page.evaluate(() => window.OverlayControl.isRunning());
+    expect(running).toBe(false);
   });
 
   // ─── Connection Settings ───────────────────────────────────────────────

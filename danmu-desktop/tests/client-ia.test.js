@@ -164,6 +164,21 @@ test("overlay section owns display selection and has one visible runtime control
   expect(overlay).toContain('data-client-overlay-action="idle-qr"');
   expect(overlay).not.toContain('data-client-overlay-action="start"');
   expect(overlay).not.toContain('data-client-overlay-action="stop"');
+  // L3 2026-07-29: the hidden #start-button/#stop-button proxy pair is gone
+  // — the visible Overlay button calls window.OverlayControl directly.
+  expect(overlay).not.toContain('id="start-button"');
+  expect(overlay).not.toContain('id="stop-button"');
+});
+
+test("client nav drives the overlay through OverlayControl, not hidden proxy buttons", () => {
+  const nav = readClientNav();
+
+  expect(nav).toContain("window.OverlayControl");
+  // No DOM proxying left: neither the button ids nor the disabled-attribute
+  // MutationObserver bridge. (client-nav still uses MutationObserver for the
+  // screen-select list, so only the start-button strings are pinned.)
+  expect(nav).not.toContain("start-button");
+  expect(nav).not.toContain("stop-button");
 });
 
 test("idle-QR button state flows through main's overlay-idle-state broadcast", () => {

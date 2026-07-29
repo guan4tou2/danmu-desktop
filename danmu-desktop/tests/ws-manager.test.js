@@ -1,16 +1,13 @@
 /**
  * Tests for renderer-modules/ws-manager.js
  *
- * The module exports two functions that are deeply entangled with DOM and
- * window.API.  We test:
- *
- * 1. initOverlayControls early-return when required DOM elements are absent.
- * 2. initOverlayControls — start button validation (empty host, bad IP, bad port).
- * 3. initConnectionStatusHandler early-return when window.API is absent.
- * 4. initConnectionStatusHandler — state mutations driven by the
- *    onConnectionStatus callback for each status variant.
- *
- * DOM helpers and the full wiring (saveSettings, etc.) are minimal stubs.
+ * L3 (2026-07-29): the hidden #start-button/#stop-button proxy chain is
+ * gone. The runtime control surface is window.OverlayControl
+ * { start, stop, isRunning, subscribe } and UI state changes are published
+ * on the events bus ("overlay:state"). The behavioral semantics under test
+ * are unchanged from the button era — validation failures never reach
+ * API.create, toasts stay deduped, stopped/failed reset the inputs — only
+ * the entry points moved from DOM clicks to direct calls.
  */
 
 // Build a minimal DOM matching the element IDs the module queries
@@ -21,9 +18,6 @@ function buildDOM() {
     <input id="ws-token-input" value="" />
     <select id="screen-select"><option value="0">0</option></select>
     <input id="sync-multi-display-checkbox" type="checkbox" />
-    <input id="use-wss-checkbox" type="checkbox" />
-    <button id="start-button">Start</button>
-    <button id="stop-button" disabled>Stop</button>
     <div id="toast-container"></div>
     <div id="connection-status" class="hidden"></div>
     <div id="status-indicator"></div>
@@ -50,14 +44,22 @@ function makeDeps(overrides = {}) {
   };
 }
 
+afterEach(() => {
+  delete window.OverlayControl;
+});
+
 // ---------------------------------------------------------------------------
 // Module exports
 // ---------------------------------------------------------------------------
 
-test("module exports initOverlayControls and initConnectionStatusHandler", () => {
+test("module exports the init functions and the OverlayControl primitives", () => {
   const mod = require("../renderer-modules/ws-manager");
   expect(typeof mod.initOverlayControls).toBe("function");
   expect(typeof mod.initConnectionStatusHandler).toBe("function");
+  expect(typeof mod.startOverlay).toBe("function");
+  expect(typeof mod.stopOverlay).toBe("function");
+  expect(typeof mod.isOverlayRunning).toBe("function");
+  expect(typeof mod.subscribeOverlayState).toBe("function");
 });
 
 // ---------------------------------------------------------------------------
@@ -70,17 +72,40 @@ describe("initOverlayControls() – DOM guard", () => {
     document.body.innerHTML = ""; // no DOM elements
   });
 
-  test("returns without throwing when required elements are missing", () => {
+  test("returns without throwing when host/port inputs are missing", () => {
     const { initOverlayControls } = require("../renderer-modules/ws-manager");
     expect(() => initOverlayControls(makeDeps())).not.toThrow();
+    // Early return ⇒ the control surface is not exposed either.
+    expect(window.OverlayControl).toBeUndefined();
   });
 });
 
 // ---------------------------------------------------------------------------
-// initOverlayControls – start-button validation
+// window.OverlayControl exposure contract
 // ---------------------------------------------------------------------------
 
-describe("initOverlayControls() – start button validation", () => {
+describe("initOverlayControls() – OverlayControl exposure", () => {
+  beforeEach(() => {
+    jest.resetModules();
+    buildDOM();
+  });
+
+  test("exposes start/stop/isRunning/subscribe on window.OverlayControl", () => {
+    const { initOverlayControls } = require("../renderer-modules/ws-manager");
+    initOverlayControls(makeDeps());
+    expect(typeof window.OverlayControl.start).toBe("function");
+    expect(typeof window.OverlayControl.stop).toBe("function");
+    expect(typeof window.OverlayControl.isRunning).toBe("function");
+    expect(typeof window.OverlayControl.subscribe).toBe("function");
+    expect(window.OverlayControl.isRunning()).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// startOverlay – validation
+// ---------------------------------------------------------------------------
+
+describe("startOverlay() – validation", () => {
   let deps;
 
   beforeEach(() => {
@@ -91,33 +116,33 @@ describe("initOverlayControls() – start button validation", () => {
     initOverlayControls(deps);
   });
 
-  function clickStart() {
-    document.getElementById("start-button").click();
+  function start() {
+    window.OverlayControl.start();
   }
 
   test("shows error toast when host input is empty", () => {
     document.getElementById("host-input").value = "";
-    clickStart();
+    start();
     expect(deps.showToast).toHaveBeenCalledWith("errorEmptyHost", "error");
   });
 
   test("adds input-invalid class to ip input when host is empty", () => {
     document.getElementById("host-input").value = "";
-    clickStart();
+    start();
     expect(document.getElementById("host-input").classList.contains("input-invalid")).toBe(true);
   });
 
   test("shows error toast when host fails validateIP", () => {
     deps.validateIP.mockReturnValue(false);
     document.getElementById("host-input").value = "not-valid";
-    clickStart();
+    start();
     expect(deps.showToast).toHaveBeenCalledWith("errorInvalidHost", "error");
   });
 
   test("shows error toast when port input is empty", () => {
     document.getElementById("host-input").value = "localhost";
     document.getElementById("port-input").value = "";
-    clickStart();
+    start();
     expect(deps.showToast).toHaveBeenCalledWith("errorEmptyPort", "error");
   });
 
@@ -125,7 +150,7 @@ describe("initOverlayControls() – start button validation", () => {
     document.getElementById("host-input").value = "localhost";
     document.getElementById("port-input").value = "99999";
     deps.validatePort.mockReturnValue(false);
-    clickStart();
+    start();
     expect(deps.showToast).toHaveBeenCalledWith("errorInvalidPort", "error");
   });
 
@@ -133,7 +158,7 @@ describe("initOverlayControls() – start button validation", () => {
     const create = jest.fn();
     window.API = { create, close: jest.fn() };
     document.getElementById("host-input").value = ""; // will fail
-    clickStart();
+    start();
     expect(create).not.toHaveBeenCalled();
     delete window.API;
   });
@@ -143,7 +168,7 @@ describe("initOverlayControls() – start button validation", () => {
     window.API = { create, close: jest.fn() };
     document.getElementById("host-input").value = "localhost";
     document.getElementById("port-input").value = "8080";
-    clickStart();
+    start();
     // v5.0.0+: WSS-only — useWss param dropped from api.create.
     expect(create).toHaveBeenCalledWith(
       "localhost", "8080", expect.any(Number), expect.any(Boolean),
@@ -152,45 +177,60 @@ describe("initOverlayControls() – start button validation", () => {
     delete window.API;
   });
 
-  test("sets state.overlayActive = true after successful start", () => {
+  test("sets state.overlayActive = true and disables inputs after successful start", () => {
     window.API = { create: jest.fn(), close: jest.fn() };
     document.getElementById("host-input").value = "localhost";
     document.getElementById("port-input").value = "8080";
-    clickStart();
+    start();
     expect(deps.state.overlayActive).toBe(true);
+    expect(window.OverlayControl.isRunning()).toBe(true);
+    expect(document.getElementById("host-input").disabled).toBe(true);
+    expect(document.getElementById("port-input").disabled).toBe(true);
+    expect(document.getElementById("screen-select").disabled).toBe(true);
+    delete window.API;
+  });
+
+  test("validation failure does not flip running state or lock inputs", () => {
+    window.API = { create: jest.fn(), close: jest.fn() };
+    document.getElementById("host-input").value = "";
+    start();
+    expect(window.OverlayControl.isRunning()).toBe(false);
+    expect(document.getElementById("host-input").disabled).toBe(false);
     delete window.API;
   });
 });
 
 // ---------------------------------------------------------------------------
-// initOverlayControls – stop button
+// stopOverlay
 // ---------------------------------------------------------------------------
 
-describe("initOverlayControls() – stop button", () => {
+describe("stopOverlay()", () => {
   let deps;
 
   beforeEach(() => {
     jest.resetModules();
     buildDOM();
-    // Stop button must NOT be disabled so the click is handled
-    document.getElementById("stop-button").disabled = false;
     deps = makeDeps();
     deps.state.overlayActive = true;
     const { initOverlayControls } = require("../renderer-modules/ws-manager");
     initOverlayControls(deps);
   });
 
-  test("clicking stop sets state.overlayActive = false", () => {
+  test("stop sets state.overlayActive = false and re-enables inputs", () => {
     window.API = { create: jest.fn(), close: jest.fn() };
-    document.getElementById("stop-button").click();
+    document.getElementById("host-input").disabled = true;
+    window.OverlayControl.stop();
     expect(deps.state.overlayActive).toBe(false);
+    expect(document.getElementById("host-input").disabled).toBe(false);
     delete window.API;
   });
 
-  test("clicking stop calls updateConnectionStatus with 'idle'", () => {
-    window.API = { create: jest.fn(), close: jest.fn() };
-    document.getElementById("stop-button").click();
+  test("stop calls updateConnectionStatus with 'idle' and API.close", () => {
+    const close = jest.fn();
+    window.API = { create: jest.fn(), close };
+    window.OverlayControl.stop();
     expect(deps.updateConnectionStatus).toHaveBeenCalledWith("idle", "statusIdle");
+    expect(close).toHaveBeenCalledTimes(1);
     delete window.API;
   });
 });
@@ -220,11 +260,11 @@ describe("initConnectionStatusHandler() – early return guard", () => {
 });
 
 // ---------------------------------------------------------------------------
-// initConnectionStatusHandler – state mutations via callback
+// initConnectionStatusHandler – state mutations + published events
 // ---------------------------------------------------------------------------
 
 describe("initConnectionStatusHandler() – onConnectionStatus state mutations", () => {
-  let deps, notify;
+  let deps, notify, published;
 
   beforeEach(() => {
     jest.resetModules();
@@ -235,22 +275,34 @@ describe("initConnectionStatusHandler() – onConnectionStatus state mutations",
     };
 
     deps = makeDeps();
-    const { initConnectionStatusHandler } = require("../renderer-modules/ws-manager");
+    const {
+      initConnectionStatusHandler,
+      initOverlayControls,
+    } = require("../renderer-modules/ws-manager");
 
     // Also call initOverlayControls to populate cached element references
-    const { initOverlayControls } = require("../renderer-modules/ws-manager");
+    // and expose window.OverlayControl.
     initOverlayControls({ ...deps, loadSettings: jest.fn().mockReturnValue(null) });
-
     initConnectionStatusHandler(deps);
+
+    published = [];
+    window.OverlayControl.subscribe((s) => published.push(s));
   });
 
   afterEach(() => {
     delete window.API;
   });
 
-  test("'connected' status sets state.overlayActive = true", () => {
+  test("'connected' status sets state.overlayActive = true and publishes running", () => {
     notify({ status: "connected" });
     expect(deps.state.overlayActive).toBe(true);
+    expect(published).toEqual([{ running: true, status: "connected" }]);
+  });
+
+  test("'connected' status disables inputs", () => {
+    notify({ status: "connected" });
+    expect(document.getElementById("host-input").disabled).toBe(true);
+    expect(document.getElementById("port-input").disabled).toBe(true);
   });
 
   test("'connected' status calls showToast once and sets connectionSuccessNotified", () => {
@@ -266,49 +318,68 @@ describe("initConnectionStatusHandler() – onConnectionStatus state mutations",
     expect(deps.showToast).toHaveBeenCalledTimes(1);
   });
 
-  test("'disconnected' while overlayActive=false is ignored", () => {
+  test("'disconnected' while overlayActive=false is ignored (no event published)", () => {
     deps.state.overlayActive = false;
     notify({ status: "disconnected", attempt: 1, maxAttempts: 5 });
     expect(deps.updateConnectionStatus).not.toHaveBeenCalled();
+    expect(published).toEqual([]);
   });
 
-  test("'disconnected' while overlayActive=true updates status", () => {
+  test("'disconnected' while overlayActive=true updates status and publishes reconnecting", () => {
     deps.state.overlayActive = true;
     notify({ status: "disconnected", attempt: 1, maxAttempts: 5 });
     expect(deps.updateConnectionStatus).toHaveBeenCalledWith(
       "disconnected", expect.stringContaining("statusDisconnected")
     );
+    expect(published).toEqual([{ running: true, status: "reconnecting" }]);
   });
 
-  test("'connection-failed' resets overlayActive to false", () => {
+  test("'connection-failed' resets overlayActive to false and publishes failed", () => {
     deps.state.overlayActive = true;
     notify({ status: "connection-failed" });
     expect(deps.state.overlayActive).toBe(false);
+    expect(published).toEqual([{ running: false, status: "failed" }]);
   });
 
-  test("'connection-failed' shows error toast", () => {
+  test("'connection-failed' re-enables inputs and shows error toast", () => {
+    notify({ status: "connected" });
     notify({ status: "connection-failed" });
-    expect(deps.showToast).toHaveBeenCalledWith(
-      expect.any(String), "error"
-    );
+    expect(document.getElementById("host-input").disabled).toBe(false);
+    expect(document.getElementById("port-input").disabled).toBe(false);
+    expect(deps.showToast).toHaveBeenCalledWith(expect.any(String), "error");
   });
 
   test("'connection-failed' second call is ignored (connectionFailureNotified guard)", () => {
     notify({ status: "connection-failed" });
     const callCount = deps.showToast.mock.calls.length;
+    const publishedCount = published.length;
     notify({ status: "connection-failed" });
     expect(deps.showToast.mock.calls.length).toBe(callCount);
+    // No new event — the UI was already reset by the first failure.
+    expect(published.length).toBe(publishedCount);
   });
 
-  test("'stopped' sets overlayActive to false", () => {
+  test("'stopped' sets overlayActive to false and publishes idle", () => {
     deps.state.overlayActive = true;
     notify({ status: "stopped" });
     expect(deps.state.overlayActive).toBe(false);
+    expect(published).toEqual([{ running: false, status: "idle" }]);
   });
 
   test("'stopped' calls updateConnectionStatus with 'idle'", () => {
     notify({ status: "stopped" });
     expect(deps.updateConnectionStatus).toHaveBeenCalledWith("idle", "statusStopped");
+  });
+
+  test("subscribe fires once per transition across a connected→stopped→failed sequence", () => {
+    notify({ status: "connected" });
+    notify({ status: "stopped" });
+    notify({ status: "connection-failed" });
+    expect(published).toEqual([
+      { running: true, status: "connected" },
+      { running: false, status: "idle" },
+      { running: false, status: "failed" },
+    ]);
   });
 
   test("'display-migrated' shows exactly one warning toast", () => {
@@ -317,41 +388,38 @@ describe("initConnectionStatusHandler() – onConnectionStatus state mutations",
     expect(deps.showToast).toHaveBeenCalledWith(expect.any(String), "warning");
   });
 
-  test("'display-migrated' leaves buttons, state and status untouched (bounds-only change)", () => {
+  test("'display-migrated' leaves inputs, state and status untouched (bounds-only change)", () => {
     deps.state.overlayActive = true;
-    const startButton = document.getElementById("start-button");
-    const stopButton = document.getElementById("stop-button");
-    startButton.disabled = true; // running
-    stopButton.disabled = false;
+    const hostInput = document.getElementById("host-input");
+    hostInput.disabled = true; // running
 
     notify({ status: "display-migrated", migrated: 1, removed: 0 });
 
     expect(deps.state.overlayActive).toBe(true);
-    expect(startButton.disabled).toBe(true);
-    expect(stopButton.disabled).toBe(false);
+    expect(hostInput.disabled).toBe(true);
     expect(deps.updateConnectionStatus).not.toHaveBeenCalled();
+    expect(published).toEqual([]);
   });
 
-  test("'validation-error' shows an error toast only — no state or button reset", () => {
+  test("'validation-error' shows an error toast only — no state or UI reset", () => {
     deps.state.overlayActive = true;
-    const startButton = document.getElementById("start-button");
-    const stopButton = document.getElementById("stop-button");
-    startButton.disabled = true; // running
-    stopButton.disabled = false;
+    const hostInput = document.getElementById("host-input");
+    hostInput.disabled = true; // running
 
     notify({ status: "validation-error", context: "test-danmu" });
 
     expect(deps.showToast).toHaveBeenCalledTimes(1);
     expect(deps.showToast).toHaveBeenCalledWith(expect.any(String), "error");
     expect(deps.state.overlayActive).toBe(true);
-    expect(startButton.disabled).toBe(true);
-    expect(stopButton.disabled).toBe(false);
+    expect(hostInput.disabled).toBe(true);
     expect(deps.updateConnectionStatus).not.toHaveBeenCalled();
+    expect(published).toEqual([]);
   });
 
   test("unknown statuses still no-op (older main + newer renderer degrade gracefully)", () => {
     notify({ status: "some-future-status" });
     expect(deps.showToast).not.toHaveBeenCalled();
     expect(deps.updateConnectionStatus).not.toHaveBeenCalled();
+    expect(published).toEqual([]);
   });
 });

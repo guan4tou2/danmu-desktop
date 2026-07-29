@@ -57,13 +57,15 @@ test.describe("App Launch", () => {
     await expect(overlayBtn).toHaveAttribute("data-state", "stopped");
   });
 
-  test("legacy start/stop controls stay hidden behind the primary overlay button", async () => {
+  test("legacy start/stop proxy buttons are gone — overlay button owns runtime control", async () => {
+    // L3 2026-07-29: #start-button/#stop-button removed from index.html;
+    // the visible overlay button drives window.OverlayControl directly and
+    // boots in the stopped state.
     await openOverlayTab();
-    const startBtn = mainWindow.locator("#start-button");
-    const stopBtn = mainWindow.locator("#stop-button");
-    await expect(startBtn).toBeHidden();
-    await expect(stopBtn).toBeHidden();
-    await expect(stopBtn).toBeDisabled();
+    expect(await mainWindow.locator("#start-button").count()).toBe(0);
+    expect(await mainWindow.locator("#stop-button").count()).toBe(0);
+    const overlayBtn = mainWindow.locator("[data-client-overlay-button]");
+    await expect(overlayBtn).toHaveAttribute("data-state", "stopped");
   });
 
   // Post design-v2: host / port / token / display live inside the Conn
