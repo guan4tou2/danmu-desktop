@@ -35,10 +35,15 @@ bottom 應加上 keyboardOffset）。
 ## Server — Admin 設計一致性（/design-review 2026-07-28 deferred）
 
 
-### 空狀態/載入態歸一（D-6）
+### 空狀態歸一批次二：B 類 renderCustom 九處（D-6 續）
 **Priority:** P3
-AdminEmpty 僅 5 頁採用、31 個模組自造 `*-empty`（72 條規則）；載入文案三派
-（載入中…／讀取中…／Loading…），admin-sessions 同頁兩種載入視覺。
+批次一已完成（見 Completed）。剩 B 類：admin-poll.js 的 proto-empty--poll
+（含模板卡 grid 與 [PLACEHOLDER] chip 清理，換掉後 proto-empty 基底 CSS
+全死）、api-tokens（hidden 切換要改 replaceChildren）、notifications、
+session-detail（同一 HTML 複製兩份）、webhooks（值得補 CTA）、history、
+widgets（文案指向按鈕卻不給按鈕）、stickers、sounds×2（仍借 emojis
+class）。C 類 row/inline 級佔位為刻意保留（分類表見 2026-07-28 盤點）。
+另：scheduler:436 與 admin-display 兩處「載入中」佔位可換 AdminSkeletons。
 
 ## Completed
 
