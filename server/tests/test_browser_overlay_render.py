@@ -677,3 +677,53 @@ def test_nickname_renders(browser_session, server_ports):
     finally:
         page.close()
         context.close()
+
+
+def test_overlay_idle_api_is_callable_and_toggles_visibility(browser_session, server_ports):
+    """待機 QR 的 show/hide/toggle 都必須是真的函式，且顯示走 .is-visible。
+
+    2026-07-29 抓到的 bug：`var hideIdle = params.get("idle") === "0"`（布林）
+    與下方的 `function hideIdle()` 同名，var 賦值把函式覆蓋成 false ——
+    `window.OverlayIdle.hide` 型別變成 boolean，呼叫即拋
+    "hide is not a function"，OBS 端的待機畫面收不起來。同一段還有一組
+    重複的 showIdle/hideIdleScene 操作 `.is-hidden`（overlay.css 零規則），
+    class 名與 CSS 對不上。這個測試同時釘住三件事：API 型別、.is-visible
+    契約、以及 ?idle=0 要能真的關閉。
+    """
+    http_port, ws_port = server_ports
+    context = browser_session.new_context()
+    page = context.new_page()
+    try:
+        page.goto(f"http://127.0.0.1:{http_port}/overlay")
+        page.wait_for_selector("#overlay-idle", state="attached", timeout=8000)
+
+        types = page.evaluate(
+            "() => ({ show: typeof window.OverlayIdle?.show,"
+            "         hide: typeof window.OverlayIdle?.hide,"
+            "         toggle: typeof window.OverlayIdle?.toggle })"
+        )
+        assert types == {"show": "function", "hide": "function", "toggle": "function"}, (
+            f"OverlayIdle API 型別不對（撞名回歸？）: {types}"
+        )
+
+        # show → .is-visible；toggle 不得拋錯
+        shown = page.evaluate(
+            "() => { window.OverlayIdle.show();"
+            "        return document.getElementById('overlay-idle')"
+            "                 .classList.contains('is-visible'); }"
+        )
+        assert shown, "show() 沒有加上 .is-visible（CSS base 是 display:none）"
+        page.evaluate("() => window.OverlayIdle.toggle()")
+
+        # ?idle=0 必須壓住待機畫面
+        page.goto(f"http://127.0.0.1:{http_port}/overlay?idle=0")
+        page.wait_for_selector("#overlay-idle", state="attached", timeout=8000)
+        suppressed = page.evaluate(
+            "() => { window.OverlayIdle.show();"
+            "        return !document.getElementById('overlay-idle')"
+            "                  .classList.contains('is-visible'); }"
+        )
+        assert suppressed, "?idle=0 應該讓待機畫面不顯示"
+    finally:
+        page.close()
+        context.close()

@@ -18,30 +18,22 @@
   var defaultFontSize = parseInt(params.get("fontSize"), 10) || 0; // 0 = use server value
   var defaultOpacity = parseInt(params.get("opacity"), 10) || 0;  // 0 = use server value
   var idleAfterMs = parseInt(params.get("idleAfter"), 10) || cfg.idleAfterMs || 30000;
-  var hideIdle = params.get("idle") === "0";
+  // 舊名 `hideIdle` 與下方的 function hideIdle() 撞名——var 賦值會把函式
+  // 覆蓋成布林，導致 window.OverlayIdle.hide 變成 false（呼叫即拋錯）。
+  var idleDisabled = params.get("idle") === "0";
 
   // ── Idle scene ─────────────────────────────────────────────────────────────
   var idleEl = document.getElementById("overlay-idle");
   var idleTimer = null;
 
-  function showIdle() {
-    if (!idleEl || hideIdle) return;
-    idleEl.classList.remove("is-hidden");
-  }
-
-  function hideIdleScene() {
-    if (!idleEl) return;
-    idleEl.classList.add("is-hidden");
-  }
-
+  // 顯示/隱藏一律走下方的 showIdle()/hideIdle()（操作 .is-visible/.is-fading，
+  // 與 overlay.css 對齊）。這裡只負責「有活動就收起、閒置 N 秒再叫出來」。
   function markActivity() {
-    hideIdleScene();
+    hideIdle();
     if (idleTimer) clearTimeout(idleTimer);
-    if (hideIdle || idleAfterMs <= 0) return;
+    if (idleDisabled || idleAfterMs <= 0) return;
     idleTimer = setTimeout(showIdle, idleAfterMs);
   }
-
-  if (hideIdle) hideIdleScene();
 
   // ── Overlay Idle / QR (4-state Hero Lockup) ──────────────────────────────
   // Prototype priority-2-pieces.jsx:174 OverlayIdleQR. States:
@@ -165,6 +157,7 @@
   }
 
   function showIdle() {
+    if (idleDisabled) return;          // ?idle=0 明確關閉待機畫面
     if (!idleEl) idleEl = document.getElementById("overlay-idle");
     if (!idleEl) return;
     _renderQr();
