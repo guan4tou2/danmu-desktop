@@ -35,17 +35,19 @@ bottom 應加上 keyboardOffset）。
 ## Server — Admin 設計一致性（/design-review 2026-07-28 deferred）
 
 
-### 空狀態歸一批次二：B 類 renderCustom 九處（D-6 續）
-**Priority:** P3
-批次一已完成（見 Completed）。剩 B 類：admin-poll.js 的 proto-empty--poll
-（含模板卡 grid 與 [PLACEHOLDER] chip 清理，換掉後 proto-empty 基底 CSS
-全死）、api-tokens（hidden 切換要改 replaceChildren）、notifications、
-session-detail（同一 HTML 複製兩份）、webhooks（值得補 CTA）、history、
-widgets（文案指向按鈕卻不給按鈕）、stickers、sounds×2（仍借 emojis
-class）。C 類 row/inline 級佔位為刻意保留（分類表見 2026-07-28 盤點）。
-另：scheduler:436 與 admin-display 兩處「載入中」佔位可換 AdminSkeletons。
+### 載入態換 AdminSkeletons（D-6 尾項）
+**Priority:** P4
+空狀態歸一已全部完成（批次一＋二見 Completed）。僅剩載入佔位可選擇性
+升級：scheduler:441、admin-display 兩處、webhooks:149/170、stickers:98
+等「載入中…」文字換 AdminSkeletons 骨架。C 類 row/inline 級佔位為刻意
+保留（分類表見 2026-07-28 盤點）。
 
 ## Completed
+
+### 空狀態/載入態歸一（D-6 批次一＋二）— done 2026-07-28/29（v5.4.0 後）
+17 處自造空狀態全數收斂到共用 AdminEmpty（modbans/webhooks/widgets 順帶
+獲得首次使用 CTA）、48 條死 CSS 清除、polls 的 [PLACEHOLDER] chip 與
+配額表歸零。C 類 row/inline 級佔位為刻意保留。
 
 ### 間距刻度二選一並寫進 lint（D-1）— done 2026-07-28（v5.4.0 後）
 拍板 4px 格為唯一刻度；六個 CSS 檔 939 個 4n+2/奇數值以 half-down snap；
