@@ -69,9 +69,9 @@ MIN_CONTENT_CHARS = 120
 #   viewer    — 曾是 1（admin-viewer-theme.js 的「立即套用」）。viewer 主題靠
 #               settings 儲存生效，沒有主動推送通道，那顆按鈕永遠不會存在。
 #               （它本來就因為 tab 可見性而量不到，這次是連 markup 一起刪。）
-DEFERRED_PLACEHOLDER_BUDGET = {
-    "polls": 1,
-}
+# D-6 批次二 (2026-07-29)：polls 空狀態的「從模板（待 BE）」chip 隨
+# AdminEmpty 收斂一併清除 —— 全部路由的 placeholder 配額歸零。
+DEFERRED_PLACEHOLDER_BUDGET = {}
 
 # 路由套用是可以明確等待的：applyRoute() 會把目標 slug 的 sidebar 按鈕設成
 # is-active + aria-selected。先等這個確定性訊號，不要用固定秒數去猜。

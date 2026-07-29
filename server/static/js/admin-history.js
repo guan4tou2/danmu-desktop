@@ -588,7 +588,15 @@
 
   function _renderHistoryList(container, records) {
     if (!records.length) {
-      container.innerHTML = '<div class="admin-history-list-empty">目前沒有訊息紀錄。</div>';
+      // D-6 批次二 (2026-07-29): 一行灰字換共用 AdminEmpty。
+      container.innerHTML = "";
+      var card = window.AdminEmpty.renderCustom({
+        icon: "◷",
+        title: "目前沒有訊息紀錄",
+        desc: "場次進行時觀眾送出的彈幕會累積在這裡，可依時間與關鍵字匯出。",
+      });
+      card.dataset.emptyKind = "history";
+      container.appendChild(card);
       return;
     }
     var rows = records.slice(0, 300).map(function (r) {

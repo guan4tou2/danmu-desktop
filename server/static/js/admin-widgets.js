@@ -259,10 +259,17 @@
       container.innerHTML = "";
 
       if (widgets.length === 0) {
-        const empty = document.createElement("div");
-        empty.className = "admin-widgets-empty";
-        empty.textContent = window.ServerI18n?.t?.("widgetNone") || "尚無小工具，點擊上方按鈕新增。";
-        container.appendChild(empty);
+        // D-6 批次二 (2026-07-29): 原文案指向「上方按鈕」卻不給按鈕——
+        // 換共用 AdminEmpty 並直接給 CTA。
+        const card = window.AdminEmpty.renderCustom({
+          icon: "⬚",
+          title: window.ServerI18n?.t?.("widgetNone") || "尚無小工具",
+          desc: "在 OBS 覆蓋層上常駐分數板、跑馬燈或文字標籤。",
+          actionLabel: "+ 新增分數板",
+          action: () => document.getElementById("widget-add-scoreboard")?.click(),
+        });
+        card.dataset.emptyKind = "widgets";
+        container.appendChild(card);
         return;
       }
 

@@ -304,12 +304,15 @@
     if (!list) return;
     const items = _filteredItems();
     if (items.length === 0) {
-      list.innerHTML = `
-        <div class="admin-notif-empty">
-          <div class="icon">◌</div>
-          <div class="t">沒有符合條件的通知</div>
-          <div class="s">當有新事件（速率限制 / token / moderation / webhooks / system）時會自動出現在這裡。</div>
-        </div>`;
+      // D-6 批次二 (2026-07-29): 自造 admin-notif-empty 換共用 AdminEmpty。
+      list.innerHTML = "";
+      const card = window.AdminEmpty.renderCustom({
+        icon: "◌",
+        title: "沒有符合條件的通知",
+        desc: "當有新事件（速率限制 / token / moderation / webhooks / system）時會自動出現在這裡。",
+      });
+      card.dataset.emptyKind = "notifications";
+      list.appendChild(card);
       return;
     }
     list.innerHTML = items.map(function (it) {

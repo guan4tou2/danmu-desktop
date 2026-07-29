@@ -74,16 +74,19 @@
   }
 
   function _renderPollEmptyState() {
-    var wrap = document.createElement("div");
-    wrap.className = "admin-proto-empty admin-proto-empty--poll";
-    wrap.setAttribute("data-empty-kind", "poll");
-    wrap.innerHTML = `
-      <div class="admin-proto-empty-title">還沒有任何投票</div>
-      <div class="admin-proto-empty-desc">建好的投票會排在這裡,可即時推到 Desktop,也可以用模板快速建立。</div>
-      <div class="admin-proto-empty-actions">
-        <button type="button" class="admin-proto-empty-primary" data-empty-cta="poll-create">+ 新建投票</button>
-        <span class="admin-be-placeholder-control admin-be-placeholder-inline" role="note">[PLACEHOLDER] 從模板（待 BE）</span>
-      </div>
+    // D-6 批次二 (2026-07-29): proto-empty--poll 收斂到共用 AdminEmpty；
+    // 「[PLACEHOLDER] 從模板（待 BE）」chip 一併清除（placeholder 配額表
+    // 已同步歸零），模板卡 grid 以 extra 保留。
+    var card = window.AdminEmpty.renderCustom({
+      icon: "⊷",
+      title: "還沒有任何投票",
+      desc: "建好的投票會排在這裡，可即時推到 Desktop，也可以用模板快速建立。",
+      actionLabel: "+ 新建投票",
+      action: function () {
+        var addBtn = document.querySelector('#sec-polls [data-poll-action="add"]');
+        if (addBtn) addBtn.click();
+      },
+      extra: `
       <div class="admin-proto-poll-template-grid">
         <div class="admin-proto-poll-template-card">
           <div class="t">是 / 否</div>
@@ -100,16 +103,10 @@
           <div class="d">4 個 + 圖片</div>
           <div class="eta">建立 ~30s</div>
         </div>
-      </div>
-    `;
-    var cta = wrap.querySelector('[data-empty-cta="poll-create"]');
-    if (cta) {
-      cta.addEventListener("click", function () {
-        var addBtn = document.querySelector('#sec-polls [data-poll-action="add"]');
-        if (addBtn) addBtn.click();
-      });
-    }
-    return wrap;
+      </div>`,
+    });
+    card.dataset.emptyKind = "poll";
+    return card;
   }
 
   function _renderPollStatus(data) {

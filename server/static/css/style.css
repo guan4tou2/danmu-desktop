@@ -9666,80 +9666,6 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 }
 
 /* Strict prototype-aligned empty state blocks (Messages / Polls / Fonts). */
-.admin-proto-empty {
-  position: relative;
-  min-height: 300px;
-  border: 1px solid var(--hud-cyan-line, rgba(125, 211, 252, 0.3));
-  background:
-    linear-gradient(180deg, rgba(125, 211, 252, 0.05), rgba(8, 14, 26, 0.86));
-  border-radius: var(--radius-md);
-  padding: 28px 20px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  overflow: hidden;
-}
-.admin-proto-empty::before,
-.admin-proto-empty::after {
-  content: "";
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  border: 1px solid var(--hud-cyan-line, rgba(125, 211, 252, 0.35));
-  pointer-events: none;
-}
-.admin-proto-empty::before {
-  left: 14px;
-  top: 14px;
-  border-right: none;
-  border-bottom: none;
-}
-.admin-proto-empty::after {
-  right: 14px;
-  bottom: 14px;
-  border-left: none;
-  border-top: none;
-}
-.admin-proto-empty-title {
-  margin: 0;
-  font-family: var(--font-display, "Zen Kaku Gothic New", "Noto Sans TC", sans-serif);
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  color: var(--color-text-strong);
-}
-.admin-proto-empty-desc {
-  margin: 0;
-  max-width: 520px;
-  font-size: 13px;
-  line-height: 1.7;
-  color: var(--color-text-muted);
-}
-.admin-proto-empty-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 2px;
-}
-.admin-proto-empty-primary,
-.admin-proto-empty-primary {
-  border: 1px solid color-mix(in srgb, var(--color-primary) 70%, #ffffff 0%);
-  background: var(--color-primary);
-  color: #07101a;
-  font-weight: 700;
-}
-.admin-proto-empty-hint {
-  margin-top: 2px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  color: var(--color-text-muted);
-}
-.admin-proto-empty--poll {
-  margin-top: 8px;
-}
 .admin-proto-poll-template-grid {
   width: 100%;
   max-width: 700px;
@@ -9990,28 +9916,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 }
 .admin-notif-item.is-archived.is-starred .star { opacity: 0.5; }
 
-.admin-notif-empty {
-  padding: 40px 20px;
-  text-align: center;
-  background: var(--color-bg);
-  border: 1px dashed var(--color-border, var(--hud-line));
-  border-radius: var(--radius-sm);
-}
-.admin-notif-empty .icon {
-  font-size: 36px;
-  color: var(--color-text-muted);
-  margin-bottom: 8px;
-}
-.admin-notif-empty .t {
-  font-size: 13px; font-weight: 600;
-  color: var(--color-text-strong);
-}
-.admin-notif-empty .s {
-  margin-top: 4px;
-  font-size: 11px; line-height: 1.6;
-  color: var(--color-text-muted);
-}
-
 /* ── Notifications 3-col detail pane (2026-04-29) ── */
 .admin-notif-grid--3col {
   grid-template-columns: 240px 1fr 300px;
@@ -10186,7 +10090,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-history-list-row .s.is-blocked { color: var(--hud-crimson); background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); }
 .admin-history-list-body { max-height: 480px; overflow-y: auto; }
 .admin-history-list-loading,
-.admin-history-list-empty,
+/* (admin-history-list-empty 已退役 — 換用共用 AdminEmpty，D-6 2026-07-29) */
 .admin-history-list-err {
   padding: 24px; text-align: center;
   color: var(--color-text-muted); font-size: 12px;
@@ -11242,42 +11146,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 }
 
 .admin-at-list-loading,
-.admin-at-empty {
-  min-height: 220px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 8px;
-  border: 1.5px dashed var(--admin-line, var(--hud-line));
-  border-radius: var(--radius-md-sm);
-  background: var(--admin-raised, var(--color-bg-elevated));
-  color: var(--admin-text-dim, var(--color-text-muted));
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.04em;
-}
-
-.admin-at-empty-icon {
-  width: 42px;
-  height: 42px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
-  border-radius: var(--radius-md-sm);
-  background: rgba(56, 189, 248, 0.10);
-  color: var(--hud-cyan, var(--color-primary));
-  font-size: 22px;
-}
-
-.admin-at-empty-hint {
-  color: var(--admin-text-dim, var(--color-text-muted));
-  font-family: var(--font-ui);
-  font-size: 12px;
-  letter-spacing: 0;
-}
-
 .admin-at-table {
   min-width: 900px;
 }
@@ -11565,16 +11433,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.admin-widgets-empty {
-  padding: 20px 16px;
-  background: var(--admin-panel, #0f172a);
-  border: 1px dashed var(--admin-line, var(--hud-line));
-  border-radius: var(--radius-md-sm);
-  color: var(--admin-text-dim, #94a3b8);
-  font-size: 13px;
-  text-align: center;
 }
 
 .admin-widget-card {
@@ -11918,27 +11776,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-sd-ann-del:hover { color: var(--color-danger); }
 
 /* Annotation list empty state */
-.admin-sd-ann-empty {
-  padding: 24px 12px;
-  text-align: center;
-}
-.admin-sd-ann-empty-icon {
-  font-size: 26px;
-  opacity: 0.4;
-  margin-bottom: 4px;
-}
-.admin-sd-ann-empty-t {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-.admin-sd-ann-empty-s {
-  font-size: 10px;
-  color: var(--color-text-muted);
-  margin-top: 4px;
-  line-height: 1.5;
-}
-
 /* Add-annotation modal internals (rendered inside HudConfirm body) */
 .admin-sd-ann-modal-body {
   display: flex;

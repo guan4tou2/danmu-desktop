@@ -88,10 +88,16 @@
     if (!container) return;
 
     if (availableSounds.length === 0) {
-      container.innerHTML =
-        '<div class="admin-emojis-empty" style="grid-column:1/-1">' +
-        escapeHtml(ServerI18n.t("noSoundsUploaded")) +
-        "</div>";
+      // D-6 批次二 (2026-07-29): 不再借用 emojis 的 class，換共用 AdminEmpty。
+      container.innerHTML = "";
+      var emptyCard = window.AdminEmpty.renderCustom({
+        icon: "♪",
+        title: ServerI18n.t("noSoundsUploaded"),
+        desc: "上傳音效後可設定觸發規則，彈幕命中關鍵字時播放。",
+      });
+      emptyCard.dataset.emptyKind = "sounds";
+      emptyCard.style.gridColumn = "1 / -1";
+      container.appendChild(emptyCard);
       return;
     }
 
@@ -234,10 +240,15 @@
     if (!container) return;
 
     if (soundRules.length === 0) {
-      container.innerHTML =
-        '<div class="admin-emojis-empty">' +
-        escapeHtml(ServerI18n.t("noSoundRules")) +
-        "</div>";
+      // D-6 批次二 (2026-07-29): 不再借用 emojis 的 class，換共用 AdminEmpty。
+      container.innerHTML = "";
+      var emptyCard = window.AdminEmpty.renderCustom({
+        icon: "♪",
+        title: ServerI18n.t("noSoundRules"),
+        desc: "規則決定哪些關鍵字觸發哪個音效、以及冷卻秒數。",
+      });
+      emptyCard.dataset.emptyKind = "sound-rules";
+      container.appendChild(emptyCard);
       return;
     }
 

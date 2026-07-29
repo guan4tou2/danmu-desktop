@@ -410,7 +410,21 @@
     if (count) count.textContent = String(_state.hooks.length);
 
     if (_state.hooks.length === 0) {
-      list.innerHTML = '<div class="admin-wh-empty">尚未註冊 webhook</div>';
+      // D-6 批次二 (2026-07-29): 一行灰字換共用 AdminEmpty，補上首次使用 CTA。
+      list.innerHTML = "";
+      const card = window.AdminEmpty.renderCustom({
+        icon: "⇌",
+        title: "尚未註冊 webhook",
+        desc: "把彈幕即時轉發到 Discord / Slack / 自訂端點，或接收外部服務發彈幕。",
+        actionLabel: "+ 新增 webhook",
+        action: () => {
+          const form = document.getElementById("wh-register-form");
+          if (form) form.hidden = false;
+          document.getElementById("wh-url")?.focus();
+        },
+      });
+      card.dataset.emptyKind = "webhooks";
+      list.appendChild(card);
       return;
     }
     list.innerHTML = _state.hooks.map(_renderHookCard).join("");

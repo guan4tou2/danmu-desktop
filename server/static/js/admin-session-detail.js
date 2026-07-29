@@ -234,13 +234,9 @@
                 <span class="admin-sd-card-head-spacer"></span>
                 <button type="button" class="admin-sd-ann-card-add" data-sd-action="add-annotation">+ 新增</button>
               </div>
-              <div class="admin-sd-ann-list" data-sd-ann-list>
-                <div class="admin-sd-ann-empty">
-                  <div class="admin-sd-ann-empty-icon">📌</div>
-                  <div class="admin-sd-ann-empty-t">尚無註記</div>
-                  <div class="admin-sd-ann-empty-s">時間軸 hover 任意位置 · 點 + 新增。</div>
-                </div>
-              </div>
+              <!-- D-6: 空狀態由 _renderAnnotations()（init 時必跑）以共用
+                   AdminEmpty 渲染，靜態複本移除 -->
+              <div class="admin-sd-ann-list" data-sd-ann-list></div>
             </section>
           </aside>
         </div>
@@ -586,12 +582,16 @@
     const listEl = document.querySelector("[data-sd-ann-list]");
     if (!listEl) return;
     if (anns.length === 0) {
-      listEl.innerHTML = `
-        <div class="admin-sd-ann-empty">
-          <div class="admin-sd-ann-empty-icon">📌</div>
-          <div class="admin-sd-ann-empty-t">尚無註記</div>
-          <div class="admin-sd-ann-empty-s">時間軸 hover 任意位置 · 點 + 新增。</div>
-        </div>`;
+      // D-6 批次二 (2026-07-29): 原本同一份 HTML 複製兩處，收斂為單一
+      // AdminEmpty 呼叫（初始 markup 的靜態複本已移除）。
+      listEl.innerHTML = "";
+      const card = window.AdminEmpty.renderCustom({
+        icon: "📌",
+        title: "尚無註記",
+        desc: "時間軸 hover 任意位置 · 點 + 新增。",
+      });
+      card.dataset.emptyKind = "session-annotations";
+      listEl.appendChild(card);
       return;
     }
     listEl.innerHTML = anns.map(function (a) {
@@ -819,6 +819,9 @@
     if (!page) {
       grid.insertAdjacentHTML("beforeend", buildSection());
       page = document.getElementById(PAGE_ID);
+      // D-6: 靜態空狀態複本移除後，mount 時先渲染一次（無 id 深連結
+      // 或標註 fetch 失敗時，面板仍顯示「尚無註記」而非全空）。
+      _renderAnnotations();
     }
 
     if (page && page.dataset.sdBound !== "1") {

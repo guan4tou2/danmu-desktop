@@ -181,10 +181,16 @@
     });
 
     if (filtered.length === 0) {
-      grid.innerHTML =
-        '<div class="admin-stickers-empty">' +
-        escapeHtml(ServerI18n.t("noStickersUploaded")) +
-        "</div>";
+      // D-6 批次二 (2026-07-29): 一行灰字換共用 AdminEmpty（比照 emojis）。
+      grid.innerHTML = "";
+      var card = window.AdminEmpty.renderCustom({
+        icon: "▦",
+        title: ServerI18n.t("noStickersUploaded"),
+        desc: "觀眾整句輸入 :名稱: 時，該句會變成貼圖飛過畫面。",
+      });
+      card.dataset.emptyKind = "stickers";
+      card.style.gridColumn = "1 / -1";
+      grid.appendChild(card);
       if (count) count.textContent = "0 項";
       return;
     }

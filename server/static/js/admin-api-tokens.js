@@ -174,12 +174,8 @@
             <!-- list loading state -->
             <div class="admin-at-list-loading" data-at-list-loading hidden>載入中…</div>
 
-            <!-- empty state -->
-            <div class="admin-at-empty" data-at-empty hidden>
-              <span class="admin-at-empty-icon" aria-hidden="true">⚿</span>
-              <span>尚無 API Token</span>
-              <span class="admin-at-empty-hint">使用右側表單核發第一個 token</span>
-            </div>
+            <!-- empty state（內容由 AdminEmpty 於首次顯示時填充） -->
+            <div data-at-empty hidden></div>
 
             <!-- table -->
             <div class="admin-ui-table-wrap" data-at-table-wrap hidden>
@@ -395,6 +391,17 @@
     if (!emptyEl || !tableWrap || !tbody) return;
 
     if (!tokens || tokens.length === 0) {
+      // D-6 批次二 (2026-07-29): 首次顯示時以共用 AdminEmpty 填充（wrapper
+      // 保留 hidden 切換機制）。
+      if (!emptyEl.firstElementChild && window.AdminEmpty) {
+        const card = window.AdminEmpty.renderCustom({
+          icon: "⚿",
+          title: "尚無 API Token",
+          desc: "使用右側表單核發第一個 token。",
+        });
+        card.dataset.emptyKind = "api-tokens";
+        emptyEl.appendChild(card);
+      }
       emptyEl.hidden = false;
       tableWrap.hidden = true;
       return;
