@@ -101,6 +101,14 @@ try {
     },
     openExternal: (url) => ipcRenderer.invoke("open-external", url),
     updateTrayStatus: (text, serverUrl) => ipcRenderer.send("update-tray-status", text, serverUrl || ""),
+    // Tray「關於」→ main window section switch (client-nav.js listens).
+    onNavigateSection: (callback) => {
+      if (_handlers.navigateSection) {
+        ipcRenderer.removeListener("client-nav:activate", _handlers.navigateSection);
+      }
+      _handlers.navigateSection = (event, key) => callback(key);
+      ipcRenderer.on("client-nav:activate", _handlers.navigateSection);
+    },
     // IPC Listeners for main -> renderer events
     onUpdateDisplayOptions: (callback) => {
       if (_handlers.updateDisplayOptions) {

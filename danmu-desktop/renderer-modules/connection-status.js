@@ -1,4 +1,5 @@
 // Connection status UI management
+const { loadSettings } = require("./settings");
 
 let currentConnectionStatus = null;
 let statusUpdateTimeout = null;
@@ -83,11 +84,16 @@ function updateConnectionStatus(status, text, shouldShow = true) {
         "connection-failed": "⊘ 連線失敗",
       };
       const label = shouldShow ? (trayLabels[status] || "⊘ 未連線") : "⊘ 未連線";
+      // Server address comes from the danmu-settings blob settings.js
+      // writes (the legacy bare serverHost/serverPort keys were never
+      // written by anyone). Read fresh each update — ws-manager saves the
+      // blob before api.create, so it's current by the time we get here.
       let serverUrl = "";
       try {
-        const host = localStorage.getItem("serverHost") || "";
-        const port = localStorage.getItem("serverPort") || "";
-        if (host) serverUrl = port ? host + ":" + port : host;
+        const saved = loadSettings();
+        if (saved && saved.host) {
+          serverUrl = saved.port ? saved.host + ":" + saved.port : String(saved.host);
+        }
       } catch (_) {}
       window.API.updateTrayStatus(label, serverUrl);
     }

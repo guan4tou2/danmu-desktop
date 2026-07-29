@@ -114,17 +114,40 @@ describe("showToast() – type handling", () => {
 // ---------------------------------------------------------------------------
 
 describe("showToast() – auto-removal", () => {
-  test("toast is removed after 4000 ms + fade (300 ms)", () => {
+  // 2026-07-29: error toasts linger 8000 ms (users need time to act on
+  // them); every other type keeps the original 4000 ms. An explicit
+  // duration argument overrides the type default.
+  test("info toast is removed after 4000 ms + fade (300 ms)", () => {
     showToast("Gone");
     expect(container().children.length).toBe(1);
     jest.advanceTimersByTime(4300);
     expect(container().children.length).toBe(0);
   });
 
-  test("toast is still present at 3999 ms", () => {
+  test("info toast is still present at 3999 ms", () => {
     showToast("Still here");
     jest.advanceTimersByTime(3999);
     expect(container().children.length).toBe(1);
+  });
+
+  test("error toast is still present at 7999 ms", () => {
+    showToast("Error stays", "error");
+    jest.advanceTimersByTime(7999);
+    expect(container().children.length).toBe(1);
+  });
+
+  test("error toast is removed after 8000 ms + fade (300 ms)", () => {
+    showToast("Error gone", "error");
+    jest.advanceTimersByTime(8300);
+    expect(container().children.length).toBe(0);
+  });
+
+  test("explicit duration overrides the type default", () => {
+    showToast("Quick error", "error", 1000);
+    jest.advanceTimersByTime(999);
+    expect(container().children.length).toBe(1);
+    jest.advanceTimersByTime(301);
+    expect(container().children.length).toBe(0);
   });
 });
 

@@ -332,6 +332,23 @@ describe("initConnectionStatusHandler() – onConnectionStatus state mutations",
     expect(deps.updateConnectionStatus).not.toHaveBeenCalled();
   });
 
+  test("'validation-error' shows an error toast only — no state or button reset", () => {
+    deps.state.overlayActive = true;
+    const startButton = document.getElementById("start-button");
+    const stopButton = document.getElementById("stop-button");
+    startButton.disabled = true; // running
+    stopButton.disabled = false;
+
+    notify({ status: "validation-error", context: "test-danmu" });
+
+    expect(deps.showToast).toHaveBeenCalledTimes(1);
+    expect(deps.showToast).toHaveBeenCalledWith(expect.any(String), "error");
+    expect(deps.state.overlayActive).toBe(true);
+    expect(startButton.disabled).toBe(true);
+    expect(stopButton.disabled).toBe(false);
+    expect(deps.updateConnectionStatus).not.toHaveBeenCalled();
+  });
+
   test("unknown statuses still no-op (older main + newer renderer degrade gracefully)", () => {
     notify({ status: "some-future-status" });
     expect(deps.showToast).not.toHaveBeenCalled();

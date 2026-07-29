@@ -196,6 +196,27 @@ test("client shell metadata fallbacks are release-neutral", () => {
   expect(html).not.toContain(`<span data-client-about-platform>macOS</span>`);
 });
 
+test("about section links to GitHub through the hardened open-external IPC", () => {
+  // about.html modal retired 2026-07-29 — the main window About section is
+  // the single About surface, so it must carry the repo link the modal had.
+  const html = readClientHtml();
+  const nav = readClientNav();
+
+  expect(section(html, "about")).toContain('id="about-github-link"');
+  expect(nav).toContain('openExternal("https://github.com/guan4tou2/danmu-desktop")');
+});
+
+test("tray About routes to the main window About section (no standalone about window)", () => {
+  const main = readMainProcess();
+  const preload = readPreload();
+  const nav = readClientNav();
+
+  expect(main).toContain('"client-nav:activate"');
+  expect(main).not.toContain("createAboutWindow");
+  expect(preload).toContain("onNavigateSection");
+  expect(nav).toContain("onNavigateSection");
+});
+
 test("tray menu exposes v3 canonical schema: Desktop toggle + idle + no dead controls", () => {
   const main = readMainProcess();
 

@@ -1,8 +1,8 @@
 // Main process entry point
-const { app, Tray, Menu, nativeImage, ipcMain, screen } = require("electron");
+const { app, Tray, Menu, nativeImage, ipcMain, screen, globalShortcut } = require("electron");
 const path = require("path");
 const { sanitizeLog } = require("./shared/utils");
-const { createWindow, createAboutWindow } = require("./main-modules/window-manager");
+const { createWindow } = require("./main-modules/window-manager");
 const {
   setupIpcHandlers,
   getOverlaySession,
@@ -138,6 +138,7 @@ app.whenReady().then(() => {
   // rejection at startup.
   let idleActive = false;
   let overlayVisible = true; // tracks show/hide (not create/destroy)
+  let shortcutRegistered = false; // ⌘⇧D — false when another app owns the combo
 
   // Broadcast an overlay-idle-toggle message to every live child window.
   // mode: 'show' | 'hide' | 'toggle'
@@ -152,6 +153,29 @@ app.whenReady().then(() => {
     });
     console.log(`[Main] overlay-idle-toggle → ${delivered} child window(s) · mode=${payload.mode}`);
     return delivered;
+  }
+
+  // Shared by the tray "顯示 Desktop" checkbox and the ⌘⇧D global shortcut.
+  // Recomputes hasOverlay each call — the shortcut fires with no overlay too.
+  function toggleOverlayVisibility() {
+    const hasOverlay = childWindows.some((cw) => cw && !cw.isDestroyed());
+    if (!hasOverlay) return;
+    if (overlayVisible) {
+      // Hide overlay windows — connection stays alive
+      childWindows.forEach((win) => {
+        if (win && !win.isDestroyed()) win.hide();
+      });
+      overlayVisible = false;
+      console.log("[Main] Overlay windows hidden via toggle (connection kept).");
+    } else {
+      // Show overlay windows again
+      childWindows.forEach((win) => {
+        if (win && !win.isDestroyed()) win.show();
+      });
+      overlayVisible = true;
+      console.log("[Main] Overlay windows shown via toggle.");
+    }
+    rebuildTrayMenu();
   }
 
   // Push the authoritative idle state to the main window so the renderer's
@@ -221,27 +245,12 @@ app.whenReady().then(() => {
         label: "顯示 Desktop",
         type: "checkbox",
         checked: hasOverlay && overlayVisible,
-        accelerator: "CommandOrControl+Shift+D",
+        // Tray accelerators are display-only; the actual binding is the
+        // globalShortcut.register below. Hide the hint when registration
+        // failed so the menu doesn't advertise a dead shortcut.
+        ...(shortcutRegistered ? { accelerator: "CommandOrControl+Shift+D" } : {}),
         enabled: hasOverlay,
-        click: () => {
-          if (!hasOverlay) return;
-          if (overlayVisible) {
-            // Hide overlay windows — connection stays alive
-            childWindows.forEach((win) => {
-              if (win && !win.isDestroyed()) win.hide();
-            });
-            overlayVisible = false;
-            console.log("[Main] Overlay windows hidden via tray toggle (connection kept).");
-          } else {
-            // Show overlay windows again
-            childWindows.forEach((win) => {
-              if (win && !win.isDestroyed()) win.show();
-            });
-            overlayVisible = true;
-            console.log("[Main] Overlay windows shown via tray toggle.");
-          }
-          rebuildTrayMenu();
-        },
+        click: toggleOverlayVisibility,
       },
       { label: `Desktop 視窗：${overlayCount} 個`, enabled: false },
       {
@@ -283,7 +292,17 @@ app.whenReady().then(() => {
         label: "偏好設定…",
         click: showMainWindow,
       },
-      { label: `關於 ${pkgName}…`, click: () => createAboutWindow(mainWindow) },
+      {
+        // Single About surface: the main window's About section (richer than
+        // the retired about.html modal — includes the update card).
+        label: `關於 ${pkgName}…`,
+        click: () => {
+          showMainWindow();
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send("client-nav:activate", "about");
+          }
+        },
+      },
       { type: "separator" },
       {
         label: "結束 Danmu",
@@ -300,21 +319,53 @@ app.whenReady().then(() => {
     tray.setContextMenu(Menu.buildFromTemplate(template));
   }
 
+  // Register the global shortcut the tray item and overlay-card hint
+  // advertise. register() returns false when another app already owns the
+  // combo — degrade to warning + no accelerator hint in the tray menu.
+  try {
+    shortcutRegistered = globalShortcut.register(
+      "CommandOrControl+Shift+D",
+      toggleOverlayVisibility
+    );
+  } catch (_) {
+    shortcutRegistered = false;
+  }
+  if (!shortcutRegistered) {
+    console.warn("[Main] ⌘⇧D global shortcut registration failed (already in use?)");
+  }
+
   rebuildTrayMenu();
   tray.setToolTip("Danmu Desktop");
 
-  // Reset overlayVisible when overlay windows are created or destroyed
-  // externally (e.g. from renderer "Start" / "Stop" buttons via ipc-handlers).
-  ipcMain.on("overlay-connection-status", (_, data) => {
-    if (data && data.status === "started") overlayVisible = true;
-    if (data && data.status === "stopped") overlayVisible = true; // reset for next session
-    // Overlay lifecycle boundary resets idle: previously idleActive stayed
-    // stale-true after the overlay closed (only masked by the tray's
-    // `checked: idleActive && hasOverlay`), so a re-opened overlay could see
-    // inverted toggle semantics. Each session now starts from false.
-    if (data && (data.status === "started" || data.status === "stopped")) {
-      idleActive = false;
+  // Overlay session boundaries reset overlayVisible + idleActive. The old
+  // listener waited for "started"/"stopped" on overlay-connection-status,
+  // but neither string ever arrives on ipcMain: child-ws-script only emits
+  // connected/disconnected/connection-failed, and ipc-handlers' "stopped"
+  // goes straight to the renderer via webContents.send. Overlay
+  // (re)creation / teardown IPCs are the real signals — a second listener
+  // on the same channel is fine, ipc-handlers' handler runs first (so
+  // childWindows is already up to date here). Deliberately NOT resetting on
+  // "connected": a WS reconnect while the user has the overlay hidden would
+  // flip the tray checkbox back to checked with the windows still hidden.
+  const onOverlaySessionBoundary = (event) => {
+    if (
+      !mainWindow ||
+      mainWindow.isDestroyed() ||
+      event.sender !== mainWindow.webContents
+    ) {
+      return;
     }
+    overlayVisible = true; // new children are always shown; reset for next session
+    idleActive = false; // each overlay session starts from non-idle
+    notifyIdleState();
+    rebuildTrayMenu();
+  };
+  ipcMain.on("createChild", onOverlaySessionBoundary);
+  ipcMain.on("closeChildWindows", onOverlaySessionBoundary);
+
+  // Keep the header status dot and hasOverlay-derived items fresh on child
+  // connection events (connected / disconnected / connection-failed).
+  ipcMain.on("overlay-connection-status", () => {
     notifyIdleState();
     rebuildTrayMenu();
   });
@@ -377,6 +428,11 @@ app.whenReady().then(() => {
       showMainWindow();
     }
   });
+});
+
+// globalShortcut 不會在退出時自動釋放 — 顯式全清，避免殘留系統級攔截
+app.on("will-quit", () => {
+  globalShortcut.unregisterAll();
 });
 
 // 安全網：任何退出路徑（Cmd+Q、dock Quit 等）都確保子視窗先被銷毀

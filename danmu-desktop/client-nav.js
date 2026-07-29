@@ -3,6 +3,10 @@
 // CSP on index.html forbids inline <script>, so this lives as its own file.
 
 (function () {
+  // Exposed section-switch entry — set by init(), used by the tray-driven
+  // navigation wiring in bootstrap().
+  var activateFn = null;
+
   function init() {
     var shell = document.querySelector("[data-client-shell]");
     if (!shell) return;
@@ -22,6 +26,7 @@
       });
       document.body.setAttribute("data-active-section", key);
     }
+    activateFn = activate;
 
     buttons.forEach(function (b) {
       b.addEventListener("click", function () {
@@ -241,6 +246,28 @@
   function bootstrap() {
     init();
     initOverlayCards();
+
+    // Tray「關於」(and any future main-process navigation) lands here.
+    // Key is validated against the actual DOM sections, not a hard-coded
+    // whitelist.
+    if (window.API && typeof window.API.onNavigateSection === "function") {
+      window.API.onNavigateSection(function (key) {
+        if (typeof key !== "string" || !activateFn) return;
+        if (!document.querySelector('.client-section[data-section="' + key + '"]')) return;
+        activateFn(key);
+      });
+    }
+
+    // About 分頁的 GitHub 按鈕 — about.html 退役後唯一的 repo 連結入口。
+    // open-external IPC 只放行 main window sender + https，這裡天然符合。
+    var githubBtn = document.getElementById("about-github-link");
+    if (githubBtn) {
+      githubBtn.addEventListener("click", function () {
+        if (window.API && typeof window.API.openExternal === "function") {
+          window.API.openExternal("https://github.com/guan4tou2/danmu-desktop");
+        }
+      });
+    }
   }
 
   if (document.readyState === "loading") {

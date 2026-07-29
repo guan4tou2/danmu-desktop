@@ -61,7 +61,7 @@ function initConnSection({ api } = {}) {
   // AUTH status text (visible when collapsed)
   const authStatusEl = document.querySelector("[data-conn-auth-status]");
 
-  // If the conn-section markup isn't on this page (e.g. about.html), bail.
+  // If the conn-section markup isn't on this page (e.g. child.html), bail.
   if (!serverInput && !hostInput) return null;
 
   // ── Bidirectional sync: serverInput ↔ host/port hidden inputs ────────────

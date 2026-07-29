@@ -282,14 +282,28 @@ function setupIpcHandlers(getMainWindow, childWindows) {
       console.warn("[Main] send-test-danmu: rejected IPC from untrusted sender");
       return;
     }
+    // Rejections report back so the renderer can toast instead of failing
+    // silently. Distinct status from "connection-failed" on purpose — that
+    // one triggers ws-manager's full button/state reset, which would be
+    // wrong for a rejected one-off message.
+    const notifyValidationError = () => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send("overlay-connection-status", {
+          status: "validation-error",
+          context: "test-danmu",
+        });
+      }
+    };
     if (!data || typeof data !== "object") {
       console.warn("[Main] send-test-danmu: invalid data payload");
+      notifyValidationError();
       return;
     }
 
     const validated = validateDanmuParams(data);
     if (!validated) {
       console.warn("[Main] send-test-danmu: numeric parameter validation failed");
+      notifyValidationError();
       return;
     }
     const { opacity, size, speed, color, text } = validated;
@@ -299,14 +313,17 @@ function setupIpcHandlers(getMainWindow, childWindows) {
       const ts = data.textStyles;
       if (ts.strokeColor !== undefined && (typeof ts.strokeColor !== "string" || !/^#[0-9a-fA-F]{3,8}$/.test(ts.strokeColor.startsWith("#") ? ts.strokeColor : `#${ts.strokeColor}`))) {
         console.log("[Main] Invalid strokeColor");
+        notifyValidationError();
         return;
       }
       if (ts.strokeWidth !== undefined && (typeof ts.strokeWidth !== "number" || ts.strokeWidth < 0 || ts.strokeWidth > 10)) {
         console.log("[Main] Invalid strokeWidth");
+        notifyValidationError();
         return;
       }
       if (ts.shadowBlur !== undefined && (typeof ts.shadowBlur !== "number" || ts.shadowBlur < 0 || ts.shadowBlur > 50)) {
         console.log("[Main] Invalid shadowBlur");
+        notifyValidationError();
         return;
       }
     }
@@ -316,10 +333,12 @@ function setupIpcHandlers(getMainWindow, childWindows) {
       const da = data.displayArea;
       if (da.top !== undefined && (typeof da.top !== "number" || da.top < 0 || da.top > 100)) {
         console.log("[Main] Invalid displayArea.top");
+        notifyValidationError();
         return;
       }
       if (da.height !== undefined && (typeof da.height !== "number" || da.height < 0 || da.height > 100)) {
         console.log("[Main] Invalid displayArea.height");
+        notifyValidationError();
         return;
       }
     }
@@ -582,16 +601,30 @@ function setupIpcHandlers(getMainWindow, childWindows) {
         console.warn("[Main] createChild: rejected IPC from untrusted sender");
         return;
       }
+      // Validation failures must report back: the renderer flipped its UI
+      // to "connecting" before sending this IPC and would otherwise hang
+      // there forever. connection-failed reuses ws-manager's existing
+      // reset-buttons + error-toast branch. In practice the renderer's own
+      // validateIP/validatePort catch most inputs first — this is the
+      // backstop for main/renderer validation-rule drift.
       if (!isValidHost(ip)) {
         console.warn(
           `[Main] createChild: invalid IP address: ${sanitizeLog(ip)}`
         );
+        mainWindow.webContents.send("overlay-connection-status", {
+          status: "connection-failed",
+          reason: "invalid-host",
+        });
         return;
       }
       const normalizedIp = ip.trim();
       const portNum = Number(port);
       if (!Number.isInteger(portNum) || portNum < 1 || portNum > 65535) {
         console.warn("[Main] createChild: port out of valid range");
+        mainWindow.webContents.send("overlay-connection-status", {
+          status: "connection-failed",
+          reason: "invalid-port",
+        });
         return;
       }
       const authToken = typeof wsAuthToken === "string" ? wsAuthToken.trim() : "";

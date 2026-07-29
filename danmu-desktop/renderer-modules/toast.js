@@ -1,6 +1,6 @@
 // Toast notification system
 
-function showToast(message, type = "info") {
+function showToast(message, type = "info", duration) {
   const container = document.getElementById("toast-container");
   if (!container) return;
 
@@ -60,10 +60,17 @@ function showToast(message, type = "info") {
     toast.classList.remove("opacity-0", "translate-x-full");
   });
 
+  // Errors linger 8 s — 4 s reads too fast when the user needs to act on
+  // the message. An explicit duration always wins over the type default.
+  const lifespanMs = Number.isFinite(duration)
+    ? duration
+    : type === "error"
+    ? 8000
+    : 4000;
   setTimeout(() => {
     toast.classList.add("opacity-0", "translate-x-full");
     setTimeout(() => toast.remove(), 300);
-  }, 4000);
+  }, lifespanMs);
 }
 
 module.exports = { showToast };

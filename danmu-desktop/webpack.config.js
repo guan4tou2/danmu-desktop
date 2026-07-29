@@ -5,7 +5,7 @@ const TerserPlugin = require('terser-webpack-plugin');
 // Minimal zero-dependency stand-in for copy-webpack-plugin (2026-07-07 UIUX
 // polish E3): mirrors shared/tokens.css into dist/ so it travels alongside
 // the JS bundles. Not strictly required at runtime today — index.html/
-// child.html/about.html load their CSS straight from the source directory
+// child.html load their CSS straight from the source directory
 // (see danmu-desktop/tokens.css symlink), not from dist/ — but this keeps
 // dist/ a complete, self-contained build output and matches the other two
 // tokens.css consumers (server/static/css/tokens.css symlink) having a

@@ -23,6 +23,7 @@
   "toastSettingsLoaded": "Previous settings loaded",
   "toastConnectionFailed": "Unable to reach the server. Please verify settings.",
   "toastDisplayMigrated": "Display disconnected — overlay moved to the primary display",
+  "toastValidationFailed": "Validation failed — message not sent",
   "errorEmptyHost": "Please enter a server address",
   "errorInvalidHost": "Invalid server address. Please enter a valid IP or domain",
   "errorEmptyPort": "Please enter a port number",

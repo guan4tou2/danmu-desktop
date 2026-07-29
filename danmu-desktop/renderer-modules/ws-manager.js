@@ -351,6 +351,17 @@ function initConnectionStatusHandler({
         ),
         "warning"
       );
+    } else if (data.status === "validation-error") {
+      // Main-side validation rejected a payload (e.g. test danmu). Toast
+      // only — the connection is untouched, so no state or button changes.
+      showToast(
+        getLocalizedText(
+          "toastValidationFailed",
+          "Validation failed — message not sent",
+          "驗證失敗，訊息未送出"
+        ),
+        "error"
+      );
     }
   });
 }

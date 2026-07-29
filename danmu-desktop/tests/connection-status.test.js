@@ -145,6 +145,53 @@ describe("updateConnectionStatus() – colour mapping", () => {
 });
 
 // ---------------------------------------------------------------------------
+// updateConnectionStatus – tray server URL (danmu-settings blob)
+// ---------------------------------------------------------------------------
+
+describe("updateConnectionStatus() – tray server URL", () => {
+  afterEach(() => {
+    delete window.API;
+    localStorage.clear();
+  });
+
+  test("reads host:port from the danmu-settings blob settings.js writes", () => {
+    localStorage.setItem(
+      "danmu-settings",
+      JSON.stringify({ host: "danmu.example.com", port: "9000", displayIndex: 0 })
+    );
+    window.API = { updateTrayStatus: jest.fn() };
+    const { updateConnectionStatus } = load();
+    updateConnectionStatus("connected", "Connected");
+    jest.runAllTimers();
+    expect(window.API.updateTrayStatus).toHaveBeenCalledWith(
+      "● 已連線",
+      "danmu.example.com:9000"
+    );
+  });
+
+  test("host without port yields the bare host", () => {
+    localStorage.setItem("danmu-settings", JSON.stringify({ host: "10.0.0.5" }));
+    window.API = { updateTrayStatus: jest.fn() };
+    const { updateConnectionStatus } = load();
+    updateConnectionStatus("connecting", "Connecting…");
+    jest.runAllTimers();
+    expect(window.API.updateTrayStatus).toHaveBeenCalledWith("◐ 連線中…", "10.0.0.5");
+  });
+
+  test("legacy bare serverHost/serverPort keys are no longer read", () => {
+    // These keys were never written by the app — the old code read them and
+    // therefore always sent an empty URL. Guard against regressing to them.
+    localStorage.setItem("serverHost", "stale.example.com");
+    localStorage.setItem("serverPort", "1234");
+    window.API = { updateTrayStatus: jest.fn() };
+    const { updateConnectionStatus } = load();
+    updateConnectionStatus("connected", "Connected");
+    jest.runAllTimers();
+    expect(window.API.updateTrayStatus).toHaveBeenCalledWith("● 已連線", "");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // hideConnectionStatus
 // ---------------------------------------------------------------------------
 

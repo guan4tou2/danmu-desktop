@@ -104,7 +104,7 @@ describe("ipc-handlers integration", () => {
     expect(handleChannels).toContain("getSystemLocale");
   });
 
-  test("createChild IPC validates IP address", () => {
+  test("createChild IPC validates IP address and reports connection-failed", () => {
     const handler = findOnHandler("createChild");
     const event = { sender: mainWindow.webContents };
     const warnSpy = jest.spyOn(console, "warn").mockImplementation();
@@ -114,6 +114,30 @@ describe("ipc-handlers integration", () => {
 
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("invalid IP address")
+    );
+    // The renderer flipped to "connecting" before the IPC — the failure must
+    // flow back so ws-manager's connection-failed branch resets the UI.
+    expect(mainWindow.webContents.send).toHaveBeenCalledWith(
+      "overlay-connection-status",
+      { status: "connection-failed", reason: "invalid-host" }
+    );
+
+    warnSpy.mockRestore();
+  });
+
+  test("createChild IPC rejects out-of-range port and reports connection-failed", () => {
+    const handler = findOnHandler("createChild");
+    const event = { sender: mainWindow.webContents };
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation();
+
+    handler(event, "localhost", 99999, 0, false, null, "");
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("port out of valid range")
+    );
+    expect(mainWindow.webContents.send).toHaveBeenCalledWith(
+      "overlay-connection-status",
+      { status: "connection-failed", reason: "invalid-port" }
     );
 
     warnSpy.mockRestore();
@@ -197,6 +221,53 @@ describe("ipc-handlers integration", () => {
     );
 
     warnSpy.mockRestore();
+  });
+
+  test("send-test-danmu rejections report validation-error (not connection-failed)", () => {
+    const handler = findOnHandler("send-test-danmu");
+    const event = { sender: mainWindow.webContents };
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation();
+    const logSpy = jest.spyOn(console, "log").mockImplementation();
+
+    // Numeric reject
+    handler(event, { text: "t", opacity: 150, color: "#fff", size: 40, speed: 5 });
+    expect(mainWindow.webContents.send).toHaveBeenCalledWith(
+      "overlay-connection-status",
+      { status: "validation-error", context: "test-danmu" }
+    );
+
+    mainWindow.webContents.send.mockClear();
+
+    // textStyles reject
+    handler(event, {
+      text: "t", opacity: 50, color: "#fff", size: 40, speed: 5,
+      textStyles: { strokeWidth: 99 },
+    });
+    expect(mainWindow.webContents.send).toHaveBeenCalledWith(
+      "overlay-connection-status",
+      { status: "validation-error", context: "test-danmu" }
+    );
+
+    mainWindow.webContents.send.mockClear();
+
+    // displayArea reject
+    handler(event, {
+      text: "t", opacity: 50, color: "#fff", size: 40, speed: 5,
+      displayArea: { top: 500 },
+    });
+    expect(mainWindow.webContents.send).toHaveBeenCalledWith(
+      "overlay-connection-status",
+      { status: "validation-error", context: "test-danmu" }
+    );
+
+    // Never the connection-failed status — that would reset the whole conn UI.
+    expect(mainWindow.webContents.send).not.toHaveBeenCalledWith(
+      "overlay-connection-status",
+      expect.objectContaining({ status: "connection-failed" })
+    );
+
+    warnSpy.mockRestore();
+    logSpy.mockRestore();
   });
 
   test("closeChildWindows destroys all child windows", () => {
