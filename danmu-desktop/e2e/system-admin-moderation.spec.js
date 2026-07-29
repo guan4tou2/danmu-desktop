@@ -207,16 +207,15 @@ test.describe("後台審核頁 · 真實 UI 操作", () => {
     await openTab("bans");
     const nick = `e2e封禁${Date.now()}`;
 
-    // ⚠ 疑似產品缺口：封禁管理頁**沒有任何新增封禁的入口**。ModBans.openPicker
-    //   在整包 static/js 裡零 call site（grep 過），也就是說 picker modal 是
-    //   一扇沒有門把的門。這裡直接呼叫 openPicker 把 modal 叫出來，之後的
-    //   時長選擇 / 原因輸入 / 確認全部走真實點擊 —— modal 本身是產品 UI。
-    await admin.evaluate(
-      (target) => { window.ModBans.openPicker({ target_kind: "nick", target, kind: "ban" }); },
-      nick,
-    );
+    // B4 修正前這裡是 page.evaluate 直接叫 openPicker——當時封禁管理頁沒有任何
+    // 新增封禁的入口，picker modal 是一扇沒有門把的門。現在頁面有「＋ 新增封禁」
+    // 主行動鈕，且 openPicker 不帶 target 時會長出對象輸入列，所以整段走真實點擊。
+    await admin.locator("#sec-modbans-overview [data-modbans-add]").click();
     const modal = admin.locator("#admin-hud-modal-root");
     await expect(modal).toBeVisible();
+    await modal.locator('[data-modbans-target-kind="nick"]').click();
+    await modal.locator("[data-modbans-target]").fill(nick);
+    await expect(modal.locator("[data-modbans-target-val]")).toHaveText(`@${nick}`);
     await modal.locator('[data-modbans-duration="3600"]').click();
     await expect(modal.locator('[data-modbans-duration="3600"]')).toHaveClass(/is-active/);
     await expect(modal.locator("[data-modbans-when]")).toContainText("自動解封");

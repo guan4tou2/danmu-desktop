@@ -12232,7 +12232,8 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   letter-spacing: 0.3px;
   margin-top: 2px;
 }
-.admin-modbans-modal-reason {
+.admin-modbans-modal-reason,
+.admin-modbans-modal-target-input {
   padding: 8px 12px;
   border-radius: var(--radius-sm);
   background: var(--hud-bg2);
@@ -12242,6 +12243,8 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   font-size: 12px;
   outline: none;
 }
+/* Target values are fingerprints / IPs — mono reads better than the UI face. */
+.admin-modbans-modal-target-input { font-family: var(--font-mono); }
 .admin-modbans-modal-hint {
   padding: 8px 12px;
   border-radius: var(--radius-sm);

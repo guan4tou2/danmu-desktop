@@ -265,12 +265,14 @@ test.describe("後台互動與自動化（投票 / 排程 / Webhooks）", () => 
     await admin.locator("[data-ed-opt-text]").nth(0).fill("A");
     await admin.locator("[data-ed-opt-text]").nth(1).fill("B");
     await admin.locator("[data-poll-session-action='start']").click();
+
+    // B6：使用者要看得見錯誤。toast 3 秒後自己消失，所以先驗 toast 再驗狀態。
+    await expect(admin.locator("#toast-container")).toContainText("第 1 題缺少題目文字", {
+      timeout: 5000,
+    });
     await admin.waitForTimeout(2000);
 
     // 真實效果：畫面沒切到 live，server 也還是 idle。
-    // 注意這裡**不驗 toast** —— admin-poll-builder.js 的 sessionStart() 是先
-    // `queue.map(...)` 再進 try/catch，題幹留白丟出的 Error 落在 try 之外，
-    // 只會變成 unhandled rejection，使用者看不到任何回饋（次要疑似產品問題）。
     await expect(admin.locator("#sec-polls")).toHaveAttribute("data-poll-view", "builder");
     expect((await adminApi("/admin/poll/status")).body.state).toBe("idle");
   });

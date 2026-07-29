@@ -925,19 +925,22 @@
       }
 
       async function sessionStart() {
-        // Validate every question first
-        const payload = queue.map((q, idx) => {
-          const text = (q.text || "").trim();
-          const options = q.options.map(o => (o.label || "").trim()).filter(Boolean);
-          if (!text) throw new Error(`第 ${idx + 1} 題缺少題目文字`);
-          if (options.length < 2) throw new Error(`第 ${idx + 1} 題選項不足 2 個`);
-          return {
-            text,
-            options,
-            time_limit_seconds: q.timer && q.timer > 0 ? q.timer : null,
-          };
-        });
         try {
+          // Validate every question first. This has to stay inside the try:
+          // outside it the throw escaped as an unhandled rejection and the
+          // operator got no feedback at all from pressing START.
+          const payload = queue.map((q, idx) => {
+            const text = (q.text || "").trim();
+            const options = q.options.map(o => (o.label || "").trim()).filter(Boolean);
+            if (!text) throw new Error(`第 ${idx + 1} 題缺少題目文字`);
+            if (options.length < 2) throw new Error(`第 ${idx + 1} 題選項不足 2 個`);
+            return {
+              text,
+              options,
+              time_limit_seconds: q.timer && q.timer > 0 ? q.timer : null,
+            };
+          });
+          if (!payload.length) throw new Error("請先新增至少一題");
           // Design v4 brief P1 #1 (2026-05-18) — send session metadata:
           // mode (manual/auto), default_duration_s (auto-mode fallback),
           // and the optional session title. Backend persists all three

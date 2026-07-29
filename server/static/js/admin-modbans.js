@@ -18,6 +18,9 @@
  *     kind: "ban",                  // | "mute"
  *   }).then(() => fetchActiveBans());
  *
+ * Called with no target (the page's own「＋ 新增封禁」button) the modal grows
+ * a target-entry row so the operator picks the kind and types the value.
+ *
  * Loaded as <script defer> in admin.html.
  */
 (function () {
@@ -118,13 +121,16 @@
   // ── picker modal ────────────────────────────────────────────────────────
   function openPicker(opts) {
     const o = opts || {};
-    const target_kind = o.target_kind || "fingerprint";
-    const target = o.target || "";
     const kind = o.kind || "ban";
     const helper = window.HudConfirm;
+    // No pre-filled target → the operator picks kind + types the value inside
+    // the modal (this is the path the page's「＋ 新增封禁」button takes).
+    const needsTargetEntry = !o.target;
+    let target_kind = o.target_kind || "fingerprint";
+    let target = o.target || "";
 
     return new Promise(function (resolve) {
-      if (!helper || !target) { resolve(false); return; }
+      if (!helper) { resolve(false); return; }
 
       let selectedDuration = 86400; // 24h default
       let isCustom = false;          // brief 0518-v2 #2: custom chip state
@@ -135,12 +141,24 @@
       body.className = "admin-modbans-modal-body";
       body.innerHTML = `
         <div class="admin-modbans-modal-target">
-          <span class="admin-modbans-modal-target-icon">${escapeHtml(KIND_ICONS[target_kind] || "?")}</span>
+          <span class="admin-modbans-modal-target-icon" data-modbans-target-icon>${escapeHtml(KIND_ICONS[target_kind] || "?")}</span>
           <div>
-            <div class="admin-ui-monolabel">${escapeHtml(KIND_LABELS[target_kind] || "?")} ${escapeHtml((kind || "ban").toUpperCase())}</div>
-            <div class="admin-modbans-modal-target-val">${escapeHtml(_fmtTarget({ target_kind: target_kind, target: target }))}</div>
+            <div class="admin-ui-monolabel" data-modbans-target-label>${escapeHtml(KIND_LABELS[target_kind] || "?")} ${escapeHtml((kind || "ban").toUpperCase())}</div>
+            <div class="admin-modbans-modal-target-val" data-modbans-target-val>${escapeHtml(target ? _fmtTarget({ target_kind: target_kind, target: target }) : "—")}</div>
           </div>
         </div>
+        ${needsTargetEntry ? `
+        <div class="admin-modbans-modal-row">
+          <div class="admin-ui-monolabel">封禁對象</div>
+          <div class="admin-modbans-modal-presets" data-modbans-kinds>
+            ${["fingerprint", "ip", "nick"].map(function (k) {
+              return `<button type="button" class="admin-modbans-modal-preset${k === target_kind ? " is-active" : ""}"
+                data-modbans-target-kind="${k}">${escapeHtml(KIND_ICONS[k])} ${escapeHtml(KIND_LABELS[k])}</button>`;
+            }).join("")}
+          </div>
+          <input type="text" class="admin-modbans-modal-target-input" data-modbans-target
+            placeholder="輸入指紋 / IP / 暱稱" maxlength="120" autocomplete="off" />
+        </div>` : ""}
         <div class="admin-modbans-modal-row">
           <div class="admin-ui-monolabel">BAN DURATION</div>
           <div class="admin-modbans-modal-presets" data-modbans-presets>
@@ -180,6 +198,20 @@
       const customSecondsEl = body.querySelector("[data-modbans-custom-seconds]");
       const whenEl = body.querySelector("[data-modbans-when]");
       const customChipBtn = body.querySelector("[data-modbans-custom]");
+      const targetInput = body.querySelector("[data-modbans-target]");
+      const targetIconEl = body.querySelector("[data-modbans-target-icon]");
+      const targetLabelEl = body.querySelector("[data-modbans-target-label]");
+      const targetValEl = body.querySelector("[data-modbans-target-val]");
+
+      // Keep the summary card at the top of the modal mirroring what is being
+      // typed / picked below it, so the target is confirmed in one place.
+      const refreshTargetSummary = function () {
+        targetIconEl.textContent = KIND_ICONS[target_kind] || "?";
+        targetLabelEl.textContent = `${KIND_LABELS[target_kind] || "?"} ${(kind || "ban").toUpperCase()}`;
+        targetValEl.textContent = target
+          ? _fmtTarget({ target_kind: target_kind, target: target })
+          : "—";
+      };
 
       const computeCustomSeconds = function () {
         const v = Math.max(1, parseInt(customInput.value, 10) || 1);
@@ -214,10 +246,14 @@
         }
       };
 
+      // Scoped to the duration row: the target-kind chips reuse the same chip
+      // class, and an unscoped querySelectorAll would clear their active state.
+      const presetsWrap = body.querySelector("[data-modbans-presets]");
+
       const enterCustom = function () {
         isCustom = true;
         customRow.hidden = false;
-        body.querySelectorAll(".admin-modbans-modal-preset").forEach(function (b) {
+        presetsWrap.querySelectorAll(".admin-modbans-modal-preset").forEach(function (b) {
           b.classList.toggle("is-active", b === customChipBtn);
         });
         refreshCustomSeconds();
@@ -226,16 +262,27 @@
       const exitCustom = function (selectedPresetBtn) {
         isCustom = false;
         customRow.hidden = true;
-        body.querySelectorAll(".admin-modbans-modal-preset").forEach(function (b) {
+        presetsWrap.querySelectorAll(".admin-modbans-modal-preset").forEach(function (b) {
           b.classList.toggle("is-active", b === selectedPresetBtn);
         });
       };
 
+      refreshTargetSummary();
       updateWhen();
       refreshCustomSeconds();
 
       // ── Click delegation ─────────────────────────────────────────
       body.addEventListener("click", function (e) {
+        // Target-kind chip (only present when no target was pre-filled)
+        const kindBtn = e.target.closest("[data-modbans-target-kind]");
+        if (kindBtn) {
+          target_kind = kindBtn.dataset.modbansTargetKind;
+          kindBtn.parentElement.querySelectorAll("[data-modbans-target-kind]").forEach(function (b) {
+            b.classList.toggle("is-active", b === kindBtn);
+          });
+          refreshTargetSummary();
+          return;
+        }
         // Custom chip
         if (e.target.closest("[data-modbans-custom]")) {
           enterCustom();
@@ -260,6 +307,12 @@
       });
 
       customInput.addEventListener("input", refreshCustomSeconds);
+      if (targetInput) {
+        targetInput.addEventListener("input", function () {
+          target = targetInput.value.trim();
+          refreshTargetSummary();
+        });
+      }
 
       const reasonInput = body.querySelector("[data-modbans-reason]");
 
@@ -274,6 +327,13 @@
         width: 480,
       }).then(function (ok) {
         if (!ok) { resolve(false); return; }
+        // HudConfirm always closes on confirm, so an empty target can only be
+        // reported after the fact — toast and bail rather than POST a blank.
+        if (!target) {
+          if (window.showToast) window.showToast("請先填寫封禁對象", false);
+          resolve(false);
+          return;
+        }
         // Permanent → second confirm to avoid mis-clicks
         if (selectedDuration === 0) {
           helper.open({
@@ -353,6 +413,10 @@
           <div class="admin-ui-page-title">封禁管理</div>
           <p class="admin-ui-page-note">時限封禁 / 永久封禁的統一管理。Source of truth = audit log；列表狀態 = 各 target 最後一筆事件。倒數到期由 client lazy-check（不跑 reaper thread）。</p>
         </div>
+        <div class="admin-ui-toolbar">
+          <span class="admin-ui-spacer"></span>
+          <button type="button" class="admin-ui-action is-primary" data-modbans-add>＋ 新增封禁</button>
+        </div>
         <div class="admin-ui-card admin-modbans-card">
           <div class="admin-modbans-header">
             <span class="admin-ui-monolabel">TARGET</span>
@@ -375,6 +439,10 @@
     if (!page || page.dataset.modbansBound === "1") return;
     page.dataset.modbansBound = "1";
     page.addEventListener("click", function (e) {
+      if (e.target.closest("[data-modbans-add]")) {
+        openPicker({ kind: "ban" });
+        return;
+      }
       const unbanBtn = e.target.closest("[data-modbans-unban]");
       if (unbanBtn && !unbanBtn.disabled) {
         _unban(unbanBtn.dataset.modbansUnban);
