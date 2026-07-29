@@ -686,7 +686,10 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.6px;
-  color: var(--color-primary);
+  /* 2026-07-29 驗收補洞：10px 的「✓ 已投出」畫在 is-voted 選項的天藍底上，
+   * --color-primary 淺色臂（sky-600）只有 3.69:1。同樣換成文字版 accent
+   * token：淺色 5.34:1，深色臂等於原值，零視覺變化。 */
+  color: var(--viewer-ink-accent);
   flex-shrink: 0;
 }
 
@@ -1975,7 +1978,11 @@ body[data-viewer-state] {
   font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
   font-size: 13px;
   font-weight: 600;
-  color: var(--color-primary);
+  /* 2026-07-29 驗收補洞：--color-primary 的淺色臂是 sky-600（給色塊／邊框用的
+   * 中間調），畫在自己那層 8% 天藍底上只有 3.70:1。文字改吃 --viewer-ink-accent
+   * （淺 sky-700 / 深 sky-400）→ 淺色 5.36:1；深色臂與 --color-primary 完全
+   * 相同，深色零視覺變化。 */
+  color: var(--viewer-ink-accent);
   cursor: pointer;
   transition: background var(--motion-fast) var(--ease-out, ease),
               border-color var(--motion-fast) var(--ease-out, ease);
@@ -1992,7 +1999,7 @@ body[data-viewer-state] {
 body.viewer-body-v2:not(.is-dark) .viewer-nickname-chip {
   background: rgba(2, 132, 199, 0.08);
   border-color: rgba(2, 132, 199, 0.35);
-  color: #0284c7;
+  /* color 交給上面的 --viewer-ink-accent（sky-700），這裡不再覆寫 */
 }
 body.viewer-body-v2:not(.is-dark) .viewer-nickname-chip:hover,
 body.viewer-body-v2:not(.is-dark) .viewer-nickname-chip[aria-expanded="true"] {
@@ -2005,7 +2012,9 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-chip[aria-expanded="true"] {
 }
 .viewer-nickname-chip-edit {
   font-size: 11px;
-  opacity: 0.7;
+  /* 2026-07-29 驗收補洞：opacity 0.7 把這支 11px 鉛筆壓到淺色 2.47:1、
+   * 深色 4.21:1 —— 兩個主題都不及格。11px 已經比 13px 的暱稱小一階，
+   * 階層靠字級就夠了，透明度拿掉：淺色 5.36、深色 6.83。 */
 }
 .viewer-nickname-hint {
   font-family: var(--font-mono);
