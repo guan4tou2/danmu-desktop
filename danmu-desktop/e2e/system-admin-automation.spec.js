@@ -319,7 +319,12 @@ test.describe("後台互動與自動化（投票 / 排程 / Webhooks）", () => 
       }, { timeout: 10000 })
       .toBe("paused");
 
-    // 恢復
+    // 恢復。注意：toggleJob() 送出後要等 fetchJobs() 回來才會把按鈕的
+    // data-action 從 pause 改成 resume。只等 server state 就點第二次，會在
+    // 網路延遲較高的環境（例如對正式站跑）再送一次 pause → 400。
+    await expect(
+      admin.locator(`.admin-scheduler-job[data-job-id="${jobId}"] .scheduler-job-toggle`),
+    ).toHaveAttribute("data-action", "resume", { timeout: 10000 });
     await admin.locator(`.admin-scheduler-job[data-job-id="${jobId}"] .scheduler-job-toggle`).click();
     await expect
       .poll(async () => {
