@@ -135,6 +135,15 @@ try {
       // mode: 'show' | 'hide' | 'toggle'
       ipcRenderer.send("overlay-idle-request", { mode: mode || "toggle" });
     },
+    // Main window subscribes to the authoritative idle state broadcast
+    // (main.js notifyIdleState) — keeps the idle-QR button in sync with tray.
+    onOverlayIdleState: (callback) => {
+      if (_handlers.overlayIdleState) {
+        ipcRenderer.removeListener("overlay-idle-state", _handlers.overlayIdleState);
+      }
+      _handlers.overlayIdleState = (event, data) => callback(data || {});
+      ipcRenderer.on("overlay-idle-state", _handlers.overlayIdleState);
+    },
     // ── Auto-updater UX (P2-3) ────────────────────────────────────────────
     // Subscribe to update lifecycle events from main process.
     onUpdateStatus: (callback) => {

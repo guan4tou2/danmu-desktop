@@ -4,6 +4,43 @@
   src: url(assets/NotoSansTC-Regular.otf);
   font-weight: normal;
 }
+/* Vendored latin woff2 (assets/fonts, OFL — see OFL.txt) so the overlay
+   renders offline: no fonts.googleapis.com / fonts.gstatic.com at runtime.
+   CJK (Noto Sans TC / Zen Kaku Gothic New) intentionally not vendored —
+   stacks below fall back to system fonts, except the bundled OTF alias. */
+@font-face {
+  font-family: "Bebas Neue";
+  src: url(assets/fonts/BebasNeue-Regular.woff2) format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Orbitron";
+  src: url(assets/fonts/Orbitron-Bold.woff2) format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url(assets/fonts/IBMPlexMono-Regular.woff2) format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url(assets/fonts/IBMPlexMono-Medium.woff2) format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+/* Alias the bundled OTF to the spaced family name the idle-screen stacks use
+   ("Noto Sans TC") — the local face above is registered as "NotoSansTC", so
+   without this alias offline CJK never hits the shipped file. */
+@font-face {
+  font-family: "Noto Sans TC";
+  src: url(assets/NotoSansTC-Regular.otf);
+  font-weight: normal;
+  font-display: swap;
+}
 h1 {
   position: absolute;
   color: aliceblue;

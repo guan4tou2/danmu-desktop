@@ -259,6 +259,11 @@
                is owned by the primary Overlay button above. -->
           <div class="client-overlay-actions">
             <button type="button" class="client-action-btn" data-client-overlay-action="clear" data-i18n="overlayActionClear">⌫ 清空畫面</button>
+            <!-- Pre-show checks: fixed-style acceptance shot + idle QR toggle.
+                 No style controls here (v5: client is not a settings hub).
+                 Both stay disabled until the overlay is running. -->
+            <button type="button" class="client-action-btn" data-client-overlay-action="test-danmu" disabled data-i18n="overlayActionTestDanmu">⚡ 試放彈幕</button>
+            <button type="button" class="client-action-btn" data-client-overlay-action="idle-qr" aria-pressed="false" disabled data-i18n="overlayActionIdleQr">◱ 顯示入場 QR</button>
           </div>
 
           <!-- NOTE: viewer params live in the viewer, not here (prototype:240) -->

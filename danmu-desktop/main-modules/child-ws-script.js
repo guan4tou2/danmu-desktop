@@ -200,8 +200,9 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
             const style = document.createElement('style');
             style.id = 'link-start-style';
             style.textContent = \`
-              @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
-
+              /* Orbitron 700 comes from child.css @font-face (vendored woff2) —
+                 injected <style> shares the same document, so the family
+                 resolves without any network fetch. */
               html, body {
                 height: 100%;
                 width: 100%;
@@ -742,11 +743,20 @@ function getChildWsScript(ip, port, startupAnimationSettings, wsAuthToken = "") 
                 }
               }
 
-              // 播放音效（僅允許本機來源）
+              // 播放音效（僅允許已連線 server / 本機來源）。
+              // server 送的是相對路徑 "/static/sounds/x.mp3"（瀏覽器版 overlay
+              // 同源可直接播；file:// 的 child.html 會解析成 file:///static/…），
+              // 先絕對化成連線中 server 的 origin 再過 allowlist。
+              // 用 startsWith(serverOrigin) 而非 regex：IP_ADDR 內含 "." 直接
+              // 插進 regex 會變萬用字元。CSP media-src 是第二層閘門，host 級
+              // 的細粒度仍靠這裡。
               if (data.sound && data.sound.url) {
                 try {
-                  const soundUrl = String(data.sound.url);
-                  if (/^https?:\\/\\/(127\\.0\\.0\\.1|localhost)(:\\d+)?\\//.test(soundUrl)
+                  let soundUrl = String(data.sound.url);
+                  const serverOrigin = 'https://' + IP_ADDR + ':' + HTTPS_PORT_NUM;
+                  if (soundUrl.startsWith('/')) soundUrl = serverOrigin + soundUrl;
+                  if (soundUrl.startsWith(serverOrigin + '/')
+                      || /^https?:\\/\\/(127\\.0\\.0\\.1|localhost)(:\\d+)?\\//.test(soundUrl)
                       || /^blob:/.test(soundUrl)
                       || /^data:audio\\//.test(soundUrl)) {
                     const audio = new Audio(soundUrl);

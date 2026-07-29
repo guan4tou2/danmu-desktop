@@ -158,8 +158,26 @@ test("overlay section owns display selection and has one visible runtime control
   expect(overlay).toContain('id="screen-select"');
   expect(overlay).toContain('id="sync-multi-display-checkbox"');
   expect(overlay).toContain('data-client-overlay-action="clear"');
+  // 2026-07-29 pre-show checks: fixed-style test shot + idle-QR toggle live
+  // in the same secondary action bar (still no style controls — v5 boundary).
+  expect(overlay).toContain('data-client-overlay-action="test-danmu"');
+  expect(overlay).toContain('data-client-overlay-action="idle-qr"');
   expect(overlay).not.toContain('data-client-overlay-action="start"');
   expect(overlay).not.toContain('data-client-overlay-action="stop"');
+});
+
+test("idle-QR button state flows through main's overlay-idle-state broadcast", () => {
+  // Single source of truth for idle state is main.js `idleActive`; renderer
+  // never flips local state — it sends toggleOverlayIdle and re-renders off
+  // the overlay-idle-state broadcast (keeps tray checkbox and button synced).
+  const main = readMainProcess();
+  const preload = readPreload();
+  const nav = readClientNav();
+
+  expect(main).toContain('"overlay-idle-state"');
+  expect(preload).toContain("onOverlayIdleState");
+  expect(nav).toContain("onOverlayIdleState");
+  expect(nav).toContain('toggleOverlayIdle("toggle")');
 });
 
 test("client shell metadata fallbacks are release-neutral", () => {

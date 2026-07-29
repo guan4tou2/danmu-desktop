@@ -140,6 +140,18 @@ app.whenReady().then(() => {
     return delivered;
   }
 
+  // Push the authoritative idle state to the main window so the renderer's
+  // idle-QR button stays converged with the tray checkbox — both mutate
+  // idleActive here and both re-render off this broadcast.
+  function notifyIdleState() {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("overlay-idle-state", {
+        active: idleActive,
+        hasOverlay: childWindows.some((cw) => cw && !cw.isDestroyed()),
+      });
+    }
+  }
+
   // Tray menu — v3 design: status-only native menu with overlay toggle.
   // Display selection and connection edits belong in the main client window
   // so tray does not become a second controller.
@@ -233,6 +245,7 @@ app.whenReady().then(() => {
               cw.setAlwaysOnTop(true, level);
             }
           });
+          notifyIdleState();
           rebuildTrayMenu();
         },
       },
@@ -281,6 +294,14 @@ app.whenReady().then(() => {
   ipcMain.on("overlay-connection-status", (_, data) => {
     if (data && data.status === "started") overlayVisible = true;
     if (data && data.status === "stopped") overlayVisible = true; // reset for next session
+    // Overlay lifecycle boundary resets idle: previously idleActive stayed
+    // stale-true after the overlay closed (only masked by the tray's
+    // `checked: idleActive && hasOverlay`), so a re-opened overlay could see
+    // inverted toggle semantics. Each session now starts from false.
+    if (data && (data.status === "started" || data.status === "stopped")) {
+      idleActive = false;
+    }
+    notifyIdleState();
     rebuildTrayMenu();
   });
 
@@ -319,6 +340,7 @@ app.whenReady().then(() => {
       }
     });
 
+    notifyIdleState();
     rebuildTrayMenu();
   });
 

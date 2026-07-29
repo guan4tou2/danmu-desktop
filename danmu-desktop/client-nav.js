@@ -90,6 +90,10 @@
           ? i18n.t(key)
           : (isRunning ? "■ 關閉 Desktop" : "▶ 開啟 Desktop");
       }
+      // Pre-show test-danmu button follows the same running() heuristic; the
+      // MutationObserver on #start-button below re-runs this on state change.
+      var testBtn = document.querySelector('[data-client-overlay-action="test-danmu"]');
+      if (testBtn) testBtn.disabled = !isRunning;
     }
 
     if (overlayButton) {
@@ -185,9 +189,51 @@
           } else {
             console.warn("[Renderer] clearOverlay IPC not available");
           }
+        } else if (a === "test-danmu") {
+          // Fixed-style acceptance shot — params must satisfy ipc-handlers
+          // validateDanmuParams; fontInfo is injected main-side (NotoSansTC).
+          if (window.API && typeof window.API.sendTestDanmu === "function") {
+            var text = (typeof i18n !== "undefined")
+              ? i18n.t("overlayTestDanmuText")
+              : "測試彈幕 · Danmu Fire ✓";
+            if (text === "overlayTestDanmuText") text = "測試彈幕 · Danmu Fire ✓";
+            window.API.sendTestDanmu(
+              text,
+              100,
+              "#38bdf8",
+              48,
+              5,
+              { textStroke: true, strokeWidth: 2, strokeColor: "#000000", textShadow: false, shadowBlur: 4 },
+              { top: 0, height: 100 }
+            );
+          } else {
+            console.warn("[Renderer] sendTestDanmu IPC not available");
+          }
+        } else if (a === "idle-qr") {
+          // No local state flip — main owns idleActive and broadcasts
+          // overlay-idle-state back (subscribed below), so tray checkbox
+          // and this button converge on the same source of truth.
+          if (window.API && typeof window.API.toggleOverlayIdle === "function") {
+            window.API.toggleOverlayIdle("toggle");
+          } else {
+            console.warn("[Renderer] toggleOverlayIdle IPC not available");
+          }
         }
       });
     });
+
+    // Idle-QR button state pushed from main (single source of truth).
+    // Markup default (disabled, aria-pressed=false) matches the no-overlay
+    // boot state, so no initial query is needed.
+    if (window.API && typeof window.API.onOverlayIdleState === "function") {
+      window.API.onOverlayIdleState(function (s) {
+        var b = document.querySelector('[data-client-overlay-action="idle-qr"]');
+        if (!b) return;
+        b.disabled = !s.hasOverlay;
+        b.setAttribute("aria-pressed", s.active ? "true" : "false");
+        b.classList.toggle("is-active", !!s.active);
+      });
+    }
 
     renderOverlayButton();
   }

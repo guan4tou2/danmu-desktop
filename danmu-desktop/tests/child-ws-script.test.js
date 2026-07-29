@@ -133,6 +133,20 @@ describe("getChildWsScript", () => {
     const script = getChildWsScript("localhost", "9999");
     expect(script).toContain("HTTPS_PORT_NUM=9999");
   });
+
+  test("script does not reference Google Fonts (offline font vendoring)", () => {
+    // Orbitron for the Link Start animation comes from child.css @font-face
+    // (vendored woff2) — the injected style must not @import from the network.
+    const script = getChildWsScript("localhost", 3000, { enabled: true });
+    expect(script).not.toContain("fonts.googleapis.com");
+    expect(script).not.toContain("fonts.gstatic.com");
+  });
+
+  test("script absolutizes relative sound URLs against the server origin", () => {
+    const script = getChildWsScript("localhost", 3000);
+    expect(script).toContain("serverOrigin");
+    expect(script).toContain("soundUrl.startsWith(serverOrigin + '/')");
+  });
 });
 
 describe("child-ws-script execution", () => {
@@ -757,6 +771,87 @@ describe("child-ws-script execution", () => {
     // With null settings (defaults to {enabled:false}), the animation should NOT play
     const linkStartEl = createdElements.find((el) => el.className === "link-start");
     expect(linkStartEl).toBeUndefined();
+  });
+
+  // -----------------------------------------------------------------------
+  // Sound playback guard (server-origin allowlist + relative-URL absolutize)
+  // -----------------------------------------------------------------------
+
+  /** Run the script with an Audio mock and fire one danmu message with sound. */
+  function playSound(serverIp, serverPort, soundUrl) {
+    class MockAudio {
+      constructor(url) {
+        this.url = url;
+        this.volume = 1;
+        MockAudio.instances.push(this);
+      }
+      play() {
+        return Promise.resolve();
+      }
+    }
+    MockAudio.instances = [];
+
+    const consoleMock = { log: jest.fn(), warn: jest.fn(), error: jest.fn() };
+    const script = getChildWsScript(serverIp, serverPort);
+    evalScript(script, {
+      console: consoleMock,
+      Audio: MockAudio,
+      Promise,
+      window: {
+        API: { sendConnectionStatus: jest.fn() },
+        showdanmu: jest.fn(),
+      },
+      setTimeout: jest.fn((fn, delay) => {
+        if (delay === undefined || delay <= 800) fn();
+        return 1;
+      }),
+    });
+
+    const ws = MockWebSocket.instances[0];
+    ws.readyState = 1;
+    if (ws.onopen) ws.onopen();
+    ws.onmessage({
+      data: JSON.stringify({
+        text: "hello",
+        color: "ffffff",
+        opacity: 100,
+        size: 50,
+        speed: 5,
+        sound: { url: soundUrl, volume: 0.5 },
+      }),
+    });
+    return { audios: MockAudio.instances, consoleMock };
+  }
+
+  test("relative sound URL is absolutized to the connected server origin", () => {
+    // server/services/sound.py ships relative "/static/sounds/…" paths; on
+    // the file:// overlay these must resolve against the WSS server origin.
+    const { audios } = playSound("127.0.0.1", 9487, "/static/sounds/ding.mp3");
+    expect(audios.length).toBe(1);
+    expect(audios[0].url).toBe("https://127.0.0.1:9487/static/sounds/ding.mp3");
+    expect(audios[0].volume).toBe(0.5);
+  });
+
+  test("absolute sound URL from the connected (remote) server is allowed", () => {
+    const { audios } = playSound("192.168.1.50", 9487, "https://192.168.1.50:9487/static/sounds/x.mp3");
+    expect(audios.length).toBe(1);
+    expect(audios[0].url).toBe("https://192.168.1.50:9487/static/sounds/x.mp3");
+  });
+
+  test("sound URL on a foreign host is blocked", () => {
+    const { audios, consoleMock } = playSound("192.168.1.50", 9487, "https://evil.example/x.mp3");
+    expect(audios.length).toBe(0);
+    expect(consoleMock.warn).toHaveBeenCalledWith(
+      "[WebSocket] Blocked non-local sound URL:",
+      expect.stringContaining("evil.example")
+    );
+  });
+
+  test("data:audio and blob: sound URLs stay allowed", () => {
+    const dataUrl = "data:audio/mpeg;base64,AAAA";
+    expect(playSound("127.0.0.1", 9487, dataUrl).audios[0].url).toBe(dataUrl);
+    const blobUrl = "blob:https://127.0.0.1:9487/some-uuid";
+    expect(playSound("127.0.0.1", 9487, blobUrl).audios[0].url).toBe(blobUrl);
   });
 
   test("clear message removes danmu elements", () => {

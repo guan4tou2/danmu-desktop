@@ -3,20 +3,26 @@
 
     <head>
         <meta charset="UTF-8">
+        <!-- Fonts are vendored in assets/fonts (see child.css @font-face) —
+             no Google Fonts network fetch at runtime, so the overlay renders
+             identically offline. media-src covers new Audio():
+             server sound URLs are https://host:port/static/sounds/… (v5
+             WSS-only; self-signed accepted via main.js certificate-error
+             handler for trustedWssHosts only), http 127.0.0.1/localhost kept
+             for local debugging like img-src, data:/blob: mirror the JS-side
+             sound guard in child-ws-script.js. -->
         <meta
           http-equiv="Content-Security-Policy"
           content="
             default-src 'self';
             script-src 'self';
-            style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-            font-src 'self' https://fonts.gstatic.com data:;
+            style-src 'self' 'unsafe-inline';
+            font-src 'self' data:;
             img-src 'self' https: http://127.0.0.1:* http://localhost:* data:;
+            media-src https: http://127.0.0.1:* http://localhost:* data: blob:;
             connect-src ws: wss:;
           "
         />
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;600&display=swap">
         <link href="./child.css" rel="stylesheet">
         <link href="./hud.css" rel="stylesheet">
         <title></title>

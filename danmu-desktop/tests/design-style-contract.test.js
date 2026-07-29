@@ -237,6 +237,10 @@ test("Desktop runtime shells do not expose old Overlay labels", () => {
 
   expect(childHtml).toContain("DESKTOP READY");
   expect(childHtml).not.toContain("OVERLAY READY");
+  // 2026-07-29 offline font vendoring: overlay shell must never fetch
+  // Google Fonts at runtime (assets/fonts woff2 + child.css @font-face).
+  expect(childHtml).not.toContain("fonts.googleapis.com");
+  expect(childHtml).not.toContain("fonts.gstatic.com");
   expect(overlayJs).toContain("DESKTOP · SILENT MODE");
   expect(overlayJs).toContain("NO DANMU RENDERING · DESKTOP PAUSED");
   expect(overlayJs).not.toContain("OVERLAY · SILENT MODE");
