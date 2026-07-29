@@ -93,9 +93,11 @@
     return `
       <div class="poll-overlay poll-overlay--active">
         <div class="poll-overlay-topbar">
-          <span class="dot"></span>
-          <span class="kicker">POLL · LIVE</span>
-          <span class="qnum">第 ${qNum} / ${qTotal} 題</span>
+          <div class="poll-overlay-topbar-pill">
+            <span class="dot"></span>
+            <span class="kicker">POLL · LIVE</span>
+            <span class="qnum">第 ${qNum} / ${qTotal} 題</span>
+          </div>
         </div>
 
         <div class="poll-overlay-panel">

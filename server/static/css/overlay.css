@@ -60,7 +60,13 @@ body {
 .overlay-idle-corner.is-bl { bottom: 24px; left: 24px;  border-bottom: 1px solid #38bdf8; border-left: 1px solid #38bdf8; }
 .overlay-idle-corner.is-br { bottom: 24px; right: 24px; border-bottom: 1px solid #38bdf8; border-right: 1px solid #38bdf8; }
 
-/* Top bar — fixed at the top, mono 11px, cyan brand + dim version + state chip. */
+/* Top bar — fixed at the top, mono 11px, cyan brand + dim version + state chip.
+ * The three mono secondary-text rules on the idle screen (this one,
+ * .overlay-idle-note, .overlay-idle-hint) used to hardcode slate-400 at 0.7
+ * alpha, which measured 4.14 / 4.06 / 3.81 against the idle backdrop — all
+ * under the 4.5 bar, and the first thing to disappear on a washed-out
+ * projector in a bright room. Solid slate-400 via the token takes them to
+ * 7.77 / 7.41 / 7.05 and drops three bare colour literals from the baseline. */
 .overlay-idle-topbar {
   position: absolute;
   top: 30px;
@@ -72,7 +78,7 @@ body {
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
   letter-spacing: 1.5px;
-  color: rgba(148, 163, 184, 0.7);
+  color: var(--color-text-secondary);
 }
 .overlay-idle-topbar-brand { color: #38bdf8; }
 .overlay-idle-topbar-state {
@@ -300,7 +306,7 @@ body {
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 12px;
   letter-spacing: 1px;
-  color: rgba(148, 163, 184, 0.7);
+  color: var(--color-text-secondary);
 }
 .overlay-idle-pair-code {
   color: #38bdf8;
@@ -322,7 +328,7 @@ body {
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 10px;
   letter-spacing: 1px;
-  color: rgba(148, 163, 184, 0.7);
+  color: var(--color-text-secondary);
 }
 .overlay-idle-btn {
   padding: 8px 16px;
@@ -365,11 +371,27 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   font-family: var(--font-sans, sans-serif);
   color: #fff;
 }
+/* The scrim moved off the bar and onto a pill around the content (2026-07-29).
+ * The old full-width `linear-gradient(180deg, rgba(0,0,0,0.55), transparent)`
+ * had already faded to ~0.25 alpha at the text's own y-position, so on a white
+ * slide deck the kicker measured 1.53:1 and the question counter 1.59:1 —
+ * both invisible in practice. It also smeared a grey band across the whole top
+ * of whatever the presenter was sharing. A discrete opaque pill (same language
+ * as .overlay-idle-chip) puts a real backdrop exactly where the ink is,
+ * occludes far less of the user's screen, and — being opaque — measures the
+ * same whatever is behind the overlay: kicker 7.20:1 and question counter
+ * 6.89:1 on white, light grey and dark alike. */
 .poll-overlay-topbar {
   position: absolute; top: 0; left: 0; right: 0;
   padding: 12px 24px;
-  display: flex; align-items: center; gap: 12px;
-  background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, transparent 100%);
+  display: flex; align-items: center;
+}
+.poll-overlay-topbar-pill {
+  display: inline-flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--hud-bg0);
+  border: 1px solid var(--hud-cyan-line);
 }
 .poll-overlay-topbar .dot {
   width: 8px; height: 8px;
@@ -513,14 +535,18 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   font-size: 13px;
 }
 
+/* Same bright-stage reasoning as .poll-overlay-topbar-pill: a 0.65 scrim under
+ * 0.7 ink measured 4.36:1 on pure white, i.e. under the 4.5 body-text bar for
+ * 10px type. 0.78 / 0.85 takes that to 8.73:1 on white with no perceptible
+ * change to the dark case (9.53 → 14.12 on a slate-950 stage). */
 .poll-overlay-ticker {
   position: absolute; bottom: 14px; left: 14px;
   padding: 4px 12px;
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.78);
   border: 1px solid rgba(56, 189, 248, 0.35);
   border-radius: var(--radius-sm);
   font-family: var(--font-mono, monospace); font-size: 10px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.85);
   letter-spacing: 0.5px;
 }
 

@@ -770,10 +770,32 @@
     }
 
     // Nickname label (must be before danmu in wrapper)
+    //
+    // Same rule as the bullet body: the nickname inherits `color`, so it also
+    // inherits the stroke/shadow. Without it a white nickname over a white
+    // slide deck measured 1.00:1 (zero painted pixels) while the outlined
+    // bullet body stayed readable. Stroke width is scaled to the smaller
+    // nickname font so it doesn't swallow the glyphs.
     if (nickname) {
+      var nickSize = Math.max(12, size * 0.35);
+      var shadows = [];
+      if (textStyles.textStroke) {
+        // Hard 4-direction ring rather than -webkit-text-stroke: the body's
+        // 2px stroke scaled down to the nickname font is sub-pixel and lands
+        // as pure antialiasing (1.44:1 on white). A 1px offset ring paints
+        // solid pixels — 7.19:1 on white, invisible on a dark capture.
+        var r = Math.max(1, Math.round(nickSize / 15));
+        var sc = textStyles.strokeColor;
+        shadows.push("-" + r + "px 0 " + sc, r + "px 0 " + sc, "0 -" + r + "px " + sc, "0 " + r + "px " + sc);
+      }
+      if (textStyles.textShadow) {
+        var nickBlur = Math.max(2, Math.round((textStyles.shadowBlur * nickSize) / Math.max(1, size)));
+        shadows.push("0 0 " + nickBlur + "px rgba(0,0,0,0.8)", "0 0 " + nickBlur * 2 + "px rgba(0,0,0,0.6)");
+      }
+      var nickInk = shadows.length ? "text-shadow:" + shadows.join(",") + ";" : "";
       var nickEl = document.createElement("span");
       nickEl.textContent = nickname;
-      nickEl.style.cssText = "font-size:" + Math.max(12, size * 0.35) + "px;color:" + color + ";opacity:0.7;margin-right:6px;vertical-align:middle;";
+      nickEl.style.cssText = "font-size:" + nickSize + "px;color:" + color + ";opacity:0.7;margin-right:6px;vertical-align:middle;" + nickInk;
       wrapper.appendChild(nickEl);
     }
 

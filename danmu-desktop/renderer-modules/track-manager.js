@@ -219,10 +219,36 @@ function initTrackManager() {
 
     // Nickname label — pinned top-left of the bullet block, above the text.
     // Per design v2 spec: @nickname as small mono prefix at top-left corner.
+    //
+    // The nickname reuses the bullet's `color`, so it MUST also reuse the
+    // bullet's stroke/shadow: the overlay floats over the *user's* screen, and
+    // on a bright stage (white slide deck, shared browser) a white nickname on
+    // white measured 1.00:1 — literally zero painted pixels — while the bullet
+    // body stayed legible purely because of its outline. The stroke is scaled
+    // down to the nickname's font size so a 2px outline meant for 50px text
+    // doesn't swallow 15px glyphs.
     if (nickname) {
+      const nickSize = Math.max(11, size * 0.3);
+      const shadows = [];
+      if (textStyles.textStroke) {
+        // A *hard* 4-direction ring, not -webkit-text-stroke. Scaling the
+        // body's 2px stroke down to the nickname's ~15px font gives 0.6px,
+        // which is all antialiasing and no solid coverage — measured 1.44:1
+        // on white, i.e. no better than nothing. A 1px offset ring lays down
+        // fully-opaque pixels: 7.19:1 on white, and invisible on a dark
+        // capture where it just hugs the glyph.
+        const r = Math.max(1, Math.round(nickSize / 15));
+        const c = textStyles.strokeColor;
+        shadows.push(`-${r}px 0 ${c}`, `${r}px 0 ${c}`, `0 -${r}px ${c}`, `0 ${r}px ${c}`);
+      }
+      if (textStyles.textShadow) {
+        const nickBlur = Math.max(2, Math.round((textStyles.shadowBlur * nickSize) / Math.max(1, size)));
+        shadows.push(`0 0 ${nickBlur}px rgba(0, 0, 0, 0.8)`, `0 0 ${nickBlur * 2}px rgba(0, 0, 0, 0.6)`);
+      }
+      const nickInk = shadows.length ? `text-shadow:${shadows.join(",")};` : "";
       const nickEl = document.createElement("span");
       nickEl.textContent = nickname;
-      nickEl.style.cssText = `font-size:${Math.max(11, size * 0.3)}px;font-family:'JetBrains Mono',ui-monospace,monospace;color:${color};opacity:0.75;letter-spacing:0.05em;margin-bottom:${Math.round(size * 0.08)}px;line-height:1;align-self:flex-start;`;
+      nickEl.style.cssText = `font-size:${nickSize}px;font-family:'JetBrains Mono',ui-monospace,monospace;color:${color};opacity:0.75;letter-spacing:0.05em;margin-bottom:${Math.round(size * 0.08)}px;line-height:1;align-self:flex-start;${nickInk}`;
       wrapper.appendChild(nickEl);
     }
 

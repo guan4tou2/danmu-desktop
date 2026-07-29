@@ -65,15 +65,21 @@ img{
   overflow: hidden;
 }
 
-/* In-flight danmu counter */
+/* In-flight danmu counter.
+ * The overlay window is transparent and floats over whatever the user has on
+ * screen, so this chip has to carry its own backplate rather than lean on a
+ * dark capture. The old 0.25 plate measured 1.60:1 on pure white and 1.70:1
+ * on slate-100 — invisible on a white slide deck. 0.72 / 0.92 gives 8.15:1
+ * on white and 8.57:1 on slate-100, and the dark case only improves
+ * (10.82 → 17.01 on a slate-950 stage). */
 #danmu-counter {
   position: fixed;
   bottom: 8px;
   right: 12px;
   font-family: monospace;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.75);
-  background: rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(0, 0, 0, 0.72);
   padding: 2px 4px;
   border-radius: var(--radius-sm);
   pointer-events: none;
