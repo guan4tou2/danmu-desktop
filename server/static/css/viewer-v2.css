@@ -28,6 +28,20 @@ body.viewer-body-v2 {
   --color-text-bright: #0f172a;
   --hud-line: rgba(15, 23, 42, 0.12);    /* lightLine */
   --hud-line-strong: rgba(15, 23, 42, 0.22);
+
+  /* ── 文字用的狀態色（2026-07-29 雙主題可讀性）────────────────────────
+   * --color-primary / -success / -warning / -error 的淺色臂是為「色塊、邊框、
+   * 圖示」挑的中間調（sky-600 4.10:1、green-600 3.30、amber-600 3.19、
+   * red-600 4.83 但疊在紅色底上只剩 4.39），拿來畫 9–12px 的小字全部踩線或
+   * 不及格。這四顆是同一組語意的「文字版」：淺色臂各深一階到 AA，
+   * **深色臂刻意等於今天畫面上的值**（sky-400 / #84e100 / amber-400 /
+   * red-400），所以深色主題零視覺變化。
+   * 非文字用途（滑桿、邊框、色點）仍然用 --color-* 那組。 */
+  --viewer-ink-accent: light-dark(var(--sky-700), var(--sky-400));
+  --viewer-ink-success: light-dark(var(--lime-700), var(--color-success-bright));
+  --viewer-ink-warning: light-dark(var(--amber-700), var(--amber-400));
+  --viewer-ink-error: light-dark(var(--red-700), var(--red-400));
+
   background: var(--color-bg-deep);
   color: var(--color-text-primary);
   color-scheme: light;
@@ -368,7 +382,8 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
 
 .viewer-conn-chip-dot.connection-dot--disconnected,
 .viewer-conn-chip-dot.connection-dot--failed {
-  background: #f87171;
+  /* 非文字 UI 也要 3.0：red-400 在淺色頁面上只有 2.5:1。 */
+  background: var(--viewer-ink-error);
 }
 
 .viewer-conn-chip-label {
@@ -542,10 +557,13 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   color: var(--color-text-primary);
 }
 
+/* 2026-07-29：sky-400 是深色臂專用的亮青，淺色主題下 tab 文字只有 2.14:1。
+   文字改吃 --viewer-ink-accent（淺色 sky-700、深色仍是 sky-400＝原值）→ 5.93；
+   底線是非文字（門檻 3.0），留 --color-primary 就夠。 */
 .viewer-tab.is-active,
 .viewer-tab[aria-selected="true"] {
-  border-bottom-color: #38bdf8;
-  color: #38bdf8;
+  border-bottom-color: var(--color-primary);
+  color: var(--viewer-ink-accent);
 }
 
 .viewer-tab.is-active .viewer-tab-label,
@@ -555,7 +573,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
 
 .viewer-tab.is-active .viewer-tab-sub,
 .viewer-tab[aria-selected="true"] .viewer-tab-sub {
-  color: #38bdf8;
+  color: var(--viewer-ink-accent);
 }
 
 .viewer-pane {
@@ -640,7 +658,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 1.2px;
-  color: #38bdf8;
+  color: var(--viewer-ink-accent);
   min-width: 22px;
 }
 
@@ -716,10 +734,16 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   }
 }
 
-/* Live preview strip.
- * 2026-05-18 followup-2 clarified that light viewer preview should read as
- * black text on a white stage. Dark keeps the older "screen" stage treatment.
- */
+/* Live preview strip — 投影幕舞台，兩個主題都是深底。
+ *
+ * 2026-07-29：原本淺色臂把預覽台刷成 --color-bg-base（白），但台上的字色是
+ * 觀眾自己挑的彈幕色，而那些色票是為「深色投影幕」調的。結果六個內建色票在
+ * 淺色主題下沒有一個過 AA（白 1.00 / 天藍 2.14 / 琥珀 1.67 / 綠 1.40 /
+ * 紅 2.77 / 黃 1.44），觀眾等於看不到自己選了什麼顏色。
+ *
+ * 預覽台本來就該長得像 overlay——overlay 疊在別人畫面上，永遠是深色圖層。
+ * 所以這裡不再分主題：兩邊共用同一座深色舞台，色票對比＝真實上場對比。
+ * 底下的 kicker / speed / nick / text-shadow 也一併去掉淺色臂（見下）。 */
 .viewer-preview {
   position: relative;
   overflow: hidden;
@@ -727,42 +751,18 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   padding: 16px 12px;
   margin-bottom: 1rem;
   border-radius: var(--radius-md);
-}
-
-body.viewer-body-v2:not(.is-dark) .viewer-preview {
-  background: var(--color-bg-base);
-  border: 1px solid var(--hud-line);
-  color: var(--color-text-primary);
-  box-shadow:
-    0 4px 14px rgba(15, 23, 42, 0.08),
-    inset 0 0 0 1px rgba(15, 23, 42, 0.03);
-}
-
-body.viewer-body-v2.is-dark .viewer-preview {
   background: linear-gradient(135deg, #000814 0%, #001428 100%);
   border: 1px solid rgba(125, 211, 252, 0.18);
   color: #f1f5f9;
   box-shadow: inset 0 0 40px rgba(125, 211, 252, 0.06);
 }
 
+/* 掃描線疊層——舞台兩主題同底，所以只留一條白色掃描線。 */
 .viewer-preview::before {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-}
-
-body.viewer-body-v2:not(.is-dark) .viewer-preview::before {
-  background: repeating-linear-gradient(
-    0deg,
-    transparent 0,
-    transparent 3px,
-    rgba(15, 23, 42, 0.035) 3px,
-    rgba(15, 23, 42, 0.035) 4px
-  );
-}
-
-body.viewer-body-v2.is-dark .viewer-preview::before {
   background: repeating-linear-gradient(
     0deg,
     transparent 0,
@@ -772,6 +772,9 @@ body.viewer-body-v2.is-dark .viewer-preview::before {
   );
 }
 
+/* 舞台上的說明文字：深底常駐，所以沒有淺色臂。
+ * 2026-07-29：原本 slate-400 @ 0.7 在深底上只有 4.05:1（11px 正文需 4.5），
+ * 深色主題也是不合格的擦邊球——提到 0.86 一次補到 5.4:1，兩個主題同時受益。 */
 .viewer-preview-kicker {
   position: absolute;
   top: 6px;
@@ -783,26 +786,19 @@ body.viewer-body-v2.is-dark .viewer-preview::before {
   gap: 8px;
   font-family: var(--font-mono);
   font-size: 11px;
-  color: rgba(148, 163, 184, 0.7);
+  color: rgba(148, 163, 184, 0.86);
   letter-spacing: 1.4px;
 }
 
-body.viewer-body-v2:not(.is-dark) .viewer-preview-kicker {
-  color: rgba(71, 85, 105, 0.74);
-}
-
 /* Speed badge inside the kicker — sits flush right, faint cyan so it
-   reads as "current speed" without competing with the kicker label. */
+   reads as "current speed" without competing with the kicker label.
+   2026-07-29：0.5 alpha 只有 3.59:1，提到 0.8 → 6.4:1。 */
 .viewer-preview-speed {
   margin-left: auto;
-  color: rgba(125, 211, 252, 0.5);
+  color: rgba(125, 211, 252, 0.8);
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.5px;
-}
-
-body.viewer-body-v2:not(.is-dark) .viewer-preview-speed {
-  color: rgba(2, 132, 199, 0.70);
 }
 
 /* 2026-05-16 marquee preview (design v3-r8): preview text actually
@@ -850,15 +846,13 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-speed {
   .viewer-preview-track { animation: none; transform: none; }
 }
 
+/* 舞台上的暱稱：繼承 .viewer-preview 的 #f1f5f9。2026-07-29 拿掉淺色臂——
+ * 它會把暱稱刷成 slate-600，在深色舞台上等於消失。 */
 .viewer-preview-nick {
   font-family: var(--font-mono);
   font-weight: 500;
   opacity: 0.75;
   letter-spacing: 0.5px;
-}
-
-body.viewer-body-v2:not(.is-dark) .viewer-preview-nick {
-  color: var(--color-text-secondary);
 }
 
 /* Default preview shadow — prototype viewer.jsx:125 fallback when glow off:
@@ -870,12 +864,6 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-nick {
   display: inline-block;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.55);
   transition: font-size var(--motion-normal), opacity var(--motion-normal);
-}
-
-body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
-  text-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.35),
-    0 0 1px rgba(15, 23, 42, 0.55);
 }
 
 /* 2026-05-17 preview-side effect keyframes (vp- prefix to avoid
@@ -927,10 +915,15 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
   background: rgba(56, 189, 248, 0.05);       /* hudTokens.cyanSoft */
 }
 
+/* 2026-07-29：--viewer-accent / --viewer-text-dim 是**幽靈 token**——全 repo
+ * 從來沒有任何地方定義過它們，所以這四條規則永遠落在 fallback，也就是硬寫死
+ * 的深色臂。淺色主題下整張卡 15 段文字全部 2.06–2.11:1（改後 5.71 / 7.29）。
+ * 改指真的存在的 token：文字走 --viewer-ink-accent / --color-text-secondary，
+ * 滑桿（非文字）走 --color-primary。深色臂數值與原 fallback 相同，零視覺變化。 */
 .viewer-effect-params-card__title {
   font-size: 11px;
   font-weight: 600;
-  color: var(--viewer-accent, #38bdf8);
+  color: var(--viewer-ink-accent);
   margin-bottom: 8px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 1px;
@@ -953,20 +946,20 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
 
 .viewer-effect-params-card__label {
   font-size: 10px;
-  color: var(--viewer-text-dim, rgba(148, 163, 184, 0.85));
+  color: var(--color-text-secondary);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.5px;
 }
 
 .viewer-effect-params-card__value {
   font-size: 10px;
-  color: var(--viewer-accent, #38bdf8);
+  color: var(--viewer-ink-accent);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 .viewer-effect-params-card__slider {
   width: 100%;
-  accent-color: var(--viewer-accent, #38bdf8);
+  accent-color: var(--color-primary);
 }
 
 /* Field — 9px mono tracked uppercase label above control. */
@@ -1344,7 +1337,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
 .viewer-layout-btn[aria-pressed="true"] {
   border-color: var(--color-primary);
   background: var(--hud-cyan-soft);
-  color: var(--color-primary);
+  color: var(--viewer-ink-accent);
 }
 
 .viewer-layout-btn__zh {
@@ -1361,7 +1354,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
 }
 
 .viewer-layout-btn.is-active .viewer-layout-btn__sub {
-  color: var(--color-primary);
+  color: var(--viewer-ink-accent);
 }
 
 /* Send bar — pill container with emoji ☺ button + input + FIRE.
@@ -1425,10 +1418,13 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
 }
 
 /* Sendbar hint state colors — design v3-r10 line 478-489. JS sets
-   data-state on the hint span; CSS recolors. */
-.viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="sent"]     { color: #84e100; }
-.viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="blocked"]  { color: #ff4d4f; }
-.viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="cooldown"] { color: #fbbf24; }
+   data-state on the hint span; CSS recolors.
+   2026-07-29：原本直接寫深色臂的三個亮色，淺色主題下 1.65 / 3.27 / 1.67，
+   送出結果等於沒回饋。三個語意 token 本身早就有 light-dark()，改指過去
+   淺色一次補到 4.5+，深色維持原本的亮色不動。 */
+.viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="sent"]     { color: var(--viewer-ink-success); }
+.viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="blocked"]  { color: var(--viewer-ink-error); }
+.viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="cooldown"] { color: var(--viewer-ink-warning); }
 
 /* 2026-07-07 uiux polish B2/B4: persistent status row ABOVE the pill (not
  * squeezed into the FIRE button or a badge over the input) so the input
@@ -1439,7 +1435,9 @@ body.viewer-body-v2:not(.is-dark) .viewer-preview-text {
   padding: 4px 8px;
   border-radius: var(--radius-md, 6px);
   background: rgba(255, 77, 79, 0.08);
-  color: #ff4d4f;
+  /* 2026-07-29：#ff4d4f 是深色臂專用的亮紅，淺色主題下只有 2.97:1。
+     --viewer-ink-error 會跟主題翻面：淺色 5.88、深色 6.00（原本 5.08）。 */
+  color: var(--viewer-ink-error);
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.4px;
@@ -1536,9 +1534,11 @@ body.viewer-body-v2.is-dark .viewer-reconnected-toast {
   cursor: pointer;
 }
 
+/* 2026-07-29：同上，離線態的紅色改走 --viewer-ink-error。
+   淺色 2.72 → 5.38、深色 4.90（原本規則根本沒生效時是 4.14）。 */
 .viewer-fire-btn[data-state="offline"] {
   background: rgba(255, 77, 79, 0.08);
-  color: #ff4d4f;
+  color: var(--viewer-ink-error);
 }
 
 .viewer-fire-btn:not([disabled]):hover {
@@ -1688,96 +1688,25 @@ body.viewer-has-topstrip .viewer-topstrip {
   }
 }
 
-/* Offline full-panel (P2-1). */
+/* Offline full-panel (P2-1) — 樣式的**單一來源是 hud.css**（`.viewer-offline-card`
+ * 那一段）。那份把整張卡做成深色卡，並在 scope 內重新宣告 --color-text-* 三個
+ * token，所以不管宿主頁面是淺是深，卡上的字都讀得到。
+ *
+ * 2026-07-29：這裡原本有一份後載入的重複定義（紅色漸層 + --color-bg-card），
+ * 它搶走 background 卻**沒有**重宣告文字 token → 淺色主題下變成「白字畫在淺底
+ * 上」，整張離線卡 1.11–2.56:1。兩套定義打架而且輸的那套贏了畫面，所以整段刪
+ * 除，只留 hud.css 沒有的倒數數字級距（顏色交給 hud.css 的膠囊繼承）。
+ *
+ * `color-scheme: dark` 是這張卡的關鍵一行：卡是刻意的深色圖層，宣告之後卡內
+ * 每一個 light-dark() token（--color-primary、--hud-line…）都自動解析到深色臂，
+ * 不必像 hud.css 那樣一顆一顆重宣告。少了它，淺色主題下倒數膠囊的 sky-600
+ * 文字畫在深卡上只有 4.02:1。 */
 .viewer-offline-card {
-  min-height: 260px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 12px;
-  padding: 20px;
-  border-radius: var(--radius-lg);
-  border: 1px solid rgba(248, 113, 113, 0.35);
-  background: linear-gradient(
-    180deg,
-    rgba(248, 113, 113, 0.08) 0%,
-    var(--color-bg-card, rgba(15, 23, 42, 0.75)) 100%
-  );
-}
-.viewer-offline-lockup {
-  margin: 0;
-  font-family: var(--font-display);
-  letter-spacing: 0.04em;
-  font-size: clamp(2rem, 6vw, 2.8rem);
-  color: var(--color-error-lighter);
-}
-.viewer-offline-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
-  border-radius: var(--radius-pill);
-  border: 1px solid rgba(248, 113, 113, 0.45);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 1.2px;
-  color: #fecaca;
-}
-.viewer-offline-chip-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #f87171;
-  box-shadow: 0 0 8px rgba(248, 113, 113, 0.7);
-}
-.viewer-offline-message {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--color-text-primary);
-}
-.viewer-offline-message small {
-  display: block;
-  margin-top: 4px;
-  color: var(--color-text-secondary);
-}
-.viewer-offline-countdown {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 1px;
-  color: var(--color-text-secondary);
+  color-scheme: dark;
 }
 .viewer-offline-countdown #offlineCountdownValue {
   font-size: 20px;
-  color: var(--color-error-lighter);
   font-weight: 700;
-}
-.viewer-offline-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.viewer-offline-btn {
-  border: 1px solid rgba(248, 113, 113, 0.45);
-  background: rgba(248, 113, 113, 0.12);
-  color: #fecaca;
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  text-decoration: none;
-  cursor: pointer;
-}
-.viewer-offline-btn:hover {
-  background: rgba(248, 113, 113, 0.2);
-}
-.viewer-offline-btn.is-secondary {
-  border-color: var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
-  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
-  color: #7dd3fc;
 }
 
 /* ─── Viewer states (P3 Group B, 2026-04-27) ──────────────────────── */
@@ -1806,6 +1735,10 @@ body[data-viewer-state] {
   font-family: var(--font-sans);
   color: var(--color-text-bright);
 }
+/* 2026-07-29 雙主題：禁言／限流畫面的警示紅、警示黃原本硬寫深色臂的
+ * red-400 / amber-400，在淺色主題（頁面 slate-50）上文字 2.64:1、圖示 2.50:1、
+ * 限流 kicker 1.60:1。改吃 --viewer-ink-error / --viewer-ink-warning：
+ * 深色臂就是原本那兩個值（零視覺變化），淺色臂各深一階才過 AA。 */
 
 /* Banned variant */
 .viewer-state-frame {
@@ -1817,7 +1750,7 @@ body[data-viewer-state] {
 .viewer-state-corner {
   position: absolute;
   width: 16px; height: 16px;
-  border-color: #f87171;
+  border-color: var(--viewer-ink-error);
   border-style: solid;
   border-width: 0;
   pointer-events: none;
@@ -1832,17 +1765,17 @@ body[data-viewer-state] {
   width: 110px; height: 110px;
   margin: 24px 0;
   border-radius: 50%;
-  border: 3px solid #f87171;
+  border: 3px solid var(--viewer-ink-error);
   background: rgba(248, 113, 113, 0.06);
   display: flex; align-items: center; justify-content: center;
-  color: #f87171;
+  color: var(--viewer-ink-error);
   font-size: 56px; font-weight: 700;
   box-shadow: 0 0 32px rgba(248, 113, 113, 0.20);
 }
 .viewer-state-banned-icon .slash {
   position: absolute; left: 50%; top: 50%;
   width: 70%; height: 4px;
-  background: #f87171;
+  background: var(--viewer-ink-error);
   transform: translate(-50%, -50%) rotate(-45deg);
   border-radius: var(--radius-2xs);
 }
@@ -1850,7 +1783,7 @@ body[data-viewer-state] {
 .viewer-state-kicker {
   font-family: var(--font-mono);
   font-size: 10px; letter-spacing: 2.5px;
-  color: #f87171;
+  color: var(--viewer-ink-error);
   margin-bottom: 8px;
 }
 .viewer-state-title {
@@ -1894,7 +1827,7 @@ body[data-viewer-state] {
 }
 .viewer-state-tip .kicker {
   display: block;
-  color: var(--color-primary);
+  color: var(--viewer-ink-accent);
   font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.5px;
   margin-bottom: 4px;
 }
@@ -2000,15 +1933,18 @@ body[data-viewer-state] {
   color: var(--color-text-muted, #64748b);
 }
 
-/* Rate-limit variant */
+/* Rate-limit variant
+ * 2026-07-29：amber-400 在淺色主題上 1.53–1.60:1。--color-warning 的深色臂
+ * **就是** amber-400（深色零變化），淺色臂 amber-600 過 AA。
+ * 底色填滿的按鈕例外——它自己就是亮底，維持 amber-400 + 近黑字。 */
 .viewer-state-ratelimit-icon {
-  border-color: #fbbf24;
+  border-color: var(--viewer-ink-warning);
   background: rgba(251, 191, 36, 0.08);
-  color: #fbbf24;
+  color: var(--viewer-ink-warning);
   box-shadow: 0 0 40px rgba(251, 191, 36, 0.3), inset 0 0 24px rgba(251, 191, 36, 0.14);
 }
 .viewer-state-kicker--warn {
-  color: #fbbf24;
+  color: var(--viewer-ink-warning);
 }
 .viewer-state-action--warn {
   background: #fbbf24;
@@ -2121,7 +2057,8 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
   border-radius: var(--radius-md);
   border: 1px solid rgba(56, 189, 248, 0.35);
   background: rgba(56, 189, 248, 0.08);
-  color: var(--color-primary);
+  /* ☰ 是字形（文字門檻 4.5），不是圖示字體——sky-600 疊在青底上只有 3.85:1。 */
+  color: var(--viewer-ink-accent);
   font-size: 16px;
   cursor: pointer;
   align-items: center;
@@ -2288,7 +2225,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
 }
 .viewer-theme-chip-seg.is-active {
   background: rgba(2, 132, 199, 0.08);
-  color: var(--color-primary, #0284c7);
+  color: var(--viewer-ink-accent);
 }
 /* Dark theme variant — accent color shift for slightly brighter sky-400 */
 body.viewer-body-v2.is-dark .viewer-theme-chip-seg.is-active {

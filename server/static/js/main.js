@@ -967,8 +967,14 @@ document.addEventListener("DOMContentLoaded", () => {
           sw.classList.remove("is-active");
         }
       });
+      // 2026-07-29：**不要**把彈幕色套到輸入框文字上。
+      // 彈幕色是為「深色投影幕」調的（白／天藍／琥珀／綠／黃…），而輸入框
+      // 坐在頁面表面（--color-bg-elevated）上：淺色主題選白色 → 1.10:1，
+      // 觀眾看不到自己打的字。顏色預覽由 .viewer-preview 那座深色舞台負責，
+      // 它本來就長得跟上場後一模一樣；輸入框只管「打得到、看得見」。
+      // （移除既有 inline color，避免舊 session 留下的殘值卡住。）
       if (elements.danmuText) {
-        elements.danmuText.style.color = color;
+        elements.danmuText.style.removeProperty("color");
       }
       updatePreview();
     });

@@ -102,27 +102,49 @@ test("implementation frontend files do not reintroduce design-v2 forbidden palet
   expect(failures).toEqual([]);
 });
 
-test("viewer light preview follows the black-on-white design followup", () => {
+// 2026-07-29 取代 2026-05-18 followup-2 的「淺色預覽 = 白底黑字」。
+// 舊契約釘的那條 `body.viewer-body-v2:not(.is-dark) .viewer-preview` 淺色臂
+// 把預覽台刷成白底，但台上的字色是觀眾自己挑的**彈幕**色，而彈幕色是為深色
+// 投影幕調的：六個內建色票在白底上沒有一個過 WCAG AA（白 1.00 / 天藍 2.14 /
+// 琥珀 1.67 / 綠 1.40 / 紅 2.77 / 黃 1.44），等於觀眾看不到自己選了什麼色。
+// 現行決策：預覽台在**兩個主題都是深色舞台**——它模擬的 overlay 本來就永遠
+// 是深色圖層，所以色票在預覽裡的對比＝上場後的真實對比（改後 6.71–18.57）。
+test("viewer preview stage is one dark stage in both themes", () => {
   const css = fs.readFileSync(path.join(REPO_ROOT, "server/static/css/viewer-v2.css"), "utf8");
 
-  expect(css).toMatch(
-    /body\.viewer-body-v2:not\(\.is-dark\)\s+\.viewer-preview\s*\{[^}]*background:\s*var\(--color-bg-base\);[^}]*color:\s*var\(--color-text-primary\);/s,
-  );
-  expect(css).toMatch(
-    /body\.viewer-body-v2:not\(\.is-dark\)\s+\.viewer-preview::before\s*\{[^}]*rgba\(15,\s*23,\s*42,\s*0\.035\)/s,
-  );
-  const lightPreviewTextRule = css.match(
-    /body\.viewer-body-v2:not\(\.is-dark\)\s+\.viewer-preview-text\s*\{(?<body>[^}]*)\}/s,
-  );
-  expect(lightPreviewTextRule).not.toBeNull();
-  expect(lightPreviewTextRule.groups.body).not.toMatch(/\bcolor\s*:/);
-  expect(lightPreviewTextRule.groups.body).toMatch(
-    /text-shadow:\s*0 1px 2px rgba\(15,\s*23,\s*42,\s*0\.35\),\s*0 0 1px rgba\(15,\s*23,\s*42,\s*0\.55\);/s,
-  );
-  expect(lightPreviewTextRule.groups.body).not.toMatch(/!important/);
-  expect(css).toMatch(
-    /body\.viewer-body-v2\.is-dark\s+\.viewer-preview\s*\{[^}]*linear-gradient\(135deg,\s*#000814/s,
-  );
+  // 深色舞台寫在 .viewer-preview 本體，不再分主題臂
+  const previewRule = css.match(/\n\.viewer-preview\s*\{(?<body>[^}]*)\}/s);
+  expect(previewRule).not.toBeNull();
+  expect(previewRule.groups.body).toMatch(/background:\s*linear-gradient\(135deg,\s*#000814/s);
+  expect(previewRule.groups.body).toMatch(/color:\s*#f1f5f9;/);
+
+  // 舊的淺色臂必須整組消失（台、掃描線、kicker、speed、暱稱、字影）
+  for (const sel of [
+    "\\.viewer-preview",
+    "\\.viewer-preview::before",
+    "\\.viewer-preview-kicker",
+    "\\.viewer-preview-speed",
+    "\\.viewer-preview-nick",
+    "\\.viewer-preview-text",
+  ]) {
+    expect(css).not.toMatch(
+      new RegExp(`body\\.viewer-body-v2:not\\(\\.is-dark\\)\\s+${sel}\\s*\\{`),
+    );
+  }
+
+  // 字影留深色版（深底就該用深色投影）
+  const previewTextRule = css.match(/\n\.viewer-preview-text\s*\{(?<body>[^}]*)\}/s);
+  expect(previewTextRule).not.toBeNull();
+  expect(previewTextRule.groups.body).toMatch(/text-shadow:\s*0 2px 4px rgba\(0,\s*0,\s*0,\s*0\.55\);/);
+  expect(previewTextRule.groups.body).not.toMatch(/\bcolor\s*:/);
+  expect(previewTextRule.groups.body).not.toMatch(/!important/);
+});
+
+// 觀眾看得到自己打的字：色票不可以被套到輸入框文字上（淺色白字白底 1.10:1）。
+test("viewer swatch colour never leaks onto the sendbar input text", () => {
+  const mainJs = fs.readFileSync(path.join(REPO_ROOT, "server/static/js/main.js"), "utf8");
+  expect(mainJs).not.toMatch(/elements\.danmuText\.style\.color\s*=/);
+  expect(mainJs).toMatch(/elements\.danmuText\.style\.removeProperty\("color"\)/);
 });
 
 test("viewer font dropdown shows the configured default font name", () => {
@@ -226,8 +248,16 @@ test("viewer offline send gate uses Desktop copy and red button state", () => {
 
   expect(mainJs).toMatch(/elements\.btnSend\.dataset\.state\s*=\s*"offline";/);
   expect(mainJs).toMatch(/_setSendbarHint\("",\s*""\);/);
+  // 2026-07-29：原本釘死 #ff4d4f，那是**深色臂專用**的亮紅——淺色主題下
+  // FIRE 離線態只有 2.72:1。改吃 --viewer-ink-error（light-dark：淺色 red-700
+  // ／深色 red-400），淺色 5.38、深色 4.90，兩邊都過 AA。契約現在釘「必須是
+  // 會跟主題翻面的 token」而不是某個固定色值。
   expect(css).toMatch(
-    /\.viewer-fire-btn\[data-state="offline"\]\s*\{[^}]*color:\s*#ff4d4f;/s,
+    /\.viewer-fire-btn\[data-state="offline"\]\s*\{[^}]*color:\s*var\(--viewer-ink-error\);/s,
+  );
+  const tokensCss = fs.readFileSync(path.join(REPO_ROOT, "server/static/css/viewer-v2.css"), "utf8");
+  expect(tokensCss).toMatch(
+    /--viewer-ink-error:\s*light-dark\(var\(--red-700\),\s*var\(--red-400\)\);/,
   );
   const offlineButtonBlock = css.match(/\.viewer-fire-btn\[data-state="offline"\]\s*\{(?<body>[^}]*)\}/);
   expect(offlineButtonBlock?.groups?.body || "").not.toMatch(/\bborder\s*:/);

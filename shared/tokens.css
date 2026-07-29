@@ -46,6 +46,9 @@
   /* amber — warning */
   --amber-400: oklch(83.686% 0.1644 84.429); /* #fbbf24 */
   --amber-600: oklch(66.584% 0.1574 58.318); /* #d97706 */
+  /* amber-700 補進來是因為 2026-07-29 出現了消費者：amber-600 在白底上只有
+   * 3.19:1，撐不起小字警示文案（viewer 冷卻提示、限流畫面）。 */
+  --amber-700: oklch(55.528% 0.1455 48.998); /* #b45309 */
   /* red — error */
   --red-300: oklch(80.77% 0.103 19.57);     /* #fca5a5 */
   --red-400: oklch(71.06% 0.166 22.22);     /* #f87171 */
@@ -117,11 +120,17 @@
   --color-bg-base: light-dark(#ffffff, var(--slate-900));          /* slate-900 — panels */
   --color-bg-elevated: light-dark(var(--slate-100), var(--slate-800));      /* slate-800 — raised */
   --color-bg-row-hover: light-dark(var(--slate-200), var(--slate-700));     /* slate-700 — list row hover */
-  --color-bg-card: rgba(15, 23, 42, 0.75);
-  --color-bg-input: rgba(30, 41, 59, 0.8);
-  --color-bg-input-solid: rgba(30, 41, 59, 1);
-  --color-bg-input-disabled: rgba(30, 41, 59, 0.5);
-  --color-overlay: rgba(0, 0, 0, 0.6);
+  /* 2026-07-29 雙主題修補：這五個是「全表面共用」的半透明面（卡片底、輸入框
+   * 底、modal 遮罩），先前只有深色臂。文字 token 早就 light-dark() 會跟著主題
+   * 翻淺，底卻永遠是 slate-900/800 → 淺色主題下「深底 + 淺字」被拆成「深底 +
+   * 深字」，viewer 的禁言／投票感謝卡整片文字掉到 1.05–2.20:1。補上淺色臂後
+   * 卡片在淺色主題是「白卡浮在 slate-50 頁面上」的標準亮色層級。
+   * overlay 遮罩淺色臂刻意仍偏深（slate-900 45%）——遮罩的工作是壓暗背景。 */
+  --color-bg-card: light-dark(rgba(255, 255, 255, 0.85), rgba(15, 23, 42, 0.75));
+  --color-bg-input: light-dark(rgba(255, 255, 255, 0.8), rgba(30, 41, 59, 0.8));
+  --color-bg-input-solid: light-dark(#ffffff, rgba(30, 41, 59, 1));
+  --color-bg-input-disabled: light-dark(rgba(241, 245, 249, 0.8), rgba(30, 41, 59, 0.5));
+  --color-overlay: light-dark(rgba(15, 23, 42, 0.45), rgba(0, 0, 0, 0.6));
 
   /* Theme-aware overlay tints — replace hardcoded rgba(255,255,255,X)
    * row/button hover so they correctly invert on light theme. Dark
