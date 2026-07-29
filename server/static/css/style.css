@@ -4555,42 +4555,23 @@ summary:focus-visible {
     radial-gradient(circle at top, rgba(251, 146, 60, 0.18), transparent 42%);
 }
 
-.admin-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 0.35rem 0.7rem;
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  border-radius: var(--radius-pill);
-  background: rgba(8, 47, 73, 0.35);
-  /* --color-sky-* / --color-slate-* are tailwind.css's RAW scales (the project's
-     own primitives have no `color-` prefix), so they never flip with the theme.
-     This legacy .admin-hero island paints hardcoded DARK surfaces in both
-     themes, so its copy must stay on a fixed light scale — repointed to the
-     project's own primitives purely to kill the tailwind name collision. */
-  color: var(--sky-300);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
+/* This legacy .admin-hero island paints hardcoded DARK surfaces in both themes,
+   so its copy stays on a fixed light scale rather than a semantic token —
+   var(--sky-*) / var(--slate-*) below are the project's own primitives (the
+   `--color-sky-*` spellings are tailwind.css's raw scales and a name collision).
+   Nothing in the templates or JS renders this island any more; the rules that
+   only styled the removed .admin-kicker / .admin-summary-card / .admin-section /
+   .admin-chip are gone. */
 .admin-summary-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.9rem;
 }
 
-.admin-summary-card {
-  border: 1px solid rgba(120, 53, 15, 0.55);
-  border-radius: var(--radius-xl);
-  background: rgba(28, 25, 23, 0.74);
-  padding: 0.95rem 1rem;
-}
-
 .admin-summary-label {
   display: block;
   margin-bottom: 0.35rem;
-  color: var(--slate-400);  /* fixed scale — card bg is hardcoded dark, see .admin-kicker */
+  color: var(--slate-400);  /* fixed scale — island bg is hardcoded dark */
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -4601,11 +4582,6 @@ summary:focus-visible {
   color: var(--slate-100);  /* fixed scale — card bg is hardcoded dark */
   font-size: 1rem;
   font-weight: 600;
-}
-
-.admin-section {
-  border: 1px solid rgba(68, 64, 60, 0.75);
-  background: rgba(17, 24, 39, 0.36);
 }
 
 .admin-section-heading {
@@ -4631,15 +4607,10 @@ summary:focus-visible {
   }
 }
 
-.admin-primary-stack > .admin-section > * h3,
-.admin-section > .admin-section-heading ~ * h3 {
-  font-size: 1rem;
-}
-
 .admin-section-kicker {
   display: block;
   margin-bottom: 0.35rem;
-  color: var(--sky-400);  /* fixed scale — .admin-section bg is hardcoded dark */
+  color: var(--sky-400);  /* fixed scale — island bg is hardcoded dark */
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -4649,25 +4620,6 @@ summary:focus-visible {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-}
-
-.admin-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.45rem 0.75rem;
-  border-radius: var(--radius-pill);
-  border: 1px solid rgba(120, 53, 15, 0.42);
-  background: rgba(41, 37, 36, 0.78);
-  color: var(--color-stone-200, #e7e5e4);
-  font-size: 0.75rem;
-  transition: background-color var(--motion-normal), border-color var(--motion-normal), color var(--motion-normal);
-}
-
-.admin-chip:hover {
-  background: rgba(68, 64, 60, 0.95);
-  border-color: rgba(251, 146, 60, 0.58);
-  color: #fdba74;
 }
 
 #live-ops-grid>*,
@@ -4684,30 +4636,10 @@ summary:focus-visible {
   gap: 0.9rem;
 }
 
-.workspace-pill {
-  display: grid;
-  gap: 0.35rem;
-  padding: 1rem 1.05rem;
-  border-radius: var(--radius-xl);
-  border: 1px solid rgba(120, 53, 15, 0.55);
-  background: linear-gradient(180deg, rgba(41, 37, 36, 0.86), rgba(24, 24, 27, 0.92));
-  color: #fafaf9;
-  transition: transform var(--motion-normal) ease, border-color var(--motion-normal) ease, background-color var(--motion-normal) ease;
-}
-
-.workspace-pill:hover {
-  transform: translateY(-1px);
-  border-color: rgba(251, 146, 60, 0.72);
-}
-
 .workspace-pill-kicker {
   color: #fdba74;
   font-size: 0.72rem;
   text-transform: uppercase;
-}
-
-.workspace-pill strong {
-  font-size: 1rem;
 }
 
 .workspace-pill-copy {
@@ -4732,32 +4664,12 @@ summary:focus-visible {
   gap: 0.9rem;
 }
 
-.workspace-overview-card {
-  padding: 1rem;
-  border-radius: var(--radius-xl);
-  border: 1px solid rgba(120, 53, 15, 0.45);
-  background: rgba(28, 25, 23, 0.62);
-}
-
 .workspace-overview-label {
   display: block;
   color: #fdba74;
   font-size: 0.72rem;
   text-transform: uppercase;
   margin-bottom: 0.35rem;
-}
-
-.workspace-overview-card strong {
-  display: block;
-  color: #fafaf9;
-  font-size: 1rem;
-  margin-bottom: 0.25rem;
-}
-
-.workspace-overview-card p {
-  color: #d6d3d1;
-  font-size: 0.84rem;
-  line-height: 1.5;
 }
 
 .workspace-split {
@@ -4769,11 +4681,6 @@ summary:focus-visible {
   grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.9fr);
 }
 
-.asset-dashboard-card {
-  border-color: rgba(120, 53, 15, 0.45);
-  background: rgba(28, 25, 23, 0.62);
-}
-
 @media (max-width: 1024px) {
   .admin-workspace-rail,
   .workspace-overview-grid,
@@ -4782,65 +4689,14 @@ summary:focus-visible {
   }
 }
 
-/* ─── Stream mode toggle + hiding ──────────────────────────────────────────
+/* ─── Stream mode hiding ───────────────────────────────────────────────────
  * When body.stream-mode is set, low-frequency sections collapse so the
  * streamer only sees the controls they touch mid-broadcast (live feed,
- * blacklist, core controls, effects, history). Toggle persists to
- * localStorage "danmu-stream-mode". Selector list intentionally narrow
- * — new sections default to visible unless added here. */
-.stream-mode-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  cursor: pointer;
-  user-select: none;
-  font-size: 0.75rem;
-  color: var(--color-text-secondary);
-  padding: 0.25rem 0.65rem 0.25rem 0.25rem;
-  border: 1px solid rgba(51, 65, 85, 0.72);
-  border-radius: var(--radius-pill);
-  background: rgba(15, 23, 42, 0.62);
-  transition: border-color var(--motion-normal), background-color var(--motion-normal), color var(--motion-normal);
-}
-.stream-mode-toggle:hover {
-  border-color: var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
-  color: var(--color-text-primary);
-}
-.stream-mode-toggle input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-.stream-mode-track {
-  position: relative;
-  display: inline-block;
-  width: 32px;
-  height: 18px;
-  background: rgba(71, 85, 105, 0.8);
-  border-radius: var(--radius-pill);
-  transition: background-color var(--motion-normal);
-}
-.stream-mode-track::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 14px;
-  height: 14px;
-  background: var(--color-white);
-  border-radius: 50%;
-  transition: transform var(--motion-normal);
-}
-.stream-mode-toggle input:checked + .stream-mode-track {
-  background: var(--color-primary);
-}
-.stream-mode-toggle input:checked + .stream-mode-track::after {
-  transform: translateX(14px);
-}
-.stream-mode-toggle input:focus-visible + .stream-mode-track {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
+ * blacklist, core controls, effects, history). Selector list intentionally
+ * narrow — new sections default to visible unless added here.
+ * The .stream-mode-toggle/.stream-mode-track switch that used to set this
+ * body class is gone: nothing renders it any more, so only the body-class
+ * consequence below is kept. */
 
 /* Hide low-frequency sections when stream mode is on.
  * Keep high-freq visible: live-feed, blacklist, effects, history,
@@ -5178,13 +5034,6 @@ body.stream-mode .admin-hero .admin-summary-grid {
   margin-bottom: 1.1rem;
 }
 
-.asset-dashboard-card {
-  border: 1px solid rgba(120, 53, 15, 0.45);
-  border-radius: var(--radius-xl);
-  background: linear-gradient(145deg, rgba(41, 37, 36, 0.8), rgba(28, 25, 23, 0.72));
-  padding: 0.9rem 1rem;
-}
-
 .asset-dashboard-label {
   display: block;
   margin-bottom: 0.45rem;
@@ -5192,21 +5041,6 @@ body.stream-mode .admin-hero .admin-summary-grid {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-}
-
-.asset-dashboard-card strong {
-  display: block;
-  margin-bottom: 0.45rem;
-  color: #fafaf9;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.asset-dashboard-card p {
-  margin: 0;
-  color: #d6d3d1;
-  font-size: 0.875rem;
-  line-height: 1.45;
 }
 
 .history-section-body {
@@ -5227,7 +5061,9 @@ body.stream-mode .admin-hero .admin-summary-grid {
   border: 1px solid var(--hud-line);
   border-radius: var(--radius-xl);
   background: var(--hud-bg1);
-  padding: 0.9rem 1rem;
+  /* was 0.9rem 1rem — 14.4px is off the D-1 4px grid (and rem values slip past
+     the offGrid lint, which only reads px), so it survived the D-1 sweep. */
+  padding: var(--space-4);
 }
 
 .history-dashboard-card--chart,
@@ -5343,10 +5179,18 @@ body.stream-mode .admin-hero .admin-summary-grid {
   padding: 0.7rem 0.9rem;
 }
 
+/* A translucent scrim over whatever is behind it — the intent is "recessed
+   well", but only the dark arm was ever written, so on the light admin it
+   painted a mid-grey slab (#95969e) and dragged the header row's slate-600
+   copy down to 2.6:1. The dark arm below is byte-identical to what shipped;
+   the light arm is the same idea inverted (a 4% slate wash on white).
+   --hud-bg1/--hud-bg2 are both wrong here: bg1 is exactly the panel behind
+   the shell and bg2 is exactly the message rows on top of it, so either one
+   would collapse a layer of the stack. */
 .history-list-shell {
-  border: 1px solid rgba(51, 65, 85, 0.66);
+  border: 1px solid var(--hud-line);
   border-radius: var(--radius-xl);
-  background: rgba(2, 6, 23, 0.42);
+  background: light-dark(rgba(15, 23, 42, 0.04), rgba(2, 6, 23, 0.42));
   padding: 0.85rem 0.9rem;
 }
 
