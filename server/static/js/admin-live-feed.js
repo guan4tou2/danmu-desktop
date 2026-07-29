@@ -497,9 +497,7 @@
 
           <!-- Message list (relative for sticky jump pill) -->
           <div class="admin-lf-v4__streamwrap">
-            <div id="liveFeedList" class="admin-live-feed-list admin-lf-v4__list" role="list" data-density="comfy">
-              <div class="admin-live-feed-empty">${escapeAttr(ServerI18n.t("liveFeedWaiting"))}</div>
-            </div>
+            <div id="liveFeedList" class="admin-live-feed-list admin-lf-v4__list" role="list" data-density="comfy"></div>
             <div class="admin-lf-v4__jump" data-lf-jump hidden>
               <button type="button" data-lf-jump-btn>↓ <span data-lf-jump-n>0</span> 新訊息</button>
             </div>

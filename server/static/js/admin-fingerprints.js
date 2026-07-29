@@ -70,10 +70,11 @@
     if (!wrap) return;
 
     if (!records || records.length === 0) {
-      wrap.innerHTML =
-        '<div class="admin-fp-empty">' +
-        escapeHtml(ServerI18n.t("noFingerprints")) +
-        "</div>";
+      // D-6 (2026-07-28): 一行灰字換共用 AdminEmpty（指紋＝觀眾的另一視圖）。
+      wrap.innerHTML = "";
+      var card = window.AdminEmpty.render("audience");
+      card.dataset.emptyKind = "fingerprints";
+      wrap.appendChild(card);
       return;
     }
 

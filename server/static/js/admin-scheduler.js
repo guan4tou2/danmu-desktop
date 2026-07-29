@@ -226,7 +226,9 @@
         '<div class="admin-sch-timeline-head-label">HOUR</div>' +
         '<div class="admin-sch-timeline-hours">' + hours.join("") + "</div>" +
       "</div>" +
-      (rowsHtml || '<div class="admin-emojis-empty" style="padding:24px;text-align:center">' + escapeHTML(ServerI18n.t("noActiveJobs")) + "</div>");
+      (rowsHtml || (window.AdminEmpty
+        ? window.AdminEmpty.renderCustom({ icon: "⏰", title: ServerI18n.t("noActiveJobs") }).outerHTML
+        : '<div style="padding:24px;text-align:center">' + escapeHTML(ServerI18n.t("noActiveJobs")) + "</div>"));
   }
 
   function renderCalendar(jobs) {
@@ -306,8 +308,11 @@
       }
 
       if (data.jobs.length === 0) {
-        list.innerHTML =
-          '<div class="admin-emojis-empty">' + escapeHTML(ServerI18n.t("noActiveJobs")) + "</div>";
+        // D-6 (2026-07-28): 不再借用 emojis 的 class，換共用 AdminEmpty preset。
+        list.innerHTML = "";
+        const card = window.AdminEmpty.render("scheduler");
+        card.dataset.emptyKind = "scheduler";
+        list.appendChild(card);
         return;
       }
 

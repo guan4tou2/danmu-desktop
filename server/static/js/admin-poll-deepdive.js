@@ -55,14 +55,23 @@
       </div>`;
   }
 
-  function _renderEmpty() {
-    return `
-      <div class="admin-pdd-empty lg:col-span-2">
-        <div class="admin-pdd-empty-icon">◌</div>
-        <div class="admin-pdd-empty-title">目前沒有投票資料</div>
-        <p class="admin-pdd-empty-desc">建立或啟動一個 poll 後，回到這頁就能看深度分析。</p>
-        <a class="admin-pdd-empty-action" href="#/polls">→ 前往投票管理</a>
-      </div>`;
+  // D-6 (2026-07-28): 自造的 admin-pdd-empty-* 四段結構收斂到共用 AdminEmpty。
+  function _renderEmptyInto(grid) {
+    grid.innerHTML = "";
+    if (!window.AdminEmpty) {
+      grid.innerHTML = '<div class="admin-pdd-loading">目前沒有投票資料</div>';
+      return;
+    }
+    const card = window.AdminEmpty.renderCustom({
+      icon: "◌",
+      title: "目前沒有投票資料",
+      desc: "建立或啟動一個 poll 後，回到這頁就能看深度分析。",
+      actionLabel: "→ 前往投票管理",
+      action: () => { location.hash = "#/polls"; },
+    });
+    card.classList.add("lg:col-span-2");
+    card.dataset.emptyKind = "poll-deepdive";
+    grid.appendChild(card);
   }
 
   function _renderPoll(poll) {
@@ -243,7 +252,7 @@
     const grid = document.querySelector("[data-pdd-grid]");
     if (!grid) return;
     if (!_state.poll || !_state.poll.poll_id) {
-      grid.innerHTML = _renderEmpty();
+      _renderEmptyInto(grid);
       return;
     }
     grid.innerHTML = _renderPoll(_state.poll);

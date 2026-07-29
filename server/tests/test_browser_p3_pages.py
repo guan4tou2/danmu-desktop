@@ -178,7 +178,8 @@ def test_audience_page_renders(admin_page):
     assert admin_page.locator("[data-aud-filter]").count() == 2
     # Table header (or empty state)
     has_header = admin_page.locator(".admin-aud-row--head").count()
-    has_empty = admin_page.locator(".admin-aud-empty").count()
+    # D-6 (2026-07-28): 空狀態改用共用 AdminEmpty（data-empty-kind="audience"）。
+    has_empty = admin_page.locator('[data-empty-kind="audience"]').count()
     assert has_header + has_empty >= 1
 
 
@@ -212,7 +213,8 @@ def test_poll_deepdive_page_renders(admin_page):
     admin_page.wait_for_selector("#sec-poll-deepdive-overview", state="visible", timeout=5000)
     # Either populated state (header + KPI) OR empty state
     has_header = admin_page.locator(".admin-pdd-header").count()
-    has_empty = admin_page.locator(".admin-pdd-empty").count()
+    # D-6 (2026-07-28): 空狀態改用共用 AdminEmpty（data-empty-kind="poll-deepdive"）。
+    has_empty = admin_page.locator('[data-empty-kind="poll-deepdive"]').count()
     assert has_header + has_empty >= 1
     # If populated, sentiment row should be present (G8 polish)
     if has_header > 0:

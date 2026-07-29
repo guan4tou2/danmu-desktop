@@ -142,28 +142,21 @@
       host.innerHTML = "";
       return;
     }
-    host.innerHTML = `
-      <div class="admin-proto-empty admin-proto-empty--fonts" data-empty-kind="fonts">
-        <div class="admin-proto-empty-title">尚未上傳自訂字型</div>
-        <div class="admin-proto-empty-desc">
-          預設使用 Noto Sans TC + IBM Plex Mono。<br/>
-          上傳 .woff2 / .ttf 可給觀眾選用,或設為 Desktop 預設字型。
-        </div>
-        <div class="admin-proto-empty-actions">
-          ${loggedIn ? '<button type="button" class="admin-proto-empty-primary" data-empty-cta="fonts-upload-first">⇪ 上傳字型</button>' : ''}
-        </div>
-        <div class="admin-proto-empty-hint">支援格式 · WOFF2 · WOFF · TTF · OTF</div>
-      </div>
-    `;
-    if (loggedIn) {
-      var btn = host.querySelector('[data-empty-cta="fonts-upload-first"]');
-      if (btn) {
-        btn.addEventListener("click", function () {
-          var fi = document.getElementById("adminFontFileInput");
-          if (fi) fi.click();
-        });
-      }
-    }
+    // D-6 (2026-07-28): 自造的 admin-proto-empty--fonts 收斂到共用 AdminEmpty。
+    host.innerHTML = "";
+    var card = window.AdminEmpty.renderCustom({
+      icon: "⌂",
+      title: "尚未上傳自訂字型",
+      desc: "預設使用 Noto Sans TC + IBM Plex Mono。上傳 .woff2 / .ttf 可給觀眾選用，或設為 Desktop 預設字型。",
+      actionLabel: loggedIn ? "⇪ 上傳字型" : undefined,
+      action: function () {
+        var fi = document.getElementById("adminFontFileInput");
+        if (fi) fi.click();
+      },
+      extra: "支援格式 · WOFF2 · WOFF · TTF · OTF",
+    });
+    card.dataset.emptyKind = "fonts";
+    host.appendChild(card);
   }
 
   function fontRow(font, loggedIn) {

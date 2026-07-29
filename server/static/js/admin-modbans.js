@@ -79,7 +79,12 @@
     if (!bodyEl) return;
     const rows = _state.rows || [];
     if (rows.length === 0) {
-      bodyEl.innerHTML = '<div class="admin-modbans-empty">目前沒有 ban 記錄</div>';
+      // D-6 (2026-07-28): 一行灰字換共用 AdminEmpty（blacklist preset 的
+      // CTA 正好導向新增規則）。
+      bodyEl.innerHTML = "";
+      const card = window.AdminEmpty.render("blacklist");
+      card.dataset.emptyKind = "modbans";
+      bodyEl.appendChild(card);
       return;
     }
     bodyEl.innerHTML = rows.map(function (r) {

@@ -178,11 +178,11 @@
     const records = _filteredRecords();
     if (summary) summary.textContent = "顯示 " + records.length + " 筆";
     if (records.length === 0) {
-      list.innerHTML = `
-        <div class="admin-aud-empty">
-          <div class="t">沒有觀眾資料</div>
-          <div class="s">當有觀眾發送訊息或連線時會在這裡聚合。</div>
-        </div>`;
+      // D-6 (2026-07-28): 自造 admin-aud-empty 換共用 AdminEmpty preset。
+      list.innerHTML = "";
+      const card = window.AdminEmpty.render("audience");
+      card.dataset.emptyKind = "audience";
+      list.appendChild(card);
       return;
     }
     const headerHtml = `

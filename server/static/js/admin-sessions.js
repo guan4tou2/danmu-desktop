@@ -289,7 +289,11 @@
 
     var list = _filteredSessions();
     if (!list.length) {
-      bodyEl.innerHTML = '<div style="padding:24px;text-align:center;color:var(--admin-text-dim);font-size:13px">尚無場次資料</div>';
+      // D-6 (2026-07-28): inline-style 佔位換共用 AdminEmpty preset。
+      bodyEl.innerHTML = "";
+      var card = window.AdminEmpty.render("sessions");
+      card.dataset.emptyKind = "sessions";
+      bodyEl.appendChild(card);
       return;
     }
 
