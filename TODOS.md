@@ -34,19 +34,6 @@ bottom 應加上 keyboardOffset）。
 
 ## Server — Admin 設計一致性（/design-review 2026-07-28 deferred）
 
-### 色彩命名空間收斂殘項：admin-bg / admin-raised / admin-line（D-2 續）
-**Priority:** P3
-D-2 主體已完成（見 Completed）。三組值仍分歧、待拍板後 alias：
-`--admin-bg` #020617 vs `--hud-bg0` #050912、`--admin-raised` #1e293b vs
-`--hud-bg2` #182239、`--admin-line` light 側 alpha .12 vs `--hud-line` .10。
-
-### 頁首 shell 與按鈕階層收回原語（D-5/D-7，部分已修）
-**Priority:** P2
-剩餘：頁首缺 note 的 9 檔補齊、viewer-theme 自成一格的頁首收回、
-onboarding `.ob-btn` 與 `admin-dsp2-btn-ghost` 兩套私有按鈕階層、
-`admin-empty__btn` 與 `.admin-ui-action` 的 padding 量級差。
-（已修 2026-07-28：ratelimit 頁首 clone 收回原語、fonts 補頁首、filters/fonts
-刪除鈕進 danger 階層——其餘三個刪除鈕實查本來就有危險視覺。）
 
 ### 空狀態/載入態歸一（D-6）
 **Priority:** P3
@@ -59,6 +46,15 @@ AdminEmpty 僅 5 頁採用、31 個模組自造 `*-empty`（72 條規則）；�
 拍板 4px 格為唯一刻度；六個 CSS 檔 939 個 4n+2/奇數值以 half-down snap；
 0/1/2px 為髮絲例外（`--space-05` 入 token）；`check-css-tokens.mjs` 新增
 offGrid ratchet、九檔歸零起算。golden master 驗證零非預期差異。
+
+### 色彩命名空間殘項二拍（D-2 續）— done 2026-07-28（v5.4.0 後）
+拍板 admin-bg/raised/line 統一到 hud 側；`--admin-*` 七顆全數成為純 alias，
+深色階梯收斂為 #050912 → #0c1424 → #182239 單一套。
+
+### 頁首 shell 與按鈕階層收回原語（D-5/D-7）— done 2026-07-28（v5.4.0 後）
+ratelimit 頁首 clone 收回原語、fonts/viewer-theme 補標準頁首、八頁補 note、
+filters/fonts 刪除鈕進 danger 階層、onboarding 與 display 的私有按鈕階層
+拆除。`admin-empty__btn` CTA 尺寸為刻意層級，記錄為保留。
 
 ### 合併三套色彩 token 命名空間（D-2 主體）— done 2026-07-28（v5.4.0 後）
 拍板：次要文字統一 slate-400（muted := secondary，回歸 muted 的
