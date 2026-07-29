@@ -499,7 +499,58 @@
 
   // DS-001: AdminHistoryTabbedPage (admin-tabbed.jsx). Three tabs:
   // EXPORT (↓) → history-v2-section, LIST (☰) → sec-history-list,
-  // REPLAY (▶) → sec-history.
+  // REPLAY (▶) → sec-history + replay-v2-section.
+  //
+  // 這條 strip 是 AdminTabs「重播」分頁**底下的子分頁**，不是 route-level 的
+  // 可見性來源：AdminTabs.applyTabSectionVisibility 決定整組四個 section 要不要
+  // 上台，這裡只在「人已經站在 history/replay」時把那組收斂成單一 pane。
+  // 2026-07-29 修正前這裡把選擇寫進 body.dataset.historyTab，而 admin-replay.js
+  // 會用 AdminTabs 的 leaf 覆寫同一個 attribute（兩套詞彙共用一格），再加上
+  // style.css 那組 body[data-history-tab=…] !important 規則，結果點「時間軸匯出」
+  // 反而把匯出精靈藏起來。現在選擇只留在本模組，body attribute 不再是可見性通道。
+  var SUBTAB_PANES = {
+    export: ["history-v2-section"],
+    list: ["sec-history-list"],
+    // 重播 pane 由 admin-replay.js 注入的 replay-v2-section 與舊 sec-history 卡
+    // 兩塊組成，要一起進退。
+    replay: ["sec-history", "replay-v2-section"],
+  };
+  var SUBTAB_ALL_PANES = ["history-v2-section", "sec-history-list", "sec-history", "replay-v2-section"];
+  // null = 使用者還沒點過子分頁 → 完全不碰 display，維持 AdminTabs 落地時
+  // 三個 pane 並列的樣貌。
+  var _historySubTab = null;
+
+  // 只有 AdminTabs 的 history／重播分頁真的在台上時，子分頁才有權改 display；
+  // 否則會把 pane 漏到 history 的其他分頁（場次／搜尋／審計／觀眾）上。
+  function _onHistoryReplayTab() {
+    var shell = document.querySelector(".admin-dash-grid");
+    var parts = (window.location.hash || "").replace("#/", "").split("/");
+    var route = (shell && shell.dataset && shell.dataset.activeRoute) || parts[0] || "";
+    var leaf = (shell && shell.dataset && shell.dataset.activeLeaf) || parts[1] || "";
+    return route === "history" && leaf === "replay";
+  }
+
+  function _syncHistorySubTabs() {
+    var bar = document.getElementById("sec-history-tabs");
+    if (!bar) return;
+    bar.querySelectorAll("[data-history-tab]").forEach(function (b) {
+      var on = b.dataset.historyTab === _historySubTab;
+      b.classList.toggle("is-active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    if (!_historySubTab || !_onHistoryReplayTab()) return;
+    var shown = SUBTAB_PANES[_historySubTab] || [];
+    SUBTAB_ALL_PANES.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = shown.indexOf(id) >= 0 ? "" : "none";
+    });
+    var listSec = document.getElementById("sec-history-list");
+    if (_historySubTab === "list" && listSec && !listSec.dataset.loaded) {
+      listSec.dataset.loaded = "1";
+      _loadHistoryList(listSec);
+    }
+  }
+
   function _initHistoryTabs() {
     if (document.getElementById("sec-history-tabs")) return; // idempotent
     var historyCard = document.getElementById("sec-history");
@@ -525,40 +576,20 @@
       parent.insertBefore(listSec, historyCard);
     }
 
-    if (!document.body.dataset.historyTab) document.body.dataset.historyTab = "export";
-
     bar.addEventListener("click", function (e) {
       var btn = e.target.closest("[data-history-tab]");
       if (!btn) return;
-      document.body.dataset.historyTab = btn.dataset.historyTab;
-      _syncHistoryTabs();
+      _historySubTab = btn.dataset.historyTab;
+      _syncHistorySubTabs();
     });
 
-    function _syncHistoryTabs() {
-      var active = document.body.dataset.historyTab || "export";
-      bar.querySelectorAll("[data-history-tab]").forEach(function (b) {
-        b.classList.toggle("is-active", b.dataset.historyTab === active);
-        b.setAttribute("aria-selected", b.dataset.historyTab === active ? "true" : "false");
-      });
-      var exportSec = document.getElementById("history-v2-section");
-      var replaySec = document.getElementById("sec-history");
-      var listSec   = document.getElementById("sec-history-list");
-      if (exportSec) exportSec.style.display = active === "export" ? "" : "none";
-      if (replaySec) replaySec.style.display  = active === "replay" ? "" : "none";
-      if (listSec)   listSec.style.display    = active === "list"   ? "" : "none";
-      if (active === "list" && listSec && !listSec.dataset.loaded) {
-        listSec.dataset.loaded = "1";
-        _loadHistoryList(listSec);
-      }
-      document.dispatchEvent(new CustomEvent("admin:history-tab", { detail: { tab: active } }));
-    }
-
-    window.addEventListener("hashchange", function () {
-      var hash = (window.location.hash.match(/^#\/([\w-]+)/) || [])[1] || "";
-      if (hash === "history") _syncHistoryTabs();
-    });
-    _syncHistoryTabs();
+    _syncHistorySubTabs();
   }
+
+  // AdminTabs 的 route-level pass 會把該分頁所有 section 的 display 寫回 ""，
+  // 所以子分頁選擇必須在 admin-route-applied（admin.js 保證那是最後一棒）之後
+  // 重放一次，否則任何一次晚到的 DOM 變動都會把 pane 全部翻回可見。
+  document.addEventListener("admin-route-applied", _syncHistorySubTabs);
 
   function _makeTabBtn(key, icon, zh, en) {
     return '<button type="button" class="admin-tabstrip-tab" data-history-tab="' + key + '" role="tab" aria-selected="false">' +

@@ -401,26 +401,46 @@ test.describe("系統維運後台（真實 UI 操作）", () => {
     await expect(admin.locator("#histv2-estimate")).toContainText(`${rows.length} 筆訊息`);
   });
 
-  // 疑似產品問題（2026-07-29 實測）：#/history/replay 頁面上方那層舊 tabstrip
-  // （[data-history-tab] = export / list / replay）點了沒有效果 —— 兩套可見性
-  // 控制打架：
-  //   1. admin-history.js 的 click handler 把 body.dataset.historyTab 設成
-  //      "export"，然後 dispatch admin:history-tab；
-  //   2. admin-replay.js 監聽同一個事件，_applyHashVisibility() 讀
-  //      .admin-dash-grid 的 activeLeaf（側欄 tab 決定的，此時是 "replay"），
-  //      又把 body.dataset.historyTab 覆寫回 "replay"；
-  //   3. style.css:6123 的 body[data-history-tab="replay"] #history-v2-section
-  //      { display:none !important } 於是把剛點開的匯出精靈藏起來。
-  // 淨效果：點「時間軸匯出」反而會讓匯出精靈消失。落地時（沒碰 tabstrip）
-  // 三個 pane 是全部一起顯示的，所以匯出功能本身還能用，上面那個案例就走這條
-  // 路徑。依指示不改產品碼，這裡留一個 skip 的案例記錄行為。
-  test.skip("紀錄 & 匯出：舊 tabstrip「時間軸匯出」可切換（產品問題：點了反而隱藏）", async () => {
+  // B7 迴歸（2026-07-29 修好）：#/history/replay 上方那層舊 tabstrip
+  // （#sec-history-tabs 內的 export / list / replay）是「重播」分頁底下的子分頁。
+  // 修好前它與 AdminTabs 打架 —— 點「時間軸匯出」時 admin-replay.js 會把
+  // body.dataset.historyTab 覆寫回 leaf 值，style.css 的
+  // body[data-history-tab="replay"] #history-v2-section { display:none !important }
+  // 於是把剛點開的匯出精靈藏起來。現在可見性只剩兩層且都在 JS：AdminTabs 管
+  // 分頁、admin-history.js 管重播分頁內的三個 pane。
+  //
+  // 選擇器一律鎖在 #sec-history-tabs 內：<body> 自己也帶 data-history-tab
+  // （admin-replay.js 寫的 leaf 值），裸選會撞上 strict mode。
+  test("紀錄 & 匯出：舊 tabstrip 三個子分頁互斥切換", async () => {
     await gotoRoute("history");
     await clickTab("history", "replay");
-    await admin.locator('[data-history-tab="export"]').click();
-    await expect(admin.locator('[data-history-tab="export"]')).toHaveClass(/is-active/);
+
+    const subTab = (k) => admin.locator(`#sec-history-tabs [data-history-tab="${k}"]`);
+
+    // 時間軸匯出 → 只剩匯出精靈
+    await subTab("export").click();
+    await expect(subTab("export")).toHaveClass(/is-active/);
     await expect(admin.locator("#history-v2-section")).toBeVisible();
     await expect(admin.locator("#sec-history")).toBeHidden();
+    await expect(admin.locator("#sec-history-list")).toBeHidden();
+
+    // 訊息清單 → 換成清單，且真的抓到資料（不是空殼）
+    await subTab("list").click();
+    await expect(subTab("list")).toHaveClass(/is-active/);
+    await expect(admin.locator("#sec-history-list")).toBeVisible();
+    await expect(admin.locator("#history-v2-section")).toBeHidden();
+
+    // 重播 → 換回舊 sec-history 卡
+    await subTab("replay").click();
+    await expect(subTab("replay")).toHaveClass(/is-active/);
+    await expect(admin.locator("#sec-history")).toBeVisible();
+    await expect(admin.locator("#sec-history-list")).toBeHidden();
+
+    // 離開重播分頁時整組都要收掉（子分頁選擇不能蓋過 AdminTabs）
+    await clickTab("history", "sessions");
+    await expect(admin.locator("#sec-history")).toBeHidden();
+    await expect(admin.locator("#sec-history-tabs")).toBeHidden();
+    await expect(admin.locator("#history-v2-section")).toBeHidden();
   });
 
   // ─── #/api-tokens ────────────────────────────────────────────────────

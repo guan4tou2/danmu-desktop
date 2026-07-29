@@ -6109,18 +6109,14 @@ body.stream-mode .admin-hero .admin-summary-grid {
   pointer-events: none;
 }
 
-/* History tab visibility — 3 tabs: export (v2 picker) / list (v1 detail) /
-   replay. body[data-history-tab] drives which pane shows.
-   - export tab → only #history-v2-section
-   - list tab → only #sec-history (legacy detail viewer)
-   - replay tab → only #replay-v2-section
-*/
-body[data-history-tab="export"] #sec-history { display: none !important; }
-body[data-history-tab="export"] #replay-v2-section { display: none !important; }
-body[data-history-tab="list"] #history-v2-section { display: none !important; }
-body[data-history-tab="list"] #replay-v2-section { display: none !important; }
-body[data-history-tab="replay"] #sec-history { display: none !important; }
-body[data-history-tab="replay"] #history-v2-section { display: none !important; }
+/* History tab visibility — 這裡曾有一組 body[data-history-tab=…] 的
+   `display: none !important`（export / list / replay 三個 pane 互斥）。
+   2026-07-29 移除：body 上那格 attribute 同時被兩套詞彙寫入——admin-replay.js
+   寫的是 AdminTabs 的 leaf（sessions / search / audit / replay / audience），
+   admin-history.js 的子分頁 strip 寫的是 pane（export / list / replay）——
+   互相覆寫後 !important 會贏過所有 inline display，點「時間軸匯出」反而把
+   匯出精靈藏掉。#/history 的可見性現在只有兩層、都在 JS：AdminTabs 管分頁，
+   admin-history.js 的子分頁 strip 管重播分頁內的三個 pane。 */
 
 /* History v2 (Timeline Export) page — prototype admin-batch1.jsx:218.
    Mirrors AdminPageShell layout: 1fr 380px grid, two card panes. */

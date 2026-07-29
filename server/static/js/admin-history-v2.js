@@ -370,28 +370,34 @@
     sec.className = "admin-v3-card lg:col-span-2 history-v2-section";
     historyCard.parentElement.insertBefore(sec, historyCard);
     _renderShell();
-    _applyHashVisibility();
+    _applyRouteGuard();
   }
 
   // Section id is `history-v2-section` — intentionally NOT prefixed `sec-`
   // so admin.js applySectionVisibility() (which only filters [id^="sec-"])
-  // doesn't touch it. We manage own visibility here to avoid leaking into
-  // every other route (#/widgets / #/themes etc.).
-  // Visible when: route === "history" AND body.dataset.historyTab === "export".
-  function _applyHashVisibility() {
+  // doesn't touch it. That leaves one job here: hide ourselves when the user
+  // is not on #/history at all, or the export wizard leaks onto every other
+  // route (#/widgets / #/themes …).
+  //
+  // 站在 #/history 之後就完全不插手——AdminTabs 決定「重播」分頁在不在台上、
+  // admin-history.js 的子分頁 strip 決定三個 pane 顯示哪一個。這裡以前還會讀
+  // body.dataset.historyTab 自算一份可見性，跟那兩者互相覆蓋（B7）。
+  function _applyRouteGuard() {
     var el = _section();
     if (!el) return;
+    var shell = document.querySelector(".admin-dash-grid");
     var hash = (window.location.hash.match(/^#\/(\w[\w-]*)/) || [])[1] || "dashboard";
-    var tab = (document.body && document.body.dataset && document.body.dataset.historyTab) || "export";
-    el.style.display = (hash === "history" && tab === "export") ? "" : "none";
+    var route = (shell && shell.dataset && shell.dataset.activeRoute) || hash;
+    if (route !== "history") el.style.display = "none";
   }
 
   document.addEventListener("admin-panel-rendered", function () {
     _ensureSection();
   });
 
-  window.addEventListener("hashchange", _applyHashVisibility);
-  document.addEventListener("admin:history-tab", _applyHashVisibility);
+  window.addEventListener("hashchange", _applyRouteGuard);
+  // 側欄點擊若沒改變 hash 就不會有 hashchange，route-applied 才是穩定的一棒。
+  document.addEventListener("admin-route-applied", _applyRouteGuard);
 
   window.AdminHistoryV2 = {
     refresh: _refreshEstimate,
