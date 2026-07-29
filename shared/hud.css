@@ -136,16 +136,20 @@
   line-height: 1.4;
 }
 
+/* hud-label 是 9–11px 全大寫小標，四個變體一律走 ink（文字）版：
+ * --color-primary/-success/-warning 的淺色臂是給色塊與邊框挑的中間調，
+ * 這個字級在白底上只有 3.19–4.10。ink 深色臂與原值相同 → 深色零變化。
+ * is-error 維持 --color-error：它的淺色臂 red-600 白底 5.94，本來就合格。 */
 .hud-label.is-accent {
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
 }
 
 .hud-label.is-success {
-  color: var(--color-success);
+  color: var(--color-ink-success);
 }
 
 .hud-label.is-warning {
-  color: var(--color-warning);
+  color: var(--color-ink-warning);
 }
 
 .hud-label.is-error {
@@ -476,21 +480,21 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-ui-chip.is-cyan {
   border-color: rgba(56, 189, 248, 0.45);
   background: rgba(56, 189, 248, 0.08);
-  color: var(--hud-cyan, #38bdf8);
+  color: var(--color-ink-accent);
 }
 
 .admin-ui-chip.is-warn,
 .admin-ui-chip[data-severity="warn"].is-active {
   border-color: rgba(251, 191, 36, 0.45);
   background: rgba(251, 191, 36, 0.08);
-  color: var(--hud-amber, #fbbf24);
+  color: var(--color-ink-warning);
 }
 
 .admin-ui-chip.is-danger,
 .admin-ui-chip[data-severity="danger"].is-active {
   border-color: rgba(248, 113, 113, 0.45);
   background: rgba(248, 113, 113, 0.08);
-  color: var(--hud-crimson, #f87171);
+  color: var(--color-ink-error);
 }
 
 .admin-ui-spacer {
@@ -532,19 +536,19 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-ui-action.is-primary {
   border-color: rgba(56, 189, 248, 0.45);
   background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.08));
-  color: var(--color-primary, var(--hud-cyan, #38bdf8));
+  color: var(--color-ink-accent);
 }
 
 .admin-ui-action.is-warn {
   border-color: rgba(251, 191, 36, 0.45);
   background: rgba(251, 191, 36, 0.08);
-  color: var(--hud-amber, #fbbf24);
+  color: var(--color-ink-warning);
 }
 
 .admin-ui-action.is-danger {
   border-color: rgba(248, 113, 113, 0.45);
   background: rgba(248, 113, 113, 0.06);
-  color: var(--hud-crimson, #f87171);
+  color: var(--color-ink-error);
 }
 
 .admin-ui-action.is-block {
@@ -556,19 +560,19 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-ui-action:hover {
   border-color: rgba(56, 189, 248, 0.45);
   background: rgba(56, 189, 248, 0.06);
-  color: var(--hud-cyan, #38bdf8);
+  color: var(--color-ink-accent);
 }
 
 .admin-ui-action.is-danger:hover {
   border-color: rgba(248, 113, 113, 0.60);
   background: rgba(248, 113, 113, 0.10);
-  color: var(--hud-crimson, #f87171);
+  color: var(--color-ink-error);
 }
 
 .admin-ui-action.is-warn:hover {
   border-color: rgba(251, 191, 36, 0.60);
   background: rgba(251, 191, 36, 0.12);
-  color: var(--hud-amber, #fbbf24);
+  color: var(--color-ink-warning);
 }
 
 .admin-ui-action:disabled {
@@ -691,14 +695,14 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-ui-pill.is-cyan {
   border-color: rgba(56, 189, 248, 0.38);
   background: rgba(56, 189, 248, 0.08);
-  color: var(--hud-cyan, #38bdf8);
+  color: var(--color-ink-accent);
 }
 
 .admin-ui-pill.is-generic,
 .admin-ui-pill.is-warn {
   border-color: rgba(251, 191, 36, 0.35);
   background: rgba(251, 191, 36, 0.07);
-  color: var(--hud-amber, #fbbf24);
+  color: var(--color-ink-warning);
 }
 
 .admin-ui-pill.is-success,
@@ -706,14 +710,14 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-ui-pill.is-green {
   border-color: rgba(134, 239, 172, 0.38);
   background: rgba(134, 239, 172, 0.10);
-  color: var(--hud-lime, #86efac);
+  color: var(--color-ink-success);
 }
 
 .admin-ui-pill.is-danger,
 .admin-ui-pill.is-red {
   border-color: rgba(248, 113, 113, 0.42);
   background: rgba(248, 113, 113, 0.10);
-  color: var(--hud-crimson, #f87171);
+  color: var(--color-ink-error);
 }
 
 .admin-ui-pill.is-muted {
@@ -777,7 +781,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-ui-choice:has(input:checked) > span {
   border-color: rgba(56, 189, 248, 0.55);
   background: rgba(56, 189, 248, 0.12);
-  color: var(--hud-cyan, var(--color-primary));
+  color: var(--color-ink-accent);
 }
 
 .admin-ui-notice {
@@ -791,19 +795,19 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-ui-notice.is-warn {
   border: 1px solid rgba(251, 191, 36, 0.38);
   background: rgba(251, 191, 36, 0.10);
-  color: var(--hud-amber, #fbbf24);
+  color: var(--color-ink-warning);
 }
 
 .admin-ui-notice.is-danger {
   border: 1px solid rgba(248, 113, 113, 0.42);
   background: rgba(248, 113, 113, 0.10);
-  color: var(--hud-crimson, #f87171);
+  color: var(--color-ink-error);
 }
 
 .admin-ui-notice.is-success {
   border: 1px solid rgba(134, 239, 172, 0.42);
   background: rgba(134, 239, 172, 0.10);
-  color: var(--hud-lime, #86efac);
+  color: var(--color-ink-success);
 }
 
 .admin-ui-row-action {
@@ -815,11 +819,11 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 
 .admin-ui-timeline-row[data-severity="danger"] .admin-ui-row-action {
-  color: var(--hud-crimson, #f87171);
+  color: var(--color-ink-error);
 }
 
 .admin-ui-timeline-row[data-severity="warn"] .admin-ui-row-action {
-  color: var(--hud-amber, #fbbf24);
+  color: var(--color-ink-warning);
 }
 
 .admin-ui-target {
@@ -1032,7 +1036,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   padding: 4px 12px; border-radius: var(--radius-sm);
   border: 1px solid var(--hud-cyan);
   background: rgba(56, 189, 248, 0.10);
-  color: var(--hud-cyan);
+  color: var(--color-ink-accent);
   font-family: var(--hud-font-mono);
   font-size: 10px; letter-spacing: 1px; cursor: pointer;
 }
@@ -1066,7 +1070,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-em-v4__count {
   font-family: var(--hud-font-mono);
   font-size: 10px; letter-spacing: 1px;
-  color: var(--hud-cyan);
+  color: var(--color-ink-accent);
 }
 
 .admin-em-v4__grid {
@@ -1093,7 +1097,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-em-v4__tile-name {
   font-family: var(--hud-font-mono);
   font-size: 10px; letter-spacing: 0.3px;
-  color: var(--hud-cyan);
+  color: var(--color-ink-accent);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .admin-em-v4__tile-meta {
@@ -1122,12 +1126,12 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-em-v4__tile-actions .emoji-copy-btn {
   background: rgba(56, 189, 248, 0.20);
   border: 1px solid var(--hud-cyan);
-  color: var(--hud-cyan);
+  color: var(--color-ink-accent);
 }
 .admin-em-v4__tile-actions .emoji-delete-btn {
   background: rgba(255, 77, 79, 0.20);
   border: 1px solid var(--hud-crimson, #ff4d4f);
-  color: var(--hud-crimson, #ff4d4f);
+  color: var(--color-ink-error);
   font-size: 12px; padding: 0 8px;
 }
 
@@ -1149,7 +1153,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-em-v4__preview-pair { display: inline-flex; align-items: center; gap: 4px; }
 .admin-em-v4__preview-pair code {
   font-family: var(--hud-font-mono);
-  font-size: 11px; color: var(--hud-cyan);
+  font-size: 11px; color: var(--color-ink-accent);
 }
 .admin-em-v4__preview-pair img {
   width: 20px; height: 20px; vertical-align: middle;
@@ -1430,7 +1434,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   font-family: var(--font-display);
   font-size: 36px;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   letter-spacing: 0.02em;
   line-height: 1;
   display: inline-block;
@@ -1515,7 +1519,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .viewer-offline-lockup {
   font-family: var(--font-display);
   font-size: clamp(2rem, 5vw, 2.75rem);
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   letter-spacing: 0.02em;
   line-height: 1;
   margin: 0;
@@ -1569,7 +1573,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   border-radius: var(--radius-pill);
   background: var(--hud-cyan-soft);
   border: 1px solid var(--hud-cyan-line);
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 1px;
@@ -1652,7 +1656,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   z-index: 1;
   font-size: 20px;
   letter-spacing: 4px;
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   text-transform: uppercase;
 }
 
@@ -1660,7 +1664,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   position: relative;
   z-index: 1;
   font-size: 22px;
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   animation: overlay-connecting-pulse 1.4s ease-in-out infinite;
 }
 
@@ -1742,7 +1746,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-lockout-contact {
   display: inline-block;
   margin-top: 4px;
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 1.5px;
@@ -1761,7 +1765,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   text-transform: uppercase;
 }
 .admin-login-attempts.is-warn {
-  color: var(--color-warning);
+  color: var(--color-ink-warning);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -2036,7 +2040,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-lf-v4__chip.is-active {
   border-color: var(--hud-cyan);
-  color: var(--hud-cyan);
+  color: var(--color-ink-accent);
   background: rgba(56, 189, 248, 0.10);
 }
 .admin-lf-v4__count {
@@ -2074,7 +2078,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-lf-v4__dchip.is-active {
   border-color: var(--hud-cyan);
-  color: var(--hud-cyan);
+  color: var(--color-ink-accent);
 }
 
 .admin-lf-v4__pausebtn {
@@ -2087,7 +2091,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-lf-v4__pausebtn:hover {
   border-color: var(--hud-cyan);
-  color: var(--hud-cyan);
+  color: var(--color-ink-accent);
 }
 
 .admin-lf-v4__bulk {
@@ -2114,7 +2118,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   padding: 4px 16px; border-radius: var(--radius-pill);
   background: rgba(0, 0, 0, 0.85);
   border: 1px solid var(--hud-cyan);
-  color: var(--hud-cyan);
+  color: var(--color-ink-accent);
   font-family: var(--hud-font-mono);
   font-size: 11px; letter-spacing: 0.5px; cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -2205,7 +2209,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 
 .admin-live-feed-nick {
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   font-size: 11px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2284,7 +2288,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 
 .admin-identity-nick.is-clickable:hover,
 .admin-identity-nick.is-clickable:focus-visible {
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   text-decoration: underline;
   text-underline-offset: 2px;
   outline: none;
@@ -2319,7 +2323,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 
 .admin-identity-fp.is-clickable:hover,
 .admin-identity-fp.is-clickable:focus-visible {
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   text-decoration: underline;
   text-underline-offset: 2px;
   outline: none;
@@ -2408,7 +2412,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-fonts-drop-icon {
   font-family: var(--font-mono);
   font-size: 22px;
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   line-height: 1;
 }
 
@@ -2808,7 +2812,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-cmdk-chip:hover { color: var(--admin-text, #e2e8f0); }
 .admin-cmdk-chip.is-on {
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   background: rgba(56, 189, 248, 0.1);
 }
 .admin-cmdk-hint {
@@ -2829,7 +2833,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-cmdk-prompt {
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   border: 1px solid var(--glow-primary, rgba(56, 189, 248, 0.4));
   border-radius: var(--radius-sm);
   padding: 2px 8px;
@@ -2872,7 +2876,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 1px;
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   background: rgba(56, 189, 248, 0.08);
   border: 1px solid rgba(56, 189, 248, 0.18);
   padding: 2px 4px;
@@ -3022,7 +3026,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-dsp2-value-badge.is-on {
   background: rgba(56, 189, 248, 0.08);
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
 }
 
 /* ── Center column: hint + picker + range band ───────────────────── */
@@ -3033,7 +3037,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   margin-bottom: 8px;
   display: flex; align-items: center; gap: 4px;
 }
-.admin-dsp2-cell-hint-arrow { color: var(--color-primary); }
+.admin-dsp2-cell-hint-arrow { color: var(--color-ink-accent); }
 
 .admin-dsp2-picker { min-width: 0; }
 .admin-dsp2-band-host { min-width: 0; }
@@ -3081,7 +3085,9 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-dsp2-slider-axis {
   display: flex; justify-content: space-between;
   font-family: var(--font-mono); font-size: 9px;
-  color: rgba(148, 163, 184, 0.7);
+  /* slate-400 再乘 0.7 alpha：淺色 1.88、深色 4.11 —— 兩個主題都不合格。
+   * 9px 刻度沒有再打薄的餘裕，改用實色的次要文字 token。 */
+  color: var(--color-text-secondary);
   margin-top: 4px;
 }
 
@@ -3100,7 +3106,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-dsp2-fchip.is-active {
   background: rgba(56, 189, 248, 0.08);
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
 }
 
 /* Color swatches */
@@ -3140,7 +3146,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-dsp2-tchip:hover { border-color: rgba(56, 189, 248, 0.55); color: var(--admin-text); }
 .admin-dsp2-tchip.is-active {
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   background: rgba(56, 189, 248, 0.08);
 }
 
@@ -3159,14 +3165,14 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-dsp2-tile.is-active {
   border-color: var(--color-primary);
   background: rgba(56, 189, 248, 0.08);
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
 }
 .admin-dsp2-tile-icon { font-size: 14px; line-height: 1; }
 .admin-dsp2-tile-label {
   font-family: var(--font-mono); font-size: 8px; letter-spacing: 1px;
   color: var(--admin-text-dim);
 }
-.admin-dsp2-tile.is-active .admin-dsp2-tile-label { color: var(--color-primary); }
+.admin-dsp2-tile.is-active .admin-dsp2-tile-label { color: var(--color-ink-accent); }
 
 /* Range band [Min | Max | Step] */
 .admin-dsp2-band {
@@ -3181,7 +3187,9 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-dsp2-band-input {
   display: flex; align-items: center; gap: 4px;
   padding: 4px 8px; border-radius: var(--radius-xs);
-  background: rgba(0, 0, 0, 0.25);
+  /* 原本是不隨主題的半透明黑：在白面板上壓成中灰 rgb(181,184,187)，
+   * 把 --admin-text 的淺色臂（slate-600）擠到 3.78。深色臂原值不動。 */
+  background: light-dark(rgba(15, 23, 42, 0.05), rgba(0, 0, 0, 0.25));
   border: 1px solid var(--admin-line);
 }
 .admin-dsp2-band-input input {
@@ -3214,7 +3222,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-dsp2-pill.is-on {
   background: rgba(56, 189, 248, 0.08);
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
 }
 .admin-dsp2-pill-track {
   width: 26px; height: 14px; border-radius: var(--radius-md);
@@ -3238,7 +3246,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   color: var(--admin-text-dim);
   max-width: 150px; line-height: 1.5;
 }
-.admin-dsp2-row.is-on .admin-dsp2-toggle-hint { color: var(--color-primary); }
+.admin-dsp2-row.is-on .admin-dsp2-toggle-hint { color: var(--color-ink-accent); }
 
 /* ── Right rail cards ─────────────────────────────────────────────── */
 .admin-dsp2-rail { display: flex; flex-direction: column; gap: 12px; }
@@ -3264,7 +3272,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-dsp2-preview-sync {
   margin-left: auto;
   font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px;
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   display: inline-flex; align-items: center; gap: 4px;
 }
 .admin-dsp2-dot {
@@ -3274,6 +3282,10 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-dsp2-preview-stage {
   height: 180px;
+  /* 這塊是模擬 overlay 的舞台，底寫死 #000、兩個主題都一樣。宣告 dark 之後
+   * 台內每顆 light-dark() token 自動解析深色臂 —— 否則淺色主題會把台上的
+   * 文字翻成深色，變成「深字壓黑底」。 */
+  color-scheme: dark;
   background:
     linear-gradient(to right, rgba(125, 211, 252, 0.04) 1px, transparent 1px) 0 0 / 24px 24px,
     linear-gradient(to bottom, rgba(125, 211, 252, 0.04) 1px, transparent 1px) 0 0 / 24px 24px,
@@ -3300,7 +3312,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   font-size: 0.42em;
   margin-right: 8px;
   vertical-align: middle;
-  color: rgba(148, 163, 184, 0.8);
+  color: var(--color-text-secondary);
 }
 .admin-dsp2-preview-pill-2 .admin-dsp2-preview-tag {
   font-size: 0.42em; margin-right: 8px;
@@ -3315,7 +3327,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   color: var(--admin-text-dim);
   display: flex; justify-content: space-between;
 }
-.admin-dsp2-preview-foot > span:last-child { color: var(--color-primary); }
+.admin-dsp2-preview-foot > span:last-child { color: var(--color-ink-accent); }
 
 /* DeployCard */
 .admin-dsp2-deploy { padding: 12px; }
@@ -3383,7 +3395,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   font-family: var(--font-mono); font-size: 9px; letter-spacing: 1px;
   color: var(--admin-text-dim);
 }
-.admin-dsp2-srow.is-on .admin-dsp2-srow-tag { color: var(--color-primary); }
+.admin-dsp2-srow.is-on .admin-dsp2-srow-tag { color: var(--color-ink-accent); }
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Polls · Live HUD (admin-polls.jsx lines 480–661)
@@ -3456,7 +3468,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   font-weight: 600;
 }
 .admin-polls-live-progress strong {
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   font-size: 18px;
 }
 
@@ -3476,7 +3488,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   font-family: var(--font-mono);
   font-size: 22px;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   line-height: 1;
   letter-spacing: 1px;
 }
@@ -3543,7 +3555,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.admin-polls-live-bar.is-leader .lbl { color: var(--color-primary); }
+.admin-polls-live-bar.is-leader .lbl { color: var(--color-ink-accent); }
 .admin-polls-live-bar .lead {
   padding: 1px 4px;
   border-radius: var(--radius-pill);
@@ -3552,7 +3564,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 1px;
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   font-weight: 700;
 }
 .admin-polls-live-bar .pct {
@@ -3564,7 +3576,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   min-width: 50px;
   text-align: right;
 }
-.admin-polls-live-bar.is-leader .pct { color: var(--color-primary); }
+.admin-polls-live-bar.is-leader .pct { color: var(--color-ink-accent); }
 .admin-polls-live-bar .cnt {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -3640,7 +3652,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-polls-live-btn:hover:not(:disabled) {
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
 }
 .admin-polls-live-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .admin-polls-live-btn.is-danger {
@@ -3708,7 +3720,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-polls-live-qmini.is-done .idx {
   background: rgba(56, 189, 248, 0.35);
   border-color: rgba(56, 189, 248, 0.45);
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
 }
 .admin-polls-live-qmini .t {
   flex: 1;
@@ -3817,12 +3829,12 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-polls-results-tabs button:hover {
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
 }
 .admin-polls-results-tabs button.is-active {
   border-color: var(--color-primary);
   background: var(--hud-cyan-soft, rgba(56,189,248,0.12));
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   font-weight: 700;
 }
 .admin-polls-results-tabs button .t {
@@ -3900,7 +3912,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 1.5px;
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   margin-bottom: 4px;
 }
 .admin-polls-results-winner .lbl {
@@ -3919,7 +3931,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   font-family: var(--font-mono);
   font-size: 52px;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   letter-spacing: -2px;
   line-height: 1;
 }
@@ -3985,7 +3997,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   min-width: 54px;
   text-align: right;
 }
-.admin-polls-results-bar.is-winner .pct { color: var(--color-primary); }
+.admin-polls-results-bar.is-winner .pct { color: var(--color-ink-accent); }
 .admin-polls-results-bar .cnt {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -4129,7 +4141,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-polls-results-btn:hover {
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
 }
 .admin-polls-results-btn.is-primary {
   border-color: var(--color-primary);
@@ -4176,10 +4188,10 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-bc-v4__statelabel {
   font-family: var(--hud-font-mono);
   font-size: 11px; letter-spacing: 2px; font-weight: 700;
-  color: var(--hud-cyan);
+  color: var(--color-ink-accent);
 }
-.admin-bc-v4__statelabel[data-state="live"]   { color: var(--hud-crimson, #ff4d4f); }
-.admin-bc-v4__statelabel[data-state="paused"] { color: var(--hud-amber); }
+.admin-bc-v4__statelabel[data-state="live"]   { color: var(--color-ink-error); }
+.admin-bc-v4__statelabel[data-state="paused"] { color: var(--color-ink-warning); }
 
 .admin-bc-v4__spacer { flex: 1; }
 
@@ -4188,7 +4200,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: rgba(56, 189, 248, 0.10);
   border: 1px solid rgba(56, 189, 248, 0.40);
   font-family: var(--hud-font-mono);
-  font-size: 11px; letter-spacing: 0.5px; color: var(--hud-cyan);
+  font-size: 11px; letter-spacing: 0.5px; color: var(--color-ink-accent);
 }
 
 .admin-bc-v4__elapsed {
@@ -4249,7 +4261,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: rgba(255, 77, 79, 0.07);
   border: 1px solid rgba(255, 77, 79, 0.21);
   font-family: var(--hud-font-mono);
-  font-size: 10px; color: var(--hud-crimson, #ff4d4f);
+  font-size: 10px; color: var(--color-ink-error);
   letter-spacing: 0.5px; max-width: 800px; width: 100%; text-align: center;
 }
 
@@ -4269,13 +4281,13 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-bc-v4__sec:disabled { opacity: 0.4; cursor: default; }
 .admin-bc-v4__sec.is-pause.is-active {
   background: rgba(251, 191, 36, 0.10); border-color: var(--hud-amber);
-  color: var(--hud-amber);
+  color: var(--color-ink-warning);
 }
 .admin-bc-v4__sec.is-clear:hover:not(:disabled) {
-  border-color: var(--hud-cyan); color: var(--hud-cyan);
+  border-color: var(--hud-cyan); color: var(--color-ink-accent);
 }
 .admin-bc-v4__sec.is-archive:hover:not(:disabled) {
-  border-color: var(--hud-crimson, #ff4d4f); color: var(--hud-crimson, #ff4d4f);
+  border-color: var(--hud-crimson, #ff4d4f); color: var(--color-ink-error);
 }
 .admin-bc-v4__sec-label { font-size: 12px; }
 .admin-bc-v4__sec-hint {
@@ -4322,7 +4334,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   margin-top: 20px; padding: 8px 20px; border-radius: var(--radius-md-sm);
   border: 1px solid var(--hud-cyan);
   background: rgba(56, 189, 248, 0.10);
-  color: var(--hud-cyan);
+  color: var(--color-ink-accent);
   font-family: var(--hud-font-mono);
   font-size: 12px; letter-spacing: 1px; font-weight: 600;
   text-decoration: none;
@@ -4361,8 +4373,8 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   font-size: 12px; letter-spacing: 2px; font-weight: 700;
   color: var(--hud-text-dim, #94a3b8);
 }
-.admin-bc-v5__status-label[data-state="live"]   { color: var(--hud-lime, #84e100); }
-.admin-bc-v5__status-label[data-state="paused"] { color: var(--hud-amber); }
+.admin-bc-v5__status-label[data-state="live"]   { color: var(--color-ink-success); }
+.admin-bc-v5__status-label[data-state="paused"] { color: var(--color-ink-warning); }
 .admin-bc-v5__status-label[data-state="ended"]  { color: var(--hud-text-dim, #94a3b8); }
 
 /* Big toggle — soft when ON (de-dramatize), cyan when OFF (primary CTA),
@@ -4444,7 +4456,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-bc-v5__session-link {
   font-family: var(--hud-font-mono);
   font-size: 10px; letter-spacing: 0.5px;
-  color: var(--hud-cyan);
+  color: var(--color-ink-accent);
   text-decoration: none;
 }
 .admin-bc-v5__session-link:hover { text-decoration: underline; }
@@ -4694,7 +4706,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   width: 96px;
   height: 24px;
   flex-shrink: 0;
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   opacity: 0.85;
 }
 .admin-ratelimit-effective {
@@ -4771,7 +4783,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: var(--admin-raised);
   padding: 1px 4px;
   border-radius: var(--radius-xs);
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
 }
 @media (max-width: 760px) {
   .admin-ratelimit-vfeed-row { grid-template-columns: 60px 50px 1fr 60px; }
@@ -4890,7 +4902,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 0.5px;
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -4961,7 +4973,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-cmdk-search { position: relative; }
 .admin-cmdk-search-icon {
   font-size: 16px;
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   flex: 0 0 auto;
   width: 18px;
   text-align: center;
@@ -4993,7 +5005,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   font-size: 13px;
 }
 .admin-cmdk-row.is-active .admin-cmdk-icon {
-  color: var(--color-primary);
+  color: var(--color-ink-accent);
   background: rgba(56, 189, 248, 0.12);
   border-color: rgba(56, 189, 248, 0.36);
 }

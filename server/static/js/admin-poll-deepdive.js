@@ -175,8 +175,8 @@
           </div>
           <div class="admin-pdd-question">${escapeHtml(question)}</div>
           <div class="admin-pdd-kpis">
-            <div class="admin-pdd-kpi"><div class="k">總票數</div><div class="v" style="color:var(--hud-lime)">${total}</div></div>
-            <div class="admin-pdd-kpi"><div class="k">參與率</div><div class="v" style="color:var(--color-primary)">${participationVal}</div><div class="sub">${escapeHtml(participationSub)}</div></div>
+            <div class="admin-pdd-kpi"><div class="k">總票數</div><div class="v" style="color: var(--color-ink-success)">${total}</div></div>
+            <div class="admin-pdd-kpi"><div class="k">參與率</div><div class="v" style="color: var(--color-ink-accent)">${participationVal}</div><div class="sub">${escapeHtml(participationSub)}</div></div>
             <div class="admin-pdd-kpi"><div class="k">持續時間</div><div class="v">${escapeHtml(durationVal)}</div></div>
             <div class="admin-pdd-kpi"><div class="k">重複指紋</div><div class="v" style="color:${duplicates > 0 ? "var(--hud-amber)" : "var(--hud-lime)"}">${duplicates}</div><div class="sub">已自動去重</div></div>
             <div class="admin-pdd-kpi is-placeholder" title="需要 IP tracking（後續 BE 擴張）"><div class="k">作弊嘗試</div><div class="v">—</div><div class="sub">同 IP 連投（待 BE 擴張）</div></div>

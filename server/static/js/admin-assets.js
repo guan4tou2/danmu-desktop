@@ -18,11 +18,15 @@
 
   // Matches design palette — kind → { en, color }
   const KIND_META = {
-    dme:   { label: "效果",   en: "DME",     color: "var(--color-warning, #fbbf24)", route: "effects",      icon: "✦" },
-    font:  { label: "字型",   en: "FONTS",   color: "var(--color-primary)",          route: "fonts",        icon: "⌂" },
-    logo:  { label: "圖片",   en: "IMAGES",  color: "var(--hud-lime)",                 route: "viewer", icon: "◐" },
-    theme: { label: "主題",   en: "THEMES",  color: "#c4b5fd",                        route: "themes",       icon: "❖" },
-    sound: { label: "音效",   en: "SOUNDS",  color: "var(--hud-crimson)",              route: "assets",       icon: "♪" },
+    // 這五個色一律畫成文字（9–26px 的 kind 標籤、圖示、統計數字），所以走
+    // ink 版而不是 --color-*／--hud-*：後者的淺色臂是給色塊挑的中間調，
+    // 白底上只有 3.2–4.1。theme 這格原本是寫死的紫色系色碼（不隨主題翻面，
+    // 白底 1.85），改成 teal —— 五個分類色裡唯一還沒被佔用的色相。
+    dme:   { label: "效果",   en: "DME",     color: "var(--color-ink-warning)",      route: "effects",      icon: "✦" },
+    font:  { label: "字型",   en: "FONTS",   color: "var(--color-ink-accent)",       route: "fonts",        icon: "⌂" },
+    logo:  { label: "圖片",   en: "IMAGES",  color: "var(--color-ink-success)",      route: "viewer", icon: "◐" },
+    theme: { label: "主題",   en: "THEMES",  color: "var(--color-ink-theme)",        route: "themes",       icon: "❖" },
+    sound: { label: "音效",   en: "SOUNDS",  color: "var(--color-ink-error)",        route: "assets",       icon: "♪" },
   };
 
   let _state = {
@@ -59,7 +63,7 @@
           </div>
           <div class="admin-assets-stat">
             <div class="admin-assets-stat-head"><span class="lbl">主題包</span><span class="en">THEMES</span></div>
-            <div class="admin-assets-stat-val" data-assets-stat="theme" style="color:#c4b5fd">—</div>
+            <div class="admin-assets-stat-val" data-assets-stat="theme" style="color:var(--color-ink-theme)">—</div>
           </div>
         </div>
 

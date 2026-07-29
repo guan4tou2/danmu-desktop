@@ -407,7 +407,7 @@
       +         ' style="'
       +           'margin-top:4px;padding:7px 0;width:100%;'
       +           'background:transparent;border:1px solid var(--color-primary);'
-      +           'color:var(--color-primary);border-radius:4px;'
+      +           'color: var(--color-ink-accent);border-radius:4px;'
       +           'font-family:var(--font-mono);font-size:11px;letter-spacing:0.5px;'
       +           'cursor:pointer">詳細 →</button>'
       + '</div>';

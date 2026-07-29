@@ -175,7 +175,7 @@
               <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:4px;background:var(--hud-cyan-soft);border:1px solid var(--color-primary)">
                 <span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;background:var(--color-primary);box-shadow:0 0 6px var(--color-primary);animation:hud-pulse 2s ease-in-out infinite"></span>
                 <div style="flex:1;min-width:0">
-                  <div style="font-family:var(--font-mono);font-size:11px;color:var(--color-primary);letter-spacing:0.1em;font-weight:700">${escapeHtml(t("displayAutoSyncLive", "同步中 · LIVE"))}</div>
+                  <div style="font-family:var(--font-mono);font-size:11px;color: var(--color-ink-accent);letter-spacing:0.1em;font-weight:700">${escapeHtml(t("displayAutoSyncLive", "同步中 · LIVE"))}</div>
                   <div style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);margin-top:2px;letter-spacing:0.04em">${escapeHtml(t("displayAutoSyncNote", "更動即推送 · Desktop 與下次刷新觀眾即生效"))}</div>
                 </div>
               </div>
@@ -1256,8 +1256,8 @@
     rightCol.innerHTML =
       '<div style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.5px">觀眾端預覽</div>' +
       '<div class="admin-vc-preview-form">' +
-        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">暱稱 / Nickname <span style="color:var(--hud-crimson,#f87171)">*</span></div><div class="admin-vc-preview-input">阿傑</div></div>' +
-        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">訊息 / Message <span style="color:var(--hud-crimson,#f87171)">*</span></div><div class="admin-vc-preview-input" style="min-height:56px">+1 求簡報</div></div>' +
+        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">暱稱 / Nickname <span style="color: var(--color-ink-error)">*</span></div><div class="admin-vc-preview-input">阿傑</div></div>' +
+        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">訊息 / Message <span style="color: var(--color-ink-error)">*</span></div><div class="admin-vc-preview-input" style="min-height:56px">+1 求簡報</div></div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
           '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">顏色</div><div class="admin-vc-preview-input"><span class="admin-vc-swatch">' + swatchHtml + "</span></div></div>" +
           '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">字型</div><div class="admin-vc-preview-input">Noto Sans TC · <b>Zen Kaku</b></div></div>' +

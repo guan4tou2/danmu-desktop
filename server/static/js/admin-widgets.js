@@ -433,7 +433,7 @@
       });
       speedRow.appendChild(speedSlider);
       const speedVal = document.createElement("span");
-      speedVal.style.cssText = "min-width:38px;font-family:var(--font-mono);font-size:12px;color:var(--color-primary,#38bdf8);text-align:right";
+      speedVal.style.cssText = "min-width:38px;font-family:var(--font-mono);font-size:12px;color: var(--color-ink-accent);text-align:right";
       speedVal.textContent = speedSlider.value;
       speedSlider.addEventListener("input", () => { speedVal.textContent = speedSlider.value; });
       speedRow.appendChild(speedVal);

@@ -194,7 +194,7 @@
               <div class="text">${escapeHtml(q.text || "(空題目)")}</div>
               <div class="meta">${q.options.length} 選項 · ${q.timer === 0 ? "無時限" : q.timer + "s"} · ${hasImg ? "含圖 " + q.crop : "純文字"}</div>
             </div>
-            ${sessionRunning ? '<span class="editing-chip" style="background:rgba(134,239,172,0.12);color:var(--hud-lime)">● LIVE</span>' : (q.id === activeId ? '<span class="editing-chip">● 編輯中</span>' : "")}
+            ${sessionRunning ? '<span class="editing-chip" style="background:rgba(134,239,172,0.12);color: var(--color-ink-success)">● LIVE</span>' : (q.id === activeId ? '<span class="editing-chip">● 編輯中</span>' : "")}
           `;
           queueEl.appendChild(row);
         });

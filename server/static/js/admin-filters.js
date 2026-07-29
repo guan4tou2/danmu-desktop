@@ -121,7 +121,7 @@
             <div class="hud-inspector-head">
               <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">\u898f\u5247\u5eab</span>
               <span class="admin-v3-card-kicker" style="margin:0">RULESET \u00b7 ORDER MATTERS</span>
-              <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-primary);letter-spacing:0.1em">+ \u65b0\u589e \u00b7 \u23d3 \u532f\u5165 \u00b7 \u23d2 \u532f\u51fa</span>
+              <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color: var(--color-ink-accent);letter-spacing:0.1em">+ \u65b0\u589e \u00b7 \u23d3 \u532f\u5165 \u00b7 \u23d2 \u532f\u51fa</span>
             </div>
             <div class="hud-filter-row" id="filterTypeChips" style="padding:10px 14px;border-bottom:1px solid var(--hud-line-strong)">
               <span class="hud-filter-chip is-active" data-filter-scope="all">\u5168\u90e8 <span data-filter-count="all">0</span></span>
@@ -482,18 +482,18 @@
       });
       const data = await resp.json();
       if (!resp.ok) {
-        resultEl.innerHTML = `<span style="color:var(--hud-crimson)">${escapeHtml(data.error || "Test failed")}</span>`;
+        resultEl.innerHTML = `<span style="color: var(--color-ink-error)">${escapeHtml(data.error || "Test failed")}</span>`;
         return;
       }
 
       let resultHtml = "";
       if (data.action === "block") {
-        resultHtml = `<span style="color:var(--hud-crimson);font-weight:600">${t("blocked", "BLOCKED")}</span>`;
+        resultHtml = `<span style="color: var(--color-ink-error);font-weight:600">${t("blocked", "BLOCKED")}</span>`;
       } else if (data.action === "replace") {
-        resultHtml = `<span style="color:var(--hud-amber);font-weight:600">${t("replaced", "REPLACED")}</span>` +
+        resultHtml = `<span style="color: var(--color-ink-warning);font-weight:600">${t("replaced", "REPLACED")}</span>` +
           ` <span style="color:var(--color-text-secondary)">\u2192 ${escapeHtml(data.text)}</span>`;
       } else if (data.action === "allow") {
-        resultHtml = `<span style="color:var(--hud-lime);font-weight:600">${t("allowed", "ALLOWED")}</span>`;
+        resultHtml = `<span style="color: var(--color-ink-success);font-weight:600">${t("allowed", "ALLOWED")}</span>`;
       } else {
         resultHtml = `<span style="color:var(--color-text-muted)">${t("noMatch", "No match (pass)")}</span>`;
       }
@@ -505,7 +505,7 @@
       resultEl.innerHTML = resultHtml;
     } catch (err) {
       console.error("Test filter rule error:", err);
-      resultEl.innerHTML = `<span style="color:var(--hud-crimson)">${t("testError", "Test error")}</span>`;
+      resultEl.innerHTML = `<span style="color: var(--color-ink-error)">${t("testError", "Test error")}</span>`;
     }
   }
 

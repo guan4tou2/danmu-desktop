@@ -109,7 +109,7 @@
                 </div>
                 <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.05em">
                   <span id="fontsOrigSize">ORIG · —</span>
-                  <span id="fontsSubsetSize" style="color:var(--color-primary)">SUBSET · —</span>
+                  <span id="fontsSubsetSize" style="color: var(--color-ink-accent)">SUBSET · —</span>
                 </div>
               </div>
             </div>
@@ -119,8 +119,8 @@
                 <span class="admin-v3-card-kicker" style="margin:0">CDN DELIVERY · 交付狀態</span>
               </div>
               <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                <div class="hud-kv"><span class="hud-kv-k">HIT RATE</span><span class="hud-kv-v" style="color:var(--hud-lime)" id="fontsCdnHit">—</span></div>
-                <div class="hud-kv"><span class="hud-kv-k">P95 TTFB</span><span class="hud-kv-v" style="color:var(--color-primary)" id="fontsCdnTtfb">—</span></div>
+                <div class="hud-kv"><span class="hud-kv-k">HIT RATE</span><span class="hud-kv-v" style="color: var(--color-ink-success)" id="fontsCdnHit">—</span></div>
+                <div class="hud-kv"><span class="hud-kv-k">P95 TTFB</span><span class="hud-kv-v" style="color: var(--color-ink-accent)" id="fontsCdnTtfb">—</span></div>
                 <div class="hud-kv"><span class="hud-kv-k">REQ/24H</span><span class="hud-kv-v" id="fontsCdnReq">—</span></div>
                 <div class="hud-kv"><span class="hud-kv-k">EDGE</span><span class="hud-kv-v" id="fontsCdnEdge">LOCAL</span></div>
               </div>
@@ -433,7 +433,7 @@
     } catch (err) {
       console.error("[admin-fonts] fetch failed:", err);
       listEl.innerHTML =
-        `<div class="hud-table-row" style="grid-template-columns: 1fr;"><span style="font-size:11px;color:var(--hud-crimson)">${ServerI18n.t("loadFontsFailed")}</span></div>`;
+        `<div class="hud-table-row" style="grid-template-columns: 1fr;"><span style="font-size:11px;color: var(--color-ink-error)">${ServerI18n.t("loadFontsFailed")}</span></div>`;
       renderFontsEmptyState([], loggedIn);
     }
   }

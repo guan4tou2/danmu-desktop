@@ -386,7 +386,7 @@
       </div>
       <div class="admin-wh-stat">
         <div class="k">近 24H 推送</div>
-        <div class="v" style="color:var(--hud-lime)">${s.deliveries_24h.toLocaleString ? s.deliveries_24h.toLocaleString() : s.deliveries_24h}</div>
+        <div class="v" style="color: var(--color-ink-success)">${s.deliveries_24h.toLocaleString ? s.deliveries_24h.toLocaleString() : s.deliveries_24h}</div>
       </div>
       <div class="admin-wh-stat">
         <div class="k">失敗（待重試）</div>
@@ -586,7 +586,7 @@
         '<div><span class="k">Max retries</span><span class="v">' + (hook.retry_count != null ? hook.retry_count : 3) + '</span></div>' +
         '<div><span class="k">Backoff</span><span class="v">exponential · 1s → 2s → 4s</span></div>' +
         '<div><span class="k">Timeout</span><span class="v">5,000 ms</span></div>' +
-        '<div><span class="k">HMAC sign</span><span class="v" style="color:var(--hud-lime)">' + (hook.secret ? "SHA-256 · X-Webhook-Signature" : "—（未設 secret）") + '</span></div>' +
+        '<div><span class="k">HMAC sign</span><span class="v" style="color: var(--color-ink-success)">' + (hook.secret ? "SHA-256 · X-Webhook-Signature" : "—（未設 secret）") + '</span></div>' +
       '</div>' +
       '<div class="admin-ui-monolabel admin-wh-detail-label">PAYLOAD SAMPLE</div>' +
       '<pre class="admin-wh-detail-payload">' + _escHtml(JSON.stringify(samplePayload, null, 2)) + '</pre>' +

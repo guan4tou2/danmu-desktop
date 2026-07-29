@@ -410,7 +410,7 @@
                 <div><div style="font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:9px;letter-spacing:1px;color:var(--hud-text-dim, #94a3b8);">FP</div><div style="font-size:14px;font-weight:600;margin-top:2px;">${fp}</div></div>
                 <div><div style="font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:9px;letter-spacing:1px;color:var(--hud-text-dim, #94a3b8);">TIME</div><div style="font-size:14px;font-weight:600;margin-top:2px;">${elapsedStr}</div></div>
               </div>
-              <div style="margin-top:12px;font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:10px;letter-spacing:0.3px;color:var(--hud-amber, #fbbf24);">
+              <div style="margin-top:12px;font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:10px;letter-spacing:0.3px;color: var(--color-ink-warning);">
                 ⚠ Session 資料不受影響 · 可隨時重新開始顯示
               </div>`,
             confirmLabel: "停止顯示",

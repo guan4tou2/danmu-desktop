@@ -66,6 +66,10 @@
   /* teal — connected */
   --teal-500: oklch(70.38% 0.123 182.5);    /* #14b8a6 */
   --teal-600: oklch(60.022% 0.1038 184.704);/* #0d9488 */
+  /* teal-700 於 2026-07-29 補進來：素材庫／擴充卡的「主題」分類色原本是寫死的
+   * violet #c4b5fd，既違反本專案的 no-violet 規則、又完全不隨主題翻面（白底
+   * 上只有 1.85）。teal 是五個分類色裡唯一還沒被佔用的色相。 */
+  --teal-700: oklch(51.094% 0.0861 186.391);/* #0f766e */
   /* emerald — connected-bright */
   --emerald-500: oklch(69.59% 0.149 162.48);/* #10b981 */
   /* blue — secondary */
@@ -99,6 +103,26 @@
   --color-error-light: var(--red-400);
   --color-error-lighter: #fca5a5;      /* red-300 — even lighter, for error copy on dark surfaces (2026-07-07 E3) */
   --color-danger: light-dark(var(--red-600), #ff4d4f);             /* destructive-action red (Ban / Delete) — slightly brighter than --color-error */
+
+  /* ── 訊號色的「文字」版（2026-07-29 雙主題收尾）────────────────────────
+   * 上面那組語意色的淺色臂（sky/amber/red-600、green-600）是為**色塊與邊框**
+   * 挑的中間調：當按鈕底色配 --btn-text-on-primary(#000) 是對的（sky-600 對黑
+   * 字 5.0），再調深反而會把按鈕弄壞（sky-700 對黑字只剩 3.6）。但同一顆拿去
+   * 畫 9–13px 文字，在白底上只有 3.19–4.10 —— 全站 chrome（⌘K 提示、● HEALTHY、
+   * DESKTOP 狀態、側欄圖示、accent 標籤）淺色不合格的主因就是這個。
+   *
+   * 所以拆一組只給**文字**用的 ink：淺色臂各深一階，深色臂**逐一等於
+   * --hud-* 的現值**（sky-400 / green-300 / amber-400 / red-400），因此所有
+   * hud 系文字換過來後深色是零變化。非文字（底色、邊框、色點、滑桿）仍用上面
+   * 的 --color-* —— 那才是它們被調出來的用途。
+   *
+   * viewer 先前自建的 --viewer-ink-* 是同一個模式的區域版，已改指這裡。 */
+  --color-ink-accent: light-dark(var(--sky-700), var(--sky-400));
+  --color-ink-success: light-dark(var(--lime-700), var(--green-300));
+  --color-ink-warning: light-dark(var(--amber-700), var(--amber-400));
+  --color-ink-error: light-dark(var(--red-700), var(--red-400));
+  /* 第五個色相，只給「分類色」用（素材庫 kind、擴充卡）——見 --teal-700 註解 */
+  --color-ink-theme: light-dark(var(--teal-700), var(--teal-500));
 
   /* Button text on filled/bright backgrounds (primary/warning/success buttons,
    * badges, pills). Value intentionally still #000 (2026-07-07 UIUX polish

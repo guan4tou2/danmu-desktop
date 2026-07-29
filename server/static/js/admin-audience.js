@@ -155,10 +155,10 @@
     }).length;
     stats.innerHTML = `
       <div class="admin-aud-stat"><div class="k">當前指紋</div><div class="v">${total}</div></div>
-      <div class="admin-aud-stat"><div class="k">5min 活躍</div><div class="v" style="color:var(--hud-lime)">${activeFiveMin}</div></div>
-      <div class="admin-aud-stat"><div class="k">總訊息</div><div class="v" style="color:var(--color-primary)">${totalMsgs}</div></div>
-      <div class="admin-aud-stat"><div class="k">已標記</div><div class="v" style="color:var(--hud-amber)">${flagged}</div></div>
-      <div class="admin-aud-stat"><div class="k">已封禁</div><div class="v" style="color:var(--hud-crimson)">${blocked}</div></div>`;
+      <div class="admin-aud-stat"><div class="k">5min 活躍</div><div class="v" style="color: var(--color-ink-success)">${activeFiveMin}</div></div>
+      <div class="admin-aud-stat"><div class="k">總訊息</div><div class="v" style="color: var(--color-ink-accent)">${totalMsgs}</div></div>
+      <div class="admin-aud-stat"><div class="k">已標記</div><div class="v" style="color: var(--color-ink-warning)">${flagged}</div></div>
+      <div class="admin-aud-stat"><div class="k">已封禁</div><div class="v" style="color: var(--color-ink-error)">${blocked}</div></div>`;
   }
 
   function _renderFilters() {

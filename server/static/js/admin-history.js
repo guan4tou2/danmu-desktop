@@ -38,7 +38,7 @@
           keywordEl.className = "hud-banned-row";
 
           const iconSpan = document.createElement("span");
-          iconSpan.style.cssText = "color:var(--hud-crimson);font-family:var(--font-mono);font-size:13px";
+          iconSpan.style.cssText = "color: var(--color-ink-error);font-family:var(--font-mono);font-size:13px";
           iconSpan.textContent = "\u2298";
 
           const keywordSpan = document.createElement("span");
@@ -48,7 +48,7 @@
           const removeButton = document.createElement("button");
           removeButton.className = "removeKeywordBtn";
           removeButton.type = "button";
-          removeButton.style.cssText = "background:transparent;border:none;color:var(--color-primary);font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;cursor:pointer;padding:2px 4px";
+          removeButton.style.cssText = "background:transparent;border:none;color: var(--color-ink-accent);font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;cursor:pointer;padding:2px 4px";
           removeButton.textContent = "UNBAN";
           removeButton.setAttribute("data-keyword", keyword);
 

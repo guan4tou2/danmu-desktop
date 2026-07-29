@@ -153,7 +153,7 @@
     const v = tile.querySelector("[data-m-v]");
     if (v) v.textContent = value;
     if (typeof ok === "boolean") {
-      v.style.color = ok ? "var(--hud-lime, #86efac)" : "var(--hud-cyan, #38bdf8)";
+      v.style.color = ok ? "var(--color-ink-success)" : "var(--color-ink-accent)";
     }
     const spark = tile.querySelector("[data-m-spark]");
     _renderSpark(spark, series, ok);
@@ -218,7 +218,10 @@
       { name: "Webhook Delivery", status: webhookOK ? "healthy" : "degraded",   uptime: "—",   ver: "—",
         note: webhookOK ? null : "近期投遞失敗 · 自動重試中" },
     ];
+    // 同一個狀態色餵兩種用途，門檻不同：圓點是非文字（3.0，--hud-* 撐得住），
+    // 徽章是 9px 文字（4.5，--hud-* 淺色臂只有 3.30）→ 分成 fill 與 ink 兩組。
     const statusCols = { healthy: "var(--hud-lime, #86efac)", degraded: "var(--hud-amber, #fbbf24)", error: "var(--hud-crimson, #ff4d4f)" };
+    const statusInk = { healthy: "var(--color-ink-success)", degraded: "var(--color-ink-warning)", error: "var(--color-ink-error)" };
     host.innerHTML = services.map((s) => `
       <div class="admin-soh-v4__svc">
         <span class="admin-soh-v4__svc-dot" style="background:${statusCols[s.status]}"></span>
@@ -228,7 +231,7 @@
         </div>
         <span class="admin-soh-v4__svc-ver">v${s.ver}</span>
         <span class="admin-soh-v4__svc-uptime">${s.uptime}</span>
-        <span class="admin-soh-v4__svc-state" style="color:${statusCols[s.status]};border-color:${statusCols[s.status]}">${s.status.toUpperCase()}</span>
+        <span class="admin-soh-v4__svc-state" style="color:${statusInk[s.status]};border-color:${statusCols[s.status]}">${s.status.toUpperCase()}</span>
       </div>`).join("");
   }
 

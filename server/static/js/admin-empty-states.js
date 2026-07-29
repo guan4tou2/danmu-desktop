@@ -13,7 +13,7 @@
  *     icon: "⊘",
  *     title: "黑名單是空的",
  *     desc: "尚未封禁任何...",
- *     accent: "var(--hud-crimson)",   // optional — 圖示色票，預設 cyan
+ *     accent: "var(--color-ink-error)",   // optional — 圖示色票，預設 cyan
  *     actionLabel: "+ 新增規則",
  *     onAction: () => location.hash = "#/moderation/blacklist",
  *   });
@@ -27,10 +27,10 @@
   "use strict";
 
   const T = {
-    cyan:    "var(--color-primary)",
-    amber:   "var(--hud-amber)",
-    lime:    "var(--hud-lime)",
-    crimson: "var(--hud-crimson)",
+    cyan:    "var(--color-ink-accent)",
+    amber:   "var(--color-ink-warning)",
+    lime:    "var(--color-ink-success)",
+    crimson: "var(--color-ink-error)",
     textDim: "var(--color-text-muted)",
   };
 

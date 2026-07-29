@@ -265,7 +265,7 @@
           <span style="
             font-family:var(--font-mono,'IBM Plex Mono',monospace);
             font-size:9px;letter-spacing:1.5px;
-            color:var(--color-primary,#38bdf8);
+            color:var(--color-ink-accent);
             padding:3px 8px;
             background:rgba(56,189,248,.1);
             border:1px solid rgba(56,189,248,.35);
