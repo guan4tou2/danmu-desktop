@@ -702,9 +702,11 @@ def test_overlay_idle_api_is_callable_and_toggles_visibility(browser_session, se
             "         hide: typeof window.OverlayIdle?.hide,"
             "         toggle: typeof window.OverlayIdle?.toggle })"
         )
-        assert types == {"show": "function", "hide": "function", "toggle": "function"}, (
-            f"OverlayIdle API 型別不對（撞名回歸？）: {types}"
-        )
+        assert types == {
+            "show": "function",
+            "hide": "function",
+            "toggle": "function",
+        }, f"OverlayIdle API 型別不對（撞名回歸？）: {types}"
 
         # show → .is-visible；toggle 不得拋錯
         shown = page.evaluate(

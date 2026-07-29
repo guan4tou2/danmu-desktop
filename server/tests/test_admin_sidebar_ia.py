@@ -703,8 +703,7 @@ def test_every_grid_mounted_page_is_owned_by_some_route(admin_js: str):
 
     assert not orphans, (
         "這些模組把整頁掛進 route 容器，但沒有任何 ADMIN_ROUTES.sections 列到它 —— "
-        "syncRouteContainerVisibility() 會藏掉整個容器，該路由必定全白：\n  "
-        + "\n  ".join(orphans)
+        "syncRouteContainerVisibility() 會藏掉整個容器，該路由必定全白：\n  " + "\n  ".join(orphans)
     )
 
 
