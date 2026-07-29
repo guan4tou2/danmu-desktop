@@ -25,7 +25,10 @@
   const STORAGE_KEY = "theme-mode";          // unified — same key viewer reads
   const LEGACY_KEY = "admin-theme-mode";     // migrated once
   const BTN_ID = "admin-theme-toggle";
-  const SHOW_TOPBAR_TOGGLE = false;
+  // 2026-07-29：重新開啟。它先前被關掉是因為淺色主題根本沒被驗過——開著等於
+  // 把人放進一個讀不到字的畫面。本次雙主題收尾後 admin 淺色不合格數 214 → 4
+  // （深色 19 → 0、逐元素零退步），前提成立才把門打開。
+  const SHOW_TOPBAR_TOGGLE = true;
 
   // ── one-time migration from legacy key ────────────────────────────
   (function migrateLegacy() {
