@@ -3062,7 +3062,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 400;
-  color: #7dd3fc;
+  color: var(--color-primary);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -3589,10 +3589,10 @@ button.admin-dash-nav-group-toggle:focus-visible {
   margin-top: 4px;
 }
 
-.hud-stat-tile-value.is-lime    { color: #86efac; }
-.hud-stat-tile-value.is-amber   { color: #fbbf24; }
+.hud-stat-tile-value.is-lime    { color: var(--hud-lime); }
+.hud-stat-tile-value.is-amber   { color: var(--hud-amber); }
 .hud-stat-tile-value.is-cyan    { color: var(--color-primary); }
-.hud-stat-tile-value.is-crimson { color: #f87171; }
+.hud-stat-tile-value.is-crimson { color: var(--hud-crimson); }
 
 .hud-stat-tile-label {
   font-size: 11px;
@@ -3660,10 +3660,10 @@ button.admin-dash-nav-group-toggle:focus-visible {
   color: var(--color-text-muted);
   width: fit-content;
 }
-.hud-pill.is-lime   { border-color: #86efac; color: #86efac; }
-.hud-pill.is-amber  { border-color: #fbbf24; color: #fbbf24; }
+.hud-pill.is-lime   { border-color: var(--hud-lime); color: var(--hud-lime); }
+.hud-pill.is-amber  { border-color: var(--hud-amber); color: var(--hud-amber); }
 .hud-pill.is-cyan   { border-color: var(--color-primary); color: var(--color-primary); }
-.hud-pill.is-danger { border-color: #f87171; color: #f87171; }
+.hud-pill.is-danger { border-color: var(--hud-crimson); color: var(--hud-crimson); }
 .hud-pill.is-default {
   background: var(--color-primary);
   color: var(--btn-text-on-primary);
@@ -4312,10 +4312,10 @@ button.admin-dash-nav-group-toggle:focus-visible {
   grid-template-columns: 70px 50px 130px 1fr;
   gap: 8px;
 }
-.hud-console-lv-info  { color: #86efac; letter-spacing: 0.1em; }
-.hud-console-lv-warn  { color: #fbbf24; letter-spacing: 0.1em; }
+.hud-console-lv-info  { color: var(--hud-lime); letter-spacing: 0.1em; }
+.hud-console-lv-warn  { color: var(--hud-amber); letter-spacing: 0.1em; }
 .hud-console-lv-debug { color: var(--color-text-muted); letter-spacing: 0.1em; }
-.hud-console-lv-err   { color: #f87171; letter-spacing: 0.1em; }
+.hud-console-lv-err   { color: var(--hud-crimson); letter-spacing: 0.1em; }
 
 .hud-sample-square {
   height: 44px;
@@ -4563,7 +4563,12 @@ summary:focus-visible {
   border: 1px solid rgba(56, 189, 248, 0.25);
   border-radius: var(--radius-pill);
   background: rgba(8, 47, 73, 0.35);
-  color: var(--color-sky-300);
+  /* --color-sky-* / --color-slate-* are tailwind.css's RAW scales (the project's
+     own primitives have no `color-` prefix), so they never flip with the theme.
+     This legacy .admin-hero island paints hardcoded DARK surfaces in both
+     themes, so its copy must stay on a fixed light scale — repointed to the
+     project's own primitives purely to kill the tailwind name collision. */
+  color: var(--sky-300);
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -4585,7 +4590,7 @@ summary:focus-visible {
 .admin-summary-label {
   display: block;
   margin-bottom: 0.35rem;
-  color: var(--color-slate-400);
+  color: var(--slate-400);  /* fixed scale — card bg is hardcoded dark, see .admin-kicker */
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -4593,7 +4598,7 @@ summary:focus-visible {
 
 .admin-summary-value {
   display: block;
-  color: var(--color-slate-100);
+  color: var(--slate-100);  /* fixed scale — card bg is hardcoded dark */
   font-size: 1rem;
   font-weight: 600;
 }
@@ -4634,7 +4639,7 @@ summary:focus-visible {
 .admin-section-kicker {
   display: block;
   margin-bottom: 0.35rem;
-  color: var(--color-sky-400);
+  color: var(--sky-400);  /* fixed scale — .admin-section bg is hardcoded dark */
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -5138,7 +5143,10 @@ body.stream-mode .admin-hero .admin-summary-grid {
   align-items: center;
   gap: 0.55rem;
   margin-top: 1.25rem;
-  color: var(--color-slate-600);
+  /* Was var(--color-slate-600) — tailwind.css's raw scale, which never flips,
+     so the footer stayed slate-600 on the dark viewer page (CR 2.63). These are
+     theme-following text, so they belong on the semantic tokens. */
+  color: var(--color-text-secondary);
   font-size: 0.75rem;
 }
 
@@ -5146,20 +5154,20 @@ body.stream-mode .admin-hero .admin-summary-grid {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  color: var(--color-slate-500);
+  color: var(--color-text-secondary);
   transition: color var(--motion-normal) ease;
 }
 
 .site-footer-link:hover {
-  color: var(--color-sky-400);
+  color: var(--color-primary);
 }
 
 .site-footer-separator {
-  color: var(--color-slate-700);
+  color: var(--color-text-secondary);
 }
 
 .site-footer-version {
-  color: var(--color-slate-600);
+  color: var(--color-text-secondary);
   font-size: 0.75rem;
 }
 
@@ -5212,10 +5220,13 @@ body.stream-mode .admin-hero .admin-summary-grid {
   gap: 0.9rem;
 }
 
+/* The surface was a hardcoded dark gradient, so this card painted as a dark
+   slab floating in the light admin. Its copy could not move to the semantic
+   text tokens until the surface itself followed the theme — both go together. */
 .history-dashboard-card {
-  border: 1px solid rgba(51, 65, 85, 0.68);
+  border: 1px solid var(--hud-line);
   border-radius: var(--radius-xl);
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.62));
+  background: var(--hud-bg1);
   padding: 0.9rem 1rem;
 }
 
@@ -5231,14 +5242,14 @@ body.stream-mode .admin-hero .admin-summary-grid {
 .history-dashboard-label {
   display: block;
   margin-bottom: 0.35rem;
-  color: var(--color-slate-400);
+  color: var(--color-text-secondary);
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .history-dashboard-value {
-  color: var(--color-slate-100);
+  color: var(--color-text-primary);
   font-size: 1.25rem;
   font-weight: 700;
 }
@@ -5252,7 +5263,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
 }
 
 .history-dashboard-title {
-  color: var(--color-slate-200);
+  color: var(--color-text-bright);
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -5260,7 +5271,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
 }
 
 .history-dashboard-caption {
-  color: var(--color-slate-500);
+  color: var(--color-text-secondary);
   font-size: 0.75rem;
 }
 
@@ -5980,7 +5991,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
 .admin-ft-curl {
   margin: 0;
   font-family: var(--font-mono); font-size: 11px;
-  color: #86efac;
+  color: var(--hud-lime);
   letter-spacing: 0.02em;
   white-space: pre-wrap; word-break: break-all;
   background: transparent;
@@ -6488,7 +6499,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   overflow-wrap: anywhere;
 }
 .admin-about-oss-row .v { color: var(--color-text-muted); }
-.admin-about-oss-row .l { color: #86efac; }
+.admin-about-oss-row .l { color: var(--hud-lime); }
 .admin-about-oss-more {
   display: inline-block; margin-top: 8px;
   font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.3px;
@@ -6557,7 +6568,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
   padding: 2px 4px;
   border-radius: var(--radius-2xs);
 }
-.admin-about-cl-row .tag-feat { color: #86efac; background: rgba(134, 239, 172, 0.10); border: 1px solid rgba(134, 239, 172, 0.35); }
+.admin-about-cl-row .tag-feat { color: var(--hud-lime); background: rgba(134, 239, 172, 0.10); border: 1px solid rgba(134, 239, 172, 0.35); }
 .admin-about-cl-row .tag-fix  { color: var(--color-primary); background: rgba(56, 189, 248, 0.10); border: 1px solid rgba(56, 189, 248, 0.35); }
 .admin-about-cl-row .tag-perf { color: var(--color-warning); background: rgba(251, 191, 36, 0.10); border: 1px solid rgba(251, 191, 36, 0.35); }
 .admin-about-cl-row .msg {
@@ -7211,8 +7222,8 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   padding: 2px 8px;
   border-radius: var(--radius-2xs);
 }
-.admin-pdd-chip.is-live  { color: #86efac; background: rgba(134, 239, 172, 0.10); border: 1px solid rgba(134, 239, 172, 0.40); }
-.admin-pdd-chip.is-ended { color: #86efac; background: rgba(134, 239, 172, 0.10); border: 1px solid rgba(134, 239, 172, 0.40); }
+.admin-pdd-chip.is-live  { color: var(--hud-lime); background: rgba(134, 239, 172, 0.10); border: 1px solid rgba(134, 239, 172, 0.40); }
+.admin-pdd-chip.is-ended { color: var(--hud-lime); background: rgba(134, 239, 172, 0.10); border: 1px solid rgba(134, 239, 172, 0.40); }
 .admin-pdd-chip.is-idle  { color: var(--color-text-muted); background: var(--color-bg); border: 1px solid var(--color-border, var(--hud-line)); }
 .admin-pdd-id {
   font-family: var(--font-mono); font-size: 10px;
@@ -7359,7 +7370,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 .admin-pdd-integrity .v {
   font-family: var(--font-mono); font-size: 11px; font-weight: 600;
 }
-.admin-pdd-integrity .v.is-good { color: #86efac; }
+.admin-pdd-integrity .v.is-good { color: var(--hud-lime); }
 .admin-pdd-integrity .v.is-warn { color: var(--color-warning); }
 
 /* Actions */
@@ -9043,17 +9054,20 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   width: 8px; height: 8px; border-radius: 50%;
   background: #38bdf8;
 }
+/* Severity dots keep a fixed hue in both themes on purpose — they are filled
+   shapes, not text, and the severity signal should read identically light/dark.
+   Their paired labels below DO follow the theme (contrast requirement). */
 .admin-ev-v4__sev-dot[data-sev="info"]  { background: #38bdf8; }
 .admin-ev-v4__sev-dot[data-sev="warn"]  { background: #fbbf24; }
 .admin-ev-v4__sev-dot[data-sev="error"] { background: #ff4d4f; }
 .admin-ev-v4__type {
   font-family: var(--font-mono);
   font-size: 10px; letter-spacing: 0.5px;
-  color: #38bdf8;
+  color: var(--hud-cyan);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.admin-ev-v4__type[data-sev="warn"]  { color: #fbbf24; }
-.admin-ev-v4__type[data-sev="error"] { color: #ff4d4f; }
+.admin-ev-v4__type[data-sev="warn"]  { color: var(--hud-amber); }
+.admin-ev-v4__type[data-sev="error"] { color: var(--color-danger); }
 .admin-ev-v4__actor {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -9498,7 +9512,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   padding: 2px 8px;
   border-radius: var(--radius-2xs);
 }
-.admin-msgd-status.is-good { color: #86efac; background: rgba(134, 239, 172, 0.10); border: 1px solid rgba(134, 239, 172, 0.40); }
+.admin-msgd-status.is-good { color: var(--hud-lime); background: rgba(134, 239, 172, 0.10); border: 1px solid rgba(134, 239, 172, 0.40); }
 .admin-msgd-status.is-warn { color: var(--color-warning); background: rgba(251, 191, 36, 0.10); border: 1px solid rgba(251, 191, 36, 0.40); }
 .admin-msgd-bubble-text {
   font-size: 16px; line-height: 1.5;
@@ -9552,7 +9566,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 .admin-msgd-actions button.is-danger {
   background: rgba(248, 113, 113, 0.05);
   border-color: rgba(248, 113, 113, 0.35);
-  color: #f87171;
+  color: var(--hud-crimson);
 }
 .admin-msgd-actions button.is-danger:hover:not(:disabled) {
   background: rgba(248, 113, 113, 0.12);
@@ -9630,7 +9644,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 .admin-msgd-fp-row .t { color: var(--color-text-muted); }
 .admin-msgd-fp-row .m { color: var(--color-text-strong); font-size: 11.5px; word-break: break-word; }
 .admin-msgd-fp-row .s {
-  color: #86efac;
+  color: var(--hud-lime);
   font-size: 9px; letter-spacing: 0.5px;
   text-align: right;
 }
@@ -10439,7 +10453,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 }
 .admin-aud-row .col-msgs {
   font-family: var(--font-mono); font-size: 12px; font-weight: 600;
-  color: #86efac;
+  color: var(--hud-lime);
 }
 .admin-aud-state-pill { justify-content: center; min-width: 68px; }
 .admin-aud-row[data-aud-row]:not(.admin-aud-row--head) {
@@ -10539,18 +10553,18 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 1.2px;
-  color: #f87171;
+  color: var(--hud-crimson);
   margin-bottom: 4px;
 }
-.admin-aud-detail-flag[data-risk="normal"] .hd { color: #86efac; }
-.admin-aud-detail-flag[data-risk="mid"] .hd { color: #fbbf24; }
+.admin-aud-detail-flag[data-risk="normal"] .hd { color: var(--hud-lime); }
+.admin-aud-detail-flag[data-risk="mid"] .hd { color: var(--hud-amber); }
 .admin-aud-detail-flag ul {
   margin: 0;
   padding-left: 12px;
   list-style: "· ";
 }
 .admin-aud-detail-flag li { padding: 2px 0; }
-.admin-aud-detail-flag li.ok { list-style: "✓ "; color: #86efac; }
+.admin-aud-detail-flag li.ok { list-style: "✓ "; color: var(--hud-lime); }
 
 .admin-aud-detail-label { margin-top: 4px; }
 
@@ -10794,7 +10808,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   font-family: var(--font-mono);
   font-size: 11px;
 }
-.admin-wh-card-foot .counter.ok { color: #86efac; }
+.admin-wh-card-foot .counter.ok { color: var(--hud-lime); }
 .admin-wh-card-foot .counter.fail { color: var(--color-warning); }
 .admin-wh-card-foot .counter.fail-zero { color: var(--color-text-muted); }
 
@@ -10882,6 +10896,9 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-wh-detail-policy .k { color: var(--color-text-muted); }
 .admin-wh-detail-policy .v { color: var(--color-text-strong); }
 
+/* Deliberately theme-independent: the payload viewer is a terminal plate that
+   paints on hardcoded #000 in both themes, so its lime must stay the bright
+   dark-surface green (CR 12.9 on black). Do NOT swap this for var(--hud-lime). */
 .admin-wh-detail-payload {
   margin: 0;
   padding: 8px;
@@ -11069,7 +11086,12 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 }
 
 .admin-tabs-btn.is-active {
-  color: #38bdf8;
+  /* Plain var(--hud-cyan) resolves to sky-600 on light, which lands at CR 3.86
+     on the active tab's tinted background — below AA for this 13px label, and
+     still *dimmer* than the 7.58 of an unselected tab, i.e. the selected tab
+     keeps reading as disabled. One step darker (sky-700) clears AA at 5.61.
+     Dark keeps --hud-cyan verbatim, so the dark arm is unchanged (7.31). */
+  color: light-dark(var(--color-primary-hover), var(--hud-cyan));
   border-bottom-color: var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
   background: rgba(56, 189, 248, 0.08);
 }
@@ -11356,7 +11378,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   border-radius: var(--radius-md-sm);
   background: rgba(134, 239, 172, 0.10);
   border: 1px solid rgba(134, 239, 172, 0.45);
-  color: #86efac;
+  color: var(--hud-lime);
   font-family: inherit;
   pointer-events: auto;
   opacity: 0;
@@ -11383,7 +11405,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   background: transparent;
   border: 1px solid rgba(134, 239, 172, 0.45);
   border-radius: var(--radius-sm);
-  color: #86efac;
+  color: var(--hud-lime);
   cursor: pointer;
   font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
   font-size: 11px;
