@@ -41,60 +41,22 @@ describe("initGlobalEffects", () => {
     expect(() => initGlobalEffects()).not.toThrow();
   });
 
-  test("registers all three API listeners", () => {
+  test("registers the two child-window listeners only", () => {
     window.API = mockAPI();
     initGlobalEffects();
 
-    expect(window.API.onUpdateDisplayOptions).toHaveBeenCalledTimes(1);
     expect(window.API.onShowStartupAnimation).toHaveBeenCalledTimes(1);
     expect(window.API.onKonamiEffect).toHaveBeenCalledTimes(1);
   });
 
-  describe("onUpdateDisplayOptions", () => {
-    test("populates screen-select with options", () => {
-      window.API = mockAPI();
-      initGlobalEffects();
+  test("does NOT register onUpdateDisplayOptions — display-select owns that channel", () => {
+    // Contract: preload keeps only the last-registered listener per channel,
+    // so a second subscriber here would nondeterministically win/lose against
+    // display-select and strip dataset.displayId on hotplug repopulates.
+    window.API = mockAPI();
+    initGlobalEffects();
 
-      const options = [
-        { value: "0", text: "Display 1" },
-        { value: "1", text: "Display 2" },
-      ];
-      window.API._handlers.updateDisplayOptions(options);
-
-      const select = document.getElementById("screen-select");
-      expect(select.children.length).toBe(2);
-      expect(select.children[0].value).toBe("0");
-      expect(select.children[0].textContent).toBe("Display 1");
-      expect(select.children[1].value).toBe("1");
-      expect(select.children[1].textContent).toBe("Display 2");
-    });
-
-    test("clears existing options before adding new ones", () => {
-      window.API = mockAPI();
-      initGlobalEffects();
-
-      // First call
-      window.API._handlers.updateDisplayOptions([
-        { value: "0", text: "A" },
-        { value: "1", text: "B" },
-      ]);
-      expect(document.getElementById("screen-select").children.length).toBe(2);
-
-      // Second call replaces all
-      window.API._handlers.updateDisplayOptions([{ value: "2", text: "C" }]);
-      expect(document.getElementById("screen-select").children.length).toBe(1);
-      expect(document.getElementById("screen-select").children[0].textContent).toBe("C");
-    });
-
-    test("does nothing when screen-select element is missing", () => {
-      document.body.innerHTML = "";
-      window.API = mockAPI();
-      initGlobalEffects();
-
-      expect(() =>
-        window.API._handlers.updateDisplayOptions([{ value: "0", text: "X" }])
-      ).not.toThrow();
-    });
+    expect(window.API.onUpdateDisplayOptions).not.toHaveBeenCalled();
   });
 
   describe("onShowStartupAnimation", () => {

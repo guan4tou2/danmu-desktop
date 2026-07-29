@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const { sanitizeLog } = require("../shared/utils");
 const { getChildWsScript } = require("./child-ws-script");
+const { buildDisplayOptions } = require("./display-watcher");
 
 // Main-window default size — used on first run and as a fallback when the
 // persisted bounds land off-screen (e.g. a monitor was unplugged).
@@ -249,15 +250,14 @@ function createWindow(childWindows, onKonamiTrigger) {
 
   mainWindow.webContents.on("did-finish-load", () => {
     try {
+      // Same sanitized payload as the `getDisplays` invoke handler and the
+      // hotplug re-emit in display-watcher — one shape on this channel.
       const displays = screen.getAllDisplays();
-      const displayOptions = displays.map((display, index) => {
-        const bounds = display.bounds;
-        return {
-          value: index,
-          text: `Display ${index + 1} (${bounds.width}x${bounds.height})`,
-        };
-      });
-      mainWindow.webContents.send("update-display-options", displayOptions);
+      const primaryDisplay = screen.getPrimaryDisplay();
+      mainWindow.webContents.send(
+        "update-display-options",
+        buildDisplayOptions(displays, primaryDisplay && primaryDisplay.id)
+      );
     } catch (error) {
       console.error(
         "Error getting display information:",
@@ -312,6 +312,30 @@ function createWindow(childWindows, onKonamiTrigger) {
 }
 
 /**
+ * BrowserWindow options every overlay child is created with — shared by the
+ * createChild IPC path and display-watcher's hotplug additions path so both
+ * construct identical windows.
+ */
+function buildChildWindowOptions() {
+  return {
+    closable: false,
+    skipTaskbar: true,
+    transparent: true,
+    frame: false,
+    resizable: false,
+    icon: path.join(__dirname, "../assets/icon.png"),
+    webPreferences: {
+      preload: path.join(__dirname, "../dist/preload.bundle.js"),
+      nodeIntegration: false,
+      contextIsolation: true,
+      webSecurity: true,
+      allowRunningInsecureContent: false,
+      experimentalFeatures: false,
+    },
+  };
+}
+
+/**
  * Configures a child overlay window: loads child.html, sets bounds, and injects WebSocket script.
  */
 function setupChildWindow(
@@ -331,6 +355,10 @@ function setupChildWindow(
       initialBounds.width
     }, height=${initialBounds.height}`
   );
+
+  // Child→display mapping display-watcher reconciles on (E2/E3). Stamped
+  // before loadFile so a reconcile firing mid-setup still sees it.
+  targetWindow.overlayDisplayId = display.id;
 
   targetWindow.loadFile(path.join(__dirname, "../child.html"));
   hardenWebContents(targetWindow.webContents);
@@ -418,6 +446,7 @@ function createAboutWindow(mainWindow) {
 module.exports = {
   createWindow,
   setupChildWindow,
+  buildChildWindowOptions,
   createAboutWindow,
   pickOverlayDisplay,
   hardenWebContents,

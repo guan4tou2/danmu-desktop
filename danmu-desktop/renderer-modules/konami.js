@@ -1,22 +1,12 @@
-// Konami Code effect, startup animation, and display options handlers (child window)
+// Konami Code effect and startup animation handlers (child window)
+//
+// NOTE: this module must NOT subscribe to onUpdateDisplayOptions —
+// display-select.js owns that channel, and preload keeps only the
+// last-registered listener per channel, so a second subscriber here would
+// silently win/lose based on init order and strip dataset.displayId.
 
 function initGlobalEffects() {
   if (!window.API) return;
-
-  // Update display options (main window)
-  window.API.onUpdateDisplayOptions((options) => {
-    const screenSelect = document.getElementById("screen-select");
-    if (!screenSelect) return;
-
-    screenSelect.innerHTML = "";
-    options.forEach((option) => {
-      const opt = document.createElement("option");
-      opt.value = option.value;
-      opt.textContent = option.text;
-      screenSelect.appendChild(opt);
-    });
-    console.log("[Renderer] Display options updated:", options);
-  });
 
   // Startup animation (child window)
   window.API.onShowStartupAnimation((data) => {

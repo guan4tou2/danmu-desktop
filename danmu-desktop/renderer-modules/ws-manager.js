@@ -339,6 +339,18 @@ function initConnectionStatusHandler({
       if (syncMultiDisplayCheckbox) syncMultiDisplayCheckbox.disabled = false;
 
       updateConnectionStatus("idle", t("statusStopped"));
+    } else if (data.status === "display-migrated") {
+      // Display unplugged → main migrated/destroyed overlay windows.
+      // Bounds-only change: the WS connection is unaffected, so leave
+      // buttons, state.overlayActive and the status line untouched.
+      showToast(
+        getLocalizedText(
+          "toastDisplayMigrated",
+          "Display disconnected — overlay moved to the primary display",
+          "螢幕已拔除，Desktop 已移至主螢幕"
+        ),
+        "warning"
+      );
     }
   });
 }

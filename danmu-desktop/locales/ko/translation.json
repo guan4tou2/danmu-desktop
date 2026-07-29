@@ -22,6 +22,7 @@
   "toastStopped": "탄막 Desktop가 중지되었습니다",
   "toastSettingsLoaded": "이전 설정을 불러왔습니다",
   "toastConnectionFailed": "서버에 연결할 수 없습니다. 설정을 확인해 주세요.",
+  "toastDisplayMigrated": "디스플레이가 분리되어 Desktop를 주 화면으로 이동했습니다",
   "errorEmptyHost": "서버 주소를 입력해 주세요",
   "errorInvalidHost": "잘못된 서버 주소입니다. 유효한 IP 또는 도메인을 입력해 주세요",
   "errorEmptyPort": "포트 번호를 입력해 주세요",

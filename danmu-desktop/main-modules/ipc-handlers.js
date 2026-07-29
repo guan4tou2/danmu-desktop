@@ -4,7 +4,11 @@ const { BrowserWindow } = require("electron");
 const net = require("net");
 const path = require("path");
 const { sanitizeLog } = require("../shared/utils");
-const { setupChildWindow, pickOverlayDisplay } = require("./window-manager");
+const {
+  setupChildWindow,
+  pickOverlayDisplay,
+  buildChildWindowOptions,
+} = require("./window-manager");
 const trustedWssHosts = require("./trusted-wss-hosts");
 
 /**
@@ -76,6 +80,15 @@ function isValidHost(ip) {
 
 let _ipcRegistered = false;
 let _preferredOverlayDisplayId = null;
+// Last successful createChild parameters — display-watcher replays these to
+// auto-create an overlay when a display appears in sync mode. Cleared on
+// closeChildWindows so no stale-credential window exists after Stop.
+// (_preferredOverlayDisplayId may go stale after an automatic migration;
+// that's safe — pickOverlayDisplay falls back id→index→primary on next Start.)
+let _overlaySession = null;
+// childWindows array shared with setupIpcHandlers, captured so the exported
+// createOverlayForDisplay can push into the same list.
+let _childWindows = null;
 
 /**
  * Registers all ipcMain handlers for the application.
@@ -88,6 +101,7 @@ function setupIpcHandlers(getMainWindow, childWindows) {
     return;
   }
   _ipcRegistered = true;
+  _childWindows = childWindows;
   // Clear danmu on every overlay window without disconnecting WS.
   // The overlay-side child-ws-script registers a listener that drops
   // currently-rendering elements when this fires.
@@ -125,6 +139,8 @@ function setupIpcHandlers(getMainWindow, childWindows) {
       }
     });
     childWindows.length = 0;
+    // No session ⇒ display-watcher never auto-creates overlays after Stop.
+    _overlaySession = null;
     // Revoke self-signed cert exceptions when overlay stops. Without
     // this the trusted host:port stays in the registry for the rest of
     // the app lifetime, allowing self-signed acceptance for endpoints
@@ -604,25 +620,20 @@ function setupIpcHandlers(getMainWindow, childWindows) {
       childWindows.length = 0;
       console.log("[Main] Cleared existing child windows before creating new ones.");
 
+      // Remember the session so display-watcher can re-create identical
+      // overlays on hotplug (sync-mode additions path).
+      _overlaySession = {
+        ip: normalizedIp,
+        port: portNum,
+        token: authToken,
+        startupAnimationSettings,
+        syncMultiDisplay: !!enableSyncMultiDisplay,
+      };
+
       const displays = screen.getAllDisplays();
       console.log(`[Main] Detected ${displays.length} displays.`);
 
-      const childWindowOptions = {
-        closable: false,
-        skipTaskbar: true,
-        transparent: true,
-        frame: false,
-        resizable: false,
-        icon: path.join(__dirname, "../assets/icon.png"),
-        webPreferences: {
-          preload: path.join(__dirname, "../dist/preload.bundle.js"),
-          nodeIntegration: false,
-          contextIsolation: true,
-          webSecurity: true,
-          allowRunningInsecureContent: false,
-          experimentalFeatures: false,
-        },
-      };
+      const childWindowOptions = buildChildWindowOptions();
 
       if (enableSyncMultiDisplay) {
         console.log("[Main] Sync multi-display ENABLED. Creating windows for all displays.");
@@ -677,4 +688,35 @@ function setupIpcHandlers(getMainWindow, childWindows) {
   );
 }
 
-module.exports = { setupIpcHandlers, validateDanmuParams };
+/** Stored overlay session (null when no overlay is running). */
+const getOverlaySession = () => _overlaySession;
+
+/**
+ * Creates one overlay child window for `display` from a stored session —
+ * display-watcher's sync-mode additions path. Mirrors the createChild loop.
+ */
+function createOverlayForDisplay(display, session) {
+  if (!display || !session || !_childWindows) return null;
+  const newChild = new BrowserWindow(buildChildWindowOptions());
+  setupChildWindow(
+    newChild,
+    display,
+    session.ip,
+    session.port,
+    session.token,
+    session.startupAnimationSettings,
+    _childWindows
+  );
+  _childWindows.push(newChild);
+  console.log(
+    `[Main] Auto-created overlay for hotplugged display (ID: ${sanitizeLog(display.id)}).`
+  );
+  return newChild;
+}
+
+module.exports = {
+  setupIpcHandlers,
+  validateDanmuParams,
+  getOverlaySession,
+  createOverlayForDisplay,
+};

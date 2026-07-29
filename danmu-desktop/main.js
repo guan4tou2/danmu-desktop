@@ -1,9 +1,14 @@
 // Main process entry point
-const { app, Tray, Menu, nativeImage, ipcMain } = require("electron");
+const { app, Tray, Menu, nativeImage, ipcMain, screen } = require("electron");
 const path = require("path");
 const { sanitizeLog } = require("./shared/utils");
 const { createWindow, createAboutWindow } = require("./main-modules/window-manager");
-const { setupIpcHandlers } = require("./main-modules/ipc-handlers");
+const {
+  setupIpcHandlers,
+  getOverlaySession,
+  createOverlayForDisplay,
+} = require("./main-modules/ipc-handlers");
+const { setupDisplayWatcher } = require("./main-modules/display-watcher");
 const { setupAutoUpdater } = require("./main-modules/auto-updater");
 const trustedWssHosts = require("./main-modules/trusted-wss-hosts");
 
@@ -68,6 +73,15 @@ function onKonamiTrigger() {
 app.whenReady().then(() => {
   mainWindow = createWindow(childWindows, onKonamiTrigger);
   setupIpcHandlers(() => mainWindow, childWindows);
+  // Must run inside whenReady — the screen module is unusable before ready.
+  // The getter survives the `activate` re-creation of mainWindow below.
+  setupDisplayWatcher({
+    screen,
+    getMainWindow: () => mainWindow,
+    childWindows,
+    getOverlaySession,
+    createOverlayForDisplay,
+  });
   setupAutoUpdater(
     () => mainWindow,
     (state) => {

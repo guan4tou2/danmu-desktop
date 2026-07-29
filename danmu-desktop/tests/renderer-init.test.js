@@ -55,6 +55,10 @@ describe("renderer entry init", () => {
     expect(options[0].textContent).toBe("主螢幕 · Built-in · 2560×1600");
     expect(window.API.setOverlayDisplayId).toHaveBeenCalledWith(101);
 
+    // display-select registers the hotplug listener (update-display-options
+    // re-emit path) — konami.js no longer touches this channel.
+    expect(window.API.onUpdateDisplayOptions).toHaveBeenCalledTimes(1);
+
     // app-shell meta sits right after the once-crashing initWindowPicker call
     expect(document.querySelector("[data-client-version]").textContent).toBe(
       "v5.4.0"

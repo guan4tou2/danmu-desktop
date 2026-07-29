@@ -310,4 +310,31 @@ describe("initConnectionStatusHandler() – onConnectionStatus state mutations",
     notify({ status: "stopped" });
     expect(deps.updateConnectionStatus).toHaveBeenCalledWith("idle", "statusStopped");
   });
+
+  test("'display-migrated' shows exactly one warning toast", () => {
+    notify({ status: "display-migrated", migrated: 1, removed: 0 });
+    expect(deps.showToast).toHaveBeenCalledTimes(1);
+    expect(deps.showToast).toHaveBeenCalledWith(expect.any(String), "warning");
+  });
+
+  test("'display-migrated' leaves buttons, state and status untouched (bounds-only change)", () => {
+    deps.state.overlayActive = true;
+    const startButton = document.getElementById("start-button");
+    const stopButton = document.getElementById("stop-button");
+    startButton.disabled = true; // running
+    stopButton.disabled = false;
+
+    notify({ status: "display-migrated", migrated: 1, removed: 0 });
+
+    expect(deps.state.overlayActive).toBe(true);
+    expect(startButton.disabled).toBe(true);
+    expect(stopButton.disabled).toBe(false);
+    expect(deps.updateConnectionStatus).not.toHaveBeenCalled();
+  });
+
+  test("unknown statuses still no-op (older main + newer renderer degrade gracefully)", () => {
+    notify({ status: "some-future-status" });
+    expect(deps.showToast).not.toHaveBeenCalled();
+    expect(deps.updateConnectionStatus).not.toHaveBeenCalled();
+  });
 });

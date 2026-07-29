@@ -26,6 +26,7 @@ const { initUpdateStatus } = require("./renderer-modules/update-status");
 const { initConnSection } = require("./renderer-modules/conn-section-wire");
 const { initWindowPicker } = require("./renderer-modules/window-picker");
 const { initAppShellMeta } = require("./renderer-modules/app-shell-meta");
+const { initDisplaySelect } = require("./renderer-modules/display-select");
 
 // Translation helper
 function t(key) {
@@ -124,58 +125,10 @@ const initRenderer = async () => {
     }
 
     // ── Screen select population ─────────────────────────────────────────
-    if (api) {
-      const screenSelect = document.getElementById("screen-select");
-      if (screenSelect) {
-        const selectedBeforePopulate = parseInt(screenSelect.value, 10);
-        const syncPreferredDisplayId = () => {
-          if (typeof api.setOverlayDisplayId !== "function") return;
-          const opt = screenSelect.options[screenSelect.selectedIndex];
-          if (!opt) return;
-          const displayId = Number(opt.dataset.displayId);
-          if (!Number.isInteger(displayId)) return;
-          api.setOverlayDisplayId(displayId);
-        };
-
-        api.getDisplays().then((displays) => {
-          screenSelect.innerHTML = "";
-          // Count primary vs secondary for labelling (主螢幕 / 副螢幕)
-          let secondaryIdx = 0;
-          displays.forEach((display, index) => {
-            const option = document.createElement("option");
-            option.value = index;
-            option.dataset.displayId = String(display.id);
-
-            // Design v3 chip format: "主螢幕 · Built-in · 2560×1600"
-            // client-nav.js splits on " · " → name | meta
-            const res = `${display.size.width}×${display.size.height}`;
-            let chipName;
-            if (display.primary) {
-              chipName = "主螢幕";
-            } else {
-              secondaryIdx++;
-              chipName = displays.length <= 2 ? "副螢幕" : `副螢幕 ${secondaryIdx}`;
-            }
-            const connector = display.label || (display.primary ? "Built-in" : `Display ${index + 1}`);
-            option.textContent = `${chipName} · ${connector} · ${res}`;
-            screenSelect.appendChild(option);
-          });
-
-          const hasSavedSelection =
-            Number.isInteger(selectedBeforePopulate) &&
-            selectedBeforePopulate >= 0 &&
-            selectedBeforePopulate < displays.length;
-          const primaryIndex = displays.findIndex((display) => display.primary);
-          const fallbackIndex = primaryIndex >= 0 ? primaryIndex : 0;
-          screenSelect.value = String(
-            hasSavedSelection ? selectedBeforePopulate : fallbackIndex
-          );
-          syncPreferredDisplayId();
-        });
-
-        screenSelect.addEventListener("change", syncPreferredDisplayId);
-      }
-    }
+    // Extracted to display-select.js; also re-populates on hotplug via
+    // update-display-options. Kept after the i18n await so first-populate
+    // ordering vs. window-picker is unchanged.
+    initDisplaySelect({ api });
   } finally {
     // Always signal that the renderer has finished initializing.
     // E2e tests wait for this class before interacting with the page.

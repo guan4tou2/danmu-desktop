@@ -22,6 +22,7 @@
   "toastStopped": "彈幕已停止",
   "toastSettingsLoaded": "已載入先前的設定",
   "toastConnectionFailed": "無法連線至伺服器，請檢查設定",
+  "toastDisplayMigrated": "螢幕已拔除，Desktop 已移至主螢幕",
   "errorEmptyHost": "請輸入伺服器位址",
   "errorInvalidHost": "無效的伺服器位址。請輸入有效的 IP 或網域",
   "errorEmptyPort": "請輸入連接埠號碼",
