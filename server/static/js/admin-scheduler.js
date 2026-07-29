@@ -34,23 +34,32 @@
     return '<span class="admin-ui-dot ' + cls + '" title="' + escapeAttr(state) + '"></span>';
   }
 
+  // /admin/scheduler/list 回的是 services/scheduler.py::list_jobs() 的欄位：
+  // interval_sec / repeat_count / remaining / messages（沒有 interval /
+  // repeat / message_count / sent_count 這些名字）。
   function jobRowHTML(job) {
     const isPaused = job.state === "paused";
     const repeat =
-      job.repeat === undefined
+      job.repeat_count === undefined
         ? "—"
-        : job.repeat === -1
+        : job.repeat_count === -1
           ? "∞"
-          : String(job.repeat);
+          : String(job.repeat_count);
+    // 已送次數只有有限次的 job 推得出來（remaining 從 repeat_count 遞減）；
+    // 無限循環的 job 後端沒有累計計數，顯示 — 而不是假的 0。
+    const sent =
+      job.repeat_count > 0 && typeof job.remaining === "number"
+        ? String(job.repeat_count - job.remaining)
+        : "—";
     return `
       <div class="admin-scheduler-job" data-job-id="${escapeAttr(job.id)}">
         ${stateDot(job.state)}
         <div>
           <div class="admin-scheduler-job-title">#${escapeHTML(job.id)}</div>
-          <div class="admin-scheduler-job-meta">${escapeHTML(ServerI18n.t("schedulerMessages"))} ${job.message_count ?? "?"}</div>
+          <div class="admin-scheduler-job-meta">${escapeHTML(ServerI18n.t("schedulerMessages"))} ${job.messages ? job.messages.length : "?"}</div>
         </div>
-        <span class="admin-scheduler-job-val">${job.interval ?? "?"}s</span>
-        <span class="admin-scheduler-job-val">${job.sent_count ?? 0}</span>
+        <span class="admin-scheduler-job-val">${job.interval_sec ?? "?"}s</span>
+        <span class="admin-scheduler-job-val">${escapeHTML(sent)}</span>
         <span class="admin-scheduler-job-val">${escapeHTML(repeat)}</span>
         <div class="admin-scheduler-job-actions">
           <button type="button" class="admin-ui-chip scheduler-job-toggle ${isPaused ? "is-active" : "is-warn"}"
@@ -133,13 +142,19 @@
     if (createBtn) createBtn.disabled = true;
 
     try {
+      // 欄位名要對上 SchedulerCreateSchema（services/validation.py）。
       const resp = await csrfFetch("/admin/scheduler/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: messages, interval: interval, repeat: repeat }),
+        body: JSON.stringify({
+          messages: messages,
+          interval_sec: interval,
+          repeat_count: repeat,
+        }),
       });
       const data = await resp.json();
-      if (resp.ok && data.ok) {
+      // 後端成功時回 {job_id}／{message}，沒有 ok 旗標，一律以 HTTP 狀態為準。
+      if (resp.ok) {
         showToast(ServerI18n.t("schedulerCreated") || "Job created");
         await fetchJobs();
       } else {
@@ -185,7 +200,7 @@
 
   function _jobDesc(job) {
     const id = job.id || "job";
-    const count = job.message_count;
+    const count = Array.isArray(job.messages) ? job.messages.length : null;
     return "Job #" + id + (count != null ? " · " + count + " messages" : "");
   }
 
@@ -206,7 +221,7 @@
     const rowsHtml = (jobs || []).map(function (job) {
       const t = _eventType(job);
       const ic = _eventIcon(t);
-      const on = job.status !== "paused";
+      const on = job.state !== "paused";
       const conflict = false; // backend doesn't surface conflicts yet
       return (
         '<div class="admin-sch-timeline-row' + (on ? "" : " is-off") + '">' +
@@ -333,10 +348,10 @@
       const resp = await csrfFetch("/admin/scheduler/" + encodeURIComponent(action), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: jobId }),
+        body: JSON.stringify({ job_id: jobId }),
       });
       const data = await resp.json();
-      if (resp.ok && data.ok) {
+      if (resp.ok) {
         showToast(action === "pause" ? ServerI18n.t("jobPaused") : ServerI18n.t("jobResumed"));
         await fetchJobs();
       } else {
@@ -353,10 +368,10 @@
       const resp = await csrfFetch("/admin/scheduler/cancel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: jobId }),
+        body: JSON.stringify({ job_id: jobId }),
       });
       const data = await resp.json();
-      if (resp.ok && data.ok) {
+      if (resp.ok) {
         showToast(ServerI18n.t("schedulerCancelled") || "Job cancelled");
         await fetchJobs();
       } else {

@@ -322,16 +322,11 @@ test.describe("場前佈置 · 內容管理（真 UI 操作）", () => {
     }
   });
 
-  // 疑似產品問題（2026-07-29 系統測試發現）：按字型的「開啟 / 關閉」鈕會
-  // 回 HTTP 500。根因在 server/services/fonts.py —— 三處寫成
-  //   from ..managers.settings import settings_store
-  // 但 singleton 掛在 `server.managers`（managers/__init__.py），
-  // `managers.settings` 模組只有 SettingsStore 類別，沒有 settings_store，
-  // 於是 ImportError。toggle_font()（line 129）沒有人接，直接 500；
-  // _get_font_allowlist()（line 98）與 list_available_fonts()（line 360）
-  // 則被寬鬆的 except Exception 吞掉 → 允許清單永遠讀成空集合，
-  // 也就是字型開/關這個功能整條是壞的。修產品碼不在本測試範圍。
-  test.skip("素材庫 · 字型：開/關按鈕 → 公開 /fonts 反映（產品問題：toggle 回 500）", async () => {
+  // 2026-07-29 修復：server/services/fonts.py 三處把 settings_store 從
+  // `..managers.settings` 匯入（singleton 其實掛在 `..managers`），
+  // toggle 直接 ImportError→500、允許清單永遠讀成空集合。改成正確來源後
+  // 這條端到端路徑才真的成立，故解除 skip。
+  test("素材庫 · 字型：開/關按鈕 → 公開 /fonts 反映", async () => {
     await gotoRoute("#/assets/fonts", "#adminFontList");
     const pubNames = async () => (await publicJson("/fonts")).fonts.map((f) => f.name);
     const btn = admin.locator('.admin-font-toggle-btn[data-name="Arial"]');

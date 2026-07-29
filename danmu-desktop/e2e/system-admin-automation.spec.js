@@ -279,16 +279,10 @@ test.describe("後台互動與自動化（投票 / 排程 / Webhooks）", () => 
 
   // ─── 排程 #/system/scheduler ─────────────────────────────────────────
 
-  // 疑似產品問題（2026-07-29）：排程頁的三個寫入動作全部因為欄位名稱對不上
-  // 而失效，UI 按了沒有任何 server 效果 ——
-  //   建立：admin-scheduler.js 送 {messages, interval, repeat}，
-  //         SchedulerCreateSchema 要的是 interval_sec / repeat_count
-  //         → 400 "Validation failed"（toast 顯示 Validation failed）。
-  //   暫停/恢復/取消：FE 送 {id}，routes/admin/scheduler.py 讀 data["job_id"]
-  //         → 一律 "Job not found"。
-  // 依指示不動產品碼，這個案例整段保留但 skip；下面那個測試改驗「列表 UI
-  // 真的會反映 server 狀態」，至少讓渲染路徑有回歸保護。
-  test.skip("排程：UI 建立 → 暫停 → 取消（疑似產品問題，見上方註解）", async () => {
+  // 2026-07-29 修復：admin-scheduler.js 的送出欄位名與後端契約對不上
+  // （interval/repeat vs interval_sec/repeat_count、id vs job_id），
+  // 且成功判定看不存在的 data.ok。前端對齊後端後解除 skip。
+  test("排程：UI 建立 → 暫停 → 取消", async () => {
     test.setTimeout(90000);
     const stamp = Date.now();
     await gotoRoute("#/system/scheduler", "sec-scheduler");

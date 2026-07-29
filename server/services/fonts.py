@@ -7,6 +7,7 @@ from flask import current_app, url_for
 from werkzeug.utils import secure_filename
 
 from .. import state
+from ..managers import settings_store
 from ..services.security import generate_font_token
 from ..utils import sanitize_log_string
 
@@ -95,10 +96,14 @@ _SYSTEM_NAMES = frozenset(e["name"] for e in _FONT_CATALOG if e["type"] == "syst
 def _get_font_allowlist():
     """Return the current FontFamily allowlist from SettingsStore (slot 1)."""
     try:
-        from ..managers.settings import settings_store
-
         return set(settings_store.get_allowlist("FontFamily"))
-    except Exception:
+    except (KeyError, TypeError, ValueError) as exc:
+        # Empty set = "all defaults allowed"; degrade instead of blanking the
+        # whole font list, but leave a trace — a silent empty set used to hide
+        # a broken settings read entirely.
+        current_app.logger.warning(
+            "Failed to read FontFamily allowlist: %s", sanitize_log_string(str(exc))
+        )
         return set()
 
 
@@ -126,8 +131,6 @@ def toggle_font(name: str, enabled: bool) -> list:
 
     Returns the updated allowlist.
     """
-    from ..managers.settings import settings_store
-
     current_allowlist = set(settings_store.get_allowlist("FontFamily"))
     default_name = settings_store.get_options().get("FontFamily", [None, None, None, None])[3]
 
@@ -357,11 +360,14 @@ def list_available_fonts(include_disabled: bool = False):
     issued_at = int(time.time())
 
     try:
-        from ..managers.settings import settings_store
-
         opts = settings_store.get_options()
         default_name = opts.get("FontFamily", [None, None, None, "NotoSansTC"])[3] or "NotoSansTC"
-    except Exception:
+    except (IndexError, KeyError, TypeError) as exc:
+        # A malformed FontFamily row must not take the whole font list down;
+        # NotoSansTC is the bundled fallback default.
+        current_app.logger.warning(
+            "Failed to read default FontFamily: %s", sanitize_log_string(str(exc))
+        )
         default_name = "NotoSansTC"
 
     allowlist = _get_font_allowlist()
