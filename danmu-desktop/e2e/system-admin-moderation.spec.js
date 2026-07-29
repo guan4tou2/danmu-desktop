@@ -84,6 +84,12 @@ test.describe("後台審核頁 · 真實 UI 操作", () => {
       method: "POST",
       body: JSON.stringify({ scope: "admin", limit: 1000, window: 60 }),
     });
+    // 預設 login 是 5/300s。system-* 每檔開場都要登入一次，跑全套會在第 6 次
+    // 登入時被擋在登入頁（429）。第一個跑到的檔案拉高額度，之後全域生效。
+    await adminApi("/admin/ratelimit/apply", {
+      method: "POST",
+      body: JSON.stringify({ scope: "login", limit: 1000, window: 60 }),
+    });
     await admin.evaluate(() => { window.location.hash = "#/moderation"; });
     await admin.waitForSelector('.admin-tabs-strip[data-nav="moderation"]', { timeout: 10000 });
   });

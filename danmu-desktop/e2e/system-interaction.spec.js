@@ -78,6 +78,9 @@ test.describe("Server ↔ Client 系統互動", () => {
     await adminPost("/admin/broadcast/toggle", { mode: "live" });
     // 本 spec 會連續 fire 多條，預設 20/60s 會擋住自己。
     await adminPost("/admin/ratelimit/apply", { scope: "fire", limit: 500, window: 60 });
+    // 預設 login 是 5/300s。system-* 每檔開場都要登入一次，跑全套會在第 6 次
+    // 登入時被擋在登入頁（429）。第一個跑到的檔案拉高額度，之後全域生效。
+    await adminPost("/admin/ratelimit/apply", { scope: "login", limit: 1000, window: 60 });
 
     proxy = await startTlsProxy({
       targetHost: serverUrl.hostname,

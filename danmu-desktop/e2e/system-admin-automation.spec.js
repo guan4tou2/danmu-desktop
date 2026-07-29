@@ -134,14 +134,22 @@ test.describe("後台互動與自動化（投票 / 排程 / Webhooks）", () => 
     });
     // 本檔會在短時間內打出大量 admin 請求，預設 300/60s 會 429 打爆自己。
     // live-apply 本身也吃 admin 限流，所以要重試到成功為止。
+    // limit 上限是 1000（routes/admin/ratelimit.py:_LIMIT_MAX），超過會 400 —
+    // 400 不是重試能救的，寫大於 1000 的值等於整個迴圈空轉、限流沒被拉高。
     for (let i = 0; i < 20; i += 1) {
       const r = await adminApi("/admin/ratelimit/apply", {
         method: "POST",
-        body: JSON.stringify({ scope: "admin", limit: 5000, window: 60 }),
+        body: JSON.stringify({ scope: "admin", limit: 1000, window: 60 }),
       });
       if (r.status === 200) break;
       await admin.waitForTimeout(1500);
     }
+    // 預設 login 是 5/300s。system-* 每檔開場都要登入一次，跑全套會在第 6 次
+    // 登入時被擋在登入頁（429）。第一個跑到的檔案拉高額度，之後全域生效。
+    await adminApi("/admin/ratelimit/apply", {
+      method: "POST",
+      body: JSON.stringify({ scope: "login", limit: 1000, window: 60 }),
+    });
 
     // 可重入：清掉前次跑測留下的殘留（本檔自己建的東西才清）。
     await adminApi("/admin/poll/reset", { method: "POST" });
