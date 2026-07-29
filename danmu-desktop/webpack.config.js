@@ -83,6 +83,36 @@ module.exports = [
     }
   },
   {
+    // Overlay-only bundle for child.html — main-window modules (ws-manager,
+    // conn-section-wire, particle-bg, …) are dead weight in the overlay, so
+    // it gets its own slim entry. index.html keeps renderer.bundle.js.
+    mode: 'production',
+    entry: './overlay-entry.js',
+    target: 'electron-renderer',
+    output: {
+      path: path.resolve(__dirname, 'dist'),
+      filename: 'child.bundle.js'
+    },
+    optimization: {
+      minimize: true,
+      minimizer: [new TerserPlugin()],
+    },
+    module: {
+      rules: [
+        {
+          test: /\.js$/,
+          exclude: /node_modules/,
+          use: {
+            loader: 'babel-loader',
+            options: {
+              presets: ['@babel/preset-env']
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
     mode: 'production',
     entry: './preload.js',
     target: 'electron-preload',
