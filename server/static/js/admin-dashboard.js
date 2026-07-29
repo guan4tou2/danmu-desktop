@@ -278,27 +278,14 @@
   // Wire up filter chips above the messages stream. Filter is purely visual
   // (tag info isn't on /admin/history records yet) — clicking just swaps the
   // is-active class. Idempotent: only binds once.
-  function bindMessageFilters() {
-    const chips = document.querySelectorAll(".admin-dash-msg-filter");
-    if (!chips.length || chips[0].dataset.bound === "1") return;
-    chips.forEach((c) => {
-      c.dataset.bound = "1";
-      c.addEventListener("click", () => {
-        chips.forEach((x) => x.classList.remove("is-active"));
-        c.classList.add("is-active");
-      });
-    });
-  }
 
   // Dashboard summary cards — design v4 live-console.jsx: LIVE FEED +
   // QUICK ACTIONS (effects/poll/blacklist/broadcast) + MY ACTIONS sidebar.
   async function refreshDashboardSummary() {
-    bindMessageFilters();
     bindQuickPoll();
     bindQuickActions();
     refreshSidebarBadges();
     populateDashboardPoll();
-    populateDashboardMessages();
     populateQuickActions();
     populateMyActions();
   }
@@ -580,60 +567,8 @@
   //   POLL → amber  (single-letter vote A/B/C/…)
   //   Q&A  → amber  (ends with question mark)
   //   FLAG → crimson (masked / admin-blocked)
-  function _classifyRow(rec) {
-    if (rec.masked || rec.flagged || rec.moderated) return { tag: "FLAG", tone: "crimson" };
-    const t = String(rec.text || rec.message || "").trim();
-    if (/^[A-Fa-f]$/.test(t)) return { tag: "POLL", tone: "amber" };
-    if (/[?？]$/.test(t)) return { tag: "Q&A", tone: "amber" };
-    return { tag: "MSG", tone: "cyan" };
-  }
 
-  function _shortFp(rec) {
-    const fp = rec.fingerprint || rec.fp || rec.user_fingerprint || "";
-    return fp ? String(fp).slice(0, 6) : "";
-  }
 
-  async function populateDashboardMessages() {
-    const body = document.querySelector("[data-dash-messages]");
-    if (!body) return;
-    try {
-      const r = await fetch("/admin/history?hours=24&limit=10", { credentials: "same-origin" });
-      if (!r.ok) return;
-      const data = await r.json();
-      const records = (data.records || []).slice(0, 10);
-      if (records.length === 0) {
-        body.innerHTML = `<div class="admin-dash-empty">等待訊息…</div>`;
-        return;
-      }
-      body.innerHTML = records.map(rec => {
-        const ts = (rec.timestamp || "").slice(11, 19);
-        const txt = _escapeHtml(rec.text || rec.message || "");
-        const user = _escapeHtml(rec.nickname || rec.user || "guest");
-        const fp = _escapeHtml(_shortFp(rec));
-        const { tag, tone } = _classifyRow(rec);
-        const masked = rec.masked || rec.flagged;
-        return `
-          <div class="admin-dash-msg-row" data-msg-id="${_escapeHtml(rec.id || rec._id || "")}" data-msg-fp="${fp}">
-            <span class="time">${ts}</span>
-            <span class="tag is-${tone}">${tag}</span>
-            <div class="msg-line">
-              <span class="user">@${user}</span>
-              ${fp ? `<span class="fp">fp:${fp}</span>` : ""}
-              <span class="text ${masked ? "is-masked" : ""}">· ${txt}</span>
-            </div>
-            <div class="msg-actions" aria-label="訊息操作">
-              <button type="button" class="msg-action" data-msg-action="mask" title="遮罩">遮罩</button>
-              <button type="button" class="msg-action" data-msg-action="hide" title="隱藏">隱藏</button>
-              <button type="button" class="msg-action is-crimson" data-msg-action="blacklist" title="加入黑名單">黑名單</button>
-              <button type="button" class="msg-action" data-msg-action="more" title="更多">⋯</button>
-            </div>
-          </div>`;
-      }).join("");
-      _bindMessageRowActions(body);
-    } catch (e) {
-      // Silent.
-    }
-  }
 
   // ── Message row actions binding ─────────────────────────────────────────
   //
@@ -1001,7 +936,6 @@
     refreshSummary: refreshDashboardSummary,
     refreshSidebarBadges: refreshSidebarBadges,
     populatePoll: populateDashboardPoll,
-    populateMessages: populateDashboardMessages,
     populateWidgets: populateDashboardWidgets,
     refreshSessionBanner,
     startSessionPolling,

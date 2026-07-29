@@ -914,30 +914,17 @@ document.addEventListener("DOMContentLoaded", () => {
                                  management is on /widgets. -->
                             <section class="admin-dash-summary" data-route-view="dashboard">
                               <div class="admin-dash-summary-grid">
-                                <div class="admin-dash-card is-span-7" data-dash-card="messages">
-                                  <div class="admin-dash-card-head">
-                                    <span class="title">即時訊息</span>
-                                    <span class="kicker">LIVE FEED · 可封鎖 / 標記</span>
-                                    <span class="auto">▶ AUTO</span>
-                                  </div>
-                                  <div class="admin-dash-msg-filters" role="tablist" aria-label="Message filter">
-                                    <button type="button" class="admin-dash-msg-filter is-active" data-msg-filter="all">全部</button>
-                                    <button type="button" class="admin-dash-msg-filter" data-msg-filter="qna">Q&amp;A</button>
-                                    <button type="button" class="admin-dash-msg-filter" data-msg-filter="poll">Poll 投票</button>
-                                    <button type="button" class="admin-dash-msg-filter" data-msg-filter="masked">已遮罩</button>
-                                    <button type="button" class="admin-dash-msg-filter" data-msg-filter="replied">已回覆</button>
-                                  </div>
-                                  <div class="admin-dash-card-body admin-dash-messages" data-dash-messages>
-                                    <div class="admin-dash-empty">等待訊息…</div>
-                                  </div>
-                                </div>
-
+                                <!-- 2026-07-29：原本這裡有一張「即時訊息」卡片，與下方全寬的
+                                     「即時訊息流」（admin-live-feed.js）重疊——同名、同位置、
+                                     但資料來自 /admin/history 快照而非即時游標，篩選 chips 也
+                                     只換 is-active 不過濾資料。已移除，訊息面板以 live-feed 為
+                                     唯一來源；Quick Actions 跟著改成佔滿寬度。 -->
                                 <!-- QUICK ACTIONS (span 3) — 4 stacked sub-panels.
                                      Effects/Blacklist/Broadcast link out to their
                                      dedicated pages for full edit; Poll sub-panel
                                      can launch a quick poll inline (existing
                                      data-qp bindings still wire up to /admin/poll/create). -->
-                                <div class="admin-dash-card is-span-3 admin-dash-quickactions" data-dash-card="quickactions">
+                                <div class="admin-dash-card is-span-7 admin-dash-quickactions" data-dash-card="quickactions">
                                   <div class="admin-dash-card-head">
                                     <span class="title">Quick Actions</span>
                                     <span class="kicker">F1–F4</span>
@@ -1027,7 +1014,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                      Each row: action chip + target + timestamp.
                                      Data: /admin/audit?limit=8&actor=admin (see
                                      server/routes/admin/audit.py). -->
-                                <div class="admin-dash-card is-span-2 admin-dash-myactions" data-dash-card="myactions">
+                                <div class="admin-dash-card is-span-5 admin-dash-myactions" data-dash-card="myactions">
                                   <div class="admin-dash-card-head">
                                     <span class="title">My Actions</span>
                                     <span class="kicker" data-dash-myactions-count>0</span>
