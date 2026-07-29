@@ -658,12 +658,46 @@ def test_routes_owning_a_v2_page_do_not_declare_empty_sections(admin_js: str):
     show itself. This pinned #/security after it regressed that way.
     """
     sections_by_slug = _admin_routes_sections(admin_js)
-    for slug in ("security", "backup"):
+    for slug in ("security", "backup", "overlay"):
         assert sections_by_slug.get(slug), (
             f"ADMIN_ROUTES.{slug}.sections is empty — the route's v2 page "
             f"lives inside settings-grid, which the container-visibility "
             f"pass will hide when no section maps to it."
         )
+
+
+def test_every_grid_mounted_page_is_owned_by_some_route(admin_js: str):
+    """自動版：任何把自己 insertAdjacentHTML 進 settings-grid / advanced-grid
+    的模組，其 PAGE_ID 都必須被某個 route 的 sections 列到。
+
+    上面那個測試靠人工維護 slug 清單，2026-07-29 就漏掉了 `overlay`
+    （#/overlay 正式站全白，使用者回報才發現）。這裡改成從模組原始碼反推
+    ——新增頁面時忘了掛 sections 會直接紅，不必有人記得回來加 slug。
+    """
+    static_js = Path(__file__).resolve().parent.parent / "static" / "js"
+    owned = {sid for ids in _admin_routes_sections(admin_js).values() for sid in ids}
+
+    orphans = []
+    for path in sorted(static_js.glob("admin-*.js")):
+        text = path.read_text(encoding="utf-8")
+        # 只看真的把整頁塞進 route 容器的模組
+        if not re.search(r'getElementById\("(?:settings|advanced)-grid"\)', text):
+            continue
+        m = re.search(r'const PAGE_ID = "([\w-]+)"', text)
+        if not m:
+            continue
+        page_id = m.group(1)
+        # 頁面必須真的被 insert 進 grid（有些模組只是讀 grid 做別的事）
+        if not re.search(r"grid\.insertAdjacentHTML|grid\.appendChild", text):
+            continue
+        if page_id not in owned:
+            orphans.append(f"{path.name} → {page_id}")
+
+    assert not orphans, (
+        "這些模組把整頁掛進 route 容器，但沒有任何 ADMIN_ROUTES.sections 列到它 —— "
+        "syncRouteContainerVisibility() 會藏掉整個容器，該路由必定全白：\n  "
+        + "\n  ".join(orphans)
+    )
 
 
 def test_admin_routes_system_owns_exactly_its_tab_sections(admin_js: str):

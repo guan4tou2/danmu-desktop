@@ -1500,7 +1500,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // 2026-05-18 P2-6 rename: route slug now matches the page title.
     // `broadcast` is alias-only (see _routeAliases above) — alias rewrites
     // the nav before this lookup so a standalone entry is dead code.
-    overlay:   { title: "Desktop 控制",        kicker: "DESKTOP · ON / OFF / PAUSED",       sections: [] },
+    // sections 必須列出 admin-broadcast.js 掛進 settings-grid 的頁面 ID——
+    // 空陣列會讓 syncRouteContainerVisibility() 算出空 owner set 並藏掉
+    // 整個容器，模組再怎麼把自己設成 display:"" 都沒用（#/security 也曾
+    // 這樣壞過）。
+    overlay:   { title: "Desktop 控制",        kicker: "DESKTOP · ON / OFF / PAUSED",       sections: ["admin-broadcast-v2-page"] },
     // Missing prototype pages — implemented 2026-04-29
     sessions:     { title: "場次",            kicker: "SESSIONS · 場次列表 · 即時 / 歷史",  sections: ["sec-sessions-overview"] },
     "session-detail": { title: "場次詳情",    kicker: "SESSION DETAIL · 密度時間軸 · 訊息回顧", sections: ["sec-session-detail-overview"] },
