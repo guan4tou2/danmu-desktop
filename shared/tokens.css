@@ -285,15 +285,13 @@
    * --color-* base tokens: dark is the :root default, light is applied by
    * [data-theme="light"] and the prefers-color-scheme:light media query
    * below. They can no longer diverge from the --color-* palette. */
-  /* D-2 (2026-07-28): --admin-* 降為語意 alias，值收斂到 color/hud 層——
-     同語意不再有兩個值。panel 拍板統一 #0c1424（原 slate-900 #0f172a）。
-     尚未收斂（值仍分歧、待另拍板）：--admin-bg（#020617 vs --hud-bg0 #050912）、
-     --admin-raised（#1e293b vs --hud-bg2 #182239）、--admin-line（light 側
-     alpha .12 vs --hud-line .10）。 */
-  --admin-bg: light-dark(var(--slate-50), var(--slate-950));                       /* slate-950 — viewport */
-  --admin-panel: var(--hud-bg1);                       /* #0c1424 — sidebar / topbar / cards */
-  --admin-raised: light-dark(var(--slate-100), var(--slate-800));                       /* slate-800 — nested surfaces */
-  --admin-line: light-dark(rgba(15, 23, 42, 0.12), rgba(148, 163, 184, 0.18));     /* slate-400 @ 0.18 — hairlines */
+  /* D-2 (2026-07-28 拍板，含同日殘項二拍)：--admin-* 全數降為 hud/color 層
+     純 alias——同語意只剩一個值，深色階梯收斂為 bg0 #050912 → bg1 #0c1424
+     → bg2 #182239 同一套。 */
+  --admin-bg: var(--hud-bg0);                          /* viewport */
+  --admin-panel: var(--hud-bg1);                       /* sidebar / topbar / cards */
+  --admin-raised: var(--hud-bg2);                      /* nested surfaces */
+  --admin-line: var(--hud-line);                       /* hairlines */
   --admin-text: var(--color-text-primary);
   --admin-text-strong: var(--color-text-primary);      /* input/content text */
   --admin-text-dim: var(--color-text-secondary);       /* slate-400 */
