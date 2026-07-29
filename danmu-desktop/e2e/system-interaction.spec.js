@@ -31,7 +31,10 @@ test.describe("Server ↔ Client 系統互動", () => {
   /** @type {import('@playwright/test').Page} */
   let adminPage;
 
-  const serverUrl = new URL(SERVER);
+  // 注意：describe 頂層的程式碼即使整檔被 test.skip 也照樣執行，
+  // 所以 SERVER 為空時不能在這裡 new URL()（會拋 TypeError 讓整個
+  // playwright run 掛掉，CI 沒設 DANMU_E2E_SERVER 時就是這個情況）。
+  const serverUrl = SERVER ? new URL(SERVER) : null;
 
   /** 登入 admin 並回傳該分頁（session cookie ＋ CSRF 都在頁面裡）。 */
   async function loginAdmin() {
