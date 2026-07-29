@@ -912,6 +912,27 @@ document.addEventListener("DOMContentLoaded", () => {
                                  anymore — full poll editing lives on /polls.
                                  Widgets card was removed from dashboard; widget
                                  management is on /widgets. -->
+
+                            <div id="settings-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 admin-route-sections">
+                                <!-- display setting cards -->
+                            </div>
+                            <div id="moderation-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 admin-route-sections">
+                                <!-- moderation sections -->
+                            </div>
+                            <div id="assets-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 admin-route-sections">
+                                <!-- assets sections -->
+                            </div>
+                            <details id="sec-advanced" class="admin-route-sections" open>
+                                <summary class="sr-only">${ServerI18n.t("sectionAutomationTitle") || "Advanced"}</summary>
+                                <div id="advanced-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <!-- webhooks & scheduler -->
+                                </div>
+                            </details>
+
+                            <!-- 2026-07-29：Quick Actions / My Actions 移到 route-sections 之後。
+                                 控制台是場中主頁，主持人最該一眼看到的是即時訊息流；輔助
+                                 操作面板排在它下面。其他路由不受影響（本區塊帶
+                                 data-route-view="dashboard"，非 cockpit 路由會被隱藏）。 -->
                             <section class="admin-dash-summary" data-route-view="dashboard">
                               <div class="admin-dash-summary-grid">
                                 <!-- 2026-07-29：原本這裡有一張「即時訊息」卡片，與下方全寬的
@@ -1025,22 +1046,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                               </div>
                             </section>
-
-                            <div id="settings-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 admin-route-sections">
-                                <!-- display setting cards -->
-                            </div>
-                            <div id="moderation-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 admin-route-sections">
-                                <!-- moderation sections -->
-                            </div>
-                            <div id="assets-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 admin-route-sections">
-                                <!-- assets sections -->
-                            </div>
-                            <details id="sec-advanced" class="admin-route-sections" open>
-                                <summary class="sr-only">${ServerI18n.t("sectionAutomationTitle") || "Advanced"}</summary>
-                                <div id="advanced-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <!-- webhooks & scheduler -->
-                                </div>
-                            </details>
                         </div>
                     </div>
                 `;
