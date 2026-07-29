@@ -34,18 +34,11 @@ bottom 應加上 keyboardOffset）。
 
 ## Server — Admin 設計一致性（/design-review 2026-07-28 deferred）
 
-### 間距刻度二選一並寫進 lint（D-1）
-**Priority:** P2
-`--space-*`（4px 格）在 style.css 採用率僅 5.4%；px 值 51% 落在無文件的 4n+2 格
-（2/6/10/14/18/22）。決定唯一刻度、把另一套 snap 過去、`check-css-tokens` 擋新增
-盤外值。（出處：/design-review 2026-07-28，完整報告在
-`~/.gstack/projects/guan4tou2-danmu-desktop/designs/design-audit-20260728/`。）
-
-### 合併三套色彩 token 命名空間（D-2）
-**Priority:** P2
-`--admin-*`／`--color-*`／`--hud-*` 同語意解析出不同值：次要文字 slate-400
-（158 處）vs slate-500（246 處）、面板底 #0f172a vs #0c1424。收斂成單一語意層，
-跨頁灰階不再跳階。
+### 色彩命名空間收斂殘項：admin-bg / admin-raised / admin-line（D-2 續）
+**Priority:** P3
+D-2 主體已完成（見 Completed）。三組值仍分歧、待拍板後 alias：
+`--admin-bg` #020617 vs `--hud-bg0` #050912、`--admin-raised` #1e293b vs
+`--hud-bg2` #182239、`--admin-line` light 側 alpha .12 vs `--hud-line` .10。
 
 ### 頁首 shell 與按鈕階層收回原語（D-5/D-7，部分已修）
 **Priority:** P2
@@ -61,3 +54,14 @@ AdminEmpty 僅 5 頁採用、31 個模組自造 `*-empty`（72 條規則）；�
 （載入中…／讀取中…／Loading…），admin-sessions 同頁兩種載入視覺。
 
 ## Completed
+
+### 間距刻度二選一並寫進 lint（D-1）— done 2026-07-28（v5.4.0 後）
+拍板 4px 格為唯一刻度；六個 CSS 檔 939 個 4n+2/奇數值以 half-down snap；
+0/1/2px 為髮絲例外（`--space-05` 入 token）；`check-css-tokens.mjs` 新增
+offGrid ratchet、九檔歸零起算。golden master 驗證零非預期差異。
+
+### 合併三套色彩 token 命名空間（D-2 主體）— done 2026-07-28（v5.4.0 後）
+拍板：次要文字統一 slate-400（muted := secondary，回歸 muted 的
+decorative-only 設計意圖）、面板底統一 #0c1424（admin-panel := hud-bg1）；
+`--admin-text/text-strong/text-dim` 降為 color 層純 alias；`.admin-body`
+的反向 remap 拆除。殘項見上方 P3 條目。
