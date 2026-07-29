@@ -454,6 +454,7 @@
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">LIVE FEED · AUTO-SCROLL · REAL-TIME</div>
           <div class="admin-ui-page-title">即時訊息流</div>
+          <p class="admin-ui-page-note">場次進行中的彈幕即時串；可就地封鎖、標記進審核佇列。</p>
         </div>
 
         <div class="admin-lf-v4__card">

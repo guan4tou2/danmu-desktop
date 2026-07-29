@@ -31,6 +31,7 @@
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">ASSETS · EMOJIS · CUSTOM :NAME: SYNTAX</div>
           <div class="admin-ui-page-title">Emoji 庫</div>
+          <p class="admin-ui-page-note">觀眾在彈幕內用 :name: 語法插入表情；上傳 PNG 後即時生效。</p>
         </div>
 
         <!-- Upload zone (dashed dropzone) -->

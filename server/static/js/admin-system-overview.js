@@ -42,6 +42,7 @@
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">SYSTEM OVERVIEW · HEALTH · SERVICES · METRICS</div>
           <div class="admin-ui-page-title">系統總覽</div>
+          <p class="admin-ui-page-note">服務健康度、資源用量與組態摘要；金鑰、排程與備份在各自分頁。</p>
         </div>
 
         <!-- Status banner -->

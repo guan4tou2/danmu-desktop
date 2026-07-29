@@ -95,6 +95,7 @@
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">SYSTEM · EVENTS · AUTO-EMITTED</div>
           <div class="admin-ui-page-title">系統事件</div>
+          <p class="admin-ui-page-note">系統自動發出的事件流（錯誤／警示／狀態變化）；人為操作紀錄在「紀錄 & 匯出 › 審計」。</p>
         </div>
 
         <!-- vs audit explainer -->

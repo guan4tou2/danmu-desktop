@@ -180,10 +180,10 @@
                 </div>
               </div>
               <div style="display:flex;gap:8px">
-                <button type="button" class="admin-dsp2-btn admin-dsp2-btn-ghost" id="dsp2-revert" style="flex:1;padding:8px;border-radius:4px;border:1px solid var(--hud-line);background:transparent;color:var(--color-text-strong);cursor:pointer;font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em">
+                <button type="button" class="admin-dsp2-btn admin-dsp2-btn-ghost" id="dsp2-revert" style="flex:1">
                   ↺ ${escapeHtml(t("displayDeployRevert", "還原預設"))}
                 </button>
-                <button type="button" class="admin-dsp2-btn admin-dsp2-btn-ghost" id="dsp2-export" style="flex:1;padding:8px;border-radius:4px;border:1px solid var(--hud-line);background:transparent;color:var(--color-text-strong);cursor:pointer;font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em">
+                <button type="button" class="admin-dsp2-btn admin-dsp2-btn-ghost" id="dsp2-export" style="flex:1">
                   ↗ ${escapeHtml(t("displayExportJson", "匯出 JSON"))}
                 </button>
               </div>

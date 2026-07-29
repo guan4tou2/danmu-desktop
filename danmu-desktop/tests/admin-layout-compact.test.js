@@ -67,7 +67,9 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   expect(viewerThemeSrc).toContain('SECTION_ID = "sec-viewer-theme"');
   expect(viewerThemeSrc).toContain('admin-vt-page');
   expect(viewerThemeSrc).toContain('data-vt-jump="display"');
-  expect(viewerThemeSrc).toContain("Desktop 排版 / 顯示器 / 連線狀態請到 <b>Display</b>");
+  // D-5 (2026-07-28): vt-scope callout 改為標準 admin-ui-page-head。
+  expect(viewerThemeSrc).toContain('admin-ui-page-note');
+  expect(viewerThemeSrc).toContain("Desktop 排版與連線在「Desktop 控制」");
   expect(themeSwitcherSrc).toContain("SHOW_TOPBAR_TOGGLE = false");
   expect(themeSwitcherSrc).toMatch(/document\.getElementById\(BTN_ID\)\?\.remove\(\);/);
 });

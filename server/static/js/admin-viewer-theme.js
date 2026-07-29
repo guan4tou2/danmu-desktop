@@ -31,12 +31,10 @@
   function _renderHtml() {
     return `
       <div id="${SECTION_ID}" class="admin-vt-page hud-page-stack lg:col-span-2">
-        <div class="admin-vt-scope">
-          <span class="icon">◉</span>
-          <div>
-            <div class="kicker">SCOPE</div>
-            <p>僅影響觀眾進入 <code>/fire</code> 時看到的頁面外觀;彈幕本身的顏色 / 描邊 / 陰影由 <b>Theme Packs</b> 管理。Desktop 排版 / 顯示器 / 連線狀態請到 <b>Display</b>。</p>
-          </div>
+        <div class="admin-ui-page-head">
+          <div class="admin-ui-page-kicker">VIEWER PAGE THEME · SCOPE</div>
+          <div class="admin-ui-page-title">整頁主題</div>
+          <p class="admin-ui-page-note">僅影響觀眾進入 <code>/fire</code> 時看到的頁面外觀；彈幕本身的顏色／描邊／陰影由 <b>Theme Packs</b> 管理，Desktop 排版與連線在「Desktop 控制」。</p>
         </div>
 
         <div class="admin-vt-grid">

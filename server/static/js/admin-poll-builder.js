@@ -36,6 +36,7 @@
             投票
             <a class="admin-poll-deeplink" href="#/poll-deepdive" title="投票深度分析">📊 深度分析 →</a>
           </div>
+          <p class="admin-ui-page-note">建立多題投票；觀眾點選項即送出，票數與百分比僅管理端可見。</p>
         </div>
 
         <!-- BUILDER VIEW -->

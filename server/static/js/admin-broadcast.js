@@ -118,6 +118,7 @@
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker" data-bc-en>DESKTOP · OFF</div>
           <div class="admin-ui-page-title" data-bc-title>Desktop 控制</div>
+          <p class="admin-ui-page-note">開啟或暫停 Desktop / OBS 的彈幕顯示；場次的開場與收場在「控制台」。</p>
         </div>
 
         <!-- Body slot — content swaps by state (ended uses a centered card) -->

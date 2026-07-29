@@ -281,20 +281,13 @@
           ${cur.body}
         </div>
 
-        <div style="margin-top:16px;display:flex;align-items:center;gap:8px">
-          <button type="button" class="ob-btn ob-btn--ghost" data-ob-action="skip"
-            style="font-size:11px;color:var(--color-text-dim,#9aa4b2);background:none;border:none;cursor:pointer;padding:4px 0">
+        <div class="ob-actions">
+          <button type="button" class="ob-btn ob-btn--ghost" data-ob-action="skip">
             跳過導覽
           </button>
-          <div style="flex:1"></div>
-          ${_step > 0 ? `<button type="button" class="ob-btn ob-btn--outline" data-ob-action="prev"
-            style="padding:7px 14px;font-family:var(--font-mono,'IBM Plex Mono',monospace);font-size:11px;
-            color:var(--color-text,#e6e8ee);border:1px solid rgba(255,255,255,.2);border-radius:3px;
-            background:none;cursor:pointer;letter-spacing:.3px">← 上一步</button>` : ""}
-          <button type="button" class="ob-btn ob-btn--primary" data-ob-action="next"
-            style="padding:7px 16px;font-family:var(--font-mono,'IBM Plex Mono',monospace);font-size:11px;
-            background:var(--color-primary,#38bdf8);color:#000;border:none;border-radius:3px;
-            cursor:pointer;font-weight:700;letter-spacing:.4px">
+          <div class="ob-actions__spacer"></div>
+          ${_step > 0 ? `<button type="button" class="admin-ui-action ob-btn" data-ob-action="prev">← 上一步</button>` : ""}
+          <button type="button" class="admin-ui-action is-primary ob-btn" data-ob-action="next">
             ${_step === total - 1 ? "✓ 完成" : "下一步 →"}
           </button>
         </div>

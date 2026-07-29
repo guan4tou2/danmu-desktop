@@ -233,6 +233,7 @@
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">MODERATION · QUEUE · SWIMLANE · REAL-TIME</div>
           <div class="admin-ui-page-title">審核佇列</div>
+          <p class="admin-ui-page-note">被敏感字規則標為「待審」的訊息在此放行或退回；逾時自動退回。</p>
         </div>
 
         <!-- Toolbar: stats chips + bulk + auto-reject config -->

@@ -1298,41 +1298,7 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   gap: 12px;
 }
 
-.admin-vt-scope {
-  display: flex;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: var(--radius-md-sm);
-  background: rgba(56, 189, 248, 0.08);
-  border: 1px solid var(--color-primary);
-}
-
-.admin-vt-scope .icon {
-  font-family: var(--font-mono);
-  color: var(--color-primary);
-  font-size: 14px;
-}
-
-.admin-vt-scope .kicker {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 2px;
-  color: var(--color-primary);
-  font-weight: 700;
-}
-
-.admin-vt-scope p {
-  margin: 2px 0 0;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--admin-text);
-}
-
-.admin-vt-scope code {
-  font-family: var(--font-mono);
-  color: var(--color-primary);
-  padding: 0 2px;
-}
+/* (admin-vt-scope 已退役 — viewer-theme 改用 admin-ui-page-head，D-5 2026-07-28) */
 
 .admin-vt-grid {
   display: grid;
@@ -14595,4 +14561,29 @@ body.admin-pu-open { overflow: hidden; }
   font-size: 9px;
   color: var(--hud-textDim);
   margin-left: 4px;
+}
+
+/* ── Onboarding tour actions（D-7 2026-07-28：拆掉 .ob-btn 內聯私有階層，
+   prev/next 改用 admin-ui-action 原語；這裡只剩排列與 ghost 文字鈕） ── */
+.ob-actions {
+  margin-top: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ob-actions__spacer { flex: 1; }
+
+.ob-btn--ghost {
+  font-size: 11px;
+  color: var(--color-text-dim);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-1) 0;
+}
+
+.ob-btn--ghost:hover,
+.ob-btn--ghost:focus-visible {
+  color: var(--color-text-primary);
 }

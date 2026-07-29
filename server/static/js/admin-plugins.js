@@ -45,6 +45,7 @@
           <div class="admin-ui-page-head">
             <div class="admin-ui-page-kicker">PLUGIN SDK \u00b7 ${ServerI18n.t("pluginsDesc")} \u00b7 HOT-RELOAD</div>
             <div class="admin-ui-page-title">${ServerI18n.t("pluginsTitle")}</div>
+          <p class="admin-ui-page-note">伺服器端 Python 插件；上傳後 5 秒熱載入，可攔截、改寫或自動回覆彈幕。</p>
           </div>
 
           <div class="admin-ui-toolbar admin-plugins-toolbar">
