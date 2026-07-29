@@ -13,10 +13,15 @@
  *     icon: "⊘",
  *     title: "黑名單是空的",
  *     desc: "尚未封禁任何...",
- *     accent: "#fb7185",      // optional, defaults to cyan
+ *     accent: "var(--hud-crimson)",   // optional — 圖示色票，預設 cyan
  *     actionLabel: "+ 新增規則",
  *     onAction: () => location.hash = "#/moderation/blacklist",
  *   });
+ *
+ * `accent` 只影響圖示色票；CTA 一律用主要動作色（單一主色）。要讓某顆 CTA
+ * 換色請明確傳 `ctaAccent`，目前沒有 preset 這樣做。兩者都必須是**語意
+ * token**（`var(--hud-crimson)` 之類），不要傳裸 hex —— 裸 hex 不會隨主題
+ * 翻轉，淺色模式會留在深色臂。
  */
 (function () {
   "use strict";
@@ -86,17 +91,24 @@
   function renderCustom(opts) {
     const {
       icon = "·", title = "", desc = "",
-      accent = T.cyan, actionLabel, action, extra,
+      accent = T.cyan, ctaAccent, actionLabel, action, extra,
     } = opts || {};
     const card = document.createElement("div");
     card.className = "admin-empty";
     card.dataset.empty = "1";
+    // D-6 階段 4 (2026-07-29): 只交出「這張卡的 accent 是什麼」，色票底
+    // 與邊框的濃度由 CSS 的 color-mix 決定。以前這裡是
+    // `accent + "30"` / `accent + "0c"` 的字串拼接 —— 對 hex accent 剛好
+    // 能動，但 8 個 preset 的 accent 全是 var(--token)，拼出來是無效值，
+    // 色票底其實從來沒畫出來過（見 style.css .admin-empty__icon 註解）。
+    card.style.setProperty("--admin-empty-accent", accent);
+    // CTA 底色預設由 class 給（單一主要動作色）。accent 不再自動套到按鈕上
+    // ——那會讓同一種動作每頁一個顏色；真的需要換色的呼叫端才明確傳
+    // ctaAccent。
+    if (ctaAccent) card.style.setProperty("--admin-empty-cta", ctaAccent);
 
     const iconEl = document.createElement("div");
     iconEl.className = "admin-empty__icon";
-    iconEl.style.color = accent;
-    iconEl.style.borderColor = accent + "30";
-    iconEl.style.background = accent + "0c";
     iconEl.textContent = icon;
     card.appendChild(iconEl);
 
@@ -116,8 +128,6 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "admin-empty__btn";
-      btn.style.borderColor = accent;
-      btn.style.background = accent;
       btn.textContent = actionLabel;
       if (typeof action === "function") {
         btn.addEventListener("click", action);

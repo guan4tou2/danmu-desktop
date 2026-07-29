@@ -96,7 +96,8 @@ clean: ## 清理暫存檔案
 lint: ## 執行程式碼檢查
 	cd server && uv run flake8 . --exclude=.venv,__pycache__,*.pyc
 
-lint-css: ## 檢查 CSS 是否新增裸 hex 色碼（對照 scripts/css-token-baseline.json）
+lint-css: ## 檢查 CSS token 紀律：裸 hex / 可 token 化 px / 裸 rgba / 離格間距 / 主題盲色（對照 scripts/css-token-baseline.json）
+	node scripts/check-css-tokens.test.mjs
 	node scripts/check-css-tokens.mjs
 
 format: ## 格式化程式碼

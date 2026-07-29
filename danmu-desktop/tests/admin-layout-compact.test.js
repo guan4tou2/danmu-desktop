@@ -93,6 +93,7 @@ test("admin Viewer surface exposes language/copy and defaults/limits guidance", 
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
   const displaySrc = fs.readFileSync(path.join(staticDir, "admin-display.js"), "utf8");
+  const tabsSrc = fs.readFileSync(path.join(staticDir, "admin-tabs.js"), "utf8");
 
   expect(adminSrc).toContain("VIEWER · 頁面預設 · 欄位設定 · 文案 / 限制");
   // 2026-05-16: viewer language is system-driven — admin-controlled
@@ -119,8 +120,19 @@ test("admin Viewer surface exposes language/copy and defaults/limits guidance", 
   expect(displaySrc).toContain('data-vc-msg-len');
   expect(adminSrc).toContain('sec-viewer-config-defaults');
   expect(adminSrc).toContain('sec-viewer-config-limits');
-  expect(displaySrc).toContain('_makeTabBtn("defaults"');
-  expect(displaySrc).toContain('_makeTabBtn("limits"');
+  // D-6 階段 4 (2026-07-29): 這兩條原本釘 admin-display.js 的
+  // `_makeTabBtn("defaults"` / `_makeTabBtn("limits"`。那是該模組自製的
+  // `.admin-tabstrip` 分頁列，已隨「同層級控制只能有一個來源」退役；
+  // viewer 現在跟其他四個分頁 nav 一樣走 admin-tabs.js 的 TabConfig。
+  // 契約沒變（viewer 有 defaults / limits 兩個分頁、各自對應哪個 section），
+  // 只是搬到唯一的宣告處，所以改釘那裡。
+  expect(tabsSrc).toContain('slug: "defaults"');
+  expect(tabsSrc).toContain('slug: "limits"');
+  expect(tabsSrc).toContain('section: "sec-viewer-config-defaults"');
+  expect(tabsSrc).toContain('section: "sec-viewer-config-limits"');
+  // 釘「不再自己生一條 strip」。比對 className 賦值而非裸字串，因為退役理由
+  // 就寫在該檔的註解裡，提到類名不該讓這條測試變紅。
+  expect(displaySrc).not.toMatch(/className\s*=\s*"admin-tabstrip/);
   expect(displaySrc).toContain('sec-viewer-config-defaults');
   expect(displaySrc).toContain('sec-viewer-config-limits');
 });

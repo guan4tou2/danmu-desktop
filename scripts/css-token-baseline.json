@@ -1,56 +1,58 @@
 {
-  "danmu-desktop/about.css": {
-    "hex": 2,
-    "gridPx": 0,
-    "rgba": 3,
-    "offGrid": 0
-  },
   "danmu-desktop/child.css": {
     "hex": 13,
     "gridPx": 7,
     "rgba": 7,
-    "offGrid": 0
+    "offGrid": 0,
+    "themeBlind": 0
   },
   "danmu-desktop/styles.css": {
     "hex": 19,
     "gridPx": 106,
     "rgba": 137,
-    "offGrid": 0
+    "offGrid": 0,
+    "themeBlind": 0
   },
   "danmu-desktop/tailwind-input.css": {
     "hex": 0,
     "gridPx": 0,
     "rgba": 0,
-    "offGrid": 0
+    "offGrid": 0,
+    "themeBlind": 0
   },
   "server/static/css/overlay.css": {
     "hex": 71,
     "gridPx": 42,
     "rgba": 41,
-    "offGrid": 0
+    "offGrid": 0,
+    "themeBlind": 14
   },
   "server/static/css/style.css": {
     "hex": 322,
     "gridPx": 1566,
     "rgba": 439,
-    "offGrid": 0
+    "offGrid": 0,
+    "themeBlind": 4
   },
   "server/static/css/viewer-v2.css": {
     "hex": 74,
     "gridPx": 175,
     "rgba": 77,
-    "offGrid": 0
+    "offGrid": 0,
+    "themeBlind": 16
   },
   "server/tailwind.input.css": {
     "hex": 0,
     "gridPx": 0,
     "rgba": 0,
-    "offGrid": 0
+    "offGrid": 0,
+    "themeBlind": 0
   },
   "shared/hud.css": {
     "hex": 126,
     "gridPx": 568,
     "rgba": 180,
-    "offGrid": 0
+    "offGrid": 0,
+    "themeBlind": 18
   }
 }

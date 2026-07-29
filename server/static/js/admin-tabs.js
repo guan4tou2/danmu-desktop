@@ -55,6 +55,21 @@
         { slug: "fonts",    label: "字型",   en: "FONTS",    section: "sec-fonts"    },
       ],
     },
+    // D-6 階段 4 (2026-07-29): viewer 從 admin-display.js 自製的
+    // `.admin-tabstrip` 併進來。舊的那條不只長得不一樣，位置也不一樣——
+    // 它渲染在 settings-grid 裡（頁面最底部 y≈1214），其他四個分頁 nav
+    // 的 strip 都在標題列正下方（y≈197）。同一層級的控制不該長在兩個地方。
+    // slug 沿用 body.dataset.viewerConfigTab 的既有值（page/fields/
+    // defaults/limits），deep link 與 ⌘K 才不用改。
+    viewer: {
+      defaultTab: "defaults",
+      tabs: [
+        { slug: "page",     label: "整頁主題",   en: "PAGE",     section: "sec-viewer-theme" },
+        { slug: "fields",   label: "表單欄位",   en: "FIELDS",   section: "sec-viewer-config-fields" },
+        { slug: "defaults", label: "送出預設",   en: "DEFAULTS", section: "sec-viewer-config-defaults" },
+        { slug: "limits",   label: "限制 / 文案", en: "LIMITS",   section: "sec-viewer-config-limits" },
+      ],
+    },
     // v7 S3 (2026-07-28): the system accordion retired — 16 leaves were
     // mostly duplicate doors to first-class routes. What genuinely lives
     // here is now a 6-tab strip; everything else rehomed (see the legacy

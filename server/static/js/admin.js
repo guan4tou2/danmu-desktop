@@ -1410,7 +1410,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // redirect (`#/display` → `#/viewer/defaults`) intercepts before
     // this lookup, so dropping the ADMIN_ROUTES entry is safe and
     // signals "this slug is no longer canonical".
-    viewer:    { title: "觀眾頁", kicker: "VIEWER · 頁面預設 · 欄位設定 · 文案 / 限制", sections: ["sec-viewer-config-tabs", "sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits"] },
+    // D-6 階段 4 (2026-07-29): `sec-viewer-config-tabs`（admin-display.js
+    // 自製的 .admin-tabstrip）退場，viewer 改用 AdminTabs 的 TabConfig，
+    // strip 由 shell 掛在標題列下方。剩下的 info banner 不屬於任何 tab，
+    // 所以留在 route-level sections 裡（四個 tab 都看得到）。
+    viewer:    { title: "觀眾頁", kicker: "VIEWER · 頁面預設 · 欄位設定 · 文案 / 限制", sections: ["sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits"] },
     // Legacy aliases — same config as their canonical home. Kept so
     // existing `=== "dashboard"` checks + URL bookmarks keep working
     // until Phase B/D collapses them.

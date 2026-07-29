@@ -28,6 +28,13 @@
  *               hardcoded rgba raises it (a regression). Like hex/gridPx this
  *               does not force existing literals to zero; it locks in today's
  *               count and only fails when a file grows.
+ *   4. themeBlind — colours that can't follow the light/dark theme: raw colour
+ *               ramp references (var(--sky-400) / var(--color-slate-600)) and
+ *               known dark-arm hex literals used directly as color/border-color.
+ *               tokens.css defines the light-dark() semantics; anything that
+ *               bypasses it is frozen on the dark arm and turns unreadable in
+ *               light mode. var(--token, #darkarm) fallbacks are exempt (same
+ *               reasoning as rgba: that idiom is the desired end state).
  *
  * Design: this does NOT try to force the pre-existing values to zero in one
  * pass — a full sweep is out of scope for a lint gate (Issue #120 tracks the
@@ -53,7 +60,7 @@
 import { readFileSync, writeFileSync, existsSync, realpathSync } from "node:fs";
 import { readdirSync, statSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..");
@@ -177,12 +184,75 @@ function countOffGridSpacing(content) {
   return n;
 }
 
+// D-6 階段 4 (2026-07-29): 主題盲值。D-2 的色彩收斂只做在 token 層 ——
+// tokens.css 有 36 個 light-dark() 正確處理雙主題，但繞過 token 的規則永遠停在
+// 深色臂，淺色模式就會出現白底上的深色臂顏色。這個指標擋兩類回歸：
+//
+//   (a) 原始色階：`var(--sky-400)` / `var(--color-slate-600)` 這種「色環上的
+//       第幾階」。它按定義就是主題無關的 —— 會翻轉的是語意 token
+//       （--color-primary / --hud-* 都已經是 light-dark()）。
+//   (b) 已知深色臂 hex 直接當文字／邊框色：`color: #7dd3fc`。
+//
+// 兩個白名單（照 rgba 指標的同一套邏輯）：
+//   * tokens.css / tailwind.css 整檔豁免（EXCLUDE_FILENAMES）—— 色階本來就
+//     定義在那裡。
+//   * `var(--token, #38bdf8)` 這個 fallback 慣用法不算：它是 #120 retrofit
+//     想要的終點，深色臂 hex 只是 token 不存在時的保險。跟 rgba 指標一樣，
+//     把裸值折進 token 只會讓數字下降（獎勵 retrofit），新寫死才會上升。
+//
+// (b) 只看 color / border-color 這類「前景」屬性。background 用深色臂 hex 也
+// 是主題盲，但 overlay.css 那種恆定深色表面是刻意的，先不擴大範圍 —— 前景色
+// 才是淺色模式下真的看不見的那個。
+const RAW_SCALE_HUES =
+  "slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose";
+const RAW_SCALE_VAR_RE = new RegExp(
+  String.raw`var\(\s*--(?:color-)?(?:${RAW_SCALE_HUES})-\d{2,3}\b`,
+  "gi",
+);
+
+// 深色臂字面值：tokens.css 裡各 light-dark() 的「深色那一半」。
+const DARK_ARM_HEX_RE =
+  /#(?:38bdf8|7dd3fc|86efac|a3e635|4ade80|22d3ee|fbbf24|f87171|fca5a5|ff4d4f)\b/gi;
+const FOREGROUND_COLOR_PROP_RE =
+  /(?:^|[;{])\s*(?:color|border-color|border-(?:top|right|bottom|left)-color|outline-color|text-decoration-color|caret-color|fill|stroke)\s*:\s*([^;{}]+)/gi;
+// 帶 fallback 的 var()。反覆剝除以處理巢狀 var(--a, var(--b, #hex))；替換成
+// 不含括號的字面，下一輪外層才咬得到。
+const VAR_WITH_FALLBACK_RE = /var\(\s*--[\w-]+\s*,\s*[^()]*\)/gi;
+
+function stripVarFallbacks(value) {
+  let prev;
+  let src = value;
+  do {
+    prev = src;
+    src = src.replace(VAR_WITH_FALLBACK_RE, "TOKENIZED");
+  } while (src !== prev);
+  return src;
+}
+
+function countThemeBlind(content) {
+  // 註解裡列出禁用色（像這個檔案上面那段說明）不該讓 lint 自己變紅。
+  const src = content.replace(COMMENT_RE, "");
+  let n = 0;
+
+  const rawScale = src.match(RAW_SCALE_VAR_RE);
+  if (rawScale) n += rawScale.length;
+
+  for (const m of src.matchAll(FOREGROUND_COLOR_PROP_RE)) {
+    const bare = stripVarFallbacks(m[1]);
+    const hits = bare.match(DARK_ARM_HEX_RE);
+    if (hits) n += hits.length;
+  }
+
+  return n;
+}
+
 function countFile(content) {
   return {
     hex: countHexColors(content),
     gridPx: countGridPx(content),
     rgba: countBareRgba(content),
     offGrid: countOffGridSpacing(content),
+    themeBlind: countThemeBlind(content),
   };
 }
 
@@ -198,8 +268,12 @@ function normalizeBaselineEntry(entry) {
     gridPx: entry?.gridPx ?? Infinity,
     rgba: entry?.rgba ?? Infinity,
     offGrid: entry?.offGrid ?? Infinity,
+    themeBlind: entry?.themeBlind ?? Infinity,
   };
 }
+
+// 單一來源：新增指標時只改這裡（外加 countFile / normalizeBaselineEntry）。
+const METRICS = ["hex", "gridPx", "rgba", "offGrid", "themeBlind"];
 
 function relPath(p) {
   return path.relative(REPO_ROOT, p).split(path.sep).join("/");
@@ -251,7 +325,7 @@ function main() {
 
   for (const [file, count] of Object.entries(current)) {
     const before = normalizeBaselineEntry(baseline[file] ?? 0);
-    for (const metric of ["hex", "gridPx", "rgba", "offGrid"]) {
+    for (const metric of METRICS) {
       if (count[metric] > before[metric]) {
         regressions.push({
           file,
@@ -268,17 +342,12 @@ function main() {
   // actually contain something to flag — a brand-new file with zero of both
   // metrics is fine.
   const newFilesWithValues = Object.keys(current).filter(
-    (f) =>
-      !(f in baseline) &&
-      (current[f].hex > 0 ||
-        current[f].gridPx > 0 ||
-        current[f].rgba > 0 ||
-        current[f].offGrid > 0),
+    (f) => !(f in baseline) && METRICS.some((m) => current[f][m] > 0),
   );
 
   if (regressions.length === 0 && newFilesWithValues.length === 0) {
     console.log(
-      `✓ check-css-tokens: no new hardcoded hex colors, token-able px, or bare rgba (${Object.keys(current).length} CSS files checked against baseline)`,
+      `✓ check-css-tokens: no new hardcoded hex, token-able px, bare rgba, off-grid spacing, or theme-blind colour (${Object.keys(current).length} CSS files checked against baseline)`,
     );
     return;
   }
@@ -291,6 +360,8 @@ function main() {
     gridPx: "token-able px (font-size/spacing) → use var(--text-*/--space-*)",
     rgba: "bare rgb()/rgba() → fold into var(--token, rgba(...))",
     offGrid: "off-grid spacing px → use the 4px grid (0/1/2 hairlines exempt)",
+    themeBlind:
+      "theme-blind colour (raw --<hue>-<step> scale, or a dark-arm hex as color/border-color) → use a light-dark() semantic token such as --color-primary / --hud-amber / --color-text-muted",
   };
   for (const r of regressions) {
     console.error(
@@ -298,8 +369,9 @@ function main() {
     );
   }
   for (const f of newFilesWithValues) {
+    const summary = METRICS.map((m) => `${current[f][m]} ${m}`).join(" / ");
     console.error(
-      `  ${f}: new file with ${current[f].hex} hex / ${current[f].gridPx} token-able px / ${current[f].rgba} bare rgba not yet in baseline. Use tokens where possible, then run 'node scripts/check-css-tokens.mjs --update' to record the intentional baseline.`,
+      `  ${f}: new file (${summary}) not yet in baseline. Use tokens where possible, then run 'node scripts/check-css-tokens.mjs --update' to record the intentional baseline.`,
     );
   }
   console.error(
@@ -308,4 +380,21 @@ function main() {
   process.exitCode = 1;
 }
 
-main();
+// 指標函式導出供測試直接呼叫（見 scripts/check-css-tokens.test.mjs）。只有
+// 當作 CLI 執行時才跑 main()，import 這個模組不該有副作用。
+export {
+  countHexColors,
+  countGridPx,
+  countBareRgba,
+  countOffGridSpacing,
+  countThemeBlind,
+  countFile,
+  METRICS,
+};
+
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+  main();
+}

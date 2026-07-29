@@ -1806,53 +1806,10 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   gap: 16px;
 }
 
-.admin-ratelimit-summary {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
-
-@media (max-width: 760px) {
-  .admin-ratelimit-summary { grid-template-columns: repeat(2, 1fr); }
-}
-
-.admin-ratelimit-summary .tile {
-  padding: 12px 16px;
-  background: var(--admin-panel);
-  border: 1px solid var(--admin-line);
-  border-radius: var(--radius-md-sm);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.admin-ratelimit-summary .lbl {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 1.5px;
-  color: var(--admin-text-dim);
-  text-transform: uppercase;
-}
-
-.admin-ratelimit-summary .val {
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--admin-text);
-  line-height: 1.1;
-  letter-spacing: -0.5px;
-}
-
-.admin-ratelimit-summary .delta {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.5px;
-}
-
-.admin-ratelimit-summary .delta.is-good   { color: var(--hud-lime, #86efac); }
-.admin-ratelimit-summary .delta.is-warn   { color: var(--hud-amber, #fbbf24); }
-.admin-ratelimit-summary .delta.is-danger { color: var(--hud-crimson, #f87171); }
-.admin-ratelimit-summary .delta.is-muted  { color: var(--admin-text-dim); }
+/* D-6 階段 4 (2026-07-29): `.admin-ratelimit-summary`（含 .tile/.lbl/.val/
+   .delta 共 9 條）整組刪除 —— 那是本頁自製的第三種 KPI 樣式，審核區其他頁
+   早就用 `.hud-stats-strip` + `.hud-stat-tile`。markup 已改用共用元件，
+   這裡沒有任何選擇器還會命中。 */
 
 /* (page head now uses the generic .admin-ui-page-* primitives in hud.css —
    the per-page clone that hud.css was "mirroring" is gone.) */
@@ -8727,7 +8684,16 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   border-radius: var(--radius-md);
   display: flex; align-items: center; justify-content: center;
   font-size: 28px;
-  border: 1px solid transparent;
+  /* D-6 階段 4 (2026-07-29): 這三行以前由 admin-empty-states.js 用字串拼接
+     注入（`accent + "30"` / `accent + "0c"`）。8 個 preset 的 accent 全是
+     var(--token)，拼出來的 `var(--color-primary)30` 在 computed-value 階段
+     無效 —— 依 CSS 變數替換規則整條宣告退回 initial：background 變
+     transparent（色票底根本沒畫出來）、border-color 變 currentColor（滿強度，
+     而不是預期的 ~19%）。改由 CSS 用 color-mix 讀自訂屬性，拼接消失，
+     淺／深兩臂都跟著語意 token 走。 */
+  color: var(--admin-empty-accent, var(--color-primary));
+  border: 1px solid color-mix(in srgb, var(--admin-empty-accent, var(--color-primary)) 19%, transparent);
+  background: color-mix(in srgb, var(--admin-empty-accent, var(--color-primary)) 5%, transparent);
 }
 .admin-empty__title {
   font-size: 18px; font-weight: 600;
@@ -8740,9 +8706,21 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   max-width: 360px;
   margin: 8px auto 0;
 }
+/* D-6 階段 4 (2026-07-29): 底色 / 邊框寫進 class。
+   原本只有 `border: 1px solid;` —— 沒有色，也就是 currentColor（＝
+   --btn-text-on-primary 的 #000），而且完全沒有 background；整顆按鈕的顏色
+   靠 admin-empty-states.js 逐一注入 preset accent。結果同一種「主要動作」在
+   場次頁是藍、投票／過濾頁是琥珀、黑名單頁是紅，而黑名單那顆在淺色模式是
+   黑字壓 red-600，實測只有 4.35（12px bold 不算大字，門檻 4.5）。
+   主要動作只該有一個顏色，accent 留給圖示做狀態識別。
+   border 與 background 同色是實心按鈕的常態（真正要對比的是卡片底：淺色
+   3.74、深色 8.59），保留 1px 是為了 forced-colors 模式下背景被剝掉時按鈕
+   還看得見。 */
 .admin-empty__btn {
   margin-top: 20px; padding: 8px 24px;
-  border: 1px solid; border-radius: var(--radius-md-sm); cursor: pointer;
+  background: var(--admin-empty-cta, var(--color-primary));
+  border: 1px solid var(--admin-empty-cta, var(--color-primary));
+  border-radius: var(--radius-md-sm); cursor: pointer;
   color: var(--btn-text-on-primary); font-weight: 700;
   font-family: var(--font-mono);
   font-size: 12px; letter-spacing: 1.5px;

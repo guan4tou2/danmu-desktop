@@ -39,26 +39,33 @@
           </p>
         </div>
 
-        <div class="admin-ratelimit-summary">
-          <div class="tile">
-            <span class="lbl">24h 請求</span>
-            <span class="val" data-rl-sum-hits>—</span>
-            <span class="delta is-muted" data-rl-sum-hits-delta>計算中…</span>
+        <!-- D-6 階段 4 (2026-07-29): 本頁原本自製 .admin-ratelimit-summary >
+             .tile，跟審核區其他 KPI 帶（黑名單／敏感字都用 .hud-stat-tile）長
+             得不一樣。改用共用元件，順帶把語意色從 10px 的 delta 移到 28px 的
+             數字上 —— 淺色模式下 hud-lime / hud-amber 當 10px 內文只有
+             3.30 / 3.19，本來就過不了 4.5；同一個顏色掛在大字上門檻是 3.0，
+             而 label 改用 muted 之後是 7.58。資料綁定 data-rl-sum-* 全部沿用。
+             BLACKLIST 的 is-cyan 對齊敏感字頁同名指標。 -->
+        <div class="hud-stats-strip">
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">REQUESTS · 24H</span>
+            <span class="hud-stat-tile-value" data-rl-sum-hits>—</span>
+            <span class="hud-stat-tile-label" data-rl-sum-hits-delta>計算中…</span>
           </div>
-          <div class="tile">
-            <span class="lbl">24h 違規</span>
-            <span class="val" data-rl-sum-viol>—</span>
-            <span class="delta is-good" data-rl-sum-viol-rate>命中率 —</span>
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">VIOLATIONS · 24H</span>
+            <span class="hud-stat-tile-value is-amber" data-rl-sum-viol>—</span>
+            <span class="hud-stat-tile-label" data-rl-sum-viol-rate>阻擋率 —</span>
           </div>
-          <div class="tile">
-            <span class="lbl">現正鎖定</span>
-            <span class="val" data-rl-sum-locked>—</span>
-            <span class="delta is-warn">LOGIN · 滑動視窗自動解除</span>
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">LOCKED</span>
+            <span class="hud-stat-tile-value is-crimson" data-rl-sum-locked>—</span>
+            <span class="hud-stat-tile-label">LOGIN · 滑動視窗自動解除</span>
           </div>
-          <div class="tile">
-            <span class="lbl">黑名單</span>
-            <span class="val" data-rl-sum-black>—</span>
-            <span class="delta is-danger">手動加入 · 永久</span>
+          <div class="hud-stat-tile">
+            <span class="hud-stat-tile-en">BLACKLIST</span>
+            <span class="hud-stat-tile-value is-cyan" data-rl-sum-black>—</span>
+            <span class="hud-stat-tile-label">手動加入 · 永久</span>
           </div>
         </div>
         <div class="admin-ratelimit-rows">

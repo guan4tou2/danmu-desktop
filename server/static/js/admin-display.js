@@ -1010,12 +1010,98 @@
     );
   }
 
+  // D-6 階段 4 (2026-07-29): tab 狀態的唯一來源改成 AdminTabs / router。
+  // 這個模組以前自己養一條 `.admin-tabstrip`，自己寫 dataset、自己算可見性；
+  // router 也在算同一件事，兩套各算各的就會變成 #/history 那種「點 A 分頁反而
+  // 藏掉 B」的打架（見 c5a7c63）。現在 strip 由 shell 統一掛在標題列下方，
+  // 這裡只負責把 router 已經決定好的分頁鏡射回 body.dataset.viewerConfigTab
+  // ——⌘K 深連結寫的是同一格，所以下面的可見性邏輯不必改。
+  //
+  // 讀 `activeLeaf` 而不是自己解析 hash：admin.js 在 dispatch
+  // admin-route-applied 之前就把 `activeLeaf = activeTab || currentRoute`
+  // 寫好了，那是 router 唯一算過一次的答案；重解 hash 只會多出一條可能跟它
+  // 不一致的推導（別名路由的 hash 裡根本沒有 tab 段）。
+  function _mirrorRouterTab(route, leaf) {
+    if (!_isViewerOwner(route, leaf)) return;
+    const cfg = window.AdminTabs?.getConfig?.("viewer");
+    if (!cfg) return; // AdminTabs 還沒載入 → 保留既有 dataset，別亂寫
+    const has = (slug) => cfg.tabs.some((t) => t.slug === slug);
+    let next = has(leaf) ? leaf : null;
+    if (!next && window.AdminTabs.resolveActiveTab) {
+      // 別名進來（#/viewer-config → leaf 還是 route 名）時補一次記憶／預設值。
+      const resolved = window.AdminTabs.resolveActiveTab("viewer", null);
+      if (has(resolved)) next = resolved;
+    }
+    if (next) document.body.dataset.viewerConfigTab = next;
+  }
+
+  // v5 IA — populate the limits tab from /admin/metrics.
+  //
+  // D-6 階段 4 (2026-07-29): 提到 module scope。以前它是那條自製 tabstrip 的
+  // click handler 的閉包，分頁列退役後就沒有呼叫者了；現在由 syncVisibility
+  // 在「limits 分頁真的在台上」時觸發。
+  //
+  // **必須是邊緣觸發**（見下面 _limitsHydrated）。syncVisibility 掛在一個
+  // `subtree: true` 的 MutationObserver 上，任何 DOM 變動都會叫它一次；而這個
+  // 函式自己會寫 textContent，也就是自己製造下一次 mutation。水平觸發會變成
+  // 自我維持的 fetch 迴圈 —— 實測閒置 6 秒打了 26 次 /admin/metrics，然後被
+  // 自己的限流擋成 429。
+  let _limitsInFlight = false;
+  let _limitsHydrated = false; // 邊緣觸發旗標：進入 limits 分頁時 true，離開時 false
+  async function _hydrateLimitsTab() {
+    const root = document.getElementById("sec-viewer-config-limits");
+    if (!root || _limitsInFlight) return;
+    _limitsInFlight = true;
+    const set = (sel, val) => {
+      const el = root.querySelector(sel);
+      if (el) el.textContent = val == null ? "—" : String(val);
+    };
+    try {
+      const r = await fetch("/admin/metrics", { credentials: "same-origin" });
+      if (!r.ok) return;
+      const body = await r.json();
+      const fire = (body.rate_limits && body.rate_limits.fire) || {};
+      const totals = (body.rate_limits && body.rate_limits.totals) || {};
+      // 2026-05-19 (PR review): pull config from rate_limit_config
+      // instead of hard-coding. Old responses (pre-config-injection
+      // server) fall back to per-deployment defaults.
+      const cfg = (body.rate_limit_config && body.rate_limit_config.fire) || {};
+      const uptime = Math.max(
+        1,
+        (body.server_time || 0) - (body.server_started_at || 0)
+      );
+      // Rate limits — `fire` scope drives the visible per-FP limit.
+      // Global/burst/cooldown don't have their own config keys yet,
+      // so render "—" rather than mislead with hardcoded numbers.
+      set("[data-vc-rate-fp]", cfg.limit || "—");
+      set("[data-vc-rate-global]", "—");
+      set("[data-vc-rate-burst]", "—");
+      set("[data-vc-rate-cooldown]", cfg.window || "—");
+      // Content limits — text max from validation.py is 100. Surface
+      // as "—" until exposed via a config endpoint to avoid drift.
+      set("[data-vc-msg-len]", 100);
+      set("[data-vc-nick-len]", "—");
+      set("[data-vc-dedup]", "—");
+      // Current session strip — live counter data, fine to compute
+      const avgRate = (fire.hits || 0) / uptime;
+      set("[data-vc-avg-rate]", avgRate.toFixed(2) + "/s");
+      set("[data-vc-throttled]", fire.violations || 0);
+      set("[data-vc-blocked]", totals.locked_sources || 0);
+      set("[data-vc-deduped]", 0);  // dedup counter not yet emitted
+    } catch (_) {
+      // network error — keep "—" placeholders, no toast spam
+    } finally {
+      _limitsInFlight = false;
+    }
+  }
+
   function syncVisibility() {
     const shell = document.querySelector(".admin-dash-grid");
     const page = document.getElementById(PAGE_ID);
     if (!shell || !page) return;
     const route = shell.dataset.activeRoute || "live";
     const leaf = shell.dataset.activeLeaf || route;
+    _mirrorRouterTab(route, leaf);
     const tab = (document.body.dataset.viewerConfigTab) || "defaults";
     // The main display-settings surface now belongs to the top-level
     // Display route from the handoff bundle, while the viewer route keeps
@@ -1040,11 +1126,22 @@
     }
     const info = document.getElementById("sec-viewer-config-info");
     if (info) {
+      // 說明橫幅不屬於任何分頁——四個 tab 都該看得到，所以只跟著 route 走。
       info.style.display = isViewerOwner ? "" : "none";
     }
-    const tabs = document.getElementById("sec-viewer-config-tabs");
-    if (tabs) {
-      tabs.style.display = isViewerOwner ? "" : "none";
+    // 限制分頁的數字以前靠 tab 按鈕的 click handler 拉；strip 交給 shell 之後
+    // 沒有那個 handler 了，改成「這個分頁真的在台上」時 lazy 拉。
+    // 邊緣觸發：只在「進入 limits 分頁」那一刻拉一次，離開時重置。syncVisibility
+    // 每次 DOM mutation 都會跑，水平觸發會變成無限 fetch 迴圈（見
+    // _hydrateLimitsTab 的註解）。離開再回來會重抓 —— 跟舊的 click handler
+    // 每點一次就重抓的語意一致，計數本來就會動。
+    if (isViewerOwner && tab === "limits") {
+      if (!_limitsHydrated) {
+        _limitsHydrated = true;
+        _hydrateLimitsTab();
+      }
+    } else {
+      _limitsHydrated = false;
     }
     if (_isDisplayOwner(route, leaf)) {
       if (!_state.metricsTimer) startMetricsPoll();
@@ -1054,99 +1151,16 @@
     _lastVisibleRoute = route;
   }
 
-  function _initViewerConfigTabs() {
-    if (document.getElementById("sec-viewer-config-tabs")) return; // idempotent
+  // D-6 階段 4 (2026-07-29): 這裡以前還會生一條 `.admin-tabstrip` 分頁列
+  // （id `sec-viewer-config-tabs`），塞在 #settings-grid 裡 —— 也就是整頁
+  // **最底部** y≈1387，而其他四個分頁 nav 的 strip 都在標題列正下方 y≈195。
+  // 同一層級的控制長在兩個地方，實測 #/viewer 同時看得到兩條一模一樣的
+  // 4-tab。strip 現在由 admin.js `_renderTabStripFor` 依 TabConfig.viewer
+  // 統一掛載，這個函式只剩下建面板的責任。
+  function _initViewerConfigPanels() {
+    if (document.getElementById("sec-viewer-config-info")) return; // idempotent
     const grid = document.getElementById("settings-grid");
     if (!grid) return;
-
-    // ── Tab strip bar ─────────────────────────────────────────────────────
-    const bar = document.createElement("div");
-    bar.id = "sec-viewer-config-tabs";
-    bar.className = "admin-tabstrip lg:col-span-2";
-    bar.setAttribute("role", "tablist");
-
-    function _makeTabBtn(key, icon, zh, en) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.setAttribute("role", "tab");
-      btn.dataset.tab = key;
-      btn.className = "admin-tabstrip-tab" + (key === "defaults" ? " is-active" : "");
-      btn.setAttribute("aria-selected", key === "defaults" ? "true" : "false");
-      btn.innerHTML =
-        '<span style="display:inline-flex;align-items:center;gap:6px">' +
-          '<span class="admin-tabstrip-icon">' + icon + "</span>" +
-          "<span>" + zh + "</span>" +
-          '<span class="admin-tabstrip-en">' + en + "</span>" +
-        "</span>" +
-        '<span class="admin-tabstrip-tab__indicator"></span>';
-      btn.addEventListener("click", function () {
-        bar.querySelectorAll(".admin-tabstrip-tab").forEach(function (b) {
-          b.classList.remove("is-active");
-          b.setAttribute("aria-selected", "false");
-        });
-        btn.classList.add("is-active");
-        btn.setAttribute("aria-selected", "true");
-        document.body.dataset.viewerConfigTab = key;
-        syncVisibility();
-        if (key === "limits") _hydrateLimitsTab();
-      });
-      return btn;
-    }
-
-    // v5 IA — populate the limits tab from /admin/metrics. Lazy: only
-    // fetches on the first tab visit (or whenever click re-triggers).
-    // Falls back to "—" placeholders when the endpoint isn't reachable.
-    async function _hydrateLimitsTab() {
-      const root = document.getElementById("sec-viewer-config-limits");
-      if (!root) return;
-      const set = (sel, val) => {
-        const el = root.querySelector(sel);
-        if (el) el.textContent = val == null ? "—" : String(val);
-      };
-      try {
-        const r = await fetch("/admin/metrics", { credentials: "same-origin" });
-        if (!r.ok) return;
-        const body = await r.json();
-        const fire = (body.rate_limits && body.rate_limits.fire) || {};
-        const totals = (body.rate_limits && body.rate_limits.totals) || {};
-        // 2026-05-19 (PR review): pull config from rate_limit_config
-        // instead of hard-coding. Old responses (pre-config-injection
-        // server) fall back to per-deployment defaults.
-        const cfg = (body.rate_limit_config && body.rate_limit_config.fire) || {};
-        const uptime = Math.max(
-          1,
-          (body.server_time || 0) - (body.server_started_at || 0)
-        );
-        // Rate limits — `fire` scope drives the visible per-FP limit.
-        // Global/burst/cooldown don't have their own config keys yet,
-        // so render "—" rather than mislead with hardcoded numbers.
-        set("[data-vc-rate-fp]", cfg.limit || "—");
-        set("[data-vc-rate-global]", "—");
-        set("[data-vc-rate-burst]", "—");
-        set("[data-vc-rate-cooldown]", cfg.window || "—");
-        // Content limits — text max from validation.py is 100. Surface
-        // as "—" until exposed via a config endpoint to avoid drift.
-        set("[data-vc-msg-len]", 100);
-        set("[data-vc-nick-len]", "—");
-        set("[data-vc-dedup]", "—");
-        // Current session strip — live counter data, fine to compute
-        const avgRate = (fire.hits || 0) / uptime;
-        set("[data-vc-avg-rate]", avgRate.toFixed(2) + "/s");
-        set("[data-vc-throttled]", fire.violations || 0);
-        set("[data-vc-blocked]", totals.locked_sources || 0);
-        set("[data-vc-deduped]", 0);  // dedup counter not yet emitted
-      } catch (_) {
-        // network error — keep "—" placeholders, no toast spam
-      }
-    }
-
-    bar.appendChild(_makeTabBtn("page",   "◧", "整頁主題", "PAGE"));
-    bar.appendChild(_makeTabBtn("fields", "☷", "表單欄位", "FIELDS"));
-    bar.appendChild(_makeTabBtn("defaults", "◫", "送出預設", "DEFAULTS"));
-    bar.appendChild(_makeTabBtn("limits", "⊘", "限制 / 文案", "LIMITS"));
-    const spacer = document.createElement("span");
-    spacer.style.flex = "1";
-    bar.appendChild(spacer);
 
     // ── Info banner ───────────────────────────────────────────────────────
     const infoBanner = document.createElement("div");
@@ -1361,12 +1375,10 @@
     // ── Insert before sec-viewer-theme ────────────────────────────────────
     const vt = document.getElementById("sec-viewer-theme");
     if (vt && vt.parentNode === grid) {
-      grid.insertBefore(bar, vt);
       grid.insertBefore(infoBanner, vt);
       grid.insertBefore(limitsPanel, vt);
       grid.insertBefore(fieldsPanel, vt);
     } else {
-      grid.appendChild(bar);
       grid.appendChild(infoBanner);
       grid.appendChild(limitsPanel);
       grid.appendChild(fieldsPanel);
@@ -1374,17 +1386,11 @@
 
     if (!document.body.dataset.viewerConfigTab) document.body.dataset.viewerConfigTab = "defaults";
 
-    function _syncBar() {
-      const shell = document.querySelector(".admin-dash-grid");
-      const route = shell?.dataset.activeRoute || "";
-      const leaf = shell?.dataset.activeLeaf || route;
-      const visible = _isViewerOwner(route, leaf);
-      bar.style.display = visible ? "" : "none";
-      infoBanner.style.display = visible ? "" : "none";
-      syncVisibility();
-    }
-    window.addEventListener("hashchange", _syncBar);
-    _syncBar();
+    // 可見性全部收斂到 syncVisibility（它同時處理 route-level 的說明橫幅與
+    // 每個分頁的面板）。以前這裡另有一個 _syncBar 各算各的，正是兩套控制
+    // 打架的來源；hashchange / admin-route-applied 的訂閱在 boot() 已經有了，
+    // 這裡只補一次「面板剛建好」的初始同步。
+    syncVisibility();
   }
 
   async function inject() {
@@ -1419,11 +1425,11 @@
     document.addEventListener("admin-panel-rendered", () => {
       inject();
       hideLegacy();
-      _initViewerConfigTabs();
+      _initViewerConfigPanels();
       syncVisibility();
     });
     inject();
-    _initViewerConfigTabs();
+    _initViewerConfigPanels();
   }
 
   if (document.readyState === "loading") {

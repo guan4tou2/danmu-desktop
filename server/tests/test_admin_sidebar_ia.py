@@ -280,10 +280,18 @@ def test_admin_routes_has_new_canonical_slugs(admin_js: str):
     2026-05-19 v5 IA: `display` was removed from this list — its
     sidebar item retired and the route slug demoted to a bare-legacy
     redirect (#/display → #/viewer/defaults). Coverage is now in
-    test_display_bare_legacy_redirect below."""
+    test_display_bare_legacy_redirect below.
+
+    D-6 階段 4 (2026-07-29): viewer 的探針從 `sec-viewer-config-tabs`
+    換成 `sec-viewer-config-info`。前者是 admin-display.js 自製的
+    `.admin-tabstrip` 分頁列，已經退役 —— viewer 改用 TabConfig.viewer，
+    strip 由 shell 掛在標題列下方（跟其他四個分頁 nav 同一個位置）。
+    這裡要釘的本來就是「route 有東西可渲染」，所以改指向同樣屬於
+    route-level（不隸屬任何分頁）的說明橫幅。分頁自己的 section 由
+    test_tab_config_section_ids_are_creatable 覆蓋。"""
     for slug, expected_section in [
         ("live", "sec-live-feed"),
-        ("viewer", "sec-viewer-config-tabs"),
+        ("viewer", "sec-viewer-config-info"),
     ]:
         pattern = re.compile(
             rf'\b{slug}:\s*\{{[^}}]*sections:\s*\[[^\]]*"{expected_section}"',
@@ -775,23 +783,38 @@ def test_viewer_owner_gate_accepts_all_four_owners(admin_display_js: str):
     )
 
 
-def test_viewer_owner_tab_bar_uses_route_owner_not_raw_hash(admin_display_js: str):
-    """The viewer tab chrome must follow the same route/leaf owner
-    decision as syncVisibility(). A raw hash check like
-    `hash === "viewer-config"` misses #/viewer and
-    #/appearance/viewer-config."""
-    sync_bar = re.search(
-        r"function _syncBar\(\)\s*\{[\s\S]*?syncVisibility\(\);[\s\S]*?\}",
+def test_viewer_tab_state_has_a_single_source(admin_display_js: str):
+    """admin-display.js must not run a second visibility controller
+    alongside syncVisibility(), and must take the active tab from the
+    router instead of re-deriving it.
+
+    D-6 階段 4 (2026-07-29) 改寫。原本這條釘的是 `_syncBar` —— 那個函式
+    是 admin-display.js 自製 `.admin-tabstrip` 分頁列的可見性控制，跟
+    syncVisibility 是兩套各算各的。同層級的控制有兩個來源，就是 c5a7c63
+    那個「點 A 分頁反而藏掉 B」的成因；strip 併進 TabConfig.viewer 之後
+    `_syncBar` 整個退場。契約從「兩套要用同一個判斷」升級成「只准有一套」。
+    """
+    assert (
+        "function _syncBar" not in admin_display_js
+    ), "_syncBar 已退役：可見性只能由 syncVisibility 決定，別再開第二套"
+    assert not re.search(r'className\s*=\s*"admin-tabstrip', admin_display_js), (
+        "viewer 不該再自己生 `.admin-tabstrip`；分頁列由 admin-tabs.js 的 "
+        "TabConfig.viewer 經 shell 統一掛載"
+    )
+
+    mirror = re.search(
+        r"function _mirrorRouterTab\([^)]*\)\s*\{[\s\S]*?\n  \}",
         admin_display_js,
     )
-    assert sync_bar, "_syncBar body not found"
-    body = sync_bar.group(0)
+    assert mirror, "_mirrorRouterTab body not found"
+    body = mirror.group(0)
     assert (
         "_isViewerOwner(route, leaf)" in body
-    ), "_syncBar must use the shared route/leaf owner check"
-    assert (
-        'hash === "viewer-config"' not in body
-    ), "_syncBar must not rely on raw hash-only visibility"
+    ), "_mirrorRouterTab must use the shared route/leaf owner check"
+    assert 'hash === "viewer-config"' not in body and "location.hash" not in body, (
+        "分頁要讀 router 已經算好的 leaf，不要自己重解 hash —— 別名路由的 "
+        "hash 裡根本沒有 tab 段，重解只會多一條可能不一致的推導"
+    )
 
 
 # ─── Command palette must not jump to a route that doesn't own the section ──
