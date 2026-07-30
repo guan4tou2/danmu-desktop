@@ -688,7 +688,7 @@
   "widgetScoreboard": "Scoreboard",
   "widgetTicker": "Ticker",
   "widgetLabel": "Label",
-  "widgetNone": "No widgets. Click a button above to add one.",
+  "widgetNone": "No widgets yet.",
   "widgetDeleteConfirm": "Delete this widget?",
   "widgetClearConfirm": "Remove all widgets from the Desktop?",
   "widgetHide": "Hide",

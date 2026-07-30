@@ -688,7 +688,7 @@
   "widgetScoreboard": "計分板",
   "widgetTicker": "跑馬燈",
   "widgetLabel": "標籤",
-  "widgetNone": "尚無小工具。點擊上方按鈕新增。",
+  "widgetNone": "尚無小工具。",
   "widgetDeleteConfirm": "刪除此小工具？",
   "widgetClearConfirm": "從覆蓋層移除所有小工具？",
   "widgetHide": "隱藏",

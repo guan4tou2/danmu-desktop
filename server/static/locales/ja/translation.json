@@ -654,7 +654,7 @@
   "widgetScoreboard": "スコアボード",
   "widgetTicker": "ティッカー",
   "widgetLabel": "ラベル",
-  "widgetNone": "ウィジェットがありません。上のボタンをクリックして追加。",
+  "widgetNone": "ウィジェットはまだありません。",
   "widgetDeleteConfirm": "このウィジェットを削除しますか？",
   "widgetClearConfirm": "すべてのウィジェットをDesktopから削除しますか？",
   "widgetHide": "非表示",

@@ -51,7 +51,8 @@
           <div class="admin-ow-kpi"><div class="admin-ow-kpi-en">TOTAL</div><div class="admin-ow-kpi-v" data-ow-total>—</div></div>
           <div class="admin-ow-kpi"><div class="admin-ow-kpi-en">ACTIVE</div><div class="admin-ow-kpi-v is-lime" data-ow-active>—</div></div>
           <div class="admin-ow-kpi"><div class="admin-ow-kpi-en">KINDS</div><div class="admin-ow-kpi-v is-cyan" data-ow-kinds>—</div></div>
-          <div class="admin-ow-kpi"><div class="admin-ow-kpi-en">OBS URL</div><div class="admin-ow-kpi-v" style="font-size:11px">${escapeHtml(obsBase)}</div></div>
+          <!-- 2026-07-30：原第四磚是 OBS URL 的唯讀複本——右欄 BROWSER SOURCE
+             卡已有同一個 URL＋複製鈕，重複陳述拆掉。 -->
         </div>
 
         <div class="admin-ow-grid">

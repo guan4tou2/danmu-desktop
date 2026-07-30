@@ -58,10 +58,12 @@
     return s + "s";
   }
 
-  function formatTs(isoStr) {
-    if (!isoStr) return "—";
+  function formatTs(ts) {
+    if (!ts) return "—";
     try {
-      var d = new Date(isoStr);
+      // API 的 started_at 是「秒級」epoch 數字；直接餵 Date 會變 1970/01/21
+      //（KPI「最近場次」實際踩過）。ISO 字串路徑保留。
+      var d = typeof ts === "number" ? new Date(ts < 1e12 ? ts * 1000 : ts) : new Date(ts);
       return d.toLocaleString("zh-TW", {
         year: "numeric", month: "2-digit", day: "2-digit",
         hour: "2-digit", minute: "2-digit", hour12: false,

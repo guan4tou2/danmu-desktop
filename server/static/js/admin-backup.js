@@ -195,14 +195,9 @@
             </div>
           </div>
 
-          <!-- End session -->
-          <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">END SESSION · 結束管理工作階段</div>
-            <div class="admin-backup-row">
-              <div class="admin-backup-desc">登出目前管理員，不影響 Desktop / viewer 連線。</div>
-              <button type="button" id="bk2-end-session" class="admin-ui-action is-danger admin-bk-action">END SESSION</button>
-            </div>
-          </div>
+          <!-- 2026-07-30：「END SESSION（登出管理員）」已拆除——它是頂欄
+               Logout 的重複入口，且本產品的「場次/session」一律指彈幕場次，
+               這顆紅色 END SESSION 站在 DANGER 區裡極易被誤讀成「結束場次」。 -->
 
           <!-- Factory reset -->
           <div class="admin-backup-subcard">
@@ -402,24 +397,6 @@
     }
   }
 
-  async function endSession() {
-    const ok = await window.HudConfirm?.open({
-      icon: "→",
-      title: "登出管理員",
-      subtitle: "SIGN OUT · CURRENT SESSION ONLY",
-      severity: "info",
-      body: "只會結束你目前的管理員登入，不影響進行中的場次或 Desktop 顯示。",
-      confirmLabel: "登出",
-    });
-    if (!ok) return;
-    try {
-      const res = await window.csrfFetch("/logout", { method: "POST" });
-      if (res.redirected) window.location.href = res.url;
-      else window.location.reload();
-    } catch (e) {
-      window.showToast && showToast("登出失敗", false);
-    }
-  }
 
   function bindFactoryConfirm() {
     const input = document.getElementById("bk2-factory-confirm");
@@ -483,7 +460,6 @@
     document.getElementById("bk2-settings-dryrun")?.addEventListener("click", dryRunSettings);
     document.getElementById("bk2-settings-apply")?.addEventListener("click", applySettings);
     document.getElementById("bk2-clear-history")?.addEventListener("click", clearHistory);
-    document.getElementById("bk2-end-session")?.addEventListener("click", endSession);
     // v5 (2026-05-19): full-state pack export/import wired to backup.py
     document.getElementById("bk2-pack-export")?.addEventListener("click", exportFullPack);
     document.getElementById("bk2-pack-dryrun")?.addEventListener("click", dryRunFullPack);

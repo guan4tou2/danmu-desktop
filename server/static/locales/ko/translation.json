@@ -654,7 +654,7 @@
   "widgetScoreboard": "스코어보드",
   "widgetTicker": "티커",
   "widgetLabel": "라벨",
-  "widgetNone": "위젯이 없습니다. 위 버튼을 클릭하여 추가하세요.",
+  "widgetNone": "위젯이 아직 없습니다.",
   "widgetDeleteConfirm": "이 위젯을 삭제하시겠습니까?",
   "widgetClearConfirm": "Desktop에서 모든 위젯을 삭제하시겠습니까?",
   "widgetHide": "숨기기",
