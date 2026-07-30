@@ -239,9 +239,11 @@ test("tray menu exposes v3 canonical schema: Desktop toggle + idle + no dead con
   expect(main).not.toContain('require("./main-modules/tray-popover")');
   expect(main).not.toContain("buildTrayPopoverSections");
 
-  // v3 canonical items: "顯示 Desktop" (⌘⇧D) + "待機畫面" (sub-item)
+  // v3 canonical items: "顯示 Desktop" (⌘⇧D) + idle QR sub-item。
+  // 2026-07-29 更名「待機畫面」→「入場 QR 畫面」：QR 場景關閉鈕的提示
+  // 指向系統列，tray 項目必須與按鈕／場景用同一個詞彙才指得到路。
   expect(main).toContain('"顯示 Desktop"');
-  expect(main).toContain("待機畫面");
+  expect(main).toContain("入場 QR 畫面");
   expect(main).toContain('"偏好設定…"');
   expect(main).toMatch(/label:\s*"偏好設定…",\s*click:\s*showMainWindow/s);
 
