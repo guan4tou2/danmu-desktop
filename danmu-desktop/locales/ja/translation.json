@@ -68,6 +68,7 @@
   "overlayActionTestDanmu": "⚡ テスト弾幕",
   "overlayTestDanmuText": "測試彈幕 · Danmu Fire ✓",
   "overlayActionIdleQr": "◱ 入場QRを表示",
+  "overlayActionIdleQrClose": "◱ 入場QRを閉じる",
   "overlayNoteKicker": "NOTE",
   "overlayNoteBody": "弾幕のフォント・色・サイズ・透明度・速度・レイアウト・エフェクトは観客が送信時に付与するパラメータで、このウィンドウでは設定しません。ここで決めるのは Desktop の表示有無・表示先ディスプレイ・サーバー接続だけです。",
   "sectionKeysTitle": "ショートカット",

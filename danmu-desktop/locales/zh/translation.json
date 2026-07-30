@@ -68,6 +68,7 @@
   "overlayActionTestDanmu": "⚡ 試放彈幕",
   "overlayTestDanmuText": "測試彈幕 · Danmu Fire ✓",
   "overlayActionIdleQr": "◱ 顯示入場 QR",
+  "overlayActionIdleQrClose": "◱ 關閉入場 QR",
   "overlayNoteKicker": "NOTE",
   "overlayNoteBody": "彈幕的字體、顏色、大小、透明度、速度、排版與效果為觀眾每次發送時帶上的參數,不在此視窗控制。此視窗僅決定 Desktop 是否顯示、顯示於哪個螢幕,以及與 server 的連線。",
   "sectionKeysTitle": "快捷鍵",

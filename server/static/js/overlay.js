@@ -696,7 +696,7 @@
     // Wrapper handles translateX animation; inner element handles effect animation
     var wrapper = document.createElement("div");
     wrapper.className = "danmu-wrapper";
-    wrapper.style.cssText = "position:absolute;display:inline-block;white-space:nowrap;";
+    wrapper.style.cssText = "position:absolute;display:inline-block;white-space:nowrap;z-index:20;"; // z 20 > #overlay-idle 的 10：入場 QR 顯示中彈幕要飛在場景上（與 Electron child 同一決策）
 
     var danmu;
     if (imgs.test(text)) {

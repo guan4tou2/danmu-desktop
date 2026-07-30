@@ -171,6 +171,41 @@ test.describe("Server ↔ Client 系統互動", () => {
     await expect(btn).toHaveAttribute("aria-pressed", "false");
   });
 
+  test("入場 QR 顯示中，彈幕仍要飛在場景之上（2026-07-29 回歸）", async () => {
+    // 使用者實測回報：開了入場 QR 後發的彈幕「沒有顯示」。根因是 #overlay-idle
+    // 是不透明滿版 z-10，彈幕 wrapper 沒設 z 被蓋在後面。此測釘住兩件事：
+    // (1) wrapper z-index 高於 idle 場景 (2) 按鈕開啟時標籤翻成「關閉入場 QR」。
+    const btn = main.locator('[data-client-overlay-action="idle-qr"]');
+    await expect(btn).toBeEnabled();
+    await btn.click();
+    await expect(overlay.locator("#overlay-idle")).toBeVisible({ timeout: 5000 });
+    await expect(btn).toContainText("關閉入場 QR");
+
+    const marker = `E2E-QR上飛彈幕-${Date.now()}`;
+    const fired = await serverJson("/fire", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: marker, color: "88ccff", size: 40, speed: 3 }),
+    });
+    expect(fired.status).toBe(200);
+    const danmu = overlay.locator(`.danmu:has-text("${marker}")`).first();
+    await expect(danmu).toBeVisible({ timeout: 10000 });
+
+    const z = await danmu.evaluate((el) => {
+      const wrapper = el.closest("div");
+      const idle = document.getElementById("overlay-idle");
+      return {
+        wrapper: parseInt(getComputedStyle(wrapper).zIndex, 10) || 0,
+        idle: parseInt(getComputedStyle(idle).zIndex, 10) || 0,
+      };
+    });
+    expect(z.wrapper).toBeGreaterThan(z.idle);
+
+    await btn.click();
+    await expect(overlay.locator("#overlay-idle")).toBeHidden({ timeout: 5000 });
+    await expect(btn).toContainText("顯示入場 QR");
+  });
+
   test("觀眾在瀏覽器 viewer 頁打字送出 → overlay 渲染（三方完整鏈路）", async () => {
     // 這是產品的主線：真觀眾瀏覽器 → server /fire → WS → Electron overlay。
     // 前面的測試用 POST /fire 模擬，這裡走真正的 viewer UI。

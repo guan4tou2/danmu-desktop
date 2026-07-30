@@ -68,6 +68,7 @@
   "overlayActionTestDanmu": "⚡ 테스트 탄막",
   "overlayTestDanmuText": "測試彈幕 · Danmu Fire ✓",
   "overlayActionIdleQr": "◱ 입장 QR 표시",
+  "overlayActionIdleQrClose": "◱ 입장 QR 닫기",
   "overlayNoteKicker": "NOTE",
   "overlayNoteBody": "댄무의 글꼴·색상·크기·투명도·속도·레이아웃·효과는 관객이 전송 시 함께 보내는 파라미터로 이 창에서는 설정하지 않습니다. 이 창은 Desktop 표시 여부·표시 디스플레이·서버 연결만 결정합니다.",
   "sectionKeysTitle": "단축키",

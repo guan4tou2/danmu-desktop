@@ -76,6 +76,8 @@ img{
   position: fixed;
   bottom: 8px;
   right: 12px;
+  /* 高於 #overlay-idle(10)：入場 QR 顯示中也要看得到流量計數 */
+  z-index: 20;
   font-family: monospace;
   font-size: 11px;
   color: rgba(255, 255, 255, 0.92);

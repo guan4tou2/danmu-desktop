@@ -239,6 +239,11 @@
         b.disabled = !s.hasOverlay;
         b.setAttribute("aria-pressed", s.active ? "true" : "false");
         b.classList.toggle("is-active", !!s.active);
+        // 開啟時把標籤翻成「關閉入場 QR」——同一顆鈕本來就是 toggle，但
+        // 標籤永遠寫「顯示」的話，QR 蓋滿投影畫面時使用者找不到關閉的門。
+        var key = s.active ? "overlayActionIdleQrClose" : "overlayActionIdleQr";
+        b.setAttribute("data-i18n", key);
+        if (typeof i18n !== "undefined" && i18n.t) b.textContent = i18n.t(key);
       });
     }
 

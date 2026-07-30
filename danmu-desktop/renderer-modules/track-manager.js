@@ -164,7 +164,7 @@ function initTrackManager() {
 
     // ── 建立 wrapper（負責 translateX 動畫，與 inner 特效動畫分離，互不衝突）
     const wrapper = document.createElement("div");
-    wrapper.style.cssText = "position:absolute;display:inline-flex;flex-direction:column;align-items:flex-start;white-space:nowrap;line-height:1;";
+    wrapper.style.cssText = "position:absolute;display:inline-flex;flex-direction:column;align-items:flex-start;white-space:nowrap;line-height:1;z-index:20;"; // z 20 > #overlay-idle 的 10：入場 QR 顯示中彈幕要飛在場景上，而不是被不透明深底吃掉
 
     let danmu;
     if (imgs.test(string) && protocolCheck.test(string)) {
