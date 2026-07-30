@@ -800,6 +800,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <nav class="admin-dash-breadcrumb" data-route-breadcrumb aria-label="breadcrumb"></nav>
                                     <span class="hud-label is-accent" data-route-kicker>DASHBOARD · 活動進行中</span>
                                     <h1 data-route-title>控制台</h1>
+                                    <p class="admin-dash-topbar-note" data-route-note hidden></p>
                                 </div>
                                 <div class="admin-dash-topbar-actions">
                                     <div class="admin-dash-search" role="button" tabindex="0" data-open-palette
@@ -1506,17 +1507,33 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // 單一 section 的路由常出現「頂欄路由標題」與「區塊標題」逐字相同
-    // （素材庫/風格主題包/備份…共 8 條）——同一屏連寫兩次。中央規則：
-    // 完全相同才隱藏區塊標題（kicker 與 note 保留，它們有額外資訊）；
-    // 標題不同的（審核 vs 審核佇列）原樣保留，那是有效的層級。
+    // （素材庫/風格主題包/備份…共 8 條）。2026-07-30 升級（使用者指出兩張
+    // bar 內容重複佔空間）：標題相同時**整張區塊頁首上收**——kicker 與
+    // 路由 kicker 重複、直接藏；note 是有效資訊、上移到頂欄標題下的
+    // [data-route-note] 插槽。標題不同的（審核 vs 審核佇列）原樣保留。
     function _dedupSectionTitles() {
       const routeTitle = shell.querySelector("[data-route-title]")
         ?.textContent?.trim().replace(/\s+/g, " ");
+      const noteSlot = shell.querySelector("[data-route-note]");
       if (!routeTitle) return;
-      shell.querySelectorAll(".admin-ui-page-head .admin-ui-page-title").forEach((el) => {
-        const t = el.textContent.trim().replace(/\s+/g, " ");
-        el.classList.toggle("is-dup-of-route", t === routeTitle);
+      let mergedNote = null;
+      shell.querySelectorAll(".admin-ui-page-head").forEach((head) => {
+        const titleEl = head.querySelector(".admin-ui-page-title");
+        const t = titleEl?.textContent?.trim().replace(/\s+/g, " ");
+        const dup = !!t && t === routeTitle;
+        head.classList.toggle("is-merged-into-topbar", dup);
+        if (dup && mergedNote === null) {
+          // 取第一個可見重複頁首的 note（innerHTML：投票頁的深度分析
+          // 連結是純 <a>，沒有事件監聽，複製安全）
+          const sec = head.closest('[id^="sec-"], .admin-route-sections');
+          const visible = !sec || getComputedStyle(sec).display !== "none";
+          if (visible) mergedNote = head.querySelector(".admin-ui-page-note")?.innerHTML || "";
+        }
       });
+      if (noteSlot) {
+        noteSlot.innerHTML = mergedNote || "";
+        noteSlot.hidden = !mergedNote;
+      }
     }
 
     function syncRouteContainerVisibility() {

@@ -10896,8 +10896,16 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 }
 
 /* ── P0-0a · Tab strip (Slice 3) ──────────────────────────────────────── */
-/* 區塊標題與路由標題逐字相同時由 _dedupSectionTitles 標記隱藏 */
-.admin-ui-page-head .admin-ui-page-title.is-dup-of-route { display: none; }
+/* 區塊頁首與路由標題逐字相同時整卡上收（note 併入頂欄插槽）——
+ * 2026-07-30 使用者指出兩張 bar 內容重複佔空間 */
+.admin-ui-page-head.is-merged-into-topbar { display: none; }
+.admin-dash-topbar-note {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  max-width: 72ch;
+}
+.admin-dash-topbar-note[hidden] { display: none; }
 
 [data-admin-tabs-host] {
   padding: 0 24px;
