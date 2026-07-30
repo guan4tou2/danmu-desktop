@@ -267,7 +267,7 @@ app.whenReady().then(() => {
       },
       { label: `Desktop 視窗：${overlayCount} 個`, enabled: false },
       {
-        label: "  待機畫面",
+        label: "  入場 QR 畫面",  // 與控制視窗按鈕、QR 場景關閉鈕同一詞彙
         type: "checkbox",
         checked: idleActive && hasOverlay,
         enabled: hasOverlay,
