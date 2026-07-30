@@ -523,21 +523,31 @@
       }
     }
 
-    document.getElementById("effectUploadInput")?.addEventListener("change", async (e) => {
+    // 防重綁：route 重套會重跑 init，重複的 change 監聽會讓一次選檔
+    // 打出兩發 POST（實測抓到）。dataset 旗標保證只綁一次。
+    const _upInput = document.getElementById("effectUploadInput");
+    const _upFresh = _upInput && !_upInput.dataset.uploadWired;
+    if (_upFresh) _upInput.dataset.uploadWired = "1";
+    (_upFresh ? _upInput : null)?.addEventListener("change", async (e) => {
       await _uploadEffectFile(e.target.files?.[0]);
       e.target.value = "";
     });
 
-    // v5 Batch 12 polish: drag-drop on the dropzone — accepts .dme files
-    // and forwards to the same upload handler. Hover state via CSS class
-    // is-drag.
-    const dropzone = document.getElementById("effectsDropzone");
-    if (dropzone) {
-      const onEnter = (e) => { e.preventDefault(); dropzone.classList.add("is-drag"); };
-      const onLeave = (e) => { e.preventDefault(); dropzone.classList.remove("is-drag"); };
+    // 2026-07-30 流程重排：大 dropzone 退役（低頻動作不佔圖書館上方），
+    // 拖放目標升級為整個效果庫區塊——拖檔進來任何位置都收，
+    // is-drag 高亮打在整區上。點擊上傳走工具列的 label（同一個 input）。
+    const dropTarget = document.getElementById("sec-effects-mgmt");
+    if (dropTarget) {
+      let depth = 0;
+      const onEnter = (e) => { e.preventDefault(); depth++; dropTarget.classList.add("is-drag"); };
+      const onOver = (e) => { e.preventDefault(); };
+      const onLeave = (e) => {
+        e.preventDefault(); depth = Math.max(0, depth - 1);
+        if (depth === 0) dropTarget.classList.remove("is-drag");
+      };
       const onDrop = async (e) => {
-        e.preventDefault();
-        dropzone.classList.remove("is-drag");
+        e.preventDefault(); depth = 0;
+        dropTarget.classList.remove("is-drag");
         const file = e.dataTransfer?.files?.[0];
         if (!file) return;
         if (!/\.(dme|dme\.zip)$/i.test(file.name)) {
@@ -546,10 +556,10 @@
         }
         await _uploadEffectFile(file);
       };
-      dropzone.addEventListener("dragenter", onEnter);
-      dropzone.addEventListener("dragover", onEnter);
-      dropzone.addEventListener("dragleave", onLeave);
-      dropzone.addEventListener("drop", onDrop);
+      dropTarget.addEventListener("dragenter", onEnter);
+      dropTarget.addEventListener("dragover", onOver);
+      dropTarget.addEventListener("dragleave", onLeave);
+      dropTarget.addEventListener("drop", onDrop);
     }
   }
 

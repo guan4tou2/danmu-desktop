@@ -1063,24 +1063,17 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="hud-page-grid-2">
           <div class="hud-page-stack" style="gap:16px">
-            <!-- v5 Batch 12 polish: dashed-cyan drop zone per
-                 batch12-effects.jsx EffectsLibraryPage. Replaces the
-                 inline upload button; clicking the zone triggers the
-                 same #effectUploadInput. Drag-and-drop wired below. -->
-            <label for="effectUploadInput" class="admin-effects-dropzone" id="effectsDropzone">
-              <span class="admin-effects-dropzone__icon">\u2726</span>
-              <div class="admin-effects-dropzone__copy">
-                <div class="admin-effects-dropzone__title">\u62d6\u5165 .dme \u6a94\u4e0a\u50b3\u65b0\u6548\u679c \u00b7 \u6216\u9ede\u6b64\u700f\u89bd</div>
-                <div class="admin-effects-dropzone__hint">\u652f\u63f4 .dme \u00b7 .dme.zip \u00b7 \u6700\u5927 4 MB \u00b7 \u4e0a\u50b3\u5f8c\u81ea\u52d5\u71b1\u91cd\u8f09</div>
-              </div>
-              <span class="admin-effects-dropzone__cta">+ \u700f\u89bd\u6a94\u6848</span>
-              <input type="file" id="effectUploadInput" accept=".dme" class="hidden">
-            </label>
 
             <!-- TPL-B 工具列：濾鏡 chips ＋ 動作靠右，一條解決 -->
+            <!-- 流程排序（2026-07-30 使用者原則：要先做的放上面）——
+                 高頻的「管理現有效果」緊跟工具列；低頻的「上傳」降級為
+                 工具列動作（label 觸發同一個 #effectUploadInput），
+                 拖放目標升級為整個 main 區（handler 在 effects-mgmt）。 -->
             <div class="hud-filter-row admin-effects-toolbar" id="effectsFilterRow">
               <span class="hud-filter-chip is-active" data-effect-filter="ALL">\u5168\u90e8 \u2014</span>
               <span class="admin-effects-toolbar__spacer" data-toolbar-spacer></span>
+              <label for="effectUploadInput" class="admin-ui-action is-primary admin-effects-action admin-effects-upload-btn" title="\u652f\u63f4 .dme / .dme.zip \u00b7 \u6700\u5927 4 MB \u00b7 \u4e0a\u50b3\u5f8c\u81ea\u52d5\u71b1\u91cd\u8f09\uff1b\u4e5f\u53ef\u76f4\u63a5\u62d6\u62c9\u6a94\u6848\u5230\u9801\u9762">+ \u4e0a\u50b3 .dme</label>
+              <input type="file" id="effectUploadInput" accept=".dme" class="hidden">
               <button id="effectReloadBtn" class="admin-ui-action admin-effects-action" type="button">\u21bb ${ServerI18n.t("reload")}</button>
             </div>
             <div id="effectsList" class="hud-effects-grid">
