@@ -506,3 +506,17 @@ def test_persistence_across_instances(tmp_path):
     assert rules[0]["id"] == rule_id
 
     FilterEngine._instance = None
+
+
+def test_add_rule_accepts_review_action(reset_engine):
+    """2026-07-30 回歸：`review` 動作（進審核佇列）在 add_rule 白名單裡。
+
+    Schema 與 apply 路徑從 v4-r3 就支援 review，但 add_rule 的白名單漏了
+    它——導致「標記進審核」規則從 UI 建立必 400，整個審核佇列收不到任何
+    訊息。這條釘住白名單＋review 規則真的把訊息送進待審。
+    """
+    engine = reset_engine
+    rule_id = engine.add_rule({"type": "keyword", "pattern": "審核回歸字", "action": "review"})
+    assert rule_id
+    result = engine.check("這句含審核回歸字要進佇列")
+    assert result.action == "review"

@@ -188,7 +188,10 @@ class FilterEngine:
             raise ValueError(f"Unknown rule type: {rule_type}")
 
         action = data.get("action", "block")
-        if action not in ("block", "replace", "allow"):
+        # `review` 是 2026-05-18 v4-r3 加的第四種動作（進審核佇列），
+        # apply 路徑與 schema 都支援，但這裡的白名單一直沒跟上——
+        # 導致審核佇列從出貨那天起就收不到任何規則（UI 建立必 400）。
+        if action not in ("block", "replace", "allow", "review"):
             raise ValueError(f"Unknown action: {action}")
 
         return FilterRule(

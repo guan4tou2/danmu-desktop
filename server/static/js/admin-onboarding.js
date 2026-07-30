@@ -91,7 +91,15 @@
     if (window.AdminOnboarding.isDone()) return;
     const route = _currentRoute();
     if (!COCKPIT_ROUTES.has(route)) return;
-    _start();
+    // 場次進行中絕不自動彈導覽（會直接蓋住即時訊息流——場中實測抓到）。
+    // 用場次橫幅的 live 態當訊號；橫幅還沒渲染就先等一拍再判。
+    const sessionLive = () => !!document.querySelector(".admin-session-banner-live");
+    if (sessionLive()) return;
+    setTimeout(() => {
+      if (window.AdminOnboarding.isDone() || sessionLive()) return;
+      if (!COCKPIT_ROUTES.has(_currentRoute())) return;
+      _start();
+    }, 1200);
   }
 
   function _currentRoute() {

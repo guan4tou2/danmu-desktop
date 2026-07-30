@@ -163,7 +163,12 @@
     _renderColumn(root.querySelector("[data-mq-col-approved]"), _state.approved, "approved");
     _renderColumn(root.querySelector("[data-mq-col-rejected]"), _state.rejected, "rejected");
 
-    const setCnt = (sel, n) => { const el = root.querySelector(sel); if (el) el.textContent = String(n); };
+    const setCnt = (sel, n) => {
+      // 同一個計數出現在兩處（工具列 chip ＋ 泳道標頭徽章）——
+      // querySelector 只會更新第一個，徽章永遠卡 0（場中實測抓到）。
+      // 範圍維持在本 section root，避免撞到其他區塊的同名節點。
+      root.querySelectorAll(sel).forEach((el) => { el.textContent = String(n); });
+    };
     setCnt("[data-mq-cnt-pending]",  _state.pending.length);
     setCnt("[data-mq-cnt-approved]", _state.approved.length);
     setCnt("[data-mq-cnt-rejected]", _state.rejected.length);

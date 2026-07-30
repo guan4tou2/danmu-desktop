@@ -412,7 +412,11 @@
   }
 
   function _updateChipCounts() {
-    const setCnt = (sel, n) => { const el = document.querySelector(sel); if (el) el.textContent = String(n); };
+    // 一定要 scope 在自己的 section 裡查：退役的 sec-notifications-overview
+    // 還留著同名 data-cnt-* 節點且在 DOM 前面，document.querySelector 會
+    // 更新到那個「隱藏的」計數——可見的 chips 永遠卡 0（場中實測抓到）。
+    const root = document.getElementById(SECTION_ID) || document;
+    const setCnt = (sel, n) => { const el = root.querySelector(sel); if (el) el.textContent = String(n); };
     setCnt("[data-cnt-all]",  entries.length);
     setCnt("[data-cnt-sens]", entries.filter((e) => e.sensitive).length);
     setCnt("[data-cnt-mut]",  entries.filter((e) => e.muted).length);
