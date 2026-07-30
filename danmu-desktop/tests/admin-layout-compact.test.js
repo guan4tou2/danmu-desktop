@@ -762,7 +762,9 @@ test("admin Poll Builder session and editor actions compose shared controls", ()
   expect(pollBuilderSrc).toContain('class="admin-ui-action is-danger admin-poll-editor-action" data-ed-action="remove-q-image"');
   expect(pollBuilderSrc).toContain('class="admin-ui-action admin-poll-editor-action" data-ed-action="upload-q-image"');
   expect(pollBuilderSrc).toContain('class="admin-ui-action is-danger admin-poll-editor-action" data-ed-action="remove-q"');
-  expect(pollBuilderSrc).toContain('class="admin-ui-action is-primary admin-poll-editor-action" data-ed-action="start-this"');
+  // 2026-07-30：START Qn 舊路徑已移除（繞過 session 模型的單題直啟），
+  // 唯一開始入口是 START SESSION。反向釘住不得回歸。
+  expect(pollBuilderSrc).not.toContain('data-ed-action="start-this"');
   expect(pollBuilderSrc).toContain('class="admin-ui-chip admin-poll-result-state"');
   expect(pollBuilderSrc).not.toContain("admin-poll-btn");
   expect(pollBuilderSrc).not.toContain('class="chip"');

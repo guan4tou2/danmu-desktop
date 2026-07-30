@@ -1225,7 +1225,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Danmu History Card
     settingsGrid.insertAdjacentHTML("beforeend", `
-                    <div id="sec-history" class="admin-v3-card lg:col-span-2">
+                    <div id="sec-history" class="admin-ui-card lg:col-span-2">
                         <div>
                             <h3 class="text-lg font-bold" style="color:var(--admin-text)">${ServerI18n.t("danmuHistory")}</h3>
                             <p class="text-sm" style="color:var(--admin-text-dim)">${ServerI18n.t("danmuHistoryDesc")}</p>
@@ -1539,6 +1539,20 @@ document.addEventListener("DOMContentLoaded", () => {
       return "settings-grid";
     }
 
+    // 單一 section 的路由常出現「頂欄路由標題」與「區塊標題」逐字相同
+    // （素材庫/風格主題包/備份…共 8 條）——同一屏連寫兩次。中央規則：
+    // 完全相同才隱藏區塊標題（kicker 與 note 保留，它們有額外資訊）；
+    // 標題不同的（審核 vs 審核佇列）原樣保留，那是有效的層級。
+    function _dedupSectionTitles() {
+      const routeTitle = shell.querySelector("[data-route-title]")
+        ?.textContent?.trim().replace(/\s+/g, " ");
+      if (!routeTitle) return;
+      shell.querySelectorAll(".admin-ui-page-head .admin-ui-page-title").forEach((el) => {
+        const t = el.textContent.trim().replace(/\s+/g, " ");
+        el.classList.toggle("is-dup-of-route", t === routeTitle);
+      });
+    }
+
     function syncRouteContainerVisibility() {
       const cfg = ADMIN_ROUTES[currentRoute];
       const wantedOwners = new Set((cfg.sections || []).map(routeSectionOwner));
@@ -1585,6 +1599,10 @@ document.addEventListener("DOMContentLoaded", () => {
         window.AdminTabs.applyTabSectionVisibility(currentRoute, _activeTab, shell);
       }
       syncRouteContainerVisibility();
+      // 晚到的 section（fetch 完才 insertAdjacentHTML 的模組）走
+      // MutationObserver 重跑到這裡——標題去重要在這條路徑也跑，
+      // 否則素材庫/整合等五條路由的重複標題會漏網。
+      _dedupSectionTitles();
     };
 
     // v7 S3 (2026-07-28): the retired system accordion carried leaves that
@@ -1747,6 +1765,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // 調整完了。容器同步要在這之後再跑一次，否則模組剛顯示的 section
       // 會被困在一個剛被判定為空、display:none 的容器裡。
       syncRouteContainerVisibility();
+      _dedupSectionTitles();
 
       _renderTabStripFor(currentRoute, activeTab);
       _renderBreadcrumb(rawName, currentRoute, activeTab);

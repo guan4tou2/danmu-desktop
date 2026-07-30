@@ -32,11 +32,9 @@
       <div id="sec-polls" class="admin-poll-page-v5 hud-page-stack lg:col-span-2" data-poll-view="builder">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">POLL · 多題目 · 拖曳排序 · 每題可上傳圖片</div>
-          <div class="admin-ui-page-title">
-            投票
-            <a class="admin-poll-deeplink" href="#/poll-deepdive" title="投票深度分析">📊 深度分析 →</a>
-          </div>
-          <p class="admin-ui-page-note">建立多題投票；觀眾點選項即送出，票數與百分比僅管理端可見。</p>
+          <div class="admin-ui-page-title">投票</div>
+          <p class="admin-ui-page-note">建立多題投票；觀眾點選項即送出，票數與百分比僅管理端可見。
+            <a class="admin-poll-deeplink" href="#/poll-deepdive" title="投票深度分析">📊 深度分析 →</a></p>
         </div>
 
         <!-- BUILDER VIEW -->
@@ -166,7 +164,6 @@
       });
       let activeId = queue[0].id;
       let mode = "manual";
-      let runningIdx = -1;
       let dragQId = null;
       let dragOptId = null;
       // Multi-question session state (P0-1)
@@ -183,7 +180,7 @@
           row.className = "admin-poll-qrow";
           if (q.id === activeId) row.classList.add("is-active");
           const sessionRunning = session.active && session.currentIndex === i;
-          if (i === runningIdx || sessionRunning) row.classList.add("is-running");
+          if (sessionRunning) row.classList.add("is-running");
           row.dataset.qid = q.id;
           row.draggable = true;
           const hasImg = !!q.image_url || q.options.some(o => o.img);
@@ -268,8 +265,10 @@
               <span>允許複選</span>
             </label>
             <div class="foot-spacer"></div>
+            <!-- 2026-07-30：「START Qn」舊路徑移除——它繞過 session 模型直打
+                 舊單題 /admin/poll/create、前端自己 watchAndAdvance，連圖片
+                 都傳不了。唯一的開始入口是左欄 START SESSION（P0-1 模型）。 -->
             <button type="button" class="admin-ui-action is-danger admin-poll-editor-action" data-ed-action="remove-q">刪除此題</button>
-            <button type="button" class="admin-ui-action is-primary admin-poll-editor-action" data-ed-action="start-this">START Q${idx + 1} ▶</button>
           </div>
         `;
       }
@@ -799,8 +798,6 @@
                 persist(); render();
               }
             }
-          } else if (act.dataset.edAction === "start-this") {
-            startAt(queue.findIndex(q2 => q2.id === activeId));
           } else if (act.dataset.edAction === "upload-q-image") {
             const input = editorEl.querySelector("[data-ed-q-image-input]");
             if (input) input.click();
@@ -1070,45 +1067,6 @@
       });
 
       // Start engine
-      async function startAt(idx) {
-        if (idx < 0 || idx >= queue.length) return;
-        const q = queue[idx];
-        const cleanOpts = q.options.map(o => (o.label || "").trim()).filter(Boolean);
-        if (!(q.text || "").trim()) { showToast && showToast(`第 ${idx + 1} 題缺少題目文字`, false); return; }
-        if (cleanOpts.length < 2) { showToast && showToast(`第 ${idx + 1} 題選項不足 2 個`, false); return; }
-        runningIdx = idx;
-        renderQueue();
-        try {
-          const res = await csrfFetch("/admin/poll/create", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ question: q.text, options: cleanOpts }),
-          });
-          if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || "poll create failed"); }
-          showToast && showToast(`第 ${idx + 1} 題已開始`, true);
-          if (mode === "auto") watchAndAdvance(idx);
-        } catch (err) {
-          runningIdx = -1; renderQueue();
-          showToast && showToast(String(err.message || err), false);
-        }
-      }
-      async function watchAndAdvance(idx) {
-        const loop = async () => {
-          if (runningIdx !== idx) return;
-          try {
-            const res = await fetch("/admin/poll/status", { credentials: "same-origin" });
-            if (res.ok) {
-              const data = await res.json();
-              if (data.state !== "active") {
-                setTimeout(() => { if (idx + 1 < queue.length) startAt(idx + 1); else { runningIdx = -1; renderQueue(); showToast && showToast("全部題目已結束", true); } }, 800);
-                return;
-              }
-            }
-          } catch (_) {}
-          setTimeout(loop, 2000);
-        };
-        setTimeout(loop, 2000);
-      }
 
       render();
   }

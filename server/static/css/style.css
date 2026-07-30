@@ -3491,27 +3491,8 @@ button.admin-dash-nav-group-toggle:focus-visible {
  * AdminV3 inner card — flat HUD panel replacing .glass-effect rounded-2xl.
  * Used across every admin section (settings, moderation, assets, advanced).
  * ────────────────────────────────────────────────────────────────────────── */
-.admin-v3-card {
-  background: var(--admin-panel);
-  border: 1px solid var(--admin-line);
-  border-radius: var(--radius-md-sm);
-  padding: var(--space-5);
-  transition: border-color var(--motion-normal) ease, background var(--motion-normal) ease;
-  scroll-margin-top: var(--space-6);
-}
-
-.admin-v3-card:hover {
-  border-color: color-mix(in srgb, var(--color-primary) 40%, var(--admin-line));
-}
-
-.admin-v3-card > summary {
-  cursor: pointer;
-  list-style: none;
-}
-
-.admin-v3-card > summary::-webkit-details-marker {
-  display: none;
-}
+/* .admin-v3-card 容器已於 2026-07-30 退役（最後三個消費者換裝
+ * admin-ui-card）。-kicker 標籤系列仍在服役，保留於下方。 */
 
 .admin-v3-card-kicker {
   font-family: var(--font-mono);
@@ -10915,6 +10896,9 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 }
 
 /* ── P0-0a · Tab strip (Slice 3) ──────────────────────────────────────── */
+/* 區塊標題與路由標題逐字相同時由 _dedupSectionTitles 標記隱藏 */
+.admin-ui-page-head .admin-ui-page-title.is-dup-of-route { display: none; }
+
 [data-admin-tabs-host] {
   padding: 0 24px;
   border-bottom: 1px solid var(--color-border, var(--hud-line));

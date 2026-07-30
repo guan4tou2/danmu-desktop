@@ -367,7 +367,7 @@
     if (!historyCard || !historyCard.parentElement) return;
     var sec = document.createElement("div");
     sec.id = SECTION_ID;
-    sec.className = "admin-v3-card lg:col-span-2 history-v2-section";
+    sec.className = "admin-ui-card lg:col-span-2 history-v2-section";
     historyCard.parentElement.insertBefore(sec, historyCard);
     _renderShell();
     _applyRouteGuard();

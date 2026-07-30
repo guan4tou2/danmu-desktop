@@ -572,7 +572,7 @@
     if (!document.getElementById("sec-history-list")) {
       var listSec = document.createElement("div");
       listSec.id = "sec-history-list";
-      listSec.className = "admin-v3-card lg:col-span-2 admin-history-list-section";
+      listSec.className = "admin-ui-card lg:col-span-2 admin-history-list-section";
       parent.insertBefore(listSec, historyCard);
     }
 
