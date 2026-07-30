@@ -77,7 +77,9 @@
     const eff = _effectiveTheme(mode);
     btn.dataset.mode = mode;
     btn.dataset.effective = eff;
-    btn.textContent = eff === "light" ? "☀" : "☾";
+    // auto 用獨立圖示 ◐：☾ 同時代表「自動且目前是暗色」與「手動暗色」時，
+    // 使用者要點三下才會發現有第三態。
+    btn.textContent = mode === "auto" ? "◐" : eff === "light" ? "☀" : "☾";
     btn.title = mode === "auto"
       ? `跟隨系統 · 目前 ${eff === "light" ? "亮色" : "暗色"}`
       : mode === "light" ? "亮色模式" : "暗色模式";

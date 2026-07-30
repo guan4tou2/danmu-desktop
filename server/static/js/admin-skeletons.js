@@ -89,5 +89,13 @@
     return wrap;
   }
 
-  window.AdminSkeletons = { listRows, statsTiles, chart };
+  // 模板字串脈絡的便利入口：五個「載入中…」佔位（D-6 尾項）都在
+  // innerHTML 模板裡，拿不到 DOM 節點掛載點。skeleton 沒有事件監聽，
+  // outerHTML 序列化是安全的。
+  function html(kind, opts) {
+    const build = { listRows, statsTiles, chart }[kind];
+    return build ? build(opts || {}).outerHTML : "";
+  }
+
+  window.AdminSkeletons = { listRows, statsTiles, chart, html };
 })();

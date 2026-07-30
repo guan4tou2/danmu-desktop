@@ -2524,12 +2524,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const next = keyboardOffset > 0 ? keyboardOffset : 0;
       if (next === _lastKeyboardOffset) return; // no change → skip style writes
       _lastKeyboardOffset = next;
+      // 同步發布成 CSS 變數：重連 toast 與離線橫幅也是 fixed-bottom，
+      // 不跟著抬會被鍵盤蓋住、或壓在已抬高的 sendbar 上（TODOS P2）。
       if (next > 0) {
+        document.documentElement.style.setProperty("--viewer-kb-offset", `${next}px`);
         elements.sendbar.style.position = "fixed";
         elements.sendbar.style.left = "0";
         elements.sendbar.style.right = "0";
         elements.sendbar.style.bottom = `${next}px`;
       } else {
+        document.documentElement.style.removeProperty("--viewer-kb-offset");
         elements.sendbar.style.position = "";
         elements.sendbar.style.left = "";
         elements.sendbar.style.right = "";

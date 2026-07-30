@@ -2,27 +2,6 @@
 
 > 格式：依元件分組，每項標 `**Priority:**`（P0 最高 → P4），完成項移至底部 `## Completed` 並附版本。
 
-## Server — Viewer 測試
-
-### 建立 viewer 頁 browser test 套件（test_browser_viewer.py）
-**Priority:** P1
-viewer 主頁（`server/static/js/main.js` + `templates/index.html`）目前沒有自己的
-browser test 檔（只有 overlay/admin/p3 有），v5.4.0 的 viewer 端行為——sendbar
-狀態列（離線/滿載訊息）、投票即時「✓ 已投出」確認、重連 toast、行動端
-blur-on-send——全數只靠人工驗證。比照 `test_browser_admin.py` 的模式新建套件，
-涵蓋上述四個行為＋色票 aria-label i18n 渲染。
-（出處：v5.4.0 /ship 覆蓋率稽核，coverage gate overridden at 35%。）
-
-## Server — Viewer UX
-
-### 軟鍵盤釘住 sendbar 時，重連 toast / 離線橫幅的定位碰撞
-**Priority:** P2
-`main.js` 的 visualViewport 處理會把 `.viewer-sendbar` 釘在鍵盤上緣，但
-`.viewer-reconnected-toast` 與離線橫幅仍是 `position:fixed; bottom:0`——鍵盤開啟
-時 toast 會被鍵盤蓋住或與 sendbar 重疊。兩套定位系統需要互相感知（toast 的
-bottom 應加上 keyboardOffset）。
-（出處：v5.4.0 /ship 對抗式審查 F5。）
-
 ## Server — Admin 測試基建
 
 ### server 端 JS 缺單元測試 harness（admin-hud-modal 等）
@@ -32,17 +11,23 @@ bottom 應加上 keyboardOffset）。
 建一個輕量 jest 環境（或決議維持 browser-test-only 並記錄為刻意取捨）。
 （出處：v5.4.0 /ship testing specialist。）
 
-## Server — Admin 設計一致性（/design-review 2026-07-28 deferred）
-
-
-### 載入態換 AdminSkeletons（D-6 尾項）
-**Priority:** P4
-空狀態歸一已全部完成（批次一＋二見 Completed）。僅剩載入佔位可選擇性
-升級：scheduler:441、admin-display 兩處、webhooks:149/170、stickers:98
-等「載入中…」文字換 AdminSkeletons 骨架。C 類 row/inline 級佔位為刻意
-保留（分類表見 2026-07-28 盤點）。
-
 ## Completed
+
+### viewer 頁 browser test 套件 — done 2026-07-29（a119f7d）
+`test_browser_viewer.py` 11 案例：sendbar 離線/滿載狀態列、投票「✓ 已投出」、
+重連 toast、blur-on-send、色票 aria-label i18n；建套件當下順帶修掉它抓到的
+三個 bug（#160）。已納入 `test_browser_isolated.py` 隔離跑法。
+
+### 軟鍵盤 toast/橫幅定位碰撞 — done 2026-07-29
+`main.js` 的 visualViewport handler 把 keyboardOffset 發布成
+`--viewer-kb-offset`；重連 toast 與離線橫幅 `bottom` 吃該變數（admin 無人
+設定、fallback 0 = 原行為）。
+
+### 載入態換 AdminSkeletons（D-6 尾項）— done 2026-07-29
+AdminSkeletons 新增 `html()` 序列化入口（模板字串脈絡用）；
+scheduler / admin-display ×2 / webhooks ×2 / stickers 六處「載入中…」
+全數換成骨架。C 類 row/inline 級佔位維持刻意保留。
+
 
 ### 空狀態/載入態歸一（D-6 批次一＋二）— done 2026-07-28/29（v5.4.0 後）
 17 處自造空狀態全數收斂到共用 AdminEmpty（modbans/webhooks/widgets 順帶

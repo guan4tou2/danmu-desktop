@@ -1456,7 +1456,8 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
+  /* 軟鍵盤開啟時跟 sendbar 一起抬高（main.js 發布的變數；桌機恆為 0） */
+  bottom: var(--viewer-kb-offset, 0);
   z-index: 9050;
   padding: 8px 16px;
   background: var(--color-success-surface);
@@ -2078,7 +2079,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
   background: rgba(56, 189, 248, 0.2);
 }
 
-/* Visible on mobile only */
+/* Visible on mobile only — desktop 用 hero 工具列的 .viewer-theme-chip */
 @media (max-width: 768px) {
   .viewer-hamburger { display: inline-flex; }
 }

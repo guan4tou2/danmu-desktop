@@ -146,7 +146,7 @@
               </form>
 
               <div id="wh-list" class="admin-ui-list-stack admin-wh-list">
-                <div class="admin-wh-empty">載入中…</div>
+                ${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : "載入中…"}
               </div>
             </div>
 
@@ -167,7 +167,7 @@
                 <span>ENDPOINT</span><span>EVENT</span><span>RETRY</span>
               </div>
               <div id="wh-log-list" class="admin-ui-list-stack is-tight admin-wh-log-list">
-                <div class="admin-wh-empty">載入中…</div>
+                ${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : "載入中…"}
               </div>
             </div>
           </div>

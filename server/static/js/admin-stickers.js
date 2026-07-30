@@ -95,7 +95,7 @@
 
             <div class="admin-ui-card">
               <div id="stickerGrid" class="admin-stickers-grid">
-                <div class="admin-stickers-empty">${escapeHtml(ServerI18n.t("loadingStickers"))}</div>
+                ${window.AdminSkeletons ? window.AdminSkeletons.html("statsTiles", { cols: 4 }) : escapeHtml(ServerI18n.t("loadingStickers"))}
               </div>
             </div>
           </div>

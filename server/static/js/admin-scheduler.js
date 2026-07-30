@@ -453,7 +453,7 @@
             <span class="admin-ui-monolabel" style="margin-left:auto" id="schedulerJobsCount">—</span>
           </div>
           <div id="schedulerJobsList" class="admin-scheduler-jobs">
-            <div class="admin-emojis-empty">${escapeHTML(ServerI18n.t("loadingJobs"))}</div>
+            ${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : escapeHTML(ServerI18n.t("loadingJobs"))}
           </div>
         </div>
       </div>

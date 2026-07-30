@@ -133,7 +133,7 @@
               <span class="admin-dsp2-list-head-right">觀眾自訂 · AUDIENCE</span>
             </div>
             <div id="dsp2-rows">
-              <div class="admin-dsp2-empty">${escapeHtml(t("loading", "載入中…"))}</div>
+              ${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : escapeHtml(t("loading", "載入中…"))}
             </div>
           </div>
 
@@ -488,7 +488,7 @@
     const host = document.getElementById("dsp2-rows");
     if (!host) return;
     if (!_state.options) {
-      host.innerHTML = `<div class="admin-dsp2-empty">${escapeHtml(t("loading", "載入中…"))}</div>`;
+      host.innerHTML = `${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : escapeHtml(t("loading", "載入中…"))}`;
       return;
     }
     host.innerHTML = ROWS
