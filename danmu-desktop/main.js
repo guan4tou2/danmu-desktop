@@ -142,6 +142,19 @@ app.whenReady().then(() => {
 
   // Broadcast an overlay-idle-toggle message to every live child window.
   // mode: 'show' | 'hide' | 'toggle'
+  // idle 顯示期間：z-level 降到 floating（macOS 選單列可達）、click-through
+  // 暫時關閉——場景上的「✕ 關閉入場 QR」鈕要收得到點擊。idle 收合即還原。
+  // 場景本身不透明滿版，關掉穿透不會誤擋任何看得到的東西。
+  function applyIdleWindowMode() {
+    const level = idleActive ? "floating" : "screen-saver";
+    childWindows.forEach((cw) => {
+      if (cw && !cw.isDestroyed()) {
+        cw.setAlwaysOnTop(true, level);
+        cw.setIgnoreMouseEvents(!idleActive);
+      }
+    });
+  }
+
   function broadcastIdleToggle(mode) {
     const payload = { mode: mode || "toggle" };
     let delivered = 0;
@@ -261,13 +274,7 @@ app.whenReady().then(() => {
         click: () => {
           broadcastIdleToggle("toggle");
           idleActive = !idleActive;
-          // Lower overlay z-level during idle so macOS menu bar stays reachable
-          const level = idleActive ? "floating" : "screen-saver";
-          childWindows.forEach((cw) => {
-            if (cw && !cw.isDestroyed()) {
-              cw.setAlwaysOnTop(true, level);
-            }
-          });
+          applyIdleWindowMode();
           notifyIdleState();
           rebuildTrayMenu();
         },
@@ -357,6 +364,7 @@ app.whenReady().then(() => {
     }
     overlayVisible = true; // new children are always shown; reset for next session
     idleActive = false; // each overlay session starts from non-idle
+    applyIdleWindowMode();
     notifyIdleState();
     rebuildTrayMenu();
   };
@@ -395,16 +403,7 @@ app.whenReady().then(() => {
     else if (mode === "show") idleActive = true;
     else idleActive = false;
 
-    // Adjust overlay window level so macOS menu bar stays accessible.
-    // "screen-saver" covers the menu bar; "floating" stays above normal
-    // windows but below it — lets the user reach the tray during idle.
-    const level = idleActive ? "floating" : "screen-saver";
-    childWindows.forEach((cw) => {
-      if (cw && !cw.isDestroyed()) {
-        cw.setAlwaysOnTop(true, level);
-      }
-    });
-
+    applyIdleWindowMode();
     notifyIdleState();
     rebuildTrayMenu();
   });

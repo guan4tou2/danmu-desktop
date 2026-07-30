@@ -201,9 +201,12 @@ test.describe("Server ↔ Client 系統互動", () => {
     });
     expect(z.wrapper).toBeGreaterThan(z.idle);
 
-    await btn.click();
+    // 收合改走「場景上的關閉鈕」：child → IPC → main(idleActive) → 廣播回
+    // child 收合 + 控制視窗按鈕狀態同步 —— 驗的是整條環，不只本地 class。
+    await overlay.locator("#overlay-idle-close").click();
     await expect(overlay.locator("#overlay-idle")).toBeHidden({ timeout: 5000 });
     await expect(btn).toContainText("顯示入場 QR");
+    await expect(btn).toHaveAttribute("aria-pressed", "false");
   });
 
   test("觀眾在瀏覽器 viewer 頁打字送出 → overlay 渲染（三方完整鏈路）", async () => {

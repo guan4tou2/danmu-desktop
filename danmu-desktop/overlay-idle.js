@@ -47,6 +47,18 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     ensureRef();
+    // 場景上的關閉鈕：走既有 IPC 讓 main 更新 idleActive（單一真相來源），
+    // main 會廣播 overlay-idle-toggle 回來、由上面的 handler 收合。
+    var closeBtn = document.getElementById("overlay-idle-close");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", function () {
+        if (window.API && typeof window.API.toggleOverlayIdle === "function") {
+          window.API.toggleOverlayIdle("hide");
+        } else {
+          hide(); // 退路：IPC 不在時至少本地收合
+        }
+      });
+    }
     if (window.API && typeof window.API.onToggleIdle === "function") {
       window.API.onToggleIdle(function (data) {
         var mode = (data && data.mode) || "toggle";

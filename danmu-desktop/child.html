@@ -35,6 +35,12 @@
         <!-- Overlay Idle · Hero Lockup — prototype hero-scenes.jsx:86 OverlayIdle.
              Hidden by default. Invoked manually via tray / window.API.toggleOverlayIdle. -->
         <div id="overlay-idle" aria-hidden="true">
+          <!-- 2026-07-29 使用者回報：單螢幕時 QR 蓋滿畫面（含控制視窗），
+               找不到出口。場景本身要有關閉鈕；idle 顯示期間 main 會暫時
+               關掉 click-through 讓這顆鈕可以點。 -->
+          <button type="button" id="overlay-idle-close" aria-label="關閉入場 QR">
+            ✕ 關閉入場 QR<span class="overlay-idle-close-hint">也可由系統列圖示切換</span>
+          </button>
           <div class="overlay-idle-backdrop" aria-hidden="true"></div>
           <div class="overlay-idle-inner">
             <h1 class="overlay-idle-hero">Danmu Fire</h1>

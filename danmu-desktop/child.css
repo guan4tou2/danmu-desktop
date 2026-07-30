@@ -116,6 +116,34 @@ img{
 }
 
 #overlay-idle.is-visible { display: flex; opacity: 1; }
+
+#overlay-idle-close {
+  position: absolute;
+  top: var(--space-6);
+  right: var(--space-6);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-pill, 999px);
+  border: 1px solid var(--overlay-close-line, rgba(148, 163, 184, 0.45));
+  background: var(--overlay-close-bg, rgba(2, 6, 23, 0.72));
+  color: var(--overlay-close-ink, rgba(255, 255, 255, 0.92));
+  font-family: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  /* idle 容器是 pointer-events:none 的投影層；只有這顆鈕收事件 */
+  pointer-events: auto;
+}
+#overlay-idle-close:hover {
+  border-color: var(--overlay-close-line-hover, rgba(125, 211, 252, 0.75));
+  background: var(--overlay-close-bg-hover, rgba(2, 6, 23, 0.9));
+}
+.overlay-idle-close-hint {
+  font-size: var(--text-2xs);
+  color: var(--overlay-close-hint-ink, rgba(255, 255, 255, 0.55));
+}
 #overlay-idle.is-fading  { opacity: 0; }
 
 .overlay-idle-backdrop {
