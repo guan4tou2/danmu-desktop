@@ -809,8 +809,14 @@ test("admin router hides empty route containers so leaf pages do not keep vertic
   expect(adminSrc).toContain("function syncRouteContainerVisibility()");
   expect(adminSrc).toContain('shell.querySelectorAll(".admin-route-sections").forEach');
   expect(adminSrc).toContain('container.id === "sec-advanced"');
-  expect(adminSrc).toContain('container.style.display = hasWanted ? "" : "none";');
-  expect(adminSrc).toContain("syncRouteContainerVisibility();");
+  // 2026-07-29：配置擁有(hasWanted)只回答「可能用到」，section 是按當前
+  // 分頁顯示的 —— 還要求「目前真的有可見內容」，否則 0 高幽靈容器會在
+  // flex 欄裡白吃兩個 24px gap（審核頁分頁列下那個 48px 洞的成因）。
+  expect(adminSrc).toContain("hasVisiblePayload");
+  expect(adminSrc).toContain('container.style.display = hasVisiblePayload(container) ? "" : "none";');
+  // 模組在 admin-route-applied（同步 dispatch）裡調整完 section 後必須再
+  // 同步一次，否則剛顯示的 section 會困在剛被判空的容器裡。
+  expect(adminSrc.split("admin-route-applied")[1]).toContain("syncRouteContainerVisibility();");
 });
 
 test("admin router re-applies route visibility for late-injected sections without rAF only", () => {

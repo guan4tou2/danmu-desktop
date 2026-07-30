@@ -1534,14 +1534,27 @@ document.addEventListener("DOMContentLoaded", () => {
     function syncRouteContainerVisibility() {
       const cfg = ADMIN_ROUTES[currentRoute];
       const wantedOwners = new Set((cfg.sections || []).map(routeSectionOwner));
-      shell.querySelectorAll(".admin-route-sections").forEach((container) => {
+      // 「配置擁有」只回答「這條路由可能用到這個容器」；section 本身是按
+      // 當前分頁顯示的。只看配置會留下 0 高的幽靈容器（例如審核路由的
+      // settings-grid 只裝速率限制分頁的 section），它在 flex 欄裡白吃
+      // 兩個 24px gap —— 分頁列下面那個 48px 的洞就是這樣來的。
+      // 所以再加一個條件：容器目前真的有可見內容才顯示。
+      const hasVisiblePayload = (container) => {
         if (container.id === "sec-advanced") {
-          const hasWanted = wantedOwners.has("sec-advanced");
-          container.style.display = hasWanted ? "" : "none";
-          return;
+          return Array.from(container.querySelectorAll('[id^="sec-"]'))
+            .some((c) => getComputedStyle(c).display !== "none");
         }
-        const hasWanted = wantedOwners.has(container.id);
-        container.style.display = hasWanted ? "" : "none";
+        return Array.from(container.children)
+          .some((k) => getComputedStyle(k).display !== "none");
+      };
+      shell.querySelectorAll(".admin-route-sections").forEach((container) => {
+        const hasWanted = container.id === "sec-advanced"
+          ? wantedOwners.has("sec-advanced")
+          : wantedOwners.has(container.id);
+        if (!hasWanted) { container.style.display = "none"; return; }
+        // 先還原再量：display:none 底下量不到子元素的真實狀態
+        container.style.display = "";
+        container.style.display = hasVisiblePayload(container) ? "" : "none";
       });
     }
 
@@ -1721,6 +1734,11 @@ document.addEventListener("DOMContentLoaded", () => {
       document.dispatchEvent(new CustomEvent("admin-route-applied", {
         detail: { route: currentRoute, leaf: activeTab },
       }));
+
+      // dispatchEvent 是同步的：跑到這裡，各分頁模組已經把自己的 section
+      // 調整完了。容器同步要在這之後再跑一次，否則模組剛顯示的 section
+      // 會被困在一個剛被判定為空、display:none 的容器裡。
+      syncRouteContainerVisibility();
 
       _renderTabStripFor(currentRoute, activeTab);
       _renderBreadcrumb(rawName, currentRoute, activeTab);
