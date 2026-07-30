@@ -334,8 +334,13 @@ function initTrackManager() {
       // 插入 DOM 才能量測尺寸
       parentElement.appendChild(wrapper);
 
-      const Height = parseFloat(getComputedStyle(danmu).height);
-      const Width = parseFloat(getComputedStyle(danmu).width);
+      // 量 wrapper 而不是 h1：帶暱稱時整塊 = 暱稱列 + 間距 + 文字，
+      // 只量 h1 會讓軌道高度少掉 ~38%，下緣侵入下一條軌道疊到別的彈幕
+      // （使用者回報「有暱稱時會遮住文字下面部分」）。寬度同理——暱稱比
+      // 訊息寬時，用 h1 寬算退場距離會讓整塊提早被 remove。
+      const wrapperRect = wrapper.getBoundingClientRect();
+      const Height = wrapperRect.height;
+      const Width = wrapperRect.width;
       const Padding = parseFloat(getComputedStyle(danmu).padding);
       const danmuTotalHeight = Height + Padding;
 

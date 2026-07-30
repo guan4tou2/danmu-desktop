@@ -209,6 +209,46 @@ test.describe("Server ↔ Client 系統互動", () => {
     await expect(btn).toHaveAttribute("aria-pressed", "false");
   });
 
+  test("帶暱稱的彈幕，軌道高度要涵蓋整塊（2026-07-30 回歸：暱稱疊字）", async () => {
+    // 使用者回報：帶暱稱的彈幕會遮住其他彈幕的文字下緣。根因是軌道分配
+    // 只量 h1（訊息文字），暱稱列讓整塊高 ~38%，下緣侵入下一條軌道。
+    // 這裡攔截 findAvailableTrack，驗證傳入的高/寬涵蓋整個 wrapper。
+    await overlay.evaluate(() => {
+      const orig = window.findAvailableTrack;
+      window.__trackCalls = [];
+      window.findAvailableTrack = (area, h, w, speed) => {
+        window.__trackCalls.push({ h, w });
+        return orig(area, h, w, speed);
+      };
+    });
+    const marker = `E2E-暱稱-dggyj-${Date.now()}`;
+    const fired = await serverJson("/fire", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: marker, color: "88ccff", size: 40, speed: 3,
+        nickname: "測試暱稱-NICK-20字內",  // server 驗證上限 20 字（validation.py）
+      }),
+    });
+    expect(fired.status).toBe(200);
+    const danmu = overlay.locator(`.danmu:has-text("${marker}")`).first();
+    await expect(danmu).toBeVisible({ timeout: 10000 });
+
+    const m = await danmu.evaluate((el) => {
+      const wrapper = el.parentElement;
+      const wr = wrapper.getBoundingClientRect();
+      const hr = el.getBoundingClientRect();
+      const call = (window.__trackCalls || [])[0] || null;
+      return { wrapperH: wr.height, wrapperW: wr.width, h1H: hr.height, call };
+    });
+    expect(m.call).not.toBeNull();
+    // 整塊必須比 h1 高（暱稱真的有佔位）……
+    expect(m.wrapperH).toBeGreaterThan(m.h1H + 8);
+    // ……而軌道分配拿到的高/寬必須涵蓋整塊（允許 1px 取整誤差）
+    expect(m.call.h).toBeGreaterThanOrEqual(m.wrapperH - 1);
+    expect(m.call.w).toBeGreaterThanOrEqual(m.wrapperW - 1);
+  });
+
   test("觀眾在瀏覽器 viewer 頁打字送出 → overlay 渲染（三方完整鏈路）", async () => {
     // 這是產品的主線：真觀眾瀏覽器 → server /fire → WS → Electron overlay。
     // 前面的測試用 POST /fire 模擬，這裡走真正的 viewer UI。

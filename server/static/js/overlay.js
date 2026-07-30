@@ -809,9 +809,12 @@
         danmu.style.fontFamily = effectiveFontName;
         parentElement.appendChild(wrapper);
 
+        // 量 wrapper 而不是 h1：帶暱稱時整塊比 h1 高（暱稱列＋間距），
+        // 只量 h1 會讓軌道打架、下緣疊到下一條彈幕（與 Electron 同修）。
         var compStyle = getComputedStyle(danmu);
-        var Height = parseFloat(compStyle.height);
-        var Width = parseFloat(compStyle.width);
+        var wrapperRect = wrapper.getBoundingClientRect();
+        var Height = wrapperRect.height;
+        var Width = wrapperRect.width;
         var Padding = parseFloat(compStyle.padding) || 0;
         var danmuTotalHeight = Height + Padding;
 
