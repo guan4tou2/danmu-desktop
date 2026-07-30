@@ -13975,57 +13975,9 @@ body.admin-pu-open { overflow: hidden; }
 /* ─── v5 Batch 12-6: Overlay Widgets KPI strip + right rail ─────────────
    Per batch12-overlay-widgets.jsx OverlayWidgetsPage. 4-col KPI strip
    at top + 2-col grid (widget list left / OBS URL card + preview right). */
-.admin-ow-kpis {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
-}
-.admin-ow-kpi {
-  padding: 8px;
-  background: var(--hud-bg1, var(--color-bg-elevated));
-  border: 1px solid var(--hud-line);
-  border-radius: var(--radius-md-sm);
-}
-.admin-ow-kpi-en {
-  font-family: var(--hud-font-mono);
-  font-size: 8px; letter-spacing: 1px;
-  color: var(--hud-textDim);
-}
-.admin-ow-kpi-v {
-  font-family: var(--hud-font-mono);
-  font-size: 20px; font-weight: 600;
-  color: var(--color-text-strong);
-  margin-top: 2px;
-  letter-spacing: -0.5px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.admin-ow-kpi-v.is-lime { color: var(--color-ink-success); }
-.admin-ow-kpi-v.is-cyan { color: var(--color-ink-accent); }
 
-.admin-ow-grid {
-  display: grid; grid-template-columns: 1fr 340px; gap: 16px;
-  align-items: start;
-}
-@media (max-width: 960px) {
-  .admin-ow-grid { grid-template-columns: 1fr; }
-  .admin-ow-kpis { grid-template-columns: 1fr 1fr; }
-}
-.admin-ow-main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-.admin-ow-rail {
-  display: flex; flex-direction: column; gap: 12px;
-  position: sticky; top: 0;
-}
-.admin-ow-card {
-  background: var(--hud-bg1, var(--color-bg-elevated));
-  border: 1px solid var(--hud-line);
-  border-radius: var(--radius-md-sm);
-  padding: 12px;
-  display: flex; flex-direction: column; gap: 8px;
-}
-.admin-ow-card-label {
-  font-family: var(--hud-font-mono);
-  font-size: 9px; letter-spacing: 1.5px;
-  color: var(--hud-textDim);
-  text-transform: uppercase;
-}
+.admin-ow-railcard { display: flex; flex-direction: column; gap: var(--space-2); }
+
 .admin-ow-card-note {
   margin: 0;
   font-size: 11px; line-height: 1.6;
@@ -14091,6 +14043,10 @@ body.admin-pu-open { overflow: hidden; }
   padding-top: var(--space-4);
   border-top: 1px solid var(--admin-line);
 }
+
+/* TPL-B 工具列：chips 與動作同列，spacer 撐開 */
+.admin-effects-toolbar { align-items: center; }
+.admin-effects-toolbar__spacer { flex: 1; }
 
 .admin-effects-dropzone {
   display: flex; align-items: center; gap: 12px;

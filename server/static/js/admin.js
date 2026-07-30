@@ -634,35 +634,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const fontLabel = currentSettings.FontFamily && currentSettings.FontFamily[3]
       ? escapeHtml(String(currentSettings.FontFamily[3]))
       : "NotoSansTC";
-    const settingCard = (
-      id,
-      title,
-      description,
-      isEnabled,
-      enabledContent,
-      disabledContent
-    ) => `
-                    <!-- 2026-07-30 S3 批次二：總開關卡收回 admin-ui-card 語言。
-                         舊版是 Tailwind utility 拼的 v3 卡，跟整頁 HUD 語言
-                         格格不入（效果庫頁最上面那塊異物）。toggle 機制與
-                         sec-*/toggle-* id 契約原封不動。 -->
-                    <div id="sec-${id.toLowerCase()}" class="admin-ui-card admin-master-toggle">
-                        <div class="admin-master-toggle__row">
-                            <div class="admin-master-toggle__copy">
-                                <div class="admin-ui-monolabel">${title}</div>
-                                <p class="admin-master-toggle__desc">${description}</p>
-                            </div>
-                            <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in flex-shrink-0">
-                                <input type="checkbox" name="${id}" id="toggle-${id}" role="switch" aria-checked="${isEnabled}" aria-label="Toggle ${title}" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer" ${isEnabled ? "checked" : ""
-      } />
-                                <label for="toggle-${id}" class="toggle-label block overflow-hidden h-7 rounded-full cursor-pointer" style="background:var(--color-bg-elevated)"></label>
-                            </div>
-                        </div>
-                        <div class="admin-master-toggle__body">
-                            ${isEnabled ? enabledContent : disabledContent}
-                        </div>
-                    </div>
-                `;
+    // settingCard 工廠已於 2026-07-30 退役（Effects 開關列改為就地模板）
 
     const kpiBars = (seed, len = 12) => {
       const out = [];
@@ -1060,20 +1032,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const settingsGrid = document.getElementById("settings-grid");
 
-    // Effects Enable/Disable Card
+    // Effects master switch — TPL-B 細開關列（2026-07-30 版型樣板頁 1）。
+    // 舊 settingCard 是半寬浮卡；TPL-B 規格：總開關是頁面第一列的全寬細列，
+    // 開關狀態文字就地顯示。toggle-Effects input 契約原樣保留。
     const effectsEnabled = currentSettings.Effects ? currentSettings.Effects[0] !== false : true;
-    settingsGrid.insertAdjacentHTML("beforeend", settingCard(
-      "Effects",
-      ServerI18n.t("effectsSetting"),
-      ServerI18n.t("effectsSettingDesc"),
-      effectsEnabled,
-      `<p class="text-sm" style="color:var(--admin-text-dim)">${ServerI18n.t("effectsEnabledMsg")}</p>`,
-      `<p class="text-sm" style="color:var(--admin-text-dim)">${ServerI18n.t("effectsDisabledMsg")}</p>`
-    ));
+    settingsGrid.insertAdjacentHTML("beforeend", `
+      <div id="sec-effects" class="admin-ui-card admin-master-toggle lg:col-span-2">
+        <div class="admin-master-toggle__row">
+          <div class="admin-master-toggle__copy">
+            <div class="admin-ui-monolabel">${ServerI18n.t("effectsSetting")}</div>
+            <p class="admin-master-toggle__desc">${effectsEnabled ? ServerI18n.t("effectsEnabledMsg") : ServerI18n.t("effectsDisabledMsg")}</p>
+          </div>
+          <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in flex-shrink-0">
+            <input type="checkbox" name="Effects" id="toggle-Effects" role="switch" aria-checked="${effectsEnabled}" aria-label="Toggle ${ServerI18n.t("effectsSetting")}" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer" ${effectsEnabled ? "checked" : ""} />
+            <label for="toggle-Effects" class="toggle-label block overflow-hidden h-7 rounded-full cursor-pointer" style="background:var(--color-bg-elevated)"></label>
+          </div>
+        </div>
+      </div>`);
 
     // Effects Management — AdminEffectsPage layout (1fr + 340px YAML inspector)
     settingsGrid.insertAdjacentHTML("beforeend", `
-      <div id="sec-effects-mgmt" class="hud-page-stack lg:col-span-2">
+      <div id="sec-effects-mgmt" class="hud-page-stack lg:col-span-2" data-tpl="B">
+        <!-- TPL-B：KPI 條固定頁面頂部（原 LIBRARY STATS 右欄卡升格；
+             data-eflib-* 更新契約不變） -->
+        <div class="hud-stats-strip">
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">TOTAL</span><span class="hud-stat-tile-value" data-eflib-total>—</span><span class="hud-stat-tile-label">效果總數</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">ACTIVE</span><span class="hud-stat-tile-value is-lime" data-eflib-active>—</span><span class="hud-stat-tile-label">啟用中</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">CATEGORIES</span><span class="hud-stat-tile-value" data-eflib-cats>—</span><span class="hud-stat-tile-label">分類</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">USER UPLOADS</span><span class="hud-stat-tile-value is-cyan" data-eflib-user>—</span><span class="hud-stat-tile-label">使用者上傳</span></div>
+        </div>
         <div class="hud-page-grid-2">
           <div class="hud-page-stack" style="gap:16px">
             <!-- v5 Batch 12 polish: dashed-cyan drop zone per
@@ -1090,16 +1077,11 @@ document.addEventListener("DOMContentLoaded", () => {
               <input type="file" id="effectUploadInput" accept=".dme" class="hidden">
             </label>
 
-            <div class="hud-filter-row" id="effectsFilterRow">
+            <!-- TPL-B 工具列：濾鏡 chips ＋ 動作靠右，一條解決 -->
+            <div class="hud-filter-row admin-effects-toolbar" id="effectsFilterRow">
               <span class="hud-filter-chip is-active" data-effect-filter="ALL">\u5168\u90e8 \u2014</span>
-            </div>
-            <div class="flex items-center justify-between" style="gap:8px">
-              <p class="text-xs m-0" style="color:var(--admin-text-dim)">${ServerI18n.t("effectsManagementDesc")}</p>
-              <div class="flex items-center" style="gap:6px">
-                <button id="effectReloadBtn" class="admin-ui-action admin-effects-action" type="button">
-                  \u21bb ${ServerI18n.t("reload")}
-                </button>
-              </div>
+              <span class="admin-effects-toolbar__spacer" data-toolbar-spacer></span>
+              <button id="effectReloadBtn" class="admin-ui-action admin-effects-action" type="button">\u21bb ${ServerI18n.t("reload")}</button>
             </div>
             <div id="effectsList" class="hud-effects-grid">
               <span class="text-xs" style="color:var(--admin-text-dim);grid-column:1 / -1">${ServerI18n.t("loadingEffectsAdmin")}</span>
@@ -1120,16 +1102,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
             </div>
 
-            <!-- v5 Batch 12-5: Library stats card per batch12-effects.jsx -->
-            <div class="admin-eflib-card">
-              <div class="admin-eflib-label">LIBRARY STATS</div>
-              <div class="admin-eflib-statgrid">
-                <div><div class="admin-eflib-stat-en">TOTAL</div><div class="admin-eflib-stat-v" data-eflib-total>\u2014</div></div>
-                <div><div class="admin-eflib-stat-en">ACTIVE</div><div class="admin-eflib-stat-v is-lime" data-eflib-active>\u2014</div></div>
-                <div><div class="admin-eflib-stat-en">CATEGORIES</div><div class="admin-eflib-stat-v" data-eflib-cats>\u2014</div></div>
-                <div><div class="admin-eflib-stat-en">USER UPLOADS</div><div class="admin-eflib-stat-v is-cyan" data-eflib-user>\u2014</div></div>
-              </div>
-            </div>
+            <!-- LIBRARY STATS 已升格為頁頂 KPI 條（TPL-B），此處不再重複 -->
 
             <!-- v5 Batch 12-5: Stacking rules info card -->
             <div class="admin-eflib-card">

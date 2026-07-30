@@ -39,6 +39,7 @@
       // OverlayWidgetsPage. The widget cards themselves keep the
       // existing edit-modal flow — only the page chrome lifts to v5.
       const obsBase = location.origin + "/overlay";
+      section.dataset.tpl = "B";
       section.innerHTML = `
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">DESKTOP WIDGETS · 分數板 · 跑馬燈 · 標籤</div>
@@ -46,17 +47,15 @@
           <p class="admin-ui-page-note">${escapeHtml(i18n("widgetsDesc", "在 OBS 覆蓋層上新增分數板、跑馬燈或文字標籤"))}</p>
         </div>
 
-        <!-- KPI strip -->
-        <div class="admin-ow-kpis">
-          <div class="admin-ow-kpi"><div class="admin-ow-kpi-en">TOTAL</div><div class="admin-ow-kpi-v" data-ow-total>—</div></div>
-          <div class="admin-ow-kpi"><div class="admin-ow-kpi-en">ACTIVE</div><div class="admin-ow-kpi-v is-lime" data-ow-active>—</div></div>
-          <div class="admin-ow-kpi"><div class="admin-ow-kpi-en">KINDS</div><div class="admin-ow-kpi-v is-cyan" data-ow-kinds>—</div></div>
-          <!-- 2026-07-30：原第四磚是 OBS URL 的唯讀複本——右欄 BROWSER SOURCE
-             卡已有同一個 URL＋複製鈕，重複陳述拆掉。 -->
+        <!-- TPL-B KPI 條：共用 hud-stat-tile（私有 admin-ow-kpi 退役） -->
+        <div class="hud-stats-strip">
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">TOTAL</span><span class="hud-stat-tile-value" data-ow-total>—</span><span class="hud-stat-tile-label">小工具總數</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">ACTIVE</span><span class="hud-stat-tile-value is-lime" data-ow-active>—</span><span class="hud-stat-tile-label">顯示中</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">KINDS</span><span class="hud-stat-tile-value is-cyan" data-ow-kinds>—</span><span class="hud-stat-tile-label">類型</span></div>
         </div>
 
-        <div class="admin-ow-grid">
-          <div class="admin-ow-main">
+        <div class="hud-page-grid-2">
+          <div class="hud-page-stack" style="gap:12px">
             <div class="admin-widgets-actions">
               <button id="widget-add-scoreboard" type="button" class="admin-ui-action is-primary admin-widget-toolbar-action">
                 + ${escapeHtml(i18n("widgetScoreboard", "分數板"))}
@@ -76,9 +75,9 @@
           </div>
 
           <!-- v5 right rail: OBS Browser Source card -->
-          <aside class="admin-ow-rail">
-            <div class="admin-ow-card">
-              <div class="admin-ow-card-label">OBS BROWSER SOURCE</div>
+          <aside class="hud-page-stack" style="gap:12px;position:sticky;top:0">
+            <div class="admin-ui-card admin-ow-railcard">
+              <div class="admin-ui-monolabel">OBS BROWSER SOURCE</div>
               <p class="admin-ow-card-note">
                 在 OBS 的 Browser Source 把 URL 設成以下值即可拉入 Desktop。
                 透明背景、自動更新。
@@ -91,8 +90,8 @@
                 <span>建議解析度</span><code>1920 × 1080</code>
               </div>
             </div>
-            <div class="admin-ow-card">
-              <div class="admin-ow-card-label">16:9 預覽</div>
+            <div class="admin-ui-card admin-ow-railcard">
+              <div class="admin-ui-monolabel">16:9 預覽</div>
               <div class="admin-ow-preview">
                 <span>Desktop preview</span>
               </div>

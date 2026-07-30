@@ -596,10 +596,19 @@
     const total = _effectsState.all.length;
     const chips = [["ALL", "\u5168\u90e8", total], ["GLOW", "GLOW", counts.GLOW], ["MOTION", "MOTION", counts.MOTION], ["COLOR", "COLOR", counts.COLOR], ["SHAKE", "SHAKE", counts.SHAKE], ["TEXT", "TEXT", counts.TEXT]];
     if (counts.MISC > 0) chips.push(["MISC", "MISC", counts.MISC]);
-    row.innerHTML = chips.map(([key, label, n]) => {
+    // TPL-B 工具列：chips 與 Reload 同列。重繪只換 chips，
+    // spacer 與 Reload（含其事件監聽）原地保留。
+    const chipsHtml = chips.map(([key, label, n]) => {
       const active = _effectsState.filter === key ? "is-active" : "";
       return `<span class="hud-filter-chip ${active}" data-effect-filter="${key}">${label} ${n}</span>`;
     }).join("");
+    const keep = row.querySelector("[data-toolbar-spacer]");
+    if (keep) {
+      row.querySelectorAll("[data-effect-filter]").forEach((c) => c.remove());
+      keep.insertAdjacentHTML("beforebegin", chipsHtml);
+    } else {
+      row.innerHTML = chipsHtml;
+    }
     row.querySelectorAll("[data-effect-filter]").forEach((chip) => {
       chip.addEventListener("click", () => {
         _effectsState.filter = chip.dataset.effectFilter;
