@@ -642,11 +642,15 @@ document.addEventListener("DOMContentLoaded", () => {
       enabledContent,
       disabledContent
     ) => `
-                    <div id="sec-${id.toLowerCase()}" class="admin-v3-card">
-                        <div class="flex items-center justify-between">
-                            <div class="flex-grow pr-4">
-                                <h3 class="text-lg font-bold" style="color:var(--admin-text)">${title}</h3>
-                                <p class="text-sm" style="color:var(--admin-text-dim)">${description}</p>
+                    <!-- 2026-07-30 S3 批次二：總開關卡收回 admin-ui-card 語言。
+                         舊版是 Tailwind utility 拼的 v3 卡，跟整頁 HUD 語言
+                         格格不入（效果庫頁最上面那塊異物）。toggle 機制與
+                         sec-*/toggle-* id 契約原封不動。 -->
+                    <div id="sec-${id.toLowerCase()}" class="admin-ui-card admin-master-toggle">
+                        <div class="admin-master-toggle__row">
+                            <div class="admin-master-toggle__copy">
+                                <div class="admin-ui-monolabel">${title}</div>
+                                <p class="admin-master-toggle__desc">${description}</p>
                             </div>
                             <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in flex-shrink-0">
                                 <input type="checkbox" name="${id}" id="toggle-${id}" role="switch" aria-checked="${isEnabled}" aria-label="Toggle ${title}" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer" ${isEnabled ? "checked" : ""
@@ -654,7 +658,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <label for="toggle-${id}" class="toggle-label block overflow-hidden h-7 rounded-full cursor-pointer" style="background:var(--color-bg-elevated)"></label>
                             </div>
                         </div>
-                        <div class="mt-4 pt-4" style="border-top:1px solid var(--admin-line)">
+                        <div class="admin-master-toggle__body">
                             ${isEnabled ? enabledContent : disabledContent}
                         </div>
                     </div>
@@ -839,10 +843,14 @@ document.addEventListener("DOMContentLoaded", () => {
                                       <option value="ja" ${ServerI18n.currentLang === "ja" ? "selected" : ""}>日本語</option>
                                       <option value="ko" ${ServerI18n.currentLang === "ko" ? "selected" : ""}>한국어</option>
                                     </select>
+                                    <!-- 誠實的狀態燈＋捷徑：它是導航（前往 Desktop 控制頁），
+                                         不是開關。舊 title 寫「切換狀態」會讓人以為點了就切，
+                                         與 #/overlay 頁的真控制形成假重複。 -->
                                     <button class="admin-dash-broadcast ${broadcasting ? "is-on" : "is-off"}" type="button" aria-live="polite"
-                                        title="切換 Desktop 狀態" data-route="overlay">
+                                        title="Desktop 狀態 · 點擊前往控制頁" data-route="overlay">
                                         <span class="dot"></span>
                                         ${broadcasting ? "DESKTOP · ON" : "DESKTOP · OFF"}
+                                        <span class="admin-dash-broadcast-go" aria-hidden="true">→</span>
                                     </button>
                                     <button id="logoutButton" class="admin-ui-action is-danger admin-logout-action">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>

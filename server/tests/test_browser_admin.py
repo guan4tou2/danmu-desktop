@@ -592,8 +592,13 @@ def test_poll_create_and_end(admin_page):
 def test_admin_fullpage_empty_states(admin_page):
     """無資料時三個關鍵頁面應顯示 full-page empty state（含可識別 selector）"""
     _open_section(admin_page, "sec-live-feed")
-    admin_page.wait_for_selector('[data-empty-kind="live-feed"]', state="visible", timeout=5000)
-    assert admin_page.is_visible('[data-empty-kind="live-feed"]')
+    # 2026-07-30 版面跟場次狀態走：無場次時訊息流整卡收合（收合本身就是
+    # 空狀態的處理——沒有訊息可看的時刻不佔主舞台），開場橫幅升為主角。
+    admin_page.wait_for_selector("#sec-live-feed.is-idle-collapsed", timeout=5000)
+    assert not admin_page.is_visible("#sec-live-feed .admin-lf-v4__card")
+    assert admin_page.eval_on_selector(
+        "#admin-session-banner", "el => el.classList.contains('is-hero')"
+    )
 
     _open_section(admin_page, "sec-polls")
     admin_page.evaluate("""

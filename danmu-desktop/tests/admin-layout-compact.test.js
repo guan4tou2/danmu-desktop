@@ -485,7 +485,10 @@ test("admin Backup actions compose shared admin-ui controls", () => {
   expect(backupSrc).toContain('id="bk2-assets-dryrun" class="admin-ui-action admin-bk-action"');
   expect(backupSrc).toContain('id="bk2-assets-apply" class="admin-ui-action is-danger admin-bk-action" disabled');
   expect(backupSrc).toContain('id="bk2-clear-history" class="admin-ui-action is-danger admin-bk-action"');
-  expect(backupSrc).toContain('id="bk2-end-session" class="admin-ui-action is-danger admin-bk-action"');
+  // 2026-07-30：END SESSION（登出管理員）已拆——頂欄 Logout 的重複入口，
+  // 且「session」在本產品指彈幕場次，紅色 END SESSION 站在 DANGER 區
+  // 極易誤讀成「結束場次」。契約反向釘住不得回歸。
+  expect(backupSrc).not.toContain("bk2-end-session");
   expect(backupSrc).toContain('id="bk2-factory-reset" class="admin-ui-action is-danger admin-bk-action" disabled');
   expect(backupSrc).toContain('"/admin/backup/factory-reset"');
   expect(backupSrc).not.toContain("Factory reset 即將支援");
@@ -1139,7 +1142,11 @@ test("admin Live session banner composes shared controls instead of page-local w
   expect(dashboardSrc).toContain('class="admin-ui-input admin-ui-grow admin-session-name-input"');
   expect(dashboardSrc).toContain('class="admin-ui-action is-primary admin-ui-nowrap admin-session-open-btn"');
   expect(dashboardSrc).toContain('class="admin-ui-dot is-success admin-session-live-dot"');
-  expect(dashboardSrc).toContain('class="admin-ui-action admin-session-pause-btn"');
+  // 2026-07-30：橫幅的「⏸ 暫停顯示」已拆——同一個 broadcast standby 開關
+  // 的第三個入口（一功能一扇門：顯示控制住在 #/overlay）。換成前往
+  // Desktop 控制的捷徑連結；反向釘住不得回歸。
+  expect(dashboardSrc).not.toContain("admin-session-pause-btn");
+  expect(dashboardSrc).toContain('class="admin-ui-action admin-session-display-link"');
   expect(dashboardSrc).toContain('class="admin-ui-action is-danger admin-session-end-btn"');
   expect(dashboardSrc).toContain('class="admin-ui-select admin-session-behavior-select"');
 

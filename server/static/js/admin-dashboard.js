@@ -755,6 +755,12 @@
 
   function _renderSessionBanner(state) {
     const banner = document.getElementById("admin-session-banner");
+    // 版面跟著場次狀態走（2026-07-30）：無場次時「開啟場次」是頁面主角、
+    // 即時訊息流收成薄卡（沒有訊息可看的時刻，別讓空面板佔主舞台）；
+    // 場次中還原成全高主面板。直接切 class，樣式在 style.css。
+    const feedSec = document.getElementById("sec-live-feed");
+    if (feedSec) feedSec.classList.toggle("is-idle-collapsed", !(state && state.status === "live"));
+    if (banner) banner.classList.toggle("is-hero", !(state && state.status === "live"));
     if (!banner) return;
     _sessionState = state;
     const isLive = state && state.status === "live";
@@ -782,8 +788,12 @@
             <span class="admin-session-live-name">${_escapeHtml(state.name || "場次")}</span>
             <span class="admin-session-live-timer" data-sess-timer></span>
           </div>
+          <!-- 2026-07-30：拆掉這裡的「⏸ 暫停顯示」——它是同一個
+               broadcast standby 開關的第三個入口（overlay 主按鈕、
+               已砍的 overlay 次要鈕之外又一顆）。一功能一扇門：
+               顯示控制住在 #/overlay，這裡只留場次生命週期＋捷徑。 -->
           <div class="admin-session-live-actions">
-            <button type="button" class="admin-ui-action admin-session-pause-btn" data-sess-action="pause-display" title="暫停 Desktop 顯示，繼續收訊息">⏸ 暫停顯示</button>
+            <a class="admin-ui-action admin-session-display-link" href="#/overlay" title="Desktop 顯示的開始／暫停在 Desktop 控制頁">◐ 顯示控制 →</a>
             <button type="button" class="admin-ui-action is-danger admin-session-end-btn" data-sess-action="close">■ 結束場次</button>
           </div>
           <div class="admin-session-live-behavior">
@@ -869,28 +879,6 @@
         window.showToast && window.showToast("結束場次失敗", false);
       } finally {
         btn.disabled = false;
-      }
-    } else if (action === "pause-display") {
-      // Toggle broadcast mode via existing broadcast route
-      try {
-        const statusRes = await fetch("/admin/broadcast/status", { credentials: "same-origin" });
-        if (!statusRes.ok) return;
-        const status = await statusRes.json();
-        const nextMode = status.mode === "live" ? "standby" : "live";
-        const r = await window.csrfFetch("/admin/broadcast/toggle", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mode: nextMode }),
-        });
-        if (!r.ok) return;
-        const btn2 = document.querySelector("[data-sess-action='pause-display']");
-        if (btn2) {
-          btn2.textContent = nextMode === "standby" ? "▶ 恢復顯示" : "⏸ 暫停顯示";
-          btn2.classList.toggle("is-paused", nextMode === "standby");
-        }
-        window.showToast && window.showToast(nextMode === "standby" ? "已暫停 Desktop 顯示" : "已恢復 Desktop 顯示", true);
-      } catch (err) {
-        window.showToast && window.showToast("切換顯示失敗", false);
       }
     }
   }

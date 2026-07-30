@@ -102,13 +102,24 @@
   //   live     ← mode=live
   //   paused   ← mode=standby AND session active   → was live, paused
   //   ended    ← session ended
+  // Session 活躍判斷的單一出口。broadcast/status 回傳的是
+  // session.status === "live"（見 session_mgmt.py）——舊碼檢查的
+  // sess.state === "active" 是不存在的欄位，導致「paused」態從未推導
+  // 出來過（暫停中頁面一直顯示 OFF）。兩個欄位名都收，以防後端演化。
+  function _sessionActive() {
+    const st = _sessionState || {};
+    return st.status === "live" || st.state === "active";
+  }
+  function _sessionEnded() {
+    const st = _sessionState || {};
+    return st.status === "ended" || st.state === "ended";
+  }
+
   function _derive4State() {
     const m = _serverState.mode || "standby";
-    const sess = _sessionState || {};
-    const sessState = sess.state || "idle";
-    if (sessState === "ended") return "ended";
+    if (_sessionEnded()) return "ended";
     if (m === "live") return "live";
-    if (sessState === "active") return "paused";
+    if (_sessionActive()) return "paused";
     return "standby";
   }
 
@@ -147,12 +158,11 @@
             停止顯示前會彈出確認 · Desktop 停止後訊息繼續接收但不渲染
           </div>
 
-          <!-- Secondary controls — only PAUSE + CLEAR (session lifecycle lives elsewhere) -->
+          <!-- Secondary controls — CLEAR only.（2026-07-30 砍掉「暫停顯示」：
+               它與主按鈕的「停止顯示」打的是同一個 postToggle("standby")，
+               server 只有 live/standby 二態 —— 同一件事兩個名字只會讓人猜
+               差別。詞彙改由主按鈕隨場次狀態切換。） -->
           <div class="admin-bc-v4__secondary admin-bc-v5__secondary" data-bc-secondary>
-            <button type="button" class="admin-bc-v4__sec is-pause" data-bc-pause>
-              <span class="admin-bc-v4__sec-label">◐ 暫停顯示</span>
-              <span class="admin-bc-v4__sec-hint">PAUSE RENDERING</span>
-            </button>
             <button type="button" class="admin-bc-v4__sec is-clear" data-bc-clear>
               <span class="admin-bc-v4__sec-label">⊗ 清空螢幕</span>
               <span class="admin-bc-v4__sec-hint">CLEAR ONSCREEN</span>
@@ -344,31 +354,31 @@
     const big = page.querySelector("[data-bc-big]");
     if (big) {
       if (isLive) {
+        // 場次進行中：這個動作的真實語意是「暫停・訊息排隊・可續播」，
+        // 沒有場次時才是單純的「停止顯示」。同一顆按鈕、同一個 server
+        // 呼叫（standby），詞彙跟著情境走。
+        const sessActive = _sessionActive();
         big.className = "admin-bc-v4__big admin-bc-v5__big is-on";
-        big.textContent = "■ 停止顯示";
+        big.textContent = sessActive ? "◐ 暫停顯示" : "■ 停止顯示";
       } else if (isPaused) {
         big.className = "admin-bc-v4__big admin-bc-v5__big is-resume";
-        big.textContent = "▶ 繼續顯示";
+        big.textContent = "▶ 繼續顯示 · 排隊訊息將播出";
       } else {
         big.className = "admin-bc-v4__big admin-bc-v5__big is-off";
         big.textContent = "▶ 開始顯示";
       }
     }
 
-    // Confirm hint visibility
+    // Confirm hint：只在「無場次的停止」出現——場次中的暫停是低風險
+    // 動作（訊息排隊、隨時續播），不需要確認彈窗也不需要提示。
     const confirmHint = page.querySelector("[data-bc-confirm-hint]");
-    if (confirmHint) confirmHint.hidden = !isLive;
+    if (confirmHint) confirmHint.hidden = !(isLive && !_sessionActive());
 
     // Secondary controls — disabled in standby/ended. Archive button
     // was removed in the polestar pivot (session end belongs to Sessions
     // page, not Overlay control).
-    page.querySelectorAll("[data-bc-pause], [data-bc-clear]")
-      .forEach((b) => {
-        b.disabled = isStandby || isEnded;
-        if (b.matches("[data-bc-pause]")) {
-          b.classList.toggle("is-active", isPaused);
-        }
-      });
+    page.querySelectorAll("[data-bc-clear]")
+      .forEach((b) => { b.disabled = isStandby || isEnded; });
 
     // Ended-state stats fill
     if (isEnded) {
@@ -390,6 +400,15 @@
       const ok = await postToggle("live");
       if (ok) window.showToast && showToast("已 RESUME · queue 將排空", true);
     } else if (state === "live") {
+      // 場次進行中：語意是「暫停」——低風險（訊息排隊、可續播），
+      // 不彈確認，點了就暫停。無場次才是「停止」，保留確認彈窗。
+      const sessActive = _sessionActive();
+      if (sessActive) {
+        const ok = await postToggle("standby");
+        if (ok) window.showToast && showToast("已暫停顯示 · 訊息會排入 queue", true);
+        renderTick();
+        return;
+      }
       // 2026-05-18 design v4-r2: HudConfirm with elapsed-stats body.
       // Falls back to native confirm() if helper hasn't loaded yet.
       const elapsedMs = (_serverState.started_at ? Date.now() - _serverState.started_at * 1000 : 0);
@@ -425,16 +444,6 @@
     renderTick();
   }
 
-  async function onPauseClick() {
-    const state = _derive4State();
-    const next = state === "paused" ? "live" : "standby";
-    const ok = await postToggle(next);
-    if (ok) {
-      window.showToast && showToast(
-        next === "live" ? "已恢復接收" : "已暫停接收 · 訊息會排入 queue", true);
-      renderTick();
-    }
-  }
 
   async function onClearClick() {
     const ok = await window.HudConfirm?.open({
@@ -457,40 +466,15 @@
     }
   }
 
-  async function onArchiveClick() {
-    const ok = await window.HudConfirm?.open({
-      icon: "■",
-      title: "結束並存檔場次",
-      subtitle: "ARCHIVE SESSION · THIS ACTION CANNOT BE UNDONE",
-      severity: "danger",
-      body: "場次會被結束並歸檔，之後不能再往這個場次寫入訊息。",
-      confirmLabel: "結束場次",
-    });
-    if (!ok) return;
-    try {
-      const r = await window.csrfFetch("/admin/session/close", { method: "POST" });
-      if (r.ok) {
-        window.showToast && showToast("場次已結束並存檔", true);
-        fetchStatus();
-      } else {
-        const body = await r.json().catch(() => ({}));
-        window.showToast && showToast("結束場次失敗 · " + (body.error || `HTTP ${r.status}`), false);
-      }
-    } catch (_) {
-      window.showToast && showToast("結束場次失敗 · 網路錯誤", false);
-    }
-  }
 
   function bind() {
     const page = document.getElementById(PAGE_ID);
     if (!page) return;
     page.querySelector("[data-bc-big]")?.addEventListener("click", onBigClick);
-    page.querySelector("[data-bc-pause]")?.addEventListener("click", onPauseClick);
     page.querySelector("[data-bc-clear]")?.addEventListener("click", onClearClick);
     // [data-bc-archive] button removed in v5 polestar pivot — session
-    // end-and-archive lives on the Sessions page now. onArchiveClick()
-    // function is kept (dead code) only because the Sessions page may
-    // later import it; safe to delete in a follow-up.
+    // end-and-archive lives on the Sessions page.（onArchiveClick 死碼
+    // 已於 2026-07-30 清除——這頁自己的頁首就寫著收場在控制台。）
   }
 
   function startTimers() {
