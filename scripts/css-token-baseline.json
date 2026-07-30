@@ -22,24 +22,24 @@
   },
   "server/static/css/overlay.css": {
     "hex": 71,
-    "gridPx": 42,
-    "rgba": 41,
+    "gridPx": 41,
+    "rgba": 38,
     "offGrid": 0,
     "themeBlind": 14
   },
   "server/static/css/style.css": {
-    "hex": 322,
-    "gridPx": 1566,
-    "rgba": 439,
+    "hex": 164,
+    "gridPx": 1517,
+    "rgba": 405,
     "offGrid": 0,
     "themeBlind": 4
   },
   "server/static/css/viewer-v2.css": {
-    "hex": 74,
-    "gridPx": 175,
-    "rgba": 77,
+    "hex": 50,
+    "gridPx": 164,
+    "rgba": 62,
     "offGrid": 0,
-    "themeBlind": 16
+    "themeBlind": 8
   },
   "server/tailwind.input.css": {
     "hex": 0,
@@ -49,10 +49,10 @@
     "themeBlind": 0
   },
   "shared/hud.css": {
-    "hex": 126,
-    "gridPx": 568,
+    "hex": 103,
+    "gridPx": 561,
     "rgba": 180,
     "offGrid": 0,
-    "themeBlind": 18
+    "themeBlind": 17
   }
 }

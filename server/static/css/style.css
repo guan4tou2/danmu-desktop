@@ -1160,7 +1160,8 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   cursor: pointer;
   flex-shrink: 0;
   background: color-mix(in srgb, var(--hud-crimson) 25%, transparent);
-  color: var(--color-text-secondary);
+  /* 次要文字色在深色（slate-400）壓 25% 紅底只有 4.20，升主文字色。 */
+  color: var(--color-text-primary);
   transition: background var(--motion-fast) var(--ease-out);
 }
 .admin-history-block-btn:hover { background: var(--hud-crimson); color: var(--btn-text-on-primary); }
@@ -5219,16 +5220,19 @@ body.stream-mode .admin-hero .admin-summary-grid {
 .admin-body .bg-emerald-900,
 .admin-body .bg-emerald-900\/30 { background-color: rgba(134, 239, 172, 0.16); }
 
+/* 這四組原本寫死淺色臂 hex——深色主題下深字壓深底、整組反向壞掉。
+ * 換 ink token 後兩臂都對：深色臂回到工具類原意的亮色（sky/amber-400 系），
+ * 淺色臂 amber 與原值相同、sky 從 4.10 的 sky-600 升到過關的 sky-700。 */
 .admin-body .text-cyan-300,
 .admin-body .text-cyan-400,
 .admin-body .text-sky-300,
-.admin-body .text-sky-400 { color: #0284c7; }
+.admin-body .text-sky-400 { color: var(--color-ink-accent); }
 .admin-body .text-rose-300,
-.admin-body .text-rose-400 { color: #dc2626; }
+.admin-body .text-rose-400 { color: var(--color-ink-error); }
 .admin-body .text-amber-300,
-.admin-body .text-amber-400 { color: #b45309; }
+.admin-body .text-amber-400 { color: var(--color-ink-warning); }
 .admin-body .text-emerald-300,
-.admin-body .text-emerald-400 { color: #047857; }
+.admin-body .text-emerald-400 { color: var(--color-ink-success); }
 
 /* Inputs inside admin inner pages should match the light chrome */
 .admin-body input[type="text"],
@@ -6187,7 +6191,8 @@ body.stream-mode .admin-hero .admin-summary-grid {
   line-height: 1.6;
 }
 .histv2-privacy-hd {
-  color: var(--color-ink-warning);
+  /* ink-warning 的 amber-700 在這張卡的淡底上量 4.43，同 pill 下探 -800。 */
+  color: var(--color-ink-warning-strong);
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 1px;
@@ -7957,7 +7962,9 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
    mid-session (design v4-r5 ErrorViewerOffline). Sticky bottom strip
    above the sendbar — preserves composed message until reconnect. */
 .admin-offline-banner {
-  position: fixed; left: 0; right: 0; bottom: 0;
+  /* viewer 借用此橫幅；軟鍵盤開啟時跟著 --viewer-kb-offset 抬高
+   * （admin 沒人設這顆變數，fallback 0 = 原行為）。 */
+  position: fixed; left: 0; right: 0; bottom: var(--viewer-kb-offset, 0);
   z-index: 9050;
   padding: 12px 16px;
   background: rgba(251, 191, 36, 0.08);
@@ -8297,7 +8304,9 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 .admin-mq__bulk--rej {
   background: rgba(255, 77, 79, 0.05);
   border: 1px solid rgba(255, 77, 79, 0.33);
-  color: var(--color-danger);
+  /* 淺色臂 --color-danger(red-600) 在粉紅淡底上 4.35，下探 red-700；
+   * 深色臂經 --color-danger 解析仍是 #ff4d4f，不變。 */
+  color: var(--color-ink-danger);
 }
 .admin-mq__bulk:hover { filter: brightness(1.15); }
 
@@ -12743,7 +12752,9 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-replay-transport-btn.is-primary {
   background: var(--color-primary);
   border-color: var(--color-primary);
-  color: var(--admin-bg);
+  /* --admin-bg 當文字色在淺色主題是近白壓 sky-600（3.91）。填滿主色上的
+   * 字走 --btn-text-on-primary，與其他主要按鈕同一套。 */
+  color: var(--btn-text-on-primary);
   width: 44px;
   height: 44px;
   font-size: 16px;
@@ -14137,12 +14148,16 @@ body.admin-pu-open { overflow: hidden; }
 .ob-actions__spacer { flex: 1; }
 
 .ob-btn--ghost {
-  font-size: 11px;
-  color: var(--color-text-dim);
+  /* 「跳過導覽」是導覽 modal 唯一的逃生門，先前 11px 無邊框像一行說明文字。
+   * 升到可辨識的次要按鈕：底線示意可點、字級對齊其他按鈕、加大點擊面。 */
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
   background: none;
   border: none;
   cursor: pointer;
-  padding: var(--space-1) 0;
+  padding: var(--space-1) var(--space-2);
 }
 
 .ob-btn--ghost:hover,

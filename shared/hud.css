@@ -269,7 +269,10 @@
   margin: 0;
   font-family: var(--font-display);
   font-weight: 400;
-  color: #7dd3fc;
+  /* 深色臂維持原品牌色 sky-300；淺色臂若同值只有 1.67——admin 登入頁的
+   * 第一眼就是這個字，白卡上要用 sky-700 才站得住（56px 大字 5.9）。
+   * Electron/OBS 表面 color-scheme 恆為 dark，不受影響。 */
+  color: var(--hud-hero-ink);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -702,7 +705,9 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-ui-pill.is-warn {
   border-color: rgba(251, 191, 36, 0.35);
   background: rgba(251, 191, 36, 0.07);
-  color: var(--color-ink-warning);
+  /* 不用 ink-warning：pill 的 7% 琥珀底會把 amber-700 拖到 4.43（9px 字）。
+   * 淺色臂再深一階到 -800（6.6），深色臂與 ink 相同。 */
+  color: var(--color-ink-warning-strong);
 }
 
 .admin-ui-pill.is-success,
@@ -710,7 +715,8 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-ui-pill.is-green {
   border-color: rgba(134, 239, 172, 0.38);
   background: rgba(134, 239, 172, 0.10);
-  color: var(--color-ink-success);
+  /* 同 is-warn：10% 綠底 + lime-700 只剩 4.42，淺色臂下探 -800（6.4）。 */
+  color: var(--color-ink-success-strong);
 }
 
 .admin-ui-pill.is-danger,
@@ -795,7 +801,8 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-ui-notice.is-warn {
   border: 1px solid rgba(251, 191, 36, 0.38);
   background: rgba(251, 191, 36, 0.10);
-  color: var(--color-ink-warning);
+  /* 同 pill.is-warn：10% 琥珀底把 amber-700 拖到邊緣，淺色臂下探 -800。 */
+  color: var(--color-ink-warning-strong);
 }
 
 .admin-ui-notice.is-danger {

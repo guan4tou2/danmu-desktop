@@ -49,6 +49,9 @@
   /* amber-700 補進來是因為 2026-07-29 出現了消費者：amber-600 在白底上只有
    * 3.19:1，撐不起小字警示文案（viewer 冷卻提示、限流畫面）。 */
   --amber-700: oklch(55.528% 0.1455 48.998); /* #b45309 */
+  /* -800 兩顆給「淡色底上的 9–11px pill 文字」：ink 的 -700 淺色臂在純白上
+   * 過關（4.6–5.4），但 pill 自帶 7–10% 色調底，會把它拖到 4.4 邊緣。 */
+  --amber-800: oklch(47.319% 0.1247 46.201); /* #92400e */
   /* red — error */
   --red-300: oklch(80.77% 0.103 19.57);     /* #fca5a5 */
   --red-400: oklch(71.06% 0.166 22.22);     /* #f87171 */
@@ -76,6 +79,7 @@
   --blue-500: oklch(62.31% 0.188 259.81);   /* #3b82f6 */
   /* lime — success-dim */
   --lime-700: oklch(53.222% 0.1405 131.589);/* #4d7c0f */
+  --lime-800: oklch(45.284% 0.1129 130.933);/* #3f6212 — 見 --amber-800 註解 */
 
   /* Brand */
   --color-primary: light-dark(var(--sky-600), var(--sky-400));
@@ -123,6 +127,13 @@
   --color-ink-error: light-dark(var(--red-700), var(--red-400));
   /* 第五個色相，只給「分類色」用（素材庫 kind、擴充卡）——見 --teal-700 註解 */
   --color-ink-theme: light-dark(var(--teal-700), var(--teal-500));
+  /* -strong 變體給「自帶 7–10% 色調底的 pill / notice」：ink 的 -700 淺色臂
+   * 在純白過關，但色調底會拖到 4.4 邊緣（9–11px 字）。深色臂與 ink 相同。 */
+  --color-ink-warning-strong: light-dark(var(--amber-800), var(--amber-400));
+  --color-ink-success-strong: light-dark(var(--lime-800), var(--green-300));
+  /* 破壞性動作的「文字」版：淺色 red-700（粉紅淡底上 5.6），深色維持
+   * --color-danger 的亮紅 #ff4d4f。 */
+  --color-ink-danger: light-dark(var(--red-700), var(--color-danger));
 
   /* Button text on filled/bright backgrounds (primary/warning/success buttons,
    * badges, pills). Value intentionally still #000 (2026-07-07 UIUX polish
@@ -133,6 +144,10 @@
   /* Ink for QR modules rendered on a white plate (the QR data squares). Not a
    * button-text token — kept separate so the two can diverge (2026-07-07 F7). */
   --qr-ink: #000;
+
+  /* Hero 品牌字（DANMU FIRE 標題）：深色臂維持品牌 sky-300，淺色臂 sky-700
+   * 才撐得住白卡（登入頁 56px 大字 1.67 → 5.9）。 */
+  --hud-hero-ink: light-dark(var(--sky-700), var(--sky-300));
 
   /* HUD alias set lives further down in this file alongside the legacy
    * --hud-cut / --hud-corner-* atoms (line ~135). --color-danger is the
