@@ -1150,7 +1150,10 @@ test("admin Live session banner composes shared controls instead of page-local w
   expect(dashboardSrc).not.toContain("admin-session-pause-btn");
   expect(dashboardSrc).toContain('class="admin-ui-action admin-session-display-link"');
   expect(dashboardSrc).toContain('class="admin-ui-action is-danger admin-session-end-btn"');
-  expect(dashboardSrc).toContain('class="admin-ui-select admin-session-behavior-select"');
+  // 2026-07-30 場中審查：「結束後 viewer」下拉從橫幅移入「結束場次」
+  // 確認彈窗（場中不干擾）。反向釘住不得回到橫幅。
+  expect(dashboardSrc).not.toContain("admin-session-behavior-select");
+  expect(dashboardSrc).toContain('id="sessCloseBehavior"');
 
   expect(hudSrc).toContain(".admin-ui-grow {");
   expect(hudSrc).toContain(".admin-ui-nowrap {");
@@ -1161,7 +1164,7 @@ test("admin Live session banner composes shared controls instead of page-local w
   expect(cssSrc).not.toContain(".admin-session-pause-btn,");
   expect(cssSrc).not.toContain(".admin-session-pause-btn {");
   expect(cssSrc).not.toContain(".admin-session-end-btn {");
-  expect(cssSrc).not.toContain(".admin-session-behavior-select {");
+
 });
 
 test("admin Scheduler toolbar and actions compose shared controls", () => {

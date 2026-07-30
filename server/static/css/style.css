@@ -328,6 +328,18 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   min-height: 180px;
 }
 
+/* 場中審查（2026-07-30）：My Actions 空紀錄時不佔半寬——
+ * Quick Actions 佔滿，My Actions 收成一條窄提示。有紀錄時回到 7|5。 */
+.admin-dash-summary-grid.is-myactions-empty .admin-dash-quickactions { grid-column: span 12; }
+.admin-dash-summary-grid.is-myactions-empty .admin-dash-myactions { grid-column: span 12; }
+.admin-dash-summary-grid.is-myactions-empty .admin-dash-myactions .admin-dash-myactions-body {
+  padding: var(--space-2) 0 0;
+}
+.admin-dash-myactions-empty-hint {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
 .admin-dash-card.is-span-7 { grid-column: span 7; }
 .admin-dash-card.is-span-5 { grid-column: span 5; }
 .admin-dash-card.is-span-3 { grid-column: span 3; }
@@ -2204,6 +2216,21 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  /* 場中審查（2026-07-30）：題目一多，START SESSION 會沉到題列底下。
+   * 左欄整體 sticky，讓題列 + 播放模式 + 開始鈕跟著捲動停在視窗頂。 */
+  position: sticky;
+  top: var(--space-4);
+  max-height: calc(100vh - var(--space-8));
+  overflow-y: auto;
+}
+/* session 控制永遠可見：黏在左欄底、與題列之間有實色分隔，捲動題列時
+ * START SESSION 不會被推走 */
+.admin-poll-session {
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  padding-top: var(--space-3);
+  background: linear-gradient(to top, var(--admin-panel) 70%, transparent);
 }
 
 .admin-poll-card-head {
@@ -8174,6 +8201,22 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 }
 
 /* ── Live-feed swipe-to-action (touch) ── */
+/* 場中審查（2026-07-30）：動作鈕預設收起，滑到該列或鍵盤 focus 才浮現——
+ * 常駐紅色「封鎖」鈕會讓整條訊息流像警報現場 */
+.admin-live-feed-actions.is-hover-reveal {
+  opacity: 0;
+  transition: opacity var(--motion-fast) ease;
+  pointer-events: none;
+}
+.admin-live-feed-row:hover .admin-live-feed-actions.is-hover-reveal,
+.admin-live-feed-row:focus-within .admin-live-feed-actions.is-hover-reveal {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (hover: none) {
+  .admin-live-feed-actions.is-hover-reveal { opacity: 1; pointer-events: auto; }
+}
+
 .admin-live-feed-row {
   position: relative;
   touch-action: pan-y;
@@ -10842,19 +10885,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   display: flex;
   gap: 4px;
   flex-shrink: 0;
-}
-.admin-session-live-behavior {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-.admin-session-live-behavior-label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--color-text-muted);
-  letter-spacing: 0.3px;
-  white-space: nowrap;
 }
 
 /* Slice 8: Backstage panel CSS removed — Slice 4 collapsed the sidebar to

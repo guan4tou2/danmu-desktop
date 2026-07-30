@@ -160,11 +160,15 @@
     timeSpan.textContent = fmtTime(entry.ts);
     row.appendChild(timeSpan);
 
-    // Layout tag
-    const badge = document.createElement("span");
-    badge.className = "admin-ui-chip admin-live-feed-tag";
-    badge.textContent = d.layout || "scroll";
-    row.appendChild(badge);
+    // Layout tag — 只在「非預設排版」時出現。整條訊息流每列都掛同一個
+    // "SCROLL" chip 是純噪音（2026-07-30 場中審查）；預設值不標記。
+    const layoutVal = (d.layout || "scroll").toLowerCase();
+    if (layoutVal !== "scroll") {
+      const badge = document.createElement("span");
+      badge.className = "admin-ui-chip admin-live-feed-tag";
+      badge.textContent = d.layout;
+      row.appendChild(badge);
+    }
 
     // Text preview
     const text = document.createElement("span");
@@ -194,8 +198,11 @@
     row.appendChild(identity);
 
     // Action buttons
+    // 動作鈕預設收起，hover/focus 該列才浮現——常駐紅色「封鎖」鈕會讓
+    // 整條訊息流像警報現場（2026-07-30 場中審查）。鍵盤 focus 也會顯示，
+    // 不犧牲可及性。
     const actions = document.createElement("span");
-    actions.className = "admin-live-feed-actions";
+    actions.className = "admin-live-feed-actions is-hover-reveal";
 
     const blockKwBtn = document.createElement("button");
     blockKwBtn.type = "button";

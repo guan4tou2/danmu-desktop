@@ -1516,11 +1516,20 @@ document.addEventListener("DOMContentLoaded", () => {
         ?.textContent?.trim().replace(/\s+/g, " ");
       const noteSlot = shell.querySelector("[data-route-note]");
       if (!routeTitle) return;
+      // 2026-07-30：分頁式路由（審核/紀錄/觀眾頁…）的 section 標題等於
+      // 「當前選中 tab 的標籤」——分頁列已經顯示它，section 再寫一次純重複。
+      // 除了比對路由標題，也比對當前 tab 標籤（麵包屑同樣已寫出）。
+      let tabLabel = null;
+      if (_activeTab && window.AdminTabs?.getConfig) {
+        const cfg = window.AdminTabs.getConfig(currentRoute);
+        const tab = cfg && (cfg.tabs || []).find((x) => x.slug === _activeTab);
+        if (tab) tabLabel = (tab.label || "").trim().replace(/\s+/g, " ");
+      }
       let mergedNote = null;
       shell.querySelectorAll(".admin-ui-page-head").forEach((head) => {
         const titleEl = head.querySelector(".admin-ui-page-title");
         const t = titleEl?.textContent?.trim().replace(/\s+/g, " ");
-        const dup = !!t && t === routeTitle;
+        const dup = !!t && (t === routeTitle || t === tabLabel);
         head.classList.toggle("is-merged-into-topbar", dup);
         if (dup && mergedNote === null) {
           // 取第一個可見重複頁首的 note（innerHTML：投票頁的深度分析

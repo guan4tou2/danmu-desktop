@@ -487,8 +487,13 @@
       const data = await r.json();
       const events = data.events || [];
       if (countEl) countEl.textContent = String(events.length);
+      // 空狀態不佔半寬（2026-07-30 場中審查）：My Actions 只在有紀錄時
+      // 展開為側欄；沒紀錄時整卡收窄、Quick Actions 佔滿。狀態掛在
+      // summary-grid 上讓 CSS 接手。
+      const grid = document.querySelector(".admin-dash-summary-grid");
+      if (grid) grid.classList.toggle("is-myactions-empty", events.length === 0);
       if (events.length === 0) {
-        body.innerHTML = `<div class="admin-dash-empty">尚無動作紀錄</div>`;
+        body.innerHTML = `<div class="admin-dash-empty admin-dash-myactions-empty-hint">場中的封鎖、審核、投票操作會記錄在這裡。</div>`;
         return;
       }
       body.innerHTML = events.map(ev => {
@@ -792,17 +797,13 @@
                broadcast standby 開關的第三個入口（overlay 主按鈕、
                已砍的 overlay 次要鈕之外又一顆）。一功能一扇門：
                顯示控制住在 #/overlay，這裡只留場次生命週期＋捷徑。 -->
-          <div class="admin-session-live-actions">
+          <!-- 2026-07-30 場中審查：「結束後 viewer」下拉從橫幅移出——它是
+               場次設定、場中每一秒都在旁邊等於干擾。改在「結束場次」確認
+               彈窗裡一次設定（見 close handler）。data-current-behavior
+               暫存目前值供彈窗預選。 -->
+          <div class="admin-session-live-actions" data-current-behavior="${state.viewer_end_behavior || "continue"}">
             <a class="admin-ui-action admin-session-display-link" href="#/overlay" title="Desktop 顯示的開始／暫停在 Desktop 控制頁">◐ 顯示控制 →</a>
             <button type="button" class="admin-ui-action is-danger admin-session-end-btn" data-sess-action="close">■ 結束場次</button>
-          </div>
-          <div class="admin-session-live-behavior">
-            <span class="admin-session-live-behavior-label">結束後 viewer：</span>
-            <select class="admin-ui-select admin-session-behavior-select" data-sess-behavior>
-              <option value="continue" ${state.viewer_end_behavior === "continue" ? "selected" : ""}>繼續運作</option>
-              <option value="ended_screen" ${state.viewer_end_behavior === "ended_screen" ? "selected" : ""}>顯示結束畫面</option>
-              <option value="reload" ${state.viewer_end_behavior === "reload" ? "selected" : ""}>自動重新載入</option>
-            </select>
           </div>
         </div>`;
 
@@ -814,7 +815,6 @@
     if (!banner.dataset.bound) {
       banner.dataset.bound = "1";
       banner.addEventListener("click", _handleSessionBannerClick);
-      banner.addEventListener("change", _handleSessionBannerChange);
     }
   }
 
@@ -858,16 +858,40 @@
         btn.disabled = false;
       }
     } else if (action === "close") {
+      const cur = btn.closest("[data-current-behavior]")?.dataset.currentBehavior || "continue";
+      const opt = (v, zh) => `<option value="${v}"${v === cur ? " selected" : ""}>${zh}</option>`;
       const ok = await window.HudConfirm?.open({
         icon: "■",
         title: "結束場次",
         subtitle: "CLOSE SESSION · DESKTOP SWITCHES OFF",
         severity: "danger",
-        body: "訊息會停止歸檔，Desktop 顯示切換為 OFF。",
+        body: `
+          <div style="font-size:13px;color:var(--hud-text,#f1f5f9);line-height:1.7;">
+            訊息會停止歸檔，Desktop 顯示切換為 OFF。
+          </div>
+          <label style="display:flex;flex-direction:column;gap:6px;margin-top:14px;">
+            <span class="admin-ui-monolabel">結束後 viewer 畫面</span>
+            <select id="sessCloseBehavior" class="admin-ui-select" style="width:100%">
+              ${opt("continue", "繼續運作")}
+              ${opt("ended_screen", "顯示結束畫面")}
+              ${opt("reload", "自動重新載入")}
+            </select>
+          </label>`,
         confirmLabel: "結束場次",
       });
       if (!ok) return;
       btn.disabled = true;
+      // 收場前先套用 viewer 結束行為（彈窗選的值可能與目前不同）
+      const chosen = document.getElementById("sessCloseBehavior")?.value;
+      if (chosen && chosen !== cur) {
+        try {
+          await window.csrfFetch("/admin/session/settings", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ viewer_end_behavior: chosen }),
+          });
+        } catch (_) { /* 設定失敗不擋收場，走原本的預設行為 */ }
+      }
       try {
         const r = await window.csrfFetch("/admin/session/close", { method: "POST" });
         const data = await r.json();
@@ -883,21 +907,6 @@
     }
   }
 
-  async function _handleSessionBannerChange(e) {
-    const sel = e.target.closest("[data-sess-behavior]");
-    if (!sel) return;
-    try {
-      const r = await window.csrfFetch("/admin/session/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ viewer_end_behavior: sel.value }),
-      });
-      if (!r.ok) { window.showToast && window.showToast("設定失敗", false); return; }
-      window.showToast && window.showToast("Viewer 結束行為已更新", true);
-    } catch (err) {
-      window.showToast && window.showToast("設定失敗", false);
-    }
-  }
 
   async function refreshSessionBanner() {
     try {

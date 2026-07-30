@@ -131,6 +131,9 @@
   function _renderEmpty() {
     const root = document.getElementById(SECTION_ID);
     if (!root) return;
+    // 佇列全空：泳道藏、批次鈕停用（2026-07-30 場中審查——工具列仍在，
+    // 沒東西可批次時 APPROVE/REJECT ALL 不該可點）。
+    root.querySelectorAll("[data-mq-bulk]").forEach((b) => { b.disabled = true; });
     // Hide swimlane, show the All-Clear empty state.
     root.querySelector(".admin-mq__body").hidden = true;
     const emptyHost = root.querySelector("[data-mq-empty]");
@@ -172,6 +175,11 @@
     setCnt("[data-mq-cnt-pending]",  _state.pending.length);
     setCnt("[data-mq-cnt-approved]", _state.approved.length);
     setCnt("[data-mq-cnt-rejected]", _state.rejected.length);
+
+    // 佇列空時停用批次動作（2026-07-30 場中審查）——沒東西可批次，
+    // 「APPROVE ALL / REJECT ALL」仍可點是誤導。
+    const noPending = _state.pending.length === 0;
+    root.querySelectorAll("[data-mq-bulk]").forEach((b) => { b.disabled = noPending; });
 
     const oldest = _state.pending[_state.pending.length - 1];
     const oldestEl = root.querySelector("[data-mq-oldest]");
@@ -235,11 +243,9 @@
   function _template() {
     return `
       <div id="${SECTION_ID}" class="admin-mq hud-page-stack lg:col-span-2" data-tpl="B" style="display:none">
-        <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">MODERATION · QUEUE · SWIMLANE · REAL-TIME</div>
-          <div class="admin-ui-page-title">審核佇列</div>
-          <p class="admin-ui-page-note">被敏感字規則標為「待審」的訊息在此放行或退回；逾時自動退回。</p>
-        </div>
+        <!-- 2026-07-30 使用者指示：移除區塊 page-head——分頁列已選中「審核
+             佇列」、麵包屑也寫了，這條標題純重複。說明由下方 admin-mq__hint
+             承接。同理適用其他審核分頁（BANS/BLACKLIST…），本次先動佇列。 -->
 
         <!-- Toolbar: stats chips + bulk + auto-reject config -->
         <div class="admin-mq__toolbar">
