@@ -30,7 +30,7 @@
 
   function pageTemplate() {
     return `
-      <div id="${PAGE_ID}" class="admin-backup-page hud-page-stack lg:col-span-2">
+      <div id="${PAGE_ID}" class="admin-backup-page hud-page-stack lg:col-span-2" data-tpl="C">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">BACKUP · EXPORT · DANGER</div>
           <div class="admin-ui-page-title">備份 &amp; 匯出</div>

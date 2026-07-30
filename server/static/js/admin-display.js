@@ -117,7 +117,7 @@
 
   function pageTemplate() {
     return `
-      <div id="${PAGE_ID}" class="admin-dsp2-page hud-page-stack lg:col-span-2">
+      <div id="${PAGE_ID}" class="admin-dsp2-page hud-page-stack lg:col-span-2" data-tpl="C">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">VIEWER DEFAULTS · 每列決定觀眾送出 danmu 時的預設值 + 是否開放自訂</div>
           <div class="admin-ui-page-title">${escapeHtml(t("viewerDefaultsTitle", "觀眾頁預設"))}</div>

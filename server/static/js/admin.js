@@ -1115,7 +1115,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Theme Management Card
     settingsGrid.insertAdjacentHTML("beforeend", `
-      <div id="sec-themes" class="hud-page-stack lg:col-span-2">
+      <div id="sec-themes" class="hud-page-stack lg:col-span-2" data-tpl="C">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">THEME PACKS \u00b7 \u5f48\u5e55\u6a23\u5f0f\u9810\u8a2d</div>
           <div class="admin-ui-page-title" data-i18n="styleThemePacks">${ServerI18n.t("styleThemePacks")}</div>

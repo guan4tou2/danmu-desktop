@@ -158,7 +158,7 @@
     }).join("");
 
     return `
-      <div id="${PAGE_ID}" class="admin-at-page hud-page-stack lg:col-span-2">
+      <div id="${PAGE_ID}" class="admin-at-page hud-page-stack lg:col-span-2" data-tpl="B">
         <!-- Page header -->
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">API TOKENS · DEVELOPER ACCESS · 整合 / CI / EXTENSION</div>

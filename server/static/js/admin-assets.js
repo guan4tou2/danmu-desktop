@@ -37,7 +37,7 @@
 
   function buildSection() {
     return `
-      <div id="${PAGE_ID}" class="admin-assets-page hud-page-stack lg:col-span-2">
+      <div id="${PAGE_ID}" class="admin-assets-page hud-page-stack lg:col-span-2" data-tpl="B">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">ASSETS LIBRARY · UNIFIED OVERVIEW · 點卡片跳轉源頁編輯</div>
           <div class="admin-ui-page-title">素材庫</div>
@@ -47,24 +47,12 @@
           </p>
         </div>
 
-        <!-- Stat strip -->
-        <div class="admin-assets-statstrip">
-          <div class="admin-assets-stat">
-            <div class="admin-assets-stat-head"><span class="lbl">總素材</span><span class="en">ASSETS</span></div>
-            <div class="admin-assets-stat-val" data-assets-stat="total">—</div>
-          </div>
-          <div class="admin-assets-stat">
-            <div class="admin-assets-stat-head"><span class="lbl">效果庫</span><span class="en">DME</span></div>
-            <div class="admin-assets-stat-val is-amber" data-assets-stat="dme">—</div>
-          </div>
-          <div class="admin-assets-stat">
-            <div class="admin-assets-stat-head"><span class="lbl">字型</span><span class="en">FONTS</span></div>
-            <div class="admin-assets-stat-val is-cyan" data-assets-stat="font">—</div>
-          </div>
-          <div class="admin-assets-stat">
-            <div class="admin-assets-stat-head"><span class="lbl">主題包</span><span class="en">THEMES</span></div>
-            <div class="admin-assets-stat-val" data-assets-stat="theme" style="color:var(--color-ink-theme)">—</div>
-          </div>
+        <!-- TPL-B KPI 條：共用 hud-stat-tile（私有 admin-assets-stat 退役） -->
+        <div class="hud-stats-strip">
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">ASSETS</span><span class="hud-stat-tile-value" data-assets-stat="total">—</span><span class="hud-stat-tile-label">總素材</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">DME</span><span class="hud-stat-tile-value is-amber" data-assets-stat="dme">—</span><span class="hud-stat-tile-label">效果庫</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">FONTS</span><span class="hud-stat-tile-value is-cyan" data-assets-stat="font">—</span><span class="hud-stat-tile-label">字型</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">THEMES</span><span class="hud-stat-tile-value" style="color:var(--color-ink-theme)" data-assets-stat="theme">—</span><span class="hud-stat-tile-label">主題包</span></div>
         </div>
 
         <!-- Filter chips -->

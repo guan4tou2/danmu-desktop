@@ -229,7 +229,7 @@
 
   function _template() {
     return `
-      <div id="${SECTION_ID}" class="admin-mq hud-page-stack lg:col-span-2" style="display:none">
+      <div id="${SECTION_ID}" class="admin-mq hud-page-stack lg:col-span-2" data-tpl="B" style="display:none">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">MODERATION · QUEUE · SWIMLANE · REAL-TIME</div>
           <div class="admin-ui-page-title">審核佇列</div>

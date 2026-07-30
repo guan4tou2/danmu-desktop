@@ -41,7 +41,7 @@
       // admin-ui-page-head, kpi-strip is-4col, plugin-row table with v4
       // pills, console with 4-level filter chips.
       const html = `
-        <div id="sec-plugins" class="hud-page-stack lg:col-span-2">
+        <div id="sec-plugins" class="hud-page-stack lg:col-span-2" data-tpl="B">
           <div class="admin-ui-page-head">
             <div class="admin-ui-page-kicker">PLUGIN SDK \u00b7 ${ServerI18n.t("pluginsDesc")} \u00b7 HOT-RELOAD</div>
             <div class="admin-ui-page-title">${ServerI18n.t("pluginsTitle")}</div>

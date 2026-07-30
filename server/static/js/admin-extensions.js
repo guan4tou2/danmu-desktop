@@ -80,7 +80,7 @@
 
   function buildSection() {
     return `
-      <div id="${PAGE_ID}" class="admin-ext-page hud-page-stack lg:col-span-2">
+      <div id="${PAGE_ID}" class="admin-ext-page hud-page-stack lg:col-span-2" data-tpl="B">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">INTEGRATIONS · 整合 · 第三方接入</div>
           <div class="admin-ui-page-title">整合</div>

@@ -5246,30 +5246,6 @@ body.stream-mode .admin-hero .admin-summary-grid {
  */
 .admin-assets-page { gap: 12px; display: flex; flex-direction: column; }
 
-.admin-assets-statstrip {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  padding: 12px;
-  background: var(--admin-panel, var(--color-bg-base));
-  border: 1px solid var(--hud-line);
-  border-radius: var(--radius-md-sm);
-}
-.admin-assets-stat-head {
-  display: flex; align-items: baseline; gap: 4px;
-  font-size: 11px; color: var(--color-text-muted);
-}
-.admin-assets-stat-head .en {
-  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em;
-  color: var(--color-text-muted); text-transform: uppercase;
-}
-.admin-assets-stat-val {
-  font-family: var(--font-display, var(--font-mono));
-  font-size: 26px; font-weight: 600; color: var(--color-text-strong);
-  letter-spacing: -0.02em; margin-top: 4px;
-}
-.admin-assets-stat-val.is-amber { color: var(--color-ink-warning); }
-.admin-assets-stat-val.is-cyan  { color: var(--color-ink-accent); }
 
 .admin-assets-filter-row {
   display: flex; gap: 4px; flex-wrap: wrap; align-items: center;

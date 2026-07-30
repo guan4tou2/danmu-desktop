@@ -29,7 +29,7 @@
   };
 
   const POLL_HTML = `
-      <div id="sec-polls" class="admin-poll-page-v5 hud-page-stack lg:col-span-2" data-poll-view="builder">
+      <div id="sec-polls" class="admin-poll-page-v5 hud-page-stack lg:col-span-2" data-tpl="C" data-poll-view="builder">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">POLL · 多題目 · 拖曳排序 · 每題可上傳圖片</div>
           <div class="admin-ui-page-title">投票</div>

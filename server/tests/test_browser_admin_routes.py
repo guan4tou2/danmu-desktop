@@ -156,6 +156,8 @@ _SNAPSHOT_JS = """
     ).map((b) => b.dataset.route),
     title: titleEl ? (titleEl.textContent || '').trim() : null,
     contentChars: mainLen - topbarLen,
+    visibleTpls: Array.from(document.querySelectorAll('[data-tpl]'))
+      .filter(isVisible).map((el) => el.dataset.tpl),
     placeholders,
     hash: window.location.hash,
   };
@@ -282,6 +284,17 @@ def test_route_renders_topbar_title(route_snapshots, slug):
         f"#/{slug} 的標題是未解析的 i18n key ({title!r}) —— "
         f"locales 缺這個 key，會直接顯示給使用者"
     )
+
+
+@pytest.mark.parametrize("slug", EXPECTED_NAV_ORDER)
+def test_route_declares_page_template(route_snapshots, slug):
+    """TPL 版型契約（2026-07-30）：每條路由的主 section 必須掛 data-tpl
+    （A 儀表／B 列表管理／C 設定分區），且值只能是這三種——新頁面不再有
+    機會發明第九種版型骨架。8 種骨架收斂成 3 種是這輪重構的核心承諾。"""
+    tpls = route_snapshots[slug]["visibleTpls"]
+    assert tpls, f"#/{slug} 沒有任何可見的 [data-tpl] section —— 新頁面必須掛版型標記"
+    bad = [t for t in tpls if t not in ("A", "B", "C")]
+    assert not bad, f"#/{slug} 出現未知版型 {bad}（只允許 A/B/C）"
 
 
 @pytest.mark.parametrize("slug", EXPECTED_NAV_ORDER)

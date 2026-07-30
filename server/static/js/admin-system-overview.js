@@ -38,7 +38,7 @@
     // / MSG RATE / DB SIZE. CONFIG SUMMARY added as 3rd right-rail
     // card per batch12-system.jsx SystemOverviewPage.
     return `
-      <div id="${SECTION_ID}" class="admin-soh-v4 hud-page-stack lg:col-span-2">
+      <div id="${SECTION_ID}" class="admin-soh-v4 hud-page-stack lg:col-span-2" data-tpl="A">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">SYSTEM OVERVIEW · HEALTH · SERVICES · METRICS</div>
           <div class="admin-ui-page-title">系統總覽</div>

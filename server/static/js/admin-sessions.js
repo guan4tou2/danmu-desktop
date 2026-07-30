@@ -173,7 +173,7 @@
   // ── HTML template ─────────────────────────────────────────────────────────
 
   function buildSection() {
-    return '<div id="' + PAGE_ID + '" class="admin-sessions-page hud-page-stack lg:col-span-2">'
+    return '<div id="' + PAGE_ID + '" class="admin-sessions-page hud-page-stack lg:col-span-2" data-tpl="B">'
 
       // ── page header (polestar 2026-05-18 reframe: session = data slice /
       //    time window, not "broadcast show". 內容仍是訊息 / 投票 / 統計 的

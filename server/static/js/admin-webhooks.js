@@ -92,7 +92,7 @@
     grid.insertAdjacentHTML(
       "beforeend",
       `
-      <div id="${SECTION_ID}" class="admin-webhooks-page hud-page-stack lg:col-span-2">
+      <div id="${SECTION_ID}" class="admin-webhooks-page hud-page-stack lg:col-span-2" data-tpl="B">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">WEBHOOKS · 外部通知 · HMAC</div>
           <div class="admin-ui-page-title">Webhooks</div>
