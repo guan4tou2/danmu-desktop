@@ -10906,10 +10906,14 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
  * 2026-07-30 使用者指出兩張 bar 內容重複佔空間 */
 .admin-ui-page-head.is-merged-into-topbar { display: none; }
 .admin-dash-topbar-note {
-  margin: var(--space-1) 0 0;
+  flex-basis: 100%;         /* 強制換到 topbar 第二列，不與控制項爭第一列 */
+  order: 3;                 /* 排在 title 塊與 actions 之後 */
+  margin: var(--space-2) 0 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--admin-line);
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  max-width: 72ch;
+  max-width: 96ch;
 }
 .admin-dash-topbar-note[hidden] { display: none; }
 

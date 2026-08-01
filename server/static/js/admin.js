@@ -800,7 +800,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <nav class="admin-dash-breadcrumb" data-route-breadcrumb aria-label="breadcrumb"></nav>
                                     <span class="hud-label is-accent" data-route-kicker>DASHBOARD · 活動進行中</span>
                                     <h1 data-route-title>控制台</h1>
-                                    <p class="admin-dash-topbar-note" data-route-note hidden></p>
                                 </div>
                                 <div class="admin-dash-topbar-actions">
                                     <div class="admin-dash-search" role="button" tabindex="0" data-open-palette
@@ -830,6 +829,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <span data-i18n="logout">${ServerI18n.t("logout")}</span>
                                     </button>
                                 </div>
+                                <!-- 2026-07-30：note 從標題塊移出來、放成 topbar 的
+                                     滿寬第二列（flex-basis:100% 強制換行）。留在標題塊裡
+                                     會把塊撐寬、把右側控制項擠到下一行。 -->
+                                <p class="admin-dash-topbar-note" data-route-note hidden></p>
                             </header>
 
                             <!-- Session banner — hidden until JS populates -->
