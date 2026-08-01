@@ -175,3 +175,8 @@ server/webhooks.json
 *.bak
 *.bak[0-9]
 *.bak-*
+
+# Playwright/驗證截圖：MCP 給相對檔名時會存到 CWD（repo root）。這些是本機驗證
+# 產物不是 source，別再被 `git add -A` 掃進來。.playwright-mcp/ 另已 ignore。
+/*-after.png
+/*-before.png
