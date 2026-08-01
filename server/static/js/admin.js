@@ -1516,28 +1516,34 @@ document.addEventListener("DOMContentLoaded", () => {
         ?.textContent?.trim().replace(/\s+/g, " ");
       const noteSlot = shell.querySelector("[data-route-note]");
       if (!routeTitle) return;
-      // 2026-07-30：分頁式路由（審核/紀錄/觀眾頁…）的 section 標題等於
-      // 「當前選中 tab 的標籤」——分頁列已經顯示它，section 再寫一次純重複。
-      // 除了比對路由標題，也比對當前 tab 標籤（麵包屑同樣已寫出）。
-      let tabLabel = null;
-      if (_activeTab && window.AdminTabs?.getConfig) {
-        const cfg = window.AdminTabs.getConfig(currentRoute);
-        const tab = cfg && (cfg.tabs || []).find((x) => x.slug === _activeTab);
-        if (tab) tabLabel = (tab.label || "").trim().replace(/\s+/g, " ");
-      }
+      // 2026-07-30（全掃後定案）：分頁式路由（審核/素材庫/觀眾頁/系統/紀錄）
+      // 的 section page-head 一律是多餘——分頁列本身就是 section 的標題，
+      // 麵包屑也已寫出位置。實測 30 個 tab section 的標題全部是 tab 標籤的
+      // 重複（相同/前綴/同義），無一例外。所以不逐條比對，直接：分頁路由
+      // 的 section page-head 全隱藏、note 上移頂欄。非分頁路由維持「標題等於
+      // 路由標題才隱藏」。page-head 只含 kicker/title/note（互動元素都在其後
+      // 的工具列或 note 內的 inline 連結，隱藏無損）。
+      const isTabbed = !!(window.AdminTabs && window.AdminTabs.hasTabsFor
+        && window.AdminTabs.hasTabsFor(currentRoute));
+      const heads = Array.prototype.slice.call(
+        shell.querySelectorAll(".admin-ui-page-head"));
+      // 先清掉舊的隱藏標記——才能用 offsetParent 量到「這一屏真正可見」的
+      // 那個 page-head。offsetParent === null 代表自己或任一祖先 display:none，
+      // 比 getComputedStyle(自己).display 可靠（共用容器會讓後者謊報可見，
+      // 正是先前 queue 抓到 replay note 的成因）。
+      heads.forEach((h) => h.classList.remove("is-merged-into-topbar"));
       let mergedNote = null;
-      shell.querySelectorAll(".admin-ui-page-head").forEach((head) => {
+      heads.forEach((head) => {
         const titleEl = head.querySelector(".admin-ui-page-title");
-        const t = titleEl?.textContent?.trim().replace(/\s+/g, " ");
-        const dup = !!t && (t === routeTitle || t === tabLabel);
-        head.classList.toggle("is-merged-into-topbar", dup);
-        if (dup && mergedNote === null) {
-          // 取第一個可見重複頁首的 note（innerHTML：投票頁的深度分析
-          // 連結是純 <a>，沒有事件監聽，複製安全）
-          const sec = head.closest('[id^="sec-"], .admin-route-sections');
-          const visible = !sec || getComputedStyle(sec).display !== "none";
-          if (visible) mergedNote = head.querySelector(".admin-ui-page-note")?.innerHTML || "";
+        const t = titleEl && titleEl.textContent.trim().replace(/\s+/g, " ");
+        const dup = !!t && (isTabbed || t === routeTitle);
+        if (!dup) return;
+        // 這一步在 add class 之前量：唯一 offsetParent 非 null 的重複頁首，
+        // 就是當前分頁真正顯示的那個 —— 只取它的 note。
+        if (mergedNote === null && head.offsetParent !== null) {
+          mergedNote = head.querySelector(".admin-ui-page-note")?.innerHTML || "";
         }
+        head.classList.add("is-merged-into-topbar");
       });
       if (noteSlot) {
         noteSlot.innerHTML = mergedNote || "";
