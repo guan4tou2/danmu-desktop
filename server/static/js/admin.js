@@ -1124,15 +1124,14 @@ document.addEventListener("DOMContentLoaded", () => {
           <p class="admin-ui-page-note" data-i18n="themesSectionDesc">${ServerI18n.t("themesSectionDesc")}</p>
         </div>
         <div class="admin-ui-card" style="padding:14px;margin-top:12px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <!-- Reload 原本獨佔一行（2026-08-01：併入 toolbar 右側，省一行高度） -->
+          <div class="theme-pack-toolbar">
+            <span class="theme-pack-count" data-theme-pack-count>—</span>
+            <span class="theme-pack-actions-head">+ 新增主題包 · ⤓ 匯入 .dmtheme · ⤒ 匯出</span>
             <button id="themeReloadBtn" class="admin-ui-action admin-theme-reload-action">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
               Reload
             </button>
-          </div>
-          <div class="theme-pack-toolbar">
-            <span class="theme-pack-count" data-theme-pack-count>—</span>
-            <span class="theme-pack-actions-head">+ 新增主題包 · ⤓ 匯入 .dmtheme · ⤒ 匯出</span>
           </div>
           <div id="themesList">
             <span class="theme-pack-muted" style="padding:14px">載入主題包…</span>

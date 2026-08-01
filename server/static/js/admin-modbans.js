@@ -81,6 +81,9 @@
     const bodyEl = document.querySelector("[data-modbans-list]");
     if (!bodyEl) return;
     const rows = _state.rows || [];
+    // 工具列左側計數（2026-08-01：補空工具列，與 plugins/audience 一致）
+    const cntEl = document.querySelector("[data-modbans-count]");
+    if (cntEl) cntEl.textContent = String(rows.length);
     if (rows.length === 0) {
       // D-6 (2026-07-28): 一行灰字換共用 AdminEmpty（blacklist preset 的
       // CTA 正好導向新增規則）。
@@ -414,6 +417,7 @@
           <p class="admin-ui-page-note">時限封禁 / 永久封禁的統一管理。Source of truth = audit log；列表狀態 = 各 target 最後一筆事件。倒數到期由 client lazy-check（不跑 reaper thread）。</p>
         </div>
         <div class="admin-ui-toolbar">
+          <span class="admin-ui-monolabel">封禁 · <span data-modbans-count>0</span> 筆</span>
           <span class="admin-ui-spacer"></span>
           <button type="button" class="admin-ui-action is-primary" data-modbans-add>＋ 新增封禁</button>
         </div>
