@@ -10914,49 +10914,55 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-dash-topbar-note[hidden] { display: none; }
 
 [data-admin-tabs-host] {
-  padding: 0 24px;
-  border-bottom: 1px solid var(--color-border, var(--hud-line));
-  background: var(--color-panel);
+  /* 2026-07-30 重新設計：分段式控制項自帶外框，不再需要裸色帶＋底線。
+   * 上下給呼吸空間，底透明，靠 strip 本身的框定義視覺邊界。 */
+  padding: var(--space-4) var(--space-6) 0;
+  background: transparent;
+  border-bottom: 0;
 }
 [data-admin-tabs-host][hidden] { display: none; }
 
 .admin-tabs-strip {
-  display: flex;
-  gap: 4px;
+  display: inline-flex;
+  gap: var(--space-05);
   align-items: stretch;
-  height: 40px;
+  padding: var(--space-1);
+  background: var(--hud-bg1);
+  border: 1px solid var(--hud-line);
+  border-radius: var(--radius-md);
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .admin-tabs-btn {
   background: transparent;
   border: 0;
-  border-bottom: 2px solid transparent;
+  border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
   cursor: pointer;
   display: inline-flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
   gap: 2px;
-  padding: 0 12px;
+  padding: var(--space-2) var(--space-3);
+  white-space: nowrap;
   font-family: inherit;
-  text-align: left;
-  transition: color var(--motion-fast) ease, border-color var(--motion-fast) ease, background var(--motion-fast) ease;
+  transition: color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 
 .admin-tabs-btn:hover {
   color: var(--color-text-bright, #f1f5f9);
-  background: rgba(56, 189, 248, 0.06);
+  background: var(--hud-cyan-soft);
 }
 
 .admin-tabs-btn.is-active {
-  /* Plain var(--hud-cyan) resolves to sky-600 on light, which lands at CR 3.86
-     on the active tab's tinted background — below AA for this 13px label, and
-     still *dimmer* than the 7.58 of an unselected tab, i.e. the selected tab
-     keeps reading as disabled. One step darker (sky-700) clears AA at 5.61.
-     Dark keeps --hud-cyan verbatim, so the dark arm is unchanged (7.31). */
+  /* 分段填色即選中指示（取代舊底線）。文字色沿用先前 WCAG 修正：
+     淺色臂 sky-700 才在填色底上過 AA（sky-600 只有 3.86、比未選中還暗），
+     深色臂維持 --hud-cyan（7.31）。 */
   color: light-dark(var(--color-primary-hover), var(--hud-cyan));
-  border-bottom-color: var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
-  background: rgba(56, 189, 248, 0.08);
+  background: var(--hud-cyan-soft);
+  box-shadow: inset 0 0 0 1px var(--hud-cyan-line);
 }
 
 .admin-tabs-btn-label {
@@ -10973,8 +10979,8 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 }
 
 @media (max-width: 640px) {
-  [data-admin-tabs-host] { padding: 0 12px; }
-  .admin-tabs-btn { padding: 0 8px; }
+  [data-admin-tabs-host] { padding: var(--space-3) var(--space-3) 0; }
+  .admin-tabs-btn { padding: var(--space-1) var(--space-2); }
   .admin-tabs-btn-en { display: none; }
 }
 
