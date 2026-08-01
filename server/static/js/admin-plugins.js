@@ -49,6 +49,7 @@
           </div>
 
           <div class="admin-ui-toolbar admin-plugins-toolbar">
+            <span class="admin-ui-monolabel">PLUGINS · <span data-plugins-count>0</span> 個</span>
             <span class="admin-ui-spacer"></span>
             <button id="pluginsUploadBtn" class="admin-ui-action is-primary admin-plugins-toolbar-btn" type="button">\uff0b \u4e0a\u50b3 .py/.js</button>
             <button id="pluginsReloadBtn" class="admin-ui-action admin-plugins-toolbar-btn" type="button">\u21bb ${ServerI18n.t("reloadBtn")}</button>
@@ -295,6 +296,8 @@
       set("running", running);
       set("paused", paused);
       set("priority", avgPriority != null ? avgPriority : "—");
+      // 工具列左側計數（2026-07-30：補空工具列）
+      document.querySelectorAll("[data-plugins-count]").forEach((el) => { el.textContent = loaded; });
     }
 
     function renderPlugin(plugin) {

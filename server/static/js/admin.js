@@ -1041,13 +1041,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // 開關狀態文字就地顯示。toggle-Effects input 契約原樣保留。
     const effectsEnabled = currentSettings.Effects ? currentSettings.Effects[0] !== false : true;
     settingsGrid.insertAdjacentHTML("beforeend", `
-      <div id="sec-effects" class="admin-ui-card admin-master-toggle lg:col-span-2">
+      <div id="sec-effects" class="admin-ui-card admin-master-toggle admin-master-toggle--slim lg:col-span-2">
         <div class="admin-master-toggle__row">
-          <div class="admin-master-toggle__copy">
-            <div class="admin-ui-monolabel">${ServerI18n.t("effectsSetting")}</div>
-            <p class="admin-master-toggle__desc">${effectsEnabled ? ServerI18n.t("effectsEnabledMsg") : ServerI18n.t("effectsDisabledMsg")}</p>
-          </div>
-          <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in flex-shrink-0">
+          <span class="admin-ui-monolabel">${ServerI18n.t("effectsSetting")}</span>
+          <span class="admin-master-toggle__state" data-on="${effectsEnabled}">${effectsEnabled ? ServerI18n.t("effectsEnabledMsg") : ServerI18n.t("effectsDisabledMsg")}</span>
+          <span class="admin-master-toggle__spacer"></span>
+          <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in flex-shrink-0">
             <input type="checkbox" name="Effects" id="toggle-Effects" role="switch" aria-checked="${effectsEnabled}" aria-label="Toggle ${ServerI18n.t("effectsSetting")}" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer" ${effectsEnabled ? "checked" : ""} />
             <label for="toggle-Effects" class="toggle-label block overflow-hidden h-7 rounded-full cursor-pointer" style="background:var(--color-bg-elevated)"></label>
           </div>

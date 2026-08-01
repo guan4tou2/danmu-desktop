@@ -14050,22 +14050,22 @@ body.admin-pu-open { overflow: hidden; }
    zone. Clicking the whole card triggers the file input (it's an
    actual <label for=...>); drag-drop adds .is-drag for hover state. */
 /* 總開關卡（S3 批次二）：admin-ui-card 語言的 master toggle */
+/* 效果庫等的「總開關」纖細版（2026-07-30 使用者：開關不該佔一整欄）——
+ * 標籤＋狀態＋開關單行排列，卡片內距收窄，高度約砍半。 */
+.admin-master-toggle--slim { padding: var(--space-2) var(--space-4); }
+.admin-master-toggle--slim .admin-master-toggle__row { align-items: center; gap: var(--space-3); }
+.admin-master-toggle__state {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+.admin-master-toggle__state[data-on="true"] { color: var(--color-ink-success); }
+.admin-master-toggle__spacer { flex: 1 1 auto; }
+
 .admin-master-toggle__row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-}
-.admin-master-toggle__copy { flex: 1 1 auto; }
-.admin-master-toggle__desc {
-  margin: var(--space-1) 0 0;
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-}
-.admin-master-toggle__body {
-  margin-top: var(--space-4);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--admin-line);
 }
 
 /* 拖檔進效果庫任何位置都收：整區高亮 */
