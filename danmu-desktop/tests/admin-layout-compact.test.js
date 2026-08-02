@@ -97,7 +97,9 @@ test("admin Viewer surface exposes language/copy and defaults/limits guidance", 
   const displaySrc = fs.readFileSync(path.join(staticDir, "admin-display.js"), "utf8");
   const tabsSrc = fs.readFileSync(path.join(staticDir, "admin-tabs.js"), "utf8");
 
-  expect(adminSrc).toContain("VIEWER · 頁面預設 · 欄位設定 · 文案 / 限制");
+  // F-101（design audit 2026-08-02）：kicker 不再傾倒分頁名（與分頁列
+  // 重複、會過時、把頂欄控制項擠到第二行），改短用途描述詞。
+  expect(adminSrc).toContain("VIEWER · 觀眾端設定");
   // 2026-05-16: viewer language is system-driven — admin-controlled
   // override lives in Viewer › Page Theme. Fields panel labels this
   // section ADMIN CONTROLLED (no in-viewer toggle) instead of the
