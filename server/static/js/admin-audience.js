@@ -99,9 +99,9 @@
     return `
       <div id="${PAGE_ID}" class="admin-audience-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">AUDIENCE · 觀眾列表</div>
-          <div class="admin-ui-page-title">觀眾</div>
-          <p class="admin-ui-page-note">即時連線觀眾的指紋聚合，按 message_count 排序。資料來源：fingerprint_tracker（in-memory）。</p>
+          <div class="admin-ui-page-kicker">AUDIENCE · ${ServerI18n.t("audienceKickerTail")}</div>
+          <div class="admin-ui-page-title">${ServerI18n.t("audiencePageTitle")}</div>
+          <p class="admin-ui-page-note">${ServerI18n.t("audiencePageNote")}</p>
         </div>
 
         <div class="admin-aud-grid">
@@ -110,13 +110,13 @@
           <div class="admin-aud-main-row">
             <div class="admin-aud-table-wrap">
               <div class="admin-ui-toolbar admin-aud-toolbar">
-                <span class="admin-ui-summary admin-aud-summary" data-aud-summary>載入中…</span>
+                <span class="admin-ui-summary admin-aud-summary" data-aud-summary>${ServerI18n.t("audienceLoading")}</span>
                 <span class="admin-ui-spacer"></span>
                 <span class="admin-ui-chip-group admin-aud-filters" data-aud-filters></span>
-                <button type="button" class="admin-ui-action admin-aud-refresh" data-aud-action="refresh" aria-label="重新整理觀眾">↻</button>
+                <button type="button" class="admin-ui-action admin-aud-refresh" data-aud-action="refresh" aria-label="${ServerI18n.t("audienceRefreshAria")}">↻</button>
               </div>
               <div class="admin-aud-list" data-aud-list>
-                <div class="admin-aud-loading">載入觀眾列表中…</div>
+                <div class="admin-aud-loading">${ServerI18n.t("audienceListLoading")}</div>
               </div>
             </div>
             <aside class="admin-aud-detail" data-aud-detail hidden>
@@ -154,11 +154,11 @@
       return (Date.now() - ms) / 1000 < 300;
     }).length;
     stats.innerHTML = `
-      <div class="admin-aud-stat"><div class="k">當前指紋</div><div class="v">${total}</div></div>
-      <div class="admin-aud-stat"><div class="k">5min 活躍</div><div class="v" style="color: var(--color-ink-success)">${activeFiveMin}</div></div>
-      <div class="admin-aud-stat"><div class="k">總訊息</div><div class="v" style="color: var(--color-ink-accent)">${totalMsgs}</div></div>
-      <div class="admin-aud-stat"><div class="k">已標記</div><div class="v" style="color: var(--color-ink-warning)">${flagged}</div></div>
-      <div class="admin-aud-stat"><div class="k">已封禁</div><div class="v" style="color: var(--color-ink-error)">${blocked}</div></div>`;
+      <div class="admin-aud-stat"><div class="k">${ServerI18n.t("audienceStatCurrentFp")}</div><div class="v">${total}</div></div>
+      <div class="admin-aud-stat"><div class="k">${ServerI18n.t("audienceStatActive5min")}</div><div class="v" style="color: var(--color-ink-success)">${activeFiveMin}</div></div>
+      <div class="admin-aud-stat"><div class="k">${ServerI18n.t("audienceStatTotalMsgs")}</div><div class="v" style="color: var(--color-ink-accent)">${totalMsgs}</div></div>
+      <div class="admin-aud-stat"><div class="k">${ServerI18n.t("audienceStatFlagged")}</div><div class="v" style="color: var(--color-ink-warning)">${flagged}</div></div>
+      <div class="admin-aud-stat"><div class="k">${ServerI18n.t("audienceStatBlocked")}</div><div class="v" style="color: var(--color-ink-error)">${blocked}</div></div>`;
   }
 
   function _renderFilters() {
@@ -167,8 +167,8 @@
     const total = _state.records.length;
     const flagCount = _state.records.filter(function (r) { return r.state === "flagged" || r.state === "blocked"; }).length;
     filters.innerHTML = `
-      <button type="button" class="admin-ui-chip admin-aud-filter ${_state.filter === "all" ? "is-active" : ""}" data-aud-filter="all">全部 ${total}</button>
-      <button type="button" class="admin-ui-chip admin-aud-filter ${_state.filter === "flagged" ? "is-active" : ""}" data-aud-filter="flagged">標記 ${flagCount}</button>`;
+      <button type="button" class="admin-ui-chip admin-aud-filter ${_state.filter === "all" ? "is-active" : ""}" data-aud-filter="all">${ServerI18n.t("audienceFilterAll", { n: total })}</button>
+      <button type="button" class="admin-ui-chip admin-aud-filter ${_state.filter === "flagged" ? "is-active" : ""}" data-aud-filter="flagged">${ServerI18n.t("audienceFilterFlagged", { n: flagCount })}</button>`;
   }
 
   function _renderList() {
@@ -176,7 +176,7 @@
     const summary = document.querySelector("[data-aud-summary]");
     if (!list) return;
     const records = _filteredRecords();
-    if (summary) summary.textContent = "顯示 " + records.length + " 筆";
+    if (summary) summary.textContent = ServerI18n.t("audienceSummaryShown", { n: records.length });
     if (records.length === 0) {
       // D-6 (2026-07-28): 自造 admin-aud-empty 換共用 AdminEmpty preset。
       list.innerHTML = "";
@@ -198,8 +198,10 @@
     const rowsHtml = records.map(function (r) {
       const fp = r.fingerprint || "—";
       const fpShort = fp === "—" ? "—" : "fp:" + fp.slice(0, 8);
-      const nick = r.nickname || "匿名";
-      const initial = nick === "匿名" ? "?" : nick.slice(0, 1);
+      // 「匿名」是後端契約值（mod_queue.py 的 nickname fallback）——比對留字面，顯示走 i18n
+      const isAnon = !r.nickname || r.nickname === "匿名";
+      const nick = isAnon ? ServerI18n.t("audienceAnonymous") : r.nickname;
+      const initial = isAnon ? "?" : nick.slice(0, 1);
       const color = _hashColor(fp);
       const ip = r.ip || "—";
       const ua = (r.ua || "").slice(0, 30) || "—";
@@ -249,20 +251,20 @@
     const rules = [];
     const msgs = Number(rec.message_count) || 0;
     const fp = rec.fingerprint || "";
-    if (rec.state === "blocked") rules.push("已被封禁 · 訊息自動遮罩中");
-    if (rec.state === "flagged") rules.push("已被標記 · 等待人工確認");
-    if (msgs >= 25) rules.push("訊息量 " + msgs + " 則 · 超過 spam threshold(25)");
-    else if (msgs >= 15) rules.push("訊息量 " + msgs + " 則 · 接近 spam threshold(25)");
+    if (rec.state === "blocked") rules.push(ServerI18n.t("audienceRuleBlocked"));
+    if (rec.state === "flagged") rules.push(ServerI18n.t("audienceRuleFlagged"));
+    if (msgs >= 25) rules.push(ServerI18n.t("audienceRuleMsgOver", { n: msgs }));
+    else if (msgs >= 15) rules.push(ServerI18n.t("audienceRuleMsgNear", { n: msgs }));
     // Same-IP-multi-fp signal (if BE exposes it later we'll surface it)
     const sameIp = _state.records.filter(function (r) {
       return r.ip && rec.ip && r.ip === rec.ip;
     }).length;
-    if (sameIp >= 3) rules.push("同 IP " + sameIp + " 個指紋 · 可能換裝置 / VPN");
+    if (sameIp >= 3) rules.push(ServerI18n.t("audienceRuleSameIp", { n: sameIp }));
     if (fp.indexOf("slido") === 0 || fp.indexOf("ext_") === 0) {
-      rules.push("Slido / extension 橋接 · 訊息來自 fire token");
+      rules.push(ServerI18n.t("audienceRuleBridge"));
     }
     if (rec.nickname === "匿名" || !rec.nickname) {
-      rules.push("使用者未設暱稱（首次出現）");
+      rules.push(ServerI18n.t("audienceRuleNoNick"));
     }
     let level = "normal";
     let color = "var(--hud-lime)";
@@ -314,18 +316,19 @@
     const risk = _assessRisk(rec);
     detail.dataset.riskLevel = risk.level;
     const color = _hashColor(fp);
-    const nick = rec.nickname || "匿名";
-    const initial = nick === "匿名" ? "?" : nick.slice(0, 1);
+    const isAnon = !rec.nickname || rec.nickname === "匿名";
+    const nick = isAnon ? ServerI18n.t("audienceAnonymous") : rec.nickname;
+    const initial = isAnon ? "?" : nick.slice(0, 1);
     const fpShort = "fp:" + (fp || "").slice(0, 8);
     const rulesHtml = risk.rules.length
       ? risk.rules.map(function (r) { return "<li>" + escapeHtml(r) + "</li>"; }).join("")
-      : '<li class="ok">未觸發任何 flag · 行為正常</li>';
+      : '<li class="ok">' + ServerI18n.t("audienceNoFlags") + '</li>';
 
     let messagesHtml = "";
     if (_state.detailLoading) {
-      messagesHtml = '<div class="admin-aud-detail-loading">載入訊息中…</div>';
+      messagesHtml = '<div class="admin-aud-detail-loading">' + ServerI18n.t("audienceDetailLoadingMsgs") + '</div>';
     } else if (_state.detailMessages.length === 0) {
-      messagesHtml = '<div class="admin-aud-detail-empty">近 5 分鐘無訊息</div>';
+      messagesHtml = '<div class="admin-aud-detail-empty">' + ServerI18n.t("audienceDetailNoMsgs") + '</div>';
     } else {
       messagesHtml = _state.detailMessages.map(function (m) {
         const status = m.muted ? "MASKED" : (m.banned ? "BLOCKED" : "SHOWN");
@@ -346,7 +349,7 @@
     detail.innerHTML =
       '<div class="admin-aud-detail-head">' +
         '<span class="admin-ui-pill admin-aud-risk-pill ' + _riskClassFor(risk.level) + '">' + escapeHtml(risk.label) + '</span>' +
-        '<button type="button" class="admin-ui-action admin-aud-detail-close" data-aud-action="close-detail" aria-label="關閉">' + window.AdminUtils.closeIcon + '</button>' +
+        '<button type="button" class="admin-ui-action admin-aud-detail-close" data-aud-action="close-detail" aria-label="' + ServerI18n.t("audienceCloseAria") + '">' + window.AdminUtils.closeIcon + '</button>' +
       '</div>' +
       '<div class="admin-aud-detail-id">' +
         '<span class="avatar" style="background:' + color + '">' + escapeHtml(initial) + '</span>' +
@@ -356,29 +359,29 @@
         '</div>' +
       '</div>' +
       '<div class="admin-aud-detail-flag" data-risk="' + risk.level + '">' +
-        '<div class="hd">⚠ FLAG · 觸發 ' + risk.rules.length + ' 條規則</div>' +
+        '<div class="hd">' + ServerI18n.t("audienceFlagHeader", { n: risk.rules.length }) + '</div>' +
         '<ul>' + rulesHtml + '</ul>' +
       '</div>' +
-      '<div class="admin-ui-monolabel admin-aud-detail-label">近 5 分鐘訊息</div>' +
+      '<div class="admin-ui-monolabel admin-aud-detail-label">' + ServerI18n.t("audienceDetailMsgsLabel") + '</div>' +
       '<div class="admin-aud-detail-messages">' + messagesHtml + '</div>' +
-      '<div class="admin-ui-monolabel admin-aud-detail-label">建議動作</div>' +
+      '<div class="admin-ui-monolabel admin-aud-detail-label">' + ServerI18n.t("audienceDetailActionsLabel") + '</div>' +
       '<div class="admin-aud-detail-actions">' +
         // Primary ban (long-term moderation_bans entry) — still useful
         // even alongside kick because it scopes to all bans, not just
         // audience-overlay state.
-        '<button type="button" class="admin-ui-action is-danger is-block admin-aud-detail-action" data-aud-action="detail-ban" data-aud-fp="' + escapeHtml(fp) + '">⊗ 立即封禁指紋 · 7 天</button>' +
-        '<button type="button" class="admin-ui-action is-warn is-block admin-aud-detail-action" data-aud-action="detail-mask" data-aud-fp="' + escapeHtml(fp) + '">◐ 改為遮罩模式</button>' +
+        '<button type="button" class="admin-ui-action is-danger is-block admin-aud-detail-action" data-aud-action="detail-ban" data-aud-fp="' + escapeHtml(fp) + '">' + ServerI18n.t("audienceActionBanFp") + '</button>' +
+        '<button type="button" class="admin-ui-action is-warn is-block admin-aud-detail-action" data-aud-action="detail-mask" data-aud-fp="' + escapeHtml(fp) + '">' + ServerI18n.t("audienceActionMask") + '</button>' +
         // Kick (= audience kick endpoint, also adds permanent fp ban).
         // Toggle to unkick when the row is already kicked.
         (rec.is_kicked
-          ? '<button type="button" class="admin-ui-action is-warn is-block admin-aud-detail-action" data-aud-action="unkick" data-aud-fp="' + escapeHtml(fp) + '">↺ 撤銷踢出</button>'
-          : '<button type="button" class="admin-ui-action is-block admin-aud-detail-action" data-aud-action="kick" data-aud-fp="' + escapeHtml(fp) + '">👢 踢出此場</button>'
+          ? '<button type="button" class="admin-ui-action is-warn is-block admin-aud-detail-action" data-aud-action="unkick" data-aud-fp="' + escapeHtml(fp) + '">' + ServerI18n.t("audienceActionUnkick") + '</button>'
+          : '<button type="button" class="admin-ui-action is-block admin-aud-detail-action" data-aud-action="kick" data-aud-fp="' + escapeHtml(fp) + '">' + ServerI18n.t("audienceActionKick") + '</button>'
         ) +
         // Flag toggle — admin-set, overlays risk score.
         '<button type="button" class="admin-ui-action is-block admin-aud-detail-action" data-aud-action="flag" data-aud-fp="' + escapeHtml(fp) + '" data-aud-flagged="' + (rec.is_flagged ? "true" : "false") + '">' +
-          (rec.is_flagged ? "★ 取消標記" : "☆ 標記為可疑") +
+          (rec.is_flagged ? ServerI18n.t("audienceActionUnflag") : ServerI18n.t("audienceActionFlag")) +
         '</button>' +
-        '<button type="button" class="admin-ui-action is-block admin-aud-detail-action" data-aud-action="detail-safe" data-aud-fp="' + escapeHtml(fp) + '">✓ 標記安全 · 解除 filter rules</button>' +
+        '<button type="button" class="admin-ui-action is-block admin-aud-detail-action" data-aud-action="detail-safe" data-aud-fp="' + escapeHtml(fp) + '">' + ServerI18n.t("audienceActionSafe") + '</button>' +
       '</div>';
   }
 
@@ -424,12 +427,12 @@
       });
       if (!r.ok) throw new Error("HTTP " + r.status);
       window.showToast && window.showToast(
-        flagged ? ("已標記 fp:" + fp.slice(0, 8)) : ("已取消標記 fp:" + fp.slice(0, 8)),
+        flagged ? ServerI18n.t("audienceToastFlagged", { fp: fp.slice(0, 8) }) : ServerI18n.t("audienceToastUnflagged", { fp: fp.slice(0, 8) }),
         true
       );
       _fetch();
     } catch (e) {
-      window.showToast && window.showToast("標記操作失敗：" + (e.message || ""), false);
+      window.showToast && window.showToast(ServerI18n.t("audienceToastFlagFailed", { msg: e.message || "" }), false);
     }
   }
 
@@ -439,7 +442,7 @@
   async function _kick(fp, reason) {
     if (!fp || fp === "—") return;
     const why = reason != null ? reason : (window.prompt(
-      "踢出指紋 fp:" + fp.slice(0, 8) + " — 輸入原因（可空）",
+      ServerI18n.t("audienceKickPrompt", { fp: fp.slice(0, 8) }),
       ""
     ) || "");
     if (why === null) return;  // user cancelled
@@ -450,10 +453,10 @@
         body: JSON.stringify({ fingerprint: fp, reason: why }),
       });
       if (!r.ok) throw new Error("HTTP " + r.status);
-      window.showToast && window.showToast("已踢出 fp:" + fp.slice(0, 8), true);
+      window.showToast && window.showToast(ServerI18n.t("audienceToastKicked", { fp: fp.slice(0, 8) }), true);
       _fetch();
     } catch (e) {
-      window.showToast && window.showToast("踢出失敗：" + (e.message || ""), false);
+      window.showToast && window.showToast(ServerI18n.t("audienceToastKickFailed", { msg: e.message || "" }), false);
     }
   }
 
@@ -461,11 +464,11 @@
     if (!fp) return;
     const ok = await window.HudConfirm?.open({
       icon: "↩",
-      title: "撤銷踢出",
+      title: ServerI18n.t("audienceUnkickTitle"),
       subtitle: "UNKICK · FINGERPRINT CAN SEND AGAIN",
       severity: "warn",
-      body: "該指紋之後又可以送出彈幕。<div style=\"margin-top:10px;font-family:var(--font-mono);font-size:12px;color:var(--color-text-muted)\">fp:" + escapeHtml(fp.slice(0, 8)) + "</div>",
-      confirmLabel: "撤銷踢出",
+      body: ServerI18n.t("audienceUnkickBody", { fpHtml: '<div style="margin-top:10px;font-family:var(--font-mono);font-size:12px;color:var(--color-text-muted)">fp:' + escapeHtml(fp.slice(0, 8)) + "</div>" }),
+      confirmLabel: ServerI18n.t("audienceUnkickTitle"),
     });
     if (!ok) return;
     try {
@@ -475,10 +478,10 @@
         body: JSON.stringify({ fingerprint: fp }),
       });
       if (!r.ok) throw new Error("HTTP " + r.status);
-      window.showToast && window.showToast("已撤銷踢出", true);
+      window.showToast && window.showToast(ServerI18n.t("audienceToastUnkicked"), true);
       _fetch();
     } catch (e) {
-      window.showToast && window.showToast("撤銷失敗：" + (e.message || ""), false);
+      window.showToast && window.showToast(ServerI18n.t("audienceToastUnkickFailed", { msg: e.message || "" }), false);
     }
   }
 
@@ -497,10 +500,10 @@
         }),
       });
       if (!r.ok) throw new Error("HTTP " + r.status);
-      window.showToast && window.showToast("已加入遮罩 fp:" + fp.slice(0, 8), true);
+      window.showToast && window.showToast(ServerI18n.t("audienceToastMasked", { fp: fp.slice(0, 8) }), true);
       _fetch();
     } catch (e) {
-      window.showToast && window.showToast("遮罩失敗：" + (e.message || ""), false);
+      window.showToast && window.showToast(ServerI18n.t("audienceToastMaskFailed", { msg: e.message || "" }), false);
     }
   }
 
@@ -518,7 +521,7 @@
         return rule && rule.type === "fingerprint" && rule.pattern === fp;
       });
       if (matches.length === 0) {
-        window.showToast && window.showToast("該指紋目前沒有過濾規則", true);
+        window.showToast && window.showToast(ServerI18n.t("audienceToastNoRules"), true);
         return;
       }
       let removed = 0;
@@ -530,10 +533,10 @@
         }).catch(function () { return { ok: false }; });
         if (rr.ok) removed += 1;
       }
-      window.showToast && window.showToast("已清除 " + removed + " 條規則 fp:" + fp.slice(0, 8), true);
+      window.showToast && window.showToast(ServerI18n.t("audienceToastRulesCleared", { n: removed, fp: fp.slice(0, 8) }), true);
       _fetch();
     } catch (e) {
-      window.showToast && window.showToast("解除失敗：" + (e.message || ""), false);
+      window.showToast && window.showToast(ServerI18n.t("audienceToastClearFailed", { msg: e.message || "" }), false);
     }
   }
 
@@ -541,11 +544,11 @@
     if (!fp || fp === "—") return;
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
-      title: "封禁指紋",
+      title: ServerI18n.t("audienceBanTitle"),
       subtitle: "BAN FINGERPRINT · FUTURE MESSAGES AUTO-MASKED",
       severity: "danger",
-      body: "該指紋之後在本場發出的訊息會自動遮罩。<div style=\"margin-top:10px;font-family:var(--font-mono);font-size:12px;color:var(--color-text-muted)\">fp:" + escapeHtml(fp.slice(0, 8)) + "</div>",
-      confirmLabel: "封禁",
+      body: ServerI18n.t("audienceBanBody", { fpHtml: '<div style="margin-top:10px;font-family:var(--font-mono);font-size:12px;color:var(--color-text-muted)">fp:' + escapeHtml(fp.slice(0, 8)) + "</div>" }),
+      confirmLabel: ServerI18n.t("audienceBanConfirm"),
     });
     if (!ok) return;
     try {
@@ -555,10 +558,10 @@
         body: JSON.stringify({ type: "fingerprint", value: fp }),
       });
       if (!r.ok) throw new Error("HTTP " + r.status);
-      window.showToast && window.showToast("已封禁 fp:" + fp.slice(0, 8), true);
+      window.showToast && window.showToast(ServerI18n.t("audienceToastBanned", { fp: fp.slice(0, 8) }), true);
       _fetch();
     } catch (e) {
-      window.showToast && window.showToast("封禁失敗：" + (e.message || ""), false);
+      window.showToast && window.showToast(ServerI18n.t("audienceToastBanFailed", { msg: e.message || "" }), false);
     }
   }
 
