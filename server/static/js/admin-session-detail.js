@@ -113,27 +113,27 @@
       <div id="${PAGE_ID}" class="admin-sd-page hud-page-stack lg:col-span-2">
         <!-- Page header -->
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">SESSION DETAIL · 切片明細 · DENSITY TIMELINE</div>
-          <div class="admin-ui-page-title" data-sd-title>場次詳情</div>
-          <p class="admin-ui-page-note">展開單一資料切片：密度時間軸、訊息逐則、投票統計。內容唯讀（場次結束即定型）。</p>
+          <div class="admin-ui-page-kicker">SESSION DETAIL · ${ServerI18n.t("sessionDetailKickerMid")} · DENSITY TIMELINE</div>
+          <div class="admin-ui-page-title" data-sd-title>${ServerI18n.t("sessionDetailPageTitle")}</div>
+          <p class="admin-ui-page-note">${ServerI18n.t("sessionDetailPageNote")}</p>
         </div>
 
         <div class="admin-sd-grid">
           <!-- ── LEFT: main content ────────────────────────────────── -->
           <div class="admin-sd-main" data-sd-main>
             <!-- breadcrumb -->
-            <nav class="admin-sd-breadcrumb" aria-label="上一頁">
-              <a href="#" class="admin-sd-back-link" data-sd-action="back">← 返回場次列表</a>
+            <nav class="admin-sd-breadcrumb" aria-label="${ServerI18n.t("sessionDetailBreadcrumbAria")}">
+              <a href="#" class="admin-sd-back-link" data-sd-action="back">${ServerI18n.t("sessionDetailBackToList")}</a>
             </nav>
 
             <!-- loading / error states -->
             <div class="admin-sd-loading" data-sd-loading hidden>
               <div class="admin-sd-loading-spinner" aria-hidden="true"></div>
-              <span>載入場次資料中…</span>
+              <span>${ServerI18n.t("sessionDetailLoadingText")}</span>
             </div>
             <div class="admin-sd-error" data-sd-error hidden>
               <span data-sd-error-msg></span>
-              <button type="button" class="admin-ui-action admin-sd-retry-action" data-sd-action="retry" style="margin-left:12px">↻ 重試</button>
+              <button type="button" class="admin-ui-action admin-sd-retry-action" data-sd-action="retry" style="margin-left:12px">${ServerI18n.t("sessionDetailRetryBtn")}</button>
             </div>
 
             <!-- session header (hidden until loaded) -->
@@ -148,27 +148,35 @@
 
             <!-- playback controls bar -->
             <div class="admin-sd-playback" data-sd-playback hidden>
+              <!-- D-4 i18n: "PLAYBACK · 回放控制" is the sitewide EN·中文
+                   bilingual-monolabel pattern — pattern-level decision still
+                   deferred (see TODOS.md "「EN · 中文」雙語 monolabel 的 pattern
+                   決策"), left untouched here to match admin-backup.js
+                   precedent (HISTORY · 彈幕歷史 etc, commit 4771242). -->
               <div class="admin-ui-monolabel" style="margin-bottom:8px">PLAYBACK · 回放控制 (VISUAL ONLY)</div>
               <div class="admin-sd-pb-row">
-                <div class="admin-ui-chip-group admin-sd-speed-group" role="group" aria-label="播放速度">
+                <div class="admin-ui-chip-group admin-sd-speed-group" role="group" aria-label="${ServerI18n.t("sessionDetailSpeedGroupAria")}">
                   <button type="button" class="admin-ui-chip admin-sd-speed-chip" data-speed="0.5">0.5×</button>
                   <button type="button" class="admin-ui-chip admin-sd-speed-chip is-active" data-speed="1">1×</button>
                   <button type="button" class="admin-ui-chip admin-sd-speed-chip" data-speed="2">2×</button>
                   <button type="button" class="admin-ui-chip admin-sd-speed-chip" data-speed="4">4×</button>
                 </div>
                 <div class="admin-sd-pb-time" data-sd-pb-time>—</div>
-                <div class="admin-sd-pb-note">← 在歷史頁面可進行實際回放</div>
+                <div class="admin-sd-pb-note">${ServerI18n.t("sessionDetailPlaybackNote")}</div>
               </div>
             </div>
 
             <!-- density timeline + annotation overlay -->
             <div class="admin-sd-timeline-wrap" data-sd-timeline-wrap hidden>
               <div class="admin-ui-monolabel admin-sd-timeline-head" style="margin-bottom:10px">
+                <!-- D-4 i18n: "DENSITY TIMELINE · 每分鐘訊息密度" is the same
+                     deferred EN·中文 bilingual monolabel pattern — left
+                     untouched (see PLAYBACK note above). -->
                 <span>DENSITY TIMELINE · 每分鐘訊息密度</span>
                 <span class="admin-sd-peak-marker" data-sd-peak-label></span>
                 <span class="admin-sd-timeline-spacer"></span>
                 <span class="admin-sd-ann-count" data-sd-ann-count></span>
-                <button type="button" class="admin-sd-ann-add" data-sd-action="add-annotation">+ 加註記</button>
+                <button type="button" class="admin-sd-ann-add" data-sd-action="add-annotation">${ServerI18n.t("sessionDetailAddAnnotationBtn")}</button>
               </div>
               <div class="admin-sd-timeline-inner" data-sd-timeline-inner>
                 <div class="admin-sd-timeline" data-sd-timeline></div>
@@ -181,7 +189,7 @@
 
             <!-- messages list -->
             <div class="admin-sd-msgs-wrap" data-sd-msgs-wrap hidden>
-              <div class="admin-ui-monolabel" style="margin-bottom:8px">訊息 (最多顯示 200 則)</div>
+              <div class="admin-ui-monolabel" style="margin-bottom:8px">${ServerI18n.t("sessionDetailMsgsLabel")}</div>
               <div class="admin-sd-msgs-list" data-sd-msgs-list></div>
             </div>
           </div>
@@ -191,28 +199,28 @@
             <!-- stats panel -->
             <section class="admin-sd-card" data-sd-stats-card>
               <div class="admin-sd-card-head">
-                <span class="admin-ui-monolabel">統計</span>
+                <span class="admin-ui-monolabel">${ServerI18n.t("sessionDetailStatsLabel")}</span>
               </div>
               <div class="admin-sd-kv-list">
-                <div class="admin-sd-kv"><span class="k">訊息數</span><span class="v" data-sd-stat="msg_count">—</span></div>
-                <div class="admin-sd-kv"><span class="k">觀眾數</span><span class="v" data-sd-stat="viewer_count">—</span></div>
-                <div class="admin-sd-kv"><span class="k">時長</span><span class="v" data-sd-stat="duration">—</span></div>
-                <div class="admin-sd-kv"><span class="k">開始</span><span class="v" data-sd-stat="started_at">—</span></div>
-                <div class="admin-sd-kv"><span class="k">結束</span><span class="v" data-sd-stat="ended_at">—</span></div>
+                <div class="admin-sd-kv"><span class="k">${ServerI18n.t("sessionDetailStatMsgCount")}</span><span class="v" data-sd-stat="msg_count">—</span></div>
+                <div class="admin-sd-kv"><span class="k">${ServerI18n.t("sessionDetailStatViewerCount")}</span><span class="v" data-sd-stat="viewer_count">—</span></div>
+                <div class="admin-sd-kv"><span class="k">${ServerI18n.t("sessionDetailStatDuration")}</span><span class="v" data-sd-stat="duration">—</span></div>
+                <div class="admin-sd-kv"><span class="k">${ServerI18n.t("sessionDetailStatStarted")}</span><span class="v" data-sd-stat="started_at">—</span></div>
+                <div class="admin-sd-kv"><span class="k">${ServerI18n.t("sessionDetailStatEnded")}</span><span class="v" data-sd-stat="ended_at">—</span></div>
               </div>
             </section>
 
             <!-- actions -->
             <section class="admin-sd-card">
               <div class="admin-sd-card-head">
-                <span class="admin-ui-monolabel">操作</span>
+                <span class="admin-ui-monolabel">${ServerI18n.t("sessionDetailActionsLabel")}</span>
               </div>
               <div class="admin-sd-actions">
                 <button type="button" class="admin-ui-action is-primary admin-sd-action" data-sd-action="export-json">
-                  ↓ 匯出 JSON
+                  ${ServerI18n.t("sessionDetailExportJsonBtn")}
                 </button>
                 <button type="button" class="admin-ui-action admin-sd-action" data-sd-action="go-history">
-                  → 在歷史頁查看
+                  ${ServerI18n.t("sessionDetailViewInHistoryBtn")}
                 </button>
               </div>
             </section>
@@ -220,10 +228,10 @@
             <!-- top keywords -->
             <section class="admin-sd-card">
               <div class="admin-sd-card-head">
-                <span class="admin-ui-monolabel">TOP 關鍵字</span>
+                <span class="admin-ui-monolabel">${ServerI18n.t("sessionDetailTopKeywordsLabel")}</span>
               </div>
               <div class="admin-sd-keywords" data-sd-keywords>
-                <span class="admin-sd-empty-note">無資料</span>
+                <span class="admin-sd-empty-note">${ServerI18n.t("sessionDetailNoDataShort")}</span>
               </div>
             </section>
 
@@ -232,7 +240,7 @@
               <div class="admin-sd-card-head">
                 <span class="admin-ui-monolabel" data-sd-ann-head>ANNOTATIONS</span>
                 <span class="admin-sd-card-head-spacer"></span>
-                <button type="button" class="admin-sd-ann-card-add" data-sd-action="add-annotation">+ 新增</button>
+                <button type="button" class="admin-sd-ann-card-add" data-sd-action="add-annotation">${ServerI18n.t("sessionDetailAnnCardAddBtn")}</button>
               </div>
               <!-- D-6: 空狀態由 _renderAnnotations()（init 時必跑）以共用
                    AdminEmpty 渲染，靜態複本移除 -->
@@ -247,7 +255,7 @@
   // ── fetch ─────────────────────────────────────────────────────────────────
 
   async function _fetchSession(sessionId) {
-    if (!sessionId) { _showError("缺少場次 ID"); return; }
+    if (!sessionId) { _showError(ServerI18n.t("sessionDetailErrMissingId")); return; }
     _setLoading(true);
     try {
       // Try history-derived sessions first; fall back to lifecycle archive.
@@ -269,7 +277,7 @@
       _fetchAnnotations();
     } catch (e) {
       _setLoading(false);
-      _showError(`無法載入場次：${e.message || "未知錯誤"}`);
+      _showError(ServerI18n.t("sessionDetailErrLoadFailed", { msg: e.message || ServerI18n.t("sessionDetailUnknownError") }));
     }
   }
 
@@ -382,7 +390,7 @@
     if (idEl) idEl.textContent = sid;
     if (startEl) startEl.textContent = _fmtTimestamp(sess && (sess.started_at || sess.start_time));
     if (durEl) durEl.textContent = _fmtDuration(sess && (sess.duration_s || sess.duration));
-    if (titleEl) titleEl.textContent = `場次 ${String(sid).slice(-8)}`;
+    if (titleEl) titleEl.textContent = ServerI18n.t("sessionDetailTitleWithId", { id: String(sid).slice(-8) });
   }
 
   function _renderPlayback() {
@@ -395,7 +403,7 @@
     const end = sess && (sess.ended_at || sess.end_time);
     const timeEl = document.querySelector("[data-sd-pb-time]");
     if (timeEl) {
-      timeEl.textContent = start ? `${_fmtTimestamp(start)} / ${end ? _fmtTimestamp(end) : "進行中"}` : "—";
+      timeEl.textContent = start ? `${_fmtTimestamp(start)} / ${end ? _fmtTimestamp(end) : ServerI18n.t("sessionDetailInProgress")}` : "—";
     }
   }
 
@@ -412,7 +420,7 @@
     set("viewer_count", _fmtNum(sess.viewer_count));
     set("duration", _fmtDuration(sess.duration_s || sess.duration));
     set("started_at", _fmtTimestamp(sess.started_at || sess.start_time));
-    set("ended_at", _fmtTimestamp(sess.ended_at || sess.end_time) || "進行中");
+    set("ended_at", _fmtTimestamp(sess.ended_at || sess.end_time) || ServerI18n.t("sessionDetailInProgress"));
   }
 
   function _renderTimeline() {
@@ -437,7 +445,7 @@
     const bars = density.map(function (v, i) {
       const pct = Math.max(2, Math.round((v / maxVal) * 100));
       const isPeak = i === peakIdx;
-      return `<div class="admin-sd-bar${isPeak ? " is-peak" : ""}" style="height:${pct}%" title="${v} 則 · 第 ${i + 1} 分鐘" aria-label="${v} 則"></div>`;
+      return `<div class="admin-sd-bar${isPeak ? " is-peak" : ""}" style="height:${pct}%" title="${ServerI18n.t("sessionDetailBarTitle", { count: v, minute: i + 1 })}" aria-label="${ServerI18n.t("sessionDetailBarAriaLabel", { count: v })}"></div>`;
     }).join("");
     tlEl.innerHTML = bars;
 
@@ -453,7 +461,7 @@
     `;
 
     if (peakEl) {
-      peakEl.textContent = `· 峰值 ${density[peakIdx]} 則 @ +${peakIdx}min`;
+      peakEl.textContent = ServerI18n.t("sessionDetailPeakLabel", { count: density[peakIdx], minute: peakIdx });
     }
   }
 
@@ -495,7 +503,7 @@
 
     const records = _state.records;
     if (!records || records.length === 0) {
-      kwEl.innerHTML = '<span class="admin-sd-empty-note">無資料</span>';
+      kwEl.innerHTML = '<span class="admin-sd-empty-note">' + ServerI18n.t("sessionDetailNoDataShort") + '</span>';
       return;
     }
 
@@ -514,7 +522,7 @@
 
     const sorted = Object.keys(freq).sort(function (a, b) { return freq[b] - freq[a]; }).slice(0, 10);
     if (sorted.length === 0) {
-      kwEl.innerHTML = '<span class="admin-sd-empty-note">無資料</span>';
+      kwEl.innerHTML = '<span class="admin-sd-empty-note">' + ServerI18n.t("sessionDetailNoDataShort") + '</span>';
       return;
     }
 
@@ -587,8 +595,8 @@
       listEl.innerHTML = "";
       const card = window.AdminEmpty.renderCustom({
         icon: "📌",
-        title: "尚無註記",
-        desc: "時間軸 hover 任意位置 · 點 + 新增。",
+        title: ServerI18n.t("sessionDetailAnnEmptyTitle"),
+        desc: ServerI18n.t("sessionDetailAnnEmptyDesc"),
       });
       card.dataset.emptyKind = "session-annotations";
       listEl.appendChild(card);
@@ -604,7 +612,7 @@
           <span class="admin-sd-ann-ts" style="color:${spec.color}">${_fmtTsMs(a.ts_ms)}</span>
           <span class="admin-sd-ann-chip" style="--ann-color:${spec.color}">${spec.icon} ${spec.label}</span>
           <span class="admin-sd-ann-note">${escapeHtml(preview)}</span>
-          <button type="button" class="admin-sd-ann-del" data-sd-ann-del="${escapeHtml(a.id)}" aria-label="刪除註記" title="刪除">🗑</button>
+          <button type="button" class="admin-sd-ann-del" data-sd-ann-del="${escapeHtml(a.id)}" aria-label="${ServerI18n.t("sessionDetailAnnDeleteAria")}" title="${ServerI18n.t("sessionDetailAnnDeleteTitle")}">🗑</button>
         </div>`;
     }).join("");
   }
@@ -615,7 +623,7 @@
     const fallbackPrompt = !helper;
 
     if (fallbackPrompt) {
-      const note = window.prompt(`新增註記 @ ${_fmtTsMs(tsMs)}\n（label=note）`, "");
+      const note = window.prompt(ServerI18n.t("sessionDetailPromptFallback", { time: _fmtTsMs(tsMs) }), "");
       if (note != null && note.trim()) _createAnnotation(tsMs, "note", note.trim());
       return;
     }
@@ -645,9 +653,12 @@
         </div>
       </div>
       <div class="admin-sd-ann-modal-row">
+        <!-- D-4 i18n: "NOTE · ≤ 280 字" is the same deferred EN·中文
+             bilingual monolabel pattern — left untouched (see PLAYBACK
+             note in buildSection() above). -->
         <div class="admin-ui-monolabel">NOTE · ≤ 280 字</div>
         <textarea class="admin-sd-ann-modal-note" data-ann-modal-note
-          placeholder="觀眾爆笑點、投票揭曉時刻、重要問答…" maxlength="280"></textarea>
+          placeholder="${ServerI18n.t("sessionDetailNotePlaceholder")}" maxlength="280"></textarea>
         <div class="admin-sd-ann-modal-counter" data-ann-modal-counter>0 / 280</div>
       </div>`;
     body.addEventListener("click", function (e) {
@@ -668,11 +679,11 @@
 
     helper.open({
       icon: "📌",
-      title: "新增註記",
+      title: ServerI18n.t("sessionDetailAddAnnotationModalTitle"),
       subtitle: "ADD ANNOTATION · TIMELINE MARKER",
       severity: "info",
-      confirmLabel: "新增",
-      cancelLabel: "取消",
+      confirmLabel: ServerI18n.t("sessionDetailConfirmAdd"),
+      cancelLabel: ServerI18n.t("cancel"),
       body: body,
       width: 460,
     }).then(function (ok) {
@@ -701,10 +712,10 @@
         _state.annotations.sort(function (a, b) { return a.ts_ms - b.ts_ms; });
         _state.activeAnnId = data.annotation.id;
         _renderAnnotations();
-        if (window.showToast) window.showToast("註記已新增", true);
+        if (window.showToast) window.showToast(ServerI18n.t("sessionDetailToastAdded"), true);
       }
     } catch (e) {
-      if (window.showToast) window.showToast(`新增失敗：${e.message || "未知錯誤"}`, false);
+      if (window.showToast) window.showToast(ServerI18n.t("sessionDetailErrAddFailed", { msg: e.message || ServerI18n.t("sessionDetailUnknownError") }), false);
     }
   }
 
@@ -719,9 +730,9 @@
       _state.annotations = _state.annotations.filter(function (a) { return a.id !== annId; });
       if (_state.activeAnnId === annId) _state.activeAnnId = null;
       _renderAnnotations();
-      if (window.showToast) window.showToast("註記已刪除", true);
+      if (window.showToast) window.showToast(ServerI18n.t("sessionDetailToastDeleted"), true);
     } catch (e) {
-      if (window.showToast) window.showToast(`刪除失敗：${e.message || "未知錯誤"}`, false);
+      if (window.showToast) window.showToast(ServerI18n.t("sessionDetailErrDeleteFailed", { msg: e.message || ServerI18n.t("sessionDetailUnknownError") }), false);
     }
   }
 
@@ -739,7 +750,7 @@
     _state.hoverTsMs = tsMs;
     hover.hidden = false;
     hover.style.left = `${(pct * 100).toFixed(2)}%`;
-    hover.textContent = `+ 在 ${_fmtTsMs(tsMs)} 加註記`;
+    hover.textContent = ServerI18n.t("sessionDetailHoverAddCta", { time: _fmtTsMs(tsMs) });
   }
 
   function _onTimelineLeave() {
@@ -802,7 +813,7 @@
     const newId = _parseSessionId();
     if (!newId) {
       _state.sessionId = null;
-      _showError("請從場次列表選擇一個場次");
+      _showError(ServerI18n.t("sessionDetailErrNoSessionSelected"));
       return;
     }
     _state.sessionId = newId;
@@ -886,7 +897,7 @@
     if (_state.sessionId) {
       _fetchSession(_state.sessionId);
     } else {
-      _showError("請從場次列表選擇一個場次");
+      _showError(ServerI18n.t("sessionDetailErrNoSessionSelected"));
     }
 
     // Listen for hash changes to support in-page navigation

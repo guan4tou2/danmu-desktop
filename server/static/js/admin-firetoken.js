@@ -31,12 +31,9 @@
     return `
       <div id="${PAGE_ID}" class="admin-ft-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">FIRE TOKEN · 共享密鑰 · 用量 / 來源 / 旋轉</div>
-          <div class="admin-ui-page-title">Fire Token 詳情</div>
-          <p class="admin-ui-page-note">
-            Extension 走 /fire 通道用的共享機密。本頁顯示用量趨勢、近期來源 IP、token 生命週期事件。
-            單一 token、operator-managed；per-integration ACL 走 <a href="#/integrations">API Tokens</a>。
-          </p>
+          <div class="admin-ui-page-kicker">FIRE TOKEN · ${ServerI18n.t("firetokenKicker")}</div>
+          <div class="admin-ui-page-title">${ServerI18n.t("firetokenPageTitle")}</div>
+          <p class="admin-ui-page-note">${ServerI18n.t("firetokenPageNote", { link: '<a href="#/integrations">API Tokens</a>' })}</p>
         </div>
 
         <div class="admin-ft-grid">
@@ -47,54 +44,54 @@
               <div class="admin-ft-token-head">
                 <span class="admin-ft-token-icon">⚿</span>
                 <div class="admin-ft-token-title">
-                  <div class="name">Fire Token · 共享密鑰</div>
-                  <div class="meta">extension 走 /fire 通道用 · admin lane ceiling 200/min</div>
+                  <div class="name">Fire Token · ${ServerI18n.t("firetokenSharedSecretLabel")}</div>
+                  <div class="meta">${ServerI18n.t("firetokenCardMeta")} · admin lane ceiling 200/min</div>
                 </div>
-                <span class="admin-ft-status" data-ft-status>● 載入中</span>
+                <span class="admin-ft-status" data-ft-status>${ServerI18n.t("firetokenStatusLoading")}</span>
               </div>
 
               <div class="admin-ft-token-display">
-                <code class="admin-ft-token-code" data-ft-token-display>未設定</code>
-                <button type="button" class="admin-ui-action admin-ft-action" data-ft-action="copy" disabled>📋 複製</button>
-                <button type="button" class="admin-ui-action is-warn admin-ft-action" data-ft-action="regen">↻ 重新產生</button>
-                <button type="button" class="admin-ui-action is-danger admin-ft-action" data-ft-action="revoke" disabled>撤銷</button>
+                <code class="admin-ft-token-code" data-ft-token-display>${ServerI18n.t("firetokenTokenUnsetPlaceholder")}</code>
+                <button type="button" class="admin-ui-action admin-ft-action" data-ft-action="copy" disabled>${ServerI18n.t("firetokenCopyBtn")}</button>
+                <button type="button" class="admin-ui-action is-warn admin-ft-action" data-ft-action="regen">${ServerI18n.t("firetokenRegenBtn")}</button>
+                <button type="button" class="admin-ui-action is-danger admin-ft-action" data-ft-action="revoke" disabled>${ServerI18n.t("firetokenRevokeBtn")}</button>
               </div>
 
               <div class="admin-ft-token-stats">
-                <div class="kv"><span class="k">建立時間</span><span class="v" data-ft-stat="created">—</span></div>
-                <div class="kv"><span class="k">上次旋轉</span><span class="v" data-ft-stat="rotated">—</span></div>
-                <div class="kv"><span class="k">近 24h 請求</span><span class="v is-good" data-ft-stat="hits">—</span></div>
-                <div class="kv"><span class="k">峰值 / hr</span><span class="v is-cyan" data-ft-stat="peak">—</span></div>
+                <div class="kv"><span class="k">${ServerI18n.t("firetokenStatCreated")}</span><span class="v" data-ft-stat="created">—</span></div>
+                <div class="kv"><span class="k">${ServerI18n.t("firetokenStatRotated")}</span><span class="v" data-ft-stat="rotated">—</span></div>
+                <div class="kv"><span class="k">${ServerI18n.t("firetokenStatHits")}</span><span class="v is-good" data-ft-stat="hits">—</span></div>
+                <div class="kv"><span class="k">${ServerI18n.t("firetokenStatPeak")}</span><span class="v is-cyan" data-ft-stat="peak">—</span></div>
               </div>
             </section>
 
             <!-- 24h hourly chart -->
             <section class="admin-ft-card">
               <div class="admin-ft-card-head">
-                <span class="admin-v3-card-kicker">近 24 小時 · 每小時請求數</span>
-                <span class="admin-ft-meta" data-ft-peak-meta>峰值 — / hr</span>
+                <span class="admin-v3-card-kicker">${ServerI18n.t("firetokenChartKicker")}</span>
+                <span class="admin-ft-meta" data-ft-peak-meta>${ServerI18n.t("firetokenPeakPlaceholder")}</span>
               </div>
               <div class="admin-ft-chart" id="adminFtChart24h">
-                <div class="admin-ft-chart-empty">載入中…</div>
+                <div class="admin-ft-chart-empty">${ServerI18n.t("firetokenChartLoading")}</div>
               </div>
             </section>
 
             <!-- Audit log -->
             <section class="admin-ft-card">
               <div class="admin-ft-card-head">
-                <span class="admin-v3-card-kicker">Token 事件 · 旋轉 / 撤銷 / 啟用</span>
-                <span class="admin-ft-meta">in-memory · 重啟清空</span>
+                <span class="admin-v3-card-kicker">${ServerI18n.t("firetokenAuditKicker")}</span>
+                <span class="admin-ft-meta">in-memory · ${ServerI18n.t("firetokenAuditMeta")}</span>
               </div>
               <div class="admin-ft-audit" id="adminFtAudit">
-                <div class="admin-ft-audit-empty">尚無事件</div>
+                <div class="admin-ft-audit-empty">${ServerI18n.t("firetokenNoEvents")}</div>
               </div>
             </section>
 
             <!-- curl example -->
             <section class="admin-ft-card admin-ft-curl-card">
               <div class="admin-ft-card-head">
-                <span class="admin-v3-card-kicker">CURL · 從 extension 發送</span>
-                <span class="admin-ft-meta">X-Fire-Source 用於 catalog 狀態燈</span>
+                <span class="admin-v3-card-kicker">CURL · ${ServerI18n.t("firetokenCurlKicker")}</span>
+                <span class="admin-ft-meta">${ServerI18n.t("firetokenCurlMeta")}</span>
               </div>
               <pre class="admin-ft-curl" id="adminFtCurl"></pre>
             </section>
@@ -104,23 +101,23 @@
           <aside class="admin-ft-rail">
             <section class="admin-ft-card">
               <div class="admin-ft-card-head">
-                <span class="admin-v3-card-kicker">近 1h 來源 IP</span>
+                <span class="admin-v3-card-kicker">${ServerI18n.t("firetokenIpKicker")}</span>
                 <span class="admin-ft-meta" data-ft-ip-count>—</span>
               </div>
               <div class="admin-ft-ip-list" id="adminFtIps">
-                <div class="admin-ft-audit-empty">尚無流量</div>
+                <div class="admin-ft-audit-empty">${ServerI18n.t("firetokenNoTraffic")}</div>
               </div>
             </section>
 
             <section class="admin-ft-card admin-ft-rotation-card">
               <div class="admin-ft-card-head">
-                <span class="admin-v3-card-kicker">輪換建議</span>
+                <span class="admin-v3-card-kicker">${ServerI18n.t("firetokenRotationKicker")}</span>
               </div>
               <div class="admin-ft-rotation-body">
                 <ul>
-                  <li>建議 90 天內輪換一次。</li>
-                  <li>輪換前先在 extension popup 中更新新 token，再點「重新產生」。</li>
-                  <li>撤銷會即時停用所有 extension。</li>
+                  <li>${ServerI18n.t("firetokenRotationTip1")}</li>
+                  <li>${ServerI18n.t("firetokenRotationTip2")}</li>
+                  <li>${ServerI18n.t("firetokenRotationTip3")}</li>
                 </ul>
               </div>
             </section>
@@ -173,11 +170,11 @@
   async function _regenerate() {
     const ok = await window.HudConfirm?.open({
       icon: "⟳",
-      title: "重新產生 Fire Token",
+      title: ServerI18n.t("firetokenRegenModalTitle"),
       subtitle: "ROTATE · EXISTING EXTENSIONS STOP WORKING IMMEDIATELY",
       severity: "warn",
-      body: "目前所有使用舊 Token 的 extension 會立刻失去存取權，需要重新設定新的 Token。",
-      confirmLabel: "產生新 Token",
+      body: ServerI18n.t("firetokenRegenModalBody"),
+      confirmLabel: ServerI18n.t("firetokenRegenModalConfirm"),
     });
     if (!ok) return;
     try {
@@ -194,21 +191,21 @@
       _state.plainToken = data.token;
       _renderToken();
       _copyToClipboard(data.token);
-      window.showToast && window.showToast("Token 已產生 · 已複製到剪貼簿", true);
+      window.showToast && window.showToast(ServerI18n.t("firetokenToastGenerated"), true);
       _fetchAudit();
     } catch (e) {
-      window.showToast && window.showToast("Token 產生失敗", false);
+      window.showToast && window.showToast(ServerI18n.t("firetokenToastGenerateFailed"), false);
     }
   }
 
   async function _revoke() {
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
-      title: "撤銷 Fire Token",
+      title: ServerI18n.t("firetokenRevokeModalTitle"),
       subtitle: "REVOKE · ALL EXTENSIONS STOP WORKING",
       severity: "danger",
-      body: "所有 extension 會立即停止運作，直到你產生新的 Token 並重新設定它們。",
-      confirmLabel: "撤銷",
+      body: ServerI18n.t("firetokenRevokeModalBody"),
+      confirmLabel: ServerI18n.t("firetokenRevokeBtn"),
     });
     if (!ok) return;
     try {
@@ -217,10 +214,10 @@
       _state.token = await r.json();
       _state.plainToken = null;
       _renderToken();
-      window.showToast && window.showToast("Token 已撤銷", true);
+      window.showToast && window.showToast(ServerI18n.t("firetokenToastRevoked"), true);
       _fetchAudit();
     } catch (e) {
-      window.showToast && window.showToast("撤銷失敗", false);
+      window.showToast && window.showToast(ServerI18n.t("firetokenToastRevokeFailed"), false);
     }
   }
 
@@ -245,10 +242,10 @@
   function _fmtAgo(ts) {
     if (!ts) return "—";
     const diff = Date.now() / 1000 - ts;
-    if (diff < 60) return "剛剛";
-    if (diff < 3600) return Math.floor(diff / 60) + " 分鐘前";
-    if (diff < 86400) return Math.floor(diff / 3600) + " 小時前";
-    return Math.floor(diff / 86400) + " 天前";
+    if (diff < 60) return ServerI18n.t("firetokenJustNow");
+    if (diff < 3600) return ServerI18n.t("firetokenMinutesAgo", { n: Math.floor(diff / 60) });
+    if (diff < 86400) return ServerI18n.t("firetokenHoursAgo", { n: Math.floor(diff / 3600) });
+    return ServerI18n.t("firetokenDaysAgo", { n: Math.floor(diff / 86400) });
   }
 
   function _fmtTime(ts) {
@@ -278,24 +275,24 @@
       display.textContent = (t.prefix || "") + " ••••••••••••••••••••";
       display.classList.remove("is-plain");
     } else {
-      display.textContent = "未設定 — 點「重新產生」建立";
+      display.textContent = ServerI18n.t("firetokenNotSetHint");
       display.classList.remove("is-plain");
     }
     if (status) {
       if (t && t.enabled && t.has_token) {
-        status.textContent = "● 啟用 · 健康";
+        status.textContent = ServerI18n.t("firetokenStatusHealthy");
         status.className = "admin-ft-status is-good";
       } else if (t && t.has_token) {
-        status.textContent = "○ 已停用";
+        status.textContent = ServerI18n.t("firetokenStatusDisabled");
         status.className = "admin-ft-status is-warn";
       } else {
-        status.textContent = "○ 未設定";
+        status.textContent = ServerI18n.t("firetokenStatusUnset");
         status.className = "admin-ft-status is-muted";
       }
     }
     if (copyBtn) copyBtn.disabled = !_state.plainToken;
     if (revokeBtn) revokeBtn.disabled = !(t && t.has_token);
-    if (regenBtn) regenBtn.textContent = (t && t.has_token) ? "↻ 重新產生" : "產生";
+    if (regenBtn) regenBtn.textContent = (t && t.has_token) ? ServerI18n.t("firetokenRegenBtn") : ServerI18n.t("firetokenGenerateBtn");
 
     if (created) created.textContent = t ? _fmtTime(t.created_at) : "—";
     if (rotated) rotated.textContent = t ? _fmtAgo(t.rotated_at) : "—";
@@ -309,7 +306,7 @@
   -H 'Content-Type: application/json' \\
   -H 'X-Fire-Source: slido' \\
   -H 'X-Fire-Token: ${tokenSample}' \\
-  -d '{"text":"哈囉 from extension","color":"#7dd3fc","size":48}'`;
+  -d '{"text":"${ServerI18n.t("firetokenCurlSampleText")}","color":"#7dd3fc","size":48}'`;
     }
   }
 
@@ -322,7 +319,7 @@
     const peakMeta = document.querySelector("[data-ft-peak-meta]");
     if (hits) hits.textContent = total.toLocaleString();
     if (peakEl) peakEl.textContent = peak.toLocaleString();
-    if (peakMeta) peakMeta.textContent = `峰值 ${peak.toLocaleString()} / hr · 共 24 小時`;
+    if (peakMeta) peakMeta.textContent = ServerI18n.t("firetokenPeakMeta", { peak: peak.toLocaleString() });
   }
 
   function _renderChart() {
@@ -330,7 +327,7 @@
     if (!wrap) return;
     const arr = _state.usage24h.map((v) => Number(v) || 0);
     if (!arr.length) {
-      wrap.innerHTML = `<div class="admin-ft-chart-empty">尚無數據（伺服器啟動 24h 內）</div>`;
+      wrap.innerHTML = `<div class="admin-ft-chart-empty">${ServerI18n.t("firetokenNoChartData")}</div>`;
       return;
     }
     const peak = Math.max(...arr);
@@ -356,7 +353,7 @@
     const ips = _state.ips || [];
     if (meta) meta.textContent = ips.length ? `${ips.length} IP` : "—";
     if (!ips.length) {
-      wrap.innerHTML = `<div class="admin-ft-audit-empty">尚無流量</div>`;
+      wrap.innerHTML = `<div class="admin-ft-audit-empty">${ServerI18n.t("firetokenNoTraffic")}</div>`;
       return;
     }
     const top = ips[0]?.ip;
@@ -380,13 +377,13 @@
     if (!wrap) return;
     const events = _state.audit || [];
     if (!events.length) {
-      wrap.innerHTML = `<div class="admin-ft-audit-empty">尚無事件</div>`;
+      wrap.innerHTML = `<div class="admin-ft-audit-empty">${ServerI18n.t("firetokenNoEvents")}</div>`;
       return;
     }
     const KIND_LABEL = {
-      rotated: "已旋轉",
-      revoked: "已撤銷",
-      toggled: "切換啟用",
+      rotated: ServerI18n.t("firetokenKindRotated"),
+      revoked: ServerI18n.t("firetokenKindRevoked"),
+      toggled: ServerI18n.t("firetokenKindToggled"),
     };
     const KIND_CLASS = {
       rotated: "is-rotated",
@@ -427,7 +424,7 @@
         else if (action === "copy") {
           if (_state.plainToken) {
             _copyToClipboard(_state.plainToken);
-            window.showToast && window.showToast("已複製到剪貼簿", true);
+            window.showToast && window.showToast(ServerI18n.t("firetokenToastCopied"), true);
           }
         }
       });

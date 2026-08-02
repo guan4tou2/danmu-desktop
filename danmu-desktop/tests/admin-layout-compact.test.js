@@ -75,7 +75,9 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   expect(viewerThemeSrc).toContain('data-vt-jump="display"');
   // D-5 (2026-07-28): vt-scope callout 改為標準 admin-ui-page-head。
   expect(viewerThemeSrc).toContain('admin-ui-page-note');
-  expect(viewerThemeSrc).toContain("Desktop 排版與連線在「Desktop 控制」");
+  // D-4：note 文案走 viewerThemePageNote key，原文改釘 zh locale
+  expect(viewerThemeSrc).toContain('t("viewerThemePageNote")');
+  expect(zhLocaleSrc).toContain("Desktop 排版與連線在「Desktop 控制」");
   // 2026-07-29：淺色主題修到可用後重新開啟切換鈕（產品決策：深淺兩個都要）。
   // 這條契約現在釘的是「開著」+ 關掉時的清理路徑仍在（旗標是唯一開關）。
   expect(themeSwitcherSrc).toContain("SHOW_TOPBAR_TOGGLE = true");
