@@ -42,7 +42,10 @@
     // Bucket-list reframe (design v4 brief 0518-3, 2026-05-18). Each bucket
     // is keyed by its label ('今天', '昨天', '本週', '更早'). Default-closed
     // for older buckets; today + yesterday open by default.
-    bucketsCollapsed: { "本週": true, "更早": true },
+    // D-4 (2026-08-03): keyed by the stable `range` id (THIS WEEK / EARLIER),
+    // not the translated `label` — label text now depends on ServerI18n's
+    // active language, so it can't double as a lookup key across locales.
+    bucketsCollapsed: { "THIS WEEK": true, "EARLIER": true },
   };
 
   // ── helpers ──────────────────────────────────────────────────────────────
@@ -105,11 +108,14 @@
     var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     var yesterdayStart = new Date(todayStart.getTime() - 86400 * 1000);
     var weekStart = new Date(todayStart.getTime() - 7 * 86400 * 1000);
+    // D-4: label built here (function-internal, runs post-init — safe to
+    // call t() directly, unlike a top-level constant). range stays the
+    // language-neutral lookup id (see bucketsCollapsed + _fmtDateRange).
     var buckets = [
-      { label: "今天",   range: "TODAY",     sessions: [], from: todayStart },
-      { label: "昨天",   range: "YESTERDAY", sessions: [], from: yesterdayStart, to: todayStart },
-      { label: "本週",   range: "THIS WEEK", sessions: [], from: weekStart, to: yesterdayStart },
-      { label: "更早",   range: "EARLIER",   sessions: [], to: weekStart },
+      { label: ServerI18n.t("sessionsBucketToday"),     range: "TODAY",     sessions: [], from: todayStart },
+      { label: ServerI18n.t("sessionsBucketYesterday"), range: "YESTERDAY", sessions: [], from: yesterdayStart, to: todayStart },
+      { label: ServerI18n.t("sessionsBucketThisWeek"),  range: "THIS WEEK", sessions: [], from: weekStart, to: yesterdayStart },
+      { label: ServerI18n.t("sessionsBucketEarlier"),   range: "EARLIER",   sessions: [], to: weekStart },
     ];
     sessions.forEach(function (s) {
       var ts = s.started_at ? new Date(s.started_at) : null;
@@ -129,14 +135,16 @@
   }
 
   function _fmtDateRange(b) {
-    if (b.label === "今天") {
+    // D-4: compare against the stable range id, not the (now translated)
+    // label — label text no longer equals "今天"/"昨天"/"本週" outside zh.
+    if (b.range === "TODAY") {
       return _fmtYMD(new Date());
     }
-    if (b.label === "昨天") {
+    if (b.range === "YESTERDAY") {
       var y = new Date(Date.now() - 86400 * 1000);
       return _fmtYMD(y);
     }
-    if (b.label === "本週") {
+    if (b.range === "THIS WEEK") {
       var s = new Date(Date.now() - 7 * 86400 * 1000);
       var e = new Date(Date.now() - 2 * 86400 * 1000);
       return _fmtMD(s) + " – " + _fmtMD(e);
@@ -179,17 +187,21 @@
       //    time window, not "broadcast show". 內容仍是訊息 / 投票 / 統計 的
       //    時間切片 — overlay 的開關只是切片的起點 trigger，不是切片本身。)
       + '<div class="admin-ui-page-head">'
-      +   '<div class="admin-ui-page-kicker">SESSIONS · 資料切片 · TIME WINDOWS</div>'
-      +   '<div class="admin-ui-page-title">場次</div>'
-      +   '<p class="admin-ui-page-note">場次 = 一段時間窗口（包含訊息 / 投票 / 統計）。Desktop 開啟為 trigger，但場次本身的角色是「資料切片」— 切完即歸檔到 history。點選查看詳細統計，或進入完整分析頁面。</p>'
+      // D-4: kicker EN bookends stay literal (4771242 convention); mid
+      // segment reuses broadcastDataSliceLabel — verbatim same zh text.
+      +   '<div class="admin-ui-page-kicker">SESSIONS · ' + ServerI18n.t("broadcastDataSliceLabel") + ' · TIME WINDOWS</div>'
+      +   '<div class="admin-ui-page-title">' + ServerI18n.t("adminRouteTitle_sessions") + '</div>'
+      +   '<p class="admin-ui-page-note">' + ServerI18n.t("sessionsPageNote") + '</p>'
       + '</div>'
 
       // ── KPI strip (full width, 4 tiles)
+      // en sub-labels (SESSIONS/VIEWERS/MESSAGES/LATEST) are all-caps EN
+      // tile markers — stay literal per D-4 convention, not translated.
       + '<div class="admin-kpi-strip" style="grid-template-columns:repeat(4,1fr)" data-sessions-kpi>'
-      +   _buildKpiTile("場次數量", "SESSIONS", "—", "data-kpi-sessions")
-      +   _buildKpiTile("觀眾總人次", "VIEWERS", "—", "data-kpi-viewers")
-      +   _buildKpiTile("訊息總數", "MESSAGES", "—", "data-kpi-messages")
-      +   _buildKpiTile("最近場次", "LATEST", "—", "data-kpi-latest")
+      +   _buildKpiTile(ServerI18n.t("sessionsKpiSessionCount"), "SESSIONS", "—", "data-kpi-sessions")
+      +   _buildKpiTile(ServerI18n.t("sessionsKpiTotalViewers"), "VIEWERS", "—", "data-kpi-viewers")
+      +   _buildKpiTile(ServerI18n.t("sessionsKpiTotalMessages"), "MESSAGES", "—", "data-kpi-messages")
+      +   _buildKpiTile(ServerI18n.t("sessionsKpiLatestSession"), "LATEST", "—", "data-kpi-latest")
       + '</div>'
 
       // ── two-column body
@@ -199,9 +211,9 @@
       + '<div class="hud-page-stack" style="gap:12px">'
 
       +   '<div class="admin-ui-tabbar" style="display:flex;gap:0">'
-      +     '<button type="button" class="admin-ui-tab is-active" data-sessions-filter="all">全部</button>'
-      +     '<button type="button" class="admin-ui-tab" data-sessions-filter="live">進行中</button>'
-      +     '<button type="button" class="admin-ui-tab" data-sessions-filter="ended">已結束</button>'
+      +     '<button type="button" class="admin-ui-tab is-active" data-sessions-filter="all">' + ServerI18n.t("sessionsTabAll") + '</button>'
+      +     '<button type="button" class="admin-ui-tab" data-sessions-filter="live">' + ServerI18n.t("sessionsTabLive") + '</button>'
+      +     '<button type="button" class="admin-ui-tab" data-sessions-filter="ended">' + ServerI18n.t("sessionsTabEnded") + '</button>'
       +   '</div>'
 
       // Bucket list container — replaces the legacy 8-col table
@@ -215,9 +227,9 @@
 
       // RIGHT: quick preview panel
       + '<aside class="admin-ui-card hud-page-stack" style="gap:12px;position:sticky;top:16px">'
-      +   '<div class="admin-ui-monolabel">快速預覽</div>'
+      +   '<div class="admin-ui-monolabel">' + ServerI18n.t("sessionsPreviewLabel") + '</div>'
       +   '<div id="admin-sessions-preview">'
-      +     '<p style="font-size:13px;color:var(--admin-text-dim);margin:0">點選場次查看預覽</p>'
+      +     '<p style="font-size:13px;color:var(--admin-text-dim);margin:0">' + ServerI18n.t("sessionsPreviewPlaceholder") + '</p>'
       +   '</div>'
       + '</aside>'
 
@@ -243,13 +255,13 @@
       + 'color:var(--admin-text-dim);text-transform:uppercase;'
       + 'border-bottom:1px solid var(--admin-line)">'
       + '<span></span>'
-      + '<span>場次</span>'
-      + '<span>開始時間</span>'
-      + '<span>時長</span>'
-      + '<span>訊息</span>'
-      + '<span>觀眾</span>'
-      + '<span>活動</span>'
-      + '<span style="text-align:right">操作</span>'
+      + '<span>' + ServerI18n.t("sessionsColSession") + '</span>'
+      + '<span>' + ServerI18n.t("sessionsLabelStarted") + '</span>'
+      + '<span>' + ServerI18n.t("sessionsLabelDuration") + '</span>'
+      + '<span>' + ServerI18n.t("sessionsColMessages") + '</span>'
+      + '<span>' + ServerI18n.t("sessionsColViewers") + '</span>'
+      + '<span>' + ServerI18n.t("sessionsLabelActivity") + '</span>'
+      + '<span style="text-align:right">' + ServerI18n.t("sessionsColActions") + '</span>'
       + '</div>';
   }
 
@@ -284,7 +296,7 @@
         bodyEl.innerHTML = "";
         bodyEl.appendChild(window.AdminSkeletons.listRows({ rows: 5 }));
       } else {
-        bodyEl.innerHTML = '<div style="padding:24px;text-align:center;color:var(--admin-text-dim);font-size:13px">載入中…</div>';
+        bodyEl.innerHTML = '<div style="padding:24px;text-align:center;color:var(--admin-text-dim);font-size:13px">' + ServerI18n.t("sessionsLoadingText") + '</div>';
       }
       return;
     }
@@ -302,13 +314,16 @@
     // ── Bucket-grouped view (design v4 brief 0518-3, Option C) ──────
     var buckets = _groupIntoBuckets(list);
     var html = buckets.map(function (b) {
-      var collapsed = !!_state.bucketsCollapsed[b.label];
+      // D-4: keyed by b.range (stable id), not b.label — see bucketsCollapsed.
+      var collapsed = !!_state.bucketsCollapsed[b.range];
       var hasSessions = b.sessions.length > 0;
       // Empty buckets still render header (zero state) so users see structure.
       var dateRange = _fmtDateRange(b);
 
       var header = ''
-        + '<div class="admin-sessions-bucket-head" data-sessions-bucket="' + _escHtml(b.label) + '" role="button" tabindex="0">'
+        // D-4: dataset key is the stable range id (see bucketsCollapsed) —
+        // the visible label span still shows the translated b.label.
+        + '<div class="admin-sessions-bucket-head" data-sessions-bucket="' + _escHtml(b.range) + '" role="button" tabindex="0">'
         +   '<span class="admin-sessions-bucket-chev" aria-hidden="true">' + (collapsed ? '▸' : '▾') + '</span>'
         +   '<span class="admin-sessions-bucket-label">' + _escHtml(b.label) + '</span>'
         +   '<span class="admin-sessions-bucket-en">' + _escHtml(b.range) + '</span>'
@@ -333,7 +348,7 @@
           var viewers = Number(s.viewer_count) || 0;
           var spark   = buildSparkline(s.sparkline, 18);
           var isSelected = _state.selectedId === s.id;
-          var name    = _escHtml(s.name || ("場次 " + idShort));
+          var name    = _escHtml(s.name || ServerI18n.t("sessionsFallbackName", { id: idShort }));
           return ''
             + '<div class="admin-sessions-bucket-row' + (isSelected ? ' is-selected' : '') + '"'
             +      ' data-session-id="' + sid + '" role="button" tabindex="0">'
@@ -362,7 +377,7 @@
             + '</div>';
         }).join("");
       } else if (!collapsed && !hasSessions) {
-        rows = '<div class="admin-sessions-bucket-empty">此期間沒有場次</div>';
+        rows = '<div class="admin-sessions-bucket-empty">' + ServerI18n.t("sessionsBucketEmptyPeriod") + '</div>';
       }
 
       return '<div class="admin-sessions-bucket' + (collapsed ? ' is-collapsed' : '') + '">' + header + rows + '</div>';
@@ -377,7 +392,7 @@
 
     var s = _selectedSession();
     if (!s) {
-      previewEl.innerHTML = '<p style="font-size:13px;color:var(--admin-text-dim);margin:0">點選場次查看預覽</p>';
+      previewEl.innerHTML = '<p style="font-size:13px;color:var(--admin-text-dim);margin:0">' + ServerI18n.t("sessionsPreviewPlaceholder") + '</p>';
       return;
     }
 
@@ -395,13 +410,13 @@
       +   idFull
       + '</div>'
       + (live ? '<span class="admin-ui-chip is-active admin-sessions-live-badge" style="align-self:flex-start">● LIVE</span>' : '')
-      + _previewKv("開始時間", ts)
-      + _previewKv("時長", dur)
-      + _previewKv("訊息數", msgs.toLocaleString())
-      + _previewKv("觀眾人次", views.toLocaleString())
+      + _previewKv(ServerI18n.t("sessionsLabelStarted"), ts)
+      + _previewKv(ServerI18n.t("sessionsLabelDuration"), dur)
+      + _previewKv(ServerI18n.t("sessionsPreviewMsgCount"), msgs.toLocaleString())
+      + _previewKv(ServerI18n.t("sessionsPreviewViewerCount"), views.toLocaleString())
       + '<div>'
       +   '<div style="font-family:var(--font-mono);font-size:10px;color:var(--admin-text-dim);'
-      +               'text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">活動</div>'
+      +               'text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">' + ServerI18n.t("sessionsLabelActivity") + '</div>'
       +   '<div style="display:flex;align-items:flex-end;height:28px;gap:1px">' + spark + '</div>'
       + '</div>'
       + '<button type="button"'
@@ -411,7 +426,7 @@
       +           'background:transparent;border:1px solid var(--color-primary);'
       +           'color: var(--color-ink-accent);border-radius:4px;'
       +           'font-family:var(--font-mono);font-size:11px;letter-spacing:0.5px;'
-      +           'cursor:pointer">詳細 →</button>'
+      +           'cursor:pointer">' + ServerI18n.t("sessionsDetailArrowBtn") + '</button>'
       + '</div>';
   }
 
@@ -495,7 +510,7 @@
       console.error("[admin-sessions] fetch error:", e);
       _state.sessions = [];
       _state.total = 0;
-      window.showToast && window.showToast("場次資料載入失敗：" + (e.message || ""), false);
+      window.showToast && window.showToast(ServerI18n.t("sessionsToastLoadFailed", { msg: e.message || "" }), false);
     } finally {
       _state.loading = false;
       _renderAll();

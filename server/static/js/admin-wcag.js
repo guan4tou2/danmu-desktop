@@ -90,15 +90,16 @@
 
   // ── state ────────────────────────────────────────────────────────
 
+  // D-4：name 存 key，渲染時才 t()（模組 parse 時 ServerI18n 尚未 init）。
   const PAIRS = [
-    { name: "彈幕白字 / 黑底",     fg: "#FFFFFF", bg: "#000000" },
-    { name: "彈幕青色 / 黑底",     fg: "#38BDF8", bg: "#000000" },
-    { name: "彈幕黃色 / 黑底",     fg: "#FBBF24", bg: "#000000" },
-    { name: "彈幕紅色 / 黑底",     fg: "#F87171", bg: "#000000" },
-    { name: "系統紅色 / 白底",     fg: "#DC2626", bg: "#FFFFFF" },
-    { name: "彈幕綠色 / 投影底",   fg: "#86EFAC", bg: "#0F172A" },
-    { name: "系統訊息 / 面板",     fg: "#94A3B8", bg: "#1E293B" },
-    { name: "輔助灰文字 / 卡片",   fg: "#64748B", bg: "#1E293B" },
+    { nameKey: "wcagPairWhiteBlack",        fg: "#FFFFFF", bg: "#000000" },
+    { nameKey: "wcagPairCyanBlack",         fg: "#38BDF8", bg: "#000000" },
+    { nameKey: "wcagPairYellowBlack",       fg: "#FBBF24", bg: "#000000" },
+    { nameKey: "wcagPairRedBlack",          fg: "#F87171", bg: "#000000" },
+    { nameKey: "wcagPairSystemRedWhite",    fg: "#DC2626", bg: "#FFFFFF" },
+    { nameKey: "wcagPairGreenProjection",   fg: "#86EFAC", bg: "#0F172A" },
+    { nameKey: "wcagPairSystemMessagePanel", fg: "#94A3B8", bg: "#1E293B" },
+    { nameKey: "wcagPairAuxGrayCard",       fg: "#64748B", bg: "#1E293B" },
   ];
 
   let _tester = { fg: "#FB7185", bg: "#000000" };
@@ -109,10 +110,12 @@
 
   // level → { pill modifier, label }. Colour lives on the pill BORDER only;
   // the text stays on a neutral token so it clears AA in both themes.
+  // D-4：僅 AA-large 含中文（"大字"）——存 labelKey 延後 t()；其餘三個純拉丁
+  // 符號＋WCAG 術語，語言中立，維持字面 label。
   const LEVEL_UI = {
     AAA:         { mod: "is-pass",  label: "✓ AAA" },
     AA:          { mod: "is-pass",  label: "✓ AA" },
-    "AA-large":  { mod: "is-large", label: "△ AA 大字" },
+    "AA-large":  { mod: "is-large", labelKey: "wcagPillLevelAALarge" },
     fail:        { mod: "is-fail",  label: "✗ FAIL" },
   };
 
@@ -127,36 +130,36 @@
       <div id="${PAGE_ID}" class="admin-wcag-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">A11Y · WCAG 2.1 CONTRAST CHECKER</div>
-          <div class="admin-ui-page-title">無障礙對比度檢查</div>
-          <p class="admin-ui-page-note">驗證彈幕顏色在各種背景下符合 WCAG AA / AAA 標準。觀眾自選顏色時系統會自動拒絕未過 AA 的組合。</p>
+          <div class="admin-ui-page-title">${ServerI18n.t("wcagPageTitle")}</div>
+          <p class="admin-ui-page-note">${ServerI18n.t("wcagPageNote")}</p>
         </div>
 
         <div class="hud-page-grid-2-wide">
           <!-- Left: pairs table -->
           <div class="hud-page-col-gap">
             <div class="hud-stats-strip">
-              ${_renderStatTile("PASS AA+", passCount, "通過 AA 以上")}
-              ${_renderStatTile("BELOW AA", failCount, "未達 AA")}
-              ${_renderStatTile("PAIRS", PAIRS.length, "檢查的顏色對")}
-              ${_renderStatTile("PASS RATE", rate + "%", "整體通過率")}
-              <div class="admin-wcag-meter" role="img" aria-label="通過率 ${rate}%">
+              ${_renderStatTile("PASS AA+", passCount, ServerI18n.t("wcagStatPassLabel"))}
+              ${_renderStatTile("BELOW AA", failCount, ServerI18n.t("wcagStatFailLabel"))}
+              ${_renderStatTile("PAIRS", PAIRS.length, ServerI18n.t("wcagStatPairsLabel"))}
+              ${_renderStatTile("PASS RATE", rate + "%", ServerI18n.t("wcagStatRateLabel"))}
+              <div class="admin-wcag-meter" role="img" aria-label="${ServerI18n.t("wcagMeterAriaLabel", { rate: rate })}">
                 <div class="admin-wcag-meter-fill" style="width:${rate}%"></div>
               </div>
             </div>
 
             <div class="hud-table" data-wcag-pairs>
               <div class="hud-table-head" style="grid-template-columns:${PAIR_COLS}">
-                <span>當前主題顏色</span>
-                <span>樣本</span>
-                <span class="admin-wcag-col-num">對比</span>
-                <span>等級</span>
+                <span>${ServerI18n.t("wcagColHeadTheme")}</span>
+                <span>${ServerI18n.t("wcagColHeadSample")}</span>
+                <span class="admin-wcag-col-num">${ServerI18n.t("wcagColHeadContrast")}</span>
+                <span>${ServerI18n.t("wcagColHeadLevel")}</span>
               </div>
               ${PAIRS.map(function (p, i) { return _renderPairRow(p, i); }).join("")}
             </div>
 
             <div class="admin-wcag-guardrail">
               <span class="admin-ui-monolabel">BUILT-IN GUARDRAIL</span>
-              觀眾自選顏色時,系統會自動拒絕未過 AA 的組合並提示替代色。
+              ${ServerI18n.t("wcagGuardrailNote")}
             </div>
           </div>
 
@@ -181,20 +184,26 @@
     const ratio  = _contrast(p.fg, p.bg);
     const lvl    = _level(ratio);
     const ui     = LEVEL_UI[lvl];
+    const name   = ServerI18n.t(p.nameKey);
+    const uiLabel = ui.labelKey ? ServerI18n.t(ui.labelKey) : ui.label;
     const warn   = lvl === "fail"
-      ? "未過 AA · 建議調整前景亮度 +10~15%"
-      : (lvl === "AA-large" ? "僅大字通過 AA · 小字未過" : "");
+      ? ServerI18n.t("wcagWarnFail")
+      : (lvl === "AA-large" ? ServerI18n.t("wcagWarnLargeOnly") : "");
     return `
       <div class="hud-table-row admin-wcag-pair-row" style="grid-template-columns:${PAIR_COLS}"
         data-wcag-pair-idx="${i}" role="button" tabindex="0"
-        aria-label="${escapeHtml(p.name)} — 對比 ${ratio.toFixed(2)} 比 1,${escapeHtml(ui.label.slice(2))}。載入單對測試器">
-        <span class="admin-wcag-pair-name">${escapeHtml(p.name)}</span>
+        aria-label="${escapeHtml(ServerI18n.t("wcagPairAriaLabel", {
+          name: name,
+          ratio: ratio.toFixed(2),
+          level: uiLabel.slice(2),
+        }))}">
+        <span class="admin-wcag-pair-name">${escapeHtml(name)}</span>
         <span class="admin-wcag-swatch" data-wcag-specimen style="background:${escapeHtml(p.bg)}">
-          <span class="admin-wcag-swatch-aa" style="color:${escapeHtml(p.fg)}">Aa 彈幕</span>
+          <span class="admin-wcag-swatch-aa" style="color:${escapeHtml(p.fg)}">${ServerI18n.t("wcagSwatchSample")}</span>
           <span class="admin-wcag-swatch-hex" style="color:${escapeHtml(p.fg)}">${escapeHtml(p.fg)} / ${escapeHtml(p.bg)}</span>
         </span>
         <span class="admin-wcag-ratio">${ratio.toFixed(2)}<span class="unit">:1</span></span>
-        <span class="hud-pill admin-wcag-pill ${ui.mod}">${ui.label}</span>
+        <span class="hud-pill admin-wcag-pill ${ui.mod}">${uiLabel}</span>
         ${warn ? `<span class="admin-wcag-warn">⚠ ${warn}</span>` : ""}
       </div>`;
   }
@@ -203,21 +212,22 @@
     const ratio = _contrast(_tester.fg, _tester.bg);
     const lvl   = _level(ratio);
     const ui    = LEVEL_UI[lvl];
+    const uiLabel = ui.labelKey ? ServerI18n.t(ui.labelKey) : ui.label;
     const sugg  = _suggestions(_tester.fg, _tester.bg);
     return `
       <div class="admin-ui-section-head">
-        <span class="admin-ui-monolabel">單對測試器</span>
+        <span class="admin-ui-monolabel">${ServerI18n.t("wcagSinglePairTesterLabel")}</span>
       </div>
 
       <div class="admin-wcag-fields">
-        ${_renderField("FOREGROUND", "前景色", _tester.fg, "fg")}
-        ${_renderField("BACKGROUND", "背景色", _tester.bg, "bg")}
+        ${_renderField("FOREGROUND", ServerI18n.t("wcagForegroundLabel"), _tester.fg, "fg")}
+        ${_renderField("BACKGROUND", ServerI18n.t("wcagBackgroundLabel"), _tester.bg, "bg")}
       </div>
 
       <div class="admin-wcag-preview" data-wcag-specimen style="background:${escapeHtml(_tester.bg)}">
-        <div class="admin-wcag-preview-lg" style="color:${escapeHtml(_tester.fg)}">太精彩了!</div>
+        <div class="admin-wcag-preview-lg" style="color:${escapeHtml(_tester.fg)}">${ServerI18n.t("wcagPreviewLarge")}</div>
         <div class="admin-wcag-preview-md" style="color:${escapeHtml(_tester.fg)}">The quick brown fox jumps over</div>
-        <div class="admin-wcag-preview-sm" style="color:${escapeHtml(_tester.fg)}">9px sample text · 小字測試</div>
+        <div class="admin-wcag-preview-sm" style="color:${escapeHtml(_tester.fg)}">${ServerI18n.t("wcagPreviewSmall")}</div>
       </div>
 
       <div class="admin-wcag-result">
@@ -225,23 +235,23 @@
           <span class="hud-stat-tile-en">CONTRAST RATIO</span>
           <span class="hud-stat-tile-value">${ratio.toFixed(2)}<span class="admin-wcag-unit"> : 1</span></span>
         </div>
-        <span class="hud-pill admin-wcag-pill ${ui.mod}">${ui.label}</span>
+        <span class="hud-pill admin-wcag-pill ${ui.mod}">${uiLabel}</span>
       </div>
 
       <div class="admin-wcag-levels">
-        ${_renderLevel("AA · 一般文字 (≥4.5)",  ratio >= 4.5)}
-        ${_renderLevel("AA · 大字 (≥3.0)",       ratio >= 3)}
-        ${_renderLevel("AAA · 一般 (≥7.0)",      ratio >= 7)}
-        ${_renderLevel("AAA · 大字 (≥4.5)",      ratio >= 4.5)}
+        ${_renderLevel(ServerI18n.t("wcagCheckAANormal"), ratio >= 4.5)}
+        ${_renderLevel(ServerI18n.t("wcagCheckAALarge"), ratio >= 3)}
+        ${_renderLevel(ServerI18n.t("wcagCheckAAANormal"), ratio >= 7)}
+        ${_renderLevel(ServerI18n.t("wcagCheckAAALarge"), ratio >= 4.5)}
       </div>
 
       ${sugg.length ? `
         <div class="admin-wcag-sugg">
-          <div class="admin-ui-monolabel">建議前景色</div>
+          <div class="admin-ui-monolabel">${ServerI18n.t("wcagSuggForegroundLabel")}</div>
           <div class="admin-wcag-sugg-chips">
             ${sugg.map(function (s) {
               return `<button type="button" class="admin-wcag-sugg-chip" data-wcag-sugg="${escapeHtml(s.hex)}"
-                title="${s.ratio.toFixed(2)}:1 · 套用到測試器">
+                title="${escapeHtml(ServerI18n.t("wcagSuggApplyTitle", { ratio: s.ratio.toFixed(2) }))}">
                 <span class="admin-wcag-sugg-plate" data-wcag-specimen
                   style="background:${escapeHtml(_tester.bg)};color:${escapeHtml(s.hex)}">${escapeHtml(s.hex)}</span>
                 <span class="admin-wcag-sugg-ratio">${s.ratio.toFixed(1)}:1</span>

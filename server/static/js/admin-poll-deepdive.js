@@ -44,13 +44,13 @@
     return `
       <div id="${PAGE_ID}" class="admin-pdd-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker" data-pdd-kicker>POLL ANALYTICS · 深度分析</div>
-          <div class="admin-ui-page-title" data-pdd-title>投票深度分析</div>
-          <p class="admin-ui-page-note" data-pdd-note>選項分佈、票數佔比、誠信檢查。<a href="#/polls" class="admin-pdd-back">← 回投票列表</a></p>
+          <div class="admin-ui-page-kicker" data-pdd-kicker>POLL ANALYTICS · ${ServerI18n.t("pollDeepdiveKickerTail")}</div>
+          <div class="admin-ui-page-title" data-pdd-title>${ServerI18n.t("adminRouteTitle_poll-deepdive")}</div>
+          <p class="admin-ui-page-note" data-pdd-note>${ServerI18n.t("pollDeepdivePageNote")}<a href="#/polls" class="admin-pdd-back">${ServerI18n.t("pollDeepdiveBackToPollsLink")}</a></p>
         </div>
 
         <div class="admin-pdd-grid" data-pdd-grid>
-          <div class="admin-pdd-loading">載入投票資料中…</div>
+          <div class="admin-pdd-loading">${ServerI18n.t("pollDeepdiveLoadingText")}</div>
         </div>
       </div>`;
   }
@@ -59,14 +59,14 @@
   function _renderEmptyInto(grid) {
     grid.innerHTML = "";
     if (!window.AdminEmpty) {
-      grid.innerHTML = '<div class="admin-pdd-loading">目前沒有投票資料</div>';
+      grid.innerHTML = '<div class="admin-pdd-loading">' + ServerI18n.t("pollDeepdiveEmptyTitle") + '</div>';
       return;
     }
     const card = window.AdminEmpty.renderCustom({
       icon: "◌",
-      title: "目前沒有投票資料",
-      desc: "建立或啟動一個 poll 後，回到這頁就能看深度分析。",
-      actionLabel: "→ 前往投票管理",
+      title: ServerI18n.t("pollDeepdiveEmptyTitle"),
+      desc: ServerI18n.t("pollDeepdiveEmptyDesc"),
+      actionLabel: ServerI18n.t("pollDeepdiveEmptyActionLabel"),
       action: () => { location.hash = "#/polls"; },
     });
     card.classList.add("lg:col-span-2");
@@ -97,8 +97,8 @@
       return `
         <div class="admin-pdd-row">
           <div class="admin-pdd-row-head">
-            <span class="lbl">${escapeHtml(o.label || o.text || o.key || ("選項 " + (i + 1)))}</span>
-            <span class="votes">${votes} 票</span>
+            <span class="lbl">${escapeHtml(o.label || o.text || o.key || ServerI18n.t("pollDeepdiveOptionFallbackLabel", { n: i + 1 }))}</span>
+            <span class="votes">${ServerI18n.t("pollBuilderVoteCount", { n: votes })}</span>
             <span class="pct" style="color:${c};">${pct.toFixed(1)}%</span>
           </div>
           <div class="admin-pdd-row-bar">
@@ -152,8 +152,8 @@
       ? ((total / audience) * 100).toFixed(1) + "%"
       : "—";
     const participationSub = audience > 0
-      ? total + " / " + audience + " 觀眾"
-      : "需 audience snapshot";
+      ? ServerI18n.t("pollDeepdiveParticipationSub", { total: total, audience: audience })
+      : ServerI18n.t("pollDeepdiveParticipationUnknown");
 
     // 重複指紋 — count of rejected re-votes per question (BE adds it).
     // Falls back to 0 (lime) if BE hasn't shipped the field yet.
@@ -166,6 +166,11 @@
       return sum;
     })();
 
+    // D-4 i18n: doc link built here (fixed href/anchor text — the anchor
+    // itself isn't user-facing prose) and spliced into the translated
+    // paragraph below via {link}, same technique as notifExplainBody.
+    const gapsDocLink = '<a href="https://github.com/guan4tou2/danmu-desktop/blob/claude/design-v2-retrofit/docs/designs/design-v2-prototype-gaps-2026-04-27.md" target="_blank" rel="noopener noreferrer">prototype-gaps doc</a>';
+
     return `
       <div class="admin-pdd-main">
         <article class="admin-pdd-card admin-pdd-header">
@@ -175,30 +180,33 @@
           </div>
           <div class="admin-pdd-question">${escapeHtml(question)}</div>
           <div class="admin-pdd-kpis">
-            <div class="admin-pdd-kpi"><div class="k">總票數</div><div class="v" style="color: var(--color-ink-success)">${total}</div></div>
-            <div class="admin-pdd-kpi"><div class="k">參與率</div><div class="v" style="color: var(--color-ink-accent)">${participationVal}</div><div class="sub">${escapeHtml(participationSub)}</div></div>
-            <div class="admin-pdd-kpi"><div class="k">持續時間</div><div class="v">${escapeHtml(durationVal)}</div></div>
-            <div class="admin-pdd-kpi"><div class="k">重複指紋</div><div class="v" style="color:${duplicates > 0 ? "var(--hud-amber)" : "var(--hud-lime)"}">${duplicates}</div><div class="sub">已自動去重</div></div>
-            <div class="admin-pdd-kpi is-placeholder" title="需要 IP tracking（後續 BE 擴張）"><div class="k">作弊嘗試</div><div class="v">—</div><div class="sub">同 IP 連投（待 BE 擴張）</div></div>
+            <div class="admin-pdd-kpi"><div class="k">${ServerI18n.t("pollDeepdiveKpiTotalVotes")}</div><div class="v" style="color: var(--color-ink-success)">${total}</div></div>
+            <div class="admin-pdd-kpi"><div class="k">${ServerI18n.t("pollDeepdiveKpiParticipation")}</div><div class="v" style="color: var(--color-ink-accent)">${participationVal}</div><div class="sub">${escapeHtml(participationSub)}</div></div>
+            <div class="admin-pdd-kpi"><div class="k">${ServerI18n.t("pollDeepdiveKpiDuration")}</div><div class="v">${escapeHtml(durationVal)}</div></div>
+            <div class="admin-pdd-kpi"><div class="k">${ServerI18n.t("pollDeepdiveKpiDuplicates")}</div><div class="v" style="color:${duplicates > 0 ? "var(--hud-amber)" : "var(--hud-lime)"}">${duplicates}</div><div class="sub">${ServerI18n.t("pollDeepdiveKpiDuplicatesSub")}</div></div>
+            <div class="admin-pdd-kpi is-placeholder" title="${ServerI18n.t("pollDeepdiveKpiCheatTitle")}"><div class="k">${ServerI18n.t("pollDeepdiveKpiCheatAttempts")}</div><div class="v">—</div><div class="sub">${ServerI18n.t("pollDeepdiveKpiCheatSub")}</div></div>
           </div>
         </article>
 
         <article class="admin-pdd-card">
+          <!-- D-4 i18n: EN·中文 bilingual monolabel block header (design idiom
+               shared by DISTRIBUTION/TIMELINE/GEO/INTEGRITY below) — left
+               untouched, same call as admin-notifications.js. -->
           <div class="admin-ui-monolabel">選項分佈 · DISTRIBUTION</div>
           <div class="admin-pdd-rows">
-            ${options.length ? optionRows : '<div class="admin-pdd-empty-rows">這個 poll 還沒有選項。</div>'}
+            ${options.length ? optionRows : '<div class="admin-pdd-empty-rows">' + ServerI18n.t("pollDeepdiveNoOptions") + '</div>'}
           </div>
 
           <div class="admin-pdd-sentiment-row">
             <div class="admin-pdd-sentiment-tile">
               <div class="k">SENTIMENT INDEX</div>
               <div class="v" style="color:${sentimentColor};">${sentimentVal}</div>
-              <div class="sub">正面 - 負面 / 100（依選項順序推算）</div>
+              <div class="sub">${ServerI18n.t("pollDeepdiveSentimentSub")}</div>
             </div>
-            <div class="admin-pdd-sentiment-tile is-placeholder" title="需要 poll history 持久化（v5.3）">
-              <div class="k">VS 上次</div>
+            <div class="admin-pdd-sentiment-tile is-placeholder" title="${ServerI18n.t("pollDeepdiveVsPreviousTitle")}">
+              <div class="k">${ServerI18n.t("pollDeepdiveVsPreviousLabel")}</div>
               <div class="v">—</div>
-              <div class="sub">需要歷史 poll 持久化（v5.3 待補）</div>
+              <div class="sub">${ServerI18n.t("pollDeepdiveVsPreviousSub")}</div>
             </div>
           </div>
         </article>
@@ -208,10 +216,8 @@
           <div class="admin-pdd-placeholder-body">
             <div class="admin-pdd-placeholder-icon">⌖</div>
             <div class="admin-pdd-placeholder-text">
-              <div class="t">需要 v5.3 vote-record 持久化</div>
-              <div class="s">目前 poll service 只記錄 voter set，沒存 per-vote timestamp。
-              要做時間直方圖需要先把每張票的 ts 寫進 SQLite / append-only log。已記在
-              <a href="https://github.com/guan4tou2/danmu-desktop/blob/claude/design-v2-retrofit/docs/designs/design-v2-prototype-gaps-2026-04-27.md" target="_blank" rel="noopener noreferrer">prototype-gaps doc</a>。</div>
+              <div class="t">${ServerI18n.t("pollDeepdiveTimelinePlaceholderTitle")}</div>
+              <div class="s">${ServerI18n.t("pollDeepdiveTimelinePlaceholderDesc", { link: gapsDocLink })}</div>
             </div>
           </div>
         </article>
@@ -223,9 +229,8 @@
           <div class="admin-pdd-placeholder-body">
             <div class="admin-pdd-placeholder-icon">⊕</div>
             <div class="admin-pdd-placeholder-text">
-              <div class="t">需要 IP geolocation</div>
-              <div class="s">v5.2 fire_sources 收 IP 但沒做 GeoIP lookup。
-              v5.3 想加 MaxMind / ipinfo lite，產出國家分佈。</div>
+              <div class="t">${ServerI18n.t("pollDeepdiveGeoPlaceholderTitle")}</div>
+              <div class="s">${ServerI18n.t("pollDeepdiveGeoPlaceholderDesc")}</div>
             </div>
           </div>
         </article>
@@ -233,17 +238,17 @@
         <article class="admin-pdd-card">
           <div class="admin-ui-monolabel">誠信檢查 · INTEGRITY</div>
           <div class="admin-pdd-integrity">
-            <div class="row"><span class="dot is-good"></span><div class="meta"><div class="t">指紋去重</div><div class="s">同一指紋 1 票</div></div><span class="v is-good">啟用</span></div>
-            <div class="row"><span class="dot is-good"></span><div class="meta"><div class="t">Rate limit</div><div class="s">/fire scope 限速</div></div><span class="v is-good">20/min</span></div>
-            <div class="row"><span class="dot is-warn"></span><div class="meta"><div class="t">同 IP 多投</div><div class="s">v5.3 將擋 X-Forwarded-For</div></div><span class="v is-warn">未強制</span></div>
-            <div class="row"><span class="dot is-warn"></span><div class="meta"><div class="t">Bot 偵測</div><div class="s">UA / timing 分析尚未做</div></div><span class="v is-warn">無</span></div>
+            <div class="row"><span class="dot is-good"></span><div class="meta"><div class="t">${ServerI18n.t("pollDeepdiveIntegrityDedupTitle")}</div><div class="s">${ServerI18n.t("pollDeepdiveIntegrityDedupSub")}</div></div><span class="v is-good">${ServerI18n.t("pollDeepdiveIntegrityEnabledValue")}</span></div>
+            <div class="row"><span class="dot is-good"></span><div class="meta"><div class="t">Rate limit</div><div class="s">${ServerI18n.t("pollDeepdiveIntegrityRatelimitSub")}</div></div><span class="v is-good">20/min</span></div>
+            <div class="row"><span class="dot is-warn"></span><div class="meta"><div class="t">${ServerI18n.t("pollDeepdiveIntegrityMultiIpTitle")}</div><div class="s">${ServerI18n.t("pollDeepdiveIntegrityMultiIpSub")}</div></div><span class="v is-warn">${ServerI18n.t("pollDeepdiveIntegrityNotEnforcedValue")}</span></div>
+            <div class="row"><span class="dot is-warn"></span><div class="meta"><div class="t">${ServerI18n.t("pollDeepdiveIntegrityBotTitle")}</div><div class="s">${ServerI18n.t("pollDeepdiveIntegrityBotSub")}</div></div><span class="v is-warn">${ServerI18n.t("pollDeepdiveIntegrityNoneValue")}</span></div>
           </div>
         </article>
 
         <article class="admin-pdd-card admin-pdd-actions">
-          <button type="button" class="admin-pdd-action admin-pdd-action--primary" data-pdd-action="export-csv">↓ 匯出選項統計 (CSV)</button>
-          <button type="button" class="admin-pdd-action" data-pdd-action="copy-link">📋 複製分享連結</button>
-          <a class="admin-pdd-action admin-pdd-action--ghost" href="#/polls">↺ 返回投票管理</a>
+          <button type="button" class="admin-pdd-action admin-pdd-action--primary" data-pdd-action="export-csv">${ServerI18n.t("pollDeepdiveExportCsvBtn")}</button>
+          <button type="button" class="admin-pdd-action" data-pdd-action="copy-link">${ServerI18n.t("pollDeepdiveCopyLinkBtn")}</button>
+          <a class="admin-pdd-action admin-pdd-action--ghost" href="#/polls">${ServerI18n.t("pollDeepdiveBackToPollsBtn")}</a>
         </article>
       </aside>`;
   }
@@ -272,7 +277,7 @@
 
   function _exportCsv() {
     if (!_state.poll || !Array.isArray(_state.poll.options)) {
-      window.showToast && window.showToast("沒有可匯出的資料", false);
+      window.showToast && window.showToast(ServerI18n.t("pollDeepdiveToastNoData"), false);
       return;
     }
     const rows = [["option_label", "votes", "percentage"]];
@@ -295,16 +300,16 @@
     a.download = "poll-" + (_state.poll.poll_id || "current") + ".csv";
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-    window.showToast && window.showToast("CSV 已匯出", true);
+    window.showToast && window.showToast(ServerI18n.t("pollDeepdiveToastCsvExported"), true);
   }
 
   function _copyShareLink() {
     const url = location.origin + "/admin/#/poll-deepdive";
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(function () {
-        window.showToast && window.showToast("連結已複製", true);
+        window.showToast && window.showToast(ServerI18n.t("pollDeepdiveToastLinkCopied"), true);
       }).catch(function () {
-        window.showToast && window.showToast("複製失敗", false);
+        window.showToast && window.showToast(ServerI18n.t("pollDeepdiveToastCopyFailed"), false);
       });
     }
   }
