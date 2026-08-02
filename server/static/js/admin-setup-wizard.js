@@ -23,40 +23,62 @@
     });
   };
 
+  // D-4：STEPS 是模組 parse 時就建構的頂層常數，ServerI18n 尚未 init，
+  // 故 label 一律存 labelKey，交給 _renderShell / 各 _render*Step 在
+  // 渲染當下才 t()。`en` 欄位是既有全大寫 kicker，本檔目前無渲染點會讀
+  // 它，維持原樣不動。
   const STEPS = [
-    { id: "server", label: "伺服器基本設定", en: "SERVER" },
-    { id: "display", label: "顯示規則", en: "DISPLAY" },
-    { id: "moderation", label: "審核策略", en: "MODERATION" },
-    { id: "theme", label: "外觀主題", en: "THEME" },
-    { id: "done", label: "完成", en: "DONE" },
+    { id: "server", labelKey: "setupWizardStepServer", en: "SERVER" },
+    { id: "display", labelKey: "setupWizardStepDisplay", en: "DISPLAY" },
+    { id: "moderation", labelKey: "setupWizardStepModeration", en: "MODERATION" },
+    { id: "theme", labelKey: "setupWizardStepTheme", en: "THEME" },
+    { id: "done", labelKey: "setupWizardStepDone", en: "DONE" },
   ];
 
+  // 同理，label/description 存 key；_themeLabel/_themeDesc 兩個 helper
+  // 負責在渲染當下解析（並相容 _fetchThemes() 從後端直接拿到的
+  // label/description 純文字，見下方兩個函式）。
   const FALLBACK_THEMES = [
     {
       name: "default",
-      label: "預設",
-      description: "標準白色彈幕，適合大多數直播畫面。",
+      labelKey: "setupWizardThemeDefaultLabel",
+      descriptionKey: "setupWizardThemeDefaultDesc",
       colors: ["#7dd3fc", "#e2e8f0", "#fbbf24", "#86efac"],
     },
     {
       name: "neon",
-      label: "霓虹",
-      description: "高對比發光色，適合深色背景與舞台燈光。",
+      labelKey: "setupWizardThemeNeonLabel",
+      descriptionKey: "setupWizardThemeNeonDesc",
       colors: ["#38bdf8", "#fbbf24", "#86efac", "#f87171"],
     },
     {
       name: "retro",
-      label: "復古",
-      description: "偏暖色與像素感排版，適合活動主視覺。",
+      labelKey: "setupWizardThemeRetroLabel",
+      descriptionKey: "setupWizardThemeRetroDesc",
       colors: ["#f97316", "#facc15", "#fb7185", "#60a5fa"],
     },
     {
       name: "cinema",
-      label: "電影",
-      description: "低飽和金色與字幕感，適合發布會與論壇。",
+      labelKey: "setupWizardThemeCinemaLabel",
+      descriptionKey: "setupWizardThemeCinemaDesc",
       colors: ["#f5d08a", "#fef3c7", "#94a3b8", "#e5e7eb"],
     },
   ];
+
+  /** Resolves a theme's display label — FALLBACK_THEMES carries a lazy
+   *  labelKey (parsed before ServerI18n init); server-fetched themes
+   *  (see _fetchThemes) carry a literal label instead. */
+  function _themeLabel(theme) {
+    if (!theme) return "—";
+    if (theme.labelKey) return ServerI18n.t(theme.labelKey);
+    return theme.label || theme.name || theme.id || "—";
+  }
+
+  function _themeDesc(theme) {
+    if (!theme) return "";
+    if (theme.descriptionKey) return ServerI18n.t(theme.descriptionKey);
+    return theme.description || "";
+  }
 
   let _state = {
     open: false,
@@ -68,43 +90,45 @@
     publicUrl: "",
     httpPort: ":4000",
     wsPath: "/ws",
+    // 頂層常數，同樣延後解析——labelKey/descKey 交給 _renderToggleStep
+    // 在渲染當下 t()。
     displayRules: [
       {
         id: "dedupe",
-        label: "重複訊息收束",
-        desc: "短時間內相同內容併成單一軌道，避免畫面洗版。",
+        labelKey: "setupWizardDisplayDedupeLabel",
+        descKey: "setupWizardDisplayDedupeDesc",
         enabled: true,
       },
       {
         id: "image-preview",
-        label: "圖片彈幕預覽",
-        desc: "圖片先以縮圖顯示，避免直接佔滿整個畫面。",
+        labelKey: "setupWizardDisplayPreviewLabel",
+        descKey: "setupWizardDisplayPreviewDesc",
         enabled: true,
       },
       {
         id: "max-length",
-        label: "長訊息折疊",
-        desc: "超過 120 字先折疊顯示，點開後再看完整內容。",
+        labelKey: "setupWizardDisplayMaxLengthLabel",
+        descKey: "setupWizardDisplayMaxLengthDesc",
         enabled: true,
       },
     ],
     moderationRules: [
       {
         id: "sensitive",
-        label: "敏感字過濾",
-        desc: "啟用內建敏感字詞庫，先擋掉常見違規內容。",
+        labelKey: "setupWizardModSensitiveLabel",
+        descKey: "setupWizardModSensitiveDesc",
         enabled: true,
       },
       {
         id: "rate-limit",
-        label: "速率限制",
-        desc: "每分鐘最多 20 則訊息，降低機器人或洗頻風險。",
+        labelKey: "setupWizardModRateLimitLabel",
+        descKey: "setupWizardModRateLimitDesc",
         enabled: true,
       },
       {
         id: "fingerprint",
-        label: "指紋追蹤",
-        desc: "自動辨識重複使用者，方便後續封鎖與追查。",
+        labelKey: "setupWizardModFingerprintLabel",
+        descKey: "setupWizardModFingerprintDesc",
         enabled: true,
       },
     ],
@@ -167,7 +191,7 @@
               return `
                 <div class="admin-setup-step" data-step-index="${index}">
                   <span class="bullet">${index + 1}</span>
-                  <span class="lbl">${escapeHtml(step.label)}</span>
+                  <span class="lbl">${escapeHtml(ServerI18n.t(step.labelKey))}</span>
                 </div>
                 ${index < STEPS.length - 1 ? '<span class="admin-setup-step-sep"></span>' : ""}
               `;
@@ -177,11 +201,11 @@
           <div class="admin-setup-content" data-setup-content></div>
 
           <footer class="admin-setup-foot" data-setup-foot>
-            <button type="button" class="admin-ui-action admin-setup-foot-action" data-setup-action="close">跳過</button>
-            <span class="admin-setup-foot-meta" data-setup-meta>步驟 1 / ${STEPS.length}</span>
+            <button type="button" class="admin-ui-action admin-setup-foot-action" data-setup-action="close">${ServerI18n.t("setupWizardSkip")}</button>
+            <span class="admin-setup-foot-meta" data-setup-meta>${ServerI18n.t("setupWizardStepMeta", { current: 1, total: STEPS.length })}</span>
             <span class="admin-setup-foot-spacer"></span>
-            <button type="button" class="admin-ui-action admin-setup-foot-action" data-setup-action="prev" disabled>← 上一步</button>
-            <button type="button" class="admin-ui-action is-primary admin-setup-foot-action" data-setup-action="next">下一步 →</button>
+            <button type="button" class="admin-ui-action admin-setup-foot-action" data-setup-action="prev" disabled>${ServerI18n.t("setupWizardBack")}</button>
+            <button type="button" class="admin-ui-action is-primary admin-setup-foot-action" data-setup-action="next">${ServerI18n.t("setupWizardNext")}</button>
           </footer>
         </div>
       </div>`;
@@ -200,7 +224,7 @@
     });
 
     const meta = root.querySelector("[data-setup-meta]");
-    if (meta) meta.textContent = `步驟 ${_state.step + 1} / ${STEPS.length}`;
+    if (meta) meta.textContent = ServerI18n.t("setupWizardStepMeta", { current: _state.step + 1, total: STEPS.length });
 
     const prev = root.querySelector('[data-setup-action="prev"]');
     if (prev) prev.disabled = _state.step === 0;
@@ -208,7 +232,7 @@
     const next = root.querySelector('[data-setup-action="next"]');
     if (next) {
       const stepId = STEPS[_state.step].id;
-      next.textContent = stepId === "theme" ? "套用主題 →" : "下一步 →";
+      next.textContent = stepId === "theme" ? ServerI18n.t("setupWizardApplyTheme") : ServerI18n.t("setupWizardNext");
     }
 
     const foot = root.querySelector("[data-setup-foot]");
@@ -244,11 +268,11 @@
     return `
       <div class="admin-setup-step-pad">
         <div class="admin-setup-step-kicker">STEP 01</div>
-        <h2 class="admin-setup-step-title">伺服器基本設定</h2>
-        <p class="admin-setup-step-desc">v5 設計把第一步收斂成目前部署快照，先確認公開入口與同源 WS path 是否正確，再往後配置顯示與審核策略。</p>
+        <h2 class="admin-setup-step-title">${ServerI18n.t("setupWizardStepServer")}</h2>
+        <p class="admin-setup-step-desc">${ServerI18n.t("setupWizardServerDesc")}</p>
         <div class="admin-setup-server-fields">
-          ${_renderShellField("server-name", "伺服器名稱", "SERVER NAME", _state.serverName)}
-          ${_renderShellField("public-url", "公開 URL", "PUBLIC URL", _state.publicUrl)}
+          ${_renderShellField("server-name", ServerI18n.t("setupWizardServerNameLabel"), "SERVER NAME", _state.serverName)}
+          ${_renderShellField("public-url", ServerI18n.t("setupWizardPublicUrlLabel"), "PUBLIC URL", _state.publicUrl)}
           ${_renderShellField("http-port", "HTTP Port", "PORT", _state.httpPort)}
           ${_renderShellField("ws-path", "WebSocket Path", "WS PATH", _state.wsPath)}
         </div>
@@ -271,8 +295,8 @@
                 aria-pressed="${item.enabled ? "true" : "false"}"
               >
                 <span class="admin-setup-toggle-body">
-                  <span class="admin-setup-toggle-title">${escapeHtml(item.label)}</span>
-                  <span class="admin-setup-toggle-desc">${escapeHtml(item.desc)}</span>
+                  <span class="admin-setup-toggle-title">${escapeHtml(ServerI18n.t(item.labelKey))}</span>
+                  <span class="admin-setup-toggle-desc">${escapeHtml(ServerI18n.t(item.descKey))}</span>
                 </span>
                 <span class="admin-setup-toggle-switch${item.enabled ? " is-on" : ""}">
                   <span class="thumb"></span>
@@ -286,8 +310,8 @@
   function _renderDisplayStep() {
     return _renderToggleStep(
       "STEP 02",
-      "顯示規則",
-      "這一頁對應 v5 handoff 的 Display Rules。先選好輸出畫面的預設節奏，之後再到各個 viewer / Desktop 頁面微調細節。",
+      ServerI18n.t("setupWizardStepDisplay"),
+      ServerI18n.t("setupWizardDisplayDesc"),
       _state.displayRules,
       "data-setup-display-toggle"
     );
@@ -296,8 +320,8 @@
   function _renderModerationStep() {
     return _renderToggleStep(
       "STEP 03",
-      "審核策略",
-      "Yellow 稿的第三步是 moderation baseline。這些開關目前作為啟動建議值，用來提醒首次部署時先把基本防線打開。",
+      ServerI18n.t("setupWizardStepModeration"),
+      ServerI18n.t("setupWizardModerationDesc"),
       _state.moderationRules,
       "data-setup-moderation-toggle"
     );
@@ -308,8 +332,8 @@
     return `
       <div class="admin-setup-step-pad">
         <div class="admin-setup-step-kicker">STEP 04</div>
-        <h2 class="admin-setup-step-title">外觀主題</h2>
-        <p class="admin-setup-step-desc">這一步會直接套用現有主題 API。選一個起手風格，日後再到「主題包」頁細修字型、顏色與特效。</p>
+        <h2 class="admin-setup-step-title">${ServerI18n.t("setupWizardStepTheme")}</h2>
+        <p class="admin-setup-step-desc">${ServerI18n.t("setupWizardThemeDesc")}</p>
         <div class="admin-setup-theme-grid">
           ${cards.map(function (theme) {
             const themeId = theme.name || theme.id || "";
@@ -320,12 +344,12 @@
                 ${selected ? '<span class="admin-setup-theme-check">✓</span>' : ""}
                 <div class="admin-setup-theme-swatch">
                   ${swatch.map(function (color, index) {
-                    const samples = ["+1", "哈哈", "🔥", "✨"];
+                    const samples = ["+1", ServerI18n.t("setupWizardThemeSwatchLaugh"), "🔥", "✨"];
                     return `<span class="admin-setup-theme-swatch-token" style="color:${escapeHtml(color)};font-size:${10 + index * 2}px;text-shadow:0 0 6px ${escapeHtml(color)}66;">${samples[index] || "·"}</span>`;
                   }).join("")}
                 </div>
-                <div class="admin-setup-theme-name">${escapeHtml(theme.label || themeId || "—")}</div>
-                <div class="admin-setup-theme-sub">${escapeHtml(theme.description || "")}</div>
+                <div class="admin-setup-theme-name">${escapeHtml(_themeLabel(theme))}</div>
+                <div class="admin-setup-theme-sub">${escapeHtml(_themeDesc(theme))}</div>
               </button>`;
           }).join("")}
         </div>
@@ -337,7 +361,7 @@
       for (let i = 0; i < _state.themes.length; i += 1) {
         const theme = _state.themes[i];
         if ((theme.name || theme.id) === (_state.selectedTheme || _state.activeTheme)) {
-          return theme.label || theme.name || "—";
+          return _themeLabel(theme);
         }
       }
       return _state.selectedTheme || _state.activeTheme || "—";
@@ -347,15 +371,15 @@
     return `
       <div class="admin-setup-step-pad admin-setup-done">
         <div class="admin-setup-done-icon">✓</div>
-        <h2 class="admin-setup-step-title">設定完成</h2>
-        <p class="admin-setup-step-desc">所有設定已就緒。你可以隨時回到各頁面再做細部調整，這個 wizard 只負責把 v5 的起手配置對齊。</p>
+        <h2 class="admin-setup-step-title">${ServerI18n.t("setupWizardDoneTitle")}</h2>
+        <p class="admin-setup-step-desc">${ServerI18n.t("setupWizardDoneDesc")}</p>
         <div class="admin-setup-done-summary">
           <div class="row"><span class="k">SERVER</span><span class="v">${escapeHtml(_state.publicUrl)}</span></div>
           <div class="row"><span class="k">THEME</span><span class="v">${escapeHtml(themeName)}</span></div>
-          <div class="row"><span class="k">DISPLAY RULES</span><span class="v">${enabledDisplay} / ${_state.displayRules.length} 啟用</span></div>
-          <div class="row"><span class="k">MODERATION</span><span class="v">${enabledModeration} / ${_state.moderationRules.length} 啟用</span></div>
+          <div class="row"><span class="k">DISPLAY RULES</span><span class="v">${ServerI18n.t("setupWizardEnabledCount", { n: enabledDisplay, total: _state.displayRules.length })}</span></div>
+          <div class="row"><span class="k">MODERATION</span><span class="v">${ServerI18n.t("setupWizardEnabledCount", { n: enabledModeration, total: _state.moderationRules.length })}</span></div>
         </div>
-        <button type="button" class="admin-setup-done-cta" data-setup-complete-cta>進入控制台 →</button>
+        <button type="button" class="admin-setup-done-cta" data-setup-complete-cta>${ServerI18n.t("setupWizardEnterConsole")}</button>
       </div>`;
   }
 
@@ -464,10 +488,10 @@
       });
       if (!response.ok) throw new Error("HTTP " + response.status);
       _state.activeTheme = _state.selectedTheme;
-      window.showToast && window.showToast("主題已套用", true);
+      window.showToast && window.showToast(ServerI18n.t("setupWizardToastThemeApplied"), true);
       return true;
     } catch (_) {
-      window.showToast && window.showToast("主題包套用失敗", false);
+      window.showToast && window.showToast(ServerI18n.t("setupWizardToastThemeApplyFailed"), false);
       return false;
     }
   }
@@ -488,7 +512,7 @@
 
   function _complete() {
     try { localStorage.setItem(STORAGE_KEY, "1"); } catch (_) {}
-    window.showToast && window.showToast("設定精靈完成", true);
+    window.showToast && window.showToast(ServerI18n.t("setupWizardToastComplete"), true);
     _close();
   }
 

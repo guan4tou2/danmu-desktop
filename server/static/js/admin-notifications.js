@@ -123,13 +123,15 @@
       const id = "tok-" + (e.ts || i) + "-" + (e.kind || "x");
       const kind = e.kind || "?";
       let sev = "info";
-      let title = "Fire Token 事件";
-      if (kind === "rotated") { sev = "info"; title = "Fire Token 已重新產生"; }
-      else if (kind === "revoked") { sev = "warn"; title = "Fire Token 已撤銷"; }
+      let title = ServerI18n.t("notifTitleFireTokenEvent");
+      if (kind === "rotated") { sev = "info"; title = ServerI18n.t("notifTitleFireTokenRotated"); }
+      else if (kind === "revoked") { sev = "warn"; title = ServerI18n.t("notifTitleFireTokenRevoked"); }
       else if (kind === "toggled") {
         const enabled = e.meta && e.meta.enabled;
         sev = enabled ? "good" : "warn";
-        title = "Fire Token 已" + (enabled ? "啟用" : "停用");
+        title = ServerI18n.t("notifTitleFireTokenToggled", {
+          state: enabled ? ServerI18n.t("notifStateEnabled") : ServerI18n.t("notifStateDisabled"),
+        });
       }
       return {
         id: id,
@@ -137,7 +139,7 @@
         src: "Fire Token",
         ts: ts,
         title: title,
-        desc: "事件類型：" + kind + (e.meta ? " · " + JSON.stringify(e.meta) : ""),
+        desc: ServerI18n.t("notifDescEventType", { kind: kind }) + (e.meta ? " · " + JSON.stringify(e.meta) : ""),
         raw: e,
       };
     });
@@ -158,8 +160,8 @@
         sev: sev,
         src: "Moderation",
         ts: ts,
-        title: "敏感字過濾 · " + action,
-        desc: "規則 " + (e.rule_id || "?") + " 命中：「" + (e.text || "").slice(0, 60) + "」",
+        title: ServerI18n.t("notifTitleFilterHit", { action: action }),
+        desc: ServerI18n.t("notifDescFilterHit", { rule: e.rule_id || "?", text: (e.text || "").slice(0, 60) }),
         raw: e,
       };
     });
@@ -180,8 +182,8 @@
         sev: sev,
         src: "Webhooks",
         ts: ts,
-        title: "Webhook 事件 · " + kind,
-        desc: "執行者：" + (e.actor || "system") + (e.meta ? " · " + JSON.stringify(e.meta) : ""),
+        title: ServerI18n.t("notifTitleWebhookEvent", { kind: kind }),
+        desc: ServerI18n.t("notifDescWebhookEvent", { actor: e.actor || "system" }) + (e.meta ? " · " + JSON.stringify(e.meta) : ""),
         raw: e,
       };
     });
@@ -205,8 +207,8 @@
         sev: sev,
         src: "System",
         ts: ts,
-        title: "系統事件 · " + kind,
-        desc: "來源：" + (e.source || "?") + " · 執行者：" + (e.actor || "system"),
+        title: ServerI18n.t("notifTitleSystemEvent", { kind: kind }),
+        desc: ServerI18n.t("notifDescSystemEvent", { source: e.source || "?", actor: e.actor || "system" }),
         raw: e,
       };
     });
@@ -215,32 +217,40 @@
   // ── render ───────────────────────────────────────────────────────
 
   function buildSection() {
+    // D-4 i18n: page title reuses adminRouteTitle_notifications (same label,
+    // already 4-lang from the sidebar/router table — see admin.js currentRoute
+    // lookup). "NOTIFICATIONS · 通知中心" kicker below is the sitewide deferred
+    // EN·中文 bilingual monolabel pattern (see TODOS.md "「EN · 中文」雙語
+    // monolabel 的 pattern 決策", precedent commit 4771242) — left untouched.
+    const eventsLink = `<a href="#/events">${ServerI18n.t("adminRouteTitle_events")}</a>`;
     return `
       <div id="${PAGE_ID}" class="admin-notif-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">NOTIFICATIONS · 通知中心</div>
-          <div class="admin-ui-page-title">通知</div>
-          <p class="admin-ui-page-note">集中所有警示來源（速率限制 / Fire Token 事件 / 敏感字觸發）。讀取 / 封存狀態存在瀏覽器 localStorage。</p>
+          <div class="admin-ui-page-title">${ServerI18n.t("adminRouteTitle_notifications")}</div>
+          <p class="admin-ui-page-note">${ServerI18n.t("notifPageNote")}</p>
         </div>
 
         <!-- vs events explainer — pairs with admin-events-log.js explainer. -->
         <div class="admin-ev-v4__explain admin-notif-explain">
-          ℹ 通知 ≠ <a href="#/events">系統事件</a>。通知 = 需要管理者關注 / 處理的訊息（warn 以上的 fire token 撤銷、moderation drop、webhook 故障）；事件 = 完整自動化日誌（含 info-tier 全部變更）。
+          ${ServerI18n.t("notifExplainBody", { link: eventsLink })}
         </div>
 
         <div class="admin-notif-grid admin-notif-grid--3col" data-notif-outer>
           <aside class="admin-notif-filters">
+            <!-- D-4 i18n: same deferred EN·中文 bilingual monolabel pattern
+                 as the page kicker above — left untouched (3 more below). -->
             <div class="admin-ui-monolabel">分組 · GROUP</div>
             <div class="admin-ui-chip-group admin-notif-tabs" data-notif-tabs>
-              <button type="button" class="admin-ui-chip admin-notif-tab is-active" data-notif-tab="unread">未讀<span class="admin-notif-count cnt" data-cnt-unread>—</span></button>
-              <button type="button" class="admin-ui-chip admin-notif-tab" data-notif-tab="all">全部<span class="admin-notif-count cnt" data-cnt-all>—</span></button>
-              <button type="button" class="admin-ui-chip admin-notif-tab" data-notif-tab="starred">已標記<span class="admin-notif-count cnt" data-cnt-starred>—</span></button>
-              <button type="button" class="admin-ui-chip admin-notif-tab" data-notif-tab="archived">已封存<span class="admin-notif-count cnt" data-cnt-archived>—</span></button>
+              <button type="button" class="admin-ui-chip admin-notif-tab is-active" data-notif-tab="unread">${ServerI18n.t("notifTabUnread")}<span class="admin-notif-count cnt" data-cnt-unread>—</span></button>
+              <button type="button" class="admin-ui-chip admin-notif-tab" data-notif-tab="all">${ServerI18n.t("notifAll")}<span class="admin-notif-count cnt" data-cnt-all>—</span></button>
+              <button type="button" class="admin-ui-chip admin-notif-tab" data-notif-tab="starred">${ServerI18n.t("notifStarred")}<span class="admin-notif-count cnt" data-cnt-starred>—</span></button>
+              <button type="button" class="admin-ui-chip admin-notif-tab" data-notif-tab="archived">${ServerI18n.t("notifTabArchived")}<span class="admin-notif-count cnt" data-cnt-archived>—</span></button>
             </div>
 
             <div class="admin-ui-monolabel admin-notif-label-top">來源 · SOURCE</div>
             <div class="admin-ui-chip-group admin-notif-sources" data-notif-sources>
-              <button type="button" class="admin-ui-chip admin-notif-src is-active" data-notif-src="all">全部<span class="admin-notif-count cnt" data-cnt-src-all>—</span></button>
+              <button type="button" class="admin-ui-chip admin-notif-src is-active" data-notif-src="all">${ServerI18n.t("notifAll")}<span class="admin-notif-count cnt" data-cnt-src-all>—</span></button>
               <button type="button" class="admin-ui-chip admin-notif-src" data-notif-src="Fire Token">Fire Token<span class="admin-notif-count cnt" data-cnt-src-ft>—</span></button>
               <button type="button" class="admin-ui-chip admin-notif-src" data-notif-src="Webhooks">Webhooks<span class="admin-notif-count cnt" data-cnt-src-wh>—</span></button>
               <button type="button" class="admin-ui-chip admin-notif-src" data-notif-src="System">System<span class="admin-notif-count cnt" data-cnt-src-sys>—</span></button>
@@ -249,7 +259,7 @@
 
             <div class="admin-ui-monolabel admin-notif-label-top">嚴重度 · SEVERITY</div>
             <div class="admin-ui-chip-group admin-notif-sources" data-notif-severity>
-              <button type="button" class="admin-ui-chip admin-notif-src is-active" data-notif-sev="all">全部<span class="admin-notif-count cnt" data-cnt-sev-all>—</span></button>
+              <button type="button" class="admin-ui-chip admin-notif-src is-active" data-notif-sev="all">${ServerI18n.t("notifAll")}<span class="admin-notif-count cnt" data-cnt-sev-all>—</span></button>
               <button type="button" class="admin-ui-chip admin-notif-src" data-notif-sev="crit">CRIT<span class="admin-notif-count cnt" data-cnt-sev-crit>—</span></button>
               <button type="button" class="admin-ui-chip admin-notif-src" data-notif-sev="warn">WARN<span class="admin-notif-count cnt" data-cnt-sev-warn>—</span></button>
               <button type="button" class="admin-ui-chip admin-notif-src" data-notif-sev="info">INFO<span class="admin-notif-count cnt" data-cnt-sev-info>—</span></button>
@@ -257,23 +267,23 @@
             </div>
 
             <div class="admin-notif-tip">
-              <span class="kicker">提示</span>
-              通知保留條件由各 backend service 決定（rate limits 30 筆、fire token audit 100 筆、filters log 即時 fetch、audit.log 近期事件）。讀取 / 封存狀態為瀏覽器本地。
+              <span class="kicker">${ServerI18n.t("notifTipKicker")}</span>
+              ${ServerI18n.t("notifTipBody")}
             </div>
           </aside>
 
           <main class="admin-notif-main">
             <div class="admin-ui-toolbar admin-notif-toolbar">
-              <span class="admin-ui-summary admin-notif-summary" data-notif-summary>載入中…</span>
+              <span class="admin-ui-summary admin-notif-summary" data-notif-summary>${ServerI18n.t("notifLoadingSummary")}</span>
               <span class="admin-ui-spacer"></span>
               <span class="admin-ui-chip-group admin-notif-actions">
-                <button type="button" class="admin-ui-action admin-notif-action" data-notif-action="mark-all-read">✓ 全部已讀</button>
-                <button type="button" class="admin-ui-action admin-notif-action" data-notif-action="archive-all">↓ 封存全部</button>
+                <button type="button" class="admin-ui-action admin-notif-action" data-notif-action="mark-all-read">${ServerI18n.t("notifMarkAllRead")}</button>
+                <button type="button" class="admin-ui-action admin-notif-action" data-notif-action="archive-all">${ServerI18n.t("notifArchiveAll")}</button>
                 <span class="admin-be-placeholder-control admin-be-placeholder-inline">[PLACEHOLDER] 通知偏好（待 Design）</span>
               </span>
             </div>
             <div class="admin-notif-list" data-notif-list>
-              <div class="admin-notif-loading">載入通知中…</div>
+              <div class="admin-notif-loading">${ServerI18n.t("notifListLoading")}</div>
             </div>
           </main>
 
@@ -308,8 +318,8 @@
       list.innerHTML = "";
       const card = window.AdminEmpty.renderCustom({
         icon: "◌",
-        title: "沒有符合條件的通知",
-        desc: "當有新事件（速率限制 / token / moderation / webhooks / system）時會自動出現在這裡。",
+        title: ServerI18n.t("notifEmptyTitle"),
+        desc: ServerI18n.t("notifEmptyDesc"),
       });
       card.dataset.emptyKind = "notifications";
       list.appendChild(card);
@@ -325,7 +335,7 @@
         <article class="admin-notif-item ${archived ? "is-archived" : (read ? "is-read" : "is-unread")} ${starred ? "is-starred" : ""}" data-notif-id="${escapeHtml(it.id)}" data-sev="${sev.sevKey || it.sev}" style="border-left-color:${sev.color}">
           <div class="head">
             ${!read && !archived ? `<span class="dot" style="background:${sev.color};box-shadow:0 0 6px ${sev.color}"></span>` : ''}
-            ${starred ? `<span class="star" aria-label="starred" title="已標記">★</span>` : ''}
+            ${starred ? `<span class="star" aria-label="starred" title="${ServerI18n.t("notifStarred")}">★</span>` : ''}
             <span class="admin-ui-pill admin-notif-sev-pill ${_sevClassFor(it.sev)}">${sev.label}</span>
             <span class="src">${escapeHtml(it.src)}</span>
             <span class="ts">${escapeHtml(tsLabel)}</span>
@@ -333,13 +343,13 @@
           <div class="title">${escapeHtml(it.title)}</div>
           <div class="desc">${escapeHtml(it.desc)}</div>
           <div class="actions">
-            <button type="button" class="admin-ui-action admin-notif-row-action ${starred ? "is-warn is-on" : ""}" data-notif-row-action="star" data-notif-id="${escapeHtml(it.id)}" title="${starred ? "取消標記" : "標記重要"}">${starred ? "★ 已標記" : "☆ 標記"}</button>
+            <button type="button" class="admin-ui-action admin-notif-row-action ${starred ? "is-warn is-on" : ""}" data-notif-row-action="star" data-notif-id="${escapeHtml(it.id)}" title="${starred ? ServerI18n.t("notifStarBtnTitleOn") : ServerI18n.t("notifStarBtnTitleOff")}">${starred ? ServerI18n.t("notifStarBtnLabelOn") : ServerI18n.t("notifStarBtnLabelOff")}</button>
             ${archived
-              ? `<button type="button" class="admin-ui-action admin-notif-row-action" data-notif-row-action="unarchive" data-notif-id="${escapeHtml(it.id)}">↺ 取消封存</button>`
+              ? `<button type="button" class="admin-ui-action admin-notif-row-action" data-notif-row-action="unarchive" data-notif-id="${escapeHtml(it.id)}">${ServerI18n.t("notifUnarchive")}</button>`
               : `${read
-                  ? `<button type="button" class="admin-ui-action admin-notif-row-action" data-notif-row-action="unread" data-notif-id="${escapeHtml(it.id)}">○ 標記未讀</button>`
-                  : `<button type="button" class="admin-ui-action admin-notif-row-action" data-notif-row-action="read" data-notif-id="${escapeHtml(it.id)}">✓ 標記已讀</button>`}
-                  <button type="button" class="admin-ui-action admin-notif-row-action" data-notif-row-action="archive" data-notif-id="${escapeHtml(it.id)}">↓ 封存</button>`}
+                  ? `<button type="button" class="admin-ui-action admin-notif-row-action" data-notif-row-action="unread" data-notif-id="${escapeHtml(it.id)}">${ServerI18n.t("notifMarkUnread")}</button>`
+                  : `<button type="button" class="admin-ui-action admin-notif-row-action" data-notif-row-action="read" data-notif-id="${escapeHtml(it.id)}">${ServerI18n.t("notifMarkRead")}</button>`}
+                  <button type="button" class="admin-ui-action admin-notif-row-action" data-notif-row-action="archive" data-notif-id="${escapeHtml(it.id)}">${ServerI18n.t("notifArchive")}</button>`}
           </div>
         </article>`;
     }).join("");
@@ -374,8 +384,13 @@
     const summary = document.querySelector("[data-notif-summary]");
     if (summary) {
       const filtered = _filteredItems().length;
-      const tabName = { unread: "未讀", all: "全部", starred: "已標記", archived: "已封存" }[_state.filterTab] || "—";
-      summary.textContent = tabName + " · " + filtered + " 筆";
+      const tabName = {
+        unread: ServerI18n.t("notifTabUnread"),
+        all: ServerI18n.t("notifAll"),
+        starred: ServerI18n.t("notifStarred"),
+        archived: ServerI18n.t("notifTabArchived"),
+      }[_state.filterTab] || "—";
+      summary.textContent = ServerI18n.t("notifSummaryCount", { tab: tabName, n: filtered });
     }
   }
 
@@ -393,7 +408,7 @@
       <div class="admin-notif-detail-head">
         <span class="admin-ui-monolabel">DETAIL</span>
         <span class="admin-ui-spacer"></span>
-        <button type="button" class="admin-ui-action admin-notif-detail-close" data-notif-action="close-detail" aria-label="關閉">${window.AdminUtils.closeIcon}</button>
+        <button type="button" class="admin-ui-action admin-notif-detail-close" data-notif-action="close-detail" aria-label="${ServerI18n.t("notifDetailCloseAria")}">${window.AdminUtils.closeIcon}</button>
       </div>
       <div class="admin-ui-pill admin-notif-detail-sev ${_sevClassFor(it.sev)}">
         <span class="badge">${escapeHtml(sev.label)}</span>
@@ -402,25 +417,25 @@
       <div class="admin-notif-detail-title">${escapeHtml(it.title)}</div>
       <div class="admin-notif-detail-ts">⏱ ${escapeHtml(tsLabel)}</div>
       <div class="admin-notif-detail-desc">${escapeHtml(it.desc)}</div>
-      <div class="admin-notif-detail-raw-label">原始資料</div>
+      <div class="admin-notif-detail-raw-label">${ServerI18n.t("notifDetailRawLabel")}</div>
       <pre class="admin-notif-detail-raw">${escapeHtml(raw)}</pre>
       <div class="admin-notif-detail-actions">
         ${!_isRead(it.id) && !_isArchived(it.id)
-          ? `<button type="button" class="admin-ui-action admin-notif-detail-action" data-notif-row-action="read" data-notif-id="${escapeHtml(it.id)}">✓ 標記已讀</button>`
+          ? `<button type="button" class="admin-ui-action admin-notif-detail-action" data-notif-row-action="read" data-notif-id="${escapeHtml(it.id)}">${ServerI18n.t("notifMarkRead")}</button>`
           : ""}
         ${!_isArchived(it.id)
-          ? `<button type="button" class="admin-ui-action admin-notif-detail-action" data-notif-row-action="archive" data-notif-id="${escapeHtml(it.id)}">↓ 封存</button>`
-          : `<button type="button" class="admin-ui-action admin-notif-detail-action" data-notif-row-action="unarchive" data-notif-id="${escapeHtml(it.id)}">↺ 取消封存</button>`}
+          ? `<button type="button" class="admin-ui-action admin-notif-detail-action" data-notif-row-action="archive" data-notif-id="${escapeHtml(it.id)}">${ServerI18n.t("notifArchive")}</button>`
+          : `<button type="button" class="admin-ui-action admin-notif-detail-action" data-notif-row-action="unarchive" data-notif-id="${escapeHtml(it.id)}">${ServerI18n.t("notifUnarchive")}</button>`}
       </div>`;
   }
 
   function _humanDelta(t) {
     if (!t) return "—";
     const diffSec = (Date.now() - t) / 1000;
-    if (diffSec < 60) return Math.floor(diffSec) + " 秒前";
-    if (diffSec < 3600) return Math.floor(diffSec / 60) + " 分鐘前";
-    if (diffSec < 86400) return Math.floor(diffSec / 3600) + " 小時前";
-    return Math.floor(diffSec / 86400) + " 天前";
+    if (diffSec < 60) return ServerI18n.t("notifTimeSecAgo", { n: Math.floor(diffSec) });
+    if (diffSec < 3600) return ServerI18n.t("notifTimeMinAgo", { n: Math.floor(diffSec / 60) });
+    if (diffSec < 86400) return ServerI18n.t("notifTimeHourAgo", { n: Math.floor(diffSec / 3600) });
+    return ServerI18n.t("notifTimeDayAgo", { n: Math.floor(diffSec / 86400) });
   }
 
   // ── handlers ─────────────────────────────────────────────────────
@@ -467,11 +482,11 @@
         if (action.dataset.notifAction === "mark-all-read") {
           _filteredItems().forEach(function (it) { _markRead(it.id); });
           _renderList(); _renderSummary();
-          window.showToast && window.showToast("已全部標為已讀", true);
+          window.showToast && window.showToast(ServerI18n.t("notifToastAllRead"), true);
         } else if (action.dataset.notifAction === "archive-all") {
           _filteredItems().forEach(function (it) { _markArchived(it.id); });
           _renderList(); _renderSummary();
-          window.showToast && window.showToast("已封存目前清單", true);
+          window.showToast && window.showToast(ServerI18n.t("notifToastArchivedList"), true);
         } else if (action.dataset.notifAction === "refresh") {
           _fetchAll();
         } else if (action.dataset.notifAction === "close-detail") {

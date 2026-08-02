@@ -81,7 +81,7 @@
       return true;
     } catch (e) {
       console.warn("[admin-broadcast] toggle failed:", e);
-      window.showToast && window.showToast("切換失敗 · " + (e && e.message || ""), false);
+      window.showToast && window.showToast(ServerI18n.t("broadcastToastToggleFailed", { msg: (e && e.message) || "" }), false);
       return false;
     }
   }
@@ -128,8 +128,8 @@
       <div id="${PAGE_ID}" class="admin-broadcast-page admin-bc-v4 admin-bc-v5 hud-page-stack lg:col-span-2" data-bc-state="standby">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker" data-bc-en>DESKTOP · OFF</div>
-          <div class="admin-ui-page-title" data-bc-title>Desktop 控制</div>
-          <p class="admin-ui-page-note">開啟或暫停 Desktop / OBS 的彈幕顯示；場次的開場與收場在「控制台」。</p>
+          <div class="admin-ui-page-title" data-bc-title>${ServerI18n.t("adminRouteTitle_overlay")}</div>
+          <p class="admin-ui-page-note">${ServerI18n.t("broadcastPageNote")}</p>
         </div>
 
         <!-- Body slot — content swaps by state (ended uses a centered card) -->
@@ -150,12 +150,12 @@
 
           <!-- Primary toggle (2-state + paused sub-state) -->
           <div class="admin-bc-v4__big-wrap">
-            <button type="button" class="admin-bc-v4__big" data-bc-big>▶ 開始顯示</button>
+            <button type="button" class="admin-bc-v4__big" data-bc-big>${ServerI18n.t("broadcastBigStart")}</button>
           </div>
 
           <!-- Confirm hint when ON -->
           <div class="admin-bc-v4__confirm-hint admin-bc-v5__confirm-hint" data-bc-confirm-hint hidden>
-            停止顯示前會彈出確認 · Desktop 停止後訊息繼續接收但不渲染
+            ${ServerI18n.t("broadcastConfirmHint")}
           </div>
 
           <!-- Secondary controls — CLEAR only.（2026-07-30 砍掉「暫停顯示」：
@@ -164,20 +164,20 @@
                差別。詞彙改由主按鈕隨場次狀態切換。） -->
           <div class="admin-bc-v4__secondary admin-bc-v5__secondary" data-bc-secondary>
             <button type="button" class="admin-bc-v4__sec is-clear" data-bc-clear>
-              <span class="admin-bc-v4__sec-label">⊗ 清空螢幕</span>
+              <span class="admin-bc-v4__sec-label">${ServerI18n.t("broadcastClearScreenBtn")}</span>
               <span class="admin-bc-v4__sec-hint">CLEAR ONSCREEN</span>
             </button>
           </div>
 
           <!-- Session context card — overlay is the toggle, session is the data slice -->
           <div class="admin-bc-v5__session-ctx" data-bc-session-ctx>
-            <div class="admin-bc-v5__session-label">SESSION CONTEXT · 資料切片</div>
+            <div class="admin-bc-v5__session-label">SESSION CONTEXT · ${ServerI18n.t("broadcastDataSliceLabel")}</div>
             <div class="admin-bc-v5__session-row">
               <span class="admin-bc-v5__session-id" data-bc-session-id>—</span>
               <span class="admin-bc-v5__session-meta" data-bc-session-started>Started · —</span>
               <span class="admin-bc-v5__session-meta" data-bc-session-window>Window · —</span>
               <span class="admin-bc-v5__spacer"></span>
-              <a class="admin-bc-v5__session-link" href="#/sessions">管理 Sessions →</a>
+              <a class="admin-bc-v5__session-link" href="#/sessions">${ServerI18n.t("broadcastManageSessionsLink")}</a>
             </div>
           </div>
         </div>
@@ -185,7 +185,7 @@
         <!-- Ended state card (rendered only when session has been formally ended) -->
         <div class="admin-bc-v4__ended" data-bc-ended hidden>
           <div class="admin-bc-v4__ended-icon">■</div>
-          <div class="admin-bc-v4__ended-title">場次已結束</div>
+          <div class="admin-bc-v4__ended-title">${ServerI18n.t("broadcastEndedTitle")}</div>
           <div class="admin-bc-v4__ended-en" data-bc-ended-en>SESSION ENDED</div>
           <div class="admin-bc-v4__ended-stats">
             <div><div class="admin-bc-v4__stat-en">DURATION</div><div data-bc-end-dur>—</div></div>
@@ -193,7 +193,7 @@
             <div><div class="admin-bc-v4__stat-en">UNIQUE FP</div><div data-bc-end-fp>—</div></div>
             <div><div class="admin-bc-v4__stat-en">FIRE COUNT</div><div data-bc-end-fire>—</div></div>
           </div>
-          <a class="admin-bc-v4__ended-link" data-bc-go-sessions href="#/sessions">查看 Sessions →</a>
+          <a class="admin-bc-v4__ended-link" data-bc-go-sessions href="#/sessions">${ServerI18n.t("broadcastViewSessionsLink")}</a>
         </div>
       </div>`;
   }
@@ -227,11 +227,13 @@
   // 2026-05-18 polestar pivot: 2-state primary (off/on) + paused sub-state
   // + ended (rare, only when session is formally closed). Names softened
   // from "broadcast" framing.
+  // D-4：頂層常數 parse 時 ServerI18n 尚未 init，存 titleKey 延後到
+  // renderTick() 才 t()（en 是全大寫 EN 設計標籤，語言中立、不搬）。
   const _titleMap = {
-    standby: { zh: "Desktop 控制",      en: "DESKTOP · OFF" },
-    live:    { zh: "Desktop 控制",      en: "DESKTOP · ON" },
-    paused:  { zh: "Desktop 控制",      en: "DESKTOP · PAUSED" },
-    ended:   { zh: "場次已結束",         en: "SESSION ENDED" },
+    standby: { titleKey: "adminRouteTitle_overlay", en: "DESKTOP · OFF" },
+    live:    { titleKey: "adminRouteTitle_overlay", en: "DESKTOP · ON" },
+    paused:  { titleKey: "adminRouteTitle_overlay", en: "DESKTOP · PAUSED" },
+    ended:   { titleKey: "broadcastEndedTitle",     en: "SESSION ENDED" },
   };
   const _statusLabels = {
     standby: "DESKTOP OFF",
@@ -250,7 +252,7 @@
     page.dataset.bcState = state;
     const titleEl = page.querySelector("[data-bc-title]");
     const enEl    = page.querySelector("[data-bc-en]");
-    if (titleEl) titleEl.textContent = _titleMap[state].zh;
+    if (titleEl) titleEl.textContent = ServerI18n.t(_titleMap[state].titleKey);
     if (enEl) {
       const elapsedSecs = (isLive && _serverState.started_at)
         ? Date.now() / 1000 - _serverState.started_at : 0;
@@ -293,7 +295,7 @@
         const ss = String(Math.floor(left % 60)).padStart(2, "0");
         const start = new Date(startsAt * 1000);
         const hhmm = `${String(start.getHours()).padStart(2,"0")}:${String(start.getMinutes()).padStart(2,"0")}`;
-        schedEl.textContent = `⏰ 預定 ${hhmm} · 倒數 ${mm}:${ss}`;
+        schedEl.textContent = ServerI18n.t("broadcastSchedCountdown", { time: hhmm, mm: mm, ss: ss });
         schedEl.hidden = false;
       } else {
         schedEl.hidden = true;
@@ -359,13 +361,13 @@
         // 呼叫（standby），詞彙跟著情境走。
         const sessActive = _sessionActive();
         big.className = "admin-bc-v4__big admin-bc-v5__big is-on";
-        big.textContent = sessActive ? "◐ 暫停顯示" : "■ 停止顯示";
+        big.textContent = sessActive ? ServerI18n.t("broadcastBigPause") : ServerI18n.t("broadcastBigStop");
       } else if (isPaused) {
         big.className = "admin-bc-v4__big admin-bc-v5__big is-resume";
-        big.textContent = "▶ 繼續顯示 · 排隊訊息將播出";
+        big.textContent = ServerI18n.t("broadcastBigResume");
       } else {
         big.className = "admin-bc-v4__big admin-bc-v5__big is-off";
-        big.textContent = "▶ 開始顯示";
+        big.textContent = ServerI18n.t("broadcastBigStart");
       }
     }
 
@@ -395,17 +397,17 @@
     const state = _derive4State();
     if (state === "standby") {
       const ok = await postToggle("live");
-      if (ok) window.showToast && showToast("已切換到 LIVE", true);
+      if (ok) window.showToast && showToast(ServerI18n.t("broadcastToastSwitchedLive"), true);
     } else if (state === "paused") {
       const ok = await postToggle("live");
-      if (ok) window.showToast && showToast("已 RESUME · queue 將排空", true);
+      if (ok) window.showToast && showToast(ServerI18n.t("broadcastToastResumed"), true);
     } else if (state === "live") {
       // 場次進行中：語意是「暫停」——低風險（訊息排隊、可續播），
       // 不彈確認，點了就暫停。無場次才是「停止」，保留確認彈窗。
       const sessActive = _sessionActive();
       if (sessActive) {
         const ok = await postToggle("standby");
-        if (ok) window.showToast && showToast("已暫停顯示 · 訊息會排入 queue", true);
+        if (ok) window.showToast && showToast(ServerI18n.t("broadcastToastPaused"), true);
         renderTick();
         return;
       }
@@ -417,12 +419,12 @@
       const fp = _uniqueFp.toLocaleString();
       const ok = await window.HudConfirm?.open({
             icon: "■",
-            title: "停止顯示",
+            title: ServerI18n.t("broadcastStopLabel"),
             subtitle: "STOP DESKTOP · MESSAGES CONTINUE TO BE RECEIVED",
             severity: "warn",
             body: `
               <div style="font-size:13px;color:var(--hud-text, #f1f5f9);line-height:1.7;">
-                Desktop 將停止渲染彈幕。訊息仍會繼續接收並記錄到 session 中。
+                ${ServerI18n.t("broadcastStopBodyDesc")}
               </div>
               <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 12px;margin-top:12px;background:var(--hud-bg2, #182239);border-radius:6px;border:1px solid var(--hud-line, rgba(148,163,184,0.18));text-align:center;">
                 <div><div style="font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:9px;letter-spacing:1px;color:var(--hud-text-dim, #94a3b8);">MSGS</div><div style="font-size:14px;font-weight:600;margin-top:2px;">${msgs.toLocaleString()}</div></div>
@@ -430,16 +432,16 @@
                 <div><div style="font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:9px;letter-spacing:1px;color:var(--hud-text-dim, #94a3b8);">TIME</div><div style="font-size:14px;font-weight:600;margin-top:2px;">${elapsedStr}</div></div>
               </div>
               <div style="margin-top:12px;font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:10px;letter-spacing:0.3px;color: var(--color-ink-warning);">
-                ⚠ Session 資料不受影響 · 可隨時重新開始顯示
+                ${ServerI18n.t("broadcastStopBodyWarn")}
               </div>`,
-            confirmLabel: "停止顯示",
-            cancelLabel: "取消",
+            confirmLabel: ServerI18n.t("broadcastStopLabel"),
+            cancelLabel: ServerI18n.t("cancel"),
             width: 440,
           });
       if (!ok) return;
       // Stop overlay rendering; session lifecycle stays separate.
       const success = await postToggle("standby");
-      if (success) window.showToast && showToast("已停止顯示 · DESKTOP OFF", true);
+      if (success) window.showToast && showToast(ServerI18n.t("broadcastToastStopped") + " · DESKTOP OFF", true);
     }
     renderTick();
   }
@@ -448,21 +450,21 @@
   async function onClearClick() {
     const ok = await window.HudConfirm?.open({
       icon: "⌫",
-      title: "清空 Desktop 畫面",
+      title: ServerI18n.t("broadcastClearModalTitle"),
       subtitle: "CLEAR SCREEN · MESSAGES STAY ARCHIVED",
       severity: "warn",
-      body: "只清掉目前顯示在 Desktop 上的彈幕，已歸檔的訊息記錄不受影響。",
-      confirmLabel: "清空畫面",
+      body: ServerI18n.t("broadcastClearModalBody"),
+      confirmLabel: ServerI18n.t("broadcastClearModalConfirm"),
     });
     if (!ok) return;
     try {
       const r = await window.csrfFetch("/admin/overlay/clear", { method: "POST" });
-      if (r.ok) window.showToast && showToast("已清空 Desktop", true);
+      if (r.ok) window.showToast && showToast(ServerI18n.t("broadcastToastCleared"), true);
       // 這個端點是有的（routes/admin/overlay.py），訊息以前寫「後端尚未實作」
       // 是留下來沒更新的舊文案 —— 真的失敗時那會把人指向錯的方向。
-      else window.showToast && showToast(`清空失敗（HTTP ${r.status}）`, false);
+      else window.showToast && showToast(ServerI18n.t("broadcastToastClearFailedHttp", { status: r.status }), false);
     } catch (_) {
-      window.showToast && showToast("清空失敗", false);
+      window.showToast && showToast(ServerI18n.t("broadcastToastClearFailed"), false);
     }
   }
 
