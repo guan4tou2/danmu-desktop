@@ -64,7 +64,9 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   expect(securitySrc).toContain('leaf === "security"');
   // 2026-05-19 v5 Batch 12-3: security page title shortened from
   // "System › Security" to just "安全性" per batch12-system.jsx.
-  expect(securitySrc).toContain("安全性");
+  // D-4：頁面標題走 security2PageTitle key，原文改釘 zh locale
+  expect(securitySrc).toContain('t("security2PageTitle")');
+  expect(zhLocaleSrc).toContain('"security2PageTitle": "安全性"');
   expect(securitySrc).toContain("SECURITY · AUTH · ACCESS · TOKENS");
   expect(systemTabsSrc).toContain("slug: \"security\"");
   expect(systemTabsSrc).toContain("section: \"admin-security-v2-page\"");

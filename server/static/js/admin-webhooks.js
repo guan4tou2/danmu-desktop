@@ -26,17 +26,20 @@
   const SECTION_ID = "sec-webhooks";
   const POLL_INTERVAL_MS = 12000;
 
+  // D-4：這份 fallback 只在 /admin/webhooks/events 抓不到時頂替，內容
+  // 對應 server/services/webhook.py::EVENT_CATALOG。頂層常數 parse 時
+  // ServerI18n 尚未 init，故存 labelKey、真正翻譯留給 _eventLabel() 渲染時解析。
   const EVENT_CATALOG_FALLBACK = [
-    { slug: "on_danmu", zh: "彈幕送出", en: "Danmu accepted" },
-    { slug: "on_danmu_blocked", zh: "彈幕被擋", en: "Danmu blocked" },
-    { slug: "on_poll_create", zh: "投票建立", en: "Poll created" },
-    { slug: "on_poll_vote", zh: "投票一次", en: "Single vote" },
-    { slug: "on_poll_end", zh: "投票結束", en: "Poll ended" },
-    { slug: "on_session_start", zh: "場次開啟 / Desktop ON", en: "Session start" },
-    { slug: "on_session_end", zh: "場次結束 / Desktop OFF", en: "Session end" },
-    { slug: "on_overlay_clear", zh: "清空 Desktop", en: "Desktop cleared" },
-    { slug: "on_audit_alert", zh: "審計警示", en: "Audit alert >= warn" },
-    { slug: "on_plugin_change", zh: "插件變動", en: "Plugin install/uninstall" },
+    { slug: "on_danmu", labelKey: "webhooksEvtOnDanmu" },
+    { slug: "on_danmu_blocked", labelKey: "webhooksEvtOnDanmuBlocked" },
+    { slug: "on_poll_create", labelKey: "webhooksEvtOnPollCreate" },
+    { slug: "on_poll_vote", labelKey: "webhooksEvtOnPollVote" },
+    { slug: "on_poll_end", labelKey: "webhooksEvtOnPollEnd" },
+    { slug: "on_session_start", labelKey: "webhooksEvtOnSessionStart" },
+    { slug: "on_session_end", labelKey: "webhooksEvtOnSessionEnd" },
+    { slug: "on_overlay_clear", labelKey: "webhooksEvtOnOverlayClear" },
+    { slug: "on_audit_alert", labelKey: "webhooksEvtOnAuditAlert" },
+    { slug: "on_plugin_change", labelKey: "webhooksEvtOnPluginChange" },
   ];
 
   function _truncate(str, max) {
@@ -49,10 +52,10 @@
     try {
       const d = new Date(iso);
       const sec = Math.max(0, (Date.now() - d.getTime()) / 1000);
-      if (sec < 60) return Math.floor(sec) + " 秒前";
-      if (sec < 3600) return Math.floor(sec / 60) + " 分鐘前";
-      if (sec < 86400) return Math.floor(sec / 3600) + " 小時前";
-      return Math.floor(sec / 86400) + " 天前";
+      if (sec < 60) return ServerI18n.t("webhooksTimeAgoSeconds", { n: Math.floor(sec) });
+      if (sec < 3600) return ServerI18n.t("webhooksTimeAgoMinutes", { n: Math.floor(sec / 60) });
+      if (sec < 86400) return ServerI18n.t("webhooksTimeAgoHours", { n: Math.floor(sec / 3600) });
+      return ServerI18n.t("webhooksTimeAgoDays", { n: Math.floor(sec / 86400) });
     } catch (_) {
       return "—";
     }
@@ -94,11 +97,10 @@
       `
       <div id="${SECTION_ID}" class="admin-webhooks-page hud-page-stack lg:col-span-2" data-tpl="B">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">WEBHOOKS · 外部通知 · HMAC</div>
+          <div class="admin-ui-page-kicker">WEBHOOKS · ${ServerI18n.t("webhooksPageKicker")} · HMAC</div>
           <div class="admin-ui-page-title">Webhooks</div>
           <p class="admin-ui-page-note">
-            集中管理外部通知 endpoints。簽名使用 HMAC-SHA256（X-Webhook-Signature）。
-            事件觸發時 fire-and-forget 並重試最多 N 次（指數退避 1s/2s/4s）。
+            ${ServerI18n.t("webhooksPageNote")}
           </p>
         </div>
 
@@ -110,9 +112,9 @@
             <!-- Endpoints list -->
             <div class="admin-ui-card admin-wh-endpoints-card">
               <div class="admin-ui-section-head admin-wh-section-head">
-                <span class="admin-ui-monolabel">ENDPOINTS · <span data-wh-count>0</span> 個</span>
+                <span class="admin-ui-monolabel">${ServerI18n.t("webhooksEndpointCountLabel", { n: '<span data-wh-count>0</span>' })}</span>
                 <span class="admin-ui-spacer" aria-hidden="true"></span>
-                <button type="button" class="admin-ui-action is-primary admin-wh-add-btn" data-wh-action="show-add">＋ 新增 endpoint</button>
+                <button type="button" class="admin-ui-action is-primary admin-wh-add-btn" data-wh-action="show-add">${ServerI18n.t("webhooksAddEndpointBtn")}</button>
               </div>
 
               <!-- Inline add form (shown when "+ 新增 endpoint" pressed) -->
@@ -140,24 +142,24 @@
                   <div data-wh-register-events></div>
                 </fieldset>
                 <div class="admin-wh-form-actions">
-                  <button type="submit" class="admin-ui-action is-primary admin-wh-form-action">註冊</button>
-                  <button type="button" class="admin-ui-action admin-wh-form-action" data-wh-action="hide-add">取消</button>
+                  <button type="submit" class="admin-ui-action is-primary admin-wh-form-action">${ServerI18n.t("webhooksRegisterBtn")}</button>
+                  <button type="button" class="admin-ui-action admin-wh-form-action" data-wh-action="hide-add">${ServerI18n.t("cancel")}</button>
                 </div>
               </form>
 
               <div id="wh-list" class="admin-ui-list-stack admin-wh-list">
-                ${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : "載入中…"}
+                ${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : ServerI18n.t("webhooksLoadingFallback")}
               </div>
             </div>
 
             <!-- Delivery log table -->
             <div class="admin-ui-card admin-wh-log-card">
               <div class="admin-ui-section-head admin-wh-section-head">
-                <span class="admin-ui-monolabel">DELIVERY LOG · 即時</span>
+                <span class="admin-ui-monolabel">DELIVERY LOG · ${ServerI18n.t("webhooksLogLiveLabel")}</span>
                 <span class="admin-ui-spacer" aria-hidden="true"></span>
                 <span class="admin-ui-chip-group admin-wh-log-filters" data-wh-log-filters>
-                  <button type="button" class="admin-ui-chip admin-wh-log-filter is-active" data-wh-log-filter="all">全部</button>
-                  <button type="button" class="admin-ui-chip admin-wh-log-filter" data-wh-log-filter="failed">失敗</button>
+                  <button type="button" class="admin-ui-chip admin-wh-log-filter is-active" data-wh-log-filter="all">${ServerI18n.t("webhooksFilterAll")}</button>
+                  <button type="button" class="admin-ui-chip admin-wh-log-filter" data-wh-log-filter="failed">${ServerI18n.t("webhooksFilterFailed")}</button>
                   <button type="button" class="admin-ui-chip admin-wh-log-filter" data-wh-log-filter="2xx">2xx</button>
                   <button type="button" class="admin-ui-chip admin-wh-log-filter" data-wh-log-filter="5xx">5xx</button>
                 </span>
@@ -167,7 +169,7 @@
                 <span>ENDPOINT</span><span>EVENT</span><span>RETRY</span>
               </div>
               <div id="wh-log-list" class="admin-ui-list-stack is-tight admin-wh-log-list">
-                ${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : "載入中…"}
+                ${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : ServerI18n.t("webhooksLoadingFallback")}
               </div>
             </div>
           </div>
@@ -345,12 +347,29 @@
 
   function _eventLabel(evt) {
     const slug = evt && evt.slug ? String(evt.slug) : "";
+    // D-4：evt.labelKey 表示這是本檔 EVENT_CATALOG_FALLBACK 的條目，走
+    // ServerI18n；否則是 /admin/webhooks/events 抓回的即時後端資料
+    // (server/services/webhook.py::EVENT_CATALOG，只有 zh/en 兩語，非本次
+    // 遷移範圍)，維持原本 zh/en 組字邏輯。
+    if (evt && evt.labelKey) {
+      const name = ServerI18n.t(evt.labelKey);
+      return {
+        slug,
+        label: name ? name + " · " + slug : slug,
+        title: name,
+      };
+    }
     const zh = evt && evt.zh ? String(evt.zh) : "";
     const en = evt && evt.en ? String(evt.en) : "";
+    // D-4 尾修：這裡原本無視 locale 永遠畫 zh——en/ja/ko 下事件名成了
+    // 頁面僅存的中文殘留。後端目錄只有 zh/en 兩語（ja/ko 補齊記在
+    // TODOS），非 zh 一律走 en（與 i18next fallbackLng 一致）。
+    const isZh = !!(window.ServerI18n && ServerI18n.currentLang === "zh");
+    const name = isZh ? (zh || en) : (en || zh);
     return {
       slug,
-      label: zh ? zh + " · " + slug : slug,
-      title: en ? zh + " · " + en : zh,
+      label: name ? name + " · " + slug : slug,
+      title: zh && en ? zh + " · " + en : (zh || en),
     };
   }
 
@@ -381,19 +400,19 @@
     };
     el.innerHTML = `
       <div class="admin-wh-stat">
-        <div class="k">已啟用 ENDPOINTS</div>
+        <div class="k">${ServerI18n.t("webhooksStatEnabledLabel")}</div>
         <div class="v">${s.endpoints_enabled} / ${s.endpoints_total}</div>
       </div>
       <div class="admin-wh-stat">
-        <div class="k">近 24H 推送</div>
+        <div class="k">${ServerI18n.t("webhooksStatDeliveries24hLabel")}</div>
         <div class="v" style="color: var(--color-ink-success)">${s.deliveries_24h.toLocaleString ? s.deliveries_24h.toLocaleString() : s.deliveries_24h}</div>
       </div>
       <div class="admin-wh-stat">
-        <div class="k">失敗（待重試）</div>
+        <div class="k">${ServerI18n.t("webhooksStatFailedLabel")}</div>
         <div class="v" style="color:${s.failed_pending_retry > 0 ? 'var(--hud-amber)' : 'var(--color-text-secondary)'}">${s.failed_pending_retry}</div>
       </div>
       <div class="admin-wh-stat">
-        <div class="k">已放棄（&gt; ${getRetryCap()} 次）</div>
+        <div class="k">${ServerI18n.t("webhooksStatDroppedLabel", { n: getRetryCap() })}</div>
         <div class="v" style="color:${s.dropped_24h > 0 ? 'var(--hud-crimson)' : 'var(--color-text-secondary)'}">${s.dropped_24h}</div>
       </div>`;
   }
@@ -417,9 +436,9 @@
       list.innerHTML = "";
       const card = window.AdminEmpty.renderCustom({
         icon: "⇌",
-        title: "尚未註冊 webhook",
-        desc: "把彈幕即時轉發到 Discord / Slack / 自訂端點，或接收外部服務發彈幕。",
-        actionLabel: "+ 新增 webhook",
+        title: ServerI18n.t("webhooksEmptyTitle"),
+        desc: ServerI18n.t("webhooksEmptyDesc"),
+        actionLabel: ServerI18n.t("webhooksEmptyActionLabel"),
         action: () => {
           const form = document.getElementById("wh-register-form");
           if (form) form.hidden = false;
@@ -478,8 +497,8 @@
           </div>
           <span class="counter ok">✓ ${success.toLocaleString()}</span>
           <span class="counter ${fail > 0 ? 'fail' : 'fail-zero'}">✗ ${fail}</span>
-          <button type="button" class="admin-ui-action admin-wh-card-btn" data-wh-action="test" data-wh-hook-id="${hookId}">↻ 測試</button>
-          <button type="button" class="admin-ui-action is-primary admin-wh-card-btn" data-wh-action="settings" data-wh-hook-id="${hookId}">⚙ 設定</button>
+          <button type="button" class="admin-ui-action admin-wh-card-btn" data-wh-action="test" data-wh-hook-id="${hookId}">${ServerI18n.t("webhooksCardTestBtn")}</button>
+          <button type="button" class="admin-ui-action is-primary admin-wh-card-btn" data-wh-action="settings" data-wh-hook-id="${hookId}">${ServerI18n.t("webhooksCardSettingsBtn")}</button>
         </div>
       </article>`;
   }
@@ -498,7 +517,7 @@
     });
 
     if (filtered.length === 0) {
-      list.innerHTML = '<div class="admin-wh-empty">尚無 delivery 紀錄</div>';
+      list.innerHTML = `<div class="admin-wh-empty">${ServerI18n.t("webhooksLogEmpty")}</div>`;
       return;
     }
 
@@ -569,7 +588,7 @@
       event: (hook.events && hook.events[0]) || "on_danmu",
       ts: Math.floor(Date.now() / 1000),
       hook_id: hook.id,
-      data: { text: "示範彈幕", color: "#ffffff", size: 50 },
+      data: { text: ServerI18n.t("webhooksSamplePayloadText"), color: "#ffffff", size: 50 },
     };
 
     detail.innerHTML =
@@ -577,23 +596,23 @@
         '<span class="dot" style="background:' + dotColor + ';box-shadow:0 0 6px ' + dotColor + '"></span>' +
         '<span class="name">' + _escHtml(_formatHostname(hook.url)) + '</span>' +
         '<span class="admin-ui-spacer" aria-hidden="true"></span>' +
-        '<button type="button" class="admin-ui-action admin-wh-detail-close" data-wh-action="close-detail" aria-label="關閉">' + window.AdminUtils.closeIcon + '</button>' +
+        '<button type="button" class="admin-ui-action admin-wh-detail-close" data-wh-action="close-detail" aria-label="' + ServerI18n.t("webhooksCloseAriaLabel") + '">' + window.AdminUtils.closeIcon + '</button>' +
       '</div>' +
-      '<div class="admin-ui-monolabel admin-wh-detail-label">事件訂閱</div>' +
+      '<div class="admin-ui-monolabel admin-wh-detail-label">' + ServerI18n.t("webhooksEventSubscriptionsLabel") + '</div>' +
       '<div class="admin-wh-detail-events">' + eventsHtml + '</div>' +
       '<div class="admin-ui-monolabel admin-wh-detail-label">RETRY POLICY</div>' +
       '<div class="admin-wh-detail-policy">' +
         '<div><span class="k">Max retries</span><span class="v">' + (hook.retry_count != null ? hook.retry_count : 3) + '</span></div>' +
         '<div><span class="k">Backoff</span><span class="v">exponential · 1s → 2s → 4s</span></div>' +
         '<div><span class="k">Timeout</span><span class="v">5,000 ms</span></div>' +
-        '<div><span class="k">HMAC sign</span><span class="v" style="color: var(--color-ink-success)">' + (hook.secret ? "SHA-256 · X-Webhook-Signature" : "—（未設 secret）") + '</span></div>' +
+        '<div><span class="k">HMAC sign</span><span class="v" style="color: var(--color-ink-success)">' + (hook.secret ? "SHA-256 · X-Webhook-Signature" : ServerI18n.t("webhooksSecretNotSet")) + '</span></div>' +
       '</div>' +
       '<div class="admin-ui-monolabel admin-wh-detail-label">PAYLOAD SAMPLE</div>' +
       '<pre class="admin-wh-detail-payload">' + _escHtml(JSON.stringify(samplePayload, null, 2)) + '</pre>' +
       '<div class="admin-wh-detail-actions">' +
-        '<button type="button" class="admin-ui-action is-primary admin-wh-detail-action" data-wh-action="detail-ping" data-wh-hook-id="' + _escHtml(hook.id) + '">↻ 送測試 ping</button>' +
-        '<button type="button" class="admin-ui-action is-warn admin-wh-detail-action" data-wh-action="detail-toggle" data-wh-hook-id="' + _escHtml(hook.id) + '" data-wh-next-enabled="' + (enabled ? "0" : "1") + '">' + (enabled ? "⏸ 暫停" : "▶ 啟用") + '</button>' +
-        '<button type="button" class="admin-ui-action is-danger admin-wh-detail-action" data-wh-action="detail-delete" data-wh-hook-id="' + _escHtml(hook.id) + '">⊘ 刪除</button>' +
+        '<button type="button" class="admin-ui-action is-primary admin-wh-detail-action" data-wh-action="detail-ping" data-wh-hook-id="' + _escHtml(hook.id) + '">' + ServerI18n.t("webhooksDetailPingBtn") + '</button>' +
+        '<button type="button" class="admin-ui-action is-warn admin-wh-detail-action" data-wh-action="detail-toggle" data-wh-hook-id="' + _escHtml(hook.id) + '" data-wh-next-enabled="' + (enabled ? "0" : "1") + '">' + (enabled ? ServerI18n.t("webhooksDetailPauseBtn") : ServerI18n.t("webhooksDetailEnableBtn")) + '</button>' +
+        '<button type="button" class="admin-ui-action is-danger admin-wh-detail-action" data-wh-action="detail-delete" data-wh-hook-id="' + _escHtml(hook.id) + '">' + ServerI18n.t("webhooksDetailDeleteBtn") + '</button>' +
       '</div>';
   }
 
@@ -608,13 +627,13 @@
         body: JSON.stringify({ hook_id: hookId }),
       });
       const data = await res.json();
-      if (res.ok) showToast(ServerI18n.t("testPayloadSent") || "已送出測試 payload");
-      else showToast(data.error || ServerI18n.t("testFailed") || "測試失敗", false);
+      if (res.ok) showToast(ServerI18n.t("testPayloadSent"));
+      else showToast(data.error || ServerI18n.t("testFailed"), false);
       // Brief delay to let the worker thread land + log the delivery.
       setTimeout(loadAll, 1500);
     } catch (err) {
       console.error("Webhook test error:", err);
-      showToast(ServerI18n.t("testFailed") || "測試失敗", false);
+      showToast(ServerI18n.t("testFailed"), false);
     }
   }
 
@@ -628,18 +647,18 @@
       });
       const data = await res.json();
       if (!res.ok) {
-        showToast(data.error || "切換失敗", false);
+        showToast(data.error || ServerI18n.t("webhooksToggleFailed"), false);
         return;
       }
       const hook = _state.hooks.find(function (h) { return h.id === hookId; });
       if (hook) hook.enabled = data.enabled;
-      showToast(data.enabled ? "Webhook 已啟用" : "Webhook 已暫停");
+      showToast(data.enabled ? ServerI18n.t("webhooksEnabledToast") : ServerI18n.t("webhooksPausedToast"));
       _renderStats();
       _renderEndpoints();
       _renderDetail();
     } catch (err) {
       console.error("Webhook toggle error:", err);
-      showToast("切換失敗", false);
+      showToast(ServerI18n.t("webhooksToggleFailed"), false);
     }
   }
 
@@ -647,11 +666,11 @@
     if (!hookId) return;
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
-      title: "刪除 webhook",
+      title: ServerI18n.t("webhooksDeleteModalTitle"),
       subtitle: "DELETE WEBHOOK",
       severity: "danger",
-      body: ServerI18n.t("deleteWebhookConfirm") || "確定刪除這個 webhook？",
-      confirmLabel: "刪除",
+      body: ServerI18n.t("deleteWebhookConfirm"),
+      confirmLabel: ServerI18n.t("webhooksConfirmDeleteLabel"),
     });
     if (!ok) return;
     try {
@@ -662,15 +681,15 @@
       });
       const data = await res.json();
       if (res.ok) {
-        showToast(ServerI18n.t("webhookDeleted") || "已刪除");
+        showToast(ServerI18n.t("webhookDeleted"));
         if (_state.selectedHookId === hookId) _state.selectedHookId = null;
         loadAll();
       } else {
-        showToast(data.error || ServerI18n.t("deleteFailed") || "刪除失敗", false);
+        showToast(data.error || ServerI18n.t("deleteFailed"), false);
       }
     } catch (err) {
       console.error("Webhook delete error:", err);
-      showToast(ServerI18n.t("deleteFailed") || "刪除失敗", false);
+      showToast(ServerI18n.t("deleteFailed"), false);
     }
   }
 

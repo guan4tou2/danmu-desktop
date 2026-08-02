@@ -31,9 +31,9 @@
         <div id="${PAGE_ID}" class="admin-security-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">SECURITY · AUTH · ACCESS · TOKENS</div>
-          <div class="admin-ui-page-title">安全性</div>
+          <div class="admin-ui-page-title">${ServerI18n.t("security2PageTitle")}</div>
           <p class="admin-ui-page-note">
-            單一管理員模式、無角色分離。下方卡片左側色條代表狀態：lime = 已就緒、cyan = 進行中、amber = 警告、crimson = 危險。
+            ${ServerI18n.t("security2PageNote")}
           </p>
         </div>
 
@@ -42,7 +42,7 @@
           <!-- ① Admin password — change password form -->
           <div class="admin-sec-card is-lime">
             <div class="admin-sec-card__head">
-              <span class="admin-sec-card__zh">管理員密碼</span>
+              <span class="admin-sec-card__zh">${ServerI18n.t("security2CardPasswordTitle")}</span>
               <span class="admin-sec-card__en">ADMIN PASSWORD</span>
             </div>
             <div class="admin-sec-card__body">
@@ -63,7 +63,7 @@
                   <span class="admin-ui-monolabel">CONFIRM</span>
                   <input id="sec2-pw-confirm" type="password" required autocomplete="new-password" class="admin-ui-input" />
                 </label>
-                <button type="submit" class="admin-ui-action is-primary admin-sec-action">變更密碼</button>
+                <button type="submit" class="admin-ui-action is-primary admin-sec-action">${ServerI18n.t("security2SubmitChangePassword")}</button>
               </form>
             </div>
           </div>
@@ -71,14 +71,14 @@
           <!-- ② Admin session -->
           <div class="admin-sec-card is-cyan">
             <div class="admin-sec-card__head">
-              <span class="admin-sec-card__zh">工作階段</span>
+              <span class="admin-sec-card__zh">${ServerI18n.t("security2CardSessionTitle")}</span>
               <span class="admin-sec-card__en">ADMIN SESSION</span>
             </div>
             <div class="admin-sec-card__body">
               <div class="admin-sec-row">
                 <span class="admin-sec-row__dot is-lime"></span>
                 <div class="admin-sec-row__main">
-                  <div class="admin-sec-row__label">目前 Session</div>
+                  <div class="admin-sec-row__label">${ServerI18n.t("security2CurrentSessionRowLabel")}</div>
                   <div class="admin-sec-row__value" id="sec2-session-self-line">—</div>
                 </div>
               </div>
@@ -86,16 +86,16 @@
                 <span class="admin-sec-row__dot is-lime"></span>
                 <div class="admin-sec-row__main">
                   <div class="admin-sec-row__label">Token TTL</div>
-                  <div class="admin-sec-row__value">24h · 自動續期</div>
+                  <div class="admin-sec-row__value">${ServerI18n.t("security2TokenTtlValue")}</div>
                 </div>
               </div>
               <div class="admin-sec-row">
                 <span class="admin-sec-row__dot is-lime"></span>
                 <div class="admin-sec-row__main">
-                  <div class="admin-sec-row__label">其他裝置</div>
-                  <div class="admin-sec-row__value">無（單會話）</div>
+                  <div class="admin-sec-row__label">${ServerI18n.t("security2OtherDevicesLabel")}</div>
+                  <div class="admin-sec-row__value">${ServerI18n.t("security2OtherDevicesValue")}</div>
                 </div>
-                <span class="admin-sec-row__hint">待 BE</span>
+                <span class="admin-sec-row__hint">${ServerI18n.t("security2PendingBackendHint")}</span>
               </div>
             </div>
           </div>
@@ -103,29 +103,29 @@
           <!-- ③ WS token — overlay viewer auth -->
           <div class="admin-sec-card is-cyan">
             <div class="admin-sec-card__head">
-              <span class="admin-sec-card__zh">WebSocket 令牌</span>
+              <span class="admin-sec-card__zh">${ServerI18n.t("security2CardWsTokenTitle")}</span>
               <span class="admin-sec-card__en">WS TOKEN · VIEWER AUTH</span>
               <span class="admin-sec-card__spacer"></span>
-              <span id="sec2-wsa-status" class="admin-ui-chip admin-sec-status-chip">載入中…</span>
+              <span id="sec2-wsa-status" class="admin-ui-chip admin-sec-status-chip">${ServerI18n.t("security2Loading")}</span>
             </div>
             <div class="admin-sec-card__body">
               <label class="admin-security-toggle">
                 <input id="sec2-wsa-toggle" type="checkbox" />
-                <span>啟用 token 驗證（Desktop 連線需帶 token）</span>
+                <span>${ServerI18n.t("security2WsTokenToggleLabel")}</span>
               </label>
               <div class="admin-security-field">
-                <span class="admin-ui-monolabel">TOKEN · 12–128 字元</span>
+                <span class="admin-ui-monolabel">${ServerI18n.t("security2TokenLengthLabel")}</span>
                 <div class="admin-security-tokenrow">
-                  <input id="sec2-wsa-token" type="password" class="admin-ui-input" placeholder="未設定" autocomplete="off" spellcheck="false" />
+                  <input id="sec2-wsa-token" type="password" class="admin-ui-input" placeholder="${ServerI18n.t("security2NotConfigured")}" autocomplete="off" spellcheck="false" />
                   <button type="button" id="sec2-wsa-reveal" class="admin-ui-action admin-sec-token-action">👁</button>
-                  <button type="button" id="sec2-wsa-copy" class="admin-ui-action admin-sec-token-action">複製</button>
-                  <button type="button" id="sec2-wsa-rotate" class="admin-ui-action is-warn admin-sec-token-action">重新產生</button>
+                  <button type="button" id="sec2-wsa-copy" class="admin-ui-action admin-sec-token-action">${ServerI18n.t("security2CopyButton")}</button>
+                  <button type="button" id="sec2-wsa-rotate" class="admin-ui-action is-warn admin-sec-token-action">${ServerI18n.t("security2RegenerateButton")}</button>
                 </div>
               </div>
               <div class="admin-security-tokenmeta">
                 <span class="admin-ui-monolabel">LAST ROTATION</span>
                 <span id="sec2-wsa-lastrot" class="admin-security-timestamp">—</span>
-                <button type="button" id="sec2-wsa-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end">儲存</button>
+                <button type="button" id="sec2-wsa-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end">${ServerI18n.t("security2SaveButton")}</button>
               </div>
             </div>
           </div>
@@ -133,31 +133,31 @@
           <!-- ④ IP allowlist -->
           <div class="admin-sec-card is-amber">
             <div class="admin-sec-card__head">
-              <span class="admin-sec-card__zh">IP 存取限制</span>
+              <span class="admin-sec-card__zh">${ServerI18n.t("security2CardIpTitle")}</span>
               <span class="admin-sec-card__en">IP ALLOWLIST</span>
               <span class="admin-sec-card__spacer"></span>
-              <span id="sec2-ip-status-chip" class="admin-ui-chip admin-sec-status-chip">載入中…</span>
+              <span id="sec2-ip-status-chip" class="admin-ui-chip admin-sec-status-chip">${ServerI18n.t("security2Loading")}</span>
             </div>
             <div class="admin-sec-card__body">
               <div class="admin-sec-row">
                 <span id="sec2-ip-dot" class="admin-sec-row__dot is-amber"></span>
                 <div class="admin-sec-row__main">
-                  <div class="admin-sec-row__label">狀態</div>
+                  <div class="admin-sec-row__label">${ServerI18n.t("security2StatusLabel")}</div>
                   <div id="sec2-ip-status-line" class="admin-sec-row__value">—</div>
                 </div>
               </div>
               <label class="admin-security-toggle">
                 <input id="sec2-ip-toggle" type="checkbox" />
-                <span>僅允許下方 IP / CIDR 存取 admin</span>
+                <span>${ServerI18n.t("security2IpToggleLabel")}</span>
               </label>
               <label class="admin-security-field">
-                <span class="admin-ui-monolabel">ALLOWLIST · 每行一筆</span>
+                <span class="admin-ui-monolabel">${ServerI18n.t("security2IpAllowlistLabel")}</span>
                 <textarea id="sec2-ip-entries" class="admin-ui-input" rows="4" spellcheck="false" placeholder="127.0.0.1/32"></textarea>
               </label>
               <div class="admin-security-tokenmeta">
                 <span class="admin-ui-monolabel">CURRENT IP</span>
                 <span id="sec2-ip-current" class="admin-security-timestamp">—</span>
-                <button type="button" id="sec2-ip-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end">儲存</button>
+                <button type="button" id="sec2-ip-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end">${ServerI18n.t("security2SaveButton")}</button>
               </div>
             </div>
           </div>
@@ -165,14 +165,14 @@
           <!-- ⑤ CORS — informational -->
           <div class="admin-sec-card">
             <div class="admin-sec-card__head">
-              <span class="admin-sec-card__zh">CORS 設定</span>
+              <span class="admin-sec-card__zh">${ServerI18n.t("security2CardCorsTitle")}</span>
               <span class="admin-sec-card__en">CROSS-ORIGIN</span>
             </div>
             <div class="admin-sec-card__body">
               <div class="admin-sec-row">
                 <span class="admin-sec-row__dot is-amber"></span>
                 <div class="admin-sec-row__main">
-                  <div class="admin-sec-row__label">允許來源</div>
+                  <div class="admin-sec-row__label">${ServerI18n.t("security2CorsOriginsRowLabel")}</div>
                   <div id="sec2-cors-origins-line" class="admin-sec-row__value">—</div>
                 </div>
               </div>
@@ -191,19 +191,19 @@
                 </div>
               </div>
               <label class="admin-security-field">
-                <span class="admin-ui-monolabel">ORIGINS · 每行一筆</span>
+                <span class="admin-ui-monolabel">${ServerI18n.t("security2CorsOriginsLabel")}</span>
                 <textarea id="sec2-cors-origins" class="admin-ui-input" rows="3" spellcheck="false" placeholder="*"></textarea>
               </label>
               <label class="admin-security-toggle">
                 <input id="sec2-cors-credentials" type="checkbox" />
-                <span>允許 credentials（不可搭配 wildcard origin）</span>
+                <span>${ServerI18n.t("security2CorsCredentialsToggleLabel")}</span>
               </label>
               <label class="admin-security-field">
                 <span class="admin-ui-monolabel">METHODS</span>
                 <input id="sec2-cors-methods" type="text" class="admin-ui-input" spellcheck="false" placeholder="GET, POST, DELETE, PATCH, OPTIONS" />
               </label>
               <div class="admin-security-tokenmeta">
-                <button type="button" id="sec2-cors-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end">儲存 CORS</button>
+                <button type="button" id="sec2-cors-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end">${ServerI18n.t("security2SaveCorsButton")}</button>
               </div>
             </div>
           </div>
@@ -218,12 +218,12 @@
               <div class="admin-sec-row">
                 <span class="admin-sec-row__dot" id="sec2-tls-dot"></span>
                 <div class="admin-sec-row__main">
-                  <div class="admin-sec-row__label">狀態</div>
+                  <div class="admin-sec-row__label">${ServerI18n.t("security2StatusLabel")}</div>
                   <div class="admin-sec-row__value" id="sec2-tls-status">—</div>
                 </div>
               </div>
               <p class="admin-sec-card__note">
-                建議在反向代理（nginx / Caddy）層啟用 TLS。
+                ${ServerI18n.t("security2TlsRecommendationNote")}
               </p>
               <div class="admin-sec-row">
                 <span class="admin-sec-row__dot is-amber"></span>
@@ -238,15 +238,14 @@
           <!-- ⑦ Audit log link (span-2) -->
           <div class="admin-sec-card is-span2">
             <div class="admin-sec-card__head">
-              <span class="admin-sec-card__zh">操作審計</span>
+              <span class="admin-sec-card__zh">${ServerI18n.t("security2CardAuditTitle")}</span>
               <span class="admin-sec-card__en">AUDIT LOG</span>
               <span class="admin-sec-card__spacer"></span>
-              <a href="#/audit" class="admin-ui-action admin-sec-card__link">查看完整日誌 →</a>
+              <a href="#/audit" class="admin-ui-action admin-sec-card__link">${ServerI18n.t("security2ViewFullLogLink")}</a>
             </div>
             <div class="admin-sec-card__body">
               <p class="admin-sec-card__note">
-                每筆 admin 動作（登入 / 密碼變更 / token 輪替 / plugin 上傳 / Desktop clear / 等）
-                都自動寫入 audit log，可在 <a href="#/audit">#/audit</a> 查詢與匯出。
+                ${ServerI18n.t("security2AuditLogNote")}
               </p>
             </div>
           </div>
@@ -254,22 +253,22 @@
           <!-- ⑧ DANGER ZONE (span-2 row) -->
           <div class="admin-sec-card is-crimson is-span2">
             <div class="admin-sec-card__head">
-              <span class="admin-sec-card__zh">危險操作</span>
+              <span class="admin-sec-card__zh">${ServerI18n.t("security2CardDangerTitle")}</span>
               <span class="admin-sec-card__en">DANGER ZONE</span>
             </div>
             <div class="admin-sec-card__body">
               <div class="admin-sec-dangerzone">
                 <button type="button" class="admin-ui-action is-danger admin-sec-danger" data-sec-danger="revoke-tokens">
-                  <span class="admin-sec-danger__title">撤銷所有 API Token</span>
-                  <span class="admin-sec-danger__desc">立即停用所有整合</span>
+                  <span class="admin-sec-danger__title">${ServerI18n.t("security2RevokeApiTokensTitle")}</span>
+                  <span class="admin-sec-danger__desc">${ServerI18n.t("security2RevokeApiTokensDesc")}</span>
                 </button>
                 <button type="button" class="admin-ui-action is-danger admin-sec-danger" data-sec-danger="revoke-firetoken">
-                  <span class="admin-sec-danger__title">撤銷 Fire Token</span>
-                  <span class="admin-sec-danger__desc">所有 extension 斷線</span>
+                  <span class="admin-sec-danger__title">${ServerI18n.t("security2RevokeFireTokenTitle")}</span>
+                  <span class="admin-sec-danger__desc">${ServerI18n.t("security2RevokeFireTokenDesc")}</span>
                 </button>
                 <button type="button" class="admin-ui-action is-warn admin-sec-danger" data-sec-danger="reset-ws">
-                  <span class="admin-sec-danger__title">重設 WS Token</span>
-                  <span class="admin-sec-danger__desc">所有 viewer 需重連</span>
+                  <span class="admin-sec-danger__title">${ServerI18n.t("security2ResetWsTokenTitle")}</span>
+                  <span class="admin-sec-danger__desc">${ServerI18n.t("security2ResetWsTokenDesc")}</span>
                 </button>
               </div>
             </div>
@@ -302,7 +301,13 @@
     const score = scorePassword(pw);
     const widths = [0, 25, 50, 75, 100];
     const cls = ["", "is-bad", "is-warn", "is-warn", "is-good"];
-    const txt = ["—", "弱", "普通", "良好", "強"];
+    const txt = [
+      "—",
+      ServerI18n.t("security2PwWeak"),
+      ServerI18n.t("security2PwFair"),
+      ServerI18n.t("security2PwGood"),
+      ServerI18n.t("security2PwStrong"),
+    ];
     meter.style.width = widths[score] + "%";
     meter.className = cls[score];
     label.textContent = txt[score];
@@ -314,15 +319,15 @@
     const nw = document.getElementById("sec2-pw-new").value;
     const cf = document.getElementById("sec2-pw-confirm").value;
     if (!cur || !nw || !cf) {
-      window.showToast && showToast("請填寫所有欄位", false);
+      window.showToast && showToast(ServerI18n.t("security2ToastFillAllFields"), false);
       return;
     }
     if (nw.length < 8) {
-      window.showToast && showToast("新密碼至少 8 字元", false);
+      window.showToast && showToast(ServerI18n.t("security2ToastPasswordMinLength"), false);
       return;
     }
     if (nw !== cf) {
-      window.showToast && showToast("兩次輸入的新密碼不一致", false);
+      window.showToast && showToast(ServerI18n.t("security2ToastPasswordMismatch"), false);
       return;
     }
     try {
@@ -333,15 +338,15 @@
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        window.showToast && showToast("密碼已變更", true);
+        window.showToast && showToast(ServerI18n.t("security2ToastPasswordChanged"), true);
         document.getElementById("sec2-pw-form").reset();
         renderStrength("");
       } else {
-        window.showToast && showToast(data.error || "變更失敗", false);
+        window.showToast && showToast(data.error || ServerI18n.t("security2ToastChangeFailed"), false);
       }
     } catch (err) {
       console.error("Password change error:", err);
-      window.showToast && showToast("網路錯誤", false);
+      window.showToast && showToast(ServerI18n.t("security2ToastNetworkError"), false);
     }
   }
 
@@ -353,7 +358,7 @@
       const data = await res.json();
       document.getElementById("sec2-wsa-toggle").checked = !!data.require_token;
       document.getElementById("sec2-wsa-token").value = data.token || "";
-      statusEl.textContent = data.require_token ? "已啟用" : "未啟用";
+      statusEl.textContent = data.require_token ? ServerI18n.t("security2StatusEnabled") : ServerI18n.t("security2StatusDisabled");
       statusEl.className = "admin-ui-chip admin-sec-status-chip " + (data.require_token ? "is-active" : "");
       // Last-rotation persisted client-side (no backend field yet)
       const lr = localStorage.getItem("ws-auth-last-rotation");
@@ -361,7 +366,7 @@
         ? new Date(parseInt(lr, 10)).toLocaleString()
         : "—";
     } catch (e) {
-      statusEl.textContent = "載入失敗";
+      statusEl.textContent = ServerI18n.t("security2LoadFailed");
       statusEl.className = "admin-ui-chip is-danger admin-sec-status-chip";
     }
   }
@@ -406,7 +411,7 @@
         ipDot.classList.toggle("is-amber", !ipEnabled);
       }
       if (ipChip) {
-        ipChip.textContent = ipEnabled ? "已限制" : "未啟用";
+        ipChip.textContent = ipEnabled ? ServerI18n.t("security2IpRestricted") : ServerI18n.t("security2StatusDisabled");
         ipChip.className = "admin-ui-chip admin-sec-status-chip " + (ipEnabled ? "is-active" : "is-warn");
       }
       if (ipToggle) ipToggle.checked = ipEnabled;
@@ -415,8 +420,8 @@
       _setText(
         "sec2-ip-status-line",
         ipEnabled
-          ? `${ipEntries.length} 筆允許來源`
-          : "未啟用 — 所有 IP 可存取 admin"
+          ? ServerI18n.t("security2IpStatusEnabled", { n: ipEntries.length })
+          : ServerI18n.t("security2IpStatusDisabled")
       );
 
       const origins = Array.isArray(cors.origins) ? cors.origins : ["*"];
@@ -437,14 +442,14 @@
       _setText("sec2-cors-methods-line", methods.join(", "));
 
       const hsts = tls.hsts_enabled
-        ? `已設定 · ${tls.hsts_header || "Strict-Transport-Security"}`
-        : "未設定";
+        ? ServerI18n.t("security2HstsConfigured", { header: tls.hsts_header || "Strict-Transport-Security" })
+        : ServerI18n.t("security2NotConfigured");
       _setText("sec2-hsts-status", hsts);
     } catch (err) {
       console.error("Security settings load error:", err);
       const chip = document.getElementById("sec2-ip-status-chip");
       if (chip) {
-        chip.textContent = "載入失敗";
+        chip.textContent = ServerI18n.t("security2LoadFailed");
         chip.className = "admin-ui-chip is-danger admin-sec-status-chip";
       }
     }
@@ -474,14 +479,14 @@
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        window.showToast && showToast(data.error || "儲存失敗", false);
+        window.showToast && showToast(data.error || ServerI18n.t("security2ToastSaveFailed"), false);
         return;
       }
-      window.showToast && showToast("安全性設定已儲存", true);
+      window.showToast && showToast(ServerI18n.t("security2ToastSecuritySettingsSaved"), true);
       await loadSecuritySettings();
     } catch (err) {
       console.error("Security settings save error:", err);
-      window.showToast && showToast("網路錯誤", false);
+      window.showToast && showToast(ServerI18n.t("security2ToastNetworkError"), false);
     }
   }
 
@@ -489,7 +494,7 @@
     const require_token = document.getElementById("sec2-wsa-toggle").checked;
     const token = document.getElementById("sec2-wsa-token").value.trim();
     if (require_token && !token) {
-      window.showToast && showToast("啟用時必須填入 token", false);
+      window.showToast && showToast(ServerI18n.t("security2ToastTokenRequiredWhenEnabled"), false);
       return;
     }
     try {
@@ -500,54 +505,54 @@
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        window.showToast && showToast("WS 驗證設定已儲存", true);
+        window.showToast && showToast(ServerI18n.t("security2ToastWsAuthSaved"), true);
         await loadWsAuth();
       } else {
-        window.showToast && showToast(data.error || "儲存失敗", false);
+        window.showToast && showToast(data.error || ServerI18n.t("security2ToastSaveFailed"), false);
       }
     } catch (e) {
-      window.showToast && showToast("網路錯誤", false);
+      window.showToast && showToast(ServerI18n.t("security2ToastNetworkError"), false);
     }
   }
 
   async function rotateWsAuth() {
     const ok = await window.HudConfirm?.open({
       icon: "⟳",
-      title: "重設 WS Token",
+      title: ServerI18n.t("security2ResetWsTokenTitle"),
       subtitle: "ROTATE WS TOKEN · DESKTOP MUST RECONNECT",
       severity: "warn",
-      body: "舊 token 立即失效，Desktop 需要用新 token 重新連線。",
-      confirmLabel: "產生新 token",
+      body: ServerI18n.t("security2RotateConfirmBody"),
+      confirmLabel: ServerI18n.t("security2GenerateNewTokenLabel"),
     });
     if (!ok) return;
     try {
       const res = await window.csrfFetch("/admin/ws-auth/rotate", { method: "POST" });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        window.showToast && showToast("已產生新 token", true);
+        window.showToast && showToast(ServerI18n.t("security2ToastNewTokenGenerated"), true);
         try { localStorage.setItem("ws-auth-last-rotation", String(Date.now())); } catch (_) {}
         await loadWsAuth();
       } else {
-        window.showToast && showToast(data.error || "重新產生失敗", false);
+        window.showToast && showToast(data.error || ServerI18n.t("security2ToastRegenerateFailed"), false);
       }
     } catch (e) {
-      window.showToast && showToast("網路錯誤", false);
+      window.showToast && showToast(ServerI18n.t("security2ToastNetworkError"), false);
     }
   }
 
   function copyToken() {
     const token = document.getElementById("sec2-wsa-token").value;
     if (!token) {
-      window.showToast && showToast("Token 為空", false);
+      window.showToast && showToast(ServerI18n.t("security2ToastTokenEmpty"), false);
       return;
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard
         .writeText(token)
-        .then(() => window.showToast && showToast("已複製", true))
-        .catch(() => window.showToast && showToast("複製失敗 — 請手動選取", false));
+        .then(() => window.showToast && showToast(ServerI18n.t("security2ToastCopied"), true))
+        .catch(() => window.showToast && showToast(ServerI18n.t("security2ToastCopyFailed"), false));
     } else {
-      window.showToast && showToast("複製失敗 — 請手動選取", false);
+      window.showToast && showToast(ServerI18n.t("security2ToastCopyFailed"), false);
     }
   }
 
@@ -559,36 +564,36 @@
   async function runDangerAction(action) {
     const config = {
       "revoke-tokens": {
-        confirm: "撤銷所有 API Token？所有外部整合會立即失效。",
+        confirm: ServerI18n.t("security2ConfirmRevokeApiTokens"),
         url: "/admin/security/revoke-api-tokens",
-        ok: (data) => `已撤銷 ${data.revoked || 0} 個 API Token`,
+        ok: (data) => ServerI18n.t("security2ToastApiTokensRevoked", { n: data.revoked || 0 }),
       },
       "revoke-firetoken": {
-        confirm: "撤銷 Fire Token？所有 extension 需重新設定。",
+        confirm: ServerI18n.t("security2ConfirmRevokeFireToken"),
         url: "/admin/integrations/fire-token/revoke",
-        ok: () => "Fire Token 已撤銷",
+        ok: () => ServerI18n.t("security2ToastFireTokenRevoked"),
       },
       "reset-ws": {
-        confirm: "重設 WS Token？Desktop 重新連線時需使用新 token。",
+        confirm: ServerI18n.t("security2ConfirmResetWsToken"),
         url: "/admin/ws-auth/rotate",
-        ok: () => "WS Token 已重設",
+        ok: () => ServerI18n.t("security2ToastWsTokenReset"),
       },
     }[action];
     if (!config) return;
     const ok = await window.HudConfirm?.open({
       icon: "⚠",
-      title: config.title || "確認操作",
+      title: config.title || ServerI18n.t("security2ConfirmDefaultTitle"),
       subtitle: config.subtitle || "SECURITY ACTION",
       severity: config.severity || "warn",
       body: config.confirm,
-      confirmLabel: config.confirmLabel || "確認",
+      confirmLabel: config.confirmLabel || ServerI18n.t("security2ConfirmDefaultLabel"),
     });
     if (!ok) return;
     try {
       const res = await window.csrfFetch(config.url, { method: "POST" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        window.showToast && showToast(data.error || "操作失敗", false);
+        window.showToast && showToast(data.error || ServerI18n.t("security2ToastActionFailed"), false);
         return;
       }
       window.showToast && showToast(config.ok(data), true);
@@ -598,7 +603,7 @@
       }
     } catch (err) {
       console.error("Security danger action error:", err);
-      window.showToast && showToast("網路錯誤", false);
+      window.showToast && showToast(ServerI18n.t("security2ToastNetworkError"), false);
     }
   }
 
@@ -611,7 +616,7 @@
       const ua = (navigator.userAgent || "").match(/(Chrome|Firefox|Safari|Edg|Opera)\/[\d.]+/);
       const platform = navigator.platform || navigator.userAgentData?.platform || "";
       const browser = ua ? ua[0].split("/")[0] : "Browser";
-      line.textContent = `${browser} · ${platform} · 目前主機 · 活躍中`;
+      line.textContent = ServerI18n.t("security2SessionSelfLine", { browser: browser, platform: platform });
     }
     // TLS status — driven by location.protocol since we can't probe the
     // server's HSTS / cert config from the client.
@@ -620,7 +625,7 @@
     if (tlsDot && tlsStatus) {
       const isHttps = location.protocol === "https:";
       tlsDot.classList.add(isHttps ? "is-lime" : "is-crimson");
-      tlsStatus.textContent = isHttps ? "已啟用 — HTTPS" : "未啟用 — 使用 HTTP";
+      tlsStatus.textContent = isHttps ? ServerI18n.t("security2TlsEnabledHttps") : ServerI18n.t("security2TlsDisabledHttp");
     }
   }
 

@@ -26,18 +26,20 @@
 
   // ── config ────────────────────────────────────────────────────────────────
 
+  // D-4：label 改存 labelKey，buildSection() 組 HTML 時才 ServerI18n.t()
+  // （模組 parse 時 ServerI18n 尚未 init）。id / badgeTxt 是 API 契約，不譯。
   const SCOPES = [
-    { id: "read:history",  label: "讀取彈幕歷史",       badge: "green",  badgeTxt: "read:history" },
-    { id: "read:stats",    label: "讀取統計資料",       badge: "cyan",   badgeTxt: "read:stats" },
-    { id: "fire:danmu",    label: "發射彈幕",           badge: "amber",  badgeTxt: "fire:danmu" },
-    { id: "admin:*",       label: "完整管理員權限",     badge: "red",    badgeTxt: "admin:*" },
+    { id: "read:history",  labelKey: "apiTokensScopeReadHistory", badge: "green",  badgeTxt: "read:history" },
+    { id: "read:stats",    labelKey: "apiTokensScopeReadStats",   badge: "cyan",   badgeTxt: "read:stats" },
+    { id: "fire:danmu",    labelKey: "apiTokensScopeFireDanmu",   badge: "amber",  badgeTxt: "fire:danmu" },
+    { id: "admin:*",       labelKey: "apiTokensScopeAdminAll",    badge: "red",    badgeTxt: "admin:*" },
   ];
 
   const EXPIRY_OPTIONS = [
-    { label: "7天",      days: 7 },
-    { label: "30天",     days: 30 },
-    { label: "90天",     days: 90,  default: true },
-    { label: "永久",     days: null },
+    { labelKey: "apiTokensExpiry7d",        days: 7 },
+    { labelKey: "apiTokensExpiry30d",       days: 30 },
+    { labelKey: "apiTokensExpiry90d",       days: 90,  default: true },
+    { labelKey: "apiTokensExpiryPermanent", days: null },
   ];
 
   // ── state ─────────────────────────────────────────────────────────────────
@@ -124,7 +126,7 @@
   function buildSection() {
     const scopeCheckboxes = SCOPES.map(function (sc) {
       const warnHtml = sc.id === "admin:*"
-        ? `<span class="admin-at-scope-warn" id="adminAtAdminWarn" hidden>⚠ 高風險：擁有全部後台能力</span>`
+        ? `<span class="admin-at-scope-warn" id="adminAtAdminWarn" hidden>${ServerI18n.t("apiTokensAdminScopeWarn")}</span>`
         : "";
       const badgeTone = sc.badge === "red" ? "danger"
         : sc.badge === "amber" ? "warn"
@@ -140,7 +142,7 @@
             value="${escapeHtml(sc.id)}"
           >
           <span class="${badgeClass}">${escapeHtml(sc.badgeTxt)}</span>
-          <span class="admin-at-scope-label">${escapeHtml(sc.label)}</span>
+          <span class="admin-at-scope-label">${escapeHtml(ServerI18n.t(sc.labelKey))}</span>
           ${warnHtml}
         </label>
       `;
@@ -152,7 +154,7 @@
       return `
         <label class="admin-ui-choice admin-at-expiry-btn">
           <input type="radio" name="adminAtExpiry" value="${val}" ${checked} class="sr-only">
-          <span>${escapeHtml(opt.label)}</span>
+          <span>${escapeHtml(ServerI18n.t(opt.labelKey))}</span>
         </label>
       `;
     }).join("");
@@ -161,18 +163,18 @@
       <div id="${PAGE_ID}" class="admin-at-page hud-page-stack lg:col-span-2" data-tpl="B">
         <!-- Page header -->
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">API TOKENS · DEVELOPER ACCESS · 整合 / CI / EXTENSION</div>
+          <div class="admin-ui-page-kicker">API TOKENS · DEVELOPER ACCESS · ${ServerI18n.t("apiTokensKicker")}</div>
           <div class="admin-ui-page-title">API Tokens</div>
-          <p class="admin-ui-page-note">為外部整合、CI/CD 或 extension 核發具有限定 scope 的 token。Token 僅在產生後顯示一次。</p>
+          <p class="admin-ui-page-note">${ServerI18n.t("apiTokensPageNote")}</p>
         </div>
 
         <div class="admin-at-grid">
           <!-- ── LEFT: token list ──────────────────────────────────── -->
           <div class="admin-at-main">
-            <div class="admin-ui-monolabel" style="margin-bottom:10px">已核發 API Tokens</div>
+            <div class="admin-ui-monolabel" style="margin-bottom:10px">${ServerI18n.t("apiTokensIssuedLabel")}</div>
 
             <!-- list loading state -->
-            <div class="admin-at-list-loading" data-at-list-loading hidden>載入中…</div>
+            <div class="admin-at-list-loading" data-at-list-loading hidden>${ServerI18n.t("apiTokensListLoading")}</div>
 
             <!-- empty state（內容由 AdminEmpty 於首次顯示時填充） -->
             <div data-at-empty hidden></div>
@@ -183,11 +185,11 @@
                 <thead>
                   <tr>
                     <th>LABEL</th>
-                    <th>前綴 · 權限</th>
-                    <th>最後使用</th>
-                    <th>用量</th>
-                    <th>建立日期</th>
-                    <th>操作</th>
+                    <th>${ServerI18n.t("apiTokensThPrefixScope")}</th>
+                    <th>${ServerI18n.t("apiTokensThLastUsed")}</th>
+                    <th>${ServerI18n.t("apiTokensThUsage")}</th>
+                    <th>${ServerI18n.t("apiTokensThCreated")}</th>
+                    <th>${ServerI18n.t("apiTokensThActions")}</th>
                   </tr>
                 </thead>
                 <tbody data-at-tbody>
@@ -201,23 +203,23 @@
           <aside class="admin-at-rail">
             <div class="admin-at-form-card" id="adminAtFormCard">
               <div class="admin-at-form-head">
-                <span class="admin-ui-monolabel">產生新 Token</span>
+                <span class="admin-ui-monolabel">${ServerI18n.t("apiTokensGenerateNewLabel")}</span>
               </div>
 
               <!-- Success banner (shown after create) -->
               <div class="admin-at-success-banner" id="adminAtSuccessBanner" hidden>
-                <div class="admin-at-success-title">✓ Token 已產生</div>
-                <p class="admin-at-success-note">請立即複製並儲存。離開後將無法再次查看。</p>
+                <div class="admin-at-success-title">${ServerI18n.t("apiTokensSuccessTitle")}</div>
+                <p class="admin-at-success-note">${ServerI18n.t("apiTokensSuccessNote")}</p>
                 <div class="admin-at-token-display-row">
                   <input
                     type="text"
                     id="adminAtTokenDisplay"
                     class="admin-ui-input admin-at-token-raw"
                     readonly
-                    aria-label="產生的 Token"
+                    aria-label="${ServerI18n.t("apiTokensRawTokenAriaLabel")}"
                   >
                   <button type="button" class="admin-ui-action admin-at-copy-btn" id="adminAtCopyBtn" data-at-action="copy-token">
-                    📋 複製
+                    ${ServerI18n.t("apiTokensCopyBtn")}
                   </button>
                 </div>
               </div>
@@ -241,7 +243,7 @@
 
                 <!-- Scopes -->
                 <div class="admin-at-field">
-                  <div class="admin-ui-monolabel" style="margin-bottom:8px">SCOPES · 權限範圍</div>
+                  <div class="admin-ui-monolabel" style="margin-bottom:8px">SCOPES · ${ServerI18n.t("apiTokensScopesLabel")}</div>
                   <div class="admin-at-scopes" id="adminAtScopes">
                     ${scopeCheckboxes}
                   </div>
@@ -249,7 +251,7 @@
 
                 <!-- Expiry -->
                 <div class="admin-at-field">
-                  <div class="admin-ui-monolabel" style="margin-bottom:8px">EXPIRY · 有效期限</div>
+                  <div class="admin-ui-monolabel" style="margin-bottom:8px">EXPIRY · ${ServerI18n.t("apiTokensExpiryLabel")}</div>
                   <div class="admin-at-expiry-row" id="adminAtExpiryRow">
                     ${expiryBtns}
                   </div>
@@ -257,7 +259,7 @@
 
                 <!-- Warning note -->
                 <p class="admin-ui-notice is-warn admin-at-once-note">
-                  ⚠ Token 僅在產生後顯示一次，請立即複製保存。
+                  ${ServerI18n.t("apiTokensOnceWarnNote")}
                 </p>
 
                 <!-- Form error -->
@@ -265,7 +267,7 @@
 
                 <!-- Submit -->
                 <button type="submit" class="admin-ui-action is-primary is-block admin-at-submit-btn" id="adminAtSubmitBtn">
-                  ⚿ 產生 Token
+                  ${ServerI18n.t("apiTokensGenerateBtn")}
                 </button>
               </form>
             </div>
@@ -286,7 +288,7 @@
       _state.tokens = data.tokens || data || [];
       _renderList();
     } catch (e) {
-      window.showToast && window.showToast(`載入 Token 失敗：${e.message || "未知錯誤"}`, false);
+      window.showToast && window.showToast(ServerI18n.t("apiTokensToastLoadFailed", { msg: e.message || ServerI18n.t("apiTokensUnknownError") }), false);
     } finally {
       _setListLoading(false);
     }
@@ -312,10 +314,10 @@
       _showSuccessBanner(rawToken);
       _resetForm();
       await _fetchList();
-      window.showToast && window.showToast("API Token 已建立", true);
+      window.showToast && window.showToast(ServerI18n.t("apiTokensToastCreated"), true);
     } catch (e) {
-      _showFormError(`建立失敗：${e.message || "未知錯誤"}`);
-      window.showToast && window.showToast(`建立 Token 失敗：${e.message || ""}`, false);
+      _showFormError(ServerI18n.t("apiTokensFormErrCreateFailed", { msg: e.message || ServerI18n.t("apiTokensUnknownError") }));
+      window.showToast && window.showToast(ServerI18n.t("apiTokensToastCreateFailed", { msg: e.message || "" }), false);
     } finally {
       _state.creating = false;
       _setSubmitBusy(false);
@@ -325,14 +327,14 @@
   async function _revokeToken(tokenId, label) {
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
-      title: "撤銷 API Token",
+      title: ServerI18n.t("apiTokensRevokeModalTitle"),
       subtitle: "REVOKE · THIS ACTION CANNOT BE UNDONE",
       severity: "danger",
       body:
-        `<div style="line-height:1.7">使用此 Token 的整合會立即失去存取權。</div>` +
+        `<div style="line-height:1.7">${ServerI18n.t("apiTokensRevokeBody")}</div>` +
         `<div style="margin-top:10px;font-family:var(--font-mono);font-size:12px;` +
         `color:var(--color-text-muted)">${escapeHtml(label || tokenId)}</div>`,
-      confirmLabel: "撤銷",
+      confirmLabel: ServerI18n.t("apiTokensRevoke"),
     });
     if (!ok) return;
     try {
@@ -343,10 +345,10 @@
         const err = await r.json().catch(() => ({}));
         throw new Error(err.error || err.message || `HTTP ${r.status}`);
       }
-      window.showToast && window.showToast("Token 已撤銷", true);
+      window.showToast && window.showToast(ServerI18n.t("apiTokensToastRevoked"), true);
       await _fetchList();
     } catch (e) {
-      window.showToast && window.showToast(`撤銷失敗：${e.message || ""}`, false);
+      window.showToast && window.showToast(ServerI18n.t("apiTokensToastRevokeFailed", { msg: e.message || "" }), false);
     }
   }
 
@@ -361,10 +363,10 @@
         const err = await r.json().catch(() => ({}));
         throw new Error(err.error || err.message || `HTTP ${r.status}`);
       }
-      window.showToast && window.showToast(enabled ? "Token 已啟用" : "Token 已停用", true);
+      window.showToast && window.showToast(enabled ? ServerI18n.t("apiTokensToastEnabled") : ServerI18n.t("apiTokensToastDisabled"), true);
       await _fetchList();
     } catch (e) {
-      window.showToast && window.showToast(`操作失敗：${e.message || ""}`, false);
+      window.showToast && window.showToast(ServerI18n.t("apiTokensToastActionFailed", { msg: e.message || "" }), false);
     }
   }
 
@@ -379,7 +381,7 @@
     const btn = document.getElementById("adminAtSubmitBtn");
     if (!btn) return;
     btn.disabled = busy;
-    btn.textContent = busy ? "產生中…" : "⚿ 產生 Token";
+    btn.textContent = busy ? ServerI18n.t("apiTokensGenerating") : ServerI18n.t("apiTokensGenerateBtn");
   }
 
   function _renderList() {
@@ -396,8 +398,8 @@
       if (!emptyEl.firstElementChild && window.AdminEmpty) {
         const card = window.AdminEmpty.renderCustom({
           icon: "⚿",
-          title: "尚無 API Token",
-          desc: "使用右側表單核發第一個 token。",
+          title: ServerI18n.t("apiTokensEmptyTitle"),
+          desc: ServerI18n.t("apiTokensEmptyDesc"),
         });
         card.dataset.emptyKind = "api-tokens";
         emptyEl.appendChild(card);
@@ -415,12 +417,12 @@
       const scopes = tok.scopes || tok.scope || [];
       const scopeArr = Array.isArray(scopes) ? scopes : String(scopes).split(",").map((s) => s.trim()).filter(Boolean);
       const daysSince = _daysSinceUsed(tok.last_used_at);
-      const unusedWarn = daysSince >= 90 ? '<span class="admin-ui-pill admin-at-badge is-warn">⚠ 90天未使用</span>' : "";
-      const expiredBadge = status === "expired" ? '<span class="admin-ui-pill admin-at-badge is-danger">已過期</span>' : "";
-      const expiringBadge = status === "expiring" ? '<span class="admin-ui-pill admin-at-badge is-warn">即將過期</span>' : "";
+      const unusedWarn = daysSince >= 90 ? `<span class="admin-ui-pill admin-at-badge is-warn">${ServerI18n.t("apiTokensUnusedWarn")}</span>` : "";
+      const expiredBadge = status === "expired" ? `<span class="admin-ui-pill admin-at-badge is-danger">${ServerI18n.t("apiTokensExpiredBadge")}</span>` : "";
+      const expiringBadge = status === "expiring" ? `<span class="admin-ui-pill admin-at-badge is-warn">${ServerI18n.t("apiTokensExpiringBadge")}</span>` : "";
       const lastUsedStr = tok.last_used_at
         ? `${_fmtDateTime(tok.last_used_at) || _fmtDate(tok.last_used_at)}<br><span class="admin-at-ip">${escapeHtml(tok.last_used_ip || "")}</span>`
-        : "從未使用";
+        : ServerI18n.t("apiTokensNeverUsed");
 
       return `
         <tr class="admin-at-row" data-token-id="${escapeHtml(tok.id || tok.token_id || "")}">
@@ -443,15 +445,15 @@
               data-at-action="toggle"
               data-token-id="${escapeHtml(tok.id || tok.token_id || "")}"
               data-token-enabled="${tok.enabled === false ? "0" : "1"}"
-              title="${tok.enabled === false ? "啟用 Token" : "停用 Token"}"
-            >${tok.enabled === false ? "啟用" : "停用"}</button>
+              title="${tok.enabled === false ? ServerI18n.t("apiTokensEnableTitle") : ServerI18n.t("apiTokensDisableTitle")}"
+            >${tok.enabled === false ? ServerI18n.t("apiTokensEnableLabel") : ServerI18n.t("apiTokensDisableLabel")}</button>
             <button
               type="button"
               class="admin-ui-action is-danger admin-at-row-btn"
               data-at-action="revoke"
               data-token-id="${escapeHtml(tok.id || tok.token_id || "")}"
               data-token-label="${escapeHtml(tok.label || tok.name || "")}"
-            >撤銷</button>
+            >${ServerI18n.t("apiTokensRevoke")}</button>
           </td>
         </tr>
       `;
@@ -527,9 +529,9 @@
   }
 
   function _validateForm(values) {
-    if (!values.label) return "請填寫 Token 名稱 (LABEL)";
-    if (values.label.length > 80) return "名稱不能超過 80 字";
-    if (!values.scopes || values.scopes.length === 0) return "請至少選擇一個 scope";
+    if (!values.label) return ServerI18n.t("apiTokensErrNeedLabel");
+    if (values.label.length > 80) return ServerI18n.t("apiTokensErrLabelTooLong");
+    if (!values.scopes || values.scopes.length === 0) return ServerI18n.t("apiTokensErrNeedScope");
     return null;
   }
 
@@ -550,20 +552,20 @@
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(raw).then(function () {
         if (copyBtn) {
-          copyBtn.textContent = "已複製 ✓";
-          setTimeout(function () { copyBtn.textContent = "📋 複製"; }, 2500);
+          copyBtn.textContent = ServerI18n.t("apiTokensCopiedLabel");
+          setTimeout(function () { copyBtn.textContent = ServerI18n.t("apiTokensCopyBtn"); }, 2500);
         }
-        window.showToast && window.showToast("Token 已複製到剪貼簿", true);
+        window.showToast && window.showToast(ServerI18n.t("apiTokensToastCopied"), true);
       }).catch(function () {
-        window.showToast && window.showToast("複製失敗 · 請手動選取", false);
+        window.showToast && window.showToast(ServerI18n.t("apiTokensToastCopyFailed"), false);
       });
     } else {
       // Fallback: select the input
       const display = document.getElementById("adminAtTokenDisplay");
       if (display) { display.select(); document.execCommand("copy"); }
       if (copyBtn) {
-        copyBtn.textContent = "已複製 ✓";
-        setTimeout(function () { copyBtn.textContent = "📋 複製"; }, 2500);
+        copyBtn.textContent = ServerI18n.t("apiTokensCopiedLabel");
+        setTimeout(function () { copyBtn.textContent = ServerI18n.t("apiTokensCopyBtn"); }, 2500);
       }
     }
   }
