@@ -40,7 +40,9 @@
     { label: "6h",  val: 21600 },
     { label: "24h", val: 86400, defaultPick: true },
     { label: "7d",  val: 604800 },
-    { label: "永久", val: 0, permanent: true },
+    // D-4：永久是唯一要翻譯的 preset——存 key，渲染時才 t()（模組
+    // parse 時 ServerI18n 尚未 init）。拉丁時長標籤（1h/6h/…）語言中立。
+    { labelKey: "modbansPermanent", val: 0, permanent: true },
   ];
 
   const KIND_ICONS = { fingerprint: "◉", ip: "⊙", nick: "@" };
@@ -98,10 +100,10 @@
       const isPerm = r.status === "permanent";
       const chipClass = "admin-modbans-chip is-" + r.status;
       const chipText = isPerm
-        ? "永久"
+        ? ServerI18n.t("modbansPermanent")
         : isExpired
-          ? "已過期 · auto-unban"
-          : `${_fmtRemaining(r.remaining_s)} 剩餘`;
+          ? ServerI18n.t("modbansExpiredAuto")
+          : ServerI18n.t("modbansRemaining", { time: _fmtRemaining(r.remaining_s) });
       const targetKey = encodeURIComponent(r.target_kind) + "|" + encodeURIComponent(r.target);
       return `
         <div class="admin-modbans-row ${isExpired ? "is-expired" : ""}">
@@ -114,8 +116,8 @@
           </span>
           <button type="button" class="admin-modbans-unban" data-modbans-unban="${targetKey}"
             ${isExpired ? "disabled" : ""}
-            title="${isExpired ? "已自動解封" : "解除封禁"}">
-            ${isExpired ? "—" : "解封"}
+            title="${isExpired ? ServerI18n.t("modbansAutoUnbanned") : ServerI18n.t("modbansUnbanTitle")}">
+            ${isExpired ? "—" : ServerI18n.t("modbansUnban")}
           </button>
         </div>`;
     }).join("");
@@ -152,7 +154,7 @@
         </div>
         ${needsTargetEntry ? `
         <div class="admin-modbans-modal-row">
-          <div class="admin-ui-monolabel">封禁對象</div>
+          <div class="admin-ui-monolabel">${ServerI18n.t("modbansTargetLabel")}</div>
           <div class="admin-modbans-modal-presets" data-modbans-kinds>
             ${["fingerprint", "ip", "nick"].map(function (k) {
               return `<button type="button" class="admin-modbans-modal-preset${k === target_kind ? " is-active" : ""}"
@@ -160,7 +162,7 @@
             }).join("")}
           </div>
           <input type="text" class="admin-modbans-modal-target-input" data-modbans-target
-            placeholder="輸入指紋 / IP / 暱稱" maxlength="120" autocomplete="off" />
+            placeholder="${ServerI18n.t("modbansTargetPlaceholder")}" maxlength="120" autocomplete="off" />
         </div>` : ""}
         <div class="admin-modbans-modal-row">
           <div class="admin-ui-monolabel">BAN DURATION</div>
@@ -169,19 +171,19 @@
               const cls = "admin-modbans-modal-preset"
                 + (p.defaultPick ? " is-active" : "")
                 + (p.permanent ? " is-permanent" : "");
-              return `<button type="button" class="${cls}" data-modbans-duration="${p.val}">${p.label}</button>`;
+              return `<button type="button" class="${cls}" data-modbans-duration="${p.val}">${p.labelKey ? ServerI18n.t(p.labelKey) : p.label}</button>`;
             }).join("")}
-            <button type="button" class="admin-modbans-modal-preset is-custom" data-modbans-custom>自訂</button>
+            <button type="button" class="admin-modbans-modal-preset is-custom" data-modbans-custom>${ServerI18n.t("modbansCustom")}</button>
           </div>
           <!-- Custom duration input row — brief 0518-v2 #2 decision B.
                Hidden until 自訂 chip is selected. -->
           <div class="admin-modbans-modal-custom-row" data-modbans-custom-row hidden>
-            <span class="admin-modbans-modal-custom-label">自訂</span>
+            <span class="admin-modbans-modal-custom-label">${ServerI18n.t("modbansCustom")}</span>
             <input type="number" min="1" max="999" class="admin-modbans-modal-custom-input"
               data-modbans-custom-input value="12" />
             <div class="admin-modbans-modal-custom-units" data-modbans-custom-units>
-              <button type="button" class="admin-modbans-modal-custom-unit is-active" data-modbans-custom-unit="hour">小時</button>
-              <button type="button" class="admin-modbans-modal-custom-unit" data-modbans-custom-unit="day">天</button>
+              <button type="button" class="admin-modbans-modal-custom-unit is-active" data-modbans-custom-unit="hour">${ServerI18n.t("modbansHour")}</button>
+              <button type="button" class="admin-modbans-modal-custom-unit" data-modbans-custom-unit="day">${ServerI18n.t("modbansDay")}</button>
             </div>
             <span class="admin-modbans-modal-custom-spacer"></span>
             <span class="admin-modbans-modal-custom-seconds" data-modbans-custom-seconds>= 43,200s</span>
@@ -189,11 +191,11 @@
           <div class="admin-modbans-modal-when" data-modbans-when></div>
         </div>
         <div class="admin-modbans-modal-row">
-          <div class="admin-ui-monolabel">REASON（選填 · 記錄到 audit log）</div>
+          <div class="admin-ui-monolabel">${ServerI18n.t("modbansReasonLabel")}</div>
           <input type="text" class="admin-modbans-modal-reason" data-modbans-reason
-            placeholder="e.g. 持續發送垃圾訊息" maxlength="200" />
+            placeholder="${ServerI18n.t("modbansReasonPlaceholder")}" maxlength="200" />
         </div>
-        <div class="admin-modbans-modal-hint">⚠ 限時 ban：到期後 reaper 自動解封 · 永久 ban 需手動解除</div>`;
+        <div class="admin-modbans-modal-hint">${ServerI18n.t("modbansHint")}</div>`;
 
       // ── Internal helpers (capture outer state) ────────────────────
       const customRow = body.querySelector("[data-modbans-custom-row]");
@@ -223,7 +225,7 @@
 
       const updateWhen = function () {
         if (selectedDuration === 0) {
-          whenEl.textContent = "永久封禁 · 無自動解封時間";
+          whenEl.textContent = ServerI18n.t("modbansWhenPermanent");
           whenEl.classList.remove("is-custom");
           return;
         }
@@ -231,10 +233,17 @@
         const pad = (n) => String(n).padStart(2, "0");
         const stamp = `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())} ${pad(at.getHours())}:${pad(at.getMinutes())}`;
         if (isCustom) {
-          whenEl.textContent = `自訂 ${customValue} ${customUnit === "day" ? "天" : "小時"} · 將於 ${stamp} 自動解封`;
+          whenEl.textContent = ServerI18n.t("modbansWhenCustom", {
+            n: customValue,
+            unit: ServerI18n.t(customUnit === "day" ? "modbansDay" : "modbansHour"),
+            stamp: stamp,
+          });
           whenEl.classList.add("is-custom");
         } else {
-          whenEl.textContent = `選擇 ${_fmtRemaining(selectedDuration)} · 將於 ${stamp} 自動解封`;
+          whenEl.textContent = ServerI18n.t("modbansWhenPreset", {
+            dur: _fmtRemaining(selectedDuration),
+            stamp: stamp,
+          });
           whenEl.classList.remove("is-custom");
         }
       };
@@ -321,11 +330,11 @@
 
       helper.open({
         icon: "⊘",
-        title: "封禁",
+        title: ServerI18n.t("modbansModalTitle"),
         subtitle: "BAN · TIME-BOUND DURATION",
         severity: "danger",
-        confirmLabel: "確認封禁",
-        cancelLabel: "取消",
+        confirmLabel: ServerI18n.t("modbansConfirmBan"),
+        cancelLabel: ServerI18n.t("cancel"),
         body: body,
         width: 480,
       }).then(function (ok) {
@@ -333,7 +342,7 @@
         // HudConfirm always closes on confirm, so an empty target can only be
         // reported after the fact — toast and bail rather than POST a blank.
         if (!target) {
-          if (window.showToast) window.showToast("請先填寫封禁對象", false);
+          if (window.showToast) window.showToast(ServerI18n.t("modbansToastNeedTarget"), false);
           resolve(false);
           return;
         }
@@ -341,12 +350,14 @@
         if (selectedDuration === 0) {
           helper.open({
             icon: "⚠",
-            title: "確認永久封禁？",
+            title: ServerI18n.t("modbansConfirmPermTitle"),
             subtitle: "PERMANENT BAN · CANNOT AUTO-EXPIRE",
             severity: "warn",
-            confirmLabel: "確認永久",
-            cancelLabel: "返回",
-            body: `將永久封禁 <b>${escapeHtml(_fmtTarget({ target_kind: target_kind, target: target }))}</b>。此後僅能手動解封。`,
+            confirmLabel: ServerI18n.t("modbansConfirmPermLabel"),
+            cancelLabel: ServerI18n.t("modbansBack"),
+            body: ServerI18n.t("modbansConfirmPermBody", {
+              target: `<b>${escapeHtml(_fmtTarget({ target_kind: target_kind, target: target }))}</b>`,
+            }),
           }).then(function (ok2) {
             if (!ok2) { resolve(false); return; }
             _submitBan(target_kind, target, selectedDuration, reasonInput.value.trim(), kind).then(resolve);
@@ -375,14 +386,16 @@
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       if (window.showToast) {
         window.showToast(
-          duration_s === 0 ? "已永久封禁" : `已封禁 ${_fmtRemaining(duration_s)}`,
+          duration_s === 0
+            ? ServerI18n.t("modbansToastPermBanned")
+            : ServerI18n.t("modbansToastBanned", { dur: _fmtRemaining(duration_s) }),
           true,
         );
       }
       _fetch();
       return true;
     } catch (e) {
-      if (window.showToast) window.showToast(`封禁失敗：${e.message || "未知"}`, false);
+      if (window.showToast) window.showToast(ServerI18n.t("modbansToastBanFailed", { msg: e.message || ServerI18n.t("modbansUnknownError") }), false);
       return false;
     }
   }
@@ -400,10 +413,10 @@
         body: JSON.stringify({ target_kind: target_kind, target: target }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      if (window.showToast) window.showToast("已解除封禁", true);
+      if (window.showToast) window.showToast(ServerI18n.t("modbansToastUnbanned"), true);
       _fetch();
     } catch (e) {
-      if (window.showToast) window.showToast(`解封失敗：${e.message || "未知"}`, false);
+      if (window.showToast) window.showToast(ServerI18n.t("modbansToastUnbanFailed", { msg: e.message || ServerI18n.t("modbansUnknownError") }), false);
     }
   }
 
@@ -413,13 +426,13 @@
       <div id="${PAGE_ID}" class="admin-modbans-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">MODERATION · BANS · TIME-BOUND</div>
-          <div class="admin-ui-page-title">封禁管理</div>
-          <p class="admin-ui-page-note">時限封禁 / 永久封禁的統一管理。Source of truth = audit log；列表狀態 = 各 target 最後一筆事件。倒數到期由 client lazy-check（不跑 reaper thread）。</p>
+          <div class="admin-ui-page-title">${ServerI18n.t("modbansPageTitle")}</div>
+          <p class="admin-ui-page-note">${ServerI18n.t("modbansPageNote")}</p>
         </div>
         <div class="admin-ui-toolbar">
-          <span class="admin-ui-monolabel">封禁 · <span data-modbans-count>0</span> 筆</span>
+          <span class="admin-ui-monolabel">${ServerI18n.t("modbansCountLabel", { n: '<span data-modbans-count>0</span>' })}</span>
           <span class="admin-ui-spacer"></span>
-          <button type="button" class="admin-ui-action is-primary" data-modbans-add>＋ 新增封禁</button>
+          <button type="button" class="admin-ui-action is-primary" data-modbans-add>${ServerI18n.t("modbansAdd")}</button>
         </div>
         <div class="admin-ui-card admin-modbans-card">
           <div class="admin-modbans-header">
