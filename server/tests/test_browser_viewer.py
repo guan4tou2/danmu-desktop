@@ -158,7 +158,7 @@ class _AdminApiClient:
 @pytest.fixture()
 def admin_http(browser_session, live_url):
     """已登入的 admin API client，測試結束後重置投票狀態"""
-    context = browser_session.new_context()
+    context = browser_session.new_context(locale="zh-TW")
     client = _AdminApiClient(context, live_url)
     yield client
     # Best-effort cleanup: reset poll so state doesn't leak into next test.

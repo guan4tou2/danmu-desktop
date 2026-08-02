@@ -76,7 +76,7 @@ def browser_session():
 @pytest.fixture(scope="module")
 def logged_context(browser_session, live_url):
     """登入一次，取得帶 session cookie 的 BrowserContext（本模組所有 admin 測試共用）"""
-    context = browser_session.new_context()
+    context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
 
     page.goto(f"{live_url}/admin/")
@@ -215,7 +215,7 @@ def _open_section(page, section_id: str):
 @pytest.fixture()
 def fresh_page(browser_session):
     """未登入的乾淨 page，用於測試登入流程"""
-    context = browser_session.new_context()
+    context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
     yield page
     page.close()
@@ -479,7 +479,7 @@ def test_change_password_wrong_current_calls_api(admin_page):
 
 def test_main_page_loads(browser_session, live_url):
     """主頁面 (/) 應成功回應 200"""
-    context = browser_session.new_context()
+    context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
     try:
         response = page.goto(f"{live_url}/")
@@ -491,7 +491,7 @@ def test_main_page_loads(browser_session, live_url):
 
 def test_health_endpoint_returns_healthy(browser_session, live_url):
     """GET /health 應回傳 200 且 body 含 'healthy'"""
-    context = browser_session.new_context()
+    context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
     try:
         response = page.goto(f"{live_url}/health")
@@ -504,7 +504,7 @@ def test_health_endpoint_returns_healthy(browser_session, live_url):
 
 def test_404_returns_json_error(browser_session, live_url):
     """不存在的路由應回傳 404"""
-    context = browser_session.new_context()
+    context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
     try:
         response = page.goto(f"{live_url}/this-does-not-exist")
@@ -913,7 +913,7 @@ def test_kpi_strip_column_count_per_breakpoint(browser_session, live_url):
     expected = {1440: 4, 800: 2, 375: 1}
     actual = {}
     for width, _ in expected.items():
-        context = browser_session.new_context(viewport={"width": width, "height": 900})
+        context = browser_session.new_context(locale="zh-TW", viewport={"width": width, "height": 900})
         page = context.new_page()
         try:
             page.goto(f"{live_url}/admin/")

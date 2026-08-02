@@ -149,7 +149,7 @@ def test_browser_submit_danmu_reaches_overlay(browser_session, server_ports):
 
     http_port, ws_port = server_ports
 
-    context = browser_session.new_context()
+    context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
     try:
         with connect(f"ws://127.0.0.1:{ws_port}/ws") as ws:
@@ -183,7 +183,7 @@ def test_viewer_identity_label_uses_nickname(browser_session, server_ports):
     """
     http_port, _ = server_ports
 
-    context = browser_session.new_context()
+    context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
     try:
         page.goto(f"http://127.0.0.1:{http_port}/")
@@ -204,7 +204,7 @@ def test_viewer_poll_tab_hidden_by_default(browser_session, server_ports):
     """Viewer should keep poll tab disabled by default (prototype pollEnabled=false)."""
     http_port, _ = server_ports
 
-    context = browser_session.new_context()
+    context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
     try:
         page.goto(f"http://127.0.0.1:{http_port}/")
@@ -225,7 +225,7 @@ def test_viewer_poll_tab_hides_results(browser_session, server_ports):
     """Viewer poll tab should show the prompt/options without vote counts or percentages."""
     http_port, _ = server_ports
 
-    context = browser_session.new_context()
+    context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
     try:
         page.goto(f"http://127.0.0.1:{http_port}/?poll=1")
@@ -271,7 +271,7 @@ def test_viewer_error_states(browser_session, server_ports):
     """Viewer error states should render: rate-limit overlay + offline card shell."""
     http_port, _ = server_ports
 
-    context = browser_session.new_context()
+    context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
     try:
         # 429 state preview (driven by viewer-states URL param)
@@ -309,7 +309,7 @@ def test_browser_submit_danmu_appears_in_history(browser_session, server_ports):
     http_port, ws_port = server_ports
     message = f"history_e2e_check_{int(time.time() * 1000)}"
 
-    context = browser_session.new_context()
+    context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
     try:
         # 需要有 overlay 連線才能 fire 成功（否則 503）

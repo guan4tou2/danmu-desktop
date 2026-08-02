@@ -176,7 +176,7 @@ def _fire(http_port, payload, retries=5):
 
 def _open_overlay(browser_session, http_port, ws_port):
     """開啟 overlay 頁面並等待 WS 連線建立"""
-    context = browser_session.new_context()
+    context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
     page.goto(f"http://127.0.0.1:{http_port}/overlay")
     # 等待 overlay.js IIFE 執行 + WS 連線（WS handshake + server 註冊）
@@ -186,7 +186,7 @@ def _open_overlay(browser_session, http_port, ws_port):
 
 def _open_overlay_with_intercept(browser_session, http_port, ws_port):
     """開啟 overlay 頁面，並注入 WS 訊息攔截器以便 debug"""
-    context = browser_session.new_context()
+    context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
     page.add_init_script(_WS_INTERCEPT_SCRIPT)
     page.goto(f"http://127.0.0.1:{http_port}/overlay")
@@ -639,7 +639,7 @@ def test_multiple_danmu_all_render(browser_session, server_ports):
 def test_nickname_renders(browser_session, server_ports):
     """帶 nickname 的彈幕應顯示暱稱 span"""
     http_port, ws_port = server_ports
-    context = browser_session.new_context()
+    context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
 
     # 捕捉 console log 幫助 debug
@@ -691,7 +691,7 @@ def test_overlay_idle_api_is_callable_and_toggles_visibility(browser_session, se
     契約、以及 ?idle=0 要能真的關閉。
     """
     http_port, ws_port = server_ports
-    context = browser_session.new_context()
+    context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
     try:
         page.goto(f"http://127.0.0.1:{http_port}/overlay")

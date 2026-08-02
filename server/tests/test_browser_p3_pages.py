@@ -86,7 +86,7 @@ def browser_session():
 
 @pytest.fixture(scope="module")
 def logged_context(browser_session, live_url):
-    context = browser_session.new_context()
+    context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
     page.goto(f"{live_url}/admin/")
     page.wait_for_selector("#loginForm", timeout=8000)

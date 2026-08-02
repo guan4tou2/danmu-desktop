@@ -173,7 +173,7 @@ def route_snapshots(browser_session, live_url):
     換一個新的 list，所以非同步遲到的錯誤最多只會落到後一條路由，不會整批
     汙染所有路由。
     """
-    context = browser_session.new_context()
+    context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
 
     page.goto(f"{live_url}/admin/")
