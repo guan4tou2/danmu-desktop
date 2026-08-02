@@ -1533,11 +1533,18 @@ document.addEventListener("DOMContentLoaded", () => {
       // 比 getComputedStyle(自己).display 可靠（共用容器會讓後者謊報可見，
       // 正是先前 queue 抓到 replay note 的成因）。
       heads.forEach((h) => h.classList.remove("is-merged-into-topbar"));
+      // F-103（design audit 2026-08-02）：頂欄標題吃 i18n（en 下是
+      // "Backup & Export"），section 頁首卻是硬編中文（"備份 & 匯出"），
+      // 只比渲染文字會在非中文 locale 下比不中 → 雙標題復活。section
+      // 頁首在 D-4 解掉前永遠是 zh，所以再拿 ROUTE_META 的 zh title
+      // 比一次，四語都成立。
+      const cfgTitle = (ADMIN_ROUTES[currentRoute]?.title || "")
+        .trim().replace(/\s+/g, " ");
       let mergedNote = null;
       heads.forEach((head) => {
         const titleEl = head.querySelector(".admin-ui-page-title");
         const t = titleEl && titleEl.textContent.trim().replace(/\s+/g, " ");
-        const dup = !!t && (isTabbed || t === routeTitle);
+        const dup = !!t && (isTabbed || t === routeTitle || t === cfgTitle);
         if (!dup) return;
         // 這一步在 add class 之前量：唯一 offsetParent 非 null 的重複頁首，
         // 就是當前分頁真正顯示的那個 —— 只取它的 note。
