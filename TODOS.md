@@ -24,6 +24,22 @@ readFileSync+eval 載入 server 靜態 JS 的先例，含 jsdom location 鎖死�
 ServerI18n.t()。逐模組搬 key 是機械工，適合批次派工。
 （出處：/design-review 2026-08-02；baseline D-4 自 2026-07-28 遺留。）
 
+**進度（2026-08-02）**：前置＝browser 測試 19 個 context 釘 locale=zh-TW
+（3e2715a）。已完成：admin-modbans（36b5ec2，34 keys）、admin-backup
+（4771242，91 keys，代理產出＋三道驗證整合）。配方見兩顆 commit 訊息
+（lazy labelKey、{var} 插值、live span 當變數、拉丁不搬）。**派工教訓：
+代理要先寫 fragment 再改模組**——反過來死在半路會留下引用不存在 key 的
+髒編輯（display 的 560 行 patch 存在 scratchpad/d4-fragments/ 待重生）。
+剩餘 ~37 模組，大頭：admin.js 172 行（含側欄/nav，建議人工）、
+admin-display 148（有 patch）、admin-poll-builder 101。
+
+### 「EN · 中文」雙語 monolabel 的 pattern 決策
+**Priority:** P3
+全站 section monolabel 慣用「HISTORY · 彈幕歷史」雙語對。zh 半是給中文
+使用者的說明，en/ja/ko 下顯示混語。決策方向：zh 半 t() 化
+（`HISTORY · ${t(...)}`，zh 視覺不變、他語全譯）；或宣告雙語對是品牌
+識別（維持現狀並記錄）。決了之後是機械工（backup 一頁就有 8 處）。
+
 ### 磨光三項（單行級）
 **Priority:** P4
 - 效果庫 YAML 側欄無選取時 EDIT 鈕仍呈可用態（F-108）。
