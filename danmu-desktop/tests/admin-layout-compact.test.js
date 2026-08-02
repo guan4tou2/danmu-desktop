@@ -199,13 +199,13 @@ test("Viewer entry points use the canonical viewer route instead of legacy viewe
   // v7 S1 (2026-07-28): palette 不再有 ROUTES 複本，開啟時讀 window.ADMIN_ROUTES。
   expect(paletteSrc).toContain('window.ADMIN_ROUTES');
   expect(paletteSrc).toContain('"viewer"');
-  expect(paletteSrc).toContain('label: "觀眾頁主題"');
+  expect(paletteSrc).toContain('labelKey: "cmdkSettingViewerTheme"'); // D-4：label 走 key
   expect(paletteSrc).toContain('route: "viewer", tab: "page", section: "sec-viewer-theme"');
-  expect(paletteSrc).toContain('label: "表單欄位 Viewer fields"');
+  expect(paletteSrc).toContain('labelKey: "cmdkSettingViewerFields"');
   expect(paletteSrc).toContain('route: "viewer", tab: "fields", section: "sec-viewer-config-fields"');
-  expect(paletteSrc).toContain('label: "送出預設 Viewer defaults"');
+  expect(paletteSrc).toContain('labelKey: "cmdkSettingViewerDefaults"');
   expect(paletteSrc).toContain('route: "viewer", tab: "defaults", section: "sec-viewer-config-defaults"');
-  expect(paletteSrc).toContain('label: "限制 / 文案 Viewer limits"');
+  expect(paletteSrc).toContain('labelKey: "cmdkSettingViewerLimits"');
   expect(paletteSrc).toContain('route: "viewer", tab: "limits", section: "sec-viewer-config-limits"');
   expect(paletteSrc).toContain('if (item.tab) document.body.dataset.viewerConfigTab = item.tab;');
   expect(paletteSrc).not.toContain('route: "viewer-config"');

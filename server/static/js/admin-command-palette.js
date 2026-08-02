@@ -43,19 +43,21 @@
   // Setting → {route, sectionId} map. Selecting jumps to the route then
   // scrolls to the section id.
   const SETTINGS = [
-    { label: "觀眾頁主題",              route: "viewer", tab: "page", section: "sec-viewer-theme" },
-    { label: "表單欄位 Viewer fields",  route: "viewer", tab: "fields", section: "sec-viewer-config-fields" },
-    { label: "送出預設 Viewer defaults", route: "viewer", tab: "defaults", section: "sec-viewer-config-defaults" },
-    { label: "限制 / 文案 Viewer limits", route: "viewer", tab: "limits", section: "sec-viewer-config-limits" },
-    { label: "黑名單 Blacklist",    route: "moderation",section: "sec-blacklist" },
-    { label: "敏感字過濾 Filters",  route: "moderation",section: "sec-filters" },
-    { label: "速率限制 Rate limit", route: "moderation", tab: "ratelimit", section: "sec-ratelimit" },
-    { label: "效果庫 Effects",      route: "effects",   section: "sec-effects" },
-    { label: "效果管理 Effects mgmt", route: "effects", section: "sec-effects-mgmt" },
+    { labelKey: "cmdkSettingViewerTheme",    route: "viewer", tab: "page", section: "sec-viewer-theme" },
+    { labelKey: "cmdkSettingViewerFields",   route: "viewer", tab: "fields", section: "sec-viewer-config-fields" },
+    { labelKey: "cmdkSettingViewerDefaults", route: "viewer", tab: "defaults", section: "sec-viewer-config-defaults" },
+    { labelKey: "cmdkSettingViewerLimits",   route: "viewer", tab: "limits", section: "sec-viewer-config-limits" },
+    { labelKey: "cmdkSettingBlacklist",   route: "moderation",section: "sec-blacklist" },
+    { labelKey: "cmdkSettingFilters",     route: "moderation",section: "sec-filters" },
+    { labelKey: "cmdkSettingRatelimit",   route: "moderation", tab: "ratelimit", section: "sec-ratelimit" },
+    { labelKey: "cmdkSettingEffects",       route: "effects",   section: "sec-effects" },
+    { labelKey: "cmdkSettingEffectsMgmt", route: "effects", section: "sec-effects-mgmt" },
     { label: "Emoji",               route: "assets",    section: "sec-emojis" },
     { label: "Stickers",            route: "assets",    section: "sec-stickers" },
     { label: "Sounds",              route: "assets",    section: "sec-sounds" },
-    { label: "字型管理",            route: "fonts",     section: "sec-fonts" },
+    // D-4: verbatim reuse of adminRouteTitle_fonts — same exact zh text,
+    // no bilingual suffix to reconcile (unlike the Viewer/* rows above).
+    { labelKey: "adminRouteTitle_fonts",    route: "fonts",     section: "sec-fonts" },
     // Phase A IA reorg (2026-05-06): webhooks/scheduler/plugins live
     // under the automation tab strip; fingerprints lives under the
     // moderation tab strip. `#/system` does NOT own these `sec-*` IDs,
@@ -65,17 +67,21 @@
     { label: "Webhooks",            route: "webhooks",     section: "sec-webhooks" },
     { label: "Scheduler",           route: "scheduler",    section: "sec-scheduler" },
     { label: "Fingerprints",        route: "fingerprints", section: "sec-fingerprints" },
-    { label: "系統概覽 Overview",   route: "system",    section: "sec-system-overview" },
+    { labelKey: "cmdkSettingSystemOverview", route: "system",    section: "sec-system-overview" },
   ];
 
+  // D-4: all 7 chips are Chinese-only labels, so every entry is a
+  // labelKey (resolved lazily in _build()/_scoreXxx — ServerI18n isn't
+  // init'd yet at module-parse time). messages/settings/themes reuse
+  // existing generic keys (messagesLabel/settings/navTabThemes).
   const SCOPES = [
-    { id: "all",      label: "所有" },
-    { id: "messages", label: "訊息" },
-    { id: "users",    label: "用戶" },
-    { id: "settings", label: "設定" },
-    { id: "routes",   label: "跳轉" },
-    { id: "themes",   label: "主題包" },
-    { id: "actions",  label: "快速動作" },
+    { id: "all",      labelKey: "cmdkScopeAll" },
+    { id: "messages", labelKey: "messagesLabel" },
+    { id: "users",    labelKey: "cmdkScopeUsers" },
+    { id: "settings", labelKey: "settings" },
+    { id: "routes",   labelKey: "cmdkScopeRoutes" },
+    { id: "themes",   labelKey: "navTabThemes" },
+    { id: "actions",  labelKey: "cmdkScopeActions" },
   ];
 
   // Predefined quick-action corpus — no fetch needed. Each entry's `action`
@@ -97,64 +103,70 @@
       window.showToast(msg, ok !== false);
     }
   }
+  // D-4: labelKey/subKey on every entry that carries hardcoded Chinese
+  // (top-level literal — module-parse time, ServerI18n not init'd yet).
+  // The `action` closures themselves stay plain `sub`/literal strings
+  // where the field is Latin-only (URLs, "Cmd+R"); the Chinese toast
+  // strings *inside* those closures call ServerI18n.t() directly since
+  // closures only run later, well after init.
   const ACTIONS = [
     {
       id: "restart-effects",
-      label: "重新載入特效",
+      labelKey: "cmdkActionReloadEffects",
       sub: "POST /effects/reload",
       action: () => _csrfFetch("/effects/reload", { method: "POST" })
-        .then((r) => _toast(r.ok ? "特效已重新載入" : "重載失敗", r.ok))
-        .catch(() => _toast("重載失敗", false)),
+        .then((r) => _toast(r.ok ? ServerI18n.t("effectsReloadFallback") : ServerI18n.t("cmdkToastEffectsReloadFailed"), r.ok))
+        .catch(() => _toast(ServerI18n.t("cmdkToastEffectsReloadFailed"), false)),
     },
     {
       id: "overlay-off",
-      label: "停止 Desktop",
-      sub: "切到 DESKTOP OFF",
+      labelKey: "cmdkActionOverlayOff",
+      subKey: "cmdkActionOverlayOffSub",
       action: () => _csrfFetch("/admin/broadcast/toggle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode: "overlay_off" }),
       })
-        .then((r) => _toast(r.ok ? "已切換為 DESKTOP OFF" : "切換失敗", r.ok))
-        .catch(() => _toast("切換失敗", false)),
+        .then((r) => _toast(r.ok ? ServerI18n.t("cmdkToastOverlayOff") : ServerI18n.t("cmdkToastToggleFailed"), r.ok))
+        .catch(() => _toast(ServerI18n.t("cmdkToastToggleFailed"), false)),
     },
     {
       id: "reset-poll",
-      label: "重置投票",
+      labelKey: "cmdkActionResetPoll",
       sub: "POST /admin/poll/reset",
       action: () => _csrfFetch("/admin/poll/reset", { method: "POST" })
-        .then((r) => _toast(r.ok ? "投票已重置" : "重置失敗", r.ok))
-        .catch(() => _toast("重置失敗", false)),
+        .then((r) => _toast(r.ok ? ServerI18n.t("cmdkToastPollReset") : ServerI18n.t("cmdkToastPollResetFailed"), r.ok))
+        .catch(() => _toast(ServerI18n.t("cmdkToastPollResetFailed"), false)),
     },
     {
       id: "clear-history",
-      label: "清空訊息歷史",
-      sub: "POST /admin/history/clear · 危險",
+      labelKey: "cmdkActionClearHistory",
+      subKey: "cmdkActionClearHistorySub",
       action: async () => {
         const ok = await window.HudConfirm?.open({
           icon: "⊘",
-          title: "清空訊息歷史",
+          title: ServerI18n.t("cmdkActionClearHistory"),
           subtitle: "CLEAR HISTORY · THIS ACTION CANNOT BE UNDONE",
           severity: "danger",
-          body: "所有已歸檔的訊息記錄都會被刪除，無法復原。",
-          confirmLabel: "清空",
+          body: ServerI18n.t("cmdkClearHistoryBody"),
+          confirmLabel: ServerI18n.t("cmdkClearHistoryConfirm"),
         });
         if (!ok) return;
         return _csrfFetch("/admin/history/clear", { method: "POST" })
-          .then((r) => _toast(r.ok ? "訊息歷史已清空" : "清空失敗", r.ok))
-          .catch(() => _toast("清空失敗", false));
+          .then((r) => _toast(r.ok ? ServerI18n.t("cmdkToastHistoryCleared") : ServerI18n.t("cmdkToastHistoryClearFailed"), r.ok))
+          .catch(() => _toast(ServerI18n.t("cmdkToastHistoryClearFailed"), false));
       },
     },
     {
       id: "logout",
-      label: "登出",
+      labelKey: "logout",
       sub: "POST /logout",
       action: () => fetch("/logout", { method: "POST", credentials: "same-origin" })
         .finally(() => location.reload()),
     },
     {
       id: "reload-page",
-      label: "重新整理頁面",
+      labelKey: "cmdkActionReloadPage",
       sub: "Cmd+R",
       action: () => location.reload(),
     },
@@ -208,14 +220,14 @@
       <div class="admin-cmdk-panel" role="dialog" aria-modal="true" aria-label="Command palette">
         <div class="admin-cmdk-search">
           <span class="admin-cmdk-search-icon" aria-hidden="true">⌕</span>
-          <input type="text" class="admin-cmdk-input" placeholder="搜尋訊息 · 用戶 · 設定 · 跳轉 · 主題 · 動作..." autocomplete="off" spellcheck="false" />
+          <input type="text" class="admin-cmdk-input" placeholder="${ServerI18n.t("cmdkSearchPlaceholder")}" autocomplete="off" spellcheck="false" />
           <span class="admin-cmdk-prompt">⌘K</span>
         </div>
         <div class="admin-cmdk-scope" role="tablist">
           ${SCOPES.map(s => `
             <button type="button" class="admin-cmdk-chip ${s.id === "all" ? "is-on" : ""}"
                     data-scope="${s.id}" role="tab" aria-selected="${s.id === "all"}">
-              <span class="lbl">${_esc(s.label)}</span>
+              <span class="lbl">${_esc(ServerI18n.t(s.labelKey))}</span>
               <span class="num" data-scope-count="${s.id}">·</span>
             </button>
           `).join("")}
@@ -223,12 +235,12 @@
         </div>
         <ul class="admin-cmdk-list" role="listbox"></ul>
         <div class="admin-cmdk-foot">
-          <span><kbd>↑↓</kbd> 選擇</span>
-          <span><kbd>Enter</kbd> 跳轉</span>
-          <span><kbd>Tab</kbd> 切換範圍</span>
-          <span><kbd>Esc</kbd> 關閉</span>
+          <span><kbd>↑↓</kbd> ${ServerI18n.t("cmdkFootSelect")}</span>
+          <span><kbd>Enter</kbd> ${ServerI18n.t("cmdkFootJump")}</span>
+          <span><kbd>Tab</kbd> ${ServerI18n.t("cmdkFootSwitchScope")}</span>
+          <span><kbd>Esc</kbd> ${ServerI18n.t("cmdkFootClose")}</span>
         </div>
-        <div class="admin-cmdk-note">所有動作在 Server 執行 · Desktop Client 只負責顯示彈幕</div>
+        <div class="admin-cmdk-note">${ServerI18n.t("cmdkFooterNote")}</div>
       </div>
     `;
     document.body.appendChild(root);
@@ -329,14 +341,14 @@
       })
         .then((r) => {
           if (r.ok) {
-            _toast(`主題「${item.label}」已套用`, true);
+            _toast(ServerI18n.t("cmdkThemeApplied", { name: item.label }), true);
             // Invalidate cache so the active flag refreshes next open.
             _themeCache = null;
           } else {
-            _toast("套用主題失敗", false);
+            _toast(ServerI18n.t("cmdkThemeApplyFailed"), false);
           }
         })
-        .catch(() => _toast("套用主題失敗", false));
+        .catch(() => _toast(ServerI18n.t("cmdkThemeApplyFailed"), false));
       close();
     } else if (item.type === "action") {
       try {
@@ -362,16 +374,21 @@
   }
 
   function _scoreSettings(q) {
-    return SETTINGS.map((s) => ({
-      type: "setting",
-      route: s.route,
-      tab: s.tab,
-      section: s.section,
-      label: s.label,
-      sub: `setting · ${(s.tab || s.section).replace("sec-", "")} · ${s.route}`,
-      icon: "⚙",
-      score: _fuzzyScore(s.label, q),
-    })).filter((x) => x.score >= 0);
+    return SETTINGS.map((s) => {
+      // D-4: labelKey resolves lazily here (post-init call site) — same
+      // fallback shape as PRESETS.labelKey in admin-modbans.js.
+      const label = s.labelKey ? ServerI18n.t(s.labelKey) : s.label;
+      return {
+        type: "setting",
+        route: s.route,
+        tab: s.tab,
+        section: s.section,
+        label: label,
+        sub: `setting · ${(s.tab || s.section).replace("sec-", "")} · ${s.route}`,
+        icon: "⚙",
+        score: _fuzzyScore(label, q),
+      };
+    }).filter((x) => x.score >= 0);
   }
 
   function _scoreMessages(q) {
@@ -398,12 +415,12 @@
     const active = _themeCache.active || "";
     return records.map((t) => {
       const label = t.label || t.display_name || t.name || "";
-      const desc = t.description || "套用此主題";
+      const desc = t.description || ServerI18n.t("cmdkThemeDefaultDesc");
       const isActive = t.name === active;
       return {
         type: "theme",
         id: t.name,
-        label: isActive ? `${label}  ✓ 使用中` : label,
+        label: isActive ? ServerI18n.t("cmdkThemeActive", { name: label }) : label,
         sub: desc,
         icon: "🎨",
         score: Math.max(_fuzzyScore(label, q), _fuzzyScore(t.name || "", q), _fuzzyScore(desc, q)),
@@ -412,15 +429,19 @@
   }
 
   function _scoreActions(q) {
-    return ACTIONS.map((a) => ({
-      type: "action",
-      id: a.id,
-      label: a.label,
-      sub: a.sub,
-      icon: "⚡",
-      action: a.action,
-      score: Math.max(_fuzzyScore(a.label, q), _fuzzyScore(a.id, q), _fuzzyScore(a.sub, q)),
-    })).filter((x) => x.score >= 0);
+    return ACTIONS.map((a) => {
+      const label = ServerI18n.t(a.labelKey);
+      const sub = a.subKey ? ServerI18n.t(a.subKey) : a.sub;
+      return {
+        type: "action",
+        id: a.id,
+        label: label,
+        sub: sub,
+        icon: "⚡",
+        action: a.action,
+        score: Math.max(_fuzzyScore(label, q), _fuzzyScore(a.id, q), _fuzzyScore(sub, q)),
+      };
+    }).filter((x) => x.score >= 0);
   }
 
   function _scoreUsers(q) {
@@ -433,7 +454,7 @@
       return {
         type: "user",
         label: nick ? `@${nick}  ·  ${fp.slice(0, 12)}…` : `${fp.slice(0, 12)}…`,
-        sub: `user · ${ip || "ip 未知"}`,
+        sub: `user · ${ip || ServerI18n.t("cmdkIpUnknown")}`,
         icon: "👤",
         score: Math.max(_fuzzyScore(fp, q), _fuzzyScore(ip, q), _fuzzyScore(nick, q)),
       };
@@ -540,7 +561,7 @@
 
   function _renderList() {
     if (!_items.length) {
-      _list.innerHTML = `<li class="admin-cmdk-empty">無結果 · 試試切換範圍 (Tab)</li>`;
+      _list.innerHTML = `<li class="admin-cmdk-empty">${ServerI18n.t("cmdkEmptyResults")}</li>`;
       return;
     }
     _list.innerHTML = _items.slice(0, 10).map((item, i) => {
@@ -559,7 +580,7 @@
       `;
     }).join("");
     if (_items.length > 10) {
-      _list.insertAdjacentHTML("beforeend", `<li class="admin-cmdk-more">+${_items.length - 10} 個更多 · 縮小搜尋範圍</li>`);
+      _list.insertAdjacentHTML("beforeend", `<li class="admin-cmdk-more">${ServerI18n.t("cmdkMoreResults", { n: _items.length - 10 })}</li>`);
     }
   }
 

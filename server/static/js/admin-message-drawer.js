@@ -90,7 +90,7 @@
     // Flip direction: visual "下一筆" → older → entries[idx - 1]
     const targetIdx = idx + (-direction);
     if (targetIdx < 0 || targetIdx >= entries.length) {
-      window.showToast && window.showToast(direction < 0 ? "已是最新一筆" : "已是最舊一筆", false);
+      window.showToast && window.showToast(direction < 0 ? ServerI18n.t("msgDrawerNavAtNewest") : ServerI18n.t("msgDrawerNavAtOldest"), false);
       return;
     }
     const target = entries[targetIdx];
@@ -176,13 +176,13 @@
   //   → Moderation → Reply → footer (PREV / NEXT)
   function _renderBody() {
     const entry = _state.entry;
-    if (!entry) return '<div class="admin-msgd-empty">沒有資料</div>';
+    if (!entry) return `<div class="admin-msgd-empty">${ServerI18n.t("msgDrawerEmptyState")}</div>`;
     const d = entry.data || {};
     const fp = d.fingerprint || "—";
     const fpShort = fp === "—" ? "—" : fp.slice(0, FP_DISPLAY_LEN);
     const fpFull  = fp === "—" ? "—" : fp.slice(0, 12);
     const ts = entry.ts ? _shortTime(entry.ts) : "—";
-    const nick = d.nickname || "匿名";
+    const nick = d.nickname || ServerI18n.t("msgDrawerAnonymous");
 
     const fpRec = _state.fingerprintRecord || {};
     const totalCount = Number(fpRec.message_count) || 0;
@@ -202,7 +202,7 @@
       <header class="admin-msgd-v4__topbar">
         <span class="admin-msgd-v4__kicker">MESSAGE DETAIL</span>
         <span class="admin-msgd-v4__spacer"></span>
-        <button type="button" class="admin-msgd-v4__close" data-msgd-action="close" title="關閉 · Esc">${window.AdminUtils.closeIcon}</button>
+        <button type="button" class="admin-msgd-v4__close" data-msgd-action="close" title="${ServerI18n.t("msgDrawerCloseTitle")}">${window.AdminUtils.closeIcon}</button>
       </header>
 
       <div class="admin-msgd-v4__header">
@@ -217,11 +217,18 @@
       <div class="admin-msgd-v4__body">${escapeHtml(d.text || "")}</div>
 
       <section class="admin-msgd-v4__section">
+        <!-- D-4 i18n: "發送者 · SENDER PROFILE" is the sitewide EN·中文
+             bilingual monolabel pattern (same family as admin-ui-monolabel,
+             pattern-level decision still deferred — see TODOS.md "「EN ·
+             中文」雙語 monolabel 的 pattern 決策", precedent commit 4771242).
+             .admin-msgd-v4__seclabel mirrors .admin-ui-monolabel styling
+             (hud.css) so it's treated the same — left untouched, as are the
+             two seclabel headers below. -->
         <div class="admin-msgd-v4__seclabel">發送者 · SENDER PROFILE</div>
         <div class="admin-msgd-v4__sender-stats">
-          <div><div class="k">累計訊息</div><div class="v">${totalCount || sameFp.length}</div></div>
-          <div><div class="k">平均長度</div><div class="v dim">${avgLen}<span class="u">字</span></div></div>
-          <div><div class="k">敏感字次</div><div class="v ${violations > 0 ? "warn" : "good"}">${violations}</div></div>
+          <div><div class="k">${ServerI18n.t("msgDrawerStatTotalMessages")}</div><div class="v">${totalCount || sameFp.length}</div></div>
+          <div><div class="k">${ServerI18n.t("msgDrawerStatAvgLength")}</div><div class="v dim">${avgLen}<span class="u">${ServerI18n.t("msgDrawerCharUnit")}</span></div></div>
+          <div><div class="k">${ServerI18n.t("msgDrawerStatSensitiveHits")}</div><div class="v ${violations > 0 ? "warn" : "good"}">${violations}</div></div>
         </div>
         <div class="admin-msgd-v4__sender-meta">
           IP · ${escapeHtml(d.ip || "—")}<br/>
@@ -230,19 +237,23 @@
       </section>
 
       <section class="admin-msgd-v4__section">
+        <!-- D-4 i18n: same deferred EN·中文 bilingual monolabel pattern as
+             SENDER PROFILE above — left untouched. -->
         <div class="admin-msgd-v4__seclabel">審核 · MODERATION</div>
         <div class="admin-msgd-v4__mod-buttons">
           <button type="button" class="admin-msgd-v4__modbtn is-ban" data-msgd-action="ban-fp" ${fp === "—" ? "disabled" : ""}>⊘ Ban</button>
           <button type="button" class="admin-msgd-v4__modbtn is-mute" data-msgd-action="mute-fp" ${fp === "—" ? "disabled" : ""}>◐ Mute</button>
           <button type="button" class="admin-msgd-v4__modbtn is-mask" data-msgd-action="mask-msg">◑ Mask</button>
-          <button type="button" class="admin-msgd-v4__modbtn is-blacklist" data-msgd-action="blacklist-kw">+ 黑名單</button>
+          <button type="button" class="admin-msgd-v4__modbtn is-blacklist" data-msgd-action="blacklist-kw">${ServerI18n.t("msgDrawerBlacklistBtn")}</button>
         </div>
       </section>
 
       <section class="admin-msgd-v4__section is-grow">
+        <!-- D-4 i18n: same deferred EN·中文 bilingual monolabel pattern as
+             SENDER PROFILE above — left untouched. -->
         <div class="admin-msgd-v4__seclabel">回覆 · REPLY AS ADMIN</div>
-        <textarea class="admin-msgd-v4__reply" data-msgd-reply placeholder="以管理者身分回覆…" rows="3"></textarea>
-        <button type="button" class="admin-msgd-v4__replybtn" data-msgd-action="reply">發送回覆</button>
+        <textarea class="admin-msgd-v4__reply" data-msgd-reply placeholder="${ServerI18n.t("msgDrawerReplyPlaceholder")}" rows="3"></textarea>
+        <button type="button" class="admin-msgd-v4__replybtn" data-msgd-action="reply">${ServerI18n.t("msgDrawerSendReply")}</button>
       </section>
 
       <footer class="admin-msgd-v4__footer">
@@ -269,10 +280,10 @@
     else return "—";
     if (!t) return "—";
     const diffSec = (Date.now() - t) / 1000;
-    if (diffSec < 60) return Math.floor(diffSec) + " 秒前";
-    if (diffSec < 3600) return Math.floor(diffSec / 60) + " 分鐘前";
-    if (diffSec < 86400) return Math.floor(diffSec / 3600) + " 小時前";
-    return Math.floor(diffSec / 86400) + " 天前";
+    if (diffSec < 60) return ServerI18n.t("msgDrawerSecAgo", { n: Math.floor(diffSec) });
+    if (diffSec < 3600) return ServerI18n.t("msgDrawerMinAgo", { n: Math.floor(diffSec / 60) });
+    if (diffSec < 86400) return ServerI18n.t("msgDrawerHourAgo", { n: Math.floor(diffSec / 3600) });
+    return ServerI18n.t("msgDrawerDayAgo", { n: Math.floor(diffSec / 86400) });
   }
 
   // ── ban via existing /admin/live/block ──────────────────────────
@@ -303,12 +314,12 @@
             body: JSON.stringify({ type: "fingerprint", value: fp, reason: reason || "" }),
           });
       if (!r.ok) throw new Error("HTTP " + r.status);
-      const label = durationLabel || (seconds > 0 ? `${seconds} 秒` : "永久");
-      window.showToast && window.showToast(`已封禁 fp:${fp.slice(0, 8)} · ${label}`, true);
+      const label = durationLabel || (seconds > 0 ? ServerI18n.t("msgDrawerSecondsLabel", { n: seconds }) : ServerI18n.t("msgDrawerPermanent"));
+      window.showToast && window.showToast(ServerI18n.t("msgDrawerToastBanned", { fp: fp.slice(0, 8), label: label }), true);
       _closeBanConfirm();
       _close();
     } catch (e) {
-      window.showToast && window.showToast("封禁失敗：" + (e.message || ""), false);
+      window.showToast && window.showToast(ServerI18n.t("msgDrawerBanFailed", { msg: e.message || "" }), false);
     }
   }
 
@@ -321,7 +332,7 @@
     const fp = d.fingerprint || "—";
     if (fp === "—") return;
     const fpFull = fp.slice(0, 12);
-    const nick = d.nickname || "匿名";
+    const nick = d.nickname || ServerI18n.t("msgDrawerAnonymous");
     let hue = 0;
     for (let i = 0; i < fp.length; i++) hue = (hue * 31 + fp.charCodeAt(i)) & 0xffff;
     hue = hue % 360;
@@ -337,19 +348,19 @@
         </div>
       </div>
       <div class="admin-bancfm-section">
-        <div class="admin-bancfm-sec-label">封禁時長</div>
+        <div class="admin-bancfm-sec-label">${ServerI18n.t("msgDrawerBanDurationLabel")}</div>
         <div class="admin-bancfm-duration">
-          <span class="admin-bancfm-dchip" role="button" tabindex="0" data-ban-duration="3600">1 小時</span>
-          <span class="admin-bancfm-dchip" role="button" tabindex="0" data-ban-duration="86400">24 小時</span>
-          <span class="admin-bancfm-dchip" role="button" tabindex="0" data-ban-duration="604800">7 天</span>
-          <span class="admin-bancfm-dchip is-active" role="button" tabindex="0" data-ban-duration="0">永久</span>
+          <span class="admin-bancfm-dchip" role="button" tabindex="0" data-ban-duration="3600">${ServerI18n.t("msgDrawerDurationHour1")}</span>
+          <span class="admin-bancfm-dchip" role="button" tabindex="0" data-ban-duration="86400">${ServerI18n.t("msgDrawerDurationHour24")}</span>
+          <span class="admin-bancfm-dchip" role="button" tabindex="0" data-ban-duration="604800">${ServerI18n.t("msgDrawerDurationDay7")}</span>
+          <span class="admin-bancfm-dchip is-active" role="button" tabindex="0" data-ban-duration="0">${ServerI18n.t("msgDrawerPermanent")}</span>
         </div>
       </div>
       <div class="admin-bancfm-section">
-        <div class="admin-bancfm-sec-label">原因（選填）</div>
-        <input type="text" class="admin-bancfm-reason" data-ban-reason placeholder="e.g. 持續發送垃圾訊息" maxlength="200" />
+        <div class="admin-bancfm-sec-label">${ServerI18n.t("msgDrawerReasonLabel")}</div>
+        <input type="text" class="admin-bancfm-reason" data-ban-reason placeholder="${ServerI18n.t("msgDrawerReasonPlaceholder")}" maxlength="200" />
       </div>
-      <div class="admin-bancfm-warn">⚠ 該指紋下所有訊息將被遮罩，該指紋將被加入黑名單。</div>`;
+      <div class="admin-bancfm-warn">${ServerI18n.t("msgDrawerBanWarn")}</div>`;
 
     // 時長為單選：點一下就把 is-active 移到那顆。鍵盤也要能操作 —— chip 不是
     // <button>，所以 Enter / Space 要自己接。
@@ -372,12 +383,12 @@
     if (!window.HudConfirm) return;
     const ok = await window.HudConfirm.open({
       icon: "⊘",
-      title: "封禁確認",
+      title: ServerI18n.t("msgDrawerBanConfirmTitle"),
       subtitle: "BAN CONFIRM · IRREVERSIBLE UNTIL MANUAL LIFT",
       severity: "danger",
       body,
-      confirmLabel: "確認封禁",
-      cancelLabel: "取消",
+      confirmLabel: ServerI18n.t("msgDrawerConfirmBan"),
+      cancelLabel: ServerI18n.t("cancel"),
       width: 480,
     });
     if (!ok) return;
@@ -386,7 +397,7 @@
     const durationS = active ? parseInt(active.dataset.banDuration || "0", 10) || 0 : 0;
     // 標籤直接用 chip 上的文字，不另外從秒數推算 —— 推算過一次，7 天被算成
     // 「1 天」（除數誤用 604800），跟 24 小時的提示變得一模一樣。
-    const durationLabel = active ? active.textContent.trim() : "永久";
+    const durationLabel = active ? active.textContent.trim() : ServerI18n.t("msgDrawerPermanent");
     return _banFingerprint(reason.trim(), durationS, durationLabel);
   }
   // Stub kept for any straggler call sites that referenced the old close
@@ -406,11 +417,11 @@
     if (!text) return;
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
-      title: "加入黑名單關鍵字",
+      title: ServerI18n.t("msgDrawerBlacklistKwTitle"),
       subtitle: "BLACKLIST KEYWORD · FUTURE MATCHES BLOCKED",
       severity: "danger",
-      body: "之後包含這段文字的訊息都會被擋下。",
-      confirmLabel: "加入黑名單",
+      body: ServerI18n.t("msgDrawerBlacklistKwBody"),
+      confirmLabel: ServerI18n.t("msgDrawerBlacklistKwConfirm"),
     });
     if (!ok) return;
     try {
@@ -420,10 +431,10 @@
         body: JSON.stringify({ type: "keyword", value: text }),
       });
       if (!r.ok) throw new Error("HTTP " + r.status);
-      window.showToast && window.showToast("已加入黑名單", true);
+      window.showToast && window.showToast(ServerI18n.t("msgDrawerToastBlacklisted"), true);
       _close();
     } catch (e) {
-      window.showToast && window.showToast("失敗：" + (e.message || ""), false);
+      window.showToast && window.showToast(ServerI18n.t("msgDrawerMaskFailed", { msg: e.message || "" }), false);
     }
   }
   async function _blacklistKeyword() {
@@ -444,10 +455,10 @@
         body: JSON.stringify({ text }),
       });
       if (!r.ok) throw new Error("HTTP " + r.status);
-      window.showToast && window.showToast("已以管理者身分發送", true);
+      window.showToast && window.showToast(ServerI18n.t("msgDrawerReplySent"), true);
       if (ta) ta.value = "";
     } catch (e) {
-      window.showToast && window.showToast("發送失敗：" + (e.message || ""), false);
+      window.showToast && window.showToast(ServerI18n.t("msgDrawerReplyFailed", { msg: e.message || "" }), false);
     }
   }
 

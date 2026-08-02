@@ -15,11 +15,12 @@ const SRC = fs.readFileSync(
 
 test("duration chips carry both the seconds and the label", () => {
   // 三個時長 + 永久，值必須對得上秒數。
+  // D-4：標籤走 i18n key，契約改釘「秒數值 ↔ key」的配對（原文在 zh locale）。
   const expected = [
-    ['data-ban-duration="3600"', "1 小時"],
-    ['data-ban-duration="86400"', "24 小時"],
-    ['data-ban-duration="604800"', "7 天"],
-    ['data-ban-duration="0"', "永久"],
+    ['data-ban-duration="3600"', 'ServerI18n.t("msgDrawerDurationHour1")'],
+    ['data-ban-duration="86400"', 'ServerI18n.t("msgDrawerDurationHour24")'],
+    ['data-ban-duration="604800"', 'ServerI18n.t("msgDrawerDurationDay7")'],
+    ['data-ban-duration="0"', 'ServerI18n.t("msgDrawerPermanent")'],
   ];
   for (const [attr, label] of expected) {
     const row = SRC.split("\n").find((l) => l.includes(attr));
