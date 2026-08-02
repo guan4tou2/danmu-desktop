@@ -28,6 +28,7 @@
   let _state = "ok";              // ok | reconnecting | exhausted | dismissed
   let _nextAttemptAt = 0;
   let _backoffMs = 5000;
+  let _authExpired = false;       // one-shot：401 只觸發一次 reload
   let _tickTimer = 0;
 
   function _setState(next) {
@@ -180,6 +181,14 @@
         const r = await promise;
         if (r && r.ok) {
           if (_state !== "ok" && _state !== "dismissed") _onSuccess();
+        } else if (r && r.status === 401 && !_authExpired) {
+          // Session 過期（idle timeout / server 重啟）：已登入 shell 下
+          // /admin/* 回 401 只有一種意思。原本這裡靜默漏過，使用者看到
+          // 的是「頁面資料壞掉」而不是登入頁（F-102 design audit
+          // 2026-08-02 實測：401 後 SPA 繼續掛著舊畫面）。reload 讓
+          // server 端出登入頁，把壞狀態換成明確的「請重新登入」。
+          _authExpired = true;
+          location.reload();
         } else if (r && r.status >= 500) {
           _onFailure();
         }
