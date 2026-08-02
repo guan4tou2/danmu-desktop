@@ -42,158 +42,170 @@
   // Per-route tips. Key = first hash segment (or alias) → array of
   // strings. `_default` is the fallback when no route key matches.
   // HTML-escaped at render time so descriptions are plain text.
+  //
+  // D-4 i18n: entries store *Key fields (not literal zh text) because this
+  // object is parsed at module load, before ServerI18n has necessarily
+  // init'd — ServerI18n.t() is only called lazily inside _renderBody().
+  // `_default.title` stays a literal string (brand name "Danmu Fire",
+  // not Chinese, out of scope for this migration).
   const ROUTE_TIPS = {
     _default: {
       title: "Danmu Fire",
-      tips: [
-        "F1 / ? / ⌘/ 任一鍵可開關此面板",
-        "⌘K 開全域命令搜尋；Esc 關 modal / drawer",
-        "頂部 KPI 數字可點擊跳到對應頁面",
+      tipKeys: [
+        "helpDrawerDefaultTip1",
+        "helpDrawerDefaultTip2",
+        "helpDrawerDefaultTip3",
       ],
     },
 
     live: {
-      title: "控制台",
-      tips: [
-        "上方 KPI 條顯示即時 session 統計",
-        "右欄 Quick Actions：F1-F4 對應 Effects / Poll / Blacklist / Desktop",
-        "點任何 KPI 數字可跳轉到對應頁面",
+      titleKey: "helpDrawerLiveTitle",
+      tipKeys: [
+        "helpDrawerLiveTip1",
+        "helpDrawerLiveTip2",
+        "helpDrawerLiveTip3",
       ],
     },
 
     polls: {
-      title: "投票",
-      tips: [
-        "pending → active → ended，新建為 pending",
-        "active 時觀眾打 A/B/C/D 投票（大小寫皆可）",
-        "多題投票：投完一題自動推下一題",
-        "polestar lock：觀眾端永遠不顯示計票/百分比",
+      titleKey: "helpDrawerPollsTitle",
+      tipKeys: [
+        "helpDrawerPollsTip1",
+        "helpDrawerPollsTip2",
+        "helpDrawerPollsTip3",
+        "helpDrawerPollsTip4",
       ],
     },
 
     widgets: {
       title: "Desktop Widgets",
-      tips: [
-        "啟用的 widget 顯示在 OBS / Electron Desktop 上層",
-        "計分板 / 跑馬燈 / 標籤可同時啟用，順序由 layer 決定",
-        "OBS browser source URL 在頁面頂部可一鍵複製",
+      tipKeys: [
+        "helpDrawerWidgetsTip1",
+        "helpDrawerWidgetsTip2",
+        "helpDrawerWidgetsTip3",
       ],
     },
 
     moderation: {
-      title: "審核",
-      tips: [
-        "Quick Filters chip 為臨時規則，場次結束自動失效",
-        "黑名單為長期規則，跨場次保留",
-        "filter action：block / replace / review / allow",
-        "review 命中的訊息進入審核佇列，30s 未處理自動拒絕",
+      titleKey: "helpDrawerModerationTitle",
+      tipKeys: [
+        "helpDrawerModerationTip1",
+        "helpDrawerModerationTip2",
+        // Latin-only (no Chinese) — kept literal, resolved in the tips
+        // map step below via the `literal` escape hatch.
+        { literal: "filter action：block / replace / review / allow" },
+        "helpDrawerModerationTip4",
       ],
     },
 
     webhooks: {
       title: "Webhooks",
-      tips: [
-        "每個 endpoint 右側 ↻ 測試 會發 ping 一次",
-        "失敗的 delivery 自動重試 3 次（1s → 2s → 4s）",
-        "HMAC-SHA256 簽署用 X-Webhook-Signature header",
+      tipKeys: [
+        "helpDrawerWebhooksTip1",
+        "helpDrawerWebhooksTip2",
+        "helpDrawerWebhooksTip3",
       ],
     },
 
     "api-tokens": {
       title: "API Tokens",
-      tips: [
-        "Token 僅在產生時顯示一次 — 請立即複製保存",
-        "admin:* scope 擁有完整管理員權限，建議只用於 CI/CD",
-        "90 天未使用的 token 會自動標記為 inactive",
+      tipKeys: [
+        "helpDrawerApiTokensTip1",
+        "helpDrawerApiTokensTip2",
+        "helpDrawerApiTokensTip3",
       ],
     },
 
     plugins: {
-      title: "伺服器插件",
-      tips: [
-        "插件是伺服器端程式碼 (.py/.js)，有完整系統存取權",
-        "Priority 值越小越先執行 — CRITICAL (≤10) 優於 HIGH (≤50)",
-        "Hot-reload 不會中斷正在處理的訊息",
+      titleKey: "helpDrawerPluginsTitle",
+      tipKeys: [
+        "helpDrawerPluginsTip1",
+        "helpDrawerPluginsTip2",
+        "helpDrawerPluginsTip3",
       ],
     },
 
     overlay: {
-      title: "Desktop 控制",
-      tips: [
-        "▶ 開始顯示 / ■ 停止顯示 切換渲染",
-        "◐ 暫停顯示：session 仍進行但 Desktop 凍結，恢復後 drain queue",
-        "⊗ 清空螢幕：抹掉 Desktop 上現存彈幕（會發 webhook on_overlay_clear）",
+      titleKey: "helpDrawerOverlayTitle",
+      tipKeys: [
+        "helpDrawerOverlayTip1",
+        "helpDrawerOverlayTip2",
+        "helpDrawerOverlayTip3",
       ],
     },
 
     broadcast: {
-      // Alias for overlay — same content
-      title: "Desktop 控制",
-      tips: [
-        "▶ 開始顯示 / ■ 停止顯示 切換渲染",
-        "◐ 暫停顯示：session 仍進行但 Desktop 凍結，恢復後 drain queue",
-        "⊗ 清空螢幕：抹掉 Desktop 上現存彈幕（會發 webhook on_overlay_clear）",
+      // Alias for overlay — same content, so it reuses overlay's keys
+      // rather than duplicating four more translation entries.
+      titleKey: "helpDrawerOverlayTitle",
+      tipKeys: [
+        "helpDrawerOverlayTip1",
+        "helpDrawerOverlayTip2",
+        "helpDrawerOverlayTip3",
       ],
     },
 
     viewer: {
-      title: "觀眾頁",
-      tips: [
-        "4 個 tab：Page (整頁主題) / Fields (表單欄位) / Defaults (送出預設) / Limits (限制)",
-        "Defaults tab 可逐參數開放觀眾自訂",
-        "限制 tab 顯示 rate / dedup / 內容長度 — 編輯在 #/ratelimit",
+      titleKey: "helpDrawerViewerTitle",
+      tipKeys: [
+        "helpDrawerViewerTip1",
+        "helpDrawerViewerTip2",
+        "helpDrawerViewerTip3",
       ],
     },
 
     modqueue: {
-      title: "審核佇列",
-      tips: [
-        "PENDING amber：等管理員 30 秒倒數",
-        "APPROVED lime：通過後推 Desktop",
-        "REJECTED crimson：丟棄；AUTO-REJECTED 表示倒數結束",
-        "建 filter rule 設 action=review 命中的訊息自動進此頁",
+      titleKey: "helpDrawerModqueueTitle",
+      tipKeys: [
+        "helpDrawerModqueueTip1",
+        "helpDrawerModqueueTip2",
+        "helpDrawerModqueueTip3",
+        "helpDrawerModqueueTip4",
       ],
     },
 
     sessions: {
-      title: "場次",
-      tips: [
-        "場次 = 一段時間切片（含訊息 / 投票 / 統計），不是「直播」",
-        "Desktop 開啟自動開新 session；Desktop 關掉 ≠ session 結束",
-        "「結束並存檔」才把切片歸檔到 history（唯讀）",
+      titleKey: "helpDrawerSessionsTitle",
+      tipKeys: [
+        "helpDrawerSessionsTip1",
+        "helpDrawerSessionsTip2",
+        "helpDrawerSessionsTip3",
       ],
     },
 
     system: {
-      title: "系統",
-      tips: [
-        "Overview：metric tiles + 服務狀態 + recent errors",
-        "Security：密碼 / WS token / IP allowlist",
-        "Backup：場次歸檔匯出 JSON / CSV",
-        "重啟 WS / Force GC 已停用（安全考量）",
+      titleKey: "helpDrawerSystemTitle",
+      tipKeys: [
+        "helpDrawerSystemTip1",
+        "helpDrawerSystemTip2",
+        "helpDrawerSystemTip3",
+        "helpDrawerSystemTip4",
       ],
     },
   };
 
   // Global shortcuts — constant across all routes per the v5 spec.
+  // `keys` are literal key-cap glyphs (language-neutral, not moved).
   const SHORTCUTS = [
-    { keys: ["⌘", "K"],        desc: "全域搜尋" },
-    { keys: ["F1"],            desc: "開啟 Help" },
-    { keys: ["⌘", "/"],        desc: "開啟 Help（替代鍵）" },
-    { keys: ["⌘", "⇧", "L"],  desc: "切到即時訊息流" },
-    { keys: ["⌘", "⇧", "S"],  desc: "Desktop 切換 OFF" },
-    { keys: ["⌘", "⇧", "C"],  desc: "清空 Desktop 螢幕" },
-    { keys: ["Esc"],           desc: "關閉抽屜 / Modal" },
+    { keys: ["⌘", "K"],        descKey: "helpDrawerShortcutGlobalSearch" },
+    { keys: ["F1"],            descKey: "helpDrawerShortcutOpenHelp" },
+    { keys: ["⌘", "/"],        descKey: "helpDrawerShortcutOpenHelpAlt" },
+    { keys: ["⌘", "⇧", "L"],  descKey: "helpDrawerShortcutLiveFeed" },
+    { keys: ["⌘", "⇧", "S"],  descKey: "helpDrawerShortcutDesktopOff" },
+    { keys: ["⌘", "⇧", "C"],  descKey: "helpDrawerShortcutClearDesktop" },
+    { keys: ["Esc"],           descKey: "helpDrawerShortcutCloseDrawer" },
   ];
 
   // Terminology cheat-sheet — clarifies post-pivot vocabulary that
-  // operators commonly confuse with adjacent web concepts.
+  // operators commonly confuse with adjacent web concepts. `term` is the
+  // jargon itself (kept in Latin across all locales, like a dictionary
+  // headword); only `defKey` (the definition) is translated.
   const GLOSSARY = [
-    { term: "Desktop",          def: "Electron / OBS 上的彈幕顯示層，不是 viewer 頁面" },
-    { term: "Session",          def: "一段時間切片的資料範圍，不是使用者 session" },
-    { term: "Fire Token",       def: "Extension 共用的認證密鑰，和 API Token 是分開的" },
-    { term: "Fingerprint (fp)", def: "基於瀏覽器特徵的匿名身份辨識，不需要登入" },
-    { term: ".dme",             def: "Danmu Effect 格式 — YAML 定義的 CSS 動畫包" },
+    { term: "Desktop",          defKey: "helpDrawerGlossaryDesktopDef" },
+    { term: "Session",          defKey: "helpDrawerGlossarySessionDef" },
+    { term: "Fire Token",       defKey: "helpDrawerGlossaryFireTokenDef" },
+    { term: "Fingerprint (fp)", defKey: "helpDrawerGlossaryFingerprintDef" },
+    { term: ".dme",             defKey: "helpDrawerGlossaryDmeDef" },
   ];
 
   // External resource links — opens in a new tab.
@@ -228,11 +240,14 @@
   function _renderBody() {
     const entry = ROUTE_TIPS[_routeKey()];
     const version = (window.DANMU_CONFIG && window.DANMU_CONFIG.appVersion) || "";
+    // _default is the only entry without a titleKey (its title is the
+    // "Danmu Fire" brand name — not Chinese, so out of scope for D-4).
+    const titleText = entry.titleKey ? ServerI18n.t(entry.titleKey) : entry.title;
 
-    const tipsHtml = entry.tips.map((tip) => `
+    const tipsHtml = entry.tipKeys.map((tipKey) => `
       <div class="admin-help__tip">
         <span class="admin-help__tip-arrow">→</span>
-        <span>${_esc(tip)}</span>
+        <span>${_esc(typeof tipKey === "string" ? ServerI18n.t(tipKey) : tipKey.literal)}</span>
       </div>`).join("");
 
     const shortcutsHtml = SHORTCUTS.map((s) => `
@@ -240,13 +255,13 @@
         <div class="admin-help__keys">
           ${s.keys.map((k) => `<kbd class="admin-help__kbd">${_esc(k)}</kbd>`).join("")}
         </div>
-        <span class="admin-help__shortcut-desc">${_esc(s.desc)}</span>
+        <span class="admin-help__shortcut-desc">${_esc(ServerI18n.t(s.descKey))}</span>
       </div>`).join("");
 
     const glossaryHtml = GLOSSARY.map((g) => `
       <div class="admin-help__glossary-row">
         <div class="admin-help__glossary-term">${_esc(g.term)}</div>
-        <div class="admin-help__glossary-def">${_esc(g.def)}</div>
+        <div class="admin-help__glossary-def">${_esc(ServerI18n.t(g.defKey))}</div>
       </div>`).join("");
 
     const resourcesHtml = RESOURCES.map((r) => `
@@ -268,30 +283,30 @@
         <section class="admin-help__section">
           <div class="admin-help__route-head">
             <span class="admin-help__route-dot"></span>
-            <span class="admin-help__route-title">${_esc(entry.title)}</span>
-            <span class="admin-help__route-tag">目前頁面</span>
+            <span class="admin-help__route-title">${_esc(titleText)}</span>
+            <span class="admin-help__route-tag">${ServerI18n.t("helpDrawerCurrentPageTag")}</span>
           </div>
           <div class="admin-help__tips">${tipsHtml}</div>
         </section>
 
         <section class="admin-help__section">
-          <div class="admin-help__sec-label">鍵盤快捷鍵 · SHORTCUTS</div>
+          <div class="admin-help__sec-label">${ServerI18n.t("helpDrawerShortcutsLabel")} · SHORTCUTS</div>
           <div class="admin-help__shortcuts">${shortcutsHtml}</div>
         </section>
 
         <section class="admin-help__section">
-          <div class="admin-help__sec-label">術語 · GLOSSARY</div>
+          <div class="admin-help__sec-label">${ServerI18n.t("helpDrawerGlossaryLabel")} · GLOSSARY</div>
           <div class="admin-help__glossary">${glossaryHtml}</div>
         </section>
 
         <section class="admin-help__section">
-          <div class="admin-help__sec-label">資源 · RESOURCES</div>
+          <div class="admin-help__sec-label">${ServerI18n.t("helpDrawerResourcesLabel")} · RESOURCES</div>
           <div class="admin-help__resources">${resourcesHtml}</div>
         </section>
 
       </div>
       <footer class="admin-help__foot">
-        Danmu Fire ${version ? "v" + _esc(version) : ""} · 按 ⌘/ 或 F1 開關
+        Danmu Fire ${version ? "v" + _esc(version) : ""} · ${ServerI18n.t("helpDrawerFooterHint")}
       </footer>`;
   }
 

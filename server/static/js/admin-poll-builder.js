@@ -28,13 +28,17 @@
     });
   };
 
-  const POLL_HTML = `
+  // D-4：頁面外殼原本是模組頂層 const POLL_HTML——模組 parse 時 ServerI18n
+  // 尚未 init，硬翻會拿到原始 key。改成 _renderHtml() 呼叫時才組字串
+  // （呼叫點在 init()，於 admin-panel-rendered / DOMContentLoaded 之後）。
+  function _renderHtml() {
+    return `
       <div id="sec-polls" class="admin-poll-page-v5 hud-page-stack lg:col-span-2" data-tpl="C" data-poll-view="builder">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">POLL · 多題目 · 拖曳排序 · 每題可上傳圖片</div>
-          <div class="admin-ui-page-title">投票</div>
-          <p class="admin-ui-page-note">建立多題投票；觀眾點選項即送出，票數與百分比僅管理端可見。
-            <a class="admin-poll-deeplink" href="#/poll-deepdive" title="投票深度分析">📊 深度分析 →</a></p>
+          <div class="admin-ui-page-kicker">POLL · ${ServerI18n.t("pollBuilderPageKicker")}</div>
+          <div class="admin-ui-page-title">${ServerI18n.t("pollBuilderPageTitle")}</div>
+          <p class="admin-ui-page-note">${ServerI18n.t("pollBuilderPageNote")}
+            <a class="admin-poll-deeplink" href="#/poll-deepdive" title="${ServerI18n.t("pollBuilderDeepdiveTitle")}">${ServerI18n.t("pollBuilderDeepdiveLink")}</a></p>
         </div>
 
         <!-- BUILDER VIEW -->
@@ -42,22 +46,22 @@
           <!-- LEFT · queue with real DnD -->
           <aside class="admin-poll-queue-panel">
             <div class="admin-poll-card-head">
-              <span class="title">題目佇列</span>
-              <span class="kicker">QUEUE · 按住 ⋮⋮ 拖曳排序</span>
+              <span class="title">${ServerI18n.t("pollBuilderQueueTitle")}</span>
+              <span class="kicker">QUEUE · ${ServerI18n.t("pollBuilderQueueKicker")}</span>
             </div>
             <div class="admin-poll-queue" data-poll-queue></div>
-            <button type="button" class="admin-poll-add-btn" data-poll-action="add">＋ 新增題目</button>
+            <button type="button" class="admin-poll-add-btn" data-poll-action="add">${ServerI18n.t("pollBuilderAddQuestion")}</button>
 
             <div class="admin-poll-mode">
-              <div class="mode-label">播放模式</div>
+              <div class="mode-label">${ServerI18n.t("pollBuilderPlayModeLabel")}</div>
               <div class="mode-row">
                 <button type="button" class="is-active" data-poll-mode="manual">
-                  <span class="lbl">手動</span>
-                  <span class="sub">每題按 Next</span>
+                  <span class="lbl">${ServerI18n.t("pollBuilderModeManual")}</span>
+                  <span class="sub">${ServerI18n.t("pollBuilderModeManualSub")}</span>
                 </button>
                 <button type="button" data-poll-mode="auto">
-                  <span class="lbl">自動</span>
-                  <span class="sub">時限到自動下一題</span>
+                  <span class="lbl">${ServerI18n.t("pollBuilderModeAuto")}</span>
+                  <span class="sub">${ServerI18n.t("pollBuilderAutoAdvanceDesc")}</span>
                 </button>
               </div>
             </div>
@@ -65,12 +69,12 @@
             <!-- Multi-question session controls (P0-1) -->
             <div class="admin-poll-session" data-poll-session>
               <div class="session-status" data-poll-session-status>
-                <span class="kicker">SESSION · 尚未開始</span>
+                <span class="kicker">SESSION · ${ServerI18n.t("pollBuilderSessionNotStarted")}</span>
               </div>
               <div class="session-actions">
                 <button type="button" class="admin-ui-action is-primary admin-poll-session-action" data-poll-session-action="start">START SESSION ▶</button>
-                <button type="button" class="admin-ui-action admin-poll-session-action" data-poll-session-action="advance" hidden>下一題 ▶</button>
-                <button type="button" class="admin-ui-action is-danger admin-poll-session-action" data-poll-session-action="end" hidden>結束 ✕</button>
+                <button type="button" class="admin-ui-action admin-poll-session-action" data-poll-session-action="advance" hidden>${ServerI18n.t("pollBuilderNextQuestionBtn")}</button>
+                <button type="button" class="admin-ui-action is-danger admin-poll-session-action" data-poll-session-action="end" hidden>${ServerI18n.t("pollBuilderEndSessionBtn")}</button>
               </div>
             </div>
           </aside>
@@ -102,8 +106,7 @@
         <div id="pollStatusDisplay" class="admin-poll-status"></div>
       </div>
   `;
-
-  function _renderHtml() { return POLL_HTML; }
+  }
 
   function _initController() {
       const sec = document.getElementById("sec-polls");
@@ -185,13 +188,13 @@
           row.draggable = true;
           const hasImg = !!q.image_url || q.options.some(o => o.img);
           row.innerHTML = `
-            <span class="drag-handle" title="拖曳排序">⋮⋮</span>
+            <span class="drag-handle" title="${ServerI18n.t("pollBuilderDragReorderTitle")}">⋮⋮</span>
             <span class="idx">${i + 1}</span>
             <div class="info">
-              <div class="text">${escapeHtml(q.text || "(空題目)")}</div>
-              <div class="meta">${q.options.length} 選項 · ${q.timer === 0 ? "無時限" : q.timer + "s"} · ${hasImg ? "含圖 " + q.crop : "純文字"}</div>
+              <div class="text">${escapeHtml(q.text || ServerI18n.t("pollBuilderEmptyQuestionPlaceholder"))}</div>
+              <div class="meta">${ServerI18n.t("pollBuilderOptionsCount", { n: q.options.length })} · ${q.timer === 0 ? ServerI18n.t("pollBuilderNoTimeLimit") : q.timer + "s"} · ${hasImg ? ServerI18n.t("pollBuilderHasImageCrop", { crop: q.crop }) : ServerI18n.t("pollBuilderPlainText")}</div>
             </div>
-            ${sessionRunning ? '<span class="editing-chip" style="background:rgba(134,239,172,0.12);color: var(--color-ink-success)">● LIVE</span>' : (q.id === activeId ? '<span class="editing-chip">● 編輯中</span>' : "")}
+            ${sessionRunning ? '<span class="editing-chip" style="background:rgba(134,239,172,0.12);color: var(--color-ink-success)">● LIVE</span>' : (q.id === activeId ? `<span class="editing-chip">${ServerI18n.t("pollBuilderEditingChip")}</span>` : "")}
           `;
           queueEl.appendChild(row);
         });
@@ -205,70 +208,70 @@
           <div class="admin-poll-edit-head">
             <span class="idx">${idx + 1}</span>
             <div class="head-info">
-              <span class="title">編輯題目 ${idx + 1}</span>
-              <span class="kicker">EDITING · 變更即時同步</span>
+              <span class="title">${ServerI18n.t("pollBuilderEditQuestionTitle", { n: idx + 1 })}</span>
+              <span class="kicker">EDITING · ${ServerI18n.t("pollBuilderEditingKicker")}</span>
             </div>
             <span class="progress">Q${idx + 1} / ${queue.length}</span>
           </div>
 
-          <div class="admin-poll-field-label">問題</div>
-          <input type="text" class="admin-poll-q-text" data-ed-text value="${escapeHtml(q.text || "")}" placeholder="輸入題目文字…" maxlength="200" />
+          <div class="admin-poll-field-label">${ServerI18n.t("pollQuestion")}</div>
+          <input type="text" class="admin-poll-q-text" data-ed-text value="${escapeHtml(q.text || "")}" placeholder="${ServerI18n.t("pollBuilderQuestionPlaceholder")}" maxlength="200" />
 
-          <div class="admin-poll-field-label">題目圖片 · 可選</div>
+          <div class="admin-poll-field-label">${ServerI18n.t("pollBuilderFieldQuestionImage")}</div>
           <div class="admin-poll-q-image">
             ${q.image_url ? `
               <img class="admin-poll-q-image-thumb" src="${escapeHtml(q.image_url)}" alt="" />
-              <button type="button" class="admin-ui-action is-danger admin-poll-editor-action" data-ed-action="remove-q-image">移除圖片</button>
+              <button type="button" class="admin-ui-action is-danger admin-poll-editor-action" data-ed-action="remove-q-image">${ServerI18n.t("pollBuilderRemoveImage")}</button>
             ` : `
-              <button type="button" class="admin-ui-action admin-poll-editor-action" data-ed-action="upload-q-image">＋ 上傳圖片 (JPG/PNG/WebP, ≤2 MB)</button>
+              <button type="button" class="admin-ui-action admin-poll-editor-action" data-ed-action="upload-q-image">${ServerI18n.t("pollBuilderUploadImageBtn")}</button>
               <input type="file" data-ed-q-image-input accept="image/jpeg,image/png,image/webp" hidden />
             `}
           </div>
 
           <div class="admin-poll-crop" data-ed-crop-row>
-            <span class="crop-label">圖片裁切比例 · CROP</span>
+            <span class="crop-label">${ServerI18n.t("pollBuilderCropLabel")} · CROP</span>
             ${["16:9", "1:1", "4:3"].map(r => `
               <button type="button" data-ed-crop="${r}" class="${q.crop === r ? "is-active" : ""}">${r}</button>
             `).join("")}
-            <span class="crop-note">套用到此題所有選項圖片</span>
+            <span class="crop-note">${ServerI18n.t("pollBuilderCropApplyNote")}</span>
           </div>
 
-          <div class="admin-poll-field-label">選項 · 2–6 · 拖曳 ⋮⋮ 排序 · 可切換顯示圖片</div>
+          <div class="admin-poll-field-label">${ServerI18n.t("pollBuilderOptionsFieldLabel")}</div>
           <div class="admin-poll-opts" data-ed-opts>
             ${q.options.map((opt, oi) => `
               <div class="admin-poll-opt" data-oid="${opt.id}" draggable="true">
                 <span class="drag-handle">⋮⋮</span>
                 <span class="opt-tag">${String.fromCharCode(65 + oi)}</span>
-                <button type="button" class="opt-img-toggle ${opt.img ? "is-on" : ""}" data-ed-opt-img="${opt.id}" title="切換圖片">
-                  ${opt.img ? '<span class="img-on">🖼</span>' : '<span class="img-off">+ 圖</span>'}
+                <button type="button" class="opt-img-toggle ${opt.img ? "is-on" : ""}" data-ed-opt-img="${opt.id}" title="${ServerI18n.t("pollBuilderToggleImageTitle")}">
+                  ${opt.img ? '<span class="img-on">🖼</span>' : `<span class="img-off">${ServerI18n.t("pollBuilderAddImageShort")}</span>`}
                 </button>
-                <input type="text" data-ed-opt-text="${opt.id}" value="${escapeHtml(opt.label || "")}" placeholder="選項 ${String.fromCharCode(65 + oi)}" maxlength="100" />
-                ${q.options.length > 2 ? `<button type="button" class="opt-remove" data-ed-opt-remove="${opt.id}" title="刪除">${window.AdminUtils.closeIcon}</button>` : ""}
+                <input type="text" data-ed-opt-text="${opt.id}" value="${escapeHtml(opt.label || "")}" placeholder="${ServerI18n.t("pollBuilderOptionPlaceholder", { letter: String.fromCharCode(65 + oi) })}" maxlength="100" />
+                ${q.options.length > 2 ? `<button type="button" class="opt-remove" data-ed-opt-remove="${opt.id}" title="${ServerI18n.t("pollBuilderDeleteTitle")}">${window.AdminUtils.closeIcon}</button>` : ""}
               </div>
             `).join("")}
-            ${q.options.length < 6 ? `<button type="button" class="admin-poll-opt-add" data-ed-opt-add>＋ 新增選項 (${q.options.length}/6)</button>` : ""}
+            ${q.options.length < 6 ? `<button type="button" class="admin-poll-opt-add" data-ed-opt-add>${ServerI18n.t("pollBuilderAddOptionBtn", { n: q.options.length })}</button>` : ""}
           </div>
 
           <div class="admin-poll-edit-foot">
             <label class="foot-field">
-              <span>時限</span>
+              <span>${ServerI18n.t("pollBuilderTimeLimitLabel")}</span>
               <select data-ed-timer>
                 <option value="30"${q.timer === 30 ? " selected" : ""}>30s</option>
                 <option value="90"${q.timer === 90 ? " selected" : ""}>90s</option>
-                <option value="180"${q.timer === 180 ? " selected" : ""}>3 分</option>
-                <option value="300"${q.timer === 300 ? " selected" : ""}>5 分</option>
-                <option value="0"${q.timer === 0 ? " selected" : ""}>無時限</option>
+                <option value="180"${q.timer === 180 ? " selected" : ""}>${ServerI18n.t("pollBuilderTimer3Min")}</option>
+                <option value="300"${q.timer === 300 ? " selected" : ""}>${ServerI18n.t("pollBuilderTimer5Min")}</option>
+                <option value="0"${q.timer === 0 ? " selected" : ""}>${ServerI18n.t("pollBuilderNoTimeLimit")}</option>
               </select>
             </label>
             <label class="foot-field foot-check">
               <input type="checkbox" data-ed-multi ${q.multi ? "checked" : ""} />
-              <span>允許複選</span>
+              <span>${ServerI18n.t("pollBuilderAllowMulti")}</span>
             </label>
             <div class="foot-spacer"></div>
             <!-- 2026-07-30：「START Qn」舊路徑移除——它繞過 session 模型直打
                  舊單題 /admin/poll/create、前端自己 watchAndAdvance，連圖片
                  都傳不了。唯一的開始入口是左欄 START SESSION（P0-1 模型）。 -->
-            <button type="button" class="admin-ui-action is-danger admin-poll-editor-action" data-ed-action="remove-q">刪除此題</button>
+            <button type="button" class="admin-ui-action is-danger admin-poll-editor-action" data-ed-action="remove-q">${ServerI18n.t("pollBuilderDeleteThisQuestion")}</button>
           </div>
         `;
       }
@@ -352,7 +355,7 @@
                   <span class="dot"></span>LIVE · #${escapeHtml((pollState.poll_id || "").slice(-6))}
                 </span>
                 <span class="admin-polls-live-progress">
-                  第 <strong>${idx + 1}</strong> / ${total} 題
+                  ${ServerI18n.t("pollBuilderLiveQuestionProgress", { idx: `<strong>${idx + 1}</strong>`, total: total })}
                 </span>
                 <div class="admin-polls-live-time" data-live-time>
                   <div class="admin-polls-live-ring">
@@ -367,8 +370,8 @@
                     </svg>
                   </div>
                   <div>
-                    <div class="kicker">剩餘</div>
-                    <div class="mmss ${lowTime ? 'is-low' : ''}" data-live-mmss>${remain == null ? '無時限' : fmtMmSs(remain)}</div>
+                    <div class="kicker">${ServerI18n.t("pollBuilderRemainingLabel")}</div>
+                    <div class="mmss ${lowTime ? 'is-low' : ''}" data-live-mmss>${remain == null ? ServerI18n.t("pollBuilderNoTimeLimit") : fmtMmSs(remain)}</div>
                   </div>
                 </div>
               </div>
@@ -387,9 +390,9 @@
                       <div class="row">
                         <span class="tag">${escapeHtml(o.key)}</span>
                         <span class="lbl">${escapeHtml(o.text || "")}</span>
-                        ${isLeader ? '<span class="lead">▲ 領先</span>' : ''}
+                        ${isLeader ? `<span class="lead">${ServerI18n.t("pollBuilderLeadingBadge")}</span>` : ''}
                         <span class="pct">${pct.toFixed(0)}%</span>
-                        <span class="cnt">${o.count} 票</span>
+                        <span class="cnt">${ServerI18n.t("pollBuilderVoteCount", { n: o.count })}</span>
                       </div>
                       <div class="track"><div class="fill" style="width:${pct.toFixed(1)}%"></div></div>
                     </div>
@@ -398,11 +401,11 @@
               </div>
 
               <div class="admin-polls-live-foot">
-                <span class="meta">總票數 <strong data-live-total>${totalVotes}</strong></span>
-                ${nextQ ? `<span class="sep"></span><span class="meta">下一題 <em>${escapeHtml(nextQ.text || "")}</em></span>` : ''}
+                <span class="meta">${ServerI18n.t("pollBuilderTotalVotesLabel", { total: `<strong data-live-total>${totalVotes}</strong>` })}</span>
+                ${nextQ ? `<span class="sep"></span><span class="meta">${ServerI18n.t("pollBuilderNextQuestionLabel", { text: `<em>${escapeHtml(nextQ.text || "")}</em>` })}</span>` : ''}
                 <div class="actions">
-                  <button type="button" class="admin-polls-live-btn" data-live-action="advance" ${idx >= total - 1 ? 'disabled' : ''}>⏭ 下一題</button>
-                  <button type="button" class="admin-polls-live-btn is-danger" data-live-action="end">◾ 結束投票</button>
+                  <button type="button" class="admin-polls-live-btn" data-live-action="advance" ${idx >= total - 1 ? 'disabled' : ''}>${ServerI18n.t("pollBuilderLiveAdvanceBtn")}</button>
+                  <button type="button" class="admin-polls-live-btn is-danger" data-live-action="end">${ServerI18n.t("pollBuilderLiveEndBtn")}</button>
                 </div>
               </div>
             </div>
@@ -411,7 +414,7 @@
             <aside class="admin-polls-live-rail">
               <div class="admin-polls-live-rail-card">
                 <div class="admin-poll-card-head">
-                  <span class="title">題目進度</span>
+                  <span class="title">${ServerI18n.t("pollBuilderQuestionProgressTitle")}</span>
                   <span class="kicker">PROGRESS · ${idx + 1}/${total}</span>
                 </div>
                 <div class="admin-polls-live-queue">
@@ -420,7 +423,7 @@
                     return `
                       <div class="admin-polls-live-qmini is-${status}">
                         <span class="idx">${status === "done" ? "✓" : (i + 1)}</span>
-                        <span class="t">${escapeHtml(qq.text || "(空)")}</span>
+                        <span class="t">${escapeHtml(qq.text || ServerI18n.t("pollBuilderEmptyShort"))}</span>
                         ${status === "active" ? '<span class="dot"></span>' : ''}
                       </div>
                     `;
@@ -429,15 +432,15 @@
               </div>
               <div class="admin-polls-live-rail-card">
                 <div class="admin-poll-card-head">
-                  <span class="title">即時推送</span>
+                  <span class="title">${ServerI18n.t("pollBuilderPushTitle")}</span>
                   <span class="kicker">DESKTOP PUSH</span>
                 </div>
                 <div class="admin-polls-live-toggles">
                   ${[
-                    { k: "showResults", label: "結果即時顯示" },
-                    { k: "showTotals", label: "顯示總票數" },
-                    { k: "autoAdvance", label: "時限到自動下一題" },
-                    { k: "anonymous", label: "匿名投票" },
+                    { k: "showResults", label: ServerI18n.t("pollBuilderToggleShowResults") },
+                    { k: "showTotals", label: ServerI18n.t("pollBuilderToggleShowTotals") },
+                    { k: "autoAdvance", label: ServerI18n.t("pollBuilderAutoAdvanceDesc") },
+                    { k: "anonymous", label: ServerI18n.t("pollBuilderToggleAnonymous") },
                   ].map(t => `
                     <label class="admin-polls-live-toggle ${liveBroadcast[t.k] ? 'is-on' : ''}" data-live-toggle="${t.k}">
                       <span class="lbl">${t.label}</span>
@@ -463,7 +466,7 @@
         const mmssEl = liveEl.querySelector("[data-live-mmss]");
         const ringEl = liveEl.querySelector("[data-live-ring]");
         if (mmssEl) {
-          mmssEl.textContent = remain == null ? "無時限" : fmtMmSs(remain);
+          mmssEl.textContent = remain == null ? ServerI18n.t("pollBuilderNoTimeLimit") : fmtMmSs(remain);
           mmssEl.classList.toggle("is-low", limit > 0 && remain != null && remain <= Math.max(5, limit * 0.15));
         }
         if (ringEl && limit > 0 && remain != null) {
@@ -519,7 +522,7 @@
               <div class="admin-polls-results-head">
                 <div class="meta">
                   <span class="admin-ui-chip admin-poll-result-state">ENDED</span>
-                  <span>Q${safeIdx + 1}/${total} · 進行 ${fmtMmSs(durSec)} · 共 ${totalVotes} 票</span>
+                  <span>Q${safeIdx + 1}/${total} · ${ServerI18n.t("pollBuilderResultsMetaLine", { dur: fmtMmSs(durSec), n: totalVotes })}</span>
                 </div>
                 <div class="text">${escapeHtml(q.text || "")}</div>
               </div>
@@ -527,17 +530,17 @@
               <div class="admin-polls-results-winner">
                 <div class="badge">${escapeHtml(winner.key)}</div>
                 <div class="info">
-                  <div class="kicker">WINNER · 領先選項</div>
+                  <div class="kicker">WINNER · ${ServerI18n.t("pollBuilderWinnerKicker")}</div>
                   <div class="lbl">${escapeHtml(winner.text || "—")}</div>
-                  <div class="sub">${winner.count} 票 · ${winnerPct.toFixed(1)}% ${runnerUp ? `· 領先第 2 名 ${lead} 票` : ''}</div>
+                  <div class="sub">${ServerI18n.t("pollBuilderVoteCount", { n: winner.count })} · ${winnerPct.toFixed(1)}% ${runnerUp ? ServerI18n.t("pollBuilderLeadOverRunnerUp", { lead: lead }) : ''}</div>
                 </div>
                 <div class="pct">${winnerPct.toFixed(0)}<span>%</span></div>
               </div>
 
               <div class="admin-polls-results-list">
                 <div class="admin-poll-card-head">
-                  <span class="title">完整結果</span>
-                  <span class="kicker">RESULTS · ${totalVotes} 票</span>
+                  <span class="title">${ServerI18n.t("pollBuilderFullResultsTitle")}</span>
+                  <span class="kicker">RESULTS · ${ServerI18n.t("pollBuilderVoteCount", { n: totalVotes })}</span>
                 </div>
                 ${ranked.map((o, rank) => {
                   const pct = totalVotes > 0 ? (o.count / totalVotes) * 100 : 0;
@@ -549,7 +552,7 @@
                         <span class="tag">${escapeHtml(o.key)}</span>
                         <span class="lbl">${escapeHtml(o.text || "")}</span>
                         <span class="pct">${pct.toFixed(1)}%</span>
-                        <span class="cnt">${o.count} 票</span>
+                        <span class="cnt">${ServerI18n.t("pollBuilderVoteCount", { n: o.count })}</span>
                       </div>
                       <div class="track"><div class="fill" style="width:${pct.toFixed(1)}%"></div></div>
                     </div>
@@ -561,31 +564,31 @@
             <aside class="admin-polls-results-rail">
               <div class="admin-polls-results-rail-card">
                 <div class="admin-poll-card-head">
-                  <span class="title">參與度</span>
+                  <span class="title">${ServerI18n.t("pollBuilderParticipationTitle")}</span>
                   <span class="kicker">PARTICIPATION</span>
                 </div>
                 <div class="admin-polls-results-stat">
                   <span class="big">${totalVotes}</span>
-                  <span class="unit">票 · 此題</span>
+                  <span class="unit">${ServerI18n.t("pollBuilderVotesThisQuestion")}</span>
                 </div>
                 <div class="admin-polls-results-meter">
                   <div class="fill" style="width:${Math.min(100, totalVotes ? 100 : 0)}%"></div>
                 </div>
                 <div class="admin-polls-results-meta-row">
-                  <span>選項 ${q.options.length}</span>
-                  <span>時限 ${q.time_limit_seconds ? fmtMmSs(q.time_limit_seconds) : '無'}</span>
+                  <span>${ServerI18n.t("pollBuilderOptionsCountLabel", { n: q.options.length })}</span>
+                  <span>${ServerI18n.t("pollBuilderTimeLimitLabel")} ${q.time_limit_seconds ? fmtMmSs(q.time_limit_seconds) : ServerI18n.t("pollBuilderNone")}</span>
                 </div>
               </div>
 
               <div class="admin-polls-results-rail-card">
                 <div class="admin-poll-card-head">
-                  <span class="title">時序</span>
+                  <span class="title">${ServerI18n.t("pollBuilderTimelineTitle")}</span>
                   <span class="kicker">TIMELINE</span>
                 </div>
                 <div class="admin-polls-results-timeline">
-                  <div class="row"><span class="k">開始</span><span class="v">${snap.started_at ? new Date(snap.started_at * 1000).toLocaleTimeString() : '—'}</span></div>
-                  <div class="row"><span class="k">結束</span><span class="v">${snap.ended_at ? new Date(snap.ended_at * 1000).toLocaleTimeString() : '—'}</span></div>
-                  <div class="row"><span class="k">時長</span><span class="v">${fmtMmSs(durSec)}</span></div>
+                  <div class="row"><span class="k">${ServerI18n.t("pollBuilderStartedLabel")}</span><span class="v">${snap.started_at ? new Date(snap.started_at * 1000).toLocaleTimeString() : '—'}</span></div>
+                  <div class="row"><span class="k">${ServerI18n.t("pollBuilderEndedLabel")}</span><span class="v">${snap.ended_at ? new Date(snap.ended_at * 1000).toLocaleTimeString() : '—'}</span></div>
+                  <div class="row"><span class="k">${ServerI18n.t("pollBuilderDurationLabel")}</span><span class="v">${fmtMmSs(durSec)}</span></div>
                 </div>
                 <div class="admin-polls-results-spark">
                   ${(function(){
@@ -599,14 +602,14 @@
 
               <div class="admin-polls-results-rail-card">
                 <div class="admin-poll-card-head">
-                  <span class="title">動作</span>
+                  <span class="title">${ServerI18n.t("pollBuilderActionsTitle")}</span>
                   <span class="kicker">EXPORT</span>
                 </div>
                 <div class="admin-polls-results-actions">
-                  <button type="button" class="admin-polls-results-btn" data-results-action="copy">⎘ 複製結果</button>
-                  <button type="button" class="admin-polls-results-btn" data-results-action="csv">⇣ 匯出 CSV</button>
-                  <button type="button" class="admin-polls-results-btn" data-results-action="json">⇣ 匯出 JSON</button>
-                  <button type="button" class="admin-polls-results-btn is-primary" data-results-action="reset">▶ 開新投票</button>
+                  <button type="button" class="admin-polls-results-btn" data-results-action="copy">${ServerI18n.t("pollBuilderCopyResultsBtn")}</button>
+                  <button type="button" class="admin-polls-results-btn" data-results-action="csv">${ServerI18n.t("pollBuilderExportCsvBtn")}</button>
+                  <button type="button" class="admin-polls-results-btn" data-results-action="json">${ServerI18n.t("pollBuilderExportJsonBtn")}</button>
+                  <button type="button" class="admin-polls-results-btn is-primary" data-results-action="reset">${ServerI18n.t("pollBuilderNewPollBtn")}</button>
                 </div>
               </div>
             </aside>
@@ -680,13 +683,13 @@
               const tot = qq.options.reduce((s, o) => s + (o.count || 0), 0);
               const lines = qq.options.map(o => {
                 const pct = tot > 0 ? ((o.count / tot) * 100).toFixed(1) : "0.0";
-                return `  ${o.key}. ${o.text} — ${o.count} 票 (${pct}%)`;
+                return `  ${o.key}. ${o.text} — ${ServerI18n.t("pollBuilderVoteCount", { n: o.count })} (${pct}%)`;
               });
               return `Q${i + 1}: ${qq.text}\n${lines.join("\n")}`;
             }).join("\n\n");
             (navigator.clipboard?.writeText(text) || Promise.resolve())
-              .then(() => showToast && showToast("結果已複製", true))
-              .catch(() => showToast && showToast("複製失敗", false));
+              .then(() => showToast && showToast(ServerI18n.t("pollBuilderToastResultsCopied"), true))
+              .catch(() => showToast && showToast(ServerI18n.t("pollBuilderToastCopyFailed"), false));
           } else if (a === "csv") {
             downloadBlob(`poll_${(snap.poll_id || "results").slice(-8)}.csv`, "text/csv;charset=utf-8", buildResultsCsv(snap));
           } else if (a === "json") {
@@ -785,11 +788,11 @@
             if (queue.length > 1) {
               const ok = await window.HudConfirm?.open({
                 icon: "⊘",
-                title: "刪除題目",
+                title: ServerI18n.t("pollBuilderRemoveQConfirmTitle"),
                 subtitle: "REMOVE QUESTION · DRAFT ONLY",
                 severity: "warn",
-                body: "從這份草稿中移除目前這一題。尚未開始的投票不受影響。",
-                confirmLabel: "刪除題目",
+                body: ServerI18n.t("pollBuilderRemoveQConfirmBody"),
+                confirmLabel: ServerI18n.t("pollBuilderRemoveQConfirmTitle"),
               });
               if (ok) {
                 const idx = queue.findIndex(q2 => q2.id === activeId);
@@ -815,17 +818,17 @@
         const q = findQ(activeId);
         if (!q) return;
         if (!session.pollId) {
-          showToast && showToast("請先按 START SESSION 建立投票後再上傳圖片", false);
+          showToast && showToast(ServerI18n.t("pollBuilderToastNeedSession"), false);
           e.target.value = "";
           return;
         }
         if (!q.server_q_id) {
-          showToast && showToast("此題目尚未同步到伺服器", false);
+          showToast && showToast(ServerI18n.t("pollBuilderToastNotSynced"), false);
           e.target.value = "";
           return;
         }
         if (file.size > 2 * 1024 * 1024) {
-          showToast && showToast("圖片過大 (最多 2 MB)", false);
+          showToast && showToast(ServerI18n.t("pollBuilderToastImageTooLarge"), false);
           e.target.value = "";
           return;
         }
@@ -840,7 +843,7 @@
           if (!res.ok) throw new Error(data.error || "upload failed");
           q.image_url = data.image_url;
           persist(); renderEditor(); renderQueue();
-          showToast && showToast("圖片已上傳", true);
+          showToast && showToast(ServerI18n.t("pollBuilderToastImageUploaded"), true);
         } catch (err) {
           showToast && showToast(String(err.message || err), false);
         } finally {
@@ -906,7 +909,7 @@
         const advBtn = wrap.querySelector("[data-poll-session-action='advance']");
         const endBtn = wrap.querySelector("[data-poll-session-action='end']");
         if (!session.pollId || !session.active) {
-          statusEl.innerHTML = '<span class="kicker">SESSION · 尚未開始</span>';
+          statusEl.innerHTML = `<span class="kicker">SESSION · ${ServerI18n.t("pollBuilderSessionNotStarted")}</span>`;
           startBtn.hidden = false;
           advBtn.hidden = true;
           endBtn.hidden = true;
@@ -929,15 +932,15 @@
           const payload = queue.map((q, idx) => {
             const text = (q.text || "").trim();
             const options = q.options.map(o => (o.label || "").trim()).filter(Boolean);
-            if (!text) throw new Error(`第 ${idx + 1} 題缺少題目文字`);
-            if (options.length < 2) throw new Error(`第 ${idx + 1} 題選項不足 2 個`);
+            if (!text) throw new Error(ServerI18n.t("pollBuilderErrMissingText", { n: idx + 1 }));
+            if (options.length < 2) throw new Error(ServerI18n.t("pollBuilderErrNotEnoughOptions", { n: idx + 1 }));
             return {
               text,
               options,
               time_limit_seconds: q.timer && q.timer > 0 ? q.timer : null,
             };
           });
-          if (!payload.length) throw new Error("請先新增至少一題");
+          if (!payload.length) throw new Error(ServerI18n.t("pollBuilderErrNoQuestions"));
           // Design v4 brief P1 #1 (2026-05-18) — send session metadata:
           // mode (manual/auto), default_duration_s (auto-mode fallback),
           // and the optional session title. Backend persists all three
@@ -958,7 +961,7 @@
             }),
           });
           const createData = await createRes.json().catch(() => ({}));
-          if (!createRes.ok) throw new Error(createData.error || "建立失敗");
+          if (!createRes.ok) throw new Error(createData.error || ServerI18n.t("pollBuilderErrCreateFailed"));
           // Map server question ids back onto local state so image upload works.
           session.pollId = createData.poll_id;
           (createData.questions || []).forEach((sq, i) => {
@@ -968,14 +971,14 @@
 
           const startRes = await csrfFetch("/admin/poll/start", { method: "POST" });
           const startData = await startRes.json().catch(() => ({}));
-          if (!startRes.ok) throw new Error(startData.error || "開始失敗");
+          if (!startRes.ok) throw new Error(startData.error || ServerI18n.t("pollBuilderErrStartFailed"));
           session.active = true;
           session.currentIndex = startData.current_index ?? 0;
           // Seed the live mirror so renderLive() has data immediately.
           pollState = startData;
           endedSnapshot = null;
           render();
-          showToast && showToast("Session 已開始", true);
+          showToast && showToast(ServerI18n.t("pollBuilderToastSessionStarted"), true);
           beginSessionPolling();
         } catch (err) {
           showToast && showToast(String(err.message || err), false);
@@ -986,12 +989,12 @@
         try {
           const res = await csrfFetch("/admin/poll/advance", { method: "POST" });
           const data = await res.json().catch(() => ({}));
-          if (!res.ok) throw new Error(data.error || "推進失敗");
+          if (!res.ok) throw new Error(data.error || ServerI18n.t("pollBuilderErrAdvanceFailed"));
           session.currentIndex = data.current_index;
           session.active = !!data.active;
           pollState = data;
           render();
-          showToast && showToast(`已推進至 Q${session.currentIndex + 1}`, true);
+          showToast && showToast(ServerI18n.t("pollBuilderToastAdvanced", { n: session.currentIndex + 1 }), true);
         } catch (err) {
           showToast && showToast(String(err.message || err), false);
         }
@@ -1005,7 +1008,7 @@
           const res = await csrfFetch("/admin/poll/end", { method: "POST" });
           if (!res.ok) {
             const data = await res.json().catch(() => ({}));
-            throw new Error(data.error || "結束失敗");
+            throw new Error(data.error || ServerI18n.t("pollBuilderErrEndFailed"));
           }
           if (beforeEnd && beforeEnd.questions) {
             endedSnapshot = {
@@ -1020,7 +1023,7 @@
           pollState = null;
           if (session.statusTimer) { clearInterval(session.statusTimer); session.statusTimer = null; }
           render();
-          showToast && showToast("Session 已結束", true);
+          showToast && showToast(ServerI18n.t("pollBuilderToastSessionEnded"), true);
         } catch (err) {
           showToast && showToast(String(err.message || err), false);
         }
