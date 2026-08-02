@@ -59,12 +59,15 @@
     { value: "rise",         label: "SIDE",   icon: "▌" },
   ];
 
-  function t(key, fallback) {
+  // D-4 (2026-08-02)：拿掉逐呼叫點的中文 fallback 字面量——那些字面量本身
+  // 會讓「grep 中文自檢」誤判成殘留硬編字串。key 未收錄時退回 key 字串本身
+  // （i18next 標準行為），第二參數改傳 vars 物件給插值。
+  function t(key, vars) {
     if (window.ServerI18n && typeof window.ServerI18n.t === "function") {
-      const v = window.ServerI18n.t(key);
+      const v = window.ServerI18n.t(key, vars);
       if (v && v !== key) return v;
     }
-    return fallback != null ? fallback : key;
+    return key;
   }
 
   // Client-only step storage. Server doesn't persist step, so stash it locally.
@@ -119,21 +122,21 @@
     return `
       <div id="${PAGE_ID}" class="admin-dsp2-page hud-page-stack lg:col-span-2" data-tpl="C">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">VIEWER DEFAULTS · 每列決定觀眾送出 danmu 時的預設值 + 是否開放自訂</div>
-          <div class="admin-ui-page-title">${escapeHtml(t("viewerDefaultsTitle", "觀眾頁預設"))}</div>
-          <p class="admin-ui-page-note">Display 控制 Desktop / client / 目標顯示器 / idle QR；<b>Viewer</b> 在此設定 <code>/fire</code> 的送出預設、欄位與文案。</p>
+          <div class="admin-ui-page-kicker">VIEWER DEFAULTS · ${escapeHtml(t("displayViewerDefaultsKicker"))}</div>
+          <div class="admin-ui-page-title">${escapeHtml(t("displayViewerDefaultsTitle"))}</div>
+          <p class="admin-ui-page-note">${t("displayViewerDefaultsNote")}</p>
         </div>
 
         <div class="admin-dsp2-grid">
           <!-- Left · row list -->
           <div class="admin-dsp2-list" id="dsp2-list">
             <div class="admin-dsp2-list-head">
-              <span>參數 · PARAM</span>
-              <span>預設值 · DEFAULT</span>
-              <span class="admin-dsp2-list-head-right">觀眾自訂 · AUDIENCE</span>
+              <span>${escapeHtml(t("displayColParam"))}</span>
+              <span>${escapeHtml(t("displayColDefault"))}</span>
+              <span class="admin-dsp2-list-head-right">${escapeHtml(t("displayColAudience"))}</span>
             </div>
             <div id="dsp2-rows">
-              ${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : escapeHtml(t("loading", "載入中…"))}
+              ${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : escapeHtml(t("loading"))}
             </div>
           </div>
 
@@ -144,17 +147,17 @@
                 <span class="admin-ui-monolabel">LIVE PREVIEW</span>
                 <span class="admin-dsp2-preview-sync">
                   <span class="admin-dsp2-dot"></span>
-                  ${escapeHtml(t("displayPreviewSync", "同步 Desktop"))}
+                  ${escapeHtml(t("displayPreviewSync"))}
                 </span>
               </div>
               <div class="admin-dsp2-preview-stage" data-preview-stage>
                 <div class="admin-dsp2-preview-pill admin-dsp2-preview-pill-1" data-preview-pill="1">
                   <span class="admin-dsp2-preview-tag">@guest#1284</span>
-                  <span data-preview-text>這個想法真的很棒 ✨</span>
+                  <span data-preview-text>${escapeHtml(t("displayPreviewSample1"))}</span>
                 </div>
                 <div class="admin-dsp2-preview-pill admin-dsp2-preview-pill-2" data-preview-pill="2">
                   <span class="admin-dsp2-preview-tag">@annie</span>
-                  <span>先舉手發問 🙋</span>
+                  <span>${escapeHtml(t("displayPreviewSample2"))}</span>
                 </div>
               </div>
               <div class="admin-dsp2-preview-foot">
@@ -169,45 +172,45 @@
                  card is just the status indicator + revert + export JSON. -->
             <div class="admin-dsp2-card admin-dsp2-autosync" style="padding:14px;background:var(--admin-panel,var(--color-bg-base));border:1px solid var(--hud-line);border-radius:6px;display:flex;flex-direction:column;gap:10px">
               <div class="admin-ui-monolabel admin-dsp2-card-head">
-                <span>${escapeHtml(t("displayAutoSyncTitle", "自動同步"))}</span>
+                <span>${escapeHtml(t("displayAutoSyncTitle"))}</span>
                 <span class="admin-dsp2-card-head-en">AUTO-SYNC · IMPLICIT DEPLOY</span>
               </div>
               <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:4px;background:var(--hud-cyan-soft);border:1px solid var(--color-primary)">
                 <span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;background:var(--color-primary);box-shadow:0 0 6px var(--color-primary);animation:hud-pulse 2s ease-in-out infinite"></span>
                 <div style="flex:1;min-width:0">
-                  <div style="font-family:var(--font-mono);font-size:11px;color: var(--color-ink-accent);letter-spacing:0.1em;font-weight:700">${escapeHtml(t("displayAutoSyncLive", "同步中 · LIVE"))}</div>
-                  <div style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);margin-top:2px;letter-spacing:0.04em">${escapeHtml(t("displayAutoSyncNote", "更動即推送 · Desktop 與下次刷新觀眾即生效"))}</div>
+                  <div style="font-family:var(--font-mono);font-size:11px;color: var(--color-ink-accent);letter-spacing:0.1em;font-weight:700">${escapeHtml(t("displayAutoSyncLive"))}</div>
+                  <div style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);margin-top:2px;letter-spacing:0.04em">${escapeHtml(t("displayAutoSyncNote"))}</div>
                 </div>
               </div>
               <div style="display:flex;gap:8px">
                 <button type="button" class="admin-dsp2-btn admin-dsp2-btn-ghost" id="dsp2-revert" style="flex:1">
-                  ↺ ${escapeHtml(t("displayDeployRevert", "還原預設"))}
+                  ↺ ${escapeHtml(t("displayDeployRevert"))}
                 </button>
                 <button type="button" class="admin-dsp2-btn admin-dsp2-btn-ghost" id="dsp2-export" style="flex:1">
-                  ↗ ${escapeHtml(t("displayExportJson", "匯出 JSON"))}
+                  ↗ ${escapeHtml(t("displayExportJson"))}
                 </button>
               </div>
             </div>
 
             <div class="admin-dsp2-card admin-dsp2-admin-controlled" style="padding:14px;background:var(--admin-panel,var(--color-bg-base));border:1px solid var(--hud-line);border-radius:6px;display:flex;flex-direction:column;gap:10px">
               <div class="admin-ui-monolabel admin-dsp2-card-head">
-                <span>${escapeHtml(t("displayAdminControlledTitle", "管理端控制"))}</span>
+                <span>${escapeHtml(t("displayAdminControlledTitle"))}</span>
                 <span class="admin-dsp2-card-head-en">ADMIN CONTROLLED</span>
               </div>
               <div style="display:grid;grid-template-columns:auto 1fr;gap:7px 12px;align-items:start;font-size:11px;line-height:1.45">
                 <span style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.08em">UI language</span><span>Auto (follow browser)</span>
-                <span style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.08em">Placeholder</span><span>想對現場說點什麼？</span>
+                <span style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.08em">Placeholder</span><span>${escapeHtml(t("displayPlaceholderExample"))}</span>
                 <span style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.08em">Submit button</span><span>FIRE</span>
-                <span style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.08em">Poll prompt</span><span>選擇你的答案</span>
+                <span style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.08em">Poll prompt</span><span>${escapeHtml(t("displayPollPromptExample"))}</span>
               </div>
               <div style="padding-top:8px;border-top:1px solid var(--hud-line);font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);line-height:1.6">
-                ${escapeHtml(t("displayAdminControlledNote", "觀眾端不提供語言切換。預設跟隨瀏覽器語言；admin 可在 Viewer Page Theme 強制指定。"))}
+                ${escapeHtml(t("displayAdminControlledNote"))}
               </div>
             </div>
 
             <div class="admin-dsp2-card admin-dsp2-summary" id="dsp2-summary">
               <div class="admin-ui-monolabel admin-dsp2-card-head">
-                <span>${escapeHtml(t("displaySummaryTitle", "觀眾端摘要"))}</span>
+                <span>${escapeHtml(t("displaySummaryTitle"))}</span>
                 <span class="admin-dsp2-card-head-en" data-summary-count>AUDIENCE · 0/6 OPEN</span>
               </div>
               <div class="admin-dsp2-summary-list" data-summary-list></div>
@@ -219,13 +222,15 @@
 
   // ─── Row rendering ──────────────────────────────────────────────────
 
+  // D-4：label 中文全數需要翻譯，模組頂層常數 parse 時 ServerI18n 未 init，
+  // 一律存 labelKey、渲染時才 t()（en 是純大寫設計語言，維持字面量）。
   const ROWS = [
-    { key: "Opacity",    label: "透明度",   en: "OPACITY",     fmt: (v) => `${Math.round(v)}%` },
-    { key: "FontSize",   label: "字級",     en: "FONT SIZE",   fmt: (v) => `${v}px` },
-    { key: "Speed",      label: "滾動速度", en: "SPEED",       fmt: (v) => `${(+v).toFixed(1)}×` },
-    { key: "Color",      label: "顏色",     en: "COLOR",       fmt: (v) => `#${String(v || "").replace(/^#/, "").toUpperCase() || "—"}`, noRange: true },
-    { key: "FontFamily", label: "字型",     en: "FONT FAMILY", fmt: (v) => v || "—",                       noRange: true },
-    { key: "Layout",     label: "排版",     en: "LAYOUT",      fmt: (v) => layoutLabel(v),                  noRange: true },
+    { key: "Opacity",    labelKey: "displayLabelOpacity",    en: "OPACITY",     fmt: (v) => `${Math.round(v)}%` },
+    { key: "FontSize",   labelKey: "displayLabelFontSize",   en: "FONT SIZE",   fmt: (v) => `${v}px` },
+    { key: "Speed",      labelKey: "displayLabelSpeed",      en: "SPEED",       fmt: (v) => `${(+v).toFixed(1)}×` },
+    { key: "Color",      labelKey: "displayLabelColor",      en: "COLOR",       fmt: (v) => `#${String(v || "").replace(/^#/, "").toUpperCase() || "—"}`, noRange: true },
+    { key: "FontFamily", labelKey: "displayLabelFontFamily", en: "FONT FAMILY", fmt: (v) => v || "—",                       noRange: true },
+    { key: "Layout",     labelKey: "displayLabelLayout",     en: "LAYOUT",      fmt: (v) => layoutLabel(v),                  noRange: true },
   ];
 
   function layoutLabel(v) {
@@ -300,7 +305,7 @@
               ${editing ? `<span class="admin-dsp2-allow-mark">${inAllow ? "✓" : ""}</span>` : ""}
             </button>`;
           }).join("")}
-          <label class="admin-dsp2-swatch-custom" title="${escapeHtml(t("specificColor", "自訂顏色"))}">
+          <label class="admin-dsp2-swatch-custom" title="${escapeHtml(t("specificColor"))}">
             <input type="color" data-num-key="Color" data-num-index="3"
               value="${escapeHtml(cur)}" />
           </label>
@@ -386,26 +391,26 @@
     const list = readAllowlist(row.key);
     const total = presetValuesFor(row.key).length || 0;
     const summary = list.length > 0
-      ? `允許 ${list.length} / ${total} ${labelForKey(row.key)}`
-      : `允許全部 (${total})`;
+      ? t("displayAllowSummaryPartial", { n: list.length, total: total, label: labelForKey(row.key) })
+      : t("displayAllowSummaryAll", { total: total });
     return `
       <div class="admin-dsp2-allow-controls" data-allow-controls="${row.key}">
         <span class="admin-dsp2-allow-summary" data-allow-summary="${row.key}">${escapeHtml(summary)}</span>
         ${editing ? `
-          <button type="button" class="admin-dsp2-allow-btn is-apply" data-allow-action="apply" data-allow-key="${row.key}">套用</button>
-          <button type="button" class="admin-dsp2-allow-btn is-cancel" data-allow-action="cancel" data-allow-key="${row.key}">取消</button>
-          <button type="button" class="admin-dsp2-allow-btn is-clear" data-allow-action="clear" data-allow-key="${row.key}">允許全部</button>
+          <button type="button" class="admin-dsp2-allow-btn is-apply" data-allow-action="apply" data-allow-key="${row.key}">${escapeHtml(t("displayApply"))}</button>
+          <button type="button" class="admin-dsp2-allow-btn is-cancel" data-allow-action="cancel" data-allow-key="${row.key}">${escapeHtml(t("cancel"))}</button>
+          <button type="button" class="admin-dsp2-allow-btn is-clear" data-allow-action="clear" data-allow-key="${row.key}">${escapeHtml(t("displayAllowAllBtn"))}</button>
         ` : `
-          <button type="button" class="admin-dsp2-allow-btn" data-allow-action="edit" data-allow-key="${row.key}" title="編輯允許清單">[編輯允許清單]</button>
+          <button type="button" class="admin-dsp2-allow-btn" data-allow-action="edit" data-allow-key="${row.key}" title="${escapeHtml(t("displayEditAllowlistTitle"))}">[${escapeHtml(t("displayEditAllowlistTitle"))}]</button>
         `}
       </div>`;
   }
 
   function labelForKey(key) {
-    if (key === "Color") return "顏色";
-    if (key === "FontFamily") return "字型";
-    if (key === "Layout") return "排版";
-    return "選項";
+    if (key === "Color") return t("displayLabelColor");
+    if (key === "FontFamily") return t("displayLabelFontFamily");
+    if (key === "Layout") return t("displayLabelLayout");
+    return t("displayLabelOption");
   }
 
   function rangeBandHtml(row, opt) {
@@ -419,7 +424,7 @@
     return `
       <div class="admin-dsp2-band">
         <div class="admin-dsp2-band-cell">
-          <span class="admin-ui-monolabel">${escapeHtml(t("displayMinAudience", "觀眾 MIN"))}</span>
+          <span class="admin-ui-monolabel">${escapeHtml(t("displayMinAudience"))}</span>
           <div class="admin-dsp2-band-input">
             <input type="number" data-num-key="${row.key}" data-num-index="1"
               min="${r.min}" max="${r.max}" step="${step}" value="${escapeHtml(String(lo))}" />
@@ -427,7 +432,7 @@
           </div>
         </div>
         <div class="admin-dsp2-band-cell">
-          <span class="admin-ui-monolabel">${escapeHtml(t("displayMaxAudience", "觀眾 MAX"))}</span>
+          <span class="admin-ui-monolabel">${escapeHtml(t("displayMaxAudience"))}</span>
           <div class="admin-dsp2-band-input">
             <input type="number" data-num-key="${row.key}" data-num-index="2"
               min="${r.min}" max="${r.max}" step="${step}" value="${escapeHtml(String(hi))}" />
@@ -453,7 +458,7 @@
     return `
       <div class="admin-dsp2-row ${enabled ? "is-on" : "is-off"} ${isLast ? "is-last" : ""}" data-row-key="${row.key}">
         <div class="admin-dsp2-cell-label">
-          <div class="admin-dsp2-cell-label-name">${escapeHtml(row.label)}</div>
+          <div class="admin-dsp2-cell-label-name">${escapeHtml(t(row.labelKey))}</div>
           <div class="admin-dsp2-cell-label-en">${row.en}</div>
           <div class="admin-dsp2-value-badge ${enabled ? "is-on" : ""}" data-value-badge>${escapeHtml(valStr)}</div>
         </div>
@@ -461,8 +466,8 @@
           <div class="admin-dsp2-cell-hint">
             <span class="admin-dsp2-cell-hint-arrow">▸</span>
             ${escapeHtml(enabled
-              ? t("displayHintAudienceOn", "觀眾拖動滑桿時的起始值")
-              : t("displayHintAudienceOff", "所有觀眾看到的固定值"))}
+              ? t("displayHintAudienceOn")
+              : t("displayHintAudienceOff"))}
           </div>
           <div class="admin-dsp2-picker" data-picker-host>${pickerHtml(row, opt)}</div>
           <div class="admin-dsp2-band-host" data-band-host>${rangeBandHtml(row, opt)}</div>
@@ -471,14 +476,14 @@
           <button type="button" class="admin-dsp2-pill ${enabled ? "is-on" : ""}"
             data-toggle-key="${row.key}" aria-pressed="${enabled ? "true" : "false"}">
             <span class="admin-dsp2-pill-track"><span class="admin-dsp2-pill-thumb"></span></span>
-            <span class="admin-dsp2-pill-label">${enabled ? "可自訂" : "鎖定"}</span>
+            <span class="admin-dsp2-pill-label">${escapeHtml(enabled ? t("displayCustomizable") : t("displayLocked"))}</span>
           </button>
           <div class="admin-dsp2-toggle-hint">
             ${escapeHtml(enabled
-              ? t("displayToggleHintOn", "觀眾端顯示此欄位")
+              ? t("displayToggleHintOn")
               : (row.noRange
-                  ? t("displayToggleHintOffPick", "觀眾看不到選項")
-                  : t("displayToggleHintOffSlider", "觀眾看不到 slider")))}
+                  ? t("displayToggleHintOffPick")
+                  : t("displayToggleHintOffSlider")))}
           </div>
         </div>
       </div>`;
@@ -488,7 +493,7 @@
     const host = document.getElementById("dsp2-rows");
     if (!host) return;
     if (!_state.options) {
-      host.innerHTML = `${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : escapeHtml(t("loading", "載入中…"))}`;
+      host.innerHTML = `${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : escapeHtml(t("loading"))}`;
       return;
     }
     host.innerHTML = ROWS
@@ -551,8 +556,8 @@
       const open = !!(_state.options[r.key] || [])[0];
       return `<div class="admin-dsp2-srow ${open ? "is-on" : ""}">
         <span class="admin-dsp2-srow-dot"></span>
-        <span class="admin-dsp2-srow-label">${escapeHtml(r.label)}</span>
-        <span class="admin-dsp2-srow-tag">${open ? "觀眾可改" : "鎖定"}</span>
+        <span class="admin-dsp2-srow-label">${escapeHtml(t(r.labelKey))}</span>
+        <span class="admin-dsp2-srow-tag">${escapeHtml(open ? t("displayAudienceChangeable") : t("displayLocked"))}</span>
       </div>`;
     }).join("");
   }
@@ -570,10 +575,10 @@
       if (!Array.isArray(_state.options[key])) _state.options[key] = [false, "", "", ""];
       _state.options[key][0] = !!enabled;
       renderRows();
-      window.showToast && window.showToast(`${key} ${t("settingsUpdated", "已更新")}`, true);
+      window.showToast && window.showToast(`${key} ${t("settingsUpdated")}`, true);
     } catch (e) {
       console.warn("[admin-display] toggle failed:", e);
-      window.showToast && window.showToast(t("updateFailed", "更新失敗"), false);
+      window.showToast && window.showToast(t("updateFailed"), false);
       await fetchSettings();
       renderRows();
     }
@@ -585,7 +590,7 @@
       if (key === "Color") {
         const hex = String(v).replace(/^#/, "");
         if (!/^[0-9A-Fa-f]{6}$/.test(hex)) {
-          window.showToast && window.showToast(t("colorFormatError", "色碼格式錯誤"), false);
+          window.showToast && window.showToast(t("colorFormatError"), false);
           return;
         }
         v = hex.toUpperCase();
@@ -612,7 +617,7 @@
       renderSummary();
     } catch (e) {
       console.warn("[admin-display] update failed:", e);
-      window.showToast && window.showToast(t("updateFailed", "更新失敗"), false);
+      window.showToast && window.showToast(t("updateFailed"), false);
     }
   }
 
@@ -635,12 +640,12 @@
       renderSummary();
       const total = presetValuesFor(key).length || 0;
       const msg = list.length > 0
-        ? `${key} 允許 ${list.length} / ${total}`
-        : `${key} 允許全部`;
+        ? t("displayAllowlistToastPartial", { key: key, n: list.length, total: total })
+        : t("displayAllowlistToastAll", { key: key });
       window.showToast && window.showToast(msg, true);
     } catch (e) {
       console.warn("[admin-display] allowlist failed:", e);
-      window.showToast && window.showToast(t("updateFailed", "更新失敗"), false);
+      window.showToast && window.showToast(t("updateFailed"), false);
     }
   }
 
@@ -738,7 +743,7 @@
 
   function exportSettingsJson() {
     if (!_state.options) {
-      window.showToast && window.showToast(t("loading", "載入中…"), false);
+      window.showToast && window.showToast(t("loading"), false);
       return;
     }
     const payload = {
@@ -755,7 +760,7 @@
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    window.showToast && window.showToast(t("displayExportDone", "已匯出 JSON"), true);
+    window.showToast && window.showToast(t("displayExportDone"), true);
   }
 
   async function deployAll() {
@@ -777,12 +782,12 @@
       }
       await fetchMetrics();
       window.showToast && window.showToast(
-        t("displayBroadcastDone", "已套用，") + ` ${_state.viewerCount} ${t("viewersReceivedSuffix", "位觀眾收到更新")}`,
+        t("displayBroadcastDone") + ` ${_state.viewerCount} ${t("displayViewersReceivedSuffix")}`,
         true,
       );
     } catch (e) {
       console.warn("[admin-display] deploy failed:", e);
-      window.showToast && window.showToast(t("updateFailed", "更新失敗"), false);
+      window.showToast && window.showToast(t("updateFailed"), false);
     } finally {
       if (btn) { btn.disabled = false; btn.classList.remove("is-pending"); }
     }
@@ -799,11 +804,11 @@
     };
     const ok = await window.HudConfirm?.open({
       icon: "↩",
-      title: "還原預設值",
+      title: t("displayRevertConfirmTitle"),
       subtitle: "REVERT TO DEFAULTS · OVERWRITES CURRENT SETTINGS",
       severity: "warn",
-      body: t("displayRevertConfirm", "還原預設將覆寫目前設定，確定？"),
-      confirmLabel: "還原預設",
+      body: t("displayRevertConfirm"),
+      confirmLabel: t("displayDeployRevert"),
     });
     if (!ok) return;
     try {
@@ -826,10 +831,10 @@
       }
       await fetchSettings();
       renderRows();
-      window.showToast && window.showToast(t("displayRevertDone", "已還原預設"), true);
+      window.showToast && window.showToast(t("displayRevertDone"), true);
     } catch (e) {
       console.warn("[admin-display] revert failed:", e);
-      window.showToast && window.showToast(t("updateFailed", "更新失敗"), false);
+      window.showToast && window.showToast(t("updateFailed"), false);
     }
   }
 
@@ -1168,21 +1173,22 @@
     infoBanner.className = "lg:col-span-2";
     infoBanner.innerHTML =
       '<div class="admin-vc-info-banner">' +
-        'Viewer 管理 <b>觀眾頁</b>：<span class="admin-vc-info-accent">觀眾頁主題</span> 控制 <code>/fire</code> 的整體外觀（背景、tab、字色）；' +
-        '<span class="admin-vc-info-accent" style="margin-left:4px">表單欄位</span> 控制觀眾在「發送 danmu」表單上看到的輸入（暱稱 / 顏色 / 字級 / 速度 / 排版 / 效果）。主題樣式由 Theme Packs 全域管理。' +
+        t("displayViewerConfigInfoBanner") +
       '</div>';
 
     // ── FIELDS panel ──────────────────────────────────────────────────────
+    // D-4：這個陣列建構於函式呼叫當下（非模組頂層），ServerI18n 已 init，
+    // 可直接呼叫 t()，不必走 labelKey 延後解析。
     const FIELD_DEFS = [
-      { k: "暱稱 / Nickname",  desc: "單行文字輸入，viewer 顯示為作者名",       on: true,  pinned: true },
-      { k: "訊息 / Message",   desc: "主要 textarea（必填，長度上限 80）",       on: true,  pinned: true },
-      { k: "顏色 / Color",     desc: "6 個預設色票 + 自訂 hex",                  on: true },
-      { k: "字型 / Font",      desc: "從 Font Library 選擇",                     on: true },
-      { k: "字級 / Size",      desc: "small / regular / large 三段",             on: true },
-      { k: "透明度 / Opacity", desc: "0.4 / 0.7 / 1.0 三段",                     on: true },
-      { k: "速度 / Speed",     desc: "0.5× / 1.0× / 2.0× 內選定預設",             on: true },
-      { k: "排版 / Layout",    desc: "scroll / top / bottom / float / rise",      on: true },
-      { k: "效果 / Effect",    desc: "可選 1–3 個從 Effect Library",              on: false },
+      { k: t("displayFieldNicknameLabel"), desc: t("displayFieldNicknameDesc"), on: true,  pinned: true },
+      { k: t("displayFieldMessageLabel"),  desc: t("displayFieldMessageDesc"),  on: true,  pinned: true },
+      { k: t("displayFieldColorLabel"),    desc: t("displayFieldColorDesc"),    on: true },
+      { k: t("displayFieldFontLabel"),     desc: t("displayFieldFontDesc"),     on: true },
+      { k: t("displayFieldSizeLabel"),     desc: t("displayFieldSizeDesc"),     on: true },
+      { k: t("displayFieldOpacityLabel"),  desc: t("displayFieldOpacityDesc"),  on: true },
+      { k: t("displayFieldSpeedLabel"),    desc: t("displayFieldSpeedDesc"),    on: true },
+      { k: t("displayFieldLayoutLabel"),   desc: "scroll / top / bottom / float / rise", on: true },
+      { k: t("displayFieldEffectLabel"),   desc: t("displayFieldEffectDesc"),   on: false },
     ];
 
     const fieldsPanel = document.createElement("div");
@@ -1198,8 +1204,8 @@
     const shownCount = FIELD_DEFS.filter(function (f) { return f.on; }).length;
     const hiddenCount = FIELD_DEFS.length - shownCount;
     head.innerHTML =
-      '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:1px">觀眾表單欄位 · ' + FIELD_DEFS.length + ' 項</span>' +
-      '<span class="admin-vc-fields-count">顯示 ' + shownCount + " · 隱藏 " + hiddenCount + "</span>";
+      '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:1px">' + escapeHtml(t("displayFieldsCountLabel", { count: FIELD_DEFS.length })) + '</span>' +
+      '<span class="admin-vc-fields-count">' + escapeHtml(t("displayFieldsShownHidden", { shown: shownCount, hidden: hiddenCount })) + "</span>";
     leftCol.appendChild(head);
 
     const fieldsList = document.createElement("div");
@@ -1215,7 +1221,7 @@
 
       const info = document.createElement("div");
       var badgeHtml = "";
-      if (f.pinned) badgeHtml = '<span class="admin-vc-field-badge admin-vc-field-badge--required">必填</span>';
+      if (f.pinned) badgeHtml = '<span class="admin-vc-field-badge admin-vc-field-badge--required">' + escapeHtml(t("displayFieldBadgeRequired")) + '</span>';
       if (f.blocked) badgeHtml = '<span class="admin-vc-field-badge admin-vc-field-badge--blocked">BE BLOCKED</span>';
       info.innerHTML =
         '<div class="admin-vc-field-label">' + escapeHtml(f.k) + badgeHtml + "</div>" +
@@ -1225,7 +1231,7 @@
       const toggle = document.createElement("button");
       toggle.type = "button";
       toggle.className = "admin-vc-toggle " + (f.on ? "is-on" : "is-off");
-      toggle.textContent = f.on ? "顯示" : "隱藏";
+      toggle.textContent = f.on ? t("displayToggleShow") : t("displayToggleHide");
       if (f.blocked || f.pinned) {
         toggle.disabled = true;
         toggle.className += " disabled";
@@ -1234,7 +1240,7 @@
         toggle.addEventListener("click", function () {
           _on = !_on;
           toggle.className = "admin-vc-toggle " + (_on ? "is-on" : "is-off");
-          toggle.textContent = _on ? "顯示" : "隱藏";
+          toggle.textContent = _on ? t("displayToggleShow") : t("displayToggleHide");
           dot.className = "admin-vc-field-dot" + (_on ? " is-on" : "");
         });
       }
@@ -1254,28 +1260,28 @@
     }).join("");
 
     rightCol.innerHTML =
-      '<div style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.5px">觀眾端預覽</div>' +
+      '<div style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.5px">' + escapeHtml(t("displayAudiencePreviewLabel")) + '</div>' +
       '<div class="admin-vc-preview-form">' +
-        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">暱稱 / Nickname <span style="color: var(--color-ink-error)">*</span></div><div class="admin-vc-preview-input">阿傑</div></div>' +
-        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">訊息 / Message <span style="color: var(--color-ink-error)">*</span></div><div class="admin-vc-preview-input" style="min-height:56px">+1 求簡報</div></div>' +
+        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayFieldNicknameLabel")) + ' <span style="color: var(--color-ink-error)">*</span></div><div class="admin-vc-preview-input">' + escapeHtml(t("displaySampleNickname")) + '</div></div>' +
+        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayFieldMessageLabel")) + ' <span style="color: var(--color-ink-error)">*</span></div><div class="admin-vc-preview-input" style="min-height:56px">' + escapeHtml(t("displaySampleMessage")) + '</div></div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
-          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">顏色</div><div class="admin-vc-preview-input"><span class="admin-vc-swatch">' + swatchHtml + "</span></div></div>" +
-          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">字型</div><div class="admin-vc-preview-input">Noto Sans TC · <b>Zen Kaku</b></div></div>' +
-        "</div>" +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
-          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">字級</div><div class="admin-vc-preview-input">small · <b>regular</b> · large</div></div>' +
-          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">透明度</div><div class="admin-vc-preview-input">0.4 · 0.7 · <b>1.0</b></div></div>' +
+          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayLabelColor")) + '</div><div class="admin-vc-preview-input"><span class="admin-vc-swatch">' + swatchHtml + "</span></div></div>" +
+          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayLabelFontFamily")) + '</div><div class="admin-vc-preview-input">Noto Sans TC · <b>Zen Kaku</b></div></div>' +
         "</div>" +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
-          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">速度</div><div class="admin-vc-preview-input">0.5× · <b>1.0×</b> · 2.0×</div></div>' +
-          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">排版</div><div class="admin-vc-preview-input"><b>scroll</b> · top · bottom · float · rise</div></div>' +
+          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayLabelFontSize")) + '</div><div class="admin-vc-preview-input">small · <b>regular</b> · large</div></div>' +
+          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayLabelOpacity")) + '</div><div class="admin-vc-preview-input">0.4 · 0.7 · <b>1.0</b></div></div>' +
         "</div>" +
-        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">效果</div><div class="admin-vc-preview-input">glow · <b>bounce</b> · wave</div></div>' +
-        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">樣式邊界</div><div class="admin-vc-preview-input">描邊 / 陰影由 Theme Packs 全域控制</div></div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayLabelSpeed")) + '</div><div class="admin-vc-preview-input">0.5× · <b>1.0×</b> · 2.0×</div></div>' +
+          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayLabelLayout")) + '</div><div class="admin-vc-preview-input"><b>scroll</b> · top · bottom · float · rise</div></div>' +
         "</div>" +
-        '<div class="admin-vc-preview-submit">↗ 發送 DANMU</div>' +
+        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayLabelEffect")) + '</div><div class="admin-vc-preview-input">glow · <b>bounce</b> · wave</div></div>' +
+        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayFieldStyleBoundaryLabel")) + '</div><div class="admin-vc-preview-input">' + escapeHtml(t("displayFieldStyleBoundaryDesc")) + '</div></div>' +
+        "</div>" +
+        '<div class="admin-vc-preview-submit">↗ ' + escapeHtml(t("displaySubmitButtonMock")) + '</div>' +
       "</div>" +
-      '<div class="admin-vc-tip">· 隱藏的欄位仍會以預設值送出；描邊 / 陰影不在 viewer 單筆欄位內，而由 Theme Packs 全域決定。</div>';
+      '<div class="admin-vc-tip">· ' + escapeHtml(t("displayFieldsTip")) + '</div>';
 
     fieldsPanel.appendChild(leftCol);
     fieldsPanel.appendChild(rightCol);
@@ -1313,16 +1319,16 @@
       '<div class="admin-vc-limit-card">' +
         '<div class="admin-vc-limit-card__head">' +
           '<span class="admin-vc-limit-card__dot is-amber"></span>' +
-          '<span class="admin-vc-limit-card__zh">速率限制</span>' +
+          '<span class="admin-vc-limit-card__zh">' + escapeHtml(t("displayRateLimitsTitle")) + '</span>' +
           '<span class="admin-vc-limit-card__en">RATE LIMITS</span>' +
-          '<a href="#/ratelimit" class="admin-vc-limit-card__edit">編輯 →</a>' +
+          '<a href="#/ratelimit" class="admin-vc-limit-card__edit">' + escapeHtml(t("displayEditLink")) + '</a>' +
         '</div>' +
-        _vcLimitRow("每人每分鐘", "PER FP / MIN", '<span data-vc-rate-fp>—</span>', "則", "超過自動排隊 · 1 min cooldown") +
-        _vcLimitRow("全域每秒", "GLOBAL / SEC", '<span data-vc-rate-global>—</span>', "/s", "到達後 FIFO 排隊") +
-        _vcLimitRow("Burst 容忍", "BURST WINDOW", '<span data-vc-rate-burst>—</span>', "則/3s", "連發偵測 · 超過觸發 cooldown") +
-        _vcLimitRow("Cooldown 時間", "COOLDOWN", '<span data-vc-rate-cooldown>—</span>', "s", "被限速後等待時間") +
+        _vcLimitRow(escapeHtml(t("displayRateFpLabel")), "PER FP / MIN", '<span data-vc-rate-fp>—</span>', escapeHtml(t("displayRateFpUnit")), escapeHtml(t("displayRateFpHint"))) +
+        _vcLimitRow(escapeHtml(t("displayRateGlobalLabel")), "GLOBAL / SEC", '<span data-vc-rate-global>—</span>', "/s", escapeHtml(t("displayRateGlobalHint"))) +
+        _vcLimitRow(escapeHtml(t("displayRateBurstLabel")), "BURST WINDOW", '<span data-vc-rate-burst>—</span>', escapeHtml(t("displayRateBurstUnit")), escapeHtml(t("displayRateBurstHint"))) +
+        _vcLimitRow(escapeHtml(t("displayRateCooldownLabel")), "COOLDOWN", '<span data-vc-rate-cooldown>—</span>', "s", escapeHtml(t("displayRateCooldownHint"))) +
         '<div class="admin-vc-limit-card__foot">' +
-          '⚠ 修改後即時生效 · 不影響已在 Desktop 上的彈幕' +
+          '⚠ ' + escapeHtml(t("displayRateLimitsFooter")) +
         '</div>' +
       '</div>' +
 
@@ -1330,21 +1336,21 @@
       '<div class="admin-vc-limit-card">' +
         '<div class="admin-vc-limit-card__head">' +
           '<span class="admin-vc-limit-card__dot is-cyan"></span>' +
-          '<span class="admin-vc-limit-card__zh">內容限制</span>' +
+          '<span class="admin-vc-limit-card__zh">' + escapeHtml(t("displayContentLimitsTitle")) + '</span>' +
           '<span class="admin-vc-limit-card__en">CONTENT LIMITS</span>' +
         '</div>' +
-        _vcLimitRow("訊息長度上限", "MAX LENGTH", '<span data-vc-msg-len>—</span>', "字", "中/英/emoji 各算 1 字") +
-        _vcLimitRow("暱稱長度上限", "NICK MAX", '<span data-vc-nick-len>—</span>', "字", "空白 = 使用 fp_xxxx") +
-        _vcLimitRow("連續重複偵測", "DEDUP WINDOW", '<span data-vc-dedup>—</span>', "s", "同指紋 · 同內容 · 靜默丟棄") +
-        _vcLimitRow("敏感字觸發", "PROFANITY ACTION", '<span data-vc-profanity>遮罩</span>', "", "block / 遮罩 / 通知管理員") +
+        _vcLimitRow(escapeHtml(t("displayMsgLenLabel")), "MAX LENGTH", '<span data-vc-msg-len>—</span>', escapeHtml(t("displayMsgLenUnit")), escapeHtml(t("displayMsgLenHint"))) +
+        _vcLimitRow(escapeHtml(t("displayNickLenLabel")), "NICK MAX", '<span data-vc-nick-len>—</span>', escapeHtml(t("displayNickLenUnit")), escapeHtml(t("displayNickLenHint"))) +
+        _vcLimitRow(escapeHtml(t("displayDedupLabel")), "DEDUP WINDOW", '<span data-vc-dedup>—</span>', "s", escapeHtml(t("displayDedupHint"))) +
+        _vcLimitRow(escapeHtml(t("displayProfanityLabel")), "PROFANITY ACTION", '<span data-vc-profanity>' + escapeHtml(t("displayProfanityDefaultValue")) + '</span>', "", escapeHtml(t("displayProfanityHint"))) +
         '<div class="admin-vc-limit-card__deferred">' +
           '<div class="admin-vc-limit-card__deferred-row">' +
-            '<span>附件大小限制</span>' +
-            '<span class="admin-vc-limit-card__deferred-tag">即將支援</span>' +
+            '<span>' + escapeHtml(t("displayAttachmentLimitLabel")) + '</span>' +
+            '<span class="admin-vc-limit-card__deferred-tag">' + escapeHtml(t("displayComingSoonTag")) + '</span>' +
           '</div>' +
           '<div class="admin-vc-limit-card__deferred-row">' +
-            '<span>連結偵測</span>' +
-            '<span class="admin-vc-limit-card__deferred-tag">即將支援</span>' +
+            '<span>' + escapeHtml(t("displayLinkDetectionLabel")) + '</span>' +
+            '<span class="admin-vc-limit-card__deferred-tag">' + escapeHtml(t("displayComingSoonTag")) + '</span>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -1369,7 +1375,7 @@
           '<span class="admin-vc-limit-status__metric-val is-mute" data-vc-deduped>—</span>' +
         '</div>' +
         '<span class="admin-vc-limit-status__spacer"></span>' +
-        '<a href="#/audit" class="admin-vc-limit-status__detail">詳細 → 操作日誌</a>' +
+        '<a href="#/audit" class="admin-vc-limit-status__detail">' + escapeHtml(t("displayAuditLogLink")) + '</a>' +
       '</div>';
 
     // ── Insert before sec-viewer-theme ────────────────────────────────────

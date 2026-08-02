@@ -55,7 +55,11 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   expect(ratelimitSrc).toContain('admin-ratelimit-page');
   expect(displaySrc).toContain('route === "display"');
   expect(displaySrc).toContain('route === "viewer"');
-  expect(displaySrc).toContain("Display 控制 Desktop / client / 目標顯示器");
+  // D-4：note 文案搬進 i18n——源碼釘 key、原文改釘 zh locale
+  const zhLocaleSrc = fs.readFileSync(
+    path.join(staticDir, "..", "locales", "zh", "translation.json"), "utf8");
+  expect(displaySrc).toContain('t("displayViewerDefaultsNote")');
+  expect(zhLocaleSrc).toContain("Display 控制 Desktop / client / 目標顯示器");
   expect(securitySrc).toContain('route === "system"');
   expect(securitySrc).toContain('leaf === "security"');
   // 2026-05-19 v5 Batch 12-3: security page title shortened from
@@ -80,11 +84,15 @@ test("admin Viewer field inventory matches the canonical viewer spec", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const displaySrc = fs.readFileSync(path.join(staticDir, "admin-display.js"), "utf8");
 
-  expect(displaySrc).toContain("Viewer 管理 <b>觀眾頁</b>");
-  expect(displaySrc).toContain("主題樣式由 Theme Packs");
-  expect(displaySrc).toContain("速度 / Speed");
-  expect(displaySrc).toContain("排版 / Layout");
-  expect(displaySrc).toContain("效果 / Effect");
+  // D-4：info banner 文案在 zh locale，源碼持 key
+  const zhLocaleSrc2 = fs.readFileSync(
+    path.join(staticDir, "..", "locales", "zh", "translation.json"), "utf8");
+  expect(displaySrc).toContain('t("displayViewerConfigInfoBanner")');
+  expect(zhLocaleSrc2).toContain("Viewer 管理 <b>觀眾頁</b>");
+  expect(zhLocaleSrc2).toContain("主題樣式由 Theme Packs"); // D-4：文案在 zh locale
+  expect(zhLocaleSrc2).toContain("速度 / Speed"); // D-4：欄位標籤在 zh locale
+  expect(zhLocaleSrc2).toContain("排版 / Layout");
+  expect(zhLocaleSrc2).toContain("效果 / Effect");
   expect(displaySrc).not.toContain("描邊 / Stroke");
   expect(displaySrc).not.toContain("陰影 / Shadow");
   expect(displaySrc).not.toContain("匿名送出");
@@ -110,15 +118,21 @@ test("admin Viewer surface exposes language/copy and defaults/limits guidance", 
   expect(displaySrc).toContain("Auto (follow browser)");
   expect(displaySrc).toContain("Placeholder");
   expect(displaySrc).toContain("Submit button");
-  expect(displaySrc).toContain("觀眾端不提供語言切換");
+  // D-4：ADMIN CONTROLLED note 走既有 displayAdminControlledNote key
+  const zhLocaleSrc3 = fs.readFileSync(
+    path.join(staticDir, "..", "locales", "zh", "translation.json"), "utf8");
+  expect(displaySrc).toContain('t("displayAdminControlledNote")');
+  expect(zhLocaleSrc3).toContain("觀眾端不提供語言切換");
   // 2026-05-19 v5: Limits tab rewritten per batch11-viewer-4tab.jsx.
   // Old static "DEFAULTS / LIMITS" text panel replaced with 2 cards
   // (RATE LIMITS + CONTENT LIMITS) + CURRENT SESSION strip, populated
   // live from /admin/metrics.rate_limit_config.
   expect(displaySrc).toContain("RATE LIMITS");
   expect(displaySrc).toContain("CONTENT LIMITS");
-  expect(displaySrc).toContain("速率限制");
-  expect(displaySrc).toContain("內容限制");
+  expect(displaySrc).toContain('t("displayRateLimitsTitle")'); // D-4：文案在 zh locale
+  expect(zhLocaleSrc3).toContain("速率限制");
+  expect(displaySrc).toContain('t("displayContentLimitsTitle")');
+  expect(zhLocaleSrc3).toContain("內容限制"); // D-4
   expect(displaySrc).toContain('admin-vc-limits-grid');
   expect(displaySrc).toContain('data-vc-rate-fp');
   expect(displaySrc).toContain('data-vc-msg-len');
