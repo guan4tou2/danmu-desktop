@@ -713,7 +713,7 @@
         <div class="hud-effect-card-actions">
           <span class="hud-effect-chip is-on" data-role="on">ON</span>
           <button type="button" class="hud-effect-chip" data-role="edit">EDIT</button>
-          <button type="button" class="hud-effect-chip" data-role="delete" style="margin-left:auto">DEL</button>
+          <button type="button" class="hud-effect-chip is-danger" data-role="delete" style="margin-left:auto">DEL</button>
         </div>
       `;
       container.appendChild(card);

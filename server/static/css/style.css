@@ -3757,6 +3757,15 @@ button.admin-dash-nav-group-toggle:focus-visible {
   border-color: var(--color-primary);
   color: var(--color-ink-accent);
 }
+/* F-105（design audit 2026-08-02）：破壞性 DEL 與 EDIT 同視覺重量，
+ * 掃視時分不出危險動作。文字走 ink 層（畫字用 ink、畫面用 --color-*）。 */
+.hud-effect-chip.is-danger {
+  color: var(--color-ink-error);
+  border-color: color-mix(in srgb, var(--color-error) 45%, var(--admin-line));
+}
+.hud-effect-chip.is-danger:hover {
+  background: color-mix(in srgb, var(--color-error) 12%, transparent);
+}
 
 .hud-inspector {
   background: var(--admin-panel);
