@@ -33,9 +33,9 @@
       <div id="${PAGE_ID}" class="admin-backup-page hud-page-stack lg:col-span-2" data-tpl="C">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">BACKUP · EXPORT · DANGER</div>
-          <div class="admin-ui-page-title">備份 &amp; 匯出</div>
+          <div class="admin-ui-page-title">${ServerI18n.t("backupPageTitle")}</div>
           <p class="admin-ui-page-note">
-            匯出歷史/設定、還原備份、危險操作分區 — 系統性重置請手動刪除 <code>server/runtime/</code>。
+            ${ServerI18n.t("backupPageNote")}
           </p>
         </div>
 
@@ -53,22 +53,22 @@
               <label class="admin-backup-field">
                 <span class="admin-ui-monolabel">RANGE</span>
                 <select id="bk2-hist-hours" class="admin-ui-select">
-                  <option value="1">最近 1 小時</option>
-                  <option value="6">最近 6 小時</option>
-                  <option value="24" selected>最近 24 小時</option>
-                  <option value="168">最近 7 天</option>
-                  <option value="720">最近 30 天</option>
+                  <option value="1">${ServerI18n.t("backupRangeLast1h")}</option>
+                  <option value="6">${ServerI18n.t("backupRangeLast6h")}</option>
+                  <option value="24" selected>${ServerI18n.t("backupRangeLast24h")}</option>
+                  <option value="168">${ServerI18n.t("backupRangeLast7d")}</option>
+                  <option value="720">${ServerI18n.t("backupRangeLast30d")}</option>
                 </select>
               </label>
               <label class="admin-backup-field">
                 <span class="admin-ui-monolabel">FORMAT</span>
                 <select id="bk2-hist-format" class="admin-ui-select">
-                  <option value="json">JSON · 完整</option>
-                  <option value="csv">CSV · 試算表</option>
-                  <option value="srt">SRT · 字幕</option>
+                  <option value="json">${ServerI18n.t("backupFormatJson")}</option>
+                  <option value="csv">${ServerI18n.t("backupFormatCsv")}</option>
+                  <option value="srt">${ServerI18n.t("backupFormatSrt")}</option>
                 </select>
               </label>
-              <button type="button" id="bk2-hist-download" class="admin-ui-action is-primary admin-bk-action">下載</button>
+              <button type="button" id="bk2-hist-download" class="admin-ui-action is-primary admin-bk-action">${ServerI18n.t("backupDownloadBtn")}</button>
             </div>
           </div>
 
@@ -77,9 +77,9 @@
             <div class="admin-ui-monolabel">SETTINGS · 設定快照</div>
             <div class="admin-backup-row">
               <div class="admin-backup-desc">
-                一鍵 JSON 快照（client-side 組合）。不含密碼雜湊與 token，已自動剝除。
+                ${ServerI18n.t("backupSettingsSnapshotDesc")}
               </div>
-              <button type="button" id="bk2-settings-download" class="admin-ui-action is-primary admin-bk-action">下載</button>
+              <button type="button" id="bk2-settings-download" class="admin-ui-action is-primary admin-bk-action">${ServerI18n.t("backupDownloadBtn")}</button>
             </div>
           </div>
 
@@ -88,13 +88,13 @@
             <div class="admin-ui-monolabel">FULL BACKUP · 全狀態 .tar.gz</div>
             <div class="admin-backup-row">
               <div class="admin-backup-desc" id="bk2-pack-summary">
-                計算備份大小中…
+                ${ServerI18n.t("backupCalculatingSize")}
               </div>
-              <button type="button" id="bk2-pack-export" class="admin-ui-action is-primary admin-bk-action">下載快照</button>
+              <button type="button" id="bk2-pack-export" class="admin-ui-action is-primary admin-bk-action">${ServerI18n.t("backupPackExportBtn")}</button>
             </div>
             <p class="admin-backup-deferred-note" id="bk2-pack-detail">
-              內容：runtime/*.json · effects/*.dme · plugins/* · user_plugins/*
-              <br>上傳素材請使用下方 <b>ASSET PACK</b>，避免大型媒體拖慢一般設定快照。
+              ${ServerI18n.t("backupPackContentList")}
+              <br>${ServerI18n.t("backupPackAssetHint")}
             </p>
           </div>
 
@@ -103,12 +103,12 @@
             <div class="admin-ui-monolabel">ASSET PACK · 素材 .tar.gz</div>
             <div class="admin-backup-row">
               <div class="admin-backup-desc" id="bk2-assets-summary">
-                計算素材大小中…
+                ${ServerI18n.t("backupCalculatingAssetSize")}
               </div>
-              <button type="button" id="bk2-assets-export" class="admin-ui-action is-primary admin-bk-action">下載素材包</button>
+              <button type="button" id="bk2-assets-export" class="admin-ui-action is-primary admin-bk-action">${ServerI18n.t("backupAssetsExportBtn")}</button>
             </div>
             <p class="admin-backup-deferred-note" id="bk2-assets-detail">
-              內容：emojis/ · stickers/ · sounds/ · runtime/stickers/packs.json
+              ${ServerI18n.t("backupAssetContentList")}
             </p>
           </div>
         </div>
@@ -128,11 +128,11 @@
                 <span class="admin-ui-monolabel">JSON FILE</span>
                 <input id="bk2-settings-upload" type="file" accept="application/json,.json" class="admin-ui-input" />
               </label>
-              <button type="button" id="bk2-settings-dryrun" class="admin-ui-action admin-bk-action">Dry-run 預覽</button>
-              <button type="button" id="bk2-settings-apply" class="admin-ui-action is-danger admin-bk-action" disabled title="先 dry-run 預覽後才能套用">套用</button>
+              <button type="button" id="bk2-settings-dryrun" class="admin-ui-action admin-bk-action">${ServerI18n.t("backupDryRunBtn")}</button>
+              <button type="button" id="bk2-settings-apply" class="admin-ui-action is-danger admin-bk-action" disabled title="${ServerI18n.t("backupApplyDisabledTitle")}">${ServerI18n.t("backupApplyBtn")}</button>
             </div>
             <pre id="bk2-settings-diff" class="admin-backup-diff" hidden></pre>
-            <p class="admin-backup-deferred-note">先 Dry-run 檢查與目前設定的差異；套用會覆蓋同名設定 row 並即時同步 Desktop / viewer。</p>
+            <p class="admin-backup-deferred-note">${ServerI18n.t("backupSettingsRestoreNote")}</p>
           </div>
 
           <!-- Full pack restore (2026-05-19 — wired to /admin/backup/import) -->
@@ -143,14 +143,13 @@
                 <span class="admin-ui-monolabel">TARBALL · ≤ 16 MB</span>
                 <input id="bk2-pack-upload" type="file" accept=".tar.gz,application/gzip,application/x-gzip" class="admin-ui-input" />
               </label>
-              <button type="button" id="bk2-pack-dryrun" class="admin-ui-action admin-bk-action">Dry-run 預覽</button>
-              <button type="button" id="bk2-pack-apply" class="admin-ui-action is-danger admin-bk-action" disabled title="先 dry-run 預覽後才能套用">套用</button>
+              <button type="button" id="bk2-pack-dryrun" class="admin-ui-action admin-bk-action">${ServerI18n.t("backupDryRunBtn")}</button>
+              <button type="button" id="bk2-pack-apply" class="admin-ui-action is-danger admin-bk-action" disabled title="${ServerI18n.t("backupApplyDisabledTitle")}">${ServerI18n.t("backupApplyBtn")}</button>
             </div>
             <pre id="bk2-pack-diff" class="admin-backup-diff" hidden></pre>
             <p class="admin-backup-deferred-note">
-              先 Dry-run 確認 manifest + 將被覆蓋的檔案；套用會原子化逐檔覆蓋
-              <code>runtime/ · effects/ · plugins/ · user_plugins/</code>。<br>
-              <b>建議套用前先下載目前快照</b>，作為復原備案。
+              ${ServerI18n.t("backupFullPackRestoreNote")}<br>
+              ${ServerI18n.t("backupRestoreBeforeApplyHint")}
             </p>
           </div>
 
@@ -162,13 +161,12 @@
                 <span class="admin-ui-monolabel">TARBALL · ≤ 64 MB</span>
                 <input id="bk2-assets-upload" type="file" accept=".tar.gz,application/gzip,application/x-gzip" class="admin-ui-input" />
               </label>
-              <button type="button" id="bk2-assets-dryrun" class="admin-ui-action admin-bk-action">Dry-run 預覽</button>
-              <button type="button" id="bk2-assets-apply" class="admin-ui-action is-danger admin-bk-action" disabled title="先 dry-run 預覽後才能套用">套用</button>
+              <button type="button" id="bk2-assets-dryrun" class="admin-ui-action admin-bk-action">${ServerI18n.t("backupDryRunBtn")}</button>
+              <button type="button" id="bk2-assets-apply" class="admin-ui-action is-danger admin-bk-action" disabled title="${ServerI18n.t("backupApplyDisabledTitle")}">${ServerI18n.t("backupApplyBtn")}</button>
             </div>
             <pre id="bk2-assets-diff" class="admin-backup-diff" hidden></pre>
             <p class="admin-backup-deferred-note">
-              只會寫入 <code>emojis/ · stickers/ · sounds/ · runtime/stickers/packs.json</code>；
-              套用成功後會刷新 Desktop / viewer 使用的素材快取。
+              ${ServerI18n.t("backupAssetRestoreNote")}
             </p>
           </div>
         </div>
@@ -187,11 +185,11 @@
               <label class="admin-backup-field">
                 <span class="admin-ui-monolabel">RANGE</span>
                 <select id="bk2-clear-scope" class="admin-ui-select">
-                  <option value="all" selected>全部</option>
+                  <option value="all" selected>${ServerI18n.t("backupClearScopeAll")}</option>
                 </select>
               </label>
-              <div class="admin-backup-desc">清除所有彈幕歷史。此動作無法復原。</div>
-              <button type="button" id="bk2-clear-history" class="admin-ui-action is-danger admin-bk-action">清除</button>
+              <div class="admin-backup-desc">${ServerI18n.t("backupClearHistoryDesc")}</div>
+              <button type="button" id="bk2-clear-history" class="admin-ui-action is-danger admin-bk-action">${ServerI18n.t("backupClearBtn")}</button>
             </div>
           </div>
 
@@ -204,10 +202,10 @@
             <div class="admin-ui-monolabel">FACTORY RESET · 回復原廠</div>
             <div class="admin-backup-row">
               <label class="admin-backup-field">
-                <span class="admin-ui-monolabel">輸入 <code>reset</code> 以確認</span>
+                <span class="admin-ui-monolabel">${ServerI18n.t("backupFactoryConfirmLabel")}</span>
                 <input id="bk2-factory-confirm" type="text" class="admin-ui-input" placeholder="reset" autocomplete="off" spellcheck="false" />
               </label>
-              <div class="admin-backup-desc">重置 runtime 狀態檔與記憶體佇列；不會移除登入密碼、效果檔、plugins 或上傳素材。</div>
+              <div class="admin-backup-desc">${ServerI18n.t("backupFactoryResetDesc")}</div>
               <button type="button" id="bk2-factory-reset" class="admin-ui-action is-danger admin-bk-action" disabled>FACTORY RESET</button>
             </div>
           </div>
@@ -254,10 +252,10 @@
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 4000);
-      window.showToast && showToast("設定快照已下載", true);
+      window.showToast && showToast(ServerI18n.t("backupSettingsSnapshotDownloaded"), true);
     } catch (e) {
       console.error("Settings snapshot error:", e);
-      window.showToast && showToast("快照失敗", false);
+      window.showToast && showToast(ServerI18n.t("backupSnapshotFailed"), false);
     }
   }
 
@@ -270,7 +268,7 @@
     const applyBtn = document.getElementById("bk2-settings-apply");
     if (!applyBtn) return;
     applyBtn.disabled = true;
-    applyBtn.title = "先 dry-run 預覽後才能套用";
+    applyBtn.title = ServerI18n.t("backupApplyDisabledTitle");
   }
 
   async function dryRunSettings() {
@@ -280,7 +278,7 @@
     const file = fileInput && fileInput.files && fileInput.files[0];
     if (!file) {
       resetSettingsApplyButton();
-      window.showToast && showToast("請先選擇 JSON 檔", false);
+      window.showToast && showToast(ServerI18n.t("backupSelectJsonFirst"), false);
       return;
     }
     try {
@@ -288,7 +286,7 @@
       const parsed = JSON.parse(text);
       const uploaded = parsed.settings || parsed;
       if (!uploaded || typeof uploaded !== "object" || Array.isArray(uploaded)) {
-        throw new Error("settings 必須是 JSON object");
+        throw new Error(ServerI18n.t("backupSettingsMustBeObject"));
       }
       const res = await fetch("/get_settings", { credentials: "same-origin" });
       const current = res.ok ? await res.json() : {};
@@ -304,20 +302,20 @@
       });
       diffEl.textContent = diff.length
         ? diff.join("\n")
-        : "(設定內容相同 · 無差異)";
+        : ServerI18n.t("backupNoDiff");
       diffEl.hidden = false;
       _pendingSettingsPayload = uploaded;
       if (applyBtn) {
         applyBtn.disabled = false;
-        applyBtn.title = "已通過 dry-run，可套用";
+        applyBtn.title = ServerI18n.t("backupApplyEnabledTitle");
       }
-      window.showToast && showToast(diff.length + " 項差異", true);
+      window.showToast && showToast(ServerI18n.t("backupDiffCount", { n: diff.length }), true);
     } catch (e) {
       console.error("Dry-run error:", e);
       resetSettingsApplyButton();
-      diffEl.textContent = "解析失敗: " + (e && e.message ? e.message : String(e));
+      diffEl.textContent = ServerI18n.t("backupParseFailedDetail", { msg: e && e.message ? e.message : String(e) });
       diffEl.hidden = false;
-      window.showToast && showToast("解析失敗", false);
+      window.showToast && showToast(ServerI18n.t("backupParseFailed"), false);
     }
   }
 
@@ -325,16 +323,16 @@
     const diffEl = document.getElementById("bk2-settings-diff");
     const applyBtn = document.getElementById("bk2-settings-apply");
     if (!_pendingSettingsPayload) {
-      window.showToast && showToast("請先 Dry-run 通過後再套用", false);
+      window.showToast && showToast(ServerI18n.t("backupDryRunFirst"), false);
       return;
     }
     const ok = await window.HudConfirm?.open({
       icon: "⚠",
-      title: "套用設定快照",
+      title: ServerI18n.t("backupApplySettingsConfirmTitle"),
       subtitle: "RESTORE SETTINGS · OVERWRITES MATCHING KEYS",
       severity: "warn",
-      body: "快照中同名的設定會覆蓋目前的值，未包含在快照裡的設定維持不變。",
-      confirmLabel: "套用",
+      body: ServerI18n.t("backupApplySettingsConfirmBody"),
+      confirmLabel: ServerI18n.t("backupApplyBtn"),
     });
     if (!ok) return;
 
@@ -348,28 +346,28 @@
       if (!res.ok) {
         if (diffEl) {
           diffEl.hidden = false;
-          diffEl.textContent = "套用失敗\n" + JSON.stringify(result.details || result, null, 2);
+          diffEl.textContent = ServerI18n.t("backupApplyFailedDetail", { details: JSON.stringify(result.details || result, null, 2) });
         }
-        window.showToast && showToast("設定套用失敗", false);
+        window.showToast && showToast(ServerI18n.t("backupSettingsApplyFailed"), false);
         return;
       }
 
       if (diffEl) {
         diffEl.hidden = false;
-        diffEl.textContent = "套用完成\nApplied " + (result.applied || []).length + " settings";
+        diffEl.textContent = ServerI18n.t("backupApplyCompleteHeader") + "\nApplied " + (result.applied || []).length + " settings";
       }
       _pendingSettingsPayload = null;
       if (applyBtn) {
         applyBtn.disabled = true;
-        applyBtn.title = "先 dry-run 預覽後才能套用";
+        applyBtn.title = ServerI18n.t("backupApplyDisabledTitle");
       }
-      window.showToast && showToast("設定已套用", true);
+      window.showToast && showToast(ServerI18n.t("backupSettingsApplied"), true);
     } catch (e) {
       if (diffEl) {
         diffEl.hidden = false;
-        diffEl.textContent = "套用錯誤: " + (e && e.message ? e.message : String(e));
+        diffEl.textContent = ServerI18n.t("backupApplyErrorDetail", { msg: e && e.message ? e.message : String(e) });
       }
-      window.showToast && showToast("網路錯誤", false);
+      window.showToast && showToast(ServerI18n.t("backupNetworkError"), false);
     }
   }
 
@@ -378,22 +376,22 @@
   async function clearHistory() {
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
-      title: "清除所有彈幕歷史",
+      title: ServerI18n.t("backupClearHistoryConfirmTitle"),
       subtitle: "CLEAR HISTORY · THIS ACTION CANNOT BE UNDONE",
       severity: "danger",
-      body: "所有已歸檔的彈幕記錄會被刪除，無法復原。建議先下載完整快照。",
-      confirmLabel: "清除歷史",
+      body: ServerI18n.t("backupClearHistoryConfirmBody"),
+      confirmLabel: ServerI18n.t("backupClearHistoryConfirmLabel"),
     });
     if (!ok) return;
     try {
       const res = await window.csrfFetch("/admin/history/clear", { method: "POST" });
       if (res.ok) {
-        window.showToast && showToast("歷史已清除", true);
+        window.showToast && showToast(ServerI18n.t("backupHistoryCleared"), true);
       } else {
-        window.showToast && showToast("清除失敗", false);
+        window.showToast && showToast(ServerI18n.t("backupClearFailed"), false);
       }
     } catch (e) {
-      window.showToast && showToast("網路錯誤", false);
+      window.showToast && showToast(ServerI18n.t("backupNetworkError"), false);
     }
   }
 
@@ -414,7 +412,7 @@
     const input = document.getElementById("bk2-factory-confirm");
     const btn = document.getElementById("bk2-factory-reset");
     if ((input?.value || "").trim() !== "reset") {
-      window.showToast && showToast("請輸入 reset 以確認", false);
+      window.showToast && showToast(ServerI18n.t("backupEnterResetToConfirm"), false);
       return;
     }
     const ok = await window.HudConfirm?.open({
@@ -422,10 +420,8 @@
       title: "Factory reset",
       subtitle: "FACTORY RESET · WIPES RUNTIME STATE AND QUEUE",
       severity: "danger",
-      body:
-        "runtime 狀態檔與目前佇列都會被清除，無法復原。" +
-        "如果還沒下載完整快照，現在取消還來得及。",
-      confirmLabel: "執行 reset",
+      body: ServerI18n.t("backupFactoryResetConfirmBody"),
+      confirmLabel: ServerI18n.t("backupFactoryResetConfirmLabel"),
     });
     if (!ok) return;
     try {
@@ -437,7 +433,7 @@
       });
       const result = await res.json().catch(() => ({}));
       if (!res.ok || !result.ok) {
-        window.showToast && showToast("Factory reset 失敗", false);
+        window.showToast && showToast(ServerI18n.t("backupFactoryResetFailed"), false);
         if (btn) btn.disabled = false;
         return;
       }
@@ -446,11 +442,11 @@
         btn.classList.remove("is-ready");
         btn.disabled = true;
       }
-      window.showToast && showToast("Factory reset 已完成", true);
+      window.showToast && showToast(ServerI18n.t("backupFactoryResetDone"), true);
       fetchPackSummary();
     } catch (e) {
       if (btn) btn.disabled = false;
-      window.showToast && showToast("Factory reset 網路錯誤", false);
+      window.showToast && showToast(ServerI18n.t("backupFactoryResetNetworkError"), false);
     }
   }
 
@@ -486,15 +482,14 @@
     try {
       const r = await fetch("/admin/backup/manifest", { credentials: "same-origin" });
       if (!r.ok) {
-        el.textContent = "預覽不可用";
+        el.textContent = ServerI18n.t("backupPreviewUnavailable");
         return;
       }
       const j = await r.json();
       const mb = (j.total_bytes / (1024 * 1024)).toFixed(2);
-      el.innerHTML =
-        '<b>' + (j.file_count || 0) + '</b> 檔案 · 約 <b>' + mb + '</b> MB（壓縮前）';
+      el.innerHTML = ServerI18n.t("backupPackSizeSummary", { count: j.file_count || 0, mb: mb });
     } catch (_) {
-      el.textContent = "預覽失敗 · 網路錯誤";
+      el.textContent = ServerI18n.t("backupPreviewFailedNetwork");
     }
   }
 
@@ -502,7 +497,7 @@
     // Navigate to the streaming endpoint — browser handles the download
     // headers (Content-Disposition: attachment; filename=...).
     window.location.href = "/admin/backup/export";
-    window.showToast?.("正在下載完整快照…", true);
+    window.showToast?.(ServerI18n.t("backupDownloadingFullSnapshot"), true);
   }
 
   async function fetchAssetPackSummary() {
@@ -511,32 +506,31 @@
     try {
       const r = await fetch("/admin/backup/assets/manifest", { credentials: "same-origin" });
       if (!r.ok) {
-        el.textContent = "素材預覽不可用";
+        el.textContent = ServerI18n.t("backupAssetPreviewUnavailable");
         return;
       }
       const j = await r.json();
       const mb = (j.total_bytes / (1024 * 1024)).toFixed(2);
-      el.innerHTML =
-        '<b>' + (j.file_count || 0) + '</b> 檔案 · 約 <b>' + mb + '</b> MB（壓縮前）';
+      el.innerHTML = ServerI18n.t("backupPackSizeSummary", { count: j.file_count || 0, mb: mb });
     } catch (_) {
-      el.textContent = "素材預覽失敗 · 網路錯誤";
+      el.textContent = ServerI18n.t("backupAssetPreviewFailedNetwork");
     }
   }
 
   function exportAssetPack() {
     window.location.href = "/admin/backup/assets/export";
-    window.showToast?.("正在下載素材包…", true);
+    window.showToast?.(ServerI18n.t("backupDownloadingAssetPack"), true);
   }
 
   async function dryRunFullPack() {
     const input = document.getElementById("bk2-pack-upload");
     const file = input?.files?.[0];
     if (!file) {
-      window.showToast?.("請先選擇 .tar.gz 檔案", false);
+      window.showToast?.(ServerI18n.t("backupSelectTarGzFirst"), false);
       return;
     }
     if (file.size > 16 * 1024 * 1024) {
-      window.showToast?.("檔案超過 16 MB", false);
+      window.showToast?.(ServerI18n.t("backupFileOver16MB"), false);
       return;
     }
     const fd = new FormData();
@@ -552,9 +546,9 @@
       if (!r.ok || !result.ok) {
         if (out) {
           out.hidden = false;
-          out.textContent = "驗證失敗\n" + JSON.stringify(result.errors || result, null, 2);
+          out.textContent = ServerI18n.t("backupValidateFailedDetail", { details: JSON.stringify(result.errors || result, null, 2) });
         }
-        window.showToast?.("Dry-run 失敗", false);
+        window.showToast?.(ServerI18n.t("backupDryRunFailed"), false);
         if (applyBtn) applyBtn.disabled = true;
         _pendingPackFile = null;
         return;
@@ -582,29 +576,26 @@
       _pendingPackFile = file;
       if (applyBtn) {
         applyBtn.disabled = false;
-        applyBtn.title = "已通過 dry-run，可套用";
+        applyBtn.title = ServerI18n.t("backupApplyEnabledTitle");
       }
-      window.showToast?.("Dry-run 通過 · " + (result.members?.length || 0) + " 檔案待寫入", true);
+      window.showToast?.(ServerI18n.t("backupDryRunPassedCount", { n: result.members?.length || 0 }), true);
     } catch (e) {
-      window.showToast?.("Dry-run 錯誤：" + (e.message || ""), false);
+      window.showToast?.(ServerI18n.t("backupDryRunErrorDetail", { msg: e.message || "" }), false);
     }
   }
 
   async function applyFullPack() {
     if (!_pendingPackFile) {
-      window.showToast?.("請先 Dry-run 通過後再套用", false);
+      window.showToast?.(ServerI18n.t("backupDryRunFirst"), false);
       return;
     }
     const ok = await window.HudConfirm?.open({
       icon: "⚠",
-      title: "套用完整備份",
+      title: ServerI18n.t("backupApplyFullPackConfirmTitle"),
       subtitle: "RESTORE PACK · OVERWRITES RUNTIME AND ASSETS",
       severity: "danger",
-      body:
-        "會覆蓋目前的 <code>runtime/</code>、<code>effects/</code>、" +
-        "<code>plugins/</code>、<code>user_plugins/</code>。" +
-        "套用前已經下載目前的快照作為復原備案了嗎？",
-      confirmLabel: "套用備份",
+      body: ServerI18n.t("backupApplyFullPackConfirmBody"),
+      confirmLabel: ServerI18n.t("backupApplyPackConfirmLabel"),
     });
     if (!ok) return;
     const fd = new FormData();
@@ -620,28 +611,28 @@
         out.hidden = false;
         const lines = [];
         if (result.ok) {
-          lines.push("✓ 套用完成");
+          lines.push("✓ " + ServerI18n.t("backupApplyCompleteHeader"));
           lines.push("");
           lines.push("Applied " + (result.applied || 0) + " files");
           if (result.skipped?.length) {
             lines.push("Skipped " + result.skipped.length + " (see above)");
           }
         } else {
-          lines.push("✗ 套用失敗");
+          lines.push("✗ " + ServerI18n.t("backupApplyFailedHeader"));
           lines.push(JSON.stringify(result.errors || result, null, 2));
         }
         out.textContent = lines.join("\n");
       }
       if (result.ok) {
-        window.showToast?.("已套用 " + result.applied + " 檔案 · 請重啟服務以重載 .dme / plugins", true);
+        window.showToast?.(ServerI18n.t("backupPackAppliedRestartHint", { n: result.applied }), true);
         _pendingPackFile = null;
         const applyBtn = document.getElementById("bk2-pack-apply");
         if (applyBtn) applyBtn.disabled = true;
       } else {
-        window.showToast?.("套用失敗", false);
+        window.showToast?.(ServerI18n.t("backupApplyFailedHeader"), false);
       }
     } catch (e) {
-      window.showToast?.("套用錯誤：" + (e.message || ""), false);
+      window.showToast?.(ServerI18n.t("backupApplyErrorToast", { msg: e.message || "" }), false);
     }
   }
 
@@ -649,11 +640,11 @@
     const input = document.getElementById("bk2-assets-upload");
     const file = input?.files?.[0];
     if (!file) {
-      window.showToast?.("請先選擇素材 .tar.gz 檔案", false);
+      window.showToast?.(ServerI18n.t("backupSelectAssetTarGzFirst"), false);
       return;
     }
     if (file.size > 64 * 1024 * 1024) {
-      window.showToast?.("素材包超過 64 MB", false);
+      window.showToast?.(ServerI18n.t("backupAssetPackOver64MB"), false);
       return;
     }
     const fd = new FormData();
@@ -669,9 +660,9 @@
       if (!r.ok || !result.ok) {
         if (out) {
           out.hidden = false;
-          out.textContent = "素材驗證失敗\n" + JSON.stringify(result.errors || result, null, 2);
+          out.textContent = ServerI18n.t("backupAssetValidateFailedDetail", { details: JSON.stringify(result.errors || result, null, 2) });
         }
-        window.showToast?.("素材 Dry-run 失敗", false);
+        window.showToast?.(ServerI18n.t("backupAssetDryRunFailed"), false);
         if (applyBtn) applyBtn.disabled = true;
         _pendingAssetPackFile = null;
         return;
@@ -697,28 +688,26 @@
       _pendingAssetPackFile = file;
       if (applyBtn) {
         applyBtn.disabled = false;
-        applyBtn.title = "已通過 dry-run，可套用";
+        applyBtn.title = ServerI18n.t("backupApplyEnabledTitle");
       }
-      window.showToast?.("素材 Dry-run 通過 · " + (result.members?.length || 0) + " 檔案待寫入", true);
+      window.showToast?.(ServerI18n.t("backupAssetDryRunPassedCount", { n: result.members?.length || 0 }), true);
     } catch (e) {
-      window.showToast?.("素材 Dry-run 錯誤：" + (e.message || ""), false);
+      window.showToast?.(ServerI18n.t("backupAssetDryRunErrorDetail", { msg: e.message || "" }), false);
     }
   }
 
   async function applyAssetPack() {
     if (!_pendingAssetPackFile) {
-      window.showToast?.("請先 Dry-run 通過後再套用", false);
+      window.showToast?.(ServerI18n.t("backupDryRunFirst"), false);
       return;
     }
     const ok = await window.HudConfirm?.open({
       icon: "⚠",
-      title: "套用素材包",
+      title: ServerI18n.t("backupApplyAssetPackConfirmTitle"),
       subtitle: "RESTORE ASSETS · OVERWRITES MATCHING FILES",
       severity: "warn",
-      body:
-        "同名的 <code>emojis/</code>、<code>stickers/</code>、<code>sounds/</code> " +
-        "檔案與 sticker pack metadata 會被覆蓋。",
-      confirmLabel: "套用素材包",
+      body: ServerI18n.t("backupApplyAssetPackConfirmBody"),
+      confirmLabel: ServerI18n.t("backupApplyAssetPackConfirmTitle"),
     });
     if (!ok) return;
     const fd = new FormData();
@@ -734,29 +723,29 @@
         out.hidden = false;
         const lines = [];
         if (result.ok) {
-          lines.push("✓ 素材套用完成");
+          lines.push("✓ " + ServerI18n.t("backupAssetApplyCompleteHeader"));
           lines.push("");
           lines.push("Applied " + (result.applied || 0) + " files");
           if (result.skipped?.length) {
             lines.push("Skipped " + result.skipped.length + " (see above)");
           }
         } else {
-          lines.push("✗ 素材套用失敗");
+          lines.push("✗ " + ServerI18n.t("backupAssetApplyFailedHeader"));
           lines.push(JSON.stringify(result.errors || result, null, 2));
         }
         out.textContent = lines.join("\n");
       }
       if (result.ok) {
-        window.showToast?.("已套用 " + result.applied + " 個素材檔案", true);
+        window.showToast?.(ServerI18n.t("backupAssetPackApplied", { n: result.applied }), true);
         _pendingAssetPackFile = null;
         const applyBtn = document.getElementById("bk2-assets-apply");
         if (applyBtn) applyBtn.disabled = true;
         fetchAssetPackSummary();
       } else {
-        window.showToast?.("素材套用失敗", false);
+        window.showToast?.(ServerI18n.t("backupAssetApplyFailedHeader"), false);
       }
     } catch (e) {
-      window.showToast?.("素材套用錯誤：" + (e.message || ""), false);
+      window.showToast?.(ServerI18n.t("backupAssetApplyErrorToast", { msg: e.message || "" }), false);
     }
   }
 

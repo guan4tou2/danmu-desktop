@@ -473,7 +473,8 @@ test("admin Backup actions compose shared admin-ui controls", () => {
   expect(backupSrc).toContain('id="bk2-pack-export" class="admin-ui-action is-primary admin-bk-action"');
   expect(backupSrc).toContain('id="bk2-assets-export" class="admin-ui-action is-primary admin-bk-action"');
   expect(backupSrc).toContain('id="bk2-settings-dryrun" class="admin-ui-action admin-bk-action"');
-  expect(backupSrc).toContain('id="bk2-settings-apply" class="admin-ui-action is-danger admin-bk-action" disabled title="先 dry-run 預覽後才能套用"');
+  // D-4：title 文案搬進 i18n key，契約改釘「危險鈕 + disabled + 有 title 提示」的形狀
+  expect(backupSrc).toContain('id="bk2-settings-apply" class="admin-ui-action is-danger admin-bk-action" disabled title="${ServerI18n.t("backupApplyDisabledTitle")}"');
   expect(backupSrc).toContain('"/admin/settings/restore"');
   expect(backupSrc).toContain('"/admin/backup/assets/export"');
   expect(backupSrc).toContain('"/admin/backup/assets/manifest"');
@@ -1269,8 +1270,9 @@ test("admin Backup exposes implemented history export formats", () => {
   const backupSrc = fs.readFileSync(path.join(staticDir, "admin-backup.js"), "utf8");
 
   expect(backupSrc).toContain('format=" + encodeURIComponent(format)');
-  expect(backupSrc).toContain('<option value="csv">CSV');
-  expect(backupSrc).toContain('<option value="srt">SRT');
+  // D-4：option 標籤走 i18n；value 契約不變
+  expect(backupSrc).toContain('<option value="csv">${ServerI18n.t("backupFormatCsv")}');
+  expect(backupSrc).toContain('<option value="srt">${ServerI18n.t("backupFormatSrt")}');
   expect(backupSrc).not.toContain('value="csv" disabled');
   expect(backupSrc).not.toContain('value="srt" disabled');
   expect(backupSrc).not.toContain("CSV / SRT history export formats  (backend returns JSON only)");
