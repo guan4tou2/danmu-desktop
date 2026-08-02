@@ -122,12 +122,17 @@
     const effects = await _fetchJson("/admin/effects");
     if (effects && Array.isArray(effects.effects)) {
       effects.effects.forEach((e) => {
+        // F-104：/admin/effects 沒有 builtin/author 欄位——判定借
+        // admin-effects-mgmt 的內建名單（單一事實來源），別再對
+        // 不存在的欄位瞎猜（曾把八個內建全標成 USER）。
+        const isBuiltin = !!(window.AdminEffectsMeta
+          && window.AdminEffectsMeta.isBuiltin(e.name));
         collected.push({
           id: "dme-" + e.name,
           kind: "dme",
           name: e.filename || e.name + ".dme",
-          author: e.author || (e.builtin ? "built-in" : "user"),
-          flag: e.builtin ? "" : "user",
+          author: e.author || (isBuiltin ? "built-in" : "user"),
+          flag: isBuiltin ? "" : "user",
         });
       });
     }

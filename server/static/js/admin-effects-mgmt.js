@@ -95,6 +95,14 @@
     zoom: "dme-zoom 0.8s ease-in-out infinite",
   };
 
+  // F-104（design audit 2026-08-02）：「哪些效果是內建」的判定只活在
+  // 這份名單。素材庫總覽借用這個 helper——它先前對 API 不存在的
+  // e.builtin 欄位瞎猜，把八個內建效果全標成 USER，跟本頁的
+  // built-in 標籤自相矛盾。
+  window.AdminEffectsMeta = {
+    isBuiltin: function (name) { return !!_BUILTIN_EFFECT_ANIMATIONS[name]; },
+  };
+
   // ── User .dme card preview cache (P3-2 follow-up) ───────────────────────────
   // name -> { keyframes, animation, animationComposition, styleId } | "failed".
   const _userEffectCache = new Map();
