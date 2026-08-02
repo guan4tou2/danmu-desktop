@@ -1390,7 +1390,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 自製的 .admin-tabstrip）退場，viewer 改用 AdminTabs 的 TabConfig，
     // strip 由 shell 掛在標題列下方。剩下的 info banner 不屬於任何 tab，
     // 所以留在 route-level sections 裡（四個 tab 都看得到）。
-    viewer:    { title: "觀眾頁", kicker: "VIEWER · 頁面預設 · 欄位設定 · 文案 / 限制", sections: ["sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits"] },
+    viewer:    { title: "觀眾頁", kicker: "VIEWER · 觀眾端設定", sections: ["sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits"] },
     // Legacy aliases — same config as their canonical home. Kept so
     // existing `=== "dashboard"` checks + URL bookmarks keep working
     // until Phase B/D collapses them.
@@ -1401,7 +1401,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // search / audit / replay / audience). Each tab's section is hidden
     // when not active by AdminTabs.applyTabSectionVisibility. Replay tab
     // owns sec-history-tabs + history-v2-section + sec-history-list + sec-history.
-    history:   { title: "紀錄 & 匯出",       kicker: "RECORDS · 場次 / 搜尋 / 審計 / 重播 / 觀眾", sections: ["sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "history-v2-section", "sec-history-list", "sec-history", "sec-audience-overview"] },
+    history:   { title: "紀錄 & 匯出",       kicker: "RECORDS · 場次資料切片", sections: ["sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "history-v2-section", "sec-history-list", "sec-history", "sec-audience-overview"] },
     polls:     { title: "投票",             kicker: "POLLS · 2–6 選項",         sections: ["sec-polls"] },
     widgets:   { title: "Desktop Widgets",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
     themes:    { title: "風格主題包",       kicker: "THEME PACKS · 彈幕樣式預設",       sections: ["sec-themes"] },
@@ -1418,7 +1418,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // / sounds sub-sections kept below for editing per-type.
     // v7 IA (2026-07-28): assets gains the fonts tab (sec-fonts) — fonts are
     // the fourth uploadable asset type; tab strip defined in admin-tabs.js.
-    assets:    { title: "素材庫",           kicker: "ASSETS LIBRARY · 素材 + 字型 · 統一入口", sections: ["sec-assets-overview", "sec-emojis", "sec-stickers", "sec-sounds", "sec-fonts"] },
+    assets:    { title: "素材庫",           kicker: "ASSETS LIBRARY · 統一素材總覽", sections: ["sec-assets-overview", "sec-emojis", "sec-stickers", "sec-sounds", "sec-fonts"] },
     // v5.2 Sprint 1 (2026-04-27): Extensions catalog page — Slido / Discord
     // / OBS / Bookmarklet cards + shared Fire Token UI inline.
     integrations: { title: "整合",          kicker: "INTEGRATIONS · 第三方接入 · 共用 FIRE TOKEN", sections: ["sec-extensions-overview"] },
@@ -1429,7 +1429,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ratelimit / fingerprints). Each tab's section gets hidden by
     // AdminTabs.applyTabSectionVisibility when not active.
     // brief 0518-v3 #2: moderation gained queue + bans tabs (was deep-link only).
-    moderation:{ title: "審核",  kicker: "MODERATION · 佇列 / 封禁 / 黑名單 / 敏感字 / 速率 / 指紋", sections: ["sec-modqueue", "sec-modbans-overview", "sec-blacklist", "sec-filters", "sec-ratelimit", "sec-fingerprints"] },
+    moderation:{ title: "審核",  kicker: "MODERATION · 審核與防護", sections: ["sec-modqueue", "sec-modbans-overview", "sec-blacklist", "sec-filters", "sec-ratelimit", "sec-fingerprints"] },
     // v7 IA (2026-07-28): `ratelimit` demoted to _bareLegacyRedirects →
     // moderation/ratelimit (the tab owns sec-ratelimit).
     effects:   { title: "效果庫 .dme",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },
@@ -1442,7 +1442,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // / wcag / about, as an AdminTabs strip (TabConfig.system). Old
     // #/system/<leaf> deep links to rehomed leaves translate via the
     // legacy leaf map in applyRoute.
-    system:    { title: "系統",  kicker: "SYSTEM · 概覽 / 排程 / 安全 / 金鑰 / 關於", sections: ["sec-system-overview", "sec-scheduler", "admin-security-v2-page", "sec-firetoken-overview", "sec-wcag-overview", "sec-about-overview"] },
+    system:    { title: "系統",  kicker: "SYSTEM · 健康度與組態", sections: ["sec-system-overview", "sec-scheduler", "admin-security-v2-page", "sec-firetoken-overview", "sec-wcag-overview", "sec-about-overview"] },
     // Legacy alias target only. Security now resolves under system/security;
     // the v2 page handles its own visibility from activeRoute + activeLeaf.
     security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: ["admin-security-v2-page"] },
