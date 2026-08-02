@@ -913,7 +913,9 @@ def test_kpi_strip_column_count_per_breakpoint(browser_session, live_url):
     expected = {1440: 4, 800: 2, 375: 1}
     actual = {}
     for width, _ in expected.items():
-        context = browser_session.new_context(locale="zh-TW", viewport={"width": width, "height": 900})
+        context = browser_session.new_context(
+            locale="zh-TW", viewport={"width": width, "height": 900}
+        )
         page = context.new_page()
         try:
             page.goto(f"{live_url}/admin/")
