@@ -10,6 +10,27 @@
 等純前端邏輯只能靠 playwright browser test 間接覆蓋。評估是否為 server 靜態 JS
 建一個輕量 jest 環境（或決議維持 browser-test-only 並記錄為刻意取捨）。
 （出處：v5.4.0 /ship testing specialist。）
+（進度 2026-08-02：danmu-desktop/tests/admin-session-expiry.test.js 開了
+readFileSync+eval 載入 server 靜態 JS 的先例，含 jsdom location 鎖死的
+繞法——eval 前把 `location.reload()` 字串替換成測試樁並斷言命中。）
+
+## Admin — Design audit 2026-08-02 遺留（B 級後的長尾）
+
+### D-4：~40 個 admin 模組硬編中文（en/ja/ko locale 是中英拼布）
+**Priority:** P2
+切到 English locale 時頂欄/搜尋列是英文、各 section 內文全是硬編中文；
+連帶症狀已各自修掉（F-103 去重 locale 比對、viewer 右欄 ADMIN CONTROLLED
+雙標籤、widgets 英文 note 在 zh 下反向拼布），但根因是模組內文沒走
+ServerI18n.t()。逐模組搬 key 是機械工，適合批次派工。
+（出處：/design-review 2026-08-02；baseline D-4 自 2026-07-28 遺留。）
+
+### 磨光三項（單行級）
+**Priority:** P4
+- 效果庫 YAML 側欄無選取時 EDIT 鈕仍呈可用態（F-108）。
+- history 的 全部/進行中/已結束 分段控制與 admin-tabs-strip 是兩套分段樣式，
+  擇一收斂（濾鏡 vs 導航語意，可能是刻意取捨——決議後記錄）。
+- 語意標題只有一顆 H1，section 層級全靠視覺 class；screen-reader 掃描性
+  受限（配合 D-4 搬 key 時順手補 h2）。
 
 ## Completed
 
