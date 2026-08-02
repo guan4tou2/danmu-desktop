@@ -37,52 +37,52 @@
   // Design v4-r2 named empty states.
   const PRESETS = {
     sessions: {
-      icon: "◷", title: "尚無場次紀錄",
-      desc: "開始第一場場次後，場次紀錄將自動出現在這裡。每場場次的觀眾數、訊息數、投票紀錄都會被保存。",
-      actionLabel: "開始第一場場次 →",
+      icon: "◷", titleKey: "emptySessionsTitle",
+      descKey: "emptySessionsDesc",
+      actionLabelKey: "emptySessionsAction",
       action: () => { location.hash = "#/overlay"; },
       accent: T.cyan,
     },
     polls: {
-      icon: "⊷", title: "尚無投票",
-      desc: "建立你的第一個投票，觀眾可以透過輸入選項代碼 (A/B/C/D) 即時參與。支援單選、多選、計時模式。",
-      actionLabel: "+ 建立投票",
+      icon: "⊷", titleKey: "emptyPollsTitle",
+      descKey: "emptyPollsDesc",
+      actionLabelKey: "emptyPollsAction",
       action: () => { location.hash = "#/polls"; },
       accent: T.amber,
     },
     audience: {
-      icon: "◉", title: "等待觀眾加入…",
-      desc: "當觀眾開啟連結或掃描 QR Code 後，他們的指紋資訊會自動出現在這裡。目前沒有任何連線。",
+      icon: "◉", titleKey: "emptyAudienceTitle",
+      descKey: "emptyAudienceDesc",
       accent: T.lime,
     },
     events: {
-      icon: "⊙", title: "一切正常",
-      desc: "系統事件流目前為空 — 沒有錯誤、沒有警告。當 WebSocket 連線、外掛錯誤、排程觸發等事件發生時，會記錄在這裡。",
+      icon: "⊙", titleKey: "emptyEventsTitle",
+      descKey: "emptyEventsDesc",
       accent: T.lime,
     },
     messages: {
-      icon: "≡", title: "等待第一則訊息…",
-      desc: "場次開始後，觀眾送出的訊息會即時出現在這裡。確認 Desktop 已開啟（Live → 開始顯示）。",
+      icon: "≡", titleKey: "emptyMessagesTitle",
+      descKey: "emptyMessagesDesc",
       accent: T.cyan,
     },
     blacklist: {
-      icon: "⊘", title: "黑名單是空的",
-      desc: "尚未封禁任何指紋或 IP。當你在訊息流中封禁用戶，或手動新增規則時，記錄會出現在這裡。",
-      actionLabel: "+ 新增規則",
+      icon: "⊘", titleKey: "emptyBlacklistTitle",
+      descKey: "emptyBlacklistDesc",
+      actionLabelKey: "emptyBlacklistAction",
       action: () => { location.hash = "#/moderation/blacklist"; },
       accent: T.crimson,
     },
     filters: {
-      icon: "⚡", title: "沒有啟用中的過濾規則",
-      desc: "即時過濾是臨時規則，場次結束後自動失效。開啟 Quick Filters 或自訂 Regex 來過濾不當訊息。",
-      actionLabel: "啟用 Quick Filters",
+      icon: "⚡", titleKey: "emptyFiltersTitle",
+      descKey: "emptyFiltersDesc",
+      actionLabelKey: "emptyFiltersAction",
       action: () => { location.hash = "#/moderation"; },
       accent: T.amber,
     },
     scheduler: {
-      icon: "⏰", title: "尚無排程",
-      desc: "預先排好 demo 流程，活動時不需要切換手忙腳亂。支援 Cron、一次性、循環排程 — 自動觸發投票、推送訊息、切換主題。",
-      actionLabel: "+ 新增排程",
+      icon: "⏰", titleKey: "emptySchedulerTitle",
+      descKey: "emptySchedulerDesc",
+      actionLabelKey: "emptySchedulerAction",
       action: () => { location.hash = "#/system/scheduler"; },
       accent: T.cyan,
     },
@@ -147,8 +147,18 @@
 
   function render(kind) {
     const preset = PRESETS[kind];
-    if (!preset) return renderCustom({ title: "沒有資料", desc: "" });
-    return renderCustom(preset);
+    // D-4：presets 是模組頂層常數（parse 時 ServerI18n 未 init），
+    // 文案存 key、這裡 render 時才解析。renderCustom 是公開 API
+    // （他模組帶已翻譯字串呼叫），簽名不動。
+    if (!preset) return renderCustom({ title: ServerI18n.t("emptyNoData"), desc: "" });
+    const resolved = Object.assign({}, preset, {
+      title: preset.titleKey ? ServerI18n.t(preset.titleKey) : preset.title,
+      desc: preset.descKey ? ServerI18n.t(preset.descKey) : preset.desc,
+      actionLabel: preset.actionLabelKey
+        ? ServerI18n.t(preset.actionLabelKey)
+        : preset.actionLabel,
+    });
+    return renderCustom(resolved);
   }
 
   window.AdminEmpty = { render, renderCustom, PRESETS };
