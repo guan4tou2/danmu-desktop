@@ -24,14 +24,20 @@ readFileSync+eval 載入 server 靜態 JS 的先例，含 jsdom location 鎖死�
 ServerI18n.t()。逐模組搬 key 是機械工，適合批次派工。
 （出處：/design-review 2026-08-02；baseline D-4 自 2026-07-28 遺留。）
 
-**進度（2026-08-02）**：前置＝browser 測試 19 個 context 釘 locale=zh-TW
-（3e2715a）。已完成：admin-modbans（36b5ec2，34 keys）、admin-backup
-（4771242，91 keys，代理產出＋三道驗證整合）。配方見兩顆 commit 訊息
-（lazy labelKey、{var} 插值、live span 當變數、拉丁不搬）。**派工教訓：
-代理要先寫 fragment 再改模組**——反過來死在半路會留下引用不存在 key 的
-髒編輯（display 的 560 行 patch 存在 scratchpad/d4-fragments/ 待重生）。
-剩餘 ~37 模組，大頭：admin.js 172 行（含側欄/nav，建議人工）、
-admin-display 148（有 patch）、admin-poll-builder 101。
+**進度（2026-08-02 晚）**：前置＝browser 測試 19 個 context 釘 locale=zh-TW
+（3e2715a）。**已完成 10 模組、833 keys ×4 語**：modbans 34（36b5ec2）、
+backup 91（4771242）、display 109（7234a07，patch 搶救）、poll-builder 91＋
+help-drawer 68（4111da3）、security 78＋webhooks 46＋api-tokens 57
+（a29736d，含 webhooks 事件名 locale-blind 尾修）、audience 56（82a2466，
+「匿名」是後端契約值——比對留字面顯示走 t()）、共用空狀態 presets 22
+（a538645，高槓桿一修八頁）。配方見各 commit 訊息（lazy labelKey、{var}
+插值、live span 當變數、拉丁不搬、fragment-first 派工＋三道獨立驗證：
+四語齊全／key 雙向吻合／zh 對 HEAD 逐字）。
+剩餘 ~30 模組，大頭：admin.js 172 行（含側欄 nav/breadcrumb，建議人工）、
+admin-dashboard 89（jest 釘點多）、viewer-theme 59、firetoken 58、
+session-detail 56、broadcast 56、setup-wizard 55、notifications 55。
+另：webhooks 後端 EVENT_CATALOG（server/services/webhook.py）只有 zh/en，
+ja/ko 事件名靠前端 fallback 走 en——補齊屬後端小工。
 
 ### 「EN · 中文」雙語 monolabel 的 pattern 決策
 **Priority:** P3
