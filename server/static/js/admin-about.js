@@ -26,6 +26,8 @@
   const APP_NAME = "Danmu Fire";
   const REPO_URL = "https://github.com/guan4tou2/danmu-desktop";
 
+  // D-4：CHANGELOG 條目是版本史資料（發佈紀錄），非 UI chrome——
+  // 比照「管理者自編內容不入 i18n」慣例保留原文。UI chrome 已全數 t() 化。
   const CHANGELOG = [
     {
       v: "5.3.1", d: "2026-05-20", tag: "current", notes: [
@@ -117,9 +119,9 @@
     return `
       <div id="${PAGE_ID}" class="admin-about-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">ABOUT · 版本 / 授權 / CHANGELOG</div>
-          <div class="admin-ui-page-title">關於 Danmu Fire</div>
-          <p class="admin-ui-page-note">開源彈幕互動系統，server (Flask) + desktop (Electron) + viewer (web)。</p>
+          <div class="admin-ui-page-kicker">ABOUT · ${ServerI18n.t("aboutKickerTail")}</div>
+          <div class="admin-ui-page-title">${ServerI18n.t("aboutPageTitle")}</div>
+          <p class="admin-ui-page-note">${ServerI18n.t("aboutPageNote")}</p>
         </div>
 
         <div class="admin-about-grid">
@@ -134,10 +136,10 @@
               </div>
             </div>
             <div class="admin-about-actions">
-              <button type="button" class="admin-ui-action is-primary admin-about-btn" data-about-action="check-update">↻ 檢查更新</button>
-              <button type="button" class="admin-ui-action admin-about-btn" data-about-action="copy">📋 複製版本資訊</button>
-              <button type="button" class="admin-ui-action admin-about-btn" data-about-action="setup-wizard">⚙ 重新開啟設定精靈</button>
-              <button type="button" class="admin-ui-action admin-about-btn" data-about-action="onboarding">▶ 重新顯示提示</button>
+              <button type="button" class="admin-ui-action is-primary admin-about-btn" data-about-action="check-update">${ServerI18n.t("aboutBtnCheckUpdate")}</button>
+              <button type="button" class="admin-ui-action admin-about-btn" data-about-action="copy">${ServerI18n.t("aboutBtnCopy")}</button>
+              <button type="button" class="admin-ui-action admin-about-btn" data-about-action="setup-wizard">${ServerI18n.t("aboutBtnWizard")}</button>
+              <button type="button" class="admin-ui-action admin-about-btn" data-about-action="onboarding">${ServerI18n.t("aboutBtnOnboarding")}</button>
             </div>
           </article>
 
@@ -150,7 +152,7 @@
               </div>
               <div class="admin-about-oss-row" data-about-system-row>
                 <span class="n">LAST CHECK</span>
-                <span class="v" style="grid-column: span 2" data-about-checked>從未檢查</span>
+                <span class="v" style="grid-column: span 2" data-about-checked>${ServerI18n.t("aboutNeverChecked")}</span>
               </div>
               <div class="admin-about-oss-row" data-about-system-row>
                 <span class="n">SERVER UPTIME</span>
@@ -174,13 +176,13 @@
           <article class="admin-about-changelog">
             <div class="admin-about-changelog-head">
               <span class="admin-ui-monolabel">CHANGELOG · RECENT RELEASES</span>
-              <a class="admin-about-changelog-more" href="${REPO_URL}/releases" target="_blank" rel="noopener noreferrer">完整紀錄 →</a>
+              <a class="admin-about-changelog-more" href="${REPO_URL}/releases" target="_blank" rel="noopener noreferrer">${ServerI18n.t("aboutFullChangelog")}</a>
             </div>
             ${CHANGELOG.slice(0, 4).map((cl) => `
               <div class="admin-about-cl-entry" data-about-changelog-item>
                 <div class="admin-about-cl-head">
                   <span class="ver">v${escapeHtml(cl.v)}</span>
-                  ${cl.tag === "current" ? '<span class="cur">● 目前版本</span>' : ""}
+                  ${cl.tag === "current" ? '<span class="cur">' + ServerI18n.t("aboutCurrentVersion") + '</span>' : ""}
                   <span class="date">${escapeHtml(cl.d)}</span>
                 </div>
                 <div class="admin-about-cl-notes">
@@ -244,8 +246,8 @@
       upEl.textContent = _formatUptime(upSec);
     }
     if (updEl) {
-      if (_state.isLatest === true) updEl.textContent = "✓ 是";
-      else if (_state.isLatest === false) updEl.textContent = "▲ 有新版 " + (_state.latestVersion || "");
+      if (_state.isLatest === true) updEl.textContent = ServerI18n.t("aboutIsLatestYes");
+      else if (_state.isLatest === false) updEl.textContent = ServerI18n.t("aboutHasNewVersion", { v: _state.latestVersion || "" });
       else updEl.textContent = "—";
       updEl.style.color = _state.isLatest === true ? "var(--hud-lime)"
         : _state.isLatest === false ? "var(--hud-amber)"
@@ -253,8 +255,8 @@
     }
     if (checkedEl) {
       checkedEl.textContent = _state.lastCheckedAt
-        ? _humanDelta(_state.lastCheckedAt) + "前"
-        : "從未檢查";
+        ? ServerI18n.t("aboutCheckedAgo", { t: _humanDelta(_state.lastCheckedAt) })
+        : ServerI18n.t("aboutNeverChecked");
     }
     if (wsPathEl) {
       const cfg = window.DANMU_CONFIG || {};
@@ -267,10 +269,10 @@
     if (!t) return "—";
     const ms = String(t).length > 12 ? t : t * 1000;
     const diffSec = (Date.now() - ms) / 1000;
-    if (diffSec < 60) return Math.floor(diffSec) + " 秒";
-    if (diffSec < 3600) return Math.floor(diffSec / 60) + " 分鐘";
-    if (diffSec < 86400) return Math.floor(diffSec / 3600) + " 小時";
-    return Math.floor(diffSec / 86400) + " 天";
+    if (diffSec < 60) return ServerI18n.t("aboutDeltaSec", { n: Math.floor(diffSec) });
+    if (diffSec < 3600) return ServerI18n.t("aboutDeltaMin", { n: Math.floor(diffSec / 60) });
+    if (diffSec < 86400) return ServerI18n.t("aboutDeltaHour", { n: Math.floor(diffSec / 3600) });
+    return ServerI18n.t("aboutDeltaDay", { n: Math.floor(diffSec / 86400) });
   }
 
   function _versionGreaterThan(a, b) {
@@ -289,7 +291,7 @@
   }
 
   async function _checkUpdate({ silent } = {}) {
-    if (!silent) window.showToast && window.showToast("檢查更新中…", true);
+    if (!silent) window.showToast && window.showToast(ServerI18n.t("aboutToastChecking"), true);
     try {
       const r = await fetch("https://api.github.com/repos/guan4tou2/danmu-desktop/releases/latest", {
         headers: { "Accept": "application/vnd.github+json" },
@@ -306,13 +308,13 @@
       _renderState();
       if (!silent) {
         window.showToast && window.showToast(
-          _state.isLatest ? "已是最新版（v" + _state.appVersion + "）"
-            : "有新版可用：v" + tag,
+          _state.isLatest ? ServerI18n.t("aboutToastLatest", { v: _state.appVersion })
+            : ServerI18n.t("aboutToastNewVersion", { tag: tag }),
           true
         );
       }
     } catch (e) {
-      if (!silent) window.showToast && window.showToast("檢查更新失敗：" + (e.message || ""), false);
+      if (!silent) window.showToast && window.showToast(ServerI18n.t("aboutToastCheckFailed", { msg: e.message || "" }), false);
     }
   }
 
@@ -351,12 +353,12 @@
     ].join("\n");
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(() => {
-        window.showToast && window.showToast("版本資訊已複製到剪貼簿", true);
+        window.showToast && window.showToast(ServerI18n.t("aboutToastCopied"), true);
       }).catch(() => {
-        window.showToast && window.showToast("複製失敗 · 瀏覽器拒絕剪貼簿存取", false);
+        window.showToast && window.showToast(ServerI18n.t("aboutToastCopyDenied"), false);
       });
     } else {
-      window.showToast && window.showToast("此瀏覽器不支援剪貼簿 API", false);
+      window.showToast && window.showToast(ServerI18n.t("aboutToastNoClipboard"), false);
     }
   }
 
