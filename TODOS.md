@@ -33,11 +33,22 @@ help-drawer 68（4111da3）、security 78＋webhooks 46＋api-tokens 57
 （a538645，高槓桿一修八頁）。配方見各 commit 訊息（lazy labelKey、{var}
 插值、live span 當變數、拉丁不搬、fragment-first 派工＋三道獨立驗證：
 四語齊全／key 雙向吻合／zh 對 HEAD 逐字）。
-剩餘 ~30 模組，大頭：admin.js 172 行（含側欄 nav/breadcrumb，建議人工）、
-admin-dashboard 89（jest 釘點多）、viewer-theme 59、firetoken 58、
-session-detail 56、broadcast 56、setup-wizard 55、notifications 55。
+**進度（2026-08-03 晨續）**：批次八~十二再收 12 模組——viewer-theme 56、
+firetoken 53、session-detail 45（046c948）、broadcast 26、setup-wizard 44、
+notifications 44（2381bad）、message-drawer 36、plugins-upload 46、
+command-palette 43（131a189）、wcag 36、poll-deepdive 44、sessions 28
+（6441384，代理拆雷：bucket 中文 label 兼任內部索引鍵已解耦到 range id）、
+about 24（1e440c5，CHANGELOG 條目屬版本史資料保留）。
+**累計 23/40 模組、1,358 keys ×4 語**。
+
+剩餘（非註解 CJK 行數）：admin.js 103（側欄 nav/breadcrumb，人工）、
+dashboard 76（jest 釘點多，人工）、ratelimit 72、fonts 68、extensions 34、
+history-v2 32、search 31、widgets 29、stickers 29、tabs 25、
+system-overview 23、live-feed 23、assets 22、emojis 21、history 18、
+modqueue 15、effects-mgmt 15、onboarding 14、mobile-nav 14＋小尾巴。
 另：webhooks 後端 EVENT_CATALOG（server/services/webhook.py）只有 zh/en，
-ja/ko 事件名靠前端 fallback 走 en——補齊屬後端小工。
+ja/ko 事件名靠前端 fallback 走 en——補齊屬後端小工。sessions 代理另旗標
+formatTs 硬編 zh-TW（全模組共通）與 catch 回傳未定義 isoStr（既有 bug）。
 
 ### 「EN · 中文」雙語 monolabel 的 pattern 決策
 **Priority:** P3
