@@ -28,13 +28,15 @@
       version: "v0.2.0",
       icon: "▦",
       color: "var(--color-ink-accent)",
-      desc: "Chrome 擴充功能，把 Slido 上的問題自動推到彈幕。",
+      // D-4：頂層常數，模組 parse 時 ServerI18n 尚未 init——存 key，
+      // 渲染時（_cardHtml）才 t()。
+      descKey: "extSlidoDesc",
       status: "ready",
       sourceMatch: "slido",
       install: {
         steps: [
-          { kind: "download", label: "下載 .crx 安裝檔", href: "/static/extensions/danmu-slido-extension-0.2.0.zip" },
-          { kind: "config",   label: "在 Slido 工作區點 Danmu icon → 貼入 Fire Token" },
+          { kind: "download", labelKey: "extSlidoStepDownload", href: "/static/extensions/danmu-slido-extension-0.2.0.zip" },
+          { kind: "config",   labelKey: "extSlidoStepConfig" },
         ],
       },
       hasFireTokenUI: true,
@@ -45,7 +47,7 @@
       version: "—",
       icon: "✉",
       color: "var(--color-ink-theme)",
-      desc: "把 Discord 頻道訊息橋接成彈幕（含 reaction 過濾）。",
+      descKey: "extDiscordDesc",
       status: "soon",
       sourceMatch: "discord",
     },
@@ -55,7 +57,7 @@
       version: "—",
       icon: "◎",
       color: "var(--color-ink-success)",
-      desc: "OBS Studio Lua 腳本，把 hotkey 觸發的彈幕送到伺服器。",
+      descKey: "extObsDesc",
       status: "soon",
       sourceMatch: "obs",
     },
@@ -65,7 +67,7 @@
       version: "—",
       icon: "✦",
       color: "var(--color-ink-warning)",
-      desc: "瀏覽器書籤一鍵打開 viewer + 預填暱稱 / 字色。",
+      descKey: "extBookmarkletDesc",
       status: "soon",
       sourceMatch: "bookmarklet",
     },
@@ -83,12 +85,8 @@
       <div id="${PAGE_ID}" class="admin-ext-page hud-page-stack lg:col-span-2" data-tpl="B">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">INTEGRATIONS · 整合 · 第三方接入</div>
-          <div class="admin-ui-page-title">整合</div>
-          <p class="admin-ui-page-note">
-            集中管理擴充功能與機器人接入。
-            Slido extension / Discord bridge / OBS plugin / bookmarklet 等共用同一組 <b>Fire Token</b>，
-            和 admin 的 API Tokens（per-integration ACL）是分開的兩條 lane。
-          </p>
+          <div class="admin-ui-page-title">${ServerI18n.t("adminRouteTitle_integrations")}</div>
+          <p class="admin-ui-page-note">${ServerI18n.t("extPageNote", { tag: "<b>Fire Token</b>" })}</p>
         </div>
 
         <div class="admin-ext-grid" id="adminExtensionsGrid">
@@ -102,16 +100,16 @@
     const dotState = "is-cold";  // updated post-fetch
     const flag = isReady
       ? `<span class="admin-ext-flag is-ready">READY</span>`
-      : `<span class="admin-ext-flag is-soon">即將支援</span>`;
+      : `<span class="admin-ext-flag is-soon">${ServerI18n.t("extFlagSoon")}</span>`;
     const installSection = isReady && ext.install
       ? `<div class="admin-ext-install">
           <div class="admin-ui-monolabel">INSTALL · 安裝步驟</div>
           <ol class="admin-ext-install-steps">
             ${ext.install.steps.map((s) => {
               if (s.kind === "download") {
-                return `<li><a class="admin-ext-step-link" href="${s.href}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.label)} ↓</a></li>`;
+                return `<li><a class="admin-ext-step-link" href="${s.href}" target="_blank" rel="noopener noreferrer">${escapeHtml(ServerI18n.t(s.labelKey))} ↓</a></li>`;
               }
-              return `<li>${escapeHtml(s.label)}</li>`;
+              return `<li>${escapeHtml(ServerI18n.t(s.labelKey))}</li>`;
             }).join("")}
           </ol>
         </div>`
@@ -120,16 +118,16 @@
       ? `<div class="admin-ext-token" data-ext-token>
           <div class="admin-ui-monolabel">
             FIRE TOKEN · 共享機密
-            <a href="#/firetoken" class="admin-ext-token-deeplink">詳細統計 →</a>
+            <a href="#/firetoken" class="admin-ext-token-deeplink">${ServerI18n.t("extTokenDeepLink")}</a>
           </div>
           <div class="admin-ext-token-row">
-            <code class="admin-ext-token-code" data-fire-token-display>未設定</code>
-            <button type="button" class="admin-ui-action admin-ext-token-action" data-fire-token-action="copy" disabled>複製</button>
-            <button type="button" class="admin-ui-action admin-ext-token-action" data-fire-token-action="regen">產生</button>
-            <button type="button" class="admin-ui-action is-danger admin-ext-token-action" data-fire-token-action="revoke" disabled>撤銷</button>
+            <code class="admin-ext-token-code" data-fire-token-display>${ServerI18n.t("firetokenTokenUnsetPlaceholder")}</code>
+            <button type="button" class="admin-ui-action admin-ext-token-action" data-fire-token-action="copy" disabled>${ServerI18n.t("extTokenCopyBtn")}</button>
+            <button type="button" class="admin-ui-action admin-ext-token-action" data-fire-token-action="regen">${ServerI18n.t("firetokenGenerateBtn")}</button>
+            <button type="button" class="admin-ui-action is-danger admin-ext-token-action" data-fire-token-action="revoke" disabled>${ServerI18n.t("firetokenRevokeBtn")}</button>
           </div>
           <div class="admin-ext-token-hint">
-            擴充功能在 popup 設定中貼入 token。撤銷會立即停用所有 extension（重 regen 後重新貼即可）。
+            ${ServerI18n.t("extTokenHint")}
           </div>
         </div>`
       : "";
@@ -144,7 +142,7 @@
           </div>
           ${flag}
         </div>
-        <p class="admin-ext-desc">${escapeHtml(ext.desc)}</p>
+        <p class="admin-ext-desc">${escapeHtml(ServerI18n.t(ext.descKey))}</p>
         ${installSection}
         ${tokenSection}
       </article>`;
@@ -174,11 +172,11 @@
   async function _regenerateToken() {
     const ok = await window.HudConfirm?.open({
       icon: "⟳",
-      title: "重新產生 Fire Token",
+      title: ServerI18n.t("firetokenRegenModalTitle"),
       subtitle: "ROTATE · EXISTING EXTENSIONS STOP WORKING IMMEDIATELY",
       severity: "warn",
-      body: "目前所有使用舊 Token 的 extension 會立刻失去存取權，需要重新設定新的 Token。",
-      confirmLabel: "產生新 Token",
+      body: ServerI18n.t("firetokenRegenModalBody"),
+      confirmLabel: ServerI18n.t("firetokenRegenModalConfirm"),
     });
     if (!ok) return;
     try {
@@ -193,22 +191,22 @@
       };
       _state.plainToken = data.token;
       _renderToken();
-      window.showToast && window.showToast("Fire Token 已產生 · 已複製到剪貼簿", true);
+      window.showToast && window.showToast(ServerI18n.t("extToastTokenGenerated"), true);
       _copyToClipboard(data.token);
     } catch (e) {
       console.warn("[ext] regen failed:", e);
-      window.showToast && window.showToast("Token 產生失敗", false);
+      window.showToast && window.showToast(ServerI18n.t("firetokenToastGenerateFailed"), false);
     }
   }
 
   async function _revokeToken() {
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
-      title: "撤銷 Fire Token",
+      title: ServerI18n.t("firetokenRevokeModalTitle"),
       subtitle: "REVOKE · ALL EXTENSIONS STOP WORKING",
       severity: "danger",
-      body: "所有 extension 會立即停止運作，直到你產生新的 Token 並重新設定它們。",
-      confirmLabel: "撤銷",
+      body: ServerI18n.t("firetokenRevokeModalBody"),
+      confirmLabel: ServerI18n.t("firetokenRevokeBtn"),
     });
     if (!ok) return;
     try {
@@ -217,10 +215,10 @@
       _state.fireToken = await r.json();
       _state.plainToken = null;
       _renderToken();
-      window.showToast && window.showToast("Fire Token 已撤銷", true);
+      window.showToast && window.showToast(ServerI18n.t("extToastTokenRevoked"), true);
     } catch (e) {
       console.warn("[ext] revoke failed:", e);
-      window.showToast && window.showToast("撤銷失敗", false);
+      window.showToast && window.showToast(ServerI18n.t("firetokenToastRevokeFailed"), false);
     }
   }
 
@@ -253,14 +251,14 @@
       display.textContent = _state.plainToken;
       display.classList.add("is-plain");
     } else if (t && t.has_token) {
-      display.textContent = (t.prefix || "") + " (僅顯示前 6 碼，完整值僅產生時可見)";
+      display.textContent = ServerI18n.t("extTokenPrefixHint", { prefix: t.prefix || "" });
       display.classList.remove("is-plain");
     } else {
-      display.textContent = "未設定 — 點「產生」建立 token";
+      display.textContent = ServerI18n.t("extTokenNotSetHint");
       display.classList.remove("is-plain");
     }
     if (copyBtn) copyBtn.disabled = !_state.plainToken;
-    if (regenBtn) regenBtn.textContent = (t && t.has_token) ? "重新產生" : "產生";
+    if (regenBtn) regenBtn.textContent = (t && t.has_token) ? ServerI18n.t("extTokenRegenerateLabel") : ServerI18n.t("firetokenGenerateBtn");
     if (revokeBtn) revokeBtn.disabled = !(t && t.has_token);
   }
 
@@ -296,7 +294,7 @@
         else if (action === "copy") {
           if (_state.plainToken) {
             _copyToClipboard(_state.plainToken);
-            window.showToast && window.showToast("已複製到剪貼簿", true);
+            window.showToast && window.showToast(ServerI18n.t("firetokenToastCopied"), true);
           }
         }
       });

@@ -9,7 +9,7 @@
 
   function formatPill(status) {
     if (status === "default") {
-      return `<span class="hud-pill is-default">預設</span>`;
+      return `<span class="hud-pill is-default">${ServerI18n.t("fontTypeDefault")}</span>`;
     }
     if (status === "enabled") {
       return `<span class="hud-pill is-lime">ON</span>`;
@@ -18,7 +18,7 @@
       return `<span class="hud-pill">SYS</span>`;
     }
     // disabled
-    return `<span class="hud-pill">關閉</span>`;
+    return `<span class="hud-pill">${ServerI18n.t("fontsPillOff")}</span>`;
   }
 
   function buildSection() {
@@ -31,11 +31,10 @@
     return `
       <div id="sec-fonts" class="hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">FONT LIBRARY · 觀眾可選 · SUBSET</div>
-          <div class="admin-ui-page-title">字型</div>
+          <div class="admin-ui-page-kicker">FONT LIBRARY · ${ServerI18n.t("fontsKicker")} · SUBSET</div>
+          <div class="admin-ui-page-title">${ServerI18n.t("font")}</div>
           <p class="admin-ui-page-note">
-            上傳給觀眾選用的字型（WOFF2 / OTF / TTF）；用 subset 把大字型檔
-            瘦身到需要的字元範圍。
+            ${ServerI18n.t("fontsPageNote")}
           </p>
         </div>
         <div class="hud-page-grid-2-wide">
@@ -57,13 +56,13 @@
               </div>
               <div class="hud-table-foot" style="padding:14px 16px;display:flex;align-items:center;gap:10px;">
                 ${loggedIn ? `<label for="adminFontFileInput" class="admin-ui-action admin-font-upload-action" style="cursor:pointer" title="${escapeHtml(ServerI18n.t("uploadFont"))}">+ ${ServerI18n.t("uploadFont")} · WOFF2 / OTF / TTF</label>${uploadHiddenInput}` : ""}
-                <span id="fontsTotalSize" style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.12em">總計 —</span>
+                <span id="fontsTotalSize" style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.12em">${ServerI18n.t("fontsTotalPlaceholder")}</span>
               </div>
             </div>
             <div id="adminFontEmptyStateHost"></div>
             ${loggedIn ? `
             <div class="admin-ui-card admin-fonts-upload-card" id="adminFontDropWrap" style="margin-top:12px">
-              <div class="admin-ui-monolabel" style="margin-bottom:8px">+ 上傳自訂字型</div>
+              <div class="admin-ui-monolabel" style="margin-bottom:8px">+ ${ServerI18n.t("fontsUploadCustomLabel")}</div>
               <div
                 id="adminFontDrop"
                 class="admin-fonts-drop"
@@ -72,8 +71,8 @@
                 aria-label="${escapeHtml(ServerI18n.t("uploadFont"))}"
               >
                 <div class="admin-fonts-drop-icon">⬆</div>
-                <div class="admin-fonts-drop-title">拖曳或點選檔案</div>
-                <div class="admin-fonts-drop-hint">.TTF / .OTF / .WOFF2 · 最大 5 MB · 前端會驗證 magic bytes</div>
+                <div class="admin-fonts-drop-title">${ServerI18n.t("fontsDropTitle")}</div>
+                <div class="admin-fonts-drop-hint">.TTF / .OTF / .WOFF2 · ${ServerI18n.t("fontsDropHint")}</div>
                 <div id="adminFontDropStatus" class="admin-fonts-drop-status" hidden></div>
               </div>
               <div id="adminFontUploadError" class="admin-font-upload-error" hidden></div>
@@ -87,12 +86,12 @@
                 <span class="admin-v3-card-kicker" style="margin:0">PREVIEW · <span id="fontsPreviewFamily">Noto Sans TC</span></span>
               </div>
               <div style="padding:16px;display:flex;flex-direction:column;gap:8px">
-                <div id="fontsPreviewHeadline" style="font-size:32px;font-weight:700;line-height:1.2;color:var(--color-text-strong)">彈幕即時互動</div>
-                <div id="fontsPreviewLatin" style="font-size:18px;color:var(--color-text-muted)">The quick brown 狐 jumps over 狸</div>
+                <div id="fontsPreviewHeadline" style="font-size:32px;font-weight:700;line-height:1.2;color:var(--color-text-strong)">${ServerI18n.t("fontsPreviewHeadline")}</div>
+                <div id="fontsPreviewLatin" style="font-size:18px;color:var(--color-text-muted)">${ServerI18n.t("fontsPreviewLatin")}</div>
                 <div style="padding:10px;background:color-mix(in srgb, var(--color-bg-deep) 65%, transparent);border-radius:4px;font-size:13px;color:var(--color-text-strong)">
-                  <div id="fontsPreviewCJK">永 和 安 康 繁 體 中 文 測 試</div>
+                  <div id="fontsPreviewCJK">${ServerI18n.t("fontsPreviewCJK")}</div>
                   <div style="margin-top:6px;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">
-                    U+6C38 U+548C U+5B89 U+5EB7 · 字純文字測試
+                    U+6C38 U+548C U+5B89 U+5EB7 · ${ServerI18n.t("fontsPreviewCJKNote")}
                   </div>
                 </div>
               </div>
@@ -103,7 +102,7 @@
                 <span class="admin-v3-card-kicker" style="margin:0">SUBSETTING · 子集化</span>
               </div>
               <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
-                <div style="font-size:13px;color:var(--color-text-strong)">自動產生子集，只載入實際用到的字</div>
+                <div style="font-size:13px;color:var(--color-text-strong)">${ServerI18n.t("fontsSubsetAutoDesc")}</div>
                 <div style="height:8px;border-radius:4px;background:color-mix(in srgb, var(--color-bg-deep) 65%, transparent);overflow:hidden">
                   <div id="fontsSubsetBar" style="width:0%;height:100%;background:var(--color-primary);transition:width 0.4s ease"></div>
                 </div>
@@ -146,14 +145,14 @@
     host.innerHTML = "";
     var card = window.AdminEmpty.renderCustom({
       icon: "⌂",
-      title: "尚未上傳自訂字型",
-      desc: "預設使用 Noto Sans TC + IBM Plex Mono。上傳 .woff2 / .ttf 可給觀眾選用，或設為 Desktop 預設字型。",
-      actionLabel: loggedIn ? "⇪ 上傳字型" : undefined,
+      title: ServerI18n.t("fontsEmptyTitle"),
+      desc: ServerI18n.t("fontsEmptyDesc"),
+      actionLabel: loggedIn ? "⇪ " + ServerI18n.t("uploadFont") : undefined,
       action: function () {
         var fi = document.getElementById("adminFontFileInput");
         if (fi) fi.click();
       },
-      extra: "支援格式 · WOFF2 · WOFF · TTF · OTF",
+      extra: ServerI18n.t("fontsSupportedFormats") + " · WOFF2 · WOFF · TTF · OTF",
     });
     card.dataset.emptyKind = "fonts";
     host.appendChild(card);
@@ -173,13 +172,13 @@
     if (loggedIn) {
       if (status !== "default") {
         actionBtns.push(
-          `<button class="admin-font-default-btn hud-effect-chip" data-name="${escapeHtml(font.name)}">設為預設</button>`
+          `<button class="admin-font-default-btn hud-effect-chip" data-name="${escapeHtml(font.name)}">${ServerI18n.t("fontsSetDefaultBtn")}</button>`
         );
       }
       // Toggle ON/OFF for non-default catalog/system fonts
       if (status !== "default") {
         const isOn = status === "enabled" || status === "system";
-        const toggleLabel = isOn ? "關閉" : "開啟";
+        const toggleLabel = isOn ? ServerI18n.t("fontsToggleOff") : ServerI18n.t("fontsToggleOn");
         actionBtns.push(
           `<button class="admin-font-toggle-btn hud-effect-chip" data-name="${escapeHtml(font.name)}" data-enabled="${isOn ? "true" : "false"}">${toggleLabel}</button>`
         );
@@ -189,7 +188,7 @@
         // Built-in / Google fonts already optimized; subsetting them would
         // confuse cache + delivery.
         actionBtns.push(
-          `<button class="admin-font-subset-btn hud-effect-chip" data-name="${escapeHtml(font.name)}" title="縮減字型大小 · 只保留指定字元範圍">⊗ 子集化</button>`
+          `<button class="admin-font-subset-btn hud-effect-chip" data-name="${escapeHtml(font.name)}" title="${escapeHtml(ServerI18n.t("fontsSubsetBtnTitle"))}">⊗ ${ServerI18n.t("fontsSubsetBtn")}</button>`
         );
         actionBtns.push(
           `<button class="admin-font-delete-btn admin-ui-action is-danger" data-name="${escapeHtml(font.name)}">${escapeHtml(ServerI18n.t("deleteBtn"))}</button>`
@@ -201,7 +200,7 @@
       `<div class="hud-table-row" style="grid-template-columns: 2fr 1.2fr 1fr 90px 80px 96px;" data-font="${escapeHtml(font.name)}">` +
         `<div class="min-w-0">` +
           `<div style="font-size:15px;color:var(--color-text-strong);${sampleStyle}" class="truncate">${escapeHtml(font.name)}</div>` +
-          `<div style="font-size:11px;color:var(--color-text-muted);margin-top:2px;font-family:var(--font-mono)">啊 永 の A a 123</div>` +
+          `<div style="font-size:11px;color:var(--color-text-muted);margin-top:2px;font-family:var(--font-mono)">${ServerI18n.t("fontsRowSample")}</div>` +
           (actionBtns.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${actionBtns.join("")}</div>` : "") +
         `</div>` +
         `<span style="font-size:12px;color:var(--color-text-strong)">${escapeHtml(foundry)}</span>` +
@@ -220,13 +219,16 @@
   // Glyph + size estimates per preset (mirrors design admin-font-subset.jsx).
   // These are rough heuristics — backend doesn't return estimates because
   // actual savings depend on the font's existing coverage.
+  // D-4: Chinese/Kana/Hangul labels are UI copy — store labelKey and resolve
+  // via t() at render time (module parse happens before ServerI18n init).
+  // Latin / Latin Ext stay literal — language-neutral Unicode block names.
   const SUBSET_PRESET_META = {
     latin:      { label: "Latin",       glyphs: "224",    estSize: "48 KB" },
     latin_ext:  { label: "Latin Ext",   glyphs: "608",    estSize: "120 KB" },
-    cjk_common: { label: "中文 BMP",     glyphs: "20,992", estSize: "1.8 MB" },
-    cjk_full:   { label: "中日韓全集",   glyphs: "29,810", estSize: "2.6 MB" },
-    kana:       { label: "假名",         glyphs: "352",    estSize: "84 KB" },
-    hangul:     { label: "한글",         glyphs: "11,400", estSize: "1.4 MB" },
+    cjk_common: { labelKey: "fontsSubsetLabelCjkCommon", glyphs: "20,992", estSize: "1.8 MB" },
+    cjk_full:   { labelKey: "fontsSubsetLabelCjkFull",   glyphs: "29,810", estSize: "2.6 MB" },
+    kana:       { labelKey: "fontsSubsetLabelKana",      glyphs: "352",    estSize: "84 KB" },
+    hangul:     { labelKey: "fontsSubsetLabelHangul",    glyphs: "11,400", estSize: "1.4 MB" },
   };
 
   async function _loadSubsetPresets() {
@@ -251,12 +253,12 @@
 
   async function openSubsetModal(fontName) {
     if (!window.HudConfirm) {
-      window.showToast?.("子集化需要 HudConfirm modal", false);
+      window.showToast?.(ServerI18n.t("fontsToastNeedsModal"), false);
       return;
     }
     const presets = await _loadSubsetPresets();
     if (!Object.keys(presets).length) {
-      window.showToast?.("無法載入子集 preset", false);
+      window.showToast?.(ServerI18n.t("fontsToastNoPresets"), false);
       return;
     }
     // Default selected: cjk_common + latin (Chinese-traditional baseline).
@@ -268,18 +270,19 @@
     const renderInner = () => {
       const chips = Object.keys(presets).map((id) => {
         const meta = SUBSET_PRESET_META[id] || { label: id, glyphs: "—", estSize: "—" };
+        const metaLabel = meta.labelKey ? ServerI18n.t(meta.labelKey) : meta.label;
         const on = selected.has(id);
         return `
           <label class="admin-font-subset-chip${on ? " is-active" : ""}" data-subset-preset="${id}">
             <span class="admin-font-subset-chip-check">${on ? "✓" : ""}</span>
-            <span class="admin-font-subset-chip-label">${escapeHtml(meta.label)}</span>
+            <span class="admin-font-subset-chip-label">${escapeHtml(metaLabel)}</span>
             <span class="admin-font-subset-chip-range">${escapeHtml(presets[id])}</span>
             <span class="admin-font-subset-chip-meta">${meta.glyphs} glyphs · ${meta.estSize}</span>
           </label>`;
       }).join("");
       body.innerHTML = `
         <div class="admin-font-subset-target">
-          <span class="admin-font-subset-target-glyph">永</span>
+          <span class="admin-font-subset-target-glyph">${ServerI18n.t("fontsSubsetTargetGlyph")}</span>
           <div>
             <div class="admin-ui-monolabel">FONT</div>
             <div class="admin-font-subset-target-name">${escapeHtml(fontName)}</div>
@@ -293,9 +296,9 @@
           <div class="admin-ui-monolabel">CUSTOM UNICODE RANGE（選填）</div>
           <textarea class="admin-font-subset-custom" data-subset-custom
             placeholder="U+4E00-9FFF, U+FF00-FFEF">${escapeHtml(customRange)}</textarea>
-          <div class="admin-font-subset-hint">逗號分隔 · 支援 U+XXXX / U+XXXX-XXXX</div>
+          <div class="admin-font-subset-hint">${ServerI18n.t("fontsSubsetCustomHint")}</div>
         </div>
-        <div class="admin-font-subset-warn">⚠ 子集化在原檔覆寫 · 無法復原 · 不在範圍內的字元將無法顯示</div>`;
+        <div class="admin-font-subset-warn">${ServerI18n.t("fontsSubsetWarn")}</div>`;
       body.querySelectorAll("[data-subset-preset]").forEach((el) => {
         el.addEventListener("click", (e) => {
           e.preventDefault();
@@ -311,11 +314,11 @@
 
     const ok = await window.HudConfirm.open({
       icon: "⊗",
-      title: "子集化字型",
+      title: ServerI18n.t("fontsSubsetModalTitle"),
       subtitle: "SUBSET · IRREVERSIBLE IN-PLACE OPERATION",
       severity: "warn",
-      confirmLabel: "產生子集",
-      cancelLabel: "取消",
+      confirmLabel: ServerI18n.t("fontsSubsetGenerateBtn"),
+      cancelLabel: ServerI18n.t("cancel"),
       body: body,
       width: 540,
     });
@@ -325,7 +328,7 @@
     selected.forEach((id) => { if (presets[id]) ranges.push(presets[id]); });
     if (customRange.trim()) ranges.push(customRange.trim());
     if (!ranges.length) {
-      window.showToast?.("請至少選一個 preset 或輸入自訂範圍", false);
+      window.showToast?.(ServerI18n.t("fontsToastNeedPresetOrRange"), false);
       return;
     }
     await _runSubset(fontName, ranges.join(","));
@@ -333,7 +336,7 @@
 
   async function _runSubset(fontName, unicodeRange) {
     try {
-      window.showToast?.(`子集化 ${fontName} 中…`, true);
+      window.showToast?.(ServerI18n.t("fontsToastSubsetting", { name: fontName }), true);
       const r = await window.csrfFetch(`/admin/fonts/${encodeURIComponent(fontName)}/subset`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -341,22 +344,27 @@
       });
       const data = await r.json().catch(() => ({}));
       if (r.status === 503) {
-        window.showToast?.("後端缺 fontTools — 請執行 `uv add fonttools`", false);
+        window.showToast?.(ServerI18n.t("fontsToastMissingFontTools"), false);
         return;
       }
       if (!r.ok) {
-        window.showToast?.(data.error || `子集化失敗 (HTTP ${r.status})`, false);
+        window.showToast?.(data.error || ServerI18n.t("fontsToastSubsetFailedHttp", { status: r.status }), false);
         return;
       }
       const saved = data.saved_bytes || 0;
       const pct = Math.round((data.saved_ratio || 0) * 100);
       window.showToast?.(
-        `${fontName} 子集化完成 · ${_formatBytes(data.original_size)} → ${_formatBytes(data.new_size)} (-${pct}%)`,
+        ServerI18n.t("fontsToastSubsetDone", {
+          name: fontName,
+          before: _formatBytes(data.original_size),
+          after: _formatBytes(data.new_size),
+          pct: pct,
+        }),
         true,
       );
       fetchAndRenderFonts();
     } catch (e) {
-      window.showToast?.(`子集化失敗：${e.message || "未知錯誤"}`, false);
+      window.showToast?.(ServerI18n.t("fontsToastSubsetFailed", { msg: e.message || ServerI18n.t("fontsUnknownError") }), false);
     }
   }
 
@@ -370,15 +378,13 @@
       if (!resp.ok) throw new Error("HTTP " + resp.status);
       currentDefaultFont = name;
       window.showToast(
-        (ServerI18n.t("setAsDefaultOk") !== "setAsDefaultOk"
-          ? ServerI18n.t("setAsDefaultOk")
-          : "已設為預設字型") + " · " + name,
+        ServerI18n.t("fontsSetDefaultToast", { name: name }),
         true
       );
       fetchAndRenderFonts();
     } catch (err) {
       console.error("[admin-fonts] set default failed:", err);
-      window.showToast("設定預設失敗", false);
+      window.showToast(ServerI18n.t("fontsSetDefaultFailed"), false);
     }
   }
 
@@ -394,13 +400,13 @@
       );
       if (!resp.ok) throw new Error("HTTP " + resp.status);
       window.showToast(
-        (currentlyEnabled ? "已關閉" : "已開啟") + " · " + name,
+        ServerI18n.t(currentlyEnabled ? "fontsToggleOffToast" : "fontsToggleOnToast", { name: name }),
         true
       );
       fetchAndRenderFonts();
     } catch (err) {
       console.error("[admin-fonts] toggle failed:", err);
-      window.showToast("操作失敗", false);
+      window.showToast(ServerI18n.t("fontsToggleFailed"), false);
     }
   }
 
@@ -442,7 +448,7 @@
     const totalEl = document.getElementById("fontsTotalSize");
     if (totalEl) {
       const enabled = fonts.filter((f) => f.status !== "disabled").length;
-      totalEl.textContent = `總計 ${fonts.length} 個字型 · ${enabled} 啟用`;
+      totalEl.textContent = ServerI18n.t("fontsTotalCountEnabled", { count: fonts.length, enabled: enabled });
     }
 
     const bar = document.getElementById("fontsSubsetBar");
@@ -451,7 +457,7 @@
     const enabledFonts = fonts.filter((f) => f.status !== "disabled");
     const count = enabledFonts.length;
     if (bar) bar.style.width = count > 0 ? "38%" : "0%";
-    if (orig) orig.textContent = `ORIG · ${count} 字型`;
+    if (orig) orig.textContent = `ORIG · ${ServerI18n.t("fontsOrigCount", { n: count })}`;
     if (sub) sub.textContent = count > 0 ? `SUBSET · ~38%` : "SUBSET · —";
   }
 
@@ -524,9 +530,9 @@
     panel.hidden = false;
     panel.innerHTML = `
       <div class="admin-error-panel" data-error-kind="font-upload">
-        <div class="admin-error-panel-title">字型上傳失敗</div>
+        <div class="admin-error-panel-title">${ServerI18n.t("fontsUploadErrorTitle")}</div>
         <div class="admin-error-panel-desc">${escapeHtml(message)}</div>
-        <button type="button" class="admin-error-panel-cta" data-font-error-retry>重新選擇檔案</button>
+        <button type="button" class="admin-error-panel-cta" data-font-error-retry>${ServerI18n.t("fontsRetrySelectFile")}</button>
       </div>
     `;
     const retryBtn = panel.querySelector("[data-font-error-retry]");
@@ -544,24 +550,24 @@
     const name = file.name.toLowerCase();
     if (!/\.(ttf|otf|woff2)$/.test(name)) {
       window.showToast(ServerI18n.t("invalidFileType"), false);
-      setDropStatus("副檔名不支援 — 僅限 .TTF / .OTF / .WOFF2", "bad");
-      setUploadError("副檔名不支援，僅限 .TTF / .OTF / .WOFF2。");
+      setDropStatus(ServerI18n.t("fontsExtNotSupportedShort"), "bad");
+      setUploadError(ServerI18n.t("fontsExtNotSupportedFull"));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      window.showToast("檔案超過 5 MB", false);
-      setDropStatus("檔案超過 5 MB", "bad");
-      setUploadError("檔案大小超過 5 MB，請壓縮或改用較小字型檔。");
+      window.showToast(ServerI18n.t("fontsFileTooLarge"), false);
+      setDropStatus(ServerI18n.t("fontsFileTooLarge"), "bad");
+      setUploadError(ServerI18n.t("fontsFileTooLargeFull"));
       return;
     }
     const magic = await detectFontMagic(file);
     if (!magic) {
-      window.showToast("檔案不是合法字型", false);
-      setDropStatus("magic bytes 無效 — 檔案不是合法字型", "bad");
-      setUploadError("magic bytes 驗證失敗，檔案內容不是有效字型。");
+      window.showToast(ServerI18n.t("fontsInvalidFontToast"), false);
+      setDropStatus(ServerI18n.t("fontsMagicInvalid"), "bad");
+      setUploadError(ServerI18n.t("fontsMagicValidationFailed"));
       return;
     }
-    setDropStatus(`驗證通過 · ${magic} · ${(file.size / 1024).toFixed(1)} KB · 上傳中…`, "good");
+    setDropStatus(ServerI18n.t("fontsUploadValidated", { magic: magic, size: (file.size / 1024).toFixed(1) }), "good");
     try {
       var fd = new FormData();
       fd.append("fontfile", file);
@@ -569,19 +575,19 @@
       var data = await resp.json();
       if (resp.ok) {
         window.showToast(data.message || ServerI18n.t("fontUploadFallback"));
-        setDropStatus(`已上傳 · ${file.name}`, "good");
+        setDropStatus(ServerI18n.t("fontsUploadedStatus", { filename: file.name }), "good");
         setUploadError("");
         await fetchAndRenderFonts();
       } else {
         window.showToast(data.error || ServerI18n.t("uploadFailed"), false);
-        setDropStatus(data.error || "上傳失敗", "bad");
-        setUploadError(data.error || "上傳失敗，請稍後再試。");
+        setDropStatus(data.error || ServerI18n.t("uploadFailed"), "bad");
+        setUploadError(data.error || ServerI18n.t("fontsUploadFailedRetry"));
       }
     } catch (err) {
       console.error("[admin-fonts] upload error:", err);
       window.showToast(ServerI18n.t("uploadNetworkError"), false);
-      setDropStatus("網路錯誤", "bad");
-      setUploadError("網路連線中斷，請檢查後重試。");
+      setDropStatus(ServerI18n.t("fontsNetworkErrorShort"), "bad");
+      setUploadError(ServerI18n.t("fontsNetworkDisconnected"));
     }
   }
 
@@ -649,11 +655,11 @@
   async function handleDelete(name) {
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
-      title: "刪除字型",
+      title: ServerI18n.t("fontsDeleteModalTitle"),
       subtitle: "DELETE FONT",
       severity: "danger",
       bodyText: ServerI18n.t("deleteFontConfirm").replace("{name}", name),
-      confirmLabel: "刪除",
+      confirmLabel: ServerI18n.t("deleteBtn"),
     });
     if (!ok) return;
     try {

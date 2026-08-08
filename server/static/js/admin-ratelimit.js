@@ -20,11 +20,14 @@
     });
   };
 
+  // D-4 (2026-08-07)：label 存 labelKey，渲染時才組 "{EN scope} · " + t(...)
+  // （模組 parse 時 ServerI18n 尚未 init）。EN scope tag 直接沿用
+  // r.key.toUpperCase()，不必再存一份、也不必跟著 4 語變動。
   const ROWS = [
-    { key: "fire",  label: "FIRE · 觀眾彈幕",   envLimit: "FIRE_RATE_LIMIT",  envWindow: "FIRE_RATE_WINDOW",  defLimit: 20,  defWindow: 60,  defLockout: null },
-    { key: "api",   label: "API · 一般請求",    envLimit: "API_RATE_LIMIT",   envWindow: "API_RATE_WINDOW",   defLimit: 30,  defWindow: 60,  defLockout: null },
-    { key: "admin", label: "ADMIN · 後台動作",  envLimit: "ADMIN_RATE_LIMIT", envWindow: "ADMIN_RATE_WINDOW", defLimit: 300, defWindow: 60,  defLockout: null },
-    { key: "login", label: "LOGIN · 登入嘗試",  envLimit: "LOGIN_RATE_LIMIT", envWindow: "LOGIN_RATE_WINDOW", defLimit: 5,   defWindow: 300, defLockout: 900 },
+    { key: "fire",  labelKey: "ratelimitScopeFireDesc",  envLimit: "FIRE_RATE_LIMIT",  envWindow: "FIRE_RATE_WINDOW",  defLimit: 20,  defWindow: 60,  defLockout: null },
+    { key: "api",   labelKey: "ratelimitScopeApiDesc",   envLimit: "API_RATE_LIMIT",   envWindow: "API_RATE_WINDOW",   defLimit: 30,  defWindow: 60,  defLockout: null },
+    { key: "admin", labelKey: "ratelimitScopeAdminDesc", envLimit: "ADMIN_RATE_LIMIT", envWindow: "ADMIN_RATE_WINDOW", defLimit: 300, defWindow: 60,  defLockout: null },
+    { key: "login", labelKey: "ratelimitScopeLoginDesc", envLimit: "LOGIN_RATE_LIMIT", envWindow: "LOGIN_RATE_WINDOW", defLimit: 5,   defWindow: 300, defLockout: 900 },
   ];
 
   function _renderHtml() {
@@ -32,11 +35,8 @@
       <div id="${SECTION_ID}" class="admin-ratelimit-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">RATE LIMITS · 4 SCOPES · .env</div>
-          <div class="admin-ui-page-title">請求速率上限</div>
-          <p class="admin-ui-page-note">
-            每個來源 IP（或 fingerprint）在時間窗內可發送的請求數上限。
-            按「即時套用」立即生效、毋須重啟；要跨重啟保留，用下方「匯出 .env 片段」寫回設定檔。
-          </p>
+          <div class="admin-ui-page-title">${ServerI18n.t("ratelimitPageTitle")}</div>
+          <p class="admin-ui-page-note">${ServerI18n.t("ratelimitPageNote")}</p>
         </div>
 
         <!-- D-6 階段 4 (2026-07-29): 本頁原本自製 .admin-ratelimit-summary >
@@ -50,38 +50,38 @@
           <div class="hud-stat-tile">
             <span class="hud-stat-tile-en">REQUESTS · 24H</span>
             <span class="hud-stat-tile-value" data-rl-sum-hits>—</span>
-            <span class="hud-stat-tile-label" data-rl-sum-hits-delta>計算中…</span>
+            <span class="hud-stat-tile-label" data-rl-sum-hits-delta>${ServerI18n.t("ratelimitCalculatingLabel")}</span>
           </div>
           <div class="hud-stat-tile">
             <span class="hud-stat-tile-en">VIOLATIONS · 24H</span>
             <span class="hud-stat-tile-value is-amber" data-rl-sum-viol>—</span>
-            <span class="hud-stat-tile-label" data-rl-sum-viol-rate>阻擋率 —</span>
+            <span class="hud-stat-tile-label" data-rl-sum-viol-rate>${ServerI18n.t("ratelimitBlockRateLabel")}</span>
           </div>
           <div class="hud-stat-tile">
             <span class="hud-stat-tile-en">LOCKED</span>
             <span class="hud-stat-tile-value is-crimson" data-rl-sum-locked>—</span>
-            <span class="hud-stat-tile-label">LOGIN · 滑動視窗自動解除</span>
+            <span class="hud-stat-tile-label">LOGIN · ${ServerI18n.t("ratelimitLockedHint")}</span>
           </div>
           <div class="hud-stat-tile">
             <span class="hud-stat-tile-en">BLACKLIST</span>
             <span class="hud-stat-tile-value is-cyan" data-rl-sum-black>—</span>
-            <span class="hud-stat-tile-label">手動加入 · 永久</span>
+            <span class="hud-stat-tile-label">${ServerI18n.t("ratelimitBlacklistHint")}</span>
           </div>
         </div>
         <div class="admin-ratelimit-rows">
           ${ROWS.map((r) => `
             <div class="admin-ratelimit-row" data-rl-key="${r.key}">
               <div class="admin-ratelimit-row-head">
-                <span class="admin-ratelimit-row-label">${escapeHtml(r.label)}</span>
+                <span class="admin-ratelimit-row-label">${escapeHtml(r.key.toUpperCase() + " · " + ServerI18n.t(r.labelKey))}</span>
                 <span class="admin-ratelimit-row-env">${r.envLimit}</span>
               </div>
               <div class="admin-ratelimit-row-body">
                 <label class="admin-ratelimit-field">
-                  <span>限制 · count</span>
+                  <span>${ServerI18n.t("ratelimitFieldLimit")}</span>
                   <input type="number" min="1" max="1000" value="${r.defLimit}" data-rl-limit="${r.key}" />
                 </label>
                 <label class="admin-ratelimit-field">
-                  <span>窗口 · window</span>
+                  <span>${ServerI18n.t("ratelimitFieldWindow")}</span>
                   <select data-rl-window="${r.key}">
                     <option value="10"${r.defWindow === 10 ? " selected" : ""}>10s</option>
                     <option value="30"${r.defWindow === 30 ? " selected" : ""}>30s</option>
@@ -92,18 +92,18 @@
                 </label>
                 ${r.key === "login" ? `
                 <label class="admin-ratelimit-field">
-                  <span>鎖定 · lockout</span>
-                  <input type="number" min="60" max="86400" value="${r.defLockout}" data-rl-lockout="${r.key}" title="觸發後鎖定秒數 · UI-only · 即將支援後端" />
+                  <span>${ServerI18n.t("ratelimitFieldLockout")}</span>
+                  <input type="number" min="60" max="86400" value="${r.defLockout}" data-rl-lockout="${r.key}" title="${ServerI18n.t("ratelimitLockoutFieldTitle")}" />
                 </label>` : ""}
                 <div class="admin-ratelimit-field admin-ratelimit-bar-field">
-                  <span>目前使用</span>
+                  <span>${ServerI18n.t("ratelimitFieldCurrentUsage")}</span>
                   <div class="admin-ratelimit-bar">
                     <div class="admin-ratelimit-bar-fill" data-rl-bar="${r.key}" style="width:18%"></div>
                   </div>
                   <span class="admin-ratelimit-bar-text" data-rl-current="${r.key}">—</span>
                 </div>
                 <div class="admin-ratelimit-field admin-ratelimit-save-field">
-                  <button type="button" class="admin-ui-action is-primary admin-rl-action" data-rl-action="save" data-rl-save="${r.key}" title="即時套用至執行中的伺服器(重啟後恢復 env 預設)">即時套用</button>
+                  <button type="button" class="admin-ui-action is-primary admin-rl-action" data-rl-action="save" data-rl-save="${r.key}" title="${ServerI18n.t("ratelimitApplyBtnTitle")}">${ServerI18n.t("ratelimitApplyBtn")}</button>
                 </div>
               </div>
               <div class="admin-ratelimit-row-foot">
@@ -117,10 +117,10 @@
               <div class="admin-ratelimit-suggest" data-rl-suggest="${r.key}" hidden>
                 <span class="admin-ratelimit-suggest-icon" aria-hidden="true">▲</span>
                 <span class="admin-ratelimit-suggest-body">
-                  <span class="admin-ratelimit-suggest-title">建議調整</span>
+                  <span class="admin-ratelimit-suggest-title">${ServerI18n.t("ratelimitSuggestTitle")}</span>
                   <span class="admin-ratelimit-suggest-detail" data-rl-suggest-detail>—</span>
                 </span>
-                <button type="button" class="admin-ui-action is-primary admin-rl-action" data-rl-action="apply-suggest" data-rl-apply="${r.key}">套用建議</button>
+                <button type="button" class="admin-ui-action is-primary admin-rl-action" data-rl-action="apply-suggest" data-rl-apply="${r.key}">${ServerI18n.t("ratelimitApplySuggestBtn")}</button>
               </div>
             </div>
           `).join("")}
@@ -129,32 +129,32 @@
         <div class="admin-ratelimit-bottom">
           <div class="admin-ratelimit-violations">
             <div class="admin-ratelimit-vfeed-head">
-              <span class="title">近期違規</span>
-              <span class="kicker" data-rl-vcount>RECENT VIOLATIONS · 5 分鐘窗口</span>
+              <span class="title">${ServerI18n.t("ratelimitViolationsTitle")}</span>
+              <span class="kicker" data-rl-vcount>RECENT VIOLATIONS · ${ServerI18n.t("ratelimitFiveMinWindow")}</span>
             </div>
             <div class="admin-ratelimit-vfeed-table">
               <div class="admin-ratelimit-vfeed-row is-head">
                 <span>TIME</span><span>SCOPE</span><span>IP</span>
               </div>
               <div class="admin-ratelimit-vfeed-body" data-rl-vbody>
-                <div class="admin-ratelimit-vfeed-empty">尚無違規 · 等待中</div>
+                <div class="admin-ratelimit-vfeed-empty">${ServerI18n.t("ratelimitNoViolationsYet")}</div>
               </div>
             </div>
           </div>
           <div class="admin-ratelimit-ip-policy">
             <div class="admin-ratelimit-vfeed-head">
-              <span class="title">IP 黑/白名單</span>
-              <span class="kicker" data-rl-ip-summary>IP POLICY · 載入中…</span>
+              <span class="title">${ServerI18n.t("ratelimitIpPolicyTitle")}</span>
+              <span class="kicker" data-rl-ip-summary>IP POLICY · ${ServerI18n.t("ratelimitLoadingEllipsis")}</span>
             </div>
             <div class="admin-ratelimit-ip-form">
-              <input type="text" data-rl-ip-input placeholder="1.2.3.4 或 10.0.0.0/8" maxlength="43" autocomplete="off" spellcheck="false" />
-              <select data-rl-ip-select aria-label="加入到哪個名單">
-                <option value="allowlist">白名單 · 跳過限制</option>
-                <option value="denylist">黑名單 · 直接 429</option>
+              <input type="text" data-rl-ip-input placeholder="${ServerI18n.t("ratelimitIpInputPlaceholder")}" maxlength="43" autocomplete="off" spellcheck="false" />
+              <select data-rl-ip-select aria-label="${ServerI18n.t("ratelimitIpSelectAriaLabel")}">
+                <option value="allowlist">${ServerI18n.t("ratelimitAllowlistOption")}</option>
+                <option value="denylist">${ServerI18n.t("ratelimitDenylistOption")}</option>
               </select>
-              <button type="button" class="admin-ui-action is-primary" data-rl-ip-add>加入</button>
+              <button type="button" class="admin-ui-action is-primary" data-rl-ip-add>${ServerI18n.t("ratelimitIpAddBtn")}</button>
             </div>
-            <p class="admin-ratelimit-ip-help">白名單優先於黑名單 · 支援 IPv4/IPv6 · 單一 IP 自動轉 /32 或 /128</p>
+            <p class="admin-ratelimit-ip-help">${ServerI18n.t("ratelimitIpHelp")}</p>
             <div class="admin-ratelimit-ip-error" data-rl-ip-error hidden></div>
             <div class="admin-ratelimit-ip-lists">
               <div class="admin-ratelimit-ip-col" data-rl-ip-col="allowlist">
@@ -163,7 +163,7 @@
                   <span class="cnt" data-rl-ip-allow-count>0</span>
                 </div>
                 <div class="admin-ratelimit-ip-col-body" data-rl-ip-body="allowlist">
-                  <div class="admin-ratelimit-vfeed-empty">尚無白名單條目</div>
+                  <div class="admin-ratelimit-vfeed-empty">${ServerI18n.t("ratelimitNoEntriesYet", { list: ServerI18n.t("ratelimitAllowlistName") })}</div>
                 </div>
               </div>
               <div class="admin-ratelimit-ip-col" data-rl-ip-col="denylist">
@@ -172,7 +172,7 @@
                   <span class="cnt" data-rl-ip-deny-count>0</span>
                 </div>
                 <div class="admin-ratelimit-ip-col-body" data-rl-ip-body="denylist">
-                  <div class="admin-ratelimit-vfeed-empty">尚無黑名單條目</div>
+                  <div class="admin-ratelimit-vfeed-empty">${ServerI18n.t("ratelimitNoEntriesYet", { list: ServerI18n.t("ratelimitDenylistName") })}</div>
                 </div>
               </div>
             </div>
@@ -180,8 +180,8 @@
         </div>
 
         <div class="admin-ratelimit-footer">
-          <button type="button" class="admin-ui-action admin-rl-footer-action" data-rl-action="reset">重設預設</button>
-          <button type="button" class="admin-ui-action is-primary admin-rl-footer-action" data-rl-action="export">匯出 .env 片段</button>
+          <button type="button" class="admin-ui-action admin-rl-footer-action" data-rl-action="reset">${ServerI18n.t("ratelimitResetBtn")}</button>
+          <button type="button" class="admin-ui-action is-primary admin-rl-footer-action" data-rl-action="export">${ServerI18n.t("ratelimitExportBtn")}</button>
         </div>
 
         <pre id="rlEnvExport" class="admin-ratelimit-export" hidden></pre>
@@ -212,13 +212,13 @@
           const hits = section.querySelector("[data-rl-sum-hits]");
           const delta = section.querySelector("[data-rl-sum-hits-delta]");
           if (hits) hits.textContent = n24.toLocaleString();
-          if (delta) delta.textContent = `總計 ${tot.toLocaleString()}`;
+          if (delta) delta.textContent = ServerI18n.t("ratelimitSumTotal", { n: tot.toLocaleString() });
         }
         const b = cachedBl || (blR && blR.ok ? await blR.json() : null);
         if (b) {
           const arr = Array.isArray(b) ? b : (b.entries || b.keywords || []);
           const bl = section.querySelector("[data-rl-sum-black]");
-          if (bl) bl.textContent = arr.length ? arr.length + " 項" : "0";
+          if (bl) bl.textContent = arr.length ? ServerI18n.t("ratelimitCountUnit", { n: arr.length }) : "0";
         }
         const viol = section.querySelector("[data-rl-sum-viol]");
         const violRate = section.querySelector("[data-rl-sum-viol-rate]");
@@ -234,28 +234,28 @@
             if (violRate) {
               const denom = tHits + tViol;
               violRate.textContent = denom > 0
-                ? `阻擋率 ${((tViol / denom) * 100).toFixed(1)}%`
+                ? ServerI18n.t("ratelimitBlockRateValue", { rate: ((tViol / denom) * 100).toFixed(1) })
                 : "—";
             }
-            if (locked) locked.textContent = `${tLock.toLocaleString()} 來源`;
+            if (locked) locked.textContent = ServerI18n.t("ratelimitLockedSources", { n: tLock.toLocaleString() });
             ROWS.forEach(({ key }) => {
               const row = rl[key];
               const el = section.querySelector(`[data-rl-current="${key}"]`);
               if (el && row) {
                 const rh = (row.hits || 0).toLocaleString();
                 const rv = (row.violations || 0).toLocaleString();
-                el.textContent = `${rh} 次 · ${rv} 違規`;
+                el.textContent = ServerI18n.t("ratelimitHitsViolations", { hits: rh, viol: rv });
               }
             });
             _renderSuggestBanners(rl);
           } else {
             if (viol) viol.textContent = "—";
-            if (violRate) violRate.textContent = "計數待 backend";
+            if (violRate) violRate.textContent = ServerI18n.t("ratelimitCountPendingBackend");
             if (locked) locked.textContent = "—";
           }
         } else {
           if (viol) viol.textContent = "—";
-          if (violRate) violRate.textContent = "計數待 backend";
+          if (violRate) violRate.textContent = ServerI18n.t("ratelimitCountPendingBackend");
           if (locked) locked.textContent = "—";
         }
         _renderViolationsFeed(m && m.recent_violations);
@@ -267,9 +267,9 @@
       const count = section.querySelector("[data-rl-vcount]");
       if (!body) return;
       const arr = Array.isArray(events) ? events : [];
-      if (count) count.textContent = `RECENT VIOLATIONS · ${arr.length} 筆 · 5 分鐘窗口`;
+      if (count) count.textContent = "RECENT VIOLATIONS · " + ServerI18n.t("ratelimitViolationsCountKicker", { n: arr.length });
       if (arr.length === 0) {
-        body.innerHTML = `<div class="admin-ratelimit-vfeed-empty">尚無違規 · 等待中</div>`;
+        body.innerHTML = `<div class="admin-ratelimit-vfeed-empty">${ServerI18n.t("ratelimitNoViolationsYet")}</div>`;
         return;
       }
       const fmtTime = (ts) => {
@@ -305,10 +305,13 @@
         }
         const detail = banner.querySelector("[data-rl-suggest-detail]");
         if (detail) {
-          detail.textContent =
-            `P95 ${Number(sug.p95_per_second || 0).toFixed(2)} req/s · ` +
-            `目前 ${row.limit || "—"} / ${row.window || "—"}s → ` +
-            `建議 ${sug.suggested_limit} / ${sug.suggested_window}s`;
+          detail.textContent = ServerI18n.t("ratelimitSuggestDetail", {
+            p95: Number(sug.p95_per_second || 0).toFixed(2),
+            limit: row.limit || "—",
+            window: row.window || "—",
+            suggLimit: sug.suggested_limit,
+            suggWindow: sug.suggested_window,
+          });
         }
         const btn = banner.querySelector("[data-rl-apply]");
         if (btn) {
@@ -332,7 +335,7 @@
           if (el && row) {
             const rh = (row.hits || 0).toLocaleString();
             const rv = (row.violations || 0).toLocaleString();
-            el.textContent = `${rh} 次 · ${rv} 違規`;
+            el.textContent = ServerI18n.t("ratelimitHitsViolations", { hits: rh, viol: rv });
           }
         });
         _renderSuggestBanners(rl);
@@ -351,12 +354,12 @@
         const limit = parseInt(limitEl.value, 10);
         const window_ = parseInt(winEl.value, 10);
         if (!Number.isFinite(limit) || !Number.isFinite(window_)) {
-          if (typeof showToast === "function") showToast("輸入值無效", false);
+          if (typeof showToast === "function") showToast(ServerI18n.t("ratelimitInvalidInputToast"), false);
           return;
         }
         const orig = btn.textContent;
         btn.disabled = true;
-        btn.textContent = "套用中…";
+        btn.textContent = ServerI18n.t("ratelimitApplyingBtn");
         try {
           const resp = await window.csrfFetch("/admin/ratelimit/apply", {
             method: "POST",
@@ -365,16 +368,16 @@
           });
           if (resp.ok) {
             if (typeof showToast === "function") {
-              showToast(`已即時套用 ${scope.toUpperCase()} = ${limit} / ${window_}s`, true);
+              showToast(ServerI18n.t("ratelimitToastApplied", { scope: scope.toUpperCase(), limit, window: window_ }), true);
             }
             refreshRateLimitMetrics();
           } else {
             const body = await resp.json().catch(() => ({}));
             const msg = (body && body.error) || `HTTP ${resp.status}`;
-            if (typeof showToast === "function") showToast(`套用失敗:${msg}`, false);
+            if (typeof showToast === "function") showToast(ServerI18n.t("ratelimitApplyFailedToast", { msg }), false);
           }
         } catch (err) {
-          if (typeof showToast === "function") showToast("套用失敗:網路錯誤", false);
+          if (typeof showToast === "function") showToast(ServerI18n.t("ratelimitApplyFailedToast", { msg: ServerI18n.t("ratelimitNetworkError") }), false);
         } finally {
           btn.disabled = false;
           btn.textContent = orig;
@@ -388,7 +391,7 @@
         if (!scope || !Number.isFinite(limit) || !Number.isFinite(window_)) return;
         const orig = btn.textContent;
         btn.disabled = true;
-        btn.textContent = "套用中…";
+        btn.textContent = ServerI18n.t("ratelimitApplyingBtn");
         try {
           const resp = await window.csrfFetch("/admin/ratelimit/apply", {
             method: "POST",
@@ -401,17 +404,17 @@
             if (limEl) limEl.value = limit;
             if (winEl) winEl.value = window_;
             if (typeof showToast === "function") {
-              showToast(`已套用建議:${scope.toUpperCase()} = ${limit} / ${window_}s`, true);
+              showToast(ServerI18n.t("ratelimitToastAppliedSuggestion", { scope: scope.toUpperCase(), limit, window: window_ }), true);
             }
             refreshRateLimitMetrics();
             renderEffectiveRates();
           } else {
             const body = await resp.json().catch(() => ({}));
             const msg = (body && body.error) || `HTTP ${resp.status}`;
-            if (typeof showToast === "function") showToast(`套用失敗:${msg}`, false);
+            if (typeof showToast === "function") showToast(ServerI18n.t("ratelimitApplyFailedToast", { msg }), false);
           }
         } catch (err) {
-          if (typeof showToast === "function") showToast("套用失敗:網路錯誤", false);
+          if (typeof showToast === "function") showToast(ServerI18n.t("ratelimitApplyFailedToast", { msg: ServerI18n.t("ratelimitNetworkError") }), false);
         } finally {
           btn.disabled = false;
           btn.textContent = orig;
@@ -432,7 +435,7 @@
         exportPre.hidden = false;
         try {
           navigator.clipboard?.writeText(lines.join("\n"));
-          if (typeof showToast === "function") showToast("已複製 .env 片段到剪貼簿", true);
+          if (typeof showToast === "function") showToast(ServerI18n.t("ratelimitCopiedToast"), true);
         } catch (_) { /* */ }
       } else if (action === "reset") {
         const defs = { fire: [20, 60], api: [30, 60], admin: [60, 60], login: [5, 300] };
@@ -526,15 +529,19 @@
       const arr = Array.isArray(ipState[kind]) ? ipState[kind] : [];
       count.textContent = String(arr.length);
       if (arr.length === 0) {
-        body.innerHTML = `<div class="admin-ratelimit-vfeed-empty">尚無${kind === "allowlist" ? "白" : "黑"}名單條目</div>`;
+        const listName = ServerI18n.t(kind === "allowlist" ? "ratelimitAllowlistName" : "ratelimitDenylistName");
+        body.innerHTML = `<div class="admin-ratelimit-vfeed-empty">${ServerI18n.t("ratelimitNoEntriesYet", { list: listName })}</div>`;
         return;
       }
-      body.innerHTML = arr.map((entry) => `
+      body.innerHTML = arr.map((entry) => {
+        const removeTitle = ServerI18n.t("ratelimitRemoveEntryTitle", { entry: escapeHtml(entry) });
+        return `
         <div class="admin-ratelimit-ip-chip" data-rl-ip-entry="${escapeHtml(entry)}">
           <span class="admin-ratelimit-ip-chip-cidr">${escapeHtml(entry)}</span>
-          <button type="button" class="admin-ratelimit-ip-chip-remove" data-rl-ip-remove="${escapeHtml(entry)}" data-rl-ip-remove-kind="${kind}" title="移除 ${escapeHtml(entry)}" aria-label="移除 ${escapeHtml(entry)}">×</button>
+          <button type="button" class="admin-ratelimit-ip-chip-remove" data-rl-ip-remove="${escapeHtml(entry)}" data-rl-ip-remove-kind="${kind}" title="${removeTitle}" aria-label="${removeTitle}">×</button>
         </div>
-      `).join("");
+      `;
+      }).join("");
     }
 
     function renderIpAll() {
@@ -543,7 +550,7 @@
       if (ipEls.summary) {
         const a = (ipState.allowlist || []).length;
         const d = (ipState.denylist || []).length;
-        ipEls.summary.textContent = `IP POLICY · 白 ${a} · 黑 ${d}`;
+        ipEls.summary.textContent = "IP POLICY · " + ServerI18n.t("ratelimitIpCounts", { allow: a, deny: d });
       }
     }
 
@@ -551,7 +558,7 @@
       try {
         const r = await fetch("/admin/ratelimit/ip-rules", { credentials: "same-origin" });
         if (!r.ok) {
-          if (ipEls.summary) ipEls.summary.textContent = `IP POLICY · 載入失敗 (${r.status})`;
+          if (ipEls.summary) ipEls.summary.textContent = "IP POLICY · " + ServerI18n.t("ratelimitLoadFailedStatus", { status: r.status });
           return;
         }
         const data = await r.json();
@@ -563,7 +570,7 @@
           renderIpAll();
         }
       } catch (_) {
-        if (ipEls.summary) ipEls.summary.textContent = "IP POLICY · 網路錯誤";
+        if (ipEls.summary) ipEls.summary.textContent = "IP POLICY · " + ServerI18n.t("ratelimitNetworkError");
       }
     }
 
@@ -590,7 +597,7 @@
         showIpError(msg);
         return false;
       } catch (_) {
-        showIpError("網路錯誤");
+        showIpError(ServerI18n.t("ratelimitNetworkError"));
         return false;
       }
     }
@@ -599,12 +606,15 @@
       ipEls.addBtn.addEventListener("click", async () => {
         if (!ipEls.input || !ipEls.select) return;
         const raw = (ipEls.input.value || "").trim();
-        if (!raw) { showIpError("請輸入 IP 或 CIDR"); return; }
-        if (!IP_HINT_RE.test(raw)) { showIpError("格式看起來不像 IP/CIDR"); return; }
+        if (!raw) { showIpError(ServerI18n.t("ratelimitIpRequiredError")); return; }
+        if (!IP_HINT_RE.test(raw)) { showIpError(ServerI18n.t("ratelimitIpFormatError")); return; }
         const kind = ipEls.select.value === "denylist" ? "denylist" : "allowlist";
         const next = Array.from(new Set([...(ipState[kind] || []), raw]));
         const ok = await saveIpRules({ [kind]: next }, {
-          toastLabel: `已加入 ${kind === "allowlist" ? "白" : "黑"}名單:${raw}`,
+          toastLabel: ServerI18n.t("ratelimitToastAdded", {
+            list: ServerI18n.t(kind === "allowlist" ? "ratelimitAllowlistName" : "ratelimitDenylistName"),
+            value: raw,
+          }),
         });
         if (ok) ipEls.input.value = "";
       });
@@ -627,7 +637,10 @@
       const kind = btn.dataset.rlIpRemoveKind === "denylist" ? "denylist" : "allowlist";
       const next = (ipState[kind] || []).filter((x) => x !== entry);
       await saveIpRules({ [kind]: next }, {
-        toastLabel: `已移除 ${kind === "allowlist" ? "白" : "黑"}名單:${entry}`,
+        toastLabel: ServerI18n.t("ratelimitToastRemoved", {
+          list: ServerI18n.t(kind === "allowlist" ? "ratelimitAllowlistName" : "ratelimitDenylistName"),
+          value: entry,
+        }),
       });
     });
 
