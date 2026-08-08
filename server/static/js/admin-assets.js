@@ -22,11 +22,11 @@
     // ink 版而不是 --color-*／--hud-*：後者的淺色臂是給色塊挑的中間調，
     // 白底上只有 3.2–4.1。theme 這格原本是寫死的紫色系色碼（不隨主題翻面，
     // 白底 1.85），改成 teal —— 五個分類色裡唯一還沒被佔用的色相。
-    dme:   { label: "效果",   en: "DME",     color: "var(--color-ink-warning)",      route: "effects",      icon: "✦" },
-    font:  { label: "字型",   en: "FONTS",   color: "var(--color-ink-accent)",       route: "fonts",        icon: "⌂" },
-    logo:  { label: "圖片",   en: "IMAGES",  color: "var(--color-ink-success)",      route: "viewer", icon: "◐" },
-    theme: { label: "主題",   en: "THEMES",  color: "var(--color-ink-theme)",        route: "themes",       icon: "❖" },
-    sound: { label: "音效",   en: "SOUNDS",  color: "var(--color-ink-error)",        route: "assets",       icon: "♪" },
+    dme:   { labelKey: "assetsKindDme",   en: "DME",     color: "var(--color-ink-warning)",      route: "effects",      icon: "✦" },
+    font:  { labelKey: "assetsKindFont",  en: "FONTS",   color: "var(--color-ink-accent)",       route: "fonts",        icon: "⌂" },
+    logo:  { labelKey: "assetsKindLogo",  en: "IMAGES",  color: "var(--color-ink-success)",      route: "viewer", icon: "◐" },
+    theme: { labelKey: "assetsKindTheme", en: "THEMES",  color: "var(--color-ink-theme)",        route: "themes",       icon: "❖" },
+    sound: { labelKey: "assetsKindSound", en: "SOUNDS",  color: "var(--color-ink-error)",        route: "assets",       icon: "♪" },
   };
 
   let _state = {
@@ -39,35 +39,34 @@
     return `
       <div id="${PAGE_ID}" class="admin-assets-page hud-page-stack lg:col-span-2" data-tpl="B">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">ASSETS LIBRARY · UNIFIED OVERVIEW · 點卡片跳轉源頁編輯</div>
-          <div class="admin-ui-page-title">素材庫</div>
+          <div class="admin-ui-page-kicker">ASSETS LIBRARY · UNIFIED OVERVIEW · ${ServerI18n.t("assetsKickerTail")}</div>
+          <div class="admin-ui-page-title">${ServerI18n.t("assetsPageTitle")}</div>
           <p class="admin-ui-page-note">
-            集中查看 .dme 效果 · 字型 · 主題包 · 觀眾頁圖片 · 音效。
-            上傳與編輯仍在各自頁面（效果庫 / 字型管理 / 風格主題包 / 觀眾頁主題）。
+            ${ServerI18n.t("assetsPageNote")}
           </p>
         </div>
 
         <!-- TPL-B KPI 條：共用 hud-stat-tile（私有 admin-assets-stat 退役） -->
         <div class="hud-stats-strip">
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">ASSETS</span><span class="hud-stat-tile-value" data-assets-stat="total">—</span><span class="hud-stat-tile-label">總素材</span></div>
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">DME</span><span class="hud-stat-tile-value is-amber" data-assets-stat="dme">—</span><span class="hud-stat-tile-label">效果庫</span></div>
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">FONTS</span><span class="hud-stat-tile-value is-cyan" data-assets-stat="font">—</span><span class="hud-stat-tile-label">字型</span></div>
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">THEMES</span><span class="hud-stat-tile-value" style="color:var(--color-ink-theme)" data-assets-stat="theme">—</span><span class="hud-stat-tile-label">主題包</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">ASSETS</span><span class="hud-stat-tile-value" data-assets-stat="total">—</span><span class="hud-stat-tile-label">${ServerI18n.t("assetsStatTotal")}</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">DME</span><span class="hud-stat-tile-value is-amber" data-assets-stat="dme">—</span><span class="hud-stat-tile-label">${ServerI18n.t("assetsStatDme")}</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">FONTS</span><span class="hud-stat-tile-value is-cyan" data-assets-stat="font">—</span><span class="hud-stat-tile-label">${ServerI18n.t("assetsStatFont")}</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">THEMES</span><span class="hud-stat-tile-value" style="color:var(--color-ink-theme)" data-assets-stat="theme">—</span><span class="hud-stat-tile-label">${ServerI18n.t("assetsStatTheme")}</span></div>
         </div>
 
         <!-- Filter chips -->
         <div class="admin-assets-filter-row" data-assets-filter-row>
-          <span class="admin-assets-chip is-active" data-filter="all">全部 <span data-count="all">0</span></span>
-          <span class="admin-assets-chip" data-filter="dme">效果 <span data-count="dme">0</span></span>
-          <span class="admin-assets-chip" data-filter="font">字型 <span data-count="font">0</span></span>
-          <span class="admin-assets-chip" data-filter="theme">主題 <span data-count="theme">0</span></span>
-          <span class="admin-assets-chip" data-filter="sound">音效 <span data-count="sound">0</span></span>
+          <span class="admin-assets-chip is-active" data-filter="all">${ServerI18n.t("assetsFilterAll")} <span data-count="all">0</span></span>
+          <span class="admin-assets-chip" data-filter="dme">${ServerI18n.t("assetsKindDme")} <span data-count="dme">0</span></span>
+          <span class="admin-assets-chip" data-filter="font">${ServerI18n.t("assetsKindFont")} <span data-count="font">0</span></span>
+          <span class="admin-assets-chip" data-filter="theme">${ServerI18n.t("assetsKindTheme")} <span data-count="theme">0</span></span>
+          <span class="admin-assets-chip" data-filter="sound">${ServerI18n.t("assetsKindSound")} <span data-count="sound">0</span></span>
         </div>
 
         <!-- Grid + right rail -->
         <div class="admin-assets-grid-wrap">
           <div class="admin-assets-grid" id="adminAssetsGrid">
-            <div class="admin-assets-empty">載入素材…</div>
+            <div class="admin-assets-empty">${ServerI18n.t("assetsLoading")}</div>
           </div>
 
           <aside class="admin-assets-rail">
@@ -80,7 +79,7 @@
                     ([k, m]) => `
                       <a class="admin-assets-source" href="#/${m.route}" data-assets-source="${k}">
                         <span class="ico" style="color:${m.color}">${m.icon}</span>
-                        <span class="lbl">${escapeHtml(m.label)}</span>
+                        <span class="lbl">${escapeHtml(ServerI18n.t(m.labelKey))}</span>
                         <span class="en">${m.en}</span>
                         <span class="arrow">→</span>
                       </a>`
@@ -88,7 +87,7 @@
                   .join("")}
               </div>
               <div class="admin-assets-source-hint">
-                點素材卡或來源頁面跳轉到對應編輯頁。素材庫只負責總覽。
+                ${ServerI18n.t("assetsSourceHint")}
               </div>
             </div>
           </aside>
@@ -209,7 +208,7 @@
       : _state.assets.filter((a) => a.kind === _state.filter);
 
     if (visible.length === 0) {
-      grid.innerHTML = `<div class="admin-assets-empty">${_state.loaded ? "此分類無素材" : "載入素材…"}</div>`;
+      grid.innerHTML = `<div class="admin-assets-empty">${_state.loaded ? ServerI18n.t("assetsEmptyCategory") : ServerI18n.t("assetsLoading")}</div>`;
       return;
     }
 

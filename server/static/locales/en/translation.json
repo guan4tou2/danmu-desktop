@@ -2153,5 +2153,21 @@
   "emojisEmptyAction": "+ Upload first emoji",
   "emojisUploadBtnIdle": "Upload",
   "emojisDeleteTitle": "Delete emoji",
-  "emojisDeleteConfirm": "Delete"
+  "emojisDeleteConfirm": "Delete",
+  "assetsKindDme": "Effects",
+  "assetsKindFont": "Fonts",
+  "assetsKindLogo": "Images",
+  "assetsKindTheme": "Themes",
+  "assetsKindSound": "Sounds",
+  "assetsKickerTail": "Click a card to edit at its source page",
+  "assetsPageTitle": "Assets Library",
+  "assetsPageNote": "One view of .dme effects · fonts · theme packs · viewer images · sounds. Uploading and editing stay on their own pages (Effects / Fonts / Theme Packs / Viewer Theme).",
+  "assetsStatTotal": "Total assets",
+  "assetsStatDme": "Effects",
+  "assetsStatFont": "Fonts",
+  "assetsStatTheme": "Theme packs",
+  "assetsFilterAll": "All",
+  "assetsLoading": "Loading assets…",
+  "assetsSourceHint": "Click an asset card or a source page to jump to its editor. This page is overview-only.",
+  "assetsEmptyCategory": "No assets in this category"
 }

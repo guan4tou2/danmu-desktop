@@ -2153,5 +2153,21 @@
   "emojisEmptyAction": "+ 첫 Emoji 업로드",
   "emojisUploadBtnIdle": "업로드",
   "emojisDeleteTitle": "이모지 삭제",
-  "emojisDeleteConfirm": "삭제"
+  "emojisDeleteConfirm": "삭제",
+  "assetsKindDme": "효과",
+  "assetsKindFont": "글꼴",
+  "assetsKindLogo": "이미지",
+  "assetsKindTheme": "테마",
+  "assetsKindSound": "사운드",
+  "assetsKickerTail": "카드 클릭 시 원본 페이지에서 편집",
+  "assetsPageTitle": "에셋 라이브러리",
+  "assetsPageNote": ".dme 효과 · 글꼴 · 테마 팩 · 시청자 이미지 · 사운드를 한눈에. 업로드·편집은 각 페이지에서.",
+  "assetsStatTotal": "총 에셋",
+  "assetsStatDme": "효과",
+  "assetsStatFont": "글꼴",
+  "assetsStatTheme": "테마 팩",
+  "assetsFilterAll": "전체",
+  "assetsLoading": "에셋 불러오는 중…",
+  "assetsSourceHint": "에셋 카드나 원본 페이지 클릭 시 편집 페이지로 이동. 이 페이지는 개요 전용.",
+  "assetsEmptyCategory": "이 카테고리에 에셋 없음"
 }

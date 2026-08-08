@@ -2153,5 +2153,21 @@
   "emojisEmptyAction": "+ 上傳第一個 Emoji",
   "emojisUploadBtnIdle": "上傳",
   "emojisDeleteTitle": "刪除表情",
-  "emojisDeleteConfirm": "刪除"
+  "emojisDeleteConfirm": "刪除",
+  "assetsKindDme": "效果",
+  "assetsKindFont": "字型",
+  "assetsKindLogo": "圖片",
+  "assetsKindTheme": "主題",
+  "assetsKindSound": "音效",
+  "assetsKickerTail": "點卡片跳轉源頁編輯",
+  "assetsPageTitle": "素材庫",
+  "assetsPageNote": "集中查看 .dme 效果 · 字型 · 主題包 · 觀眾頁圖片 · 音效。 上傳與編輯仍在各自頁面（效果庫 / 字型管理 / 風格主題包 / 觀眾頁主題）。",
+  "assetsStatTotal": "總素材",
+  "assetsStatDme": "效果庫",
+  "assetsStatFont": "字型",
+  "assetsStatTheme": "主題包",
+  "assetsFilterAll": "全部",
+  "assetsLoading": "載入素材…",
+  "assetsSourceHint": "點素材卡或來源頁面跳轉到對應編輯頁。素材庫只負責總覽。",
+  "assetsEmptyCategory": "此分類無素材"
 }

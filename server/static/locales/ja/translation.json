@@ -2153,5 +2153,21 @@
   "emojisEmptyAction": "+ 最初の Emoji を追加",
   "emojisUploadBtnIdle": "アップロード",
   "emojisDeleteTitle": "絵文字を削除",
-  "emojisDeleteConfirm": "削除"
+  "emojisDeleteConfirm": "削除",
+  "assetsKindDme": "エフェクト",
+  "assetsKindFont": "フォント",
+  "assetsKindLogo": "画像",
+  "assetsKindTheme": "テーマ",
+  "assetsKindSound": "サウンド",
+  "assetsKickerTail": "カードから編集元ページへ",
+  "assetsPageTitle": "アセットライブラリ",
+  "assetsPageNote": ".dme エフェクト · フォント · テーマ · 視聴者画像 · サウンドを一覧。アップロードと編集は各ページで。",
+  "assetsStatTotal": "総アセット",
+  "assetsStatDme": "エフェクト",
+  "assetsStatFont": "フォント",
+  "assetsStatTheme": "テーマパック",
+  "assetsFilterAll": "すべて",
+  "assetsLoading": "アセット読み込み中…",
+  "assetsSourceHint": "カードか編集元リンクで編集ページへ。ここは一覧専用。",
+  "assetsEmptyCategory": "このカテゴリにアセットなし"
 }
