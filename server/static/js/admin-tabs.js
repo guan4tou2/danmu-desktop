@@ -33,12 +33,12 @@
       // workflow starts there.
       defaultTab: "queue",
       tabs: [
-        { slug: "queue",        label: "審核佇列", en: "QUEUE",       section: "sec-modqueue"     },
-        { slug: "bans",         label: "封禁管理", en: "BANS",        section: "sec-modbans-overview" },
-        { slug: "blacklist",    label: "黑名單", en: "BLACKLIST",    section: "sec-blacklist"    },
-        { slug: "filters",      label: "敏感字", en: "FILTERS",      section: "sec-filters"      },
-        { slug: "ratelimit",    label: "速率限制", en: "RATE LIMIT",  section: "sec-ratelimit"    },
-        { slug: "fingerprints", label: "指紋",  en: "FINGERPRINTS", section: "sec-fingerprints" },
+        { slug: "queue",        labelKey: "tabModQueue", en: "QUEUE",       section: "sec-modqueue"     },
+        { slug: "bans",         labelKey: "tabModBans", en: "BANS",        section: "sec-modbans-overview" },
+        { slug: "blacklist",    labelKey: "tabModBlacklist", en: "BLACKLIST",    section: "sec-blacklist"    },
+        { slug: "filters",      labelKey: "tabModFilters", en: "FILTERS",      section: "sec-filters"      },
+        { slug: "ratelimit",    labelKey: "tabModRatelimit", en: "RATE LIMIT",  section: "sec-ratelimit"    },
+        { slug: "fingerprints", labelKey: "tabModFingerprints", en: "FINGERPRINTS", section: "sec-fingerprints" },
       ],
     },
     // v7 S4 (2026-07-28): dead `appearance` group removed — the route is a
@@ -48,11 +48,11 @@
     assets: {
       defaultTab: "overview",
       tabs: [
-        { slug: "overview", label: "總覽",   en: "OVERVIEW", section: "sec-assets-overview" },
-        { slug: "emojis",   label: "表情",   en: "EMOJIS",   section: "sec-emojis"   },
-        { slug: "stickers", label: "貼圖",   en: "STICKERS", section: "sec-stickers" },
-        { slug: "sounds",   label: "音效",   en: "SOUNDS",   section: "sec-sounds"   },
-        { slug: "fonts",    label: "字型",   en: "FONTS",    section: "sec-fonts"    },
+        { slug: "overview", labelKey: "tabAssetsOverview", en: "OVERVIEW", section: "sec-assets-overview" },
+        { slug: "emojis",   labelKey: "tabAssetsEmojis", en: "EMOJIS",   section: "sec-emojis"   },
+        { slug: "stickers", labelKey: "tabAssetsStickers", en: "STICKERS", section: "sec-stickers" },
+        { slug: "sounds",   labelKey: "tabAssetsSounds", en: "SOUNDS",   section: "sec-sounds"   },
+        { slug: "fonts",    labelKey: "tabAssetsFonts", en: "FONTS",    section: "sec-fonts"    },
       ],
     },
     // D-6 階段 4 (2026-07-29): viewer 從 admin-display.js 自製的
@@ -64,10 +64,10 @@
     viewer: {
       defaultTab: "defaults",
       tabs: [
-        { slug: "page",     label: "整頁主題",   en: "PAGE",     section: "sec-viewer-theme" },
-        { slug: "fields",   label: "表單欄位",   en: "FIELDS",   section: "sec-viewer-config-fields" },
-        { slug: "defaults", label: "送出預設",   en: "DEFAULTS", section: "sec-viewer-config-defaults" },
-        { slug: "limits",   label: "限制 / 文案", en: "LIMITS",   section: "sec-viewer-config-limits" },
+        { slug: "page",     labelKey: "tabViewerPage", en: "PAGE",     section: "sec-viewer-theme" },
+        { slug: "fields",   labelKey: "tabViewerFields", en: "FIELDS",   section: "sec-viewer-config-fields" },
+        { slug: "defaults", labelKey: "tabViewerDefaults", en: "DEFAULTS", section: "sec-viewer-config-defaults" },
+        { slug: "limits",   labelKey: "tabViewerLimits", en: "LIMITS",   section: "sec-viewer-config-limits" },
       ],
     },
     // v7 S3 (2026-07-28): the system accordion retired — 16 leaves were
@@ -77,22 +77,22 @@
     system: {
       defaultTab: "overview",
       tabs: [
-        { slug: "overview",  label: "概覽",       en: "OVERVIEW",  section: "sec-system-overview" },
-        { slug: "scheduler", label: "排程",       en: "SCHEDULER", section: "sec-scheduler" },
-        { slug: "security",  label: "安全",       en: "SECURITY",  section: "admin-security-v2-page" },
+        { slug: "overview",  labelKey: "tabSystemOverview", en: "OVERVIEW",  section: "sec-system-overview" },
+        { slug: "scheduler", labelKey: "tabSystemScheduler", en: "SCHEDULER", section: "sec-scheduler" },
+        { slug: "security",  labelKey: "tabSystemSecurity", en: "SECURITY",  section: "admin-security-v2-page" },
         { slug: "firetoken", label: "Fire Token", en: "FIRETOKEN", section: "sec-firetoken-overview" },
-        { slug: "wcag",      label: "無障礙",     en: "WCAG",      section: "sec-wcag-overview" },
-        { slug: "about",     label: "關於",       en: "ABOUT",     section: "sec-about-overview" },
+        { slug: "wcag",      labelKey: "tabSystemWcag", en: "WCAG",      section: "sec-wcag-overview" },
+        { slug: "about",     labelKey: "tabSystemAbout", en: "ABOUT",     section: "sec-about-overview" },
       ],
     },
     history: {
       defaultTab: "sessions",
       tabs: [
-        { slug: "sessions", label: "場次",    en: "SESSIONS", section: "sec-sessions-overview" },
-        { slug: "search",   label: "搜尋",    en: "SEARCH",   section: "sec-search-overview"   },
-        { slug: "audit",    label: "審計",    en: "AUDIT",    section: "sec-audit-overview"    },
-        { slug: "replay",   label: "重播",    en: "REPLAY",   sections: ["sec-history-tabs", "history-v2-section", "sec-history-list", "sec-history"] },
-        { slug: "audience", label: "觀眾",    en: "AUDIENCE", section: "sec-audience-overview" },
+        { slug: "sessions", labelKey: "tabHistorySessions", en: "SESSIONS", section: "sec-sessions-overview" },
+        { slug: "search",   labelKey: "tabHistorySearch", en: "SEARCH",   section: "sec-search-overview"   },
+        { slug: "audit",    labelKey: "tabHistoryAudit", en: "AUDIT",    section: "sec-audit-overview"    },
+        { slug: "replay",   labelKey: "tabHistoryReplay", en: "REPLAY",   sections: ["sec-history-tabs", "history-v2-section", "sec-history-list", "sec-history"] },
+        { slug: "audience", labelKey: "tabHistoryAudience", en: "AUDIENCE", section: "sec-audience-overview" },
       ],
     },
   };
@@ -142,7 +142,7 @@
 
       const label = document.createElement("span");
       label.className = "admin-tabs-btn-label";
-      label.textContent = tab.label;
+      label.textContent = tab.labelKey ? ServerI18n.t(tab.labelKey) : tab.label;
       btn.appendChild(label);
 
       const en = document.createElement("span");
