@@ -2118,5 +2118,22 @@
   "mnavDescBackup": "匯出 · 還原 · 危險區",
   "mnavDescPlugins": "Plugin SDK · 熱重載",
   "mnavDescWebhooks": "端點 · 投遞紀錄",
-  "mnavDescApiTokens": "開發者存取 · 權限"
+  "mnavDescApiTokens": "開發者存取 · 權限",
+  "histToastBlacklisted": "已加入黑名單 · {keyword}",
+  "histUndo": "撤回",
+  "histRemoveKwTitle": "移除黑名單關鍵字",
+  "histRemoveKwConfirm": "移除",
+  "histClearTitle": "清除彈幕歷史",
+  "histClearConfirm": "清除",
+  "histTabExport": "時間軸匯出",
+  "histTabList": "訊息清單",
+  "histTabReplay": "重播",
+  "histListLoading": "載入中…",
+  "histListLoadFailed": "載入失敗：{msg}",
+  "histEmptyTitle": "目前沒有訊息紀錄",
+  "histEmptyDesc": "場次進行時觀眾送出的彈幕會累積在這裡，可依時間與關鍵字匯出。",
+  "histStateBlocked": "已封鎖",
+  "histStateMasked": "已遮罩",
+  "histListHeader": "訊息清單 · 近 24 小時",
+  "histListCount": "● {n} 筆"
 }

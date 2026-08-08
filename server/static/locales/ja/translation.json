@@ -2118,5 +2118,22 @@
   "mnavDescBackup": "エクスポート · 復元 · 危険区",
   "mnavDescPlugins": "Plugin SDK · ホットリロード",
   "mnavDescWebhooks": "エンドポイント · 配送ログ",
-  "mnavDescApiTokens": "開発者アクセス · 権限"
+  "mnavDescApiTokens": "開発者アクセス · 権限",
+  "histToastBlacklisted": "ブラックリストに追加 · {keyword}",
+  "histUndo": "取り消す",
+  "histRemoveKwTitle": "ブラックリストのキーワードを削除",
+  "histRemoveKwConfirm": "削除",
+  "histClearTitle": "弾幕履歴を消去",
+  "histClearConfirm": "消去",
+  "histTabExport": "タイムライン出力",
+  "histTabList": "メッセージ一覧",
+  "histTabReplay": "リプレイ",
+  "histListLoading": "読み込み中…",
+  "histListLoadFailed": "読み込み失敗：{msg}",
+  "histEmptyTitle": "メッセージ記録なし",
+  "histEmptyDesc": "セッション中の弾幕がここに蓄積。時間・キーワードで出力可能。",
+  "histStateBlocked": "ブロック済み",
+  "histStateMasked": "マスク済み",
+  "histListHeader": "メッセージ一覧 · 直近 24 時間",
+  "histListCount": "● {n} 件"
 }

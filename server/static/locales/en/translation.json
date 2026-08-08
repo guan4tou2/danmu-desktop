@@ -2118,5 +2118,22 @@
   "mnavDescBackup": "Export · restore · danger zone",
   "mnavDescPlugins": "Plugin SDK · hot reload",
   "mnavDescWebhooks": "Endpoints · delivery log",
-  "mnavDescApiTokens": "Developer access · scopes"
+  "mnavDescApiTokens": "Developer access · scopes",
+  "histToastBlacklisted": "Added to blacklist · {keyword}",
+  "histUndo": "Undo",
+  "histRemoveKwTitle": "Remove blacklist keyword",
+  "histRemoveKwConfirm": "Remove",
+  "histClearTitle": "Clear danmu history",
+  "histClearConfirm": "Clear",
+  "histTabExport": "Timeline export",
+  "histTabList": "Message list",
+  "histTabReplay": "Replay",
+  "histListLoading": "Loading…",
+  "histListLoadFailed": "Load failed: {msg}",
+  "histEmptyTitle": "No message records yet",
+  "histEmptyDesc": "Danmu sent during sessions pile up here — export by time range and keyword.",
+  "histStateBlocked": "Blocked",
+  "histStateMasked": "Masked",
+  "histListHeader": "Message list · last 24 h",
+  "histListCount": "● {n}"
 }

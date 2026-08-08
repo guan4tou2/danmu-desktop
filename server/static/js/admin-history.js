@@ -89,9 +89,9 @@
         // the bar lifecycle; we wire the undo to /admin/blacklist/remove.
         if (window.AdminQuickAction) {
           window.AdminQuickAction.fire({
-            label: data.message || `已加入黑名單 · ${keyword}`,
+            label: data.message || ServerI18n.t("histToastBlacklisted", { keyword: keyword }),
             undo: {
-              label: "撤回",
+              label: ServerI18n.t("histUndo"),
               run: async () => {
                 const r = await window.csrfFetch("/admin/blacklist/remove", {
                   method: "POST",
@@ -118,11 +118,11 @@
   async function removeKeyword(keyword) {
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
-      title: "移除黑名單關鍵字",
+      title: ServerI18n.t("histRemoveKwTitle"),
       subtitle: "REMOVE KEYWORD",
       severity: "warn",
       bodyText: ServerI18n.t("confirmRemoveKeyword").replace("{keyword}", keyword),
-      confirmLabel: "移除",
+      confirmLabel: ServerI18n.t("histRemoveKwConfirm"),
     });
     if (!ok) return;
     try {
@@ -330,11 +330,11 @@
   async function clearDanmuHistory() {
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
-      title: "清除彈幕歷史",
+      title: ServerI18n.t("histClearTitle"),
       subtitle: "CLEAR HISTORY · THIS ACTION CANNOT BE UNDONE",
       severity: "danger",
       body: ServerI18n.t("confirmClearHistory"),
-      confirmLabel: "清除",
+      confirmLabel: ServerI18n.t("histClearConfirm"),
     });
     if (!ok) {
       return;
@@ -562,9 +562,9 @@
     bar.id = "sec-history-tabs";
     bar.className = "admin-tabstrip lg:col-span-2";
     bar.innerHTML =
-      _makeTabBtn("export", "↓", "時間軸匯出", "EXPORT") +
-      _makeTabBtn("list",   "☰", "訊息清單",   "LIST") +
-      _makeTabBtn("replay", "▶", "重播",       "REPLAY") +
+      _makeTabBtn("export", "↓", ServerI18n.t("histTabExport"), "EXPORT") +
+      _makeTabBtn("list",   "☰", ServerI18n.t("histTabList"),   "LIST") +
+      _makeTabBtn("replay", "▶", ServerI18n.t("histTabReplay"),       "REPLAY") +
       '<span style="flex:1"></span>';
     parent.insertBefore(bar, historyCard);
 
@@ -605,7 +605,7 @@
   };
 
   async function _loadHistoryList(container) {
-    container.innerHTML = '<div class="admin-history-list-loading">載入中…</div>';
+    container.innerHTML = '<div class="admin-history-list-loading">' + ServerI18n.t("histListLoading") + '</div>';
     try {
       var r = await fetch("/admin/history?hours=24&limit=300", { credentials: "same-origin" });
       if (!r.ok) throw new Error("HTTP " + r.status);
@@ -613,7 +613,7 @@
       var records = Array.isArray(data) ? data : (data.messages || data.records || []);
       _renderHistoryList(container, records);
     } catch (e) {
-      container.innerHTML = '<div class="admin-history-list-err">載入失敗：' + _historyListEscape(String(e)) + '</div>';
+      container.innerHTML = '<div class="admin-history-list-err">' + ServerI18n.t("histListLoadFailed", { msg: _historyListEscape(String(e)) }) + '</div>';
     }
   }
 
@@ -623,8 +623,8 @@
       container.innerHTML = "";
       var card = window.AdminEmpty.renderCustom({
         icon: "◷",
-        title: "目前沒有訊息紀錄",
-        desc: "場次進行時觀眾送出的彈幕會累積在這裡，可依時間與關鍵字匯出。",
+        title: ServerI18n.t("histEmptyTitle"),
+        desc: ServerI18n.t("histEmptyDesc"),
       });
       card.dataset.emptyKind = "history";
       container.appendChild(card);
@@ -632,10 +632,10 @@
     }
     var rows = records.slice(0, 300).map(function (r) {
       var ts = r.timestamp ? new Date(r.timestamp).toLocaleTimeString("zh-TW", { hour12: false }) : "—";
-      var nick = _historyListEscape(r.nickname || r.fingerprint || "匿名");
+      var nick = _historyListEscape(r.nickname || r.fingerprint || ServerI18n.t("audienceAnonymous"));
       var state, cls, msgHtml;
-      if (r.banned || r.blocked) { state = "BLOCKED"; cls = "blocked"; msgHtml = "<em>已封鎖</em>"; }
-      else if (r.muted) { state = "MASKED"; cls = "masked"; msgHtml = "<em>已遮罩</em>"; }
+      if (r.banned || r.blocked) { state = "BLOCKED"; cls = "blocked"; msgHtml = "<em>" + ServerI18n.t("histStateBlocked") + "</em>"; }
+      else if (r.muted) { state = "MASKED"; cls = "masked"; msgHtml = "<em>" + ServerI18n.t("histStateMasked") + "</em>"; }
       else { state = "SHOWN"; cls = "shown"; msgHtml = _historyListEscape((r.text || "").slice(0, 80)); }
       return '<div class="admin-history-list-row">' +
         '<span class="t">' + ts + '</span>' +
@@ -646,8 +646,8 @@
     }).join("");
     container.innerHTML =
       '<div class="admin-history-list-head">' +
-        '<span class="admin-ui-monolabel">訊息清單 · 近 24 小時</span>' +
-        '<span class="admin-history-list-count">● ' + records.length + ' 筆</span>' +
+        '<span class="admin-ui-monolabel">' + ServerI18n.t("histListHeader") + '</span>' +
+        '<span class="admin-history-list-count">' + ServerI18n.t("histListCount", { n: records.length }) + '</span>' +
       '</div>' +
       '<div class="admin-history-list-header"><span class="t">TIME</span><span class="n">NICK</span><span class="m">MESSAGE</span><span class="s">STATE</span></div>' +
       '<div class="admin-history-list-body">' + rows + '</div>';
