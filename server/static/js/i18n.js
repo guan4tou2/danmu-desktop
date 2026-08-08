@@ -2084,7 +2084,21 @@
       "modqueueBulkApproveBody": "Every pending LOW-severity message in the queue will be released.",
       "modqueueBulkRejectBody": "Every pending HIGH-severity message in the queue will be rejected.",
       "modqueueBulkApproveConfirm": "Approve all",
-      "modqueueBulkRejectConfirm": "Reject all"
+      "modqueueBulkRejectConfirm": "Reject all",
+      "fxToastBadExt": "Only .dme / .dme.zip accepted",
+      "fxDeleteTitle": "Confirm delete",
+      "fxDeleteBody": "Delete {name}?",
+      "fxDeleteWarn": "This can't be undone; historical messages using this effect fall back to the default style.",
+      "fxDeleteConfirm": "Confirm delete",
+      "fxHintFlashBlock": "Rate > 4× may trigger photosensitive seizures — blocked per WCAG 2.1 SC 2.3.1",
+      "fxHintFlashWarn": "Rate > 3× nears the WCAG 2.1 SC 2.3.1 warning threshold",
+      "fxHintFlashOk": "Rate within WCAG safe range",
+      "fxHintAmpBlock": "Amplitude > 30px may drop frames on low-end devices — keep ≤ 24px",
+      "fxHintAmpWarn": "Amplitude > 24px may hurt performance — consider easing it",
+      "fxHintAmpOk": "Parameters within recommended range — performance is good",
+      "fxNoNumericParams": "This effect has no numeric parameters",
+      "fxSectionParams": "§1 · Motion parameters",
+      "fxSectionControls": "§2 · Control options"
     },
     "zh": {
       "mainTitle": "Danmu Fire",
@@ -4161,7 +4175,21 @@
       "modqueueBulkApproveBody": "佇列中所有 LOW 嚴重度的待審訊息都會被放行。",
       "modqueueBulkRejectBody": "佇列中所有 HIGH 嚴重度的待審訊息都會被拒絕。",
       "modqueueBulkApproveConfirm": "全部通過",
-      "modqueueBulkRejectConfirm": "全部拒絕"
+      "modqueueBulkRejectConfirm": "全部拒絕",
+      "fxToastBadExt": ".dme / .dme.zip 才接受",
+      "fxDeleteTitle": "刪除確認",
+      "fxDeleteBody": "確定要刪除 {name} 嗎？",
+      "fxDeleteWarn": "刪除後無法復原，已使用此效果的歷史訊息將顯示為預設樣式。",
+      "fxDeleteConfirm": "確認刪除",
+      "fxHintFlashBlock": "頻率 > 4× 可能誘發光敏性癲癇，WCAG 2.1 SC 2.3.1 封鎖",
+      "fxHintFlashWarn": "頻率 > 3× 接近 WCAG 2.1 SC 2.3.1 警告閾值",
+      "fxHintFlashOk": "頻率在 WCAG 安全範圍內",
+      "fxHintAmpBlock": "振幅 > 30px 在低端裝置可能掉幀，建議 ≤ 24px",
+      "fxHintAmpWarn": "振幅 > 24px 可能影響效能，建議適度調整",
+      "fxHintAmpOk": "參數在建議範圍內，效能良好",
+      "fxNoNumericParams": "此效果無數值參數",
+      "fxSectionParams": "§1 · 動態參數",
+      "fxSectionControls": "§2 · 控制選項"
     },
     "ja": {
       "mainTitle": "Danmu Fire",
@@ -6238,7 +6266,21 @@
       "modqueueBulkApproveBody": "キュー内の LOW 重要度の保留メッセージをすべて通します。",
       "modqueueBulkRejectBody": "キュー内の HIGH 重要度の保留メッセージをすべて拒否します。",
       "modqueueBulkApproveConfirm": "すべて承認",
-      "modqueueBulkRejectConfirm": "すべて拒否"
+      "modqueueBulkRejectConfirm": "すべて拒否",
+      "fxToastBadExt": ".dme / .dme.zip のみ対応",
+      "fxDeleteTitle": "削除の確認",
+      "fxDeleteBody": "{name} を削除しますか？",
+      "fxDeleteWarn": "取り消せません。この効果を使った過去メッセージは既定スタイルで表示されます。",
+      "fxDeleteConfirm": "削除する",
+      "fxHintFlashBlock": "頻度 > 4× は光過敏性発作の恐れ — WCAG 2.1 SC 2.3.1 でブロック",
+      "fxHintFlashWarn": "頻度 > 3× は WCAG 2.1 SC 2.3.1 警告閾値に接近",
+      "fxHintFlashOk": "頻度は WCAG 安全範囲内",
+      "fxHintAmpBlock": "振幅 > 30px は低スペック端末でコマ落ちの恐れ — ≤ 24px 推奨",
+      "fxHintAmpWarn": "振幅 > 24px は性能に影響の恐れ — 調整推奨",
+      "fxHintAmpOk": "パラメータは推奨範囲内 — 良好",
+      "fxNoNumericParams": "この効果に数値パラメータなし",
+      "fxSectionParams": "§1 · モーションパラメータ",
+      "fxSectionControls": "§2 · 制御オプション"
     },
     "ko": {
       "mainTitle": "Danmu Fire",
@@ -8315,7 +8357,21 @@
       "modqueueBulkApproveBody": "대기열의 LOW 심각도 대기 메시지가 모두 통과됩니다.",
       "modqueueBulkRejectBody": "대기열의 HIGH 심각도 대기 메시지가 모두 거부됩니다.",
       "modqueueBulkApproveConfirm": "전체 승인",
-      "modqueueBulkRejectConfirm": "전체 거부"
+      "modqueueBulkRejectConfirm": "전체 거부",
+      "fxToastBadExt": ".dme / .dme.zip만 허용",
+      "fxDeleteTitle": "삭제 확인",
+      "fxDeleteBody": "{name}을(를) 삭제할까요?",
+      "fxDeleteWarn": "되돌릴 수 없으며, 이 효과를 쓴 과거 메시지는 기본 스타일로 표시됩니다.",
+      "fxDeleteConfirm": "삭제 확정",
+      "fxHintFlashBlock": "빈도 > 4×는 광과민성 발작 유발 가능 — WCAG 2.1 SC 2.3.1 차단",
+      "fxHintFlashWarn": "빈도 > 3×는 WCAG 2.1 SC 2.3.1 경고 임계값에 근접",
+      "fxHintFlashOk": "빈도가 WCAG 안전 범위 내",
+      "fxHintAmpBlock": "진폭 > 30px는 저사양 기기에서 프레임 드랍 가능 — ≤ 24px 권장",
+      "fxHintAmpWarn": "진폭 > 24px는 성능에 영향 가능 — 조정 권장",
+      "fxHintAmpOk": "파라미터가 권장 범위 내 — 양호",
+      "fxNoNumericParams": "이 효과에는 숫자 파라미터 없음",
+      "fxSectionParams": "§1 · 모션 파라미터",
+      "fxSectionControls": "§2 · 제어 옵션"
     }
   };
 

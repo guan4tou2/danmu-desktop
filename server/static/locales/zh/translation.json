@@ -2073,5 +2073,19 @@
   "modqueueBulkApproveBody": "佇列中所有 LOW 嚴重度的待審訊息都會被放行。",
   "modqueueBulkRejectBody": "佇列中所有 HIGH 嚴重度的待審訊息都會被拒絕。",
   "modqueueBulkApproveConfirm": "全部通過",
-  "modqueueBulkRejectConfirm": "全部拒絕"
+  "modqueueBulkRejectConfirm": "全部拒絕",
+  "fxToastBadExt": ".dme / .dme.zip 才接受",
+  "fxDeleteTitle": "刪除確認",
+  "fxDeleteBody": "確定要刪除 {name} 嗎？",
+  "fxDeleteWarn": "刪除後無法復原，已使用此效果的歷史訊息將顯示為預設樣式。",
+  "fxDeleteConfirm": "確認刪除",
+  "fxHintFlashBlock": "頻率 > 4× 可能誘發光敏性癲癇，WCAG 2.1 SC 2.3.1 封鎖",
+  "fxHintFlashWarn": "頻率 > 3× 接近 WCAG 2.1 SC 2.3.1 警告閾值",
+  "fxHintFlashOk": "頻率在 WCAG 安全範圍內",
+  "fxHintAmpBlock": "振幅 > 30px 在低端裝置可能掉幀，建議 ≤ 24px",
+  "fxHintAmpWarn": "振幅 > 24px 可能影響效能，建議適度調整",
+  "fxHintAmpOk": "參數在建議範圍內，效能良好",
+  "fxNoNumericParams": "此效果無數值參數",
+  "fxSectionParams": "§1 · 動態參數",
+  "fxSectionControls": "§2 · 控制選項"
 }

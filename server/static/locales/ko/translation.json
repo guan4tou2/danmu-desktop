@@ -2073,5 +2073,19 @@
   "modqueueBulkApproveBody": "대기열의 LOW 심각도 대기 메시지가 모두 통과됩니다.",
   "modqueueBulkRejectBody": "대기열의 HIGH 심각도 대기 메시지가 모두 거부됩니다.",
   "modqueueBulkApproveConfirm": "전체 승인",
-  "modqueueBulkRejectConfirm": "전체 거부"
+  "modqueueBulkRejectConfirm": "전체 거부",
+  "fxToastBadExt": ".dme / .dme.zip만 허용",
+  "fxDeleteTitle": "삭제 확인",
+  "fxDeleteBody": "{name}을(를) 삭제할까요?",
+  "fxDeleteWarn": "되돌릴 수 없으며, 이 효과를 쓴 과거 메시지는 기본 스타일로 표시됩니다.",
+  "fxDeleteConfirm": "삭제 확정",
+  "fxHintFlashBlock": "빈도 > 4×는 광과민성 발작 유발 가능 — WCAG 2.1 SC 2.3.1 차단",
+  "fxHintFlashWarn": "빈도 > 3×는 WCAG 2.1 SC 2.3.1 경고 임계값에 근접",
+  "fxHintFlashOk": "빈도가 WCAG 안전 범위 내",
+  "fxHintAmpBlock": "진폭 > 30px는 저사양 기기에서 프레임 드랍 가능 — ≤ 24px 권장",
+  "fxHintAmpWarn": "진폭 > 24px는 성능에 영향 가능 — 조정 권장",
+  "fxHintAmpOk": "파라미터가 권장 범위 내 — 양호",
+  "fxNoNumericParams": "이 효과에는 숫자 파라미터 없음",
+  "fxSectionParams": "§1 · 모션 파라미터",
+  "fxSectionControls": "§2 · 제어 옵션"
 }

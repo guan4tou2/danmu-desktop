@@ -2073,5 +2073,19 @@
   "modqueueBulkApproveBody": "キュー内の LOW 重要度の保留メッセージをすべて通します。",
   "modqueueBulkRejectBody": "キュー内の HIGH 重要度の保留メッセージをすべて拒否します。",
   "modqueueBulkApproveConfirm": "すべて承認",
-  "modqueueBulkRejectConfirm": "すべて拒否"
+  "modqueueBulkRejectConfirm": "すべて拒否",
+  "fxToastBadExt": ".dme / .dme.zip のみ対応",
+  "fxDeleteTitle": "削除の確認",
+  "fxDeleteBody": "{name} を削除しますか？",
+  "fxDeleteWarn": "取り消せません。この効果を使った過去メッセージは既定スタイルで表示されます。",
+  "fxDeleteConfirm": "削除する",
+  "fxHintFlashBlock": "頻度 > 4× は光過敏性発作の恐れ — WCAG 2.1 SC 2.3.1 でブロック",
+  "fxHintFlashWarn": "頻度 > 3× は WCAG 2.1 SC 2.3.1 警告閾値に接近",
+  "fxHintFlashOk": "頻度は WCAG 安全範囲内",
+  "fxHintAmpBlock": "振幅 > 30px は低スペック端末でコマ落ちの恐れ — ≤ 24px 推奨",
+  "fxHintAmpWarn": "振幅 > 24px は性能に影響の恐れ — 調整推奨",
+  "fxHintAmpOk": "パラメータは推奨範囲内 — 良好",
+  "fxNoNumericParams": "この効果に数値パラメータなし",
+  "fxSectionParams": "§1 · モーションパラメータ",
+  "fxSectionControls": "§2 · 制御オプション"
 }

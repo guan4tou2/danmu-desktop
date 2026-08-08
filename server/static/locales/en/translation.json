@@ -2073,5 +2073,19 @@
   "modqueueBulkApproveBody": "Every pending LOW-severity message in the queue will be released.",
   "modqueueBulkRejectBody": "Every pending HIGH-severity message in the queue will be rejected.",
   "modqueueBulkApproveConfirm": "Approve all",
-  "modqueueBulkRejectConfirm": "Reject all"
+  "modqueueBulkRejectConfirm": "Reject all",
+  "fxToastBadExt": "Only .dme / .dme.zip accepted",
+  "fxDeleteTitle": "Confirm delete",
+  "fxDeleteBody": "Delete {name}?",
+  "fxDeleteWarn": "This can't be undone; historical messages using this effect fall back to the default style.",
+  "fxDeleteConfirm": "Confirm delete",
+  "fxHintFlashBlock": "Rate > 4× may trigger photosensitive seizures — blocked per WCAG 2.1 SC 2.3.1",
+  "fxHintFlashWarn": "Rate > 3× nears the WCAG 2.1 SC 2.3.1 warning threshold",
+  "fxHintFlashOk": "Rate within WCAG safe range",
+  "fxHintAmpBlock": "Amplitude > 30px may drop frames on low-end devices — keep ≤ 24px",
+  "fxHintAmpWarn": "Amplitude > 24px may hurt performance — consider easing it",
+  "fxHintAmpOk": "Parameters within recommended range — performance is good",
+  "fxNoNumericParams": "This effect has no numeric parameters",
+  "fxSectionParams": "§1 · Motion parameters",
+  "fxSectionControls": "§2 · Control options"
 }

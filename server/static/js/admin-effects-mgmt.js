@@ -559,7 +559,7 @@
         const file = e.dataTransfer?.files?.[0];
         if (!file) return;
         if (!/\.(dme|dme\.zip)$/i.test(file.name)) {
-          showToast(".dme / .dme.zip 才接受", false);
+          showToast(ServerI18n.t("fxToastBadExt"), false);
           return;
         }
         await _uploadEffectFile(file);
@@ -805,18 +805,18 @@
         const effName = eff.label || eff.name;
         const ok = await window.HudConfirm?.open({
               icon: "⊗",
-              title: "刪除確認",
+              title: ServerI18n.t("fxDeleteTitle"),
               subtitle: "DELETE · THIS ACTION CANNOT BE UNDONE",
               severity: "danger",
               body: `
                 <div style="font-size:13px;color:var(--hud-text, #f1f5f9);line-height:1.7;">
-                  確定要刪除 <span style="font-family:var(--hud-font-mono, ui-monospace, monospace);color: var(--color-ink-accent);font-weight:600;">${effName}.dme</span> 嗎？
+                  ${ServerI18n.t("fxDeleteBody", { name: `<span style="font-family:var(--hud-font-mono, ui-monospace, monospace);color: var(--color-ink-accent);font-weight:600;">${effName}.dme</span>` })}
                 </div>
                 <div style="margin-top:12px;padding:10px 12px;border-radius:4px;background:rgba(255,77,79,0.05);border:1px solid rgba(255,77,79,0.19);font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:10px;color: var(--color-ink-error);letter-spacing:0.3px;">
-                  刪除後無法復原，已使用此效果的歷史訊息將顯示為預設樣式。
+                  ${ServerI18n.t("fxDeleteWarn")}
                 </div>`,
-              confirmLabel: "確認刪除",
-              cancelLabel: "取消",
+              confirmLabel: ServerI18n.t("fxDeleteConfirm"),
+              cancelLabel: ServerI18n.t("cancel"),
               width: 400,
             });
         if (!ok) return;
@@ -951,13 +951,13 @@
 
   function _getWarnText(category, tone) {
     if (category === "COLOR") {
-      if (tone === "crimson") return "頻率 > 4× 可能誘發光敏性癲癇，WCAG 2.1 SC 2.3.1 封鎖";
-      if (tone === "amber")   return "頻率 > 3× 接近 WCAG 2.1 SC 2.3.1 警告閾值";
-      return "頻率在 WCAG 安全範圍內";
+      if (tone === "crimson") return ServerI18n.t("fxHintFlashBlock");
+      if (tone === "amber")   return ServerI18n.t("fxHintFlashWarn");
+      return ServerI18n.t("fxHintFlashOk");
     }
-    if (tone === "crimson") return "振幅 > 30px 在低端裝置可能掉幀，建議 ≤ 24px";
-    if (tone === "amber")   return "振幅 > 24px 可能影響效能，建議適度調整";
-    return "參數在建議範圍內，效能良好";
+    if (tone === "crimson") return ServerI18n.t("fxHintAmpBlock");
+    if (tone === "amber")   return ServerI18n.t("fxHintAmpWarn");
+    return ServerI18n.t("fxHintAmpOk");
   }
 
   function _renderEffectParamPanel(eff, yamlContent) {
@@ -1001,7 +1001,7 @@
           <span>${mn}${escapeHtml(unit)}</span><span>${mx}${escapeHtml(unit)}</span>
         </div>
       </div>`;
-    }).join("") || `<span style="font-size:11px;color:var(--color-text-muted)">此效果無數值參數</span>`;
+    }).join("") || `<span style="font-size:11px;color:var(--color-text-muted)">${ServerI18n.t("fxNoNumericParams")}</span>`;
 
     // §2 select/radio
     let selectHTML = selectParams.map((p) => {
@@ -1027,14 +1027,14 @@
 
     let html = `${previewCSS}<div class="fx-param-body">
       <div>
-        <div class="fx-section-head">§1 · 動態參數</div>
+        <div class="fx-section-head">${ServerI18n.t("fxSectionParams")}</div>
         <div style="display:flex;flex-direction:column;gap:14px">${slidersHTML}</div>
       </div>`;
 
     if (selectHTML) {
       html += `<div class="fx-divider"></div>
       <div>
-        <div class="fx-section-head">§2 · 控制選項</div>
+        <div class="fx-section-head">${ServerI18n.t("fxSectionControls")}</div>
         <div style="display:flex;flex-direction:column;gap:12px">${selectHTML}</div>
       </div>`;
     }
