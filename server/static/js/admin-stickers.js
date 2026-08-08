@@ -34,7 +34,7 @@
       window.DANMU_CONFIG && window.DANMU_CONFIG.session && window.DANMU_CONFIG.session.logged_in;
     var uploadBlock = loggedIn
       ? `
-          <div class="admin-ui-monolabel" style="margin-bottom:10px">+ 新增貼圖</div>
+          <div class="admin-ui-monolabel" style="margin-bottom:10px">+ ${ServerI18n.t("stickersAddLabel")}</div>
           <div class="admin-stickers-upload">
             <label class="admin-stickers-field">
               <span class="admin-ui-monolabel">FILE · GIF/PNG/WEBP · ≤300KB</span>
@@ -45,7 +45,7 @@
                 class="admin-ui-input"
               />
             </label>
-            <button id="stickerUploadBtn" type="button" class="admin-ui-action is-primary admin-sticker-action">上傳</button>
+            <button id="stickerUploadBtn" type="button" class="admin-ui-action is-primary admin-sticker-action">${ServerI18n.t("stickersUploadBtn")}</button>
           </div>`
       : "";
 
@@ -53,9 +53,9 @@
       <div id="${SECTION_ID}" class="admin-stickers-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">ASSETS · STICKERS · QUICK-SEND FOR AUDIENCE</div>
-          <div class="admin-ui-page-title">Sticker 包管理</div>
+          <div class="admin-ui-page-title">${ServerI18n.t("stickersPageTitle")}</div>
           <p class="admin-ui-page-note">
-            比 emoji 大的浮動圖像 — 最大 300KB,按權重隨機。
+            ${ServerI18n.t("stickersPageNote")}
           </p>
         </div>
 
@@ -69,8 +69,8 @@
                 type="button"
                 class="admin-ui-action is-primary admin-sticker-pack-add"
                 style="margin-left:auto"
-                title="新增貼圖包"
-              >+ 新增</button>
+                title="${ServerI18n.t("stickersNewPackTitle")}"
+              >${ServerI18n.t("stickersNewBtn")}</button>
             </div>
             <div id="stickerPackList" class="admin-stickers-pack-list"></div>
           </aside>
@@ -85,7 +85,7 @@
                 <input
                   id="stickerSearchInput"
                   type="search"
-                  placeholder=":name 過濾"
+                  placeholder="${ServerI18n.t("stickersSearchPlaceholder")}"
                   class="admin-ui-input"
                   style="flex:1;max-width:280px"
                 />
@@ -117,7 +117,7 @@
     var html = '<button type="button" class="admin-stickers-pack' +
       (_activePackId === ALL_PACK_KEY ? " is-active" : "") + '" data-pack="' + ALL_PACK_KEY + '">' +
       '<span class="admin-ui-dot is-success"></span>' +
-      '<span class="admin-stickers-pack-name">全部貼圖</span>' +
+      '<span class="admin-stickers-pack-name">' + ServerI18n.t("stickersAllPacks") + '</span>' +
       '<span class="admin-stickers-pack-count">' + _packCount(ALL_PACK_KEY) + '</span>' +
       '</button>';
 
@@ -128,11 +128,11 @@
       var actions = isDefault
         ? ""
         : '<div class="admin-stickers-pack-actions" style="display:flex;gap:4px;flex-wrap:wrap;padding-left:14px">' +
-            '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="rename" data-pack-id="' + escapeAttr(pack.id) + '" title="重新命名">✎</button>' +
-            '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="up" data-pack-id="' + escapeAttr(pack.id) + '" title="上移">↑</button>' +
-            '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="down" data-pack-id="' + escapeAttr(pack.id) + '" title="下移">↓</button>' +
-            '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="toggle" data-pack-id="' + escapeAttr(pack.id) + '" title="' + (pack.enabled ? "停用" : "啟用") + '">' + (pack.enabled ? "ON" : "OFF") + '</button>' +
-            '<button type="button" class="admin-ui-chip is-danger admin-sticker-pack-action" data-pack-action="delete" data-pack-id="' + escapeAttr(pack.id) + '" title="刪除貼圖包">' + window.AdminUtils.closeIcon + '</button>' +
+            '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="rename" data-pack-id="' + escapeAttr(pack.id) + '" title="' + ServerI18n.t("stickersRenameTitle") + '">✎</button>' +
+            '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="up" data-pack-id="' + escapeAttr(pack.id) + '" title="' + ServerI18n.t("stickersMoveUp") + '">↑</button>' +
+            '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="down" data-pack-id="' + escapeAttr(pack.id) + '" title="' + ServerI18n.t("stickersMoveDown") + '">↓</button>' +
+            '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="toggle" data-pack-id="' + escapeAttr(pack.id) + '" title="' + (pack.enabled ? ServerI18n.t("stickersDisable") : ServerI18n.t("stickersEnable")) + '">' + (pack.enabled ? "ON" : "OFF") + '</button>' +
+            '<button type="button" class="admin-ui-chip is-danger admin-sticker-pack-action" data-pack-action="delete" data-pack-id="' + escapeAttr(pack.id) + '" title="' + ServerI18n.t("stickersDeletePackTitle") + '">' + window.AdminUtils.closeIcon + '</button>' +
           '</div>';
       html +=
         '<div class="' + rowCls + '" data-pack="' + escapeAttr(pack.id) + '" style="display:flex;flex-direction:column;gap:4px">' +
@@ -186,16 +186,16 @@
       var card = window.AdminEmpty.renderCustom({
         icon: "▦",
         title: ServerI18n.t("noStickersUploaded"),
-        desc: "觀眾整句輸入 :名稱: 時，該句會變成貼圖飛過畫面。",
+        desc: ServerI18n.t("stickersEmptyDesc"),
       });
       card.dataset.emptyKind = "stickers";
       card.style.gridColumn = "1 / -1";
       grid.appendChild(card);
-      if (count) count.textContent = "0 項";
+      if (count) count.textContent = ServerI18n.t("stickersItemCount", { n: 0 });
       return;
     }
     grid.innerHTML = filtered.map(stickerCard).join("");
-    if (count) count.textContent = filtered.length + " 項";
+    if (count) count.textContent = ServerI18n.t("stickersItemCount", { n: filtered.length });
   }
 
   // ─── Fetch ──────────────────────────────────────────────────────────
@@ -237,7 +237,7 @@
     }
     if (action === "rename") {
       var current = _packs.find(function (p) { return p.id === packId; });
-      var name = prompt("貼圖包名稱", current ? current.name : "");
+      var name = prompt(ServerI18n.t("stickersPackNamePrompt"), current ? current.name : "");
       if (!name) return;
       try {
         var resp = await window.csrfFetch("/admin/stickers/packs/" + encodeURIComponent(packId) + "/rename", {
@@ -247,10 +247,10 @@
         });
         var data = await resp.json();
         if (resp.ok) {
-          window.showToast("已重新命名");
+          window.showToast(ServerI18n.t("stickersToastRenamed"));
           await fetchAndRender();
         } else {
-          window.showToast(data.error || "重新命名失敗", false);
+          window.showToast(data.error || ServerI18n.t("stickersToastRenameFailed"), false);
         }
       } catch (_) {
         window.showToast("Network error", false);
@@ -269,11 +269,11 @@
     if (action === "delete") {
       const ok = await window.HudConfirm?.open({
         icon: "⊘",
-        title: "刪除貼圖包",
+        title: ServerI18n.t("stickersDeletePackTitle"),
         subtitle: "DELETE PACK · ALL STICKERS INSIDE ARE REMOVED",
         severity: "danger",
-        body: "這個貼圖包內的所有貼圖都會一起刪除，無法復原。",
-        confirmLabel: "刪除貼圖包",
+        body: ServerI18n.t("stickersDeletePackBody"),
+        confirmLabel: ServerI18n.t("stickersDeletePackTitle"),
       });
       if (!ok) return;
       try {
@@ -282,11 +282,11 @@
         });
         var dd = await dr.json();
         if (dr.ok) {
-          window.showToast("貼圖包已刪除");
+          window.showToast(ServerI18n.t("stickersToastPackDeleted"));
           if (_activePackId === packId) _activePackId = ALL_PACK_KEY;
           await fetchAndRender();
         } else {
-          window.showToast(dd.error || "刪除失敗", false);
+          window.showToast(dd.error || ServerI18n.t("stickersToastDeleteFailed"), false);
         }
       } catch (_) {
         window.showToast("Network error", false);
@@ -321,7 +321,7 @@
   }
 
   async function handleAddPack() {
-    var name = prompt("新貼圖包名稱");
+    var name = prompt(ServerI18n.t("stickersNewPackPrompt"));
     if (!name) return;
     try {
       var r = await window.csrfFetch("/admin/stickers/packs/create", {
@@ -331,11 +331,11 @@
       });
       var d = await r.json();
       if (r.ok) {
-        window.showToast("貼圖包已建立");
+        window.showToast(ServerI18n.t("stickersToastPackCreated"));
         _activePackId = d.pack && d.pack.id ? d.pack.id : _activePackId;
         await fetchAndRender();
       } else {
-        window.showToast(d.error || "建立失敗", false);
+        window.showToast(d.error || ServerI18n.t("stickersToastCreateFailed"), false);
       }
     } catch (_) {
       window.showToast("Network error", false);
@@ -400,11 +400,11 @@
   async function handleDelete(name) {
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
-      title: "刪除貼圖",
+      title: ServerI18n.t("stickersDeleteTitle"),
       subtitle: "DELETE STICKER",
       severity: "danger",
       bodyText: ServerI18n.t("deleteStickerConfirm").replace("{name}", name),
-      confirmLabel: "刪除",
+      confirmLabel: ServerI18n.t("stickersDeleteConfirm"),
     });
     if (!ok) return;
     try {
