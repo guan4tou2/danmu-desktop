@@ -2058,5 +2058,20 @@
   "fontsUploadFailedRetry": "업로드에 실패했습니다. 잠시 후 다시 시도해 주세요.",
   "fontsNetworkErrorShort": "네트워크 오류",
   "fontsNetworkDisconnected": "네트워크 연결이 끊겼습니다. 확인 후 다시 시도해 주세요.",
-  "fontsDeleteModalTitle": "글꼴 삭제"
+  "fontsDeleteModalTitle": "글꼴 삭제",
+  "modqueueEmptyTitle": "대기열 비움",
+  "modqueueEmptyDesc": "대기 메시지 모두 처리됨. 새로 필터링된 메시지는 자동으로 여기에 표시됩니다.",
+  "modqueueEmptyAction": "← Live Feed로 돌아가기",
+  "modqueueEmptyAuditLink": "심사 기록 보기 →",
+  "modqueueToastApproved": "승인됨",
+  "modqueueToastRejected": "거부됨",
+  "modqueueToastActionFailed": "작업 실패 · {msg}",
+  "modqueueToastNetworkError": "네트워크 오류",
+  "modqueueHintLine": "ℹ Live Feed에서 \"대기\"로 표시된 메시지는 자동으로 이 대기열로 · Live Feed의 FLAG 행 클릭 시 여기로 이동",
+  "modqueueBulkApproveTitle": "LOW 모두 승인",
+  "modqueueBulkRejectTitle": "HIGH 모두 거부",
+  "modqueueBulkApproveBody": "대기열의 LOW 심각도 대기 메시지가 모두 통과됩니다.",
+  "modqueueBulkRejectBody": "대기열의 HIGH 심각도 대기 메시지가 모두 거부됩니다.",
+  "modqueueBulkApproveConfirm": "전체 승인",
+  "modqueueBulkRejectConfirm": "전체 거부"
 }

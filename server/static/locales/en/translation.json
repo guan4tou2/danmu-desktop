@@ -2058,5 +2058,20 @@
   "fontsUploadFailedRetry": "Upload failed. Please try again later.",
   "fontsNetworkErrorShort": "Network error",
   "fontsNetworkDisconnected": "Network connection lost. Please check and try again.",
-  "fontsDeleteModalTitle": "Delete Font"
+  "fontsDeleteModalTitle": "Delete Font",
+  "modqueueEmptyTitle": "Queue cleared",
+  "modqueueEmptyDesc": "All pending messages handled. New filtered messages will show up here automatically.",
+  "modqueueEmptyAction": "← Back to Live Feed",
+  "modqueueEmptyAuditLink": "View review log →",
+  "modqueueToastApproved": "Approved",
+  "modqueueToastRejected": "Rejected",
+  "modqueueToastActionFailed": "Action failed · {msg}",
+  "modqueueToastNetworkError": "Network error",
+  "modqueueHintLine": "ℹ Messages flagged \"pending\" in the Live Feed land here automatically · click a FLAG row in the Live Feed to jump here",
+  "modqueueBulkApproveTitle": "Approve all LOW messages",
+  "modqueueBulkRejectTitle": "Reject all HIGH messages",
+  "modqueueBulkApproveBody": "Every pending LOW-severity message in the queue will be released.",
+  "modqueueBulkRejectBody": "Every pending HIGH-severity message in the queue will be rejected.",
+  "modqueueBulkApproveConfirm": "Approve all",
+  "modqueueBulkRejectConfirm": "Reject all"
 }

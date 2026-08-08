@@ -68,7 +68,7 @@
     const sevCol = SEV_COLOR[sev] || SEV_COLOR.low;
     const hue = _fpHue(msg.fp);
     const fpShort = String(msg.fp || "—").slice(0, 8);
-    const nick = msg.nick || msg.nickname || "匿名";
+    const nick = msg.nick || msg.nickname || ServerI18n.t("audienceAnonymous");
     const initial = (nick || "?").slice(0, 2).toUpperCase();
     const left = (col === "pending") ? _countdown(msg) : null;
 
@@ -142,12 +142,12 @@
       emptyHost.innerHTML = "";
       emptyHost.appendChild(window.AdminEmpty.renderCustom({
         icon: "✓",
-        title: "佇列已清空",
-        desc: "所有待審訊息已處理完畢。當新的敏感訊息被過濾時，會自動出現在這裡。",
+        title: ServerI18n.t("modqueueEmptyTitle"),
+        desc: ServerI18n.t("modqueueEmptyDesc"),
         accent: "var(--color-ink-success)",
-        actionLabel: "← 回到 Live Feed",
+        actionLabel: ServerI18n.t("modqueueEmptyAction"),
         action: function () { location.hash = "#/live"; },
-        extra: '<a href="#/audit" style="color: var(--color-ink-accent); text-decoration:underline">查看審核紀錄 →</a>',
+        extra: '<a href="#/audit" style="color: var(--color-ink-accent); text-decoration:underline">' + ServerI18n.t("modqueueEmptyAuditLink") + '</a>',
       }));
     }
   }
@@ -227,14 +227,14 @@
       });
       if (r.ok) {
         window.showToast && window.showToast(
-          action === "approve" ? "已通過" : "已拒絕", true);
+          action === "approve" ? ServerI18n.t("modqueueToastApproved") : ServerI18n.t("modqueueToastRejected"), true);
         _fetch();
       } else {
         const j = await r.json().catch(() => ({}));
-        window.showToast && window.showToast("動作失敗 · " + (j.error || ""), false);
+        window.showToast && window.showToast(ServerI18n.t("modqueueToastActionFailed", { msg: j.error || "" }), false);
       }
     } catch (_) {
-      window.showToast && window.showToast("網路錯誤", false);
+      window.showToast && window.showToast(ServerI18n.t("modqueueToastNetworkError"), false);
     }
   }
 
@@ -270,7 +270,7 @@
 
         <!-- Integration hint -->
         <div class="admin-mq__hint">
-          ℹ Live Feed 中標記為「待審」的訊息會自動進入此佇列 · 點 Live Feed 中的 FLAG 行可跳轉到這裡
+          ${ServerI18n.t("modqueueHintLine")}
         </div>
 
         <!-- Swimlane body -->
@@ -333,13 +333,13 @@
         const approving = kind === "approve-low";
         const ok = await window.HudConfirm?.open({
           icon: approving ? "✓" : "⊘",
-          title: approving ? "通過所有 LOW 訊息" : "拒絕所有 HIGH 訊息",
+          title: approving ? ServerI18n.t("modqueueBulkApproveTitle") : ServerI18n.t("modqueueBulkRejectTitle"),
           subtitle: "BULK MODERATION · APPLIES TO THE WHOLE QUEUE",
           severity: approving ? "warn" : "danger",
           body: approving
-            ? "佇列中所有 LOW 嚴重度的待審訊息都會被放行。"
-            : "佇列中所有 HIGH 嚴重度的待審訊息都會被拒絕。",
-          confirmLabel: approving ? "全部通過" : "全部拒絕",
+            ? ServerI18n.t("modqueueBulkApproveBody")
+            : ServerI18n.t("modqueueBulkRejectBody"),
+          confirmLabel: approving ? ServerI18n.t("modqueueBulkApproveConfirm") : ServerI18n.t("modqueueBulkRejectConfirm"),
         });
         if (!ok) return;
         const action = kind.startsWith("approve") ? "approve" : "reject";

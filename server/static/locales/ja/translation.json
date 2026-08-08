@@ -2058,5 +2058,20 @@
   "fontsUploadFailedRetry": "アップロードに失敗しました。しばらくしてから再度お試しください。",
   "fontsNetworkErrorShort": "ネットワークエラー",
   "fontsNetworkDisconnected": "ネットワーク接続が切断されました。確認のうえ再度お試しください。",
-  "fontsDeleteModalTitle": "フォントを削除"
+  "fontsDeleteModalTitle": "フォントを削除",
+  "modqueueEmptyTitle": "キューは空です",
+  "modqueueEmptyDesc": "保留メッセージはすべて処理済み。新たにフィルタされたメッセージは自動でここに表示。",
+  "modqueueEmptyAction": "← Live Feed に戻る",
+  "modqueueEmptyAuditLink": "審査ログを見る →",
+  "modqueueToastApproved": "承認しました",
+  "modqueueToastRejected": "拒否しました",
+  "modqueueToastActionFailed": "操作失敗 · {msg}",
+  "modqueueToastNetworkError": "ネットワークエラー",
+  "modqueueHintLine": "ℹ Live Feed で「保留」フラグされたメッセージは自動でこのキューへ · Live Feed の FLAG 行クリックでここへ",
+  "modqueueBulkApproveTitle": "LOW をすべて承認",
+  "modqueueBulkRejectTitle": "HIGH をすべて拒否",
+  "modqueueBulkApproveBody": "キュー内の LOW 重要度の保留メッセージをすべて通します。",
+  "modqueueBulkRejectBody": "キュー内の HIGH 重要度の保留メッセージをすべて拒否します。",
+  "modqueueBulkApproveConfirm": "すべて承認",
+  "modqueueBulkRejectConfirm": "すべて拒否"
 }

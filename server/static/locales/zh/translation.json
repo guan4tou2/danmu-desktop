@@ -2058,5 +2058,20 @@
   "fontsUploadFailedRetry": "上傳失敗，請稍後再試。",
   "fontsNetworkErrorShort": "網路錯誤",
   "fontsNetworkDisconnected": "網路連線中斷，請檢查後重試。",
-  "fontsDeleteModalTitle": "刪除字型"
+  "fontsDeleteModalTitle": "刪除字型",
+  "modqueueEmptyTitle": "佇列已清空",
+  "modqueueEmptyDesc": "所有待審訊息已處理完畢。當新的敏感訊息被過濾時，會自動出現在這裡。",
+  "modqueueEmptyAction": "← 回到 Live Feed",
+  "modqueueEmptyAuditLink": "查看審核紀錄 →",
+  "modqueueToastApproved": "已通過",
+  "modqueueToastRejected": "已拒絕",
+  "modqueueToastActionFailed": "動作失敗 · {msg}",
+  "modqueueToastNetworkError": "網路錯誤",
+  "modqueueHintLine": "ℹ Live Feed 中標記為「待審」的訊息會自動進入此佇列 · 點 Live Feed 中的 FLAG 行可跳轉到這裡",
+  "modqueueBulkApproveTitle": "通過所有 LOW 訊息",
+  "modqueueBulkRejectTitle": "拒絕所有 HIGH 訊息",
+  "modqueueBulkApproveBody": "佇列中所有 LOW 嚴重度的待審訊息都會被放行。",
+  "modqueueBulkRejectBody": "佇列中所有 HIGH 嚴重度的待審訊息都會被拒絕。",
+  "modqueueBulkApproveConfirm": "全部通過",
+  "modqueueBulkRejectConfirm": "全部拒絕"
 }
