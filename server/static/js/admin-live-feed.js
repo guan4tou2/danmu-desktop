@@ -109,14 +109,14 @@
       let el;
       if (kind === "paused") {
         el = window.AdminEmpty.renderCustom({
-          icon: "⏸", title: "Live Feed 已暫停",
-          desc: hint || "目前不接收新訊息 — 點頂部「Resume」恢復串流。",
+          icon: "⏸", title: ServerI18n.t("lfPausedTitle"),
+          desc: hint || ServerI18n.t("lfPausedDesc"),
           accent: "var(--color-ink-warning)",
         });
       } else if (kind === "no-result") {
         el = window.AdminEmpty.renderCustom({
-          icon: "○", title: "沒有符合的訊息",
-          desc: hint || "清除搜尋或切回「全部」標籤檢視所有訊息。",
+          icon: "○", title: ServerI18n.t("lfNoMatchTitle"),
+          desc: hint || ServerI18n.t("lfNoMatchDesc"),
         });
       } else {
         el = window.AdminEmpty.render("messages");
@@ -242,11 +242,11 @@
 
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
-      title: "封鎖",
+      title: ServerI18n.t("lfBlockTitle"),
       subtitle: "BLOCK · FUTURE MESSAGES ARE FILTERED",
       severity: "danger",
       bodyText: ServerI18n.t("blockConfirm").replace("{label}", label).replace("{display}", display),
-      confirmLabel: "封鎖",
+      confirmLabel: ServerI18n.t("lfBlockTitle"),
     });
     if (!ok) return;
 
@@ -288,11 +288,11 @@
     if (targets.length === 0) return;
     const confirmed = await window.HudConfirm?.open({
       icon: "⊘",
-      title: "批次遮罩訊息",
+      title: ServerI18n.t("lfBulkMaskTitle"),
       subtitle: "BULK MASK · BY FINGERPRINT",
       severity: "danger",
-      body: `將依指紋遮罩 <b>${targets.length}</b> 則訊息。`,
-      confirmLabel: "批次遮罩",
+      body: ServerI18n.t("lfBulkMaskBody", { n: `<b>${targets.length}</b>` }),
+      confirmLabel: ServerI18n.t("lfBulkMaskConfirm"),
     });
     if (!confirmed) return;
 
@@ -314,7 +314,7 @@
       }
     }
     selected.clear();
-    showToast(`已遮罩 ${ok} / ${targets.length}`);
+    showToast(ServerI18n.t("lfToastMasked", { ok: ok, total: targets.length }));
     renderList();
   }
 
@@ -354,7 +354,7 @@
     const total = entries.length;
     const buffered = pauseBuffer.length;
     countBadge.textContent =
-      total + " 筆" + (buffered > 0 ? ` (+${buffered})` : "");
+      ServerI18n.t("lfCountUnit", { n: total }) + (buffered > 0 ? ` (+${buffered})` : "");
   }
 
   function updateBulkBar() {
@@ -415,7 +415,7 @@
     if (rate) rate.textContent = `${_currentRate()} MSG/S`;
     if (total) total.textContent = `${entries.length} TOTAL`;
     if (dot) dot.dataset.state = paused ? "paused" : "on";
-    if (lbl) lbl.textContent = paused ? "已暫停" : "自動滾動 · ON";
+    if (lbl) lbl.textContent = paused ? ServerI18n.t("lfAutoScrollPaused") : ServerI18n.t("lfAutoScrollOn");
   }
 
   function _updateChipCounts() {
@@ -464,8 +464,8 @@
       <div id="${SECTION_ID}" class="admin-live-feed-page admin-lf-v4 hud-page-stack lg:col-span-2" data-tpl="A">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">LIVE FEED · AUTO-SCROLL · REAL-TIME</div>
-          <div class="admin-ui-page-title">即時訊息流</div>
-          <p class="admin-ui-page-note">場次進行中的彈幕即時串；可就地封鎖、標記進審核佇列。</p>
+          <div class="admin-ui-page-title">${ServerI18n.t("lfPageTitle")}</div>
+          <p class="admin-ui-page-note">${ServerI18n.t("lfPageNote")}</p>
         </div>
 
         <div class="admin-lf-v4__card">
@@ -473,16 +473,16 @@
           <div class="admin-lf-v4__filterbar">
             <div class="admin-lf-v4__chips" role="tablist">
               <button type="button" class="admin-lf-v4__chip is-active admin-live-feed-tab" data-tab="all" role="tab">
-                全部 <span class="admin-lf-v4__count" data-cnt-all>0</span>
+                ${ServerI18n.t("lfChipAll")} <span class="admin-lf-v4__count" data-cnt-all>0</span>
               </button>
               <button type="button" class="admin-lf-v4__chip admin-live-feed-tab" data-tab="sensitive" role="tab">
-                含敏感字 <span class="admin-lf-v4__count" data-cnt-sens>0</span>
+                ${ServerI18n.t("lfChipSensitive")} <span class="admin-lf-v4__count" data-cnt-sens>0</span>
               </button>
               <button type="button" class="admin-lf-v4__chip admin-live-feed-tab" data-tab="muted" role="tab">
-                已封鎖 <span class="admin-lf-v4__count" data-cnt-mut>0</span>
+                ${ServerI18n.t("lfChipBlocked")} <span class="admin-lf-v4__count" data-cnt-mut>0</span>
               </button>
               <button type="button" class="admin-lf-v4__chip admin-live-feed-tab" data-tab="queued" role="tab">
-                待審 <span class="admin-lf-v4__count" data-cnt-q>0</span>
+                ${ServerI18n.t("lfChipPending")} <span class="admin-lf-v4__count" data-cnt-q>0</span>
               </button>
             </div>
             <span class="admin-lf-v4__spacer"></span>
@@ -499,25 +499,25 @@
           <!-- Bulk-select bar (kept for batch fingerprint block flow) -->
           <div id="liveFeedBulk" class="admin-lf-v4__bulk" hidden>
             <span class="admin-ui-monolabel">BULK ·
-              <span class="admin-live-feed-bulk-count">0</span> 已選
+              <span class="admin-live-feed-bulk-count">0</span> ${ServerI18n.t("lfBulkSelected")}
             </span>
             <span class="admin-lf-v4__spacer"></span>
-            <button type="button" id="liveFeedBulkBlock" class="admin-ui-action is-primary admin-live-feed-bulk-action">批次遮罩指紋</button>
-            <button type="button" id="liveFeedBulkClear" class="admin-ui-action admin-live-feed-bulk-action">清除選取</button>
+            <button type="button" id="liveFeedBulkBlock" class="admin-ui-action is-primary admin-live-feed-bulk-action">${ServerI18n.t("lfBulkBlockBtn")}</button>
+            <button type="button" id="liveFeedBulkClear" class="admin-ui-action admin-live-feed-bulk-action">${ServerI18n.t("lfBulkClearBtn")}</button>
           </div>
 
           <!-- Message list (relative for sticky jump pill) -->
           <div class="admin-lf-v4__streamwrap">
             <div id="liveFeedList" class="admin-live-feed-list admin-lf-v4__list" role="list" data-density="comfy"></div>
             <div class="admin-lf-v4__jump" data-lf-jump hidden>
-              <button type="button" data-lf-jump-btn>↓ <span data-lf-jump-n>0</span> 新訊息</button>
+              <button type="button" data-lf-jump-btn>↓ <span data-lf-jump-n>0</span> ${ServerI18n.t("lfJumpNew")}</button>
             </div>
           </div>
 
           <!-- Bottom rate bar -->
           <div class="admin-lf-v4__bottom">
             <span class="admin-lf-v4__statedot" data-lf-statedot></span>
-            <span class="admin-lf-v4__statelabel" data-lf-statelabel>自動滾動 · ON</span>
+            <span class="admin-lf-v4__statelabel" data-lf-statelabel>${ServerI18n.t("lfAutoScrollOn")}</span>
             <span class="admin-lf-v4__spacer"></span>
             <span class="admin-lf-v4__counts">
               <span class="admin-ui-monolabel admin-live-feed-count" id="liveFeedCount">0 TOTAL</span>
