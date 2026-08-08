@@ -59,7 +59,7 @@
       const tilePeak = document.querySelector('[data-kpi="peak"]');
       if (tilePeak) {
         tilePeak.querySelector("[data-kpi-value]").textContent = peakVal.toLocaleString();
-        tilePeak.querySelector("[data-kpi-delta]").textContent = peakEntry ? `於 ${peakHour}` : "無資料";
+        tilePeak.querySelector("[data-kpi-delta]").textContent = peakEntry ? ServerI18n.t("dashKpiAtHour", { hour: peakHour }) : ServerI18n.t("dashKpiNoData");
         _renderSparkBars(tilePeak.querySelector("[data-kpi-bars]"), dist.slice(-20).map(e => e.count));
       }
 
@@ -87,7 +87,7 @@
         tileFp.querySelector("[data-kpi-value]").textContent = uniqueCount.toLocaleString();
         const delta = tileFp.querySelector("[data-kpi-delta]");
         if (delta) {
-          delta.textContent = `近 24h · ${uniqueCount > 0 ? `${(total / Math.max(1, uniqueCount)).toFixed(1)} 訊息/人` : "等待訊息"}`;
+          delta.textContent = uniqueCount > 0 ? ServerI18n.t("dashKpiMsgsPerPerson", { rate: (total / Math.max(1, uniqueCount)).toFixed(1) }) : ServerI18n.t("dashKpiWaitingMsgs");
         }
         _renderSparkBars(tileFp.querySelector("[data-kpi-bars]"), hourBuckets.map(s => s.size));
       }
@@ -109,14 +109,14 @@
           valEl.textContent = h > 0
             ? `${h}:${String(m).padStart(2, "0")}`
             : `${m}:${String(secs % 60).padStart(2, "0")}`;
-          if (deltaEl) deltaEl.textContent = _escapeHtml((sess.name || "進行中").slice(0, 16));
+          if (deltaEl) deltaEl.textContent = _escapeHtml((sess.name || ServerI18n.t("dashSessInProgress")).slice(0, 16));
           if (barsEl) {
             // Steady-state bars: gentle upward ramp so the tile reads "ongoing"
             _renderSparkBars(barsEl, [2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12]);
           }
         } else {
           valEl.textContent = "—";
-          if (deltaEl) deltaEl.textContent = "等待場次…";
+          if (deltaEl) deltaEl.textContent = ServerI18n.t("dashSessWaiting");
           if (barsEl) barsEl.innerHTML = "";
         }
       }
@@ -189,7 +189,7 @@
     return (
       `<div class="admin-dash-qp-row">` +
         `<span class="key">${letter}</span>` +
-        `<input type="text" placeholder="選項 ${letter}" maxlength="60" />` +
+        `<input type="text" placeholder="${ServerI18n.t("dashOptionPlaceholder", { letter: letter })}" maxlength="60" />` +
         `<button type="button" class="rm" data-qp-rm ${removable ? "" : "hidden"}>${window.AdminUtils.closeIcon}</button>` +
       `</div>`
     );
@@ -201,7 +201,7 @@
       const k = POLL_KEYS[i] || "+";
       row.querySelector(".key").textContent = k;
       const inp = row.querySelector("input");
-      if (inp) inp.placeholder = `選項 ${k}`;
+      if (inp) inp.placeholder = ServerI18n.t("dashOptionPlaceholder", { letter: k });
       const rm = row.querySelector("[data-qp-rm]");
       // Always show remove on rows past the first 2
       if (rm) rm.hidden = i < 2;
@@ -217,11 +217,11 @@
       .map((i) => (i.value || "").trim())
       .filter(Boolean);
     if (!question) {
-      window.showToast && window.showToast("請輸入問題文字", false);
+      window.showToast && window.showToast(ServerI18n.t("dashToastNeedQuestion"), false);
       return;
     }
     if (opts.length < 2) {
-      window.showToast && window.showToast("至少需要 2 個選項", false);
+      window.showToast && window.showToast(ServerI18n.t("dashToastNeedOptions"), false);
       return;
     }
     if (startBtn) startBtn.disabled = true;
@@ -232,7 +232,7 @@
         body: JSON.stringify({ question, options: opts }),
       });
       if (!r.ok) throw new Error("HTTP " + r.status);
-      window.showToast && window.showToast("投票已開始", true);
+      window.showToast && window.showToast(ServerI18n.t("dashToastPollStarted"), true);
       // Reset form
       card.querySelector("[data-qp='question']").value = "";
       card.querySelectorAll(".admin-dash-qp-row input").forEach((i) => (i.value = ""));
@@ -240,7 +240,7 @@
       populateDashboardPoll();
     } catch (e) {
       console.error("[admin-dashboard] quick poll create failed:", e);
-      window.showToast && window.showToast("投票建立失敗", false);
+      window.showToast && window.showToast(ServerI18n.t("dashToastPollCreateFailed"), false);
     } finally {
       if (startBtn) startBtn.disabled = false;
     }
@@ -335,16 +335,16 @@
           });
           const data = await r.json().catch(() => ({}));
           if (!r.ok) {
-            window.showToast && window.showToast(data.error || "加入黑名單失敗", false);
+            window.showToast && window.showToast(data.error || ServerI18n.t("dashToastBlacklistFailed"), false);
             return;
           }
-          window.showToast && window.showToast(`已加入黑名單: ${val}`, true);
+          window.showToast && window.showToast(ServerI18n.t("dashToastBlacklisted", { val: val }), true);
           if (blInput) blInput.value = "";
           // Refresh chips + count.
           await populateQuickActions();
           await refreshSidebarBadges();
         } catch (_) {
-          window.showToast && window.showToast("加入黑名單失敗", false);
+          window.showToast && window.showToast(ServerI18n.t("dashToastBlacklistFailed"), false);
         } finally {
           blAddBtn.disabled = false;
         }
@@ -371,7 +371,7 @@
       if (effCount) effCount.textContent = effects.length ? `${effects.length} / ${effects.length}` : "—";
       if (effChips) {
         if (!effects.length) {
-          effChips.innerHTML = `<span class="admin-dash-qa-chip">尚無效果</span>`;
+          effChips.innerHTML = `<span class="admin-dash-qa-chip">${ServerI18n.t("dashNoEffects")}</span>`;
         } else {
           effChips.innerHTML = effects.slice(0, 6).map(e => {
             const name = _escapeHtml((e.name_zh || e.name || e.id || "?").slice(0, 4));
@@ -389,7 +389,7 @@
       const blacklist = Array.isArray(blData) ? blData : (blData?.keywords || []);
       const blChips = document.querySelector("[data-qa-blacklist-chips]");
       const blCount = document.querySelector("[data-qa-blacklist-count]");
-      if (blCount) blCount.textContent = blacklist.length ? `已封禁 ${blacklist.length}` : "—";
+      if (blCount) blCount.textContent = blacklist.length ? ServerI18n.t("dashBlockedCount", { n: blacklist.length }) : "—";
       if (blChips) {
         if (!blacklist.length) {
           blChips.innerHTML = "";
@@ -440,21 +440,21 @@
     const action = String(ev.action || ev.kind || "").toLowerCase();
     const source = String(ev.source || "").toLowerCase();
     const map = {
-      "broadcast.push": "推送廣播",
-      "broadcast.toggle": "切換廣播",
-      "overlay_cleared": "清空螢幕",
-      "blacklist.add": "加入黑名單",
-      "blacklist.remove": "移出黑名單",
-      "ban": "封禁",
-      "mod.approve": "核准訊息",
-      "mod.reject": "拒絕訊息",
-      "poll.create": "建立投票",
-      "poll.close": "結束投票",
-      "effect.toggle": "切換效果",
-      "auth.login": "登入",
-      "auth.logout": "登出",
-      "session.open": "開啟場次",
-      "session.close": "結束場次",
+      "broadcast.push": ServerI18n.t("dashActBroadcastPush"),
+      "broadcast.toggle": ServerI18n.t("dashActBroadcastToggle"),
+      "overlay_cleared": ServerI18n.t("dashActOverlayCleared"),
+      "blacklist.add": ServerI18n.t("dashActBlacklistAdd"),
+      "blacklist.remove": ServerI18n.t("dashActBlacklistRemove"),
+      "ban": ServerI18n.t("dashActBan"),
+      "mod.approve": ServerI18n.t("dashActModApprove"),
+      "mod.reject": ServerI18n.t("dashActModReject"),
+      "poll.create": ServerI18n.t("dashActPollCreate"),
+      "poll.close": ServerI18n.t("dashActPollClose"),
+      "effect.toggle": ServerI18n.t("dashActEffectToggle"),
+      "auth.login": ServerI18n.t("dashActLogin"),
+      "auth.logout": ServerI18n.t("dashActLogout"),
+      "session.open": ServerI18n.t("dashActSessionOpen"),
+      "session.close": ServerI18n.t("dashActSessionClose"),
     };
     return map[`${source}.${action}`] || map[action] || action.toUpperCase() || source.toUpperCase() || "ACTION";
   }
@@ -493,7 +493,7 @@
       const grid = document.querySelector(".admin-dash-summary-grid");
       if (grid) grid.classList.toggle("is-myactions-empty", events.length === 0);
       if (events.length === 0) {
-        body.innerHTML = `<div class="admin-dash-empty admin-dash-myactions-empty-hint">場中的封鎖、審核、投票操作會記錄在這裡。</div>`;
+        body.innerHTML = `<div class="admin-dash-empty admin-dash-myactions-empty-hint">${ServerI18n.t("dashMyActionsEmpty")}</div>`;
         return;
       }
       body.innerHTML = events.map(ev => {
@@ -511,7 +511,7 @@
           </div>`;
       }).join("");
     } catch (_) {
-      body.innerHTML = `<div class="admin-dash-empty">audit 載入失敗</div>`;
+      body.innerHTML = `<div class="admin-dash-empty">${ServerI18n.t("dashAuditLoadFailed")}</div>`;
     }
   }
 
@@ -531,7 +531,7 @@
       }
       const ps = m.poll_state;
       if (!ps || !ps.active || !Array.isArray(ps.options) || ps.options.length === 0) {
-        body.innerHTML = `<div class="admin-dash-empty">尚無進行中投票 · 切換至「投票」頁建立</div>`;
+        body.innerHTML = `<div class="admin-dash-empty">${ServerI18n.t("dashNoPollHint")}</div>`;
         if (timer) timer.textContent = "";
         return;
       }
@@ -540,7 +540,7 @@
       let winnerIdx = 0;
       ps.options.forEach((o, i) => { if ((o.votes || 0) > (ps.options[winnerIdx].votes || 0)) winnerIdx = i; });
       body.innerHTML =
-        `<div class="admin-dash-poll-question" style="font-size:13px;margin-bottom:8px">${_escapeHtml(ps.question || "投票進行中")}</div>` +
+        `<div class="admin-dash-poll-question" style="font-size:13px;margin-bottom:8px">${_escapeHtml(ps.question || ServerI18n.t("dashPollRunning"))}</div>` +
         ps.options.map((o, i) => {
           const pct = totalVotes ? Math.round((o.votes / totalVotes) * 100) : 0;
           const win = i === winnerIdx && totalVotes > 0;
@@ -550,16 +550,16 @@
                 <span class="tag">${keys[i] || String(i + 1)}</span>
                 <span class="label">${_escapeHtml(o.label || "")}</span>
                 <span class="pct">${pct}%</span>
-                <span class="votes">${(o.votes || 0)} 票</span>
+                <span class="votes">${ServerI18n.t("dashVotesUnit", { n: o.votes || 0 })}</span>
               </div>
               <div class="bar"><span style="width:${pct}%"></span></div>
             </div>`;
         }).join("") +
-        `<div class="admin-dash-empty" style="padding:6px 4px;margin-top:4px;font-size:10px">TOTAL · ${totalVotes} 票 · 觀眾輸入 A B C D 即可投票</div>`;
+        `<div class="admin-dash-empty" style="padding:6px 4px;margin-top:4px;font-size:10px">${ServerI18n.t("dashPollTotalLine", { n: totalVotes })}</div>`;
       if (timer) {
         const remain = ps.remaining_seconds;
         timer.textContent = typeof remain === "number" && remain > 0
-          ? `● ${Math.floor(remain / 60)}:${String(remain % 60).padStart(2, "0")} 剩餘`
+          ? ServerI18n.t("dashPollRemaining", { mm: Math.floor(remain / 60), ss: String(remain % 60).padStart(2, "0") })
           : "● LIVE";
       }
     } catch (e) {
@@ -591,17 +591,17 @@
       const fp = row.dataset.msgFp;
       const msgId = row.dataset.msgId;
       if (action === "blacklist") {
-        if (!fp) { window.showToast && window.showToast("此訊息無 fingerprint，無法加入", false); return; }
+        if (!fp) { window.showToast && window.showToast(ServerI18n.t("dashToastNoFp"), false); return; }
         const ok = await window.HudConfirm?.open({
           icon: "⊘",
-          title: "加入黑名單",
+          title: ServerI18n.t("dashBlacklistTitle"),
           subtitle: "BLACKLIST FINGERPRINT · BLOCKS FUTURE MESSAGES",
           severity: "danger",
           body:
-            `此 fingerprint 之後送出的訊息都會被擋下。` +
+            ServerI18n.t("dashBlacklistBody") +
             `<div style="margin-top:10px;font-family:var(--font-mono);font-size:12px;` +
             `color:var(--color-text-muted)">fp:${_escapeHtml(fp)}</div>`,
-          confirmLabel: "加入黑名單",
+          confirmLabel: ServerI18n.t("dashBlacklistTitle"),
         });
         if (!ok) return;
         try {
@@ -611,10 +611,10 @@
             body: JSON.stringify({ keyword: `fp:${fp}` }),
           });
           if (!r.ok) throw new Error("HTTP " + r.status);
-          window.showToast && window.showToast(`已加入黑名單 fp:${fp}`, true);
+          window.showToast && window.showToast(ServerI18n.t("dashToastBlacklistedFp", { fp: fp }), true);
           populateQuickActions();
         } catch (_) {
-          window.showToast && window.showToast("加入黑名單失敗", false);
+          window.showToast && window.showToast(ServerI18n.t("dashToastBlacklistFailed"), false);
         }
       } else if (action === "mask" || action === "hide") {
         // Both map to a soft-mask state in the message log. We don't have
@@ -622,7 +622,7 @@
         // intent so the user sees feedback. Persistent moderation lives
         // on the /moderation page; this is the dashboard quick-act path.
         row.classList.add("is-masked-row");
-        window.showToast && window.showToast(action === "mask" ? "已遮罩此訊息" : "已隱藏此訊息", true);
+        window.showToast && window.showToast(action === "mask" ? ServerI18n.t("dashToastMasked") : ServerI18n.t("dashToastHidden"), true);
       } else if (action === "more") {
         // Future: open message drawer (v4 P0-3 design). v7 IA: messages
         // merged into the live console, so jump there.
@@ -687,7 +687,7 @@
       if (!r.ok) throw new Error("HTTP " + r.status);
       populateDashboardWidgets();
     } catch (e) {
-      window.showToast && window.showToast("切換 widget 失敗", false);
+      window.showToast && window.showToast(ServerI18n.t("dashToastWidgetFailed"), false);
     }
   }
 
@@ -720,14 +720,14 @@
       if (!data) {
         const r = await fetch("/admin/widgets/list", { credentials: "same-origin" });
         if (!r.ok) {
-          body.innerHTML = `<div class="admin-dash-empty">無可用 widgets</div>`;
+          body.innerHTML = `<div class="admin-dash-empty">${ServerI18n.t("dashNoWidgets")}</div>`;
           return;
         }
         data = await r.json();
       }
       const widgets = (data.widgets || data.items || []).slice(0, 4);
       if (widgets.length === 0) {
-        body.innerHTML = `<div class="admin-dash-empty">尚未啟用任何 widget</div>`;
+        body.innerHTML = `<div class="admin-dash-empty">${ServerI18n.t("dashNoWidgetsEnabled")}</div>`;
         return;
       }
       body.innerHTML =
@@ -736,7 +736,7 @@
         `</div>`;
       _bindWidgetActions(body);
     } catch (e) {
-      body.innerHTML = `<div class="admin-dash-empty">無可用 widgets</div>`;
+      body.innerHTML = `<div class="admin-dash-empty">${ServerI18n.t("dashNoWidgets")}</div>`;
     }
   }
 
@@ -775,12 +775,12 @@
       banner.hidden = false;
       banner.innerHTML = `
         <div class="admin-session-banner-idle">
-          <span class="admin-session-banner-idle-label">目前沒有進行中的場次</span>
+          <span class="admin-session-banner-idle-label">${ServerI18n.t("dashSessIdleLabel")}</span>
           <div class="admin-session-open-row">
-            <input type="text" class="admin-ui-input admin-ui-grow admin-session-name-input" placeholder="場次名稱（必填）…" maxlength="120" data-sess-name />
-            <button type="button" class="admin-ui-action is-primary admin-ui-nowrap admin-session-open-btn" data-sess-action="open">▶ 開啟場次</button>
+            <input type="text" class="admin-ui-input admin-ui-grow admin-session-name-input" placeholder="${ServerI18n.t("dashSessNamePlaceholder")}" maxlength="120" data-sess-name />
+            <button type="button" class="admin-ui-action is-primary admin-ui-nowrap admin-session-open-btn" data-sess-action="open">${ServerI18n.t("dashSessOpenBtn")}</button>
           </div>
-          <div class="admin-session-banner-idle-hint">開啟後自動啟動 Desktop，訊息開始歸檔至本場次</div>
+          <div class="admin-session-banner-idle-hint">${ServerI18n.t("dashSessIdleHint")}</div>
         </div>`;
     } else {
       // LIVE — show session info + controls
@@ -790,7 +790,7 @@
         <div class="admin-session-banner-live">
           <div class="admin-ui-dot is-success admin-session-live-dot"></div>
           <div class="admin-session-live-info">
-            <span class="admin-session-live-name">${_escapeHtml(state.name || "場次")}</span>
+            <span class="admin-session-live-name">${_escapeHtml(state.name || ServerI18n.t("dashSessFallbackName"))}</span>
             <span class="admin-session-live-timer" data-sess-timer></span>
           </div>
           <!-- 2026-07-30：拆掉這裡的「⏸ 暫停顯示」——它是同一個
@@ -802,8 +802,8 @@
                彈窗裡一次設定（見 close handler）。data-current-behavior
                暫存目前值供彈窗預選。 -->
           <div class="admin-session-live-actions" data-current-behavior="${state.viewer_end_behavior || "continue"}">
-            <a class="admin-ui-action admin-session-display-link" href="#/overlay" title="Desktop 顯示的開始／暫停在 Desktop 控制頁">◐ 顯示控制 →</a>
-            <button type="button" class="admin-ui-action is-danger admin-session-end-btn" data-sess-action="close">■ 結束場次</button>
+            <a class="admin-ui-action admin-session-display-link" href="#/overlay" title="${ServerI18n.t("dashSessDisplayLinkTitle")}">${ServerI18n.t("dashSessDisplayLink")}</a>
+            <button type="button" class="admin-ui-action is-danger admin-session-end-btn" data-sess-action="close">${ServerI18n.t("dashSessEndBtn")}</button>
           </div>
         </div>`;
 
@@ -840,7 +840,7 @@
     if (action === "open") {
       const input = document.querySelector("[data-sess-name]");
       const name = (input ? input.value : "").trim();
-      if (!name) { input && input.focus(); window.showToast && window.showToast("請輸入場次名稱", false); return; }
+      if (!name) { input && input.focus(); window.showToast && window.showToast(ServerI18n.t("dashToastNeedName"), false); return; }
       btn.disabled = true;
       try {
         const r = await window.csrfFetch("/admin/session/open", {
@@ -849,11 +849,11 @@
           body: JSON.stringify({ name }),
         });
         const data = await r.json();
-        if (!r.ok) { window.showToast && window.showToast(data.error || "開啟失敗", false); return; }
-        window.showToast && window.showToast("場次「" + name + "」已開始", true);
+        if (!r.ok) { window.showToast && window.showToast(data.error || ServerI18n.t("dashToastOpenFailed"), false); return; }
+        window.showToast && window.showToast(ServerI18n.t("dashToastSessOpened", { name: name }), true);
         _renderSessionBanner(data.session);
       } catch (err) {
-        window.showToast && window.showToast("開啟場次失敗", false);
+        window.showToast && window.showToast(ServerI18n.t("dashToastOpenSessFailed"), false);
       } finally {
         btn.disabled = false;
       }
@@ -862,22 +862,22 @@
       const opt = (v, zh) => `<option value="${v}"${v === cur ? " selected" : ""}>${zh}</option>`;
       const ok = await window.HudConfirm?.open({
         icon: "■",
-        title: "結束場次",
+        title: ServerI18n.t("dashCloseTitle"),
         subtitle: "CLOSE SESSION · DESKTOP SWITCHES OFF",
         severity: "danger",
         body: `
           <div style="font-size:13px;color:var(--hud-text,#f1f5f9);line-height:1.7;">
-            訊息會停止歸檔，Desktop 顯示切換為 OFF。
+            ${ServerI18n.t("dashCloseBody")}
           </div>
           <label style="display:flex;flex-direction:column;gap:6px;margin-top:14px;">
-            <span class="admin-ui-monolabel">結束後 viewer 畫面</span>
+            <span class="admin-ui-monolabel">${ServerI18n.t("dashCloseBehaviorLabel")}</span>
             <select id="sessCloseBehavior" class="admin-ui-select" style="width:100%">
-              ${opt("continue", "繼續運作")}
-              ${opt("ended_screen", "顯示結束畫面")}
-              ${opt("reload", "自動重新載入")}
+              ${opt("continue", ServerI18n.t("dashCloseBehaviorContinue"))}
+              ${opt("ended_screen", ServerI18n.t("dashCloseBehaviorEnded"))}
+              ${opt("reload", ServerI18n.t("dashCloseBehaviorReload"))}
             </select>
           </label>`,
-        confirmLabel: "結束場次",
+        confirmLabel: ServerI18n.t("dashCloseTitle"),
       });
       if (!ok) return;
       btn.disabled = true;
@@ -895,12 +895,12 @@
       try {
         const r = await window.csrfFetch("/admin/session/close", { method: "POST" });
         const data = await r.json();
-        if (!r.ok) { window.showToast && window.showToast(data.error || "結束失敗", false); return; }
-        window.showToast && window.showToast("場次已結束並歸檔", true);
+        if (!r.ok) { window.showToast && window.showToast(data.error || ServerI18n.t("dashToastCloseFailed"), false); return; }
+        window.showToast && window.showToast(ServerI18n.t("dashToastSessClosed"), true);
         _stopSessionTimer();
         _renderSessionBanner({ status: "idle", viewer_end_behavior: data.archived && data.archived.viewer_end_behavior || "continue" });
       } catch (err) {
-        window.showToast && window.showToast("結束場次失敗", false);
+        window.showToast && window.showToast(ServerI18n.t("dashToastCloseSessFailed"), false);
       } finally {
         btn.disabled = false;
       }
