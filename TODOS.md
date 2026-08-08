@@ -41,11 +41,15 @@ command-palette 43（131a189）、wcag 36、poll-deepdive 44、sessions 28
 about 24（1e440c5，CHANGELOG 條目屬版本史資料保留）。
 **累計 23/40 模組、1,358 keys ×4 語**。
 
+**進度（2026-08-08 續）**：批次十三~二十五再收 12 模組——extensions 16＋
+ratelimit 57＋fonts 61（182b697，兩代理死於末段全額搶救）、modqueue 15、
+effects-mgmt 14、onboarding 15、mobile-nav 16、history 19（跨中斷續傳）、
+emojis 18、assets 16、live-feed 22、system-overview 21、tabs 25（五導航
+labelKey 化，零文字釘）、stickers 27、widgets 15（半套 i18n 死 fallback
+拆除，F-107 了結）。**累計 35/40 模組、~1,400 keys ×4 語**。
+
 剩餘（非註解 CJK 行數）：admin.js 103（側欄 nav/breadcrumb，人工）、
-dashboard 76（jest 釘點多，人工）、ratelimit 72、fonts 68、extensions 34、
-history-v2 32、search 31、widgets 29、stickers 29、tabs 25、
-system-overview 23、live-feed 23、assets 22、emojis 21、history 18、
-modqueue 15、effects-mgmt 15、onboarding 14、mobile-nav 14＋小尾巴。
+dashboard 76（jest 釘點多，人工）、ratelimit 72、fonts 68、history-v2 32、search 31＋小尾巴（scheduler/filters/fingerprints/events-log 等殘量待盤）。
 另：webhooks 後端 EVENT_CATALOG（server/services/webhook.py）只有 zh/en，
 ja/ko 事件名靠前端 fallback 走 en——補齊屬後端小工。sessions 代理另旗標
 formatTs 硬編 zh-TW（全模組共通）與 catch 回傳未定義 isoStr（既有 bug）。
