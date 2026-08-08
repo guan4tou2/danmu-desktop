@@ -2102,5 +2102,21 @@
   "obSkip": "투어 건너뛰기",
   "obPrev": "← 이전",
   "obDone": "✓ 완료",
-  "obNext": "다음 →"
+  "obNext": "다음 →",
+  "mnavTabAssets": "에셋",
+  "mnavMore": "더보기",
+  "mnavEffects": "효과",
+  "mnavThemes": "테마",
+  "mnavBackup": "백업",
+  "mnavPlugins": "플러그인",
+  "mnavDescViewer": "페이지 테마 · 필드 · 기본값 · 제한",
+  "mnavDescWidgets": "OBS 스코어보드 · 티커",
+  "mnavDescEffects": ".dme 핫 리로드",
+  "mnavDescThemes": "탄막 스타일 프리셋",
+  "mnavDescSystem": "개요 · 키 · 스케줄",
+  "mnavDescHistory": "세션 · 감사 · 리플레이 · 내보내기",
+  "mnavDescBackup": "내보내기 · 복원 · 위험 구역",
+  "mnavDescPlugins": "Plugin SDK · 핫 리로드",
+  "mnavDescWebhooks": "엔드포인트 · 전송 기록",
+  "mnavDescApiTokens": "개발자 접근 · 권한"
 }

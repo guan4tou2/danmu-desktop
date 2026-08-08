@@ -2102,5 +2102,21 @@
   "obSkip": "Skip tour",
   "obPrev": "← Back",
   "obDone": "✓ Done",
-  "obNext": "Next →"
+  "obNext": "Next →",
+  "mnavTabAssets": "Assets",
+  "mnavMore": "More",
+  "mnavEffects": "Effects",
+  "mnavThemes": "Themes",
+  "mnavBackup": "Backup",
+  "mnavPlugins": "Plugins",
+  "mnavDescViewer": "Page theme · fields · defaults · limits",
+  "mnavDescWidgets": "OBS scoreboard · ticker",
+  "mnavDescEffects": ".dme hot reload",
+  "mnavDescThemes": "Danmu style presets",
+  "mnavDescSystem": "Overview · keys · scheduler",
+  "mnavDescHistory": "Sessions · audit · replay · export",
+  "mnavDescBackup": "Export · restore · danger zone",
+  "mnavDescPlugins": "Plugin SDK · hot reload",
+  "mnavDescWebhooks": "Endpoints · delivery log",
+  "mnavDescApiTokens": "Developer access · scopes"
 }

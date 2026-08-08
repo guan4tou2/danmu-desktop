@@ -2102,5 +2102,21 @@
   "obSkip": "跳過導覽",
   "obPrev": "← 上一步",
   "obDone": "✓ 完成",
-  "obNext": "下一步 →"
+  "obNext": "下一步 →",
+  "mnavTabAssets": "素材",
+  "mnavMore": "更多",
+  "mnavEffects": "效果庫",
+  "mnavThemes": "主題包",
+  "mnavBackup": "備份",
+  "mnavPlugins": "插件",
+  "mnavDescViewer": "整頁主題 · 欄位 · 預設 · 限制",
+  "mnavDescWidgets": "OBS 分數板 · 跑馬燈",
+  "mnavDescEffects": ".dme 熱重載",
+  "mnavDescThemes": "彈幕樣式預設",
+  "mnavDescSystem": "概覽 · 金鑰 · 排程",
+  "mnavDescHistory": "場次 · 審計 · 重播 · 匯出",
+  "mnavDescBackup": "匯出 · 還原 · 危險區",
+  "mnavDescPlugins": "Plugin SDK · 熱重載",
+  "mnavDescWebhooks": "端點 · 投遞紀錄",
+  "mnavDescApiTokens": "開發者存取 · 權限"
 }

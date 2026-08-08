@@ -21,12 +21,15 @@
 
   const NAV_ID = "admin-mobile-nav-root";
 
+  // D-4：TABS/MORE 是頂層常數——文案存 labelKey/descKey（含重用的
+  // adminRouteTitle_*），渲染時 t()。EN 專名（Widgets/Webhooks/API Tokens/
+  // Live）維持 label 字面。
   const TABS = [
     { id: "live",       route: "live",       icon: "▶", label: "Live" },
-    { id: "moderation", route: "moderation", icon: "⊘", label: "審核", badgeKey: "pending" },
-    { id: "polls",      route: "polls",      icon: "⊷", label: "投票" },
-    { id: "assets",     route: "assets",     icon: "⊞", label: "素材" },
-    { id: "more",       route: null,         icon: "⋯", label: "更多" },
+    { id: "moderation", route: "moderation", icon: "⊘", labelKey: "adminRouteTitle_moderation", badgeKey: "pending" },
+    { id: "polls",      route: "polls",      icon: "⊷", labelKey: "adminRouteTitle_polls" },
+    { id: "assets",     route: "assets",     icon: "⊞", labelKey: "mnavTabAssets" },
+    { id: "more",       route: null,         icon: "⋯", labelKey: "mnavMore" },
   ];
 
   // v7 IA (2026-07-28): overflow covers every sidebar item the four primary
@@ -34,17 +37,17 @@
   // Display/Viewer duplicate (both landed on #/viewer) and reached only
   // 9 of the sidebar's items.
   const OVERFLOW = [
-    { route: "viewer",     icon: "◑", label: "觀眾頁",      desc: "整頁主題 · 欄位 · 預設 · 限制" },
-    { route: "widgets",    icon: "⬚", label: "Widgets",     desc: "OBS 分數板 · 跑馬燈" },
-    { route: "effects",    icon: "✦", label: "效果庫",      desc: ".dme 熱重載" },
-    { route: "themes",     icon: "❖", label: "主題包",      desc: "彈幕樣式預設" },
-    { route: "system",     icon: "⚙", label: "系統",        desc: "概覽 · 金鑰 · 排程" },
-    { route: "history",    icon: "◷", label: "紀錄 & 匯出", desc: "場次 · 審計 · 重播 · 匯出" },
-    { route: "backup",     icon: "⇪", label: "備份",        desc: "匯出 · 還原 · 危險區" },
+    { route: "viewer",     icon: "◑", labelKey: "adminRouteTitle_viewer", descKey: "mnavDescViewer" },
+    { route: "widgets",    icon: "⬚", label: "Widgets",     descKey: "mnavDescWidgets" },
+    { route: "effects",    icon: "✦", labelKey: "mnavEffects", descKey: "mnavDescEffects" },
+    { route: "themes",     icon: "❖", labelKey: "mnavThemes", descKey: "mnavDescThemes" },
+    { route: "system",     icon: "⚙", labelKey: "adminRouteTitle_system", descKey: "mnavDescSystem" },
+    { route: "history",    icon: "◷", labelKey: "adminRouteTitle_history", descKey: "mnavDescHistory" },
+    { route: "backup",     icon: "⇪", labelKey: "mnavBackup", descKey: "mnavDescBackup" },
     { route: "extensions", icon: "⌬", label: "Extensions",  desc: "Slido · Discord · OBS" },
-    { route: "plugins",    icon: "⬢", label: "插件",        desc: "Plugin SDK · 熱重載" },
-    { route: "webhooks",   icon: "⇌", label: "Webhooks",    desc: "端點 · 投遞紀錄" },
-    { route: "api-tokens", icon: "⚿", label: "API Tokens",  desc: "開發者存取 · 權限" },
+    { route: "plugins",    icon: "⬢", labelKey: "mnavPlugins", descKey: "mnavDescPlugins" },
+    { route: "webhooks",   icon: "⇌", label: "Webhooks",    descKey: "mnavDescWebhooks" },
+    { route: "api-tokens", icon: "⚿", label: "API Tokens",  descKey: "mnavDescApiTokens" },
   ];
 
   let _overflowOpen = false;
@@ -59,8 +62,8 @@
             <button type="button" class="admin-mobile-nav__o-row" data-mn-route="${it.route}">
               <span class="admin-mobile-nav__o-icon">${it.icon}</span>
               <span class="admin-mobile-nav__o-txt">
-                <span class="admin-mobile-nav__o-label">${it.label}</span>
-                <span class="admin-mobile-nav__o-desc">${it.desc}</span>
+                <span class="admin-mobile-nav__o-label">${it.labelKey ? ServerI18n.t(it.labelKey) : it.label}</span>
+                <span class="admin-mobile-nav__o-desc">${it.descKey ? ServerI18n.t(it.descKey) : (it.desc || "")}</span>
               </span>
               <span class="admin-mobile-nav__o-chev">›</span>
             </button>`).join("")}
@@ -69,7 +72,7 @@
           ${TABS.map((t) => `
             <button type="button" class="admin-mobile-nav__tab" data-mn-tab="${t.id}" data-mn-route="${t.route || ""}">
               <span class="admin-mobile-nav__icon">${t.icon}</span>
-              <span class="admin-mobile-nav__label">${t.label}</span>
+              <span class="admin-mobile-nav__label">${t.labelKey ? ServerI18n.t(t.labelKey) : t.label}</span>
               ${t.badgeKey ? `<span class="admin-mobile-nav__badge" data-mn-badge="${t.badgeKey}" hidden>0</span>` : ""}
               <span class="admin-mobile-nav__active-line"></span>
             </button>`).join("")}

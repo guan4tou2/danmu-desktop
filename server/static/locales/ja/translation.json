@@ -2102,5 +2102,21 @@
   "obSkip": "ツアーをスキップ",
   "obPrev": "← 戻る",
   "obDone": "✓ 完了",
-  "obNext": "次へ →"
+  "obNext": "次へ →",
+  "mnavTabAssets": "素材",
+  "mnavMore": "その他",
+  "mnavEffects": "エフェクト",
+  "mnavThemes": "テーマ",
+  "mnavBackup": "バックアップ",
+  "mnavPlugins": "プラグイン",
+  "mnavDescViewer": "ページテーマ · 項目 · 既定 · 制限",
+  "mnavDescWidgets": "OBS スコアボード · ティッカー",
+  "mnavDescEffects": ".dme ホットリロード",
+  "mnavDescThemes": "弾幕スタイルプリセット",
+  "mnavDescSystem": "概要 · キー · スケジュール",
+  "mnavDescHistory": "セッション · 監査 · リプレイ · エクスポート",
+  "mnavDescBackup": "エクスポート · 復元 · 危険区",
+  "mnavDescPlugins": "Plugin SDK · ホットリロード",
+  "mnavDescWebhooks": "エンドポイント · 配送ログ",
+  "mnavDescApiTokens": "開発者アクセス · 権限"
 }
