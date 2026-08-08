@@ -30,31 +30,31 @@
       <div id="${SECTION_ID}" class="admin-emojis-page admin-em-v4 hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">ASSETS · EMOJIS · CUSTOM :NAME: SYNTAX</div>
-          <div class="admin-ui-page-title">Emoji 庫</div>
-          <p class="admin-ui-page-note">觀眾在彈幕內用 :name: 語法插入表情；上傳 PNG 後即時生效。</p>
+          <div class="admin-ui-page-title">${ServerI18n.t("emojisPageTitle")}</div>
+          <p class="admin-ui-page-note">${ServerI18n.t("emojisPageNote")}</p>
         </div>
 
         <!-- Upload zone (dashed dropzone) -->
         <div class="admin-em-v4__upzone" data-em-dropzone>
           <div class="admin-em-v4__upicon">↑</div>
           <div class="admin-em-v4__upcopy">
-            <div class="admin-em-v4__uptitle">拖入 PNG / GIF / WEBP 上傳新 Emoji · 或填表單</div>
-            <div class="admin-em-v4__upsub">64×64 推薦 · 最大 128KB · 支援動圖 GIF</div>
+            <div class="admin-em-v4__uptitle">${ServerI18n.t("emojisUpTitle")}</div>
+            <div class="admin-em-v4__upsub">${ServerI18n.t("emojisUpSub")}</div>
             <div class="admin-em-v4__upform">
               <input id="emojiNameInput" type="text" placeholder=":name:" maxlength="32" pattern="[a-zA-Z0-9_]+" autocomplete="off" />
               <input id="emojiFileInput" type="file" accept="${ACCEPTED_TYPES}" />
-              <button id="emojiUploadBtn" type="button">+ 上傳</button>
+              <button id="emojiUploadBtn" type="button">${ServerI18n.t("emojisUploadBtn")}</button>
             </div>
           </div>
         </div>
 
         <!-- Quota + search toolbar -->
         <div class="admin-em-v4__toolbar">
-          <span class="admin-em-v4__quota-label" data-em-quota-label>已用 0 / 100</span>
+          <span class="admin-em-v4__quota-label" data-em-quota-label>${ServerI18n.t("emojisQuotaUsed", { n: 0, max: 100 })}</span>
           <div class="admin-em-v4__quota-bar"><div class="admin-em-v4__quota-fill" data-em-quota-fill style="width:0%"></div></div>
-          <span class="admin-em-v4__quota-size" data-em-quota-size>總計 0 KB</span>
+          <span class="admin-em-v4__quota-size" data-em-quota-size>${ServerI18n.t("emojisQuotaSize", { size: "0 KB" })}</span>
           <span class="admin-em-v4__spacer"></span>
-          <input id="emojiSearchInput" type="search" placeholder=":name 過濾" class="admin-em-v4__search" />
+          <input id="emojiSearchInput" type="search" placeholder="${ServerI18n.t("emojisSearchPlaceholder")}" class="admin-em-v4__search" />
           <span class="admin-em-v4__count" id="emojiCount">0</span>
         </div>
 
@@ -63,9 +63,9 @@
 
         <!-- Audience preview row -->
         <div class="admin-em-v4__preview" data-em-preview>
-          <div class="admin-em-v4__preview-label">觀眾預覽 · AUDIENCE PREVIEW</div>
+          <div class="admin-em-v4__preview-label">${ServerI18n.t("emojisPreviewLabel")} · AUDIENCE PREVIEW</div>
           <div class="admin-em-v4__preview-body" data-em-preview-body>
-            <span class="admin-em-v4__preview-empty">上傳第一個 emoji 後此處會出現預覽。</span>
+            <span class="admin-em-v4__preview-empty">${ServerI18n.t("emojisPreviewEmpty")}</span>
           </div>
         </div>
       </div>
@@ -95,7 +95,7 @@
       '<div class="admin-em-v4__tile-meta">' + escapeHtml(meta) + '</div>' +
       '<span class="admin-em-v4__tile-dot" aria-label="enabled"></span>' +
       '<div class="admin-em-v4__tile-actions">' +
-      '<button type="button" class="emoji-copy-btn" data-label="' + escapeAttr(label) + '" title="' + escapeAttr(ServerI18n.t("copyToClipboard")) + '">複製</button>' +
+      '<button type="button" class="emoji-copy-btn" data-label="' + escapeAttr(label) + '" title="' + escapeAttr(ServerI18n.t("copyToClipboard")) + '">' + ServerI18n.t("emojisCopyBtn") + '</button>' +
       '<button type="button" class="emoji-delete-btn" data-name="' + escapeAttr(emoji.name) + '" title="' + escapeAttr(ServerI18n.t("deleteEmoji")) + '">' + window.AdminUtils.closeIcon + '</button>' +
       '</div>' +
       '</div>'
@@ -109,17 +109,17 @@
     if (!label || !fill || !sizeEl) return;
     const n = emojis.length;
     const max = 100;
-    label.textContent = `已用 ${n} / ${max}`;
+    label.textContent = ServerI18n.t("emojisQuotaUsed", { n: n, max: max });
     fill.style.width = Math.min(100, (n / max) * 100) + "%";
     const totalKB = emojis.reduce((s, e) => s + (e.size_bytes || 0), 0) / 1024;
-    sizeEl.textContent = `總計 ${totalKB < 1024 ? totalKB.toFixed(0) + " KB" : (totalKB / 1024).toFixed(1) + " MB"}`;
+    sizeEl.textContent = ServerI18n.t("emojisQuotaSize", { size: totalKB < 1024 ? totalKB.toFixed(0) + " KB" : (totalKB / 1024).toFixed(1) + " MB" });
   }
 
   function _renderPreview(emojis) {
     const body = document.querySelector("[data-em-preview-body]");
     if (!body) return;
     if (!emojis || emojis.length === 0) {
-      body.innerHTML = '<span class="admin-em-v4__preview-empty">上傳第一個 emoji 後此處會出現預覽。</span>';
+      body.innerHTML = '<span class="admin-em-v4__preview-empty">' + ServerI18n.t("emojisPreviewEmpty") + '</span>';
       return;
     }
     const sample = emojis.slice(0, 3);
@@ -127,7 +127,7 @@
       `<span class="admin-em-v4__preview-pair"><code>:${escapeHtml(e.name)}:</code> → ` +
       `<img src="${escapeAttr(e.url)}" alt=":${escapeAttr(e.name)}:" /></span>`
     );
-    body.innerHTML = `觀眾鍵入 ${parts.join(" · ")}`;
+    body.innerHTML = ServerI18n.t("emojisPreviewTyping", { pairs: parts.join(" · ") });
   }
 
   function escapeAttr(s) {
@@ -149,9 +149,9 @@
         grid.innerHTML = "";
         grid.appendChild(window.AdminEmpty.renderCustom({
           icon: "⊞",
-          title: "尚無自訂 Emoji",
-          desc: "上傳 PNG / GIF（64×64 推薦），觀眾以 :name: 觸發。",
-          actionLabel: "+ 上傳第一個 Emoji",
+          title: ServerI18n.t("emojisEmptyTitle"),
+          desc: ServerI18n.t("emojisEmptyDesc"),
+          actionLabel: ServerI18n.t("emojisEmptyAction"),
           action: function () {
             var fileInput = document.getElementById("emojiFileInput");
             if (fileInput) fileInput.click();
@@ -294,7 +294,7 @@
       showToast(ServerI18n.t("uploadNetworkError"), false);
     } finally {
       uploadBtn.disabled = false;
-      uploadBtn.textContent = "上傳";
+      uploadBtn.textContent = ServerI18n.t("emojisUploadBtnIdle");
     }
   }
 
@@ -303,11 +303,11 @@
   async function handleDelete(name) {
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
-      title: "刪除表情",
+      title: ServerI18n.t("emojisDeleteTitle"),
       subtitle: "DELETE EMOJI",
       severity: "danger",
       bodyText: ServerI18n.t("deleteEmojiConfirm").replace("{name}", name),
-      confirmLabel: "刪除",
+      confirmLabel: ServerI18n.t("emojisDeleteConfirm"),
     });
     if (!ok) return;
 
