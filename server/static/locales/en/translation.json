@@ -2264,5 +2264,20 @@
   "stickersToastPackCreated": "Sticker pack created",
   "stickersToastCreateFailed": "Create failed",
   "stickersDeleteTitle": "Delete sticker",
-  "stickersDeleteConfirm": "Delete"
+  "stickersDeleteConfirm": "Delete",
+  "widgetsKickerTail": "Scoreboard · Ticker · Labels",
+  "widgetsStatTotal": "Total widgets",
+  "widgetsStatActive": "Active",
+  "widgetsStatKinds": "Kinds",
+  "widgetsObsNote": "Point an OBS Browser Source at this URL to pull in the Desktop. Transparent background, auto-updating.",
+  "widgetsCopyBtn": "Copy",
+  "widgetsResolutionHint": "Recommended resolution",
+  "widgetsPreviewLabel": "16:9 preview",
+  "widgetsToastUrlCopied": "OBS URL copied",
+  "widgetsToastCopyFailed": "Copy failed",
+  "widgetsDeleteTitle": "Delete widget",
+  "widgetsDeleteConfirmBtn": "Delete",
+  "widgetsClearTitle": "Clear all widgets",
+  "widgetsEmptyDesc": "Keep a scoreboard, ticker or text label pinned on the OBS overlay.",
+  "widgetsEmptyAction": "+ Add scoreboard"
 }

@@ -2264,5 +2264,20 @@
   "stickersToastPackCreated": "貼圖包已建立",
   "stickersToastCreateFailed": "建立失敗",
   "stickersDeleteTitle": "刪除貼圖",
-  "stickersDeleteConfirm": "刪除"
+  "stickersDeleteConfirm": "刪除",
+  "widgetsKickerTail": "分數板 · 跑馬燈 · 標籤",
+  "widgetsStatTotal": "小工具總數",
+  "widgetsStatActive": "顯示中",
+  "widgetsStatKinds": "類型",
+  "widgetsObsNote": "在 OBS 的 Browser Source 把 URL 設成以下值即可拉入 Desktop。 透明背景、自動更新。",
+  "widgetsCopyBtn": "複製",
+  "widgetsResolutionHint": "建議解析度",
+  "widgetsPreviewLabel": "16:9 預覽",
+  "widgetsToastUrlCopied": "OBS URL 已複製",
+  "widgetsToastCopyFailed": "複製失敗",
+  "widgetsDeleteTitle": "刪除小工具",
+  "widgetsDeleteConfirmBtn": "刪除",
+  "widgetsClearTitle": "清除所有小工具",
+  "widgetsEmptyDesc": "在 OBS 覆蓋層上常駐分數板、跑馬燈或文字標籤。",
+  "widgetsEmptyAction": "+ 新增分數板"
 }

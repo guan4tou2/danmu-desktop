@@ -2264,5 +2264,20 @@
   "stickersToastPackCreated": "팩 생성됨",
   "stickersToastCreateFailed": "생성 실패",
   "stickersDeleteTitle": "스티커 삭제",
-  "stickersDeleteConfirm": "삭제"
+  "stickersDeleteConfirm": "삭제",
+  "widgetsKickerTail": "스코어보드 · 티커 · 라벨",
+  "widgetsStatTotal": "위젯 총수",
+  "widgetsStatActive": "표시 중",
+  "widgetsStatKinds": "종류",
+  "widgetsObsNote": "OBS Browser Source에 이 URL을 설정하면 Desktop을 가져옵니다. 투명 배경·자동 갱신.",
+  "widgetsCopyBtn": "복사",
+  "widgetsResolutionHint": "권장 해상도",
+  "widgetsPreviewLabel": "16:9 미리보기",
+  "widgetsToastUrlCopied": "OBS URL 복사됨",
+  "widgetsToastCopyFailed": "복사 실패",
+  "widgetsDeleteTitle": "위젯 삭제",
+  "widgetsDeleteConfirmBtn": "삭제",
+  "widgetsClearTitle": "모든 위젯 지우기",
+  "widgetsEmptyDesc": "OBS 오버레이에 스코어보드·티커·라벨을 상주.",
+  "widgetsEmptyAction": "+ 스코어보드 추가"
 }

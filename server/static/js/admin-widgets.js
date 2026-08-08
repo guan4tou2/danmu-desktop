@@ -42,33 +42,33 @@
       section.dataset.tpl = "B";
       section.innerHTML = `
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">DESKTOP WIDGETS · 分數板 · 跑馬燈 · 標籤</div>
+          <div class="admin-ui-page-kicker">DESKTOP WIDGETS · ${ServerI18n.t("widgetsKickerTail")}</div>
           <div class="admin-ui-page-title">${escapeHtml(i18n("widgetsTitle", "Desktop Widgets"))}</div>
-          <p class="admin-ui-page-note">${escapeHtml(i18n("widgetsDesc", "在 OBS 覆蓋層上新增分數板、跑馬燈或文字標籤"))}</p>
+          <p class="admin-ui-page-note">${escapeHtml(i18n("widgetsDesc"))}</p>
         </div>
 
         <!-- TPL-B KPI 條：共用 hud-stat-tile（私有 admin-ow-kpi 退役） -->
         <div class="hud-stats-strip">
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">TOTAL</span><span class="hud-stat-tile-value" data-ow-total>—</span><span class="hud-stat-tile-label">小工具總數</span></div>
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">ACTIVE</span><span class="hud-stat-tile-value is-lime" data-ow-active>—</span><span class="hud-stat-tile-label">顯示中</span></div>
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">KINDS</span><span class="hud-stat-tile-value is-cyan" data-ow-kinds>—</span><span class="hud-stat-tile-label">類型</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">TOTAL</span><span class="hud-stat-tile-value" data-ow-total>—</span><span class="hud-stat-tile-label">${ServerI18n.t("widgetsStatTotal")}</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">ACTIVE</span><span class="hud-stat-tile-value is-lime" data-ow-active>—</span><span class="hud-stat-tile-label">${ServerI18n.t("widgetsStatActive")}</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">KINDS</span><span class="hud-stat-tile-value is-cyan" data-ow-kinds>—</span><span class="hud-stat-tile-label">${ServerI18n.t("widgetsStatKinds")}</span></div>
         </div>
 
         <div class="hud-page-grid-2">
           <div class="hud-page-stack" style="gap:12px">
             <div class="admin-widgets-actions">
               <button id="widget-add-scoreboard" type="button" class="admin-ui-action is-primary admin-widget-toolbar-action">
-                + ${escapeHtml(i18n("widgetScoreboard", "分數板"))}
+                + ${escapeHtml(i18n("widgetScoreboard"))}
               </button>
               <button id="widget-add-ticker" type="button" class="admin-ui-action is-primary admin-widget-toolbar-action">
-                + ${escapeHtml(i18n("widgetTicker", "跑馬燈"))}
+                + ${escapeHtml(i18n("widgetTicker"))}
               </button>
               <button id="widget-add-label" type="button" class="admin-ui-action is-primary admin-widget-toolbar-action">
-                + ${escapeHtml(i18n("widgetLabel", "標籤"))}
+                + ${escapeHtml(i18n("widgetLabel"))}
               </button>
               <span class="spacer"></span>
               <button id="widget-clear-all" type="button" class="admin-ui-action is-danger admin-widget-toolbar-action">
-                ${escapeHtml(i18n("clearAll", "全部清除"))}
+                ${escapeHtml(i18n("clearAll"))}
               </button>
             </div>
             <div id="widgets-list" class="admin-widgets-list"></div>
@@ -79,19 +79,18 @@
             <div class="admin-ui-card admin-ow-railcard">
               <div class="admin-ui-monolabel">OBS BROWSER SOURCE</div>
               <p class="admin-ow-card-note">
-                在 OBS 的 Browser Source 把 URL 設成以下值即可拉入 Desktop。
-                透明背景、自動更新。
+                ${ServerI18n.t("widgetsObsNote")}
               </p>
               <div class="admin-ow-urlrow">
                 <code class="admin-ow-url" data-ow-obs-url>${escapeHtml(obsBase)}</code>
-                <button type="button" class="admin-ui-action admin-widget-toolbar-action" data-ow-copy>複製</button>
+                <button type="button" class="admin-ui-action admin-widget-toolbar-action" data-ow-copy>${ServerI18n.t("widgetsCopyBtn")}</button>
               </div>
               <div class="admin-ow-card-meta">
-                <span>建議解析度</span><code>1920 × 1080</code>
+                <span>${ServerI18n.t("widgetsResolutionHint")}</span><code>1920 × 1080</code>
               </div>
             </div>
             <div class="admin-ui-card admin-ow-railcard">
-              <div class="admin-ui-monolabel">16:9 預覽</div>
+              <div class="admin-ui-monolabel">${ServerI18n.t("widgetsPreviewLabel")}</div>
               <div class="admin-ow-preview">
                 <span>Desktop preview</span>
               </div>
@@ -110,8 +109,8 @@
       section.querySelector("[data-ow-copy]")?.addEventListener("click", () => {
         const url = section.querySelector("[data-ow-obs-url]")?.textContent || "";
         navigator.clipboard?.writeText(url).then(
-          () => window.showToast?.("OBS URL 已複製", true),
-          () => window.showToast?.("複製失敗", false)
+          () => window.showToast?.(ServerI18n.t("widgetsToastUrlCopied"), true),
+          () => window.showToast?.(ServerI18n.t("widgetsToastCopyFailed"), false)
         );
       });
 
@@ -191,14 +190,14 @@
     }
 
     async function deleteWidget(id) {
-      const t = window.ServerI18n?.t?.("widgetDeleteConfirm") || "刪除這個小工具?";
+      const t = ServerI18n.t("widgetDeleteConfirm");
       const ok = await window.HudConfirm?.open({
         icon: "⊘",
-        title: "刪除小工具",
+        title: ServerI18n.t("widgetsDeleteTitle"),
         subtitle: "DELETE WIDGET",
         severity: "danger",
         body: t,
-        confirmLabel: "刪除",
+        confirmLabel: ServerI18n.t("widgetsDeleteConfirmBtn"),
       });
       if (!ok) return;
       try {
@@ -228,14 +227,14 @@
     }
 
     async function clearAllWidgets() {
-      const t = window.ServerI18n?.t?.("widgetClearConfirm") || "清除所有小工具?";
+      const t = ServerI18n.t("widgetClearConfirm");
       const ok = await window.HudConfirm?.open({
         icon: "⊘",
-        title: "清除所有小工具",
+        title: ServerI18n.t("widgetsClearTitle"),
         subtitle: "CLEAR ALL WIDGETS · THIS ACTION CANNOT BE UNDONE",
         severity: "danger",
         body: t,
-        confirmLabel: "全部清除",
+        confirmLabel: ServerI18n.t("clearAll"),
       });
       if (!ok) return;
       try {
@@ -263,9 +262,9 @@
         // 換共用 AdminEmpty 並直接給 CTA。
         const card = window.AdminEmpty.renderCustom({
           icon: "⬚",
-          title: window.ServerI18n?.t?.("widgetNone") || "尚無小工具",
-          desc: "在 OBS 覆蓋層上常駐分數板、跑馬燈或文字標籤。",
-          actionLabel: "+ 新增分數板",
+          title: ServerI18n.t("widgetNone"),
+          desc: ServerI18n.t("widgetsEmptyDesc"),
+          actionLabel: ServerI18n.t("widgetsEmptyAction"),
           action: () => document.getElementById("widget-add-scoreboard")?.click(),
         });
         card.dataset.emptyKind = "widgets";
@@ -317,15 +316,15 @@
       toggleBtn.type = "button";
       toggleBtn.className = "admin-ui-action admin-widget-card-action";
       toggleBtn.textContent = w.visible
-        ? (window.ServerI18n?.t?.("widgetHide") || "隱藏")
-        : (window.ServerI18n?.t?.("widgetShow") || "顯示");
+        ? ServerI18n.t("widgetHide")
+        : ServerI18n.t("widgetShow");
       toggleBtn.addEventListener("click", () => updateWidget(w.id, { visible: !w.visible }));
       actions.appendChild(toggleBtn);
 
       const delBtn = document.createElement("button");
       delBtn.type = "button";
       delBtn.className = "admin-ui-action is-danger admin-widget-card-action";
-      delBtn.textContent = window.ServerI18n?.t?.("remove") || "移除";
+      delBtn.textContent = ServerI18n.t("remove");
       delBtn.addEventListener("click", () => deleteWidget(w.id));
       actions.appendChild(delBtn);
 
@@ -450,7 +449,7 @@
       textarea.className = "admin-widget-textarea";
       textarea.value = (cfg.messages || []).join("\n");
       textarea.rows = 3;
-      textarea.placeholder = window.ServerI18n?.t?.("widgetTickerPlaceholder") || "每行一則訊息";
+      textarea.placeholder = ServerI18n.t("widgetTickerPlaceholder");
       textarea.addEventListener("change", () => {
         const messages = textarea.value.split("\n").filter((m) => m.trim());
         updateWidget(w.id, { messages });

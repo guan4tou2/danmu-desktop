@@ -2264,5 +2264,20 @@
   "stickersToastPackCreated": "パックを作成しました",
   "stickersToastCreateFailed": "作成失敗",
   "stickersDeleteTitle": "スタンプを削除",
-  "stickersDeleteConfirm": "削除"
+  "stickersDeleteConfirm": "削除",
+  "widgetsKickerTail": "スコアボード · ティッカー · ラベル",
+  "widgetsStatTotal": "ウィジェット総数",
+  "widgetsStatActive": "表示中",
+  "widgetsStatKinds": "種類",
+  "widgetsObsNote": "OBS の Browser Source にこの URL を設定すれば Desktop を取り込めます。透過背景・自動更新。",
+  "widgetsCopyBtn": "コピー",
+  "widgetsResolutionHint": "推奨解像度",
+  "widgetsPreviewLabel": "16:9 プレビュー",
+  "widgetsToastUrlCopied": "OBS URL をコピーしました",
+  "widgetsToastCopyFailed": "コピー失敗",
+  "widgetsDeleteTitle": "ウィジェットを削除",
+  "widgetsDeleteConfirmBtn": "削除",
+  "widgetsClearTitle": "全ウィジェットをクリア",
+  "widgetsEmptyDesc": "OBS オーバーレイにスコアボード / ティッカー / ラベルを常駐。",
+  "widgetsEmptyAction": "+ スコアボード追加"
 }
