@@ -41,28 +41,28 @@
       <div id="${SECTION_ID}" class="admin-soh-v4 hud-page-stack lg:col-span-2" data-tpl="A">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">SYSTEM OVERVIEW · HEALTH · SERVICES · METRICS</div>
-          <div class="admin-ui-page-title">系統總覽</div>
-          <p class="admin-ui-page-note">服務健康度、資源用量與組態摘要；金鑰、排程與備份在各自分頁。</p>
+          <div class="admin-ui-page-title">${ServerI18n.t("sohPageTitle")}</div>
+          <p class="admin-ui-page-note">${ServerI18n.t("sohPageNote")}</p>
         </div>
 
         <!-- Status banner -->
         <div class="admin-soh-v4__banner" data-soh-banner>
           <span class="admin-soh-v4__banner-dot" data-soh-banner-dot></span>
           <div>
-            <div class="admin-soh-v4__banner-title" data-soh-banner-title>檢查中…</div>
+            <div class="admin-soh-v4__banner-title" data-soh-banner-title>${ServerI18n.t("sohChecking")}</div>
             <div class="admin-soh-v4__banner-sub" data-soh-banner-sub>—</div>
           </div>
           <span class="admin-soh-v4__spacer"></span>
-          <button type="button" class="admin-soh-v4__banner-recheck" data-soh-recheck>↻ 立即檢查</button>
+          <button type="button" class="admin-soh-v4__banner-recheck" data-soh-recheck>${ServerI18n.t("sohRecheckBtn")}</button>
         </div>
 
         <!-- 6 metric tiles -->
         <div class="admin-soh-v4__metrics">
           ${[
-            { id: "uptime", en: "UPTIME",     zh: "啟動時間" },
+            { id: "uptime", en: "UPTIME",     zh: ServerI18n.t("sohMetricUptime") },
             { id: "cpu",    en: "CPU",        zh: "CPU" },
             { id: "ram",    en: "MEM RSS",    zh: "RAM" },
-            { id: "ws",     en: "WS CLIENTS", zh: "WS 連線" },
+            { id: "ws",     en: "WS CLIENTS", zh: ServerI18n.t("sohMetricWs") },
             { id: "qps",    en: "MSG RATE",   zh: "Fire QPS" },
             { id: "disk",   en: "DB SIZE",    zh: "DB" },
           ].map(m => `
@@ -79,7 +79,7 @@
         <!-- 2-col grid: services table (left) + right stack -->
         <div class="admin-soh-v4__panes">
           <div class="admin-soh-v4__pane">
-            <div class="admin-soh-v4__pane-head"><span class="admin-soh-v4__pane-label">服務狀態 · SERVICES</span></div>
+            <div class="admin-soh-v4__pane-head"><span class="admin-soh-v4__pane-label">${ServerI18n.t("sohPaneServices")} · SERVICES</span></div>
             <div class="admin-soh-v4__services" data-soh-services>
               <!-- populated by _wire() -->
             </div>
@@ -88,22 +88,22 @@
           <div class="admin-soh-v4__rail">
             <div class="admin-soh-v4__pane">
               <div class="admin-soh-v4__pane-head">
-                <span class="admin-soh-v4__pane-label">近期事件 · RECENT</span>
+                <span class="admin-soh-v4__pane-label">${ServerI18n.t("sohPaneRecent")} · RECENT</span>
                 <span class="admin-soh-v4__spacer"></span>
-                <a href="#/events" class="admin-soh-v4__pane-link">查看全部 →</a>
+                <a href="#/events" class="admin-soh-v4__pane-link">${ServerI18n.t("sohViewAll")}</a>
               </div>
               <div class="admin-soh-v4__errors" data-soh-errors>
-                <div class="admin-soh-v4__err-empty">過去 60 分鐘沒有錯誤事件 ✓</div>
+                <div class="admin-soh-v4__err-empty">${ServerI18n.t("sohNoErrors")}</div>
               </div>
             </div>
 
             <div class="admin-soh-v4__quickcard">
               <div class="admin-soh-v4__pane-label">QUICK ACTIONS</div>
-              <button type="button" class="admin-soh-v4__qa is-cyan" data-soh-action="reload-effects">⟳ 重新載入所有插件</button>
-              <a class="admin-soh-v4__qa" href="#/overlay">⊗ 清除 Desktop 畫面</a>
-              <a class="admin-soh-v4__qa" href="#/backup">↓ 下載系統診斷包</a>
-              <button type="button" class="admin-soh-v4__qa is-disabled" data-soh-action="force-gc" disabled title="基於安全考量已停用">
-                <span>⚠ 強制 GC</span>
+              <button type="button" class="admin-soh-v4__qa is-cyan" data-soh-action="reload-effects">${ServerI18n.t("sohQaReloadPlugins")}</button>
+              <a class="admin-soh-v4__qa" href="#/overlay">${ServerI18n.t("sohQaClearDesktop")}</a>
+              <a class="admin-soh-v4__qa" href="#/backup">${ServerI18n.t("sohQaDiagPack")}</a>
+              <button type="button" class="admin-soh-v4__qa is-disabled" data-soh-action="force-gc" disabled title="${ServerI18n.t("sohQaGcDisabledTitle")}">
+                <span>${ServerI18n.t("sohQaForceGc")}</span>
                 <span class="admin-soh-v4__qa-hint">待 BE</span>
               </button>
             </div>
@@ -181,7 +181,7 @@
       dot.style.background = allHealthy ? "var(--hud-lime, #86efac)" : "var(--hud-amber, #fbbf24)";
       dot.style.boxShadow = allHealthy ? "0 0 8px var(--hud-lime, #86efac)" : "0 0 8px var(--hud-amber, #fbbf24)";
     }
-    if (title) title.textContent = allHealthy ? "所有服務正常" : "1 個服務異常";
+    if (title) title.textContent = allHealthy ? ServerI18n.t("sohAllHealthy") : ServerI18n.t("sohOneUnhealthy");
     if (sub) sub.textContent = `${wsClients} WS clients · uptime ${upStr} · last check ${new Date().toLocaleTimeString()}`;
   }
 
@@ -216,7 +216,7 @@
       { name: "WS Server",        status: wsHealthy ? "healthy" : "degraded",   uptime: upStr, ver },
       { name: "Effect Engine",    status: "healthy",                            uptime: upStr, ver: "—" },
       { name: "Webhook Delivery", status: webhookOK ? "healthy" : "degraded",   uptime: "—",   ver: "—",
-        note: webhookOK ? null : "近期投遞失敗 · 自動重試中" },
+        note: webhookOK ? null : ServerI18n.t("sohWebhookRetrying") },
     ];
     // 同一個狀態色餵兩種用途，門檻不同：圓點是非文字（3.0，--hud-* 撐得住），
     // 徽章是 9px 文字（4.5，--hud-* 淺色臂只有 3.30）→ 分成 fill 與 ink 兩組。
@@ -240,7 +240,7 @@
     if (!host) return;
     const errs = (events || []).filter((e) => e.sev === "error" || e.sev === "warn").slice(0, 5);
     if (errs.length === 0) {
-      host.innerHTML = '<div class="admin-soh-v4__err-empty">過去 60 分鐘沒有錯誤事件 ✓</div>';
+      host.innerHTML = '<div class="admin-soh-v4__err-empty">' + ServerI18n.t("sohNoErrors") + '</div>';
       return;
     }
     host.innerHTML = errs.map((e) => `
@@ -307,11 +307,11 @@
     const _recheck = document.querySelector("[data-soh-recheck]");
     if (_recheck) {
       _recheck.addEventListener("click", () => {
-        _recheck.textContent = "↻ 檢查中…";
+        _recheck.textContent = ServerI18n.t("sohRecheckBusy");
         _recheck.disabled = true;
         setTimeout(() => _wire(), 100);
         setTimeout(() => {
-          _recheck.textContent = "↻ 立即檢查";
+          _recheck.textContent = ServerI18n.t("sohRecheckBtn");
           _recheck.disabled = false;
         }, 1500);
       });
@@ -325,8 +325,8 @@
         if (a.dataset.sohAction === "reload-effects") {
           window.csrfFetch("/admin/effects/reload", { method: "POST" })
             .then((r) => r.ok ? r.json() : Promise.reject(r))
-            .then(() => { window.showToast && window.showToast("已重新載入 effects", true); })
-            .catch(() => { window.showToast && window.showToast("重新載入失敗", false); });
+            .then(() => { window.showToast && window.showToast(ServerI18n.t("sohToastEffectsReloaded"), true); })
+            .catch(() => { window.showToast && window.showToast(ServerI18n.t("sohToastReloadFailed"), false); });
         }
       });
     }
