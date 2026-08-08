@@ -2087,5 +2087,20 @@
   "fxHintAmpOk": "參數在建議範圍內，效能良好",
   "fxNoNumericParams": "此效果無數值參數",
   "fxSectionParams": "§1 · 動態參數",
-  "fxSectionControls": "§2 · 控制選項"
+  "fxSectionControls": "§2 · 控制選項",
+  "obStep1Title": "即時控制台",
+  "obStep1Body": "你會在這個頁面看到正在進行的場次概況 — 觀眾數、訊息流、Polls、健康度。所有重要資訊都在第一屏。",
+  "obStep2Title": "⌘K 命令面板",
+  "obStep2Body": "隨時按 ⌘K 開啟。可搜尋訊息、跳到任何頁面、執行快速動作。學會這個就能少點 3/4 的次數。",
+  "obStep3Title": "Fire Token 整合",
+  "obStep3Body": "想接 Slido、OBS、自製 bot？在「整合」頁取得 Fire Token，任何工具都能 POST 訊息到你的場次。",
+  "obStep4Title": "通知中心",
+  "obStep4Body": "當 webhook 失敗、quota 接近上限、備份失敗時，會集中在這裡通知。建議養成每天看一次的習慣。",
+  "obStep5Title": "完成 · 開始使用",
+  "obStep5Body": "指引隨時可以從「關於」頁點「重新顯示提示」叫回來。試著開一個測試場次，看看觀眾發訊息會怎麼跑。",
+  "obAriaLabel": "新手導覽",
+  "obSkip": "跳過導覽",
+  "obPrev": "← 上一步",
+  "obDone": "✓ 完成",
+  "obNext": "下一步 →"
 }

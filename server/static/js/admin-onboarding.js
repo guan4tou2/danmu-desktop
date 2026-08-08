@@ -27,43 +27,45 @@
     return window.AdminUtils.styleTag("", css);
   }
 
+  // D-4：STEPS 是頂層常數（parse 時 ServerI18n 未 init）——文案存 key，
+  // 渲染時才 t()。
   const STEPS = [
     {
       n: 1,
-      title: "即時控制台",
-      body: "你會在這個頁面看到正在進行的場次概況 — 觀眾數、訊息流、Polls、健康度。所有重要資訊都在第一屏。",
+      titleKey: "obStep1Title",
+      bodyKey: "obStep1Body",
       target: ".admin-dash-kpi-row, [data-section='dashboard-kpi']",
       fallbackRect: { x: 12, y: 80, w: 700, h: 120 },
       tipSide: "bottom",
     },
     {
       n: 2,
-      title: "⌘K 命令面板",
-      body: "隨時按 ⌘K 開啟。可搜尋訊息、跳到任何頁面、執行快速動作。學會這個就能少點 3/4 的次數。",
+      titleKey: "obStep2Title",
+      bodyKey: "obStep2Body",
       target: "[data-admin-palette-trigger], .admin-palette-trigger, [data-cmd-palette-open]",
       fallbackRect: { x: 0.55, y: 12, w: 240, h: 36, relative: true },
       tipSide: "bottom",
     },
     {
       n: 3,
-      title: "Fire Token 整合",
-      body: "想接 Slido、OBS、自製 bot？在「整合」頁取得 Fire Token，任何工具都能 POST 訊息到你的場次。",
+      titleKey: "obStep3Title",
+      bodyKey: "obStep3Body",
       target: "[data-route='integrations']",
       fallbackRect: { x: 0, y: 480, w: 200, h: 36, relative: false },
       tipSide: "right",
     },
     {
       n: 4,
-      title: "通知中心",
-      body: "當 webhook 失敗、quota 接近上限、備份失敗時，會集中在這裡通知。建議養成每天看一次的習慣。",
+      titleKey: "obStep4Title",
+      bodyKey: "obStep4Body",
       target: "[data-route='notifications']",
       fallbackRect: { x: 0, y: 440, w: 200, h: 36, relative: false },
       tipSide: "right",
     },
     {
       n: 5,
-      title: "完成 · 開始使用",
-      body: "指引隨時可以從「關於」頁點「重新顯示提示」叫回來。試著開一個測試場次，看看觀眾發訊息會怎麼跑。",
+      titleKey: "obStep5Title",
+      bodyKey: "obStep5Body",
       target: null,
       tipSide: "center",
     },
@@ -159,7 +161,7 @@
     root.id = ROOT_ID;
     root.setAttribute("role", "dialog");
     root.setAttribute("aria-modal", "true");
-    root.setAttribute("aria-label", "新手導覽");
+    root.setAttribute("aria-label", ServerI18n.t("obAriaLabel"));
     // pointer-events:none on root so the overlay never blocks clicks on the
     // underlying admin UI (logout button, nav, etc.).  Only the tooltip card
     // is set to pointer-events:auto in _renderStep so its buttons work.
@@ -283,20 +285,20 @@
         </div>
 
         <div style="font-size:16px;font-weight:600;color:var(--admin-text,#f1f5f9);margin-bottom:6px;letter-spacing:.2px">
-          ${cur.title}
+          ${ServerI18n.t(cur.titleKey)}
         </div>
         <div style="font-size:13px;color:var(--admin-text-dim,#94a3b8);line-height:1.6;letter-spacing:.2px">
-          ${cur.body}
+          ${ServerI18n.t(cur.bodyKey)}
         </div>
 
         <div class="ob-actions">
           <button type="button" class="ob-btn ob-btn--ghost" data-ob-action="skip">
-            跳過導覽
+            ${ServerI18n.t("obSkip")}
           </button>
           <div class="ob-actions__spacer"></div>
-          ${_step > 0 ? `<button type="button" class="admin-ui-action ob-btn" data-ob-action="prev">← 上一步</button>` : ""}
+          ${_step > 0 ? `<button type="button" class="admin-ui-action ob-btn" data-ob-action="prev">${ServerI18n.t("obPrev")}</button>` : ""}
           <button type="button" class="admin-ui-action is-primary ob-btn" data-ob-action="next">
-            ${_step === total - 1 ? "✓ 完成" : "下一步 →"}
+            ${_step === total - 1 ? ServerI18n.t("obDone") : ServerI18n.t("obNext")}
           </button>
         </div>
       </div>

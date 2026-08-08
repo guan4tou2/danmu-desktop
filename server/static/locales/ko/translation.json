@@ -2087,5 +2087,20 @@
   "fxHintAmpOk": "파라미터가 권장 범위 내 — 양호",
   "fxNoNumericParams": "이 효과에는 숫자 파라미터 없음",
   "fxSectionParams": "§1 · 모션 파라미터",
-  "fxSectionControls": "§2 · 제어 옵션"
+  "fxSectionControls": "§2 · 제어 옵션",
+  "obStep1Title": "라이브 콘솔",
+  "obStep1Body": "진행 중 세션 개요 — 시청자 수·메시지 스트림·투표·상태. 중요한 정보가 첫 화면에 모여 있습니다.",
+  "obStep2Title": "⌘K 커맨드 팔레트",
+  "obStep2Body": "언제든 ⌘K로 열기 — 메시지 검색, 페이지 이동, 빠른 작업. 익히면 클릭이 3/4 줄어듭니다.",
+  "obStep3Title": "Fire Token 연동",
+  "obStep3Body": "Slido·OBS·자체 봇 연결은 통합 페이지에서 Fire Token 발급 — 어떤 도구든 세션으로 POST 가능.",
+  "obStep4Title": "알림 센터",
+  "obStep4Body": "웹훅 실패, 쿼터 임박, 백업 실패가 여기로 모입니다. 하루 한 번 확인을 습관으로.",
+  "obStep5Title": "완료 · 시작하기",
+  "obStep5Body": "이 안내는 정보 페이지에서 언제든 다시 볼 수 있습니다. 테스트 세션을 열어 메시지 흐름을 확인해 보세요.",
+  "obAriaLabel": "온보딩 투어",
+  "obSkip": "투어 건너뛰기",
+  "obPrev": "← 이전",
+  "obDone": "✓ 완료",
+  "obNext": "다음 →"
 }

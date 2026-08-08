@@ -2087,5 +2087,20 @@
   "fxHintAmpOk": "パラメータは推奨範囲内 — 良好",
   "fxNoNumericParams": "この効果に数値パラメータなし",
   "fxSectionParams": "§1 · モーションパラメータ",
-  "fxSectionControls": "§2 · 制御オプション"
+  "fxSectionControls": "§2 · 制御オプション",
+  "obStep1Title": "ライブコンソール",
+  "obStep1Body": "進行中セッションの概況——視聴者数・メッセージ・投票・ヘルスがこの画面に。重要情報はファーストビューに集約。",
+  "obStep2Title": "⌘K コマンドパレット",
+  "obStep2Body": "いつでも ⌘K で起動。メッセージ検索・ページ移動・クイック操作。使いこなせばクリックが 3/4 減る。",
+  "obStep3Title": "Fire Token 連携",
+  "obStep3Body": "Slido・OBS・自作 bot を繋ぐなら「連携」ページで Fire Token を取得。どんなツールからでも POST 可能。",
+  "obStep4Title": "通知センター",
+  "obStep4Body": "webhook 失敗・quota 上限接近・バックアップ失敗はここに集約。1 日 1 回の確認を習慣に。",
+  "obStep5Title": "完了 · はじめる",
+  "obStep5Body": "このツアーは「情報」ページからいつでも再表示可。テストセッションを開いてメッセージの流れを見てみよう。",
+  "obAriaLabel": "オンボーディングツアー",
+  "obSkip": "ツアーをスキップ",
+  "obPrev": "← 戻る",
+  "obDone": "✓ 完了",
+  "obNext": "次へ →"
 }

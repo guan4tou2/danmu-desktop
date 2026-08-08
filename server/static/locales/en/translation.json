@@ -2087,5 +2087,20 @@
   "fxHintAmpOk": "Parameters within recommended range — performance is good",
   "fxNoNumericParams": "This effect has no numeric parameters",
   "fxSectionParams": "§1 · Motion parameters",
-  "fxSectionControls": "§2 · Control options"
+  "fxSectionControls": "§2 · Control options",
+  "obStep1Title": "Live console",
+  "obStep1Body": "This page shows the running session at a glance — audience count, message stream, polls, health. Everything important is above the fold.",
+  "obStep2Title": "⌘K command palette",
+  "obStep2Body": "Press ⌘K anytime — search messages, jump to any page, run quick actions. Master it and skip 3/4 of your clicks.",
+  "obStep3Title": "Fire Token integrations",
+  "obStep3Body": "Hooking up Slido, OBS or your own bot? Grab a Fire Token on the Integrations page — any tool can POST messages into your session.",
+  "obStep4Title": "Notification center",
+  "obStep4Body": "Webhook failures, quota nearing the cap, backup errors — they all land here. Worth checking once a day.",
+  "obStep5Title": "Done · get started",
+  "obStep5Body": "You can replay this tour anytime from the About page. Try starting a test session and watch audience messages fly.",
+  "obAriaLabel": "Onboarding tour",
+  "obSkip": "Skip tour",
+  "obPrev": "← Back",
+  "obDone": "✓ Done",
+  "obNext": "Next →"
 }
