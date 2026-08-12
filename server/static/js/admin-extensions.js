@@ -84,7 +84,7 @@
     return `
       <div id="${PAGE_ID}" class="admin-ext-page hud-page-stack lg:col-span-2" data-tpl="B">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">INTEGRATIONS · 整合 · 第三方接入</div>
+          <div class="admin-ui-page-kicker">INTEGRATIONS · ${ServerI18n.t("extKickerTail")}</div>
           <div class="admin-ui-page-title">${ServerI18n.t("adminRouteTitle_integrations")}</div>
           <p class="admin-ui-page-note">${ServerI18n.t("extPageNote", { tag: "<b>Fire Token</b>" })}</p>
         </div>
@@ -103,7 +103,7 @@
       : `<span class="admin-ext-flag is-soon">${ServerI18n.t("extFlagSoon")}</span>`;
     const installSection = isReady && ext.install
       ? `<div class="admin-ext-install">
-          <div class="admin-ui-monolabel">INSTALL · 安裝步驟</div>
+          <div class="admin-ui-monolabel">INSTALL · ${ServerI18n.t("extSecInstall")}</div>
           <ol class="admin-ext-install-steps">
             ${ext.install.steps.map((s) => {
               if (s.kind === "download") {
@@ -117,7 +117,7 @@
     const tokenSection = ext.hasFireTokenUI
       ? `<div class="admin-ext-token" data-ext-token>
           <div class="admin-ui-monolabel">
-            FIRE TOKEN · 共享機密
+            FIRE TOKEN · ${ServerI18n.t("extSecFireToken")}
             <a href="#/firetoken" class="admin-ext-token-deeplink">${ServerI18n.t("extTokenDeepLink")}</a>
           </div>
           <div class="admin-ext-token-row">

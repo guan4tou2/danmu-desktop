@@ -224,7 +224,7 @@
              .admin-msgd-v4__seclabel mirrors .admin-ui-monolabel styling
              (hud.css) so it's treated the same — left untouched, as are the
              two seclabel headers below. -->
-        <div class="admin-msgd-v4__seclabel">發送者 · SENDER PROFILE</div>
+        <div class="admin-msgd-v4__seclabel">${ServerI18n.t("msgDrawerSecSender")} · SENDER PROFILE</div>
         <div class="admin-msgd-v4__sender-stats">
           <div><div class="k">${ServerI18n.t("msgDrawerStatTotalMessages")}</div><div class="v">${totalCount || sameFp.length}</div></div>
           <div><div class="k">${ServerI18n.t("msgDrawerStatAvgLength")}</div><div class="v dim">${avgLen}<span class="u">${ServerI18n.t("msgDrawerCharUnit")}</span></div></div>
@@ -239,7 +239,7 @@
       <section class="admin-msgd-v4__section">
         <!-- D-4 i18n: same deferred EN·中文 bilingual monolabel pattern as
              SENDER PROFILE above — left untouched. -->
-        <div class="admin-msgd-v4__seclabel">審核 · MODERATION</div>
+        <div class="admin-msgd-v4__seclabel">${ServerI18n.t("msgDrawerSecModeration")} · MODERATION</div>
         <div class="admin-msgd-v4__mod-buttons">
           <button type="button" class="admin-msgd-v4__modbtn is-ban" data-msgd-action="ban-fp" ${fp === "—" ? "disabled" : ""}>⊘ Ban</button>
           <button type="button" class="admin-msgd-v4__modbtn is-mute" data-msgd-action="mute-fp" ${fp === "—" ? "disabled" : ""}>◐ Mute</button>
@@ -251,7 +251,7 @@
       <section class="admin-msgd-v4__section is-grow">
         <!-- D-4 i18n: same deferred EN·中文 bilingual monolabel pattern as
              SENDER PROFILE above — left untouched. -->
-        <div class="admin-msgd-v4__seclabel">回覆 · REPLY AS ADMIN</div>
+        <div class="admin-msgd-v4__seclabel">${ServerI18n.t("msgDrawerSecReply")} · REPLY AS ADMIN</div>
         <textarea class="admin-msgd-v4__reply" data-msgd-reply placeholder="${ServerI18n.t("msgDrawerReplyPlaceholder")}" rows="3"></textarea>
         <button type="button" class="admin-msgd-v4__replybtn" data-msgd-action="reply">${ServerI18n.t("msgDrawerSendReply")}</button>
       </section>

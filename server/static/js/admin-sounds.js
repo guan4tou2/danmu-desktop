@@ -430,7 +430,7 @@
           <!-- LEFT: Sound library (upload + list) -->
           <div class="admin-ui-card admin-sounds-col">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-              <span class="admin-ui-monolabel">SOUND LIBRARY · 庫存</span>
+              <span class="admin-ui-monolabel">SOUND LIBRARY · ${ServerI18n.t("sndSecLibrary")}</span>
             </div>
             <div id="soundsList" class="admin-sounds-grid"></div>
 

@@ -48,7 +48,7 @@
 
           <!-- History export -->
           <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">HISTORY · 彈幕歷史</div>
+            <div class="admin-ui-monolabel">HISTORY · ${ServerI18n.t("backupSecHistory")}</div>
             <div class="admin-backup-row">
               <label class="admin-backup-field">
                 <span class="admin-ui-monolabel">RANGE</span>
@@ -74,7 +74,7 @@
 
           <!-- Settings export -->
           <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">SETTINGS · 設定快照</div>
+            <div class="admin-ui-monolabel">SETTINGS · ${ServerI18n.t("backupSecSettingsSnap")}</div>
             <div class="admin-backup-row">
               <div class="admin-backup-desc">
                 ${ServerI18n.t("backupSettingsSnapshotDesc")}
@@ -85,7 +85,7 @@
 
           <!-- Full pack (2026-05-19 — wired to /admin/backup/export) -->
           <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">FULL BACKUP · 全狀態 .tar.gz</div>
+            <div class="admin-ui-monolabel">FULL BACKUP · ${ServerI18n.t("backupSecFullState")}</div>
             <div class="admin-backup-row">
               <div class="admin-backup-desc" id="bk2-pack-summary">
                 ${ServerI18n.t("backupCalculatingSize")}
@@ -100,7 +100,7 @@
 
           <!-- Asset pack export (uploaded media) -->
           <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">ASSET PACK · 素材 .tar.gz</div>
+            <div class="admin-ui-monolabel">ASSET PACK · ${ServerI18n.t("backupSecAssetPack")}</div>
             <div class="admin-backup-row">
               <div class="admin-backup-desc" id="bk2-assets-summary">
                 ${ServerI18n.t("backupCalculatingAssetSize")}
@@ -122,7 +122,7 @@
 
           <!-- Settings restore -->
           <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">SETTINGS · 還原設定</div>
+            <div class="admin-ui-monolabel">SETTINGS · ${ServerI18n.t("backupSecRestoreSettings")}</div>
             <div class="admin-backup-row">
               <label class="admin-backup-field">
                 <span class="admin-ui-monolabel">JSON FILE</span>
@@ -137,7 +137,7 @@
 
           <!-- Full pack restore (2026-05-19 — wired to /admin/backup/import) -->
           <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">FULL BACKUP · 還原 .tar.gz</div>
+            <div class="admin-ui-monolabel">FULL BACKUP · ${ServerI18n.t("backupSecRestoreFull")}</div>
             <div class="admin-backup-row">
               <label class="admin-backup-field">
                 <span class="admin-ui-monolabel">TARBALL · ≤ 16 MB</span>
@@ -155,7 +155,7 @@
 
           <!-- Asset pack restore -->
           <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">ASSET PACK · 還原素材 .tar.gz</div>
+            <div class="admin-ui-monolabel">ASSET PACK · ${ServerI18n.t("backupSecRestoreAssets")}</div>
             <div class="admin-backup-row">
               <label class="admin-backup-field">
                 <span class="admin-ui-monolabel">TARBALL · ≤ 64 MB</span>
@@ -180,7 +180,7 @@
 
           <!-- Clear history -->
           <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">CLEAR HISTORY · 清除彈幕歷史</div>
+            <div class="admin-ui-monolabel">CLEAR HISTORY · ${ServerI18n.t("backupSecClearHistory")}</div>
             <div class="admin-backup-row">
               <label class="admin-backup-field">
                 <span class="admin-ui-monolabel">RANGE</span>
@@ -199,7 +199,7 @@
 
           <!-- Factory reset -->
           <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">FACTORY RESET · 回復原廠</div>
+            <div class="admin-ui-monolabel">FACTORY RESET · ${ServerI18n.t("backupSecFactoryReset")}</div>
             <div class="admin-backup-row">
               <label class="admin-backup-field">
                 <span class="admin-ui-monolabel">${ServerI18n.t("backupFactoryConfirmLabel")}</span>

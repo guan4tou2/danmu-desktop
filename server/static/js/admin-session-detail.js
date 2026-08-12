@@ -153,7 +153,7 @@
                    deferred (see TODOS.md "「EN · 中文」雙語 monolabel 的 pattern
                    決策"), left untouched here to match admin-backup.js
                    precedent (HISTORY · 彈幕歷史 etc, commit 4771242). -->
-              <div class="admin-ui-monolabel" style="margin-bottom:8px">PLAYBACK · 回放控制 (VISUAL ONLY)</div>
+              <div class="admin-ui-monolabel" style="margin-bottom:8px">PLAYBACK · ${ServerI18n.t("sessionDetailSecPlayback")} (VISUAL ONLY)</div>
               <div class="admin-sd-pb-row">
                 <div class="admin-ui-chip-group admin-sd-speed-group" role="group" aria-label="${ServerI18n.t("sessionDetailSpeedGroupAria")}">
                   <button type="button" class="admin-ui-chip admin-sd-speed-chip" data-speed="0.5">0.5×</button>
@@ -172,7 +172,7 @@
                 <!-- D-4 i18n: "DENSITY TIMELINE · 每分鐘訊息密度" is the same
                      deferred EN·中文 bilingual monolabel pattern — left
                      untouched (see PLAYBACK note above). -->
-                <span>DENSITY TIMELINE · 每分鐘訊息密度</span>
+                <span>DENSITY TIMELINE · ${ServerI18n.t("sessionDetailSecDensity")}</span>
                 <span class="admin-sd-peak-marker" data-sd-peak-label></span>
                 <span class="admin-sd-timeline-spacer"></span>
                 <span class="admin-sd-ann-count" data-sd-ann-count></span>
@@ -656,7 +656,7 @@
         <!-- D-4 i18n: "NOTE · ≤ 280 字" is the same deferred EN·中文
              bilingual monolabel pattern — left untouched (see PLAYBACK
              note in buildSection() above). -->
-        <div class="admin-ui-monolabel">NOTE · ≤ 280 字</div>
+        <div class="admin-ui-monolabel">NOTE · ${ServerI18n.t("sessionDetailSecNote")}</div>
         <textarea class="admin-sd-ann-modal-note" data-ann-modal-note
           placeholder="${ServerI18n.t("sessionDetailNotePlaceholder")}" maxlength="280"></textarea>
         <div class="admin-sd-ann-modal-counter" data-ann-modal-counter>0 / 280</div>

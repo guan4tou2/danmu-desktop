@@ -226,7 +226,7 @@
     return `
       <div id="${PAGE_ID}" class="admin-notif-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">NOTIFICATIONS · 通知中心</div>
+          <div class="admin-ui-page-kicker">NOTIFICATIONS · ${ServerI18n.t("notifKickerTail")}</div>
           <div class="admin-ui-page-title">${ServerI18n.t("adminRouteTitle_notifications")}</div>
           <p class="admin-ui-page-note">${ServerI18n.t("notifPageNote")}</p>
         </div>
@@ -240,7 +240,7 @@
           <aside class="admin-notif-filters">
             <!-- D-4 i18n: same deferred EN·中文 bilingual monolabel pattern
                  as the page kicker above — left untouched (3 more below). -->
-            <div class="admin-ui-monolabel">分組 · GROUP</div>
+            <div class="admin-ui-monolabel">${ServerI18n.t("notifSecGroup")} · GROUP</div>
             <div class="admin-ui-chip-group admin-notif-tabs" data-notif-tabs>
               <button type="button" class="admin-ui-chip admin-notif-tab is-active" data-notif-tab="unread">${ServerI18n.t("notifTabUnread")}<span class="admin-notif-count cnt" data-cnt-unread>—</span></button>
               <button type="button" class="admin-ui-chip admin-notif-tab" data-notif-tab="all">${ServerI18n.t("notifAll")}<span class="admin-notif-count cnt" data-cnt-all>—</span></button>
@@ -248,7 +248,7 @@
               <button type="button" class="admin-ui-chip admin-notif-tab" data-notif-tab="archived">${ServerI18n.t("notifTabArchived")}<span class="admin-notif-count cnt" data-cnt-archived>—</span></button>
             </div>
 
-            <div class="admin-ui-monolabel admin-notif-label-top">來源 · SOURCE</div>
+            <div class="admin-ui-monolabel admin-notif-label-top">${ServerI18n.t("notifSecSource")} · SOURCE</div>
             <div class="admin-ui-chip-group admin-notif-sources" data-notif-sources>
               <button type="button" class="admin-ui-chip admin-notif-src is-active" data-notif-src="all">${ServerI18n.t("notifAll")}<span class="admin-notif-count cnt" data-cnt-src-all>—</span></button>
               <button type="button" class="admin-ui-chip admin-notif-src" data-notif-src="Fire Token">Fire Token<span class="admin-notif-count cnt" data-cnt-src-ft>—</span></button>
@@ -257,7 +257,7 @@
               <button type="button" class="admin-ui-chip admin-notif-src" data-notif-src="Moderation">Moderation<span class="admin-notif-count cnt" data-cnt-src-mod>—</span></button>
             </div>
 
-            <div class="admin-ui-monolabel admin-notif-label-top">嚴重度 · SEVERITY</div>
+            <div class="admin-ui-monolabel admin-notif-label-top">${ServerI18n.t("notifSecSeverity")} · SEVERITY</div>
             <div class="admin-ui-chip-group admin-notif-sources" data-notif-severity>
               <button type="button" class="admin-ui-chip admin-notif-src is-active" data-notif-sev="all">${ServerI18n.t("notifAll")}<span class="admin-notif-count cnt" data-cnt-sev-all>—</span></button>
               <button type="button" class="admin-ui-chip admin-notif-src" data-notif-sev="crit">CRIT<span class="admin-notif-count cnt" data-cnt-sev-crit>—</span></button>

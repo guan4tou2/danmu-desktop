@@ -99,7 +99,7 @@
 
             <div class="hud-inspector" style="min-height:auto">
               <div class="hud-inspector-head">
-                <span class="admin-v3-card-kicker" style="margin:0">SUBSETTING · 子集化</span>
+                <span class="admin-v3-card-kicker" style="margin:0">SUBSETTING · ${ServerI18n.t("fontsSecSubsetting")}</span>
               </div>
               <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
                 <div style="font-size:13px;color:var(--color-text-strong)">${ServerI18n.t("fontsSubsetAutoDesc")}</div>
@@ -115,7 +115,7 @@
 
             <div class="hud-inspector" style="min-height:auto">
               <div class="hud-inspector-head">
-                <span class="admin-v3-card-kicker" style="margin:0">CDN DELIVERY · 交付狀態</span>
+                <span class="admin-v3-card-kicker" style="margin:0">CDN DELIVERY · ${ServerI18n.t("fontsSecCdn")}</span>
               </div>
               <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
                 <div class="hud-kv"><span class="hud-kv-k">HIT RATE</span><span class="hud-kv-v" style="color: var(--color-ink-success)" id="fontsCdnHit">—</span></div>
@@ -289,11 +289,11 @@
           </div>
         </div>
         <div class="admin-font-subset-section">
-          <div class="admin-ui-monolabel">SUBSET PRESETS · 多選</div>
+          <div class="admin-ui-monolabel">SUBSET PRESETS · ${ServerI18n.t("fontsSecPresets")}</div>
           <div class="admin-font-subset-chips">${chips}</div>
         </div>
         <div class="admin-font-subset-section">
-          <div class="admin-ui-monolabel">CUSTOM UNICODE RANGE（選填）</div>
+          <div class="admin-ui-monolabel">CUSTOM UNICODE RANGE ${ServerI18n.t("fontsSecUnicodeRange")}</div>
           <textarea class="admin-font-subset-custom" data-subset-custom
             placeholder="U+4E00-9FFF, U+FF00-FFEF">${escapeHtml(customRange)}</textarea>
           <div class="admin-font-subset-hint">${ServerI18n.t("fontsSubsetCustomHint")}</div>

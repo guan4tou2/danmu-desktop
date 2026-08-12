@@ -16,13 +16,6 @@ readFileSync+eval 載入 server 靜態 JS 的先例，含 jsdom location 鎖死�
 
 ## Admin — Design audit 2026-08-02 遺留（B 級後的長尾）
 
-### 「EN · 中文」雙語 monolabel 的 pattern 決策
-**Priority:** P3
-全站 section monolabel 慣用「HISTORY · 彈幕歷史」雙語對。zh 半是給中文
-使用者的說明，en/ja/ko 下顯示混語。決策方向：zh 半 t() 化
-（`HISTORY · ${t(...)}`，zh 視覺不變、他語全譯）；或宣告雙語對是品牌
-識別（維持現狀並記錄）。決了之後是機械工（backup 一頁就有 8 處）。
-
 ### 磨光三項（單行級）
 **Priority:** P4
 - 效果庫 YAML 側欄無選取時 EDIT 鈕仍呈可用態（F-108）。
@@ -32,6 +25,14 @@ readFileSync+eval 載入 server 靜態 JS 的先例，含 jsdom location 鎖死�
   受限（配合 D-4 搬 key 時順手補 h2）。
 
 ## Completed
+
+### 「EN · 中文」雙語 monolabel pattern — done 2026-08-09（決策＋執行）
+拍板：zh 半 t() 化（caps EN token 保留為設計語言）——與 D-4 期間 kicker/
+行內字串的既行規則歸一，zh 視覺零變化、en/ja/ko 拼布歸零；「雙語對＝
+品牌」否決（識別在 caps token 不在混語）。32 keys ×4 語、28 處接線
+（backup ×9、poll-deepdive ×4、fonts ×4、notifications ×4、
+message-drawer ×3、extensions ×3、session-detail ×3、assets/sounds ×1）。
+
 
 ### D-4：admin 模組硬編中文全數遷移 — done 2026-08-09（31 批）
 ~40 模組、~1,900 keys ×4 語（zh/en/ja/ko）分 31 批收官，全數 CI 綠＋

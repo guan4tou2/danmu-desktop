@@ -192,7 +192,7 @@
           <!-- D-4 i18n: EN·中文 bilingual monolabel block header (design idiom
                shared by DISTRIBUTION/TIMELINE/GEO/INTEGRITY below) — left
                untouched, same call as admin-notifications.js. -->
-          <div class="admin-ui-monolabel">選項分佈 · DISTRIBUTION</div>
+          <div class="admin-ui-monolabel">${ServerI18n.t("pollDeepdiveSecDistribution")} · DISTRIBUTION</div>
           <div class="admin-pdd-rows">
             ${options.length ? optionRows : '<div class="admin-pdd-empty-rows">' + ServerI18n.t("pollDeepdiveNoOptions") + '</div>'}
           </div>
@@ -212,7 +212,7 @@
         </article>
 
         <article class="admin-pdd-card admin-pdd-placeholder">
-          <div class="admin-ui-monolabel">投票時間分佈 · TIMELINE</div>
+          <div class="admin-ui-monolabel">${ServerI18n.t("pollDeepdiveSecTimeline")} · TIMELINE</div>
           <div class="admin-pdd-placeholder-body">
             <div class="admin-pdd-placeholder-icon">⌖</div>
             <div class="admin-pdd-placeholder-text">
@@ -225,7 +225,7 @@
 
       <aside class="admin-pdd-aside">
         <article class="admin-pdd-card admin-pdd-placeholder">
-          <div class="admin-ui-monolabel">地理分佈 · GEO</div>
+          <div class="admin-ui-monolabel">${ServerI18n.t("pollDeepdiveSecGeo")} · GEO</div>
           <div class="admin-pdd-placeholder-body">
             <div class="admin-pdd-placeholder-icon">⊕</div>
             <div class="admin-pdd-placeholder-text">
@@ -236,7 +236,7 @@
         </article>
 
         <article class="admin-pdd-card">
-          <div class="admin-ui-monolabel">誠信檢查 · INTEGRITY</div>
+          <div class="admin-ui-monolabel">${ServerI18n.t("pollDeepdiveSecIntegrity")} · INTEGRITY</div>
           <div class="admin-pdd-integrity">
             <div class="row"><span class="dot is-good"></span><div class="meta"><div class="t">${ServerI18n.t("pollDeepdiveIntegrityDedupTitle")}</div><div class="s">${ServerI18n.t("pollDeepdiveIntegrityDedupSub")}</div></div><span class="v is-good">${ServerI18n.t("pollDeepdiveIntegrityEnabledValue")}</span></div>
             <div class="row"><span class="dot is-good"></span><div class="meta"><div class="t">Rate limit</div><div class="s">${ServerI18n.t("pollDeepdiveIntegrityRatelimitSub")}</div></div><span class="v is-good">20/min</span></div>
