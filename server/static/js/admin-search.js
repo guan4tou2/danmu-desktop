@@ -45,12 +45,12 @@
   // ── range definitions ────────────────────────────────────────────────────
 
   var RANGES = [
-    { label: "今天",  hours: 24 },
-    { label: "7天",   hours: 168 },
-    { label: "30天",  hours: 720 },
-    { label: "90天",  hours: 2160 },
-    { label: "全部",  hours: 0 },
-    { label: "自訂",  hours: -1 },   // -1 = custom (UI only, not yet wired to a date-picker)
+    { labelKey: "searchRangeToday",  hours: 24 },
+    { labelKey: "searchRange7d",   hours: 168 },
+    { labelKey: "searchRange30d",  hours: 720 },
+    { labelKey: "searchRange90d",  hours: 2160 },
+    { labelKey: "searchRangeAll",  hours: 0 },
+    { labelKey: "searchRangeCustom",  hours: -1 },   // -1 = custom (UI only, not yet wired to a date-picker)
   ];
 
   // ── HTML template ────────────────────────────────────────────────────────
@@ -59,16 +59,16 @@
     var rangeButtons = RANGES.map(function (r) {
       var active = r.hours === _state.hours ? " is-active" : "";
       return '<button type="button" class="admin-ui-chip admin-search-range-chip' + active + '" data-hours="' + r.hours + '">'
-        + _escHtml(r.label) + '</button>';
+        + _escHtml(ServerI18n.t(r.labelKey)) + '</button>';
     }).join("");
 
     return '<div id="' + PAGE_ID + '" class="admin-search-page hud-page-stack lg:col-span-2">'
 
       // ── page header
       + '<div class="admin-ui-page-head">'
-      +   '<div class="admin-ui-page-kicker">SEARCH · 彈幕全文搜尋</div>'
-      +   '<div class="admin-ui-page-title">搜尋彈幕</div>'
-      +   '<p class="admin-ui-page-note">全文搜尋歷史彈幕。支援進階語法：fp: / nick: / session: / after:。</p>'
+      +   '<div class="admin-ui-page-kicker">SEARCH · ' + ServerI18n.t("searchKickerTail") + '</div>'
+      +   '<div class="admin-ui-page-title">' + ServerI18n.t("searchPageTitle") + '</div>'
+      +   '<p class="admin-ui-page-note">' + ServerI18n.t("searchPageNote") + '</p>'
       + '</div>'
 
       // ── two-column layout
@@ -76,11 +76,11 @@
 
       // LEFT: filter panel
       + '<div class="admin-ui-card hud-page-stack" style="gap:14px">'
-      +   '<div class="admin-ui-monolabel">篩選條件</div>'
+      +   '<div class="admin-ui-monolabel">' + ServerI18n.t("searchFiltersLabel") + '</div>'
 
       // Time range
       +   '<div>'
-      +     '<div class="admin-ui-monolabel" style="margin-bottom:6px">時間範圍</div>'
+      +     '<div class="admin-ui-monolabel" style="margin-bottom:6px">' + ServerI18n.t("searchTimeRangeLabel") + '</div>'
       +     '<div class="admin-search-range-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px">'
       +       rangeButtons
       +     '</div>'
@@ -88,28 +88,28 @@
 
       // Session note
       +   '<div>'
-      +     '<div class="admin-ui-monolabel" style="margin-bottom:4px">場次</div>'
-      +     '<p style="font-size:11px;color:var(--admin-text-dim);margin:0">（根據歷史紀錄自動分組）</p>'
+      +     '<div class="admin-ui-monolabel" style="margin-bottom:4px">' + ServerI18n.t("searchSessionLabel") + '</div>'
+      +     '<p style="font-size:11px;color:var(--admin-text-dim);margin:0">' + ServerI18n.t("searchSessionHint") + '</p>'
       +   '</div>'
 
       // Status checkboxes
       +   '<div>'
-      +     '<div class="admin-ui-monolabel" style="margin-bottom:6px">狀態</div>'
+      +     '<div class="admin-ui-monolabel" style="margin-bottom:6px">' + ServerI18n.t("searchStatusLabel") + '</div>'
       +     '<div class="admin-search-status-checks" style="display:flex;flex-direction:column;gap:6px">'
       +       '<label class="admin-search-check-label" style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--admin-text)">'
-      +         '<input type="checkbox" class="admin-search-status-cb" value="shown" checked /> 顯示</label>'
+      +         '<input type="checkbox" class="admin-search-status-cb" value="shown" checked /> ' + ServerI18n.t("searchStatusShown") + '</label>'
       +       '<label class="admin-search-check-label" style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--admin-text)">'
-      +         '<input type="checkbox" class="admin-search-status-cb" value="pinned" /> 已釘選</label>'
+      +         '<input type="checkbox" class="admin-search-status-cb" value="pinned" /> ' + ServerI18n.t("searchStatusPinned") + '</label>'
       +       '<label class="admin-search-check-label" style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--admin-text)">'
-      +         '<input type="checkbox" class="admin-search-status-cb" value="masked" /> 已遮罩</label>'
+      +         '<input type="checkbox" class="admin-search-status-cb" value="masked" /> ' + ServerI18n.t("searchStatusMasked") + '</label>'
       +       '<label class="admin-search-check-label" style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--admin-text)">'
-      +         '<input type="checkbox" class="admin-search-status-cb" value="blocked" /> 已封鎖</label>'
+      +         '<input type="checkbox" class="admin-search-status-cb" value="blocked" /> ' + ServerI18n.t("searchStatusBlocked") + '</label>'
       +     '</div>'
       +   '</div>'
 
       // Advanced syntax
       +   '<div>'
-      +     '<div class="admin-ui-monolabel" style="margin-bottom:6px">進階語法</div>'
+      +     '<div class="admin-ui-monolabel" style="margin-bottom:6px">' + ServerI18n.t("searchSyntaxLabel") + '</div>'
       +     '<pre class="admin-search-syntax-block" style="'
       +         'background:var(--admin-raised);border:1px solid var(--admin-line);'
       +         'border-radius:4px;padding:8px 10px;margin:0;'
@@ -128,7 +128,7 @@
       +     '<span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);'
       +           'font-size:14px;color:var(--admin-text-dim);pointer-events:none;user-select:none">⌕</span>'
       +     '<input id="admin-search-input" type="search" class="admin-ui-input"'
-      +           ' placeholder="搜尋彈幕內容…"'
+      +           ' placeholder="' + ServerI18n.t("searchInputPlaceholder") + '"'
       +           ' autocomplete="off" spellcheck="false"'
       +           ' style="padding-left:30px;font-family:inherit;font-size:13px" />'
       +   '</div>'
@@ -139,7 +139,7 @@
       +     '<span id="admin-search-count" style="font-family:var(--font-mono);font-size:11px;color:var(--admin-text-dim)"></span>'
       +     '<button type="button" id="admin-search-export-btn"'
       +             ' class="admin-ui-action admin-search-export-btn" hidden'
-      +             ' style="cursor:pointer">↓ 匯出 CSV</button>'
+      +             ' style="cursor:pointer">' + ServerI18n.t("searchExportCsv") + '</button>'
       +   '</div>'
 
       // Time distribution chart
@@ -154,7 +154,7 @@
       +        ' style="display:flex;flex-direction:column;gap:6px">'
       +     '<div id="admin-search-empty-state"'
       +          ' style="padding:32px;text-align:center;color:var(--admin-text-dim);font-size:13px">'
-      +       '輸入關鍵字開始搜尋'
+      +       ServerI18n.t("searchPromptStart")
       +     '</div>'
       +   '</div>'
 
@@ -205,14 +205,14 @@
     var countEl = document.getElementById("admin-search-count");
     if (!countEl) return;
     if (_state.loading) {
-      countEl.textContent = "搜尋中…";
+      countEl.textContent = ServerI18n.t("searchSearching");
       return;
     }
     if (!_state.searched) {
       countEl.textContent = "";
       return;
     }
-    countEl.textContent = _state.total + " 筆結果 · " + _state.queryMs + "ms";
+    countEl.textContent = ServerI18n.t("searchResultCount", { n: _state.total, ms: _state.queryMs });
   }
 
   function _renderChart() {
@@ -254,17 +254,17 @@
     cards.forEach(function (c) { c.remove(); });
 
     if (_state.loading) {
-      if (emptyEl) { emptyEl.style.display = "block"; emptyEl.textContent = "搜尋中…"; }
+      if (emptyEl) { emptyEl.style.display = "block"; emptyEl.textContent = ServerI18n.t("searchSearching"); }
       if (exportBtn) exportBtn.hidden = true;
       return;
     }
     if (!_state.searched) {
-      if (emptyEl) { emptyEl.style.display = "block"; emptyEl.textContent = "輸入關鍵字開始搜尋"; }
+      if (emptyEl) { emptyEl.style.display = "block"; emptyEl.textContent = ServerI18n.t("searchPromptStart"); }
       if (exportBtn) exportBtn.hidden = true;
       return;
     }
     if (_state.results.length === 0) {
-      if (emptyEl) { emptyEl.style.display = "block"; emptyEl.textContent = "找不到符合的彈幕"; }
+      if (emptyEl) { emptyEl.style.display = "block"; emptyEl.textContent = ServerI18n.t("searchNoMatch"); }
       if (exportBtn) exportBtn.hidden = true;
       return;
     }
@@ -275,7 +275,7 @@
     var frag = document.createDocumentFragment();
     _state.results.forEach(function (r) {
       var hue = _hue(r.fingerprint || "");
-      var nick = _escHtml(r.nickname || "匿名");
+      var nick = _escHtml(r.nickname || ServerI18n.t("audienceAnonymous"));
       var fp = _escHtml((r.fingerprint || "").slice(0, 10));
       var ts = _formatTs(r.timestamp);
       var textHtml = _highlight(r.text || "", _state.query);
@@ -338,7 +338,7 @@
       _state.results = [];
       _state.total = 0;
       _state.queryMs = 0;
-      window.showToast && window.showToast("搜尋失敗：" + (e.message || ""), false);
+      window.showToast && window.showToast(ServerI18n.t("searchToastFailed", { msg: e.message || "" }), false);
     } finally {
       _state.loading = false;
       _state.searched = true;
