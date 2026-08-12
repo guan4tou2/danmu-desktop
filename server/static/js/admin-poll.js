@@ -79,9 +79,9 @@
     // 已同步歸零），模板卡 grid 以 extra 保留。
     var card = window.AdminEmpty.renderCustom({
       icon: "⊷",
-      title: "還沒有任何投票",
-      desc: "建好的投票會排在這裡，可即時推到 Desktop，也可以用模板快速建立。",
-      actionLabel: "+ 新建投票",
+      title: ServerI18n.t("pollEmptyTitle"),
+      desc: ServerI18n.t("pollEmptyDesc"),
+      actionLabel: ServerI18n.t("pollEmptyAction"),
       action: function () {
         var addBtn = document.querySelector('#sec-polls [data-poll-action="add"]');
         if (addBtn) addBtn.click();
@@ -89,19 +89,19 @@
       extra: `
       <div class="admin-proto-poll-template-grid">
         <div class="admin-proto-poll-template-card">
-          <div class="t">是 / 否</div>
-          <div class="d">最簡 2 選項</div>
-          <div class="eta">建立 ~5s</div>
+          <div class="t">${ServerI18n.t("pollTplYesNo")}</div>
+          <div class="d">${ServerI18n.t("pollTplYesNoDesc")}</div>
+          <div class="eta">${ServerI18n.t("pollTplEta5s")}</div>
         </div>
         <div class="admin-proto-poll-template-card">
-          <div class="t">滿意度</div>
-          <div class="d">1-5 星</div>
-          <div class="eta">建立 ~10s</div>
+          <div class="t">${ServerI18n.t("pollTplSatisfaction")}</div>
+          <div class="d">${ServerI18n.t("pollTplSatisfactionDesc")}</div>
+          <div class="eta">${ServerI18n.t("pollTplEta10s")}</div>
         </div>
         <div class="admin-proto-poll-template-card">
-          <div class="t">多選題</div>
-          <div class="d">4 個 + 圖片</div>
-          <div class="eta">建立 ~30s</div>
+          <div class="t">${ServerI18n.t("pollTplMulti")}</div>
+          <div class="d">${ServerI18n.t("pollTplMultiDesc")}</div>
+          <div class="eta">${ServerI18n.t("pollTplEta30s")}</div>
         </div>
       </div>`,
     });

@@ -79,7 +79,7 @@
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = INLINE_BAR_CLASS + "-undo";
-    btn.textContent = "↶ " + (undoLabel || "撤回");
+    btn.textContent = "↶ " + (undoLabel || ServerI18n.t("qaUndoLabel"));
     bar.appendChild(btn);
 
     const dismiss = () => {
@@ -91,12 +91,12 @@
     btn.addEventListener("click", async () => {
       clearTimeout(timer);
       btn.disabled = true;
-      btn.textContent = "撤銷中…";
+      btn.textContent = ServerI18n.t("qaUndoing");
       try {
         await onUndo();
-        _showToast("已撤銷", true);
+        _showToast(ServerI18n.t("qaUndone"), true);
       } catch (e) {
-        _showToast("撤銷失敗：" + (e?.message || String(e)), false);
+        _showToast(ServerI18n.t("qaUndoFailed", { msg: e?.message || String(e) }), false);
       } finally {
         dismiss();
       }
@@ -109,7 +109,7 @@
 
   function fire(opts) {
     if (!opts || typeof opts !== "object") return;
-    const label = opts.label || "已完成";
+    const label = opts.label || ServerI18n.t("qaDone");
     if (opts.toast !== false) _showToast(label, true);
 
     if (opts.undo && typeof opts.undo.run === "function") {

@@ -55,11 +55,10 @@
              Page used to render straight into hud-stats-strip without a
              section header. -->
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">MODERATION · LIVE FILTERS · 規則 / 命中 / 即時</div>
-          <div class="admin-ui-page-title">敏感字 &amp; 過濾規則</div>
+          <div class="admin-ui-page-kicker">MODERATION · LIVE FILTERS · ${ServerI18n.t("filtersKickerTail")}</div>
+          <div class="admin-ui-page-title">${ServerI18n.t("filtersPageTitle")}</div>
           <p class="admin-ui-page-note">
-            關鍵字 / regex / 替換 / 速率規則。命中後動作支援 block / replace / allow，
-            每條規則可即時開關，命中次數即時累計。
+            ${ServerI18n.t("filtersPageNote")}
           </p>
         </div>
 
@@ -68,22 +67,22 @@
           <div class="hud-stat-tile">
             <span class="hud-stat-tile-en">RULES</span>
             <span class="hud-stat-tile-value" data-mod-stat="rules">—</span>
-            <span class="hud-stat-tile-label">規則數</span>
+            <span class="hud-stat-tile-label">${ServerI18n.t("filtersStatRules")}</span>
           </div>
           <div class="hud-stat-tile">
             <span class="hud-stat-tile-en">MASKED · 24H</span>
             <span class="hud-stat-tile-value is-amber" data-mod-stat="masked">—</span>
-            <span class="hud-stat-tile-label">今日遮罩</span>
+            <span class="hud-stat-tile-label">${ServerI18n.t("filtersStatMaskedToday")}</span>
           </div>
           <div class="hud-stat-tile">
             <span class="hud-stat-tile-en">BLOCKED · 24H</span>
             <span class="hud-stat-tile-value is-crimson" data-mod-stat="blocked">—</span>
-            <span class="hud-stat-tile-label">今日封鎖</span>
+            <span class="hud-stat-tile-label">${ServerI18n.t("filtersStatBlockedToday")}</span>
           </div>
           <div class="hud-stat-tile">
             <span class="hud-stat-tile-en">BLACKLIST</span>
             <span class="hud-stat-tile-value is-cyan" data-mod-stat="blacklist">—</span>
-            <span class="hud-stat-tile-label">黑名單</span>
+            <span class="hud-stat-tile-label">${ServerI18n.t("filtersStatBlacklist")}</span>
           </div>
         </div>
         <!-- 2026-05-18 design v4 P2-1: Quick Filters bar \u2014 one-shot
@@ -388,11 +387,11 @@
   async function deleteRule(ruleId) {
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
-      title: "刪除過濾規則",
+      title: ServerI18n.t("filtersDeleteTitle"),
       subtitle: "DELETE FILTER RULE",
       severity: "danger",
       body: t("confirmDeleteRule", "Delete this filter rule?"),
-      confirmLabel: "刪除",
+      confirmLabel: ServerI18n.t("filtersDeleteConfirm"),
     });
     if (!ok) return;
     try {
@@ -659,9 +658,9 @@
       if (r.ok) {
         delete _quickRuleIds[id];
         chip.classList.remove("is-active");
-        showToast(`已關閉「${label}」`, true);
+        showToast(ServerI18n.t("filtersToastDisabled", { label: label }), true);
       } else {
-        showToast("關閉失敗", false);
+        showToast(ServerI18n.t("filtersToastDisableFailed"), false);
       }
     } else {
       // turn on
@@ -680,10 +679,10 @@
         const data = await r.json().catch(() => ({}));
         if (data.rule_id) _quickRuleIds[id] = data.rule_id;
         chip.classList.add("is-active");
-        showToast(`已啟用「${label}」`, true);
+        showToast(ServerI18n.t("filtersToastEnabled", { label: label }), true);
       } else {
         const body = await r.json().catch(() => ({}));
-        showToast("啟用失敗 · " + (body.error || ""), false);
+        showToast(ServerI18n.t("filtersToastEnableFailed", { msg: body.error || "" }), false);
       }
     }
     // Refresh the rule list too so the regex table reflects the toggle.

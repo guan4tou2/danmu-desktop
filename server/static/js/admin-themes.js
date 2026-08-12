@@ -47,7 +47,7 @@
     if (count) {
       const builtin = themes.filter(t => t.bundled !== false).length;
       const custom = themes.length - builtin;
-      count.textContent = `${themes.length} PACKS · ${builtin} 內建${custom > 0 ? " · " + custom + " 社群" : ""}`;
+      count.textContent = ServerI18n.t("themesCountLine", { n: themes.length, builtin: builtin, custom: custom > 0 ? ServerI18n.t("themesCountCustomSuffix", { n: custom }) : "" });
     }
 
     if (themes.length === 0) {
@@ -76,7 +76,7 @@
         .map(e => typeof e === "string" ? e : (e.name || ""))
         .filter(Boolean);
       const fontFam = theme.font?.family || "Noto Sans TC";
-      const layout = theme.layout || "scroll · 右→左";
+      const layout = theme.layout || ServerI18n.t("themesLayoutFallback");
       const builtin = theme.bundled !== false;
 
       const card = document.createElement("div");
@@ -108,8 +108,8 @@
           <span class="theme-pack-badge${builtin ? " is-builtin" : ""}">${builtin ? "BUILT-IN" : "CUSTOM"}</span>
           <div class="theme-pack-actions">
             ${isActive
-              ? '<span class="admin-ui-chip admin-theme-pack-status is-active">已啟用</span>'
-              : `<button class="admin-ui-action is-primary admin-theme-pack-action theme-activate-btn" data-theme="${escapeHtml(theme.name)}">啟用 ▶</button>`
+              ? '<span class="admin-ui-chip admin-theme-pack-status is-active">' + ServerI18n.t("themesActiveChip") + '</span>'
+              : `<button class="admin-ui-action is-primary admin-theme-pack-action theme-activate-btn" data-theme="${escapeHtml(theme.name)}">${ServerI18n.t("themesActivateBtn")}</button>`
             }
           </div>
         </div>

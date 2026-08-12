@@ -249,7 +249,7 @@
   function renderCalendar(jobs) {
     const host = document.querySelector("[data-sch-calendar]");
     if (!host) return;
-    const dayNames = ["一", "二", "三", "四", "五", "六", "日"];
+    const dayNames = [ServerI18n.t("schDayMon"), ServerI18n.t("schDayTue"), ServerI18n.t("schDayWed"), ServerI18n.t("schDayThu"), ServerI18n.t("schDayFri"), ServerI18n.t("schDaySat"), ServerI18n.t("schDaySun")];
     const today = new Date();
     const todayIdx = (today.getDay() + 6) % 7; // Mon=0, Sun=6
     const startDate = new Date(today);
@@ -311,7 +311,7 @@
         if (count) count.textContent = "—";
         return;
       }
-      if (count) count.textContent = data.jobs.length + " 項";
+      if (count) count.textContent = ServerI18n.t("schItemCount", { n: data.jobs.length });
 
       // v4 P1-4 — render timeline + calendar from job list (2026-05-19).
       renderTimeline(data.jobs);
@@ -319,7 +319,7 @@
       const meta = document.querySelector("[data-sch-meta]");
       if (meta) {
         const today = new Date().toISOString().slice(0, 10);
-        meta.textContent = "今天 · " + today + " · " + data.jobs.length + " 排程";
+        meta.textContent = ServerI18n.t("schTodayMeta", { date: today, n: data.jobs.length });
       }
 
       if (data.jobs.length === 0) {
@@ -332,7 +332,7 @@
       }
 
       list.innerHTML =
-        '<div class="admin-scheduler-jobs-head"><span></span><span>JOB · 訊息</span><span>INTERVAL</span><span>SENT</span><span>REPEAT</span><span style="text-align:right">ACTIONS</span></div>' +
+        '<div class="admin-scheduler-jobs-head"><span></span><span>${"" + ServerI18n.t("schJobsHeadMsg")}</span><span>INTERVAL</span><span>SENT</span><span>REPEAT</span><span style="text-align:right">ACTIONS</span></div>' +
         data.jobs.map(jobRowHTML).join("");
     } catch (err) {
       console.error("Scheduler fetch error:", err);
@@ -397,9 +397,9 @@
       <div id="${SECTION_ID}" class="admin-scheduler-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">SYSTEM · SCHEDULER · CRON / AT / RECURRING</div>
-          <div class="admin-ui-page-title">排程器</div>
+          <div class="admin-ui-page-title">${ServerI18n.t("schPageTitle")}</div>
           <p class="admin-ui-page-note">
-            按時間/週期自動送出彈幕 — 使用 apscheduler,時區以伺服器為準。
+            ${ServerI18n.t("schPageNote")}
           </p>
         </div>
 
@@ -423,7 +423,7 @@
 
         <!-- Create job form -->
         <div class="admin-ui-card">
-          <div class="admin-ui-monolabel" style="margin-bottom:10px">+ 新增排程</div>
+          <div class="admin-ui-monolabel" style="margin-bottom:10px">+ ${ServerI18n.t("schAddLabel")}</div>
           <div class="admin-scheduler-form-stack">
             <div>
               <div class="admin-ui-monolabel" style="margin-bottom:6px">MESSAGES</div>
@@ -432,7 +432,7 @@
             </div>
             <div class="admin-scheduler-config">
               <label>
-                <span class="admin-ui-monolabel">INTERVAL · 秒</span>
+                <span class="admin-ui-monolabel">${ServerI18n.t("schIntervalSec")}</span>
                 <input id="schedulerInterval" type="number" value="10" min="1" max="3600" class="admin-ui-input" />
               </label>
               <label>
@@ -449,7 +449,7 @@
         <!-- Active jobs list -->
         <div class="admin-ui-card">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-            <span class="admin-ui-monolabel">JOBS · 進行中</span>
+            <span class="admin-ui-monolabel">${ServerI18n.t("schJobsRunning")}</span>
             <span class="admin-ui-monolabel" style="margin-left:auto" id="schedulerJobsCount">—</span>
           </div>
           <div id="schedulerJobsList" class="admin-scheduler-jobs">

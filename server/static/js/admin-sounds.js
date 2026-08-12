@@ -93,7 +93,7 @@
       var emptyCard = window.AdminEmpty.renderCustom({
         icon: "♪",
         title: ServerI18n.t("noSoundsUploaded"),
-        desc: "上傳音效後可設定觸發規則，彈幕命中關鍵字時播放。",
+        desc: ServerI18n.t("soundsEmptyDesc"),
       });
       emptyCard.dataset.emptyKind = "sounds";
       emptyCard.style.gridColumn = "1 / -1";
@@ -144,11 +144,11 @@
         var name = btn.dataset.name;
         const ok = await window.HudConfirm?.open({
           icon: "⊘",
-          title: "刪除音效",
+          title: ServerI18n.t("soundsDeleteTitle"),
           subtitle: "DELETE SOUND",
           severity: "danger",
           bodyText: ServerI18n.t("deleteSoundConfirm").replace("{name}", name),
-          confirmLabel: "刪除",
+          confirmLabel: ServerI18n.t("soundsDeleteConfirm"),
         });
         if (!ok) return;
         try {
@@ -200,7 +200,7 @@
       }
       var entry = availableSounds.find(function (s) { return s.name === name; });
       if (entry) entry.volume = volume;
-      window.showToast("音量已儲存 · " + Math.round(volume * 100) + "%", true);
+      window.showToast(ServerI18n.t("soundsToastVolumeSaved", { pct: Math.round(volume * 100) }), true);
     } catch (err) {
       console.warn("[admin-sounds] volume save failed:", err);
       window.showToast("Network error", false);
@@ -245,7 +245,7 @@
       var emptyCard = window.AdminEmpty.renderCustom({
         icon: "♪",
         title: ServerI18n.t("noSoundRules"),
-        desc: "規則決定哪些關鍵字觸發哪個音效、以及冷卻秒數。",
+        desc: ServerI18n.t("soundsRulesEmptyDesc"),
       });
       emptyCard.dataset.emptyKind = "sound-rules";
       container.appendChild(emptyCard);
@@ -327,7 +327,7 @@
         window.showToast(err.message, false);
       } finally {
         uploadBtn.disabled = false;
-        uploadBtn.textContent = "上傳";
+        uploadBtn.textContent = ServerI18n.t("soundsUploadIdle");
       }
     });
   }
@@ -417,9 +417,9 @@
       <div id="${SECTION_ID}" class="admin-sounds-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">ASSETS · SOUNDS · EVENT-TRIGGERED</div>
-          <div class="admin-ui-page-title">聲音庫</div>
+          <div class="admin-ui-page-title">${ServerI18n.t("soundsPageTitle")}</div>
           <p class="admin-ui-page-note">
-            關鍵字命中或事件觸發時在 Desktop 播放 — 最長 10 秒,最大 500KB。
+            ${ServerI18n.t("soundsPageNote")}
           </p>
         </div>
 
@@ -436,7 +436,7 @@
 
             <!-- Upload form (collapsed into library card per v4 spec) -->
             <div class="admin-sounds-upload-foot">
-              <div class="admin-ui-monolabel" style="margin-bottom:8px">+ 上傳音效</div>
+              <div class="admin-ui-monolabel" style="margin-bottom:8px">+ ${ServerI18n.t("soundsUploadLabel")}</div>
               <div class="admin-sounds-form">
                 <label class="admin-webhooks-field">
                   <span class="admin-ui-monolabel">FILE · MP3/OGG/WAV</span>
@@ -447,7 +447,7 @@
                   <input type="text" id="soundNameInput" placeholder="${escapeHtml(ServerI18n.t("soundNamePlaceholder"))}" maxlength="100" class="admin-ui-input" />
                 </label>
                 <div class="admin-sounds-form-full" style="display:flex;justify-content:flex-end">
-                  <button id="soundUploadBtn" type="button" class="admin-ui-action is-primary admin-sound-action">上傳</button>
+                  <button id="soundUploadBtn" type="button" class="admin-ui-action is-primary admin-sound-action">${ServerI18n.t("soundsUploadIdle")}</button>
                 </div>
               </div>
             </div>
@@ -462,7 +462,7 @@
 
             <!-- New rule form (collapsed into rules card per v4 spec) -->
             <div class="admin-sounds-rule-foot">
-              <div class="admin-ui-monolabel" style="margin-bottom:8px">+ 新增觸發規則</div>
+              <div class="admin-ui-monolabel" style="margin-bottom:8px">+ ${ServerI18n.t("soundsAddRuleLabel")}</div>
               <div class="admin-sounds-form">
                 <label class="admin-webhooks-field">
                   <span class="admin-ui-monolabel">TRIGGER TYPE</span>
@@ -491,7 +491,7 @@
                   <input type="number" id="ruleCooldown" min="0" step="100" value="1000" class="admin-ui-input" />
                 </label>
                 <div class="admin-sounds-form-full" style="display:flex;justify-content:flex-end">
-                  <button id="addRuleBtn" type="button" class="admin-ui-action is-primary admin-sound-action">新增規則</button>
+                  <button id="addRuleBtn" type="button" class="admin-ui-action is-primary admin-sound-action">${ServerI18n.t("soundsAddRuleBtn")}</button>
                 </div>
               </div>
             </div>

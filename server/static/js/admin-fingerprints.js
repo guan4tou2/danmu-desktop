@@ -26,7 +26,7 @@
     return `
       <div id="sec-fingerprints" class="admin-fp-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">FINGERPRINTS · 觀測 · 技術檢視</div>
+          <div class="admin-ui-page-kicker">FINGERPRINTS · ${ServerI18n.t("fpKickerTail")}</div>
           <div class="admin-ui-page-title">${escapeHtml(ServerI18n.t("fingerprintsTitle"))}</div>
           <p class="admin-ui-page-note">${escapeHtml(ServerI18n.t("fingerprintsDesc"))}</p>
         </div>
@@ -152,11 +152,11 @@
   async function handleReset() {
     const ok = await window.HudConfirm?.open({
       icon: "⟳",
-      title: "重設指紋統計",
+      title: ServerI18n.t("fpResetTitle"),
       subtitle: "RESET FINGERPRINTS · OBSERVED DATA IS CLEARED",
       severity: "danger",
       body: ServerI18n.t("fingerprintResetConfirm"),
-      confirmLabel: "重設",
+      confirmLabel: ServerI18n.t("fpResetConfirm"),
     });
     if (!ok) return;
     try {

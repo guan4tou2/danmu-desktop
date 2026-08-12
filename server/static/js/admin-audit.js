@@ -38,14 +38,14 @@
     return `
       <div id="${PAGE_ID}" class="admin-audit-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">AUDIT LOG · 管理員 + 系統事件</div>
-          <div class="admin-ui-page-title">操作日誌</div>
-          <p class="admin-ui-page-note">跨重啟保留的事件紀錄，存在 <code>server/runtime/audit.log</code>。v5 Yellow 以 timeline 呈現最近管理與系統動作。</p>
+          <div class="admin-ui-page-kicker">AUDIT LOG · ${ServerI18n.t("auditKickerTail")}</div>
+          <div class="admin-ui-page-title">${ServerI18n.t("auditPageTitle")}</div>
+          <p class="admin-ui-page-note">${ServerI18n.t("auditPageNote")}</p>
         </div>
 
         <div class="admin-ui-toolbar admin-audit-toolbar-v5">
           <div class="admin-ui-chip-group admin-audit-chip-group" data-audit-actor-group>
-            <button type="button" class="admin-ui-chip admin-audit-filter-chip is-active" data-audit-actor-filter="all">全部</button>
+            <button type="button" class="admin-ui-chip admin-audit-filter-chip is-active" data-audit-actor-filter="all">${ServerI18n.t("auditFilterAll")}</button>
             <button type="button" class="admin-ui-chip admin-audit-filter-chip" data-audit-actor-filter="admin">admin</button>
             <button type="button" class="admin-ui-chip admin-audit-filter-chip" data-audit-actor-filter="system">system</button>
           </div>
@@ -55,9 +55,9 @@
             <button type="button" class="admin-ui-chip admin-audit-filter-chip" data-severity="danger" data-audit-severity-filter="danger">DANGER</button>
           </div>
           <span class="admin-ui-spacer admin-audit-toolbar-spacer"></span>
-          <span class="admin-ui-summary admin-audit-summary" data-audit-summary>載入中…</span>
-          <button type="button" class="admin-ui-action admin-audit-action" data-audit-export>↓ 匯出</button>
-          <button type="button" class="admin-ui-action admin-audit-action" data-audit-refresh>↻ 重新整理</button>
+          <span class="admin-ui-summary admin-audit-summary" data-audit-summary>${ServerI18n.t("auditLoading")}</span>
+          <button type="button" class="admin-ui-action admin-audit-action" data-audit-export>${ServerI18n.t("auditExportBtn")}</button>
+          <button type="button" class="admin-ui-action admin-audit-action" data-audit-refresh>${ServerI18n.t("auditRefreshBtn")}</button>
         </div>
 
         <div class="admin-ui-scroll-list admin-ui-timeline admin-audit-timeline" data-audit-rows>
@@ -174,7 +174,7 @@
     if (!container) return;
     const events = _filteredEvents();
     if (!events.length) {
-      container.innerHTML = `<div class="admin-audit-empty">沒有符合條件的紀錄。</div>`;
+      container.innerHTML = `<div class="admin-audit-empty">${ServerI18n.t("auditNoMatch")}</div>`;
       return;
     }
 
@@ -205,9 +205,9 @@
     const summary = document.querySelector("[data-audit-summary]");
     if (!summary) return;
     const count = _filteredEvents().length;
-    const actor = _state.filterActor === "all" ? "全部角色" : _state.filterActor;
-    const severity = _state.filterSeverity === "all" ? "全部層級" : _state.filterSeverity.toUpperCase();
-    summary.textContent = `${count} 筆 · ${actor} · ${severity}`;
+    const actor = _state.filterActor === "all" ? ServerI18n.t("auditAllRoles") : _state.filterActor;
+    const severity = _state.filterSeverity === "all" ? ServerI18n.t("auditAllLevels") : _state.filterSeverity.toUpperCase();
+    summary.textContent = ServerI18n.t("auditSummaryLine", { n: count, actor: actor, sev: severity });
   }
 
   function _renderFilters() {
@@ -240,7 +240,7 @@
   function _exportJson() {
     const events = _filteredEvents();
     if (!events.length) {
-      window.showToast && window.showToast("沒有可匯出的紀錄", false);
+      window.showToast && window.showToast(ServerI18n.t("auditNothingToExport"), false);
       return;
     }
     const blob = new Blob([JSON.stringify(events, null, 2)], { type: "application/json;charset=utf-8" });
@@ -252,7 +252,7 @@
     anchor.click();
     document.body.removeChild(anchor);
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-    window.showToast && window.showToast("已匯出 " + events.length + " 筆紀錄", true);
+    window.showToast && window.showToast(ServerI18n.t("auditToastExported", { n: events.length }), true);
   }
 
   function _bind() {

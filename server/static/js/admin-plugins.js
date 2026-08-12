@@ -45,11 +45,11 @@
           <div class="admin-ui-page-head">
             <div class="admin-ui-page-kicker">PLUGIN SDK \u00b7 ${ServerI18n.t("pluginsDesc")} \u00b7 HOT-RELOAD</div>
             <div class="admin-ui-page-title">${ServerI18n.t("pluginsTitle")}</div>
-          <p class="admin-ui-page-note">伺服器端 Python 插件；上傳後 5 秒熱載入，可攔截、改寫或自動回覆彈幕。</p>
+          <p class="admin-ui-page-note">${ServerI18n.t("pluginsPageNote2")}</p>
           </div>
 
           <div class="admin-ui-toolbar admin-plugins-toolbar">
-            <span class="admin-ui-monolabel">PLUGINS · <span data-plugins-count>0</span> 個</span>
+            <span class="admin-ui-monolabel">PLUGINS · <span data-plugins-count>0</span> ${ServerI18n.t("pluginsCountUnit")}</span>
             <span class="admin-ui-spacer"></span>
             <button id="pluginsUploadBtn" class="admin-ui-action is-primary admin-plugins-toolbar-btn" type="button">\uff0b \u4e0a\u50b3 .py/.js</button>
             <button id="pluginsReloadBtn" class="admin-ui-action admin-plugins-toolbar-btn" type="button">\u21bb ${ServerI18n.t("reloadBtn")}</button>
@@ -315,7 +315,7 @@
         ? `<button type="button" class="plugin-uninstall admin-plugins-uninstall"
             data-plugin-filename="${escapeHtml(filename)}"
             data-plugin-name="${escapeHtml(name)}"
-            title="移除此使用者上傳的插件"
+            title="${ServerI18n.t("pluginsRemoveTitleAttr")}"
             aria-label="Uninstall plugin ${escapeHtml(name)}">⊘</button>`
         : "";
 
@@ -349,11 +349,11 @@
     async function uninstallPlugin(name, filename) {
       const ok = await window.HudConfirm?.open({
         icon: "⊘",
-        titleText: `移除插件「${name}」`,
+        titleText: ServerI18n.t("pluginsRemoveModalTitle", { name: name }),
         subtitle: "UNINSTALL PLUGIN · FILE IS DELETED",
         severity: "danger",
-        bodyText: `檔案 server/user_plugins/${filename} 會被刪除，無法復原。`,
-        confirmLabel: "移除插件",
+        bodyText: ServerI18n.t("pluginsRemoveBody", { filename: filename }),
+        confirmLabel: ServerI18n.t("pluginsRemoveConfirm"),
       });
       if (!ok) return;
       try {
@@ -364,13 +364,13 @@
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          showToast(data.error || `移除失敗 (HTTP ${res.status})`, false);
+          showToast(data.error || ServerI18n.t("pluginsToastRemoveFailed", { status: res.status }), false);
           return;
         }
-        showToast(`${name} 已移除`, true);
+        showToast(ServerI18n.t("pluginsToastRemoved", { name: name }), true);
         await fetchPlugins();
       } catch (e) {
-        showToast(`網路錯誤：${e.message || ""}`, false);
+        showToast(ServerI18n.t("pluginsToastNetError", { msg: e.message || "" }), false);
       }
     }
 

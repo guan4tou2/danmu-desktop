@@ -94,27 +94,26 @@
       <div id="${SECTION_ID}" class="admin-ev-v4 hud-page-stack lg:col-span-2" style="display:none">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">SYSTEM · EVENTS · AUTO-EMITTED</div>
-          <div class="admin-ui-page-title">系統事件</div>
-          <p class="admin-ui-page-note">系統自動發出的事件流（錯誤／警示／狀態變化）；人為操作紀錄在「紀錄 & 匯出 › 審計」。</p>
+          <div class="admin-ui-page-title">${ServerI18n.t("evPageTitle")}</div>
+          <p class="admin-ui-page-note">${ServerI18n.t("evPageNote")}</p>
         </div>
 
         <!-- vs audit explainer -->
         <div class="admin-ev-v4__explain">
-          ℹ 系統事件 ≠ 操作日誌。事件 = 系統自動產生；
-          <a href="#/audit">操作日誌</a> = 人為動作（誰改了什麼設定）。
+          ${ServerI18n.t("evInfoLine", { link: `<a href="#/audit">${ServerI18n.t("evAuditLinkText")}</a>` })}
         </div>
 
         <!-- v5 Batch 12-4 (2026-05-19): added category chip row + LIVE
              pulse indicator per batch12-system.jsx SystemEventsPage. -->
         <div class="admin-ui-toolbar admin-ev-v4__filterbar">
           <div class="admin-ui-chip-group admin-ev-v4__sev-chips" role="tablist">
-            <button type="button" class="admin-ui-chip admin-ev-v4__sev-chip is-active" data-ev-sev="all">全部 <span class="admin-ev-v4__sev-count" data-ev-cnt="all">0</span></button>
+            <button type="button" class="admin-ui-chip admin-ev-v4__sev-chip is-active" data-ev-sev="all">${ServerI18n.t("evChipAll")} <span class="admin-ev-v4__sev-count" data-ev-cnt="all">0</span></button>
             <button type="button" class="admin-ui-chip admin-ev-v4__sev-chip" data-ev-sev="info">INFO <span class="admin-ev-v4__sev-count" data-ev-cnt="info">0</span></button>
             <button type="button" class="admin-ui-chip admin-ev-v4__sev-chip" data-severity="warn" data-ev-sev="warn">WARN <span class="admin-ev-v4__sev-count" data-ev-cnt="warn">0</span></button>
             <button type="button" class="admin-ui-chip admin-ev-v4__sev-chip" data-severity="danger" data-ev-sev="error">ERROR <span class="admin-ev-v4__sev-count" data-ev-cnt="error">0</span></button>
           </div>
           <div class="admin-ui-chip-group admin-ev-v4__cat-chips" role="tablist" aria-label="Category filter">
-            <button type="button" class="admin-ui-chip admin-ev-v4__cat-chip is-active" data-ev-cat="all">全部</button>
+            <button type="button" class="admin-ui-chip admin-ev-v4__cat-chip is-active" data-ev-cat="all">${ServerI18n.t("evChipAll")}</button>
             <button type="button" class="admin-ui-chip admin-ev-v4__cat-chip" data-ev-cat="ws">ws</button>
             <button type="button" class="admin-ui-chip admin-ev-v4__cat-chip" data-ev-cat="msg">msg</button>
             <button type="button" class="admin-ui-chip admin-ev-v4__cat-chip" data-ev-cat="plugin">plugin</button>
@@ -129,8 +128,8 @@
           <span class="admin-ui-dot is-success admin-ev-v4__live-dot"></span>
           <span class="admin-ui-summary admin-ev-v4__live-label">LIVE</span>
           <span class="admin-ui-summary admin-ev-v4__count" data-ev-total>0</span>
-          <button type="button" class="admin-ui-action admin-ev-v4__refresh" data-ev-action="refresh">↻ 重新整理</button>
-          <button type="button" class="admin-ui-action admin-ev-v4__refresh" data-ev-action="export">↓ 匯出</button>
+          <button type="button" class="admin-ui-action admin-ev-v4__refresh" data-ev-action="refresh">${ServerI18n.t("evRefreshBtn")}</button>
+          <button type="button" class="admin-ui-action admin-ev-v4__refresh" data-ev-action="export">${ServerI18n.t("evExportBtn")}</button>
         </div>
 
         <!-- Events table -->
@@ -144,7 +143,7 @@
             <span></span>
           </div>
           <div class="admin-ev-v4__rows" data-ev-rows>
-            <div class="admin-ev-v4__empty">載入中…</div>
+            <div class="admin-ev-v4__empty">${ServerI18n.t("evLoading")}</div>
           </div>
         </div>
       </div>`;
@@ -165,7 +164,7 @@
       if (window.AdminEmpty) {
         host.appendChild(window.AdminEmpty.render("events"));
       } else {
-        host.innerHTML = '<div class="admin-ev-v4__empty">沒有事件</div>';
+        host.innerHTML = '<div class="admin-ev-v4__empty">' + ServerI18n.t("evNoEvents") + '</div>';
       }
     } else {
       host.innerHTML = visible.map((e) => {
@@ -237,7 +236,7 @@
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
-        window.showToast?.("已下載事件 JSON", true);
+        window.showToast?.(ServerI18n.t("evToastDownloaded"), true);
       }
     });
   }

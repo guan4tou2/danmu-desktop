@@ -88,7 +88,7 @@
 
       const {
         icon = "⚠",
-        title = "確認",
+        title = ServerI18n.t("hudConfirmTitle"),
         subtitle = "",
         severity = "warn",
         body = "",
@@ -98,8 +98,8 @@
         // they are written with textContent and can never execute.
         titleText,
         bodyText,
-        confirmLabel = "確認",
-        cancelLabel = "取消",
+        confirmLabel = ServerI18n.t("hudConfirmLabel"),
+        cancelLabel = ServerI18n.t("cancel"),
         width = 480,
       } = opts || {};
 
