@@ -84,11 +84,11 @@
       const r = await window.csrfFetch("/admin/konami/trigger", { method: "POST" });
       if (!r.ok) throw new Error("HTTP " + r.status);
       if (window.showToast) {
-        window.showToast("🎮 KONAMI · 已觸發 Desktop 爆炸動畫", true);
+        window.showToast(ServerI18n.t("konamiToastFired"), true);
       }
     } catch (e) {
       console.warn("[konami] trigger failed:", e && e.message);
-      if (window.showToast) window.showToast("Konami 觸發失敗", false);
+      if (window.showToast) window.showToast(ServerI18n.t("konamiToastFailed"), false);
     }
   }
 

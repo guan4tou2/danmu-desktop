@@ -2523,5 +2523,12 @@
   "fpKickerTail": "Observability · technical view",
   "fpResetTitle": "Reset fingerprint stats",
   "fpResetConfirm": "Reset",
-  "themesLayoutFallback": "scroll · right→left"
+  "themesLayoutFallback": "scroll · right→left",
+  "themeModeFollowSystem": "Follow system · now {mode}",
+  "themeModeLightShort": "light",
+  "themeModeDarkShort": "dark",
+  "themeModeLight": "Light mode",
+  "themeModeDark": "Dark mode",
+  "konamiToastFired": "🎮 KONAMI · Desktop explosion fired",
+  "konamiToastFailed": "Konami trigger failed"
 }

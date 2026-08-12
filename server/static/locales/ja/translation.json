@@ -2523,5 +2523,12 @@
   "fpKickerTail": "観測 · 技術ビュー",
   "fpResetTitle": "指紋統計をリセット",
   "fpResetConfirm": "リセット",
-  "themesLayoutFallback": "scroll · 右→左"
+  "themesLayoutFallback": "scroll · 右→左",
+  "themeModeFollowSystem": "システムに追従 · 現在 {mode}",
+  "themeModeLightShort": "ライト",
+  "themeModeDarkShort": "ダーク",
+  "themeModeLight": "ライトモード",
+  "themeModeDark": "ダークモード",
+  "konamiToastFired": "🎮 KONAMI · Desktop 爆発アニメ発動",
+  "konamiToastFailed": "Konami 発動失敗"
 }

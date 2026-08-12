@@ -2534,7 +2534,14 @@
       "fpKickerTail": "Observability · technical view",
       "fpResetTitle": "Reset fingerprint stats",
       "fpResetConfirm": "Reset",
-      "themesLayoutFallback": "scroll · right→left"
+      "themesLayoutFallback": "scroll · right→left",
+      "themeModeFollowSystem": "Follow system · now {mode}",
+      "themeModeLightShort": "light",
+      "themeModeDarkShort": "dark",
+      "themeModeLight": "Light mode",
+      "themeModeDark": "Dark mode",
+      "konamiToastFired": "🎮 KONAMI · Desktop explosion fired",
+      "konamiToastFailed": "Konami trigger failed"
     },
     "zh": {
       "mainTitle": "Danmu Fire",
@@ -5061,7 +5068,14 @@
       "fpKickerTail": "觀測 · 技術檢視",
       "fpResetTitle": "重設指紋統計",
       "fpResetConfirm": "重設",
-      "themesLayoutFallback": "scroll · 右→左"
+      "themesLayoutFallback": "scroll · 右→左",
+      "themeModeFollowSystem": "跟隨系統 · 目前 {mode}",
+      "themeModeLightShort": "亮色",
+      "themeModeDarkShort": "暗色",
+      "themeModeLight": "亮色模式",
+      "themeModeDark": "暗色模式",
+      "konamiToastFired": "🎮 KONAMI · 已觸發 Desktop 爆炸動畫",
+      "konamiToastFailed": "Konami 觸發失敗"
     },
     "ja": {
       "mainTitle": "Danmu Fire",
@@ -7588,7 +7602,14 @@
       "fpKickerTail": "観測 · 技術ビュー",
       "fpResetTitle": "指紋統計をリセット",
       "fpResetConfirm": "リセット",
-      "themesLayoutFallback": "scroll · 右→左"
+      "themesLayoutFallback": "scroll · 右→左",
+      "themeModeFollowSystem": "システムに追従 · 現在 {mode}",
+      "themeModeLightShort": "ライト",
+      "themeModeDarkShort": "ダーク",
+      "themeModeLight": "ライトモード",
+      "themeModeDark": "ダークモード",
+      "konamiToastFired": "🎮 KONAMI · Desktop 爆発アニメ発動",
+      "konamiToastFailed": "Konami 発動失敗"
     },
     "ko": {
       "mainTitle": "Danmu Fire",
@@ -10115,7 +10136,14 @@
       "fpKickerTail": "관측 · 기술 뷰",
       "fpResetTitle": "지문 통계 재설정",
       "fpResetConfirm": "재설정",
-      "themesLayoutFallback": "scroll · 오른쪽→왼쪽"
+      "themesLayoutFallback": "scroll · 오른쪽→왼쪽",
+      "themeModeFollowSystem": "시스템 따름 · 현재 {mode}",
+      "themeModeLightShort": "라이트",
+      "themeModeDarkShort": "다크",
+      "themeModeLight": "라이트 모드",
+      "themeModeDark": "다크 모드",
+      "konamiToastFired": "🎮 KONAMI · Desktop 폭발 애니메이션 발동",
+      "konamiToastFailed": "Konami 발동 실패"
     }
   };
 

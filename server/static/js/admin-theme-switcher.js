@@ -81,8 +81,8 @@
     // 使用者要點三下才會發現有第三態。
     btn.textContent = mode === "auto" ? "◐" : eff === "light" ? "☀" : "☾";
     btn.title = mode === "auto"
-      ? `跟隨系統 · 目前 ${eff === "light" ? "亮色" : "暗色"}`
-      : mode === "light" ? "亮色模式" : "暗色模式";
+      ? ServerI18n.t("themeModeFollowSystem", { mode: eff === "light" ? ServerI18n.t("themeModeLightShort") : ServerI18n.t("themeModeDarkShort") })
+      : mode === "light" ? ServerI18n.t("themeModeLight") : ServerI18n.t("themeModeDark");
   }
 
   function _cycle() {

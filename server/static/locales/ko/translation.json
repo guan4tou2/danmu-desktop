@@ -2523,5 +2523,12 @@
   "fpKickerTail": "관측 · 기술 뷰",
   "fpResetTitle": "지문 통계 재설정",
   "fpResetConfirm": "재설정",
-  "themesLayoutFallback": "scroll · 오른쪽→왼쪽"
+  "themesLayoutFallback": "scroll · 오른쪽→왼쪽",
+  "themeModeFollowSystem": "시스템 따름 · 현재 {mode}",
+  "themeModeLightShort": "라이트",
+  "themeModeDarkShort": "다크",
+  "themeModeLight": "라이트 모드",
+  "themeModeDark": "다크 모드",
+  "konamiToastFired": "🎮 KONAMI · Desktop 폭발 애니메이션 발동",
+  "konamiToastFailed": "Konami 발동 실패"
 }

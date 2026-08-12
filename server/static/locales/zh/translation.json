@@ -2523,5 +2523,12 @@
   "fpKickerTail": "觀測 · 技術檢視",
   "fpResetTitle": "重設指紋統計",
   "fpResetConfirm": "重設",
-  "themesLayoutFallback": "scroll · 右→左"
+  "themesLayoutFallback": "scroll · 右→左",
+  "themeModeFollowSystem": "跟隨系統 · 目前 {mode}",
+  "themeModeLightShort": "亮色",
+  "themeModeDarkShort": "暗色",
+  "themeModeLight": "亮色模式",
+  "themeModeDark": "暗色模式",
+  "konamiToastFired": "🎮 KONAMI · 已觸發 Desktop 爆炸動畫",
+  "konamiToastFailed": "Konami 觸發失敗"
 }
