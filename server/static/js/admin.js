@@ -803,9 +803,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                                 <div class="admin-dash-topbar-actions">
                                     <div class="admin-dash-search" role="button" tabindex="0" data-open-palette
-                                         aria-label="${escapeHtml(ServerI18n.t("adminSearchHint") || "搜尋")}">
+                                         aria-label="${escapeHtml(ServerI18n.t("adminSearchHint"))}">
                                         <span aria-hidden="true">⌕</span>
-                                        <span data-i18n="adminSearchHint">${ServerI18n.t("adminSearchHint") || "搜尋"}</span>
+                                        <span data-i18n="adminSearchHint">${ServerI18n.t("adminSearchHint")}</span>
                                         <span class="sep" aria-hidden="true">⌘K</span>
                                     </div>
                                     <select id="server-lang-select" aria-label="Language"
@@ -850,39 +850,39 @@ document.addEventListener("DOMContentLoaded", () => {
                             <section class="admin-kpi-strip is-4col" data-route-view="dashboard">
                                 <div class="admin-kpi-tile is-cyan" data-kpi="messages">
                                     <div class="admin-kpi-tile-head">
-                                        <span class="label">訊息總數</span>
+                                        <span class="label">${ServerI18n.t("dashKpiMsgTotal")}</span>
                                         <span class="en">MESSAGES</span>
                                     </div>
                                     <div class="admin-kpi-tile-value" data-kpi-value>—</div>
                                     <div class="admin-kpi-tile-bars" data-kpi-bars>${kpiBars(6)}</div>
-                                    <div class="admin-kpi-tile-delta is-success" data-kpi-delta>載入中…</div>
+                                    <div class="admin-kpi-tile-delta is-success" data-kpi-delta>${ServerI18n.t("dashKpiLoading")}</div>
                                 </div>
                                 <div class="admin-kpi-tile is-amber" data-kpi="peak">
                                     <div class="admin-kpi-tile-head">
-                                        <span class="label">高峰/分鐘</span>
+                                        <span class="label">${ServerI18n.t("dashKpiPeakPerMin")}</span>
                                         <span class="en">PEAK</span>
                                     </div>
                                     <div class="admin-kpi-tile-value" data-kpi-value>—</div>
                                     <div class="admin-kpi-tile-bars" data-kpi-bars>${kpiBars(6)}</div>
-                                    <div class="admin-kpi-tile-delta is-muted" data-kpi-delta>計算中…</div>
+                                    <div class="admin-kpi-tile-delta is-muted" data-kpi-delta>${ServerI18n.t("dashKpiCalculating")}</div>
                                 </div>
                                 <div class="admin-kpi-tile is-lime" data-kpi="unique-fp">
                                     <div class="admin-kpi-tile-head">
-                                        <span class="label">獨立指紋</span>
+                                        <span class="label">${ServerI18n.t("dashKpiUniqueFp")}</span>
                                         <span class="en">UNIQUE FP</span>
                                     </div>
                                     <div class="admin-kpi-tile-value" data-kpi-value>—</div>
                                     <div class="admin-kpi-tile-bars" data-kpi-bars>${kpiBars(7)}</div>
-                                    <div class="admin-kpi-tile-delta is-muted" data-kpi-delta>近 24h</div>
+                                    <div class="admin-kpi-tile-delta is-muted" data-kpi-delta>${ServerI18n.t("dashKpiLast24h")}</div>
                                 </div>
                                 <div class="admin-kpi-tile is-text" data-kpi="session">
                                     <div class="admin-kpi-tile-head">
-                                        <span class="label">本場時長</span>
+                                        <span class="label">${ServerI18n.t("dashKpiSessionDuration")}</span>
                                         <span class="en">SESSION</span>
                                     </div>
                                     <div class="admin-kpi-tile-value" data-kpi-value>—</div>
                                     <div class="admin-kpi-tile-bars" data-kpi-bars>${kpiBars(3)}</div>
-                                    <div class="admin-kpi-tile-delta is-muted" data-kpi-delta>等待場次…</div>
+                                    <div class="admin-kpi-tile-delta is-muted" data-kpi-delta>${ServerI18n.t("dashSessWaiting")}</div>
                                 </div>
                             </section>
 
@@ -942,9 +942,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <span class="count" data-qa-effects-count>—</span>
                                       </div>
                                       <div class="admin-dash-qa-chips" data-qa-effects-chips>
-                                        <span class="admin-dash-qa-chip is-loading">載入中…</span>
+                                        <span class="admin-dash-qa-chip is-loading">${ServerI18n.t("dashKpiLoading")}</span>
                                       </div>
-                                      <a class="admin-dash-qa-link" href="#" data-route-link="effects">編輯 →</a>
+                                      <a class="admin-dash-qa-link" href="#" data-route-link="effects">${ServerI18n.t("displayEditLink")}</a>
                                     </div>
 
                                     <!-- POLL panel (F2) - active poll status + quick launch.
@@ -959,28 +959,28 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <span class="count" data-dash-poll-timer></span>
                                       </div>
                                       <div class="admin-dash-qa-body" data-dash-poll-body>
-                                        <div class="admin-dash-qa-empty">尚無進行中投票</div>
+                                        <div class="admin-dash-qa-empty">${ServerI18n.t("dashQaNoPoll")}</div>
                                       </div>
                                       <div class="admin-dash-qa-row">
                                         <input
                                           type="text"
                                           class="admin-dash-qa-input"
-                                          placeholder="新投票問題…"
+                                          placeholder="${ServerI18n.t("dashQaNewPollPlaceholder")}"
                                           maxlength="120"
                                           data-qp="question"
-                                          aria-label="新投票問題"
+                                          aria-label="${ServerI18n.t("dashQaNewPollAria")}"
                                         />
-                                        <button type="button" class="admin-dash-qa-cta is-amber" data-qa-poll-expand>新建 ▶</button>
+                                        <button type="button" class="admin-dash-qa-cta is-amber" data-qa-poll-expand>${ServerI18n.t("dashQaCreateBtn")}</button>
                                       </div>
                                       <div class="admin-dash-qp-options admin-dash-qa-options" data-qp="options" hidden>
-                                        <div class="admin-dash-qp-row"><span class="key">A</span><input type="text" placeholder="選項 A" maxlength="60" /><button type="button" class="rm" data-qp-rm hidden>${window.AdminUtils.closeIcon}</button></div>
-                                        <div class="admin-dash-qp-row"><span class="key">B</span><input type="text" placeholder="選項 B" maxlength="60" /><button type="button" class="rm" data-qp-rm hidden>${window.AdminUtils.closeIcon}</button></div>
+                                        <div class="admin-dash-qp-row"><span class="key">A</span><input type="text" placeholder="${ServerI18n.t("dashOptionPlaceholder", { letter: "A" })}" maxlength="60" /><button type="button" class="rm" data-qp-rm hidden>${window.AdminUtils.closeIcon}</button></div>
+                                        <div class="admin-dash-qp-row"><span class="key">B</span><input type="text" placeholder="${ServerI18n.t("dashOptionPlaceholder", { letter: "B" })}" maxlength="60" /><button type="button" class="rm" data-qp-rm hidden>${window.AdminUtils.closeIcon}</button></div>
                                       </div>
                                       <div class="admin-dash-qp-foot" data-qa-poll-foot hidden>
-                                        <a href="#" class="admin-dash-qp-add" data-qp-add>+ 新增選項</a>
+                                        <a href="#" class="admin-dash-qp-add" data-qp-add>${ServerI18n.t("dashQaAddOption")}</a>
                                         <button type="button" class="admin-dash-qp-start" data-qp-start>START ▶</button>
                                       </div>
-                                      <a class="admin-dash-qa-link" href="#" data-route-link="polls">多題 builder →</a>
+                                      <a class="admin-dash-qa-link" href="#" data-route-link="polls">${ServerI18n.t("dashQaMultiBuilder")}</a>
                                     </div>
 
                                     <!-- ③ BLACKLIST -->
@@ -993,12 +993,12 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <input
                                           type="text"
                                           class="admin-dash-qa-input"
-                                          placeholder="fp_ 或 @暱稱…"
+                                          placeholder="${ServerI18n.t("dashQaBlacklistPlaceholder")}"
                                           maxlength="120"
                                           data-qa-blacklist-input
-                                          aria-label="新增黑名單關鍵字"
+                                          aria-label="${ServerI18n.t("dashQaBlacklistAria")}"
                                         />
-                                        <button type="button" class="admin-dash-qa-cta is-crimson" data-qa-blacklist-add>+ 加入</button>
+                                        <button type="button" class="admin-dash-qa-cta is-crimson" data-qa-blacklist-add>${ServerI18n.t("dashQaAddBtn")}</button>
                                       </div>
                                       <div class="admin-dash-qa-chips" data-qa-blacklist-chips></div>
                                     </div>
@@ -1009,7 +1009,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <span class="key">④ BROADCAST · F4</span>
                                         <span class="count" data-qa-broadcast-status>—</span>
                                       </div>
-                                      <a class="admin-dash-qa-link" href="#" data-route-link="overlay">Desktop 控制 →</a>
+                                      <a class="admin-dash-qa-link" href="#" data-route-link="overlay">${ServerI18n.t("dashQaDesktopControl")}</a>
                                     </div>
                                   </div>
                                 </div>
@@ -1025,7 +1025,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="kicker" data-dash-myactions-count>0</span>
                                   </div>
                                   <div class="admin-dash-myactions-body" data-dash-myactions-body>
-                                    <div class="admin-dash-empty">尚無動作紀錄</div>
+                                    <div class="admin-dash-empty">${ServerI18n.t("dashNoActions")}</div>
                                   </div>
                                 </div>
                               </div>
@@ -1059,10 +1059,10 @@ document.addEventListener("DOMContentLoaded", () => {
         <!-- TPL-B：KPI 條固定頁面頂部（原 LIBRARY STATS 右欄卡升格；
              data-eflib-* 更新契約不變） -->
         <div class="hud-stats-strip">
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">TOTAL</span><span class="hud-stat-tile-value" data-eflib-total>—</span><span class="hud-stat-tile-label">效果總數</span></div>
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">ACTIVE</span><span class="hud-stat-tile-value is-lime" data-eflib-active>—</span><span class="hud-stat-tile-label">啟用中</span></div>
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">CATEGORIES</span><span class="hud-stat-tile-value" data-eflib-cats>—</span><span class="hud-stat-tile-label">分類</span></div>
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">USER UPLOADS</span><span class="hud-stat-tile-value is-cyan" data-eflib-user>—</span><span class="hud-stat-tile-label">使用者上傳</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">TOTAL</span><span class="hud-stat-tile-value" data-eflib-total>—</span><span class="hud-stat-tile-label">${ServerI18n.t("eflibStatTotal")}</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">ACTIVE</span><span class="hud-stat-tile-value is-lime" data-eflib-active>—</span><span class="hud-stat-tile-label">${ServerI18n.t("eflibStatActive")}</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">CATEGORIES</span><span class="hud-stat-tile-value" data-eflib-cats>—</span><span class="hud-stat-tile-label">${ServerI18n.t("eflibStatCategories")}</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-en">USER UPLOADS</span><span class="hud-stat-tile-value is-cyan" data-eflib-user>—</span><span class="hud-stat-tile-label">${ServerI18n.t("eflibStatUserUploads")}</span></div>
         </div>
         <div class="hud-page-grid-2">
           <div class="hud-page-stack" style="gap:16px">
@@ -1127,14 +1127,14 @@ document.addEventListener("DOMContentLoaded", () => {
           <!-- Reload 原本獨佔一行（2026-08-01：併入 toolbar 右側，省一行高度） -->
           <div class="theme-pack-toolbar">
             <span class="theme-pack-count" data-theme-pack-count>—</span>
-            <span class="theme-pack-actions-head">+ 新增主題包 · ⤓ 匯入 .dmtheme · ⤒ 匯出</span>
+            <span class="theme-pack-actions-head">${ServerI18n.t("themesActionsHead")}</span>
             <button id="themeReloadBtn" class="admin-ui-action admin-theme-reload-action">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
               Reload
             </button>
           </div>
           <div id="themesList">
-            <span class="theme-pack-muted" style="padding:14px">載入主題包…</span>
+            <span class="theme-pack-muted" style="padding:14px">${ServerI18n.t("themesLoading")}</span>
           </div>
         </div>
       </div>
@@ -2073,6 +2073,13 @@ document.addEventListener("DOMContentLoaded", () => {
   async function init() {
     await fetchLatestSettings(); // This will call renderControlPanel which now calls populateFontFamilyDropdowns
     render();
+    // D-4：i18n 的 data-i18n 掃描在本 shell 注入前就跑完了——側欄 25 個
+    // adminNav* 節點是之後才生出來的，永遠停在 zh fallback（en/ja/ko 下
+    // 側欄是整個 admin 最後一塊拼布）。shell 就緒後補掃一次（updateUI
+    // 冪等，掃全文件的 [data-i18n]/[data-i18n-*]）。
+    if (window.ServerI18n && typeof ServerI18n.updateUI === "function") {
+      ServerI18n.updateUI();
+    }
   }
 
 
