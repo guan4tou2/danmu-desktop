@@ -612,7 +612,7 @@
     const counts = { GLOW: 0, MOTION: 0, COLOR: 0, SHAKE: 0, TEXT: 0, MISC: 0 };
     _effectsState.all.forEach((e) => { counts[detectCategory(e.name)] += 1; });
     const total = _effectsState.all.length;
-    const chips = [["ALL", "\u5168\u90e8", total], ["GLOW", "GLOW", counts.GLOW], ["MOTION", "MOTION", counts.MOTION], ["COLOR", "COLOR", counts.COLOR], ["SHAKE", "SHAKE", counts.SHAKE], ["TEXT", "TEXT", counts.TEXT]];
+    const chips = [["ALL", ServerI18n.t("fxChipAll"), total], ["GLOW", "GLOW", counts.GLOW], ["MOTION", "MOTION", counts.MOTION], ["COLOR", "COLOR", counts.COLOR], ["SHAKE", "SHAKE", counts.SHAKE], ["TEXT", "TEXT", counts.TEXT]];
     if (counts.MISC > 0) chips.push(["MISC", "MISC", counts.MISC]);
     // TPL-B 工具列：chips 與 Reload 同列。重繪只換 chips，
     // spacer 與 Reload（含其事件監聽）原地保留。
@@ -666,7 +666,7 @@
     if (!filtered.length) {
       container.innerHTML =
         '<span style="font-size:11px;color:var(--color-text-muted);grid-column:1 / -1">' +
-        (all.length ? "\u6c92\u6709\u7b26\u5408\u904e\u6ffe\u7684\u6548\u679c" : ServerI18n.t("noEffectsLoaded")) +
+        (all.length ? ServerI18n.t("fxNoFilterMatch") : ServerI18n.t("noEffectsLoaded")) +
         '</span>';
       return;
     }
@@ -1062,11 +1062,14 @@
     const body = document.getElementById("effectsInspectorBody");
     if (!inspector) return;
     if (dot) dot.className = "hud-status-dot is-live";
+    // F-108（design audit 磨光項）：RELOAD/EDIT 初始 disabled，首次選取解鎖
+    document.getElementById("effectsInspectorReload")?.removeAttribute("disabled");
+    document.getElementById("effectsInspectorEdit")?.removeAttribute("disabled");
     if (titleEl) titleEl.textContent = eff.label || eff.name;
     if (kicker) kicker.textContent = "LOADING";
     if (body) {
       body.className = "hud-inspector-body";
-      body.textContent = "# \u8f09\u5165\u4e2d\u2026";
+      body.textContent = "# " + ServerI18n.t("fxYamlLoading");
     }
 
     // mark selected card
@@ -1105,7 +1108,7 @@
     const editBtn = document.getElementById("effectsInspectorEdit");
     reloadBtn?.addEventListener("click", async () => {
       if (!_effectsState.selected) {
-        showToast("\u8acb\u5148\u9078\u64c7\u4e00\u500b\u6548\u679c", false);
+        showToast(ServerI18n.t("fxSelectFirst"), false);
         return;
       }
       const eff = _effectsState.all.find((e) => e.name === _effectsState.selected);
@@ -1113,7 +1116,7 @@
     });
     editBtn?.addEventListener("click", () => {
       if (!_effectsState.selected) {
-        showToast("\u8acb\u5148\u9078\u64c7\u4e00\u500b\u6548\u679c", false);
+        showToast(ServerI18n.t("fxSelectFirst"), false);
         return;
       }
       const card = document.querySelector(`.hud-effect-card[data-effect-name="${CSS.escape(_effectsState.selected)}"]`);

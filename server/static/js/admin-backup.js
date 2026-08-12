@@ -33,7 +33,7 @@
       <div id="${PAGE_ID}" class="admin-backup-page hud-page-stack lg:col-span-2" data-tpl="C">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">BACKUP · EXPORT · DANGER</div>
-          <div class="admin-ui-page-title">${ServerI18n.t("backupPageTitle")}</div>
+          <h2 class="admin-ui-page-title">${ServerI18n.t("backupPageTitle")}</h2>
           <p class="admin-ui-page-note">
             ${ServerI18n.t("backupPageNote")}
           </p>

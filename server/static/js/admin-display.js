@@ -123,7 +123,7 @@
       <div id="${PAGE_ID}" class="admin-dsp2-page hud-page-stack lg:col-span-2" data-tpl="C">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">VIEWER DEFAULTS · ${escapeHtml(t("displayViewerDefaultsKicker"))}</div>
-          <div class="admin-ui-page-title">${escapeHtml(t("displayViewerDefaultsTitle"))}</div>
+          <h2 class="admin-ui-page-title">${escapeHtml(t("displayViewerDefaultsTitle"))}</h2>
           <p class="admin-ui-page-note">${t("displayViewerDefaultsNote")}</p>
         </div>
 

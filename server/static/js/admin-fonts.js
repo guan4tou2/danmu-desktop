@@ -32,7 +32,7 @@
       <div id="sec-fonts" class="hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">FONT LIBRARY · ${ServerI18n.t("fontsKicker")} · SUBSET</div>
-          <div class="admin-ui-page-title">${ServerI18n.t("font")}</div>
+          <h2 class="admin-ui-page-title">${ServerI18n.t("font")}</h2>
           <p class="admin-ui-page-note">
             ${ServerI18n.t("fontsPageNote")}
           </p>
@@ -594,14 +594,14 @@
   function updateTotals(fonts) {
     const totalEl = document.getElementById("fontsTotalSize");
     if (totalEl) {
-      totalEl.textContent = `\u7e3d\u8a08 ${fonts.length} \u500b\u5b57\u578b`;
+      totalEl.textContent = ServerI18n.t("fontsTotalCount", { n: fonts.length });
     }
     // Subsetting bar — show a small illustrative ratio (not real data)
     const bar = document.getElementById("fontsSubsetBar");
     if (bar) bar.style.width = "38%";
     const orig = document.getElementById("fontsOrigSize");
     const sub = document.getElementById("fontsSubsetSize");
-    if (orig) orig.textContent = `ORIG \u00b7 ${fonts.length} \u5b57\u578b`;
+    if (orig) orig.textContent = "ORIG · " + ServerI18n.t("fontsOrigCountTail", { n: fonts.length });
     if (sub) sub.textContent = `SUBSET \u00b7 ~38%`;
   }
 

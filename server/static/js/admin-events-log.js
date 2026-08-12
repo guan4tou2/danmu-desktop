@@ -94,7 +94,7 @@
       <div id="${SECTION_ID}" class="admin-ev-v4 hud-page-stack lg:col-span-2" style="display:none">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">SYSTEM · EVENTS · AUTO-EMITTED</div>
-          <div class="admin-ui-page-title">${ServerI18n.t("evPageTitle")}</div>
+          <h2 class="admin-ui-page-title">${ServerI18n.t("evPageTitle")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("evPageNote")}</p>
         </div>
 

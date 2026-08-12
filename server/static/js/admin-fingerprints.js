@@ -27,7 +27,7 @@
       <div id="sec-fingerprints" class="admin-fp-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">FINGERPRINTS · ${ServerI18n.t("fpKickerTail")}</div>
-          <div class="admin-ui-page-title">${escapeHtml(ServerI18n.t("fingerprintsTitle"))}</div>
+          <h2 class="admin-ui-page-title">${escapeHtml(ServerI18n.t("fingerprintsTitle"))}</h2>
           <p class="admin-ui-page-note">${escapeHtml(ServerI18n.t("fingerprintsDesc"))}</p>
         </div>
 

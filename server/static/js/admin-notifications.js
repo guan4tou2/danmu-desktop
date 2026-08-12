@@ -227,7 +227,7 @@
       <div id="${PAGE_ID}" class="admin-notif-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">NOTIFICATIONS · ${ServerI18n.t("notifKickerTail")}</div>
-          <div class="admin-ui-page-title">${ServerI18n.t("adminRouteTitle_notifications")}</div>
+          <h2 class="admin-ui-page-title">${ServerI18n.t("adminRouteTitle_notifications")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("notifPageNote")}</p>
         </div>
 

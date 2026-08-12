@@ -128,7 +128,7 @@
       <div id="${PAGE_ID}" class="admin-broadcast-page admin-bc-v4 admin-bc-v5 hud-page-stack lg:col-span-2" data-bc-state="standby">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker" data-bc-en>DESKTOP · OFF</div>
-          <div class="admin-ui-page-title" data-bc-title>${ServerI18n.t("adminRouteTitle_overlay")}</div>
+          <h2 class="admin-ui-page-title" data-bc-title>${ServerI18n.t("adminRouteTitle_overlay")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("broadcastPageNote")}</p>
         </div>
 

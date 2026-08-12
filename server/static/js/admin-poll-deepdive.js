@@ -45,7 +45,7 @@
       <div id="${PAGE_ID}" class="admin-pdd-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker" data-pdd-kicker>POLL ANALYTICS · ${ServerI18n.t("pollDeepdiveKickerTail")}</div>
-          <div class="admin-ui-page-title" data-pdd-title>${ServerI18n.t("adminRouteTitle_poll-deepdive")}</div>
+          <h2 class="admin-ui-page-title" data-pdd-title>${ServerI18n.t("adminRouteTitle_poll-deepdive")}</h2>
           <p class="admin-ui-page-note" data-pdd-note>${ServerI18n.t("pollDeepdivePageNote")}<a href="#/polls" class="admin-pdd-back">${ServerI18n.t("pollDeepdiveBackToPollsLink")}</a></p>
         </div>
 

@@ -31,7 +31,7 @@
         <div id="${PAGE_ID}" class="admin-security-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">SECURITY · AUTH · ACCESS · TOKENS</div>
-          <div class="admin-ui-page-title">${ServerI18n.t("security2PageTitle")}</div>
+          <h2 class="admin-ui-page-title">${ServerI18n.t("security2PageTitle")}</h2>
           <p class="admin-ui-page-note">
             ${ServerI18n.t("security2PageNote")}
           </p>

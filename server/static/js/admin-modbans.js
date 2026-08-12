@@ -426,7 +426,7 @@
       <div id="${PAGE_ID}" class="admin-modbans-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">MODERATION · BANS · TIME-BOUND</div>
-          <div class="admin-ui-page-title">${ServerI18n.t("modbansPageTitle")}</div>
+          <h2 class="admin-ui-page-title">${ServerI18n.t("modbansPageTitle")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("modbansPageNote")}</p>
         </div>
         <div class="admin-ui-toolbar">

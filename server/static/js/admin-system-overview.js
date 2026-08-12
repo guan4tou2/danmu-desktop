@@ -41,7 +41,7 @@
       <div id="${SECTION_ID}" class="admin-soh-v4 hud-page-stack lg:col-span-2" data-tpl="A">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">SYSTEM OVERVIEW · HEALTH · SERVICES · METRICS</div>
-          <div class="admin-ui-page-title">${ServerI18n.t("sohPageTitle")}</div>
+          <h2 class="admin-ui-page-title">${ServerI18n.t("sohPageTitle")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("sohPageNote")}</p>
         </div>
 

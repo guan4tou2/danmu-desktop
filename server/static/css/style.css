@@ -5841,6 +5841,11 @@ body.stream-mode .admin-hero .admin-summary-grid {
 
 /* ─── v5.2 sidebar consolidation (2026-04-27) ────────────────────────── */
 /* Tab strip at the top of consolidated routes (history, viewer-config). */
+/* 磨光項決議（design audit P4，2026-08-09）：admin 有兩套分段控制是
+ * 刻意取捨，不收斂——.admin-ui-tabbar/.admin-ui-tab 是「資料濾鏡」
+ * （同一份列表換條件，如 sessions 的 全部/進行中/已結束），
+ * .admin-tabs-strip 是「區塊導航」（切換 section、帶 EN 副標、寫入
+ * hash）。合併視覺會讓 濾資料 與 導頁面 兩種行為長一樣，反而誤導。 */
 .admin-ui-tabbar {
   display: flex; gap: 4px;
   margin-bottom: 8px;
@@ -14428,3 +14433,9 @@ body.admin-pu-open { overflow: hidden; }
     grid-template-columns: 1fr;
   }
 }
+
+/* 磨光項（design audit P4）：admin-ui-page-title 由 div 升級為 h2（語意
+ * 標題層級，screen-reader 掃描性）。h2 的 UA margin-bottom 在這裡歸零，
+ * 維持原 div 版面；margin-top 沿用 hud.css 的 4px。放 style.css 而非
+ * hud.css：後者 image-baked，改它要 docker rebuild。 */
+.admin-ui-page-title { margin-bottom: 0; }

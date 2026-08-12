@@ -464,7 +464,7 @@
       <div id="${SECTION_ID}" class="admin-live-feed-page admin-lf-v4 hud-page-stack lg:col-span-2" data-tpl="A">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">LIVE FEED · AUTO-SCROLL · REAL-TIME</div>
-          <div class="admin-ui-page-title">${ServerI18n.t("lfPageTitle")}</div>
+          <h2 class="admin-ui-page-title">${ServerI18n.t("lfPageTitle")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("lfPageNote")}</p>
         </div>
 

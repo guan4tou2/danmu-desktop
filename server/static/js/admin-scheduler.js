@@ -397,7 +397,7 @@
       <div id="${SECTION_ID}" class="admin-scheduler-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">SYSTEM · SCHEDULER · CRON / AT / RECURRING</div>
-          <div class="admin-ui-page-title">${ServerI18n.t("schPageTitle")}</div>
+          <h2 class="admin-ui-page-title">${ServerI18n.t("schPageTitle")}</h2>
           <p class="admin-ui-page-note">
             ${ServerI18n.t("schPageNote")}
           </p>

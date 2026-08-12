@@ -98,7 +98,7 @@
       <div id="${SECTION_ID}" class="admin-webhooks-page hud-page-stack lg:col-span-2" data-tpl="B">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">WEBHOOKS · ${ServerI18n.t("webhooksPageKicker")} · HMAC</div>
-          <div class="admin-ui-page-title">Webhooks</div>
+          <h2 class="admin-ui-page-title">Webhooks</h2>
           <p class="admin-ui-page-note">
             ${ServerI18n.t("webhooksPageNote")}
           </p>

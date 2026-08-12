@@ -32,7 +32,7 @@
       <div id="${PAGE_ID}" class="admin-ft-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">FIRE TOKEN · ${ServerI18n.t("firetokenKicker")}</div>
-          <div class="admin-ui-page-title">${ServerI18n.t("firetokenPageTitle")}</div>
+          <h2 class="admin-ui-page-title">${ServerI18n.t("firetokenPageTitle")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("firetokenPageNote", { link: '<a href="#/integrations">API Tokens</a>' })}</p>
         </div>
 

@@ -164,7 +164,7 @@
         <!-- Page header -->
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">API TOKENS · DEVELOPER ACCESS · ${ServerI18n.t("apiTokensKicker")}</div>
-          <div class="admin-ui-page-title">API Tokens</div>
+          <h2 class="admin-ui-page-title">API Tokens</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("apiTokensPageNote")}</p>
         </div>
 

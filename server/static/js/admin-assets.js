@@ -40,7 +40,7 @@
       <div id="${PAGE_ID}" class="admin-assets-page hud-page-stack lg:col-span-2" data-tpl="B">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">ASSETS LIBRARY · UNIFIED OVERVIEW · ${ServerI18n.t("assetsKickerTail")}</div>
-          <div class="admin-ui-page-title">${ServerI18n.t("assetsPageTitle")}</div>
+          <h2 class="admin-ui-page-title">${ServerI18n.t("assetsPageTitle")}</h2>
           <p class="admin-ui-page-note">
             ${ServerI18n.t("assetsPageNote")}
           </p>

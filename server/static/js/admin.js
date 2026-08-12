@@ -1073,9 +1073,9 @@ document.addEventListener("DOMContentLoaded", () => {
                  工具列動作（label 觸發同一個 #effectUploadInput），
                  拖放目標升級為整個 main 區（handler 在 effects-mgmt）。 -->
             <div class="hud-filter-row admin-effects-toolbar" id="effectsFilterRow">
-              <span class="hud-filter-chip is-active" data-effect-filter="ALL">\u5168\u90e8 \u2014</span>
+              <span class="hud-filter-chip is-active" data-effect-filter="ALL">${ServerI18n.t("fxChipAll")} —</span>
               <span class="admin-effects-toolbar__spacer" data-toolbar-spacer></span>
-              <label for="effectUploadInput" class="admin-ui-action is-primary admin-effects-action admin-effects-upload-btn" title="\u652f\u63f4 .dme / .dme.zip \u00b7 \u6700\u5927 4 MB \u00b7 \u4e0a\u50b3\u5f8c\u81ea\u52d5\u71b1\u91cd\u8f09\uff1b\u4e5f\u53ef\u76f4\u63a5\u62d6\u62c9\u6a94\u6848\u5230\u9801\u9762">+ \u4e0a\u50b3 .dme</label>
+              <label for="effectUploadInput" class="admin-ui-action is-primary admin-effects-action admin-effects-upload-btn" title="${ServerI18n.t("fxUploadTitle")}">${ServerI18n.t("fxUploadBtn")}</label>
               <input type="file" id="effectUploadInput" accept=".dme" class="hidden">
               <button id="effectReloadBtn" class="admin-ui-action admin-effects-action" type="button">\u21bb ${ServerI18n.t("reload")}</button>
             </div>
@@ -1091,10 +1091,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span id="effectsInspectorTitle" style="font-size:13px;font-weight:600;color:var(--color-text-strong)">\u2014</span>
                 <span class="admin-v3-card-kicker" id="effectsInspectorKicker" style="margin:0">IDLE</span>
               </div>
-              <pre class="hud-inspector-body" id="effectsInspectorBody"># \u9ede\u9078\u4e00\u500b\u6548\u679c\u4ee5\u986f\u793a YAML \u5167\u5bb9</pre>
+              <pre class="hud-inspector-body" id="effectsInspectorBody"># ${ServerI18n.t("fxYamlIdle")}</pre>
               <div class="hud-inspector-foot">
-                <button type="button" class="admin-ui-action admin-effects-inspector-action" id="effectsInspectorReload" style="flex:1">\u21bb RELOAD</button>
-                <button type="button" class="admin-ui-action is-primary admin-effects-inspector-action" id="effectsInspectorEdit" style="flex:1">EDIT</button>
+                <button type="button" class="admin-ui-action admin-effects-inspector-action" id="effectsInspectorReload" style="flex:1" disabled>\u21bb RELOAD</button>
+                <button type="button" class="admin-ui-action is-primary admin-effects-inspector-action" id="effectsInspectorEdit" style="flex:1" disabled>EDIT</button>
               </div>
             </div>
 
@@ -1104,10 +1104,10 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="admin-eflib-card">
               <div class="admin-eflib-label">STACKING RULES</div>
               <ul class="admin-eflib-rules">
-                <li>\u00b7 \u540c\u985e\u6548\u679c\u4e92\u65a5\uff08\u6700\u5f8c\u4e00\u500b\u751f\u6548\uff09</li>
-                <li>\u00b7 \u8de8\u985e\u53ef\u758a\u52a0\uff08\u6700\u591a 3 \u5c64\uff09</li>
-                <li>\u00b7 \u89c0\u773e\u53ef\u9078 1\u20133 \u500b\u6548\u679c</li>
-                <li>\u00b7 priority \u4f4e\u7684\u5148\u7b97</li>
+                <li>· ${ServerI18n.t("fxStackSameType")}</li>
+                <li>· ${ServerI18n.t("fxStackCrossType")}</li>
+                <li>· ${ServerI18n.t("fxStackViewerPick")}</li>
+                <li>· ${ServerI18n.t("fxStackPriority")}</li>
               </ul>
             </div>
           </aside>
@@ -1119,8 +1119,8 @@ document.addEventListener("DOMContentLoaded", () => {
     settingsGrid.insertAdjacentHTML("beforeend", `
       <div id="sec-themes" class="hud-page-stack lg:col-span-2" data-tpl="C">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">THEME PACKS \u00b7 \u5f48\u5e55\u6a23\u5f0f\u9810\u8a2d</div>
-          <div class="admin-ui-page-title" data-i18n="styleThemePacks">${ServerI18n.t("styleThemePacks")}</div>
+          <div class="admin-ui-page-kicker">THEME PACKS · ${ServerI18n.t("themesKickerTail")}</div>
+          <h2 class="admin-ui-page-title" data-i18n="styleThemePacks">${ServerI18n.t("styleThemePacks")}</h2>
           <p class="admin-ui-page-note" data-i18n="themesSectionDesc">${ServerI18n.t("themesSectionDesc")}</p>
         </div>
         <div class="admin-ui-card" style="padding:14px;margin-top:12px">
@@ -1148,27 +1148,27 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="hud-stat-tile">
             <span class="hud-stat-tile-en">RULES</span>
             <span class="hud-stat-tile-value" data-mod-stat="rules">\u2014</span>
-            <span class="hud-stat-tile-label">\u898f\u5247\u6578</span>
+            <span class="hud-stat-tile-label">${ServerI18n.t("modStatRules")}</span>
           </div>
           <div class="hud-stat-tile">
             <span class="hud-stat-tile-en">BANNED</span>
             <span class="hud-stat-tile-value is-danger" data-mod-stat="banned">\u2014</span>
-            <span class="hud-stat-tile-label">\u9ed1\u540d\u55ae</span>
+            <span class="hud-stat-tile-label">${ServerI18n.t("modStatBlacklist")}</span>
           </div>
           <div class="hud-stat-tile">
             <span class="hud-stat-tile-en">MASKED \u00b7 24H</span>
             <span class="hud-stat-tile-value is-amber" data-mod-stat="masked">\u2014</span>
-            <span class="hud-stat-tile-label">\u4eca\u65e5\u906e\u7f69</span>
+            <span class="hud-stat-tile-label">${ServerI18n.t("modStatMaskedToday")}</span>
           </div>
           <div class="hud-stat-tile">
             <span class="hud-stat-tile-en">BLOCKED \u00b7 24H</span>
             <span class="hud-stat-tile-value is-danger" data-mod-stat="blocked">\u2014</span>
-            <span class="hud-stat-tile-label">\u4eca\u65e5\u5c01\u9396</span>
+            <span class="hud-stat-tile-label">${ServerI18n.t("modStatBlockedToday")}</span>
           </div>
           <div class="hud-stat-tile">
             <span class="hud-stat-tile-en">REVIEW QUEUE</span>
             <span class="hud-stat-tile-value is-cyan" data-mod-stat="review">\u2014</span>
-            <span class="hud-stat-tile-label">\u5f85\u5be9\u6838</span>
+            <span class="hud-stat-tile-label">${ServerI18n.t("modStatPending")}</span>
           </div>
         </div>
 

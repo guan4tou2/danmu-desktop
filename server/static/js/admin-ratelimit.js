@@ -35,7 +35,7 @@
       <div id="${SECTION_ID}" class="admin-ratelimit-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">RATE LIMITS · 4 SCOPES · .env</div>
-          <div class="admin-ui-page-title">${ServerI18n.t("ratelimitPageTitle")}</div>
+          <h2 class="admin-ui-page-title">${ServerI18n.t("ratelimitPageTitle")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("ratelimitPageNote")}</p>
         </div>
 

@@ -130,7 +130,7 @@
       <div id="${PAGE_ID}" class="admin-wcag-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">A11Y · WCAG 2.1 CONTRAST CHECKER</div>
-          <div class="admin-ui-page-title">${ServerI18n.t("wcagPageTitle")}</div>
+          <h2 class="admin-ui-page-title">${ServerI18n.t("wcagPageTitle")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("wcagPageNote")}</p>
         </div>
 

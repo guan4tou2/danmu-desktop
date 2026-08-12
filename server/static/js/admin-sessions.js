@@ -190,7 +190,7 @@
       // D-4: kicker EN bookends stay literal (4771242 convention); mid
       // segment reuses broadcastDataSliceLabel — verbatim same zh text.
       +   '<div class="admin-ui-page-kicker">SESSIONS · ' + ServerI18n.t("broadcastDataSliceLabel") + ' · TIME WINDOWS</div>'
-      +   '<div class="admin-ui-page-title">' + ServerI18n.t("adminRouteTitle_sessions") + '</div>'
+      +   '<h2 class="admin-ui-page-title">' + ServerI18n.t("adminRouteTitle_sessions") + '</h2>'
       +   '<p class="admin-ui-page-note">' + ServerI18n.t("sessionsPageNote") + '</p>'
       + '</div>'
 

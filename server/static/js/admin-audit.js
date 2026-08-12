@@ -39,7 +39,7 @@
       <div id="${PAGE_ID}" class="admin-audit-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">AUDIT LOG · ${ServerI18n.t("auditKickerTail")}</div>
-          <div class="admin-ui-page-title">${ServerI18n.t("auditPageTitle")}</div>
+          <h2 class="admin-ui-page-title">${ServerI18n.t("auditPageTitle")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("auditPageNote")}</p>
         </div>
 

@@ -114,7 +114,7 @@
         <!-- Page header -->
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">SESSION DETAIL · ${ServerI18n.t("sessionDetailKickerMid")} · DENSITY TIMELINE</div>
-          <div class="admin-ui-page-title" data-sd-title>${ServerI18n.t("sessionDetailPageTitle")}</div>
+          <h2 class="admin-ui-page-title" data-sd-title>${ServerI18n.t("sessionDetailPageTitle")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("sessionDetailPageNote")}</p>
         </div>
 

@@ -43,7 +43,7 @@
       section.innerHTML = `
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">DESKTOP WIDGETS · ${ServerI18n.t("widgetsKickerTail")}</div>
-          <div class="admin-ui-page-title">${escapeHtml(i18n("widgetsTitle", "Desktop Widgets"))}</div>
+          <h2 class="admin-ui-page-title">${escapeHtml(i18n("widgetsTitle", "Desktop Widgets"))}</h2>
           <p class="admin-ui-page-note">${escapeHtml(i18n("widgetsDesc"))}</p>
         </div>
 

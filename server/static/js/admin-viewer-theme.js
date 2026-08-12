@@ -36,7 +36,7 @@
       <div id="${SECTION_ID}" class="admin-vt-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">VIEWER PAGE THEME · SCOPE</div>
-          <div class="admin-ui-page-title">${ServerI18n.t("viewerThemePageTitle")}</div>
+          <h2 class="admin-ui-page-title">${ServerI18n.t("viewerThemePageTitle")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("viewerThemePageNote")}</p>
         </div>
 

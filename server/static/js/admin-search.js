@@ -67,7 +67,7 @@
       // ── page header
       + '<div class="admin-ui-page-head">'
       +   '<div class="admin-ui-page-kicker">SEARCH · ' + ServerI18n.t("searchKickerTail") + '</div>'
-      +   '<div class="admin-ui-page-title">' + ServerI18n.t("searchPageTitle") + '</div>'
+      +   '<h2 class="admin-ui-page-title">' + ServerI18n.t("searchPageTitle") + '</h2>'
       +   '<p class="admin-ui-page-note">' + ServerI18n.t("searchPageNote") + '</p>'
       + '</div>'
 

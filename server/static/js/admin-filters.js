@@ -56,7 +56,7 @@
              section header. -->
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">MODERATION · LIVE FILTERS · ${ServerI18n.t("filtersKickerTail")}</div>
-          <div class="admin-ui-page-title">${ServerI18n.t("filtersPageTitle")}</div>
+          <h2 class="admin-ui-page-title">${ServerI18n.t("filtersPageTitle")}</h2>
           <p class="admin-ui-page-note">
             ${ServerI18n.t("filtersPageNote")}
           </p>
@@ -90,20 +90,20 @@
              Each toggle creates / removes a regex rule. The existing
              custom rules library below is the same regex store. -->
         <div class="admin-flt-v4__explain">
-          <span class="admin-flt-v4__amber-kicker">\u26a1 \u81e8\u6642\u898f\u5247</span>
-          \u5373\u6642\u751f\u6548 \u00b7 \u4e0d\u5beb\u9032\u9ed1\u540d\u55ae \u00b7 \u76f4\u64ad\u7d50\u675f\u5f8c\u53ef\u4e00\u9375\u6e05\u9664\u3002
+          <span class="admin-flt-v4__amber-kicker">⚡ ${ServerI18n.t("fltTempRules")}</span>
+          ${ServerI18n.t("fltTempRulesDesc")}
           <span class="admin-flt-v4__spacer"></span>
-          <span class="admin-flt-v4__dim-kicker">vs. \u9ed1\u540d\u55ae = \u9577\u671f\u6c38\u4e45\u898f\u5247</span>
+          <span class="admin-flt-v4__dim-kicker">${ServerI18n.t("fltVsBlacklist")}</span>
         </div>
         <div class="admin-flt-v4__card">
           <div class="admin-flt-v4__head">
-            <span class="admin-flt-v4__kicker">QUICK FILTERS \u00b7 \u4e00\u9375\u958b\u95dc \u00b7 \u5373\u6642\u751f\u6548</span>
+            <span class="admin-flt-v4__kicker">QUICK FILTERS · ${ServerI18n.t("fltQuickKickerTail")}</span>
           </div>
           <div class="admin-flt-v4__quick" data-flt-quick>
             ${[
-              { id: "url",       label: "\u542b URL",       pattern: "https?://[^\\s]+", action: "block" },
-              { id: "allcaps",   label: "\u5168\u5927\u5beb",       pattern: "^[A-Z\\W\\s]{8,}$", action: "mask" },
-              { id: "repeat",    label: "\u91cd\u8907\u8a0a\u606f",     pattern: "(.)\\1{6,}", action: "mask" },
+              { id: "url",       label: ServerI18n.t("fltPresetUrl"),       pattern: "https?://[^\\s]+", action: "block" },
+              { id: "allcaps",   label: ServerI18n.t("fltPresetAllcaps"),       pattern: "^[A-Z\\W\\s]{8,}$", action: "mask" },
+              { id: "repeat",    label: ServerI18n.t("fltPresetRepeat"),     pattern: "(.)\\1{6,}", action: "mask" },
               { id: "emojionly", label: "Emoji-only",  pattern: "^[\\p{Emoji}\\s]+$", action: "block" },
             ].map((q) => `
               <button type="button" class="admin-flt-v4__qchip" data-flt-quick-id="${q.id}" data-flt-pattern="${q.pattern}" data-flt-action="${q.action}" data-flt-label="${q.label}">
@@ -118,12 +118,12 @@
           <!-- LEFT: Rules library -->
           <div class="hud-inspector" style="min-height:auto">
             <div class="hud-inspector-head">
-              <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">\u898f\u5247\u5eab</span>
+              <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${ServerI18n.t("fltRuleLib")}</span>
               <span class="admin-v3-card-kicker" style="margin:0">RULESET \u00b7 ORDER MATTERS</span>
-              <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color: var(--color-ink-accent);letter-spacing:0.1em">+ \u65b0\u589e \u00b7 \u23d3 \u532f\u5165 \u00b7 \u23d2 \u532f\u51fa</span>
+              <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color: var(--color-ink-accent);letter-spacing:0.1em">${ServerI18n.t("fltActionsHead")}</span>
             </div>
             <div class="hud-filter-row" id="filterTypeChips" style="padding:10px 14px;border-bottom:1px solid var(--hud-line-strong)">
-              <span class="hud-filter-chip is-active" data-filter-scope="all">\u5168\u90e8 <span data-filter-count="all">0</span></span>
+              <span class="hud-filter-chip is-active" data-filter-scope="all">${ServerI18n.t("fltChipAll")} <span data-filter-count="all">0</span></span>
               <span class="hud-filter-chip" data-filter-scope="keyword">WORD <span data-filter-count="keyword">0</span></span>
               <span class="hud-filter-chip" data-filter-scope="regex">REGEX <span data-filter-count="regex">0</span></span>
               <span class="hud-filter-chip" data-filter-scope="replace">REPLACE <span data-filter-count="replace">0</span></span>
@@ -143,12 +143,12 @@
             <div style="border-top:1px solid var(--hud-line-strong)">
               <div class="hud-inspector-head" style="border-bottom:1px solid var(--hud-line-strong)">
                 <span class="hud-status-dot is-live"></span>
-                <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">\u5373\u6642\u5be9\u6838\u65e5\u8a8c</span>
+                <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${ServerI18n.t("fltLiveLog")}</span>
                 <span class="admin-v3-card-kicker" style="margin:0">LAST 6 EVENTS</span>
                 <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.1em">AUTO-SCROLL \u25b6</span>
               </div>
               <div class="hud-console-body" id="filterLiveLog" style="max-height:200px;padding:10px 14px;font-family:var(--font-mono);font-size:11px;line-height:1.7">
-                <div style="color:var(--color-text-muted);text-align:center;padding:10px">\u5c1a\u7121\u4e8b\u4ef6 \u00b7 \u7b49\u5f85\u898f\u5247\u547d\u4e2d...</div>
+                <div style="color:var(--color-text-muted);text-align:center;padding:10px">' + ServerI18n.t("fltNoEvents") + '</div>
               </div>
             </div>
           </div>
@@ -204,7 +204,7 @@
                   </div>
                 </div>
                 <div>
-                  <label for="filterPriority" class="admin-v3-card-kicker" style="margin:0">PRIORITY \u00b7 \u5c0f\u7684\u5148\u884c</label>
+                  <label for="filterPriority" class="admin-v3-card-kicker" style="margin:0">PRIORITY · ${ServerI18n.t("fltPriorityTail")}</label>
                   <input type="number" id="filterPriority" value="0" min="-9999" max="9999"
                     class="admin-ui-input" />
                 </div>
@@ -570,7 +570,7 @@
     const log = document.getElementById("filterLiveLog");
     if (!log) return;
     if (_liveLogBuffer.length === 0) {
-      log.innerHTML = `<div style="color:var(--color-text-muted);text-align:center;padding:10px">\u5c1a\u7121\u4e8b\u4ef6 \u00b7 \u7b49\u5f85\u898f\u5247\u547d\u4e2d...</div>`;
+      log.innerHTML = `<div style="color:var(--color-text-muted);text-align:center;padding:10px">${ServerI18n.t("fltNoEvents")}</div>`;
       return;
     }
     log.innerHTML = _liveLogBuffer.map((e) => {

@@ -44,21 +44,21 @@
         <div id="sec-plugins" class="hud-page-stack lg:col-span-2" data-tpl="B">
           <div class="admin-ui-page-head">
             <div class="admin-ui-page-kicker">PLUGIN SDK \u00b7 ${ServerI18n.t("pluginsDesc")} \u00b7 HOT-RELOAD</div>
-            <div class="admin-ui-page-title">${ServerI18n.t("pluginsTitle")}</div>
+            <h2 class="admin-ui-page-title">${ServerI18n.t("pluginsTitle")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("pluginsPageNote2")}</p>
           </div>
 
           <div class="admin-ui-toolbar admin-plugins-toolbar">
             <span class="admin-ui-monolabel">PLUGINS · <span data-plugins-count>0</span> ${ServerI18n.t("pluginsCountUnit")}</span>
             <span class="admin-ui-spacer"></span>
-            <button id="pluginsUploadBtn" class="admin-ui-action is-primary admin-plugins-toolbar-btn" type="button">\uff0b \u4e0a\u50b3 .py/.js</button>
+            <button id="pluginsUploadBtn" class="admin-ui-action is-primary admin-plugins-toolbar-btn" type="button">${ServerI18n.t("pluginsUploadBtnLabel")}</button>
             <button id="pluginsReloadBtn" class="admin-ui-action admin-plugins-toolbar-btn" type="button">\u21bb ${ServerI18n.t("reloadBtn")}</button>
           </div>
 
           <section class="admin-kpi-strip is-4col">
             <div class="admin-kpi-tile is-text" data-plugins-kpi="loaded">
               <div class="admin-kpi-tile-head">
-                <span class="label">\u5df2\u8f09\u5165</span>
+                <span class="label">${ServerI18n.t("pluginsStatLoaded")}</span>
                 <span class="en">LOADED</span>
               </div>
               <div class="admin-kpi-tile-value" data-plugins-stat="loaded">\u2014</div>
@@ -66,27 +66,27 @@
             </div>
             <div class="admin-kpi-tile is-lime" data-plugins-kpi="running">
               <div class="admin-kpi-tile-head">
-                <span class="label">\u904b\u884c\u4e2d</span>
+                <span class="label">${ServerI18n.t("pluginsStatRunning")}</span>
                 <span class="en">RUNNING</span>
               </div>
               <div class="admin-kpi-tile-value" data-plugins-stat="running">\u2014</div>
-              <div class="admin-kpi-tile-delta is-success">\u5373\u6642 enabled</div>
+              <div class="admin-kpi-tile-delta is-success">${ServerI18n.t("pluginsDeltaLive")}</div>
             </div>
             <div class="admin-kpi-tile is-amber" data-plugins-kpi="paused">
               <div class="admin-kpi-tile-head">
-                <span class="label">\u5df2\u66ab\u505c</span>
+                <span class="label">${ServerI18n.t("pluginsStatPaused")}</span>
                 <span class="en">PAUSED</span>
               </div>
               <div class="admin-kpi-tile-value" data-plugins-stat="paused">\u2014</div>
-              <div class="admin-kpi-tile-delta is-warn">\u5f85\u958b\u555f</div>
+              <div class="admin-kpi-tile-delta is-warn">${ServerI18n.t("pluginsDeltaWaiting")}</div>
             </div>
             <div class="admin-kpi-tile is-cyan" data-plugins-kpi="priority">
               <div class="admin-kpi-tile-head">
-                <span class="label">\u5e73\u5747\u512a\u5148\u5ea6</span>
+                <span class="label">${ServerI18n.t("pluginsStatAvgPriority")}</span>
                 <span class="en">AVG PRIORITY</span>
               </div>
               <div class="admin-kpi-tile-value" data-plugins-stat="priority">\u2014</div>
-              <div class="admin-kpi-tile-delta is-info">\u8d8a\u5c0f\u8d8a\u512a\u5148</div>
+              <div class="admin-kpi-tile-delta is-info">${ServerI18n.t("pluginsDeltaPriorityHint")}</div>
             </div>
           </section>
 
@@ -94,7 +94,7 @@
             <div class="admin-plugins-table">
               <div class="admin-plugins-row admin-plugins-row--head">
                 <span>\u25cf</span>
-                <span>PLUGIN \u00b7 \u63cf\u8ff0</span>
+                <span>PLUGIN · ${ServerI18n.t("pluginsSecDesc")}</span>
                 <span>VERSION</span>
                 <span>PRIORITY</span>
                 <span>LANG</span>

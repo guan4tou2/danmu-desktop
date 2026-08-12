@@ -36,7 +36,7 @@
       <div id="sec-polls" class="admin-poll-page-v5 hud-page-stack lg:col-span-2" data-tpl="C" data-poll-view="builder">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">POLL · ${ServerI18n.t("pollBuilderPageKicker")}</div>
-          <div class="admin-ui-page-title">${ServerI18n.t("pollBuilderPageTitle")}</div>
+          <h2 class="admin-ui-page-title">${ServerI18n.t("pollBuilderPageTitle")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("pollBuilderPageNote")}
             <a class="admin-poll-deeplink" href="#/poll-deepdive" title="${ServerI18n.t("pollBuilderDeepdiveTitle")}">${ServerI18n.t("pollBuilderDeepdiveLink")}</a></p>
         </div>

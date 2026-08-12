@@ -30,7 +30,7 @@
       <div id="${SECTION_ID}" class="admin-emojis-page admin-em-v4 hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <div class="admin-ui-page-kicker">ASSETS · EMOJIS · CUSTOM :NAME: SYNTAX</div>
-          <div class="admin-ui-page-title">${ServerI18n.t("emojisPageTitle")}</div>
+          <h2 class="admin-ui-page-title">${ServerI18n.t("emojisPageTitle")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("emojisPageNote")}</p>
         </div>
 
