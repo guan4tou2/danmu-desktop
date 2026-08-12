@@ -16,44 +16,6 @@ readFileSync+eval 載入 server 靜態 JS 的先例，含 jsdom location 鎖死�
 
 ## Admin — Design audit 2026-08-02 遺留（B 級後的長尾）
 
-### D-4：~40 個 admin 模組硬編中文（en/ja/ko locale 是中英拼布）
-**Priority:** P2
-切到 English locale 時頂欄/搜尋列是英文、各 section 內文全是硬編中文；
-連帶症狀已各自修掉（F-103 去重 locale 比對、viewer 右欄 ADMIN CONTROLLED
-雙標籤、widgets 英文 note 在 zh 下反向拼布），但根因是模組內文沒走
-ServerI18n.t()。逐模組搬 key 是機械工，適合批次派工。
-（出處：/design-review 2026-08-02；baseline D-4 自 2026-07-28 遺留。）
-
-**進度（2026-08-02 晚）**：前置＝browser 測試 19 個 context 釘 locale=zh-TW
-（3e2715a）。**已完成 10 模組、833 keys ×4 語**：modbans 34（36b5ec2）、
-backup 91（4771242）、display 109（7234a07，patch 搶救）、poll-builder 91＋
-help-drawer 68（4111da3）、security 78＋webhooks 46＋api-tokens 57
-（a29736d，含 webhooks 事件名 locale-blind 尾修）、audience 56（82a2466，
-「匿名」是後端契約值——比對留字面顯示走 t()）、共用空狀態 presets 22
-（a538645，高槓桿一修八頁）。配方見各 commit 訊息（lazy labelKey、{var}
-插值、live span 當變數、拉丁不搬、fragment-first 派工＋三道獨立驗證：
-四語齊全／key 雙向吻合／zh 對 HEAD 逐字）。
-**進度（2026-08-03 晨續）**：批次八~十二再收 12 模組——viewer-theme 56、
-firetoken 53、session-detail 45（046c948）、broadcast 26、setup-wizard 44、
-notifications 44（2381bad）、message-drawer 36、plugins-upload 46、
-command-palette 43（131a189）、wcag 36、poll-deepdive 44、sessions 28
-（6441384，代理拆雷：bucket 中文 label 兼任內部索引鍵已解耦到 range id）、
-about 24（1e440c5，CHANGELOG 條目屬版本史資料保留）。
-**累計 23/40 模組、1,358 keys ×4 語**。
-
-**進度（2026-08-08 續）**：批次十三~二十五再收 12 模組——extensions 16＋
-ratelimit 57＋fonts 61（182b697，兩代理死於末段全額搶救）、modqueue 15、
-effects-mgmt 14、onboarding 15、mobile-nav 16、history 19（跨中斷續傳）、
-emojis 18、assets 16、live-feed 22、system-overview 21、tabs 25（五導航
-labelKey 化，零文字釘）、stickers 27、widgets 15（半套 i18n 死 fallback
-拆除，F-107 了結）。**累計 35/40 模組、~1,400 keys ×4 語**。
-
-剩餘（非註解 CJK 行數）：admin.js 103（側欄 nav/breadcrumb，人工）、
-dashboard 76（jest 釘點多，人工）、ratelimit 72、fonts 68、history-v2 32、search 31＋小尾巴（scheduler/filters/fingerprints/events-log 等殘量待盤）。
-另：webhooks 後端 EVENT_CATALOG（server/services/webhook.py）只有 zh/en，
-ja/ko 事件名靠前端 fallback 走 en——補齊屬後端小工。sessions 代理另旗標
-formatTs 硬編 zh-TW（全模組共通）與 catch 回傳未定義 isoStr（既有 bug）。
-
 ### 「EN · 中文」雙語 monolabel 的 pattern 決策
 **Priority:** P3
 全站 section monolabel 慣用「HISTORY · 彈幕歷史」雙語對。zh 半是給中文
@@ -70,6 +32,20 @@ formatTs 硬編 zh-TW（全模組共通）與 catch 回傳未定義 isoStr（既
   受限（配合 D-4 搬 key 時順手補 h2）。
 
 ## Completed
+
+### D-4：admin 模組硬編中文全數遷移 — done 2026-08-09（31 批）
+~40 模組、~1,900 keys ×4 語（zh/en/ja/ko）分 31 批收官，全數 CI 綠＋
+部署驗證。配方與教訓封存在各批 commit 訊息（36b5ec2 起）：fragment-first
+派工＋三道獨立驗證（四語齊全／key 雙向吻合／zh 對 HEAD 逐字）、lazy
+labelKey（頂層常數陷阱）、{var} 插值、live span 當變數、後端契約字面
+（「匿名」/action 白名單/theme slug）比對保留顯示 t() 化、瀏覽器測試
+locale 釘 zh-TW 前置解鎖（3e2715a）。**槓桿最高一擊**：側欄 25 個
+adminNav* 譯文在 locale 躺了整個專案週期——i18n 的 data-i18n 掃描跑在
+shell 注入前，一行冪等 updateUI() 補掃了案（3289283）。刻意保留類：
+ROUTE_META 活 fallback、語言自名、EN·中文 monolabel（P3 待決）、
+CHANGELOG 版本史、開發標記。遺留小工：後端 EVENT_CATALOG 補 ja/ko、
+toLocaleString("zh-TW") 統一。
+
 
 ### viewer 頁 browser test 套件 — done 2026-07-29（a119f7d）
 `test_browser_viewer.py` 11 案例：sendbar 離線/滿載狀態列、投票「✓ 已投出」、
