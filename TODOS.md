@@ -14,44 +14,18 @@
 readFileSync+eval 載入 server 靜態 JS 的先例，含 jsdom location 鎖死的
 繞法——eval 前把 `location.reload()` 字串替換成測試樁並斷言命中。）
 
-## Admin — Design audit 2026-08-02 遺留（B 級後的長尾）
-
-## Completed` 並附版本。
-
-## Server — Admin 測試基建
-
-### server 端 JS 缺單元測試 harness（admin-hud-modal 等）
-**Priority:** P3
-`server/static/js/` 沒有 jest/jsdom 之類的單元測試環境，focus trap、breadcrumb
-等純前端邏輯只能靠 playwright browser test 間接覆蓋。評估是否為 server 靜態 JS
-建一個輕量 jest 環境（或決議維持 browser-test-only 並記錄為刻意取捨）。
-（出處：v5.4.0 /ship testing specialist。）
-（進度 2026-08-02：danmu-desktop/tests/admin-session-expiry.test.js 開了
-readFileSync+eval 載入 server 靜態 JS 的先例，含 jsdom location 鎖死的
-繞法——eval 前把 `location.reload()` 字串替換成測試樁並斷言命中。）
-
-## Admin — Design audit 2026-08-02 遺留（B 級後的長尾）
-
-### 磨光三項（單行級）
-**Priority:** P4
-- 效果庫 YAML 側欄無選取時 EDIT 鈕仍呈可用態（F-108）。
-- history 的 全部/進行中/已結束 分段控制與 admin-tabs-strip 是兩套分段樣式，
-  擇一收斂（濾鏡 vs 導航語意，可能是刻意取捨——決議後記錄）。
-- 語意標題只有一顆 H1，section 層級全靠視覺 class；screen-reader 掃描性
-  受限（配合 D-4 搬 key 時順手補 h2）。
-
 ## Completed
 
 ### 磨光三項（P4）— done 2026-08-09
 ① F-108：效果庫 YAML 側欄 RELOAD/EDIT 初始 disabled、首次選卡解鎖
 （雙態實測）。② 分段雙軌拍板「刻意取捨」：.admin-ui-tab=資料濾鏡、
-.admin-tabs-strip=區塊導航——合併會讓濾資料與導頁面長一樣，決議
-落在 style.css 註解。③ 36 處 admin-ui-page-title div→h2＋UA margin
-歸零（style.css 蓋、hud.css 免 rebuild）；現況 dedup 讓可見標題由
-頂欄 h1 承擔、hidden 頭不進 AX tree——h2 是正確語意與未來保險，
-非即時 SR 增益（誠實記錄）。順帶挖出 D-4 盲點：\u 轉義中文 41 處
-（所有 CJK grep 皆不可見）一併遷移；途中 decode 重寫吃掉 regex
-反斜線，已逐位元復原並與 HEAD 比對。
+.admin-tabs-strip=區塊導航——合併會讓濾資料與導頁面長一樣，決議落在
+style.css 註解。③ 36 處 admin-ui-page-title div→h2＋UA margin 歸零
+（style.css 蓋、hud.css 免 rebuild）；現況 dedup 讓可見標題由頂欄 h1
+承擔、hidden 頭不進 AX tree——h2 是正確語意與未來保險，非即時 SR
+增益（誠實記錄）。順帶挖出 D-4 盲點：\u 轉義中文 41 處（所有 CJK
+grep 皆不可見）一併遷移；decode 重寫吃掉 regex 反斜線的事故已逐位元
+復原並與 HEAD 比對。
 
 
 ### 「EN · 中文」雙語 monolabel pattern — done 2026-08-09（決策＋執行）
