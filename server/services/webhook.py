@@ -38,24 +38,24 @@ _VALID_FORMATS = {"json", "discord", "slack"}
 # EVENT_CATALOG is the single source of truth for the vocabulary: the
 # runtime filter (_VALID_EVENTS), the FE picker (/admin/webhooks/events)
 # and the request whitelist (validation.WebhookSchema) all derive from it.
-# Adding an event = one entry here, nothing else. The zh/en labels live
-# here rather than in the route because the route is only a projection.
+# Adding an event = one entry here, nothing else. The zh/en/ja/ko labels
+# live here rather than in the route because the route is only a projection.
 EVENT_CATALOG: List[Dict[str, str]] = [
     # Core danmu lifecycle
-    {"slug": "on_danmu", "zh": "彈幕送出", "en": "Danmu accepted"},
-    {"slug": "on_danmu_blocked", "zh": "彈幕被擋", "en": "Danmu blocked"},
+    {"slug": "on_danmu", "zh": "彈幕送出", "en": "Danmu accepted", "ja": "弾幕送信", "ko": "탄막 전송"},
+    {"slug": "on_danmu_blocked", "zh": "彈幕被擋", "en": "Danmu blocked", "ja": "弾幕ブロック", "ko": "탄막 차단"},
     # Poll lifecycle
-    {"slug": "on_poll_create", "zh": "投票建立", "en": "Poll created"},
-    {"slug": "on_poll_vote", "zh": "投票一次", "en": "Single vote"},
-    {"slug": "on_poll_end", "zh": "投票結束", "en": "Poll ended"},
+    {"slug": "on_poll_create", "zh": "投票建立", "en": "Poll created", "ja": "投票作成", "ko": "투표 생성"},
+    {"slug": "on_poll_vote", "zh": "投票一次", "en": "Single vote", "ja": "1 票投票", "ko": "1표 투표"},
+    {"slug": "on_poll_end", "zh": "投票結束", "en": "Poll ended", "ja": "投票終了", "ko": "투표 종료"},
     # Broadcast / session lifecycle
-    {"slug": "on_session_start", "zh": "場次開啟 / Overlay ON", "en": "Session start"},
-    {"slug": "on_session_end", "zh": "場次結束 / Overlay OFF", "en": "Session end"},
+    {"slug": "on_session_start", "zh": "場次開啟 / Overlay ON", "en": "Session start", "ja": "セッション開始 / Overlay ON", "ko": "세션 시작 / Overlay ON"},
+    {"slug": "on_session_end", "zh": "場次結束 / Overlay OFF", "en": "Session end", "ja": "セッション終了 / Overlay OFF", "ko": "세션 종료 / Overlay OFF"},
     # Overlay control
-    {"slug": "on_overlay_clear", "zh": "清空 Overlay", "en": "Overlay cleared"},
+    {"slug": "on_overlay_clear", "zh": "清空 Overlay", "en": "Overlay cleared", "ja": "Overlay クリア", "ko": "Overlay 지움"},
     # Operator surfaces
-    {"slug": "on_audit_alert", "zh": "審計警示", "en": "Audit alert ≥ warn"},
-    {"slug": "on_plugin_change", "zh": "插件變動", "en": "Plugin install/uninstall"},
+    {"slug": "on_audit_alert", "zh": "審計警示", "en": "Audit alert ≥ warn", "ja": "監査アラート ≥ warn", "ko": "감사 경고 ≥ warn"},
+    {"slug": "on_plugin_change", "zh": "插件變動", "en": "Plugin install/uninstall", "ja": "プラグイン変更", "ko": "플러그인 변경"},
 ]
 _VALID_EVENTS = {e["slug"] for e in EVENT_CATALOG}
 

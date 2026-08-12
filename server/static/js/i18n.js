@@ -10494,6 +10494,14 @@
       return i18next.t(key, vars);
     },
 
+    /**
+     * BCP47 tag for Date#toLocale*String，跟隨 UI 語言。
+     * 取代散落各模組的硬編 "zh-TW"（design audit 遺留統一，2026-08-09）。
+     */
+    dateLocale: function () {
+      return { zh: "zh-TW", en: "en-US", ja: "ja-JP", ko: "ko-KR" }[this.currentLang];
+    },
+
     setLanguage: function (lang) {
       if (SUPPORTED.indexOf(lang) === -1) return;
       this.currentLang = lang;

@@ -160,7 +160,7 @@
       if (diffHours < 24) return `${diffHours}h ago`;
       if (diffDays < 7) return `${diffDays}d ago`;
 
-      return date.toLocaleString("zh-TW", {
+      return date.toLocaleString(ServerI18n.dateLocale(), {
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
@@ -631,7 +631,7 @@
       return;
     }
     var rows = records.slice(0, 300).map(function (r) {
-      var ts = r.timestamp ? new Date(r.timestamp).toLocaleTimeString("zh-TW", { hour12: false }) : "—";
+      var ts = r.timestamp ? new Date(r.timestamp).toLocaleTimeString(ServerI18n.dateLocale(), { hour12: false }) : "—";
       var nick = _historyListEscape(r.nickname || r.fingerprint || ServerI18n.t("audienceAnonymous"));
       var state, cls, msgHtml;
       if (r.banned || r.blocked) { state = "BLOCKED"; cls = "blocked"; msgHtml = "<em>" + ServerI18n.t("histStateBlocked") + "</em>"; }

@@ -355,7 +355,7 @@
     if (waveTs) {
       var current = _filtered[_filtered.length - 1 - nowDur];
       waveTs.textContent = current && current.timestamp
-        ? new Date(current.timestamp).toLocaleTimeString("zh-TW", { hour12: false }).slice(0, 8)
+        ? new Date(current.timestamp).toLocaleTimeString(ServerI18n.dateLocale(), { hour12: false }).slice(0, 8)
         : "--:--";
     }
 

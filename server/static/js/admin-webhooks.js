@@ -361,11 +361,10 @@
     }
     const zh = evt && evt.zh ? String(evt.zh) : "";
     const en = evt && evt.en ? String(evt.en) : "";
-    // D-4 尾修：這裡原本無視 locale 永遠畫 zh——en/ja/ko 下事件名成了
-    // 頁面僅存的中文殘留。後端目錄只有 zh/en 兩語（ja/ko 補齊記在
-    // TODOS），非 zh 一律走 en（與 i18next fallbackLng 一致）。
-    const isZh = !!(window.ServerI18n && ServerI18n.currentLang === "zh");
-    const name = isZh ? (zh || en) : (en || zh);
+    // 後端 EVENT_CATALOG 已補 ja/ko（audit 遺留收尾）：按當前語言取值，
+    // 缺項退 en 再退 zh（與 i18next fallbackLng 一致）。
+    const lang = (window.ServerI18n && ServerI18n.currentLang) || "zh";
+    const name = (evt && evt[lang] ? String(evt[lang]) : "") || en || zh;
     return {
       slug,
       label: name ? name + " · " + slug : slug,
@@ -522,7 +521,7 @@
     }
 
     list.innerHTML = filtered.map(function (d) {
-      const ts = d.ts ? new Date(d.ts).toLocaleTimeString("zh-TW", { hour12: false }) : "—";
+      const ts = d.ts ? new Date(d.ts).toLocaleTimeString(ServerI18n.dateLocale(), { hour12: false }) : "—";
       const codeLabel = d.code ? String(d.code) : "—";
       const codeColor = d.ok ? "var(--hud-lime)" : "var(--hud-crimson)";
       const dur = d.duration_ms ? (d.duration_ms >= 1000 ? (d.duration_ms / 1000).toFixed(1) + "s" : d.duration_ms + "ms") : "—";

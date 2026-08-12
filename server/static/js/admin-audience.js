@@ -334,7 +334,7 @@
         const status = m.muted ? "MASKED" : (m.banned ? "BLOCKED" : "SHOWN");
         const statusColor = m.muted ? "var(--hud-amber)" : (m.banned ? "var(--hud-crimson)" : "var(--hud-lime)");
         const tsLabel = m.timestamp
-          ? new Date(m.timestamp).toLocaleTimeString("zh-TW", { hour12: false })
+          ? new Date(m.timestamp).toLocaleTimeString(ServerI18n.dateLocale(), { hour12: false })
           : "—";
         return (
           '<div class="admin-aud-detail-msg">' +

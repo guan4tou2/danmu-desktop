@@ -402,7 +402,7 @@
     if (!it) { detail.hidden = true; return; }
     detail.hidden = false;
     const sev = SEVERITY[it.sev] || SEVERITY.info;
-    const tsLabel = it.ts ? new Date(it.ts).toLocaleString("zh-TW") : "—";
+    const tsLabel = it.ts ? new Date(it.ts).toLocaleString(ServerI18n.dateLocale()) : "—";
     const raw = it.raw ? JSON.stringify(it.raw, null, 2) : "—";
     inner.innerHTML = `
       <div class="admin-notif-detail-head">

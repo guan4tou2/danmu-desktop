@@ -192,7 +192,7 @@
     if (!isoStr) return "—";
     try {
       var d = new Date(isoStr);
-      return d.toLocaleString("zh-TW", { month: "2-digit", day: "2-digit",
+      return d.toLocaleString(ServerI18n.dateLocale(), { month: "2-digit", day: "2-digit",
         hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
     } catch (_) {
       return isoStr;

@@ -79,7 +79,7 @@
   function _renderThankYou(opts) {
     const question = (opts && opts.question) || "—";
     const choice = (opts && opts.choice) || "—";
-    const ts = new Date().toLocaleTimeString("zh-TW", { hour12: false });
+    const ts = new Date().toLocaleTimeString((window.ServerI18n && ServerI18n.dateLocale && ServerI18n.dateLocale()) || undefined, { hour12: false });
     const fp = (opts && opts.fp) || "";
     const fpShort = fp ? "fp:" + fp.slice(0, 8) : "";
     const voteId = (opts && opts.voteId) || ("vote_" + Math.random().toString(36).slice(2, 8));
