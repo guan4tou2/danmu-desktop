@@ -20,20 +20,24 @@
     metadata: true,
   };
 
+  // D-4：常數層在模組 parse 時求值（ServerI18n 尚未 init），故存 labelKey /
+  // descKey / badgeKey，實際文字延後到各自的單一渲染點（_renderRangeChips /
+  // _renderFormats）才 t()。today/yest 語意與 sessions bucket 列相同，重用
+  // sessionsBucketToday / sessionsBucketYesterday，不開新 key。
   var TIME_PRESETS = [
-    { k: "live",  label: "本場活動",     hours: null /* computed */ },
-    { k: "1h",    label: "近 1 小時",   hours: 1 },
-    { k: "24h",   label: "近 24 小時",  hours: 24 },
-    { k: "today", label: "今天",         hours: null /* since 00:00 */ },
-    { k: "yest",  label: "昨天",         hours: null },
-    { k: "7d",    label: "近 7 天",     hours: 168 },
-    { k: "custom", label: "自訂…",      hours: null },
+    { k: "live",  labelKey: "historyV2RangeLive",  hours: null /* computed */ },
+    { k: "1h",    labelKey: "historyV2Range1h",    hours: 1 },
+    { k: "24h",   labelKey: "historyV2Range24h",   hours: 24 },
+    { k: "today", labelKey: "sessionsBucketToday", hours: null /* since 00:00 */ },
+    { k: "yest",  labelKey: "sessionsBucketYesterday", hours: null },
+    { k: "7d",    labelKey: "historyV2Range7d",    hours: 168 },
+    { k: "custom", labelKey: "historyV2RangeCustom", hours: null },
   ];
 
   var FORMATS = [
-    { k: "JSON", desc: "完整原始紀錄、機器可讀，含所有 metadata" },
-    { k: "CSV",  desc: "試算表友善，預設欄位：時間 / 暱稱 / IP / 內容 / 狀態" },
-    { k: "SRT",  desc: "字幕格式，可直接套到 YouTube / Premiere", badge: "字幕" },
+    { k: "JSON", descKey: "historyV2FormatJsonDesc" },
+    { k: "CSV",  descKey: "historyV2FormatCsvDesc" },
+    { k: "SRT",  descKey: "historyV2FormatSrtDesc", badgeKey: "historyV2FormatSrtBadge" },
   ];
 
   var state = {
@@ -69,9 +73,9 @@
       var d = new Date(iso);
       var now = new Date();
       var sameDay = d.toDateString() === now.toDateString();
-      if (sameDay) return "今天 " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+      if (sameDay) return ServerI18n.t("historyV2TodayAt", { time: String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") });
       var yest = new Date(now); yest.setDate(now.getDate() - 1);
-      if (d.toDateString() === yest.toDateString()) return "昨天 " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+      if (d.toDateString() === yest.toDateString()) return ServerI18n.t("historyV2YesterdayAt", { time: String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") });
       return (d.getMonth() + 1) + "-" + String(d.getDate()).padStart(2, "0") + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
     } catch (_) { return iso || ""; }
   }
@@ -168,7 +172,7 @@
         var raw = (data && data.records) || [];
         var rows = _filterRecords(raw);
         if (rows.length === 0) {
-          if (window.showToast) window.showToast("沒有符合條件的紀錄", false);
+          if (window.showToast) window.showToast(ServerI18n.t("historyV2NoMatchingRecords"), false);
           return;
         }
         var ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
@@ -191,11 +195,11 @@
         });
         _renderRecent();
         _renderEstimate(rows.length, blob.size);
-        if (window.showToast) window.showToast("已匯出 " + rows.length + " 筆", true);
+        if (window.showToast) window.showToast(ServerI18n.t("historyV2ToastExported", { n: rows.length }), true);
       })
       .catch(function (err) {
         console.error("[history-v2] export failed", err);
-        if (window.showToast) window.showToast("匯出失敗：" + (err.message || err), false);
+        if (window.showToast) window.showToast(ServerI18n.t("historyV2ToastExportFailed", { msg: err.message || err }), false);
       })
       .finally(function () { if (btn) { btn.disabled = false; delete btn.dataset.busy; } });
   }
@@ -203,7 +207,7 @@
   function _renderEstimate(count, bytes) {
     var el = document.getElementById("histv2-estimate");
     if (!el) return;
-    el.textContent = "預估：" + (count || "—") + " 筆訊息 · " + (bytes ? _formatBytes(bytes) : "— MB");
+    el.textContent = ServerI18n.t("historyV2Estimate", { count: count || "—", size: bytes ? _formatBytes(bytes) : "— MB" });
   }
 
   function _renderRecent() {
@@ -211,7 +215,7 @@
     if (!listEl) return;
     var list = _loadRecent();
     if (list.length === 0) {
-      listEl.innerHTML = '<div class="histv2-recent-empty">尚未匯出</div>';
+      listEl.innerHTML = '<div class="histv2-recent-empty">' + ServerI18n.t("historyV2RecentEmpty") + '</div>';
       return;
     }
     listEl.innerHTML = list.map(function (f) {
@@ -238,29 +242,29 @@
       var on = state.range === p.k;
       return (
         '<button type="button" class="histv2-chip' + (on ? " is-active" : "") + '" data-histv2-range="' + p.k + '">' +
-        _esc(p.label) + (p.k === "live" ? ' · ' + _now() : "") +
+        _esc(ServerI18n.t(p.labelKey)) + (p.k === "live" ? ' · ' + _now() : "") +
         '</button>'
       );
     }).join("");
   }
   function _now() {
     var d = new Date();
-    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") + "–現在";
+    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") + "–" + ServerI18n.t("historyV2Now");
   }
 
   function _renderToggles() {
     var defs = [
-      { k: "rawText", label: "包含原始訊息" },
-      { k: "polls",   label: "包含投票" },
-      { k: "masked",  label: "包含被遮罩 / 封鎖" },
-      { k: "metadata", label: "包含元資料 (IP / 指紋)" },
+      { k: "rawText", labelKey: "historyV2ToggleRawText" },
+      { k: "polls",   labelKey: "historyV2TogglePolls" },
+      { k: "masked",  labelKey: "historyV2ToggleMasked" },
+      { k: "metadata", labelKey: "historyV2ToggleMetadata" },
     ];
     return defs.map(function (d) {
       var on = !!state.filters[d.k];
       return (
         '<button type="button" class="histv2-toggle' + (on ? " is-on" : "") + '" data-histv2-toggle="' + d.k + '">' +
         '<span class="histv2-toggle-mark">' + (on ? "✓" : "○") + '</span>' +
-        '<span>' + _esc(d.label) + '</span>' +
+        '<span>' + _esc(ServerI18n.t(d.labelKey)) + '</span>' +
         '</button>'
       );
     }).join("");
@@ -286,30 +290,30 @@
     sec.innerHTML =
       '<div class="histv2-grid">' +
         '<div class="histv2-pane histv2-picker">' +
-          '<div class="histv2-section-hd">① 時間範圍</div>' +
+          '<div class="histv2-section-hd">' + ServerI18n.t("historyV2StepTime") + '</div>' +
           '<div class="histv2-chips" id="histv2-chips">' + _renderRangeChips() + '</div>' +
 
-          '<div class="histv2-section-hd">② 內容篩選</div>' +
+          '<div class="histv2-section-hd">' + ServerI18n.t("historyV2StepFilter") + '</div>' +
           '<div class="histv2-toggles" id="histv2-toggles">' + _renderToggles() + '</div>' +
 
-          '<div class="histv2-section-hd">③ 輸出格式</div>' +
+          '<div class="histv2-section-hd">' + ServerI18n.t("historyV2StepFormat") + '</div>' +
           '<div class="histv2-formats" id="histv2-formats">' + _renderFormats() + '</div>' +
 
           '<div class="histv2-actions">' +
-            '<button type="button" id="histv2-go" class="histv2-go">↓ 產生並下載</button>' +
-            '<span id="histv2-estimate" class="histv2-estimate">預估：— 筆訊息 · — MB</span>' +
+            '<button type="button" id="histv2-go" class="histv2-go">' + ServerI18n.t("historyV2GoButton") + '</button>' +
+            '<span id="histv2-estimate" class="histv2-estimate">' + ServerI18n.t("historyV2Estimate", { count: "—", size: "— MB" }) + '</span>' +
           '</div>' +
         '</div>' +
 
         '<div class="histv2-pane histv2-recent">' +
           '<div class="histv2-recent-hd">' +
-            '<span class="histv2-recent-label">最近匯出</span>' +
-            '<span class="histv2-recent-period">過去 30 天</span>' +
+            '<span class="histv2-recent-label">' + ServerI18n.t("historyV2RecentLabel") + '</span>' +
+            '<span class="histv2-recent-period">' + ServerI18n.t("historyV2RecentPeriod") + '</span>' +
           '</div>' +
           '<div id="histv2-recent-list" class="histv2-recent-list"></div>' +
           '<div class="histv2-privacy">' +
-            '<div class="histv2-privacy-hd">⚠ 隱私</div>' +
-            '匯出包含 IP / 指紋的檔案 24 小時後自動刪除，避免外洩。' +
+            '<div class="histv2-privacy-hd">' + ServerI18n.t("historyV2PrivacyTitle") + '</div>' +
+            ServerI18n.t("historyV2PrivacyBody") +
           '</div>' +
         '</div>' +
       '</div>';
