@@ -285,8 +285,8 @@
       }[s] || "var(--color-text-muted)");
       body.innerHTML = arr.slice(0, 30).map((e) => `
         <div class="admin-ratelimit-vfeed-row">
-          <span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">${fmtTime(e.ts)}</span>
-          <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:1px;font-weight:700;color:${scopeColor(e.scope)}">${(e.scope || "").toUpperCase()}</span>
+          <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">${fmtTime(e.ts)}</span>
+          <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:1px;font-weight:700;color:${scopeColor(e.scope)}">${(e.scope || "").toUpperCase()}</span>
           <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-strong)">${escapeHtml(e.ip || "")}</span>
         </div>
       `).join("");

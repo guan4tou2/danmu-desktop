@@ -48,7 +48,7 @@
           const removeButton = document.createElement("button");
           removeButton.className = "removeKeywordBtn";
           removeButton.type = "button";
-          removeButton.style.cssText = "background:transparent;border:none;color: var(--color-ink-accent);font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;cursor:pointer;padding:2px 4px";
+          removeButton.style.cssText = "background:transparent;border:none;color: var(--color-ink-accent);font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;cursor:pointer;padding:2px 4px";
           removeButton.textContent = "UNBAN";
           removeButton.setAttribute("data-keyword", keyword);
 

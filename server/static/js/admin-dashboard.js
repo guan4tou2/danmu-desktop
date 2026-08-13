@@ -555,7 +555,7 @@
               <div class="bar"><span style="width:${pct}%"></span></div>
             </div>`;
         }).join("") +
-        `<div class="admin-dash-empty" style="padding:6px 4px;margin-top:4px;font-size:10px">${ServerI18n.t("dashPollTotalLine", { n: totalVotes })}</div>`;
+        `<div class="admin-dash-empty" style="padding:6px 4px;margin-top:4px;font-size:11px">${ServerI18n.t("dashPollTotalLine", { n: totalVotes })}</div>`;
       if (timer) {
         const remain = ps.remaining_seconds;
         timer.textContent = typeof remain === "number" && remain > 0

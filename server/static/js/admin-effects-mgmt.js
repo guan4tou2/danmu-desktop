@@ -703,7 +703,7 @@
         <div class="hud-effect-card-head">
           <span class="hud-status-dot is-live"></span>
           <span class="admin-v3-card-kicker" style="margin:0;color:var(--color-text-muted)">${escapeHtml(cat)}</span>
-          <span style="margin-left:auto;font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted)">${escapeHtml(eff.filename || "")}</span>
+          <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">${escapeHtml(eff.filename || "")}</span>
         </div>
         <div class="hud-effect-card-preview effect-card-preview ${previewClass}"><span class="effect-demo-text" style="${demoStyle}">ABC</span></div>
         <div>
@@ -812,7 +812,7 @@
                 <div style="font-size:13px;color:var(--hud-text, #f1f5f9);line-height:1.7;">
                   ${ServerI18n.t("fxDeleteBody", { name: `<span style="font-family:var(--hud-font-mono, ui-monospace, monospace);color: var(--color-ink-accent);font-weight:600;">${effName}.dme</span>` })}
                 </div>
-                <div style="margin-top:12px;padding:10px 12px;border-radius:4px;background:rgba(255,77,79,0.05);border:1px solid rgba(255,77,79,0.19);font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:10px;color: var(--color-ink-error);letter-spacing:0.3px;">
+                <div style="margin-top:12px;padding:10px 12px;border-radius:4px;background:rgba(255,77,79,0.05);border:1px solid rgba(255,77,79,0.19);font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:11px;color: var(--color-ink-error);letter-spacing:0.3px;">
                   ${ServerI18n.t("fxDeleteWarn")}
                 </div>`,
               confirmLabel: ServerI18n.t("fxDeleteConfirm"),

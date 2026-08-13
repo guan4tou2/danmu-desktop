@@ -274,7 +274,7 @@
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
           <span style="
             font-family:var(--font-mono,'IBM Plex Mono',monospace);
-            font-size:9px;letter-spacing:1.5px;
+            font-size:11px;letter-spacing:1.5px;
             color:var(--color-ink-accent);
             padding:3px 8px;
             background:rgba(56,189,248,.1);

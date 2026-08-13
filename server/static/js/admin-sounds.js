@@ -109,7 +109,7 @@
           '<div class="admin-sounds-tile" data-sound-name="' + escapeHtml(sound.name) + '">' +
           '<div class="name" title="' + safeName + '">' + safeName + "</div>" +
           '<div class="admin-sounds-tile-volume" style="display:flex;align-items:center;gap:6px;margin-top:6px">' +
-            '<span class="admin-ui-monolabel" style="font-size:9px">VOL</span>' +
+            '<span class="admin-ui-monolabel" style="font-size:11px">VOL</span>' +
             '<input type="range" class="sound-volume-slider" data-name="' + escapeHtml(sound.name) + '" ' +
               'min="0" max="100" step="1" value="' + volPct + '" ' +
               'style="flex:1;min-width:80px;max-width:120px;accent-color:var(--color-primary)" />' +

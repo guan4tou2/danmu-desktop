@@ -1177,7 +1177,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <span class="hud-status-dot is-danger"></span>
             <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${ServerI18n.t("blacklistManagement")}</span>
             <span class="admin-v3-card-kicker" style="margin:0">KEYWORD \u00b7 BANNED</span>
-            <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.1em" id="modBlacklistCount">\u2014 words</span>
+            <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.1em" id="modBlacklistCount">\u2014 words</span>
           </div>
           <div style="padding:14px;display:grid;grid-template-columns:1fr auto;gap:8px;border-bottom:1px solid var(--hud-line-strong)">
             <input type="text" id="newKeywordInput" placeholder="${ServerI18n.t("enterKeyword")}"

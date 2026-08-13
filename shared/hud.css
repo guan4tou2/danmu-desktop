@@ -128,7 +128,7 @@
  * Default muted color; combine with utility color classes to emphasize. */
 .hud-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -338,7 +338,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 
 .hud-hero-inline-suffix {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.15em;
   color: var(--color-text-muted);
   text-transform: uppercase;
@@ -366,7 +366,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 
 .admin-ui-page-kicker {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 2px;
   color: var(--admin-text-dim);
   text-transform: uppercase;
@@ -395,7 +395,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 
 .admin-ui-monolabel {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1.5px;
   color: var(--admin-text-dim);
   text-transform: uppercase;
@@ -467,7 +467,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: transparent;
   color: var(--admin-text-dim);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.8px;
   font-weight: 700;
   text-transform: uppercase;
@@ -516,7 +516,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 
 .admin-ui-summary {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: var(--admin-text-dim);
 }
@@ -530,7 +530,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   border-radius: var(--radius-xs);
   color: var(--admin-text-dim);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   cursor: pointer;
   transition: border-color var(--motion-fast) ease, color var(--motion-fast) ease, background var(--motion-fast) ease;
@@ -630,7 +630,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 
 .admin-ui-time {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--admin-text-dim);
   white-space: nowrap;
 }
@@ -688,7 +688,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: var(--admin-raised);
   color: var(--admin-text-dim);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.7px;
   font-weight: 700;
   text-transform: uppercase;
@@ -837,7 +837,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   min-width: 0;
   color: var(--admin-text-dim);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   overflow-wrap: anywhere;
 }
 
@@ -852,7 +852,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   display: inline-block;
   max-width: 100%;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
   padding: 2px 4px;
@@ -1019,7 +1019,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-em-v4__upsub {
   font-family: var(--hud-font-mono);
-  font-size: 9px; letter-spacing: 0.5px;
+  font-size: 11px; letter-spacing: 0.5px;
   color: var(--hud-textDim); margin-top: 2px;
 }
 .admin-em-v4__upform {
@@ -1045,7 +1045,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: rgba(56, 189, 248, 0.10);
   color: var(--color-ink-accent);
   font-family: var(--hud-font-mono);
-  font-size: 10px; letter-spacing: 1px; cursor: pointer;
+  font-size: 11px; letter-spacing: 1px; cursor: pointer;
 }
 
 .admin-em-v4__toolbar {
@@ -1054,7 +1054,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-em-v4__quota-label,
 .admin-em-v4__quota-size {
   font-family: var(--hud-font-mono);
-  font-size: 10px; letter-spacing: 1px;
+  font-size: 11px; letter-spacing: 1px;
   color: var(--hud-textDim);
 }
 .admin-em-v4__quota-bar {
@@ -1076,7 +1076,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-em-v4__search:focus { border-color: var(--hud-cyan); }
 .admin-em-v4__count {
   font-family: var(--hud-font-mono);
-  font-size: 10px; letter-spacing: 1px;
+  font-size: 11px; letter-spacing: 1px;
   color: var(--color-ink-accent);
 }
 
@@ -1103,13 +1103,13 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-em-v4__tile-thumb img { max-width: 80%; max-height: 80%; object-fit: contain; }
 .admin-em-v4__tile-name {
   font-family: var(--hud-font-mono);
-  font-size: 10px; letter-spacing: 0.3px;
+  font-size: 11px; letter-spacing: 0.3px;
   color: var(--color-ink-accent);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .admin-em-v4__tile-meta {
   font-family: var(--hud-font-mono);
-  font-size: 8px; letter-spacing: 0.3px;
+  font-size: 11px; letter-spacing: 0.3px;
   color: var(--hud-textDim); margin-top: 2px;
 }
 .admin-em-v4__tile-dot {
@@ -1128,7 +1128,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-em-v4__tile-actions button {
   padding: 4px 8px; border-radius: var(--radius-xs); cursor: pointer;
   font-family: var(--hud-font-mono);
-  font-size: 9px; letter-spacing: 0.5px;
+  font-size: 11px; letter-spacing: 0.5px;
 }
 .admin-em-v4__tile-actions .emoji-copy-btn {
   background: rgba(56, 189, 248, 0.20);
@@ -1149,7 +1149,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-em-v4__preview-label {
   font-family: var(--hud-font-mono);
-  font-size: 9px; letter-spacing: 1.5px;
+  font-size: 11px; letter-spacing: 1.5px;
   color: var(--hud-textDim); text-transform: uppercase;
 }
 .admin-em-v4__preview-body {
@@ -1198,7 +1198,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 
 .admin-emojis-tile .label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: var(--admin-text);
   max-width: 100%;
@@ -1287,7 +1287,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 
 .admin-sounds-rule-detail {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: var(--admin-text-dim);
 }
@@ -1321,7 +1321,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   gap: 8px;
   padding: 8px 12px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1px;
   color: var(--admin-text-dim);
   text-transform: uppercase;
@@ -1350,7 +1350,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 
 .admin-scheduler-job-meta {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--admin-text-dim);
   letter-spacing: 0.5px;
   margin-top: 2px;
@@ -1765,7 +1765,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-login-attempts {
   margin-top: 4px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1.5px;
   color: var(--color-error);
   text-align: center;
@@ -1837,7 +1837,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 
 .admin-stickers-pack-count {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--admin-text-dim);
   letter-spacing: 0.5px;
 }
@@ -1845,7 +1845,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-stickers-pack-hint {
   margin-top: 4px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: var(--admin-text-dim);
   line-height: 1.5;
@@ -1910,7 +1910,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 
 .admin-stickers-tile .label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: var(--admin-text);
   max-width: 100%;
@@ -1957,7 +1957,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   padding: 4px 12px;
   border-radius: var(--radius-xs);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
   background: transparent;
@@ -2042,7 +2042,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   border: 1px solid var(--hud-line);
   color: var(--hud-textDim);
   font-family: var(--hud-font-mono);
-  font-size: 10px; letter-spacing: 0.8px; cursor: pointer;
+  font-size: 11px; letter-spacing: 0.8px; cursor: pointer;
   display: inline-flex; align-items: center; gap: 4px;
 }
 .admin-lf-v4__chip.is-active {
@@ -2051,7 +2051,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: rgba(56, 189, 248, 0.10);
 }
 .admin-lf-v4__count {
-  font-size: 9px; font-weight: 700; letter-spacing: 0;
+  font-size: 11px; font-weight: 700; letter-spacing: 0;
   opacity: 0.7;
 }
 
@@ -2071,7 +2071,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 
 .admin-lf-v4__density-label {
   font-family: var(--hud-font-mono);
-  font-size: 9px; letter-spacing: 1px;
+  font-size: 11px; letter-spacing: 1px;
   color: var(--hud-textDim);
   margin-left: 4px;
 }
@@ -2081,7 +2081,9 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   border: 1px solid var(--hud-line);
   color: var(--hud-textDim);
   font-family: var(--hud-font-mono);
-  font-size: 9px; letter-spacing: 1px; cursor: pointer;
+  font-size: 11px; letter-spacing: 1px; cursor: pointer;
+  min-height: 32px; box-sizing: border-box;
+  display: inline-flex; align-items: center;
 }
 .admin-lf-v4__dchip.is-active {
   border-color: var(--hud-cyan);
@@ -2094,7 +2096,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   border: 1px solid var(--hud-line);
   color: var(--hud-text);
   font-family: var(--hud-font-mono);
-  font-size: 10px; letter-spacing: 0.5px; cursor: pointer;
+  font-size: 11px; letter-spacing: 0.5px; cursor: pointer;
 }
 .admin-lf-v4__pausebtn:hover {
   border-color: var(--hud-cyan);
@@ -2136,7 +2138,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   padding: 8px 12px;
   border-top: 1px solid var(--hud-line);
   font-family: var(--hud-font-mono);
-  font-size: 10px; letter-spacing: 0.5px;
+  font-size: 11px; letter-spacing: 0.5px;
   color: var(--hud-textDim);
 }
 .admin-lf-v4__statedot {
@@ -2149,7 +2151,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   animation: none;
 }
 .admin-lf-v4__statelabel { color: inherit; }
-.admin-lf-v4__counts { font-size: 10px; }
+.admin-lf-v4__counts { font-size: 11px; }
 
 @keyframes lf-v4-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
@@ -2197,7 +2199,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 
 .admin-live-feed-time {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--admin-text-dim);
   letter-spacing: 0.5px;
   font-variant-numeric: tabular-nums;
@@ -2224,7 +2226,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 
 .admin-live-feed-fp {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--admin-text-dim);
   letter-spacing: 0.5px;
   overflow: hidden;
@@ -2311,7 +2313,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   align-items: center;
   gap: 4px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.04em;
   color: var(--admin-text-dim);
   background: transparent;
@@ -2338,7 +2340,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 
 .admin-identity-ip {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   color: var(--color-text-muted);
   letter-spacing: 0.02em;
   cursor: default;
@@ -2432,7 +2434,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 
 .admin-fonts-drop-hint {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--admin-text-dim);
   letter-spacing: 0.5px;
   text-align: center;
@@ -2443,7 +2445,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   padding: 4px 8px;
   border-radius: var(--radius-xs);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   border: 1px solid var(--admin-line);
   color: var(--admin-text-dim);
@@ -2499,7 +2501,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-replay-meta {
   margin-top: 8px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1px;
   color: var(--admin-text-dim);
   text-transform: uppercase;
@@ -2582,7 +2584,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   }
 
   .admin-replay-time {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .admin-replay-histogram {
@@ -2682,7 +2684,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-security-row.is-head {
   background: transparent;
   color: var(--admin-text-dim);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
 }
@@ -2751,7 +2753,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 
 .admin-backup-deferred-note {
   margin: 8px 0 0;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--admin-text-dim);
   font-family: var(--font-mono);
   letter-spacing: 0.05em;
@@ -2825,7 +2827,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-cmdk-hint {
   margin-left: auto;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--admin-text-dim, #94a3b8);
   letter-spacing: 1.5px;
   text-transform: uppercase;
@@ -2881,7 +2883,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-cmdk-prefix {
   flex: 0 0 auto;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1px;
   color: var(--color-ink-accent);
   background: rgba(56, 189, 248, 0.08);
@@ -2911,7 +2913,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   gap: 12px;
   padding: 8px 12px;
   border-top: 1px solid var(--admin-line, #1e293b);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--admin-text-dim, #94a3b8);
   font-family: var(--font-mono);
   letter-spacing: 0.5px;
@@ -2925,7 +2927,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: rgba(56, 189, 248, 0.04);
   color: var(--admin-text, #e2e8f0);
   font-family: inherit;
-  font-size: 10px;
+  font-size: 11px;
   margin-right: 4px;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2933,7 +2935,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 @media (max-width: 480px) {
   .admin-cmdk { padding: 4vh 8px 8px; }
-  .admin-cmdk-foot { gap: 8px; font-size: 9px; }
+  .admin-cmdk-foot { gap: 8px; font-size: 11px; }
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -2972,7 +2974,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   border-bottom: 1px solid var(--admin-line);
   background: var(--admin-raised);
   font-family: var(--font-mono);
-  font-size: 9px; letter-spacing: 1.5px;
+  font-size: 11px; letter-spacing: 1.5px;
   color: var(--admin-text-dim);
   text-transform: uppercase;
 }
@@ -3015,7 +3017,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-dsp2-cell-label-en {
   font-family: var(--font-mono);
-  font-size: 9px; letter-spacing: 1.3px;
+  font-size: 11px; letter-spacing: 1.3px;
   color: var(--admin-text-dim);
   margin-top: 2px;
 }
@@ -3039,7 +3041,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 /* ── Center column: hint + picker + range band ───────────────────── */
 .admin-dsp2-cell-center { padding-top: 2px; min-width: 0; }
 .admin-dsp2-cell-hint {
-  font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.3px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 1.3px;
   color: var(--admin-text-dim);
   margin-bottom: 8px;
   display: flex; align-items: center; gap: 4px;
@@ -3091,7 +3093,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-dsp2-slider-axis {
   display: flex; justify-content: space-between;
-  font-family: var(--font-mono); font-size: 9px;
+  font-family: var(--font-mono); font-size: 11px;
   /* slate-400 再乘 0.7 alpha：淺色 1.88、深色 4.11 —— 兩個主題都不合格。
    * 9px 刻度沒有再打薄的餘裕，改用實色的次要文字 token。 */
   color: var(--color-text-secondary);
@@ -3176,7 +3178,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-dsp2-tile-icon { font-size: 14px; line-height: 1; }
 .admin-dsp2-tile-label {
-  font-family: var(--font-mono); font-size: 8px; letter-spacing: 1px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 1px;
   color: var(--admin-text-dim);
 }
 .admin-dsp2-tile.is-active .admin-dsp2-tile-label { color: var(--color-ink-accent); }
@@ -3206,7 +3208,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   font-family: var(--font-mono); font-size: 12px; outline: none;
 }
 .admin-dsp2-band-input span {
-  font-family: var(--font-mono); font-size: 10px;
+  font-family: var(--font-mono); font-size: 11px;
   color: var(--admin-text-dim);
 }
 
@@ -3222,7 +3224,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: transparent;
   border: 1px solid var(--admin-line);
   color: var(--admin-text-dim);
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px; font-weight: 700;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 1px; font-weight: 700;
   cursor: pointer;
   transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease, color var(--motion-fast) ease;
 }
@@ -3248,7 +3250,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   left: 13px; background: #000;
 }
 .admin-dsp2-toggle-hint {
-  font-family: var(--font-mono); font-size: 9px; letter-spacing: 1px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 1px;
   text-align: right;
   color: var(--admin-text-dim);
   max-width: 150px; line-height: 1.5;
@@ -3267,7 +3269,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   display: flex; align-items: baseline; gap: 8px; justify-content: space-between;
 }
 .admin-dsp2-card-head-en {
-  font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.3px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 1.3px;
   color: var(--admin-text-dim);
 }
 
@@ -3278,7 +3280,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-dsp2-preview-sync {
   margin-left: auto;
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 1px;
   color: var(--color-ink-accent);
   display: inline-flex; align-items: center; gap: 4px;
 }
@@ -3316,13 +3318,13 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-dsp2-preview-tag {
   font-family: var(--font-mono);
-  font-size: 0.42em;
+  font-size: 0.46em;
   margin-right: 8px;
   vertical-align: middle;
   color: var(--color-text-secondary);
 }
 .admin-dsp2-preview-pill-2 .admin-dsp2-preview-tag {
-  font-size: 0.42em; margin-right: 8px;
+  font-size: 0.46em; margin-right: 8px;
 }
 .admin-dsp2-preview-stage[data-layout="top_fixed"] .admin-dsp2-preview-pill-1 { top: 8px; }
 .admin-dsp2-preview-stage[data-layout="bottom_fixed"] .admin-dsp2-preview-pill-1 { top: auto; bottom: 60px; }
@@ -3330,7 +3332,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-dsp2-preview-stage[data-layout="rise"] .admin-dsp2-preview-pill-1 { top: auto; bottom: 12px; left: 12px; }
 .admin-dsp2-preview-foot {
   padding: 8px 12px; border-top: 1px solid var(--admin-line);
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 1px;
   color: var(--admin-text-dim);
   display: flex; justify-content: space-between;
 }
@@ -3361,7 +3363,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-dsp2-btn-ghost:hover { border-color: rgba(56, 189, 248, 0.55); }
 .admin-dsp2-deploy-note {
   margin-top: 8px;
-  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.5px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.5px;
   color: var(--admin-text-dim);
 }
 
@@ -3399,7 +3401,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-dsp2-srow-tag {
   margin-left: auto;
-  font-family: var(--font-mono); font-size: 9px; letter-spacing: 1px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 1px;
   color: var(--admin-text-dim);
 }
 .admin-dsp2-srow.is-on .admin-dsp2-srow-tag { color: var(--color-ink-accent); }
@@ -3446,7 +3448,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: rgba(248, 113, 113, 0.12);
   border: 1px solid rgba(248, 113, 113, 0.6);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1.5px;
   color: #f87171;
   font-weight: 700;
@@ -3487,7 +3489,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-polls-live-time .kicker {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 1.5px;
   color: var(--admin-text-dim);
 }
@@ -3508,7 +3510,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-polls-live-question .kicker {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1.5px;
   color: var(--admin-text-dim);
   margin-bottom: 8px;
@@ -3569,7 +3571,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: var(--hud-cyan-soft, rgba(56,189,248,0.12));
   border: 1px solid var(--color-primary);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 1px;
   color: var(--color-ink-accent);
   font-weight: 700;
@@ -3586,7 +3588,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-polls-live-bar.is-leader .pct { color: var(--color-ink-accent); }
 .admin-polls-live-bar .cnt {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--admin-text-dim);
   letter-spacing: 0.5px;
   min-width: 42px;
@@ -3620,7 +3622,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-polls-live-foot .meta {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--admin-text-dim);
   letter-spacing: 1px;
 }
@@ -3713,7 +3715,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   align-items: center;
   justify-content: center;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   border: 1px solid var(--admin-line);
   color: var(--admin-text-dim);
@@ -3879,7 +3881,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   border-radius: var(--radius-xs);
   background: var(--admin-raised);
   border: 1px solid var(--admin-line);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 1.5px;
   color: var(--admin-text-dim);
 }
@@ -3917,7 +3919,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-polls-results-winner .info { flex: 1; min-width: 0; }
 .admin-polls-results-winner .kicker {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1.5px;
   color: var(--color-ink-accent);
   margin-bottom: 4px;
@@ -3963,7 +3965,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-polls-results-bar .rank {
   width: 16px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--admin-text-dim);
   letter-spacing: 0.5px;
   text-align: center;
@@ -3977,7 +3979,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   align-items: center;
   justify-content: center;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--admin-text);
   flex-shrink: 0;
@@ -4007,7 +4009,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-polls-results-bar.is-winner .pct { color: var(--color-ink-accent); }
 .admin-polls-results-bar .cnt {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--admin-text-dim);
   min-width: 44px;
   text-align: right;
@@ -4079,7 +4081,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   display: flex;
   justify-content: space-between;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--admin-text-dim);
   letter-spacing: 0.5px;
 }
@@ -4227,7 +4229,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-bc-v4__stat-en {
   font-family: var(--hud-font-mono);
-  font-size: 9px; letter-spacing: 1.2px;
+  font-size: 11px; letter-spacing: 1.2px;
   color: var(--hud-textDim);
 }
 .admin-bc-v4__stat-v {
@@ -4268,7 +4270,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: rgba(255, 77, 79, 0.07);
   border: 1px solid rgba(255, 77, 79, 0.21);
   font-family: var(--hud-font-mono);
-  font-size: 10px; color: var(--color-ink-error);
+  font-size: 11px; color: var(--color-ink-error);
   letter-spacing: 0.5px; max-width: 800px; width: 100%; text-align: center;
 }
 
@@ -4298,7 +4300,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-bc-v4__sec-label { font-size: 12px; }
 .admin-bc-v4__sec-hint {
-  font-size: 9px; letter-spacing: 1px;
+  font-size: 11px; letter-spacing: 1px;
   color: var(--hud-textDim);
 }
 
@@ -4323,7 +4325,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-bc-v4__ended-en {
   font-family: var(--hud-font-mono);
-  font-size: 10px; letter-spacing: 1.5px;
+  font-size: 11px; letter-spacing: 1.5px;
   color: var(--hud-textDim); margin-top: 4px;
 }
 .admin-bc-v4__ended-stats {
@@ -4442,7 +4444,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-bc-v5__session-ctx[hidden] { display: none; }
 .admin-bc-v5__session-label {
   font-family: var(--hud-font-mono);
-  font-size: 9px; letter-spacing: 1.5px;
+  font-size: 11px; letter-spacing: 1.5px;
   color: var(--hud-text-dim, #94a3b8);
 }
 .admin-bc-v5__session-row {
@@ -4462,7 +4464,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-bc-v5__spacer { flex: 1; }
 .admin-bc-v5__session-link {
   font-family: var(--hud-font-mono);
-  font-size: 10px; letter-spacing: 0.5px;
+  font-size: 11px; letter-spacing: 0.5px;
   color: var(--color-ink-accent);
   text-decoration: none;
 }
@@ -4612,7 +4614,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   border-radius: var(--radius-sm);
   background: var(--admin-raised);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--admin-text-dim);
   letter-spacing: 0.5px;
   line-height: 1.7;
@@ -4691,7 +4693,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-broadcast-rule .is-standby { color: rgba(244, 114, 182, 1); }
 .admin-broadcast-rule .is-end     { color: rgba(248, 113, 113, 1); }
 .admin-broadcast-rule .tag {
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1px;
 }
 .admin-broadcast-rule .tag.is-instant { color: #86efac; }
@@ -4718,7 +4720,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-ratelimit-effective {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.4px;
   color: var(--admin-text-dim);
   line-height: 1.5;
@@ -4754,7 +4756,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-ratelimit-vfeed-head .kicker {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1px;
   color: var(--admin-text-dim);
   text-transform: uppercase;
@@ -4767,7 +4769,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   display: grid;
   grid-template-columns: 70px 60px 1fr 140px 56px 130px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   padding: 8px 12px;
   gap: 8px;
   border-bottom: 1px solid var(--admin-line);
@@ -4776,7 +4778,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-ratelimit-vfeed-row.is-head {
   color: var(--admin-text-dim);
   letter-spacing: 1px;
-  font-size: 9px;
+  font-size: 11px;
 }
 .admin-ratelimit-vfeed-empty {
   padding: 12px 16px;
@@ -4825,7 +4827,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-ratelimit-ip-row .kind {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1px;
   font-weight: 700;
   text-align: center;
@@ -4836,7 +4838,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-ratelimit-ip-row .kind.is-allow { color: #86efac; border: 1px solid rgba(134, 239, 172, 0.6); }
 .admin-ratelimit-ip-row .meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .admin-ratelimit-ip-row .ip { font-family: var(--font-mono); font-size: 12px; color: var(--admin-text); overflow: hidden; text-overflow: ellipsis; }
-.admin-ratelimit-ip-row .note { font-size: 10px; color: var(--admin-text-dim); overflow: hidden; text-overflow: ellipsis; }
+.admin-ratelimit-ip-row .note { font-size: 11px; color: var(--admin-text-dim); overflow: hidden; text-overflow: ellipsis; }
 .admin-ratelimit-ip-del {
   background: transparent;
   border: 0;
@@ -4869,7 +4871,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-viewer-theme-legend-head .kicker {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1px;
   color: var(--admin-text-dim);
   text-transform: uppercase;
@@ -4907,7 +4909,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-viewer-theme-legend-row .v {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: var(--color-ink-accent);
 }
@@ -4926,7 +4928,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   gap: 4px;
   margin-top: 8px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.05em;
 }
 .admin-dash-telem-bar-row {
@@ -4988,7 +4990,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-cmdk-chip { display: inline-flex; align-items: center; gap: 4px; }
 .admin-cmdk-chip .num {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   opacity: 0.6;
   letter-spacing: 0;
 }
@@ -5031,7 +5033,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-cmdk-sub {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: var(--admin-text-dim, #94a3b8);
   margin-top: 2px;
@@ -5041,7 +5043,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-cmdk-shortcut {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1px;
   color: var(--admin-text-dim, #94a3b8);
   border: 1px solid var(--admin-line, #1e293b);
@@ -5060,7 +5062,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: rgba(56, 189, 248, 0.04);
   border-top: 1px solid var(--admin-line, #1e293b);
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: var(--admin-text-dim, #94a3b8);
 }

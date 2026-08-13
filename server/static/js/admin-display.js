@@ -179,7 +179,7 @@
                 <span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;background:var(--color-primary);box-shadow:0 0 6px var(--color-primary);animation:hud-pulse 2s ease-in-out infinite"></span>
                 <div style="flex:1;min-width:0">
                   <div style="font-family:var(--font-mono);font-size:11px;color: var(--color-ink-accent);letter-spacing:0.1em;font-weight:700">${escapeHtml(t("displayAutoSyncLive"))}</div>
-                  <div style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);margin-top:2px;letter-spacing:0.04em">${escapeHtml(t("displayAutoSyncNote"))}</div>
+                  <div style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);margin-top:2px;letter-spacing:0.04em">${escapeHtml(t("displayAutoSyncNote"))}</div>
                 </div>
               </div>
               <div style="display:flex;gap:8px">
@@ -198,12 +198,12 @@
                 <span class="admin-dsp2-card-head-en">ADMIN CONTROLLED</span>
               </div>
               <div style="display:grid;grid-template-columns:auto 1fr;gap:7px 12px;align-items:start;font-size:11px;line-height:1.45">
-                <span style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.08em">UI language</span><span>Auto (follow browser)</span>
-                <span style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.08em">Placeholder</span><span>${escapeHtml(t("displayPlaceholderExample"))}</span>
-                <span style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.08em">Submit button</span><span>FIRE</span>
-                <span style="font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);letter-spacing:0.08em">Poll prompt</span><span>${escapeHtml(t("displayPollPromptExample"))}</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em">UI language</span><span>Auto (follow browser)</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em">Placeholder</span><span>${escapeHtml(t("displayPlaceholderExample"))}</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em">Submit button</span><span>FIRE</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em">Poll prompt</span><span>${escapeHtml(t("displayPollPromptExample"))}</span>
               </div>
-              <div style="padding-top:8px;border-top:1px solid var(--hud-line);font-family:var(--font-mono);font-size:9px;color:var(--color-text-muted);line-height:1.6">
+              <div style="padding-top:8px;border-top:1px solid var(--hud-line);font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);line-height:1.6">
                 ${escapeHtml(t("displayAdminControlledNote"))}
               </div>
             </div>
@@ -1204,7 +1204,7 @@
     const shownCount = FIELD_DEFS.filter(function (f) { return f.on; }).length;
     const hiddenCount = FIELD_DEFS.length - shownCount;
     head.innerHTML =
-      '<span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:1px">' + escapeHtml(t("displayFieldsCountLabel", { count: FIELD_DEFS.length })) + '</span>' +
+      '<span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:1px">' + escapeHtml(t("displayFieldsCountLabel", { count: FIELD_DEFS.length })) + '</span>' +
       '<span class="admin-vc-fields-count">' + escapeHtml(t("displayFieldsShownHidden", { shown: shownCount, hidden: hiddenCount })) + "</span>";
     leftCol.appendChild(head);
 
@@ -1260,7 +1260,7 @@
     }).join("");
 
     rightCol.innerHTML =
-      '<div style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.5px">' + escapeHtml(t("displayAudiencePreviewLabel")) + '</div>' +
+      '<div style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.5px">' + escapeHtml(t("displayAudiencePreviewLabel")) + '</div>' +
       '<div class="admin-vc-preview-form">' +
         '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayFieldNicknameLabel")) + ' <span style="color: var(--color-ink-error)">*</span></div><div class="admin-vc-preview-input">' + escapeHtml(t("displaySampleNickname")) + '</div></div>' +
         '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayFieldMessageLabel")) + ' <span style="color: var(--color-ink-error)">*</span></div><div class="admin-vc-preview-input" style="min-height:56px">' + escapeHtml(t("displaySampleMessage")) + '</div></div>' +

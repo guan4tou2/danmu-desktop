@@ -251,7 +251,7 @@
     return '<div class="admin-sessions-table-head" style="'
       + 'display:grid;grid-template-columns:28px 1fr 140px 80px 70px 60px 60px 80px;'
       + 'gap:0 8px;padding:8px 12px;'
-      + 'font-family:var(--font-mono);font-size:10px;letter-spacing:1px;'
+      + 'font-family:var(--font-mono);font-size:11px;letter-spacing:1px;'
       + 'color:var(--admin-text-dim);text-transform:uppercase;'
       + 'border-bottom:1px solid var(--admin-line)">'
       + '<span></span>'
@@ -406,7 +406,7 @@
 
     previewEl.innerHTML =
       '<div style="display:flex;flex-direction:column;gap:10px">'
-      + '<div style="font-family:var(--font-mono);font-size:10px;color:var(--admin-text-dim);word-break:break-all">'
+      + '<div style="font-family:var(--font-mono);font-size:11px;color:var(--admin-text-dim);word-break:break-all">'
       +   idFull
       + '</div>'
       + (live ? '<span class="admin-ui-chip is-active admin-sessions-live-badge" style="align-self:flex-start">● LIVE</span>' : '')
@@ -415,7 +415,7 @@
       + _previewKv(ServerI18n.t("sessionsPreviewMsgCount"), msgs.toLocaleString())
       + _previewKv(ServerI18n.t("sessionsPreviewViewerCount"), views.toLocaleString())
       + '<div>'
-      +   '<div style="font-family:var(--font-mono);font-size:10px;color:var(--admin-text-dim);'
+      +   '<div style="font-family:var(--font-mono);font-size:11px;color:var(--admin-text-dim);'
       +               'text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">' + ServerI18n.t("sessionsLabelActivity") + '</div>'
       +   '<div style="display:flex;align-items:flex-end;height:28px;gap:1px">' + spark + '</div>'
       + '</div>'
@@ -432,7 +432,7 @@
 
   function _previewKv(label, value) {
     return '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">'
-      + '<span style="font-family:var(--font-mono);font-size:10px;color:var(--admin-text-dim);'
+      + '<span style="font-family:var(--font-mono);font-size:11px;color:var(--admin-text-dim);'
       +               'text-transform:uppercase;letter-spacing:1px">' + _escHtml(label) + '</span>'
       + '<span style="font-size:13px;color:var(--admin-text)">' + _escHtml(value) + '</span>'
       + '</div>';

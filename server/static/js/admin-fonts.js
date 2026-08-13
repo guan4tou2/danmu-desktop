@@ -56,7 +56,7 @@
               </div>
               <div class="hud-table-foot" style="padding:14px 16px;display:flex;align-items:center;gap:10px;">
                 ${loggedIn ? `<label for="adminFontFileInput" class="admin-ui-action admin-font-upload-action" style="cursor:pointer" title="${escapeHtml(ServerI18n.t("uploadFont"))}">+ ${ServerI18n.t("uploadFont")} · WOFF2 / OTF / TTF</label>${uploadHiddenInput}` : ""}
-                <span id="fontsTotalSize" style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.12em">${ServerI18n.t("fontsTotalPlaceholder")}</span>
+                <span id="fontsTotalSize" style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.12em">${ServerI18n.t("fontsTotalPlaceholder")}</span>
               </div>
             </div>
             <div id="adminFontEmptyStateHost"></div>
@@ -106,7 +106,7 @@
                 <div style="height:8px;border-radius:4px;background:color-mix(in srgb, var(--color-bg-deep) 65%, transparent);overflow:hidden">
                   <div id="fontsSubsetBar" style="width:0%;height:100%;background:var(--color-primary);transition:width 0.4s ease"></div>
                 </div>
-                <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.05em">
+                <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.05em">
                   <span id="fontsOrigSize">ORIG · —</span>
                   <span id="fontsSubsetSize" style="color: var(--color-ink-accent)">SUBSET · —</span>
                 </div>

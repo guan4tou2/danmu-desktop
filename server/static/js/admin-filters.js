@@ -120,7 +120,7 @@
             <div class="hud-inspector-head">
               <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${ServerI18n.t("fltRuleLib")}</span>
               <span class="admin-v3-card-kicker" style="margin:0">RULESET \u00b7 ORDER MATTERS</span>
-              <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color: var(--color-ink-accent);letter-spacing:0.1em">${ServerI18n.t("fltActionsHead")}</span>
+              <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color: var(--color-ink-accent);letter-spacing:0.1em">${ServerI18n.t("fltActionsHead")}</span>
             </div>
             <div class="hud-filter-row" id="filterTypeChips" style="padding:10px 14px;border-bottom:1px solid var(--hud-line-strong)">
               <span class="hud-filter-chip is-active" data-filter-scope="all">${ServerI18n.t("fltChipAll")} <span data-filter-count="all">0</span></span>
@@ -145,7 +145,7 @@
                 <span class="hud-status-dot is-live"></span>
                 <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${ServerI18n.t("fltLiveLog")}</span>
                 <span class="admin-v3-card-kicker" style="margin:0">LAST 6 EVENTS</span>
-                <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);letter-spacing:0.1em">AUTO-SCROLL \u25b6</span>
+                <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.1em">AUTO-SCROLL \u25b6</span>
               </div>
               <div class="hud-console-body" id="filterLiveLog" style="max-height:200px;padding:10px 14px;font-family:var(--font-mono);font-size:11px;line-height:1.7">
                 <div style="color:var(--color-text-muted);text-align:center;padding:10px">' + ServerI18n.t("fltNoEvents") + '</div>
@@ -255,7 +255,7 @@
       <div class="hud-table-row hud-rule-row" style="grid-template-columns: 1.6fr 80px 80px 60px 60px 40px;${dim}" data-rule-id="${escapeHtml(rule.id)}" data-rule-type="${escapeHtml(rule.type)}">
         <span style="font-family:var(--font-mono);font-size:12px;color:var(--color-text-strong);word-break:break-all">${escapeHtml(patternText)}</span>
         <span class="hud-pill ${typePill}">${typeLabel}</span>
-        <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;padding:2px 6px;border-radius:3px;background:${actionCol};color:#000;font-weight:700;width:fit-content;text-transform:uppercase">${escapeHtml(rule.action)}</span>
+        <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;padding:2px 6px;border-radius:3px;background:${actionCol};color:#000;font-weight:700;width:fit-content;text-transform:uppercase">${escapeHtml(rule.action)}</span>
         <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">P${escapeHtml(String(rule.priority))}</span>
         <label class="relative inline-block" style="width:32px;align-self:center" title="${escapeHtml(rule.enabled ? t("enabled", "Enabled") : t("disabled", "Disabled"))}">
           <input type="checkbox" class="sr-only filter-toggle-cb" data-rule-id="${escapeHtml(rule.id)}" ${rule.enabled ? "checked" : ""} />
@@ -582,8 +582,8 @@
       const source = (e.source || "").slice(0, 16);
       const sourceLabel = source ? `\u00b7 ${source}` : "";
       return `<div class="admin-filter-log-row" style="display:grid;grid-template-columns:64px 70px 1fr;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px dashed var(--hud-line)">
-        <span style="font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted)">${ts}</span>
-        <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:1px;font-weight:700;color:${ac}">${action}</span>
+        <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">${ts}</span>
+        <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:1px;font-weight:700;color:${ac}">${action}</span>
         <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\u300c${text}\u300d<span style="color:var(--color-text-muted)"> \u2014 \u898f\u5247 ${pattern} ${sourceLabel}</span></span>
       </div>`;
     }).join("");
