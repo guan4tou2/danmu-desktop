@@ -5093,7 +5093,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   flex: 0 0 auto;
   width: 18px;
   text-align: center;
-  color: #fbbf24;
+  color: var(--color-ink-warning);
 }
 .admin-ratelimit-suggest-body {
   flex: 1 1 auto;
