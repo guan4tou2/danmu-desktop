@@ -599,7 +599,7 @@
           severity: "danger",
           body:
             ServerI18n.t("dashBlacklistBody") +
-            `<div style="margin-top:10px;font-family:var(--font-mono);font-size:12px;` +
+            `<div style="margin-top:10px;font-family:var(--font-mono);font-size:13px;` +
             `color:var(--color-text-muted)">fp:${_escapeHtml(fp)}</div>`,
           confirmLabel: ServerI18n.t("dashBlacklistTitle"),
         });

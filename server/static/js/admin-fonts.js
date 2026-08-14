@@ -86,8 +86,8 @@
                 <span class="admin-v3-card-kicker" style="margin:0">PREVIEW · <span id="fontsPreviewFamily">Noto Sans TC</span></span>
               </div>
               <div style="padding:16px;display:flex;flex-direction:column;gap:8px">
-                <div id="fontsPreviewHeadline" style="font-size:32px;font-weight:700;line-height:1.2;color:var(--color-text-strong)">${ServerI18n.t("fontsPreviewHeadline")}</div>
-                <div id="fontsPreviewLatin" style="font-size:18px;color:var(--color-text-muted)">${ServerI18n.t("fontsPreviewLatin")}</div>
+                <div id="fontsPreviewHeadline" style="font-size:34px;font-weight:700;line-height:1.2;color:var(--color-text-strong)">${ServerI18n.t("fontsPreviewHeadline")}</div>
+                <div id="fontsPreviewLatin" style="font-size:20px;color:var(--color-text-muted)">${ServerI18n.t("fontsPreviewLatin")}</div>
                 <div style="padding:10px;background:color-mix(in srgb, var(--color-bg-deep) 65%, transparent);border-radius:4px;font-size:13px;color:var(--color-text-strong)">
                   <div id="fontsPreviewCJK">${ServerI18n.t("fontsPreviewCJK")}</div>
                   <div style="margin-top:6px;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">
@@ -199,11 +199,11 @@
     return (
       `<div class="hud-table-row" style="grid-template-columns: 2fr 1.2fr 1fr 90px 80px 96px;" data-font="${escapeHtml(font.name)}">` +
         `<div class="min-w-0">` +
-          `<div style="font-size:15px;color:var(--color-text-strong);${sampleStyle}" class="truncate">${escapeHtml(font.name)}</div>` +
+          `<div style="font-size:16px;color:var(--color-text-strong);${sampleStyle}" class="truncate">${escapeHtml(font.name)}</div>` +
           `<div style="font-size:11px;color:var(--color-text-muted);margin-top:2px;font-family:var(--font-mono)">${ServerI18n.t("fontsRowSample")}</div>` +
           (actionBtns.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${actionBtns.join("")}</div>` : "") +
         `</div>` +
-        `<span style="font-size:12px;color:var(--color-text-strong)">${escapeHtml(foundry)}</span>` +
+        `<span style="font-size:13px;color:var(--color-text-strong)">${escapeHtml(foundry)}</span>` +
         `<span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">${escapeHtml(weight)}</span>` +
         `<span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-strong)">${escapeHtml(size)}</span>` +
         `<span class="hud-pill" style="text-transform:uppercase;justify-self:start">${escapeHtml(fmt)}</span>` +

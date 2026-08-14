@@ -467,7 +467,7 @@
       title: ServerI18n.t("audienceUnkickTitle"),
       subtitle: "UNKICK · FINGERPRINT CAN SEND AGAIN",
       severity: "warn",
-      body: ServerI18n.t("audienceUnkickBody", { fpHtml: '<div style="margin-top:10px;font-family:var(--font-mono);font-size:12px;color:var(--color-text-muted)">fp:' + escapeHtml(fp.slice(0, 8)) + "</div>" }),
+      body: ServerI18n.t("audienceUnkickBody", { fpHtml: '<div style="margin-top:10px;font-family:var(--font-mono);font-size:13px;color:var(--color-text-muted)">fp:' + escapeHtml(fp.slice(0, 8)) + "</div>" }),
       confirmLabel: ServerI18n.t("audienceUnkickTitle"),
     });
     if (!ok) return;
@@ -547,7 +547,7 @@
       title: ServerI18n.t("audienceBanTitle"),
       subtitle: "BAN FINGERPRINT · FUTURE MESSAGES AUTO-MASKED",
       severity: "danger",
-      body: ServerI18n.t("audienceBanBody", { fpHtml: '<div style="margin-top:10px;font-family:var(--font-mono);font-size:12px;color:var(--color-text-muted)">fp:' + escapeHtml(fp.slice(0, 8)) + "</div>" }),
+      body: ServerI18n.t("audienceBanBody", { fpHtml: '<div style="margin-top:10px;font-family:var(--font-mono);font-size:13px;color:var(--color-text-muted)">fp:' + escapeHtml(fp.slice(0, 8)) + "</div>" }),
       confirmLabel: ServerI18n.t("audienceBanConfirm"),
     });
     if (!ok) return;

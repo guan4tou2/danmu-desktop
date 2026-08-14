@@ -42,7 +42,7 @@
           iconSpan.textContent = "\u2298";
 
           const keywordSpan = document.createElement("span");
-          keywordSpan.style.cssText = "flex:1;min-width:0;font-family:var(--font-mono);font-size:12px;color:var(--color-text-strong);word-break:break-all";
+          keywordSpan.style.cssText = "flex:1;min-width:0;font-family:var(--font-mono);font-size:13px;color:var(--color-text-strong);word-break:break-all";
           keywordSpan.textContent = keyword;
 
           const removeButton = document.createElement("button");

@@ -286,7 +286,7 @@
       if (type === "select" && Array.isArray(def.options)) {
         const sel = document.createElement("select");
         sel.className = "admin-ui-select";
-        sel.style.cssText = "font-size:12px;padding:4px 8px";
+        sel.style.cssText = "font-size:13px;padding:4px 8px";
         sel.dataset.paramKey = key;
         for (const opt of def.options) {
           const o = document.createElement("option");
@@ -321,7 +321,7 @@
 
         const valDisplay = document.createElement("span");
         valDisplay.className = "font-mono";
-        valDisplay.style.cssText = "font-size:12px;color:var(--color-text-muted);width:2.5rem;text-align:right";
+        valDisplay.style.cssText = "font-size:13px;color:var(--color-text-muted);width:2.5rem;text-align:right";
         valDisplay.textContent = String(defaultVal);
 
         input.addEventListener("input", () => {
@@ -426,7 +426,7 @@
                   <button id="effectPreviewRefreshBtn" class="admin-ui-action admin-fx-preview-refresh">${ServerI18n.t("refresh")}</button>
                 </div>
                 <div id="effectPreviewBox" style="background:var(--color-bg-elevated);padding:20px;border-radius:8px;display:flex;align-items:center;justify-content:center;min-height:80px;">
-                  <span id="effectPreviewText" style="font-size:32px;color:var(--color-text-strong);display:inline-block;">${ServerI18n.t("previewText")}</span>
+                  <span id="effectPreviewText" style="font-size:34px;color:var(--color-text-strong);display:inline-block;">${ServerI18n.t("previewText")}</span>
                 </div>
                 ${styleTag("effectPreviewStyle", "")}
                 <div id="effectPreviewParams" class="flex flex-col gap-2"></div>

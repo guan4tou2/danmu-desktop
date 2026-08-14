@@ -200,7 +200,7 @@
           <article class="admin-about-oss" data-about-license style="grid-column:1 / -1">
             <div class="admin-ui-monolabel">LICENSE · OPEN SOURCE</div>
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px">
-              <span style="font-size:12px;color:var(--color-text-strong)">MIT License · © 2026 Danmu Fire Contributors</span>
+              <span style="font-size:13px;color:var(--color-text-strong)">MIT License · © 2026 Danmu Fire Contributors</span>
               <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color: var(--color-ink-accent)">GitHub →</span>
             </div>
             <div class="admin-about-oss-list" style="margin-top:12px">

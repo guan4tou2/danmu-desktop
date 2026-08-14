@@ -253,7 +253,7 @@
 
     return `
       <div class="hud-table-row hud-rule-row" style="grid-template-columns: 1.6fr 80px 80px 60px 60px 40px;${dim}" data-rule-id="${escapeHtml(rule.id)}" data-rule-type="${escapeHtml(rule.type)}">
-        <span style="font-family:var(--font-mono);font-size:12px;color:var(--color-text-strong);word-break:break-all">${escapeHtml(patternText)}</span>
+        <span style="font-family:var(--font-mono);font-size:13px;color:var(--color-text-strong);word-break:break-all">${escapeHtml(patternText)}</span>
         <span class="hud-pill ${typePill}">${typeLabel}</span>
         <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;padding:2px 6px;border-radius:3px;background:${actionCol};color:#000;font-weight:700;width:fit-content;text-transform:uppercase">${escapeHtml(rule.action)}</span>
         <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">P${escapeHtml(String(rule.priority))}</span>

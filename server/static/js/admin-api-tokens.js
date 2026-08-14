@@ -332,7 +332,7 @@
       severity: "danger",
       body:
         `<div style="line-height:1.7">${ServerI18n.t("apiTokensRevokeBody")}</div>` +
-        `<div style="margin-top:10px;font-family:var(--font-mono);font-size:12px;` +
+        `<div style="margin-top:10px;font-family:var(--font-mono);font-size:13px;` +
         `color:var(--color-text-muted)">${escapeHtml(label || tokenId)}</div>`,
       confirmLabel: ServerI18n.t("apiTokensRevoke"),
     });
