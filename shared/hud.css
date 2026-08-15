@@ -3006,7 +3006,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   }
   .admin-dsp2-cell-label { grid-area: label; }
   .admin-dsp2-cell-center { grid-area: center; }
-  .admin-dsp2-cell-toggle { grid-area: toggle; align-items: flex-start !important; }
+  .admin-dsp2-cell-toggle { grid-area: toggle; align-items: flex-start !important; border-left: none; border-top: 1px dashed var(--admin-line); margin: 0; padding: 8px 0 0; }
   .admin-dsp2-list-head { display: none; }
 }
 
@@ -3215,7 +3215,9 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 /* ── Right column: audience pill ──────────────────────────────────── */
 .admin-dsp2-cell-toggle {
   display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
-  padding-top: 2px;
+  padding: 8px 12px 8px 12px;
+  margin: -8px 0;
+  border-left: 1px dashed var(--admin-line);
 }
 .admin-dsp2-pill {
   display: inline-flex; align-items: center; gap: 8px;

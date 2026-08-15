@@ -2364,8 +2364,10 @@ body[data-active-route]:not([data-active-route="dashboard"]) .admin-dash-summary
 
 .admin-poll-mode {
   margin-top: var(--space-4);
-  padding-top: 12px;
+  padding: 12px;
   border-top: 1px solid var(--admin-line);
+  background: var(--admin-raised);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
 }
 
 .admin-poll-mode .mode-label {
@@ -13984,6 +13986,7 @@ body.admin-pu-open { overflow: hidden; }
 .admin-eflib-card {
   background: var(--hud-bg1, var(--color-bg-elevated));
   border: 1px solid var(--hud-line);
+  border-left: 3px solid var(--color-primary);
   border-radius: var(--radius-md-sm);
   padding: 12px;
   display: flex; flex-direction: column; gap: 8px;
