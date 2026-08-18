@@ -203,7 +203,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-marquee {
   left: 100%;
   font-family: var(--font-sans, sans-serif);
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
   letter-spacing: 0.02em;
   white-space: nowrap;
   animation: viewer-mq-scroll 16s linear infinite;
@@ -218,7 +218,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-marquee {
 
 @media (max-width: 599px) {
   .viewer-mq-item {
-    font-size: 12px;
+    font-size: 13px;
     animation-name: viewer-mq-scroll-mobile;
   }
   @keyframes viewer-mq-scroll-mobile {
@@ -316,7 +316,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
 @media (max-width: 599px) {
   .viewer-hero-subtitle {
     margin: 4px 0 0;
-    font-size: 12px;
+    font-size: 13px;
   }
 }
 
@@ -345,7 +345,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
    * solid here and let .is-online / :has() override with the cyan tint. */
   background: var(--color-bg-base);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1px;
   color: var(--color-text-primary);
   white-space: nowrap;
@@ -399,7 +399,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
 @media (max-width: 599px) {
   .viewer-conn-chip {
     /* prototype mini variant: 2px 7px / 9px / 0.5px / gap 4 */
-    font-size: 9px;
+    font-size: 11px;
     padding: 2px 8px;
     letter-spacing: 0.5px;
     gap: 4px;
@@ -458,7 +458,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   top: 50%;
   transform: translateY(-50%);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 11px;
   color: var(--color-text-secondary);
   pointer-events: none;
 }
@@ -489,7 +489,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   background: var(--hud-cyan-soft);
   color: var(--color-primary);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 13px;
   cursor: pointer;
 }
 .viewer-theme-toggle:hover {
@@ -503,7 +503,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
     height: 22px;
     padding: 0 16px 0 8px;
   }
-  .viewer-lang-current { font-size: 10px; }
+  .viewer-lang-current { font-size: 11px; }
   .viewer-lang-arrow {
     right: 5px;
   }
@@ -539,14 +539,14 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
 }
 
 .viewer-tab-label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.2px;
 }
 
 .viewer-tab-sub {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--color-text-secondary);
@@ -612,7 +612,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
 
 .viewer-poll-question {
   margin: 0;
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
   line-height: 1.35;
   color: var(--color-text-primary);
@@ -665,7 +665,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
 .viewer-poll-option-text {
   flex: 1;
   min-width: 0;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -684,7 +684,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   align-items: center;
   gap: 4px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.6px;
   /* 2026-07-29 驗收補洞：10px 的「✓ 已投出」畫在 is-voted 選項的天藍底上，
    * --color-primary 淺色臂（sky-600）只有 3.69:1。同樣換成文字版 accent
@@ -708,7 +708,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   }
 
   .viewer-tab-sub {
-    font-size: 8px;
+    font-size: 11px;
   }
 
   .viewer-poll-card {
@@ -948,14 +948,14 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
 }
 
 .viewer-effect-params-card__label {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--color-text-secondary);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.5px;
 }
 
 .viewer-effect-params-card__value {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--viewer-ink-accent);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
@@ -1015,7 +1015,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
 
 .viewer-identity-chip-nick {
   font-family: var(--font-sans, sans-serif);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--color-text-primary);
   letter-spacing: 0.01em;
@@ -1037,7 +1037,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   border: none;
   outline: none;
   color: var(--color-text-primary);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   font-family: var(--font-sans, sans-serif);
   padding: 0;
@@ -1068,7 +1068,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   padding: 0.7rem 0.85rem;
   border-radius: var(--radius-md-sm);
   outline: none;
-  font-size: 15px;
+  font-size: 16px;
   box-sizing: border-box;
 }
 
@@ -1110,7 +1110,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   align-items: center;
   justify-content: center;
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .viewer-swatch--custom input[type="color"] {
@@ -1123,7 +1123,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
 .viewer-color-hex {
   margin-left: auto;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: 0.5px;
   color: var(--color-text-secondary);
   text-transform: uppercase;
@@ -1141,7 +1141,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   background: var(--color-bg-elevated);
   border: 1px solid var(--hud-line);
   color: var(--color-text-primary);
-  font-size: 15px;
+  font-size: 16px;
   outline: none;
   cursor: pointer;
   appearance: none;
@@ -1157,7 +1157,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   pointer-events: none;
   color: var(--color-text-secondary);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 /* Range slider — Tailwind preflight sets `input { background-color: #0000 }`
@@ -1288,7 +1288,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
   background: transparent;
   color: var(--color-text-primary);
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 400;
   transition: background var(--motion-fast), border-color var(--motion-fast), color var(--motion-fast);
   display: inline-flex;
@@ -1344,13 +1344,13 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
 }
 
 .viewer-layout-btn__zh {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
 }
 
 .viewer-layout-btn__sub {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: var(--color-text-secondary);
   text-transform: uppercase;
@@ -1503,7 +1503,7 @@ body.viewer-body-v2.is-dark .viewer-reconnected-toast {
   background: transparent;
   border: none;
   outline: none;
-  font-size: 14px;
+  font-size: 13px;
   padding: 8px 0;
   font-weight: 500;
   color: var(--color-text-primary);
@@ -1521,7 +1521,7 @@ body.viewer-body-v2.is-dark .viewer-reconnected-toast {
   border: none;
   color: var(--color-text-secondary);
   cursor: default;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   font-family: var(--font-mono);
   letter-spacing: 1.5px;
@@ -1564,7 +1564,7 @@ body.viewer-body-v2.is-dark .viewer-reconnected-toast {
   margin-top: 4px;
   padding: 0 4px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--color-text-secondary);
   letter-spacing: 1px;
 }
@@ -1613,7 +1613,7 @@ body.viewer-body-v2.is-dark .viewer-reconnected-toast {
   cursor: pointer;
   border: 1px solid var(--hud-line);
   background: transparent;
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -1645,7 +1645,7 @@ body.viewer-has-topstrip .viewer-topstrip {
   gap: 0.75rem;
   padding: 0.5rem 1.25rem 0;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1.5px;
   color: var(--color-text-secondary);
   text-transform: uppercase;
@@ -1666,7 +1666,7 @@ body.viewer-has-topstrip .viewer-topstrip {
   border: 1px solid var(--hud-line);
   color: var(--color-text-secondary);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.1em;
   padding: 0.25rem 0.5rem;
   border-radius: var(--radius-sm);
@@ -1786,12 +1786,12 @@ body[data-viewer-state] {
 
 .viewer-state-kicker {
   font-family: var(--font-mono);
-  font-size: 10px; letter-spacing: 2.5px;
+  font-size: 11px; letter-spacing: 2.5px;
   color: var(--viewer-ink-error);
   margin-bottom: 8px;
 }
 .viewer-state-title {
-  margin: 0; font-size: 22px; font-weight: 600;
+  margin: 0; font-size: 20px; font-weight: 600;
   letter-spacing: 0.5px;
 }
 .viewer-state-title--center { text-align: center; }
@@ -1832,7 +1832,7 @@ body[data-viewer-state] {
 .viewer-state-tip .kicker {
   display: block;
   color: var(--viewer-ink-accent);
-  font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.5px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 1.5px;
   margin-bottom: 4px;
 }
 
@@ -1870,12 +1870,12 @@ body[data-viewer-state] {
   text-align: left;
 }
 .viewer-state-recap .kicker {
-  font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.2px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 1.2px;
   color: var(--color-text-muted, #64748b);
   margin-bottom: 4px;
 }
 .viewer-state-recap .question {
-  font-size: 14px; font-weight: 600; line-height: 1.5;
+  font-size: 13px; font-weight: 600; line-height: 1.5;
   margin-bottom: 12px;
 }
 .viewer-state-recap .choice {
@@ -1891,19 +1891,19 @@ body[data-viewer-state] {
   background: var(--color-primary);
   color: #000;
   border-radius: 50%;
-  font-size: 12px; font-weight: 700;
+  font-size: 13px; font-weight: 700;
   flex-shrink: 0;
 }
 .viewer-state-recap .choice .lbl {
-  flex: 1; font-size: 14px; font-weight: 600;
+  flex: 1; font-size: 13px; font-weight: 600;
 }
 .viewer-state-recap .choice .ts {
-  font-family: var(--font-mono); font-size: 10px;
+  font-family: var(--font-mono); font-size: 11px;
   color: var(--color-text-muted, #64748b);
 }
 .viewer-state-recap .meta {
   margin-top: 8px;
-  font-family: var(--font-mono); font-size: 10px;
+  font-family: var(--font-mono); font-size: 11px;
   line-height: 1.7; letter-spacing: 0.3px;
   color: var(--color-text-muted, #64748b);
 }
@@ -1923,7 +1923,7 @@ body[data-viewer-state] {
   background: var(--color-primary);
   color: #000;
   border: none; border-radius: var(--radius-md);
-  font-size: 14px; font-weight: 600;
+  font-size: 13px; font-weight: 600;
   letter-spacing: 0.4px;
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35);
@@ -1932,7 +1932,7 @@ body[data-viewer-state] {
 .viewer-state-action:hover { transform: translateY(-1px); }
 .viewer-state-trace {
   margin-top: 12px;
-  font-family: var(--font-mono); font-size: 10px;
+  font-family: var(--font-mono); font-size: 11px;
   letter-spacing: 0.3px;
   color: var(--color-text-muted, #64748b);
 }
@@ -2019,7 +2019,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-chip[aria-expanded="true"] {
 }
 .viewer-nickname-hint {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--color-text-muted);
   letter-spacing: 0.3px;
 }
@@ -2135,7 +2135,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
   gap: 8px;
 }
 .viewer-mobile-sheet-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--color-text-primary);
   flex: 1;
@@ -2186,7 +2186,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
   padding: 16px;
   text-align: center;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   color: var(--color-text-muted);
 }
 

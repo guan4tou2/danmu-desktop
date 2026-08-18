@@ -304,7 +304,7 @@ body {
 .overlay-idle-note {
   margin-top: 12px;
   font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: 1px;
   color: var(--color-text-secondary);
 }
@@ -326,7 +326,7 @@ body {
 .overlay-idle-hint {
   padding: 8px 12px;
   font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1px;
   color: var(--color-text-secondary);
 }
@@ -429,12 +429,12 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   margin-bottom: 12px;
 }
 .poll-overlay-meta .qq {
-  font-family: var(--font-mono, monospace); font-size: 10px;
+  font-family: var(--font-mono, monospace); font-size: 11px;
   letter-spacing: 2px; color: #22d3ee;
 }
 .poll-overlay-meta .counts {
   margin-left: auto;
-  font-family: var(--font-mono, monospace); font-size: 10px;
+  font-family: var(--font-mono, monospace); font-size: 11px;
   letter-spacing: 1px; color: rgba(255, 255, 255, 0.55);
 }
 .poll-overlay-question {
@@ -453,7 +453,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 }
 .poll-overlay-row-head .key {
   font-family: var(--font-display, sans-serif);
-  font-size: 22px; letter-spacing: 1px;
+  font-size: 20px; letter-spacing: 1px;
   min-width: 24px;
 }
 .poll-overlay-row-head .lbl {
@@ -461,7 +461,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   color: #fff;
 }
 .poll-overlay-row-head .lead {
-  font-family: var(--font-mono, monospace); font-size: 9px;
+  font-family: var(--font-mono, monospace); font-size: 11px;
   letter-spacing: 1px;
   padding: 2px 8px;
   border: 1px solid;
@@ -469,7 +469,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 }
 .poll-overlay-row-head .pct {
   font-family: var(--font-display, sans-serif);
-  font-size: 22px; letter-spacing: 1px; font-weight: 600;
+  font-size: 20px; letter-spacing: 1px; font-weight: 600;
   min-width: 60px; text-align: right;
 }
 .poll-overlay-row-head .votes {
@@ -522,7 +522,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   background: #fff; color: #000;
   border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-mono, monospace); font-size: 9px; font-weight: 700;
+  font-family: var(--font-mono, monospace); font-size: 11px; font-weight: 700;
 }
 .poll-overlay-foot .qr .hint {
   font-family: var(--font-mono, monospace); font-size: 11px;
@@ -545,7 +545,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   background: rgba(0, 0, 0, 0.78);
   border: 1px solid rgba(56, 189, 248, 0.35);
   border-radius: var(--radius-sm);
-  font-family: var(--font-mono, monospace); font-size: 10px;
+  font-family: var(--font-mono, monospace); font-size: 11px;
   color: rgba(255, 255, 255, 0.85);
   letter-spacing: 0.5px;
 }

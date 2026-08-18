@@ -347,7 +347,7 @@ body[data-os="mac"] .client-titlebar {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1px;
   color: rgba(148, 163, 184, 0.9);
   text-transform: uppercase;
@@ -394,7 +394,7 @@ body[data-os="mac"] .client-titlebar {
   background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
   color: var(--color-primary);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 1.2px;
   text-transform: uppercase;
   cursor: pointer;
@@ -448,7 +448,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-update-card .kicker {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 2px;
   color: var(--color-primary);
   text-transform: uppercase;
@@ -510,7 +510,7 @@ body[data-os="mac"] .client-titlebar {
 .client-update-card .progress-label {
   flex: 0 0 auto;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: rgba(241, 245, 249, 0.85);
   min-width: 40px;
@@ -630,7 +630,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-nav-label .en {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 1px;
   color: rgba(148, 163, 184, 0.8);
   margin-top: 1px;
@@ -641,7 +641,7 @@ body[data-os="mac"] .client-titlebar {
   padding: 8px 12px;
   border-top: 1px solid rgba(148, 163, 184, 0.14);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.85);
   line-height: 1.6;
@@ -705,7 +705,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-section-kicker {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 2px;
   color: rgba(148, 163, 184, 0.8);
   text-transform: uppercase;
@@ -749,7 +749,7 @@ body[data-os="mac"] .client-titlebar {
 .client-keys-hint {
   margin-top: 12px;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.8);
 }
@@ -772,7 +772,7 @@ body[data-os="mac"] .client-titlebar {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 20px;
   background: rgba(134, 239, 172, 0.12);
   border: 1px solid rgba(134, 239, 172, 0.45);
   color: var(--color-success-light);
@@ -792,7 +792,7 @@ body[data-os="mac"] .client-titlebar {
 .client-update-status-meta {
   margin-top: 4px;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.85);
 }
@@ -823,7 +823,7 @@ body[data-os="mac"] .client-titlebar {
 }
 .client-update-prefs-kicker {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1.5px;
   color: rgba(148, 163, 184, 0.85);
   text-transform: uppercase;
@@ -864,7 +864,7 @@ body[data-os="mac"] .client-titlebar {
 }
 .client-update-changelog-kicker {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1.5px;
   color: rgba(148, 163, 184, 0.85);
   text-transform: uppercase;
@@ -872,7 +872,7 @@ body[data-os="mac"] .client-titlebar {
 .client-update-changelog-link {
   margin-left: auto;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: var(--color-primary);
   text-decoration: none;
@@ -1004,7 +1004,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-conn-kicker {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 2px;
   color: rgba(148, 163, 184, 0.8);
   text-transform: uppercase;
@@ -1022,7 +1022,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-meta {
   margin-top: var(--space-1);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.8);
   display: flex;
@@ -1061,7 +1061,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-card-meta {
   margin-left: auto;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.7);
 }
@@ -1147,7 +1147,7 @@ body[data-os="mac"] .client-titlebar {
   padding: 4px 8px;
   border-radius: var(--radius-sm);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   border: 1px solid rgba(148, 163, 184, 0.25);
   background: transparent;
@@ -1196,7 +1196,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-edit-label {
   margin-top: var(--space-2);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 1px;
   color: rgba(148, 163, 184, 0.8);
   text-transform: uppercase;
@@ -1273,7 +1273,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-conn-last-when {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.7);
 }
@@ -1281,7 +1281,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-hint {
   margin-top: var(--space-2);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.3px;
   line-height: 1.5;
   color: rgba(148, 163, 184, 0.7);
@@ -1290,7 +1290,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-edit-help {
   margin-top: 4px;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.3px;
   line-height: 1.5;
   color: rgba(148, 163, 184, 0.7);
@@ -1321,7 +1321,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-auth-status {
   margin-left: auto;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.7);
 }
@@ -1341,7 +1341,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-conn-auth-kicker {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 2px;
   color: rgba(148, 163, 184, 0.8);
   text-transform: uppercase;
@@ -1373,7 +1373,7 @@ body[data-os="mac"] .client-titlebar {
   background: rgba(15, 23, 42, 0.35);
   color: rgba(241, 245, 249, 0.9);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1px;
   cursor: pointer;
   transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease, color var(--motion-fast) ease;
@@ -1407,7 +1407,7 @@ body[data-os="mac"] .client-titlebar {
   display: flex;
   gap: var(--space-5);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.8);
 }
@@ -1456,7 +1456,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-conn-edit-field > span {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1.5px;
   color: rgba(148, 163, 184, 0.8);
   text-transform: uppercase;
@@ -1581,7 +1581,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-overlay-screens .head .kicker {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 2px;
   color: rgba(148, 163, 184, 0.8);
   text-transform: uppercase;
@@ -1632,13 +1632,13 @@ body[data-os="mac"] .client-titlebar {
   margin-left: auto;
   color: var(--color-primary);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   opacity: 0;
 }
 
 .client-screen-chip .meta {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.8);
 }
@@ -1725,7 +1725,7 @@ body[data-os="mac"] .client-titlebar {
 .client-overlay-note .kicker {
   display: inline-block;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 2px;
   color: var(--color-primary);
   text-transform: uppercase;
@@ -1787,7 +1787,7 @@ body[data-os="mac"] .client-titlebar {
   background: none;
   border: none;
   color: var(--color-text-muted, #64748b);
-  font-size: 22px;
+  font-size: 20px;
   cursor: pointer;
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-md-sm);
