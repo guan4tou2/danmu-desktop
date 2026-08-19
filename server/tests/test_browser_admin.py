@@ -10,7 +10,7 @@
 import threading
 
 import pytest
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 from server.app import create_app
 from server.tests._browser_isolation import should_run_browser_module
@@ -327,8 +327,7 @@ def test_settings_speed_reflects_new_value(admin_page):
     speed = admin_page.locator('[data-num-key="Speed"][data-num-index="3"]')
     speed.fill("3")
     speed.dispatch_event("change")
-    admin_page.wait_for_timeout(500)
-    assert float(speed.input_value()) == 3.0
+    expect(speed).to_have_value("3", timeout=5000)
 
 
 def test_settings_color_toggle_calls_api(admin_page):
